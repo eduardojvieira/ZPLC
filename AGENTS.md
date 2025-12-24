@@ -34,56 +34,21 @@ This file provides context for AI agents and human contributors working on ZPLC.
 
 ```
 ZPLC/
-├── .github/
-│   └── workflows/
-│       └── ci.yml              # CI/CD pipeline (POSIX + assembler tests)
-├── apps/                       # Application targets
-│   ├── posix_host/             # POSIX development runtime
-│   │   ├── CMakeLists.txt
-│   │   └── src/main.c
-│   └── zephyr_app/             # Zephyr verification app
-│       ├── CMakeLists.txt
-│       ├── prj.conf            # Zephyr configuration
-│       ├── app.overlay         # DeviceTree overlay
-│       └── src/main.c
-├── dts/                        # DeviceTree files
-│   └── bindings/
-│       └── zplc,runtime.yaml   # ZPLC runtime binding
-├── examples/                   # Example assembly programs
-│   ├── 01_hello.asm            # Minimal program
-│   ├── 02_addition.asm         # Basic arithmetic
-│   ├── 03_conditional.asm      # IF/ELSE branching
-│   ├── 04_loop.asm             # FOR loop counter
-│   ├── 05_function_call.asm    # CALL/RET subroutines
-│   ├── 06_bitwise.asm          # Bit manipulation
-│   └── 07_stack_ops.asm        # Stack operations
-├── include/                    # Public headers
-│   ├── zplc_core.h             # VM public API
-│   ├── zplc_hal.h              # HAL interface (17 functions)
-│   └── zplc_isa.h              # ISA definitions (62 opcodes)
-├── src/                        # Source code
-│   ├── core/
-│   │   └── zplc_core.c         # VM implementation (~1100 lines)
-│   └── hal/
-│       ├── posix/
-│       │   └── zplc_hal_posix.c
-│       └── zephyr/
-│           └── zplc_hal_zephyr.c
-├── tests/                      # Unit tests
-│   ├── test_isa.c              # ISA structure tests (39 tests)
-│   └── test_vm_core.c          # VM execution tests (40 tests)
-├── tools/
-│   └── zplc_asm.py             # Assembler (text -> .zplc bytecode)
-├── zephyr/                     # Zephyr module definition
-│   ├── module.yml              # Module manifest
-│   ├── CMakeLists.txt          # Zephyr library registration
-│   └── Kconfig                 # Configuration options
-├── docs/
-│   └── ISA.md                  # Instruction Set specification
-├── CMakeLists.txt              # Root build (POSIX mode)
-├── TECHNICAL_SPEC.md           # Full technical specification
-├── AGENTS.md                   # This file
-└── README.md                   # Project overview
+├── .github/                # GitHub Actions CI/CD workflows
+├── apps/                   # Runtime applications (POSIX & Zephyr)
+├── dts/                    # DeviceTree bindings for hardware mapping
+├── ide/                    # Web-based IDE (React + TypeScript)
+│   ├── src/compiler/       # ST Compiler & Transpilers
+│   └── src/editors/        # LD, FBD, SFC Visual Editors
+├── include/                # Public C headers (VM and HAL API)
+├── src/                    # Implementation of VM Core and HALs
+├── tests/                  # C unit tests for VM components
+├── tools/                  # Python-based Assembler and utilities
+├── zephyr/                 # Zephyr Module configuration files
+├── examples/               # Assembly and ST example programs
+├── TECHNICAL_SPEC.md       # Technical architecture specification
+└── README.md               # Main project overview
+
 ```
 
 ## Key Documents

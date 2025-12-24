@@ -11,11 +11,11 @@ ZPLC is a portable, deterministic PLC runtime environment powered by [Zephyr RTO
 ## Features
 
 - **Portable Core**: ANSI C99 compliant core, running on 500+ microcontrollers (via Zephyr), Linux, Windows, and WebAssembly.
-- **Unified Architecture**: A single "Compiler-VM" architecture where the IDE produces hardware-agnostic `.zplc` bytecode.
-- **IEC 61131-3 Support**: Designed to support all 5 languages (ST, LD, FBD, SFC, IL).
-- **Industrial Grade**: Deterministic execution, retentive memory support, and strict timing control.
-- **Modern Tooling**: CI/CD ready, text-based formats (PLCopen XML), and open interoperability.
-- **Stack-Based VM**: 62 opcodes covering arithmetic, logic, control flow, and type conversion.
+- **Visual IDE**: Powerful web-based editor for Ladder Diagrams (LD), Function Block Diagrams (FBD), and Sequential Function Charts (SFC).
+- **Unified Architecture**: Hardware-agnostic `.zplc` bytecode allows you to "compile once, run anywhere."
+- **IEC 61131-3 Support**: First-class support for Structured Text (ST) and visual logic languages.
+- **Industrial Grade**: Deterministic execution, retentive memory support, and sub-millisecond jitter on RTOS targets.
+- **Modern Tooling**: TS-based compiler, Python assembler, and built-in unit testing framework.
 
 ## Current Status
 
