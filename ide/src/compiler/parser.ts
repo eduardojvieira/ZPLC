@@ -1,0 +1,703 @@
+/**
+ * ZPLC Structured Text Parser
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ * Recursive descent parser for IEC 61131-3 Structured Text.
+ * Converts token stream to AST.
+ */
+
+import { tokenize, TokenType } from './lexer.ts';
+import type { Token, TokenTypeValue } from './lexer.ts';
+import { DataType, VarSection, parseTimeLiteral, parseIOAddress } from './ast.ts';
+import type {
+    CompilationUnit,
+    Program,
+    VarBlock,
+    VarDecl,
+    Statement,
+    Expression,
+    IfStatement,
+    FBCallStatement,
+    FBParameter,
+    Identifier,
+    MemberAccess,
+    BoolLiteral,
+    IntLiteral,
+    TimeLiteral,
+    UnaryExpr,
+    DataTypeValue,
+    VarSectionValue,
+} from './ast.ts';
+
+/**
+ * Parser error with location information.
+ */
+export class ParseError extends Error {
+    line: number;
+    column: number;
+
+    constructor(message: string, line: number, column: number) {
+        super(`Parse error at ${line}:${column}: ${message}`);
+        this.name = 'ParseError';
+        this.line = line;
+        this.column = column;
+    }
+}
+
+/**
+ * Parse ST source code to AST.
+ *
+ * @param source - ST source code
+ * @returns Compilation unit with parsed programs
+ */
+export function parse(source: string): CompilationUnit {
+    const tokens = tokenize(source);
+    const parser = new Parser(tokens);
+    return parser.parseCompilationUnit();
+}
+
+/**
+ * Recursive descent parser for Structured Text.
+ */
+class Parser {
+    private tokens: Token[];
+    private pos = 0;
+
+    constructor(tokens: Token[]) {
+        this.tokens = tokens;
+    }
+
+    // ========================================================================
+    // Utility methods
+    // ========================================================================
+
+    private current(): Token {
+        return this.tokens[this.pos] ?? { type: TokenType.EOF, value: '', line: 0, column: 0 };
+    }
+
+    private isAtEnd(): boolean {
+        return this.current().type === TokenType.EOF;
+    }
+
+    private check(type: TokenTypeValue): boolean {
+        return this.current().type === type;
+    }
+
+    private match(...types: TokenTypeValue[]): boolean {
+        for (const type of types) {
+            if (this.check(type)) {
+                this.advance();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private advance(): Token {
+        if (!this.isAtEnd()) {
+            this.pos++;
+        }
+        return this.tokens[this.pos - 1];
+    }
+
+    private expect(type: TokenTypeValue, message: string): Token {
+        if (this.check(type)) {
+            return this.advance();
+        }
+        const curr = this.current();
+        throw new ParseError(`${message}, got ${curr.type} '${curr.value}'`, curr.line, curr.column);
+    }
+
+    private error(message: string): never {
+        const curr = this.current();
+        throw new ParseError(message, curr.line, curr.column);
+    }
+
+    // ========================================================================
+    // Grammar rules
+    // ========================================================================
+
+    /**
+     * compilation_unit := program*
+     */
+    parseCompilationUnit(): CompilationUnit {
+        const programs: Program[] = [];
+        const start = this.current();
+
+        while (!this.isAtEnd()) {
+            if (this.check(TokenType.PROGRAM)) {
+                programs.push(this.parseProgram());
+            } else {
+                this.error(`Expected PROGRAM, got ${this.current().type}`);
+            }
+        }
+
+        return {
+            kind: 'CompilationUnit',
+            programs,
+            line: start.line,
+            column: start.column,
+        };
+    }
+
+    /**
+     * program := PROGRAM identifier var_block* statement* END_PROGRAM
+     */
+    private parseProgram(): Program {
+        const start = this.expect(TokenType.PROGRAM, 'Expected PROGRAM');
+        const nameToken = this.expect(TokenType.IDENTIFIER, 'Expected program name');
+
+        const varBlocks: VarBlock[] = [];
+        while (this.check(TokenType.VAR) || this.check(TokenType.VAR_OUTPUT) || this.check(TokenType.VAR_INPUT)) {
+            varBlocks.push(this.parseVarBlock());
+        }
+
+        const statements: Statement[] = [];
+        while (!this.check(TokenType.END_PROGRAM) && !this.isAtEnd()) {
+            statements.push(this.parseStatement());
+        }
+
+        this.expect(TokenType.END_PROGRAM, 'Expected END_PROGRAM');
+
+        return {
+            kind: 'Program',
+            name: nameToken.value,
+            varBlocks,
+            statements,
+            line: start.line,
+            column: start.column,
+        };
+    }
+
+    /**
+     * var_block := (VAR | VAR_OUTPUT | VAR_INPUT) var_decl* END_VAR
+     */
+    private parseVarBlock(): VarBlock {
+        const start = this.current();
+        let section: VarSectionValue;
+
+        if (this.match(TokenType.VAR)) {
+            section = VarSection.VAR;
+        } else if (this.match(TokenType.VAR_OUTPUT)) {
+            section = VarSection.VAR_OUTPUT;
+        } else if (this.match(TokenType.VAR_INPUT)) {
+            section = VarSection.VAR_INPUT;
+        } else {
+            this.error('Expected VAR, VAR_OUTPUT, or VAR_INPUT');
+        }
+
+        const variables: VarDecl[] = [];
+        while (!this.check(TokenType.END_VAR) && !this.isAtEnd()) {
+            variables.push(this.parseVarDecl(section));
+        }
+
+        this.expect(TokenType.END_VAR, 'Expected END_VAR');
+
+        return {
+            kind: 'VarBlock',
+            section,
+            variables,
+            line: start.line,
+            column: start.column,
+        };
+    }
+
+    /**
+     * var_decl := identifier (AT io_address)? COLON type_name (:= expression)? SEMICOLON
+     */
+    private parseVarDecl(section: VarSectionValue): VarDecl {
+        const start = this.current();
+        const nameToken = this.expect(TokenType.IDENTIFIER, 'Expected variable name');
+
+        // Optional AT for I/O mapping
+        let ioAddress = null;
+        if (this.match(TokenType.AT)) {
+            const addrToken = this.expect(TokenType.IO_ADDRESS, 'Expected I/O address after AT');
+            ioAddress = parseIOAddress(addrToken.value);
+        }
+
+        this.expect(TokenType.COLON, 'Expected : after variable name');
+
+        const dataType = this.parseTypeName();
+
+        // Optional initial value
+        let initialValue: Expression | null = null;
+        if (this.match(TokenType.ASSIGN)) {
+            initialValue = this.parseExpression();
+        }
+
+        this.expect(TokenType.SEMICOLON, 'Expected ; after variable declaration');
+
+        return {
+            kind: 'VarDecl',
+            name: nameToken.value,
+            dataType,
+            initialValue,
+            ioAddress,
+            section,
+            line: start.line,
+            column: start.column,
+        };
+    }
+
+    /**
+     * type_name := BOOL | INT | DINT | REAL | TIME | TON | TOF | TP
+     */
+    private parseTypeName(): DataTypeValue {
+        const curr = this.current();
+
+        if (this.match(TokenType.BOOL)) return DataType.BOOL;
+        if (this.match(TokenType.INT)) return DataType.INT;
+        if (this.match(TokenType.DINT)) return DataType.DINT;
+        if (this.match(TokenType.REAL)) return DataType.REAL;
+        if (this.match(TokenType.TIME)) return DataType.TIME;
+        if (this.match(TokenType.TON)) return DataType.TON;
+        if (this.match(TokenType.TOF)) return DataType.TOF;
+        if (this.match(TokenType.TP)) return DataType.TP;
+
+        this.error(`Expected type name, got ${curr.type}`);
+    }
+
+    /**
+     * statement := assignment | if_statement | fb_call_statement
+     */
+    private parseStatement(): Statement {
+        // Check for IF statement
+        if (this.check(TokenType.IF)) {
+            return this.parseIfStatement();
+        }
+
+        // Must be identifier-based (assignment or FB call)
+        if (!this.check(TokenType.IDENTIFIER)) {
+            this.error(`Expected statement, got ${this.current().type}`);
+        }
+
+        const identToken = this.advance();
+        const start = identToken;
+
+        // Check what follows the identifier
+        if (this.check(TokenType.LPAREN)) {
+            // FB call: Timer(IN := TRUE, ...)
+            return this.parseFBCallStatement(identToken, start);
+        }
+
+        if (this.check(TokenType.DOT)) {
+            // Member assignment: Timer.IN := value
+            this.advance(); // consume .
+            const memberToken = this.expect(TokenType.IDENTIFIER, 'Expected member name after .');
+
+            this.expect(TokenType.ASSIGN, 'Expected := after member access');
+            const value = this.parseExpression();
+            this.expect(TokenType.SEMICOLON, 'Expected ; after assignment');
+
+            const target: MemberAccess = {
+                kind: 'MemberAccess',
+                object: { kind: 'Identifier', name: identToken.value, line: identToken.line, column: identToken.column },
+                member: memberToken.value,
+                line: identToken.line,
+                column: identToken.column,
+            };
+
+            return {
+                kind: 'Assignment',
+                target,
+                value,
+                line: start.line,
+                column: start.column,
+            };
+        }
+
+        if (this.check(TokenType.ASSIGN)) {
+            // Simple assignment: x := value
+            this.advance(); // consume :=
+            const value = this.parseExpression();
+            this.expect(TokenType.SEMICOLON, 'Expected ; after assignment');
+
+            const target: Identifier = {
+                kind: 'Identifier',
+                name: identToken.value,
+                line: identToken.line,
+                column: identToken.column,
+            };
+
+            return {
+                kind: 'Assignment',
+                target,
+                value,
+                line: start.line,
+                column: start.column,
+            };
+        }
+
+        this.error(`Unexpected token ${this.current().type} after identifier`);
+    }
+
+    /**
+     * if_statement := IF expression THEN statement* (ELSE statement*)? END_IF SEMICOLON?
+     */
+    private parseIfStatement(): IfStatement {
+        const start = this.expect(TokenType.IF, 'Expected IF');
+        const condition = this.parseExpression();
+        this.expect(TokenType.THEN, 'Expected THEN after IF condition');
+
+        const thenBranch: Statement[] = [];
+        while (!this.check(TokenType.ELSE) && !this.check(TokenType.END_IF) && !this.isAtEnd()) {
+            thenBranch.push(this.parseStatement());
+        }
+
+        let elseBranch: Statement[] | null = null;
+        if (this.match(TokenType.ELSE)) {
+            elseBranch = [];
+            while (!this.check(TokenType.END_IF) && !this.isAtEnd()) {
+                elseBranch.push(this.parseStatement());
+            }
+        }
+
+        this.expect(TokenType.END_IF, 'Expected END_IF');
+
+        // Optional semicolon after END_IF
+        this.match(TokenType.SEMICOLON);
+
+        return {
+            kind: 'IfStatement',
+            condition,
+            thenBranch,
+            elseBranch,
+            line: start.line,
+            column: start.column,
+        };
+    }
+
+    /**
+     * fb_call_statement := identifier LPAREN (parameter (COMMA parameter)*)? RPAREN SEMICOLON
+     */
+    private parseFBCallStatement(identToken: Token, start: Token): FBCallStatement {
+        this.expect(TokenType.LPAREN, 'Expected ( after function block name');
+
+        const parameters: FBParameter[] = [];
+        if (!this.check(TokenType.RPAREN)) {
+            do {
+                const param = this.parseFBParameter();
+                parameters.push(param);
+            } while (this.match(TokenType.COMMA));
+        }
+
+        this.expect(TokenType.RPAREN, 'Expected ) after parameters');
+        this.expect(TokenType.SEMICOLON, 'Expected ; after function block call');
+
+        return {
+            kind: 'FBCallStatement',
+            fbName: identToken.value,
+            parameters,
+            line: start.line,
+            column: start.column,
+        };
+    }
+
+    /**
+     * parameter := identifier ASSIGN expression
+     */
+    private parseFBParameter(): FBParameter {
+        const nameToken = this.expect(TokenType.IDENTIFIER, 'Expected parameter name');
+        this.expect(TokenType.ASSIGN, 'Expected := after parameter name');
+        const value = this.parseExpression();
+
+        return {
+            name: nameToken.value,
+            value,
+        };
+    }
+
+    // ========================================================================
+    // Expression parsing (precedence climbing)
+    // Precedence (lowest to highest):
+    //   OR
+    //   XOR
+    //   AND
+    //   comparison (=, <>, <, <=, >, >=)
+    //   additive (+, -)
+    //   multiplicative (*, /, MOD)
+    //   unary (NOT, -)
+    //   primary
+    // ========================================================================
+
+    /**
+     * expression := or_expr
+     */
+    private parseExpression(): Expression {
+        return this.parseOrExpr();
+    }
+
+    /**
+     * or_expr := xor_expr (OR xor_expr)*
+     */
+    private parseOrExpr(): Expression {
+        let left = this.parseXorExpr();
+
+        while (this.match(TokenType.OR)) {
+            const right = this.parseXorExpr();
+            left = {
+                kind: 'BinaryExpr',
+                operator: 'OR',
+                left,
+                right,
+                line: left.line,
+                column: left.column,
+            };
+        }
+
+        return left;
+    }
+
+    /**
+     * xor_expr := and_expr (XOR and_expr)*
+     */
+    private parseXorExpr(): Expression {
+        let left = this.parseAndExpr();
+
+        while (this.match(TokenType.XOR)) {
+            const right = this.parseAndExpr();
+            left = {
+                kind: 'BinaryExpr',
+                operator: 'XOR',
+                left,
+                right,
+                line: left.line,
+                column: left.column,
+            };
+        }
+
+        return left;
+    }
+
+    /**
+     * and_expr := comparison_expr (AND comparison_expr)*
+     */
+    private parseAndExpr(): Expression {
+        let left = this.parseComparisonExpr();
+
+        while (this.match(TokenType.AND)) {
+            const right = this.parseComparisonExpr();
+            left = {
+                kind: 'BinaryExpr',
+                operator: 'AND',
+                left,
+                right,
+                line: left.line,
+                column: left.column,
+            };
+        }
+
+        return left;
+    }
+
+    /**
+     * comparison_expr := additive_expr ((= | <> | < | <= | > | >=) additive_expr)?
+     */
+    private parseComparisonExpr(): Expression {
+        let left = this.parseAdditiveExpr();
+
+        // Comparison operators (non-associative, only one allowed)
+        if (this.check(TokenType.EQ) || this.check(TokenType.NE) ||
+            this.check(TokenType.LT) || this.check(TokenType.LE) ||
+            this.check(TokenType.GT) || this.check(TokenType.GE)) {
+
+            const opToken = this.advance();
+            const right = this.parseAdditiveExpr();
+
+            const opMap: Record<string, 'EQ' | 'NE' | 'LT' | 'LE' | 'GT' | 'GE'> = {
+                '=': 'EQ',
+                '<>': 'NE',
+                '<': 'LT',
+                '<=': 'LE',
+                '>': 'GT',
+                '>=': 'GE',
+            };
+
+            left = {
+                kind: 'BinaryExpr',
+                operator: opMap[opToken.value],
+                left,
+                right,
+                line: left.line,
+                column: left.column,
+            };
+        }
+
+        return left;
+    }
+
+    /**
+     * additive_expr := multiplicative_expr ((+ | -) multiplicative_expr)*
+     */
+    private parseAdditiveExpr(): Expression {
+        let left = this.parseMultiplicativeExpr();
+
+        while (this.check(TokenType.PLUS) || this.check(TokenType.MINUS)) {
+            const opToken = this.advance();
+            const right = this.parseMultiplicativeExpr();
+            const operator = opToken.value === '+' ? 'ADD' : 'SUB';
+            left = {
+                kind: 'BinaryExpr',
+                operator,
+                left,
+                right,
+                line: left.line,
+                column: left.column,
+            };
+        }
+
+        return left;
+    }
+
+    /**
+     * multiplicative_expr := unary_expr ((* | / | MOD) unary_expr)*
+     */
+    private parseMultiplicativeExpr(): Expression {
+        let left = this.parseUnaryExpr();
+
+        while (this.check(TokenType.STAR) || this.check(TokenType.SLASH) || this.check(TokenType.MOD)) {
+            const opToken = this.advance();
+            const right = this.parseUnaryExpr();
+
+            let operator: 'MUL' | 'DIV' | 'MOD';
+            if (opToken.value === '*') {
+                operator = 'MUL';
+            } else if (opToken.value === '/') {
+                operator = 'DIV';
+            } else {
+                operator = 'MOD';
+            }
+
+            left = {
+                kind: 'BinaryExpr',
+                operator,
+                left,
+                right,
+                line: left.line,
+                column: left.column,
+            };
+        }
+
+        return left;
+    }
+
+    /**
+     * unary_expr := NOT unary_expr | - unary_expr | primary_expr
+     */
+    private parseUnaryExpr(): Expression {
+        if (this.match(TokenType.NOT)) {
+            const start = this.tokens[this.pos - 1];
+            const operand = this.parseUnaryExpr();
+            return {
+                kind: 'UnaryExpr',
+                operator: 'NOT',
+                operand,
+                line: start.line,
+                column: start.column,
+            } as UnaryExpr;
+        }
+
+        // Unary minus
+        if (this.match(TokenType.MINUS)) {
+            const start = this.tokens[this.pos - 1];
+            const operand = this.parseUnaryExpr();
+            return {
+                kind: 'UnaryExpr',
+                operator: 'NEG',
+                operand,
+                line: start.line,
+                column: start.column,
+            } as UnaryExpr;
+        }
+
+        return this.parsePrimaryExpr();
+    }
+
+    /**
+     * primary_expr := TRUE | FALSE | INTEGER | TIME_LITERAL | identifier (. member)? | LPAREN expression RPAREN
+     */
+    private parsePrimaryExpr(): Expression {
+        const curr = this.current();
+
+        // Boolean literals
+        if (this.match(TokenType.TRUE)) {
+            return {
+                kind: 'BoolLiteral',
+                value: true,
+                line: curr.line,
+                column: curr.column,
+            } as BoolLiteral;
+        }
+
+        if (this.match(TokenType.FALSE)) {
+            return {
+                kind: 'BoolLiteral',
+                value: false,
+                line: curr.line,
+                column: curr.column,
+            } as BoolLiteral;
+        }
+
+        // Integer literal
+        if (this.match(TokenType.INTEGER)) {
+            let value: number;
+            if (curr.value.toLowerCase().startsWith('0x')) {
+                value = parseInt(curr.value, 16);
+            } else {
+                value = parseInt(curr.value, 10);
+            }
+            return {
+                kind: 'IntLiteral',
+                value,
+                line: curr.line,
+                column: curr.column,
+            } as IntLiteral;
+        }
+
+        // Time literal
+        if (this.match(TokenType.TIME_LITERAL)) {
+            return {
+                kind: 'TimeLiteral',
+                valueMs: parseTimeLiteral(curr.value),
+                rawValue: curr.value,
+                line: curr.line,
+                column: curr.column,
+            } as TimeLiteral;
+        }
+
+        // Identifier or member access
+        if (this.match(TokenType.IDENTIFIER)) {
+            const ident: Identifier = {
+                kind: 'Identifier',
+                name: curr.value,
+                line: curr.line,
+                column: curr.column,
+            };
+
+            // Check for member access
+            if (this.match(TokenType.DOT)) {
+                const memberToken = this.expect(TokenType.IDENTIFIER, 'Expected member name after .');
+                return {
+                    kind: 'MemberAccess',
+                    object: ident,
+                    member: memberToken.value,
+                    line: curr.line,
+                    column: curr.column,
+                } as MemberAccess;
+            }
+
+            return ident;
+        }
+
+        // Parenthesized expression
+        if (this.match(TokenType.LPAREN)) {
+            const expr = this.parseExpression();
+            this.expect(TokenType.RPAREN, 'Expected ) after expression');
+            return expr;
+        }
+
+        this.error(`Unexpected token in expression: ${curr.type} '${curr.value}'`);
+    }
+}

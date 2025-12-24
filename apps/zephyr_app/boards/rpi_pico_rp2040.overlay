@@ -1,0 +1,31 @@
+/*
+ * ZPLC Board Overlay - Raspberry Pi Pico (RP2040)
+ * SPDX-License-Identifier: MIT
+ *
+ * The RPi Pico already defines:
+ *   - led0 (GPIO25, onboard LED)
+ *
+ * This overlay adds a button input for testing.
+ * Connect a button between GPIO15 and GND (uses internal pull-up).
+ *
+ * Hardware connection:
+ *   GPIO15 -> Button -> GND
+ */
+
+/ {
+    gpio_keys {
+        compatible = "gpio-keys";
+        
+        /* User button on GPIO15 with internal pull-up */
+        button0: button_0 {
+            gpios = <&gpio0 15 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+            label = "ZPLC Input 0";
+            zephyr,code = <0>;
+        };
+    };
+    
+    aliases {
+        sw0 = &button0;
+        /* led0 already defined as onboard LED (GPIO25) */
+    };
+};

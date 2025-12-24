@@ -1,0 +1,227 @@
+@import "tailwindcss";
+
+/* =============================================================================
+   ZPLC Industrial Theme System
+   Supports: Light, Dark, and System preference
+   ============================================================================= */
+
+/* Light Theme Variables (Default) */
+:root {
+  /* Surface colors - Light mode */
+  --color-surface-900: #f8fafc;
+  --color-surface-800: #f1f5f9;
+  --color-surface-700: #e2e8f0;
+  --color-surface-600: #cbd5e1;
+  --color-surface-500: #94a3b8;
+  --color-surface-400: #64748b;
+  --color-surface-300: #475569;
+  --color-surface-200: #334155;
+  --color-surface-100: #1e293b;
+  
+  /* Accent colors (same for both themes) */
+  --color-accent-blue: #2563eb;
+  --color-accent-green: #16a34a;
+  --color-accent-yellow: #ca8a04;
+  --color-accent-red: #dc2626;
+  --color-accent-orange: #ea580c;
+  --color-accent-purple: #9333ea;
+  
+  /* Status colors for PLC states */
+  --color-status-running: #16a34a;
+  --color-status-stopped: #dc2626;
+  --color-status-warning: #ca8a04;
+  --color-status-connected: #2563eb;
+  --color-status-disconnected: #64748b;
+  
+  /* Fonts */
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  
+  /* Theme-specific text colors */
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  
+  /* Borders and shadows for light mode */
+  --border-color: #e2e8f0;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+/* Dark Theme Variables */
+:root.dark {
+  /* Surface colors - Dark mode (industrial) */
+  --color-surface-900: #0a0a0b;
+  --color-surface-800: #111113;
+  --color-surface-700: #1a1a1d;
+  --color-surface-600: #242428;
+  --color-surface-500: #2e2e33;
+  --color-surface-400: #3d3d44;
+  --color-surface-300: #5c5c66;
+  --color-surface-200: #8b8b99;
+  --color-surface-100: #c4c4cc;
+  
+  /* Slightly brighter accents for dark mode visibility */
+  --color-accent-blue: #3b82f6;
+  --color-accent-green: #22c55e;
+  --color-accent-yellow: #eab308;
+  --color-accent-red: #ef4444;
+  --color-accent-orange: #f97316;
+  --color-accent-purple: #a855f7;
+  
+  /* Status colors adjusted for dark */
+  --color-status-running: #22c55e;
+  --color-status-stopped: #ef4444;
+  --color-status-warning: #eab308;
+  --color-status-connected: #3b82f6;
+  --color-status-disconnected: #6b7280;
+  
+  /* Theme-specific text colors */
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  
+  /* Borders and shadows for dark mode */
+  --border-color: #242428;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4);
+}
+
+/* System preference detection - applies if no explicit theme set */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light):not(.dark) {
+    /* Surface colors - Dark mode */
+    --color-surface-900: #0a0a0b;
+    --color-surface-800: #111113;
+    --color-surface-700: #1a1a1d;
+    --color-surface-600: #242428;
+    --color-surface-500: #2e2e33;
+    --color-surface-400: #3d3d44;
+    --color-surface-300: #5c5c66;
+    --color-surface-200: #8b8b99;
+    --color-surface-100: #c4c4cc;
+    
+    --color-accent-blue: #3b82f6;
+    --color-accent-green: #22c55e;
+    --color-accent-yellow: #eab308;
+    --color-accent-red: #ef4444;
+    --color-accent-orange: #f97316;
+    --color-accent-purple: #a855f7;
+    
+    --color-status-running: #22c55e;
+    --color-status-stopped: #ef4444;
+    --color-status-warning: #eab308;
+    --color-status-connected: #3b82f6;
+    --color-status-disconnected: #6b7280;
+    
+    --text-primary: #f1f5f9;
+    --text-secondary: #cbd5e1;
+    --text-muted: #94a3b8;
+    
+    --border-color: #242428;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4);
+  }
+}
+
+/* =============================================================================
+   Base Styles
+   ============================================================================= */
+
+html, body, #root {
+  @apply h-full w-full m-0 p-0;
+  background-color: var(--color-surface-900);
+  color: var(--color-surface-100);
+  font-family: var(--font-sans);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Smooth theme transitions */
+* {
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Disable transitions on initial load to prevent flash */
+.no-transitions * {
+  transition: none !important;
+}
+
+/* =============================================================================
+   Custom Scrollbar
+   ============================================================================= */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-surface-800);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-surface-500);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-surface-400);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-surface-500) var(--color-surface-800);
+}
+
+/* =============================================================================
+   Component Overrides
+   ============================================================================= */
+
+/* ReactFlow container */
+.react-flow__container {
+  background-color: var(--color-surface-800) !important;
+}
+
+/* Monaco editor - theme sync */
+.monaco-editor,
+.monaco-editor-background,
+.monaco-editor .margin {
+  background-color: var(--color-surface-800) !important;
+}
+
+/* Light mode Monaco override */
+:root:not(.dark) .monaco-editor,
+:root:not(.dark) .monaco-editor-background,
+:root:not(.dark) .monaco-editor .margin,
+:root.light .monaco-editor,
+:root.light .monaco-editor-background,
+:root.light .monaco-editor .margin {
+  background-color: var(--color-surface-800) !important;
+}
+
+/* =============================================================================
+   Utility Classes
+   ============================================================================= */
+
+/* Focus ring styles */
+.focus-ring {
+  @apply outline-none;
+}
+
+.focus-ring:focus-visible {
+  box-shadow: 0 0 0 2px var(--color-accent-blue);
+}
+
+/* Industrial button hover */
+.btn-industrial {
+  transition: all 0.1s ease;
+}
+
+.btn-industrial:hover {
+  transform: translateY(-1px);
+}
+
+.btn-industrial:active {
+  transform: translateY(0);
+}

@@ -12,9 +12,27 @@ ZPLC is a portable, deterministic PLC runtime environment powered by Zephyr RTOS
 
 ---
 
-## 2. High-Level Architecture
+## 2. Supported Hardware Targets
+
+ZPLC v1.0 officially supports the following reference boards. CI/CD pipelines must ensure compilation succeeds for all defined targets.
+
+| Board Name | SoC | Zephyr Board ID | Notes |
+| :--- | :--- | :--- | :--- |
+| **Arduino GIGA R1** | STM32H747XI (Cortex-M7/M4) | `arduino_giga_r1_m7` | Dual-core (targeting M7) |
+| **ESP32-S3 DevKit-C** | ESP32-S3 (Xtensa LX7) | `esp32s3_devkitc` | WiFi/BLE capable |
+| **STM32 Nucleo-H743ZI** | STM32H743ZI (Cortex-M7) | `nucleo_h743zi` | High-perf industrial Ref |
+| **Raspberry Pi Pico 2** | RP2350 (Cortex-M33) | `rpi_pico2` | (Or `rpi_pico` fallback) |
+| **QEMU (Simulation)** | Cortex-M3 | `mps2_an385` | CI Default |
+
+---
+
+## 3. High-Level Architecture
 
 The system follows a "Compiler-VM" architecture. The IDE acts as the compiler/linker, producing a hardware-agnostic bytecode package (`.zplc`) which is consumed by the ZPLC Core.
+
+For embedded targets, **Zephyr RTOS is the primary citizen**. ZPLC is designed to be a **Zephyr Module** that can be effortlessly dropped into any board supported by Zephyr.
+
+### 2.1 The Data Flow
 
 ### 2.1 The Data Flow
 
@@ -89,13 +107,26 @@ The Core is ANSI C99, strictly standard-compliant, designed to be compiled as a 
 
 The Core never calls hardware directly. It calls the HAL.
 
+### 5.1 Zephyr Integration Strategy (Primary)
+
+ZPLC integrates with Zephyr as a **Module**.
+- **DeviceTree Bindings:** I/O channels are defined in `.dts` overlay files using a custom binding:
+  ```dts
+  zplc {
+      compatible = "zplc,runtime";
+      io-channels = <&d_in0 &d_in1 &d_out0>;
+  };
+  ```
+- **Kconfig:** All runtime limits (stack size, memory pool) are configurable via Kconfig.
+- **Shell:** ZPLC provides a shell module (`zplc load`, `zplc start`, `zplc stats`) for management.
+
 | Function | Zephyr Implementation | Desktop (Linux/Win) Implementation | WASM Implementation |
 | --- | --- | --- | --- |
-| `zplc_hal_tick()` | `k_timer` / Hardware RTC | `clock_gettime` / `QueryPerformanceCounter` | JS `performance.now()` |
-| `zplc_hal_sleep()` | `k_sleep()` | `usleep()` / `Sleep()` | `Atomics.wait` or async yield |
-| `zplc_hal_gpio_read()` | DeviceTree GPIO driver | Read from Shared Mem / Sim Config | Read from JS Object (DOM) |
-| `zplc_hal_socket()` | Zephyr Networking Stack | BSD Sockets / Winsock | WebSockets (via JS bridge) |
-| `zplc_hal_persist()` | NVS / EEPROM | Local File (`retain.bin`) | `localStorage` / IndexedDB |
+| `zplc_hal_tick()` | `k_uptime_get()` | `clock_gettime` | JS `performance.now()` |
+| `zplc_hal_sleep()` | `k_sleep()` | `usleep()` | `Atomics.wait` |
+| `zplc_hal_gpio_read()` | `gpio_pin_get_dt()` (via binding) | Shared Mem / Simulation | JS Object |
+| `zplc_hal_socket()` | Zephyr BSD Sockets (`net_context`) | BSD Sockets | WebSockets |
+| `zplc_hal_persist()` | Settings Subsystem (`NVS`) | File (`retain.bin`) | `localStorage` |
 
 ---
 

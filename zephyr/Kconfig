@@ -1,0 +1,58 @@
+# =============================================================================
+# ZPLC Kconfig
+# =============================================================================
+# SPDX-License-Identifier: MIT
+#
+# Zephyr Kconfig options for the ZPLC runtime module.
+# =============================================================================
+
+menuconfig ZPLC
+    bool "ZPLC PLC Runtime"
+    help
+      Enable the ZPLC IEC 61131-3 PLC runtime.
+      This provides a portable virtual machine for executing
+      PLC programs compiled to the .zplc bytecode format.
+
+if ZPLC
+
+config ZPLC_STACK_DEPTH
+    int "Evaluation stack depth"
+    default 256
+    help
+      Maximum depth of the VM evaluation stack.
+      Each entry is 4 bytes (32-bit).
+
+config ZPLC_CALL_STACK_DEPTH
+    int "Call stack depth"
+    default 32
+    help
+      Maximum call nesting depth for subroutines.
+
+config ZPLC_WORK_MEMORY_SIZE
+    int "Work memory size (bytes)"
+    default 8192
+    help
+      Size of the work memory region for temporary variables.
+
+config ZPLC_RETAIN_MEMORY_SIZE
+    int "Retentive memory size (bytes)"
+    default 4096
+    help
+      Size of the retentive memory region.
+      This memory is persisted across power cycles.
+
+config ZPLC_CODE_SIZE_MAX
+    int "Maximum code size (bytes)"
+    default 45056
+    help
+      Maximum size of the bytecode segment.
+
+config ZPLC_LOG_LEVEL
+    int "Log level"
+    default 3
+    range 0 4
+    help
+      Log level for ZPLC runtime.
+      0=OFF, 1=ERR, 2=WRN, 3=INF, 4=DBG
+
+endif # ZPLC

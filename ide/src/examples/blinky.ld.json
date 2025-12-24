@@ -1,0 +1,217 @@
+{
+  "$schema": "./schemas/ld.schema.json",
+  "name": "Blinky",
+  "description": "ZPLC Golden Standard - Blinky in Ladder Diagram (LD)",
+  "version": "1.0.0",
+
+  "variables": {
+    "local": [
+      {
+        "name": "BlinkTimer",
+        "type": "TON",
+        "comment": "Timer for 500ms blink interval"
+      },
+      {
+        "name": "TimerDone",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "Timer output pulse"
+      },
+      {
+        "name": "LedState",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "LED latch state"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "LED_Output",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Physical LED output"
+      }
+    ]
+  },
+
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "Timer Network - Generate 500ms pulse train",
+      "elements": [
+        {
+          "id": "rail_left_1",
+          "type": "left_rail",
+          "position": { "x": 0, "y": 0 }
+        },
+        {
+          "id": "nc_timer",
+          "type": "contact_nc",
+          "variable": "TimerDone",
+          "position": { "x": 100, "y": 0 },
+          "comment": "When timer done, this opens to reset"
+        },
+        {
+          "id": "ton_blink",
+          "type": "function_block",
+          "fbType": "TON",
+          "instance": "BlinkTimer",
+          "position": { "x": 250, "y": 0 },
+          "parameters": {
+            "IN": "CONNECTED",
+            "PT": "T#500ms"
+          },
+          "outputs": {
+            "Q": "TimerDone"
+          }
+        },
+        {
+          "id": "rail_right_1",
+          "type": "right_rail",
+          "position": { "x": 450, "y": 0 }
+        }
+      ],
+      "connections": [
+        { "from": "rail_left_1", "to": "nc_timer" },
+        { "from": "nc_timer", "to": "ton_blink.IN" },
+        { "from": "ton_blink.Q", "to": "rail_right_1" }
+      ]
+    },
+    {
+      "id": "rung_2", 
+      "number": 2,
+      "comment": "Toggle Network - Toggle LED on each timer pulse",
+      "elements": [
+        {
+          "id": "rail_left_2",
+          "type": "left_rail",
+          "position": { "x": 0, "y": 100 }
+        },
+        {
+          "id": "contact_done",
+          "type": "contact_no",
+          "variable": "TimerDone",
+          "position": { "x": 100, "y": 100 },
+          "comment": "Rising edge of timer done"
+        },
+        {
+          "id": "contact_led_off",
+          "type": "contact_nc",
+          "variable": "LedState",
+          "position": { "x": 200, "y": 100 },
+          "comment": "If LED is currently OFF..."
+        },
+        {
+          "id": "coil_set_led",
+          "type": "coil_set",
+          "variable": "LedState",
+          "position": { "x": 350, "y": 100 },
+          "comment": "...SET the LED latch"
+        },
+        {
+          "id": "rail_right_2",
+          "type": "right_rail",
+          "position": { "x": 450, "y": 100 }
+        }
+      ],
+      "connections": [
+        { "from": "rail_left_2", "to": "contact_done" },
+        { "from": "contact_done", "to": "contact_led_off" },
+        { "from": "contact_led_off", "to": "coil_set_led" },
+        { "from": "coil_set_led", "to": "rail_right_2" }
+      ]
+    },
+    {
+      "id": "rung_3",
+      "number": 3,
+      "comment": "Reset Network - Reset LED when timer done and LED is ON",
+      "elements": [
+        {
+          "id": "rail_left_3",
+          "type": "left_rail",
+          "position": { "x": 0, "y": 200 }
+        },
+        {
+          "id": "contact_done_3",
+          "type": "contact_no",
+          "variable": "TimerDone",
+          "position": { "x": 100, "y": 200 }
+        },
+        {
+          "id": "contact_led_on",
+          "type": "contact_no",
+          "variable": "LedState",
+          "position": { "x": 200, "y": 200 },
+          "comment": "If LED is currently ON..."
+        },
+        {
+          "id": "coil_reset_led",
+          "type": "coil_reset",
+          "variable": "LedState",
+          "position": { "x": 350, "y": 200 },
+          "comment": "...RESET the LED latch"
+        },
+        {
+          "id": "rail_right_3",
+          "type": "right_rail",
+          "position": { "x": 450, "y": 200 }
+        }
+      ],
+      "connections": [
+        { "from": "rail_left_3", "to": "contact_done_3" },
+        { "from": "contact_done_3", "to": "contact_led_on" },
+        { "from": "contact_led_on", "to": "coil_reset_led" },
+        { "from": "coil_reset_led", "to": "rail_right_3" }
+      ]
+    },
+    {
+      "id": "rung_4",
+      "number": 4,
+      "comment": "Output Network - Drive physical LED from latch",
+      "elements": [
+        {
+          "id": "rail_left_4",
+          "type": "left_rail",
+          "position": { "x": 0, "y": 300 }
+        },
+        {
+          "id": "contact_state",
+          "type": "contact_no",
+          "variable": "LedState",
+          "position": { "x": 100, "y": 300 }
+        },
+        {
+          "id": "coil_output",
+          "type": "coil",
+          "variable": "LED_Output",
+          "position": { "x": 350, "y": 300 }
+        },
+        {
+          "id": "rail_right_4",
+          "type": "right_rail",
+          "position": { "x": 450, "y": 300 }
+        }
+      ],
+      "connections": [
+        { "from": "rail_left_4", "to": "contact_state" },
+        { "from": "contact_state", "to": "coil_output" },
+        { "from": "coil_output", "to": "rail_right_4" }
+      ]
+    }
+  ],
+
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2024-12-23",
+    "iecStandard": "IEC 61131-3",
+    "elementTypes": {
+      "contact_no": "Normally Open Contact (examines ON)",
+      "contact_nc": "Normally Closed Contact (examines OFF)",
+      "coil": "Standard Coil (output)",
+      "coil_set": "Set/Latch Coil (S)",
+      "coil_reset": "Reset/Unlatch Coil (R)",
+      "function_block": "Timer, Counter, or other FB"
+    }
+  }
+}

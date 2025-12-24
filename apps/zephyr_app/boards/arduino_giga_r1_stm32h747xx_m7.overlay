@@ -1,0 +1,17 @@
+/*
+ * ZPLC Board Overlay - Arduino GIGA R1 (Cortex-M7)
+ * SPDX-License-Identifier: MIT
+ *
+ * The Arduino GIGA R1 already defines:
+ *   - led0 = red_led (PI12)
+ *   - led1 = green_led (PJ13)
+ *   - sw0 = user_button (PC13)
+ *
+ * This overlay is a placeholder for future ZPLC-specific configurations.
+ * For example, mapping additional GPIO pins as ZPLC I/O channels.
+ */
+
+/ {
+    /* Board has sufficient default aliases for ZPLC GPIO HAL */
+    /* Placeholder for future expansion */
+};

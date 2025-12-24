@@ -1,0 +1,75 @@
+# =============================================================================
+# ZPLC Runtime DeviceTree Binding
+# =============================================================================
+# SPDX-License-Identifier: MIT
+#
+# This binding defines the ZPLC runtime node for Zephyr DeviceTree.
+# The runtime uses this to discover I/O channel assignments.
+#
+# Example usage in board overlay:
+#
+#   / {
+#       zplc: zplc {
+#           compatible = "zplc,runtime";
+#           status = "okay";
+#           io-channels = <&gpio0 10 &gpio0 11 &gpio0 12>;
+#       };
+#   };
+#
+# =============================================================================
+
+description: |
+  ZPLC IEC 61131-3 PLC Runtime node.
+  
+  This node defines the ZPLC runtime configuration and I/O channel
+  assignments for the target board. The runtime reads this configuration
+  at startup to map logical I/O channels to physical GPIO pins.
+
+compatible: "zplc,runtime"
+
+properties:
+  io-channels:
+    type: phandles
+    description: |
+      List of phandles to GPIO pins used for digital I/O.
+      The order defines the logical channel mapping:
+      - Channels 0-7: Digital Inputs (DI)
+      - Channels 8-15: Digital Outputs (DO)
+      
+      Each phandle should reference a GPIO pin defined in the board's
+      DeviceTree (e.g., &gpio0 10).
+
+  adc-channels:
+    type: phandles
+    description: |
+      List of phandles to ADC channels for analog inputs.
+      Optional - only needed if analog I/O is used.
+
+  dac-channels:
+    type: phandles
+    description: |
+      List of phandles to DAC channels for analog outputs.
+      Optional - only needed if analog I/O is used.
+
+  cycle-time-us:
+    type: int
+    default: 10000
+    description: |
+      Default scan cycle time in microseconds.
+      Can be overridden by the loaded .zplc program's task configuration.
+      Default is 10000 (10ms).
+
+  watchdog-timeout-ms:
+    type: int
+    default: 1000
+    description: |
+      Watchdog timeout in milliseconds.
+      If a scan cycle exceeds this duration, the runtime triggers
+      a watchdog fault. Default is 1000ms (1 second).
+
+  retain-partition:
+    type: string
+    description: |
+      Name of the flash partition used for retentive memory storage.
+      If not specified, retentive memory is not persisted.
+      Example: "retain_partition"

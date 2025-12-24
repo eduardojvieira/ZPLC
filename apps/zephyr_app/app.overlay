@@ -1,0 +1,34 @@
+/*
+ * ZPLC Runtime DeviceTree Overlay
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ * This overlay adds the ZPLC runtime node to the DeviceTree.
+ * Customize the io-channels property for your specific board.
+ *
+ * Example for a board with GPIO0:
+ *   io-channels = <&gpio0 10 &gpio0 11>;
+ */
+
+/ {
+    zplc: zplc {
+        compatible = "zplc,runtime";
+        status = "okay";
+        
+        /* 
+         * I/O channel assignment - customize for your board.
+         * Format: <&gpio_device pin_number>
+         * 
+         * Example:
+         *   io-channels = <&gpio0 10 &gpio0 11 &gpio0 12 &gpio0 13>;
+         *
+         * Currently empty - will cause build warning until configured.
+         */
+        
+        /* Default cycle time: 10ms */
+        cycle-time-us = <10000>;
+        
+        /* Watchdog timeout: 1 second */
+        watchdog-timeout-ms = <1000>;
+    };
+};

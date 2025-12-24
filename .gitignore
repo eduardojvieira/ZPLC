@@ -1,0 +1,52 @@
+# Build directories
+build/
+build_posix/
+bin/
+dist/
+
+# IDE files
+ide/node_modules/
+ide/dist/
+ide/.env
+ide/.DS_Store
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+
+# Python files
+__pycache__/
+*.py[cod]
+
+# Compiled ZPLC files
+*.zplc
+!examples/*.zplc
+
+# Local artifacts
+.gemini/
+.agent/
+task.md
+walkthrough.md
+implementation_plan.md
+task_boundary_history.json
+*.png
+*.webp
+*.video
+*.audio
+*.mp4
+*.mkv
+*.webm
+*.mov
+*.wav
+*.mp3
+*.m4a
+*.log
+
+# Temp files
+*.tmp
+temp/

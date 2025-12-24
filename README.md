@@ -4,32 +4,205 @@
 
 ZPLC is a portable, deterministic PLC runtime environment powered by [Zephyr RTOS](https://zephyrproject.org/) for embedded targets and native OS layers for desktop/server hosting. It brings modern software development practices to industrial automation.
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Zephyr 4.0](https://img.shields.io/badge/Zephyr-4.0.0-blue.svg)](https://zephyrproject.org/)
+[![C99](https://img.shields.io/badge/C-C99-green.svg)](https://en.wikipedia.org/wiki/C99)
+
 ## Features
 
-- **Portable Core**: ANSI C99 compliant core, running on generic microcontrollers (via Zephyr), Linux, Windows, and WebAssembly.
+- **Portable Core**: ANSI C99 compliant core, running on 500+ microcontrollers (via Zephyr), Linux, Windows, and WebAssembly.
 - **Unified Architecture**: A single "Compiler-VM" architecture where the IDE produces hardware-agnostic `.zplc` bytecode.
 - **IEC 61131-3 Support**: Designed to support all 5 languages (ST, LD, FBD, SFC, IL).
 - **Industrial Grade**: Deterministic execution, retentive memory support, and strict timing control.
 - **Modern Tooling**: CI/CD ready, text-based formats (PLCopen XML), and open interoperability.
+- **Stack-Based VM**: 62 opcodes covering arithmetic, logic, control flow, and type conversion.
+
+## Current Status
+
+| Phase | Status | Description |
+|-------|--------|-------------|
+| Phase 0 | ✅ Complete | Build System & HAL Abstraction |
+| Phase 0.5 | ✅ Complete | Zephyr Module Integration |
+| Phase 1 | ✅ Complete | ISA Definition & VM Core (62 opcodes, 109 tests) |
+| Phase 2 | 🟡 In Progress | Visual Languages (LD, FBD, SFC Editors, TS Assembler) |
+| Phase 2.5 | 🟡 In Progress | Structured Text Compiler (TS) |
+| Phase 3 | 🔲 Pending | Real Hardware I/O |
+| Phase 4 | 🔲 Pending | Connectivity (Modbus, MQTT) |
+
+## Quick Start
+
+### Option 1: POSIX Build (Development/Testing)
+
+Build and test the core on your host machine:
+
+```bash
+# Clone the repository
+git clone https://github.com/your/zplc.git
+cd zplc
+
+# Build
+mkdir build_posix && cd build_posix
+cmake .. -DZEPHYR_BUILD=OFF
+make
+
+# Run tests (109 assertions across 2 test suites)
+ctest --output-on-failure
+
+# Run the demo runtime
+./zplc_runtime
+```
+
+### Option 2: Zephyr Build (Embedded/QEMU)
+
+Run on real hardware or the QEMU emulator:
+
+```bash
+# Activate Zephyr environment (see Setup section below)
+source ~/zephyrproject/activate.sh
+
+# Build for QEMU Cortex-M3 emulator
+cd ~/zephyrproject
+west build -b mps2/an385 $ZEPLC_PATH/apps/zephyr_app
+
+# Run in QEMU
+west build -t run
+```
+
+**Expected output:**
+```
+*** Booting Zephyr OS build v4.0.0 ***
+================================================
+  ZPLC Runtime - Zephyr Target
+  Core Version: 0.2.0
+  Phase 0.5: Module Verification
+================================================
+[HAL] Zephyr HAL initializing...
+[HAL] Zephyr HAL ready (Phase 0.5 stub)
+[MAIN] Initialization complete.
+[MAIN] Starting verification loop...
+
+Tick 0 ms (cycle #0)
+Tick 110 ms (cycle #1)
+...
+Tick 990 ms (cycle #9)
+
+[MAIN] Verification complete: 10 cycles.
+[MAIN] ZPLC module is working on Zephyr!
+```
 
 ## Documentation
 
-- [Technical Specification](TECHNICAL_SPEC.md): Detailed architecture, binary format, and roadmap.
-- [Agents / Contribution Context](AGENTS.md): Context for AI agents and contributors.
+| Document | Description |
+|----------|-------------|
+| [TECHNICAL_SPEC.md](TECHNICAL_SPEC.md) | Complete architecture, binary format, and roadmap |
+| [AGENTS.md](AGENTS.md) | Context for AI agents and contributors |
+| [docs/ISA.md](docs/ISA.md) | Instruction Set Architecture specification |
 
-## Quick Start (Phase 0)
+## Architecture
 
-*Note: This project is currently in early development (Phase 0).*
-
-### Prerequisites
-- CMake (3.20+)
-- C Compiler (GCC/Clang)
-- Zephyr SDK (for embedded targets)
-
-### Building the Core (Host)
-```bash
-mkdir build && cd build
-cmake ..
-make
-./tests/zplc_test_suite
 ```
+┌─────────────────────────────────────────────────────────────┐
+│                    Development Host (IDE)                    │
+│  ┌─────────┐    ┌──────────┐    ┌────────┐    ┌──────────┐ │
+│  │ ST/LD/  │───▶│ Compiler │───▶│ Linker │───▶│  .zplc   │ │
+│  │ FBD/SFC │    │          │    │        │    │ bytecode │ │
+│  └─────────┘    └──────────┘    └────────┘    └────┬─────┘ │
+└────────────────────────────────────────────────────│───────┘
+                                                     │ Deploy
+┌────────────────────────────────────────────────────▼───────┐
+│                    Target Runtime                           │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │                    ZPLC Core (C99)                    │  │
+│  │  ┌──────────┐  ┌─────────────┐  ┌─────────────────┐  │  │
+│  │  │ Loader   │  │ VM (62 ops) │  │ Process Image   │  │  │
+│  │  └──────────┘  └─────────────┘  └─────────────────┘  │  │
+│  └──────────────────────────┬───────────────────────────┘  │
+│                             │ HAL Interface                 │
+│  ┌──────────────────────────▼───────────────────────────┐  │
+│  │ ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────┐ │  │
+│  │ │  Zephyr  │  │  POSIX   │  │ Windows  │  │  WASM  │ │  │
+│  │ │   HAL    │  │   HAL    │  │   HAL    │  │  HAL   │ │  │
+│  │ └──────────┘  └──────────┘  └──────────┘  └────────┘ │  │
+│  └──────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Supported Platforms
+
+### Primary Target: Zephyr RTOS
+ZPLC is a Zephyr Module, supporting 500+ boards including:
+- **Nordic**: nRF52840, nRF5340, nRF9160
+- **STMicroelectronics**: STM32F4, STM32L4, STM32H7
+- **Espressif**: ESP32, ESP32-S2, ESP32-C3
+- **NXP**: i.MX RT, LPC, Kinetis
+- **And many more...**
+
+### Development Targets
+- **POSIX** (Linux/macOS): For development and unit testing
+- **QEMU**: Cortex-M3 emulation for CI/CD pipelines
+- **WASM**: Browser-based simulation (planned)
+
+## Project Structure
+
+```
+ZPLC/
+├── apps/                       # Application targets (POSIX & Zephyr)
+├── dts/bindings/               # DeviceTree bindings for Zephyr
+├── ide/                        # Web-based IDE (React + TypeScript)
+│   ├── src/compiler/           # ST Compiler & Transpilers
+│   └── src/editors/            # LD, FBD, SFC Visual Editors
+├── include/                    # Public C headers (VM API & ISA)
+├── src/                        # VM Core and HAL implementations
+├── tests/                      # Unit tests (109 assertions)
+├── tools/                      # CLI tools (Python Assembler)
+├── zephyr/                     # Zephyr module definition files
+├── CMakeLists.txt              # Root build configuration
+├── TECHNICAL_SPEC.md           # Full technical specification
+└── AGENTS.md                   # Contributor guide
+
+```
+
+## Using ZPLC in Your Zephyr Project
+
+### Via West Manifest
+Add to your `west.yml`:
+```yaml
+manifest:
+  projects:
+    - name: zplc
+      url: https://github.com/your/zplc
+      revision: main
+      path: modules/lib/zplc
+```
+
+### Via ZEPHYR_EXTRA_MODULES
+```bash
+west build -b <board> <app> -- -DZEPHYR_EXTRA_MODULES=/path/to/zplc
+```
+
+### Application Configuration
+In your `prj.conf`:
+```ini
+CONFIG_ZPLC=y
+CONFIG_ZPLC_STACK_DEPTH=256
+CONFIG_ZPLC_WORK_MEMORY_SIZE=8192
+```
+
+## Contributing
+
+See [AGENTS.md](AGENTS.md) for detailed contribution guidelines, coding standards, and development workflows.
+
+### Key Principles
+1. **Strict ANSI C99**: No GCC extensions in core code
+2. **HAL Abstraction**: Core never touches hardware directly
+3. **Test-Driven**: Every feature needs tests
+4. **Zephyr First**: Primary target is Zephyr RTOS
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- [Zephyr Project](https://zephyrproject.org/) - The RTOS that makes this possible
+- [IEC 61131-3](https://en.wikipedia.org/wiki/IEC_61131-3) - The standard we aim to support

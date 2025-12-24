@@ -1,0 +1,11 @@
+# =============================================================================
+# ZPLC Zephyr Module Definition
+# =============================================================================
+# https://docs.zephyrproject.org/latest/develop/modules.html
+# =============================================================================
+name: zplc
+build:
+  cmake: zephyr
+  kconfig: zephyr/Kconfig
+  settings:
+    dts_root: .

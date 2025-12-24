@@ -1,0 +1,17 @@
+/*
+ * ZPLC Board Overlay - ST Nucleo H743ZI
+ * SPDX-License-Identifier: MIT
+ *
+ * The Nucleo H743ZI already defines:
+ *   - led0 = green_led (PB0)
+ *   - led1 = yellow_led (PE1)
+ *   - sw0 = user_button (PC13)
+ *
+ * This overlay is a placeholder for future ZPLC-specific configurations.
+ * For example, adding led2/led3 for additional outputs.
+ */
+
+/ {
+    /* Board has sufficient default aliases for ZPLC GPIO HAL */
+    /* Placeholder for future expansion */
+};
