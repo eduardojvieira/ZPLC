@@ -1,6 +1,5 @@
 # ZPLC v1.0: Technical Specification & Architecture
-
-**Version:** 1.0 (Draft)
+**Version:** 1.0.0 (Stable)
 **Target:** Open Source Industrial Automation
 **Core Philosophy:** One Execution Core, Any Runtime.
 
@@ -162,27 +161,20 @@ ZPLC integrates with Zephyr as a **Module**.
 
 ---
 
-## 8. Roadmap & Milestones
+## 8. Development Roadmap
 
-**Phase 0: The Skeleton**
-* **Goal:** `zplc_core` compiling on Linux and Zephyr.
-* **Deliverable:** A "dummy" runtime that prints "Tick" every 100ms.
+**Phase 1.0 (Completed)**
+* **ISA & VM**: 62 opcodes, 32-bit stack, IEEE 754 float support.
+* **Visual IDE**: Reactive editors for LD, FBD, and SFC.
+* **TS Compiler**: Structured Text to Bytecode transpilation.
+* **WASM Simulation**: In-browser execution of the C core.
+* **Serial Loader**: Real-time program injection into Zephyr targets.
 
-**Phase 1: ST & The Virtual Machine**
-* **Goal:** Execute Structured Text.
-* **Deliverable:** A compiler (JS/TS) that turns simple ST into `.zplc`. A VM that executes it.
-
-**Phase 2: Visual Languages (The Heavy Lift)**
-* **Goal:** LD, FBD, SFC.
-* **Deliverable:** Visual editors in IDE. Transpilers that convert Graphic -> IEC IR -> Bytecode.
-
-**Phase 3: Real Hardware & IO**
-* **Goal:** Blinking an LED on a real Zephyr board.
-* **Deliverable:** Zephyr HAL implementation using DeviceTree.
-
-**Phase 4: Connectivity & Polish**
-* **Goal:** Modbus, MQTT, and Security.
-* **Deliverable:** v1.0 Release Candidate.
+**Phase 1.1 (Target: Q1 2026)**
+* **Industrial Connectivity**: Modbus TCP/RTU server and client.
+* **Cloud Integration**: MQTT "Sparkplug B" compliant client.
+* **Hardware NVS**: Non-Volatile Storage support for retentive variables.
+* **Security**: Bytecode signing and encrypted debug transport.
 
 ---
 

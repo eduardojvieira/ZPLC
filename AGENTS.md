@@ -303,18 +303,15 @@ CONFIG_ZPLC_LOG_LEVEL=3
 
 ---
 
-## Phase Status
+## Phase Status (v1.0 Complete)
 
 | Phase | Status | Description |
 |-------|--------|-------------|
-| Phase 0 | ✅ Complete | Build System & HAL Abstraction |
-| Phase 0.5 | ✅ Complete | Zephyr Module Integration |
-| Phase 1 | ✅ Complete | ISA Definition & VM Core (62 opcodes, 109 tests) |
-| Phase 1.5 | ✅ Complete | Tooling - Assembler, Examples, CI/CD |
-| Phase 2 | 🟡 In Progress | Visual Languages (LD, FBD, SFC Editors, TS Assembler) |
-| Phase 2.5 | 🟡 In Progress | Structured Text Compiler (TS) |
-| Phase 3 | 🔲 Pending | Real Hardware I/O (GPIO, ADC via DeviceTree) |
-| Phase 4 | 🔲 Pending | Connectivity (Modbus TCP, MQTT, Debug Protocol) |
+| Phase 1 | ✅ Complete | VM Core, ISA, and C99 Runtime |
+| Phase 2 | ✅ Complete | Visual Editors (React) & ST Compiler (TS) |
+| Phase 3 | ✅ Complete | Zephyr Integration & Serial Loader |
+| Phase 4 | ✅ Complete | Simulation (WASM) & Debugging UI |
+| Phase 5 | ✅ Complete | Polish & Release v1.0.0 |
 
 ---
 
@@ -406,23 +403,21 @@ These are Language Server errors due to missing include paths. The actual build 
 
 ---
 
-## Next Steps (Suggested Tasks)
+## Next Steps (Version 1.1)
 
-1. **Phase 3: GPIO Implementation**
-   - Implement `zplc_hal_gpio_*` using Zephyr's GPIO API
-   - Parse DeviceTree bindings in `zplc_hal_init()`
+1. **Modbus Implementation**
+   - Implement `zplc_modbus_server` in `src/comms/`.
+   - Add HAL socket abstractions to `zplc_hal_zephyr.c`.
 
-2. **Simple Assembler Tool**
-   - Create `tools/zplc_asm.py` to convert text assembly to `.zplc`
-   - Enable writing test programs without a full compiler
+2. **Retentive Memory (NVS)**
+   - Wire `zplc_hal_persist_*` to Zephyr's NVS or Settings subsystem.
 
-3. **Zephyr Shell Integration**
-   - Add `zplc load <file>`, `zplc start`, `zplc stop`, `zplc stats` commands
-   - Requires `CONFIG_SHELL=y`
+3. **MQTT Integration**
+   - Use Zephyr's MQTT client to sync variables with an IIoT broker.
 
-4. **CI/CD Pipeline**
-   - GitHub Actions workflow for POSIX tests
-   - QEMU-based Zephyr tests
+4. **IDE Enhancements**
+   - Implement online-editing (partial code updates).
+   - Add a logic analyzer view for variable tracing.
 
 ---
 

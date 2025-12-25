@@ -17,17 +17,32 @@ ZPLC is a portable, deterministic PLC runtime environment powered by [Zephyr RTO
 - **Industrial Grade**: Deterministic execution, retentive memory support, and sub-millisecond jitter on RTOS targets.
 - **Modern Tooling**: TS-based compiler, Python assembler, and built-in unit testing framework.
 
-## Current Status
+## Current Status: v1.0.0 (Released) 🚀
+
+ZPLC has reached its first major milestone. All core development phases are complete, providing a functional end-to-end PLC ecosystem.
 
 | Phase | Status | Description |
 |-------|--------|-------------|
 | Phase 0 | ✅ Complete | Build System & HAL Abstraction |
-| Phase 0.5 | ✅ Complete | Zephyr Module Integration |
-| Phase 1 | ✅ Complete | ISA Definition & VM Core (62 opcodes, 109 tests) |
-| Phase 2 | 🟡 In Progress | Visual Languages (LD, FBD, SFC Editors, TS Assembler) |
-| Phase 2.5 | 🟡 In Progress | Structured Text Compiler (TS) |
-| Phase 3 | 🔲 Pending | Real Hardware I/O |
-| Phase 4 | 🔲 Pending | Connectivity (Modbus, MQTT) |
+| Phase 1 | ✅ Complete | VM Core (62 opcodes) & ISA Definition |
+| Phase 2 | ✅ Complete | Visual IDE (LD, FBD, SFC) & ST Compiler |
+| Phase 3 | ✅ Complete | Hardware Integration (Zephyr Serial Loader) |
+| Phase 4 | ✅ Complete | Debugging & Simulation (WASM + HW) |
+| Phase 5 | ✅ Complete | Final Polish & Release v1.0.0 |
+
+---
+
+## 🚀 Roadmap (v1.1+)
+
+The focus for the next version is expanding industrial connectivity and persistence.
+
+- [ ] **Modbus TCP/RTU**: Native support for industrial fieldbus.
+- [ ] **MQTT Integration**: First-class support for IIoT/Cloud connectivity.
+- [ ] **Retentive Memory**: Support for flash-backed variables across power cycles.
+- [ ] **Distributed Control**: Peer-to-peer PLC communication.
+- [ ] **OPC UA Server**: Enterprise-level interoperability.
+
+
 
 ## Quick Start
 
@@ -140,7 +155,7 @@ ZPLC is a Zephyr Module, supporting 500+ boards including:
 ### Development Targets
 - **POSIX** (Linux/macOS): For development and unit testing
 - **QEMU**: Cortex-M3 emulation for CI/CD pipelines
-- **WASM**: Browser-based simulation (planned)
+- **WASM**: Browser-based simulation (fully supported in IDE)
 
 ## Project Structure
 

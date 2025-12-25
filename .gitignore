@@ -50,3 +50,5 @@ task_boundary_history.json
 # Temp files
 *.tmp
 temp/
+.cache/
+
