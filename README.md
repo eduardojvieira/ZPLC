@@ -192,11 +192,53 @@ CONFIG_ZPLC_WORK_MEMORY_SIZE=8192
 
 See [AGENTS.md](AGENTS.md) for detailed contribution guidelines, coding standards, and development workflows.
 
-### Key Principles
-1. **Strict ANSI C99**: No GCC extensions in core code
-2. **HAL Abstraction**: Core never touches hardware directly
-3. **Test-Driven**: Every feature needs tests
-4. **Zephyr First**: Primary target is Zephyr RTOS
+### Key Features in Detail
+
+### Visual IDE
+The ZPLC IDE is a modern, web-browser-based environment for programming PLCs.
+- **Ladder Diagram (LD)**: Interactive editor with support for nested branches and real-time animation.
+- **Function Block Diagram (FBD)**: Modular logic design with standard IEC 61131-3 blocks.
+- **Sequential Function Chart (SFC)**: Visual state machine design for complex process control.
+- **Structured Text (ST)**: High-level language with a robust compiler and standard library.
+
+### Simulation & Debugging
+- **Local Simulation**: Run your PLC logic directly in the browser using WebAssembly. No hardware required for testing.
+- **Hardware Debugging**: Connect to a running PLC over serial to watch variables and inspect the VM state in real-time.
+- **Visual Watch**: Active wires and steps are highlighted in the editors during execution.
+
+### Hardware Integration
+- **WebSerial Uploader**: One-click upload from the browser to your Zephyr-enabled board.
+- **Deterministic Execution**: The runtime ensures fixed cycle times (e.g., 100ms) for critical control tasks.
+
+## Quick Start (IDE)
+
+1.  **Open the IDE**:
+    ```bash
+    cd ide
+    bun install
+    bun run dev
+    ```
+2.  **Create a New Program**: Use the sidebar to add an `LD` or `FBD` file.
+3.  **Simulate**: Click the **Simulate** button in the top toolbar to run the logic in your browser.
+4.  **Connect Hardware**: Plug in your Zephyr board, click **Connect**, select the serial port, and then **Upload**.
+
+## Quick Start (Runtime)
+
+To build the runtime for your board:
+1.  **Environment**: Ensure you have the [Zephyr SDK](https://docs.zephyrproject.org/latest/develop/getting_started/index.html) installed.
+2.  **Compile**:
+    ```bash
+    cd apps/zephyr_app
+    west build -b <your_board_alias>
+    west flash
+    ```
+
+## Key Principles
+
+1.  **Strict ANSI C99**: No GCC extensions in core code to ensure maximum portability.
+2.  **HAL Abstraction**: The VM core never touches hardware directly, enabling simulation on any platform.
+3.  **Test-Driven**: Every instruction and feature is backed by C unit tests.
+4.  **IEC 61131-3 Compliance**: Aiming for full compatibility with international PLC standards.
 
 ## License
 
@@ -205,4 +247,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Acknowledgments
 
 - [Zephyr Project](https://zephyrproject.org/) - The RTOS that makes this possible
+- [React Flow](https://reactflow.dev/) - Powering our highly interactive visual editors
+- [Emscripten](https://emscripten.org/) - Enabling high-performance PLC simulation in the browser
 - [IEC 61131-3](https://en.wikipedia.org/wiki/IEC_61131-3) - The standard we aim to support
+

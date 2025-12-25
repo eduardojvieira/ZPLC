@@ -4,7 +4,7 @@
 # =============================================================================
 # SPDX-License-Identifier: MIT
 #
-# This CMakeLists.txt supports two build modes:
+# This CMakeLists.txt supports three build modes:
 #
 # 1. POSIX Build (default):
 #    mkdir build_posix && cd build_posix
@@ -15,6 +15,11 @@
 #    The Zephyr build system invokes zephyr/CMakeLists.txt directly.
 #    See apps/zephyr_app/ for an example Zephyr application.
 #
+# 3. WebAssembly Build (using Emscripten):
+#    mkdir build_wasm && cd build_wasm
+#    emcmake cmake .. -DWASM_BUILD=ON
+#    emmake make
+#
 # =============================================================================
 
 cmake_minimum_required(VERSION 3.20)
@@ -23,17 +28,16 @@ cmake_minimum_required(VERSION 3.20)
 # Build Mode Detection
 # =============================================================================
 # If ZEPHYR_BASE is defined, we're being included in a Zephyr build.
+# If EMSCRIPTEN is defined, we're building for WebAssembly.
 # Otherwise, this is a standalone POSIX build.
 
 option(ZEPHYR_BUILD "Build as Zephyr module (requires Zephyr SDK)" OFF)
+option(WASM_BUILD "Build for WebAssembly (requires Emscripten)" OFF)
 
 if(DEFINED ENV{ZEPHYR_BASE} OR ZEPHYR_BUILD)
     # =========================================================================
     # ZEPHYR BUILD PATH
     # =========================================================================
-    # When building with Zephyr, the actual build is handled by
-    # zephyr/CMakeLists.txt which registers sources with zephyr_library().
-    # This file is not directly used in Zephyr builds.
     message(STATUS "==============================================")
     message(STATUS "ZPLC: Zephyr build mode detected")
     message(STATUS "==============================================")
@@ -43,6 +47,97 @@ if(DEFINED ENV{ZEPHYR_BASE} OR ZEPHYR_BUILD)
     
     # For IDE support, still define the project
     project(zplc VERSION 0.2.0 LANGUAGES C)
+
+elseif(EMSCRIPTEN OR WASM_BUILD)
+    # =========================================================================
+    # EMSCRIPTEN/WASM BUILD PATH
+    # =========================================================================
+    message(STATUS "==============================================")
+    message(STATUS "ZPLC: WebAssembly build mode")
+    message(STATUS "==============================================")
+
+    project(zplc
+        VERSION 0.2.0
+        DESCRIPTION "Portable IEC 61131-3 PLC Runtime"
+        LANGUAGES C
+    )
+
+    # Emscripten uses C99
+    set(CMAKE_C_STANDARD 99)
+    set(CMAKE_C_STANDARD_REQUIRED ON)
+    set(CMAKE_C_EXTENSIONS OFF)
+
+    # Store root for subdirectories
+    set(ZPLC_ROOT ${CMAKE_SOURCE_DIR})
+
+    # Include Paths
+    include_directories(${CMAKE_SOURCE_DIR}/include)
+
+    # =========================================================================
+    # Target: zplc_sim (WebAssembly Module)
+    # =========================================================================
+    # The WASM simulation runtime for browser-based debugging.
+
+    add_executable(zplc_sim
+        src/core/zplc_core.c
+        src/hal/wasm/zplc_hal_wasm.c
+    )
+
+    target_include_directories(zplc_sim PRIVATE
+        ${CMAKE_SOURCE_DIR}/include
+    )
+
+    # Emscripten-specific flags
+    set_target_properties(zplc_sim PROPERTIES
+        SUFFIX ".js"
+        LINK_FLAGS "\
+            -s WASM=1 \
+            -s MODULARIZE=1 \
+            -s EXPORT_NAME='ZPLCModule' \
+            -s EXPORTED_FUNCTIONS='[ \
+                \"_zplc_core_init\", \
+                \"_zplc_core_shutdown\", \
+                \"_zplc_core_load_raw\", \
+                \"_zplc_core_step\", \
+                \"_zplc_core_run\", \
+                \"_zplc_core_run_cycle\", \
+                \"_zplc_core_get_state\", \
+                \"_zplc_core_get_sp\", \
+                \"_zplc_core_get_stack\", \
+                \"_zplc_core_get_error\", \
+                \"_zplc_core_is_halted\", \
+                \"_zplc_core_set_ipi\", \
+                \"_zplc_core_get_opi\", \
+                \"_zplc_hal_init\", \
+                \"_zplc_hal_shutdown\", \
+                \"_zplc_hal_tick\", \
+                \"_zplc_wasm_set_input\", \
+                \"_zplc_wasm_get_output\", \
+                \"_malloc\", \
+                \"_free\" \
+            ]' \
+            -s EXPORTED_RUNTIME_METHODS='[\"ccall\", \"cwrap\", \"getValue\", \"setValue\", \"UTF8ToString\", \"stringToUTF8\", \"HEAPU8\"]' \
+            -s ALLOW_MEMORY_GROWTH=1 \
+            -s INITIAL_MEMORY=1048576 \
+            -s STACK_SIZE=65536 \
+            -s NO_EXIT_RUNTIME=1 \
+            -s ASSERTIONS=1 \
+            --no-entry \
+        "
+    )
+
+    # =========================================================================
+    # Build Info
+    # =========================================================================
+
+    message(STATUS "==============================================")
+    message(STATUS "ZPLC WASM Build Configuration")
+    message(STATUS "==============================================")
+    message(STATUS "  Version:    ${PROJECT_VERSION}")
+    message(STATUS "  C Standard: C${CMAKE_C_STANDARD}")
+    message(STATUS "  Compiler:   Emscripten")
+    message(STATUS "  Output:     zplc_sim.js + zplc_sim.wasm")
+    message(STATUS "==============================================")
     
 else()
     # =========================================================================

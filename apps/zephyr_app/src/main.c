@@ -1,17 +1,26 @@
 /**
  * @file main.c
- * @brief ZPLC Zephyr Runtime - Phase 2.5 Integration
+ * @brief ZPLC Zephyr Runtime - Phase 3 Integration
  *
  * SPDX-License-Identifier: MIT
  *
  * This is the real ZPLC execution engine running on Zephyr.
- * It loads embedded bytecode and executes it cyclically.
+ * It supports dynamic program loading via shell commands and
+ * synchronizes the Output Process Image (OPI) to physical GPIO.
+ *
+ * Features:
+ *   - Dynamic bytecode loading via UART shell
+ *   - Cyclic VM execution with configurable timing
+ *   - OPI to GPIO synchronization (outputs 0-3)
+ *   - GPIO to IPI synchronization (inputs 4-7)
  */
 
 #include <zephyr/kernel.h>
 #include <zplc_hal.h>
 #include <zplc_core.h>
 #include <zplc_isa.h>
+
+#include <string.h>
 
 /* ============================================================================
  * Configuration
@@ -23,62 +32,67 @@
 /** @brief Maximum instructions per cycle (watchdog budget) */
 #define ZPLC_MAX_INSTRUCTIONS   1000
 
-/** @brief Number of demo cycles to run (0 = infinite) */
-#define ZPLC_DEMO_CYCLES        50
+/** @brief Program buffer size (4 KB) */
+#define ZPLC_PROGRAM_BUFFER_SIZE    4096
+
+/** @brief Number of GPIO output channels */
+#define ZPLC_GPIO_OUTPUT_COUNT  4
+
+/** @brief Number of GPIO input channels */
+#define ZPLC_GPIO_INPUT_COUNT   4
 
 /* ============================================================================
- * Embedded Program: Counter
- * ============================================================================
- *
- * This program increments a counter in OPI[0] each cycle.
- * It demonstrates the VM is actually executing real bytecode.
- *
- * Assembly:
- *     LOAD32  0x1000      ; Load counter from OPI[0]
- *     PUSH8   1           ; Push increment value
- *     ADD                 ; counter = counter + 1
- *     STORE32 0x1000      ; Store back to OPI[0]
- *     HALT                ; End this cycle
- *
- * Bytecode breakdown:
- *     82 00 10    LOAD32  0x1000  (opcode=0x82, addr=0x1000 little-endian)
- *     40 01       PUSH8   1       (opcode=0x40, imm8=0x01)
- *     20          ADD             (opcode=0x20)
- *     86 00 10    STORE32 0x1000  (opcode=0x86, addr=0x1000 little-endian)
- *     01          HALT            (opcode=0x01)
- *
- * Total: 12 bytes
+ * Runtime State (shared with shell_cmds.c)
+ * ============================================================================ */
+
+/**
+ * @brief Runtime state enumeration
  */
-static const uint8_t counter_program[] = {
-    0x82, 0x00, 0x10,   /* LOAD32  0x1000 */
-    0x40, 0x01,         /* PUSH8   1      */
-    0x20,               /* ADD            */
-    0x86, 0x00, 0x10,   /* STORE32 0x1000 */
-    0x01                /* HALT           */
-};
+typedef enum {
+    ZPLC_STATE_IDLE = 0,    /**< No program loaded or stopped */
+    ZPLC_STATE_LOADING,     /**< Receiving bytecode over serial */
+    ZPLC_STATE_READY,       /**< Program loaded, ready to run */
+    ZPLC_STATE_RUNNING,     /**< VM executing cyclically */
+    ZPLC_STATE_PAUSED,      /**< VM paused (for debugging) */
+    ZPLC_STATE_ERROR,       /**< Error occurred */
+} zplc_runtime_state_t;
+
+/** @brief Program buffer for dynamic loading */
+uint8_t program_buffer[ZPLC_PROGRAM_BUFFER_SIZE];
+
+/** @brief Size of program buffer (for shell_cmds.c) */
+size_t program_buffer_size = ZPLC_PROGRAM_BUFFER_SIZE;
+
+/** @brief Current runtime state */
+volatile zplc_runtime_state_t runtime_state = ZPLC_STATE_IDLE;
+
+/** @brief Expected program size (set by 'zplc load') */
+volatile size_t program_expected_size = 0;
+
+/** @brief Actually received program size */
+volatile size_t program_received_size = 0;
+
+/** @brief Cycle counter */
+volatile uint32_t cycle_count = 0;
+
+/** @brief Step request flag (set by 'zplc dbg step', cleared after one cycle) */
+volatile int step_requested = 0;
 
 /* ============================================================================
- * Embedded Program: Blinky Simulation
- * ============================================================================
- *
- * This program toggles a "LED" bit in OPI[0] each cycle.
- * More visual feedback for debugging.
+ * Embedded Demo Programs (used when no program loaded)
+ * ============================================================================ */
+
+/**
+ * Blinky program - toggles OPI[0] bit 0 each cycle
  *
  * Assembly:
- *     LOAD8   0x1000      ; Load current LED state from OPI[0]
+ *     LOAD8   0x1000      ; Load current state from OPI[0]
  *     PUSH8   1           ; Push toggle mask
- *     XOR                 ; Toggle the bit
+ *     XOR                 ; Toggle bit 0
  *     STORE8  0x1000      ; Store back
  *     HALT
- *
- * Bytecode:
- *     80 00 10    LOAD8   0x1000
- *     40 01       PUSH8   1
- *     32          XOR
- *     84 00 10    STORE8  0x1000
- *     01          HALT
  */
-static const uint8_t blinky_program[] = {
+static const uint8_t blinky_demo[] = {
     0x80, 0x00, 0x10,   /* LOAD8   0x1000 */
     0x40, 0x01,         /* PUSH8   1      */
     0x32,               /* XOR            */
@@ -86,18 +100,42 @@ static const uint8_t blinky_program[] = {
     0x01                /* HALT           */
 };
 
-/* Select which program to run */
-#define USE_COUNTER_PROGRAM 1
+/* ============================================================================
+ * I/O Synchronization
+ * ============================================================================ */
 
-#if USE_COUNTER_PROGRAM
-    #define PROGRAM_NAME    "Counter"
-    #define PROGRAM_DATA    counter_program
-    #define PROGRAM_SIZE    sizeof(counter_program)
-#else
-    #define PROGRAM_NAME    "Blinky"
-    #define PROGRAM_DATA    blinky_program
-    #define PROGRAM_SIZE    sizeof(blinky_program)
-#endif
+/**
+ * @brief Sync inputs from GPIO to IPI (Input Process Image)
+ *
+ * Reads physical inputs (buttons/switches) and writes to IPI[0..3]
+ * so the VM can access them via LOAD instructions from address 0x0000.
+ */
+static void sync_gpio_to_ipi(void)
+{
+    uint8_t value;
+    
+    for (int i = 0; i < ZPLC_GPIO_INPUT_COUNT; i++) {
+        /* GPIO inputs are channels 4-7 in HAL, mapped to IPI bytes 0-3 */
+        if (zplc_hal_gpio_read(4 + i, &value) == ZPLC_HAL_OK) {
+            zplc_core_set_ipi(i, value);
+        }
+    }
+}
+
+/**
+ * @brief Sync outputs from OPI (Output Process Image) to GPIO
+ *
+ * Reads OPI bytes and writes to physical outputs (LEDs).
+ * OPI[0] bit 0 -> LED0, OPI[1] bit 0 -> LED1, etc.
+ */
+static void sync_opi_to_gpio(void)
+{
+    for (int i = 0; i < ZPLC_GPIO_OUTPUT_COUNT; i++) {
+        /* Read OPI byte and write bit 0 to corresponding GPIO */
+        uint8_t opi_value = (uint8_t)zplc_core_get_opi(i);
+        zplc_hal_gpio_write(i, opi_value & 0x01);
+    }
+}
 
 /* ============================================================================
  * Main Entry Point
@@ -107,20 +145,19 @@ int main(void)
 {
     int ret;
     uint32_t tick_start, tick_end, elapsed;
-    uint32_t cycle_count = 0;
     int instructions_executed;
-    const zplc_vm_state_t *state;
 
     /* ===== Banner ===== */
     zplc_hal_log("================================================\n");
     zplc_hal_log("  ZPLC Runtime - Zephyr Target\n");
     zplc_hal_log("  Core Version: %s\n", zplc_core_version());
-    zplc_hal_log("  Phase 2.5: Runtime Integration\n");
+    zplc_hal_log("  Phase 3: Hardware Integration\n");
     zplc_hal_log("================================================\n");
     zplc_hal_log("  Stack Depth:  %d\n", ZPLC_STACK_MAX_DEPTH);
     zplc_hal_log("  Call Depth:   %d\n", ZPLC_CALL_STACK_MAX);
     zplc_hal_log("  Work Memory:  %u bytes\n", (unsigned)ZPLC_MEM_WORK_SIZE);
     zplc_hal_log("  Code Max:     %u bytes\n", (unsigned)ZPLC_MEM_CODE_SIZE);
+    zplc_hal_log("  Buffer:       %u bytes\n", (unsigned)ZPLC_PROGRAM_BUFFER_SIZE);
     zplc_hal_log("================================================\n\n");
 
     /* ===== System Initialization ===== */
@@ -138,75 +175,109 @@ int main(void)
         return ret;
     }
 
-    /* ===== Load Program ===== */
-    zplc_hal_log("[LOAD] Loading program: %s (%u bytes)\n", 
-                 PROGRAM_NAME, (unsigned)PROGRAM_SIZE);
+    /* ===== Load Demo Program ===== */
+    zplc_hal_log("[INIT] Loading blinky demo (%u bytes)...\n",
+                 (unsigned)sizeof(blinky_demo));
     
-    ret = zplc_core_load_raw(PROGRAM_DATA, PROGRAM_SIZE);
+    memcpy(program_buffer, blinky_demo, sizeof(blinky_demo));
+    program_received_size = sizeof(blinky_demo);
+    
+    ret = zplc_core_load_raw(program_buffer, program_received_size);
     if (ret != 0) {
-        zplc_hal_log("[LOAD] ERROR: Failed to load program: %d\n", ret);
-        return ret;
+        zplc_hal_log("[INIT] ERROR: Failed to load demo: %d\n", ret);
+        runtime_state = ZPLC_STATE_ERROR;
+    } else {
+        runtime_state = ZPLC_STATE_RUNNING;
+        zplc_hal_log("[INIT] Demo loaded, starting execution.\n");
     }
-    zplc_hal_log("[LOAD] Program loaded successfully.\n\n");
 
-    /* ===== Execution Loop ===== */
-    zplc_hal_log("[RUN] Starting execution loop...\n");
-    zplc_hal_log("[RUN] Cycle time: %d ms, Max instructions: %d\n\n",
-                 ZPLC_CYCLE_TIME_MS, ZPLC_MAX_INSTRUCTIONS);
+    zplc_hal_log("[INIT] Shell ready. Use 'zplc help' for commands.\n\n");
 
-    while (ZPLC_DEMO_CYCLES == 0 || cycle_count < ZPLC_DEMO_CYCLES) {
+    /* ===== Main Execution Loop ===== */
+    while (1) {
         tick_start = zplc_hal_tick();
 
-        /* Run one scan cycle */
-        instructions_executed = zplc_core_run_cycle();
-        
-        if (instructions_executed < 0) {
-            /* VM error occurred */
-            zplc_hal_log("[ERR] Cycle %u: VM error %d\n", 
-                         cycle_count, zplc_core_get_error());
-            break;
+        switch (runtime_state) {
+            case ZPLC_STATE_RUNNING:
+                /* === Phase 1: Read Inputs === */
+                sync_gpio_to_ipi();
+                
+                /* === Phase 2: Execute Program === */
+                instructions_executed = zplc_core_run_cycle();
+                
+                if (instructions_executed < 0) {
+                    zplc_hal_log("[ERR] Cycle %u: VM error %d\n",
+                                 cycle_count, zplc_core_get_error());
+                    runtime_state = ZPLC_STATE_ERROR;
+                    break;
+                }
+                
+                /* === Phase 3: Write Outputs === */
+                sync_opi_to_gpio();
+                
+                /* === Phase 4: Logging (periodic) === */
+                if (cycle_count % 50 == 0) {
+                    zplc_hal_log("[RUN] Cycle %u: OPI[0]=%u, Instrs=%d\n",
+                                 cycle_count,
+                                 (uint8_t)zplc_core_get_opi(0),
+                                 instructions_executed);
+                }
+                
+                cycle_count++;
+                break;
+
+            case ZPLC_STATE_PAUSED:
+                /* Paused state - execute one cycle only if step requested */
+                if (step_requested) {
+                    step_requested = 0;
+                    
+                    /* Execute one cycle */
+                    sync_gpio_to_ipi();
+                    instructions_executed = zplc_core_run_cycle();
+                    
+                    if (instructions_executed < 0) {
+                        zplc_hal_log("[DBG] Step error: %d\n", zplc_core_get_error());
+                        runtime_state = ZPLC_STATE_ERROR;
+                        break;
+                    }
+                    
+                    sync_opi_to_gpio();
+                    cycle_count++;
+                    
+                    zplc_hal_log("[DBG] Step: cycle=%u, OPI[0]=%u\n",
+                                 cycle_count, (uint8_t)zplc_core_get_opi(0));
+                }
+                /* Keep outputs active while paused (for debugging) */
+                break;
+
+            case ZPLC_STATE_IDLE:
+            case ZPLC_STATE_LOADING:
+            case ZPLC_STATE_READY:
+            case ZPLC_STATE_ERROR:
+            default:
+                /* Turn off outputs when not running */
+                for (int i = 0; i < ZPLC_GPIO_OUTPUT_COUNT; i++) {
+                    zplc_hal_gpio_write(i, 0);
+                }
+                break;
         }
 
-        /* Get VM state for diagnostics */
-        state = zplc_core_get_state();
-
-        /* Read output for display */
-        uint32_t opi_value = zplc_core_get_opi(0);
-
-        /* Periodic status log (every 10 cycles) */
-        if (cycle_count % 10 == 0) {
-            zplc_hal_log("[CYCLE %3u] OPI[0]=%u, Instructions=%d, PC=%u, SP=%u\n",
-                         cycle_count, opi_value, instructions_executed,
-                         state->pc, state->sp);
-        }
-
-        cycle_count++;
-
-        /* Calculate time spent and sleep for remainder of cycle */
+        /* === Timing: Maintain cycle time === */
         tick_end = zplc_hal_tick();
         elapsed = tick_end - tick_start;
         
         if (elapsed < ZPLC_CYCLE_TIME_MS) {
             zplc_hal_sleep(ZPLC_CYCLE_TIME_MS - elapsed);
-        } else {
-            /* Cycle overrun - log warning but continue */
-            zplc_hal_log("[WARN] Cycle overrun: %u ms > %d ms\n", 
+        } else if (runtime_state == ZPLC_STATE_RUNNING && elapsed > ZPLC_CYCLE_TIME_MS) {
+            /* Only warn on overruns when actively running */
+            zplc_hal_log("[WARN] Cycle overrun: %u ms > %d ms\n",
                          elapsed, ZPLC_CYCLE_TIME_MS);
         }
     }
 
-    /* ===== Summary ===== */
-    zplc_hal_log("\n================================================\n");
-    zplc_hal_log("  Execution Complete\n");
-    zplc_hal_log("  Total Cycles: %u\n", cycle_count);
-    zplc_hal_log("  Final OPI[0]: %u\n", zplc_core_get_opi(0));
-    zplc_hal_log("  VM Status:    %s\n", 
-                 zplc_core_is_halted() ? "HALTED" : "RUNNING");
-    zplc_hal_log("================================================\n");
-
-    /* ===== Shutdown ===== */
+    /* Never reached in normal operation */
     zplc_core_shutdown();
     zplc_hal_shutdown();
-
+    
     return 0;
 }

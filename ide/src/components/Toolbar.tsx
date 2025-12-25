@@ -10,7 +10,6 @@ import {
   Square,
   Upload,
   Hammer,
-  Wifi,
   WifiOff,
   Settings,
   Sun,
@@ -20,6 +19,12 @@ import {
   FileCode,
   Save,
   Download,
+  Usb,
+  Loader2,
+  Pause,
+  SkipForward,
+  Cpu,
+  RotateCcw,
 } from 'lucide-react';
 import { useIDEStore } from '../store/useIDEStore';
 import { useTheme } from '../hooks/useTheme';
@@ -33,12 +38,23 @@ import { compileProject, CompilerError } from '../compiler';
 import type { PLCLanguage } from '../compiler';
 import { AssemblerError } from '../assembler';
 import { GeneratedCodeDialog } from './GeneratedCodeDialog';
+import {
+  isWebSerialSupported,
+  requestPort,
+  connect,
+  disconnect,
+  uploadBytecode,
+  type SerialConnection,
+} from '../uploader';
+import { WASMAdapter, createWASMAdapter } from '../runtime';
+import type { VMState } from '../runtime';
 
 export function Toolbar() {
   const { 
     connection, 
     addConsoleEntry, 
-    setPlcState, 
+    setPlcState,
+    setConnectionStatus,
     files, 
     activeFileId, 
     addCompilerMessage, 
@@ -67,6 +83,18 @@ export function Toolbar() {
     fileName: string;
     codeSize: number;
   } | null>(null);
+
+  // State for WebSerial connection
+  const [serialConnection, setSerialConnection] = useState<SerialConnection | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ stage: string; progress: number } | null>(null);
+
+  // State for WASM simulation
+  const [simAdapter, setSimAdapter] = useState<WASMAdapter | null>(null);
+  const [simState, setSimState] = useState<VMState>('disconnected');
+  const [simCycles, setSimCycles] = useState(0);
+  const [isSimLoading, setIsSimLoading] = useState(false);
 
   // Get the active file
   const activeFile = files.find(f => f.id === activeFileId);
@@ -367,12 +395,142 @@ export function Toolbar() {
     setPlcState('stopped');
   };
 
-  const handleUpload = () => {
-    addConsoleEntry({
-      type: 'info',
-      message: 'Uploading bytecode to target...',
-      source: 'upload',
-    });
+  /**
+   * Connect to a serial device via WebSerial
+   */
+  const handleConnect = async () => {
+    if (!isWebSerialSupported()) {
+      addConsoleEntry({
+        type: 'error',
+        message: 'WebSerial not supported. Use Chrome or Edge browser.',
+        source: 'upload',
+      });
+      return;
+    }
+
+    if (serialConnection) {
+      // Disconnect
+      try {
+        await disconnect(serialConnection);
+        setSerialConnection(null);
+        setConnectionStatus('disconnected');
+        addConsoleEntry({
+          type: 'info',
+          message: 'Disconnected from device',
+          source: 'upload',
+        });
+      } catch (e) {
+        addConsoleEntry({
+          type: 'error',
+          message: `Disconnect failed: ${e instanceof Error ? e.message : String(e)}`,
+          source: 'upload',
+        });
+      }
+      return;
+    }
+
+    // Connect
+    setIsConnecting(true);
+    try {
+      addConsoleEntry({
+        type: 'info',
+        message: 'Select a serial port...',
+        source: 'upload',
+      });
+
+      const port = await requestPort();
+      if (!port) {
+        addConsoleEntry({
+          type: 'warning',
+          message: 'Port selection cancelled',
+          source: 'upload',
+        });
+        return;
+      }
+
+      addConsoleEntry({
+        type: 'info',
+        message: 'Connecting to device...',
+        source: 'upload',
+      });
+
+      const conn = await connect(port, 115200);
+      setSerialConnection(conn);
+      setConnectionStatus('connected');
+
+      addConsoleEntry({
+        type: 'success',
+        message: 'Connected to ZPLC device',
+        source: 'upload',
+      });
+    } catch (e) {
+      addConsoleEntry({
+        type: 'error',
+        message: `Connection failed: ${e instanceof Error ? e.message : String(e)}`,
+        source: 'upload',
+      });
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  /**
+   * Upload bytecode to connected device
+   */
+  const handleUpload = async () => {
+    if (!serialConnection) {
+      addConsoleEntry({
+        type: 'error',
+        message: 'Not connected. Click "Connect" first.',
+        source: 'upload',
+      });
+      return;
+    }
+
+    if (!lastCompileResult) {
+      addConsoleEntry({
+        type: 'error',
+        message: 'No compiled bytecode. Compile first!',
+        source: 'upload',
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress({ stage: 'starting', progress: 0 });
+
+    try {
+      addConsoleEntry({
+        type: 'info',
+        message: `Uploading ${lastCompileResult.bytecode.length} bytes to device...`,
+        source: 'upload',
+      });
+
+      await uploadBytecode(
+        serialConnection,
+        lastCompileResult.bytecode,
+        (stage, progress, message) => {
+          setUploadProgress({ stage, progress });
+          if (stage === 'error') {
+            addConsoleEntry({ type: 'error', message, source: 'upload' });
+          } else if (stage === 'complete') {
+            addConsoleEntry({ type: 'success', message, source: 'upload' });
+            setPlcState('running');
+          } else {
+            addConsoleEntry({ type: 'info', message, source: 'upload' });
+          }
+        }
+      );
+    } catch (e) {
+      addConsoleEntry({
+        type: 'error',
+        message: `Upload failed: ${e instanceof Error ? e.message : String(e)}`,
+        source: 'upload',
+      });
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(null);
+    }
   };
 
   /**
@@ -434,7 +592,241 @@ export function Toolbar() {
     setShowGeneratedCode(true);
   };
 
-  const isConnected = connection.status === 'connected';
+  // =========================================================================
+  // Simulation Handlers
+  // =========================================================================
+
+  /**
+   * Start WASM simulation
+   */
+  const handleSimulate = async () => {
+    if (!lastCompileResult) {
+      addConsoleEntry({
+        type: 'error',
+        message: 'No compiled bytecode. Compile first!',
+        source: 'simulator',
+      });
+      return;
+    }
+
+    setIsSimLoading(true);
+
+    try {
+      // Check if WASM module is loaded
+      if (!window.ZPLCModule) {
+        addConsoleEntry({
+          type: 'warning',
+          message: 'WASM module not loaded. Simulation requires zplc_sim.js to be built and included.',
+          source: 'simulator',
+        });
+        // For now, create adapter anyway - it will fail gracefully when connecting
+      }
+
+      // Create adapter if not exists
+      let adapter = simAdapter;
+      if (!adapter) {
+        adapter = createWASMAdapter();
+        
+        // Set up event handlers
+        adapter.setEventHandlers({
+          onStateChange: (state) => {
+            setSimState(state);
+            if (state === 'running') {
+              setPlcState('running');
+            } else if (state === 'idle' || state === 'paused') {
+              setPlcState('stopped');
+            }
+          },
+          onInfoUpdate: (info) => {
+            setSimCycles(info.cycles);
+          },
+          onError: (error) => {
+            addConsoleEntry({
+              type: 'error',
+              message: `Simulation error: ${error}`,
+              source: 'simulator',
+            });
+          },
+          onGpioChange: (channel, value) => {
+            addConsoleEntry({
+              type: 'info',
+              message: `GPIO ${channel} = ${value}`,
+              source: 'simulator',
+            });
+          },
+        });
+
+        setSimAdapter(adapter);
+      }
+
+      // Connect if not connected
+      if (!adapter.connected) {
+        addConsoleEntry({
+          type: 'info',
+          message: 'Connecting to WASM simulator...',
+          source: 'simulator',
+        });
+        await adapter.connect();
+        addConsoleEntry({
+          type: 'success',
+          message: 'WASM simulator connected',
+          source: 'simulator',
+        });
+      }
+
+      // Load the program
+      addConsoleEntry({
+        type: 'info',
+        message: `Loading program (${lastCompileResult.bytecode.length} bytes)...`,
+        source: 'simulator',
+      });
+      await adapter.loadProgram(lastCompileResult.bytecode);
+
+      // Start execution
+      addConsoleEntry({
+        type: 'info',
+        message: 'Starting simulation...',
+        source: 'simulator',
+      });
+      await adapter.start();
+      setSimState('running');
+      setPlcState('running');
+      
+      addConsoleEntry({
+        type: 'success',
+        message: 'Simulation running (100ms cycle time)',
+        source: 'simulator',
+      });
+
+    } catch (e) {
+      addConsoleEntry({
+        type: 'error',
+        message: `Simulation failed: ${e instanceof Error ? e.message : String(e)}`,
+        source: 'simulator',
+      });
+      setSimState('error');
+    } finally {
+      setIsSimLoading(false);
+    }
+  };
+
+  /**
+   * Pause simulation
+   */
+  const handleSimPause = async () => {
+    if (!simAdapter) return;
+
+    try {
+      await simAdapter.pause();
+      addConsoleEntry({
+        type: 'info',
+        message: `Simulation paused at cycle ${simCycles}`,
+        source: 'simulator',
+      });
+    } catch (e) {
+      addConsoleEntry({
+        type: 'error',
+        message: `Pause failed: ${e instanceof Error ? e.message : String(e)}`,
+        source: 'simulator',
+      });
+    }
+  };
+
+  /**
+   * Resume simulation
+   */
+  const handleSimResume = async () => {
+    if (!simAdapter) return;
+
+    try {
+      await simAdapter.resume();
+      addConsoleEntry({
+        type: 'info',
+        message: 'Simulation resumed',
+        source: 'simulator',
+      });
+    } catch (e) {
+      addConsoleEntry({
+        type: 'error',
+        message: `Resume failed: ${e instanceof Error ? e.message : String(e)}`,
+        source: 'simulator',
+      });
+    }
+  };
+
+  /**
+   * Single-step simulation
+   */
+  const handleSimStep = async () => {
+    if (!simAdapter) return;
+
+    try {
+      await simAdapter.step();
+      addConsoleEntry({
+        type: 'info',
+        message: `Stepped to cycle ${simCycles + 1}`,
+        source: 'simulator',
+      });
+    } catch (e) {
+      addConsoleEntry({
+        type: 'error',
+        message: `Step failed: ${e instanceof Error ? e.message : String(e)}`,
+        source: 'simulator',
+      });
+    }
+  };
+
+  /**
+   * Stop simulation
+   */
+  const handleSimStop = async () => {
+    if (!simAdapter) return;
+
+    try {
+      await simAdapter.stop();
+      addConsoleEntry({
+        type: 'info',
+        message: `Simulation stopped after ${simCycles} cycles`,
+        source: 'simulator',
+      });
+      setSimCycles(0);
+    } catch (e) {
+      addConsoleEntry({
+        type: 'error',
+        message: `Stop failed: ${e instanceof Error ? e.message : String(e)}`,
+        source: 'simulator',
+      });
+    }
+  };
+
+  /**
+   * Reset simulation
+   */
+  const handleSimReset = async () => {
+    if (!simAdapter) return;
+
+    try {
+      await simAdapter.reset();
+      setSimCycles(0);
+      addConsoleEntry({
+        type: 'info',
+        message: 'Simulation reset',
+        source: 'simulator',
+      });
+    } catch (e) {
+      addConsoleEntry({
+        type: 'error',
+        message: `Reset failed: ${e instanceof Error ? e.message : String(e)}`,
+        source: 'simulator',
+      });
+    }
+  };
+
+  const isSimulating = simState === 'running';
+  const isSimPaused = simState === 'paused';
+  const isSimActive = simState !== 'disconnected' && simState !== 'error';
+
+  const isConnected = !!serialConnection;
   const isRunning = connection.plcState === 'running';
 
   const themeOptions = [
@@ -543,14 +935,119 @@ export function Toolbar() {
         </button>
       )}
 
+      {/* Separator */}
+      <div className="w-px h-6 bg-[var(--color-surface-600)] mx-2" />
+
+      {/* Simulation Controls */}
+      {!isSimActive ? (
+        <button
+          onClick={handleSimulate}
+          disabled={!lastCompileResult || isSimLoading}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          title={!lastCompileResult ? 'Compile first to simulate' : 'Start WASM simulation'}
+        >
+          {isSimLoading ? (
+            <Loader2 size={16} className="animate-spin" />
+          ) : (
+            <Cpu size={16} />
+          )}
+          <span>Simulate</span>
+        </button>
+      ) : (
+        <>
+          {isSimulating ? (
+            <button
+              onClick={handleSimPause}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-amber-600 hover:bg-amber-500 text-white text-sm transition-colors"
+              title="Pause simulation"
+            >
+              <Pause size={16} />
+              <span>Pause</span>
+            </button>
+          ) : (
+            <button
+              onClick={handleSimResume}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-sm transition-colors"
+              title="Resume simulation"
+            >
+              <Play size={16} />
+              <span>Resume</span>
+            </button>
+          )}
+
+          <button
+            onClick={handleSimStep}
+            disabled={isSimulating}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-100)] text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Step one cycle"
+          >
+            <SkipForward size={16} />
+            <span>Step</span>
+          </button>
+
+          <button
+            onClick={handleSimStop}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[var(--color-accent-red)] hover:opacity-90 text-white text-sm transition-colors"
+            title="Stop simulation"
+          >
+            <Square size={16} />
+            <span>Stop</span>
+          </button>
+
+          <button
+            onClick={handleSimReset}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-100)] text-sm transition-colors"
+            title="Reset simulation (reload program)"
+          >
+            <RotateCcw size={16} />
+          </button>
+        </>
+      )}
+
+      {/* Separator */}
+      <div className="w-px h-6 bg-[var(--color-surface-600)] mx-2" />
+
+      {/* Serial Connection Controls */}
+      <button
+        onClick={handleConnect}
+        disabled={isConnecting}
+        className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm transition-colors ${
+          isConnected
+            ? 'bg-[var(--color-accent-green)] text-white hover:opacity-90'
+            : 'bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-100)]'
+        } disabled:opacity-50 disabled:cursor-not-allowed`}
+        title={isConnected ? 'Disconnect from device' : 'Connect to ZPLC device via serial'}
+      >
+        {isConnecting ? (
+          <Loader2 size={16} className="animate-spin" />
+        ) : (
+          <Usb size={16} />
+        )}
+        <span>{isConnected ? 'Disconnect' : 'Connect'}</span>
+      </button>
+
       <button
         onClick={handleUpload}
-        disabled={!isConnected}
+        disabled={!isConnected || !lastCompileResult || isUploading}
         className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-100)] text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        title="Upload to Target"
+        title={
+          !isConnected 
+            ? 'Connect to a device first' 
+            : !lastCompileResult 
+              ? 'Compile first' 
+              : 'Upload bytecode to device'
+        }
       >
-        <Upload size={16} />
-        <span>Upload</span>
+        {isUploading ? (
+          <Loader2 size={16} className="animate-spin" />
+        ) : (
+          <Upload size={16} />
+        )}
+        <span>
+          {isUploading && uploadProgress 
+            ? `${uploadProgress.progress}%` 
+            : 'Upload'}
+        </span>
       </button>
 
       {/* Spacer */}
@@ -558,29 +1055,49 @@ export function Toolbar() {
 
       {/* Connection Status */}
       <div className="flex items-center gap-2">
-        {isConnected ? (
-          <div className="flex items-center gap-1.5 text-[var(--color-status-connected)] text-sm">
-            <Wifi size={16} />
-            <span>Connected</span>
+        {/* Simulation Status - shows when simulating */}
+        {isSimActive && (
+          <div className="flex items-center gap-1.5 text-cyan-400 text-sm">
+            <Cpu size={16} />
+            <span>SIM</span>
+            {simCycles > 0 && (
+              <span className="text-xs text-[var(--color-surface-300)]">
+                #{simCycles}
+              </span>
+            )}
           </div>
-        ) : (
-          <div className="flex items-center gap-1.5 text-[var(--color-status-disconnected)] text-sm">
-            <WifiOff size={16} />
-            <span>Disconnected</span>
-          </div>
+        )}
+
+        {/* Serial Connection Status */}
+        {!isSimActive && (
+          isConnected ? (
+            <div className="flex items-center gap-1.5 text-[var(--color-status-connected)] text-sm">
+              <Usb size={16} />
+              <span>Serial</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 text-[var(--color-status-disconnected)] text-sm">
+              <WifiOff size={16} />
+              <span>No Device</span>
+            </div>
+          )
         )}
 
         {/* PLC State Indicator */}
         <div className="flex items-center gap-1.5 ml-2">
           <div
             className={`w-2.5 h-2.5 rounded-full ${
-              isRunning
-                ? 'bg-[var(--color-status-running)] animate-pulse'
-                : 'bg-[var(--color-status-stopped)]'
+              isSimulating
+                ? 'bg-cyan-400 animate-pulse'
+                : isSimPaused
+                  ? 'bg-amber-400'
+                  : isRunning
+                    ? 'bg-[var(--color-status-running)] animate-pulse'
+                    : 'bg-[var(--color-status-stopped)]'
             }`}
           />
           <span className="text-sm text-[var(--color-surface-200)] uppercase">
-            {connection.plcState}
+            {isSimulating ? 'running' : isSimPaused ? 'paused' : connection.plcState}
           </span>
         </div>
       </div>
