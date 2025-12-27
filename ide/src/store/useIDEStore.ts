@@ -102,9 +102,14 @@ interface IDEState {
 
 const EXAMPLE_ST = `(* Blinky Program - Structured Text *)
 PROGRAM Blinky
+
 VAR
     BlinkTimer : TON;
     LedState : BOOL := FALSE;
+END_VAR
+
+VAR_OUTPUT
+    LED_Output AT %Q0.0 : BOOL;
 END_VAR
 
 (* Timer with 500ms interval *)
@@ -112,16 +117,26 @@ BlinkTimer(IN := TRUE, PT := T#500ms);
 
 IF BlinkTimer.Q THEN
     LedState := NOT LedState;
-    BlinkTimer(IN := FALSE);
+    BlinkTimer(IN := FALSE, PT := T#500ms);
 END_IF;
 
 (* Output to LED *)
-%Q0.0 := LedState;
+LED_Output := LedState;
 
 END_PROGRAM`;
 
 const EXAMPLE_IL = `(* Blinky Program - Instruction List *)
+(* Note: IL is deprecated in IEC 61131-3 but included for reference *)
 PROGRAM Blinky
+
+VAR
+    BlinkTimer : TON;
+    LedState : BOOL := FALSE;
+END_VAR
+
+VAR_OUTPUT
+    LED_Output AT %Q0.0 : BOOL;
+END_VAR
 
         LD      TRUE
         ST      BlinkTimer.IN
@@ -135,7 +150,7 @@ PROGRAM Blinky
         
 SKIP_TOGGLE:
         LD      LedState
-        ST      %Q0.0
+        ST      LED_Output
         
         RET
 
