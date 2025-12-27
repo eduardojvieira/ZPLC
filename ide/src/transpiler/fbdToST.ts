@@ -462,7 +462,17 @@ function generateBlockCode(
           fbInputs.push(`${port} := ${getInput(port)}`);
         }
         
-        return `${block.instanceName}(${fbInputs.join(', ')});`;
+        // Generate FB call
+        const lines: string[] = [];
+        lines.push(`${block.instanceName}(${fbInputs.join(', ')});`);
+        
+        // Assign FB outputs to temp variables
+        // This is CRITICAL - consumers reference temp vars, not FB.output directly
+        for (const output of outputs) {
+          lines.push(`${output.tempVar} := ${block.instanceName}.${output.port};`);
+        }
+        
+        return lines.join('\n');
       }
       
       return `(* Unknown block type: ${block.type} *)`;

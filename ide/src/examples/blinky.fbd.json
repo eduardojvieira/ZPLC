@@ -1,8 +1,8 @@
 {
   "$schema": "./schemas/fbd.schema.json",
   "name": "Blinky",
-  "description": "ZPLC Blinky - Function Block Diagram with oscillating timer",
-  "version": "2.0.0",
+  "description": "ZPLC Blinky - Function Block Diagram with timer feedback",
+  "version": "2.1.0",
 
   "variables": {
     "local": [],
@@ -11,30 +11,41 @@
         "name": "LED_Output",
         "type": "BOOL",
         "address": "%Q0.0",
-        "comment": "Physical LED output"
+        "comment": "Physical LED output - follows timer.Q directly"
       }
     ]
   },
 
   "blocks": [
     {
-      "id": "not_feedback",
+      "id": "var_led_read",
+      "type": "variable",
+      "variableName": "LED_Output",
+      "direction": "read",
+      "position": { "x": 50, "y": 50 },
+      "outputs": [
+        { "name": "OUT", "type": "BOOL" }
+      ],
+      "comment": "Read current LED output state"
+    },
+    {
+      "id": "not_enable",
       "type": "NOT",
-      "position": { "x": 50, "y": 80 },
+      "position": { "x": 150, "y": 50 },
       "inputs": [
         { "name": "IN", "type": "BOOL" }
       ],
       "outputs": [
         { "name": "OUT", "type": "BOOL" }
       ],
-      "comment": "Invert LED_Output for timer enable"
+      "comment": "Invert: timer runs when LED is OFF"
     },
     {
       "id": "const_500ms",
       "type": "constant",
       "dataType": "TIME",
       "value": "T#500ms",
-      "position": { "x": 50, "y": 150 },
+      "position": { "x": 150, "y": 120 },
       "outputs": [
         { "name": "OUT", "type": "TIME" }
       ]
@@ -43,7 +54,7 @@
       "id": "ton_timer",
       "type": "TON",
       "instanceName": "BlinkTimer",
-      "position": { "x": 200, "y": 80 },
+      "position": { "x": 280, "y": 50 },
       "inputs": [
         { "name": "IN", "type": "BOOL" },
         { "name": "PT", "type": "TIME" }
@@ -58,7 +69,7 @@
       "id": "output_led",
       "type": "output",
       "variableName": "LED_Output",
-      "position": { "x": 400, "y": 80 },
+      "position": { "x": 420, "y": 50 },
       "inputs": [
         { "name": "IN", "type": "BOOL" }
       ],
@@ -68,23 +79,22 @@
 
   "connections": [
     {
-      "id": "conn_feedback",
-      "from": { "block": "output_led", "port": "IN" },
-      "to": { "block": "not_feedback", "port": "IN" },
-      "comment": "Feedback loop: LED state inverted to timer input"
+      "id": "conn_led_to_not",
+      "from": { "block": "var_led_read", "port": "OUT" },
+      "to": { "block": "not_enable", "port": "IN" }
     },
     {
-      "id": "conn_timer_in",
-      "from": { "block": "not_feedback", "port": "OUT" },
+      "id": "conn_not_to_timer",
+      "from": { "block": "not_enable", "port": "OUT" },
       "to": { "block": "ton_timer", "port": "IN" }
     },
     {
-      "id": "conn_timer_pt",
+      "id": "conn_pt_to_timer",
       "from": { "block": "const_500ms", "port": "OUT" },
       "to": { "block": "ton_timer", "port": "PT" }
     },
     {
-      "id": "conn_timer_out",
+      "id": "conn_timer_to_led",
       "from": { "block": "ton_timer", "port": "Q" },
       "to": { "block": "output_led", "port": "IN" }
     }
@@ -96,14 +106,15 @@
     "iecStandard": "IEC 61131-3",
     "notes": [
       "Classic oscillator pattern in FBD:",
-      "1. NOT block inverts LED_Output to create enable signal",
-      "2. TON timer runs when enable is TRUE (LED is OFF)",
-      "3. When timer.Q becomes TRUE, LED_Output turns ON",
-      "4. LED ON -> NOT output FALSE -> timer resets -> LED OFF",
-      "5. LED OFF -> NOT output TRUE -> timer starts again",
+      "1. Read LED_Output state",
+      "2. NOT block inverts it (timer enabled when LED is OFF)",
+      "3. TON timer counts when enabled",
+      "4. When timer.Q = TRUE, LED turns ON",
+      "5. LED ON → NOT output FALSE → timer resets → LED OFF",
+      "6. Cycle repeats",
       "",
-      "The feedback connection from output_led back to not_feedback",
-      "creates the oscillation loop."
+      "Note: This reads LED_Output as input, which the transpiler",
+      "handles by using the variable value from the previous cycle."
     ]
   }
 }
