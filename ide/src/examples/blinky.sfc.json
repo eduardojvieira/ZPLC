@@ -1,18 +1,11 @@
 {
   "$schema": "./schemas/sfc.schema.json",
   "name": "Blinky",
-  "description": "ZPLC Golden Standard - Blinky in Sequential Function Chart (SFC)",
-  "version": "1.0.0",
+  "description": "ZPLC Blinky - Sequential Function Chart with timed steps",
+  "version": "2.0.0",
   
   "variables": {
-    "local": [
-      {
-        "name": "LedState",
-        "type": "BOOL",
-        "initialValue": false,
-        "comment": "Current LED state"
-      }
-    ],
+    "local": [],
     "outputs": [
       {
         "name": "LED_Output",
@@ -25,28 +18,15 @@
 
   "steps": [
     {
-      "id": "step_init",
-      "name": "Init",
+      "id": "step_led_on",
+      "name": "LED_ON",
       "isInitial": true,
       "position": { "x": 200, "y": 50 },
       "actions": [
         {
           "qualifier": "N",
-          "actionName": "LED_OFF",
-          "comment": "Ensure LED starts OFF"
-        }
-      ]
-    },
-    {
-      "id": "step_led_on",
-      "name": "LED_ON",
-      "isInitial": false,
-      "position": { "x": 200, "y": 250 },
-      "actions": [
-        {
-          "qualifier": "N",
           "actionName": "SET_LED_ON",
-          "comment": "Turn LED ON"
+          "comment": "Turn LED ON while in this step"
         }
       ]
     },
@@ -54,12 +34,12 @@
       "id": "step_led_off",
       "name": "LED_OFF", 
       "isInitial": false,
-      "position": { "x": 200, "y": 450 },
+      "position": { "x": 200, "y": 250 },
       "actions": [
         {
           "qualifier": "N",
           "actionName": "SET_LED_OFF",
-          "comment": "Turn LED OFF"
+          "comment": "Turn LED OFF while in this step"
         }
       ]
     }
@@ -67,20 +47,12 @@
 
   "transitions": [
     {
-      "id": "trans_init_to_on",
-      "fromStep": "step_init",
-      "toStep": "step_led_on",
-      "condition": "TRUE",
-      "comment": "Immediately transition to ON state",
-      "position": { "x": 200, "y": 150 }
-    },
-    {
       "id": "trans_on_to_off",
       "fromStep": "step_led_on",
       "toStep": "step_led_off",
       "condition": "step_led_on.T >= T#500ms",
       "comment": "After 500ms in ON state, transition to OFF",
-      "position": { "x": 200, "y": 350 }
+      "position": { "x": 200, "y": 150 }
     },
     {
       "id": "trans_off_to_on",
@@ -88,7 +60,7 @@
       "toStep": "step_led_on",
       "condition": "step_led_off.T >= T#500ms",
       "comment": "After 500ms in OFF state, transition to ON",
-      "position": { "x": 400, "y": 350 }
+      "position": { "x": 200, "y": 350 }
     }
   ],
 
@@ -97,30 +69,26 @@
       "id": "SET_LED_ON",
       "name": "SET_LED_ON",
       "type": "ST",
-      "body": "LedState := TRUE;\nLED_Output := LedState;"
+      "body": "LED_Output := TRUE;"
     },
     {
       "id": "SET_LED_OFF",
       "name": "SET_LED_OFF",
       "type": "ST",
-      "body": "LedState := FALSE;\nLED_Output := LedState;"
-    },
-    {
-      "id": "LED_OFF",
-      "name": "LED_OFF",
-      "type": "ST",
-      "body": "LedState := FALSE;\nLED_Output := FALSE;"
+      "body": "LED_Output := FALSE;"
     }
   ],
 
   "metadata": {
     "author": "ZPLC Team",
-    "created": "2024-12-23",
+    "created": "2024-12-27",
     "iecStandard": "IEC 61131-3",
     "notes": [
-      "SFC step timing uses implicit .T property",
-      "Action qualifiers: N=Non-stored, S=Set, R=Reset, L=Time Limited, D=Time Delayed",
-      "This example uses the simplest N (Non-stored) qualifier"
+      "Simple 2-state blinky using SFC:",
+      "- LED_ON step: LED is ON, waits 500ms, transitions to LED_OFF",
+      "- LED_OFF step: LED is OFF, waits 500ms, transitions to LED_ON",
+      "- step.T is the elapsed time in the current step",
+      "- Initial step is LED_ON, so LED starts ON"
     ]
   }
 }

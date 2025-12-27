@@ -1,18 +1,11 @@
 {
   "$schema": "./schemas/fbd.schema.json",
   "name": "Blinky",
-  "description": "ZPLC Golden Standard - Blinky in Function Block Diagram (FBD)",
-  "version": "1.0.0",
+  "description": "ZPLC Blinky - Function Block Diagram with oscillating timer",
+  "version": "2.0.0",
 
   "variables": {
-    "local": [
-      {
-        "name": "LedState",
-        "type": "BOOL",
-        "initialValue": false,
-        "comment": "Current LED state (toggle memory)"
-      }
-    ],
+    "local": [],
     "outputs": [
       {
         "name": "LED_Output",
@@ -25,21 +18,23 @@
 
   "blocks": [
     {
-      "id": "const_true",
-      "type": "constant",
-      "dataType": "BOOL",
-      "value": true,
-      "position": { "x": 50, "y": 50 },
+      "id": "not_feedback",
+      "type": "NOT",
+      "position": { "x": 50, "y": 80 },
+      "inputs": [
+        { "name": "IN", "type": "BOOL" }
+      ],
       "outputs": [
         { "name": "OUT", "type": "BOOL" }
-      ]
+      ],
+      "comment": "Invert LED_Output for timer enable"
     },
     {
       "id": "const_500ms",
       "type": "constant",
       "dataType": "TIME",
       "value": "T#500ms",
-      "position": { "x": 50, "y": 120 },
+      "position": { "x": 50, "y": 150 },
       "outputs": [
         { "name": "OUT", "type": "TIME" }
       ]
@@ -48,7 +43,7 @@
       "id": "ton_timer",
       "type": "TON",
       "instanceName": "BlinkTimer",
-      "position": { "x": 200, "y": 50 },
+      "position": { "x": 200, "y": 80 },
       "inputs": [
         { "name": "IN", "type": "BOOL" },
         { "name": "PT", "type": "TIME" }
@@ -57,173 +52,58 @@
         { "name": "Q", "type": "BOOL" },
         { "name": "ET", "type": "TIME" }
       ],
-      "comment": "500ms timer for blink rate"
-    },
-    {
-      "id": "r_trig",
-      "type": "R_TRIG",
-      "instanceName": "EdgeDetect",
-      "position": { "x": 380, "y": 50 },
-      "inputs": [
-        { "name": "CLK", "type": "BOOL" }
-      ],
-      "outputs": [
-        { "name": "Q", "type": "BOOL" }
-      ],
-      "comment": "Rising edge detection on timer output"
-    },
-    {
-      "id": "sr_latch",
-      "type": "SR",
-      "instanceName": "LedLatch",
-      "position": { "x": 550, "y": 50 },
-      "inputs": [
-        { "name": "S1", "type": "BOOL" },
-        { "name": "R", "type": "BOOL" }
-      ],
-      "outputs": [
-        { "name": "Q1", "type": "BOOL" }
-      ],
-      "comment": "Toggle logic using SR latch"
-    },
-    {
-      "id": "not_gate",
-      "type": "NOT",
-      "position": { "x": 380, "y": 150 },
-      "inputs": [
-        { "name": "IN", "type": "BOOL" }
-      ],
-      "outputs": [
-        { "name": "OUT", "type": "BOOL" }
-      ],
-      "comment": "Invert current state for toggle"
-    },
-    {
-      "id": "and_set",
-      "type": "AND",
-      "position": { "x": 480, "y": 50 },
-      "inputs": [
-        { "name": "IN1", "type": "BOOL" },
-        { "name": "IN2", "type": "BOOL" }
-      ],
-      "outputs": [
-        { "name": "OUT", "type": "BOOL" }
-      ],
-      "comment": "Set condition: edge AND NOT current state"
-    },
-    {
-      "id": "and_reset",
-      "type": "AND",
-      "position": { "x": 480, "y": 120 },
-      "inputs": [
-        { "name": "IN1", "type": "BOOL" },
-        { "name": "IN2", "type": "BOOL" }
-      ],
-      "outputs": [
-        { "name": "OUT", "type": "BOOL" }
-      ],
-      "comment": "Reset condition: edge AND current state"
-    },
-    {
-      "id": "var_ledstate",
-      "type": "variable",
-      "variableName": "LedState",
-      "position": { "x": 300, "y": 200 },
-      "inputs": [
-        { "name": "IN", "type": "BOOL" }
-      ],
-      "outputs": [
-        { "name": "OUT", "type": "BOOL" }
-      ],
-      "comment": "Feedback: current LED state"
+      "comment": "500ms on-delay timer"
     },
     {
       "id": "output_led",
       "type": "output",
       "variableName": "LED_Output",
-      "position": { "x": 700, "y": 50 },
+      "position": { "x": 400, "y": 80 },
       "inputs": [
         { "name": "IN", "type": "BOOL" }
       ],
-      "comment": "Physical output to LED"
+      "comment": "Physical LED output"
     }
   ],
 
   "connections": [
     {
-      "id": "conn_1",
-      "from": { "block": "const_true", "port": "OUT" },
+      "id": "conn_feedback",
+      "from": { "block": "output_led", "port": "IN" },
+      "to": { "block": "not_feedback", "port": "IN" },
+      "comment": "Feedback loop: LED state inverted to timer input"
+    },
+    {
+      "id": "conn_timer_in",
+      "from": { "block": "not_feedback", "port": "OUT" },
       "to": { "block": "ton_timer", "port": "IN" }
     },
     {
-      "id": "conn_2",
+      "id": "conn_timer_pt",
       "from": { "block": "const_500ms", "port": "OUT" },
       "to": { "block": "ton_timer", "port": "PT" }
     },
     {
-      "id": "conn_3",
+      "id": "conn_timer_out",
       "from": { "block": "ton_timer", "port": "Q" },
-      "to": { "block": "r_trig", "port": "CLK" }
-    },
-    {
-      "id": "conn_4",
-      "from": { "block": "r_trig", "port": "Q" },
-      "to": { "block": "and_set", "port": "IN1" }
-    },
-    {
-      "id": "conn_5",
-      "from": { "block": "r_trig", "port": "Q" },
-      "to": { "block": "and_reset", "port": "IN1" }
-    },
-    {
-      "id": "conn_6",
-      "from": { "block": "var_ledstate", "port": "OUT" },
-      "to": { "block": "not_gate", "port": "IN" }
-    },
-    {
-      "id": "conn_7",
-      "from": { "block": "not_gate", "port": "OUT" },
-      "to": { "block": "and_set", "port": "IN2" }
-    },
-    {
-      "id": "conn_8",
-      "from": { "block": "var_ledstate", "port": "OUT" },
-      "to": { "block": "and_reset", "port": "IN2" }
-    },
-    {
-      "id": "conn_9",
-      "from": { "block": "and_set", "port": "OUT" },
-      "to": { "block": "sr_latch", "port": "S1" }
-    },
-    {
-      "id": "conn_10",
-      "from": { "block": "and_reset", "port": "OUT" },
-      "to": { "block": "sr_latch", "port": "R" }
-    },
-    {
-      "id": "conn_11",
-      "from": { "block": "sr_latch", "port": "Q1" },
-      "to": { "block": "var_ledstate", "port": "IN" }
-    },
-    {
-      "id": "conn_12",
-      "from": { "block": "sr_latch", "port": "Q1" },
       "to": { "block": "output_led", "port": "IN" }
     }
   ],
 
   "metadata": {
     "author": "ZPLC Team",
-    "created": "2024-12-23",
+    "created": "2024-12-27",
     "iecStandard": "IEC 61131-3",
-    "blockCategories": {
-      "logic": ["AND", "OR", "NOT", "XOR", "NAND", "NOR"],
-      "timers": ["TON", "TOF", "TP"],
-      "counters": ["CTU", "CTD", "CTUD"],
-      "triggers": ["R_TRIG", "F_TRIG"],
-      "bistables": ["SR", "RS"],
-      "comparison": ["EQ", "NE", "LT", "LE", "GT", "GE"],
-      "math": ["ADD", "SUB", "MUL", "DIV", "MOD", "ABS"]
-    }
+    "notes": [
+      "Classic oscillator pattern in FBD:",
+      "1. NOT block inverts LED_Output to create enable signal",
+      "2. TON timer runs when enable is TRUE (LED is OFF)",
+      "3. When timer.Q becomes TRUE, LED_Output turns ON",
+      "4. LED ON -> NOT output FALSE -> timer resets -> LED OFF",
+      "5. LED OFF -> NOT output TRUE -> timer starts again",
+      "",
+      "The feedback connection from output_led back to not_feedback",
+      "creates the oscillation loop."
+    ]
   }
 }

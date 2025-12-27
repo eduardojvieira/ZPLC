@@ -31,6 +31,21 @@ import { getFB } from './stdlib/index.ts';
 import type { CodeGenContext } from './stdlib/types.ts';
 
 // ============================================================================
+// Memory Layout Constants
+// ============================================================================
+
+/**
+ * Reserved address for the "already initialized" flag.
+ * Located at the last byte of work memory to avoid conflicts with user variables.
+ * Work memory: 0x2000-0x3FFF (8KB), so we use 0x3FFF.
+ *
+ * This flag ensures variable initialization only runs on the first cycle.
+ * The VM resets PC to 0 each cycle, so without this guard, all variables
+ * would be reset to initial values every scan cycle.
+ */
+const INIT_FLAG_ADDR = 0x3FFF;
+
+// ============================================================================
 // Code Generator
 // ============================================================================
 
@@ -71,8 +86,20 @@ export function generate(program: Program): string {
     emit(state, `; === Program Entry ===`);
     emit(state, `_start:`);
 
+    // Check if already initialized - skip to _cycle if so
+    // This is critical because run_cycle() resets PC=0 each scan
+    emit(state, `    ; Check if already initialized`);
+    emit(state, `    LOAD8 ${formatAddress(INIT_FLAG_ADDR)}    ; _initialized flag`);
+    emit(state, `    JNZ _cycle                  ; Skip init if already done`);
+
     // Emit initialization for variables with initial values
     emitInitialization(state, program);
+
+    // Set initialization flag
+    emit(state, ``);
+    emit(state, `    ; Mark as initialized`);
+    emit(state, `    PUSH8 1`);
+    emit(state, `    STORE8 ${formatAddress(INIT_FLAG_ADDR)}`);
 
     // Emit main loop label (for cyclic execution)
     emit(state, ``);
@@ -114,6 +141,10 @@ function formatAddress(addr: number): string {
 
 function emitMemoryMap(state: CodeGenState): void {
     emit(state, `; === Memory Map ===`);
+    
+    // Document the reserved init flag
+    emit(state, `; ${formatAddress(INIT_FLAG_ADDR)}: _initialized (BOOL, 1 byte) [RESERVED]`);
+    
     for (const sym of state.symbols.all()) {
         const addrHex = formatAddress(sym.address);
         emit(state, `; ${addrHex}: ${sym.name} (${sym.dataType}, ${sym.size} bytes)`);

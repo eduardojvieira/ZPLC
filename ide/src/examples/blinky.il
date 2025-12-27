@@ -1,19 +1,15 @@
 (* ============================================================================
- * ZPLC Golden Standard - Blinky in Instruction List (IL)
+ * ZPLC Blinky - Instruction List (IL)
  * ============================================================================
  * IEC 61131-3 Instruction List implementation of a simple LED blinker.
  * 
- * IL is a low-level, assembly-like language. Each instruction operates on
- * an implicit "Current Result" (CR) register.
- * 
- * This program toggles output Q0.0 based on a timer.
+ * This uses the same oscillating timer pattern as the LD and FBD versions:
+ * Timer runs when LED is OFF, sets LED when done, which resets timer.
  * ============================================================================ *)
 
 PROGRAM Blinky
 VAR
     BlinkTimer : TON;
-    LedState : BOOL := FALSE;
-    TimerDone : BOOL;
 END_VAR
 
 VAR_OUTPUT
@@ -24,60 +20,50 @@ END_VAR
  * Instruction List Code
  * ============================================================================
  * 
- * Operators:
- *   LD   - Load value into CR
+ * IL Operators used:
+ *   LD   - Load value into Current Result (CR)
+ *   LDN  - Load negated value into CR
  *   ST   - Store CR to variable
- *   AND  - Logical AND with CR
- *   OR   - Logical OR with CR
- *   NOT  - Negate CR
- *   S    - Set (latch) if CR is TRUE
- *   R    - Reset (unlatch) if CR is TRUE
  *   CAL  - Call function block
- *   JMP  - Unconditional jump
- *   JMPC - Jump if CR is TRUE
- *   RET  - Return
  * ============================================================================ *)
 
-        (* Call the timer function block *)
+        (* Step 1: Call timer with inverted output as enable *)
+        (* Timer runs when LED_Output is FALSE *)
+        LDN     LED_Output
+        ST      BlinkTimer.IN
+        
         CAL     BlinkTimer(
-                    IN := TRUE,
                     PT := T#500ms
                 )
         
-        (* Load timer done flag *)
+        (* Step 2: Output = Timer.Q *)
+        (* When timer done, LED turns ON, which resets timer *)
         LD      BlinkTimer.Q
-        ST      TimerDone
-        
-        (* If timer not done, skip toggle *)
-        JMPCN   END_TOGGLE
-        
-        (* Toggle LED state: LedState := NOT LedState *)
-        LD      LedState
-        NOT
-        ST      LedState
-        
-        (* Reset timer *)
-        CAL     BlinkTimer(IN := FALSE)
-
-END_TOGGLE:
-        (* Output the LED state *)
-        LD      LedState
         ST      LED_Output
-        
-        RET
 
 END_PROGRAM
 
 (* ============================================================================
- * IL to ZPLC Bytecode Mapping:
+ * How it works:
  * 
- * LD      -> LOAD8/16/32 (depending on type)
- * ST      -> STORE8/16/32
- * NOT     -> NOT opcode
- * AND     -> AND opcode
- * OR      -> OR opcode
- * JMPC    -> JNZ (jump if not zero)
- * JMPCN   -> JZ (jump if zero)
- * CAL     -> CALL to FB entry point
- * RET     -> RET opcode
+ * Cycle 1: LED_Output=FALSE
+ *   - LDN LED_Output -> CR = TRUE (inverted FALSE)
+ *   - ST BlinkTimer.IN -> Timer enabled
+ *   - Timer starts counting
+ *   - LD BlinkTimer.Q -> CR = FALSE (not done yet)
+ *   - ST LED_Output -> LED stays OFF
+ * 
+ * After 500ms: LED_Output=FALSE, BlinkTimer.Q=TRUE
+ *   - LDN LED_Output -> CR = TRUE
+ *   - Timer still enabled, Q=TRUE
+ *   - LD BlinkTimer.Q -> CR = TRUE
+ *   - ST LED_Output -> LED turns ON
+ * 
+ * Next cycle: LED_Output=TRUE
+ *   - LDN LED_Output -> CR = FALSE (inverted TRUE)
+ *   - ST BlinkTimer.IN -> Timer disabled, resets
+ *   - LD BlinkTimer.Q -> CR = FALSE (timer reset)
+ *   - ST LED_Output -> LED turns OFF
+ * 
+ * And the cycle repeats...
  * ============================================================================ *)

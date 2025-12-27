@@ -1,14 +1,10 @@
 (* ============================================================================
- * ZPLC Golden Standard - Blinky in Structured Text (ST)
+ * ZPLC Blinky - Structured Text (ST)
  * ============================================================================
  * IEC 61131-3 Structured Text implementation of a simple LED blinker.
  * 
- * This program toggles an output (Q0.0) every 500ms.
- * It demonstrates:
- *   - Variable declarations with types
- *   - Timer function blocks (TON)
- *   - IF/ELSE conditional logic
- *   - Boolean negation
+ * This program toggles an output (Q0.0) every 500ms using a timer and
+ * state variable approach for equal ON/OFF times.
  * ============================================================================ *)
 
 PROGRAM Blinky
@@ -18,9 +14,6 @@ VAR
     
     (* LED state: TRUE = ON, FALSE = OFF *)
     LedState : BOOL := FALSE;
-    
-    (* Blink interval in milliseconds *)
-    BlinkInterval : TIME := T#500ms;
 END_VAR
 
 VAR_OUTPUT
@@ -32,16 +25,16 @@ END_VAR
  * Main Program Logic
  * ============================================================================ *)
 
-(* Start the timer with current LED state as trigger *)
-BlinkTimer(IN := TRUE, PT := BlinkInterval);
+(* Run timer continuously *)
+BlinkTimer(IN := TRUE, PT := T#500ms);
 
-(* When timer expires, toggle the LED *)
+(* When timer expires, toggle the LED and reset timer *)
 IF BlinkTimer.Q THEN
-    (* Toggle LED state *)
+    (* Toggle LED state using NOT *)
     LedState := NOT LedState;
     
-    (* Reset timer by retriggering *)
-    BlinkTimer(IN := FALSE);
+    (* Reset timer by disabling then re-enabling *)
+    BlinkTimer(IN := FALSE, PT := T#500ms);
 END_IF;
 
 (* Write LED state to physical output *)
@@ -50,11 +43,16 @@ LED_Output := LedState;
 END_PROGRAM
 
 (* ============================================================================
- * Expected Compilation to ZPLC Bytecode:
+ * How it works:
  * 
- * The compiler should generate:
- * 1. Timer FB instance in Work Memory
- * 2. Cyclic read of timer output
- * 3. Conditional toggle of LedState
- * 4. Store to OPI[0] bit 0
+ * 1. Timer runs continuously with IN := TRUE
+ * 2. After 500ms, Timer.Q becomes TRUE
+ * 3. IF block detects Timer.Q and:
+ *    - Toggles LedState (FALSE -> TRUE or TRUE -> FALSE)
+ *    - Resets timer by calling with IN := FALSE
+ * 4. Next scan: Timer.Q is FALSE, IF block skipped
+ * 5. Timer restarts counting (IN := TRUE on first line)
+ * 6. After another 500ms, repeat from step 2
+ * 
+ * Result: LED toggles every 500ms (1Hz blink rate with 50% duty cycle)
  * ============================================================================ *)

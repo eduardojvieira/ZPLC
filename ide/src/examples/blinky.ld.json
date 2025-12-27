@@ -1,8 +1,8 @@
 {
   "$schema": "./schemas/ld.schema.json",
   "name": "Blinky",
-  "description": "ZPLC Golden Standard - Blinky in Ladder Diagram (LD)",
-  "version": "1.0.0",
+  "description": "ZPLC Blinky - Ladder Diagram with oscillating timer pattern",
+  "version": "2.0.0",
 
   "variables": {
     "local": [
@@ -10,18 +10,6 @@
         "name": "BlinkTimer",
         "type": "TON",
         "comment": "Timer for 500ms blink interval"
-      },
-      {
-        "name": "TimerDone",
-        "type": "BOOL",
-        "initialValue": false,
-        "comment": "Timer output pulse"
-      },
-      {
-        "name": "LedState",
-        "type": "BOOL",
-        "initialValue": false,
-        "comment": "LED latch state"
       }
     ],
     "outputs": [
@@ -38,19 +26,23 @@
     {
       "id": "rung_1",
       "number": 1,
-      "comment": "Timer Network - Generate 500ms pulse train",
+      "comment": "Oscillating Timer - runs when output is OFF, times 500ms",
+      "grid": [
+        [
+          { "element": { "id": "rail_left_1", "type": "left_rail" } },
+          { "element": { "id": "nc_output", "type": "contact_nc", "variable": "LED_Output" } },
+          { "element": { "id": "ton_blink", "type": "function_block", "fbType": "TON", "instance": "BlinkTimer", "parameters": { "IN": "CONNECTED", "PT": "T#500ms" } } },
+          { "element": { "id": "rail_right_1", "type": "right_rail" } }
+        ]
+      ],
       "elements": [
+        { "id": "rail_left_1", "type": "left_rail", "position": { "x": 0, "y": 0 } },
         {
-          "id": "rail_left_1",
-          "type": "left_rail",
-          "position": { "x": 0, "y": 0 }
-        },
-        {
-          "id": "nc_timer",
+          "id": "nc_output",
           "type": "contact_nc",
-          "variable": "TimerDone",
+          "variable": "LED_Output",
           "position": { "x": 100, "y": 0 },
-          "comment": "When timer done, this opens to reset"
+          "comment": "NC: passes power when LED is OFF"
         },
         {
           "id": "ton_blink",
@@ -61,157 +53,69 @@
           "parameters": {
             "IN": "CONNECTED",
             "PT": "T#500ms"
-          },
-          "outputs": {
-            "Q": "TimerDone"
           }
         },
-        {
-          "id": "rail_right_1",
-          "type": "right_rail",
-          "position": { "x": 450, "y": 0 }
-        }
+        { "id": "rail_right_1", "type": "right_rail", "position": { "x": 450, "y": 0 } }
       ],
       "connections": [
-        { "from": "rail_left_1", "to": "nc_timer" },
-        { "from": "nc_timer", "to": "ton_blink.IN" },
-        { "from": "ton_blink.Q", "to": "rail_right_1" }
+        { "from": "rail_left_1", "to": "nc_output" },
+        { "from": "nc_output", "to": "ton_blink.IN" }
       ]
     },
     {
-      "id": "rung_2", 
+      "id": "rung_2",
       "number": 2,
-      "comment": "Toggle Network - Toggle LED on each timer pulse",
+      "comment": "LED Output - SET when timer done, self-resets when timer restarts",
+      "grid": [
+        [
+          { "element": { "id": "rail_left_2", "type": "left_rail" } },
+          { "element": { "id": "timer_done", "type": "contact_no", "variable": "BlinkTimer.Q" } },
+          { "element": { "id": "coil_led", "type": "coil", "variable": "LED_Output" } },
+          { "element": { "id": "rail_right_2", "type": "right_rail" } }
+        ]
+      ],
       "elements": [
+        { "id": "rail_left_2", "type": "left_rail", "position": { "x": 0, "y": 100 } },
         {
-          "id": "rail_left_2",
-          "type": "left_rail",
-          "position": { "x": 0, "y": 100 }
-        },
-        {
-          "id": "contact_done",
+          "id": "timer_done",
           "type": "contact_no",
-          "variable": "TimerDone",
+          "variable": "BlinkTimer.Q",
           "position": { "x": 100, "y": 100 },
-          "comment": "Rising edge of timer done"
+          "comment": "Timer expired?"
         },
         {
-          "id": "contact_led_off",
-          "type": "contact_nc",
-          "variable": "LedState",
-          "position": { "x": 200, "y": 100 },
-          "comment": "If LED is currently OFF..."
-        },
-        {
-          "id": "coil_set_led",
-          "type": "coil_set",
-          "variable": "LedState",
-          "position": { "x": 350, "y": 100 },
-          "comment": "...SET the LED latch"
-        },
-        {
-          "id": "rail_right_2",
-          "type": "right_rail",
-          "position": { "x": 450, "y": 100 }
-        }
-      ],
-      "connections": [
-        { "from": "rail_left_2", "to": "contact_done" },
-        { "from": "contact_done", "to": "contact_led_off" },
-        { "from": "contact_led_off", "to": "coil_set_led" },
-        { "from": "coil_set_led", "to": "rail_right_2" }
-      ]
-    },
-    {
-      "id": "rung_3",
-      "number": 3,
-      "comment": "Reset Network - Reset LED when timer done and LED is ON",
-      "elements": [
-        {
-          "id": "rail_left_3",
-          "type": "left_rail",
-          "position": { "x": 0, "y": 200 }
-        },
-        {
-          "id": "contact_done_3",
-          "type": "contact_no",
-          "variable": "TimerDone",
-          "position": { "x": 100, "y": 200 }
-        },
-        {
-          "id": "contact_led_on",
-          "type": "contact_no",
-          "variable": "LedState",
-          "position": { "x": 200, "y": 200 },
-          "comment": "If LED is currently ON..."
-        },
-        {
-          "id": "coil_reset_led",
-          "type": "coil_reset",
-          "variable": "LedState",
-          "position": { "x": 350, "y": 200 },
-          "comment": "...RESET the LED latch"
-        },
-        {
-          "id": "rail_right_3",
-          "type": "right_rail",
-          "position": { "x": 450, "y": 200 }
-        }
-      ],
-      "connections": [
-        { "from": "rail_left_3", "to": "contact_done_3" },
-        { "from": "contact_done_3", "to": "contact_led_on" },
-        { "from": "contact_led_on", "to": "coil_reset_led" },
-        { "from": "coil_reset_led", "to": "rail_right_3" }
-      ]
-    },
-    {
-      "id": "rung_4",
-      "number": 4,
-      "comment": "Output Network - Drive physical LED from latch",
-      "elements": [
-        {
-          "id": "rail_left_4",
-          "type": "left_rail",
-          "position": { "x": 0, "y": 300 }
-        },
-        {
-          "id": "contact_state",
-          "type": "contact_no",
-          "variable": "LedState",
-          "position": { "x": 100, "y": 300 }
-        },
-        {
-          "id": "coil_output",
+          "id": "coil_led",
           "type": "coil",
           "variable": "LED_Output",
-          "position": { "x": 350, "y": 300 }
+          "position": { "x": 350, "y": 100 },
+          "comment": "Drive LED directly from timer.Q"
         },
-        {
-          "id": "rail_right_4",
-          "type": "right_rail",
-          "position": { "x": 450, "y": 300 }
-        }
+        { "id": "rail_right_2", "type": "right_rail", "position": { "x": 450, "y": 100 } }
       ],
       "connections": [
-        { "from": "rail_left_4", "to": "contact_state" },
-        { "from": "contact_state", "to": "coil_output" },
-        { "from": "coil_output", "to": "rail_right_4" }
+        { "from": "rail_left_2", "to": "timer_done" },
+        { "from": "timer_done", "to": "coil_led" },
+        { "from": "coil_led", "to": "rail_right_2" }
       ]
     }
   ],
 
   "metadata": {
     "author": "ZPLC Team",
-    "created": "2024-12-23",
+    "created": "2024-12-27",
     "iecStandard": "IEC 61131-3",
-    "elementTypes": {
-      "contact_no": "Normally Open Contact (examines ON)",
-      "contact_nc": "Normally Closed Contact (examines OFF)",
-      "coil": "Standard Coil (output)",
-      "coil_set": "Set/Latch Coil (S)",
-      "coil_reset": "Reset/Unlatch Coil (R)",
-      "function_block": "Timer, Counter, or other FB"
-    }
+    "notes": [
+      "This is a classic PLC oscillator pattern:",
+      "1. Rung 1: Timer runs while LED_Output is FALSE (NC contact passes power)",
+      "2. When timer.Q becomes TRUE, Rung 2 turns LED_Output ON",
+      "3. LED_Output ON opens the NC contact in Rung 1, resetting timer",
+      "4. Timer resets (Q=FALSE), Rung 2 turns LED_Output OFF",
+      "5. LED_Output OFF closes NC contact, timer starts again",
+      "Result: LED toggles every 500ms",
+      "",
+      "This pattern avoids race conditions because:",
+      "- Only ONE coil assignment to LED_Output exists",
+      "- The feedback loop naturally creates the oscillation"
+    ]
   }
 }

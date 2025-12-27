@@ -620,7 +620,6 @@ describe('Blinky Golden Test', () => {
         // Memory layout assertions
         expect(asm).toMatch(/0x20[0-9a-f]{2}.*BlinkTimer/i);
         expect(asm).toMatch(/0x20[0-9a-f]{2}.*LedState/i);
-        expect(asm).toMatch(/0x20[0-9a-f]{2}.*BlinkInterval/i);
         expect(asm).toMatch(/0x1000.*LED_Output/i);
 
         // Timer call
