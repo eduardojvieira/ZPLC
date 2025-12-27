@@ -97,15 +97,22 @@ export class SymbolTable {
         // Determine address based on section and I/O mapping
         if (decl.ioAddress) {
             // I/O mapped variable
+            // For BOOL: each bit address gets its own byte (wastes memory but simplifies logic)
+            // For larger types: use byte offset directly
+            const isBool = decl.dataType === 'BOOL';
+            const offset = isBool 
+                ? decl.ioAddress.byteOffset * 8 + decl.ioAddress.bitOffset  // Spread bits across bytes
+                : decl.ioAddress.byteOffset;
+            
             if (decl.ioAddress.type === 'I') {
-                // Input: IPI base + byte offset
-                address = MemoryLayout.IPI_BASE + decl.ioAddress.byteOffset;
+                // Input: IPI base + offset
+                address = MemoryLayout.IPI_BASE + offset;
             } else if (decl.ioAddress.type === 'Q') {
-                // Output: OPI base + byte offset
-                address = MemoryLayout.OPI_BASE + decl.ioAddress.byteOffset;
+                // Output: OPI base + offset
+                address = MemoryLayout.OPI_BASE + offset;
             } else {
-                // Memory: Work base + byte offset
-                address = MemoryLayout.WORK_BASE + decl.ioAddress.byteOffset;
+                // Memory: Work base + offset
+                address = MemoryLayout.WORK_BASE + offset;
             }
         } else {
             // Regular variable: allocate in work memory

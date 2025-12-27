@@ -34,75 +34,38 @@ interface TranspileResult {
 // Grid Analysis Helpers
 // =============================================================================
 
+import type { LDBranch } from '../models/ld';
+
 /**
- * Represents a "branch" - a horizontal path through the rung
+ * Element with its position in the grid
  */
-interface Branch {
+interface PositionedElement {
+  element: LDElement;
   row: number;
-  elements: LDElement[];
+  col: number;
 }
 
 /**
- * Analyze the grid to extract branches and their OR relationships
+ * Collect all contacts from the grid with their positions
  */
-function analyzeGrid(rung: LDRung): { branches: Branch[]; orGroups: number[][] } {
-  if (!rung.grid || rung.grid.length === 0) {
-    return { branches: [], orGroups: [] };
-  }
+function collectContacts(rung: LDRung): PositionedElement[] {
+  const contacts: PositionedElement[] = [];
   
-  const branches: Branch[] = [];
+  if (!rung.grid) return contacts;
   
-  // Extract elements from each row
   rung.grid.forEach((row, rowIdx) => {
-    const elements: LDElement[] = [];
-    row.forEach(cell => {
-      if (cell.element) {
-        elements.push(cell.element);
+    row.forEach((cell, colIdx) => {
+      if (cell.element && isContact(cell.element.type)) {
+        contacts.push({
+          element: cell.element,
+          row: rowIdx,
+          col: cell.element.col ?? colIdx,
+        });
       }
     });
-    
-    if (elements.length > 0) {
-      branches.push({ row: rowIdx, elements });
-    }
   });
   
-  // Analyze vertical links to determine OR groups
-  const verticalLinks = rung.verticalLinks || [];
-  const orGroups: number[][] = [];
-  
-  if (verticalLinks.length > 0) {
-    // Group connected rows together
-    const rowConnections = new Map<number, Set<number>>();
-    
-    verticalLinks.forEach(link => {
-      if (!rowConnections.has(link.fromRow)) {
-        rowConnections.set(link.fromRow, new Set([link.fromRow]));
-      }
-      if (!rowConnections.has(link.toRow)) {
-        rowConnections.set(link.toRow, new Set([link.toRow]));
-      }
-      
-      // Merge the sets
-      const fromSet = rowConnections.get(link.fromRow)!;
-      const toSet = rowConnections.get(link.toRow)!;
-      
-      const mergedSet = new Set([...fromSet, ...toSet]);
-      mergedSet.forEach(r => rowConnections.set(r, mergedSet));
-    });
-    
-    // Convert to groups (avoid duplicates)
-    const seen = new Set<string>();
-    rowConnections.forEach(group => {
-      const sortedGroup = [...group].sort((a, b) => a - b);
-      const key = sortedGroup.join(',');
-      if (!seen.has(key)) {
-        seen.add(key);
-        orGroups.push(sortedGroup);
-      }
-    });
-  }
-  
-  return { branches, orGroups };
+  return contacts;
 }
 
 /**
@@ -126,63 +89,137 @@ function elementToExpression(element: LDElement): string {
 }
 
 /**
- * Generate expression for a branch (row) - AND all contacts together
+ * Check if a column is within a branch region
  */
-function branchToExpression(branch: Branch): string {
-  const contacts = branch.elements.filter(e => isContact(e.type));
+function isInBranch(col: number, branch: LDBranch): boolean {
+  return col >= branch.startCol && col <= branch.endCol;
+}
+
+/**
+ * Generate expression for a rung by analyzing column regions
+ * 
+ * Strategy:
+ * 1. Identify branch regions (startCol to endCol)
+ * 2. For contacts OUTSIDE any branch: series (AND)
+ * 3. For contacts INSIDE a branch: parallel by row (OR), then AND with rest
+ * 
+ * Example Rung 1 of motor control:
+ *   Row 0: [StopPB_NC @ col0] [Overload_NC @ col1] [StartPB_NO @ col2] ... [Coil @ col7]
+ *   Row 1:                                         [MotorRunning @ col2]
+ *   Branch: { startCol: 2, endCol: 4, rows: [0, 1] }
+ * 
+ * Result: NOT StopPB AND NOT Overload AND (StartPB OR MotorRunning)
+ */
+function generateRungExpression(rung: LDRung): string {
+  const contacts = collectContacts(rung);
   
   if (contacts.length === 0) {
     return 'TRUE';
   }
   
-  const exprs = contacts.map(e => elementToExpression(e)).filter(e => e !== '');
-  return exprs.length > 0 ? exprs.join(' AND ') : 'TRUE';
-}
-
-/**
- * Generate expression for a rung with OR groups
- */
-function generateRungExpression(
-  branches: Branch[], 
-  orGroups: number[][]
-): string {
+  const branches = rung.branches || [];
+  
+  // No branches: simple series (AND all contacts on row 0)
   if (branches.length === 0) {
-    return 'TRUE';
+    const row0Contacts = contacts.filter(c => c.row === 0);
+    row0Contacts.sort((a, b) => a.col - b.col);
+    const exprs = row0Contacts.map(c => elementToExpression(c.element)).filter(e => e !== '');
+    return exprs.length > 0 ? exprs.join(' AND ') : 'TRUE';
   }
   
-  if (branches.length === 1 || orGroups.length === 0) {
-    // Simple case: all in series
-    return branchToExpression(branches[0]);
+  // With branches: need to build expression respecting column regions
+  // Find all unique column positions
+  const allCols = [...new Set(contacts.map(c => c.col))].sort((a, b) => a - b);
+  
+  // Group columns into regions: "series" (outside branches) or "parallel" (inside a branch)
+  interface Region {
+    type: 'series' | 'parallel';
+    startCol: number;
+    endCol: number;
+    branch?: LDBranch;
   }
   
-  // Complex case: handle OR groups
-  const branchExprs: string[] = [];
-  const processedRows = new Set<number>();
+  const regions: Region[] = [];
+  let currentCol = 0;
+  const numCols = rung.gridConfig?.cols || 8;
   
-  // First, handle OR groups
-  for (const group of orGroups) {
-    const groupExprs = group
-      .map(rowIdx => branches.find(b => b.row === rowIdx))
-      .filter((b): b is Branch => b !== undefined)
-      .map(b => branchToExpression(b));
-    
-    if (groupExprs.length > 1) {
-      branchExprs.push(`(${groupExprs.join(' OR ')})`);
-    } else if (groupExprs.length === 1) {
-      branchExprs.push(groupExprs[0]);
+  // Sort branches by startCol
+  const sortedBranches = [...branches].sort((a, b) => a.startCol - b.startCol);
+  
+  for (const branch of sortedBranches) {
+    // Add series region before this branch (if any)
+    if (branch.startCol > currentCol) {
+      regions.push({
+        type: 'series',
+        startCol: currentCol,
+        endCol: branch.startCol - 1,
+      });
     }
     
-    group.forEach(r => processedRows.add(r));
+    // Add parallel region for this branch
+    regions.push({
+      type: 'parallel',
+      startCol: branch.startCol,
+      endCol: branch.endCol,
+      branch,
+    });
+    
+    currentCol = branch.endCol + 1;
   }
   
-  // Then, handle rows not in any OR group (they're in series)
-  for (const branch of branches) {
-    if (!processedRows.has(branch.row)) {
-      branchExprs.push(branchToExpression(branch));
+  // Add trailing series region (if any)
+  if (currentCol < numCols) {
+    regions.push({
+      type: 'series',
+      startCol: currentCol,
+      endCol: numCols - 1,
+    });
+  }
+  
+  // Now generate expression for each region
+  const regionExprs: string[] = [];
+  
+  for (const region of regions) {
+    const regionContacts = contacts.filter(c => c.col >= region.startCol && c.col <= region.endCol);
+    
+    if (regionContacts.length === 0) continue;
+    
+    if (region.type === 'series') {
+      // All contacts in series (AND)
+      // Only use row 0 contacts for series regions
+      const row0Contacts = regionContacts.filter(c => c.row === 0);
+      row0Contacts.sort((a, b) => a.col - b.col);
+      
+      for (const c of row0Contacts) {
+        const expr = elementToExpression(c.element);
+        if (expr) regionExprs.push(expr);
+      }
+    } else {
+      // Parallel region: group by row, OR between rows
+      const branch = region.branch!;
+      const rowExprs: string[] = [];
+      
+      for (const rowIdx of branch.rows) {
+        const rowContacts = regionContacts.filter(c => c.row === rowIdx);
+        rowContacts.sort((a, b) => a.col - b.col);
+        
+        // AND contacts within the same row
+        const exprs = rowContacts.map(c => elementToExpression(c.element)).filter(e => e !== '');
+        if (exprs.length > 0) {
+          rowExprs.push(exprs.length === 1 ? exprs[0] : `(${exprs.join(' AND ')})`);
+        }
+      }
+      
+      // OR between rows
+      if (rowExprs.length > 1) {
+        regionExprs.push(`(${rowExprs.join(' OR ')})`);
+      } else if (rowExprs.length === 1) {
+        regionExprs.push(rowExprs[0]);
+      }
     }
   }
   
-  return branchExprs.length > 0 ? branchExprs.join(' AND ') : 'TRUE';
+  return regionExprs.length > 0 ? regionExprs.join(' AND ') : 'TRUE';
 }
 
 // =============================================================================
@@ -198,7 +235,19 @@ export function transpileLDToST(model: LDModel): TranspileResult {
     lines.push(`PROGRAM ${model.name}`);
     lines.push('');
     
-    // Generate variable declarations
+    // Generate input variable declarations
+    if (model.variables.inputs && model.variables.inputs.length > 0) {
+      lines.push('VAR_INPUT');
+      for (const v of model.variables.inputs) {
+        const address = v.address ? ` AT ${v.address}` : '';
+        const comment = v.comment ? ` (* ${v.comment} *)` : '';
+        lines.push(`    ${v.name}${address} : ${v.type};${comment}`);
+      }
+      lines.push('END_VAR');
+      lines.push('');
+    }
+    
+    // Generate local variable declarations
     lines.push('VAR');
     
     // Local variables from model
@@ -275,17 +324,24 @@ function generateRungCode(rung: LDRung): string[] {
   const gridRung = isGridBasedRung(rung) ? rung : convertToGridRung(rung);
   
   const lines: string[] = [];
-  const { branches, orGroups } = analyzeGrid(gridRung);
   
-  // Collect coils and function blocks from all branches
+  // Collect all elements from the grid
   const allElements: LDElement[] = [];
-  branches.forEach(b => allElements.push(...b.elements));
+  if (gridRung.grid) {
+    gridRung.grid.forEach(row => {
+      row.forEach(cell => {
+        if (cell.element) {
+          allElements.push(cell.element);
+        }
+      });
+    });
+  }
   
   const coils = allElements.filter(e => isCoil(e.type));
   const fbs = allElements.filter(e => isFunctionBlock(e.type));
   
-  // Generate rung expression (contacts only)
-  const rungExpr = generateRungExpression(branches, orGroups);
+  // Generate rung expression (contacts only) using the new column-aware algorithm
+  const rungExpr = generateRungExpression(gridRung);
   
   // Store rung result
   lines.push(`_rung${rung.number}_result := ${rungExpr};`);
