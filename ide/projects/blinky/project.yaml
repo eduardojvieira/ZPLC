@@ -1,0 +1,64 @@
+# ZPLC Project Configuration
+# This file defines project metadata, build settings, and tasks
+
+name: Blinky
+description: LED blinker example - demonstrates all 5 IEC 61131-3 languages
+version: 1.0.0
+author: ZPLC Team
+
+# Target hardware configuration
+target:
+  board: rpi_pico          # Target board (rpi_pico, arduino_giga_r1, esp32s3, etc.)
+  cpu: rp2040              # CPU type
+  clock_mhz: 125           # System clock frequency
+
+# Compiler settings
+compiler:
+  optimization: size       # none, speed, size
+  debug: true              # Include debug symbols
+  warnings: all            # none, default, all
+
+# I/O Configuration
+io:
+  inputs: []
+  outputs:
+    - name: LED_Output
+      address: "%Q0.0"
+      description: "Onboard LED"
+      pin: 25               # Physical GPIO pin (Pico onboard LED)
+
+# Build tasks
+tasks:
+  - name: build
+    description: Compile the project
+    command: compile
+    default: true
+
+  - name: upload
+    description: Upload to target device
+    command: upload
+    depends_on: build
+
+  - name: simulate
+    description: Run in WASM simulator
+    command: simulate
+
+  - name: clean
+    description: Clean build artifacts
+    command: clean
+
+# Entry point - which file to compile
+entry_point: main.st
+
+# Files to include in build (glob patterns)
+include:
+  - "*.st"
+  - "*.ld.json"
+  - "*.fbd.json"
+  - "*.sfc.json"
+  - "*.il"
+
+# Files to exclude
+exclude:
+  - "*.bak"
+  - "*.tmp"

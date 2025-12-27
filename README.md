@@ -24,7 +24,7 @@ ZPLC has reached its first major milestone. All core development phases are comp
 | Phase | Status | Description |
 |-------|--------|-------------|
 | Phase 0 | ✅ Complete | Build System & HAL Abstraction |
-| Phase 1 | ✅ Complete | VM Core (62 opcodes) & ISA Definition |
+| Phase 1 | ✅ Complete | VM Core (63 opcodes) & ISA Definition |
 | Phase 2 | ✅ Complete | Visual IDE (LD, FBD, SFC) & ST Compiler |
 | Phase 3 | ✅ Complete | Hardware Integration (Zephyr Serial Loader) |
 | Phase 4 | ✅ Complete | Debugging & Simulation (WASM + HW) |
@@ -60,7 +60,7 @@ mkdir build_posix && cd build_posix
 cmake .. -DZEPHYR_BUILD=OFF
 make
 
-# Run tests (109 assertions across 2 test suites)
+# Run tests (105 assertions across 2 test suites)
 ctest --output-on-failure
 
 # Run the demo runtime

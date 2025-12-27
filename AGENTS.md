@@ -74,7 +74,7 @@ mkdir build_posix && cd build_posix
 cmake .. -DZEPHYR_BUILD=OFF
 make
 
-# Run tests (79 assertions across 2 test suites)
+# Run tests (105 assertions across 2 test suites)
 ctest --output-on-failure
 
 # Run the demo runtime
@@ -361,7 +361,7 @@ The HAL (`zplc_hal.h`) defines 17 functions that must be implemented per platfor
 | HAL | Timing | GPIO | Analog | Persist | Network |
 |-----|--------|------|--------|---------|---------|
 | POSIX | ✅ | Stub | Stub | Stub | Stub |
-| Zephyr | ✅ | TODO | TODO | TODO | TODO |
+| Zephyr | ✅ | ✅ | TODO | TODO | TODO |
 | WASM | - | - | - | - | - |
 
 ---
@@ -431,7 +431,7 @@ Continue developing ZPLC - the Zephyr-first PLC runtime.
 COMPLETED:
 - Phase 0: Build system, POSIX HAL
 - Phase 0.5: Zephyr module integration
-- Phase 1: VM core with 62 opcodes, 79 passing tests
+- Phase 1: VM core with 63 opcodes, 105 passing tests
 
 DEVELOPMENT ENVIRONMENT:
 - Zephyr workspace: ~/zephyrproject (v4.0.0)

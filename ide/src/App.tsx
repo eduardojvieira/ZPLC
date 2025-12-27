@@ -3,7 +3,7 @@
  * 
  * Industrial-grade PLC development environment
  * 
- * Layout:
+ * Layout (when project is open):
  * ┌─────────────────────────────────────────────┐
  * │ Toolbar                                     │
  * ├──────────┬──────────────────────────────────┤
@@ -13,18 +13,35 @@
  * │          ├──────────────────────────────────┤
  * │          │ Console (collapsible)            │
  * └──────────┴──────────────────────────────────┘
+ * 
+ * When no project is open, shows WelcomeScreen.
  */
 
 import { Toolbar } from './components/Toolbar';
 import { Sidebar } from './components/Sidebar';
 import { EditorArea } from './components/EditorArea';
 import { Console } from './components/Console';
+import { WelcomeScreen } from './components/WelcomeScreen';
 import { useTheme } from './hooks/useTheme';
+import { useIDEStore } from './store/useIDEStore';
 
 function App() {
   // Initialize theme system
   useTheme();
 
+  // Check if a project is open
+  const isProjectOpen = useIDEStore((s) => s.isProjectOpen);
+
+  // No project open - show welcome screen
+  if (!isProjectOpen) {
+    return (
+      <div className="h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-surface-900)]">
+        <WelcomeScreen />
+      </div>
+    );
+  }
+
+  // Project is open - show full IDE
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-surface-900)]">
       {/* Top Toolbar */}

@@ -1,8 +1,8 @@
 # ZPLC Virtual Machine - Instruction Set Architecture (ISA)
 
-**Version:** 1.0
-**Status:** Draft
-**Last Updated:** 2024
+**Version:** 1.0.0 (Stable)
+**Status:** Released
+**Last Updated:** 2025
 
 ---
 

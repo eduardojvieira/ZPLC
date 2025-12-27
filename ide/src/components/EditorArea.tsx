@@ -21,7 +21,6 @@ import { ProjectSettings } from './settings/ProjectSettings';
 
 export function EditorArea() {
   const {
-    files,
     activeFileId,
     openTabs,
     setActiveFile,
@@ -29,14 +28,16 @@ export function EditorArea() {
     updateFileContent,
     showSettings,
     toggleSettings,
+    getActiveFile,
+    getFile,
   } = useIDEStore();
   
   const { isDark } = useTheme();
 
-  const activeFile = files.find((f) => f.id === activeFileId);
+  const activeFile = getActiveFile();
   const tabFiles = openTabs
-    .map((id) => files.find((f) => f.id === id))
-    .filter(Boolean);
+    .map((id) => getFile(id))
+    .filter((f): f is NonNullable<typeof f> => f !== undefined);
 
   // Monaco language mapping
   const getMonacoLanguage = (lang: PLCLanguage): string => {

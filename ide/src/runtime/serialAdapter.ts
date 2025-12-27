@@ -162,42 +162,38 @@ export class SerialAdapter implements IDebugAdapter {
     }
 
     const encoder = new TextEncoder();
-    const decoder = new TextDecoder();
+    // eslint-disable-next-line no-control-regex
+    const ansiRegex = /\x1B\[[0-9;]*[a-zA-Z]/g;
+
+    // Clear buffer before sending
+    this.connection._rxBuffer = '';
 
     // Send command
     const data = encoder.encode(command + LINE_ENDING);
     await this.connection.writer.write(data);
 
-    // Read response with timeout
-    let response = '';
+    // Read response with timeout by polling _rxBuffer
     const startTime = Date.now();
 
     while (Date.now() - startTime < COMMAND_TIMEOUT_MS) {
-      const { value, done } = await Promise.race([
-        this.connection.reader.read(),
-        new Promise<{ value: undefined; done: true }>((resolve) =>
-          setTimeout(() => resolve({ value: undefined, done: true }), 100)
-        ),
-      ]);
+      // Check buffer for response lines
+      const lines = this.connection._rxBuffer.split(/\r?\n/);
 
-      if (done || !value) {
-        continue;
-      }
-
-      response += decoder.decode(value);
-
-      // Check for complete response
-      const lines = response.split(/\r?\n/);
-      for (const line of lines) {
-        const trimmed = line.trim();
+      for (let i = 0; i < lines.length; i++) {
+        const cleanLine = lines[i].replace(ansiRegex, '').trim();
         if (
-          trimmed.startsWith('OK:') ||
-          trimmed.startsWith('ERROR:') ||
-          trimmed.startsWith('WARN:')
+          cleanLine.startsWith('OK:') ||
+          cleanLine.startsWith('ERROR:') ||
+          cleanLine.startsWith('WARN:')
         ) {
-          return trimmed;
+          // Found a response! Remove processed lines from buffer
+          this.connection._rxBuffer = lines.slice(i + 1).join('\n');
+          return cleanLine;
         }
       }
+
+      // Wait a bit before checking again
+      await new Promise((r) => setTimeout(r, 50));
     }
 
     throw new Error(`Command timeout: ${command}`);
@@ -451,11 +447,4 @@ export class SerialAdapter implements IDebugAdapter {
   clearEventHandlers(): void {
     this.events = {};
   }
-}
-
-/**
- * Create and return a Serial adapter instance
- */
-export function createSerialAdapter(): SerialAdapter {
-  return new SerialAdapter();
 }

@@ -145,11 +145,158 @@ export interface ConsoleEntry {
 }
 
 // =============================================================================
-// Project Configuration
+// Project Configuration (from project.yaml)
 // =============================================================================
 
 export type TaskMode = 'cyclic' | 'freewheeling';
 
+// =============================================================================
+// IEC 61131-3 POU Types
+// =============================================================================
+
+/** Program Organization Unit types per IEC 61131-3 */
+export type POUType = 'PRG' | 'FB' | 'FUN' | 'GVL';
+
+export interface POUInfo {
+  type: POUType;
+  name: string;
+  fullName: string;
+  extension: string;
+  description: string;
+}
+
+export const POU_TYPES: Record<POUType, POUInfo> = {
+  PRG: {
+    type: 'PRG',
+    name: 'Program',
+    fullName: 'Program',
+    extension: '.st',
+    description: 'Main executable unit, can be assigned to tasks',
+  },
+  FB: {
+    type: 'FB',
+    name: 'Function Block',
+    fullName: 'Function Block',
+    extension: '.st',
+    description: 'Reusable block with internal state (instances)',
+  },
+  FUN: {
+    type: 'FUN',
+    name: 'Function',
+    fullName: 'Function',
+    extension: '.st',
+    description: 'Stateless function, returns a value',
+  },
+  GVL: {
+    type: 'GVL',
+    name: 'Global Variables',
+    fullName: 'Global Variable List',
+    extension: '.gvl',
+    description: 'Global variable declarations',
+  },
+};
+
+// =============================================================================
+// Task Definition (IEC 61131-3 Task Configuration)
+// =============================================================================
+
+/** Task trigger type */
+export type TaskTrigger = 'cyclic' | 'event' | 'freewheeling';
+
+/** Task definition for zplc.json */
+export interface TaskDefinition {
+  name: string;
+  trigger: TaskTrigger;
+  interval?: number;          // Cycle time in ms (for cyclic tasks)
+  priority: number;           // 0 = highest, 255 = lowest
+  watchdog?: number;          // Watchdog timeout in ms
+  programs: string[];         // List of program names assigned to this task
+}
+
+// =============================================================================
+// zplc.json - Project Configuration File
+// =============================================================================
+
+/** I/O Pin configuration */
+export interface IOPinConfig {
+  name: string;
+  address: string;       // e.g., "%I0.0", "%Q0.0"
+  description?: string;
+  pin?: number;          // Physical GPIO pin
+  type?: 'BOOL' | 'INT' | 'REAL';
+}
+
+/** Target hardware configuration */
+export interface TargetConfig {
+  board: string;         // e.g., "rpi_pico", "arduino_giga_r1"
+  cpu?: string;          // e.g., "rp2040", "stm32h747"
+  clock_mhz?: number;
+}
+
+/** Compiler settings */
+export interface CompilerConfig {
+  optimization?: 'none' | 'speed' | 'size';
+  debug?: boolean;
+  warnings?: 'none' | 'default' | 'all';
+}
+
+/** I/O configuration */
+export interface IOConfig {
+  inputs?: IOPinConfig[];
+  outputs?: IOPinConfig[];
+}
+
+/** 
+ * zplc.json - Main project configuration file
+ * This is the new standard format replacing project.yaml
+ */
+export interface ZPLCProjectConfig {
+  // Metadata
+  name: string;
+  version: string;
+  description?: string;
+  author?: string;
+
+  // Hardware target
+  target?: TargetConfig;
+
+  // Compiler settings
+  compiler?: CompilerConfig;
+
+  // I/O Mapping
+  io?: IOConfig;
+
+  // Task configuration (IEC 61131-3 style)
+  tasks: TaskDefinition[];
+
+  // Build settings
+  build?: {
+    outDir?: string;           // Output directory (default: "build")
+    entryPoints?: string[];    // Override: explicit entry points
+  };
+}
+
+/** Default project configuration */
+export const DEFAULT_ZPLC_CONFIG: ZPLCProjectConfig = {
+  name: 'New Project',
+  version: '1.0.0',
+  tasks: [
+    {
+      name: 'MainTask',
+      trigger: 'cyclic',
+      interval: 10,
+      priority: 1,
+      watchdog: 100,
+      programs: ['Main'],
+    },
+  ],
+};
+
+// =============================================================================
+// Legacy Project Configuration (for backward compatibility)
+// =============================================================================
+
+/** @deprecated Use ZPLCProjectConfig instead */
 export interface ProjectConfig {
   name: string;
   taskMode: TaskMode;
@@ -159,14 +306,38 @@ export interface ProjectConfig {
   startPOU: string;      // Entry point program name
 }
 
+/** @deprecated */
 export const DEFAULT_PROJECT_CONFIG: ProjectConfig = {
   name: 'ZPLC Demo',
   taskMode: 'cyclic',
   cycleTimeMs: 10,
   priority: 1,
   watchdogMs: 100,
-  startPOU: 'Blinky',
+  startPOU: 'Main',
 };
+
+/** Complete project.yaml structure - legacy format */
+export interface ProjectYAML {
+  name: string;
+  description?: string;
+  version: string;
+  author?: string;
+  
+  target?: TargetConfig;
+  compiler?: CompilerConfig;
+  io?: IOConfig;
+  tasks?: {
+    name: string;
+    description?: string;
+    command: 'compile' | 'upload' | 'simulate' | 'clean';
+    default?: boolean;
+    depends_on?: string;
+  }[];
+  
+  entry_point: string;
+  include?: string[];
+  exclude?: string[];
+}
 
 // =============================================================================
 // Serializable Project (for Import/Export)
@@ -177,6 +348,54 @@ export interface SerializableProject {
   config: ProjectConfig;
   files: Omit<ProjectFile, 'isModified'>[];
   exportedAt: string;
+}
+
+/** Loaded project with all files and configuration */
+export interface LoadedProject {
+  path: string;                    // Folder path
+  yaml: ProjectYAML;               // Parsed project.yaml
+  files: ProjectFile[];            // All source files
+  config: ProjectConfig;           // Runtime config (derived from yaml)
+}
+
+// =============================================================================
+// File System Types (File System Access API)
+// =============================================================================
+
+/** Extended ProjectFile with file handle for direct disk access */
+export interface ProjectFileWithHandle extends ProjectFile {
+  handle?: FileSystemFileHandle;   // Browser file handle (if opened from disk)
+  parentPath: string;              // Parent directory path
+}
+
+/** Directory tree node for sidebar rendering */
+export interface FileTreeNode {
+  id: string;
+  name: string;
+  type: 'file' | 'directory';
+  path: string;
+  children?: FileTreeNode[];
+  // File-specific
+  language?: PLCLanguage;
+  pouType?: POUType;
+  handle?: FileSystemFileHandle;
+  // Directory-specific
+  dirHandle?: FileSystemDirectoryHandle;
+  isExpanded?: boolean;
+}
+
+/** Project state when opened from file system */
+export interface FileSystemProject {
+  rootHandle: FileSystemDirectoryHandle;
+  rootPath: string;                 // Display name of root folder
+  config: ZPLCProjectConfig;        // Parsed zplc.json
+  fileTree: FileTreeNode;           // Recursive file tree
+  files: Map<string, ProjectFileWithHandle>;  // Flat map of loaded files
+}
+
+/** Check if File System Access API is available */
+export function isFileSystemAccessSupported(): boolean {
+  return 'showDirectoryPicker' in window;
 }
 
 // =============================================================================

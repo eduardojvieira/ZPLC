@@ -46,7 +46,7 @@ if(DEFINED ENV{ZEPHYR_BASE} OR ZEPHYR_BUILD)
     message(STATUS "==============================================")
     
     # For IDE support, still define the project
-    project(zplc VERSION 0.2.0 LANGUAGES C)
+    project(zplc VERSION 1.0.0 LANGUAGES C)
 
 elseif(EMSCRIPTEN OR WASM_BUILD)
     # =========================================================================
@@ -57,7 +57,7 @@ elseif(EMSCRIPTEN OR WASM_BUILD)
     message(STATUS "==============================================")
 
     project(zplc
-        VERSION 0.2.0
+        VERSION 1.0.0
         DESCRIPTION "Portable IEC 61131-3 PLC Runtime"
         LANGUAGES C
     )
@@ -148,7 +148,7 @@ else()
     message(STATUS "==============================================")
 
     project(zplc
-        VERSION 0.2.0
+        VERSION 1.0.0
         DESCRIPTION "Portable IEC 61131-3 PLC Runtime"
         LANGUAGES C
     )

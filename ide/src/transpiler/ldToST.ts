@@ -89,13 +89,6 @@ function elementToExpression(element: LDElement): string {
 }
 
 /**
- * Check if a column is within a branch region
- */
-function isInBranch(col: number, branch: LDBranch): boolean {
-  return col >= branch.startCol && col <= branch.endCol;
-}
-
-/**
  * Generate expression for a rung by analyzing column regions
  * 
  * Strategy:
@@ -128,8 +121,6 @@ function generateRungExpression(rung: LDRung): string {
   }
   
   // With branches: need to build expression respecting column regions
-  // Find all unique column positions
-  const allCols = [...new Set(contacts.map(c => c.col))].sort((a, b) => a - b);
   
   // Group columns into regions: "series" (outside branches) or "parallel" (inside a branch)
   interface Region {

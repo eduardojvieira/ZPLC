@@ -1,25 +1,40 @@
 /**
  * ZPLC IDE Global State Store
  * 
- * Uses Zustand for simple, type-safe state management
+ * Uses Zustand for state management.
+ * Supports File System Access API for opening real folders,
+ * with fallback to virtual projects for unsupported browsers.
  */
 
 import { create } from 'zustand';
 import type {
-  ProjectFile,
   ConnectionState,
   ConsoleEntry,
   ConsoleTab,
   PLCLanguage,
   CompilerMessage,
-  ProjectConfig,
-  SerializableProject,
+  ZPLCProjectConfig,
+  FileTreeNode,
+  ProjectFileWithHandle,
 } from '../types';
 import {
-  DEFAULT_PROJECT_CONFIG,
+  DEFAULT_ZPLC_CONFIG,
   getExtensionForLanguage,
   createEmptyFileContent,
+  isFileSystemAccessSupported,
 } from '../types';
+import {
+  openDirectoryPicker,
+  readDirectoryRecursive,
+  readProjectConfig,
+  writeProjectConfig,
+  loadFileFromTree,
+  writeFileContent,
+  createNewProject,
+  createVirtualProject,
+  toggleDirectoryExpanded,
+  findFileInTree,
+} from '../utils/fileSystem';
 
 // =============================================================================
 // Theme Types
@@ -35,11 +50,18 @@ interface IDEState {
   // Theme State
   theme: Theme;
 
-  // Project State
-  projectConfig: ProjectConfig;
-  files: ProjectFile[];
+  // Project State - File System Based
+  isProjectOpen: boolean;
+  isVirtualProject: boolean;             // True if in-memory only (Firefox fallback)
+  projectName: string | null;
+  projectConfig: ZPLCProjectConfig | null;
+  directoryHandle: FileSystemDirectoryHandle | null;
+  fileTree: FileTreeNode | null;
+  
+  // Files (loaded on demand)
+  loadedFiles: Map<string, ProjectFileWithHandle>;
   activeFileId: string | null;
-  openTabs: string[];
+  openTabs: string[];                    // File IDs of open tabs
 
   // Connection State
   connection: ConnectionState;
@@ -59,23 +81,26 @@ interface IDEState {
   // Actions - Theme
   setTheme: (theme: Theme) => void;
 
-  // Actions - Project Config
-  updateProjectConfig: (config: Partial<ProjectConfig>) => void;
+  // Actions - Project Management (File System)
+  openProjectFromFolder: () => Promise<boolean>;
+  createNewProjectInFolder: () => Promise<boolean>;
+  createVirtualProject: (name: string) => void;
+  closeProject: () => void;
+  saveProjectConfig: () => Promise<void>;
+
+  // Actions - File Tree
+  toggleDirectory: (dirPath: string) => void;
+  refreshFileTree: () => Promise<void>;
 
   // Actions - Files
-  addFile: (file: ProjectFile) => void;
-  createFile: (name: string, language: PLCLanguage) => string; // Returns file ID
-  deleteFile: (fileId: string) => void;
-  renameFile: (fileId: string, newName: string) => void;
+  openFile: (fileId: string) => Promise<void>;
+  saveFile: (fileId: string) => Promise<boolean>;
+  saveAllFiles: () => Promise<void>;
+  createFile: (name: string, language: PLCLanguage, parentPath?: string) => Promise<string>;
+  deleteFile: (fileId: string) => Promise<void>;
   setActiveFile: (fileId: string | null) => void;
   updateFileContent: (fileId: string, content: string) => void;
   closeTab: (fileId: string) => void;
-  openTab: (fileId: string) => void;
-  markFileSaved: (fileId: string) => void;
-
-  // Actions - Import/Export
-  exportProject: () => SerializableProject;
-  importProject: (project: SerializableProject) => void;
 
   // Actions - Connection
   setConnectionStatus: (status: ConnectionState['status']) => void;
@@ -94,352 +119,12 @@ interface IDEState {
   toggleSidebar: () => void;
   toggleConsole: () => void;
   toggleSettings: () => void;
+
+  // Computed helpers
+  getActiveFile: () => ProjectFileWithHandle | null;
+  getFile: (fileId: string) => ProjectFileWithHandle | undefined;
+  hasUnsavedChanges: () => boolean;
 }
-
-// =============================================================================
-// Golden Standard Example Files - All 5 IEC 61131-3 Languages
-// =============================================================================
-
-const EXAMPLE_ST = `(* Blinky Program - Structured Text *)
-PROGRAM Blinky
-
-VAR
-    BlinkTimer : TON;
-    LedState : BOOL := FALSE;
-END_VAR
-
-VAR_OUTPUT
-    LED_Output AT %Q0.0 : BOOL;
-END_VAR
-
-(* Timer with 500ms interval *)
-BlinkTimer(IN := TRUE, PT := T#500ms);
-
-IF BlinkTimer.Q THEN
-    LedState := NOT LedState;
-    BlinkTimer(IN := FALSE, PT := T#500ms);
-END_IF;
-
-(* Output to LED *)
-LED_Output := LedState;
-
-END_PROGRAM`;
-
-const EXAMPLE_IL = `(* Blinky Program - Instruction List *)
-(* Note: IL is deprecated in IEC 61131-3 but included for reference *)
-PROGRAM Blinky
-
-VAR
-    BlinkTimer : TON;
-    LedState : BOOL := FALSE;
-END_VAR
-
-VAR_OUTPUT
-    LED_Output AT %Q0.0 : BOOL;
-END_VAR
-
-        LD      TRUE
-        ST      BlinkTimer.IN
-        
-        LD      BlinkTimer.Q
-        JMPCN   SKIP_TOGGLE
-        
-        LD      LedState
-        NOT
-        ST      LedState
-        
-SKIP_TOGGLE:
-        LD      LedState
-        ST      LED_Output
-        
-        RET
-
-END_PROGRAM`;
-
-const EXAMPLE_LD = `{
-  "$schema": "./schemas/ld.schema.json",
-  "name": "Blinky",
-  "description": "ZPLC Golden Standard - Blinky in Ladder Diagram (LD)",
-  "version": "1.0.0",
-  "variables": {
-    "local": [
-      { "name": "BlinkTimer", "type": "TON", "comment": "Timer for 500ms blink interval" },
-      { "name": "TimerDone", "type": "BOOL", "initialValue": false },
-      { "name": "LedState", "type": "BOOL", "initialValue": false }
-    ],
-    "outputs": [
-      { "name": "LED_Output", "type": "BOOL", "address": "%Q0.0" }
-    ]
-  },
-  "rungs": [
-    {
-      "id": "rung_1",
-      "number": 1,
-      "comment": "Timer Network - Generate 500ms pulse train",
-      "elements": [
-        { "id": "rail_left_1", "type": "left_rail", "position": { "x": 0, "y": 0 } },
-        { "id": "nc_timer", "type": "contact_nc", "variable": "TimerDone", "position": { "x": 100, "y": 0 } },
-        { "id": "ton_blink", "type": "function_block", "fbType": "TON", "instance": "BlinkTimer", "position": { "x": 250, "y": 0 }, "parameters": { "IN": "CONNECTED", "PT": "T#500ms" }, "outputs": { "Q": "TimerDone" } },
-        { "id": "rail_right_1", "type": "right_rail", "position": { "x": 450, "y": 0 } }
-      ],
-      "connections": [
-        { "from": "rail_left_1", "to": "nc_timer" },
-        { "from": "nc_timer", "to": "ton_blink.IN" },
-        { "from": "ton_blink.Q", "to": "rail_right_1" }
-      ]
-    },
-    {
-      "id": "rung_2",
-      "number": 2,
-      "comment": "Toggle Network - Toggle LED on timer pulse",
-      "elements": [
-        { "id": "rail_left_2", "type": "left_rail", "position": { "x": 0, "y": 100 } },
-        { "id": "contact_done", "type": "contact_no", "variable": "TimerDone", "position": { "x": 100, "y": 100 } },
-        { "id": "contact_led_off", "type": "contact_nc", "variable": "LedState", "position": { "x": 200, "y": 100 } },
-        { "id": "coil_set_led", "type": "coil_set", "variable": "LedState", "position": { "x": 350, "y": 100 } },
-        { "id": "rail_right_2", "type": "right_rail", "position": { "x": 450, "y": 100 } }
-      ],
-      "connections": [
-        { "from": "rail_left_2", "to": "contact_done" },
-        { "from": "contact_done", "to": "contact_led_off" },
-        { "from": "contact_led_off", "to": "coil_set_led" },
-        { "from": "coil_set_led", "to": "rail_right_2" }
-      ]
-    },
-    {
-      "id": "rung_3",
-      "number": 3,
-      "comment": "Reset Network - Reset LED when timer done and LED is ON",
-      "elements": [
-        { "id": "rail_left_3", "type": "left_rail", "position": { "x": 0, "y": 200 } },
-        { "id": "contact_done_3", "type": "contact_no", "variable": "TimerDone", "position": { "x": 100, "y": 200 } },
-        { "id": "contact_led_on", "type": "contact_no", "variable": "LedState", "position": { "x": 200, "y": 200 } },
-        { "id": "coil_reset_led", "type": "coil_reset", "variable": "LedState", "position": { "x": 350, "y": 200 } },
-        { "id": "rail_right_3", "type": "right_rail", "position": { "x": 450, "y": 200 } }
-      ],
-      "connections": [
-        { "from": "rail_left_3", "to": "contact_done_3" },
-        { "from": "contact_done_3", "to": "contact_led_on" },
-        { "from": "contact_led_on", "to": "coil_reset_led" },
-        { "from": "coil_reset_led", "to": "rail_right_3" }
-      ]
-    },
-    {
-      "id": "rung_4",
-      "number": 4,
-      "comment": "Output Network - Drive physical LED from latch",
-      "elements": [
-        { "id": "rail_left_4", "type": "left_rail", "position": { "x": 0, "y": 300 } },
-        { "id": "contact_state", "type": "contact_no", "variable": "LedState", "position": { "x": 100, "y": 300 } },
-        { "id": "coil_output", "type": "coil", "variable": "LED_Output", "position": { "x": 350, "y": 300 } },
-        { "id": "rail_right_4", "type": "right_rail", "position": { "x": 450, "y": 300 } }
-      ],
-      "connections": [
-        { "from": "rail_left_4", "to": "contact_state" },
-        { "from": "contact_state", "to": "coil_output" },
-        { "from": "coil_output", "to": "rail_right_4" }
-      ]
-    }
-  ],
-  "metadata": {
-    "author": "ZPLC Team",
-    "created": "2024-12-23",
-    "iecStandard": "IEC 61131-3"
-  }
-}`;
-
-const EXAMPLE_FBD = `{
-  "$schema": "./schemas/fbd.schema.json",
-  "name": "Blinky",
-  "description": "ZPLC Golden Standard - Blinky in Function Block Diagram (FBD)",
-  "version": "1.0.0",
-  "variables": {
-    "local": [
-      { "name": "LedState", "type": "BOOL", "initialValue": false, "comment": "Current LED state" }
-    ],
-    "outputs": [
-      { "name": "LED_Output", "type": "BOOL", "address": "%Q0.0", "comment": "Physical LED output" }
-    ]
-  },
-  "blocks": [
-    { "id": "const_true", "type": "constant", "dataType": "BOOL", "value": true, "position": { "x": 50, "y": 50 }, "outputs": [{ "name": "OUT", "type": "BOOL" }] },
-    { "id": "const_500ms", "type": "constant", "dataType": "TIME", "value": "T#500ms", "position": { "x": 50, "y": 150 }, "outputs": [{ "name": "OUT", "type": "TIME" }] },
-    { "id": "ton_timer", "type": "TON", "instanceName": "BlinkTimer", "position": { "x": 250, "y": 60 }, "inputs": [{ "name": "IN", "type": "BOOL" }, { "name": "PT", "type": "TIME" }], "outputs": [{ "name": "Q", "type": "BOOL" }, { "name": "ET", "type": "TIME" }], "comment": "500ms timer" },
-    { "id": "r_trig", "type": "R_TRIG", "instanceName": "EdgeDetect", "position": { "x": 500, "y": 60 }, "inputs": [{ "name": "CLK", "type": "BOOL" }], "outputs": [{ "name": "Q", "type": "BOOL" }], "comment": "Rising edge detection" },
-    { "id": "not_gate", "type": "NOT", "position": { "x": 500, "y": 200 }, "inputs": [{ "name": "IN", "type": "BOOL" }], "outputs": [{ "name": "OUT", "type": "BOOL" }] },
-    { "id": "and_set", "type": "AND", "position": { "x": 700, "y": 50 }, "inputs": [{ "name": "IN1", "type": "BOOL" }, { "name": "IN2", "type": "BOOL" }], "outputs": [{ "name": "OUT", "type": "BOOL" }] },
-    { "id": "and_reset", "type": "AND", "position": { "x": 700, "y": 150 }, "inputs": [{ "name": "IN1", "type": "BOOL" }, { "name": "IN2", "type": "BOOL" }], "outputs": [{ "name": "OUT", "type": "BOOL" }] },
-    { "id": "sr_latch", "type": "SR", "instanceName": "LedLatch", "position": { "x": 900, "y": 80 }, "inputs": [{ "name": "S1", "type": "BOOL" }, { "name": "R", "type": "BOOL" }], "outputs": [{ "name": "Q1", "type": "BOOL" }], "comment": "Toggle logic" },
-    { "id": "output_led", "type": "output", "variableName": "LED_Output", "position": { "x": 1100, "y": 80 }, "inputs": [{ "name": "IN", "type": "BOOL" }] }
-  ],
-  "connections": [
-    { "id": "conn_1", "from": { "block": "const_true", "port": "OUT" }, "to": { "block": "ton_timer", "port": "IN" } },
-    { "id": "conn_2", "from": { "block": "const_500ms", "port": "OUT" }, "to": { "block": "ton_timer", "port": "PT" } },
-    { "id": "conn_3", "from": { "block": "ton_timer", "port": "Q" }, "to": { "block": "r_trig", "port": "CLK" } },
-    { "id": "conn_4", "from": { "block": "r_trig", "port": "Q" }, "to": { "block": "and_set", "port": "IN1" } },
-    { "id": "conn_5", "from": { "block": "r_trig", "port": "Q" }, "to": { "block": "and_reset", "port": "IN1" } },
-    { "id": "conn_6", "from": { "block": "not_gate", "port": "OUT" }, "to": { "block": "and_set", "port": "IN2" } },
-    { "id": "conn_7", "from": { "block": "and_set", "port": "OUT" }, "to": { "block": "sr_latch", "port": "S1" } },
-    { "id": "conn_8", "from": { "block": "and_reset", "port": "OUT" }, "to": { "block": "sr_latch", "port": "R" } },
-    { "id": "conn_9", "from": { "block": "sr_latch", "port": "Q1" }, "to": { "block": "output_led", "port": "IN" } }
-  ],
-  "metadata": {
-    "author": "ZPLC Team",
-    "created": "2024-12-23",
-    "iecStandard": "IEC 61131-3"
-  }
-}`;
-
-const EXAMPLE_SFC = `{
-  "$schema": "./schemas/sfc.schema.json",
-  "name": "Blinky",
-  "description": "ZPLC Golden Standard - Blinky in Sequential Function Chart (SFC)",
-  "version": "1.0.0",
-  "variables": {
-    "local": [
-      { "name": "LedState", "type": "BOOL", "initialValue": false, "comment": "Current LED state" }
-    ],
-    "outputs": [
-      { "name": "LED_Output", "type": "BOOL", "address": "%Q0.0", "comment": "Physical LED output" }
-    ]
-  },
-  "steps": [
-    { "id": "step_init", "name": "Init", "isInitial": true, "position": { "x": 200, "y": 50 }, "actions": [{ "qualifier": "N", "actionName": "LED_OFF", "comment": "Ensure LED starts OFF" }] },
-    { "id": "step_led_on", "name": "LED_ON", "isInitial": false, "position": { "x": 200, "y": 250 }, "actions": [{ "qualifier": "N", "actionName": "SET_LED_ON", "comment": "Turn LED ON" }] },
-    { "id": "step_led_off", "name": "LED_OFF", "isInitial": false, "position": { "x": 200, "y": 450 }, "actions": [{ "qualifier": "N", "actionName": "SET_LED_OFF", "comment": "Turn LED OFF" }] }
-  ],
-  "transitions": [
-    { "id": "trans_init_to_on", "fromStep": "step_init", "toStep": "step_led_on", "condition": "TRUE", "comment": "Immediately transition to ON state", "position": { "x": 200, "y": 150 } },
-    { "id": "trans_on_to_off", "fromStep": "step_led_on", "toStep": "step_led_off", "condition": "step_led_on.T >= T#500ms", "comment": "After 500ms, transition to OFF", "position": { "x": 200, "y": 350 } },
-    { "id": "trans_off_to_on", "fromStep": "step_led_off", "toStep": "step_led_on", "condition": "step_led_off.T >= T#500ms", "comment": "After 500ms, transition to ON", "position": { "x": 400, "y": 350 } }
-  ],
-  "actions": [
-    { "id": "SET_LED_ON", "name": "SET_LED_ON", "type": "ST", "body": "LedState := TRUE;\\nLED_Output := LedState;" },
-    { "id": "SET_LED_OFF", "name": "SET_LED_OFF", "type": "ST", "body": "LedState := FALSE;\\nLED_Output := LedState;" },
-    { "id": "LED_OFF", "name": "LED_OFF", "type": "ST", "body": "LedState := FALSE;\\nLED_Output := FALSE;" }
-  ],
-  "metadata": {
-    "author": "ZPLC Team",
-    "created": "2024-12-23",
-    "iecStandard": "IEC 61131-3",
-    "notes": ["SFC step timing uses implicit .T property", "Action qualifiers: N=Non-stored, S=Set, R=Reset"]
-  }
-}`;
-
-// Motor Control - LD example with parallel branches
-const EXAMPLE_MOTOR_LD = `{
-  "name": "MotorControl",
-  "description": "Motor Start/Stop with Parallel Branches",
-  "version": "1.0.0",
-  "variables": {
-    "local": [{ "name": "MotorRunning", "type": "BOOL", "initialValue": false }],
-    "inputs": [
-      { "name": "StartPB", "type": "BOOL", "address": "%I0.0" },
-      { "name": "StopPB", "type": "BOOL", "address": "%I0.1" }
-    ],
-    "outputs": [{ "name": "MotorContactor", "type": "BOOL", "address": "%Q0.0" }]
-  },
-  "rungs": [
-    {
-      "id": "rung_1",
-      "number": 1,
-      "comment": "Motor Start with Seal-In (Parallel Branch)",
-      "grid": [
-        [
-          { "element": { "id": "stop_nc", "type": "contact_nc", "variable": "StopPB", "row": 0, "col": 0 }, "hasWire": true },
-          { "element": { "id": "start_no", "type": "contact_no", "variable": "StartPB", "row": 0, "col": 1 }, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": { "id": "motor_coil", "type": "coil", "variable": "MotorContactor", "row": 0, "col": 7 }, "hasWire": true }
-        ],
-        [
-          { "element": null, "hasWire": false },
-          { "element": { "id": "seal_in", "type": "contact_no", "variable": "MotorRunning", "row": 1, "col": 1 }, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": null, "hasWire": false },
-          { "element": null, "hasWire": false },
-          { "element": null, "hasWire": false }
-        ]
-      ],
-      "branches": [{ "id": "branch_1", "startCol": 1, "endCol": 4, "rows": [0, 1] }],
-      "gridConfig": { "cols": 8, "rows": 2, "cellWidth": 80, "cellHeight": 60 }
-    },
-    {
-      "id": "rung_2",
-      "number": 2,
-      "comment": "Latch Motor State",
-      "grid": [
-        [
-          { "element": { "id": "contactor_fb", "type": "contact_no", "variable": "MotorContactor", "row": 0, "col": 0 }, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": { "id": "running_set", "type": "coil_set", "variable": "MotorRunning", "row": 0, "col": 7 }, "hasWire": true }
-        ]
-      ],
-      "gridConfig": { "cols": 8, "rows": 1, "cellWidth": 80, "cellHeight": 60 }
-    }
-  ]
-}`;
-
-const EXAMPLE_FILES: ProjectFile[] = [
-  {
-    id: 'blinky-st',
-    name: 'blinky.st',
-    language: 'ST' as PLCLanguage,
-    content: EXAMPLE_ST,
-    isModified: false,
-    path: '/examples/blinky.st',
-  },
-  {
-    id: 'blinky-il',
-    name: 'blinky.il',
-    language: 'IL' as PLCLanguage,
-    content: EXAMPLE_IL,
-    isModified: false,
-    path: '/examples/blinky.il',
-  },
-  {
-    id: 'blinky-ld',
-    name: 'blinky.ld',
-    language: 'LD' as PLCLanguage,
-    content: EXAMPLE_LD,
-    isModified: false,
-    path: '/examples/blinky.ld',
-  },
-  {
-    id: 'motor-ld',
-    name: 'motor.ld',
-    language: 'LD' as PLCLanguage,
-    content: EXAMPLE_MOTOR_LD,
-    isModified: false,
-    path: '/examples/motor.ld',
-  },
-  {
-    id: 'blinky-fbd',
-    name: 'blinky.fbd',
-    language: 'FBD' as PLCLanguage,
-    content: EXAMPLE_FBD,
-    isModified: false,
-    path: '/examples/blinky.fbd',
-  },
-  {
-    id: 'blinky-sfc',
-    name: 'blinky.sfc',
-    language: 'SFC' as PLCLanguage,
-    content: EXAMPLE_SFC,
-    isModified: false,
-    path: '/examples/blinky.sfc',
-  },
-];
 
 // =============================================================================
 // Theme Utilities
@@ -460,18 +145,12 @@ function applyThemeToDOM(theme: Theme): void {
   if (typeof window === 'undefined') return;
 
   const root = document.documentElement;
-
-  // Remove existing theme classes
   root.classList.remove('light', 'dark');
 
-  if (theme === 'system') {
-    // Let CSS @media query handle it - don't add any class
-    // The CSS already has @media (prefers-color-scheme: dark) rules
-  } else {
+  if (theme !== 'system') {
     root.classList.add(theme);
   }
 
-  // Store preference
   localStorage.setItem(THEME_STORAGE_KEY, theme);
 }
 
@@ -480,12 +159,17 @@ function applyThemeToDOM(theme: Theme): void {
 // =============================================================================
 
 export const useIDEStore = create<IDEState>((set, get) => ({
-  // Initial State
+  // Initial State - No project open
   theme: getStoredTheme(),
-  projectConfig: DEFAULT_PROJECT_CONFIG,
-  files: EXAMPLE_FILES,
-  activeFileId: EXAMPLE_FILES[0].id,
-  openTabs: [EXAMPLE_FILES[0].id],
+  isProjectOpen: false,
+  isVirtualProject: false,
+  projectName: null,
+  projectConfig: null,
+  directoryHandle: null,
+  fileTree: null,
+  loadedFiles: new Map(),
+  activeFileId: null,
+  openTabs: [],
 
   connection: {
     status: 'disconnected',
@@ -500,14 +184,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     {
       id: '1',
       type: 'info',
-      message: 'ZPLC IDE initialized',
-      timestamp: new Date(),
-      source: 'system',
-    },
-    {
-      id: '2',
-      type: 'info',
-      message: 'Ready to connect to target device',
+      message: 'ZPLC IDE ready',
       timestamp: new Date(),
       source: 'system',
     },
@@ -521,142 +198,520 @@ export const useIDEStore = create<IDEState>((set, get) => ({
   isConsoleCollapsed: false,
   showSettings: false,
 
+  // ==========================================================================
   // Theme Actions
+  // ==========================================================================
+  
   setTheme: (theme) => {
     applyThemeToDOM(theme);
     set({ theme });
   },
 
-  // Project Config Actions
-  updateProjectConfig: (config) =>
-    set((state) => ({
-      projectConfig: { ...state.projectConfig, ...config },
-    })),
+  // ==========================================================================
+  // Project Management Actions
+  // ==========================================================================
 
+  openProjectFromFolder: async () => {
+    if (!isFileSystemAccessSupported()) {
+      get().addConsoleEntry({
+        type: 'error',
+        message: 'File System Access API not supported. Use Chrome or Edge, or create a Virtual Project.',
+        source: 'system',
+      });
+      return false;
+    }
+
+    try {
+      const dirHandle = await openDirectoryPicker();
+      if (!dirHandle) {
+        // User cancelled
+        return false;
+      }
+
+      get().addConsoleEntry({
+        type: 'info',
+        message: `Opening folder: ${dirHandle.name}...`,
+        source: 'system',
+      });
+
+      // Read project config
+      let config = await readProjectConfig(dirHandle);
+      if (!config) {
+        // No zplc.json found - ask if we should create one
+        get().addConsoleEntry({
+          type: 'warning',
+          message: 'No zplc.json found. Creating default configuration...',
+          source: 'system',
+        });
+        config = { ...DEFAULT_ZPLC_CONFIG, name: dirHandle.name };
+        await writeProjectConfig(dirHandle, config);
+      }
+
+      // Read file tree
+      const fileTree = await readDirectoryRecursive(dirHandle);
+
+      set({
+        isProjectOpen: true,
+        isVirtualProject: false,
+        projectName: config.name,
+        projectConfig: config,
+        directoryHandle: dirHandle,
+        fileTree,
+        loadedFiles: new Map(),
+        activeFileId: null,
+        openTabs: [],
+      });
+
+      get().addConsoleEntry({
+        type: 'success',
+        message: `Opened project: ${config.name}`,
+        source: 'system',
+      });
+
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      get().addConsoleEntry({
+        type: 'error',
+        message: `Failed to open folder: ${message}`,
+        source: 'system',
+      });
+      return false;
+    }
+  },
+
+  createNewProjectInFolder: async () => {
+    if (!isFileSystemAccessSupported()) {
+      get().addConsoleEntry({
+        type: 'error',
+        message: 'File System Access API not supported. Use a Virtual Project instead.',
+        source: 'system',
+      });
+      return false;
+    }
+
+    try {
+      const dirHandle = await openDirectoryPicker();
+      if (!dirHandle) {
+        return false;
+      }
+
+      get().addConsoleEntry({
+        type: 'info',
+        message: `Creating new project in: ${dirHandle.name}...`,
+        source: 'system',
+      });
+
+      const config = await createNewProject(dirHandle, dirHandle.name);
+      const fileTree = await readDirectoryRecursive(dirHandle);
+
+      set({
+        isProjectOpen: true,
+        isVirtualProject: false,
+        projectName: config.name,
+        projectConfig: config,
+        directoryHandle: dirHandle,
+        fileTree,
+        loadedFiles: new Map(),
+        activeFileId: null,
+        openTabs: [],
+      });
+
+      get().addConsoleEntry({
+        type: 'success',
+        message: `Created new project: ${config.name}`,
+        source: 'system',
+      });
+
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      get().addConsoleEntry({
+        type: 'error',
+        message: `Failed to create project: ${message}`,
+        source: 'system',
+      });
+      return false;
+    }
+  },
+
+  createVirtualProject: (name: string) => {
+    const { config, files, fileTree } = createVirtualProject(name);
+    
+    const loadedFiles = new Map<string, ProjectFileWithHandle>();
+    files.forEach(f => loadedFiles.set(f.id, f));
+
+    set({
+      isProjectOpen: true,
+      isVirtualProject: true,
+      projectName: name,
+      projectConfig: config,
+      directoryHandle: null,
+      fileTree,
+      loadedFiles,
+      activeFileId: files[0]?.id || null,
+      openTabs: files.length > 0 ? [files[0].id] : [],
+    });
+
+    get().addConsoleEntry({
+      type: 'success',
+      message: `Created virtual project: ${name}`,
+      source: 'system',
+    });
+  },
+
+  closeProject: () => {
+    const hasUnsaved = get().hasUnsavedChanges();
+    if (hasUnsaved) {
+      // In a real app, we'd show a confirmation dialog
+      console.warn('Closing project with unsaved changes');
+    }
+
+    set({
+      isProjectOpen: false,
+      isVirtualProject: false,
+      projectName: null,
+      projectConfig: null,
+      directoryHandle: null,
+      fileTree: null,
+      loadedFiles: new Map(),
+      activeFileId: null,
+      openTabs: [],
+    });
+
+    get().addConsoleEntry({
+      type: 'info',
+      message: 'Project closed',
+      source: 'system',
+    });
+  },
+
+  saveProjectConfig: async () => {
+    const { directoryHandle, projectConfig, isVirtualProject } = get();
+    
+    if (isVirtualProject || !directoryHandle || !projectConfig) {
+      return;
+    }
+
+    try {
+      await writeProjectConfig(directoryHandle, projectConfig);
+      get().addConsoleEntry({
+        type: 'success',
+        message: 'Saved zplc.json',
+        source: 'system',
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      get().addConsoleEntry({
+        type: 'error',
+        message: `Failed to save config: ${message}`,
+        source: 'system',
+      });
+    }
+  },
+
+  // ==========================================================================
+  // File Tree Actions
+  // ==========================================================================
+
+  toggleDirectory: (dirPath: string) => {
+    const { fileTree } = get();
+    if (!fileTree) return;
+
+    const newTree = toggleDirectoryExpanded(fileTree, dirPath);
+    set({ fileTree: newTree });
+  },
+
+  refreshFileTree: async () => {
+    const { directoryHandle } = get();
+    if (!directoryHandle) return;
+
+    try {
+      const fileTree = await readDirectoryRecursive(directoryHandle);
+      set({ fileTree });
+    } catch (err) {
+      console.error('Failed to refresh file tree:', err);
+    }
+  },
+
+  // ==========================================================================
   // File Actions
-  addFile: (file) =>
-    set((state) => ({
-      files: [...state.files, file],
-    })),
+  // ==========================================================================
 
-  createFile: (name, language) => {
+  openFile: async (fileId: string) => {
+    const { loadedFiles, fileTree, openTabs } = get();
+
+    // Check if already loaded
+    if (loadedFiles.has(fileId)) {
+      set({
+        activeFileId: fileId,
+        openTabs: openTabs.includes(fileId) ? openTabs : [...openTabs, fileId],
+      });
+      return;
+    }
+
+    // Find the file in the tree
+    if (!fileTree) return;
+    
+    const node = findFileInTree(fileTree, fileId.replace('file-', '').replace(/-/g, '/'));
+    if (!node || node.type !== 'file') {
+      // Try finding by ID directly
+      const findById = (tree: FileTreeNode): FileTreeNode | null => {
+        if (tree.id === fileId) return tree;
+        if (tree.children) {
+          for (const child of tree.children) {
+            const found = findById(child);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+      
+      const foundNode = findById(fileTree);
+      if (!foundNode || foundNode.type !== 'file') {
+        console.error(`File not found: ${fileId}`);
+        return;
+      }
+
+      try {
+        const file = await loadFileFromTree(foundNode);
+        if (file) {
+          const newLoadedFiles = new Map(loadedFiles);
+          newLoadedFiles.set(fileId, file);
+          set({
+            loadedFiles: newLoadedFiles,
+            activeFileId: fileId,
+            openTabs: [...openTabs, fileId],
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load file:', err);
+      }
+      return;
+    }
+
+    try {
+      const file = await loadFileFromTree(node);
+      if (file) {
+        const newLoadedFiles = new Map(loadedFiles);
+        newLoadedFiles.set(fileId, file);
+        set({
+          loadedFiles: newLoadedFiles,
+          activeFileId: fileId,
+          openTabs: [...openTabs, fileId],
+        });
+      }
+    } catch (err) {
+      console.error('Failed to load file:', err);
+    }
+  },
+
+  saveFile: async (fileId: string) => {
+    const { loadedFiles, isVirtualProject } = get();
+    const file = loadedFiles.get(fileId);
+    
+    if (!file) {
+      console.error(`File not found: ${fileId}`);
+      return false;
+    }
+
+    if (isVirtualProject) {
+      // Virtual projects can't save to disk, just mark as saved
+      const newLoadedFiles = new Map(loadedFiles);
+      newLoadedFiles.set(fileId, { ...file, isModified: false });
+      set({ loadedFiles: newLoadedFiles });
+      return true;
+    }
+
+    if (!file.handle) {
+      console.error('File has no handle, cannot save');
+      return false;
+    }
+
+    try {
+      await writeFileContent(file.handle, file.content);
+      
+      const newLoadedFiles = new Map(loadedFiles);
+      newLoadedFiles.set(fileId, { ...file, isModified: false });
+      set({ loadedFiles: newLoadedFiles });
+
+      get().addConsoleEntry({
+        type: 'success',
+        message: `Saved: ${file.name}`,
+        source: 'system',
+      });
+
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      get().addConsoleEntry({
+        type: 'error',
+        message: `Failed to save ${file.name}: ${message}`,
+        source: 'system',
+      });
+      return false;
+    }
+  },
+
+  saveAllFiles: async () => {
+    const { loadedFiles } = get();
+    
+    for (const [fileId, file] of loadedFiles) {
+      if (file.isModified) {
+        await get().saveFile(fileId);
+      }
+    }
+  },
+
+  createFile: async (name: string, language: PLCLanguage, parentPath: string = 'src') => {
+    const { directoryHandle, loadedFiles, openTabs, isVirtualProject, fileTree } = get();
+    
     const ext = getExtensionForLanguage(language);
     const fileName = name.endsWith(ext) ? name : `${name}${ext}`;
-    const fileId = `file_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const filePath = `${parentPath}/${fileName}`;
+    const fileId = `file-${filePath.replace(/[^a-zA-Z0-9]/g, '-')}`;
+    const content = createEmptyFileContent(language);
 
-    const newFile: ProjectFile = {
+    const newFile: ProjectFileWithHandle = {
       id: fileId,
       name: fileName,
       language,
-      content: createEmptyFileContent(language),
+      content,
       isModified: true,
-      path: `/src/${fileName}`,
+      path: filePath,
+      parentPath,
     };
 
-    set((state) => ({
-      files: [...state.files, newFile],
-      openTabs: [...state.openTabs, fileId],
+    if (!isVirtualProject && directoryHandle) {
+      try {
+        // Navigate to parent directory
+        const pathParts = parentPath.split('/').filter(p => p);
+        let currentDir = directoryHandle;
+        for (const part of pathParts) {
+          currentDir = await currentDir.getDirectoryHandle(part, { create: true });
+        }
+
+        // Create the file
+        const fileHandle = await currentDir.getFileHandle(fileName, { create: true });
+        await writeFileContent(fileHandle, content);
+        newFile.handle = fileHandle;
+        newFile.isModified = false;
+
+        // Refresh file tree
+        await get().refreshFileTree();
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        get().addConsoleEntry({
+          type: 'error',
+          message: `Failed to create file: ${message}`,
+          source: 'system',
+        });
+        throw err;
+      }
+    } else if (isVirtualProject && fileTree) {
+      // Update virtual file tree
+      const newTree = { ...fileTree };
+      // Find or create parent directory in tree
+      const srcDir = newTree.children?.find(c => c.name === 'src');
+      if (srcDir && srcDir.children) {
+        srcDir.children.push({
+          id: fileId,
+          name: fileName,
+          type: 'file',
+          path: filePath,
+          language,
+        });
+      }
+      set({ fileTree: newTree });
+    }
+
+    const newLoadedFiles = new Map(loadedFiles);
+    newLoadedFiles.set(fileId, newFile);
+
+    set({
+      loadedFiles: newLoadedFiles,
       activeFileId: fileId,
-    }));
+      openTabs: [...openTabs, fileId],
+    });
+
+    get().addConsoleEntry({
+      type: 'success',
+      message: `Created: ${fileName}`,
+      source: 'system',
+    });
 
     return fileId;
   },
 
-  deleteFile: (fileId) =>
-    set((state) => {
-      const newFiles = state.files.filter((f) => f.id !== fileId);
-      const newTabs = state.openTabs.filter((id) => id !== fileId);
-      const newActiveId = state.activeFileId === fileId
-        ? newTabs[newTabs.length - 1] || null
-        : state.activeFileId;
+  deleteFile: async (fileId: string) => {
+    const { loadedFiles, openTabs, activeFileId, isVirtualProject } = get();
+    const file = loadedFiles.get(fileId);
 
-      return {
-        files: newFiles,
-        openTabs: newTabs,
-        activeFileId: newActiveId,
-      };
-    }),
+    if (!isVirtualProject && file?.handle) {
+      // Note: File System Access API doesn't have a direct delete method
+      // on FileSystemFileHandle. You'd need to use the parent directory's
+      // removeEntry method. For now, we just remove from our state.
+      console.warn('Disk file deletion not implemented - file removed from project only');
+    }
 
-  renameFile: (fileId, newName) =>
-    set((state) => ({
-      files: state.files.map((f) => {
-        if (f.id !== fileId) return f;
+    const newLoadedFiles = new Map(loadedFiles);
+    newLoadedFiles.delete(fileId);
 
-        // Update extension if needed
-        const ext = getExtensionForLanguage(f.language);
-        const fileName = newName.endsWith(ext) ? newName : `${newName}${ext}`;
+    const newTabs = openTabs.filter(id => id !== fileId);
+    const newActiveId = activeFileId === fileId 
+      ? newTabs[newTabs.length - 1] || null 
+      : activeFileId;
 
-        return {
-          ...f,
-          name: fileName,
-          path: `/src/${fileName}`,
-          isModified: true,
-        };
-      }),
-    })),
+    set({
+      loadedFiles: newLoadedFiles,
+      openTabs: newTabs,
+      activeFileId: newActiveId,
+    });
 
-  setActiveFile: (fileId) =>
-    set((state) => ({
-      activeFileId: fileId,
-      openTabs: fileId && !state.openTabs.includes(fileId)
-        ? [...state.openTabs, fileId]
-        : state.openTabs,
-    })),
-
-  updateFileContent: (fileId, content) =>
-    set((state) => ({
-      files: state.files.map((f) =>
-        f.id === fileId ? { ...f, content, isModified: true } : f
-      ),
-    })),
-
-  closeTab: (fileId) =>
-    set((state) => {
-      const newTabs = state.openTabs.filter((id) => id !== fileId);
-      const newActiveId = state.activeFileId === fileId
-        ? newTabs[newTabs.length - 1] || null
-        : state.activeFileId;
-      return {
-        openTabs: newTabs,
-        activeFileId: newActiveId,
-      };
-    }),
-
-  openTab: (fileId) =>
-    set((state) => ({
-      openTabs: state.openTabs.includes(fileId)
-        ? state.openTabs
-        : [...state.openTabs, fileId],
-      activeFileId: fileId,
-    })),
-
-  markFileSaved: (fileId) =>
-    set((state) => ({
-      files: state.files.map((f) =>
-        f.id === fileId ? { ...f, isModified: false } : f
-      ),
-    })),
-
-  // Import/Export Actions
-  exportProject: () => {
-    const state = get();
-    return {
-      version: '1.0.0',
-      config: state.projectConfig,
-      files: state.files.map(({ isModified, ...rest }) => rest),
-      exportedAt: new Date().toISOString(),
-    };
+    // Refresh file tree
+    if (!isVirtualProject) {
+      await get().refreshFileTree();
+    }
   },
 
-  importProject: (project) =>
-    set(() => ({
-      projectConfig: project.config,
-      files: project.files.map((f) => ({ ...f, isModified: false })),
-      openTabs: project.files.length > 0 ? [project.files[0].id] : [],
-      activeFileId: project.files.length > 0 ? project.files[0].id : null,
-    })),
+  setActiveFile: (fileId: string | null) => {
+    const { openTabs } = get();
+    set({
+      activeFileId: fileId,
+      openTabs: fileId && !openTabs.includes(fileId) 
+        ? [...openTabs, fileId] 
+        : openTabs,
+    });
+  },
 
+  updateFileContent: (fileId: string, content: string) => {
+    const { loadedFiles } = get();
+    const file = loadedFiles.get(fileId);
+    
+    if (!file) return;
+
+    const newLoadedFiles = new Map(loadedFiles);
+    newLoadedFiles.set(fileId, { ...file, content, isModified: true });
+    set({ loadedFiles: newLoadedFiles });
+  },
+
+  closeTab: (fileId: string) => {
+    const { openTabs, activeFileId } = get();
+    const newTabs = openTabs.filter(id => id !== fileId);
+    const newActiveId = activeFileId === fileId
+      ? newTabs[newTabs.length - 1] || null
+      : activeFileId;
+
+    set({
+      openTabs: newTabs,
+      activeFileId: newActiveId,
+    });
+  },
+
+  // ==========================================================================
   // Connection Actions
+  // ==========================================================================
+
   setConnectionStatus: (status) =>
     set((state) => ({
       connection: { ...state.connection, status },
@@ -667,7 +722,10 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       connection: { ...state.connection, plcState },
     })),
 
+  // ==========================================================================
   // Console Actions
+  // ==========================================================================
+
   addConsoleEntry: (entry) =>
     set((state) => ({
       consoleEntries: [
@@ -680,11 +738,9 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       ],
     })),
 
-  clearConsole: () =>
-    set({ consoleEntries: [] }),
+  clearConsole: () => set({ consoleEntries: [] }),
 
-  setActiveConsoleTab: (tab) =>
-    set({ activeConsoleTab: tab }),
+  setActiveConsoleTab: (tab) => set({ activeConsoleTab: tab }),
 
   addCompilerMessage: (message) =>
     set((state) => ({
@@ -694,28 +750,43 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       ],
     })),
 
-  clearCompilerMessages: () =>
-    set({ compilerMessages: [] }),
+  clearCompilerMessages: () => set({ compilerMessages: [] }),
 
+  // ==========================================================================
   // UI Actions
-  setSidebarWidth: (width) =>
-    set({ sidebarWidth: width }),
+  // ==========================================================================
 
-  setConsoleHeight: (height) =>
-    set({ consoleHeight: height }),
+  setSidebarWidth: (width) => set({ sidebarWidth: width }),
+  setConsoleHeight: (height) => set({ consoleHeight: height }),
+  toggleSidebar: () => set((state) => ({ isSidebarCollapsed: !state.isSidebarCollapsed })),
+  toggleConsole: () => set((state) => ({ isConsoleCollapsed: !state.isConsoleCollapsed })),
+  toggleSettings: () => set((state) => ({ showSettings: !state.showSettings })),
 
-  toggleSidebar: () =>
-    set((state) => ({ isSidebarCollapsed: !state.isSidebarCollapsed })),
+  // ==========================================================================
+  // Computed Helpers
+  // ==========================================================================
 
-  toggleConsole: () =>
-    set((state) => ({ isConsoleCollapsed: !state.isConsoleCollapsed })),
+  getActiveFile: () => {
+    const { activeFileId, loadedFiles } = get();
+    if (!activeFileId) return null;
+    return loadedFiles.get(activeFileId) || null;
+  },
 
-  toggleSettings: () =>
-    set((state) => ({ showSettings: !state.showSettings })),
+  getFile: (fileId: string) => {
+    return get().loadedFiles.get(fileId);
+  },
+
+  hasUnsavedChanges: () => {
+    const { loadedFiles } = get();
+    for (const file of loadedFiles.values()) {
+      if (file.isModified) return true;
+    }
+    return false;
+  },
 }));
 
 // =============================================================================
-// Theme Initialization Hook
+// Theme Initialization
 // =============================================================================
 
 export function initializeTheme(): void {

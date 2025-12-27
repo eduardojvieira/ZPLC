@@ -55,16 +55,14 @@ export function Toolbar() {
     addConsoleEntry, 
     setPlcState,
     setConnectionStatus,
-    files, 
     activeFileId, 
     addCompilerMessage, 
     clearCompilerMessages,
-    addFile,
-    openTab,
-    setActiveFile,
+    createFile,
     toggleSettings,
-    markFileSaved,
-    exportProject,
+    saveFile,
+    getActiveFile,
+    isVirtualProject,
   } = useIDEStore();
   const { theme, setTheme, isDark } = useTheme();
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
@@ -97,7 +95,7 @@ export function Toolbar() {
   const [isSimLoading, setIsSimLoading] = useState(false);
 
   // Get the active file
-  const activeFile = files.find(f => f.id === activeFileId);
+  const activeFile = getActiveFile();
   const isVisualLanguage = activeFile?.language === 'FBD' || activeFile?.language === 'LD' || activeFile?.language === 'SFC';
 
   // Close dropdown when clicking outside
@@ -192,39 +190,39 @@ export function Toolbar() {
   /**
    * Handle creating a new ST file from generated code
    */
-  const handleCreateSTFile = (code: string) => {
+  const handleCreateSTFile = async (code: string) => {
     if (!activeFile) return;
 
     // Generate a unique file name
     const baseName = activeFile.name.replace(/\.(fbd|ld|sfc)(\.json)?$/, '');
-    const newFileName = `${baseName}_generated.st`;
-    const newFileId = `generated_${Date.now()}`;
+    const newFileName = `${baseName}_generated`;
 
-    const newFile = {
-      id: newFileId,
-      name: newFileName,
-      language: 'ST' as const,
-      content: code,
-      isModified: false,
-      path: `/generated/${newFileName}`,
-    };
+    try {
+      // Create the file (it will have .st extension added automatically)
+      const newFileId = await createFile(newFileName, 'ST');
+      
+      // Update the content with the generated code
+      useIDEStore.getState().updateFileContent(newFileId, code);
 
-    addFile(newFile);
-    openTab(newFileId);
-    setActiveFile(newFileId);
-
-    addConsoleEntry({
-      type: 'success',
-      message: `Created new file: ${newFileName}`,
-      source: 'transpiler',
-    });
+      addConsoleEntry({
+        type: 'success',
+        message: `Created new file: ${newFileName}.st`,
+        source: 'transpiler',
+      });
+    } catch (err) {
+      addConsoleEntry({
+        type: 'error',
+        message: `Failed to create file: ${err instanceof Error ? err.message : String(err)}`,
+        source: 'transpiler',
+      });
+    }
   };
 
   /**
-   * Save current file to disk (download)
+   * Save current file to disk
    */
-  const handleSaveFile = () => {
-    if (!activeFile) {
+  const handleSaveFile = async () => {
+    if (!activeFile || !activeFileId) {
       addConsoleEntry({
         type: 'error',
         message: 'No file selected to save',
@@ -233,43 +231,73 @@ export function Toolbar() {
       return;
     }
 
-    try {
-      const blob = new Blob([activeFile.content], { type: 'text/plain;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = activeFile.name;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+    // Use the store's saveFile which handles both virtual and real projects
+    const success = await saveFile(activeFileId);
+    
+    if (!success && isVirtualProject) {
+      // For virtual projects, offer download as fallback
+      try {
+        const blob = new Blob([activeFile.content], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = activeFile.name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
 
-      markFileSaved(activeFile.id);
-      addConsoleEntry({
-        type: 'success',
-        message: `Saved: ${activeFile.name}`,
-        source: 'system',
-      });
-    } catch (e) {
-      addConsoleEntry({
-        type: 'error',
-        message: `Failed to save: ${e instanceof Error ? e.message : String(e)}`,
-        source: 'system',
-      });
+        addConsoleEntry({
+          type: 'success',
+          message: `Downloaded: ${activeFile.name}`,
+          source: 'system',
+        });
+      } catch (e) {
+        addConsoleEntry({
+          type: 'error',
+          message: `Failed to download: ${e instanceof Error ? e.message : String(e)}`,
+          source: 'system',
+        });
+      }
     }
   };
 
   /**
-   * Export entire project as JSON
+   * Export entire project as JSON (for virtual projects or backup)
    */
   const handleExportProject = () => {
+    const { loadedFiles, projectConfig } = useIDEStore.getState();
+    
+    if (!projectConfig) {
+      addConsoleEntry({
+        type: 'error',
+        message: 'No project open',
+        source: 'system',
+      });
+      return;
+    }
+
     try {
-      const project = exportProject();
-      const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json;charset=utf-8' });
+      // Build export object
+      const files = Array.from(loadedFiles.values()).map(f => ({
+        name: f.name,
+        path: f.path,
+        language: f.language,
+        content: f.content,
+      }));
+
+      const exportData = {
+        version: '1.0.0',
+        config: projectConfig,
+        files,
+        exportedAt: new Date().toISOString(),
+      };
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${project.config.name || 'zplc-project'}.zplc.json`;
+      a.download = `${projectConfig.name || 'zplc-project'}.zplc.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -277,7 +305,7 @@ export function Toolbar() {
 
       addConsoleEntry({
         type: 'success',
-        message: `Exported project: ${project.config.name}`,
+        message: `Exported project: ${projectConfig.name}`,
         source: 'system',
       });
     } catch (e) {
