@@ -53,7 +53,7 @@ const config = {
         docs: {
           sidebarPath: './sidebars.js',
           editUrl:
-            'https://github.com/eduardojvieira/ZPLC/tree/main/website/',
+            'https://github.com/eduardojvieira/ZPLC/tree/master/docs/',
         },
         blog: false,
         theme: {
