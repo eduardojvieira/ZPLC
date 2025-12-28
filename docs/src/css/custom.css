@@ -1,30 +1,190 @@
-/**
- * Any CSS included here will be global. The classic template
- * bundles Infima by default. Infima is a CSS framework designed to
- * work well for content-centric websites.
- */
+/* Font Imports */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
-/* You can override the default Infima variables here. */
 :root {
-  --ifm-color-primary: #2e8555;
-  --ifm-color-primary-dark: #29784c;
-  --ifm-color-primary-darker: #277148;
-  --ifm-color-primary-darkest: #205d3b;
-  --ifm-color-primary-light: #33925d;
-  --ifm-color-primary-lighter: #359962;
-  --ifm-color-primary-lightest: #3cad6e;
-  --ifm-code-font-size: 95%;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+  /* ZPLC Brand Colors */
+  --zplc-cyan: #00E5FF;
+  --zplc-cyan-dark: #00B2C7;
+  --zplc-purple: #BD00FF;
+  --zplc-purple-dark: #9600CC;
+  --zplc-bg-dark: #0B0E14;
+  --zplc-bg-card: #151922;
+  --zplc-text-main: #E0E6ED;
+  --zplc-text-muted: #94A3B8;
+
+  /* Docusaurus Overrides (Light Mode - enforced for contrast) */
+  /* Using darker teal/slate for readability on white backgrounds */
+  --ifm-color-primary: #006D77;
+  --ifm-color-primary-dark: #005F68;
+  --ifm-color-primary-darker: #00525A;
+  --ifm-color-primary-darkest: #003B41;
+  --ifm-color-primary-light: #008B96;
+  --ifm-color-primary-lighter: #00AAB8;
+  --ifm-color-primary-lightest: #00D4E6;
+
+  --ifm-font-family-base: 'Outfit', sans-serif;
+  --ifm-font-family-monospace: 'JetBrains Mono', monospace;
+
+  --ifm-background-color: #ffffff;
+  --ifm-navbar-background-color: #ffffff;
+
+  /* Hero Text Variables (Light Mode Default) */
+  --zplc-hero-text-gradient: none;
+  --zplc-hero-text-fill: #1a202c;
+  /* High contrast dark grey/black */
 }
 
-/* For readability concerns, you should choose a lighter palette in dark mode. */
+/* Premium Dark Mode (The Default Experience) */
 [data-theme='dark'] {
-  --ifm-color-primary: #25c2a0;
-  --ifm-color-primary-dark: #21af90;
-  --ifm-color-primary-darker: #1fa588;
-  --ifm-color-primary-darkest: #1a8870;
-  --ifm-color-primary-light: #29d5b0;
-  --ifm-color-primary-lighter: #32d8b4;
-  --ifm-color-primary-lightest: #4fddbf;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+  --ifm-color-primary: #00E5FF;
+  --ifm-color-primary-dark: #00CEE6;
+  --ifm-color-primary-darker: #00B6CC;
+  --ifm-color-primary-darkest: #008999;
+  --ifm-color-primary-light: #33EAFF;
+  --ifm-color-primary-lighter: #66F0FF;
+  --ifm-color-primary-lightest: #99F5FF;
+
+  --ifm-background-color: var(--zplc-bg-dark);
+  --ifm-background-surface-color: var(--zplc-bg-card);
+  --ifm-navbar-background-color: rgba(11, 14, 20, 0.85);
+  /* Semi-transparent */
+
+  --ifm-footer-background-color: #05070A;
+
+  /* Glassmorphism utils */
+  --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+  --neon-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+
+  /* Hero Text Variables (Dark Mode) */
+  --zplc-hero-text-gradient: linear-gradient(180deg, #FFFFFF 0%, #94A3B8 100%);
+  --zplc-hero-text-fill: transparent;
+}
+
+/* Global Styles */
+html[data-theme='dark'] .navbar {
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.hero-title {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+/* Button Gradients */
+.button--primary {
+  background: linear-gradient(135deg, #0077aa 0%, #005577 100%);
+  border: none;
+  font-weight: 600;
+  color: #fff !important;
+}
+
+.button--secondary {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.button--secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: var(--zplc-cyan);
+}
+
+/* Light Mode Overrides */
+[data-theme='light'] .button--secondary {
+  color: #000;
+  border-color: #ccc;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='light'] .button--secondary:hover {
+  background: rgba(0, 0, 0, 0.1);
+  border-color: var(--ifm-color-primary);
+}
+
+[data-theme='light'] .hero-title span {
+  color: #0099AA !important;
+}
+
+/* ============================================
+   LIGHT MODE - High Contrast Overrides
+   ============================================ */
+
+/* Light mode text colors for landing page */
+[data-theme='light'] {
+  --zplc-text-main: #1a202c;
+  --zplc-text-muted: #4a5568;
+  --zplc-cyan: #0077aa;
+  --zplc-purple: #7c3aed;
+  --zplc-bg-card: #f7fafc;
+}
+
+/* Hero section light mode */
+[data-theme='light'] .heroSection {
+  background: radial-gradient(circle at 50% 20%, rgba(0, 119, 170, 0.08) 0%, rgba(255, 255, 255, 0) 50%);
+}
+
+[data-theme='light'] .heroTitle {
+  background: none;
+  -webkit-background-clip: unset;
+  -webkit-text-fill-color: #0f1419;
+  background-clip: unset;
+  color: #0f1419;
+}
+
+[data-theme='light'] .heroTitle span {
+  -webkit-text-fill-color: #005566 !important;
+  color: #005566 !important;
+}
+
+[data-theme='light'] .heroSubtitle {
+  color: #2D3748;
+  /* Darker than the previous #4a5568 for better readability */
+  font-weight: 500;
+}
+
+/* Feature section light mode */
+[data-theme='light'] .featureTitle {
+  color: #1a202c;
+}
+
+[data-theme='light'] .featureTitleHighlight {
+  color: #0077aa;
+}
+
+[data-theme='light'] .featureDescription {
+  color: #4a5568;
+}
+
+[data-theme='light'] .featureListItem {
+  color: #2d3748;
+}
+
+[data-theme='light'] .featureIcon {
+  color: #0077aa;
+}
+
+/* Visual container light mode */
+[data-theme='light'] .visualContainer {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+/* Code blocks in light mode */
+[data-theme='light'] .visualContainer pre {
+  background: #f7fafc !important;
+}
+
+[data-theme='light'] .visualContainer code {
+  color: #1a202c;
+}
+
+/* Glow button toned down for light mode */
+[data-theme='light'] .glowButton {
+  box-shadow: 0 4px 14px rgba(0, 119, 170, 0.3);
+}
+
+[data-theme='light'] .glowButton:hover {
+  box-shadow: 0 6px 20px rgba(0, 119, 170, 0.4);
 }

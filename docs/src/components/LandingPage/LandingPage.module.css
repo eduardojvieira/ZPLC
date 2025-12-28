@@ -1,0 +1,954 @@
+/* ============================================
+   ZPLC Landing Page Styles
+   ============================================ */
+
+/* ============================================
+   HERO SECTION
+   ============================================ */
+
+.heroSection {
+    position: relative;
+    min-height: 90vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    padding: 6rem 2rem 4rem;
+}
+
+.heroBackground {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.gridPattern {
+    position: absolute;
+    inset: 0;
+    background-image: 
+        linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse 80% 50% at 50% 50%, black 40%, transparent 100%);
+}
+
+.glowOrb1 {
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0, 229, 255, 0.15) 0%, transparent 70%);
+    top: -200px;
+    left: -100px;
+    filter: blur(60px);
+    animation: float 20s ease-in-out infinite;
+}
+
+.glowOrb2 {
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(189, 0, 255, 0.12) 0%, transparent 70%);
+    bottom: -150px;
+    right: -100px;
+    filter: blur(60px);
+    animation: float 25s ease-in-out infinite reverse;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0) translateX(0); }
+    33% { transform: translateY(-30px) translateX(20px); }
+    66% { transform: translateY(20px) translateX(-20px); }
+}
+
+.heroContent {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    text-align: center;
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(0, 229, 255, 0.1);
+    border: 1px solid rgba(0, 229, 255, 0.2);
+    border-radius: 100px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--zplc-cyan, #00E5FF);
+    margin-bottom: 1.5rem;
+}
+
+.badgeIcon {
+    font-size: 1rem;
+}
+
+.heroTitle {
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(180deg, #FFFFFF 0%, #94A3B8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.heroTitleAccent {
+    background: linear-gradient(135deg, var(--zplc-cyan, #00E5FF) 0%, var(--zplc-purple, #BD00FF) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.heroSubtitle {
+    font-size: 1.25rem;
+    line-height: 1.7;
+    color: var(--zplc-text-muted, #94A3B8);
+    max-width: 700px;
+    margin: 0 auto 2.5rem;
+}
+
+.heroStats {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+    margin-bottom: 2.5rem;
+    flex-wrap: wrap;
+}
+
+.stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.statValue {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--zplc-cyan, #00E5FF);
+    font-family: var(--ifm-font-family-monospace);
+}
+
+.statLabel {
+    font-size: 0.85rem;
+    color: var(--zplc-text-muted, #94A3B8);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.statDivider {
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(180deg, transparent, rgba(255,255,255,0.2), transparent);
+}
+
+.buttons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 3rem;
+    flex-wrap: wrap;
+}
+
+.heroButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.75rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.primaryButton {
+    background: linear-gradient(135deg, #00E5FF 0%, #00B2C7 100%);
+    color: #000 !important;
+    box-shadow: 0 4px 20px rgba(0, 229, 255, 0.3);
+}
+
+.primaryButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 30px rgba(0, 229, 255, 0.4);
+}
+
+.secondaryButton {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+
+.secondaryButton:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(0, 229, 255, 0.5);
+}
+
+.buttonArrow {
+    font-size: 1.1rem;
+    transition: transform 0.3s ease;
+}
+
+.heroButton:hover .buttonArrow {
+    transform: translateX(4px);
+}
+
+.trustedBy {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.trustedLabel {
+    font-size: 0.8rem;
+    color: var(--zplc-text-muted, #94A3B8);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.techLogos {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.techLogo {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.5);
+    padding: 0.5rem 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* ============================================
+   GENERAL SECTION STYLES
+   ============================================ */
+
+.section {
+    padding: 6rem 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.sectionAlt {
+    background: rgba(255, 255, 255, 0.02);
+    max-width: none;
+    padding-left: 2rem;
+    padding-right: 2rem;
+}
+
+.sectionAlt > * {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.sectionHeader {
+    text-align: center;
+    margin-bottom: 4rem;
+}
+
+.sectionLabel {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--zplc-cyan, #00E5FF);
+    margin-bottom: 1rem;
+    padding: 0.25rem 0.75rem;
+    background: rgba(0, 229, 255, 0.1);
+    border-radius: 4px;
+}
+
+.sectionTitle {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--zplc-text-main, #E0E6ED);
+}
+
+.sectionSubtitle {
+    font-size: 1.15rem;
+    line-height: 1.7;
+    color: var(--zplc-text-muted, #94A3B8);
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+/* ============================================
+   RUNTIME SECTION
+   ============================================ */
+
+.runtimeGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: center;
+    margin-bottom: 4rem;
+}
+
+@media (max-width: 900px) {
+    .runtimeGrid {
+        grid-template-columns: 1fr;
+        gap: 3rem;
+    }
+}
+
+.runtimeVisual {
+    display: flex;
+    justify-content: center;
+}
+
+.architectureDiagram {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 2rem;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 350px;
+}
+
+.archLayer {
+    width: 100%;
+    padding: 1rem 1.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--layer-color, #22d3ee);
+    border-radius: 8px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.archLayer:hover {
+    background: rgba(255, 255, 255, 0.05);
+    transform: scale(1.02);
+}
+
+.archLayerLabel {
+    display: block;
+    font-weight: 600;
+    color: var(--layer-color, #22d3ee);
+    font-size: 0.95rem;
+}
+
+.archLayerSub {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--zplc-text-muted, #94A3B8);
+    margin-top: 0.25rem;
+}
+
+.archArrow {
+    font-size: 1.5rem;
+    color: var(--zplc-text-muted, #94A3B8);
+    opacity: 0.5;
+}
+
+.archTargets {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.archTarget {
+    padding: 0.5rem 1rem;
+    background: rgba(39, 202, 64, 0.1);
+    border: 1px solid rgba(39, 202, 64, 0.3);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #27ca40;
+}
+
+.runtimeFeatures {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.runtimeFeature {
+    display: flex;
+    gap: 1rem;
+    padding: 1.25rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.runtimeFeature:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(0, 229, 255, 0.2);
+}
+
+.runtimeFeatureIcon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.runtimeFeatureContent h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: var(--zplc-text-main, #E0E6ED);
+}
+
+.runtimeFeatureContent p {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--zplc-text-muted, #94A3B8);
+    margin: 0;
+}
+
+/* ============================================
+   CODE SHOWCASE
+   ============================================ */
+
+.codeShowcase {
+    margin-top: 3rem;
+}
+
+.codeBlock {
+    background: #0d1117;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.codeHeader {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.codeDot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.codeTitle {
+    margin-left: 0.75rem;
+    font-size: 0.8rem;
+    color: var(--zplc-text-muted, #94A3B8);
+    font-family: var(--ifm-font-family-monospace);
+}
+
+.codeContent {
+    padding: 1.5rem;
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: #c9d1d9;
+    font-family: var(--ifm-font-family-monospace);
+    overflow-x: auto;
+}
+
+/* ============================================
+   IDE SECTION
+   ============================================ */
+
+.ideShowcase {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 3rem;
+    align-items: start;
+}
+
+@media (max-width: 1000px) {
+    .ideShowcase {
+        grid-template-columns: 1fr;
+    }
+}
+
+.ideScreenshot {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ideSvg {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.ideFeatures {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+}
+
+@media (max-width: 600px) {
+    .ideFeatures {
+        grid-template-columns: 1fr;
+    }
+}
+
+.ideFeatureCard {
+    padding: 1.25rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.ideFeatureCard:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(0, 229, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.ideFeatureIcon {
+    font-size: 1.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.ideFeatureCard h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--zplc-text-main, #E0E6ED);
+}
+
+.ideFeatureCard p {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--zplc-text-muted, #94A3B8);
+    margin: 0;
+}
+
+/* ============================================
+   USE CASES SECTION
+   ============================================ */
+
+.useCasesGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+
+@media (max-width: 900px) {
+    .useCasesGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .useCasesGrid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.useCaseCard {
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.useCaseCard:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(0, 229, 255, 0.2);
+    transform: translateY(-4px);
+}
+
+.useCaseIcon {
+    font-size: 2.5rem;
+    display: block;
+    margin-bottom: 1rem;
+}
+
+.useCaseTitle {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--zplc-text-main, #E0E6ED);
+}
+
+.useCaseDesc {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--zplc-text-muted, #94A3B8);
+    margin: 0;
+}
+
+/* ============================================
+   ARCHITECTURE FLOW SECTION
+   ============================================ */
+
+.archFlow {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.archFlowStep {
+    flex: 1;
+    min-width: 180px;
+    max-width: 220px;
+    text-align: center;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.archFlowStep:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(0, 229, 255, 0.2);
+}
+
+.archFlowIcon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.archFlowStep h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--zplc-text-main, #E0E6ED);
+}
+
+.archFlowStep p {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--zplc-text-muted, #94A3B8);
+    margin: 0;
+}
+
+.archFlowArrow {
+    font-size: 1.5rem;
+    color: var(--zplc-cyan, #00E5FF);
+    align-self: center;
+    opacity: 0.6;
+}
+
+@media (max-width: 900px) {
+    .archFlowArrow {
+        display: none;
+    }
+    
+    .archFlow {
+        gap: 1.5rem;
+    }
+}
+
+/* ============================================
+   CTA SECTION
+   ============================================ */
+
+.ctaSection {
+    padding: 6rem 2rem;
+    background: linear-gradient(180deg, transparent 0%, rgba(0, 229, 255, 0.05) 50%, transparent 100%);
+    text-align: center;
+}
+
+.ctaContent {
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.ctaTitle {
+    font-size: clamp(2rem, 4vw, 2.5rem);
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--zplc-text-main, #E0E6ED);
+}
+
+.ctaSubtitle {
+    font-size: 1.15rem;
+    line-height: 1.7;
+    color: var(--zplc-text-muted, #94A3B8);
+    margin-bottom: 2rem;
+}
+
+.ctaButtons {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.ctaButton {
+    padding: 0.875rem 1.75rem;
+    font-weight: 600;
+    border-radius: 8px;
+}
+
+/* ============================================
+   FEATURE CARD (Reusable)
+   ============================================ */
+
+.featureCard {
+    padding: 2rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    transition: all 0.3s ease;
+}
+
+.featureCard:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--accent-color, rgba(0, 229, 255, 0.3));
+    transform: translateY(-4px);
+}
+
+.featureCardIcon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.featureCardTitle {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: var(--zplc-text-main, #E0E6ED);
+}
+
+.featureCardDescription {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--zplc-text-muted, #94A3B8);
+    margin-bottom: 1rem;
+}
+
+.featureCardList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.featureCardListItem {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--zplc-text-muted, #94A3B8);
+    margin-bottom: 0.5rem;
+}
+
+.checkIcon {
+    color: var(--accent-color, #22d3ee);
+    font-weight: bold;
+}
+
+/* ============================================
+   LIGHT MODE OVERRIDES
+   ============================================ */
+
+:global([data-theme='light']) .heroSection {
+    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+
+:global([data-theme='light']) .gridPattern {
+    background-image: 
+        linear-gradient(rgba(0, 109, 119, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 109, 119, 0.05) 1px, transparent 1px);
+}
+
+:global([data-theme='light']) .glowOrb1 {
+    background: radial-gradient(circle, rgba(0, 109, 119, 0.08) 0%, transparent 70%);
+}
+
+:global([data-theme='light']) .glowOrb2 {
+    background: radial-gradient(circle, rgba(124, 58, 237, 0.06) 0%, transparent 70%);
+}
+
+:global([data-theme='light']) .badge {
+    background: rgba(0, 109, 119, 0.1);
+    border-color: rgba(0, 109, 119, 0.2);
+    color: #006D77;
+}
+
+:global([data-theme='light']) .heroTitle {
+    background: none;
+    -webkit-background-clip: unset;
+    -webkit-text-fill-color: #0a0a0a;
+    background-clip: unset;
+    color: #0a0a0a;
+}
+
+:global([data-theme='light']) .heroTitleAccent {
+    background: linear-gradient(135deg, #006D77 0%, #7c3aed 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+:global([data-theme='light']) .heroSubtitle {
+    color: #4a5568;
+}
+
+:global([data-theme='light']) .statValue {
+    color: #006D77;
+}
+
+:global([data-theme='light']) .statLabel {
+    color: #64748b;
+}
+
+:global([data-theme='light']) .statDivider {
+    background: linear-gradient(180deg, transparent, rgba(0,0,0,0.1), transparent);
+}
+
+:global([data-theme='light']) .primaryButton {
+    background: linear-gradient(135deg, #006D77 0%, #005a62 100%);
+    color: #fff !important;
+    box-shadow: 0 4px 20px rgba(0, 109, 119, 0.25);
+}
+
+:global([data-theme='light']) .primaryButton:hover {
+    box-shadow: 0 6px 30px rgba(0, 109, 119, 0.35);
+}
+
+:global([data-theme='light']) .secondaryButton {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: rgba(0, 0, 0, 0.15);
+    color: #1a202c;
+}
+
+:global([data-theme='light']) .secondaryButton:hover {
+    background: rgba(0, 0, 0, 0.08);
+    border-color: #006D77;
+}
+
+:global([data-theme='light']) .techLogo {
+    color: #64748b;
+    border-color: rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, 0.02);
+}
+
+:global([data-theme='light']) .trustedLabel {
+    color: #64748b;
+}
+
+:global([data-theme='light']) .sectionLabel {
+    background: rgba(0, 109, 119, 0.1);
+    color: #006D77;
+}
+
+:global([data-theme='light']) .sectionTitle {
+    color: #1a202c;
+}
+
+:global([data-theme='light']) .sectionSubtitle {
+    color: #4a5568;
+}
+
+:global([data-theme='light']) .sectionAlt {
+    background: #f8fafc;
+}
+
+:global([data-theme='light']) .architectureDiagram {
+    background: #ffffff;
+    border-color: #e2e8f0;
+}
+
+:global([data-theme='light']) .archLayer {
+    background: #f8fafc;
+}
+
+:global([data-theme='light']) .archArrow {
+    color: #64748b;
+}
+
+:global([data-theme='light']) .runtimeFeature {
+    background: #ffffff;
+    border-color: #e2e8f0;
+}
+
+:global([data-theme='light']) .runtimeFeature:hover {
+    border-color: #006D77;
+}
+
+:global([data-theme='light']) .runtimeFeatureContent h4 {
+    color: #1a202c;
+}
+
+:global([data-theme='light']) .runtimeFeatureContent p {
+    color: #4a5568;
+}
+
+:global([data-theme='light']) .codeBlock {
+    background: #1e293b;
+}
+
+:global([data-theme='light']) .ideScreenshot {
+    border-color: #e2e8f0;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+}
+
+:global([data-theme='light']) .ideFeatureCard,
+:global([data-theme='light']) .useCaseCard,
+:global([data-theme='light']) .archFlowStep,
+:global([data-theme='light']) .featureCard {
+    background: #ffffff;
+    border-color: #e2e8f0;
+}
+
+:global([data-theme='light']) .ideFeatureCard:hover,
+:global([data-theme='light']) .useCaseCard:hover,
+:global([data-theme='light']) .archFlowStep:hover,
+:global([data-theme='light']) .featureCard:hover {
+    border-color: #006D77;
+}
+
+:global([data-theme='light']) .ideFeatureCard h4,
+:global([data-theme='light']) .useCaseTitle,
+:global([data-theme='light']) .archFlowStep h4,
+:global([data-theme='light']) .featureCardTitle {
+    color: #1a202c;
+}
+
+:global([data-theme='light']) .ideFeatureCard p,
+:global([data-theme='light']) .useCaseDesc,
+:global([data-theme='light']) .archFlowStep p,
+:global([data-theme='light']) .featureCardDescription,
+:global([data-theme='light']) .featureCardListItem {
+    color: #4a5568;
+}
+
+:global([data-theme='light']) .archFlowArrow {
+    color: #006D77;
+}
+
+:global([data-theme='light']) .ctaSection {
+    background: linear-gradient(180deg, transparent 0%, rgba(0, 109, 119, 0.05) 50%, transparent 100%);
+}
+
+:global([data-theme='light']) .ctaTitle {
+    color: #1a202c;
+}
+
+:global([data-theme='light']) .ctaSubtitle {
+    color: #4a5568;
+}
+
+:global([data-theme='light']) .checkIcon {
+    color: #006D77;
+}

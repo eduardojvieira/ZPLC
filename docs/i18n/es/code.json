@@ -325,5 +325,227 @@
   "theme.tags.tagsPageTitle": {
     "message": "Etiquetas",
     "description": "The title of the tag list page"
+  },
+  "homepage.features.runtime.title.portable": {
+    "message": "Portátil"
+  },
+  "homepage.features.runtime.title.highlight": {
+    "message": "Runtime"
+  },
+  "homepage.features.runtime.description": {
+    "message": "El Núcleo ZPLC es un intérprete de bytecode ligero y basado en pila escrito en C. Abstrae el hardware subyacente, permitiendo que su lógica de control se ejecute de manera idéntica en un microcontrolador, una puerta de enlace perimetral o un servidor en la nube."
+  },
+  "homepage.features.runtime.list.deterministic": {
+    "message": "Determinista y apto para tiempo real"
+  },
+  "homepage.features.runtime.list.footprint": {
+    "message": "Huella Flash de 44KB (optimizado para Zephyr)"
+  },
+  "homepage.features.runtime.list.safety": {
+    "message": "Seguridad de Memoria y Ejecución en Sandbox"
+  },
+  "homepage.features.ide.title.zeroInstall": {
+    "message": "Cero Instalación"
+  },
+  "homepage.features.ide.title.highlight": {
+    "message": "IDE"
+  },
+  "homepage.features.ide.description": {
+    "message": "Olvídese de gigabytes de archivos de instalación. El ZPLC IDE se ejecuta completamente en su navegador. Conéctese a su hardware a través de WebSerial o WebSockets y depure en tiempo real."
+  },
+  "homepage.features.ide.list.logic": {
+    "message": "Lógica Pura: Ladder, ST, FBD"
+  },
+  "homepage.features.ide.list.connection": {
+    "message": "Conexión Instantánea de Hardware"
+  },
+  "homepage.features.ide.list.monitoring": {
+    "message": "Monitorización y Forzado en Vivo"
+  },
+  "homepage.hero.title.oneCore": {
+    "message": "Un Núcleo de Ejecución."
+  },
+  "homepage.hero.title.anyRuntime": {
+    "message": "Cualquier Entorno."
+  },
+  "homepage.hero.subtitle": {
+    "message": "El runtime compatible con IEC 61131-3, determinista, portátil y seguro, diseñado para la automatización industrial moderna. Ejecútelo en Zephyr, Linux y Windows."
+  },
+  "homepage.hero.button.getStarted": {
+    "message": "Empezar"
+  },
+  "homepage.hero.button.openIDE": {
+    "message": "Abrir IDE Web"
+  },
+  "homepage.hero.button.ideDocs": {
+    "message": "Documentación IDE"
+  },
+  "homepage.hero.badge": {
+    "message": "Runtime Industrial de Código Abierto"
+  },
+  "homepage.hero.stats.boards": {
+    "message": "Placas Soportadas"
+  },
+  "homepage.hero.stats.footprint": {
+    "message": "Huella Flash"
+  },
+  "homepage.hero.stats.jitter": {
+    "message": "Jitter de Ciclo"
+  },
+  "homepage.hero.poweredBy": {
+    "message": "Impulsado por"
+  },
+  "homepage.runtime.label": {
+    "message": "MOTOR DE EJECUCIÓN"
+  },
+  "homepage.runtime.title": {
+    "message": "Portátil. Determinista. Seguro."
+  },
+  "homepage.runtime.subtitle": {
+    "message": "El Núcleo ZPLC es un intérprete de bytecode ligero basado en pila escrito en ANSI C99. Abstrae el hardware subyacente a través de una interfaz HAL limpia."
+  },
+  "homepage.runtime.feature1.title": {
+    "message": "Ejecución en Tiempo Real"
+  },
+  "homepage.runtime.feature1.desc": {
+    "message": "Ciclos de escaneo deterministas con jitter sub-milisegundo en objetivos RTOS. Temporización predecible para aplicaciones de seguridad crítica."
+  },
+  "homepage.runtime.feature2.title": {
+    "message": "Memoria Segura"
+  },
+  "homepage.runtime.feature2.desc": {
+    "message": "Ejecución en sandbox con acceso a memoria verificado. La VM no puede corromper el sistema host."
+  },
+  "homepage.runtime.feature3.title": {
+    "message": "Huella Mínima"
+  },
+  "homepage.runtime.feature3.desc": {
+    "message": "Solo 44KB Flash y 8KB RAM requeridos. Funciona en microcontroladores con recursos limitados."
+  },
+  "homepage.runtime.feature4.title": {
+    "message": "Recarga en Caliente"
+  },
+  "homepage.runtime.feature4.desc": {
+    "message": "Actualice la lógica del programa sin reiniciar el runtime. La memoria retentiva sobrevive a las actualizaciones."
+  },
+  "homepage.ide.label": {
+    "message": "IDE BASADO EN WEB"
+  },
+  "homepage.ide.title": {
+    "message": "Desarrolle desde Cualquier Lugar"
+  },
+  "homepage.ide.subtitle": {
+    "message": "Un entorno de desarrollo moderno basado en navegador. Sin instalación requerida. Conéctese a su hardware vía WebSerial y depure en tiempo real."
+  },
+  "homepage.ide.feature1.title": {
+    "message": "Editores Visuales"
+  },
+  "homepage.ide.feature1.desc": {
+    "message": "Editores de arrastrar y soltar para Diagrama de Escalera (LD), Diagrama de Bloques de Función (FBD) y Gráfico de Función Secuencial (SFC)."
+  },
+  "homepage.ide.feature2.title": {
+    "message": "Texto Estructurado"
+  },
+  "homepage.ide.feature2.desc": {
+    "message": "Compilador ST completo con resaltado de sintaxis, autocompletado y verificación de errores en tiempo real."
+  },
+  "homepage.ide.feature3.title": {
+    "message": "Conexión de Hardware"
+  },
+  "homepage.ide.feature3.desc": {
+    "message": "Conéctese vía WebSerial o WebSocket. Cargue programas y monitoree variables en vivo."
+  },
+  "homepage.ide.feature4.title": {
+    "message": "Simulación WASM"
+  },
+  "homepage.ide.feature4.desc": {
+    "message": "Pruebe su lógica en el navegador antes de desplegar. Simulación precisa ciclo a ciclo."
+  },
+  "homepage.usecases.label": {
+    "message": "CASOS DE USO"
+  },
+  "homepage.usecases.title": {
+    "message": "Diseñado para Aplicaciones Industriales"
+  },
+  "homepage.usecases.subtitle": {
+    "message": "Desde plantas de producción hasta laboratorios de investigación, ZPLC impulsa la automatización en diversas industrias."
+  },
+  "homepage.usecases.manufacturing.title": {
+    "message": "Manufactura"
+  },
+  "homepage.usecases.manufacturing.desc": {
+    "message": "Control de líneas de producción, sistemas de transporte y máquinas de empaque con temporización determinista."
+  },
+  "homepage.usecases.hvac.title": {
+    "message": "Automatización de Edificios"
+  },
+  "homepage.usecases.hvac.desc": {
+    "message": "Control HVAC, sistemas de iluminación y gestión energética con conectividad de red."
+  },
+  "homepage.usecases.water.title": {
+    "message": "Tratamiento de Agua"
+  },
+  "homepage.usecases.water.desc": {
+    "message": "Control de bombas, dosificación química y monitoreo de niveles con enclavamientos de seguridad."
+  },
+  "homepage.usecases.energy.title": {
+    "message": "Sistemas de Energía"
+  },
+  "homepage.usecases.energy.desc": {
+    "message": "Inversores solares, gestión de baterías y control de sincronización con la red."
+  },
+  "homepage.usecases.agriculture.title": {
+    "message": "Agricultura"
+  },
+  "homepage.usecases.agriculture.desc": {
+    "message": "Control de riego, automatización de invernaderos y monitoreo de ganado."
+  },
+  "homepage.usecases.lab.title": {
+    "message": "Laboratorio"
+  },
+  "homepage.usecases.lab.desc": {
+    "message": "Control de equipos de prueba, adquisición de datos y automatización de experimentos."
+  },
+  "homepage.arch.label": {
+    "message": "ARQUITECTURA"
+  },
+  "homepage.arch.title": {
+    "message": "Cómo Funciona"
+  },
+  "homepage.arch.step1.title": {
+    "message": "Diseñar"
+  },
+  "homepage.arch.step1.desc": {
+    "message": "Cree lógica usando Ladder, FBD o Texto Estructurado en el IDE basado en navegador."
+  },
+  "homepage.arch.step2.title": {
+    "message": "Compilar"
+  },
+  "homepage.arch.step2.desc": {
+    "message": "El compilador genera bytecode ZPLC optimizado a partir de su código fuente."
+  },
+  "homepage.arch.step3.title": {
+    "message": "Simular"
+  },
+  "homepage.arch.step3.desc": {
+    "message": "Pruebe en el navegador usando WebAssembly antes de desplegar."
+  },
+  "homepage.arch.step4.title": {
+    "message": "Desplegar"
+  },
+  "homepage.arch.step4.desc": {
+    "message": "Cargue al hardware objetivo vía conexión Serial o de Red."
+  },
+  "homepage.cta.title": {
+    "message": "¿Listo para Comenzar?"
+  },
+  "homepage.cta.subtitle": {
+    "message": "ZPLC es de código abierto y gratuito. Consulte la documentación o explore el código."
+  },
+  "homepage.cta.docs": {
+    "message": "Leer la Documentación"
+  },
+  "homepage.cta.github": {
+    "message": "Ver en GitHub"
   }
 }

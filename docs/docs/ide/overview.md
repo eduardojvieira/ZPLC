@@ -2,8 +2,7 @@
 
 The ZPLC IDE is a modern, web-based engineering environment designed for industrial automation professionals. It enables the development, simulation, and deployment of PLC programs using IEC 61131-3 standard languages.
 
-![ZPLC IDE Screenshot](/img/ide_placeholder.png)
-*Figure 1: The ZPLC Web-based IDE*
+{/* IDE screenshot placeholder - will be added in future release */}
 
 ## Key Features
 

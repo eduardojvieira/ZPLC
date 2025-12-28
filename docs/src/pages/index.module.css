@@ -1,23 +1,199 @@
-/**
- * CSS files with the .module.css suffix will be treated as CSS modules
- * and scoped locally.
- */
+/* Landing Page Layout Styles */
 
-.heroBanner {
-  padding: 4rem 0;
+.heroSection {
+  padding: 8rem 2rem;
   text-align: center;
   position: relative;
   overflow: hidden;
+  min-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
-@media screen and (max-width: 996px) {
-  .heroBanner {
-    padding: 2rem;
-  }
+:global([data-theme='dark']) .heroSection {
+  background: radial-gradient(circle at 50% 20%, rgba(0, 229, 255, 0.15) 0%, rgba(0, 0, 0, 0) 50%);
+}
+
+:global([data-theme='light']) .heroSection {
+  background: radial-gradient(circle at 50% 20%, rgba(0, 77, 90, 0.08) 0%, rgba(255, 255, 255, 0) 50%);
+}
+
+.heroTitle {
+  font-size: 5rem;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 24px;
+  letter-spacing: -0.03em;
+}
+
+/* Dark mode - gradient text */
+:global([data-theme='dark']) .heroTitle {
+  background: linear-gradient(180deg, #FFFFFF 0%, #94A3B8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+:global([data-theme='dark']) .heroTitle span {
+  -webkit-text-fill-color: var(--zplc-cyan);
+}
+
+/* Light mode - solid dark text */
+:global([data-theme='light']) .heroTitle {
+  background: none;
+  -webkit-background-clip: unset;
+  background-clip: unset;
+  -webkit-text-fill-color: #0a0a0a;
+  color: #0a0a0a;
+}
+
+:global([data-theme='light']) .heroTitle span {
+  -webkit-text-fill-color: #004d5a !important;
+  color: #004d5a !important;
+}
+
+.heroSubtitle {
+  font-size: 1.5rem;
+  max-width: 800px;
+  margin: 0 auto 48px;
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+:global([data-theme='dark']) .heroSubtitle {
+  color: #94A3B8;
+}
+
+:global([data-theme='light']) .heroSubtitle {
+  color: #374151;
 }
 
 .buttons {
   display: flex;
-  align-items: center;
+  gap: 24px;
   justify-content: center;
+  margin-top: 2rem;
+}
+
+.heroButton {
+  padding: 16px 48px;
+  font-size: 1.1rem;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.glowButton {
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+}
+
+.glowButton:hover {
+  box-shadow: 0 0 30px rgba(0, 229, 255, 0.6);
+  transform: translateY(-2px);
+}
+
+/* Feature Sections */
+.featuresSection {
+  padding: 6rem 2rem;
+}
+
+.featureRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto 8rem;
+  gap: 4rem;
+}
+
+.featureRowReverse {
+  flex-direction: row-reverse;
+}
+
+.featureContent {
+  flex: 1;
+}
+
+.featureVisual {
+  flex: 1;
+  position: relative;
+}
+
+.featureTitle {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: var(--zplc-text-main, #E0E6ED);
+}
+
+.featureTitleHighlight {
+  color: var(--zplc-cyan, #00E5FF);
+}
+
+.featureDescription {
+  font-size: 1.125rem;
+  color: var(--zplc-text-muted, #94A3B8);
+  line-height: 1.7;
+  margin-bottom: 2rem;
+}
+
+.featureList {
+  list-style: none;
+  padding: 0;
+}
+
+.featureListItem {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  color: var(--zplc-text-main, #E0E6ED);
+}
+
+.featureIcon {
+  margin-right: 12px;
+  color: var(--zplc-cyan, #00E5FF);
+}
+
+/* Visual Container Stylings */
+.visualContainer {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 24px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.ideScreenshot {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Mermaid Wrapper */
+.mermaidWrapper {
+  background: transparent;
+  display: flex;
+  justify-content: center;
+  min-height: 300px;
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 996px) {
+  .heroTitle {
+    font-size: 3.5rem;
+  }
+
+  .featureRow,
+  .featureRowReverse {
+    flex-direction: column;
+    text-align: center;
+    gap: 3rem;
+  }
+
+  .featureListItem {
+    justify-content: center;
+  }
 }
