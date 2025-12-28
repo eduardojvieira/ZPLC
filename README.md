@@ -8,6 +8,8 @@ ZPLC is a portable, deterministic PLC runtime environment powered by [Zephyr RTO
 [![Zephyr 4.0](https://img.shields.io/badge/Zephyr-4.0.0-blue.svg)](https://zephyrproject.org/)
 [![C99](https://img.shields.io/badge/C-C99-green.svg)](https://en.wikipedia.org/wiki/C99)
 
+[![Website](https://img.shields.io/badge/Website-Live-brightgreen)](https://eduardojvieira.github.io/ZPLC/)
+
 ## Features
 
 - **Portable Core**: ANSI C99 compliant core, running on 500+ microcontrollers (via Zephyr), Linux, Windows, and WebAssembly.
