@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZPLC - Zephyr PLC</title>
+    <meta name="description" content="A portable, deterministic PLC runtime environment powered by Zephyr RTOS.">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="#" class="logo">ZPLC</a>
+            <div class="nav-links">
+                <a href="#features" data-i18n="nav_features">Features</a>
+                <a href="#architecture" data-i18n="nav_architecture">Architecture</a>
+                <a href="#quickstart" data-i18n="nav_quickstart">Quick Start</a>
+                <a href="https://github.com/eduardojvieira/ZPLC" target="_blank">GitHub</a>
+                <button id="lang-toggle" class="lang-btn" aria-label="Toggle Language">
+                    <span class="lang-text">ES</span>
+                </button>
+            </div>
+            <button class="mobile-menu-btn">☰</button>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-content">
+            <div class="badge">v1.0.0 Released 🚀</div>
+            <h1 data-i18n="hero_title">One Execution Core,<br>Any Runtime.</h1>
+            <p class="hero-subtitle" data-i18n="hero_subtitle">
+                Portable, deterministic PLC runtime powered by Zephyr RTOS. 
+                Bring modern software development practices to industrial automation.
+            </p>
+            <div class="hero-actions">
+                <a href="#quickstart" class="btn btn-primary" data-i18n="cta_start">Get Started</a>
+                <a href="https://github.com/eduardojvieira/ZPLC" class="btn btn-secondary">
+                    <svg height="20" width="20" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+                    </svg>
+                    GitHub
+                </a>
+            </div>
+            <div class="hero-stats">
+                <div class="stat">
+                    <span class="stat-value">500+</span>
+                    <span class="stat-label" data-i18n="stat_boards">Boards</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value">IEC</span>
+                    <span class="stat-label">61131-3</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-value">MIT</span>
+                    <span class="stat-label" data-i18n="stat_license">Open Source</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section id="features" class="features-section">
+        <div class="container">
+            <h2 class="section-title" data-i18n="features_title">Key Features</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3 data-i18n="feat_portable_title">Portable Core</h3>
+                    <p data-i18n="feat_portable_desc">ANSI C99 compliant core running on Zephyr, Linux, Windows, and WebAssembly.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎨</div>
+                    <h3 data-i18n="feat_ide_title">Visual IDE</h3>
+                    <p data-i18n="feat_ide_desc">Web-based editor for Ladder (LD), Function Block (FBD), and SFC workflows.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🏭</div>
+                    <h3 data-i18n="feat_industrial_title">Industrial Grade</h3>
+                    <p data-i18n="feat_industrial_desc">Deterministic execution with sub-millisecond jitter on RTOS targets.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔌</div>
+                    <h3 data-i18n="feat_connectivity_title">Unified Architecture</h3>
+                    <p data-i18n="feat_connectivity_desc">Hardware-agnostic .zplc bytecode. Compile once, run on any supported hardware.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="architecture" class="arch-section">
+        <div class="container">
+            <h2 class="section-title" data-i18n="arch_title">Architecture</h2>
+            <div class="arch-container">
+                <pre class="code-block arch-diagram">
+┌─────────────────────────────────────────────────────────────┐
+│                    Development Host (IDE)                    │
+│  ┌─────────┐    ┌──────────┐    ┌────────┐    ┌──────────┐ │
+│  │ ST/LD/  │───▶│ Compiler │───▶│ Linker │───▶│  .zplc   │ │
+│  │ FBD/SFC │    │          │    │        │    │ bytecode │ │
+│  └─────────┘    └──────────┘    └────────┘    └────┬─────┘ │
+└────────────────────────────────────────────────────│───────┘
+                                                     │ Deploy
+┌────────────────────────────────────────────────────▼───────┐
+│                    Target Runtime                           │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │                    ZPLC Core (C99)                    │  │
+│  │  ┌──────────┐  ┌─────────────┐  ┌─────────────────┐  │  │
+│  │  │ Loader   │  │ VM (62 ops) │  │ Process Image   │  │  │
+│  │  └──────────┘  └─────────────┘  └─────────────────┘  │  │
+│  └──────────────────────────┬───────────────────────────┘  │
+│                             │ HAL Interface                 │
+│  ┌──────────────────────────▼───────────────────────────┐  │
+│  │ ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌────────┐ │  │
+│  │ │  Zephyr  │  │  POSIX   │  │ Windows  │  │  WASM  │ │  │
+│  │ │   HAL    │  │   HAL    │  │   HAL    │  │  HAL   │ │  │
+│  │ └──────────┘  └──────────┘  └──────────┘  └────────┘ │  │
+│  └──────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+                </pre>
+            </div>
+        </div>
+    </section>
+
+    <section id="quickstart" class="qs-section">
+        <div class="container">
+            <h2 class="section-title" data-i18n="qs_title">Quick Start</h2>
+            <div class="qs-content">
+                <div class="qs-step">
+                    <h3 data-i18n="qs_step1_title">1. POSIX Build (Testing)</h3>
+                    <p data-i18n="qs_step1_desc">Build and test the core on your host machine:</p>
+                    <pre class="code-block"><span class="comment"># Clone the repository</span>
+git clone https://github.com/eduardojvieira/ZPLC.git
+cd ZPLC
+
+<span class="comment"># Build</span>
+mkdir build_posix && cd build_posix
+cmake .. -DZEPHYR_BUILD=OFF
+make
+
+<span class="comment"># Run the demo runtime</span>
+./zplc_runtime</pre>
+                </div>
+                <div class="qs-step">
+                    <h3 data-i18n="qs_step2_title">2. Zephyr Build (Embedded)</h3>
+                    <p data-i18n="qs_step2_desc">Run on real hardware or QEMU:</p>
+                    <pre class="code-block"><span class="comment"># Build for QEMU Cortex-M3</span>
+west build -b mps2/an385 $ZEPLC_PATH/apps/zephyr_app
+
+<span class="comment"># Run in QEMU</span>
+west build -t run</pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-logo">ZPLC</div>
+            <p data-i18n="footer_desc">Open source PLC runtime for the modern era.</p>
+            <div class="social-links">
+                <a href="https://github.com/eduardojvieira/ZPLC">GitHub</a>
+                <a href="https://zephyrproject.org/">Zephyr Project</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 ZPLC Project. MIT License.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
