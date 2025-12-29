@@ -11,6 +11,11 @@
  *
  * If using the onboard RGB LED (WS2812), you would need the LED Strip driver
  * instead of simple GPIO. This overlay provides a simple GPIO LED for testing.
+ *
+ * NVS Storage:
+ *   ESP32 uses its own NVS partition defined in the ESP-IDF partition table.
+ *   The storage_partition is already defined in the base ESP32 devicetree.
+ *   No additional overlay is needed for program persistence.
  */
 
 / {

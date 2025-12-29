@@ -238,6 +238,13 @@ static int run_legacy_mode(void)
 
 #ifdef CONFIG_ZPLC_SCHEDULER
 
+/** @brief Persistence keys for saving program to NVS */
+#define ZPLC_PERSIST_KEY_CODE   "code"
+#define ZPLC_PERSIST_KEY_LEN    "code_len"
+
+/** @brief Buffer for restored program (shared with shell) */
+static uint8_t restored_program_buffer[4096];
+
 /**
  * @brief Sync OPI to GPIO (called periodically from main thread)
  */
@@ -270,9 +277,99 @@ static void read_counters(uint32_t *fast_count, uint32_t *slow_count)
                   ((uint32_t)work[6] << 16) | ((uint32_t)work[7] << 24);
 }
 
+/**
+ * @brief Try to restore a saved program from NVS.
+ *
+ * This function attempts to load a previously saved ZPLC program from
+ * Flash storage. If successful, it registers the program with the
+ * scheduler and starts execution.
+ *
+ * @return Number of tasks loaded (>0), 0 if no saved program, or negative error.
+ */
+static int try_restore_saved_program(void)
+{
+    uint32_t saved_len = 0;
+    int ret;
+    int task_count;
+    
+    zplc_hal_log("[RESTORE] Checking for saved program...\n");
+    
+    /* First, try to load the program length */
+    ret = zplc_hal_persist_load(ZPLC_PERSIST_KEY_LEN, &saved_len, sizeof(saved_len));
+    if (ret != ZPLC_HAL_OK) {
+        zplc_hal_log("[RESTORE] No saved program found (first boot)\n");
+        return 0;
+    }
+    
+    /* Validate the saved length */
+    if (saved_len == 0 || saved_len > sizeof(restored_program_buffer)) {
+        zplc_hal_log("[RESTORE] Invalid saved length: %u\n", saved_len);
+        return 0;
+    }
+    
+    /* Load the program bytecode */
+    ret = zplc_hal_persist_load(ZPLC_PERSIST_KEY_CODE, restored_program_buffer, saved_len);
+    if (ret != ZPLC_HAL_OK) {
+        zplc_hal_log("[RESTORE] Failed to load program bytecode\n");
+        return 0;
+    }
+    
+    zplc_hal_log("[RESTORE] Loaded %u bytes from Flash\n", saved_len);
+    
+    /* Validate the header - check for ZPLC magic */
+    if (saved_len >= 4 &&
+        restored_program_buffer[0] == 'Z' &&
+        restored_program_buffer[1] == 'P' &&
+        restored_program_buffer[2] == 'L' &&
+        restored_program_buffer[3] == 'C') {
+        
+        /* It's a .zplc file with TASK segment - use zplc_sched_load */
+        task_count = zplc_sched_load(restored_program_buffer, saved_len);
+        
+        if (task_count < 0) {
+            zplc_hal_log("[RESTORE] Failed to parse .zplc file: %d\n", task_count);
+            return task_count;
+        }
+        
+        if (task_count == 0) {
+            zplc_hal_log("[RESTORE] No tasks found in .zplc file\n");
+            return 0;
+        }
+        
+        /* Start the scheduler */
+        zplc_sched_start();
+        
+        zplc_hal_log("[RESTORE] Restored %d tasks from Flash\n", task_count);
+        return task_count;
+    }
+    
+    /* Otherwise, treat as raw bytecode - register as single task */
+    zplc_task_def_t task_def = {
+        .id = 100,  /* Restored task ID */
+        .type = ZPLC_TASK_CYCLIC,
+        .priority = 3,
+        .interval_us = 100000,  /* 100ms default */
+        .entry_point = 0,
+        .stack_size = 64,
+    };
+    
+    ret = zplc_sched_register_task(&task_def, restored_program_buffer, saved_len);
+    if (ret < 0) {
+        zplc_hal_log("[RESTORE] Failed to register restored task: %d\n", ret);
+        return ret;
+    }
+    
+    /* Start the scheduler */
+    zplc_sched_start();
+    
+    zplc_hal_log("[RESTORE] Restored raw program (%u bytes) as task\n", saved_len);
+    return 1;
+}
+
 static int run_scheduler_mode(void)
 {
     int ret;
+#if RUN_DEMO_ON_BOOT
     int fast_task_id, slow_task_id;
     zplc_task_def_t fast_task_def, slow_task_def;
     zplc_sched_stats_t stats;
@@ -280,6 +377,9 @@ static int run_scheduler_mode(void)
     uint32_t fast_count, slow_count;
     uint32_t start_time, elapsed_sec;
     uint32_t last_report = 0;
+#else
+    int restored_tasks;
+#endif
 
     zplc_hal_log("[SCHED] Multitask scheduler mode\n");
 
@@ -435,9 +535,16 @@ static int run_scheduler_mode(void)
 #if RUN_DEMO_ON_BOOT
     zplc_hal_log("[SCHED] Test complete. Entering idle loop.\n");
 #else
-    zplc_hal_log("[SCHED] Scheduler ready. Waiting for shell commands.\n");
-    zplc_hal_log("[SCHED] Use 'zplc load <size>' then 'zplc data <hex>' to load a program.\n");
-    zplc_hal_log("[SCHED] Use 'zplc start' to begin execution.\n");
+    /* Try to restore a previously saved program from NVS */
+    restored_tasks = try_restore_saved_program();
+    
+    if (restored_tasks > 0) {
+        zplc_hal_log("[SCHED] Program restored from Flash. Running.\n");
+    } else {
+        zplc_hal_log("[SCHED] Scheduler ready. Waiting for shell commands.\n");
+        zplc_hal_log("[SCHED] Use 'zplc load <size>' then 'zplc data <hex>' to load a program.\n");
+        zplc_hal_log("[SCHED] Use 'zplc start' to begin execution.\n");
+    }
 #endif
     zplc_hal_log("[SCHED] Shell available. Use 'zplc help' for commands.\n");
 

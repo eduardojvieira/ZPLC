@@ -159,6 +159,18 @@ zplc_hal_result_t zplc_hal_persist_load(const char *key,
                                          void *data,
                                          size_t len);
 
+/**
+ * @brief Delete data from persistent storage.
+ *
+ * Removes the specified key from persistent storage.
+ *
+ * @param key    Identifier string for the data block to delete.
+ *
+ * @return ZPLC_HAL_OK on success, ZPLC_HAL_NOT_IMPL if key not found,
+ *         error code otherwise.
+ */
+zplc_hal_result_t zplc_hal_persist_delete(const char *key);
+
 /* ============================================================================
  * Network Functions (Phase 4+)
  * ============================================================================ */

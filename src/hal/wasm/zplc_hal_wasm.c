@@ -225,12 +225,28 @@ EM_JS(int, js_persist_load, (const char* key, void* data, int len), {
     }
 });
 
+EM_JS(int, js_persist_delete, (const char* key), {
+    try {
+        const keyStr = UTF8ToString(key);
+        const item = localStorage.getItem('zplc_' + keyStr);
+        if (!item) return -4;  /* ZPLC_HAL_NOT_IMPL - not found */
+        localStorage.removeItem('zplc_' + keyStr);
+        return 0;
+    } catch (e) {
+        console.error('Persist delete error:', e);
+        return -1;
+    }
+});
+
 #else
 static int js_persist_save(const char* key, const void* data, int len) {
     (void)key; (void)data; (void)len; return -1;
 }
 static int js_persist_load(const char* key, void* data, int len) {
     (void)key; (void)data; (void)len; return -1;
+}
+static int js_persist_delete(const char* key) {
+    (void)key; return -1;
 }
 #endif
 
@@ -250,6 +266,17 @@ zplc_hal_result_t zplc_hal_persist_load(const char *key,
 {
     if (js_persist_load(key, data, (int)len) == 0) {
         return ZPLC_HAL_OK;
+    }
+    return ZPLC_HAL_ERROR;
+}
+
+zplc_hal_result_t zplc_hal_persist_delete(const char *key)
+{
+    int ret = js_persist_delete(key);
+    if (ret == 0) {
+        return ZPLC_HAL_OK;
+    } else if (ret == -4) {
+        return ZPLC_HAL_NOT_IMPL;  /* Not found */
     }
     return ZPLC_HAL_ERROR;
 }

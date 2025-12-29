@@ -8,9 +8,14 @@
  * This overlay:
  *   - Enables USB CDC ACM as the console/shell interface
  *   - Adds a button input for testing
+ *   - Defines a storage partition for NVS (program persistence)
  *
  * Hardware connection:
  *   GPIO15 -> Button -> GND (optional)
+ *
+ * Flash Layout (2MB total):
+ *   0x000000 - 0x1EFFFF: Application code (1984 KB)
+ *   0x1F0000 - 0x1FFFFF: NVS Storage (64 KB)
  */
 
 / {
@@ -34,6 +39,25 @@
     aliases {
         sw0 = &button0;
         /* led0 already defined as onboard LED (GPIO25) */
+    };
+};
+
+/* Define flash partitions for NVS storage */
+&flash0 {
+    partitions {
+        compatible = "fixed-partitions";
+        #address-cells = <1>;
+        #size-cells = <1>;
+
+        /*
+         * Storage partition for NVS (Non-Volatile Storage)
+         * Located at the end of flash: 64KB for program persistence
+         * This allows storing ZPLC programs up to ~60KB
+         */
+        storage_partition: partition@1f0000 {
+            label = "storage";
+            reg = <0x1f0000 0x10000>;
+        };
     };
 };
 

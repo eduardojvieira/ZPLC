@@ -19,6 +19,11 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/printk.h>
 
+/* Settings subsystem for NVS persistence */
+#ifdef CONFIG_SETTINGS
+#include <zephyr/settings/settings.h>
+#endif
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -364,9 +369,231 @@ zplc_hal_result_t zplc_hal_dac_write(uint8_t channel, uint16_t value)
 }
 
 /* ============================================================================
- * Persistence Functions (Stubs for Phase 3+)
- * ============================================================================ */
+ * Persistence Functions (Direct NVS API)
+ * ============================================================================
+ *
+ * This implementation uses Zephyr's NVS (Non-Volatile Storage) directly.
+ * NVS provides a simple key-value store on flash memory.
+ *
+ * We use numeric IDs for keys:
+ *   ID 1: "code_len" - Program length (4 bytes)
+ *   ID 2: "code"     - Program bytecode (up to 4KB)
+ *   ID 3: "retain"   - Retentive memory region (future)
+ *
+ * The storage_partition must be defined in the board's DeviceTree overlay.
+ */
 
+#ifdef CONFIG_NVS
+
+#include <zephyr/fs/nvs.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/drivers/flash.h>
+
+/** @brief NVS ID for program length */
+#define NVS_ID_CODE_LEN   1
+
+/** @brief NVS ID for program bytecode */
+#define NVS_ID_CODE       2
+
+/** @brief NVS ID for retentive memory */
+#define NVS_ID_RETAIN     3
+
+/** @brief NVS filesystem handle */
+static struct nvs_fs nvs_handle;
+
+/** @brief NVS initialized flag */
+static bool nvs_initialized = false;
+
+/**
+ * @brief Map string key to NVS ID.
+ */
+static uint16_t key_to_nvs_id(const char *key)
+{
+    if (strcmp(key, "code_len") == 0) return NVS_ID_CODE_LEN;
+    if (strcmp(key, "code") == 0) return NVS_ID_CODE;
+    if (strcmp(key, "retain") == 0) return NVS_ID_RETAIN;
+    return 0; /* Invalid */
+}
+
+/**
+ * @brief Ensure NVS is initialized.
+ */
+static int ensure_nvs_init(void)
+{
+    int ret;
+    struct flash_pages_info page_info;
+    
+    if (nvs_initialized) {
+        return 0;
+    }
+    
+    /* Get the storage partition from DeviceTree */
+    nvs_handle.flash_device = FIXED_PARTITION_DEVICE(storage_partition);
+    if (!device_is_ready(nvs_handle.flash_device)) {
+        zplc_hal_log("[HAL] NVS flash device not ready\n");
+        return -ENODEV;
+    }
+    
+    nvs_handle.offset = FIXED_PARTITION_OFFSET(storage_partition);
+    
+    /* Get flash page info to determine sector size */
+    ret = flash_get_page_info_by_offs(nvs_handle.flash_device, 
+                                       nvs_handle.offset, &page_info);
+    if (ret != 0) {
+        zplc_hal_log("[HAL] Failed to get flash page info: %d\n", ret);
+        return ret;
+    }
+    
+    nvs_handle.sector_size = page_info.size;
+    nvs_handle.sector_count = FIXED_PARTITION_SIZE(storage_partition) / 
+                               page_info.size;
+    
+    /* Mount NVS */
+    ret = nvs_mount(&nvs_handle);
+    if (ret != 0) {
+        zplc_hal_log("[HAL] NVS mount failed: %d\n", ret);
+        return ret;
+    }
+    
+    nvs_initialized = true;
+    zplc_hal_log("[HAL] NVS initialized (%u sectors of %u bytes)\n",
+                 nvs_handle.sector_count, nvs_handle.sector_size);
+    return 0;
+}
+
+/**
+ * @brief Save data to persistent storage using NVS.
+ *
+ * @param key    Identifier string for the data block.
+ * @param data   Pointer to data to save.
+ * @param len    Length of data in bytes.
+ *
+ * @return ZPLC_HAL_OK on success, error code otherwise.
+ */
+zplc_hal_result_t zplc_hal_persist_save(const char *key,
+                                         const void *data,
+                                         size_t len)
+{
+    uint16_t id;
+    ssize_t ret;
+    
+    if (key == NULL || data == NULL || len == 0) {
+        return ZPLC_HAL_ERROR;
+    }
+    
+    /* Initialize NVS if needed */
+    if (ensure_nvs_init() != 0) {
+        return ZPLC_HAL_ERROR;
+    }
+    
+    /* Map key to ID */
+    id = key_to_nvs_id(key);
+    if (id == 0) {
+        zplc_hal_log("[HAL] Unknown persist key: %s\n", key);
+        return ZPLC_HAL_ERROR;
+    }
+    
+    /* Write to NVS */
+    ret = nvs_write(&nvs_handle, id, data, len);
+    if (ret < 0) {
+        zplc_hal_log("[HAL] NVS write '%s' (id=%u) failed: %zd\n", key, id, ret);
+        return ZPLC_HAL_ERROR;
+    }
+    
+    zplc_hal_log("[HAL] NVS write '%s': %zu bytes\n", key, len);
+    return ZPLC_HAL_OK;
+}
+
+/**
+ * @brief Load data from persistent storage using NVS.
+ *
+ * @param key    Identifier string for the data block.
+ * @param data   Buffer to load data into.
+ * @param len    Maximum length to read.
+ *
+ * @return ZPLC_HAL_OK on success, error code otherwise.
+ *         Returns ZPLC_HAL_ERROR if key not found or read fails.
+ */
+zplc_hal_result_t zplc_hal_persist_load(const char *key,
+                                         void *data,
+                                         size_t len)
+{
+    uint16_t id;
+    ssize_t ret;
+    
+    if (key == NULL || data == NULL || len == 0) {
+        return ZPLC_HAL_ERROR;
+    }
+    
+    /* Initialize NVS if needed */
+    if (ensure_nvs_init() != 0) {
+        return ZPLC_HAL_ERROR;
+    }
+    
+    /* Map key to ID */
+    id = key_to_nvs_id(key);
+    if (id == 0) {
+        zplc_hal_log("[HAL] Unknown persist key: %s\n", key);
+        return ZPLC_HAL_ERROR;
+    }
+    
+    /* Read from NVS */
+    ret = nvs_read(&nvs_handle, id, data, len);
+    if (ret < 0) {
+        /* Key not found or error - this is normal on first boot */
+        zplc_hal_log("[HAL] NVS read '%s': not found\n", key);
+        return ZPLC_HAL_ERROR;
+    }
+    
+    zplc_hal_log("[HAL] NVS read '%s': %zd bytes\n", key, ret);
+    return ZPLC_HAL_OK;
+}
+
+/**
+ * @brief Delete data from persistent storage using NVS.
+ *
+ * @param key    Identifier string for the data block.
+ *
+ * @return ZPLC_HAL_OK on success, ZPLC_HAL_NOT_IMPL if key not found,
+ *         error code otherwise.
+ */
+zplc_hal_result_t zplc_hal_persist_delete(const char *key)
+{
+    uint16_t id;
+    int ret;
+    
+    if (key == NULL) {
+        return ZPLC_HAL_ERROR;
+    }
+    
+    /* Initialize NVS if needed */
+    if (ensure_nvs_init() != 0) {
+        return ZPLC_HAL_ERROR;
+    }
+    
+    /* Map key to ID */
+    id = key_to_nvs_id(key);
+    if (id == 0) {
+        zplc_hal_log("[HAL] Unknown persist key: %s\n", key);
+        return ZPLC_HAL_ERROR;
+    }
+    
+    /* Delete from NVS */
+    ret = nvs_delete(&nvs_handle, id);
+    if (ret != 0) {
+        zplc_hal_log("[HAL] NVS delete '%s' failed: %d\n", key, ret);
+        return ZPLC_HAL_ERROR;
+    }
+    
+    zplc_hal_log("[HAL] NVS delete '%s': OK\n", key);
+    return ZPLC_HAL_OK;
+}
+
+#else /* !CONFIG_NVS */
+
+/**
+ * @brief Save data to persistent storage (stub - NVS disabled).
+ */
 zplc_hal_result_t zplc_hal_persist_save(const char *key,
                                          const void *data,
                                          size_t len)
@@ -375,12 +602,13 @@ zplc_hal_result_t zplc_hal_persist_save(const char *key,
     (void)data;
     (void)len;
     
-    /* TODO Phase 3+:
-     * Use settings_save_one() or NVS directly
-     */
+    zplc_hal_log("[HAL] Persist save: CONFIG_SETTINGS not enabled\n");
     return ZPLC_HAL_NOT_IMPL;
 }
 
+/**
+ * @brief Load data from persistent storage (stub - Settings disabled).
+ */
 zplc_hal_result_t zplc_hal_persist_load(const char *key,
                                          void *data,
                                          size_t len)
@@ -389,11 +617,21 @@ zplc_hal_result_t zplc_hal_persist_load(const char *key,
     (void)data;
     (void)len;
     
-    /* TODO Phase 3+:
-     * Use settings_runtime_get() or NVS directly
-     */
     return ZPLC_HAL_NOT_IMPL;
 }
+
+/**
+ * @brief Delete data from persistent storage (stub - Settings disabled).
+ */
+zplc_hal_result_t zplc_hal_persist_delete(const char *key)
+{
+    (void)key;
+    
+    zplc_hal_log("[HAL] Persist delete: CONFIG_SETTINGS not enabled\n");
+    return ZPLC_HAL_NOT_IMPL;
+}
+
+#endif /* CONFIG_SETTINGS */
 
 /* ============================================================================
  * Network Functions (Stubs for Phase 4)

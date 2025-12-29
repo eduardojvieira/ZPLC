@@ -56,6 +56,10 @@
  * scheduler API, not the legacy buffer system.
  */
 
+/** @brief Persistence keys for saving program to NVS */
+#define ZPLC_PERSIST_KEY_CODE   "code"
+#define ZPLC_PERSIST_KEY_LEN    "code_len"
+
 /* Local state for dynamic task loading */
 static uint8_t shell_program_buffer[4096];
 static size_t shell_buffer_size = sizeof(shell_program_buffer);
@@ -81,6 +85,10 @@ static int shell_task_id = -1;
  * In legacy mode, shell commands control the single-task execution
  * loop in main.c via shared extern variables.
  */
+
+/** @brief Persistence keys for saving program to NVS */
+#define ZPLC_PERSIST_KEY_CODE   "code"
+#define ZPLC_PERSIST_KEY_LEN    "code_len"
 
 /* VM state enum - must match main.c */
 typedef enum {
@@ -315,6 +323,17 @@ static int cmd_zplc_start(const struct shell *sh, size_t argc, char **argv)
         /* Start the scheduler */
         zplc_sched_start();
         
+        /* Save program to NVS for persistence across power cycles */
+        {
+            uint32_t len32 = (uint32_t)shell_received_size;
+            if (zplc_hal_persist_save(ZPLC_PERSIST_KEY_LEN, &len32, sizeof(len32)) == ZPLC_HAL_OK &&
+                zplc_hal_persist_save(ZPLC_PERSIST_KEY_CODE, shell_program_buffer, shell_received_size) == ZPLC_HAL_OK) {
+                shell_print(sh, "OK: Program retained in Flash");
+            } else {
+                shell_warn(sh, "WARN: Failed to save program to Flash (will not persist)");
+            }
+        }
+        
         shell_load_state = SHELL_STATE_IDLE;
         shell_print(sh, "OK: Loaded %d tasks from .zplc file", task_count);
         return 0;
@@ -349,6 +368,17 @@ static int cmd_zplc_start(const struct shell *sh, size_t argc, char **argv)
     
     /* Ensure scheduler is running */
     zplc_sched_start();
+    
+    /* Save program to NVS for persistence across power cycles */
+    {
+        uint32_t len32 = (uint32_t)shell_received_size;
+        if (zplc_hal_persist_save(ZPLC_PERSIST_KEY_LEN, &len32, sizeof(len32)) == ZPLC_HAL_OK &&
+            zplc_hal_persist_save(ZPLC_PERSIST_KEY_CODE, shell_program_buffer, shell_received_size) == ZPLC_HAL_OK) {
+            shell_print(sh, "OK: Program retained in Flash");
+        } else {
+            shell_warn(sh, "WARN: Failed to save program to Flash (will not persist)");
+        }
+    }
     
     shell_load_state = SHELL_STATE_IDLE;
     shell_print(sh, "OK: Task started (slot=%d, %zu bytes)", 
@@ -487,6 +517,70 @@ static int cmd_sched_tasks(const struct shell *sh, size_t argc, char **argv)
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_sched,
     SHELL_CMD(status, NULL, "Show scheduler statistics", cmd_sched_status),
     SHELL_CMD(tasks, NULL, "List registered tasks", cmd_sched_tasks),
+    SHELL_SUBCMD_SET_END
+);
+
+/* ============================================================================
+ * Persistence Command Handlers
+ * ============================================================================ */
+
+/**
+ * @brief Handler for 'zplc persist clear'
+ *
+ * Erases the saved program from Flash/NVS so it won't auto-load on next boot.
+ */
+static int cmd_persist_clear(const struct shell *sh, size_t argc, char **argv)
+{
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
+    
+    zplc_hal_result_t ret1, ret2;
+    
+    /* Delete both code and length keys */
+    ret1 = zplc_hal_persist_delete(ZPLC_PERSIST_KEY_CODE);
+    ret2 = zplc_hal_persist_delete(ZPLC_PERSIST_KEY_LEN);
+    
+    if (ret1 == ZPLC_HAL_OK || ret2 == ZPLC_HAL_OK) {
+        shell_print(sh, "OK: Cleared saved program from Flash");
+    } else if (ret1 == ZPLC_HAL_NOT_IMPL && ret2 == ZPLC_HAL_NOT_IMPL) {
+        shell_print(sh, "OK: No saved program found");
+    } else {
+        shell_error(sh, "ERROR: Failed to clear persistence");
+        return -EIO;
+    }
+    
+    return 0;
+}
+
+/**
+ * @brief Handler for 'zplc persist info'
+ *
+ * Shows information about saved program in Flash/NVS.
+ */
+static int cmd_persist_info(const struct shell *sh, size_t argc, char **argv)
+{
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
+    
+    uint32_t saved_len = 0;
+    zplc_hal_result_t ret;
+    
+    ret = zplc_hal_persist_load(ZPLC_PERSIST_KEY_LEN, &saved_len, sizeof(saved_len));
+    
+    if (ret == ZPLC_HAL_OK && saved_len > 0) {
+        shell_print(sh, "Saved program: %u bytes", saved_len);
+        shell_print(sh, "Will auto-load on next boot");
+    } else {
+        shell_print(sh, "No saved program in Flash");
+    }
+    
+    return 0;
+}
+
+/* Persist subcommands */
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_persist,
+    SHELL_CMD(clear, NULL, "Erase saved program from Flash", cmd_persist_clear),
+    SHELL_CMD(info, NULL, "Show saved program info", cmd_persist_info),
     SHELL_SUBCMD_SET_END
 );
 
@@ -774,6 +868,17 @@ static int cmd_zplc_start(const struct shell *sh, size_t argc, char **argv)
     /* Reset cycle count and start */
     cycle_count = 0;
     runtime_state = ZPLC_STATE_RUNNING;
+    
+    /* Save program to NVS for persistence across power cycles */
+    {
+        uint32_t len32 = (uint32_t)program_received_size;
+        if (zplc_hal_persist_save(ZPLC_PERSIST_KEY_LEN, &len32, sizeof(len32)) == ZPLC_HAL_OK &&
+            zplc_hal_persist_save(ZPLC_PERSIST_KEY_CODE, program_buffer, program_received_size) == ZPLC_HAL_OK) {
+            shell_print(sh, "OK: Program retained in Flash");
+        } else {
+            shell_warn(sh, "WARN: Failed to save program to Flash (will not persist)");
+        }
+    }
     
     shell_print(sh, "OK: Started (%zu bytes loaded)", program_received_size);
     return 0;
@@ -1167,6 +1272,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_zplc,
 #ifdef CONFIG_ZPLC_SCHEDULER
     SHELL_CMD(sched, &sub_sched,
         "Scheduler commands (status/tasks)",
+        NULL),
+    SHELL_CMD(persist, &sub_persist,
+        "Persistence commands (clear/info)",
         NULL),
 #endif
     SHELL_SUBCMD_SET_END

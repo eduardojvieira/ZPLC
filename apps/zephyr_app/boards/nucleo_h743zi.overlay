@@ -7,11 +7,33 @@
  *   - led1 = yellow_led (PE1)
  *   - sw0 = user_button (PC13)
  *
- * This overlay is a placeholder for future ZPLC-specific configurations.
- * For example, adding led2/led3 for additional outputs.
+ * This overlay adds:
+ *   - Storage partition for NVS (program persistence)
+ *
+ * Flash Layout (2MB total):
+ *   The H743ZI has 2MB flash with 128KB sectors.
+ *   We reserve the last 128KB for NVS storage.
  */
 
 / {
     /* Board has sufficient default aliases for ZPLC GPIO HAL */
-    /* Placeholder for future expansion */
+};
+
+/* Define flash partitions for NVS storage */
+&flash0 {
+    partitions {
+        compatible = "fixed-partitions";
+        #address-cells = <1>;
+        #size-cells = <1>;
+
+        /*
+         * Storage partition for NVS (Non-Volatile Storage)
+         * Located at the end of flash: 128KB for program persistence
+         * STM32H7 has 128KB sectors, so we use one sector.
+         */
+        storage_partition: partition@1e0000 {
+            label = "storage";
+            reg = <0x1e0000 0x20000>;
+        };
+    };
 };
