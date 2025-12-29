@@ -154,6 +154,26 @@ int zplc_sched_register_task(const zplc_task_def_t *def,
                               size_t code_size);
 
 /**
+ * @brief Load a multi-task .zplc binary and register all tasks.
+ *
+ * This is the preferred way to load multi-task PLC programs.
+ * It parses the .zplc file, loads the shared code segment, and
+ * registers each task defined in the TASK segment.
+ *
+ * The function internally uses zplc_core_load_tasks() to parse
+ * the binary and then configures VMs with appropriate entry points.
+ *
+ * @param binary Pointer to .zplc file contents
+ * @param size Size of binary data
+ * @return Number of tasks loaded on success, negative error code on failure:
+ *         -1: Scheduler not initialized
+ *         -2: Invalid arguments
+ *         -3: zplc_core_load_tasks() error (bad file format)
+ *         -4: Task registration failed
+ */
+int zplc_sched_load(const uint8_t *binary, size_t size);
+
+/**
  * @brief Unregister a task.
  *
  * @param task_id Task handle returned by register_task

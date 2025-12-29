@@ -20,6 +20,7 @@ import {
     hexDump,
     ZPLC_CONSTANTS,
     createMultiTaskZplcFile,
+    relocateBytecode,
     TASK_TYPE,
 } from './index';
 import type { TaskDef } from './index';
@@ -544,5 +545,140 @@ describe('Multi-Task Support', () => {
 
         // Expected size: header (32) + 2 segments (16) + code (3) + 2 tasks (32) = 83
         expect(zplcFile.length).toBe(32 + 16 + 3 + 32);
+    });
+});
+
+// =============================================================================
+// Bytecode Relocation Tests
+// =============================================================================
+
+describe('Bytecode Relocation', () => {
+    test('relocateBytecode adjusts JMP addresses', () => {
+        // JMP 0x0010 -> JMP 0x0110 when relocated by 0x100
+        const bytecode = new Uint8Array([
+            Opcode.JMP, 0x10, 0x00,  // JMP 0x0010 (little-endian)
+            Opcode.HALT,
+        ]);
+
+        relocateBytecode(bytecode, 0x100);
+
+        // Check the relocated address
+        const view = new DataView(bytecode.buffer);
+        expect(view.getUint16(1, true)).toBe(0x0110);
+    });
+
+    test('relocateBytecode adjusts JZ addresses', () => {
+        // JZ 0x0015 -> JZ 0x003d when relocated by 0x28
+        const bytecode = new Uint8Array([
+            Opcode.JZ, 0x15, 0x00,  // JZ 0x0015
+            Opcode.HALT,
+        ]);
+
+        relocateBytecode(bytecode, 0x28);
+
+        const view = new DataView(bytecode.buffer);
+        expect(view.getUint16(1, true)).toBe(0x003d);
+    });
+
+    test('relocateBytecode adjusts JNZ addresses', () => {
+        // JNZ 0x0036 -> JNZ 0x0073 when relocated by 0x3d
+        const bytecode = new Uint8Array([
+            Opcode.JNZ, 0x36, 0x00,  // JNZ 0x0036
+            Opcode.HALT,
+        ]);
+
+        relocateBytecode(bytecode, 0x3d);
+
+        const view = new DataView(bytecode.buffer);
+        expect(view.getUint16(1, true)).toBe(0x0073);
+    });
+
+    test('relocateBytecode adjusts CALL addresses', () => {
+        // CALL 0x0020 -> CALL 0x0120 when relocated by 0x100
+        const bytecode = new Uint8Array([
+            Opcode.CALL, 0x20, 0x00,  // CALL 0x0020
+            Opcode.HALT,
+        ]);
+
+        relocateBytecode(bytecode, 0x100);
+
+        const view = new DataView(bytecode.buffer);
+        expect(view.getUint16(1, true)).toBe(0x0120);
+    });
+
+    test('relocateBytecode does NOT adjust relative jumps (JR, JRZ, JRNZ)', () => {
+        // Relative jumps use signed 8-bit offset, not absolute address
+        const bytecode = new Uint8Array([
+            Opcode.JR, 0x10,    // JR +16
+            Opcode.JRZ, 0xF0,   // JRZ -16 (signed)
+            Opcode.JRNZ, 0x05,  // JRNZ +5
+            Opcode.HALT,
+        ]);
+
+        relocateBytecode(bytecode, 0x100);
+
+        // Relative jumps should be unchanged
+        expect(bytecode[1]).toBe(0x10);  // JR still +16
+        expect(bytecode[3]).toBe(0xF0);  // JRZ still -16
+        expect(bytecode[5]).toBe(0x05);  // JRNZ still +5
+    });
+
+    test('relocateBytecode does NOT adjust LOAD/STORE addresses', () => {
+        // LOAD/STORE use memory addresses, not code addresses
+        const bytecode = new Uint8Array([
+            Opcode.LOAD16, 0x00, 0x20,   // LOAD16 0x2000
+            Opcode.STORE16, 0x00, 0x10,  // STORE16 0x1000
+            Opcode.HALT,
+        ]);
+
+        relocateBytecode(bytecode, 0x100);
+
+        const view = new DataView(bytecode.buffer);
+        // Memory addresses should be unchanged
+        expect(view.getUint16(1, true)).toBe(0x2000);
+        expect(view.getUint16(4, true)).toBe(0x1000);
+    });
+
+    test('relocateBytecode handles zero offset (no-op)', () => {
+        const original = new Uint8Array([
+            Opcode.JMP, 0x10, 0x00,
+            Opcode.HALT,
+        ]);
+        const bytecode = new Uint8Array(original);
+
+        relocateBytecode(bytecode, 0);
+
+        // Should be unchanged
+        expect(bytecode).toEqual(original);
+    });
+
+    test('relocateBytecode handles multiple jumps in sequence', () => {
+        const bytecode = new Uint8Array([
+            Opcode.PUSH8, 0x01,          // 0x00: PUSH8 1
+            Opcode.JZ, 0x10, 0x00,       // 0x02: JZ 0x0010
+            Opcode.JNZ, 0x15, 0x00,      // 0x05: JNZ 0x0015
+            Opcode.JMP, 0x20, 0x00,      // 0x08: JMP 0x0020
+            Opcode.HALT,                  // 0x0B: HALT
+        ]);
+
+        relocateBytecode(bytecode, 0x50);
+
+        const view = new DataView(bytecode.buffer);
+        expect(view.getUint16(3, true)).toBe(0x0060);   // JZ 0x0010 + 0x50 = 0x0060
+        expect(view.getUint16(6, true)).toBe(0x0065);   // JNZ 0x0015 + 0x50 = 0x0065
+        expect(view.getUint16(9, true)).toBe(0x0070);   // JMP 0x0020 + 0x50 = 0x0070
+    });
+
+    test('relocateBytecode wraps on 16-bit overflow', () => {
+        // Address 0xFF00 + 0x200 = 0x10100, but should wrap to 0x0100
+        const bytecode = new Uint8Array([
+            Opcode.JMP, 0x00, 0xFF,  // JMP 0xFF00
+            Opcode.HALT,
+        ]);
+
+        relocateBytecode(bytecode, 0x200);
+
+        const view = new DataView(bytecode.buffer);
+        expect(view.getUint16(1, true)).toBe(0x0100);  // Wrapped
     });
 });

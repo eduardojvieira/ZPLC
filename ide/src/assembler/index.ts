@@ -28,7 +28,7 @@ export { AssemblerError, ZPLC_CONSTANTS, TASK_TYPE } from './types';
 export type { Instruction, Label, Token, AssemblyResult, AssemblerOptions, TaskDef, TaskType } from './types';
 export { parseNumber, parse } from './parser';
 export type { ParseResult } from './parser';
-export { emitBytecode, createZplcFile, createMultiTaskZplcFile, disassemble, hexDump } from './codegen';
+export { emitBytecode, createZplcFile, createMultiTaskZplcFile, relocateBytecode, disassemble, hexDump } from './codegen';
 
 import { parse } from './parser';
 import { generate } from './codegen';

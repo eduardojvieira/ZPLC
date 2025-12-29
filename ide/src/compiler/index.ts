@@ -7,7 +7,7 @@
  * Also supports visual languages (LD, FBD, SFC) via transpilation to ST.
  *
  * Usage:
- *   import { compileST, compileToBinary, compileProject } from './compiler';
+ *   import { compileST, compileToBinary, compileProject, compileMultiTaskProject } from './compiler';
  *
  *   // Compile ST directly
  *   const asm = compileST(source);
@@ -20,6 +20,10 @@
  *   // Compile any language (ST, LD, FBD, SFC)
  *   const projectResult = compileProject(content, 'LD');
  *   console.log(projectResult.bytecode);
+ *
+ *   // Compile multi-task project
+ *   const multiResult = compileMultiTaskProject(config, sources);
+ *   console.log(multiResult.tasks); // Array of TaskDef
  */
 
 // Re-export lexer
@@ -322,5 +326,259 @@ export function compileProject(content: string, language: PLCLanguage): ProjectC
         language,
         intermediateSTSource,
         transpileErrors: transpileErrors.length > 0 ? transpileErrors : undefined,
+    };
+}
+
+// =============================================================================
+// Multi-Task Project Compilation
+// =============================================================================
+
+import { createMultiTaskZplcFile, relocateBytecode, TASK_TYPE } from '../assembler/index.ts';
+import type { TaskDef, TaskType } from '../assembler/index.ts';
+import type { ZPLCProjectConfig, TaskDefinition } from '../types/index.ts';
+
+/**
+ * Program source file for multi-task compilation.
+ */
+export interface ProgramSource {
+    /** Program name (matches task.programs[] entries) */
+    name: string;
+    /** Source content */
+    content: string;
+    /** Source language */
+    language: PLCLanguage;
+}
+
+/**
+ * Result of multi-task project compilation.
+ */
+export interface MultiTaskCompilationResult {
+    /** Complete .zplc file with CODE and TASK segments */
+    zplcFile: Uint8Array;
+    /** Concatenated bytecode */
+    bytecode: Uint8Array;
+    /** Task definitions embedded in the file */
+    tasks: TaskDef[];
+    /** Total code size */
+    codeSize: number;
+    /** Per-program compilation details */
+    programDetails: {
+        name: string;
+        entryPoint: number;
+        size: number;
+        assembly: string;
+    }[];
+}
+
+/**
+ * Map TaskTrigger from project config to TaskType for assembler.
+ */
+function mapTaskTrigger(trigger: TaskDefinition['trigger']): TaskType {
+    switch (trigger) {
+        case 'cyclic':
+            return TASK_TYPE.CYCLIC;
+        case 'event':
+            return TASK_TYPE.EVENT;
+        case 'freewheeling':
+            return TASK_TYPE.CYCLIC; // Freewheeling is cyclic with minimal interval
+        default:
+            return TASK_TYPE.CYCLIC;
+    }
+}
+
+/**
+ * Compile a multi-task project to a single .zplc file.
+ *
+ * This function takes a project configuration with multiple tasks and
+ * multiple program sources, compiles each program, concatenates the
+ * bytecode with proper entry points, and generates a .zplc file with
+ * both CODE and TASK segments.
+ *
+ * @param config - Project configuration (from zplc.json)
+ * @param programSources - Map of program name to source content
+ * @returns Multi-task compilation result
+ * @throws CompilerError if compilation fails
+ *
+ * @example
+ * ```typescript
+ * const config: ZPLCProjectConfig = {
+ *   name: 'MultiTaskDemo',
+ *   version: '1.0.0',
+ *   tasks: [
+ *     { name: 'FastTask', trigger: 'cyclic', interval: 10, priority: 0, programs: ['FastLogic'] },
+ *     { name: 'SlowTask', trigger: 'cyclic', interval: 100, priority: 1, programs: ['SlowLogic'] },
+ *   ],
+ * };
+ *
+ * const sources: ProgramSource[] = [
+ *   { name: 'FastLogic', content: fastSTCode, language: 'ST' },
+ *   { name: 'SlowLogic', content: slowSTCode, language: 'ST' },
+ * ];
+ *
+ * const result = compileMultiTaskProject(config, sources);
+ * // result.zplcFile contains the complete binary with 2 tasks
+ * ```
+ */
+export function compileMultiTaskProject(
+    config: ZPLCProjectConfig,
+    programSources: ProgramSource[]
+): MultiTaskCompilationResult {
+    if (!config.tasks || config.tasks.length === 0) {
+        throw new CompilerError('No tasks defined in project configuration', 0, 0, 'codegen');
+    }
+
+    // Build a map of program name -> source for quick lookup
+    const sourceMap = new Map<string, ProgramSource>();
+    for (const source of programSources) {
+        sourceMap.set(source.name, source);
+    }
+
+    // Collect all unique programs referenced by tasks
+    const referencedPrograms = new Set<string>();
+    for (const task of config.tasks) {
+        for (const progName of task.programs) {
+            referencedPrograms.add(progName);
+        }
+    }
+
+    // Compile each program and track entry points
+    const compiledPrograms: {
+        name: string;
+        bytecode: Uint8Array;
+        assembly: string;
+        entryPoint: number;
+        size: number;
+    }[] = [];
+
+    let currentOffset = 0;
+
+    for (const progName of referencedPrograms) {
+        const source = sourceMap.get(progName);
+        if (!source) {
+            throw new CompilerError(
+                `Program '${progName}' referenced by task but not found in sources`,
+                0, 0, 'codegen'
+            );
+        }
+
+        // Transpile if needed
+        let stSource = source.content;
+        if (source.language !== 'ST') {
+            const transpileResult = transpileToST(source.content, source.language);
+            if (!transpileResult.success) {
+                throw new CompilerError(
+                    `Transpilation of '${progName}' failed: ${transpileResult.errors.join('; ')}`,
+                    0, 0, 'parser'
+                );
+            }
+            stSource = transpileResult.source;
+        }
+
+        // Compile to assembly
+        let assembly: string;
+        try {
+            assembly = compileST(stSource);
+        } catch (e) {
+            const err = e as Error;
+            throw new CompilerError(
+                `Compilation of '${progName}' failed: ${err.message}`,
+                0, 0, 'codegen'
+            );
+        }
+
+        // Assemble to bytecode
+        let asmResult: AssemblyResult;
+        try {
+            asmResult = assemble(assembly);
+        } catch (e) {
+            const err = e as Error;
+            throw new CompilerError(
+                `Assembly of '${progName}' failed: ${err.message}`,
+                0, 0, 'assembler'
+            );
+        }
+
+        compiledPrograms.push({
+            name: progName,
+            bytecode: asmResult.bytecode,
+            assembly,
+            entryPoint: currentOffset,
+            size: asmResult.bytecode.length,
+        });
+
+        currentOffset += asmResult.bytecode.length;
+    }
+
+    // Concatenate all bytecode with relocation
+    // Each program was compiled with addresses starting at 0, so we must
+    // relocate absolute jump addresses when placing them at different offsets.
+    const totalCodeSize = compiledPrograms.reduce((sum, p) => sum + p.size, 0);
+    const concatenatedBytecode = new Uint8Array(totalCodeSize);
+    let offset = 0;
+    for (const prog of compiledPrograms) {
+        // Make a copy so we don't modify the original
+        const relocatedBytecode = new Uint8Array(prog.bytecode);
+        
+        // Relocate absolute jump addresses by adding the program's entry point
+        relocateBytecode(relocatedBytecode, prog.entryPoint);
+        
+        // Copy to concatenated buffer
+        concatenatedBytecode.set(relocatedBytecode, offset);
+        offset += prog.size;
+    }
+
+    // Build program name -> entry point map
+    const entryPointMap = new Map<string, number>();
+    for (const prog of compiledPrograms) {
+        entryPointMap.set(prog.name, prog.entryPoint);
+    }
+
+    // Build task definitions
+    const taskDefs: TaskDef[] = [];
+    let taskId = 0;
+
+    for (const taskConfig of config.tasks) {
+        // For now, we use the first program's entry point as the task entry
+        // In a full implementation, you might concatenate program bytecode per task
+        const firstProgram = taskConfig.programs[0];
+        if (!firstProgram) {
+            throw new CompilerError(
+                `Task '${taskConfig.name}' has no programs assigned`,
+                0, 0, 'codegen'
+            );
+        }
+
+        const entryPoint = entryPointMap.get(firstProgram);
+        if (entryPoint === undefined) {
+            throw new CompilerError(
+                `Program '${firstProgram}' for task '${taskConfig.name}' was not compiled`,
+                0, 0, 'codegen'
+            );
+        }
+
+        taskDefs.push({
+            id: taskId++,
+            type: mapTaskTrigger(taskConfig.trigger),
+            priority: taskConfig.priority ?? 1,
+            intervalUs: (taskConfig.interval ?? 10) * 1000, // Convert ms to us
+            entryPoint,
+            stackSize: 64, // Default stack size
+        });
+    }
+
+    // Generate .zplc file with TASK segment
+    const zplcFile = createMultiTaskZplcFile(concatenatedBytecode, taskDefs);
+
+    return {
+        zplcFile,
+        bytecode: concatenatedBytecode,
+        tasks: taskDefs,
+        codeSize: totalCodeSize,
+        programDetails: compiledPrograms.map(p => ({
+            name: p.name,
+            entryPoint: p.entryPoint,
+            size: p.size,
+            assembly: p.assembly,
+        })),
     };
 }

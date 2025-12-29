@@ -425,6 +425,100 @@ int zplc_sched_register_task(const zplc_task_def_t *def,
     return slot;
 }
 
+int zplc_sched_load(const uint8_t *binary, size_t size)
+{
+    zplc_task_def_t defs[CONFIG_ZPLC_MAX_TASKS];
+    int count;
+    int slot;
+    uint32_t total_code_size;
+    
+    if (sched_state == ZPLC_SCHED_STATE_UNINIT) {
+        return -1;
+    }
+    
+    if (binary == NULL || size == 0) {
+        return -2;
+    }
+    
+    /* Parse the .zplc file and load code segment */
+    count = zplc_core_load_tasks(binary, size, defs, CONFIG_ZPLC_MAX_TASKS);
+    if (count < 0) {
+        zplc_hal_log("[SCHED] Failed to parse .zplc file: %d\n", count);
+        return -3;
+    }
+    
+    if (count == 0) {
+        zplc_hal_log("[SCHED] No tasks found in .zplc file\n");
+        return 0;
+    }
+    
+    /* Get total code size (loaded by zplc_core_load_tasks) */
+    total_code_size = zplc_mem_get_code_size();
+    
+    zplc_hal_log("[SCHED] Loading %d tasks (code size: %u bytes)\n", 
+                 count, total_code_size);
+    
+    /* Register each task with its entry point */
+    for (int i = 0; i < count; i++) {
+        const zplc_task_def_t *def = &defs[i];
+        zplc_task_internal_t *t;
+        
+        /* Validate interval */
+        if (def->interval_us < ZPLC_MIN_INTERVAL_US ||
+            def->interval_us > ZPLC_MAX_INTERVAL_US) {
+            zplc_hal_log("[SCHED] Task %d has invalid interval %u us\n",
+                         def->id, def->interval_us);
+            continue; /* Skip invalid tasks */
+        }
+        
+        /* Find free slot */
+        slot = -1;
+        for (int j = 0; j < CONFIG_ZPLC_MAX_TASKS; j++) {
+            if (!tasks[j].registered) {
+                slot = j;
+                break;
+            }
+        }
+        
+        if (slot < 0) {
+            zplc_hal_log("[SCHED] No slots available for task %d\n", def->id);
+            return -4;
+        }
+        
+        t = &tasks[slot];
+        
+        /* Initialize task data */
+        memset(t, 0, sizeof(zplc_task_internal_t));
+        memcpy(&t->task.config, def, sizeof(zplc_task_def_t));
+        t->task.state = ZPLC_TASK_STATE_READY;
+        
+        /* Point to code in shared segment (already loaded) */
+        t->task.code = zplc_mem_get_code(def->entry_point, 
+                                          total_code_size - def->entry_point);
+        t->task.code_size = total_code_size - def->entry_point;
+        
+        /* Initialize VM with entry point */
+        zplc_vm_init(&t->vm);
+        zplc_vm_set_entry(&t->vm, def->entry_point, total_code_size);
+        t->vm.task_id = def->id;
+        t->vm.priority = def->priority;
+        
+        /* Initialize timer (but don't start yet) */
+        k_timer_init(&t->timer, task_timer_handler, NULL);
+        
+        /* Initialize work item */
+        k_work_init(&t->work, task_work_handler);
+        
+        t->registered = 1;
+        task_count++;
+        
+        zplc_hal_log("[SCHED] Task %d loaded: entry=%u, interval=%u us, priority=%d\n",
+                     def->id, def->entry_point, def->interval_us, def->priority);
+    }
+    
+    return count;
+}
+
 int zplc_sched_unregister_task(int task_id)
 {
     if (task_id < 0 || task_id >= CONFIG_ZPLC_MAX_TASKS) {

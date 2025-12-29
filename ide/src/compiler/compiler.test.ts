@@ -641,3 +641,203 @@ describe('Blinky Golden Test', () => {
         console.log(asm);
     });
 });
+
+// ============================================================================
+// Multi-Task Compiler Tests
+// ============================================================================
+
+import { compileMultiTaskProject } from './index.ts';
+import type { ProgramSource, MultiTaskCompilationResult } from './index.ts';
+import type { ZPLCProjectConfig } from '../types/index.ts';
+import { ZPLC_CONSTANTS, TASK_TYPE } from '../assembler/index.ts';
+
+describe('Multi-Task Compiler', () => {
+    it('compiles a single-task project', () => {
+        const config: ZPLCProjectConfig = {
+            name: 'SingleTask',
+            version: '1.0.0',
+            tasks: [
+                { name: 'MainTask', trigger: 'cyclic', interval: 10, priority: 1, programs: ['Main'] },
+            ],
+        };
+
+        const sources: ProgramSource[] = [
+            { 
+                name: 'Main', 
+                content: 'PROGRAM Main VAR x : BOOL; END_VAR x := TRUE; END_PROGRAM', 
+                language: 'ST' 
+            },
+        ];
+
+        const result = compileMultiTaskProject(config, sources);
+
+        // Check that we got valid output
+        expect(result.zplcFile.length).toBeGreaterThan(0);
+        expect(result.bytecode.length).toBeGreaterThan(0);
+        expect(result.tasks.length).toBe(1);
+        expect(result.codeSize).toBe(result.bytecode.length);
+
+        // Check task definition
+        expect(result.tasks[0].id).toBe(0);
+        expect(result.tasks[0].type).toBe(TASK_TYPE.CYCLIC);
+        expect(result.tasks[0].priority).toBe(1);
+        expect(result.tasks[0].intervalUs).toBe(10000); // 10ms * 1000
+        expect(result.tasks[0].entryPoint).toBe(0);
+    });
+
+    it('compiles a two-task project with different programs', () => {
+        const config: ZPLCProjectConfig = {
+            name: 'MultiTask',
+            version: '1.0.0',
+            tasks: [
+                { name: 'FastTask', trigger: 'cyclic', interval: 10, priority: 0, programs: ['Fast'] },
+                { name: 'SlowTask', trigger: 'cyclic', interval: 100, priority: 2, programs: ['Slow'] },
+            ],
+        };
+
+        const sources: ProgramSource[] = [
+            { 
+                name: 'Fast', 
+                content: 'PROGRAM Fast VAR x : BOOL; END_VAR x := TRUE; END_PROGRAM', 
+                language: 'ST' 
+            },
+            { 
+                name: 'Slow', 
+                content: 'PROGRAM Slow VAR y : INT; END_VAR y := 42; END_PROGRAM', 
+                language: 'ST' 
+            },
+        ];
+
+        const result = compileMultiTaskProject(config, sources);
+
+        // Check we have 2 tasks
+        expect(result.tasks.length).toBe(2);
+
+        // Check task 1 (Fast)
+        expect(result.tasks[0].priority).toBe(0);
+        expect(result.tasks[0].intervalUs).toBe(10000);
+        expect(result.tasks[0].entryPoint).toBe(0);
+
+        // Check task 2 (Slow) - entry point should be after Fast's code
+        expect(result.tasks[1].priority).toBe(2);
+        expect(result.tasks[1].intervalUs).toBe(100000);
+        expect(result.tasks[1].entryPoint).toBeGreaterThan(0);
+
+        // Program details should show both programs
+        expect(result.programDetails.length).toBe(2);
+        expect(result.programDetails[0].name).toBe('Fast');
+        expect(result.programDetails[1].name).toBe('Slow');
+        expect(result.programDetails[1].entryPoint).toBe(result.tasks[1].entryPoint);
+    });
+
+    it('generates correct .zplc file structure', () => {
+        const config: ZPLCProjectConfig = {
+            name: 'Test',
+            version: '1.0.0',
+            tasks: [
+                { name: 'Task1', trigger: 'cyclic', interval: 50, priority: 1, programs: ['Prog1'] },
+            ],
+        };
+
+        const sources: ProgramSource[] = [
+            { 
+                name: 'Prog1', 
+                content: 'PROGRAM Prog1 END_PROGRAM', 
+                language: 'ST' 
+            },
+        ];
+
+        const result = compileMultiTaskProject(config, sources);
+        const view = new DataView(result.zplcFile.buffer);
+
+        // Check magic
+        expect(view.getUint32(0, true)).toBe(ZPLC_CONSTANTS.MAGIC);
+
+        // Check version
+        expect(view.getUint16(4, true)).toBe(1);
+        expect(view.getUint16(6, true)).toBe(0);
+
+        // Check segment count = 2 (CODE + TASK)
+        expect(view.getUint16(26, true)).toBe(2);
+
+        // Check segment table
+        // Segment 1: CODE at offset 32
+        expect(view.getUint16(32, true)).toBe(ZPLC_CONSTANTS.SEGMENT_TYPE_CODE);
+
+        // Segment 2: TASK at offset 40
+        expect(view.getUint16(40, true)).toBe(ZPLC_CONSTANTS.SEGMENT_TYPE_TASK);
+    });
+
+    it('throws error for missing program source', () => {
+        const config: ZPLCProjectConfig = {
+            name: 'MissingSource',
+            version: '1.0.0',
+            tasks: [
+                { name: 'Task1', trigger: 'cyclic', interval: 10, priority: 1, programs: ['NonExistent'] },
+            ],
+        };
+
+        const sources: ProgramSource[] = [];
+
+        expect(() => compileMultiTaskProject(config, sources)).toThrow(/not found/);
+    });
+
+    it('throws error for empty tasks', () => {
+        const config: ZPLCProjectConfig = {
+            name: 'NoTasks',
+            version: '1.0.0',
+            tasks: [],
+        };
+
+        const sources: ProgramSource[] = [];
+
+        expect(() => compileMultiTaskProject(config, sources)).toThrow(/No tasks/);
+    });
+
+    it('handles event trigger type', () => {
+        const config: ZPLCProjectConfig = {
+            name: 'EventTask',
+            version: '1.0.0',
+            tasks: [
+                { name: 'EventHandler', trigger: 'event', priority: 0, programs: ['Handler'] },
+            ],
+        };
+
+        const sources: ProgramSource[] = [
+            { 
+                name: 'Handler', 
+                content: 'PROGRAM Handler END_PROGRAM', 
+                language: 'ST' 
+            },
+        ];
+
+        const result = compileMultiTaskProject(config, sources);
+
+        expect(result.tasks[0].type).toBe(TASK_TYPE.EVENT);
+    });
+
+    it('uses default values for optional fields', () => {
+        const config: ZPLCProjectConfig = {
+            name: 'Defaults',
+            version: '1.0.0',
+            tasks: [
+                { name: 'Task1', trigger: 'cyclic', programs: ['Prog1'] } as any, // Missing interval/priority
+            ],
+        };
+
+        const sources: ProgramSource[] = [
+            { 
+                name: 'Prog1', 
+                content: 'PROGRAM Prog1 END_PROGRAM', 
+                language: 'ST' 
+            },
+        ];
+
+        const result = compileMultiTaskProject(config, sources);
+
+        // Should use defaults
+        expect(result.tasks[0].priority).toBe(1); // Default
+        expect(result.tasks[0].intervalUs).toBe(10000); // 10ms default
+        expect(result.tasks[0].stackSize).toBe(64); // Default
+    });
+});

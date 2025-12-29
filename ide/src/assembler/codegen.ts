@@ -7,10 +7,21 @@
  * All multi-byte values are little-endian.
  */
 
-import { getOperandSize, OPCODE_BY_VALUE, isRelativeJump } from './opcodes';
+import { getOperandSize, OPCODE_BY_VALUE, isRelativeJump, Opcode } from './opcodes';
 import type { Instruction, TaskDef } from './types';
 import { ZPLC_CONSTANTS } from './types';
 import type { ParseResult } from './parser';
+
+/**
+ * Set of opcodes that use absolute 16-bit addresses and need relocation.
+ * These are jumps and calls that target absolute code addresses.
+ */
+const RELOCATABLE_OPCODES = new Set([
+    Opcode.JMP,   // 0x90 - Unconditional jump
+    Opcode.JZ,    // 0x91 - Jump if zero
+    Opcode.JNZ,   // 0x92 - Jump if not zero
+    Opcode.CALL,  // 0x93 - Call subroutine
+]);
 
 /**
  * Emit bytecode from parsed instructions.
@@ -53,6 +64,58 @@ export function emitBytecode(instructions: Instruction[]): Uint8Array {
     }
 
     return output;
+}
+
+/**
+ * Relocate bytecode by adding an offset to all absolute jump/call addresses.
+ *
+ * This function is used when concatenating multiple independently compiled
+ * programs into a single code segment. Each program is compiled with addresses
+ * starting at 0, so when placing them at different offsets, all absolute
+ * jumps must be adjusted.
+ *
+ * Affected instructions (16-bit absolute address operand):
+ *   - JMP  (0x90)
+ *   - JZ   (0x91)
+ *   - JNZ  (0x92)
+ *   - CALL (0x93)
+ *
+ * NOT affected (relative jumps use signed 8-bit offset from PC):
+ *   - JR, JRZ, JRNZ
+ *
+ * @param bytecode - Original bytecode (will be modified in place)
+ * @param baseOffset - Offset to add to all absolute addresses
+ * @returns The same bytecode array (modified)
+ */
+export function relocateBytecode(bytecode: Uint8Array, baseOffset: number): Uint8Array {
+    if (baseOffset === 0) {
+        return bytecode; // No relocation needed
+    }
+
+    const view = new DataView(bytecode.buffer, bytecode.byteOffset, bytecode.byteLength);
+    let pc = 0;
+
+    while (pc < bytecode.length) {
+        const opcode = bytecode[pc];
+        const operandSize = getOperandSize(opcode);
+
+        // Check if this is a relocatable opcode
+        if (RELOCATABLE_OPCODES.has(opcode) && operandSize === 2) {
+            // Read the 16-bit address (little-endian)
+            const originalAddr = view.getUint16(pc + 1, true);
+            
+            // Add the base offset
+            const relocatedAddr = (originalAddr + baseOffset) & 0xFFFF;
+            
+            // Write back the relocated address
+            view.setUint16(pc + 1, relocatedAddr, true);
+        }
+
+        // Move to next instruction
+        pc += 1 + operandSize;
+    }
+
+    return bytecode;
 }
 
 /**
