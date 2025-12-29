@@ -1173,6 +1173,219 @@ static void test_integration_float_math(void)
 }
 
 /* ============================================================================
+ * Instance-Based VM API Tests (Multitask Support)
+ * ============================================================================ */
+
+static void test_instance_based_vm(void)
+{
+    zplc_vm_t vm1, vm2;
+    uint8_t code1[32], code2[32];
+    size_t len1 = 0, len2 = 0;
+    int result;
+
+    printf("\n=== Test: Instance-Based VM API ===\n");
+
+    /*
+     * Create two independent VMs with different programs.
+     * VM1: Push 100, HALT -> stack[0] = 100
+     * VM2: Push 200, HALT -> stack[0] = 200
+     *
+     * Both use the shared code segment but different entry points.
+     */
+
+    /* Build program 1: PUSH32 100, HALT */
+    len1 = emit_push32(code1, len1, 100);
+    len1 = emit_op(code1, len1, OP_HALT);
+
+    /* Build program 2: PUSH32 200, HALT */
+    len2 = emit_push32(code2, len2, 200);
+    len2 = emit_op(code2, len2, OP_HALT);
+
+    /* Initialize shared memory */
+    zplc_mem_init();
+
+    /* Load both programs into shared code segment */
+    result = zplc_mem_load_code(code1, len1, 0);
+    TEST_ASSERT_EQ(result, 0, "Load code1 at offset 0");
+
+    result = zplc_mem_load_code(code2, len2, (uint16_t)len1);
+    TEST_ASSERT_EQ(result, 0, "Load code2 at offset len1");
+
+    /* Initialize both VMs */
+    zplc_vm_init(&vm1);
+    zplc_vm_init(&vm2);
+
+    /* Set different entry points */
+    result = zplc_vm_set_entry(&vm1, 0, (uint32_t)len1);
+    TEST_ASSERT_EQ(result, 0, "Set VM1 entry at 0");
+
+    result = zplc_vm_set_entry(&vm2, (uint16_t)len1, (uint32_t)len2);
+    TEST_ASSERT_EQ(result, 0, "Set VM2 entry at len1");
+
+    /* Run both VMs */
+    result = zplc_vm_run(&vm1, 0);
+    TEST_ASSERT(result >= 0, "VM1 executed successfully");
+
+    result = zplc_vm_run(&vm2, 0);
+    TEST_ASSERT(result >= 0, "VM2 executed successfully");
+
+    /* Verify independent execution */
+    TEST_ASSERT_EQ(vm1.stack[0], 100, "VM1 stack[0] = 100");
+    TEST_ASSERT_EQ(vm2.stack[0], 200, "VM2 stack[0] = 200");
+    TEST_ASSERT(vm1.halted, "VM1 halted");
+    TEST_ASSERT(vm2.halted, "VM2 halted");
+
+    /* Verify they can be reset independently */
+    zplc_vm_reset_cycle(&vm1);
+    TEST_ASSERT_EQ(vm1.pc, 0, "VM1 reset: PC = 0");
+    TEST_ASSERT_EQ(vm1.sp, 0, "VM1 reset: SP = 0");
+    TEST_ASSERT(!vm1.halted, "VM1 reset: not halted");
+    TEST_ASSERT(vm2.halted, "VM2 still halted after VM1 reset");
+}
+
+static void test_multiple_entry_points(void)
+{
+    zplc_vm_t vms[4];
+    uint8_t programs[4][16];
+    size_t lengths[4];
+    uint16_t offsets[4];
+    int i, result;
+    uint16_t current_offset = 0;
+
+    printf("\n=== Test: Multiple Entry Points (Scheduler Simulation) ===\n");
+
+    /*
+     * Simulate 4 tasks with different programs, like the scheduler does.
+     * Each task increments a different counter in Work memory.
+     *
+     * Task 0: Work[0] += 1
+     * Task 1: Work[4] += 2
+     * Task 2: Work[8] += 3
+     * Task 3: Work[12] += 4
+     */
+
+    /* Initialize shared memory */
+    zplc_mem_init();
+
+    /* Build and load 4 programs */
+    for (i = 0; i < 4; i++) {
+        size_t len = 0;
+        uint16_t work_addr = 0x2000 + (i * 4);
+        uint8_t increment = (uint8_t)(i + 1);
+
+        /* LOAD32 work_addr, PUSH8 increment, ADD, STORE32 work_addr, HALT */
+        len = emit_load32(programs[i], len, work_addr);
+        len = emit_push8(programs[i], len, increment);
+        len = emit_op(programs[i], len, OP_ADD);
+        len = emit_store32(programs[i], len, work_addr);
+        len = emit_op(programs[i], len, OP_HALT);
+
+        lengths[i] = len;
+        offsets[i] = current_offset;
+
+        result = zplc_mem_load_code(programs[i], len, current_offset);
+        TEST_ASSERT_EQ(result, 0, "Load program into code segment");
+
+        current_offset += (uint16_t)len;
+    }
+
+    /* Initialize all VMs with their entry points */
+    for (i = 0; i < 4; i++) {
+        zplc_vm_init(&vms[i]);
+        result = zplc_vm_set_entry(&vms[i], offsets[i], (uint32_t)lengths[i]);
+        TEST_ASSERT_EQ(result, 0, "Set VM entry point");
+    }
+
+    /* Run each VM multiple times (simulating scheduler cycles) */
+    for (int cycle = 0; cycle < 10; cycle++) {
+        for (i = 0; i < 4; i++) {
+            zplc_vm_reset_cycle(&vms[i]);
+            result = zplc_vm_run(&vms[i], 0);
+            TEST_ASSERT(result >= 0, "VM cycle executed");
+        }
+    }
+
+    /* Verify counters:
+     * Task 0: 10 cycles × 1 = 10
+     * Task 1: 10 cycles × 2 = 20
+     * Task 2: 10 cycles × 3 = 30
+     * Task 3: 10 cycles × 4 = 40
+     */
+    uint8_t *work = zplc_mem_get_region(ZPLC_MEM_WORK_BASE);
+    TEST_ASSERT(work != NULL, "Work memory accessible");
+
+    uint32_t counter0 = work[0] | (work[1] << 8) | (work[2] << 16) | (work[3] << 24);
+    uint32_t counter1 = work[4] | (work[5] << 8) | (work[6] << 16) | (work[7] << 24);
+    uint32_t counter2 = work[8] | (work[9] << 8) | (work[10] << 16) | (work[11] << 24);
+    uint32_t counter3 = work[12] | (work[13] << 8) | (work[14] << 16) | (work[15] << 24);
+
+    TEST_ASSERT_EQ(counter0, 10, "Task 0: 10 cycles × 1 = 10");
+    TEST_ASSERT_EQ(counter1, 20, "Task 1: 10 cycles × 2 = 20");
+    TEST_ASSERT_EQ(counter2, 30, "Task 2: 10 cycles × 3 = 30");
+    TEST_ASSERT_EQ(counter3, 40, "Task 3: 10 cycles × 4 = 40");
+}
+
+static void test_vm_isolation(void)
+{
+    zplc_vm_t vm1, vm2;
+    uint8_t code[32];
+    size_t len = 0;
+    int result;
+
+    printf("\n=== Test: VM Stack Isolation ===\n");
+
+    /*
+     * Verify that two VMs have completely isolated stacks.
+     * Both run the same program, but should have independent state.
+     */
+
+    /* Program: PUSH 1, PUSH 2, PUSH 3, ADD, HALT -> stack = [1, 5] */
+    len = emit_push32(code, len, 1);
+    len = emit_push32(code, len, 2);
+    len = emit_push32(code, len, 3);
+    len = emit_op(code, len, OP_ADD);  /* 2 + 3 = 5 */
+    len = emit_op(code, len, OP_HALT);
+
+    /* Initialize shared memory and load code once */
+    zplc_mem_init();
+    zplc_mem_load_code(code, len, 0);
+
+    /* Setup both VMs */
+    zplc_vm_init(&vm1);
+    zplc_vm_init(&vm2);
+    zplc_vm_set_entry(&vm1, 0, (uint32_t)len);
+    zplc_vm_set_entry(&vm2, 0, (uint32_t)len);
+
+    /* Run VM1 only */
+    result = zplc_vm_run(&vm1, 0);
+    TEST_ASSERT(result >= 0, "VM1 executed");
+
+    /* Verify VM1 state */
+    TEST_ASSERT_EQ(vm1.sp, 2, "VM1 has 2 items on stack");
+    TEST_ASSERT_EQ(vm1.stack[0], 1, "VM1 stack[0] = 1");
+    TEST_ASSERT_EQ(vm1.stack[1], 5, "VM1 stack[1] = 5");
+    TEST_ASSERT(vm1.halted, "VM1 halted");
+
+    /* Verify VM2 is still pristine */
+    TEST_ASSERT_EQ(vm2.sp, 0, "VM2 stack empty (not run yet)");
+    TEST_ASSERT(!vm2.halted, "VM2 not halted (not run yet)");
+    TEST_ASSERT_EQ(vm2.pc, 0, "VM2 PC at entry point");
+
+    /* Now run VM2 */
+    result = zplc_vm_run(&vm2, 0);
+    TEST_ASSERT(result >= 0, "VM2 executed");
+
+    /* Verify VM2 has same results but independent */
+    TEST_ASSERT_EQ(vm2.sp, 2, "VM2 has 2 items on stack");
+    TEST_ASSERT_EQ(vm2.stack[0], 1, "VM2 stack[0] = 1");
+    TEST_ASSERT_EQ(vm2.stack[1], 5, "VM2 stack[1] = 5");
+
+    /* Modify VM1 stack and verify VM2 unaffected */
+    vm1.stack[0] = 999;
+    TEST_ASSERT_EQ(vm2.stack[0], 1, "VM2 stack unaffected by VM1 modification");
+}
+
+/* ============================================================================
  * Main
  * ============================================================================ */
 
@@ -1199,6 +1412,11 @@ int main(void)
     test_get_ticks();
     test_integration_assembled_program();
     test_integration_float_math();
+
+    /* Instance-Based VM Tests (Multitask Support) */
+    test_instance_based_vm();
+    test_multiple_entry_points();
+    test_vm_isolation();
 
     printf("\n================================================\n");
     printf("  Results: %d tests, %d passed, %d failed\n",
