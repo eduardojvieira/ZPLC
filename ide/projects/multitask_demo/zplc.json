@@ -28,15 +28,15 @@
     "outputs": [
       {
         "name": "LED1",
-        "address": "%Q0.0",
-        "description": "Fast blink LED (onboard)",
-        "pin": 25
+        "address": "%Q0.1",
+        "description": "Fast blink LED (external)",
+        "pin": 15
       },
       {
         "name": "LED2",
-        "address": "%Q0.1",
-        "description": "Slow blink LED (external)",
-        "pin": 15
+        "address": "%Q0.0",
+        "description": "Slow blink LED (onboard)",
+        "pin": 25
       }
     ]
   },

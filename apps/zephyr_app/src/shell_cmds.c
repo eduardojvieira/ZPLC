@@ -279,6 +279,7 @@ static int cmd_zplc_data(const struct shell *sh, size_t argc, char **argv)
  * @brief Handler for 'zplc start' (scheduler mode)
  *
  * Registers the loaded program as a new task and starts it.
+ * If the program is a .zplc file with TASK segment, loads all tasks.
  */
 static int cmd_zplc_start(const struct shell *sh, size_t argc, char **argv)
 {
@@ -289,6 +290,37 @@ static int cmd_zplc_start(const struct shell *sh, size_t argc, char **argv)
         shell_error(sh, "ERROR: No program loaded");
         return -EINVAL;
     }
+    
+    /* Check if this is a .zplc file with TASK segment */
+    /* Magic: "ZPLC" = 0x5A504C43 (little-endian: 0x434C505A) */
+    if (shell_received_size >= 32 &&
+        shell_program_buffer[0] == 'Z' &&
+        shell_program_buffer[1] == 'P' &&
+        shell_program_buffer[2] == 'L' &&
+        shell_program_buffer[3] == 'C') {
+        
+        /* Use zplc_sched_load to parse TASK segment and load all tasks */
+        int task_count = zplc_sched_load(shell_program_buffer, shell_received_size);
+        
+        if (task_count < 0) {
+            shell_error(sh, "ERROR: Failed to parse .zplc file: %d", task_count);
+            return task_count;
+        }
+        
+        if (task_count == 0) {
+            shell_error(sh, "ERROR: No tasks found in .zplc file");
+            return -EINVAL;
+        }
+        
+        /* Start the scheduler */
+        zplc_sched_start();
+        
+        shell_load_state = SHELL_STATE_IDLE;
+        shell_print(sh, "OK: Loaded %d tasks from .zplc file", task_count);
+        return 0;
+    }
+    
+    /* Legacy single-task mode: register raw bytecode as a single task */
     
     /* Remove old shell task if exists */
     if (shell_task_id >= 0) {

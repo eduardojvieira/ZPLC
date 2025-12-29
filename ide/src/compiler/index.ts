@@ -69,14 +69,16 @@ export { getFB, getFn, isFB, isFn, getAllFBNames, getAllFnNames } from './stdlib
 export type { FunctionBlockDef, FunctionDef, CodeGenContext, MemberDef } from './stdlib/types.ts';
 
 // Re-export code generator
-export { generate } from './codegen.ts';
+export { generate, WORK_MEMORY_REGION_SIZE } from './codegen.ts';
+export type { CodeGenOptions } from './codegen.ts';
 
 // Re-export transpilers
 export { transpileLDToST, transpileFBDToST, transpileSFCToST } from './transpilers/index.ts';
 
 // Import for main functions
 import { parse } from './parser.ts';
-import { generate } from './codegen.ts';
+import { generate, WORK_MEMORY_REGION_SIZE } from './codegen.ts';
+import type { CodeGenOptions } from './codegen.ts';
 import { assemble } from '../assembler/index.ts';
 import type { AssemblyResult } from '../assembler/index.ts';
 import { transpileLDToST } from './transpilers/ld.ts';
@@ -143,7 +145,7 @@ export interface CompilationResult {
  * console.log(assembly);
  * ```
  */
-export function compileST(source: string): string {
+export function compileST(source: string, options?: CodeGenOptions): string {
     // Parse ST to AST
     const ast = parse(source);
 
@@ -155,7 +157,7 @@ export function compileST(source: string): string {
     const program = ast.programs[0];
 
     // Generate assembly
-    return generate(program);
+    return generate(program, options);
 }
 
 /**
@@ -164,6 +166,7 @@ export function compileST(source: string): string {
  * This is a convenience function that chains the ST compiler with the assembler.
  *
  * @param source - ST source code
+ * @param options - Optional code generation options (for memory base configuration)
  * @returns Compilation result with bytecode and assembly
  * @throws CompilerError on compilation failure
  *
@@ -175,9 +178,9 @@ export function compileST(source: string): string {
  * const blob = new Blob([result.zplcFile], { type: 'application/octet-stream' });
  * ```
  */
-export function compileToBinary(source: string): CompilationResult {
+export function compileToBinary(source: string, options?: CodeGenOptions): CompilationResult {
     // First, compile ST to assembly
-    const assembly = compileST(source);
+    const assembly = compileST(source, options);
 
     // Then, assemble to bytecode
     let asmResult: AssemblyResult;
@@ -336,6 +339,7 @@ export function compileProject(content: string, language: PLCLanguage): ProjectC
 import { createMultiTaskZplcFile, relocateBytecode, TASK_TYPE } from '../assembler/index.ts';
 import type { TaskDef, TaskType } from '../assembler/index.ts';
 import type { ZPLCProjectConfig, TaskDefinition } from '../types/index.ts';
+import { MemoryLayout } from './symbol-table.ts';
 
 /**
  * Program source file for multi-task compilation.
@@ -442,6 +446,7 @@ export function compileMultiTaskProject(
     }
 
     // Compile each program and track entry points
+    // Each program gets its own work memory region to avoid conflicts
     const compiledPrograms: {
         name: string;
         bytecode: Uint8Array;
@@ -451,6 +456,7 @@ export function compileMultiTaskProject(
     }[] = [];
 
     let currentOffset = 0;
+    let programIndex = 0;
 
     for (const progName of referencedPrograms) {
         const source = sourceMap.get(progName);
@@ -460,6 +466,10 @@ export function compileMultiTaskProject(
                 0, 0, 'codegen'
             );
         }
+
+        // Calculate work memory base for this program
+        // Each program gets WORK_MEMORY_REGION_SIZE bytes of isolated work memory
+        const workMemoryBase = MemoryLayout.WORK_BASE + (programIndex * WORK_MEMORY_REGION_SIZE);
 
         // Transpile if needed
         let stSource = source.content;
@@ -474,10 +484,10 @@ export function compileMultiTaskProject(
             stSource = transpileResult.source;
         }
 
-        // Compile to assembly
+        // Compile to assembly with isolated work memory region
         let assembly: string;
         try {
-            assembly = compileST(stSource);
+            assembly = compileST(stSource, { workMemoryBase });
         } catch (e) {
             const err = e as Error;
             throw new CompilerError(
@@ -507,6 +517,7 @@ export function compileMultiTaskProject(
         });
 
         currentOffset += asmResult.bytecode.length;
+        programIndex++;
     }
 
     // Concatenate all bytecode with relocation

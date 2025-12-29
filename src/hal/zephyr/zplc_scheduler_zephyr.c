@@ -119,6 +119,56 @@ static struct k_work_q high_workq;
 #endif
 
 /* ============================================================================
+ * I/O Synchronization
+ * ============================================================================ */
+
+/** @brief Number of digital I/O channels to sync */
+#define ZPLC_DIO_CHANNEL_COUNT  4
+
+/**
+ * @brief Synchronize inputs from GPIO to IPI (Input Process Image).
+ *
+ * Reads physical GPIO inputs and writes them to the shared memory IPI region.
+ * Called at the beginning of each task cycle.
+ */
+static void sync_inputs_to_ipi(void)
+{
+    uint8_t *ipi = zplc_mem_get_region(ZPLC_MEM_IPI_BASE);
+    uint8_t value;
+    
+    if (ipi == NULL) {
+        return;
+    }
+    
+    /* Read GPIO inputs (channels 4-7 are inputs) */
+    for (int i = 0; i < ZPLC_DIO_CHANNEL_COUNT; i++) {
+        if (zplc_hal_gpio_read(4 + i, &value) == ZPLC_HAL_OK) {
+            ipi[i] = value;
+        }
+    }
+}
+
+/**
+ * @brief Synchronize outputs from OPI (Output Process Image) to GPIO.
+ *
+ * Reads the OPI region and writes to physical GPIO outputs.
+ * Called at the end of each task cycle.
+ */
+static void sync_opi_to_outputs(void)
+{
+    uint8_t *opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
+    
+    if (opi == NULL) {
+        return;
+    }
+    
+    /* Write GPIO outputs (channels 0-3 are outputs) */
+    for (int i = 0; i < ZPLC_DIO_CHANNEL_COUNT; i++) {
+        zplc_hal_gpio_write(i, opi[i]);
+    }
+}
+
+/* ============================================================================
  * Forward Declarations
  * ============================================================================ */
 
@@ -234,8 +284,14 @@ static void task_work_handler(struct k_work *work)
     /* Lock shared memory */
     k_mutex_lock(&mem_mutex, K_FOREVER);
     
+    /* Sync inputs from GPIO to IPI before execution */
+    sync_inputs_to_ipi();
+    
     /* Execute one VM cycle */
     result = zplc_vm_run_cycle(&t->vm);
+    
+    /* Sync outputs from OPI to GPIO after execution */
+    sync_opi_to_outputs();
     
     /* Unlock shared memory */
     k_mutex_unlock(&mem_mutex);
@@ -499,7 +555,15 @@ int zplc_sched_load(const uint8_t *binary, size_t size)
         
         /* Initialize VM with entry point */
         zplc_vm_init(&t->vm);
-        zplc_vm_set_entry(&t->vm, def->entry_point, total_code_size);
+        /* Pass total_code_size (not task size) - zplc_vm_set_entry sets
+         * vm->code_size = entry_point + task_code_size, so for multi-task
+         * we need: code_size = total_code_size, meaning task_code_size
+         * should be (total_code_size - entry_point) */
+        if (zplc_vm_set_entry(&t->vm, def->entry_point, 
+                              total_code_size - def->entry_point) != 0) {
+            zplc_hal_log("[SCHED] Failed to set entry for task %d\n", def->id);
+            continue; /* Skip this task */
+        }
         t->vm.task_id = def->id;
         t->vm.priority = def->priority;
         

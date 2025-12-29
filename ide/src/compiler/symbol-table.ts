@@ -60,6 +60,29 @@ export interface Symbol {
 export class SymbolTable {
     private symbols = new Map<string, Symbol>();
     private workOffset = 0;  // Current offset in work memory
+    private readonly workBase: number;  // Base address for work memory
+
+    /**
+     * Create a new symbol table.
+     * @param workMemoryBase - Base address for work memory allocation (default: 0x2000)
+     */
+    constructor(workMemoryBase: number = MemoryLayout.WORK_BASE) {
+        this.workBase = workMemoryBase;
+    }
+
+    /**
+     * Get the work memory base address.
+     */
+    getWorkBase(): number {
+        return this.workBase;
+    }
+
+    /**
+     * Get the current work memory offset (bytes used).
+     */
+    getWorkOffset(): number {
+        return this.workOffset;
+    }
 
     /**
      * Get a symbol by name.
@@ -111,8 +134,8 @@ export class SymbolTable {
                 // Output: OPI base + offset
                 address = MemoryLayout.OPI_BASE + offset;
             } else {
-                // Memory: Work base + offset
-                address = MemoryLayout.WORK_BASE + offset;
+                // Memory: Work base + offset (uses instance work base)
+                address = this.workBase + offset;
             }
         } else {
             // Regular variable: allocate in work memory
@@ -120,7 +143,7 @@ export class SymbolTable {
             const alignment = Math.min(size, 4);
             this.workOffset = alignTo(this.workOffset, alignment);
 
-            address = MemoryLayout.WORK_BASE + this.workOffset;
+            address = this.workBase + this.workOffset;
             this.workOffset += size;
         }
 
@@ -222,9 +245,13 @@ function alignTo(value: number, alignment: number): number {
 
 /**
  * Build a symbol table from a parsed program.
+ * 
+ * @param program - Parsed program AST
+ * @param workMemoryBase - Base address for work memory (default: 0x2000)
+ * @returns Symbol table with all variables mapped to addresses
  */
-export function buildSymbolTable(program: Program): SymbolTable {
-    const table = new SymbolTable();
+export function buildSymbolTable(program: Program, workMemoryBase?: number): SymbolTable {
+    const table = new SymbolTable(workMemoryBase);
 
     for (const block of program.varBlocks) {
         for (const decl of block.variables) {

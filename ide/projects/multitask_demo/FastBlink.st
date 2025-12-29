@@ -10,8 +10,8 @@ VAR
 END_VAR
 
 VAR_OUTPUT
-    (* Output mapped to LED1 *)
-    LED1 AT %Q0.0 : BOOL;
+    (* Output mapped to LED2 - external LED on GPIO15 *)
+    LED1 AT %Q0.1 : BOOL;
 END_VAR
 
 (* Increment counter every 10ms cycle *)

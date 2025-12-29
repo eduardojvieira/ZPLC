@@ -25,7 +25,7 @@ import type {
     UnaryExpr,
     BinaryExpr,
 } from './ast.ts';
-import { buildSymbolTable, getLoadStoreSuffix, getMemberLoadStoreSuffix } from './symbol-table.ts';
+import { buildSymbolTable, getLoadStoreSuffix, getMemberLoadStoreSuffix, MemoryLayout } from './symbol-table.ts';
 import type { SymbolTable, Symbol } from './symbol-table.ts';
 import { getFB } from './stdlib/index.ts';
 import type { CodeGenContext } from './stdlib/types.ts';
@@ -35,15 +35,46 @@ import type { CodeGenContext } from './stdlib/types.ts';
 // ============================================================================
 
 /**
- * Reserved address for the "already initialized" flag.
+ * Default address for the "already initialized" flag.
  * Located at the last byte of work memory to avoid conflicts with user variables.
- * Work memory: 0x2000-0x3FFF (8KB), so we use 0x3FFF.
+ * Work memory: 0x2000-0x3FFF (8KB), so we use 0x3FFF by default.
  *
  * This flag ensures variable initialization only runs on the first cycle.
  * The VM resets PC to 0 each cycle, so without this guard, all variables
  * would be reset to initial values every scan cycle.
+ * 
+ * For multi-task compilation, each program gets its own init flag address
+ * calculated relative to its work memory region.
  */
-const INIT_FLAG_ADDR = 0x3FFF;
+const DEFAULT_INIT_FLAG_ADDR = 0x3FFF;
+
+/**
+ * Size of work memory region allocated per program in multi-task mode.
+ * Each program gets this many bytes of isolated work memory.
+ * Must be a power of 2 for efficient alignment.
+ */
+export const WORK_MEMORY_REGION_SIZE = 256;
+
+// ============================================================================
+// Code Generator Configuration
+// ============================================================================
+
+/**
+ * Configuration options for code generation.
+ */
+export interface CodeGenOptions {
+    /**
+     * Base address for work memory allocation.
+     * Default: 0x2000 (standard ZPLC work memory base)
+     */
+    workMemoryBase?: number;
+    
+    /**
+     * Address of the initialization flag.
+     * If not specified, calculated as workMemoryBase + WORK_MEMORY_REGION_SIZE - 1
+     */
+    initFlagAddress?: number;
+}
 
 // ============================================================================
 // Code Generator
@@ -56,26 +87,39 @@ interface CodeGenState {
     symbols: SymbolTable;
     output: string[];
     labelCounter: number;
+    initFlagAddr: number;
 }
 
 /**
  * Generate ZPLC assembly from a parsed program.
  *
  * @param program - Parsed program AST
+ * @param options - Optional code generation configuration
  * @returns Assembly source code
  */
-export function generate(program: Program): string {
-    const symbols = buildSymbolTable(program);
+export function generate(program: Program, options?: CodeGenOptions): string {
+    const workMemoryBase = options?.workMemoryBase ?? MemoryLayout.WORK_BASE;
+    const initFlagAddr = options?.initFlagAddress ?? 
+        (options?.workMemoryBase !== undefined 
+            ? workMemoryBase + WORK_MEMORY_REGION_SIZE - 1 
+            : DEFAULT_INIT_FLAG_ADDR);
+    
+    const symbols = buildSymbolTable(program, workMemoryBase);
     const state: CodeGenState = {
         symbols,
         output: [],
         labelCounter: 0,
+        initFlagAddr,
     };
 
     // Emit header comment
     emit(state, `; ============================================================================`);
     emit(state, `; ZPLC Generated Assembly`);
     emit(state, `; Program: ${program.name}`);
+    if (options?.workMemoryBase !== undefined) {
+        emit(state, `; Work Memory Base: ${formatAddress(workMemoryBase)}`);
+        emit(state, `; Init Flag: ${formatAddress(initFlagAddr)}`);
+    }
     emit(state, `; ============================================================================`);
     emit(state, ``);
 
@@ -89,7 +133,7 @@ export function generate(program: Program): string {
     // Check if already initialized - skip to _cycle if so
     // This is critical because run_cycle() resets PC=0 each scan
     emit(state, `    ; Check if already initialized`);
-    emit(state, `    LOAD8 ${formatAddress(INIT_FLAG_ADDR)}    ; _initialized flag`);
+    emit(state, `    LOAD8 ${formatAddress(state.initFlagAddr)}    ; _initialized flag`);
     emit(state, `    JNZ _cycle                  ; Skip init if already done`);
 
     // Emit initialization for variables with initial values
@@ -99,7 +143,7 @@ export function generate(program: Program): string {
     emit(state, ``);
     emit(state, `    ; Mark as initialized`);
     emit(state, `    PUSH8 1`);
-    emit(state, `    STORE8 ${formatAddress(INIT_FLAG_ADDR)}`);
+    emit(state, `    STORE8 ${formatAddress(state.initFlagAddr)}`);
 
     // Emit main loop label (for cyclic execution)
     emit(state, ``);
@@ -143,7 +187,7 @@ function emitMemoryMap(state: CodeGenState): void {
     emit(state, `; === Memory Map ===`);
     
     // Document the reserved init flag
-    emit(state, `; ${formatAddress(INIT_FLAG_ADDR)}: _initialized (BOOL, 1 byte) [RESERVED]`);
+    emit(state, `; ${formatAddress(state.initFlagAddr)}: _initialized (BOOL, 1 byte) [RESERVED]`);
     
     for (const sym of state.symbols.all()) {
         const addrHex = formatAddress(sym.address);

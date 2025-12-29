@@ -37,6 +37,9 @@
 /** @brief Report interval in seconds */
 #define REPORT_INTERVAL_SEC 2
 
+/** @brief Set to 1 to run demo on boot, 0 for shell-only mode */
+#define RUN_DEMO_ON_BOOT    0
+
 /** @brief Number of GPIO output channels */
 #define ZPLC_GPIO_OUTPUT_COUNT  4
 
@@ -279,7 +282,6 @@ static int run_scheduler_mode(void)
     uint32_t last_report = 0;
 
     zplc_hal_log("[SCHED] Multitask scheduler mode\n");
-    zplc_hal_log("[SCHED] Test duration: %d seconds\n", TEST_DURATION_SEC);
 
     /* Initialize scheduler */
     ret = zplc_sched_init();
@@ -287,6 +289,9 @@ static int run_scheduler_mode(void)
         zplc_hal_log("[SCHED] ERROR: Scheduler init failed: %d\n", ret);
         return ret;
     }
+
+#if RUN_DEMO_ON_BOOT
+    zplc_hal_log("[SCHED] Running embedded demo for %d seconds\n", TEST_DURATION_SEC);
 
     /* Register FastTask: 10ms interval, priority 0 (highest) */
     memset(&fast_task_def, 0, sizeof(fast_task_def));
@@ -424,8 +429,16 @@ static int run_scheduler_mode(void)
 
     zplc_hal_log("================================================\n\n");
 
-    /* Keep running (LED should stop blinking) */
+#endif /* RUN_DEMO_ON_BOOT */
+
+    /* Keep running - shell-only mode or demo complete */
+#if RUN_DEMO_ON_BOOT
     zplc_hal_log("[SCHED] Test complete. Entering idle loop.\n");
+#else
+    zplc_hal_log("[SCHED] Scheduler ready. Waiting for shell commands.\n");
+    zplc_hal_log("[SCHED] Use 'zplc load <size>' then 'zplc data <hex>' to load a program.\n");
+    zplc_hal_log("[SCHED] Use 'zplc start' to begin execution.\n");
+#endif
     zplc_hal_log("[SCHED] Shell available. Use 'zplc help' for commands.\n");
 
     while (1) {
