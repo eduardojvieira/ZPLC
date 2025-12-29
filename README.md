@@ -56,8 +56,8 @@ Build and test the core on your host machine:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your/zplc.git
-cd zplc
+git clone https://github.com/eduardojvieira/ZPLC.git
+cd ZPLC
 
 # Build
 mkdir build_posix && cd build_posix
@@ -91,22 +91,18 @@ west build -t run
 ```
 *** Booting Zephyr OS build v4.0.0 ***
 ================================================
-  ZPLC Runtime - Zephyr Target
-  Core Version: 0.2.0
-  Phase 0.5: Module Verification
+  ZPLC Runtime v1.1.0 - Zephyr Target
+  ISA Version: 1.1
+  Features: Multitask, NVS Persistence
 ================================================
-[HAL] Zephyr HAL initializing...
-[HAL] Zephyr HAL ready (Phase 0.5 stub)
-[MAIN] Initialization complete.
-[MAIN] Starting verification loop...
+[HAL] Zephyr HAL initialized
+[NVS] Checking for saved program...
+[MAIN] ZPLC Runtime ready. Use 'zplc' shell commands.
 
-Tick 0 ms (cycle #0)
-Tick 110 ms (cycle #1)
-...
-Tick 990 ms (cycle #9)
-
-[MAIN] Verification complete: 10 cycles.
-[MAIN] ZPLC module is working on Zephyr!
+uart:~$ zplc status
+VM State: IDLE
+Tasks: 0 registered
+Persistence: No saved program
 ```
 
 ## Documentation
@@ -115,7 +111,7 @@ Tick 990 ms (cycle #9)
 |----------|-------------|
 | [TECHNICAL_SPEC.md](TECHNICAL_SPEC.md) | Complete architecture, binary format, and roadmap |
 | [AGENTS.md](AGENTS.md) | Context for AI agents and contributors |
-| [docs/ISA.md](docs/ISA.md) | Instruction Set Architecture specification |
+| [docs/docs/runtime/isa.md](docs/docs/runtime/isa.md) | Instruction Set Architecture specification |
 
 ## Architecture
 
@@ -133,7 +129,7 @@ Tick 990 ms (cycle #9)
 │  ┌──────────────────────────────────────────────────────┐  │
 │  │                    ZPLC Core (C99)                    │  │
 │  │  ┌──────────┐  ┌─────────────┐  ┌─────────────────┐  │  │
-│  │  │ Loader   │  │ VM (62 ops) │  │ Process Image   │  │  │
+│  │  │ Loader   │  │ VM (63 ops) │  │ Process Image   │  │  │
 │  │  └──────────┘  └─────────────┘  └─────────────────┘  │  │
 │  └──────────────────────────┬───────────────────────────┘  │
 │                             │ HAL Interface                 │
@@ -189,8 +185,8 @@ Add to your `west.yml`:
 manifest:
   projects:
     - name: zplc
-      url: https://github.com/your/zplc
-      revision: main
+      url: https://github.com/eduardojvieira/ZPLC
+      revision: master
       path: modules/lib/zplc
 ```
 

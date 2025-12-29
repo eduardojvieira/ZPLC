@@ -12,7 +12,7 @@ This file provides context for AI agents and human contributors working on ZPLC.
 | **Dev Platforms** | macOS, Linux, Windows (via POSIX HAL) |
 | **Language** | ANSI C99 (strict compliance) |
 | **Architecture** | Zephyr Module with POSIX fallback |
-| **Current Version** | v1.1-dev (Multitask + Persistence) |
+| **Current Version** | v1.1.0 (Multitask + Persistence) |
 
 ## Core Philosophy
 

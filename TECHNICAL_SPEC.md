@@ -7,21 +7,21 @@
 
 ZPLC is a portable, deterministic PLC runtime environment powered by Zephyr RTOS for embedded targets and native OS layers for desktop/server hosting. It is designed to bring modern software development practices—including CI/CD pipelines, compact binary deployment, and open interoperability via PLCopen XML—to the industrial floor.
 
-**The "v1" Promise:** A fully functional runtime supporting all 5 IEC 61131-3 languages, capable of running real hardware I/O or in-browser simulations, with industrial-grade determinism.
+**The "v1.1" Promise:** A fully functional runtime supporting all 5 IEC 61131-3 languages, capable of running real hardware I/O or in-browser simulations, with industrial-grade determinism. Now with **multitask scheduling** and **NVS persistence**.
 
 ---
 
 ## 2. Supported Hardware Targets
 
-ZPLC v1.0 officially supports the following reference boards. CI/CD pipelines must ensure compilation succeeds for all defined targets.
+ZPLC v1.1 officially supports the following reference boards. CI/CD pipelines must ensure compilation succeeds for all defined targets.
 
 | Board Name | SoC | Zephyr Board ID | Notes |
 | :--- | :--- | :--- | :--- |
-| **Arduino GIGA R1** | STM32H747XI (Cortex-M7/M4) | `arduino_giga_r1_m7` | Dual-core (targeting M7) |
+| **Arduino GIGA R1** | STM32H747XI (Cortex-M7/M4) | `arduino_giga_r1/stm32h747xx/m7` | Dual-core (targeting M7) |
 | **ESP32-S3 DevKit-C** | ESP32-S3 (Xtensa LX7) | `esp32s3_devkitc` | WiFi/BLE capable |
 | **STM32 Nucleo-H743ZI** | STM32H743ZI (Cortex-M7) | `nucleo_h743zi` | High-perf industrial Ref |
-| **Raspberry Pi Pico 2** | RP2350 (Cortex-M33) | `rpi_pico2` | (Or `rpi_pico` fallback) |
-| **QEMU (Simulation)** | Cortex-M3 | `mps2_an385` | CI Default |
+| **Raspberry Pi Pico** | RP2040 (Cortex-M0+) | `rpi_pico` | Low-cost, tested with NVS |
+| **QEMU (Simulation)** | Cortex-M3 | `mps2/an385` | CI Default |
 
 ---
 
@@ -31,9 +31,7 @@ The system follows a "Compiler-VM" architecture. The IDE acts as the compiler/li
 
 For embedded targets, **Zephyr RTOS is the primary citizen**. ZPLC is designed to be a **Zephyr Module** that can be effortlessly dropped into any board supported by Zephyr.
 
-### 2.1 The Data Flow
-
-### 2.1 The Data Flow
+### 3.1 The Data Flow
 
 ```mermaid
 graph TD
@@ -84,20 +82,21 @@ The Core is ANSI C99, strictly standard-compliant, designed to be compiled as a 
 
 ### 4.1 The Virtual Machine (VM)
 
-* **Instruction Set:** Stack-based or Register-based (TBD in Phase 7 detailed view). optimized for boolean logic and arithmetic.
+* **Instruction Set:** Stack-based, optimized for boolean logic and arithmetic. **63 opcodes** total.
 * **Unified IR:** Structured Text (ST) and Ladder (LD) ultimately compile down to the same JUMP / LOAD / STORE / AND / OR opcodes.
 * **Memory Model:**
     * **Process Image:** A contiguous block of memory for I/O snapshots.
-    * **Retentive Memory:** A dedicated block backed by HAL storage (Battery RAM / Flash).
-    * **Work Memory:** Stack/Heap for temporary calculation (strictly bounded).
+    * **Retentive Memory:** A dedicated block backed by HAL storage (NVS / Flash).
+    * **Work Memory:** Stack/Heap for temporary calculation (strictly bounded, per-task isolated).
 
 ### 4.2 The Scheduler
 
-* **Execution Discipline:** Preemptive capability (dependent on HAL) but functionally deterministic.
+* **Execution Discipline:** Priority-based preemptive scheduling with configurable task intervals.
+* **Task Types:** CYCLIC (periodic) and EVENT (future).
 * **Cycle:**
-    1. **Input Latch:** Call `HAL_IO_Read()` to update Process Image.
-    2. **Logic Execution:** Run tasks sorted by priority.
-    3. **Output Latch:** Call `HAL_IO_Write()` to flush Process Image.
+    1. **Input Latch:** Call `HAL_IO_Read()` to update Process Image (IPI).
+    2. **Logic Execution:** Run tasks sorted by priority, each with isolated work memory.
+    3. **Output Latch:** Call `HAL_IO_Write()` to flush Process Image (OPI).
     4. **Housekeeping:** Handle Comms/Debug messages (time budgeted).
 
 ---
@@ -109,40 +108,36 @@ The Core never calls hardware directly. It calls the HAL.
 ### 5.1 Zephyr Integration Strategy (Primary)
 
 ZPLC integrates with Zephyr as a **Module**.
-- **DeviceTree Bindings:** I/O channels are defined in `.dts` overlay files using a custom binding:
-  ```dts
-  zplc {
-      compatible = "zplc,runtime";
-      io-channels = <&d_in0 &d_in1 &d_out0>;
-  };
-  ```
+- **DeviceTree Bindings:** I/O channels are defined in `.dts` overlay files.
 - **Kconfig:** All runtime limits (stack size, memory pool) are configurable via Kconfig.
-- **Shell:** ZPLC provides a shell module (`zplc load`, `zplc start`, `zplc stats`) for management.
+- **Shell:** ZPLC provides a shell module (`zplc load`, `zplc start`, `zplc persist`) for management.
 
-| Function | Zephyr Implementation | Desktop (Linux/Win) Implementation | WASM Implementation |
+| Function | Zephyr Implementation | Desktop (Linux/macOS) | WASM Implementation |
 | --- | --- | --- | --- |
 | `zplc_hal_tick()` | `k_uptime_get()` | `clock_gettime` | JS `performance.now()` |
 | `zplc_hal_sleep()` | `k_sleep()` | `usleep()` | `Atomics.wait` |
-| `zplc_hal_gpio_read()` | `gpio_pin_get_dt()` (via binding) | Shared Mem / Simulation | JS Object |
-| `zplc_hal_socket()` | Zephyr BSD Sockets (`net_context`) | BSD Sockets | WebSockets |
-| `zplc_hal_persist()` | Settings Subsystem (`NVS`) | File (`retain.bin`) | `localStorage` |
+| `zplc_hal_gpio_read()` | `gpio_pin_get_dt()` | Simulated | JS Object |
+| `zplc_hal_gpio_write()` | `gpio_pin_set_dt()` | Simulated | JS Object |
+| `zplc_hal_persist_save()` | NVS (`nvs_write`) | File | `localStorage` |
+| `zplc_hal_persist_load()` | NVS (`nvs_read`) | File | `localStorage` |
+| `zplc_hal_persist_delete()` | NVS (`nvs_delete`) | File delete | `localStorage.removeItem` |
 
 ---
 
 ## 6. Development Environment (Web IDE)
 
-* **Stack:** TypeScript, React/Vue (Frontend), Rust/Go/Node (Backend Service).
-* **Project Model:** The "Truth" is strictly **PLCopen XML**.
+* **Stack:** TypeScript, React (Frontend), Bun (Runtime/Bundler).
+* **Project Model:** JSON-based project files (`zplc.json`) with task definitions.
 * **Editors:**
-    * **ST:** Monaco Editor with custom language server.
-    * **Visual (LD/FBD/SFC):** SVG/Canvas-based implementation utilizing a common graph model.
+    * **ST:** Monaco Editor with syntax highlighting.
+    * **Visual (LD/FBD/SFC):** React Flow-based interactive editors.
 * **Simulation:**
     * The IDE includes a compiled WASM version of `zplc_core`.
-    * "Run Simulation" launches the VM strictly in the browser tab.
+    * "Run Simulation" launches the VM directly in the browser tab.
 
 ---
 
-## 7. Connectivity & Security (v1 Scope)
+## 7. Connectivity & Security (v1.2 Scope)
 
 ### 7.1 Communication
 
