@@ -24,11 +24,11 @@
 
 // Re-export types and functions
 export { Opcode, OPCODE_BY_NAME, OPCODE_BY_VALUE, getOperandSize, isRelativeJump } from './opcodes';
-export { AssemblerError, ZPLC_CONSTANTS } from './types';
-export type { Instruction, Label, Token, AssemblyResult, AssemblerOptions } from './types';
+export { AssemblerError, ZPLC_CONSTANTS, TASK_TYPE } from './types';
+export type { Instruction, Label, Token, AssemblyResult, AssemblerOptions, TaskDef, TaskType } from './types';
 export { parseNumber, parse } from './parser';
 export type { ParseResult } from './parser';
-export { emitBytecode, createZplcFile, disassemble, hexDump } from './codegen';
+export { emitBytecode, createZplcFile, createMultiTaskZplcFile, disassemble, hexDump } from './codegen';
 
 import { parse } from './parser';
 import { generate } from './codegen';

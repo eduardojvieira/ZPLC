@@ -428,6 +428,58 @@ uint32_t zplc_core_get_opi(uint16_t offset);
  */
 zplc_vm_t* zplc_core_get_default_vm(void);
 
+/* ============================================================================
+ * Multi-Task Loading API
+ * ============================================================================
+ * 
+ * Functions for loading programs with multiple tasks (TASK segment).
+ */
+
+/**
+ * @brief Load tasks from a .zplc binary containing a TASK segment.
+ *
+ * Parses the TASK segment and populates an array of task definitions.
+ * Also loads the code segment into shared memory.
+ *
+ * @param binary Pointer to .zplc file contents
+ * @param size Size of binary data
+ * @param tasks Output array to fill with task definitions
+ * @param max_tasks Maximum number of tasks to load
+ * @return Number of tasks loaded, or negative error code
+ */
+int zplc_core_load_tasks(const uint8_t *binary, size_t size,
+                         zplc_task_def_t *tasks, uint8_t max_tasks);
+
+/**
+ * @brief Get entry point for a loaded task.
+ *
+ * @param task Pointer to task definition
+ * @return Entry point offset in code segment
+ */
+static inline uint16_t zplc_task_get_entry(const zplc_task_def_t *task) {
+    return task->entry_point;
+}
+
+/**
+ * @brief Get interval in microseconds for a task.
+ *
+ * @param task Pointer to task definition
+ * @return Interval in microseconds
+ */
+static inline uint32_t zplc_task_get_interval_us(const zplc_task_def_t *task) {
+    return task->interval_us;
+}
+
+/**
+ * @brief Get priority for a task.
+ *
+ * @param task Pointer to task definition
+ * @return Priority (0 = highest)
+ */
+static inline uint8_t zplc_task_get_priority(const zplc_task_def_t *task) {
+    return task->priority;
+}
+
 #ifdef __cplusplus
 }
 #endif

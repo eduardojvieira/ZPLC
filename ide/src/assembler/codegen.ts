@@ -8,7 +8,7 @@
  */
 
 import { getOperandSize, OPCODE_BY_VALUE, isRelativeJump } from './opcodes';
-import type { Instruction } from './types';
+import type { Instruction, TaskDef } from './types';
 import { ZPLC_CONSTANTS } from './types';
 import type { ParseResult } from './parser';
 
@@ -172,6 +172,152 @@ export function createZplcFile(bytecode: Uint8Array, entryPoint: number): Uint8A
     // Code Segment
     // =========================================================================
     output.set(bytecode, offset);
+
+    return output;
+}
+
+/**
+ * Create a .zplc file with multiple tasks.
+ *
+ * File format:
+ *   - Header: 32 bytes
+ *   - Segment table: 8 bytes per segment (code + task)
+ *   - Code segment
+ *   - Task segment (16 bytes per task)
+ *
+ * @param bytecode - Raw bytecode
+ * @param tasks - Array of task definitions
+ * @returns Complete .zplc file with task segment
+ */
+export function createMultiTaskZplcFile(bytecode: Uint8Array, tasks: TaskDef[]): Uint8Array {
+    const codeSize = bytecode.length;
+    const taskCount = tasks.length;
+    const taskSegmentSize = taskCount * ZPLC_CONSTANTS.TASK_DEF_SIZE;
+    const segmentCount = 2; // CODE + TASK
+
+    // Total file size: header + 2 segment entries + code + task data
+    const totalSize =
+        ZPLC_CONSTANTS.HEADER_SIZE +
+        (ZPLC_CONSTANTS.SEGMENT_ENTRY_SIZE * segmentCount) +
+        codeSize +
+        taskSegmentSize;
+
+    const output = new Uint8Array(totalSize);
+    const view = new DataView(output.buffer);
+
+    let offset = 0;
+
+    // =========================================================================
+    // Header (32 bytes) - same as single task, entry_point = first task
+    // =========================================================================
+
+    // magic
+    view.setUint32(offset, ZPLC_CONSTANTS.MAGIC, true);
+    offset += 4;
+
+    // version
+    view.setUint16(offset, ZPLC_CONSTANTS.VERSION_MAJOR, true);
+    offset += 2;
+    view.setUint16(offset, ZPLC_CONSTANTS.VERSION_MINOR, true);
+    offset += 2;
+
+    // flags
+    view.setUint32(offset, 0, true);
+    offset += 4;
+
+    // crc32 (TODO)
+    view.setUint32(offset, 0, true);
+    offset += 4;
+
+    // code_size
+    view.setUint32(offset, codeSize, true);
+    offset += 4;
+
+    // data_size (task segment counts as data)
+    view.setUint32(offset, taskSegmentSize, true);
+    offset += 4;
+
+    // entry_point (first task's entry point for legacy compatibility)
+    const primaryEntryPoint = tasks.length > 0 ? tasks[0].entryPoint : 0;
+    view.setUint16(offset, primaryEntryPoint & 0xFFFF, true);
+    offset += 2;
+
+    // segment_count
+    view.setUint16(offset, segmentCount, true);
+    offset += 2;
+
+    // reserved
+    view.setUint32(offset, 0, true);
+    offset += 4;
+
+    // =========================================================================
+    // Segment Table Entry 1: CODE
+    // =========================================================================
+    view.setUint16(offset, ZPLC_CONSTANTS.SEGMENT_TYPE_CODE, true);
+    offset += 2;
+    view.setUint16(offset, 0, true); // flags
+    offset += 2;
+    view.setUint32(offset, codeSize, true);
+    offset += 4;
+
+    // =========================================================================
+    // Segment Table Entry 2: TASK
+    // =========================================================================
+    view.setUint16(offset, ZPLC_CONSTANTS.SEGMENT_TYPE_TASK, true);
+    offset += 2;
+    view.setUint16(offset, 0, true); // flags
+    offset += 2;
+    view.setUint32(offset, taskSegmentSize, true);
+    offset += 4;
+
+    // =========================================================================
+    // Code Segment
+    // =========================================================================
+    output.set(bytecode, offset);
+    offset += codeSize;
+
+    // =========================================================================
+    // Task Segment (16 bytes per task per zplc_task_def_t)
+    // =========================================================================
+    // Layout from zplc_isa.h:
+    //   id          (2 bytes, uint16_t)
+    //   type        (1 byte,  uint8_t)
+    //   priority    (1 byte,  uint8_t)
+    //   interval_us (4 bytes, uint32_t)
+    //   entry_point (2 bytes, uint16_t)
+    //   stack_size  (2 bytes, uint16_t)
+    //   reserved    (4 bytes, uint32_t)
+    // Total: 16 bytes
+
+    for (const task of tasks) {
+        // id
+        view.setUint16(offset, task.id & 0xFFFF, true);
+        offset += 2;
+
+        // type
+        view.setUint8(offset, task.type & 0xFF);
+        offset += 1;
+
+        // priority
+        view.setUint8(offset, task.priority & 0xFF);
+        offset += 1;
+
+        // interval_us
+        view.setUint32(offset, task.intervalUs >>> 0, true);
+        offset += 4;
+
+        // entry_point
+        view.setUint16(offset, task.entryPoint & 0xFFFF, true);
+        offset += 2;
+
+        // stack_size
+        view.setUint16(offset, task.stackSize & 0xFFFF, true);
+        offset += 2;
+
+        // reserved
+        view.setUint32(offset, 0, true);
+        offset += 4;
+    }
 
     return output;
 }

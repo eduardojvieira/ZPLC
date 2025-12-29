@@ -1517,3 +1517,140 @@ zplc_vm_t *zplc_core_get_default_vm(void)
 {
     return &default_vm;
 }
+
+/* ============================================================================
+ * Multi-Task Loading API
+ * ============================================================================ */
+
+/**
+ * @brief Load tasks from a .zplc binary containing a TASK segment.
+ *
+ * Parses the TASK segment and populates an array of task definitions.
+ * Also loads the code segment into shared memory.
+ *
+ * @param binary Pointer to .zplc file contents
+ * @param size Size of binary data
+ * @param tasks Output array to fill with task definitions
+ * @param max_tasks Maximum number of tasks to load
+ * @return Number of tasks loaded, or negative error code:
+ *         -1: NULL pointer or insufficient size
+ *         -2: Invalid magic number
+ *         -3: Unsupported version
+ *         -4: Code too large
+ *         -5: File truncated
+ *         -6: No TASK segment found
+ */
+int zplc_core_load_tasks(const uint8_t *binary, size_t size,
+                         zplc_task_def_t *tasks, uint8_t max_tasks)
+{
+    const zplc_file_header_t *header;
+    const zplc_segment_entry_t *seg_table;
+    size_t seg_table_size;
+    size_t data_offset;
+    
+    /* Segment locations (filled during scan) */
+    size_t code_seg_offset = 0;
+    uint32_t code_seg_size = 0;
+    size_t task_seg_offset = 0;
+    uint32_t task_seg_size = 0;
+    int code_found = 0;
+    int task_found = 0;
+    
+    uint8_t task_count;
+    uint8_t i;
+
+    /* Validate inputs */
+    if (binary == NULL || size < ZPLC_FILE_HEADER_SIZE || tasks == NULL) {
+        return -1;
+    }
+
+    /* Parse header */
+    header = (const zplc_file_header_t *)binary;
+
+    if (header->magic != ZPLC_MAGIC) {
+        return -2;
+    }
+
+    if (header->version_major > ZPLC_VERSION_MAJOR) {
+        return -3;
+    }
+
+    /* Calculate segment table size and data offset */
+    seg_table_size = header->segment_count * ZPLC_SEGMENT_ENTRY_SIZE;
+    
+    if (size < ZPLC_FILE_HEADER_SIZE + seg_table_size) {
+        return -5; /* File truncated */
+    }
+    
+    seg_table = (const zplc_segment_entry_t *)(binary + ZPLC_FILE_HEADER_SIZE);
+    data_offset = ZPLC_FILE_HEADER_SIZE + seg_table_size;
+
+    /* Scan segment table to find CODE and TASK segments */
+    for (i = 0; i < header->segment_count; i++) {
+        if (seg_table[i].type == ZPLC_SEG_CODE) {
+            code_seg_offset = data_offset;
+            code_seg_size = seg_table[i].size;
+            code_found = 1;
+        } else if (seg_table[i].type == ZPLC_SEG_TASK) {
+            task_seg_offset = data_offset;
+            task_seg_size = seg_table[i].size;
+            task_found = 1;
+        }
+        /* Advance data_offset past this segment's data */
+        data_offset += seg_table[i].size;
+    }
+
+    /* Verify we found required segments */
+    if (!code_found) {
+        /* No code segment - use header's code_size for backwards compat */
+        code_seg_offset = ZPLC_FILE_HEADER_SIZE + seg_table_size;
+        code_seg_size = header->code_size;
+    }
+
+    if (!task_found) {
+        return -6; /* No TASK segment */
+    }
+
+    /* Validate code size */
+    if (code_seg_size > ZPLC_MEM_CODE_SIZE) {
+        return -4;
+    }
+
+    /* Verify file has enough data */
+    if (code_seg_offset + code_seg_size > size ||
+        task_seg_offset + task_seg_size > size) {
+        return -5;
+    }
+
+    /* Load code into shared segment */
+    zplc_mem_load_code(binary + code_seg_offset, code_seg_size, 0);
+
+    /* Parse task definitions */
+    task_count = (uint8_t)(task_seg_size / ZPLC_TASK_DEF_SIZE);
+    if (task_count > max_tasks) {
+        task_count = max_tasks;
+    }
+
+    /* Copy task definitions with endian-safe parsing */
+    for (i = 0; i < task_count; i++) {
+        const uint8_t *task_ptr = binary + task_seg_offset + 
+                                  (i * ZPLC_TASK_DEF_SIZE);
+        
+        /* Parse little-endian fields manually for portability */
+        tasks[i].id = (uint16_t)task_ptr[0] | 
+                      ((uint16_t)task_ptr[1] << 8);
+        tasks[i].type = task_ptr[2];
+        tasks[i].priority = task_ptr[3];
+        tasks[i].interval_us = (uint32_t)task_ptr[4] |
+                               ((uint32_t)task_ptr[5] << 8) |
+                               ((uint32_t)task_ptr[6] << 16) |
+                               ((uint32_t)task_ptr[7] << 24);
+        tasks[i].entry_point = (uint16_t)task_ptr[8] |
+                               ((uint16_t)task_ptr[9] << 8);
+        tasks[i].stack_size = (uint16_t)task_ptr[10] |
+                              ((uint16_t)task_ptr[11] << 8);
+        tasks[i].reserved = 0; /* Ignore reserved field */
+    }
+
+    return (int)task_count;
+}

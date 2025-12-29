@@ -19,7 +19,10 @@ import {
     disassemble,
     hexDump,
     ZPLC_CONSTANTS,
+    createMultiTaskZplcFile,
+    TASK_TYPE,
 } from './index';
+import type { TaskDef } from './index';
 
 // =============================================================================
 // Helper Functions
@@ -433,5 +436,113 @@ describe('Integration', () => {
         ]);
 
         expect(toHex(result.bytecode)).toBe(toHex(expected));
+    });
+});
+
+// =============================================================================
+// Multi-Task Support Tests
+// =============================================================================
+
+describe('Multi-Task Support', () => {
+    test('createMultiTaskZplcFile generates correct header', () => {
+        const bytecode = new Uint8Array([0x00, 0x01]); // NOP, HALT
+        const tasks: TaskDef[] = [
+            {
+                id: 1,
+                type: TASK_TYPE.CYCLIC,
+                priority: 0,
+                intervalUs: 10000,
+                entryPoint: 0,
+                stackSize: 64,
+            },
+        ];
+
+        const zplcFile = createMultiTaskZplcFile(bytecode, tasks);
+        const view = new DataView(zplcFile.buffer);
+
+        // Check magic
+        expect(view.getUint32(0, true)).toBe(ZPLC_CONSTANTS.MAGIC);
+
+        // Check version
+        expect(view.getUint16(4, true)).toBe(1);  // major
+        expect(view.getUint16(6, true)).toBe(0);  // minor
+
+        // Check code_size (at offset 16)
+        expect(view.getUint32(16, true)).toBe(2);  // bytecode length
+
+        // Check data_size (task segment size = 1 task * 16 bytes)
+        expect(view.getUint32(20, true)).toBe(16);
+
+        // Check entry_point (first task's entry)
+        expect(view.getUint16(24, true)).toBe(0);
+
+        // Check segment_count = 2 (CODE + TASK)
+        expect(view.getUint16(26, true)).toBe(2);
+    });
+
+    test('createMultiTaskZplcFile generates correct segment table', () => {
+        const bytecode = new Uint8Array([0x01]); // HALT
+        const tasks: TaskDef[] = [
+            { id: 1, type: TASK_TYPE.CYCLIC, priority: 1, intervalUs: 100000, entryPoint: 0, stackSize: 64 },
+        ];
+
+        const zplcFile = createMultiTaskZplcFile(bytecode, tasks);
+        const view = new DataView(zplcFile.buffer);
+
+        // Segment table starts at offset 32 (after header)
+        // Segment 1: CODE
+        expect(view.getUint16(32, true)).toBe(ZPLC_CONSTANTS.SEGMENT_TYPE_CODE);
+        expect(view.getUint16(34, true)).toBe(0);  // flags
+        expect(view.getUint32(36, true)).toBe(1);  // size = bytecode length
+
+        // Segment 2: TASK
+        expect(view.getUint16(40, true)).toBe(ZPLC_CONSTANTS.SEGMENT_TYPE_TASK);
+        expect(view.getUint16(42, true)).toBe(0);  // flags
+        expect(view.getUint32(44, true)).toBe(16); // size = 1 task * 16 bytes
+    });
+
+    test('createMultiTaskZplcFile generates correct task definitions', () => {
+        const bytecode = new Uint8Array([0x01]); // HALT
+        const tasks: TaskDef[] = [
+            { id: 1, type: TASK_TYPE.CYCLIC, priority: 0, intervalUs: 10000, entryPoint: 0, stackSize: 64 },
+            { id: 2, type: TASK_TYPE.CYCLIC, priority: 2, intervalUs: 100000, entryPoint: 50, stackSize: 128 },
+        ];
+
+        const zplcFile = createMultiTaskZplcFile(bytecode, tasks);
+        const view = new DataView(zplcFile.buffer);
+
+        // Task segment starts after: header (32) + 2 segment entries (16) + code (1) = 49
+        const taskSegmentStart = 32 + 16 + 1;
+
+        // Task 1 (16 bytes)
+        expect(view.getUint16(taskSegmentStart + 0, true)).toBe(1);      // id
+        expect(view.getUint8(taskSegmentStart + 2)).toBe(0);             // type (CYCLIC)
+        expect(view.getUint8(taskSegmentStart + 3)).toBe(0);             // priority
+        expect(view.getUint32(taskSegmentStart + 4, true)).toBe(10000);  // interval_us
+        expect(view.getUint16(taskSegmentStart + 8, true)).toBe(0);      // entry_point
+        expect(view.getUint16(taskSegmentStart + 10, true)).toBe(64);    // stack_size
+        expect(view.getUint32(taskSegmentStart + 12, true)).toBe(0);     // reserved
+
+        // Task 2 (16 bytes, starts at taskSegmentStart + 16)
+        const task2Offset = taskSegmentStart + 16;
+        expect(view.getUint16(task2Offset + 0, true)).toBe(2);           // id
+        expect(view.getUint8(task2Offset + 2)).toBe(0);                  // type (CYCLIC)
+        expect(view.getUint8(task2Offset + 3)).toBe(2);                  // priority
+        expect(view.getUint32(task2Offset + 4, true)).toBe(100000);      // interval_us
+        expect(view.getUint16(task2Offset + 8, true)).toBe(50);          // entry_point
+        expect(view.getUint16(task2Offset + 10, true)).toBe(128);        // stack_size
+    });
+
+    test('total file size is correct for multi-task', () => {
+        const bytecode = new Uint8Array([0x00, 0x01, 0x02]); // 3 bytes
+        const tasks: TaskDef[] = [
+            { id: 1, type: TASK_TYPE.CYCLIC, priority: 0, intervalUs: 10000, entryPoint: 0, stackSize: 64 },
+            { id: 2, type: TASK_TYPE.CYCLIC, priority: 1, intervalUs: 50000, entryPoint: 2, stackSize: 64 },
+        ];
+
+        const zplcFile = createMultiTaskZplcFile(bytecode, tasks);
+
+        // Expected size: header (32) + 2 segments (16) + code (3) + 2 tasks (32) = 83
+        expect(zplcFile.length).toBe(32 + 16 + 3 + 32);
     });
 });

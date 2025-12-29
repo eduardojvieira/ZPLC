@@ -1386,6 +1386,313 @@ static void test_vm_isolation(void)
 }
 
 /* ============================================================================
+ * Task Loading Tests (Multi-Task .zplc Files)
+ * ============================================================================ */
+
+/**
+ * @brief Build a multi-task .zplc file in memory for testing.
+ *
+ * Creates a file with:
+ *   - Header (32 bytes)
+ *   - Segment table: CODE + TASK (16 bytes)
+ *   - Code segment (bytecode)
+ *   - Task segment (16 bytes per task)
+ */
+static size_t build_multitask_zplc(uint8_t *buf, size_t buf_size,
+                                   const uint8_t *code, size_t code_size,
+                                   uint8_t task_count)
+{
+    size_t offset = 0;
+    size_t task_seg_size = task_count * ZPLC_TASK_DEF_SIZE;
+    size_t total_size = ZPLC_FILE_HEADER_SIZE + 
+                        (2 * ZPLC_SEGMENT_ENTRY_SIZE) +  /* CODE + TASK */
+                        code_size + 
+                        task_seg_size;
+    uint8_t i;
+
+    if (buf_size < total_size) {
+        return 0;
+    }
+
+    memset(buf, 0, total_size);
+
+    /* ===== Header (32 bytes) ===== */
+    /* magic (4 bytes, little-endian) */
+    buf[offset++] = 0x5A;  /* 'Z' */
+    buf[offset++] = 0x50;  /* 'P' */
+    buf[offset++] = 0x4C;  /* 'L' */
+    buf[offset++] = 0x43;  /* 'C' */
+
+    /* version_major (2 bytes) */
+    buf[offset++] = ZPLC_VERSION_MAJOR & 0xFF;
+    buf[offset++] = (ZPLC_VERSION_MAJOR >> 8) & 0xFF;
+
+    /* version_minor (2 bytes) */
+    buf[offset++] = ZPLC_VERSION_MINOR & 0xFF;
+    buf[offset++] = (ZPLC_VERSION_MINOR >> 8) & 0xFF;
+
+    /* flags (4 bytes) */
+    offset += 4;
+
+    /* crc32 (4 bytes) */
+    offset += 4;
+
+    /* code_size (4 bytes) */
+    buf[offset++] = code_size & 0xFF;
+    buf[offset++] = (code_size >> 8) & 0xFF;
+    buf[offset++] = (code_size >> 16) & 0xFF;
+    buf[offset++] = (code_size >> 24) & 0xFF;
+
+    /* data_size (4 bytes) */
+    buf[offset++] = task_seg_size & 0xFF;
+    buf[offset++] = (task_seg_size >> 8) & 0xFF;
+    buf[offset++] = (task_seg_size >> 16) & 0xFF;
+    buf[offset++] = (task_seg_size >> 24) & 0xFF;
+
+    /* entry_point (2 bytes) - first task's entry */
+    buf[offset++] = 0;
+    buf[offset++] = 0;
+
+    /* segment_count (2 bytes) = 2 */
+    buf[offset++] = 2;
+    buf[offset++] = 0;
+
+    /* reserved (4 bytes) */
+    offset += 4;
+
+    /* Verify header size */
+    if (offset != ZPLC_FILE_HEADER_SIZE) {
+        return 0;
+    }
+
+    /* ===== Segment Entry 1: CODE (8 bytes) ===== */
+    buf[offset++] = ZPLC_SEG_CODE & 0xFF;  /* type */
+    buf[offset++] = (ZPLC_SEG_CODE >> 8) & 0xFF;
+    buf[offset++] = 0;  /* flags */
+    buf[offset++] = 0;
+    buf[offset++] = code_size & 0xFF;  /* size */
+    buf[offset++] = (code_size >> 8) & 0xFF;
+    buf[offset++] = (code_size >> 16) & 0xFF;
+    buf[offset++] = (code_size >> 24) & 0xFF;
+
+    /* ===== Segment Entry 2: TASK (8 bytes) ===== */
+    buf[offset++] = ZPLC_SEG_TASK & 0xFF;  /* type */
+    buf[offset++] = (ZPLC_SEG_TASK >> 8) & 0xFF;
+    buf[offset++] = 0;  /* flags */
+    buf[offset++] = 0;
+    buf[offset++] = task_seg_size & 0xFF;  /* size */
+    buf[offset++] = (task_seg_size >> 8) & 0xFF;
+    buf[offset++] = (task_seg_size >> 16) & 0xFF;
+    buf[offset++] = (task_seg_size >> 24) & 0xFF;
+
+    /* ===== Code Segment ===== */
+    memcpy(&buf[offset], code, code_size);
+    offset += code_size;
+
+    /* ===== Task Segment (16 bytes per task) ===== */
+    for (i = 0; i < task_count; i++) {
+        size_t task_offset = offset + (i * ZPLC_TASK_DEF_SIZE);
+        uint16_t task_id = i;
+        uint8_t task_type = (i == 0) ? ZPLC_TASK_INIT : ZPLC_TASK_CYCLIC;
+        uint8_t priority = i;
+        uint32_t interval_us = (i == 0) ? 0 : (10000 * (i + 1)); /* 10ms, 20ms, etc */
+        uint16_t entry_point = (uint16_t)(i * 6);  /* Each program ~6 bytes */
+        uint16_t stack_size = 64;
+
+        /* id (2 bytes) */
+        buf[task_offset + 0] = task_id & 0xFF;
+        buf[task_offset + 1] = (task_id >> 8) & 0xFF;
+
+        /* type (1 byte) */
+        buf[task_offset + 2] = task_type;
+
+        /* priority (1 byte) */
+        buf[task_offset + 3] = priority;
+
+        /* interval_us (4 bytes) */
+        buf[task_offset + 4] = interval_us & 0xFF;
+        buf[task_offset + 5] = (interval_us >> 8) & 0xFF;
+        buf[task_offset + 6] = (interval_us >> 16) & 0xFF;
+        buf[task_offset + 7] = (interval_us >> 24) & 0xFF;
+
+        /* entry_point (2 bytes) */
+        buf[task_offset + 8] = entry_point & 0xFF;
+        buf[task_offset + 9] = (entry_point >> 8) & 0xFF;
+
+        /* stack_size (2 bytes) */
+        buf[task_offset + 10] = stack_size & 0xFF;
+        buf[task_offset + 11] = (stack_size >> 8) & 0xFF;
+
+        /* reserved (4 bytes) - already zero */
+    }
+
+    return total_size;
+}
+
+static void test_load_tasks_basic(void)
+{
+    uint8_t file_buf[512];
+    uint8_t code[32];
+    size_t code_len = 0;
+    size_t file_size;
+    zplc_task_def_t tasks[4];
+    int result;
+
+    printf("\n=== Test: Load Tasks from .zplc ===\n");
+
+    /* Build simple code: 2 programs, each is PUSH8 N, HALT */
+    code_len = emit_push8(code, code_len, 1);
+    code_len = emit_op(code, code_len, OP_HALT);  /* Task 0: offset 0, len 3 */
+    code_len = emit_push8(code, code_len, 2);
+    code_len = emit_op(code, code_len, OP_HALT);  /* Task 1: offset 3, len 3 */
+    code_len = emit_push8(code, code_len, 3);
+    code_len = emit_op(code, code_len, OP_HALT);  /* Task 2: offset 6, len 3 */
+
+    /* Build a .zplc file with 3 tasks */
+    file_size = build_multitask_zplc(file_buf, sizeof(file_buf), 
+                                     code, code_len, 3);
+    TEST_ASSERT(file_size > 0, "Build multi-task .zplc file");
+
+    /* Initialize memory */
+    zplc_mem_init();
+
+    /* Load tasks */
+    result = zplc_core_load_tasks(file_buf, file_size, tasks, 4);
+    TEST_ASSERT_EQ(result, 3, "Loaded 3 tasks");
+
+    /* Verify task 0 (INIT) */
+    TEST_ASSERT_EQ(tasks[0].id, 0, "Task 0: id = 0");
+    TEST_ASSERT_EQ(tasks[0].type, ZPLC_TASK_INIT, "Task 0: type = INIT");
+    TEST_ASSERT_EQ(tasks[0].priority, 0, "Task 0: priority = 0");
+    TEST_ASSERT_EQ(tasks[0].entry_point, 0, "Task 0: entry_point = 0");
+
+    /* Verify task 1 (CYCLIC) */
+    TEST_ASSERT_EQ(tasks[1].id, 1, "Task 1: id = 1");
+    TEST_ASSERT_EQ(tasks[1].type, ZPLC_TASK_CYCLIC, "Task 1: type = CYCLIC");
+    TEST_ASSERT_EQ(tasks[1].priority, 1, "Task 1: priority = 1");
+    TEST_ASSERT_EQ(tasks[1].interval_us, 20000, "Task 1: interval_us = 20000");
+    TEST_ASSERT_EQ(tasks[1].entry_point, 6, "Task 1: entry_point = 6");
+
+    /* Verify task 2 (CYCLIC) */
+    TEST_ASSERT_EQ(tasks[2].id, 2, "Task 2: id = 2");
+    TEST_ASSERT_EQ(tasks[2].type, ZPLC_TASK_CYCLIC, "Task 2: type = CYCLIC");
+    TEST_ASSERT_EQ(tasks[2].interval_us, 30000, "Task 2: interval_us = 30000");
+    TEST_ASSERT_EQ(tasks[2].entry_point, 12, "Task 2: entry_point = 12");
+    TEST_ASSERT_EQ(tasks[2].stack_size, 64, "Task 2: stack_size = 64");
+
+    /* Verify code was loaded */
+    TEST_ASSERT_EQ(zplc_mem_get_code_size(), code_len, "Code loaded correctly");
+}
+
+static void test_load_tasks_execute(void)
+{
+    uint8_t file_buf[512];
+    uint8_t code[64];
+    size_t code_len = 0;
+    size_t file_size;
+    zplc_task_def_t tasks[2];
+    zplc_vm_t vms[2];
+    int result, i;
+
+    printf("\n=== Test: Load and Execute Tasks ===\n");
+
+    /*
+     * Build 2 programs:
+     *   Task 0 (offset 0): PUSH32 100, STORE32 0x1000, HALT -> OPI[0] = 100
+     *   Task 1 (offset 9): PUSH32 200, STORE32 0x1004, HALT -> OPI[4] = 200
+     */
+    /* Task 0 */
+    code_len = emit_push32(code, code_len, 100);
+    code_len = emit_store32(code, code_len, 0x1000);
+    code_len = emit_op(code, code_len, OP_HALT);
+    /* Task 1 (starts at offset 9) */
+    code_len = emit_push32(code, code_len, 200);
+    code_len = emit_store32(code, code_len, 0x1004);
+    code_len = emit_op(code, code_len, OP_HALT);
+
+    /* Build .zplc file with 2 tasks */
+    file_size = build_multitask_zplc(file_buf, sizeof(file_buf),
+                                     code, code_len, 2);
+    TEST_ASSERT(file_size > 0, "Build 2-task .zplc file");
+
+    /* Manually fix entry points in the file since our builder uses i*6 */
+    /* Task 0 entry_point is at: header(32) + seg_table(16) + code_len + 8 */
+    /* Task 1 entry_point is at: header(32) + seg_table(16) + code_len + 8 + 16 */
+    size_t task_seg_start = ZPLC_FILE_HEADER_SIZE + 
+                            (2 * ZPLC_SEGMENT_ENTRY_SIZE) + 
+                            code_len;
+    /* Task 0: entry_point = 0 */
+    file_buf[task_seg_start + 8] = 0;
+    file_buf[task_seg_start + 9] = 0;
+    /* Task 1: entry_point = 9 */
+    file_buf[task_seg_start + 16 + 8] = 9;
+    file_buf[task_seg_start + 16 + 9] = 0;
+
+    /* Initialize memory */
+    zplc_mem_init();
+
+    /* Load tasks */
+    result = zplc_core_load_tasks(file_buf, file_size, tasks, 2);
+    TEST_ASSERT_EQ(result, 2, "Loaded 2 tasks");
+
+    /* Initialize VMs and set entry points from loaded tasks */
+    for (i = 0; i < 2; i++) {
+        zplc_vm_init(&vms[i]);
+        result = zplc_vm_set_entry(&vms[i], tasks[i].entry_point, 
+                                   (uint32_t)code_len - tasks[i].entry_point);
+        TEST_ASSERT_EQ(result, 0, "Set VM entry point from task");
+    }
+
+    /* Execute both tasks */
+    for (i = 0; i < 2; i++) {
+        result = zplc_vm_run(&vms[i], 0);
+        TEST_ASSERT(result >= 0, "Task executed successfully");
+    }
+
+    /* Verify OPI results */
+    TEST_ASSERT_EQ(zplc_core_get_opi(0), 100, "Task 0: OPI[0] = 100");
+    TEST_ASSERT_EQ(zplc_core_get_opi(4), 200, "Task 1: OPI[4] = 200");
+}
+
+static void test_load_tasks_errors(void)
+{
+    uint8_t file_buf[256];
+    zplc_task_def_t tasks[4];
+    int result;
+
+    printf("\n=== Test: Load Tasks Error Handling ===\n");
+
+    /* Test NULL pointer */
+    result = zplc_core_load_tasks(NULL, 100, tasks, 4);
+    TEST_ASSERT_EQ(result, -1, "NULL binary returns -1");
+
+    /* Test invalid magic */
+    memset(file_buf, 0, sizeof(file_buf));
+    file_buf[0] = 'X';  /* Wrong magic */
+    result = zplc_core_load_tasks(file_buf, sizeof(file_buf), tasks, 4);
+    TEST_ASSERT_EQ(result, -2, "Invalid magic returns -2");
+
+    /* Test file without TASK segment (single-task file) */
+    /* Build a minimal header with just CODE segment */
+    memset(file_buf, 0, sizeof(file_buf));
+    file_buf[0] = 0x5A; file_buf[1] = 0x50; 
+    file_buf[2] = 0x4C; file_buf[3] = 0x43;  /* Magic = ZPLC */
+    file_buf[4] = 1; file_buf[5] = 0;  /* version_major = 1 */
+    file_buf[6] = 0; file_buf[7] = 0;  /* version_minor = 0 */
+    file_buf[20] = 2; /* code_size = 2 */
+    file_buf[28] = 1; /* segment_count = 1 */
+    /* Segment entry: CODE */
+    file_buf[32] = ZPLC_SEG_CODE;
+    file_buf[36] = 2;  /* size = 2 */
+    /* Code: NOP, HALT */
+    file_buf[40] = OP_NOP;
+    file_buf[41] = OP_HALT;
+
+    result = zplc_core_load_tasks(file_buf, 42, tasks, 4);
+    TEST_ASSERT_EQ(result, -6, "No TASK segment returns -6");
+}
+
+/* ============================================================================
  * Main
  * ============================================================================ */
 
@@ -1417,6 +1724,11 @@ int main(void)
     test_instance_based_vm();
     test_multiple_entry_points();
     test_vm_isolation();
+
+    /* Multi-Task Loading Tests */
+    test_load_tasks_basic();
+    test_load_tasks_execute();
+    test_load_tasks_errors();
 
     printf("\n================================================\n");
     printf("  Results: %d tests, %d passed, %d failed\n",

@@ -62,10 +62,12 @@ export interface AssemblyResult {
     zplcFile: Uint8Array;
     /** Parsed labels for debugging */
     labels: Map<string, Label>;
-    /** Entry point address */
+    /** Entry point address (legacy - use tasks for multi-task) */
     entryPoint: number;
     /** Code size in bytes */
     codeSize: number;
+    /** Task definitions (empty for single-task programs) */
+    tasks?: TaskDef[];
 }
 
 /**
@@ -80,6 +82,7 @@ export interface AssemblerOptions {
 
 /**
  * ZPLC file format constants.
+ * Must match zplc_isa.h definitions.
  */
 export const ZPLC_CONSTANTS = {
     /** Magic number: "ZPLC" in little-endian (0x5A 0x50 0x4C 0x43) */
@@ -92,6 +95,40 @@ export const ZPLC_CONSTANTS = {
     HEADER_SIZE: 32,
     /** Segment entry size in bytes */
     SEGMENT_ENTRY_SIZE: 8,
-    /** Code segment type ID */
+    /** Segment type IDs */
     SEGMENT_TYPE_CODE: 0x01,
+    SEGMENT_TYPE_DATA: 0x02,
+    SEGMENT_TYPE_TASK: 0x20,
+    /** Task definition size in bytes (per zplc_isa.h) */
+    TASK_DEF_SIZE: 16,
 } as const;
+
+/**
+ * Task trigger types (matches zplc_task_type_t in zplc_isa.h)
+ */
+export const TASK_TYPE = {
+    CYCLIC: 0,
+    EVENT: 1,
+    INIT: 2,
+} as const;
+
+export type TaskType = typeof TASK_TYPE[keyof typeof TASK_TYPE];
+
+/**
+ * Task definition for multi-task programs.
+ * Matches zplc_task_def_t in zplc_isa.h (16 bytes)
+ */
+export interface TaskDef {
+    /** Task ID (unique identifier) */
+    id: number;
+    /** Task type: 0=cyclic, 1=event, 2=init */
+    type: TaskType;
+    /** Priority (0=highest, 255=lowest) */
+    priority: number;
+    /** Interval in microseconds (for cyclic tasks) */
+    intervalUs: number;
+    /** Entry point offset in code segment */
+    entryPoint: number;
+    /** Required stack depth (default: 64) */
+    stackSize: number;
+}
