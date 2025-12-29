@@ -1,8 +1,8 @@
 # ZPLC Virtual Machine - Instruction Set Architecture (ISA)
 
-**Version:** 1.0.0 (Stable)
+**Version:** 1.1.0 (Stable)
 **Status:** Released
-**Last Updated:** 2025
+**Last Updated:** December 2025
 
 ---
 
@@ -472,7 +472,8 @@ skip:   ...
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 1.0     | 2024 | Initial specification |
+| 1.0     | 2024 | Initial specification (62 opcodes) |
+| 1.1     | 2025 | Added GET_TICKS opcode (63 total), multitask support |
 
 ---
 

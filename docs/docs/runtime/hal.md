@@ -60,12 +60,13 @@ The HAL defines a contract of functions that each platform must implement:
 | `zplc_hal_adc_read(channel)` | Read analog input (12-bit typical) |
 | `zplc_hal_dac_write(channel, value)` | Write analog output |
 
-### Persistence
+### Persistence (NVS)
 
 | Function | Description |
 |----------|-------------|
-| `zplc_hal_persist_save(addr, data, len)` | Save data to non-volatile storage |
-| `zplc_hal_persist_load(addr, data, len)` | Load data from non-volatile storage |
+| `zplc_hal_persist_save(key, data, len)` | Save data to non-volatile storage |
+| `zplc_hal_persist_load(key, data, len)` | Load data from non-volatile storage |
+| `zplc_hal_persist_delete(key)` | Delete key from non-volatile storage |
 
 ### Logging
 
@@ -93,6 +94,13 @@ void zplc_hal_sleep(uint32_t ms) {
 int zplc_hal_gpio_read(uint8_t channel) {
     return gpio_pin_get_dt(&io_channels[channel]);
 }
+
+// Persistence uses NVS directly
+zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data, size_t len) {
+    uint16_t id = key_to_id(key);  // "code_len"->1, "code"->2, "retain"->3
+    int rc = nvs_write(&nvs_fs, id, data, len);
+    return (rc >= 0) ? ZPLC_HAL_OK : ZPLC_HAL_ERROR;
+}
 ```
 
 **Configuration via Kconfig:**
@@ -109,9 +117,15 @@ CONFIG_ZPLC_RETAIN_MEMORY_SIZE=4096
 # I/O channel count
 CONFIG_ZPLC_GPIO_CHANNELS=16
 CONFIG_ZPLC_ADC_CHANNELS=8
+
+# Persistence (NVS)
+CONFIG_FLASH=y
+CONFIG_FLASH_PAGE_LAYOUT=y
+CONFIG_FLASH_MAP=y
+CONFIG_NVS=y
 ```
 
-**DeviceTree Overlay:**
+**DeviceTree Overlay (with storage partition):**
 
 ```dts
 / {
@@ -120,6 +134,19 @@ CONFIG_ZPLC_ADC_CHANNELS=8
         digital-inputs = <&gpio0 0>, <&gpio0 1>, <&gpio0 2>;
         digital-outputs = <&gpio1 0>, <&gpio1 1>;
         analog-inputs = <&adc0 0>, <&adc0 1>;
+    };
+};
+
+&flash0 {
+    partitions {
+        compatible = "fixed-partitions";
+        #address-cells = <1>;
+        #size-cells = <1>;
+
+        storage_partition: partition@1f0000 {
+            label = "storage";
+            reg = <0x1f0000 0x10000>;  /* 64KB */
+        };
     };
 };
 ```
@@ -142,6 +169,17 @@ void zplc_hal_sleep(uint32_t ms) {
 // GPIO is simulated via shared memory or file
 int zplc_hal_gpio_read(uint8_t channel) {
     return simulated_inputs[channel];
+}
+
+// Persistence uses file system
+zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data, size_t len) {
+    char filename[64];
+    snprintf(filename, sizeof(filename), "zplc_%s.bin", key);
+    FILE *f = fopen(filename, "wb");
+    if (!f) return ZPLC_HAL_ERROR;
+    fwrite(data, 1, len, f);
+    fclose(f);
+    return ZPLC_HAL_OK;
 }
 ```
 
@@ -191,6 +229,6 @@ To port ZPLC to a new platform:
 
 | HAL | Timing | GPIO | Analog | Persist | Network |
 |-----|--------|------|--------|---------|---------|
-| Zephyr | Complete | Complete | Planned | Planned | Planned |
-| POSIX | Complete | Simulated | Simulated | File-based | Planned |
-| WASM | Complete | JS Bridge | JS Bridge | localStorage | WebSocket |
+| Zephyr | ✅ Complete | ✅ Complete | Stub | ✅ NVS | Planned |
+| POSIX | ✅ Complete | Simulated | Simulated | ✅ File | Planned |
+| WASM | ✅ Complete | ✅ JS Bridge | JS Bridge | Stub | WebSocket |
