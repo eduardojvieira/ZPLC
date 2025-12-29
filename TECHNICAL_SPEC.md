@@ -1,5 +1,5 @@
-# ZPLC v1.0: Technical Specification & Architecture
-**Version:** 1.0.0 (Stable)
+# ZPLC v1.1: Technical Specification & Architecture
+**Version:** 1.1.0 (Stable)
 **Target:** Open Source Industrial Automation
 **Core Philosophy:** One Execution Core, Any Runtime.
 
@@ -164,16 +164,21 @@ ZPLC integrates with Zephyr as a **Module**.
 ## 8. Development Roadmap
 
 **Phase 1.0 (Completed)**
-* **ISA & VM**: 62 opcodes, 32-bit stack, IEEE 754 float support.
+* **ISA & VM**: 63 opcodes, 32-bit stack, IEEE 754 float support.
 * **Visual IDE**: Reactive editors for LD, FBD, and SFC.
 * **TS Compiler**: Structured Text to Bytecode transpilation.
 * **WASM Simulation**: In-browser execution of the C core.
 * **Serial Loader**: Real-time program injection into Zephyr targets.
 
-**Phase 1.1 (Target: Q1 2026)**
+**Phase 1.1 (Completed)**
+* ✅ **Multitask Scheduler**: Priority-based concurrent task execution with configurable intervals.
+* ✅ **Program Persistence**: NVS-backed storage - programs survive power cycles and auto-restore on boot.
+* ✅ **Shell Commands**: `zplc persist info/clear` for managing stored programs.
+
+**Phase 1.2 (Target: Q2 2026)**
 * **Industrial Connectivity**: Modbus TCP/RTU server and client.
 * **Cloud Integration**: MQTT "Sparkplug B" compliant client.
-* **Hardware NVS**: Non-Volatile Storage support for retentive variables.
+* **Retentive Variables**: NVS-backed RETAIN memory region for critical process data.
 * **Security**: Bytecode signing and encrypted debug transport.
 
 ---

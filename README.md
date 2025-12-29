@@ -19,9 +19,9 @@ ZPLC is a portable, deterministic PLC runtime environment powered by [Zephyr RTO
 - **Industrial Grade**: Deterministic execution, retentive memory support, and sub-millisecond jitter on RTOS targets.
 - **Modern Tooling**: TS-based compiler, Python assembler, and built-in unit testing framework.
 
-## Current Status: v1.0.0 (Released) 🚀
+## Current Status: v1.1.0 (Released) 🚀
 
-ZPLC has reached its first major milestone. All core development phases are complete, providing a functional end-to-end PLC ecosystem.
+ZPLC has reached its second major milestone with **multitask scheduling** and **persistent program storage**.
 
 | Phase | Status | Description |
 |-------|--------|-------------|
@@ -31,17 +31,19 @@ ZPLC has reached its first major milestone. All core development phases are comp
 | Phase 3 | ✅ Complete | Hardware Integration (Zephyr Serial Loader) |
 | Phase 4 | ✅ Complete | Debugging & Simulation (WASM + HW) |
 | Phase 5 | ✅ Complete | Final Polish & Release v1.0.0 |
+| **v1.1** | ✅ Complete | **Multitask Scheduler + NVS Persistence** |
 
 ---
 
-## 🚀 Roadmap (v1.1+)
+## 🚀 Roadmap (v1.2+)
 
-The focus for the next version is expanding industrial connectivity and persistence.
+The focus for the next version is expanding industrial connectivity.
 
+- [x] **Multitask Scheduler**: Priority-based concurrent task execution (v1.1) ✅
+- [x] **Program Persistence**: NVS-backed program storage survives power cycles (v1.1) ✅
 - [ ] **Modbus TCP/RTU**: Native support for industrial fieldbus.
-- [ ] **MQTT Integration**: First-class support for IIoT/Cloud connectivity.
-- [ ] **Retentive Memory**: Support for flash-backed variables across power cycles.
-- [ ] **Distributed Control**: Peer-to-peer PLC communication.
+- [ ] **MQTT Integration**: First-class support for IIoT/Cloud connectivity (Sparkplug B).
+- [ ] **Retentive Variables**: Flash-backed RETAIN memory for critical data.
 - [ ] **OPC UA Server**: Enterprise-level interoperability.
 
 
