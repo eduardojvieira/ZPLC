@@ -21,6 +21,11 @@ if(CONFIG_ZPLC)
     ${ZEPHYR_CURRENT_MODULE_DIR}/src/hal/zephyr/zplc_hal_zephyr.c
   )
 
+  # Scheduler (optional - enabled via CONFIG_ZPLC_SCHEDULER)
+  zephyr_library_sources_ifdef(CONFIG_ZPLC_SCHEDULER
+    ${ZEPHYR_CURRENT_MODULE_DIR}/src/hal/zephyr/zplc_scheduler_zephyr.c
+  )
+
   # Include paths
   zephyr_library_include_directories(
     ${ZEPHYR_CURRENT_MODULE_DIR}/include

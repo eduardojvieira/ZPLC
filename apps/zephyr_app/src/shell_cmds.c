@@ -23,6 +23,10 @@
  *   zplc dbg peek <addr> [len] - Read memory (hex dump)
  *   zplc dbg poke <addr> <val> - Write byte to IPI memory
  *   zplc dbg info      - Show detailed VM state
+ *
+ * Scheduler Commands (when CONFIG_ZPLC_SCHEDULER=y):
+ *   zplc sched status  - Show scheduler statistics
+ *   zplc sched tasks   - List all registered tasks
  */
 
 #include <zephyr/kernel.h>
@@ -30,13 +34,53 @@
 #include <zplc_core.h>
 #include <zplc_hal.h>
 
+#ifdef CONFIG_ZPLC_SCHEDULER
+#include <zplc_scheduler.h>
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 
 /* ============================================================================
- * External Interface (defined in main.c)
+ * Mode-specific Definitions
  * ============================================================================ */
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+
+/*
+ * SCHEDULER MODE
+ * 
+ * In scheduler mode, the shell commands provide status info about
+ * the scheduler and tasks. Dynamic program loading goes through the
+ * scheduler API, not the legacy buffer system.
+ */
+
+/* Local state for dynamic task loading */
+static uint8_t shell_program_buffer[4096];
+static size_t shell_buffer_size = sizeof(shell_program_buffer);
+static size_t shell_expected_size = 0;
+static size_t shell_received_size = 0;
+
+typedef enum {
+    SHELL_STATE_IDLE = 0,
+    SHELL_STATE_LOADING,
+    SHELL_STATE_READY,
+} shell_load_state_t;
+
+static shell_load_state_t shell_load_state = SHELL_STATE_IDLE;
+
+/* Dynamic task ID (for shell-loaded programs) */
+static int shell_task_id = -1;
+
+#else /* Legacy mode */
+
+/*
+ * LEGACY MODE
+ * 
+ * In legacy mode, shell commands control the single-task execution
+ * loop in main.c via shared extern variables.
+ */
 
 /* VM state enum - must match main.c */
 typedef enum {
@@ -48,7 +92,7 @@ typedef enum {
     ZPLC_STATE_ERROR,       /* Error occurred */
 } zplc_runtime_state_t;
 
-/* Functions and variables exposed by main.c */
+/* Functions and variables exposed by main.c (legacy mode only) */
 extern uint8_t program_buffer[];
 extern size_t program_buffer_size;
 extern volatile zplc_runtime_state_t runtime_state;
@@ -56,6 +100,8 @@ extern volatile size_t program_expected_size;
 extern volatile size_t program_received_size;
 extern volatile uint32_t cycle_count;
 extern volatile int step_requested;
+
+#endif /* CONFIG_ZPLC_SCHEDULER */
 
 /* ============================================================================
  * Helper Functions
@@ -104,8 +150,9 @@ static int hex_decode(const char *hex, uint8_t *out, size_t max_out)
     return (int)out_len;
 }
 
+#ifndef CONFIG_ZPLC_SCHEDULER
 /**
- * @brief Get human-readable state name.
+ * @brief Get human-readable state name (legacy mode).
  */
 static const char *state_name(zplc_runtime_state_t state)
 {
@@ -119,9 +166,450 @@ static const char *state_name(zplc_runtime_state_t state)
         default:                 return "UNKNOWN";
     }
 }
+#endif
 
 /* ============================================================================
- * Shell Command Handlers
+ * Shell Command Handlers - Common
+ * ============================================================================ */
+
+/**
+ * @brief Handler for 'zplc version'
+ *
+ * Shows version information.
+ */
+static int cmd_zplc_version(const struct shell *sh, size_t argc, char **argv)
+{
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
+    
+    shell_print(sh, "ZPLC Runtime v%s", zplc_core_version());
+#ifdef CONFIG_ZPLC_SCHEDULER
+    shell_print(sh, "Mode: Multitask Scheduler");
+    shell_print(sh, "Max Tasks: %d", CONFIG_ZPLC_MAX_TASKS);
+#else
+    shell_print(sh, "Mode: Single Task (Legacy)");
+    shell_print(sh, "Buffer: %zu bytes", program_buffer_size);
+#endif
+    return 0;
+}
+
+/* ============================================================================
+ * Shell Command Handlers - Scheduler Mode
+ * ============================================================================ */
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+
+/**
+ * @brief Handler for 'zplc load <size>' (scheduler mode)
+ */
+static int cmd_zplc_load(const struct shell *sh, size_t argc, char **argv)
+{
+    if (argc != 2) {
+        shell_error(sh, "Usage: zplc load <size>");
+        return -EINVAL;
+    }
+    
+    char *endptr;
+    unsigned long size = strtoul(argv[1], &endptr, 10);
+    
+    if (*endptr != '\0' || size == 0) {
+        shell_error(sh, "ERROR: Invalid size");
+        return -EINVAL;
+    }
+    
+    if (size > shell_buffer_size) {
+        shell_error(sh, "ERROR: Size %lu exceeds buffer (%zu bytes)",
+                    size, shell_buffer_size);
+        return -ENOMEM;
+    }
+    
+    /* Clear buffer and prepare for loading */
+    memset(shell_program_buffer, 0, shell_buffer_size);
+    shell_expected_size = size;
+    shell_received_size = 0;
+    shell_load_state = SHELL_STATE_LOADING;
+    
+    shell_print(sh, "OK: Ready to receive %lu bytes", size);
+    return 0;
+}
+
+/**
+ * @brief Handler for 'zplc data <hex>' (scheduler mode)
+ */
+static int cmd_zplc_data(const struct shell *sh, size_t argc, char **argv)
+{
+    if (argc != 2) {
+        shell_error(sh, "Usage: zplc data <hex>");
+        return -EINVAL;
+    }
+    
+    if (shell_load_state != SHELL_STATE_LOADING) {
+        shell_error(sh, "ERROR: Not in loading state (use 'zplc load' first)");
+        return -EINVAL;
+    }
+    
+    const char *hex = argv[1];
+    size_t remaining = shell_expected_size - shell_received_size;
+    
+    int decoded = hex_decode(hex, 
+                             shell_program_buffer + shell_received_size,
+                             remaining);
+    
+    if (decoded < 0) {
+        shell_error(sh, "ERROR: Invalid hex data");
+        shell_load_state = SHELL_STATE_IDLE;
+        return -EINVAL;
+    }
+    
+    shell_received_size += decoded;
+    
+    if (shell_received_size >= shell_expected_size) {
+        shell_load_state = SHELL_STATE_READY;
+        shell_print(sh, "OK: Received %zu/%zu bytes (complete)",
+                    shell_received_size, shell_expected_size);
+    } else {
+        shell_print(sh, "OK: Received %zu/%zu bytes",
+                    shell_received_size, shell_expected_size);
+    }
+    
+    return 0;
+}
+
+/**
+ * @brief Handler for 'zplc start' (scheduler mode)
+ *
+ * Registers the loaded program as a new task and starts it.
+ */
+static int cmd_zplc_start(const struct shell *sh, size_t argc, char **argv)
+{
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
+    
+    if (shell_load_state != SHELL_STATE_READY) {
+        shell_error(sh, "ERROR: No program loaded");
+        return -EINVAL;
+    }
+    
+    /* Remove old shell task if exists */
+    if (shell_task_id >= 0) {
+        zplc_sched_unregister_task(shell_task_id);
+        shell_task_id = -1;
+    }
+    
+    /* Create task definition for shell-loaded program */
+    zplc_task_def_t task_def = {
+        .id = 99,  /* Shell task ID */
+        .type = ZPLC_TASK_CYCLIC,
+        .priority = 3,
+        .interval_us = 100000,  /* 100ms default */
+        .entry_point = 0,
+        .stack_size = 64,
+    };
+    
+    /* Register the task */
+    shell_task_id = zplc_sched_register_task(&task_def, 
+                                              shell_program_buffer, 
+                                              shell_received_size);
+    if (shell_task_id < 0) {
+        shell_error(sh, "ERROR: Failed to register task: %d", shell_task_id);
+        return shell_task_id;
+    }
+    
+    /* Ensure scheduler is running */
+    zplc_sched_start();
+    
+    shell_load_state = SHELL_STATE_IDLE;
+    shell_print(sh, "OK: Task started (slot=%d, %zu bytes)", 
+                shell_task_id, shell_received_size);
+    return 0;
+}
+
+/**
+ * @brief Handler for 'zplc stop' (scheduler mode)
+ */
+static int cmd_zplc_stop(const struct shell *sh, size_t argc, char **argv)
+{
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
+    
+    if (shell_task_id >= 0) {
+        zplc_sched_unregister_task(shell_task_id);
+        shell_task_id = -1;
+        shell_print(sh, "OK: Shell task stopped");
+    } else {
+        shell_print(sh, "OK: No shell task running");
+    }
+    
+    return 0;
+}
+
+/**
+ * @brief Handler for 'zplc status' (scheduler mode)
+ */
+static int cmd_zplc_status(const struct shell *sh, size_t argc, char **argv)
+{
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
+    
+    zplc_sched_stats_t stats;
+    zplc_sched_get_stats(&stats);
+    
+    shell_print(sh, "=== ZPLC Scheduler Status ===");
+    shell_print(sh, "Active Tasks:   %u", stats.active_tasks);
+    shell_print(sh, "Total Cycles:   %u", stats.total_cycles);
+    shell_print(sh, "Total Overruns: %u", stats.total_overruns);
+    shell_print(sh, "Shell Task:     %s", shell_task_id >= 0 ? "active" : "none");
+    
+    /* Show OPI outputs */
+    shell_print(sh, "--- Outputs (OPI) ---");
+    shell_print(sh, "OPI[0..3]:  0x%02X 0x%02X 0x%02X 0x%02X",
+                zplc_opi_read8(0),
+                zplc_opi_read8(1),
+                zplc_opi_read8(2),
+                zplc_opi_read8(3));
+    
+    return 0;
+}
+
+/**
+ * @brief Handler for 'zplc reset' (scheduler mode)
+ */
+static int cmd_zplc_reset(const struct shell *sh, size_t argc, char **argv)
+{
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
+    
+    /* Stop all tasks */
+    zplc_sched_stop();
+    
+    /* Clear shell state */
+    if (shell_task_id >= 0) {
+        zplc_sched_unregister_task(shell_task_id);
+        shell_task_id = -1;
+    }
+    shell_load_state = SHELL_STATE_IDLE;
+    shell_expected_size = 0;
+    shell_received_size = 0;
+    
+    /* Clear memory */
+    zplc_mem_init();
+    
+    /* Turn off all outputs */
+    for (int i = 0; i < 4; i++) {
+        zplc_hal_gpio_write(i, 0);
+    }
+    
+    shell_print(sh, "OK: Reset complete");
+    return 0;
+}
+
+/**
+ * @brief Handler for 'zplc sched status'
+ */
+static int cmd_sched_status(const struct shell *sh, size_t argc, char **argv)
+{
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
+    
+    zplc_sched_stats_t stats;
+    zplc_sched_get_stats(&stats);
+    
+    shell_print(sh, "=== Scheduler Statistics ===");
+    shell_print(sh, "Active Tasks:   %u / %d", stats.active_tasks, CONFIG_ZPLC_MAX_TASKS);
+    shell_print(sh, "Total Cycles:   %u", stats.total_cycles);
+    shell_print(sh, "Total Overruns: %u", stats.total_overruns);
+    shell_print(sh, "Uptime:         %u ms", k_uptime_get_32());
+    
+    return 0;
+}
+
+/**
+ * @brief Handler for 'zplc sched tasks'
+ */
+static int cmd_sched_tasks(const struct shell *sh, size_t argc, char **argv)
+{
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
+    
+    shell_print(sh, "=== Registered Tasks ===");
+    shell_print(sh, "Slot  ID    Prio  Interval   Cycles    Overruns");
+    shell_print(sh, "----  ----  ----  ---------  --------  --------");
+    
+    for (int i = 0; i < CONFIG_ZPLC_MAX_TASKS; i++) {
+        zplc_task_t task;
+        if (zplc_sched_get_task(i, &task) == 0) {
+            shell_print(sh, "%4d  %4d  %4d  %7u us  %8u  %8u",
+                        i,
+                        task.config.id,
+                        task.config.priority,
+                        task.config.interval_us,
+                        task.stats.cycle_count,
+                        task.stats.overrun_count);
+        }
+    }
+    
+    return 0;
+}
+
+/* Scheduler subcommands */
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_sched,
+    SHELL_CMD(status, NULL, "Show scheduler statistics", cmd_sched_status),
+    SHELL_CMD(tasks, NULL, "List registered tasks", cmd_sched_tasks),
+    SHELL_SUBCMD_SET_END
+);
+
+/* Debug commands - scheduler mode (simplified) */
+static int cmd_dbg_peek(const struct shell *sh, size_t argc, char **argv)
+{
+    if (argc < 2) {
+        shell_error(sh, "Usage: zplc dbg peek <addr> [len]");
+        return -EINVAL;
+    }
+    
+    char *endptr;
+    unsigned long addr = strtoul(argv[1], &endptr, 0);
+    if (*endptr != '\0') {
+        shell_error(sh, "ERROR: Invalid address");
+        return -EINVAL;
+    }
+    
+    unsigned long len = 16;
+    if (argc >= 3) {
+        len = strtoul(argv[2], &endptr, 0);
+        if (*endptr != '\0' || len == 0 || len > 256) {
+            shell_error(sh, "ERROR: Invalid length (1-256)");
+            return -EINVAL;
+        }
+    }
+    
+    shell_print(sh, "Memory at 0x%04lX (%lu bytes):", addr, len);
+    
+    /* Get memory region pointer */
+    uint8_t *base = NULL;
+    uint16_t offset = 0;
+    
+    if (addr < ZPLC_MEM_OPI_BASE) {
+        base = zplc_mem_get_region(ZPLC_MEM_IPI_BASE);
+        offset = (uint16_t)addr;
+    } else if (addr < ZPLC_MEM_WORK_BASE) {
+        base = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
+        offset = (uint16_t)(addr - ZPLC_MEM_OPI_BASE);
+    } else if (addr < ZPLC_MEM_RETAIN_BASE) {
+        base = zplc_mem_get_region(ZPLC_MEM_WORK_BASE);
+        offset = (uint16_t)(addr - ZPLC_MEM_WORK_BASE);
+    } else {
+        base = zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE);
+        offset = (uint16_t)(addr - ZPLC_MEM_RETAIN_BASE);
+    }
+    
+    if (base == NULL) {
+        shell_error(sh, "ERROR: Invalid memory region");
+        return -EINVAL;
+    }
+    
+    /* Print in rows of 16 bytes */
+    for (unsigned long i = 0; i < len; i += 16) {
+        char line[80];
+        int pos = 0;
+        
+        pos += snprintf(line + pos, sizeof(line) - pos, "%04lX: ", addr + i);
+        
+        for (unsigned long j = 0; j < 16 && (i + j) < len; j++) {
+            pos += snprintf(line + pos, sizeof(line) - pos, "%02X ", 
+                           base[offset + i + j]);
+        }
+        
+        shell_print(sh, "%s", line);
+    }
+    
+    return 0;
+}
+
+static int cmd_dbg_poke(const struct shell *sh, size_t argc, char **argv)
+{
+    if (argc != 3) {
+        shell_error(sh, "Usage: zplc dbg poke <addr> <value>");
+        return -EINVAL;
+    }
+    
+    char *endptr;
+    unsigned long addr = strtoul(argv[1], &endptr, 0);
+    if (*endptr != '\0') {
+        shell_error(sh, "ERROR: Invalid address");
+        return -EINVAL;
+    }
+    
+    unsigned long value = strtoul(argv[2], &endptr, 0);
+    if (*endptr != '\0' || value > 255) {
+        shell_error(sh, "ERROR: Invalid value (0-255)");
+        return -EINVAL;
+    }
+    
+    /* Write to IPI region */
+    if (addr < ZPLC_MEM_OPI_BASE) {
+        zplc_ipi_write8((uint16_t)addr, (uint8_t)value);
+        shell_print(sh, "OK: Wrote 0x%02X to IPI[0x%04lX]", (uint8_t)value, addr);
+    } else {
+        shell_error(sh, "ERROR: Can only poke IPI region (0x0000-0x0FFF)");
+        return -EINVAL;
+    }
+    
+    return 0;
+}
+
+static int cmd_dbg_info(const struct shell *sh, size_t argc, char **argv)
+{
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
+    
+    zplc_sched_stats_t stats;
+    zplc_sched_get_stats(&stats);
+    
+    shell_print(sh, "=== Debug Info (Scheduler Mode) ===");
+    shell_print(sh, "Active Tasks: %u", stats.active_tasks);
+    shell_print(sh, "Total Cycles: %u", stats.total_cycles);
+    shell_print(sh, "Overruns:     %u", stats.total_overruns);
+    shell_print(sh, "Uptime:       %u ms", k_uptime_get_32());
+    
+    /* Show OPI bytes 0-7 */
+    shell_print(sh, "OPI[0..7]: %02X %02X %02X %02X %02X %02X %02X %02X",
+                zplc_opi_read8(0), zplc_opi_read8(1),
+                zplc_opi_read8(2), zplc_opi_read8(3),
+                zplc_opi_read8(4), zplc_opi_read8(5),
+                zplc_opi_read8(6), zplc_opi_read8(7));
+    
+    return 0;
+}
+
+/* Stub commands for scheduler mode (pause/resume/step not applicable) */
+static int cmd_dbg_pause(const struct shell *sh, size_t argc, char **argv)
+{
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
+    shell_print(sh, "WARN: Pause not supported in scheduler mode (use task-level control)");
+    return 0;
+}
+
+static int cmd_dbg_resume(const struct shell *sh, size_t argc, char **argv)
+{
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
+    shell_print(sh, "WARN: Resume not supported in scheduler mode");
+    return 0;
+}
+
+static int cmd_dbg_step(const struct shell *sh, size_t argc, char **argv)
+{
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
+    shell_print(sh, "WARN: Step not supported in scheduler mode");
+    return 0;
+}
+
+#else /* Legacy mode implementations */
+
+/* ============================================================================
+ * Shell Command Handlers - Legacy Mode
  * ============================================================================ */
 
 /**
@@ -352,23 +840,8 @@ static int cmd_zplc_reset(const struct shell *sh, size_t argc, char **argv)
     return 0;
 }
 
-/**
- * @brief Handler for 'zplc version'
- *
- * Shows version information.
- */
-static int cmd_zplc_version(const struct shell *sh, size_t argc, char **argv)
-{
-    ARG_UNUSED(argc);
-    ARG_UNUSED(argv);
-    
-    shell_print(sh, "ZPLC Runtime v%s", zplc_core_version());
-    shell_print(sh, "Buffer: %zu bytes", program_buffer_size);
-    return 0;
-}
-
 /* ============================================================================
- * Debug Command Handlers
+ * Debug Command Handlers - Legacy Mode
  * ============================================================================ */
 
 /**
@@ -604,6 +1077,12 @@ static int cmd_dbg_info(const struct shell *sh, size_t argc, char **argv)
     return 0;
 }
 
+#endif /* CONFIG_ZPLC_SCHEDULER */
+
+/* ============================================================================
+ * Shell Command Registration
+ * ============================================================================ */
+
 /* Debug subcommands under 'zplc dbg' */
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_dbg,
     SHELL_CMD(pause, NULL,
@@ -626,10 +1105,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_dbg,
         cmd_dbg_info),
     SHELL_SUBCMD_SET_END
 );
-
-/* ============================================================================
- * Shell Command Registration
- * ============================================================================ */
 
 /* Subcommands under 'zplc' */
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_zplc,
@@ -657,6 +1132,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_zplc,
     SHELL_CMD(dbg, &sub_dbg,
         "Debug commands (pause/resume/step/peek/poke/info)",
         NULL),
+#ifdef CONFIG_ZPLC_SCHEDULER
+    SHELL_CMD(sched, &sub_sched,
+        "Scheduler commands (status/tasks)",
+        NULL),
+#endif
     SHELL_SUBCMD_SET_END
 );
 

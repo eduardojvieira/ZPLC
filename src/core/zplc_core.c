@@ -10,11 +10,18 @@
  *
  * Architecture: Stack-based bytecode interpreter
  * See docs/ISA.md for instruction set specification.
+ *
+ * Memory Model:
+ *   - Shared: IPI, OPI, Work, Retain, Code (global arrays)
+ *   - Private: Stack, Call Stack, PC, flags (per zplc_vm_t instance)
+ *
+ * This design allows multiple VM instances to execute different tasks
+ * while sharing the same I/O and data memory.
  */
 
 #include <string.h>
 #include <zplc_hal.h>
-#include <zplc_isa.h>
+#include <zplc_core.h>
 
 /* ============================================================================
  * Version Information
@@ -22,14 +29,14 @@
  */
 
 #define ZPLC_CORE_VERSION_MAJOR 0
-#define ZPLC_CORE_VERSION_MINOR 2
+#define ZPLC_CORE_VERSION_MINOR 3
 #define ZPLC_CORE_VERSION_PATCH 0
 
 /* ============================================================================
- * Memory Regions
+ * Shared Memory Regions
  * ============================================================================
- * These are the VM's memory banks. All access goes through helper functions
- * that perform bounds checking and address translation.
+ * These are global and shared across all VM instances.
+ * In a multi-task environment, access must be synchronized by the scheduler.
  */
 
 /** @brief Input Process Image - updated by HAL, read by VM */
@@ -50,16 +57,11 @@ static uint8_t mem_code[ZPLC_MEM_CODE_SIZE];
 /** @brief Loaded code size (for bounds checking) */
 static uint32_t code_size = 0;
 
-/* ============================================================================
- * VM State
- * ============================================================================
- */
+/** @brief Default VM instance for legacy API */
+static zplc_vm_t default_vm;
 
-/** @brief The virtual machine execution state */
-static zplc_vm_state_t vm_state;
-
-/** @brief Flag indicating if a program is loaded */
-static int program_loaded = 0;
+/** @brief Flag indicating if default VM has a program loaded */
+static int default_program_loaded = 0;
 
 /* ============================================================================
  * Internal Helper Macros
@@ -69,62 +71,62 @@ static int program_loaded = 0;
 /**
  * @brief Check for stack underflow before popping N items.
  */
-#define CHECK_STACK_UNDERFLOW(n)                                               \
-  do {                                                                         \
-    if (vm_state.sp < (n)) {                                                   \
-      vm_state.error = ZPLC_VM_STACK_UNDERFLOW;                                \
-      vm_state.halted = 1;                                                     \
-      return ZPLC_VM_STACK_UNDERFLOW;                                          \
-    }                                                                          \
-  } while (0)
+#define VM_CHECK_STACK_UNDERFLOW(vm, n)                                        \
+    do {                                                                       \
+        if ((vm)->sp < (n)) {                                                  \
+            (vm)->error = ZPLC_VM_STACK_UNDERFLOW;                             \
+            (vm)->halted = 1;                                                  \
+            return ZPLC_VM_STACK_UNDERFLOW;                                    \
+        }                                                                      \
+    } while (0)
 
 /**
  * @brief Check for stack overflow before pushing.
  */
-#define CHECK_STACK_OVERFLOW()                                                 \
-  do {                                                                         \
-    if (vm_state.sp >= ZPLC_STACK_MAX_DEPTH) {                                 \
-      vm_state.error = ZPLC_VM_STACK_OVERFLOW;                                 \
-      vm_state.halted = 1;                                                     \
-      return ZPLC_VM_STACK_OVERFLOW;                                           \
-    }                                                                          \
-  } while (0)
+#define VM_CHECK_STACK_OVERFLOW(vm)                                            \
+    do {                                                                       \
+        if ((vm)->sp >= ZPLC_STACK_MAX_DEPTH) {                                \
+            (vm)->error = ZPLC_VM_STACK_OVERFLOW;                              \
+            (vm)->halted = 1;                                                  \
+            return ZPLC_VM_STACK_OVERFLOW;                                     \
+        }                                                                      \
+    } while (0)
 
 /**
  * @brief Push a value onto the stack.
  */
-#define PUSH(val)                                                              \
-  do {                                                                         \
-    CHECK_STACK_OVERFLOW();                                                    \
-    vm_state.stack[vm_state.sp++] = (uint32_t)(val);                           \
-  } while (0)
+#define VM_PUSH(vm, val)                                                       \
+    do {                                                                       \
+        VM_CHECK_STACK_OVERFLOW(vm);                                           \
+        (vm)->stack[(vm)->sp++] = (uint32_t)(val);                             \
+    } while (0)
 
 /**
  * @brief Pop a value from the stack.
  */
-#define POP() (vm_state.stack[--vm_state.sp])
+#define VM_POP(vm) ((vm)->stack[--(vm)->sp])
 
 /**
  * @brief Peek at the top of stack without removing.
  */
-#define PEEK() (vm_state.stack[vm_state.sp - 1])
+#define VM_PEEK(vm) ((vm)->stack[(vm)->sp - 1])
 
 /**
  * @brief Read a 16-bit little-endian value from code.
  */
-#define READ_U16(offset)                                                       \
-  ((uint16_t)mem_code[(offset)] | ((uint16_t)mem_code[(offset) + 1] << 8))
+#define READ_U16(code, offset)                                                 \
+    ((uint16_t)(code)[(offset)] | ((uint16_t)(code)[(offset) + 1] << 8))
 
 /**
  * @brief Read a 32-bit little-endian value from code.
  */
-#define READ_U32(offset)                                                       \
-  ((uint32_t)mem_code[(offset)] | ((uint32_t)mem_code[(offset) + 1] << 8) |    \
-   ((uint32_t)mem_code[(offset) + 2] << 16) |                                  \
-   ((uint32_t)mem_code[(offset) + 3] << 24))
+#define READ_U32(code, offset)                                                 \
+    ((uint32_t)(code)[(offset)] | ((uint32_t)(code)[(offset) + 1] << 8) |      \
+     ((uint32_t)(code)[(offset) + 2] << 16) |                                  \
+     ((uint32_t)(code)[(offset) + 3] << 24))
 
 /* ============================================================================
- * Memory Access Functions
+ * Shared Memory Access Functions
  * ============================================================================
  * All memory access goes through these functions for bounds checking
  * and address translation.
@@ -138,1229 +140,1380 @@ static int program_loaded = 0;
  * @param writable 1 if write access required, 0 for read
  * @return Pointer to memory, or NULL if out of bounds
  */
-static uint8_t *mem_ptr(uint16_t addr, uint8_t size, int writable) {
-  /* Input Process Image: 0x0000 - 0x0FFF (read-only for VM) */
-  if (addr < ZPLC_MEM_OPI_BASE) {
-    if (writable) {
-      return NULL; /* Can't write to inputs */
+static uint8_t *mem_ptr(uint16_t addr, uint8_t size, int writable)
+{
+    /* Input Process Image: 0x0000 - 0x0FFF (read-only for VM) */
+    if (addr < ZPLC_MEM_OPI_BASE) {
+        if (writable) {
+            return NULL; /* Can't write to inputs */
+        }
+        if (addr + size > ZPLC_MEM_IPI_SIZE) {
+            return NULL;
+        }
+        return &mem_ipi[addr];
     }
-    if (addr + size > ZPLC_MEM_IPI_SIZE) {
-      return NULL;
-    }
-    return &mem_ipi[addr];
-  }
 
-  /* Output Process Image: 0x1000 - 0x1FFF */
-  if (addr < ZPLC_MEM_WORK_BASE) {
-    uint16_t offset = addr - ZPLC_MEM_OPI_BASE;
-    if (offset + size > ZPLC_MEM_OPI_SIZE) {
-      return NULL;
+    /* Output Process Image: 0x1000 - 0x1FFF */
+    if (addr < ZPLC_MEM_WORK_BASE) {
+        uint16_t offset = addr - ZPLC_MEM_OPI_BASE;
+        if (offset + size > ZPLC_MEM_OPI_SIZE) {
+            return NULL;
+        }
+        return &mem_opi[offset];
     }
-    return &mem_opi[offset];
-  }
 
-  /* Work Memory: 0x2000 - 0x3FFF */
-  if (addr < ZPLC_MEM_RETAIN_BASE) {
-    uint16_t offset = addr - ZPLC_MEM_WORK_BASE;
-    if (offset + size > ZPLC_MEM_WORK_SIZE) {
-      return NULL;
+    /* Work Memory: 0x2000 - 0x3FFF */
+    if (addr < ZPLC_MEM_RETAIN_BASE) {
+        uint16_t offset = addr - ZPLC_MEM_WORK_BASE;
+        if (offset + size > ZPLC_MEM_WORK_SIZE) {
+            return NULL;
+        }
+        return &mem_work[offset];
     }
-    return &mem_work[offset];
-  }
 
-  /* Retentive Memory: 0x4000 - 0x4FFF */
-  if (addr < ZPLC_MEM_CODE_BASE) {
-    uint16_t offset = addr - ZPLC_MEM_RETAIN_BASE;
-    if (offset + size > ZPLC_MEM_RETAIN_SIZE) {
-      return NULL;
+    /* Retentive Memory: 0x4000 - 0x4FFF */
+    if (addr < ZPLC_MEM_CODE_BASE) {
+        uint16_t offset = addr - ZPLC_MEM_RETAIN_BASE;
+        if (offset + size > ZPLC_MEM_RETAIN_SIZE) {
+            return NULL;
+        }
+        return &mem_retain[offset];
     }
-    return &mem_retain[offset];
-  }
 
-  /* Code segment not accessible via load/store */
-  return NULL;
+    /* Code segment not accessible via load/store */
+    return NULL;
 }
 
 /**
  * @brief Read an 8-bit value from memory.
  */
-static int mem_read8(uint16_t addr, uint8_t *value) {
-  uint8_t *ptr = mem_ptr(addr, 1, 0);
-  if (ptr == NULL) {
-    return ZPLC_VM_OUT_OF_BOUNDS;
-  }
-  *value = *ptr;
-  return ZPLC_VM_OK;
+static int mem_read8(uint16_t addr, uint8_t *value)
+{
+    uint8_t *ptr = mem_ptr(addr, 1, 0);
+    if (ptr == NULL) {
+        return ZPLC_VM_OUT_OF_BOUNDS;
+    }
+    *value = *ptr;
+    return ZPLC_VM_OK;
 }
 
 /**
  * @brief Read a 16-bit little-endian value from memory.
  */
-static int mem_read16(uint16_t addr, uint16_t *value) {
-  uint8_t *ptr = mem_ptr(addr, 2, 0);
-  if (ptr == NULL) {
-    return ZPLC_VM_OUT_OF_BOUNDS;
-  }
-  *value = (uint16_t)ptr[0] | ((uint16_t)ptr[1] << 8);
-  return ZPLC_VM_OK;
+static int mem_read16(uint16_t addr, uint16_t *value)
+{
+    uint8_t *ptr = mem_ptr(addr, 2, 0);
+    if (ptr == NULL) {
+        return ZPLC_VM_OUT_OF_BOUNDS;
+    }
+    *value = (uint16_t)ptr[0] | ((uint16_t)ptr[1] << 8);
+    return ZPLC_VM_OK;
 }
 
 /**
  * @brief Read a 32-bit little-endian value from memory.
  */
-static int mem_read32(uint16_t addr, uint32_t *value) {
-  uint8_t *ptr = mem_ptr(addr, 4, 0);
-  if (ptr == NULL) {
-    return ZPLC_VM_OUT_OF_BOUNDS;
-  }
-  *value = (uint32_t)ptr[0] | ((uint32_t)ptr[1] << 8) |
-           ((uint32_t)ptr[2] << 16) | ((uint32_t)ptr[3] << 24);
-  return ZPLC_VM_OK;
+static int mem_read32(uint16_t addr, uint32_t *value)
+{
+    uint8_t *ptr = mem_ptr(addr, 4, 0);
+    if (ptr == NULL) {
+        return ZPLC_VM_OUT_OF_BOUNDS;
+    }
+    *value = (uint32_t)ptr[0] | ((uint32_t)ptr[1] << 8) |
+             ((uint32_t)ptr[2] << 16) | ((uint32_t)ptr[3] << 24);
+    return ZPLC_VM_OK;
 }
 
 /**
  * @brief Write an 8-bit value to memory.
  */
-static int mem_write8(uint16_t addr, uint8_t value) {
-  uint8_t *ptr = mem_ptr(addr, 1, 1);
-  if (ptr == NULL) {
-    return ZPLC_VM_OUT_OF_BOUNDS;
-  }
-  *ptr = value;
-  return ZPLC_VM_OK;
+static int mem_write8(uint16_t addr, uint8_t value)
+{
+    uint8_t *ptr = mem_ptr(addr, 1, 1);
+    if (ptr == NULL) {
+        return ZPLC_VM_OUT_OF_BOUNDS;
+    }
+    *ptr = value;
+    return ZPLC_VM_OK;
 }
 
 /**
  * @brief Write a 16-bit little-endian value to memory.
  */
-static int mem_write16(uint16_t addr, uint16_t value) {
-  uint8_t *ptr = mem_ptr(addr, 2, 1);
-  if (ptr == NULL) {
-    return ZPLC_VM_OUT_OF_BOUNDS;
-  }
-  ptr[0] = (uint8_t)(value & 0xFF);
-  ptr[1] = (uint8_t)((value >> 8) & 0xFF);
-  return ZPLC_VM_OK;
+static int mem_write16(uint16_t addr, uint16_t value)
+{
+    uint8_t *ptr = mem_ptr(addr, 2, 1);
+    if (ptr == NULL) {
+        return ZPLC_VM_OUT_OF_BOUNDS;
+    }
+    ptr[0] = (uint8_t)(value & 0xFF);
+    ptr[1] = (uint8_t)((value >> 8) & 0xFF);
+    return ZPLC_VM_OK;
 }
 
 /**
  * @brief Write a 32-bit little-endian value to memory.
  */
-static int mem_write32(uint16_t addr, uint32_t value) {
-  uint8_t *ptr = mem_ptr(addr, 4, 1);
-  if (ptr == NULL) {
-    return ZPLC_VM_OUT_OF_BOUNDS;
-  }
-  ptr[0] = (uint8_t)(value & 0xFF);
-  ptr[1] = (uint8_t)((value >> 8) & 0xFF);
-  ptr[2] = (uint8_t)((value >> 16) & 0xFF);
-  ptr[3] = (uint8_t)((value >> 24) & 0xFF);
-  return ZPLC_VM_OK;
+static int mem_write32(uint16_t addr, uint32_t value)
+{
+    uint8_t *ptr = mem_ptr(addr, 4, 1);
+    if (ptr == NULL) {
+        return ZPLC_VM_OUT_OF_BOUNDS;
+    }
+    ptr[0] = (uint8_t)(value & 0xFF);
+    ptr[1] = (uint8_t)((value >> 8) & 0xFF);
+    ptr[2] = (uint8_t)((value >> 16) & 0xFF);
+    ptr[3] = (uint8_t)((value >> 24) & 0xFF);
+    return ZPLC_VM_OK;
 }
 
 /**
  * @brief Read a 64-bit little-endian value from memory.
- *
- * Returns the value as two 32-bit words (for stack-based operations).
- * Low word is stored first (little-endian).
  */
-static int mem_read64(uint16_t addr, uint32_t *low, uint32_t *high) {
-  uint8_t *ptr = mem_ptr(addr, 8, 0);
-  if (ptr == NULL) {
-    return ZPLC_VM_OUT_OF_BOUNDS;
-  }
-  *low = (uint32_t)ptr[0] | ((uint32_t)ptr[1] << 8) | ((uint32_t)ptr[2] << 16) |
-         ((uint32_t)ptr[3] << 24);
-  *high = (uint32_t)ptr[4] | ((uint32_t)ptr[5] << 8) |
-          ((uint32_t)ptr[6] << 16) | ((uint32_t)ptr[7] << 24);
-  return ZPLC_VM_OK;
+static int mem_read64(uint16_t addr, uint32_t *low, uint32_t *high)
+{
+    uint8_t *ptr = mem_ptr(addr, 8, 0);
+    if (ptr == NULL) {
+        return ZPLC_VM_OUT_OF_BOUNDS;
+    }
+    *low = (uint32_t)ptr[0] | ((uint32_t)ptr[1] << 8) |
+           ((uint32_t)ptr[2] << 16) | ((uint32_t)ptr[3] << 24);
+    *high = (uint32_t)ptr[4] | ((uint32_t)ptr[5] << 8) |
+            ((uint32_t)ptr[6] << 16) | ((uint32_t)ptr[7] << 24);
+    return ZPLC_VM_OK;
 }
 
 /**
  * @brief Write a 64-bit little-endian value to memory.
- *
- * Takes two 32-bit words (low and high) from the stack.
  */
-static int mem_write64(uint16_t addr, uint32_t low, uint32_t high) {
-  uint8_t *ptr = mem_ptr(addr, 8, 1);
-  if (ptr == NULL) {
-    return ZPLC_VM_OUT_OF_BOUNDS;
-  }
-  ptr[0] = (uint8_t)(low & 0xFF);
-  ptr[1] = (uint8_t)((low >> 8) & 0xFF);
-  ptr[2] = (uint8_t)((low >> 16) & 0xFF);
-  ptr[3] = (uint8_t)((low >> 24) & 0xFF);
-  ptr[4] = (uint8_t)(high & 0xFF);
-  ptr[5] = (uint8_t)((high >> 8) & 0xFF);
-  ptr[6] = (uint8_t)((high >> 16) & 0xFF);
-  ptr[7] = (uint8_t)((high >> 24) & 0xFF);
-  return ZPLC_VM_OK;
+static int mem_write64(uint16_t addr, uint32_t low, uint32_t high)
+{
+    uint8_t *ptr = mem_ptr(addr, 8, 1);
+    if (ptr == NULL) {
+        return ZPLC_VM_OUT_OF_BOUNDS;
+    }
+    ptr[0] = (uint8_t)(low & 0xFF);
+    ptr[1] = (uint8_t)((low >> 8) & 0xFF);
+    ptr[2] = (uint8_t)((low >> 16) & 0xFF);
+    ptr[3] = (uint8_t)((low >> 24) & 0xFF);
+    ptr[4] = (uint8_t)(high & 0xFF);
+    ptr[5] = (uint8_t)((high >> 8) & 0xFF);
+    ptr[6] = (uint8_t)((high >> 16) & 0xFF);
+    ptr[7] = (uint8_t)((high >> 24) & 0xFF);
+    return ZPLC_VM_OK;
 }
 
 /* ============================================================================
- * Public API
- * ============================================================================
- */
+ * Shared Memory Public API
+ * ============================================================================ */
 
-const char *zplc_core_version(void) {
-  static char version_str[16] = {0};
-  if (version_str[0] == '\0') {
-    version_str[0] = '0' + ZPLC_CORE_VERSION_MAJOR;
-    version_str[1] = '.';
-    version_str[2] = '0' + ZPLC_CORE_VERSION_MINOR;
-    version_str[3] = '.';
-    version_str[4] = '0' + ZPLC_CORE_VERSION_PATCH;
-    version_str[5] = '\0';
-  }
-  return version_str;
+int zplc_mem_init(void)
+{
+    memset(mem_ipi, 0, sizeof(mem_ipi));
+    memset(mem_opi, 0, sizeof(mem_opi));
+    memset(mem_work, 0, sizeof(mem_work));
+    memset(mem_retain, 0, sizeof(mem_retain));
+    memset(mem_code, 0, sizeof(mem_code));
+    code_size = 0;
+    return 0;
 }
 
-int zplc_core_init(void) {
-  /* Zero all memory regions */
-  memset(mem_ipi, 0, sizeof(mem_ipi));
-  memset(mem_opi, 0, sizeof(mem_opi));
-  memset(mem_work, 0, sizeof(mem_work));
-  memset(mem_retain, 0, sizeof(mem_retain));
-  memset(mem_code, 0, sizeof(mem_code));
-
-  /* Reset VM state */
-  memset(&vm_state, 0, sizeof(vm_state));
-  vm_state.pc = 0;
-  vm_state.sp = 0;
-  vm_state.bp = 0;
-  vm_state.call_depth = 0;
-  vm_state.flags = 0;
-  vm_state.error = ZPLC_VM_OK;
-  vm_state.halted = 0;
-
-  code_size = 0;
-  program_loaded = 0;
-
-  return 0;
+uint8_t *zplc_mem_get_region(uint16_t base)
+{
+    switch (base) {
+    case ZPLC_MEM_IPI_BASE:
+        return mem_ipi;
+    case ZPLC_MEM_OPI_BASE:
+        return mem_opi;
+    case ZPLC_MEM_WORK_BASE:
+        return mem_work;
+    case ZPLC_MEM_RETAIN_BASE:
+        return mem_retain;
+    default:
+        return NULL;
+    }
 }
 
-int zplc_core_shutdown(void) {
-  /* TODO: Flush retentive memory to HAL persistence */
-  program_loaded = 0;
-  vm_state.halted = 1;
-  return 0;
+int zplc_mem_load_code(const uint8_t *code, size_t size, uint16_t offset)
+{
+    if (code == NULL || size == 0) {
+        return -1;
+    }
+    if (offset + size > ZPLC_MEM_CODE_SIZE) {
+        return -2;
+    }
+    memcpy(&mem_code[offset], code, size);
+    
+    /* Track total code size */
+    if (offset + size > code_size) {
+        code_size = (uint32_t)(offset + size);
+    }
+    return 0;
 }
 
-int zplc_core_load(const uint8_t *binary, size_t size) {
-  const zplc_file_header_t *header;
-  size_t code_offset;
+const uint8_t *zplc_mem_get_code(uint16_t offset, size_t size)
+{
+    if (offset + size > code_size) {
+        return NULL;
+    }
+    return &mem_code[offset];
+}
 
-  /* Validate input */
-  if (binary == NULL || size < ZPLC_FILE_HEADER_SIZE) {
-    return -1; /* Invalid input */
-  }
+uint32_t zplc_mem_get_code_size(void)
+{
+    return code_size;
+}
 
-  /* Parse header */
-  header = (const zplc_file_header_t *)binary;
+/* ============================================================================
+ * I/O Helpers
+ * ============================================================================ */
 
-  /* Validate magic */
-  if (header->magic != ZPLC_MAGIC) {
-    return -2; /* Bad magic */
-  }
+int zplc_ipi_write32(uint16_t offset, uint32_t value)
+{
+    if (offset + 4 > ZPLC_MEM_IPI_SIZE) {
+        return -1;
+    }
+    mem_ipi[offset] = (uint8_t)(value & 0xFF);
+    mem_ipi[offset + 1] = (uint8_t)((value >> 8) & 0xFF);
+    mem_ipi[offset + 2] = (uint8_t)((value >> 16) & 0xFF);
+    mem_ipi[offset + 3] = (uint8_t)((value >> 24) & 0xFF);
+    return 0;
+}
 
-  /* Version check (we accept same major version) */
-  if (header->version_major > ZPLC_VERSION_MAJOR) {
-    return -3; /* Incompatible version */
-  }
+int zplc_ipi_write16(uint16_t offset, uint16_t value)
+{
+    if (offset + 2 > ZPLC_MEM_IPI_SIZE) {
+        return -1;
+    }
+    mem_ipi[offset] = (uint8_t)(value & 0xFF);
+    mem_ipi[offset + 1] = (uint8_t)((value >> 8) & 0xFF);
+    return 0;
+}
 
-  /* Validate sizes */
-  if (header->code_size > ZPLC_MEM_CODE_SIZE) {
-    return -4; /* Code too large */
-  }
+int zplc_ipi_write8(uint16_t offset, uint8_t value)
+{
+    if (offset >= ZPLC_MEM_IPI_SIZE) {
+        return -1;
+    }
+    mem_ipi[offset] = value;
+    return 0;
+}
 
-  /*
-   * Calculate code offset.
-   * Format: [Header 32B][Segment Table][Code]
-   * Segment table has segment_count entries of 8 bytes each.
-   */
-  code_offset =
-      ZPLC_FILE_HEADER_SIZE + (header->segment_count * ZPLC_SEGMENT_ENTRY_SIZE);
+uint32_t zplc_opi_read32(uint16_t offset)
+{
+    if (offset + 4 > ZPLC_MEM_OPI_SIZE) {
+        return 0;
+    }
+    return (uint32_t)mem_opi[offset] |
+           ((uint32_t)mem_opi[offset + 1] << 8) |
+           ((uint32_t)mem_opi[offset + 2] << 16) |
+           ((uint32_t)mem_opi[offset + 3] << 24);
+}
 
-  /* Check file has enough data */
-  if (size < code_offset + header->code_size) {
-    return -5; /* File truncated */
-  }
+uint16_t zplc_opi_read16(uint16_t offset)
+{
+    if (offset + 2 > ZPLC_MEM_OPI_SIZE) {
+        return 0;
+    }
+    return (uint16_t)mem_opi[offset] |
+           ((uint16_t)mem_opi[offset + 1] << 8);
+}
 
-  /* TODO: Validate CRC32 (stub for now) */
+uint8_t zplc_opi_read8(uint16_t offset)
+{
+    if (offset >= ZPLC_MEM_OPI_SIZE) {
+        return 0;
+    }
+    return mem_opi[offset];
+}
 
-  /* Copy code segment */
-  memcpy(mem_code, binary + code_offset, header->code_size);
-  code_size = header->code_size;
+/* ============================================================================
+ * VM Instance API
+ * ============================================================================ */
 
-  /* Set entry point */
-  vm_state.pc = header->entry_point;
-  vm_state.sp = 0;
-  vm_state.halted = 0;
-  vm_state.error = ZPLC_VM_OK;
+int zplc_vm_init(zplc_vm_t *vm)
+{
+    if (vm == NULL) {
+        return -1;
+    }
+    
+    memset(vm, 0, sizeof(zplc_vm_t));
+    vm->pc = 0;
+    vm->sp = 0;
+    vm->bp = 0;
+    vm->call_depth = 0;
+    vm->flags = 0;
+    vm->error = ZPLC_VM_OK;
+    vm->halted = 0;
+    vm->code = mem_code;
+    vm->code_size = code_size;
+    vm->entry_point = 0;
+    vm->task_id = 0;
+    vm->priority = 0;
+    
+    return 0;
+}
 
-  program_loaded = 1;
+int zplc_vm_set_entry(zplc_vm_t *vm, uint16_t entry_point, uint32_t task_code_size)
+{
+    if (vm == NULL) {
+        return -1;
+    }
+    if (entry_point + task_code_size > code_size) {
+        return -2;
+    }
+    
+    vm->entry_point = entry_point;
+    vm->code = mem_code;
+    /* code_size is the END of this task's code in global segment
+     * (entry_point + task_code_size), not just the task's size.
+     * This allows bounds check: pc >= code_size fails if pc goes past end */
+    vm->code_size = entry_point + task_code_size;
+    vm->pc = entry_point;
+    
+    return 0;
+}
 
-  return 0;
+void zplc_vm_reset_cycle(zplc_vm_t *vm)
+{
+    if (vm == NULL) {
+        return;
+    }
+    vm->pc = vm->entry_point;
+    vm->sp = 0;
+    vm->call_depth = 0;
+    vm->halted = 0;
+    vm->error = ZPLC_VM_OK;
+}
+
+int zplc_vm_get_error(const zplc_vm_t *vm)
+{
+    if (vm == NULL) {
+        return -1;
+    }
+    return vm->error;
+}
+
+int zplc_vm_is_halted(const zplc_vm_t *vm)
+{
+    if (vm == NULL) {
+        return 1;
+    }
+    return vm->halted;
+}
+
+uint32_t zplc_vm_get_stack(const zplc_vm_t *vm, uint16_t index)
+{
+    if (vm == NULL || index >= vm->sp) {
+        return 0;
+    }
+    return vm->stack[index];
+}
+
+uint16_t zplc_vm_get_sp(const zplc_vm_t *vm)
+{
+    if (vm == NULL) {
+        return 0;
+    }
+    return vm->sp;
+}
+
+uint16_t zplc_vm_get_pc(const zplc_vm_t *vm)
+{
+    if (vm == NULL) {
+        return 0;
+    }
+    return vm->pc;
 }
 
 /**
- * @brief Load raw bytecode directly (for testing).
+ * @brief Execute a single instruction on a VM instance.
  *
- * This bypasses the .zplc header validation - use only for unit tests.
- *
- * @param bytecode Raw bytecode bytes
- * @param size Size of bytecode
- * @return 0 on success
- */
-int zplc_core_load_raw(const uint8_t *bytecode, size_t size) {
-  if (bytecode == NULL || size == 0 || size > ZPLC_MEM_CODE_SIZE) {
-    return -1;
-  }
-
-  /* Copy bytecode directly */
-  memcpy(mem_code, bytecode, size);
-  code_size = (uint32_t)size;
-
-  /* Reset VM state */
-  vm_state.pc = 0;
-  vm_state.sp = 0;
-  vm_state.bp = 0;
-  vm_state.call_depth = 0;
-  vm_state.halted = 0;
-  vm_state.error = ZPLC_VM_OK;
-
-  program_loaded = 1;
-
-  return 0;
-}
-
-/**
- * @brief Execute a single instruction.
- *
+ * @param vm Pointer to VM instance
  * @return VM error code (ZPLC_VM_OK if successful)
  */
-int zplc_core_step(void) {
-  uint8_t opcode;
-  uint8_t operand8;
-  uint16_t operand16;
-  uint32_t operand32;
-  uint32_t a, b, result;
-  int32_t sa, sb;
-  int mem_result;
+int zplc_vm_step(zplc_vm_t *vm)
+{
+    uint8_t opcode;
+    uint8_t operand8;
+    uint16_t operand16;
+    uint32_t operand32;
+    uint32_t a, b, result;
+    int32_t sa, sb;
+    int mem_result;
+    const uint8_t *code;
 
-  /* Check if halted */
-  if (vm_state.halted) {
-    return vm_state.error;
-  }
+    if (vm == NULL) {
+        return ZPLC_VM_INVALID_OPCODE;
+    }
 
-  /* Check program loaded */
-  if (!program_loaded) {
-    vm_state.error = ZPLC_VM_INVALID_OPCODE;
-    vm_state.halted = 1;
-    return vm_state.error;
-  }
+    /* Check if halted */
+    if (vm->halted) {
+        return vm->error;
+    }
 
-  /* Bounds check PC */
-  if (vm_state.pc >= code_size) {
-    vm_state.error = ZPLC_VM_INVALID_JUMP;
-    vm_state.halted = 1;
-    return vm_state.error;
-  }
+    /* Check code pointer */
+    code = vm->code;
+    if (code == NULL) {
+        vm->error = ZPLC_VM_INVALID_OPCODE;
+        vm->halted = 1;
+        return vm->error;
+    }
 
-  /* Fetch opcode */
-  opcode = mem_code[vm_state.pc];
+    /* Bounds check PC */
+    if (vm->pc >= vm->code_size) {
+        vm->error = ZPLC_VM_INVALID_JUMP;
+        vm->halted = 1;
+        return vm->error;
+    }
 
-  /* Decode and execute */
-  switch (opcode) {
+    /* Fetch opcode */
+    opcode = code[vm->pc];
+
+    /* Decode and execute */
+    switch (opcode) {
 
     /* ===== System Operations ===== */
 
-  case OP_NOP:
-    vm_state.pc++;
-    break;
+    case OP_NOP:
+        vm->pc++;
+        break;
 
-  case OP_HALT:
-    vm_state.halted = 1;
-    vm_state.error = ZPLC_VM_HALTED;
-    vm_state.pc++;
-    return ZPLC_VM_HALTED;
+    case OP_HALT:
+        vm->halted = 1;
+        vm->error = ZPLC_VM_HALTED;
+        vm->pc++;
+        return ZPLC_VM_HALTED;
 
-  case OP_BREAK:
-    /* Debugger breakpoint - for now, just continue */
-    vm_state.pc++;
-    break;
+    case OP_BREAK:
+        /* Debugger breakpoint - for now, just continue */
+        vm->pc++;
+        break;
 
-  case OP_GET_TICKS:
-    CHECK_STACK_OVERFLOW();
-    PUSH(zplc_hal_tick());
-    vm_state.pc++;
-    break;
+    case OP_GET_TICKS:
+        VM_CHECK_STACK_OVERFLOW(vm);
+        VM_PUSH(vm, zplc_hal_tick());
+        vm->pc++;
+        break;
 
     /* ===== Stack Operations ===== */
 
-  case OP_DUP:
-    CHECK_STACK_UNDERFLOW(1);
-    a = PEEK();
-    PUSH(a);
-    vm_state.pc++;
-    break;
+    case OP_DUP:
+        VM_CHECK_STACK_UNDERFLOW(vm, 1);
+        a = VM_PEEK(vm);
+        VM_PUSH(vm, a);
+        vm->pc++;
+        break;
 
-  case OP_DROP:
-    CHECK_STACK_UNDERFLOW(1);
-    (void)POP();
-    vm_state.pc++;
-    break;
+    case OP_DROP:
+        VM_CHECK_STACK_UNDERFLOW(vm, 1);
+        (void)VM_POP(vm);
+        vm->pc++;
+        break;
 
-  case OP_SWAP:
-    CHECK_STACK_UNDERFLOW(2);
-    a = vm_state.stack[vm_state.sp - 1];
-    b = vm_state.stack[vm_state.sp - 2];
-    vm_state.stack[vm_state.sp - 1] = b;
-    vm_state.stack[vm_state.sp - 2] = a;
-    vm_state.pc++;
-    break;
+    case OP_SWAP:
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        a = vm->stack[vm->sp - 1];
+        b = vm->stack[vm->sp - 2];
+        vm->stack[vm->sp - 1] = b;
+        vm->stack[vm->sp - 2] = a;
+        vm->pc++;
+        break;
 
-  case OP_OVER:
-    CHECK_STACK_UNDERFLOW(2);
-    a = vm_state.stack[vm_state.sp - 2];
-    PUSH(a);
-    vm_state.pc++;
-    break;
+    case OP_OVER:
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        a = vm->stack[vm->sp - 2];
+        VM_PUSH(vm, a);
+        vm->pc++;
+        break;
 
-  case OP_ROT:
-    CHECK_STACK_UNDERFLOW(3);
-    a = vm_state.stack[vm_state.sp - 3];      /* bottom */
-    b = vm_state.stack[vm_state.sp - 2];      /* middle */
-    result = vm_state.stack[vm_state.sp - 1]; /* top */
-    vm_state.stack[vm_state.sp - 3] = b;
-    vm_state.stack[vm_state.sp - 2] = result;
-    vm_state.stack[vm_state.sp - 1] = a;
-    vm_state.pc++;
-    break;
+    case OP_ROT:
+        VM_CHECK_STACK_UNDERFLOW(vm, 3);
+        a = vm->stack[vm->sp - 3];      /* bottom */
+        b = vm->stack[vm->sp - 2];      /* middle */
+        result = vm->stack[vm->sp - 1]; /* top */
+        vm->stack[vm->sp - 3] = b;
+        vm->stack[vm->sp - 2] = result;
+        vm->stack[vm->sp - 1] = a;
+        vm->pc++;
+        break;
 
     /* ===== Integer Arithmetic ===== */
 
-  case OP_ADD:
-    CHECK_STACK_UNDERFLOW(2);
-    b = POP();
-    a = POP();
-    PUSH(a + b);
-    vm_state.pc++;
-    break;
+    case OP_ADD:
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        b = VM_POP(vm);
+        a = VM_POP(vm);
+        VM_PUSH(vm, a + b);
+        vm->pc++;
+        break;
 
-  case OP_SUB:
-    CHECK_STACK_UNDERFLOW(2);
-    b = POP();
-    a = POP();
-    PUSH(a - b);
-    vm_state.pc++;
-    break;
+    case OP_SUB:
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        b = VM_POP(vm);
+        a = VM_POP(vm);
+        VM_PUSH(vm, a - b);
+        vm->pc++;
+        break;
 
-  case OP_MUL:
-    CHECK_STACK_UNDERFLOW(2);
-    b = POP();
-    a = POP();
-    PUSH(a * b);
-    vm_state.pc++;
-    break;
+    case OP_MUL:
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        b = VM_POP(vm);
+        a = VM_POP(vm);
+        VM_PUSH(vm, a * b);
+        vm->pc++;
+        break;
 
-  case OP_DIV:
-    CHECK_STACK_UNDERFLOW(2);
-    b = POP();
-    a = POP();
-    if (b == 0) {
-      vm_state.error = ZPLC_VM_DIV_BY_ZERO;
-      vm_state.halted = 1;
-      return ZPLC_VM_DIV_BY_ZERO;
-    }
-    /* Signed division */
-    sa = (int32_t)a;
-    sb = (int32_t)b;
-    PUSH((uint32_t)(sa / sb));
-    vm_state.pc++;
-    break;
+    case OP_DIV:
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        b = VM_POP(vm);
+        a = VM_POP(vm);
+        if (b == 0) {
+            vm->error = ZPLC_VM_DIV_BY_ZERO;
+            vm->halted = 1;
+            return ZPLC_VM_DIV_BY_ZERO;
+        }
+        sa = (int32_t)a;
+        sb = (int32_t)b;
+        VM_PUSH(vm, (uint32_t)(sa / sb));
+        vm->pc++;
+        break;
 
-  case OP_MOD:
-    CHECK_STACK_UNDERFLOW(2);
-    b = POP();
-    a = POP();
-    if (b == 0) {
-      vm_state.error = ZPLC_VM_DIV_BY_ZERO;
-      vm_state.halted = 1;
-      return ZPLC_VM_DIV_BY_ZERO;
-    }
-    sa = (int32_t)a;
-    sb = (int32_t)b;
-    PUSH((uint32_t)(sa % sb));
-    vm_state.pc++;
-    break;
+    case OP_MOD:
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        b = VM_POP(vm);
+        a = VM_POP(vm);
+        if (b == 0) {
+            vm->error = ZPLC_VM_DIV_BY_ZERO;
+            vm->halted = 1;
+            return ZPLC_VM_DIV_BY_ZERO;
+        }
+        sa = (int32_t)a;
+        sb = (int32_t)b;
+        VM_PUSH(vm, (uint32_t)(sa % sb));
+        vm->pc++;
+        break;
 
-  case OP_NEG:
-    CHECK_STACK_UNDERFLOW(1);
-    a = POP();
-    PUSH((uint32_t)(-(int32_t)a));
-    vm_state.pc++;
-    break;
+    case OP_NEG:
+        VM_CHECK_STACK_UNDERFLOW(vm, 1);
+        a = VM_POP(vm);
+        VM_PUSH(vm, (uint32_t)(-(int32_t)a));
+        vm->pc++;
+        break;
 
-  case OP_ABS:
-    CHECK_STACK_UNDERFLOW(1);
-    a = POP();
-    sa = (int32_t)a;
-    PUSH((uint32_t)(sa < 0 ? -sa : sa));
-    vm_state.pc++;
-    break;
+    case OP_ABS:
+        VM_CHECK_STACK_UNDERFLOW(vm, 1);
+        a = VM_POP(vm);
+        sa = (int32_t)a;
+        VM_PUSH(vm, (uint32_t)(sa < 0 ? -sa : sa));
+        vm->pc++;
+        break;
 
     /* ===== Float Arithmetic ===== */
-    /*
-     * Float representation: IEEE 754 single precision (32-bit)
-     * We use memcpy for type-punning to avoid strict aliasing issues.
-     * This is the C99-compliant way to do it.
-     */
 
-  case OP_ADDF:
-    CHECK_STACK_UNDERFLOW(2);
-    b = POP();
-    a = POP();
-    {
-      float fa, fb, fr;
-      memcpy(&fa, &a, sizeof(float));
-      memcpy(&fb, &b, sizeof(float));
-      fr = fa + fb;
-      memcpy(&result, &fr, sizeof(uint32_t));
-      PUSH(result);
-    }
-    vm_state.pc++;
-    break;
+    case OP_ADDF:
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        b = VM_POP(vm);
+        a = VM_POP(vm);
+        {
+            float fa, fb, fr;
+            memcpy(&fa, &a, sizeof(float));
+            memcpy(&fb, &b, sizeof(float));
+            fr = fa + fb;
+            memcpy(&result, &fr, sizeof(uint32_t));
+            VM_PUSH(vm, result);
+        }
+        vm->pc++;
+        break;
 
-  case OP_SUBF:
-    CHECK_STACK_UNDERFLOW(2);
-    b = POP();
-    a = POP();
-    {
-      float fa, fb, fr;
-      memcpy(&fa, &a, sizeof(float));
-      memcpy(&fb, &b, sizeof(float));
-      fr = fa - fb;
-      memcpy(&result, &fr, sizeof(uint32_t));
-      PUSH(result);
-    }
-    vm_state.pc++;
-    break;
+    case OP_SUBF:
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        b = VM_POP(vm);
+        a = VM_POP(vm);
+        {
+            float fa, fb, fr;
+            memcpy(&fa, &a, sizeof(float));
+            memcpy(&fb, &b, sizeof(float));
+            fr = fa - fb;
+            memcpy(&result, &fr, sizeof(uint32_t));
+            VM_PUSH(vm, result);
+        }
+        vm->pc++;
+        break;
 
-  case OP_MULF:
-    CHECK_STACK_UNDERFLOW(2);
-    b = POP();
-    a = POP();
-    {
-      float fa, fb, fr;
-      memcpy(&fa, &a, sizeof(float));
-      memcpy(&fb, &b, sizeof(float));
-      fr = fa * fb;
-      memcpy(&result, &fr, sizeof(uint32_t));
-      PUSH(result);
-    }
-    vm_state.pc++;
-    break;
+    case OP_MULF:
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        b = VM_POP(vm);
+        a = VM_POP(vm);
+        {
+            float fa, fb, fr;
+            memcpy(&fa, &a, sizeof(float));
+            memcpy(&fb, &b, sizeof(float));
+            fr = fa * fb;
+            memcpy(&result, &fr, sizeof(uint32_t));
+            VM_PUSH(vm, result);
+        }
+        vm->pc++;
+        break;
 
-  case OP_DIVF:
-    CHECK_STACK_UNDERFLOW(2);
-    b = POP();
-    a = POP();
-    {
-      float fa, fb, fr;
-      memcpy(&fa, &a, sizeof(float));
-      memcpy(&fb, &b, sizeof(float));
-      /* IEEE 754 handles div by zero (returns Inf or NaN) */
-      /* But for industrial safety, we check anyway */
-      if (fb == 0.0f) {
-        vm_state.error = ZPLC_VM_DIV_BY_ZERO;
-        vm_state.halted = 1;
-        return ZPLC_VM_DIV_BY_ZERO;
-      }
-      fr = fa / fb;
-      memcpy(&result, &fr, sizeof(uint32_t));
-      PUSH(result);
-    }
-    vm_state.pc++;
-    break;
+    case OP_DIVF:
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        b = VM_POP(vm);
+        a = VM_POP(vm);
+        {
+            float fa, fb, fr;
+            memcpy(&fa, &a, sizeof(float));
+            memcpy(&fb, &b, sizeof(float));
+            if (fb == 0.0f) {
+                vm->error = ZPLC_VM_DIV_BY_ZERO;
+                vm->halted = 1;
+                return ZPLC_VM_DIV_BY_ZERO;
+            }
+            fr = fa / fb;
+            memcpy(&result, &fr, sizeof(uint32_t));
+            VM_PUSH(vm, result);
+        }
+        vm->pc++;
+        break;
 
-  case OP_NEGF:
-    CHECK_STACK_UNDERFLOW(1);
-    a = POP();
-    {
-      float fa;
-      memcpy(&fa, &a, sizeof(float));
-      fa = -fa;
-      memcpy(&result, &fa, sizeof(uint32_t));
-      PUSH(result);
-    }
-    vm_state.pc++;
-    break;
+    case OP_NEGF:
+        VM_CHECK_STACK_UNDERFLOW(vm, 1);
+        a = VM_POP(vm);
+        {
+            float fa;
+            memcpy(&fa, &a, sizeof(float));
+            fa = -fa;
+            memcpy(&result, &fa, sizeof(uint32_t));
+            VM_PUSH(vm, result);
+        }
+        vm->pc++;
+        break;
 
-  case OP_ABSF:
-    CHECK_STACK_UNDERFLOW(1);
-    a = POP();
-    {
-      float fa;
-      memcpy(&fa, &a, sizeof(float));
-      if (fa < 0.0f)
-        fa = -fa;
-      memcpy(&result, &fa, sizeof(uint32_t));
-      PUSH(result);
-    }
-    vm_state.pc++;
-    break;
+    case OP_ABSF:
+        VM_CHECK_STACK_UNDERFLOW(vm, 1);
+        a = VM_POP(vm);
+        {
+            float fa;
+            memcpy(&fa, &a, sizeof(float));
+            if (fa < 0.0f)
+                fa = -fa;
+            memcpy(&result, &fa, sizeof(uint32_t));
+            VM_PUSH(vm, result);
+        }
+        vm->pc++;
+        break;
 
     /* ===== Logical/Bitwise Operations ===== */
 
-  case OP_AND:
-    CHECK_STACK_UNDERFLOW(2);
-    b = POP();
-    a = POP();
-    PUSH(a & b);
-    vm_state.pc++;
-    break;
+    case OP_AND:
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        b = VM_POP(vm);
+        a = VM_POP(vm);
+        VM_PUSH(vm, a & b);
+        vm->pc++;
+        break;
 
-  case OP_OR:
-    CHECK_STACK_UNDERFLOW(2);
-    b = POP();
-    a = POP();
-    PUSH(a | b);
-    vm_state.pc++;
-    break;
+    case OP_OR:
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        b = VM_POP(vm);
+        a = VM_POP(vm);
+        VM_PUSH(vm, a | b);
+        vm->pc++;
+        break;
 
-  case OP_XOR:
-    CHECK_STACK_UNDERFLOW(2);
-    b = POP();
-    a = POP();
-    PUSH(a ^ b);
-    vm_state.pc++;
-    break;
+    case OP_XOR:
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        b = VM_POP(vm);
+        a = VM_POP(vm);
+        VM_PUSH(vm, a ^ b);
+        vm->pc++;
+        break;
 
-  case OP_NOT:
-    CHECK_STACK_UNDERFLOW(1);
-    a = POP();
-    PUSH(~a);
-    vm_state.pc++;
-    break;
+    case OP_NOT:
+        VM_CHECK_STACK_UNDERFLOW(vm, 1);
+        a = VM_POP(vm);
+        VM_PUSH(vm, ~a);
+        vm->pc++;
+        break;
 
-  case OP_SHL:
-    CHECK_STACK_UNDERFLOW(2);
-    b = POP(); /* shift amount */
-    a = POP();
-    PUSH(a << (b & 31)); /* Mask to prevent UB */
-    vm_state.pc++;
-    break;
+    case OP_SHL:
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        b = VM_POP(vm);
+        a = VM_POP(vm);
+        VM_PUSH(vm, a << (b & 31));
+        vm->pc++;
+        break;
 
-  case OP_SHR:
-    CHECK_STACK_UNDERFLOW(2);
-    b = POP();
-    a = POP();
-    PUSH(a >> (b & 31)); /* Logical shift */
-    vm_state.pc++;
-    break;
+    case OP_SHR:
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        b = VM_POP(vm);
+        a = VM_POP(vm);
+        VM_PUSH(vm, a >> (b & 31));
+        vm->pc++;
+        break;
 
-  case OP_SAR:
-    CHECK_STACK_UNDERFLOW(2);
-    b = POP();
-    a = POP();
-    sa = (int32_t)a;
-    PUSH((uint32_t)(sa >> (b & 31))); /* Arithmetic shift */
-    vm_state.pc++;
-    break;
+    case OP_SAR:
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        b = VM_POP(vm);
+        a = VM_POP(vm);
+        sa = (int32_t)a;
+        VM_PUSH(vm, (uint32_t)(sa >> (b & 31)));
+        vm->pc++;
+        break;
 
     /* ===== Comparison Operations ===== */
 
-  case OP_EQ:
-    CHECK_STACK_UNDERFLOW(2);
-    b = POP();
-    a = POP();
-    PUSH(a == b ? 1 : 0);
-    vm_state.pc++;
-    break;
+    case OP_EQ:
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        b = VM_POP(vm);
+        a = VM_POP(vm);
+        VM_PUSH(vm, a == b ? 1 : 0);
+        vm->pc++;
+        break;
 
-  case OP_NE:
-    CHECK_STACK_UNDERFLOW(2);
-    b = POP();
-    a = POP();
-    PUSH(a != b ? 1 : 0);
-    vm_state.pc++;
-    break;
+    case OP_NE:
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        b = VM_POP(vm);
+        a = VM_POP(vm);
+        VM_PUSH(vm, a != b ? 1 : 0);
+        vm->pc++;
+        break;
 
-  case OP_LT:
-    CHECK_STACK_UNDERFLOW(2);
-    b = POP();
-    a = POP();
-    sa = (int32_t)a;
-    sb = (int32_t)b;
-    PUSH(sa < sb ? 1 : 0);
-    vm_state.pc++;
-    break;
+    case OP_LT:
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        b = VM_POP(vm);
+        a = VM_POP(vm);
+        sa = (int32_t)a;
+        sb = (int32_t)b;
+        VM_PUSH(vm, sa < sb ? 1 : 0);
+        vm->pc++;
+        break;
 
-  case OP_LE:
-    CHECK_STACK_UNDERFLOW(2);
-    b = POP();
-    a = POP();
-    sa = (int32_t)a;
-    sb = (int32_t)b;
-    PUSH(sa <= sb ? 1 : 0);
-    vm_state.pc++;
-    break;
+    case OP_LE:
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        b = VM_POP(vm);
+        a = VM_POP(vm);
+        sa = (int32_t)a;
+        sb = (int32_t)b;
+        VM_PUSH(vm, sa <= sb ? 1 : 0);
+        vm->pc++;
+        break;
 
-  case OP_GT:
-    CHECK_STACK_UNDERFLOW(2);
-    b = POP();
-    a = POP();
-    sa = (int32_t)a;
-    sb = (int32_t)b;
-    PUSH(sa > sb ? 1 : 0);
-    vm_state.pc++;
-    break;
+    case OP_GT:
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        b = VM_POP(vm);
+        a = VM_POP(vm);
+        sa = (int32_t)a;
+        sb = (int32_t)b;
+        VM_PUSH(vm, sa > sb ? 1 : 0);
+        vm->pc++;
+        break;
 
-  case OP_GE:
-    CHECK_STACK_UNDERFLOW(2);
-    b = POP();
-    a = POP();
-    sa = (int32_t)a;
-    sb = (int32_t)b;
-    PUSH(sa >= sb ? 1 : 0);
-    vm_state.pc++;
-    break;
+    case OP_GE:
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        b = VM_POP(vm);
+        a = VM_POP(vm);
+        sa = (int32_t)a;
+        sb = (int32_t)b;
+        VM_PUSH(vm, sa >= sb ? 1 : 0);
+        vm->pc++;
+        break;
 
-  case OP_LTU:
-    CHECK_STACK_UNDERFLOW(2);
-    b = POP();
-    a = POP();
-    PUSH(a < b ? 1 : 0);
-    vm_state.pc++;
-    break;
+    case OP_LTU:
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        b = VM_POP(vm);
+        a = VM_POP(vm);
+        VM_PUSH(vm, a < b ? 1 : 0);
+        vm->pc++;
+        break;
 
-  case OP_GTU:
-    CHECK_STACK_UNDERFLOW(2);
-    b = POP();
-    a = POP();
-    PUSH(a > b ? 1 : 0);
-    vm_state.pc++;
-    break;
+    case OP_GTU:
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        b = VM_POP(vm);
+        a = VM_POP(vm);
+        VM_PUSH(vm, a > b ? 1 : 0);
+        vm->pc++;
+        break;
 
     /* ===== Push with 8-bit operand ===== */
 
-  case OP_PUSH8:
-    if (vm_state.pc + 1 >= code_size) {
-      vm_state.error = ZPLC_VM_INVALID_JUMP;
-      vm_state.halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
-    operand8 = mem_code[vm_state.pc + 1];
-    /* Sign-extend to 32-bit */
-    PUSH((uint32_t)(int32_t)(int8_t)operand8);
-    vm_state.pc += 2;
-    break;
+    case OP_PUSH8:
+        if (vm->pc + 1 >= vm->code_size) {
+            vm->error = ZPLC_VM_INVALID_JUMP;
+            vm->halted = 1;
+            return ZPLC_VM_INVALID_JUMP;
+        }
+        operand8 = code[vm->pc + 1];
+        VM_PUSH(vm, (uint32_t)(int32_t)(int8_t)operand8);
+        vm->pc += 2;
+        break;
 
-  case OP_JR:
-    if (vm_state.pc + 1 >= code_size) {
-      vm_state.error = ZPLC_VM_INVALID_JUMP;
-      vm_state.halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
-    operand8 = mem_code[vm_state.pc + 1];
-    /* Relative jump with signed offset */
-    vm_state.pc = (uint16_t)(vm_state.pc + 2 + (int8_t)operand8);
-    break;
+    case OP_JR:
+        if (vm->pc + 1 >= vm->code_size) {
+            vm->error = ZPLC_VM_INVALID_JUMP;
+            vm->halted = 1;
+            return ZPLC_VM_INVALID_JUMP;
+        }
+        operand8 = code[vm->pc + 1];
+        vm->pc = (uint16_t)(vm->pc + 2 + (int8_t)operand8);
+        break;
 
-  case OP_JRZ:
-    CHECK_STACK_UNDERFLOW(1);
-    if (vm_state.pc + 1 >= code_size) {
-      vm_state.error = ZPLC_VM_INVALID_JUMP;
-      vm_state.halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
-    operand8 = mem_code[vm_state.pc + 1];
-    a = POP();
-    if (a == 0) {
-      vm_state.pc = (uint16_t)(vm_state.pc + 2 + (int8_t)operand8);
-    } else {
-      vm_state.pc += 2;
-    }
-    break;
+    case OP_JRZ:
+        VM_CHECK_STACK_UNDERFLOW(vm, 1);
+        if (vm->pc + 1 >= vm->code_size) {
+            vm->error = ZPLC_VM_INVALID_JUMP;
+            vm->halted = 1;
+            return ZPLC_VM_INVALID_JUMP;
+        }
+        operand8 = code[vm->pc + 1];
+        a = VM_POP(vm);
+        if (a == 0) {
+            vm->pc = (uint16_t)(vm->pc + 2 + (int8_t)operand8);
+        } else {
+            vm->pc += 2;
+        }
+        break;
 
-  case OP_JRNZ:
-    CHECK_STACK_UNDERFLOW(1);
-    if (vm_state.pc + 1 >= code_size) {
-      vm_state.error = ZPLC_VM_INVALID_JUMP;
-      vm_state.halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
-    operand8 = mem_code[vm_state.pc + 1];
-    a = POP();
-    if (a != 0) {
-      vm_state.pc = (uint16_t)(vm_state.pc + 2 + (int8_t)operand8);
-    } else {
-      vm_state.pc += 2;
-    }
-    break;
+    case OP_JRNZ:
+        VM_CHECK_STACK_UNDERFLOW(vm, 1);
+        if (vm->pc + 1 >= vm->code_size) {
+            vm->error = ZPLC_VM_INVALID_JUMP;
+            vm->halted = 1;
+            return ZPLC_VM_INVALID_JUMP;
+        }
+        operand8 = code[vm->pc + 1];
+        a = VM_POP(vm);
+        if (a != 0) {
+            vm->pc = (uint16_t)(vm->pc + 2 + (int8_t)operand8);
+        } else {
+            vm->pc += 2;
+        }
+        break;
 
     /* ===== Load/Store with 16-bit address ===== */
 
-  case OP_LOAD8:
-    if (vm_state.pc + 2 >= code_size) {
-      vm_state.error = ZPLC_VM_INVALID_JUMP;
-      vm_state.halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
-    operand16 = READ_U16(vm_state.pc + 1);
-    {
-      uint8_t val8;
-      mem_result = mem_read8(operand16, &val8);
-      if (mem_result != ZPLC_VM_OK) {
-        vm_state.error = (uint8_t)mem_result;
-        vm_state.halted = 1;
-        return mem_result;
-      }
-      PUSH((uint32_t)val8);
-    }
-    vm_state.pc += 3;
-    break;
+    case OP_LOAD8:
+        if (vm->pc + 2 >= vm->code_size) {
+            vm->error = ZPLC_VM_INVALID_JUMP;
+            vm->halted = 1;
+            return ZPLC_VM_INVALID_JUMP;
+        }
+        operand16 = READ_U16(code, vm->pc + 1);
+        {
+            uint8_t val8;
+            mem_result = mem_read8(operand16, &val8);
+            if (mem_result != ZPLC_VM_OK) {
+                vm->error = (uint8_t)mem_result;
+                vm->halted = 1;
+                return mem_result;
+            }
+            VM_PUSH(vm, (uint32_t)val8);
+        }
+        vm->pc += 3;
+        break;
 
-  case OP_LOAD16:
-    if (vm_state.pc + 2 >= code_size) {
-      vm_state.error = ZPLC_VM_INVALID_JUMP;
-      vm_state.halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
-    operand16 = READ_U16(vm_state.pc + 1);
-    {
-      uint16_t val16;
-      mem_result = mem_read16(operand16, &val16);
-      if (mem_result != ZPLC_VM_OK) {
-        vm_state.error = (uint8_t)mem_result;
-        vm_state.halted = 1;
-        return mem_result;
-      }
-      PUSH((uint32_t)val16);
-    }
-    vm_state.pc += 3;
-    break;
+    case OP_LOAD16:
+        if (vm->pc + 2 >= vm->code_size) {
+            vm->error = ZPLC_VM_INVALID_JUMP;
+            vm->halted = 1;
+            return ZPLC_VM_INVALID_JUMP;
+        }
+        operand16 = READ_U16(code, vm->pc + 1);
+        {
+            uint16_t val16;
+            mem_result = mem_read16(operand16, &val16);
+            if (mem_result != ZPLC_VM_OK) {
+                vm->error = (uint8_t)mem_result;
+                vm->halted = 1;
+                return mem_result;
+            }
+            VM_PUSH(vm, (uint32_t)val16);
+        }
+        vm->pc += 3;
+        break;
 
-  case OP_LOAD32:
-    if (vm_state.pc + 2 >= code_size) {
-      vm_state.error = ZPLC_VM_INVALID_JUMP;
-      vm_state.halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
-    operand16 = READ_U16(vm_state.pc + 1);
-    {
-      uint32_t val32;
-      mem_result = mem_read32(operand16, &val32);
-      if (mem_result != ZPLC_VM_OK) {
-        vm_state.error = (uint8_t)mem_result;
-        vm_state.halted = 1;
-        return mem_result;
-      }
-      PUSH(val32);
-    }
-    vm_state.pc += 3;
-    break;
+    case OP_LOAD32:
+        if (vm->pc + 2 >= vm->code_size) {
+            vm->error = ZPLC_VM_INVALID_JUMP;
+            vm->halted = 1;
+            return ZPLC_VM_INVALID_JUMP;
+        }
+        operand16 = READ_U16(code, vm->pc + 1);
+        {
+            uint32_t val32;
+            mem_result = mem_read32(operand16, &val32);
+            if (mem_result != ZPLC_VM_OK) {
+                vm->error = (uint8_t)mem_result;
+                vm->halted = 1;
+                return mem_result;
+            }
+            VM_PUSH(vm, val32);
+        }
+        vm->pc += 3;
+        break;
 
-  case OP_LOAD64:
-    /*
-     * 64-bit load: pushes two 32-bit values onto the stack.
-     * Low word is pushed first, then high word (TOS = high).
-     * This matches IEC 61131-3 LWORD/LREAL representation.
-     */
-    if (vm_state.pc + 2 >= code_size) {
-      vm_state.error = ZPLC_VM_INVALID_JUMP;
-      vm_state.halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
-    operand16 = READ_U16(vm_state.pc + 1);
-    {
-      uint32_t low, high;
-      mem_result = mem_read64(operand16, &low, &high);
-      if (mem_result != ZPLC_VM_OK) {
-        vm_state.error = (uint8_t)mem_result;
-        vm_state.halted = 1;
-        return mem_result;
-      }
-      PUSH(low);
-      PUSH(high);
-    }
-    vm_state.pc += 3;
-    break;
+    case OP_LOAD64:
+        if (vm->pc + 2 >= vm->code_size) {
+            vm->error = ZPLC_VM_INVALID_JUMP;
+            vm->halted = 1;
+            return ZPLC_VM_INVALID_JUMP;
+        }
+        operand16 = READ_U16(code, vm->pc + 1);
+        {
+            uint32_t low, high;
+            mem_result = mem_read64(operand16, &low, &high);
+            if (mem_result != ZPLC_VM_OK) {
+                vm->error = (uint8_t)mem_result;
+                vm->halted = 1;
+                return mem_result;
+            }
+            VM_PUSH(vm, low);
+            VM_PUSH(vm, high);
+        }
+        vm->pc += 3;
+        break;
 
-  case OP_STORE8:
-    CHECK_STACK_UNDERFLOW(1);
-    if (vm_state.pc + 2 >= code_size) {
-      vm_state.error = ZPLC_VM_INVALID_JUMP;
-      vm_state.halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
-    operand16 = READ_U16(vm_state.pc + 1);
-    a = POP();
-    mem_result = mem_write8(operand16, (uint8_t)a);
-    if (mem_result != ZPLC_VM_OK) {
-      vm_state.error = (uint8_t)mem_result;
-      vm_state.halted = 1;
-      return mem_result;
-    }
-    vm_state.pc += 3;
-    break;
+    case OP_STORE8:
+        VM_CHECK_STACK_UNDERFLOW(vm, 1);
+        if (vm->pc + 2 >= vm->code_size) {
+            vm->error = ZPLC_VM_INVALID_JUMP;
+            vm->halted = 1;
+            return ZPLC_VM_INVALID_JUMP;
+        }
+        operand16 = READ_U16(code, vm->pc + 1);
+        a = VM_POP(vm);
+        mem_result = mem_write8(operand16, (uint8_t)a);
+        if (mem_result != ZPLC_VM_OK) {
+            vm->error = (uint8_t)mem_result;
+            vm->halted = 1;
+            return mem_result;
+        }
+        vm->pc += 3;
+        break;
 
-  case OP_STORE16:
-    CHECK_STACK_UNDERFLOW(1);
-    if (vm_state.pc + 2 >= code_size) {
-      vm_state.error = ZPLC_VM_INVALID_JUMP;
-      vm_state.halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
-    operand16 = READ_U16(vm_state.pc + 1);
-    a = POP();
-    mem_result = mem_write16(operand16, (uint16_t)a);
-    if (mem_result != ZPLC_VM_OK) {
-      vm_state.error = (uint8_t)mem_result;
-      vm_state.halted = 1;
-      return mem_result;
-    }
-    vm_state.pc += 3;
-    break;
+    case OP_STORE16:
+        VM_CHECK_STACK_UNDERFLOW(vm, 1);
+        if (vm->pc + 2 >= vm->code_size) {
+            vm->error = ZPLC_VM_INVALID_JUMP;
+            vm->halted = 1;
+            return ZPLC_VM_INVALID_JUMP;
+        }
+        operand16 = READ_U16(code, vm->pc + 1);
+        a = VM_POP(vm);
+        mem_result = mem_write16(operand16, (uint16_t)a);
+        if (mem_result != ZPLC_VM_OK) {
+            vm->error = (uint8_t)mem_result;
+            vm->halted = 1;
+            return mem_result;
+        }
+        vm->pc += 3;
+        break;
 
-  case OP_STORE32:
-    CHECK_STACK_UNDERFLOW(1);
-    if (vm_state.pc + 2 >= code_size) {
-      vm_state.error = ZPLC_VM_INVALID_JUMP;
-      vm_state.halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
-    operand16 = READ_U16(vm_state.pc + 1);
-    a = POP();
-    mem_result = mem_write32(operand16, a);
-    if (mem_result != ZPLC_VM_OK) {
-      vm_state.error = (uint8_t)mem_result;
-      vm_state.halted = 1;
-      return mem_result;
-    }
-    vm_state.pc += 3;
-    break;
+    case OP_STORE32:
+        VM_CHECK_STACK_UNDERFLOW(vm, 1);
+        if (vm->pc + 2 >= vm->code_size) {
+            vm->error = ZPLC_VM_INVALID_JUMP;
+            vm->halted = 1;
+            return ZPLC_VM_INVALID_JUMP;
+        }
+        operand16 = READ_U16(code, vm->pc + 1);
+        a = VM_POP(vm);
+        mem_result = mem_write32(operand16, a);
+        if (mem_result != ZPLC_VM_OK) {
+            vm->error = (uint8_t)mem_result;
+            vm->halted = 1;
+            return mem_result;
+        }
+        vm->pc += 3;
+        break;
 
-  case OP_STORE64:
-    /*
-     * 64-bit store: pops two 32-bit values from the stack.
-     * High word is popped first (TOS), then low word.
-     * Stores to memory in little-endian order.
-     */
-    CHECK_STACK_UNDERFLOW(2);
-    if (vm_state.pc + 2 >= code_size) {
-      vm_state.error = ZPLC_VM_INVALID_JUMP;
-      vm_state.halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
-    operand16 = READ_U16(vm_state.pc + 1);
-    {
-      uint32_t high = POP();
-      uint32_t low = POP();
-      mem_result = mem_write64(operand16, low, high);
-      if (mem_result != ZPLC_VM_OK) {
-        vm_state.error = (uint8_t)mem_result;
-        vm_state.halted = 1;
-        return mem_result;
-      }
-    }
-    vm_state.pc += 3;
-    break;
+    case OP_STORE64:
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        if (vm->pc + 2 >= vm->code_size) {
+            vm->error = ZPLC_VM_INVALID_JUMP;
+            vm->halted = 1;
+            return ZPLC_VM_INVALID_JUMP;
+        }
+        operand16 = READ_U16(code, vm->pc + 1);
+        {
+            uint32_t high = VM_POP(vm);
+            uint32_t low = VM_POP(vm);
+            mem_result = mem_write64(operand16, low, high);
+            if (mem_result != ZPLC_VM_OK) {
+                vm->error = (uint8_t)mem_result;
+                vm->halted = 1;
+                return mem_result;
+            }
+        }
+        vm->pc += 3;
+        break;
 
-  case OP_PUSH16:
-    if (vm_state.pc + 2 >= code_size) {
-      vm_state.error = ZPLC_VM_INVALID_JUMP;
-      vm_state.halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
-    operand16 = READ_U16(vm_state.pc + 1);
-    /* Sign-extend to 32-bit */
-    PUSH((uint32_t)(int32_t)(int16_t)operand16);
-    vm_state.pc += 3;
-    break;
+    case OP_PUSH16:
+        if (vm->pc + 2 >= vm->code_size) {
+            vm->error = ZPLC_VM_INVALID_JUMP;
+            vm->halted = 1;
+            return ZPLC_VM_INVALID_JUMP;
+        }
+        operand16 = READ_U16(code, vm->pc + 1);
+        VM_PUSH(vm, (uint32_t)(int32_t)(int16_t)operand16);
+        vm->pc += 3;
+        break;
 
     /* ===== Control Flow with 16-bit address ===== */
 
-  case OP_JMP:
-    if (vm_state.pc + 2 >= code_size) {
-      vm_state.error = ZPLC_VM_INVALID_JUMP;
-      vm_state.halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
-    operand16 = READ_U16(vm_state.pc + 1);
-    vm_state.pc = operand16;
-    break;
+    case OP_JMP:
+        if (vm->pc + 2 >= vm->code_size) {
+            vm->error = ZPLC_VM_INVALID_JUMP;
+            vm->halted = 1;
+            return ZPLC_VM_INVALID_JUMP;
+        }
+        operand16 = READ_U16(code, vm->pc + 1);
+        vm->pc = operand16;
+        break;
 
-  case OP_JZ:
-    CHECK_STACK_UNDERFLOW(1);
-    if (vm_state.pc + 2 >= code_size) {
-      vm_state.error = ZPLC_VM_INVALID_JUMP;
-      vm_state.halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
-    operand16 = READ_U16(vm_state.pc + 1);
-    a = POP();
-    if (a == 0) {
-      vm_state.pc = operand16;
-    } else {
-      vm_state.pc += 3;
-    }
-    break;
+    case OP_JZ:
+        VM_CHECK_STACK_UNDERFLOW(vm, 1);
+        if (vm->pc + 2 >= vm->code_size) {
+            vm->error = ZPLC_VM_INVALID_JUMP;
+            vm->halted = 1;
+            return ZPLC_VM_INVALID_JUMP;
+        }
+        operand16 = READ_U16(code, vm->pc + 1);
+        a = VM_POP(vm);
+        if (a == 0) {
+            vm->pc = operand16;
+        } else {
+            vm->pc += 3;
+        }
+        break;
 
-  case OP_JNZ:
-    CHECK_STACK_UNDERFLOW(1);
-    if (vm_state.pc + 2 >= code_size) {
-      vm_state.error = ZPLC_VM_INVALID_JUMP;
-      vm_state.halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
-    operand16 = READ_U16(vm_state.pc + 1);
-    a = POP();
-    if (a != 0) {
-      vm_state.pc = operand16;
-    } else {
-      vm_state.pc += 3;
-    }
-    break;
+    case OP_JNZ:
+        VM_CHECK_STACK_UNDERFLOW(vm, 1);
+        if (vm->pc + 2 >= vm->code_size) {
+            vm->error = ZPLC_VM_INVALID_JUMP;
+            vm->halted = 1;
+            return ZPLC_VM_INVALID_JUMP;
+        }
+        operand16 = READ_U16(code, vm->pc + 1);
+        a = VM_POP(vm);
+        if (a != 0) {
+            vm->pc = operand16;
+        } else {
+            vm->pc += 3;
+        }
+        break;
 
-  case OP_CALL:
-    if (vm_state.pc + 2 >= code_size) {
-      vm_state.error = ZPLC_VM_INVALID_JUMP;
-      vm_state.halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
-    if (vm_state.call_depth >= ZPLC_CALL_STACK_MAX) {
-      vm_state.error = ZPLC_VM_CALL_OVERFLOW;
-      vm_state.halted = 1;
-      return ZPLC_VM_CALL_OVERFLOW;
-    }
-    operand16 = READ_U16(vm_state.pc + 1);
-    /* Push return address */
-    vm_state.call_stack[vm_state.call_depth++] = vm_state.pc + 3;
-    vm_state.pc = operand16;
-    break;
+    case OP_CALL:
+        if (vm->pc + 2 >= vm->code_size) {
+            vm->error = ZPLC_VM_INVALID_JUMP;
+            vm->halted = 1;
+            return ZPLC_VM_INVALID_JUMP;
+        }
+        if (vm->call_depth >= ZPLC_CALL_STACK_MAX) {
+            vm->error = ZPLC_VM_CALL_OVERFLOW;
+            vm->halted = 1;
+            return ZPLC_VM_CALL_OVERFLOW;
+        }
+        operand16 = READ_U16(code, vm->pc + 1);
+        vm->call_stack[vm->call_depth++] = vm->pc + 3;
+        vm->pc = operand16;
+        break;
 
-  case OP_RET:
-    if (vm_state.call_depth == 0) {
-      /* Return from main - halt */
-      vm_state.halted = 1;
-      vm_state.error = ZPLC_VM_HALTED;
-      return ZPLC_VM_HALTED;
-    }
-    vm_state.pc = vm_state.call_stack[--vm_state.call_depth];
-    break;
+    case OP_RET:
+        if (vm->call_depth == 0) {
+            vm->halted = 1;
+            vm->error = ZPLC_VM_HALTED;
+            return ZPLC_VM_HALTED;
+        }
+        vm->pc = vm->call_stack[--vm->call_depth];
+        break;
 
     /* ===== Push with 32-bit operand ===== */
 
-  case OP_PUSH32:
-    if (vm_state.pc + 4 >= code_size) {
-      vm_state.error = ZPLC_VM_INVALID_JUMP;
-      vm_state.halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
-    operand32 = READ_U32(vm_state.pc + 1);
-    PUSH(operand32);
-    vm_state.pc += 5;
-    break;
+    case OP_PUSH32:
+        if (vm->pc + 4 >= vm->code_size) {
+            vm->error = ZPLC_VM_INVALID_JUMP;
+            vm->halted = 1;
+            return ZPLC_VM_INVALID_JUMP;
+        }
+        operand32 = READ_U32(code, vm->pc + 1);
+        VM_PUSH(vm, operand32);
+        vm->pc += 5;
+        break;
 
     /* ===== Type Conversion ===== */
 
-  case OP_I2F:
-    CHECK_STACK_UNDERFLOW(1);
-    a = POP();
-    {
-      float f = (float)(int32_t)a;
-      memcpy(&result, &f, sizeof(uint32_t));
-      PUSH(result);
-    }
-    vm_state.pc++;
-    break;
+    case OP_I2F:
+        VM_CHECK_STACK_UNDERFLOW(vm, 1);
+        a = VM_POP(vm);
+        {
+            float f = (float)(int32_t)a;
+            memcpy(&result, &f, sizeof(uint32_t));
+            VM_PUSH(vm, result);
+        }
+        vm->pc++;
+        break;
 
-  case OP_F2I:
-    CHECK_STACK_UNDERFLOW(1);
-    a = POP();
-    {
-      float f;
-      memcpy(&f, &a, sizeof(float));
-      /* Truncate towards zero, like C cast */
-      PUSH((uint32_t)(int32_t)f);
-    }
-    vm_state.pc++;
-    break;
+    case OP_F2I:
+        VM_CHECK_STACK_UNDERFLOW(vm, 1);
+        a = VM_POP(vm);
+        {
+            float f;
+            memcpy(&f, &a, sizeof(float));
+            VM_PUSH(vm, (uint32_t)(int32_t)f);
+        }
+        vm->pc++;
+        break;
 
-  case OP_I2B:
-    CHECK_STACK_UNDERFLOW(1);
-    a = POP();
-    PUSH(a != 0 ? 1 : 0);
-    vm_state.pc++;
-    break;
+    case OP_I2B:
+        VM_CHECK_STACK_UNDERFLOW(vm, 1);
+        a = VM_POP(vm);
+        VM_PUSH(vm, a != 0 ? 1 : 0);
+        vm->pc++;
+        break;
 
-  case OP_EXT8:
-    /* Sign-extend 8-bit to 32-bit */
-    CHECK_STACK_UNDERFLOW(1);
-    a = POP();
-    PUSH((uint32_t)(int32_t)(int8_t)(uint8_t)a);
-    vm_state.pc++;
-    break;
+    case OP_EXT8:
+        VM_CHECK_STACK_UNDERFLOW(vm, 1);
+        a = VM_POP(vm);
+        VM_PUSH(vm, (uint32_t)(int32_t)(int8_t)(uint8_t)a);
+        vm->pc++;
+        break;
 
-  case OP_EXT16:
-    /* Sign-extend 16-bit to 32-bit */
-    CHECK_STACK_UNDERFLOW(1);
-    a = POP();
-    PUSH((uint32_t)(int32_t)(int16_t)(uint16_t)a);
-    vm_state.pc++;
-    break;
+    case OP_EXT16:
+        VM_CHECK_STACK_UNDERFLOW(vm, 1);
+        a = VM_POP(vm);
+        VM_PUSH(vm, (uint32_t)(int32_t)(int16_t)(uint16_t)a);
+        vm->pc++;
+        break;
 
-  case OP_ZEXT8:
-    /* Zero-extend 8-bit to 32-bit (mask off upper bits) */
-    CHECK_STACK_UNDERFLOW(1);
-    a = POP();
-    PUSH(a & 0xFF);
-    vm_state.pc++;
-    break;
+    case OP_ZEXT8:
+        VM_CHECK_STACK_UNDERFLOW(vm, 1);
+        a = VM_POP(vm);
+        VM_PUSH(vm, a & 0xFF);
+        vm->pc++;
+        break;
 
-  case OP_ZEXT16:
-    /* Zero-extend 16-bit to 32-bit (mask off upper bits) */
-    CHECK_STACK_UNDERFLOW(1);
-    a = POP();
-    PUSH(a & 0xFFFF);
-    vm_state.pc++;
-    break;
+    case OP_ZEXT16:
+        VM_CHECK_STACK_UNDERFLOW(vm, 1);
+        a = VM_POP(vm);
+        VM_PUSH(vm, a & 0xFFFF);
+        vm->pc++;
+        break;
 
     /* ===== Unknown opcode ===== */
 
-  default:
-    vm_state.error = ZPLC_VM_INVALID_OPCODE;
-    vm_state.halted = 1;
-    return ZPLC_VM_INVALID_OPCODE;
-  }
-
-  return ZPLC_VM_OK;
-}
-
-/**
- * @brief Run the VM for a fixed number of instructions or until halted.
- *
- * @param max_instructions Maximum instructions to execute (0 = unlimited)
- * @return Number of instructions executed, or negative error code
- */
-int zplc_core_run(uint32_t max_instructions) {
-  uint32_t count = 0;
-  int result;
-
-  while (!vm_state.halted) {
-    result = zplc_core_step();
-
-    if (result != ZPLC_VM_OK && result != ZPLC_VM_HALTED) {
-      return -result; /* Return negative error code */
+    default:
+        vm->error = ZPLC_VM_INVALID_OPCODE;
+        vm->halted = 1;
+        return ZPLC_VM_INVALID_OPCODE;
     }
 
-    count++;
-
-    if (max_instructions > 0 && count >= max_instructions) {
-      break;
-    }
-  }
-
-  return (int)count;
+    return ZPLC_VM_OK;
 }
 
-/**
- * @brief Run one PLC scan cycle.
- *
- * This is the main execution interface for the runtime:
- * 1. (Future) Latch inputs from HAL
- * 2. Execute program until HALT or cycle complete
- * 3. (Future) Flush outputs to HAL
- *
- * @return 0 on success, error code otherwise
- */
-int zplc_core_run_cycle(void) {
-  /* Reset for new cycle */
-  vm_state.pc = 0;
-  vm_state.sp = 0;
-  vm_state.halted = 0;
-  vm_state.error = ZPLC_VM_OK;
+int zplc_vm_run(zplc_vm_t *vm, uint32_t max_instructions)
+{
+    uint32_t count = 0;
+    int result;
 
-  /* Run until HALT */
-  return zplc_core_run(0);
+    if (vm == NULL) {
+        return -1;
+    }
+
+    while (!vm->halted) {
+        result = zplc_vm_step(vm);
+
+        if (result != ZPLC_VM_OK && result != ZPLC_VM_HALTED) {
+            return -result;
+        }
+
+        count++;
+
+        if (max_instructions > 0 && count >= max_instructions) {
+            break;
+        }
+    }
+
+    return (int)count;
+}
+
+int zplc_vm_run_cycle(zplc_vm_t *vm)
+{
+    if (vm == NULL) {
+        return -1;
+    }
+
+    /* Reset for new cycle */
+    zplc_vm_reset_cycle(vm);
+
+    /* Run until HALT */
+    return zplc_vm_run(vm, 0);
 }
 
 /* ============================================================================
- * State Access (for testing and debugging)
- * ============================================================================
- */
+ * Legacy Singleton API (backward compatibility)
+ * ============================================================================ */
 
-/**
- * @brief Get a read-only pointer to the VM state.
- *
- * @return Pointer to VM state structure
- */
-const zplc_vm_state_t *zplc_core_get_state(void) { return &vm_state; }
+const char *zplc_core_version(void)
+{
+    static char version_str[16] = {0};
+    if (version_str[0] == '\0') {
+        version_str[0] = '0' + ZPLC_CORE_VERSION_MAJOR;
+        version_str[1] = '.';
+        version_str[2] = '0' + ZPLC_CORE_VERSION_MINOR;
+        version_str[3] = '.';
+        version_str[4] = '0' + ZPLC_CORE_VERSION_PATCH;
+        version_str[5] = '\0';
+    }
+    return version_str;
+}
 
-/**
- * @brief Get the current stack pointer.
- */
-uint16_t zplc_core_get_sp(void) { return vm_state.sp; }
-
-/**
- * @brief Get a value from the evaluation stack.
- *
- * @param index Stack index (0 = bottom, sp-1 = top)
- * @return Stack value, or 0 if index out of bounds
- */
-uint32_t zplc_core_get_stack(uint16_t index) {
-  if (index >= vm_state.sp) {
+int zplc_core_init(void)
+{
+    /* Initialize shared memory */
+    zplc_mem_init();
+    
+    /* Initialize default VM */
+    zplc_vm_init(&default_vm);
+    default_program_loaded = 0;
+    
     return 0;
-  }
-  return vm_state.stack[index];
 }
 
-/**
- * @brief Get the last error code.
- */
-int zplc_core_get_error(void) { return vm_state.error; }
-
-/**
- * @brief Check if VM is halted.
- */
-int zplc_core_is_halted(void) { return vm_state.halted; }
-
-/**
- * @brief Write a value to the IPI (for testing - simulates HAL input).
- */
-int zplc_core_set_ipi(uint16_t offset, uint32_t value) {
-  if (offset + 4 > ZPLC_MEM_IPI_SIZE) {
-    return -1;
-  }
-  mem_ipi[offset] = (uint8_t)(value & 0xFF);
-  mem_ipi[offset + 1] = (uint8_t)((value >> 8) & 0xFF);
-  mem_ipi[offset + 2] = (uint8_t)((value >> 16) & 0xFF);
-  mem_ipi[offset + 3] = (uint8_t)((value >> 24) & 0xFF);
-  return 0;
-}
-
-/**
- * @brief Write a 16-bit value to the IPI (for testing - simulates HAL input).
- */
-int zplc_core_set_ipi16(uint16_t offset, uint16_t value) {
-  if (offset + 2 > ZPLC_MEM_IPI_SIZE) {
-    return -1;
-  }
-  mem_ipi[offset] = (uint8_t)(value & 0xFF);
-  mem_ipi[offset + 1] = (uint8_t)((value >> 8) & 0xFF);
-  return 0;
-}
-
-/**
- * @brief Read a value from the OPI (for testing - check outputs).
- */
-uint32_t zplc_core_get_opi(uint16_t offset) {
-  if (offset + 4 > ZPLC_MEM_OPI_SIZE) {
+int zplc_core_shutdown(void)
+{
+    default_program_loaded = 0;
+    default_vm.halted = 1;
     return 0;
-  }
-  return (uint32_t)mem_opi[offset] | ((uint32_t)mem_opi[offset + 1] << 8) |
-         ((uint32_t)mem_opi[offset + 2] << 16) |
-         ((uint32_t)mem_opi[offset + 3] << 24);
+}
+
+int zplc_core_load(const uint8_t *binary, size_t size)
+{
+    const zplc_file_header_t *header;
+    size_t code_offset;
+
+    if (binary == NULL || size < ZPLC_FILE_HEADER_SIZE) {
+        return -1;
+    }
+
+    header = (const zplc_file_header_t *)binary;
+
+    if (header->magic != ZPLC_MAGIC) {
+        return -2;
+    }
+
+    if (header->version_major > ZPLC_VERSION_MAJOR) {
+        return -3;
+    }
+
+    if (header->code_size > ZPLC_MEM_CODE_SIZE) {
+        return -4;
+    }
+
+    code_offset = ZPLC_FILE_HEADER_SIZE + 
+                  (header->segment_count * ZPLC_SEGMENT_ENTRY_SIZE);
+
+    if (size < code_offset + header->code_size) {
+        return -5;
+    }
+
+    /* Load code into shared segment */
+    zplc_mem_load_code(binary + code_offset, header->code_size, 0);
+
+    /* Configure default VM */
+    zplc_vm_init(&default_vm);
+    zplc_vm_set_entry(&default_vm, header->entry_point, header->code_size);
+    default_program_loaded = 1;
+
+    return 0;
+}
+
+int zplc_core_load_raw(const uint8_t *bytecode, size_t size)
+{
+    if (bytecode == NULL || size == 0 || size > ZPLC_MEM_CODE_SIZE) {
+        return -1;
+    }
+
+    /* Load code into shared segment at offset 0 */
+    zplc_mem_load_code(bytecode, size, 0);
+
+    /* Configure default VM */
+    zplc_vm_init(&default_vm);
+    zplc_vm_set_entry(&default_vm, 0, (uint32_t)size);
+    default_program_loaded = 1;
+
+    return 0;
+}
+
+int zplc_core_step(void)
+{
+    if (!default_program_loaded) {
+        return ZPLC_VM_INVALID_OPCODE;
+    }
+    return zplc_vm_step(&default_vm);
+}
+
+int zplc_core_run(uint32_t max_instructions)
+{
+    if (!default_program_loaded) {
+        return -1;
+    }
+    return zplc_vm_run(&default_vm, max_instructions);
+}
+
+int zplc_core_run_cycle(void)
+{
+    if (!default_program_loaded) {
+        return -1;
+    }
+    return zplc_vm_run_cycle(&default_vm);
+}
+
+const zplc_vm_state_t *zplc_core_get_state(void)
+{
+    /* 
+     * Legacy API returns zplc_vm_state_t*, but our new zplc_vm_t is compatible
+     * since it starts with the same fields. Cast is safe for read-only access.
+     */
+    return (const zplc_vm_state_t *)&default_vm;
+}
+
+uint16_t zplc_core_get_sp(void)
+{
+    return default_vm.sp;
+}
+
+uint32_t zplc_core_get_stack(uint16_t index)
+{
+    return zplc_vm_get_stack(&default_vm, index);
+}
+
+int zplc_core_get_error(void)
+{
+    return default_vm.error;
+}
+
+int zplc_core_is_halted(void)
+{
+    return default_vm.halted;
+}
+
+int zplc_core_set_ipi(uint16_t offset, uint32_t value)
+{
+    return zplc_ipi_write32(offset, value);
+}
+
+int zplc_core_set_ipi16(uint16_t offset, uint16_t value)
+{
+    return zplc_ipi_write16(offset, value);
+}
+
+uint32_t zplc_core_get_opi(uint16_t offset)
+{
+    return zplc_opi_read32(offset);
+}
+
+zplc_vm_t *zplc_core_get_default_vm(void)
+{
+    return &default_vm;
 }

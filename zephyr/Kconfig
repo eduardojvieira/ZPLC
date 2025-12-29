@@ -55,4 +55,69 @@ config ZPLC_LOG_LEVEL
       Log level for ZPLC runtime.
       0=OFF, 1=ERR, 2=WRN, 3=INF, 4=DBG
 
+# -----------------------------------------------------------------------------
+# Multitask Scheduler Configuration
+# -----------------------------------------------------------------------------
+
+config ZPLC_SCHEDULER
+    bool "Enable multitask scheduler"
+    default n
+    help
+      Enable the ZPLC multitask scheduler.
+      Allows running multiple PLC tasks with different intervals
+      and priorities using Zephyr's k_timer and work queue system.
+
+if ZPLC_SCHEDULER
+
+config ZPLC_MAX_TASKS
+    int "Maximum number of concurrent tasks"
+    default 8
+    range 2 16
+    help
+      Maximum number of PLC tasks that can be registered.
+      Each task requires approximately 1KB of RAM for its VM state.
+
+config ZPLC_SCHED_WORKQ_STACK_SIZE
+    int "Scheduler work queue stack size"
+    default 2048
+    help
+      Stack size for the scheduler work queue thread.
+      Increase if tasks require deeper call stacks.
+
+config ZPLC_SCHED_WORKQ_PRIORITY
+    int "Scheduler work queue priority"
+    default 5
+    range 0 14
+    help
+      Priority of the scheduler work queue thread.
+      Lower values = higher priority.
+      0 = highest (preempts almost everything)
+      14 = lowest cooperative priority
+
+config ZPLC_SCHED_HIGH_PRIO_WORKQ
+    bool "Use separate high-priority work queue"
+    default y
+    help
+      Create a separate high-priority work queue for fast tasks.
+      When enabled, tasks with priority 0-1 run on high-priority queue,
+      and tasks with priority 2+ run on standard work queue.
+
+config ZPLC_SCHED_HIGH_PRIO_STACK_SIZE
+    int "High-priority work queue stack size"
+    default 2048
+    depends on ZPLC_SCHED_HIGH_PRIO_WORKQ
+    help
+      Stack size for the high-priority work queue thread.
+
+config ZPLC_SCHED_HIGH_PRIO_PRIORITY
+    int "High-priority work queue thread priority"
+    default 2
+    range 0 14
+    depends on ZPLC_SCHED_HIGH_PRIO_WORKQ
+    help
+      Priority of the high-priority work queue thread.
+      Should be lower (higher priority) than ZPLC_SCHED_WORKQ_PRIORITY.
+
+endif # ZPLC_SCHEDULER
+
 endif # ZPLC
