@@ -76,6 +76,30 @@ export type { CodeGenOptions } from './codegen.ts';
 // Re-export transpilers
 export { transpileLDToST, transpileFBDToST, transpileSFCToST } from './transpilers/index.ts';
 
+// Re-export debug map types and utilities
+export {
+    createDebugMap,
+    createDebugVarInfo,
+    serializeDebugMap,
+    parseDebugMap,
+    findVariable,
+    findSourceLine,
+    findPC,
+    getBreakpointLocations,
+    buildDebugMap,
+} from './debug-map.ts';
+export type {
+    MemoryRegion,
+    DebugDataType,
+    DebugVarInfo,
+    DebugMemberInfo,
+    SourceLineMapping,
+    BreakpointLocation,
+    DebugPOUInfo,
+    DebugMap,
+    BuildDebugMapOptions,
+} from './debug-map.ts';
+
 // Import for main functions
 import { parse } from './parser.ts';
 import { generate, WORK_MEMORY_REGION_SIZE } from './codegen.ts';
@@ -88,6 +112,9 @@ import { transpileSFCToST } from './transpilers/sfc.ts';
 import { parseLDModel } from '../models/ld.ts';
 import { parseFBDModel } from '../models/fbd.ts';
 import { parseSFCModel } from '../models/sfc.ts';
+import type { DebugMap } from './debug-map.ts';
+import { buildDebugMap } from './debug-map.ts';
+import { buildSymbolTable } from './symbol-table.ts';
 
 /**
  * Compiler error with source location.
@@ -120,6 +147,16 @@ export interface CompilationResult {
     entryPoint: number;
     /** Code size in bytes */
     codeSize: number;
+    /** Debug map for source-level debugging (optional) */
+    debugMap?: DebugMap;
+}
+
+/**
+ * Options for compilation functions.
+ */
+export interface CompileOptions extends CodeGenOptions {
+    /** Generate debug map for source-level debugging */
+    generateDebugMap?: boolean;
 }
 
 /**
@@ -177,13 +214,33 @@ export function compileST(source: string, options?: CodeGenOptions): string {
  *
  * // Download as .zplc file
  * const blob = new Blob([result.zplcFile], { type: 'application/octet-stream' });
+ * 
+ * // With debug map for debugging
+ * const debugResult = compileToBinary(source, { generateDebugMap: true });
+ * console.log(debugResult.debugMap);
  * ```
  */
-export function compileToBinary(source: string, options?: CodeGenOptions): CompilationResult {
-    // First, compile ST to assembly
-    const assembly = compileST(source, options);
+export function compileToBinary(source: string, options?: CompileOptions): CompilationResult {
+    // Parse ST to AST
+    const ast = parse(source);
 
-    // Then, assemble to bytecode
+    if (ast.programs.length === 0) {
+        throw new CompilerError('No program found in source', 1, 1, 'parser');
+    }
+
+    const program = ast.programs[0];
+    const generateDebugMap = options?.generateDebugMap ?? false;
+    
+    // Build codegen options - enable source annotations if debug map is requested
+    const codegenOptions: CodeGenOptions = {
+        ...options,
+        emitSourceAnnotations: generateDebugMap,
+    };
+    
+    // Generate assembly
+    const assembly = generate(program, codegenOptions);
+
+    // Assemble to bytecode
     let asmResult: AssemblyResult;
     try {
         asmResult = assemble(assembly);
@@ -192,13 +249,28 @@ export function compileToBinary(source: string, options?: CodeGenOptions): Compi
         throw new CompilerError(err.message, 0, 0, 'assembler');
     }
 
-    return {
+    const result: CompilationResult = {
         assembly,
         bytecode: asmResult.bytecode,
         zplcFile: asmResult.zplcFile,
         entryPoint: asmResult.entryPoint,
         codeSize: asmResult.codeSize,
     };
+    
+    // Build debug map if requested
+    if (generateDebugMap) {
+        const workMemoryBase = options?.workMemoryBase;
+        const symbols = buildSymbolTable(program, workMemoryBase);
+        
+        result.debugMap = buildDebugMap({
+            programName: program.name,
+            symbols,
+            instructionMappings: asmResult.instructionMappings,
+            codeSize: asmResult.codeSize,
+        });
+    }
+
+    return result;
 }
 
 /**
@@ -285,6 +357,7 @@ export function transpileToST(content: string, language: PLCLanguage): Transpile
  *
  * @param content - Source content (ST code or JSON for visual languages)
  * @param language - Source language
+ * @param options - Optional compilation options (debug map, memory base, etc.)
  * @returns Compilation result with bytecode and metadata
  * @throws CompilerError on compilation failure
  *
@@ -293,15 +366,16 @@ export function transpileToST(content: string, language: PLCLanguage): Transpile
  * // Compile ST
  * const result = compileProject(stSource, 'ST');
  *
- * // Compile LD (from JSON)
- * const result = compileProject(ldJson, 'LD');
+ * // Compile LD (from JSON) with debug map
+ * const result = compileProject(ldJson, 'LD', { generateDebugMap: true });
  * console.log(result.intermediateSTSource); // See transpiled ST
+ * console.log(result.debugMap); // Debug info
  *
  * // Download as .zplc file
  * const blob = new Blob([result.zplcFile], { type: 'application/octet-stream' });
  * ```
  */
-export function compileProject(content: string, language: PLCLanguage): ProjectCompilationResult {
+export function compileProject(content: string, language: PLCLanguage, options?: CompileOptions): ProjectCompilationResult {
     let stSource = content;
     let intermediateSTSource: string | undefined;
     let transpileErrors: string[] = [];
@@ -323,7 +397,7 @@ export function compileProject(content: string, language: PLCLanguage): ProjectC
     }
 
     // Step 2: Compile ST to bytecode
-    const compilationResult = compileToBinary(stSource);
+    const compilationResult = compileToBinary(stSource, options);
 
     return {
         ...compilationResult,

@@ -40,13 +40,8 @@ import { AssemblerError } from '../assembler';
 import { GeneratedCodeDialog } from './GeneratedCodeDialog';
 import {
   isWebSerialSupported,
-  requestPort,
-  connect,
-  disconnect,
-  uploadBytecode,
-  type SerialConnection,
 } from '../uploader';
-import { WASMAdapter, createWASMAdapter } from '../runtime';
+import { WASMAdapter, createWASMAdapter, connectionManager } from '../runtime';
 import type { VMState } from '../runtime';
 
 export function Toolbar() {
@@ -82,8 +77,8 @@ export function Toolbar() {
     codeSize: number;
   } | null>(null);
 
-  // State for WebSerial connection
-  const [serialConnection, setSerialConnection] = useState<SerialConnection | null>(null);
+  // State for WebSerial connection (uses connectionManager)
+  const [isSerialConnected, setIsSerialConnected] = useState(connectionManager.connected);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{ stage: string; progress: number } | null>(null);
@@ -108,6 +103,15 @@ export function Toolbar() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Subscribe to connection manager state
+  useEffect(() => {
+    const unsub = connectionManager.onConnectionChange((connected) => {
+      setIsSerialConnected(connected);
+      setConnectionStatus(connected ? 'connected' : 'disconnected');
+    });
+    return unsub;
+  }, [setConnectionStatus]);
 
   /**
    * Generate Structured Text from visual language (FBD/LD/SFC)
@@ -424,7 +428,7 @@ export function Toolbar() {
   };
 
   /**
-   * Connect to a serial device via WebSerial
+   * Connect to a serial device via WebSerial (uses connectionManager)
    */
   const handleConnect = async () => {
     if (!isWebSerialSupported()) {
@@ -436,12 +440,10 @@ export function Toolbar() {
       return;
     }
 
-    if (serialConnection) {
+    if (isSerialConnected) {
       // Disconnect
       try {
-        await disconnect(serialConnection);
-        setSerialConnection(null);
-        setConnectionStatus('disconnected');
+        await connectionManager.disconnect();
         addConsoleEntry({
           type: 'info',
           message: 'Disconnected from device',
@@ -466,25 +468,7 @@ export function Toolbar() {
         source: 'upload',
       });
 
-      const port = await requestPort();
-      if (!port) {
-        addConsoleEntry({
-          type: 'warning',
-          message: 'Port selection cancelled',
-          source: 'upload',
-        });
-        return;
-      }
-
-      addConsoleEntry({
-        type: 'info',
-        message: 'Connecting to device...',
-        source: 'upload',
-      });
-
-      const conn = await connect(port, 115200);
-      setSerialConnection(conn);
-      setConnectionStatus('connected');
+      await connectionManager.connect();
 
       addConsoleEntry({
         type: 'success',
@@ -492,21 +476,31 @@ export function Toolbar() {
         source: 'upload',
       });
     } catch (e) {
-      addConsoleEntry({
-        type: 'error',
-        message: `Connection failed: ${e instanceof Error ? e.message : String(e)}`,
-        source: 'upload',
-      });
+      const errorMsg = e instanceof Error ? e.message : String(e);
+      // User cancel is not an error
+      if (!errorMsg.includes('cancelled') && !errorMsg.includes('No port selected')) {
+        addConsoleEntry({
+          type: 'error',
+          message: `Connection failed: ${errorMsg}`,
+          source: 'upload',
+        });
+      } else {
+        addConsoleEntry({
+          type: 'warning',
+          message: 'Port selection cancelled',
+          source: 'upload',
+        });
+      }
     } finally {
       setIsConnecting(false);
     }
   };
 
   /**
-   * Upload bytecode to connected device
+   * Upload bytecode to connected device (uses connectionManager)
    */
   const handleUpload = async () => {
-    if (!serialConnection) {
+    if (!isSerialConnected) {
       addConsoleEntry({
         type: 'error',
         message: 'Not connected. Click "Connect" first.',
@@ -534,21 +528,20 @@ export function Toolbar() {
         source: 'upload',
       });
 
-      await uploadBytecode(
-        serialConnection,
-        lastCompileResult.bytecode,
-        (stage, progress, message) => {
-          setUploadProgress({ stage, progress });
-          if (stage === 'error') {
-            addConsoleEntry({ type: 'error', message, source: 'upload' });
-          } else if (stage === 'complete') {
-            addConsoleEntry({ type: 'success', message, source: 'upload' });
-            setPlcState('running');
-          } else {
-            addConsoleEntry({ type: 'info', message, source: 'upload' });
-          }
-        }
-      );
+      setUploadProgress({ stage: 'loading', progress: 30 });
+      await connectionManager.uploadBytecode(lastCompileResult.bytecode);
+      
+      setUploadProgress({ stage: 'starting', progress: 70 });
+      await connectionManager.start();
+
+      setUploadProgress({ stage: 'complete', progress: 100 });
+      
+      addConsoleEntry({ 
+        type: 'success', 
+        message: `Upload complete! Program running.`, 
+        source: 'upload' 
+      });
+      setPlcState('running');
     } catch (e) {
       addConsoleEntry({
         type: 'error',
@@ -854,7 +847,7 @@ export function Toolbar() {
   const isSimPaused = simState === 'paused';
   const isSimActive = simState !== 'disconnected' && simState !== 'error';
 
-  const isConnected = !!serialConnection;
+  const isConnected = isSerialConnected;
   const isRunning = connection.plcState === 'running';
 
   const themeOptions = [

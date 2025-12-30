@@ -21,11 +21,13 @@ import {
   Trash2,
   RefreshCw,
   Database,
+  Cpu,
 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useIDEStore } from '../store/useIDEStore';
 import { PLC_LANGUAGES, type PLCLanguage, type FileTreeNode } from '../types';
 import { Modal } from './Modal';
+import { ControllerView } from './ControllerView';
 
 // =============================================================================
 // New File Modal
@@ -329,6 +331,7 @@ export function Sidebar() {
   const [isNewFileModalOpen, setIsNewFileModalOpen] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; node: FileTreeNode } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ fileId: string; fileName: string } | null>(null);
+  const [isControllerExpanded, setIsControllerExpanded] = useState(true);
 
   // Handle collapsed sidebar
   if (isSidebarCollapsed) {
@@ -457,6 +460,29 @@ export function Sidebar() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Controller Panel (collapsible) */}
+      <div className="border-t border-[var(--color-surface-600)]">
+        <button
+          onClick={() => setIsControllerExpanded(!isControllerExpanded)}
+          className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[var(--color-surface-700)] transition-colors"
+        >
+          {isControllerExpanded ? (
+            <ChevronDown size={14} className="text-[var(--color-surface-400)]" />
+          ) : (
+            <ChevronRight size={14} className="text-[var(--color-surface-400)]" />
+          )}
+          <Cpu size={14} className="text-[var(--color-accent-purple)]" />
+          <span className="text-xs font-semibold uppercase text-[var(--color-surface-300)]">
+            Controller
+          </span>
+        </button>
+        {isControllerExpanded && (
+          <div className="max-h-64 overflow-y-auto">
+            <ControllerView />
+          </div>
+        )}
       </div>
 
       {/* New File Modal */}

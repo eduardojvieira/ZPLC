@@ -30,10 +30,8 @@
 import type { FunctionDef, CodeGenContext } from './types.ts';
 import type { Expression } from '../ast.ts';
 
-// String memory layout constants
-const STR_LEN_OFFSET = 0;
-const STR_CAP_OFFSET = 2;
-const STR_DATA_OFFSET = 4;
+// String memory layout: [len:2][cap:2][data:cap+1]
+// Constants defined in zplc_isa.h for consistency
 
 // ============================================================================
 // LEN - Get String Length
@@ -426,10 +424,8 @@ export const FIND_FN: FunctionDef = {
     variadic: false,
     generateInline: (ctx: CodeGenContext, args: Expression[]) => {
         const lblNotFound = ctx.newLabel('find_notfound');
-        const lblOuterLoop = ctx.newLabel('find_outer');
-        const lblInnerLoop = ctx.newLabel('find_inner');
+        // Outer/inner loop and noMatch labels reserved for full character-by-character implementation
         const lblMatch = ctx.newLabel('find_match');
-        const lblNoMatch = ctx.newLabel('find_nomatch');
         const lblEnd = ctx.newLabel('find_end');
 
         ctx.emit('    ; FIND(s1, s2) - find s2 in s1');

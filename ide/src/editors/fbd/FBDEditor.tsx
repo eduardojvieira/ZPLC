@@ -3,9 +3,13 @@
  * 
  * Visual editor for IEC 61131-3 FBD programs.
  * Converts FBDModel <-> ReactFlow nodes/edges.
+ * 
+ * Supports:
+ * - Live value display on edges and nodes during debugging
+ * - Instance Monitor popup for Function Block inspection
  */
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   ReactFlow,
   Background,
@@ -20,6 +24,7 @@ import {
   type Edge,
   type OnConnect,
   type NodeTypes,
+  type EdgeTypes,
   BackgroundVariant,
   ConnectionMode,
 } from '@xyflow/react';
@@ -27,7 +32,11 @@ import '@xyflow/react/dist/style.css';
 
 import { type FBDModel, type FBDBlock, type FBDConnection } from '../../models/fbd';
 import { nodeTypes, getNodeType } from './nodes';
+import { edgeTypes } from './edges';
 import FBDToolbox from './FBDToolbox';
+import InstanceMonitor from './InstanceMonitor';
+import { useDebugValues } from '../../hooks/useDebugValue';
+import { useIDEStore } from '../../store/useIDEStore';
 
 // =============================================================================
 // Props
@@ -40,13 +49,27 @@ interface FBDEditorProps {
 }
 
 // =============================================================================
+// Instance Monitor State
+// =============================================================================
+
+interface MonitorState {
+  instanceName: string;
+  blockType: string;
+}
+
+// =============================================================================
 // Model <-> ReactFlow Conversion
 // =============================================================================
 
 /**
  * Convert FBD blocks to ReactFlow nodes
  */
-function blocksToNodes(blocks: FBDBlock[]): Node[] {
+function blocksToNodes(
+  blocks: FBDBlock[],
+  debugActive: boolean,
+  liveValues: Map<string, unknown>,
+  onOpenMonitor: (instanceName: string, blockType: string) => void
+): Node[] {
   return blocks.map((block) => ({
     id: block.id,
     type: getNodeType(block.type),
@@ -60,6 +83,10 @@ function blocksToNodes(blocks: FBDBlock[]): Node[] {
       comment: block.comment,
       inputs: block.inputs,
       outputs: block.outputs,
+      // Debug props
+      debugActive,
+      liveValues,
+      onOpenMonitor,
     },
   }));
 }
@@ -67,20 +94,28 @@ function blocksToNodes(blocks: FBDBlock[]): Node[] {
 /**
  * Convert FBD connections to ReactFlow edges
  */
-function connectionsToEdges(connections: FBDConnection[]): Edge[] {
+function connectionsToEdges(
+  connections: FBDConnection[],
+  debugActive: boolean,
+  liveValues: Map<string, unknown>
+): Edge[] {
   return connections.map((conn) => ({
     id: conn.id,
     source: conn.from.block,
     sourceHandle: conn.from.port,
     target: conn.to.block,
     targetHandle: conn.to.port,
-    // Industrial-style edges
-    type: 'smoothstep',
+    // Use debug edge when debugging, otherwise smoothstep
+    type: debugActive ? 'debug' : 'smoothstep',
     animated: false,
-    style: {
+    style: debugActive ? undefined : {
       stroke: '#64748b',
       strokeWidth: 2,
     },
+    data: debugActive ? {
+      liveValue: liveValues.get(`${conn.from.block}.${conn.from.port}`),
+      debugActive: true,
+    } : undefined,
   }));
 }
 
@@ -129,13 +164,50 @@ function edgesToConnections(edges: Edge[]): FBDConnection[] {
 interface FBDEditorInnerProps extends FBDEditorProps {
   initialNodes: Node[];
   initialEdges: Edge[];
+  debugActive: boolean;
+  liveValues: Map<string, unknown>;
+  onOpenMonitor: (instanceName: string, blockType: string) => void;
 }
 
-function FBDEditorInner({ model, onChange, readOnly = false, initialNodes, initialEdges }: FBDEditorInnerProps) {
+function FBDEditorInner({ 
+  model, 
+  onChange, 
+  readOnly = false, 
+  initialNodes, 
+  initialEdges,
+  debugActive,
+  liveValues,
+  onOpenMonitor,
+}: FBDEditorInnerProps) {
   const { screenToFlowPosition } = useReactFlow();
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+
+  // Update nodes/edges when debug state changes
+  useMemo(() => {
+    setNodes((nds) => nds.map((node) => ({
+      ...node,
+      data: {
+        ...node.data,
+        debugActive,
+        liveValues,
+        onOpenMonitor,
+      },
+    })));
+  }, [debugActive, liveValues, onOpenMonitor, setNodes]);
+
+  useMemo(() => {
+    setEdges((eds) => eds.map((edge) => ({
+      ...edge,
+      type: debugActive ? 'debug' : 'smoothstep',
+      style: debugActive ? undefined : { stroke: '#64748b', strokeWidth: 2 },
+      data: debugActive ? {
+        liveValue: liveValues.get(`${edge.source}.${edge.sourceHandle}`),
+        debugActive: true,
+      } : undefined,
+    })));
+  }, [debugActive, liveValues, setEdges]);
 
   // Handle new connections
   const onConnect: OnConnect = useCallback(
@@ -235,6 +307,7 @@ function FBDEditorInner({ model, onChange, readOnly = false, initialNodes, initi
         onEdgesChange={handleEdgesChange}
         onConnect={onConnect}
         nodeTypes={nodeTypes as NodeTypes}
+        edgeTypes={edgeTypes as EdgeTypes}
         connectionMode={ConnectionMode.Loose}
         defaultViewport={{ x: 50, y: 50, zoom: 1 }}
         snapToGrid
@@ -274,9 +347,55 @@ function FBDEditorInner({ model, onChange, readOnly = false, initialNodes, initi
 }
 
 export default function FBDEditor({ model, onChange, readOnly = false }: FBDEditorProps) {
-  // Convert model to ReactFlow format
-  const initialNodes = useMemo(() => blocksToNodes(model.blocks), [model.blocks]);
-  const initialEdges = useMemo(() => connectionsToEdges(model.connections), [model.connections]);
+  // Debug state
+  const debugMode = useIDEStore((state) => state.debug.mode);
+  const debugActive = debugMode !== 'none';
+  
+  // Instance monitor state
+  const [monitorState, setMonitorState] = useState<MonitorState | null>(null);
+  
+  // Collect all variable paths for live value subscription
+  const variablePaths = useMemo(() => {
+    const paths: string[] = [];
+    for (const block of model.blocks) {
+      if (block.instanceName) {
+        // Add all port paths for function blocks
+        const { inputs, outputs } = block;
+        if (inputs) {
+          for (const inp of inputs) {
+            paths.push(`${block.instanceName}.${inp.name}`);
+          }
+        }
+        if (outputs) {
+          for (const out of outputs) {
+            paths.push(`${block.instanceName}.${out.name}`);
+          }
+        }
+      }
+      if (block.variableName) {
+        paths.push(block.variableName);
+      }
+    }
+    return paths;
+  }, [model.blocks]);
+  
+  // Subscribe to live values
+  const liveValues = useDebugValues(variablePaths);
+  
+  // Handler for opening instance monitor
+  const handleOpenMonitor = useCallback((instanceName: string, blockType: string) => {
+    setMonitorState({ instanceName, blockType });
+  }, []);
+  
+  // Convert model to ReactFlow format with debug data
+  const initialNodes = useMemo(
+    () => blocksToNodes(model.blocks, debugActive, liveValues, handleOpenMonitor),
+    [model.blocks, debugActive, liveValues, handleOpenMonitor]
+  );
+  const initialEdges = useMemo(
+    () => connectionsToEdges(model.connections, debugActive, liveValues),
+    [model.connections, debugActive, liveValues]
+  );
 
   return (
     <div className="w-full h-full flex">
@@ -291,8 +410,20 @@ export default function FBDEditor({ model, onChange, readOnly = false }: FBDEdit
           readOnly={readOnly}
           initialNodes={initialNodes}
           initialEdges={initialEdges}
+          debugActive={debugActive}
+          liveValues={liveValues}
+          onOpenMonitor={handleOpenMonitor}
         />
       </ReactFlowProvider>
+      
+      {/* Instance Monitor Modal */}
+      {monitorState && (
+        <InstanceMonitor
+          instanceName={monitorState.instanceName}
+          blockType={monitorState.blockType}
+          onClose={() => setMonitorState(null)}
+        />
+      )}
     </div>
   );
 }

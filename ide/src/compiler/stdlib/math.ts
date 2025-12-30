@@ -193,7 +193,7 @@ export const SQRT_FN: FunctionDef = {
         }
 
         const sqrtEnd = ctx.newLabel('sqrt_end');
-        const sqrtLoop = ctx.newLabel('sqrt_loop');
+        // sqrtLoop reserved for iterative Newton-Raphson implementation
 
         ctx.emit(`    ; SQRT(IN) - Newton-Raphson`);
         ctx.emitExpression(args[0]);  // IN on stack (as float)
@@ -1119,8 +1119,7 @@ export const ATAN2_FN: FunctionDef = {
             return;
         }
 
-        const xNeg = ctx.newLabel('atan2_xneg');
-        const yNeg = ctx.newLabel('atan2_yneg');
+        // xNeg and yNeg labels reserved for quadrant handling in full implementation
         const done = ctx.newLabel('atan2_done');
 
         ctx.emit(`    ; ATAN2(Y, X)`);

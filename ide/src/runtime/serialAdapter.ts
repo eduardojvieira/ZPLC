@@ -5,6 +5,9 @@
  * This adapter communicates with a ZPLC-enabled Zephyr device via
  * WebSerial. It implements the IDebugAdapter interface and uses
  * the shell commands defined in shell_cmds.c for debugging.
+ *
+ * v1.3: Added JSON mode support for machine-readable responses,
+ *       passthrough mode for terminal, and system info.
  */
 
 import type {
@@ -35,6 +38,74 @@ const COMMAND_TIMEOUT_MS = 3000;
 const LINE_ENDING = '\r\n';
 
 /**
+ * Extended VMInfo with additional fields from JSON responses
+ */
+export interface ExtendedVMInfo extends VMInfo {
+  state: string;
+  uptime_ms: number;
+  opi: number[];
+  ipi?: number[];
+  active_tasks?: number;
+  overruns?: number;
+}
+
+/**
+ * System information from device
+ */
+export interface SystemInfo {
+  board: string;
+  zplc_version: string;
+  zephyr_version: string;
+  uptime_ms: number;
+  cpu_freq_mhz: number;
+  capabilities: {
+    fpu: boolean;
+    mpu: boolean;
+    scheduler: boolean;
+    max_tasks: number;
+  };
+  memory: {
+    work_size: number;
+    retain_size: number;
+    ipi_size: number;
+    opi_size: number;
+  };
+}
+
+/**
+ * Status information from device
+ */
+export interface StatusInfo {
+  state: string;
+  uptime_ms: number;
+  stats: {
+    cycles: number;
+    overruns?: number;
+    active_tasks?: number;
+    program_size?: number;
+  };
+  tasks?: Array<{
+    slot: number;
+    id: number;
+    prio: number;
+    interval_us: number;
+    cycles: number;
+    overruns: number;
+  }>;
+  memory?: {
+    work_total: number;
+    retain_total: number;
+  };
+  vm?: {
+    pc: number;
+    sp: number;
+    halted: boolean;
+    error: number;
+  };
+  opi: number[];
+}
+
+/**
  * WebSerial Debug Adapter
  *
  * Implements IDebugAdapter for communicating with real ZPLC hardware.
@@ -49,6 +120,10 @@ export class SerialAdapter implements IDebugAdapter {
   private events: DebugAdapterEvents = {};
   private pollingInterval: ReturnType<typeof setInterval> | null = null;
   private lastPollCycles = 0;
+  private _passthroughMode = false;
+
+  // Breakpoint state (managed locally, synced to hardware when commands available)
+  private breakpoints: Set<number> = new Set();
 
   get connected(): boolean {
     return this._connected;
@@ -58,10 +133,60 @@ export class SerialAdapter implements IDebugAdapter {
     return this._state;
   }
 
+  get passthroughMode(): boolean {
+    return this._passthroughMode;
+  }
+
   private setState(newState: VMState): void {
     if (this._state !== newState) {
       this._state = newState;
       this.events.onStateChange?.(newState);
+    }
+  }
+
+  // =========================================================================
+  // Passthrough Mode (for Terminal)
+  // =========================================================================
+
+  /**
+   * Enable or disable passthrough mode.
+   * When enabled, polling is paused and all received data is forwarded
+   * to the callback instead of being parsed.
+   */
+  setPassthroughMode(enabled: boolean, _callback?: (data: string) => void): void {
+    this._passthroughMode = enabled;
+
+    if (enabled) {
+      this.stopPolling();
+    } else {
+      this.startPolling();
+    }
+  }
+
+  /**
+   * Send raw data in passthrough mode
+   */
+  async sendRaw(data: string): Promise<void> {
+    if (!this.connection) {
+      throw new Error('Not connected');
+    }
+    const encoder = new TextEncoder();
+    await this.connection.writer.write(encoder.encode(data));
+  }
+
+  /**
+   * Get the raw receive buffer (for passthrough mode)
+   */
+  getRxBuffer(): string {
+    return this.connection?._rxBuffer || '';
+  }
+
+  /**
+   * Clear the raw receive buffer
+   */
+  clearRxBuffer(): void {
+    if (this.connection) {
+      this.connection._rxBuffer = '';
     }
   }
 
@@ -89,15 +214,21 @@ export class SerialAdapter implements IDebugAdapter {
     this._connected = true;
 
     // Get initial state
-    const info = await this.getInfo();
-    if (info.cycles > 0 && !info.halted) {
-      this.setState('running');
-    } else {
+    try {
+      const info = await this.getInfo();
+      if (info.cycles > 0 && !info.halted) {
+        this.setState('running');
+      } else {
+        this.setState('idle');
+      }
+    } catch {
       this.setState('idle');
     }
 
     // Start polling for state updates
-    this.startPolling();
+    if (!this._passthroughMode) {
+      this.startPolling();
+    }
   }
 
   async disconnect(): Promise<void> {
@@ -106,6 +237,7 @@ export class SerialAdapter implements IDebugAdapter {
     }
 
     this.stopPolling();
+    this._passthroughMode = false;
 
     await serialDisconnect(this.connection);
     this.connection = null;
@@ -115,13 +247,13 @@ export class SerialAdapter implements IDebugAdapter {
   }
 
   private startPolling(): void {
-    if (this.pollingInterval !== null) {
+    if (this.pollingInterval !== null || this._passthroughMode) {
       return;
     }
 
     // Poll every 200ms for state updates
     this.pollingInterval = setInterval(async () => {
-      if (!this._connected) {
+      if (!this._connected || this._passthroughMode) {
         this.stopPolling();
         return;
       }
@@ -155,6 +287,68 @@ export class SerialAdapter implements IDebugAdapter {
   // =========================================================================
   // Command Communication
   // =========================================================================
+
+  /**
+   * Send a command that expects a JSON response
+   */
+  private async sendJsonCommand(command: string): Promise<unknown> {
+    if (!this.connection) {
+      throw new Error('Not connected');
+    }
+
+    const encoder = new TextEncoder();
+    // eslint-disable-next-line no-control-regex
+    const ansiRegex = /\x1B\[[0-9;]*[a-zA-Z]/g;
+
+    // Clear buffer before sending
+    this.connection._rxBuffer = '';
+
+    // Send command with --json flag
+    const fullCommand = `${command} --json`;
+    const data = encoder.encode(fullCommand + LINE_ENDING);
+    await this.connection.writer.write(data);
+
+    // Read response with timeout by polling _rxBuffer
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < COMMAND_TIMEOUT_MS) {
+      // Check buffer for JSON response (starts with { and ends with })
+      const buffer = this.connection._rxBuffer.replace(ansiRegex, '');
+      
+      // Look for complete JSON object
+      const jsonStart = buffer.indexOf('{');
+      if (jsonStart >= 0) {
+        // Try to find matching closing brace
+        let braceCount = 0;
+        let jsonEnd = -1;
+        for (let i = jsonStart; i < buffer.length; i++) {
+          if (buffer[i] === '{') braceCount++;
+          if (buffer[i] === '}') braceCount--;
+          if (braceCount === 0) {
+            jsonEnd = i;
+            break;
+          }
+        }
+
+        if (jsonEnd > jsonStart) {
+          const jsonStr = buffer.slice(jsonStart, jsonEnd + 1);
+          try {
+            const parsed = JSON.parse(jsonStr);
+            // Clear processed data from buffer
+            this.connection._rxBuffer = buffer.slice(jsonEnd + 1);
+            return parsed;
+          } catch {
+            // JSON not complete yet, keep waiting
+          }
+        }
+      }
+
+      // Wait a bit before checking again
+      await new Promise((r) => setTimeout(r, 50));
+    }
+
+    throw new Error(`Command timeout: ${command}`);
+  }
 
   private async sendCommand(command: string): Promise<string> {
     if (!this.connection) {
@@ -201,6 +395,26 @@ export class SerialAdapter implements IDebugAdapter {
 
   private async sendDebugCommand(subcommand: string): Promise<string> {
     return this.sendCommand(`zplc dbg ${subcommand}`);
+  }
+
+  // =========================================================================
+  // System Information
+  // =========================================================================
+
+  /**
+   * Get system information from the device (board, version, capabilities)
+   */
+  async getSystemInfo(): Promise<SystemInfo> {
+    const result = await this.sendJsonCommand('zplc sys info') as SystemInfo;
+    return result;
+  }
+
+  /**
+   * Get detailed status information in JSON format
+   */
+  async getStatus(): Promise<StatusInfo> {
+    const result = await this.sendJsonCommand('zplc status') as StatusInfo;
+    return result;
   }
 
   // =========================================================================
@@ -330,10 +544,17 @@ export class SerialAdapter implements IDebugAdapter {
     }
   }
 
-  async getOPI(_offset: number): Promise<number> {
-    // For now, get full info and extract OPI value
-    // A more efficient implementation would add a dedicated command
-    return 0; // Placeholder - would need to parse status output
+  async getOPI(offset: number): Promise<number> {
+    // Use JSON status to get OPI values
+    try {
+      const status = await this.getStatus();
+      if (status.opi && offset < status.opi.length) {
+        return status.opi[offset];
+      }
+    } catch {
+      // Fall back to 0
+    }
+    return 0;
   }
 
   async setIPI(offset: number, value: number): Promise<void> {
@@ -349,17 +570,27 @@ export class SerialAdapter implements IDebugAdapter {
       throw new Error('Not connected');
     }
 
-    const response = await this.sendDebugCommand('info');
+    try {
+      // Try JSON format first
+      const result = await this.sendJsonCommand('zplc dbg info') as ExtendedVMInfo;
+      return {
+        pc: result.pc ?? 0,
+        sp: result.sp ?? 0,
+        halted: result.halted ?? (result.state !== 'RUNNING'),
+        cycles: result.cycles ?? 0,
+        error: result.error ?? 0,
+      };
+    } catch {
+      // Fallback to text parsing
+      return this.getInfoLegacy();
+    }
+  }
 
-    // Parse the info response
-    // Expected format:
-    // === Debug Info ===
-    // State:   RUNNING
-    // Cycles:  123
-    // PC:      0x0000
-    // SP:      2
-    // Halted:  no
-    // Error:   0
+  /**
+   * Legacy text-based info parsing (fallback)
+   */
+  private async getInfoLegacy(): Promise<VMInfo> {
+    const response = await this.sendDebugCommand('info');
 
     const lines = response.split(/\r?\n/);
     let cycles = 0;
@@ -399,6 +630,14 @@ export class SerialAdapter implements IDebugAdapter {
       cycles,
       error,
     };
+  }
+
+  /**
+   * Get extended info using JSON format
+   */
+  async getExtendedInfo(): Promise<ExtendedVMInfo> {
+    const result = await this.sendJsonCommand('zplc dbg info') as ExtendedVMInfo;
+    return result;
   }
 
   async readWatchVariables(variables: WatchVariable[]): Promise<WatchVariable[]> {
@@ -446,5 +685,94 @@ export class SerialAdapter implements IDebugAdapter {
 
   clearEventHandlers(): void {
     this.events = {};
+  }
+
+  // =========================================================================
+  // Breakpoint Management
+  // =========================================================================
+
+  /**
+   * Set a breakpoint at a specific program counter address.
+   * 
+   * Note: Hardware breakpoint commands (`zplc dbg bp add <pc>`) are not yet
+   * implemented in the Zephyr shell. This method stores breakpoints locally
+   * and will sync to hardware when the commands become available.
+   */
+  async setBreakpoint(pc: number): Promise<boolean> {
+    if (!this._connected) {
+      throw new Error('Not connected');
+    }
+
+    if (this.breakpoints.has(pc)) {
+      return false; // Already set
+    }
+
+    // Try to send to hardware (will fail gracefully if not supported)
+    try {
+      const response = await this.sendDebugCommand(`bp add 0x${pc.toString(16)}`);
+      if (response.startsWith('ERROR:')) {
+        // Command not supported - store locally only
+        console.warn('Hardware breakpoints not supported, storing locally');
+      }
+    } catch {
+      // Command timeout or not supported - store locally
+    }
+
+    this.breakpoints.add(pc);
+    return true;
+  }
+
+  /**
+   * Remove a breakpoint at a specific program counter address.
+   */
+  async removeBreakpoint(pc: number): Promise<boolean> {
+    if (!this._connected) {
+      throw new Error('Not connected');
+    }
+
+    if (!this.breakpoints.has(pc)) {
+      return false;
+    }
+
+    // Try to send to hardware
+    try {
+      await this.sendDebugCommand(`bp remove 0x${pc.toString(16)}`);
+    } catch {
+      // Command not supported - just remove locally
+    }
+
+    return this.breakpoints.delete(pc);
+  }
+
+  /**
+   * Clear all breakpoints.
+   */
+  async clearBreakpoints(): Promise<void> {
+    if (!this._connected) {
+      throw new Error('Not connected');
+    }
+
+    // Try to send to hardware
+    try {
+      await this.sendDebugCommand('bp clear');
+    } catch {
+      // Command not supported
+    }
+
+    this.breakpoints.clear();
+  }
+
+  /**
+   * Get list of currently set breakpoint addresses.
+   */
+  async getBreakpoints(): Promise<number[]> {
+    return Array.from(this.breakpoints);
+  }
+
+  /**
+   * Check if a breakpoint is set at a specific address.
+   */
+  async hasBreakpoint(pc: number): Promise<boolean> {
+    return this.breakpoints.has(pc);
   }
 }

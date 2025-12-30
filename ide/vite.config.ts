@@ -8,8 +8,25 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  // Use relative paths for Electron production build
+  base: './',
   server: {
     port: 3000,
-    open: true,
+    open: false, // Don't auto-open browser, Electron will handle it
+  },
+  build: {
+    // Generate source maps for debugging
+    sourcemap: true,
+    // Optimize chunk size
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Split vendor chunks for better caching
+          'react-vendor': ['react', 'react-dom'],
+          'monaco': ['@monaco-editor/react'],
+          'xyflow': ['@xyflow/react'],
+        },
+      },
+    },
   },
 })

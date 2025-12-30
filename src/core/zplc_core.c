@@ -445,6 +445,8 @@ int zplc_vm_init(zplc_vm_t *vm)
     vm->flags = 0;
     vm->error = ZPLC_VM_OK;
     vm->halted = 0;
+    vm->paused = 0;
+    vm->breakpoint_count = 0;
     vm->code = mem_code;
     vm->code_size = code_size;
     vm->entry_point = 0;
@@ -483,7 +485,9 @@ void zplc_vm_reset_cycle(zplc_vm_t *vm)
     vm->sp = 0;
     vm->call_depth = 0;
     vm->halted = 0;
+    vm->paused = 0;
     vm->error = ZPLC_VM_OK;
+    /* Note: breakpoints are preserved across cycles */
 }
 
 int zplc_vm_get_error(const zplc_vm_t *vm)
@@ -542,9 +546,15 @@ int zplc_vm_step(zplc_vm_t *vm)
     int32_t sa, sb;
     int mem_result;
     const uint8_t *code;
+    uint8_t bp_idx;
 
     if (vm == NULL) {
         return ZPLC_VM_INVALID_OPCODE;
+    }
+
+    /* Check if paused (at breakpoint) */
+    if (vm->paused) {
+        return ZPLC_VM_PAUSED;
     }
 
     /* Check if halted */
@@ -567,6 +577,15 @@ int zplc_vm_step(zplc_vm_t *vm)
         return vm->error;
     }
 
+    /* Check for breakpoints at current PC */
+    for (bp_idx = 0; bp_idx < vm->breakpoint_count; bp_idx++) {
+        if (vm->breakpoints[bp_idx] == vm->pc) {
+            vm->paused = 1;
+            vm->error = ZPLC_VM_PAUSED;
+            return ZPLC_VM_PAUSED;
+        }
+    }
+
     /* Fetch opcode */
     opcode = code[vm->pc];
 
@@ -586,9 +605,11 @@ int zplc_vm_step(zplc_vm_t *vm)
         return ZPLC_VM_HALTED;
 
     case OP_BREAK:
-        /* Debugger breakpoint - for now, just continue */
-        vm->pc++;
-        break;
+        /* Debugger breakpoint - pause execution */
+        vm->paused = 1;
+        vm->error = ZPLC_VM_PAUSED;
+        vm->pc++;  /* Advance past BREAK so resume continues */
+        return ZPLC_VM_PAUSED;
 
     case OP_GET_TICKS:
         VM_CHECK_STACK_OVERFLOW(vm);
@@ -1682,10 +1703,14 @@ int zplc_vm_run(zplc_vm_t *vm, uint32_t max_instructions)
         return -1;
     }
 
-    while (!vm->halted) {
+    while (!vm->halted && !vm->paused) {
         result = zplc_vm_step(vm);
 
-        if (result != ZPLC_VM_OK && result != ZPLC_VM_HALTED) {
+        /* Stop on halt, pause, or error */
+        if (result == ZPLC_VM_HALTED || result == ZPLC_VM_PAUSED) {
+            break;
+        }
+        if (result != ZPLC_VM_OK) {
             return -result;
         }
 
@@ -2015,4 +2040,102 @@ int zplc_core_load_tasks(const uint8_t *binary, size_t size,
     }
 
     return (int)task_count;
+}
+
+/* ============================================================================
+ * Debugger API Implementation
+ * ============================================================================ */
+
+int zplc_vm_is_paused(const zplc_vm_t *vm)
+{
+    if (vm == NULL) {
+        return 0;
+    }
+    return vm->paused;
+}
+
+int zplc_vm_resume(zplc_vm_t *vm)
+{
+    if (vm == NULL) {
+        return -1;
+    }
+    vm->paused = 0;
+    vm->error = ZPLC_VM_OK;
+    return 0;
+}
+
+int zplc_vm_add_breakpoint(zplc_vm_t *vm, uint16_t pc)
+{
+    uint8_t i;
+    
+    if (vm == NULL) {
+        return -1;
+    }
+    
+    /* Check if breakpoint already exists */
+    for (i = 0; i < vm->breakpoint_count; i++) {
+        if (vm->breakpoints[i] == pc) {
+            return -3; /* Already exists */
+        }
+    }
+    
+    /* Check if table is full */
+    if (vm->breakpoint_count >= ZPLC_MAX_BREAKPOINTS) {
+        return -2; /* Table full */
+    }
+    
+    /* Add breakpoint */
+    vm->breakpoints[vm->breakpoint_count] = pc;
+    vm->breakpoint_count++;
+    
+    return 0;
+}
+
+int zplc_vm_remove_breakpoint(zplc_vm_t *vm, uint16_t pc)
+{
+    uint8_t i;
+    
+    if (vm == NULL) {
+        return -1;
+    }
+    
+    /* Find breakpoint */
+    for (i = 0; i < vm->breakpoint_count; i++) {
+        if (vm->breakpoints[i] == pc) {
+            /* Found - shift remaining breakpoints down */
+            while (i < vm->breakpoint_count - 1) {
+                vm->breakpoints[i] = vm->breakpoints[i + 1];
+                i++;
+            }
+            vm->breakpoint_count--;
+            return 0;
+        }
+    }
+    
+    return -2; /* Not found */
+}
+
+int zplc_vm_clear_breakpoints(zplc_vm_t *vm)
+{
+    if (vm == NULL) {
+        return -1;
+    }
+    vm->breakpoint_count = 0;
+    return 0;
+}
+
+uint8_t zplc_vm_get_breakpoint_count(const zplc_vm_t *vm)
+{
+    if (vm == NULL) {
+        return 0;
+    }
+    return vm->breakpoint_count;
+}
+
+uint16_t zplc_vm_get_breakpoint(const zplc_vm_t *vm, uint8_t index)
+{
+    if (vm == NULL || index >= vm->breakpoint_count) {
+        return 0xFFFF;
+    }
+    return vm->breakpoints[index];
 }

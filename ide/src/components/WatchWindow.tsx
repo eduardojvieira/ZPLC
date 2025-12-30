@@ -24,8 +24,13 @@ interface WatchWindowProps {
 /**
  * Format a value for display based on its type
  */
-function formatValue(value: number | boolean | undefined, type: WatchVariable['type']): string {
+function formatValue(value: number | boolean | string | undefined, type: WatchVariable['type']): string {
   if (value === undefined) return '---';
+
+  // Handle STRING type
+  if (type === 'STRING') {
+    return typeof value === 'string' ? `"${value}"` : String(value);
+  }
 
   if (type === 'BOOL') {
     return value ? 'TRUE' : 'FALSE';

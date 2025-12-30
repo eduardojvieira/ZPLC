@@ -7,9 +7,7 @@
 
 import { useMemo, useCallback } from 'react';
 import { X, FileCode, File, Settings } from 'lucide-react';
-import Editor from '@monaco-editor/react';
 import { useIDEStore } from '../store/useIDEStore';
-import { useTheme } from '../hooks/useTheme';
 import { PLC_LANGUAGES, type PLCLanguage } from '../types';
 import { FBDEditor } from '../editors/fbd';
 import { LDEditor } from '../editors/ld';
@@ -18,6 +16,7 @@ import { parseFBDModel, serializeFBDModel, type FBDModel } from '../models/fbd';
 import { parseLDModel, serializeLDModel, type LDModel } from '../models/ld';
 import { parseSFCModel, serializeSFCModel, type SFCModel } from '../models/sfc';
 import { ProjectSettings } from './settings/ProjectSettings';
+import { CodeEditor } from './CodeEditor';
 
 export function EditorArea() {
   const {
@@ -31,25 +30,11 @@ export function EditorArea() {
     getActiveFile,
     getFile,
   } = useIDEStore();
-  
-  const { isDark } = useTheme();
 
   const activeFile = getActiveFile();
   const tabFiles = openTabs
     .map((id) => getFile(id))
     .filter((f): f is NonNullable<typeof f> => f !== undefined);
-
-  // Monaco language mapping
-  const getMonacoLanguage = (lang: PLCLanguage): string => {
-    switch (lang) {
-      case 'ST':
-        return 'pascal'; // Closest match for Structured Text
-      case 'IL':
-        return 'plaintext'; // Assembly-like
-      default:
-        return 'json';
-    }
-  };
 
   const getFileIcon = (lang: PLCLanguage) => {
     const info = PLC_LANGUAGES[lang];
@@ -275,36 +260,12 @@ export function EditorArea() {
             /* Visual Editors (FBD, LD, SFC) */
             renderVisualEditor()
           ) : (
-            /* Monaco Editor for Text Languages */
-            <Editor
-              height="100%"
-              language={getMonacoLanguage(activeFile.language)}
-              value={activeFile.content}
+            /* Code Editor with debug support for Text Languages */
+            <CodeEditor
+              fileId={activeFile.id}
+              content={activeFile.content}
+              language={activeFile.language}
               onChange={handleEditorChange}
-              theme={isDark ? 'vs-dark' : 'light'}
-              options={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: 14,
-                lineNumbers: 'on',
-                minimap: { enabled: true, scale: 1 },
-                scrollBeyondLastLine: false,
-                wordWrap: 'off',
-                tabSize: 4,
-                insertSpaces: true,
-                automaticLayout: true,
-                padding: { top: 8 },
-                // Industrial feel - less fancy stuff
-                cursorBlinking: 'solid',
-                cursorSmoothCaretAnimation: 'off',
-                smoothScrolling: false,
-                renderLineHighlight: 'line',
-                scrollbar: {
-                  vertical: 'auto',
-                  horizontal: 'auto',
-                  verticalScrollbarSize: 10,
-                  horizontalScrollbarSize: 10,
-                },
-              }}
             />
           )
         ) : null}

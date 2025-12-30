@@ -16,7 +16,7 @@ import type { ParseResult } from './parser';
  * Set of opcodes that use absolute 16-bit addresses and need relocation.
  * These are jumps and calls that target absolute code addresses.
  */
-const RELOCATABLE_OPCODES = new Set([
+const RELOCATABLE_OPCODES: Set<number> = new Set([
     Opcode.JMP,   // 0x90 - Unconditional jump
     Opcode.JZ,    // 0x91 - Jump if zero
     Opcode.JNZ,   // 0x92 - Jump if not zero

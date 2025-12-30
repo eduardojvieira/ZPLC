@@ -6,3 +6,4 @@
 export * from './debugAdapter';
 export * from './wasmAdapter';
 export * from './serialAdapter';
+export * from './connectionManager';

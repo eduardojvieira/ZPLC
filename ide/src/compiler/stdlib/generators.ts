@@ -99,7 +99,7 @@ export const BLINK_FB: FunctionBlockDef = {
 
         // Generate unique labels
         const disabled = ctx.newLabel('blink_disabled');
-        const checkPhase = ctx.newLabel('blink_check_phase');
+        // checkPhase label reserved for future phase-based implementation
         const inOnPhase = ctx.newLabel('blink_in_on');
         const startOnPhase = ctx.newLabel('blink_start_on');
         const startOffPhase = ctx.newLabel('blink_start_off');
@@ -389,7 +389,7 @@ export const PULSE_FB: FunctionBlockDef = {
         }
 
         // Generate unique labels
-        const checkActive = ctx.newLabel('pulse_check_active');
+        // checkActive label reserved for edge detection implementation
         const checkExpired = ctx.newLabel('pulse_check_expired');
         const startPulse = ctx.newLabel('pulse_start');
         const endPulse = ctx.newLabel('pulse_end_pulse');

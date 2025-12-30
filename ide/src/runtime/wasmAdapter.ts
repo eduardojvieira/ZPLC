@@ -78,6 +78,7 @@ export class WASMAdapter implements IDebugAdapter {
   private coreShutdown: (() => number) | null = null;
   private coreLoadRaw: ((ptr: number, size: number) => number) | null = null;
   private coreRunCycle: (() => number) | null = null;
+  private coreGetPc: (() => number) | null = null;
   private coreGetSp: (() => number) | null = null;
   private coreGetStack: ((index: number) => number) | null = null;
   private coreGetError: (() => number) | null = null;
@@ -90,6 +91,9 @@ export class WASMAdapter implements IDebugAdapter {
 
   // Cycle counter (maintained locally since VM resets PC each cycle)
   private cycleCount = 0;
+
+  // Breakpoint state (managed locally in JS)
+  private breakpoints: Set<number> = new Set();
 
   get connected(): boolean {
     return this._connected;
@@ -184,6 +188,7 @@ export class WASMAdapter implements IDebugAdapter {
       'number',
     ]) as (ptr: number, size: number) => number;
     this.coreRunCycle = m.cwrap('zplc_core_run_cycle', 'number', []) as () => number;
+    this.coreGetPc = m.cwrap('zplc_core_get_pc', 'number', []) as () => number;
     this.coreGetSp = m.cwrap('zplc_core_get_sp', 'number', []) as () => number;
     this.coreGetStack = m.cwrap('zplc_core_get_stack', 'number', [
       'number',
@@ -238,7 +243,9 @@ export class WASMAdapter implements IDebugAdapter {
         throw new Error(`Failed to load program: ${result}`);
       }
 
+      // Reset state but preserve breakpoints (user might want to debug same program)
       this.cycleCount = 0;
+      
       this.setState('idle');
     } finally {
       this.module._free(ptr);
@@ -325,7 +332,11 @@ export class WASMAdapter implements IDebugAdapter {
     // Reset inputs
     this.virtualInputs = [0, 0, 0, 0];
 
+    // Clear breakpoints on reset
+    this.breakpoints.clear();
+
     this.cycleCount = 0;
+    
     this.setState('idle');
   }
 
@@ -458,14 +469,15 @@ export class WASMAdapter implements IDebugAdapter {
     }
 
     const sp = this.coreGetSp?.() ?? 0;
+    const pc = this.coreGetPc?.() ?? 0;
     const halted = (this.coreIsHalted?.() ?? 0) !== 0;
     const error = this.coreGetError?.() ?? 0;
     const tos = sp > 0 ? this.coreGetStack?.(sp - 1) ?? 0 : undefined;
 
-    // Note: PC is reset each cycle in the VM, so we report 0
-    // The cycle count is our main progress indicator
+    
+
     return {
-      pc: 0,
+      pc,
       sp,
       halted,
       cycles: this.cycleCount,
@@ -522,6 +534,43 @@ export class WASMAdapter implements IDebugAdapter {
 
   clearEventHandlers(): void {
     this.events = {};
+  }
+
+  // =========================================================================
+  // Breakpoint Management
+  // =========================================================================
+
+  async setBreakpoint(pc: number): Promise<boolean> {
+    if (!this._connected) {
+      throw new Error('Not connected');
+    }
+
+    if (this.breakpoints.has(pc)) {
+      return false; // Already set
+    }
+
+    this.breakpoints.add(pc);
+    return true;
+  }
+
+  async removeBreakpoint(pc: number): Promise<boolean> {
+    if (!this._connected) {
+      throw new Error('Not connected');
+    }
+
+    return this.breakpoints.delete(pc);
+  }
+
+  async clearBreakpoints(): Promise<void> {
+    this.breakpoints.clear();
+  }
+
+  async getBreakpoints(): Promise<number[]> {
+    return Array.from(this.breakpoints);
+  }
+
+  async hasBreakpoint(pc: number): Promise<boolean> {
+    return this.breakpoints.has(pc);
   }
 
   // =========================================================================

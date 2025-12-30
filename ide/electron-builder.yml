@@ -1,0 +1,120 @@
+# ZPLC IDE - Electron Builder Configuration
+# Cross-platform builds for Windows, macOS, and Linux
+
+appId: com.zplc.ide
+productName: ZPLC IDE
+
+# Directories
+directories:
+  output: dist-electron
+  buildResources: build
+
+# Files to include in the app
+files:
+  - dist/**/*
+  - electron-dist/**/*
+
+# Extra files to copy (icons, etc.)
+extraResources:
+  - from: ../examples
+    to: examples
+    filter:
+      - "**/*.zplc"
+      - "**/*.st"
+
+# Asset Index - for faster builds
+asar: true
+compression: maximum
+
+# Don't publish automatically
+publish: null
+
+# ============================================================================
+# macOS Configuration
+# ============================================================================
+mac:
+  category: public.app-category.developer-tools
+  darkModeSupport: true
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+    - target: zip
+      arch:
+        - x64
+        - arm64
+
+dmg:
+  artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+
+# ============================================================================
+# Windows Configuration
+# ============================================================================
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+        - arm64
+    - target: portable
+      arch:
+        - x64
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  artifactName: "${productName}-${version}-${os}-${arch}-Setup.${ext}"
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: ZPLC IDE
+
+portable:
+  artifactName: "${productName}-${version}-${os}-${arch}-Portable.${ext}"
+
+# ============================================================================
+# Linux Configuration
+# ============================================================================
+linux:
+  category: Development
+  maintainer: ZPLC Team
+  target:
+    - target: AppImage
+      arch:
+        - x64
+        - arm64
+    - target: deb
+      arch:
+        - x64
+        - arm64
+    - target: rpm
+      arch:
+        - x64
+
+appImage:
+  artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+
+deb:
+  artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+  depends:
+    - gconf2
+    - gconf-service
+    - libnotify4
+    - libappindicator1
+    - libxtst6
+    - libnss3
+
+rpm:
+  artifactName: "${productName}-${version}-${os}-${arch}.${ext}"

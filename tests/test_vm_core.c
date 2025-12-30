@@ -2148,6 +2148,158 @@ static void test_string_operations(void)
     TEST_ASSERT_EQ(read_string_len(0x2200), 0, "STRCLR: length = 0");
 }
 
+/**
+ * @brief Test debugger breakpoint functionality
+ */
+static void test_breakpoints(void)
+{
+    uint8_t code[64];
+    size_t len = 0;
+    zplc_vm_t *vm;
+    int result;
+
+    printf("\n=== Test: Debugger Breakpoints ===\n");
+
+    /*
+     * Test 1: OP_BREAK instruction pauses execution
+     * Program: PUSH32 10, BREAK, PUSH32 20, HALT
+     * Expected: VM pauses after BREAK, then resume continues
+     */
+    len = 0;
+    len = emit_push32(code, len, 10);  /* PC 0-4 */
+    code[len++] = OP_BREAK;            /* PC 5 */
+    len = emit_push32(code, len, 20);  /* PC 6-10 */
+    len = emit_op(code, len, OP_HALT); /* PC 11 */
+
+    zplc_core_init();
+    zplc_core_load_raw(code, len);
+    
+    /* Run - should pause at BREAK */
+    vm = zplc_core_get_default_vm();
+    result = zplc_vm_run(vm, 0);
+    
+    TEST_ASSERT(zplc_vm_is_paused(vm), "OP_BREAK pauses VM");
+    TEST_ASSERT_EQ(vm->pc, 6, "PC advances past BREAK");
+    TEST_ASSERT_EQ(vm->sp, 1, "First PUSH executed before BREAK");
+    TEST_ASSERT_EQ(vm->stack[0], 10, "Stack[0] = 10 before BREAK");
+    
+    /* Resume and continue */
+    zplc_vm_resume(vm);
+    TEST_ASSERT(!zplc_vm_is_paused(vm), "Resume clears paused flag");
+    
+    result = zplc_vm_run(vm, 0);
+    TEST_ASSERT(vm->halted, "VM halted after resume");
+    TEST_ASSERT_EQ(vm->sp, 2, "Both PUSHes executed");
+    TEST_ASSERT_EQ(vm->stack[1], 20, "Stack[1] = 20 after resume");
+
+    /*
+     * Test 2: Add/Remove breakpoints
+     */
+    zplc_vm_init(vm);
+    zplc_vm_clear_breakpoints(vm);
+    
+    TEST_ASSERT_EQ(zplc_vm_get_breakpoint_count(vm), 0, "Breakpoint count = 0 initially");
+    
+    result = zplc_vm_add_breakpoint(vm, 100);
+    TEST_ASSERT_EQ(result, 0, "Add breakpoint returns 0");
+    TEST_ASSERT_EQ(zplc_vm_get_breakpoint_count(vm), 1, "Breakpoint count = 1");
+    TEST_ASSERT_EQ(zplc_vm_get_breakpoint(vm, 0), 100, "Breakpoint[0] = 100");
+    
+    result = zplc_vm_add_breakpoint(vm, 200);
+    TEST_ASSERT_EQ(result, 0, "Add second breakpoint");
+    TEST_ASSERT_EQ(zplc_vm_get_breakpoint_count(vm), 2, "Breakpoint count = 2");
+    
+    /* Try adding duplicate */
+    result = zplc_vm_add_breakpoint(vm, 100);
+    TEST_ASSERT_EQ(result, -3, "Duplicate breakpoint returns -3");
+    TEST_ASSERT_EQ(zplc_vm_get_breakpoint_count(vm), 2, "Count unchanged after dup");
+    
+    /* Remove breakpoint */
+    result = zplc_vm_remove_breakpoint(vm, 100);
+    TEST_ASSERT_EQ(result, 0, "Remove breakpoint returns 0");
+    TEST_ASSERT_EQ(zplc_vm_get_breakpoint_count(vm), 1, "Count = 1 after remove");
+    TEST_ASSERT_EQ(zplc_vm_get_breakpoint(vm, 0), 200, "Remaining breakpoint = 200");
+    
+    /* Remove non-existent */
+    result = zplc_vm_remove_breakpoint(vm, 999);
+    TEST_ASSERT_EQ(result, -2, "Remove non-existent returns -2");
+    
+    /* Clear all */
+    zplc_vm_clear_breakpoints(vm);
+    TEST_ASSERT_EQ(zplc_vm_get_breakpoint_count(vm), 0, "Clear removes all breakpoints");
+
+    /*
+     * Test 3: Breakpoint by PC address
+     * Program: PUSH32 1, PUSH32 2, PUSH32 3, HALT
+     * Set breakpoint at PC=10 (second PUSH32)
+     */
+    len = 0;
+    len = emit_push32(code, len, 1);  /* PC 0-4 */
+    len = emit_push32(code, len, 2);  /* PC 5-9 */
+    len = emit_push32(code, len, 3);  /* PC 10-14 */
+    len = emit_op(code, len, OP_HALT);/* PC 15 */
+
+    zplc_core_init();
+    zplc_core_load_raw(code, len);
+    
+    vm = zplc_core_get_default_vm();
+    zplc_vm_add_breakpoint(vm, 10);  /* Break before third PUSH32 */
+    
+    result = zplc_vm_run(vm, 0);
+    TEST_ASSERT(zplc_vm_is_paused(vm), "Paused at PC breakpoint");
+    TEST_ASSERT_EQ(vm->pc, 10, "PC = 10 at breakpoint");
+    TEST_ASSERT_EQ(vm->sp, 2, "Two PUSHes executed before breakpoint");
+    TEST_ASSERT_EQ(vm->stack[0], 1, "Stack[0] = 1");
+    TEST_ASSERT_EQ(vm->stack[1], 2, "Stack[1] = 2");
+    
+    /* Resume past breakpoint */
+    zplc_vm_resume(vm);
+    
+    /* Remove breakpoint so we don't hit it again */
+    zplc_vm_clear_breakpoints(vm);
+    
+    result = zplc_vm_run(vm, 0);
+    TEST_ASSERT(vm->halted, "VM halted after resume from PC breakpoint");
+    TEST_ASSERT_EQ(vm->sp, 3, "All three PUSHes executed");
+    TEST_ASSERT_EQ(vm->stack[2], 3, "Stack[2] = 3");
+
+    /*
+     * Test 4: Single-step debugging
+     */
+    len = 0;
+    len = emit_push32(code, len, 100);
+    len = emit_push32(code, len, 200);
+    len = emit_op(code, len, OP_ADD);
+    len = emit_op(code, len, OP_HALT);
+
+    zplc_core_init();
+    zplc_core_load_raw(code, len);
+    vm = zplc_core_get_default_vm();
+    
+    /* Step 1: Execute first PUSH32 */
+    result = zplc_vm_step(vm);
+    TEST_ASSERT_EQ(result, ZPLC_VM_OK, "Step 1 returns OK");
+    TEST_ASSERT_EQ(vm->pc, 5, "PC = 5 after first step");
+    TEST_ASSERT_EQ(vm->sp, 1, "SP = 1 after first step");
+    
+    /* Step 2: Execute second PUSH32 */
+    result = zplc_vm_step(vm);
+    TEST_ASSERT_EQ(result, ZPLC_VM_OK, "Step 2 returns OK");
+    TEST_ASSERT_EQ(vm->pc, 10, "PC = 10 after second step");
+    TEST_ASSERT_EQ(vm->sp, 2, "SP = 2 after second step");
+    
+    /* Step 3: Execute ADD */
+    result = zplc_vm_step(vm);
+    TEST_ASSERT_EQ(result, ZPLC_VM_OK, "Step 3 returns OK");
+    TEST_ASSERT_EQ(vm->sp, 1, "SP = 1 after ADD");
+    TEST_ASSERT_EQ(vm->stack[0], 300, "100 + 200 = 300");
+    
+    /* Step 4: Execute HALT */
+    result = zplc_vm_step(vm);
+    TEST_ASSERT_EQ(result, ZPLC_VM_HALTED, "Step 4 returns HALTED");
+    TEST_ASSERT(vm->halted, "VM is halted");
+}
+
 /* ============================================================================
  * Main
  * ============================================================================ */
@@ -2191,6 +2343,9 @@ int main(void)
 
     /* String Operations Tests (v1.2: STRING type) */
     test_string_operations();
+
+    /* Debugger Breakpoint Tests (v1.3: Debug support) */
+    test_breakpoints();
 
     printf("\n================================================\n");
     printf("  Results: %d tests, %d passed, %d failed\n",

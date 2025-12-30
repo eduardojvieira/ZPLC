@@ -23,6 +23,7 @@ const STROKE_WIDTH = 2;
 // Colors
 const COLORS = {
   wire: 'var(--color-surface-400)',
+  wireEnergized: '#22c55e', // Bright green for power flow
   contact: 'var(--color-accent-green)',
   contactNC: 'var(--color-accent-red)',
   coil: 'var(--color-accent-blue)',
@@ -33,6 +34,7 @@ const COLORS = {
   textDim: 'var(--color-surface-200)',
   selected: 'var(--color-accent-yellow)',
   hover: 'rgba(255,255,255,0.1)',
+  energizedGlow: 'rgba(34, 197, 94, 0.3)', // Glow effect for energized state
 };
 
 // =============================================================================
@@ -44,6 +46,7 @@ interface LDElementProps {
   x: number;  // Grid column (0-based)
   y: number;  // Grid row (0-based)
   selected?: boolean;
+  energized?: boolean;  // True when power flows through this element (debug mode)
   onClick?: () => void;
   onDragStart?: (element: LDElementType) => void;
   draggable?: boolean;
@@ -57,14 +60,16 @@ interface ContactSymbolProps {
   type: 'contact_no' | 'contact_nc' | 'contact_p' | 'contact_n';
   variable?: string;
   selected?: boolean;
+  energized?: boolean;
 }
 
-function ContactSymbol({ type, variable, selected }: ContactSymbolProps) {
+function ContactSymbol({ type, variable, selected, energized }: ContactSymbolProps) {
   const isNC = type === 'contact_nc';
   const isEdge = type === 'contact_p' || type === 'contact_n';
   const edgeLetter = type === 'contact_p' ? 'P' : type === 'contact_n' ? 'N' : '';
 
   const strokeColor = selected ? COLORS.selected : (isNC ? COLORS.contactNC : COLORS.contact);
+  const wireColor = energized ? COLORS.wireEnergized : COLORS.wire;
   const boxWidth = 20;
   const boxHeight = 24;
   const boxX = (CELL_WIDTH - boxWidth) / 2;
@@ -72,13 +77,25 @@ function ContactSymbol({ type, variable, selected }: ContactSymbolProps) {
 
   return (
     <g>
+      {/* Energized glow effect */}
+      {energized && (
+        <rect
+          x={boxX - 4}
+          y={boxY - 4}
+          width={boxWidth + 8}
+          height={boxHeight + 8}
+          fill={COLORS.energizedGlow}
+          rx={4}
+        />
+      )}
+
       {/* Left wire segment */}
       <line
         x1={0}
         y1={WIRE_Y}
         x2={boxX}
         y2={WIRE_Y}
-        stroke={COLORS.wire}
+        stroke={wireColor}
         strokeWidth={STROKE_WIDTH}
       />
 
@@ -88,7 +105,7 @@ function ContactSymbol({ type, variable, selected }: ContactSymbolProps) {
         y1={WIRE_Y}
         x2={CELL_WIDTH}
         y2={WIRE_Y}
-        stroke={COLORS.wire}
+        stroke={wireColor}
         strokeWidth={STROKE_WIDTH}
       />
 
@@ -160,12 +177,14 @@ interface CoilSymbolProps {
   type: 'coil' | 'coil_negated' | 'coil_set' | 'coil_reset' | 'coil_p' | 'coil_n';
   variable?: string;
   selected?: boolean;
+  energized?: boolean;
 }
 
-function CoilSymbol({ type, variable, selected }: CoilSymbolProps) {
+function CoilSymbol({ type, variable, selected, energized }: CoilSymbolProps) {
   const radius = 12;
   const centerX = CELL_WIDTH / 2;
   const centerY = WIRE_Y;
+  const wireColor = energized ? COLORS.wireEnergized : COLORS.wire;
 
   // Determine color and inner symbol
   let strokeColor = COLORS.coil;
@@ -198,13 +217,24 @@ function CoilSymbol({ type, variable, selected }: CoilSymbolProps) {
 
   return (
     <g>
+      {/* Energized glow effect */}
+      {energized && (
+        <ellipse
+          cx={centerX}
+          cy={centerY}
+          rx={radius + 4}
+          ry={radius + 2}
+          fill={COLORS.energizedGlow}
+        />
+      )}
+
       {/* Left wire segment */}
       <line
         x1={0}
         y1={WIRE_Y}
         x2={centerX - radius}
         y2={WIRE_Y}
-        stroke={COLORS.wire}
+        stroke={wireColor}
         strokeWidth={STROKE_WIDTH}
       />
 
@@ -214,7 +244,7 @@ function CoilSymbol({ type, variable, selected }: CoilSymbolProps) {
         y1={WIRE_Y}
         x2={CELL_WIDTH}
         y2={WIRE_Y}
-        stroke={COLORS.wire}
+        stroke={wireColor}
         strokeWidth={STROKE_WIDTH}
       />
 
@@ -267,24 +297,38 @@ interface FBSymbolProps {
   fbType?: string;
   instance?: string;
   selected?: boolean;
+  energized?: boolean;
 }
 
-function FBSymbol({ fbType, instance, selected }: FBSymbolProps) {
+function FBSymbol({ fbType, instance, selected, energized }: FBSymbolProps) {
   const boxWidth = 60;
   const boxHeight = 40;
   const boxX = (CELL_WIDTH - boxWidth) / 2;
   const boxY = (CELL_HEIGHT - boxHeight) / 2 - 2;
   const strokeColor = selected ? COLORS.selected : COLORS.fb;
+  const wireColor = energized ? COLORS.wireEnergized : COLORS.wire;
 
   return (
     <g>
+      {/* Energized glow effect */}
+      {energized && (
+        <rect
+          x={boxX - 4}
+          y={boxY - 4}
+          width={boxWidth + 8}
+          height={boxHeight + 8}
+          fill={COLORS.energizedGlow}
+          rx={5}
+        />
+      )}
+
       {/* Left wire segment */}
       <line
         x1={0}
         y1={WIRE_Y}
         x2={boxX}
         y2={WIRE_Y}
-        stroke={COLORS.wire}
+        stroke={wireColor}
         strokeWidth={STROKE_WIDTH}
       />
 
@@ -294,7 +338,7 @@ function FBSymbol({ fbType, instance, selected }: FBSymbolProps) {
         y1={WIRE_Y}
         x2={CELL_WIDTH}
         y2={WIRE_Y}
-        stroke={COLORS.wire}
+        stroke={wireColor}
         strokeWidth={STROKE_WIDTH}
       />
 
@@ -344,9 +388,10 @@ function FBSymbol({ fbType, instance, selected }: FBSymbolProps) {
 
 interface WireProps {
   hasWire: boolean;
+  energized?: boolean;
 }
 
-function Wire({ hasWire }: WireProps) {
+function Wire({ hasWire, energized }: WireProps) {
   if (!hasWire) return null;
 
   return (
@@ -355,7 +400,7 @@ function Wire({ hasWire }: WireProps) {
       y1={WIRE_Y}
       x2={CELL_WIDTH}
       y2={WIRE_Y}
-      stroke={COLORS.wire}
+      stroke={energized ? COLORS.wireEnergized : COLORS.wire}
       strokeWidth={STROKE_WIDTH}
     />
   );
@@ -365,7 +410,7 @@ function Wire({ hasWire }: WireProps) {
 // Main Element Component
 // =============================================================================
 
-export default function LDElement({ element, x, y, selected, onClick, onDragStart, draggable = false }: LDElementProps) {
+export default function LDElement({ element, x, y, selected, energized, onClick, onDragStart, draggable = false }: LDElementProps) {
   const translateX = x * CELL_WIDTH;
   const translateY = y * CELL_HEIGHT;
 
@@ -404,6 +449,7 @@ export default function LDElement({ element, x, y, selected, onClick, onDragStar
           type={element.type as 'contact_no' | 'contact_nc' | 'contact_p' | 'contact_n'}
           variable={element.variable}
           selected={selected}
+          energized={energized}
         />
       );
     }
@@ -414,6 +460,7 @@ export default function LDElement({ element, x, y, selected, onClick, onDragStar
           type={element.type as 'coil' | 'coil_negated' | 'coil_set' | 'coil_reset' | 'coil_p' | 'coil_n'}
           variable={element.variable}
           selected={selected}
+          energized={energized}
         />
       );
     }
@@ -424,12 +471,13 @@ export default function LDElement({ element, x, y, selected, onClick, onDragStar
           fbType={element.fbType}
           instance={element.instance}
           selected={selected}
+          energized={energized}
         />
       );
     }
 
     // Default: just draw a wire
-    return <Wire hasWire />;
+    return <Wire hasWire energized={energized} />;
   };
 
   return (

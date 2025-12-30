@@ -57,6 +57,11 @@ typedef struct {
     uint8_t error;                            /**< Last error code */
     uint8_t halted;                           /**< Execution stopped */
     
+    /* Debugger state */
+    uint8_t paused;                           /**< Paused at breakpoint */
+    uint8_t breakpoint_count;                 /**< Number of active breakpoints */
+    uint16_t breakpoints[ZPLC_MAX_BREAKPOINTS]; /**< Breakpoint PC addresses */
+    
     /* Private stacks */
     uint32_t stack[ZPLC_STACK_MAX_DEPTH];     /**< Evaluation stack */
     uint16_t call_stack[ZPLC_CALL_STACK_MAX]; /**< Return addresses */
@@ -229,6 +234,77 @@ uint16_t zplc_vm_get_sp(const zplc_vm_t *vm);
  * @return Program counter
  */
 uint16_t zplc_vm_get_pc(const zplc_vm_t *vm);
+
+/* ============================================================================
+ * Debugger API (zplc_vm_* breakpoints)
+ * ============================================================================
+ * 
+ * Functions for debugging support: breakpoints, pause/resume, single-step.
+ * These are used by the IDE debugger (WASM simulation or serial debug).
+ */
+
+/**
+ * @brief Check if VM is paused at a breakpoint.
+ *
+ * @param vm Pointer to VM instance
+ * @return 1 if paused, 0 if running or halted
+ */
+int zplc_vm_is_paused(const zplc_vm_t *vm);
+
+/**
+ * @brief Resume execution after a breakpoint pause.
+ *
+ * Clears the paused flag so the next zplc_vm_step() continues execution.
+ *
+ * @param vm Pointer to VM instance
+ * @return 0 on success, -1 if NULL
+ */
+int zplc_vm_resume(zplc_vm_t *vm);
+
+/**
+ * @brief Add a breakpoint at a program counter address.
+ *
+ * When the VM's PC reaches this address, execution will pause.
+ *
+ * @param vm Pointer to VM instance
+ * @param pc Program counter address to break at
+ * @return 0 on success, -1 if NULL, -2 if breakpoint table full, -3 if already exists
+ */
+int zplc_vm_add_breakpoint(zplc_vm_t *vm, uint16_t pc);
+
+/**
+ * @brief Remove a breakpoint at a program counter address.
+ *
+ * @param vm Pointer to VM instance
+ * @param pc Program counter address to remove
+ * @return 0 on success, -1 if NULL, -2 if not found
+ */
+int zplc_vm_remove_breakpoint(zplc_vm_t *vm, uint16_t pc);
+
+/**
+ * @brief Clear all breakpoints.
+ *
+ * @param vm Pointer to VM instance
+ * @return 0 on success, -1 if NULL
+ */
+int zplc_vm_clear_breakpoints(zplc_vm_t *vm);
+
+/**
+ * @brief Get the number of active breakpoints.
+ *
+ * @param vm Pointer to VM instance
+ * @return Number of breakpoints, or 0 if NULL
+ */
+uint8_t zplc_vm_get_breakpoint_count(const zplc_vm_t *vm);
+
+/**
+ * @brief Get a breakpoint address by index.
+ *
+ * @param vm Pointer to VM instance
+ * @param index Index in breakpoint array (0 to count-1)
+ * @return PC address of breakpoint, or 0xFFFF if invalid
+ */
+uint16_t zplc_vm_get_breakpoint(const zplc_vm_t *vm, uint8_t index);
 
 /* ============================================================================
  * Shared Memory I/O Helpers

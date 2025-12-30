@@ -134,7 +134,7 @@ export interface BuildResult {
 // Console / Output
 // =============================================================================
 
-export type ConsoleTab = 'output' | 'problems' | 'terminal';
+export type ConsoleTab = 'output' | 'problems' | 'terminal' | 'watch';
 
 export interface ConsoleEntry {
   id: string;

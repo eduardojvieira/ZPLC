@@ -1,7 +1,9 @@
 /**
  * Console Component
  * 
- * Bottom panel with Output, Problems, and Terminal tabs
+ * Bottom panel with Output, Problems, Watch, and Terminal tabs.
+ * The Terminal tab provides direct shell access to ZPLC devices.
+ * The Watch tab shows live debug values.
  */
 
 import {
@@ -9,15 +11,17 @@ import {
   ChevronUp,
   Terminal,
   AlertTriangle,
-  FileWarning,
   Trash2,
   XCircle,
   AlertCircle,
   Info,
   CheckCircle,
+  Eye,
 } from 'lucide-react';
 import { useIDEStore } from '../store/useIDEStore';
 import type { ConsoleEntry, ConsoleTab } from '../types';
+import { TerminalTab } from './TerminalTab';
+import { DebugWatchPanel } from './DebugWatchPanel';
 
 export function Console() {
   const {
@@ -30,6 +34,10 @@ export function Console() {
     clearConsole,
     clearCompilerMessages,
   } = useIDEStore();
+
+  // Get watch count for badge
+  const watchCount = useIDEStore((state) => state.debug.watchVariables.length);
+  const debugMode = useIDEStore((state) => state.debug.mode);
 
   const tabs: { id: ConsoleTab; label: string; icon: React.ReactNode; count?: number }[] = [
     { 
@@ -44,9 +52,15 @@ export function Console() {
       count: compilerMessages.filter((m) => m.type === 'error').length,
     },
     { 
+      id: 'watch', 
+      label: 'Watch', 
+      icon: <Eye size={14} className={debugMode !== 'none' ? 'text-green-400' : ''} />,
+      count: watchCount > 0 ? watchCount : undefined,
+    },
+    { 
       id: 'terminal', 
       label: 'Terminal', 
-      icon: <FileWarning size={14} /> 
+      icon: <Terminal size={14} className="text-[var(--color-accent-green)]" /> 
     },
   ];
 
@@ -157,17 +171,19 @@ export function Console() {
         {/* Spacer */}
         <div className="flex-1" />
 
-        {/* Clear Button */}
-        <button
-          onClick={() => {
-            if (activeConsoleTab === 'output') clearConsole();
-            if (activeConsoleTab === 'problems') clearCompilerMessages();
-          }}
-          className="p-1 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-400)] hover:text-[var(--color-surface-200)]"
-          title="Clear"
-        >
-          <Trash2 size={14} />
-        </button>
+        {/* Clear Button - only for output and problems tabs */}
+        {(activeConsoleTab === 'output' || activeConsoleTab === 'problems') && (
+          <button
+            onClick={() => {
+              if (activeConsoleTab === 'output') clearConsole();
+              if (activeConsoleTab === 'problems') clearCompilerMessages();
+            }}
+            className="p-1 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-400)] hover:text-[var(--color-surface-200)]"
+            title="Clear"
+          >
+            <Trash2 size={14} />
+          </button>
+        )}
       </div>
 
       {/* Content Area */}
@@ -240,14 +256,11 @@ export function Console() {
         )}
 
         {activeConsoleTab === 'terminal' && (
-          <div className="p-2">
-            <div className="text-[var(--color-surface-400)] italic">
-              Terminal emulator coming soon...
-            </div>
-            <div className="mt-2 text-[var(--color-accent-green)]">
-              $ <span className="animate-pulse">_</span>
-            </div>
-          </div>
+          <TerminalTab isActive={activeConsoleTab === 'terminal'} />
+        )}
+
+        {activeConsoleTab === 'watch' && (
+          <DebugWatchPanel />
         )}
       </div>
     </div>

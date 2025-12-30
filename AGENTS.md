@@ -12,7 +12,7 @@ This file provides context for AI agents and human contributors working on ZPLC.
 | **Dev Platforms** | macOS, Linux, Windows (via POSIX HAL) |
 | **Language** | ANSI C99 (strict compliance) |
 | **Architecture** | Zephyr Module with POSIX fallback |
-| **Current Version** | v1.2.0 (Indirect Memory + Standard Libraries) |
+| **Current Version** | v1.4.0 (Cross-Platform Desktop App) |
 
 ## Core Philosophy
 
@@ -363,6 +363,8 @@ The HAL (`zplc_hal.h`) defines the contract between core and platform:
 | Phase 5 | ✅ Complete | Polish & Release v1.0.0 |
 | **v1.1** | ✅ Complete | **Multitask Scheduler + NVS Persistence** |
 | **v1.2** | ✅ Complete | **STRING Type + Indirect Memory + Standard Library** |
+| **v1.3** | ✅ Complete | **Advanced Debugging + Professional IDE** |
+| **v1.4** | ✅ Complete | **Cross-Platform Desktop App (Electron)** |
 
 ---
 
@@ -449,24 +451,26 @@ brew install cmake ninja gperf python3 ccache qemu dtc wget xz
 
 ---
 
-## Next Steps (v1.3 Roadmap)
+## Next Steps (Phase 7: Cross-Platform & Distribution)
 
-1. **Modbus TCP/RTU**
-   - Implement `zplc_modbus_server` in `src/comms/`
-   - Add HAL socket abstractions
+1.  **Cross-Platform Build (Prompt 29)**
+    - Electron build for Windows/Linux/macOS.
+    - Native WebSerial integration.
+    - Code signing and auto-updates.
 
-2. **MQTT Integration**
-   - Sparkplug B compliant client
-   - Publish-on-change for tagged variables
-   - STRING type ready for topic/payload handling
+2.  **OPC UA / MQTT Integration**
+    - Publish variable values to MQTT broker.
+    - OPC UA Server for Unified Namespace.
 
-3. **Retentive Variables**
-   - Persist RETAIN memory region to NVS
-   - Auto-restore on boot
+3.  **Additional Hardware Targets**
+    - STM32H7 with built-in Ethernet.
+    - ESP32 with WiFi connectivity.
+    - Arduino Opta (industrial Arduino).
 
-4. **IDE Enhancements**
-   - Online-editing (partial code updates)
-   - Logic analyzer view for variable tracing
+4.  **Documentation**
+    - Complete user manual.
+    - Video tutorials.
+    - Example projects library.
 
 ---
 

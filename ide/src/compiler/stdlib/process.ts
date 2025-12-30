@@ -11,7 +11,7 @@
  * All functions operate on REAL (32-bit float) values.
  */
 
-import type { FunctionDef, FunctionBlockDef, CodeGenContext, MemberDef } from './types.ts';
+import type { FunctionDef, FunctionBlockDef, CodeGenContext, MemberDef as _MemberDef } from './types.ts';
 import { formatAddr, inputMember, outputMember, internalMember } from './types.ts';
 import type { Expression } from '../ast.ts';
 
@@ -132,7 +132,7 @@ export const HYSTERESIS_FB: FunctionBlockDef = {
     generateCall(ctx, params): void {
         const base = ctx.baseAddress;
         const onLabel = ctx.newLabel('hyst_on');
-        const offLabel = ctx.newLabel('hyst_off');
+        // offLabel reserved for explicit off-state handling
         const endLabel = ctx.newLabel('hyst_end');
 
         ctx.emit(`    ; --- HYSTERESIS Logic (${ctx.instanceName}) ---`);

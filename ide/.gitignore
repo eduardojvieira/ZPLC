@@ -12,6 +12,16 @@ dist
 dist-ssr
 *.local
 
+# Electron
+electron-dist
+dist-electron
+*.dmg
+*.AppImage
+*.deb
+*.rpm
+*.exe
+*.msi
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

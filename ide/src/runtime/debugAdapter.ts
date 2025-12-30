@@ -65,11 +65,13 @@ export interface WatchVariable {
   /** Memory address */
   address: number;
   /** Data type */
-  type: 'BOOL' | 'INT' | 'DINT' | 'REAL' | 'BYTE' | 'WORD' | 'DWORD';
+  type: 'BOOL' | 'INT' | 'DINT' | 'REAL' | 'BYTE' | 'WORD' | 'DWORD' | 'TIME' | 'STRING';
   /** Current value (updated by polling) */
-  value?: number | boolean;
+  value?: number | boolean | string;
   /** Whether value can be forced */
   forceable: boolean;
+  /** For STRING: max length */
+  maxLength?: number;
 }
 
 /**
@@ -84,6 +86,10 @@ export interface DebugAdapterEvents {
   onError?: (message: string) => void;
   /** Called when VM info is updated */
   onInfoUpdate?: (info: VMInfo) => void;
+  /** Called when execution hits a breakpoint */
+  onBreakpointHit?: (pc: number, line?: number) => void;
+  /** Called when a single step completes */
+  onStepComplete?: (pc: number) => void;
 }
 
 /**
@@ -233,6 +239,42 @@ export interface IDebugAdapter {
   getVirtualOutput(channel: number): Promise<number>;
 
   // =========================================================================
+  // Breakpoint Management
+  // =========================================================================
+
+  /**
+   * Set a breakpoint at a specific program counter address.
+   * When execution reaches this PC, the VM will pause.
+   * @param pc Program counter address for the breakpoint
+   * @returns True if breakpoint was set successfully
+   */
+  setBreakpoint(pc: number): Promise<boolean>;
+
+  /**
+   * Remove a breakpoint at a specific program counter address.
+   * @param pc Program counter address of the breakpoint to remove
+   * @returns True if breakpoint was removed successfully
+   */
+  removeBreakpoint(pc: number): Promise<boolean>;
+
+  /**
+   * Clear all breakpoints.
+   */
+  clearBreakpoints(): Promise<void>;
+
+  /**
+   * Get list of currently set breakpoint addresses.
+   * @returns Array of PC addresses with active breakpoints
+   */
+  getBreakpoints(): Promise<number[]>;
+
+  /**
+   * Check if a breakpoint is set at a specific address.
+   * @param pc Program counter address to check
+   */
+  hasBreakpoint(pc: number): Promise<boolean>;
+
+  // =========================================================================
   // Event Handling
   // =========================================================================
 
@@ -250,7 +292,7 @@ export interface IDebugAdapter {
 /**
  * Get the size in bytes for a variable type
  */
-export function getTypeSize(type: WatchVariable['type']): number {
+export function getTypeSize(type: WatchVariable['type'], maxLength?: number): number {
   switch (type) {
     case 'BOOL':
     case 'BYTE':
@@ -261,7 +303,12 @@ export function getTypeSize(type: WatchVariable['type']): number {
     case 'DINT':
     case 'DWORD':
     case 'REAL':
+    case 'TIME':
       return 4;
+    case 'STRING':
+      // String: 2-byte length prefix + content + null terminator
+      // Default max length is 255 if not specified
+      return 2 + (maxLength ?? 255) + 1;
     default:
       return 1;
   }
@@ -273,7 +320,7 @@ export function getTypeSize(type: WatchVariable['type']): number {
 export function bytesToValue(
   bytes: Uint8Array,
   type: WatchVariable['type']
-): number | boolean {
+): number | boolean | string {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
 
   switch (type) {
@@ -286,11 +333,21 @@ export function bytesToValue(
     case 'WORD':
       return view.getUint16(0, true);
     case 'DINT':
+    case 'TIME':
       return view.getInt32(0, true);
     case 'DWORD':
       return view.getUint32(0, true);
     case 'REAL':
       return view.getFloat32(0, true);
+    case 'STRING': {
+      // String format: 2-byte length + content
+      if (bytes.length < 2) return '';
+      const length = view.getUint16(0, true);
+      if (length === 0 || bytes.length < 2 + length) return '';
+      // Decode UTF-8 content
+      const contentBytes = bytes.slice(2, 2 + length);
+      return new TextDecoder('utf-8').decode(contentBytes);
+    }
     default:
       return bytes[0];
   }
@@ -300,14 +357,29 @@ export function bytesToValue(
  * Convert a typed value to bytes
  */
 export function valueToBytes(
-  value: number | boolean,
-  type: WatchVariable['type']
+  value: number | boolean | string,
+  type: WatchVariable['type'],
+  maxLength?: number
 ): Uint8Array {
+  // Handle string separately
+  if (type === 'STRING') {
+    const strValue = String(value);
+    const maxLen = maxLength ?? 255;
+    const truncated = strValue.slice(0, maxLen);
+    const encoded = new TextEncoder().encode(truncated);
+    const bytes = new Uint8Array(2 + encoded.length + 1);
+    const view = new DataView(bytes.buffer);
+    view.setUint16(0, encoded.length, true);
+    bytes.set(encoded, 2);
+    bytes[2 + encoded.length] = 0; // Null terminator
+    return bytes;
+  }
+
   const size = getTypeSize(type);
   const bytes = new Uint8Array(size);
   const view = new DataView(bytes.buffer);
 
-  const numValue = typeof value === 'boolean' ? (value ? 1 : 0) : value;
+  const numValue = typeof value === 'boolean' ? (value ? 1 : 0) : Number(value);
 
   switch (type) {
     case 'BOOL':
@@ -321,6 +393,7 @@ export function valueToBytes(
       view.setUint16(0, numValue, true);
       break;
     case 'DINT':
+    case 'TIME':
       view.setInt32(0, numValue, true);
       break;
     case 'DWORD':

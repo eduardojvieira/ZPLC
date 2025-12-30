@@ -35,12 +35,75 @@ import {
   toggleDirectoryExpanded,
   findFileInTree,
 } from '../utils/fileSystem';
+import type { SystemInfo, StatusInfo } from '../runtime/serialAdapter';
+import type { DebugMap } from '../compiler/debug-map';
 
 // =============================================================================
 // Theme Types
 // =============================================================================
 
 export type Theme = 'light' | 'dark' | 'system';
+
+// =============================================================================
+// Debug State Types
+// =============================================================================
+
+/**
+ * Debug mode - how the IDE is connected for debugging
+ */
+export type DebugMode = 'none' | 'simulation' | 'hardware';
+
+/**
+ * Live value that can be displayed in the IDE
+ */
+export type LiveValue = number | boolean | string;
+
+/**
+ * Debug state for the IDE
+ * 
+ * This tracks all debugging-related state including:
+ * - Debug map from compilation (variable locations, source mappings)
+ * - Active breakpoints (by file and line)
+ * - Current execution state when paused
+ * - Watch variables and their live values
+ */
+export interface DebugState {
+  /** Current debug mode (none, simulation, or hardware) */
+  mode: DebugMode;
+  
+  /** Debug map from last compilation */
+  debugMap: DebugMap | null;
+  
+  /** 
+   * Active breakpoints indexed by file ID.
+   * Value is a Set of line numbers with breakpoints.
+   */
+  breakpoints: Map<string, Set<number>>;
+  
+  /** Current execution line when paused (null if running or not debugging) */
+  currentLine: number | null;
+  
+  /** Current POU name when paused */
+  currentPOU: string | null;
+  
+  /** Current PC (program counter) when paused */
+  currentPC: number | null;
+  
+  /** Watch variable paths (e.g., "MyTimer.ET", "Counter") */
+  watchVariables: string[];
+  
+  /** 
+   * Live values cache for watched variables.
+   * Key is the variable path, value is the current value.
+   */
+  liveValues: Map<string, LiveValue>;
+  
+  /** Whether the debugger is currently polling for live values */
+  isPolling: boolean;
+  
+  /** Polling interval in milliseconds (default: 100ms) */
+  pollingInterval: number;
+}
 
 // =============================================================================
 // Store Interface
@@ -66,6 +129,10 @@ interface IDEState {
   // Connection State
   connection: ConnectionState;
 
+  // Controller State (from device JSON APIs)
+  controllerInfo: SystemInfo | null;
+  controllerStatus: StatusInfo | null;
+
   // Console State
   consoleEntries: ConsoleEntry[];
   activeConsoleTab: ConsoleTab;
@@ -77,6 +144,9 @@ interface IDEState {
   isSidebarCollapsed: boolean;
   isConsoleCollapsed: boolean;
   showSettings: boolean;
+
+  // Debug State
+  debug: DebugState;
 
   // Actions - Theme
   setTheme: (theme: Theme) => void;
@@ -106,6 +176,11 @@ interface IDEState {
   setConnectionStatus: (status: ConnectionState['status']) => void;
   setPlcState: (state: ConnectionState['plcState']) => void;
 
+  // Actions - Controller
+  setControllerInfo: (info: SystemInfo | null) => void;
+  setControllerStatus: (status: StatusInfo | null) => void;
+  clearControllerState: () => void;
+
   // Actions - Console
   addConsoleEntry: (entry: Omit<ConsoleEntry, 'id' | 'timestamp'>) => void;
   clearConsole: () => void;
@@ -119,6 +194,24 @@ interface IDEState {
   toggleSidebar: () => void;
   toggleConsole: () => void;
   toggleSettings: () => void;
+
+  // Actions - Debug
+  setDebugMode: (mode: DebugMode) => void;
+  setDebugMap: (map: DebugMap | null) => void;
+  toggleBreakpoint: (fileId: string, line: number) => void;
+  setBreakpoints: (fileId: string, lines: number[]) => void;
+  clearBreakpoints: (fileId?: string) => void;
+  setCurrentExecution: (pou: string | null, line: number | null, pc: number | null) => void;
+  addWatchVariable: (varPath: string) => void;
+  removeWatchVariable: (varPath: string) => void;
+  clearWatchVariables: () => void;
+  updateLiveValue: (varPath: string, value: LiveValue) => void;
+  updateLiveValues: (values: Map<string, LiveValue>) => void;
+  clearLiveValues: () => void;
+  setPolling: (isPolling: boolean) => void;
+  setPollingInterval: (interval: number) => void;
+  getBreakpointsForFile: (fileId: string) => Set<number>;
+  getAllBreakpointPCs: () => number[];
 
   // Computed helpers
   getActiveFile: () => ProjectFileWithHandle | null;
@@ -180,6 +273,9 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     uptime: null,
   },
 
+  controllerInfo: null,
+  controllerStatus: null,
+
   consoleEntries: [
     {
       id: '1',
@@ -197,6 +293,20 @@ export const useIDEStore = create<IDEState>((set, get) => ({
   isSidebarCollapsed: false,
   isConsoleCollapsed: false,
   showSettings: false,
+
+  // Initial Debug State
+  debug: {
+    mode: 'none',
+    debugMap: null,
+    breakpoints: new Map(),
+    currentLine: null,
+    currentPOU: null,
+    currentPC: null,
+    watchVariables: [],
+    liveValues: new Map(),
+    isPolling: false,
+    pollingInterval: 100,
+  },
 
   // ==========================================================================
   // Theme Actions
@@ -377,6 +487,19 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       loadedFiles: new Map(),
       activeFileId: null,
       openTabs: [],
+      // Reset debug state when closing project
+      debug: {
+        mode: 'none',
+        debugMap: null,
+        breakpoints: new Map(),
+        currentLine: null,
+        currentPOU: null,
+        currentPC: null,
+        watchVariables: [],
+        liveValues: new Map(),
+        isPolling: false,
+        pollingInterval: 100,
+      },
     });
 
     get().addConsoleEntry({
@@ -723,6 +846,19 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     })),
 
   // ==========================================================================
+  // Controller Actions
+  // ==========================================================================
+
+  setControllerInfo: (info) => set({ controllerInfo: info }),
+
+  setControllerStatus: (status) => set({ controllerStatus: status }),
+
+  clearControllerState: () => set({ 
+    controllerInfo: null, 
+    controllerStatus: null,
+  }),
+
+  // ==========================================================================
   // Console Actions
   // ==========================================================================
 
@@ -761,6 +897,177 @@ export const useIDEStore = create<IDEState>((set, get) => ({
   toggleSidebar: () => set((state) => ({ isSidebarCollapsed: !state.isSidebarCollapsed })),
   toggleConsole: () => set((state) => ({ isConsoleCollapsed: !state.isConsoleCollapsed })),
   toggleSettings: () => set((state) => ({ showSettings: !state.showSettings })),
+
+  // ==========================================================================
+  // Debug Actions
+  // ==========================================================================
+
+  setDebugMode: (mode) =>
+    set((state) => ({
+      debug: { ...state.debug, mode },
+    })),
+
+  setDebugMap: (debugMap) =>
+    set((state) => ({
+      debug: { ...state.debug, debugMap },
+    })),
+
+  toggleBreakpoint: (fileId, line) =>
+    set((state) => {
+      const newBreakpoints = new Map(state.debug.breakpoints);
+      const fileBreakpoints = new Set(newBreakpoints.get(fileId) || []);
+      
+      if (fileBreakpoints.has(line)) {
+        fileBreakpoints.delete(line);
+      } else {
+        fileBreakpoints.add(line);
+      }
+      
+      if (fileBreakpoints.size === 0) {
+        newBreakpoints.delete(fileId);
+      } else {
+        newBreakpoints.set(fileId, fileBreakpoints);
+      }
+      
+      return {
+        debug: { ...state.debug, breakpoints: newBreakpoints },
+      };
+    }),
+
+  setBreakpoints: (fileId, lines) =>
+    set((state) => {
+      const newBreakpoints = new Map(state.debug.breakpoints);
+      if (lines.length === 0) {
+        newBreakpoints.delete(fileId);
+      } else {
+        newBreakpoints.set(fileId, new Set(lines));
+      }
+      return {
+        debug: { ...state.debug, breakpoints: newBreakpoints },
+      };
+    }),
+
+  clearBreakpoints: (fileId) =>
+    set((state) => {
+      if (fileId) {
+        const newBreakpoints = new Map(state.debug.breakpoints);
+        newBreakpoints.delete(fileId);
+        return {
+          debug: { ...state.debug, breakpoints: newBreakpoints },
+        };
+      }
+      // Clear all breakpoints
+      return {
+        debug: { ...state.debug, breakpoints: new Map() },
+      };
+    }),
+
+  setCurrentExecution: (pou, line, pc) =>
+    set((state) => ({
+      debug: {
+        ...state.debug,
+        currentPOU: pou,
+        currentLine: line,
+        currentPC: pc,
+      },
+    })),
+
+  addWatchVariable: (varPath) =>
+    set((state) => {
+      if (state.debug.watchVariables.includes(varPath)) {
+        return state; // Already watching
+      }
+      return {
+        debug: {
+          ...state.debug,
+          watchVariables: [...state.debug.watchVariables, varPath],
+        },
+      };
+    }),
+
+  removeWatchVariable: (varPath) =>
+    set((state) => {
+      const newLiveValues = new Map(state.debug.liveValues);
+      newLiveValues.delete(varPath);
+      return {
+        debug: {
+          ...state.debug,
+          watchVariables: state.debug.watchVariables.filter(v => v !== varPath),
+          liveValues: newLiveValues,
+        },
+      };
+    }),
+
+  clearWatchVariables: () =>
+    set((state) => ({
+      debug: {
+        ...state.debug,
+        watchVariables: [],
+        liveValues: new Map(),
+      },
+    })),
+
+  updateLiveValue: (varPath, value) =>
+    set((state) => {
+      const newLiveValues = new Map(state.debug.liveValues);
+      newLiveValues.set(varPath, value);
+      return {
+        debug: { ...state.debug, liveValues: newLiveValues },
+      };
+    }),
+
+  updateLiveValues: (values) =>
+    set((state) => {
+      const newLiveValues = new Map(state.debug.liveValues);
+      for (const [key, value] of values) {
+        newLiveValues.set(key, value);
+      }
+      return {
+        debug: { ...state.debug, liveValues: newLiveValues },
+      };
+    }),
+
+  clearLiveValues: () =>
+    set((state) => ({
+      debug: { ...state.debug, liveValues: new Map() },
+    })),
+
+  setPolling: (isPolling) =>
+    set((state) => ({
+      debug: { ...state.debug, isPolling },
+    })),
+
+  setPollingInterval: (pollingInterval) =>
+    set((state) => ({
+      debug: { ...state.debug, pollingInterval },
+    })),
+
+  getBreakpointsForFile: (fileId) => {
+    const { debug } = get();
+    return debug.breakpoints.get(fileId) || new Set();
+  },
+
+  getAllBreakpointPCs: () => {
+    const { debug } = get();
+    const pcs: number[] = [];
+    
+    if (!debug.debugMap) return pcs;
+    
+    // For each file's breakpoints, look up the PC from the debug map
+    for (const [_fileId, lineNumbers] of debug.breakpoints) {
+      for (const line of lineNumbers) {
+        // Search all POUs for this line
+        for (const [_pouName, pouInfo] of Object.entries(debug.debugMap.pou)) {
+          const mapping = pouInfo.sourceMap.find(m => m.line === line);
+          if (mapping) {
+            pcs.push(mapping.pc);
+          }
+        }
+      }
+    }
+    
+    return pcs;
+  },
 
   // ==========================================================================
   // Computed Helpers

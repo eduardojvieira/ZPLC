@@ -14,7 +14,7 @@ import {
     getOperandSize,
     isRelativeJump,
 } from './opcodes';
-import type { Instruction, Label } from './types';
+import type { Instruction, Label, SourceAnnotation, InstructionMapping } from './types';
 import { AssemblerError } from './types';
 
 // =============================================================================
@@ -107,6 +107,10 @@ interface ParserState {
     labels: Map<string, Label>;
     currentAddress: number;
     entryPoint: number | string;  // Can be number or label name until resolved
+    /** Current pending source annotation (from preceding comment) */
+    pendingSourceAnnotation: SourceAnnotation | null;
+    /** Mapping from instruction to source (populated during parsing) */
+    instructionMappings: InstructionMapping[];
 }
 
 // =============================================================================
@@ -119,14 +123,26 @@ interface ParserState {
  * Syntax:
  *   [label:] [instruction [operand]] [; comment]
  *
+ * Source annotations are embedded in comments:
+ *   ; @source 42       -> source line 42
+ *   ; @source 42:10    -> source line 42, column 10
+ *
  * @param line - Source line to parse
  * @param lineNum - Line number (1-based)
  * @param state - Parser state to update
  */
 function parseLine(line: string, lineNum: number, state: ParserState): void {
-    // Remove comments
+    // Check for source annotation in comments BEFORE stripping
     const commentIdx = line.indexOf(';');
     if (commentIdx !== -1) {
+        const comment = line.slice(commentIdx + 1).trim();
+        const sourceMatch = comment.match(/^@source\s+(\d+)(?::(\d+))?/);
+        if (sourceMatch) {
+            state.pendingSourceAnnotation = {
+                line: parseInt(sourceMatch[1], 10),
+                column: sourceMatch[2] ? parseInt(sourceMatch[2], 10) : undefined,
+            };
+        }
         line = line.slice(0, commentIdx);
     }
 
@@ -222,8 +238,23 @@ function parseLine(line: string, lineNum: number, state: ParserState): void {
 
     state.instructions.push(instr);
 
-    // Advance address
+    // Record instruction mapping for source-level debugging
     const instrSize = 1 + operandSize;
+    const mapping: InstructionMapping = {
+        asmLine: lineNum,
+        pc: state.currentAddress,
+        size: instrSize,
+    };
+    
+    // Attach pending source annotation if present
+    if (state.pendingSourceAnnotation) {
+        mapping.sourceAnnotation = state.pendingSourceAnnotation;
+        state.pendingSourceAnnotation = null;  // Consume it
+    }
+    
+    state.instructionMappings.push(mapping);
+
+    // Advance address
     state.currentAddress += instrSize;
 }
 
@@ -352,6 +383,8 @@ export interface ParseResult {
     labels: Map<string, Label>;
     entryPoint: number;
     codeSize: number;
+    /** Instruction-level mappings for source-level debugging */
+    instructionMappings: InstructionMapping[];
 }
 
 /**
@@ -371,6 +404,8 @@ export function parse(source: string): ParseResult {
         labels: new Map(),
         currentAddress: 0,
         entryPoint: 0,
+        pendingSourceAnnotation: null,
+        instructionMappings: [],
     };
 
     // Pass 1: Parse
@@ -387,6 +422,7 @@ export function parse(source: string): ParseResult {
         labels: state.labels,
         entryPoint: typeof state.entryPoint === 'number' ? state.entryPoint : 0,
         codeSize: state.currentAddress,
+        instructionMappings: state.instructionMappings,
     };
 }
 

@@ -12,7 +12,7 @@
 
 import type { FunctionDef, FunctionBlockDef, CodeGenContext, MemberDef } from './types.ts';
 import { inputMember, outputMember, internalMember, formatAddr } from './types.ts';
-import type { FBParameter } from '../ast.ts';
+import type { FBParameter, Expression } from '../ast.ts';
 
 // ============================================================================
 // UPTIME - System Uptime Function
@@ -32,7 +32,7 @@ export const UPTIME_FN: FunctionDef = {
     argCount: 0,
     variadic: false,
 
-    generateInline(ctx: CodeGenContext, _args: []): void {
+    generateInline(ctx: CodeGenContext, _args: Expression[]): void {
         ctx.emit(`    ; UPTIME() - Get system uptime in ms`);
         ctx.emit(`    GET_TICKS`);
     }
@@ -496,7 +496,7 @@ export const CYCLE_TIME_FN: FunctionDef = {
     argCount: 0,
     variadic: false,
 
-    generateInline(ctx: CodeGenContext, _args: []): void {
+    generateInline(ctx: CodeGenContext, _args: Expression[]): void {
         ctx.emit(`    ; CYCLE_TIME() - Read last cycle execution time from system registers`);
         ctx.emit(`    LOAD32 0x0FF0`);  // ZPLC_SYS_CYCLE_TIME in IPI
     }
@@ -517,7 +517,7 @@ export const WATCHDOG_RESET_FN: FunctionDef = {
     argCount: 0,
     variadic: false,
 
-    generateInline(ctx: CodeGenContext, _args: []): void {
+    generateInline(ctx: CodeGenContext, _args: Expression[]): void {
         ctx.emit(`    ; WATCHDOG_RESET() - Reset watchdog (stub)`);
         ctx.emit(`    ; TODO: Requires HAL integration`);
         ctx.emit(`    NOP`);

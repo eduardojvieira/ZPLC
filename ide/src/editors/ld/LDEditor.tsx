@@ -9,7 +9,7 @@
  * - Element selection and property editing
  */
 
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useMemo } from 'react';
 import { Plus, Trash2, ChevronDown, ChevronUp, Rows3 } from 'lucide-react';
 import {
   type LDModel,
@@ -23,6 +23,8 @@ import {
 } from '../../models/ld';
 import LDToolbox from './LDToolbox';
 import LDRungGrid from './LDRungGrid';
+import { useIDEStore } from '../../store/useIDEStore';
+import { useDebugValues } from '../../hooks/useDebugValue';
 
 // =============================================================================
 // Props
@@ -166,6 +168,9 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
   const [selectedElement, setSelectedElement] = useState<LDElementType | null>(null);
   const [selectedRungId, setSelectedRungId] = useState<string | null>(null);
 
+  // Get debug mode from store
+  const debugMode = useIDEStore((state) => state.debug.mode);
+
   // Ensure all rungs are grid-based
   const normalizedModel: LDModel = {
     ...model,
@@ -173,6 +178,51 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
       isGridBasedRung(rung) ? rung : convertToGridRung(rung)
     ),
   };
+
+  // Extract all variable names from the model for debug value lookup
+  const allVariables = useMemo(() => {
+    const vars: string[] = [];
+    for (const rung of normalizedModel.rungs) {
+      if (!rung.grid) continue;
+      for (const row of rung.grid) {
+        for (const cell of row) {
+          const el = cell.element;
+          if (!el) continue;
+          // Contacts and coils use variable
+          if (el.variable) {
+            vars.push(el.variable);
+          }
+          // Function blocks: also get Q output for energized state
+          if (el.instance) {
+            vars.push(`${el.instance}.Q`);
+          }
+        }
+      }
+    }
+    return vars;
+  }, [normalizedModel.rungs]);
+
+  // Get live values for all variables (only when debugging)
+  const debugValues = useDebugValues(debugMode !== 'none' ? allVariables : []);
+
+  // Build energized map: varName -> boolean
+  const energizedVariables = useMemo(() => {
+    const map = new Map<string, boolean>();
+    if (debugMode === 'none') return map;
+
+    for (const varPath of allVariables) {
+      const result = debugValues.get(varPath);
+      if (result?.exists && result.value !== null) {
+        // For BOOL: direct value
+        // For other types: non-zero = true
+        const isEnergized = result.type === 'BOOL'
+          ? !!result.value
+          : Number(result.value) !== 0;
+        map.set(varPath, isEnergized);
+      }
+    }
+    return map;
+  }, [debugMode, allVariables, debugValues]);
 
   // Add a new rung
   const handleAddRung = useCallback(() => {
@@ -382,6 +432,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                     onElementDelete={(el) => handleElementDelete(rung.id, el)}
                     selectedElementId={selectedRungId === rung.id ? selectedElement?.id : null}
                     readOnly={readOnly}
+                    energizedVariables={debugMode !== 'none' ? energizedVariables : undefined}
                   />
 
                   {/* Rung controls */}

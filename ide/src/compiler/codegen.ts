@@ -20,9 +20,9 @@ import type {
     ForStatement,
     RepeatStatement,
     CaseStatement,
-    ExitStatement,
-    ContinueStatement,
-    ReturnStatement,
+    ExitStatement as _ExitStatement,
+    ContinueStatement as _ContinueStatement,
+    ReturnStatement as _ReturnStatement,
     FBCallStatement,
     Identifier,
     MemberAccess,
@@ -84,6 +84,13 @@ export interface CodeGenOptions {
      * If not specified, calculated as workMemoryBase + WORK_MEMORY_REGION_SIZE - 1
      */
     initFlagAddress?: number;
+    
+    /**
+     * Enable source line annotations in assembly output for debugging.
+     * When true, emits "; @source <line>" comments before statements.
+     * Default: false
+     */
+    emitSourceAnnotations?: boolean;
 }
 
 // ============================================================================
@@ -124,6 +131,10 @@ interface CodeGenState {
     stringLiteralNextAddr: number;
     /** Stack of loop contexts for EXIT/CONTINUE handling */
     loopStack: LoopContext[];
+    /** Last emitted source line (for deduplication) */
+    lastSourceLine: number;
+    /** Enable source annotations in assembly output */
+    emitSourceAnnotations: boolean;
 }
 
 /**
@@ -139,6 +150,7 @@ export function generate(program: Program, options?: CodeGenOptions): string {
         (options?.workMemoryBase !== undefined 
             ? workMemoryBase + WORK_MEMORY_REGION_SIZE - 1 
             : DEFAULT_INIT_FLAG_ADDR);
+    const emitSourceAnnotations = options?.emitSourceAnnotations ?? false;
     
     const symbols = buildSymbolTable(program, workMemoryBase);
     
@@ -155,6 +167,8 @@ export function generate(program: Program, options?: CodeGenOptions): string {
         stringLiterals: [],
         stringLiteralNextAddr: stringLiteralBase,
         loopStack: [],
+        lastSourceLine: 0,
+        emitSourceAnnotations,
     };
 
     // First pass: collect all string literals from the program
@@ -225,6 +239,19 @@ function emit(state: CodeGenState, line: string): void {
     state.output.push(line);
 }
 
+/**
+ * Emit a source line annotation comment.
+ * This allows the assembler to track source line → bytecode PC mapping.
+ * Only emits if the line is different from the last emitted line (deduplication).
+ */
+function emitSourceAnnotation(state: CodeGenState, line: number | undefined): void {
+    if (!state.emitSourceAnnotations || !line || line === state.lastSourceLine) {
+        return;
+    }
+    state.lastSourceLine = line;
+    emit(state, `    ; @source ${line}`);
+}
+
 function newLabel(state: CodeGenState, prefix: string): string {
     return `${prefix}_${state.labelCounter++}`;
 }
@@ -278,7 +305,7 @@ function emitMemoryMap(state: CodeGenState): void {
  * Matches zplc_isa.h definitions.
  */
 const STRING_HEADER_SIZE = 4;  // 2 bytes length + 2 bytes capacity
-const STRING_DEFAULT_CAPACITY = 80;
+// Default capacity is defined in zplc_isa.h as 80 bytes
 
 /**
  * Calculate the size in bytes for a string literal.
@@ -504,6 +531,9 @@ function emitInitialization(state: CodeGenState, program: Program): void {
 // ============================================================================
 
 function emitStatement(state: CodeGenState, stmt: Statement): void {
+    // Emit source annotation before the first instruction of this statement
+    emitSourceAnnotation(state, stmt.line);
+    
     switch (stmt.kind) {
         case 'Assignment':
             emitAssignment(state, stmt);

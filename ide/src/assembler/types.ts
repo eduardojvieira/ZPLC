@@ -68,6 +68,8 @@ export interface AssemblyResult {
     codeSize: number;
     /** Task definitions (empty for single-task programs) */
     tasks?: TaskDef[];
+    /** Instruction-level mappings for source-level debugging */
+    instructionMappings?: InstructionMapping[];
 }
 
 /**
@@ -131,4 +133,42 @@ export interface TaskDef {
     entryPoint: number;
     /** Required stack depth (default: 64) */
     stackSize: number;
+}
+
+// ============================================================================
+// Debug/Source Mapping Types
+// ============================================================================
+
+/**
+ * Source line annotation embedded in assembly comments.
+ * Format: "; @source <line>:<column?>" or "; @source <line>"
+ */
+export interface SourceAnnotation {
+    /** Source line number (1-based) */
+    line: number;
+    /** Source column (1-based, optional) */
+    column?: number;
+}
+
+/**
+ * Mapping from assembly instruction to bytecode PC and optional source line.
+ * This allows reconstructing source → PC mappings after assembly.
+ */
+export interface InstructionMapping {
+    /** Assembly line number (1-based) */
+    asmLine: number;
+    /** Bytecode PC (address) */
+    pc: number;
+    /** Size of this instruction in bytes */
+    size: number;
+    /** Source line annotation (if present in preceding comment) */
+    sourceAnnotation?: SourceAnnotation;
+}
+
+/**
+ * Extended assembly result with source mapping information.
+ */
+export interface AssemblyResultWithMapping extends AssemblyResult {
+    /** Instruction-level mappings for debugging */
+    instructionMappings: InstructionMapping[];
 }

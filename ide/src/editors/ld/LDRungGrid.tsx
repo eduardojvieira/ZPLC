@@ -46,6 +46,8 @@ interface LDRungGridProps {
   onElementDelete?: (element: LDElementType) => void;
   selectedElementId?: string | null;
   readOnly?: boolean;
+  /** Map of variable names to their energized (TRUE) state for power flow visualization */
+  energizedVariables?: Map<string, boolean>;
 }
 
 // =============================================================================
@@ -464,10 +466,37 @@ export default function LDRungGrid({
   onElementDelete,
   selectedElementId,
   readOnly = false,
+  energizedVariables,
 }: LDRungGridProps) {
   const [hoverCell, setHoverCell] = useState<{ col: number; row: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [draggedElementId, setDraggedElementId] = useState<string | null>(null);
+
+  // Helper function to check if an element is energized based on its variable value
+  const isElementEnergized = useCallback((element: LDElementType | null): boolean => {
+    if (!element || !energizedVariables) return false;
+
+    // For contacts: use the variable value directly
+    // NO contact: energized when variable is TRUE
+    // NC contact: energized when variable is FALSE
+    if (element.variable) {
+      const value = energizedVariables.get(element.variable);
+      if (value === undefined) return false;
+
+      if (element.type === 'contact_nc') {
+        return !value; // NC is energized when variable is FALSE
+      }
+      return !!value; // NO and others are energized when TRUE
+    }
+
+    // For function blocks: check the instance Q output
+    if (element.instance) {
+      const qValue = energizedVariables.get(`${element.instance}.Q`);
+      return !!qValue;
+    }
+
+    return false;
+  }, [energizedVariables]);
 
   // Convert legacy rung to grid-based if needed
   const gridRung = useMemo(() => {
@@ -1007,6 +1036,7 @@ export default function LDRungGrid({
                       x={colIdx}
                       y={rowIdx}
                       selected={cell.element.id === selectedElementId}
+                      energized={isElementEnergized(cell.element)}
                       onClick={() => handleElementClick(cell.element!)}
                       draggable={!readOnly}
                       onDragStart={handleElementDragStart}

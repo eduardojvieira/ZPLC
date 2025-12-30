@@ -13,7 +13,7 @@
  *   zplc data <hex>    - Receive a chunk of hex-encoded bytecode
  *   zplc start         - Start VM execution
  *   zplc stop          - Stop VM execution
- *   zplc status        - Show VM state and statistics
+ *   zplc status [--json] - Show VM state and statistics (JSON for IDE)
  *   zplc reset         - Reset VM to initial state
  *
  * Debug Commands:
@@ -22,7 +22,10 @@
  *   zplc dbg step      - Execute exactly one cycle
  *   zplc dbg peek <addr> [len] - Read memory (hex dump)
  *   zplc dbg poke <addr> <val> - Write byte to IPI memory
- *   zplc dbg info      - Show detailed VM state
+ *   zplc dbg info [--json]     - Show detailed VM state (JSON for IDE)
+ *
+ * System Commands:
+ *   zplc sys info [--json] - Show board, version, and capabilities
  *
  * Scheduler Commands (when CONFIG_ZPLC_SCHEDULER=y):
  *   zplc sched status  - Show scheduler statistics
@@ -41,6 +44,62 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdbool.h>
+
+/* ============================================================================
+ * JSON Output Helpers (no malloc, uses shell_print directly)
+ * ============================================================================ */
+
+/**
+ * @brief Helper structure for building JSON output without dynamic allocation.
+ *
+ * Uses shell_print for each field. The IDE parses the complete JSON block.
+ * All output goes through the shell to maintain compatibility with the
+ * existing serial protocol.
+ */
+
+/** Print the start of a JSON object */
+#define JSON_OBJ_START(sh)      shell_fprintf(sh, SHELL_NORMAL, "{")
+#define JSON_OBJ_END(sh)        shell_fprintf(sh, SHELL_NORMAL, "}")
+#define JSON_ARRAY_START(sh)    shell_fprintf(sh, SHELL_NORMAL, "[")
+#define JSON_ARRAY_END(sh)      shell_fprintf(sh, SHELL_NORMAL, "]")
+#define JSON_COMMA(sh)          shell_fprintf(sh, SHELL_NORMAL, ",")
+#define JSON_NEWLINE(sh)        shell_fprintf(sh, SHELL_NORMAL, "\n")
+
+/** Print a JSON string field: "key": "value" */
+static inline void json_str(const struct shell *sh, const char *key, const char *val, bool comma)
+{
+    shell_fprintf(sh, SHELL_NORMAL, "\"%s\":\"%s\"%s", key, val, comma ? "," : "");
+}
+
+/** Print a JSON integer field: "key": value */
+static inline void json_int(const struct shell *sh, const char *key, int32_t val, bool comma)
+{
+    shell_fprintf(sh, SHELL_NORMAL, "\"%s\":%d%s", key, val, comma ? "," : "");
+}
+
+/** Print a JSON unsigned field: "key": value */
+static inline void json_uint(const struct shell *sh, const char *key, uint32_t val, bool comma)
+{
+    shell_fprintf(sh, SHELL_NORMAL, "\"%s\":%u%s", key, val, comma ? "," : "");
+}
+
+/** Print a JSON boolean field: "key": true/false */
+static inline void json_bool(const struct shell *sh, const char *key, bool val, bool comma)
+{
+    shell_fprintf(sh, SHELL_NORMAL, "\"%s\":%s%s", key, val ? "true" : "false", comma ? "," : "");
+}
+
+/** Check if --json flag is present in arguments */
+static bool has_json_flag(size_t argc, char **argv)
+{
+    for (size_t i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--json") == 0 || strcmp(argv[i], "-j") == 0) {
+            return true;
+        }
+    }
+    return false;
+}
 
 /* ============================================================================
  * Mode-specific Definitions
@@ -406,17 +465,77 @@ static int cmd_zplc_stop(const struct shell *sh, size_t argc, char **argv)
 }
 
 /**
- * @brief Handler for 'zplc status' (scheduler mode)
+ * @brief Handler for 'zplc status [--json]' (scheduler mode)
+ *
+ * Outputs current VM/scheduler status. With --json flag, outputs
+ * machine-readable JSON for IDE integration.
  */
 static int cmd_zplc_status(const struct shell *sh, size_t argc, char **argv)
 {
-    ARG_UNUSED(argc);
-    ARG_UNUSED(argv);
-    
     zplc_sched_stats_t stats;
     zplc_sched_get_stats(&stats);
     
+    uint32_t uptime_ms = k_uptime_get_32();
+    bool is_running = stats.active_tasks > 0;
+    const char *state_str = is_running ? "RUNNING" : "IDLE";
+    
+    if (has_json_flag(argc, argv)) {
+        /* JSON output for IDE */
+        JSON_OBJ_START(sh);
+        json_str(sh, "state", state_str, true);
+        json_uint(sh, "uptime_ms", uptime_ms, true);
+        
+        /* Stats object */
+        shell_fprintf(sh, SHELL_NORMAL, "\"stats\":{");
+        json_uint(sh, "cycles", stats.total_cycles, true);
+        json_uint(sh, "overruns", stats.total_overruns, true);
+        json_uint(sh, "active_tasks", stats.active_tasks, false);
+        shell_fprintf(sh, SHELL_NORMAL, "},");
+        
+        /* Tasks array */
+        shell_fprintf(sh, SHELL_NORMAL, "\"tasks\":[");
+        bool first_task = true;
+        for (int i = 0; i < CONFIG_ZPLC_MAX_TASKS; i++) {
+            zplc_task_t task;
+            if (zplc_sched_get_task(i, &task) == 0) {
+                if (!first_task) {
+                    JSON_COMMA(sh);
+                }
+                first_task = false;
+                JSON_OBJ_START(sh);
+                json_int(sh, "slot", i, true);
+                json_int(sh, "id", task.config.id, true);
+                json_int(sh, "prio", task.config.priority, true);
+                json_uint(sh, "interval_us", task.config.interval_us, true);
+                json_uint(sh, "cycles", task.stats.cycle_count, true);
+                json_uint(sh, "overruns", task.stats.overrun_count, false);
+                JSON_OBJ_END(sh);
+            }
+        }
+        shell_fprintf(sh, SHELL_NORMAL, "],");
+        
+        /* Memory usage */
+        shell_fprintf(sh, SHELL_NORMAL, "\"memory\":{");
+        json_uint(sh, "work_total", CONFIG_ZPLC_WORK_MEMORY_SIZE, true);
+        json_uint(sh, "retain_total", CONFIG_ZPLC_RETAIN_MEMORY_SIZE, false);
+        shell_fprintf(sh, SHELL_NORMAL, "},");
+        
+        /* OPI outputs */
+        shell_fprintf(sh, SHELL_NORMAL, "\"opi\":[%u,%u,%u,%u,%u,%u,%u,%u]",
+                     zplc_opi_read8(0), zplc_opi_read8(1),
+                     zplc_opi_read8(2), zplc_opi_read8(3),
+                     zplc_opi_read8(4), zplc_opi_read8(5),
+                     zplc_opi_read8(6), zplc_opi_read8(7));
+        
+        JSON_OBJ_END(sh);
+        JSON_NEWLINE(sh);
+        return 0;
+    }
+    
+    /* Human-readable output */
     shell_print(sh, "=== ZPLC Scheduler Status ===");
+    shell_print(sh, "State:          %s", state_str);
+    shell_print(sh, "Uptime:         %u ms", uptime_ms);
     shell_print(sh, "Active Tasks:   %u", stats.active_tasks);
     shell_print(sh, "Total Cycles:   %u", stats.total_cycles);
     shell_print(sh, "Total Overruns: %u", stats.total_overruns);
@@ -584,6 +703,90 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_persist,
     SHELL_SUBCMD_SET_END
 );
 
+/* ============================================================================
+ * System Information Commands
+ * ============================================================================ */
+
+/**
+ * @brief Handler for 'zplc sys info [--json]'
+ *
+ * Shows board name, ZPLC version, Zephyr version, clock speed, and capabilities.
+ */
+static int cmd_sys_info(const struct shell *sh, size_t argc, char **argv)
+{
+    uint32_t uptime_ms = k_uptime_get_32();
+    
+    /* Get CPU frequency if available */
+    uint32_t cpu_freq_mhz = 0;
+#ifdef CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
+    cpu_freq_mhz = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / 1000000;
+#endif
+
+    /* Detect capabilities */
+    bool has_fpu = false;
+#ifdef CONFIG_FPU
+    has_fpu = true;
+#endif
+
+    bool has_mpu = false;
+#ifdef CONFIG_ARM_MPU
+    has_mpu = true;
+#endif
+
+    if (has_json_flag(argc, argv)) {
+        /* JSON output for IDE */
+        JSON_OBJ_START(sh);
+        json_str(sh, "board", CONFIG_BOARD, true);
+        json_str(sh, "zplc_version", zplc_core_version(), true);
+        json_str(sh, "zephyr_version", KERNEL_VERSION_STRING, true);
+        json_uint(sh, "uptime_ms", uptime_ms, true);
+        json_uint(sh, "cpu_freq_mhz", cpu_freq_mhz, true);
+        
+        /* Capabilities object */
+        shell_fprintf(sh, SHELL_NORMAL, "\"capabilities\":{");
+        json_bool(sh, "fpu", has_fpu, true);
+        json_bool(sh, "mpu", has_mpu, true);
+        json_bool(sh, "scheduler", true, true);  /* Always true in scheduler mode */
+        json_int(sh, "max_tasks", CONFIG_ZPLC_MAX_TASKS, false);
+        shell_fprintf(sh, SHELL_NORMAL, "},");
+        
+        /* Memory configuration */
+        shell_fprintf(sh, SHELL_NORMAL, "\"memory\":{");
+        json_uint(sh, "work_size", CONFIG_ZPLC_WORK_MEMORY_SIZE, true);
+        json_uint(sh, "retain_size", CONFIG_ZPLC_RETAIN_MEMORY_SIZE, true);
+        json_uint(sh, "ipi_size", 4096, true);  /* Fixed in ZPLC */
+        json_uint(sh, "opi_size", 4096, false);
+        shell_fprintf(sh, SHELL_NORMAL, "}");
+        
+        JSON_OBJ_END(sh);
+        JSON_NEWLINE(sh);
+        return 0;
+    }
+    
+    /* Human-readable output */
+    shell_print(sh, "=== ZPLC System Information ===");
+    shell_print(sh, "Board:          %s", CONFIG_BOARD);
+    shell_print(sh, "ZPLC Version:   %s", zplc_core_version());
+    shell_print(sh, "Zephyr Version: %s", KERNEL_VERSION_STRING);
+    shell_print(sh, "Uptime:         %u ms", uptime_ms);
+    shell_print(sh, "CPU Frequency:  %u MHz", cpu_freq_mhz);
+    shell_print(sh, "--- Capabilities ---");
+    shell_print(sh, "FPU:            %s", has_fpu ? "yes" : "no");
+    shell_print(sh, "MPU:            %s", has_mpu ? "yes" : "no");
+    shell_print(sh, "Scheduler:      enabled (max %d tasks)", CONFIG_ZPLC_MAX_TASKS);
+    shell_print(sh, "--- Memory ---");
+    shell_print(sh, "Work Memory:    %d bytes", CONFIG_ZPLC_WORK_MEMORY_SIZE);
+    shell_print(sh, "Retain Memory:  %d bytes", CONFIG_ZPLC_RETAIN_MEMORY_SIZE);
+    
+    return 0;
+}
+
+/* System subcommands */
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_sys,
+    SHELL_CMD_ARG(info, NULL, "Show system information [--json]", cmd_sys_info, 1, 1),
+    SHELL_SUBCMD_SET_END
+);
+
 /* Debug commands - scheduler mode (simplified) */
 static int cmd_dbg_peek(const struct shell *sh, size_t argc, char **argv)
 {
@@ -685,17 +888,49 @@ static int cmd_dbg_poke(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_dbg_info(const struct shell *sh, size_t argc, char **argv)
 {
-    ARG_UNUSED(argc);
-    ARG_UNUSED(argv);
-    
     zplc_sched_stats_t stats;
     zplc_sched_get_stats(&stats);
     
+    uint32_t uptime_ms = k_uptime_get_32();
+    bool is_running = stats.active_tasks > 0;
+    
+    if (has_json_flag(argc, argv)) {
+        /* JSON output for IDE */
+        JSON_OBJ_START(sh);
+        json_str(sh, "state", is_running ? "RUNNING" : "IDLE", true);
+        json_uint(sh, "uptime_ms", uptime_ms, true);
+        json_uint(sh, "cycles", stats.total_cycles, true);
+        json_uint(sh, "active_tasks", stats.active_tasks, true);
+        json_uint(sh, "overruns", stats.total_overruns, true);
+        json_bool(sh, "halted", !is_running, true);
+        json_int(sh, "error", 0, true);
+        
+        /* OPI outputs as array */
+        shell_fprintf(sh, SHELL_NORMAL, "\"opi\":[%u,%u,%u,%u,%u,%u,%u,%u],",
+                     zplc_opi_read8(0), zplc_opi_read8(1),
+                     zplc_opi_read8(2), zplc_opi_read8(3),
+                     zplc_opi_read8(4), zplc_opi_read8(5),
+                     zplc_opi_read8(6), zplc_opi_read8(7));
+        
+        /* IPI inputs (first 8 bytes) */
+        shell_fprintf(sh, SHELL_NORMAL, "\"ipi\":[%u,%u,%u,%u,%u,%u,%u,%u]",
+                     zplc_ipi_read8(0), zplc_ipi_read8(1),
+                     zplc_ipi_read8(2), zplc_ipi_read8(3),
+                     zplc_ipi_read8(4), zplc_ipi_read8(5),
+                     zplc_ipi_read8(6), zplc_ipi_read8(7));
+        
+        JSON_OBJ_END(sh);
+        JSON_NEWLINE(sh);
+        return 0;
+    }
+    
+    /* Human-readable output */
     shell_print(sh, "=== Debug Info (Scheduler Mode) ===");
+    shell_print(sh, "State:        %s", is_running ? "RUNNING" : "IDLE");
     shell_print(sh, "Active Tasks: %u", stats.active_tasks);
     shell_print(sh, "Total Cycles: %u", stats.total_cycles);
     shell_print(sh, "Overruns:     %u", stats.total_overruns);
-    shell_print(sh, "Uptime:       %u ms", k_uptime_get_32());
+    shell_print(sh, "Uptime:       %u ms", uptime_ms);
     
     /* Show OPI bytes 0-7 */
     shell_print(sh, "OPI[0..7]: %02X %02X %02X %02X %02X %02X %02X %02X",
@@ -911,19 +1146,53 @@ static int cmd_zplc_stop(const struct shell *sh, size_t argc, char **argv)
 }
 
 /**
- * @brief Handler for 'zplc status'
+ * @brief Handler for 'zplc status [--json]' (legacy mode)
  *
  * Displays current VM state and statistics.
  */
 static int cmd_zplc_status(const struct shell *sh, size_t argc, char **argv)
 {
-    ARG_UNUSED(argc);
-    ARG_UNUSED(argv);
-    
     const zplc_vm_state_t *vm = zplc_core_get_state();
+    uint32_t uptime_ms = k_uptime_get_32();
+    const char *state_str = state_name(runtime_state);
+    bool is_halted = zplc_core_is_halted();
+    int32_t vm_error = zplc_core_get_error();
     
+    if (has_json_flag(argc, argv)) {
+        /* JSON output for IDE */
+        JSON_OBJ_START(sh);
+        json_str(sh, "state", state_str, true);
+        json_uint(sh, "uptime_ms", uptime_ms, true);
+        
+        /* Stats */
+        shell_fprintf(sh, SHELL_NORMAL, "\"stats\":{");
+        json_uint(sh, "cycles", cycle_count, true);
+        json_uint(sh, "program_size", (uint32_t)program_received_size, false);
+        shell_fprintf(sh, SHELL_NORMAL, "},");
+        
+        /* VM State */
+        shell_fprintf(sh, SHELL_NORMAL, "\"vm\":{");
+        json_uint(sh, "pc", vm->pc, true);
+        json_uint(sh, "sp", vm->sp, true);
+        json_bool(sh, "halted", is_halted, true);
+        json_int(sh, "error", vm_error, false);
+        shell_fprintf(sh, SHELL_NORMAL, "},");
+        
+        /* OPI outputs */
+        shell_fprintf(sh, SHELL_NORMAL, "\"opi\":[%u,%u,%u,%u,%u,%u,%u,%u]",
+                     (uint8_t)zplc_core_get_opi(0), (uint8_t)zplc_core_get_opi(1),
+                     (uint8_t)zplc_core_get_opi(2), (uint8_t)zplc_core_get_opi(3),
+                     (uint8_t)zplc_core_get_opi(4), (uint8_t)zplc_core_get_opi(5),
+                     (uint8_t)zplc_core_get_opi(6), (uint8_t)zplc_core_get_opi(7));
+        
+        JSON_OBJ_END(sh);
+        JSON_NEWLINE(sh);
+        return 0;
+    }
+    
+    /* Human-readable output */
     shell_print(sh, "=== ZPLC Runtime Status ===");
-    shell_print(sh, "State:      %s", state_name(runtime_state));
+    shell_print(sh, "State:      %s", state_str);
     shell_print(sh, "Cycles:     %u", cycle_count);
     shell_print(sh, "Program:    %zu bytes", program_received_size);
     
@@ -931,8 +1200,8 @@ static int cmd_zplc_status(const struct shell *sh, size_t argc, char **argv)
         shell_print(sh, "--- VM State ---");
         shell_print(sh, "PC:         %u", vm->pc);
         shell_print(sh, "SP:         %u", vm->sp);
-        shell_print(sh, "Halted:     %s", zplc_core_is_halted() ? "yes" : "no");
-        shell_print(sh, "Error:      %d", zplc_core_get_error());
+        shell_print(sh, "Halted:     %s", is_halted ? "yes" : "no");
+        shell_print(sh, "Error:      %d", vm_error);
         
         /* Show OPI output bytes */
         shell_print(sh, "--- Outputs ---");
@@ -1178,20 +1447,62 @@ static int cmd_dbg_poke(const struct shell *sh, size_t argc, char **argv)
  *
  * Shows detailed VM state for debugging.
  */
+/**
+ * @brief Handler for 'zplc dbg info [--json]' (legacy mode)
+ *
+ * Shows detailed VM state for debugging.
+ */
 static int cmd_dbg_info(const struct shell *sh, size_t argc, char **argv)
 {
-    ARG_UNUSED(argc);
-    ARG_UNUSED(argv);
-    
     const zplc_vm_state_t *vm = zplc_core_get_state();
+    uint32_t uptime_ms = k_uptime_get_32();
+    const char *state_str = state_name(runtime_state);
+    bool is_halted = zplc_core_is_halted();
+    int32_t vm_error = zplc_core_get_error();
     
+    if (has_json_flag(argc, argv)) {
+        /* JSON output for IDE */
+        JSON_OBJ_START(sh);
+        json_str(sh, "state", state_str, true);
+        json_uint(sh, "uptime_ms", uptime_ms, true);
+        json_uint(sh, "cycles", cycle_count, true);
+        json_uint(sh, "pc", vm->pc, true);
+        json_uint(sh, "sp", vm->sp, true);
+        json_bool(sh, "halted", is_halted, true);
+        json_int(sh, "error", vm_error, true);
+        
+        /* Stack top if available */
+        if (vm->sp > 0) {
+            json_uint(sh, "tos", zplc_core_get_stack(vm->sp - 1), true);
+        }
+        
+        /* OPI outputs */
+        shell_fprintf(sh, SHELL_NORMAL, "\"opi\":[%u,%u,%u,%u,%u,%u,%u,%u],",
+                     (uint8_t)zplc_core_get_opi(0), (uint8_t)zplc_core_get_opi(1),
+                     (uint8_t)zplc_core_get_opi(2), (uint8_t)zplc_core_get_opi(3),
+                     (uint8_t)zplc_core_get_opi(4), (uint8_t)zplc_core_get_opi(5),
+                     (uint8_t)zplc_core_get_opi(6), (uint8_t)zplc_core_get_opi(7));
+        
+        /* IPI inputs */
+        shell_fprintf(sh, SHELL_NORMAL, "\"ipi\":[%u,%u,%u,%u,%u,%u,%u,%u]",
+                     (uint8_t)zplc_core_get_ipi(0), (uint8_t)zplc_core_get_ipi(1),
+                     (uint8_t)zplc_core_get_ipi(2), (uint8_t)zplc_core_get_ipi(3),
+                     (uint8_t)zplc_core_get_ipi(4), (uint8_t)zplc_core_get_ipi(5),
+                     (uint8_t)zplc_core_get_ipi(6), (uint8_t)zplc_core_get_ipi(7));
+        
+        JSON_OBJ_END(sh);
+        JSON_NEWLINE(sh);
+        return 0;
+    }
+    
+    /* Human-readable output */
     shell_print(sh, "=== Debug Info ===");
-    shell_print(sh, "State:   %s", state_name(runtime_state));
+    shell_print(sh, "State:   %s", state_str);
     shell_print(sh, "Cycles:  %u", cycle_count);
     shell_print(sh, "PC:      0x%04X", vm->pc);
     shell_print(sh, "SP:      %u", vm->sp);
-    shell_print(sh, "Halted:  %s", zplc_core_is_halted() ? "yes" : "no");
-    shell_print(sh, "Error:   %d", zplc_core_get_error());
+    shell_print(sh, "Halted:  %s", is_halted ? "yes" : "no");
+    shell_print(sh, "Error:   %d", vm_error);
     
     /* Show stack top */
     if (vm->sp > 0) {
@@ -1237,9 +1548,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_dbg,
     SHELL_CMD_ARG(poke, NULL,
         "Write memory: dbg poke <addr> <value>",
         cmd_dbg_poke, 3, 0),
-    SHELL_CMD(info, NULL,
-        "Show detailed VM state",
-        cmd_dbg_info),
+    SHELL_CMD_ARG(info, NULL,
+        "Show detailed VM state [--json]",
+        cmd_dbg_info, 1, 1),
     SHELL_SUBCMD_SET_END
 );
 
@@ -1257,9 +1568,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_zplc,
     SHELL_CMD(stop, NULL,
         "Stop VM execution",
         cmd_zplc_stop),
-    SHELL_CMD(status, NULL,
-        "Show runtime status",
-        cmd_zplc_status),
+    SHELL_CMD_ARG(status, NULL,
+        "Show runtime status [--json]",
+        cmd_zplc_status, 1, 1),
     SHELL_CMD(reset, NULL,
         "Reset VM to initial state",
         cmd_zplc_reset),
@@ -1275,6 +1586,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_zplc,
         NULL),
     SHELL_CMD(persist, &sub_persist,
         "Persistence commands (clear/info)",
+        NULL),
+    SHELL_CMD(sys, &sub_sys,
+        "System information (info)",
         NULL),
 #endif
     SHELL_SUBCMD_SET_END

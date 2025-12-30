@@ -109,6 +109,13 @@ extern "C" {
 #define ZPLC_CALL_STACK_MAX 32
 #endif
 
+/** @brief Maximum number of breakpoints (configurable via Kconfig) */
+#ifdef CONFIG_ZPLC_MAX_BREAKPOINTS
+#define ZPLC_MAX_BREAKPOINTS CONFIG_ZPLC_MAX_BREAKPOINTS
+#else
+#define ZPLC_MAX_BREAKPOINTS 16
+#endif
+
 /* ============================================================================
  * System Information Registers (Reserved IPI Addresses)
  * ============================================================================
@@ -474,7 +481,8 @@ typedef enum {
   ZPLC_VM_CALL_OVERFLOW = 0x06,   /**< Call stack full */
   ZPLC_VM_INVALID_JUMP = 0x07,    /**< Jump to invalid address */
   ZPLC_VM_WATCHDOG = 0x08,        /**< Execution time exceeded */
-  ZPLC_VM_HALTED = 0x09           /**< Execution stopped normally */
+  ZPLC_VM_HALTED = 0x09,          /**< Execution stopped normally */
+  ZPLC_VM_PAUSED = 0x0A           /**< Paused at breakpoint (debugger) */
 } zplc_vm_error_t;
 
 /**
@@ -492,6 +500,8 @@ typedef enum {
  *
  * This structure holds the complete state of the virtual machine.
  * It's designed to be saveable/restorable for debugging.
+ *
+ * NOTE: This must match the first fields of zplc_vm_t in zplc_core.h
  */
 typedef struct {
   uint16_t pc;                              /**< Program counter */
@@ -501,6 +511,12 @@ typedef struct {
   uint8_t flags;                            /**< Status flags */
   uint8_t error;                            /**< Last error code */
   uint8_t halted;                           /**< Execution stopped */
+  
+  /* Debugger state */
+  uint8_t paused;                           /**< Paused at breakpoint */
+  uint8_t breakpoint_count;                 /**< Number of active breakpoints */
+  uint16_t breakpoints[ZPLC_MAX_BREAKPOINTS]; /**< Breakpoint PC addresses */
+  
   uint32_t stack[ZPLC_STACK_MAX_DEPTH];     /**< Evaluation stack */
   uint16_t call_stack[ZPLC_CALL_STACK_MAX]; /**< Return addresses */
 } zplc_vm_state_t;
