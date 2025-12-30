@@ -241,18 +241,15 @@ export const RIGHT_FN: FunctionDef = {
         
         // Check if i < n
         ctx.emit('    DUP');            // [addr, n, offset, i, i]
-        ctx.emit('    PUSH8 4');
-        ctx.emit('    PICK');           // [addr, n, offset, i, i, n]
+        ctx.emit('    PICK 4');         // [addr, n, offset, i, i, n]
         ctx.emit('    LT');             // [addr, n, offset, i, i<n]
         ctx.emit(`    JZ ${lblLoopEnd}`);
         
         // Calculate source address: addr + 4 + offset + i
-        ctx.emit('    PUSH8 5');
-        ctx.emit('    PICK');           // [addr, n, offset, i, addr]
+        ctx.emit('    PICK 5');         // [addr, n, offset, i, addr]
         ctx.emit('    PUSH8 4');
         ctx.emit('    ADD');            // [addr, n, offset, i, addr+4]
-        ctx.emit('    PUSH8 3');
-        ctx.emit('    PICK');           // [addr, n, offset, i, addr+4, offset]
+        ctx.emit('    PICK 3');         // [addr, n, offset, i, addr+4, offset]
         ctx.emit('    ADD');            // [addr, n, offset, i, addr+4+offset]
         ctx.emit('    OVER');           // [addr, n, offset, i, addr+4+offset, i]
         ctx.emit('    ADD');            // [addr, n, offset, i, src_addr]
@@ -261,12 +258,10 @@ export const RIGHT_FN: FunctionDef = {
         ctx.emit('    LOADI8');         // [addr, n, offset, i, byte]
         
         // Calculate destination address: addr + 4 + i
-        ctx.emit('    PUSH8 5');
-        ctx.emit('    PICK');           // [addr, n, offset, i, byte, addr]
+        ctx.emit('    PICK 5');         // [addr, n, offset, i, byte, addr]
         ctx.emit('    PUSH8 4');
         ctx.emit('    ADD');            // [addr, n, offset, i, byte, addr+4]
-        ctx.emit('    PUSH8 3');
-        ctx.emit('    PICK');           // [addr, n, offset, i, byte, addr+4, i]
+        ctx.emit('    PICK 3');         // [addr, n, offset, i, byte, addr+4, i]
         ctx.emit('    ADD');            // [addr, n, offset, i, byte, dst_addr]
         
         // Store byte to destination
@@ -343,8 +338,7 @@ export const MID_FN: FunctionDef = {
         ctx.emitExpression(args[2]);    // [addr, len, offset, n]
         
         // Calculate available = len - offset
-        ctx.emit('    PUSH8 3');
-        ctx.emit('    PICK');           // [addr, len, offset, n, len]
+        ctx.emit('    PICK 3');         // [addr, len, offset, n, len]
         ctx.emit('    OVER');           
         ctx.emit('    OVER');           // [addr, len, offset, n, len, offset, n] - need to fix
         // Actually we need: available = len - offset
@@ -369,18 +363,15 @@ export const MID_FN: FunctionDef = {
         
         // Check if i < n
         ctx.emit('    DUP');            // [addr, n, offset, i, i]
-        ctx.emit('    PUSH8 4');
-        ctx.emit('    PICK');           // [addr, n, offset, i, i, n]
+        ctx.emit('    PICK 4');         // [addr, n, offset, i, i, n]
         ctx.emit('    LT');             // [addr, n, offset, i, i<n]
         ctx.emit(`    JZ ${lblLoopEnd}`);
         
         // Calculate source address: addr + 4 + offset + i
-        ctx.emit('    PUSH8 5');
-        ctx.emit('    PICK');           // [addr, n, offset, i, addr]
+        ctx.emit('    PICK 5');         // [addr, n, offset, i, addr]
         ctx.emit('    PUSH8 4');
         ctx.emit('    ADD');            // [addr, n, offset, i, addr+4]
-        ctx.emit('    PUSH8 3');
-        ctx.emit('    PICK');           // [addr, n, offset, i, addr+4, offset]
+        ctx.emit('    PICK 3');         // [addr, n, offset, i, addr+4, offset]
         ctx.emit('    ADD');            // [addr, n, offset, i, addr+4+offset]
         ctx.emit('    OVER');           // [addr, n, offset, i, addr+4+offset, i]
         ctx.emit('    ADD');            // [addr, n, offset, i, src_addr]
@@ -389,12 +380,10 @@ export const MID_FN: FunctionDef = {
         ctx.emit('    LOADI8');         // [addr, n, offset, i, byte]
         
         // Calculate destination address: addr + 4 + i
-        ctx.emit('    PUSH8 5');
-        ctx.emit('    PICK');           // [addr, n, offset, i, byte, addr]
+        ctx.emit('    PICK 5');         // [addr, n, offset, i, byte, addr]
         ctx.emit('    PUSH8 4');
         ctx.emit('    ADD');            // [addr, n, offset, i, byte, addr+4]
-        ctx.emit('    PUSH8 3');
-        ctx.emit('    PICK');           // [addr, n, offset, i, byte, addr+4, i]
+        ctx.emit('    PICK 3');         // [addr, n, offset, i, byte, addr+4, i]
         ctx.emit('    ADD');            // [addr, n, offset, i, byte, dst_addr]
         
         // Store byte to destination

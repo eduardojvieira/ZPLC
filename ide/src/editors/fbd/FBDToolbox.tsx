@@ -51,7 +51,7 @@ const BLOCK_CATEGORIES: BlockCategory[] = [
   {
     name: 'System',
     icon: <Database size={14} />,
-    blocks: ['FIFO', 'LIFO', 'UPTIME', 'CYCLE_TIME'],
+    blocks: ['FIFO', 'LIFO', 'UPTIME', 'CYCLE_TIME', 'WATCHDOG_RESET'],
   },
   {
     name: 'Logic Gates',

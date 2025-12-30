@@ -959,5 +959,25 @@ export function getToolboxItems(): LDToolboxItem[] {
     { type: 'function_block', label: 'CTD', symbol: 'CTD', category: 'function_block', fbType: 'CTD' },
     { type: 'function_block', label: 'R_TRIG', symbol: 'R↑', category: 'function_block', fbType: 'R_TRIG' },
     { type: 'function_block', label: 'F_TRIG', symbol: 'F↓', category: 'function_block', fbType: 'F_TRIG' },
+    // Bistables
+    { type: 'function_block', label: 'RS', symbol: 'RS', category: 'function_block', fbType: 'RS' },
+    { type: 'function_block', label: 'SR', symbol: 'SR', category: 'function_block', fbType: 'SR' },
+    // Counters (extended)
+    { type: 'function_block', label: 'CTUD', symbol: 'CTUD', category: 'function_block', fbType: 'CTUD' },
+    // Generators
+    { type: 'function_block', label: 'BLINK', symbol: 'BLNK', category: 'function_block', fbType: 'BLINK' },
+    { type: 'function_block', label: 'PWM', symbol: 'PWM', category: 'function_block', fbType: 'PWM' },
+    { type: 'function_block', label: 'PULSE', symbol: 'PLS', category: 'function_block', fbType: 'PULSE' },
+    // Process Control
+    { type: 'function_block', label: 'HYSTERESIS', symbol: 'HYST', category: 'function_block', fbType: 'HYSTERESIS' },
+    { type: 'function_block', label: 'DEADBAND', symbol: 'DEAD', category: 'function_block', fbType: 'DEADBAND' },
+    { type: 'function_block', label: 'LAG_FILTER', symbol: 'LAG', category: 'function_block', fbType: 'LAG_FILTER' },
+    { type: 'function_block', label: 'RAMP_REAL', symbol: 'RAMP', category: 'function_block', fbType: 'RAMP_REAL' },
+    { type: 'function_block', label: 'INTEGRAL', symbol: '∫', category: 'function_block', fbType: 'INTEGRAL' },
+    { type: 'function_block', label: 'DERIVATIVE', symbol: 'd/dt', category: 'function_block', fbType: 'DERIVATIVE' },
+    { type: 'function_block', label: 'PID', symbol: 'PID', category: 'function_block', fbType: 'PID_Compact' },
+    // System Buffers
+    { type: 'function_block', label: 'FIFO', symbol: 'FIFO', category: 'function_block', fbType: 'FIFO' },
+    { type: 'function_block', label: 'LIFO', symbol: 'LIFO', category: 'function_block', fbType: 'LIFO' },
   ];
 }
