@@ -33,6 +33,7 @@ export const DataType = {
     DINT: 'DINT',
     REAL: 'REAL',
     TIME: 'TIME',
+    STRING: 'STRING',
     // Timer function blocks
     TON: 'TON',
     TOF: 'TOF',
@@ -47,6 +48,21 @@ export const DataType = {
     CTU: 'CTU',
     CTD: 'CTD',
     CTUD: 'CTUD',
+    // Generators
+    BLINK: 'BLINK',
+    PWM: 'PWM',
+    PULSE: 'PULSE',
+    // Process Control
+    HYSTERESIS: 'HYSTERESIS',
+    DEADBAND: 'DEADBAND',
+    LAG_FILTER: 'LAG_FILTER',
+    RAMP_REAL: 'RAMP_REAL',
+    INTEGRAL: 'INTEGRAL',
+    DERIVATIVE: 'DERIVATIVE',
+    PID_Compact: 'PID_Compact',
+    // System Buffers
+    FIFO: 'FIFO',
+    LIFO: 'LIFO',
 } as const;
 
 export type DataTypeValue = typeof DataType[keyof typeof DataType];
@@ -64,6 +80,9 @@ export function getDataTypeSize(type: DataTypeValue): number {
         case DataType.REAL:
         case DataType.TIME:
             return 4;
+        // STRING: 4 bytes header + 80 chars + 1 null = 85 bytes (default STRING[80])
+        case DataType.STRING:
+            return 85;
         // Timer FBs: IN(1) + Q(1) + PT(4) + ET(4) + _start(4) + _running(1) + pad = 16
         case DataType.TON:
         case DataType.TOF:
@@ -84,6 +103,27 @@ export function getDataTypeSize(type: DataTypeValue): number {
         // Counter Up/Down combined: CU(1) + CD(1) + R(1) + LD(1) + QU(1) + QD(1) + pad(2) + CV(4) = 12
         case DataType.CTUD:
             return 12;
+        // Generators: Q(1) + pad(3) + various timing vars = 16
+        case DataType.BLINK:
+        case DataType.PWM:
+        case DataType.PULSE:
+            return 16;
+        // Process Control blocks
+        case DataType.HYSTERESIS:
+        case DataType.DEADBAND:
+        case DataType.LAG_FILTER:
+        case DataType.RAMP_REAL:
+        case DataType.INTEGRAL:
+        case DataType.DERIVATIVE:
+            return 16;
+        case DataType.PID_Compact:
+            return 48;
+        // System Buffers: FIFO/LIFO have variable size based on buffer
+        // Default allocation: 64 bytes (header + 8 items * 4 bytes)
+        case DataType.FIFO:
+            return 64;
+        case DataType.LIFO:
+            return 56;
         default:
             return 4; // Default to 32-bit
     }
@@ -163,12 +203,15 @@ export interface VarBlock extends ASTNode {
 export type Expression =
     | BoolLiteral
     | IntLiteral
+    | RealLiteral
     | TimeLiteral
+    | StringLiteral
     | Identifier
     | MemberAccess
     | UnaryExpr
     | BinaryExpr
-    | FBCall;
+    | FBCall
+    | FunctionCall;
 
 /**
  * Boolean literal: TRUE or FALSE.
@@ -187,12 +230,28 @@ export interface IntLiteral extends ASTNode {
 }
 
 /**
+ * Real (floating-point) literal: 3.14, 0.5, 1.0e-3, etc.
+ */
+export interface RealLiteral extends ASTNode {
+    kind: 'RealLiteral';
+    value: number;  // Parsed float value
+}
+
+/**
  * Time literal: T#500ms, T#1s, etc.
  */
 export interface TimeLiteral extends ASTNode {
     kind: 'TimeLiteral';
     valueMs: number;  // Always stored in milliseconds
     rawValue: string; // Original string for display
+}
+
+/**
+ * String literal: 'Hello World'
+ */
+export interface StringLiteral extends ASTNode {
+    kind: 'StringLiteral';
+    value: string;  // The string content (without quotes)
 }
 
 /**
@@ -252,6 +311,16 @@ export interface BinaryExpr extends ASTNode {
     operator: 'AND' | 'OR' | 'XOR' | 'ADD' | 'SUB' | 'MUL' | 'DIV' | 'MOD' | 'EQ' | 'NE' | 'LT' | 'LE' | 'GT' | 'GE';
     left: Expression;
     right: Expression;
+}
+
+/**
+ * Function call with positional arguments: MAX(a, b), SQRT(x), etc.
+ * Used for stateless stdlib functions.
+ */
+export interface FunctionCall extends ASTNode {
+    kind: 'FunctionCall';
+    name: string;
+    args: Expression[];
 }
 
 // ============================================================================

@@ -90,7 +90,106 @@ The IR is serialized to ZPLC bytecode in the `.zplc` binary format.
 | DINT | 32-bit signed | `-2147483648` to `2147483647` |
 | REAL | 32-bit float | `3.14159` |
 | TIME | Duration | `T#5s`, `T#100ms` |
-| STRING | Text (limited) | `'Hello'` |
+| STRING | Text (80 chars default) | `'Hello'` |
+| STRING[n] | Text with capacity n | `'Hello'` (max n chars) |
+
+### STRING Type Details
+
+Strings in ZPLC follow the IEC 61131-3 specification with bounded buffers for safety.
+
+#### Declaration
+
+```st
+VAR
+    message : STRING;           (* Default: 80 char capacity *)
+    short_msg : STRING[20];     (* Custom: 20 char capacity *)
+    initialized : STRING := 'Hello World';
+END_VAR
+```
+
+#### Memory Layout
+
+Each STRING variable occupies a fixed buffer in work memory:
+
+```
+┌───────────────┬───────────────┬──────────────────────┐
+│ current_len   │ max_capacity  │      data[]          │
+│   (2 bytes)   │   (2 bytes)   │  (max_capacity + 1)  │
+└───────────────┴───────────────┴──────────────────────┘
+```
+
+- **current_len**: Number of characters currently stored
+- **max_capacity**: Maximum allowed characters (from declaration)
+- **data[]**: Character bytes + null terminator
+
+Total size: 4 + capacity + 1 = 85 bytes for `STRING[80]`
+
+#### String Literals
+
+String literals use single quotes with `''` for escaped quotes:
+
+```st
+msg := 'Hello World';      (* Simple string *)
+msg := 'It''s working';    (* Escaped quote → It's working *)
+msg := '';                 (* Empty string *)
+```
+
+#### String Operations
+
+The compiler automatically handles string operations:
+
+```st
+(* Comparison - uses STRCMP opcode *)
+IF status = 'OK' THEN
+    (* ... *)
+END_IF;
+
+IF error <> 'NONE' THEN
+    (* ... *)
+END_IF;
+
+(* Function calls *)
+len := LEN(message);
+CONCAT(message, ' World');
+COPY(source, destination);
+```
+
+#### Code Generation
+
+String literals are allocated in a pool during compilation:
+
+1. **Collection Phase**: All string literals in the AST are gathered
+2. **Allocation Phase**: Unique addresses assigned after declared variables
+3. **Initialization Phase**: Startup code stores length, capacity, and characters
+
+Example generated code for `msg := 'Hi'`:
+```asm
+; Initialize literal '_str0' at 0x2055
+PUSH16 2           ; length = 2
+STORE16 0x2055     ; store at offset 0
+PUSH16 2           ; capacity = 2
+STORE16 0x2057     ; store at offset 2
+PUSH8 72           ; 'H'
+STORE8 0x2059      ; data[0]
+PUSH8 105          ; 'i'
+STORE8 0x205a      ; data[1]
+PUSH8 0            ; null terminator
+STORE8 0x205b      ; data[2]
+
+; Assignment: copy literal to variable
+PUSH16 0x2000      ; &msg (destination)
+PUSH16 0x2055      ; &'Hi' (source)
+STRCPY
+```
+
+#### String Functions
+
+See the [Standard Library Reference](/docs/runtime/stdlib#7-string-functions) for the complete list of string functions including:
+
+- **Basic**: `LEN`, `CONCAT`, `COPY`, `CLEAR`
+- **Substring**: `LEFT`, `RIGHT`, `MID`
+- **Search**: `FIND`, `INSERT`, `DELETE`, `REPLACE`
+- **Comparison**: `STRCMP`, `EQ_STRING`, `NE_STRING`
 
 ### Operators
 

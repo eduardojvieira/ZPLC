@@ -841,3 +841,399 @@ describe('Multi-Task Compiler', () => {
         expect(result.tasks[0].stackSize).toBe(64); // Default
     });
 });
+
+// ============================================================================
+// STRING Type Tests
+// ============================================================================
+
+describe('STRING Type', () => {
+    describe('Lexer', () => {
+        it('tokenizes STRING keyword', () => {
+            const tokens = tokenize('VAR s : STRING; END_VAR');
+            
+            expect(tokens.some(t => t.type === TokenType.STRING)).toBe(true);
+        });
+
+        it('tokenizes string literals with single quotes', () => {
+            const tokens = tokenize("s := 'Hello World';");
+            
+            const stringLiteral = tokens.find(t => t.type === TokenType.STRING_LITERAL);
+            expect(stringLiteral).toBeDefined();
+            expect(stringLiteral?.value).toBe('Hello World');
+        });
+
+        it('tokenizes empty string literal', () => {
+            const tokens = tokenize("s := '';");
+            
+            const stringLiteral = tokens.find(t => t.type === TokenType.STRING_LITERAL);
+            expect(stringLiteral).toBeDefined();
+            expect(stringLiteral?.value).toBe('');
+        });
+
+        it('tokenizes string with escaped quotes', () => {
+            const tokens = tokenize("s := 'It''s a test';");
+            
+            const stringLiteral = tokens.find(t => t.type === TokenType.STRING_LITERAL);
+            expect(stringLiteral).toBeDefined();
+            expect(stringLiteral?.value).toBe("It's a test");
+        });
+    });
+
+    describe('Parser', () => {
+        it('parses STRING variable declaration', () => {
+            const ast = parse(`
+                PROGRAM Test
+                VAR
+                    message : STRING;
+                END_VAR
+                END_PROGRAM
+            `);
+
+            const program = ast.programs[0];
+            const decl = program.varBlocks[0].variables[0];
+            expect(decl.name).toBe('message');
+            expect(decl.dataType).toBe('STRING');
+        });
+
+        it('parses STRING with initial value', () => {
+            const ast = parse(`
+                PROGRAM Test
+                VAR
+                    greeting : STRING := 'Hello';
+                END_VAR
+                END_PROGRAM
+            `);
+
+            const program = ast.programs[0];
+            const decl = program.varBlocks[0].variables[0];
+            expect(decl.name).toBe('greeting');
+            expect(decl.dataType).toBe('STRING');
+            expect(decl.initialValue).not.toBeNull();
+            expect(decl.initialValue?.kind).toBe('StringLiteral');
+            if (decl.initialValue?.kind === 'StringLiteral') {
+                expect(decl.initialValue.value).toBe('Hello');
+            }
+        });
+
+        it('parses string literal in assignment', () => {
+            const ast = parse(`
+                PROGRAM Test
+                VAR
+                    s : STRING;
+                END_VAR
+                s := 'Test message';
+                END_PROGRAM
+            `);
+
+            const program = ast.programs[0];
+            const stmt = program.statements[0];
+            expect(stmt.kind).toBe('Assignment');
+            if (stmt.kind === 'Assignment') {
+                expect(stmt.value.kind).toBe('StringLiteral');
+            }
+        });
+    });
+
+    describe('Symbol Table', () => {
+        it('allocates 85 bytes for STRING type', () => {
+            const ast = parse(`
+                PROGRAM Test
+                VAR
+                    msg : STRING;
+                END_VAR
+                END_PROGRAM
+            `);
+
+            const symbols = buildSymbolTable(ast.programs[0]);
+            const sym = symbols.get('msg');
+            expect(sym).toBeDefined();
+            expect(sym?.dataType).toBe('STRING');
+            expect(sym?.size).toBe(85); // 4 header + 80 chars + 1 null
+        });
+    });
+
+    describe('Code Generation', () => {
+        it('generates string literal initialization code', () => {
+            const ast = parse(`
+                PROGRAM Test
+                VAR
+                    s : STRING;
+                END_VAR
+                s := 'Hi';
+                END_PROGRAM
+            `);
+
+            const asm = generate(ast.programs[0]);
+            
+            // Should have string literal in memory map
+            expect(asm).toContain('String Literals');
+            expect(asm).toContain("'Hi'");
+            
+            // Should initialize the literal (store length, capacity, chars)
+            expect(asm).toContain('STORE16'); // Length
+            expect(asm).toContain('STORE8');  // Characters
+        });
+
+        it('emits PUSH address for STRING identifiers', () => {
+            const ast = parse(`
+                PROGRAM Test
+                VAR
+                    s1 : STRING;
+                    s2 : STRING;
+                END_VAR
+                s2 := s1;
+                END_PROGRAM
+            `);
+
+            const asm = generate(ast.programs[0]);
+            
+            // STRING identifiers should push address, not LOAD value
+            expect(asm).toContain('PUSH16 0x2000');  // &s1 address
+        });
+
+        it('generates STRCMP for string equality', () => {
+            const ast = parse(`
+                PROGRAM Test
+                VAR
+                    s : STRING;
+                    result : BOOL;
+                END_VAR
+                result := s = 'test';
+                END_PROGRAM
+            `);
+
+            const asm = generate(ast.programs[0]);
+            
+            // Should use STRCMP + EQ for string comparison
+            expect(asm).toContain('String comparison');
+            expect(asm).toContain('STRCMP');
+        });
+
+        it('generates STRCMP + NE for string inequality', () => {
+            const ast = parse(`
+                PROGRAM Test
+                VAR
+                    s : STRING;
+                    result : BOOL;
+                END_VAR
+                result := s <> 'test';
+                END_PROGRAM
+            `);
+
+            const asm = generate(ast.programs[0]);
+            
+            expect(asm).toContain('STRCMP');
+            expect(asm).toContain('NE');
+        });
+    });
+
+    describe('String Functions', () => {
+        it('compiles LEN function call', () => {
+            const ast = parse(`
+                PROGRAM Test
+                VAR
+                    s : STRING;
+                    len : INT;
+                END_VAR
+                len := LEN(s);
+                END_PROGRAM
+            `);
+
+            const asm = generate(ast.programs[0]);
+            expect(asm).toContain('LEN');
+            expect(asm).toContain('STRLEN');
+        });
+
+        it('compiles CONCAT function call in expression', () => {
+            // CONCAT is a function, not a FB, so it's used in expressions
+            const ast = parse(`
+                PROGRAM Test
+                VAR
+                    s1 : STRING;
+                    s2 : STRING;
+                    result : STRING;
+                END_VAR
+                result := CONCAT(s1, s2);
+                END_PROGRAM
+            `);
+
+            const program = ast.programs[0];
+            expect(program.statements.length).toBe(1);
+            
+            const asm = generate(program);
+            expect(asm).toContain('CONCAT');
+            expect(asm).toContain('STRCAT');
+        });
+
+        it('compiles string comparison with EQ_STRING', () => {
+            const ast = parse(`
+                PROGRAM Test
+                VAR
+                    s1 : STRING;
+                    s2 : STRING;
+                    equal : BOOL;
+                END_VAR
+                equal := EQ_STRING(s1, s2);
+                END_PROGRAM
+            `);
+
+            const asm = generate(ast.programs[0]);
+            expect(asm).toContain('EQ_STRING');
+            expect(asm).toContain('STRCMP');
+        });
+    });
+});
+
+// ============================================================================
+// Type Inference Tests
+// ============================================================================
+
+describe('Type Inference', () => {
+    describe('Float Arithmetic', () => {
+        it('uses ADDF for REAL + REAL', () => {
+            const ast = parse(`
+                PROGRAM Test
+                VAR
+                    x : REAL;
+                    y : REAL;
+                    z : REAL;
+                END_VAR
+                z := x + y;
+                END_PROGRAM
+            `);
+
+            const asm = generate(ast.programs[0]);
+            expect(asm).toContain('ADDF');
+            expect(asm).not.toContain('    ADD\n');  // Should not have integer ADD
+        });
+
+        it('uses SUBF for REAL - REAL', () => {
+            const ast = parse(`
+                PROGRAM Test
+                VAR
+                    x : REAL;
+                    y : REAL;
+                    z : REAL;
+                END_VAR
+                z := x - y;
+                END_PROGRAM
+            `);
+
+            const asm = generate(ast.programs[0]);
+            expect(asm).toContain('SUBF');
+        });
+
+        it('uses MULF for REAL * REAL', () => {
+            const ast = parse(`
+                PROGRAM Test
+                VAR
+                    x : REAL;
+                    y : REAL;
+                    z : REAL;
+                END_VAR
+                z := x * y;
+                END_PROGRAM
+            `);
+
+            const asm = generate(ast.programs[0]);
+            expect(asm).toContain('MULF');
+        });
+
+        it('uses DIVF for REAL / REAL', () => {
+            const ast = parse(`
+                PROGRAM Test
+                VAR
+                    x : REAL;
+                    y : REAL;
+                    z : REAL;
+                END_VAR
+                z := x / y;
+                END_PROGRAM
+            `);
+
+            const asm = generate(ast.programs[0]);
+            expect(asm).toContain('DIVF');
+        });
+
+        it('promotes INT + REAL to float arithmetic', () => {
+            const ast = parse(`
+                PROGRAM Test
+                VAR
+                    i : INT;
+                    r : REAL;
+                    result : REAL;
+                END_VAR
+                result := i + r;
+                END_PROGRAM
+            `);
+
+            const asm = generate(ast.programs[0]);
+            expect(asm).toContain('ADDF');  // Type promotion: INT + REAL uses ADDF
+        });
+
+        it('promotes REAL + INT to float arithmetic', () => {
+            const ast = parse(`
+                PROGRAM Test
+                VAR
+                    i : INT;
+                    r : REAL;
+                    result : REAL;
+                END_VAR
+                result := r + i;
+                END_PROGRAM
+            `);
+
+            const asm = generate(ast.programs[0]);
+            expect(asm).toContain('ADDF');
+        });
+
+        it('uses ADD for INT + INT', () => {
+            const ast = parse(`
+                PROGRAM Test
+                VAR
+                    a : INT;
+                    b : INT;
+                    c : INT;
+                END_VAR
+                c := a + b;
+                END_PROGRAM
+            `);
+
+            const asm = generate(ast.programs[0]);
+            expect(asm).toContain('    ADD');
+            expect(asm).not.toContain('ADDF');
+        });
+
+        it('handles complex float expressions', () => {
+            const ast = parse(`
+                PROGRAM Test
+                VAR
+                    a : REAL;
+                    b : REAL;
+                    c : REAL;
+                    result : REAL;
+                END_VAR
+                result := (a + b) * c;
+                END_PROGRAM
+            `);
+
+            const asm = generate(ast.programs[0]);
+            expect(asm).toContain('ADDF');
+            expect(asm).toContain('MULF');
+        });
+
+        it('handles float literal operations', () => {
+            const ast = parse(`
+                PROGRAM Test
+                VAR
+                    x : REAL;
+                END_VAR
+                x := 3.14 + 2.0;
+                END_PROGRAM
+            `);
+
+            const asm = generate(ast.programs[0]);
+            expect(asm).toContain('ADDF');
+        });
+    });
+});

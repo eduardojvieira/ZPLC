@@ -148,8 +148,29 @@ typedef enum {
   ZPLC_TYPE_BYTE = 0x10,  /**< 8-bit bit string */
   ZPLC_TYPE_WORD = 0x11,  /**< 16-bit bit string */
   ZPLC_TYPE_DWORD = 0x12, /**< 32-bit bit string */
-  ZPLC_TYPE_LWORD = 0x13  /**< 64-bit bit string */
+  ZPLC_TYPE_LWORD = 0x13, /**< 64-bit bit string */
+
+  /* String type */
+  ZPLC_TYPE_STRING = 0x20 /**< Variable-length string (IEC 61131-3) */
 } zplc_data_type_t;
+
+/**
+ * @brief STRING memory layout.
+ *
+ * Strings in ZPLC use a safe, bounds-checked layout:
+ *   Offset 0: current_length (uint16_t) - actual string length
+ *   Offset 2: max_capacity (uint16_t) - maximum allowed length
+ *   Offset 4: data[max_capacity+1] - null-terminated character data
+ *
+ * Total size = 4 + max_capacity + 1 bytes
+ *
+ * Example: STRING[80] uses 85 bytes (4 header + 80 chars + 1 null)
+ */
+#define ZPLC_STRING_LEN_OFFSET    0
+#define ZPLC_STRING_CAP_OFFSET    2
+#define ZPLC_STRING_DATA_OFFSET   4
+#define ZPLC_STRING_DEFAULT_SIZE  80
+#define ZPLC_STRING_MAX_SIZE      255
 
 /* ============================================================================
  * Opcodes
@@ -177,6 +198,21 @@ typedef enum {
   OP_SWAP = 0x12, /**< Swap top two elements */
   OP_OVER = 0x13, /**< Copy second element to top */
   OP_ROT = 0x14,  /**< Rotate top three elements */
+
+  /* ===== Indirect Memory Access (0x15-0x1A) ===== */
+  OP_LOADI8 = 0x15,  /**< Load 8-bit from address on stack */
+  OP_LOADI32 = 0x16, /**< Load 32-bit from address on stack */
+  OP_STOREI8 = 0x17, /**< Store 8-bit to address on stack: [addr val] -> [] */
+  OP_STOREI32 = 0x18, /**< Store 32-bit to address on stack: [addr val] -> [] */
+  OP_LOADI16 = 0x19, /**< Load 16-bit from address on stack */
+  OP_STOREI16 = 0x1A, /**< Store 16-bit to address on stack: [addr val] -> [] */
+
+  /* ===== String Operations (0x1B-0x1F) ===== */
+  OP_STRLEN = 0x1B,  /**< Get string length: [str_addr] -> [length] */
+  OP_STRCPY = 0x1C,  /**< Copy string: [src_addr dst_addr] -> [] (safe, bounds-checked) */
+  OP_STRCAT = 0x1D,  /**< Concatenate: [src_addr dst_addr] -> [] (safe, bounds-checked) */
+  OP_STRCMP = 0x1E,  /**< Compare strings: [addr1 addr2] -> [result] (-1, 0, 1) */
+  OP_STRCLR = 0x1F,  /**< Clear string: [str_addr] -> [] */
 
   /* ===== Integer Arithmetic (0x20-0x27) ===== */
   OP_ADD = 0x20, /**< Integer addition */
@@ -216,6 +252,7 @@ typedef enum {
 
   /* ===== Push with 8-bit operand (0x40-0x5F) ===== */
   OP_PUSH8 = 0x40, /**< Push 8-bit immediate (sign-extended) */
+  OP_PICK = 0x41,  /**< Copy nth stack element to top: PICK n copies stack[sp-1-n] */
 
   OP_JR = 0x50,   /**< Relative jump (signed 8-bit offset) */
   OP_JRZ = 0x51,  /**< Relative jump if zero */
@@ -486,6 +523,19 @@ static inline int zplc_opcode_is_valid(uint8_t opcode) {
   case OP_SWAP:
   case OP_OVER:
   case OP_ROT:
+  /* Indirect memory */
+  case OP_LOADI8:
+  case OP_LOADI32:
+  case OP_STOREI8:
+  case OP_STOREI32:
+  case OP_LOADI16:
+  case OP_STOREI16:
+  /* String operations */
+  case OP_STRLEN:
+  case OP_STRCPY:
+  case OP_STRCAT:
+  case OP_STRCMP:
+  case OP_STRCLR:
   /* Integer math */
   case OP_ADD:
   case OP_SUB:
@@ -520,6 +570,7 @@ static inline int zplc_opcode_is_valid(uint8_t opcode) {
   case OP_GTU:
   /* 8-bit operand */
   case OP_PUSH8:
+  case OP_PICK:
   case OP_JR:
   case OP_JRZ:
   case OP_JRNZ:

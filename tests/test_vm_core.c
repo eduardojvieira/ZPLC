@@ -100,6 +100,17 @@ static size_t emit_load32(uint8_t *buf, size_t offset, uint16_t addr)
 }
 
 /**
+ * @brief Append a PUSH16 instruction with a 16-bit value.
+ */
+static size_t emit_push16(uint8_t *buf, size_t offset, uint16_t value)
+{
+    buf[offset++] = OP_PUSH16;
+    buf[offset++] = (uint8_t)(value & 0xFF);
+    buf[offset++] = (uint8_t)((value >> 8) & 0xFF);
+    return offset;
+}
+
+/**
  * @brief Append a JZ instruction.
  */
 static size_t emit_jz(uint8_t *buf, size_t offset, uint16_t addr)
@@ -1693,6 +1704,451 @@ static void test_load_tasks_errors(void)
 }
 
 /* ============================================================================
+ * Indirect Memory Access Tests (LOADI/STOREI)
+ * ============================================================================ */
+
+static void test_indirect_memory(void)
+{
+    uint8_t code[128];
+    size_t len = 0;
+    const zplc_vm_state_t *state;
+
+    printf("\n=== Test: Indirect Memory Access (LOADI/STOREI) ===\n");
+
+    /*
+     * Test STOREI32: Store a value to computed address
+     * 
+     * Program:
+     *   PUSH16 0x2000   ; Address (work memory)
+     *   PUSH32 12345    ; Value to store
+     *   STOREI32        ; Store value to address
+     *   LOAD32 0x2000   ; Load back using direct addressing
+     *   HALT
+     *
+     * Expected: stack[0] = 12345
+     */
+    len = 0;
+    len = emit_push16(code, len, 0x2000);    /* Address */
+    len = emit_push32(code, len, 12345);     /* Value */
+    code[len++] = OP_STOREI32;               /* Indirect store */
+    len = emit_load32(code, len, 0x2000);    /* Load back */
+    len = emit_op(code, len, OP_HALT);
+
+    zplc_core_init();
+    zplc_core_load_raw(code, len);
+    zplc_core_run(0);
+
+    state = zplc_core_get_state();
+    TEST_ASSERT_EQ(state->stack[0], 12345, "STOREI32: stored 12345 via indirect");
+
+    /*
+     * Test LOADI32: Load from computed address
+     * 
+     * Program:
+     *   PUSH32 0xABCD1234  ; Store a known value first
+     *   STORE32 0x2004
+     *   PUSH16 0x2004      ; Address to load from
+     *   LOADI32            ; Indirect load
+     *   HALT
+     *
+     * Expected: stack[0] = 0xABCD1234
+     */
+    len = 0;
+    len = emit_push32(code, len, 0xABCD1234);
+    len = emit_store32(code, len, 0x2004);   /* Store known value */
+    len = emit_push16(code, len, 0x2004);    /* Address to load */
+    code[len++] = OP_LOADI32;                /* Indirect load */
+    len = emit_op(code, len, OP_HALT);
+
+    zplc_core_init();
+    zplc_core_load_raw(code, len);
+    zplc_core_run(0);
+
+    state = zplc_core_get_state();
+    TEST_ASSERT_EQ(state->stack[0], 0xABCD1234, "LOADI32: loaded 0xABCD1234 via indirect");
+
+    /*
+     * Test STOREI8/LOADI8: 8-bit indirect access
+     * 
+     * Program:
+     *   PUSH16 0x2010   ; Address
+     *   PUSH8 0x42      ; Value (66)
+     *   STOREI8         ; Store byte
+     *   PUSH16 0x2010   ; Address
+     *   LOADI8          ; Load byte
+     *   HALT
+     *
+     * Expected: stack[0] = 0x42
+     */
+    len = 0;
+    len = emit_push16(code, len, 0x2010);
+    len = emit_push8(code, len, 0x42);
+    code[len++] = OP_STOREI8;
+    len = emit_push16(code, len, 0x2010);
+    code[len++] = OP_LOADI8;
+    len = emit_op(code, len, OP_HALT);
+
+    zplc_core_init();
+    zplc_core_load_raw(code, len);
+    zplc_core_run(0);
+
+    state = zplc_core_get_state();
+    TEST_ASSERT_EQ(state->stack[0], 0x42, "STOREI8/LOADI8: stored/loaded 0x42 via indirect");
+
+    /*
+     * Test STOREI16/LOADI16: 16-bit indirect access
+     * 
+     * Program:
+     *   PUSH16 0x2020   ; Address
+     *   PUSH16 0x1234   ; Value (4660)
+     *   STOREI16        ; Store word
+     *   PUSH16 0x2020   ; Address
+     *   LOADI16         ; Load word
+     *   HALT
+     *
+     * Expected: stack[0] = 0x1234
+     */
+    len = 0;
+    len = emit_push16(code, len, 0x2020);
+    len = emit_push16(code, len, 0x1234);
+    code[len++] = OP_STOREI16;
+    len = emit_push16(code, len, 0x2020);
+    code[len++] = OP_LOADI16;
+    len = emit_op(code, len, OP_HALT);
+
+    zplc_core_init();
+    zplc_core_load_raw(code, len);
+    zplc_core_run(0);
+
+    state = zplc_core_get_state();
+    TEST_ASSERT_EQ(state->stack[0], 0x1234, "STOREI16/LOADI16: stored/loaded 0x1234 via indirect");
+
+    /*
+     * Test array-like access pattern (FIFO/LIFO simulation):
+     * 
+     * Program: Store values at array[0], array[1], array[2] then load array[1]
+     *   Base address: 0x2100
+     *   Element size: 4 bytes
+     *   
+     *   Store 100 at index 0
+     *   Store 200 at index 1  
+     *   Store 300 at index 2
+     *   Load from index 1
+     *
+     * Expected: stack[0] = 200
+     */
+    len = 0;
+    /* Store array[0] = 100 */
+    len = emit_push16(code, len, 0x2100);    /* base + 0*4 */
+    len = emit_push32(code, len, 100);
+    code[len++] = OP_STOREI32;
+
+    /* Store array[1] = 200 */
+    len = emit_push16(code, len, 0x2104);    /* base + 1*4 */
+    len = emit_push32(code, len, 200);
+    code[len++] = OP_STOREI32;
+
+    /* Store array[2] = 300 */
+    len = emit_push16(code, len, 0x2108);    /* base + 2*4 */
+    len = emit_push32(code, len, 300);
+    code[len++] = OP_STOREI32;
+
+    /* Load array[1] */
+    len = emit_push16(code, len, 0x2104);
+    code[len++] = OP_LOADI32;
+    len = emit_op(code, len, OP_HALT);
+
+    zplc_core_init();
+    zplc_core_load_raw(code, len);
+    zplc_core_run(0);
+
+    state = zplc_core_get_state();
+    TEST_ASSERT_EQ(state->stack[0], 200, "Array access: array[1] = 200");
+
+    /*
+     * Test computed index (dynamic array access):
+     *
+     * Program: 
+     *   index = 2 (on stack)
+     *   address = base + index * 4
+     *   LOADI32
+     *
+     * Expected: Load array[2] = 300 (set in previous test, memory persists)
+     */
+    len = 0;
+    /* Compute: 0x2100 + (2 * 4) = 0x2108 */
+    len = emit_push16(code, len, 0x2100);    /* Base */
+    len = emit_push8(code, len, 2);          /* Index */
+    len = emit_push8(code, len, 4);          /* Element size */
+    len = emit_op(code, len, OP_MUL);        /* index * 4 = 8 */
+    len = emit_op(code, len, OP_ADD);        /* base + 8 = 0x2108 */
+    code[len++] = OP_LOADI32;                /* Load from computed address */
+    len = emit_op(code, len, OP_HALT);
+
+    /* NOTE: Don't reinit - use memory from previous test */
+    zplc_core_load_raw(code, len);
+    zplc_vm_t *vm = zplc_core_get_default_vm();
+    vm->pc = 0;
+    vm->sp = 0;
+    vm->halted = 0;
+    vm->error = ZPLC_VM_OK;
+    zplc_core_run(0);
+
+    state = zplc_core_get_state();
+    TEST_ASSERT_EQ(state->stack[0], 300, "Computed index: array[2] = 300");
+}
+
+/* ============================================================================
+ * String Operations Tests
+ * ============================================================================ */
+
+/**
+ * Helper to get pointer to memory at given absolute address.
+ * Routes to the correct region (IPI/OPI/Work/Retain) based on address.
+ */
+static uint8_t* get_memory_ptr(uint16_t addr)
+{
+    uint8_t *region;
+    uint16_t offset;
+    
+    if (addr >= ZPLC_MEM_WORK_BASE && addr < ZPLC_MEM_RETAIN_BASE) {
+        region = zplc_mem_get_region(ZPLC_MEM_WORK_BASE);
+        offset = addr - ZPLC_MEM_WORK_BASE;
+    } else if (addr >= ZPLC_MEM_RETAIN_BASE && addr < ZPLC_MEM_CODE_BASE) {
+        region = zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE);
+        offset = addr - ZPLC_MEM_RETAIN_BASE;
+    } else if (addr >= ZPLC_MEM_OPI_BASE && addr < ZPLC_MEM_WORK_BASE) {
+        region = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
+        offset = addr - ZPLC_MEM_OPI_BASE;
+    } else {
+        region = zplc_mem_get_region(ZPLC_MEM_IPI_BASE);
+        offset = addr - ZPLC_MEM_IPI_BASE;
+    }
+    
+    return region ? (region + offset) : NULL;
+}
+
+/**
+ * Helper to initialize a string in memory.
+ * Layout: [len:2][cap:2][data:cap+1]
+ */
+static void init_string(uint16_t addr, uint16_t capacity, const char *value)
+{
+    uint8_t *mem = get_memory_ptr(addr);
+    uint16_t len = 0;
+    uint16_t i;
+
+    if (!mem) return;
+
+    /* Calculate length */
+    if (value) {
+        while (value[len] && len < capacity) {
+            len++;
+        }
+    }
+
+    /* Write header (little-endian) */
+    mem[0] = (uint8_t)(len & 0xFF);
+    mem[1] = (uint8_t)((len >> 8) & 0xFF);
+    mem[2] = (uint8_t)(capacity & 0xFF);
+    mem[3] = (uint8_t)((capacity >> 8) & 0xFF);
+
+    /* Write data */
+    for (i = 0; i < len; i++) {
+        mem[4 + i] = (uint8_t)value[i];
+    }
+    mem[4 + len] = 0; /* Null terminator */
+}
+
+/**
+ * Helper to read string length from memory.
+ */
+static uint16_t read_string_len(uint16_t addr)
+{
+    uint8_t *mem = get_memory_ptr(addr);
+    if (!mem) return 0;
+    return (uint16_t)mem[0] | ((uint16_t)mem[1] << 8);
+}
+
+/**
+ * Helper to compare string data in memory.
+ */
+static int string_equals(uint16_t addr, const char *expected)
+{
+    uint8_t *mem = get_memory_ptr(addr);
+    uint16_t len;
+    uint16_t i;
+
+    if (!mem) return 0;
+    
+    len = (uint16_t)mem[0] | ((uint16_t)mem[1] << 8);
+
+    for (i = 0; i < len; i++) {
+        if (mem[4 + i] != (uint8_t)expected[i]) {
+            return 0;
+        }
+    }
+    return expected[len] == '\0';
+}
+
+static void test_string_operations(void)
+{
+    uint8_t code[64];
+    size_t len = 0;
+    const zplc_vm_state_t *state;
+
+    printf("\n=== Test: String Operations ===\n");
+
+    /*
+     * Test STRLEN: Get length of string
+     *
+     * Setup: String "Hello" at 0x2200
+     * Program: PUSH16 0x2200, STRLEN, HALT
+     * Expected: stack[0] = 5
+     */
+    zplc_core_init();
+    init_string(0x2200, 80, "Hello");
+
+    len = 0;
+    len = emit_push16(code, len, 0x2200);
+    code[len++] = OP_STRLEN;
+    len = emit_op(code, len, OP_HALT);
+
+    zplc_core_load_raw(code, len);
+    zplc_core_run(0);
+
+    state = zplc_core_get_state();
+    TEST_ASSERT_EQ(state->stack[0], 5, "STRLEN: 'Hello' has length 5");
+
+    /*
+     * Test STRCPY: Copy string (safe, bounds-checked)
+     *
+     * Setup: 
+     *   Source "Hello" at 0x2200 (cap=80)
+     *   Destination empty at 0x2300 (cap=80)
+     * Program: PUSH16 0x2200, PUSH16 0x2300, STRCPY, HALT
+     * Expected: Destination contains "Hello"
+     */
+    zplc_core_init();
+    init_string(0x2200, 80, "Hello");
+    init_string(0x2300, 80, "");
+
+    len = 0;
+    len = emit_push16(code, len, 0x2200); /* src */
+    len = emit_push16(code, len, 0x2300); /* dst */
+    code[len++] = OP_STRCPY;
+    len = emit_op(code, len, OP_HALT);
+
+    zplc_core_load_raw(code, len);
+    zplc_core_run(0);
+
+    TEST_ASSERT_EQ(read_string_len(0x2300), 5, "STRCPY: destination length = 5");
+    TEST_ASSERT(string_equals(0x2300, "Hello"), "STRCPY: destination = 'Hello'");
+
+    /*
+     * Test STRCPY with truncation (bounds check)
+     *
+     * Setup:
+     *   Source "Hello World" at 0x2200 (cap=80)
+     *   Destination at 0x2300 (cap=5, too small)
+     * Expected: Destination contains "Hello" (truncated to capacity)
+     */
+    zplc_core_init();
+    init_string(0x2200, 80, "Hello World");
+    init_string(0x2300, 5, ""); /* Small capacity! */
+
+    len = 0;
+    len = emit_push16(code, len, 0x2200);
+    len = emit_push16(code, len, 0x2300);
+    code[len++] = OP_STRCPY;
+    len = emit_op(code, len, OP_HALT);
+
+    zplc_core_load_raw(code, len);
+    zplc_core_run(0);
+
+    TEST_ASSERT_EQ(read_string_len(0x2300), 5, "STRCPY truncation: length = 5");
+    TEST_ASSERT(string_equals(0x2300, "Hello"), "STRCPY truncation: = 'Hello'");
+
+    /*
+     * Test STRCAT: Concatenate strings
+     *
+     * Setup:
+     *   Source "World" at 0x2200
+     *   Destination "Hello " at 0x2300 (cap=80)
+     * Expected: Destination = "Hello World"
+     */
+    zplc_core_init();
+    init_string(0x2200, 80, "World");
+    init_string(0x2300, 80, "Hello ");
+
+    len = 0;
+    len = emit_push16(code, len, 0x2200);
+    len = emit_push16(code, len, 0x2300);
+    code[len++] = OP_STRCAT;
+    len = emit_op(code, len, OP_HALT);
+
+    zplc_core_load_raw(code, len);
+    zplc_core_run(0);
+
+    TEST_ASSERT_EQ(read_string_len(0x2300), 11, "STRCAT: length = 11");
+    TEST_ASSERT(string_equals(0x2300, "Hello World"), "STRCAT: = 'Hello World'");
+
+    /*
+     * Test STRCMP: Compare equal strings
+     */
+    zplc_core_init();
+    init_string(0x2200, 80, "Hello");
+    init_string(0x2300, 80, "Hello");
+
+    len = 0;
+    len = emit_push16(code, len, 0x2200);
+    len = emit_push16(code, len, 0x2300);
+    code[len++] = OP_STRCMP;
+    len = emit_op(code, len, OP_HALT);
+
+    zplc_core_load_raw(code, len);
+    zplc_core_run(0);
+
+    state = zplc_core_get_state();
+    TEST_ASSERT_EQ(state->stack[0], 0, "STRCMP: 'Hello' == 'Hello' -> 0");
+
+    /*
+     * Test STRCMP: First string less
+     */
+    zplc_core_init();
+    init_string(0x2200, 80, "Apple");
+    init_string(0x2300, 80, "Banana");
+
+    len = 0;
+    len = emit_push16(code, len, 0x2200);
+    len = emit_push16(code, len, 0x2300);
+    code[len++] = OP_STRCMP;
+    len = emit_op(code, len, OP_HALT);
+
+    zplc_core_load_raw(code, len);
+    zplc_core_run(0);
+
+    state = zplc_core_get_state();
+    TEST_ASSERT_EQ((int32_t)state->stack[0], -1, "STRCMP: 'Apple' < 'Banana' -> -1");
+
+    /*
+     * Test STRCLR: Clear string
+     */
+    zplc_core_init();
+    init_string(0x2200, 80, "Hello World");
+
+    len = 0;
+    len = emit_push16(code, len, 0x2200);
+    code[len++] = OP_STRCLR;
+    len = emit_op(code, len, OP_HALT);
+
+    zplc_core_load_raw(code, len);
+    zplc_core_run(0);
+
+    TEST_ASSERT_EQ(read_string_len(0x2200), 0, "STRCLR: length = 0");
+}
+
+/* ============================================================================
  * Main
  * ============================================================================ */
 
@@ -1729,6 +2185,12 @@ int main(void)
     test_load_tasks_basic();
     test_load_tasks_execute();
     test_load_tasks_errors();
+
+    /* Indirect Memory Access Tests (v1.1: LOADI/STOREI) */
+    test_indirect_memory();
+
+    /* String Operations Tests (v1.2: STRING type) */
+    test_string_operations();
 
     printf("\n================================================\n");
     printf("  Results: %d tests, %d passed, %d failed\n",

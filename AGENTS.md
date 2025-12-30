@@ -12,7 +12,7 @@ This file provides context for AI agents and human contributors working on ZPLC.
 | **Dev Platforms** | macOS, Linux, Windows (via POSIX HAL) |
 | **Language** | ANSI C99 (strict compliance) |
 | **Architecture** | Zephyr Module with POSIX fallback |
-| **Current Version** | v1.1.0 (Multitask + Persistence) |
+| **Current Version** | v1.2.0 (Indirect Memory + Standard Libraries) |
 
 ## Core Philosophy
 
@@ -362,6 +362,7 @@ The HAL (`zplc_hal.h`) defines the contract between core and platform:
 | Phase 4 | ✅ Complete | Simulation (WASM) & Debugging UI |
 | Phase 5 | ✅ Complete | Polish & Release v1.0.0 |
 | **v1.1** | ✅ Complete | **Multitask Scheduler + NVS Persistence** |
+| **v1.2** | ✅ Complete | **STRING Type + Indirect Memory + Standard Library** |
 
 ---
 
@@ -377,15 +378,15 @@ The HAL (`zplc_hal.h`) defines the contract between core and platform:
 | Retentive Memory | `0x4000` | 4 KB | Persisted across power cycles |
 | Code Segment | `0x5000` | 44 KB | Bytecode storage |
 
-### Opcode Categories (63 total)
+### Opcode Categories (75 total)
 
 | Range | Category | Examples |
 |-------|----------|----------|
 | `0x00-0x0F` | System | NOP, HALT, BREAK |
-| `0x10-0x1F` | Stack | DUP, DROP, SWAP, OVER, ROT |
+| `0x10-0x1F` | Stack + Indirect + String | DUP, DROP, SWAP, OVER, ROT, LOADI*, STOREI*, STRLEN, STRCPY, STRCAT, STRCMP, STRCLR |
 | `0x20-0x2F` | Arithmetic | ADD, SUB, MUL, DIV, ADDF, SUBF |
 | `0x30-0x3F` | Logic/Compare | AND, OR, XOR, EQ, LT, GT |
-| `0x40-0x5F` | 8-bit operand | PUSH8, JR, JRZ, JRNZ |
+| `0x40-0x5F` | 8-bit operand | PUSH8, PICK, JR, JRZ, JRNZ |
 | `0x80-0x9F` | 16-bit operand | LOAD/STORE, JMP, CALL, RET |
 | `0xA0-0xAF` | Conversion | I2F, F2I, EXT8, ZEXT16 |
 | `0xC0-0xCF` | 32-bit operand | PUSH32 |
@@ -448,7 +449,7 @@ brew install cmake ninja gperf python3 ccache qemu dtc wget xz
 
 ---
 
-## Next Steps (v1.2 Roadmap)
+## Next Steps (v1.3 Roadmap)
 
 1. **Modbus TCP/RTU**
    - Implement `zplc_modbus_server` in `src/comms/`
@@ -457,6 +458,7 @@ brew install cmake ninja gperf python3 ccache qemu dtc wget xz
 2. **MQTT Integration**
    - Sparkplug B compliant client
    - Publish-on-change for tagged variables
+   - STRING type ready for topic/payload handling
 
 3. **Retentive Variables**
    - Persist RETAIN memory region to NVS
@@ -475,12 +477,18 @@ When continuing development in a new session, use this context:
 ```
 Continue developing ZPLC - the Zephyr-first PLC runtime.
 
-COMPLETED (v1.1):
-- VM Core with 63 opcodes, 105+ passing tests
+COMPLETED (v1.2):
+- VM Core with 75 opcodes, 200+ passing tests (179 IDE + C suites)
 - Multitask scheduler with priority-based execution
 - NVS persistence (programs survive power cycles)
 - Serial loader with chunked upload
 - Visual IDE with LD/FBD/SFC editors
+- STRING type with full IEC 61131-3 compliance:
+  - VM opcodes: STRLEN, STRCPY, STRCAT, STRCMP, STRCLR
+  - Compiler: String literal pooling, operator overloading (= and <> use STRCMP)
+  - 14 string functions: LEN, CONCAT, COPY, CLEAR, LEFT, RIGHT, MID, FIND, INSERT, DELETE, REPLACE, STRCMP, EQ_STRING, NE_STRING
+- Indirect memory access (LOADI*, STOREI*) for arrays and data structures
+- Standard Library: 45+ functions + 22 function blocks
 
 DEVELOPMENT ENVIRONMENT:
 - Zephyr workspace: ~/zephyrproject (v4.0.0)
@@ -490,14 +498,18 @@ DEVELOPMENT ENVIRONMENT:
 
 QUICK BUILD COMMANDS:
   POSIX: cd build_posix && make && ctest
-  Pico: west build -b rpi_pico $ZEPLC_PATH/apps/zephyr_app --pristine
+  IDE:   cd ide && bun test
+  Pico:  west build -b rpi_pico $ZEPLC_PATH/apps/zephyr_app --pristine
   Flash: cp build/zephyr/zephyr.uf2 /Volumes/RPI-RP2/
 
 KEY FILES:
+- src/core/zplc_core.c (VM with string opcodes)
 - src/hal/zephyr/zplc_hal_zephyr.c (NVS persistence)
 - src/hal/zephyr/zplc_scheduler_zephyr.c (multitask)
 - apps/zephyr_app/src/shell_cmds.c (serial commands)
 - ide/src/compiler/index.ts (ST compiler)
+- ide/src/compiler/codegen.ts (code generation with string support)
+- ide/src/compiler/stdlib/strings.ts (14 string functions)
 
 What would you like to work on?
 ```

@@ -68,17 +68,99 @@ describe('stdlib registry', () => {
         expect(fbNames).toContain('CTU');
         expect(fbNames).toContain('CTD');
         expect(fbNames).toContain('CTUD');
-        expect(fbNames.length).toBe(10);
+        // New in v1.1
+        expect(fbNames).toContain('BLINK');
+        expect(fbNames).toContain('PWM');
+        expect(fbNames).toContain('PULSE');
+        // New in v1.2 - Process Control
+        expect(fbNames).toContain('HYSTERESIS');
+        expect(fbNames).toContain('DEADBAND');
+        expect(fbNames).toContain('LAG_FILTER');
+        expect(fbNames).toContain('RAMP_REAL');
+        expect(fbNames).toContain('INTEGRAL');
+        expect(fbNames).toContain('DERIVATIVE');
+        expect(fbNames).toContain('PID_Compact');
+        // New in v1.2 - System Buffers
+        expect(fbNames).toContain('FIFO');
+        expect(fbNames).toContain('LIFO');
+        expect(fbNames.length).toBe(22);
     });
 
     test('all functions are registered', () => {
         const fnNames = getAllFnNames();
+        // Selection functions
         expect(fnNames).toContain('MAX');
         expect(fnNames).toContain('MIN');
         expect(fnNames).toContain('LIMIT');
         expect(fnNames).toContain('SEL');
         expect(fnNames).toContain('MUX');
-        expect(fnNames.length).toBe(5);
+        // Bitwise functions (new in v1.1)
+        expect(fnNames).toContain('ROL');
+        expect(fnNames).toContain('ROR');
+        expect(fnNames).toContain('SHL');
+        expect(fnNames).toContain('SHR');
+        expect(fnNames).toContain('AND_WORD');
+        expect(fnNames).toContain('OR_WORD');
+        expect(fnNames).toContain('XOR_WORD');
+        expect(fnNames).toContain('NOT_WORD');
+        expect(fnNames).toContain('AND_DWORD');
+        expect(fnNames).toContain('OR_DWORD');
+        expect(fnNames).toContain('XOR_DWORD');
+        expect(fnNames).toContain('NOT_DWORD');
+        // Math functions (new in v1.1)
+        expect(fnNames).toContain('ABS');
+        expect(fnNames).toContain('ABSF');
+        expect(fnNames).toContain('NEG');
+        expect(fnNames).toContain('NEGF');
+        expect(fnNames).toContain('MOD');
+        expect(fnNames).toContain('SQRT');
+        expect(fnNames).toContain('EXPT');
+        // Type conversion functions (new in v1.1)
+        expect(fnNames).toContain('INT_TO_REAL');
+        expect(fnNames).toContain('REAL_TO_INT');
+        expect(fnNames).toContain('BOOL_TO_INT');
+        expect(fnNames).toContain('INT_TO_BOOL');
+        // Process control functions (new in v1.2)
+        expect(fnNames).toContain('NORM_X');
+        expect(fnNames).toContain('SCALE_X');
+        // Rounding functions (new in v1.2)
+        expect(fnNames).toContain('TRUNC');
+        expect(fnNames).toContain('ROUND');
+        // Trigonometry functions (new in v1.2)
+        expect(fnNames).toContain('SIN');
+        expect(fnNames).toContain('COS');
+        expect(fnNames).toContain('TAN');
+        // Inverse trigonometry (new in v1.2)
+        expect(fnNames).toContain('ASIN');
+        expect(fnNames).toContain('ACOS');
+        expect(fnNames).toContain('ATAN');
+        expect(fnNames).toContain('ATAN2');
+        // Logarithmic/Exponential (new in v1.2)
+        expect(fnNames).toContain('LN');
+        expect(fnNames).toContain('LOG');
+        expect(fnNames).toContain('EXP');
+        // System functions (new in v1.2)
+        expect(fnNames).toContain('UPTIME');
+        expect(fnNames).toContain('CYCLE_TIME');
+        expect(fnNames).toContain('WATCHDOG_RESET');
+        // String functions (new in v1.2)
+        expect(fnNames).toContain('LEN');
+        expect(fnNames).toContain('CONCAT');
+        expect(fnNames).toContain('LEFT');
+        expect(fnNames).toContain('RIGHT');
+        expect(fnNames).toContain('MID');
+        expect(fnNames).toContain('FIND');
+        expect(fnNames).toContain('INSERT');
+        expect(fnNames).toContain('DELETE');
+        expect(fnNames).toContain('REPLACE');
+        expect(fnNames).toContain('STRCMP');
+        expect(fnNames).toContain('COPY');
+        expect(fnNames).toContain('CLEAR');
+        expect(fnNames).toContain('EQ_STRING');
+        expect(fnNames).toContain('NE_STRING');
+        expect(fnNames).toContain('NAND');
+        expect(fnNames).toContain('NOR');
+        expect(fnNames.length).toBe(61);  // 45 + 14 string functions + 2 logic (NAND, NOR)
     });
 
     test('isFB returns correct values', () => {

@@ -638,6 +638,349 @@ int zplc_vm_step(zplc_vm_t *vm)
         vm->pc++;
         break;
 
+    /* ===== Indirect Memory Access ===== */
+
+    case OP_LOADI8:
+        /* Stack: [addr] -> [value] */
+        VM_CHECK_STACK_UNDERFLOW(vm, 1);
+        a = VM_POP(vm); /* address */
+        {
+            uint8_t val8;
+            mem_result = mem_read8((uint16_t)a, &val8);
+            if (mem_result != ZPLC_VM_OK) {
+                vm->error = (uint8_t)mem_result;
+                vm->halted = 1;
+                return mem_result;
+            }
+            VM_PUSH(vm, (uint32_t)val8);
+        }
+        vm->pc++;
+        break;
+
+    case OP_LOADI32:
+        /* Stack: [addr] -> [value] */
+        VM_CHECK_STACK_UNDERFLOW(vm, 1);
+        a = VM_POP(vm); /* address */
+        {
+            uint32_t val32;
+            mem_result = mem_read32((uint16_t)a, &val32);
+            if (mem_result != ZPLC_VM_OK) {
+                vm->error = (uint8_t)mem_result;
+                vm->halted = 1;
+                return mem_result;
+            }
+            VM_PUSH(vm, val32);
+        }
+        vm->pc++;
+        break;
+
+    case OP_STOREI8:
+        /* Stack: [addr val] -> [] */
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        a = VM_POP(vm); /* value */
+        b = VM_POP(vm); /* address */
+        mem_result = mem_write8((uint16_t)b, (uint8_t)a);
+        if (mem_result != ZPLC_VM_OK) {
+            vm->error = (uint8_t)mem_result;
+            vm->halted = 1;
+            return mem_result;
+        }
+        vm->pc++;
+        break;
+
+    case OP_STOREI32:
+        /* Stack: [addr val] -> [] */
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        a = VM_POP(vm); /* value */
+        b = VM_POP(vm); /* address */
+        mem_result = mem_write32((uint16_t)b, a);
+        if (mem_result != ZPLC_VM_OK) {
+            vm->error = (uint8_t)mem_result;
+            vm->halted = 1;
+            return mem_result;
+        }
+        vm->pc++;
+        break;
+
+    case OP_LOADI16:
+        /* Stack: [addr] -> [value] */
+        VM_CHECK_STACK_UNDERFLOW(vm, 1);
+        a = VM_POP(vm); /* address */
+        {
+            uint16_t val16;
+            mem_result = mem_read16((uint16_t)a, &val16);
+            if (mem_result != ZPLC_VM_OK) {
+                vm->error = (uint8_t)mem_result;
+                vm->halted = 1;
+                return mem_result;
+            }
+            VM_PUSH(vm, (uint32_t)val16);
+        }
+        vm->pc++;
+        break;
+
+    case OP_STOREI16:
+        /* Stack: [addr val] -> [] */
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        a = VM_POP(vm); /* value */
+        b = VM_POP(vm); /* address */
+        mem_result = mem_write16((uint16_t)b, (uint16_t)a);
+        if (mem_result != ZPLC_VM_OK) {
+            vm->error = (uint8_t)mem_result;
+            vm->halted = 1;
+            return mem_result;
+        }
+        vm->pc++;
+        break;
+
+    /* ===== String Operations ===== */
+    /*
+     * String memory layout:
+     *   Offset 0: current_length (uint16_t)
+     *   Offset 2: max_capacity (uint16_t)
+     *   Offset 4: data[max_capacity+1] (null-terminated)
+     */
+
+    case OP_STRLEN:
+        /* Stack: [str_addr] -> [length] */
+        VM_CHECK_STACK_UNDERFLOW(vm, 1);
+        a = VM_POP(vm); /* string address */
+        {
+            uint16_t str_len;
+            mem_result = mem_read16((uint16_t)a, &str_len);
+            if (mem_result != ZPLC_VM_OK) {
+                vm->error = (uint8_t)mem_result;
+                vm->halted = 1;
+                return mem_result;
+            }
+            VM_PUSH(vm, (uint32_t)str_len);
+        }
+        vm->pc++;
+        break;
+
+    case OP_STRCPY:
+        /* Stack: [src_addr dst_addr] -> [] (safe copy with bounds check) */
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        b = VM_POP(vm); /* dst_addr */
+        a = VM_POP(vm); /* src_addr */
+        {
+            uint16_t src_len, dst_cap;
+            uint16_t copy_len;
+            uint16_t i;
+            uint8_t ch;
+
+            /* Read source length */
+            mem_result = mem_read16((uint16_t)a, &src_len);
+            if (mem_result != ZPLC_VM_OK) {
+                vm->error = (uint8_t)mem_result;
+                vm->halted = 1;
+                return mem_result;
+            }
+
+            /* Read destination capacity */
+            mem_result = mem_read16((uint16_t)b + 2, &dst_cap);
+            if (mem_result != ZPLC_VM_OK) {
+                vm->error = (uint8_t)mem_result;
+                vm->halted = 1;
+                return mem_result;
+            }
+
+            /* Calculate safe copy length (bounds check) */
+            copy_len = (src_len < dst_cap) ? src_len : dst_cap;
+
+            /* Copy character by character */
+            for (i = 0; i < copy_len; i++) {
+                mem_result = mem_read8((uint16_t)a + 4 + i, &ch);
+                if (mem_result != ZPLC_VM_OK) {
+                    vm->error = (uint8_t)mem_result;
+                    vm->halted = 1;
+                    return mem_result;
+                }
+                mem_result = mem_write8((uint16_t)b + 4 + i, ch);
+                if (mem_result != ZPLC_VM_OK) {
+                    vm->error = (uint8_t)mem_result;
+                    vm->halted = 1;
+                    return mem_result;
+                }
+            }
+
+            /* Null-terminate */
+            mem_result = mem_write8((uint16_t)b + 4 + copy_len, 0);
+            if (mem_result != ZPLC_VM_OK) {
+                vm->error = (uint8_t)mem_result;
+                vm->halted = 1;
+                return mem_result;
+            }
+
+            /* Update destination length */
+            mem_result = mem_write16((uint16_t)b, copy_len);
+            if (mem_result != ZPLC_VM_OK) {
+                vm->error = (uint8_t)mem_result;
+                vm->halted = 1;
+                return mem_result;
+            }
+        }
+        vm->pc++;
+        break;
+
+    case OP_STRCAT:
+        /* Stack: [src_addr dst_addr] -> [] (safe concat with bounds check) */
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        b = VM_POP(vm); /* dst_addr */
+        a = VM_POP(vm); /* src_addr */
+        {
+            uint16_t src_len, dst_len, dst_cap;
+            uint16_t space_left, copy_len;
+            uint16_t i;
+            uint8_t ch;
+
+            /* Read source length */
+            mem_result = mem_read16((uint16_t)a, &src_len);
+            if (mem_result != ZPLC_VM_OK) {
+                vm->error = (uint8_t)mem_result;
+                vm->halted = 1;
+                return mem_result;
+            }
+
+            /* Read destination length and capacity */
+            mem_result = mem_read16((uint16_t)b, &dst_len);
+            if (mem_result != ZPLC_VM_OK) {
+                vm->error = (uint8_t)mem_result;
+                vm->halted = 1;
+                return mem_result;
+            }
+            mem_result = mem_read16((uint16_t)b + 2, &dst_cap);
+            if (mem_result != ZPLC_VM_OK) {
+                vm->error = (uint8_t)mem_result;
+                vm->halted = 1;
+                return mem_result;
+            }
+
+            /* Calculate safe append length (bounds check) */
+            space_left = (dst_cap > dst_len) ? (dst_cap - dst_len) : 0;
+            copy_len = (src_len < space_left) ? src_len : space_left;
+
+            /* Append character by character */
+            for (i = 0; i < copy_len; i++) {
+                mem_result = mem_read8((uint16_t)a + 4 + i, &ch);
+                if (mem_result != ZPLC_VM_OK) {
+                    vm->error = (uint8_t)mem_result;
+                    vm->halted = 1;
+                    return mem_result;
+                }
+                mem_result = mem_write8((uint16_t)b + 4 + dst_len + i, ch);
+                if (mem_result != ZPLC_VM_OK) {
+                    vm->error = (uint8_t)mem_result;
+                    vm->halted = 1;
+                    return mem_result;
+                }
+            }
+
+            /* Null-terminate */
+            mem_result = mem_write8((uint16_t)b + 4 + dst_len + copy_len, 0);
+            if (mem_result != ZPLC_VM_OK) {
+                vm->error = (uint8_t)mem_result;
+                vm->halted = 1;
+                return mem_result;
+            }
+
+            /* Update destination length */
+            mem_result = mem_write16((uint16_t)b, dst_len + copy_len);
+            if (mem_result != ZPLC_VM_OK) {
+                vm->error = (uint8_t)mem_result;
+                vm->halted = 1;
+                return mem_result;
+            }
+        }
+        vm->pc++;
+        break;
+
+    case OP_STRCMP:
+        /* Stack: [addr1 addr2] -> [result] (-1, 0, or 1) */
+        VM_CHECK_STACK_UNDERFLOW(vm, 2);
+        b = VM_POP(vm); /* addr2 */
+        a = VM_POP(vm); /* addr1 */
+        {
+            uint16_t len1, len2;
+            uint16_t min_len, i;
+            uint8_t ch1, ch2;
+            int32_t result = 0;
+
+            /* Read lengths */
+            mem_result = mem_read16((uint16_t)a, &len1);
+            if (mem_result != ZPLC_VM_OK) {
+                vm->error = (uint8_t)mem_result;
+                vm->halted = 1;
+                return mem_result;
+            }
+            mem_result = mem_read16((uint16_t)b, &len2);
+            if (mem_result != ZPLC_VM_OK) {
+                vm->error = (uint8_t)mem_result;
+                vm->halted = 1;
+                return mem_result;
+            }
+
+            /* Compare character by character */
+            min_len = (len1 < len2) ? len1 : len2;
+            for (i = 0; i < min_len; i++) {
+                mem_result = mem_read8((uint16_t)a + 4 + i, &ch1);
+                if (mem_result != ZPLC_VM_OK) {
+                    vm->error = (uint8_t)mem_result;
+                    vm->halted = 1;
+                    return mem_result;
+                }
+                mem_result = mem_read8((uint16_t)b + 4 + i, &ch2);
+                if (mem_result != ZPLC_VM_OK) {
+                    vm->error = (uint8_t)mem_result;
+                    vm->halted = 1;
+                    return mem_result;
+                }
+                if (ch1 < ch2) {
+                    result = -1;
+                    break;
+                } else if (ch1 > ch2) {
+                    result = 1;
+                    break;
+                }
+            }
+
+            /* If all compared chars equal, shorter string is "less" */
+            if (result == 0) {
+                if (len1 < len2) {
+                    result = -1;
+                } else if (len1 > len2) {
+                    result = 1;
+                }
+            }
+
+            VM_PUSH(vm, (uint32_t)result);
+        }
+        vm->pc++;
+        break;
+
+    case OP_STRCLR:
+        /* Stack: [str_addr] -> [] (clear string to empty) */
+        VM_CHECK_STACK_UNDERFLOW(vm, 1);
+        a = VM_POP(vm); /* string address */
+        {
+            /* Set length to 0 */
+            mem_result = mem_write16((uint16_t)a, 0);
+            if (mem_result != ZPLC_VM_OK) {
+                vm->error = (uint8_t)mem_result;
+                vm->halted = 1;
+                return mem_result;
+            }
+            /* Null-terminate at start */
+            mem_result = mem_write8((uint16_t)a + 4, 0);
+            if (mem_result != ZPLC_VM_OK) {
+                vm->error = (uint8_t)mem_result;
+                vm->halted = 1;
+                return mem_result;
+            }
+        }
+        vm->pc++;
+        break;
+
     /* ===== Integer Arithmetic ===== */
 
     case OP_ADD:
@@ -945,6 +1288,25 @@ int zplc_vm_step(zplc_vm_t *vm)
         }
         operand8 = code[vm->pc + 1];
         VM_PUSH(vm, (uint32_t)(int32_t)(int8_t)operand8);
+        vm->pc += 2;
+        break;
+
+    case OP_PICK:
+        /* PICK n: Copy the nth element from top of stack to top (0=top, 1=second, etc.)
+         * Stack before: [..., a, b, c, d] (d on top)
+         * PICK 2 -> Stack after: [..., a, b, c, d, b]
+         * This is a standard Forth/stack-machine operation for accessing deep stack values. */
+        if (vm->pc + 1 >= vm->code_size) {
+            vm->error = ZPLC_VM_INVALID_JUMP;
+            vm->halted = 1;
+            return ZPLC_VM_INVALID_JUMP;
+        }
+        operand8 = code[vm->pc + 1];
+        /* Check that we have enough elements: need at least (n+1) elements */
+        VM_CHECK_STACK_UNDERFLOW(vm, operand8 + 1);
+        /* Copy element at position (sp - 1 - n) to top */
+        a = vm->stack[vm->sp - 1 - operand8];
+        VM_PUSH(vm, a);
         vm->pc += 2;
         break;
 

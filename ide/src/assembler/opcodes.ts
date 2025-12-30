@@ -34,6 +34,21 @@ export const Opcode = {
     OVER: 0x13,     // Copy second element to top
     ROT: 0x14,     // Rotate top three elements
 
+    // ===== Indirect Memory Access (0x15-0x1A) =====
+    LOADI8: 0x15,   // Load 8-bit from address on stack
+    LOADI32: 0x16,  // Load 32-bit from address on stack
+    STOREI8: 0x17,  // Store 8-bit to address on stack [addr val] -> []
+    STOREI32: 0x18, // Store 32-bit to address on stack [addr val] -> []
+    LOADI16: 0x19,  // Load 16-bit from address on stack
+    STOREI16: 0x1A, // Store 16-bit to address on stack [addr val] -> []
+
+    // ===== String Operations (0x1B-0x1F) =====
+    STRLEN: 0x1B,   // Get string length: [str_addr] -> [length]
+    STRCPY: 0x1C,   // Copy string: [src_addr dst_addr] -> [] (safe, bounds-checked)
+    STRCAT: 0x1D,   // Concatenate: [src_addr dst_addr] -> [] (safe, bounds-checked)
+    STRCMP: 0x1E,   // Compare strings: [addr1 addr2] -> [result] (-1, 0, 1)
+    STRCLR: 0x1F,   // Clear string: [str_addr] -> []
+
     // ===== Integer Arithmetic (0x20-0x27) =====
     ADD: 0x20,     // Integer addition
     SUB: 0x21,     // Integer subtraction
@@ -72,6 +87,7 @@ export const Opcode = {
 
     // ===== 8-bit operand instructions (0x40-0x7F) =====
     PUSH8: 0x40,     // Push 8-bit immediate (sign-extended)
+    PICK: 0x41,     // Copy nth stack element to top (n is 8-bit operand)
     JR: 0x50,     // Relative jump (signed 8-bit offset)
     JRZ: 0x51,     // Relative jump if zero
     JRNZ: 0x52,     // Relative jump if not zero

@@ -9,6 +9,8 @@
  * - LIMIT: Clamp value between bounds
  * - SEL: Binary selector (G ? IN1 : IN0)
  * - MUX: Multiplexer (select from N inputs)
+ * - NAND: NOT AND (returns NOT(a AND b))
+ * - NOR: NOT OR (returns NOT(a OR b))
  */
 
 import type { FunctionDef, CodeGenContext } from './types.ts';
@@ -280,5 +282,69 @@ export const MUX_FN: FunctionDef = {
         ctx.emitExpression(args[1]);  // IN0
 
         ctx.emit(`${muxEnd}:`);
+    },
+};
+
+// ============================================================================
+// NAND - NOT AND
+// ============================================================================
+
+/**
+ * NAND(IN1, IN2) -> OUT
+ *
+ * Logical NAND: returns NOT(IN1 AND IN2)
+ * - If both inputs are TRUE: OUT = FALSE
+ * - Otherwise: OUT = TRUE
+ *
+ * Stack: [IN1, IN2] -> [result]
+ */
+export const NAND_FN: FunctionDef = {
+    name: 'NAND',
+    argCount: 2,
+    variadic: false,
+
+    generateInline(ctx: CodeGenContext, args: Expression[]): void {
+        if (args.length !== 2) {
+            ctx.emit(`    ; ERROR: NAND requires 2 arguments`);
+            return;
+        }
+
+        ctx.emit(`    ; NAND(IN1, IN2)`);
+        ctx.emitExpression(args[0]);  // IN1 on stack
+        ctx.emitExpression(args[1]);  // IN2 on stack
+        ctx.emit(`    AND`);          // [IN1 AND IN2]
+        ctx.emit(`    NOT`);          // [NOT(IN1 AND IN2)]
+    },
+};
+
+// ============================================================================
+// NOR - NOT OR
+// ============================================================================
+
+/**
+ * NOR(IN1, IN2) -> OUT
+ *
+ * Logical NOR: returns NOT(IN1 OR IN2)
+ * - If both inputs are FALSE: OUT = TRUE
+ * - Otherwise: OUT = FALSE
+ *
+ * Stack: [IN1, IN2] -> [result]
+ */
+export const NOR_FN: FunctionDef = {
+    name: 'NOR',
+    argCount: 2,
+    variadic: false,
+
+    generateInline(ctx: CodeGenContext, args: Expression[]): void {
+        if (args.length !== 2) {
+            ctx.emit(`    ; ERROR: NOR requires 2 arguments`);
+            return;
+        }
+
+        ctx.emit(`    ; NOR(IN1, IN2)`);
+        ctx.emitExpression(args[0]);  // IN1 on stack
+        ctx.emitExpression(args[1]);  // IN2 on stack
+        ctx.emit(`    OR`);           // [IN1 OR IN2]
+        ctx.emit(`    NOT`);          // [NOT(IN1 OR IN2)]
     },
 };

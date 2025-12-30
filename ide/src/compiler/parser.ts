@@ -24,8 +24,11 @@ import type {
     MemberAccess,
     BoolLiteral,
     IntLiteral,
+    RealLiteral,
     TimeLiteral,
+    StringLiteral,
     UnaryExpr,
+    FunctionCall,
     DataTypeValue,
     VarSectionValue,
 } from './ast.ts';
@@ -242,7 +245,7 @@ class Parser {
     }
 
     /**
-     * type_name := BOOL | INT | DINT | REAL | TIME | TON | TOF | TP
+     * type_name := BOOL | INT | DINT | REAL | TIME | TON | TOF | TP | ...
      */
     private parseTypeName(): DataTypeValue {
         const curr = this.current();
@@ -252,9 +255,35 @@ class Parser {
         if (this.match(TokenType.DINT)) return DataType.DINT;
         if (this.match(TokenType.REAL)) return DataType.REAL;
         if (this.match(TokenType.TIME)) return DataType.TIME;
+        if (this.match(TokenType.STRING)) return DataType.STRING;
+        // Timers
         if (this.match(TokenType.TON)) return DataType.TON;
         if (this.match(TokenType.TOF)) return DataType.TOF;
         if (this.match(TokenType.TP)) return DataType.TP;
+        // Edge detectors and bistables
+        if (this.match(TokenType.R_TRIG)) return DataType.R_TRIG;
+        if (this.match(TokenType.F_TRIG)) return DataType.F_TRIG;
+        if (this.match(TokenType.RS)) return DataType.RS;
+        if (this.match(TokenType.SR)) return DataType.SR;
+        // Counters
+        if (this.match(TokenType.CTU)) return DataType.CTU;
+        if (this.match(TokenType.CTD)) return DataType.CTD;
+        if (this.match(TokenType.CTUD)) return DataType.CTUD;
+        // Generators
+        if (this.match(TokenType.BLINK)) return DataType.BLINK;
+        if (this.match(TokenType.PWM)) return DataType.PWM;
+        if (this.match(TokenType.PULSE)) return DataType.PULSE;
+        // Process Control
+        if (this.match(TokenType.HYSTERESIS)) return DataType.HYSTERESIS;
+        if (this.match(TokenType.DEADBAND)) return DataType.DEADBAND;
+        if (this.match(TokenType.LAG_FILTER)) return DataType.LAG_FILTER;
+        if (this.match(TokenType.RAMP_REAL)) return DataType.RAMP_REAL;
+        if (this.match(TokenType.INTEGRAL)) return DataType.INTEGRAL;
+        if (this.match(TokenType.DERIVATIVE)) return DataType.DERIVATIVE;
+        if (this.match(TokenType.PID_Compact)) return DataType.PID_Compact;
+        // System Buffers
+        if (this.match(TokenType.FIFO)) return DataType.FIFO;
+        if (this.match(TokenType.LIFO)) return DataType.LIFO;
 
         this.error(`Expected type name, got ${curr.type}`);
     }
@@ -656,6 +685,16 @@ class Parser {
             } as IntLiteral;
         }
 
+        // Real (floating-point) literal
+        if (this.match(TokenType.REAL_LITERAL)) {
+            return {
+                kind: 'RealLiteral',
+                value: parseFloat(curr.value),
+                line: curr.line,
+                column: curr.column,
+            } as RealLiteral;
+        }
+
         // Time literal
         if (this.match(TokenType.TIME_LITERAL)) {
             return {
@@ -667,7 +706,17 @@ class Parser {
             } as TimeLiteral;
         }
 
-        // Identifier or member access
+        // String literal
+        if (this.match(TokenType.STRING_LITERAL)) {
+            return {
+                kind: 'StringLiteral',
+                value: curr.value,
+                line: curr.line,
+                column: curr.column,
+            } as StringLiteral;
+        }
+
+        // Identifier, member access, or function call
         if (this.match(TokenType.IDENTIFIER)) {
             const ident: Identifier = {
                 kind: 'Identifier',
@@ -675,6 +724,29 @@ class Parser {
                 line: curr.line,
                 column: curr.column,
             };
+
+            // Check for function call: IDENTIFIER(args)
+            if (this.match(TokenType.LPAREN)) {
+                const args: Expression[] = [];
+
+                // Parse comma-separated arguments
+                if (!this.check(TokenType.RPAREN)) {
+                    args.push(this.parseExpression());
+                    while (this.match(TokenType.COMMA)) {
+                        args.push(this.parseExpression());
+                    }
+                }
+
+                this.expect(TokenType.RPAREN, 'Expected ) after function arguments');
+
+                return {
+                    kind: 'FunctionCall',
+                    name: curr.value,
+                    args,
+                    line: curr.line,
+                    column: curr.column,
+                } as FunctionCall;
+            }
 
             // Check for member access
             if (this.match(TokenType.DOT)) {

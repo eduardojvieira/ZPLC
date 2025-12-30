@@ -21,13 +21,16 @@ import type {
     MemberAccess,
     BoolLiteral,
     IntLiteral,
+    RealLiteral,
     TimeLiteral,
+    StringLiteral,
     UnaryExpr,
     BinaryExpr,
+    FunctionCall,
 } from './ast.ts';
 import { buildSymbolTable, getLoadStoreSuffix, getMemberLoadStoreSuffix, MemoryLayout } from './symbol-table.ts';
 import type { SymbolTable, Symbol } from './symbol-table.ts';
-import { getFB } from './stdlib/index.ts';
+import { getFB, getFn } from './stdlib/index.ts';
 import type { CodeGenContext } from './stdlib/types.ts';
 
 // ============================================================================
@@ -81,6 +84,15 @@ export interface CodeGenOptions {
 // ============================================================================
 
 /**
+ * String literal entry in the pool.
+ */
+interface StringLiteralEntry {
+    value: string;
+    address: number;
+    size: number;  // Total bytes including header
+}
+
+/**
  * Code generator state.
  */
 interface CodeGenState {
@@ -88,6 +100,10 @@ interface CodeGenState {
     output: string[];
     labelCounter: number;
     initFlagAddr: number;
+    /** Pool of string literals allocated in work memory */
+    stringLiterals: StringLiteralEntry[];
+    /** Next available address for string literal allocation */
+    stringLiteralNextAddr: number;
 }
 
 /**
@@ -105,12 +121,23 @@ export function generate(program: Program, options?: CodeGenOptions): string {
             : DEFAULT_INIT_FLAG_ADDR);
     
     const symbols = buildSymbolTable(program, workMemoryBase);
+    
+    // Calculate string literal pool base address
+    // Place it after all declared variables but before the init flag
+    const workOffset = symbols.getWorkOffset();
+    const stringLiteralBase = workMemoryBase + workOffset;
+    
     const state: CodeGenState = {
         symbols,
         output: [],
         labelCounter: 0,
         initFlagAddr,
+        stringLiterals: [],
+        stringLiteralNextAddr: stringLiteralBase,
     };
+
+    // First pass: collect all string literals from the program
+    collectStringLiterals(state, program);
 
     // Emit header comment
     emit(state, `; ============================================================================`);
@@ -119,6 +146,9 @@ export function generate(program: Program, options?: CodeGenOptions): string {
     if (options?.workMemoryBase !== undefined) {
         emit(state, `; Work Memory Base: ${formatAddress(workMemoryBase)}`);
         emit(state, `; Init Flag: ${formatAddress(initFlagAddr)}`);
+    }
+    if (state.stringLiterals.length > 0) {
+        emit(state, `; String Literals: ${state.stringLiterals.length} (${formatAddress(stringLiteralBase)} - ${formatAddress(state.stringLiteralNextAddr - 1)})`);
     }
     emit(state, `; ============================================================================`);
     emit(state, ``);
@@ -138,6 +168,9 @@ export function generate(program: Program, options?: CodeGenOptions): string {
 
     // Emit initialization for variables with initial values
     emitInitialization(state, program);
+    
+    // Emit string literal initialization
+    emitStringLiteralInit(state);
 
     // Set initialization flag
     emit(state, ``);
@@ -201,7 +234,172 @@ function emitMemoryMap(state: CodeGenState): void {
             }
         }
     }
+    
+    // Document string literals
+    if (state.stringLiterals.length > 0) {
+        emit(state, `; --- String Literals ---`);
+        for (let i = 0; i < state.stringLiterals.length; i++) {
+            const lit = state.stringLiterals[i];
+            const preview = lit.value.length > 20 ? lit.value.substring(0, 20) + '...' : lit.value;
+            emit(state, `; ${formatAddress(lit.address)}: _str${i} = '${preview}' (${lit.size} bytes)`);
+        }
+    }
+    
     emit(state, ``);
+}
+
+// ============================================================================
+// String Literal Collection and Allocation
+// ============================================================================
+
+/**
+ * STRING memory layout constants.
+ * Matches zplc_isa.h definitions.
+ */
+const STRING_HEADER_SIZE = 4;  // 2 bytes length + 2 bytes capacity
+const STRING_DEFAULT_CAPACITY = 80;
+
+/**
+ * Calculate the size in bytes for a string literal.
+ * Layout: [len:2][cap:2][data:cap+1]
+ */
+function getStringLiteralSize(value: string): number {
+    // Use the string length as capacity (plus null terminator)
+    const capacity = Math.max(value.length, 1);  // At least 1 char capacity
+    return STRING_HEADER_SIZE + capacity + 1;  // +1 for null terminator
+}
+
+/**
+ * Recursively collect all string literals from the program AST.
+ * Allocates addresses for each unique literal.
+ */
+function collectStringLiterals(state: CodeGenState, program: Program): void {
+    const seen = new Map<string, number>();  // value -> index in pool
+    
+    function visitExpression(expr: Expression): void {
+        switch (expr.kind) {
+            case 'StringLiteral':
+                // Check if we've seen this literal before
+                if (!seen.has(expr.value)) {
+                    const size = getStringLiteralSize(expr.value);
+                    const entry: StringLiteralEntry = {
+                        value: expr.value,
+                        address: state.stringLiteralNextAddr,
+                        size,
+                    };
+                    seen.set(expr.value, state.stringLiterals.length);
+                    state.stringLiterals.push(entry);
+                    state.stringLiteralNextAddr += size;
+                }
+                break;
+            case 'UnaryExpr':
+                visitExpression(expr.operand);
+                break;
+            case 'BinaryExpr':
+                visitExpression(expr.left);
+                visitExpression(expr.right);
+                break;
+            case 'FunctionCall':
+                for (const arg of expr.args) {
+                    visitExpression(arg);
+                }
+                break;
+            case 'FBCall':
+                for (const param of expr.parameters) {
+                    visitExpression(param.value);
+                }
+                break;
+            default:
+                break;
+        }
+    }
+    
+    function visitStatement(stmt: Statement): void {
+        switch (stmt.kind) {
+            case 'Assignment':
+                visitExpression(stmt.value);
+                break;
+            case 'IfStatement':
+                visitExpression(stmt.condition);
+                for (const s of stmt.thenBranch) {
+                    visitStatement(s);
+                }
+                if (stmt.elseBranch) {
+                    for (const s of stmt.elseBranch) {
+                        visitStatement(s);
+                    }
+                }
+                break;
+            case 'FBCallStatement':
+                for (const param of stmt.parameters) {
+                    visitExpression(param.value);
+                }
+                break;
+        }
+    }
+    
+    // Visit all variable initializers
+    for (const block of program.varBlocks) {
+        for (const decl of block.variables) {
+            if (decl.initialValue) {
+                visitExpression(decl.initialValue);
+            }
+        }
+    }
+    
+    // Visit all statements
+    for (const stmt of program.statements) {
+        visitStatement(stmt);
+    }
+}
+
+/**
+ * Find the address of a string literal in the pool.
+ * Returns undefined if not found.
+ */
+function findStringLiteralAddress(state: CodeGenState, value: string): number | undefined {
+    const entry = state.stringLiterals.find(e => e.value === value);
+    return entry?.address;
+}
+
+/**
+ * Emit initialization code for all string literals.
+ * Each string is initialized with its header (len, cap) and data bytes.
+ */
+function emitStringLiteralInit(state: CodeGenState): void {
+    if (state.stringLiterals.length === 0) {
+        return;
+    }
+    
+    emit(state, ``);
+    emit(state, `    ; --- String Literal Initialization ---`);
+    
+    for (let i = 0; i < state.stringLiterals.length; i++) {
+        const lit = state.stringLiterals[i];
+        const len = lit.value.length;
+        const cap = len > 0 ? len : 1;  // At least capacity of 1
+        
+        emit(state, `    ; _str${i} = '${lit.value.substring(0, 20)}${lit.value.length > 20 ? '...' : ''}'`);
+        
+        // Store length (uint16 at offset 0)
+        emit(state, `    PUSH16 ${len}`);
+        emit(state, `    STORE16 ${formatAddress(lit.address)}`);
+        
+        // Store capacity (uint16 at offset 2)
+        emit(state, `    PUSH16 ${cap}`);
+        emit(state, `    STORE16 ${formatAddress(lit.address + 2)}`);
+        
+        // Store each character byte (offset 4+)
+        for (let j = 0; j < len; j++) {
+            const charCode = lit.value.charCodeAt(j);
+            emit(state, `    PUSH8 ${charCode}       ; '${lit.value[j]}'`);
+            emit(state, `    STORE8 ${formatAddress(lit.address + STRING_HEADER_SIZE + j)}`);
+        }
+        
+        // Store null terminator
+        emit(state, `    PUSH8 0           ; null terminator`);
+        emit(state, `    STORE8 ${formatAddress(lit.address + STRING_HEADER_SIZE + len)}`);
+    }
 }
 
 // ============================================================================
@@ -348,8 +546,14 @@ function emitExpression(state: CodeGenState, expr: Expression): void {
         case 'IntLiteral':
             emitIntLiteral(state, expr);
             break;
+        case 'RealLiteral':
+            emitRealLiteral(state, expr);
+            break;
         case 'TimeLiteral':
             emitTimeLiteral(state, expr);
+            break;
+        case 'StringLiteral':
+            emitStringLiteral(state, expr);
             break;
         case 'Identifier':
             emitIdentifier(state, expr);
@@ -362,6 +566,9 @@ function emitExpression(state: CodeGenState, expr: Expression): void {
             break;
         case 'BinaryExpr':
             emitBinaryExpr(state, expr);
+            break;
+        case 'FunctionCall':
+            emitFunctionCall(state, expr);
             break;
         case 'FBCall':
             emit(state, `    ; TODO: Inline FB call expression`);
@@ -385,9 +592,42 @@ function emitIntLiteral(state: CodeGenState, expr: IntLiteral): void {
     }
 }
 
+/**
+ * Emit a REAL (floating-point) literal.
+ * Converts the float to IEEE 754 single-precision (32-bit) representation.
+ */
+function emitRealLiteral(state: CodeGenState, expr: RealLiteral): void {
+    // Convert float to 32-bit IEEE 754 representation
+    const buffer = new ArrayBuffer(4);
+    const floatView = new Float32Array(buffer);
+    const intView = new Uint32Array(buffer);
+    
+    floatView[0] = expr.value;
+    const ieee754Bits = intView[0];
+    
+    emit(state, `    PUSH32 ${ieee754Bits}       ; ${expr.value} (REAL)`);
+}
+
 function emitTimeLiteral(state: CodeGenState, expr: TimeLiteral): void {
     // Time is stored in milliseconds as a 32-bit integer
     emit(state, `    PUSH32 ${expr.valueMs}       ; ${expr.rawValue}`);
+}
+
+/**
+ * Emit a STRING literal.
+ *
+ * String literals are pre-allocated in work memory during the collection phase.
+ * This function emits a PUSH of the literal's address.
+ */
+function emitStringLiteral(state: CodeGenState, expr: StringLiteral): void {
+    const addr = findStringLiteralAddress(state, expr.value);
+    if (addr !== undefined) {
+        emit(state, `    PUSH16 ${formatAddress(addr)}   ; '${expr.value.substring(0, 20)}${expr.value.length > 20 ? '...' : ''}'`);
+    } else {
+        // Should not happen if collectStringLiterals was called
+        emit(state, `    ; ERROR: String literal not found in pool: '${expr.value}'`);
+        emit(state, `    PUSH16 0`);
+    }
 }
 
 function emitIdentifier(state: CodeGenState, expr: Identifier): void {
@@ -395,6 +635,12 @@ function emitIdentifier(state: CodeGenState, expr: Identifier): void {
     if (!sym) {
         emit(state, `    ; ERROR: Unknown variable ${expr.name}`);
         emit(state, `    PUSH8 0`);
+        return;
+    }
+
+    // For STRING type, push the address (not load the value)
+    if (sym.dataType === 'STRING') {
+        emit(state, `    PUSH16 ${formatAddress(sym.address)}   ; &${expr.name}`);
         return;
     }
 
@@ -430,19 +676,127 @@ function emitUnaryExpr(state: CodeGenState, expr: UnaryExpr): void {
     }
 }
 
+/**
+ * Infer the data type of an expression.
+ * Returns 'STRING' if the expression is a string type, otherwise returns the inferred type.
+ */
+function inferExpressionType(state: CodeGenState, expr: Expression): string {
+    switch (expr.kind) {
+        case 'StringLiteral':
+            return 'STRING';
+        case 'BoolLiteral':
+            return 'BOOL';
+        case 'IntLiteral':
+            return 'INT';
+        case 'RealLiteral':
+            return 'REAL';
+        case 'TimeLiteral':
+            return 'TIME';
+        case 'Identifier': {
+            const sym = state.symbols.get(expr.name);
+            return sym?.dataType ?? 'UNKNOWN';
+        }
+        case 'FunctionCall': {
+            // String functions return STRING
+            const stringFunctions = ['CONCAT', 'LEFT', 'RIGHT', 'MID', 'INSERT', 'DELETE', 'REPLACE', 'COPY', 'CLEAR'];
+            if (stringFunctions.includes(expr.name)) {
+                return 'STRING';
+            }
+            // Most other functions return numeric types
+            return 'UNKNOWN';
+        }
+        case 'BinaryExpr':
+            // For comparison operators, return BOOL
+            if (['EQ', 'NE', 'LT', 'LE', 'GT', 'GE'].includes(expr.operator)) {
+                return 'BOOL';
+            }
+            // For arithmetic, inherit from left operand
+            return inferExpressionType(state, expr.left);
+        default:
+            return 'UNKNOWN';
+    }
+}
+
+/**
+ * Check if an expression is of STRING type.
+ */
+function isStringExpression(state: CodeGenState, expr: Expression): boolean {
+    return inferExpressionType(state, expr) === 'STRING';
+}
+
+/**
+ * Check if an expression is of REAL (floating-point) type.
+ * Returns true if the expression evaluates to a REAL value.
+ */
+function isFloatExpression(state: CodeGenState, expr: Expression): boolean {
+    const exprType = inferExpressionType(state, expr);
+    return exprType === 'REAL' || exprType === 'LREAL';
+}
+
+/**
+ * Determine if a binary expression should use floating-point arithmetic.
+ * Returns true if either operand is a float type (type promotion).
+ */
+function shouldUseFloatArithmetic(state: CodeGenState, left: Expression, right: Expression): boolean {
+    return isFloatExpression(state, left) || isFloatExpression(state, right);
+}
+
 function emitBinaryExpr(state: CodeGenState, expr: BinaryExpr): void {
+    // Check if this is a string operation
+    const leftIsString = isStringExpression(state, expr.left);
+    const rightIsString = isStringExpression(state, expr.right);
+    
+    if (leftIsString || rightIsString) {
+        // String comparison: s1 = s2, s1 <> s2
+        if (expr.operator === 'EQ' || expr.operator === 'NE') {
+            emit(state, `    ; String comparison`);
+            emitExpression(state, expr.left);
+            emitExpression(state, expr.right);
+            emit(state, `    STRCMP`);
+            emit(state, `    PUSH8 0`);
+            emit(state, expr.operator === 'EQ' ? `    EQ` : `    NE`);
+            return;
+        }
+        
+        // String concatenation: s1 + s2 is not standard IEC 61131-3
+        // but we can support it by calling CONCAT
+        if (expr.operator === 'ADD') {
+            emit(state, `    ; String concatenation (s1 + s2)`);
+            emit(state, `    ; NOTE: Use CONCAT() for proper string concatenation`);
+            // For now, emit an error comment - proper concatenation needs a destination
+            emit(state, `    ; ERROR: String + operator requires destination. Use CONCAT(s1, s2) instead.`);
+            emitExpression(state, expr.left);
+            return;
+        }
+        
+        // Other operators don't make sense for strings
+        emit(state, `    ; WARNING: Operator ${expr.operator} not supported for STRING type`);
+    }
+    
+    // Check if we should use floating-point arithmetic
+    const useFloat = shouldUseFloatArithmetic(state, expr.left, expr.right);
+    
+    // Standard numeric/boolean operations
     emitExpression(state, expr.left);
     emitExpression(state, expr.right);
 
     switch (expr.operator) {
+        // Logical operators - always integer
         case 'AND': emit(state, `    AND`); break;
         case 'OR': emit(state, `    OR`); break;
         case 'XOR': emit(state, `    XOR`); break;
-        case 'ADD': emit(state, `    ADD`); break;
-        case 'SUB': emit(state, `    SUB`); break;
-        case 'MUL': emit(state, `    MUL`); break;
-        case 'DIV': emit(state, `    DIV`); break;
+        
+        // Arithmetic operators - use float variants when operands are REAL
+        case 'ADD': emit(state, useFloat ? `    ADDF` : `    ADD`); break;
+        case 'SUB': emit(state, useFloat ? `    SUBF` : `    SUB`); break;
+        case 'MUL': emit(state, useFloat ? `    MULF` : `    MUL`); break;
+        case 'DIV': emit(state, useFloat ? `    DIVF` : `    DIV`); break;
+        
+        // MOD doesn't have a float variant (integer only)
         case 'MOD': emit(state, `    MOD`); break;
+        
+        // Comparison operators - same opcodes work for int and float
+        // (the VM compares 32-bit values on the stack bitwise)
         case 'EQ': emit(state, `    EQ`); break;
         case 'NE': emit(state, `    NE`); break;
         case 'LT': emit(state, `    LT`); break;
@@ -450,6 +804,29 @@ function emitBinaryExpr(state: CodeGenState, expr: BinaryExpr): void {
         case 'GT': emit(state, `    GT`); break;
         case 'GE': emit(state, `    GE`); break;
     }
+}
+
+function emitFunctionCall(state: CodeGenState, expr: FunctionCall): void {
+    const fnDef = getFn(expr.name);
+    if (!fnDef) {
+        emit(state, `    ; ERROR: Unknown function '${expr.name}'`);
+        emit(state, `    PUSH8 0`);
+        return;
+    }
+
+    emit(state, `    ; ${expr.name}(...)`);
+
+    // Create code generation context for inline function
+    const ctx: CodeGenContext = {
+        baseAddress: 0, // Not used for stateless functions
+        instanceName: expr.name,
+        newLabel: (prefix: string) => newLabel(state, prefix),
+        emit: (line: string) => emit(state, line),
+        emitExpression: (e: Expression) => emitExpression(state, e),
+    };
+
+    // Let the function generate its inline code
+    fnDef.generateInline(ctx, expr.args);
 }
 
 // ============================================================================

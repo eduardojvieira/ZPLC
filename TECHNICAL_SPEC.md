@@ -1,5 +1,5 @@
-# ZPLC v1.1: Technical Specification & Architecture
-**Version:** 1.1.0 (Stable)
+# ZPLC v1.2: Technical Specification & Architecture
+**Version:** 1.2.0 (Stable)
 **Target:** Open Source Industrial Automation
 **Core Philosophy:** One Execution Core, Any Runtime.
 
@@ -7,7 +7,7 @@
 
 ZPLC is a portable, deterministic PLC runtime environment powered by Zephyr RTOS for embedded targets and native OS layers for desktop/server hosting. It is designed to bring modern software development practices—including CI/CD pipelines, compact binary deployment, and open interoperability via PLCopen XML—to the industrial floor.
 
-**The "v1.1" Promise:** A fully functional runtime supporting all 5 IEC 61131-3 languages, capable of running real hardware I/O or in-browser simulations, with industrial-grade determinism. Now with **multitask scheduling** and **NVS persistence**.
+**The "v1.2" Promise:** A fully functional runtime supporting all 5 IEC 61131-3 languages, capable of running real hardware I/O or in-browser simulations, with industrial-grade determinism. Features **multitask scheduling**, **NVS persistence**, **indirect memory access**, and a comprehensive **standard function library**.
 
 ---
 
@@ -82,12 +82,13 @@ The Core is ANSI C99, strictly standard-compliant, designed to be compiled as a 
 
 ### 4.1 The Virtual Machine (VM)
 
-* **Instruction Set:** Stack-based, optimized for boolean logic and arithmetic. **63 opcodes** total.
+* **Instruction Set:** Stack-based, optimized for boolean logic and arithmetic. **75 opcodes** total (including indirect memory access, STRING operations, and PICK for deep stack access).
 * **Unified IR:** Structured Text (ST) and Ladder (LD) ultimately compile down to the same JUMP / LOAD / STORE / AND / OR opcodes.
 * **Memory Model:**
     * **Process Image:** A contiguous block of memory for I/O snapshots.
     * **Retentive Memory:** A dedicated block backed by HAL storage (NVS / Flash).
     * **Work Memory:** Stack/Heap for temporary calculation (strictly bounded, per-task isolated).
+* **STRING Support:** IEC 61131-3 compliant STRING type with bounds-checked operations (STRLEN, STRCPY, STRCAT, STRCMP, STRCLR).
 
 ### 4.2 The Scheduler
 
@@ -137,7 +138,7 @@ ZPLC integrates with Zephyr as a **Module**.
 
 ---
 
-## 7. Connectivity & Security (v1.2 Scope)
+## 7. Connectivity & Security (v1.3 Scope)
 
 ### 7.1 Communication
 
@@ -159,7 +160,7 @@ ZPLC integrates with Zephyr as a **Module**.
 ## 8. Development Roadmap
 
 **Phase 1.0 (Completed)**
-* **ISA & VM**: 63 opcodes, 32-bit stack, IEEE 754 float support.
+* **ISA & VM**: 62 opcodes, 32-bit stack, IEEE 754 float support.
 * **Visual IDE**: Reactive editors for LD, FBD, and SFC.
 * **TS Compiler**: Structured Text to Bytecode transpilation.
 * **WASM Simulation**: In-browser execution of the C core.
@@ -169,8 +170,28 @@ ZPLC integrates with Zephyr as a **Module**.
 * ✅ **Multitask Scheduler**: Priority-based concurrent task execution with configurable intervals.
 * ✅ **Program Persistence**: NVS-backed storage - programs survive power cycles and auto-restore on boot.
 * ✅ **Shell Commands**: `zplc persist info/clear` for managing stored programs.
+* ✅ **GET_TICKS Opcode**: System tick counter for timing operations.
 
-**Phase 1.2 (Target: Q2 2026)**
+**Phase 1.2 (Completed)**
+* ✅ **Indirect Memory Opcodes**: LOADI8, LOADI16, LOADI32, STOREI8, STOREI16, STOREI32 for computed address access.
+* ✅ **STRING Type**: IEC 61131-3 compliant STRING with bounds-checked operations:
+  - VM opcodes: STRLEN, STRCPY, STRCAT, STRCMP, STRCLR
+  - Compiler: String literal pooling, operator overloading (`=`, `<>` use STRCMP)
+  - 14 string functions: LEN, CONCAT, COPY, CLEAR, LEFT, RIGHT, MID, FIND, INSERT, DELETE, REPLACE, STRCMP, EQ_STRING, NE_STRING
+* ✅ **Standard Library**: 45 functions + 22 function blocks covering:
+  - Math: ABS, SQRT, EXPT, SIN, COS, TAN, ASIN, ACOS, ATAN, ATAN2, LN, LOG, EXP
+  - Selection: MAX, MIN, LIMIT, SEL, MUX
+  - Bitwise: ROL, ROR, SHL, SHR, AND/OR/XOR/NOT for WORD and DWORD
+  - Type Conversion: INT_TO_REAL, REAL_TO_INT, TRUNC, ROUND, NORM_X, SCALE_X
+  - Timers: TON, TOF, TP, BLINK, PWM, PULSE
+  - Counters: CTU, CTD, CTUD
+  - Edge Detection: R_TRIG, F_TRIG
+  - Bistables: RS, SR
+  - Control: PID_Compact, HYSTERESIS, DEADBAND, LAG_FILTER, RAMP_REAL, INTEGRAL, DERIVATIVE
+  - Data Structures: FIFO, LIFO (using indirect memory access)
+  - System: UPTIME, CYCLE_TIME, WATCHDOG_RESET
+
+**Phase 1.3 (Target: Q2 2026)**
 * **Industrial Connectivity**: Modbus TCP/RTU server and client.
 * **Cloud Integration**: MQTT "Sparkplug B" compliant client.
 * **Retentive Variables**: NVS-backed RETAIN memory region for critical process data.

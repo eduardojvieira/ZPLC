@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, Timer, Binary, Hash, GitBranch, Calculator, ToggleLeft } from 'lucide-react';
+import { ChevronDown, ChevronRight, Timer, Binary, Hash, GitBranch, Calculator, ToggleLeft, Zap, ArrowRightLeft, Repeat, Gauge, Database, Type } from 'lucide-react';
 
 // =============================================================================
 // Block Categories
@@ -39,6 +39,21 @@ const BLOCK_CATEGORIES: BlockCategory[] = [
     blocks: ['SR', 'RS'],
   },
   {
+    name: 'Generators',
+    icon: <Repeat size={14} />,
+    blocks: ['BLINK', 'PWM', 'PULSE'],
+  },
+  {
+    name: 'Process Control',
+    icon: <Gauge size={14} />,
+    blocks: ['PID_Compact', 'HYSTERESIS', 'DEADBAND', 'LAG_FILTER', 'RAMP_REAL', 'INTEGRAL', 'DERIVATIVE', 'NORM_X', 'SCALE_X'],
+  },
+  {
+    name: 'System',
+    icon: <Database size={14} />,
+    blocks: ['FIFO', 'LIFO', 'UPTIME', 'CYCLE_TIME'],
+  },
+  {
     name: 'Logic Gates',
     icon: <Binary size={14} />,
     blocks: ['AND', 'OR', 'NOT', 'XOR', 'NAND', 'NOR'],
@@ -51,12 +66,32 @@ const BLOCK_CATEGORIES: BlockCategory[] = [
   {
     name: 'Math',
     icon: <Calculator size={14} />,
-    blocks: ['ADD', 'SUB', 'MUL', 'DIV', 'MOD', 'ABS'],
+    blocks: ['ADD', 'SUB', 'MUL', 'DIV', 'MOD', 'ABS', 'SQRT', 'EXPT', 'LN', 'LOG', 'EXP', 'TRUNC', 'ROUND'],
+  },
+  {
+    name: 'Trigonometry',
+    icon: <Calculator size={14} />,
+    blocks: ['SIN', 'COS', 'TAN', 'ASIN', 'ACOS', 'ATAN', 'ATAN2'],
   },
   {
     name: 'Selection',
     icon: <GitBranch size={14} />,
-    blocks: ['MAX', 'MIN', 'LIMIT', 'SEL'],
+    blocks: ['MAX', 'MIN', 'LIMIT', 'SEL', 'MUX'],
+  },
+  {
+    name: 'Bitwise',
+    icon: <Zap size={14} />,
+    blocks: ['SHL', 'SHR', 'ROL', 'ROR', 'AND_WORD', 'OR_WORD', 'XOR_WORD', 'NOT_WORD', 'AND_DWORD', 'OR_DWORD', 'XOR_DWORD', 'NOT_DWORD'],
+  },
+  {
+    name: 'Type Conversion',
+    icon: <ArrowRightLeft size={14} />,
+    blocks: ['INT_TO_REAL', 'REAL_TO_INT', 'INT_TO_BOOL', 'BOOL_TO_INT'],
+  },
+  {
+    name: 'Strings',
+    icon: <Type size={14} />,
+    blocks: ['LEN', 'CONCAT', 'LEFT', 'RIGHT', 'MID', 'FIND', 'INSERT', 'DELETE', 'REPLACE', 'COPY', 'CLEAR', 'STRCMP', 'EQ_STRING', 'NE_STRING'],
   },
 ];
 

@@ -38,11 +38,35 @@ export const TokenType = {
     INT: 'INT',
     DINT: 'DINT',
     REAL: 'REAL',
+    STRING: 'STRING',
 
     // Keywords - Function blocks
     TON: 'TON',
     TOF: 'TOF',
     TP: 'TP',
+    R_TRIG: 'R_TRIG',
+    F_TRIG: 'F_TRIG',
+    RS: 'RS',
+    SR: 'SR',
+    CTU: 'CTU',
+    CTD: 'CTD',
+    CTUD: 'CTUD',
+    BLINK: 'BLINK',
+    PWM: 'PWM',
+    PULSE: 'PULSE',
+
+    // Keywords - Process Control Function blocks
+    HYSTERESIS: 'HYSTERESIS',
+    DEADBAND: 'DEADBAND',
+    LAG_FILTER: 'LAG_FILTER',
+    RAMP_REAL: 'RAMP_REAL',
+    INTEGRAL: 'INTEGRAL',
+    DERIVATIVE: 'DERIVATIVE',
+    PID_Compact: 'PID_Compact',
+
+    // Keywords - System Function blocks
+    FIFO: 'FIFO',
+    LIFO: 'LIFO',
 
     // Keywords - Literals
     TRUE: 'TRUE',
@@ -84,7 +108,9 @@ export const TokenType = {
     // Literals and identifiers
     IDENTIFIER: 'IDENTIFIER',
     INTEGER: 'INTEGER',
+    REAL_LITERAL: 'REAL_LITERAL',  // 3.14, 0.5, 100.0
     TIME_LITERAL: 'TIME_LITERAL',  // T#500ms, T#1s, etc.
+    STRING_LITERAL: 'STRING_LITERAL',  // 'Hello World'
     IO_ADDRESS: 'IO_ADDRESS',      // %Q0.0, %I0.0, etc.
 
     // Special
@@ -138,9 +164,29 @@ const KEYWORDS: Record<string, TokenTypeValue> = {
     'INT': TokenType.INT,
     'DINT': TokenType.DINT,
     'REAL': TokenType.REAL,
+    'STRING': TokenType.STRING,
     'TON': TokenType.TON,
     'TOF': TokenType.TOF,
     'TP': TokenType.TP,
+    'R_TRIG': TokenType.R_TRIG,
+    'F_TRIG': TokenType.F_TRIG,
+    'RS': TokenType.RS,
+    'SR': TokenType.SR,
+    'CTU': TokenType.CTU,
+    'CTD': TokenType.CTD,
+    'CTUD': TokenType.CTUD,
+    'BLINK': TokenType.BLINK,
+    'PWM': TokenType.PWM,
+    'PULSE': TokenType.PULSE,
+    'HYSTERESIS': TokenType.HYSTERESIS,
+    'DEADBAND': TokenType.DEADBAND,
+    'LAG_FILTER': TokenType.LAG_FILTER,
+    'RAMP_REAL': TokenType.RAMP_REAL,
+    'INTEGRAL': TokenType.INTEGRAL,
+    'DERIVATIVE': TokenType.DERIVATIVE,
+    'PID_COMPACT': TokenType.PID_Compact,
+    'FIFO': TokenType.FIFO,
+    'LIFO': TokenType.LIFO,
     'TRUE': TokenType.TRUE,
     'FALSE': TokenType.FALSE,
     'NOT': TokenType.NOT,
@@ -216,8 +262,10 @@ export function tokenize(source: string): Token[] {
         return result;
     };
 
-    const readNumber = (): string => {
+    const readNumber = (): { value: string; isReal: boolean } => {
         let result = '';
+        let isReal = false;
+        
         // Handle hex: 0x...
         if (current() === '0' && (peek() === 'x' || peek() === 'X')) {
             result += advance(); // 0
@@ -225,12 +273,39 @@ export function tokenize(source: string): Token[] {
             while (!isAtEnd() && isHexDigit(current())) {
                 result += advance();
             }
-        } else {
+            return { value: result, isReal: false };
+        }
+        
+        // Integer part
+        while (!isAtEnd() && isDigit(current())) {
+            result += advance();
+        }
+        
+        // Check for decimal point followed by a digit (REAL literal)
+        if (current() === '.' && isDigit(peek())) {
+            isReal = true;
+            result += advance(); // .
             while (!isAtEnd() && isDigit(current())) {
                 result += advance();
             }
         }
-        return result;
+        
+        // Optional exponent (e.g., 1.5e10, 2E-3)
+        if (current() === 'e' || current() === 'E') {
+            const nextChar = peek();
+            if (isDigit(nextChar) || nextChar === '+' || nextChar === '-') {
+                isReal = true;
+                result += advance(); // e or E
+                if (current() === '+' || current() === '-') {
+                    result += advance(); // sign
+                }
+                while (!isAtEnd() && isDigit(current())) {
+                    result += advance();
+                }
+            }
+        }
+        
+        return { value: result, isReal };
     };
 
     const readTimeLiteral = (): string => {
@@ -254,6 +329,36 @@ export function tokenize(source: string): Token[] {
         while (!isAtEnd() && (isAlphaNumeric(current()) || current() === '.')) {
             result += advance();
         }
+        return result;
+    };
+
+    const readStringLiteral = (): string => {
+        // Expecting 'string content'
+        advance(); // consume opening quote
+        let result = '';
+        while (!isAtEnd()) {
+            if (current() === '\n') {
+                throw new LexerError('Unterminated string literal (newline in string)', line, column);
+            }
+            // Handle escape sequences: '' for single quote
+            if (current() === "'") {
+                if (peek() === "'") {
+                    // Escaped quote: '' becomes '
+                    result += "'";
+                    advance(); // consume first '
+                    advance(); // consume second '
+                } else {
+                    // End of string
+                    break;
+                }
+            } else {
+                result += advance();
+            }
+        }
+        if (isAtEnd()) {
+            throw new LexerError('Unterminated string literal', line, column);
+        }
+        advance(); // consume closing quote
         return result;
     };
 
@@ -427,10 +532,21 @@ export function tokenize(source: string): Token[] {
             continue;
         }
 
-        // Numbers
+        // Numbers (INTEGER or REAL_LITERAL)
         if (isDigit(ch)) {
-            const num = readNumber();
-            addToken(TokenType.INTEGER, num, startLine, startColumn);
+            const { value, isReal } = readNumber();
+            if (isReal) {
+                addToken(TokenType.REAL_LITERAL, value, startLine, startColumn);
+            } else {
+                addToken(TokenType.INTEGER, value, startLine, startColumn);
+            }
+            continue;
+        }
+
+        // String literal 'Hello World'
+        if (ch === "'") {
+            const str = readStringLiteral();
+            addToken(TokenType.STRING_LITERAL, str, startLine, startColumn);
             continue;
         }
 

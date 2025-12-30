@@ -45,6 +45,7 @@ export type {
     FBCallStatement,
     FBCall,
     FBParameter,
+    FunctionCall,
     Identifier,
     MemberAccess,
     BoolLiteral,

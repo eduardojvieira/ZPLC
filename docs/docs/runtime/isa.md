@@ -1,6 +1,6 @@
 # ZPLC Virtual Machine - Instruction Set Architecture (ISA)
 
-**Version:** 1.1.0 (Stable)
+**Version:** 1.2.0 (Stable)
 **Status:** Released
 **Last Updated:** December 2025
 
@@ -123,8 +123,31 @@ IEC 61131-3 defines standard data types. We map them to type IDs for the VM.
 | WORD     | `0x11`  | 2            | 16 bits | Bit string |
 | DWORD    | `0x12`  | 4            | 32 bits | Bit string |
 | LWORD    | `0x13`  | 8            | 64 bits | Bit string |
+| STRING   | `0x14`  | Variable     | See below | Character string |
 
-### 3.2 Type Categories
+### 3.2 STRING Type Layout
+
+IEC 61131-3 strings are fixed-capacity with dynamic length. ZPLC uses this memory layout:
+
+```
+┌───────────────┬───────────────┬──────────────────────┐
+│ current_len   │ max_capacity  │      data[]          │
+│   (2 bytes)   │   (2 bytes)   │  (max_capacity + 1)  │
+└───────────────┴───────────────┴──────────────────────┘
+     Offset 0        Offset 2         Offset 4
+```
+
+| Field | Size | Description |
+|-------|------|-------------|
+| `current_len` | 2 bytes | Current string length (0 to max_capacity) |
+| `max_capacity` | 2 bytes | Maximum characters (default: 80, max: 255) |
+| `data` | capacity+1 | Null-terminated character data |
+
+**Total size:** 4 + max_capacity + 1 bytes
+
+**Example:** A `STRING[80]` occupies 85 bytes (4 header + 80 chars + 1 null).
+
+### 3.3 Type Categories
 
 For opcode suffixes, types are grouped:
 
@@ -178,6 +201,21 @@ Instructions are variable-length for compactness:
 | `0x12` | SWAP     | -       | (a b → b a)  | Swap top two |
 | `0x13` | OVER     | -       | (a b → a b a)| Copy second to top |
 | `0x14` | ROT      | -       | (a b c → b c a) | Rotate top three |
+| `0x15` | LOADI8   | -       | (addr → val) | Load 8-bit from address on stack |
+| `0x16` | LOADI32  | -       | (addr → val) | Load 32-bit from address on stack |
+| `0x17` | STOREI8  | -       | (addr val →) | Store 8-bit to address on stack |
+| `0x18` | STOREI32 | -       | (addr val →) | Store 32-bit to address on stack |
+| `0x19` | LOADI16  | -       | (addr → val) | Load 16-bit from address on stack |
+| `0x1A` | STOREI16 | -       | (addr val →) | Store 16-bit to address on stack |
+| `0x1B` | STRLEN   | -       | (str → len)  | Get string length |
+| `0x1C` | STRCPY   | -       | (src dst →)  | Copy string (bounds-checked) |
+| `0x1D` | STRCAT   | -       | (src dst →)  | Concatenate strings (bounds-checked) |
+| `0x1E` | STRCMP   | -       | (s1 s2 → cmp)| Compare strings (-1, 0, 1) |
+| `0x1F` | STRCLR   | -       | (str →)      | Clear string to empty |
+
+**Indirect Memory Access (v1.2):** The `LOADI*` and `STOREI*` opcodes enable computed address access, essential for implementing arrays, FIFO/LIFO buffers, and other data structures. The address is taken from the stack rather than encoded in the instruction.
+
+**String Operations (v1.2):** The string opcodes operate on the STRING memory layout (see Section 3.2). All operations are bounds-checked and will truncate rather than overflow. STRCPY and STRCAT respect the destination's `max_capacity` field.
 
 #### 4.2.3 Load/Store Operations (0x20-0x3F)
 
@@ -193,6 +231,7 @@ Instructions are variable-length for compactness:
 | `0x87` | STORE64  | addr16  | (val_lo val_hi →) | Store 64-bit |
 | `0xC0` | PUSH32   | imm32   | (→ val)      | Push 32-bit immediate |
 | `0x40` | PUSH8    | imm8    | (→ val)      | Push 8-bit immediate (sign-extended) |
+| `0x41` | PICK     | n8      | (... → ... stack[sp-1-n]) | Copy nth stack element to top |
 | `0x88` | PUSH16   | imm16   | (→ val)      | Push 16-bit immediate (sign-extended) |
 
 #### 4.2.4 Arithmetic Operations (0x20-0x2F)
@@ -474,6 +513,8 @@ skip:   ...
 |---------|------|---------|
 | 1.0     | 2024 | Initial specification (62 opcodes) |
 | 1.1     | 2025 | Added GET_TICKS opcode (63 total), multitask support |
+| 1.2     | 2025 | Added indirect memory opcodes (LOADI*, STOREI*) and STRING opcodes (STRLEN, STRCPY, STRCAT, STRCMP, STRCLR). |
+| 1.2.1   | 2025 | Added PICK opcode (0x41) for deep stack access. Total: **75 opcodes** |
 
 ---
 
@@ -485,11 +526,20 @@ skip:   ...
 02 BREAK     12 SWAP      22 MUL       32 XOR       
 03 GET_TICKS 13 OVER      23 DIV       33 NOT       
              14 ROT       24 MOD       34 SHL       
-                          25 NEG       35 SHR       
-                          26 ABS       36 SAR       
+             15 LOADI8    25 NEG       35 SHR       
+             16 LOADI32   26 ABS       36 SAR       
+             17 STOREI8                             
+             18 STOREI32                            
+             19 LOADI16                             
+             1A STOREI16                            
+             1B STRLEN                              
+             1C STRCPY                              
+             1D STRCAT                              
+             1E STRCMP                              
+             1F STRCLR                              
                                                     
 38 EQ        40 PUSH8     50 JR        80 LOAD8     
-39 NE        51 JRZ       81 LOAD16    90 JMP       
+39 NE        41 PICK      51 JRZ       81 LOAD16    90 JMP       
 3A LT        52 JRNZ      82 LOAD32    91 JZ        
 3B LE                     83 LOAD64    92 JNZ       
 3C GT                     84 STORE8    93 CALL      
