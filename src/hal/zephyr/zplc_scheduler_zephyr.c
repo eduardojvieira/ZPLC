@@ -32,7 +32,9 @@
 #include <zplc_scheduler.h>
 #include <zplc_core.h>
 #include <zplc_hal.h>
+#include <zplc_isa.h>
 #include <string.h>
+#include <stdbool.h>
 
 /* ============================================================================
  * Configuration
@@ -168,6 +170,53 @@ static void sync_opi_to_outputs(void)
     }
 }
 
+/**
+ * @brief Update system registers in IPI.
+ *
+ * Writes cycle time, uptime, task ID, and flags to the reserved
+ * system register area at the end of IPI (0x0FF0-0x0FFF).
+ *
+ * @param task_id Current task ID
+ * @param cycle_time_us Cycle execution time in microseconds
+ * @param first_scan True if this is the first scan
+ */
+static void update_system_registers(uint8_t task_id, uint32_t cycle_time_us, bool first_scan)
+{
+    uint8_t *ipi = zplc_mem_get_region(ZPLC_MEM_IPI_BASE);
+    uint8_t flags = 0;
+    
+    if (ipi == NULL) {
+        return;
+    }
+    
+    /* Write cycle time at offset 0x0FF0 (4 bytes, little-endian) */
+    ipi[0x0FF0] = (uint8_t)(cycle_time_us & 0xFF);
+    ipi[0x0FF1] = (uint8_t)((cycle_time_us >> 8) & 0xFF);
+    ipi[0x0FF2] = (uint8_t)((cycle_time_us >> 16) & 0xFF);
+    ipi[0x0FF3] = (uint8_t)((cycle_time_us >> 24) & 0xFF);
+    
+    /* Write uptime at offset 0x0FF4 (4 bytes, little-endian) */
+    uint32_t uptime_ms = k_uptime_get_32();
+    ipi[0x0FF4] = (uint8_t)(uptime_ms & 0xFF);
+    ipi[0x0FF5] = (uint8_t)((uptime_ms >> 8) & 0xFF);
+    ipi[0x0FF6] = (uint8_t)((uptime_ms >> 16) & 0xFF);
+    ipi[0x0FF7] = (uint8_t)((uptime_ms >> 24) & 0xFF);
+    
+    /* Write task ID at offset 0x0FF8 */
+    ipi[0x0FF8] = task_id;
+    
+    /* Build flags byte */
+    if (first_scan) {
+        flags |= ZPLC_SYS_FLAG_FIRST_SCAN;
+    }
+    if (sched_state == ZPLC_SCHED_STATE_RUNNING) {
+        flags |= ZPLC_SYS_FLAG_RUNNING;
+    }
+    
+    /* Write flags at offset 0x0FF9 */
+    ipi[0x0FF9] = flags;
+}
+
 /* ============================================================================
  * Forward Declarations
  * ============================================================================ */
@@ -267,6 +316,7 @@ static void task_work_handler(struct k_work *work)
     zplc_task_internal_t *t = find_task_by_work(work);
     uint32_t start_tick, end_tick, exec_time;
     int result;
+    bool first_scan;
     
     if (t == NULL || !t->registered) {
         return;
@@ -277,6 +327,9 @@ static void task_work_handler(struct k_work *work)
         return;
     }
     
+    /* Check if this is the first scan */
+    first_scan = (t->task.stats.cycle_count == 0);
+    
     /* Record start time */
     start_tick = k_uptime_get_32();
     t->last_start_tick = start_tick;
@@ -286,6 +339,9 @@ static void task_work_handler(struct k_work *work)
     
     /* Sync inputs from GPIO to IPI before execution */
     sync_inputs_to_ipi();
+    
+    /* Update system registers BEFORE execution so program can read them */
+    update_system_registers(t->task.config.id, t->task.stats.last_exec_time_us, first_scan);
     
     /* Execute one VM cycle */
     result = zplc_vm_run_cycle(&t->vm);

@@ -710,7 +710,7 @@ VAR
 END_VAR
     cycleTime := CYCLE_TIME();
 END_PROGRAM
-`, ['PUSH32']);  // CYCLE_TIME is currently a stub returning 0
+`, ['LOAD32']);  // CYCLE_TIME reads from system register at IPI 0x0FF0
 
 // ============================================================================
 // Test 11: Complex Expressions

@@ -480,9 +480,16 @@ export const LIFO_FB: FunctionBlockDef = {
  * CYCLE_TIME() : DINT
  *
  * Returns the execution time of the last PLC cycle in microseconds.
- * Note: This requires runtime support - currently returns 0.
+ * Reads from system register at IPI offset 0x0FF0 (ZPLC_SYS_CYCLE_TIME).
  *
- * In a real implementation, this would be tracked by the scheduler.
+ * The scheduler updates this value BEFORE each task cycle, so the program
+ * can monitor its own execution time from the previous cycle.
+ *
+ * Usage in ST:
+ *   last_cycle := CYCLE_TIME();
+ *   IF last_cycle > 5000 THEN  (* More than 5ms *)
+ *       cycle_warning := TRUE;
+ *   END_IF;
  */
 export const CYCLE_TIME_FN: FunctionDef = {
     name: 'CYCLE_TIME',
@@ -490,9 +497,8 @@ export const CYCLE_TIME_FN: FunctionDef = {
     variadic: false,
 
     generateInline(ctx: CodeGenContext, _args: []): void {
-        ctx.emit(`    ; CYCLE_TIME() - Get last cycle time (stub)`);
-        ctx.emit(`    ; TODO: Requires scheduler integration`);
-        ctx.emit(`    PUSH32 0`);
+        ctx.emit(`    ; CYCLE_TIME() - Read last cycle execution time from system registers`);
+        ctx.emit(`    LOAD32 0x0FF0`);  // ZPLC_SYS_CYCLE_TIME in IPI
     }
 };
 

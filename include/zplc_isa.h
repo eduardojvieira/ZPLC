@@ -110,6 +110,41 @@ extern "C" {
 #endif
 
 /* ============================================================================
+ * System Information Registers (Reserved IPI Addresses)
+ * ============================================================================
+ *
+ * The last 16 bytes of IPI (0x0FF0-0x0FFF) are reserved for system information.
+ * These are written by the scheduler/runtime and readable by PLC programs.
+ * This follows common PLC practice (similar to %SW system words in IEC 61131-3).
+ */
+
+/** @brief Offset within IPI for system registers (last 16 bytes) */
+#define ZPLC_SYS_REG_OFFSET     0x0FF0U
+
+/** @brief System register: Last cycle execution time in microseconds (DINT, 4 bytes) */
+#define ZPLC_SYS_CYCLE_TIME     (ZPLC_MEM_IPI_BASE + 0x0FF0U)
+
+/** @brief System register: System uptime in milliseconds (UDINT, 4 bytes) */
+#define ZPLC_SYS_UPTIME         (ZPLC_MEM_IPI_BASE + 0x0FF4U)
+
+/** @brief System register: Current task ID (BYTE, 1 byte) */
+#define ZPLC_SYS_TASK_ID        (ZPLC_MEM_IPI_BASE + 0x0FF8U)
+
+/** @brief System register: System flags (BYTE, 1 byte) */
+#define ZPLC_SYS_FLAGS          (ZPLC_MEM_IPI_BASE + 0x0FF9U)
+
+/** @brief System flags: First scan bit (set on first cycle after start) */
+#define ZPLC_SYS_FLAG_FIRST_SCAN    0x01
+
+/** @brief System flags: Watchdog warning (cycle time exceeded 80% of interval) */
+#define ZPLC_SYS_FLAG_WDG_WARN      0x02
+
+/** @brief System flags: Scheduler is running */
+#define ZPLC_SYS_FLAG_RUNNING       0x04
+
+/* Bytes 0x0FFA-0x0FFF reserved for future use */
+
+/* ============================================================================
  * Data Types (IEC 61131-3 Mapping)
  * ============================================================================
  */
