@@ -21,11 +21,11 @@ const config = {
 
   url: 'https://eduardojvieira.github.io',
   baseUrl: '/ZPLC/',
+  trailingSlash: true,
   organizationName: 'eduardojvieira',
   projectName: 'ZPLC',
 
   onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
 
   i18n: {
     defaultLocale: 'en',
