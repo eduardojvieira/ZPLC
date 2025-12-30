@@ -14,7 +14,7 @@
     "preview": "vite preview",
     "test": "bun test",
     "test:watch": "bun test --watch",
-    "electron:compile": "tsc -p tsconfig.electron.json",
+    "electron:compile": "tsc -p tsconfig.electron.json && tsc -p tsconfig.preload.json && mv electron-dist/preload.js electron-dist/preload.cjs",
     "electron:dev": "concurrently -k \"vite\" \"wait-on http://localhost:3000 && npm run electron:compile && NODE_ENV=development electron .\"",
     "electron:preview": "npm run build && npm run electron:compile && electron .",
     "electron:build": "npm run build && npm run electron:compile && electron-builder",

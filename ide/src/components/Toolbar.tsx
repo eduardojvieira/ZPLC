@@ -856,8 +856,13 @@ export function Toolbar() {
     { id: 'system' as const, label: 'System', icon: Monitor },
   ];
 
+  // Check if running in Electron on macOS (need space for traffic light buttons)
+  const isElectronMac = typeof window !== 'undefined' && 
+    window.electronAPI?.isElectron && 
+    window.electronAPI?.platform === 'darwin';
+
   return (
-    <div className="h-12 bg-[var(--color-surface-800)] border-b border-[var(--color-surface-600)] flex items-center px-4 gap-2">
+    <div className={`h-12 bg-[var(--color-surface-800)] border-b border-[var(--color-surface-600)] flex items-center px-4 gap-2 ${isElectronMac ? 'pl-20' : ''}`}>
       {/* Logo */}
       <div className="flex items-center gap-2 mr-4">
         <div className="w-8 h-8 bg-[var(--color-accent-blue)] rounded flex items-center justify-center font-bold text-white text-sm">

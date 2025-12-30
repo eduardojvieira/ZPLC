@@ -704,8 +704,39 @@ function IOTable({ items, onUpdate, onRemove }: IOTableProps) {
 // TASKS SECTION
 // =============================================================================
 
+/**
+ * Get list of available program files from the file tree.
+ * Programs are .st files or visual editor files (.fbd.json, .ld.json, .sfc.json)
+ */
+function getAvailablePrograms(loadedFiles: Map<string, unknown>): string[] {
+  const programs: string[] = [];
+  const programExtensions = ['.st', '.fbd.json', '.ld.json', '.sfc.json'];
+  
+  for (const [, file] of loadedFiles) {
+    const f = file as { name?: string };
+    if (f.name) {
+      const isProgram = programExtensions.some(ext => f.name!.endsWith(ext));
+      if (isProgram) {
+        // Extract program name without extension
+        let name = f.name;
+        for (const ext of programExtensions) {
+          if (name.endsWith(ext)) {
+            name = name.slice(0, -ext.length);
+            break;
+          }
+        }
+        programs.push(name);
+      }
+    }
+  }
+  
+  return programs.sort();
+}
+
 function TasksSection({ config, updateConfig }: SectionProps) {
+  const { loadedFiles } = useIDEStore();
   const tasks = config.tasks;
+  const availablePrograms = getAvailablePrograms(loadedFiles);
 
   const addTask = () => {
     const newTask: TaskDefinition = {
@@ -753,6 +784,7 @@ function TasksSection({ config, updateConfig }: SectionProps) {
             <TaskCard
               key={index}
               task={task}
+              availablePrograms={availablePrograms}
               onUpdate={(updates) => updateTask(index, updates)}
               onRemove={() => removeTask(index)}
             />
@@ -766,11 +798,15 @@ function TasksSection({ config, updateConfig }: SectionProps) {
 // Task Card sub-component
 interface TaskCardProps {
   task: TaskDefinition;
+  availablePrograms: string[];
   onUpdate: (updates: Partial<TaskDefinition>) => void;
   onRemove: () => void;
 }
 
-function TaskCard({ task, onUpdate, onRemove }: TaskCardProps) {
+function TaskCard({ task, availablePrograms, onUpdate, onRemove }: TaskCardProps) {
+  // Currently only one program per task is supported by the runtime
+  const selectedProgram = task.programs[0] || '';
+  
   return (
     <div className="bg-[var(--color-surface-700)] rounded-lg p-3 border border-[var(--color-surface-500)]">
       <div className="flex items-center justify-between mb-3">
@@ -855,21 +891,31 @@ function TaskCard({ task, onUpdate, onRemove }: TaskCardProps) {
         </div>
       </div>
 
-      {/* Programs */}
+      {/* Program */}
       <div className="mt-3">
         <label className="block text-xs text-[var(--color-surface-400)] mb-1">
           <Play size={10} className="inline mr-1" />
-          Programs (comma-separated)
+          Program
         </label>
-        <input
-          type="text"
-          value={task.programs.join(', ')}
+        <select
+          value={selectedProgram}
           onChange={(e) => onUpdate({
-            programs: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
+            programs: e.target.value ? [e.target.value] : []
           })}
-          placeholder="Main, Diagnostics"
-          className="w-full px-2 py-1 text-sm bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] focus:outline-none placeholder:text-[var(--color-surface-500)]"
-        />
+          className="w-full px-2 py-1 text-sm bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] focus:outline-none"
+        >
+          <option value="">Select a program...</option>
+          {availablePrograms.map((prog) => (
+            <option key={prog} value={prog}>
+              {prog}
+            </option>
+          ))}
+        </select>
+        {availablePrograms.length === 0 && (
+          <p className="mt-1 text-xs text-[var(--color-accent-yellow)]">
+            No program files found. Create a .st, .fbd, .ld, or .sfc file first.
+          </p>
+        )}
       </div>
     </div>
   );

@@ -5,8 +5,13 @@
  * This is the entry point for the Electron desktop application.
  */
 
-import { app, BrowserWindow, session, ipcMain } from 'electron';
+import { app, BrowserWindow, session, ipcMain, shell } from 'electron';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+// ESM equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Keep a global reference of the window object to prevent GC
 let mainWindow: BrowserWindow | null = null;
@@ -27,7 +32,7 @@ function createWindow(): void {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js'),
+      preload: path.join(__dirname, 'preload.cjs'),
       // Enable WebSerial API
       experimentalFeatures: true,
     },
@@ -160,7 +165,6 @@ function setupIPC(): void {
 
   // Handle opening external URLs
   ipcMain.handle('open-external', async (_event, url: string) => {
-    const { shell } = await import('electron');
     return shell.openExternal(url);
   });
 }

@@ -5,6 +5,26 @@
  */
 
 // =============================================================================
+// Electron API (exposed via preload script)
+// =============================================================================
+
+declare global {
+  interface Window {
+    electronAPI?: {
+      getAppInfo: () => Promise<{
+        version: string;
+        platform: string;
+        arch: string;
+        isPackaged: boolean;
+      }>;
+      openExternal: (url: string) => Promise<void>;
+      isElectron: boolean;
+      platform: string;
+    };
+  }
+}
+
+// =============================================================================
 // IEC 61131-3 Language Types
 // =============================================================================
 
