@@ -2,6 +2,62 @@
 
 This guide covers how to deploy your compiled ZPLC program to target hardware.
 
+## Desktop Application (Electron)
+
+ZPLC is available as a cross-platform desktop application with native serial port access.
+
+### Installation
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs>
+  <TabItem value="mac" label="macOS" default>
+
+```bash
+# Download from GitHub Releases
+# Or build from source:
+git clone https://github.com/eduardojvieira/ZPLC.git
+cd ZPLC/ide
+bun install
+bun run build:electron
+```
+
+</TabItem>
+<TabItem value="win" label="Windows">
+
+```powershell
+# Download the .exe installer from GitHub Releases
+# Or build from source with Bun for Windows
+```
+
+</TabItem>
+<TabItem value="linux" label="Linux">
+
+```bash
+# AppImage from GitHub Releases
+chmod +x ZPLC-*.AppImage
+./ZPLC-*.AppImage
+
+# Or .deb package
+sudo dpkg -i zplc_*.deb
+```
+
+</TabItem>
+</Tabs>
+
+### Features over Web Version
+
+| Feature | Web IDE | Desktop App |
+|---------|---------|-------------|
+| Serial Port Access | WebSerial (Chrome only) | Native (all ports) |
+| File System Access | Limited | Full |
+| Offline Mode | ✅ | ✅ |
+| Auto-Updates | - | ✅ |
+| System Tray | - | ✅ |
+
+---
+
 ## Deployment Methods
 
 ZPLC supports multiple deployment methods depending on your target platform and connectivity:

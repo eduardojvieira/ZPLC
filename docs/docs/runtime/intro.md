@@ -70,7 +70,7 @@ This is the contract between the IDE and the Runtime. It is a compact, serialize
 | **SymTable** | Variable IDs, Types, Scopes (Global/Local), Retentive Flags | Memory layout definition. |
 | **TaskMap** | ID, Type (Cyclic/Event), Interval (μs), Priority, Entry Point | Tells the scheduler *when* to run code. |
 | **Bytecode** | Linearized VM Instructions (SSA-based) | The executable logic. Unified format for all languages. |
-| **IOMap** | Logical ID <-> Abstract Channel | Example: `Var_StartBtn` maps to `DIN_0`. |
+| **IOMap** | Logical ID ↔ Abstract Channel | Example: `Var_StartBtn` maps to `DIN_0`. |
 | **Debug** | (Optional) Source Line Mapping, Symbol Names | Strippable for production, needed for IDE debugging. |
 | **Signature** | (Optional) Crypto Signature | Security verification (v1.2 Roadmap). |
 
@@ -89,6 +89,30 @@ The Core is ANSI C99, strictly standard-compliant, designed to be compiled as a 
     * **Retentive Memory:** A dedicated block backed by HAL storage (NVS / Flash).
     * **Work Memory:** Stack/Heap for temporary calculation (strictly bounded, per-task).
 
+#### Memory Map
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    ZPLC Memory Map (64KB Total)                     │
+├─────────────┬─────────────┬───────────────┬─────────────────────────┤
+│     IPI     │     OPI     │  Work Memory  │      Retentive          │
+│ 0x0000-0x0FFF│ 0x1000-0x1FFF│ 0x2000-0x3FFF │    0x4000-0x4FFF        │
+│    4 KB     │    4 KB     │     8 KB      │       4 KB              │
+│   (Inputs)  │  (Outputs)  │   (per-task)  │  (NVS-backed)           │
+├─────────────┴─────────────┴───────────────┴─────────────────────────┤
+│                        Code Segment                                 │
+│                      0x5000-0xFFFF (44 KB)                          │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+| Region | Base | Size | Description |
+|--------|------|------|-------------|
+| **IPI** | 0x0000 | 4 KB | Input Process Image - snapshot of all inputs at cycle start |
+| **OPI** | 0x1000 | 4 KB | Output Process Image - buffered outputs flushed at cycle end |
+| **Work** | 0x2000 | 8 KB | Per-task temporary variables and call stack |
+| **Retain** | 0x4000 | 4 KB | NVS-backed persistent variables (survives power loss) |
+| **Code** | 0x5000 | 44 KB | Bytecode storage |
+
 ### 5.2 The Scheduler (v1.1+)
 
 * **Execution Discipline:** Priority-based preemptive scheduling with configurable task intervals.
@@ -98,6 +122,29 @@ The Core is ANSI C99, strictly standard-compliant, designed to be compiled as a 
     2. **Logic Execution:** Run tasks sorted by priority, each with isolated work memory.
     3. **Output Latch:** Call `HAL_IO_Write()` to flush Process Image (OPI).
     4. **Housekeeping:** Handle Comms/Debug messages (time budgeted).
+
+#### Scan Cycle Visualization
+
+```mermaid
+graph LR
+    subgraph "One Scan Cycle (10-100ms typical)"
+        direction LR
+        A["📥 Input Scan\n< 100μs"] --> B["⚙️ Logic Execution\n< 10ms"]
+        B --> C["📤 Output Update\n< 100μs"]
+        C --> D["🔧 Housekeeping\n< 1ms"]
+    end
+    D --> A
+    
+    style A fill:#22d3ee,color:#000
+    style B fill:#a855f7,color:#fff
+    style C fill:#27ca40,color:#000
+    style D fill:#64748b,color:#fff
+```
+
+**Timing Guarantees:**
+- Input/Output phases complete in microseconds
+- Logic execution is deterministic (same input = same output)
+- Jitter < 1ms on Zephyr RTOS targets
 
 ### 5.3 Program Persistence (v1.1+)
 

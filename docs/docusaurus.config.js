@@ -81,6 +81,12 @@ const config = {
         items: [
           {
             type: 'docSidebar',
+            sidebarId: 'docsSidebar',
+            position: 'left',
+            label: 'Documentation',
+          },
+          {
+            type: 'docSidebar',
             sidebarId: 'runtimeSidebar',
             position: 'left',
             label: 'Runtime',
@@ -109,6 +115,10 @@ const config = {
             title: 'Documentation',
             items: [
               {
+                label: 'Quick Start',
+                to: '/docs/getting-started/quickstart',
+              },
+              {
                 label: 'Runtime Reference',
                 to: '/docs/runtime/intro',
               },
@@ -119,11 +129,32 @@ const config = {
             ],
           },
           {
+            title: 'Resources',
+            items: [
+              {
+                label: 'Hardware Setup',
+                to: '/docs/hardware/pinouts',
+              },
+              {
+                label: 'Standard Library',
+                to: '/docs/runtime/stdlib',
+              },
+              {
+                label: 'Advanced Topics',
+                to: '/docs/advanced/multitask',
+              },
+            ],
+          },
+          {
             title: 'Community',
             items: [
               {
                 label: 'GitHub',
                 href: 'https://github.com/eduardojvieira/ZPLC',
+              },
+              {
+                label: 'Discussions',
+                href: 'https://github.com/eduardojvieira/ZPLC/discussions',
               },
               {
                 label: 'Zephyr Project',
