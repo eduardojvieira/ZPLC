@@ -16,6 +16,13 @@ import type {
     Expression,
     Assignment,
     IfStatement,
+    WhileStatement,
+    ForStatement,
+    RepeatStatement,
+    CaseStatement,
+    ExitStatement,
+    ContinueStatement,
+    ReturnStatement,
     FBCallStatement,
     Identifier,
     MemberAccess,
@@ -93,6 +100,17 @@ interface StringLiteralEntry {
 }
 
 /**
+ * Loop context for EXIT/CONTINUE statement handling.
+ * Each loop (WHILE, FOR, REPEAT) pushes a context onto the stack.
+ */
+interface LoopContext {
+    /** Label to jump to for CONTINUE (start of next iteration) */
+    continueLabel: string;
+    /** Label to jump to for EXIT (end of loop) */
+    exitLabel: string;
+}
+
+/**
  * Code generator state.
  */
 interface CodeGenState {
@@ -104,6 +122,8 @@ interface CodeGenState {
     stringLiterals: StringLiteralEntry[];
     /** Next available address for string literal allocation */
     stringLiteralNextAddr: number;
+    /** Stack of loop contexts for EXIT/CONTINUE handling */
+    loopStack: LoopContext[];
 }
 
 /**
@@ -134,6 +154,7 @@ export function generate(program: Program, options?: CodeGenOptions): string {
         initFlagAddr,
         stringLiterals: [],
         stringLiteralNextAddr: stringLiteralBase,
+        loopStack: [],
     };
 
     // First pass: collect all string literals from the program
@@ -324,6 +345,50 @@ function collectStringLiterals(state: CodeGenState, program: Program): void {
                 for (const s of stmt.thenBranch) {
                     visitStatement(s);
                 }
+                // Visit ELSIF branches
+                if (stmt.elsifBranches) {
+                    for (const elsif of stmt.elsifBranches) {
+                        visitExpression(elsif.condition);
+                        for (const s of elsif.statements) {
+                            visitStatement(s);
+                        }
+                    }
+                }
+                if (stmt.elseBranch) {
+                    for (const s of stmt.elseBranch) {
+                        visitStatement(s);
+                    }
+                }
+                break;
+            case 'WhileStatement':
+                visitExpression(stmt.condition);
+                for (const s of stmt.body) {
+                    visitStatement(s);
+                }
+                break;
+            case 'ForStatement':
+                visitExpression(stmt.start);
+                visitExpression(stmt.end);
+                if (stmt.step) {
+                    visitExpression(stmt.step);
+                }
+                for (const s of stmt.body) {
+                    visitStatement(s);
+                }
+                break;
+            case 'RepeatStatement':
+                visitExpression(stmt.condition);
+                for (const s of stmt.body) {
+                    visitStatement(s);
+                }
+                break;
+            case 'CaseStatement':
+                visitExpression(stmt.selector);
+                for (const branch of stmt.branches) {
+                    for (const s of branch.statements) {
+                        visitStatement(s);
+                    }
+                }
                 if (stmt.elseBranch) {
                     for (const s of stmt.elseBranch) {
                         visitStatement(s);
@@ -334,6 +399,11 @@ function collectStringLiterals(state: CodeGenState, program: Program): void {
                 for (const param of stmt.parameters) {
                     visitExpression(param.value);
                 }
+                break;
+            // ExitStatement, ContinueStatement, ReturnStatement have no expressions
+            case 'ExitStatement':
+            case 'ContinueStatement':
+            case 'ReturnStatement':
                 break;
         }
     }
@@ -441,11 +511,32 @@ function emitStatement(state: CodeGenState, stmt: Statement): void {
         case 'IfStatement':
             emitIfStatement(state, stmt);
             break;
+        case 'WhileStatement':
+            emitWhileStatement(state, stmt);
+            break;
+        case 'ForStatement':
+            emitForStatement(state, stmt);
+            break;
+        case 'RepeatStatement':
+            emitRepeatStatement(state, stmt);
+            break;
+        case 'CaseStatement':
+            emitCaseStatement(state, stmt);
+            break;
+        case 'ExitStatement':
+            emitExitStatement(state);
+            break;
+        case 'ContinueStatement':
+            emitContinueStatement(state);
+            break;
+        case 'ReturnStatement':
+            emitReturnStatement(state);
+            break;
         case 'FBCallStatement':
             emitFBCallStatement(state, stmt);
             break;
         default:
-            emit(state, `    ; TODO: ${(stmt as Statement).kind}`);
+            emit(state, `    ; ERROR: Unknown statement type ${(stmt as Statement).kind}`);
     }
 }
 
@@ -480,29 +571,400 @@ function emitAssignment(state: CodeGenState, stmt: Assignment): void {
 
 function emitIfStatement(state: CodeGenState, stmt: IfStatement): void {
     const endLabel = newLabel(state, 'end_if');
-    const elseLabel = stmt.elseBranch ? newLabel(state, 'else') : endLabel;
+    const hasElsif = stmt.elsifBranches && stmt.elsifBranches.length > 0;
+    const hasElse = stmt.elseBranch && stmt.elseBranch.length > 0;
+    
+    // Generate labels for each ELSIF branch
+    const elsifLabels: string[] = [];
+    for (let i = 0; i < (stmt.elsifBranches?.length ?? 0); i++) {
+        elsifLabels.push(newLabel(state, 'elsif'));
+    }
+    const elseLabel = hasElse ? newLabel(state, 'else') : null;
+    
+    // Determine where to jump if the main IF condition is false
+    const firstFalseLabel = elsifLabels.length > 0 
+        ? elsifLabels[0] 
+        : (elseLabel ?? endLabel);
 
     emit(state, ``);
     emit(state, `    ; IF condition`);
     emitExpression(state, stmt.condition);
-    emit(state, `    JZ ${elseLabel}`);
+    emit(state, `    JZ ${firstFalseLabel}`);
 
-    // Then branch
+    // THEN branch
     emit(state, `    ; THEN branch`);
     for (const s of stmt.thenBranch) {
         emitStatement(state, s);
     }
-
-    if (stmt.elseBranch) {
+    
+    // Jump to end after THEN (only if there are more branches)
+    if (hasElsif || hasElse) {
         emit(state, `    JMP ${endLabel}`);
+    }
+
+    // ELSIF branches
+    if (stmt.elsifBranches) {
+        for (let i = 0; i < stmt.elsifBranches.length; i++) {
+            const elsif = stmt.elsifBranches[i];
+            const currentLabel = elsifLabels[i];
+            
+            // Determine where to jump if this ELSIF condition is false
+            const nextFalseLabel = i + 1 < elsifLabels.length 
+                ? elsifLabels[i + 1] 
+                : (elseLabel ?? endLabel);
+            
+            emit(state, `${currentLabel}:`);
+            emit(state, `    ; ELSIF condition`);
+            emitExpression(state, elsif.condition);
+            emit(state, `    JZ ${nextFalseLabel}`);
+            
+            emit(state, `    ; ELSIF branch`);
+            for (const s of elsif.statements) {
+                emitStatement(state, s);
+            }
+            emit(state, `    JMP ${endLabel}`);
+        }
+    }
+
+    // ELSE branch
+    if (hasElse && elseLabel) {
         emit(state, `${elseLabel}:`);
         emit(state, `    ; ELSE branch`);
-        for (const s of stmt.elseBranch) {
+        for (const s of stmt.elseBranch!) {
             emitStatement(state, s);
         }
     }
 
     emit(state, `${endLabel}:`);
+}
+
+/**
+ * Emit a WHILE statement.
+ *
+ * Pattern:
+ *   while_loop_N:
+ *       <condition>
+ *       JZ end_while_N
+ *       <body>
+ *       JMP while_loop_N
+ *   end_while_N:
+ */
+function emitWhileStatement(state: CodeGenState, stmt: WhileStatement): void {
+    const loopLabel = newLabel(state, 'while_loop');
+    const endLabel = newLabel(state, 'end_while');
+    
+    // Push loop context for EXIT/CONTINUE handling
+    state.loopStack.push({
+        continueLabel: loopLabel,  // CONTINUE jumps to loop start (re-evaluate condition)
+        exitLabel: endLabel,
+    });
+    
+    emit(state, ``);
+    emit(state, `    ; WHILE loop`);
+    emit(state, `${loopLabel}:`);
+    emit(state, `    ; condition`);
+    emitExpression(state, stmt.condition);
+    emit(state, `    JZ ${endLabel}`);
+    
+    emit(state, `    ; loop body`);
+    for (const s of stmt.body) {
+        emitStatement(state, s);
+    }
+    
+    emit(state, `    JMP ${loopLabel}`);
+    emit(state, `${endLabel}:`);
+    
+    // Pop loop context
+    state.loopStack.pop();
+}
+
+/**
+ * Emit a FOR statement.
+ *
+ * Pattern:
+ *   ; FOR counter := start TO end BY step
+ *   <start>
+ *   STORE32 <counter_addr>
+ *   for_loop_N:
+ *       LOAD32 <counter_addr>
+ *       <end>
+ *       GT
+ *       JNZ end_for_N
+ *       <body>
+ *   for_continue_N:
+ *       LOAD32 <counter_addr>
+ *       <step or PUSH8 1>
+ *       ADD
+ *       STORE32 <counter_addr>
+ *       JMP for_loop_N
+ *   end_for_N:
+ */
+function emitForStatement(state: CodeGenState, stmt: ForStatement): void {
+    const loopLabel = newLabel(state, 'for_loop');
+    const continueLabel = newLabel(state, 'for_continue');
+    const endLabel = newLabel(state, 'end_for');
+    
+    // Get counter variable symbol
+    const counterSym = state.symbols.get(stmt.counter);
+    if (!counterSym) {
+        emit(state, `    ; ERROR: Unknown loop counter variable ${stmt.counter}`);
+        return;
+    }
+    
+    const counterAddr = formatAddress(counterSym.address);
+    const suffix = getLoadStoreSuffix(counterSym.dataType);
+    
+    // Push loop context for EXIT/CONTINUE handling
+    state.loopStack.push({
+        continueLabel: continueLabel,  // CONTINUE jumps to increment section
+        exitLabel: endLabel,
+    });
+    
+    emit(state, ``);
+    emit(state, `    ; FOR ${stmt.counter} := start TO end`);
+    
+    // Initialize counter
+    emit(state, `    ; counter := start`);
+    emitExpression(state, stmt.start);
+    emit(state, `    STORE${suffix} ${counterAddr}`);
+    
+    // Loop condition check
+    emit(state, `${loopLabel}:`);
+    emit(state, `    ; check: counter > end?`);
+    emit(state, `    LOAD${suffix} ${counterAddr}`);
+    emitExpression(state, stmt.end);
+    emit(state, `    GT`);
+    emit(state, `    JNZ ${endLabel}`);
+    
+    // Loop body
+    emit(state, `    ; loop body`);
+    for (const s of stmt.body) {
+        emitStatement(state, s);
+    }
+    
+    // Increment section (CONTINUE target)
+    emit(state, `${continueLabel}:`);
+    emit(state, `    ; counter := counter + step`);
+    emit(state, `    LOAD${suffix} ${counterAddr}`);
+    if (stmt.step) {
+        emitExpression(state, stmt.step);
+    } else {
+        emit(state, `    PUSH8 1       ; default step`);
+    }
+    emit(state, `    ADD`);
+    emit(state, `    STORE${suffix} ${counterAddr}`);
+    emit(state, `    JMP ${loopLabel}`);
+    
+    emit(state, `${endLabel}:`);
+    
+    // Pop loop context
+    state.loopStack.pop();
+}
+
+/**
+ * Emit a REPEAT statement.
+ *
+ * Pattern:
+ *   repeat_loop_N:
+ *       <body>           ; executes at least once
+ *   repeat_continue_N:
+ *       <condition>
+ *       JZ repeat_loop_N ; repeat while condition is FALSE
+ *   end_repeat_N:
+ */
+function emitRepeatStatement(state: CodeGenState, stmt: RepeatStatement): void {
+    const loopLabel = newLabel(state, 'repeat_loop');
+    const continueLabel = newLabel(state, 'repeat_continue');
+    const endLabel = newLabel(state, 'end_repeat');
+    
+    // Push loop context for EXIT/CONTINUE handling
+    state.loopStack.push({
+        continueLabel: continueLabel,  // CONTINUE jumps to condition check
+        exitLabel: endLabel,
+    });
+    
+    emit(state, ``);
+    emit(state, `    ; REPEAT...UNTIL loop`);
+    emit(state, `${loopLabel}:`);
+    
+    emit(state, `    ; loop body (executes at least once)`);
+    for (const s of stmt.body) {
+        emitStatement(state, s);
+    }
+    
+    // Condition check (CONTINUE target)
+    emit(state, `${continueLabel}:`);
+    emit(state, `    ; UNTIL condition`);
+    emitExpression(state, stmt.condition);
+    emit(state, `    JZ ${loopLabel}   ; repeat while FALSE`);
+    
+    emit(state, `${endLabel}:`);
+    
+    // Pop loop context
+    state.loopStack.pop();
+}
+
+/**
+ * Emit a CASE statement.
+ *
+ * Pattern:
+ *   ; CASE selector OF
+ *   <selector>
+ *   DUP
+ *   PUSH8 <value1>
+ *   EQ
+ *   JNZ case_branch_0
+ *   DUP
+ *   PUSH8 <value2>
+ *   EQ
+ *   JNZ case_branch_1
+ *   ...
+ *   JMP case_else_N (or end_case if no else)
+ *   case_branch_0:
+ *       DROP
+ *       <statements>
+ *       JMP end_case_N
+ *   case_branch_1:
+ *       DROP
+ *       <statements>
+ *       JMP end_case_N
+ *   case_else_N:
+ *       DROP
+ *       <statements>
+ *   end_case_N:
+ */
+function emitCaseStatement(state: CodeGenState, stmt: CaseStatement): void {
+    const endLabel = newLabel(state, 'end_case');
+    const elseLabel = stmt.elseBranch ? newLabel(state, 'case_else') : null;
+    
+    // Generate labels for each branch
+    const branchLabels: string[] = stmt.branches.map(() => newLabel(state, 'case_branch'));
+    
+    emit(state, ``);
+    emit(state, `    ; CASE statement`);
+    emit(state, `    ; evaluate selector`);
+    emitExpression(state, stmt.selector);
+    
+    // Emit comparison for each branch
+    for (let i = 0; i < stmt.branches.length; i++) {
+        const branch = stmt.branches[i];
+        const branchLabel = branchLabels[i];
+        
+        // Each branch can have multiple values or ranges
+        for (const value of branch.values) {
+            if (typeof value === 'number') {
+                // Single value comparison
+                emit(state, `    DUP`);
+                if (value >= -128 && value <= 127) {
+                    emit(state, `    PUSH8 ${value}`);
+                } else if (value >= -32768 && value <= 32767) {
+                    emit(state, `    PUSH16 ${value}`);
+                } else {
+                    emit(state, `    PUSH32 ${value}`);
+                }
+                emit(state, `    EQ`);
+                emit(state, `    JNZ ${branchLabel}`);
+            } else {
+                // Range comparison: value.start..value.end
+                // Check: selector >= start AND selector <= end
+                emit(state, `    DUP`);
+                if (value.start >= -128 && value.start <= 127) {
+                    emit(state, `    PUSH8 ${value.start}`);
+                } else {
+                    emit(state, `    PUSH32 ${value.start}`);
+                }
+                emit(state, `    GE`);
+                emit(state, `    DUP`);
+                emit(state, `    JZ _skip_range_${state.labelCounter}`);
+                emit(state, `    DROP`);
+                emit(state, `    DUP`);
+                if (value.end >= -128 && value.end <= 127) {
+                    emit(state, `    PUSH8 ${value.end}`);
+                } else {
+                    emit(state, `    PUSH32 ${value.end}`);
+                }
+                emit(state, `    LE`);
+                emit(state, `_skip_range_${state.labelCounter++}:`);
+                emit(state, `    JNZ ${branchLabel}`);
+            }
+        }
+    }
+    
+    // Jump to else or end if no match
+    emit(state, `    JMP ${elseLabel ?? endLabel}`);
+    
+    // Emit each branch body
+    for (let i = 0; i < stmt.branches.length; i++) {
+        const branch = stmt.branches[i];
+        const branchLabel = branchLabels[i];
+        
+        emit(state, `${branchLabel}:`);
+        emit(state, `    DROP        ; discard selector`);
+        for (const s of branch.statements) {
+            emitStatement(state, s);
+        }
+        emit(state, `    JMP ${endLabel}`);
+    }
+    
+    // Else branch
+    if (elseLabel && stmt.elseBranch) {
+        emit(state, `${elseLabel}:`);
+        emit(state, `    DROP        ; discard selector`);
+        emit(state, `    ; ELSE branch`);
+        for (const s of stmt.elseBranch) {
+            emitStatement(state, s);
+        }
+    } else if (!stmt.elseBranch) {
+        // No else - still need to drop the selector before end
+        // This handles the case where no branch matched and there's no else
+        // We need a small shim to drop before ending
+        emit(state, `${newLabel(state, 'case_drop')}:`);
+        emit(state, `    DROP        ; discard selector (no match)`);
+    }
+    
+    emit(state, `${endLabel}:`);
+}
+
+/**
+ * Emit an EXIT statement.
+ * Jumps to the exit label of the innermost loop.
+ */
+function emitExitStatement(state: CodeGenState): void {
+    if (state.loopStack.length === 0) {
+        emit(state, `    ; ERROR: EXIT outside of loop`);
+        return;
+    }
+    
+    const loopCtx = state.loopStack[state.loopStack.length - 1];
+    emit(state, `    ; EXIT`);
+    emit(state, `    JMP ${loopCtx.exitLabel}`);
+}
+
+/**
+ * Emit a CONTINUE statement.
+ * Jumps to the continue label of the innermost loop.
+ */
+function emitContinueStatement(state: CodeGenState): void {
+    if (state.loopStack.length === 0) {
+        emit(state, `    ; ERROR: CONTINUE outside of loop`);
+        return;
+    }
+    
+    const loopCtx = state.loopStack[state.loopStack.length - 1];
+    emit(state, `    ; CONTINUE`);
+    emit(state, `    JMP ${loopCtx.continueLabel}`);
+}
+
+/**
+ * Emit a RETURN statement.
+ * In PROGRAM context, this acts like HALT (end the cycle early).
+ * In FUNCTION/FUNCTION_BLOCK context, this would emit RET.
+ */
+function emitReturnStatement(state: CodeGenState): void {
+    emit(state, `    ; RETURN`);
+    // For PROGRAM, RETURN ends the cycle early
+    // We jump to the HALT at the end
+    emit(state, `    HALT`);
 }
 
 function emitFBCallStatement(state: CodeGenState, stmt: FBCallStatement): void {

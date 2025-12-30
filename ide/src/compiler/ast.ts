@@ -333,6 +333,13 @@ export interface FunctionCall extends ASTNode {
 export type Statement =
     | Assignment
     | IfStatement
+    | WhileStatement
+    | ForStatement
+    | RepeatStatement
+    | CaseStatement
+    | ExitStatement
+    | ContinueStatement
+    | ReturnStatement
     | FBCallStatement;
 
 /**
@@ -345,13 +352,138 @@ export interface Assignment extends ASTNode {
 }
 
 /**
- * IF statement.
+ * ELSIF clause for IF statement.
+ */
+export interface ElsifClause {
+    condition: Expression;
+    statements: Statement[];
+}
+
+/**
+ * IF statement with optional ELSIF and ELSE branches.
+ *
+ * Syntax:
+ *   IF condition THEN
+ *       statements
+ *   ELSIF condition THEN
+ *       statements
+ *   ELSE
+ *       statements
+ *   END_IF;
  */
 export interface IfStatement extends ASTNode {
     kind: 'IfStatement';
     condition: Expression;
     thenBranch: Statement[];
+    elsifBranches: ElsifClause[];  // NEW: ELSIF branches
     elseBranch: Statement[] | null;
+}
+
+/**
+ * WHILE statement.
+ *
+ * Syntax:
+ *   WHILE condition DO
+ *       statements
+ *   END_WHILE;
+ */
+export interface WhileStatement extends ASTNode {
+    kind: 'WhileStatement';
+    condition: Expression;
+    body: Statement[];
+}
+
+/**
+ * FOR statement.
+ *
+ * Syntax:
+ *   FOR counter := start TO end BY step DO
+ *       statements
+ *   END_FOR;
+ *
+ * Note: BY step is optional, defaults to 1
+ */
+export interface ForStatement extends ASTNode {
+    kind: 'ForStatement';
+    counter: string;         // Loop variable name
+    start: Expression;       // Initial value
+    end: Expression;         // End value (inclusive)
+    step: Expression | null; // Step increment (null = default 1)
+    body: Statement[];
+}
+
+/**
+ * REPEAT statement (do-while equivalent).
+ *
+ * Syntax:
+ *   REPEAT
+ *       statements
+ *   UNTIL condition
+ *   END_REPEAT;
+ *
+ * Note: Body executes at least once, then repeats until condition is TRUE
+ */
+export interface RepeatStatement extends ASTNode {
+    kind: 'RepeatStatement';
+    body: Statement[];
+    condition: Expression;   // Exit when this becomes TRUE
+}
+
+/**
+ * CASE branch for CASE statement.
+ */
+export interface CaseBranch {
+    values: (number | { start: number; end: number })[]; // Single values or ranges
+    statements: Statement[];
+}
+
+/**
+ * CASE statement (switch equivalent).
+ *
+ * Syntax:
+ *   CASE selector OF
+ *       1: statements;
+ *       2, 3, 4: statements;
+ *       5..10: statements;
+ *   ELSE
+ *       statements;
+ *   END_CASE;
+ */
+export interface CaseStatement extends ASTNode {
+    kind: 'CaseStatement';
+    selector: Expression;
+    branches: CaseBranch[];
+    elseBranch: Statement[] | null;
+}
+
+/**
+ * EXIT statement - breaks out of the innermost loop.
+ *
+ * Syntax:
+ *   EXIT;
+ */
+export interface ExitStatement extends ASTNode {
+    kind: 'ExitStatement';
+}
+
+/**
+ * CONTINUE statement - skips to next iteration of innermost loop.
+ *
+ * Syntax:
+ *   CONTINUE;
+ */
+export interface ContinueStatement extends ASTNode {
+    kind: 'ContinueStatement';
+}
+
+/**
+ * RETURN statement - returns from current POU.
+ *
+ * Syntax:
+ *   RETURN;
+ */
+export interface ReturnStatement extends ASTNode {
+    kind: 'ReturnStatement';
 }
 
 /**

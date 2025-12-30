@@ -18,6 +18,15 @@ import type {
     Statement,
     Expression,
     IfStatement,
+    ElsifClause,
+    WhileStatement,
+    ForStatement,
+    RepeatStatement,
+    CaseStatement,
+    CaseBranch,
+    ExitStatement,
+    ContinueStatement,
+    ReturnStatement,
     FBCallStatement,
     FBParameter,
     Identifier,
@@ -289,12 +298,35 @@ class Parser {
     }
 
     /**
-     * statement := assignment | if_statement | fb_call_statement
+     * statement := assignment | if_statement | while_statement | for_statement |
+     *              repeat_statement | case_statement | exit_statement |
+     *              continue_statement | return_statement | fb_call_statement
      */
     private parseStatement(): Statement {
-        // Check for IF statement
+        // Check for control flow statements
         if (this.check(TokenType.IF)) {
             return this.parseIfStatement();
+        }
+        if (this.check(TokenType.WHILE)) {
+            return this.parseWhileStatement();
+        }
+        if (this.check(TokenType.FOR)) {
+            return this.parseForStatement();
+        }
+        if (this.check(TokenType.REPEAT)) {
+            return this.parseRepeatStatement();
+        }
+        if (this.check(TokenType.CASE)) {
+            return this.parseCaseStatement();
+        }
+        if (this.check(TokenType.EXIT)) {
+            return this.parseExitStatement();
+        }
+        if (this.check(TokenType.CONTINUE)) {
+            return this.parseContinueStatement();
+        }
+        if (this.check(TokenType.RETURN)) {
+            return this.parseReturnStatement();
         }
 
         // Must be identifier-based (assignment or FB call)
@@ -363,7 +395,10 @@ class Parser {
     }
 
     /**
-     * if_statement := IF expression THEN statement* (ELSE statement*)? END_IF SEMICOLON?
+     * if_statement := IF expression THEN statement*
+     *                 (ELSIF expression THEN statement*)*
+     *                 (ELSE statement*)?
+     *                 END_IF SEMICOLON?
      */
     private parseIfStatement(): IfStatement {
         const start = this.expect(TokenType.IF, 'Expected IF');
@@ -371,10 +406,28 @@ class Parser {
         this.expect(TokenType.THEN, 'Expected THEN after IF condition');
 
         const thenBranch: Statement[] = [];
-        while (!this.check(TokenType.ELSE) && !this.check(TokenType.END_IF) && !this.isAtEnd()) {
+        while (!this.check(TokenType.ELSIF) && !this.check(TokenType.ELSE) && !this.check(TokenType.END_IF) && !this.isAtEnd()) {
             thenBranch.push(this.parseStatement());
         }
 
+        // Parse ELSIF branches
+        const elsifBranches: ElsifClause[] = [];
+        while (this.match(TokenType.ELSIF)) {
+            const elsifCondition = this.parseExpression();
+            this.expect(TokenType.THEN, 'Expected THEN after ELSIF condition');
+
+            const elsifStatements: Statement[] = [];
+            while (!this.check(TokenType.ELSIF) && !this.check(TokenType.ELSE) && !this.check(TokenType.END_IF) && !this.isAtEnd()) {
+                elsifStatements.push(this.parseStatement());
+            }
+
+            elsifBranches.push({
+                condition: elsifCondition,
+                statements: elsifStatements,
+            });
+        }
+
+        // Parse ELSE branch
         let elseBranch: Statement[] | null = null;
         if (this.match(TokenType.ELSE)) {
             elseBranch = [];
@@ -384,15 +437,226 @@ class Parser {
         }
 
         this.expect(TokenType.END_IF, 'Expected END_IF');
-
-        // Optional semicolon after END_IF
-        this.match(TokenType.SEMICOLON);
+        this.match(TokenType.SEMICOLON); // Optional semicolon
 
         return {
             kind: 'IfStatement',
             condition,
             thenBranch,
+            elsifBranches,
             elseBranch,
+            line: start.line,
+            column: start.column,
+        };
+    }
+
+    /**
+     * while_statement := WHILE expression DO statement* END_WHILE SEMICOLON?
+     */
+    private parseWhileStatement(): WhileStatement {
+        const start = this.expect(TokenType.WHILE, 'Expected WHILE');
+        const condition = this.parseExpression();
+        this.expect(TokenType.DO, 'Expected DO after WHILE condition');
+
+        const body: Statement[] = [];
+        while (!this.check(TokenType.END_WHILE) && !this.isAtEnd()) {
+            body.push(this.parseStatement());
+        }
+
+        this.expect(TokenType.END_WHILE, 'Expected END_WHILE');
+        this.match(TokenType.SEMICOLON); // Optional semicolon
+
+        return {
+            kind: 'WhileStatement',
+            condition,
+            body,
+            line: start.line,
+            column: start.column,
+        };
+    }
+
+    /**
+     * for_statement := FOR identifier := expression TO expression (BY expression)? DO
+     *                  statement*
+     *                  END_FOR SEMICOLON?
+     */
+    private parseForStatement(): ForStatement {
+        const start = this.expect(TokenType.FOR, 'Expected FOR');
+        const counterToken = this.expect(TokenType.IDENTIFIER, 'Expected loop counter variable');
+        this.expect(TokenType.ASSIGN, 'Expected := after counter variable');
+        const startExpr = this.parseExpression();
+        this.expect(TokenType.TO, 'Expected TO after start value');
+        const endExpr = this.parseExpression();
+
+        // Optional BY clause
+        let stepExpr: Expression | null = null;
+        if (this.match(TokenType.BY)) {
+            stepExpr = this.parseExpression();
+        }
+
+        this.expect(TokenType.DO, 'Expected DO after FOR header');
+
+        const body: Statement[] = [];
+        while (!this.check(TokenType.END_FOR) && !this.isAtEnd()) {
+            body.push(this.parseStatement());
+        }
+
+        this.expect(TokenType.END_FOR, 'Expected END_FOR');
+        this.match(TokenType.SEMICOLON); // Optional semicolon
+
+        return {
+            kind: 'ForStatement',
+            counter: counterToken.value,
+            start: startExpr,
+            end: endExpr,
+            step: stepExpr,
+            body,
+            line: start.line,
+            column: start.column,
+        };
+    }
+
+    /**
+     * repeat_statement := REPEAT statement* UNTIL expression END_REPEAT SEMICOLON?
+     */
+    private parseRepeatStatement(): RepeatStatement {
+        const start = this.expect(TokenType.REPEAT, 'Expected REPEAT');
+
+        const body: Statement[] = [];
+        while (!this.check(TokenType.UNTIL) && !this.isAtEnd()) {
+            body.push(this.parseStatement());
+        }
+
+        this.expect(TokenType.UNTIL, 'Expected UNTIL');
+        const condition = this.parseExpression();
+        this.expect(TokenType.END_REPEAT, 'Expected END_REPEAT');
+        this.match(TokenType.SEMICOLON); // Optional semicolon
+
+        return {
+            kind: 'RepeatStatement',
+            body,
+            condition,
+            line: start.line,
+            column: start.column,
+        };
+    }
+
+    /**
+     * case_statement := CASE expression OF
+     *                   (case_branch)+
+     *                   (ELSE statement*)?
+     *                   END_CASE SEMICOLON?
+     *
+     * case_branch := (INTEGER | INTEGER..INTEGER) (, ...)* : statement*
+     */
+    private parseCaseStatement(): CaseStatement {
+        const start = this.expect(TokenType.CASE, 'Expected CASE');
+        const selector = this.parseExpression();
+        this.expect(TokenType.OF, 'Expected OF after CASE selector');
+
+        const branches: CaseBranch[] = [];
+
+        // Parse case branches until we hit ELSE or END_CASE
+        while (!this.check(TokenType.ELSE) && !this.check(TokenType.END_CASE) && !this.isAtEnd()) {
+            const branch = this.parseCaseBranch();
+            branches.push(branch);
+        }
+
+        // Parse ELSE branch
+        let elseBranch: Statement[] | null = null;
+        if (this.match(TokenType.ELSE)) {
+            elseBranch = [];
+            while (!this.check(TokenType.END_CASE) && !this.isAtEnd()) {
+                elseBranch.push(this.parseStatement());
+            }
+        }
+
+        this.expect(TokenType.END_CASE, 'Expected END_CASE');
+        this.match(TokenType.SEMICOLON); // Optional semicolon
+
+        return {
+            kind: 'CaseStatement',
+            selector,
+            branches,
+            elseBranch,
+            line: start.line,
+            column: start.column,
+        };
+    }
+
+    /**
+     * case_branch := value_list : statement*
+     * value_list := value (, value)*
+     * value := INTEGER | INTEGER..INTEGER
+     */
+    private parseCaseBranch(): CaseBranch {
+        const values: (number | { start: number; end: number })[] = [];
+
+        // Parse comma-separated list of values or ranges
+        do {
+            const valueToken = this.expect(TokenType.INTEGER, 'Expected integer value in CASE branch');
+            const startValue = parseInt(valueToken.value, 10);
+
+            // Check for range: value..value
+            if (this.check(TokenType.DOT)) {
+                this.advance(); // first .
+                this.expect(TokenType.DOT, 'Expected .. for range');
+                const endToken = this.expect(TokenType.INTEGER, 'Expected end of range');
+                const endValue = parseInt(endToken.value, 10);
+                values.push({ start: startValue, end: endValue });
+            } else {
+                values.push(startValue);
+            }
+        } while (this.match(TokenType.COMMA));
+
+        this.expect(TokenType.COLON, 'Expected : after CASE values');
+
+        const statements: Statement[] = [];
+        // Parse statements until we see another case value, ELSE, or END_CASE
+        while (!this.check(TokenType.INTEGER) && !this.check(TokenType.ELSE) && !this.check(TokenType.END_CASE) && !this.isAtEnd()) {
+            statements.push(this.parseStatement());
+        }
+
+        return { values, statements };
+    }
+
+    /**
+     * exit_statement := EXIT SEMICOLON
+     */
+    private parseExitStatement(): ExitStatement {
+        const start = this.expect(TokenType.EXIT, 'Expected EXIT');
+        this.expect(TokenType.SEMICOLON, 'Expected ; after EXIT');
+
+        return {
+            kind: 'ExitStatement',
+            line: start.line,
+            column: start.column,
+        };
+    }
+
+    /**
+     * continue_statement := CONTINUE SEMICOLON
+     */
+    private parseContinueStatement(): ContinueStatement {
+        const start = this.expect(TokenType.CONTINUE, 'Expected CONTINUE');
+        this.expect(TokenType.SEMICOLON, 'Expected ; after CONTINUE');
+
+        return {
+            kind: 'ContinueStatement',
+            line: start.line,
+            column: start.column,
+        };
+    }
+
+    /**
+     * return_statement := RETURN SEMICOLON
+     */
+    private parseReturnStatement(): ReturnStatement {
+        const start = this.expect(TokenType.RETURN, 'Expected RETURN');
+        this.expect(TokenType.SEMICOLON, 'Expected ; after RETURN');
+
+        return {
+            kind: 'ReturnStatement',
             line: start.line,
             column: start.column,
         };
