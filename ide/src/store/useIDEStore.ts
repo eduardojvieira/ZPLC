@@ -35,6 +35,11 @@ import {
   toggleDirectoryExpanded,
   findFileInTree,
 } from '../utils/fileSystem';
+import {
+  getAvailableProjects,
+  loadProject,
+} from '../utils/projectLoader';
+import type { ProjectInfo } from '../utils/projectLoader';
 import type { SystemInfo, StatusInfo } from '../runtime/serialAdapter';
 import type { DebugMap } from '../compiler/debug-map';
 
@@ -155,6 +160,8 @@ interface IDEState {
   openProjectFromFolder: () => Promise<boolean>;
   createNewProjectInFolder: () => Promise<boolean>;
   createVirtualProject: (name: string) => void;
+  openExampleProject: (projectId: string) => void;
+  getExampleProjects: () => ProjectInfo[];
   closeProject: () => void;
   saveProjectConfig: () => Promise<void>;
 
@@ -468,6 +475,75 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       message: `Created virtual project: ${name}`,
       source: 'system',
     });
+  },
+
+  openExampleProject: (projectId: string) => {
+    const loaded = loadProject(projectId);
+    if (!loaded) {
+      get().addConsoleEntry({
+        type: 'error',
+        message: `Failed to load example project: ${projectId}`,
+        source: 'system',
+      });
+      return;
+    }
+
+    // Convert ProjectFile[] to Map<string, ProjectFileWithHandle>
+    const loadedFiles = new Map<string, ProjectFileWithHandle>();
+    for (const file of loaded.files) {
+      const fileWithHandle: ProjectFileWithHandle = {
+        ...file,
+        parentPath: file.path.includes('/') ? file.path.substring(0, file.path.lastIndexOf('/')) : '',
+      };
+      loadedFiles.set(file.id, fileWithHandle);
+    }
+
+    // Build a file tree from the loaded files
+    const fileTree: FileTreeNode = {
+      id: 'root',
+      name: loaded.zplcConfig.name || projectId,
+      type: 'directory',
+      path: '',
+      isExpanded: true,
+      children: [
+        {
+          id: 'src',
+          name: 'src',
+          type: 'directory',
+          path: 'src',
+          isExpanded: true,
+          children: loaded.files.map(f => ({
+            id: f.id,
+            name: f.name,
+            type: 'file' as const,
+            path: f.path,
+            language: f.language,
+          })),
+        },
+      ],
+    };
+
+    set({
+      isProjectOpen: true,
+      isVirtualProject: true,  // Example projects are read-only (no disk handle)
+      projectName: loaded.zplcConfig.name || projectId,
+      projectConfig: loaded.zplcConfig,
+      directoryHandle: null,
+      fileTree,
+      loadedFiles,
+      activeFileId: loaded.files[0]?.id || null,
+      openTabs: loaded.files.length > 0 ? [loaded.files[0].id] : [],
+    });
+
+    get().addConsoleEntry({
+      type: 'success',
+      message: `Loaded example project: ${loaded.zplcConfig.name || projectId}`,
+      source: 'system',
+    });
+  },
+
+  getExampleProjects: () => {
+    return getAvailableProjects();
   },
 
   closeProject: () => {

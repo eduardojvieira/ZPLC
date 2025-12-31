@@ -633,16 +633,6 @@ export function Toolbar() {
     setIsSimLoading(true);
 
     try {
-      // Check if WASM module is loaded
-      if (!window.ZPLCModule) {
-        addConsoleEntry({
-          type: 'warning',
-          message: 'WASM module not loaded. Simulation requires zplc_sim.js to be built and included.',
-          source: 'simulator',
-        });
-        // For now, create adapter anyway - it will fail gracefully when connecting
-      }
-
       // Create adapter if not exists
       let adapter = simAdapter;
       if (!adapter) {

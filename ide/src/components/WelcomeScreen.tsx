@@ -5,9 +5,10 @@
  * - Open an existing project folder (File System Access API)
  * - Create a new project in a folder
  * - Create a virtual (in-memory) project for unsupported browsers
+ * - Open an example project (bundled with the IDE)
  */
 
-import { FolderOpen, FolderPlus, FileCode2, AlertTriangle } from 'lucide-react';
+import { FolderOpen, FolderPlus, FileCode2, AlertTriangle, BookOpen } from 'lucide-react';
 import { useIDEStore } from '../store/useIDEStore';
 import { isFileSystemAccessSupported } from '../types';
 
@@ -16,9 +17,12 @@ export function WelcomeScreen() {
     openProjectFromFolder,
     createNewProjectInFolder,
     createVirtualProject,
+    openExampleProject,
+    getExampleProjects,
   } = useIDEStore();
 
   const fsApiSupported = isFileSystemAccessSupported();
+  const exampleProjects = getExampleProjects();
 
   const handleOpenFolder = async () => {
     await openProjectFromFolder();
@@ -30,6 +34,10 @@ export function WelcomeScreen() {
 
   const handleVirtualProject = () => {
     createVirtualProject('Untitled Project');
+  };
+
+  const handleOpenExample = (projectId: string) => {
+    openExampleProject(projectId);
   };
 
   return (
@@ -119,6 +127,39 @@ export function WelcomeScreen() {
           </div>
         </button>
       </div>
+
+      {/* Example Projects */}
+      {exampleProjects.length > 0 && (
+        <div className="mt-10 w-full max-w-2xl">
+          <div className="flex items-center gap-2 mb-4">
+            <BookOpen size={18} className="text-[var(--color-accent-cyan)]" />
+            <h3 className="text-[var(--color-surface-200)] font-medium">
+              Example Projects
+            </h3>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {exampleProjects.map((project) => (
+              <button
+                key={project.id}
+                onClick={() => handleOpenExample(project.id)}
+                className="group flex flex-col items-start gap-1 p-4 rounded-lg border border-[var(--color-surface-600)] bg-[var(--color-surface-800)] hover:border-[var(--color-accent-cyan)] hover:bg-[var(--color-surface-700)] cursor-pointer transition-all text-left"
+              >
+                <h4 className="text-[var(--color-surface-100)] font-medium group-hover:text-[var(--color-accent-cyan)] transition-colors">
+                  {project.name}
+                </h4>
+                {project.description && (
+                  <p className="text-[var(--color-surface-400)] text-xs line-clamp-2">
+                    {project.description}
+                  </p>
+                )}
+                <span className="text-[var(--color-surface-500)] text-xs mt-1">
+                  v{project.version}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Browser Warning */}
       {!fsApiSupported && (

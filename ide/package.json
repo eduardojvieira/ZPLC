@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:wasm": "cd .. && ./scripts/build_wasm.sh",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "bun test",

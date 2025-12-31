@@ -1870,6 +1870,11 @@ uint16_t zplc_core_get_sp(void)
     return default_vm.sp;
 }
 
+uint16_t zplc_core_get_pc(void)
+{
+    return default_vm.pc;
+}
+
 uint32_t zplc_core_get_stack(uint16_t index)
 {
     return zplc_vm_get_stack(&default_vm, index);

@@ -1,0 +1,17 @@
+{
+  "name": "motor_control",
+  "version": "1.0.0",
+  "description": "Motor start/stop circuit with seal-in logic",
+  "tasks": [
+    {
+      "name": "MainTask",
+      "trigger": "cyclic",
+      "interval": 10,
+      "priority": 1,
+      "watchdog": 100,
+      "programs": [
+        "Main"
+      ]
+    }
+  ]
+}

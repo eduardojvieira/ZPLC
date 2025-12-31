@@ -21,37 +21,7 @@ import {
   getTypeSize,
   bytesToValue,
 } from './debugAdapter';
-
-/**
- * Emscripten Module interface
- */
-interface EmscriptenModule {
-  _malloc(size: number): number;
-  _free(ptr: number): void;
-  HEAPU8: Uint8Array;
-  ccall(
-    name: string,
-    returnType: string | null,
-    argTypes: string[],
-    args: unknown[]
-  ): unknown;
-  cwrap(
-    name: string,
-    returnType: string | null,
-    argTypes: string[]
-  ): (...args: unknown[]) => unknown;
-}
-
-/**
- * Global window interface for ZPLC callbacks
- */
-declare global {
-  interface Window {
-    ZPLCModule?: EmscriptenModule;
-    zplcOnGpioWrite?: (channel: number, value: number) => void;
-    zplcOnGpioRead?: (channel: number) => number;
-  }
-}
+import { loadZPLCModule, type EmscriptenModule } from './wasmLoader';
 
 /**
  * WASM Debug Adapter
@@ -119,14 +89,14 @@ export class WASMAdapter implements IDebugAdapter {
       return;
     }
 
-    // Check if WASM module is loaded
-    if (!window.ZPLCModule) {
+    // Load and initialize the WASM module
+    try {
+      this.module = await loadZPLCModule();
+    } catch (error) {
       throw new Error(
-        'ZPLC WASM module not loaded. Ensure zplc_sim.js is included.'
+        `Failed to load ZPLC WASM module: ${error instanceof Error ? error.message : error}`
       );
     }
-
-    this.module = window.ZPLCModule;
 
     // Wrap C functions
     this.wrapFunctions();
@@ -245,7 +215,7 @@ export class WASMAdapter implements IDebugAdapter {
 
       // Reset state but preserve breakpoints (user might want to debug same program)
       this.cycleCount = 0;
-      
+
       this.setState('idle');
     } finally {
       this.module._free(ptr);
@@ -336,7 +306,7 @@ export class WASMAdapter implements IDebugAdapter {
     this.breakpoints.clear();
 
     this.cycleCount = 0;
-    
+
     this.setState('idle');
   }
 
@@ -474,7 +444,7 @@ export class WASMAdapter implements IDebugAdapter {
     const error = this.coreGetError?.() ?? 0;
     const tos = sp > 0 ? this.coreGetStack?.(sp - 1) ?? 0 : undefined;
 
-    
+
 
     return {
       pc,

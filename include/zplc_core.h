@@ -448,6 +448,13 @@ const zplc_vm_state_t* zplc_core_get_state(void);
 uint16_t zplc_core_get_sp(void);
 
 /**
+ * @brief Get the current program counter.
+ *
+ * @return Program counter value
+ */
+uint16_t zplc_core_get_pc(void);
+
+/**
  * @brief Get a value from the evaluation stack.
  *
  * @param index Stack index (0 = bottom)

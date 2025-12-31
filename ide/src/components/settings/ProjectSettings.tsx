@@ -36,6 +36,7 @@ import type {
   TargetConfig,
   CompilerConfig,
   ZPLCProjectConfig,
+  FileTreeNode,
 } from '../../types';
 
 // =============================================================================
@@ -707,36 +708,52 @@ function IOTable({ items, onUpdate, onRemove }: IOTableProps) {
 /**
  * Get list of available program files from the file tree.
  * Programs are .st files or visual editor files (.fbd.json, .ld.json, .sfc.json)
+ * This searches the fileTree recursively, not just loaded files.
+ * 
+ * Returns filenames with simplified extensions (e.g., "main.st", "main.fbd")
+ * so users can choose which language/file to compile.
  */
-function getAvailablePrograms(loadedFiles: Map<string, unknown>): string[] {
-  const programs: string[] = [];
-  const programExtensions = ['.st', '.fbd.json', '.ld.json', '.sfc.json'];
+function getAvailablePrograms(fileTree: FileTreeNode | null): string[] {
+  if (!fileTree) return [];
   
-  for (const [, file] of loadedFiles) {
-    const f = file as { name?: string };
-    if (f.name) {
-      const isProgram = programExtensions.some(ext => f.name!.endsWith(ext));
+  const programs: string[] = [];
+  const programExtensions = ['.st', '.il', '.fbd.json', '.ld.json', '.sfc.json'];
+  
+  // Map .xxx.json to .xxx for cleaner display
+  const simplifyExtension = (filename: string): string => {
+    if (filename.endsWith('.fbd.json')) return filename.replace('.fbd.json', '.fbd');
+    if (filename.endsWith('.ld.json')) return filename.replace('.ld.json', '.ld');
+    if (filename.endsWith('.sfc.json')) return filename.replace('.sfc.json', '.sfc');
+    return filename;
+  };
+  
+  function collectPrograms(node: FileTreeNode) {
+    if (node.type === 'file' && node.name) {
+      const isProgram = programExtensions.some(ext => node.name.endsWith(ext));
       if (isProgram) {
-        // Extract program name without extension
-        let name = f.name;
-        for (const ext of programExtensions) {
-          if (name.endsWith(ext)) {
-            name = name.slice(0, -ext.length);
-            break;
-          }
+        const displayName = simplifyExtension(node.name);
+        if (!programs.includes(displayName)) {
+          programs.push(displayName);
         }
-        programs.push(name);
+      }
+    }
+    
+    // Recurse into directories
+    if (node.children) {
+      for (const child of node.children) {
+        collectPrograms(child);
       }
     }
   }
   
+  collectPrograms(fileTree);
   return programs.sort();
 }
 
 function TasksSection({ config, updateConfig }: SectionProps) {
-  const { loadedFiles } = useIDEStore();
+  const { fileTree } = useIDEStore();
   const tasks = config.tasks;
-  const availablePrograms = getAvailablePrograms(loadedFiles);
+  const availablePrograms = getAvailablePrograms(fileTree);
 
   const addTask = () => {
     const newTask: TaskDefinition = {

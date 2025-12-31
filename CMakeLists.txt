@@ -103,6 +103,7 @@ elseif(EMSCRIPTEN OR WASM_BUILD)
                 \"_zplc_core_run_cycle\", \
                 \"_zplc_core_get_state\", \
                 \"_zplc_core_get_sp\", \
+                \"_zplc_core_get_pc\", \
                 \"_zplc_core_get_stack\", \
                 \"_zplc_core_get_error\", \
                 \"_zplc_core_is_halted\", \

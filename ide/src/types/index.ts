@@ -296,6 +296,9 @@ export interface ZPLCProjectConfig {
   };
 }
 
+/** Alias for ZPLCProjectConfig (shorter name for common usage) */
+export type ZPLCConfig = ZPLCProjectConfig;
+
 /** Default project configuration */
 export const DEFAULT_ZPLC_CONFIG: ZPLCProjectConfig = {
   name: 'New Project',
@@ -373,9 +376,9 @@ export interface SerializableProject {
 /** Loaded project with all files and configuration */
 export interface LoadedProject {
   path: string;                    // Folder path
-  yaml: ProjectYAML;               // Parsed project.yaml
+  zplcConfig: ZPLCProjectConfig;   // Parsed zplc.json
   files: ProjectFile[];            // All source files
-  config: ProjectConfig;           // Runtime config (derived from yaml)
+  config: ProjectConfig;           // Runtime config (derived from zplcConfig)
 }
 
 // =============================================================================

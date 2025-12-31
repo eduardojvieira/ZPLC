@@ -213,6 +213,21 @@ function DeleteModal({ isOpen, fileName, onConfirm, onCancel }: DeleteModalProps
 }
 
 // =============================================================================
+// Display Name Helper
+// =============================================================================
+
+/**
+ * Simplify file extensions for display in the explorer.
+ * Converts .fbd.json -> .fbd, .ld.json -> .ld, .sfc.json -> .sfc
+ */
+function getDisplayName(filename: string): string {
+  if (filename.endsWith('.fbd.json')) return filename.replace('.fbd.json', '.fbd');
+  if (filename.endsWith('.ld.json')) return filename.replace('.ld.json', '.ld');
+  if (filename.endsWith('.sfc.json')) return filename.replace('.sfc.json', '.sfc');
+  return filename;
+}
+
+// =============================================================================
 // Tree Node Component
 // =============================================================================
 
@@ -265,7 +280,7 @@ function TreeNode({ node, depth, activeFileId, onFileClick, onToggleDir, onConte
             <ChevronRight size={14} className="text-[var(--color-surface-400)]" />
           )}
           {getFileIcon()}
-          <span className="truncate">{node.name}</span>
+          <span className="truncate">{getDisplayName(node.name)}</span>
         </button>
 
         {node.isExpanded && node.children && (
@@ -304,7 +319,7 @@ function TreeNode({ node, depth, activeFileId, onFileClick, onToggleDir, onConte
       {/* Spacer for alignment with folders */}
       <span className="w-3.5" />
       {getFileIcon()}
-      <span className="truncate flex-1">{node.name}</span>
+      <span className="truncate flex-1">{getDisplayName(node.name)}</span>
     </div>
   );
 }

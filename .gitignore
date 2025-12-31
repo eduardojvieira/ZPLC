@@ -52,3 +52,4 @@ task_boundary_history.json
 temp/
 .cache/
 
+build_wasm/
