@@ -5,9 +5,7 @@
  * 
  * Layout (when project is open):
  * ┌─────────────────────────────────────────────┐
- * │ Toolbar                                     │
- * ├─────────────────────────────────────────────┤
- * │ DebugToolbar (Play/Pause/Step/Status)       │
+ * │ Toolbar (unified controls)                  │
  * ├──────────┬──────────────────────────────────┤
  * │          │                                  │
  * │ Sidebar  │ EditorArea (Monaco/ReactFlow)    │
@@ -20,7 +18,6 @@
  */
 
 import { Toolbar } from './components/Toolbar';
-import { DebugToolbar } from './components/DebugToolbar';
 import { Sidebar } from './components/Sidebar';
 import { EditorArea } from './components/EditorArea';
 import { Console } from './components/Console';
@@ -37,7 +34,8 @@ function App() {
   const isProjectOpen = useIDEStore((s) => s.isProjectOpen);
 
   // Debug controller - manages adapter lifecycle, polling, and events
-  const debug = useDebugController();
+  // This is the single source of truth for all simulation/hardware state
+  const debugController = useDebugController();
 
   // No project open - show welcome screen
   if (!isProjectOpen) {
@@ -51,17 +49,8 @@ function App() {
   // Project is open - show full IDE
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-surface-900)]">
-      {/* Top Toolbar */}
-      <Toolbar />
-
-      {/* Debug Toolbar - execution controls and status */}
-      <DebugToolbar
-        adapter={debug.adapter}
-        vmState={debug.vmState}
-        onStartSimulation={debug.startSimulation}
-        onConnectHardware={debug.connectHardware}
-        onDisconnect={debug.disconnect}
-      />
+      {/* Unified Toolbar - handles compile, mode selection, and execution */}
+      <Toolbar debugController={debugController} />
 
       {/* Main Content Area */}
       <div className="flex-1 flex overflow-hidden">

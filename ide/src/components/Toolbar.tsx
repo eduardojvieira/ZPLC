@@ -1,7 +1,15 @@
 /**
- * Toolbar Component
+ * Toolbar Component - Unified Control Bar
  * 
- * Top toolbar with compile/run/upload buttons, connection status, and theme switcher
+ * Single toolbar that handles:
+ * - File operations (Save, Export)
+ * - Build operations (Compile, Download, View ASM)
+ * - Execution mode (Simulate vs Hardware)
+ * - Execution controls (Run/Pause/Stop/Step/Reset)
+ * - Connection status and settings
+ * 
+ * Uses useDebugController as the single source of truth for all
+ * simulation and hardware connection state.
  */
 
 import { useState, useRef, useEffect } from 'react';
@@ -10,7 +18,6 @@ import {
   Square,
   Upload,
   Hammer,
-  WifiOff,
   Settings,
   Sun,
   Moon,
@@ -25,9 +32,12 @@ import {
   SkipForward,
   Cpu,
   RotateCcw,
+  Radio,
+  Unplug,
 } from 'lucide-react';
 import { useIDEStore } from '../store/useIDEStore';
 import { useTheme } from '../hooks/useTheme';
+import { useDebugController } from '../hooks/useDebugController';
 import { transpileFBDToST } from '../transpiler/fbdToST';
 import { transpileLDToST } from '../transpiler/ldToST';
 import { transpileSFCToST } from '../transpiler/sfcToST';
@@ -38,19 +48,25 @@ import { compileSingleFileWithTask, compileMultiTaskProject, CompilerError } fro
 import type { PLCLanguage, ProgramSource } from '../compiler';
 import { AssemblerError } from '../assembler';
 import { GeneratedCodeDialog } from './GeneratedCodeDialog';
-import {
-  isWebSerialSupported,
-} from '../uploader';
-import { WASMAdapter, createWASMAdapter, connectionManager } from '../runtime';
-import type { VMState } from '../runtime';
 
-export function Toolbar() {
+// =============================================================================
+// Types
+// =============================================================================
+
+type ExecutionMode = 'simulate' | 'hardware';
+
+interface ToolbarProps {
+  /** Debug controller instance from App */
+  debugController: ReturnType<typeof useDebugController>;
+}
+
+// =============================================================================
+// Main Component
+// =============================================================================
+
+export function Toolbar({ debugController }: ToolbarProps) {
   const { 
-    connection, 
     addConsoleEntry, 
-    setPlcState,
-    setConnectionStatus,
-    activeFileId, 
     addCompilerMessage, 
     clearCompilerMessages,
     createFile,
@@ -61,10 +77,37 @@ export function Toolbar() {
     projectConfig,
     loadedFiles,
     isProjectOpen,
+    activeFileId,
   } = useIDEStore();
+  
   const { theme, setTheme, isDark } = useTheme();
+  
+  // Destructure debug controller
+  const {
+    adapter,
+    vmState,
+    vmInfo,
+    startSimulation,
+    connectHardware,
+    disconnect,
+    loadProgram,
+    start,
+    stop,
+    pause,
+    resume,
+    step,
+    reset,
+  } = debugController;
+
+  // Local UI state
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
+  const [isCompileMenuOpen, setIsCompileMenuOpen] = useState(false);
+  const [executionMode, setExecutionMode] = useState<ExecutionMode>('simulate');
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  
   const themeMenuRef = useRef<HTMLDivElement>(null);
+  const compileMenuRef = useRef<HTMLDivElement>(null);
 
   // State for generated code dialog
   const [showGeneratedCode, setShowGeneratedCode] = useState(false);
@@ -82,169 +125,43 @@ export function Toolbar() {
     taskCount: number;
   } | null>(null);
 
-  // State for WebSerial connection (uses connectionManager)
-  const [isSerialConnected, setIsSerialConnected] = useState(connectionManager.connected);
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<{ stage: string; progress: number } | null>(null);
-
-  // State for WASM simulation
-  const [simAdapter, setSimAdapter] = useState<WASMAdapter | null>(null);
-  const [simState, setSimState] = useState<VMState>('disconnected');
-  const [simCycles, setSimCycles] = useState(0);
-  const [isSimLoading, setIsSimLoading] = useState(false);
-
   // Get the active file
   const activeFile = getActiveFile();
   const isVisualLanguage = activeFile?.language === 'FBD' || activeFile?.language === 'LD' || activeFile?.language === 'SFC';
 
-  // Close dropdown when clicking outside
+  // Derived state from adapter
+  const isConnected = adapter?.connected ?? false;
+  const isRunning = vmState === 'running';
+  const isPaused = vmState === 'paused';
+  const isIdle = vmState === 'idle';
+
+  // Close dropdowns when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (themeMenuRef.current && !themeMenuRef.current.contains(event.target as Node)) {
         setIsThemeMenuOpen(false);
+      }
+      if (compileMenuRef.current && !compileMenuRef.current.contains(event.target as Node)) {
+        setIsCompileMenuOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Subscribe to connection manager state
-  useEffect(() => {
-    const unsub = connectionManager.onConnectionChange((connected) => {
-      setIsSerialConnected(connected);
-      setConnectionStatus(connected ? 'connected' : 'disconnected');
-    });
-    return unsub;
-  }, [setConnectionStatus]);
+  // ==========================================================================
+  // File Operations
+  // ==========================================================================
 
-  /**
-   * Generate Structured Text from visual language (FBD/LD/SFC)
-   * Returns the generated ST source or null if failed
-   */
-  const generateSTFromVisual = (): { source: string; success: boolean } | null => {
-    if (!activeFile) return null;
-
-    try {
-      if (activeFile.language === 'FBD') {
-        const model = parseFBDModel(activeFile.content);
-        const result = transpileFBDToST(model);
-        if (!result.success) {
-          result.errors.forEach(err => {
-            addConsoleEntry({ type: 'error', message: err, source: 'transpiler' });
-          });
-          return null;
-        }
-        return { source: result.source, success: true };
-      } else if (activeFile.language === 'LD') {
-        const model = parseLDModel(activeFile.content);
-        const result = transpileLDToST(model);
-        if (!result.success) {
-          result.errors.forEach(err => {
-            addConsoleEntry({ type: 'error', message: err, source: 'transpiler' });
-          });
-          return null;
-        }
-        return { source: result.source, success: true };
-      } else if (activeFile.language === 'SFC') {
-        const model = parseSFCModel(activeFile.content);
-        const result = transpileSFCToST(model);
-        if (!result.success) {
-          result.errors.forEach(err => {
-            addConsoleEntry({ type: 'error', message: err, source: 'transpiler' });
-          });
-          return null;
-        }
-        return { source: result.source, success: true };
-      }
-    } catch (e) {
-      addConsoleEntry({ 
-        type: 'error', 
-        message: `Transpiler error: ${e instanceof Error ? e.message : String(e)}`, 
-        source: 'transpiler' 
-      });
-      return null;
-    }
-
-    return null;
-  };
-
-  /**
-   * Handle "Generate ST" button - transpile visual language to ST and show dialog
-   */
-  const handleGenerateST = () => {
-    if (!activeFile) return;
-
-    addConsoleEntry({
-      type: 'info',
-      message: `Transpiling ${activeFile.language} to Structured Text...`,
-      source: 'transpiler',
-    });
-
-    const result = generateSTFromVisual();
-    if (result?.success) {
-      addConsoleEntry({
-        type: 'success',
-        message: `Generated ${result.source.split('\n').length} lines of Structured Text`,
-        source: 'transpiler',
-      });
-      
-      // Show the dialog with generated code
-      setGeneratedCode(result.source);
-      setGeneratedCodeType(activeFile.language as 'FBD' | 'LD' | 'SFC');
-      setShowGeneratedCode(true);
-    }
-  };
-
-  /**
-   * Handle creating a new ST file from generated code
-   */
-  const handleCreateSTFile = async (code: string) => {
-    if (!activeFile) return;
-
-    // Generate a unique file name
-    const baseName = activeFile.name.replace(/\.(fbd|ld|sfc)(\.json)?$/, '');
-    const newFileName = `${baseName}_generated`;
-
-    try {
-      // Create the file (it will have .st extension added automatically)
-      const newFileId = await createFile(newFileName, 'ST');
-      
-      // Update the content with the generated code
-      useIDEStore.getState().updateFileContent(newFileId, code);
-
-      addConsoleEntry({
-        type: 'success',
-        message: `Created new file: ${newFileName}.st`,
-        source: 'transpiler',
-      });
-    } catch (err) {
-      addConsoleEntry({
-        type: 'error',
-        message: `Failed to create file: ${err instanceof Error ? err.message : String(err)}`,
-        source: 'transpiler',
-      });
-    }
-  };
-
-  /**
-   * Save current file to disk
-   */
   const handleSaveFile = async () => {
     if (!activeFile || !activeFileId) {
-      addConsoleEntry({
-        type: 'error',
-        message: 'No file selected to save',
-        source: 'system',
-      });
+      addConsoleEntry({ type: 'error', message: 'No file selected to save', source: 'system' });
       return;
     }
 
-    // Use the store's saveFile which handles both virtual and real projects
     const success = await saveFile(activeFileId);
     
     if (!success && isVirtualProject) {
-      // For virtual projects, offer download as fallback
       try {
         const blob = new Blob([activeFile.content], { type: 'text/plain;charset=utf-8' });
         const url = URL.createObjectURL(blob);
@@ -255,50 +172,30 @@ export function Toolbar() {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-
-        addConsoleEntry({
-          type: 'success',
-          message: `Downloaded: ${activeFile.name}`,
-          source: 'system',
-        });
+        addConsoleEntry({ type: 'success', message: `Downloaded: ${activeFile.name}`, source: 'system' });
       } catch (e) {
-        addConsoleEntry({
-          type: 'error',
-          message: `Failed to download: ${e instanceof Error ? e.message : String(e)}`,
-          source: 'system',
-        });
+        addConsoleEntry({ type: 'error', message: `Failed to download: ${e instanceof Error ? e.message : String(e)}`, source: 'system' });
       }
     }
   };
 
-  /**
-   * Export entire project as JSON (for virtual projects or backup)
-   */
   const handleExportProject = () => {
-    const { loadedFiles, projectConfig } = useIDEStore.getState();
+    const { loadedFiles: files, projectConfig: config } = useIDEStore.getState();
     
-    if (!projectConfig) {
-      addConsoleEntry({
-        type: 'error',
-        message: 'No project open',
-        source: 'system',
-      });
+    if (!config) {
+      addConsoleEntry({ type: 'error', message: 'No project open', source: 'system' });
       return;
     }
 
     try {
-      // Build export object
-      const files = Array.from(loadedFiles.values()).map(f => ({
-        name: f.name,
-        path: f.path,
-        language: f.language,
-        content: f.content,
+      const fileList = Array.from(files.values()).map(f => ({
+        name: f.name, path: f.path, language: f.language, content: f.content,
       }));
 
       const exportData = {
         version: '1.0.0',
-        config: projectConfig,
-        files,
+        config,
+        files: fileList,
         exportedAt: new Date().toISOString(),
       };
 
@@ -306,77 +203,115 @@ export function Toolbar() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${projectConfig.name || 'zplc-project'}.zplc.json`;
+      a.download = `${config.name || 'zplc-project'}.zplc.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      addConsoleEntry({
-        type: 'success',
-        message: `Exported project: ${projectConfig.name}`,
-        source: 'system',
-      });
+      addConsoleEntry({ type: 'success', message: `Exported project: ${config.name}`, source: 'system' });
     } catch (e) {
-      addConsoleEntry({
-        type: 'error',
-        message: `Failed to export: ${e instanceof Error ? e.message : String(e)}`,
-        source: 'system',
-      });
+      addConsoleEntry({ type: 'error', message: `Failed to export: ${e instanceof Error ? e.message : String(e)}`, source: 'system' });
     }
   };
 
-  /**
-   * Helper to find a program source file by name.
-   * Searches loadedFiles for a file matching the program name.
-   * Program names should include extension (e.g., "main.st", "FastBlink.st")
-   */
+  // ==========================================================================
+  // Transpiler (Visual -> ST)
+  // ==========================================================================
+
+  const generateSTFromVisual = (): { source: string; success: boolean } | null => {
+    if (!activeFile) return null;
+
+    try {
+      if (activeFile.language === 'FBD') {
+        const model = parseFBDModel(activeFile.content);
+        const result = transpileFBDToST(model);
+        if (!result.success) {
+          result.errors.forEach(err => addConsoleEntry({ type: 'error', message: err, source: 'transpiler' }));
+          return null;
+        }
+        return { source: result.source, success: true };
+      } else if (activeFile.language === 'LD') {
+        const model = parseLDModel(activeFile.content);
+        const result = transpileLDToST(model);
+        if (!result.success) {
+          result.errors.forEach(err => addConsoleEntry({ type: 'error', message: err, source: 'transpiler' }));
+          return null;
+        }
+        return { source: result.source, success: true };
+      } else if (activeFile.language === 'SFC') {
+        const model = parseSFCModel(activeFile.content);
+        const result = transpileSFCToST(model);
+        if (!result.success) {
+          result.errors.forEach(err => addConsoleEntry({ type: 'error', message: err, source: 'transpiler' }));
+          return null;
+        }
+        return { source: result.source, success: true };
+      }
+    } catch (e) {
+      addConsoleEntry({ type: 'error', message: `Transpiler error: ${e instanceof Error ? e.message : String(e)}`, source: 'transpiler' });
+      return null;
+    }
+    return null;
+  };
+
+  const handleGenerateST = () => {
+    if (!activeFile) return;
+    addConsoleEntry({ type: 'info', message: `Transpiling ${activeFile.language} to Structured Text...`, source: 'transpiler' });
+
+    const result = generateSTFromVisual();
+    if (result?.success) {
+      addConsoleEntry({ type: 'success', message: `Generated ${result.source.split('\n').length} lines of Structured Text`, source: 'transpiler' });
+      setGeneratedCode(result.source);
+      setGeneratedCodeType(activeFile.language as 'FBD' | 'LD' | 'SFC');
+      setShowGeneratedCode(true);
+    }
+  };
+
+  const handleCreateSTFile = async (code: string) => {
+    if (!activeFile) return;
+    const baseName = activeFile.name.replace(/\.(fbd|ld|sfc)(\.json)?$/, '');
+    const newFileName = `${baseName}_generated`;
+
+    try {
+      const newFileId = await createFile(newFileName, 'ST');
+      useIDEStore.getState().updateFileContent(newFileId, code);
+      addConsoleEntry({ type: 'success', message: `Created new file: ${newFileName}.st`, source: 'transpiler' });
+    } catch (err) {
+      addConsoleEntry({ type: 'error', message: `Failed to create file: ${err instanceof Error ? err.message : String(err)}`, source: 'transpiler' });
+    }
+  };
+
+  // ==========================================================================
+  // Compilation
+  // ==========================================================================
+
   const findProgramSource = (programName: string): ProgramSource | null => {
-    // Try to find a file matching the program name (with extension)
     for (const file of loadedFiles.values()) {
-      // Match by full filename (case-insensitive)
       if (file.name.toLowerCase() === programName.toLowerCase()) {
-        // Extract base name for the compiler (without extension)
         const baseName = file.name.replace(/\.(st|fbd|ld|sfc|il)(\.json)?$/i, '');
-        return {
-          name: baseName,
-          content: file.content,
-          language: file.language as PLCLanguage,
-        };
+        return { name: baseName, content: file.content, language: file.language as PLCLanguage };
       }
     }
     return null;
   };
 
-  /**
-   * Check if we have a valid project configuration with tasks that reference programs.
-   */
   const hasValidProjectConfig = (): boolean => {
-    if (!isProjectOpen || !projectConfig?.tasks?.length) {
-      return false;
-    }
-    // Check if at least one task has a program assigned
+    if (!isProjectOpen || !projectConfig?.tasks?.length) return false;
     return projectConfig.tasks.some(task => task.programs && task.programs.length > 0);
   };
 
   const handleCompile = () => {
     clearCompilerMessages();
+    setIsCompileMenuOpen(false);
 
-    // Determine compilation mode: Project vs Single-File
     const useProjectMode = hasValidProjectConfig();
 
     if (useProjectMode && projectConfig) {
-      // =========================================================================
-      // PROJECT MODE: Compile all programs referenced in tasks
-      // =========================================================================
-      addConsoleEntry({
-        type: 'info',
-        message: `Compiling project: ${projectConfig.name || 'Unnamed'}...`,
-        source: 'compiler',
-      });
+      // PROJECT MODE
+      addConsoleEntry({ type: 'info', message: `Compiling project: ${projectConfig.name || 'Unnamed'}...`, source: 'compiler' });
 
       try {
-        // Collect all unique programs referenced by tasks
         const referencedPrograms = new Set<string>();
         for (const task of projectConfig.tasks) {
           for (const progName of task.programs || []) {
@@ -385,15 +320,10 @@ export function Toolbar() {
         }
 
         if (referencedPrograms.size === 0) {
-          addConsoleEntry({
-            type: 'error',
-            message: 'No programs assigned to tasks. Configure tasks in Project Settings.',
-            source: 'compiler',
-          });
+          addConsoleEntry({ type: 'error', message: 'No programs assigned to tasks. Configure tasks in Project Settings.', source: 'compiler' });
           return;
         }
 
-        // Find source files for each referenced program
         const programSources: ProgramSource[] = [];
         const missingPrograms: string[] = [];
 
@@ -401,38 +331,18 @@ export function Toolbar() {
           const source = findProgramSource(progName);
           if (source) {
             programSources.push(source);
-            addConsoleEntry({
-              type: 'info',
-              message: `  Found: ${progName} (${source.language})`,
-              source: 'compiler',
-            });
           } else {
             missingPrograms.push(progName);
           }
         }
 
         if (missingPrograms.length > 0) {
-          addConsoleEntry({
-            type: 'error',
-            message: `Missing program files: ${missingPrograms.join(', ')}. Create the files or update task configuration.`,
-            source: 'compiler',
-          });
+          addConsoleEntry({ type: 'error', message: `Missing program files: ${missingPrograms.join(', ')}`, source: 'compiler' });
           return;
         }
 
-        // Log task configuration
-        for (const task of projectConfig.tasks) {
-          addConsoleEntry({
-            type: 'info',
-            message: `  Task: ${task.name} → ${task.programs?.join(', ') || 'none'} (${task.interval || 100}ms, priority ${task.priority})`,
-            source: 'compiler',
-          });
-        }
-
-        // Compile using multi-task project compiler
         const result = compileMultiTaskProject(projectConfig, programSources);
 
-        // Store the result for download/upload
         setLastCompileResult({
           bytecode: result.bytecode,
           zplcFile: result.zplcFile,
@@ -445,95 +355,35 @@ export function Toolbar() {
 
         addConsoleEntry({
           type: 'success',
-          message: `Project compiled! ${result.zplcFile.length} bytes (${result.codeSize} bytes code, ${result.tasks.length} tasks, ${programSources.length} programs). Ready to upload.`,
+          message: `Compiled! ${result.zplcFile.length} bytes (${result.codeSize} code, ${result.tasks.length} tasks)`,
           source: 'compiler',
         });
 
       } catch (e) {
-        if (e instanceof CompilerError) {
-          addConsoleEntry({ type: 'error', message: e.message, source: 'compiler' });
-          addCompilerMessage({
-            type: 'error',
-            message: e.message,
-            line: e.line,
-            column: e.column,
-          });
-        } else if (e instanceof AssemblerError) {
-          addConsoleEntry({ type: 'error', message: `Assembler: ${e.message}`, source: 'assembler' });
-        } else {
-          addConsoleEntry({
-            type: 'error',
-            message: `Compilation error: ${e instanceof Error ? e.message : String(e)}`,
-            source: 'compiler',
-          });
-        }
+        handleCompileError(e);
       }
 
     } else {
-      // =========================================================================
-      // SINGLE-FILE MODE: Compile only the active file
-      // =========================================================================
+      // SINGLE FILE MODE
       if (!activeFile) {
-        addConsoleEntry({
-          type: 'error',
-          message: 'No file selected',
-          source: 'compiler',
-        });
+        addConsoleEntry({ type: 'error', message: 'No file selected', source: 'compiler' });
         return;
       }
 
-      addConsoleEntry({
-        type: 'info',
-        message: `Compiling ${activeFile.name}...`,
-        source: 'compiler',
-      });
-
-      // Determine the language
-      const language = activeFile.language as PLCLanguage;
-
-      // Log transpilation for visual languages
-      if (isVisualLanguage) {
-        addConsoleEntry({
-          type: 'info',
-          message: `Transpiling ${language} to Structured Text first...`,
-          source: 'transpiler',
-        });
-      }
+      addConsoleEntry({ type: 'info', message: `Compiling ${activeFile.name}...`, source: 'compiler' });
 
       try {
-        // Get task configuration from project settings or use defaults
+        const language = activeFile.language as PLCLanguage;
         const firstTask = projectConfig?.tasks?.[0];
         const taskName = firstTask?.name || 'MainTask';
         const intervalMs = firstTask?.interval || 10;
         const priority = firstTask?.priority ?? 1;
-        
-        // Extract program name from filename
         const programName = activeFile.name.replace(/\.(st|fbd|ld|sfc)(\.json)?$/i, '') || 'Main';
-        
-        addConsoleEntry({
-          type: 'info',
-          message: `Task: ${taskName}, Interval: ${intervalMs}ms, Priority: ${priority}`,
-          source: 'compiler',
-        });
 
-        // Compile single file with task
         const result = compileSingleFileWithTask(activeFile.content, language, {
-          taskName,
-          intervalMs,
-          priority,
-          programName,
+          taskName, intervalMs, priority, programName,
         });
 
-        // Log transpilation success
-        if (result.intermediateSTSource) {
-          addConsoleEntry({
-            type: 'success',
-            message: `Transpiled to ST (${result.intermediateSTSource.split('\n').length} lines)`,
-            source: 'transpiler',
-          });
-        }
-
-        // Store the result
         const outputFileName = activeFile.name.replace(/\.(st|fbd|ld|sfc)(\.json)?$/i, '.zplc');
         setLastCompileResult({
           bytecode: result.bytecode,
@@ -547,196 +397,35 @@ export function Toolbar() {
 
         addConsoleEntry({
           type: 'success',
-          message: `Compilation successful! ${result.zplcFile.length} bytes (${result.codeSize} bytes code, ${result.tasks.length} task). Ready to upload.`,
+          message: `Compiled! ${result.zplcFile.length} bytes (${result.codeSize} code, ${result.tasks.length} task)`,
           source: 'compiler',
         });
 
       } catch (e) {
-        if (e instanceof CompilerError) {
-          addConsoleEntry({ type: 'error', message: e.message, source: 'compiler' });
-          addCompilerMessage({
-            type: 'error',
-            message: e.message,
-            line: e.line,
-            column: e.column,
-            file: activeFile.name,
-          });
-        } else if (e instanceof AssemblerError) {
-          addConsoleEntry({ type: 'error', message: `Assembler: ${e.message}`, source: 'assembler' });
-        } else {
-          addConsoleEntry({
-            type: 'error',
-            message: `Compilation error: ${e instanceof Error ? e.message : String(e)}`,
-            source: 'compiler',
-          });
-        }
+        handleCompileError(e);
       }
     }
   };
 
-  const handleRun = () => {
-    addConsoleEntry({
-      type: 'info',
-      message: 'Starting PLC execution...',
-      source: 'runtime',
-    });
-    setPlcState('running');
-  };
-
-  const handleStop = () => {
-    addConsoleEntry({
-      type: 'warning',
-      message: 'Stopping PLC execution',
-      source: 'runtime',
-    });
-    setPlcState('stopped');
-  };
-
-  /**
-   * Connect to a serial device via WebSerial (uses connectionManager)
-   */
-  const handleConnect = async () => {
-    if (!isWebSerialSupported()) {
-      addConsoleEntry({
-        type: 'error',
-        message: 'WebSerial not supported. Use Chrome or Edge browser.',
-        source: 'upload',
-      });
-      return;
-    }
-
-    if (isSerialConnected) {
-      // Disconnect
-      try {
-        await connectionManager.disconnect();
-        addConsoleEntry({
-          type: 'info',
-          message: 'Disconnected from device',
-          source: 'upload',
-        });
-      } catch (e) {
-        addConsoleEntry({
-          type: 'error',
-          message: `Disconnect failed: ${e instanceof Error ? e.message : String(e)}`,
-          source: 'upload',
-        });
-      }
-      return;
-    }
-
-    // Connect
-    setIsConnecting(true);
-    try {
-      addConsoleEntry({
-        type: 'info',
-        message: 'Select a serial port...',
-        source: 'upload',
-      });
-
-      await connectionManager.connect();
-
-      addConsoleEntry({
-        type: 'success',
-        message: 'Connected to ZPLC device',
-        source: 'upload',
-      });
-    } catch (e) {
-      const errorMsg = e instanceof Error ? e.message : String(e);
-      // User cancel is not an error
-      if (!errorMsg.includes('cancelled') && !errorMsg.includes('No port selected')) {
-        addConsoleEntry({
-          type: 'error',
-          message: `Connection failed: ${errorMsg}`,
-          source: 'upload',
-        });
-      } else {
-        addConsoleEntry({
-          type: 'warning',
-          message: 'Port selection cancelled',
-          source: 'upload',
-        });
-      }
-    } finally {
-      setIsConnecting(false);
+  const handleCompileError = (e: unknown) => {
+    if (e instanceof CompilerError) {
+      addConsoleEntry({ type: 'error', message: e.message, source: 'compiler' });
+      addCompilerMessage({ type: 'error', message: e.message, line: e.line, column: e.column });
+    } else if (e instanceof AssemblerError) {
+      addConsoleEntry({ type: 'error', message: `Assembler: ${e.message}`, source: 'assembler' });
+    } else {
+      addConsoleEntry({ type: 'error', message: `Error: ${e instanceof Error ? e.message : String(e)}`, source: 'compiler' });
     }
   };
 
-  /**
-   * Upload bytecode to connected device (uses connectionManager)
-   */
-  const handleUpload = async () => {
-    if (!isSerialConnected) {
-      addConsoleEntry({
-        type: 'error',
-        message: 'Not connected. Click "Connect" first.',
-        source: 'upload',
-      });
-      return;
-    }
-
-    if (!lastCompileResult) {
-      addConsoleEntry({
-        type: 'error',
-        message: 'No compiled bytecode. Compile first!',
-        source: 'upload',
-      });
-      return;
-    }
-
-    setIsUploading(true);
-    setUploadProgress({ stage: 'starting', progress: 0 });
-
-    try {
-      // Upload the complete .zplc file (with TASK segment) not just raw bytecode
-      const uploadData = lastCompileResult.zplcFile;
-      
-      addConsoleEntry({
-        type: 'info',
-        message: `Uploading ${uploadData.length} bytes to device (${lastCompileResult.codeSize} bytes code, ${lastCompileResult.taskCount} task)...`,
-        source: 'upload',
-      });
-
-      setUploadProgress({ stage: 'loading', progress: 30 });
-      await connectionManager.uploadBytecode(uploadData);
-      
-      setUploadProgress({ stage: 'starting', progress: 70 });
-      await connectionManager.start();
-
-      setUploadProgress({ stage: 'complete', progress: 100 });
-      
-      addConsoleEntry({ 
-        type: 'success', 
-        message: `Upload complete! Program running.`, 
-        source: 'upload' 
-      });
-      setPlcState('running');
-    } catch (e) {
-      addConsoleEntry({
-        type: 'error',
-        message: `Upload failed: ${e instanceof Error ? e.message : String(e)}`,
-        source: 'upload',
-      });
-    } finally {
-      setIsUploading(false);
-      setUploadProgress(null);
-    }
-  };
-
-  /**
-   * Download the compiled .zplc bytecode file
-   */
   const handleDownloadBytecode = () => {
     if (!lastCompileResult) {
-      addConsoleEntry({
-        type: 'error',
-        message: 'No compiled bytecode available. Compile first!',
-        source: 'system',
-      });
+      addConsoleEntry({ type: 'error', message: 'No compiled bytecode. Compile first!', source: 'system' });
       return;
     }
+    setIsCompileMenuOpen(false);
 
     try {
-      // Create a copy to ensure ArrayBuffer compatibility
       const binaryData = new Uint8Array(lastCompileResult.zplcFile);
       const blob = new Blob([binaryData.buffer], { type: 'application/octet-stream' });
       const url = URL.createObjectURL(blob);
@@ -748,265 +437,122 @@ export function Toolbar() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      addConsoleEntry({
-        type: 'success',
-        message: `Downloaded: ${lastCompileResult.fileName} (${lastCompileResult.zplcFile.length} bytes)`,
-        source: 'system',
-      });
+      addConsoleEntry({ type: 'success', message: `Downloaded: ${lastCompileResult.fileName}`, source: 'system' });
     } catch (e) {
-      addConsoleEntry({
-        type: 'error',
-        message: `Failed to download: ${e instanceof Error ? e.message : String(e)}`,
-        source: 'system',
-      });
+      addConsoleEntry({ type: 'error', message: `Failed to download: ${e instanceof Error ? e.message : String(e)}`, source: 'system' });
     }
   };
 
-  /**
-   * View the generated assembly code in a dialog
-   */
   const handleViewAssembly = () => {
     if (!lastCompileResult) {
-      addConsoleEntry({
-        type: 'error',
-        message: 'No compiled code available. Compile first!',
-        source: 'system',
-      });
+      addConsoleEntry({ type: 'error', message: 'No compiled code. Compile first!', source: 'system' });
       return;
     }
-
-    // Show assembly in the generated code dialog
+    setIsCompileMenuOpen(false);
     setGeneratedCode(lastCompileResult.assembly);
     setGeneratedCodeType('ASM');
     setShowGeneratedCode(true);
   };
 
-  // =========================================================================
-  // Simulation Handlers
-  // =========================================================================
+  // ==========================================================================
+  // Connection & Execution
+  // ==========================================================================
 
-  /**
-   * Start WASM simulation
-   */
-  const handleSimulate = async () => {
-    if (!lastCompileResult) {
-      addConsoleEntry({
-        type: 'error',
-        message: 'No compiled bytecode. Compile first!',
-        source: 'simulator',
-      });
+  const handleConnect = async () => {
+    if (isConnected) {
+      await disconnect();
       return;
     }
 
-    setIsSimLoading(true);
-
+    setIsConnecting(true);
     try {
-      // Create adapter if not exists
-      let adapter = simAdapter;
-      if (!adapter) {
-        adapter = createWASMAdapter();
-        
-        // Set up event handlers
-        adapter.setEventHandlers({
-          onStateChange: (state) => {
-            setSimState(state);
-            if (state === 'running') {
-              setPlcState('running');
-            } else if (state === 'idle' || state === 'paused') {
-              setPlcState('stopped');
-            }
-          },
-          onInfoUpdate: (info) => {
-            setSimCycles(info.cycles);
-          },
-          onError: (error) => {
-            addConsoleEntry({
-              type: 'error',
-              message: `Simulation error: ${error}`,
-              source: 'simulator',
-            });
-          },
-          onGpioChange: (channel, value) => {
-            addConsoleEntry({
-              type: 'info',
-              message: `GPIO ${channel} = ${value}`,
-              source: 'simulator',
-            });
-          },
-        });
-
-        setSimAdapter(adapter);
+      if (executionMode === 'simulate') {
+        await startSimulation();
+        addConsoleEntry({ type: 'success', message: 'Simulator ready', source: 'runtime' });
+      } else {
+        await connectHardware();
+        addConsoleEntry({ type: 'success', message: 'Hardware connected', source: 'runtime' });
       }
-
-      // Connect if not connected
-      if (!adapter.connected) {
-        addConsoleEntry({
-          type: 'info',
-          message: 'Connecting to WASM simulator...',
-          source: 'simulator',
-        });
-        await adapter.connect();
-        addConsoleEntry({
-          type: 'success',
-          message: 'WASM simulator connected',
-          source: 'simulator',
-        });
-      }
-
-      // Load the program
-      addConsoleEntry({
-        type: 'info',
-        message: `Loading program (${lastCompileResult.bytecode.length} bytes)...`,
-        source: 'simulator',
-      });
-      await adapter.loadProgram(lastCompileResult.bytecode);
-
-      // Start execution
-      addConsoleEntry({
-        type: 'info',
-        message: 'Starting simulation...',
-        source: 'simulator',
-      });
-      await adapter.start();
-      setSimState('running');
-      setPlcState('running');
-      
-      addConsoleEntry({
-        type: 'success',
-        message: 'Simulation running (100ms cycle time)',
-        source: 'simulator',
-      });
-
     } catch (e) {
-      addConsoleEntry({
-        type: 'error',
-        message: `Simulation failed: ${e instanceof Error ? e.message : String(e)}`,
-        source: 'simulator',
-      });
-      setSimState('error');
+      const msg = e instanceof Error ? e.message : String(e);
+      if (!msg.includes('cancelled') && !msg.includes('No port')) {
+        addConsoleEntry({ type: 'error', message: `Connection failed: ${msg}`, source: 'runtime' });
+      }
     } finally {
-      setIsSimLoading(false);
+      setIsConnecting(false);
     }
   };
 
-  /**
-   * Pause simulation
-   */
-  const handleSimPause = async () => {
-    if (!simAdapter) return;
+  const handleUpload = async () => {
+    if (!isConnected) {
+      addConsoleEntry({ type: 'error', message: 'Not connected. Connect first.', source: 'runtime' });
+      return;
+    }
+    if (!lastCompileResult) {
+      addConsoleEntry({ type: 'error', message: 'No compiled bytecode. Compile first!', source: 'runtime' });
+      return;
+    }
 
+    setIsUploading(true);
     try {
-      await simAdapter.pause();
-      addConsoleEntry({
-        type: 'info',
-        message: `Simulation paused at cycle ${simCycles}`,
-        source: 'simulator',
-      });
+      addConsoleEntry({ type: 'info', message: `Uploading ${lastCompileResult.zplcFile.length} bytes...`, source: 'runtime' });
+      await loadProgram(lastCompileResult.bytecode);
+      addConsoleEntry({ type: 'success', message: 'Program loaded', source: 'runtime' });
     } catch (e) {
-      addConsoleEntry({
-        type: 'error',
-        message: `Pause failed: ${e instanceof Error ? e.message : String(e)}`,
-        source: 'simulator',
-      });
+      addConsoleEntry({ type: 'error', message: `Upload failed: ${e instanceof Error ? e.message : String(e)}`, source: 'runtime' });
+    } finally {
+      setIsUploading(false);
     }
   };
 
-  /**
-   * Resume simulation
-   */
-  const handleSimResume = async () => {
-    if (!simAdapter) return;
-
-    try {
-      await simAdapter.resume();
-      addConsoleEntry({
-        type: 'info',
-        message: 'Simulation resumed',
-        source: 'simulator',
-      });
-    } catch (e) {
-      addConsoleEntry({
-        type: 'error',
-        message: `Resume failed: ${e instanceof Error ? e.message : String(e)}`,
-        source: 'simulator',
-      });
+  const handleStart = async () => {
+    if (!isConnected) {
+      // Auto-connect first
+      await handleConnect();
+      return;
     }
+    
+    // If we have bytecode but haven't loaded it, load it first
+    if (lastCompileResult && isIdle) {
+      try {
+        await loadProgram(lastCompileResult.bytecode);
+      } catch (e) {
+        addConsoleEntry({ type: 'error', message: `Failed to load: ${e instanceof Error ? e.message : String(e)}`, source: 'runtime' });
+        return;
+      }
+    }
+    
+    await start();
+    addConsoleEntry({ type: 'info', message: 'Execution started', source: 'runtime' });
   };
 
-  /**
-   * Single-step simulation
-   */
-  const handleSimStep = async () => {
-    if (!simAdapter) return;
-
-    try {
-      await simAdapter.step();
-      addConsoleEntry({
-        type: 'info',
-        message: `Stepped to cycle ${simCycles + 1}`,
-        source: 'simulator',
-      });
-    } catch (e) {
-      addConsoleEntry({
-        type: 'error',
-        message: `Step failed: ${e instanceof Error ? e.message : String(e)}`,
-        source: 'simulator',
-      });
-    }
+  const handlePause = async () => {
+    await pause();
+    addConsoleEntry({ type: 'info', message: `Paused at cycle ${vmInfo?.cycles || 0}`, source: 'runtime' });
   };
 
-  /**
-   * Stop simulation
-   */
-  const handleSimStop = async () => {
-    if (!simAdapter) return;
-
-    try {
-      await simAdapter.stop();
-      addConsoleEntry({
-        type: 'info',
-        message: `Simulation stopped after ${simCycles} cycles`,
-        source: 'simulator',
-      });
-      setSimCycles(0);
-    } catch (e) {
-      addConsoleEntry({
-        type: 'error',
-        message: `Stop failed: ${e instanceof Error ? e.message : String(e)}`,
-        source: 'simulator',
-      });
-    }
+  const handleResume = async () => {
+    await resume();
+    addConsoleEntry({ type: 'info', message: 'Resumed', source: 'runtime' });
   };
 
-  /**
-   * Reset simulation
-   */
-  const handleSimReset = async () => {
-    if (!simAdapter) return;
-
-    try {
-      await simAdapter.reset();
-      setSimCycles(0);
-      addConsoleEntry({
-        type: 'info',
-        message: 'Simulation reset',
-        source: 'simulator',
-      });
-    } catch (e) {
-      addConsoleEntry({
-        type: 'error',
-        message: `Reset failed: ${e instanceof Error ? e.message : String(e)}`,
-        source: 'simulator',
-      });
-    }
+  const handleStop = async () => {
+    await stop();
+    addConsoleEntry({ type: 'info', message: 'Stopped', source: 'runtime' });
   };
 
-  const isSimulating = simState === 'running';
-  const isSimPaused = simState === 'paused';
-  const isSimActive = simState !== 'disconnected' && simState !== 'error';
+  const handleStep = async () => {
+    await step();
+  };
 
-  const isConnected = isSerialConnected;
-  const isRunning = connection.plcState === 'running';
+  const handleReset = async () => {
+    await reset();
+    addConsoleEntry({ type: 'info', message: 'Reset', source: 'runtime' });
+  };
+
+  // ==========================================================================
+  // Render Helpers
+  // ==========================================================================
 
   const themeOptions = [
     { id: 'light' as const, label: 'Light', icon: Sun },
@@ -1014,319 +560,332 @@ export function Toolbar() {
     { id: 'system' as const, label: 'System', icon: Monitor },
   ];
 
-  // Check if running in Electron on macOS (need space for traffic light buttons)
+  // Status text and color
+  const getStatusDisplay = () => {
+    if (!isConnected) {
+      return { text: 'Disconnected', color: 'text-[var(--color-surface-400)]', dot: 'bg-gray-500' };
+    }
+    switch (vmState) {
+      case 'running':
+        return { text: 'Running', color: 'text-green-400', dot: 'bg-green-500 animate-pulse' };
+      case 'paused':
+        return { text: 'Paused', color: 'text-amber-400', dot: 'bg-amber-500' };
+      case 'idle':
+        return { text: 'Ready', color: 'text-blue-400', dot: 'bg-blue-500' };
+      case 'error':
+        return { text: 'Error', color: 'text-red-400', dot: 'bg-red-500' };
+      default:
+        return { text: vmState, color: 'text-[var(--color-surface-400)]', dot: 'bg-gray-500' };
+    }
+  };
+
+  const status = getStatusDisplay();
+
+  // Check if running in Electron on macOS
   const isElectronMac = typeof window !== 'undefined' && 
     window.electronAPI?.isElectron && 
     window.electronAPI?.platform === 'darwin';
 
+  // ==========================================================================
+  // Render
+  // ==========================================================================
+
   return (
-    <div className={`h-12 bg-[var(--color-surface-800)] border-b border-[var(--color-surface-600)] flex items-center px-4 gap-2 ${isElectronMac ? 'pl-20' : ''}`}>
+    <div className={`h-12 bg-[var(--color-surface-800)] border-b border-[var(--color-surface-600)] flex items-center px-3 gap-1.5 ${isElectronMac ? 'pl-20' : ''}`}>
       {/* Logo */}
-      <div className="flex items-center gap-2 mr-4">
-        <div className="w-8 h-8 bg-[var(--color-accent-blue)] rounded flex items-center justify-center font-bold text-white text-sm">
+      <div className="flex items-center gap-2 mr-2">
+        <div className="w-7 h-7 bg-[var(--color-accent-blue)] rounded flex items-center justify-center font-bold text-white text-xs">
           Z
         </div>
-        <span className="font-semibold text-[var(--color-surface-100)]">ZPLC IDE</span>
+        <span className="font-semibold text-[var(--color-surface-100)] text-sm hidden sm:inline">ZPLC</span>
       </div>
 
       {/* Separator */}
-      <div className="w-px h-6 bg-[var(--color-surface-600)] mx-2" />
+      <div className="w-px h-6 bg-[var(--color-surface-600)]" />
 
-      {/* File Actions */}
+      {/* Save Button */}
       <button
         onClick={handleSaveFile}
         disabled={!activeFile}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-100)] text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        title="Save File (Ctrl+S)"
+        className="p-2 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-200)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        title="Save (Ctrl+S)"
       >
-        <Save size={16} />
-        <span>Save</span>
-      </button>
-
-      <button
-        onClick={handleExportProject}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-100)] text-sm transition-colors"
-        title="Export Project"
-      >
-        <Download size={16} />
-        <span>Export</span>
+        <Save size={18} />
       </button>
 
       {/* Separator */}
-      <div className="w-px h-6 bg-[var(--color-surface-600)] mx-2" />
+      <div className="w-px h-6 bg-[var(--color-surface-600)]" />
 
-      {/* Build Actions */}
       {/* Generate ST button - only for visual languages */}
       {isVisualLanguage && (
         <button
           onClick={handleGenerateST}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-purple-600 hover:bg-purple-500 text-white text-sm transition-colors"
-          title="Generate Structured Text (transpile FBD/LD to ST)"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-purple-600 hover:bg-purple-500 text-white text-xs font-medium transition-colors"
+          title="Generate Structured Text"
         >
-          <FileCode size={16} />
-          <span>Generate ST</span>
+          <FileCode size={14} />
+          <span className="hidden md:inline">To ST</span>
         </button>
       )}
 
-      <button
-        onClick={handleCompile}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-100)] text-sm transition-colors"
-        title={hasValidProjectConfig() 
-          ? `Compile Project: ${projectConfig?.name || 'Unnamed'} (${projectConfig?.tasks?.length || 0} tasks)` 
-          : `Compile: ${activeFile?.name || 'No file selected'}`
-        }
-      >
-        <Hammer size={16} />
-        <span>Compile</span>
-      </button>
-
-      {/* Download and View Assembly buttons - only visible after successful compilation */}
-      {lastCompileResult && (
-        <>
-          <button
-            onClick={handleDownloadBytecode}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[var(--color-accent-blue)] hover:opacity-90 text-white text-sm transition-colors"
-            title={`Download ${lastCompileResult.fileName} (${lastCompileResult.zplcFile.length} bytes)`}
-          >
-            <Download size={16} />
-            <span>.zplc</span>
-          </button>
-          <button
-            onClick={handleViewAssembly}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-100)] text-sm transition-colors"
-            title="View generated assembly code"
-          >
-            <FileCode size={16} />
-            <span>ASM</span>
-          </button>
-        </>
-      )}
-
-      {isRunning ? (
+      {/* Compile Dropdown */}
+      <div className="relative" ref={compileMenuRef}>
         <button
-          onClick={handleStop}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[var(--color-accent-red)] hover:opacity-90 text-white text-sm transition-colors"
-          title="Stop (Ctrl+Shift+F5)"
+          onClick={() => setIsCompileMenuOpen(!isCompileMenuOpen)}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-100)] text-xs font-medium transition-colors"
+          title="Build options"
         >
-          <Square size={16} />
-          <span>Stop</span>
+          <Hammer size={14} />
+          <span>Build</span>
+          <ChevronDown size={12} className={`transition-transform ${isCompileMenuOpen ? 'rotate-180' : ''}`} />
         </button>
-      ) : (
-        <button
-          onClick={handleRun}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[var(--color-accent-green)] hover:opacity-90 text-white text-sm transition-colors"
-          title="Run (F5)"
-        >
-          <Play size={16} />
-          <span>Run</span>
-        </button>
-      )}
+
+        {isCompileMenuOpen && (
+          <div className="absolute left-0 top-full mt-1 py-1 w-44 bg-[var(--color-surface-700)] border border-[var(--color-surface-600)] rounded-lg shadow-lg z-50">
+            <button
+              onClick={handleCompile}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-surface-100)] hover:bg-[var(--color-surface-600)] transition-colors"
+            >
+              <Hammer size={14} />
+              <span>Compile</span>
+              <span className="ml-auto text-xs text-[var(--color-surface-400)]">Ctrl+B</span>
+            </button>
+            <div className="h-px bg-[var(--color-surface-600)] my-1" />
+            <button
+              onClick={handleDownloadBytecode}
+              disabled={!lastCompileResult}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-surface-100)] hover:bg-[var(--color-surface-600)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <Download size={14} />
+              <span>Download .zplc</span>
+            </button>
+            <button
+              onClick={handleViewAssembly}
+              disabled={!lastCompileResult}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-surface-100)] hover:bg-[var(--color-surface-600)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <FileCode size={14} />
+              <span>View Assembly</span>
+            </button>
+            <div className="h-px bg-[var(--color-surface-600)] my-1" />
+            <button
+              onClick={handleExportProject}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-surface-100)] hover:bg-[var(--color-surface-600)] transition-colors"
+            >
+              <Download size={14} />
+              <span>Export Project</span>
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Separator */}
-      <div className="w-px h-6 bg-[var(--color-surface-600)] mx-2" />
+      <div className="w-px h-6 bg-[var(--color-surface-600)]" />
 
-      {/* Simulation Controls */}
-      {!isSimActive ? (
+      {/* Mode Toggle */}
+      <div className="flex items-center bg-[var(--color-surface-700)] rounded overflow-hidden">
         <button
-          onClick={handleSimulate}
-          disabled={!lastCompileResult || isSimLoading}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          title={!lastCompileResult ? 'Compile first to simulate' : 'Start WASM simulation'}
+          onClick={() => {
+            if (isConnected) disconnect();
+            setExecutionMode('simulate');
+          }}
+          className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors ${
+            executionMode === 'simulate'
+              ? 'bg-cyan-600 text-white'
+              : 'text-[var(--color-surface-300)] hover:bg-[var(--color-surface-600)]'
+          }`}
+          title="Simulation Mode (WASM)"
         >
-          {isSimLoading ? (
-            <Loader2 size={16} className="animate-spin" />
-          ) : (
-            <Cpu size={16} />
-          )}
-          <span>Simulate</span>
+          <Cpu size={14} />
+          <span className="hidden sm:inline">Simulate</span>
         </button>
-      ) : (
-        <>
-          {isSimulating ? (
-            <button
-              onClick={handleSimPause}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-amber-600 hover:bg-amber-500 text-white text-sm transition-colors"
-              title="Pause simulation"
-            >
-              <Pause size={16} />
-              <span>Pause</span>
-            </button>
-          ) : (
-            <button
-              onClick={handleSimResume}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-sm transition-colors"
-              title="Resume simulation"
-            >
-              <Play size={16} />
-              <span>Resume</span>
-            </button>
-          )}
-
-          <button
-            onClick={handleSimStep}
-            disabled={isSimulating}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-100)] text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Step one cycle"
-          >
-            <SkipForward size={16} />
-            <span>Step</span>
-          </button>
-
-          <button
-            onClick={handleSimStop}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[var(--color-accent-red)] hover:opacity-90 text-white text-sm transition-colors"
-            title="Stop simulation"
-          >
-            <Square size={16} />
-            <span>Stop</span>
-          </button>
-
-          <button
-            onClick={handleSimReset}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-100)] text-sm transition-colors"
-            title="Reset simulation (reload program)"
-          >
-            <RotateCcw size={16} />
-          </button>
-        </>
-      )}
+        <button
+          onClick={() => {
+            if (isConnected) disconnect();
+            setExecutionMode('hardware');
+          }}
+          className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors ${
+            executionMode === 'hardware'
+              ? 'bg-green-600 text-white'
+              : 'text-[var(--color-surface-300)] hover:bg-[var(--color-surface-600)]'
+          }`}
+          title="Hardware Mode (Serial)"
+        >
+          <Radio size={14} />
+          <span className="hidden sm:inline">Hardware</span>
+        </button>
+      </div>
 
       {/* Separator */}
-      <div className="w-px h-6 bg-[var(--color-surface-600)] mx-2" />
+      <div className="w-px h-6 bg-[var(--color-surface-600)]" />
 
-      {/* Serial Connection Controls */}
-      <button
-        onClick={handleConnect}
-        disabled={isConnecting}
-        className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-sm transition-colors ${
-          isConnected
-            ? 'bg-[var(--color-accent-green)] text-white hover:opacity-90'
-            : 'bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-100)]'
-        } disabled:opacity-50 disabled:cursor-not-allowed`}
-        title={isConnected ? 'Disconnect from device' : 'Connect to ZPLC device via serial'}
-      >
-        {isConnecting ? (
-          <Loader2 size={16} className="animate-spin" />
-        ) : (
-          <Usb size={16} />
-        )}
-        <span>{isConnected ? 'Disconnect' : 'Connect'}</span>
-      </button>
+      {/* Connection / Execution Controls */}
+      <div className="flex items-center gap-1">
+        {/* Connect/Disconnect */}
+        <button
+          onClick={handleConnect}
+          disabled={isConnecting}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-colors ${
+            isConnected
+              ? 'bg-[var(--color-surface-700)] text-[var(--color-surface-200)] hover:bg-red-600 hover:text-white'
+              : executionMode === 'simulate'
+                ? 'bg-cyan-600 hover:bg-cyan-500 text-white'
+                : 'bg-green-600 hover:bg-green-500 text-white'
+          } disabled:opacity-50`}
+          title={isConnected ? 'Disconnect' : 'Connect'}
+        >
+          {isConnecting ? (
+            <Loader2 size={14} className="animate-spin" />
+          ) : isConnected ? (
+            <Unplug size={14} />
+          ) : executionMode === 'simulate' ? (
+            <Cpu size={14} />
+          ) : (
+            <Usb size={14} />
+          )}
+          <span className="hidden md:inline">{isConnected ? 'Disconnect' : 'Connect'}</span>
+        </button>
 
-      <button
-        onClick={handleUpload}
-        disabled={!isConnected || !lastCompileResult || isUploading}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-100)] text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        title={
-          !isConnected 
-            ? 'Connect to a device first' 
-            : !lastCompileResult 
-              ? 'Compile first' 
-              : 'Upload bytecode to device'
-        }
-      >
-        {isUploading ? (
-          <Loader2 size={16} className="animate-spin" />
-        ) : (
-          <Upload size={16} />
+        {/* Upload - only for hardware mode when connected */}
+        {executionMode === 'hardware' && isConnected && (
+          <button
+            onClick={handleUpload}
+            disabled={!lastCompileResult || isUploading}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-200)] text-xs font-medium transition-colors disabled:opacity-40"
+            title="Upload to device"
+          >
+            {isUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+            <span className="hidden md:inline">Upload</span>
+          </button>
         )}
-        <span>
-          {isUploading && uploadProgress 
-            ? `${uploadProgress.progress}%` 
-            : 'Upload'}
-        </span>
-      </button>
+
+        {/* Separator when connected */}
+        {isConnected && <div className="w-px h-5 bg-[var(--color-surface-600)] mx-0.5" />}
+
+        {/* Execution Controls - only when connected */}
+        {isConnected && (
+          <>
+            {/* Run/Resume or Pause based on state */}
+            {isRunning ? (
+              <button
+                onClick={handlePause}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium transition-colors"
+                title="Pause"
+              >
+                <Pause size={14} />
+                <span className="hidden sm:inline">Pause</span>
+              </button>
+            ) : isPaused ? (
+              <button
+                onClick={handleResume}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-green-600 hover:bg-green-500 text-white text-xs font-medium transition-colors"
+                title="Resume"
+              >
+                <Play size={14} />
+                <span className="hidden sm:inline">Resume</span>
+              </button>
+            ) : (
+              <button
+                onClick={handleStart}
+                disabled={!lastCompileResult}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-green-600 hover:bg-green-500 text-white text-xs font-medium transition-colors disabled:opacity-40"
+                title="Run"
+              >
+                <Play size={14} />
+                <span className="hidden sm:inline">Run</span>
+              </button>
+            )}
+
+            {/* Step - only when paused or idle */}
+            {(isPaused || isIdle) && (
+              <button
+                onClick={handleStep}
+                className="flex items-center gap-1.5 px-2 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-200)] text-xs font-medium transition-colors"
+                title="Step one cycle"
+              >
+                <SkipForward size={14} />
+              </button>
+            )}
+
+            {/* Stop - when running or paused */}
+            {(isRunning || isPaused) && (
+              <button
+                onClick={handleStop}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-red-600 hover:bg-red-500 text-white text-xs font-medium transition-colors"
+                title="Stop"
+              >
+                <Square size={14} />
+              </button>
+            )}
+
+            {/* Reset */}
+            <button
+              onClick={handleReset}
+              className="flex items-center gap-1.5 px-2 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-200)] text-xs font-medium transition-colors"
+              title="Reset"
+            >
+              <RotateCcw size={14} />
+            </button>
+          </>
+        )}
+      </div>
 
       {/* Spacer */}
       <div className="flex-1" />
 
-      {/* Connection Status */}
-      <div className="flex items-center gap-2">
-        {/* Simulation Status - shows when simulating */}
-        {isSimActive && (
-          <div className="flex items-center gap-1.5 text-cyan-400 text-sm">
-            <Cpu size={16} />
-            <span>SIM</span>
-            {simCycles > 0 && (
-              <span className="text-xs text-[var(--color-surface-300)]">
-                #{simCycles}
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* Serial Connection Status */}
-        {!isSimActive && (
-          isConnected ? (
-            <div className="flex items-center gap-1.5 text-[var(--color-status-connected)] text-sm">
-              <Usb size={16} />
-              <span>Serial</span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1.5 text-[var(--color-status-disconnected)] text-sm">
-              <WifiOff size={16} />
-              <span>No Device</span>
-            </div>
-          )
-        )}
-
-        {/* PLC State Indicator */}
-        <div className="flex items-center gap-1.5 ml-2">
-          <div
-            className={`w-2.5 h-2.5 rounded-full ${
-              isSimulating
-                ? 'bg-cyan-400 animate-pulse'
-                : isSimPaused
-                  ? 'bg-amber-400'
-                  : isRunning
-                    ? 'bg-[var(--color-status-running)] animate-pulse'
-                    : 'bg-[var(--color-status-stopped)]'
-            }`}
-          />
-          <span className="text-sm text-[var(--color-surface-200)] uppercase">
-            {isSimulating ? 'running' : isSimPaused ? 'paused' : connection.plcState}
+      {/* Status Display */}
+      <div className="flex items-center gap-2 mr-2">
+        {/* Cycle counter when running */}
+        {isConnected && vmInfo && vmInfo.cycles > 0 && (
+          <span className="text-xs text-[var(--color-surface-400)] font-mono">
+            #{vmInfo.cycles.toLocaleString()}
           </span>
+        )}
+        
+        {/* Status indicator */}
+        <div className="flex items-center gap-1.5">
+          <div className={`w-2 h-2 rounded-full ${status.dot}`} />
+          <span className={`text-xs font-medium ${status.color}`}>{status.text}</span>
         </div>
+
+        {/* Mode indicator */}
+        {isConnected && (
+          <span className="text-xs text-[var(--color-surface-500)]">
+            {executionMode === 'simulate' ? 'SIM' : 'HW'}
+          </span>
+        )}
       </div>
 
       {/* Separator */}
-      <div className="w-px h-6 bg-[var(--color-surface-600)] mx-2" />
+      <div className="w-px h-6 bg-[var(--color-surface-600)]" />
 
-      {/* Theme Switcher Dropdown */}
+      {/* Theme Switcher */}
       <div className="relative" ref={themeMenuRef}>
         <button
           onClick={() => setIsThemeMenuOpen(!isThemeMenuOpen)}
           className="flex items-center gap-1 p-1.5 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-200)] transition-colors"
           title={`Theme: ${theme}`}
         >
-          {isDark ? <Moon size={18} /> : <Sun size={18} />}
-          <ChevronDown size={14} className={`transition-transform ${isThemeMenuOpen ? 'rotate-180' : ''}`} />
+          {isDark ? <Moon size={16} /> : <Sun size={16} />}
         </button>
 
-        {/* Dropdown Menu */}
         {isThemeMenuOpen && (
-          <div className="absolute right-0 top-full mt-1 py-1 w-36 bg-[var(--color-surface-700)] border border-[var(--color-surface-600)] rounded-lg shadow-lg z-50">
+          <div className="absolute right-0 top-full mt-1 py-1 w-32 bg-[var(--color-surface-700)] border border-[var(--color-surface-600)] rounded-lg shadow-lg z-50">
             {themeOptions.map((option) => {
               const Icon = option.icon;
               const isActive = theme === option.id;
               return (
                 <button
                   key={option.id}
-                  onClick={() => {
-                    setTheme(option.id);
-                    setIsThemeMenuOpen(false);
-                  }}
-                  className={`w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors ${
+                  onClick={() => { setTheme(option.id); setIsThemeMenuOpen(false); }}
+                  className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs transition-colors ${
                     isActive
                       ? 'bg-[var(--color-accent-blue)] text-white'
                       : 'text-[var(--color-surface-100)] hover:bg-[var(--color-surface-600)]'
                   }`}
                 >
-                  <Icon size={16} />
+                  <Icon size={14} />
                   <span>{option.label}</span>
-                  {isActive && (
-                    <span className="ml-auto text-xs">✓</span>
-                  )}
                 </button>
               );
             })}
@@ -1340,10 +899,10 @@ export function Toolbar() {
         className="p-1.5 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-200)] transition-colors"
         title="Project Settings"
       >
-        <Settings size={18} />
+        <Settings size={16} />
       </button>
 
-      {/* Generated Code Dialog - works for ST from visual languages AND assembly from compiler */}
+      {/* Generated Code Dialog */}
       <GeneratedCodeDialog
         isOpen={showGeneratedCode}
         onClose={() => setShowGeneratedCode(false)}
@@ -1354,3 +913,5 @@ export function Toolbar() {
     </div>
   );
 }
+
+export default Toolbar;
