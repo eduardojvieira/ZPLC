@@ -16,7 +16,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useIDEStore, type LiveValue } from '../store/useIDEStore';
 import type { IDebugAdapter, VMState, VMInfo, DebugAdapterEvents } from '../runtime/debugAdapter';
 import { WASMAdapter } from '../runtime/wasmAdapter';
-import { SerialAdapter } from '../runtime/serialAdapter';
+import { connectionManager } from '../runtime/connectionManager';
 import type { DebugMap } from '../compiler/debug-map';
 
 // =============================================================================
@@ -211,10 +211,16 @@ export function useDebugController(): DebugController {
         await adapterRef.current.disconnect();
       }
 
-      const serialAdapter = new SerialAdapter();
+      // Use the global connectionManager for hardware connections
+      // This ensures ControllerView, Terminal, and DebugController share the same connection
+      await connectionManager.connect();
+      
+      const serialAdapter = connectionManager.serialAdapter;
+      if (!serialAdapter) {
+        throw new Error('Failed to get serial adapter from connection manager');
+      }
+      
       serialAdapter.setEventHandlers(createEventHandlers());
-
-      await serialAdapter.connect();
 
       setAdapter(serialAdapter);
       setVmState('idle');
@@ -239,7 +245,11 @@ export function useDebugController(): DebugController {
 
   const disconnect = useCallback(async () => {
     try {
-      if (adapterRef.current) {
+      // For hardware mode, use connectionManager to disconnect
+      // For simulation, disconnect the WASM adapter directly
+      if (debugMode === 'hardware') {
+        await connectionManager.disconnect();
+      } else if (adapterRef.current) {
         await adapterRef.current.disconnect();
       }
 
@@ -260,7 +270,7 @@ export function useDebugController(): DebugController {
       const message = err instanceof Error ? err.message : 'Unknown error';
       setLastError(message);
     }
-  }, [clearLiveValues, setPolling, setCurrentExecution, setDebugMode, addConsoleEntry]);
+  }, [debugMode, clearLiveValues, setPolling, setCurrentExecution, setDebugMode, addConsoleEntry]);
 
   // =========================================================================
   // Program Loading
