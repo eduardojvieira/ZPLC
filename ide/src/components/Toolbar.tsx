@@ -587,8 +587,18 @@ export function Toolbar({ debugController }: ToolbarProps) {
 
     setIsUploading(true);
     try {
-      addConsoleEntry({ type: 'info', message: `Uploading ${lastCompileResult.zplcFile.length} bytes...`, source: 'runtime' });
-      await loadProgram(lastCompileResult.bytecode);
+      // Hardware mode: Send full .zplc file with TASK segment for multi-task support
+      // Simulation mode: Send raw bytecode (WASM uses coreLoadRaw)
+      const dataToUpload = executionMode === 'hardware' 
+        ? lastCompileResult.zplcFile 
+        : lastCompileResult.bytecode;
+      
+      const description = executionMode === 'hardware'
+        ? `Uploading .zplc file (${dataToUpload.length} bytes, ${lastCompileResult.taskCount} task(s))...`
+        : `Loading bytecode (${dataToUpload.length} bytes)...`;
+      
+      addConsoleEntry({ type: 'info', message: description, source: 'runtime' });
+      await loadProgram(dataToUpload);
       addConsoleEntry({ type: 'success', message: 'Program loaded', source: 'runtime' });
     } catch (e) {
       addConsoleEntry({ type: 'error', message: `Upload failed: ${e instanceof Error ? e.message : String(e)}`, source: 'runtime' });
@@ -607,7 +617,12 @@ export function Toolbar({ debugController }: ToolbarProps) {
     // If we have bytecode but haven't loaded it, load it first
     if (lastCompileResult && isIdle) {
       try {
-        await loadProgram(lastCompileResult.bytecode);
+        // Hardware mode: Send full .zplc file with TASK segment for multi-task support
+        // Simulation mode: Send raw bytecode (WASM uses coreLoadRaw)
+        const dataToUpload = executionMode === 'hardware' 
+          ? lastCompileResult.zplcFile 
+          : lastCompileResult.bytecode;
+        await loadProgram(dataToUpload);
       } catch (e) {
         addConsoleEntry({ type: 'error', message: `Failed to load: ${e instanceof Error ? e.message : String(e)}`, source: 'runtime' });
         return;

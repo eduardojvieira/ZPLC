@@ -34,6 +34,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
+#include <zephyr/sys/reboot.h>
 #include <zephyr/version.h>
 #include <zplc_core.h>
 #include <zplc_hal.h>
@@ -709,6 +710,29 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_persist,
  * ============================================================================ */
 
 /**
+ * @brief Handler for 'zplc sys reboot'
+ *
+ * Performs a system reset. This is useful for recovering from error states
+ * or applying configuration changes that require a restart.
+ */
+static int cmd_sys_reboot(const struct shell *sh, size_t argc, char **argv)
+{
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
+    
+    shell_print(sh, "OK: Rebooting system...");
+    
+    /* Flush shell output before reboot */
+    k_msleep(100);
+    
+    /* Perform system reset */
+    sys_reboot(SYS_REBOOT_COLD);
+    
+    /* Should never reach here */
+    return 0;
+}
+
+/**
  * @brief Handler for 'zplc sys info [--json]'
  *
  * Shows board name, ZPLC version, Zephyr version, clock speed, and capabilities.
@@ -785,6 +809,7 @@ static int cmd_sys_info(const struct shell *sh, size_t argc, char **argv)
 /* System subcommands */
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_sys,
     SHELL_CMD_ARG(info, NULL, "Show system information [--json]", cmd_sys_info, 1, 1),
+    SHELL_CMD(reboot, NULL, "Reboot the system", cmd_sys_reboot),
     SHELL_SUBCMD_SET_END
 );
 
