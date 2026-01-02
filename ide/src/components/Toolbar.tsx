@@ -150,6 +150,98 @@ export function Toolbar({ debugController }: ToolbarProps) {
   }, []);
 
   // ==========================================================================
+  // Keyboard Shortcuts - Industrial-critical: operators need fast reactions
+  // ==========================================================================
+  // F5        = Run/Resume
+  // Shift+F5  = Stop
+  // F6        = Pause
+  // F10       = Step
+  // F8        = Reset
+  // Ctrl+B    = Compile
+  // Ctrl+S    = Save
+  // ==========================================================================
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      // Ignore if user is typing in an input/textarea (but not Monaco - it handles its own shortcuts)
+      const target = event.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+        return;
+      }
+
+      const key = event.key;
+      const ctrl = event.ctrlKey || event.metaKey;
+      const shift = event.shiftKey;
+
+      // Ctrl+S - Save
+      if (ctrl && key === 's') {
+        event.preventDefault();
+        handleSaveFile();
+        return;
+      }
+
+      // Ctrl+B - Compile
+      if (ctrl && key === 'b') {
+        event.preventDefault();
+        handleCompile();
+        return;
+      }
+
+      // F5 - Run/Resume (without shift)
+      if (key === 'F5' && !shift) {
+        event.preventDefault();
+        if (isRunning) {
+          // Already running, do nothing
+        } else if (isPaused) {
+          handleResume();
+        } else {
+          handleStart();
+        }
+        return;
+      }
+
+      // Shift+F5 - Stop
+      if (key === 'F5' && shift) {
+        event.preventDefault();
+        if (isRunning || isPaused) {
+          handleStop();
+        }
+        return;
+      }
+
+      // F6 - Pause
+      if (key === 'F6') {
+        event.preventDefault();
+        if (isRunning) {
+          handlePause();
+        }
+        return;
+      }
+
+      // F10 - Step
+      if (key === 'F10') {
+        event.preventDefault();
+        if (isPaused || isIdle) {
+          handleStep();
+        }
+        return;
+      }
+
+      // F8 - Reset
+      if (key === 'F8') {
+        event.preventDefault();
+        if (isConnected) {
+          handleReset();
+        }
+        return;
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isConnected, isRunning, isPaused, isIdle, activeFile]);
+
+  // ==========================================================================
   // File Operations
   // ==========================================================================
 
@@ -770,7 +862,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
               <button
                 onClick={handlePause}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium transition-colors"
-                title="Pause"
+                title="Pause (F6)"
               >
                 <Pause size={14} />
                 <span className="hidden sm:inline">Pause</span>
@@ -779,7 +871,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
               <button
                 onClick={handleResume}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-green-600 hover:bg-green-500 text-white text-xs font-medium transition-colors"
-                title="Resume"
+                title="Resume (F5)"
               >
                 <Play size={14} />
                 <span className="hidden sm:inline">Resume</span>
@@ -789,7 +881,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
                 onClick={handleStart}
                 disabled={!lastCompileResult}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-green-600 hover:bg-green-500 text-white text-xs font-medium transition-colors disabled:opacity-40"
-                title="Run"
+                title="Run (F5)"
               >
                 <Play size={14} />
                 <span className="hidden sm:inline">Run</span>
@@ -801,7 +893,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
               <button
                 onClick={handleStep}
                 className="flex items-center gap-1.5 px-2 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-200)] text-xs font-medium transition-colors"
-                title="Step one cycle"
+                title="Step one cycle (F10)"
               >
                 <SkipForward size={14} />
               </button>
@@ -812,7 +904,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
               <button
                 onClick={handleStop}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-red-600 hover:bg-red-500 text-white text-xs font-medium transition-colors"
-                title="Stop"
+                title="Stop (Shift+F5)"
               >
                 <Square size={14} />
               </button>
@@ -822,7 +914,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
             <button
               onClick={handleReset}
               className="flex items-center gap-1.5 px-2 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-200)] text-xs font-medium transition-colors"
-              title="Reset"
+              title="Reset (F8)"
             >
               <RotateCcw size={14} />
             </button>
