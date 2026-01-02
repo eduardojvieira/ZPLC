@@ -1,7 +1,10 @@
 /**
- * Test script for Pico persistence test project
+ * Test Pico Blinky Project Compilation
  * 
- * Run with: bun run test_pico_persist.ts
+ * Compiles the pico_blinky project for Raspberry Pi Pico with proper
+ * multi-task format required by the Zephyr scheduler.
+ * 
+ * Run with: bun run test_pico_blinky.ts
  */
 
 import { readFileSync, writeFileSync, mkdirSync } from 'fs';
@@ -12,12 +15,12 @@ import type { ZPLCProjectConfig } from './src/types/index.ts';
 import { hexDump, disassemble } from './src/assembler/index.ts';
 
 // Load project configuration
-const projectDir = join(import.meta.dir, 'projects/pico_persist_test');
+const projectDir = join(import.meta.dir, 'projects/pico_blinky');
 const configPath = join(projectDir, 'zplc.json');
 const config: ZPLCProjectConfig = JSON.parse(readFileSync(configPath, 'utf-8'));
 
 console.log('='.repeat(60));
-console.log('ZPLC Pico Persistence Test Compiler');
+console.log('ZPLC Pico Blinky Project Compiler');
 console.log('='.repeat(60));
 console.log(`\nProject: ${config.name} v${config.version}`);
 console.log(`Target: ${config.target?.board ?? 'generic'}`);
@@ -28,12 +31,9 @@ const sources: ProgramSource[] = [];
 
 for (const task of config.tasks) {
     for (const progName of task.programs) {
-        // Determine file path - handle both "name" and "name.st" conventions
-        const hasExtension = /\.(st|ld|fbd|sfc)$/i.test(progName);
-        const fileName = hasExtension ? progName : `${progName}.st`;
-        const baseName = hasExtension ? progName.replace(/\.[^.]+$/, '') : progName;
-        const stPath = join(projectDir, 'src', fileName);
-        
+        // Find the source file - handle both with and without .st extension
+        const baseName = progName.replace(/\.st$/, '');
+        const stPath = join(projectDir, 'src', `${baseName}.st`);
         try {
             const content = readFileSync(stPath, 'utf-8');
             sources.push({
@@ -41,9 +41,9 @@ for (const task of config.tasks) {
                 content,
                 language: 'ST'
             });
-            console.log(`\nLoaded: ${fileName}`);
+            console.log(`\nLoaded: src/${baseName}.st`);
         } catch (e) {
-            console.error(`Error loading ${fileName}: ${(e as Error).message}`);
+            console.error(`Error loading ${stPath}: ${(e as Error).message}`);
             process.exit(1);
         }
     }
@@ -97,24 +97,18 @@ try {
     // Write output files
     mkdirSync(join(projectDir, 'build'), { recursive: true });
     
-    const zplcPath = join(projectDir, 'build', 'pico_persist_test.zplc');
-    writeFileSync(zplcPath, result.zplcFile);
-    console.log(`\n✓ Wrote: ${zplcPath}`);
-    
-    // Also write hex dump for easy loading via serial
-    const hexPath = join(projectDir, 'build', 'pico_persist_test.hex');
-    const hexContent = Buffer.from(result.zplcFile).toString('hex');
-    writeFileSync(hexPath, hexContent);
-    console.log(`✓ Wrote: ${hexPath}`);
-    
-    console.log(`\n  Hex length: ${hexContent.length} characters`);
-    console.log(`  For serial upload:`);
-    console.log(`    zplc load ${result.zplcFile.length}`);
-    console.log(`    zplc data <paste hex>`);
-    console.log(`    zplc start`);
+    const outputPath = join(projectDir, 'build', 'main.zplc');
+    writeFileSync(outputPath, result.zplcFile);
+    console.log(`\n✓ Wrote: ${outputPath} (${result.zplcFile.length} bytes)`);
+
+    // Also save the assembly for debugging
+    const asmPath = join(projectDir, 'build', 'main.asm');
+    const assemblyContent = result.programDetails.map(p => `; === ${p.name} ===\n${p.assembly}`).join('\n\n');
+    writeFileSync(asmPath, assemblyContent);
+    console.log(`✓ Wrote: ${asmPath}`);
 
     console.log('\n' + '='.repeat(60));
-    console.log('SUCCESS');
+    console.log('SUCCESS - Ready to upload to Pico!');
     console.log('='.repeat(60));
 
 } catch (e) {

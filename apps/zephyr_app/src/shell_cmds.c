@@ -34,6 +34,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
+#include <zephyr/version.h>
 #include <zplc_core.h>
 #include <zplc_hal.h>
 

@@ -399,6 +399,34 @@ int zplc_ipi_write8(uint16_t offset, uint8_t value)
     return 0;
 }
 
+uint32_t zplc_ipi_read32(uint16_t offset)
+{
+    if (offset + 4 > ZPLC_MEM_IPI_SIZE) {
+        return 0;
+    }
+    return (uint32_t)mem_ipi[offset] |
+           ((uint32_t)mem_ipi[offset + 1] << 8) |
+           ((uint32_t)mem_ipi[offset + 2] << 16) |
+           ((uint32_t)mem_ipi[offset + 3] << 24);
+}
+
+uint16_t zplc_ipi_read16(uint16_t offset)
+{
+    if (offset + 2 > ZPLC_MEM_IPI_SIZE) {
+        return 0;
+    }
+    return (uint16_t)mem_ipi[offset] |
+           ((uint16_t)mem_ipi[offset + 1] << 8);
+}
+
+uint8_t zplc_ipi_read8(uint16_t offset)
+{
+    if (offset >= ZPLC_MEM_IPI_SIZE) {
+        return 0;
+    }
+    return mem_ipi[offset];
+}
+
 uint32_t zplc_opi_read32(uint16_t offset)
 {
     if (offset + 4 > ZPLC_MEM_OPI_SIZE) {

@@ -338,6 +338,30 @@ int zplc_ipi_write16(uint16_t offset, uint16_t value);
 int zplc_ipi_write8(uint16_t offset, uint8_t value);
 
 /**
+ * @brief Read a 32-bit value from IPI.
+ *
+ * @param offset Byte offset within IPI
+ * @return Value at offset, or 0 if out of bounds
+ */
+uint32_t zplc_ipi_read32(uint16_t offset);
+
+/**
+ * @brief Read a 16-bit value from IPI.
+ *
+ * @param offset Byte offset within IPI
+ * @return Value at offset, or 0 if out of bounds
+ */
+uint16_t zplc_ipi_read16(uint16_t offset);
+
+/**
+ * @brief Read an 8-bit value from IPI.
+ *
+ * @param offset Byte offset within IPI
+ * @return Value at offset, or 0 if out of bounds
+ */
+uint8_t zplc_ipi_read8(uint16_t offset);
+
+/**
  * @brief Read a 32-bit value from OPI.
  *
  * @param offset Byte offset within OPI

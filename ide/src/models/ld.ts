@@ -897,18 +897,121 @@ export function convertToLegacyRung(rung: LDRung): LDRung {
 // =============================================================================
 
 /**
+ * Normalize a grid-based rung to ensure proper sizing and wire flags.
+ * 
+ * This function:
+ * 1. Pads the grid to the expected number of columns
+ * 2. Filters out power rails from the grid (they're auto-generated)
+ * 3. Ensures row 0 has hasWire=true for all cells
+ * 4. Sets proper hasWire flags based on element positions
+ */
+export function normalizeGridRung(rung: LDRung): LDRung {
+  if (!rung.grid || rung.grid.length === 0) {
+    return rung;
+  }
+  
+  const config = rung.gridConfig || DEFAULT_GRID_CONFIG;
+  const targetCols = config.cols;
+  
+  // Create normalized grid
+  const newGrid: LDCell[][] = [];
+  
+  for (let rowIdx = 0; rowIdx < rung.grid.length; rowIdx++) {
+    const sourceRow = rung.grid[rowIdx] || [];
+    const newRow: LDCell[] = [];
+    
+    // Filter out power rails and track element positions
+    const elementsInRow: { element: LDElement; col: number }[] = [];
+    
+    let colOffset = 0;
+    for (let colIdx = 0; colIdx < sourceRow.length; colIdx++) {
+      const cell = sourceRow[colIdx];
+      if (cell.element) {
+        // Skip power rails - they're auto-generated
+        if (isPowerRail(cell.element.type)) {
+          continue;
+        }
+        elementsInRow.push({ element: cell.element, col: colIdx - colOffset });
+      }
+      // Track how many power rails we've skipped to adjust positions
+      if (cell.element && isPowerRail(cell.element.type)) {
+        colOffset++;
+      }
+    }
+    
+    // Build the new row with proper sizing
+    for (let colIdx = 0; colIdx < targetCols; colIdx++) {
+      // Check if there's an element at this position
+      const elementEntry = elementsInRow.find(e => e.col === colIdx);
+      
+      if (elementEntry) {
+        // Cell with element - ensure row/col are set correctly
+        const elementWithPosition: LDElement = {
+          ...elementEntry.element,
+          row: rowIdx,
+          col: colIdx,
+        };
+        newRow.push({ element: elementWithPosition, hasWire: true });
+      } else {
+        // Empty cell - main row (0) should always have wire for continuity
+        // Branch rows only have wire within the branch region
+        const hasWire = rowIdx === 0;
+        newRow.push({ element: null, hasWire });
+      }
+    }
+    
+    newGrid.push(newRow);
+  }
+  
+  // If grid is empty, create a single row with wires
+  if (newGrid.length === 0) {
+    const emptyRow: LDCell[] = [];
+    for (let col = 0; col < targetCols; col++) {
+      emptyRow.push({ element: null, hasWire: true });
+    }
+    newGrid.push(emptyRow);
+  }
+  
+  // Update branch row wires
+  if (rung.branches) {
+    for (const branch of rung.branches) {
+      for (const rowIdx of branch.rows) {
+        if (rowIdx > 0 && rowIdx < newGrid.length) {
+          // Set hasWire for cells within the branch region
+          for (let col = branch.startCol; col <= branch.endCol && col < targetCols; col++) {
+            if (newGrid[rowIdx][col]) {
+              newGrid[rowIdx][col].hasWire = true;
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  return {
+    ...rung,
+    grid: newGrid,
+    gridConfig: {
+      ...config,
+      rows: newGrid.length,
+    },
+  };
+}
+
+/**
  * Parse a JSON string into an LDModel
  */
 export function parseLDModel(json: string): LDModel {
   const parsed = JSON.parse(json) as LDModel;
   
-  // Auto-convert legacy rungs to grid-based
+  // Auto-convert and normalize rungs
   if (parsed.rungs) {
     parsed.rungs = parsed.rungs.map(rung => {
       if (!isGridBasedRung(rung) && rung.elements) {
-        return convertToGridRung(rung);
+        return normalizeGridRung(convertToGridRung(rung));
       }
-      return rung;
+      // Normalize existing grid-based rungs
+      return normalizeGridRung(rung);
     });
   }
   

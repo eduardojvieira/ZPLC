@@ -7,7 +7,7 @@
  * Also supports visual languages (LD, FBD, SFC) via transpilation to ST.
  *
  * Usage:
- *   import { compileST, compileToBinary, compileProject, compileMultiTaskProject } from './compiler';
+ *   import { compileST, compileToBinary, compileProject, compileMultiTaskProject, compileSingleFileWithTask } from './compiler';
  *
  *   // Compile ST directly
  *   const asm = compileST(source);
@@ -507,10 +507,40 @@ export function compileMultiTaskProject(
     }
 
     // Build a map of program name -> source for quick lookup
+    // We store both with and without extension for flexible matching
     const sourceMap = new Map<string, ProgramSource>();
     for (const source of programSources) {
+        // Store by original name
         sourceMap.set(source.name, source);
+        // Also store by name with common extensions for flexible lookup
+        sourceMap.set(source.name.toLowerCase(), source);
+        sourceMap.set(`${source.name}.st`.toLowerCase(), source);
+        sourceMap.set(`${source.name}.fbd`.toLowerCase(), source);
+        sourceMap.set(`${source.name}.ld`.toLowerCase(), source);
+        sourceMap.set(`${source.name}.sfc`.toLowerCase(), source);
+        sourceMap.set(`${source.name}.il`.toLowerCase(), source);
     }
+
+    /**
+     * Find a program source by name, handling both with and without extension.
+     */
+    const findSource = (progName: string): ProgramSource | undefined => {
+        // Try exact match first
+        let source = sourceMap.get(progName);
+        if (source) return source;
+        
+        // Try lowercase
+        source = sourceMap.get(progName.toLowerCase());
+        if (source) return source;
+        
+        // Try without extension
+        const baseName = progName.replace(/\.(st|fbd|ld|sfc|il)$/i, '');
+        source = sourceMap.get(baseName);
+        if (source) return source;
+        
+        source = sourceMap.get(baseName.toLowerCase());
+        return source;
+    };
 
     // Collect all unique programs referenced by tasks
     const referencedPrograms = new Set<string>();
@@ -534,7 +564,7 @@ export function compileMultiTaskProject(
     let programIndex = 0;
 
     for (const progName of referencedPrograms) {
-        const source = sourceMap.get(progName);
+        const source = findSource(progName);
         if (!source) {
             throw new CompilerError(
                 `Program '${progName}' referenced by task but not found in sources`,
@@ -614,10 +644,35 @@ export function compileMultiTaskProject(
     }
 
     // Build program name -> entry point map
+    // Store both with and without extension for flexible lookup
     const entryPointMap = new Map<string, number>();
     for (const prog of compiledPrograms) {
         entryPointMap.set(prog.name, prog.entryPoint);
+        entryPointMap.set(prog.name.toLowerCase(), prog.entryPoint);
+        // Also store with common extensions
+        entryPointMap.set(`${prog.name}.st`.toLowerCase(), prog.entryPoint);
+        entryPointMap.set(`${prog.name}.fbd`.toLowerCase(), prog.entryPoint);
+        entryPointMap.set(`${prog.name}.ld`.toLowerCase(), prog.entryPoint);
+        entryPointMap.set(`${prog.name}.sfc`.toLowerCase(), prog.entryPoint);
+        entryPointMap.set(`${prog.name}.il`.toLowerCase(), prog.entryPoint);
     }
+
+    /**
+     * Find entry point by program name, handling both with and without extension.
+     */
+    const findEntryPoint = (progName: string): number | undefined => {
+        let ep = entryPointMap.get(progName);
+        if (ep !== undefined) return ep;
+        
+        ep = entryPointMap.get(progName.toLowerCase());
+        if (ep !== undefined) return ep;
+        
+        const baseName = progName.replace(/\.(st|fbd|ld|sfc|il)$/i, '');
+        ep = entryPointMap.get(baseName);
+        if (ep !== undefined) return ep;
+        
+        return entryPointMap.get(baseName.toLowerCase());
+    };
 
     // Build task definitions
     const taskDefs: TaskDef[] = [];
@@ -634,7 +689,7 @@ export function compileMultiTaskProject(
             );
         }
 
-        const entryPoint = entryPointMap.get(firstProgram);
+        const entryPoint = findEntryPoint(firstProgram);
         if (entryPoint === undefined) {
             throw new CompilerError(
                 `Program '${firstProgram}' for task '${taskConfig.name}' was not compiled`,
@@ -666,5 +721,104 @@ export function compileMultiTaskProject(
             size: p.size,
             assembly: p.assembly,
         })),
+    };
+}
+
+// =============================================================================
+// Single-File Compilation with Default Task (for IDE quick compile)
+// =============================================================================
+
+/**
+ * Options for single-file compilation with task generation.
+ */
+export interface SingleFileTaskOptions {
+    /** Task name (default: 'MainTask') */
+    taskName?: string;
+    /** Cycle interval in milliseconds (default: 10ms) */
+    intervalMs?: number;
+    /** Task priority (default: 1, lower = higher priority) */
+    priority?: number;
+    /** Program name extracted from source (default: 'Main') */
+    programName?: string;
+}
+
+/**
+ * Result of single-file compilation with task.
+ * Extends ProjectCompilationResult with task information.
+ */
+export interface SingleFileTaskResult extends ProjectCompilationResult {
+    /** Task definitions (always contains exactly one task) */
+    tasks: TaskDef[];
+    /** Whether the file contains TASK segment (always true) */
+    hasTaskSegment: boolean;
+}
+
+/**
+ * Compile a single file with automatic task generation.
+ * 
+ * This is a convenience function for the IDE that wraps compileMultiTaskProject
+ * with a default single-task configuration. The resulting .zplc file includes
+ * the TASK segment required by the Zephyr scheduler.
+ * 
+ * @param content - Source code content
+ * @param language - Source language (ST, LD, FBD, SFC)
+ * @param options - Optional task configuration
+ * @returns Compilation result with TASK segment
+ * 
+ * @example
+ * ```typescript
+ * // Quick compile with 10ms cycle (default)
+ * const result = compileSingleFileWithTask(source, 'ST');
+ * 
+ * // Custom cycle time for slower tasks
+ * const result = compileSingleFileWithTask(source, 'ST', { intervalMs: 100 });
+ * ```
+ */
+export function compileSingleFileWithTask(
+    content: string,
+    language: PLCLanguage,
+    options: SingleFileTaskOptions = {}
+): SingleFileTaskResult {
+    const {
+        taskName = 'MainTask',
+        intervalMs = 10,
+        priority = 1,
+        programName = 'Main',
+    } = options;
+
+    // Create a minimal project config with one task
+    const config: ZPLCProjectConfig = {
+        name: 'SingleFile',
+        version: '1.0.0',
+        tasks: [{
+            name: taskName,
+            trigger: 'cyclic',
+            interval: intervalMs,
+            priority,
+            programs: [programName],
+        }],
+    };
+
+    // Create program source
+    const programSources: ProgramSource[] = [{
+        name: programName,
+        content,
+        language,
+    }];
+
+    // Compile using multi-task compiler
+    const multiResult = compileMultiTaskProject(config, programSources);
+
+    // Return in ProjectCompilationResult format with task info
+    return {
+        bytecode: multiResult.bytecode,
+        zplcFile: multiResult.zplcFile,
+        assembly: multiResult.programDetails[0]?.assembly ?? '',
+        entryPoint: multiResult.tasks[0]?.entryPoint ?? 0,
+        codeSize: multiResult.codeSize,
+        debugMap: undefined, // TODO: propagate debug map from multi-task compile
+        language,
+        tasks: multiResult.tasks,
+        hasTaskSegment: true,
     };
 }

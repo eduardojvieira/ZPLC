@@ -35,7 +35,7 @@
       "interval": 10,
       "priority": 0,
       "watchdog": 50,
-      "programs": ["FastCounter"]
+      "programs": ["FastCounter.st"]
     },
     {
       "name": "SlowBlink",
@@ -43,7 +43,7 @@
       "interval": 100,
       "priority": 2,
       "watchdog": 500,
-      "programs": ["SlowBlink"]
+      "programs": ["SlowBlink.st"]
     }
   ],
 

@@ -588,7 +588,32 @@ export const useIDEStore = create<IDEState>((set, get) => ({
   saveProjectConfig: async () => {
     const { directoryHandle, projectConfig, isVirtualProject } = get();
     
-    if (isVirtualProject || !directoryHandle || !projectConfig) {
+    if (!projectConfig) {
+      get().addConsoleEntry({
+        type: 'warning',
+        message: 'No project configuration to save',
+        source: 'system',
+      });
+      return;
+    }
+
+    if (isVirtualProject) {
+      // Virtual/example projects can't save to disk
+      // But we can still update the in-memory state (already done via updateConfig)
+      get().addConsoleEntry({
+        type: 'warning',
+        message: 'Virtual project - settings updated in memory only. Use "Open Folder" to save to disk.',
+        source: 'system',
+      });
+      return;
+    }
+
+    if (!directoryHandle) {
+      get().addConsoleEntry({
+        type: 'error',
+        message: 'No directory handle - cannot save configuration',
+        source: 'system',
+      });
       return;
     }
 

@@ -2,8 +2,7 @@
   "$schema": "./schemas/ld.schema.json",
   "name": "Blinky",
   "description": "ZPLC Blinky - Ladder Diagram with oscillating timer pattern",
-  "version": "2.0.0",
-
+  "version": "2.1.0",
   "variables": {
     "local": [
       {
@@ -21,88 +20,137 @@
       }
     ]
   },
-
   "rungs": [
     {
       "id": "rung_1",
       "number": 1,
       "comment": "Oscillating Timer - runs when output is OFF, times 500ms",
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
       "grid": [
         [
-          { "element": { "id": "rail_left_1", "type": "left_rail" } },
-          { "element": { "id": "nc_output", "type": "contact_nc", "variable": "LED_Output" } },
-          { "element": { "id": "ton_blink", "type": "function_block", "fbType": "TON", "instance": "BlinkTimer", "parameters": { "IN": "CONNECTED", "PT": "T#500ms" } } },
-          { "element": { "id": "rail_right_1", "type": "right_rail" } }
+          {
+            "element": {
+              "id": "nc_output",
+              "type": "contact_nc",
+              "variable": "LED_Output",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "ton_blink",
+              "type": "function_block",
+              "fbType": "TON",
+              "instance": "BlinkTimer",
+              "parameters": {
+                "IN": "CONNECTED",
+                "PT": "T#500ms"
+              },
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
         ]
       ],
-      "elements": [
-        { "id": "rail_left_1", "type": "left_rail", "position": { "x": 0, "y": 0 } },
-        {
-          "id": "nc_output",
-          "type": "contact_nc",
-          "variable": "LED_Output",
-          "position": { "x": 100, "y": 0 },
-          "comment": "NC: passes power when LED is OFF"
-        },
-        {
-          "id": "ton_blink",
-          "type": "function_block",
-          "fbType": "TON",
-          "instance": "BlinkTimer",
-          "position": { "x": 250, "y": 0 },
-          "parameters": {
-            "IN": "CONNECTED",
-            "PT": "T#500ms"
-          }
-        },
-        { "id": "rail_right_1", "type": "right_rail", "position": { "x": 450, "y": 0 } }
-      ],
-      "connections": [
-        { "from": "rail_left_1", "to": "nc_output" },
-        { "from": "nc_output", "to": "ton_blink.IN" }
-      ]
+      "branches": []
     },
     {
       "id": "rung_2",
       "number": 2,
       "comment": "LED Output - SET when timer done, self-resets when timer restarts",
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
       "grid": [
         [
-          { "element": { "id": "rail_left_2", "type": "left_rail" } },
-          { "element": { "id": "timer_done", "type": "contact_no", "variable": "BlinkTimer.Q" } },
-          { "element": { "id": "coil_led", "type": "coil", "variable": "LED_Output" } },
-          { "element": { "id": "rail_right_2", "type": "right_rail" } }
+          {
+            "element": {
+              "id": "timer_done",
+              "type": "contact_no",
+              "variable": "BlinkTimer.Q",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_led",
+              "type": "coil",
+              "variable": "LED_Output",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
         ]
       ],
-      "elements": [
-        { "id": "rail_left_2", "type": "left_rail", "position": { "x": 0, "y": 100 } },
-        {
-          "id": "timer_done",
-          "type": "contact_no",
-          "variable": "BlinkTimer.Q",
-          "position": { "x": 100, "y": 100 },
-          "comment": "Timer expired?"
-        },
-        {
-          "id": "coil_led",
-          "type": "coil",
-          "variable": "LED_Output",
-          "position": { "x": 350, "y": 100 },
-          "comment": "Drive LED directly from timer.Q"
-        },
-        { "id": "rail_right_2", "type": "right_rail", "position": { "x": 450, "y": 100 } }
-      ],
-      "connections": [
-        { "from": "rail_left_2", "to": "timer_done" },
-        { "from": "timer_done", "to": "coil_led" },
-        { "from": "coil_led", "to": "rail_right_2" }
-      ]
+      "branches": []
     }
   ],
-
   "metadata": {
     "author": "ZPLC Team",
     "created": "2024-12-27",
+    "modified": "2026-01-02",
     "iecStandard": "IEC 61131-3",
     "notes": [
       "This is a classic PLC oscillator pattern:",

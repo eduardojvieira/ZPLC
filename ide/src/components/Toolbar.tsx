@@ -34,8 +34,8 @@ import { transpileSFCToST } from '../transpiler/sfcToST';
 import { parseFBDModel } from '../models/fbd';
 import { parseLDModel } from '../models/ld';
 import { parseSFCModel } from '../models/sfc';
-import { compileProject, CompilerError } from '../compiler';
-import type { PLCLanguage } from '../compiler';
+import { compileSingleFileWithTask, compileMultiTaskProject, CompilerError } from '../compiler';
+import type { PLCLanguage, ProgramSource } from '../compiler';
 import { AssemblerError } from '../assembler';
 import { GeneratedCodeDialog } from './GeneratedCodeDialog';
 import {
@@ -58,6 +58,9 @@ export function Toolbar() {
     saveFile,
     getActiveFile,
     isVirtualProject,
+    projectConfig,
+    loadedFiles,
+    isProjectOpen,
   } = useIDEStore();
   const { theme, setTheme, isDark } = useTheme();
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
@@ -75,6 +78,8 @@ export function Toolbar() {
     assembly: string;
     fileName: string;
     codeSize: number;
+    hasTaskSegment: boolean;
+    taskCount: number;
   } | null>(null);
 
   // State for WebSerial connection (uses connectionManager)
@@ -321,90 +326,250 @@ export function Toolbar() {
     }
   };
 
-  const handleCompile = () => {
-    if (!activeFile) {
-      addConsoleEntry({
-        type: 'error',
-        message: 'No file selected',
-        source: 'compiler',
-      });
-      return;
+  /**
+   * Helper to find a program source file by name.
+   * Searches loadedFiles for a file matching the program name.
+   * Program names should include extension (e.g., "main.st", "FastBlink.st")
+   */
+  const findProgramSource = (programName: string): ProgramSource | null => {
+    // Try to find a file matching the program name (with extension)
+    for (const file of loadedFiles.values()) {
+      // Match by full filename (case-insensitive)
+      if (file.name.toLowerCase() === programName.toLowerCase()) {
+        // Extract base name for the compiler (without extension)
+        const baseName = file.name.replace(/\.(st|fbd|ld|sfc|il)(\.json)?$/i, '');
+        return {
+          name: baseName,
+          content: file.content,
+          language: file.language as PLCLanguage,
+        };
+      }
     }
+    return null;
+  };
 
+  /**
+   * Check if we have a valid project configuration with tasks that reference programs.
+   */
+  const hasValidProjectConfig = (): boolean => {
+    if (!isProjectOpen || !projectConfig?.tasks?.length) {
+      return false;
+    }
+    // Check if at least one task has a program assigned
+    return projectConfig.tasks.some(task => task.programs && task.programs.length > 0);
+  };
+
+  const handleCompile = () => {
     clearCompilerMessages();
-    addConsoleEntry({
-      type: 'info',
-      message: `Compiling ${activeFile.name}...`,
-      source: 'compiler',
-    });
 
-    // Determine the language
-    const language = activeFile.language as PLCLanguage;
+    // Determine compilation mode: Project vs Single-File
+    const useProjectMode = hasValidProjectConfig();
 
-    // Log transpilation for visual languages
-    if (isVisualLanguage) {
+    if (useProjectMode && projectConfig) {
+      // =========================================================================
+      // PROJECT MODE: Compile all programs referenced in tasks
+      // =========================================================================
       addConsoleEntry({
         type: 'info',
-        message: `Transpiling ${language} to Structured Text first...`,
-        source: 'transpiler',
+        message: `Compiling project: ${projectConfig.name || 'Unnamed'}...`,
+        source: 'compiler',
       });
-    }
 
-    try {
-      // Use unified compileProject function
-      const result = compileProject(activeFile.content, language);
+      try {
+        // Collect all unique programs referenced by tasks
+        const referencedPrograms = new Set<string>();
+        for (const task of projectConfig.tasks) {
+          for (const progName of task.programs || []) {
+            referencedPrograms.add(progName);
+          }
+        }
 
-      // Log transpilation success for visual languages
-      if (result.intermediateSTSource) {
+        if (referencedPrograms.size === 0) {
+          addConsoleEntry({
+            type: 'error',
+            message: 'No programs assigned to tasks. Configure tasks in Project Settings.',
+            source: 'compiler',
+          });
+          return;
+        }
+
+        // Find source files for each referenced program
+        const programSources: ProgramSource[] = [];
+        const missingPrograms: string[] = [];
+
+        for (const progName of referencedPrograms) {
+          const source = findProgramSource(progName);
+          if (source) {
+            programSources.push(source);
+            addConsoleEntry({
+              type: 'info',
+              message: `  Found: ${progName} (${source.language})`,
+              source: 'compiler',
+            });
+          } else {
+            missingPrograms.push(progName);
+          }
+        }
+
+        if (missingPrograms.length > 0) {
+          addConsoleEntry({
+            type: 'error',
+            message: `Missing program files: ${missingPrograms.join(', ')}. Create the files or update task configuration.`,
+            source: 'compiler',
+          });
+          return;
+        }
+
+        // Log task configuration
+        for (const task of projectConfig.tasks) {
+          addConsoleEntry({
+            type: 'info',
+            message: `  Task: ${task.name} → ${task.programs?.join(', ') || 'none'} (${task.interval || 100}ms, priority ${task.priority})`,
+            source: 'compiler',
+          });
+        }
+
+        // Compile using multi-task project compiler
+        const result = compileMultiTaskProject(projectConfig, programSources);
+
+        // Store the result for download/upload
+        setLastCompileResult({
+          bytecode: result.bytecode,
+          zplcFile: result.zplcFile,
+          assembly: result.programDetails.map(p => `; === ${p.name} ===\n${p.assembly}`).join('\n\n'),
+          fileName: `${projectConfig.name || 'project'}.zplc`,
+          codeSize: result.codeSize,
+          hasTaskSegment: true,
+          taskCount: result.tasks.length,
+        });
+
         addConsoleEntry({
           type: 'success',
-          message: `Transpiled to ST (${result.intermediateSTSource.split('\n').length} lines)`,
+          message: `Project compiled! ${result.zplcFile.length} bytes (${result.codeSize} bytes code, ${result.tasks.length} tasks, ${programSources.length} programs). Ready to upload.`,
+          source: 'compiler',
+        });
+
+      } catch (e) {
+        if (e instanceof CompilerError) {
+          addConsoleEntry({ type: 'error', message: e.message, source: 'compiler' });
+          addCompilerMessage({
+            type: 'error',
+            message: e.message,
+            line: e.line,
+            column: e.column,
+          });
+        } else if (e instanceof AssemblerError) {
+          addConsoleEntry({ type: 'error', message: `Assembler: ${e.message}`, source: 'assembler' });
+        } else {
+          addConsoleEntry({
+            type: 'error',
+            message: `Compilation error: ${e instanceof Error ? e.message : String(e)}`,
+            source: 'compiler',
+          });
+        }
+      }
+
+    } else {
+      // =========================================================================
+      // SINGLE-FILE MODE: Compile only the active file
+      // =========================================================================
+      if (!activeFile) {
+        addConsoleEntry({
+          type: 'error',
+          message: 'No file selected',
+          source: 'compiler',
+        });
+        return;
+      }
+
+      addConsoleEntry({
+        type: 'info',
+        message: `Compiling ${activeFile.name}...`,
+        source: 'compiler',
+      });
+
+      // Determine the language
+      const language = activeFile.language as PLCLanguage;
+
+      // Log transpilation for visual languages
+      if (isVisualLanguage) {
+        addConsoleEntry({
+          type: 'info',
+          message: `Transpiling ${language} to Structured Text first...`,
           source: 'transpiler',
         });
       }
 
-      // Store the result for download
-      const outputFileName = activeFile.name.replace(/\.(st|fbd|ld|sfc)(\.json)?$/i, '.zplc');
-      setLastCompileResult({
-        bytecode: result.bytecode,
-        zplcFile: result.zplcFile,
-        assembly: result.assembly,
-        fileName: outputFileName,
-        codeSize: result.codeSize,
-      });
-
-      addConsoleEntry({
-        type: 'success',
-        message: `Compilation successful! Output: ${result.zplcFile.length} bytes (${result.codeSize} bytes code). Ready to download.`,
-        source: 'compiler',
-      });
-
-    } catch (e) {
-      if (e instanceof CompilerError) {
-        addConsoleEntry({ 
-          type: 'error', 
-          message: e.message, 
-          source: 'compiler' 
-        });
-        addCompilerMessage({
-          type: 'error',
-          message: e.message,
-          line: e.line,
-          column: e.column,
-          file: activeFile.name,
-        });
-      } else if (e instanceof AssemblerError) {
-        addConsoleEntry({ 
-          type: 'error', 
-          message: `Assembler: ${e.message}`, 
-          source: 'assembler' 
-        });
-      } else {
+      try {
+        // Get task configuration from project settings or use defaults
+        const firstTask = projectConfig?.tasks?.[0];
+        const taskName = firstTask?.name || 'MainTask';
+        const intervalMs = firstTask?.interval || 10;
+        const priority = firstTask?.priority ?? 1;
+        
+        // Extract program name from filename
+        const programName = activeFile.name.replace(/\.(st|fbd|ld|sfc)(\.json)?$/i, '') || 'Main';
+        
         addConsoleEntry({
-          type: 'error',
-          message: `Compilation error: ${e instanceof Error ? e.message : String(e)}`,
+          type: 'info',
+          message: `Task: ${taskName}, Interval: ${intervalMs}ms, Priority: ${priority}`,
           source: 'compiler',
         });
+
+        // Compile single file with task
+        const result = compileSingleFileWithTask(activeFile.content, language, {
+          taskName,
+          intervalMs,
+          priority,
+          programName,
+        });
+
+        // Log transpilation success
+        if (result.intermediateSTSource) {
+          addConsoleEntry({
+            type: 'success',
+            message: `Transpiled to ST (${result.intermediateSTSource.split('\n').length} lines)`,
+            source: 'transpiler',
+          });
+        }
+
+        // Store the result
+        const outputFileName = activeFile.name.replace(/\.(st|fbd|ld|sfc)(\.json)?$/i, '.zplc');
+        setLastCompileResult({
+          bytecode: result.bytecode,
+          zplcFile: result.zplcFile,
+          assembly: result.assembly,
+          fileName: outputFileName,
+          codeSize: result.codeSize,
+          hasTaskSegment: result.hasTaskSegment,
+          taskCount: result.tasks.length,
+        });
+
+        addConsoleEntry({
+          type: 'success',
+          message: `Compilation successful! ${result.zplcFile.length} bytes (${result.codeSize} bytes code, ${result.tasks.length} task). Ready to upload.`,
+          source: 'compiler',
+        });
+
+      } catch (e) {
+        if (e instanceof CompilerError) {
+          addConsoleEntry({ type: 'error', message: e.message, source: 'compiler' });
+          addCompilerMessage({
+            type: 'error',
+            message: e.message,
+            line: e.line,
+            column: e.column,
+            file: activeFile.name,
+          });
+        } else if (e instanceof AssemblerError) {
+          addConsoleEntry({ type: 'error', message: `Assembler: ${e.message}`, source: 'assembler' });
+        } else {
+          addConsoleEntry({
+            type: 'error',
+            message: `Compilation error: ${e instanceof Error ? e.message : String(e)}`,
+            source: 'compiler',
+          });
+        }
       }
     }
   };
@@ -522,14 +687,17 @@ export function Toolbar() {
     setUploadProgress({ stage: 'starting', progress: 0 });
 
     try {
+      // Upload the complete .zplc file (with TASK segment) not just raw bytecode
+      const uploadData = lastCompileResult.zplcFile;
+      
       addConsoleEntry({
         type: 'info',
-        message: `Uploading ${lastCompileResult.bytecode.length} bytes to device...`,
+        message: `Uploading ${uploadData.length} bytes to device (${lastCompileResult.codeSize} bytes code, ${lastCompileResult.taskCount} task)...`,
         source: 'upload',
       });
 
       setUploadProgress({ stage: 'loading', progress: 30 });
-      await connectionManager.uploadBytecode(lastCompileResult.bytecode);
+      await connectionManager.uploadBytecode(uploadData);
       
       setUploadProgress({ stage: 'starting', progress: 70 });
       await connectionManager.start();
@@ -903,7 +1071,10 @@ export function Toolbar() {
       <button
         onClick={handleCompile}
         className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-100)] text-sm transition-colors"
-        title="Compile (Ctrl+B)"
+        title={hasValidProjectConfig() 
+          ? `Compile Project: ${projectConfig?.name || 'Unnamed'} (${projectConfig?.tasks?.length || 0} tasks)` 
+          : `Compile: ${activeFile?.name || 'No file selected'}`
+        }
       >
         <Hammer size={16} />
         <span>Compile</span>

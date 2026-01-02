@@ -18,6 +18,7 @@ import {
   isGridBasedRung,
   DEFAULT_GRID_CONFIG,
   convertToGridRung,
+  normalizeGridRung,
   createBranch,
   createNestedBranch,
   removeBranch,
@@ -498,12 +499,16 @@ export default function LDRungGrid({
     return false;
   }, [energizedVariables]);
 
-  // Convert legacy rung to grid-based if needed
+  // Convert legacy rung to grid-based if needed, then normalize
   const gridRung = useMemo(() => {
+    let result: LDRung;
     if (isGridBasedRung(rung)) {
-      return rung;
+      result = rung;
+    } else {
+      result = convertToGridRung(rung);
     }
-    return convertToGridRung(rung);
+    // Always normalize to ensure proper sizing and hasWire flags
+    return normalizeGridRung(result);
   }, [rung]);
 
   // Grid configuration
@@ -791,64 +796,50 @@ export default function LDRungGrid({
     setIsDragging(true);
   }, []);
 
-  // Draw horizontal wires for empty cells that have wires
-  // Elements draw their own internal wires, so we only draw for empty wire cells
+  // Draw horizontal wires for empty cells
+  // Elements draw their own internal wires (left edge to right edge), 
+  // so we only need to draw wires for empty cells that should have connections.
+  //
+  // Strategy:
+  // - Row 0 (main row): Draw continuous wire for all empty cells
+  // - Branch rows: Only draw wires where hasWire=true (within branch region)
   const renderWires = () => {
     const wires: React.ReactNode[] = [];
 
     grid.forEach((row, rowIdx) => {
-      // Find contiguous segments of empty cells
-      // Logic update: Branch rows (rowIdx > 0) usually need wires 
-      // where there are empty cells, to connect elements.
-
-      let wireStart: number | null = null;
-
+      const isMainRow = rowIdx === 0;
+      
       row.forEach((cell, colIdx) => {
         const isEmpty = cell.element === null;
-        // In grid-based LD, empty usually means wire, unless it's a void
-        // But specifically we rely on `hasWire` flag
-        const hasWireConnection = cell.hasWire;
-        const isLastCol = colIdx === row.length - 1;
-
-        // Start a wire segment if it's an empty cell with wire
-        if (isEmpty && hasWireConnection && wireStart === null) {
-          wireStart = colIdx;
+        
+        // Determine if this empty cell should have a wire
+        let shouldHaveWire = false;
+        if (isEmpty) {
+          if (isMainRow) {
+            // Main row: always has wire for continuity
+            shouldHaveWire = true;
+          } else {
+            // Branch rows: only where hasWire flag is set
+            shouldHaveWire = cell.hasWire === true;
+          }
         }
+        
+        if (shouldHaveWire) {
+          const x1 = gridOffsetX + colIdx * CELL_WIDTH;
+          const x2 = gridOffsetX + (colIdx + 1) * CELL_WIDTH;
+          const y = PADDING + rowIdx * CELL_HEIGHT + WIRE_Y;
 
-        // End the wire segment conditions:
-        // 1. Not empty (element here, wires connect to element terminals, handled by element itself)
-        // 2. No wire flag
-        // 3. End of row
-        const shouldEnd = !isEmpty || !hasWireConnection || isLastCol;
-
-        if (shouldEnd && wireStart !== null) {
-          // Calculate end column
-          // If this cell is the end because it's last col and empty/wire, include it.
-          // If it's the end because it has an element, the wire connects TO it, so stop at colIdx-1 (visually extends to current)
-
-          let endCol = colIdx;
-          if (!isEmpty || !hasWireConnection) {
-            endCol = colIdx - 1;
-          }
-
-          if (endCol >= wireStart) {
-            const x1 = gridOffsetX + wireStart * CELL_WIDTH;
-            const x2 = gridOffsetX + (endCol + 1) * CELL_WIDTH;
-            const y = PADDING + rowIdx * CELL_HEIGHT + WIRE_Y;
-
-            wires.push(
-              <line
-                key={`wire-${rowIdx}-${wireStart}-${endCol}`}
-                x1={x1}
-                y1={y}
-                x2={x2}
-                y2={y}
-                stroke={COLORS.wire}
-                strokeWidth={STROKE_WIDTH}
-              />
-            );
-          }
-          wireStart = null;
+          wires.push(
+            <line
+              key={`wire-${rowIdx}-${colIdx}`}
+              x1={x1}
+              y1={y}
+              x2={x2}
+              y2={y}
+              stroke={COLORS.wire}
+              strokeWidth={STROKE_WIDTH}
+            />
+          );
         }
       });
     });

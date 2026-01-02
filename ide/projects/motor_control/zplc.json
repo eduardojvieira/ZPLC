@@ -10,7 +10,7 @@
       "priority": 1,
       "watchdog": 100,
       "programs": [
-        "Main"
+        "main.ld"
       ]
     }
   ]

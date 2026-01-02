@@ -28,20 +28,23 @@ const sources: ProgramSource[] = [];
 
 for (const task of config.tasks) {
     for (const progName of task.programs) {
-        // Find the source file
-        const stPath = join(projectDir, `${progName}.st`);
+        // Find the source file - check src/ directory first, then root
+        const baseName = progName.replace(/\.st$/, '');
+        let stPath = join(projectDir, 'src', `${baseName}.st`);
+        let content: string;
         try {
-            const content = readFileSync(stPath, 'utf-8');
-            sources.push({
-                name: progName,
-                content,
-                language: 'ST'
-            });
-            console.log(`\nLoaded: ${progName}.st`);
-        } catch (e) {
-            console.error(`Error loading ${progName}.st: ${(e as Error).message}`);
-            process.exit(1);
+            content = readFileSync(stPath, 'utf-8');
+        } catch {
+            // Fallback to root directory
+            stPath = join(projectDir, `${baseName}.st`);
+            content = readFileSync(stPath, 'utf-8');
         }
+        sources.push({
+            name: baseName,
+            content,
+            language: 'ST'
+        });
+        console.log(`\nLoaded: ${stPath}`);
     }
 }
 
