@@ -211,10 +211,10 @@ export function ControllerView() {
                   : 'bg-[var(--color-surface-500)]'
             }`} />
             <span className="text-xs font-medium text-[var(--color-surface-200)] uppercase">
-              {status.state}
+              {status.state || 'UNKNOWN'}
             </span>
             <span className="ml-auto text-xs text-[var(--color-surface-400)]">
-              {status.stats.cycles.toLocaleString()} cycles
+              {(status.stats?.cycles ?? 0).toLocaleString()} cycles
             </span>
           </div>
 
