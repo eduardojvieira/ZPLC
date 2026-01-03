@@ -270,6 +270,13 @@ export async function disconnect(connection: SerialConnection): Promise<void> {
 
 /**
  * Wait for a response matching our expected pattern
+ * 
+ * The Zephyr shell sends responses with various formats:
+ * - Echo of the command (can be mixed with input)
+ * - Response line starting with OK:, ERROR:, or WARN:
+ * - Prompt (uart:~$ ) which may appear before/after response
+ * 
+ * We need to be flexible and find the response anywhere in the buffer.
  */
 async function waitForResponse(
   connection: SerialConnection,
@@ -280,30 +287,44 @@ async function waitForResponse(
   // Regex to strip ANSI escape codes
   // eslint-disable-next-line no-control-regex
   const ansiRegex = /\x1B\[[0-9;]*[a-zA-Z]/g;
+  
+  // Regex to find response patterns anywhere in the buffer
+  // Match OK:, ERROR:, or WARN: followed by anything until newline
+  const responseRegex = /(OK:|ERROR:|WARN:)[^\r\n]*/;
 
   while (Date.now() - startTime < timeoutMs) {
-    // Check buffer for response lines
-    const lines = connection._rxBuffer.split(/\r?\n/);
-
-    for (let i = 0; i < lines.length; i++) {
-      const originalLine = lines[i];
-      // Strip ANSI codes and whitespace for checking
-      const cleanLine = originalLine.replace(ansiRegex, '').trim();
-
-      if (cleanLine.startsWith('OK:') || cleanLine.startsWith('ERROR:') || cleanLine.startsWith('WARN:')) {
-        // Found a response! Remove everything up to and including this line from buffer
-        // (We keep the original line in the output if needed, or just return the clean one)
-        connection._rxBuffer = lines.slice(i + 1).join('\n');
-        return cleanLine;
+    // Clean the buffer of ANSI codes first
+    const cleanBuffer = connection._rxBuffer.replace(ansiRegex, '');
+    
+    // Search for response pattern anywhere in buffer
+    const match = cleanBuffer.match(responseRegex);
+    
+    if (match) {
+      const response = match[0].trim();
+      console.log('[WebSerial] Found response:', response);
+      
+      // Find where this response ends in the buffer and clear up to there
+      const responseEnd = cleanBuffer.indexOf(response) + response.length;
+      // Find the next newline after the response
+      const nextNewline = cleanBuffer.indexOf('\n', responseEnd);
+      if (nextNewline >= 0) {
+        connection._rxBuffer = cleanBuffer.slice(nextNewline + 1);
+      } else {
+        connection._rxBuffer = cleanBuffer.slice(responseEnd);
       }
+      
+      return response;
     }
 
     // Wait a bit before checking again
     await new Promise((r) => setTimeout(r, 50));
   }
 
-  // Timeout - log what we received
-  console.error('[WebSerial] Timeout. Buffer contents:', connection._rxBuffer);
+  // Timeout - log what we received for debugging
+  const cleanBuffer = connection._rxBuffer.replace(ansiRegex, '');
+  console.error('[WebSerial] Timeout waiting for response.');
+  console.error('[WebSerial] Buffer contents (cleaned):', cleanBuffer);
+  console.error('[WebSerial] Buffer length:', cleanBuffer.length);
   throw new Error('Command timeout');
 }
 
@@ -322,6 +343,9 @@ async function sendCommand(
   // Send command with newline
   console.log('[WebSerial] Sending:', command);
   await connection.writer.write(encoder.encode(command + '\n'));
+
+  // Give the device a moment to start processing
+  await new Promise((r) => setTimeout(r, 50));
 
   // Wait for response
   const response = await waitForResponse(connection);
@@ -356,15 +380,25 @@ export async function uploadBytecode(
   };
 
   try {
+    // Clear any stale data in the buffer before starting
+    connection._rxBuffer = '';
+    
+    // Send a newline to ensure shell is ready and clear any partial input
+    const encoder = new TextEncoder();
+    await connection.writer.write(encoder.encode('\n'));
+    await new Promise((r) => setTimeout(r, 200));
+    connection._rxBuffer = ''; // Clear the prompt that comes back
+    
     // Step 1: Stop any running program
     notify('stopping', 0, 'Stopping current program...');
     const stopResponse = await sendCommand(connection, 'zplc stop');
+    // Accept OK and WARN (WARN is returned if already stopped)
     if (stopResponse.startsWith('ERROR:')) {
       throw new Error(`Stop failed: ${stopResponse}`);
     }
 
-    // Small delay
-    await new Promise((r) => setTimeout(r, 100));
+    // Delay to let device settle
+    await new Promise((r) => setTimeout(r, 200));
 
     // Step 2: Prepare to load
     notify('loading', 10, `Preparing to receive ${bytecode.length} bytes...`);
@@ -380,7 +414,8 @@ export async function uploadBytecode(
 
     while (offset < bytecode.length) {
       // Delay before sending chunk to ensure device is ready
-      await new Promise((r) => setTimeout(r, 50));
+      // The Zephyr shell needs time to process each chunk
+      await new Promise((r) => setTimeout(r, 100));
 
       const chunkSize = Math.min(MAX_CHUNK_SIZE, bytecode.length - offset);
       const chunk = bytecode.slice(offset, offset + chunkSize);

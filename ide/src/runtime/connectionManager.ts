@@ -92,6 +92,8 @@ class ConnectionManager {
     // Create adapter if needed
     if (!this.adapter) {
       this.adapter = new SerialAdapter();
+      // Disable auto-polling - connectionManager will handle polling
+      this.adapter.disableAutoPolling = true;
     }
 
     await this.adapter.connect();
@@ -166,18 +168,27 @@ class ConnectionManager {
   // =========================================================================
 
   /**
-   * Pause polling temporarily for serial operations
-   * Call resumePolling() when done
+   * Pause polling temporarily for serial operations.
+   * This pauses BOTH connectionManager and SerialAdapter polling.
+   * Call resumePolling() when done.
    */
   pausePolling(): void {
     this.stopPolling();
+    // Also stop the adapter's internal polling
+    if (this.adapter) {
+      this.adapter.setPassthroughMode(true);
+    }
   }
 
   /**
-   * Resume polling after pausePolling()
-   * Only resumes if not in passthrough mode
+   * Resume polling after pausePolling().
+   * Only resumes if not in passthrough mode.
    */
   resumePolling(): void {
+    // Resume adapter polling first
+    if (this.adapter && !this._passthroughMode) {
+      this.adapter.setPassthroughMode(false);
+    }
     if (!this._passthroughMode && this.connected) {
       this.startPolling();
     }

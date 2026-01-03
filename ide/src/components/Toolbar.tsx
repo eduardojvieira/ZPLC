@@ -400,7 +400,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     const useProjectMode = hasValidProjectConfig();
 
     if (useProjectMode && projectConfig) {
-      // PROJECT MODE
+      // PROJECT MODE - Compile all tasks from project configuration
       addConsoleEntry({ type: 'info', message: `Compiling project: ${projectConfig.name || 'Unnamed'}...`, source: 'compiler' });
 
       try {
@@ -455,13 +455,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
         handleCompileError(e);
       }
 
-    } else {
-      // SINGLE FILE MODE
-      if (!activeFile) {
-        addConsoleEntry({ type: 'error', message: 'No file selected', source: 'compiler' });
-        return;
-      }
-
+    } else if (activeFile) {
+      // SINGLE FILE MODE - Compile active file as a single-task project
       addConsoleEntry({ type: 'info', message: `Compiling ${activeFile.name}...`, source: 'compiler' });
 
       try {
@@ -495,6 +490,21 @@ export function Toolbar({ debugController }: ToolbarProps) {
 
       } catch (e) {
         handleCompileError(e);
+      }
+    } else {
+      // NO PROJECT AND NO FILE - Give helpful error
+      if (isProjectOpen) {
+        addConsoleEntry({ 
+          type: 'error', 
+          message: 'No programs assigned to tasks. Open Project Settings and configure tasks with programs.', 
+          source: 'compiler' 
+        });
+      } else {
+        addConsoleEntry({ 
+          type: 'error', 
+          message: 'No project or file open. Open a .zplc project or create a new file to compile.', 
+          source: 'compiler' 
+        });
       }
     }
   };

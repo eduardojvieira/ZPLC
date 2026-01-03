@@ -121,6 +121,10 @@ export class SerialAdapter implements IDebugAdapter {
   private pollingInterval: ReturnType<typeof setInterval> | null = null;
   private lastPollCycles = 0;
   private _passthroughMode = false;
+  
+  /** When true, SerialAdapter does NOT start its own polling on connect.
+   *  This is used when connectionManager handles polling externally. */
+  public disableAutoPolling = false;
 
   // Breakpoint state (managed locally, synced to hardware when commands available)
   private breakpoints: Set<number> = new Set();
@@ -225,8 +229,8 @@ export class SerialAdapter implements IDebugAdapter {
       this.setState('idle');
     }
 
-    // Start polling for state updates
-    if (!this._passthroughMode) {
+    // Start polling for state updates (unless externally managed)
+    if (!this._passthroughMode && !this.disableAutoPolling) {
       this.startPolling();
     }
   }
