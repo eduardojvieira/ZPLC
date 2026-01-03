@@ -300,11 +300,18 @@ export function useDebugController(): DebugController {
         setDebugMap(newDebugMap);
       }
 
-      // Sync breakpoints to adapter
+      // Sync breakpoints to adapter (skip for hardware if not supported)
       const breakpointPCs = getAllBreakpointPCs();
-      await adapterRef.current.clearBreakpoints();
-      for (const pc of breakpointPCs) {
-        await adapterRef.current.setBreakpoint(pc);
+      if (breakpointPCs.length > 0) {
+        try {
+          await adapterRef.current.clearBreakpoints();
+          for (const pc of breakpointPCs) {
+            await adapterRef.current.setBreakpoint(pc);
+          }
+        } catch (e) {
+          // Breakpoints may not be supported on hardware, log but don't fail
+          console.warn('Breakpoint sync failed:', e);
+        }
       }
 
       addConsoleEntry({
@@ -314,7 +321,9 @@ export function useDebugController(): DebugController {
       });
     } finally {
       // Resume polling after all operations complete
+      // Add small delay to let serial buffer settle
       if (isHardware) {
+        await new Promise(r => setTimeout(r, 200));
         connectionManager.resumePolling();
       }
     }

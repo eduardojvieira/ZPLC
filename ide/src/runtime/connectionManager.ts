@@ -220,10 +220,8 @@ class ConnectionManager {
       return;
     }
 
-    // Poll immediately
-    this.poll();
-
-    // Then poll periodically
+    // Start polling after a short delay to let serial buffer settle
+    // Don't poll immediately to avoid conflicts with recent commands
     this.pollInterval = setInterval(() => {
       this.poll();
     }, this.POLL_INTERVAL);
