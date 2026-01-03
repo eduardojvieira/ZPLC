@@ -171,7 +171,7 @@ export class SerialAdapter implements IDebugAdapter {
    * Send raw data in passthrough mode
    */
   async sendRaw(data: string): Promise<void> {
-    if (!this.connection) {
+    if (!this.connection || !this.connection.isConnected) {
       throw new Error('Not connected');
     }
     const encoder = new TextEncoder();
@@ -296,7 +296,7 @@ export class SerialAdapter implements IDebugAdapter {
    * Send a command that expects a JSON response
    */
   private async sendJsonCommand(command: string): Promise<unknown> {
-    if (!this.connection) {
+    if (!this.connection || !this.connection.isConnected) {
       throw new Error('Not connected');
     }
 
@@ -307,6 +307,11 @@ export class SerialAdapter implements IDebugAdapter {
     // Clear buffer before sending
     this.connection._rxBuffer = '';
 
+    // Check connection before write
+    if (!this.connection.isConnected) {
+      throw new Error('Connection closed');
+    }
+    
     // Send command with --json flag
     const fullCommand = `${command} --json`;
     const data = encoder.encode(fullCommand + LINE_ENDING);
@@ -355,7 +360,7 @@ export class SerialAdapter implements IDebugAdapter {
   }
 
   private async sendCommand(command: string): Promise<string> {
-    if (!this.connection) {
+    if (!this.connection || !this.connection.isConnected) {
       throw new Error('Not connected');
     }
 
@@ -366,7 +371,11 @@ export class SerialAdapter implements IDebugAdapter {
     // Clear buffer before sending
     this.connection._rxBuffer = '';
 
-    // Send command
+    // Send command - check again before write in case disconnect happened
+    if (!this.connection.isConnected) {
+      throw new Error('Connection closed');
+    }
+    
     const data = encoder.encode(command + LINE_ENDING);
     await this.connection.writer.write(data);
 

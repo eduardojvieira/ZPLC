@@ -244,6 +244,7 @@ export function useDebugController(): DebugController {
   }, [createEventHandlers, setDebugMode, addConsoleEntry]);
 
   const disconnect = useCallback(async () => {
+    console.log('[DebugController] disconnect called, debugMode:', debugMode);
     try {
       // For hardware mode, use connectionManager to disconnect
       // For simulation, disconnect the WASM adapter directly
@@ -253,14 +254,6 @@ export function useDebugController(): DebugController {
         await adapterRef.current.disconnect();
       }
 
-      setAdapter(null);
-      setVmState('disconnected');
-      setVmInfo(null);
-      clearLiveValues();
-      setPolling(false);
-      setCurrentExecution(null, null, null);
-      setDebugMode('none');
-
       addConsoleEntry({
         type: 'info',
         message: 'Debug session disconnected',
@@ -268,7 +261,23 @@ export function useDebugController(): DebugController {
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
+      console.error('[DebugController] disconnect error:', err);
       setLastError(message);
+      // Still show disconnect message even if there was an error
+      addConsoleEntry({
+        type: 'warning',
+        message: `Disconnected with error: ${message}`,
+        source: 'debugger',
+      });
+    } finally {
+      // Always clean up state, even if disconnect threw an error
+      setAdapter(null);
+      setVmState('disconnected');
+      setVmInfo(null);
+      clearLiveValues();
+      setPolling(false);
+      setCurrentExecution(null, null, null);
+      setDebugMode('none');
     }
   }, [debugMode, clearLiveValues, setPolling, setCurrentExecution, setDebugMode, addConsoleEntry]);
 
@@ -362,9 +371,16 @@ export function useDebugController(): DebugController {
 
   const reset = useCallback(async () => {
     if (!adapterRef.current) return;
-    await adapterRef.current.reset();
-    clearLiveValues();
-    setCurrentExecution(null, null, null);
+    try {
+      await adapterRef.current.reset();
+      clearLiveValues();
+      setCurrentExecution(null, null, null);
+    } catch (err) {
+      // If reset fails (e.g., connection lost), just clear local state
+      console.warn('[DebugController] reset failed:', err);
+      clearLiveValues();
+      setCurrentExecution(null, null, null);
+    }
   }, [clearLiveValues, setCurrentExecution]);
 
   // =========================================================================

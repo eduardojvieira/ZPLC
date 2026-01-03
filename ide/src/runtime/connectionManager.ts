@@ -119,17 +119,25 @@ class ConnectionManager {
    * Disconnect from device
    */
   async disconnect(): Promise<void> {
+    console.log('[ConnectionManager] disconnect called');
     this.stopPolling();
     
     if (this.adapter) {
-      await this.adapter.disconnect();
+      try {
+        await this.adapter.disconnect();
+      } catch (err) {
+        console.warn('[ConnectionManager] Error during adapter disconnect:', err);
+      }
+      this.adapter = null;
     }
     
     this._systemInfo = null;
     this._status = null;
+    this._passthroughMode = false;
     
     // Notify subscribers
     this.notifyConnectionChange(false);
+    console.log('[ConnectionManager] disconnect complete');
   }
 
   // =========================================================================

@@ -96,7 +96,11 @@ export function ProjectSettings() {
 
   // Save to disk
   const handleSave = async () => {
-    await saveProjectConfig();
+    try {
+      await saveProjectConfig();
+    } catch (err) {
+      console.error('[ProjectSettings] handleSave error:', err);
+    }
   };
 
   return (

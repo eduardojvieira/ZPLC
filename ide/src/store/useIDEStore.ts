@@ -618,7 +618,24 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     }
 
     try {
+      // Verify we still have write permission
+      const permission = await directoryHandle.queryPermission({ mode: 'readwrite' });
+      
+      if (permission !== 'granted') {
+        // Try to request permission again
+        const requestResult = await directoryHandle.requestPermission({ mode: 'readwrite' });
+        if (requestResult !== 'granted') {
+          get().addConsoleEntry({
+            type: 'error',
+            message: 'Write permission denied. Please grant access to save.',
+            source: 'system',
+          });
+          return;
+        }
+      }
+      
       await writeProjectConfig(directoryHandle, projectConfig);
+      
       get().addConsoleEntry({
         type: 'success',
         message: 'Saved zplc.json',

@@ -153,18 +153,25 @@ function startReaderTask(connection: SerialConnection): void {
   const reader = connection.port.readable.getReader();
   const decoder = new TextDecoder();
 
+  // Store reader reference so we can cancel it on disconnect
+  (connection as any)._reader = reader;
+
   console.log('[WebSerial] Starting background reader...');
 
   connection._readerTask = (async () => {
     try {
       while (connection.isConnected) {
-        console.log('[WebSerial] Waiting for data...');
         const { value, done } = await reader.read();
-        console.log('[WebSerial] Read result - done:', done, 'bytes:', value?.length || 0);
-        if (done) break;
+        if (done) {
+          console.log('[WebSerial] Reader done signal received');
+          break;
+        }
+        if (!connection.isConnected) {
+          console.log('[WebSerial] Connection closed during read');
+          break;
+        }
         if (value) {
           const text = decoder.decode(value);
-          console.log('[WebSerial] Received:', text);
           connection._rxBuffer += text;
           // Keep buffer from growing too large (keep last 10KB)
           if (connection._rxBuffer.length > 10000) {
@@ -173,6 +180,7 @@ function startReaderTask(connection: SerialConnection): void {
         }
       }
     } catch (e) {
+      // Only log errors if we're still supposed to be connected
       if (connection.isConnected) {
         console.error('[WebSerial] Reader error:', e);
       }
@@ -183,6 +191,7 @@ function startReaderTask(connection: SerialConnection): void {
       } catch {
         // Ignore
       }
+      (connection as any)._reader = null;
     }
   })();
 }
@@ -247,25 +256,42 @@ export async function connect(
  * Disconnect from a serial port
  */
 export async function disconnect(connection: SerialConnection): Promise<void> {
+  console.log('[WebSerial] Disconnecting...');
   connection.isConnected = false;
-  connection._abortController.abort();
 
+  // Cancel the reader to unblock the read() call
+  const reader = (connection as any)._reader;
+  if (reader) {
+    try {
+      console.log('[WebSerial] Cancelling reader...');
+      await reader.cancel();
+    } catch (e) {
+      console.warn('[WebSerial] Error cancelling reader:', e);
+    }
+  }
+
+  // Release writer lock
   try {
     connection.writer.releaseLock();
   } catch {
-    // Ignore
+    // Ignore - may already be released
   }
 
-  // Wait for reader task to finish
+  // Wait for reader task to finish (with timeout)
   if (connection._readerTask) {
-    await connection._readerTask.catch(() => { });
+    const timeout = new Promise<void>(resolve => setTimeout(resolve, 1000));
+    await Promise.race([connection._readerTask.catch(() => {}), timeout]);
   }
 
+  // Close the port
   try {
     await connection.port.close();
-  } catch {
-    // Ignore
+    console.log('[WebSerial] Port closed');
+  } catch (e) {
+    console.warn('[WebSerial] Error closing port:', e);
   }
+  
+  console.log('[WebSerial] Disconnect complete');
 }
 
 /**

@@ -13,6 +13,11 @@ export default defineConfig({
   server: {
     port: 3000,
     open: false, // Don't auto-open browser, Electron will handle it
+    watch: {
+      // Ignore project files to prevent HMR when saving zplc.json or user code
+      // This is critical: editing files inside projects/ would trigger a page reload
+      ignored: ['**/projects/**', '**/node_modules/**'],
+    },
   },
   build: {
     // Generate source maps for debugging

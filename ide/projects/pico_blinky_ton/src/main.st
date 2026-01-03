@@ -20,7 +20,7 @@ END_VAR
 Counter := Counter + 1;
 
 (* Toggle every 50 cycles (500ms at 10ms/cycle) *)
-IF Counter >= 50 THEN
+IF Counter >= 10 THEN
     Counter := 0;
     LED_State := NOT LED_State;
 END_IF;
