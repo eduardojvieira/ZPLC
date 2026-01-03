@@ -162,6 +162,28 @@ class ConnectionManager {
   }
 
   // =========================================================================
+  // Polling Control (for operations that need exclusive serial access)
+  // =========================================================================
+
+  /**
+   * Pause polling temporarily for serial operations
+   * Call resumePolling() when done
+   */
+  pausePolling(): void {
+    this.stopPolling();
+  }
+
+  /**
+   * Resume polling after pausePolling()
+   * Only resumes if not in passthrough mode
+   */
+  resumePolling(): void {
+    if (!this._passthroughMode && this.connected) {
+      this.startPolling();
+    }
+  }
+
+  // =========================================================================
   // Data Access (for Terminal)
   // =========================================================================
 
@@ -302,25 +324,14 @@ class ConnectionManager {
 
   /**
    * Upload bytecode to device
-   * Automatically pauses polling during upload to avoid serial conflicts
+   * NOTE: Caller should use pausePolling()/resumePolling() to manage polling
    */
   async uploadBytecode(bytecode: Uint8Array): Promise<void> {
     if (!this.adapter?.connected) {
       throw new Error('Not connected');
     }
     
-    // Pause polling during upload to avoid serial conflicts
-    const wasPolling = this.pollInterval !== null;
-    this.stopPolling();
-    
-    try {
-      await this.adapter.loadProgram(bytecode);
-    } finally {
-      // Resume polling if it was active before
-      if (wasPolling && !this._passthroughMode) {
-        this.startPolling();
-      }
-    }
+    await this.adapter.loadProgram(bytecode);
   }
 
   /**

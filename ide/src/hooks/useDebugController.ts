@@ -281,30 +281,43 @@ export function useDebugController(): DebugController {
       throw new Error('No adapter connected');
     }
 
-    // For hardware mode, use connectionManager to handle polling pause
-    // For simulation, use adapter directly
-    if (debugMode === 'hardware') {
-      await connectionManager.uploadBytecode(bytecode);
-    } else {
-      await adapterRef.current.loadProgram(bytecode);
+    // For hardware mode, pause polling during entire load operation
+    // (upload + breakpoint sync) to avoid serial conflicts
+    const isHardware = debugMode === 'hardware';
+    if (isHardware) {
+      connectionManager.pausePolling();
     }
 
-    if (newDebugMap) {
-      setDebugMap(newDebugMap);
-    }
+    try {
+      // Upload bytecode
+      if (isHardware) {
+        await connectionManager.uploadBytecode(bytecode);
+      } else {
+        await adapterRef.current.loadProgram(bytecode);
+      }
 
-    // Sync breakpoints to adapter
-    const breakpointPCs = getAllBreakpointPCs();
-    await adapterRef.current.clearBreakpoints();
-    for (const pc of breakpointPCs) {
-      await adapterRef.current.setBreakpoint(pc);
-    }
+      if (newDebugMap) {
+        setDebugMap(newDebugMap);
+      }
 
-    addConsoleEntry({
-      type: 'success',
-      message: `Loaded ${bytecode.length} bytes, ${breakpointPCs.length} breakpoints set`,
-      source: 'debugger',
-    });
+      // Sync breakpoints to adapter
+      const breakpointPCs = getAllBreakpointPCs();
+      await adapterRef.current.clearBreakpoints();
+      for (const pc of breakpointPCs) {
+        await adapterRef.current.setBreakpoint(pc);
+      }
+
+      addConsoleEntry({
+        type: 'success',
+        message: `Loaded ${bytecode.length} bytes, ${breakpointPCs.length} breakpoints set`,
+        source: 'debugger',
+      });
+    } finally {
+      // Resume polling after all operations complete
+      if (isHardware) {
+        connectionManager.resumePolling();
+      }
+    }
   }, [debugMode, setDebugMap, getAllBreakpointPCs, addConsoleEntry]);
 
   // =========================================================================
