@@ -2,7 +2,7 @@
   "$schema": "../schemas/zplc.schema.json",
   "name": "Pico Blinky TON",
   "version": "1.0.0",
-  "description": "Raspberry Pi Pico LED blink using TON timer - proper IEC 61131-3 timing",
+  "description": "Raspberry Pi Pico LED blink demos - counter, BLINK FB, and TON timer versions",
   "author": "ZPLC Team",
 
   "target": {
