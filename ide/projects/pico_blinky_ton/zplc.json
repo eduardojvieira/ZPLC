@@ -1,0 +1,46 @@
+{
+  "$schema": "../schemas/zplc.schema.json",
+  "name": "Pico Blinky TON",
+  "version": "1.0.0",
+  "description": "Raspberry Pi Pico LED blink using TON timer - proper IEC 61131-3 timing",
+  "author": "ZPLC Team",
+
+  "target": {
+    "board": "rpi_pico",
+    "cpu": "rp2040",
+    "clock_mhz": 133
+  },
+
+  "compiler": {
+    "optimization": "speed",
+    "debug": true,
+    "warnings": "all"
+  },
+
+  "io": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "LED_Output",
+        "address": "%Q0.0",
+        "type": "BOOL",
+        "pin": 25,
+        "description": "Onboard LED (GPIO 25)"
+      }
+    ]
+  },
+
+  "tasks": [
+    {
+      "name": "MainTask",
+      "trigger": "cyclic",
+      "interval": 10,
+      "priority": 1,
+      "programs": ["main.st"]
+    }
+  ],
+
+  "build": {
+    "outDir": "build"
+  }
+}
