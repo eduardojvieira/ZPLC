@@ -281,7 +281,13 @@ export function useDebugController(): DebugController {
       throw new Error('No adapter connected');
     }
 
-    await adapterRef.current.loadProgram(bytecode);
+    // For hardware mode, use connectionManager to handle polling pause
+    // For simulation, use adapter directly
+    if (debugMode === 'hardware') {
+      await connectionManager.uploadBytecode(bytecode);
+    } else {
+      await adapterRef.current.loadProgram(bytecode);
+    }
 
     if (newDebugMap) {
       setDebugMap(newDebugMap);
@@ -299,7 +305,7 @@ export function useDebugController(): DebugController {
       message: `Loaded ${bytecode.length} bytes, ${breakpointPCs.length} breakpoints set`,
       source: 'debugger',
     });
-  }, [setDebugMap, getAllBreakpointPCs, addConsoleEntry]);
+  }, [debugMode, setDebugMap, getAllBreakpointPCs, addConsoleEntry]);
 
   // =========================================================================
   // Execution Control

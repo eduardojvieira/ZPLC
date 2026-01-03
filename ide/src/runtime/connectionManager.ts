@@ -302,12 +302,25 @@ class ConnectionManager {
 
   /**
    * Upload bytecode to device
+   * Automatically pauses polling during upload to avoid serial conflicts
    */
   async uploadBytecode(bytecode: Uint8Array): Promise<void> {
     if (!this.adapter?.connected) {
       throw new Error('Not connected');
     }
-    await this.adapter.loadProgram(bytecode);
+    
+    // Pause polling during upload to avoid serial conflicts
+    const wasPolling = this.pollInterval !== null;
+    this.stopPolling();
+    
+    try {
+      await this.adapter.loadProgram(bytecode);
+    } finally {
+      // Resume polling if it was active before
+      if (wasPolling && !this._passthroughMode) {
+        this.startPolling();
+      }
+    }
   }
 
   /**
