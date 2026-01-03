@@ -48,6 +48,8 @@ import { compileSingleFileWithTask, compileMultiTaskProject, CompilerError } fro
 import type { PLCLanguage, ProgramSource } from '../compiler';
 import { AssemblerError } from '../assembler';
 import { GeneratedCodeDialog } from './GeneratedCodeDialog';
+import { findFileInTree, loadFileFromTree } from '../utils/fileSystem';
+import type { FileTreeNode } from '../types';
 
 // =============================================================================
 // Types
@@ -78,6 +80,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     loadedFiles,
     isProjectOpen,
     activeFileId,
+    fileTree,
   } = useIDEStore();
   
   const { theme, setTheme, isDark } = useTheme();
@@ -378,14 +381,50 @@ export function Toolbar({ debugController }: ToolbarProps) {
   // Compilation
   // ==========================================================================
 
-  const findProgramSource = (programName: string): ProgramSource | null => {
+  /**
+   * Find program source by name.
+   * First checks loaded files, then searches fileTree and loads if needed.
+   */
+  const findProgramSource = async (programName: string): Promise<ProgramSource | null> => {
+    // First check already loaded files
     for (const file of loadedFiles.values()) {
       if (file.name.toLowerCase() === programName.toLowerCase()) {
         const baseName = file.name.replace(/\.(st|fbd|ld|sfc|il)(\.json)?$/i, '');
         return { name: baseName, content: file.content, language: file.language as PLCLanguage };
       }
     }
-    return null;
+
+    // Not in loadedFiles - search the fileTree
+    if (!fileTree) return null;
+
+    // Recursively search for the file by name
+    const findFileByName = (node: FileTreeNode, targetName: string): FileTreeNode | null => {
+      if (node.type === 'file' && node.name.toLowerCase() === targetName.toLowerCase()) {
+        return node;
+      }
+      if (node.children) {
+        for (const child of node.children) {
+          const found = findFileByName(child, targetName);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    const fileNode = findFileByName(fileTree, programName);
+    if (!fileNode) return null;
+
+    // Load the file from the tree
+    try {
+      const loadedFile = await loadFileFromTree(fileNode);
+      if (!loadedFile) return null;
+
+      const baseName = loadedFile.name.replace(/\.(st|fbd|ld|sfc|il)(\.json)?$/i, '');
+      return { name: baseName, content: loadedFile.content, language: loadedFile.language as PLCLanguage };
+    } catch (err) {
+      console.error(`Failed to load file ${programName}:`, err);
+      return null;
+    }
   };
 
   const hasValidProjectConfig = (): boolean => {
@@ -393,7 +432,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     return projectConfig.tasks.some(task => task.programs && task.programs.length > 0);
   };
 
-  const handleCompile = () => {
+  const handleCompile = async () => {
     clearCompilerMessages();
     setIsCompileMenuOpen(false);
 
@@ -416,11 +455,12 @@ export function Toolbar({ debugController }: ToolbarProps) {
           return;
         }
 
+        // Load all program sources (may need to read from disk)
         const programSources: ProgramSource[] = [];
         const missingPrograms: string[] = [];
 
         for (const progName of referencedPrograms) {
-          const source = findProgramSource(progName);
+          const source = await findProgramSource(progName);
           if (source) {
             programSources.push(source);
           } else {
