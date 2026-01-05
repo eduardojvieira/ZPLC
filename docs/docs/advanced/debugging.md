@@ -384,3 +384,82 @@ t_section2 := UPTIME() - t_start - t_section1;
 2. I/O values are simulated
 3. Memory layout may differ slightly
 4. Always final-test on real hardware
+
+## Enhanced Debug Commands (v1.1+)
+
+ZPLC v1.1 introduces powerful new debugging commands for troubleshooting PLC programs:
+
+### `zplc dbg ticks`
+
+Shows the current system tick value in milliseconds.
+
+```bash
+uart:~$ zplc dbg ticks
+Ticks: 12345 ms
+```
+
+**Use case:** Verify that the system timer is progressing correctly, essential for debugging timer-based logic (TON, TOF, TP).
+
+### `zplc dbg mem <region> [offset]`
+
+Dumps memory regions with hex and ASCII representation.
+
+**Regions:** `ipi`, `opi`, `work`, `retain`
+
+```bash
+uart:~$ zplc dbg mem work
+--- work Memory Dump (offset 0x0000) ---
+2000: 09 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+2010: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00  | ................
+```
+
+**Use case:** Quick inspection of memory regions without manual `peek` commands. Shows 64 bytes by default.
+
+### `zplc dbg task <id> [--json]`
+
+Displays detailed information about a specific task.
+
+```bash
+uart:~$ zplc dbg task 0
+Task 0:
+  Interval:   10000 us
+  Priority:   1
+  Cycles:     4089
+  Entry:      0x0000
+```
+
+**Use case:** Debug why a task may be stalled. Confirm cycle count is incrementing.
+
+### `zplc dbg watch <addr> [type]`
+
+Reads and displays typed values from memory addresses.
+
+**Supported types:** `u8`, `u16`, `u32`, `i8`, `i16`, `i32`, `bool`
+
+```bash
+uart:~$ zplc dbg watch 0x2000 u32
+0x2000 (U32): 500 (0x000001F4)
+
+uart:~$ zplc dbg watch 0x1000 bool
+0x1000 (BOOL): TRUE
+```
+
+**Use case:** Monitor specific variables during runtime without hex conversion.
+
+### `zplc dbg timer <addr>`
+
+Specialized inspector for TON/TOF/TP timer function blocks.
+
+```bash
+uart:~$ zplc dbg timer 0x2000
+Timer at 0x2000:
+  IN:      ON
+  Q:       OFF
+  PT:      500 ms
+  ET:      250 ms
+  _start:  12000 ms
+  _active: YES
+```
+
+**Use case:** Debug IEC 61131-3 timer issues. Shows all timer state variables in one command.
+

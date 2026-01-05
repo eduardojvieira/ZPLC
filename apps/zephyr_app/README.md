@@ -60,6 +60,11 @@ west build -t run
 | `zplc dbg peek <addr>` | Read memory (hex dump). |
 | `zplc dbg poke <addr> <val>` | Write byte to IPI. |
 | `zplc dbg info` | Detailed VM state. |
+| `zplc dbg ticks` | Show current system tick (ms). |
+| `zplc dbg mem <region> [offset]` | Dump memory region (ipi/opi/work/retain). |
+| `zplc dbg task <id>` | Show task details by ID. |
+| `zplc dbg watch <addr> [type]` | Read typed value from address (u8/u16/u32/i8/i16/i32/bool). |
+| `zplc dbg timer <addr>` | Inspect TON/TOF/TP timer at address. |
 
 ### Scheduler (Multitask)
 
