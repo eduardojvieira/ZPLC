@@ -125,7 +125,7 @@ static bool has_json_flag(size_t argc, char **argv) {
 #define ZPLC_PERSIST_KEY_LEN "code_len"
 
 /* Local state for dynamic task loading */
-static uint8_t shell_program_buffer[4096];
+static uint8_t shell_program_buffer[0xB000];
 static size_t shell_buffer_size = sizeof(shell_program_buffer);
 static size_t shell_expected_size = 0;
 static size_t shell_received_size = 0;
