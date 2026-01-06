@@ -1,5 +1,3 @@
-// @ts-check
-
 /**
  * ZPLC Documentation Sidebar Configuration
  * @type {import('@docusaurus/plugin-content-docs').SidebarsConfig}
@@ -30,6 +28,18 @@ const sidebars = {
         'ide/deployment',
       ],
     },
+
+    // IEC 61131-3 Reference
+    {
+      type: 'category',
+      label: 'Language Reference',
+      className: 'sidebar-category-languages',
+      items: [
+        'languages/st',
+        'languages/il',
+        'languages/stdlib',
+      ],
+    },
     
     // Hardware section
     {
@@ -49,8 +59,9 @@ const sidebars = {
       items: [
         'runtime/intro',
         'runtime/isa',
+        'runtime/scheduler',
+        'runtime/persistence',
         'runtime/hal',
-        'runtime/stdlib',
       ],
     },
     
@@ -64,21 +75,6 @@ const sidebars = {
         'advanced/debugging',
       ],
     },
-  ],
-  
-  // Legacy sidebars for backward compatibility with navbar links
-  runtimeSidebar: [
-    'runtime/intro',
-    'runtime/isa',
-    'runtime/hal',
-    'runtime/stdlib',
-  ],
-  
-  ideSidebar: [
-    'ide/overview',
-    'ide/editors',
-    'ide/compiler',
-    'ide/deployment',
   ],
 };
 
