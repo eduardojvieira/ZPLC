@@ -25,6 +25,12 @@
         zephyr,shell-uart = &cdc_acm_uart0;
     };
 
+    zephyr,user {
+        /* ADC channel 4 is the internal temperature sensor on RP2040 */
+        io-channels = <&adc 4>;
+        io-channel-names = "temp";
+    };
+
     gpio_keys {
         compatible = "gpio-keys";
         
@@ -40,6 +46,13 @@
         sw0 = &button0;
         /* led0 already defined as onboard LED (GPIO25) */
     };
+};
+
+/* Enable ADC for analog input */
+&adc {
+    status = "okay";
+    #address-cells = <1>;
+    #size-cells = <0>;
 };
 
 /* Define flash partitions for NVS storage */

@@ -15,6 +15,14 @@ import { useIDEStore } from '../store/useIDEStore';
 import { useFileBreakpoints, useCurrentExecution } from '../hooks/useDebugValue';
 import { useTheme } from '../hooks/useTheme';
 import type { PLCLanguage } from '../types';
+import {
+  ST_LANGUAGE_ID, stLanguage, stConf,
+  IL_LANGUAGE_ID, ilLanguage, ilConf
+} from '../utils/monaco-languages';
+import {
+  ZPLC_DARK_THEME, ZPLC_DARK_THEME_ID,
+  ZPLC_LIGHT_THEME, ZPLC_LIGHT_THEME_ID
+} from '../utils/monaco-themes';
 
 // =============================================================================
 // Types
@@ -43,9 +51,9 @@ interface CodeEditorProps {
 function getMonacoLanguage(lang: PLCLanguage): string {
   switch (lang) {
     case 'ST':
-      return 'pascal'; // Closest match for Structured Text
+      return ST_LANGUAGE_ID;
     case 'IL':
-      return 'plaintext'; // Assembly-like
+      return IL_LANGUAGE_ID;
     default:
       return 'json';
   }
@@ -87,7 +95,7 @@ export function CodeEditor({
 
     // Define custom CSS for breakpoint and current line decorations
     // This is done via the editor's built-in decoration system
-    
+
     // Add mouse down listener for gutter clicks (breakpoints)
     editor.onMouseDown((e) => {
       // Check if click is in the gutter (line number area)
@@ -106,6 +114,24 @@ export function CodeEditor({
     editor.updateOptions({
       glyphMargin: true,
     });
+
+    // Register custom languages if not already registered
+    const languages = monaco.languages.getLanguages();
+    if (!languages.some((l: { id: string }) => l.id === ST_LANGUAGE_ID)) {
+      monaco.languages.register({ id: ST_LANGUAGE_ID });
+      monaco.languages.setMonarchTokensProvider(ST_LANGUAGE_ID, stLanguage);
+      monaco.languages.setLanguageConfiguration(ST_LANGUAGE_ID, stConf);
+    }
+    if (!languages.some((l: { id: string }) => l.id === IL_LANGUAGE_ID)) {
+      monaco.languages.register({ id: IL_LANGUAGE_ID });
+      monaco.languages.setMonarchTokensProvider(IL_LANGUAGE_ID, ilLanguage);
+      monaco.languages.setLanguageConfiguration(IL_LANGUAGE_ID, ilConf);
+    }
+
+    // Register custom themes
+    monaco.editor.defineTheme(ZPLC_DARK_THEME_ID, ZPLC_DARK_THEME);
+    monaco.editor.defineTheme(ZPLC_LIGHT_THEME_ID, ZPLC_LIGHT_THEME);
+
   }, [fileId, toggleBreakpoint]);
 
   // Update decorations when breakpoints or current line changes
@@ -160,7 +186,7 @@ export function CodeEditor({
     // Create or update style element for custom decorations
     const styleId = 'zplc-editor-debug-styles';
     let styleElement = document.getElementById(styleId) as HTMLStyleElement | null;
-    
+
     if (!styleElement) {
       styleElement = document.createElement('style');
       styleElement.id = styleId;
@@ -219,9 +245,8 @@ export function CodeEditor({
         <div className="absolute top-2 right-2 z-10 flex items-center gap-2 px-2 py-1 
                         bg-[var(--color-surface-800)]/90 rounded text-xs text-[var(--color-surface-300)]
                         border border-[var(--color-surface-600)]">
-          <span className={`w-2 h-2 rounded-full ${
-            isPaused ? 'bg-yellow-500' : 'bg-green-500 animate-pulse'
-          }`} />
+          <span className={`w-2 h-2 rounded-full ${isPaused ? 'bg-yellow-500' : 'bg-green-500 animate-pulse'
+            }`} />
           <span>{isPaused ? 'Paused' : 'Running'}</span>
           {breakpoints.size > 0 && (
             <span className="text-[var(--color-surface-400)]">
@@ -237,7 +262,7 @@ export function CodeEditor({
         value={content}
         onChange={handleChange}
         onMount={handleEditorDidMount}
-        theme={isDark ? 'vs-dark' : 'light'}
+        theme={isDark ? ZPLC_DARK_THEME_ID : ZPLC_LIGHT_THEME_ID}
         options={{
           fontFamily: 'var(--font-mono)',
           fontSize: 14,
