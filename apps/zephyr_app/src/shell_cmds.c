@@ -1782,7 +1782,119 @@ static int cmd_dbg_info(const struct shell *sh, size_t argc, char **argv) {
 #endif /* CONFIG_ZPLC_SCHEDULER */
 
 /* ============================================================================
+ * ADC Commands (Analog Input Test)
+ * ============================================================================
+ */
+
+#ifdef CONFIG_ADC
+
+/**
+ * @brief Convert raw ADC value to temperature in Celsius.
+ *
+ * The RP2040 internal temperature sensor has a voltage output:
+ *   T = 27 - (V - 0.706) / 0.001721
+ *
+ * Where V is in volts. With 12-bit ADC and 3.3V reference:
+ *   V = (raw * 3.3) / 4096
+ */
+static int32_t adc_raw_to_celsius(uint16_t raw) {
+  /* Convert to millivolts: (raw * 3300) / 4096 */
+  int32_t mv = (raw * 3300) / 4096;
+
+  /* T = 27 - (V - 0.706) / 0.001721
+   * T = 27 - (mV/1000 - 0.706) * 581
+   * T = 27 - (mV - 706) * 581 / 1000
+   * T = 27 - (mV - 706) * 0.581
+   */
+  int32_t temp_c = 27 - ((mv - 706) * 581) / 1000;
+  return temp_c;
+}
+
+/**
+ * @brief Handler for 'zplc adc temp' - Read internal temperature sensor
+ *
+ * RP2040 internal temperature sensor is on ADC channel 4.
+ * Formula: T = 27 - (V - 0.706) / 0.001721
+ * With 12-bit ADC and 3.3V reference: V = raw * 3.3 / 4096
+ */
+static int cmd_adc_temp(const struct shell *sh, size_t argc, char **argv) {
+  ARG_UNUSED(argc);
+  ARG_UNUSED(argv);
+
+  /* RP2040 temperature sensor is on ADC channel 4 */
+  uint16_t raw_value = 0;
+  zplc_hal_result_t ret = zplc_hal_adc_read(4, &raw_value);
+
+  if (ret != ZPLC_HAL_OK) {
+    shell_error(sh, "ERROR: ADC read failed (%d)", ret);
+    return -EIO;
+  }
+
+  /* Convert raw to millivolts: (raw * 3300) / 4096 */
+  int32_t mv = (raw_value * 3300) / 4096;
+
+  /* Convert to temperature using RP2040 formula:
+   * T = 27 - (V - 0.706) / 0.001721
+   * T = 27 - ((mV/1000) - 0.706) / 0.001721
+   * T = 27 - (mV - 706) / 1.721
+   * Multiply by 1000 to avoid floats: T = 27000 - (mV - 706) * 581 / 1000
+   */
+  int32_t temp_c = 27 - ((mv - 706) * 1000) / 1721;
+
+  shell_print(sh, "Temperature Sensor (ADC Channel 4):");
+  shell_print(sh, "  Raw:    %u (0x%04X)", raw_value, raw_value);
+  shell_print(sh, "  Voltage: %d.%03d V", mv / 1000, mv % 1000);
+  shell_print(sh, "  Temp:   %d C", temp_c);
+
+  return 0;
+}
+
+/**
+ * @brief Handler for 'zplc adc read <channel>' - Read raw ADC value
+ */
+static int cmd_adc_read(const struct shell *sh, size_t argc, char **argv) {
+  if (argc < 2) {
+    shell_error(sh, "Usage: zplc adc read <channel>");
+    return -EINVAL;
+  }
+
+  char *endptr;
+  unsigned long channel = strtoul(argv[1], &endptr, 0);
+  if (*endptr != '\0') {
+    shell_error(sh, "ERROR: Invalid channel number");
+    return -EINVAL;
+  }
+
+  uint16_t raw_value = 0;
+  zplc_hal_result_t ret = zplc_hal_adc_read((uint8_t)channel, &raw_value);
+
+  if (ret != ZPLC_HAL_OK) {
+    shell_error(sh, "ERROR: ADC read failed (%d)", ret);
+    return -EIO;
+  }
+
+  int32_t mv = (raw_value * 3300) / 4096;
+
+  shell_print(sh, "ADC Channel %lu:", channel);
+  shell_print(sh, "  Raw:    %u (0x%04X)", raw_value, raw_value);
+  shell_print(sh, "  Voltage: %d.%03d V", mv / 1000, mv % 1000);
+
+  return 0;
+}
+
+/* ADC subcommands */
+SHELL_STATIC_SUBCMD_SET_CREATE(
+    sub_adc,
+    SHELL_CMD(temp, NULL, "Read internal temperature sensor", cmd_adc_temp),
+    SHELL_CMD_ARG(read, NULL, "Read ADC channel: adc read <channel>",
+                  cmd_adc_read, 2, 0),
+    SHELL_SUBCMD_SET_END);
+
+#endif /* CONFIG_ADC */
+
+/* ============================================================================
  * Shell Command Registration
+
  * ============================================================================
  */
 
@@ -1832,6 +1944,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_CMD(sched, &sub_sched, "Scheduler commands (status/tasks)", NULL),
     SHELL_CMD(persist, &sub_persist, "Persistence commands (clear/info)", NULL),
     SHELL_CMD(sys, &sub_sys, "System information (info)", NULL),
+#endif
+#ifdef CONFIG_ADC
+    SHELL_CMD(adc, &sub_adc, "ADC commands (temp/read)", NULL),
 #endif
     SHELL_SUBCMD_SET_END);
 

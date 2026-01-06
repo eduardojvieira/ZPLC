@@ -64,7 +64,7 @@ const BOARD_OPTIONS = [
 
 export function ProjectSettings() {
   const { projectConfig, saveProjectConfig, isVirtualProject } = useIDEStore();
-  
+
   // Section collapse state
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     metadata: true,
@@ -123,11 +123,10 @@ export function ProjectSettings() {
           </div>
           <button
             onClick={handleSave}
-            className={`px-4 py-2 text-sm rounded font-medium transition-colors ${
-              isVirtualProject 
-                ? 'bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--color-surface-200)]' 
-                : 'bg-[var(--color-accent-blue)] hover:bg-[var(--color-accent-blue)]/80 text-white'
-            }`}
+            className={`px-4 py-2 text-sm rounded font-medium transition-colors ${isVirtualProject
+              ? 'bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--color-surface-200)]'
+              : 'bg-[var(--color-accent-blue)] hover:bg-[var(--color-accent-blue)]/80 text-white'
+              }`}
             title={isVirtualProject ? 'Virtual project - changes are in-memory only' : 'Save changes to zplc.json'}
           >
             {isVirtualProject ? 'Apply (Virtual)' : 'Save Config'}
@@ -229,7 +228,7 @@ export function ProjectSettings() {
                 </li>
               )}
               <li>
-                I/O: <span className="text-[var(--color-accent-yellow)]">{projectConfig.io?.inputs?.length || 0}</span> inputs, 
+                I/O: <span className="text-[var(--color-accent-yellow)]">{projectConfig.io?.inputs?.length || 0}</span> inputs,
                 <span className="text-[var(--color-accent-yellow)]"> {projectConfig.io?.outputs?.length || 0}</span> outputs
               </li>
               <li>
@@ -327,7 +326,7 @@ function MetadataSection({ config, updateConfig }: SectionProps) {
           />
         </div>
       </div>
-      
+
       <div>
         <label className="block text-xs text-[var(--color-surface-400)] mb-1">
           <User size={10} className="inline mr-1" />
@@ -543,12 +542,42 @@ function IOSection({ config, updateConfig }: SectionProps) {
     updateIO({ inputs: [...inputs, newInput] });
   };
 
+  const addAnalogInput = () => {
+    // Find next available word offset (heuristic: count existing analog inputs * 2)
+    const analogInputs = inputs.filter(i => i.address.includes('%IW'));
+    const nextOffset = 4 + (analogInputs.length * 2); // Start at %IW4
+    const nextChannel = analogInputs.length;
+
+    const newInput: IOPinConfig = {
+      name: `AnalogIn${nextChannel}`,
+      address: `%IW${nextOffset}`,
+      type: 'INT',
+      channel: nextChannel,
+    };
+    updateIO({ inputs: [...inputs, newInput] });
+  };
+
   const addOutput = () => {
     const nextIndex = outputs.length;
     const newOutput: IOPinConfig = {
       name: `Output${nextIndex}`,
       address: `%Q0.${nextIndex}`,
       type: 'BOOL',
+    };
+    updateIO({ outputs: [...outputs, newOutput] });
+  };
+
+  const addAnalogOutput = () => {
+    // Find next available word offset
+    const analogOutputs = outputs.filter(o => o.address.includes('%QW'));
+    const nextOffset = analogOutputs.length * 2; // Start at %QW0
+    const nextChannel = analogOutputs.length;
+
+    const newOutput: IOPinConfig = {
+      name: `AnalogOut${nextChannel}`,
+      address: `%QW${nextOffset}`,
+      type: 'INT',
+      channel: nextChannel,
     };
     updateIO({ outputs: [...outputs, newOutput] });
   };
@@ -581,17 +610,28 @@ function IOSection({ config, updateConfig }: SectionProps) {
           <label className="text-sm font-medium text-[var(--color-accent-green)]">
             Inputs (%I)
           </label>
-          <button
-            onClick={addInput}
-            className="flex items-center gap-1 px-2 py-1 text-xs rounded bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--color-surface-200)]"
-          >
-            <Plus size={12} />
-            Add Input
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={addInput}
+              className="flex items-center gap-1 px-2 py-1 text-xs rounded bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--color-surface-200)]"
+              title="Add Digital Input (BOOL)"
+            >
+              <Plus size={12} />
+              Digital
+            </button>
+            <button
+              onClick={addAnalogInput}
+              className="flex items-center gap-1 px-2 py-1 text-xs rounded bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--color-surface-200)]"
+              title="Add Analog Input (INT)"
+            >
+              <Plus size={12} />
+              Analog
+            </button>
+          </div>
         </div>
         {inputs.length === 0 ? (
           <p className="text-xs text-[var(--color-surface-400)] text-center py-4 bg-[var(--color-surface-700)] rounded">
-            No inputs configured. Click "Add Input" to map a GPIO pin.
+            No inputs configured. Click "Add" to map a GPIO pin.
           </p>
         ) : (
           <IOTable
@@ -609,17 +649,28 @@ function IOSection({ config, updateConfig }: SectionProps) {
           <label className="text-sm font-medium text-[var(--color-accent-yellow)]">
             Outputs (%Q)
           </label>
-          <button
-            onClick={addOutput}
-            className="flex items-center gap-1 px-2 py-1 text-xs rounded bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--color-surface-200)]"
-          >
-            <Plus size={12} />
-            Add Output
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={addOutput}
+              className="flex items-center gap-1 px-2 py-1 text-xs rounded bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--color-surface-200)]"
+              title="Add Digital Output (BOOL)"
+            >
+              <Plus size={12} />
+              Digital
+            </button>
+            <button
+              onClick={addAnalogOutput}
+              className="flex items-center gap-1 px-2 py-1 text-xs rounded bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--color-surface-200)]"
+              title="Add Analog Output (INT)"
+            >
+              <Plus size={12} />
+              Analog
+            </button>
+          </div>
         </div>
         {outputs.length === 0 ? (
           <p className="text-xs text-[var(--color-surface-400)] text-center py-4 bg-[var(--color-surface-700)] rounded">
-            No outputs configured. Click "Add Output" to map a GPIO pin.
+            No outputs configured. Click "Add" to map a GPIO pin.
           </p>
         ) : (
           <IOTable
@@ -649,7 +700,8 @@ function IOTable({ items, onUpdate, onRemove }: IOTableProps) {
       <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-[var(--color-surface-600)] text-xs text-[var(--color-surface-300)] font-medium">
         <div className="col-span-3">Name</div>
         <div className="col-span-2">Address</div>
-        <div className="col-span-2">GPIO Pin</div>
+        <div className="col-span-1">Chan</div>
+        <div className="col-span-1">Pin</div>
         <div className="col-span-2">Type</div>
         <div className="col-span-2">Description</div>
         <div className="col-span-1"></div>
@@ -677,15 +729,26 @@ function IOTable({ items, onUpdate, onRemove }: IOTableProps) {
               className="w-full px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-accent-blue)] font-mono focus:outline-none"
             />
           </div>
-          <div className="col-span-2">
+          <div className="col-span-1">
+            <input
+              type="number"
+              value={item.channel ?? ''}
+              onChange={(e) => onUpdate(index, { channel: e.target.value ? parseInt(e.target.value) : undefined })}
+              placeholder="#"
+              min={0}
+              max={16}
+              className="w-full px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] focus:outline-none placeholder:text-[var(--color-surface-500)]"
+            />
+          </div>
+          <div className="col-span-1">
             <input
               type="number"
               value={item.pin ?? ''}
               onChange={(e) => onUpdate(index, { pin: e.target.value ? parseInt(e.target.value) : undefined })}
-              placeholder="GPIO"
+              placeholder="IO"
               min={0}
               max={100}
-              className="w-full px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] focus:outline-none"
+              className="w-full px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] focus:outline-none placeholder:text-[var(--color-surface-500)]"
             />
           </div>
           <div className="col-span-2">
@@ -737,10 +800,10 @@ function IOTable({ items, onUpdate, onRemove }: IOTableProps) {
  */
 function getAvailablePrograms(fileTree: FileTreeNode | null): string[] {
   if (!fileTree) return [];
-  
+
   const programs: string[] = [];
   const programExtensions = ['.st', '.il', '.fbd.json', '.ld.json', '.sfc.json'];
-  
+
   // Map .xxx.json to .xxx for cleaner display
   const simplifyExtension = (filename: string): string => {
     if (filename.endsWith('.fbd.json')) return filename.replace('.fbd.json', '.fbd');
@@ -748,7 +811,7 @@ function getAvailablePrograms(fileTree: FileTreeNode | null): string[] {
     if (filename.endsWith('.sfc.json')) return filename.replace('.sfc.json', '.sfc');
     return filename;
   };
-  
+
   function collectPrograms(node: FileTreeNode) {
     if (node.type === 'file' && node.name) {
       const isProgram = programExtensions.some(ext => node.name.endsWith(ext));
@@ -759,7 +822,7 @@ function getAvailablePrograms(fileTree: FileTreeNode | null): string[] {
         }
       }
     }
-    
+
     // Recurse into directories
     if (node.children) {
       for (const child of node.children) {
@@ -767,7 +830,7 @@ function getAvailablePrograms(fileTree: FileTreeNode | null): string[] {
       }
     }
   }
-  
+
   collectPrograms(fileTree);
   return programs.sort();
 }
@@ -846,7 +909,7 @@ function TaskCard({ task, availablePrograms, onUpdate, onRemove }: TaskCardProps
   // Currently only one program per task is supported by the runtime
   // Programs are stored WITH extension (e.g., "main.st", "main.fbd")
   const selectedProgram = task.programs[0] || '';
-  
+
   return (
     <div className="bg-[var(--color-surface-700)] rounded-lg p-3 border border-[var(--color-surface-500)]">
       <div className="flex items-center justify-between mb-3">
