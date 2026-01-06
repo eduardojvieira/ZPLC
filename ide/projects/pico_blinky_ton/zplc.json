@@ -33,7 +33,7 @@
       "interval": 10,
       "priority": 1,
       "programs": [
-        "main.st"
+        "main_blink.st"
       ]
     }
   ],

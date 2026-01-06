@@ -48,7 +48,7 @@ import { compileSingleFileWithTask, compileMultiTaskProject, CompilerError } fro
 import type { PLCLanguage, ProgramSource } from '../compiler';
 import { AssemblerError } from '../assembler';
 import { GeneratedCodeDialog } from './GeneratedCodeDialog';
-import { findFileInTree, loadFileFromTree } from '../utils/fileSystem';
+import { loadFileFromTree } from '../utils/fileSystem';
 import type { FileTreeNode } from '../types';
 
 // =============================================================================
@@ -67,9 +67,9 @@ interface ToolbarProps {
 // =============================================================================
 
 export function Toolbar({ debugController }: ToolbarProps) {
-  const { 
-    addConsoleEntry, 
-    addCompilerMessage, 
+  const {
+    addConsoleEntry,
+    addCompilerMessage,
     clearCompilerMessages,
     createFile,
     toggleSettings,
@@ -82,9 +82,9 @@ export function Toolbar({ debugController }: ToolbarProps) {
     activeFileId,
     fileTree,
   } = useIDEStore();
-  
+
   const { theme, setTheme, isDark } = useTheme();
-  
+
   // Destructure debug controller
   const {
     adapter,
@@ -108,7 +108,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
   const [executionMode, setExecutionMode] = useState<ExecutionMode>('simulate');
   const [isConnecting, setIsConnecting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  
+
   const themeMenuRef = useRef<HTMLDivElement>(null);
   const compileMenuRef = useRef<HTMLDivElement>(null);
 
@@ -255,7 +255,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     }
 
     const success = await saveFile(activeFileId);
-    
+
     if (!success && isVirtualProject) {
       try {
         const blob = new Blob([activeFile.content], { type: 'text/plain;charset=utf-8' });
@@ -276,7 +276,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
 
   const handleExportProject = () => {
     const { loadedFiles: files, projectConfig: config } = useIDEStore.getState();
-    
+
     if (!config) {
       addConsoleEntry({ type: 'error', message: 'No project open', source: 'system' });
       return;
@@ -383,21 +383,13 @@ export function Toolbar({ debugController }: ToolbarProps) {
 
   /**
    * Find program source by name.
-   * First checks loaded files, then searches fileTree and loads if needed.
+   * Always loads fresh content from disk (via fileTree) to ensure
+   * compilation uses the latest file content, avoiding stale cache issues.
+   * 
+   * Falls back to loadedFiles only for virtual projects with no fileTree handles.
    */
   const findProgramSource = async (programName: string): Promise<ProgramSource | null> => {
-    // First check already loaded files
-    for (const file of loadedFiles.values()) {
-      if (file.name.toLowerCase() === programName.toLowerCase()) {
-        const baseName = file.name.replace(/\.(st|fbd|ld|sfc|il)(\.json)?$/i, '');
-        return { name: baseName, content: file.content, language: file.language as PLCLanguage };
-      }
-    }
-
-    // Not in loadedFiles - search the fileTree
-    if (!fileTree) return null;
-
-    // Recursively search for the file by name
+    // Helper to search fileTree recursively
     const findFileByName = (node: FileTreeNode, targetName: string): FileTreeNode | null => {
       if (node.type === 'file' && node.name.toLowerCase() === targetName.toLowerCase()) {
         return node;
@@ -411,20 +403,33 @@ export function Toolbar({ debugController }: ToolbarProps) {
       return null;
     };
 
-    const fileNode = findFileByName(fileTree, programName);
-    if (!fileNode) return null;
-
-    // Load the file from the tree
-    try {
-      const loadedFile = await loadFileFromTree(fileNode);
-      if (!loadedFile) return null;
-
-      const baseName = loadedFile.name.replace(/\.(st|fbd|ld|sfc|il)(\.json)?$/i, '');
-      return { name: baseName, content: loadedFile.content, language: loadedFile.language as PLCLanguage };
-    } catch (err) {
-      console.error(`Failed to load file ${programName}:`, err);
-      return null;
+    // Try to load fresh from disk first (via fileTree)
+    if (fileTree) {
+      const fileNode = findFileByName(fileTree, programName);
+      if (fileNode) {
+        try {
+          // loadFileFromTree reads fresh content from disk via the file handle
+          const loadedFile = await loadFileFromTree(fileNode);
+          if (loadedFile) {
+            const baseName = loadedFile.name.replace(/\.(st|fbd|ld|sfc|il)(\.json)?$/i, '');
+            return { name: baseName, content: loadedFile.content, language: loadedFile.language as PLCLanguage };
+          }
+        } catch (err) {
+          console.error(`Failed to load file from disk: ${programName}:`, err);
+          // Fall through to check loadedFiles cache as fallback
+        }
+      }
     }
+
+    // Fallback: check loadedFiles cache (for virtual projects or if disk read failed)
+    for (const file of loadedFiles.values()) {
+      if (file.name.toLowerCase() === programName.toLowerCase()) {
+        const baseName = file.name.replace(/\.(st|fbd|ld|sfc|il)(\.json)?$/i, '');
+        return { name: baseName, content: file.content, language: file.language as PLCLanguage };
+      }
+    }
+
+    return null;
   };
 
   const hasValidProjectConfig = (): boolean => {
@@ -534,16 +539,16 @@ export function Toolbar({ debugController }: ToolbarProps) {
     } else {
       // NO PROJECT AND NO FILE - Give helpful error
       if (isProjectOpen) {
-        addConsoleEntry({ 
-          type: 'error', 
-          message: 'No programs assigned to tasks. Open Project Settings and configure tasks with programs.', 
-          source: 'compiler' 
+        addConsoleEntry({
+          type: 'error',
+          message: 'No programs assigned to tasks. Open Project Settings and configure tasks with programs.',
+          source: 'compiler'
         });
       } else {
-        addConsoleEntry({ 
-          type: 'error', 
-          message: 'No project or file open. Open a .zplc project or create a new file to compile.', 
-          source: 'compiler' 
+        addConsoleEntry({
+          type: 'error',
+          message: 'No project or file open. Open a .zplc project or create a new file to compile.',
+          source: 'compiler'
         });
       }
     }
@@ -639,14 +644,14 @@ export function Toolbar({ debugController }: ToolbarProps) {
     try {
       // Hardware mode: Send full .zplc file with TASK segment for multi-task support
       // Simulation mode: Send raw bytecode (WASM uses coreLoadRaw)
-      const dataToUpload = executionMode === 'hardware' 
-        ? lastCompileResult.zplcFile 
+      const dataToUpload = executionMode === 'hardware'
+        ? lastCompileResult.zplcFile
         : lastCompileResult.bytecode;
-      
+
       const description = executionMode === 'hardware'
         ? `Uploading .zplc file (${dataToUpload.length} bytes, ${lastCompileResult.taskCount} task(s))...`
         : `Loading bytecode (${dataToUpload.length} bytes)...`;
-      
+
       addConsoleEntry({ type: 'info', message: description, source: 'runtime' });
       await loadProgram(dataToUpload);
       addConsoleEntry({ type: 'success', message: 'Program loaded', source: 'runtime' });
@@ -663,14 +668,14 @@ export function Toolbar({ debugController }: ToolbarProps) {
       await handleConnect();
       return;
     }
-    
+
     // If we have bytecode but haven't loaded it, load it first
     if (lastCompileResult && isIdle) {
       try {
         // Hardware mode: Send full .zplc file with TASK segment for multi-task support
         // Simulation mode: Send raw bytecode (WASM uses coreLoadRaw)
-        const dataToUpload = executionMode === 'hardware' 
-          ? lastCompileResult.zplcFile 
+        const dataToUpload = executionMode === 'hardware'
+          ? lastCompileResult.zplcFile
           : lastCompileResult.bytecode;
         await loadProgram(dataToUpload);
       } catch (e) {
@@ -678,7 +683,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
         return;
       }
     }
-    
+
     await start();
     addConsoleEntry({ type: 'info', message: 'Execution started', source: 'runtime' });
   };
@@ -739,8 +744,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
   const status = getStatusDisplay();
 
   // Check if running in Electron on macOS
-  const isElectronMac = typeof window !== 'undefined' && 
-    window.electronAPI?.isElectron && 
+  const isElectronMac = typeof window !== 'undefined' &&
+    window.electronAPI?.isElectron &&
     window.electronAPI?.platform === 'darwin';
 
   // ==========================================================================
@@ -846,11 +851,10 @@ export function Toolbar({ debugController }: ToolbarProps) {
             if (isConnected) disconnect();
             setExecutionMode('simulate');
           }}
-          className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors ${
-            executionMode === 'simulate'
-              ? 'bg-cyan-600 text-white'
-              : 'text-[var(--color-surface-300)] hover:bg-[var(--color-surface-600)]'
-          }`}
+          className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors ${executionMode === 'simulate'
+            ? 'bg-cyan-600 text-white'
+            : 'text-[var(--color-surface-300)] hover:bg-[var(--color-surface-600)]'
+            }`}
           title="Simulation Mode (WASM)"
         >
           <Cpu size={14} />
@@ -861,11 +865,10 @@ export function Toolbar({ debugController }: ToolbarProps) {
             if (isConnected) disconnect();
             setExecutionMode('hardware');
           }}
-          className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors ${
-            executionMode === 'hardware'
-              ? 'bg-green-600 text-white'
-              : 'text-[var(--color-surface-300)] hover:bg-[var(--color-surface-600)]'
-          }`}
+          className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors ${executionMode === 'hardware'
+            ? 'bg-green-600 text-white'
+            : 'text-[var(--color-surface-300)] hover:bg-[var(--color-surface-600)]'
+            }`}
           title="Hardware Mode (Serial)"
         >
           <Radio size={14} />
@@ -882,13 +885,12 @@ export function Toolbar({ debugController }: ToolbarProps) {
         <button
           onClick={handleConnect}
           disabled={isConnecting}
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-colors ${
-            isConnected
-              ? 'bg-[var(--color-surface-700)] text-[var(--color-surface-200)] hover:bg-red-600 hover:text-white'
-              : executionMode === 'simulate'
-                ? 'bg-cyan-600 hover:bg-cyan-500 text-white'
-                : 'bg-green-600 hover:bg-green-500 text-white'
-          } disabled:opacity-50`}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-colors ${isConnected
+            ? 'bg-[var(--color-surface-700)] text-[var(--color-surface-200)] hover:bg-red-600 hover:text-white'
+            : executionMode === 'simulate'
+              ? 'bg-cyan-600 hover:bg-cyan-500 text-white'
+              : 'bg-green-600 hover:bg-green-500 text-white'
+            } disabled:opacity-50`}
           title={isConnected ? 'Disconnect' : 'Connect'}
         >
           {isConnecting ? (
@@ -998,7 +1000,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
             #{vmInfo.cycles.toLocaleString()}
           </span>
         )}
-        
+
         {/* Status indicator */}
         <div className="flex items-center gap-1.5">
           <div className={`w-2 h-2 rounded-full ${status.dot}`} />
@@ -1035,11 +1037,10 @@ export function Toolbar({ debugController }: ToolbarProps) {
                 <button
                   key={option.id}
                   onClick={() => { setTheme(option.id); setIsThemeMenuOpen(false); }}
-                  className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs transition-colors ${
-                    isActive
-                      ? 'bg-[var(--color-accent-blue)] text-white'
-                      : 'text-[var(--color-surface-100)] hover:bg-[var(--color-surface-600)]'
-                  }`}
+                  className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs transition-colors ${isActive
+                    ? 'bg-[var(--color-accent-blue)] text-white'
+                    : 'text-[var(--color-surface-100)] hover:bg-[var(--color-surface-600)]'
+                    }`}
                 >
                   <Icon size={14} />
                   <span>{option.label}</span>
