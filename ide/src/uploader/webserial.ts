@@ -280,7 +280,7 @@ export async function disconnect(connection: SerialConnection): Promise<void> {
   // Wait for reader task to finish (with timeout)
   if (connection._readerTask) {
     const timeout = new Promise<void>(resolve => setTimeout(resolve, 1000));
-    await Promise.race([connection._readerTask.catch(() => {}), timeout]);
+    await Promise.race([connection._readerTask.catch(() => { }), timeout]);
   }
 
   // Close the port
@@ -290,7 +290,7 @@ export async function disconnect(connection: SerialConnection): Promise<void> {
   } catch (e) {
     console.warn('[WebSerial] Error closing port:', e);
   }
-  
+
   console.log('[WebSerial] Disconnect complete');
 }
 
@@ -313,7 +313,7 @@ async function waitForResponse(
   // Regex to strip ANSI escape codes
   // eslint-disable-next-line no-control-regex
   const ansiRegex = /\x1B\[[0-9;]*[a-zA-Z]/g;
-  
+
   // Regex to find response patterns anywhere in the buffer
   // Match OK:, ERROR:, or WARN: followed by anything until newline
   const responseRegex = /(OK:|ERROR:|WARN:)[^\r\n]*/;
@@ -321,14 +321,14 @@ async function waitForResponse(
   while (Date.now() - startTime < timeoutMs) {
     // Clean the buffer of ANSI codes first
     const cleanBuffer = connection._rxBuffer.replace(ansiRegex, '');
-    
+
     // Search for response pattern anywhere in buffer
     const match = cleanBuffer.match(responseRegex);
-    
+
     if (match) {
       const response = match[0].trim();
       console.log('[WebSerial] Found response:', response);
-      
+
       // Find where this response ends in the buffer and clear up to there
       const responseEnd = cleanBuffer.indexOf(response) + response.length;
       // Find the next newline after the response
@@ -338,7 +338,7 @@ async function waitForResponse(
       } else {
         connection._rxBuffer = cleanBuffer.slice(responseEnd);
       }
-      
+
       return response;
     }
 
@@ -408,13 +408,13 @@ export async function uploadBytecode(
   try {
     // Clear any stale data in the buffer before starting
     connection._rxBuffer = '';
-    
+
     // Send a newline to ensure shell is ready and clear any partial input
     const encoder = new TextEncoder();
     await connection.writer.write(encoder.encode('\n'));
     await new Promise((r) => setTimeout(r, 200));
     connection._rxBuffer = ''; // Clear the prompt that comes back
-    
+
     // Step 1: Stop any running program
     notify('stopping', 0, 'Stopping current program...');
     const stopResponse = await sendCommand(connection, 'zplc stop');
@@ -427,6 +427,7 @@ export async function uploadBytecode(
     await new Promise((r) => setTimeout(r, 200));
 
     // Step 2: Prepare to load
+    console.log(`[WebSerial] Starting upload. Bytecode size: ${bytecode.length} bytes`);
     notify('loading', 10, `Preparing to receive ${bytecode.length} bytes...`);
     const loadResponse = await sendCommand(connection, `zplc load ${bytecode.length}`);
     if (loadResponse.startsWith('ERROR:')) {
@@ -450,6 +451,7 @@ export async function uploadBytecode(
       const progress = 10 + Math.floor((chunkNum / totalChunks) * 80);
       notify('sending', progress, `Sending chunk ${chunkNum + 1}/${totalChunks}...`);
 
+      console.log(`[WebSerial] Sending chunk ${chunkNum + 1}/${totalChunks}: ${hexChunk}`);
       const dataResponse = await sendCommand(connection, `zplc data ${hexChunk}`);
       if (dataResponse.startsWith('ERROR:')) {
         throw new Error(`Data transfer failed at offset ${offset}: ${dataResponse}`);
