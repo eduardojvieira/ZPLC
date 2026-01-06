@@ -1,5 +1,5 @@
-# ZPLC v1.4: Technical Specification & Architecture
-**Version:** 1.4.0 (Stable)
+# ZPLC v1.2: Technical Specification & Architecture
+**Version:** 1.2.0 (Stable)
 **Target:** Open Source Industrial Automation
 **Core Philosophy:** One Execution Core, Any Runtime.
 
@@ -7,7 +7,7 @@
 
 ZPLC is a portable, deterministic PLC runtime environment powered by Zephyr RTOS for embedded targets and native OS layers for desktop/server hosting. It is designed to bring modern software development practices—including CI/CD pipelines, compact binary deployment, and open interoperability via PLCopen XML—to the industrial floor.
 
-**The "v1.4" Promise:** A fully functional runtime supporting all 5 IEC 61131-3 languages, capable of running real hardware I/O or in-browser simulations, with industrial-grade determinism. Features **multitask scheduling**, **NVS persistence**, **indirect memory access**, **comprehensive standard function library**, and a **Cross-Platform Desktop IDE** (Electron).
+**The "v1.2" Promise:** A fully functional runtime supporting all 5 IEC 61131-3 languages, capable of running real hardware I/O or in-browser simulations, with industrial-grade determinism. Features **multitask scheduling**, **NVS persistence**, **indirect memory access**, and a comprehensive **standard function library**.
 
 ---
 
@@ -191,16 +191,7 @@ ZPLC integrates with Zephyr as a **Module**.
   - Data Structures: FIFO, LIFO (using indirect memory access)
   - System: UPTIME, CYCLE_TIME, WATCHDOG_RESET
 
-**Phase 1.3 (Completed)**
-* ✅ **Advanced Debugging**: Watch/Force variables, Breakpoints, and Live Monitoring via WebSocket.
-* ✅ **Professional IDE**: Polished UI with resizeable panels, dark/light themes, and improved editor UX.
-
-**Phase 1.4 (Completed)**
-* ✅ **Cross-Platform Desktop App**: Electron-based native application for Windows, macOS, and Linux.
-* ✅ **Offline Capabilities**: Full functionality without internet connection.
-* ✅ **Native Serial Integration**: Direct access to serial ports for flashing and monitoring (no WebSerial limitations).
-
-**Phase 1.5 (Target: Q2 2026)**
+**Phase 1.3 (Target: Q2 2026)**
 * **Industrial Connectivity**: Modbus TCP/RTU server and client.
 * **Cloud Integration**: MQTT "Sparkplug B" compliant client.
 * **Retentive Variables**: NVS-backed RETAIN memory region for critical process data.
