@@ -86,18 +86,6 @@ const config = {
             label: 'Documentation',
           },
           {
-            type: 'docSidebar',
-            sidebarId: 'runtimeSidebar',
-            position: 'left',
-            label: 'Runtime',
-          },
-          {
-            type: 'docSidebar',
-            sidebarId: 'ideSidebar',
-            position: 'left',
-            label: 'IDE',
-          },
-          {
             type: 'localeDropdown',
             position: 'right',
           },
@@ -137,7 +125,7 @@ const config = {
               },
               {
                 label: 'Standard Library',
-                to: '/docs/runtime/stdlib',
+                to: '/docs/languages/stdlib',
               },
               {
                 label: 'Advanced Topics',

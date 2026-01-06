@@ -12,23 +12,20 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
 <Tabs>
-  <TabItem value="ide" label="I want to program PLCs" default>
+  <TabItem value="desktop" label="Desktop App (Recommended)" default>
 
-## For PLC Programmers (Web IDE)
+## For PLC Programmers (Desktop IDE)
 
-The fastest way to start is using the **ZPLC Web IDE** - no installation required!
+The easiest way to start is using the **ZPLC Desktop IDE** for macOS, Windows, and Linux.
 
-### Step 1: Open the IDE
+### Step 1: Install the IDE
 
-Visit the online IDE at: **[ide.zplc.dev](https://ide.zplc.dev)** *(coming soon)*
-
-Or run locally:
-```bash
-git clone https://github.com/eduardojvieira/ZPLC.git
-cd ZPLC/ide
-bun install
-bun run dev
-```
+1.  **Download**: Go to the [Releases Page](https://github.com/eduardojvieira/ZPLC/releases) and download the latest installer:
+    *   **macOS**: `.dmg` (Apple Silicon or Intel)
+    *   **Windows**: `.exe` (Coming soon)
+    *   **Linux**: `.AppImage` or `.deb` (Coming soon)
+2.  **Install**: Run the installer and verify the application.
+3.  **Launch**: Open **ZPLC IDE** from your applications menu.
 
 ### Step 2: Create Your First Program
 
@@ -53,23 +50,41 @@ END_PROGRAM
 
 ### Step 3: Simulate
 
-1. Click the **▶ Simulate** button in the toolbar
-2. Watch the `LED` variable toggle every 500ms in the Watch window
-3. Use **Pause/Step** to debug cycle by cycle
+1. Click the **▶ Simulate** button in the toolbar.
+2. The bundled Simulator will start automatically.
+3. Watch the `LED` variable toggle every 500ms in the Watch window.
 
-### Step 4: Deploy to Hardware (Optional)
+### Step 4: Deploy to Hardware
 
-1. Connect your Zephyr-compatible board via USB
-2. Click **Connect** → Select your serial port
-3. Click **Upload** to flash the program
-4. Your PLC is now running autonomously!
-
-:::tip No Hardware? No Problem!
-The WASM simulator runs the exact same bytecode that runs on hardware. If it works in simulation, it works on the device.
-:::
+1. Connect your supported board (e.g., Raspberry Pi Pico) via USB.
+2. Click **Connect** → Select your serial port from the native dropdown.
+3. Click **Upload** to flash the program.
 
   </TabItem>
-  <TabItem value="dev" label="I want to embed the runtime">
+  <TabItem value="web" label="Web IDE">
+
+## For PLC Programmers (Web IDE)
+
+Run ZPLC directly in your browser without installation.
+
+### Step 1: Open the IDE
+
+Visit the online IDE at: **[ide.zplc.dev](https://ide.zplc.dev)** *(coming soon)*
+
+Or run locally:
+```bash
+git clone https://github.com/eduardojvieira/ZPLC.git
+cd ZPLC/ide
+bun install
+bun run dev
+```
+
+### Step 2: Create & Simulate
+
+The process is identical to the Desktop App, but hardware connection requires a browser with **WebSerial API** support (Chrome, Edge).
+
+  </TabItem>
+  <TabItem value="dev" label="Embed Runtime (C/C++)">
 
 ## For Embedded Developers (C Runtime)
 
@@ -94,15 +109,7 @@ ctest --output-on-failure
 # Expected: 100% pass rate (105+ assertions)
 ```
 
-### Step 3: Run the Demo
-
-```bash
-./zplc_runtime
-```
-
-This loads a sample bytecode program and executes it in a loop.
-
-### Step 4: Integrate into Your Project
+### Step 3: Integrate into Your Project
 
 Add ZPLC as a Zephyr module:
 
@@ -140,7 +147,7 @@ int main(void) {
 ```
 
   </TabItem>
-  <TabItem value="zephyr" label="I want to build firmware">
+  <TabItem value="zephyr" label="Build Firmware">
 
 ## For Firmware Engineers (Zephyr Build)
 
@@ -148,25 +155,9 @@ Build the complete ZPLC firmware for your target board.
 
 ### Step 1: Set Up Zephyr Environment
 
-Follow the [official Zephyr Getting Started Guide](https://docs.zephyrproject.org/latest/develop/getting_started/index.html) to install:
+Follow the [official Zephyr Getting Started Guide](https://docs.zephyrproject.org/latest/develop/getting_started/index.html).
 
-- Zephyr SDK
-- West build tool
-- CMake & Ninja
-
-### Step 2: Clone & Configure
-
-```bash
-# Create workspace
-mkdir ~/zephyrproject && cd ~/zephyrproject
-west init
-west update
-
-# Add ZPLC as external module
-git clone https://github.com/eduardojvieira/ZPLC.git modules/lib/zplc
-```
-
-### Step 3: Build for Your Board
+### Step 2: Build for Your Board
 
 ```bash
 # Raspberry Pi Pico
@@ -177,13 +168,9 @@ west build -b nucleo_h743zi modules/lib/zplc/apps/zephyr_app --pristine
 
 # ESP32-S3
 west build -b esp32s3_devkitc modules/lib/zplc/apps/zephyr_app --pristine
-
-# QEMU Simulation
-west build -b mps2/an385 modules/lib/zplc/apps/zephyr_app --pristine
-west build -t run
 ```
 
-### Step 4: Flash & Test
+### Step 3: Flash & Test
 
 ```bash
 # Flash to hardware
@@ -209,34 +196,6 @@ Now that you have ZPLC running, explore these topics:
 | Topic | Description |
 |-------|-------------|
 | [IDE Editors](/docs/ide/editors) | Master Ladder, FBD, and ST editors |
-| [Hardware Setup](/docs/hardware/pinouts) | Wire your I/O correctly |
-| [Standard Library](/docs/runtime/stdlib) | Timers, counters, and math functions |
-| [Debugging](/docs/advanced/debugging) | Breakpoints, watch windows, and step execution |
-| [Multitasking](/docs/advanced/multitask) | Run multiple tasks at different intervals |
-
----
-
-## System Requirements
-
-### Web IDE
-- **Browser**: Chrome 89+, Edge 89+, Safari 15+ (WebSerial support)
-- **RAM**: 2GB minimum
-- **Network**: Internet not required after initial load
-
-### Development (POSIX Build)
-- **OS**: macOS, Linux, Windows (WSL2)
-- **Compiler**: GCC 9+ or Clang 10+
-- **CMake**: 3.20+
-
-### Zephyr Build
-- **Zephyr SDK**: 0.16.0+
-- **Python**: 3.10+
-- **Disk Space**: 10GB+ for SDK and toolchains
-
----
-
-## Getting Help
-
-- **Issues**: [GitHub Issues](https://github.com/eduardojvieira/ZPLC/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/eduardojvieira/ZPLC/discussions)
-- **Source Code**: [GitHub Repository](https://github.com/eduardojvieira/ZPLC)
+| [Language Reference](/docs/languages/st) | Learn Structured Text and Instruction List |
+| [Standard Library](/docs/languages/stdlib) | Timers, counters, and math functions |
+| [Runtime Architecture](/docs/runtime/intro) | Understand how the VM works |
