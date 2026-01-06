@@ -1,8 +1,8 @@
 # ZPLC Virtual Machine - Instruction Set Architecture (ISA)
 
-**Version:** 1.2.0 (Stable)
+**Version:** 1.4.0 (Stable)
 **Status:** Released
-**Last Updated:** December 2025
+**Last Updated:** January 2026
 
 ---
 
@@ -515,6 +515,7 @@ skip:   ...
 | 1.1     | 2025 | Added GET_TICKS opcode (63 total), multitask support |
 | 1.2     | 2025 | Added indirect memory opcodes (LOADI*, STOREI*) and STRING opcodes (STRLEN, STRCPY, STRCAT, STRCMP, STRCLR). |
 | 1.2.1   | 2025 | Added PICK opcode (0x41) for deep stack access. Total: **75 opcodes** |
+| 1.4.0   | 2026 | ISA Stable. ZPLC Runtime now wrapped in Electron for Desktop App. |
 
 ---
 

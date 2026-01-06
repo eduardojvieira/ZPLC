@@ -7,6 +7,7 @@ The ZPLC IDE is a modern, web-based engineering environment designed for industr
 ## Key Features
 
 - **Multi-Language Support**: Work with Ladder Diagrams (LD), Function Block Diagrams (FBD), and Structured Text (ST).
+- **Multi-Platform**: Available as a Web App (PWA) and a native **Desktop App** (Windows, macOS, Linux) via Electron.
 - **Offline-First**: Built with modern web technologies that allow working without an active internet connection.
 - **Hardware Agnostic**: Compile your logic once and deploy to any ZPLC-compatible runtime (Zephyr, POSIX, Windows).
 - **Real-time Monitoring**: Connect to your hardware and monitor variables live with the debug protocol.

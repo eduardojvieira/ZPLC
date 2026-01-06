@@ -109,9 +109,11 @@ import type { AssemblyResult } from '../assembler/index.ts';
 import { transpileLDToST } from './transpilers/ld.ts';
 import { transpileFBDToST } from './transpilers/fbd.ts';
 import { transpileSFCToST } from './transpilers/sfc.ts';
+import { transpileILToST } from './transpilers/il.ts';
 import { parseLDModel } from '../models/ld.ts';
 import { parseFBDModel } from '../models/fbd.ts';
 import { parseSFCModel } from '../models/sfc.ts';
+import { parseIL } from './il/parser.ts';
 import type { DebugMap } from './debug-map.ts';
 import { buildDebugMap } from './debug-map.ts';
 import { buildSymbolTable } from './symbol-table.ts';
@@ -230,13 +232,13 @@ export function compileToBinary(source: string, options?: CompileOptions): Compi
 
     const program = ast.programs[0];
     const generateDebugMap = options?.generateDebugMap ?? false;
-    
+
     // Build codegen options - enable source annotations if debug map is requested
     const codegenOptions: CodeGenOptions = {
         ...options,
         emitSourceAnnotations: generateDebugMap,
     };
-    
+
     // Generate assembly
     const assembly = generate(program, codegenOptions);
 
@@ -256,12 +258,12 @@ export function compileToBinary(source: string, options?: CompileOptions): Compi
         entryPoint: asmResult.entryPoint,
         codeSize: asmResult.codeSize,
     };
-    
+
     // Build debug map if requested
     if (generateDebugMap) {
         const workMemoryBase = options?.workMemoryBase;
         const symbols = buildSymbolTable(program, workMemoryBase);
-        
+
         result.debugMap = buildDebugMap({
             programName: program.name,
             symbols,
@@ -341,8 +343,10 @@ export function transpileToST(content: string, language: PLCLanguage): Transpile
         }
         case 'ST':
             return { success: true, source: content, errors: [] };
-        case 'IL':
-            return { success: false, source: '', errors: ['IL compilation not yet supported. Use ST or visual languages.'] };
+        case 'IL': {
+            const ilProgram = parseIL(content);
+            return transpileILToST(ilProgram);
+        }
         default:
             return { success: false, source: '', errors: [`Unknown language: ${language}`] };
     }
@@ -383,14 +387,14 @@ export function compileProject(content: string, language: PLCLanguage, options?:
     // Step 1: Transpile visual languages to ST
     if (language !== 'ST') {
         const transpileResult = transpileToST(content, language);
-        
+
         if (!transpileResult.success) {
             throw new CompilerError(
                 `Transpilation failed: ${transpileResult.errors.join('; ')}`,
                 0, 0, 'parser'
             );
         }
-        
+
         stSource = transpileResult.source;
         intermediateSTSource = transpileResult.source;
         transpileErrors = transpileResult.errors;
@@ -528,16 +532,16 @@ export function compileMultiTaskProject(
         // Try exact match first
         let source = sourceMap.get(progName);
         if (source) return source;
-        
+
         // Try lowercase
         source = sourceMap.get(progName.toLowerCase());
         if (source) return source;
-        
+
         // Try without extension
         const baseName = progName.replace(/\.(st|fbd|ld|sfc|il)$/i, '');
         source = sourceMap.get(baseName);
         if (source) return source;
-        
+
         source = sourceMap.get(baseName.toLowerCase());
         return source;
     };
@@ -634,10 +638,10 @@ export function compileMultiTaskProject(
     for (const prog of compiledPrograms) {
         // Make a copy so we don't modify the original
         const relocatedBytecode = new Uint8Array(prog.bytecode);
-        
+
         // Relocate absolute jump addresses by adding the program's entry point
         relocateBytecode(relocatedBytecode, prog.entryPoint);
-        
+
         // Copy to concatenated buffer
         concatenatedBytecode.set(relocatedBytecode, offset);
         offset += prog.size;
@@ -663,14 +667,14 @@ export function compileMultiTaskProject(
     const findEntryPoint = (progName: string): number | undefined => {
         let ep = entryPointMap.get(progName);
         if (ep !== undefined) return ep;
-        
+
         ep = entryPointMap.get(progName.toLowerCase());
         if (ep !== undefined) return ep;
-        
+
         const baseName = progName.replace(/\.(st|fbd|ld|sfc|il)$/i, '');
         ep = entryPointMap.get(baseName);
         if (ep !== undefined) return ep;
-        
+
         return entryPointMap.get(baseName.toLowerCase());
     };
 
