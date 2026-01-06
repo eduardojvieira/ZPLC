@@ -1,0 +1,20 @@
+{
+    "name": "Analog Test",
+    "version": "1.0.0",
+    "tasks": [
+        {
+            "name": "MainTask",
+            "trigger": "cyclic",
+            "interval": 100,
+            "priority": 1,
+            "watchdog": 500,
+            "programs": [
+                "main"
+            ]
+        }
+    ],
+    "startPOU": "main",
+    "target": {
+        "board": "rpi_pico"
+    }
+}

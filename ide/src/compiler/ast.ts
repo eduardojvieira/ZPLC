@@ -148,27 +148,87 @@ export const VarSection = {
 export type VarSectionValue = typeof VarSection[keyof typeof VarSection];
 
 /**
- * I/O address (e.g., %Q0.0, %I0.0).
+ * I/O address (e.g., %Q0.0, %IW0).
  */
 export interface IOAddress {
-    type: 'I' | 'Q' | 'M';  // Input, Output, Memory
-    byteOffset: number;
-    bitOffset: number;
+    type: 'I' | 'Q' | 'M';  // Area: Input, Output, Memory
+    size: 'X' | 'B' | 'W' | 'D' | null; // Size: Bit, Byte, Word, Double
+    index: number;          // Main index (byte for X/B, word for W, etc.)
+    bitOffset: number;      // Bit offset (only valid for type X or implicit bit)
+    // Legacy fields for backward compatibility
+    byteOffset: number;     // Canonical byte offset calculated from index/size
 }
 
 /**
- * Parse an I/O address string like "%Q0.0".
+ * Parse an I/O address string like "%Q0.0" or "%IW0".
  */
 export function parseIOAddress(addr: string): IOAddress {
-    // Format: %<type><byte>.<bit>
-    const match = addr.match(/^%([IQM])(\d+)\.(\d+)$/);
+    // Format: %<type>[<size>]<index>(.<bit>)?
+    // Examples: %QX0.0, %IW0, %MD4
+
+    // Regex breakdown:
+    // ^%
+    // ([IQM])      -> Type
+    // ([XBWD]?)    -> Size (optional)
+    // (\d+)        -> Index
+    // (?:\.(\d+))? -> Bit offset (optional)
+    const match = addr.match(/^%([IQM])([XBWD]?)(\d+)(?:\.(\d+))?$/);
+
     if (!match) {
         throw new Error(`Invalid I/O address: ${addr}`);
     }
+
+    const type = match[1] as 'I' | 'Q' | 'M';
+    const sizeStr = match[2] as string;
+    const index = parseInt(match[3], 10);
+    const bitStr = match[4];
+
+    // Determine size
+    // If bit offset is present, size is 'X' (Bit)
+    // If no size char and no bit offset, usually implies specific size based on context or error, 
+    // but for compatibility we might default to 'X' for %I0.0 style, 
+    // or maybe 'B' if just %I0?
+    // In IEC 61131-3:
+    // %IX0.0 or %I0.0 -> Bit
+    // %IB0 -> Byte
+    // %IW0 -> Word
+
+    let size: 'X' | 'B' | 'W' | 'D' | null = null;
+    if (sizeStr) {
+        size = sizeStr as 'X' | 'B' | 'W' | 'D';
+    } else if (bitStr !== undefined) {
+        size = 'X'; // Implicit bit addressing
+    } else {
+        // Ambiguous like %I0? Treat as byte or error?
+        // Let's default to Byte if ambiguous, or null.
+        // Actually, without dot, it usually means full access. 
+        // But let's assume 'B' for single index legacy behavior if any? 
+        // Actually existing was %Q0.0. 
+        // If user writes %IW0, sizeStr='W'.
+        // If user writes %I0, sizeStr=''. bitStr=undefined.
+        // Keep as null and let SymbolTable decide or default?
+    }
+
+    const bitOffset = bitStr ? parseInt(bitStr, 10) : 0;
+
+    // Calculate canonical byte offset for backward compatibility
+    // This logic will be refined in SymbolTable, but strictly speaking:
+    // This field was 'byteOffset' in legacy IOAddress.
+    // If %IW1 => Word 1 => Byte 2.
+    // If %IB1 => Byte 1.
+    // If %IX0.1 => Byte 0.
+
+    let byteOffset = index;
+    if (size === 'W') byteOffset = index * 2;
+    if (size === 'D') byteOffset = index * 4;
+    // B and X use index as byte offset directly
+
     return {
-        type: match[1] as 'I' | 'Q' | 'M',
-        byteOffset: parseInt(match[2], 10),
-        bitOffset: parseInt(match[3], 10),
+        type,
+        size,
+        index,
+        bitOffset,
+        byteOffset // Legacy field populated with canonical byte address
     };
 }
 

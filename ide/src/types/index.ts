@@ -240,9 +240,10 @@ export interface TaskDefinition {
 /** I/O Pin configuration */
 export interface IOPinConfig {
   name: string;
-  address: string;       // e.g., "%I0.0", "%Q0.0"
+  address: string;       // e.g., "%I0.0", "%Q0.0", "%IW0", "%QW0"
   description?: string;
   pin?: number;          // Physical GPIO pin
+  channel?: number;      // ADC/DAC channel index (e.g., 0 for ADC0/GP26)
   type?: 'BOOL' | 'INT' | 'REAL';
 }
 
@@ -345,7 +346,7 @@ export interface ProjectYAML {
   description?: string;
   version: string;
   author?: string;
-  
+
   target?: TargetConfig;
   compiler?: CompilerConfig;
   io?: IOConfig;
@@ -356,7 +357,7 @@ export interface ProjectYAML {
     default?: boolean;
     depends_on?: string;
   }[];
-  
+
   entry_point: string;
   include?: string[];
   exclude?: string[];
