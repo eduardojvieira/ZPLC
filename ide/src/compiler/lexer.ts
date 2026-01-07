@@ -55,6 +55,7 @@ export const TokenType = {
     DINT: 'DINT',
     REAL: 'REAL',
     STRING: 'STRING',
+    ARRAY: 'ARRAY',
 
     // Keywords - Function blocks
     TON: 'TON',
@@ -105,6 +106,9 @@ export const TokenType = {
     COMMA: 'COMMA',             // ,
     LPAREN: 'LPAREN',           // (
     RPAREN: 'RPAREN',           // )
+    LBRACKET: 'LBRACKET',       // [
+    RBRACKET: 'RBRACKET',       // ]
+    DOTDOT: 'DOTDOT',           // ..
     AT: 'AT',                   // AT (for I/O mapping)
 
     // Arithmetic operators
@@ -197,6 +201,7 @@ const KEYWORDS: Record<string, TokenTypeValue> = {
     'DINT': TokenType.DINT,
     'REAL': TokenType.REAL,
     'STRING': TokenType.STRING,
+    'ARRAY': TokenType.ARRAY,
     'TON': TokenType.TON,
     'TOF': TokenType.TOF,
     'TP': TokenType.TP,
@@ -297,7 +302,7 @@ export function tokenize(source: string): Token[] {
     const readNumber = (): { value: string; isReal: boolean } => {
         let result = '';
         let isReal = false;
-        
+
         // Handle hex: 0x...
         if (current() === '0' && (peek() === 'x' || peek() === 'X')) {
             result += advance(); // 0
@@ -307,12 +312,12 @@ export function tokenize(source: string): Token[] {
             }
             return { value: result, isReal: false };
         }
-        
+
         // Integer part
         while (!isAtEnd() && isDigit(current())) {
             result += advance();
         }
-        
+
         // Check for decimal point followed by a digit (REAL literal)
         if (current() === '.' && isDigit(peek())) {
             isReal = true;
@@ -321,7 +326,7 @@ export function tokenize(source: string): Token[] {
                 result += advance();
             }
         }
-        
+
         // Optional exponent (e.g., 1.5e10, 2E-3)
         if (current() === 'e' || current() === 'E') {
             const nextChar = peek();
@@ -336,7 +341,7 @@ export function tokenize(source: string): Token[] {
                 }
             }
         }
-        
+
         return { value: result, isReal };
     };
 
@@ -418,8 +423,25 @@ export function tokenize(source: string): Token[] {
             continue;
         }
         if (ch === '.') {
+            // Check for DOTDOT (..)
+            if (peek() === '.') {
+                advance();
+                advance();
+                addToken(TokenType.DOTDOT, '..', startLine, startColumn);
+            } else {
+                advance();
+                addToken(TokenType.DOT, '.', startLine, startColumn);
+            }
+            continue;
+        }
+        if (ch === '[') {
             advance();
-            addToken(TokenType.DOT, '.', startLine, startColumn);
+            addToken(TokenType.LBRACKET, '[', startLine, startColumn);
+            continue;
+        }
+        if (ch === ']') {
+            advance();
+            addToken(TokenType.RBRACKET, ']', startLine, startColumn);
             continue;
         }
         if (ch === '(') {

@@ -130,6 +130,60 @@ export function getDataTypeSize(type: DataTypeValue): number {
 }
 
 // ============================================================================
+// Array Types (v1.4.3+)
+// ============================================================================
+
+/**
+ * Array dimension bounds.
+ * Represents a single dimension like [0..9] or [1..10].
+ */
+export interface ArrayDimension {
+    lowerBound: number;
+    upperBound: number;
+}
+
+/**
+ * Array type definition.
+ * Supports 1D, 2D, and 3D arrays.
+ * 
+ * Examples:
+ *   ARRAY[0..9] OF INT           -> 1D
+ *   ARRAY[0..2, 0..2] OF REAL    -> 2D
+ *   ARRAY[0..1, 0..1, 0..1] OF BOOL -> 3D
+ */
+export interface ArrayType {
+    kind: 'ArrayType';
+    dimensions: ArrayDimension[];  // 1-3 elements
+    elementType: DataTypeValue;
+}
+
+/**
+ * Get the total number of elements in an array.
+ */
+export function getArrayElementCount(arrayType: ArrayType): number {
+    let count = 1;
+    for (const dim of arrayType.dimensions) {
+        count *= (dim.upperBound - dim.lowerBound + 1);
+    }
+    return count;
+}
+
+/**
+ * Get the total size in bytes for an array.
+ */
+export function getArrayTotalSize(arrayType: ArrayType): number {
+    const elementSize = getDataTypeSize(arrayType.elementType);
+    return getArrayElementCount(arrayType) * elementSize;
+}
+
+/**
+ * Type guard to check if a type is an ArrayType.
+ */
+export function isArrayType(type: DataTypeValue | ArrayType): type is ArrayType {
+    return typeof type === 'object' && type !== null && 'kind' in type && type.kind === 'ArrayType';
+}
+
+// ============================================================================
 // Variable Declarations
 // ============================================================================
 
@@ -238,8 +292,8 @@ export function parseIOAddress(addr: string): IOAddress {
 export interface VarDecl extends ASTNode {
     kind: 'VarDecl';
     name: string;
-    dataType: DataTypeValue;
-    initialValue: Expression | null;
+    dataType: DataTypeValue | ArrayType;  // Can be elementary type or array type
+    initialValue: Expression | ArrayLiteral | null;
     ioAddress: IOAddress | null;  // For I/O-mapped variables
     section: VarSectionValue;
 }
@@ -268,10 +322,38 @@ export type Expression =
     | StringLiteral
     | Identifier
     | MemberAccess
+    | ArrayAccess
     | UnaryExpr
     | BinaryExpr
     | FBCall
     | FunctionCall;
+
+/**
+ * Array access expression.
+ * 
+ * Examples:
+ *   Temps[0]         -> 1D access
+ *   Matrix[i, j]     -> 2D access
+ *   Cube[x, y, z]    -> 3D access
+ */
+export interface ArrayAccess extends ASTNode {
+    kind: 'ArrayAccess';
+    array: Identifier;
+    indices: Expression[];  // 1-3 elements, must match array dimensions
+}
+
+/**
+ * Array literal for initialization.
+ * 
+ * Examples:
+ *   [1, 2, 3, 4, 5]                    -> 1D
+ *   [[1, 2], [3, 4]]                   -> 2D (nested)
+ *   [FALSE, FALSE, TRUE, FALSE]        -> 1D BOOL
+ */
+export interface ArrayLiteral extends ASTNode {
+    kind: 'ArrayLiteral';
+    elements: (Expression | ArrayLiteral)[];  // Nested for multi-dimensional
+}
 
 /**
  * Boolean literal: TRUE or FALSE.
@@ -407,7 +489,7 @@ export type Statement =
  */
 export interface Assignment extends ASTNode {
     kind: 'Assignment';
-    target: Identifier | MemberAccess;
+    target: Identifier | MemberAccess | ArrayAccess;  // Added ArrayAccess for array element assignment
     value: Expression;
 }
 
