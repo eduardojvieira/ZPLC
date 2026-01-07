@@ -1,0 +1,468 @@
+# =============================================================================
+# ZPLC Release Build Workflow
+# =============================================================================
+# Builds cross-platform IDE binaries and runtime source packages for releases.
+#
+# Triggers:
+#   - Manual dispatch (workflow_dispatch) with version input
+#   - Push to release/* branches
+#
+# Artifacts:
+#   - IDE: macOS (x64, arm64), Windows (x64, arm64), Linux (x64, arm64)
+#   - Runtime: Source tarball with everything needed to build for Zephyr boards
+# =============================================================================
+
+name: Release Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., 1.4.0)'
+        required: true
+        type: string
+      upload_to_release:
+        description: 'Upload artifacts to GitHub Release'
+        required: false
+        type: boolean
+        default: true
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  # ===========================================================================
+  # Build IDE for macOS (x64 and arm64)
+  # ===========================================================================
+  build-macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        arch: [x64, arm64]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ide/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ide
+        run: npm ci
+
+      - name: Build Electron app (macOS ${{ matrix.arch }})
+        working-directory: ide
+        run: |
+          npm run build
+          npm run electron:compile
+          npx electron-builder --mac --${{ matrix.arch }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Skip notarization for now (requires Apple Developer account)
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-${{ matrix.arch }}
+          path: |
+            ide/dist-electron/*.dmg
+            ide/dist-electron/*.zip
+          retention-days: 7
+
+  # ===========================================================================
+  # Build IDE for Windows (x64 and arm64)
+  # ===========================================================================
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        arch: [x64, arm64]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ide/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ide
+        run: npm ci
+
+      - name: Build Electron app (Windows ${{ matrix.arch }})
+        working-directory: ide
+        run: |
+          npm run build
+          npm run electron:compile
+          npx electron-builder --win --${{ matrix.arch }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-${{ matrix.arch }}
+          path: |
+            ide/dist-electron/*-Setup.exe
+            ide/dist-electron/*-Portable.exe
+          retention-days: 7
+
+  # ===========================================================================
+  # Build IDE for Linux (x64 and arm64)
+  # ===========================================================================
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [x64, arm64]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: ide/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ide
+        run: npm ci
+
+      - name: Build Electron app (Linux ${{ matrix.arch }})
+        working-directory: ide
+        run: |
+          npm run build
+          npm run electron:compile
+          npx electron-builder --linux --${{ matrix.arch }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{ matrix.arch }}
+          path: |
+            ide/dist-electron/*.AppImage
+            ide/dist-electron/*.deb
+            ide/dist-electron/*.rpm
+          retention-days: 7
+
+  # ===========================================================================
+  # Package Runtime Source for Board Builds
+  # ===========================================================================
+  package-runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create runtime source package
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          PACKAGE_NAME="zplc-runtime-${VERSION}"
+          
+          # Create package directory
+          mkdir -p "${PACKAGE_NAME}"
+          
+          # Copy runtime source files
+          cp -r include "${PACKAGE_NAME}/"
+          cp -r src "${PACKAGE_NAME}/"
+          cp -r zephyr "${PACKAGE_NAME}/"
+          cp -r apps "${PACKAGE_NAME}/"
+          cp -r examples "${PACKAGE_NAME}/"
+          cp -r tools "${PACKAGE_NAME}/"
+          cp -r scripts "${PACKAGE_NAME}/"
+          cp CMakeLists.txt "${PACKAGE_NAME}/"
+          cp Makefile "${PACKAGE_NAME}/"
+          cp README.md "${PACKAGE_NAME}/"
+          cp TECHNICAL_SPEC.md "${PACKAGE_NAME}/"
+          cp AGENTS.md "${PACKAGE_NAME}/"
+          
+          # Create build instructions
+          cat > "${PACKAGE_NAME}/BUILD.md" << 'EOF'
+          # ZPLC Runtime Build Instructions
+          
+          ## Overview
+          
+          This package contains the ZPLC runtime source code ready for building on:
+          - POSIX systems (Linux, macOS, BSD)
+          - Zephyr RTOS (500+ supported boards)
+          - WebAssembly (for browser simulation)
+          
+          ## Directory Structure
+          
+          ```
+          zplc-runtime/
+          ├── include/          # Public C headers
+          │   ├── zplc_core.h   # VM Core API
+          │   ├── zplc_hal.h    # Hardware Abstraction Layer
+          │   ├── zplc_isa.h    # Instruction Set Architecture
+          │   └── zplc_scheduler.h  # Multitask Scheduler
+          ├── src/
+          │   ├── core/         # VM implementation (C99)
+          │   └── hal/          # HAL implementations
+          │       ├── posix/    # Linux/macOS/BSD
+          │       ├── zephyr/   # Zephyr RTOS
+          │       └── wasm/     # WebAssembly
+          ├── apps/
+          │   ├── posix_host/   # Desktop development runtime
+          │   └── zephyr_app/   # Zephyr application with shell
+          ├── zephyr/           # Zephyr module configuration
+          ├── examples/         # Example .zplc and .asm programs
+          └── tools/            # Assembler and utilities
+          ```
+          
+          ## POSIX Build (Development)
+          
+          Quick build for development and testing:
+          
+          ```bash
+          mkdir build && cd build
+          cmake .. -DZEPHYR_BUILD=OFF
+          make
+          
+          # Run tests
+          ctest --output-on-failure
+          
+          # Run demo runtime
+          ./zplc_runtime
+          ```
+          
+          ## Zephyr Build (Production)
+          
+          ### Prerequisites
+          
+          1. Install Zephyr SDK: https://docs.zephyrproject.org/latest/getting_started/
+          2. Initialize workspace:
+             ```bash
+             west init ~/zephyrproject
+             cd ~/zephyrproject
+             west update
+             ```
+          3. Add ZPLC as a module (choose one):
+             - Copy this directory to `~/zephyrproject/modules/lib/zplc`
+             - Or add to `west.yml` manifest
+          
+          ### Build for Specific Boards
+          
+          ```bash
+          cd ~/zephyrproject
+          
+          # Raspberry Pi Pico (RP2040)
+          west build -b rpi_pico modules/lib/zplc/apps/zephyr_app --pristine
+          # Flash: cp build/zephyr/zephyr.uf2 /Volumes/RPI-RP2/
+          
+          # STM32 Nucleo-H743ZI
+          west build -b nucleo_h743zi modules/lib/zplc/apps/zephyr_app
+          west flash
+          
+          # Arduino Giga R1 (STM32H747)
+          west build -b arduino_giga_r1/stm32h747xx/m7 modules/lib/zplc/apps/zephyr_app
+          west flash
+          
+          # ESP32-S3 DevKit
+          west build -b esp32s3_devkitc modules/lib/zplc/apps/zephyr_app
+          west flash
+          
+          # QEMU (for testing without hardware)
+          west build -b mps2/an385 modules/lib/zplc/apps/zephyr_app
+          west build -t run
+          ```
+          
+          ### Board Overlays
+          
+          Pre-configured overlays are available in `apps/zephyr_app/boards/`:
+          - `rpi_pico_rp2040.overlay` - Pi Pico with USB serial and NVS
+          - `nucleo_h743zi.overlay` - STM32H743 with UART and NVS
+          - `arduino_giga_r1_stm32h747xx_m7.overlay` - Arduino Giga R1
+          - `esp32s3_devkitc_esp32s3_procpu.overlay` - ESP32-S3
+          
+          ## WebAssembly Build
+          
+          For browser-based simulation:
+          
+          ```bash
+          # Install Emscripten: https://emscripten.org/docs/getting_started/
+          source ~/emsdk/emsdk_env.sh
+          
+          mkdir build_wasm && cd build_wasm
+          emcmake cmake .. -DWASM_BUILD=ON
+          emmake make
+          
+          # Output: zplc_sim.js + zplc_sim.wasm
+          ```
+          
+          ## Serial Commands (Zephyr Shell)
+          
+          Once running on hardware, connect via serial (115200 baud):
+          
+          ```bash
+          zplc load <size>      # Prepare to receive bytecode
+          zplc data <hex>       # Send hex-encoded chunk
+          zplc start            # Start execution
+          zplc stop             # Stop execution
+          zplc status           # Show VM state
+          zplc persist info     # Show saved program
+          zplc dbg info         # Detailed debugging info
+          ```
+          
+          ## Documentation
+          
+          - Full documentation: https://eduardojvieira.github.io/ZPLC/
+          - Technical spec: See TECHNICAL_SPEC.md
+          - Agent context: See AGENTS.md
+          
+          EOF
+          
+          # Create tarball
+          tar -czvf "${PACKAGE_NAME}.tar.gz" "${PACKAGE_NAME}"
+          
+          # Create zip for Windows users
+          zip -r "${PACKAGE_NAME}.zip" "${PACKAGE_NAME}"
+          
+          # Show package contents
+          echo "=== Package Contents ==="
+          tar -tvf "${PACKAGE_NAME}.tar.gz" | head -50
+          echo "..."
+          
+      - name: Upload runtime package artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-source
+          path: |
+            zplc-runtime-*.tar.gz
+            zplc-runtime-*.zip
+          retention-days: 7
+
+  # ===========================================================================
+  # Upload to GitHub Release
+  # ===========================================================================
+  upload-release:
+    needs: [build-macos, build-windows, build-linux, package-runtime]
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.upload_to_release) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+            echo "tag=v${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: List artifacts
+        run: |
+          echo "=== Downloaded Artifacts ==="
+          find artifacts -type f -name "*" | sort
+
+      - name: Update release with assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: "v${{ steps.version.outputs.version }} - Cross-Platform Desktop App"
+          body: |
+            ## Release v${{ steps.version.outputs.version }}
+
+            ### Highlights
+            - **Cross-Platform Desktop App**: Electron-based IDE for macOS, Windows, and Linux
+            - **Multitask Scheduler**: Run multiple PLC tasks with different intervals and priorities
+            - **NVS Persistence**: Programs survive power cycles (stored in Flash)
+            - **75 VM Opcodes**: Complete instruction set including STRING operations
+            - **Standard Library**: 45+ functions + 22 function blocks
+
+            ### IDE Downloads
+
+            #### macOS
+            | Architecture | DMG | ZIP |
+            |-------------|-----|-----|
+            | Apple Silicon (M1/M2/M3) | `ZPLC IDE-*-mac-arm64.dmg` | `ZPLC IDE-*-mac-arm64.zip` |
+            | Intel (x64) | `ZPLC IDE-*-mac-x64.dmg` | `ZPLC IDE-*-mac-x64.zip` |
+
+            #### Windows
+            | Architecture | Installer | Portable |
+            |-------------|-----------|----------|
+            | x64 (64-bit) | `ZPLC IDE-*-win-x64-Setup.exe` | `ZPLC IDE-*-win-x64-Portable.exe` |
+            | ARM64 | `ZPLC IDE-*-win-arm64-Setup.exe` | - |
+
+            #### Linux
+            | Architecture | AppImage | DEB | RPM |
+            |-------------|----------|-----|-----|
+            | x64 (64-bit) | `ZPLC IDE-*-linux-x64.AppImage` | `ZPLC IDE-*-linux-x64.deb` | `ZPLC IDE-*-linux-x64.rpm` |
+            | ARM64 | `ZPLC IDE-*-linux-arm64.AppImage` | `ZPLC IDE-*-linux-arm64.deb` | - |
+
+            ### Runtime Source Package
+
+            For building on embedded boards (Zephyr RTOS):
+
+            | Format | File |
+            |--------|------|
+            | Tarball (Linux/macOS) | `zplc-runtime-${{ steps.version.outputs.version }}.tar.gz` |
+            | ZIP (Windows) | `zplc-runtime-${{ steps.version.outputs.version }}.zip` |
+
+            The runtime package includes:
+            - Complete C99 source code for the VM
+            - Zephyr module configuration
+            - Board overlays (Pi Pico, Nucleo H743, Arduino Giga R1, ESP32-S3)
+            - Build instructions for 500+ Zephyr-supported boards
+
+            ### Supported Boards (Tested)
+
+            - Raspberry Pi Pico (RP2040)
+            - STM32 Nucleo-H743ZI
+            - Arduino Giga R1 (STM32H747)
+            - ESP32-S3 DevKit
+            - Any board with 32KB+ RAM and Zephyr support
+
+            ### Documentation
+
+            - 📚 [Full Documentation](https://eduardojvieira.github.io/ZPLC/)
+            - 📖 [Technical Specification](https://github.com/eduardojvieira/ZPLC/blob/master/TECHNICAL_SPEC.md)
+          files: |
+            artifacts/macos-*/*.dmg
+            artifacts/macos-*/*.zip
+            artifacts/windows-*/*-Setup.exe
+            artifacts/windows-*/*-Portable.exe
+            artifacts/linux-*/*.AppImage
+            artifacts/linux-*/*.deb
+            artifacts/linux-*/*.rpm
+            artifacts/runtime-source/*.tar.gz
+            artifacts/runtime-source/*.zip
+          fail_on_unmatched_files: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
