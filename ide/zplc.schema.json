@@ -1,0 +1,290 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://zplc.dev/schemas/zplc.schema.json",
+    "title": "ZPLC Project Configuration",
+    "description": "Configuration file for ZPLC projects (v1.4.3+)",
+    "type": "object",
+    "required": [
+        "name",
+        "version",
+        "tasks"
+    ],
+    "properties": {
+        "$schema": {
+            "type": "string",
+            "description": "JSON Schema reference"
+        },
+        "name": {
+            "type": "string",
+            "description": "Project name",
+            "minLength": 1
+        },
+        "version": {
+            "type": "string",
+            "description": "Project version (semver)",
+            "pattern": "^\\d+\\.\\d+\\.\\d+(-[a-zA-Z0-9.]+)?$"
+        },
+        "description": {
+            "type": "string",
+            "description": "Optional project description"
+        },
+        "author": {
+            "type": "string",
+            "description": "Project author"
+        },
+        "target": {
+            "type": "object",
+            "description": "Target hardware configuration",
+            "properties": {
+                "board": {
+                    "type": "string",
+                    "description": "Target board (e.g., rpi_pico, posix)",
+                    "enum": [
+                        "rpi_pico",
+                        "posix",
+                        "esp32",
+                        "stm32f4"
+                    ]
+                },
+                "cpu": {
+                    "type": "string",
+                    "description": "CPU identifier"
+                },
+                "clock_mhz": {
+                    "type": "integer",
+                    "description": "CPU clock frequency in MHz",
+                    "minimum": 1
+                }
+            }
+        },
+        "compiler": {
+            "type": "object",
+            "description": "Compiler settings",
+            "properties": {
+                "optimization": {
+                    "type": "string",
+                    "enum": [
+                        "none",
+                        "size",
+                        "speed"
+                    ],
+                    "default": "size",
+                    "description": "Optimization level"
+                },
+                "debug": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Generate debug information"
+                },
+                "warnings": {
+                    "type": "string",
+                    "enum": [
+                        "none",
+                        "default",
+                        "all"
+                    ],
+                    "default": "default",
+                    "description": "Warning level"
+                },
+                "strictTypes": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Enable strict type checking (v1.4.3+)"
+                }
+            }
+        },
+        "io": {
+            "type": "object",
+            "description": "I/O configuration",
+            "properties": {
+                "inputs": {
+                    "type": "array",
+                    "description": "Digital input definitions",
+                    "items": {
+                        "$ref": "#/definitions/digitalIOPoint"
+                    }
+                },
+                "outputs": {
+                    "type": "array",
+                    "description": "Digital output definitions",
+                    "items": {
+                        "$ref": "#/definitions/digitalIOPoint"
+                    }
+                },
+                "analog": {
+                    "type": "object",
+                    "description": "Analog I/O configuration",
+                    "properties": {
+                        "adc": {
+                            "type": "array",
+                            "description": "ADC channel definitions",
+                            "items": {
+                                "$ref": "#/definitions/analogIOPoint"
+                            }
+                        },
+                        "dac": {
+                            "type": "array",
+                            "description": "DAC channel definitions",
+                            "items": {
+                                "$ref": "#/definitions/analogIOPoint"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "tasks": {
+            "type": "array",
+            "description": "Task definitions",
+            "minItems": 1,
+            "items": {
+                "type": "object",
+                "required": [
+                    "name",
+                    "programs"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Task name",
+                        "minLength": 1
+                    },
+                    "trigger": {
+                        "type": "string",
+                        "enum": [
+                            "cyclic",
+                            "event"
+                        ],
+                        "default": "cyclic",
+                        "description": "Task trigger type"
+                    },
+                    "interval_ms": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "default": 100,
+                        "description": "Task interval in milliseconds (for cyclic tasks)"
+                    },
+                    "priority": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 255,
+                        "default": 1,
+                        "description": "Task priority (0 = highest)"
+                    },
+                    "watchdog_ms": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "default": 0,
+                        "description": "Watchdog timeout in milliseconds (0 = disabled)"
+                    },
+                    "programs": {
+                        "type": "array",
+                        "description": "List of program files to execute in this task",
+                        "minItems": 1,
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "build": {
+            "type": "object",
+            "description": "Build configuration",
+            "properties": {
+                "outDir": {
+                    "type": "string",
+                    "default": "build",
+                    "description": "Output directory for compiled files"
+                },
+                "generateDebugInfo": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Generate source maps for debugging"
+                }
+            }
+        }
+    },
+    "definitions": {
+        "digitalIOPoint": {
+            "type": "object",
+            "required": [
+                "name",
+                "address"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Variable name",
+                    "minLength": 1
+                },
+                "address": {
+                    "type": "string",
+                    "description": "IEC 61131-3 address (e.g., %I0.0, %Q0.1, %MW0)",
+                    "pattern": "^%[IQM][XBWD]?\\d+(\\.\\d+)?$"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "BOOL",
+                        "BYTE",
+                        "WORD",
+                        "DWORD"
+                    ],
+                    "default": "BOOL",
+                    "description": "Data type"
+                },
+                "pin": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "GPIO pin number (hardware-specific)"
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Optional description"
+                }
+            }
+        },
+        "analogIOPoint": {
+            "type": "object",
+            "required": [
+                "name",
+                "address",
+                "channel"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "Variable name",
+                    "minLength": 1
+                },
+                "address": {
+                    "type": "string",
+                    "description": "IEC 61131-3 word address (e.g., %IW0, %QW0)",
+                    "pattern": "^%[IQ]W\\d+$"
+                },
+                "channel": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "ADC/DAC channel number"
+                },
+                "bits": {
+                    "type": "integer",
+                    "enum": [
+                        8,
+                        10,
+                        12,
+                        14,
+                        16
+                    ],
+                    "default": 12,
+                    "description": "Resolution in bits"
+                },
+                "description": {
+                    "type": "string",
+                    "description": "Optional description"
+                }
+            }
+        }
+    }
+}

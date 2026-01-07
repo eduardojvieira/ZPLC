@@ -223,14 +223,24 @@ export const POU_TYPES: Record<POUType, POUInfo> = {
 /** Task trigger type */
 export type TaskTrigger = 'cyclic' | 'event' | 'freewheeling';
 
-/** Task definition for zplc.json */
+/** Task definition for zplc.json (v1.4.3+ format) */
 export interface TaskDefinition {
   name: string;
   trigger: TaskTrigger;
-  interval?: number;          // Cycle time in ms (for cyclic tasks)
-  priority: number;           // 0 = highest, 255 = lowest
-  watchdog?: number;          // Watchdog timeout in ms
-  programs: string[];         // List of program names assigned to this task
+  interval_ms?: number;        // Cycle time in ms (for cyclic tasks)
+  priority: number;            // 0 = highest, 255 = lowest
+  watchdog_ms?: number;        // Watchdog timeout in ms
+  programs: string[];          // List of program names assigned to this task
+
+  // Deprecated fields (for backwards compatibility)
+  /** @deprecated Use interval_ms instead */
+  interval?: number;
+  /** @deprecated Use watchdog_ms instead */
+  watchdog?: number;
+  /** @deprecated Use programs[] instead */
+  file?: string;
+  /** @deprecated Use trigger instead */
+  type?: string;
 }
 
 // =============================================================================
@@ -300,7 +310,7 @@ export interface ZPLCProjectConfig {
 /** Alias for ZPLCProjectConfig (shorter name for common usage) */
 export type ZPLCConfig = ZPLCProjectConfig;
 
-/** Default project configuration */
+/** Default project configuration (v1.4.3+ format) */
 export const DEFAULT_ZPLC_CONFIG: ZPLCProjectConfig = {
   name: 'New Project',
   version: '1.0.0',
@@ -308,9 +318,9 @@ export const DEFAULT_ZPLC_CONFIG: ZPLCProjectConfig = {
     {
       name: 'MainTask',
       trigger: 'cyclic',
-      interval: 10,
+      interval_ms: 10,
       priority: 1,
-      watchdog: 100,
+      watchdog_ms: 100,
       programs: ['Main'],
     },
   ],

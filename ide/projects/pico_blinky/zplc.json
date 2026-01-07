@@ -1,22 +1,18 @@
 {
-  "$schema": "../schemas/zplc.schema.json",
+  "$schema": "../../zplc.schema.json",
   "name": "Pico Blinky",
   "version": "1.0.0",
   "description": "Raspberry Pi Pico LED blink demo - toggles onboard LED every 500ms",
   "author": "ZPLC Team",
-
   "target": {
     "board": "rpi_pico",
     "cpu": "rp2040",
     "clock_mhz": 133
   },
-
   "compiler": {
     "optimization": "speed",
-    "debug": true,
-    "warnings": "all"
+    "debug": true
   },
-
   "io": {
     "inputs": [],
     "outputs": [
@@ -29,17 +25,18 @@
       }
     ]
   },
-
   "tasks": [
     {
       "name": "MainTask",
       "trigger": "cyclic",
-      "interval": 10,
+      "interval_ms": 10,
       "priority": 1,
-      "programs": ["main.st"]
+      "watchdog_ms": 100,
+      "programs": [
+        "main.st"
+      ]
     }
   ],
-
   "build": {
     "outDir": "build"
   }

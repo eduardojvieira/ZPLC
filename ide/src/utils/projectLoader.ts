@@ -61,13 +61,13 @@ export function getAvailableProjects(): ProjectInfo[] {
   for (const [path, content] of Object.entries(projectConfigModules)) {
     try {
       const config = JSON.parse(content) as ZPLCConfig;
-      
+
       // Extract project folder name from path: /projects/blinky/zplc.json -> blinky
       const match = path.match(/\/projects\/([^/]+)\/zplc\.json$/);
       if (!match) continue;
-      
+
       const folderId = match[1];
-      
+
       projects.push({
         id: folderId,
         name: config.name || folderId,
@@ -81,6 +81,61 @@ export function getAvailableProjects(): ProjectInfo[] {
   }
 
   return projects;
+}
+
+// =============================================================================
+// Configuration Migration (v1.4.3+)
+// =============================================================================
+
+/**
+ * Migrate old zplc.json format to v1.4.3 unified format.
+ * Handles backwards compatibility for:
+ * - interval -> interval_ms
+ * - watchdog -> watchdog_ms  
+ * - file -> programs[]
+ * - type -> trigger
+ */
+function migrateZPLCConfig(config: ZPLCConfig): ZPLCConfig {
+  const migrated = { ...config };
+
+  // Migrate tasks
+  if (migrated.tasks) {
+    migrated.tasks = migrated.tasks.map((task: any) => {
+      const migratedTask = { ...task };
+
+      // interval -> interval_ms
+      if (task.interval !== undefined && task.interval_ms === undefined) {
+        migratedTask.interval_ms = task.interval;
+        delete migratedTask.interval;
+        console.warn(`[ZPLC Migration] Task "${task.name}": 'interval' is deprecated, use 'interval_ms'`);
+      }
+
+      // watchdog -> watchdog_ms
+      if (task.watchdog !== undefined && task.watchdog_ms === undefined) {
+        migratedTask.watchdog_ms = task.watchdog;
+        delete migratedTask.watchdog;
+        console.warn(`[ZPLC Migration] Task "${task.name}": 'watchdog' is deprecated, use 'watchdog_ms'`);
+      }
+
+      // file -> programs[]
+      if (task.file !== undefined && task.programs === undefined) {
+        migratedTask.programs = [task.file];
+        delete migratedTask.file;
+        console.warn(`[ZPLC Migration] Task "${task.name}": 'file' is deprecated, use 'programs[]'`);
+      }
+
+      // type -> trigger (lowercase)
+      if (task.type !== undefined && task.trigger === undefined) {
+        migratedTask.trigger = task.type.toLowerCase();
+        delete migratedTask.type;
+        console.warn(`[ZPLC Migration] Task "${task.name}": 'type' is deprecated, use 'trigger'`);
+      }
+
+      return migratedTask;
+    });
+  }
+
+  return migrated;
 }
 
 // =============================================================================
@@ -100,7 +155,8 @@ export function loadProject(projectId: string): LoadedProject | null {
   }
 
   try {
-    const zplcConfig = JSON.parse(configContent) as ZPLCConfig;
+    const rawConfig = JSON.parse(configContent) as ZPLCConfig;
+    const zplcConfig = migrateZPLCConfig(rawConfig);
     const files = loadProjectFiles(projectId);
     const config = zplcConfigToProjectConfig(zplcConfig);
 
@@ -164,9 +220,10 @@ function zplcConfigToProjectConfig(config: ZPLCConfig): ProjectConfig {
   return {
     name: config.name,
     taskMode: firstTask?.trigger === 'cyclic' ? 'cyclic' : 'freewheeling',
-    cycleTimeMs: firstTask?.interval || 10,
-    priority: firstTask?.priority || 1,
-    watchdogMs: firstTask?.watchdog || 100,
+    // Use unified field names (v1.4.3+), with fallback for compatibility
+    cycleTimeMs: (firstTask as any)?.interval_ms ?? (firstTask as any)?.interval ?? 10,
+    priority: firstTask?.priority ?? 1,
+    watchdogMs: (firstTask as any)?.watchdog_ms ?? (firstTask as any)?.watchdog ?? 100,
     startPOU: firstProgram,
   };
 }
@@ -204,7 +261,7 @@ export function getFileContent(projectId: string, filename: string): string | nu
   if (projectSourceModules[srcPath]) {
     return projectSourceModules[srcPath];
   }
-  
+
   // Fallback: try without src/ (for backwards compatibility)
   const directPath = `/projects/${projectId}/${filename}`;
   return projectSourceModules[directPath] || null;

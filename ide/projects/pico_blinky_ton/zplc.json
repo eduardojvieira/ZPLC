@@ -1,5 +1,5 @@
 {
-  "$schema": "../schemas/zplc.schema.json",
+  "$schema": "../../zplc.schema.json",
   "name": "Pico Blinky TON",
   "version": "1.0.0",
   "description": "Raspberry Pi Pico LED blink demos - counter, BLINK FB, and TON timer versions",
@@ -11,8 +11,7 @@
   },
   "compiler": {
     "optimization": "speed",
-    "debug": true,
-    "warnings": "all"
+    "debug": true
   },
   "io": {
     "inputs": [],
@@ -30,8 +29,9 @@
     {
       "name": "MainTask",
       "trigger": "cyclic",
-      "interval": 10,
+      "interval_ms": 10,
       "priority": 1,
+      "watchdog_ms": 100,
       "programs": [
         "main_blink.st"
       ]

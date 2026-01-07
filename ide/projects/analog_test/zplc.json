@@ -1,20 +1,46 @@
 {
+    "$schema": "../../zplc.schema.json",
     "name": "Analog Test",
     "version": "1.0.0",
+    "description": "Test project for analog I/O (ADC/DAC) functionality",
+    "target": {
+        "board": "rpi_pico",
+        "cpu": "rp2040",
+        "clock_mhz": 125
+    },
+    "compiler": {
+        "optimization": "size",
+        "debug": true
+    },
+    "io": {
+        "inputs": [],
+        "outputs": [],
+        "analog": {
+            "adc": [
+                {
+                    "name": "AnalogInput",
+                    "address": "%IW0",
+                    "channel": 0,
+                    "bits": 12,
+                    "description": "ADC Channel 0 (GPIO26)"
+                }
+            ],
+            "dac": []
+        }
+    },
     "tasks": [
         {
             "name": "MainTask",
             "trigger": "cyclic",
-            "interval": 100,
+            "interval_ms": 100,
             "priority": 1,
-            "watchdog": 500,
+            "watchdog_ms": 500,
             "programs": [
-                "main"
+                "main.st"
             ]
         }
     ],
-    "startPOU": "main",
-    "target": {
-        "board": "rpi_pico"
+    "build": {
+        "outDir": "build"
     }
 }
