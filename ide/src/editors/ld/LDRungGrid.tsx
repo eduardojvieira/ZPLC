@@ -25,7 +25,7 @@ import {
   getBranchesAtCell,
   type LDBranch,
 } from '../../models/ld';
-import LDElement, { CELL_WIDTH, CELL_HEIGHT, WIRE_Y, COLORS } from './LDElement';
+import LDElement, { CELL_WIDTH, CELL_HEIGHT, WIRE_Y, COLORS, type DebugValuesMap } from './LDElement';
 import { parseLDDropData, DRAG_MIME_TYPE } from './LDToolbox';
 
 // =============================================================================
@@ -49,6 +49,8 @@ interface LDRungGridProps {
   readOnly?: boolean;
   /** Map of variable names to their energized (TRUE) state for power flow visualization */
   energizedVariables?: Map<string, boolean>;
+  /** Full debug values map for rich value display on elements */
+  debugValues?: DebugValuesMap;
 }
 
 // =============================================================================
@@ -468,6 +470,7 @@ export default function LDRungGrid({
   selectedElementId,
   readOnly = false,
   energizedVariables,
+  debugValues,
 }: LDRungGridProps) {
   const [hoverCell, setHoverCell] = useState<{ col: number; row: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -1028,6 +1031,7 @@ export default function LDRungGrid({
                       y={rowIdx}
                       selected={cell.element.id === selectedElementId}
                       energized={isElementEnergized(cell.element)}
+                      debugValues={debugValues}
                       onClick={() => handleElementClick(cell.element!)}
                       draggable={!readOnly}
                       onDragStart={handleElementDragStart}

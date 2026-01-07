@@ -180,6 +180,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
   };
 
   // Extract all variable names from the model for debug value lookup
+  // This includes FB port paths for rich value display
   const allVariables = useMemo(() => {
     const vars: string[] = [];
     for (const rung of normalizedModel.rungs) {
@@ -192,9 +193,33 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
           if (el.variable) {
             vars.push(el.variable);
           }
-          // Function blocks: also get Q output for energized state
-          if (el.instance) {
-            vars.push(`${el.instance}.Q`);
+          // Function blocks: get ALL output ports for display
+          if (el.instance && el.fbType) {
+            // Add common output ports based on FB type
+            switch (el.fbType) {
+              case 'TON':
+              case 'TOF':
+              case 'TP':
+                vars.push(`${el.instance}.Q`);
+                vars.push(`${el.instance}.ET`);
+                break;
+              case 'CTU':
+              case 'CTD':
+                vars.push(`${el.instance}.Q`);
+                vars.push(`${el.instance}.CV`);
+                break;
+              case 'CTUD':
+                vars.push(`${el.instance}.QU`);
+                vars.push(`${el.instance}.QD`);
+                vars.push(`${el.instance}.CV`);
+                break;
+              case 'R_TRIG':
+              case 'F_TRIG':
+                vars.push(`${el.instance}.Q`);
+                break;
+              default:
+                vars.push(`${el.instance}.Q`);
+            }
           }
         }
       }
@@ -433,6 +458,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                     selectedElementId={selectedRungId === rung.id ? selectedElement?.id : null}
                     readOnly={readOnly}
                     energizedVariables={debugMode !== 'none' ? energizedVariables : undefined}
+                    debugValues={debugMode !== 'none' ? debugValues : undefined}
                   />
 
                   {/* Rung controls */}
