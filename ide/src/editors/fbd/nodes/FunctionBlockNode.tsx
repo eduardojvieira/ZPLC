@@ -5,13 +5,14 @@
  * Industrial-grade styling with input/output handles.
  * 
  * Supports:
- * - Live value display when debugging
+ * - Live value display when debugging with enhanced visibility
  * - Context menu for Instance Monitor
+ * - Visual feedback for active outputs
  */
 
 import { memo, useState, useCallback } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { Eye, MoreVertical } from 'lucide-react';
+import { Eye, MoreVertical, Activity } from 'lucide-react';
 import { getDefaultPorts, isFunctionBlock } from '../../../models/fbd';
 import NodeComment from './NodeComment';
 
@@ -28,23 +29,44 @@ interface FunctionBlockData {
 }
 
 /**
- * Format a live value for inline display
+ * Format a live value for inline display with enhanced formatting
  */
 function formatLiveValue(value: unknown, type: string): string {
-  if (value === undefined || value === null) return '';
+  if (value === undefined || value === null) return '—';
   
   if (type === 'BOOL') {
-    return value ? '1' : '0';
+    return value ? 'TRUE' : 'FALSE';
   }
   if (type === 'TIME') {
     const ms = typeof value === 'number' ? value : 0;
+    if (ms >= 60000) {
+      const mins = Math.floor(ms / 60000);
+      const secs = ((ms % 60000) / 1000).toFixed(1);
+      return `${mins}m${secs}s`;
+    }
     if (ms >= 1000) return `${(ms / 1000).toFixed(1)}s`;
     return `${ms}ms`;
   }
   if (typeof value === 'number') {
-    return value.toString();
+    // Format integers without decimals, floats with 2 decimals
+    return Number.isInteger(value) ? value.toString() : value.toFixed(2);
   }
   return String(value);
+}
+
+/**
+ * Get CSS class for value display based on type and value
+ */
+function getValueClass(value: unknown, type: string): string {
+  if (value === undefined || value === null) return 'text-slate-500';
+  
+  if (type === 'BOOL') {
+    return value ? 'text-green-400 font-bold' : 'text-red-400';
+  }
+  if (type === 'TIME') {
+    return 'text-amber-400';
+  }
+  return 'text-cyan-400';
 }
 
 const FunctionBlockNode = memo(({ id, data, selected }: NodeProps) => {
@@ -82,36 +104,64 @@ const FunctionBlockNode = memo(({ id, data, selected }: NodeProps) => {
     return 'bg-slate-600';
   };
 
+  // Width needs to be larger when debug is active to show values
+  const baseWidth = debugActive ? 160 : 120;
   const maxPorts = Math.max(ports.inputs.length, ports.outputs.length);
-  const portHeight = 24;
+  const portHeight = debugActive ? 28 : 24;  // More space for value display
   const headerHeight = 32;
   const bodyHeight = Math.max(maxPorts * portHeight + 16, 60);
 
-  // Get live value for a port
-  const getPortValue = (portName: string): string => {
-    if (!debugActive || !liveValues || !instanceName) return '';
+  // Get live value and metadata for a port
+  const getPortValue = (portName: string): { display: string; raw: unknown; type: string } => {
+    const port = [...ports.inputs, ...ports.outputs].find(p => p.name === portName);
+    const portType = port?.type || 'INT';
+    
+    if (!debugActive || !liveValues || !instanceName) {
+      return { display: '', raw: undefined, type: portType };
+    }
     const key = `${instanceName}.${portName}`;
     const value = liveValues.get(key);
-    const port = [...ports.inputs, ...ports.outputs].find(p => p.name === portName);
-    return formatLiveValue(value, port?.type || 'INT');
+    return { 
+      display: formatLiveValue(value, portType), 
+      raw: value, 
+      type: portType 
+    };
   };
+  
+  // Check if any output is TRUE (for visual feedback)
+  const hasActiveOutput = debugActive && instanceName && liveValues && ports.outputs.some(port => {
+    const key = `${instanceName}.${port.name}`;
+    const value = liveValues.get(key);
+    return port.type === 'BOOL' && !!value;
+  });
 
   return (
     <div className="flex flex-col items-center relative">
       <div
         className={`
-          min-w-[120px] rounded border-2 shadow-lg
+          rounded border-2 shadow-lg transition-all duration-200
           ${selected 
             ? 'border-blue-400 ring-2 ring-blue-400/50' 
-            : 'border-slate-500'
+            : hasActiveOutput
+              ? 'border-green-500 ring-2 ring-green-500/30'
+              : 'border-slate-500'
           }
           bg-slate-800
         `}
+        style={{ minWidth: baseWidth }}
         title={comment}
         onContextMenu={handleContextMenu}
       >
         {/* Header with type name */}
-        <div className={`${getHeaderColor()} px-3 py-1.5 rounded-t text-center relative`}>
+        <div className={`${getHeaderColor()} px-3 py-1.5 rounded-t text-center relative flex items-center justify-center gap-2`}>
+          {/* Debug indicator */}
+          {debugActive && (
+            <Activity 
+              size={12} 
+              className={`absolute left-2 ${hasActiveOutput ? 'text-green-300 animate-pulse' : 'text-white/50'}`}
+            />
+          )}
+          
           <span className="text-white font-bold text-sm tracking-wide">
             {type}
           </span>
@@ -129,15 +179,16 @@ const FunctionBlockNode = memo(({ id, data, selected }: NodeProps) => {
 
         {/* Body with ports */}
         <div 
-          className="relative px-2 py-2 flex justify-between"
+          className="relative px-2 py-2 flex justify-between gap-2"
           style={{ minHeight: bodyHeight }}
         >
           {/* Input ports (left side) */}
           <div className="flex flex-col gap-1">
             {ports.inputs.map((port, idx) => {
-              const liveVal = getPortValue(port.name);
+              const { display, raw, type: portType } = getPortValue(port.name);
+              const valueClass = getValueClass(raw, portType);
               return (
-                <div key={port.name} className="flex items-center gap-1 h-6">
+                <div key={port.name} className="flex items-center gap-1 relative" style={{ height: portHeight }}>
                   <Handle
                     type="target"
                     position={Position.Left}
@@ -148,13 +199,9 @@ const FunctionBlockNode = memo(({ id, data, selected }: NodeProps) => {
                   <span className="text-xs text-slate-300 font-mono pl-3">
                     {port.name}
                   </span>
-                  {debugActive && liveVal && (
-                    <span className={`text-[10px] font-mono ${
-                      port.type === 'BOOL' 
-                        ? (liveVal === '1' ? 'text-green-400' : 'text-red-400')
-                        : 'text-cyan-400'
-                    }`}>
-                      {liveVal}
+                  {debugActive && display && (
+                    <span className={`text-[10px] font-mono ml-1 px-1 py-0.5 rounded bg-slate-900/50 ${valueClass}`}>
+                      {display}
                     </span>
                   )}
                 </div>
@@ -165,16 +212,13 @@ const FunctionBlockNode = memo(({ id, data, selected }: NodeProps) => {
           {/* Output ports (right side) */}
           <div className="flex flex-col gap-1 items-end">
             {ports.outputs.map((port, idx) => {
-              const liveVal = getPortValue(port.name);
+              const { display, raw, type: portType } = getPortValue(port.name);
+              const valueClass = getValueClass(raw, portType);
               return (
-                <div key={port.name} className="flex items-center gap-1 h-6">
-                  {debugActive && liveVal && (
-                    <span className={`text-[10px] font-mono ${
-                      port.type === 'BOOL' 
-                        ? (liveVal === '1' ? 'text-green-400' : 'text-red-400')
-                        : 'text-cyan-400'
-                    }`}>
-                      {liveVal}
+                <div key={port.name} className="flex items-center gap-1 relative" style={{ height: portHeight }}>
+                  {debugActive && display && (
+                    <span className={`text-[10px] font-mono mr-1 px-1 py-0.5 rounded bg-slate-900/50 ${valueClass}`}>
+                      {display}
                     </span>
                   )}
                   <span className="text-xs text-slate-300 font-mono pr-3">
@@ -184,7 +228,11 @@ const FunctionBlockNode = memo(({ id, data, selected }: NodeProps) => {
                     type="source"
                     position={Position.Right}
                     id={port.name}
-                    className="!w-3 !h-3 !bg-green-400 !border-2 !border-green-600"
+                    className={`!w-3 !h-3 !border-2 ${
+                      debugActive && raw && portType === 'BOOL'
+                        ? '!bg-green-400 !border-green-600'
+                        : '!bg-green-400 !border-green-600'
+                    }`}
                     style={{ top: headerHeight + 12 + idx * portHeight }}
                   />
                 </div>
@@ -200,7 +248,7 @@ const FunctionBlockNode = memo(({ id, data, selected }: NodeProps) => {
               {instanceName}
             </span>
             {debugActive && (
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+              <span className={`w-2 h-2 rounded-full ${hasActiveOutput ? 'bg-green-500' : 'bg-slate-500'} ${hasActiveOutput ? 'animate-pulse' : ''}`} />
             )}
           </div>
         )}
