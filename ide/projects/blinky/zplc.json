@@ -1,16 +1,24 @@
 {
-  "name": "blinky",
+  "$schema": "../../zplc.schema.json",
+  "name": "Blinky",
   "version": "1.0.0",
+  "description": "Simple LED blinker using Ladder Diagram",
+  "target": {
+    "board": "posix"
+  },
   "tasks": [
     {
       "name": "MainTask",
       "trigger": "cyclic",
-      "interval": 10,
+      "interval_ms": 10,
       "priority": 1,
-      "watchdog": 100,
+      "watchdog_ms": 100,
       "programs": [
         "main.ld"
       ]
     }
-  ]
+  ],
+  "build": {
+    "outDir": "build"
+  }
 }

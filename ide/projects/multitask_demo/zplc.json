@@ -1,21 +1,18 @@
 {
+  "$schema": "../../zplc.schema.json",
   "name": "MultiTask Demo",
   "version": "1.0.0",
   "description": "Demonstrates multi-task scheduling with fast and slow tasks",
   "author": "ZPLC Team",
-
   "target": {
     "board": "rpi_pico",
     "cpu": "rp2040",
     "clock_mhz": 125
   },
-
   "compiler": {
     "optimization": "size",
-    "debug": true,
-    "warnings": "all"
+    "debug": true
   },
-
   "io": {
     "inputs": [
       {
@@ -40,26 +37,28 @@
       }
     ]
   },
-
   "tasks": [
     {
       "name": "FastTask",
       "trigger": "cyclic",
-      "interval": 10,
+      "interval_ms": 10,
       "priority": 0,
-      "watchdog": 50,
-      "programs": ["FastBlink.st"]
+      "watchdog_ms": 50,
+      "programs": [
+        "FastBlink.st"
+      ]
     },
     {
       "name": "SlowTask",
       "trigger": "cyclic",
-      "interval": 100,
+      "interval_ms": 100,
       "priority": 2,
-      "watchdog": 500,
-      "programs": ["SlowBlink.st"]
+      "watchdog_ms": 500,
+      "programs": [
+        "SlowBlink.st"
+      ]
     }
   ],
-
   "build": {
     "outDir": "build"
   }

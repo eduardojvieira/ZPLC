@@ -1,15 +1,28 @@
 {
+  "$schema": "../../zplc.schema.json",
   "name": "Kitchen Sink Test",
   "version": "1.0.0",
   "description": "Comprehensive test project using ALL standard library FBs and Functions",
-  "target": "posix",
+  "target": {
+    "board": "posix"
+  },
+  "compiler": {
+    "optimization": "none",
+    "debug": true
+  },
   "tasks": [
     {
       "name": "MainTask",
-      "file": "main.st",
-      "type": "CYCLIC",
+      "trigger": "cyclic",
       "interval_ms": 100,
-      "priority": 1
+      "priority": 1,
+      "watchdog_ms": 500,
+      "programs": [
+        "main.st"
+      ]
     }
-  ]
+  ],
+  "build": {
+    "outDir": "build"
+  }
 }

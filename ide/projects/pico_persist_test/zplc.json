@@ -1,52 +1,52 @@
 {
+  "$schema": "../../zplc.schema.json",
   "name": "Pico Persistence Test",
   "version": "1.0.0",
   "description": "Tests NVS persistence with multitask scheduling on RPi Pico",
   "author": "ZPLC Team",
-
   "target": {
     "board": "rpi_pico",
     "cpu": "rp2040",
     "clock_mhz": 125
   },
-
   "compiler": {
     "optimization": "size",
-    "debug": true,
-    "warnings": "all"
+    "debug": true
   },
-
   "io": {
     "inputs": [],
     "outputs": [
       {
         "name": "LED_ONBOARD",
         "address": "%Q0.0",
-        "description": "Onboard LED (GPIO25)",
-        "pin": 25
+        "type": "BOOL",
+        "pin": 25,
+        "description": "Onboard LED (GPIO25)"
       }
     ]
   },
-
   "tasks": [
     {
       "name": "FastCounter",
       "trigger": "cyclic",
-      "interval": 10,
+      "interval_ms": 10,
       "priority": 0,
-      "watchdog": 50,
-      "programs": ["FastCounter.st"]
+      "watchdog_ms": 50,
+      "programs": [
+        "FastCounter.st"
+      ]
     },
     {
       "name": "SlowBlink",
       "trigger": "cyclic",
-      "interval": 100,
+      "interval_ms": 100,
       "priority": 2,
-      "watchdog": 500,
-      "programs": ["SlowBlink.st"]
+      "watchdog_ms": 500,
+      "programs": [
+        "SlowBlink.st"
+      ]
     }
   ],
-
   "build": {
     "outDir": "build"
   }

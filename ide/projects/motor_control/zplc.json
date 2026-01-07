@@ -1,17 +1,24 @@
 {
-  "name": "motor_control",
+  "$schema": "../../zplc.schema.json",
+  "name": "Motor Control",
   "version": "1.0.0",
   "description": "Motor start/stop circuit with seal-in logic",
+  "target": {
+    "board": "posix"
+  },
   "tasks": [
     {
       "name": "MainTask",
       "trigger": "cyclic",
-      "interval": 10,
+      "interval_ms": 10,
       "priority": 1,
-      "watchdog": 100,
+      "watchdog_ms": 100,
       "programs": [
         "main.ld"
       ]
     }
-  ]
+  ],
+  "build": {
+    "outDir": "build"
+  }
 }
