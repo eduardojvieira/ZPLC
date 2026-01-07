@@ -44,6 +44,7 @@ import type {
     ArrayDimension,
     ArrayAccess,
     ArrayLiteral,
+    FunctionDecl,
 } from './ast.ts';
 
 /**
@@ -135,22 +136,26 @@ class Parser {
     // ========================================================================
 
     /**
-     * compilation_unit := program*
+     * compilation_unit := (function | program)*
      */
     parseCompilationUnit(): CompilationUnit {
+        const functions: FunctionDecl[] = [];
         const programs: Program[] = [];
         const start = this.current();
 
         while (!this.isAtEnd()) {
-            if (this.check(TokenType.PROGRAM)) {
+            if (this.check(TokenType.FUNCTION)) {
+                functions.push(this.parseFunctionDecl());
+            } else if (this.check(TokenType.PROGRAM)) {
                 programs.push(this.parseProgram());
             } else {
-                this.error(`Expected PROGRAM, got ${this.current().type}`);
+                this.error(`Expected FUNCTION or PROGRAM, got ${this.current().type}`);
             }
         }
 
         return {
             kind: 'CompilationUnit',
+            functions,
             programs,
             line: start.line,
             column: start.column,
@@ -181,6 +186,53 @@ class Parser {
             name: nameToken.value,
             varBlocks,
             statements,
+            line: start.line,
+            column: start.column,
+        };
+    }
+
+    /**
+     * function_decl := FUNCTION identifier COLON type_name var_block* statement* END_FUNCTION
+     */
+    private parseFunctionDecl(): FunctionDecl {
+        const start = this.expect(TokenType.FUNCTION, 'Expected FUNCTION');
+        const nameToken = this.expect(TokenType.IDENTIFIER, 'Expected function name');
+        this.expect(TokenType.COLON, 'Expected : after function name');
+        const returnType = this.parseTypeName();
+
+        // Return type must be elementary, not array
+        if (typeof returnType !== 'string') {
+            this.error('Function return type must be an elementary type, not ARRAY');
+        }
+
+        const inputs: VarDecl[] = [];
+        const locals: VarDecl[] = [];
+
+        // Parse VAR_INPUT and VAR blocks
+        while (this.check(TokenType.VAR) || this.check(TokenType.VAR_INPUT)) {
+            const block = this.parseVarBlock();
+            if (block.section === VarSection.VAR_INPUT) {
+                inputs.push(...block.variables);
+            } else {
+                locals.push(...block.variables);
+            }
+        }
+
+        // Parse body statements
+        const body: Statement[] = [];
+        while (!this.check(TokenType.END_FUNCTION) && !this.isAtEnd()) {
+            body.push(this.parseStatement());
+        }
+
+        this.expect(TokenType.END_FUNCTION, 'Expected END_FUNCTION');
+
+        return {
+            kind: 'FunctionDecl',
+            name: nameToken.value,
+            returnType: returnType as DataTypeValue,
+            inputs,
+            locals,
+            body,
             line: start.line,
             column: start.column,
         };
@@ -273,10 +325,18 @@ class Parser {
 
         const curr = this.current();
 
+        // Elementary types
         if (this.match(TokenType.BOOL)) return DataType.BOOL;
+        if (this.match(TokenType.SINT)) return DataType.SINT;
+        if (this.match(TokenType.USINT)) return DataType.USINT;
         if (this.match(TokenType.INT)) return DataType.INT;
+        if (this.match(TokenType.UINT)) return DataType.UINT;
         if (this.match(TokenType.DINT)) return DataType.DINT;
+        if (this.match(TokenType.UDINT)) return DataType.UDINT;
+        if (this.match(TokenType.LINT)) return DataType.LINT;
+        if (this.match(TokenType.ULINT)) return DataType.ULINT;
         if (this.match(TokenType.REAL)) return DataType.REAL;
+        if (this.match(TokenType.LREAL)) return DataType.LREAL;
         if (this.match(TokenType.TIME)) return DataType.TIME;
         if (this.match(TokenType.STRING)) return DataType.STRING;
         // Timers
