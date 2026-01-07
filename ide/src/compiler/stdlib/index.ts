@@ -263,5 +263,5 @@ initRegistry();
 // Exports
 // ============================================================================
 
-export type { FunctionBlockDef, FunctionDef, CodeGenContext, MemberDef } from './types.ts';
+export type { FunctionBlockDef, FunctionDef, CodeGenContext, MemberDef, MemberSize } from './types.ts';
 export { formatAddr, getSizeSuffix, inputMember, outputMember, internalMember } from './types.ts';

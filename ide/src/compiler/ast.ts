@@ -76,74 +76,69 @@ export const DataType = {
 export type DataTypeValue = typeof DataType[keyof typeof DataType];
 
 /**
- * Get size in bytes for a data type.
+ * Represents any valid data type in ZPLC, including elementary types, array types,
+ * and user-defined types (structs).
  */
-export function getDataTypeSize(type: DataTypeValue): number {
-    switch (type) {
-        case DataType.BOOL:
-            return 1;
-        case DataType.SINT:
-        case DataType.USINT:
-            return 1;
-        case DataType.INT:
-        case DataType.UINT:
-            return 2;
-        case DataType.DINT:
-        case DataType.UDINT:
-        case DataType.REAL:
-        case DataType.TIME:
-            return 4;
-        case DataType.LINT:
-        case DataType.ULINT:
-        case DataType.LREAL:
-            return 8;
-        // STRING: 4 bytes header + 80 chars + 1 null = 85 bytes (default STRING[80])
-        case DataType.STRING:
-            return 85;
-        // Timer FBs: IN(1) + Q(1) + PT(4) + ET(4) + _start(4) + _running(1) + pad = 16
-        case DataType.TON:
-        case DataType.TOF:
-        case DataType.TP:
-            return 16;
-        // Edge detectors: CLK(1) + Q(1) + _prev(1) + pad = 4
-        case DataType.R_TRIG:
-        case DataType.F_TRIG:
-            return 4;
-        // Bistables: S(1) + R(1) + Q1(1) + pad = 4
-        case DataType.RS:
-        case DataType.SR:
-            return 4;
-        // Counter Up/Down: CU/CD(1) + R(1) + Q(1) + pad(1) + CV(4) = 8
-        case DataType.CTU:
-        case DataType.CTD:
-            return 8;
-        // Counter Up/Down combined: CU(1) + CD(1) + R(1) + LD(1) + QU(1) + QD(1) + pad(2) + CV(4) = 12
-        case DataType.CTUD:
-            return 12;
-        // Generators: Q(1) + pad(3) + various timing vars = 16
-        case DataType.BLINK:
-        case DataType.PWM:
-        case DataType.PULSE:
-            return 16;
-        // Process Control blocks
-        case DataType.HYSTERESIS:
-        case DataType.DEADBAND:
-        case DataType.LAG_FILTER:
-        case DataType.RAMP_REAL:
-        case DataType.INTEGRAL:
-        case DataType.DERIVATIVE:
-            return 16;
-        case DataType.PID_Compact:
-            return 48;
-        // System Buffers: FIFO/LIFO have variable size based on buffer
-        // Default allocation: 64 bytes (header + 8 items * 4 bytes)
-        case DataType.FIFO:
-            return 64;
-        case DataType.LIFO:
-            return 56;
-        default:
-            return 4; // Default to 32-bit
+export type STDataType = DataTypeValue | ArrayType | string; // string for user-defined TYPES (STRUCTs)
+
+/**
+ * Get the size in bytes of a data type.
+ */
+export function getDataTypeSize(type: STDataType): number {
+    if (typeof type === 'string') {
+        // Elementary types
+        switch (type) {
+            case 'BOOL':
+            case 'SINT':
+            case 'USINT':
+            case 'BYTE':
+                return 1;
+            case 'INT':
+            case 'UINT':
+            case 'WORD':
+                return 2;
+            case 'DINT':
+            case 'UDINT':
+            case 'DWORD':
+            case 'REAL':
+            case 'TIME':
+                return 4;
+            case 'LINT':
+            case 'ULINT':
+            case 'LWORD':
+            case 'LREAL':
+                return 8;
+            case 'STRING':
+                return 85; // Default max length (84 chars + null)
+
+            // Standard FBs (for completeness/compatibility)
+            case 'TON':
+            case 'TOF':
+            case 'TP':
+                return 16;
+            case 'R_TRIG':
+            case 'F_TRIG':
+            case 'RS':
+            case 'SR':
+                return 4;
+            case 'CTU':
+            case 'CTD':
+                return 8;
+            case 'CTUD':
+                return 12;
+
+            default:
+                // This is likely a user-defined type (Struct or FB)
+                // The SymbolTable will override this with the actual layout size
+                return 0;
+        }
     }
+
+    if (isArrayType(type)) {
+        return getArrayTotalSize(type);
+    }
+
+    return 0;
 }
 
 // ============================================================================
@@ -196,9 +191,15 @@ export function getArrayTotalSize(arrayType: ArrayType): number {
 /**
  * Type guard to check if a type is an ArrayType.
  */
-export function isArrayType(type: DataTypeValue | ArrayType): type is ArrayType {
+export function isArrayType(type: STDataType): type is ArrayType {
     return typeof type === 'object' && type !== null && 'kind' in type && type.kind === 'ArrayType';
 }
+
+/**
+ * Represents any valid data type in ZPLC, including elementary types, array types,
+ * and user-defined types (structs).
+ */
+export type DataType = DataTypeValue | ArrayType | string; // string for user-defined TYPES (STRUCTs)
 
 // ============================================================================
 // Variable Declarations
@@ -214,6 +215,7 @@ export const VarSection = {
     VAR_IN_OUT: 'VAR_IN_OUT',
     VAR_TEMP: 'VAR_TEMP',
     VAR_RETAIN: 'VAR_RETAIN',
+    VAR_GLOBAL: 'VAR_GLOBAL',
 } as const;
 
 export type VarSectionValue = typeof VarSection[keyof typeof VarSection];
@@ -309,7 +311,7 @@ export function parseIOAddress(addr: string): IOAddress {
 export interface VarDecl extends ASTNode {
     kind: 'VarDecl';
     name: string;
-    dataType: DataTypeValue | ArrayType;  // Can be elementary type or array type
+    dataType: STDataType;  // Can be elementary type or array type or user-defined type
     initialValue: Expression | ArrayLiteral | null;
     ioAddress: IOAddress | null;  // For I/O-mapped variables
     section: VarSectionValue;
@@ -343,7 +345,8 @@ export type Expression =
     | UnaryExpr
     | BinaryExpr
     | FBCall
-    | FunctionCall;
+    | FunctionCall
+    | ArrayLiteral;
 
 /**
  * Array access expression.
@@ -355,7 +358,7 @@ export type Expression =
  */
 export interface ArrayAccess extends ASTNode {
     kind: 'ArrayAccess';
-    array: Identifier;
+    array: Expression;  // Changed from Identifier to Expression for nested access
     indices: Expression[];  // 1-3 elements, must match array dimensions
 }
 
@@ -449,7 +452,7 @@ export interface Identifier extends ASTNode {
  */
 export interface MemberAccess extends ASTNode {
     kind: 'MemberAccess';
-    object: Identifier;
+    object: Expression;  // Changed from Identifier to Expression for nested access
     member: string;
 }
 
@@ -691,11 +694,23 @@ export interface Program extends ASTNode {
 // ============================================================================
 
 /**
+ * Structure declaration (TYPE ... STRUCT ... END_STRUCT ... END_TYPE).
+ */
+export interface StructDecl extends ASTNode {
+    kind: 'StructDecl';
+    name: string;
+    members: VarDecl[];
+}
+
+/**
  * A complete compilation unit (one .st file).
  */
 export interface CompilationUnit extends ASTNode {
     kind: 'CompilationUnit';
-    functions: FunctionDecl[];  // User-defined functions
+    globalVars: GlobalVarBlock[];   // NEW in v1.4.3
+    functions: FunctionDecl[];      // User-defined functions
+    functionBlocks: FunctionBlockDecl[]; // NEW in v1.4.3
+    typeDefinitions: StructDecl[];  // NEW for Sprint 4
     programs: Program[];
 }
 
@@ -721,4 +736,26 @@ export interface FunctionDecl extends ASTNode {
     inputs: VarDecl[];     // VAR_INPUT parameters
     locals: VarDecl[];     // VAR variables
     body: Statement[];
+}
+
+/**
+ * User-defined function block declaration.
+ */
+export interface FunctionBlockDecl extends ASTNode {
+    kind: 'FunctionBlockDecl';
+    name: string;
+    inputs: VarDecl[];     // VAR_INPUT
+    outputs: VarDecl[];    // VAR_OUTPUT
+    inouts: VarDecl[];     // VAR_IN_OUT
+    locals: VarDecl[];     // VAR
+    body: Statement[];
+}
+
+/**
+ * Global variable block.
+ */
+export interface GlobalVarBlock extends ASTNode {
+    kind: 'GlobalVarBlock';
+    variables: VarDecl[];
+    isConstant: boolean;
 }
