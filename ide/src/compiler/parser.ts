@@ -15,6 +15,7 @@ import type {
     Program,
     VarBlock,
     VarDecl,
+    Assignment,
     Statement,
     Expression,
     IfStatement,
@@ -29,7 +30,6 @@ import type {
     ReturnStatement,
     FBCallStatement,
     FBParameter,
-    Identifier,
     MemberAccess,
     BoolLiteral,
     IntLiteral,
@@ -39,12 +39,16 @@ import type {
     UnaryExpr,
     FunctionCall,
     DataTypeValue,
+    STDataType,
     VarSectionValue,
     ArrayType,
     ArrayDimension,
     ArrayAccess,
     ArrayLiteral,
     FunctionDecl,
+    FunctionBlockDecl,
+    GlobalVarBlock,
+    StructDecl,
 } from './ast.ts';
 
 /**
@@ -97,6 +101,10 @@ class Parser {
         return this.current().type === TokenType.EOF;
     }
 
+    private peek(offset = 1): Token {
+        return this.tokens[this.pos + offset] ?? { type: TokenType.EOF, value: '', line: 0, column: 0 };
+    }
+
     private check(type: TokenTypeValue): boolean {
         return this.current().type === type;
     }
@@ -139,24 +147,36 @@ class Parser {
      * compilation_unit := (function | program)*
      */
     parseCompilationUnit(): CompilationUnit {
+        const globalVars: GlobalVarBlock[] = [];
         const functions: FunctionDecl[] = [];
         const programs: Program[] = [];
+        const functionBlocks: FunctionBlockDecl[] = [];
+        const typeDefinitions: StructDecl[] = [];
         const start = this.current();
 
         while (!this.isAtEnd()) {
-            if (this.check(TokenType.FUNCTION)) {
+            if (this.check(TokenType.VAR_GLOBAL)) {
+                globalVars.push(this.parseGlobalVarBlock());
+            } else if (this.check(TokenType.FUNCTION)) {
                 functions.push(this.parseFunctionDecl());
+            } else if (this.check(TokenType.FUNCTION_BLOCK)) {
+                functionBlocks.push(this.parseFunctionBlockDecl());
             } else if (this.check(TokenType.PROGRAM)) {
                 programs.push(this.parseProgram());
+            } else if (this.check(TokenType.TYPE)) {
+                typeDefinitions.push(this.parseTypeDecl());
             } else {
-                this.error(`Expected FUNCTION or PROGRAM, got ${this.current().type}`);
+                this.error(`Expected VAR_GLOBAL, FUNCTION, FUNCTION_BLOCK, PROGRAM or TYPE, got ${this.current().type}`);
             }
         }
 
         return {
             kind: 'CompilationUnit',
+            globalVars,
             functions,
+            functionBlocks,
             programs,
+            typeDefinitions,
             line: start.line,
             column: start.column,
         };
@@ -186,6 +206,147 @@ class Parser {
             name: nameToken.value,
             varBlocks,
             statements,
+            line: start.line,
+            column: start.column,
+        };
+    }
+
+    /**
+     * function_block_decl := FUNCTION_BLOCK identifier var_block* statement* END_FUNCTION_BLOCK
+     */
+    private parseFunctionBlockDecl(): FunctionBlockDecl {
+        const start = this.expect(TokenType.FUNCTION_BLOCK, 'Expected FUNCTION_BLOCK');
+        const nameToken = this.expect(TokenType.IDENTIFIER, 'Expected function block name');
+
+        const inputs: VarDecl[] = [];
+        const outputs: VarDecl[] = [];
+        const inouts: VarDecl[] = [];
+        const locals: VarDecl[] = [];
+
+        // Parse variable blocks
+        while (
+            this.check(TokenType.VAR) ||
+            this.check(TokenType.VAR_INPUT) ||
+            this.check(TokenType.VAR_OUTPUT) ||
+            this.check(TokenType.VAR_IN_OUT)
+        ) {
+            const block = this.parseVarBlock();
+            switch (block.section) {
+                case VarSection.VAR_INPUT:
+                    inputs.push(...block.variables);
+                    break;
+                case VarSection.VAR_OUTPUT:
+                    outputs.push(...block.variables);
+                    break;
+                case VarSection.VAR_IN_OUT:
+                    inouts.push(...block.variables);
+                    break;
+                case VarSection.VAR:
+                    locals.push(...block.variables);
+                    break;
+            }
+        }
+
+        // Parse body statements
+        const body: Statement[] = [];
+        while (!this.check(TokenType.END_FUNCTION_BLOCK) && !this.isAtEnd()) {
+            body.push(this.parseStatement());
+        }
+
+        this.expect(TokenType.END_FUNCTION_BLOCK, 'Expected END_FUNCTION_BLOCK');
+
+        return {
+            kind: 'FunctionBlockDecl',
+            name: nameToken.value,
+            inputs,
+            outputs,
+            inouts,
+            locals,
+            body,
+            line: start.line,
+            column: start.column,
+        };
+    }
+
+    /**
+     * global_var_block := VAR_GLOBAL (CONSTANT)? var_decl* END_VAR
+     */
+    private parseTypeDecl(): StructDecl {
+        const start = this.expect(TokenType.TYPE, "Expected 'TYPE'");
+        const nameToken = this.expect(TokenType.IDENTIFIER, "Expected type name");
+
+        // Handle optional colon (TYPE MotorData : STRUCT)
+        if (this.match(TokenType.COLON)) {
+            // just skip
+        }
+
+        this.expect(TokenType.STRUCT, "Expected 'STRUCT'");
+
+        const members: VarDecl[] = [];
+        while (!this.check(TokenType.END_STRUCT) && !this.isAtEnd()) {
+            // Struct members look like variable declarations without VAR/END_VAR
+            // Speed : REAL;
+            const memberNames: string[] = [];
+            memberNames.push(this.expect(TokenType.IDENTIFIER, "Expected member name").value);
+            while (this.match(TokenType.COMMA)) {
+                memberNames.push(this.expect(TokenType.IDENTIFIER, "Expected member name").value);
+            }
+
+            this.expect(TokenType.COLON, "Expected ':' after member name");
+            const dataType = this.parseTypeName();
+
+            let initialValue: Expression | ArrayLiteral | null = null;
+            if (this.match(TokenType.ASSIGN)) {
+                initialValue = this.parseExpression() as any; // Cast for simplicity, valid for structs
+            }
+
+            this.expect(TokenType.SEMICOLON, "Expected ';' after member declaration");
+
+            for (const mName of memberNames) {
+                members.push({
+                    kind: 'VarDecl',
+                    name: mName,
+                    dataType,
+                    initialValue,
+                    ioAddress: null,
+                    section: 'VAR', // Struct members are implicitly VAR
+                    line: start.line,
+                    column: start.column,
+                });
+            }
+        }
+
+        this.expect(TokenType.END_STRUCT, "Expected 'END_STRUCT'");
+
+        // Optional semicolon after END_STRUCT
+        if (this.match(TokenType.SEMICOLON)) { }
+
+        this.expect(TokenType.END_TYPE, "Expected 'END_TYPE'");
+
+        return {
+            kind: 'StructDecl',
+            name: nameToken.value,
+            members,
+            line: start.line,
+            column: start.column,
+        };
+    }
+
+    private parseGlobalVarBlock(): GlobalVarBlock {
+        const start = this.expect(TokenType.VAR_GLOBAL, 'Expected VAR_GLOBAL');
+        const isConstant = this.match(TokenType.CONSTANT);
+
+        const variables: VarDecl[] = [];
+        while (!this.check(TokenType.END_VAR) && !this.isAtEnd()) {
+            variables.push(this.parseVarDecl(isConstant ? VarSection.VAR : VarSection.VAR_GLOBAL));
+        }
+
+        this.expect(TokenType.END_VAR, 'Expected END_VAR');
+
+        return {
+            kind: 'GlobalVarBlock',
+            isConstant,
+            variables,
             line: start.line,
             column: start.column,
         };
@@ -229,7 +390,7 @@ class Parser {
         return {
             kind: 'FunctionDecl',
             name: nameToken.value,
-            returnType: returnType as DataTypeValue,
+            returnType: returnType as any,
             inputs,
             locals,
             body,
@@ -251,8 +412,12 @@ class Parser {
             section = VarSection.VAR_OUTPUT;
         } else if (this.match(TokenType.VAR_INPUT)) {
             section = VarSection.VAR_INPUT;
+        } else if (this.match(TokenType.VAR_IN_OUT)) {
+            section = VarSection.VAR_IN_OUT;
+        } else if (this.match(TokenType.VAR_GLOBAL)) {
+            section = VarSection.VAR_GLOBAL;
         } else {
-            this.error('Expected VAR, VAR_OUTPUT, or VAR_INPUT');
+            this.error('Expected VAR, VAR_OUTPUT, VAR_INPUT, VAR_IN_OUT, or VAR_GLOBAL');
         }
 
         const variables: VarDecl[] = [];
@@ -317,13 +482,11 @@ class Parser {
     /**
      * type_name := BOOL | INT | DINT | REAL | TIME | TON | TOF | TP | ... | ARRAY [...] OF type_name
      */
-    private parseTypeName(): DataTypeValue | ArrayType {
+    private parseTypeName(): STDataType | ArrayType {
         // Check for ARRAY type
         if (this.check(TokenType.ARRAY)) {
             return this.parseArrayType();
         }
-
-        const curr = this.current();
 
         // Elementary types
         if (this.match(TokenType.BOOL)) return DataType.BOOL;
@@ -368,7 +531,13 @@ class Parser {
         if (this.match(TokenType.FIFO)) return DataType.FIFO;
         if (this.match(TokenType.LIFO)) return DataType.LIFO;
 
-        this.error(`Expected type name, got ${curr.type}`);
+        // User defined type (Struct or FB)
+        if (this.check(TokenType.IDENTIFIER)) {
+            const token = this.advance();
+            return token.value;
+        }
+
+        this.error(`Expected type name, got ${this.current().type}`);
     }
 
     /**
@@ -376,7 +545,7 @@ class Parser {
      * dimension := INTEGER '..' INTEGER
      */
     private parseArrayType(): ArrayType {
-        const start = this.expect(TokenType.ARRAY, 'Expected ARRAY');
+        this.expect(TokenType.ARRAY, 'Expected ARRAY');
         this.expect(TokenType.LBRACKET, 'Expected [ after ARRAY');
 
         const dimensions: ArrayDimension[] = [];
@@ -499,113 +668,32 @@ class Parser {
             this.error(`Expected statement, got ${this.current().type}`);
         }
 
-        const identToken = this.advance();
-        const start = identToken;
+        const startToken = this.current();
 
-        // Check what follows the identifier
-        if (this.check(TokenType.LPAREN)) {
-            // FB call: Timer(IN := TRUE, ...)
-            return this.parseFBCallStatement(identToken, start);
+        // Special case: FB call with ( )
+        if (this.peek().type === TokenType.LPAREN) {
+            const ident = this.advance();
+            return this.parseFBCallStatement(ident, startToken);
         }
 
-        if (this.check(TokenType.DOT)) {
-            // Member assignment: Timer.IN := value
-            this.advance(); // consume .
-            const memberToken = this.expect(TokenType.IDENTIFIER, 'Expected member name after .');
+        // Must be an assignment (possibly with nested access)
+        const target = this.parsePrimaryExpr();
 
-            this.expect(TokenType.ASSIGN, 'Expected := after member access');
+        if (this.match(TokenType.ASSIGN)) {
+            // Assignment: target := value;
             const value = this.parseExpression();
             this.expect(TokenType.SEMICOLON, 'Expected ; after assignment');
 
-            const target: MemberAccess = {
-                kind: 'MemberAccess',
-                object: { kind: 'Identifier', name: identToken.value, line: identToken.line, column: identToken.column },
-                member: memberToken.value,
-                line: identToken.line,
-                column: identToken.column,
-            };
-
             return {
                 kind: 'Assignment',
-                target,
+                target: target as any,
                 value,
-                line: start.line,
-                column: start.column,
-            };
+                line: startToken.line,
+                column: startToken.column,
+            } as Assignment;
         }
 
-        if (this.check(TokenType.LBRACKET)) {
-            // Array element assignment: arr[i] := value or arr[i, j] := value
-            return this.parseArrayAssignment(identToken, start);
-        }
-
-        if (this.check(TokenType.ASSIGN)) {
-            // Simple assignment: x := value
-            this.advance(); // consume :=
-            const value = this.parseExpression();
-            this.expect(TokenType.SEMICOLON, 'Expected ; after assignment');
-
-            const target: Identifier = {
-                kind: 'Identifier',
-                name: identToken.value,
-                line: identToken.line,
-                column: identToken.column,
-            };
-
-            return {
-                kind: 'Assignment',
-                target,
-                value,
-                line: start.line,
-                column: start.column,
-            };
-        }
-
-        this.error(`Unexpected token ${this.current().type} after identifier`);
-    }
-
-    /**
-     * array_assignment := identifier '[' expression (',' expression)* ']' ASSIGN expression SEMICOLON
-     */
-    private parseArrayAssignment(identToken: Token, start: Token): Statement {
-        this.expect(TokenType.LBRACKET, 'Expected [');
-
-        const indices: Expression[] = [];
-        indices.push(this.parseExpression());
-
-        while (this.match(TokenType.COMMA)) {
-            if (indices.length >= 3) {
-                this.error('Maximum 3 indices supported for array access');
-            }
-            indices.push(this.parseExpression());
-        }
-
-        this.expect(TokenType.RBRACKET, 'Expected ] after array indices');
-        this.expect(TokenType.ASSIGN, 'Expected := after array access');
-
-        const value = this.parseExpression();
-        this.expect(TokenType.SEMICOLON, 'Expected ; after assignment');
-
-        const target: ArrayAccess = {
-            kind: 'ArrayAccess',
-            array: {
-                kind: 'Identifier',
-                name: identToken.value,
-                line: identToken.line,
-                column: identToken.column,
-            },
-            indices,
-            line: identToken.line,
-            column: identToken.column,
-        };
-
-        return {
-            kind: 'Assignment',
-            target,
-            value,
-            line: start.line,
-            column: start.column,
-        };
+        this.error(`Expected := after assignment target, got ${this.current().type}`);
     }
 
     /**
@@ -1095,27 +1183,27 @@ class Parser {
      */
     private parseUnaryExpr(): Expression {
         if (this.match(TokenType.NOT)) {
-            const start = this.tokens[this.pos - 1];
+            const startToken = this.tokens[this.pos - 1];
             const operand = this.parseUnaryExpr();
             return {
                 kind: 'UnaryExpr',
                 operator: 'NOT',
                 operand,
-                line: start.line,
-                column: start.column,
+                line: startToken.line,
+                column: startToken.column,
             } as UnaryExpr;
         }
 
         // Unary minus
         if (this.match(TokenType.MINUS)) {
-            const start = this.tokens[this.pos - 1];
+            const startToken = this.tokens[this.pos - 1];
             const operand = this.parseUnaryExpr();
             return {
                 kind: 'UnaryExpr',
                 operator: 'NEG',
                 operand,
-                line: start.line,
-                column: start.column,
+                line: startToken.line,
+                column: startToken.column,
             } as UnaryExpr;
         }
 
@@ -1194,17 +1282,14 @@ class Parser {
             } as StringLiteral;
         }
 
-        // Identifier, member access, or function call
+        // Identifier, member access, array access, or function call
         if (this.match(TokenType.IDENTIFIER)) {
-            const ident: Identifier = {
-                kind: 'Identifier',
-                name: curr.value,
-                line: curr.line,
-                column: curr.column,
-            };
+            const startToken = curr;
 
             // Check for function call: IDENTIFIER(args)
-            if (this.match(TokenType.LPAREN)) {
+            // Function calls are currently only supported as top-level identifiers
+            if (this.check(TokenType.LPAREN)) {
+                this.advance(); // consume (
                 const args: Expression[] = [];
 
                 // Parse comma-separated arguments
@@ -1219,49 +1304,58 @@ class Parser {
 
                 return {
                     kind: 'FunctionCall',
-                    name: curr.value,
+                    name: startToken.value,
                     args,
-                    line: curr.line,
-                    column: curr.column,
+                    line: startToken.line,
+                    column: startToken.column,
                 } as FunctionCall;
             }
 
-            // Check for member access
-            if (this.match(TokenType.DOT)) {
-                const memberToken = this.expect(TokenType.IDENTIFIER, 'Expected member name after .');
-                return {
-                    kind: 'MemberAccess',
-                    object: ident,
-                    member: memberToken.value,
-                    line: curr.line,
-                    column: curr.column,
-                } as MemberAccess;
-            }
+            // Normal identifier (could be start of member/array access)
+            let expr: Expression = {
+                kind: 'Identifier',
+                name: startToken.value,
+                line: startToken.line,
+                column: startToken.column,
+            };
 
-            // Check for array access: IDENTIFIER[index]
-            if (this.match(TokenType.LBRACKET)) {
-                const indices: Expression[] = [];
-                indices.push(this.parseExpression());
-
-                while (this.match(TokenType.COMMA)) {
-                    if (indices.length >= 3) {
-                        this.error('Maximum 3 indices supported for array access');
-                    }
+            // Parse suffixes recursively (.member or [indices])
+            while (true) {
+                if (this.match(TokenType.DOT)) {
+                    const memberToken = this.expect(TokenType.IDENTIFIER, 'Expected member name after .');
+                    expr = {
+                        kind: 'MemberAccess',
+                        object: expr,
+                        member: memberToken.value,
+                        line: startToken.line,
+                        column: startToken.column,
+                    } as MemberAccess;
+                } else if (this.match(TokenType.LBRACKET)) {
+                    const indices: Expression[] = [];
                     indices.push(this.parseExpression());
+
+                    while (this.match(TokenType.COMMA)) {
+                        if (indices.length >= 3) {
+                            this.error('Maximum 3 indices supported for array access');
+                        }
+                        indices.push(this.parseExpression());
+                    }
+
+                    this.expect(TokenType.RBRACKET, 'Expected ] after array indices');
+
+                    expr = {
+                        kind: 'ArrayAccess',
+                        array: expr,
+                        indices,
+                        line: startToken.line,
+                        column: startToken.column,
+                    } as ArrayAccess;
+                } else {
+                    break;
                 }
-
-                this.expect(TokenType.RBRACKET, 'Expected ] after array indices');
-
-                return {
-                    kind: 'ArrayAccess',
-                    array: ident,
-                    indices,
-                    line: curr.line,
-                    column: curr.column,
-                } as ArrayAccess;
             }
 
-            return ident;
+            return expr;
         }
 
         // Parenthesized expression

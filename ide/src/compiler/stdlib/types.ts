@@ -7,7 +7,7 @@
  * standard library. These abstractions allow pluggable code generation.
  */
 
-import type { Expression, FBParameter } from '../ast.ts';
+import type { Expression, FBParameter, STDataType } from '../ast.ts';
 
 // ============================================================================
 // Member Types
@@ -16,7 +16,7 @@ import type { Expression, FBParameter } from '../ast.ts';
 /**
  * Data size for a member variable.
  */
-export type MemberSize = 1 | 2 | 4;
+export type MemberSize = 1 | 2 | 4 | 8;
 
 /**
  * Member variable definition for a function block.
@@ -34,6 +34,8 @@ export interface MemberDef {
     isOutput: boolean;
     /** Is this an internal (private) member? */
     isInternal: boolean;
+    /** Data type (optional for stdlib FBs if it's already implied by size, but useful for resolution) */
+    dataType?: STDataType;
 }
 
 // ============================================================================
@@ -121,22 +123,22 @@ export interface FunctionDef {
 /**
  * Create a MemberDef for an input parameter.
  */
-export function inputMember(name: string, size: MemberSize, offset: number): MemberDef {
-    return { name, size, offset, isInput: true, isOutput: false, isInternal: false };
+export function inputMember(name: string, size: MemberSize, offset: number, dataType?: STDataType): MemberDef {
+    return { name, size, offset, isInput: true, isOutput: false, isInternal: false, dataType };
 }
 
 /**
  * Create a MemberDef for an output parameter.
  */
-export function outputMember(name: string, size: MemberSize, offset: number): MemberDef {
-    return { name, size, offset, isInput: false, isOutput: true, isInternal: false };
+export function outputMember(name: string, size: MemberSize, offset: number, dataType?: STDataType): MemberDef {
+    return { name, size, offset, isInput: false, isOutput: true, isInternal: false, dataType };
 }
 
 /**
  * Create a MemberDef for an internal (private) variable.
  */
-export function internalMember(name: string, size: MemberSize, offset: number): MemberDef {
-    return { name, size, offset, isInput: false, isOutput: false, isInternal: true };
+export function internalMember(name: string, size: MemberSize, offset: number, dataType?: STDataType): MemberDef {
+    return { name, size, offset, isInput: false, isOutput: false, isInternal: true, dataType };
 }
 
 /**
@@ -147,6 +149,8 @@ export function getSizeSuffix(size: MemberSize): '8' | '16' | '32' {
         case 1: return '8';
         case 2: return '16';
         case 4: return '32';
+        case 8: return '32' as any; // Actually '64', but VM is mostly 32-bit for now
+        default: return '32';
     }
 }
 
