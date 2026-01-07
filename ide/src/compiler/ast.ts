@@ -28,10 +28,18 @@ export interface ASTNode {
  * IEC 61131-3 data type.
  */
 export const DataType = {
+    // Elementary types
     BOOL: 'BOOL',
+    SINT: 'SINT',
+    USINT: 'USINT',
     INT: 'INT',
+    UINT: 'UINT',
     DINT: 'DINT',
+    UDINT: 'UDINT',
+    LINT: 'LINT',
+    ULINT: 'ULINT',
     REAL: 'REAL',
+    LREAL: 'LREAL',
     TIME: 'TIME',
     STRING: 'STRING',
     // Timer function blocks
@@ -74,12 +82,21 @@ export function getDataTypeSize(type: DataTypeValue): number {
     switch (type) {
         case DataType.BOOL:
             return 1;
+        case DataType.SINT:
+        case DataType.USINT:
+            return 1;
         case DataType.INT:
+        case DataType.UINT:
             return 2;
         case DataType.DINT:
+        case DataType.UDINT:
         case DataType.REAL:
         case DataType.TIME:
             return 4;
+        case DataType.LINT:
+        case DataType.ULINT:
+        case DataType.LREAL:
+            return 8;
         // STRING: 4 bytes header + 80 chars + 1 null = 85 bytes (default STRING[80])
         case DataType.STRING:
             return 85;
@@ -678,5 +695,30 @@ export interface Program extends ASTNode {
  */
 export interface CompilationUnit extends ASTNode {
     kind: 'CompilationUnit';
+    functions: FunctionDecl[];  // User-defined functions
     programs: Program[];
+}
+
+// ============================================================================
+// User-Defined Functions (v1.4.3+)
+// ============================================================================
+
+/**
+ * User-defined function declaration.
+ * 
+ * Syntax:
+ *   FUNCTION FunctionName : ReturnType
+ *       VAR_INPUT ... END_VAR
+ *       VAR ... END_VAR
+ *       statements
+ *       FunctionName := returnValue;  (* IEC return syntax *)
+ *   END_FUNCTION
+ */
+export interface FunctionDecl extends ASTNode {
+    kind: 'FunctionDecl';
+    name: string;
+    returnType: DataTypeValue;
+    inputs: VarDecl[];     // VAR_INPUT parameters
+    locals: VarDecl[];     // VAR variables
+    body: Statement[];
 }
