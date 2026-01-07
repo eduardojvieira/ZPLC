@@ -11,8 +11,8 @@
  *   - RETAIN: 0x4000-0x4FFF (Retentive Memory)
  */
 
-import { DataType, getDataTypeSize } from './ast.ts';
-import type { DataTypeValue, VarSectionValue, IOAddress, VarDecl, Program } from './ast.ts';
+import { DataType, getDataTypeSize, getArrayTotalSize, isArrayType } from './ast.ts';
+import type { DataTypeValue, VarSectionValue, IOAddress, VarDecl, Program, ArrayType } from './ast.ts';
 import { getFB } from './stdlib/index.ts';
 
 // ============================================================================
@@ -40,8 +40,8 @@ export const MemoryLayout = {
 export interface Symbol {
     /** Variable name */
     name: string;
-    /** Data type */
-    dataType: DataTypeValue;
+    /** Data type (elementary type or array type) */
+    dataType: DataTypeValue | ArrayType;
     /** Absolute memory address */
     address: number;
     /** Size in bytes */
@@ -123,10 +123,10 @@ export class SymbolTable {
             // For BOOL: each bit address gets its own byte (wastes memory but simplifies logic)
             // For larger types: use byte offset directly
             const isBool = decl.dataType === 'BOOL';
-            const offset = isBool 
+            const offset = isBool
                 ? decl.ioAddress.byteOffset * 8 + decl.ioAddress.bitOffset  // Spread bits across bytes
                 : decl.ioAddress.byteOffset;
-            
+
             if (decl.ioAddress.type === 'I') {
                 // Input: IPI base + offset
                 address = MemoryLayout.IPI_BASE + offset;
@@ -139,12 +139,17 @@ export class SymbolTable {
             }
         } else {
             // Regular variable: allocate in work memory
+            // Calculate size - arrays use getArrayTotalSize
+            const varSize = isArrayType(decl.dataType)
+                ? getArrayTotalSize(decl.dataType)
+                : getDataTypeSize(decl.dataType);
+
             // Align to natural boundary
-            const alignment = Math.min(size, 4);
+            const alignment = Math.min(varSize, 4);
             this.workOffset = alignTo(this.workOffset, alignment);
 
             address = this.workBase + this.workOffset;
-            this.workOffset += size;
+            this.workOffset += varSize;
         }
 
         // Create member map for function blocks using stdlib registry

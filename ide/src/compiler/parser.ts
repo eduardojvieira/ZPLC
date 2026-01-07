@@ -40,6 +40,10 @@ import type {
     FunctionCall,
     DataTypeValue,
     VarSectionValue,
+    ArrayType,
+    ArrayDimension,
+    ArrayAccess,
+    ArrayLiteral,
 } from './ast.ts';
 
 /**
@@ -234,9 +238,14 @@ class Parser {
         const dataType = this.parseTypeName();
 
         // Optional initial value
-        let initialValue: Expression | null = null;
+        let initialValue: Expression | ArrayLiteral | null = null;
         if (this.match(TokenType.ASSIGN)) {
-            initialValue = this.parseExpression();
+            // Check if it's an array literal initializer
+            if (this.check(TokenType.LBRACKET)) {
+                initialValue = this.parseArrayLiteral();
+            } else {
+                initialValue = this.parseExpression();
+            }
         }
 
         this.expect(TokenType.SEMICOLON, 'Expected ; after variable declaration');
@@ -254,9 +263,14 @@ class Parser {
     }
 
     /**
-     * type_name := BOOL | INT | DINT | REAL | TIME | TON | TOF | TP | ...
+     * type_name := BOOL | INT | DINT | REAL | TIME | TON | TOF | TP | ... | ARRAY [...] OF type_name
      */
-    private parseTypeName(): DataTypeValue {
+    private parseTypeName(): DataTypeValue | ArrayType {
+        // Check for ARRAY type
+        if (this.check(TokenType.ARRAY)) {
+            return this.parseArrayType();
+        }
+
         const curr = this.current();
 
         if (this.match(TokenType.BOOL)) return DataType.BOOL;
@@ -295,6 +309,97 @@ class Parser {
         if (this.match(TokenType.LIFO)) return DataType.LIFO;
 
         this.error(`Expected type name, got ${curr.type}`);
+    }
+
+    /**
+     * array_type := ARRAY '[' dimension (',' dimension)* ']' OF type_name
+     * dimension := INTEGER '..' INTEGER
+     */
+    private parseArrayType(): ArrayType {
+        const start = this.expect(TokenType.ARRAY, 'Expected ARRAY');
+        this.expect(TokenType.LBRACKET, 'Expected [ after ARRAY');
+
+        const dimensions: ArrayDimension[] = [];
+
+        // Parse first dimension
+        dimensions.push(this.parseArrayDimension());
+
+        // Parse additional dimensions (comma-separated)
+        while (this.match(TokenType.COMMA)) {
+            if (dimensions.length >= 3) {
+                this.error('Maximum 3 dimensions supported for arrays');
+            }
+            dimensions.push(this.parseArrayDimension());
+        }
+
+        this.expect(TokenType.RBRACKET, 'Expected ] after array dimensions');
+        this.expect(TokenType.OF, 'Expected OF after array bounds');
+
+        const elementType = this.parseTypeName();
+
+        // Nested arrays not supported - use multi-dimensional
+        if (typeof elementType === 'object' && 'kind' in elementType) {
+            this.error('Nested arrays not supported, use multi-dimensional array syntax: ARRAY[a..b, c..d] OF TYPE');
+        }
+
+        return {
+            kind: 'ArrayType',
+            dimensions,
+            elementType: elementType as DataTypeValue,
+        };
+    }
+
+    /**
+     * dimension := INTEGER '..' INTEGER
+     */
+    private parseArrayDimension(): ArrayDimension {
+        const lowerToken = this.expect(TokenType.INTEGER, 'Expected lower bound integer');
+        const lower = parseInt(lowerToken.value, 10);
+
+        this.expect(TokenType.DOTDOT, 'Expected .. between array bounds');
+
+        const upperToken = this.expect(TokenType.INTEGER, 'Expected upper bound integer');
+        const upper = parseInt(upperToken.value, 10);
+
+        if (upper < lower) {
+            this.error(`Invalid array bounds: ${lower}..${upper} (upper must be >= lower)`);
+        }
+
+        return { lowerBound: lower, upperBound: upper };
+    }
+
+    /**
+     * array_literal := '[' expression (',' expression)* ']'
+     */
+    private parseArrayLiteral(): ArrayLiteral {
+        const start = this.expect(TokenType.LBRACKET, 'Expected [');
+        const elements: (Expression | ArrayLiteral)[] = [];
+
+        if (!this.check(TokenType.RBRACKET)) {
+            // Check if first element is also a bracket (nested array)
+            if (this.check(TokenType.LBRACKET)) {
+                elements.push(this.parseArrayLiteral());
+            } else {
+                elements.push(this.parseExpression());
+            }
+
+            while (this.match(TokenType.COMMA)) {
+                if (this.check(TokenType.LBRACKET)) {
+                    elements.push(this.parseArrayLiteral());
+                } else {
+                    elements.push(this.parseExpression());
+                }
+            }
+        }
+
+        this.expect(TokenType.RBRACKET, 'Expected ] after array elements');
+
+        return {
+            kind: 'ArrayLiteral',
+            elements,
+            line: start.line,
+            column: start.column,
+        };
     }
 
     /**
@@ -369,6 +474,11 @@ class Parser {
             };
         }
 
+        if (this.check(TokenType.LBRACKET)) {
+            // Array element assignment: arr[i] := value or arr[i, j] := value
+            return this.parseArrayAssignment(identToken, start);
+        }
+
         if (this.check(TokenType.ASSIGN)) {
             // Simple assignment: x := value
             this.advance(); // consume :=
@@ -392,6 +502,50 @@ class Parser {
         }
 
         this.error(`Unexpected token ${this.current().type} after identifier`);
+    }
+
+    /**
+     * array_assignment := identifier '[' expression (',' expression)* ']' ASSIGN expression SEMICOLON
+     */
+    private parseArrayAssignment(identToken: Token, start: Token): Statement {
+        this.expect(TokenType.LBRACKET, 'Expected [');
+
+        const indices: Expression[] = [];
+        indices.push(this.parseExpression());
+
+        while (this.match(TokenType.COMMA)) {
+            if (indices.length >= 3) {
+                this.error('Maximum 3 indices supported for array access');
+            }
+            indices.push(this.parseExpression());
+        }
+
+        this.expect(TokenType.RBRACKET, 'Expected ] after array indices');
+        this.expect(TokenType.ASSIGN, 'Expected := after array access');
+
+        const value = this.parseExpression();
+        this.expect(TokenType.SEMICOLON, 'Expected ; after assignment');
+
+        const target: ArrayAccess = {
+            kind: 'ArrayAccess',
+            array: {
+                kind: 'Identifier',
+                name: identToken.value,
+                line: identToken.line,
+                column: identToken.column,
+            },
+            indices,
+            line: identToken.line,
+            column: identToken.column,
+        };
+
+        return {
+            kind: 'Assignment',
+            target,
+            value,
+            line: start.line,
+            column: start.column,
+        };
     }
 
     /**
@@ -1022,6 +1176,29 @@ class Parser {
                     line: curr.line,
                     column: curr.column,
                 } as MemberAccess;
+            }
+
+            // Check for array access: IDENTIFIER[index]
+            if (this.match(TokenType.LBRACKET)) {
+                const indices: Expression[] = [];
+                indices.push(this.parseExpression());
+
+                while (this.match(TokenType.COMMA)) {
+                    if (indices.length >= 3) {
+                        this.error('Maximum 3 indices supported for array access');
+                    }
+                    indices.push(this.parseExpression());
+                }
+
+                this.expect(TokenType.RBRACKET, 'Expected ] after array indices');
+
+                return {
+                    kind: 'ArrayAccess',
+                    array: ident,
+                    indices,
+                    line: curr.line,
+                    column: curr.column,
+                } as ArrayAccess;
             }
 
             return ident;
