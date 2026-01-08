@@ -386,10 +386,29 @@ jobs:
         with:
           path: artifacts
 
-      - name: List artifacts
+      - name: Flatten and deduplicate artifacts
         run: |
-          echo "=== Downloaded Artifacts ==="
+          echo "=== Downloaded Artifacts ===" 
           find artifacts -type f -name "*" | sort
+          
+          echo ""
+          echo "=== Flattening to release/ ===" 
+          mkdir -p release
+          
+          # Copy all files to a flat directory, avoiding duplicates
+          find artifacts -type f \( -name "*.dmg" -o -name "*.zip" -o -name "*.exe" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" -o -name "*.tar.gz" \) | while read f; do
+            basename=$(basename "$f")
+            if [ ! -f "release/$basename" ]; then
+              cp "$f" "release/"
+              echo "  Copied: $basename"
+            else
+              echo "  Skipped (duplicate): $basename"
+            fi
+          done
+          
+          echo ""
+          echo "=== Final release files ===" 
+          ls -la release/
 
       - name: Update release with assets
         uses: softprops/action-gh-release@v2
@@ -454,15 +473,14 @@ jobs:
             - 📚 [Full Documentation](https://eduardojvieira.github.io/ZPLC/)
             - 📖 [Technical Specification](https://github.com/eduardojvieira/ZPLC/blob/master/TECHNICAL_SPEC.md)
           files: |
-            artifacts/macos-*/*.dmg
-            artifacts/macos-*/*.zip
-            artifacts/windows-*/*-Setup.exe
-            artifacts/windows-*/*-Portable.exe
-            artifacts/linux-*/*.AppImage
-            artifacts/linux-*/*.deb
-            artifacts/linux-*/*.rpm
-            artifacts/runtime-source/*.tar.gz
-            artifacts/runtime-source/*.zip
+            release/*.dmg
+            release/*.zip
+            release/*-Setup.exe
+            release/*-Portable.exe
+            release/*.AppImage
+            release/*.deb
+            release/*.rpm
+            release/*.tar.gz
           fail_on_unmatched_files: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
