@@ -28,7 +28,7 @@ function createWindow(): void {
     height: 900,
     minWidth: 1024,
     minHeight: 768,
-    title: 'ZPLC IDE',
+    title: `ZPLC IDE v${app.getVersion()}`,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -122,7 +122,7 @@ function setupSerialPortSelection(): void {
           '067b', // Prolific PL2303
         ];
 
-        const preferredPort = portList.find(p => 
+        const preferredPort = portList.find(p =>
           p.vendorId && knownVendors.includes(p.vendorId)
         );
 
@@ -172,7 +172,7 @@ function setupIPC(): void {
 // App lifecycle handlers
 app.whenReady().then(() => {
   console.log('[Electron] App ready, setting up...');
-  
+
   setupWebSerial();
   setupSerialPortSelection();
   setupIPC();
