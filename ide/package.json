@@ -1,7 +1,7 @@
 {
   "name": "zplc-ide",
   "private": true,
-  "version": "1.4.3",
+  "version": "1.4.5",
   "description": "ZPLC IDE - Industrial PLC Development Environment",
   "author": "ZPLC Team",
   "license": "MIT",
