@@ -548,8 +548,6 @@ function collectStringLiteralsInStatement(state: CodeGenState, stmt: Statement):
             break;
         case 'ExitStatement':
         case 'ContinueStatement':
-        case 'ExitStatement':
-        case 'ContinueStatement':
         case 'ReturnStatement':
             // These have no expressions
             break;

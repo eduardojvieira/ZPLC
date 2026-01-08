@@ -1,3 +1,0 @@
-; Test GET_TICKS
-GET_TICKS
-HALT
