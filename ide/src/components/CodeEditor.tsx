@@ -75,10 +75,10 @@ function getMonacoLanguage(lang: PLCLanguage): string {
  * Extract all variable references from ST/IL code.
  * Returns variable names and their line positions.
  */
-function extractVariablesFromCode(content: string, language: PLCLanguage): Map<string, { lines: number[], instances: Array<{ line: number, col: number }> }> {
+function extractVariablesFromCode(content: string, _language: PLCLanguage): Map<string, { lines: number[], instances: Array<{ line: number, col: number }> }> {
   const variables = new Map<string, { lines: number[], instances: Array<{ line: number, col: number }> }>();
   const lines = content.split('\n');
-  
+
   // Keywords to ignore (ST + IL instructions)
   const keywords = new Set([
     // ST/Common keywords
@@ -98,12 +98,9 @@ function extractVariablesFromCode(content: string, language: PLCLanguage): Map<s
     'JMP', 'JMPC', 'JMPCN', 'CAL', 'CALC', 'CALCN', 'RET', 'RETC', 'RETCN',
   ]);
 
-  // Types to track for FB instance detection
-  const fbTypes = new Set(['TON', 'TOF', 'TP', 'CTU', 'CTD', 'CTUD', 'R_TRIG', 'F_TRIG', 'SR', 'RS']);
-  
   // Track declared FB instances
   const fbInstances = new Map<string, string>(); // name -> type
-  
+
   // First pass: find FB instance declarations
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -113,36 +110,36 @@ function extractVariablesFromCode(content: string, language: PLCLanguage): Map<s
       fbInstances.set(fbDeclMatch[1], fbDeclMatch[2].toUpperCase());
     }
   }
-  
+
   // Regex to match identifiers (including dot notation for FB members)
   const identifierRegex = /\b([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\b/g;
-  
+
   for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
     const line = lines[lineIdx];
     const lineNum = lineIdx + 1;
-    
+
     // Skip comments
     if (line.trim().startsWith('//') || line.trim().startsWith('(*')) continue;
-    
+
     // Remove string literals to avoid false matches
     const cleanLine = line.replace(/'[^']*'/g, '').replace(/"[^"]*"/g, '');
-    
+
     let match;
     while ((match = identifierRegex.exec(cleanLine)) !== null) {
       const varName = match[1];
       const baseName = varName.split('.')[0];
-      
+
       // Skip keywords
       if (keywords.has(baseName.toUpperCase())) continue;
       if (keywords.has(varName.toUpperCase())) continue;
-      
+
       // Skip type annotations (after colon)
       const beforeMatch = cleanLine.substring(0, match.index);
       if (beforeMatch.match(/:\s*$/)) continue;
-      
+
       // Get column position
       const col = match.index + 1;
-      
+
       // Track variable
       const existing = variables.get(varName) || { lines: [], instances: [] };
       if (!existing.lines.includes(lineNum)) {
@@ -150,11 +147,11 @@ function extractVariablesFromCode(content: string, language: PLCLanguage): Map<s
       }
       existing.instances.push({ line: lineNum, col });
       variables.set(varName, existing);
-      
+
       // For FB instances, also track their outputs
       if (fbInstances.has(baseName) && !varName.includes('.')) {
         const fbType = fbInstances.get(baseName)!;
-        
+
         // Add common FB outputs to watch
         const outputs: string[] = [];
         switch (fbType) {
@@ -181,7 +178,7 @@ function extractVariablesFromCode(content: string, language: PLCLanguage): Map<s
             outputs.push(`${baseName}.Q1`, `${baseName}.S`, `${baseName}.R1`);
             break;
         }
-        
+
         for (const output of outputs) {
           if (!variables.has(output)) {
             variables.set(output, { lines: existing.lines.slice(), instances: [] });
@@ -190,7 +187,7 @@ function extractVariablesFromCode(content: string, language: PLCLanguage): Map<s
       }
     }
   }
-  
+
   return variables;
 }
 
@@ -204,10 +201,10 @@ function buildInlineWidgets(
   const widgets: InlineValueWidget[] = [];
   const lines = content.split('\n');
   const shownOnLine = new Map<number, Set<string>>(); // Track which vars shown on each line
-  
+
   // Keywords to skip for line-end display
   const skipPatterns = [/^\s*$/, /^\s*\/\//, /^\s*\(\*/, /^\s*VAR/, /^\s*END_VAR/, /^\s*PROGRAM/, /^\s*END_PROGRAM/];
-  
+
   // IL instructions to ignore when building widgets
   const ilInstructions = new Set([
     'LD', 'LDN', 'ST', 'STN', 'S', 'R',
@@ -216,32 +213,32 @@ function buildInlineWidgets(
     'JMP', 'JMPC', 'JMPCN', 'CAL', 'CALC', 'CALCN', 'RET', 'RETC', 'RETCN',
     'PT', 'IN', 'TRUE', 'FALSE',
   ]);
-  
+
   for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
     const line = lines[lineIdx];
     const lineNum = lineIdx + 1;
-    
+
     // Skip empty lines, comments, declarations
     if (skipPatterns.some(p => p.test(line))) continue;
-    
+
     // Find variables on this line
     const varsOnLine: InlineValueWidget[] = [];
     const identifierRegex = /\b([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\b/g;
     const cleanLine = line.replace(/'[^']*'/g, '').replace(/"[^"]*"/g, '');
-    
+
     let match;
     const seenOnThisLine = new Set<string>();
-    
+
     while ((match = identifierRegex.exec(cleanLine)) !== null) {
       const varName = match[1];
-      
+
       // Skip if we already have this var on this line
       if (seenOnThisLine.has(varName)) continue;
       seenOnThisLine.add(varName);
-      
+
       // Skip IL instructions and keywords
       if (ilInstructions.has(varName.toUpperCase())) continue;
-      
+
       // Check if we have a value for this variable
       const valInfo = variableValues.get(varName);
       if (valInfo) {
@@ -256,7 +253,7 @@ function buildInlineWidgets(
         });
       }
     }
-    
+
     // For this line, show up to 3 most relevant variables
     // Priority: FB outputs (.Q, .ET) > assignments (LHS) > others
     varsOnLine.sort((a, b) => {
@@ -266,7 +263,7 @@ function buildInlineWidgets(
       if (!aIsFBOutput && bIsFBOutput) return 1;
       return a.column - b.column;
     });
-    
+
     // Take first 4 unique variables per line
     const lineVarsShown = shownOnLine.get(lineNum) || new Set();
     for (const widget of varsOnLine.slice(0, 4)) {
@@ -277,7 +274,7 @@ function buildInlineWidgets(
     }
     shownOnLine.set(lineNum, lineVarsShown);
   }
-  
+
   return widgets;
 }
 
@@ -327,7 +324,7 @@ export function CodeEditor({
   // Build variable value map for widgets
   const variableValueMap = useMemo(() => {
     const map = new Map<string, { value: string; type: string | null; isBool: boolean; isTrue?: boolean }>();
-    
+
     for (const [varPath, result] of debugValues) {
       if (result.exists && result.value !== null) {
         const isBool = result.type === 'BOOL';
@@ -340,7 +337,7 @@ export function CodeEditor({
         });
       }
     }
-    
+
     return map;
   }, [debugValues]);
 
@@ -389,7 +386,7 @@ export function CodeEditor({
     // Register custom themes
     monaco.editor.defineTheme(ZPLC_DARK_THEME_ID, ZPLC_DARK_THEME);
     monaco.editor.defineTheme(ZPLC_LIGHT_THEME_ID, ZPLC_LIGHT_THEME);
-    
+
     setEditorReady(true);
   }, [fileId, toggleBreakpoint]);
 
@@ -454,19 +451,19 @@ export function CodeEditor({
       for (const [lineNum, widgets] of widgetsByLine) {
         // Build combined text for all values on this line
         const valueParts = widgets.map(w => {
-          const label = w.variableName.includes('.') 
-            ? w.variableName.split('.').pop() 
+          const label = w.variableName.includes('.')
+            ? w.variableName.split('.').pop()
             : w.variableName;
           return `${label}=${w.value}`;
         });
-        
+
         const combinedText = `  // ${valueParts.join(' | ')}`;
-        
+
         // Get end of line
         const model = editor.getModel();
         if (!model) continue;
         const lineLength = model.getLineLength(lineNum);
-        
+
         newDecorations.push({
           range: new monaco.Range(lineNum, lineLength + 1, lineNum, lineLength + 1),
           options: {

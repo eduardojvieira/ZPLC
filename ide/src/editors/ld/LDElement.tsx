@@ -82,7 +82,7 @@ function formatValue(info: DebugValueResult | undefined): string {
   if (!info || !info.exists || info.value === undefined || info.value === null) {
     return '';
   }
-  
+
   if (info.type === 'BOOL') {
     return info.value ? 'T' : 'F';
   }
@@ -107,7 +107,7 @@ function formatValue(info: DebugValueResult | undefined): string {
  */
 function getValueColor(info: DebugValueResult | undefined): string {
   if (!info || !info.exists) return COLORS.textDim;
-  
+
   if (info.type === 'BOOL') {
     return info.value ? COLORS.valueTrue : COLORS.valueFalse;
   }
@@ -479,10 +479,10 @@ function FBSymbol({ fbType, instance, selected, energized, debugValues }: FBSymb
   const boxY = (CELL_HEIGHT - boxHeight) / 2 - 2;
   const strokeColor = selected ? COLORS.selected : COLORS.fb;
   const wireColor = energized ? COLORS.wireEnergized : COLORS.wire;
-  
+
   // Get ports for this FB type
   const ports = fbType ? getFBPorts(fbType) : { inputs: [], outputs: [] };
-  
+
   // Get debug value for a port
   const getPortDebug = (portName: string): DebugValueResult | undefined => {
     if (!debugValues || !instance) return undefined;
@@ -572,14 +572,14 @@ function FBSymbol({ fbType, instance, selected, energized, debugValues }: FBSymb
             stroke={COLORS.wire}
             strokeWidth={0.5}
           />
-          
+
           {/* Output values row */}
           {ports.outputs.map((port, idx) => {
             const info = getPortDebug(port.name);
             const displayVal = formatValue(info);
             const color = getValueColor(info);
             const xPos = boxX + 8 + (idx * (boxWidth - 16) / Math.max(ports.outputs.length, 1));
-            
+
             return (
               <g key={port.name}>
                 {/* Port name */}
@@ -652,13 +652,13 @@ export default function LDElement({ element, x, y, selected, energized, debugVal
   // This is called from the foreignObject div which supports HTML5 drag
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
     if (!draggable) return;
-    
+
     // Set drag data with element info for move operation
     const data = JSON.stringify({
       type: element.type,
       fbType: element.fbType,
-      category: element.type === 'function_block' ? 'function_block' : 
-                element.type.startsWith('contact') ? 'contact' : 'coil',
+      category: element.type === 'function_block' ? 'function_block' :
+        element.type.startsWith('contact') ? 'contact' : 'coil',
       isMove: true,
       elementId: element.id,
       fromRow: element.row,
@@ -666,12 +666,12 @@ export default function LDElement({ element, x, y, selected, energized, debugVal
     });
     e.dataTransfer.setData('application/zplc-ld-element', data);
     e.dataTransfer.effectAllowed = 'move';
-    
+
     // Set a custom drag image (optional - browser default works too)
     if (e.currentTarget) {
       e.dataTransfer.setDragImage(e.currentTarget, CELL_WIDTH / 2, CELL_HEIGHT / 2);
     }
-    
+
     onDragStart?.(element);
   };
 
@@ -772,4 +772,3 @@ export default function LDElement({ element, x, y, selected, energized, debugVal
 
 // Export constants and types for use in other components
 export { CELL_WIDTH, CELL_HEIGHT, WIRE_Y, COLORS };
-export type { DebugValuesMap };
