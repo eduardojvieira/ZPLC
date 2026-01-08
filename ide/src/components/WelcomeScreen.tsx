@@ -8,6 +8,7 @@
  * - Open an example project (bundled with the IDE)
  */
 
+import React from 'react';
 import { FolderOpen, FolderPlus, FileCode2, AlertTriangle, BookOpen } from 'lucide-react';
 import { useIDEStore } from '../store/useIDEStore';
 import { isFileSystemAccessSupported } from '../types';
@@ -21,8 +22,25 @@ export function WelcomeScreen() {
     getExampleProjects,
   } = useIDEStore();
 
+
+
   const fsApiSupported = isFileSystemAccessSupported();
   const exampleProjects = getExampleProjects();
+  const [appVersion, setAppVersion] = React.useState('1.4.5'); // Default to current version
+
+  React.useEffect(() => {
+    const loadVersion = async () => {
+      if (window.electronAPI) {
+        try {
+          const info = await window.electronAPI.getAppInfo();
+          setAppVersion(info.version);
+        } catch (e) {
+          console.error('Failed to get app version:', e);
+        }
+      }
+    };
+    loadVersion();
+  }, []);
 
   const handleOpenFolder = async () => {
     await openProjectFromFolder();
@@ -65,14 +83,14 @@ export function WelcomeScreen() {
           onClick={handleOpenFolder}
           disabled={!fsApiSupported}
           className={`group flex flex-col items-center gap-3 p-6 rounded-lg border transition-all
-            ${fsApiSupported 
+            ${fsApiSupported
               ? 'border-[var(--color-surface-600)] bg-[var(--color-surface-800)] hover:border-[var(--color-accent-blue)] hover:bg-[var(--color-surface-700)] cursor-pointer'
               : 'border-[var(--color-surface-700)] bg-[var(--color-surface-800)]/50 cursor-not-allowed opacity-60'
             }`}
         >
-          <FolderOpen 
-            size={32} 
-            className={`${fsApiSupported ? 'text-[var(--color-accent-yellow)] group-hover:scale-110 transition-transform' : 'text-[var(--color-surface-500)]'}`} 
+          <FolderOpen
+            size={32}
+            className={`${fsApiSupported ? 'text-[var(--color-accent-yellow)] group-hover:scale-110 transition-transform' : 'text-[var(--color-surface-500)]'}`}
           />
           <div className="text-center">
             <h3 className="text-[var(--color-surface-100)] font-semibold mb-1">
@@ -89,14 +107,14 @@ export function WelcomeScreen() {
           onClick={handleNewProject}
           disabled={!fsApiSupported}
           className={`group flex flex-col items-center gap-3 p-6 rounded-lg border transition-all
-            ${fsApiSupported 
+            ${fsApiSupported
               ? 'border-[var(--color-surface-600)] bg-[var(--color-surface-800)] hover:border-[var(--color-accent-green)] hover:bg-[var(--color-surface-700)] cursor-pointer'
               : 'border-[var(--color-surface-700)] bg-[var(--color-surface-800)]/50 cursor-not-allowed opacity-60'
             }`}
         >
-          <FolderPlus 
-            size={32} 
-            className={`${fsApiSupported ? 'text-[var(--color-accent-green)] group-hover:scale-110 transition-transform' : 'text-[var(--color-surface-500)]'}`} 
+          <FolderPlus
+            size={32}
+            className={`${fsApiSupported ? 'text-[var(--color-accent-green)] group-hover:scale-110 transition-transform' : 'text-[var(--color-surface-500)]'}`}
           />
           <div className="text-center">
             <h3 className="text-[var(--color-surface-100)] font-semibold mb-1">
@@ -113,9 +131,9 @@ export function WelcomeScreen() {
           onClick={handleVirtualProject}
           className="group flex flex-col items-center gap-3 p-6 rounded-lg border border-[var(--color-surface-600)] bg-[var(--color-surface-800)] hover:border-[var(--color-accent-purple)] hover:bg-[var(--color-surface-700)] cursor-pointer transition-all"
         >
-          <FileCode2 
-            size={32} 
-            className="text-[var(--color-accent-purple)] group-hover:scale-110 transition-transform" 
+          <FileCode2
+            size={32}
+            className="text-[var(--color-accent-purple)] group-hover:scale-110 transition-transform"
           />
           <div className="text-center">
             <h3 className="text-[var(--color-surface-100)] font-semibold mb-1">
@@ -171,8 +189,8 @@ export function WelcomeScreen() {
                 Limited Browser Support
               </h4>
               <p className="text-[var(--color-surface-300)] text-sm">
-                Your browser doesn't support the File System Access API. 
-                Use <strong>Chrome</strong>, <strong>Edge</strong>, or <strong>Opera</strong> for full functionality 
+                Your browser doesn't support the File System Access API.
+                Use <strong>Chrome</strong>, <strong>Edge</strong>, or <strong>Opera</strong> for full functionality
                 (open folders, save to disk). You can still use Virtual Projects in this browser.
               </p>
             </div>
@@ -192,10 +210,9 @@ export function WelcomeScreen() {
       </div>
       */}
 
-      {/* Footer */}
       <div className="absolute bottom-4 text-center">
         <p className="text-[var(--color-surface-600)] text-xs">
-          ZPLC IDE v1.0.0 | Zephyr RTOS Target
+          ZPLC IDE v{appVersion} | Zephyr RTOS Target
         </p>
       </div>
     </div>
