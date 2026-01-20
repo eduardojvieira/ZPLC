@@ -54,14 +54,14 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: ide/package-lock.json
+          cache-dependency-path: packages/zplc-ide/package-lock.json
 
       - name: Install dependencies
-        working-directory: ide
+        working-directory: packages/zplc-ide
         run: npm ci
 
       - name: Build Electron app (macOS ${{ matrix.arch }})
-        working-directory: ide
+        working-directory: packages/zplc-ide
         run: |
           npm run build
           npm run electron:compile
@@ -76,8 +76,8 @@ jobs:
         with:
           name: macos-${{ matrix.arch }}
           path: |
-            ide/dist-electron/*.dmg
-            ide/dist-electron/*.zip
+            packages/zplc-ide/dist-electron/*.dmg
+            packages/zplc-ide/dist-electron/*.zip
           retention-days: 7
 
   # ===========================================================================
@@ -97,14 +97,14 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: ide/package-lock.json
+          cache-dependency-path: packages/zplc-ide/package-lock.json
 
       - name: Install dependencies
-        working-directory: ide
+        working-directory: packages/zplc-ide
         run: npm ci
 
       - name: Build Electron app (Windows ${{ matrix.arch }})
-        working-directory: ide
+        working-directory: packages/zplc-ide
         run: |
           npm run build
           npm run electron:compile
@@ -117,8 +117,8 @@ jobs:
         with:
           name: windows-${{ matrix.arch }}
           path: |
-            ide/dist-electron/*-Setup.exe
-            ide/dist-electron/*-Portable.exe
+            packages/zplc-ide/dist-electron/*-Setup.exe
+            packages/zplc-ide/dist-electron/*-Portable.exe
           retention-days: 7
 
   # ===========================================================================
@@ -138,14 +138,14 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-          cache-dependency-path: ide/package-lock.json
+          cache-dependency-path: packages/zplc-ide/package-lock.json
 
       - name: Install dependencies
-        working-directory: ide
+        working-directory: packages/zplc-ide
         run: npm ci
 
       - name: Build Electron app (Linux ${{ matrix.arch }})
-        working-directory: ide
+        working-directory: packages/zplc-ide
         run: |
           npm run build
           npm run electron:compile
@@ -158,9 +158,9 @@ jobs:
         with:
           name: linux-${{ matrix.arch }}
           path: |
-            ide/dist-electron/*.AppImage
-            ide/dist-electron/*.deb
-            ide/dist-electron/*.rpm
+            packages/zplc-ide/dist-electron/*.AppImage
+            packages/zplc-ide/dist-electron/*.deb
+            packages/zplc-ide/dist-electron/*.rpm
           retention-days: 7
 
   # ===========================================================================

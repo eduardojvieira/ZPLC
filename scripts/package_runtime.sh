@@ -9,7 +9,7 @@
 #
 # Examples:
 #   ./scripts/package_runtime.sh 1.4.0
-#   ./scripts/package_runtime.sh  # Uses version from ide/package.json
+#   ./scripts/package_runtime.sh  # Uses version from packages/zplc-ide/package.json
 # =============================================================================
 
 set -euo pipefail
@@ -21,7 +21,7 @@ ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 if [[ $# -ge 1 ]]; then
     VERSION="$1"
 else
-    VERSION=$(grep '"version"' "$ROOT_DIR/ide/package.json" | head -1 | sed 's/.*"version": "\([^"]*\)".*/\1/')
+    VERSION=$(grep '"version"' "$ROOT_DIR/packages/zplc-ide/package.json" | head -1 | sed 's/.*"version": "\([^"]*\)".*/\1/')
 fi
 
 PACKAGE_NAME="zplc-runtime-${VERSION}"

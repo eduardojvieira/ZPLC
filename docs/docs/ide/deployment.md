@@ -18,9 +18,10 @@ import TabItem from '@theme/TabItem';
 # Download from GitHub Releases
 # Or build from source:
 git clone https://github.com/eduardojvieira/ZPLC.git
-cd ZPLC/ide
+cd ZPLC
 bun install
-bun run build:electron
+cd packages/zplc-ide
+bun run electron:build
 ```
 
 </TabItem>

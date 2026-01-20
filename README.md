@@ -45,8 +45,8 @@ ZPLC is a portable, deterministic PLC runtime environment powered by [Zephyr RTO
 Download the pre-built desktop application for your platform:
 
 ```bash
-cd ide
 bun install
+cd packages/zplc-ide
 bun run electron:dev    # Development mode
 bun run electron:build  # Build distributable
 ```
@@ -56,8 +56,8 @@ bun run electron:build  # Build distributable
 Run the IDE in your browser:
 
 ```bash
-cd ide
 bun install
+cd packages/zplc-ide
 bun run dev
 # Open http://localhost:5173
 ```
@@ -201,11 +201,10 @@ ZPLC/
 │   ├── CMakeLists.txt             # Zephyr module CMake
 │   ├── Kconfig                    # Zephyr Kconfig
 │   └── module.yml                 # Zephyr module definition
-├── ide/                           # Desktop & Web IDE
-│   ├── electron/                  # Electron main process
-│   ├── src/compiler/              # ST Compiler & Code Generator
-│   ├── src/components/            # React UI Components
-│   └── projects/                  # Example projects
+├── packages/                      # Monorepo packages
+│   ├── zplc-compiler/             # ST Compiler & Code Generator
+│   ├── zplc-ide/                  # Desktop & Web IDE (React + Electron)
+│   └── ...
 ├── docs/                          # Documentation (Docusaurus)
 ├── AGENTS.md                      # AI agent & contributor guide
 └── TECHNICAL_SPEC.md              # Full technical specification
@@ -293,10 +292,12 @@ See [AGENTS.md](AGENTS.md) for detailed contribution guidelines, coding standard
 # C Runtime (from firmware/lib/zplc_core/build)
 cmake .. && make && ctest --output-on-failure
 
-# TypeScript IDE
-cd ide && bun test
+# TypeScript (Monorepo)
+bun install
+bun test
 
-# Single test file
+# Single test file (Compiler)
+cd packages/zplc-compiler
 bun test compiler.test.ts
 ```
 

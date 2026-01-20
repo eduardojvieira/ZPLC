@@ -13,7 +13,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 BUILD_DIR="$PROJECT_ROOT/build_wasm"
-IDE_PUBLIC="$PROJECT_ROOT/ide/public"
+IDE_PUBLIC="$PROJECT_ROOT/packages/zplc-ide/public"
 EMSDK_DIR="${EMSDK:-$HOME/emsdk}"
 
 # Colors for output

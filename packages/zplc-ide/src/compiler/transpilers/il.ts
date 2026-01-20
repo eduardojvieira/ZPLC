@@ -5,7 +5,7 @@
  *
  * Re-exports the IL transpiler from the IL compiler module.
  * This file exists to maintain consistency with other transpilers
- * (LD, FBD, SFC) located in ide/src/compiler/transpilers/.
+ * (LD, FBD, SFC) located in packages/zplc-ide/src/compiler/transpilers/.
  *
  * @see ../il/ilToST.ts for the implementation
  */

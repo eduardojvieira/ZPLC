@@ -73,6 +73,7 @@ const sidebars = {
       items: [
         'advanced/multitask',
         'advanced/debugging',
+        'advanced/ai-agents',
       ],
     },
   ],
