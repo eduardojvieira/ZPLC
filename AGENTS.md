@@ -1,519 +1,258 @@
-# Context for Agents & Contributors
+# AGENTS.md - Context for AI Agents & Contributors
 
-This file provides context for AI agents and human contributors working on ZPLC.
+This file provides essential context for AI coding agents working on ZPLC.
 
-## Project Identity
+## Project Overview
 
 | Field | Value |
 |-------|-------|
 | **Name** | ZPLC (Zephyr PLC) |
-| **Goal** | Create a robust, open-source industrial PLC runtime |
-| **Primary Target** | Zephyr RTOS (500+ boards) |
-| **Dev Platforms** | macOS, Linux, Windows (via POSIX HAL) |
-| **Language** | ANSI C99 (strict compliance) |
-| **Architecture** | Zephyr Module with POSIX fallback |
-| **Current Version** | v1.4.0 (Cross-Platform Desktop App) |
+| **Goal** | Open-source IEC 61131-3 PLC runtime |
+| **Primary Target** | Zephyr RTOS |
+| **Core Language** | ANSI C99 (strict) |
+| **IDE Language** | TypeScript + React |
+| **Version** | v1.4.x |
 
-## Core Philosophy
+## Build & Test Commands
 
-1. **Strict ANSI C99**: The core (`src/core`) must compile with any standard C99 compiler. No GCC extensions, no stdlib dependencies that aren't abstractable.
-2. **HAL Abstraction**: The core *never* touches hardware directly. All IO, Timing, and Persistence go through `zplc_hal.h`.
-3. **Test-Driven**: Every feature must have a corresponding test case in `tests/`.
-4. **Zephyr First**: The primary target is Zephyr RTOS. POSIX is for development/testing.
-5. **No Feature Creep**: Stick to the [TECHNICAL_SPEC.md](TECHNICAL_SPEC.md).
-
-## Development Rules
-
-### Code Style (C)
-- **Indentation**: 4 spaces (no tabs)
-- **Naming**: `snake_case` for functions/variables, `zplc_` prefix for public API
-- **Constants**: `ZPLC_UPPER_CASE` for macros and constants
-- **Comments**: Doxygen style `/** ... */` for public headers
-- **Line Length**: 80 characters soft limit, 100 hard limit
-
-### Directory Structure
-
-```
-ZPLC/
-├── apps/                   # Runtime applications (POSIX & Zephyr)
-│   ├── posix_host/         # Desktop development build
-│   └── zephyr_app/         # Zephyr application with shell
-├── ide/                    # Web-based IDE (React + TypeScript)
-│   ├── src/compiler/       # ST Compiler & Transpilers
-│   ├── src/editors/        # LD, FBD, SFC Visual Editors
-│   ├── src/assembler/      # Bytecode assembler with relocation
-│   └── projects/           # Example projects (blinky, multitask)
-├── include/                # Public C headers (VM and HAL API)
-│   ├── zplc_core.h         # VM Core API
-│   ├── zplc_hal.h          # Hardware Abstraction Layer
-│   ├── zplc_isa.h          # Instruction Set Architecture
-│   └── zplc_scheduler.h    # Multitask Scheduler API
-├── src/                    # Implementation
-│   ├── core/               # VM Core (C99, portable)
-│   └── hal/                # HAL implementations (posix, zephyr, wasm)
-├── tests/                  # C unit tests for VM components
-├── tools/                  # Python-based Assembler and utilities
-├── zephyr/                 # Zephyr Module configuration files
-├── examples/               # Assembly and ST example programs
-├── prompts/                # Development session prompts
-├── TECHNICAL_SPEC.md       # Technical architecture specification
-└── README.md               # Main project overview
-```
-
-## Key Documents
-
-| Document | Purpose |
-|----------|---------|
-| [TECHNICAL_SPEC.md](TECHNICAL_SPEC.md) | Complete architecture, binary format, and roadmap |
-| [docs/docs/runtime/isa.md](docs/docs/runtime/isa.md) | Instruction Set Architecture specification |
-| [zephyr/Kconfig](zephyr/Kconfig) | Zephyr configuration options |
-| [include/zplc_isa.h](include/zplc_isa.h) | Binary format structures and opcodes |
-
----
-
-## Build Workflows
-
-### POSIX Build (Development)
-
-Quick build for development and testing on your host machine:
+### C Runtime (POSIX)
 
 ```bash
-cd /path/to/ZPLC
-mkdir build_posix && cd build_posix
-cmake .. -DZEPHYR_BUILD=OFF
-make
+# Build (from firmware/lib/zplc_core)
+cd firmware/lib/zplc_core
+mkdir build && cd build
+cmake .. && make
 
-# Run tests (105+ assertions across test suites)
+# Run all tests
 ctest --output-on-failure
 
-# Run the demo runtime
-./zplc_runtime
+# Run a single test
+./test_vm_core          # VM core tests
+./test_isa              # ISA tests
+
+# Clean rebuild
+rm -rf build && mkdir build && cd build && cmake .. && make
 ```
 
----
-
-### Zephyr Build (macOS Development Setup)
-
-A complete Zephyr workspace is configured at `~/zephyrproject`.
-
-#### Environment Activation
-
-```bash
-source ~/zephyrproject/activate.sh
-```
-
-This sets up:
-- `ZEPHYR_BASE` pointing to Zephyr v4.0.0
-- `ZEPHYR_SDK_INSTALL_DIR` pointing to SDK 0.17.0
-- `ZEPLC_PATH` pointing to this repository
-- `ZEPHYR_EXTRA_MODULES` for automatic module inclusion
-- Python virtualenv with all dependencies
-
-#### Build for QEMU (Cortex-M3 Emulator)
-
-```bash
-cd ~/zephyrproject
-west build -b mps2/an385 $ZEPLC_PATH/apps/zephyr_app
-```
-
-#### Run in QEMU
-
-```bash
-west build -t run
-```
-
-#### Build for Real Hardware
-
-```bash
-# Raspberry Pi Pico (RP2040)
-west build -b rpi_pico $ZEPLC_PATH/apps/zephyr_app --pristine
-# Flash via BOOTSEL: cp build/zephyr/zephyr.uf2 /Volumes/RPI-RP2/
-
-# STM32 Nucleo-H743ZI
-west build -b nucleo_h743zi $ZEPLC_PATH/apps/zephyr_app
-west flash
-
-# Arduino Giga R1 (STM32H747)
-west build -b arduino_giga_r1/stm32h747xx/m7 $ZEPLC_PATH/apps/zephyr_app
-west flash
-
-# ESP32-S3 DevKit
-west build -b esp32s3_devkitc $ZEPLC_PATH/apps/zephyr_app
-west flash
-```
-
----
-
-## Serial Shell Commands
-
-Once the Zephyr app is running, connect via serial (115200 baud) and use:
-
-### Program Management
-```bash
-zplc load <size>      # Prepare to receive <size> bytes
-zplc data <hex>       # Send hex-encoded bytecode chunk (64 chars max)
-zplc start            # Start execution (auto-saves to Flash)
-zplc stop             # Stop execution
-zplc status           # Show VM/scheduler state
-zplc reset            # Reset VM to initial state
-```
-
-### Persistence (NVS)
-```bash
-zplc persist info     # Show saved program info
-zplc persist clear    # Erase saved program from Flash
-```
-
-### Debugging
-```bash
-zplc dbg pause        # Pause at next cycle
-zplc dbg resume       # Resume execution
-zplc dbg step         # Execute one cycle
-zplc dbg peek <addr>  # Read memory (hex dump)
-zplc dbg poke <addr> <val>  # Write byte to IPI
-zplc dbg info         # Detailed VM state
-```
-
-### Scheduler (Multitask)
-```bash
-zplc sched status     # Scheduler statistics
-zplc sched tasks      # List all registered tasks
-```
-
----
-
-## Program Persistence (NVS)
-
-ZPLC programs are automatically saved to Flash and restored on boot.
-
-### How It Works
-
-1. **On Upload**: When you run `zplc start`, the program is saved to NVS
-2. **On Boot**: The runtime checks NVS and auto-loads any saved program
-3. **Storage**: Uses Zephyr NVS with a dedicated `storage_partition`
-
-### Configuration Requirements
-
-In `prj.conf`:
-```ini
-CONFIG_FLASH=y
-CONFIG_FLASH_PAGE_LAYOUT=y
-CONFIG_FLASH_MAP=y
-CONFIG_NVS=y
-```
-
-In board overlay (e.g., `rpi_pico_rp2040.overlay`):
-```dts
-&flash0 {
-    partitions {
-        compatible = "fixed-partitions";
-        #address-cells = <1>;
-        #size-cells = <1>;
-
-        storage_partition: partition@1f0000 {
-            label = "storage";
-            reg = <0x1f0000 0x10000>;  /* 64KB at end of flash */
-        };
-    };
-};
-```
-
-### HAL API
-
-```c
-// Save data to NVS
-zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data, size_t len);
-
-// Load data from NVS  
-zplc_hal_result_t zplc_hal_persist_load(const char *key, void *data, size_t len);
-
-// Delete key from NVS
-zplc_hal_result_t zplc_hal_persist_delete(const char *key);
-```
-
-Keys used:
-- `"code_len"` - Program length (4 bytes)
-- `"code"` - Program bytecode (up to 4KB)
-- `"retain"` - Retentive memory (future)
-
----
-
-## Multitask Scheduler
-
-The scheduler supports multiple concurrent tasks with different intervals.
-
-### Task Definition (in .zplc header)
-
-```c
-typedef struct {
-    uint8_t  id;           // Unique task ID
-    uint8_t  type;         // 0=CYCLIC, 1=EVENT
-    uint8_t  priority;     // 0=highest, 255=lowest
-    uint8_t  reserved;
-    uint32_t interval_us;  // Cycle time in microseconds
-    uint32_t entry_point;  // Bytecode offset
-    uint32_t stack_size;   // Per-task stack (words)
-} zplc_task_def_t;
-```
-
-### Configuration
-
-In `prj.conf`:
-```ini
-CONFIG_ZPLC_SCHEDULER=y
-CONFIG_ZPLC_MAX_TASKS=4
-CONFIG_ZPLC_SCHED_WORKQ_STACK_SIZE=2048
-CONFIG_ZPLC_SCHED_WORKQ_PRIORITY=5
-```
-
-### Example: Two-Task Program
-
-```
-Task 0: FastCounter (10ms interval, priority 0)
-Task 1: SlowBlink (100ms interval, priority 2)
-```
-
-Each task has isolated work memory but shares IPI/OPI for I/O.
-
----
-
-## IDE Compiler Workflow
-
-### Compiling a Project
+### TypeScript IDE
 
 ```bash
 cd ide
-bun run test_multitask.ts   # Compile multitask_demo project
-bun run test_pico_persist.ts  # Compile pico_persist_test project
+
+bun install             # Install dependencies
+bun test                # Run all tests
+bun test compiler.test.ts           # Single test file
+bun test --test-name-pattern "tok"  # Pattern match
+bun test --watch        # Watch mode
+bun run lint            # Lint
+bun run dev             # Dev server
+bun run build           # Production build
 ```
 
-### Project Structure (`zplc.json`)
+### Zephyr Build
 
-```json
-{
-  "name": "My Project",
-  "version": "1.0.0",
-  "target": "rpi_pico",
-  "tasks": [
-    {
-      "name": "MainTask",
-      "file": "main.st",
-      "type": "CYCLIC",
-      "interval_ms": 100,
-      "priority": 1
+```bash
+source ~/zephyrproject/activate.sh
+cd ~/zephyrproject
+west build -b mps2/an385 $ZEPLC_PATH/firmware/app --pristine   # QEMU
+west build -b rpi_pico $ZEPLC_PATH/firmware/app --pristine     # Pico
+cp build/zephyr/zephyr.uf2 /Volumes/RPI-RP2/                   # Flash
+```
+
+---
+
+## Code Style Guidelines
+
+### C Code (firmware/lib/zplc_core/)
+
+- **Standard**: ANSI C99 strict (`-std=c99 -pedantic -Werror`)
+- **Indentation**: 4 spaces (no tabs)
+- **Line length**: 80 soft, 100 hard
+- **Braces**: Opening on same line
+
+**Naming:**
+```c
+zplc_core_init();              // Functions: snake_case, zplc_ prefix
+static int local_counter;      // Variables: snake_case
+#define ZPLC_MEM_SIZE 4096     // Macros: UPPER_CASE, ZPLC_ prefix
+typedef struct zplc_vm zplc_vm_t;  // Types: snake_case_t
+```
+
+**Documentation:**
+```c
+/**
+ * @brief Function description.
+ * @param name Parameter description.
+ * @return Return value description.
+ */
+int zplc_function(int name);
+```
+
+**Error Handling:**
+```c
+zplc_result_t result = zplc_core_load(data, size);
+if (result != ZPLC_OK) return result;  // Propagate errors
+```
+
+**Memory Rules:**
+- No dynamic allocation (`malloc`/`free`) in core
+- All memory statically allocated
+- Bounds check all array accesses
+
+### TypeScript Code (ide/src/)
+
+- **Target**: ES2022, strict mode
+- **Module**: ESNext with bundler resolution
+
+**Imports:**
+```typescript
+import type { ASTNode, Expression } from './ast.ts';  // Type imports
+import { tokenize, TokenType } from './lexer.ts';     // Include .ts extension
+```
+
+**Naming:**
+```typescript
+function compileProject(): CompileResult { }  // camelCase functions
+interface CompileResult { }                   // PascalCase types
+const WORK_MEMORY_SIZE = 256;                 // UPPER_CASE constants
+enum TokenType { Identifier, IntLiteral }     // PascalCase enums
+```
+
+**Error Handling:**
+```typescript
+export class ParseError extends Error {
+    constructor(message: string, public line: number, public column: number) {
+        super(`${message} at line ${line}, column ${column}`);
+        this.name = 'ParseError';
     }
-  ]
 }
 ```
 
-### Uploading via Serial
+**Testing:**
+```typescript
+import { describe, it, expect } from 'bun:test';
 
-```python
-# Using pyserial
-import serial
-ser = serial.Serial('/dev/cu.usbmodem11401', 115200)
-
-# 1. Load
-ser.write(b'zplc load 167\r\n')
-
-# 2. Send data in 64-char chunks
-hex_data = "5a504c43..."
-for i in range(0, len(hex_data), 64):
-    ser.write(f'zplc data {hex_data[i:i+64]}\r\n'.encode())
-    time.sleep(0.3)
-
-# 3. Start
-ser.write(b'zplc start\r\n')
+describe('Lexer', () => {
+    it('tokenizes keywords', () => {
+        const tokens = tokenize('PROGRAM Test END_PROGRAM');
+        expect(tokens[0].type).toBe(TokenType.PROGRAM);
+    });
+});
 ```
 
 ---
 
-## HAL Interface Summary
+## Architecture
 
-The HAL (`zplc_hal.h`) defines the contract between core and platform:
+### HAL Abstraction (Critical)
 
-| Category | Functions |
-|----------|-----------|
-| **Timing** | `zplc_hal_tick()`, `zplc_hal_sleep()` |
-| **GPIO** | `zplc_hal_gpio_read()`, `zplc_hal_gpio_write()` |
-| **Analog** | `zplc_hal_adc_read()`, `zplc_hal_dac_write()` |
-| **Persistence** | `zplc_hal_persist_save()`, `zplc_hal_persist_load()`, `zplc_hal_persist_delete()` |
-| **Network** | `zplc_hal_socket_*()` (4 functions) |
-| **Logging** | `zplc_hal_log()` |
-| **Lifecycle** | `zplc_hal_init()`, `zplc_hal_shutdown()` |
+The core VM **never** accesses hardware directly:
 
-### Implementation Status
+```c
+// Good: Use HAL
+uint32_t now = zplc_hal_tick();
+zplc_hal_gpio_write(channel, value);
 
-| HAL | Timing | GPIO | Analog | Persist | Network |
-|-----|--------|------|--------|---------|---------|
-| POSIX | ✅ | Stub | Stub | ✅ (file) | Stub |
-| Zephyr | ✅ | ✅ | Stub | ✅ (NVS) | Stub |
-| WASM | ✅ | ✅ | Stub | Stub | Stub |
-
----
-
-## Phase Status
-
-| Phase | Status | Description |
-|-------|--------|-------------|
-| Phase 1 | ✅ Complete | VM Core, ISA, and C99 Runtime |
-| Phase 2 | ✅ Complete | Visual Editors (React) & ST Compiler (TS) |
-| Phase 3 | ✅ Complete | Zephyr Integration & Serial Loader |
-| Phase 4 | ✅ Complete | Simulation (WASM) & Debugging UI |
-| Phase 5 | ✅ Complete | Polish & Release v1.0.0 |
-| **v1.1** | ✅ Complete | **Multitask Scheduler + NVS Persistence** |
-| **v1.2** | ✅ Complete | **STRING Type + Indirect Memory + Standard Library** |
-| **v1.3** | ✅ Complete | **Advanced Debugging + Professional IDE** |
-| **v1.4** | ✅ Complete | **Cross-Platform Desktop App (Electron)** |
-
----
-
-## VM Architecture Summary
+// Bad: Direct hardware (NEVER in src/core/)
+GPIO->ODR |= (1 << pin);
+```
 
 ### Memory Map
 
-| Region | Base Address | Size | Purpose |
-|--------|--------------|------|---------|
-| IPI (Input Process Image) | `0x0000` | 4 KB | Input snapshots from HAL |
-| OPI (Output Process Image) | `0x1000` | 4 KB | Output buffer to HAL |
-| Work Memory | `0x2000` | 8 KB | Per-task temporary variables |
-| Retentive Memory | `0x4000` | 4 KB | Persisted across power cycles |
-| Code Segment | `0x5000` | 44 KB | Bytecode storage |
+| Region | Address | Size | Purpose |
+|--------|---------|------|---------|
+| IPI | 0x0000 | 4 KB | Inputs (read-only) |
+| OPI | 0x1000 | 4 KB | Outputs |
+| Work | 0x2000 | 8 KB | Variables |
+| Retain | 0x4000 | 4 KB | Persistent |
+| Code | 0x5000 | 44 KB | Bytecode |
 
-### Opcode Categories (75 total)
+---
 
-| Range | Category | Examples |
-|-------|----------|----------|
-| `0x00-0x0F` | System | NOP, HALT, BREAK |
-| `0x10-0x1F` | Stack + Indirect + String | DUP, DROP, SWAP, OVER, ROT, LOADI*, STOREI*, STRLEN, STRCPY, STRCAT, STRCMP, STRCLR |
-| `0x20-0x2F` | Arithmetic | ADD, SUB, MUL, DIV, ADDF, SUBF |
-| `0x30-0x3F` | Logic/Compare | AND, OR, XOR, EQ, LT, GT |
-| `0x40-0x5F` | 8-bit operand | PUSH8, PICK, JR, JRZ, JRNZ |
-| `0x80-0x9F` | 16-bit operand | LOAD/STORE, JMP, CALL, RET |
-| `0xA0-0xAF` | Conversion | I2F, F2I, EXT8, ZEXT16 |
-| `0xC0-0xCF` | 32-bit operand | PUSH32 |
+## Directory Structure
+
+```
+ZPLC/
+├── firmware/                      # Standalone Zephyr project
+│   ├── app/                       # Zephyr application (main target)
+│   │   ├── src/main.c
+│   │   ├── src/shell_cmds.c
+│   │   ├── boards/                # Board overlays & configs
+│   │   └── prj.conf
+│   ├── apps/posix_host/           # POSIX development runtime
+│   ├── lib/zplc_core/             # Core library (C99)
+│   │   ├── include/               # Public headers
+│   │   ├── src/core/              # VM implementation
+│   │   ├── src/hal/               # HAL implementations
+│   │   └── tests/                 # C unit tests
+│   ├── CMakeLists.txt             # Zephyr module CMake
+│   ├── Kconfig                    # Zephyr Kconfig
+│   └── module.yml                 # Zephyr module definition
+├── ide/                           # Web/Desktop IDE
+│   ├── src/compiler/              # ST compiler (TypeScript)
+│   ├── src/components/            # React UI
+│   └── electron/                  # Desktop app
+└── docs/                          # Documentation
+```
+
+---
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `firmware/lib/zplc_core/src/core/zplc_core.c` | VM interpreter |
+| `firmware/lib/zplc_core/include/zplc_isa.h` | Opcode definitions (75 opcodes) |
+| `firmware/app/src/shell_cmds.c` | Serial shell commands |
+| `ide/src/compiler/index.ts` | Compiler entry point |
+| `ide/src/compiler/codegen.ts` | Bytecode generation |
+| `ide/src/compiler/parser.ts` | ST parser |
+| `firmware/lib/zplc_core/tests/test_vm_core.c` | VM tests |
+
+---
+
+## Common Tasks
+
+### Adding a New Opcode
+
+1. Define in `firmware/lib/zplc_core/include/zplc_isa.h`: `#define OP_NEW 0xNN`
+2. Implement in `firmware/lib/zplc_core/src/core/zplc_core.c`
+3. Add test in `firmware/lib/zplc_core/tests/test_vm_core.c`
+4. Add compiler support in `ide/src/compiler/codegen.ts`
+
+### Adding a Stdlib Function
+
+1. Create/edit in `ide/src/compiler/stdlib/`
+2. Register in `ide/src/compiler/stdlib/index.ts`
+3. Add tests in `ide/src/compiler/functions.test.ts`
 
 ---
 
 ## Troubleshooting
 
-### "POSIX architecture only works on Linux"
-
-On macOS, use QEMU targets instead of `native_sim`:
-```bash
-west build -b mps2/an385 ...  # Instead of -b native_sim
-```
-
-### "RAM overflowed by X bytes"
-
-Reduce ZPLC memory sizes in `prj.conf`:
-```ini
-CONFIG_ZPLC_WORK_MEMORY_SIZE=4096
-CONFIG_ZPLC_RETAIN_MEMORY_SIZE=2048
-```
-
-### "RX ring buffer full" during upload
-
-Send hex data in smaller chunks (64 chars) with delays:
-```python
-for i in range(0, len(hex_data), 64):
-    ser.write(f'zplc data {hex_data[i:i+64]}\r\n'.encode())
-    time.sleep(0.3)  # Wait between chunks
-```
-
-### "No saved program in Flash"
-
-Ensure the board overlay defines a `storage_partition` and NVS is enabled.
-
-### IDE Language Server errors
-
-These are false positives - the Zephyr build system provides headers. Ignore them.
+| Issue | Solution |
+|-------|----------|
+| "POSIX only works on Linux" | Use QEMU: `west build -b mps2/an385` |
+| Compiler warnings as errors | Fix warnings, don't disable `-Werror` |
+| LSP errors with Zephyr headers | Ignore - Zephyr provides at build time |
 
 ---
 
-## Development Environment Details
+## Commit Guidelines
 
-| Component | Location | Version |
-|-----------|----------|---------|
-| Zephyr Workspace | `~/zephyrproject` | - |
-| Zephyr Base | `~/zephyrproject/zephyr` | v4.0.0 |
-| Zephyr SDK | `~/zephyr-sdk-0.17.0` | 0.17.0 |
-| Python venv | `~/zephyrproject/.venv` | Python 3.14 |
-| ZPLC Source | `~/Documents/Repos/ZPLC` | - |
-| ZPLC Symlink | `~/zephyrproject/modules/lib/zplc` | → Source |
-| Activation Script | `~/zephyrproject/activate.sh` | - |
+- Prefix: `feat:`, `fix:`, `refactor:`, `test:`, `docs:`
+- Run before commit:
+  ```bash
+  cd firmware/lib/zplc_core/build && make && ctest
+  cd ../../../ide && bun test
+  ```
 
-### Required Tools (macOS)
+## Environment
 
-```bash
-brew install cmake ninja gperf python3 ccache qemu dtc wget xz
-```
+| Component | Location |
+|-----------|----------|
+| Zephyr Workspace | `~/zephyrproject` |
+| Zephyr SDK | `~/zephyr-sdk-0.17.0` |
+| Activation | `source ~/zephyrproject/activate.sh` |
 
----
-
-## Next Steps (Phase 7: Cross-Platform & Distribution)
-
-1.  **Cross-Platform Build (Prompt 29)**
-    - Electron build for Windows/Linux/macOS.
-    - Native WebSerial integration.
-    - Code signing and auto-updates.
-
-2.  **OPC UA / MQTT Integration**
-    - Publish variable values to MQTT broker.
-    - OPC UA Server for Unified Namespace.
-
-3.  **Additional Hardware Targets**
-    - STM32H7 with built-in Ethernet.
-    - ESP32 with WiFi connectivity.
-    - Arduino Opta (industrial Arduino).
-
-4.  **Documentation**
-    - Complete user manual.
-    - Video tutorials.
-    - Example projects library.
-
----
-
-## Session Continuation Prompt
-
-When continuing development in a new session, use this context:
-
-```
-Continue developing ZPLC - the Zephyr-first PLC runtime.
-
-COMPLETED (v1.2):
-- VM Core with 75 opcodes, 200+ passing tests (179 IDE + C suites)
-- Multitask scheduler with priority-based execution
-- NVS persistence (programs survive power cycles)
-- Serial loader with chunked upload
-- Visual IDE with LD/FBD/SFC editors
-- STRING type with full IEC 61131-3 compliance:
-  - VM opcodes: STRLEN, STRCPY, STRCAT, STRCMP, STRCLR
-  - Compiler: String literal pooling, operator overloading (= and <> use STRCMP)
-  - 14 string functions: LEN, CONCAT, COPY, CLEAR, LEFT, RIGHT, MID, FIND, INSERT, DELETE, REPLACE, STRCMP, EQ_STRING, NE_STRING
-- Indirect memory access (LOADI*, STOREI*) for arrays and data structures
-- Standard Library: 45+ functions + 22 function blocks
-
-DEVELOPMENT ENVIRONMENT:
-- Zephyr workspace: ~/zephyrproject (v4.0.0)
-- Zephyr SDK: ~/zephyr-sdk-0.17.0
-- ZPLC source: ~/Documents/Repos/ZPLC
-- Activation: source ~/zephyrproject/activate.sh
-
-QUICK BUILD COMMANDS:
-  POSIX: cd build_posix && make && ctest
-  IDE:   cd ide && bun test
-  Pico:  west build -b rpi_pico $ZEPLC_PATH/apps/zephyr_app --pristine
-  Flash: cp build/zephyr/zephyr.uf2 /Volumes/RPI-RP2/
-
-KEY FILES:
-- src/core/zplc_core.c (VM with string opcodes)
-- src/hal/zephyr/zplc_hal_zephyr.c (NVS persistence)
-- src/hal/zephyr/zplc_scheduler_zephyr.c (multitask)
-- apps/zephyr_app/src/shell_cmds.c (serial commands)
-- ide/src/compiler/index.ts (ST compiler)
-- ide/src/compiler/codegen.ts (code generation with string support)
-- ide/src/compiler/stdlib/strings.ts (14 string functions)
-
-What would you like to work on?
-```
+macOS tools: `brew install cmake ninja gperf python3 ccache qemu dtc`
