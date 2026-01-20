@@ -1,5 +1,5 @@
-# ZPLC v1.2: Technical Specification & Architecture
-**Version:** 1.2.0 (Stable)
+# ZPLC v1.4: Technical Specification & Architecture
+**Version:** 1.4.7 (Stable)
 **Target:** Open Source Industrial Automation
 **Core Philosophy:** One Execution Core, Any Runtime.
 
@@ -7,7 +7,7 @@
 
 ZPLC is a portable, deterministic PLC runtime environment powered by Zephyr RTOS for embedded targets and native OS layers for desktop/server hosting. It is designed to bring modern software development practices—including CI/CD pipelines, compact binary deployment, and open interoperability via PLCopen XML—to the industrial floor.
 
-**The "v1.2" Promise:** A fully functional runtime supporting all 5 IEC 61131-3 languages, capable of running real hardware I/O or in-browser simulations, with industrial-grade determinism. Features **multitask scheduling**, **NVS persistence**, **indirect memory access**, and a comprehensive **standard function library**.
+**The "v1.4" Promise:** A fully functional runtime supporting all 5 IEC 61131-3 languages, capable of running real hardware I/O or in-browser simulations, with industrial-grade determinism. Features **multitask scheduling**, **NVS persistence**, **indirect memory access**, and a comprehensive **standard function library**. Now includes a **cross-platform desktop application** based on Electron.
 
 ---
 
@@ -191,11 +191,22 @@ ZPLC integrates with Zephyr as a **Module**.
   - Data Structures: FIFO, LIFO (using indirect memory access)
   - System: UPTIME, CYCLE_TIME, WATCHDOG_RESET
 
-**Phase 1.3 (Target: Q2 2026)**
-* **Industrial Connectivity**: Modbus TCP/RTU server and client.
-* **Cloud Integration**: MQTT "Sparkplug B" compliant client.
-* **Retentive Variables**: NVS-backed RETAIN memory region for critical process data.
-* **Security**: Bytecode signing and encrypted debug transport.
+**Phase 1.3 (Completed)**
+* ✅ **Industrial Connectivity**: Modbus TCP/RTU server and client.
+* ✅ **Cloud Integration**: MQTT "Sparkplug B" compliant client.
+* ✅ **Retentive Variables**: NVS-backed RETAIN memory region for critical process data.
+* ✅ **Security**: Bytecode signing and encrypted debug transport.
+
+**Phase 1.4 (Completed)**
+* ✅ **Cross-Platform Desktop App**: Electron-based IDE for Windows, macOS, and Linux.
+* ✅ **Native Serial Support**: Access to all COM/TTY ports via Node-Serial.
+* ✅ **Integrated Simulator**: Improved WebAssembly simulation engine.
+* ✅ **Project Management**: Persistent project storage and file system integration.
+
+**Phase 1.5 (Target: Q3 2026)**
+* **OPC UA Server**: Full support for industrial interoperability.
+* **Graphical HMI**: Drag-and-drop web-based human-machine interface.
+* **Redundancy**: Hot-standby support for high-availability systems.
 
 ---
 

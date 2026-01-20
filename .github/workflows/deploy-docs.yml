@@ -30,20 +30,42 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies (Monorepo)
+        run: bun install
+
+      - name: Build WASM module
+        run: ./scripts/build_wasm.sh
+
+      - name: Build IDE
+        working-directory: packages/zplc-ide
+        run: bun run build
+
+      - name: Setup Node.js (for Docusaurus)
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: docs/package-lock.json
 
-      - name: Install dependencies
+      - name: Install documentation dependencies
+        working-directory: docs
         run: npm ci
 
-      - name: Build website
+      - name: Build documentation
+        working-directory: docs
         run: npm run build
         env:
           NODE_OPTIONS: '--max_old_space_size=4096'
+
+      - name: Integrate IDE into documentation
+        run: |
+          mkdir -p docs/build/ide
+          cp -r packages/zplc-ide/dist/* docs/build/ide/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

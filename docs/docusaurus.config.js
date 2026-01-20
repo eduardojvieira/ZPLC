@@ -86,6 +86,11 @@ const config = {
             label: 'Documentation',
           },
           {
+            to: '/ide/',
+            label: 'Try Online',
+            position: 'left',
+          },
+          {
             type: 'localeDropdown',
             position: 'right',
           },

@@ -37,6 +37,7 @@ __pycache__/
 # Local artifacts
 .gemini/
 .agent/
+.opencode/
 task.md
 walkthrough.md
 implementation_plan.md
