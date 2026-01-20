@@ -7,111 +7,103 @@ ZPLC is a portable, deterministic PLC runtime environment powered by [Zephyr RTO
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Zephyr 4.0](https://img.shields.io/badge/Zephyr-4.0.0-blue.svg)](https://zephyrproject.org/)
 [![C99](https://img.shields.io/badge/C-C99-green.svg)](https://en.wikipedia.org/wiki/C99)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
 
 [![Website](https://img.shields.io/badge/Website-Live-brightgreen)](https://eduardojvieira.github.io/ZPLC/)
 
 ## Features
 
-- **Portable Core**: ANSI C99 compliant core, running on 500+ microcontrollers (via Zephyr), Linux, Windows, and WebAssembly.
-- **Visual IDE**: Powerful web-based editor for Ladder Diagrams (LD), Function Block Diagrams (FBD), and Sequential Function Charts (SFC).
+- **Portable Core**: ANSI C99 compliant core, running on 500+ microcontrollers (via Zephyr), Linux, macOS, Windows, and WebAssembly.
+- **Cross-Platform Desktop App**: Electron-based IDE for Windows, macOS, and Linux with native serial support.
+- **Visual IDE**: Powerful editor for Ladder Diagrams (LD), Function Block Diagrams (FBD), and Sequential Function Charts (SFC).
 - **Unified Architecture**: Hardware-agnostic `.zplc` bytecode allows you to "compile once, run anywhere."
-- **IEC 61131-3 Support**: First-class support for Structured Text (ST) and visual logic languages.
-- **Industrial Grade**: Deterministic execution, retentive memory support, and sub-millisecond jitter on RTOS targets.
-- **Modern Tooling**: TS-based compiler, Python assembler, and built-in unit testing framework.
+- **IEC 61131-3 Support**: First-class support for Structured Text (ST) with 45+ standard functions and 22 function blocks.
+- **Industrial Grade**: Deterministic execution, retentive memory, multitask scheduling, and sub-millisecond jitter on RTOS targets.
+- **Advanced Debugging**: Breakpoints, step execution, variable watch, and real-time memory inspection.
+- **Modern Tooling**: TypeScript compiler, WebAssembly simulation, and comprehensive test suite.
 
-## Current Status: v1.1.0 (Released) 🚀
+## Current Status: v1.4.x (Released)
 
-ZPLC has reached its second major milestone with **multitask scheduling** and **persistent program storage**.
-
-| Phase | Status | Description |
-|-------|--------|-------------|
-| Phase 0 | ✅ Complete | Build System & HAL Abstraction |
-| Phase 1 | ✅ Complete | VM Core (63 opcodes) & ISA Definition |
-| Phase 2 | ✅ Complete | Visual IDE (LD, FBD, SFC) & ST Compiler |
-| Phase 3 | ✅ Complete | Hardware Integration (Zephyr Serial Loader) |
-| Phase 4 | ✅ Complete | Debugging & Simulation (WASM + HW) |
-| Phase 5 | ✅ Complete | Final Polish & Release v1.0.0 |
-| **v1.1** | ✅ Complete | **Multitask Scheduler + NVS Persistence** |
+| Version | Status | Description |
+|---------|--------|-------------|
+| Phase 1 | Complete | VM Core (75 opcodes) & ISA Definition |
+| Phase 2 | Complete | Visual IDE (LD, FBD, SFC) & ST Compiler |
+| Phase 3 | Complete | Hardware Integration (Zephyr Serial Loader) |
+| Phase 4 | Complete | Debugging & Simulation (WASM + Hardware) |
+| Phase 5 | Complete | Final Polish & Release v1.0.0 |
+| **v1.1** | Complete | Multitask Scheduler + NVS Persistence |
+| **v1.2** | Complete | STRING Type + Indirect Memory + Standard Library |
+| **v1.3** | Complete | Advanced Debugging + Professional IDE |
+| **v1.4** | Complete | **Cross-Platform Desktop App (Electron)** |
 
 ---
 
-## 🚀 Roadmap (v1.2+)
-
-The focus for the next version is expanding industrial connectivity.
-
-- [x] **Multitask Scheduler**: Priority-based concurrent task execution (v1.1) ✅
-- [x] **Program Persistence**: NVS-backed program storage survives power cycles (v1.1) ✅
-- [ ] **Modbus TCP/RTU**: Native support for industrial fieldbus.
-- [ ] **MQTT Integration**: First-class support for IIoT/Cloud connectivity (Sparkplug B).
-- [ ] **Retentive Variables**: Flash-backed RETAIN memory for critical data.
-- [ ] **OPC UA Server**: Enterprise-level interoperability.
-
-
-
 ## Quick Start
 
-### Option 1: POSIX Build (Development/Testing)
+### Option 1: Desktop App (Recommended)
 
-Build and test the core on your host machine:
+Download the pre-built desktop application for your platform:
+
+```bash
+cd ide
+bun install
+bun run electron:dev    # Development mode
+bun run electron:build  # Build distributable
+```
+
+### Option 2: Web IDE (Development)
+
+Run the IDE in your browser:
+
+```bash
+cd ide
+bun install
+bun run dev
+# Open http://localhost:5173
+```
+
+### Option 3: POSIX Build (Core Development)
+
+Build and test the C runtime on your host machine:
 
 ```bash
 # Clone the repository
 git clone https://github.com/eduardojvieira/ZPLC.git
-cd ZPLC
+cd ZPLC/firmware/lib/zplc_core
 
 # Build
-mkdir build_posix && cd build_posix
-cmake .. -DZEPHYR_BUILD=OFF
+mkdir build && cd build
+cmake ..
 make
 
-# Run tests (105 assertions across 2 test suites)
+# Run tests
 ctest --output-on-failure
 
 # Run the demo runtime
 ./zplc_runtime
 ```
 
-### Option 2: Zephyr Build (Embedded/QEMU)
+### Option 4: Zephyr Build (Embedded Hardware)
 
 Run on real hardware or the QEMU emulator:
 
 ```bash
-# Activate Zephyr environment (see Setup section below)
+# Activate Zephyr environment
 source ~/zephyrproject/activate.sh
 
 # Build for QEMU Cortex-M3 emulator
 cd ~/zephyrproject
-west build -b mps2/an385 $ZEPLC_PATH/apps/zephyr_app
+west build -b mps2/an385 $ZEPLC_PATH/firmware/app --pristine
 
 # Run in QEMU
 west build -t run
+
+# Or build for Raspberry Pi Pico
+west build -b rpi_pico $ZEPLC_PATH/firmware/app --pristine
+cp build/zephyr/zephyr.uf2 /Volumes/RPI-RP2/
 ```
 
-**Expected output:**
-```
-*** Booting Zephyr OS build v4.0.0 ***
-================================================
-  ZPLC Runtime v1.1.0 - Zephyr Target
-  ISA Version: 1.1
-  Features: Multitask, NVS Persistence
-================================================
-[HAL] Zephyr HAL initialized
-[NVS] Checking for saved program...
-[MAIN] ZPLC Runtime ready. Use 'zplc' shell commands.
-
-uart:~$ zplc status
-VM State: IDLE
-Tasks: 0 registered
-Persistence: No saved program
-```
-
-## Documentation
-
-| Document | Description |
-|----------|-------------|
-| [TECHNICAL_SPEC.md](TECHNICAL_SPEC.md) | Complete architecture, binary format, and roadmap |
-| [AGENTS.md](AGENTS.md) | Context for AI agents and contributors |
-| [docs/docs/runtime/isa.md](docs/docs/runtime/isa.md) | Instruction Set Architecture specification |
+---
 
 ## Architecture
 
@@ -129,7 +121,7 @@ Persistence: No saved program
 │  ┌──────────────────────────────────────────────────────┐  │
 │  │                    ZPLC Core (C99)                    │  │
 │  │  ┌──────────┐  ┌─────────────┐  ┌─────────────────┐  │  │
-│  │  │ Loader   │  │ VM (63 ops) │  │ Process Image   │  │  │
+│  │  │ Loader   │  │ VM (75 ops) │  │ Process Image   │  │  │
 │  │  └──────────┘  └─────────────┘  └─────────────────┘  │  │
 │  └──────────────────────────┬───────────────────────────┘  │
 │                             │ HAL Interface                 │
@@ -142,118 +134,173 @@ Persistence: No saved program
 └─────────────────────────────────────────────────────────────┘
 ```
 
+---
+
+## Standard Library
+
+ZPLC includes a comprehensive IEC 61131-3 standard library:
+
+### Functions (45+)
+
+| Category | Functions |
+|----------|-----------|
+| **Math** | ABS, SQRT, LN, LOG, EXP, SIN, COS, TAN, ASIN, ACOS, ATAN, EXPT |
+| **Arithmetic** | ADD, SUB, MUL, DIV, MOD, MIN, MAX, LIMIT, SEL, MUX |
+| **Bitwise** | AND, OR, XOR, NOT, SHL, SHR, ROL, ROR |
+| **Comparison** | EQ, NE, LT, LE, GT, GE |
+| **Type Conversion** | INT_TO_REAL, REAL_TO_INT, BOOL_TO_INT, etc. |
+| **String** | LEN, CONCAT, LEFT, RIGHT, MID, FIND, INSERT, DELETE, REPLACE |
+
+### Function Blocks (22)
+
+| Category | Blocks |
+|----------|--------|
+| **Timers** | TON, TOF, TP, TONR |
+| **Counters** | CTU, CTD, CTUD |
+| **Edge Detection** | R_TRIG, F_TRIG |
+| **Bistables** | SR, RS |
+| **Communication** | (Planned: MODBUS_CLIENT, MQTT_PUBLISH) |
+
+---
+
 ## Supported Platforms
 
-### Primary Target: Zephyr RTOS
+### Embedded (Zephyr RTOS)
 ZPLC is a Zephyr Module, supporting 500+ boards including:
+- **Raspberry Pi**: Pico (RP2040)
+- **STMicroelectronics**: STM32F4, STM32L4, STM32H7, Nucleo boards
+- **Arduino**: Giga R1 (STM32H747)
+- **Espressif**: ESP32, ESP32-S2, ESP32-S3, ESP32-C3
 - **Nordic**: nRF52840, nRF5340, nRF9160
-- **STMicroelectronics**: STM32F4, STM32L4, STM32H7
-- **Espressif**: ESP32, ESP32-S2, ESP32-C3
 - **NXP**: i.MX RT, LPC, Kinetis
-- **And many more...**
 
-### Development Targets
-- **POSIX** (Linux/macOS): For development and unit testing
+### Desktop & Development
+- **Desktop App**: Windows, macOS, Linux (Electron)
+- **POSIX**: Linux/macOS for development and unit testing
 - **QEMU**: Cortex-M3 emulation for CI/CD pipelines
-- **WASM**: Browser-based simulation (fully supported in IDE)
+- **WASM**: Browser-based simulation
+
+---
 
 ## Project Structure
 
 ```
 ZPLC/
-├── apps/                       # Application targets (POSIX & Zephyr)
-├── dts/bindings/               # DeviceTree bindings for Zephyr
-├── ide/                        # Web-based IDE (React + TypeScript)
-│   ├── src/compiler/           # ST Compiler & Transpilers
-│   └── src/editors/            # LD, FBD, SFC Visual Editors
-├── include/                    # Public C headers (VM API & ISA)
-├── src/                        # VM Core and HAL implementations
-├── tests/                      # Unit tests (109 assertions)
-├── tools/                      # CLI tools (Python Assembler)
-├── zephyr/                     # Zephyr module definition files
-├── CMakeLists.txt              # Root build configuration
-├── TECHNICAL_SPEC.md           # Full technical specification
-└── AGENTS.md                   # Contributor guide
-
+├── firmware/                      # Standalone Zephyr project
+│   ├── app/                       # Zephyr application (main target)
+│   │   ├── src/main.c
+│   │   ├── src/shell_cmds.c
+│   │   ├── boards/                # Board overlays & configs
+│   │   └── prj.conf
+│   ├── apps/posix_host/           # POSIX development runtime
+│   ├── lib/zplc_core/             # Core library (C99)
+│   │   ├── include/               # Public headers
+│   │   ├── src/core/              # VM implementation
+│   │   ├── src/hal/               # HAL implementations
+│   │   └── tests/                 # C unit tests
+│   ├── CMakeLists.txt             # Zephyr module CMake
+│   ├── Kconfig                    # Zephyr Kconfig
+│   └── module.yml                 # Zephyr module definition
+├── ide/                           # Desktop & Web IDE
+│   ├── electron/                  # Electron main process
+│   ├── src/compiler/              # ST Compiler & Code Generator
+│   ├── src/components/            # React UI Components
+│   └── projects/                  # Example projects
+├── docs/                          # Documentation (Docusaurus)
+├── AGENTS.md                      # AI agent & contributor guide
+└── TECHNICAL_SPEC.md              # Full technical specification
 ```
+
+---
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [TECHNICAL_SPEC.md](TECHNICAL_SPEC.md) | Complete architecture, binary format, and roadmap |
+| [AGENTS.md](AGENTS.md) | Context for AI agents and contributors |
+| [docs/](docs/) | Full documentation site (Docusaurus) |
+
+---
 
 ## Using ZPLC in Your Zephyr Project
 
 ### Via West Manifest
+
 Add to your `west.yml`:
+
 ```yaml
 manifest:
   projects:
     - name: zplc
       url: https://github.com/eduardojvieira/ZPLC
-      revision: master
+      revision: main
       path: modules/lib/zplc
+      import:
+        path-prefix: firmware
 ```
 
 ### Via ZEPHYR_EXTRA_MODULES
+
 ```bash
-west build -b <board> <app> -- -DZEPHYR_EXTRA_MODULES=/path/to/zplc
+west build -b <board> <app> -- -DZEPHYR_EXTRA_MODULES=/path/to/zplc/firmware
 ```
 
 ### Application Configuration
+
 In your `prj.conf`:
+
 ```ini
 CONFIG_ZPLC=y
 CONFIG_ZPLC_STACK_DEPTH=256
 CONFIG_ZPLC_WORK_MEMORY_SIZE=8192
+CONFIG_ZPLC_SCHEDULER=y
+CONFIG_ZPLC_MAX_TASKS=4
 ```
+
+---
+
+## Key Features
+
+### Visual IDE
+- **Ladder Diagram (LD)**: Interactive editor with nested branches and real-time animation
+- **Function Block Diagram (FBD)**: Modular logic design with standard IEC blocks
+- **Sequential Function Chart (SFC)**: Visual state machine design
+- **Structured Text (ST)**: Full compiler with syntax highlighting and error reporting
+
+### Simulation & Debugging
+- **WebAssembly Simulation**: Run PLC logic in browser, no hardware required
+- **Hardware Debugging**: Serial connection for real-time variable inspection
+- **Breakpoints**: Pause execution at specific lines
+- **Step Execution**: Execute one cycle at a time
+- **Watch Window**: Monitor variables in real-time
+
+### Hardware Integration
+- **Serial Uploader**: One-click upload to Zephyr boards
+- **NVS Persistence**: Programs survive power cycles
+- **Multitask Scheduling**: Priority-based concurrent task execution
+- **Deterministic Execution**: Fixed cycle times for critical control
+
+---
 
 ## Contributing
 
 See [AGENTS.md](AGENTS.md) for detailed contribution guidelines, coding standards, and development workflows.
 
-### Key Features in Detail
+### Quick Commands
 
-### Visual IDE
-The ZPLC IDE is a modern, web-browser-based environment for programming PLCs.
-- **Ladder Diagram (LD)**: Interactive editor with support for nested branches and real-time animation.
-- **Function Block Diagram (FBD)**: Modular logic design with standard IEC 61131-3 blocks.
-- **Sequential Function Chart (SFC)**: Visual state machine design for complex process control.
-- **Structured Text (ST)**: High-level language with a robust compiler and standard library.
+```bash
+# C Runtime (from firmware/lib/zplc_core/build)
+cmake .. && make && ctest --output-on-failure
 
-### Simulation & Debugging
-- **Local Simulation**: Run your PLC logic directly in the browser using WebAssembly. No hardware required for testing.
-- **Hardware Debugging**: Connect to a running PLC over serial to watch variables and inspect the VM state in real-time.
-- **Visual Watch**: Active wires and steps are highlighted in the editors during execution.
+# TypeScript IDE
+cd ide && bun test
 
-### Hardware Integration
-- **WebSerial Uploader**: One-click upload from the browser to your Zephyr-enabled board.
-- **Deterministic Execution**: The runtime ensures fixed cycle times (e.g., 100ms) for critical control tasks.
+# Single test file
+bun test compiler.test.ts
+```
 
-## Quick Start (IDE)
-
-1.  **Open the IDE**:
-    ```bash
-    cd ide
-    bun install
-    bun run dev
-    ```
-2.  **Create a New Program**: Use the sidebar to add an `LD` or `FBD` file.
-3.  **Simulate**: Click the **Simulate** button in the top toolbar to run the logic in your browser.
-4.  **Connect Hardware**: Plug in your Zephyr board, click **Connect**, select the serial port, and then **Upload**.
-
-## Quick Start (Runtime)
-
-To build the runtime for your board:
-1.  **Environment**: Ensure you have the [Zephyr SDK](https://docs.zephyrproject.org/latest/develop/getting_started/index.html) installed.
-2.  **Compile**:
-    ```bash
-    cd apps/zephyr_app
-    west build -b <your_board_alias>
-    west flash
-    ```
-
-## Key Principles
-
-1.  **Strict ANSI C99**: No GCC extensions in core code to ensure maximum portability.
-2.  **HAL Abstraction**: The VM core never touches hardware directly, enabling simulation on any platform.
-3.  **Test-Driven**: Every instruction and feature is backed by C unit tests.
-4.  **IEC 61131-3 Compliance**: Aiming for full compatibility with international PLC standards.
+---
 
 ## License
 
@@ -262,7 +309,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Acknowledgments
 
 - [Zephyr Project](https://zephyrproject.org/) - The RTOS that makes this possible
-- [React Flow](https://reactflow.dev/) - Powering our highly interactive visual editors
-- [Emscripten](https://emscripten.org/) - Enabling high-performance PLC simulation in the browser
-- [IEC 61131-3](https://en.wikipedia.org/wiki/IEC_61131-3) - The standard we aim to support
-
+- [React Flow](https://reactflow.dev/) - Powering our visual editors
+- [Monaco Editor](https://microsoft.github.io/monaco-editor/) - Code editing experience
+- [Electron](https://www.electronjs.org/) - Cross-platform desktop framework
+- [Emscripten](https://emscripten.org/) - WebAssembly compilation
+- [IEC 61131-3](https://en.wikipedia.org/wiki/IEC_61131-3) - The standard we implement
