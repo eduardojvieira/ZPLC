@@ -17,7 +17,7 @@ import { useIDEStore, type LiveValue } from '../store/useIDEStore';
 import type { IDebugAdapter, VMState, VMInfo, DebugAdapterEvents } from '../runtime/debugAdapter';
 import { WASMAdapter } from '../runtime/wasmAdapter';
 import { connectionManager } from '../runtime/connectionManager';
-import type { DebugMap } from '../compiler/debug-map';
+import type { DebugMap } from '../compiler';
 
 // =============================================================================
 // Types

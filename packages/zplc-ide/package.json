@@ -1,5 +1,5 @@
 {
-  "name": "zplc-ide",
+  "name": "@zplc/ide",
   "private": true,
   "version": "1.4.7",
   "description": "ZPLC IDE - Industrial PLC Development Environment",
@@ -15,7 +15,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "build:wasm": "cd .. && ./scripts/build_wasm.sh",
+    "build:wasm": "cd ../.. && ./scripts/build_wasm.sh",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "bun test",
@@ -29,6 +29,7 @@
     "electron:build:linux": "npm run build && npm run electron:compile && electron-builder --linux"
   },
   "dependencies": {
+    "@zplc/compiler": "workspace:*",
     "@monaco-editor/react": "^4.7.0",
     "@xyflow/react": "^12.10.0",
     "js-yaml": "^4.1.1",
