@@ -888,8 +888,7 @@ describe('LD to ST Transpiler', () => {
 // Integration Tests
 // =============================================================================
 
-import { compileST } from '../compiler';
-import { assemble } from '../assembler';
+import { compileST, assemble } from '../compiler';
 
 describe('Transpiler Integration', () => {
   it('should generate compilable ST from blinky.fbd.json example', () => {

@@ -79,7 +79,7 @@ export type { CodeGenOptions } from './codegen.ts';
 // =============================================================================
 // Assembler exports (ASM -> bytecode)
 // =============================================================================
-export { assemble, createZplcFile, createMultiTaskZplcFile, relocateBytecode, TASK_TYPE } from '../assembler/index.ts';
+export { assemble, createZplcFile, createMultiTaskZplcFile, relocateBytecode, TASK_TYPE, AssemblerError, ZPLC_CONSTANTS } from '../assembler/index.ts';
 export type { AssemblyResult, TaskDef, TaskType, InstructionMapping } from '../assembler/index.ts';
 
 // =============================================================================

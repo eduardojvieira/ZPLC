@@ -6,15 +6,16 @@ build_release/
 bin/
 dist/
 
-# IDE files
-ide/node_modules/
-ide/dist/
-ide/.env
-ide/.DS_Store
+# Root workspace
+node_modules/
+bun.lock
 
 # Packages
 packages/*/node_modules/
 packages/*/dist/
+packages/*/electron-dist/
+packages/*/.env
+packages/*/.DS_Store
 
 # OS files
 .DS_Store

@@ -21,7 +21,7 @@
 
 import { useMemo } from 'react';
 import { useIDEStore, type LiveValue } from '../store/useIDEStore';
-import { findVariable, type DebugDataType, type MemoryRegion } from '../compiler/debug-map';
+import { findVariable, type DebugDataType, type MemoryRegion } from '../compiler';
 
 /**
  * Result of looking up a debug variable

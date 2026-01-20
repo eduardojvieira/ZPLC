@@ -41,7 +41,7 @@ import {
 } from '../utils/projectLoader';
 import type { ProjectInfo } from '../utils/projectLoader';
 import type { SystemInfo, StatusInfo } from '../runtime/serialAdapter';
-import type { DebugMap } from '../compiler/debug-map';
+import type { DebugMap } from '../compiler';
 
 // =============================================================================
 // Theme Types
