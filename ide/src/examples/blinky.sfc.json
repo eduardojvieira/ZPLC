@@ -1,0 +1,94 @@
+{
+  "$schema": "./schemas/sfc.schema.json",
+  "name": "Blinky",
+  "description": "ZPLC Blinky - Sequential Function Chart with timed steps",
+  "version": "2.0.0",
+  
+  "variables": {
+    "local": [],
+    "outputs": [
+      {
+        "name": "LED_Output",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Physical LED output"
+      }
+    ]
+  },
+
+  "steps": [
+    {
+      "id": "step_led_on",
+      "name": "LED_ON",
+      "isInitial": true,
+      "position": { "x": 200, "y": 50 },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "SET_LED_ON",
+          "comment": "Turn LED ON while in this step"
+        }
+      ]
+    },
+    {
+      "id": "step_led_off",
+      "name": "LED_OFF", 
+      "isInitial": false,
+      "position": { "x": 200, "y": 250 },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "SET_LED_OFF",
+          "comment": "Turn LED OFF while in this step"
+        }
+      ]
+    }
+  ],
+
+  "transitions": [
+    {
+      "id": "trans_on_to_off",
+      "fromStep": "step_led_on",
+      "toStep": "step_led_off",
+      "condition": "step_led_on.T >= T#500ms",
+      "comment": "After 500ms in ON state, transition to OFF",
+      "position": { "x": 200, "y": 150 }
+    },
+    {
+      "id": "trans_off_to_on",
+      "fromStep": "step_led_off",
+      "toStep": "step_led_on",
+      "condition": "step_led_off.T >= T#500ms",
+      "comment": "After 500ms in OFF state, transition to ON",
+      "position": { "x": 200, "y": 350 }
+    }
+  ],
+
+  "actions": [
+    {
+      "id": "SET_LED_ON",
+      "name": "SET_LED_ON",
+      "type": "ST",
+      "body": "LED_Output := TRUE;"
+    },
+    {
+      "id": "SET_LED_OFF",
+      "name": "SET_LED_OFF",
+      "type": "ST",
+      "body": "LED_Output := FALSE;"
+    }
+  ],
+
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2024-12-27",
+    "iecStandard": "IEC 61131-3",
+    "notes": [
+      "Simple 2-state blinky using SFC:",
+      "- LED_ON step: LED is ON, waits 500ms, transitions to LED_OFF",
+      "- LED_OFF step: LED is OFF, waits 500ms, transitions to LED_ON",
+      "- step.T is the elapsed time in the current step",
+      "- Initial step is LED_ON, so LED starts ON"
+    ]
+  }
+}

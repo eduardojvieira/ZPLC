@@ -1,0 +1,121 @@
+{
+  "$schema": "./schemas/ld.schema.json",
+  "name": "Blinky",
+  "description": "ZPLC Blinky - Ladder Diagram with oscillating timer pattern",
+  "version": "2.0.0",
+
+  "variables": {
+    "local": [
+      {
+        "name": "BlinkTimer",
+        "type": "TON",
+        "comment": "Timer for 500ms blink interval"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "LED_Output",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Physical LED output"
+      }
+    ]
+  },
+
+  "rungs": [
+    {
+      "id": "rung_1",
+      "number": 1,
+      "comment": "Oscillating Timer - runs when output is OFF, times 500ms",
+      "grid": [
+        [
+          { "element": { "id": "rail_left_1", "type": "left_rail" } },
+          { "element": { "id": "nc_output", "type": "contact_nc", "variable": "LED_Output" } },
+          { "element": { "id": "ton_blink", "type": "function_block", "fbType": "TON", "instance": "BlinkTimer", "parameters": { "IN": "CONNECTED", "PT": "T#500ms" } } },
+          { "element": { "id": "rail_right_1", "type": "right_rail" } }
+        ]
+      ],
+      "elements": [
+        { "id": "rail_left_1", "type": "left_rail", "position": { "x": 0, "y": 0 } },
+        {
+          "id": "nc_output",
+          "type": "contact_nc",
+          "variable": "LED_Output",
+          "position": { "x": 100, "y": 0 },
+          "comment": "NC: passes power when LED is OFF"
+        },
+        {
+          "id": "ton_blink",
+          "type": "function_block",
+          "fbType": "TON",
+          "instance": "BlinkTimer",
+          "position": { "x": 250, "y": 0 },
+          "parameters": {
+            "IN": "CONNECTED",
+            "PT": "T#500ms"
+          }
+        },
+        { "id": "rail_right_1", "type": "right_rail", "position": { "x": 450, "y": 0 } }
+      ],
+      "connections": [
+        { "from": "rail_left_1", "to": "nc_output" },
+        { "from": "nc_output", "to": "ton_blink.IN" }
+      ]
+    },
+    {
+      "id": "rung_2",
+      "number": 2,
+      "comment": "LED Output - SET when timer done, self-resets when timer restarts",
+      "grid": [
+        [
+          { "element": { "id": "rail_left_2", "type": "left_rail" } },
+          { "element": { "id": "timer_done", "type": "contact_no", "variable": "BlinkTimer.Q" } },
+          { "element": { "id": "coil_led", "type": "coil", "variable": "LED_Output" } },
+          { "element": { "id": "rail_right_2", "type": "right_rail" } }
+        ]
+      ],
+      "elements": [
+        { "id": "rail_left_2", "type": "left_rail", "position": { "x": 0, "y": 100 } },
+        {
+          "id": "timer_done",
+          "type": "contact_no",
+          "variable": "BlinkTimer.Q",
+          "position": { "x": 100, "y": 100 },
+          "comment": "Timer expired?"
+        },
+        {
+          "id": "coil_led",
+          "type": "coil",
+          "variable": "LED_Output",
+          "position": { "x": 350, "y": 100 },
+          "comment": "Drive LED directly from timer.Q"
+        },
+        { "id": "rail_right_2", "type": "right_rail", "position": { "x": 450, "y": 100 } }
+      ],
+      "connections": [
+        { "from": "rail_left_2", "to": "timer_done" },
+        { "from": "timer_done", "to": "coil_led" },
+        { "from": "coil_led", "to": "rail_right_2" }
+      ]
+    }
+  ],
+
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2024-12-27",
+    "iecStandard": "IEC 61131-3",
+    "notes": [
+      "This is a classic PLC oscillator pattern:",
+      "1. Rung 1: Timer runs while LED_Output is FALSE (NC contact passes power)",
+      "2. When timer.Q becomes TRUE, Rung 2 turns LED_Output ON",
+      "3. LED_Output ON opens the NC contact in Rung 1, resetting timer",
+      "4. Timer resets (Q=FALSE), Rung 2 turns LED_Output OFF",
+      "5. LED_Output OFF closes NC contact, timer starts again",
+      "Result: LED toggles every 500ms",
+      "",
+      "This pattern avoids race conditions because:",
+      "- Only ONE coil assignment to LED_Output exists",
+      "- The feedback loop naturally creates the oscillation"
+    ]
+  }
+}
