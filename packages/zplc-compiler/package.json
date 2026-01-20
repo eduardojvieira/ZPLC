@@ -1,0 +1,54 @@
+{
+  "name": "@zplc/compiler",
+  "version": "1.0.0",
+  "description": "IEC 61131-3 Structured Text compiler for ZPLC runtime",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "bun run build.ts",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "plc",
+    "iec-61131-3",
+    "structured-text",
+    "compiler",
+    "bytecode",
+    "industrial",
+    "automation",
+    "embedded"
+  ],
+  "author": "ZPLC Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eduardojvieira/ZPLC.git",
+    "directory": "packages/zplc-compiler"
+  },
+  "bugs": {
+    "url": "https://github.com/eduardojvieira/ZPLC/issues"
+  },
+  "homepage": "https://github.com/eduardojvieira/ZPLC#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.27.2",
+    "typescript": "^5.9.3"
+  }
+}

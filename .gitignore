@@ -12,6 +12,10 @@ ide/dist/
 ide/.env
 ide/.DS_Store
 
+# Packages
+packages/*/node_modules/
+packages/*/dist/
+
 # OS files
 .DS_Store
 Thumbs.db
