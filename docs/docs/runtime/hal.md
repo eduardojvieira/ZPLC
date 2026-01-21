@@ -229,6 +229,10 @@ To port ZPLC to a new platform:
 
 | HAL | Timing | GPIO | Analog | Persist | Network |
 |-----|--------|------|--------|---------|---------|
-| Zephyr | ✅ Complete | ✅ Complete | Stub | ✅ NVS | Planned |
-| POSIX | ✅ Complete | Simulated | Simulated | ✅ File | Planned |
-| WASM | ✅ Complete | ✅ JS Bridge | JS Bridge | Stub | WebSocket |
+| Zephyr | ✅ Complete | ✅ Complete | Stub | ✅ NVS | 🔜 Phase 1.4.1 |
+| POSIX | ✅ Complete | Simulated | Simulated | ✅ File | 🔜 Phase 1.4.1 |
+| WASM | ✅ Complete | ✅ JS Bridge | JS Bridge | ✅ localStorage | N/A |
+
+:::note
+Network support requires Phase 1.4.1 (Networking Foundation) which will implement `zplc_hal_socket_*` functions for Zephyr and POSIX targets.
+:::

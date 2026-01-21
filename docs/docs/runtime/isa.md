@@ -427,7 +427,6 @@ All multi-byte values are **little-endian**.
 │     └── OPI → HAL writes physical outputs               │
 │                                                         │
 │  4. HOUSEKEEPING                                        │
-│     ├── Comm handling (Modbus, MQTT)                    │
 │     ├── Debug protocol                                  │
 │     └── Retain memory flush (if dirty)                  │
 │                                                         │

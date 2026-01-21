@@ -72,5 +72,5 @@ While tasks share global variables, their **local** execution state is completel
 This means you can call the same Function Block from different tasks without stack corruption, *provided* the Function Block instance itself (its state) is unique or thread-safe.
 
 :::warning Concurrency
-If two tasks write to the same Global Variable or Output, the "Last Write Wins". For critical data exchange, use atomic operations or specific synchronization primitives (Roadmap v1.5).
+If two tasks write to the same Global Variable or Output, the "Last Write Wins". Thread-safe Process Image access is planned for Phase 1.4.1 (Networking Foundation) which will add mutex protection via `zplc_pi_lock()` / `zplc_pi_unlock()` API.
 :::
