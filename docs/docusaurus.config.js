@@ -25,7 +25,7 @@ const config = {
   organizationName: 'eduardojvieira',
   projectName: 'ZPLC',
 
-  onBrokenLinks: 'throw',
+  onBrokenLinks: 'warn',
 
   i18n: {
     defaultLocale: 'en',
@@ -86,11 +86,6 @@ const config = {
             label: 'Documentation',
           },
           {
-            to: '/ide/',
-            label: 'Try Online',
-            position: 'left',
-          },
-          {
             type: 'localeDropdown',
             position: 'right',
           },
@@ -107,10 +102,10 @@ const config = {
           {
             title: 'Documentation',
             items: [
-              {
-                label: 'Quick Start',
-                to: '/docs/getting-started/quickstart',
-              },
+            {
+              label: 'Runtime Introduction',
+              to: '/docs/runtime/intro',
+            },
               {
                 label: 'Runtime Reference',
                 to: '/docs/runtime/intro',
@@ -124,18 +119,18 @@ const config = {
           {
             title: 'Resources',
             items: [
-              {
-                label: 'Hardware Setup',
-                to: '/docs/hardware/pinouts',
-              },
+            {
+              label: 'Hardware Abstraction Layer',
+              to: '/docs/runtime/hal',
+            },
               {
                 label: 'Standard Library',
                 to: '/docs/languages/stdlib',
               },
-              {
-                label: 'Advanced Topics',
-                to: '/docs/advanced/multitask',
-              },
+            {
+              label: 'Task Scheduler',
+              to: '/docs/runtime/scheduler',
+            },
             ],
           },
           {
