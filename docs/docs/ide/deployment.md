@@ -63,12 +63,12 @@ sudo dpkg -i zplc_*.deb
 
 ZPLC supports multiple deployment methods depending on your target platform and connectivity:
 
-| Method | Connection | Use Case |
-|--------|------------|----------|
-| WebSerial | USB | Direct connection from browser |
-| Network | TCP/IP | Remote deployment over LAN/WAN |
-| File Transfer | SD Card/USB | Offline deployment |
-| OTA | WiFi/Cellular | Field updates |
+| Method | Connection | Use Case | Status |
+|--------|------------|----------|--------|
+| Serial | USB | Direct connection from IDE | ✅ Implemented |
+| Network | TCP/IP | Remote deployment over LAN/WAN | 🔜 Planned (Phase 1.4.1) |
+| File Transfer | SD Card/USB | Offline deployment | ✅ Implemented |
+| OTA | WiFi/Cellular | Field updates | 🔜 Planned (Phase 2.1) |
 
 ---
 
@@ -128,6 +128,10 @@ Default: **115200 bps** (configurable in device settings)
 
 ## Network Deployment
 
+:::caution Planned Feature
+Network deployment requires the networking foundation (Phase 1.4.1) which is not yet implemented. This section describes the intended functionality for future releases.
+:::
+
 For devices with Ethernet or WiFi connectivity.
 
 ### Prerequisites
@@ -146,8 +150,12 @@ For devices with Ethernet or WiFi connectivity.
 
 ### Security Considerations
 
-- Use TLS for production deployments
-- Enable authentication on the debug protocol
+:::note
+These security features are planned for Phase 1.7. Currently, the debug protocol has no authentication.
+:::
+
+- Use TLS for production deployments (planned)
+- Enable authentication on the debug protocol (planned)
 - Restrict access via firewall rules
 
 ---
@@ -184,6 +192,10 @@ zplc run
 ---
 
 ## OTA (Over-the-Air) Updates
+
+:::caution Planned Feature
+OTA updates are planned for Phase 2.1. This section describes the intended architecture for future implementation.
+:::
 
 For deployed field devices with network connectivity.
 

@@ -82,7 +82,7 @@ The Core is ANSI C99, strictly standard-compliant, designed to be compiled as a 
 
 ### 5.1 The Virtual Machine (VM)
 
-* **Instruction Set:** Stack-based, optimized for boolean logic and arithmetic. **63 opcodes** total.
+* **Instruction Set:** Stack-based, optimized for boolean logic and arithmetic. **75 opcodes** total (including indirect memory access, STRING operations, and PICK for deep stack access).
 * **Unified IR:** Structured Text (ST) and Ladder (LD) ultimately compile down to the same JUMP / LOAD / STORE / AND / OR opcodes.
 * **Memory Model:**
     * **Process Image:** A contiguous block of memory for I/O snapshots.
@@ -190,44 +190,68 @@ ZPLC integrates with Zephyr as a **Module**.
 
 ---
 
-## 8. Connectivity & Security (v1.2 Scope)
+## 8. Connectivity & Security
 
-### 8.1 Communication
+### 8.1 Communication (Current State)
 
-* **Modbus TCP Server:** Standard implementation. Map internal vars to Holding Registers/Coils via config.
-* **MQTT Client:** "Publish on Change" for tagged variables (Sparkplug B compliant).
-* **Debug Protocol:** WebSocket protocol for Watch/Force/Upload.
+* **Debug Protocol**: Binary protocol over Serial (implemented) for:
+  - Program upload/download
+  - Variable watch (read process image)
+  - Variable force (write process image)
+  - Breakpoint control
+  - Step execution
 
-### 8.2 Security Strategy
+* **Planned Protocols** (see Roadmap):
+  - Modbus TCP/RTU (Phase 1.5)
+  - MQTT v3.1.1/v5.0 (Phase 1.5)
+  - Cloud integrations - AWS, Azure (Phase 1.5.1)
+  - OPC UA (Phase 1.5.2)
 
-* **Authentication:** SRP or JWT based auth for the Debug Protocol.
+### 8.2 Security Strategy (Planned - Phase 1.7)
+
+* **Authentication:** Token-based auth for network protocols.
 * **Role Based Access Control (RBAC):**
-    * *Viewer:* Read-only Watch.
-    * *Operator:* Read/Write specific runtime parameters.
-    * *Engineer:* Full Upload/Download/Force capability.
-* **Crypto:** Use MbedTLS (on Zephyr) or OpenSSL (on Host) for TLS transport.
+    * *Viewer:* Read-only variable monitoring.
+    * *Operator:* Read/Write runtime parameters.
+    * *Engineer:* Full program upload/download capability.
+* **Crypto:** MbedTLS (Zephyr) for TLS transport on network protocols.
 
 ---
 
 ## 9. Development Roadmap
 
 **Phase 1.0 (Completed)**
-* **ISA & VM**: 63 opcodes, 32-bit stack, IEEE 754 float support.
-* **Visual IDE**: Reactive editors for LD, FBD, and SFC.
-* **TS Compiler**: Structured Text to Bytecode transpilation.
-* **WASM Simulation**: In-browser execution of the C core.
-* **Serial Loader**: Real-time program injection into Zephyr targets.
+* ✅ **ISA & VM**: 63 opcodes, 32-bit stack, IEEE 754 float support.
+* ✅ **Visual IDE**: Reactive editors for LD, FBD, and SFC.
+* ✅ **TS Compiler**: Structured Text to Bytecode transpilation.
+* ✅ **WASM Simulation**: In-browser execution of the C core.
+* ✅ **Serial Loader**: Real-time program injection into Zephyr targets.
 
 **Phase 1.1 (Completed)**
 * ✅ **Multitask Scheduler**: Priority-based concurrent task execution.
 * ✅ **Program Persistence**: NVS-backed storage survives power cycles.
 * ✅ **Shell Commands**: `zplc persist info/clear` for managing stored programs.
 
-**Phase 1.2 (Target: Q2 2026)**
-* **Industrial Connectivity**: Modbus TCP/RTU server and client.
-* **Cloud Integration**: MQTT "Sparkplug B" compliant client.
-* **Retentive Variables**: NVS-backed RETAIN memory for process data.
-* **Security**: Bytecode signing and encrypted debug transport.
+**Phase 1.2 (Completed)**
+* ✅ **STRING Operations**: Full IEC 61131-3 string support with bounds-checked operations.
+* ✅ **Indirect Memory**: Dynamic memory access opcodes (LOADI/STOREI).
+* ✅ **ISA Expansion**: 75 opcodes total.
+
+**Phase 1.3 (Completed)**
+* ✅ **Retentive Variables**: NVS-backed RETAIN memory region for critical process data.
+* ✅ **Debug Protocol**: Binary serial protocol for variable watch, force, and breakpoints.
+
+**Phase 1.4 (Completed)**
+* ✅ **Cross-Platform Desktop App**: Electron-based IDE for Windows, macOS, and Linux.
+* ✅ **Native Serial Port**: Direct device communication via serialport package.
+* ✅ **Integrated Simulator**: Improved WebAssembly simulation engine.
+* ✅ **Project Management**: Persistent project storage and file system integration.
+
+**Upcoming Phases** (see TECHNICAL_SPEC.md for details):
+* **Phase 1.4.1**: Networking Foundation (HAL sockets, thread-safe PI, config system)
+* **Phase 1.5**: Industrial Connectivity (Modbus RTU/TCP, MQTT, AWS IoT)
+* **Phase 1.6**: Runtime Hardening (logging, watchdog, diagnostics)
+* **Phase 1.7**: Security & Authentication (bytecode signing, TLS, RBAC)
 
 ---
 

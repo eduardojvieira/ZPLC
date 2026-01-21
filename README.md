@@ -159,7 +159,6 @@ ZPLC includes a comprehensive IEC 61131-3 standard library:
 | **Counters** | CTU, CTD, CTUD |
 | **Edge Detection** | R_TRIG, F_TRIG |
 | **Bistables** | SR, RS |
-| **Communication** | (Planned: MODBUS_CLIENT, MQTT_PUBLISH) |
 
 ---
 
