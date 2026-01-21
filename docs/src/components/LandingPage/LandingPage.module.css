@@ -26,7 +26,7 @@
 .gridPattern {
     position: absolute;
     inset: 0;
-    background-image: 
+    background-image:
         linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px),
         linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px);
     background-size: 60px 60px;
@@ -58,16 +58,64 @@
 }
 
 @keyframes float {
-    0%, 100% { transform: translateY(0) translateX(0); }
-    33% { transform: translateY(-30px) translateX(20px); }
-    66% { transform: translateY(20px) translateX(-20px); }
+
+    0%,
+    100% {
+        transform: translateY(0) translateX(0);
+    }
+
+    33% {
+        transform: translateY(-30px) translateX(20px);
+    }
+
+    66% {
+        transform: translateY(20px) translateX(-20px);
+    }
 }
 
 .heroContent {
     position: relative;
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4rem;
     z-index: 1;
-    max-width: 900px;
-    text-align: center;
+    text-align: left;
+}
+
+@media (max-width: 1100px) {
+    .heroContent {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+.heroText {
+    flex: 1;
+    max-width: 600px;
+}
+
+.heroImageContainer {
+    flex: 1;
+    max-width: 700px;
+    position: relative;
+    perspective: 1000px;
+}
+
+.heroImage {
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transform: rotateY(5deg) skewY(2deg);
+    transition: transform 0.5s ease;
+}
+
+.heroImage:hover {
+    transform: rotateY(0) skewY(0);
 }
 
 .badge {
@@ -110,13 +158,15 @@
     font-size: 1.25rem;
     line-height: 1.7;
     color: var(--zplc-text-muted, #94A3B8);
-    max-width: 700px;
-    margin: 0 auto 2.5rem;
+    font-size: 1.25rem;
+    line-height: 1.7;
+    color: var(--zplc-text-muted, #94A3B8);
+    max-width: 600px;
+    margin-bottom: 2.5rem;
 }
 
 .heroStats {
     display: flex;
-    justify-content: center;
     align-items: center;
     gap: 2rem;
     margin-bottom: 2.5rem;
@@ -146,12 +196,11 @@
 .statDivider {
     width: 1px;
     height: 40px;
-    background: linear-gradient(180deg, transparent, rgba(255,255,255,0.2), transparent);
+    background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.2), transparent);
 }
 
 .buttons {
     display: flex;
-    justify-content: center;
     gap: 1rem;
     margin-bottom: 3rem;
     flex-wrap: wrap;
@@ -201,8 +250,14 @@
 .trustedBy {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
     gap: 1rem;
+}
+
+@media (max-width: 1100px) {
+    .trustedBy {
+        align-items: center;
+    }
 }
 
 .trustedLabel {
@@ -246,7 +301,7 @@
     padding-right: 2rem;
 }
 
-.sectionAlt > * {
+.sectionAlt>* {
     max-width: 1200px;
     margin-left: auto;
     margin-right: auto;
@@ -652,7 +707,7 @@
     .archFlowArrow {
         display: none;
     }
-    
+
     .archFlow {
         gap: 1.5rem;
     }
@@ -766,7 +821,7 @@
 }
 
 :global([data-theme='light']) .gridPattern {
-    background-image: 
+    background-image:
         linear-gradient(rgba(0, 109, 119, 0.05) 1px, transparent 1px),
         linear-gradient(90deg, rgba(0, 109, 119, 0.05) 1px, transparent 1px);
 }
@@ -813,7 +868,7 @@
 }
 
 :global([data-theme='light']) .statDivider {
-    background: linear-gradient(180deg, transparent, rgba(0,0,0,0.1), transparent);
+    background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.1), transparent);
 }
 
 :global([data-theme='light']) .primaryButton {

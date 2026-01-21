@@ -68,6 +68,10 @@ const config = {
     ({
       // Replace with your project's social card
       image: 'img/banner.png',
+      metadata: [
+        { name: 'keywords', content: 'plc, iec 61131-3, zephyr rtos, industrial automation, open source, stm32, esp32, raspberry pi pico, modbus, mqtt, scada, softplc, real-time' },
+        { name: 'description', content: 'ZPLC - The deterministic, portable, and secure IEC 61131-3 compatible runtime for modern industrial automation. The 2026 Standard.' },
+      ],
       colorMode: {
         defaultMode: 'dark',
         respectPrefersColorScheme: true,
@@ -102,10 +106,10 @@ const config = {
           {
             title: 'Documentation',
             items: [
-            {
-              label: 'Runtime Introduction',
-              to: '/docs/runtime/intro',
-            },
+              {
+                label: 'Runtime Introduction',
+                to: '/docs/runtime/intro',
+              },
               {
                 label: 'Runtime Reference',
                 to: '/docs/runtime/intro',
@@ -119,18 +123,18 @@ const config = {
           {
             title: 'Resources',
             items: [
-            {
-              label: 'Hardware Abstraction Layer',
-              to: '/docs/runtime/hal',
-            },
+              {
+                label: 'Hardware Abstraction Layer',
+                to: '/docs/runtime/hal',
+              },
               {
                 label: 'Standard Library',
                 to: '/docs/languages/stdlib',
               },
-            {
-              label: 'Task Scheduler',
-              to: '/docs/runtime/scheduler',
-            },
+              {
+                label: 'Task Scheduler',
+                to: '/docs/runtime/scheduler',
+              },
             ],
           },
           {
@@ -151,7 +155,7 @@ const config = {
             ],
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} ZPLC Project. Built with Docusaurus.`,
+        copyright: `Copyright © 2026 ZPLC Project. Built for Resilience. Built with Docusaurus.`,
       },
       prism: {
         theme: prismThemes.github,
