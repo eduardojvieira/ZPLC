@@ -1,5 +1,5 @@
-# ZPLC v1.1: Technical Specification & Architecture
-**Version:** 1.1.0 (Stable)
+# ZPLC v1.4: Technical Specification & Architecture
+**Version:** 1.4.7 (Stable)
 **Target:** Open Source Industrial Automation
 **Core Philosophy:** One Execution Core, Any Runtime.
 
@@ -7,13 +7,13 @@
 
 ZPLC is a portable, deterministic PLC runtime environment powered by Zephyr RTOS for embedded targets and native OS layers for desktop/server hosting. It is designed to bring modern software development practices—including CI/CD pipelines, compact binary deployment, and open interoperability via PLCopen XML—to the industrial floor.
 
-**The "v1.1" Features:** A fully functional runtime supporting all 5 IEC 61131-3 languages, capable of running real hardware I/O or in-browser simulations, with industrial-grade determinism. Now includes **multitask scheduling** and **NVS persistence**.
+**The "v1.4" Promise:** A fully functional runtime supporting all 5 IEC 61131-3 languages, capable of running real hardware I/O or in-browser simulations, with industrial-grade determinism. Features **multitask scheduling**, **NVS persistence**, **indirect memory access**, and a comprehensive **standard function library**. Now includes a **cross-platform desktop application** based on Electron.
 
 ---
 
 ## 2. Supported Hardware Targets
 
-ZPLC v1.1 officially supports the following reference boards. CI/CD pipelines must ensure compilation succeeds for all defined targets.
+ZPLC v1.4 officially supports the following reference boards. CI/CD pipelines must ensure compilation succeeds for all defined targets.
 
 | Board Name | SoC | Zephyr Board ID | Notes |
 | :--- | :--- | :--- | :--- |
@@ -21,6 +21,7 @@ ZPLC v1.1 officially supports the following reference boards. CI/CD pipelines mu
 | **ESP32-S3 DevKit-C** | ESP32-S3 (Xtensa LX7) | `esp32s3_devkitc` | WiFi/BLE capable |
 | **STM32 Nucleo-H743ZI** | STM32H743ZI (Cortex-M7) | `nucleo_h743zi` | High-perf industrial Ref |
 | **Raspberry Pi Pico** | RP2040 (Cortex-M0+) | `rpi_pico` | Low-cost, tested target |
+| **macOS / Linux** | x86_64 / ARM64 | `native_sim` | Native execution |
 | **QEMU (Simulation)** | Cortex-M3 | `mps2/an385` | CI Default |
 
 ---
@@ -35,14 +36,14 @@ For embedded targets, **Zephyr RTOS is the primary citizen**. ZPLC is designed t
 
 ```mermaid
 graph TD
-    subgraph "Development Host (Web IDE)"
+    subgraph "Development Host (IDE)"
         User[User Logic] -->|ST/LD/FBD/SFC/IL| Parsers
         Parsers -->|Normalize| IEC_IR[Internal IR]
         IEC_IR -->|Optimization| Compiler
         Compiler -->|Link & Pack| ZPLC_Bin[.zplc Package]
     end
 
-    ZPLC_Bin -->|Deploy via HTTP/Serial| Runtime
+    ZPLC_Bin -->|Deploy via Serial/USB| Runtime
 
     subgraph "Target Runtime (Device)"
         Loader[Package Loader] -->|Verify & Load| VM[ZPLC Virtual Machine]

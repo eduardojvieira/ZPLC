@@ -5,10 +5,10 @@
 const sidebars = {
   // Main documentation sidebar
   docsSidebar: [
-    // IDE User Manual
+    // Development Environment
     {
       type: 'category',
-      label: 'IDE User Manual',
+      label: 'Development Environment',
       className: 'sidebar-category-ide',
       collapsed: false,
       items: [
@@ -30,11 +30,11 @@ const sidebars = {
         'languages/stdlib',
       ],
     },
-    
-    // Runtime Reference
+
+    // Runtime Core
     {
       type: 'category',
-      label: 'Runtime Reference',
+      label: 'Runtime Core',
       className: 'sidebar-category-runtime',
       items: [
         'runtime/intro',
@@ -45,7 +45,18 @@ const sidebars = {
         'runtime/stdlib',
       ],
     },
-    
+
+    // Roadmap & Connectivity
+    {
+      type: 'category',
+      label: 'Roadmap & Ecosystem',
+      className: 'sidebar-category-advanced',
+      items: [
+        'runtime/roadmap',
+        'runtime/connectivity',
+      ],
+    },
+
     // Advanced Topics
     {
       type: 'category',

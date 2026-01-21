@@ -1,30 +1,46 @@
-# ZPLC IDE Overview
+# ZPLC IDE: Engineering Environment
 
-The ZPLC IDE is a modern engineering environment available as a **Desktop Application** (recommended) and a **Web Application**. It enables the development, simulation, and deployment of PLC programs using IEC 61131-3 standard languages.
+The ZPLC IDE is a modern, high-performance engineering environment designed for industrial automation professionals. Unlike traditional heavyweight PLCs, ZPLC is built on modern web technologies (TypeScript/React) and delivered as a **Native Desktop Application** for Windows, macOS, and Linux.
 
-## Editions
+## Core Editions
 
-| Feature | Desktop App (Electron) | Web App (Browser) |
+While the **Desktop App (Electron)** is the primary tool for production engineering, a **Web Edition** is available for rapid simulation and testing without installation.
+
+| Feature | Desktop App (Recommended) | Web App (Alternative) |
 |---|---|---|
-| **Platform** | macOS, Windows, Linux | Chrome, Edge |
-| **Connectivity** | Native Serial & Network | WebSerial API (Chrome/Edge only) |
-| **File System** | Direct File Access | Browser Sandboxed |
-| **Offline** | Fully Offline | Offline capable (PWA) |
-| **Updates** | Auto-updater | Instant web updates |
+| **OS** | Windows, macOS, Linux | Chrome / Edge |
+| **I/O Access** | Native Serial (Node-Serial) | WebSerial API |
+| **Files** | Local File System (Git-friendly) | Browser Sandbox |
+| **Determinism** | High-performance Electron Shell | Browser Threading |
 
 ## Key Features
 
-- **Multi-Language Support**: Work with Ladder Diagrams (LD), Function Block Diagrams (FBD), Structured Text (ST), and Instruction List (IL).
-- **Integrated Compiler**: Fast, local compilation to `.zplc` bytecode.
-- **Hardware Agnostic**: Compile your logic once and deploy to any ZPLC-compatible runtime (Zephyr, POSIX, Windows).
-- **Real-time Monitoring**: Watch window, live variable forcing, and cycle time analysis.
-- **WASM Simulation**: Test your logic instantly on your PC using the integrated WebAssembly runtime.
-- **Project Management**: Create multi-task configurations with custom cycle times.
+- **Unified Engineering**: Write in ST, parity with visual LD/FBD/SFC in the same project.
+- **Git-Native Persistence**: Every project is a simple folder with `zplc.json`. No proprietary binary blobs—version control works exactly as it should.
+- **Hardware Agnostic**: Transpile to portable bytecode. Deploy to an ESP32 or a High-End Industrial PC without changing a line of code.
+- **WASM High-Speed Simulation**: Test cycle-accurate logic instantly using a WebAssembly version of the C runtime.
+- **Live Diagnostics**: Remote variable monitoring, force injection, and cycle jitter analysis via the Debug Protocol.
 
-## Workflow
+## Engineering Workflow
 
-1.  **Design**: Create your logic using the visual or text-based editors.
-2.  **Configure**: Set up tasks and global variables in `zplc.json`.
-3.  **Compile**: The IDE transpiles your logic into optimized `.zplc` bytecode.
-4.  **Simulate**: Run the bytecode in the simulator to verify timing and logic.
-5.  **Deploy**: Upload the package to your target hardware via Serial (USB).
+```mermaid
+graph LR
+    A[Design] --> B[Compile]
+    B --> C[Simulate]
+    C --> D[Deploy]
+    
+    subgraph "IDE"
+        A
+        B
+        C
+    end
+    
+    subgraph "Target Board"
+        D
+    end
+```
+
+1.  **Design**: Compose logic using visual editors or Structured Text.
+2.  **Compile**: Transpile into `.zplc` bytecode with static analysis.
+3.  **Simulate**: Run on the WASM engine to verify logic and state machines.
+4.  **Deploy**: Upload to physical hardware via Serial/USB or Network (v1.5).
