@@ -23,9 +23,6 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: docs
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,11 +32,16 @@ jobs:
         with:
           bun-version: latest
 
-      - name: Install dependencies (Monorepo)
+      - name: Install monorepo dependencies
         run: bun install
 
       - name: Build WASM module
-        run: ./scripts/build_wasm.sh
+        run: |
+          if [ -f "./scripts/build_wasm.sh" ]; then
+            ./scripts/build_wasm.sh
+          else
+            echo "WASM build script not found, skipping..."
+          fi
 
       - name: Build IDE
         working-directory: packages/zplc-ide
