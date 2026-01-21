@@ -52,8 +52,8 @@ export default function Hero() {
                     </Link>
                     <Link
                         className={`button button--secondary button--lg ${styles.heroButton} ${styles.secondaryButton}`}
-                        to="/ide/">
-                        <Translate id="homepage.hero.button.tryOnline">Try it Online</Translate>
+                        to="/docs/ide/overview">
+                        <Translate id="homepage.hero.button.tryOnline">Explore IDE Docs</Translate>
                     </Link>
                 </div>
                 <div className={styles.trustedBy}>
