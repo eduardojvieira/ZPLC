@@ -27,27 +27,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - name: Install monorepo dependencies
-        run: bun install
-
-      - name: Build WASM module
-        run: |
-          if [ -f "./scripts/build_wasm.sh" ]; then
-            ./scripts/build_wasm.sh
-          else
-            echo "WASM build script not found, skipping..."
-          fi
-
-      - name: Build IDE
-        working-directory: packages/zplc-ide
-        run: bun run build
-
-      - name: Setup Node.js (for Docusaurus)
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -63,11 +43,6 @@ jobs:
         run: npm run build
         env:
           NODE_OPTIONS: '--max_old_space_size=4096'
-
-      - name: Integrate IDE into documentation
-        run: |
-          mkdir -p docs/build/ide
-          cp -r packages/zplc-ide/dist/* docs/build/ide/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
