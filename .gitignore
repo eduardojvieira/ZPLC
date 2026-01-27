@@ -26,6 +26,10 @@ Thumbs.db
 .idea/
 *.swp
 
+# LSP/clangd (symlink to build/compile_commands.json - local to each dev)
+compile_commands.json
+.cache/clangd/
+
 # Python files
 __pycache__/
 *.py[cod]

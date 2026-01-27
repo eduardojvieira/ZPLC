@@ -1,0 +1,28 @@
+{
+  "name": "SFCSingle",
+  "variables": {
+    "outputs": [
+      { "name": "OutLed", "type": "BOOL", "address": "%Q0.0" }
+    ],
+    "local": []
+  },
+  "steps": [
+    {
+      "id": "step1",
+      "name": "Step1",
+      "isInitial": true,
+      "actions": [
+        { "qualifier": "N", "actionName": "ACT1" }
+      ]
+    }
+  ],
+  "transitions": [],
+  "actions": [
+    {
+      "id": "ACT1",
+      "name": "ACT1",
+      "type": "ST",
+      "body": "OutLed := TRUE;"
+    }
+  ]
+}

@@ -4,13 +4,6 @@
  * SPDX-License-Identifier: MIT
  *
  * Tokenizes IEC 61131-3 Structured Text source code.
- * Supports the subset needed for blinky.st:
- *   - PROGRAM/END_PROGRAM, VAR/END_VAR, VAR_OUTPUT
- *   - IF/THEN/END_IF
- *   - Types: BOOL, TIME, TON
- *   - Literals: TRUE, FALSE, T#500ms, integers
- *   - Operators: :=, NOT, .
- *   - I/O addresses: %Q0.0, %I0.0
  */
 
 /**
@@ -26,6 +19,7 @@ export const TokenType = {
     END_VAR: 'END_VAR',
     VAR_OUTPUT: 'VAR_OUTPUT',
     VAR_INPUT: 'VAR_INPUT',
+    VAR_TEMP: 'VAR_TEMP',
     VAR_GLOBAL: 'VAR_GLOBAL',
     VAR_IN_OUT: 'VAR_IN_OUT',
     CONSTANT: 'CONSTANT',
@@ -35,6 +29,21 @@ export const TokenType = {
     END_TYPE: 'END_TYPE',
     STRUCT: 'STRUCT',
     END_STRUCT: 'END_STRUCT',
+
+    // OOP Extensions (IEC 61131-3 3rd Edition)
+    METHOD: 'METHOD',
+    END_METHOD: 'END_METHOD',
+    INTERFACE: 'INTERFACE',
+    END_INTERFACE: 'END_INTERFACE',
+    IMPLEMENTS: 'IMPLEMENTS',
+    EXTENDS: 'EXTENDS',
+    THIS: 'THIS',
+    PUBLIC: 'PUBLIC',
+    PRIVATE: 'PRIVATE',
+    PROTECTED: 'PROTECTED',
+    FINAL: 'FINAL',
+    ABSTRACT: 'ABSTRACT',
+    OVERRIDE: 'OVERRIDE',
 
     // Keywords - Control flow
     IF: 'IF',
@@ -112,10 +121,8 @@ export const TokenType = {
     AND: 'AND',
     OR: 'OR',
     XOR: 'XOR',
-
-    // Keywords - Arithmetic (MOD is a keyword in ST)
     MOD: 'MOD',
-
+    
     // Symbols
     ASSIGN: 'ASSIGN',           // :=
     COLON: 'COLON',             // :
@@ -128,6 +135,11 @@ export const TokenType = {
     RBRACKET: 'RBRACKET',       // ]
     DOTDOT: 'DOTDOT',           // ..
     AT: 'AT',                   // AT (for I/O mapping)
+    
+    // Pointers
+    REF_TO: 'REF_TO',
+    REF: 'REF',
+    CARET: 'CARET',             // ^
 
     // Arithmetic operators
     PLUS: 'PLUS',               // +
@@ -148,7 +160,11 @@ export const TokenType = {
     INTEGER: 'INTEGER',
     REAL_LITERAL: 'REAL_LITERAL',  // 3.14, 0.5, 100.0
     TIME_LITERAL: 'TIME_LITERAL',  // T#500ms, T#1s, etc.
+    DATE_LITERAL: 'DATE_LITERAL',  // D#1990-01-01
+    TOD_LITERAL: 'TOD_LITERAL',    // TOD#12:00:00
+    DT_LITERAL: 'DT_LITERAL',      // DT#1990-01-01-12:00:00
     STRING_LITERAL: 'STRING_LITERAL',  // 'Hello World'
+    WSTRING_LITERAL: 'WSTRING_LITERAL', // "Hello World"
     IO_ADDRESS: 'IO_ADDRESS',      // %Q0.0, %I0.0, etc.
 
     // Special
@@ -194,6 +210,7 @@ const KEYWORDS: Record<string, TokenTypeValue> = {
     'END_VAR': TokenType.END_VAR,
     'VAR_OUTPUT': TokenType.VAR_OUTPUT,
     'VAR_INPUT': TokenType.VAR_INPUT,
+    'VAR_TEMP': TokenType.VAR_TEMP,
     'VAR_GLOBAL': TokenType.VAR_GLOBAL,
     'VAR_IN_OUT': TokenType.VAR_IN_OUT,
     'CONSTANT': TokenType.CONSTANT,
@@ -203,6 +220,20 @@ const KEYWORDS: Record<string, TokenTypeValue> = {
     'END_TYPE': TokenType.END_TYPE,
     'STRUCT': TokenType.STRUCT,
     'END_STRUCT': TokenType.END_STRUCT,
+    // OOP Extensions
+    'METHOD': TokenType.METHOD,
+    'END_METHOD': TokenType.END_METHOD,
+    'INTERFACE': TokenType.INTERFACE,
+    'END_INTERFACE': TokenType.END_INTERFACE,
+    'IMPLEMENTS': TokenType.IMPLEMENTS,
+    'EXTENDS': TokenType.EXTENDS,
+    'THIS': TokenType.THIS,
+    'PUBLIC': TokenType.PUBLIC,
+    'PRIVATE': TokenType.PRIVATE,
+    'PROTECTED': TokenType.PROTECTED,
+    'FINAL': TokenType.FINAL,
+    'ABSTRACT': TokenType.ABSTRACT,
+    'OVERRIDE': TokenType.OVERRIDE,
     'IF': TokenType.IF,
     'THEN': TokenType.THEN,
     'ELSE': TokenType.ELSE,
@@ -268,6 +299,8 @@ const KEYWORDS: Record<string, TokenTypeValue> = {
     'XOR': TokenType.XOR,
     'MOD': TokenType.MOD,
     'AT': TokenType.AT,
+    'REF_TO': TokenType.REF_TO,
+    'REF': TokenType.REF,
 };
 
 /**
@@ -435,6 +468,37 @@ export function tokenize(source: string): Token[] {
         return result;
     };
 
+    const readWStringLiteral = (): string => {
+        advance(); // consume opening quote "
+        let result = '';
+        while (!isAtEnd()) {
+            if (current() === '\n') {
+                throw new LexerError('Unterminated wstring literal (newline in string)', line, column);
+            }
+            if (current() === '"') {
+                if (peek() === '"') {
+                    result += '"';
+                    advance(); advance();
+                } else {
+                    break;
+                }
+            } else {
+                result += advance();
+            }
+        }
+        if (isAtEnd()) throw new LexerError('Unterminated wstring literal', line, column);
+        advance(); // consume closing quote
+        return result;
+    };
+
+    const readTypedLiteralValue = (): string => {
+        let result = '';
+        while (!isAtEnd() && (isAlphaNumeric(current()) || current() === '_' || current() === '-' || current() === ':' || current() === '.')) {
+            result += advance();
+        }
+        return result;
+    };
+
     const addToken = (type: TokenTypeValue, value: string, startLine: number, startColumn: number): void => {
         tokens.push({ type, value, line: startLine, column: startColumn });
     };
@@ -488,6 +552,11 @@ export function tokenize(source: string): Token[] {
         if (ch === ')') {
             advance();
             addToken(TokenType.RPAREN, ')', startLine, startColumn);
+            continue;
+        }
+        if (ch === '^') {
+            advance();
+            addToken(TokenType.CARET, '^', startLine, startColumn);
             continue;
         }
 
@@ -562,22 +631,65 @@ export function tokenize(source: string): Token[] {
             continue;
         }
 
-        // Time literal T#...
-        if ((ch === 'T' || ch === 't') && peek() === '#') {
-            const timeLit = readTimeLiteral();
-            addToken(TokenType.TIME_LITERAL, timeLit, startLine, startColumn);
-            continue;
-        }
-
         // Identifiers and keywords
         if (isAlpha(ch) || ch === '_') {
             const ident = readIdentifier();
             const upper = ident.toUpperCase();
 
+            // Check for typed literals: prefix#value
+            if (current() === '#') {
+                advance(); // Consume #
+                
+                if (upper === 'T' || upper === 'TIME') {
+                    const val = readTypedLiteralValue();
+                    addToken(TokenType.TIME_LITERAL, val, startLine, startColumn);
+                    continue;
+                }
+                
+                if (upper === 'D' || upper === 'DATE') {
+                    const val = readTypedLiteralValue();
+                    addToken(TokenType.DATE_LITERAL, val, startLine, startColumn);
+                    continue;
+                }
+                
+                if (upper === 'TOD' || upper === 'TIME_OF_DAY') {
+                    const val = readTypedLiteralValue();
+                    addToken(TokenType.TOD_LITERAL, val, startLine, startColumn);
+                    continue;
+                }
+                
+                if (upper === 'DT' || upper === 'DATE_AND_TIME') {
+                    const val = readTypedLiteralValue();
+                    addToken(TokenType.DT_LITERAL, val, startLine, startColumn);
+                    continue;
+                }
+                
+                if (upper === 'STRING') {
+                    if (current() === "'") {
+                        const val = readStringLiteral();
+                        addToken(TokenType.STRING_LITERAL, val, startLine, startColumn);
+                        continue;
+                    }
+                }
+                
+                if (upper === 'WSTRING') {
+                    if (current() === '"') {
+                        const val = readWStringLiteral();
+                        addToken(TokenType.WSTRING_LITERAL, val, startLine, startColumn);
+                        continue;
+                    }
+                }
+                
+                throw new LexerError(`Unknown typed literal prefix '${ident}'`, line, column);
+            }
+
             // Check for compound keywords like END_PROGRAM, END_VAR, END_IF
             if (upper === 'END') {
                 skipWhitespace();
                 if (current() === '_') {
+                    const savedPos = pos;
+                    const savedLine = line;
+                    const savedColumn = column;
                     advance();
                     const suffix = readIdentifier().toUpperCase();
                     const compound = `END_${suffix}`;
@@ -585,10 +697,25 @@ export function tokenize(source: string): Token[] {
                         addToken(KEYWORDS[compound], compound, startLine, startColumn);
                         continue;
                     }
-                    // Not a valid compound keyword, treat as two separate tokens
-                    addToken(TokenType.IDENTIFIER, 'END', startLine, startColumn);
-                    addToken(TokenType.IDENTIFIER, suffix, line, column);
-                    continue;
+                    // Not a valid compound keyword, backtrack and treat as separate
+                    // Actually, treating as separate tokens is safer if the user wrote "END_SOMETHING"
+                    // But here we consumed the underscore and suffix.
+                    // Let's just restore if not found? No, better logic:
+                    // If it's END_PROGRAM, match it. If END_FOO (not keyword), it's an identifier.
+                    
+                    // The original code was simpler but risky. Let's keep it robust.
+                    // Since I replaced the file, I'll stick to the original logic which worked fine.
+                    // Oh wait, I am rewriting it now.
+                    if (compound in KEYWORDS) {
+                        addToken(KEYWORDS[compound], compound, startLine, startColumn);
+                        continue;
+                    } else {
+                        // Backtrack to just after END
+                        pos = savedPos;
+                        line = savedLine;
+                        column = savedColumn;
+                        // Fall through to emit IDENTIFIER 'END'
+                    }
                 }
             }
 
@@ -607,6 +734,26 @@ export function tokenize(source: string): Token[] {
                         continue;
                     }
                     // Not a valid compound, restore and emit VAR
+                    pos = savedPos;
+                    line = savedLine;
+                    column = savedColumn;
+                }
+            }
+            
+            // Check REF_TO
+            if (upper === 'REF') {
+                const savedPos = pos;
+                const savedLine = line;
+                const savedColumn = column;
+                skipWhitespace();
+                if (current() === '_') {
+                    advance();
+                    const suffix = readIdentifier().toUpperCase();
+                    if (suffix === 'TO') {
+                        addToken(TokenType.REF_TO, 'REF_TO', startLine, startColumn);
+                        continue;
+                    }
+                    // Backtrack
                     pos = savedPos;
                     line = savedLine;
                     column = savedColumn;
@@ -637,6 +784,13 @@ export function tokenize(source: string): Token[] {
         if (ch === "'") {
             const str = readStringLiteral();
             addToken(TokenType.STRING_LITERAL, str, startLine, startColumn);
+            continue;
+        }
+
+        // WString literal "Hello World"
+        if (ch === '"') {
+            const str = readWStringLiteral();
+            addToken(TokenType.WSTRING_LITERAL, str, startLine, startColumn);
             continue;
         }
 

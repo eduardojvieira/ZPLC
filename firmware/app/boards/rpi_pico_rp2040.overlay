@@ -42,9 +42,32 @@
         };
     };
     
+    leds {
+        compatible = "gpio-leds";
+        led0: led_0 {
+            gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+            label = "ZPLC Output 0 (GP0)";
+        };
+        led1: led_1 {
+            gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+            label = "ZPLC Output 1 (GP1)";
+        };
+        led2: led_2 {
+            gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+            label = "ZPLC Output 2 (GP2)";
+        };
+        led3: led_3 {
+            gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+            label = "ZPLC Output 3 (GP3)";
+        };
+    };
+
     aliases {
         sw0 = &button0;
-        /* led0 already defined as onboard LED (GPIO25) */
+        led0 = &led0;
+        led1 = &led1;
+        led2 = &led2;
+        led3 = &led3;
     };
 };
 

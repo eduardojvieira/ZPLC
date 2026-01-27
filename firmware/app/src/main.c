@@ -13,6 +13,7 @@
 #include <zplc_core.h>
 #include <zplc_hal.h>
 #include <zplc_isa.h>
+#include <zplc_debug.h>
 
 #ifdef CONFIG_ZPLC_SCHEDULER
 #include <zplc_scheduler.h>
@@ -205,9 +206,9 @@ static int try_restore_saved_program(void) {
       .id = 100, /* Restored task ID */
       .type = ZPLC_TASK_CYCLIC,
       .priority = 3,
-      .interval_us = 100000, /* 100ms default */
+      .interval_us = 500000, /* Slower default for restored tasks */
       .entry_point = 0,
-      .stack_size = 64,
+      .stack_size = 256,      /* Set to 256 for stability */
   };
 
   ret = zplc_sched_register_task(&task_def, restored_program_buffer, saved_len);
@@ -237,8 +238,9 @@ static int run_scheduler_mode(void) {
     return ret;
   }
 
-  /* Try to restore a previously saved program from NVS */
-  restored_tasks = try_restore_saved_program();
+  /* Try to restore a previously saved program from NVS - DISABLED FOR DEBUGGING */
+  // restored_tasks = try_restore_saved_program();
+  restored_tasks = 0;
 
   if (restored_tasks > 0) {
     zplc_hal_log("[SCHED] Program restored from Flash. Running.\n");
@@ -301,6 +303,14 @@ int main(void) {
   }
 
   zplc_hal_log("[INIT] Shell ready. Use 'zplc help' for commands.\n\n");
+
+#ifdef CONFIG_ZPLC_HIL_DEBUG
+#ifdef CONFIG_ZPLC_SCHEDULER
+  hil_send_ready(zplc_core_version(), "sched,hil");
+#else
+  hil_send_ready(zplc_core_version(), "hil");
+#endif
+#endif
 
   /* ===== Run appropriate mode ===== */
 #ifdef CONFIG_ZPLC_SCHEDULER

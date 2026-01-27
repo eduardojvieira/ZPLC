@@ -1105,8 +1105,14 @@ static void test_integration_assembled_program(void)
     zplc_core_set_ipi16(0, 100);  /* IPI[0:1] = 100 */
     zplc_core_set_ipi16(2, 200);  /* IPI[2:3] = 200 */
 
-    /* Load the assembled program */
-    result = load_zplc_file("../examples/02_addition.zplc");
+    /* Load the assembled program - try multiple paths */
+    result = load_zplc_file("examples/02_addition.zplc");
+    if (result != 0) {
+        result = load_zplc_file("../examples/02_addition.zplc");
+    }
+    if (result != 0) {
+        result = load_zplc_file("../../../../examples/02_addition.zplc");
+    }
 
     if (result != 0) {
         printf("SKIP: Integration test - could not load .zplc file (run assembler first)\n");
@@ -1147,8 +1153,14 @@ static void test_integration_float_math(void)
     /* Set Celsius temperature = 25 */
     zplc_core_set_ipi16(0, 25);
 
-    /* Load the assembled program */
-    result = load_zplc_file("../examples/08_float_math.zplc");
+    /* Load the assembled program - try multiple paths */
+    result = load_zplc_file("examples/08_float_math.zplc");
+    if (result != 0) {
+        result = load_zplc_file("../examples/08_float_math.zplc");
+    }
+    if (result != 0) {
+        result = load_zplc_file("../../../../examples/08_float_math.zplc");
+    }
 
     if (result != 0) {
         printf("SKIP: Float math test - could not load .zplc file\n");
@@ -1169,7 +1181,9 @@ static void test_integration_float_math(void)
     /* Test another value: 0°C = 32°F */
     zplc_core_init();
     zplc_core_set_ipi16(0, 0);
-    load_zplc_file("../examples/08_float_math.zplc");
+    if (load_zplc_file("examples/08_float_math.zplc") != 0) {
+        load_zplc_file("../../../../examples/08_float_math.zplc");
+    }
     zplc_core_run(0);
     opi_value = (uint16_t)(zplc_core_get_opi(0) & 0xFFFF);
     TEST_ASSERT_EQ(opi_value, 32, "Float math: 0°C = 32°F");
@@ -1177,7 +1191,9 @@ static void test_integration_float_math(void)
     /* Test: 100°C = 212°F (boiling point) */
     zplc_core_init();
     zplc_core_set_ipi16(0, 100);
-    load_zplc_file("../examples/08_float_math.zplc");
+    if (load_zplc_file("examples/08_float_math.zplc") != 0) {
+        load_zplc_file("../../../../examples/08_float_math.zplc");
+    }
     zplc_core_run(0);
     opi_value = (uint16_t)(zplc_core_get_opi(0) & 0xFFFF);
     TEST_ASSERT_EQ(opi_value, 212, "Float math: 100°C = 212°F");

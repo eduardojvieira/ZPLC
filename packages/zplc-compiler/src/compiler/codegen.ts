@@ -39,12 +39,22 @@ import type {
     STDataType,
     FunctionBlockDecl,
     FunctionDecl,
+    ReferenceExpr,
+    DereferenceExpr,
+    MethodCall,
+    ThisExpr,
+    MethodDecl,
+    DateLiteral,
+    TODLiteral,
+    DTLiteral,
+    WStringLiteral,
 } from './ast.ts';
-import { getDataTypeSize, isArrayType } from './ast.ts';
+import { getDataTypeSize, isArrayType, VarSection } from './ast.ts';
 import {
     getLoadStoreSuffix,
     buildSymbolTable,
     MemoryLayout,
+    alignTo,
 } from './symbol-table.ts';
 import type { SymbolTable, Symbol } from './symbol-table.ts';
 import {
@@ -166,6 +176,52 @@ interface CodeGenState {
     currentFunction: FunctionDecl | null;
     /** Current FB instance being inlined */
     currentFBInstance: Symbol | null;
+    /** Current method being inlined (for return value handling) */
+    currentMethod: MethodDecl | null;
+}
+
+/**
+ * Resolve a symbol name based on current context (Method, FB, Global).
+ */
+function resolveSymbol(state: CodeGenState, name: string): Symbol | undefined {
+    // 1. Check Method Scope (Inputs, Outputs, Locals)
+    if (state.currentMethod) {
+        const method = state.currentMethod as any;
+        
+        // Helper to find var in lists
+        const findVar = (list: any[]) => list && list.find((v: any) => v.name === name);
+
+        const methodVar = findVar(method.inputs) ||
+                          findVar(method.outputs) ||
+                          findVar(method.locals);
+
+        if (methodVar && methodVar.mangledName) {
+            return state.symbols.get(methodVar.mangledName);
+        }
+    }
+
+    // 2. Check FB Scope (Implicit THIS)
+    if (state.currentFBInstance && state.currentFBInstance.members) {
+        const offset = state.currentFBInstance.members.get(name);
+        if (offset !== undefined) {
+            const fbTypeName = state.currentFBInstance.dataType as string;
+            const fbDef = state.symbols.getFBDefinition(fbTypeName);
+            const memberInfo = fbDef?.members.get(name);
+            
+            return {
+                name: name,
+                dataType: memberInfo?.dataType || 'UNKNOWN',
+                address: state.currentFBInstance.address + offset,
+                size: memberInfo?.size || 0,
+                section: VarSection.VAR,
+                ioAddress: null,
+                members: null
+            };
+        }
+    }
+
+    // 3. Check Global Scope
+    return state.symbols.get(name);
 }
 
 /**
@@ -203,6 +259,7 @@ export function generate(unit: CompilationUnit | Program, options?: CodeGenOptio
         functionBlockTable: new Map(),
         currentFunction: null,
         currentFBInstance: null,
+        currentMethod: null,
     };
 
     const isUnit = unit.kind === 'CompilationUnit';
@@ -239,6 +296,11 @@ export function generate(unit: CompilationUnit | Program, options?: CodeGenOptio
 
     // Memory map
     emitMemoryMap(state);
+
+    // Emit bootstrap jump to ensure entry point is always 0
+    emit(state, `; === Bootstrap ===`);
+    emit(state, `    JMP _start`);
+    emit(state, ``);
 
     // Emit User Functions first
     if (isUnit) {
@@ -412,15 +474,30 @@ function collectStringLiteralsInExpression(state: CodeGenState, expr: Expression
     // This function primarily traverses and adds to the global pool.
     switch (expr.kind) {
         case 'StringLiteral':
-            // Check if we've seen this literal before in the global pool
-            if (!state.stringLiterals.some(e => e.value === expr.value)) {
-                const size = getStringLiteralSize(expr.value);
-                const entry: StringLiteralEntry = {
+            // Check if already collected
+            if (!state.stringLiterals.some(l => l.value === expr.value)) {
+                const size = STRING_HEADER_SIZE + expr.value.length + 1; // header + data + null
+                const alignment = 2; // header uses STORE16
+                state.stringLiteralNextAddr = alignTo(state.stringLiteralNextAddr, alignment);
+                state.stringLiterals.push({
                     value: expr.value,
                     address: state.stringLiteralNextAddr,
                     size,
-                };
-                state.stringLiterals.push(entry);
+                });
+                state.stringLiteralNextAddr += size;
+            }
+            break;
+        case 'WStringLiteral':
+            const wkey = `W:${expr.value}`;
+            if (!state.stringLiterals.some(l => l.value === wkey)) {
+                const size = STRING_HEADER_SIZE + expr.value.length * 2 + 2; // header + utf16 data + null word
+                const alignment = 2;
+                state.stringLiteralNextAddr = alignTo(state.stringLiteralNextAddr, alignment);
+                state.stringLiterals.push({
+                    value: wkey,
+                    address: state.stringLiteralNextAddr,
+                    size,
+                });
                 state.stringLiteralNextAddr += size;
             }
             break;
@@ -433,7 +510,21 @@ function collectStringLiteralsInExpression(state: CodeGenState, expr: Expression
             break;
         case 'FunctionCall':
             for (const arg of expr.args) {
-                collectStringLiteralsInExpression(state, arg);
+                if ((arg as any).kind === 'NamedArgument') {
+                    collectStringLiteralsInExpression(state, (arg as any).value);
+                } else {
+                    collectStringLiteralsInExpression(state, arg as Expression);
+                }
+            }
+            break;
+        case 'MethodCall':
+            collectStringLiteralsInExpression(state, expr.object);
+            for (const arg of expr.args) {
+                if ((arg as any).kind === 'NamedArgument') {
+                    collectStringLiteralsInExpression(state, (arg as any).value);
+                } else {
+                    collectStringLiteralsInExpression(state, arg as Expression);
+                }
             }
             break;
         case 'FBCall':
@@ -580,29 +671,46 @@ function emitStringLiteralInit(state: CodeGenState): void {
 
     for (let i = 0; i < state.stringLiterals.length; i++) {
         const lit = state.stringLiterals[i];
-        const len = lit.value.length;
-        const cap = len > 0 ? len : 1;  // At least capacity of 1
+        let val = lit.value;
+        const isWString = val.startsWith('W:');
+        
+        if (isWString) val = val.substring(2);
+        
+        const len = val.length;
+        const cap = len > 0 ? len : 1;
 
-        emit(state, `    ; _str${i} = '${lit.value.substring(0, 20)}${lit.value.length > 20 ? '...' : ''}'`);
+        emit(state, `    ; _str${i} = '${val.substring(0, 20)}${len > 20 ? '...' : ''}' (${lit.size} bytes)`);
 
-        // Store length (uint16 at offset 0)
+        // Header (Len, Cap)
         emit(state, `    PUSH16 ${len}`);
         emit(state, `    STORE16 ${formatAddress(lit.address)}`);
-
-        // Store capacity (uint16 at offset 2)
+        
         emit(state, `    PUSH16 ${cap}`);
         emit(state, `    STORE16 ${formatAddress(lit.address + 2)}`);
+        
+        const headerSize = 4;
 
-        // Store each character byte (offset 4+)
-        for (let j = 0; j < len; j++) {
-            const charCode = lit.value.charCodeAt(j);
-            emit(state, `    PUSH8 ${charCode}       ; '${lit.value[j]}'`);
-            emit(state, `    STORE8 ${formatAddress(lit.address + STRING_HEADER_SIZE + j)}`);
+        if (isWString) {
+            // WSTRING: 2 bytes per char
+            for (let j = 0; j < len; j++) {
+                const charCode = val.charCodeAt(j);
+                emit(state, `    PUSH16 ${charCode}`);
+                emit(state, `    STORE16 ${formatAddress(lit.address + headerSize + j * 2)}`);
+            }
+            // Null terminator (2 bytes)
+            emit(state, `    PUSH16 0`);
+            emit(state, `    STORE16 ${formatAddress(lit.address + headerSize + len * 2)}`);
+        } else {
+            // STRING: 1 byte per char
+            for (let j = 0; j < len; j++) {
+                const charCode = val.charCodeAt(j);
+                emit(state, `    PUSH8 ${charCode}`);
+                emit(state, `    STORE8 ${formatAddress(lit.address + headerSize + j)}`);
+            }
+            // Null terminator (1 byte)
+            emit(state, `    PUSH8 0`);
+            emit(state, `    STORE8 ${formatAddress(lit.address + headerSize + len)}`);
         }
-
-        // Store null terminator
-        emit(state, `    PUSH8 0           ; null terminator`);
-        emit(state, `    STORE8 ${formatAddress(lit.address + STRING_HEADER_SIZE + len)}`);
     }
 }
 
@@ -729,7 +837,39 @@ function emitAssignment(state: CodeGenState, stmt: Assignment): void {
     emit(state, ``);
 
     if (stmt.target.kind === 'Identifier') {
-        // IEC return syntax: FunctionName := value
+        // Bug 2 fix: Standalone method call as statement uses '_' as dummy target
+        // Just emit the method call expression, skip the STORE
+        if (stmt.target.name === '_') {
+            if (stmt.value.kind === 'MethodCall') {
+                emit(state, `    ; (method call as statement, result discarded)`);
+                emitExpression(state, stmt.value);
+                // The method was executed, but we don't store the result
+                // If method returned a value, drop it from stack
+                const methodCall = stmt.value;
+                if (state.functionBlockTable.has((methodCall.object as any)?.name ? 
+                    (state.symbols.get((methodCall.object as any).name)?.dataType as string) || '' : '')) {
+                    // Check if method has return type - if so, DROP the result
+                    const objName = (methodCall.object as any)?.name;
+                    if (objName) {
+                        const instanceSym = state.symbols.get(objName);
+                        if (instanceSym) {
+                            const fbDecl = state.functionBlockTable.get(instanceSym.dataType as string);
+                            const method = fbDecl?.methods.find(m => m.name === methodCall.methodName);
+                            if (method?.returnType) {
+                                emit(state, `    DROP       ; discard unused return value`);
+                            }
+                        }
+                    }
+                }
+                return;
+            }
+            // Other expressions assigned to '_' - just evaluate and drop
+            emitExpression(state, stmt.value);
+            emit(state, `    DROP       ; discard result of expression`);
+            return;
+        }
+
+        // IEC return syntax: FunctionName := value (for FUNCTION)
         if (state.currentFunction && stmt.target.name === state.currentFunction.name) {
             emit(state, `    ; RETURN ${state.currentFunction.name} := ...`);
             emitExpression(state, stmt.value);
@@ -740,7 +880,17 @@ function emitAssignment(state: CodeGenState, stmt: Assignment): void {
             return;
         }
 
-        const sym = state.symbols.get(stmt.target.name);
+        // IEC return syntax: MethodName := value (for METHOD - inline context)
+        // Bug 1 fix: When inside an inlined method, assignment to method name 
+        // should leave the value on stack (not store it)
+        if (state.currentMethod && stmt.target.name === state.currentMethod.name) {
+            emit(state, `    ; METHOD RETURN: ${state.currentMethod.name} := ...`);
+            emitExpression(state, stmt.value);
+            // Value stays on stack - caller will use it or discard it
+            return;
+        }
+
+        const sym = resolveSymbol(state, stmt.target.name);
         if (!sym) return;
 
         emit(state, `    ; ${stmt.target.name} := ...`);
@@ -751,9 +901,39 @@ function emitAssignment(state: CodeGenState, stmt: Assignment): void {
         emit(state, `    ; ${stringifyExpression(stmt.target)} := ...`);
         emitExpression(state, stmt.value);
 
-        const resolution = state.symbols.resolveMemberPath(stmt.target);
-        const suffix = getLoadStoreSuffix(resolution.dataType as DataTypeValue);
-        emit(state, `    STORE${suffix} ${formatAddress(resolution.address)}`);
+        // Handle THIS.member assignment
+        if (stmt.target.object.kind === 'ThisExpr') {
+            if (!state.currentFBInstance) {
+                emit(state, `    ; ERROR: THIS used outside of FB/method context`);
+                return;
+            }
+            
+            const fbTypeName = state.currentFBInstance.dataType as string;
+            const fbDef = state.symbols.getFBDefinition(fbTypeName);
+            
+            if (!fbDef) {
+                emit(state, `    ; ERROR: Unknown FB type '${fbTypeName}'`);
+                return;
+            }
+            
+            const member = fbDef.members.get(stmt.target.member);
+            if (!member) {
+                emit(state, `    ; ERROR: Unknown member '${stmt.target.member}' on FB '${fbTypeName}'`);
+                return;
+            }
+            
+            const memberAddr = state.currentFBInstance.address + member.offset;
+            let suffix: '8' | '16' | '32' | '64' = '32';
+            if (member.size === 1) suffix = '8';
+            else if (member.size === 2) suffix = '16';
+            else if (member.size === 8) suffix = '64';
+            
+            emit(state, `    STORE${suffix} ${formatAddress(memberAddr)}   ; THIS.${stmt.target.member}`);
+        } else {
+            const resolution = state.symbols.resolveMemberPath(stmt.target);
+            const suffix = getLoadStoreSuffix(resolution.dataType as DataTypeValue);
+            emit(state, `    STORE${suffix} ${formatAddress(resolution.address)}`);
+        }
     } else if (stmt.target.kind === 'ArrayAccess') {
         // Array element assignment: arr[i] := value
         const resolution = state.symbols.resolveMemberPath(stmt.target.array);
@@ -774,10 +954,23 @@ function emitAssignment(state: CodeGenState, stmt: Assignment): void {
 
         // Store using indirect addressing
         const elementSize = getDataTypeSize(arrayType.elementType as DataTypeValue);
-        emit(state, `    PUSH32 ${elementSize}`);
-        emit(state, `    MUL32`);
-        emit(state, `    ADD32`);
         emit(state, `    STOREI${elementSize * 8}`);
+    } else if (stmt.target.kind === 'DereferenceExpr') {
+        // ptr^ := value
+        emit(state, `    ; *(${stringifyExpression(stmt.target.operand)}) := ...`);
+
+        // 1. Calculate address (load pointer value)
+        emitExpression(state, stmt.target.operand);
+        
+        // 2. Evaluate value to store
+        emitExpression(state, stmt.value);
+        
+        // 3. Determine size
+        const type = resolveType(state, stmt.target);
+        const size = type ? getDataTypeSize(type) : 4;
+        
+        // 4. Store Indirect
+        emit(state, `    STOREI${size * 8}`);
     }
 }
 
@@ -1278,6 +1471,30 @@ function emitExpression(state: CodeGenState, expr: Expression): void {
         case 'ArrayAccess':
             emitArrayAccess(state, expr);
             break;
+        case 'ReferenceExpr':
+            emitReference(state, expr);
+            break;
+        case 'DereferenceExpr':
+            emitDereference(state, expr);
+            break;
+        case 'MethodCall':
+            emitMethodCall(state, expr);
+            break;
+        case 'ThisExpr':
+            emitThisExpr(state, expr);
+            break;
+        case 'WStringLiteral':
+            emitWStringLiteral(state, expr);
+            break;
+        case 'DateLiteral':
+            emitDateLiteral(state, expr);
+            break;
+        case 'TODLiteral':
+            emitTODLiteral(state, expr);
+            break;
+        case 'DTLiteral':
+            emitDTLiteral(state, expr);
+            break;
         default:
             emit(state, `    ; TODO: Expression type ${(expr as Expression).kind}`);
     }
@@ -1352,11 +1569,20 @@ function emitIdentifier(state: CodeGenState, expr: Identifier): void {
     }
 
     // 2. Regular symbol lookup
-    const sym = state.symbols.get(expr.name);
+    const sym = resolveSymbol(state, expr.name);
     if (!sym) {
         emit(state, `    ; ERROR: Unknown identifier ${expr.name}`);
         emit(state, `    PUSH32 0`);
         return;
+    }
+
+    // Inline CONSTANT values (e.g. ENUMs)
+    if (sym.section === 'CONSTANT' && sym.initialValue) {
+        const initVal = sym.initialValue as any;
+        if (initVal.kind === 'IntLiteral' || initVal.kind === 'BoolLiteral' || initVal.kind === 'RealLiteral') {
+            emitExpression(state, initVal);
+            return;
+        }
     }
 
     // For STRING type, push the address (not load the value)
@@ -1370,10 +1596,76 @@ function emitIdentifier(state: CodeGenState, expr: Identifier): void {
 }
 
 function emitMemberAccess(state: CodeGenState, expr: MemberAccess): void {
-    const resolution = state.symbols.resolveMemberPath(expr);
-    const suffix = getLoadStoreSuffix(resolution.dataType as DataTypeValue);
-    emit(state, `    LOAD${suffix} ${formatAddress(resolution.address)}`);
+    // Handle THIS.member access
+    if (expr.object.kind === 'ThisExpr') {
+        if (!state.currentFBInstance) {
+            emit(state, `    ; ERROR: THIS used outside of FB/method context`);
+            return;
+        }
+        
+        const fbTypeName = state.currentFBInstance.dataType as string;
+        const fbDef = state.symbols.getFBDefinition(fbTypeName);
+        
+        if (!fbDef) {
+            emit(state, `    ; ERROR: Unknown FB type '${fbTypeName}'`);
+            return;
+        }
+        
+        const member = fbDef.members.get(expr.member);
+        if (!member) {
+            emit(state, `    ; ERROR: Unknown member '${expr.member}' on FB '${fbTypeName}'`);
+            return;
+        }
+        
+        const memberAddr = state.currentFBInstance.address + member.offset;
+        let suffix: '8' | '16' | '32' | '64' = '32';
+        if (member.size === 1) suffix = '8';
+        else if (member.size === 2) suffix = '16';
+        else if (member.size === 8) suffix = '64';
+        
+        emit(state, `    LOAD${suffix} ${formatAddress(memberAddr)}   ; THIS.${expr.member}`);
+        return;
+    }
+    
+    // Current implementation only supports identifier.Member
+    if (expr.object.kind !== 'Identifier') {
+        emit(state, `    ; ERROR: Nested or complex member access not fully supported`);
+        return;
+    }
+
+    const structName = (expr.object as Identifier).name;
+    const sym = state.symbols.get(structName);
+    if (!sym) {
+        emit(state, `    ; ERROR: Unknown struct/instance '${structName}'`);
+        return;
+    }
+
+    const memberAddr = state.symbols.getMemberAddress(structName, expr.member);
+    
+    // FORCE CORRECT SIZE for standard members
+    let suffix = '32';
+    // Handle PointerType or other complex types safely
+    const typeName = typeof sym.dataType === 'string' 
+        ? sym.dataType.toUpperCase() 
+        : (sym.dataType as any)?.baseType || '';
+    const memberName = expr.member.toUpperCase().replace(/^\./, '');
+    
+    const fbDef = getFB(typeName);
+    if (fbDef) {
+        const member = fbDef.members.find(m => m.name.toUpperCase() === memberName);
+        if (member) {
+            if (member.size === 1) suffix = '8';
+            else if (member.size === 2) suffix = '16';
+            else if (member.size === 4) suffix = '32';
+        }
+    } else {
+        // Fallback to symbol table logic
+        suffix = getMemberLoadStoreSuffix(state.symbols, typeof sym.dataType === 'string' ? sym.dataType : '', expr.member);
+    }
+    
+    emit(state, `    LOAD${suffix} ${formatAddress(memberAddr)}`);
 }
+
 
 function emitUnaryExpr(state: CodeGenState, expr: UnaryExpr): void {
     emitExpression(state, expr.operand);
@@ -1420,7 +1712,7 @@ function inferExpressionType(state: CodeGenState, expr: Expression): string {
         case 'TimeLiteral':
             return 'TIME';
         case 'Identifier': {
-            const sym = state.symbols.get(expr.name);
+            const sym = resolveSymbol(state, expr.name);
             return (sym?.dataType as string) ?? 'UNKNOWN';
         }
         case 'FunctionCall': {
@@ -1471,8 +1763,21 @@ function stringifyExpression(expr: Expression): string {
         case 'UnaryExpr':
             return `${expr.operator}(${stringifyExpression(expr.operand)})`;
         case 'FunctionCall':
-            const args = expr.args.map(stringifyExpression).join(', ');
+            const args = expr.args.map(arg => {
+                if ((arg as any).kind === 'NamedArgument') {
+                    return `${(arg as any).name} := ${stringifyExpression((arg as any).value)}`;
+                }
+                return stringifyExpression(arg as Expression);
+            }).join(', ');
             return `${expr.name}(${args})`;
+        case 'MethodCall':
+             const mArgs = (expr as any).args.map((arg: any) => {
+                if (arg.kind === 'NamedArgument') {
+                    return `${arg.name} := ${stringifyExpression(arg.value)}`;
+                }
+                return stringifyExpression(arg);
+            }).join(', ');
+            return `${stringifyExpression((expr as any).object)}.${(expr as any).methodName}(${mArgs})`;
         default:
             return '...';
     }
@@ -1575,7 +1880,11 @@ function emitFunctionCall(state: CodeGenState, expr: FunctionCall): void {
 
         // Push arguments onto stack
         for (const arg of expr.args) {
-            emitExpression(state, arg);
+            if ((arg as any).kind === 'NamedArgument') {
+                emitExpression(state, (arg as any).value);
+            } else {
+                emitExpression(state, arg as Expression);
+            }
         }
 
         emit(state, `    CALL ${userFn.label}`);
@@ -1602,7 +1911,12 @@ function emitFunctionCall(state: CodeGenState, expr: FunctionCall): void {
     };
 
     // Let the function generate its inline code
-    fnDef.generateInline(ctx, expr.args);
+    // Convert args to pure expressions (ignoring names for built-ins for now)
+    const simpleArgs = expr.args.map(a => 
+        (a as any).kind === 'NamedArgument' ? (a as any).value : a
+    ) as Expression[];
+
+    fnDef.generateInline(ctx, simpleArgs);
 }
 
 // ============================================================================
@@ -1722,30 +2036,304 @@ function emitArrayAccess(state: CodeGenState, expr: ArrayAccess): void {
     // Load using indirect addressing
     emit(state, `    LOADI${elementSize * 8}`);
 }
+
+/**
+ * Resolve the data type of an expression.
+ */
+function resolveType(state: CodeGenState, expr: Expression): STDataType | null {
+    if (expr.kind === 'Identifier') {
+        const sym = state.symbols.get(expr.name);
+        return sym ? sym.dataType : null;
+    } else if (expr.kind === 'ReferenceExpr') {
+        const base = resolveType(state, expr.operand);
+        return base ? { kind: 'PointerType', baseType: base } as any : null;
+    } else if (expr.kind === 'DereferenceExpr') {
+        const ptrType = resolveType(state, expr.operand);
+        if (ptrType && typeof ptrType === 'object' && (ptrType as any).kind === 'PointerType') {
+            return (ptrType as any).baseType;
+        }
+        return null;
+    }
+    // TODO: Support MemberAccess, ArrayAccess resolution
+    return null;
+}
+
+/**
+ * Emit code to calculate the address of an L-Value.
+ */
+function emitAddress(state: CodeGenState, expr: Expression): void {
+    if (expr.kind === 'Identifier') {
+        const sym = state.symbols.get(expr.name);
+        if (sym) {
+            emit(state, `    PUSH32 ${formatAddress(sym.address)}`);
+        } else {
+            emit(state, `    ; ERROR: Unknown identifier ${expr.name}`);
+            emit(state, `    PUSH32 0`);
+        }
+    } else if (expr.kind === 'ArrayAccess') {
+        const resolution = state.symbols.resolveMemberPath(expr.array);
+        emitArrayAddress(state, expr, resolution);
+    } else if (expr.kind === 'DereferenceExpr') {
+        // Address of (ptr^) is the value of ptr
+        emitExpression(state, expr.operand);
+    } else if (expr.kind === 'MemberAccess') {
+         if (expr.object.kind !== 'Identifier') {
+            emit(state, `    ; ERROR: Complex member access address not supported`);
+            emit(state, `    PUSH32 0`);
+            return;
+        }
+        const structName = (expr.object as Identifier).name;
+        const memberAddr = state.symbols.getMemberAddress(structName, expr.member);
+        emit(state, `    PUSH32 ${formatAddress(memberAddr)}`);
+    } else {
+        emit(state, `    ; ERROR: Cannot take address of ${expr.kind}`);
+        emit(state, `    PUSH32 0`);
+    }
+}
+
+function emitReference(state: CodeGenState, expr: ReferenceExpr): void {
+    emitAddress(state, expr.operand);
+}
+
+function emitDereference(state: CodeGenState, expr: DereferenceExpr): void {
+    // 1. Load pointer value (address)
+    emitExpression(state, expr.operand);
+
+    // 2. Determine type size to load
+    const type = resolveType(state, expr);
+    let size = 4; // Default to 32-bit if unknown
+    if (type) {
+        size = getDataTypeSize(type);
+    }
+    
+    // 3. Load indirect
+    emit(state, `    LOADI${size * 8}`);
+}
+
+/**
+ * Emit a method call expression.
+ * 
+ * For now, methods are inlined at call sites (no dynamic dispatch).
+ * Format: instance.MethodName(args)
+ * 
+ * The method body is executed with THIS bound to the instance.
+ */
+function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
+    emit(state, `    ; Method call: ${stringifyExpression(expr.object)}.${expr.methodName}()`);
+    
+    // Get the object (FB instance)
+    if (expr.object.kind !== 'Identifier' && expr.object.kind !== 'ThisExpr') {
+        emit(state, `    ; ERROR: Complex method call targets not supported yet`);
+        return;
+    }
+    
+    let instanceName: string;
+    let fbTypeName: string;
+    let instanceSym: Symbol | undefined;
+    
+    if (expr.object.kind === 'ThisExpr') {
+        // Method called on THIS - we're inside an FB context
+        if (!state.currentFBInstance) {
+            emit(state, `    ; ERROR: THIS used outside of FB context`);
+            return;
+        }
+        instanceName = state.currentFBInstance.name;
+        fbTypeName = state.currentFBInstance.dataType as string;
+        instanceSym = state.currentFBInstance;
+    } else {
+        instanceName = (expr.object as Identifier).name;
+        instanceSym = state.symbols.get(instanceName);
+        if (!instanceSym) {
+            emit(state, `    ; ERROR: Unknown instance '${instanceName}'`);
+            return;
+        }
+        fbTypeName = instanceSym.dataType as string;
+    }
+    
+    // Get the FB definition from SymbolTable (which handles inheritance)
+    const fbDef = state.symbols.getFBDefinition(fbTypeName);
+    if (!fbDef) {
+        emit(state, `    ; ERROR: Unknown FB type '${fbTypeName}'`);
+        return;
+    }
+    
+    // Find the method (includes inherited ones)
+    const methodInfo = fbDef.methods.get(expr.methodName);
+    if (!methodInfo) {
+        emit(state, `    ; ERROR: Unknown method '${expr.methodName}' on FB '${fbTypeName}'`);
+        return;
+    }
+    
+    // Save current FB context and set up new one for method execution
+    const prevFBInstance = state.currentFBInstance;
+    const prevMethod = state.currentMethod;
+    state.currentFBInstance = instanceSym;
+    // Cast MethodInfo to MethodDecl for compatibility (they share name/body which is what matters)
+    state.currentMethod = methodInfo as any;
+    
+    emit(state, `    ; --- Begin Method ${fbTypeName}.${expr.methodName} ---`);
+    
+    // Handle method inputs from args (Positional and Named)
+    if (expr.args && expr.args.length > 0) {
+        let positionalIndex = 0;
+        
+        for (const arg of expr.args) {
+            let inputName: string;
+            let argExpr: Expression;
+            let input: any;
+
+            // Check if arg is NamedArgument or Expression
+            // We cast to any to access kind safely
+            if ((arg as any).kind === 'NamedArgument') {
+                inputName = (arg as any).name;
+                argExpr = (arg as any).value;
+                input = methodInfo.inputs.find((i: any) => i.name === inputName);
+                
+                if (!input) {
+                    emit(state, `    ; ERROR: Unknown named argument '${inputName}' for method '${expr.methodName}'`);
+                    emitExpression(state, argExpr);
+                    emit(state, `    DROP`);
+                    continue;
+                }
+            } else {
+                // Positional
+                if (positionalIndex >= methodInfo.inputs.length) {
+                    emit(state, `    ; WARNING: Too many positional arguments`);
+                    emitExpression(state, arg as Expression);
+                    emit(state, `    DROP`);
+                    continue;
+                }
+                input = methodInfo.inputs[positionalIndex];
+                argExpr = arg as Expression;
+                inputName = input.name;
+                positionalIndex++;
+            }
+            
+            emit(state, `    ; Arg ${inputName} := ...`);
+            emitExpression(state, argExpr);
+            
+            if (input.mangledName) {
+                const sym = state.symbols.get(input.mangledName);
+                if (sym) {
+                    const suffix = getLoadStoreSuffix(sym.dataType as DataTypeValue);
+                    emit(state, `    STORE${suffix} ${formatAddress(sym.address)}`);
+                } else {
+                     emit(state, `    ; ERROR: Symbol for input '${inputName}' not found`);
+                     emit(state, `    DROP`); // Clean stack
+                }
+            } else {
+                emit(state, `    ; ERROR: Input '${inputName}' has no allocated memory`);
+                emit(state, `    DROP`); // Clean stack
+            }
+        }
+    }
+    
+    // Initialize method locals (including VAR_TEMP)
+    if (methodInfo.locals) {
+        for (const local of methodInfo.locals as any[]) {
+            if (local.mangledName) {
+                const sym = state.symbols.get(local.mangledName);
+                if (sym) {
+                    if (local.initialValue) {
+                        emit(state, `    ; Init ${local.name} := ...`);
+                        emitExpression(state, local.initialValue);
+                    } else {
+                        emit(state, `    ; Init ${local.name} := 0`);
+                        const size = sym.size;
+                        if (size === 8) emit(state, `    PUSH64 0`);
+                        else emit(state, `    PUSH32 0`);
+                    }
+                    const suffix = getLoadStoreSuffix(sym.dataType as DataTypeValue);
+                    emit(state, `    STORE${suffix} ${formatAddress(sym.address)}`);
+                }
+            }
+        }
+    }
+
+    // Inline the method body
+    for (const stmt of methodInfo.body) {
+        emitStatement(state, stmt);
+    }
+    
+    // If method has a return type, the result should be on the stack
+    // (IEC convention: MethodName := value; leaves value as result)
+    
+    emit(state, `    ; --- End Method ${fbTypeName}.${expr.methodName} ---`);
+    
+    // Restore previous FB context
+    state.currentFBInstance = prevFBInstance;
+    state.currentMethod = prevMethod;
+}
+
+/**
+ * Emit THIS expression.
+ * 
+ * THIS refers to the current FB instance's base address.
+ * Used within methods to access the FB's own members.
+ */
+function emitThisExpr(state: CodeGenState, _expr: ThisExpr): void {
+    if (!state.currentFBInstance) {
+        emit(state, `    ; ERROR: THIS used outside of FB/method context`);
+        emit(state, `    PUSH32 0`);
+        return;
+    }
+    
+    // Push the base address of the current FB instance
+    emit(state, `    PUSH32 ${formatAddress(state.currentFBInstance.address)}   ; THIS`);
+}
+
+function emitDateLiteral(state: CodeGenState, expr: DateLiteral): void {
+    const dateStr = expr.value;
+    const timestamp = Date.parse(dateStr);
+    if (isNaN(timestamp)) {
+        emit(state, `    ; ERROR: Invalid DATE literal '${expr.value}'`);
+        emit(state, `    PUSH32 0`);
+        return;
+    }
+    emit(state, `    PUSH32 ${Math.floor(timestamp / 1000)}`);
+}
+
+function emitTODLiteral(state: CodeGenState, expr: TODLiteral): void {
+    const timestamp = Date.parse(`1970-01-01T${expr.value}Z`);
+    if (isNaN(timestamp)) {
+        emit(state, `    ; ERROR: Invalid TOD literal '${expr.value}'`);
+        emit(state, `    PUSH32 0`);
+        return;
+    }
+    emit(state, `    PUSH32 ${timestamp}`);
+}
+
+function emitDTLiteral(state: CodeGenState, expr: DTLiteral): void {
+    const normalized = expr.value.replace(/-(\d{2}:)/, 'T$1');
+    const timestamp = Date.parse(normalized);
+    if (isNaN(timestamp)) {
+        emit(state, `    ; ERROR: Invalid DT literal '${expr.value}'`);
+        emit(state, `    PUSH32 0`);
+        emit(state, `    PUSH32 0`);
+        return;
+    }
+    
+    const bigVal = BigInt(timestamp);
+    const low = Number(bigVal & 0xFFFFFFFFn) | 0;
+    const high = Number((bigVal >> 32n) & 0xFFFFFFFFn) | 0;
+    
+    emit(state, `    PUSH32 ${low}`);
+    emit(state, `    PUSH32 ${high}`);
+}
+
+function emitWStringLiteral(state: CodeGenState, expr: WStringLiteral): void {
+    const wkey = `W:${expr.value}`;
+    const addr = findStringLiteralAddress(state, wkey);
+    if (addr !== undefined) {
+        emit(state, `    PUSH32 ${formatAddress(addr)}   ; WSTRING '${expr.value}'`);
+    } else {
+        emit(state, `    ; ERROR: WString literal not found in pool: '${expr.value}'`);
+        emit(state, `    PUSH32 0`);
+    }
+}
+
 /**
  * Helper to get the load/store suffix for a member (resolves through FBs and Structs).
+ * Re-exporting from symbol-table to maintain backward compatibility in this file.
  */
-export function getMemberLoadStoreSuffix(symbols: SymbolTable, parentTypeName: string, memberName: string): string {
-    // 1. Check user-defined FBs
-    const userFB = symbols.getFBDefinition(parentTypeName);
-    if (userFB) {
-        const memberInfo = userFB.members.get(memberName);
-        if (memberInfo) return getSizeSuffix(memberInfo.size as any);
-    }
-
-    // 2. Check user-defined Structs
-    const userStruct = symbols.getStructDefinition(parentTypeName);
-    if (userStruct) {
-        const memberInfo = userStruct.members.get(memberName);
-        if (memberInfo) return getSizeSuffix(memberInfo.size as any);
-    }
-
-    // 3. Check stdlib FBs
-    const fbDef = getFB(parentTypeName as DataTypeValue);
-    if (fbDef) {
-        const member = fbDef.members.find(m => m.name === memberName);
-        if (member) return getSizeSuffix(member.size);
-    }
-
-    return '32'; // Default
-}
+import { getMemberLoadStoreSuffix } from './symbol-table.ts';

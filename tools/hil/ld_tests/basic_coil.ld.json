@@ -1,0 +1,23 @@
+{
+  "name": "LDBasicCoil",
+  "variables": {
+    "outputs": [
+      { "name": "InButton", "type": "BOOL", "address": "%Q0.0" },
+      { "name": "OutLamp", "type": "BOOL", "address": "%Q0.1" }
+    ],
+    "local": []
+  },
+  "rungs": [
+    {
+      "number": 1,
+      "grid": [
+        [
+          { "element": { "type": "left_rail" } },
+          { "element": { "type": "contact_no", "variable": "InButton" } },
+          { "element": { "type": "coil", "variable": "OutLamp" } },
+          { "element": { "type": "right_rail" } }
+        ]
+      ]
+    }
+  ]
+}

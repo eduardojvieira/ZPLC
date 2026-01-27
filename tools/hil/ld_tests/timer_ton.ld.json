@@ -1,0 +1,36 @@
+{
+  "name": "LDTimer",
+  "variables": {
+    "outputs": [
+      { "name": "InStart", "type": "BOOL", "address": "%Q0.0" },
+      { "name": "OutDone", "type": "BOOL", "address": "%Q0.1" }
+    ],
+    "local": [
+      { "name": "MyTimer", "type": "TON" }
+    ]
+  },
+  "rungs": [
+    {
+      "number": 1,
+      "grid": [
+        [
+          { "element": { "type": "left_rail" } },
+          { "element": { "type": "contact_no", "variable": "InStart" } },
+          { "element": { "type": "function_block", "fbType": "TON", "instance": "MyTimer", "parameters": { "IN": "CONNECTED", "PT": "T#200ms" } } },
+          { "element": { "type": "right_rail" } }
+        ]
+      ]
+    },
+    {
+      "number": 2,
+      "grid": [
+        [
+          { "element": { "type": "left_rail" } },
+          { "element": { "type": "contact_no", "variable": "MyTimer.Q" } },
+          { "element": { "type": "coil", "variable": "OutDone" } },
+          { "element": { "type": "right_rail" } }
+        ]
+      ]
+    }
+  ]
+}

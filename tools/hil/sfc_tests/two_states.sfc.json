@@ -1,0 +1,29 @@
+{
+  "name": "SFCTwoStates",
+  "variables": {
+    "outputs": [
+      { "name": "State", "type": "INT", "address": "%Q0.0" }
+    ],
+    "local": []
+  },
+  "steps": [
+    {
+      "id": "s1", "name": "S1", "isInitial": true,
+      "actions": [{ "qualifier": "N", "actionName": "Set1" }]
+    },
+    {
+      "id": "s2", "name": "S2", "isInitial": false,
+      "actions": [{ "qualifier": "N", "actionName": "Set2" }]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t1", "fromStep": "s1", "toStep": "s2",
+      "condition": "s1.T >= T#200ms"
+    }
+  ],
+  "actions": [
+    { "id": "Set1", "name": "Set1", "type": "ST", "body": "State := 1;" },
+    { "id": "Set2", "name": "Set2", "type": "ST", "body": "State := 2;" }
+  ]
+}

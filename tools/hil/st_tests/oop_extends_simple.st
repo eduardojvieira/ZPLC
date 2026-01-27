@@ -1,0 +1,22 @@
+FUNCTION_BLOCK FB_Base
+METHOD PUBLIC GetVal : INT
+    GetVal := 111;
+END_METHOD
+END_FUNCTION_BLOCK
+
+FUNCTION_BLOCK FB_Child EXTENDS FB_Base
+METHOD PUBLIC OVERRIDE GetVal : INT
+    GetVal := 222;
+END_METHOD
+END_FUNCTION_BLOCK
+
+PROGRAM SimpleExtends
+VAR
+    child : FB_Child;
+    res : INT;
+    debug AT %QW0 : INT;
+END_VAR
+
+res := child.GetVal();
+debug := res;
+END_PROGRAM

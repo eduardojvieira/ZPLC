@@ -1,0 +1,65 @@
+# =============================================================================
+# ZPLC Clangd Configuration for Zephyr RTOS Development
+# =============================================================================
+# This file configures clangd to work correctly with Zephyr SDK toolchain.
+# It's designed to work with opencode and any LSP client (neovim, vscode, etc.)
+#
+# SETUP (run once after cloning or changing boards):
+#   source ~/zephyrproject/zephyr/zephyr-env.sh
+#   cd firmware && west build -b rpi_pico app -- -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+#   ln -sf firmware/build/compile_commands.json .  # (already done if symlink exists)
+#
+# The symlink persists even if build/ is deleted. Re-run west build to regenerate.
+# =============================================================================
+
+CompileFlags:
+  # clangd auto-finds compile_commands.json in project root (via symlink)
+
+  # Remove flags that clangd doesn't understand (GCC-specific)
+  Remove:
+    - -fno-reorder-functions    # GCC-specific optimization
+    - -fno-defer-pop            # GCC-specific
+    - -fno-printf-return-value  # GCC-specific printf optimization
+    - -mfp16-format*            # ARM-specific float format
+    - -mabi=*                   # ABI specification (clang handles differently)
+    - -march=*+*                # Complex march with extensions
+    - --param*                  # GCC tuning parameters
+    - -fno-freestanding         # Sometimes causes issues
+    - -mtp=*                    # Thread pointer options
+    - -Wno-packed-bitfield-compat
+    - -specs=*                  # GCC spec files (picolibc, etc.)
+
+  # Add flags to help clangd understand embedded context
+  Add:
+    - -Wno-unknown-warning-option
+    - -Wno-unused-command-line-argument
+    - -ferror-limit=100
+
+Diagnostics:
+  # Suppress noisy warnings that flood every file
+  Suppress:
+    - drv_unknown_argument       # Unknown driver arguments from GCC
+    - unknown_argument           # General unknown arguments
+    - pp_file_not_found          # Missing headers (often false positives in embedded)
+
+  ClangTidy:
+    Add:
+      - modernize-*
+      - bugprone-*
+      - performance-*
+      - readability-identifier-naming
+    Remove:
+      - modernize-use-trailing-return-type
+      - readability-magic-numbers
+      - bugprone-easily-swappable-parameters
+
+InlayHints:
+  Enabled: true
+  ParameterNames: true
+  DeducedTypes: true
+
+Hover:
+  ShowAKA: true
+
+Index:
+  Background: Build

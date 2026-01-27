@@ -1,0 +1,20 @@
+{
+  "name": "@zplc/hil",
+  "version": "0.1.0",
+  "description": "Hardware-in-the-Loop Testing Framework for ZPLC",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "serialport": "^12.0.0",
+    "@serialport/parser-readline": "^12.0.0"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}

@@ -26,7 +26,11 @@
     "electron:build": "npm run build && npm run electron:compile && electron-builder",
     "electron:build:mac": "npm run build && npm run electron:compile && electron-builder --mac",
     "electron:build:win": "npm run build && npm run electron:compile && electron-builder --win",
-    "electron:build:linux": "npm run build && npm run electron:compile && electron-builder --linux"
+    "electron:build:linux": "npm run build && npm run electron:compile && electron-builder --linux",
+    "cli:build": "bun build --compile --minify --target bun-darwin-arm64 src/cli/index.ts --outfile dist/zplc-cli"
+  },
+  "bin": {
+    "zplc-cli": "./dist/zplc-cli"
   },
   "dependencies": {
     "@zplc/compiler": "workspace:*",

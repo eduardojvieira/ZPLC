@@ -131,7 +131,7 @@ describe('IL-to-ST Transpiler', () => {
         const result = transpileILToST(program);
 
         expect(result.success).toBe(true);
-        expect(result.source).toContain('_IL_CR_');
+        expect(result.source).toContain('IL_CR');
         expect(result.source).toContain('Y :=');
     });
 
@@ -153,8 +153,8 @@ describe('IL-to-ST Transpiler', () => {
         const result = transpileILToST(program);
 
         expect(result.success).toBe(true);
-        expect(result.source).toContain('_IL_CR_ := _IL_CR_ +');
-        expect(result.source).toContain('_IL_CR_ := _IL_CR_ *');
+        expect(result.source).toContain('IL_CR := IL_CR +');
+        expect(result.source).toContain('IL_CR := IL_CR *');
     });
 
     it('should generate state machine for jumps', () => {
@@ -174,9 +174,9 @@ describe('IL-to-ST Transpiler', () => {
         const result = transpileILToST(program);
 
         expect(result.success).toBe(true);
-        expect(result.source).toContain('_IL_STATE_');
-        expect(result.source).toContain('CASE _IL_STATE_ OF');
-        expect(result.source).toContain('WHILE NOT _IL_DONE_');
+        expect(result.source).toContain('IL_STATE');
+        expect(result.source).toContain('CASE IL_STATE OF');
+        expect(result.source).toContain('WHILE NOT IL_DONE');
     });
 });
 

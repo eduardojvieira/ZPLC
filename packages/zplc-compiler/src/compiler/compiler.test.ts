@@ -62,11 +62,11 @@ describe('Lexer', () => {
         const tokens = tokenize('T#500ms T#1s T#2m');
 
         expect(tokens[0].type).toBe(TokenType.TIME_LITERAL);
-        expect(tokens[0].value).toBe('T#500ms');
+        expect(tokens[0].value).toBe('500ms');
         expect(tokens[1].type).toBe(TokenType.TIME_LITERAL);
-        expect(tokens[1].value).toBe('T#1s');
+        expect(tokens[1].value).toBe('1s');
         expect(tokens[2].type).toBe(TokenType.TIME_LITERAL);
-        expect(tokens[2].value).toBe('T#2m');
+        expect(tokens[2].value).toBe('2m');
     });
 
     it('tokenizes assignment', () => {
@@ -682,7 +682,8 @@ describe('Multi-Task Compiler', () => {
         expect(result.tasks[0].type).toBe(TASK_TYPE.CYCLIC);
         expect(result.tasks[0].priority).toBe(1);
         expect(result.tasks[0].intervalUs).toBe(10000); // 10ms * 1000
-        expect(result.tasks[0].entryPoint).toBe(0);
+        // Entry point is after bootstrap JMP _start (3 bytes)
+        expect(result.tasks[0].entryPoint).toBe(3);
     });
 
     it('compiles a two-task project with different programs', () => {
@@ -713,10 +714,10 @@ describe('Multi-Task Compiler', () => {
         // Check we have 2 tasks
         expect(result.tasks.length).toBe(2);
 
-        // Check task 1 (Fast)
+        // Check task 1 (Fast) - entry point after bootstrap JMP (3 bytes)
         expect(result.tasks[0].priority).toBe(0);
         expect(result.tasks[0].intervalUs).toBe(10000);
-        expect(result.tasks[0].entryPoint).toBe(0);
+        expect(result.tasks[0].entryPoint).toBe(3);
 
         // Check task 2 (Slow) - entry point should be after Fast's code
         expect(result.tasks[1].priority).toBe(2);

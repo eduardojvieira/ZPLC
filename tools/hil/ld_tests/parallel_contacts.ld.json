@@ -1,0 +1,33 @@
+{
+  "name": "LDParallel",
+  "variables": {
+    "outputs": [
+      { "name": "A", "type": "BOOL", "address": "%Q0.0" },
+      { "name": "B", "type": "BOOL", "address": "%Q0.1" },
+      { "name": "Q", "type": "BOOL", "address": "%Q0.2" }
+    ],
+    "local": []
+  },
+  "rungs": [
+    {
+      "number": 1,
+      "branches": [
+        { "startCol": 1, "endCol": 1, "rows": [0, 1] }
+      ],
+      "grid": [
+        [
+          { "element": { "type": "left_rail" } },
+          { "element": { "type": "contact_no", "variable": "A" } },
+          { "element": { "type": "coil", "variable": "Q" } },
+          { "element": { "type": "right_rail" } }
+        ],
+        [
+          {},
+          { "element": { "type": "contact_no", "variable": "B" } },
+          {},
+          {}
+        ]
+      ]
+    }
+  ]
+}

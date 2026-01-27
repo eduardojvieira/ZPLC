@@ -30,6 +30,16 @@ if(CONFIG_ZPLC)
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/hal/zephyr/zplc_scheduler_zephyr.c
   )
 
+  # HIL Debug support (optional - enabled via CONFIG_ZPLC_HIL_DEBUG)
+  zephyr_library_sources_ifdef(CONFIG_ZPLC_HIL_DEBUG
+    ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_debug.c
+  )
+
+  # ZPLC Loader (always included if ZPLC is enabled)
+  zephyr_library_sources(
+    ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_loader.c
+  )
+
   # Include paths for library compilation
   zephyr_library_include_directories(
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/include

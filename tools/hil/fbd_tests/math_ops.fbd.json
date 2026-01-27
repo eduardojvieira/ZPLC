@@ -1,0 +1,20 @@
+{
+  "name": "FBDMath",
+  "variables": {
+    "outputs": [
+      { "name": "OutAdd", "type": "INT", "address": "%Q4.0" }
+    ],
+    "local": []
+  },
+  "blocks": [
+    { "id": "1", "type": "constant", "value": 10, "dataType": "INT", "outputs": [{ "name": "OUT", "type": "INT" }] },
+    { "id": "2", "type": "constant", "value": 20, "dataType": "INT", "outputs": [{ "name": "OUT", "type": "INT" }] },
+    { "id": "3", "type": "ADD", "outputs": [{ "name": "OUT", "type": "INT" }] },
+    { "id": "4", "type": "output", "variableName": "OutAdd", "inputs": [{ "name": "IN", "type": "INT" }] }
+  ],
+  "connections": [
+    { "from": { "block": "1", "port": "OUT" }, "to": { "block": "3", "port": "IN1" } },
+    { "from": { "block": "2", "port": "OUT" }, "to": { "block": "3", "port": "IN2" } },
+    { "from": { "block": "3", "port": "OUT" }, "to": { "block": "4", "port": "IN" } }
+  ]
+}

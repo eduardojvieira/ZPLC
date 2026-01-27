@@ -1,0 +1,22 @@
+{
+  "name": "FBDAnd",
+  "variables": {
+    "outputs": [
+      { "name": "InA", "type": "BOOL", "address": "%Q0.0" },
+      { "name": "InB", "type": "BOOL", "address": "%Q1.0" },
+      { "name": "OutQ", "type": "BOOL", "address": "%Q2.0" }
+    ],
+    "local": []
+  },
+  "blocks": [
+    { "id": "1", "type": "variable", "variableName": "InA", "direction": "read", "outputs": [{ "name": "OUT", "type": "BOOL" }] },
+    { "id": "2", "type": "variable", "variableName": "InB", "direction": "read", "outputs": [{ "name": "OUT", "type": "BOOL" }] },
+    { "id": "3", "type": "AND", "outputs": [{ "name": "OUT", "type": "BOOL" }] },
+    { "id": "4", "type": "output", "variableName": "OutQ", "inputs": [{ "name": "IN", "type": "BOOL" }] }
+  ],
+  "connections": [
+    { "from": { "block": "1", "port": "OUT" }, "to": { "block": "3", "port": "IN1" } },
+    { "from": { "block": "2", "port": "OUT" }, "to": { "block": "3", "port": "IN2" } },
+    { "from": { "block": "3", "port": "OUT" }, "to": { "block": "4", "port": "IN" } }
+  ]
+}
