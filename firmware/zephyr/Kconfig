@@ -120,4 +120,17 @@ config ZPLC_SCHED_HIGH_PRIO_PRIORITY
 
 endif # ZPLC_SCHEDULER
 
+# -----------------------------------------------------------------------------
+# HIL Debug Configuration
+# -----------------------------------------------------------------------------
+
+config ZPLC_HIL_DEBUG
+    bool "Enable HIL Debugging"
+    default n
+    help
+      Enables Hardware-in-the-Loop debugging features.
+      Adds JSON trace output for VM introspection and testing.
+      When enabled, the runtime emits structured JSON debug frames
+      over serial for automated testing and validation.
+
 endif # ZPLC

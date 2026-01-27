@@ -1,0 +1,9 @@
+PROGRAM DebugGT
+VAR
+  res_gt AT %Q0.0 : BOOL;
+END_VAR
+
+LD 50
+GT 40
+ST res_gt
+END_PROGRAM

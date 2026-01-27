@@ -22,6 +22,7 @@
 #include <string.h>
 #include <zplc_core.h>
 #include <zplc_hal.h>
+#include <zplc_debug.h>
 
 /* ============================================================================
  * Version Information
@@ -337,6 +338,7 @@ int zplc_mem_load_code(const uint8_t *code, size_t size, uint16_t offset) {
   if (offset + size > code_size) {
     code_size = (uint32_t)(offset + size);
   }
+
   return 0;
 }
 
@@ -1697,7 +1699,28 @@ int zplc_vm_run(zplc_vm_t *vm, uint32_t max_instructions) {
   }
 
   while (!vm->halted && !vm->paused) {
+#ifdef CONFIG_ZPLC_HIL_DEBUG
+    /* HIL Trace: Capture state before execution */
+    uint16_t trace_pc = vm->pc;
+    uint8_t trace_op = 0;
+    if (vm->code && trace_pc < vm->code_size) {
+      trace_op = vm->code[trace_pc];
+    }
+#endif
+
     result = zplc_vm_step(vm);
+
+#ifdef CONFIG_ZPLC_HIL_DEBUG
+    /* HIL Trace: Output result */
+    if (result == ZPLC_VM_OK || result == ZPLC_VM_HALTED ||
+        result == ZPLC_VM_PAUSED) {
+      int32_t tos = (vm->sp > 0) ? (int32_t)vm->stack[vm->sp - 1] : 0;
+      hil_trace_opcode(trace_op, trace_pc, (uint8_t)vm->sp, tos);
+    } else {
+      hil_trace_error((uint8_t)result, hil_error_name((uint8_t)result),
+                      trace_pc);
+    }
+#endif
 
     /* Stop on halt, pause, or error */
     if (result == ZPLC_VM_HALTED || result == ZPLC_VM_PAUSED) {

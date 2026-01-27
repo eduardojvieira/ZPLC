@@ -1,0 +1,12 @@
+# =============================================================================
+# ZPLC Application Kconfig
+# =============================================================================
+# Include the main Zephyr Kconfig
+source "Kconfig.zephyr"
+
+menu "ZPLC Application"
+
+# Application-specific options go here
+# (ZPLC_HIL_DEBUG is now defined in the module Kconfig)
+
+endmenu

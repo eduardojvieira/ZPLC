@@ -1,0 +1,25 @@
+Detected language: LD for extension .json
+--- Generated ST (LD) ---
+PROGRAM Blinky
+
+VAR
+    BlinkTimer : TON; (* Timer for 500ms blink interval *)
+    _rung1_result : BOOL;
+    _rung2_result : BOOL;
+END_VAR
+
+VAR_OUTPUT
+    LED_Output AT %Q0.0 : BOOL; (* Physical LED output *)
+END_VAR
+
+(* LD Execution - Auto-generated *)
+
+(* Rung 1: Oscillating Timer - runs when output is OFF, times 500ms *)
+_rung1_result := NOT LED_Output;
+BlinkTimer(IN := _rung1_result, PT := T#500ms);
+
+(* Rung 2: LED Output - SET when timer done, self-resets when timer restarts *)
+_rung2_result := BlinkTimer.Q;
+LED_Output := _rung2_result;
+
+END_PROGRAM

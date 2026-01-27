@@ -42,6 +42,15 @@ export const DataType = {
     LREAL: 'LREAL',
     TIME: 'TIME',
     STRING: 'STRING',
+    WSTRING: 'WSTRING',
+    DATE: 'DATE',
+    TIME_OF_DAY: 'TIME_OF_DAY', // Alias: TOD
+    DATE_AND_TIME: 'DATE_AND_TIME', // Alias: DT
+    // Bit strings
+    BYTE: 'BYTE',
+    WORD: 'WORD',
+    DWORD: 'DWORD',
+    LWORD: 'LWORD',
     // Timer function blocks
     TON: 'TON',
     TOF: 'TOF',
@@ -77,9 +86,17 @@ export type DataTypeValue = typeof DataType[keyof typeof DataType];
 
 /**
  * Represents any valid data type in ZPLC, including elementary types, array types,
- * and user-defined types (structs).
+ * user-defined types (structs), and pointer types.
  */
-export type STDataType = DataTypeValue | ArrayType | string; // string for user-defined TYPES (STRUCTs)
+export type STDataType = DataTypeValue | ArrayType | PointerType | string;
+
+/**
+ * Pointer type (REF_TO <Type>)
+ */
+export interface PointerType {
+    kind: 'PointerType';
+    baseType: STDataType;
+}
 
 /**
  * Get the size in bytes of a data type.
@@ -102,15 +119,22 @@ export function getDataTypeSize(type: STDataType): number {
             case 'DWORD':
             case 'REAL':
             case 'TIME':
+            case 'DATE':
+            case 'TIME_OF_DAY':
+            case 'TOD':
                 return 4;
             case 'LINT':
             case 'ULINT':
             case 'LWORD':
             case 'LREAL':
+            case 'DATE_AND_TIME':
+            case 'DT':
                 return 8;
             case 'STRING':
-                return 85; // Default max length (84 chars + null)
-
+                return 85; // 4 byte header + 80 chars + 1 null
+            case 'WSTRING':
+                return 166; // 4 byte header + 80 wchars + 2 null
+            
             // Standard FBs (for completeness/compatibility)
             case 'TON':
             case 'TOF':
@@ -136,6 +160,10 @@ export function getDataTypeSize(type: STDataType): number {
 
     if (isArrayType(type)) {
         return getArrayTotalSize(type);
+    }
+
+    if (typeof type === 'object' && type.kind === 'PointerType') {
+        return 4; // Pointers are 32-bit addresses
     }
 
     return 0;
@@ -216,6 +244,7 @@ export const VarSection = {
     VAR_TEMP: 'VAR_TEMP',
     VAR_RETAIN: 'VAR_RETAIN',
     VAR_GLOBAL: 'VAR_GLOBAL',
+    CONSTANT: 'CONSTANT',
 } as const;
 
 export type VarSectionValue = typeof VarSection[keyof typeof VarSection];
@@ -339,6 +368,10 @@ export type Expression =
     | RealLiteral
     | TimeLiteral
     | StringLiteral
+    | WStringLiteral
+    | DateLiteral
+    | TODLiteral
+    | DTLiteral
     | Identifier
     | MemberAccess
     | ArrayAccess
@@ -346,7 +379,52 @@ export type Expression =
     | BinaryExpr
     | FBCall
     | FunctionCall
-    | ArrayLiteral;
+    | MethodCall
+    | ArrayLiteral
+    | ReferenceExpr
+    | DereferenceExpr
+    | ThisExpr;
+
+/**
+ * Reference expression (REF(variable)).
+ * Returns the memory address of the operand.
+ */
+export interface ReferenceExpr extends ASTNode {
+    kind: 'ReferenceExpr';
+    operand: Identifier | MemberAccess | ArrayAccess;
+}
+
+/**
+ * Dereference expression (pointer^).
+ * Accesses the value at the memory address stored in the operand.
+ */
+export interface DereferenceExpr extends ASTNode {
+    kind: 'DereferenceExpr';
+    operand: Expression;
+}
+
+/**
+ * Method call expression.
+ * Syntax: instance.MethodName(args) or THIS.MethodName(args)
+ * 
+ * Examples:
+ *   myMotor.Start(speed := 100);
+ *   THIS.Calculate();
+ */
+export interface MethodCall extends ASTNode {
+    kind: 'MethodCall';
+    object: Expression;
+    methodName: string;
+    args: (Expression | NamedArgument)[];
+}
+
+/**
+ * THIS keyword expression.
+ * References the current FB instance within a method.
+ */
+export interface ThisExpr extends ASTNode {
+    kind: 'ThisExpr';
+}
 
 /**
  * Array access expression.
@@ -413,15 +491,35 @@ export interface TimeLiteral extends ASTNode {
  */
 export interface StringLiteral extends ASTNode {
     kind: 'StringLiteral';
-    value: string;  // The string content (without quotes)
+    value: string;
+}
+
+export interface WStringLiteral extends ASTNode {
+    kind: 'WStringLiteral';
+    value: string;
+}
+
+export interface DateLiteral extends ASTNode {
+    kind: 'DateLiteral';
+    value: string;
+}
+
+export interface TODLiteral extends ASTNode {
+    kind: 'TODLiteral';
+    value: string;
+}
+
+export interface DTLiteral extends ASTNode {
+    kind: 'DTLiteral';
+    value: string;
 }
 
 /**
  * Parse a time literal string to milliseconds.
  */
 export function parseTimeLiteral(raw: string): number {
-    // Format: T#<value><unit>
-    const match = raw.match(/^T#(\d+)(ms|s|m|h|d)$/i);
+    // Format: T#<value><unit> or just <value><unit> (from lexer)
+    const match = raw.match(/^(?:T#)?(\d+)(ms|s|m|h|d)$/i);
     if (!match) {
         throw new Error(`Invalid time literal: ${raw}`);
     }
@@ -476,13 +574,24 @@ export interface BinaryExpr extends ASTNode {
 }
 
 /**
+ * Named argument for function/method calls: name := value
+ */
+export interface NamedArgument {
+    kind: 'NamedArgument';
+    name: string;
+    value: Expression;
+    line?: number;
+    column?: number;
+}
+
+/**
  * Function call with positional arguments: MAX(a, b), SQRT(x), etc.
  * Used for stateless stdlib functions.
  */
 export interface FunctionCall extends ASTNode {
     kind: 'FunctionCall';
     name: string;
-    args: Expression[];
+    args: (Expression | NamedArgument)[];
 }
 
 // ============================================================================
@@ -509,7 +618,7 @@ export type Statement =
  */
 export interface Assignment extends ASTNode {
     kind: 'Assignment';
-    target: Identifier | MemberAccess | ArrayAccess;  // Added ArrayAccess for array element assignment
+    target: Identifier | MemberAccess | ArrayAccess | DereferenceExpr;
     value: Expression;
 }
 
@@ -703,6 +812,29 @@ export interface StructDecl extends ASTNode {
 }
 
 /**
+ * Enumeration value.
+ */
+export interface EnumValue {
+    name: string;
+    value: number;
+}
+
+/**
+ * Enumeration declaration (TYPE ... (Val1, Val2) ... END_TYPE).
+ */
+export interface EnumDecl extends ASTNode {
+    kind: 'EnumDecl';
+    name: string;
+    baseType: DataTypeValue; // Usually INT
+    values: EnumValue[];
+}
+
+/**
+ * User-defined type definition.
+ */
+export type TypeDefinition = StructDecl | EnumDecl;
+
+/**
  * A complete compilation unit (one .st file).
  */
 export interface CompilationUnit extends ASTNode {
@@ -710,7 +842,8 @@ export interface CompilationUnit extends ASTNode {
     globalVars: GlobalVarBlock[];   // NEW in v1.4.3
     functions: FunctionDecl[];      // User-defined functions
     functionBlocks: FunctionBlockDecl[]; // NEW in v1.4.3
-    typeDefinitions: StructDecl[];  // NEW for Sprint 4
+    typeDefinitions: TypeDefinition[];  // NEW for Sprint 4
+    interfaces: InterfaceDecl[];    // NEW for OOP support
     programs: Program[];
 }
 
@@ -744,11 +877,65 @@ export interface FunctionDecl extends ASTNode {
 export interface FunctionBlockDecl extends ASTNode {
     kind: 'FunctionBlockDecl';
     name: string;
+    extends: string | null;        // Base FB name (inheritance)
+    implements: string[];          // List of interface names
     inputs: VarDecl[];     // VAR_INPUT
     outputs: VarDecl[];    // VAR_OUTPUT
     inouts: VarDecl[];     // VAR_IN_OUT
     locals: VarDecl[];     // VAR
+    methods: MethodDecl[]; // Methods defined in this FB
     body: Statement[];
+}
+
+// ============================================================================
+// OOP Extensions (IEC 61131-3 3rd Edition)
+// ============================================================================
+
+/**
+ * Access specifier for methods and properties.
+ */
+export type AccessSpecifier = 'PUBLIC' | 'PRIVATE' | 'PROTECTED' | 'INTERNAL';
+
+/**
+ * Method declaration within a FUNCTION_BLOCK or INTERFACE.
+ * 
+ * Syntax:
+ *   METHOD [access] [FINAL|ABSTRACT|OVERRIDE] MethodName : ReturnType
+ *       VAR_INPUT ... END_VAR
+ *       VAR ... END_VAR
+ *       statements
+ *   END_METHOD
+ */
+export interface MethodDecl extends ASTNode {
+    kind: 'MethodDecl';
+    name: string;
+    returnType: STDataType | null;   // null for void methods
+    accessSpecifier: AccessSpecifier;
+    isFinal: boolean;        // Cannot be overridden
+    isAbstract: boolean;     // No implementation (interface or abstract FB)
+    isOverride: boolean;     // Overrides a base method
+    inputs: VarDecl[];       // VAR_INPUT parameters
+    outputs: VarDecl[];      // VAR_OUTPUT parameters
+    locals: VarDecl[];       // VAR variables
+    body: Statement[];       // Empty if isAbstract
+}
+
+/**
+ * Interface declaration.
+ * Interfaces define method signatures without implementation.
+ * 
+ * Syntax:
+ *   INTERFACE InterfaceName [EXTENDS BaseInterface1, BaseInterface2, ...]
+ *       METHOD MethodName : ReturnType
+ *           VAR_INPUT ... END_VAR
+ *       END_METHOD
+ *   END_INTERFACE
+ */
+export interface InterfaceDecl extends ASTNode {
+    kind: 'InterfaceDecl';
+    name: string;
+    extends: string[];       // Base interfaces (multiple inheritance allowed)
+    methods: MethodDecl[];   // Method signatures (abstract, no body)
 }
 
 /**

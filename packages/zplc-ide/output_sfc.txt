@@ -1,0 +1,54 @@
+Detected language: SFC for extension .json
+--- Generated ST (SFC) ---
+PROGRAM Blinky
+
+(* SFC Generated from Visual Editor *)
+
+VAR
+    (* Step Active Flags *)
+    X_step_led_on : BOOL := TRUE; (* Step: LED_ON *)
+    X_step_led_off : BOOL := FALSE; (* Step: LED_OFF *)
+
+    (* Step Elapsed Timers *)
+    T_step_led_on : TON; (* Timer for LED_ON *)
+    T_step_led_off : TON; (* Timer for LED_OFF *)
+
+END_VAR
+
+VAR_OUTPUT
+    LED_Output AT %Q0.0 : BOOL; (* Physical LED output *)
+END_VAR
+
+(* === Step Timers === *)
+T_step_led_on(IN := X_step_led_on, PT := T#24h);
+T_step_led_off(IN := X_step_led_off, PT := T#24h);
+
+(* === Transition Logic === *)
+(* Transition: LED_ON -> LED_OFF (After 500ms in ON state, transition to OFF) *)
+IF X_step_led_on AND (T_step_led_on.ET >= T#500ms) THEN
+    X_step_led_on := FALSE;
+    X_step_led_off := TRUE;
+END_IF;
+
+(* Transition: LED_OFF -> LED_ON (After 500ms in OFF state, transition to ON) *)
+IF X_step_led_off AND (T_step_led_off.ET >= T#500ms) THEN
+    X_step_led_off := FALSE;
+    X_step_led_on := TRUE;
+END_IF;
+
+(* === Action Execution === *)
+(* Step: LED_ON *)
+IF X_step_led_on THEN
+    (* Action: SET_LED_ON *)
+    (* Turn LED ON while in this step *)
+    LED_Output := TRUE;
+END_IF;
+
+(* Step: LED_OFF *)
+IF X_step_led_off THEN
+    (* Action: SET_LED_OFF *)
+    (* Turn LED OFF while in this step *)
+    LED_Output := FALSE;
+END_IF;
+
+END_PROGRAM

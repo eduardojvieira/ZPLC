@@ -1,0 +1,19 @@
+{
+  "name": "FBDNot",
+  "variables": {
+    "outputs": [
+      { "name": "InA", "type": "BOOL", "address": "%Q0.0" },
+      { "name": "OutQ", "type": "BOOL", "address": "%Q1.0" }
+    ],
+    "local": []
+  },
+  "blocks": [
+    { "id": "1", "type": "variable", "variableName": "InA", "direction": "read", "outputs": [{ "name": "OUT", "type": "BOOL" }] },
+    { "id": "2", "type": "NOT", "outputs": [{ "name": "OUT", "type": "BOOL" }] },
+    { "id": "3", "type": "output", "variableName": "OutQ", "inputs": [{ "name": "IN", "type": "BOOL" }] }
+  ],
+  "connections": [
+    { "from": { "block": "1", "port": "OUT" }, "to": { "block": "2", "port": "IN" } },
+    { "from": { "block": "2", "port": "OUT" }, "to": { "block": "3", "port": "IN" } }
+  ]
+}

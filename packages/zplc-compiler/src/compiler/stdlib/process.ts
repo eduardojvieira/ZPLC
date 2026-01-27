@@ -623,7 +623,7 @@ export const PID_COMPACT_FB: FunctionBlockDef = {
         ctx.emit(`    MULF`);                          // [P_term, I_term, error, D_term]
 
         // Store error as _prev_err
-        ctx.emit(`    ROT`);                           // [P_term, I_term, D_term, error]
+        ctx.emit(`    SWAP`);                          // [P_term, I_term, D_term, error]
         ctx.emit(`    STORE32 ${formatAddr(base + 40)} ; _prev_err`);
 
         // Sum: OUT = P_term + I_term + D_term

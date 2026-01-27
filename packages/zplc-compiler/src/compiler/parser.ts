@@ -28,27 +28,46 @@ import type {
     ExitStatement,
     ContinueStatement,
     ReturnStatement,
+    NamedArgument,
     FBCallStatement,
-    FBParameter,
-    MemberAccess,
+    Identifier,
+    TypeDefinition,
+    EnumDecl,
+    EnumValue,
+    StructDecl,
+    // OOP Extensions
+    InterfaceDecl,
+    MethodDecl,
+    AccessSpecifier,
+    MethodCall,
+    ThisExpr,
+    StringLiteral,
+    WStringLiteral,
+    DateLiteral,
+    TODLiteral,
+    DTLiteral,
     BoolLiteral,
     IntLiteral,
     RealLiteral,
     TimeLiteral,
-    StringLiteral,
     UnaryExpr,
+    BinaryExpr,
     FunctionCall,
-    DataTypeValue,
-    STDataType,
-    VarSectionValue,
-    ArrayType,
-    ArrayDimension,
     ArrayAccess,
+    MemberAccess,
+    DereferenceExpr,
+    ReferenceExpr,
     ArrayLiteral,
+    // Extended types
+    GlobalVarBlock,
     FunctionDecl,
     FunctionBlockDecl,
-    GlobalVarBlock,
-    StructDecl,
+    FBParameter,
+    STDataType,
+    ArrayType,
+    ArrayDimension,
+    DataTypeValue,
+    VarSectionValue,
 } from './ast.ts';
 
 /**
@@ -95,6 +114,10 @@ class Parser {
 
     private current(): Token {
         return this.tokens[this.pos] ?? { type: TokenType.EOF, value: '', line: 0, column: 0 };
+    }
+
+    private previous(): Token {
+        return this.tokens[this.pos - 1];
     }
 
     private isAtEnd(): boolean {
@@ -144,14 +167,15 @@ class Parser {
     // ========================================================================
 
     /**
-     * compilation_unit := (function | program)*
+     * compilation_unit := (function | program | function_block | interface | type)*
      */
     parseCompilationUnit(): CompilationUnit {
         const globalVars: GlobalVarBlock[] = [];
         const functions: FunctionDecl[] = [];
         const programs: Program[] = [];
         const functionBlocks: FunctionBlockDecl[] = [];
-        const typeDefinitions: StructDecl[] = [];
+        const typeDefinitions: TypeDefinition[] = [];
+        const interfaces: InterfaceDecl[] = [];
         const start = this.current();
 
         while (!this.isAtEnd()) {
@@ -165,8 +189,10 @@ class Parser {
                 programs.push(this.parseProgram());
             } else if (this.check(TokenType.TYPE)) {
                 typeDefinitions.push(this.parseTypeDecl());
+            } else if (this.check(TokenType.INTERFACE)) {
+                interfaces.push(this.parseInterfaceDecl());
             } else {
-                this.error(`Expected VAR_GLOBAL, FUNCTION, FUNCTION_BLOCK, PROGRAM or TYPE, got ${this.current().type}`);
+                this.error(`Expected VAR_GLOBAL, FUNCTION, FUNCTION_BLOCK, PROGRAM, TYPE or INTERFACE, got ${this.current().type}`);
             }
         }
 
@@ -177,6 +203,7 @@ class Parser {
             functionBlocks,
             programs,
             typeDefinitions,
+            interfaces,
             line: start.line,
             column: start.column,
         };
@@ -212,42 +239,67 @@ class Parser {
     }
 
     /**
-     * function_block_decl := FUNCTION_BLOCK identifier var_block* statement* END_FUNCTION_BLOCK
+     * function_block_decl := FUNCTION_BLOCK identifier [EXTENDS base_fb] [IMPLEMENTS iface, ...]
+     *                        var_block* method* statement* END_FUNCTION_BLOCK
      */
     private parseFunctionBlockDecl(): FunctionBlockDecl {
         const start = this.expect(TokenType.FUNCTION_BLOCK, 'Expected FUNCTION_BLOCK');
         const nameToken = this.expect(TokenType.IDENTIFIER, 'Expected function block name');
 
+        // Parse optional EXTENDS clause
+        let extendsName: string | null = null;
+        if (this.match(TokenType.EXTENDS)) {
+            extendsName = this.expect(TokenType.IDENTIFIER, 'Expected base FB name after EXTENDS').value;
+        }
+
+        // Parse optional IMPLEMENTS clause
+        const implementsList: string[] = [];
+        if (this.match(TokenType.IMPLEMENTS)) {
+            implementsList.push(this.expect(TokenType.IDENTIFIER, 'Expected interface name').value);
+            while (this.match(TokenType.COMMA)) {
+                implementsList.push(this.expect(TokenType.IDENTIFIER, 'Expected interface name').value);
+            }
+        }
+
         const inputs: VarDecl[] = [];
         const outputs: VarDecl[] = [];
         const inouts: VarDecl[] = [];
         const locals: VarDecl[] = [];
+        const methods: MethodDecl[] = [];
 
-        // Parse variable blocks
+        // Parse variable blocks and methods
         while (
             this.check(TokenType.VAR) ||
             this.check(TokenType.VAR_INPUT) ||
             this.check(TokenType.VAR_OUTPUT) ||
-            this.check(TokenType.VAR_IN_OUT)
+            this.check(TokenType.VAR_IN_OUT) ||
+            this.check(TokenType.VAR_TEMP) ||
+            this.check(TokenType.METHOD)
         ) {
-            const block = this.parseVarBlock();
-            switch (block.section) {
-                case VarSection.VAR_INPUT:
-                    inputs.push(...block.variables);
-                    break;
-                case VarSection.VAR_OUTPUT:
-                    outputs.push(...block.variables);
-                    break;
-                case VarSection.VAR_IN_OUT:
-                    inouts.push(...block.variables);
-                    break;
-                case VarSection.VAR:
-                    locals.push(...block.variables);
-                    break;
+            // Check for method (starts with METHOD keyword)
+            if (this.check(TokenType.METHOD)) {
+                methods.push(this.parseMethodDecl());
+            } else {
+                const block = this.parseVarBlock();
+                switch (block.section) {
+                    case VarSection.VAR_INPUT:
+                        inputs.push(...block.variables);
+                        break;
+                    case VarSection.VAR_OUTPUT:
+                        outputs.push(...block.variables);
+                        break;
+                    case VarSection.VAR_IN_OUT:
+                        inouts.push(...block.variables);
+                        break;
+                    case VarSection.VAR:
+                    case VarSection.VAR_TEMP:
+                        locals.push(...block.variables);
+                        break;
+                }
             }
         }
 
-        // Parse body statements
+        // Parse body statements (legacy FB body, executed on call)
         const body: Statement[] = [];
         while (!this.check(TokenType.END_FUNCTION_BLOCK) && !this.isAtEnd()) {
             body.push(this.parseStatement());
@@ -258,10 +310,13 @@ class Parser {
         return {
             kind: 'FunctionBlockDecl',
             name: nameToken.value,
+            extends: extendsName,
+            implements: implementsList,
             inputs,
             outputs,
             inouts,
             locals,
+            methods,
             body,
             line: start.line,
             column: start.column,
@@ -271,7 +326,7 @@ class Parser {
     /**
      * global_var_block := VAR_GLOBAL (CONSTANT)? var_decl* END_VAR
      */
-    private parseTypeDecl(): StructDecl {
+    private parseTypeDecl(): TypeDefinition {
         const start = this.expect(TokenType.TYPE, "Expected 'TYPE'");
         const nameToken = this.expect(TokenType.IDENTIFIER, "Expected type name");
 
@@ -280,53 +335,223 @@ class Parser {
             // just skip
         }
 
-        this.expect(TokenType.STRUCT, "Expected 'STRUCT'");
-
-        const members: VarDecl[] = [];
-        while (!this.check(TokenType.END_STRUCT) && !this.isAtEnd()) {
-            // Struct members look like variable declarations without VAR/END_VAR
-            // Speed : REAL;
-            const memberNames: string[] = [];
-            memberNames.push(this.expect(TokenType.IDENTIFIER, "Expected member name").value);
-            while (this.match(TokenType.COMMA)) {
+        if (this.check(TokenType.STRUCT)) {
+            this.advance(); // consume STRUCT
+            const members: VarDecl[] = [];
+            while (!this.check(TokenType.END_STRUCT) && !this.isAtEnd()) {
+                const memberNames: string[] = [];
                 memberNames.push(this.expect(TokenType.IDENTIFIER, "Expected member name").value);
+                while (this.match(TokenType.COMMA)) {
+                    memberNames.push(this.expect(TokenType.IDENTIFIER, "Expected member name").value);
+                }
+
+                this.expect(TokenType.COLON, "Expected ':' after member name");
+                const dataType = this.parseTypeName();
+
+                let initialValue: Expression | ArrayLiteral | null = null;
+                if (this.match(TokenType.ASSIGN)) {
+                    initialValue = this.parseExpression() as any; 
+                }
+
+                this.expect(TokenType.SEMICOLON, "Expected ';' after member declaration");
+
+                for (const mName of memberNames) {
+                    members.push({
+                        kind: 'VarDecl',
+                        name: mName,
+                        dataType,
+                        initialValue,
+                        ioAddress: null,
+                        section: 'VAR', 
+                        line: start.line,
+                        column: start.column,
+                    });
+                }
             }
 
-            this.expect(TokenType.COLON, "Expected ':' after member name");
-            const dataType = this.parseTypeName();
+            this.expect(TokenType.END_STRUCT, "Expected 'END_STRUCT'");
+            if (this.match(TokenType.SEMICOLON)) { }
+            this.expect(TokenType.END_TYPE, "Expected 'END_TYPE'");
 
-            let initialValue: Expression | ArrayLiteral | null = null;
-            if (this.match(TokenType.ASSIGN)) {
-                initialValue = this.parseExpression() as any; // Cast for simplicity, valid for structs
-            }
+            return {
+                kind: 'StructDecl',
+                name: nameToken.value,
+                members,
+                line: start.line,
+                column: start.column,
+            };
+        } else if (this.check(TokenType.LPAREN)) {
+            // Enum declaration
+            this.advance(); // consume (
+            const values: EnumValue[] = [];
+            let nextVal = 0;
+            
+            do {
+                const enumName = this.expect(TokenType.IDENTIFIER, "Expected enum value name").value;
+                let val = nextVal;
+                
+                if (this.match(TokenType.ASSIGN)) {
+                    const lit = this.parseExpression(); 
+                    if (lit.kind === 'IntLiteral') {
+                        val = lit.value;
+                    } else {
+                        this.error("Enum value must be an integer literal");
+                    }
+                }
+                
+                values.push({ name: enumName, value: val });
+                nextVal = val + 1;
+            } while (this.match(TokenType.COMMA));
+            
+            this.expect(TokenType.RPAREN, "Expected ')' after enum values");
+            if (this.match(TokenType.SEMICOLON)) { }
+            this.expect(TokenType.END_TYPE, "Expected 'END_TYPE'");
+            
+            return {
+                kind: 'EnumDecl',
+                name: nameToken.value,
+                baseType: 'INT',
+                values,
+                line: start.line,
+                column: start.column
+            };
+        } else {
+            this.error("Expected 'STRUCT' or '(' for type definition");
+            // Unreachable
+            return {} as any;
+        }
+    }
 
-            this.expect(TokenType.SEMICOLON, "Expected ';' after member declaration");
+    /**
+     * interface_decl := INTERFACE identifier [EXTENDS iface, ...] method_signature* END_INTERFACE
+     */
+    private parseInterfaceDecl(): InterfaceDecl {
+        const start = this.expect(TokenType.INTERFACE, 'Expected INTERFACE');
+        const nameToken = this.expect(TokenType.IDENTIFIER, 'Expected interface name');
 
-            for (const mName of memberNames) {
-                members.push({
-                    kind: 'VarDecl',
-                    name: mName,
-                    dataType,
-                    initialValue,
-                    ioAddress: null,
-                    section: 'VAR', // Struct members are implicitly VAR
-                    line: start.line,
-                    column: start.column,
-                });
+        // Parse optional EXTENDS clause (multiple inheritance for interfaces)
+        const extendsList: string[] = [];
+        if (this.match(TokenType.EXTENDS)) {
+            extendsList.push(this.expect(TokenType.IDENTIFIER, 'Expected base interface name').value);
+            while (this.match(TokenType.COMMA)) {
+                extendsList.push(this.expect(TokenType.IDENTIFIER, 'Expected base interface name').value);
             }
         }
 
-        this.expect(TokenType.END_STRUCT, "Expected 'END_STRUCT'");
+        // Parse method signatures (abstract methods only)
+        const methods: MethodDecl[] = [];
+        while (!this.check(TokenType.END_INTERFACE) && !this.isAtEnd()) {
+            if (this.check(TokenType.METHOD)) {
+                methods.push(this.parseMethodDecl(true)); // isAbstract = true
+            } else {
+                this.error(`Expected METHOD in interface, got ${this.current().type}`);
+            }
+        }
 
-        // Optional semicolon after END_STRUCT
-        if (this.match(TokenType.SEMICOLON)) { }
-
-        this.expect(TokenType.END_TYPE, "Expected 'END_TYPE'");
+        this.expect(TokenType.END_INTERFACE, 'Expected END_INTERFACE');
 
         return {
-            kind: 'StructDecl',
+            kind: 'InterfaceDecl',
             name: nameToken.value,
-            members,
+            extends: extendsList,
+            methods,
+            line: start.line,
+            column: start.column,
+        };
+    }
+
+    /**
+     * method_decl := METHOD [access] [FINAL|ABSTRACT|OVERRIDE] name [: return_type]
+     *                var_block* statement* END_METHOD
+     * 
+     * Note: IEC 61131-3 syntax has METHOD before the access specifier
+     * 
+     * @param forceAbstract - If true (for interfaces), method has no body
+     */
+    private parseMethodDecl(forceAbstract: boolean = false): MethodDecl {
+        const start = this.expect(TokenType.METHOD, 'Expected METHOD');
+
+        // Parse optional access specifier (after METHOD keyword)
+        let accessSpecifier: AccessSpecifier = 'PUBLIC';
+        if (this.match(TokenType.PUBLIC)) {
+            accessSpecifier = 'PUBLIC';
+        } else if (this.match(TokenType.PRIVATE)) {
+            accessSpecifier = 'PRIVATE';
+        } else if (this.match(TokenType.PROTECTED)) {
+            accessSpecifier = 'PROTECTED';
+        }
+
+        // Parse optional modifiers
+        let isFinal = false;
+        let isAbstract = forceAbstract;
+        let isOverride = false;
+
+        while (this.check(TokenType.FINAL) || this.check(TokenType.ABSTRACT) || this.check(TokenType.OVERRIDE)) {
+            if (this.match(TokenType.FINAL)) {
+                isFinal = true;
+            } else if (this.match(TokenType.ABSTRACT)) {
+                isAbstract = true;
+            } else if (this.match(TokenType.OVERRIDE)) {
+                isOverride = true;
+            }
+        }
+
+        const nameToken = this.expect(TokenType.IDENTIFIER, 'Expected method name');
+
+        // Parse optional return type
+        let returnType: STDataType | null = null;
+        if (this.match(TokenType.COLON)) {
+            returnType = this.parseTypeName();
+        }
+
+        const inputs: VarDecl[] = [];
+        const outputs: VarDecl[] = [];
+        const locals: VarDecl[] = [];
+
+        // Parse variable blocks
+        while (
+            this.check(TokenType.VAR) ||
+            this.check(TokenType.VAR_INPUT) ||
+            this.check(TokenType.VAR_OUTPUT) ||
+            this.check(TokenType.VAR_TEMP)
+        ) {
+            const block = this.parseVarBlock();
+            switch (block.section) {
+                case VarSection.VAR_INPUT:
+                    inputs.push(...block.variables);
+                    break;
+                case VarSection.VAR_OUTPUT:
+                    outputs.push(...block.variables);
+                    break;
+                case VarSection.VAR:
+                case VarSection.VAR_TEMP:
+                    locals.push(...block.variables);
+                    break;
+            }
+        }
+
+        // Parse body (unless abstract)
+        const body: Statement[] = [];
+        if (!isAbstract) {
+            while (!this.check(TokenType.END_METHOD) && !this.isAtEnd()) {
+                body.push(this.parseStatement());
+            }
+        }
+
+        this.expect(TokenType.END_METHOD, 'Expected END_METHOD');
+
+        return {
+            kind: 'MethodDecl',
+            name: nameToken.value,
+            returnType,
+            accessSpecifier,
+            isFinal,
+            isAbstract,
+            isOverride,
+            inputs,
+            outputs,
+            locals,
+            body,
             line: start.line,
             column: start.column,
         };
@@ -369,8 +594,8 @@ class Parser {
         const inputs: VarDecl[] = [];
         const locals: VarDecl[] = [];
 
-        // Parse VAR_INPUT and VAR blocks
-        while (this.check(TokenType.VAR) || this.check(TokenType.VAR_INPUT)) {
+        // Parse VAR_INPUT, VAR, and VAR_TEMP blocks
+        while (this.check(TokenType.VAR) || this.check(TokenType.VAR_INPUT) || this.check(TokenType.VAR_TEMP)) {
             const block = this.parseVarBlock();
             if (block.section === VarSection.VAR_INPUT) {
                 inputs.push(...block.variables);
@@ -416,8 +641,10 @@ class Parser {
             section = VarSection.VAR_IN_OUT;
         } else if (this.match(TokenType.VAR_GLOBAL)) {
             section = VarSection.VAR_GLOBAL;
+        } else if (this.match(TokenType.VAR_TEMP)) {
+            section = VarSection.VAR_TEMP;
         } else {
-            this.error('Expected VAR, VAR_OUTPUT, VAR_INPUT, VAR_IN_OUT, or VAR_GLOBAL');
+            this.error('Expected VAR, VAR_OUTPUT, VAR_INPUT, VAR_IN_OUT, VAR_GLOBAL, or VAR_TEMP');
         }
 
         const variables: VarDecl[] = [];
@@ -480,12 +707,21 @@ class Parser {
     }
 
     /**
-     * type_name := BOOL | INT | DINT | REAL | TIME | TON | TOF | TP | ... | ARRAY [...] OF type_name
+     * type_name := BOOL | ... | REF_TO type_name | ...
      */
     private parseTypeName(): STDataType | ArrayType {
         // Check for ARRAY type
         if (this.check(TokenType.ARRAY)) {
             return this.parseArrayType();
+        }
+
+        // Check for POINTER type
+        if (this.match(TokenType.REF_TO)) {
+            const baseType = this.parseTypeName();
+            return {
+                kind: 'PointerType',
+                baseType
+            };
         }
 
         // Elementary types
@@ -663,21 +899,36 @@ class Parser {
             return this.parseReturnStatement();
         }
 
-        // Must be identifier-based (assignment or FB call)
-        if (!this.check(TokenType.IDENTIFIER)) {
+        // Must be identifier-based (assignment or FB call) or THIS-based
+        if (!this.check(TokenType.IDENTIFIER) && !this.check(TokenType.THIS)) {
             this.error(`Expected statement, got ${this.current().type}`);
         }
 
         const startToken = this.current();
 
-        // Special case: FB call with ( )
-        if (this.peek().type === TokenType.LPAREN) {
+        // Special case: FB call with ( ) - only for identifiers, not THIS
+        if (this.check(TokenType.IDENTIFIER) && this.peek().type === TokenType.LPAREN) {
             const ident = this.advance();
             return this.parseFBCallStatement(ident, startToken);
         }
 
-        // Must be an assignment (possibly with nested access)
+        // Must be an assignment (possibly with nested access) or a method call statement
         const target = this.parsePrimaryExpr();
+
+        // Check if this is a standalone method call (no assignment needed)
+        if (target.kind === 'MethodCall') {
+            this.expect(TokenType.SEMICOLON, 'Expected ; after method call');
+            // Wrap the method call in an assignment to a dummy variable
+            // Actually, we need a proper statement type for this
+            // For now, treat it as an assignment to itself (result discarded)
+            return {
+                kind: 'Assignment',
+                target: { kind: 'Identifier', name: '_', line: startToken.line, column: startToken.column } as Identifier,
+                value: target,
+                line: startToken.line,
+                column: startToken.column,
+            } as Assignment;
+        }
 
         if (this.match(TokenType.ASSIGN)) {
             // Assignment: target := value;
@@ -1282,6 +1533,46 @@ class Parser {
             } as StringLiteral;
         }
 
+        // WString literal
+        if (this.match(TokenType.WSTRING_LITERAL)) {
+            return {
+                kind: 'WStringLiteral',
+                value: curr.value,
+                line: curr.line,
+                column: curr.column,
+            } as WStringLiteral;
+        }
+
+        // Date literal
+        if (this.match(TokenType.DATE_LITERAL)) {
+            return {
+                kind: 'DateLiteral',
+                value: curr.value,
+                line: curr.line,
+                column: curr.column,
+            } as DateLiteral;
+        }
+
+        // TOD literal
+        if (this.match(TokenType.TOD_LITERAL)) {
+            return {
+                kind: 'TODLiteral',
+                value: curr.value,
+                line: curr.line,
+                column: curr.column,
+            } as TODLiteral;
+        }
+
+        // DT literal
+        if (this.match(TokenType.DT_LITERAL)) {
+            return {
+                kind: 'DTLiteral',
+                value: curr.value,
+                line: curr.line,
+                column: curr.column,
+            } as DTLiteral;
+        }
+
         // Identifier, member access, array access, or function call
         if (this.match(TokenType.IDENTIFIER)) {
             const startToken = curr;
@@ -1290,14 +1581,26 @@ class Parser {
             // Function calls are currently only supported as top-level identifiers
             if (this.check(TokenType.LPAREN)) {
                 this.advance(); // consume (
-                const args: Expression[] = [];
+                const args: (Expression | NamedArgument)[] = [];
 
                 // Parse comma-separated arguments
                 if (!this.check(TokenType.RPAREN)) {
-                    args.push(this.parseExpression());
-                    while (this.match(TokenType.COMMA)) {
-                        args.push(this.parseExpression());
-                    }
+                    do {
+                        if (this.check(TokenType.IDENTIFIER) && this.peek().type === TokenType.ASSIGN) {
+                            const argNameToken = this.advance();
+                            this.advance(); // consume :=
+                            const argValue = this.parseExpression();
+                            args.push({
+                                kind: 'NamedArgument',
+                                name: argNameToken.value,
+                                value: argValue,
+                                line: argNameToken.line,
+                                column: argNameToken.column,
+                            });
+                        } else {
+                            args.push(this.parseExpression());
+                        }
+                    } while (this.match(TokenType.COMMA));
                 }
 
                 this.expect(TokenType.RPAREN, 'Expected ) after function arguments');
@@ -1311,7 +1614,7 @@ class Parser {
                 } as FunctionCall;
             }
 
-            // Normal identifier (could be start of member/array access)
+            // Normal identifier (could be start of member/array access/method call)
             let expr: Expression = {
                 kind: 'Identifier',
                 name: startToken.value,
@@ -1319,17 +1622,56 @@ class Parser {
                 column: startToken.column,
             };
 
-            // Parse suffixes recursively (.member or [indices])
+            // Parse suffixes recursively (.member, .method(), [indices], ^)
             while (true) {
                 if (this.match(TokenType.DOT)) {
                     const memberToken = this.expect(TokenType.IDENTIFIER, 'Expected member name after .');
-                    expr = {
-                        kind: 'MemberAccess',
-                        object: expr,
-                        member: memberToken.value,
-                        line: startToken.line,
-                        column: startToken.column,
-                    } as MemberAccess;
+                    
+                    // Check if this is a method call: instance.Method(args)
+                    if (this.check(TokenType.LPAREN)) {
+                        this.advance(); // consume (
+                        const args: (Expression | NamedArgument)[] = [];
+                        
+                        // Parse comma-separated arguments
+                        if (!this.check(TokenType.RPAREN)) {
+                            do {
+                                if (this.check(TokenType.IDENTIFIER) && this.peek().type === TokenType.ASSIGN) {
+                                    const argNameToken = this.advance();
+                                    this.advance(); // consume :=
+                                    const argValue = this.parseExpression();
+                                    args.push({
+                                        kind: 'NamedArgument',
+                                        name: argNameToken.value,
+                                        value: argValue,
+                                        line: argNameToken.line,
+                                        column: argNameToken.column,
+                                    });
+                                } else {
+                                    args.push(this.parseExpression());
+                                }
+                            } while (this.match(TokenType.COMMA));
+                        }
+                        
+                        this.expect(TokenType.RPAREN, 'Expected ) after method arguments');
+                        
+                        expr = {
+                            kind: 'MethodCall',
+                            object: expr,
+                            methodName: memberToken.value,
+                            args,
+                            line: startToken.line,
+                            column: startToken.column,
+                        } as MethodCall;
+                    } else {
+                        // Regular member access
+                        expr = {
+                            kind: 'MemberAccess',
+                            object: expr,
+                            member: memberToken.value,
+                            line: startToken.line,
+                            column: startToken.column,
+                        } as MemberAccess;
+                    }
                 } else if (this.match(TokenType.LBRACKET)) {
                     const indices: Expression[] = [];
                     indices.push(this.parseExpression());
@@ -1350,11 +1692,69 @@ class Parser {
                         line: startToken.line,
                         column: startToken.column,
                     } as ArrayAccess;
+                } else if (this.match(TokenType.CARET)) {
+                    // Dereference: ptr^
+                    expr = {
+                        kind: 'DereferenceExpr',
+                        operand: expr,
+                        line: startToken.line,
+                        column: startToken.column
+                    } as DereferenceExpr;
                 } else {
                     break;
                 }
             }
+            return expr;
+        }
 
+        // THIS keyword (used inside methods)
+        if (this.match(TokenType.THIS)) {
+            let expr: Expression = {
+                kind: 'ThisExpr',
+                line: curr.line,
+                column: curr.column,
+            } as ThisExpr;
+            
+            // THIS can have suffixes: THIS.member, THIS.Method()
+            while (true) {
+                if (this.match(TokenType.DOT)) {
+                    const memberToken = this.expect(TokenType.IDENTIFIER, 'Expected member name after THIS.');
+                    
+                    // Check if this is a method call: THIS.Method(args)
+                    if (this.check(TokenType.LPAREN)) {
+                        this.advance(); // consume (
+                        const args: Expression[] = [];
+                        
+                        if (!this.check(TokenType.RPAREN)) {
+                            args.push(this.parseExpression());
+                            while (this.match(TokenType.COMMA)) {
+                                args.push(this.parseExpression());
+                            }
+                        }
+                        
+                        this.expect(TokenType.RPAREN, 'Expected ) after method arguments');
+                        
+                        expr = {
+                            kind: 'MethodCall',
+                            object: expr,
+                            methodName: memberToken.value,
+                            args,
+                            line: curr.line,
+                            column: curr.column,
+                        } as MethodCall;
+                    } else {
+                        expr = {
+                            kind: 'MemberAccess',
+                            object: expr,
+                            member: memberToken.value,
+                            line: curr.line,
+                            column: curr.column,
+                        } as MemberAccess;
+                    }
+                } else {
+                    break;
+                }
+            }
             return expr;
         }
 
@@ -1365,6 +1765,22 @@ class Parser {
             return expr;
         }
 
-        this.error(`Unexpected token in expression: ${curr.type} '${curr.value}'`);
+        // Reference operator: REF(variable)
+        if (this.match(TokenType.REF)) {
+            const startToken = this.previous();
+            this.expect(TokenType.LPAREN, 'Expected ( after REF');
+            const operand = this.parseExpression();
+            this.expect(TokenType.RPAREN, 'Expected ) after REF operand');
+            
+            return {
+                kind: 'ReferenceExpr',
+                operand: operand as any, // Cast for type safety, semantic check later
+                line: startToken.line,
+                column: startToken.column
+            } as ReferenceExpr;
+        }
+
+        this.error(`Expected expression, got ${this.current().type}`);
     }
+
 }

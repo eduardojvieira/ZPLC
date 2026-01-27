@@ -1,0 +1,47 @@
+/*
+ * ZPLC Board Overlay - Waveshare RP2040-Zero
+ * SPDX-License-Identifier: MIT
+ *
+ * Pinout differences from Pico:
+ * - No onboard LED on GP25.
+ * - RGB LED (WS2812) on GP16.
+ * - GP0/GP1 are UART0 (Standard).
+ */
+
+/ {
+    chosen {
+        zephyr,console = &cdc_acm_uart0;
+        zephyr,shell-uart = &cdc_acm_uart0;
+    };
+
+    aliases {
+        /* Mapeamos led0 a GP2 para tener una salida física de testeo */
+        led0 = &test_led;
+        sw0 = &button0;
+    };
+
+    leds {
+        compatible = "gpio-leds";
+        test_led: led_0 {
+            gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+            label = "Test LED (GP2)";
+        };
+    };
+
+    gpio_keys {
+        compatible = "gpio-keys";
+        button0: button_0 {
+            gpios = <&gpio0 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+            label = "Test Button (GP3)";
+        };
+    };
+};
+
+&cdc_acm_uart0 {
+    compatible = "zephyr,cdc-acm-uart";
+};
+
+&zephyr_udc0 {
+    cdc_acm_uart0: cdc_acm_uart0 {
+    };
+};

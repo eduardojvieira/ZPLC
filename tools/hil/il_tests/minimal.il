@@ -1,0 +1,7 @@
+PROGRAM Minimal
+VAR
+  res AT %Q0.0 : INT;
+END_VAR
+LD 123
+ST res
+END_PROGRAM

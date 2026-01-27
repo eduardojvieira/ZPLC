@@ -47,6 +47,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <zplc_debug.h>
+#include <zplc_loader.h>
 
 /* ============================================================================
  * JSON Output Helpers (no malloc, uses shell_print directly)
@@ -368,63 +370,50 @@ static int cmd_zplc_start(const struct shell *sh, size_t argc, char **argv) {
     return -EINVAL;
   }
 
-  /* Check if this is a .zplc file with TASK segment */
-  /* Magic: "ZPLC" = 0x5A504C43 (little-endian: 0x434C505A) */
-  if (shell_received_size >= 32 && shell_program_buffer[0] == 'Z' &&
-      shell_program_buffer[1] == 'P' && shell_program_buffer[2] == 'L' &&
-      shell_program_buffer[3] == 'C') {
-
-    /* Use zplc_sched_load to parse TASK segment and load all tasks */
-    int task_count = zplc_sched_load(shell_program_buffer, shell_received_size);
-
-    if (task_count < 0) {
-      shell_error(sh, "ERROR: Failed to parse .zplc file: %d", task_count);
-      return task_count;
-    }
-
-    if (task_count == 0) {
-      shell_error(sh, "ERROR: No tasks found in .zplc file");
-      return -EINVAL;
-    }
-
-    /* Start the scheduler */
-    zplc_sched_start();
-
-    /* Save program to NVS for persistence across power cycles */
-    {
-      uint32_t len32 = (uint32_t)shell_received_size;
-      if (zplc_hal_persist_save(ZPLC_PERSIST_KEY_LEN, &len32, sizeof(len32)) ==
-              ZPLC_HAL_OK &&
-          zplc_hal_persist_save(ZPLC_PERSIST_KEY_CODE, shell_program_buffer,
-                                shell_received_size) == ZPLC_HAL_OK) {
-        shell_print(sh, "OK: Program retained in Flash");
-      } else {
-        shell_warn(sh,
-                   "WARN: Failed to save program to Flash (will not persist)");
-      }
-    }
-
-    shell_load_state = SHELL_STATE_IDLE;
-    shell_print(sh, "OK: Loaded %d tasks from .zplc file", task_count);
-    return 0;
-  }
-
-  /* Legacy single-task mode: register raw bytecode as a single task */
-
-  /* Remove old shell task if exists */
+  /* Stop existing tasks */
   if (shell_task_id >= 0) {
     zplc_sched_unregister_task(shell_task_id);
     shell_task_id = -1;
   }
+  
+  /* Try to load as ZPLC file with tasks */
+  int loader_ret = zplc_loader_load(shell_program_buffer, shell_received_size);
+  
+  if (loader_ret == ZPLC_LOADER_OK) {
+      /* Success! Tasks registered by loader. */
+      /* Start the scheduler */
+      zplc_sched_start();
+      
+      /* Save program to NVS */
+      uint32_t len32 = (uint32_t)shell_received_size;
+      zplc_hal_persist_save(ZPLC_PERSIST_KEY_LEN, &len32, sizeof(len32));
+      zplc_hal_persist_save(ZPLC_PERSIST_KEY_CODE, shell_program_buffer, shell_received_size);
+      
+      shell_load_state = SHELL_STATE_IDLE;
+      shell_print(sh, "OK: Loaded ZPLC file with tasks");
+      return 0;
+  } 
+  
+  /* Not a ZPLC file or magic mismatch? Try legacy mode if magic error */
+  if (loader_ret != ZPLC_LOADER_ERR_MAGIC) {
+      shell_error(sh, "ERROR: ZPLC Load Failed: %d", loader_ret);
+      return loader_ret;
+  }
+
+  /* Legacy single-task mode: register raw bytecode as a single task */
+  shell_print(sh, "WARN: Raw bytecode detected (Legacy mode)");
+  shell_print(sh, "DEBUG: Magic read: %02X %02X %02X %02X",
+              shell_program_buffer[0], shell_program_buffer[1],
+              shell_program_buffer[2], shell_program_buffer[3]);
 
   /* Create task definition for shell-loaded program */
   zplc_task_def_t task_def = {
       .id = 99, /* Shell task ID */
       .type = ZPLC_TASK_CYCLIC,
       .priority = 3,
-      .interval_us = 100000, /* 100ms default */
+      .interval_us = 50000, /* 50ms - Real-time speed */
       .entry_point = 0,
-      .stack_size = 64,
+      .stack_size = 256,    /* Stable stack size */
   };
 
   /* Register the task */
@@ -569,11 +558,13 @@ static int cmd_zplc_reset(const struct shell *sh, size_t argc, char **argv) {
   /* Stop all tasks */
   zplc_sched_stop();
 
-  /* Clear shell state */
-  if (shell_task_id >= 0) {
-    zplc_sched_unregister_task(shell_task_id);
-    shell_task_id = -1;
+  /* Unregister all tasks to get a clean slate */
+  for (int i = 0; i < CONFIG_ZPLC_MAX_TASKS; i++) {
+    zplc_sched_unregister_task(i);
   }
+
+  /* Clear shell state */
+  shell_task_id = -1;
   shell_load_state = SHELL_STATE_IDLE;
   shell_expected_size = 0;
   shell_received_size = 0;
@@ -900,14 +891,31 @@ static int cmd_dbg_poke(const struct shell *sh, size_t argc, char **argv) {
     return -EINVAL;
   }
 
-  /* Write to IPI region */
+  /* Get memory region pointer */
+  uint8_t *base = NULL;
+  uint16_t offset = 0;
+
   if (addr < ZPLC_MEM_OPI_BASE) {
-    zplc_ipi_write8((uint16_t)addr, (uint8_t)value);
-    shell_print(sh, "OK: Wrote 0x%02X to IPI[0x%04lX]", (uint8_t)value, addr);
+    base = zplc_mem_get_region(ZPLC_MEM_IPI_BASE);
+    offset = (uint16_t)addr;
+  } else if (addr < ZPLC_MEM_WORK_BASE) {
+    base = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
+    offset = (uint16_t)(addr - ZPLC_MEM_OPI_BASE);
+  } else if (addr < ZPLC_MEM_RETAIN_BASE) {
+    base = zplc_mem_get_region(ZPLC_MEM_WORK_BASE);
+    offset = (uint16_t)(addr - ZPLC_MEM_WORK_BASE);
   } else {
-    shell_error(sh, "ERROR: Can only poke IPI region (0x0000-0x0FFF)");
+    base = zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE);
+    offset = (uint16_t)(addr - ZPLC_MEM_RETAIN_BASE);
+  }
+
+  if (base == NULL) {
+    shell_error(sh, "ERROR: Invalid memory address");
     return -EINVAL;
   }
+
+  base[offset] = (uint8_t)value;
+  shell_print(sh, "OK: Wrote 0x%02X to 0x%04lX", (uint8_t)value, addr);
 
   return 0;
 }
@@ -1893,6 +1901,152 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 #endif /* CONFIG_ADC */
 
 /* ============================================================================
+ * HIL Debug Commands
+ * ============================================================================
+ */
+
+#ifdef CONFIG_ZPLC_HIL_DEBUG
+
+/** @brief Cycle counter for HIL status reporting */
+static uint32_t cycle_count = 0;
+
+/**
+ * @brief Handler for 'zplc hil mode <off|summary|verbose>'
+ */
+static int cmd_hil_mode(const struct shell *sh, size_t argc, char **argv) {
+  if (argc < 2) {
+    shell_error(sh, "Usage: zplc hil mode <off|summary|verbose>");
+    return -EINVAL;
+  }
+
+  hil_mode_t mode = HIL_MODE_OFF;
+  const char *mode_str = argv[1];
+
+  if (strcmp(mode_str, "off") == 0) {
+    mode = HIL_MODE_OFF;
+  } else if (strcmp(mode_str, "summary") == 0) {
+    mode = HIL_MODE_SUMMARY;
+  } else if (strcmp(mode_str, "verbose") == 0) {
+    mode = HIL_MODE_VERBOSE;
+  } else {
+    shell_error(sh, "Invalid mode. Use: off, summary, verbose");
+    hil_send_ack("mode", mode_str, false, "Invalid mode");
+    return -EINVAL;
+  }
+
+  hil_set_shell(sh);
+  hil_set_mode(mode);
+  hil_send_ack("mode", mode_str, true, NULL);
+  
+  return 0;
+}
+
+/**
+ * @brief Handler for 'zplc hil status'
+ */
+static int cmd_hil_status(const struct shell *sh, size_t argc, char **argv) {
+  ARG_UNUSED(argc);
+  ARG_UNUSED(argv);
+
+  hil_mode_t mode = hil_get_mode();
+  const char *mode_str = "unknown";
+  
+  switch (mode) {
+    case HIL_MODE_OFF: mode_str = "off"; break;
+    case HIL_MODE_SUMMARY: mode_str = "summary"; break;
+    case HIL_MODE_VERBOSE: mode_str = "verbose"; break;
+  }
+
+  /* Output status as JSON */
+  shell_fprintf(sh, SHELL_NORMAL, 
+                "{\"t\":\"status\",\"mode\":\"%s\",\"cycles\":%u,\"uptime\":%u}\r\n",
+                mode_str, cycle_count, k_uptime_get_32());
+  
+  return 0;
+}
+
+/**
+ * @brief Handler for 'zplc hil watch <add|del|clear> [args]'
+ */
+static int cmd_hil_watch(const struct shell *sh, size_t argc, char **argv) {
+  if (argc < 2) {
+    shell_error(sh, "Usage: zplc hil watch <add|del|clear>");
+    return -EINVAL;
+  }
+
+  const char *subcmd = argv[1];
+
+  if (strcmp(subcmd, "clear") == 0) {
+    /* TODO: Implement clear logic in debug.c if needed, or just ack for now */
+    hil_send_ack("watch", "clear", true, NULL);
+    return 0;
+  }
+
+  if (strcmp(subcmd, "add") == 0) {
+    if (argc < 4) {
+      shell_error(sh, "Usage: zplc hil watch add <addr> <type>");
+      return -EINVAL;
+    }
+    
+    char *endptr;
+    unsigned long addr = strtoul(argv[2], &endptr, 0);
+    const char *type = argv[3];
+    
+    if (*endptr != '\0') {
+       hil_send_ack("watch", "add", false, "Invalid address");
+       return -EINVAL;
+    }
+
+    char val_str[32];
+    snprintf(val_str, sizeof(val_str), "%lu:%s", addr, type);
+    hil_send_ack("watch", val_str, true, NULL);
+    return 0;
+  }
+  
+  if (strcmp(subcmd, "del") == 0) {
+    if (argc < 3) {
+      shell_error(sh, "Usage: zplc hil watch del <addr>");
+      return -EINVAL;
+    }
+    hil_send_ack("watch", argv[2], true, NULL);
+    return 0;
+  }
+
+  hil_send_ack("watch", subcmd, false, "Unknown subcommand");
+  return -EINVAL;
+}
+
+/**
+ * @brief Handler for 'zplc hil reset'
+ */
+static int cmd_hil_reset(const struct shell *sh, size_t argc, char **argv) {
+  ARG_UNUSED(argc);
+  ARG_UNUSED(argv);
+
+  /* Reuse the standard reset logic */
+  zplc_core_init();
+  cycle_count = 0;
+  /* Reset runtime state if in legacy mode, 
+     but HIL usually runs alongside scheduler so maybe just init core */
+  
+  hil_send_ack("reset", "ok", true, NULL);
+  return 0;
+}
+
+/* HIL subcommands */
+SHELL_STATIC_SUBCMD_SET_CREATE(
+    sub_hil,
+    SHELL_CMD_ARG(mode, NULL, "Set debug mode: mode <off|summary|verbose>",
+                  cmd_hil_mode, 2, 0),
+    SHELL_CMD(status, NULL, "Show HIL status", cmd_hil_status),
+    SHELL_CMD_ARG(watch, NULL, "Manage watches: watch <add|del|clear>",
+                  cmd_hil_watch, 2, 2),
+    SHELL_CMD(reset, NULL, "Reset VM", cmd_hil_reset),
+    SHELL_SUBCMD_SET_END);
+
+#endif /* CONFIG_ZPLC_HIL_DEBUG */
+
+/* ============================================================================
  * Shell Command Registration
 
  * ============================================================================
@@ -1947,6 +2101,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 #endif
 #ifdef CONFIG_ADC
     SHELL_CMD(adc, &sub_adc, "ADC commands (temp/read)", NULL),
+#endif
+#ifdef CONFIG_ZPLC_HIL_DEBUG
+    SHELL_CMD(hil, &sub_hil, "HIL Debug commands (mode/status/watch/reset)", NULL),
 #endif
     SHELL_SUBCMD_SET_END);
 

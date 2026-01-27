@@ -81,11 +81,22 @@ export function assemble(source: string, _options: AssemblerOptions = {}): Assem
         labels.set(name, label);
     }
 
+    // Determine entry point:
+    // 1. Use explicit .ENTRY directive if present
+    // 2. Look for _start label
+    // 3. Default to 0
+    let entryPoint = parseResult.entryPoint;
+    if (entryPoint === 0 && parseResult.labels.has('_start')) {
+        entryPoint = parseResult.labels.get('_start')!.address;
+    } else if (entryPoint === 0 && parseResult.labels.has('_START')) {
+        entryPoint = parseResult.labels.get('_START')!.address;
+    }
+
     return {
         bytecode,
         zplcFile,
         labels,
-        entryPoint: parseResult.entryPoint,
+        entryPoint,
         codeSize: parseResult.codeSize,
         instructionMappings: parseResult.instructionMappings,
     };

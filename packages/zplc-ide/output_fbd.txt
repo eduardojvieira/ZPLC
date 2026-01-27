@@ -1,0 +1,26 @@
+Detected language: FBD for extension .json
+--- Generated ST (FBD) ---
+PROGRAM Blinky
+
+VAR
+    BlinkTimer : TON; (* 500ms on-delay timer *)
+    _var_led_read_OUT : BOOL;
+    _not_enable_OUT : BOOL;
+    _ton_timer_Q : BOOL;
+END_VAR
+
+VAR_OUTPUT
+    LED_Output AT %Q0.0 : BOOL; (* Physical LED output - follows timer.Q directly *)
+END_VAR
+
+(* FBD Execution - Auto-generated *)
+
+(* Invert: timer runs when LED is OFF *)
+_not_enable_OUT := NOT LED_Output;
+(* 500ms on-delay timer *)
+BlinkTimer(IN := _not_enable_OUT, PT := T#500ms);
+_ton_timer_Q := BlinkTimer.Q;
+(* Physical LED output *)
+LED_Output := _ton_timer_Q;
+
+END_PROGRAM

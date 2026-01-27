@@ -1,0 +1,25 @@
+{
+  "name": "LDSeries",
+  "variables": {
+    "outputs": [
+      { "name": "A", "type": "BOOL", "address": "%Q0.0" },
+      { "name": "B", "type": "BOOL", "address": "%Q0.1" },
+      { "name": "Q", "type": "BOOL", "address": "%Q0.2" }
+    ],
+    "local": []
+  },
+  "rungs": [
+    {
+      "number": 1,
+      "grid": [
+        [
+          { "element": { "type": "left_rail" } },
+          { "element": { "type": "contact_no", "variable": "A" } },
+          { "element": { "type": "contact_no", "variable": "B" } },
+          { "element": { "type": "coil", "variable": "Q" } },
+          { "element": { "type": "right_rail" } }
+        ]
+      ]
+    }
+  ]
+}

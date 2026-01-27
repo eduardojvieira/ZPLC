@@ -35,6 +35,7 @@
 #include <zplc_hal.h>
 #include <zplc_isa.h>
 #include <zplc_scheduler.h>
+#include <zplc_debug.h>
 
 /* ============================================================================
  * Configuration
@@ -394,9 +395,14 @@ static void task_work_handler(struct k_work *work) {
   }
 
   /* Check for deadline miss */
+  bool overrun = false;
   if (end_tick > t->deadline_tick) {
     t->task.stats.overrun_count++;
+    overrun = true;
   }
+
+  /* HIL Trace */
+  hil_trace_task(t->task.config.id, start_tick, end_tick, exec_time, overrun);
 
   /* Handle errors */
   if (result < 0) {
@@ -482,8 +488,15 @@ int zplc_sched_register_task(const zplc_task_def_t *def, const uint8_t *code,
     return -1;
   }
 
-  if (def == NULL || code == NULL || code_size == 0) {
+  if (def == NULL) {
     return -2;
+  }
+
+  /* Allow NULL code if registering a pre-loaded task */
+  if (code == NULL && code_size > 0) {
+      /* code_size here is used as the max size for the VM check */
+  } else if (code != NULL && code_size == 0) {
+      return -2;
   }
 
   if (task_count >= CONFIG_ZPLC_MAX_TASKS) {
@@ -510,24 +523,43 @@ int zplc_sched_register_task(const zplc_task_def_t *def, const uint8_t *code,
 
   zplc_task_internal_t *t = &tasks[slot];
 
-  /* Load code into shared segment */
-  /* Calculate offset: each task's code is placed sequentially */
-  code_offset = (uint16_t)zplc_mem_get_code_size();
+  if (code != NULL) {
+      /* Load code into shared segment */
+      /* Calculate offset: each task's code is placed sequentially */
+      code_offset = (uint16_t)zplc_mem_get_code_size();
 
-  if (zplc_mem_load_code(code, code_size, code_offset) != 0) {
-    return -5;
+      if (zplc_mem_load_code(code, code_size, code_offset) != 0) {
+        return -5;
+      }
+      t->task.code = zplc_mem_get_code(code_offset, code_size);
+      t->task.code_size = code_size;
+  } else {
+      /* Pre-loaded code mode */
+      code_offset = def->entry_point;
+      /* Use a safe default size if 0 provided, effectively allowing access to rest of memory */
+      size_t effective_size = (code_size > 0) ? code_size : 0xFFFF;
+      
+      t->task.code = zplc_mem_get_code(code_offset, 1);
+      t->task.code_size = effective_size;
   }
 
   /* Initialize task data */
   memset(t, 0, sizeof(zplc_task_internal_t));
   memcpy(&t->task.config, def, sizeof(zplc_task_def_t));
   t->task.state = ZPLC_TASK_STATE_READY;
-  t->task.code = zplc_mem_get_code(code_offset, code_size);
-  t->task.code_size = code_size;
+  
+  /* Restore code pointers (memset cleared them) */
+  if (code != NULL) {
+      t->task.code = zplc_mem_get_code(code_offset, code_size);
+      t->task.code_size = code_size;
+  } else {
+      t->task.code = zplc_mem_get_code(code_offset, 1);
+      t->task.code_size = (code_size > 0) ? code_size : 0xFFFF;
+  }
 
   /* Initialize VM for this task */
   zplc_vm_init(&t->vm);
-  zplc_vm_set_entry(&t->vm, code_offset, (uint32_t)code_size);
+  zplc_vm_set_entry(&t->vm, code_offset, (uint32_t)t->task.code_size);
   t->vm.task_id = def->id;
   t->vm.priority = def->priority;
 
@@ -682,15 +714,19 @@ int zplc_sched_start(void) {
     return -1;
   }
 
-  if (sched_state == ZPLC_SCHED_STATE_RUNNING) {
-    return 0; /* Already running */
-  }
+  int started_count = 0;
 
-  /* Start all ready tasks */
+  /* Start all ready tasks (including newly registered ones) */
   for (int i = 0; i < CONFIG_ZPLC_MAX_TASKS; i++) {
     zplc_task_internal_t *t = &tasks[i];
 
     if (!t->registered) {
+      continue;
+    }
+
+    /* Skip tasks that are already running or in error state */
+    if (t->task.state == ZPLC_TASK_STATE_RUNNING ||
+        t->task.state == ZPLC_TASK_STATE_ERROR) {
       continue;
     }
 
@@ -714,6 +750,7 @@ int zplc_sched_start(void) {
     k_timer_start(&t->timer, K_MSEC(interval_ms), K_MSEC(interval_ms));
     t->timer_running = 1;
     t->task.state = ZPLC_TASK_STATE_RUNNING;
+    started_count++;
 
     zplc_hal_log("[SCHED] Task %d started (interval=%u ms)\n",
                  t->task.config.id, interval_ms);
@@ -721,7 +758,9 @@ int zplc_sched_start(void) {
 
   sched_state = ZPLC_SCHED_STATE_RUNNING;
 
-  zplc_hal_log("[SCHED] Scheduler started with %d tasks\n", task_count);
+  if (started_count > 0 || sched_state != ZPLC_SCHED_STATE_RUNNING) {
+    zplc_hal_log("[SCHED] Scheduler started with %d tasks\n", task_count);
+  }
 
   return 0;
 }

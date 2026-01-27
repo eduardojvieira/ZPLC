@@ -7,8 +7,8 @@
  * This enables IL programs to be compiled using the existing ST compiler pipeline.
  *
  * Transpilation Strategy:
- * - IL Current Result (CR) is mapped to internal variables _IL_CR_, _IL_CR_BOOL_, _IL_CR_REAL_
- * - Load operators (LD, LDN) assign values to CR
+ * - IL Current Result (CR) is mapped to internal variables IL_CR, IL_CR_BOOL, IL_CR_REAL
+ * - Load operators (LD, LDN) assign values to CR based on variable type (naive symbol table)
  * - Store operators (ST, STN, S, R) read from CR and assign to variables
  * - Arithmetic and logical operators modify CR in place
  * - Jump/label support uses a state machine with WHILE/CASE
@@ -32,13 +32,25 @@ export interface TranspileResult {
 // =============================================================================
 
 // IL Current Result register - holds the accumulator value
-const CR_VAR = '_IL_CR_';
-const CR_BOOL_VAR = '_IL_CR_BOOL_';
-const CR_REAL_VAR = '_IL_CR_REAL_';
+const CR_VAR = 'IL_CR';
+const CR_BOOL_VAR = 'IL_CR_BOOL';
+const CR_REAL_VAR = 'IL_CR_REAL';
 
 // State machine variables for jump support
-const STATE_VAR = '_IL_STATE_';
-const DONE_VAR = '_IL_DONE_';
+const STATE_VAR = 'IL_STATE';
+const DONE_VAR = 'IL_DONE';
+const LOOP_VAR = 'IL_LOOP_COUNT';
+const MAX_CYCLES = 100000; // Safety limit for state machine loops
+
+// =============================================================================
+// State Machine Block
+// =============================================================================
+
+interface StateBlock {
+    id: number;
+    label: string | null;  // null for first block or auto-generated blocks
+    instructions: ILInstruction[];
+}
 
 // =============================================================================
 // IL-to-ST Transpiler
@@ -48,25 +60,18 @@ export function transpileILToST(program: ILProgram): TranspileResult {
     const errors: string[] = [];
     const lines: string[] = [];
 
-    // Check if we need state machine for jumps
-    const hasJumps = program.instructions.some(i =>
-        ['JMP', 'JMPC', 'JMPCN'].includes(i.operator)
-    );
-
-    // Build label-to-state mapping
-    const labelToState = new Map<string, number>();
-    if (hasJumps) {
-        let stateNum = 0;
-        for (const instr of program.instructions) {
-            if (instr.label && !labelToState.has(instr.label)) {
-                labelToState.set(instr.label, stateNum++);
-            }
-        }
-        // If no labels but we have jumps, that's an error
-        if (labelToState.size === 0 && hasJumps) {
-            errors.push('IL program has jumps but no labels');
+    // Build rudimentary symbol table for type inference
+    const varTypes = new Map<string, string>();
+    for (const block of program.varBlocks) {
+        for (const v of block.variables) {
+            varTypes.set(v.name, v.dataType.toUpperCase());
         }
     }
+
+    // Check if we need state machine for jumps
+    const hasJumps = program.instructions.some(i =>
+        ['JMP', 'JMPC', 'JMPCN', 'RET', 'RETC', 'RETCN'].includes(i.operator)
+    );
 
     // Generate program header
     lines.push(`PROGRAM ${program.name}`);
@@ -84,81 +89,103 @@ export function transpileILToST(program: ILProgram): TranspileResult {
     if (hasJumps) {
         lines.push(`    ${STATE_VAR} : INT := 0;`);
         lines.push(`    ${DONE_VAR} : BOOL := FALSE;`);
+        lines.push(`    ${LOOP_VAR} : DINT := 0;`);
     }
     lines.push('END_VAR');
     lines.push('');
 
     // Generate instruction body
     if (hasJumps) {
-        // State machine approach for jumps
-        lines.push(`${DONE_VAR} := FALSE;`);
-        lines.push(`WHILE NOT ${DONE_VAR} DO`);
-        lines.push(`    CASE ${STATE_VAR} OF`);
-
-        let currentState = 0;
-        let stateInstructions: string[] = [];
-
+        // Build state blocks - we need a new block after:
+        // 1. Any instruction with a label (target of a jump)
+        // 2. Any control flow instruction (jumps create breaks in flow)
+        
+        const blocks: StateBlock[] = [];
+        let currentBlock: StateBlock = { id: 0, label: null, instructions: [] };
+        
+        // Map from label (uppercase) to block ID for jump resolution
+        const labelToBlockId = new Map<string, number>();
+        
+        // First pass: Build blocks
         for (let i = 0; i < program.instructions.length; i++) {
             const instr = program.instructions[i];
-
-            // Check if this instruction starts a new state (has a label)
-            if (instr.label && labelToState.has(instr.label)) {
-                // Emit previous state if we have instructions
-                if (stateInstructions.length > 0 || currentState === 0) {
-                    const nextState = labelToState.get(instr.label)!;
-                    if (currentState !== nextState) {
-                        stateInstructions.push(`${STATE_VAR} := ${nextState};`);
-                    }
-                    lines.push(`        ${currentState}:`);
-                    for (const stmt of stateInstructions) {
-                        lines.push(`            ${stmt}`);
-                    }
-                    stateInstructions = [];
+            
+            // If this instruction has a label, start a new block
+            if (instr.label) {
+                // Save current block if it has instructions
+                if (currentBlock.instructions.length > 0) {
+                    blocks.push(currentBlock);
                 }
-                currentState = labelToState.get(instr.label)!;
+                // Start new block for this label
+                const newId = blocks.length;
+                currentBlock = { id: newId, label: instr.label, instructions: [] };
+                labelToBlockId.set(instr.label.toUpperCase(), newId);
             }
+            
+            // Add instruction to current block
+            currentBlock.instructions.push(instr);
+            
+            // If this instruction is control flow (JMP/JMPC/etc), 
+            // we need to start a new block for whatever comes next
+            if (isControlFlowOp(instr.operator)) {
+                blocks.push(currentBlock);
+                // Start a fresh block (will get an auto-label if needed)
+                const newId = blocks.length;
+                currentBlock = { id: newId, label: null, instructions: [] };
+            }
+        }
+        
+        // Push final block if it has instructions
+        if (currentBlock.instructions.length > 0) {
+            blocks.push(currentBlock);
+        }
 
-            // Generate instruction
-            const stmts = generateInstruction(instr, labelToState, hasJumps);
-            stateInstructions.push(...stmts);
-
-            // If this is the last instruction or next has a label, emit state
-            const nextInstr = program.instructions[i + 1];
-            const needsStateBreak = !nextInstr ||
-                (nextInstr.label && labelToState.has(nextInstr.label));
-
-            if (needsStateBreak && stateInstructions.length > 0) {
-                lines.push(`        ${currentState}:`);
-                for (const stmt of stateInstructions) {
-                    lines.push(`            ${stmt}`);
-                }
-                if (!stateInstructions.some(s => s.includes(STATE_VAR) || s.includes(DONE_VAR))) {
-                    // Add transition to next state or done
-                    if (nextInstr && nextInstr.label) {
-                        const nextState = labelToState.get(nextInstr.label);
-                        if (nextState !== undefined) {
-                            lines.push(`            ${STATE_VAR} := ${nextState};`);
-                        }
-                    } else if (!nextInstr) {
-                        lines.push(`            ${DONE_VAR} := TRUE;`);
-                    }
-                }
-                stateInstructions = [];
-                if (nextInstr && nextInstr.label) {
-                    currentState = labelToState.get(nextInstr.label) ?? currentState + 1;
-                } else {
-                    currentState++;
-                }
+        // Re-index blocks and update label map
+        for (let i = 0; i < blocks.length; i++) {
+            blocks[i].id = i;
+            if (blocks[i].label) {
+                labelToBlockId.set(blocks[i].label!.toUpperCase(), i);
             }
         }
 
-        // Emit any remaining instructions
-        if (stateInstructions.length > 0) {
-            lines.push(`        ${currentState}:`);
-            for (const stmt of stateInstructions) {
-                lines.push(`            ${stmt}`);
+        // Generate state machine
+        lines.push(`${DONE_VAR} := FALSE;`);
+        lines.push(`${LOOP_VAR} := 0;`);
+        lines.push(`WHILE NOT ${DONE_VAR} AND ${LOOP_VAR} < ${MAX_CYCLES} DO`);
+        lines.push(`    ${LOOP_VAR} := ${LOOP_VAR} + 1;`);
+        lines.push(`    CASE ${STATE_VAR} OF`);
+
+        for (let blockIdx = 0; blockIdx < blocks.length; blockIdx++) {
+            const block = blocks[blockIdx];
+            const nextBlockId = blockIdx + 1 < blocks.length ? blockIdx + 1 : -1;
+            
+            lines.push(`        ${block.id}:`);
+
+            for (let instrIdx = 0; instrIdx < block.instructions.length; instrIdx++) {
+                const instr = block.instructions[instrIdx];
+                
+                const stmts = generateInstruction(
+                    instr, 
+                    labelToBlockId, 
+                    hasJumps, 
+                    varTypes, 
+                    nextBlockId
+                );
+                
+                for (const stmt of stmts) {
+                    lines.push(`            ${stmt}`);
+                }
             }
-            lines.push(`            ${DONE_VAR} := TRUE;`);
+
+            // If block doesn't end with a control flow instruction, add fallthrough
+            const lastInstr = block.instructions[block.instructions.length - 1];
+            if (!isControlFlowOp(lastInstr.operator)) {
+                if (nextBlockId !== -1) {
+                    lines.push(`            ${STATE_VAR} := ${nextBlockId};`);
+                } else {
+                    lines.push(`            ${DONE_VAR} := TRUE;`);
+                }
+            }
         }
 
         lines.push('    ELSE');
@@ -167,8 +194,9 @@ export function transpileILToST(program: ILProgram): TranspileResult {
         lines.push('END_WHILE;');
     } else {
         // Simple sequential execution (no jumps)
+        const labelToBlockId = new Map<string, number>();
         for (const instr of program.instructions) {
-            const stmts = generateInstruction(instr, labelToState, hasJumps);
+            const stmts = generateInstruction(instr, labelToBlockId, hasJumps, varTypes, -1);
             for (const stmt of stmts) {
                 lines.push(stmt);
             }
@@ -183,6 +211,14 @@ export function transpileILToST(program: ILProgram): TranspileResult {
         source: lines.join('\n'),
         errors,
     };
+}
+
+// =============================================================================
+// Helper: Check if operator is control flow
+// =============================================================================
+
+function isControlFlowOp(op: string): boolean {
+    return ['JMP', 'JMPC', 'JMPCN', 'RET', 'RETC', 'RETCN'].includes(op);
 }
 
 // =============================================================================
@@ -216,30 +252,72 @@ function generateVarBlock(block: ILVarBlock): string {
 
 function generateInstruction(
     instr: ILInstruction,
-    labelToState: Map<string, number>,
-    hasJumps: boolean
+    labelToBlockId: Map<string, number>,
+    hasJumps: boolean,
+    varTypes: Map<string, string>,
+    nextBlockId: number // Block ID to fall through to (-1 if end)
 ): string[] {
     const stmts: string[] = [];
+
+    // Helper for fallthrough assignment
+    const assignFallthrough = () => {
+        if (nextBlockId !== -1) {
+            return `${STATE_VAR} := ${nextBlockId};`;
+        } else {
+            return `${DONE_VAR} := TRUE;`;
+        }
+    };
 
     // Handle the instruction based on operator
     switch (instr.operator) {
         // Load operators
-        case 'LD':
-            stmts.push(`${CR_BOOL_VAR} := ${formatOperand(instr.operand)};`);
-            stmts.push(`${CR_VAR} := BOOL_TO_INT(${CR_BOOL_VAR});`);
+        case 'LD': {
+            const op = formatOperand(instr.operand);
+            const type = getOperandType(instr.operand, varTypes);
+            
+            if (type === 'BOOL') {
+                stmts.push(`${CR_BOOL_VAR} := ${op};`);
+                stmts.push(`${CR_VAR} := BOOL_TO_INT(${CR_BOOL_VAR});`);
+                stmts.push(`${CR_REAL_VAR} := INT_TO_REAL(${CR_VAR});`);
+            } else if (type === 'REAL') {
+                stmts.push(`${CR_REAL_VAR} := ${op};`);
+                stmts.push(`${CR_VAR} := REAL_TO_INT(${CR_REAL_VAR});`);
+                stmts.push(`${CR_BOOL_VAR} := INT_TO_BOOL(${CR_VAR});`);
+            } else {
+                stmts.push(`${CR_VAR} := ${op};`);
+                stmts.push(`${CR_REAL_VAR} := INT_TO_REAL(${CR_VAR});`);
+                stmts.push(`${CR_BOOL_VAR} := INT_TO_BOOL(${CR_VAR});`);
+            }
             break;
+        }
         case 'LDN':
             stmts.push(`${CR_BOOL_VAR} := NOT ${formatOperand(instr.operand)};`);
             stmts.push(`${CR_VAR} := BOOL_TO_INT(${CR_BOOL_VAR});`);
             break;
 
         // Store operators
-        case 'ST':
-            stmts.push(`${formatOperand(instr.operand)} := ${CR_VAR};`);
+        case 'ST': {
+            const op = formatOperand(instr.operand);
+            const type = getOperandType(instr.operand, varTypes);
+            if (type === 'BOOL') {
+                stmts.push(`${op} := ${CR_BOOL_VAR};`);
+            } else if (type === 'REAL') {
+                stmts.push(`${op} := ${CR_REAL_VAR};`);
+            } else {
+                stmts.push(`${op} := ${CR_VAR};`);
+            }
             break;
-        case 'STN':
-            stmts.push(`${formatOperand(instr.operand)} := NOT ${CR_BOOL_VAR};`);
+        }
+        case 'STN': {
+            const op = formatOperand(instr.operand);
+            const type = getOperandType(instr.operand, varTypes);
+            if (type === 'BOOL') {
+                stmts.push(`${op} := NOT ${CR_BOOL_VAR};`);
+            } else {
+                stmts.push(`${op} := NOT ${CR_VAR};`);
+            }
             break;
+        }
         case 'S':
             stmts.push(`IF ${CR_BOOL_VAR} THEN ${formatOperand(instr.operand)} := TRUE; END_IF;`);
             break;
@@ -326,25 +404,36 @@ function generateInstruction(
         // Jump operators
         case 'JMP':
             if (hasJumps && instr.operand) {
-                const targetState = labelToState.get(instr.operand.value);
-                if (targetState !== undefined) {
-                    stmts.push(`${STATE_VAR} := ${targetState};`);
+                const targetBlockId = labelToBlockId.get(instr.operand.value.toUpperCase());
+                if (targetBlockId !== undefined) {
+                    stmts.push(`${STATE_VAR} := ${targetBlockId};`);
+                } else {
+                    stmts.push(`(* ERROR: Jump target '${instr.operand.value}' not found *)`);
+                    stmts.push(`${DONE_VAR} := TRUE;`);
                 }
             }
             break;
         case 'JMPC':
             if (hasJumps && instr.operand) {
-                const targetState = labelToState.get(instr.operand.value);
-                if (targetState !== undefined) {
-                    stmts.push(`IF ${CR_BOOL_VAR} THEN ${STATE_VAR} := ${targetState}; END_IF;`);
+                const targetBlockId = labelToBlockId.get(instr.operand.value.toUpperCase());
+                if (targetBlockId !== undefined) {
+                    stmts.push(`IF ${CR_BOOL_VAR} THEN`);
+                    stmts.push(`    ${STATE_VAR} := ${targetBlockId};`);
+                    stmts.push(`ELSE`);
+                    stmts.push(`    ${assignFallthrough()}`);
+                    stmts.push(`END_IF;`);
                 }
             }
             break;
         case 'JMPCN':
             if (hasJumps && instr.operand) {
-                const targetState = labelToState.get(instr.operand.value);
-                if (targetState !== undefined) {
-                    stmts.push(`IF NOT ${CR_BOOL_VAR} THEN ${STATE_VAR} := ${targetState}; END_IF;`);
+                const targetBlockId = labelToBlockId.get(instr.operand.value.toUpperCase());
+                if (targetBlockId !== undefined) {
+                    stmts.push(`IF NOT ${CR_BOOL_VAR} THEN`);
+                    stmts.push(`    ${STATE_VAR} := ${targetBlockId};`);
+                    stmts.push(`ELSE`);
+                    stmts.push(`    ${assignFallthrough()}`);
+                    stmts.push(`END_IF;`);
                 }
             }
             break;
@@ -372,22 +461,26 @@ function generateInstruction(
 
         // Return operators
         case 'RET':
-            if (hasJumps) {
-                stmts.push(`${DONE_VAR} := TRUE;`);
-            } else {
-                stmts.push('RETURN;');
-            }
+            stmts.push(`${DONE_VAR} := TRUE;`);
             break;
         case 'RETC':
             if (hasJumps) {
-                stmts.push(`IF ${CR_BOOL_VAR} THEN ${DONE_VAR} := TRUE; END_IF;`);
+                stmts.push(`IF ${CR_BOOL_VAR} THEN`);
+                stmts.push(`    ${DONE_VAR} := TRUE;`);
+                stmts.push(`ELSE`);
+                stmts.push(`    ${assignFallthrough()}`);
+                stmts.push(`END_IF;`);
             } else {
                 stmts.push(`IF ${CR_BOOL_VAR} THEN RETURN; END_IF;`);
             }
             break;
         case 'RETCN':
             if (hasJumps) {
-                stmts.push(`IF NOT ${CR_BOOL_VAR} THEN ${DONE_VAR} := TRUE; END_IF;`);
+                stmts.push(`IF NOT ${CR_BOOL_VAR} THEN`);
+                stmts.push(`    ${DONE_VAR} := TRUE;`);
+                stmts.push(`ELSE`);
+                stmts.push(`    ${assignFallthrough()}`);
+                stmts.push(`END_IF;`);
             } else {
                 stmts.push(`IF NOT ${CR_BOOL_VAR} THEN RETURN; END_IF;`);
             }
@@ -415,6 +508,19 @@ function formatOperand(operand: ILOperand | undefined): string {
         default:
             return operand.value;
     }
+}
+
+function getOperandType(operand: ILOperand | undefined, varTypes: Map<string, string>): string {
+    if (!operand) return 'BOOL';
+    
+    if (operand.dataType) return operand.dataType;
+    
+    if (operand.type === 'identifier' && varTypes.has(operand.value)) {
+        return varTypes.get(operand.value)!;
+    }
+    
+    // Default fallback
+    return 'INT';
 }
 
 function generateFBCall(fbName: string, params?: ILFBParam[]): string {

@@ -207,8 +207,8 @@ export function compileST(source: string, options?: CodeGenOptions): string {
         throw new CompilerError('No program found in source', 1, 1, 'parser');
     }
 
-    const program = ast.programs[0];
-    return generate(program, options);
+    // Pass the full CompilationUnit to generate() to support functions
+    return generate(ast, options);
 }
 
 /**
@@ -240,7 +240,7 @@ export function compileToBinary(source: string, options?: CompileOptions): Compi
         throw new CompilerError('No program found in source', 1, 1, 'parser');
     }
 
-    const program = ast.programs[0];
+    const program = ast.programs[0]; // Still need main program for name/entry point
     const generateDebugMap = options?.generateDebugMap ?? false;
 
     // Build codegen options - enable source annotations if debug map is requested
@@ -249,8 +249,8 @@ export function compileToBinary(source: string, options?: CompileOptions): Compi
         emitSourceAnnotations: generateDebugMap,
     };
 
-    // Generate assembly
-    const assembly = generate(program, codegenOptions);
+    // Generate assembly using full AST
+    const assembly = generate(ast, codegenOptions);
 
     // Assemble to bytecode
     let asmResult: AssemblyResult;
@@ -481,7 +481,8 @@ export function compileMultiTaskProject(
             name: progName,
             bytecode: asmResult.bytecode,
             assembly,
-            entryPoint: currentOffset,
+            // The entry point for the task is the global offset + the program's local entry point (_start)
+            entryPoint: currentOffset + asmResult.entryPoint,
             size: asmResult.bytecode.length,
         });
 
@@ -495,7 +496,10 @@ export function compileMultiTaskProject(
     let offset = 0;
     for (const prog of compiledPrograms) {
         const relocatedBytecode = new Uint8Array(prog.bytecode);
-        relocateBytecode(relocatedBytecode, prog.entryPoint);
+        // Relocate relative to the start of this program in the global buffer
+        // Note: prog.entryPoint includes the local _start offset, so we need to subtract it 
+        // to get the base address, OR just use our tracking offset variable.
+        relocateBytecode(relocatedBytecode, offset);
         concatenatedBytecode.set(relocatedBytecode, offset);
         offset += prog.size;
     }

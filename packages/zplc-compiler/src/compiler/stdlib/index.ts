@@ -81,15 +81,33 @@ export function registerFB(fb: FunctionBlockDef): void {
 /**
  * Get a Function Block by name.
  */
-export function getFB(name: string): FunctionBlockDef | undefined {
-    return functionBlocks.get(name);
+export function getFB(name: string | object): FunctionBlockDef | undefined {
+    // Handle non-string types gracefully (e.g., PointerType objects)
+    if (typeof name !== 'string') return undefined;
+    
+    let fb = functionBlocks.get(name);
+    if (fb) return fb;
+    // Case-insensitive fallback
+    const upper = name.toUpperCase();
+    for (const [key, val] of functionBlocks) {
+        if (key.toUpperCase() === upper) return val;
+    }
+    return undefined;
 }
 
 /**
  * Check if a name is a registered Function Block.
  */
-export function isFB(name: string): boolean {
-    return functionBlocks.has(name);
+export function isFB(name: string | object): boolean {
+    // Handle non-string types gracefully (e.g., PointerType objects)
+    if (typeof name !== 'string') return false;
+    
+    if (functionBlocks.has(name)) return true;
+    const upper = name.toUpperCase();
+    for (const key of functionBlocks.keys()) {
+        if (key.toUpperCase() === upper) return true;
+    }
+    return false;
 }
 
 /**
@@ -118,15 +136,32 @@ export function registerFn(fn: FunctionDef): void {
 /**
  * Get a Function by name.
  */
-export function getFn(name: string): FunctionDef | undefined {
-    return functions.get(name);
+export function getFn(name: string | object): FunctionDef | undefined {
+    // Handle non-string types gracefully (e.g., PointerType objects)
+    if (typeof name !== 'string') return undefined;
+    
+    let fn = functions.get(name);
+    if (fn) return fn;
+    const upper = name.toUpperCase();
+    for (const [key, val] of functions) {
+        if (key.toUpperCase() === upper) return val;
+    }
+    return undefined;
 }
 
 /**
  * Check if a name is a registered Function.
  */
-export function isFn(name: string): boolean {
-    return functions.has(name);
+export function isFn(name: string | object): boolean {
+    // Handle non-string types gracefully (e.g., PointerType objects)
+    if (typeof name !== 'string') return false;
+    
+    if (functions.has(name)) return true;
+    const upper = name.toUpperCase();
+    for (const key of functions.keys()) {
+        if (key.toUpperCase() === upper) return true;
+    }
+    return false;
 }
 
 /**
