@@ -1,4 +1,5 @@
 # ZPLC Physical Testing Guide
+
 ## Guía Profesional de Pruebas Físicas - HAL & Overlay Verification
 
 **Versión:** 2.0  
@@ -10,6 +11,7 @@
 ## 1. Objetivos de Validación
 
 Esta guía verifica:
+
 1. **HAL Functions**: Timing, GPIO, ADC, Persistence en cada arquitectura
 2. **DeviceTree Overlays**: Correcta configuración de pines y particiones
 3. **Cross-Architecture Consistency**: Mismo comportamiento en todas las placas
@@ -19,28 +21,31 @@ Esta guía verifica:
 
 ## 2. Placas Soportadas - Especificaciones
 
-| Board | SoC | Arquitectura | Clock | Flash | RAM | GPIO | ADC |
-|-------|-----|--------------|-------|-------|-----|------|-----|
-| **Raspberry Pi Pico** | RP2040 | Cortex-M0+ Dual | 133 MHz | 2 MB | 264 KB | 26 | 3ch 12-bit |
-| **Arduino GIGA R1** | STM32H747XI | Cortex-M7/M4 | 480 MHz | 2 MB | 1 MB | 76 | 16ch 16-bit |
-| **ESP32-S3 DevKit** | ESP32-S3 | Xtensa LX7 Dual | 240 MHz | 8 MB | 512 KB | 45 | 10ch 12-bit |
-| **STM32 Nucleo-H743ZI** | STM32H743ZI | Cortex-M7 | 480 MHz | 2 MB | 1 MB | 114 | 16ch 16-bit |
+| Board                   | SoC         | Arquitectura    | Clock   | Flash | RAM    | GPIO | ADC         |
+| ----------------------- | ----------- | --------------- | ------- | ----- | ------ | ---- | ----------- |
+| **Raspberry Pi Pico**   | RP2040      | Cortex-M0+ Dual | 133 MHz | 2 MB  | 264 KB | 26   | 3ch 12-bit  |
+| **Arduino GIGA R1**     | STM32H747XI | Cortex-M7/M4    | 480 MHz | 2 MB  | 1 MB   | 76   | 16ch 16-bit |
+| **ESP32-S3 DevKit**     | ESP32-S3    | Xtensa LX7 Dual | 240 MHz | 8 MB  | 512 KB | 45   | 10ch 12-bit |
+| **STM32 Nucleo-H743ZI** | STM32H743ZI | Cortex-M7       | 480 MHz | 2 MB  | 1 MB   | 114  | 16ch 16-bit |
+| **STM32F746G-DISCO**    | STM32F746NG | Cortex-M7       | 216 MHz | 1 MB  | 340 KB | 114  | 16ch 12-bit |
 
 ---
 
 ## 3. Equipamiento de Medición
 
 ### Instrumentos Requeridos
-| Instrumento | Especificación Mínima | Uso |
-|-------------|----------------------|-----|
-| Osciloscopio | ≥100 MHz, 2 canales | Timing, jitter, PWM |
-| Multímetro | 4½ dígitos, True RMS | Voltajes DC/AC |
-| Generador de señales | 1 Hz - 1 MHz | Señales de entrada |
-| Analizador lógico | 8 canales, 24 MHz | Debug digital |
-| Termómetro IR | -20°C a 200°C | Verificación temperatura |
-| Cronómetro | ±0.01s | Mediciones largas |
+
+| Instrumento          | Especificación Mínima | Uso                      |
+| -------------------- | --------------------- | ------------------------ |
+| Osciloscopio         | ≥100 MHz, 2 canales   | Timing, jitter, PWM      |
+| Multímetro           | 4½ dígitos, True RMS  | Voltajes DC/AC           |
+| Generador de señales | 1 Hz - 1 MHz          | Señales de entrada       |
+| Analizador lógico    | 8 canales, 24 MHz     | Debug digital            |
+| Termómetro IR        | -20°C a 200°C         | Verificación temperatura |
+| Cronómetro           | ±0.01s                | Mediciones largas        |
 
 ### Componentes por Placa
+
 ```
 [x4 sets - uno por cada placa]
 ├── LED 5mm rojo ×3 + R330Ω ×3
@@ -60,6 +65,7 @@ Esta guía verifica:
 ### 4.1 Raspberry Pi Pico (RP2040)
 
 #### Overlay Actual: `rpi_pico_rp2040.overlay`
+
 ```dts
 / {
     chosen {
@@ -89,6 +95,7 @@ Esta guía verifica:
 ```
 
 #### Diagrama de Conexiones - Pico
+
 ```
                     ┌─────────────────────────────────────────┐
                     │          RASPBERRY PI PICO              │
@@ -116,25 +123,27 @@ Conexiones detalladas:
 ```
 
 #### Mapeo I/O - Pico
-| Dirección ZPLC | Pin Físico | GPIO | Función HAL |
-|----------------|------------|------|-------------|
-| `%Q0.0` | 1 | GP0 | `zplc_hal_gpio_write(0, x)` |
-| `%Q0.1` | 2 | GP1 | `zplc_hal_gpio_write(1, x)` |
-| `%Q0.2` | 4 | GP2 | `zplc_hal_gpio_write(2, x)` |
-| `%Q0.3` | - | GP25 | LED onboard (led0 alias) |
-| `%I0.0` | 20 | GP15 | `zplc_hal_gpio_read(4, &v)` - sw0 |
-| `%I0.1` | 19 | GP14 | `zplc_hal_gpio_read(5, &v)` |
-| `%I0.2` | 17 | GP13 | `zplc_hal_gpio_read(6, &v)` |
-| `%IW0` | 31 | ADC0/GP26 | `zplc_hal_adc_read(0, &v)` |
-| `%IW2` | 32 | ADC1/GP27 | `zplc_hal_adc_read(1, &v)` |
-| `%IW4` | 34 | ADC2/GP28 | `zplc_hal_adc_read(2, &v)` |
-| `%IW8` | - | ADC4 | Sensor temperatura interno |
+
+| Dirección ZPLC | Pin Físico | GPIO      | Función HAL                       |
+| -------------- | ---------- | --------- | --------------------------------- |
+| `%Q0.0`        | 1          | GP0       | `zplc_hal_gpio_write(0, x)`       |
+| `%Q0.1`        | 2          | GP1       | `zplc_hal_gpio_write(1, x)`       |
+| `%Q0.2`        | 4          | GP2       | `zplc_hal_gpio_write(2, x)`       |
+| `%Q0.3`        | -          | GP25      | LED onboard (led0 alias)          |
+| `%I0.0`        | 20         | GP15      | `zplc_hal_gpio_read(4, &v)` - sw0 |
+| `%I0.1`        | 19         | GP14      | `zplc_hal_gpio_read(5, &v)`       |
+| `%I0.2`        | 17         | GP13      | `zplc_hal_gpio_read(6, &v)`       |
+| `%IW0`         | 31         | ADC0/GP26 | `zplc_hal_adc_read(0, &v)`        |
+| `%IW2`         | 32         | ADC1/GP27 | `zplc_hal_adc_read(1, &v)`        |
+| `%IW4`         | 34         | ADC2/GP28 | `zplc_hal_adc_read(2, &v)`        |
+| `%IW8`         | -          | ADC4      | Sensor temperatura interno        |
 
 ---
 
 ### 4.2 Arduino GIGA R1 (STM32H747)
 
 #### Overlay Actual: `arduino_giga_r1_stm32h747xx_m7.overlay`
+
 ```dts
 / {
     /* Aliases predefinidos:
@@ -154,6 +163,7 @@ Conexiones detalladas:
 ```
 
 #### Diagrama de Conexiones - GIGA R1
+
 ```
                     ┌─────────────────────────────────────────┐
                     │          ARDUINO GIGA R1                │
@@ -176,20 +186,22 @@ Conexiones detalladas:
 ```
 
 #### Mapeo I/O - GIGA R1
+
 | Dirección ZPLC | Pin Arduino | STM32 GPIO | Función HAL |
-|----------------|-------------|------------|-------------|
-| `%Q0.0` | LED interno | PI12 | led0 alias |
-| `%Q0.1` | LED interno | PJ13 | led1 alias |
-| `%I0.0` | USER BTN | PC13 | sw0 alias |
-| `%IW0` | A0 | PA0_C | ADC1_INP0 |
-| `%IW2` | A1 | PA1_C | ADC1_INP1 |
-| `%IW4` | A2 | PC2_C | ADC1_INP12 |
+| -------------- | ----------- | ---------- | ----------- |
+| `%Q0.0`        | LED interno | PI12       | led0 alias  |
+| `%Q0.1`        | LED interno | PJ13       | led1 alias  |
+| `%I0.0`        | USER BTN    | PC13       | sw0 alias   |
+| `%IW0`         | A0          | PA0_C      | ADC1_INP0   |
+| `%IW2`         | A1          | PA1_C      | ADC1_INP1   |
+| `%IW4`         | A2          | PC2_C      | ADC1_INP12  |
 
 ---
 
 ### 4.3 ESP32-S3 DevKit
 
 #### Overlay Actual: `esp32s3_devkitc_esp32s3_procpu.overlay`
+
 ```dts
 / {
     leds {
@@ -208,6 +220,7 @@ Conexiones detalladas:
 ```
 
 #### Diagrama de Conexiones - ESP32-S3
+
 ```
                     ┌─────────────────────────────────────────┐
                     │          ESP32-S3 DevKitC               │
@@ -233,6 +246,7 @@ Conexiones detalladas:
 ### 4.4 STM32 Nucleo-H743ZI
 
 #### Overlay Actual: `nucleo_h743zi.overlay`
+
 ```dts
 / {
     /* Aliases predefinidos:
@@ -252,6 +266,7 @@ Conexiones detalladas:
 ```
 
 #### Diagrama de Conexiones - Nucleo-H743ZI
+
 ```
                     ┌─────────────────────────────────────────┐
                     │          STM32 NUCLEO-H743ZI            │
@@ -283,6 +298,7 @@ Conexiones detalladas:
 **Método:** Medición con osciloscopio de señal de toggle
 
 #### Programa de Test: `test_hal_timing.st`
+
 ```iecst
 PROGRAM TestHALTiming
 VAR
@@ -296,25 +312,28 @@ END_PROGRAM
 ```
 
 #### Configuración de Task
+
 ```json
 { "name": "TimingTest", "interval_ms": 10, "priority": 0 }
 ```
 
 #### Procedimiento de Medición
+
 1. Configurar osciloscopio: CH1 en salida LED, trigger en flanco
 2. Medir frecuencia y calcular período
 3. Capturar 1000 ciclos, calcular estadísticas
 
 #### Mediciones Requeridas (por placa)
 
-| Placa | Período Nominal | Período Medido | Error | Jitter (σ) | PASS/FAIL |
-|-------|-----------------|----------------|-------|------------|-----------|
-| Pico | 20.00 ms | ______ ms | ____% | ______ µs | [ ] |
-| GIGA R1 | 20.00 ms | ______ ms | ____% | ______ µs | [ ] |
-| ESP32-S3 | 20.00 ms | ______ ms | ____% | ______ µs | [ ] |
-| Nucleo | 20.00 ms | ______ ms | ____% | ______ µs | [ ] |
+| Placa    | Período Nominal | Período Medido | Error     | Jitter (σ)  | PASS/FAIL |
+| -------- | --------------- | -------------- | --------- | ----------- | --------- |
+| Pico     | 20.00 ms        | **\_\_** ms    | \_\_\_\_% | **\_\_** µs | [ ]       |
+| GIGA R1  | 20.00 ms        | **\_\_** ms    | \_\_\_\_% | **\_\_** µs | [ ]       |
+| ESP32-S3 | 20.00 ms        | **\_\_** ms    | \_\_\_\_% | **\_\_** µs | [ ]       |
+| Nucleo   | 20.00 ms        | **\_\_** ms    | \_\_\_\_% | **\_\_** µs | [ ]       |
 
 **Criterio de Aceptación:**
+
 - Error promedio: < 1%
 - Jitter (desviación estándar): < 500 µs
 - Sin outliers > 2ms del nominal
@@ -326,6 +345,7 @@ END_PROGRAM
 **Objetivo:** Medir latencia entre escritura de memoria y cambio de pin físico
 
 #### Programa de Test: `test_gpio_latency.st`
+
 ```iecst
 PROGRAM TestGPIOLatency
 VAR
@@ -340,21 +360,22 @@ END_PROGRAM
 ```
 
 #### Procedimiento de Medición
+
 1. CH1 osciloscopio → Pin de entrada (generador de señales)
 2. CH2 osciloscopio → Pin de salida
 3. Aplicar pulso de 1ms a entrada
 4. Medir delay entre flancos
 
-| Placa | Task (ms) | Latencia Medida | PASS/FAIL |
-|-------|-----------|-----------------|-----------|
-| Pico | 1 | ______ µs | [ ] |
-| Pico | 10 | ______ µs | [ ] |
-| GIGA R1 | 1 | ______ µs | [ ] |
-| GIGA R1 | 10 | ______ µs | [ ] |
-| ESP32-S3 | 1 | ______ µs | [ ] |
-| ESP32-S3 | 10 | ______ µs | [ ] |
-| Nucleo | 1 | ______ µs | [ ] |
-| Nucleo | 10 | ______ µs | [ ] |
+| Placa    | Task (ms) | Latencia Medida | PASS/FAIL |
+| -------- | --------- | --------------- | --------- |
+| Pico     | 1         | **\_\_** µs     | [ ]       |
+| Pico     | 10        | **\_\_** µs     | [ ]       |
+| GIGA R1  | 1         | **\_\_** µs     | [ ]       |
+| GIGA R1  | 10        | **\_\_** µs     | [ ]       |
+| ESP32-S3 | 1         | **\_\_** µs     | [ ]       |
+| ESP32-S3 | 10        | **\_\_** µs     | [ ]       |
+| Nucleo   | 1         | **\_\_** µs     | [ ]       |
+| Nucleo   | 10        | **\_\_** µs     | [ ]       |
 
 **Criterio:** Latencia < 2× intervalo de task
 
@@ -365,6 +386,7 @@ END_PROGRAM
 **Objetivo:** Verificar lectura estable de entradas con rebote mecánico
 
 #### Procedimiento
+
 1. Usar pulsador mecánico real (con rebote)
 2. Contar flancos detectados por pulsación
 3. Debe ser 1 flanco por pulsación (sin falsos triggers)
@@ -376,6 +398,7 @@ END_PROGRAM
 **Objetivo:** Verificar precisión y linealidad del ADC en cada placa
 
 #### Programa de Test: `test_adc_accuracy.st`
+
 ```iecst
 PROGRAM TestADCAccuracy
 VAR
@@ -390,17 +413,18 @@ END_PROGRAM
 ```
 
 #### Procedimiento
+
 1. Aplicar voltajes conocidos con fuente de precisión
 2. Leer valor via `zplc dbg peek`
 3. Registrar error en cada punto
 
-| Voltaje Aplicado | Valor Esperado | Pico | GIGA R1 | ESP32-S3 | Nucleo |
-|------------------|----------------|------|---------|----------|--------|
-| 0.000 V | 0 | ____ | ____ | ____ | ____ |
-| 0.825 V | 1024 | ____ | ____ | ____ | ____ |
-| 1.650 V | 2048 | ____ | ____ | ____ | ____ |
-| 2.475 V | 3072 | ____ | ____ | ____ | ____ |
-| 3.300 V | 4095 | ____ | ____ | ____ | ____ |
+| Voltaje Aplicado | Valor Esperado | Pico     | GIGA R1  | ESP32-S3 | Nucleo   |
+| ---------------- | -------------- | -------- | -------- | -------- | -------- |
+| 0.000 V          | 0              | \_\_\_\_ | \_\_\_\_ | \_\_\_\_ | \_\_\_\_ |
+| 0.825 V          | 1024           | \_\_\_\_ | \_\_\_\_ | \_\_\_\_ | \_\_\_\_ |
+| 1.650 V          | 2048           | \_\_\_\_ | \_\_\_\_ | \_\_\_\_ | \_\_\_\_ |
+| 2.475 V          | 3072           | \_\_\_\_ | \_\_\_\_ | \_\_\_\_ | \_\_\_\_ |
+| 3.300 V          | 4095           | \_\_\_\_ | \_\_\_\_ | \_\_\_\_ | \_\_\_\_ |
 
 **Criterio:** Error < ±2% del rango completo (±82 counts)
 
@@ -411,6 +435,7 @@ END_PROGRAM
 **Objetivo:** Verificar lectura del sensor de temperatura interno (Pico)
 
 #### Programa de Test: `test_internal_temp.st`
+
 ```iecst
 PROGRAM TestInternalTemp
 VAR
@@ -426,9 +451,10 @@ END_PROGRAM
 ```
 
 #### Medición
-| Placa | Temp Calculada | Temp IR Medida | Error | PASS/FAIL |
-|-------|----------------|----------------|-------|-----------|
-| Pico | ______ °C | ______ °C | ____ °C | [ ] |
+
+| Placa | Temp Calculada | Temp IR Medida | Error       | PASS/FAIL |
+| ----- | -------------- | -------------- | ----------- | --------- |
+| Pico  | **\_\_** °C    | **\_\_** °C    | \_\_\_\_ °C | [ ]       |
 
 **Criterio:** Error < ±5°C
 
@@ -439,18 +465,19 @@ END_PROGRAM
 **Objetivo:** Verificar guardado y restauración de programa en flash
 
 #### Procedimiento
+
 1. Cargar programa blinky
 2. Verificar ejecución
 3. `zplc persist info` → anotar tamaño
 4. Power cycle (desconectar/reconectar USB)
 5. Verificar auto-restore
 
-| Placa | Tamaño Guardado | Auto-Restore | Tiempo Boot | PASS/FAIL |
-|-------|-----------------|--------------|-------------|-----------|
-| Pico | ____ bytes | [ ] SI [ ] NO | ____ ms | [ ] |
-| GIGA R1 | ____ bytes | [ ] SI [ ] NO | ____ ms | [ ] |
-| ESP32-S3 | ____ bytes | [ ] SI [ ] NO | ____ ms | [ ] |
-| Nucleo | ____ bytes | [ ] SI [ ] NO | ____ ms | [ ] |
+| Placa    | Tamaño Guardado | Auto-Restore  | Tiempo Boot | PASS/FAIL |
+| -------- | --------------- | ------------- | ----------- | --------- |
+| Pico     | \_\_\_\_ bytes  | [ ] SI [ ] NO | \_\_\_\_ ms | [ ]       |
+| GIGA R1  | \_\_\_\_ bytes  | [ ] SI [ ] NO | \_\_\_\_ ms | [ ]       |
+| ESP32-S3 | \_\_\_\_ bytes  | [ ] SI [ ] NO | \_\_\_\_ ms | [ ]       |
+| Nucleo   | \_\_\_\_ bytes  | [ ] SI [ ] NO | \_\_\_\_ ms | [ ]       |
 
 ---
 
@@ -459,6 +486,7 @@ END_PROGRAM
 **Objetivo:** Verificar durabilidad de flash con escrituras repetidas
 
 #### Procedimiento
+
 1. Script que hace 1000 ciclos de save/clear
 2. Verificar integridad después de cada 100 ciclos
 
@@ -478,11 +506,11 @@ for cycle in range(1000):
     time.sleep(0.1)
     ser.write(b'zplc start\r\n')
     time.sleep(0.5)
-    
+
     # Clear
     ser.write(b'zplc persist clear\r\n')
     time.sleep(0.2)
-    
+
     if cycle % 100 == 0:
         print(f"Cycle {cycle} complete")
 ```
@@ -495,25 +523,26 @@ for cycle in range(1000):
 
 Cada celda debe ser verificada con PASS/FAIL:
 
-| Test | Función | ST | LD | FBD | IL | Pico | GIGA | ESP32 | Nucleo |
-|------|---------|----|----|-----|----|------|------|-------|--------|
-| TIM-001 | Timing | ✓ | - | - | - | [ ] | [ ] | [ ] | [ ] |
-| GPIO-001 | Latency | ✓ | - | - | - | [ ] | [ ] | [ ] | [ ] |
-| GPIO-002 | Debounce | ✓ | ✓ | - | - | [ ] | [ ] | [ ] | [ ] |
-| ADC-001 | Accuracy | ✓ | - | ✓ | - | [ ] | [ ] | [ ] | [ ] |
-| ADC-002 | Temp | ✓ | - | - | - | [ ] | N/A | N/A | N/A |
-| NVS-001 | Persist | - | - | - | - | [ ] | [ ] | [ ] | [ ] |
-| TON-001 | Timer | ✓ | - | ✓ | - | [ ] | [ ] | [ ] | [ ] |
-| CTU-001 | Counter | ✓ | ✓ | ✓ | - | [ ] | [ ] | [ ] | [ ] |
-| EDGE-001 | R_TRIG | ✓ | ✓ | ✓ | - | [ ] | [ ] | [ ] | [ ] |
-| BIST-001 | RS/SR | ✓ | ✓ | - | - | [ ] | [ ] | [ ] | [ ] |
-| SCHED-001 | Multitask | ✓ | - | - | - | [ ] | [ ] | [ ] | [ ] |
+| Test      | Función   | ST  | LD  | FBD | IL  | Pico | GIGA | ESP32 | Nucleo |
+| --------- | --------- | --- | --- | --- | --- | ---- | ---- | ----- | ------ |
+| TIM-001   | Timing    | ✓   | -   | -   | -   | [ ]  | [ ]  | [ ]   | [ ]    |
+| GPIO-001  | Latency   | ✓   | -   | -   | -   | [ ]  | [ ]  | [ ]   | [ ]    |
+| GPIO-002  | Debounce  | ✓   | ✓   | -   | -   | [ ]  | [ ]  | [ ]   | [ ]    |
+| ADC-001   | Accuracy  | ✓   | -   | ✓   | -   | [ ]  | [ ]  | [ ]   | [ ]    |
+| ADC-002   | Temp      | ✓   | -   | -   | -   | [ ]  | N/A  | N/A   | N/A    |
+| NVS-001   | Persist   | -   | -   | -   | -   | [ ]  | [ ]  | [ ]   | [ ]    |
+| TON-001   | Timer     | ✓   | -   | ✓   | -   | [ ]  | [ ]  | [ ]   | [ ]    |
+| CTU-001   | Counter   | ✓   | ✓   | ✓   | -   | [ ]  | [ ]  | [ ]   | [ ]    |
+| EDGE-001  | R_TRIG    | ✓   | ✓   | ✓   | -   | [ ]  | [ ]  | [ ]   | [ ]    |
+| BIST-001  | RS/SR     | ✓   | ✓   | -   | -   | [ ]  | [ ]  | [ ]   | [ ]    |
+| SCHED-001 | Multitask | ✓   | -   | -   | -   | [ ]  | [ ]  | [ ]   | [ ]    |
 
 ---
 
 ## 7. Comandos de Compilación y Flash
 
 ### 7.1 Raspberry Pi Pico
+
 ```bash
 source ~/zephyrproject/activate.sh
 cd ~/zephyrproject
@@ -531,6 +560,7 @@ screen /dev/cu.usbmodem* 115200
 ```
 
 ### 7.2 Arduino GIGA R1
+
 ```bash
 source ~/zephyrproject/activate.sh
 cd ~/zephyrproject
@@ -546,6 +576,7 @@ screen /dev/cu.usbmodem* 115200
 ```
 
 ### 7.3 ESP32-S3 DevKit
+
 ```bash
 source ~/zephyrproject/activate.sh
 cd ~/zephyrproject
@@ -561,6 +592,7 @@ screen /dev/cu.usbserial* 115200
 ```
 
 ### 7.4 STM32 Nucleo-H743ZI
+
 ```bash
 source ~/zephyrproject/activate.sh
 cd ~/zephyrproject
@@ -638,21 +670,25 @@ Firma Tester: ________________  Fecha: ________________
 ## 9. Troubleshooting
 
 ### Problema: LED no enciende
+
 1. Verificar polaridad (ánodo a GPIO, cátodo a GND via resistor)
 2. Verificar overlay tiene alias `led0` definido
 3. `zplc dbg peek 0x1000` - bit 0 debe cambiar
 
 ### Problema: Botón no responde
+
 1. Verificar pull-up (interno o externo)
 2. `zplc dbg peek 0x0000` - bit correspondiente debe cambiar
 3. Verificar overlay tiene `sw0` con flags correctos
 
 ### Problema: ADC lee 0 siempre
+
 1. Verificar `CONFIG_ADC=y` en prj.conf
 2. Verificar overlay habilita `&adc { status = "okay"; }`
 3. Verificar conexión física del potenciómetro
 
 ### Problema: NVS no guarda
+
 1. Verificar `storage_partition` definida en overlay
 2. Verificar `CONFIG_NVS=y` y `CONFIG_FLASH=y`
 3. Revisar logs: `[HAL] NVS initialized`

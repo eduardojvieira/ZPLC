@@ -33,45 +33,45 @@ west build -t run
 
 ### Program Management
 
-| Command | Description |
-|---------|-------------|
-| `zplc version` | Show Core and ISA version. |
-| `zplc load <size>` | Prepare to receive `<size>` bytes of bytecode. |
-| `zplc data <hex_bytes>` | Send a chunk of bytecode (64 chars max). |
-| `zplc start` | Initialize VM and start execution (auto-saves to NVS). |
-| `zplc stop` | Stop VM execution. |
-| `zplc status` | Show current VM state (Running/Halted/Error). |
-| `zplc reset` | Clear all memory regions (IPI/OPI/Work/RETAIN). |
+| Command                 | Description                                            |
+| ----------------------- | ------------------------------------------------------ |
+| `zplc version`          | Show Core and ISA version.                             |
+| `zplc load <size>`      | Prepare to receive `<size>` bytes of bytecode.         |
+| `zplc data <hex_bytes>` | Send a chunk of bytecode (64 chars max).               |
+| `zplc start`            | Initialize VM and start execution (auto-saves to NVS). |
+| `zplc stop`             | Stop VM execution.                                     |
+| `zplc status`           | Show current VM state (Running/Halted/Error).          |
+| `zplc reset`            | Clear all memory regions (IPI/OPI/Work/RETAIN).        |
 
 ### Persistence (NVS)
 
-| Command | Description |
-|---------|-------------|
-| `zplc persist info` | Show saved program info (size, auto-load status). |
-| `zplc persist clear` | Erase saved program from Flash. |
+| Command              | Description                                       |
+| -------------------- | ------------------------------------------------- |
+| `zplc persist info`  | Show saved program info (size, auto-load status). |
+| `zplc persist clear` | Erase saved program from Flash.                   |
 
 ### Debugging
 
-| Command | Description |
-|---------|-------------|
-| `zplc dbg pause` | Pause execution at next cycle. |
-| `zplc dbg resume` | Resume execution. |
-| `zplc dbg step` | Execute one cycle. |
-| `zplc dbg peek <addr>` | Read memory (hex dump). |
-| `zplc dbg poke <addr> <val>` | Write byte to IPI. |
-| `zplc dbg info` | Detailed VM state. |
-| `zplc dbg ticks` | Show current system tick (ms). |
-| `zplc dbg mem <region> [offset]` | Dump memory region (ipi/opi/work/retain). |
-| `zplc dbg task <id>` | Show task details by ID. |
-| `zplc dbg watch <addr> [type]` | Read typed value from address (u8/u16/u32/i8/i16/i32/bool). |
-| `zplc dbg timer <addr>` | Inspect TON/TOF/TP timer at address. |
+| Command                          | Description                                                 |
+| -------------------------------- | ----------------------------------------------------------- |
+| `zplc dbg pause`                 | Pause execution at next cycle.                              |
+| `zplc dbg resume`                | Resume execution.                                           |
+| `zplc dbg step`                  | Execute one cycle.                                          |
+| `zplc dbg peek <addr>`           | Read memory (hex dump).                                     |
+| `zplc dbg poke <addr> <val>`     | Write byte to IPI.                                          |
+| `zplc dbg info`                  | Detailed VM state.                                          |
+| `zplc dbg ticks`                 | Show current system tick (ms).                              |
+| `zplc dbg mem <region> [offset]` | Dump memory region (ipi/opi/work/retain).                   |
+| `zplc dbg task <id>`             | Show task details by ID.                                    |
+| `zplc dbg watch <addr> [type]`   | Read typed value from address (u8/u16/u32/i8/i16/i32/bool). |
+| `zplc dbg timer <addr>`          | Inspect TON/TOF/TP timer at address.                        |
 
 ### Scheduler (Multitask)
 
-| Command | Description |
-|---------|-------------|
-| `zplc sched status` | Scheduler statistics. |
-| `zplc sched tasks` | List all registered tasks. |
+| Command             | Description                |
+| ------------------- | -------------------------- |
+| `zplc sched status` | Scheduler statistics.      |
+| `zplc sched tasks`  | List all registered tasks. |
 
 ## 📤 Uploading Programs
 
@@ -155,10 +155,11 @@ CONFIG_NVS=y
 
 ## 🎯 Supported Boards
 
-| Board | Zephyr ID | Notes |
-|-------|-----------|-------|
-| Raspberry Pi Pico | `rpi_pico` | Tested, persistence works |
-| STM32 Nucleo-H743ZI | `nucleo_h743zi` | High-performance |
-| Arduino Giga R1 | `arduino_giga_r1/stm32h747xx/m7` | Dual-core |
-| ESP32-S3 DevKit | `esp32s3_devkitc` | WiFi/BLE capable |
-| QEMU | `mps2/an385` | For CI/testing |
+| Board               | Zephyr ID                        | Notes                     |
+| ------------------- | -------------------------------- | ------------------------- |
+| Raspberry Pi Pico   | `rpi_pico`                       | Tested, persistence works |
+| STM32 Nucleo-H743ZI | `nucleo_h743zi`                  | High-performance          |
+| STM32F746G-DISCO    | `stm32f746g_disco`               | TFT display, touch, audio |
+| Arduino Giga R1     | `arduino_giga_r1/stm32h747xx/m7` | Dual-core                 |
+| ESP32-S3 DevKit     | `esp32s3_devkitc`                | WiFi/BLE capable          |
+| QEMU                | `mps2/an385`                     | For CI/testing            |
