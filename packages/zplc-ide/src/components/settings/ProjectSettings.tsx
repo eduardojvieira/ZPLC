@@ -51,6 +51,7 @@ const BOARD_OPTIONS = [
   { value: 'arduino_opta', label: 'Arduino Opta (Industrial PLC)' },
   { value: 'nucleo_h743zi', label: 'STM32 Nucleo H743ZI' },
   { value: 'nucleo_f446re', label: 'STM32 Nucleo F446RE' },
+  { value: 'stm32f746g_disco', label: 'STM32F746G Discovery' },
   { value: 'esp32s3_devkitc', label: 'ESP32-S3 DevKitC' },
   { value: 'esp32_devkitc_wroom', label: 'ESP32 DevKitC WROOM' },
   { value: 'nrf52840dk', label: 'Nordic nRF52840 DK' },

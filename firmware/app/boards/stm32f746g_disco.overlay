@@ -1,0 +1,20 @@
+/*
+ * ZPLC Board Overlay - STM32F746G Discovery
+ * SPDX-License-Identifier: MIT
+ *
+ * The STM32F746G-DISCO already defines:
+ *   - led0 = green_led_1 (PI1)
+ *   - sw0 = user_button (PI11)
+ *   - storage_partition on QSPI flash (external N25Q128A)
+ *
+ * The board already has NVS storage configured on external QSPI,
+ * so no additional overlay configuration is needed for persistence.
+ *
+ * This overlay is kept minimal as the base DTS provides everything needed.
+ */
+
+/ {
+    /* Board has sufficient default aliases for ZPLC GPIO HAL */
+    /* NVS storage available via external QSPI flash */
+};
+
