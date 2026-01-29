@@ -9,7 +9,7 @@ def run_tests():
 
     print("\n--- TEST: IL Arithmetic ---")
     try:
-        tester.compile_and_run("tools/hil/il_tests/arithmetic.il", duration=0.2)
+        tester.compile_and_run("tools/hil/il_tests/arithmetic.il", duration=1.0)
         # Check a=10 (0), b=5 (2)
         # res_add (4) = 15
         # res_sub (6) = 5
@@ -35,7 +35,7 @@ def run_tests():
 
     print("\n--- TEST: IL Comparison ---")
     try:
-        tester.compile_and_run("tools/hil/il_tests/comparison.il", duration=0.2)
+        tester.compile_and_run("tools/hil/il_tests/comparison.il", duration=1.0)
         # val=50 at %Q0 (bytes 0-1)
 
         # is_gt at %Q2.0 -> Byte 2, Bit 0
@@ -54,7 +54,7 @@ def run_tests():
 
     print("\n--- TEST: IL Logic ---")
     try:
-        tester.compile_and_run("tools/hil/il_tests/logic.il", duration=0.2)
+        tester.compile_and_run("tools/hil/il_tests/logic.il", duration=1.0)
         # t=1 (0), f=0 (1)
         # and=0 (2), or=1 (3), xor=1 (4), not=0 (5)
 
@@ -70,7 +70,7 @@ def run_tests():
 
     print("\n--- TEST: IL Jumps ---")
     try:
-        tester.compile_and_run("tools/hil/il_tests/jumps.il", duration=0.2)
+        tester.compile_and_run("tools/hil/il_tests/jumps.il", duration=1.0)
         # skip1_result (0) = 0 (skipped by JMPC when jump_cond=TRUE)
         # skip2_result (2) = 0 (always skipped by JMP)
         # exec1_result (4) = 42 (always executed)
