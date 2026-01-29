@@ -311,3 +311,14 @@ class ZPLCTester:
             if trace.get("t") == "opcode" and "tos" in trace:
                 return trace["tos"]
         return None
+
+    def get_last_sp(self, traces):
+        """
+        Extract the last SP (stack pointer) value from opcode traces.
+        Returns None if no opcode traces found.
+        """
+        for trace in reversed(traces):
+            if trace.get("t") == "opcode" and "sp" in trace:
+                return trace["sp"]
+        return None
+
