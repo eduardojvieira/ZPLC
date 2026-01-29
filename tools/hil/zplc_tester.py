@@ -242,21 +242,47 @@ class ZPLCTester:
         self.send("zplc stop")
 
     def peek(self, addr, length=1):
-        resp = self.send(f"zplc dbg peek {hex(addr)} {length}")
-        # print(f"DEBUG: Peek raw response:\n{resp}")
+        """
+        Reads memory from the device using zplc dbg peek.
+        Handles potentially noisy output (logs) and retries on empty reads.
+        """
+        cmd = f"zplc dbg peek {hex(addr)} {length}"
+        
+        for attempt in range(3):
+            # Clear any pending logs
+            self.ser.reset_input_buffer()
+            
+            resp = self.send(cmd, wait_for="zplc:~$")
+            
+            # Parse hex values only from lines that look like memory dumps:
+            # "0x20001004: 00 00 ..." or just raw hex data depending on formatting
+            # We look for lines containing ":" and hex bytes
+            
+            bytes_out = []
+            for line in resp.splitlines():
+                line = line.strip()
+                # Ignore log lines starting with [HAL], [ERR], etc.
+                if line.startswith("[") or not line:
+                    continue
+                    
+                # Standard hexdump format: "0xaddr: byte byte ..."
+                if ":" in line:
+                    parts = line.split(":")
+                    if len(parts) > 1:
+                        data_part = parts[1]
+                        # Find all 2-digit hex sequences
+                        hex_matches = re.findall(r"\b([0-9A-Fa-f]{2})\b", data_part)
+                        for hv in hex_matches:
+                            bytes_out.append(int(hv, 16))
+            
+            if len(bytes_out) >= length:
+                return bytes_out[:length]
+            
+            # If we are here, we didn't get enough bytes. Wait a bit and retry.
+            time.sleep(0.2)
+            
+        return []  # Return empty if failed after retries
 
-        # Extraer todos los valores hexadecimales de 2 dígitos que sigan a un ":"
-        bytes_out = []
-        for line in resp.splitlines():
-            if ":" in line:
-                data_part = line.split(":")[1]
-                # Buscar patrones de 2 caracteres hex
-                hex_matches = re.findall(r"([0-9A-Fa-f]{2})", data_part)
-                for hv in hex_matches:
-                    bytes_out.append(int(hv, 16))
-
-        # print(f"DEBUG: Parsed bytes: {bytes_out}")
-        return bytes_out[:length]
 
     def compile_st(self, st_file):
         base, ext = os.path.splitext(st_file)
