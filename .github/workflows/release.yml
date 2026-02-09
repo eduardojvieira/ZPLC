@@ -147,6 +147,11 @@ jobs:
         run: |
           cd packages/zplc-compiler && bun run build
 
+      - name: Install Linux build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm
+
       - name: Build Electron app (Linux ${{ matrix.arch }})
         working-directory: packages/zplc-ide
         run: |
