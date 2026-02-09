@@ -105,3 +105,8 @@ deb:
 
 rpm:
   artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
+  # Override fpm --name to avoid spaces in .spec filename
+  # rpmbuild can't handle "ZPLC IDE.spec" — needs "zplc-ide.spec"
+  fpm:
+    - "--name"
+    - "zplc-ide"
