@@ -1,8 +1,14 @@
 # ZPLC IDE - Electron Builder Configuration
 # Cross-platform builds for Windows, macOS, and Linux
+#
+# IMPORTANT: Architecture (x64/arm64) is controlled EXCLUSIVELY by the CLI
+# flags (--x64 / --arm64) in the GitHub Actions workflow.
+# Do NOT hardcode arch arrays here — it causes double builds and wastes CI time.
 
 appId: com.zplc.ide
 productName: ZPLC IDE
+# executableName without spaces — rpmbuild chokes on spaces in .spec paths
+executableName: zplc-ide
 
 # Directories
 directories:
@@ -40,14 +46,8 @@ mac:
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
   target:
-    - target: dmg
-      arch:
-        - x64
-        - arm64
-    - target: zip
-      arch:
-        - x64
-        - arm64
+    - dmg
+    - zip
 
 dmg:
   artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
@@ -64,13 +64,8 @@ dmg:
 # ============================================================================
 win:
   target:
-    - target: nsis
-      arch:
-        - x64
-        - arm64
-    - target: portable
-      arch:
-        - x64
+    - nsis
+    - portable
 
 nsis:
   oneClick: false
@@ -91,17 +86,9 @@ linux:
   category: Development
   maintainer: ZPLC Team
   target:
-    - target: AppImage
-      arch:
-        - x64
-        - arm64
-    - target: deb
-      arch:
-        - x64
-        - arm64
-    - target: rpm
-      arch:
-        - x64
+    - AppImage
+    - deb
+    - rpm
 
 appImage:
   artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
