@@ -45,7 +45,6 @@ env:
   # Fallback mirrors for when GitHub CDN returns 500/504
   # npmmirror is the most reliable alternative CDN for Electron binaries
   ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
-  ELECTRON_BUILDER_BINARIES_MIRROR: https://npmmirror.com/mirrors/electron-builder-binaries/
 
 jobs:
   # ===========================================================================
