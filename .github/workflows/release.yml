@@ -10,6 +10,11 @@
 # Artifacts:
 #   - IDE: macOS (x64, arm64), Windows (x64, arm64), Linux (x64, arm64)
 #   - Runtime: Source tarball with everything needed to build for Zephyr boards
+#
+# Architecture:
+#   Each matrix job builds ONE architecture only. The arch is passed to
+#   electron-builder via CLI flag (--x64 or --arm64). The electron-builder.yml
+#   has NO hardcoded arch arrays to prevent double builds.
 # =============================================================================
 
 name: Release Build
@@ -35,6 +40,8 @@ permissions:
 
 env:
   NODE_VERSION: '20'
+  # Retry config for transient CDN failures
+  ELECTRON_BUILDER_CACHE: ~/.cache/electron-builder
 
 jobs:
   # ===========================================================================
@@ -43,19 +50,38 @@ jobs:
   build-macos:
     runs-on: macos-latest
     strategy:
+      fail-fast: false
       matrix:
         arch: [x64, arm64]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest
 
-      - name: Install dependencies
-        run: bun install
+      - name: Install dependencies (with retry)
+        run: |
+          for attempt in 1 2 3; do
+            echo "=== Attempt $attempt of 3 ==="
+            if bun install; then
+              echo "Install succeeded on attempt $attempt"
+              break
+            fi
+            if [ $attempt -eq 3 ]; then
+              echo "Install failed after 3 attempts"
+              exit 1
+            fi
+            echo "Install failed, retrying in 15s..."
+            sleep 15
+          done
 
       - name: Build dependencies
         run: |
@@ -66,10 +92,9 @@ jobs:
         run: |
           bun run build
           bun run electron:compile
-          bun x electron-builder --mac --${{ matrix.arch }}
+          bun x electron-builder --mac --${{ matrix.arch }} --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Skip notarization for now (requires Apple Developer account)
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Upload macOS artifacts
@@ -87,19 +112,39 @@ jobs:
   build-windows:
     runs-on: windows-latest
     strategy:
+      fail-fast: false
       matrix:
         arch: [x64, arm64]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest
 
-      - name: Install dependencies
-        run: bun install
+      - name: Install dependencies (with retry)
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            echo "=== Attempt $attempt of 3 ==="
+            if bun install; then
+              echo "Install succeeded on attempt $attempt"
+              break
+            fi
+            if [ $attempt -eq 3 ]; then
+              echo "Install failed after 3 attempts"
+              exit 1
+            fi
+            echo "Install failed, retrying in 15s..."
+            sleep 15
+          done
 
       - name: Build dependencies
         run: |
@@ -110,7 +155,7 @@ jobs:
         run: |
           bun run build
           bun run electron:compile
-          bun x electron-builder --win --${{ matrix.arch }}
+          bun x electron-builder --win --${{ matrix.arch }} --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -129,19 +174,38 @@ jobs:
   build-linux:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         arch: [x64, arm64]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest
 
-      - name: Install dependencies
-        run: bun install
+      - name: Install dependencies (with retry)
+        run: |
+          for attempt in 1 2 3; do
+            echo "=== Attempt $attempt of 3 ==="
+            if bun install; then
+              echo "Install succeeded on attempt $attempt"
+              break
+            fi
+            if [ $attempt -eq 3 ]; then
+              echo "Install failed after 3 attempts"
+              exit 1
+            fi
+            echo "Install failed, retrying in 15s..."
+            sleep 15
+          done
 
       - name: Build dependencies
         run: |
@@ -157,8 +221,7 @@ jobs:
         run: |
           bun run build
           bun run electron:compile
-          # Skip RPM build if it continues to fail
-          bun x electron-builder --linux AppImage deb --${{ matrix.arch }}
+          bun x electron-builder --linux --${{ matrix.arch }} --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -210,9 +273,7 @@ jobs:
           
           cp -r examples "${PACKAGE_NAME}/"
           cp -r tools "${PACKAGE_NAME}/"
-          # cp -r scripts "${PACKAGE_NAME}/" # Scripts not found at root
           cp firmware/CMakeLists.txt "${PACKAGE_NAME}/"
-          # cp Makefile "${PACKAGE_NAME}/" # Makefile usually generated
           cp README.md "${PACKAGE_NAME}/"
           cp TECHNICAL_SPEC.md "${PACKAGE_NAME}/"
           cp AGENTS.md "${PACKAGE_NAME}/"
@@ -379,7 +440,7 @@ jobs:
   upload-release:
     needs: [build-macos, build-windows, build-linux, package-runtime]
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.upload_to_release) }}
+    if: ${{ always() && needs.package-runtime.result == 'success' && (needs.build-macos.result == 'success' || needs.build-windows.result == 'success' || needs.build-linux.result == 'success') }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
