@@ -42,6 +42,10 @@ env:
   NODE_VERSION: '20'
   # Retry config for transient CDN failures
   ELECTRON_BUILDER_CACHE: ~/.cache/electron-builder
+  # Fallback mirrors for when GitHub CDN returns 500/504
+  # npmmirror is the most reliable alternative CDN for Electron binaries
+  ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
+  ELECTRON_BUILDER_BINARIES_MIRROR: https://npmmirror.com/mirrors/electron-builder-binaries/
 
 jobs:
   # ===========================================================================
@@ -440,7 +444,14 @@ jobs:
   upload-release:
     needs: [build-macos, build-windows, build-linux, package-runtime]
     runs-on: ubuntu-latest
-    if: ${{ always() && needs.package-runtime.result == 'success' && (needs.build-macos.result == 'success' || needs.build-windows.result == 'success' || needs.build-linux.result == 'success') }}
+    # Skip upload when workflow_dispatch with upload_to_release=false (dry-run testing)
+    if: >-
+      ${{
+        always()
+        && (github.event_name == 'push' || inputs.upload_to_release != false)
+        && needs.package-runtime.result == 'success'
+        && (needs.build-macos.result == 'success' || needs.build-windows.result == 'success' || needs.build-linux.result == 'success')
+      }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
