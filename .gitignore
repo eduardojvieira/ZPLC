@@ -46,7 +46,7 @@ task.md
 walkthrough.md
 implementation_plan.md
 task_boundary_history.json
-*.png
+# *.png  <-- COMENTADO PARA PERMITIR IMÁGENES
 *.webp
 *.video
 *.audio

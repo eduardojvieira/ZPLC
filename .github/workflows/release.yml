@@ -49,23 +49,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: packages/zplc-ide/package-lock.json
+          bun-version: latest
 
       - name: Install dependencies
-        working-directory: packages/zplc-ide
-        run: npm ci
+        run: bun install
 
       - name: Build Electron app (macOS ${{ matrix.arch }})
         working-directory: packages/zplc-ide
         run: |
-          npm run build
-          npm run electron:compile
-          npx electron-builder --mac --${{ matrix.arch }}
+          bun run build
+          bun run electron:compile
+          bun x electron-builder --mac --${{ matrix.arch }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Skip notarization for now (requires Apple Developer account)
@@ -92,23 +89,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: packages/zplc-ide/package-lock.json
+          bun-version: latest
 
       - name: Install dependencies
-        working-directory: packages/zplc-ide
-        run: npm ci
+        run: bun install
 
       - name: Build Electron app (Windows ${{ matrix.arch }})
         working-directory: packages/zplc-ide
         run: |
-          npm run build
-          npm run electron:compile
-          npx electron-builder --win --${{ matrix.arch }}
+          bun run build
+          bun run electron:compile
+          bun x electron-builder --win --${{ matrix.arch }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -133,23 +127,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: packages/zplc-ide/package-lock.json
+          bun-version: latest
 
       - name: Install dependencies
-        working-directory: packages/zplc-ide
-        run: npm ci
+        run: bun install
 
       - name: Build Electron app (Linux ${{ matrix.arch }})
         working-directory: packages/zplc-ide
         run: |
-          npm run build
-          npm run electron:compile
-          npx electron-builder --linux --${{ matrix.arch }}
+          bun run build
+          bun run electron:compile
+          bun x electron-builder --linux --${{ matrix.arch }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -190,15 +181,20 @@ jobs:
           mkdir -p "${PACKAGE_NAME}"
           
           # Copy runtime source files
-          cp -r include "${PACKAGE_NAME}/"
-          cp -r src "${PACKAGE_NAME}/"
-          cp -r zephyr "${PACKAGE_NAME}/"
-          cp -r apps "${PACKAGE_NAME}/"
+          cp -r firmware/lib/zplc_core/include "${PACKAGE_NAME}/"
+          cp -r firmware/lib/zplc_core/src "${PACKAGE_NAME}/"
+          cp -r firmware/zephyr "${PACKAGE_NAME}/"
+          
+          # Create apps directory structure
+          mkdir -p "${PACKAGE_NAME}/apps"
+          cp -r firmware/apps/posix_host "${PACKAGE_NAME}/apps/"
+          cp -r firmware/app "${PACKAGE_NAME}/apps/zephyr_app"
+          
           cp -r examples "${PACKAGE_NAME}/"
           cp -r tools "${PACKAGE_NAME}/"
-          cp -r scripts "${PACKAGE_NAME}/"
-          cp CMakeLists.txt "${PACKAGE_NAME}/"
-          cp Makefile "${PACKAGE_NAME}/"
+          # cp -r scripts "${PACKAGE_NAME}/" # Scripts not found at root
+          cp firmware/CMakeLists.txt "${PACKAGE_NAME}/"
+          # cp Makefile "${PACKAGE_NAME}/" # Makefile usually generated
           cp README.md "${PACKAGE_NAME}/"
           cp TECHNICAL_SPEC.md "${PACKAGE_NAME}/"
           cp AGENTS.md "${PACKAGE_NAME}/"
