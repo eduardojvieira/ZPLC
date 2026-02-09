@@ -157,7 +157,8 @@ jobs:
         run: |
           bun run build
           bun run electron:compile
-          bun x electron-builder --linux --${{ matrix.arch }}
+          # Skip RPM build if it continues to fail
+          bun x electron-builder --linux AppImage deb --${{ matrix.arch }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
