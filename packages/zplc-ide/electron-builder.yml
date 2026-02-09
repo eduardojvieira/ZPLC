@@ -16,7 +16,7 @@ files:
 
 # Extra files to copy (icons, etc.)
 extraResources:
-  - from: ../examples
+  - from: ../../examples
     to: examples
     filter:
       - "**/*.zplc"
