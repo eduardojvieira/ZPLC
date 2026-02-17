@@ -127,11 +127,14 @@ const DebugEdge = memo(({
               className={`
                 px-1.5 py-0.5 rounded text-[10px] font-mono font-medium
                 shadow-md border
-                ${energized 
-                  ? 'bg-green-600 text-white border-green-500' 
-                  : 'bg-slate-700 text-slate-300 border-slate-600'
+                ${typeof liveValue === 'boolean'
+                  ? (energized
+                    ? 'bg-green-600 text-white border-green-500'
+                    : 'bg-slate-700 text-slate-300 border-slate-600')
+                  : (energized
+                    ? 'bg-blue-600 text-white border-blue-500'
+                    : 'bg-slate-700 text-slate-300 border-slate-600')
                 }
-                ${typeof liveValue === 'boolean' ? '' : 'bg-blue-600 border-blue-500'}
               `}
             >
               {formatValue(liveValue, dataType)}

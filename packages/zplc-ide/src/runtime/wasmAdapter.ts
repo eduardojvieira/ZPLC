@@ -43,7 +43,7 @@ export class WASMAdapter implements IDebugAdapter {
   private virtualInputs: number[] = [0, 0, 0, 0];
   private virtualOutputs: number[] = [0, 0, 0, 0];
 
-  // Wrapped C functions
+  // Wrapped C functions — core lifecycle
   private coreInit: (() => number) | null = null;
   private coreShutdown: (() => number) | null = null;
   private coreLoadRaw: ((ptr: number, size: number) => number) | null = null;
@@ -59,11 +59,24 @@ export class WASMAdapter implements IDebugAdapter {
   private wasmSetInput: ((channel: number, value: number) => void) | null = null;
   private wasmGetOutput: ((channel: number) => number) | null = null;
 
+  // Wrapped C functions — typed memory access for all regions
+  private ipiRead8: ((offset: number) => number) | null = null;
+  private opiRead8: ((offset: number) => number) | null = null;
+  private ipiWrite8: ((offset: number, value: number) => number) | null = null;
+  private memGetRegion: ((base: number) => number) | null = null;
+
+  // Wrapped C functions — breakpoints (delegated to C VM)
+  private coreGetDefaultVm: (() => number) | null = null;
+  private vmAddBreakpoint: ((vm: number, pc: number) => number) | null = null;
+  private vmRemoveBreakpoint: ((vm: number, pc: number) => number) | null = null;
+  private vmClearBreakpoints: ((vm: number) => number) | null = null;
+  private vmIsPaused: ((vm: number) => number) | null = null;
+  private vmResume: ((vm: number) => number) | null = null;
+  private vmGetBreakpointCount: ((vm: number) => number) | null = null;
+  private vmGetBreakpoint: ((vm: number, index: number) => number) | null = null;
+
   // Cycle counter (maintained locally since VM resets PC each cycle)
   private cycleCount = 0;
-
-  // Breakpoint state (managed locally in JS)
-  private breakpoints: Set<number> = new Set();
 
   get connected(): boolean {
     return this._connected;
@@ -151,6 +164,7 @@ export class WASMAdapter implements IDebugAdapter {
 
     const m = this.module;
 
+    // Core lifecycle
     this.coreInit = m.cwrap('zplc_core_init', 'number', []) as () => number;
     this.coreShutdown = m.cwrap('zplc_core_shutdown', 'number', []) as () => number;
     this.coreLoadRaw = m.cwrap('zplc_core_load_raw', 'number', [
@@ -180,6 +194,22 @@ export class WASMAdapter implements IDebugAdapter {
     this.wasmGetOutput = m.cwrap('zplc_wasm_get_output', 'number', [
       'number',
     ]) as (channel: number) => number;
+
+    // Typed memory access for all regions
+    this.ipiRead8 = m.cwrap('zplc_ipi_read8', 'number', ['number']) as (offset: number) => number;
+    this.opiRead8 = m.cwrap('zplc_opi_read8', 'number', ['number']) as (offset: number) => number;
+    this.ipiWrite8 = m.cwrap('zplc_ipi_write8', 'number', ['number', 'number']) as (offset: number, value: number) => number;
+    this.memGetRegion = m.cwrap('zplc_mem_get_region', 'number', ['number']) as (base: number) => number;
+
+    // Breakpoints — delegate to C VM for proper instruction-level checking
+    this.coreGetDefaultVm = m.cwrap('zplc_core_get_default_vm', 'number', []) as () => number;
+    this.vmAddBreakpoint = m.cwrap('zplc_vm_add_breakpoint', 'number', ['number', 'number']) as (vm: number, pc: number) => number;
+    this.vmRemoveBreakpoint = m.cwrap('zplc_vm_remove_breakpoint', 'number', ['number', 'number']) as (vm: number, pc: number) => number;
+    this.vmClearBreakpoints = m.cwrap('zplc_vm_clear_breakpoints', 'number', ['number']) as (vm: number) => number;
+    this.vmIsPaused = m.cwrap('zplc_vm_is_paused', 'number', ['number']) as (vm: number) => number;
+    this.vmResume = m.cwrap('zplc_vm_resume', 'number', ['number']) as (vm: number) => number;
+    this.vmGetBreakpointCount = m.cwrap('zplc_vm_get_breakpoint_count', 'number', ['number']) as (vm: number) => number;
+    this.vmGetBreakpoint = m.cwrap('zplc_vm_get_breakpoint', 'number', ['number', 'number']) as (vm: number, index: number) => number;
   }
 
   // =========================================================================
@@ -303,7 +333,7 @@ export class WASMAdapter implements IDebugAdapter {
     this.virtualInputs = [0, 0, 0, 0];
 
     // Clear breakpoints on reset
-    this.breakpoints.clear();
+    await this.clearBreakpoints();
 
     this.cycleCount = 0;
 
@@ -349,7 +379,13 @@ export class WASMAdapter implements IDebugAdapter {
       this.wasmSetInput?.(i, this.virtualInputs[i]);
     }
 
-    // Run one PLC cycle
+    // If VM was paused at a breakpoint, resume before running next cycle
+    const vm = this.coreGetDefaultVm?.() ?? 0;
+    if (vm && this.vmIsPaused?.(vm)) {
+      this.vmResume?.(vm);
+    }
+
+    // Run one PLC cycle — the C VM checks breakpoints internally
     const result = this.coreRunCycle?.() ?? -1;
 
     if (result < 0) {
@@ -361,6 +397,15 @@ export class WASMAdapter implements IDebugAdapter {
     }
 
     this.cycleCount++;
+
+    // Check if VM hit a breakpoint during this cycle
+    if (vm && this.vmIsPaused?.(vm)) {
+      const pc = this.coreGetPc?.() ?? 0;
+      this.stopExecutionLoop();
+      this.setState('paused');
+      this.events.onBreakpointHit?.(pc);
+      return;
+    }
 
     // Read virtual outputs
     for (let i = 0; i < 4; i++) {
@@ -381,35 +426,109 @@ export class WASMAdapter implements IDebugAdapter {
   // Memory Access
   // =========================================================================
 
+  /**
+   * Read bytes from any memory region via WASM.
+   * Uses typed C API for IPI/OPI, and direct HEAPU8 access
+   * via zplc_mem_get_region() for WORK/RETAIN.
+   */
   async peek(address: number, length: number): Promise<Uint8Array> {
-    if (!this._connected) {
+    if (!this._connected || !this.module) {
       throw new Error('Not connected');
     }
 
-    // For now, we can only read OPI region via the API
-    // Full memory access would require direct HEAPU8 access with proper offsets
     const result = new Uint8Array(length);
 
-    if (address >= 0x1000 && address < 0x2000) {
-      // OPI region
-      for (let i = 0; i < length && address + i < 0x2000; i++) {
-        result[i] = (this.coreGetOpi?.(address - 0x1000 + i) ?? 0) & 0xff;
+    for (let i = 0; i < length; i++) {
+      const addr = address + i;
+      let byte = 0;
+
+      if (addr < 0x1000) {
+        // IPI region (0x0000-0x0FFF)
+        byte = (this.ipiRead8?.(addr) ?? 0) & 0xff;
+      } else if (addr < 0x2000) {
+        // OPI region (0x1000-0x1FFF)
+        byte = (this.opiRead8?.(addr - 0x1000) ?? 0) & 0xff;
+      } else if (addr < 0x4000) {
+        // WORK region (0x2000-0x3FFF) — read via HEAPU8 + region pointer
+        byte = this.readRegionByte(0x2000, addr - 0x2000);
+      } else if (addr < 0x5000) {
+        // RETAIN region (0x4000-0x4FFF) — read via HEAPU8 + region pointer
+        byte = this.readRegionByte(0x4000, addr - 0x4000);
       }
+      // addr >= 0x5000 is CODE region — read-only, could add later
+
+      result[i] = byte;
     }
 
     return result;
   }
 
+  /**
+   * Read a single byte from a memory region using HEAPU8 + zplc_mem_get_region.
+   * The C function returns a pointer into WASM linear memory.
+   */
+  private readRegionByte(base: number, offset: number): number {
+    if (!this.module || !this.memGetRegion) return 0;
+
+    const regionPtr = this.memGetRegion(base);
+    if (regionPtr === 0) return 0;
+
+    return this.module.HEAPU8[regionPtr + offset] ?? 0;
+  }
+
+  /**
+   * Write a single byte to a memory region using HEAPU8 + zplc_mem_get_region.
+   */
+  private writeRegionByte(base: number, offset: number, value: number): void {
+    if (!this.module || !this.memGetRegion) return;
+
+    const regionPtr = this.memGetRegion(base);
+    if (regionPtr === 0) return;
+
+    this.module.HEAPU8[regionPtr + offset] = value & 0xff;
+  }
+
+  /**
+   * Write to any writable memory region.
+   * Supports IPI (typed 8/16/32-bit), WORK, and RETAIN.
+   */
   async poke(address: number, value: number): Promise<void> {
     if (!this._connected) {
       throw new Error('Not connected');
     }
 
-    // Can only write to IPI region
     if (address >= 0 && address < 0x1000) {
-      this.coreSetIpi?.(address, value & 0xff);
+      // IPI — use typed 8-bit write
+      this.ipiWrite8?.(address, value & 0xff);
+    } else if (address >= 0x2000 && address < 0x4000) {
+      // WORK region — direct HEAPU8 write
+      this.writeRegionByte(0x2000, address - 0x2000, value);
+    } else if (address >= 0x4000 && address < 0x5000) {
+      // RETAIN region — direct HEAPU8 write
+      this.writeRegionByte(0x4000, address - 0x4000, value);
     } else {
-      throw new Error('Can only write to IPI region (0x0000-0x0FFF)');
+      throw new Error(
+        `Cannot write to address 0x${address.toString(16)}: region not writable`
+      );
+    }
+  }
+
+  async pokeN(address: number, bytes: Uint8Array): Promise<void> {
+    if (!this._connected) {
+      throw new Error('Not connected');
+    }
+
+    for (let i = 0; i < bytes.length; i++) {
+      const addr = address + i;
+      const val = bytes[i];
+
+      if (addr >= 0 && addr < 0x1000) {
+        this.ipiWrite8?.(addr, val);
+      } else if (addr >= 0x2000 && addr < 0x4000) {
+        this.writeRegionByte(0x2000, addr - 0x2000, val);
+      } else if (addr >= 0x4000 && addr < 0x5000) {
+        this.writeRegionByte(0x4000, addr - 0x4000, val);
+      }
     }
   }
 
@@ -507,7 +626,7 @@ export class WASMAdapter implements IDebugAdapter {
   }
 
   // =========================================================================
-  // Breakpoint Management
+  // Breakpoint Management — delegated to C VM for proper instruction checking
   // =========================================================================
 
   async setBreakpoint(pc: number): Promise<boolean> {
@@ -515,12 +634,11 @@ export class WASMAdapter implements IDebugAdapter {
       throw new Error('Not connected');
     }
 
-    if (this.breakpoints.has(pc)) {
-      return false; // Already set
-    }
+    const vm = this.coreGetDefaultVm?.() ?? 0;
+    if (!vm) return false;
 
-    this.breakpoints.add(pc);
-    return true;
+    const result = this.vmAddBreakpoint?.(vm, pc) ?? -1;
+    return result === 0;
   }
 
   async removeBreakpoint(pc: number): Promise<boolean> {
@@ -528,19 +646,38 @@ export class WASMAdapter implements IDebugAdapter {
       throw new Error('Not connected');
     }
 
-    return this.breakpoints.delete(pc);
+    const vm = this.coreGetDefaultVm?.() ?? 0;
+    if (!vm) return false;
+
+    const result = this.vmRemoveBreakpoint?.(vm, pc) ?? -1;
+    return result === 0;
   }
 
   async clearBreakpoints(): Promise<void> {
-    this.breakpoints.clear();
+    const vm = this.coreGetDefaultVm?.() ?? 0;
+    if (vm) {
+      this.vmClearBreakpoints?.(vm);
+    }
   }
 
   async getBreakpoints(): Promise<number[]> {
-    return Array.from(this.breakpoints);
+    const vm = this.coreGetDefaultVm?.() ?? 0;
+    if (!vm) return [];
+
+    const count = this.vmGetBreakpointCount?.(vm) ?? 0;
+    const breakpoints: number[] = [];
+    for (let i = 0; i < count; i++) {
+      const pc = this.vmGetBreakpoint?.(vm, i) ?? 0xFFFF;
+      if (pc !== 0xFFFF) {
+        breakpoints.push(pc);
+      }
+    }
+    return breakpoints;
   }
 
   async hasBreakpoint(pc: number): Promise<boolean> {
-    return this.breakpoints.has(pc);
+    const breakpoints = await this.getBreakpoints();
+    return breakpoints.includes(pc);
   }
 
   // =========================================================================

@@ -244,6 +244,14 @@ int zplc_sched_get_task(int task_id, zplc_task_t *task);
  */
 int zplc_sched_get_task_count(void);
 
+/**
+ * @brief Get pointer to the VM instance for a task.
+ *
+ * @param task_id Task handle
+ * @return Pointer to VM instance, or NULL if task not found
+ */
+zplc_vm_t* zplc_sched_get_vm_ptr(int task_id);
+
 /* ============================================================================
  * Memory Synchronization
  * ============================================================================ */

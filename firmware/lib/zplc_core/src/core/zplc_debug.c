@@ -280,6 +280,18 @@ void hil_trace_error(uint8_t code, const char *msg, uint16_t pc)
     hil_output();
 }
 
+void hil_trace_break(uint16_t pc)
+{
+    /* Breakpoints are always output regardless of mode */
+    if (hil_shell == NULL) {
+        return;
+    }
+
+    snprintf(hil_buf, sizeof(hil_buf),
+             "{\"t\":\"break\",\"pc\":%u}", pc);
+    hil_output();
+}
+
 void hil_trace_watch(uint16_t addr, const char *type, int32_t val)
 {
     if (hil_mode == HIL_MODE_OFF || hil_shell == NULL) {

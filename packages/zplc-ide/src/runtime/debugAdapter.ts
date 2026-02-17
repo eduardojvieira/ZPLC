@@ -193,6 +193,13 @@ export interface IDebugAdapter {
   poke(address: number, value: number): Promise<void>;
 
   /**
+   * Write multiple bytes to VM memory.
+   * @param address Starting memory address
+   * @param bytes Raw bytes to write (in order, little-endian)
+   */
+  pokeN(address: number, bytes: Uint8Array): Promise<void>;
+
+  /**
    * Get a single OPI byte value
    * @param offset Byte offset within OPI (0-4095)
    */

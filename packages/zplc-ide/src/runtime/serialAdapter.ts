@@ -529,21 +529,98 @@ export class SerialAdapter implements IDebugAdapter {
   // Memory Access
   // =========================================================================
 
+  /**
+   * Send a command and capture ALL output lines before the OK/ERROR terminator.
+   * Unlike sendCommand which only returns the terminator line, this returns
+   * all intermediate output lines as well.
+   */
+  private async sendCommandWithOutput(command: string): Promise<{ lines: string[]; status: string }> {
+    if (!this.connection?.isConnected) {
+      throw new Error('Connection closed');
+    }
+
+    const encoder = new TextEncoder();
+    const LINE_ENDING = '\r\n';
+    const COMMAND_TIMEOUT_MS = 3000;
+    // eslint-disable-next-line no-control-regex
+    const ansiRegex = /\x1b\[[0-9;]*[a-zA-Z]/g;
+
+    // Clear buffer before sending
+    this.connection._rxBuffer = '';
+
+    const data = encoder.encode(command + LINE_ENDING);
+    await this.connection.writer.write(data);
+
+    const outputLines: string[] = [];
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < COMMAND_TIMEOUT_MS) {
+      const lines = this.connection._rxBuffer.split(/\r?\n/);
+
+      for (let i = 0; i < lines.length; i++) {
+        const cleanLine = lines[i].replace(ansiRegex, '').trim();
+        if (!cleanLine) continue;
+
+        if (
+          cleanLine.startsWith('OK:') ||
+          cleanLine.startsWith('ERROR:') ||
+          cleanLine.startsWith('WARN:')
+        ) {
+          // Collect all non-empty lines before the terminator
+          for (let j = 0; j < i; j++) {
+            const cl = lines[j].replace(ansiRegex, '').trim();
+            if (cl && !cl.startsWith('uart:~$') && cl !== command) {
+              outputLines.push(cl);
+            }
+          }
+          // Remove processed lines from buffer
+          this.connection._rxBuffer = lines.slice(i + 1).join('\n');
+          return { lines: outputLines, status: cleanLine };
+        }
+      }
+
+      await new Promise((r) => setTimeout(r, 50));
+    }
+
+    throw new Error(`Command timeout: ${command}`);
+  }
+
   async peek(address: number, length: number): Promise<Uint8Array> {
     if (!this._connected) {
       throw new Error('Not connected');
     }
 
-    const response = await this.sendDebugCommand(`peek 0x${address.toString(16)} ${length}`);
-    if (response.startsWith('ERROR:')) {
-      throw new Error(response);
+    const { lines, status } = await this.sendCommandWithOutput(
+      `zplc dbg peek 0x${address.toString(16)} ${length}`
+    );
+
+    if (status.startsWith('ERROR:')) {
+      throw new Error(status);
     }
 
-    // Parse hex response
-    // Response format: "Memory at 0xXXXX (Y bytes):"
-    // Then lines like: "XXXX: AA BB CC DD ..."
-    // For now, return empty array - full parsing would require multi-line reads
-    return new Uint8Array(length);
+    // Parse hex dump lines:
+    //   "Memory at 0xXXXX (Y bytes):"   <- header
+    //   "XXXX: AA BB CC DD EE FF ..."     <- data rows
+    const result = new Uint8Array(length);
+    let byteIndex = 0;
+
+    for (const line of lines) {
+      // Skip header line
+      if (line.startsWith('Memory at')) continue;
+
+      // Match hex data lines: "XXXX: AA BB CC DD ..."
+      const match = line.match(/^[0-9A-Fa-f]+:\s+((?:[0-9A-Fa-f]{2}\s*)+)/);
+      if (!match) continue;
+
+      const hexBytes = match[1].trim().split(/\s+/);
+      for (const hexByte of hexBytes) {
+        if (byteIndex < length) {
+          result[byteIndex++] = parseInt(hexByte, 16);
+        }
+      }
+    }
+
+    return result;
   }
 
   async poke(address: number, value: number): Promise<void> {
@@ -554,6 +631,17 @@ export class SerialAdapter implements IDebugAdapter {
     const response = await this.sendDebugCommand(`poke 0x${address.toString(16)} ${value}`);
     if (response.startsWith('ERROR:')) {
       throw new Error(response);
+    }
+  }
+
+  async pokeN(address: number, bytes: Uint8Array): Promise<void> {
+    if (!this._connected) {
+      throw new Error('Not connected');
+    }
+
+    // Since we don't have a bulk poke command yet, send individual bytes
+    for (let i = 0; i < bytes.length; i++) {
+      await this.poke(address + i, bytes[i]);
     }
   }
 

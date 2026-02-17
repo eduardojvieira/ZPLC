@@ -896,6 +896,16 @@ int zplc_sched_get_task(int task_id, zplc_task_t *task) {
 
 int zplc_sched_get_task_count(void) { return task_count; }
 
+zplc_vm_t* zplc_sched_get_vm_ptr(int task_id) {
+  if (task_id < 0 || task_id >= CONFIG_ZPLC_MAX_TASKS) {
+    return NULL;
+  }
+  if (!tasks[task_id].registered) {
+    return NULL;
+  }
+  return &tasks[task_id].vm;
+}
+
 int zplc_sched_lock(int timeout_ms) {
   k_timeout_t timeout;
 

@@ -1172,13 +1172,20 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     if (!debug.debugMap) return pcs;
     
     // For each file's breakpoints, look up the PC from the debug map
-    for (const [_fileId, lineNumbers] of debug.breakpoints) {
+    for (const [fileId, lineNumbers] of debug.breakpoints) {
+      // Heuristic: map fileId to POU name by taking the filename without extension
+      const fileName = fileId.split('/').pop() || fileId;
+      const pouNameFromPath = fileName.replace(/\.[^.]+$/, '');
+      
       for (const line of lineNumbers) {
-        // Search all POUs for this line
-        for (const [_pouName, pouInfo] of Object.entries(debug.debugMap.pou)) {
-          const mapping = pouInfo.sourceMap.find(m => m.line === line);
-          if (mapping) {
-            pcs.push(mapping.pc);
+        // Search for the POU that matches this file
+        for (const [pouName, pouInfo] of Object.entries(debug.debugMap.pou)) {
+          // Check if POU name matches the file name (case-insensitive)
+          if (pouName.toLowerCase() === pouNameFromPath.toLowerCase()) {
+            const mapping = pouInfo.sourceMap.find(m => m.line === line);
+            if (mapping) {
+              pcs.push(mapping.pc);
+            }
           }
         }
       }
