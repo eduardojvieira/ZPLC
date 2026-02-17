@@ -163,6 +163,17 @@ void hil_trace_cycle(uint32_t n, uint32_t us, uint8_t tasks);
 void hil_trace_error(uint8_t code, const char *msg, uint16_t pc);
 
 /**
+ * @brief Trace a breakpoint hit.
+ *
+ * Emits: {"t":"break","pc":42}
+ *
+ * Always outputs regardless of mode (breakpoint events are critical).
+ *
+ * @param pc Program counter where the breakpoint was hit
+ */
+void hil_trace_break(uint16_t pc);
+
+/**
  * @brief Trace a watched variable change.
  *
  * Emits: {"t":"watch","addr":8192,"type":"i32","val":42}
@@ -240,6 +251,7 @@ const char *hil_error_name(uint8_t code);
 #define hil_trace_task(id, start, end, us, ovr)            ((void)0)
 #define hil_trace_cycle(n, us, tasks)                      ((void)0)
 #define hil_trace_error(code, msg, pc)                     ((void)0)
+#define hil_trace_break(pc)                                ((void)0)
 #define hil_trace_watch(addr, type, val)                   ((void)0)
 #define hil_send_ready(fw, caps)                           ((void)0)
 #define hil_send_ack(cmd, val, ok, err)                    ((void)0)

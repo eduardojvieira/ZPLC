@@ -7,6 +7,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { valueToBytes } from '../runtime/debugAdapter';
 import type { IDebugAdapter, WatchVariable, VMInfo, VMState } from '../runtime/debugAdapter';
 
 /**
@@ -193,7 +194,8 @@ export const WatchWindow: React.FC<WatchWindowProps> = ({
       }
 
       try {
-        await adapter.poke(variable.address, value);
+        const bytes = valueToBytes(value, variable.type);
+        await adapter.pokeN(variable.address, bytes);
         onForceValue?.(variable, value);
         setEditingVar(null);
         setEditValue('');

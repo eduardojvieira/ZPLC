@@ -14,7 +14,14 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useIDEStore, type LiveValue } from '../store/useIDEStore';
-import type { IDebugAdapter, VMState, VMInfo, DebugAdapterEvents } from '../runtime/debugAdapter';
+import type {
+  IDebugAdapter,
+  VMState,
+  VMInfo,
+  DebugAdapterEvents,
+  WatchVariable,
+} from '../runtime/debugAdapter';
+import { valueToBytes } from '../runtime/debugAdapter';
 import { WASMAdapter } from '../runtime/wasmAdapter';
 import { connectionManager } from '../runtime/connectionManager';
 import type { DebugMap } from '../compiler';
@@ -58,7 +65,11 @@ export interface DebugControllerActions {
   /** Reset VM */
   reset: () => Promise<void>;
   /** Force a value in IPI */
-  forceValue: (address: number, value: number) => Promise<void>;
+  forceValue: (
+    address: number,
+    value: number | boolean | string,
+    type: WatchVariable['type']
+  ) => Promise<void>;
   /** Set virtual input (WASM only) */
   setVirtualInput: (channel: number, value: number) => Promise<void>;
   /** Get virtual output (WASM only) */
@@ -387,10 +398,18 @@ export function useDebugController(): DebugController {
   // Memory Access
   // =========================================================================
 
-  const forceValue = useCallback(async (address: number, value: number) => {
-    if (!adapterRef.current) return;
-    await adapterRef.current.poke(address, value);
-  }, []);
+  const forceValue = useCallback(
+    async (
+      address: number,
+      value: number | boolean | string,
+      type: WatchVariable['type']
+    ) => {
+      if (!adapterRef.current) return;
+      const bytes = valueToBytes(value, type);
+      await adapterRef.current.pokeN(address, bytes);
+    },
+    []
+  );
 
   const setVirtualInput = useCallback(async (channel: number, value: number) => {
     if (!adapterRef.current) return;

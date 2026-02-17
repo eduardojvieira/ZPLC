@@ -578,6 +578,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
     if (vm->breakpoints[bp_idx] == vm->pc) {
       vm->paused = 1;
       vm->error = ZPLC_VM_PAUSED;
+      hil_trace_break(vm->pc);
       return ZPLC_VM_PAUSED;
     }
   }
@@ -604,6 +605,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
     /* Debugger breakpoint - pause execution */
     vm->paused = 1;
     vm->error = ZPLC_VM_PAUSED;
+    hil_trace_break(vm->pc);
     vm->pc++; /* Advance past BREAK so resume continues */
     return ZPLC_VM_PAUSED;
 

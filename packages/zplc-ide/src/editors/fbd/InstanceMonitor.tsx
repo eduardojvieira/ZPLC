@@ -119,20 +119,20 @@ export function InstanceMonitor({
   // Auto-add to watch list on mount
   useEffect(() => {
     allPaths.forEach((path) => addWatchVariable(path));
-  }, []);
+  }, [allPaths, addWatchVariable]);
   
   // Build port values with live data
   const inputValues: PortValue[] = ports.inputs.map((port) => ({
     name: port.name,
     type: port.type,
-    value: liveValues.get(`${instanceName}.${port.name}`),
+    value: liveValues.get(`${instanceName}.${port.name}`)?.value,
     direction: 'input' as const,
   }));
   
   const outputValues: PortValue[] = ports.outputs.map((port) => ({
     name: port.name,
     type: port.type,
-    value: liveValues.get(`${instanceName}.${port.name}`),
+    value: liveValues.get(`${instanceName}.${port.name}`)?.value,
     direction: 'output' as const,
   }));
 

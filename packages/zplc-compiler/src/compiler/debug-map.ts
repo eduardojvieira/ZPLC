@@ -331,9 +331,22 @@ function getRegionFromAddress(addr: number): MemoryRegion {
 }
 
 /**
- * Build variable info from a symbol table symbol.
+ * Interface for resolving FB/struct member types.
+ * This bridges the gap between Symbol (which only stores offsets)
+ * and FB/struct definitions (which store full type info).
  */
-function buildVarInfoFromSymbol(sym: Symbol): DebugVarInfo {
+export interface TypeResolver {
+    /** Get FB member info: returns { offset, size, dataType } or undefined */
+    getMemberInfo(typeName: string, memberName: string): { offset: number; size: number; dataType: string } | undefined;
+    /** Check if a type is an FB or struct */
+    isCompositeType(typeName: string): boolean;
+}
+
+/**
+ * Build variable info from a symbol table symbol.
+ * Uses optional TypeResolver to get real member types instead of defaulting to DINT.
+ */
+function buildVarInfoFromSymbol(sym: Symbol, typeResolver?: TypeResolver): DebugVarInfo {
     const varInfo: DebugVarInfo = {
         addr: sym.address,
         type: sym.dataType as DebugDataType,
@@ -344,13 +357,16 @@ function buildVarInfoFromSymbol(sym: Symbol): DebugVarInfo {
     // Add FB member children if present
     if (sym.members && sym.members.size > 0) {
         varInfo.children = {};
-        // We need to look up member types from the FB definition
-        // For now, we'll use generic info - can be enhanced with stdlib lookup
+        const typeName = sym.dataType as string;
+        
         for (const [memberName, offset] of sym.members) {
+            // Try to resolve real member type from FB/struct definition
+            const memberInfo = typeResolver?.getMemberInfo(typeName, memberName);
+            
             varInfo.children[memberName] = {
                 offset,
-                type: 'DINT', // Default - could be enhanced with stdlib lookup
-                size: 4,
+                type: (memberInfo?.dataType ?? 'DINT') as DebugDataType,
+                size: memberInfo?.size ?? 4,
             };
         }
     }
@@ -437,6 +453,8 @@ export interface BuildDebugMapOptions {
     };
     /** Code size */
     codeSize?: number;
+    /** Optional type resolver for FB/struct member types */
+    typeResolver?: TypeResolver;
 }
 
 /**
@@ -455,7 +473,7 @@ export interface BuildDebugMapOptions {
  * ```
  */
 export function buildDebugMap(options: BuildDebugMapOptions): DebugMap {
-    const { programName, symbols, instructionMappings = [], stringPool, codeSize = 0 } = options;
+    const { programName, symbols, instructionMappings = [], stringPool, codeSize = 0, typeResolver } = options;
     
     const map = createDebugMap(programName);
     
@@ -470,7 +488,7 @@ export function buildDebugMap(options: BuildDebugMapOptions): DebugMap {
     
     // Add variables from symbol table
     for (const sym of symbols.all()) {
-        pouInfo.vars[sym.name] = buildVarInfoFromSymbol(sym);
+        pouInfo.vars[sym.name] = buildVarInfoFromSymbol(sym, typeResolver);
     }
     
     // Build breakpoint locations from source map

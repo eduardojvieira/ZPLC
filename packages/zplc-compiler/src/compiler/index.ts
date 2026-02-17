@@ -106,6 +106,7 @@ export type {
     DebugPOUInfo,
     DebugMap,
     BuildDebugMapOptions,
+    TypeResolver,
 } from './debug-map.ts';
 
 // =============================================================================
@@ -116,9 +117,11 @@ import { generate, WORK_MEMORY_REGION_SIZE } from './codegen.ts';
 import type { CodeGenOptions } from './codegen.ts';
 import { assemble, createMultiTaskZplcFile, relocateBytecode, TASK_TYPE } from '../assembler/index.ts';
 import type { AssemblyResult, TaskDef, TaskType } from '../assembler/index.ts';
-import type { DebugMap } from './debug-map.ts';
+import type { DebugMap, TypeResolver } from './debug-map.ts';
 import { buildDebugMap } from './debug-map.ts';
 import { buildSymbolTable, MemoryLayout } from './symbol-table.ts';
+import { getFB } from './stdlib/index.ts';
+import type { DataTypeValue } from './ast.ts';
 
 // =============================================================================
 // Error types
@@ -233,6 +236,66 @@ export function compileST(source: string, options?: CodeGenOptions): string {
  * console.log(debugResult.debugMap);
  * ```
  */
+/**
+ * Create a TypeResolver from a SymbolTable.
+ * Bridges user-defined FBs/structs and stdlib FBs into the debug-map's TypeResolver interface.
+ */
+function createTypeResolver(symbols: import('./symbol-table.ts').SymbolTable): TypeResolver {
+    return {
+        getMemberInfo(typeName: string, memberName: string): { offset: number; size: number; dataType: string } | undefined {
+            // 1. Check user-defined FBs
+            const fbDef = symbols.getFBDefinition(typeName);
+            if (fbDef) {
+                const member = fbDef.members.get(memberName);
+                if (member) {
+                    return {
+                        offset: member.offset,
+                        size: member.size,
+                        dataType: typeof member.dataType === 'string' ? member.dataType : 'DINT',
+                    };
+                }
+            }
+
+            // 2. Check user-defined structs
+            const structDef = symbols.getStructDefinition(typeName);
+            if (structDef) {
+                const member = structDef.members.get(memberName);
+                if (member) {
+                    return {
+                        offset: member.offset,
+                        size: member.size,
+                        dataType: typeof member.dataType === 'string' ? member.dataType : 'DINT',
+                    };
+                }
+            }
+
+            // 3. Check stdlib FBs
+            const stdFB = getFB(typeName as DataTypeValue);
+            if (stdFB) {
+                const member = stdFB.members.find(m => m.name === memberName);
+                if (member) {
+                    const dt: string = typeof member.dataType === 'string'
+                        ? member.dataType
+                        : (member.size === 1 ? 'BOOL' : member.size === 2 ? 'INT' : 'DINT');
+                    return {
+                        offset: member.offset,
+                        size: member.size,
+                        dataType: dt,
+                    };
+                }
+            }
+
+            return undefined;
+        },
+
+        isCompositeType(typeName: string) {
+            return !!symbols.getFBDefinition(typeName)
+                || !!symbols.getStructDefinition(typeName)
+                || !!getFB(typeName as DataTypeValue);
+        },
+    };
+}
+
 export function compileToBinary(source: string, options?: CompileOptions): CompilationResult {
     const ast = parse(source);
 
@@ -279,6 +342,7 @@ export function compileToBinary(source: string, options?: CompileOptions): Compi
             symbols,
             instructionMappings: asmResult.instructionMappings,
             codeSize: asmResult.codeSize,
+            typeResolver: createTypeResolver(symbols),
         });
     }
 
