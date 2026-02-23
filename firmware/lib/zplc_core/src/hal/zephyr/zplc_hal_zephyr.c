@@ -24,6 +24,13 @@
 #include <zephyr/settings/settings.h>
 #endif
 
+#ifdef CONFIG_NETWORKING
+#include <zephyr/net/socket.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_core.h>
+#endif
+
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -818,11 +825,19 @@ zplc_hal_result_t zplc_hal_net_init(void) {
 
 zplc_hal_result_t zplc_hal_net_get_ip(char *buf, size_t len) {
 #ifdef CONFIG_NETWORKING
-  /* TODO: Implement reading IP address using Zephyr net_if API */
-  if (buf && len > 0) {
-    strncpy(buf, "0.0.0.0", len);
-    buf[len - 1] = '\0';
+  struct net_if *iface = net_if_get_default();
+  if (!iface) {
+    if (buf && len > 0) buf[0] = '\0';
+    return ZPLC_HAL_ERROR;
   }
+  
+  struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
+  if (!ipv4 || net_ipv4_is_addr_unspecified(&ipv4->unicast[0].ipv4.address.in_addr)) {
+    if (buf && len > 0) buf[0] = '\0';
+    return ZPLC_HAL_ERROR;
+  }
+  
+  net_addr_ntop(AF_INET, &ipv4->unicast[0].ipv4.address.in_addr, buf, len);
   return ZPLC_HAL_OK;
 #else
   if (buf && len > 0) {
@@ -833,45 +848,99 @@ zplc_hal_result_t zplc_hal_net_get_ip(char *buf, size_t len) {
 }
 
 zplc_hal_result_t zplc_hal_dns_resolve(const char *hostname, char *ip_buf, size_t len) {
-#ifdef CONFIG_NET_SOCKETS_POSIX_NAMES
-  /* TODO: Implement using Zephyr zsock_getaddrinfo */
-  return ZPLC_HAL_NOT_IMPL;
+#ifdef CONFIG_NETWORKING
+  struct zsock_addrinfo hints = {0};
+  hints.ai_family = AF_INET;
+  hints.ai_socktype = SOCK_STREAM;
+  
+  struct zsock_addrinfo *res;
+  int ret = zsock_getaddrinfo(hostname, NULL, &hints, &res);
+  if (ret != 0) {
+    return ZPLC_HAL_ERROR;
+  }
+  
+  struct sockaddr_in *addr = (struct sockaddr_in *)res->ai_addr;
+  zsock_inet_ntop(AF_INET, &addr->sin_addr, ip_buf, len);
+  
+  zsock_freeaddrinfo(res);
+  return ZPLC_HAL_OK;
 #else
   return ZPLC_HAL_NOT_IMPL;
 #endif
 }
 
 zplc_hal_socket_t zplc_hal_socket_connect(const char *host, uint16_t port) {
+#ifdef CONFIG_NETWORKING
+  struct zsock_addrinfo hints = {0};
+  hints.ai_family = AF_INET;
+  hints.ai_socktype = SOCK_STREAM;
+  
+  char port_str[8];
+  snprintf(port_str, sizeof(port_str), "%u", port);
+  
+  struct zsock_addrinfo *res;
+  if (zsock_getaddrinfo(host, port_str, &hints, &res) != 0) {
+    return NULL;
+  }
+  
+  int sock = zsock_socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+  if (sock < 0) {
+    zsock_freeaddrinfo(res);
+    return NULL;
+  }
+  
+  if (zsock_connect(sock, res->ai_addr, res->ai_addrlen) < 0) {
+    zsock_close(sock);
+    zsock_freeaddrinfo(res);
+    return NULL;
+  }
+  
+  zsock_freeaddrinfo(res);
+  return (zplc_hal_socket_t)(intptr_t)sock;
+#else
   (void)host;
   (void)port;
-
-  /* TODO Phase 4:
-   * Use Zephyr BSD sockets (CONFIG_NET_SOCKETS)
-   */
   return NULL;
+#endif
 }
 
-int32_t zplc_hal_socket_send(zplc_hal_socket_t sock, const void *data,
-                             size_t len) {
-  (void)sock;
+int32_t zplc_hal_socket_send(zplc_hal_socket_t sock_handle, const void *data, size_t len) {
+#ifdef CONFIG_NETWORKING
+  int sock = (int)(intptr_t)sock_handle;
+  ssize_t ret = zsock_send(sock, data, len, 0);
+  if (ret < 0) return ZPLC_HAL_ERROR;
+  return (int32_t)ret;
+#else
+  (void)sock_handle;
   (void)data;
   (void)len;
-
   return ZPLC_HAL_NOT_IMPL;
+#endif
 }
 
-int32_t zplc_hal_socket_recv(zplc_hal_socket_t sock, void *buf, size_t len) {
-  (void)sock;
+int32_t zplc_hal_socket_recv(zplc_hal_socket_t sock_handle, void *buf, size_t len) {
+#ifdef CONFIG_NETWORKING
+  int sock = (int)(intptr_t)sock_handle;
+  ssize_t ret = zsock_recv(sock, buf, len, 0);
+  if (ret < 0) return ZPLC_HAL_ERROR;
+  return (int32_t)ret;
+#else
+  (void)sock_handle;
   (void)buf;
   (void)len;
-
   return ZPLC_HAL_NOT_IMPL;
+#endif
 }
 
-zplc_hal_result_t zplc_hal_socket_close(zplc_hal_socket_t sock) {
-  (void)sock;
-
+zplc_hal_result_t zplc_hal_socket_close(zplc_hal_socket_t sock_handle) {
+#ifdef CONFIG_NETWORKING
+  int sock = (int)(intptr_t)sock_handle;
+  zsock_close(sock);
+  return ZPLC_HAL_OK;
+#else
+  (void)sock_handle;
   return ZPLC_HAL_NOT_IMPL;
+#endif
 }
 
 /* ============================================================================
