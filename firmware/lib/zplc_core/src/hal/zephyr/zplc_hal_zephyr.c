@@ -772,9 +772,74 @@ zplc_hal_result_t zplc_hal_persist_delete(const char *key) {
 #endif /* CONFIG_SETTINGS */
 
 /* ============================================================================
- * Network Functions (Stubs for Phase 4)
+ * Synchronization Functions
  * ============================================================================
  */
+
+zplc_hal_mutex_t zplc_hal_mutex_create(void) {
+  struct k_mutex *mutex = k_malloc(sizeof(struct k_mutex));
+  if (mutex != NULL) {
+    k_mutex_init(mutex);
+  }
+  return (zplc_hal_mutex_t)mutex;
+}
+
+zplc_hal_result_t zplc_hal_mutex_lock(zplc_hal_mutex_t mutex) {
+  if (mutex == NULL) {
+    return ZPLC_HAL_ERROR;
+  }
+  if (k_mutex_lock((struct k_mutex *)mutex, K_FOREVER) == 0) {
+    return ZPLC_HAL_OK;
+  }
+  return ZPLC_HAL_ERROR;
+}
+
+zplc_hal_result_t zplc_hal_mutex_unlock(zplc_hal_mutex_t mutex) {
+  if (mutex == NULL) {
+    return ZPLC_HAL_ERROR;
+  }
+  k_mutex_unlock((struct k_mutex *)mutex);
+  return ZPLC_HAL_OK;
+}
+
+/* ============================================================================
+ * Network Functions (Phase 1.4.1+)
+ * ============================================================================
+ */
+
+zplc_hal_result_t zplc_hal_net_init(void) {
+#ifdef CONFIG_NETWORKING
+  /* Zephyr initializes networking automatically. Just check if it's up. */
+  return ZPLC_HAL_OK;
+#else
+  return ZPLC_HAL_NOT_IMPL;
+#endif
+}
+
+zplc_hal_result_t zplc_hal_net_get_ip(char *buf, size_t len) {
+#ifdef CONFIG_NETWORKING
+  /* TODO: Implement reading IP address using Zephyr net_if API */
+  if (buf && len > 0) {
+    strncpy(buf, "0.0.0.0", len);
+    buf[len - 1] = '\0';
+  }
+  return ZPLC_HAL_OK;
+#else
+  if (buf && len > 0) {
+    buf[0] = '\0';
+  }
+  return ZPLC_HAL_NOT_IMPL;
+#endif
+}
+
+zplc_hal_result_t zplc_hal_dns_resolve(const char *hostname, char *ip_buf, size_t len) {
+#ifdef CONFIG_NET_SOCKETS_POSIX_NAMES
+  /* TODO: Implement using Zephyr zsock_getaddrinfo */
+  return ZPLC_HAL_NOT_IMPL;
+#else
+  return ZPLC_HAL_NOT_IMPL;
+#endif
+}
 
 zplc_hal_socket_t zplc_hal_socket_connect(const char *host, uint16_t port) {
   (void)host;

@@ -346,8 +346,48 @@ zplc_hal_result_t zplc_hal_persist_delete(const char *key)
 }
 
 /* ============================================================================
+ * Synchronization Functions
+ * ============================================================================ */
+
+zplc_hal_mutex_t zplc_hal_mutex_create(void)
+{
+    /* Single-threaded desktop/test environment: Mutexes not strictly required, 
+       but could be implemented with pthread_mutex_t if needed. */
+    return (zplc_hal_mutex_t)1; /* Dummy handle */
+}
+
+zplc_hal_result_t zplc_hal_mutex_lock(zplc_hal_mutex_t mutex)
+{
+    (void)mutex;
+    return ZPLC_HAL_OK;
+}
+
+zplc_hal_result_t zplc_hal_mutex_unlock(zplc_hal_mutex_t mutex)
+{
+    (void)mutex;
+    return ZPLC_HAL_OK;
+}
+
+/* ============================================================================
  * Network Functions (Stubs for Phase 0)
  * ============================================================================ */
+
+zplc_hal_result_t zplc_hal_net_init(void)
+{
+    return ZPLC_HAL_NOT_IMPL;
+}
+
+zplc_hal_result_t zplc_hal_net_get_ip(char *buf, size_t len)
+{
+    if (buf && len > 0) buf[0] = '\0';
+    return ZPLC_HAL_NOT_IMPL;
+}
+
+zplc_hal_result_t zplc_hal_dns_resolve(const char *hostname, char *ip_buf, size_t len)
+{
+    if (ip_buf && len > 0) ip_buf[0] = '\0';
+    return ZPLC_HAL_NOT_IMPL;
+}
 
 zplc_hal_socket_t zplc_hal_socket_connect(const char *host, uint16_t port)
 {

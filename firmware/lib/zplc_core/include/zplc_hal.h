@@ -172,11 +172,67 @@ zplc_hal_result_t zplc_hal_persist_load(const char *key,
 zplc_hal_result_t zplc_hal_persist_delete(const char *key);
 
 /* ============================================================================
- * Network Functions (Phase 4+)
+ * Network Functions (Phase 1.4.1+)
  * ============================================================================ */
+
+/**
+ * @brief Initialize the networking stack.
+ *
+ * @return ZPLC_HAL_OK on success, error code otherwise.
+ */
+zplc_hal_result_t zplc_hal_net_init(void);
+
+/**
+ * @brief Get the current IP address of the device.
+ *
+ * @param buf Buffer to store the IP address string (e.g., "192.168.1.100")
+ * @param len Maximum length of the buffer
+ * @return ZPLC_HAL_OK on success, error code otherwise.
+ */
+zplc_hal_result_t zplc_hal_net_get_ip(char *buf, size_t len);
+
+/**
+ * @brief Resolve a hostname to an IP address.
+ *
+ * @param hostname Hostname string to resolve
+ * @param ip_buf Buffer to store the resolved IP address string
+ * @param len Maximum length of the IP buffer
+ * @return ZPLC_HAL_OK on success, error code otherwise.
+ */
+zplc_hal_result_t zplc_hal_dns_resolve(const char *hostname, char *ip_buf, size_t len);
 
 /** @brief Opaque socket handle */
 typedef void* zplc_hal_socket_t;
+
+/* ============================================================================
+ * Synchronization Functions (Phase 1.4.1+)
+ * ============================================================================ */
+
+/** @brief Opaque mutex handle */
+typedef void* zplc_hal_mutex_t;
+
+/**
+ * @brief Create a new mutex.
+ *
+ * @return Mutex handle on success, NULL on failure.
+ */
+zplc_hal_mutex_t zplc_hal_mutex_create(void);
+
+/**
+ * @brief Lock a mutex. Blocks until available.
+ *
+ * @param mutex Mutex handle.
+ * @return ZPLC_HAL_OK on success, error code otherwise.
+ */
+zplc_hal_result_t zplc_hal_mutex_lock(zplc_hal_mutex_t mutex);
+
+/**
+ * @brief Unlock a mutex.
+ *
+ * @param mutex Mutex handle.
+ * @return ZPLC_HAL_OK on success, error code otherwise.
+ */
+zplc_hal_result_t zplc_hal_mutex_unlock(zplc_hal_mutex_t mutex);
 
 /**
  * @brief Create a TCP socket and connect to a remote host.

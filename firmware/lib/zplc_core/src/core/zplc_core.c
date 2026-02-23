@@ -58,6 +58,9 @@ static uint8_t mem_code[ZPLC_MEM_CODE_SIZE];
 /** @brief Loaded code size (for bounds checking) */
 static uint32_t code_size = 0;
 
+/** @brief Process Image Mutex for thread-safe access */
+static zplc_hal_mutex_t pi_mutex = NULL;
+
 /** @brief Default VM instance for legacy API */
 static zplc_vm_t default_vm;
 
@@ -428,6 +431,24 @@ uint8_t zplc_opi_read8(uint16_t offset) {
     return 0;
   }
   return mem_opi[offset];
+}
+
+/* ============================================================================
+ * Thread-Safe Process Image Access
+ * ============================================================================
+ */
+
+int zplc_pi_lock(void) {
+  if (pi_mutex == NULL) {
+    return ZPLC_HAL_ERROR;
+  }
+  return (int)zplc_hal_mutex_lock(pi_mutex);
+}
+
+void zplc_pi_unlock(void) {
+  if (pi_mutex != NULL) {
+    zplc_hal_mutex_unlock(pi_mutex);
+  }
 }
 
 /* ============================================================================
@@ -1775,6 +1796,11 @@ const char *zplc_core_version(void) {
 int zplc_core_init(void) {
   /* Initialize shared memory */
   zplc_mem_init();
+
+  /* Create PI Mutex */
+  if (pi_mutex == NULL) {
+    pi_mutex = zplc_hal_mutex_create();
+  }
 
   /* Initialize default VM */
   zplc_vm_init(&default_vm);
