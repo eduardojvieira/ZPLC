@@ -749,7 +749,7 @@ export class SerialAdapter implements IDebugAdapter {
     const result: WatchVariable[] = [];
 
     for (const v of variables) {
-      const size = getTypeSize(v.type);
+      const size = getTypeSize(v.type, v.maxLength);
       const bytes = await this.peek(v.address, size);
       const value = bytesToValue(bytes, v.type);
 
@@ -794,10 +794,6 @@ export class SerialAdapter implements IDebugAdapter {
 
   /**
    * Set a breakpoint at a specific program counter address.
-   * 
-   * Note: Hardware breakpoint commands (`zplc dbg bp add <pc>`) are not yet
-   * implemented in the Zephyr shell. This method stores breakpoints locally
-   * and will sync to hardware when the commands become available.
    */
   async setBreakpoint(pc: number): Promise<boolean> {
     if (!this._connected) {
@@ -808,15 +804,16 @@ export class SerialAdapter implements IDebugAdapter {
       return false; // Already set
     }
 
-    // Try to send to hardware (will fail gracefully if not supported)
+    // Send to hardware
     try {
       const response = await this.sendDebugCommand(`bp add 0x${pc.toString(16)}`);
       if (response.startsWith('ERROR:')) {
-        // Command not supported - store locally only
-        console.warn('Hardware breakpoints not supported, storing locally');
+        console.warn('Hardware breakpoint error:', response);
+        return false;
       }
-    } catch {
-      // Command timeout or not supported - store locally
+    } catch (e) {
+      console.warn('Command timeout or not supported:', e);
+      return false;
     }
 
     this.breakpoints.add(pc);
@@ -835,11 +832,11 @@ export class SerialAdapter implements IDebugAdapter {
       return false;
     }
 
-    // Try to send to hardware
+    // Send to hardware
     try {
       await this.sendDebugCommand(`bp remove 0x${pc.toString(16)}`);
     } catch {
-      // Command not supported - just remove locally
+      // Ignore if not supported
     }
 
     return this.breakpoints.delete(pc);
@@ -853,11 +850,11 @@ export class SerialAdapter implements IDebugAdapter {
       throw new Error('Not connected');
     }
 
-    // Try to send to hardware
+    // Send to hardware
     try {
       await this.sendDebugCommand('bp clear');
     } catch {
-      // Command not supported
+      // Ignore if not supported
     }
 
     this.breakpoints.clear();

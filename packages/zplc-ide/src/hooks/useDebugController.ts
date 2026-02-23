@@ -68,7 +68,8 @@ export interface DebugControllerActions {
   forceValue: (
     address: number,
     value: number | boolean | string,
-    type: WatchVariable['type']
+    type: WatchVariable['type'],
+    maxLength?: number
   ) => Promise<void>;
   /** Set virtual input (WASM only) */
   setVirtualInput: (channel: number, value: number) => Promise<void>;
@@ -402,10 +403,11 @@ export function useDebugController(): DebugController {
     async (
       address: number,
       value: number | boolean | string,
-      type: WatchVariable['type']
+      type: WatchVariable['type'],
+      maxLength?: number
     ) => {
       if (!adapterRef.current) return;
-      const bytes = valueToBytes(value, type);
+      const bytes = valueToBytes(value, type, maxLength);
       await adapterRef.current.pokeN(address, bytes);
     },
     []
@@ -466,6 +468,7 @@ export function useDebugController(): DebugController {
                     address: varInfo.addr,
                     type: mappedType,
                     forceable: varInfo.region === 'IPI',
+                    maxLength: mappedType === 'STRING' && varInfo.size ? Math.max(0, varInfo.size - 3) : undefined,
                   };
                 }
               }

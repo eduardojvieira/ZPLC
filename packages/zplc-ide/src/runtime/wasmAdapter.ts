@@ -583,7 +583,7 @@ export class WASMAdapter implements IDebugAdapter {
     const result: WatchVariable[] = [];
 
     for (const v of variables) {
-      const size = getTypeSize(v.type);
+      const size = getTypeSize(v.type, v.maxLength);
       const bytes = await this.peek(v.address, size);
       const value = bytesToValue(bytes, v.type);
 
