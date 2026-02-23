@@ -1071,14 +1071,12 @@ static int cmd_dbg_bp_add(const struct shell *sh, size_t argc, char **argv) {
 #endif
 
   if (!found) {
-    hil_send_ack("bp", "add", false, "no VM active");
+    shell_error(sh, "ERROR: no VM active");
   } else if (last_err == 0) {
-    char val[16];
-    snprintf(val, sizeof(val), "add:%u", pc);
-    hil_send_ack("bp", val, true, NULL);
+    shell_print(sh, "OK: Breakpoint added at 0x%04X", pc);
   } else {
     const char *err_msg = (last_err == -2) ? "table full" : "already exists";
-    hil_send_ack("bp", "add", false, err_msg);
+    shell_error(sh, "ERROR: %s", err_msg);
   }
   return 0;
 }
@@ -1111,13 +1109,11 @@ static int cmd_dbg_bp_remove(const struct shell *sh, size_t argc, char **argv) {
 #endif
 
   if (!found) {
-    hil_send_ack("bp", "remove", false, "no VM active");
+    shell_error(sh, "ERROR: no VM active");
   } else if (last_err == 0) {
-    char val[16];
-    snprintf(val, sizeof(val), "remove:%u", pc);
-    hil_send_ack("bp", val, true, NULL);
+    shell_print(sh, "OK: Breakpoint removed at 0x%04X", pc);
   } else {
-    hil_send_ack("bp", "remove", false, "not found");
+    shell_error(sh, "ERROR: not found");
   }
   return 0;
 }
@@ -1144,9 +1140,9 @@ static int cmd_dbg_bp_clear(const struct shell *sh, size_t argc, char **argv) {
 #endif
 
   if (!found) {
-    hil_send_ack("bp", "clear", false, "no VM active");
+    shell_error(sh, "ERROR: no VM active");
   } else {
-    hil_send_ack("bp", "clear", true, NULL);
+    shell_print(sh, "OK: Breakpoints cleared");
   }
   return 0;
 }
