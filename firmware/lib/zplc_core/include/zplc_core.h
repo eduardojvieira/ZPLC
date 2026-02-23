@@ -26,7 +26,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <zplc_isa.h>
+#include "zplc_isa.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -384,6 +384,31 @@ uint16_t zplc_opi_read16(uint16_t offset);
  * @return Value at offset, or 0 if out of bounds
  */
 uint8_t zplc_opi_read8(uint16_t offset);
+
+/* ============================================================================
+ * Thread-Safe Process Image Access (Phase 1.4.1+)
+ * ============================================================================
+ * 
+ * Used by secondary threads (e.g. Modbus, MQTT) to read/write memory
+ * without causing data races with the main PLC execution cycle.
+ */
+
+/**
+ * @brief Lock the Process Image.
+ *
+ * Acquires a mutex or spinlock to protect memory regions.
+ * Must be called before accessing IPI/OPI from external threads.
+ *
+ * @return 0 on success, negative on error or timeout
+ */
+int zplc_pi_lock(void);
+
+/**
+ * @brief Unlock the Process Image.
+ *
+ * Releases the lock acquired by zplc_pi_lock.
+ */
+void zplc_pi_unlock(void);
 
 /* ============================================================================
  * Legacy Singleton API (zplc_core_*)
