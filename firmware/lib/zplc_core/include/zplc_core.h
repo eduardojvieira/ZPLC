@@ -411,6 +411,24 @@ int zplc_pi_lock(void);
 void zplc_pi_unlock(void);
 
 /* ============================================================================
+ * Variable Tags API (Phase 1.4.1+)
+ * ============================================================================
+ */
+
+/**
+ * @brief Get the number of variable tags loaded.
+ */
+uint16_t zplc_core_get_tag_count(void);
+
+/**
+ * @brief Get a variable tag by index.
+ * 
+ * @param index Tag index (0 to count-1)
+ * @return Pointer to tag entry, or NULL if out of bounds.
+ */
+const zplc_tag_entry_t* zplc_core_get_tag(uint16_t index);
+
+/* ============================================================================
  * Legacy Singleton API (zplc_core_*)
  * ============================================================================
  * 

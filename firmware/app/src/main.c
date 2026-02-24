@@ -320,6 +320,9 @@ int main(void) {
     zplc_hal_log("[INIT] Networking active (DHCP pending...)\n");
   }
 
+  zplc_hal_log("[INIT] Starting Modbus TCP Server...\n");
+  zplc_modbus_init();
+
   zplc_hal_log("[INIT] Shell ready. Use 'zplc help' for commands.\n\n");
 
 #ifdef CONFIG_ZPLC_HIL_DEBUG
