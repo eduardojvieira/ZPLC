@@ -45,6 +45,8 @@ export interface DebugVarInfo {
     size: number;
     /** For STRING: max capacity */
     capacity?: number;
+    /** Tags associated with the variable */
+    tags?: Record<string, string | true>;
     /** For FB instances: child member information */
     children?: Record<string, DebugMemberInfo>;
 }
@@ -352,6 +354,7 @@ function buildVarInfoFromSymbol(sym: Symbol, typeResolver?: TypeResolver): Debug
         type: sym.dataType as DebugDataType,
         region: getRegionFromAddress(sym.address),
         size: sym.size,
+        tags: sym.tags,
     };
     
     // Add FB member children if present

@@ -68,6 +68,8 @@ export interface AssemblyResult {
     codeSize: number;
     /** Task definitions (empty for single-task programs) */
     tasks?: TaskDef[];
+    /** Variable tags (networking metadata) */
+    tags?: TagDef[];
     /** Instruction-level mappings for source-level debugging */
     instructionMappings?: InstructionMapping[];
 }
@@ -101,8 +103,11 @@ export const ZPLC_CONSTANTS = {
     SEGMENT_TYPE_CODE: 0x01,
     SEGMENT_TYPE_DATA: 0x02,
     SEGMENT_TYPE_TASK: 0x20,
+    SEGMENT_TYPE_TAGS: 0x30,
     /** Task definition size in bytes (per zplc_isa.h) */
     TASK_DEF_SIZE: 16,
+    /** Tag entry size in bytes (per zplc_isa.h) */
+    TAG_ENTRY_SIZE: 8,
 } as const;
 
 /**
@@ -133,6 +138,21 @@ export interface TaskDef {
     entryPoint: number;
     /** Required stack depth (default: 64) */
     stackSize: number;
+}
+
+/**
+ * Variable tag definition for TAG segment.
+ * Matches zplc_tag_entry_t in zplc_isa.h (8 bytes)
+ */
+export interface TagDef {
+    /** Variable address */
+    varAddr: number;
+    /** Data type ID */
+    varType: number;
+    /** Tag identifier (1=Publish, 2=Modbus) */
+    tagId: number;
+    /** Tag parameter (Modbus address, etc) */
+    value: number;
 }
 
 // ============================================================================

@@ -14,7 +14,7 @@ import {
     getOperandSize,
     isRelativeJump,
 } from './opcodes';
-import type { Instruction, Label, SourceAnnotation, InstructionMapping } from './types';
+import type { Instruction, Label, SourceAnnotation, InstructionMapping, TagDef } from './types';
 import { AssemblerError } from './types';
 
 // =============================================================================
@@ -107,6 +107,8 @@ interface ParserState {
     labels: Map<string, Label>;
     currentAddress: number;
     entryPoint: number | string;  // Can be number or label name until resolved
+    /** Variable tags */
+    tags: TagDef[];
     /** Current pending source annotation (from preceding comment) */
     pendingSourceAnnotation: SourceAnnotation | null;
     /** Mapping from instruction to source (populated during parsing) */
@@ -310,6 +312,25 @@ function handleDirective(
             break;
         }
 
+        case '.TAG': {
+            // .TAG <addr> <type> <tag_id> <value>
+            const parts = operand.split(/\s+/);
+            if (parts.length < 4) {
+                throw new AssemblerError(`.TAG requires 4 arguments: addr type tag_id value`, lineNum, '');
+            }
+            try {
+                state.tags.push({
+                    varAddr: parseNumber(parts[0]),
+                    varType: parseNumber(parts[1]),
+                    tagId: parseNumber(parts[2]),
+                    value: parseNumber(parts[3]),
+                });
+            } catch (e) {
+                throw new AssemblerError(`Invalid arguments for .TAG: ${(e as Error).message}`, lineNum, '');
+            }
+            break;
+        }
+
         default:
             throw new AssemblerError(`Unknown directive '${directive}'`, lineNum, '');
     }
@@ -383,6 +404,8 @@ export interface ParseResult {
     labels: Map<string, Label>;
     entryPoint: number;
     codeSize: number;
+    /** Variable tags */
+    tags: TagDef[];
     /** Instruction-level mappings for source-level debugging */
     instructionMappings: InstructionMapping[];
 }
@@ -404,6 +427,7 @@ export function parse(source: string): ParseResult {
         labels: new Map(),
         currentAddress: 0,
         entryPoint: 0,
+        tags: [],
         pendingSourceAnnotation: null,
         instructionMappings: [],
     };
@@ -422,6 +446,7 @@ export function parse(source: string): ParseResult {
         labels: state.labels,
         entryPoint: typeof state.entryPoint === 'number' ? state.entryPoint : 0,
         codeSize: state.currentAddress,
+        tags: state.tags,
         instructionMappings: state.instructionMappings,
     };
 }

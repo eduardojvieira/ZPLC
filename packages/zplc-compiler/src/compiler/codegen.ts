@@ -215,7 +215,9 @@ function resolveSymbol(state: CodeGenState, name: string): Symbol | undefined {
                 size: memberInfo?.size || 0,
                 section: VarSection.VAR,
                 ioAddress: null,
-                members: null
+                members: null,
+                initialValue: null,
+                tags: {}
             };
         }
     }
@@ -420,7 +422,71 @@ function emitMemoryMap(state: CodeGenState): void {
         }
     }
 
+    emitVariableTags(state);
+
     emit(state, ``);
+}
+
+/**
+ * Map tag names to numeric IDs from zplc_isa.h
+ */
+const TAG_MAP: Record<string, number> = {
+    'publish': 1,
+    'modbus': 2,
+    'subscribe': 3,
+};
+
+/**
+ * Map DataType string to numeric ID from zplc_isa.h
+ */
+function getDataTypeId(type: any): number {
+    const typeStr = typeof type === 'string' ? type.toUpperCase() : 'UNKNOWN';
+    switch (typeStr) {
+        case 'BOOL': return 0x01;
+        case 'SINT': return 0x02;
+        case 'USINT': return 0x03;
+        case 'INT': return 0x04;
+        case 'UINT': return 0x05;
+        case 'DINT': return 0x06;
+        case 'UDINT': return 0x07;
+        case 'LINT': return 0x08;
+        case 'ULINT': return 0x09;
+        case 'REAL': return 0x0A;
+        case 'LREAL': return 0x0B;
+        case 'TIME': return 0x0C;
+        case 'BYTE': return 0x10;
+        case 'WORD': return 0x11;
+        case 'DWORD': return 0x12;
+        case 'LWORD': return 0x13;
+        case 'STRING': return 0x20;
+        default: return 0x00;
+    }
+}
+
+/**
+ * Emit .TAG directives for variables with attributes.
+ */
+function emitVariableTags(state: CodeGenState): void {
+    const symbolsWithTags = state.symbols.all().filter(s => s.tags && Object.keys(s.tags).length > 0);
+    
+    if (symbolsWithTags.length === 0) return;
+
+    emit(state, ``);
+    emit(state, `; --- Variable Tags ---`);
+    
+    for (const sym of symbolsWithTags) {
+        if (!sym.tags) continue;
+        
+        for (const [tagIdName, tagValue] of Object.entries(sym.tags)) {
+            const tagId = TAG_MAP[tagIdName.toLowerCase()];
+            if (tagId === undefined) continue;
+            
+            const typeId = getDataTypeId(sym.dataType);
+            const val = typeof tagValue === 'string' ? parseInt(tagValue, 10) : 0;
+            
+            emit(state, `.TAG ${formatAddress(sym.address)} ${typeId} ${tagId} ${val}  ; ${sym.name} {${tagIdName}${tagValue === true ? '' : ':' + tagValue}}`);
+        }
+    }
 }
 
 // ============================================================================

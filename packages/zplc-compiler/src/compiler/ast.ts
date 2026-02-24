@@ -344,6 +344,7 @@ export interface VarDecl extends ASTNode {
     initialValue: Expression | ArrayLiteral | null;
     ioAddress: IOAddress | null;  // For I/O-mapped variables
     section: VarSectionValue;
+    tags: Record<string, string | true>; // Optional attributes like {publish} or {modbus:40001}
 }
 
 /**

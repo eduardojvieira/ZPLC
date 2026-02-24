@@ -12,7 +12,7 @@
  */
 
 import { getDataTypeSize, getArrayTotalSize, isArrayType, DataType, VarSection } from './ast.ts';
-import type { STDataType, DataTypeValue, VarSectionValue, IOAddress, VarDecl, Program, ArrayType, CompilationUnit, Expression, Statement } from './ast.ts';
+import type { STDataType, DataTypeValue, VarSectionValue, IOAddress, VarDecl, Program, ArrayType, CompilationUnit, Expression, Statement, ArrayLiteral } from './ast.ts';
 import { getFB } from './stdlib/index.ts';
 
 // ============================================================================
@@ -53,7 +53,9 @@ export interface Symbol {
     /** For function blocks and structs: member offsets */
     members: Map<string, number> | null;
     /** Initial value expression (for constants) */
-    initialValue?: Expression | null;
+    initialValue: Expression | ArrayLiteral | null;
+    /** Tags (like {publish}, {modbus:40001}) */
+    tags?: Record<string, string | true>;
 }
 
 /**
@@ -257,6 +259,7 @@ export class SymbolTable {
             ioAddress: decl.ioAddress,
             members,
             initialValue: decl.initialValue,
+            tags: decl.tags,
         };
 
         this.symbols.set(decl.name, symbol);
@@ -558,6 +561,7 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
                                 section: VarSection.CONSTANT,
                                 initialValue: { kind: 'IntLiteral', value: v.value } as any,
                                 ioAddress: null,
+                                tags: {},
                                 line: typeDef.line,
                                 column: typeDef.column,
                             });
@@ -813,7 +817,7 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
                 name: func.name,
                 dataType: func.returnType,
                 section: VarSection.VAR,
-                initialValue: null,
+                initialValue: null, tags: {},
                 ioAddress: null,
                 line: func.line,
                 column: func.column,
