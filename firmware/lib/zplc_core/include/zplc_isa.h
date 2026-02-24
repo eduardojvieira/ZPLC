@@ -95,6 +95,11 @@ extern "C" {
 #define ZPLC_MEM_CODE_SIZE 0xB000U
 #endif
 
+/** @brief Maximum number of variable tags supported */
+#ifndef ZPLC_MAX_TAGS
+#define ZPLC_MAX_TAGS 64
+#endif
+
 /** @brief Maximum evaluation stack depth (configurable via Kconfig) */
 #ifdef CONFIG_ZPLC_STACK_DEPTH
 #define ZPLC_STACK_MAX_DEPTH CONFIG_ZPLC_STACK_DEPTH

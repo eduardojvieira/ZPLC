@@ -51,9 +51,12 @@ static uint8_t mem_work[ZPLC_MEM_WORK_SIZE];
 
 /** @brief Retentive memory - survives power cycle */
 static uint8_t mem_retain[ZPLC_MEM_RETAIN_SIZE];
-
-/** @brief Code segment - bytecode (read-only during execution) */
+/** @brief Global static array for loaded code */
 static uint8_t mem_code[ZPLC_MEM_CODE_SIZE];
+
+/** @brief Global static array for variable tags */
+static zplc_tag_entry_t mem_tags[ZPLC_MAX_TAGS];
+static uint16_t tag_count = 0;
 
 /** @brief Loaded code size (for bounds checking) */
 static uint32_t code_size = 0;
@@ -1961,6 +1964,10 @@ int zplc_core_load_tasks(const uint8_t *binary, size_t size,
   uint32_t task_seg_size = 0;
   int code_found = 0;
   int task_found = 0;
+  
+  uint32_t tags_seg_offset = 0;
+  uint32_t tags_seg_size = 0;
+  int tags_found = 0;
 
   uint8_t task_count;
   uint8_t i;
@@ -2012,6 +2019,10 @@ int zplc_core_load_tasks(const uint8_t *binary, size_t size,
       task_seg_offset = data_offset;
       task_seg_size = seg_table[i].size;
       task_found = 1;
+    } else if (seg_table[i].type == ZPLC_SEG_TAGS) {
+      tags_seg_offset = data_offset;
+      tags_seg_size = seg_table[i].size;
+      tags_found = 1;
     }
     /* Advance data_offset past this segment's data */
     data_offset += seg_table[i].size;
@@ -2045,6 +2056,26 @@ int zplc_core_load_tasks(const uint8_t *binary, size_t size,
 
   /* Load code into shared segment */
   zplc_mem_load_code(binary + code_seg_offset, code_seg_size, 0);
+
+  /* Load tags if present */
+  tag_count = 0;
+  if (tags_found && tags_seg_size > 0 && tags_seg_offset + tags_seg_size <= size) {
+    uint16_t found_tags = (uint16_t)(tags_seg_size / ZPLC_TAG_ENTRY_SIZE);
+    if (found_tags > ZPLC_MAX_TAGS) {
+      found_tags = ZPLC_MAX_TAGS;
+      zplc_hal_log("[CORE] WARNING: Too many tags, truncating to %d\n", ZPLC_MAX_TAGS);
+    }
+    
+    for (uint16_t t = 0; t < found_tags; t++) {
+      const uint8_t *ptr = binary + tags_seg_offset + (t * ZPLC_TAG_ENTRY_SIZE);
+      mem_tags[t].var_addr = (uint16_t)ptr[0] | ((uint16_t)ptr[1] << 8);
+      mem_tags[t].var_type = ptr[2];
+      mem_tags[t].tag_id   = ptr[3];
+      mem_tags[t].value    = (uint32_t)ptr[4] | ((uint32_t)ptr[5] << 8) | ((uint32_t)ptr[6] << 16) | ((uint32_t)ptr[7] << 24);
+    }
+    tag_count = found_tags;
+    zplc_hal_log("[CORE] Loaded %u variable tags\n", tag_count);
+  }
 
   /* Parse task definitions */
   task_count = (uint8_t)(task_seg_size / ZPLC_TASK_DEF_SIZE);
@@ -2163,4 +2194,15 @@ uint16_t zplc_vm_get_breakpoint(const zplc_vm_t *vm, uint8_t index) {
     return 0xFFFF;
   }
   return vm->breakpoints[index];
+}
+
+uint16_t zplc_core_get_tag_count(void) {
+  return tag_count;
+}
+
+const zplc_tag_entry_t* zplc_core_get_tag(uint16_t index) {
+  if (index >= tag_count) {
+    return NULL;
+  }
+  return &mem_tags[index];
 }

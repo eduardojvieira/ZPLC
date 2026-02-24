@@ -17,6 +17,7 @@ target_sources(app PRIVATE
     src/main.c
     src/shell_cmds.c
     src/zplc_config.c
+    src/zplc_modbus.c
 )
 
 target_include_directories(app PRIVATE
