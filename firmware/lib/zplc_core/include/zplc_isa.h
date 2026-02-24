@@ -408,7 +408,8 @@ typedef enum {
   ZPLC_SEG_IOMAP = 0x05,  /**< I/O mapping table */
   ZPLC_SEG_SYMTAB = 0x10, /**< Symbol table */
   ZPLC_SEG_DEBUG = 0x11,  /**< Debug information */
-  ZPLC_SEG_TASK = 0x20    /**< Task definitions */
+  ZPLC_SEG_TASK = 0x20,   /**< Task definitions */
+  ZPLC_SEG_TAGS = 0x30    /**< Variable tags (networking metadata) */
 } zplc_segment_type_t;
 
 /**
@@ -457,6 +458,30 @@ typedef enum {
   ZPLC_IO_INPUT = 0, /**< Input (HAL -> VM) */
   ZPLC_IO_OUTPUT = 1 /**< Output (VM -> HAL) */
 } zplc_io_direction_t;
+
+/**
+ * @brief Variable tag entry (8 bytes).
+ * Used for mapping variables to communication protocols.
+ */
+typedef struct ZPLC_PACKED {
+  uint16_t var_addr; /**< Memory address of the variable */
+  uint8_t var_type;  /**< Data type ID (zplc_data_type_t) */
+  uint8_t tag_id;    /**< Protocol/Tag identifier (1=Publish, 2=Modbus, etc.) */
+  uint32_t value;    /**< Parameter (Modbus address, or offset to string table) */
+} zplc_tag_entry_t;
+
+/** @brief Expected size of tag entry */
+#define ZPLC_TAG_ENTRY_SIZE 8
+
+/**
+ * @brief Tag identifiers.
+ */
+typedef enum {
+  ZPLC_TAG_NONE = 0,
+  ZPLC_TAG_PUBLISH = 1,  /**< {publish} */
+  ZPLC_TAG_MODBUS = 2,   /**< {modbus:N} */
+  ZPLC_TAG_SUBSCRIBE = 3 /**< {subscribe} */
+} zplc_tag_id_t;
 
 /* Restore packing for MSVC */
 #if defined(_MSC_VER)

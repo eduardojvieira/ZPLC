@@ -26,6 +26,7 @@
 #include <zplc_hal.h>
 #include <zplc_isa.h>
 #include <zplc_debug.h>
+#include "zplc_config.h"
 
 #ifdef CONFIG_ZPLC_SCHEDULER
 #include <zplc_scheduler.h>
@@ -1359,6 +1360,87 @@ static int cmd_hil_reset(const struct shell *sh, size_t argc, char **argv) {
 #endif
 
 /* ============================================================================
+ * Configuration Handlers
+ * ============================================================================
+ */
+
+static int cmd_config_get(const struct shell *sh, size_t argc, char **argv) {
+  ARG_UNUSED(argc);
+  ARG_UNUSED(argv);
+  char buf[64];
+
+  shell_print(sh, "ZPLC Configuration:");
+  
+  zplc_config_get_hostname(buf, sizeof(buf));
+  shell_print(sh, "  Hostname:     %s", buf);
+  
+  shell_print(sh, "  DHCP:         %s", zplc_config_get_dhcp() ? "Enabled" : "Disabled");
+  
+  zplc_config_get_ip(buf, sizeof(buf));
+  shell_print(sh, "  Static IP:    %s", buf);
+  
+  shell_print(sh, "  Modbus ID:    %u", zplc_config_get_modbus_id());
+  
+  zplc_config_get_mqtt_broker(buf, sizeof(buf));
+  shell_print(sh, "  MQTT Broker:  %s", buf);
+  
+  shell_print(sh, "  MQTT Port:    %u", zplc_config_get_mqtt_port());
+  
+  return 0;
+}
+
+static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
+  if (argc < 3) {
+    shell_error(sh, "Usage: zplc config set <key> <value>");
+    shell_print(sh, "Keys: hostname, dhcp, ip, modbus_id, mqtt_broker, mqtt_port");
+    return -EINVAL;
+  }
+
+  const char *key = argv[1];
+  const char *val = argv[2];
+
+  if (strcmp(key, "hostname") == 0) {
+    zplc_config_set_hostname(val);
+  } else if (strcmp(key, "dhcp") == 0) {
+    zplc_config_set_dhcp(strcmp(val, "true") == 0 || strcmp(val, "1") == 0);
+  } else if (strcmp(key, "ip") == 0) {
+    zplc_config_set_ip(val);
+  } else if (strcmp(key, "modbus_id") == 0) {
+    zplc_config_set_modbus_id((uint16_t)atoi(val));
+  } else if (strcmp(key, "mqtt_broker") == 0) {
+    zplc_config_set_mqtt_broker(val);
+  } else if (strcmp(key, "mqtt_port") == 0) {
+    zplc_config_set_mqtt_port((uint16_t)atoi(val));
+  } else {
+    shell_error(sh, "Unknown config key: %s", key);
+    return -EINVAL;
+  }
+
+  shell_print(sh, "Config updated. Use 'zplc config save' to persist.");
+  return 0;
+}
+
+static int cmd_config_save(const struct shell *sh, size_t argc, char **argv) {
+  ARG_UNUSED(argc);
+  ARG_UNUSED(argv);
+  int err = zplc_config_save();
+  if (err) {
+    shell_error(sh, "Failed to save config: %d", err);
+    return err;
+  }
+  shell_print(sh, "Config saved to NVS.");
+  return 0;
+}
+
+static int cmd_config_reset(const struct shell *sh, size_t argc, char **argv) {
+  ARG_UNUSED(argc);
+  ARG_UNUSED(argv);
+  zplc_config_reset();
+  shell_print(sh, "Config reset to defaults.");
+  return 0;
+}
+
+/* ============================================================================
  * Shell Command Registration
  * ============================================================================
  */
@@ -1420,6 +1502,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 #endif
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
+    sub_config,
+    SHELL_CMD(get, NULL, "Show current configuration", cmd_config_get),
+    SHELL_CMD_ARG(set, NULL, "Set configuration value", cmd_config_set, 3, 0),
+    SHELL_CMD(save, NULL, "Persist configuration to NVS", cmd_config_save),
+    SHELL_CMD(reset, NULL, "Reset configuration to defaults", cmd_config_reset),
+    SHELL_SUBCMD_SET_END);
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_zplc,
 #ifndef CONFIG_ZPLC_SCHEDULER
     SHELL_CMD_ARG(load, NULL, "Prepare load", cmd_zplc_load, 2, 0),
@@ -1431,6 +1521,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 #endif
     SHELL_CMD(version, NULL, "Version info", cmd_zplc_version),
     SHELL_CMD(dbg, &sub_dbg, "Debug commands", NULL),
+    SHELL_CMD(config, &sub_config, "Configuration commands", NULL),
 #ifdef CONFIG_ZPLC_SCHEDULER
     SHELL_CMD(sched, &sub_sched, "Scheduler commands", NULL),
     SHELL_CMD(sys, &sub_sys, "System commands", NULL),

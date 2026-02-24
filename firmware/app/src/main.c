@@ -14,12 +14,16 @@
 #include <zplc_hal.h>
 #include <zplc_isa.h>
 #include <zplc_debug.h>
+#include "zplc_config.h"
 
 #ifdef CONFIG_ZPLC_SCHEDULER
 #include <zplc_scheduler.h>
 #endif
 
 #include <string.h>
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
 /* ============================================================================
  * Configuration
@@ -300,6 +304,20 @@ int main(void) {
   if (ret != 0) {
     zplc_hal_log("[INIT] ERROR: Core init failed: %d\n", ret);
     return ret;
+  }
+
+  /* ===== Industrial Networking Foundation (Phase 1.4.1) ===== */
+  zplc_hal_log("[INIT] Initializing Configuration Manager...\n");
+  zplc_config_init();
+
+  zplc_hal_log("[INIT] Initializing Networking HAL...\n");
+  zplc_hal_net_init();
+
+  char ip_buf[16];
+  if (zplc_hal_net_get_ip(ip_buf, sizeof(ip_buf)) == ZPLC_HAL_OK) {
+    zplc_hal_log("[INIT] IP Address: %s\n", ip_buf);
+  } else {
+    zplc_hal_log("[INIT] Networking active (DHCP pending...)\n");
   }
 
   zplc_hal_log("[INIT] Shell ready. Use 'zplc help' for commands.\n\n");

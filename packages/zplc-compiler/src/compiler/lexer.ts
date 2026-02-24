@@ -133,6 +133,8 @@ export const TokenType = {
     RPAREN: 'RPAREN',           // )
     LBRACKET: 'LBRACKET',       // [
     RBRACKET: 'RBRACKET',       // ]
+    LCURLY: 'LCURLY',           // {
+    RCURLY: 'RCURLY',           // }
     DOTDOT: 'DOTDOT',           // ..
     AT: 'AT',                   // AT (for I/O mapping)
     
@@ -542,6 +544,16 @@ export function tokenize(source: string): Token[] {
         if (ch === ']') {
             advance();
             addToken(TokenType.RBRACKET, ']', startLine, startColumn);
+            continue;
+        }
+        if (ch === '{') {
+            advance();
+            addToken(TokenType.LCURLY, '{', startLine, startColumn);
+            continue;
+        }
+        if (ch === '}') {
+            advance();
+            addToken(TokenType.RCURLY, '}', startLine, startColumn);
             continue;
         }
         if (ch === '(') {

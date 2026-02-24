@@ -363,6 +363,7 @@ class Parser {
                         initialValue,
                         ioAddress: null,
                         section: 'VAR', 
+                        tags: {},
                         line: start.line,
                         column: start.column,
                     });
@@ -692,6 +693,19 @@ class Parser {
             }
         }
 
+        // Optional tags: {publish}, {modbus:40001}
+        const tags: Record<string, string | true> = {};
+        while (this.match(TokenType.LCURLY)) {
+            const tagId = this.expect(TokenType.IDENTIFIER, 'Expected tag name').value;
+            if (this.match(TokenType.COLON)) {
+                const tagVal = this.advance().value; // Could be identifier or number
+                tags[tagId] = tagVal;
+            } else {
+                tags[tagId] = true;
+            }
+            this.expect(TokenType.RCURLY, 'Expected } to close tag');
+        }
+
         this.expect(TokenType.SEMICOLON, 'Expected ; after variable declaration');
 
         return {
@@ -701,6 +715,7 @@ class Parser {
             initialValue,
             ioAddress,
             section,
+            tags,
             line: start.line,
             column: start.column,
         };

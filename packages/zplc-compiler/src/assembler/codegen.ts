@@ -8,7 +8,7 @@
  */
 
 import { getOperandSize, OPCODE_BY_VALUE, isRelativeJump, Opcode } from './opcodes';
-import type { Instruction, TaskDef } from './types';
+import type { Instruction, TaskDef, TagDef } from './types';
 import { ZPLC_CONSTANTS } from './types';
 import type { ParseResult } from './parser';
 
@@ -125,20 +125,27 @@ export function relocateBytecode(bytecode: Uint8Array, baseOffset: number): Uint
  *   - Header: 32 bytes
  *   - Segment table: 8 bytes per segment
  *   - Code segment
+ *   - (Optional) Tag segment
  *
  * @param bytecode - Raw bytecode
  * @param entryPoint - Entry point address
+ * @param tags - Optional variable tags
  * @returns Complete .zplc file
  */
-export function createZplcFile(bytecode: Uint8Array, entryPoint: number): Uint8Array {
+export function createZplcFile(bytecode: Uint8Array, entryPoint: number, tags?: TagDef[]): Uint8Array {
     const codeSize = bytecode.length;
-    const segmentCount = 1;  // Just code for now
+    const tagCount = tags?.length ?? 0;
+    const tagSegmentSize = tagCount * ZPLC_CONSTANTS.TAG_ENTRY_SIZE;
+    
+    let segmentCount = 1;  // CODE
+    if (tagCount > 0) segmentCount++;
 
-    // Total file size: header (32) + segment table (8) + code
+    // Total file size: header (32) + segment table (8 * segmentCount) + code + tags
     const totalSize =
         ZPLC_CONSTANTS.HEADER_SIZE +
-        ZPLC_CONSTANTS.SEGMENT_ENTRY_SIZE +
-        codeSize;
+        (ZPLC_CONSTANTS.SEGMENT_ENTRY_SIZE * segmentCount) +
+        codeSize +
+        tagSegmentSize;
 
     const output = new Uint8Array(totalSize);
     const view = new DataView(output.buffer);
@@ -146,19 +153,6 @@ export function createZplcFile(bytecode: Uint8Array, entryPoint: number): Uint8A
     // =========================================================================
     // Header (32 bytes)
     // =========================================================================
-    // Layout from zplc_isa.h:
-    //   magic         (4 bytes, uint32_t)
-    //   version_major (2 bytes, uint16_t)
-    //   version_minor (2 bytes, uint16_t)
-    //   flags         (4 bytes, uint32_t)
-    //   crc32         (4 bytes, uint32_t)
-    //   code_size     (4 bytes, uint32_t)
-    //   data_size     (4 bytes, uint32_t)
-    //   entry_point   (2 bytes, uint16_t)
-    //   segment_count (2 bytes, uint16_t)
-    //   reserved      (4 bytes, uint32_t)
-    // Total: 4+2+2+4+4+4+4+2+2+4 = 32 bytes
-
     let offset = 0;
 
     // magic (4 bytes)
@@ -177,7 +171,7 @@ export function createZplcFile(bytecode: Uint8Array, entryPoint: number): Uint8A
     view.setUint32(offset, 0, true);
     offset += 4;
 
-    // crc32 (4 bytes) - TODO: implement proper CRC32
+    // crc32 (4 bytes)
     view.setUint32(offset, 0, true);
     offset += 4;
 
@@ -185,8 +179,8 @@ export function createZplcFile(bytecode: Uint8Array, entryPoint: number): Uint8A
     view.setUint32(offset, codeSize, true);
     offset += 4;
 
-    // data_size (4 bytes)
-    view.setUint32(offset, 0, true);
+    // data_size (4 bytes) - tag segment counts as data/metadata
+    view.setUint32(offset, tagSegmentSize, true);
     offset += 4;
 
     // entry_point (2 bytes)
@@ -201,40 +195,49 @@ export function createZplcFile(bytecode: Uint8Array, entryPoint: number): Uint8A
     view.setUint32(offset, 0, true);
     offset += 4;
 
-    // Sanity check header size
-    if (offset !== ZPLC_CONSTANTS.HEADER_SIZE) {
-        throw new Error(`Header size mismatch: ${offset} != ${ZPLC_CONSTANTS.HEADER_SIZE}`);
-    }
-
     // =========================================================================
-    // Segment Table Entry (8 bytes)
+    // Segment Table Entry 1: CODE
     // =========================================================================
-    // type  (2 bytes, uint16_t) = 0x01 (CODE)
-    // flags (2 bytes, uint16_t) = 0
-    // size  (4 bytes, uint32_t) = code_size
-
-    // type
     view.setUint16(offset, ZPLC_CONSTANTS.SEGMENT_TYPE_CODE, true);
     offset += 2;
-
-    // flags
     view.setUint16(offset, 0, true);
     offset += 2;
-
-    // size
     view.setUint32(offset, codeSize, true);
     offset += 4;
 
-    // Sanity check segment entry offset
-    const expectedOffset = ZPLC_CONSTANTS.HEADER_SIZE + ZPLC_CONSTANTS.SEGMENT_ENTRY_SIZE;
-    if (offset !== expectedOffset) {
-        throw new Error(`Segment entry size mismatch: ${offset} != ${expectedOffset}`);
+    // =========================================================================
+    // Segment Table Entry 2: TAGS (if present)
+    // =========================================================================
+    if (tagCount > 0) {
+        view.setUint16(offset, ZPLC_CONSTANTS.SEGMENT_TYPE_TAGS, true);
+        offset += 2;
+        view.setUint16(offset, 0, true);
+        offset += 2;
+        view.setUint32(offset, tagSegmentSize, true);
+        offset += 4;
     }
 
     // =========================================================================
     // Code Segment
     // =========================================================================
     output.set(bytecode, offset);
+    offset += codeSize;
+
+    // =========================================================================
+    // Tag Segment
+    // =========================================================================
+    if (tagCount > 0 && tags) {
+        for (const tag of tags) {
+            view.setUint16(offset, tag.varAddr & 0xFFFF, true);
+            offset += 2;
+            view.setUint8(offset, tag.varType & 0xFF);
+            offset += 1;
+            view.setUint8(offset, tag.tagId & 0xFF);
+            offset += 1;
+            view.setUint32(offset, tag.value >>> 0, true);
+            offset += 4;
+        }
+    }
 
     return output;
 }
@@ -396,7 +399,7 @@ export function generate(parseResult: ParseResult): {
     zplcFile: Uint8Array;
 } {
     const bytecode = emitBytecode(parseResult.instructions);
-    const zplcFile = createZplcFile(bytecode, parseResult.entryPoint);
+    const zplcFile = createZplcFile(bytecode, parseResult.entryPoint, parseResult.tags);
 
     return { bytecode, zplcFile };
 }
