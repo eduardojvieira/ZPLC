@@ -1,0 +1,24 @@
+# Sparkplug B Nanopb Options
+# SPDX-License-Identifier: MIT
+
+# ZPLC constraints (No Malloc)
+# Define static memory limits for arrays and strings.
+org.eclipse.tahu.protobuf.Payload.metrics max_count:32
+org.eclipse.tahu.protobuf.Payload.uuid max_size:37
+org.eclipse.tahu.protobuf.Payload.body max_size:64
+
+org.eclipse.tahu.protobuf.Metric.name max_size:32
+org.eclipse.tahu.protobuf.Metric.string_value max_size:64
+org.eclipse.tahu.protobuf.Metric.bytes_value max_size:32
+
+org.eclipse.tahu.protobuf.MetaData.content_type max_size:16
+org.eclipse.tahu.protobuf.MetaData.file_name max_size:16
+org.eclipse.tahu.protobuf.MetaData.file_type max_size:16
+org.eclipse.tahu.protobuf.MetaData.md5 max_size:33
+org.eclipse.tahu.protobuf.MetaData.description max_size:32
+
+org.eclipse.tahu.protobuf.PropertySet.keys max_count:4
+org.eclipse.tahu.protobuf.PropertySet.keys max_size:16
+org.eclipse.tahu.protobuf.PropertySet.values max_count:4
+
+org.eclipse.tahu.protobuf.PropertyValue.string_value max_size:32

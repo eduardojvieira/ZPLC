@@ -6,12 +6,28 @@
 
 #include "zplc_config.h"
 #include <zephyr/settings/settings.h>
+#include <zephyr/fs/fs.h>
+#include <zephyr/fs/littlefs.h>
+#include <zephyr/storage/flash_map.h>
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(zplc_config, LOG_LEVEL_INF);
+
+/* LittleFS mount on external QSPI NOR flash (storage_partition).
+ * Must be mounted before settings_subsys_init() when using SETTINGS_FILE.
+ * Variable renamed to zplc_lfs_mount to avoid collision with lfs_mount()
+ * function declared in lfs.h.
+ */
+FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(qspi_lfs_data);
+static struct fs_mount_t zplc_lfs_mount = {
+    .type      = FS_LITTLEFS,
+    .fs_data   = &qspi_lfs_data,
+    .storage_dev = (void *)FIXED_PARTITION_ID(storage_partition),
+    .mnt_point = "/lfs",
+};
 
 /* Internal configuration state */
 static struct {
@@ -86,8 +102,51 @@ int zplc_config_init(void)
     config.dhcp = true;
     strncpy(config.ip, "0.0.0.0", sizeof(config.ip));
     config.modbus_id = 1;
-    strncpy(config.mqtt_broker, "localhost", sizeof(config.mqtt_broker));
+    strncpy(config.mqtt_broker, "test.mosquitto.org", sizeof(config.mqtt_broker));
     config.mqtt_port = 1883;
+
+    /* Mount LittleFS on external QSPI NOR flash.
+     * SETTINGS_FILE requires a mounted filesystem before settings_subsys_init().
+     * On first boot the partition is unformatted — fs_mount() returns -ENOENT
+     * or a negative errno. We detect that and call fs_mkfs() to format it.
+     */
+    err = fs_mount(&zplc_lfs_mount);
+    if (err < 0) {
+        LOG_WRN("LittleFS mount failed (err %d) — formatting QSPI storage...", err);
+        err = fs_mkfs(FS_LITTLEFS, (uintptr_t)FIXED_PARTITION_ID(storage_partition),
+                      NULL, 0);
+        if (err) {
+            LOG_ERR("LittleFS mkfs failed (err %d)", err);
+            /* Non-fatal: continue with in-RAM defaults */
+            err = 0;
+            goto skip_lfs;
+        }
+        err = fs_mount(&zplc_lfs_mount);
+    }
+    if (err) {
+        LOG_ERR("LittleFS mount failed after format (err %d) — settings will not persist", err);
+        err = 0; /* Non-fatal */
+        goto skip_lfs;
+    }
+
+    LOG_INF("LittleFS mounted on /lfs");
+
+    /* Sanity check: settings_file backend needs /lfs/settings to be a FILE,
+     * not a directory. A previous firmware version incorrectly created it as
+     * a directory (fs_mkdir). Detect that and remove it so settings_file can
+     * create a proper file on first access.
+     */
+    {
+        struct fs_dirent dirent;
+        if (fs_stat(CONFIG_SETTINGS_FILE_PATH, &dirent) == 0 &&
+            dirent.type == FS_DIR_ENTRY_DIR) {
+            LOG_WRN("'%s' exists as a directory — removing stale artifact",
+                    CONFIG_SETTINGS_FILE_PATH);
+            (void)fs_unlink(CONFIG_SETTINGS_FILE_PATH);
+        }
+    }
+
+skip_lfs:
 
     err = settings_subsys_init();
     if (err) {
@@ -129,7 +188,7 @@ int zplc_config_reset(void)
     config.dhcp = true;
     strncpy(config.ip, "0.0.0.0", sizeof(config.ip));
     config.modbus_id = 1;
-    strncpy(config.mqtt_broker, "localhost", sizeof(config.mqtt_broker));
+    strncpy(config.mqtt_broker, "test.mosquitto.org", sizeof(config.mqtt_broker));
     config.mqtt_port = 1883;
 
     return zplc_config_save();

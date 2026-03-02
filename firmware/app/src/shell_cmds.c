@@ -1428,7 +1428,7 @@ static int cmd_config_save(const struct shell *sh, size_t argc, char **argv) {
     shell_error(sh, "Failed to save config: %d", err);
     return err;
   }
-  shell_print(sh, "Config saved to NVS.");
+  shell_print(sh, "Config saved to flash.");
   return 0;
 }
 

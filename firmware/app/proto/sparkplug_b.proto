@@ -1,0 +1,66 @@
+// Sparkplug B (v1.0) Protobuf Definition (Subset for Zephyr / Embedded)
+// SPDX-License-Identifier: MIT
+
+syntax = "proto3";
+
+package org.eclipse.tahu.protobuf;
+
+message PropertyValue {
+    uint32 type = 1;
+    bool is_null = 2;
+    oneof value {
+        uint32 int_value = 3;
+        uint64 long_value = 4;
+        float float_value = 5;
+        double double_value = 6;
+        bool boolean_value = 7;
+        string string_value = 8;
+        // skipping ExtensionValue, PropertySet for embedded
+    }
+}
+
+message PropertySet {
+    repeated string keys = 1;
+    repeated PropertyValue values = 2;
+}
+
+message MetaData {
+    bool is_multi_part = 1;
+    string content_type = 2;
+    uint64 size = 3;
+    uint64 seq = 4;
+    string file_name = 5;
+    string file_type = 6;
+    string md5 = 7;
+    string description = 8;
+}
+
+message Metric {
+    string name = 1;
+    uint64 alias = 2;
+    uint64 timestamp = 3;
+    uint32 datatype = 4;
+    bool is_historical = 5;
+    bool is_transient = 6;
+    bool is_null = 7;
+    MetaData metadata = 8;
+    PropertySet properties = 9;
+    oneof value {
+        uint32 int_value = 10;
+        uint64 long_value = 11;
+        float float_value = 12;
+        double double_value = 13;
+        bool boolean_value = 14;
+        string string_value = 15;
+        bytes bytes_value = 16;
+        // skipping DataSet, Template for embedded
+    }
+}
+
+message Payload {
+    uint64 timestamp = 1;
+    repeated Metric metrics = 2;
+    uint64 seq = 3;
+    string uuid = 4;
+    bytes body = 5;
+}

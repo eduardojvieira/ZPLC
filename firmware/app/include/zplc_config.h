@@ -57,6 +57,7 @@ uint16_t zplc_config_get_modbus_id(void);
 void zplc_config_set_modbus_id(uint16_t id);
 
 int zplc_modbus_init(void);
+int zplc_mqtt_init(void);
 
 void zplc_config_get_mqtt_broker(char *buf, size_t len);
 void zplc_config_set_mqtt_broker(const char *broker);
