@@ -323,6 +323,13 @@ int main(void) {
   zplc_hal_log("[INIT] Starting Modbus TCP Server...\n");
   zplc_modbus_init();
 
+  zplc_hal_log("[INIT] Starting MQTT Client...\n");
+  ret = zplc_mqtt_init();
+  if (ret != 0) {
+    zplc_hal_log("[INIT] ERROR: MQTT init failed: %d\n", ret);
+    return ret;
+  }
+
   zplc_hal_log("[INIT] Shell ready. Use 'zplc help' for commands.\n\n");
 
 #ifdef CONFIG_ZPLC_HIL_DEBUG

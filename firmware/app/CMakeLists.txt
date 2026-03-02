@@ -18,8 +18,15 @@ target_sources(app PRIVATE
     src/shell_cmds.c
     src/zplc_config.c
     src/zplc_modbus.c
+    src/zplc_mqtt.c
 )
 
 target_include_directories(app PRIVATE
     include
 )
+
+# Integrar nanopb para compilar los .proto
+list(APPEND CMAKE_MODULE_PATH ${ZEPHYR_BASE}/modules/nanopb)
+include(nanopb)
+zephyr_nanopb_sources(app proto/sparkplug_b.proto)
+

@@ -2,19 +2,22 @@
  * ZPLC Board Overlay - STM32F746G Discovery
  * SPDX-License-Identifier: MIT
  *
- * The STM32F746G-DISCO already defines:
- *   - led0 = green_led_1 (PI1)
- *   - sw0 = user_button (PI11)
- *   - storage_partition on QSPI flash (external N25Q128A)
+ * The STM32F746G-DISCO board DTS defines:
+ *   - flash0: internal STM32 flash (1MB, non-uniform sector layout)
+ *   - n25q128a1: external QSPI NOR flash (16MB)
+ *     - storage_partition @ 0xa0000 on QSPI (15MB usable)
  *
- * The board already has NVS storage configured on external QSPI,
- * so no additional overlay configuration is needed for persistence.
+ * Settings storage backend:
+ *   CONFIG_SETTINGS_NVS is NOT used here because NVS requires flash sector
+ *   size <= UINT16_MAX (64KB). The STM32F746 internal flash has sectors of
+ *   32KB (small) and 256KB (large). Placing NVS on a 256KB sector returns
+ *   -EDOM (-33) in settings_backend_init() (nvs_sector_size > UINT16_MAX).
  *
- * This overlay is kept minimal as the base DTS provides everything needed.
+ *   Instead we use CONFIG_SETTINGS_FILE backed by LittleFS mounted on the
+ *   external QSPI NOR flash (storage_partition). The QSPI NOR driver supports
+ *   all LittleFS flash operations (read/prog/erase/sync).
+ *
+ *   No DTS changes needed: storage_partition is already defined in the board
+ *   DTS and FIXED_PARTITION_ID(storage_partition) resolves to the QSPI NOR.
+ *   LittleFS is mounted by zplc_config_init() before settings_subsys_init().
  */
-
-/ {
-    /* Board has sufficient default aliases for ZPLC GPIO HAL */
-    /* NVS storage available via external QSPI flash */
-};
-
