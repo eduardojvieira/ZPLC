@@ -17,16 +17,29 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/adc.h>
+#include <zephyr/fs/fs.h>
+#ifdef CONFIG_NETWORKING
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_mgmt.h>
+#ifdef CONFIG_WIFI
+#include <zephyr/net/wifi_mgmt.h>
+#endif
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <errno.h>
 
 #include <zplc_core.h>
 #include <zplc_hal.h>
 #include <zplc_isa.h>
 #include <zplc_debug.h>
 #include "zplc_config.h"
+
+/* zplc_mqtt.c has no standalone header — declare the public symbol here */
+extern void zplc_mqtt_request_backoff_reset(void);
 
 #ifdef CONFIG_ZPLC_SCHEDULER
 #include <zplc_scheduler.h>
@@ -63,6 +76,16 @@ extern size_t program_buffer_size;
 extern size_t program_expected_size;
 extern size_t program_received_size;
 extern uint8_t step_requested;
+
+#define CERT_STAGING_MAX_BYTES 4096U
+
+static struct {
+  bool active;
+  size_t expected;
+  size_t received;
+  char path[32];
+  uint8_t data[CERT_STAGING_MAX_BYTES];
+} cert_staging;
 
 /**
  * @brief Convert hex string to byte array.
@@ -191,6 +214,8 @@ static int cmd_hil_reset(const struct shell *sh, size_t argc, char **argv);
 #ifdef CONFIG_ZPLC_SCHEDULER
 static int cmd_sched_status(const struct shell *sh, size_t argc, char **argv);
 static int cmd_sched_tasks(const struct shell *sh, size_t argc, char **argv);
+static int cmd_sched_load(const struct shell *sh, size_t argc, char **argv);
+static int cmd_sched_data(const struct shell *sh, size_t argc, char **argv);
 static int cmd_sys_info(const struct shell *sh, size_t argc, char **argv);
 static int cmd_sys_reboot(const struct shell *sh, size_t argc, char **argv);
 #endif
@@ -261,6 +286,66 @@ static int cmd_sched_tasks(const struct shell *sh, size_t argc, char **argv) {
     }
   }
 
+  return 0;
+}
+
+static int cmd_sched_load(const struct shell *sh, size_t argc, char **argv) {
+  if (argc != 2) {
+    shell_error(sh, "Usage: zplc sched load <size>");
+    return -EINVAL;
+  }
+  char *endptr;
+  unsigned long size = strtoul(argv[1], &endptr, 10);
+  if (*endptr != '\0' || size == 0) {
+    shell_error(sh, "ERROR: Invalid size");
+    return -EINVAL;
+  }
+  if (size > program_buffer_size) {
+    shell_error(sh, "ERROR: Size %lu exceeds buffer (%zu bytes)", size,
+                program_buffer_size);
+    return -ENOMEM;
+  }
+  memset(program_buffer, 0, program_buffer_size);
+  program_expected_size = size;
+  program_received_size = 0;
+  shell_print(sh, "OK: Ready to receive %lu bytes", size);
+  return 0;
+}
+
+static int cmd_sched_data(const struct shell *sh, size_t argc, char **argv) {
+  if (argc != 2) {
+    shell_error(sh, "Usage: zplc sched data <hex>");
+    return -EINVAL;
+  }
+  if (program_expected_size == 0) {
+    shell_error(sh, "ERROR: Not in loading state (use 'zplc sched load' first)");
+    return -EINVAL;
+  }
+  const char *hex = argv[1];
+  size_t remaining = program_expected_size - program_received_size;
+  int decoded = hex_decode(hex, program_buffer + program_received_size, remaining);
+  if (decoded < 0) {
+    shell_error(sh, "ERROR: Hex decode failed");
+    return -EINVAL;
+  }
+  program_received_size += decoded;
+  if (program_received_size >= program_expected_size) {
+    int ret = zplc_sched_load(program_buffer, program_received_size);
+    if (ret < 0) {
+      shell_error(sh, "ERROR: Scheduler load failed (%d)", ret);
+      program_expected_size = 0;
+      return ret;
+    }
+    ret = zplc_sched_start();
+    if (ret < 0) {
+      shell_warn(sh, "WARN: zplc_sched_start returned %d (may already be running)", ret);
+    }
+    shell_print(sh, "OK: Program loaded and started (%zu bytes)", program_received_size);
+    program_expected_size = 0;
+  } else {
+    shell_print(sh, "OK: Received %d bytes (%zu/%zu)", decoded,
+                program_received_size, program_expected_size);
+  }
   return 0;
 }
 
@@ -775,268 +860,6 @@ static int cmd_dbg_step(const struct shell *sh, size_t argc, char **argv) {
   return 0;
 }
 
-  char *endptr;
-  unsigned long size = strtoul(argv[1], &endptr, 10);
-  if (*endptr != '\0' || size == 0) {
-    shell_error(sh, "ERROR: Invalid size");
-    return -EINVAL;
-  }
-  if (size > program_buffer_size) {
-    shell_error(sh, "ERROR: Size %lu exceeds buffer (%zu bytes)", size,
-                program_buffer_size);
-    return -ENOMEM;
-  }
-  if (runtime_state == ZPLC_STATE_RUNNING) {
-    runtime_state = ZPLC_STATE_IDLE;
-    k_msleep(10);
-  }
-  memset(program_buffer, 0, program_buffer_size);
-  program_expected_size = size;
-  program_received_size = 0;
-  runtime_state = ZPLC_STATE_LOADING;
-  shell_print(sh, "OK: Ready to receive %lu bytes", size);
-  return 0;
-}
-
-static int cmd_zplc_data(const struct shell *sh, size_t argc, char **argv) {
-  if (argc != 2) {
-    shell_error(sh, "Usage: zplc data <hex>");
-    return -EINVAL;
-  }
-  if (runtime_state != ZPLC_STATE_LOADING) {
-    shell_error(sh, "ERROR: Not in loading state (use 'zplc load' first)");
-    return -EINVAL;
-  }
-  const char *hex = argv[1];
-  size_t remaining = program_expected_size - program_received_size;
-  int decoded = hex_decode(hex, program_buffer + program_received_size, remaining);
-  if (decoded < 0) {
-    shell_error(sh, "ERROR: Hex decode failed");
-    return -EINVAL;
-  }
-  program_received_size += decoded;
-  if (program_received_size >= program_expected_size) {
-    int ret = zplc_core_load_raw(program_buffer, program_received_size);
-    if (ret != 0) {
-      shell_error(sh, "ERROR: Program load failed (%d)", ret);
-      runtime_state = ZPLC_STATE_ERROR;
-      return ret;
-    }
-    runtime_state = ZPLC_STATE_READY;
-    shell_print(sh, "OK: Program loaded (%zu bytes)", program_received_size);
-  } else {
-    shell_print(sh, "OK: Received %d bytes (%zu/%zu)", decoded,
-                program_received_size, program_expected_size);
-  }
-  return 0;
-}
-
-static int cmd_zplc_start(const struct shell *sh, size_t argc, char **argv) {
-  ARG_UNUSED(argc);
-  ARG_UNUSED(argv);
-  if (runtime_state != ZPLC_STATE_READY && runtime_state != ZPLC_STATE_IDLE &&
-      runtime_state != ZPLC_STATE_PAUSED) {
-    shell_error(sh, "ERROR: Not ready (state=%s)", state_name(runtime_state));
-    return -EINVAL;
-  }
-  if (runtime_state == ZPLC_STATE_READY || runtime_state == ZPLC_STATE_IDLE) {
-    cycle_count = 0;
-    zplc_vm_t *vm = zplc_core_get_default_vm();
-    if (vm) {
-      zplc_vm_reset_cycle(vm);
-    }
-  }
-  runtime_state = ZPLC_STATE_RUNNING;
-  shell_print(sh, "OK: PLC started");
-  return 0;
-}
-
-static int cmd_zplc_stop(const struct shell *sh, size_t argc, char **argv) {
-  ARG_UNUSED(argc);
-  ARG_UNUSED(argv);
-  runtime_state = ZPLC_STATE_IDLE;
-  shell_print(sh, "OK: PLC stopped");
-  return 0;
-}
-
-static int cmd_zplc_reset(const struct shell *sh, size_t argc, char **argv) {
-  ARG_UNUSED(argc);
-  ARG_UNUSED(argv);
-  runtime_state = ZPLC_STATE_IDLE;
-  cycle_count = 0;
-  zplc_core_init();
-  if (program_received_size > 0) {
-    zplc_core_load_raw(program_buffer, program_received_size);
-    runtime_state = ZPLC_STATE_READY;
-  }
-  shell_print(sh, "OK: Runtime reset");
-  return 0;
-}
-
-static int cmd_zplc_status(const struct shell *sh, size_t argc, char **argv) {
-  ARG_UNUSED(argc);
-  bool json = (argc > 1 && strcmp(argv[1], "--json") == 0);
-  zplc_vm_t *vm = zplc_core_get_default_vm();
-  if (json) {
-    JSON_OBJ_START(sh);
-    JSON_STR(sh, "state", state_name(runtime_state), true);
-    JSON_UINT(sh, "uptime_ms", k_uptime_get_32(), true);
-    shell_fprintf(sh, SHELL_NORMAL, "\"stats\":");
-    JSON_OBJ_START(sh);
-    JSON_UINT(sh, "cycles", cycle_count, true);
-    JSON_UINT(sh, "program_size", program_received_size, false);
-    JSON_OBJ_END(sh);
-    if (vm) {
-      shell_fprintf(sh, SHELL_NORMAL, ",\"vm\":");
-      JSON_OBJ_START(sh);
-      JSON_UINT(sh, "pc", vm->pc, true);
-      JSON_UINT(sh, "sp", vm->sp, true);
-      JSON_BOOL(sh, "halted", vm->halted != 0, true);
-      JSON_INT(sh, "error", vm->error, false);
-      JSON_OBJ_END(sh);
-    }
-    shell_fprintf(sh, SHELL_NORMAL, ",\"opi\":[");
-    uint8_t *opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
-    for (int i = 0; i < 8; i++) {
-      shell_fprintf(sh, SHELL_NORMAL, "%u%s", opi ? opi[i] : 0, (i < 7) ? "," : "");
-    }
-    shell_fprintf(sh, SHELL_NORMAL, "]");
-    JSON_OBJ_END(sh);
-    JSON_NEWLINE(sh);
-    return 0;
-  }
-  shell_print(sh, "ZPLC Status:");
-  shell_print(sh, "  State:   %s", state_name(runtime_state));
-  shell_print(sh, "  Cycles:  %u", cycle_count);
-  shell_print(sh, "  Program: %zu bytes", program_received_size);
-  if (vm) {
-    shell_print(sh, "  VM:      PC=%04X, SP=%d, Halted=%s, Error=%d", vm->pc,
-                vm->sp, vm->halted ? "YES" : "NO", vm->error);
-  }
-  return 0;
-}
-
-static int cmd_dbg_pause(const struct shell *sh, size_t argc, char **argv) {
-  ARG_UNUSED(argc);
-  ARG_UNUSED(argv);
-  if (runtime_state != ZPLC_STATE_RUNNING) {
-    shell_warn(sh, "WARN: Not running (state=%s)", state_name(runtime_state));
-    return 0;
-  }
-  runtime_state = ZPLC_STATE_PAUSED;
-  shell_print(sh, "OK: Paused at cycle %u", cycle_count);
-  return 0;
-}
-
-static int cmd_dbg_resume(const struct shell *sh, size_t argc, char **argv) {
-  ARG_UNUSED(argc);
-  ARG_UNUSED(argv);
-  if (runtime_state != ZPLC_STATE_PAUSED) {
-    shell_warn(sh, "WARN: Not paused (state=%s)", state_name(runtime_state));
-    return 0;
-  }
-  runtime_state = ZPLC_STATE_RUNNING;
-  shell_print(sh, "OK: Resumed");
-  return 0;
-}
-
-static int cmd_dbg_step(const struct shell *sh, size_t argc, char **argv) {
-  ARG_UNUSED(argc);
-  ARG_UNUSED(argv);
-  if (runtime_state == ZPLC_STATE_RUNNING) {
-    runtime_state = ZPLC_STATE_PAUSED;
-    k_msleep(10);
-  }
-  if (runtime_state != ZPLC_STATE_PAUSED && runtime_state != ZPLC_STATE_READY) {
-    shell_error(sh, "ERROR: Cannot step (state=%s)", state_name(runtime_state));
-    return -EINVAL;
-  }
-  if (runtime_state == ZPLC_STATE_READY) {
-    zplc_core_init();
-    zplc_core_load_raw(program_buffer, program_received_size);
-    cycle_count = 0;
-    runtime_state = ZPLC_STATE_PAUSED;
-  }
-  step_requested = 1;
-  shell_print(sh, "OK: Step requested");
-  return 0;
-}
-
-static int cmd_dbg_peek(const struct shell *sh, size_t argc, char **argv) {
-  if (argc < 2) {
-    shell_error(sh, "Usage: zplc dbg peek <addr> [len]");
-    return -EINVAL;
-  }
-  char *endptr;
-  unsigned long addr = strtoul(argv[1], &endptr, 0);
-  if (*endptr != '\0') {
-    shell_error(sh, "ERROR: Invalid address");
-    return -EINVAL;
-  }
-  unsigned long len = 16;
-  if (argc >= 3) {
-    len = strtoul(argv[2], &endptr, 0);
-    if (*endptr != '\0' || len == 0 || len > 256) {
-      shell_error(sh, "ERROR: Invalid length (1-256)");
-      return -EINVAL;
-    }
-  }
-  shell_print(sh, "Memory at 0x%04lX (%lu bytes):", addr, len);
-  for (unsigned long offset = 0; offset < len; offset += 16) {
-    char line[80];
-    int pos = 0;
-    pos += snprintf(line + pos, sizeof(line) - pos, "%04lX: ", addr + offset);
-    for (unsigned long i = 0; i < 16 && (offset + i) < len; i++) {
-      uint8_t val = 0;
-      uint16_t a = (uint16_t)(addr + offset + i);
-      if (a < 0x1000) {
-        val = zplc_ipi_read8(a);
-      } else if (a < 0x2000) {
-        val = zplc_opi_read8(a - 0x1000);
-      } else if (a < 0x4000) {
-        uint8_t *work = zplc_mem_get_region(0x2000);
-        if (work) val = work[a - 0x2000];
-      } else if (a < 0x5000) {
-        uint8_t *retain = zplc_mem_get_region(0x4000);
-        if (retain) val = retain[a - 0x4000];
-      }
-      pos += snprintf(line + pos, sizeof(line) - pos, "%02X ", val);
-    }
-    shell_print(sh, "%s", line);
-  }
-  shell_print(sh, "OK: Read %lu bytes at 0x%04lX", len, addr);
-  return 0;
-}
-
-static int cmd_dbg_poke(const struct shell *sh, size_t argc, char **argv) {
-  if (argc != 3) {
-    shell_error(sh, "Usage: zplc dbg poke <addr> <value>");
-    return -EINVAL;
-  }
-  char *endptr;
-  unsigned long addr = strtoul(argv[1], &endptr, 0);
-  if (*endptr != '\0') {
-    shell_error(sh, "ERROR: Invalid address");
-    return -EINVAL;
-  }
-  unsigned long value = strtoul(argv[2], &endptr, 0);
-  if (*endptr != '\0' || value > 255) {
-    shell_error(sh, "ERROR: Invalid value (0-255)");
-    return -EINVAL;
-  }
-  if (addr < 0x1000) {
-    zplc_ipi_write8((uint16_t)addr, (uint8_t)value);
-  } else if (addr >= 0x2000 && addr < 0x4000) {
-    uint8_t *work = zplc_mem_get_region(0x2000);
-    if (work) work[addr - 0x2000] = (uint8_t)value;
-  } else {
-    shell_error(sh, "ERROR: Address not writable (only IPI and WORK allowed)");
-    return -EINVAL;
-  }
-  shell_print(sh, "OK: Wrote 0x%02X to 0x%04lX", (uint8_t)value, addr);
-  return 0;
-}
-
 #endif /* CONFIG_ZPLC_SCHEDULER */
 
 /* ============================================================================
@@ -1385,6 +1208,14 @@ static int cmd_config_get(const struct shell *sh, size_t argc, char **argv) {
   shell_print(sh, "  MQTT Broker:  %s", buf);
   
   shell_print(sh, "  MQTT Port:    %u", zplc_config_get_mqtt_port());
+  shell_print(sh, "  MQTT Enabled: %s", zplc_config_get_mqtt_enabled() ? "Yes" : "No");
+  shell_print(sh, "  MQTT Keepalive: %u s", zplc_config_get_mqtt_keepalive_sec());
+  shell_print(sh, "  MQTT Clean Session: %s", zplc_config_get_mqtt_clean_session() ? "Yes" : "No");
+
+  zplc_config_get_mqtt_username(buf, sizeof(buf));
+  shell_print(sh, "  MQTT Username: %s", (buf[0] != '\0') ? buf : "(none)");
+
+  shell_print(sh, "  MQTT Security: %u", (unsigned)zplc_config_get_mqtt_security());
   
   return 0;
 }
@@ -1392,7 +1223,7 @@ static int cmd_config_get(const struct shell *sh, size_t argc, char **argv) {
 static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
   if (argc < 3) {
     shell_error(sh, "Usage: zplc config set <key> <value>");
-    shell_print(sh, "Keys: hostname, dhcp, ip, modbus_id, mqtt_broker, mqtt_port");
+    shell_print(sh, "Keys: hostname, dhcp, ip, modbus_id, mqtt_enabled, mqtt_broker, mqtt_port, mqtt_username, mqtt_password, mqtt_keepalive, mqtt_clean_session, mqtt_security");
     return -EINVAL;
   }
 
@@ -1411,6 +1242,18 @@ static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
     zplc_config_set_mqtt_broker(val);
   } else if (strcmp(key, "mqtt_port") == 0) {
     zplc_config_set_mqtt_port((uint16_t)atoi(val));
+  } else if (strcmp(key, "mqtt_enabled") == 0) {
+    zplc_config_set_mqtt_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
+  } else if (strcmp(key, "mqtt_username") == 0) {
+    zplc_config_set_mqtt_username(val);
+  } else if (strcmp(key, "mqtt_password") == 0) {
+    zplc_config_set_mqtt_password(val);
+  } else if (strcmp(key, "mqtt_keepalive") == 0) {
+    zplc_config_set_mqtt_keepalive_sec((uint16_t)atoi(val));
+  } else if (strcmp(key, "mqtt_clean_session") == 0) {
+    zplc_config_set_mqtt_clean_session(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
+  } else if (strcmp(key, "mqtt_security") == 0) {
+    zplc_config_set_mqtt_security((zplc_mqtt_security_t)atoi(val));
   } else {
     shell_error(sh, "Unknown config key: %s", key);
     return -EINVAL;
@@ -1437,6 +1280,226 @@ static int cmd_config_reset(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argv);
   zplc_config_reset();
   shell_print(sh, "Config reset to defaults.");
+  return 0;
+}
+
+static int cmd_net_status(const struct shell *sh, size_t argc, char **argv) {
+  ARG_UNUSED(argc);
+  ARG_UNUSED(argv);
+
+#ifndef CONFIG_NETWORKING
+  shell_error(sh, "Networking is disabled in this firmware build");
+  return -ENOTSUP;
+#else
+
+  struct net_if *iface = net_if_get_default();
+  if (iface == NULL) {
+    shell_error(sh, "No default network interface");
+    return -ENODEV;
+  }
+
+  char ip_buf[16] = {0};
+  if (zplc_hal_net_get_ip(ip_buf, sizeof(ip_buf)) == ZPLC_HAL_OK && ip_buf[0] != '\0') {
+    shell_print(sh, "IP Address: %s", ip_buf);
+  } else {
+    shell_print(sh, "IP Address: (not assigned yet)");
+  }
+
+  shell_print(sh, "Interface: %s", net_if_is_up(iface) ? "up" : "down");
+
+  struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
+  if (ipv4 != NULL && !net_ipv4_is_addr_unspecified(&ipv4->gw)) {
+    char gw_buf[16] = {0};
+    net_addr_ntop(AF_INET, &ipv4->gw, gw_buf, sizeof(gw_buf));
+    shell_print(sh, "Gateway: %s", gw_buf);
+  }
+
+#ifdef CONFIG_WIFI
+  struct wifi_iface_status status = {0};
+  int rc = net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, iface, &status, sizeof(status));
+  if (rc == 0) {
+    shell_print(sh, "WiFi state: %d", status.state);
+    if (status.ssid_len > 0U) {
+      shell_print(sh, "WiFi SSID: %s", status.ssid);
+    } else {
+      shell_print(sh, "WiFi SSID: (not connected)");
+    }
+    shell_print(sh, "WiFi channel: %u", status.channel);
+    shell_print(sh, "WiFi RSSI: %d dBm", status.rssi);
+    shell_print(sh, "WiFi security: %d", status.security);
+  } else {
+    shell_print(sh, "WiFi status unavailable (rc=%d)", rc);
+  }
+#endif
+
+  return 0;
+#endif
+}
+
+static const char *cert_path_from_kind(const char *kind) {
+  if (strcmp(kind, "ca") == 0) return "/lfs/certs/ca.pem";
+  if (strcmp(kind, "client") == 0) return "/lfs/certs/client.pem";
+  if (strcmp(kind, "key") == 0) return "/lfs/certs/client.key";
+  return NULL;
+}
+
+static int ensure_certs_dir(void) {
+  struct fs_dirent dirent;
+  if (fs_stat("/lfs/certs", &dirent) == 0) {
+    if (dirent.type == FS_DIR_ENTRY_DIR) {
+      return 0;
+    }
+    return -ENOTDIR;
+  }
+  return fs_mkdir("/lfs/certs");
+}
+
+static int cmd_cert_begin(const struct shell *sh, size_t argc, char **argv) {
+  if (argc < 3) {
+    shell_error(sh, "ERROR: Usage: zplc cert begin <ca|client|key> <size>");
+    return -EINVAL;
+  }
+
+  const char *path = cert_path_from_kind(argv[1]);
+  if (!path) {
+    shell_error(sh, "ERROR: Invalid cert type '%s'", argv[1]);
+    return -EINVAL;
+  }
+
+  unsigned long size = strtoul(argv[2], NULL, 10);
+  if (size == 0U || size > CERT_STAGING_MAX_BYTES) {
+    shell_error(sh, "ERROR: Invalid size (1..%u)", CERT_STAGING_MAX_BYTES);
+    return -EINVAL;
+  }
+
+  cert_staging.active = true;
+  cert_staging.expected = (size_t)size;
+  cert_staging.received = 0U;
+  strncpy(cert_staging.path, path, sizeof(cert_staging.path) - 1U);
+  cert_staging.path[sizeof(cert_staging.path) - 1U] = '\0';
+
+  shell_print(sh, "OK: Cert staging started for %s (%lu bytes)", argv[1], size);
+  return 0;
+}
+
+static int cmd_cert_chunk(const struct shell *sh, size_t argc, char **argv) {
+  if (argc < 2) {
+    shell_error(sh, "ERROR: Usage: zplc cert chunk <hex>");
+    return -EINVAL;
+  }
+  if (!cert_staging.active) {
+    shell_error(sh, "ERROR: No active cert staging. Run 'zplc cert begin' first");
+    return -EINVAL;
+  }
+
+  size_t remaining = cert_staging.expected - cert_staging.received;
+  int decoded = hex_decode(argv[1], &cert_staging.data[cert_staging.received], remaining);
+  if (decoded <= 0) {
+    shell_error(sh, "ERROR: Invalid hex chunk");
+    return -EINVAL;
+  }
+
+  cert_staging.received += (size_t)decoded;
+  if (cert_staging.received > cert_staging.expected) {
+    shell_error(sh, "ERROR: Too much data (%u > %u)", (unsigned)cert_staging.received,
+                (unsigned)cert_staging.expected);
+    cert_staging.active = false;
+    return -EOVERFLOW;
+  }
+
+  shell_print(sh, "OK: Cert chunk accepted (%u/%u)", (unsigned)cert_staging.received,
+              (unsigned)cert_staging.expected);
+  return 0;
+}
+
+static int cmd_cert_commit(const struct shell *sh, size_t argc, char **argv) {
+  ARG_UNUSED(argc);
+  ARG_UNUSED(argv);
+
+  if (!cert_staging.active) {
+    shell_error(sh, "ERROR: No active cert staging");
+    return -EINVAL;
+  }
+  if (cert_staging.received != cert_staging.expected) {
+    shell_error(sh, "ERROR: Incomplete data (%u/%u)", (unsigned)cert_staging.received,
+                (unsigned)cert_staging.expected);
+    return -EINVAL;
+  }
+
+  int err = ensure_certs_dir();
+  if (err && err != -EEXIST) {
+    shell_error(sh, "ERROR: Failed to create cert dir (%d)", err);
+    cert_staging.active = false;
+    return err;
+  }
+
+  struct fs_file_t file;
+  fs_file_t_init(&file);
+  err = fs_open(&file, cert_staging.path, FS_O_CREATE | FS_O_WRITE | FS_O_TRUNC);
+  if (err < 0) {
+    shell_error(sh, "ERROR: Failed to open cert file (%d)", err);
+    cert_staging.active = false;
+    return err;
+  }
+
+  ssize_t wr = fs_write(&file, cert_staging.data, cert_staging.received);
+  fs_close(&file);
+
+  if (wr < 0 || (size_t)wr != cert_staging.received) {
+    shell_error(sh, "ERROR: Failed to write cert file (%d)", (int)wr);
+    cert_staging.active = false;
+    return -EIO;
+  }
+
+  shell_print(sh, "OK: Certificate committed to %s (%u bytes)", cert_staging.path,
+              (unsigned)cert_staging.received);
+  cert_staging.active = false;
+  return 0;
+}
+
+static int cmd_cert_erase(const struct shell *sh, size_t argc, char **argv) {
+  if (argc < 2) {
+    shell_error(sh, "ERROR: Usage: zplc cert erase <ca|client|key>");
+    return -EINVAL;
+  }
+
+  const char *path = cert_path_from_kind(argv[1]);
+  if (!path) {
+    shell_error(sh, "ERROR: Invalid cert type '%s'", argv[1]);
+    return -EINVAL;
+  }
+
+  int err = fs_unlink(path);
+  if (err == -ENOENT) {
+    shell_print(sh, "OK: Certificate not present (%s)", path);
+    return 0;
+  }
+  if (err < 0) {
+    shell_error(sh, "ERROR: Failed to erase cert (%d)", err);
+    return err;
+  }
+
+  shell_print(sh, "OK: Erased certificate %s", path);
+  return 0;
+}
+
+static int cmd_cert_status(const struct shell *sh, size_t argc, char **argv) {
+  ARG_UNUSED(argc);
+  ARG_UNUSED(argv);
+
+  const char *paths[] = {"/lfs/certs/ca.pem", "/lfs/certs/client.pem", "/lfs/certs/client.key"};
+  const char *names[] = {"CA", "CLIENT", "KEY"};
+
+  for (size_t i = 0; i < 3U; i++) {
+    struct fs_dirent dirent;
+    int err = fs_stat(paths[i], &dirent);
+    if (err == 0 && dirent.type == FS_DIR_ENTRY_FILE) {
+      shell_print(sh, "OK: %s present (%u bytes)", names[i], (unsigned)dirent.size);
+    } else {
+      shell_print(sh, "WARN: %s missing", names[i]);
+    }
+  }
+
   return 0;
 }
 
@@ -1474,6 +1537,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_sched,
     SHELL_CMD_ARG(status, NULL, "Scheduler status", cmd_sched_status, 1, 1),
     SHELL_CMD(tasks, NULL, "List tasks", cmd_sched_tasks),
+    SHELL_CMD_ARG(load, NULL, "Prepare program load: sched load <size>", cmd_sched_load, 2, 0),
+    SHELL_CMD_ARG(data, NULL, "Receive program data (hex): sched data <hex>", cmd_sched_data, 2, 0),
     SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
@@ -1505,8 +1570,36 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_config,
     SHELL_CMD(get, NULL, "Show current configuration", cmd_config_get),
     SHELL_CMD_ARG(set, NULL, "Set configuration value", cmd_config_set, 3, 0),
-    SHELL_CMD(save, NULL, "Persist configuration to NVS", cmd_config_save),
+    SHELL_CMD(save, NULL, "Persist configuration to flash", cmd_config_save),
     SHELL_CMD(reset, NULL, "Reset configuration to defaults", cmd_config_reset),
+    SHELL_SUBCMD_SET_END);
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+    sub_cert,
+    SHELL_CMD_ARG(begin, NULL, "Begin cert upload: cert begin <ca|client|key> <size>", cmd_cert_begin, 3, 0),
+    SHELL_CMD_ARG(chunk, NULL, "Upload cert chunk in hex", cmd_cert_chunk, 2, 0),
+    SHELL_CMD(commit, NULL, "Commit staged certificate", cmd_cert_commit),
+    SHELL_CMD_ARG(erase, NULL, "Erase certificate: cert erase <ca|client|key>", cmd_cert_erase, 2, 0),
+    SHELL_CMD(status, NULL, "Show cert presence/size", cmd_cert_status),
+    SHELL_SUBCMD_SET_END);
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+    sub_net,
+    SHELL_CMD(status, NULL, "Show network status (IP/WiFi)", cmd_net_status),
+    SHELL_SUBCMD_SET_END);
+
+static int cmd_mqtt_reset_backoff(const struct shell *sh, size_t argc, char **argv)
+{
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
+    zplc_mqtt_request_backoff_reset();
+    shell_print(sh, "MQTT backoff reset requested.");
+    return 0;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+    sub_mqtt,
+    SHELL_CMD(reset_backoff, NULL, "Reset MQTT reconnect backoff to initial value", cmd_mqtt_reset_backoff),
     SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
@@ -1522,6 +1615,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_CMD(version, NULL, "Version info", cmd_zplc_version),
     SHELL_CMD(dbg, &sub_dbg, "Debug commands", NULL),
     SHELL_CMD(config, &sub_config, "Configuration commands", NULL),
+    SHELL_CMD(cert, &sub_cert, "Certificate management", NULL),
+    SHELL_CMD(net, &sub_net, "Network diagnostics", NULL),
+    SHELL_CMD(mqtt, &sub_mqtt, "MQTT client commands", NULL),
 #ifdef CONFIG_ZPLC_SCHEDULER
     SHELL_CMD(sched, &sub_sched, "Scheduler commands", NULL),
     SHELL_CMD(sys, &sub_sys, "System commands", NULL),

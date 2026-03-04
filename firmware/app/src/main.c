@@ -34,17 +34,25 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 #define ZPLC_GPIO_OUTPUT_COUNT 4
 
 /* ============================================================================
+ * Program Upload Buffer (shared by legacy and scheduler modes via shell_cmds.c)
+ * ============================================================================
+ */
+
+/** @brief Static backing store for shell-based bytecode upload */
+static uint8_t s_program_buf[4096];
+
+/** @brief Pointer to the program buffer (extern in shell_cmds.c) */
+uint8_t *program_buffer = s_program_buf;
+size_t program_buffer_size = 4096;
+volatile size_t program_expected_size = 0;
+volatile size_t program_received_size = 0;
+
+/* ============================================================================
  * Legacy Single-Task Mode (when scheduler is disabled)
  * ============================================================================
  */
 
 #ifndef CONFIG_ZPLC_SCHEDULER
-
-/** @brief Program buffer for dynamic loading */
-uint8_t program_buffer[4096];
-size_t program_buffer_size = 4096;
-volatile size_t program_expected_size = 0;
-volatile size_t program_received_size = 0;
 volatile uint32_t cycle_count = 0;
 volatile int step_requested = 0;
 
