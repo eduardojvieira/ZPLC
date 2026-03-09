@@ -24,6 +24,8 @@ target_sources(app PRIVATE
     src/zplc_config.c
     src/zplc_modbus.c
     src/zplc_mqtt.c
+    src/zplc_time.c
+    src/zplc_azure_sas.c
 )
 
 if(CONFIG_SHELL)

@@ -38,8 +38,8 @@ import type {
   CompilerConfig,
   NetworkConfig,
   CommunicationConfig,
+  MQTTCommunicationConfig,
   CommunicationTagConfig,
-  CommunicationTagMode,
   CommunicationTagType,
   ZPLCProjectConfig,
   FileTreeNode,
@@ -198,7 +198,7 @@ export function ProjectSettings() {
             icon={<Radio size={16} />}
             isExpanded={expandedSections.communication}
             onToggle={() => toggleSection('communication')}
-            badge={`${projectConfig.communication?.tags?.length || 0} tag${(projectConfig.communication?.tags?.length || 0) !== 1 ? 's' : ''}`}
+            badge={`${(projectConfig.communication?.bindings?.length || projectConfig.communication?.tags?.length || 0)} tag${(projectConfig.communication?.bindings?.length || projectConfig.communication?.tags?.length || 0) !== 1 ? 's' : ''}`}
           >
             <CommunicationSection config={projectConfig} updateConfig={updateConfig} />
           </SettingsSection>
@@ -245,7 +245,7 @@ export function ProjectSettings() {
                 <span className="text-[var(--color-accent-yellow)]"> {projectConfig.io?.outputs?.length || 0}</span> outputs
               </li>
               <li>
-                Communication: <span className="text-[var(--color-accent-blue)]">{projectConfig.communication?.tags?.length || 0}</span> tags,
+                Communication: <span className="text-[var(--color-accent-blue)]">{projectConfig.communication?.bindings?.length || projectConfig.communication?.tags?.length || 0}</span> tags,
                 MQTT <span className="text-[var(--color-accent-green)]">{projectConfig.communication?.mqtt?.enabled ? 'ON' : 'OFF'}</span>,
                 Modbus <span className="text-[var(--color-accent-green)]">{projectConfig.communication?.modbus?.enabled ? 'ON' : 'OFF'}</span>
               </li>
@@ -613,6 +613,26 @@ function NetworkSection({ config, updateConfig }: SectionProps) {
             />
           </div>
         )}
+        <div>
+          <label className="block text-xs text-[var(--color-surface-400)] mb-2">NTP Time Synchronization</label>
+          <div className="grid grid-cols-4 gap-3">
+            <label className="flex items-center gap-2 text-sm text-[var(--color-surface-200)]">
+              <input
+                type="checkbox"
+                checked={network?.ntp?.enabled ?? true}
+                onChange={(e) => updateNetwork({ ...network, wifi, ntp: { enabled: e.target.checked, server: network?.ntp?.server ?? 'pool.ntp.org' } })}
+              />
+              NTP Enabled
+            </label>
+            <input
+              type="text"
+              value={network?.ntp?.server ?? 'pool.ntp.org'}
+              onChange={(e) => updateNetwork({ ...network, wifi, ntp: { enabled: network?.ntp?.enabled ?? true, server: e.target.value } })}
+              placeholder="NTP server (e.g. pool.ntp.org)"
+              className="col-span-3 px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+            />
+          </div>
+        </div>
       </div>
     );
   }
@@ -688,6 +708,26 @@ function NetworkSection({ config, updateConfig }: SectionProps) {
           />
         </div>
       )}
+      <div>
+        <label className="block text-xs text-[var(--color-surface-400)] mb-2">NTP Time Synchronization</label>
+        <div className="grid grid-cols-4 gap-3">
+          <label className="flex items-center gap-2 text-sm text-[var(--color-surface-200)]">
+            <input
+              type="checkbox"
+              checked={network?.ntp?.enabled ?? true}
+              onChange={(e) => updateNetwork({ ...network, ethernet, ntp: { enabled: e.target.checked, server: network?.ntp?.server ?? 'pool.ntp.org' } })}
+            />
+            NTP Enabled
+          </label>
+          <input
+            type="text"
+            value={network?.ntp?.server ?? 'pool.ntp.org'}
+            onChange={(e) => updateNetwork({ ...network, ethernet, ntp: { enabled: network?.ntp?.enabled ?? true, server: e.target.value } })}
+            placeholder="NTP server (e.g. pool.ntp.org)"
+            className="col-span-3 px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+        </div>
+      </div>
     </div>
   );
 }
@@ -1027,18 +1067,32 @@ function IOTable({ items, onUpdate, onRemove }: IOTableProps) {
 // =============================================================================
 
 function CommunicationSection({ config, updateConfig }: SectionProps) {
+  const defaultMqtt: MQTTCommunicationConfig = {
+    enabled: true,
+    profile: 'sparkplug-b',
+    protocolVersion: '5.0',
+    transport: 'tcp',
+    broker: 'test.mosquitto.org',
+    port: 1883,
+    clientId: 'zplc-device',
+    keepAliveSec: 60,
+    cleanSession: true,
+    sessionExpirySec: 0,
+    topicNamespace: 'spBv1.0/ZPLC',
+    publishIntervalMs: 2000,
+    publishQos: 0,
+    subscribeQos: 0,
+    publishRetain: false,
+    securityLevel: 'none',
+    websocketPath: '/mqtt',
+    lwtEnabled: false,
+    lwtPayload: 'offline',
+    lwtQos: 0,
+    lwtRetain: false,
+  };
+
   const communication: CommunicationConfig = config.communication || {
-    mqtt: {
-      enabled: true,
-      broker: 'test.mosquitto.org',
-      port: 1883,
-      clientId: 'zplc-device',
-      keepAliveSec: 60,
-      cleanSession: true,
-      topicNamespace: 'spBv1.0/ZPLC',
-      publishIntervalMs: 2000,
-      securityLevel: 'none',
-    },
+    mqtt: defaultMqtt,
     modbus: {
       enabled: true,
       unitId: 1,
@@ -1052,17 +1106,7 @@ function CommunicationSection({ config, updateConfig }: SectionProps) {
     tags: [],
   };
 
-  const mqtt = communication.mqtt || {
-    enabled: true,
-    broker: 'test.mosquitto.org',
-    port: 1883,
-    clientId: 'zplc-device',
-    keepAliveSec: 60,
-    cleanSession: true,
-    topicNamespace: 'spBv1.0/ZPLC',
-    publishIntervalMs: 2000,
-    securityLevel: 'none',
-  };
+  const mqtt: MQTTCommunicationConfig = communication.mqtt || defaultMqtt;
 
   const modbus = communication.modbus || {
     enabled: true,
@@ -1075,13 +1119,15 @@ function CommunicationSection({ config, updateConfig }: SectionProps) {
     pollIntervalMs: 100,
   };
 
-  const tags = communication.tags || [];
+  const tags = communication.bindings || communication.tags || [];
 
   const updateCommunication = (updates: Partial<CommunicationConfig>) => {
+    const nextBindings = updates.bindings ?? updates.tags;
     updateConfig({
       communication: {
         ...communication,
         ...updates,
+        ...(nextBindings ? { bindings: nextBindings, tags: nextBindings } : {}),
       },
     });
   };
@@ -1092,7 +1138,7 @@ function CommunicationSection({ config, updateConfig }: SectionProps) {
       name: `Tag${index + 1}`,
       symbol: `CommTag${index + 1}`,
       type: 'REAL',
-      mode: 'publish',
+      publish: true,
     };
     updateCommunication({ tags: [...tags, next] });
   };
@@ -1120,6 +1166,35 @@ function CommunicationSection({ config, updateConfig }: SectionProps) {
             />
             Enabled
           </label>
+          <select
+            value={mqtt.profile}
+            onChange={(e) => updateCommunication({ mqtt: { ...mqtt, profile: e.target.value as typeof mqtt.profile } })}
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          >
+            <option value="sparkplug-b">Sparkplug B</option>
+            <option value="generic-broker">Generic Broker</option>
+            <option value="aws-iot-core">AWS IoT Core</option>
+            <option value="azure-iot-hub">Azure IoT Hub</option>
+            <option value="azure-event-grid-mqtt">Azure Event Grid MQTT</option>
+          </select>
+          <select
+            value={mqtt.protocolVersion}
+            onChange={(e) => updateCommunication({ mqtt: { ...mqtt, protocolVersion: e.target.value as typeof mqtt.protocolVersion } })}
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          >
+            <option value="3.1.1">MQTT 3.1.1</option>
+            <option value="5.0">MQTT 5.0</option>
+          </select>
+          <select
+            value={mqtt.transport}
+            onChange={(e) => updateCommunication({ mqtt: { ...mqtt, transport: e.target.value as typeof mqtt.transport } })}
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          >
+            <option value="tcp">TCP</option>
+            <option value="tls">TLS</option>
+            <option value="ws">WebSocket</option>
+            <option value="wss">Secure WebSocket</option>
+          </select>
           <input
             type="text"
             value={mqtt.broker}
@@ -1159,6 +1234,77 @@ function CommunicationSection({ config, updateConfig }: SectionProps) {
             placeholder="Topic namespace"
             className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
           />
+          {mqtt.profile === 'sparkplug-b' && (
+            <input
+              type="text"
+              value={mqtt.groupId ?? ''}
+              onChange={(e) => updateCommunication({ mqtt: { ...mqtt, groupId: e.target.value || undefined } })}
+              placeholder="Sparkplug Group ID"
+              className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+            />
+          )}
+          {mqtt.profile === 'azure-iot-hub' && (
+            <>
+              <input
+                type="password"
+                value={mqtt.azureSasKey ?? ''}
+                onChange={(e) => updateCommunication({ mqtt: { ...mqtt, azureSasKey: e.target.value || undefined } })}
+                placeholder="Azure SharedAccessKey (base64)"
+                className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded font-mono"
+              />
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-[var(--color-text-muted)] whitespace-nowrap">Token expiry (s)</label>
+                <input
+                  type="number"
+                  min={300}
+                  max={31536000}
+                  value={mqtt.azureSasExpirySec ?? 3600}
+                  onChange={(e) => updateCommunication({ mqtt: { ...mqtt, azureSasExpirySec: parseInt(e.target.value, 10) || 3600 } })}
+                  className="w-24 px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+                />
+              </div>
+              <label className="flex items-center gap-2 text-xs text-[var(--color-text-muted)] cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={mqtt.azureTwinEnabled ?? false}
+                  onChange={(e) => updateCommunication({ mqtt: { ...mqtt, azureTwinEnabled: e.target.checked } })}
+                  className="accent-[var(--color-primary)]"
+                />
+                Device Twins
+              </label>
+              <label className="flex items-center gap-2 text-xs text-[var(--color-text-muted)] cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={mqtt.azureDirectMethodsEnabled ?? false}
+                  onChange={(e) => updateCommunication({ mqtt: { ...mqtt, azureDirectMethodsEnabled: e.target.checked } })}
+                  className="accent-[var(--color-primary)]"
+                />
+                Direct Methods
+              </label>
+            </>
+          )}
+          {mqtt.profile === 'aws-iot-core' && (
+            <>
+              <label className="flex items-center gap-2 text-xs text-[var(--color-text-muted)] cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={mqtt.awsShadowEnabled ?? false}
+                  onChange={(e) => updateCommunication({ mqtt: { ...mqtt, awsShadowEnabled: e.target.checked } })}
+                  className="accent-[var(--color-primary)]"
+                />
+                Device Shadows
+              </label>
+              <label className="flex items-center gap-2 text-xs text-[var(--color-text-muted)] cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={mqtt.awsJobsEnabled ?? false}
+                  onChange={(e) => updateCommunication({ mqtt: { ...mqtt, awsJobsEnabled: e.target.checked } })}
+                  className="accent-[var(--color-primary)]"
+                />
+                IoT Jobs
+              </label>
+            </>
+          )}
           <select
             value={mqtt.securityLevel}
             onChange={(e) => updateCommunication({ mqtt: { ...mqtt, securityLevel: e.target.value as typeof mqtt.securityLevel } })}
@@ -1180,6 +1326,42 @@ function CommunicationSection({ config, updateConfig }: SectionProps) {
             placeholder="KeepAlive s"
             className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
           />
+          <input
+            type="number"
+            min={0}
+            value={mqtt.sessionExpirySec}
+            onChange={(e) => updateCommunication({ mqtt: { ...mqtt, sessionExpirySec: parseInt(e.target.value, 10) || 0 } })}
+            placeholder="Session expiry s"
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+          <select
+            value={mqtt.publishQos}
+            onChange={(e) => updateCommunication({ mqtt: { ...mqtt, publishQos: parseInt(e.target.value, 10) as 0 | 1 | 2 } })}
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          >
+            <option value={0}>Publish QoS 0</option>
+            <option value={1}>Publish QoS 1</option>
+            <option value={2}>Publish QoS 2</option>
+          </select>
+          <select
+            value={mqtt.subscribeQos}
+            onChange={(e) => updateCommunication({ mqtt: { ...mqtt, subscribeQos: parseInt(e.target.value, 10) as 0 | 1 | 2 } })}
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          >
+            <option value={0}>Subscribe QoS 0</option>
+            <option value={1}>Subscribe QoS 1</option>
+            <option value={2}>Subscribe QoS 2</option>
+          </select>
+        </div>
+        <div className="grid grid-cols-4 gap-3 mt-2">
+          <label className="flex items-center gap-2 text-xs text-[var(--color-surface-200)]">
+            <input
+              type="checkbox"
+              checked={mqtt.publishRetain}
+              onChange={(e) => updateCommunication({ mqtt: { ...mqtt, publishRetain: e.target.checked } })}
+            />
+            Retain publishes
+          </label>
           <label className="flex items-center gap-2 text-xs text-[var(--color-surface-200)]">
             <input
               type="checkbox"
@@ -1203,7 +1385,21 @@ function CommunicationSection({ config, updateConfig }: SectionProps) {
             className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
           />
         </div>
-        <div className="grid grid-cols-3 gap-3 mt-2">
+        <div className="grid grid-cols-4 gap-3 mt-2">
+          <input
+            type="text"
+            value={mqtt.websocketPath || ''}
+            onChange={(e) => updateCommunication({ mqtt: { ...mqtt, websocketPath: e.target.value || undefined } })}
+            placeholder="WebSocket path"
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+          <input
+            type="text"
+            value={mqtt.alpnProtocols || ''}
+            onChange={(e) => updateCommunication({ mqtt: { ...mqtt, alpnProtocols: e.target.value || undefined } })}
+            placeholder="ALPN protocol"
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
           <input
             type="text"
             value={mqtt.caCertPath || ''}
@@ -1225,6 +1421,46 @@ function CommunicationSection({ config, updateConfig }: SectionProps) {
             placeholder="Client key path"
             className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
           />
+        </div>
+        <div className="grid grid-cols-5 gap-3 mt-2">
+          <label className="flex items-center gap-2 text-xs text-[var(--color-surface-200)]">
+            <input
+              type="checkbox"
+              checked={mqtt.lwtEnabled}
+              onChange={(e) => updateCommunication({ mqtt: { ...mqtt, lwtEnabled: e.target.checked } })}
+            />
+            Last Will
+          </label>
+          <input
+            type="text"
+            value={mqtt.lwtTopic || ''}
+            onChange={(e) => updateCommunication({ mqtt: { ...mqtt, lwtTopic: e.target.value || undefined } })}
+            placeholder="LWT topic"
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+          <input
+            type="text"
+            value={mqtt.lwtPayload || ''}
+            onChange={(e) => updateCommunication({ mqtt: { ...mqtt, lwtPayload: e.target.value || undefined } })}
+            placeholder="LWT payload"
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+          <select
+            value={mqtt.lwtQos}
+            onChange={(e) => updateCommunication({ mqtt: { ...mqtt, lwtQos: parseInt(e.target.value, 10) as 0 | 1 } })}
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          >
+            <option value={0}>LWT QoS 0</option>
+            <option value={1}>LWT QoS 1</option>
+          </select>
+          <label className="flex items-center gap-2 text-xs text-[var(--color-surface-200)]">
+            <input
+              type="checkbox"
+              checked={mqtt.lwtRetain}
+              onChange={(e) => updateCommunication({ mqtt: { ...mqtt, lwtRetain: e.target.checked } })}
+            />
+            Retain LWT
+          </label>
         </div>
       </div>
 
@@ -1334,7 +1570,7 @@ function CommunicationSection({ config, updateConfig }: SectionProps) {
               <div className="col-span-2">Name</div>
               <div className="col-span-2">Symbol</div>
               <div className="col-span-1">Type</div>
-              <div className="col-span-2">Mode</div>
+              <div className="col-span-2">Bindings</div>
               <div className="col-span-2">Modbus</div>
               <div className="col-span-2">Description</div>
               <div className="col-span-1"></div>
@@ -1363,22 +1599,39 @@ function CommunicationSection({ config, updateConfig }: SectionProps) {
                   <option value="UINT">UINT</option>
                   <option value="REAL">REAL</option>
                 </select>
-                <select
-                  value={tag.mode}
-                  onChange={(e) => updateTag(index, { mode: e.target.value as CommunicationTagMode })}
-                  className="col-span-2 px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded"
-                >
-                  <option value="publish">publish</option>
-                  <option value="subscribe">subscribe</option>
-                  <option value="modbus">modbus</option>
-                </select>
+                <div className="col-span-2 flex gap-2 text-[11px] text-[var(--color-surface-200)]">
+                  <label className="flex items-center gap-1">
+                    <input
+                      type="checkbox"
+                      checked={tag.publish || tag.mode === 'publish'}
+                      onChange={(e) => updateTag(index, {
+                        publish: e.target.checked,
+                        mode: e.target.checked ? 'publish' : undefined,
+                      })}
+                    />
+                    pub
+                  </label>
+                  <label className="flex items-center gap-1">
+                    <input
+                      type="checkbox"
+                      checked={tag.subscribe || tag.mode === 'subscribe'}
+                      onChange={(e) => updateTag(index, {
+                        subscribe: e.target.checked,
+                        mode: e.target.checked ? 'subscribe' : tag.mode === 'subscribe' ? undefined : tag.mode,
+                      })}
+                    />
+                    sub
+                  </label>
+                </div>
                 <input
                   type="number"
                   min={1}
                   max={65535}
                   value={tag.modbusAddress ?? ''}
-                  onChange={(e) => updateTag(index, { modbusAddress: e.target.value ? parseInt(e.target.value, 10) : undefined })}
-                  disabled={tag.mode !== 'modbus'}
+                  onChange={(e) => updateTag(index, {
+                    modbusAddress: e.target.value ? parseInt(e.target.value, 10) : undefined,
+                    mode: e.target.value ? 'modbus' : tag.mode === 'modbus' ? undefined : tag.mode,
+                  })}
                   className="col-span-2 px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded disabled:opacity-50"
                 />
                 <input

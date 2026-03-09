@@ -10,9 +10,11 @@ export {
   connect,
   disconnect,
   uploadBytecode,
+  uploadCertificates,
   getStatus,
   resetDevice,
   getVersion,
+  type CertificateUploadBundle,
   type SerialConnection,
   type ProgressCallback,
 } from './webserial';

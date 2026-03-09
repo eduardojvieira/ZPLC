@@ -15,6 +15,7 @@
 #include <zplc_isa.h>
 #include <zplc_debug.h>
 #include "zplc_config.h"
+#include "zplc_time.h"
 
 #ifdef CONFIG_ZPLC_SCHEDULER
 #include <zplc_scheduler.h>
@@ -328,6 +329,9 @@ int main(void) {
   } else {
     zplc_hal_log("[INIT] Networking active (DHCP pending...)\n");
   }
+
+  zplc_hal_log("[INIT] Synchronizing RTC via SNTP...\n");
+  zplc_time_init();
 
   zplc_hal_log("[INIT] Starting Modbus communication services...\n");
   zplc_modbus_init();

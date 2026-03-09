@@ -21,23 +21,29 @@ import {
   RefreshCw,
   Clock,
   Layers,
+  Radio,
   ChevronDown,
   ChevronRight,
 } from 'lucide-react';
 import { connectionManager } from '../runtime/connectionManager';
-import type { SystemInfo, StatusInfo } from '../runtime/serialAdapter';
+import type { CommunicationMapEntry, MqttRuntimeStatus, SystemInfo, StatusInfo } from '../runtime/serialAdapter';
 
 export function ControllerView() {
   // State from connection manager
   const [isConnected, setIsConnected] = useState(connectionManager.connected);
   const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(connectionManager.systemInfo);
   const [status, setStatus] = useState<StatusInfo | null>(connectionManager.status);
+  const [communicationMap, setCommunicationMap] = useState<CommunicationMapEntry[]>(connectionManager.communicationMap);
+  const [mqttStatus, setMqttStatus] = useState<MqttRuntimeStatus | null>(connectionManager.mqttStatus);
   const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
+  const [modbusDrafts, setModbusDrafts] = useState<Record<number, string>>({});
   
   // UI state
   const [expandedSections, setExpandedSections] = useState({
     info: true,
     tasks: true,
+    communication: true,
+    mqtt: true,
     memory: false,
     io: false,
   });
@@ -62,12 +68,36 @@ export function ControllerView() {
       setLastUpdateTime(new Date());
     });
 
+    const unsubCommunication = connectionManager.onCommunicationMapUpdate((entries) => {
+      setCommunicationMap(entries);
+    });
+
+    const unsubMqtt = connectionManager.onMqttStatusUpdate((nextStatus) => {
+      setMqttStatus(nextStatus);
+    });
+
     return () => {
       unsubConnection();
       unsubSystemInfo();
       unsubStatus();
+      unsubCommunication();
+      unsubMqtt();
     };
   }, []);
+
+  const applyModbusOverride = async (entry: CommunicationMapEntry) => {
+    const draft = modbusDrafts[entry.index] ?? String(entry.effective_value);
+    const nextAddress = parseInt(draft, 10);
+    if (!Number.isFinite(nextAddress) || nextAddress <= 0) {
+      return;
+    }
+
+    await connectionManager.setModbusAddress(entry.index, nextAddress);
+  };
+
+  const clearModbusOverride = async (entry: CommunicationMapEntry) => {
+    await connectionManager.clearModbusAddress(entry.index);
+  };
 
   /**
    * Toggle section expansion
@@ -270,6 +300,118 @@ export function ControllerView() {
               )}
             </div>
           )}
+
+          <div className="border-b border-[var(--color-surface-700)]">
+            <button
+              onClick={() => toggleSection('communication')}
+              className="flex items-center gap-2 w-full p-2 hover:bg-[var(--color-surface-700)] text-left"
+            >
+              {expandedSections.communication ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+              <Radio size={14} className="text-[var(--color-accent-green)]" />
+              <span className="text-[var(--color-surface-200)]">Communication</span>
+              <span className="ml-auto text-xs text-[var(--color-surface-400)]">
+                {communicationMap.length}
+              </span>
+            </button>
+
+            {expandedSections.communication && (
+              <div className="px-2 pb-2 space-y-2">
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => void connectionManager.refreshCommunicationMap()}
+                    className="text-[10px] px-2 py-1 rounded bg-[var(--color-surface-700)] text-[var(--color-surface-300)]"
+                  >
+                    Refresh map
+                  </button>
+                </div>
+
+                {communicationMap.length === 0 ? (
+                  <p className="px-2 py-2 text-xs text-[var(--color-surface-400)]">
+                    No runtime communication bindings loaded.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {communicationMap.map((entry) => (
+                      <div key={entry.index} className="rounded border border-[var(--color-surface-700)] p-2 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-[var(--color-surface-200)]">#{entry.index}</span>
+                          <span className="rounded bg-[var(--color-surface-700)] px-1.5 py-0.5 uppercase text-[10px] text-[var(--color-surface-300)]">
+                            {entry.kind}
+                          </span>
+                          <span className="text-[var(--color-surface-400)]">{entry.type}</span>
+                          <span className="text-[var(--color-surface-500)]">x{entry.width}</span>
+                          <span className="ml-auto font-mono text-[var(--color-surface-400)]">0x{entry.var_addr.toString(16).padStart(4, '0')}</span>
+                        </div>
+
+                        {entry.kind === 'modbus' ? (
+                          <div className="mt-2 flex items-center gap-2">
+                            <span className="text-[var(--color-surface-500)]">
+                              Addr {entry.effective_value}{entry.width > 1 ? `-${entry.effective_value + entry.width - 1}` : ''}
+                            </span>
+                            <input
+                              type="number"
+                              min={1}
+                              value={modbusDrafts[entry.index] ?? String(entry.effective_value)}
+                              onChange={(e) => setModbusDrafts((prev) => ({ ...prev, [entry.index]: e.target.value }))}
+                              className="w-24 rounded border border-[var(--color-surface-600)] bg-[var(--color-surface-800)] px-2 py-1 text-[var(--color-surface-100)]"
+                            />
+                            <button
+                              onClick={() => void applyModbusOverride(entry)}
+                              className="rounded bg-[var(--color-accent-blue)]/20 px-2 py-1 text-[var(--color-accent-blue)]"
+                            >
+                              Apply
+                            </button>
+                            {entry.override && (
+                              <button
+                                onClick={() => void clearModbusOverride(entry)}
+                                className="rounded bg-[var(--color-accent-yellow)]/20 px-2 py-1 text-[var(--color-accent-yellow)]"
+                              >
+                                Clear override
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="mt-2 text-[var(--color-surface-400)]">
+                            Value: {entry.effective_value}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="border-b border-[var(--color-surface-700)]">
+            <button
+              onClick={() => toggleSection('mqtt')}
+              className="flex items-center gap-2 w-full p-2 hover:bg-[var(--color-surface-700)] text-left"
+            >
+              {expandedSections.mqtt ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+              <Radio size={14} className="text-[var(--color-accent-blue)]" />
+              <span className="text-[var(--color-surface-200)]">MQTT Runtime</span>
+              <span className="ml-auto text-xs text-[var(--color-surface-400)]">
+                {mqttStatus?.connected ? 'online' : 'offline'}
+              </span>
+            </button>
+
+            {expandedSections.mqtt && mqttStatus && (
+              <div className="px-4 pb-3 space-y-1.5 text-xs">
+                <div className="flex justify-between"><span className="text-[var(--color-surface-400)]">Broker</span><span className="text-[var(--color-surface-200)]">{mqttStatus.broker || '-'}</span></div>
+                <div className="flex justify-between"><span className="text-[var(--color-surface-400)]">Client ID</span><span className="text-[var(--color-surface-200)]">{mqttStatus.client_id || '-'}</span></div>
+                <div className="flex justify-between"><span className="text-[var(--color-surface-400)]">Profile</span><span className="text-[var(--color-surface-200)]">{mqttStatus.profile}</span></div>
+                <div className="flex justify-between"><span className="text-[var(--color-surface-400)]">Protocol</span><span className="text-[var(--color-surface-200)]">{mqttStatus.protocol === 0 ? '3.1.1' : '5.0'}</span></div>
+                <div className="flex justify-between"><span className="text-[var(--color-surface-400)]">Transport</span><span className="text-[var(--color-surface-200)]">{['tcp', 'tls', 'ws', 'wss'][mqttStatus.transport] ?? mqttStatus.transport}</span></div>
+                <div className="flex justify-between"><span className="text-[var(--color-surface-400)]">QoS</span><span className="text-[var(--color-surface-200)]">pub {mqttStatus.publish_qos} / sub {mqttStatus.subscribe_qos}</span></div>
+                <div className="flex justify-between"><span className="text-[var(--color-surface-400)]">Session</span><span className="text-[var(--color-surface-200)]">{mqttStatus.session_present ? 'present' : 'new'}</span></div>
+                <div className="flex justify-between"><span className="text-[var(--color-surface-400)]">Flags</span><span className="text-[var(--color-surface-200)]">{mqttStatus.retain_enabled ? 'retain ' : ''}{mqttStatus.lwt_enabled ? 'lwt' : 'plain'}</span></div>
+                <div className="flex justify-between"><span className="text-[var(--color-surface-400)]">Last Error</span><span className="text-[var(--color-surface-200)]">{mqttStatus.last_error}</span></div>
+                <div className="flex justify-between"><span className="text-[var(--color-surface-400)]">Last Publish</span><span className="text-[var(--color-surface-200)]">{mqttStatus.last_publish_ms} ms</span></div>
+                <div className="flex justify-between"><span className="text-[var(--color-surface-400)]">Backoff</span><span className="text-[var(--color-surface-200)]">{mqttStatus.reconnect_backoff_s}s</span></div>
+              </div>
+            )}
+          </div>
 
           {/* Memory Section */}
           <div className="border-b border-[var(--color-surface-700)]">

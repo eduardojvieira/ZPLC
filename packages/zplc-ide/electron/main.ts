@@ -8,6 +8,7 @@
 import { app, BrowserWindow, session, ipcMain, shell } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
 
 // ESM equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -19,6 +20,21 @@ let mainWindow: BrowserWindow | null = null;
 // Determine if we're in development mode
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
+function getRepoVersion(): string {
+  try {
+    const repoRoot = path.resolve(__dirname, '../../..');
+    return execSync('git describe --tags --always --dirty', {
+      cwd: repoRoot,
+      stdio: ['ignore', 'pipe', 'ignore'],
+      encoding: 'utf8',
+    }).trim();
+  } catch {
+    return app.getVersion();
+  }
+}
+
+const appVersion = getRepoVersion();
+
 /**
  * Create the main application window
  */
@@ -28,7 +44,7 @@ function createWindow(): void {
     height: 900,
     minWidth: 1024,
     minHeight: 768,
-    title: `ZPLC IDE v${app.getVersion()}`,
+    title: `ZPLC IDE ${appVersion}`,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -157,7 +173,7 @@ function setupSerialPortSelection(): void {
 function setupIPC(): void {
   // Handle requests for app info
   ipcMain.handle('get-app-info', () => ({
-    version: app.getVersion(),
+    version: appVersion,
     platform: process.platform,
     arch: process.arch,
     isPackaged: app.isPackaged,

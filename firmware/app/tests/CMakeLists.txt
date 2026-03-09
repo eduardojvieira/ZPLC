@@ -5,7 +5,7 @@
 #
 # Host-side (POSIX) tests for firmware/app modules that depend on nanopb.
 # Requires the Zephyr build to have been run at least once so that the
-# proto-generated files exist in build_disco/proto/.
+# proto-generated files exist in a Zephyr build directory (build_giga/build_disco).
 #
 # Usage:
 #   mkdir build && cd build
@@ -45,8 +45,12 @@ add_compile_options(
 set(NANOPB_DIR   "/Users/eduardo/zephyrproject/modules/lib/nanopb"
     CACHE PATH   "Path to nanopb source directory")
 
-set(PROTO_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../build_disco/proto"
+set(PROTO_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../build_giga/proto"
     CACHE PATH   "Path to Zephyr-generated protobuf output directory")
+
+if(NOT EXISTS "${PROTO_BUILD_DIR}/sparkplug_b.pb.h")
+    set(PROTO_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../build_disco/proto")
+endif()
 
 set(ZPLC_CORE_INC "${CMAKE_CURRENT_SOURCE_DIR}/../../lib/zplc_core/include"
     CACHE PATH   "Path to zplc_core include directory")
@@ -58,7 +62,8 @@ set(ZPLC_CORE_INC "${CMAKE_CURRENT_SOURCE_DIR}/../../lib/zplc_core/include"
 if(NOT EXISTS "${PROTO_BUILD_DIR}/sparkplug_b.pb.h")
     message(FATAL_ERROR
         "Proto-generated header not found at ${PROTO_BUILD_DIR}/sparkplug_b.pb.h\n"
-        "Run the Zephyr build first: west build -b stm32f746g_disco firmware/app\n"
+        "Run a Zephyr build first, e.g.:\n"
+        "  west build -b arduino_giga_r1/stm32h747xx/m7 firmware/app -d firmware/app/build_giga\n"
     )
 endif()
 

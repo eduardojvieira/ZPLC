@@ -10,6 +10,11 @@ ZPLC supports deterministic multitasking, allowing you to run different parts of
 
 The scheduler uses a **priority-based preemptive** model.
 
+:::note Native C code
+The scheduler documentation on this page describes **ZPLC VM tasks** loaded from `.zplc` binaries.
+If you need custom Zephyr-native C code, keep it in the runtime application as a built-in service/thread instead of treating it like an IDE-managed PLC program. See `runtime/native-c`.
+:::
+
 *   **Priority**: Lower number = Higher priority. Task 0 (High) can interrupt Task 1 (Low).
 *   **Interval**: Each task has a defined cycle time (e.g., 10ms, 100ms).
 *   **Isolation**: Each task has its own isolated "Work Memory" (Stack + Heap) to prevent data corruption.

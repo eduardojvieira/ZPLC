@@ -82,7 +82,12 @@ export type FBDBlockType =
   | 'MIN'
   | 'LIMIT'
   | 'SEL'
-  | 'MUX';
+  | 'MUX'
+  // Communication
+  | 'COMM_PUBLISH'
+  | 'COMM_SUBSCRIBE'
+  | 'COMM_MODBUS'
+  | 'COMM_CONNECT';
 
 // =============================================================================
 // Block Definition
@@ -183,7 +188,8 @@ export function isFunctionBlock(type: string): boolean {
     'TON', 'TOF', 'TP',
     'CTU', 'CTD', 'CTUD',
     'R_TRIG', 'F_TRIG',
-    'SR', 'RS'
+    'SR', 'RS',
+    'COMM_PUBLISH', 'COMM_SUBSCRIBE', 'COMM_MODBUS', 'COMM_CONNECT'
   ];
   return fbTypes.includes(type);
 }
@@ -377,6 +383,48 @@ export function getDefaultPorts(type: string): { inputs: FBDPort[], outputs: FBD
           { name: 'IN1', type: 'ANY' }
         ],
         outputs: [{ name: 'OUT', type: 'ANY' }]
+      };
+    case 'COMM_PUBLISH':
+      return {
+        inputs: [
+          { name: 'EN', type: 'BOOL' },
+          { name: 'IN', type: 'ANY' }
+        ],
+        outputs: [
+          { name: 'OUT', type: 'ANY' },
+          { name: 'DONE', type: 'BOOL' }
+        ]
+      };
+    case 'COMM_SUBSCRIBE':
+      return {
+        inputs: [
+          { name: 'EN', type: 'BOOL' }
+        ],
+        outputs: [
+          { name: 'OUT', type: 'ANY' },
+          { name: 'VALID', type: 'BOOL' }
+        ]
+      };
+    case 'COMM_MODBUS':
+      return {
+        inputs: [
+          { name: 'EN', type: 'BOOL' },
+          { name: 'IN', type: 'ANY' }
+        ],
+        outputs: [
+          { name: 'OUT', type: 'ANY' },
+          { name: 'STATUS', type: 'BOOL' }
+        ]
+      };
+    case 'COMM_CONNECT':
+      return {
+        inputs: [
+          { name: 'EN', type: 'BOOL' }
+        ],
+        outputs: [
+          { name: 'CONNECTED', type: 'BOOL' },
+          { name: 'ERROR', type: 'BOOL' }
+        ]
       };
     default:
       return {

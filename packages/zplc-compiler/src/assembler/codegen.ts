@@ -255,18 +255,21 @@ export function createZplcFile(bytecode: Uint8Array, entryPoint: number, tags?: 
  * @param tasks - Array of task definitions
  * @returns Complete .zplc file with task segment
  */
-export function createMultiTaskZplcFile(bytecode: Uint8Array, tasks: TaskDef[]): Uint8Array {
+export function createMultiTaskZplcFile(bytecode: Uint8Array, tasks: TaskDef[], tags?: TagDef[]): Uint8Array {
     const codeSize = bytecode.length;
     const taskCount = tasks.length;
     const taskSegmentSize = taskCount * ZPLC_CONSTANTS.TASK_DEF_SIZE;
-    const segmentCount = 2; // CODE + TASK
+    const tagCount = tags?.length ?? 0;
+    const tagSegmentSize = tagCount * ZPLC_CONSTANTS.TAG_ENTRY_SIZE;
+    const segmentCount = tagCount > 0 ? 3 : 2; // CODE + TASK (+ TAGS)
 
-    // Total file size: header + 2 segment entries + code + task data
+    // Total file size: header + segment entries + code + task data + optional tags
     const totalSize =
         ZPLC_CONSTANTS.HEADER_SIZE +
         (ZPLC_CONSTANTS.SEGMENT_ENTRY_SIZE * segmentCount) +
         codeSize +
-        taskSegmentSize;
+        taskSegmentSize +
+        tagSegmentSize;
 
     const output = new Uint8Array(totalSize);
     const view = new DataView(output.buffer);
@@ -299,8 +302,8 @@ export function createMultiTaskZplcFile(bytecode: Uint8Array, tasks: TaskDef[]):
     view.setUint32(offset, codeSize, true);
     offset += 4;
 
-    // data_size (task segment counts as data)
-    view.setUint32(offset, taskSegmentSize, true);
+    // data_size (task metadata + optional tag metadata)
+    view.setUint32(offset, taskSegmentSize + tagSegmentSize, true);
     offset += 4;
 
     // entry_point (first task's entry point for legacy compatibility)
@@ -335,6 +338,18 @@ export function createMultiTaskZplcFile(bytecode: Uint8Array, tasks: TaskDef[]):
     offset += 2;
     view.setUint32(offset, taskSegmentSize, true);
     offset += 4;
+
+    // =========================================================================
+    // Segment Table Entry 3: TAGS (if present)
+    // =========================================================================
+    if (tagCount > 0) {
+        view.setUint16(offset, ZPLC_CONSTANTS.SEGMENT_TYPE_TAGS, true);
+        offset += 2;
+        view.setUint16(offset, 0, true); // flags
+        offset += 2;
+        view.setUint32(offset, tagSegmentSize, true);
+        offset += 4;
+    }
 
     // =========================================================================
     // Code Segment
@@ -383,6 +398,19 @@ export function createMultiTaskZplcFile(bytecode: Uint8Array, tasks: TaskDef[]):
         // reserved
         view.setUint32(offset, 0, true);
         offset += 4;
+    }
+
+    if (tagCount > 0 && tags) {
+        for (const tag of tags) {
+            view.setUint16(offset, tag.varAddr & 0xFFFF, true);
+            offset += 2;
+            view.setUint8(offset, tag.varType & 0xFF);
+            offset += 1;
+            view.setUint8(offset, tag.tagId & 0xFF);
+            offset += 1;
+            view.setUint32(offset, tag.value >>> 0, true);
+            offset += 4;
+        }
     }
 
     return output;

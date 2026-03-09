@@ -37,6 +37,7 @@
 #include <zplc_isa.h>
 #include <zplc_debug.h>
 #include "zplc_config.h"
+#include "zplc_time.h"
 
 /* zplc_mqtt.c has no standalone header — declare the public symbol here */
 extern void zplc_mqtt_request_backoff_reset(void);
@@ -1183,6 +1184,90 @@ static int cmd_hil_reset(const struct shell *sh, size_t argc, char **argv) {
 #endif
 
 /* ============================================================================
+ * NTP Handlers
+ * ============================================================================
+ */
+
+static int cmd_ntp_status(const struct shell *sh, size_t argc, char **argv)
+{
+  bool json = (argc > 1 && strcmp(argv[1], "--json") == 0);
+  bool synced = zplc_time_is_synced();
+  int64_t unix_ms = zplc_time_get_unix_ms();
+  char server[64];
+  zplc_config_get_ntp_server(server, sizeof(server));
+
+  if (json) {
+    JSON_OBJ_START(sh);
+    JSON_BOOL(sh, "enabled", zplc_config_get_ntp_enabled(), true);
+    JSON_BOOL(sh, "synced", synced, true);
+    JSON_STR(sh, "server", server, true);
+    if (synced && unix_ms > 0) {
+      shell_fprintf(sh, SHELL_NORMAL, "\"unix_ms\":%lld", (long long)unix_ms);
+    } else {
+      shell_fprintf(sh, SHELL_NORMAL, "\"unix_ms\":null");
+    }
+    JSON_OBJ_END(sh);
+    JSON_NEWLINE(sh);
+    return 0;
+  }
+
+  shell_print(sh, "NTP Status:");
+  shell_print(sh, "  Enabled: %s", zplc_config_get_ntp_enabled() ? "Yes" : "No");
+  shell_print(sh, "  Server:  %s", server);
+  shell_print(sh, "  Synced:  %s", synced ? "Yes" : "No");
+  if (synced && unix_ms > 0) {
+    shell_print(sh, "  Time:    %lld ms (UTC)", (long long)unix_ms);
+  } else {
+    shell_print(sh, "  Time:    (not synced)");
+  }
+  return 0;
+}
+
+static int cmd_ntp_enable(const struct shell *sh, size_t argc, char **argv)
+{
+  ARG_UNUSED(argc);
+  ARG_UNUSED(argv);
+  zplc_config_set_ntp_enabled(true);
+  shell_print(sh, "NTP enabled. Use 'zplc config save' to persist.");
+  return 0;
+}
+
+static int cmd_ntp_disable(const struct shell *sh, size_t argc, char **argv)
+{
+  ARG_UNUSED(argc);
+  ARG_UNUSED(argv);
+  zplc_config_set_ntp_enabled(false);
+  shell_print(sh, "NTP disabled. Use 'zplc config save' to persist.");
+  return 0;
+}
+
+static int cmd_ntp_server(const struct shell *sh, size_t argc, char **argv)
+{
+  if (argc < 2) {
+    shell_error(sh, "Usage: zplc ntp server <hostname>");
+    return -EINVAL;
+  }
+  zplc_config_set_ntp_server(argv[1]);
+  shell_print(sh, "NTP server set to '%s'. Use 'zplc config save' to persist.", argv[1]);
+  return 0;
+}
+
+static int cmd_ntp_sync(const struct shell *sh, size_t argc, char **argv)
+{
+  ARG_UNUSED(argc);
+  ARG_UNUSED(argv);
+  shell_print(sh, "Triggering NTP re-sync...");
+  int ret = zplc_time_resync();
+  if (ret == 0) {
+    int64_t unix_ms = zplc_time_get_unix_ms();
+    shell_print(sh, "OK: NTP synced. Time: %lld ms (UTC)", (long long)unix_ms);
+  } else {
+    shell_error(sh, "ERROR: NTP sync failed (%d)", ret);
+  }
+  return ret;
+}
+
+/* ============================================================================
  * Configuration Handlers
  * ============================================================================
  */
@@ -1196,8 +1281,12 @@ static int cmd_config_get(const struct shell *sh, size_t argc, char **argv) {
   
   zplc_config_get_hostname(buf, sizeof(buf));
   shell_print(sh, "  Hostname:     %s", buf);
-  
+
   shell_print(sh, "  DHCP:         %s", zplc_config_get_dhcp() ? "Enabled" : "Disabled");
+
+  shell_print(sh, "  NTP Enabled:  %s", zplc_config_get_ntp_enabled() ? "Yes" : "No");
+  zplc_config_get_ntp_server(buf, sizeof(buf));
+  shell_print(sh, "  NTP Server:   %s", buf);
   
   zplc_config_get_ip(buf, sizeof(buf));
   shell_print(sh, "  Static IP:    %s", buf);
@@ -1217,12 +1306,21 @@ static int cmd_config_get(const struct shell *sh, size_t argc, char **argv) {
 
   zplc_config_get_mqtt_topic_namespace(buf, sizeof(buf));
   shell_print(sh, "  MQTT Namespace: %s", buf);
+  shell_print(sh, "  MQTT Profile: %u", (unsigned)zplc_config_get_mqtt_profile());
+  zplc_config_get_mqtt_group_id(buf, sizeof(buf));
+  shell_print(sh, "  MQTT Group ID: %s", buf);
+  shell_print(sh, "  MQTT Protocol: %u", (unsigned)zplc_config_get_mqtt_protocol());
+  shell_print(sh, "  MQTT Transport: %u", (unsigned)zplc_config_get_mqtt_transport());
   
   shell_print(sh, "  MQTT Port:    %u", zplc_config_get_mqtt_port());
   shell_print(sh, "  MQTT Enabled: %s", zplc_config_get_mqtt_enabled() ? "Yes" : "No");
   shell_print(sh, "  MQTT Keepalive: %u s", zplc_config_get_mqtt_keepalive_sec());
   shell_print(sh, "  MQTT Publish Interval: %u ms", (unsigned)zplc_config_get_mqtt_publish_interval_ms());
+  shell_print(sh, "  MQTT Publish QoS: %u", (unsigned)zplc_config_get_mqtt_publish_qos());
+  shell_print(sh, "  MQTT Subscribe QoS: %u", (unsigned)zplc_config_get_mqtt_subscribe_qos());
+  shell_print(sh, "  MQTT Retain: %s", zplc_config_get_mqtt_publish_retain() ? "Yes" : "No");
   shell_print(sh, "  MQTT Clean Session: %s", zplc_config_get_mqtt_clean_session() ? "Yes" : "No");
+  shell_print(sh, "  MQTT Session Expiry: %u s", (unsigned)zplc_config_get_mqtt_session_expiry_sec());
 
   zplc_config_get_mqtt_username(buf, sizeof(buf));
   shell_print(sh, "  MQTT Username: %s", (buf[0] != '\0') ? buf : "(none)");
@@ -1237,6 +1335,20 @@ static int cmd_config_get(const struct shell *sh, size_t argc, char **argv) {
 
   zplc_config_get_mqtt_client_key_path(buf, sizeof(buf));
   shell_print(sh, "  MQTT Key Path: %s", buf);
+
+  zplc_config_get_mqtt_websocket_path(buf, sizeof(buf));
+  shell_print(sh, "  MQTT WebSocket Path: %s", buf);
+
+  zplc_config_get_mqtt_alpn(buf, sizeof(buf));
+  shell_print(sh, "  MQTT ALPN: %s", (buf[0] != '\0') ? buf : "(none)");
+
+  shell_print(sh, "  MQTT LWT Enabled: %s", zplc_config_get_mqtt_lwt_enabled() ? "Yes" : "No");
+  zplc_config_get_mqtt_lwt_topic(buf, sizeof(buf));
+  shell_print(sh, "  MQTT LWT Topic: %s", (buf[0] != '\0') ? buf : "(auto)");
+  zplc_config_get_mqtt_lwt_payload(buf, sizeof(buf));
+  shell_print(sh, "  MQTT LWT Payload: %s", (buf[0] != '\0') ? buf : "(none)");
+  shell_print(sh, "  MQTT LWT QoS: %u", (unsigned)zplc_config_get_mqtt_lwt_qos());
+  shell_print(sh, "  MQTT LWT Retain: %s", zplc_config_get_mqtt_lwt_retain() ? "Yes" : "No");
   
   return 0;
 }
@@ -1244,7 +1356,7 @@ static int cmd_config_get(const struct shell *sh, size_t argc, char **argv) {
 static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
   if (argc < 3) {
     shell_error(sh, "Usage: zplc config set <key> <value>");
-    shell_print(sh, "Keys: hostname, dhcp, ip, modbus_id, modbus_tcp_enabled, modbus_tcp_port, modbus_rtu_enabled, modbus_rtu_baud, modbus_rtu_parity, mqtt_enabled, mqtt_broker, mqtt_client_id, mqtt_topic_namespace, mqtt_port, mqtt_username, mqtt_password, mqtt_keepalive, mqtt_publish_interval, mqtt_clean_session, mqtt_security, mqtt_ca_cert_path, mqtt_client_cert_path, mqtt_client_key_path");
+    shell_print(sh, "Keys: hostname, dhcp, ip, ntp_enabled, ntp_server, modbus_id, modbus_tcp_enabled, modbus_tcp_port, modbus_rtu_enabled, modbus_rtu_baud, modbus_rtu_parity, mqtt_enabled, mqtt_broker, mqtt_client_id, mqtt_group_id, mqtt_topic_namespace, mqtt_profile, mqtt_protocol, mqtt_transport, mqtt_port, mqtt_username, mqtt_password, mqtt_keepalive, mqtt_publish_interval, mqtt_publish_qos, mqtt_subscribe_qos, mqtt_publish_retain, mqtt_clean_session, mqtt_session_expiry, mqtt_security, mqtt_websocket_path, mqtt_alpn, mqtt_lwt_enabled, mqtt_lwt_topic, mqtt_lwt_payload, mqtt_lwt_qos, mqtt_lwt_retain, mqtt_ca_cert_path, mqtt_client_cert_path, mqtt_client_key_path");
     return -EINVAL;
   }
 
@@ -1257,6 +1369,10 @@ static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
     zplc_config_set_dhcp(strcmp(val, "true") == 0 || strcmp(val, "1") == 0);
   } else if (strcmp(key, "ip") == 0) {
     zplc_config_set_ip(val);
+  } else if (strcmp(key, "ntp_enabled") == 0) {
+    zplc_config_set_ntp_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
+  } else if (strcmp(key, "ntp_server") == 0) {
+    zplc_config_set_ntp_server(val);
   } else if (strcmp(key, "modbus_id") == 0) {
     zplc_config_set_modbus_id((uint16_t)atoi(val));
   } else if (strcmp(key, "modbus_tcp_enabled") == 0) {
@@ -1273,8 +1389,16 @@ static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
     zplc_config_set_mqtt_broker(val);
   } else if (strcmp(key, "mqtt_client_id") == 0) {
     zplc_config_set_mqtt_client_id(val);
+  } else if (strcmp(key, "mqtt_group_id") == 0) {
+    zplc_config_set_mqtt_group_id(val);
   } else if (strcmp(key, "mqtt_topic_namespace") == 0) {
     zplc_config_set_mqtt_topic_namespace(val);
+  } else if (strcmp(key, "mqtt_profile") == 0) {
+    zplc_config_set_mqtt_profile((zplc_mqtt_profile_t)atoi(val));
+  } else if (strcmp(key, "mqtt_protocol") == 0) {
+    zplc_config_set_mqtt_protocol((zplc_mqtt_protocol_t)atoi(val));
+  } else if (strcmp(key, "mqtt_transport") == 0) {
+    zplc_config_set_mqtt_transport((zplc_mqtt_transport_t)atoi(val));
   } else if (strcmp(key, "mqtt_port") == 0) {
     zplc_config_set_mqtt_port((uint16_t)atoi(val));
   } else if (strcmp(key, "mqtt_enabled") == 0) {
@@ -1287,10 +1411,32 @@ static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
     zplc_config_set_mqtt_keepalive_sec((uint16_t)atoi(val));
   } else if (strcmp(key, "mqtt_publish_interval") == 0) {
     zplc_config_set_mqtt_publish_interval_ms((uint32_t)strtoul(val, NULL, 10));
+  } else if (strcmp(key, "mqtt_publish_qos") == 0) {
+    zplc_config_set_mqtt_publish_qos((zplc_mqtt_qos_t)atoi(val));
+  } else if (strcmp(key, "mqtt_subscribe_qos") == 0) {
+    zplc_config_set_mqtt_subscribe_qos((zplc_mqtt_qos_t)atoi(val));
+  } else if (strcmp(key, "mqtt_publish_retain") == 0) {
+    zplc_config_set_mqtt_publish_retain(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
   } else if (strcmp(key, "mqtt_clean_session") == 0) {
     zplc_config_set_mqtt_clean_session(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
+  } else if (strcmp(key, "mqtt_session_expiry") == 0) {
+    zplc_config_set_mqtt_session_expiry_sec((uint32_t)strtoul(val, NULL, 10));
   } else if (strcmp(key, "mqtt_security") == 0) {
     zplc_config_set_mqtt_security((zplc_mqtt_security_t)atoi(val));
+  } else if (strcmp(key, "mqtt_websocket_path") == 0) {
+    zplc_config_set_mqtt_websocket_path(val);
+  } else if (strcmp(key, "mqtt_alpn") == 0) {
+    zplc_config_set_mqtt_alpn(val);
+  } else if (strcmp(key, "mqtt_lwt_enabled") == 0) {
+    zplc_config_set_mqtt_lwt_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
+  } else if (strcmp(key, "mqtt_lwt_topic") == 0) {
+    zplc_config_set_mqtt_lwt_topic(val);
+  } else if (strcmp(key, "mqtt_lwt_payload") == 0) {
+    zplc_config_set_mqtt_lwt_payload(val);
+  } else if (strcmp(key, "mqtt_lwt_qos") == 0) {
+    zplc_config_set_mqtt_lwt_qos((zplc_mqtt_qos_t)atoi(val));
+  } else if (strcmp(key, "mqtt_lwt_retain") == 0) {
+    zplc_config_set_mqtt_lwt_retain(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
   } else if (strcmp(key, "mqtt_ca_cert_path") == 0) {
     zplc_config_set_mqtt_ca_cert_path(val);
   } else if (strcmp(key, "mqtt_client_cert_path") == 0) {
@@ -1546,6 +1692,208 @@ static int cmd_cert_status(const struct shell *sh, size_t argc, char **argv) {
   return 0;
 }
 
+static const char *comm_tag_name(uint8_t tag_id)
+{
+  switch (tag_id) {
+  case ZPLC_TAG_PUBLISH:
+    return "publish";
+  case ZPLC_TAG_MODBUS:
+    return "modbus";
+  case ZPLC_TAG_SUBSCRIBE:
+    return "subscribe";
+  default:
+    return "unknown";
+  }
+}
+
+static const char *comm_type_name(uint8_t var_type)
+{
+  switch (var_type) {
+  case ZPLC_TYPE_BOOL:
+    return "BOOL";
+  case ZPLC_TYPE_INT:
+    return "INT";
+  case ZPLC_TYPE_UINT:
+    return "UINT";
+  case ZPLC_TYPE_WORD:
+    return "WORD";
+  case ZPLC_TYPE_DINT:
+    return "DINT";
+  case ZPLC_TYPE_UDINT:
+    return "UDINT";
+  case ZPLC_TYPE_DWORD:
+    return "DWORD";
+  case ZPLC_TYPE_REAL:
+    return "REAL";
+  default:
+    return "UNKNOWN";
+  }
+}
+
+static uint16_t comm_modbus_width(uint8_t var_type)
+{
+  switch (var_type) {
+  case ZPLC_TYPE_REAL:
+  case ZPLC_TYPE_DINT:
+  case ZPLC_TYPE_UDINT:
+  case ZPLC_TYPE_DWORD:
+    return 2U;
+  default:
+    return 1U;
+  }
+}
+
+static uint32_t comm_effective_modbus_addr(uint16_t index,
+                                           const zplc_tag_entry_t *tag)
+{
+  uint32_t addr = 0U;
+  if (zplc_config_get_modbus_tag_override(index, &addr)) {
+    return addr;
+  }
+
+  return tag ? tag->value : 0U;
+}
+
+static int cmd_comm_map(const struct shell *sh, size_t argc, char **argv)
+{
+  bool json = (argc > 1 && strcmp(argv[1], "--json") == 0);
+  uint16_t count = zplc_core_get_tag_count();
+
+  if (json) {
+    JSON_OBJ_START(sh);
+    JSON_UINT(sh, "count", count, true);
+    shell_fprintf(sh, SHELL_NORMAL, "\"entries\":[");
+    for (uint16_t i = 0U; i < count; i++) {
+      const zplc_tag_entry_t *tag = zplc_core_get_tag(i);
+      uint32_t effective = (tag && tag->tag_id == ZPLC_TAG_MODBUS)
+                               ? comm_effective_modbus_addr(i, tag)
+                               : (tag ? tag->value : 0U);
+      if (i > 0U) {
+        shell_fprintf(sh, SHELL_NORMAL, ",");
+      }
+      JSON_OBJ_START(sh);
+      JSON_UINT(sh, "index", i, true);
+      JSON_STR(sh, "kind", tag ? comm_tag_name(tag->tag_id) : "unknown", true);
+      JSON_STR(sh, "type", tag ? comm_type_name(tag->var_type) : "UNKNOWN", true);
+      JSON_UINT(sh, "var_addr", tag ? tag->var_addr : 0U, true);
+      JSON_UINT(sh, "width", tag ? comm_modbus_width(tag->var_type) : 0U, true);
+      JSON_UINT(sh, "value", tag ? tag->value : 0U, true);
+      JSON_UINT(sh, "effective_value", effective, true);
+      JSON_BOOL(sh, "override", tag ? zplc_config_get_modbus_tag_override(i, NULL) : false, false);
+      JSON_OBJ_END(sh);
+    }
+    shell_fprintf(sh, SHELL_NORMAL, "]");
+    JSON_OBJ_END(sh);
+    JSON_NEWLINE(sh);
+    return 0;
+  }
+
+  shell_print(sh, "Communication Map (%u entries):", count);
+  for (uint16_t i = 0U; i < count; i++) {
+    const zplc_tag_entry_t *tag = zplc_core_get_tag(i);
+    if (!tag) {
+      continue;
+    }
+
+    if (tag->tag_id == ZPLC_TAG_MODBUS) {
+      bool has_override = zplc_config_get_modbus_tag_override(i, NULL);
+      shell_print(sh,
+                  "  [%u] %-9s addr=%lu%s var=0x%04x type=%s",
+                  i,
+                  comm_tag_name(tag->tag_id),
+                  (unsigned long)comm_effective_modbus_addr(i, tag),
+                  has_override ? " (override)" : "",
+                  tag->var_addr,
+                  comm_type_name(tag->var_type));
+      continue;
+    }
+
+    shell_print(sh,
+                "  [%u] %-9s value=%lu var=0x%04x type=%s",
+                i,
+                comm_tag_name(tag->tag_id),
+                (unsigned long)tag->value,
+                tag->var_addr,
+                comm_type_name(tag->var_type));
+  }
+
+  return 0;
+}
+
+static int cmd_comm_set(const struct shell *sh, size_t argc, char **argv)
+{
+  if (argc < 4) {
+    shell_error(sh, "Usage: zplc comm set modbus <index> <address>");
+    return -EINVAL;
+  }
+
+  if (strcmp(argv[1], "modbus") != 0) {
+    shell_error(sh, "Only modbus overrides are supported");
+    return -EINVAL;
+  }
+
+  uint16_t index = (uint16_t)strtoul(argv[2], NULL, 10);
+  uint32_t address = (uint32_t)strtoul(argv[3], NULL, 10);
+  const zplc_tag_entry_t *tag = zplc_core_get_tag(index);
+  if (!tag || tag->tag_id != ZPLC_TAG_MODBUS) {
+    shell_error(sh, "Tag index %u is not a Modbus binding", index);
+    return -EINVAL;
+  }
+
+  for (uint16_t i = 0U; i < zplc_core_get_tag_count(); i++) {
+    const zplc_tag_entry_t *other = zplc_core_get_tag(i);
+    if (!other || other->tag_id != ZPLC_TAG_MODBUS || i == index) {
+      continue;
+    }
+
+    uint32_t other_start = comm_effective_modbus_addr(i, other);
+    uint32_t other_end = other_start + comm_modbus_width(other->var_type) - 1U;
+    uint32_t new_end = address + comm_modbus_width(tag->var_type) - 1U;
+    if (!(new_end < other_start || address > other_end)) {
+      shell_error(sh, "Modbus range %lu-%lu overlaps tag %u (%lu-%lu)",
+                  (unsigned long)address,
+                  (unsigned long)new_end,
+                  i,
+                  (unsigned long)other_start,
+                  (unsigned long)other_end);
+      return -EEXIST;
+    }
+  }
+
+  int err = zplc_config_set_modbus_tag_override(index, address);
+  if (err < 0) {
+    shell_error(sh, "Failed to set override (%d)", err);
+    return err;
+  }
+
+  shell_print(sh, "Modbus tag %u remapped to %lu. Use 'zplc config save' to persist.",
+              index, (unsigned long)address);
+  return 0;
+}
+
+static int cmd_comm_clear(const struct shell *sh, size_t argc, char **argv)
+{
+  if (argc < 3) {
+    shell_error(sh, "Usage: zplc comm clear modbus <index>");
+    return -EINVAL;
+  }
+
+  if (strcmp(argv[1], "modbus") != 0) {
+    shell_error(sh, "Only modbus overrides are supported");
+    return -EINVAL;
+  }
+
+  uint16_t index = (uint16_t)strtoul(argv[2], NULL, 10);
+  int err = zplc_config_clear_modbus_tag_override(index);
+  if (err < 0) {
+    shell_error(sh, "Failed to clear override (%d)", err);
+    return err;
+  }
+
+  shell_print(sh, "Cleared Modbus override for tag %u. Use 'zplc config save' to persist.", index);
+  return 0;
+}
+
 /* ============================================================================
  * Shell Command Registration
  * ============================================================================
@@ -1631,6 +1979,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_CMD(status, NULL, "Show network status (IP/WiFi)", cmd_net_status),
     SHELL_SUBCMD_SET_END);
 
+SHELL_STATIC_SUBCMD_SET_CREATE(
+    sub_ntp,
+    SHELL_CMD_ARG(status, NULL, "Show NTP sync status", cmd_ntp_status, 1, 1),
+    SHELL_CMD(enable, NULL, "Enable NTP time sync", cmd_ntp_enable),
+    SHELL_CMD(disable, NULL, "Disable NTP time sync", cmd_ntp_disable),
+    SHELL_CMD_ARG(server, NULL, "Set NTP server: ntp server <hostname>", cmd_ntp_server, 2, 0),
+    SHELL_CMD(sync, NULL, "Force NTP re-sync now", cmd_ntp_sync),
+    SHELL_SUBCMD_SET_END);
+
 static int cmd_mqtt_reset_backoff(const struct shell *sh, size_t argc, char **argv)
 {
     ARG_UNUSED(argc);
@@ -1640,9 +1997,64 @@ static int cmd_mqtt_reset_backoff(const struct shell *sh, size_t argc, char **ar
     return 0;
 }
 
+static int cmd_mqtt_status(const struct shell *sh, size_t argc, char **argv)
+{
+    bool json = (argc > 1 && strcmp(argv[1], "--json") == 0);
+    zplc_mqtt_status_t status;
+    zplc_mqtt_get_status(&status);
+
+    if (json) {
+        JSON_OBJ_START(sh);
+        JSON_BOOL(sh, "connected", status.connected, true);
+        JSON_BOOL(sh, "subscribed", status.subscribed, true);
+        JSON_BOOL(sh, "session_present", status.session_present, true);
+        JSON_UINT(sh, "profile", status.profile, true);
+        JSON_UINT(sh, "protocol", status.protocol, true);
+        JSON_UINT(sh, "transport", status.transport, true);
+        JSON_UINT(sh, "publish_qos", status.publish_qos, true);
+        JSON_UINT(sh, "subscribe_qos", status.subscribe_qos, true);
+        JSON_BOOL(sh, "retain_enabled", status.retain_enabled, true);
+        JSON_BOOL(sh, "lwt_enabled", status.lwt_enabled, true);
+        JSON_INT(sh, "last_error", status.last_error, true);
+        JSON_UINT(sh, "last_publish_ms", status.last_publish_ms, true);
+        JSON_UINT(sh, "reconnect_backoff_s", status.reconnect_backoff_s, true);
+        JSON_STR(sh, "broker", status.broker, true);
+        JSON_STR(sh, "client_id", status.client_id, false);
+        JSON_OBJ_END(sh);
+        JSON_NEWLINE(sh);
+        return 0;
+    }
+
+    shell_print(sh, "MQTT Status:");
+    shell_print(sh, "  Connected: %s", status.connected ? "Yes" : "No");
+    shell_print(sh, "  Subscribed: %s", status.subscribed ? "Yes" : "No");
+    shell_print(sh, "  Session Present: %s", status.session_present ? "Yes" : "No");
+    shell_print(sh, "  Profile: %u", status.profile);
+    shell_print(sh, "  Protocol: %u", status.protocol);
+    shell_print(sh, "  Transport: %u", status.transport);
+    shell_print(sh, "  Publish QoS: %u", status.publish_qos);
+    shell_print(sh, "  Subscribe QoS: %u", status.subscribe_qos);
+    shell_print(sh, "  Retain Enabled: %s", status.retain_enabled ? "Yes" : "No");
+    shell_print(sh, "  LWT Enabled: %s", status.lwt_enabled ? "Yes" : "No");
+    shell_print(sh, "  Last Error: %d", status.last_error);
+    shell_print(sh, "  Last Publish: %u ms", (unsigned)status.last_publish_ms);
+    shell_print(sh, "  Reconnect Backoff: %u s", (unsigned)status.reconnect_backoff_s);
+    shell_print(sh, "  Broker: %s", status.broker);
+    shell_print(sh, "  Client ID: %s", status.client_id);
+    return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_mqtt,
+    SHELL_CMD_ARG(status, NULL, "Show MQTT runtime status", cmd_mqtt_status, 1, 1),
     SHELL_CMD(reset_backoff, NULL, "Reset MQTT reconnect backoff to initial value", cmd_mqtt_reset_backoff),
+    SHELL_SUBCMD_SET_END);
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+    sub_comm,
+    SHELL_CMD_ARG(map, NULL, "Show effective communication map", cmd_comm_map, 1, 1),
+    SHELL_CMD_ARG(set, NULL, "Override communication binding", cmd_comm_set, 4, 0),
+    SHELL_CMD_ARG(clear, NULL, "Clear communication override", cmd_comm_clear, 3, 0),
     SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
@@ -1660,7 +2072,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_CMD(config, &sub_config, "Configuration commands", NULL),
     SHELL_CMD(cert, &sub_cert, "Certificate management", NULL),
     SHELL_CMD(net, &sub_net, "Network diagnostics", NULL),
+    SHELL_CMD(ntp, &sub_ntp, "NTP time synchronization", NULL),
     SHELL_CMD(mqtt, &sub_mqtt, "MQTT client commands", NULL),
+    SHELL_CMD(comm, &sub_comm, "Communication map and overrides", NULL),
 #ifdef CONFIG_ZPLC_SCHEDULER
     SHELL_CMD(sched, &sub_sched, "Scheduler commands", NULL),
     SHELL_CMD(sys, &sub_sys, "System commands", NULL),

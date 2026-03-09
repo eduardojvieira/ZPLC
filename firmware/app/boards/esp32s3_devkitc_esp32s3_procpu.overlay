@@ -1,5 +1,5 @@
 /*
- * ZPLC Board Overlay - ESP32-S3 DevKitC
+ * ZPLC Board Overlay - ESP32-S3 DevKitC (T-Display S3 target)
  * SPDX-License-Identifier: MIT
  *
  * The ESP32-S3 DevKitC does not have a dedicated user LED.
@@ -13,17 +13,37 @@
  * instead of simple GPIO. This overlay provides a simple GPIO LED for testing.
  *
  * Console:
- *   Uses UART0 via CP2102 USB-UART bridge (default).
- *   If your board uses the native USB-Serial/JTAG, override chosen in a
- *   board-specific overlay.
+ *   Force Zephyr console/shell to native USB-Serial/JTAG so boards like
+ *   T-Display S3 can be controlled over the same USB port used for flashing.
  *
  * NVS Storage:
  *   ESP32 uses its own NVS partition defined in the ESP-IDF partition table.
  *   The storage_partition is already defined in the base ESP32 devicetree.
  *   No additional overlay is needed for program persistence.
+ *
+ * PSRAM:
+ *   The LilyGo T-Display S3 uses the ESP32-S3R8 (N16R8 variant):
+ *   16MB flash + 8MB Octal PSRAM. The base board DTS targets the N8 (no PSRAM)
+ *   variant, so we override psram0 here to expose the 8MB PSRAM.
+ *   This is required for CONFIG_ESP_SPIRAM to work correctly.
  */
 
+/* Override psram0 for ESP32-S3R8: 8MB Octal PSRAM */
+&psram0 {
+    size = <DT_SIZE_M(8)>;
+};
+
+/* Override flash0 for 16MB flash variant */
+&flash0 {
+    reg = <0x0 DT_SIZE_M(16)>;
+};
+
 / {
+    chosen {
+        zephyr,console = &usb_serial;
+        zephyr,shell-uart = &usb_serial;
+    };
+
     leds {
         compatible = "gpio-leds";
         
@@ -40,4 +60,7 @@
     };
 };
 
+&usb_serial {
+    status = "okay";
+};
 

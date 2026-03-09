@@ -30,6 +30,15 @@ import {
     type TaskType,
 } from '@zplc/compiler';
 
+interface CompilerTagDef {
+    varAddr: number;
+    varType: number;
+    tagId: number;
+    value: number;
+}
+
+type AssemblyResultWithTags = AssemblyResult & { tags?: CompilerTagDef[] };
+
 // =============================================================================
 // IDE-specific: Transpilers (Visual Languages -> ST)
 // =============================================================================
@@ -46,7 +55,11 @@ import { parseLDModel } from '../models/ld.ts';
 import { parseFBDModel } from '../models/fbd.ts';
 import { parseSFCModel } from '../models/sfc.ts';
 import { parseIL } from './il/parser.ts';
-import type { ZPLCProjectConfig, TaskDefinition } from '../types/index.ts';
+import type {
+    ZPLCProjectConfig,
+    TaskDefinition,
+    CommunicationTagConfig,
+} from '../types/index.ts';
 
 // =============================================================================
 // IDE-specific Types
@@ -123,6 +136,8 @@ export interface SingleFileTaskOptions {
     priority?: number;
     /** Program name extracted from source (default: 'Main') */
     programName?: string;
+    /** Communication tags to inject as ST variable tags */
+    communicationTags?: CommunicationTagConfig[];
 }
 
 /**
@@ -230,6 +245,92 @@ function mapTaskTrigger(trigger: TaskDefinition['trigger']): TaskType {
     }
 }
 
+function escapeRegExp(input: string): string {
+    return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function getTagAnnotations(tag: CommunicationTagConfig): string[] {
+    const annotations: string[] = [];
+
+    if (tag.publish || tag.mode === 'publish') {
+        annotations.push('{publish}');
+    }
+
+    if (tag.subscribe || tag.mode === 'subscribe') {
+        annotations.push('{subscribe}');
+    }
+
+    if (tag.modbusAddress !== undefined || tag.mode === 'modbus') {
+        annotations.push(`{modbus:${tag.modbusAddress ?? 1}}`);
+    }
+
+    return annotations;
+}
+
+export function applyCommunicationTags(stSource: string, tags: CommunicationTagConfig[]): string {
+    if (!tags.length) {
+        return stSource;
+    }
+
+    const lines = stSource.split('\n');
+    const missing: CommunicationTagConfig[] = [];
+
+    for (const tag of tags) {
+        const annotations = getTagAnnotations(tag);
+        if (annotations.length === 0) {
+            continue;
+        }
+        const symbolExpr = escapeRegExp(tag.symbol);
+        const declRegex = new RegExp(`^(\\s*${symbolExpr}\\s*:[^;]*)(;.*)$`, 'i');
+        let updated = false;
+
+        for (let i = 0; i < lines.length; i++) {
+            const match = lines[i].match(declRegex);
+            if (!match) {
+                continue;
+            }
+
+            const missingAnnotations = annotations.filter((annotation) => !lines[i].includes(annotation));
+            if (missingAnnotations.length > 0) {
+                lines[i] = `${match[1]} ${missingAnnotations.join(' ')}${match[2]}`;
+            }
+            updated = true;
+            break;
+        }
+
+        if (!updated) {
+            missing.push(tag);
+        }
+    }
+
+    if (!missing.length) {
+        return lines.join('\n');
+    }
+
+    const varIndex = lines.findIndex((line) => /^\s*VAR\b/i.test(line));
+    if (varIndex >= 0) {
+        const declarations = missing.map((tag) => {
+            const note = tag.description ? ` (* ${tag.description} *)` : '';
+            return `    ${tag.symbol} : ${tag.type} ${getTagAnnotations(tag).join(' ')};${note}`;
+        });
+        lines.splice(varIndex + 1, 0, ...declarations);
+        return lines.join('\n');
+    }
+
+    const programIndex = lines.findIndex((line) => /^\s*PROGRAM\b/i.test(line));
+    if (programIndex >= 0) {
+        const declarations = missing.map((tag) => {
+            const note = tag.description ? ` (* ${tag.description} *)` : '';
+            return `    ${tag.symbol} : ${tag.type} ${getTagAnnotations(tag).join(' ')};${note}`;
+        });
+        const block = ['VAR', ...declarations, 'END_VAR', ''];
+        lines.splice(programIndex + 1, 0, ...block);
+        return lines.join('\n');
+    }
+
+    return stSource;
+}
+
 /**
  * Compile a multi-task project to a single .zplc file.
  *
@@ -277,10 +378,13 @@ export function compileMultiTaskProject(
         assembly: string;
         entryPoint: number;
         size: number;
+        tags: CompilerTagDef[];
     }[] = [];
 
     let currentOffset = 0;
     let programIndex = 0;
+
+    const communicationTags = config.communication?.bindings || config.communication?.tags || [];
 
     for (const progName of referencedPrograms) {
         const source = findSource(progName);
@@ -306,6 +410,8 @@ export function compileMultiTaskProject(
             stSource = transpileResult.source;
         }
 
+        stSource = applyCommunicationTags(stSource, communicationTags);
+
         // Compile to assembly
         let assembly: string;
         try {
@@ -319,7 +425,7 @@ export function compileMultiTaskProject(
         }
 
         // Assemble to bytecode
-        let asmResult: AssemblyResult;
+        let asmResult: AssemblyResultWithTags;
         try {
             asmResult = assemble(assembly);
         } catch (e) {
@@ -336,6 +442,7 @@ export function compileMultiTaskProject(
             assembly,
             entryPoint: currentOffset,
             size: asmResult.bytecode.length,
+            tags: asmResult.tags ?? [],
         });
 
         currentOffset += asmResult.bytecode.length;
@@ -373,6 +480,8 @@ export function compileMultiTaskProject(
     const taskDefs: TaskDef[] = [];
     let taskId = 0;
 
+    const allTags = compiledPrograms.flatMap((prog) => prog.tags);
+
     for (const taskConfig of config.tasks) {
         const firstProgram = taskConfig.programs[0];
         if (!firstProgram) {
@@ -394,13 +503,17 @@ export function compileMultiTaskProject(
             id: taskId++,
             type: mapTaskTrigger(taskConfig.trigger),
             priority: taskConfig.priority ?? 1,
-            intervalUs: (taskConfig.interval ?? 10) * 1000,
+            intervalUs: ((taskConfig.interval_ms ?? taskConfig.interval ?? 10) * 1000),
             entryPoint,
             stackSize: 64,
         });
     }
 
-    const zplcFile = createMultiTaskZplcFile(concatenatedBytecode, taskDefs);
+    const zplcFile = (createMultiTaskZplcFile as unknown as (
+        bytecode: Uint8Array,
+        tasks: TaskDef[],
+        tags: CompilerTagDef[]
+    ) => Uint8Array)(concatenatedBytecode, taskDefs, allTags);
 
     return {
         zplcFile,
@@ -437,6 +550,7 @@ export function compileSingleFileWithTask(
         intervalMs = 10,
         priority = 1,
         programName = 'Main',
+        communicationTags = [],
     } = options;
 
     const config: ZPLCProjectConfig = {
@@ -445,10 +559,13 @@ export function compileSingleFileWithTask(
         tasks: [{
             name: taskName,
             trigger: 'cyclic',
-            interval: intervalMs,
+            interval_ms: intervalMs,
             priority,
             programs: [programName],
         }],
+        communication: {
+            tags: communicationTags,
+        },
     };
 
     const programSources: ProgramSource[] = [{

@@ -33,6 +33,7 @@ export type {
     AssemblerOptions,
     TaskDef,
     TaskType,
+    TagDef,
     SourceAnnotation,
     InstructionMapping,
     AssemblyResultWithMapping,
@@ -98,6 +99,7 @@ export function assemble(source: string, _options: AssemblerOptions = {}): Assem
         labels,
         entryPoint,
         codeSize: parseResult.codeSize,
+        tags: parseResult.tags,
         instructionMappings: parseResult.instructionMappings,
     };
 }

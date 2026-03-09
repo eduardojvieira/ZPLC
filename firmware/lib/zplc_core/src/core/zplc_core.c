@@ -29,9 +29,9 @@
  * ============================================================================
  */
 
-#define ZPLC_CORE_VERSION_MAJOR 0
-#define ZPLC_CORE_VERSION_MINOR 3
-#define ZPLC_CORE_VERSION_PATCH 0
+#ifndef ZPLC_CORE_VERSION_STR
+#define ZPLC_CORE_VERSION_STR "0.3.0"
+#endif
 
 /* ============================================================================
  * Shared Memory Regions
@@ -1784,16 +1784,7 @@ int zplc_vm_run_cycle(zplc_vm_t *vm) {
  */
 
 const char *zplc_core_version(void) {
-  static char version_str[16] = {0};
-  if (version_str[0] == '\0') {
-    version_str[0] = '0' + ZPLC_CORE_VERSION_MAJOR;
-    version_str[1] = '.';
-    version_str[2] = '0' + ZPLC_CORE_VERSION_MINOR;
-    version_str[3] = '.';
-    version_str[4] = '0' + ZPLC_CORE_VERSION_PATCH;
-    version_str[5] = '\0';
-  }
-  return version_str;
+  return ZPLC_CORE_VERSION_STR;
 }
 
 int zplc_core_init(void) {

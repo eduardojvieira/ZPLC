@@ -106,6 +106,40 @@ export interface StatusInfo {
   opi: number[];
 }
 
+export interface CommunicationMapEntry {
+  index: number;
+  kind: string;
+  type: string;
+  var_addr: number;
+  width: number;
+  value: number;
+  effective_value: number;
+  override: boolean;
+}
+
+export interface MqttRuntimeStatus {
+  connected: boolean;
+  subscribed: boolean;
+  session_present: boolean;
+  profile: number;
+  protocol: number;
+  transport: number;
+  publish_qos: number;
+  subscribe_qos: number;
+  retain_enabled: boolean;
+  lwt_enabled: boolean;
+  last_error: number;
+  last_publish_ms: number;
+  reconnect_backoff_s: number;
+  broker: string;
+  client_id: string;
+}
+
+interface CommunicationMapResponse {
+  count: number;
+  entries: CommunicationMapEntry[];
+}
+
 /**
  * WebSerial Debug Adapter
  *
@@ -425,6 +459,40 @@ export class SerialAdapter implements IDebugAdapter {
     return 0;
   }
 
+  private mqttProfileToRuntimeLevel(profile: string | undefined): number {
+    switch (profile) {
+      case 'generic-broker':
+        return 1;
+      case 'aws-iot-core':
+        return 2;
+      case 'azure-iot-hub':
+        return 3;
+      case 'azure-event-grid-mqtt':
+        return 4;
+      case 'sparkplug-b':
+      default:
+        return 0;
+    }
+  }
+
+  private mqttProtocolToRuntimeLevel(version: string | undefined): number {
+    return version === '3.1.1' ? 0 : 1;
+  }
+
+  private mqttTransportToRuntimeLevel(transport: string | undefined): number {
+    switch (transport) {
+      case 'tls':
+        return 1;
+      case 'ws':
+        return 2;
+      case 'wss':
+        return 3;
+      case 'tcp':
+      default:
+        return 0;
+    }
+  }
+
   private modbusParityToRuntimeLevel(parity: string | undefined): number {
     switch (parity) {
       case 'even':
@@ -459,6 +527,39 @@ export class SerialAdapter implements IDebugAdapter {
   async getStatus(): Promise<StatusInfo> {
     const result = await this.sendJsonCommand('zplc status') as StatusInfo;
     return result;
+  }
+
+  async getCommunicationMap(): Promise<CommunicationMapEntry[]> {
+    const result = await this.sendJsonCommand('zplc comm map') as CommunicationMapResponse;
+    return result.entries ?? [];
+  }
+
+  async getMqttStatus(): Promise<MqttRuntimeStatus> {
+    const result = await this.sendJsonCommand('zplc mqtt status') as MqttRuntimeStatus;
+    return result;
+  }
+
+  async setModbusAddress(index: number, address: number): Promise<void> {
+    const response = await this.sendCommand(`zplc comm set modbus ${index} ${address}`);
+    if (response.startsWith('ERROR:')) {
+      throw new Error(response);
+    }
+    await this.saveRuntimeConfig();
+  }
+
+  async clearModbusAddress(index: number): Promise<void> {
+    const response = await this.sendCommand(`zplc comm clear modbus ${index}`);
+    if (response.startsWith('ERROR:')) {
+      throw new Error(response);
+    }
+    await this.saveRuntimeConfig();
+  }
+
+  async saveRuntimeConfig(): Promise<void> {
+    const response = await this.sendCommand('zplc config save');
+    if (response.startsWith('ERROR:')) {
+      throw new Error(response);
+    }
   }
 
   // =========================================================================
@@ -511,11 +612,25 @@ export class SerialAdapter implements IDebugAdapter {
       await this.sendCommand(`zplc config set mqtt_broker ${this.quoteShellArg(mqtt.broker)}`);
       await this.sendCommand(`zplc config set mqtt_client_id ${this.quoteShellArg(mqtt.clientId)}`);
       await this.sendCommand(`zplc config set mqtt_topic_namespace ${this.quoteShellArg(mqtt.topicNamespace)}`);
+      await this.sendCommand(`zplc config set mqtt_profile ${this.mqttProfileToRuntimeLevel(mqtt.profile)}`);
+      await this.sendCommand(`zplc config set mqtt_protocol ${this.mqttProtocolToRuntimeLevel(mqtt.protocolVersion)}`);
+      await this.sendCommand(`zplc config set mqtt_transport ${this.mqttTransportToRuntimeLevel(mqtt.transport)}`);
       await this.sendCommand(`zplc config set mqtt_port ${mqtt.port}`);
       await this.sendCommand(`zplc config set mqtt_keepalive ${mqtt.keepAliveSec}`);
       await this.sendCommand(`zplc config set mqtt_publish_interval ${mqtt.publishIntervalMs}`);
+      await this.sendCommand(`zplc config set mqtt_publish_qos ${mqtt.publishQos}`);
+      await this.sendCommand(`zplc config set mqtt_subscribe_qos ${mqtt.subscribeQos}`);
+      await this.sendCommand(`zplc config set mqtt_publish_retain ${mqtt.publishRetain ? '1' : '0'}`);
       await this.sendCommand(`zplc config set mqtt_clean_session ${mqtt.cleanSession ? '1' : '0'}`);
+      await this.sendCommand(`zplc config set mqtt_session_expiry ${mqtt.sessionExpirySec}`);
       await this.sendCommand(`zplc config set mqtt_security ${this.mqttSecurityToRuntimeLevel(mqtt.securityLevel)}`);
+      await this.sendCommand(`zplc config set mqtt_websocket_path ${this.quoteShellArg(mqtt.websocketPath ?? '')}`);
+      await this.sendCommand(`zplc config set mqtt_alpn ${this.quoteShellArg(mqtt.alpnProtocols ?? '')}`);
+      await this.sendCommand(`zplc config set mqtt_lwt_enabled ${mqtt.lwtEnabled ? '1' : '0'}`);
+      await this.sendCommand(`zplc config set mqtt_lwt_topic ${this.quoteShellArg(mqtt.lwtTopic ?? '')}`);
+      await this.sendCommand(`zplc config set mqtt_lwt_payload ${this.quoteShellArg(mqtt.lwtPayload ?? '')}`);
+      await this.sendCommand(`zplc config set mqtt_lwt_qos ${mqtt.lwtQos}`);
+      await this.sendCommand(`zplc config set mqtt_lwt_retain ${mqtt.lwtRetain ? '1' : '0'}`);
       await this.sendCommand(`zplc config set mqtt_username ${this.quoteShellArg(mqtt.username ?? '')}`);
       await this.sendCommand(`zplc config set mqtt_password ${this.quoteShellArg(mqtt.password ?? '')}`);
       await this.sendCommand(`zplc config set mqtt_ca_cert_path ${this.quoteShellArg(mqtt.caCertPath ?? '')}`);

@@ -507,12 +507,16 @@ export function Toolbar({ debugController }: ToolbarProps) {
         const language = activeFile.language as PLCLanguage;
         const firstTask = projectConfig?.tasks?.[0];
         const taskName = firstTask?.name || 'MainTask';
-        const intervalMs = firstTask?.interval || 10;
+        const intervalMs = firstTask?.interval_ms ?? firstTask?.interval ?? 10;
         const priority = firstTask?.priority ?? 1;
         const programName = activeFile.name.replace(/\.(st|fbd|ld|sfc)(\.json)?$/i, '') || 'Main';
 
         const result = compileSingleFileWithTask(activeFile.content, language, {
-          taskName, intervalMs, priority, programName,
+          taskName,
+          intervalMs,
+          priority,
+          programName,
+          communicationTags: projectConfig?.communication?.bindings || projectConfig?.communication?.tags || [],
         });
 
         const outputFileName = activeFile.name.replace(/\.(st|fbd|ld|sfc)(\.json)?$/i, '.zplc');

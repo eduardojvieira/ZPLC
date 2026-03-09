@@ -4,8 +4,9 @@
  * Categorized palette of function blocks, logic gates, etc.
  */
 
-import { useState } from 'react';
-import { ChevronDown, ChevronRight, Timer, Binary, Hash, GitBranch, Calculator, ToggleLeft, Zap, ArrowRightLeft, Repeat, Gauge, Database, Type } from 'lucide-react';
+import { useState, type ReactElement } from 'react';
+import { ChevronDown, ChevronRight, Timer, Binary, Hash, GitBranch, Calculator, ToggleLeft, Zap, ArrowRightLeft, Repeat, Gauge, Database, Type, Radio } from 'lucide-react';
+import { getBlockCategories } from '../../catalog/blockCatalog';
 
 // =============================================================================
 // Block Categories
@@ -13,87 +14,34 @@ import { ChevronDown, ChevronRight, Timer, Binary, Hash, GitBranch, Calculator, 
 
 interface BlockCategory {
   name: string;
-  icon: React.ReactNode;
+  icon: ReactElement;
   blocks: string[];
 }
 
-const BLOCK_CATEGORIES: BlockCategory[] = [
-  {
-    name: 'Timers',
-    icon: <Timer size={14} />,
-    blocks: ['TON', 'TOF', 'TP'],
-  },
-  {
-    name: 'Counters',
-    icon: <Hash size={14} />,
-    blocks: ['CTU', 'CTD', 'CTUD'],
-  },
-  {
-    name: 'Edge Detection',
-    icon: <GitBranch size={14} />,
-    blocks: ['R_TRIG', 'F_TRIG'],
-  },
-  {
-    name: 'Bistables',
-    icon: <ToggleLeft size={14} />,
-    blocks: ['SR', 'RS'],
-  },
-  {
-    name: 'Generators',
-    icon: <Repeat size={14} />,
-    blocks: ['BLINK', 'PWM', 'PULSE'],
-  },
-  {
-    name: 'Process Control',
-    icon: <Gauge size={14} />,
-    blocks: ['PID_Compact', 'HYSTERESIS', 'DEADBAND', 'LAG_FILTER', 'RAMP_REAL', 'INTEGRAL', 'DERIVATIVE', 'NORM_X', 'SCALE_X'],
-  },
-  {
-    name: 'System',
-    icon: <Database size={14} />,
-    blocks: ['FIFO', 'LIFO', 'UPTIME', 'CYCLE_TIME', 'WATCHDOG_RESET'],
-  },
-  {
-    name: 'Logic Gates',
-    icon: <Binary size={14} />,
-    blocks: ['AND', 'OR', 'NOT', 'XOR', 'NAND', 'NOR'],
-  },
-  {
-    name: 'Comparison',
-    icon: <GitBranch size={14} />,
-    blocks: ['EQ', 'NE', 'LT', 'LE', 'GT', 'GE'],
-  },
-  {
-    name: 'Math',
-    icon: <Calculator size={14} />,
-    blocks: ['ADD', 'SUB', 'MUL', 'DIV', 'MOD', 'ABS', 'SQRT', 'EXPT', 'LN', 'LOG', 'EXP', 'TRUNC', 'ROUND'],
-  },
-  {
-    name: 'Trigonometry',
-    icon: <Calculator size={14} />,
-    blocks: ['SIN', 'COS', 'TAN', 'ASIN', 'ACOS', 'ATAN', 'ATAN2'],
-  },
-  {
-    name: 'Selection',
-    icon: <GitBranch size={14} />,
-    blocks: ['MAX', 'MIN', 'LIMIT', 'SEL', 'MUX'],
-  },
-  {
-    name: 'Bitwise',
-    icon: <Zap size={14} />,
-    blocks: ['SHL', 'SHR', 'ROL', 'ROR', 'AND_WORD', 'OR_WORD', 'XOR_WORD', 'NOT_WORD', 'AND_DWORD', 'OR_DWORD', 'XOR_DWORD', 'NOT_DWORD'],
-  },
-  {
-    name: 'Type Conversion',
-    icon: <ArrowRightLeft size={14} />,
-    blocks: ['INT_TO_REAL', 'REAL_TO_INT', 'INT_TO_BOOL', 'BOOL_TO_INT'],
-  },
-  {
-    name: 'Strings',
-    icon: <Type size={14} />,
-    blocks: ['LEN', 'CONCAT', 'LEFT', 'RIGHT', 'MID', 'FIND', 'INSERT', 'DELETE', 'REPLACE', 'COPY', 'CLEAR', 'STRCMP', 'EQ_STRING', 'NE_STRING'],
-  },
-];
+const CATEGORY_ICONS: Record<string, ReactElement> = {
+  Timers: <Timer size={14} />,
+  Counters: <Hash size={14} />,
+  'Edge Detection': <GitBranch size={14} />,
+  Bistables: <ToggleLeft size={14} />,
+  Generators: <Repeat size={14} />,
+  'Process Control': <Gauge size={14} />,
+  System: <Database size={14} />,
+  Communication: <Radio size={14} />,
+  'Logic Gates': <Binary size={14} />,
+  Comparison: <GitBranch size={14} />,
+  Math: <Calculator size={14} />,
+  Trigonometry: <Calculator size={14} />,
+  Selection: <GitBranch size={14} />,
+  Bitwise: <Zap size={14} />,
+  'Type Conversion': <ArrowRightLeft size={14} />,
+  Strings: <Type size={14} />,
+  Other: <Database size={14} />,
+};
+
+const BLOCK_CATEGORIES: BlockCategory[] = getBlockCategories().map((category) => ({
+  ...category,
+  icon: CATEGORY_ICONS[category.name] ?? <Database size={14} />,
+}));
 
 // =============================================================================
 // Component

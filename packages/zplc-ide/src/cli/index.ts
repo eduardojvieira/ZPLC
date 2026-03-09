@@ -8,6 +8,22 @@ import { transpileILToST } from '../compiler/il/ilToST';
 import { parseIL } from '../compiler/il/parser';
 import * as fs from "fs";
 import * as path from "path";
+import { execSync } from "child_process";
+import { fileURLToPath } from "url";
+
+function getRepoVersion(): string {
+  try {
+    const thisDir = path.dirname(fileURLToPath(import.meta.url));
+    const repoRoot = path.resolve(thisDir, '../../../..');
+    return execSync('git describe --tags --always --dirty', {
+      cwd: repoRoot,
+      stdio: ['ignore', 'pipe', 'ignore'],
+      encoding: 'utf8',
+    }).trim();
+  } catch {
+    return 'dev';
+  }
+}
 
 async function main() {
   const { values, positionals } = parseArgs({
@@ -30,7 +46,7 @@ async function main() {
   }
 
   if (values.version) {
-    console.log("zplc-cli v0.1.0");
+    console.log(`zplc-cli ${getRepoVersion()}`);
     return;
   }
 
