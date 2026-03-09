@@ -30,6 +30,7 @@ import {
   disconnect as serialDisconnect,
   uploadBytecode,
 } from '../uploader/webserial';
+import type { ZPLCProjectConfig } from '../types';
 
 /** Command timeout in milliseconds */
 const COMMAND_TIMEOUT_MS = 3000;
@@ -406,6 +407,36 @@ export class SerialAdapter implements IDebugAdapter {
     throw new Error(`Command timeout: ${command}`);
   }
 
+  private quoteShellArg(value: string): string {
+    const escaped = value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    return `"${escaped}"`;
+  }
+
+  private mqttSecurityToRuntimeLevel(level: string | undefined): number {
+    if (level === 'tls-no-verify') {
+      return 1;
+    }
+    if (level === 'tls-server-verify') {
+      return 2;
+    }
+    if (level === 'tls-mutual') {
+      return 3;
+    }
+    return 0;
+  }
+
+  private modbusParityToRuntimeLevel(parity: string | undefined): number {
+    switch (parity) {
+      case 'even':
+        return 1;
+      case 'odd':
+        return 2;
+      case 'none':
+      default:
+        return 0;
+    }
+  }
+
   private async sendDebugCommand(subcommand: string): Promise<string> {
     return this.sendCommand(`zplc dbg ${subcommand}`);
   }
@@ -433,6 +464,67 @@ export class SerialAdapter implements IDebugAdapter {
   // =========================================================================
   // Program Loading
   // =========================================================================
+
+  async provisionProjectConfig(projectConfig: ZPLCProjectConfig): Promise<void> {
+    if (!this._connected || !this.connection) {
+      throw new Error('Not connected');
+    }
+
+    const network = projectConfig.network;
+    const communication = projectConfig.communication;
+
+    if (network?.hostname) {
+      await this.sendCommand(`zplc config set hostname ${this.quoteShellArg(network.hostname)}`);
+    }
+
+    const ipv4 = network?.wifi?.ipv4 ?? network?.ethernet?.ipv4;
+    if (ipv4) {
+      await this.sendCommand(`zplc config set dhcp ${ipv4.dhcp ? '1' : '0'}`);
+      if (!ipv4.dhcp && ipv4.ip) {
+        await this.sendCommand(`zplc config set ip ${this.quoteShellArg(ipv4.ip)}`);
+      }
+    }
+
+    if (network?.wifi?.enabled && network.wifi.ssid) {
+      const ssidArg = this.quoteShellArg(network.wifi.ssid);
+      if (network.wifi.security === 'open') {
+        await this.sendCommand(`wifi connect -s ${ssidArg}`);
+      } else if (network.wifi.password) {
+        const passArg = this.quoteShellArg(network.wifi.password);
+        await this.sendCommand(`wifi connect -s ${ssidArg} -k 2 -p ${passArg}`);
+      }
+    }
+
+    if (communication?.modbus) {
+      const modbus = communication.modbus;
+      await this.sendCommand(`zplc config set modbus_id ${modbus.unitId}`);
+      await this.sendCommand(`zplc config set modbus_tcp_enabled ${modbus.enabled && modbus.tcpEnabled ? '1' : '0'}`);
+      await this.sendCommand(`zplc config set modbus_tcp_port ${modbus.tcpPort}`);
+      await this.sendCommand(`zplc config set modbus_rtu_enabled ${modbus.enabled && modbus.rtuEnabled ? '1' : '0'}`);
+      await this.sendCommand(`zplc config set modbus_rtu_baud ${modbus.rtuBaud}`);
+      await this.sendCommand(`zplc config set modbus_rtu_parity ${this.modbusParityToRuntimeLevel(modbus.rtuParity)}`);
+    }
+
+    if (communication?.mqtt) {
+      const mqtt = communication.mqtt;
+      await this.sendCommand(`zplc config set mqtt_enabled ${mqtt.enabled ? '1' : '0'}`);
+      await this.sendCommand(`zplc config set mqtt_broker ${this.quoteShellArg(mqtt.broker)}`);
+      await this.sendCommand(`zplc config set mqtt_client_id ${this.quoteShellArg(mqtt.clientId)}`);
+      await this.sendCommand(`zplc config set mqtt_topic_namespace ${this.quoteShellArg(mqtt.topicNamespace)}`);
+      await this.sendCommand(`zplc config set mqtt_port ${mqtt.port}`);
+      await this.sendCommand(`zplc config set mqtt_keepalive ${mqtt.keepAliveSec}`);
+      await this.sendCommand(`zplc config set mqtt_publish_interval ${mqtt.publishIntervalMs}`);
+      await this.sendCommand(`zplc config set mqtt_clean_session ${mqtt.cleanSession ? '1' : '0'}`);
+      await this.sendCommand(`zplc config set mqtt_security ${this.mqttSecurityToRuntimeLevel(mqtt.securityLevel)}`);
+      await this.sendCommand(`zplc config set mqtt_username ${this.quoteShellArg(mqtt.username ?? '')}`);
+      await this.sendCommand(`zplc config set mqtt_password ${this.quoteShellArg(mqtt.password ?? '')}`);
+      await this.sendCommand(`zplc config set mqtt_ca_cert_path ${this.quoteShellArg(mqtt.caCertPath ?? '')}`);
+      await this.sendCommand(`zplc config set mqtt_client_cert_path ${this.quoteShellArg(mqtt.clientCertPath ?? '')}`);
+      await this.sendCommand(`zplc config set mqtt_client_key_path ${this.quoteShellArg(mqtt.clientKeyPath ?? '')}`);
+    }
+
+    await this.sendCommand('zplc config save');
+  }
 
   async loadProgram(bytecode: Uint8Array): Promise<void> {
     if (!this._connected || !this.connection) {

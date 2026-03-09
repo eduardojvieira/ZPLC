@@ -27,6 +27,7 @@ import {
   Package,
   User,
   FileText,
+  Radio,
 } from 'lucide-react';
 import { useIDEStore } from '../../store/useIDEStore';
 import type {
@@ -35,29 +36,19 @@ import type {
   IOPinConfig,
   TargetConfig,
   CompilerConfig,
+  NetworkConfig,
+  CommunicationConfig,
+  CommunicationTagConfig,
+  CommunicationTagMode,
+  CommunicationTagType,
   ZPLCProjectConfig,
   FileTreeNode,
 } from '../../types';
-
-// =============================================================================
-// Common Board Options (for dropdown)
-// =============================================================================
-
-const BOARD_OPTIONS = [
-  { value: '', label: 'Select a board...' },
-  { value: 'rpi_pico', label: 'Raspberry Pi Pico (RP2040)' },
-  { value: 'rpi_pico_w', label: 'Raspberry Pi Pico W (RP2040 + WiFi)' },
-  { value: 'arduino_giga_r1', label: 'Arduino GIGA R1 (STM32H747)' },
-  { value: 'arduino_opta', label: 'Arduino Opta (Industrial PLC)' },
-  { value: 'nucleo_h743zi', label: 'STM32 Nucleo H743ZI' },
-  { value: 'nucleo_f446re', label: 'STM32 Nucleo F446RE' },
-  { value: 'stm32f746g_disco', label: 'STM32F746G Discovery' },
-  { value: 'esp32s3_devkitc', label: 'ESP32-S3 DevKitC' },
-  { value: 'esp32_devkitc_wroom', label: 'ESP32 DevKitC WROOM' },
-  { value: 'nrf52840dk', label: 'Nordic nRF52840 DK' },
-  { value: 'mps2_an385', label: 'ARM MPS2+ AN385 (QEMU)' },
-  { value: 'custom', label: 'Custom (enter manually)' },
-];
+import {
+  BOARD_OPTIONS,
+  getBoardNetworkType,
+  normalizeNetworkConfigForBoard,
+} from '../../config/boardProfiles';
 
 // =============================================================================
 // Main Component
@@ -70,8 +61,10 @@ export function ProjectSettings() {
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     metadata: true,
     target: true,
+    network: true,
     compiler: false,
     io: true,
+    communication: true,
     tasks: true,
     build: false,
   });
@@ -170,6 +163,15 @@ export function ProjectSettings() {
             <TargetSection config={projectConfig} updateConfig={updateConfig} />
           </SettingsSection>
 
+          <SettingsSection
+            title="Network"
+            icon={<Radio size={16} />}
+            isExpanded={expandedSections.network}
+            onToggle={() => toggleSection('network')}
+          >
+            <NetworkSection config={projectConfig} updateConfig={updateConfig} />
+          </SettingsSection>
+
           {/* ================= COMPILER ================= */}
           <SettingsSection
             title="Compiler Settings"
@@ -189,6 +191,16 @@ export function ProjectSettings() {
             badge={`${projectConfig.io?.inputs?.length || 0} IN / ${projectConfig.io?.outputs?.length || 0} OUT`}
           >
             <IOSection config={projectConfig} updateConfig={updateConfig} />
+          </SettingsSection>
+
+          <SettingsSection
+            title="Communication"
+            icon={<Radio size={16} />}
+            isExpanded={expandedSections.communication}
+            onToggle={() => toggleSection('communication')}
+            badge={`${projectConfig.communication?.tags?.length || 0} tag${(projectConfig.communication?.tags?.length || 0) !== 1 ? 's' : ''}`}
+          >
+            <CommunicationSection config={projectConfig} updateConfig={updateConfig} />
           </SettingsSection>
 
           {/* ================= TASKS ================= */}
@@ -231,6 +243,15 @@ export function ProjectSettings() {
               <li>
                 I/O: <span className="text-[var(--color-accent-yellow)]">{projectConfig.io?.inputs?.length || 0}</span> inputs,
                 <span className="text-[var(--color-accent-yellow)]"> {projectConfig.io?.outputs?.length || 0}</span> outputs
+              </li>
+              <li>
+                Communication: <span className="text-[var(--color-accent-blue)]">{projectConfig.communication?.tags?.length || 0}</span> tags,
+                MQTT <span className="text-[var(--color-accent-green)]">{projectConfig.communication?.mqtt?.enabled ? 'ON' : 'OFF'}</span>,
+                Modbus <span className="text-[var(--color-accent-green)]">{projectConfig.communication?.modbus?.enabled ? 'ON' : 'OFF'}</span>
+              </li>
+              <li>
+                Network: <span className="text-[var(--color-accent-green)]">{getBoardNetworkType(projectConfig.target?.board)}</span>
+                {projectConfig.network?.hostname ? ` (${projectConfig.network.hostname})` : ''}
               </li>
               <li>
                 Tasks: <span className="text-[var(--color-accent-green)]">{projectConfig.tasks.length}</span> configured
@@ -373,19 +394,34 @@ function TargetSection({ config, updateConfig }: SectionProps) {
     const newTarget = { ...target, ...updates };
     // Only set target if at least board is defined
     if (newTarget.board) {
-      updateConfig({ target: newTarget as TargetConfig });
+      const nextBoard = typeof updates.board === 'string' ? updates.board : newTarget.board;
+      updateConfig({
+        target: newTarget as TargetConfig,
+        network: normalizeNetworkConfigForBoard(config.network, nextBoard),
+      });
     } else {
-      updateConfig({ target: undefined });
+      updateConfig({ target: undefined, network: undefined });
     }
   };
 
   const handleBoardChange = (value: string) => {
     if (value === 'custom') {
       setCustomBoard(true);
-      updateTarget({ board: '' });
+      updateConfig({
+        target: undefined,
+        network: undefined,
+      });
     } else {
       setCustomBoard(false);
-      updateTarget({ board: value });
+      const nextTarget = {
+        ...target,
+        board: value,
+      } as TargetConfig;
+
+      updateConfig({
+        target: nextTarget,
+        network: normalizeNetworkConfigForBoard(config.network, value),
+      });
     }
   };
 
@@ -453,6 +489,205 @@ function TargetSection({ config, updateConfig }: SectionProps) {
           />
         </div>
       </div>
+    </div>
+  );
+}
+
+// =============================================================================
+// NETWORK SECTION
+// =============================================================================
+
+function NetworkSection({ config, updateConfig }: SectionProps) {
+  const networkType = getBoardNetworkType(config.target?.board);
+  const network: NetworkConfig | undefined = config.network;
+
+  if (networkType === 'none') {
+    return (
+      <div className="pt-4 text-xs text-[var(--color-surface-400)]">
+        Select a board with network hardware to configure Wi-Fi or Ethernet.
+      </div>
+    );
+  }
+
+  const updateNetwork = (next: NetworkConfig) => {
+    updateConfig({ network: next });
+  };
+
+  if (networkType === 'wifi') {
+    const wifi = network?.wifi ?? {
+      enabled: true,
+      security: 'wpa2-psk' as const,
+      hiddenSsid: false,
+      ipv4: { dhcp: true },
+    };
+
+    return (
+      <div className="pt-4 space-y-3">
+        <input
+          type="text"
+          value={network?.hostname || ''}
+          onChange={(e) => updateNetwork({ ...network, hostname: e.target.value || undefined, wifi })}
+          placeholder="Hostname (optional)"
+          className="w-full px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+        />
+        <div className="grid grid-cols-4 gap-3">
+          <label className="flex items-center gap-2 text-sm text-[var(--color-surface-200)]">
+            <input
+              type="checkbox"
+              checked={wifi.enabled}
+              onChange={(e) => updateNetwork({ ...network, wifi: { ...wifi, enabled: e.target.checked } })}
+            />
+            Wi-Fi Enabled
+          </label>
+          <input
+            type="text"
+            value={wifi.ssid || ''}
+            onChange={(e) => updateNetwork({ ...network, wifi: { ...wifi, ssid: e.target.value || undefined } })}
+            placeholder="SSID"
+            className="col-span-2 px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+          <select
+            value={wifi.security}
+            onChange={(e) => updateNetwork({ ...network, wifi: { ...wifi, security: e.target.value as typeof wifi.security } })}
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          >
+            <option value="open">Open</option>
+            <option value="wpa2-psk">WPA2-PSK</option>
+            <option value="wpa3-sae">WPA3-SAE</option>
+          </select>
+        </div>
+        <div className="grid grid-cols-4 gap-3">
+          <input
+            type="password"
+            value={wifi.password || ''}
+            onChange={(e) => updateNetwork({ ...network, wifi: { ...wifi, password: e.target.value || undefined } })}
+            placeholder="Wi-Fi password"
+            className="col-span-2 px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+          <label className="flex items-center gap-2 text-sm text-[var(--color-surface-200)]">
+            <input
+              type="checkbox"
+              checked={wifi.hiddenSsid}
+              onChange={(e) => updateNetwork({ ...network, wifi: { ...wifi, hiddenSsid: e.target.checked } })}
+            />
+            Hidden SSID
+          </label>
+          <label className="flex items-center gap-2 text-sm text-[var(--color-surface-200)]">
+            <input
+              type="checkbox"
+              checked={wifi.ipv4.dhcp}
+              onChange={(e) => updateNetwork({ ...network, wifi: { ...wifi, ipv4: { ...wifi.ipv4, dhcp: e.target.checked } } })}
+            />
+            DHCP
+          </label>
+        </div>
+        {!wifi.ipv4.dhcp && (
+          <div className="grid grid-cols-4 gap-3">
+            <input
+              type="text"
+              value={wifi.ipv4.ip || ''}
+              onChange={(e) => updateNetwork({ ...network, wifi: { ...wifi, ipv4: { ...wifi.ipv4, ip: e.target.value || undefined } } })}
+              placeholder="Static IP"
+              className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+            />
+            <input
+              type="text"
+              value={wifi.ipv4.netmask || ''}
+              onChange={(e) => updateNetwork({ ...network, wifi: { ...wifi, ipv4: { ...wifi.ipv4, netmask: e.target.value || undefined } } })}
+              placeholder="Netmask"
+              className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+            />
+            <input
+              type="text"
+              value={wifi.ipv4.gateway || ''}
+              onChange={(e) => updateNetwork({ ...network, wifi: { ...wifi, ipv4: { ...wifi.ipv4, gateway: e.target.value || undefined } } })}
+              placeholder="Gateway"
+              className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+            />
+            <input
+              type="text"
+              value={wifi.ipv4.dns || ''}
+              onChange={(e) => updateNetwork({ ...network, wifi: { ...wifi, ipv4: { ...wifi.ipv4, dns: e.target.value || undefined } } })}
+              placeholder="DNS"
+              className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+            />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const ethernet = network?.ethernet ?? {
+    enabled: true,
+    ipv4: { dhcp: true },
+  };
+
+  return (
+    <div className="pt-4 space-y-3">
+      <input
+        type="text"
+        value={network?.hostname || ''}
+        onChange={(e) => updateNetwork({ ...network, hostname: e.target.value || undefined, ethernet })}
+        placeholder="Hostname (optional)"
+        className="w-full px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+      />
+      <div className="grid grid-cols-4 gap-3">
+        <label className="flex items-center gap-2 text-sm text-[var(--color-surface-200)]">
+          <input
+            type="checkbox"
+            checked={ethernet.enabled}
+            onChange={(e) => updateNetwork({ ...network, ethernet: { ...ethernet, enabled: e.target.checked } })}
+          />
+          Ethernet Enabled
+        </label>
+        <label className="flex items-center gap-2 text-sm text-[var(--color-surface-200)]">
+          <input
+            type="checkbox"
+            checked={ethernet.ipv4.dhcp}
+            onChange={(e) => updateNetwork({ ...network, ethernet: { ...ethernet, ipv4: { ...ethernet.ipv4, dhcp: e.target.checked } } })}
+          />
+          DHCP
+        </label>
+        <input
+          type="text"
+          value={ethernet.macAddress || ''}
+          onChange={(e) => updateNetwork({ ...network, ethernet: { ...ethernet, macAddress: e.target.value || undefined } })}
+          placeholder="MAC (optional)"
+          className="col-span-2 px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+        />
+      </div>
+      {!ethernet.ipv4.dhcp && (
+        <div className="grid grid-cols-4 gap-3">
+          <input
+            type="text"
+            value={ethernet.ipv4.ip || ''}
+            onChange={(e) => updateNetwork({ ...network, ethernet: { ...ethernet, ipv4: { ...ethernet.ipv4, ip: e.target.value || undefined } } })}
+            placeholder="Static IP"
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+          <input
+            type="text"
+            value={ethernet.ipv4.netmask || ''}
+            onChange={(e) => updateNetwork({ ...network, ethernet: { ...ethernet, ipv4: { ...ethernet.ipv4, netmask: e.target.value || undefined } } })}
+            placeholder="Netmask"
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+          <input
+            type="text"
+            value={ethernet.ipv4.gateway || ''}
+            onChange={(e) => updateNetwork({ ...network, ethernet: { ...ethernet, ipv4: { ...ethernet.ipv4, gateway: e.target.value || undefined } } })}
+            placeholder="Gateway"
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+          <input
+            type="text"
+            value={ethernet.ipv4.dns || ''}
+            onChange={(e) => updateNetwork({ ...network, ethernet: { ...ethernet, ipv4: { ...ethernet.ipv4, dns: e.target.value || undefined } } })}
+            placeholder="DNS"
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -783,6 +1018,386 @@ function IOTable({ items, onUpdate, onRemove }: IOTableProps) {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+// =============================================================================
+// COMMUNICATION SECTION
+// =============================================================================
+
+function CommunicationSection({ config, updateConfig }: SectionProps) {
+  const communication: CommunicationConfig = config.communication || {
+    mqtt: {
+      enabled: true,
+      broker: 'test.mosquitto.org',
+      port: 1883,
+      clientId: 'zplc-device',
+      keepAliveSec: 60,
+      cleanSession: true,
+      topicNamespace: 'spBv1.0/ZPLC',
+      publishIntervalMs: 2000,
+      securityLevel: 'none',
+    },
+    modbus: {
+      enabled: true,
+      unitId: 1,
+      tcpEnabled: true,
+      tcpPort: 502,
+      rtuEnabled: false,
+      rtuBaud: 19200,
+      rtuParity: 'none',
+      pollIntervalMs: 100,
+    },
+    tags: [],
+  };
+
+  const mqtt = communication.mqtt || {
+    enabled: true,
+    broker: 'test.mosquitto.org',
+    port: 1883,
+    clientId: 'zplc-device',
+    keepAliveSec: 60,
+    cleanSession: true,
+    topicNamespace: 'spBv1.0/ZPLC',
+    publishIntervalMs: 2000,
+    securityLevel: 'none',
+  };
+
+  const modbus = communication.modbus || {
+    enabled: true,
+    unitId: 1,
+    tcpEnabled: true,
+    tcpPort: 502,
+    rtuEnabled: false,
+    rtuBaud: 19200,
+    rtuParity: 'none' as const,
+    pollIntervalMs: 100,
+  };
+
+  const tags = communication.tags || [];
+
+  const updateCommunication = (updates: Partial<CommunicationConfig>) => {
+    updateConfig({
+      communication: {
+        ...communication,
+        ...updates,
+      },
+    });
+  };
+
+  const addTag = () => {
+    const index = tags.length;
+    const next: CommunicationTagConfig = {
+      name: `Tag${index + 1}`,
+      symbol: `CommTag${index + 1}`,
+      type: 'REAL',
+      mode: 'publish',
+    };
+    updateCommunication({ tags: [...tags, next] });
+  };
+
+  const updateTag = (index: number, updates: Partial<CommunicationTagConfig>) => {
+    const next = [...tags];
+    next[index] = { ...next[index], ...updates };
+    updateCommunication({ tags: next });
+  };
+
+  const removeTag = (index: number) => {
+    updateCommunication({ tags: tags.filter((_, i) => i !== index) });
+  };
+
+  return (
+    <div className="pt-4 space-y-6">
+      <div>
+        <label className="block text-xs text-[var(--color-surface-400)] mb-2">MQTT</label>
+        <div className="grid grid-cols-5 gap-3">
+          <label className="flex items-center gap-2 text-sm text-[var(--color-surface-200)]">
+            <input
+              type="checkbox"
+              checked={mqtt.enabled}
+              onChange={(e) => updateCommunication({ mqtt: { ...mqtt, enabled: e.target.checked } })}
+            />
+            Enabled
+          </label>
+          <input
+            type="text"
+            value={mqtt.broker}
+            onChange={(e) => updateCommunication({ mqtt: { ...mqtt, broker: e.target.value } })}
+            placeholder="Broker"
+            className="col-span-2 px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+          <input
+            type="number"
+            min={1}
+            max={65535}
+            value={mqtt.port}
+            onChange={(e) => updateCommunication({ mqtt: { ...mqtt, port: parseInt(e.target.value, 10) || 1883 } })}
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+          <input
+            type="number"
+            min={1}
+            value={mqtt.publishIntervalMs}
+            onChange={(e) => updateCommunication({ mqtt: { ...mqtt, publishIntervalMs: parseInt(e.target.value, 10) || 2000 } })}
+            placeholder="Interval ms"
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+        </div>
+        <div className="grid grid-cols-3 gap-3 mt-2">
+          <input
+            type="text"
+            value={mqtt.clientId}
+            onChange={(e) => updateCommunication({ mqtt: { ...mqtt, clientId: e.target.value } })}
+            placeholder="Client ID"
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+          <input
+            type="text"
+            value={mqtt.topicNamespace}
+            onChange={(e) => updateCommunication({ mqtt: { ...mqtt, topicNamespace: e.target.value } })}
+            placeholder="Topic namespace"
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+          <select
+            value={mqtt.securityLevel}
+            onChange={(e) => updateCommunication({ mqtt: { ...mqtt, securityLevel: e.target.value as typeof mqtt.securityLevel } })}
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          >
+            <option value="none">No TLS</option>
+            <option value="tls-no-verify">TLS (no verify)</option>
+            <option value="tls-server-verify">TLS + server verify</option>
+            <option value="tls-mutual">Mutual TLS</option>
+          </select>
+        </div>
+        <div className="grid grid-cols-4 gap-3 mt-2">
+          <input
+            type="number"
+            min={5}
+            max={3600}
+            value={mqtt.keepAliveSec}
+            onChange={(e) => updateCommunication({ mqtt: { ...mqtt, keepAliveSec: parseInt(e.target.value, 10) || 60 } })}
+            placeholder="KeepAlive s"
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+          <label className="flex items-center gap-2 text-xs text-[var(--color-surface-200)]">
+            <input
+              type="checkbox"
+              checked={mqtt.cleanSession}
+              onChange={(e) => updateCommunication({ mqtt: { ...mqtt, cleanSession: e.target.checked } })}
+            />
+            Clean Session
+          </label>
+          <input
+            type="text"
+            value={mqtt.username || ''}
+            onChange={(e) => updateCommunication({ mqtt: { ...mqtt, username: e.target.value || undefined } })}
+            placeholder="Username"
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+          <input
+            type="password"
+            value={mqtt.password || ''}
+            onChange={(e) => updateCommunication({ mqtt: { ...mqtt, password: e.target.value || undefined } })}
+            placeholder="Password"
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+        </div>
+        <div className="grid grid-cols-3 gap-3 mt-2">
+          <input
+            type="text"
+            value={mqtt.caCertPath || ''}
+            onChange={(e) => updateCommunication({ mqtt: { ...mqtt, caCertPath: e.target.value || undefined } })}
+            placeholder="CA cert path (PEM/DER)"
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+          <input
+            type="text"
+            value={mqtt.clientCertPath || ''}
+            onChange={(e) => updateCommunication({ mqtt: { ...mqtt, clientCertPath: e.target.value || undefined } })}
+            placeholder="Client cert path"
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+          <input
+            type="text"
+            value={mqtt.clientKeyPath || ''}
+            onChange={(e) => updateCommunication({ mqtt: { ...mqtt, clientKeyPath: e.target.value || undefined } })}
+            placeholder="Client key path"
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-xs text-[var(--color-surface-400)] mb-2">Modbus</label>
+        <div className="grid grid-cols-6 gap-3">
+          <label className="flex items-center gap-2 text-sm text-[var(--color-surface-200)]">
+            <input
+              type="checkbox"
+              checked={modbus.enabled}
+              onChange={(e) => updateCommunication({ modbus: { ...modbus, enabled: e.target.checked } })}
+            />
+            Enabled
+          </label>
+          <label className="flex items-center gap-2 text-sm text-[var(--color-surface-200)]">
+            <input
+              type="checkbox"
+              checked={modbus.tcpEnabled}
+              onChange={(e) => updateCommunication({ modbus: { ...modbus, tcpEnabled: e.target.checked } })}
+              disabled={!modbus.enabled}
+            />
+            TCP
+          </label>
+          <label className="flex items-center gap-2 text-sm text-[var(--color-surface-200)]">
+            <input
+              type="checkbox"
+              checked={modbus.rtuEnabled}
+              onChange={(e) => updateCommunication({ modbus: { ...modbus, rtuEnabled: e.target.checked } })}
+              disabled={!modbus.enabled}
+            />
+            RTU
+          </label>
+          <input
+            type="number"
+            min={1}
+            max={247}
+            value={modbus.unitId}
+            onChange={(e) => updateCommunication({ modbus: { ...modbus, unitId: parseInt(e.target.value, 10) || 1 } })}
+            placeholder="Unit ID"
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+          <input
+            type="number"
+            min={1}
+            max={65535}
+            value={modbus.tcpPort}
+            onChange={(e) => updateCommunication({ modbus: { ...modbus, tcpPort: parseInt(e.target.value, 10) || 502 } })}
+            placeholder="Port"
+            disabled={!modbus.enabled || !modbus.tcpEnabled}
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+          <input
+            type="number"
+            min={1}
+            value={modbus.pollIntervalMs}
+            onChange={(e) => updateCommunication({ modbus: { ...modbus, pollIntervalMs: parseInt(e.target.value, 10) || 100 } })}
+            placeholder="Poll ms"
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+        </div>
+        <div className="grid grid-cols-3 gap-3 mt-2">
+          <input
+            type="number"
+            min={1200}
+            max={1000000}
+            value={modbus.rtuBaud}
+            onChange={(e) => updateCommunication({ modbus: { ...modbus, rtuBaud: parseInt(e.target.value, 10) || 19200 } })}
+            placeholder="RTU baud"
+            disabled={!modbus.enabled || !modbus.rtuEnabled}
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+          <select
+            value={modbus.rtuParity}
+            onChange={(e) => updateCommunication({ modbus: { ...modbus, rtuParity: e.target.value as typeof modbus.rtuParity } })}
+            disabled={!modbus.enabled || !modbus.rtuEnabled}
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          >
+            <option value="none">RTU parity: none</option>
+            <option value="even">RTU parity: even</option>
+            <option value="odd">RTU parity: odd</option>
+          </select>
+          <div className="px-3 py-2 text-xs rounded border border-[var(--color-surface-600)] bg-[var(--color-surface-800)] text-[var(--color-surface-400)]">
+            RTU uses the board's configured `zephyr,modbus-serial` UART.
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-sm font-medium text-[var(--color-surface-200)]">Communication Tags</label>
+          <button
+            onClick={addTag}
+            className="flex items-center gap-1 px-2 py-1 text-xs rounded bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--color-surface-200)]"
+          >
+            <Plus size={12} />
+            Add Tag
+          </button>
+        </div>
+
+        {tags.length === 0 ? (
+          <p className="text-xs text-[var(--color-surface-400)] text-center py-3 bg-[var(--color-surface-700)] rounded">
+            No communication tags configured.
+          </p>
+        ) : (
+          <div className="bg-[var(--color-surface-700)] rounded border border-[var(--color-surface-600)] overflow-hidden">
+            <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-[var(--color-surface-600)] text-xs text-[var(--color-surface-300)] font-medium">
+              <div className="col-span-2">Name</div>
+              <div className="col-span-2">Symbol</div>
+              <div className="col-span-1">Type</div>
+              <div className="col-span-2">Mode</div>
+              <div className="col-span-2">Modbus</div>
+              <div className="col-span-2">Description</div>
+              <div className="col-span-1"></div>
+            </div>
+            {tags.map((tag, index) => (
+              <div key={`${tag.symbol}-${index}`} className="grid grid-cols-12 gap-2 px-3 py-2 border-t border-[var(--color-surface-600)] items-center">
+                <input
+                  type="text"
+                  value={tag.name}
+                  onChange={(e) => updateTag(index, { name: e.target.value })}
+                  className="col-span-2 px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded"
+                />
+                <input
+                  type="text"
+                  value={tag.symbol}
+                  onChange={(e) => updateTag(index, { symbol: e.target.value.replace(/[^A-Za-z0-9_]/g, '') })}
+                  className="col-span-2 px-2 py-1 text-xs font-mono bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded"
+                />
+                <select
+                  value={tag.type}
+                  onChange={(e) => updateTag(index, { type: e.target.value as CommunicationTagType })}
+                  className="col-span-1 px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded"
+                >
+                  <option value="BOOL">BOOL</option>
+                  <option value="INT">INT</option>
+                  <option value="UINT">UINT</option>
+                  <option value="REAL">REAL</option>
+                </select>
+                <select
+                  value={tag.mode}
+                  onChange={(e) => updateTag(index, { mode: e.target.value as CommunicationTagMode })}
+                  className="col-span-2 px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded"
+                >
+                  <option value="publish">publish</option>
+                  <option value="subscribe">subscribe</option>
+                  <option value="modbus">modbus</option>
+                </select>
+                <input
+                  type="number"
+                  min={1}
+                  max={65535}
+                  value={tag.modbusAddress ?? ''}
+                  onChange={(e) => updateTag(index, { modbusAddress: e.target.value ? parseInt(e.target.value, 10) : undefined })}
+                  disabled={tag.mode !== 'modbus'}
+                  className="col-span-2 px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded disabled:opacity-50"
+                />
+                <input
+                  type="text"
+                  value={tag.description || ''}
+                  onChange={(e) => updateTag(index, { description: e.target.value || undefined })}
+                  className="col-span-2 px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded"
+                />
+                <button
+                  onClick={() => removeTag(index)}
+                  className="col-span-1 p-1 rounded hover:bg-[var(--color-surface-500)] text-[var(--color-accent-red)]"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

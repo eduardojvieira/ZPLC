@@ -33,6 +33,7 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 /** @brief Number of GPIO output channels */
 #define ZPLC_GPIO_OUTPUT_COUNT 4
 
+
 /* ============================================================================
  * Program Upload Buffer (shared by legacy and scheduler modes via shell_cmds.c)
  * ============================================================================
@@ -328,7 +329,7 @@ int main(void) {
     zplc_hal_log("[INIT] Networking active (DHCP pending...)\n");
   }
 
-  zplc_hal_log("[INIT] Starting Modbus TCP Server...\n");
+  zplc_hal_log("[INIT] Starting Modbus communication services...\n");
   zplc_modbus_init();
 
   zplc_hal_log("[INIT] Starting MQTT Client...\n");

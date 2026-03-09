@@ -41,9 +41,17 @@
                     "description": "Target board (e.g., rpi_pico, posix)",
                     "enum": [
                         "rpi_pico",
-                        "posix",
-                        "esp32",
-                        "stm32f4"
+                        "rpi_pico_w",
+                        "arduino_giga_r1",
+                        "arduino_opta",
+                        "nucleo_h743zi",
+                        "nucleo_f446re",
+                        "stm32f746g_disco",
+                        "esp32s3_devkitc",
+                        "esp32_devkitc_wroom",
+                        "esp32_nodemcu",
+                        "nrf52840dk",
+                        "mps2_an385"
                     ]
                 },
                 "cpu": {
@@ -130,6 +138,40 @@
                             }
                         }
                     }
+                }
+            }
+        },
+        "communication": {
+            "type": "object",
+            "description": "Industrial communication configuration",
+            "properties": {
+                "mqtt": {
+                    "$ref": "#/definitions/mqttConfig"
+                },
+                "modbus": {
+                    "$ref": "#/definitions/modbusConfig"
+                },
+                "tags": {
+                    "type": "array",
+                    "description": "Tag map used by runtime communication modules",
+                    "items": {
+                        "$ref": "#/definitions/communicationTag"
+                    }
+                }
+            }
+        },
+        "network": {
+            "type": "object",
+            "description": "Board-specific network configuration",
+            "properties": {
+                "hostname": {
+                    "type": "string"
+                },
+                "wifi": {
+                    "$ref": "#/definitions/wifiNetworkConfig"
+                },
+                "ethernet": {
+                    "$ref": "#/definitions/ethernetNetworkConfig"
                 }
             }
         },
@@ -283,6 +325,253 @@
                 "description": {
                     "type": "string",
                     "description": "Optional description"
+                }
+            }
+        },
+        "mqttConfig": {
+            "type": "object",
+            "required": [
+                "enabled",
+                "broker",
+                "port",
+                "clientId",
+                "keepAliveSec",
+                "cleanSession",
+                "topicNamespace",
+                "publishIntervalMs",
+                "securityLevel"
+            ],
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "broker": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "port": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535
+                },
+                "clientId": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "keepAliveSec": {
+                    "type": "integer",
+                    "minimum": 5,
+                    "maximum": 3600
+                },
+                "cleanSession": {
+                    "type": "boolean"
+                },
+                "username": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "topicNamespace": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "publishIntervalMs": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "securityLevel": {
+                    "type": "string",
+                    "enum": [
+                        "none",
+                        "tls-no-verify",
+                        "tls-server-verify",
+                        "tls-mutual"
+                    ]
+                },
+                "caCertPath": {
+                    "type": "string"
+                },
+                "clientCertPath": {
+                    "type": "string"
+                },
+                "clientKeyPath": {
+                    "type": "string"
+                }
+            }
+        },
+        "modbusConfig": {
+            "type": "object",
+            "required": [
+                "enabled",
+                "unitId",
+                "tcpEnabled",
+                "tcpPort",
+                "rtuEnabled",
+                "rtuBaud",
+                "rtuParity",
+                "pollIntervalMs"
+            ],
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "unitId": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 247
+                },
+                "tcpEnabled": {
+                    "type": "boolean"
+                },
+                "tcpPort": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535
+                },
+                "rtuEnabled": {
+                    "type": "boolean"
+                },
+                "rtuBaud": {
+                    "type": "integer",
+                    "minimum": 1200,
+                    "maximum": 1000000
+                },
+                "rtuParity": {
+                    "type": "string",
+                    "enum": [
+                        "none",
+                        "even",
+                        "odd"
+                    ]
+                },
+                "pollIntervalMs": {
+                    "type": "integer",
+                    "minimum": 1
+                }
+            }
+        },
+        "communicationTag": {
+            "type": "object",
+            "required": [
+                "name",
+                "symbol",
+                "type",
+                "mode"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "minLength": 1
+                },
+                "symbol": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "BOOL",
+                        "INT",
+                        "UINT",
+                        "REAL"
+                    ]
+                },
+                "mode": {
+                    "type": "string",
+                    "enum": [
+                        "publish",
+                        "subscribe",
+                        "modbus"
+                    ]
+                },
+                "modbusAddress": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535
+                },
+                "description": {
+                    "type": "string"
+                }
+            }
+        },
+        "networkIPv4Config": {
+            "type": "object",
+            "required": [
+                "dhcp"
+            ],
+            "properties": {
+                "dhcp": {
+                    "type": "boolean"
+                },
+                "ip": {
+                    "type": "string",
+                    "pattern": "^(25[0-5]|2[0-4]\\d|1?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|1?\\d?\\d)){3}$"
+                },
+                "netmask": {
+                    "type": "string",
+                    "pattern": "^(25[0-5]|2[0-4]\\d|1?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|1?\\d?\\d)){3}$"
+                },
+                "gateway": {
+                    "type": "string",
+                    "pattern": "^(25[0-5]|2[0-4]\\d|1?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|1?\\d?\\d)){3}$"
+                },
+                "dns": {
+                    "type": "string",
+                    "pattern": "^(25[0-5]|2[0-4]\\d|1?\\d?\\d)(\\.(25[0-5]|2[0-4]\\d|1?\\d?\\d)){3}$"
+                }
+            }
+        },
+        "wifiNetworkConfig": {
+            "type": "object",
+            "required": [
+                "enabled",
+                "security",
+                "hiddenSsid",
+                "ipv4"
+            ],
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "ssid": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "security": {
+                    "type": "string",
+                    "enum": [
+                        "open",
+                        "wpa2-psk",
+                        "wpa3-sae"
+                    ]
+                },
+                "hiddenSsid": {
+                    "type": "boolean"
+                },
+                "ipv4": {
+                    "$ref": "#/definitions/networkIPv4Config"
+                }
+            }
+        },
+        "ethernetNetworkConfig": {
+            "type": "object",
+            "required": [
+                "enabled",
+                "ipv4"
+            ],
+            "properties": {
+                "enabled": {
+                    "type": "boolean"
+                },
+                "macAddress": {
+                    "type": "string",
+                    "pattern": "^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$"
+                },
+                "ipv4": {
+                    "$ref": "#/definitions/networkIPv4Config"
                 }
             }
         }
