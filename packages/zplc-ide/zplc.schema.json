@@ -151,9 +151,16 @@
                 "modbus": {
                     "$ref": "#/definitions/modbusConfig"
                 },
+                "bindings": {
+                    "type": "array",
+                    "description": "Canonical communication bindings used by compiler and runtime communication modules",
+                    "items": {
+                        "$ref": "#/definitions/communicationTag"
+                    }
+                },
                 "tags": {
                     "type": "array",
-                    "description": "Tag map used by runtime communication modules",
+                    "description": "Legacy alias for communication bindings",
                     "items": {
                         "$ref": "#/definitions/communicationTag"
                     }
@@ -332,18 +339,40 @@
             "type": "object",
             "required": [
                 "enabled",
+                "profile",
+                "protocolVersion",
+                "transport",
                 "broker",
                 "port",
                 "clientId",
                 "keepAliveSec",
                 "cleanSession",
+                "sessionExpirySec",
                 "topicNamespace",
                 "publishIntervalMs",
+                "publishQos",
+                "subscribeQos",
+                "publishRetain",
+                "lwtEnabled",
+                "lwtQos",
+                "lwtRetain",
                 "securityLevel"
             ],
             "properties": {
                 "enabled": {
                     "type": "boolean"
+                },
+                "profile": {
+                    "type": "string",
+                    "enum": ["sparkplug-b", "generic-broker", "aws-iot-core", "azure-iot-hub", "azure-event-grid-mqtt"]
+                },
+                "protocolVersion": {
+                    "type": "string",
+                    "enum": ["3.1.1", "5.0"]
+                },
+                "transport": {
+                    "type": "string",
+                    "enum": ["tcp", "tls", "ws", "wss"]
                 },
                 "broker": {
                     "type": "string",
@@ -366,6 +395,10 @@
                 "cleanSession": {
                     "type": "boolean"
                 },
+                "sessionExpirySec": {
+                    "type": "integer",
+                    "minimum": 0
+                },
                 "username": {
                     "type": "string"
                 },
@@ -380,6 +413,17 @@
                     "type": "integer",
                     "minimum": 1
                 },
+                "publishQos": {
+                    "type": "integer",
+                    "enum": [0, 1]
+                },
+                "subscribeQos": {
+                    "type": "integer",
+                    "enum": [0, 1]
+                },
+                "publishRetain": {
+                    "type": "boolean"
+                },
                 "securityLevel": {
                     "type": "string",
                     "enum": [
@@ -389,6 +433,12 @@
                         "tls-mutual"
                     ]
                 },
+                "websocketPath": {
+                    "type": "string"
+                },
+                "alpnProtocols": {
+                    "type": "string"
+                },
                 "caCertPath": {
                     "type": "string"
                 },
@@ -397,6 +447,22 @@
                 },
                 "clientKeyPath": {
                     "type": "string"
+                },
+                "lwtEnabled": {
+                    "type": "boolean"
+                },
+                "lwtTopic": {
+                    "type": "string"
+                },
+                "lwtPayload": {
+                    "type": "string"
+                },
+                "lwtQos": {
+                    "type": "integer",
+                    "enum": [0, 1]
+                },
+                "lwtRetain": {
+                    "type": "boolean"
                 }
             }
         },
@@ -456,8 +522,7 @@
             "required": [
                 "name",
                 "symbol",
-                "type",
-                "mode"
+                "type"
             ],
             "properties": {
                 "name": {
@@ -484,6 +549,12 @@
                         "subscribe",
                         "modbus"
                     ]
+                },
+                "publish": {
+                    "type": "boolean"
+                },
+                "subscribe": {
+                    "type": "boolean"
                 },
                 "modbusAddress": {
                     "type": "integer",

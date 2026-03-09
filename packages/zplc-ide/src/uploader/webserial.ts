@@ -389,6 +389,61 @@ function toHex(data: Uint8Array): string {
     .join('');
 }
 
+export interface CertificateUploadBundle {
+  caCertPem?: string;
+  clientCertPem?: string;
+  clientKeyPem?: string;
+}
+
+function textToBytes(text: string): Uint8Array {
+  return new TextEncoder().encode(text);
+}
+
+async function uploadSingleCertificate(
+  connection: SerialConnection,
+  kind: 'ca' | 'client' | 'key',
+  content: string,
+): Promise<void> {
+  const bytes = textToBytes(content);
+  const beginResp = await sendCommand(connection, `zplc cert begin ${kind} ${bytes.length}`);
+  if (beginResp.startsWith('ERROR:')) {
+    throw new Error(`Cert begin failed for ${kind}: ${beginResp}`);
+  }
+
+  let offset = 0;
+  while (offset < bytes.length) {
+    const chunkSize = Math.min(MAX_CHUNK_SIZE, bytes.length - offset);
+    const chunk = bytes.slice(offset, offset + chunkSize);
+    const chunkHex = toHex(chunk);
+    const chunkResp = await sendCommand(connection, `zplc cert chunk ${chunkHex}`);
+    if (chunkResp.startsWith('ERROR:')) {
+      throw new Error(`Cert chunk failed for ${kind} at ${offset}: ${chunkResp}`);
+    }
+    offset += chunkSize;
+  }
+
+  const commitResp = await sendCommand(connection, 'zplc cert commit');
+  if (commitResp.startsWith('ERROR:')) {
+    throw new Error(`Cert commit failed for ${kind}: ${commitResp}`);
+  }
+}
+
+export async function uploadCertificates(
+  connection: SerialConnection,
+  certs: CertificateUploadBundle,
+): Promise<void> {
+  connection._rxBuffer = '';
+  if (certs.caCertPem) {
+    await uploadSingleCertificate(connection, 'ca', certs.caCertPem);
+  }
+  if (certs.clientCertPem) {
+    await uploadSingleCertificate(connection, 'client', certs.clientCertPem);
+  }
+  if (certs.clientKeyPem) {
+    await uploadSingleCertificate(connection, 'key', certs.clientKeyPem);
+  }
+}
+
 /**
  * Upload bytecode to the connected device
  */

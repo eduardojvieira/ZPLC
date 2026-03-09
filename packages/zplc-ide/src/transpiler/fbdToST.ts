@@ -320,6 +320,69 @@ function generateBlockCode(
       }
       return '';
     }
+
+    case 'COMM_PUBLISH': {
+      const target = block.variableName || `${block.id}_pub`;
+      const en = getInput('EN');
+      const inputExpr = getInput('IN');
+      const out = getOutput('OUT');
+      const done = getOutput('DONE');
+      const lines: string[] = [];
+      lines.push(`IF ${en} THEN ${target} := ${inputExpr}; END_IF;`);
+      if (out) {
+        lines.push(`${out} := ${target};`);
+      }
+      if (done) {
+        lines.push(`${done} := ${en};`);
+      }
+      return lines.join('\n');
+    }
+
+    case 'COMM_SUBSCRIBE': {
+      const target = block.variableName || `${block.id}_sub`;
+      const en = getInput('EN');
+      const out = getOutput('OUT');
+      const valid = getOutput('VALID');
+      const lines: string[] = [];
+      if (out) {
+        lines.push(`${out} := ${target};`);
+      }
+      if (valid) {
+        lines.push(`${valid} := ${en};`);
+      }
+      return lines.join('\n');
+    }
+
+    case 'COMM_MODBUS': {
+      const target = block.variableName || `${block.id}_mb`;
+      const en = getInput('EN');
+      const inputExpr = getInput('IN');
+      const out = getOutput('OUT');
+      const status = getOutput('STATUS');
+      const lines: string[] = [];
+      lines.push(`IF ${en} THEN ${target} := ${inputExpr}; END_IF;`);
+      if (out) {
+        lines.push(`${out} := ${target};`);
+      }
+      if (status) {
+        lines.push(`${status} := ${en};`);
+      }
+      return lines.join('\n');
+    }
+
+    case 'COMM_CONNECT': {
+      const en = getInput('EN');
+      const connected = getOutput('CONNECTED');
+      const error = getOutput('ERROR');
+      const lines: string[] = [];
+      if (connected) {
+        lines.push(`${connected} := ${en};`);
+      }
+      if (error) {
+        lines.push(`${error} := FALSE;`);
+      }
+      return lines.join('\n');
+    }
     
     // Logic gates
     case 'AND': {
@@ -519,6 +582,11 @@ function getOutputType(block: FBDBlock, portName: string): string {
   if (isComparison(block.type)) return 'BOOL';
   if (isMathOperator(block.type)) return 'INT';
   if (['MAX', 'MIN', 'LIMIT', 'SEL'].includes(block.type)) return 'INT';
+  if (block.type === 'COMM_PUBLISH' || block.type === 'COMM_SUBSCRIBE' || block.type === 'COMM_MODBUS' || block.type === 'COMM_CONNECT') {
+    if (portName === 'DONE' || portName === 'VALID' || portName === 'STATUS') return 'BOOL';
+    if (portName === 'CONNECTED' || portName === 'ERROR') return 'BOOL';
+    return 'INT';
+  }
   
   // FB outputs
   if (isFunctionBlock(block.type)) {

@@ -40,6 +40,7 @@ const sidebars = {
         'runtime/intro',
         'runtime/isa',
         'runtime/scheduler',
+        'runtime/native-c',
         'runtime/persistence',
         'runtime/hal',
         'runtime/stdlib',

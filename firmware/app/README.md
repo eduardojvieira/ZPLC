@@ -9,6 +9,23 @@ This is the reference implementation of the ZPLC runtime for Zephyr RTOS targets
 - **IO Sync**: Automatically maps `IPI` (Inputs) and `OPI` (Outputs) to physical GPIO defined in the DeviceTree.
 - **Multitask Scheduler**: Run multiple concurrent tasks with different intervals and priorities.
 - **Program Persistence**: Programs are saved to NVS and automatically restored on boot.
+- **Native Runtime Extensions**: Board/project-specific Zephyr C code can live in the runtime firmware and be built as native threads/services.
+
+## Native C in the Runtime
+
+If you need custom Zephyr C code, keep it in the runtime firmware, not in the IDE editor model.
+
+- IEC logic remains `.zplc` bytecode managed by the ZPLC VM/scheduler
+- native C remains trusted runtime code built into firmware
+- the current scheduler API is bytecode-oriented, not a public native-callback task API
+
+Recommended pattern:
+
+- add project-specific code under `src/custom/` and `include/custom/`
+- wire it into `CMakeLists.txt`
+- initialize it from `main.c` as a Zephyr thread/work item/service
+
+See the full documentation in [`docs/docs/runtime/native-c.md`](../../docs/docs/runtime/native-c.md).
 
 ## 🛠️ Build & Flash
 
@@ -72,6 +89,12 @@ west build -t run
 | ------------------- | -------------------------- |
 | `zplc sched status` | Scheduler statistics.      |
 | `zplc sched tasks`  | List all registered tasks. |
+
+### Networking Diagnostics
+
+| Command            | Description                                   |
+| ------------------ | --------------------------------------------- |
+| `zplc net status`  | Show IP/default interface and Wi-Fi telemetry |
 
 ## 📤 Uploading Programs
 

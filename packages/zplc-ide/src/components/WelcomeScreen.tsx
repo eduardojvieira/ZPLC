@@ -12,6 +12,7 @@ import React from 'react';
 import { FolderOpen, FolderPlus, FileCode2, AlertTriangle, BookOpen } from 'lucide-react';
 import { useIDEStore } from '../store/useIDEStore';
 import { isFileSystemAccessSupported } from '../types';
+import { ZPLC_REPO_VERSION } from '../version';
 
 export function WelcomeScreen() {
   const {
@@ -26,7 +27,7 @@ export function WelcomeScreen() {
 
   const fsApiSupported = isFileSystemAccessSupported();
   const exampleProjects = getExampleProjects();
-  const [appVersion, setAppVersion] = React.useState('1.4.5'); // Default to current version
+  const [appVersion, setAppVersion] = React.useState(ZPLC_REPO_VERSION);
 
   React.useEffect(() => {
     const loadVersion = async () => {

@@ -14,6 +14,7 @@
  */
 
 #include <zplc_hal.h>
+#include <zplc_core.h>
 #include <signal.h>
 
 /* ============================================================================
@@ -49,7 +50,7 @@ int main(void)
 
     /* Banner */
     zplc_hal_log("================================================\n");
-    zplc_hal_log("  ZPLC Runtime v0.1.0\n");
+    zplc_hal_log("  ZPLC Runtime v%s\n", zplc_core_version());
     zplc_hal_log("  Phase 0: Build System Validation\n");
     zplc_hal_log("================================================\n");
 

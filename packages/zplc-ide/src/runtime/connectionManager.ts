@@ -11,7 +11,8 @@
  */
 
 import { SerialAdapter } from './serialAdapter';
-import type { SystemInfo, StatusInfo } from './serialAdapter';
+import type { CommunicationMapEntry, MqttRuntimeStatus, SystemInfo, StatusInfo } from './serialAdapter';
+import type { ZPLCProjectConfig } from '../types';
 
 /** Connection state change callback */
 export type ConnectionCallback = (connected: boolean) => void;
@@ -21,6 +22,10 @@ export type StatusCallback = (status: StatusInfo) => void;
 
 /** System info update callback */
 export type SystemInfoCallback = (info: SystemInfo) => void;
+
+/** Communication map update callback */
+export type CommunicationMapCallback = (entries: CommunicationMapEntry[]) => void;
+export type MqttStatusCallback = (status: MqttRuntimeStatus | null) => void;
 
 /**
  * Global connection manager singleton
@@ -34,10 +39,14 @@ class ConnectionManager {
   private connectionCallbacks: Set<ConnectionCallback> = new Set();
   private statusCallbacks: Set<StatusCallback> = new Set();
   private systemInfoCallbacks: Set<SystemInfoCallback> = new Set();
+  private communicationMapCallbacks: Set<CommunicationMapCallback> = new Set();
+  private mqttStatusCallbacks: Set<MqttStatusCallback> = new Set();
   
   // Cached state
   private _systemInfo: SystemInfo | null = null;
   private _status: StatusInfo | null = null;
+  private _communicationMap: CommunicationMapEntry[] = [];
+  private _mqttStatus: MqttRuntimeStatus | null = null;
 
   /** Poll interval in ms */
   private readonly POLL_INTERVAL = 1000;
@@ -72,6 +81,14 @@ class ConnectionManager {
    */
   get status(): StatusInfo | null {
     return this._status;
+  }
+
+  get communicationMap(): CommunicationMapEntry[] {
+    return this._communicationMap;
+  }
+
+  get mqttStatus(): MqttRuntimeStatus | null {
+    return this._mqttStatus;
   }
 
   /**
@@ -109,6 +126,20 @@ class ConnectionManager {
       console.error('Failed to fetch system info:', e);
     }
 
+    try {
+      this._communicationMap = await this.adapter.getCommunicationMap();
+      this.notifyCommunicationMap(this._communicationMap);
+    } catch (e) {
+      console.error('Failed to fetch communication map:', e);
+    }
+
+    try {
+      this._mqttStatus = await this.adapter.getMqttStatus();
+      this.notifyMqttStatus(this._mqttStatus);
+    } catch (e) {
+      console.error('Failed to fetch MQTT status:', e);
+    }
+
     // Start polling if not in passthrough mode
     if (!this._passthroughMode) {
       this.startPolling();
@@ -133,10 +164,14 @@ class ConnectionManager {
     
     this._systemInfo = null;
     this._status = null;
+    this._communicationMap = [];
+    this._mqttStatus = null;
     this._passthroughMode = false;
     
     // Notify subscribers
     this.notifyConnectionChange(false);
+    this.notifyCommunicationMap(this._communicationMap);
+    this.notifyMqttStatus(this._mqttStatus);
     console.log('[ConnectionManager] disconnect complete');
   }
 
@@ -261,6 +296,8 @@ class ConnectionManager {
     try {
       this._status = await this.adapter.getStatus();
       this.notifyStatus(this._status);
+      this._mqttStatus = await this.adapter.getMqttStatus();
+      this.notifyMqttStatus(this._mqttStatus);
     } catch (e) {
       // Silently ignore poll errors
       console.debug('Poll error:', e);
@@ -283,6 +320,39 @@ class ConnectionManager {
       console.error('Failed to refresh system info:', e);
       return null;
     }
+  }
+
+  async refreshCommunicationMap(): Promise<CommunicationMapEntry[]> {
+    if (!this.adapter?.connected) {
+      return [];
+    }
+
+    try {
+      this._communicationMap = await this.adapter.getCommunicationMap();
+      this.notifyCommunicationMap(this._communicationMap);
+      return this._communicationMap;
+    } catch (e) {
+      console.error('Failed to refresh communication map:', e);
+      return this._communicationMap;
+    }
+  }
+
+  async setModbusAddress(index: number, address: number): Promise<void> {
+    if (!this.adapter?.connected) {
+      throw new Error('Not connected');
+    }
+
+    await this.adapter.setModbusAddress(index, address);
+    await this.refreshCommunicationMap();
+  }
+
+  async clearModbusAddress(index: number): Promise<void> {
+    if (!this.adapter?.connected) {
+      throw new Error('Not connected');
+    }
+
+    await this.adapter.clearModbusAddress(index);
+    await this.refreshCommunicationMap();
   }
 
   // =========================================================================
@@ -323,6 +393,18 @@ class ConnectionManager {
     return () => this.systemInfoCallbacks.delete(callback);
   }
 
+  onCommunicationMapUpdate(callback: CommunicationMapCallback): () => void {
+    this.communicationMapCallbacks.add(callback);
+    callback(this._communicationMap);
+    return () => this.communicationMapCallbacks.delete(callback);
+  }
+
+  onMqttStatusUpdate(callback: MqttStatusCallback): () => void {
+    this.mqttStatusCallbacks.add(callback);
+    callback(this._mqttStatus);
+    return () => this.mqttStatusCallbacks.delete(callback);
+  }
+
   private notifyConnectionChange(connected: boolean): void {
     this.connectionCallbacks.forEach(cb => cb(connected));
   }
@@ -335,9 +417,25 @@ class ConnectionManager {
     this.systemInfoCallbacks.forEach(cb => cb(info));
   }
 
+  private notifyCommunicationMap(entries: CommunicationMapEntry[]): void {
+    this.communicationMapCallbacks.forEach(cb => cb(entries));
+  }
+
+  private notifyMqttStatus(status: MqttRuntimeStatus | null): void {
+    this.mqttStatusCallbacks.forEach(cb => cb(status));
+  }
+
   // =========================================================================
   // Upload (delegates to adapter)
   // =========================================================================
+
+  async provisionProjectConfig(config: ZPLCProjectConfig): Promise<void> {
+    if (!this.adapter?.connected) {
+      throw new Error('Not connected');
+    }
+
+    await this.adapter.provisionProjectConfig(config);
+  }
 
   /**
    * Upload bytecode to device
@@ -349,6 +447,7 @@ class ConnectionManager {
     }
     
     await this.adapter.loadProgram(bytecode);
+    await this.refreshCommunicationMap();
   }
 
   /**

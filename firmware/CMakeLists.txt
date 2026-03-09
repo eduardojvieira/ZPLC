@@ -13,7 +13,21 @@
 
 if(CONFIG_ZPLC)
 
+  set(ZPLC_GIT_VERSION "unknown")
+  execute_process(
+    COMMAND git -C ${CMAKE_CURRENT_LIST_DIR}/.. describe --tags --always --dirty
+    OUTPUT_VARIABLE ZPLC_GIT_VERSION
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+  )
+  if(ZPLC_GIT_VERSION STREQUAL "")
+    set(ZPLC_GIT_VERSION "unknown")
+  endif()
+  string(REGEX REPLACE "^v" "" ZPLC_GIT_VERSION "${ZPLC_GIT_VERSION}")
+
   zephyr_library_named(zplc)
+
+  zephyr_library_compile_definitions(ZPLC_CORE_VERSION_STR="${ZPLC_GIT_VERSION}")
 
   # Core VM sources (platform-independent C99)
   zephyr_library_sources(

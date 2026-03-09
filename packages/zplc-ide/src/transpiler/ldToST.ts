@@ -357,6 +357,10 @@ function generateRungCode(rung: LDRung): string[] {
           params.push(`IN := _rung${rung.number}_result`);
         } else if (['CTU', 'CTD'].includes(fb.fbType)) {
           params.push(`CU := _rung${rung.number}_result`);
+        } else if (fb.fbType === 'CTUD') {
+          params.push(`CU := _rung${rung.number}_result`);
+        } else if (['COMM_PUBLISH', 'COMM_SUBSCRIBE', 'COMM_MODBUS', 'COMM_CONNECT'].includes(fb.fbType)) {
+          params.push(`EN := _rung${rung.number}_result`);
         }
       }
       

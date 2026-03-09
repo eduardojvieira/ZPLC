@@ -464,6 +464,38 @@ function getFBPorts(fbType: string): { inputs: string[]; outputs: Array<{ name: 
         inputs: ['CLK'],
         outputs: [{ name: 'Q', type: 'BOOL' }]
       };
+    case 'COMM_PUBLISH':
+      return {
+        inputs: ['EN', 'IN'],
+        outputs: [
+          { name: 'OUT', type: 'ANY' },
+          { name: 'DONE', type: 'BOOL' }
+        ]
+      };
+    case 'COMM_SUBSCRIBE':
+      return {
+        inputs: ['EN'],
+        outputs: [
+          { name: 'OUT', type: 'ANY' },
+          { name: 'VALID', type: 'BOOL' }
+        ]
+      };
+    case 'COMM_MODBUS':
+      return {
+        inputs: ['EN', 'IN'],
+        outputs: [
+          { name: 'OUT', type: 'ANY' },
+          { name: 'STATUS', type: 'BOOL' }
+        ]
+      };
+    case 'COMM_CONNECT':
+      return {
+        inputs: ['EN'],
+        outputs: [
+          { name: 'CONNECTED', type: 'BOOL' },
+          { name: 'ERROR', type: 'BOOL' }
+        ]
+      };
     default:
       return {
         inputs: ['IN'],

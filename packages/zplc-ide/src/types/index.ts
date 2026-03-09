@@ -291,6 +291,10 @@ export interface NetworkConfig {
   hostname?: string;
   wifi?: WifiNetworkConfig;
   ethernet?: EthernetNetworkConfig;
+  ntp?: {
+    enabled: boolean;
+    server: string;
+  };
 }
 
 /** Compiler settings */
@@ -314,26 +318,56 @@ export interface CommunicationTagConfig {
   name: string;
   symbol: string;
   type: CommunicationTagType;
-  mode: CommunicationTagMode;
+  mode?: CommunicationTagMode;
+  publish?: boolean;
+  subscribe?: boolean;
   modbusAddress?: number;
   description?: string;
 }
 
 export interface MQTTCommunicationConfig {
   enabled: boolean;
+  profile: 'sparkplug-b' | 'generic-broker' | 'aws-iot-core' | 'azure-iot-hub' | 'azure-event-grid-mqtt';
+  protocolVersion: '3.1.1' | '5.0';
+  transport: 'tcp' | 'tls' | 'ws' | 'wss';
   broker: string;
   port: number;
   clientId: string;
   keepAliveSec: number;
   cleanSession: boolean;
+  sessionExpirySec: number;
   username?: string;
   password?: string;
   topicNamespace: string;
+  /** Sparkplug B group ID — used in topic: spBv1.0/{groupId}/{msgType}/{nodeId} */
+  groupId?: string;
   publishIntervalMs: number;
+  publishQos: 0 | 1 | 2;
+  subscribeQos: 0 | 1 | 2;
+  publishRetain: boolean;
   securityLevel: 'none' | 'tls-no-verify' | 'tls-server-verify' | 'tls-mutual';
+  websocketPath?: string;
+  alpnProtocols?: string;
   caCertPath?: string;
   clientCertPath?: string;
   clientKeyPath?: string;
+  lwtEnabled: boolean;
+  lwtTopic?: string;
+  lwtPayload?: string;
+  lwtQos: 0 | 1;
+  lwtRetain: boolean;
+  /** Azure IoT Hub — base64-encoded SharedAccessKey (primary or secondary key from Azure Portal) */
+  azureSasKey?: string;
+  /** Azure IoT Hub — SAS token validity window in seconds. Default: 3600 (1 hour). */
+  azureSasExpirySec?: number;
+  /** Azure IoT Hub — enable Device Twin synchronisation (GET on connect + PATCH reported). Default: false. */
+  azureTwinEnabled?: boolean;
+  /** Azure IoT Hub — enable Direct Methods (subscribe to $iothub/methods/POST/# and respond). Default: false. */
+  azureDirectMethodsEnabled?: boolean;
+  /** AWS IoT Core — enable Device Shadow synchronisation (delta subscription + reported publish). Default: false. */
+  awsShadowEnabled?: boolean;
+  /** AWS IoT Core — enable Jobs (subscribe to $aws/things/{clientId}/jobs/notify). Default: false. */
+  awsJobsEnabled?: boolean;
 }
 
 export interface ModbusCommunicationConfig {
@@ -350,6 +384,7 @@ export interface ModbusCommunicationConfig {
 export interface CommunicationConfig {
   mqtt?: MQTTCommunicationConfig;
   modbus?: ModbusCommunicationConfig;
+  bindings?: CommunicationTagConfig[];
   tags?: CommunicationTagConfig[];
 }
 
@@ -399,14 +434,31 @@ export const DEFAULT_ZPLC_CONFIG: ZPLCProjectConfig = {
   communication: {
     mqtt: {
       enabled: true,
+      profile: 'sparkplug-b',
+      protocolVersion: '5.0',
+      transport: 'tcp',
       broker: 'test.mosquitto.org',
       port: 1883,
       clientId: 'zplc-device',
       keepAliveSec: 60,
       cleanSession: true,
+      sessionExpirySec: 0,
       topicNamespace: 'spBv1.0/ZPLC',
+      groupId: 'ZPLC',
       publishIntervalMs: 2000,
+      publishQos: 0,
+      subscribeQos: 0,
+      publishRetain: false,
       securityLevel: 'none',
+      websocketPath: '/mqtt',
+      lwtEnabled: false,
+      lwtPayload: 'offline',
+      lwtQos: 0,
+      lwtRetain: false,
+      azureTwinEnabled: false,
+      azureDirectMethodsEnabled: false,
+      awsShadowEnabled: false,
+      awsJobsEnabled: false,
     },
     modbus: {
       enabled: true,
@@ -418,6 +470,7 @@ export const DEFAULT_ZPLC_CONFIG: ZPLCProjectConfig = {
       rtuParity: 'none',
       pollIntervalMs: 100,
     },
+    bindings: [],
     tags: [],
   },
   tasks: [

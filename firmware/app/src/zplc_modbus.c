@@ -37,8 +37,14 @@ LOG_MODULE_REGISTER(zplc_modbus, LOG_LEVEL_INF);
 #define FC_WRITE_MULTIPLE_COILS 0x0F
 #define FC_WRITE_MULTIPLE_REGISTERS 0x10
 
+/* Maximum simultaneous Modbus TCP clients — static, no malloc */
+#define MODBUS_TCP_MAX_CLIENTS 4
+
 static struct k_thread modbus_thread_data;
-static K_THREAD_STACK_DEFINE(modbus_stack_area, 2048);
+static K_THREAD_STACK_DEFINE(modbus_stack_area, 3072);
+
+/* Client socket table — -1 means slot is free */
+static int s_clients[MODBUS_TCP_MAX_CLIENTS];
 
 #if DT_HAS_COMPAT_STATUS_OKAY(zephyr_modbus_serial)
 #define ZPLC_MODBUS_RTU_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_modbus_serial)
@@ -50,13 +56,55 @@ static K_THREAD_STACK_DEFINE(modbus_stack_area, 2048);
 /**
  * @brief Search for a tag that maps the given modbus address
  */
-static const zplc_tag_entry_t* find_modbus_tag(uint16_t modbus_addr) {
+static uint16_t modbus_register_width(zplc_data_type_t type)
+{
+    switch (type) {
+    case ZPLC_TYPE_REAL:
+    case ZPLC_TYPE_DINT:
+    case ZPLC_TYPE_UDINT:
+    case ZPLC_TYPE_DWORD:
+        return 2U;
+    default:
+        return 1U;
+    }
+}
+
+static uint32_t get_effective_modbus_address(uint16_t tag_index,
+                                             const zplc_tag_entry_t *tag)
+{
+    uint32_t override_addr = 0U;
+    if (zplc_config_get_modbus_tag_override(tag_index, &override_addr)) {
+        return override_addr;
+    }
+
+    return tag ? tag->value : 0U;
+}
+
+static const zplc_tag_entry_t* find_modbus_tag(uint16_t modbus_addr,
+                                               uint16_t *tag_index_out,
+                                               uint16_t *word_offset_out) {
     uint16_t count = zplc_core_get_tag_count();
     for (uint16_t i = 0; i < count; i++) {
         const zplc_tag_entry_t* tag = zplc_core_get_tag(i);
-        if (tag && tag->tag_id == ZPLC_TAG_MODBUS && tag->value == modbus_addr) {
-            return tag;
+        if (!tag || tag->tag_id != ZPLC_TAG_MODBUS) {
+            continue;
         }
+
+        uint32_t start_addr = get_effective_modbus_address(i, tag);
+        uint16_t width = modbus_register_width((zplc_data_type_t)tag->var_type);
+        if (modbus_addr < start_addr || modbus_addr >= start_addr + width) {
+            continue;
+        }
+
+        if (tag_index_out != NULL) {
+            *tag_index_out = i;
+        }
+
+        if (word_offset_out != NULL) {
+            *word_offset_out = (uint16_t)(modbus_addr - start_addr);
+        }
+
+        return tag;
     }
     return NULL;
 }
@@ -132,7 +180,8 @@ static int handle_read(uint16_t addr, uint16_t count, uint8_t *resp_data, bool i
     zplc_pi_lock();
     
     for (uint16_t i = 0; i < count; i++) {
-        const zplc_tag_entry_t* tag = find_modbus_tag(addr + i);
+        uint16_t word_offset = 0U;
+        const zplc_tag_entry_t* tag = find_modbus_tag(addr + i, NULL, &word_offset);
         if (!tag) {
             zplc_pi_unlock();
             return -1;
@@ -149,9 +198,17 @@ static int handle_read(uint16_t addr, uint16_t count, uint8_t *resp_data, bool i
                 resp_data[byte_idx] &= ~(1 << bit_idx);
             }
         } else {
+            uint16_t register_word = 0U;
+            if (modbus_register_width((zplc_data_type_t)tag->var_type) == 2U) {
+                register_word = (uint16_t)((word_offset == 0U) ? ((val >> 16) & 0xFFFFU)
+                                                             : (val & 0xFFFFU));
+            } else {
+                register_word = (uint16_t)(val & 0xFFFFU);
+            }
+
             /* Modbus is big-endian, ZPLC memory is little-endian */
-            resp_data[i * 2] = (val >> 8) & 0xFF;
-            resp_data[i * 2 + 1] = val & 0xFF;
+            resp_data[i * 2] = (register_word >> 8) & 0xFF;
+            resp_data[i * 2 + 1] = register_word & 0xFF;
         }
     }
     
@@ -171,7 +228,8 @@ static int handle_write(uint16_t addr, uint16_t count, const uint8_t *req_data, 
     zplc_pi_lock();
     
     for (uint16_t i = 0; i < count; i++) {
-        const zplc_tag_entry_t* tag = find_modbus_tag(addr + i);
+        uint16_t word_offset = 0U;
+        const zplc_tag_entry_t* tag = find_modbus_tag(addr + i, NULL, &word_offset);
         if (!tag) {
             zplc_pi_unlock();
             return -1; /* Address not mapped */
@@ -191,6 +249,15 @@ static int handle_write(uint16_t addr, uint16_t count, const uint8_t *req_data, 
         } else {
             /* Modbus is big-endian */
             val = (req_data[i * 2] << 8) | req_data[i * 2 + 1];
+        }
+
+        if (!is_bit && modbus_register_width((zplc_data_type_t)tag->var_type) == 2U) {
+            uint32_t current = mem_read_val(tag->var_addr, (zplc_data_type_t)tag->var_type);
+            if (word_offset == 0U) {
+                val = ((uint32_t)val << 16) | (current & 0xFFFFU);
+            } else {
+                val = (current & 0xFFFF0000U) | val;
+            }
         }
         
         mem_write_val(tag->var_addr, (zplc_data_type_t)tag->var_type, val);
@@ -353,23 +420,62 @@ static void process_modbus_request(int sock, uint8_t *req, int req_len) {
     zsock_send(sock, resp, resp_len, 0);
 }
 
-static void modbus_server_thread(void *arg1, void *arg2, void *arg3) {
+/**
+ * @brief Find a free slot in the client table. Returns -1 if full.
+ */
+static int find_free_client_slot(void)
+{
+    for (int i = 0; i < MODBUS_TCP_MAX_CLIENTS; i++) {
+        if (s_clients[i] < 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+/**
+ * @brief Close and evict a client from the table.
+ */
+static void close_client(int slot)
+{
+    if (s_clients[slot] >= 0) {
+        zsock_close(s_clients[slot]);
+        s_clients[slot] = -1;
+    }
+}
+
+/**
+ * @brief Modbus TCP server — poll()-based multi-client, single thread, no malloc.
+ *
+ * Layout of fds[] passed to zsock_poll():
+ *   fds[0]         → server (listen) socket
+ *   fds[1..N]      → active client sockets (maps 1:1 to s_clients[])
+ */
+static void modbus_server_thread(void *arg1, void *arg2, void *arg3)
+{
     ARG_UNUSED(arg1);
     ARG_UNUSED(arg2);
     ARG_UNUSED(arg3);
 
-    int serv;
-    struct sockaddr_in bind_addr;
+    /* Initialise client table */
+    for (int i = 0; i < MODBUS_TCP_MAX_CLIENTS; i++) {
+        s_clients[i] = -1;
+    }
 
-    serv = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    int serv = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (serv < 0) {
         LOG_ERR("Failed to create Modbus socket: %d", errno);
         return;
     }
 
-    bind_addr.sin_family = AF_INET;
+    /* Allow immediate reuse after reset */
+    int opt = 1;
+    zsock_setsockopt(serv, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+
+    struct sockaddr_in bind_addr;
+    bind_addr.sin_family      = AF_INET;
     bind_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    bind_addr.sin_port = htons(zplc_config_get_modbus_tcp_port());
+    bind_addr.sin_port        = htons(zplc_config_get_modbus_tcp_port());
 
     if (zsock_bind(serv, (struct sockaddr *)&bind_addr, sizeof(bind_addr)) < 0) {
         LOG_ERR("Failed to bind Modbus socket: %d", errno);
@@ -377,38 +483,71 @@ static void modbus_server_thread(void *arg1, void *arg2, void *arg3) {
         return;
     }
 
-    if (zsock_listen(serv, 3) < 0) {
+    if (zsock_listen(serv, MODBUS_TCP_MAX_CLIENTS) < 0) {
         LOG_ERR("Failed to listen on Modbus socket: %d", errno);
         zsock_close(serv);
         return;
     }
 
-    LOG_INF("Modbus TCP Server started on port %u", zplc_config_get_modbus_tcp_port());
+    LOG_INF("Modbus TCP Server started on port %u (max %d clients)",
+            zplc_config_get_modbus_tcp_port(), MODBUS_TCP_MAX_CLIENTS);
+
+    /* +1 for the server fd itself */
+    struct zsock_pollfd fds[MODBUS_TCP_MAX_CLIENTS + 1];
+    uint8_t buf[MODBUS_MAX_ADU];
 
     while (1) {
-        struct sockaddr_in client_addr;
-        socklen_t client_addr_len = sizeof(client_addr);
-        int client = zsock_accept(serv, (struct sockaddr *)&client_addr, &client_addr_len);
+        /* Rebuild poll set every iteration — cheap and correct */
+        fds[0].fd     = serv;
+        fds[0].events = ZSOCK_POLLIN;
 
-        if (client < 0) {
-            LOG_WRN("Modbus accept error: %d", errno);
-            k_msleep(100);
+        for (int i = 0; i < MODBUS_TCP_MAX_CLIENTS; i++) {
+            fds[i + 1].fd     = s_clients[i];
+            fds[i + 1].events = (s_clients[i] >= 0) ? ZSOCK_POLLIN : 0;
+        }
+
+        int ready = zsock_poll(fds, MODBUS_TCP_MAX_CLIENTS + 1, -1 /* block */);
+        if (ready < 0) {
+            LOG_WRN("Modbus poll error: %d", errno);
+            k_msleep(50);
             continue;
         }
 
-        LOG_INF("Modbus client connected");
-
-        uint8_t buf[MODBUS_MAX_ADU];
-        while (1) {
-            int received = zsock_recv(client, buf, sizeof(buf), 0);
-            if (received <= 0) {
-                break;
+        /* --- New connection? --- */
+        if (fds[0].revents & ZSOCK_POLLIN) {
+            struct sockaddr_in client_addr;
+            socklen_t client_addr_len = sizeof(client_addr);
+            int client = zsock_accept(serv, (struct sockaddr *)&client_addr,
+                                      &client_addr_len);
+            if (client >= 0) {
+                int slot = find_free_client_slot();
+                if (slot < 0) {
+                    LOG_WRN("Modbus: max clients reached, rejecting connection");
+                    zsock_close(client);
+                } else {
+                    s_clients[slot] = client;
+                    LOG_INF("Modbus client connected (slot %d)", slot);
+                }
             }
-            process_modbus_request(client, buf, received);
         }
 
-        LOG_INF("Modbus client disconnected");
-        zsock_close(client);
+        /* --- Service existing clients --- */
+        for (int i = 0; i < MODBUS_TCP_MAX_CLIENTS; i++) {
+            if (s_clients[i] < 0) {
+                continue;
+            }
+            if (!(fds[i + 1].revents & (ZSOCK_POLLIN | ZSOCK_POLLHUP | ZSOCK_POLLERR))) {
+                continue;
+            }
+
+            int received = zsock_recv(s_clients[i], buf, sizeof(buf), ZSOCK_MSG_DONTWAIT);
+            if (received <= 0) {
+                LOG_INF("Modbus client disconnected (slot %d)", i);
+                close_client(i);
+            } else {
+                process_modbus_request(s_clients[i], buf, received);
+            }
+        }
     }
 }
 

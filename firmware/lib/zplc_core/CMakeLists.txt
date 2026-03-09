@@ -22,6 +22,18 @@ project(zplc_core
     LANGUAGES C
 )
 
+set(ZPLC_GIT_VERSION "${PROJECT_VERSION}")
+execute_process(
+    COMMAND git -C ${CMAKE_CURRENT_LIST_DIR}/../.. describe --tags --always --dirty
+    OUTPUT_VARIABLE ZPLC_GIT_VERSION
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+)
+if(ZPLC_GIT_VERSION STREQUAL "")
+    set(ZPLC_GIT_VERSION "${PROJECT_VERSION}")
+endif()
+string(REGEX REPLACE "^v" "" ZPLC_GIT_VERSION "${ZPLC_GIT_VERSION}")
+
 # =============================================================================
 # Compiler Configuration
 # =============================================================================
@@ -46,6 +58,8 @@ add_compile_options(
 add_library(zplc_core STATIC
     src/core/zplc_core.c
 )
+
+target_compile_definitions(zplc_core PUBLIC ZPLC_CORE_VERSION_STR="${ZPLC_GIT_VERSION}")
 
 target_include_directories(zplc_core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include

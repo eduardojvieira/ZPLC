@@ -80,7 +80,7 @@ export type { CodeGenOptions } from './codegen.ts';
 // Assembler exports (ASM -> bytecode)
 // =============================================================================
 export { assemble, createZplcFile, createMultiTaskZplcFile, relocateBytecode, TASK_TYPE, AssemblerError, ZPLC_CONSTANTS } from '../assembler/index.ts';
-export type { AssemblyResult, TaskDef, TaskType, InstructionMapping } from '../assembler/index.ts';
+export type { AssemblyResult, TaskDef, TaskType, InstructionMapping, TagDef } from '../assembler/index.ts';
 
 // =============================================================================
 // Debug map exports
@@ -116,7 +116,7 @@ import { parse } from './parser.ts';
 import { generate, WORK_MEMORY_REGION_SIZE } from './codegen.ts';
 import type { CodeGenOptions } from './codegen.ts';
 import { assemble, createMultiTaskZplcFile, relocateBytecode, TASK_TYPE } from '../assembler/index.ts';
-import type { AssemblyResult, TaskDef, TaskType } from '../assembler/index.ts';
+import type { AssemblyResult, TagDef, TaskDef, TaskType } from '../assembler/index.ts';
 import type { DebugMap, TypeResolver } from './debug-map.ts';
 import { buildDebugMap } from './debug-map.ts';
 import { buildSymbolTable, MemoryLayout } from './symbol-table.ts';
@@ -500,6 +500,7 @@ export function compileMultiTaskProject(
         assembly: string;
         entryPoint: number;
         size: number;
+        tags: TagDef[];
     }[] = [];
 
     let currentOffset = 0;
@@ -548,6 +549,7 @@ export function compileMultiTaskProject(
             // The entry point for the task is the global offset + the program's local entry point (_start)
             entryPoint: currentOffset + asmResult.entryPoint,
             size: asmResult.bytecode.length,
+            tags: asmResult.tags ?? [],
         });
 
         currentOffset += asmResult.bytecode.length;
@@ -577,6 +579,7 @@ export function compileMultiTaskProject(
 
     // Build task definitions
     const taskDefs: TaskDef[] = [];
+    const allTags = compiledPrograms.flatMap((prog) => prog.tags);
     let taskId = 0;
 
     for (const taskConfig of config.tasks) {
@@ -607,7 +610,7 @@ export function compileMultiTaskProject(
     }
 
     // Generate .zplc file with TASK segment
-    const zplcFile = createMultiTaskZplcFile(concatenatedBytecode, taskDefs);
+    const zplcFile = createMultiTaskZplcFile(concatenatedBytecode, taskDefs, allTags);
 
     return {
         zplcFile,

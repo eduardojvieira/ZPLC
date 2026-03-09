@@ -17,6 +17,10 @@ packages/*/electron-dist/
 packages/*/.env
 packages/*/.DS_Store
 
+# HIL local credentials (never commit)
+tools/hil/.env
+tools/hil/*.env
+
 # OS files
 .DS_Store
 Thumbs.db

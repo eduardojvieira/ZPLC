@@ -1,7 +1,7 @@
 # ZPLC Phase 1.5 - Industrial Connectivity Core
 
 ## Objetivo Principal
-Estabilizar la conectividad MQTT v5 + Sparkplug B y soportar Modbus TCP/RTU sobre Zephyr 4.3.0 en la STM32F746-Disco.
+Estabilizar la conectividad MQTT v5 + Sparkplug B y soportar Modbus TCP/RTU sobre Zephyr 4.3.0 en ESP32-S3 (T-Display S3, Wi-Fi).
 
 ## Reglas de Oro para este Módulo
 1. **No Malloc**: Toda estructura generada por `nanopb` debe tener límites definidos en `.options` para evitar allocación dinámica de memoria en tiempo real.

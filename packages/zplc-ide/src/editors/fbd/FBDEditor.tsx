@@ -30,7 +30,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import { type FBDModel, type FBDBlock, type FBDConnection } from '../../models/fbd';
+import { type FBDModel, type FBDBlock, type FBDConnection, getDefaultPorts } from '../../models/fbd';
 import { nodeTypes, getNodeType } from './nodes';
 import { edgeTypes } from './edges';
 import FBDToolbox from './FBDToolbox';
@@ -278,6 +278,9 @@ function FBDEditorInner({
         position,
         data: {
           type: blockType,
+          inputs: getDefaultPorts(blockType).inputs,
+          outputs: getDefaultPorts(blockType).outputs,
+          variableName: blockType.startsWith('COMM_') ? `${blockType}_TAG` : undefined,
           instanceName: blockType.match(/^(TON|TOF|TP|CTU|CTD|CTUD|R_TRIG|F_TRIG|SR|RS)$/)
             ? `${blockType}_${Date.now().toString(36)}`
             : undefined,

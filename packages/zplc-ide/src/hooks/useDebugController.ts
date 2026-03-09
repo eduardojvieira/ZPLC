@@ -100,6 +100,7 @@ export function useDebugController(): DebugController {
   const watchVariables = useIDEStore((state) => state.debug.watchVariables);
   const pollingInterval = useIDEStore((state) => state.debug.pollingInterval);
   const isPolling = useIDEStore((state) => state.debug.isPolling);
+  const projectConfig = useIDEStore((state) => state.projectConfig);
 
   // Store actions
   const setDebugMode = useIDEStore((state) => state.setDebugMode);
@@ -312,6 +313,14 @@ export function useDebugController(): DebugController {
     try {
       // Upload bytecode
       if (isHardware) {
+        if (projectConfig) {
+          addConsoleEntry({
+            type: 'info',
+            message: 'Applying project network and communication settings...',
+            source: 'debugger',
+          });
+          await connectionManager.provisionProjectConfig(projectConfig);
+        }
         await connectionManager.uploadBytecode(bytecode);
       } else {
         await adapterRef.current.loadProgram(bytecode);
@@ -348,7 +357,7 @@ export function useDebugController(): DebugController {
         connectionManager.resumePolling();
       }
     }
-  }, [debugMode, setDebugMap, getAllBreakpointPCs, addConsoleEntry]);
+  }, [debugMode, projectConfig, setDebugMap, getAllBreakpointPCs, addConsoleEntry]);
 
   // =========================================================================
   // Execution Control

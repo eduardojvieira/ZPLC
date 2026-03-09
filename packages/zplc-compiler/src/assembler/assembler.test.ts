@@ -23,7 +23,7 @@ import {
     relocateBytecode,
     TASK_TYPE,
 } from './index';
-import type { TaskDef } from './index';
+import type { TagDef, TaskDef } from './index';
 
 // =============================================================================
 // Helper Functions
@@ -545,6 +545,23 @@ describe('Multi-Task Support', () => {
 
         // Expected size: header (32) + 2 segments (16) + code (3) + 2 tasks (32) = 83
         expect(zplcFile.length).toBe(32 + 16 + 3 + 32);
+    });
+
+    test('createMultiTaskZplcFile includes TAGS segment when tags are provided', () => {
+        const bytecode = new Uint8Array([0x01]);
+        const tasks: TaskDef[] = [
+            { id: 1, type: TASK_TYPE.CYCLIC, priority: 1, intervalUs: 100000, entryPoint: 0, stackSize: 64 },
+        ];
+        const tags: TagDef[] = [
+            { varAddr: 0x2000, varType: 0x0A, tagId: 2, value: 40001 },
+        ];
+
+        const zplcFile = createMultiTaskZplcFile(bytecode, tasks, tags);
+        const view = new DataView(zplcFile.buffer);
+
+        expect(view.getUint16(26, true)).toBe(3);
+        expect(view.getUint16(48, true)).toBe(ZPLC_CONSTANTS.SEGMENT_TYPE_TAGS);
+        expect(view.getUint32(52, true)).toBe(ZPLC_CONSTANTS.TAG_ENTRY_SIZE);
     });
 });
 
