@@ -264,6 +264,35 @@ export interface TargetConfig {
   clock_mhz?: number;
 }
 
+export interface NetworkIPv4Config {
+  dhcp: boolean;
+  ip?: string;
+  netmask?: string;
+  gateway?: string;
+  dns?: string;
+}
+
+export interface WifiNetworkConfig {
+  enabled: boolean;
+  ssid?: string;
+  password?: string;
+  security: 'open' | 'wpa2-psk' | 'wpa3-sae';
+  hiddenSsid: boolean;
+  ipv4: NetworkIPv4Config;
+}
+
+export interface EthernetNetworkConfig {
+  enabled: boolean;
+  macAddress?: string;
+  ipv4: NetworkIPv4Config;
+}
+
+export interface NetworkConfig {
+  hostname?: string;
+  wifi?: WifiNetworkConfig;
+  ethernet?: EthernetNetworkConfig;
+}
+
 /** Compiler settings */
 export interface CompilerConfig {
   optimization?: 'none' | 'speed' | 'size';
@@ -275,6 +304,53 @@ export interface CompilerConfig {
 export interface IOConfig {
   inputs?: IOPinConfig[];
   outputs?: IOPinConfig[];
+}
+
+export type CommunicationTagMode = 'publish' | 'subscribe' | 'modbus';
+
+export type CommunicationTagType = 'BOOL' | 'INT' | 'UINT' | 'REAL';
+
+export interface CommunicationTagConfig {
+  name: string;
+  symbol: string;
+  type: CommunicationTagType;
+  mode: CommunicationTagMode;
+  modbusAddress?: number;
+  description?: string;
+}
+
+export interface MQTTCommunicationConfig {
+  enabled: boolean;
+  broker: string;
+  port: number;
+  clientId: string;
+  keepAliveSec: number;
+  cleanSession: boolean;
+  username?: string;
+  password?: string;
+  topicNamespace: string;
+  publishIntervalMs: number;
+  securityLevel: 'none' | 'tls-no-verify' | 'tls-server-verify' | 'tls-mutual';
+  caCertPath?: string;
+  clientCertPath?: string;
+  clientKeyPath?: string;
+}
+
+export interface ModbusCommunicationConfig {
+  enabled: boolean;
+  unitId: number;
+  tcpEnabled: boolean;
+  tcpPort: number;
+  rtuEnabled: boolean;
+  rtuBaud: number;
+  rtuParity: 'none' | 'even' | 'odd';
+  pollIntervalMs: number;
+}
+
+export interface CommunicationConfig {
+  mqtt?: MQTTCommunicationConfig;
+  modbus?: ModbusCommunicationConfig;
+  tags?: CommunicationTagConfig[];
 }
 
 /** 
@@ -297,6 +373,12 @@ export interface ZPLCProjectConfig {
   // I/O Mapping
   io?: IOConfig;
 
+  // Communication configuration
+  communication?: CommunicationConfig;
+
+  // Network configuration (board-specific: Wi-Fi or Ethernet)
+  network?: NetworkConfig;
+
   // Task configuration (IEC 61131-3 style)
   tasks: TaskDefinition[];
 
@@ -314,6 +396,30 @@ export type ZPLCConfig = ZPLCProjectConfig;
 export const DEFAULT_ZPLC_CONFIG: ZPLCProjectConfig = {
   name: 'New Project',
   version: '1.0.0',
+  communication: {
+    mqtt: {
+      enabled: true,
+      broker: 'test.mosquitto.org',
+      port: 1883,
+      clientId: 'zplc-device',
+      keepAliveSec: 60,
+      cleanSession: true,
+      topicNamespace: 'spBv1.0/ZPLC',
+      publishIntervalMs: 2000,
+      securityLevel: 'none',
+    },
+    modbus: {
+      enabled: true,
+      unitId: 1,
+      tcpEnabled: true,
+      tcpPort: 502,
+      rtuEnabled: false,
+      rtuBaud: 19200,
+      rtuParity: 'none',
+      pollIntervalMs: 100,
+    },
+    tags: [],
+  },
   tasks: [
     {
       name: 'MainTask',

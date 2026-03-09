@@ -24,14 +24,19 @@
 #include <zephyr/kernel.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/mqtt.h>
+#include <zephyr/net/tls_credentials.h>
+#include <zephyr/fs/fs.h>
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
 #include <errno.h>
+#include <stdlib.h>
 
 #include <pb_encode.h>
 #include "proto/sparkplug_b.pb.h"
 
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/atomic.h>
 LOG_MODULE_REGISTER(zplc_mqtt, LOG_LEVEL_INF);
 
 /* ============================================================================
@@ -41,6 +46,15 @@ LOG_MODULE_REGISTER(zplc_mqtt, LOG_LEVEL_INF);
 #define MQTT_BUFFER_SIZE        1024U
 #define PAYLOAD_BUFFER_SIZE     1024U
 #define TOPIC_BUFFER_SIZE       128U
+#define TOPIC_WILDCARD_BUFFER_SIZE 144U
+
+#define MQTT_SUB_MAX_TOPICS     32U
+
+#define MQTT_TLS_CA_TAG         130U
+#define MQTT_TLS_CLIENT_CERT_TAG 131U
+#define MQTT_TLS_CLIENT_KEY_TAG 132U
+
+#define MQTT_CRED_BUF_SIZE      2048U
 
 /** Sparkplug B sequence number wraps at 255 (uint8 domain) */
 #define SPB_SEQ_MAX             256U
@@ -62,9 +76,45 @@ static struct sockaddr_storage s_broker_addr;
 static struct zsock_pollfd s_fds[1];
 static int                 s_nfds;
 static bool                s_connected;
+static bool                s_subscribed;
+
+static uint8_t             s_publish_buf[128];
+
+static uint8_t             s_tls_ca_buf[MQTT_CRED_BUF_SIZE];
+static uint8_t             s_tls_cert_buf[MQTT_CRED_BUF_SIZE];
+static uint8_t             s_tls_key_buf[MQTT_CRED_BUF_SIZE];
+
+static sec_tag_t           s_mqtt_sec_tags[3];
+static uint8_t             s_mqtt_sec_tag_count;
+
+static char                s_mqtt_username[64];
+static char                s_mqtt_password[64];
+static char                s_mqtt_hostname[64];
+static char                s_mqtt_client_id[64];
+static char                s_mqtt_topic_namespace[64];
+static char                s_mqtt_ca_cert_path[96];
+static char                s_mqtt_client_cert_path[96];
+static char                s_mqtt_client_key_path[96];
+static struct mqtt_utf8    s_mqtt_username_utf8;
+static struct mqtt_utf8    s_mqtt_password_utf8;
+
+static struct mqtt_topic   s_sub_topics[MQTT_SUB_MAX_TOPICS];
 
 /** Monotonically increasing Sparkplug B sequence number (wraps 0-255) */
 static uint32_t            s_spb_seq;
+
+/** Set by zplc_mqtt_request_backoff_reset() to force backoff_s = BACKOFF_INITIAL_S */
+static atomic_t            s_backoff_reset_req;
+
+/**
+ * Semaphore used to wake the MQTT thread immediately from any k_sem_take()
+ * backoff sleep. Given by zplc_mqtt_request_backoff_reset() so the HIL or
+ * operator can force a retry without waiting up to BACKOFF_MAX_S seconds.
+ *
+ * Initial count: 0 (thread blocks until signalled).
+ * Limit: 1 (coalesces multiple rapid signals into a single wakeup).
+ */
+static K_SEM_DEFINE(s_wakeup_sem, 0, 1);
 
 static struct k_thread     s_mqtt_thread;
 static K_THREAD_STACK_DEFINE(s_mqtt_stack, 8192);
@@ -86,9 +136,148 @@ static int build_topic(char *buf, size_t buf_len, const char *msg_type)
 {
     char hostname[32];
     zplc_config_get_hostname(hostname, sizeof(hostname));
+    zplc_config_get_mqtt_topic_namespace(s_mqtt_topic_namespace,
+                                         sizeof(s_mqtt_topic_namespace));
+    return snprintf(buf, buf_len, "%s/%s/%s", s_mqtt_topic_namespace, msg_type,
+                    hostname);
+}
 
-    /* Topic namespace: spBv1.0/<GroupId>/<MsgType>/<EdgeNodeId> */
-    return snprintf(buf, buf_len, "spBv1.0/ZPLC/%s/%s", msg_type, hostname);
+static int build_tag_topic(char *buf, size_t buf_len, const char *msg_type,
+                           uint16_t var_addr)
+{
+    char hostname[32];
+    zplc_config_get_hostname(hostname, sizeof(hostname));
+    zplc_config_get_mqtt_topic_namespace(s_mqtt_topic_namespace,
+                                         sizeof(s_mqtt_topic_namespace));
+    return snprintf(buf, buf_len, "%s/%s/%s/tag_%04x", s_mqtt_topic_namespace,
+                    msg_type, hostname, var_addr);
+}
+
+static int read_file_to_buf(const char *path, uint8_t *buf, size_t buf_len)
+{
+    struct fs_file_t file;
+    fs_file_t_init(&file);
+
+    int rc = fs_open(&file, path, FS_O_READ);
+    if (rc < 0) {
+        return rc;
+    }
+
+    ssize_t rd = fs_read(&file, buf, buf_len - 1U);
+    (void)fs_close(&file);
+
+    if (rd < 0) {
+        return (int)rd;
+    }
+
+    buf[rd] = '\0';
+    return (int)rd;
+}
+
+static void setup_auth(struct mqtt_client *client)
+{
+    zplc_config_get_mqtt_broker(s_mqtt_hostname, sizeof(s_mqtt_hostname));
+    zplc_config_get_mqtt_client_id(s_mqtt_client_id, sizeof(s_mqtt_client_id));
+    zplc_config_get_mqtt_username(s_mqtt_username, sizeof(s_mqtt_username));
+    zplc_config_get_mqtt_password(s_mqtt_password, sizeof(s_mqtt_password));
+
+    if (s_mqtt_username[0] != '\0') {
+        s_mqtt_username_utf8.utf8 = (const uint8_t *)s_mqtt_username;
+        s_mqtt_username_utf8.size = strlen(s_mqtt_username);
+        client->user_name = &s_mqtt_username_utf8;
+    } else {
+        client->user_name = NULL;
+    }
+
+    if (s_mqtt_password[0] != '\0') {
+        s_mqtt_password_utf8.utf8 = (const uint8_t *)s_mqtt_password;
+        s_mqtt_password_utf8.size = strlen(s_mqtt_password);
+        client->password = &s_mqtt_password_utf8;
+    } else {
+        client->password = NULL;
+    }
+}
+
+static int setup_tls(struct mqtt_client *client)
+{
+    zplc_mqtt_security_t security = zplc_config_get_mqtt_security();
+
+    s_mqtt_sec_tag_count = 0U;
+
+    if (security == ZPLC_MQTT_SECURITY_NONE) {
+        client->transport.type = MQTT_TRANSPORT_NON_SECURE;
+        return 0;
+    }
+
+    client->transport.type = MQTT_TRANSPORT_SECURE;
+
+    if (security == ZPLC_MQTT_SECURITY_TLS_NO_VERIFY) {
+        client->transport.tls.config.peer_verify = TLS_PEER_VERIFY_NONE;
+        client->transport.tls.config.sec_tag_list = NULL;
+        client->transport.tls.config.sec_tag_count = 0;
+        return 0;
+    }
+
+    zplc_config_get_mqtt_ca_cert_path(s_mqtt_ca_cert_path,
+                                      sizeof(s_mqtt_ca_cert_path));
+    zplc_config_get_mqtt_client_cert_path(s_mqtt_client_cert_path,
+                                          sizeof(s_mqtt_client_cert_path));
+    zplc_config_get_mqtt_client_key_path(s_mqtt_client_key_path,
+                                         sizeof(s_mqtt_client_key_path));
+
+    int ca_len = read_file_to_buf(s_mqtt_ca_cert_path, s_tls_ca_buf,
+                                  sizeof(s_tls_ca_buf));
+    if (ca_len <= 0) {
+        LOG_ERR("TLS CA file missing: %s (err %d)", s_mqtt_ca_cert_path, ca_len);
+        return -ENOENT;
+    }
+
+    int rc = tls_credential_add(MQTT_TLS_CA_TAG, TLS_CREDENTIAL_CA_CERTIFICATE,
+                                s_tls_ca_buf, (size_t)ca_len + 1U);
+    if (rc < 0 && rc != -EEXIST) {
+        LOG_ERR("tls_credential_add(CA) failed: %d", rc);
+        return rc;
+    }
+
+    s_mqtt_sec_tags[s_mqtt_sec_tag_count++] = MQTT_TLS_CA_TAG;
+
+    if (security == ZPLC_MQTT_SECURITY_TLS_MUTUAL) {
+        int cert_len = read_file_to_buf(s_mqtt_client_cert_path, s_tls_cert_buf,
+                                        sizeof(s_tls_cert_buf));
+        int key_len = read_file_to_buf(s_mqtt_client_key_path, s_tls_key_buf,
+                                       sizeof(s_tls_key_buf));
+        if (cert_len <= 0 || key_len <= 0) {
+            LOG_ERR("Mutual TLS requires cert+key in %s and %s",
+                    s_mqtt_client_cert_path, s_mqtt_client_key_path);
+            return -ENOENT;
+        }
+
+        rc = tls_credential_add(MQTT_TLS_CLIENT_CERT_TAG,
+                                TLS_CREDENTIAL_SERVER_CERTIFICATE,
+                                s_tls_cert_buf, (size_t)cert_len + 1U);
+        if (rc < 0 && rc != -EEXIST) {
+            LOG_ERR("tls_credential_add(client cert) failed: %d", rc);
+            return rc;
+        }
+
+        rc = tls_credential_add(MQTT_TLS_CLIENT_KEY_TAG,
+                                TLS_CREDENTIAL_PRIVATE_KEY,
+                                s_tls_key_buf, (size_t)key_len + 1U);
+        if (rc < 0 && rc != -EEXIST) {
+            LOG_ERR("tls_credential_add(client key) failed: %d", rc);
+            return rc;
+        }
+
+        s_mqtt_sec_tags[s_mqtt_sec_tag_count++] = MQTT_TLS_CLIENT_CERT_TAG;
+        s_mqtt_sec_tags[s_mqtt_sec_tag_count++] = MQTT_TLS_CLIENT_KEY_TAG;
+    }
+
+    client->transport.tls.config.peer_verify = TLS_PEER_VERIFY_REQUIRED;
+    client->transport.tls.config.cipher_list = NULL;
+    client->transport.tls.config.sec_tag_list = s_mqtt_sec_tags;
+    client->transport.tls.config.sec_tag_count = s_mqtt_sec_tag_count;
+    client->transport.tls.config.hostname = s_mqtt_hostname;
+    return 0;
 }
 
 /**
@@ -256,7 +445,7 @@ static void clear_fds(void)
 static int poll_for_data(int timeout_ms)
 {
     if (s_nfds > 0) {
-        return zsock_poll(s_fds, (nfds_t)s_nfds, timeout_ms);
+        return zsock_poll(s_fds, (int)s_nfds, timeout_ms);
     }
     return -EINVAL;
 }
@@ -395,6 +584,135 @@ static int publish_ddata(struct mqtt_client *client)
     return 1; /* Nothing to publish */
 }
 
+static int parse_payload_to_tag(const zplc_tag_entry_t *tag, const char *payload)
+{
+    if (!tag || !payload) {
+        return -EINVAL;
+    }
+
+    uint16_t base = tag->var_addr & 0xF000U;
+    uint16_t offset = tag->var_addr & 0x0FFFU;
+    if (base == 0x3000U) {
+        base = 0x2000U;
+    }
+
+    uint8_t *region = zplc_mem_get_region(base);
+    if (!region) {
+        return -EINVAL;
+    }
+
+    zplc_pi_lock();
+    switch (tag->var_type) {
+    case ZPLC_TYPE_BOOL: {
+        bool v = (strcmp(payload, "1") == 0) || (strcasecmp(payload, "true") == 0);
+        region[offset] = v ? 1U : 0U;
+        break;
+    }
+    case ZPLC_TYPE_INT:
+    case ZPLC_TYPE_UINT:
+    case ZPLC_TYPE_WORD: {
+        long v = strtol(payload, NULL, 10);
+        uint16_t raw = (uint16_t)v;
+        region[offset] = (uint8_t)(raw & 0xFFU);
+        region[offset + 1U] = (uint8_t)((raw >> 8U) & 0xFFU);
+        break;
+    }
+    case ZPLC_TYPE_REAL: {
+        float f = strtof(payload, NULL);
+        uint32_t raw;
+        memcpy(&raw, &f, sizeof(raw));
+        region[offset] = (uint8_t)(raw & 0xFFU);
+        region[offset + 1U] = (uint8_t)((raw >> 8U) & 0xFFU);
+        region[offset + 2U] = (uint8_t)((raw >> 16U) & 0xFFU);
+        region[offset + 3U] = (uint8_t)((raw >> 24U) & 0xFFU);
+        break;
+    }
+    default:
+        zplc_pi_unlock();
+        return -ENOTSUP;
+    }
+    zplc_pi_unlock();
+    return 0;
+}
+
+static int handle_incoming_publish(struct mqtt_client *client,
+                                   const struct mqtt_publish_param *pub)
+{
+    uint32_t to_copy = MIN((uint32_t)pub->message.payload.len,
+                           (uint32_t)(sizeof(s_publish_buf) - 1U));
+    int rc = mqtt_read_publish_payload(client, s_publish_buf, to_copy);
+    if (rc < 0) {
+        return rc;
+    }
+
+    s_publish_buf[to_copy] = '\0';
+
+    char topic[TOPIC_WILDCARD_BUFFER_SIZE];
+    size_t topic_len = MIN((size_t)pub->message.topic.topic.size, sizeof(topic) - 1U);
+    memcpy(topic, pub->message.topic.topic.utf8, topic_len);
+    topic[topic_len] = '\0';
+
+    uint16_t count = zplc_core_get_tag_count();
+    for (uint16_t i = 0U; i < count; i++) {
+        const zplc_tag_entry_t *tag = zplc_core_get_tag(i);
+        if (!tag || tag->tag_id != ZPLC_TAG_SUBSCRIBE) {
+            continue;
+        }
+
+        char expected[TOPIC_WILDCARD_BUFFER_SIZE];
+        if (build_tag_topic(expected, sizeof(expected), "DCMD", tag->var_addr) < 0) {
+            continue;
+        }
+
+        if (strcmp(topic, expected) == 0) {
+            (void)parse_payload_to_tag(tag, (char *)s_publish_buf);
+            break;
+        }
+    }
+
+    return 0;
+}
+
+static int subscribe_runtime_tags(struct mqtt_client *client)
+{
+    uint16_t count = zplc_core_get_tag_count();
+    uint32_t n = 0U;
+
+    for (uint16_t i = 0U; i < count && n < MQTT_SUB_MAX_TOPICS; i++) {
+        const zplc_tag_entry_t *tag = zplc_core_get_tag(i);
+        if (!tag || tag->tag_id != ZPLC_TAG_SUBSCRIBE) {
+            continue;
+        }
+
+        static char topic_storage[MQTT_SUB_MAX_TOPICS][TOPIC_WILDCARD_BUFFER_SIZE];
+        if (build_tag_topic(topic_storage[n], sizeof(topic_storage[n]), "DCMD", tag->var_addr) < 0) {
+            continue;
+        }
+
+        s_sub_topics[n].topic.utf8 = (const uint8_t *)topic_storage[n];
+        s_sub_topics[n].topic.size = strlen(topic_storage[n]);
+        s_sub_topics[n].qos = MQTT_QOS_0_AT_MOST_ONCE;
+        n++;
+    }
+
+    if (n == 0U) {
+        return 0;
+    }
+
+    struct mqtt_subscription_list list = {
+        .list = s_sub_topics,
+        .list_count = n,
+        .message_id = 0x0200,
+    };
+
+    int rc = mqtt_subscribe(client, &list);
+    if (rc == 0) {
+        s_subscribed = true;
+        LOG_INF("Subscribed to %u runtime tag topics", n);
+    }
+    return rc;
+}
+
 /* ============================================================================
  * MQTT Event Handler
  * ============================================================================ */
@@ -419,13 +737,23 @@ static void mqtt_evt_handler(struct mqtt_client *const client,
             LOG_ERR("NBIRTH publish failed — aborting connection");
             s_connected = false;
             mqtt_abort(client);
+            break;
+        }
+
+        if (subscribe_runtime_tags(client) != 0) {
+            LOG_WRN("Subscribe setup failed");
         }
         break;
 
     case MQTT_EVT_DISCONNECT:
         LOG_INF("MQTT disconnected: %d", evt->result);
         s_connected = false;
+        s_subscribed = false;
         clear_fds();
+        break;
+
+    case MQTT_EVT_PUBLISH:
+        (void)handle_incoming_publish(client, &evt->param.publish);
         break;
 
     case MQTT_EVT_PUBACK:
@@ -457,8 +785,8 @@ static void mqtt_evt_handler(struct mqtt_client *const client,
  */
 static void resolve_broker(struct sockaddr_in *out)
 {
-    char broker[64];
-    zplc_config_get_mqtt_broker(broker, sizeof(broker));
+    /* Use the static buffer so deferred LOG_* macros don't crash on invalid pointers */
+    zplc_config_get_mqtt_broker(s_mqtt_hostname, sizeof(s_mqtt_hostname));
 
     char port_str[8];
     snprintf(port_str, sizeof(port_str), "%u", zplc_config_get_mqtt_port());
@@ -468,21 +796,21 @@ static void resolve_broker(struct sockaddr_in *out)
     hints.ai_socktype = SOCK_STREAM;
 
     struct zsock_addrinfo *res = NULL;
-    if (zsock_getaddrinfo(broker, port_str, &hints, &res) == 0 && res) {
+    if (zsock_getaddrinfo(s_mqtt_hostname, port_str, &hints, &res) == 0 && res) {
         memcpy(out, res->ai_addr, sizeof(struct sockaddr_in));
         zsock_freeaddrinfo(res);
-        LOG_INF("Broker '%s' resolved via DNS", broker);
+        LOG_INF("Broker '%s' resolved via DNS", s_mqtt_hostname);
     } else {
         /*
          * DNS failed. Attempt to use the configured value directly as an
          * IPv4 address. If it is already a dotted-decimal string (common
          * in embedded deployments) zsock_inet_pton will succeed.
          */
-        LOG_WRN("DNS resolution for '%s' failed. Trying as literal IP...", broker);
+        LOG_WRN("DNS resolution for '%s' failed. Trying as literal IP...", s_mqtt_hostname);
         out->sin_family = AF_INET;
         out->sin_port   = htons(zplc_config_get_mqtt_port());
-        if (zsock_inet_pton(AF_INET, broker, &out->sin_addr) != 1) {
-            LOG_ERR("'%s' is not a valid IPv4 address. Connection will fail.", broker);
+        if (zsock_inet_pton(AF_INET, s_mqtt_hostname, &out->sin_addr) != 1) {
+            LOG_ERR("'%s' is not a valid IPv4 address. Connection will fail.", s_mqtt_hostname);
         }
     }
 }
@@ -491,7 +819,7 @@ static void resolve_broker(struct sockaddr_in *out)
  * Client Init
  * ============================================================================ */
 
-static void client_init(struct mqtt_client *client)
+static int client_init(struct mqtt_client *client)
 {
     mqtt_client_init(client);
 
@@ -499,21 +827,28 @@ static void client_init(struct mqtt_client *client)
 
     char hostname[32];
     zplc_config_get_hostname(hostname, sizeof(hostname));
+    zplc_config_get_mqtt_client_id(s_mqtt_client_id, sizeof(s_mqtt_client_id));
 
     client->broker           = &s_broker_addr;
     client->evt_cb           = mqtt_evt_handler;
-    client->client_id.utf8   = (const uint8_t *)hostname;
-    client->client_id.size   = strlen(hostname);
-    client->password         = NULL;
-    client->user_name        = NULL;
+    if (s_mqtt_client_id[0] != '\0') {
+        client->client_id.utf8 = (const uint8_t *)s_mqtt_client_id;
+        client->client_id.size = strlen(s_mqtt_client_id);
+    } else {
+        client->client_id.utf8 = (const uint8_t *)hostname;
+        client->client_id.size = strlen(hostname);
+    }
+    setup_auth(client);
     client->protocol_version = MQTT_VERSION_5_0;
+    client->clean_session    = zplc_config_get_mqtt_clean_session() ? 1U : 0U;
+    client->keepalive        = zplc_config_get_mqtt_keepalive_sec();
 
     client->rx_buf      = s_rx_buf;
     client->rx_buf_size = sizeof(s_rx_buf);
     client->tx_buf      = s_tx_buf;
     client->tx_buf_size = sizeof(s_tx_buf);
 
-    client->transport.type = MQTT_TRANSPORT_NON_SECURE;
+    return setup_tls(client);
 }
 
 /* ============================================================================
@@ -532,15 +867,38 @@ static void mqtt_client_thread(void *arg1, void *arg2, void *arg3)
     uint32_t backoff_s = BACKOFF_INITIAL_S;
 
     while (1) {
+        if (!zplc_config_get_mqtt_enabled()) {
+            /* Use the wakeup semaphore so zplc_mqtt_request_backoff_reset()
+             * (or any future re-enable path) can interrupt this sleep
+             * immediately instead of waiting a full second. */
+            k_sem_take(&s_wakeup_sem, K_SECONDS(1));
+            continue;
+        }
+
+        /* Allow HIL / operator to force backoff reset without a reboot */
+        if (atomic_test_and_clear_bit(&s_backoff_reset_req, 0)) {
+            LOG_INF("Backoff reset requested — resetting to %us", BACKOFF_INITIAL_S);
+            backoff_s = BACKOFF_INITIAL_S;
+        }
+
         s_connected = false;
-        client_init(&s_client);
+        s_subscribed = false;
+        int tls_rc = client_init(&s_client);
+        if (tls_rc < 0) {
+            LOG_ERR("MQTT security setup failed: %d", tls_rc);
+            /* Interruptible sleep: wakes early if s_wakeup_sem is given */
+            k_sem_take(&s_wakeup_sem, K_SECONDS(backoff_s));
+            backoff_s = MIN(backoff_s * 2U, BACKOFF_MAX_S);
+            continue;
+        }
 
         LOG_INF("Connecting to MQTT broker (backoff=%us)...", backoff_s);
 
         int rc = mqtt_connect(&s_client);
         if (rc != 0) {
             LOG_ERR("mqtt_connect failed: %d — retrying in %us", rc, backoff_s);
-            k_sleep(K_SECONDS(backoff_s));
+            /* Interruptible sleep: wakes early if s_wakeup_sem is given */
+            k_sem_take(&s_wakeup_sem, K_SECONDS(backoff_s));
             /* Exponential backoff, capped at BACKOFF_MAX_S */
             backoff_s = MIN(backoff_s * 2U, BACKOFF_MAX_S);
             continue;
@@ -556,7 +914,8 @@ static void mqtt_client_thread(void *arg1, void *arg2, void *arg3)
         if (!s_connected) {
             mqtt_abort(&s_client);
             LOG_WRN("No CONNACK received — retrying in %us", backoff_s);
-            k_sleep(K_SECONDS(backoff_s));
+            /* Interruptible sleep: wakes early if s_wakeup_sem is given */
+            k_sem_take(&s_wakeup_sem, K_SECONDS(backoff_s));
             backoff_s = MIN(backoff_s * 2U, BACKOFF_MAX_S);
             continue;
         }
@@ -577,7 +936,7 @@ static void mqtt_client_thread(void *arg1, void *arg2, void *arg3)
             }
 
             uint32_t now_ms = k_uptime_get_32();
-            if (now_ms - last_publish_ms >= 2000U) {
+            if (now_ms - last_publish_ms >= zplc_config_get_mqtt_publish_interval_ms()) {
                 (void)publish_ddata(&s_client);
                 last_publish_ms = now_ms;
             }
@@ -591,7 +950,8 @@ static void mqtt_client_thread(void *arg1, void *arg2, void *arg3)
         mqtt_disconnect(&s_client, &dis);
 
         LOG_INF("Disconnected. Reconnecting in %us...", backoff_s);
-        k_sleep(K_SECONDS(backoff_s));
+        /* Interruptible sleep: wakes early if s_wakeup_sem is given */
+        k_sem_take(&s_wakeup_sem, K_SECONDS(backoff_s));
         backoff_s = MIN(backoff_s * 2U, BACKOFF_MAX_S);
     }
 }
@@ -616,4 +976,14 @@ int zplc_mqtt_init(void)
 
     k_thread_name_set(&s_mqtt_thread, "mqtt_client");
     return 0;
+}
+
+void zplc_mqtt_request_backoff_reset(void)
+{
+    atomic_set_bit(&s_backoff_reset_req, 0);
+    /* Wake the MQTT thread immediately from any k_sem_take() backoff sleep.
+     * Without this, the thread would block up to BACKOFF_MAX_S (60s) before
+     * it checks the atomic flag — making HIL tests time out. */
+    k_sem_give(&s_wakeup_sem);
+    LOG_INF("Backoff reset requested — thread woken immediately");
 }

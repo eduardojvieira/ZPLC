@@ -1190,7 +1190,7 @@ static int cmd_hil_reset(const struct shell *sh, size_t argc, char **argv) {
 static int cmd_config_get(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
-  char buf[64];
+  char buf[96];
 
   shell_print(sh, "ZPLC Configuration:");
   
@@ -1203,19 +1203,40 @@ static int cmd_config_get(const struct shell *sh, size_t argc, char **argv) {
   shell_print(sh, "  Static IP:    %s", buf);
   
   shell_print(sh, "  Modbus ID:    %u", zplc_config_get_modbus_id());
+  shell_print(sh, "  Modbus TCP:   %s", zplc_config_get_modbus_tcp_enabled() ? "Enabled" : "Disabled");
+  shell_print(sh, "  Modbus TCP Port: %u", zplc_config_get_modbus_tcp_port());
+  shell_print(sh, "  Modbus RTU:   %s", zplc_config_get_modbus_rtu_enabled() ? "Enabled" : "Disabled");
+  shell_print(sh, "  Modbus RTU Baud: %u", (unsigned)zplc_config_get_modbus_rtu_baud());
+  shell_print(sh, "  Modbus RTU Parity: %u", (unsigned)zplc_config_get_modbus_rtu_parity());
   
   zplc_config_get_mqtt_broker(buf, sizeof(buf));
   shell_print(sh, "  MQTT Broker:  %s", buf);
+
+  zplc_config_get_mqtt_client_id(buf, sizeof(buf));
+  shell_print(sh, "  MQTT Client ID: %s", (buf[0] != '\0') ? buf : "(hostname)");
+
+  zplc_config_get_mqtt_topic_namespace(buf, sizeof(buf));
+  shell_print(sh, "  MQTT Namespace: %s", buf);
   
   shell_print(sh, "  MQTT Port:    %u", zplc_config_get_mqtt_port());
   shell_print(sh, "  MQTT Enabled: %s", zplc_config_get_mqtt_enabled() ? "Yes" : "No");
   shell_print(sh, "  MQTT Keepalive: %u s", zplc_config_get_mqtt_keepalive_sec());
+  shell_print(sh, "  MQTT Publish Interval: %u ms", (unsigned)zplc_config_get_mqtt_publish_interval_ms());
   shell_print(sh, "  MQTT Clean Session: %s", zplc_config_get_mqtt_clean_session() ? "Yes" : "No");
 
   zplc_config_get_mqtt_username(buf, sizeof(buf));
   shell_print(sh, "  MQTT Username: %s", (buf[0] != '\0') ? buf : "(none)");
 
   shell_print(sh, "  MQTT Security: %u", (unsigned)zplc_config_get_mqtt_security());
+
+  zplc_config_get_mqtt_ca_cert_path(buf, sizeof(buf));
+  shell_print(sh, "  MQTT CA Path: %s", buf);
+
+  zplc_config_get_mqtt_client_cert_path(buf, sizeof(buf));
+  shell_print(sh, "  MQTT Cert Path: %s", buf);
+
+  zplc_config_get_mqtt_client_key_path(buf, sizeof(buf));
+  shell_print(sh, "  MQTT Key Path: %s", buf);
   
   return 0;
 }
@@ -1223,7 +1244,7 @@ static int cmd_config_get(const struct shell *sh, size_t argc, char **argv) {
 static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
   if (argc < 3) {
     shell_error(sh, "Usage: zplc config set <key> <value>");
-    shell_print(sh, "Keys: hostname, dhcp, ip, modbus_id, mqtt_enabled, mqtt_broker, mqtt_port, mqtt_username, mqtt_password, mqtt_keepalive, mqtt_clean_session, mqtt_security");
+    shell_print(sh, "Keys: hostname, dhcp, ip, modbus_id, modbus_tcp_enabled, modbus_tcp_port, modbus_rtu_enabled, modbus_rtu_baud, modbus_rtu_parity, mqtt_enabled, mqtt_broker, mqtt_client_id, mqtt_topic_namespace, mqtt_port, mqtt_username, mqtt_password, mqtt_keepalive, mqtt_publish_interval, mqtt_clean_session, mqtt_security, mqtt_ca_cert_path, mqtt_client_cert_path, mqtt_client_key_path");
     return -EINVAL;
   }
 
@@ -1238,8 +1259,22 @@ static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
     zplc_config_set_ip(val);
   } else if (strcmp(key, "modbus_id") == 0) {
     zplc_config_set_modbus_id((uint16_t)atoi(val));
+  } else if (strcmp(key, "modbus_tcp_enabled") == 0) {
+    zplc_config_set_modbus_tcp_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
+  } else if (strcmp(key, "modbus_tcp_port") == 0) {
+    zplc_config_set_modbus_tcp_port((uint16_t)atoi(val));
+  } else if (strcmp(key, "modbus_rtu_enabled") == 0) {
+    zplc_config_set_modbus_rtu_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
+  } else if (strcmp(key, "modbus_rtu_baud") == 0) {
+    zplc_config_set_modbus_rtu_baud((uint32_t)strtoul(val, NULL, 10));
+  } else if (strcmp(key, "modbus_rtu_parity") == 0) {
+    zplc_config_set_modbus_rtu_parity((zplc_modbus_parity_t)atoi(val));
   } else if (strcmp(key, "mqtt_broker") == 0) {
     zplc_config_set_mqtt_broker(val);
+  } else if (strcmp(key, "mqtt_client_id") == 0) {
+    zplc_config_set_mqtt_client_id(val);
+  } else if (strcmp(key, "mqtt_topic_namespace") == 0) {
+    zplc_config_set_mqtt_topic_namespace(val);
   } else if (strcmp(key, "mqtt_port") == 0) {
     zplc_config_set_mqtt_port((uint16_t)atoi(val));
   } else if (strcmp(key, "mqtt_enabled") == 0) {
@@ -1250,10 +1285,18 @@ static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
     zplc_config_set_mqtt_password(val);
   } else if (strcmp(key, "mqtt_keepalive") == 0) {
     zplc_config_set_mqtt_keepalive_sec((uint16_t)atoi(val));
+  } else if (strcmp(key, "mqtt_publish_interval") == 0) {
+    zplc_config_set_mqtt_publish_interval_ms((uint32_t)strtoul(val, NULL, 10));
   } else if (strcmp(key, "mqtt_clean_session") == 0) {
     zplc_config_set_mqtt_clean_session(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
   } else if (strcmp(key, "mqtt_security") == 0) {
     zplc_config_set_mqtt_security((zplc_mqtt_security_t)atoi(val));
+  } else if (strcmp(key, "mqtt_ca_cert_path") == 0) {
+    zplc_config_set_mqtt_ca_cert_path(val);
+  } else if (strcmp(key, "mqtt_client_cert_path") == 0) {
+    zplc_config_set_mqtt_client_cert_path(val);
+  } else if (strcmp(key, "mqtt_client_key_path") == 0) {
+    zplc_config_set_mqtt_client_key_path(val);
   } else {
     shell_error(sh, "Unknown config key: %s", key);
     return -EINVAL;

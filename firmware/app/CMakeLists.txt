@@ -8,6 +8,12 @@
 
 cmake_minimum_required(VERSION 3.20.0)
 
+# Tell Zephyr where the ZPLC module lives so its Kconfig and CMakeLists.txt
+# are always found, regardless of whether the workspace symlink exists.
+# ZEPHYR_EXTRA_MODULES must be set BEFORE find_package(Zephyr).
+get_filename_component(_ZPLC_FIRMWARE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/.." ABSOLUTE)
+list(APPEND ZEPHYR_EXTRA_MODULES "${_ZPLC_FIRMWARE_DIR}")
+
 # Find Zephyr - this sets up the entire Zephyr build system
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
@@ -15,18 +21,31 @@ project(zplc_zephyr_app)
 
 target_sources(app PRIVATE
     src/main.c
-    src/shell_cmds.c
     src/zplc_config.c
     src/zplc_modbus.c
     src/zplc_mqtt.c
 )
 
+if(CONFIG_SHELL)
+  target_sources(app PRIVATE src/shell_cmds.c)
+endif()
+
 target_include_directories(app PRIVATE
     include
 )
 
-# Integrar nanopb para compilar los .proto
-list(APPEND CMAKE_MODULE_PATH ${ZEPHYR_BASE}/modules/nanopb)
-include(nanopb)
-zephyr_nanopb_sources(app proto/sparkplug_b.proto)
+# Sparkplug protobuf sources
+# On some ESP32 toolchain/CMake combinations, zephyr_nanopb_sources() can fail
+# during configure. Fall back to checked-in generated sources when available.
+set(SPARKPLUG_FALLBACK_BASE "${CMAKE_CURRENT_SOURCE_DIR}/build_disco")
+set(SPARKPLUG_FALLBACK_SRC "${SPARKPLUG_FALLBACK_BASE}/proto/sparkplug_b.pb.c")
 
+if(EXISTS "${SPARKPLUG_FALLBACK_SRC}")
+  message(WARNING "Using fallback Sparkplug protobuf sources from build_disco/proto")
+  target_sources(app PRIVATE "${SPARKPLUG_FALLBACK_SRC}")
+  target_include_directories(app PRIVATE "${SPARKPLUG_FALLBACK_BASE}")
+else()
+  list(APPEND CMAKE_MODULE_PATH ${ZEPHYR_BASE}/modules/nanopb)
+  include(nanopb)
+  zephyr_nanopb_sources(app proto/sparkplug_b.proto)
+endif()

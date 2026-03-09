@@ -8,7 +8,9 @@
 #include <zplc_core.h>
 #include <zplc_hal.h>
 #include <zplc_isa.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
+#include <zephyr/modbus/modbus.h>
 #include <zephyr/net/socket.h>
 
 #include <zephyr/logging/log.h>
@@ -23,7 +25,6 @@ LOG_MODULE_REGISTER(zplc_modbus, LOG_LEVEL_INF);
  * PDU:  [FC (1)][Data (n)]
  */
 
-#define MODBUS_TCP_PORT 502
 #define MODBUS_MAX_ADU 260
 
 /* Supported function codes */
@@ -38,6 +39,13 @@ LOG_MODULE_REGISTER(zplc_modbus, LOG_LEVEL_INF);
 
 static struct k_thread modbus_thread_data;
 static K_THREAD_STACK_DEFINE(modbus_stack_area, 2048);
+
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_modbus_serial)
+#define ZPLC_MODBUS_RTU_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_modbus_serial)
+#define ZPLC_HAS_MODBUS_RTU 1
+#else
+#define ZPLC_HAS_MODBUS_RTU 0
+#endif
 
 /**
  * @brief Search for a tag that maps the given modbus address
@@ -192,6 +200,58 @@ static int handle_write(uint16_t addr, uint16_t count, const uint8_t *req_data, 
     return 0;
 }
 
+static int coil_rd_cb(uint16_t addr, bool *state) {
+    uint8_t value = 0U;
+    int rc = handle_read(addr, 1U, &value, true);
+    if (rc < 0) {
+        return -ENOTSUP;
+    }
+
+    *state = (value & 0x01U) != 0U;
+    return 0;
+}
+
+static int coil_wr_cb(uint16_t addr, bool state) {
+    const uint8_t req_data[2] = { state ? 0xFFU : 0x00U, 0x00U };
+    int rc = handle_write(addr, 1U, req_data, true, false);
+    return (rc < 0) ? -ENOTSUP : 0;
+}
+
+static int discrete_input_rd_cb(uint16_t addr, bool *state) {
+    return coil_rd_cb(addr, state);
+}
+
+static int input_reg_rd_cb(uint16_t addr, uint16_t *reg) {
+    uint8_t resp_data[2] = {0U, 0U};
+    int rc = handle_read(addr, 1U, resp_data, false);
+    if (rc < 0) {
+        return -ENOTSUP;
+    }
+
+    *reg = ((uint16_t)resp_data[0] << 8) | (uint16_t)resp_data[1];
+    return 0;
+}
+
+static int holding_reg_rd_cb(uint16_t addr, uint16_t *reg) {
+    return input_reg_rd_cb(addr, reg);
+}
+
+static int holding_reg_wr_cb(uint16_t addr, uint16_t reg) {
+    uint8_t req_data[2];
+    req_data[0] = (uint8_t)((reg >> 8) & 0xFFU);
+    req_data[1] = (uint8_t)(reg & 0xFFU);
+    return (handle_write(addr, 1U, req_data, false, false) < 0) ? -ENOTSUP : 0;
+}
+
+static struct modbus_user_callbacks zplc_modbus_rtu_callbacks = {
+    .coil_rd = coil_rd_cb,
+    .coil_wr = coil_wr_cb,
+    .discrete_input_rd = discrete_input_rd_cb,
+    .input_reg_rd = input_reg_rd_cb,
+    .holding_reg_rd = holding_reg_rd_cb,
+    .holding_reg_wr = holding_reg_wr_cb,
+};
+
 /**
  * @brief Handle an incoming Modbus ADU
  */
@@ -309,7 +369,7 @@ static void modbus_server_thread(void *arg1, void *arg2, void *arg3) {
 
     bind_addr.sin_family = AF_INET;
     bind_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    bind_addr.sin_port = htons(MODBUS_TCP_PORT);
+    bind_addr.sin_port = htons(zplc_config_get_modbus_tcp_port());
 
     if (zsock_bind(serv, (struct sockaddr *)&bind_addr, sizeof(bind_addr)) < 0) {
         LOG_ERR("Failed to bind Modbus socket: %d", errno);
@@ -323,7 +383,7 @@ static void modbus_server_thread(void *arg1, void *arg2, void *arg3) {
         return;
     }
 
-    LOG_INF("Modbus TCP Server started on port %d", MODBUS_TCP_PORT);
+    LOG_INF("Modbus TCP Server started on port %u", zplc_config_get_modbus_tcp_port());
 
     while (1) {
         struct sockaddr_in client_addr;
@@ -352,12 +412,69 @@ static void modbus_server_thread(void *arg1, void *arg2, void *arg3) {
     }
 }
 
+static enum uart_config_parity zplc_modbus_parity_to_uart(zplc_modbus_parity_t parity)
+{
+    switch (parity) {
+    case ZPLC_MODBUS_PARITY_EVEN:
+        return UART_CFG_PARITY_EVEN;
+    case ZPLC_MODBUS_PARITY_ODD:
+        return UART_CFG_PARITY_ODD;
+    case ZPLC_MODBUS_PARITY_NONE:
+    default:
+        return UART_CFG_PARITY_NONE;
+    }
+}
+
+static int zplc_modbus_rtu_init(void)
+{
+#if ZPLC_HAS_MODBUS_RTU
+    struct modbus_iface_param server_param = {
+        .mode = MODBUS_MODE_RTU,
+        .server = {
+            .user_cb = &zplc_modbus_rtu_callbacks,
+            .unit_id = (uint8_t)zplc_config_get_modbus_id(),
+        },
+        .serial = {
+            .baud = zplc_config_get_modbus_rtu_baud(),
+            .parity = zplc_modbus_parity_to_uart(zplc_config_get_modbus_rtu_parity()),
+            .stop_bits = UART_CFG_STOP_BITS_1,
+        },
+    };
+    const char iface_name[] = DEVICE_DT_NAME(ZPLC_MODBUS_RTU_NODE);
+    int iface = modbus_iface_get_by_name(iface_name);
+
+    if (iface < 0) {
+        LOG_ERR("Failed to get Modbus RTU iface index for %s", iface_name);
+        return iface;
+    }
+
+    return modbus_init_server(iface, server_param);
+#else
+    LOG_WRN("Modbus RTU enabled but no zephyr,modbus-serial node is present");
+    return -ENODEV;
+#endif
+}
+
 int zplc_modbus_init(void) {
-    k_thread_create(&modbus_thread_data, modbus_stack_area,
-                    K_THREAD_STACK_SIZEOF(modbus_stack_area),
-                    modbus_server_thread,
-                    NULL, NULL, NULL,
-                    K_PRIO_COOP(7), 0, K_NO_WAIT);
-    k_thread_name_set(&modbus_thread_data, "modbus_tcp");
+    if (zplc_config_get_modbus_tcp_enabled()) {
+        k_thread_create(&modbus_thread_data, modbus_stack_area,
+                        K_THREAD_STACK_SIZEOF(modbus_stack_area),
+                        modbus_server_thread,
+                        NULL, NULL, NULL,
+                        K_PRIO_COOP(7), 0, K_NO_WAIT);
+        k_thread_name_set(&modbus_thread_data, "modbus_tcp");
+    } else {
+        LOG_INF("Modbus TCP disabled by configuration");
+    }
+
+    if (zplc_config_get_modbus_rtu_enabled()) {
+        int rc = zplc_modbus_rtu_init();
+        if (rc < 0) {
+            LOG_ERR("Modbus RTU init failed: %d", rc);
+            return rc;
+        }
+        LOG_INF("Modbus RTU server initialized");
+    }
+
     return 0;
 }

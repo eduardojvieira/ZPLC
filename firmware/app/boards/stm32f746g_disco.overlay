@@ -20,4 +20,18 @@
  *   No DTS changes needed: storage_partition is already defined in the board
  *   DTS and FIXED_PARTITION_ID(storage_partition) resolves to the QSPI NOR.
  *   LittleFS is mounted by zplc_config_init() before settings_subsys_init().
+ *
+ * Modbus RTU wiring (production-style):
+ *   - USART6 TX = PC6 = Arduino D1
+ *   - USART6 RX = PC7 = Arduino D0
+ *   - DE/RE control = PA15 = Arduino D9
  */
+
+
+&usart6 {
+	modbus0: modbus0 {
+		compatible = "zephyr,modbus-serial";
+		de-gpios = <&gpioa 15 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+};
