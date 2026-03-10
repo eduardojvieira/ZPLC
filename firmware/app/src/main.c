@@ -9,22 +9,32 @@
  * If no program is found, it waits for shell commands to load one.
  */
 
-#include <zephyr/kernel.h>
-#include <zplc_core.h>
-#include <zplc_hal.h>
-#include <zplc_isa.h>
-#include <zplc_debug.h>
+#include "zplc_comm_modbus_handler.h"
 #include "zplc_config.h"
 #include "zplc_time.h"
+#include <zephyr/kernel.h>
+#include <zplc_core.h>
+#include <zplc_debug.h>
+#include <zplc_hal.h>
+#include <zplc_isa.h>
 
 #ifdef CONFIG_ZPLC_SCHEDULER
 #include <zplc_scheduler.h>
 #endif
 
+#include <zephyr/fs/fs.h>
+
+#include "zplc_comm_cloud_handler.h"
+#include "zplc_comm_modbus_handler.h"
+#include "zplc_comm_mqtt_handler.h"
+#include "zplc_config.h"
+#include "zplc_time.h"
+#include <zplc_core.h>
+
 #include <string.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(zplc_main, LOG_LEVEL_INF);
 
 /* ============================================================================
  * Configuration
@@ -33,7 +43,6 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
 /** @brief Number of GPIO output channels */
 #define ZPLC_GPIO_OUTPUT_COUNT 4
-
 
 /* ============================================================================
  * Program Upload Buffer (shared by legacy and scheduler modes via shell_cmds.c)
@@ -222,7 +231,7 @@ static int try_restore_saved_program(void) {
       .priority = 3,
       .interval_us = 500000, /* Slower default for restored tasks */
       .entry_point = 0,
-      .stack_size = 256,      /* Set to 256 for stability */
+      .stack_size = 256, /* Set to 256 for stability */
   };
 
   ret = zplc_sched_register_task(&task_def, restored_program_buffer, saved_len);
@@ -252,7 +261,8 @@ static int run_scheduler_mode(void) {
     return ret;
   }
 
-  /* Try to restore a previously saved program from NVS - DISABLED FOR DEBUGGING */
+  /* Try to restore a previously saved program from NVS - DISABLED FOR DEBUGGING
+   */
   // restored_tasks = try_restore_saved_program();
   restored_tasks = 0;
 
@@ -283,6 +293,7 @@ static int run_scheduler_mode(void) {
 
 int main(void) {
   int ret;
+  int rc;
 
   /* ===== Banner ===== */
   zplc_hal_log("\n");
@@ -335,6 +346,10 @@ int main(void) {
 
   zplc_hal_log("[INIT] Starting Modbus communication services...\n");
   zplc_modbus_init();
+  rc = zplc_comm_modbus_handler_init();
+  if (rc != 0) {
+    zplc_hal_log("[INIT] ERROR: Modbus Handler init failed: %d\n", rc);
+  }
 
   zplc_hal_log("[INIT] Starting MQTT Client...\n");
   ret = zplc_mqtt_init();
@@ -342,6 +357,20 @@ int main(void) {
     zplc_hal_log("[INIT] ERROR: MQTT init failed: %d\n", ret);
     return ret;
   }
+
+  if (zplc_config_get_mqtt_enabled()) {
+    rc = zplc_comm_mqtt_handler_init();
+    if (rc != 0) {
+      zplc_hal_log("[INIT] ERROR: MQTT Handler init failed: %d\n", rc);
+    }
+    rc = zplc_comm_cloud_handler_init();
+    if (rc != 0) {
+      zplc_hal_log("[INIT] ERROR: Cloud Handler init failed: %d\n", rc);
+    }
+  }
+
+  (void)zplc_azure_dps_provision();
+  (void)zplc_aws_fleet_provision();
 
   zplc_hal_log("[INIT] Shell ready. Use 'zplc help' for commands.\n\n");
 

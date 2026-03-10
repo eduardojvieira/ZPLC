@@ -127,32 +127,35 @@ extern "C" {
  *
  * The last 16 bytes of IPI (0x0FF0-0x0FFF) are reserved for system information.
  * These are written by the scheduler/runtime and readable by PLC programs.
- * This follows common PLC practice (similar to %SW system words in IEC 61131-3).
+ * This follows common PLC practice (similar to %SW system words in IEC
+ * 61131-3).
  */
 
 /** @brief Offset within IPI for system registers (last 16 bytes) */
-#define ZPLC_SYS_REG_OFFSET     0x0FF0U
+#define ZPLC_SYS_REG_OFFSET 0x0FF0U
 
-/** @brief System register: Last cycle execution time in microseconds (DINT, 4 bytes) */
-#define ZPLC_SYS_CYCLE_TIME     (ZPLC_MEM_IPI_BASE + 0x0FF0U)
+/** @brief System register: Last cycle execution time in microseconds (DINT, 4
+ * bytes) */
+#define ZPLC_SYS_CYCLE_TIME (ZPLC_MEM_IPI_BASE + 0x0FF0U)
 
 /** @brief System register: System uptime in milliseconds (UDINT, 4 bytes) */
-#define ZPLC_SYS_UPTIME         (ZPLC_MEM_IPI_BASE + 0x0FF4U)
+#define ZPLC_SYS_UPTIME (ZPLC_MEM_IPI_BASE + 0x0FF4U)
 
 /** @brief System register: Current task ID (BYTE, 1 byte) */
-#define ZPLC_SYS_TASK_ID        (ZPLC_MEM_IPI_BASE + 0x0FF8U)
+#define ZPLC_SYS_TASK_ID (ZPLC_MEM_IPI_BASE + 0x0FF8U)
 
 /** @brief System register: System flags (BYTE, 1 byte) */
-#define ZPLC_SYS_FLAGS          (ZPLC_MEM_IPI_BASE + 0x0FF9U)
+#define ZPLC_SYS_FLAGS (ZPLC_MEM_IPI_BASE + 0x0FF9U)
 
 /** @brief System flags: First scan bit (set on first cycle after start) */
-#define ZPLC_SYS_FLAG_FIRST_SCAN    0x01
+#define ZPLC_SYS_FLAG_FIRST_SCAN 0x01
 
-/** @brief System flags: Watchdog warning (cycle time exceeded 80% of interval) */
-#define ZPLC_SYS_FLAG_WDG_WARN      0x02
+/** @brief System flags: Watchdog warning (cycle time exceeded 80% of interval)
+ */
+#define ZPLC_SYS_FLAG_WDG_WARN 0x02
 
 /** @brief System flags: Scheduler is running */
-#define ZPLC_SYS_FLAG_RUNNING       0x04
+#define ZPLC_SYS_FLAG_RUNNING 0x04
 
 /* Bytes 0x0FFA-0x0FFF reserved for future use */
 
@@ -213,11 +216,11 @@ typedef enum {
  *
  * Example: STRING[80] uses 85 bytes (4 header + 80 chars + 1 null)
  */
-#define ZPLC_STRING_LEN_OFFSET    0
-#define ZPLC_STRING_CAP_OFFSET    2
-#define ZPLC_STRING_DATA_OFFSET   4
-#define ZPLC_STRING_DEFAULT_SIZE  80
-#define ZPLC_STRING_MAX_SIZE      255
+#define ZPLC_STRING_LEN_OFFSET 0
+#define ZPLC_STRING_CAP_OFFSET 2
+#define ZPLC_STRING_DATA_OFFSET 4
+#define ZPLC_STRING_DEFAULT_SIZE 80
+#define ZPLC_STRING_MAX_SIZE 255
 
 /* ============================================================================
  * Opcodes
@@ -247,19 +250,22 @@ typedef enum {
   OP_ROT = 0x14,  /**< Rotate top three elements */
 
   /* ===== Indirect Memory Access (0x15-0x1A) ===== */
-  OP_LOADI8 = 0x15,  /**< Load 8-bit from address on stack */
-  OP_LOADI32 = 0x16, /**< Load 32-bit from address on stack */
-  OP_STOREI8 = 0x17, /**< Store 8-bit to address on stack: [addr val] -> [] */
+  OP_LOADI8 = 0x15,   /**< Load 8-bit from address on stack */
+  OP_LOADI32 = 0x16,  /**< Load 32-bit from address on stack */
+  OP_STOREI8 = 0x17,  /**< Store 8-bit to address on stack: [addr val] -> [] */
   OP_STOREI32 = 0x18, /**< Store 32-bit to address on stack: [addr val] -> [] */
-  OP_LOADI16 = 0x19, /**< Load 16-bit from address on stack */
+  OP_LOADI16 = 0x19,  /**< Load 16-bit from address on stack */
   OP_STOREI16 = 0x1A, /**< Store 16-bit to address on stack: [addr val] -> [] */
 
   /* ===== String Operations (0x1B-0x1F) ===== */
-  OP_STRLEN = 0x1B,  /**< Get string length: [str_addr] -> [length] */
-  OP_STRCPY = 0x1C,  /**< Copy string: [src_addr dst_addr] -> [] (safe, bounds-checked) */
-  OP_STRCAT = 0x1D,  /**< Concatenate: [src_addr dst_addr] -> [] (safe, bounds-checked) */
-  OP_STRCMP = 0x1E,  /**< Compare strings: [addr1 addr2] -> [result] (-1, 0, 1) */
-  OP_STRCLR = 0x1F,  /**< Clear string: [str_addr] -> [] */
+  OP_STRLEN = 0x1B, /**< Get string length: [str_addr] -> [length] */
+  OP_STRCPY = 0x1C, /**< Copy string: [src_addr dst_addr] -> [] (safe,
+                       bounds-checked) */
+  OP_STRCAT = 0x1D, /**< Concatenate: [src_addr dst_addr] -> [] (safe,
+                       bounds-checked) */
+  OP_STRCMP =
+      0x1E, /**< Compare strings: [addr1 addr2] -> [result] (-1, 0, 1) */
+  OP_STRCLR = 0x1F, /**< Clear string: [str_addr] -> [] */
 
   /* ===== Integer Arithmetic (0x20-0x27) ===== */
   OP_ADD = 0x20, /**< Integer addition */
@@ -299,7 +305,8 @@ typedef enum {
 
   /* ===== Push with 8-bit operand (0x40-0x5F) ===== */
   OP_PUSH8 = 0x40, /**< Push 8-bit immediate (sign-extended) */
-  OP_PICK = 0x41,  /**< Copy nth stack element to top: PICK n copies stack[sp-1-n] */
+  OP_PICK =
+      0x41, /**< Copy nth stack element to top: PICK n copies stack[sp-1-n] */
 
   OP_JR = 0x50,   /**< Relative jump (signed 8-bit offset) */
   OP_JRZ = 0x51,  /**< Relative jump if zero */
@@ -333,7 +340,12 @@ typedef enum {
   OP_ZEXT16 = 0xA6, /**< Zero-extend 16-bit to 32-bit */
 
   /* ===== Push with 32-bit operand (0xC0-0xCF) ===== */
-  OP_PUSH32 = 0xC0 /**< Push 32-bit immediate */
+  OP_PUSH32 = 0xC0, /**< Push 32-bit immediate */
+
+  /* ===== Communication with 32-bit operand (0xD0-0xDF) ===== */
+  OP_COMM_EXEC = 0xD0, /**< Execute/update Comm FB; pop base addr from stack */
+  OP_COMM_STATUS = 0xD1, /**< Push status word for a kind to stack */
+  OP_COMM_RESET = 0xD2   /**< Reset FSM for Comm FB; pop base addr from stack */
 
 } zplc_opcode_t;
 
@@ -472,7 +484,7 @@ typedef struct ZPLC_PACKED {
   uint16_t var_addr; /**< Memory address of the variable */
   uint8_t var_type;  /**< Data type ID (zplc_data_type_t) */
   uint8_t tag_id;    /**< Protocol/Tag identifier (1=Publish, 2=Modbus, etc.) */
-  uint32_t value;    /**< Parameter (Modbus address, or offset to string table) */
+  uint32_t value; /**< Parameter (Modbus address, or offset to string table) */
 } zplc_tag_entry_t;
 
 /** @brief Expected size of tag entry */
@@ -534,19 +546,19 @@ typedef enum {
  * NOTE: This must match the first fields of zplc_vm_t in zplc_core.h
  */
 typedef struct {
-  uint16_t pc;                              /**< Program counter */
-  uint16_t sp;                              /**< Stack pointer */
-  uint16_t bp;                              /**< Base pointer */
-  uint8_t call_depth;                       /**< Current call nesting */
-  uint8_t flags;                            /**< Status flags */
-  uint8_t error;                            /**< Last error code */
-  uint8_t halted;                           /**< Execution stopped */
-  
+  uint16_t pc;        /**< Program counter */
+  uint16_t sp;        /**< Stack pointer */
+  uint16_t bp;        /**< Base pointer */
+  uint8_t call_depth; /**< Current call nesting */
+  uint8_t flags;      /**< Status flags */
+  uint8_t error;      /**< Last error code */
+  uint8_t halted;     /**< Execution stopped */
+
   /* Debugger state */
-  uint8_t paused;                           /**< Paused at breakpoint */
-  uint8_t breakpoint_count;                 /**< Number of active breakpoints */
+  uint8_t paused;           /**< Paused at breakpoint */
+  uint8_t breakpoint_count; /**< Number of active breakpoints */
   uint16_t breakpoints[ZPLC_MAX_BREAKPOINTS]; /**< Breakpoint PC addresses */
-  
+
   uint32_t stack[ZPLC_STACK_MAX_DEPTH];     /**< Evaluation stack */
   uint16_t call_stack[ZPLC_CALL_STACK_MAX]; /**< Return addresses */
 } zplc_vm_state_t;

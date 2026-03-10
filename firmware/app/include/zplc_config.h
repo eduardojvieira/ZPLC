@@ -7,9 +7,9 @@
 #ifndef ZPLC_CONFIG_H
 #define ZPLC_CONFIG_H
 
-#include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include <zplc_isa.h>
 
@@ -70,34 +70,37 @@ typedef enum {
   ZPLC_MODBUS_PARITY_ODD = 2,
 } zplc_modbus_parity_t;
 
+typedef void (*zplc_azure_c2d_cb_t)(const uint8_t *payload, size_t len);
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
  * @brief Initialize the configuration system.
- * 
+ *
  * @return 0 on success, negative on error.
  */
 int zplc_config_init(void);
 
 /**
  * @brief Save the current configuration to persistent storage.
- * 
+ *
  * @return 0 on success, negative on error.
  */
 int zplc_config_save(void);
 
 /**
  * @brief Reset configuration to defaults.
- * 
+ *
  * @return 0 on success, negative on error.
  */
 int zplc_config_reset(void);
 
 /* ============================================================================
  * Networking Configuration
- * ============================================================================ */
+ * ============================================================================
+ */
 
 void zplc_config_get_hostname(char *buf, size_t len);
 void zplc_config_set_hostname(const char *name);
@@ -110,7 +113,8 @@ void zplc_config_set_ip(const char *ip);
 
 /* ============================================================================
  * Protocol Configuration
- * ============================================================================ */
+ * ============================================================================
+ */
 
 uint16_t zplc_config_get_modbus_id(void);
 void zplc_config_set_modbus_id(uint16_t id);
@@ -130,6 +134,62 @@ void zplc_config_set_modbus_rtu_baud(uint32_t baud);
 zplc_modbus_parity_t zplc_config_get_modbus_rtu_parity(void);
 void zplc_config_set_modbus_rtu_parity(zplc_modbus_parity_t parity);
 
+bool zplc_config_get_modbus_rtu_client_enabled(void);
+void zplc_config_set_modbus_rtu_client_enabled(bool enabled);
+
+uint8_t zplc_config_get_modbus_rtu_client_slave_id(void);
+void zplc_config_set_modbus_rtu_client_slave_id(uint8_t id);
+
+uint32_t zplc_config_get_modbus_rtu_client_poll_ms(void);
+void zplc_config_set_modbus_rtu_client_poll_ms(uint32_t ms);
+
+bool zplc_config_get_modbus_tcp_client_enabled(void);
+void zplc_config_set_modbus_tcp_client_enabled(bool enabled);
+
+void zplc_config_get_modbus_tcp_client_host(char *buf, size_t len);
+void zplc_config_set_modbus_tcp_client_host(const char *host);
+
+uint16_t zplc_config_get_modbus_tcp_client_port(void);
+void zplc_config_set_modbus_tcp_client_port(uint16_t port);
+
+uint8_t zplc_config_get_modbus_tcp_client_unit_id(void);
+void zplc_config_set_modbus_tcp_client_unit_id(uint8_t id);
+
+uint32_t zplc_config_get_modbus_tcp_client_poll_ms(void);
+void zplc_config_set_modbus_tcp_client_poll_ms(uint32_t ms);
+
+uint32_t zplc_config_get_modbus_tcp_client_timeout_ms(void);
+void zplc_config_set_modbus_tcp_client_timeout_ms(uint32_t ms);
+
+int zplc_modbus_rtu_client_read_holding(uint8_t slave_id, uint16_t start_reg,
+                                        uint16_t count, uint16_t *out);
+int zplc_modbus_rtu_client_write_register(uint8_t slave_id, uint16_t reg,
+                                          uint16_t value);
+int zplc_modbus_rtu_client_write_multiple(uint8_t slave_id, uint16_t start_reg,
+                                          uint16_t count,
+                                          const uint16_t *values);
+int zplc_modbus_rtu_client_read_coils(uint8_t slave_id, uint16_t start_addr,
+                                      uint16_t count, uint8_t *out_bits);
+int zplc_modbus_rtu_client_write_coil(uint8_t slave_id, uint16_t addr,
+                                      bool state);
+
+int zplc_modbus_tcp_client_read_holding(const char *host, uint16_t port,
+                                        uint8_t unit_id, uint16_t start_reg,
+                                        uint16_t count, uint16_t *out);
+int zplc_modbus_tcp_client_write_register(const char *host, uint16_t port,
+                                          uint8_t unit_id, uint16_t reg,
+                                          uint16_t value);
+int zplc_modbus_tcp_client_write_multiple(const char *host, uint16_t port,
+                                          uint8_t unit_id, uint16_t start_reg,
+                                          uint16_t count,
+                                          const uint16_t *values);
+int zplc_modbus_tcp_client_read_coils(const char *host, uint16_t port,
+                                      uint8_t unit_id, uint16_t start_addr,
+                                      uint16_t count, uint8_t *out_bits);
+int zplc_modbus_tcp_client_write_coil(const char *host, uint16_t port,
+                                      uint8_t unit_id, uint16_t addr,
+                                      bool state);
+
 bool zplc_config_get_modbus_tag_override(uint16_t index, uint32_t *address);
 int zplc_config_set_modbus_tag_override(uint16_t index, uint32_t address);
 int zplc_config_clear_modbus_tag_override(uint16_t index);
@@ -138,6 +198,12 @@ int zplc_modbus_init(void);
 int zplc_mqtt_init(void);
 void zplc_mqtt_request_backoff_reset(void);
 void zplc_mqtt_get_status(zplc_mqtt_status_t *status);
+void zplc_mqtt_set_azure_c2d_callback(zplc_azure_c2d_cb_t cb);
+bool zplc_mqtt_is_connected(void);
+int zplc_mqtt_enqueue_publish(const char *topic, const uint8_t *payload,
+                              size_t len, uint8_t qos, bool retain);
+int zplc_azure_event_grid_publish(const char *event_type, const char *source,
+                                  const char *topic, const char *data);
 
 void zplc_config_get_mqtt_broker(char *buf, size_t len);
 void zplc_config_set_mqtt_broker(const char *broker);
@@ -225,7 +291,8 @@ void zplc_config_set_mqtt_client_key_path(const char *path);
 
 /* ============================================================================
  * Time Synchronization Configuration (SNTP / NTP)
- * ============================================================================ */
+ * ============================================================================
+ */
 
 bool zplc_config_get_ntp_enabled(void);
 void zplc_config_set_ntp_enabled(bool enabled);
@@ -235,20 +302,22 @@ void zplc_config_set_ntp_server(const char *server);
 
 /* ============================================================================
  * Sparkplug B Configuration
- * ============================================================================ */
+ * ============================================================================
+ */
 
 /**
  * @brief Get the Sparkplug B Group ID.
  *
- * Used to build the canonical topic: spBv1.0/{group_id}/{msg_type}/{edge_node_id}
- * Defaults to "ZPLC".
+ * Used to build the canonical topic:
+ * spBv1.0/{group_id}/{msg_type}/{edge_node_id} Defaults to "ZPLC".
  */
 void zplc_config_get_mqtt_group_id(char *buf, size_t len);
 void zplc_config_set_mqtt_group_id(const char *group_id);
 
 /* ============================================================================
  * Azure IoT Hub SAS Token Configuration
- * ============================================================================ */
+ * ============================================================================
+ */
 
 /**
  * @brief Get/set the base64-encoded SharedAccessKey for Azure IoT Hub SAS auth.
@@ -272,7 +341,8 @@ void zplc_config_set_azure_sas_expiry_s(uint32_t expiry_s);
 
 /* ============================================================================
  * Azure IoT Hub — Device Twins & Direct Methods
- * ============================================================================ */
+ * ============================================================================
+ */
 
 /**
  * @brief Enable/disable Azure IoT Hub Device Twin synchronisation.
@@ -294,9 +364,34 @@ void zplc_config_set_azure_twin_enabled(bool enabled);
 bool zplc_config_get_azure_direct_methods_enabled(void);
 void zplc_config_set_azure_direct_methods_enabled(bool enabled);
 
+bool zplc_config_get_azure_c2d_enabled(void);
+void zplc_config_set_azure_c2d_enabled(bool enabled);
+
+bool zplc_config_get_azure_dps_enabled(void);
+void zplc_config_set_azure_dps_enabled(bool enabled);
+
+void zplc_config_get_azure_dps_id_scope(char *buf, size_t len);
+void zplc_config_set_azure_dps_id_scope(const char *scope);
+
+void zplc_config_get_azure_dps_registration_id(char *buf, size_t len);
+void zplc_config_set_azure_dps_registration_id(const char *id);
+
+void zplc_config_get_azure_dps_endpoint(char *buf, size_t len);
+void zplc_config_set_azure_dps_endpoint(const char *endpoint);
+
+void zplc_config_get_azure_event_grid_topic(char *buf, size_t len);
+void zplc_config_set_azure_event_grid_topic(const char *topic);
+
+void zplc_config_get_azure_event_grid_source(char *buf, size_t len);
+void zplc_config_set_azure_event_grid_source(const char *source);
+
+void zplc_config_get_azure_event_grid_event_type(char *buf, size_t len);
+void zplc_config_set_azure_event_grid_event_type(const char *type);
+
 /* ============================================================================
  * AWS IoT Core — Device Shadows & Jobs
- * ============================================================================ */
+ * ============================================================================
+ */
 
 /**
  * @brief Enable/disable AWS IoT Core Device Shadow synchronisation.
@@ -317,6 +412,22 @@ void zplc_config_set_aws_shadow_enabled(bool enabled);
  */
 bool zplc_config_get_aws_jobs_enabled(void);
 void zplc_config_set_aws_jobs_enabled(bool enabled);
+
+bool zplc_config_get_aws_fleet_enabled(void);
+void zplc_config_set_aws_fleet_enabled(bool enabled);
+
+void zplc_config_get_aws_fleet_template_name(char *buf, size_t len);
+void zplc_config_set_aws_fleet_template_name(const char *name);
+
+void zplc_config_get_aws_claim_cert_path(char *buf, size_t len);
+void zplc_config_set_aws_claim_cert_path(const char *path);
+
+void zplc_config_get_aws_claim_key_path(char *buf, size_t len);
+void zplc_config_set_aws_claim_key_path(const char *path);
+
+int zplc_azure_dps_provision(void);
+int zplc_aws_fleet_provision(void);
+bool zplc_aws_fleet_is_provisioned(void);
 
 #ifdef __cplusplus
 }

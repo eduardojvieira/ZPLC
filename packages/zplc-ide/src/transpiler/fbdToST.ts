@@ -321,68 +321,58 @@ function generateBlockCode(
       return '';
     }
 
-    case 'COMM_PUBLISH': {
-      const target = block.variableName || `${block.id}_pub`;
-      const en = getInput('EN');
-      const inputExpr = getInput('IN');
-      const out = getOutput('OUT');
-      const done = getOutput('DONE');
-      const lines: string[] = [];
-      lines.push(`IF ${en} THEN ${target} := ${inputExpr}; END_IF;`);
-      if (out) {
-        lines.push(`${out} := ${target};`);
+    // VM-backed Communication Function Blocks (Phase 3, 4, 5)
+    // These are proper IEC 61131-3 FB instances. The transpiler emits the
+    // standard ST FB call syntax: INSTANCE(PORT := VALUE, ...);\
+    case 'MB_READ_HREG':
+    case 'MB_WRITE_HREG':
+    case 'MB_READ_COIL':
+    case 'MB_WRITE_COIL':
+    case 'MQTT_CONNECT':
+    case 'MQTT_PUBLISH':
+    case 'MQTT_SUBSCRIBE':
+    case 'AZURE_C2D_RECV':
+    case 'AZURE_DPS_PROV':
+    case 'AZURE_EG_PUB':
+    case 'AWS_FLEET_PROV':
+    case 'SPB_REBIRTH': {
+      if (!block.instanceName) return `(* ${block.type}: no instance name *)`;
+      const callLines: string[] = [];
+      const portAssign = inputs.map(i => `${i.port} := ${getInput(i.port)}`).join(', ');
+      callLines.push(`${block.instanceName}(${portAssign});`);
+      // Expose any wired outputs through temp vars
+      for (const output of outputs) {
+        callLines.push(`${output.tempVar} := ${block.instanceName}.${output.port};`);
       }
-      if (done) {
-        lines.push(`${done} := ${en};`);
-      }
-      return lines.join('\n');
+      return callLines.join('\n');
     }
 
-    case 'COMM_SUBSCRIBE': {
-      const target = block.variableName || `${block.id}_sub`;
-      const en = getInput('EN');
-      const out = getOutput('OUT');
-      const valid = getOutput('VALID');
-      const lines: string[] = [];
-      if (out) {
-        lines.push(`${out} := ${target};`);
-      }
-      if (valid) {
-        lines.push(`${valid} := ${en};`);
-      }
-      return lines.join('\n');
-    }
-
-    case 'COMM_MODBUS': {
+    // Compile-time Modbus server tag-binding helpers (legacy, additive per FR-016)
+    // These are NOT FB instances; they emit the MODBUS_COIL(var, addr) helper syntax.
+    case 'MB_COIL':
+    case 'MB_DISCRETE_INPUT':
+    case 'MB_INPUT_REGISTER':
+    case 'MB_HOLDING_REGISTER': {
+      const helperMap: Record<string, string> = {
+        MB_COIL:             'MODBUS_COIL',
+        MB_DISCRETE_INPUT:   'MODBUS_DISCRETE_INPUT',
+        MB_INPUT_REGISTER:   'MODBUS_INPUT_REGISTER',
+        MB_HOLDING_REGISTER: 'MODBUS_HOLDING_REGISTER',
+      };
       const target = block.variableName || `${block.id}_mb`;
       const en = getInput('EN');
       const inputExpr = getInput('IN');
-      const out = getOutput('OUT');
-      const status = getOutput('STATUS');
-      const lines: string[] = [];
-      lines.push(`IF ${en} THEN ${target} := ${inputExpr}; END_IF;`);
-      if (out) {
-        lines.push(`${out} := ${target};`);
-      }
-      if (status) {
-        lines.push(`${status} := ${en};`);
-      }
-      return lines.join('\n');
+      const addr = getInput('ADDR');
+      const outputVar = getOutput('OUT');
+      const statusVar = getOutput('STATUS');
+      const tagLines: string[] = [];
+      tagLines.push(`IF ${en} THEN ${target} := ${inputExpr}; END_IF;`);
+      tagLines.push(`${helperMap[block.type]}(${target}, ${addr});`);
+      if (outputVar) tagLines.push(`${outputVar} := ${target};`);
+      if (statusVar) tagLines.push(`${statusVar} := ${en};`);
+      return tagLines.join('\n');
     }
 
-    case 'COMM_CONNECT': {
-      const en = getInput('EN');
-      const connected = getOutput('CONNECTED');
-      const error = getOutput('ERROR');
-      const lines: string[] = [];
-      if (connected) {
-        lines.push(`${connected} := ${en};`);
-      }
-      if (error) {
-        lines.push(`${error} := FALSE;`);
-      }
-      return lines.join('\n');
-    }
     
     // Logic gates
     case 'AND': {
@@ -520,7 +510,7 @@ function generateBlockCode(
           'CTUD': ['CU', 'CD', 'R', 'LD', 'PV'],
         };
         
-        const inputPorts = portMap[block.type] || [];
+        const inputPorts = portMap[block.type] || Array.from(new Set(inputs.map(i => i.port)));
         for (const port of inputPorts) {
           fbInputs.push(`${port} := ${getInput(port)}`);
         }
@@ -582,9 +572,18 @@ function getOutputType(block: FBDBlock, portName: string): string {
   if (isComparison(block.type)) return 'BOOL';
   if (isMathOperator(block.type)) return 'INT';
   if (['MAX', 'MIN', 'LIMIT', 'SEL'].includes(block.type)) return 'INT';
-  if (block.type === 'COMM_PUBLISH' || block.type === 'COMM_SUBSCRIBE' || block.type === 'COMM_MODBUS' || block.type === 'COMM_CONNECT') {
-    if (portName === 'DONE' || portName === 'VALID' || portName === 'STATUS') return 'BOOL';
-    if (portName === 'CONNECTED' || portName === 'ERROR') return 'BOOL';
+  if (block.type === 'COMM_PUBLISH' || block.type === 'COMM_SUBSCRIBE' ||
+      block.type === 'COMM_MODBUS' || block.type === 'COMM_CONNECT' ||
+      ['MB_READ_HREG','MB_WRITE_HREG','MB_READ_COIL','MB_WRITE_COIL',
+       'MQTT_CONNECT','MQTT_PUBLISH','MQTT_SUBSCRIBE',
+       'AZURE_C2D_RECV','AZURE_DPS_PROV','AZURE_EG_PUB',
+       'AWS_FLEET_PROV','SPB_REBIRTH'].includes(block.type)) {
+    if (portName === 'DONE' || portName === 'VALID') return 'BOOL';
+    if (portName === 'CONNECTED' || portName === 'ERROR' || portName === 'BUSY') return 'BOOL';
+    if (portName === 'STATUS') return 'DINT';
+    if (portName === 'PAYLOAD' || portName === 'TOPIC' || portName === 'ASSIGNED_HUB' ||
+        portName === 'DEVICE_ID' || portName === 'THING_NAME' || portName === 'TEMPLATE_NAME') return 'STRING';
+    if (portName === 'VALUE') return 'INT';
     return 'INT';
   }
   

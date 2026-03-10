@@ -87,7 +87,11 @@ export type FBDBlockType =
   | 'COMM_PUBLISH'
   | 'COMM_SUBSCRIBE'
   | 'COMM_MODBUS'
-  | 'COMM_CONNECT';
+  | 'COMM_CONNECT'
+  | 'MB_COIL'
+  | 'MB_DISCRETE_INPUT'
+  | 'MB_INPUT_REGISTER'
+  | 'MB_HOLDING_REGISTER';
 
 // =============================================================================
 // Block Definition
@@ -424,6 +428,21 @@ export function getDefaultPorts(type: string): { inputs: FBDPort[], outputs: FBD
         outputs: [
           { name: 'CONNECTED', type: 'BOOL' },
           { name: 'ERROR', type: 'BOOL' }
+        ]
+      };
+    case 'MB_COIL':
+    case 'MB_DISCRETE_INPUT':
+    case 'MB_INPUT_REGISTER':
+    case 'MB_HOLDING_REGISTER':
+      return {
+        inputs: [
+          { name: 'EN', type: 'BOOL' },
+          { name: 'IN', type: 'ANY' },
+          { name: 'ADDR', type: 'UINT' }
+        ],
+        outputs: [
+          { name: 'OUT', type: 'ANY' },
+          { name: 'STATUS', type: 'BOOL' }
         ]
       };
     default:

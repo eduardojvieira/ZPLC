@@ -39,6 +39,7 @@ import type {
   NetworkConfig,
   CommunicationConfig,
   MQTTCommunicationConfig,
+  ModbusClientConfig,
   CommunicationTagConfig,
   CommunicationTagType,
   ZPLCProjectConfig,
@@ -1089,6 +1090,26 @@ function CommunicationSection({ config, updateConfig }: SectionProps) {
     lwtPayload: 'offline',
     lwtQos: 0,
     lwtRetain: false,
+    azureTwinEnabled: false,
+    azureDirectMethodsEnabled: false,
+    azureC2dEnabled: false,
+    azureDpsEnabled: false,
+    azureDpsEndpoint: 'global.azure-devices-provisioning.net',
+    awsShadowEnabled: false,
+    awsJobsEnabled: false,
+    awsFleetEnabled: false,
+  };
+
+  const defaultModbusClient: ModbusClientConfig = {
+    rtuClientEnabled: false,
+    rtuClientSlaveId: 1,
+    rtuClientPollMs: 100,
+    tcpClientEnabled: false,
+    tcpClientHost: '192.168.1.100',
+    tcpClientPort: 502,
+    tcpClientUnitId: 1,
+    tcpClientPollMs: 100,
+    tcpClientTimeoutMs: 500,
   };
 
   const communication: CommunicationConfig = config.communication || {
@@ -1102,6 +1123,7 @@ function CommunicationSection({ config, updateConfig }: SectionProps) {
       rtuBaud: 19200,
       rtuParity: 'none',
       pollIntervalMs: 100,
+      client: defaultModbusClient,
     },
     tags: [],
   };
@@ -1117,7 +1139,9 @@ function CommunicationSection({ config, updateConfig }: SectionProps) {
     rtuBaud: 19200,
     rtuParity: 'none' as const,
     pollIntervalMs: 100,
+    client: defaultModbusClient,
   };
+  const modbusClient = modbus.client || defaultModbusClient;
 
   const tags = communication.bindings || communication.tags || [];
 
@@ -1281,6 +1305,74 @@ function CommunicationSection({ config, updateConfig }: SectionProps) {
                 />
                 Direct Methods
               </label>
+              <label className="flex items-center gap-2 text-xs text-[var(--color-text-muted)] cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={mqtt.azureC2dEnabled ?? false}
+                  onChange={(e) => updateCommunication({ mqtt: { ...mqtt, azureC2dEnabled: e.target.checked } })}
+                  className="accent-[var(--color-primary)]"
+                />
+                C2D Messaging
+              </label>
+              <label className="flex items-center gap-2 text-xs text-[var(--color-text-muted)] cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={mqtt.azureDpsEnabled ?? false}
+                  onChange={(e) => updateCommunication({ mqtt: { ...mqtt, azureDpsEnabled: e.target.checked } })}
+                  className="accent-[var(--color-primary)]"
+                />
+                DPS
+              </label>
+            </>
+          )}
+          {mqtt.profile === 'azure-iot-hub' && (
+            <>
+              <input
+                type="text"
+                value={mqtt.azureDpsIdScope ?? ''}
+                onChange={(e) => updateCommunication({ mqtt: { ...mqtt, azureDpsIdScope: e.target.value || undefined } })}
+                placeholder="Azure DPS ID Scope"
+                className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+              />
+              <input
+                type="text"
+                value={mqtt.azureDpsRegistrationId ?? ''}
+                onChange={(e) => updateCommunication({ mqtt: { ...mqtt, azureDpsRegistrationId: e.target.value || undefined } })}
+                placeholder="Azure DPS Registration ID"
+                className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+              />
+              <input
+                type="text"
+                value={mqtt.azureDpsEndpoint ?? ''}
+                onChange={(e) => updateCommunication({ mqtt: { ...mqtt, azureDpsEndpoint: e.target.value || undefined } })}
+                placeholder="Azure DPS Endpoint"
+                className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+              />
+            </>
+          )}
+          {mqtt.profile === 'azure-event-grid-mqtt' && (
+            <>
+              <input
+                type="text"
+                value={mqtt.azureEventGridTopic ?? ''}
+                onChange={(e) => updateCommunication({ mqtt: { ...mqtt, azureEventGridTopic: e.target.value || undefined } })}
+                placeholder="Event Grid topic"
+                className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+              />
+              <input
+                type="text"
+                value={mqtt.azureEventGridSource ?? ''}
+                onChange={(e) => updateCommunication({ mqtt: { ...mqtt, azureEventGridSource: e.target.value || undefined } })}
+                placeholder="CloudEvent source"
+                className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+              />
+              <input
+                type="text"
+                value={mqtt.azureEventGridEventType ?? ''}
+                onChange={(e) => updateCommunication({ mqtt: { ...mqtt, azureEventGridEventType: e.target.value || undefined } })}
+                placeholder="CloudEvent type"
+                className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+              />
             </>
           )}
           {mqtt.profile === 'aws-iot-core' && (
@@ -1303,6 +1395,40 @@ function CommunicationSection({ config, updateConfig }: SectionProps) {
                 />
                 IoT Jobs
               </label>
+              <label className="flex items-center gap-2 text-xs text-[var(--color-text-muted)] cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={mqtt.awsFleetEnabled ?? false}
+                  onChange={(e) => updateCommunication({ mqtt: { ...mqtt, awsFleetEnabled: e.target.checked } })}
+                  className="accent-[var(--color-primary)]"
+                />
+                Fleet Provisioning
+              </label>
+            </>
+          )}
+          {mqtt.profile === 'aws-iot-core' && (
+            <>
+              <input
+                type="text"
+                value={mqtt.awsFleetTemplateName ?? ''}
+                onChange={(e) => updateCommunication({ mqtt: { ...mqtt, awsFleetTemplateName: e.target.value || undefined } })}
+                placeholder="Fleet template name"
+                className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+              />
+              <input
+                type="text"
+                value={mqtt.awsClaimCertPath ?? ''}
+                onChange={(e) => updateCommunication({ mqtt: { ...mqtt, awsClaimCertPath: e.target.value || undefined } })}
+                placeholder="Claim cert path"
+                className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+              />
+              <input
+                type="text"
+                value={mqtt.awsClaimKeyPath ?? ''}
+                onChange={(e) => updateCommunication({ mqtt: { ...mqtt, awsClaimKeyPath: e.target.value || undefined } })}
+                placeholder="Claim key path"
+                className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+              />
             </>
           )}
           <select
@@ -1466,6 +1592,9 @@ function CommunicationSection({ config, updateConfig }: SectionProps) {
 
       <div>
         <label className="block text-xs text-[var(--color-surface-400)] mb-2">Modbus</label>
+        <p className="text-xs text-[var(--color-surface-400)] mb-2">
+          Configure the onboard Modbus TCP/RTU servers first, then optional client polling.
+        </p>
         <div className="grid grid-cols-6 gap-3">
           <label className="flex items-center gap-2 text-sm text-[var(--color-surface-200)]">
             <input
@@ -1545,6 +1674,84 @@ function CommunicationSection({ config, updateConfig }: SectionProps) {
           <div className="px-3 py-2 text-xs rounded border border-[var(--color-surface-600)] bg-[var(--color-surface-800)] text-[var(--color-surface-400)]">
             RTU uses the board's configured `zephyr,modbus-serial` UART.
           </div>
+        </div>
+        <div className="grid grid-cols-5 gap-3 mt-3">
+          <label className="flex items-center gap-2 text-xs text-[var(--color-surface-200)]">
+            <input
+              type="checkbox"
+              checked={modbusClient.rtuClientEnabled}
+              onChange={(e) => updateCommunication({ modbus: { ...modbus, client: { ...modbusClient, rtuClientEnabled: e.target.checked } } })}
+            />
+            RTU Client
+          </label>
+          <input
+            type="number"
+            min={1}
+            max={247}
+            value={modbusClient.rtuClientSlaveId}
+            onChange={(e) => updateCommunication({ modbus: { ...modbus, client: { ...modbusClient, rtuClientSlaveId: parseInt(e.target.value, 10) || 1 } } })}
+            placeholder="RTU slave ID"
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+          <input
+            type="number"
+            min={1}
+            value={modbusClient.rtuClientPollMs}
+            onChange={(e) => updateCommunication({ modbus: { ...modbus, client: { ...modbusClient, rtuClientPollMs: parseInt(e.target.value, 10) || 100 } } })}
+            placeholder="RTU poll ms"
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+          <label className="flex items-center gap-2 text-xs text-[var(--color-surface-200)]">
+            <input
+              type="checkbox"
+              checked={modbusClient.tcpClientEnabled}
+              onChange={(e) => updateCommunication({ modbus: { ...modbus, client: { ...modbusClient, tcpClientEnabled: e.target.checked } } })}
+            />
+            TCP Client
+          </label>
+          <input
+            type="text"
+            value={modbusClient.tcpClientHost}
+            onChange={(e) => updateCommunication({ modbus: { ...modbus, client: { ...modbusClient, tcpClientHost: e.target.value } } })}
+            placeholder="TCP host"
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+        </div>
+        <div className="grid grid-cols-4 gap-3 mt-2">
+          <input
+            type="number"
+            min={1}
+            max={65535}
+            value={modbusClient.tcpClientPort}
+            onChange={(e) => updateCommunication({ modbus: { ...modbus, client: { ...modbusClient, tcpClientPort: parseInt(e.target.value, 10) || 502 } } })}
+            placeholder="TCP client port"
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+          <input
+            type="number"
+            min={1}
+            max={247}
+            value={modbusClient.tcpClientUnitId}
+            onChange={(e) => updateCommunication({ modbus: { ...modbus, client: { ...modbusClient, tcpClientUnitId: parseInt(e.target.value, 10) || 1 } } })}
+            placeholder="TCP unit ID"
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+          <input
+            type="number"
+            min={1}
+            value={modbusClient.tcpClientPollMs}
+            onChange={(e) => updateCommunication({ modbus: { ...modbus, client: { ...modbusClient, tcpClientPollMs: parseInt(e.target.value, 10) || 100 } } })}
+            placeholder="TCP poll ms"
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
+          <input
+            type="number"
+            min={1}
+            value={modbusClient.tcpClientTimeoutMs}
+            onChange={(e) => updateCommunication({ modbus: { ...modbus, client: { ...modbusClient, tcpClientTimeoutMs: parseInt(e.target.value, 10) || 500 } } })}
+            placeholder="TCP timeout ms"
+            className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
+          />
         </div>
       </div>
 
@@ -1630,15 +1837,26 @@ function CommunicationSection({ config, updateConfig }: SectionProps) {
                   value={tag.modbusAddress ?? ''}
                   onChange={(e) => updateTag(index, {
                     modbusAddress: e.target.value ? parseInt(e.target.value, 10) : undefined,
+                    modbusArea: e.target.value ? (tag.modbusArea ?? (tag.type === 'BOOL' ? 'coil' : 'holding-register')) : tag.modbusArea,
                     mode: e.target.value ? 'modbus' : tag.mode === 'modbus' ? undefined : tag.mode,
                   })}
                   className="col-span-2 px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded disabled:opacity-50"
                 />
+                <select
+                  value={tag.modbusArea ?? 'holding-register'}
+                  onChange={(e) => updateTag(index, { modbusArea: e.target.value as typeof tag.modbusArea })}
+                  className="col-span-2 px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded"
+                >
+                  <option value="coil">Coil</option>
+                  <option value="discrete-input">Discrete Input</option>
+                  <option value="input-register">Input Register</option>
+                  <option value="holding-register">Holding Register</option>
+                </select>
                 <input
                   type="text"
                   value={tag.description || ''}
                   onChange={(e) => updateTag(index, { description: e.target.value || undefined })}
-                  className="col-span-2 px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded"
+                  className="col-span-1 px-2 py-1 text-xs bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded"
                 />
                 <button
                   onClick={() => removeTag(index)}

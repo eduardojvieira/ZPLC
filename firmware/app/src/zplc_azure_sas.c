@@ -86,14 +86,14 @@ static int percent_encode(const char *in, char *out, size_t out_len)
 /* Public API                                                           */
 /* ------------------------------------------------------------------ */
 
-int zplc_azure_sas_generate(const char *hub_host,
-                             const char *device_id,
-                             const char *sas_key_b64,
-                             uint32_t    expiry_s,
-                             char       *out_buf,
-                             size_t      out_len)
+int zplc_azure_sas_generate_resource(const char *resource_uri,
+                                     const char *sas_key_b64,
+                                     uint32_t expiry_s,
+                                     const char *key_name,
+                                     char *out_buf,
+                                     size_t out_len)
 {
-    if (!hub_host || !device_id || !sas_key_b64 || !out_buf || out_len == 0U) {
+    if (!resource_uri || !sas_key_b64 || !out_buf || out_len == 0U) {
         return -EINVAL;
     }
 
@@ -111,18 +111,15 @@ int zplc_azure_sas_generate(const char *hub_host,
     }
 
     /* -------------------------------------------------------------- */
-    /* 2. Build the URI component: "{hub_host}/devices/{device_id}"   */
-    /*    then percent-encode it.                                      */
+    /* 2. Percent-encode the resource URI. */
     /* -------------------------------------------------------------- */
-    char raw_uri[SAS_URI_LEN];
-    int n = snprintf(raw_uri, sizeof(raw_uri), "%s/devices/%s",
-                     hub_host, device_id);
-    if (n < 0 || (size_t)n >= sizeof(raw_uri)) {
+    int n;
+    if (strlen(resource_uri) >= SAS_URI_LEN) {
         return -ENOMEM;
     }
 
     char enc_uri[SAS_URI_LEN];
-    rc = percent_encode(raw_uri, enc_uri, sizeof(enc_uri));
+    rc = percent_encode(resource_uri, enc_uri, sizeof(enc_uri));
     if (rc != 0) {
         return rc;
     }
@@ -187,9 +184,15 @@ int zplc_azure_sas_generate(const char *hub_host,
     /* -------------------------------------------------------------- */
     /* 8. Assemble final token                                         */
     /* -------------------------------------------------------------- */
-    n = snprintf(out_buf, out_len,
-                 "SharedAccessSignature sr=%s&sig=%s&se=%llu",
-                 enc_uri, sig_pct, (unsigned long long)expiry_epoch);
+    if (key_name != NULL && key_name[0] != '\0') {
+        n = snprintf(out_buf, out_len,
+                     "SharedAccessSignature sr=%s&sig=%s&se=%llu&skn=%s",
+                     enc_uri, sig_pct, (unsigned long long)expiry_epoch, key_name);
+    } else {
+        n = snprintf(out_buf, out_len,
+                     "SharedAccessSignature sr=%s&sig=%s&se=%llu",
+                     enc_uri, sig_pct, (unsigned long long)expiry_epoch);
+    }
     if (n < 0 || (size_t)n >= out_len) {
         LOG_ERR("Azure SAS: output buffer too small (need %d, have %zu)", n + 1, out_len);
         return -ENOMEM;
@@ -197,4 +200,27 @@ int zplc_azure_sas_generate(const char *hub_host,
 
     LOG_INF("Azure SAS token generated (expires in %u s)", expiry_s);
     return 0;
+}
+
+int zplc_azure_sas_generate(const char *hub_host,
+                            const char *device_id,
+                            const char *sas_key_b64,
+                            uint32_t expiry_s,
+                            char *out_buf,
+                            size_t out_len)
+{
+    char raw_uri[SAS_URI_LEN];
+    int n;
+
+    if (!hub_host || !device_id) {
+        return -EINVAL;
+    }
+
+    n = snprintf(raw_uri, sizeof(raw_uri), "%s/devices/%s", hub_host, device_id);
+    if (n < 0 || (size_t)n >= sizeof(raw_uri)) {
+        return -ENOMEM;
+    }
+
+    return zplc_azure_sas_generate_resource(raw_uri, sas_key_b64, expiry_s,
+                                            NULL, out_buf, out_len);
 }

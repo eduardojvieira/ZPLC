@@ -57,6 +57,7 @@ add_compile_options(
 
 add_library(zplc_core STATIC
     src/core/zplc_core.c
+    src/core/zplc_comm_dispatch.c
 )
 
 target_compile_definitions(zplc_core PUBLIC ZPLC_CORE_VERSION_STR="${ZPLC_GIT_VERSION}")
@@ -121,10 +122,24 @@ endif()
 
 add_test(NAME test_vm_core COMMAND test_vm_core)
 
+# Test: Communication Dispatch
+add_executable(test_comm_dispatch
+    tests/test_comm_dispatch.c
+    src/core/zplc_comm_dispatch.c
+)
+
+target_include_directories(test_comm_dispatch PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_link_libraries(test_comm_dispatch PRIVATE zplc_core)
+
+add_test(NAME test_comm_dispatch COMMAND test_comm_dispatch)
+
 # Custom target to run all tests
 add_custom_target(check
     COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-    DEPENDS test_isa test_vm_core
+    DEPENDS test_isa test_vm_core test_comm_dispatch
     COMMENT "Running all tests..."
 )
 

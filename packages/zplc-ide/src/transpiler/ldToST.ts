@@ -340,6 +340,29 @@ function generateRungCode(rung: LDRung): string[] {
   // Generate function block calls
   for (const fb of fbs) {
     if (fb.fbType && fb.instance) {
+      if (['MB_COIL', 'MB_DISCRETE_INPUT', 'MB_INPUT_REGISTER', 'MB_HOLDING_REGISTER'].includes(fb.fbType)) {
+        const helperMap: Record<string, string> = {
+          MB_COIL: 'MODBUS_COIL',
+          MB_DISCRETE_INPUT: 'MODBUS_DISCRETE_INPUT',
+          MB_INPUT_REGISTER: 'MODBUS_INPUT_REGISTER',
+          MB_HOLDING_REGISTER: 'MODBUS_HOLDING_REGISTER',
+        };
+        const inputVar = fb.parameters?.IN ?? fb.parameters?.OUT ?? fb.instance;
+        const addrVar = fb.parameters?.ADDR ?? '1';
+        lines.push(`IF _rung${rung.number}_result THEN ${inputVar} := ${inputVar}; END_IF;`);
+        lines.push(`${helperMap[fb.fbType]}(${inputVar}, ${addrVar});`);
+        if (fb.outputs) {
+          for (const [port, variable] of Object.entries(fb.outputs)) {
+            if (port === 'STATUS') {
+              lines.push(`${variable} := _rung${rung.number}_result;`);
+            } else {
+              lines.push(`${variable} := ${inputVar};`);
+            }
+          }
+        }
+        continue;
+      }
+
       const params: string[] = [];
       
       // Input parameters
@@ -359,7 +382,12 @@ function generateRungCode(rung: LDRung): string[] {
           params.push(`CU := _rung${rung.number}_result`);
         } else if (fb.fbType === 'CTUD') {
           params.push(`CU := _rung${rung.number}_result`);
-        } else if (['COMM_PUBLISH', 'COMM_SUBSCRIBE', 'COMM_MODBUS', 'COMM_CONNECT'].includes(fb.fbType)) {
+        } else if (['COMM_PUBLISH', 'COMM_SUBSCRIBE', 'COMM_MODBUS', 'COMM_CONNECT',
+                    'MB_COIL', 'MB_DISCRETE_INPUT', 'MB_INPUT_REGISTER', 'MB_HOLDING_REGISTER',
+                    'MB_READ_HREG', 'MB_WRITE_HREG', 'MB_READ_COIL', 'MB_WRITE_COIL',
+                    'MQTT_CONNECT', 'MQTT_PUBLISH', 'MQTT_SUBSCRIBE',
+                    'AZURE_C2D_RECV', 'AZURE_DPS_PROV', 'AZURE_EG_PUB',
+                    'AWS_FLEET_PROV', 'SPB_REBIRTH'].includes(fb.fbType)) {
           params.push(`EN := _rung${rung.number}_result`);
         }
       }

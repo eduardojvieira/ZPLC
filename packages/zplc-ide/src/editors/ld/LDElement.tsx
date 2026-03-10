@@ -496,6 +496,17 @@ function getFBPorts(fbType: string): { inputs: string[]; outputs: Array<{ name: 
           { name: 'ERROR', type: 'BOOL' }
         ]
       };
+    case 'MB_COIL':
+    case 'MB_DISCRETE_INPUT':
+    case 'MB_INPUT_REGISTER':
+    case 'MB_HOLDING_REGISTER':
+      return {
+        inputs: ['EN', 'IN', 'ADDR'],
+        outputs: [
+          { name: 'OUT', type: 'ANY' },
+          { name: 'STATUS', type: 'BOOL' }
+        ]
+      };
     default:
       return {
         inputs: ['IN'],

@@ -61,6 +61,7 @@ import {
     FIFO_FB, LIFO_FB
 } from './system.ts';
 import { STRING_FUNCTIONS } from './strings.ts';
+import { CommBlocks } from './communication.ts';
 
 // ============================================================================
 // Function Block Registry
@@ -217,6 +218,9 @@ function initRegistry(): void {
     registerFB(LIFO_FB);
 
     // ===== Functions =====
+
+    // Communication (NEW in v1.3)
+    Object.values(CommBlocks).forEach(fb => registerFB(fb));
 
     // Selection functions
     registerFn(MAX_FN);

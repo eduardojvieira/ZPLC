@@ -101,7 +101,7 @@ const FunctionBlockNode = memo(({ id, data, selected }: NodeProps) => {
     if (['CTU', 'CTD', 'CTUD'].includes(type)) return 'bg-emerald-600';
     if (['R_TRIG', 'F_TRIG'].includes(type)) return 'bg-purple-600';
     if (['SR', 'RS'].includes(type)) return 'bg-blue-600';
-    if (['COMM_CONNECT', 'COMM_PUBLISH', 'COMM_SUBSCRIBE', 'COMM_MODBUS'].includes(type)) return 'bg-cyan-700';
+    if (['COMM_CONNECT', 'COMM_PUBLISH', 'COMM_SUBSCRIBE', 'COMM_MODBUS', 'MB_COIL', 'MB_DISCRETE_INPUT', 'MB_INPUT_REGISTER', 'MB_HOLDING_REGISTER'].includes(type)) return 'bg-cyan-700';
     return 'bg-slate-600';
   };
 

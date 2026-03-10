@@ -32,6 +32,7 @@ if(CONFIG_ZPLC)
   # Core VM sources (platform-independent C99)
   zephyr_library_sources(
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_core.c
+    ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_comm_dispatch.c
   )
 
   # Zephyr HAL implementation

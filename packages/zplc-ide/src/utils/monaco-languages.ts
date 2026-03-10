@@ -55,7 +55,8 @@ export const stLanguage: languages.IMonarchLanguage = {
         'REAL', 'LREAL',
         'TIME', 'DATE', 'TIME_OF_DAY', 'TOD', 'DATE_AND_TIME', 'DT',
         'STRING', 'WSTRING',
-        'TON', 'TOF', 'TP', 'CTU', 'CTD', 'CTUD', 'R_TRIG', 'F_TRIG'
+        'TON', 'TOF', 'TP', 'CTU', 'CTD', 'CTUD', 'R_TRIG', 'F_TRIG',
+        'MODBUS_COIL', 'MODBUS_DISCRETE_INPUT', 'MODBUS_INPUT_REGISTER', 'MODBUS_HOLDING_REGISTER'
     ],
 
     operators: [

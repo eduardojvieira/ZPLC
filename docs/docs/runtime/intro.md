@@ -206,7 +206,9 @@ ZPLC integrates with Zephyr as a **Module**.
   - Modbus TCP/RTU (Phase 1.5)
   - MQTT v3.1.1/v5.0 (Phase 1.5)
   - Cloud integrations - AWS, Azure (Phase 1.5.1)
-  - OPC UA (Phase 1.5.2)
+
+* **Communication FB Architecture**:
+  - Real VM-backed communication function blocks are specified in `communication-function-blocks.md`
 
 ### 8.2 Security Strategy (Planned - Phase 1.7)
 

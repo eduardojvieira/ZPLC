@@ -1,6 +1,6 @@
 # Industrial Connectivity (Phase 1.5)
 
-Industrial protocols are the nervous system of automation. ZPLC is designed to support the "Standard 3" of modern IIoT and legacy automation: **Modbus**, **MQTT**, and **OPC UA**.
+Industrial protocols are the nervous system of automation. ZPLC is designed to focus on the connectivity stack it actually ships: **Modbus**, **MQTT**, and cloud integration over MQTT.
 
 :::important
 Connectivity features are currently in **Phase 1.5 Development**. Many of these features require the Native Networking HAL extension.
@@ -12,6 +12,27 @@ Modbus is the universal language of industrial devices. ZPLC implements Modbus u
 *   **Modbus RTU**: RS-485 half-duplex communication for local sensors and VFDs.
 *   **Modbus TCP**: High-speed communication over Ethernet.
 *   **Mapping**: Variables are tagged in Structured Text or the I/O Map and automatically exposed as Coils or Holding Registers.
+
+Language helpers are available across the IDE pipeline and compile down to standard Modbus tag bindings:
+
+```st
+PROGRAM Main
+VAR
+    PumpRun : BOOL;
+    MotorSpeed : UINT;
+END_VAR
+
+MODBUS_COIL(PumpRun, 1);
+MODBUS_HOLDING_REGISTER(MotorSpeed, 40001);
+END_PROGRAM
+```
+
+Visual language blocks map to the same helpers:
+
+- `MB_COIL`
+- `MB_DISCRETE_INPUT`
+- `MB_INPUT_REGISTER`
+- `MB_HOLDING_REGISTER`
 
 ```st
 VAR
