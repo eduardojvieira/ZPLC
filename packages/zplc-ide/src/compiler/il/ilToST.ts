@@ -524,6 +524,21 @@ function getOperandType(operand: ILOperand | undefined, varTypes: Map<string, st
 }
 
 function generateFBCall(fbName: string, params?: ILFBParam[]): string {
+    const helperMap: Record<string, string> = {
+        MB_COIL: 'MODBUS_COIL',
+        MB_DISCRETE_INPUT: 'MODBUS_DISCRETE_INPUT',
+        MB_INPUT_REGISTER: 'MODBUS_INPUT_REGISTER',
+        MB_HOLDING_REGISTER: 'MODBUS_HOLDING_REGISTER',
+    };
+
+    if (fbName in helperMap) {
+        const inParam = params?.find((p) => p.name.toUpperCase() === 'IN');
+        const addrParam = params?.find((p) => p.name.toUpperCase() === 'ADDR');
+        if (inParam && addrParam) {
+            return `${helperMap[fbName]}(${formatOperand(inParam.value)}, ${formatOperand(addrParam.value)});`;
+        }
+    }
+
     if (!params || params.length === 0) {
         return `${fbName}();`;
     }

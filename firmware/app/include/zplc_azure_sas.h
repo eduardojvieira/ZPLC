@@ -43,11 +43,18 @@ extern "C" {
  *         -EIO     mbedTLS crypto operation failed
  */
 int zplc_azure_sas_generate(const char *hub_host,
-                             const char *device_id,
-                             const char *sas_key_b64,
-                             uint32_t    expiry_s,
-                             char       *out_buf,
-                             size_t      out_len);
+                              const char *device_id,
+                              const char *sas_key_b64,
+                              uint32_t    expiry_s,
+                              char       *out_buf,
+                              size_t      out_len);
+
+int zplc_azure_sas_generate_resource(const char *resource_uri,
+                                     const char *sas_key_b64,
+                                     uint32_t expiry_s,
+                                     const char *key_name,
+                                     char *out_buf,
+                                     size_t out_len);
 
 #ifdef __cplusplus
 }

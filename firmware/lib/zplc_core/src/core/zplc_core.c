@@ -19,10 +19,11 @@
  * while sharing the same I/O and data memory.
  */
 
+#include "zplc_comm_dispatch.h"
 #include <string.h>
 #include <zplc_core.h>
-#include <zplc_hal.h>
 #include <zplc_debug.h>
+#include <zplc_hal.h>
 
 /* ============================================================================
  * Version Information
@@ -1646,6 +1647,70 @@ int zplc_vm_step(zplc_vm_t *vm) {
     vm->pc += 5;
     break;
 
+    /* ===== Communication with 32-bit operand ===== */
+
+  case OP_COMM_EXEC:
+  case OP_COMM_STATUS:
+  case OP_COMM_RESET:
+    if (vm->pc + 4 >= vm->code_size) {
+      vm->error = ZPLC_VM_INVALID_JUMP;
+      vm->halted = 1;
+      return ZPLC_VM_INVALID_JUMP;
+    }
+    operand32 = READ_U32(code, vm->pc + 1);
+    VM_CHECK_STACK_UNDERFLOW(vm, 1);
+    a = VM_POP(vm); /* FB base address inside memory regions */
+    {
+      zplc_comm_fb_kind_t kind = (zplc_comm_fb_kind_t)operand32;
+      uint16_t fb_base = (uint16_t)a;
+
+      /* First, determine the physical pointer to FB memory. Comm FBs are mostly
+       * in WORK or RETAIN memory */
+      uint8_t *fb_mem = zplc_mem_get_region(fb_base & 0xF000);
+      if (!fb_mem) {
+        /* Fallback generic lookup via mem_ptr macro abstraction */
+        fb_mem =
+            mem_ptr(fb_base, 8, 1); // request at least 8 bytes for comm header
+      } else {
+        /* Offset it */
+        uint16_t region_base = fb_base & 0xF000;
+        fb_mem = &fb_mem[fb_base - region_base];
+      }
+
+      if (fb_mem == NULL) {
+        vm->error = ZPLC_VM_OUT_OF_BOUNDS;
+        vm->halted = 1;
+        return ZPLC_VM_OUT_OF_BOUNDS;
+      }
+
+      switch (opcode) {
+      case OP_COMM_EXEC:
+        mem_result = zplc_comm_fb_exec(kind, fb_mem);
+        break;
+      case OP_COMM_RESET:
+        mem_result = zplc_comm_fb_reset(kind, fb_mem);
+        break;
+      case OP_COMM_STATUS: {
+        /* Push STATUS (bytes 4..7) */
+        uint32_t status_val = (uint32_t)fb_mem[4] | ((uint32_t)fb_mem[5] << 8) |
+                              ((uint32_t)fb_mem[6] << 16) |
+                              ((uint32_t)fb_mem[7] << 24);
+        VM_CHECK_STACK_OVERFLOW(vm);
+        VM_PUSH(vm, status_val);
+        mem_result = 0;
+        break;
+      }
+      }
+
+      if (mem_result < 0) {
+        vm->error = ZPLC_VM_INVALID_OPCODE;
+        vm->halted = 1;
+        return ZPLC_VM_INVALID_OPCODE;
+      }
+    }
+    vm->pc += 5;
+    break;
+
     /* ===== Type Conversion ===== */
 
   case OP_I2F:
@@ -1783,9 +1848,7 @@ int zplc_vm_run_cycle(zplc_vm_t *vm) {
  * ============================================================================
  */
 
-const char *zplc_core_version(void) {
-  return ZPLC_CORE_VERSION_STR;
-}
+const char *zplc_core_version(void) { return ZPLC_CORE_VERSION_STR; }
 
 int zplc_core_init(void) {
   /* Initialize shared memory */
@@ -1955,7 +2018,7 @@ int zplc_core_load_tasks(const uint8_t *binary, size_t size,
   uint32_t task_seg_size = 0;
   int code_found = 0;
   int task_found = 0;
-  
+
   uint32_t tags_seg_offset = 0;
   uint32_t tags_seg_size = 0;
   int tags_found = 0;
@@ -2050,19 +2113,22 @@ int zplc_core_load_tasks(const uint8_t *binary, size_t size,
 
   /* Load tags if present */
   tag_count = 0;
-  if (tags_found && tags_seg_size > 0 && tags_seg_offset + tags_seg_size <= size) {
+  if (tags_found && tags_seg_size > 0 &&
+      tags_seg_offset + tags_seg_size <= size) {
     uint16_t found_tags = (uint16_t)(tags_seg_size / ZPLC_TAG_ENTRY_SIZE);
     if (found_tags > ZPLC_MAX_TAGS) {
       found_tags = ZPLC_MAX_TAGS;
-      zplc_hal_log("[CORE] WARNING: Too many tags, truncating to %d\n", ZPLC_MAX_TAGS);
+      zplc_hal_log("[CORE] WARNING: Too many tags, truncating to %d\n",
+                   ZPLC_MAX_TAGS);
     }
-    
+
     for (uint16_t t = 0; t < found_tags; t++) {
       const uint8_t *ptr = binary + tags_seg_offset + (t * ZPLC_TAG_ENTRY_SIZE);
       mem_tags[t].var_addr = (uint16_t)ptr[0] | ((uint16_t)ptr[1] << 8);
       mem_tags[t].var_type = ptr[2];
-      mem_tags[t].tag_id   = ptr[3];
-      mem_tags[t].value    = (uint32_t)ptr[4] | ((uint32_t)ptr[5] << 8) | ((uint32_t)ptr[6] << 16) | ((uint32_t)ptr[7] << 24);
+      mem_tags[t].tag_id = ptr[3];
+      mem_tags[t].value = (uint32_t)ptr[4] | ((uint32_t)ptr[5] << 8) |
+                          ((uint32_t)ptr[6] << 16) | ((uint32_t)ptr[7] << 24);
     }
     tag_count = found_tags;
     zplc_hal_log("[CORE] Loaded %u variable tags\n", tag_count);
@@ -2187,11 +2253,9 @@ uint16_t zplc_vm_get_breakpoint(const zplc_vm_t *vm, uint8_t index) {
   return vm->breakpoints[index];
 }
 
-uint16_t zplc_core_get_tag_count(void) {
-  return tag_count;
-}
+uint16_t zplc_core_get_tag_count(void) { return tag_count; }
 
-const zplc_tag_entry_t* zplc_core_get_tag(uint16_t index) {
+const zplc_tag_entry_t *zplc_core_get_tag(uint16_t index) {
   if (index >= tag_count) {
     return NULL;
   }

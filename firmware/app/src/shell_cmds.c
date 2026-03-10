@@ -88,6 +88,45 @@ static struct {
   uint8_t data[CERT_STAGING_MAX_BYTES];
 } cert_staging;
 
+#ifdef CONFIG_ZPLC_HIL_DEBUG
+#define HIL_MAX_WATCHES 8
+#define HIL_WATCH_POLL_MS 100
+
+typedef enum {
+  HIL_WATCH_BOOL = 0,
+  HIL_WATCH_I8,
+  HIL_WATCH_I16,
+  HIL_WATCH_I32,
+  HIL_WATCH_U8,
+  HIL_WATCH_U16,
+  HIL_WATCH_U32,
+  HIL_WATCH_F32,
+} hil_watch_type_t;
+
+typedef struct {
+  bool active;
+  uint16_t addr;
+  hil_watch_type_t type;
+  char type_name[6];
+  uint32_t last_raw;
+  bool has_last;
+} hil_watch_entry_t;
+
+typedef struct {
+  uint32_t raw;
+  bool bool_val;
+  int32_t i32_val;
+  uint32_t u32_val;
+  float f32_val;
+} hil_watch_value_t;
+
+static hil_watch_entry_t s_hil_watches[HIL_MAX_WATCHES];
+static const struct shell *s_hil_shell;
+
+static void hil_watch_work_handler(struct k_work *work);
+static K_WORK_DELAYABLE_DEFINE(s_hil_watch_work, hil_watch_work_handler);
+#endif
+
 /**
  * @brief Convert hex string to byte array.
  */
@@ -126,6 +165,287 @@ static const char *state_name(zplc_state_t state) {
     return "UNKNOWN";
   }
 }
+
+#ifdef CONFIG_ZPLC_HIL_DEBUG
+static const char *hil_mode_name(hil_mode_t mode) {
+  switch (mode) {
+  case HIL_MODE_SUMMARY:
+    return "summary";
+  case HIL_MODE_VERBOSE:
+    return "verbose";
+  case HIL_MODE_OFF:
+  default:
+    return "off";
+  }
+}
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+static const char *sched_state_name(zplc_sched_state_t state) {
+  switch (state) {
+  case ZPLC_SCHED_STATE_IDLE:
+    return "idle";
+  case ZPLC_SCHED_STATE_RUNNING:
+    return "running";
+  case ZPLC_SCHED_STATE_PAUSED:
+    return "paused";
+  case ZPLC_SCHED_STATE_ERROR:
+    return "error";
+  case ZPLC_SCHED_STATE_UNINIT:
+  default:
+    return "uninit";
+  }
+}
+#endif
+
+static int hil_parse_watch_type(const char *type, hil_watch_type_t *out_type,
+                                size_t *out_size) {
+  if (strcmp(type, "bool") == 0) {
+    *out_type = HIL_WATCH_BOOL;
+    *out_size = 1;
+  } else if (strcmp(type, "i8") == 0) {
+    *out_type = HIL_WATCH_I8;
+    *out_size = 1;
+  } else if (strcmp(type, "i16") == 0) {
+    *out_type = HIL_WATCH_I16;
+    *out_size = 2;
+  } else if (strcmp(type, "i32") == 0) {
+    *out_type = HIL_WATCH_I32;
+    *out_size = 4;
+  } else if (strcmp(type, "u8") == 0) {
+    *out_type = HIL_WATCH_U8;
+    *out_size = 1;
+  } else if (strcmp(type, "u16") == 0) {
+    *out_type = HIL_WATCH_U16;
+    *out_size = 2;
+  } else if (strcmp(type, "u32") == 0) {
+    *out_type = HIL_WATCH_U32;
+    *out_size = 4;
+  } else if (strcmp(type, "f32") == 0) {
+    *out_type = HIL_WATCH_F32;
+    *out_size = 4;
+  } else {
+    return -EINVAL;
+  }
+
+  return 0;
+}
+
+static int hil_resolve_mem_ptr(uint16_t addr, size_t width, uint8_t **ptr) {
+  uint16_t base;
+  uint16_t size;
+  uint8_t *region;
+
+  if (addr >= ZPLC_MEM_IPI_BASE &&
+      addr + width <= ZPLC_MEM_IPI_BASE + ZPLC_MEM_IPI_SIZE) {
+    base = ZPLC_MEM_IPI_BASE;
+    size = ZPLC_MEM_IPI_SIZE;
+  } else if (addr >= ZPLC_MEM_OPI_BASE &&
+             addr + width <= ZPLC_MEM_OPI_BASE + ZPLC_MEM_OPI_SIZE) {
+    base = ZPLC_MEM_OPI_BASE;
+    size = ZPLC_MEM_OPI_SIZE;
+  } else if (addr >= ZPLC_MEM_WORK_BASE &&
+             addr + width <= ZPLC_MEM_WORK_BASE + ZPLC_MEM_WORK_SIZE) {
+    base = ZPLC_MEM_WORK_BASE;
+    size = ZPLC_MEM_WORK_SIZE;
+  } else if (addr >= ZPLC_MEM_RETAIN_BASE &&
+             addr + width <= ZPLC_MEM_RETAIN_BASE + ZPLC_MEM_RETAIN_SIZE) {
+    base = ZPLC_MEM_RETAIN_BASE;
+    size = ZPLC_MEM_RETAIN_SIZE;
+  } else {
+    return -ERANGE;
+  }
+
+  region = zplc_mem_get_region(base);
+  if (region == NULL || (addr - base) + width > size) {
+    return -ERANGE;
+  }
+
+  *ptr = region + (addr - base);
+  return 0;
+}
+
+static int hil_read_watch_value(uint16_t addr, hil_watch_type_t type,
+                                hil_watch_value_t *value) {
+  uint8_t *ptr = NULL;
+  size_t width = 0;
+  int rc;
+
+  switch (type) {
+  case HIL_WATCH_BOOL:
+  case HIL_WATCH_I8:
+  case HIL_WATCH_U8:
+    width = 1;
+    break;
+  case HIL_WATCH_I16:
+  case HIL_WATCH_U16:
+    width = 2;
+    break;
+  case HIL_WATCH_I32:
+  case HIL_WATCH_U32:
+  case HIL_WATCH_F32:
+    width = 4;
+    break;
+  default:
+    return -EINVAL;
+  }
+
+  rc = hil_resolve_mem_ptr(addr, width, &ptr);
+  if (rc != 0) {
+    return rc;
+  }
+
+  memset(value, 0, sizeof(*value));
+
+  switch (type) {
+  case HIL_WATCH_BOOL:
+    value->raw = ptr[0] ? 1U : 0U;
+    value->bool_val = ptr[0] != 0U;
+    break;
+  case HIL_WATCH_I8:
+    value->raw = ptr[0];
+    value->i32_val = (int8_t)ptr[0];
+    break;
+  case HIL_WATCH_U8:
+    value->raw = ptr[0];
+    value->u32_val = ptr[0];
+    break;
+  case HIL_WATCH_I16:
+    memcpy(&value->raw, ptr, sizeof(uint16_t));
+    value->raw &= 0xFFFFU;
+    value->i32_val = (int16_t)value->raw;
+    break;
+  case HIL_WATCH_U16:
+    memcpy(&value->raw, ptr, sizeof(uint16_t));
+    value->raw &= 0xFFFFU;
+    value->u32_val = (uint16_t)value->raw;
+    break;
+  case HIL_WATCH_I32:
+    memcpy(&value->raw, ptr, sizeof(uint32_t));
+    value->i32_val = (int32_t)value->raw;
+    break;
+  case HIL_WATCH_U32:
+    memcpy(&value->raw, ptr, sizeof(uint32_t));
+    value->u32_val = value->raw;
+    break;
+  case HIL_WATCH_F32: {
+    union {
+      uint32_t u32;
+      float f32;
+    } conv;
+    memcpy(&conv.u32, ptr, sizeof(uint32_t));
+    value->raw = conv.u32;
+    value->f32_val = conv.f32;
+    break;
+  }
+  default:
+    return -EINVAL;
+  }
+
+  return 0;
+}
+
+static void hil_emit_watch_json(const struct shell *sh, uint16_t addr,
+                                const char *type_name,
+                                const hil_watch_value_t *value,
+                                hil_watch_type_t type) {
+  switch (type) {
+  case HIL_WATCH_BOOL:
+    shell_fprintf(sh, SHELL_NORMAL,
+                  "{\"t\":\"watch\",\"addr\":%u,\"type\":\"%s\",\"val\":%s}\n",
+                  addr, type_name, value->bool_val ? "true" : "false");
+    break;
+  case HIL_WATCH_I8:
+  case HIL_WATCH_I16:
+  case HIL_WATCH_I32:
+    shell_fprintf(sh, SHELL_NORMAL,
+                  "{\"t\":\"watch\",\"addr\":%u,\"type\":\"%s\",\"val\":%d}\n",
+                  addr, type_name, value->i32_val);
+    break;
+  case HIL_WATCH_U8:
+  case HIL_WATCH_U16:
+  case HIL_WATCH_U32:
+    shell_fprintf(sh, SHELL_NORMAL,
+                  "{\"t\":\"watch\",\"addr\":%u,\"type\":\"%s\",\"val\":%u}\n",
+                  addr, type_name, (unsigned int)value->u32_val);
+    break;
+  case HIL_WATCH_F32:
+    shell_fprintf(sh, SHELL_NORMAL,
+                  "{\"t\":\"watch\",\"addr\":%u,\"type\":\"%s\",\"val\":%.6g}\n",
+                  addr, type_name, (double)value->f32_val);
+    break;
+  }
+}
+
+static int hil_active_watch_count(void) {
+  int count = 0;
+
+  for (int i = 0; i < HIL_MAX_WATCHES; i++) {
+    if (s_hil_watches[i].active) {
+      count++;
+    }
+  }
+
+  return count;
+}
+
+static void hil_watch_poll_once(bool force_emit) {
+  if (s_hil_shell == NULL || hil_get_mode() == HIL_MODE_OFF) {
+    return;
+  }
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+  if (zplc_sched_lock(5) != 0) {
+    return;
+  }
+#endif
+
+  for (int i = 0; i < HIL_MAX_WATCHES; i++) {
+    hil_watch_value_t value;
+    hil_watch_entry_t *watch = &s_hil_watches[i];
+    int rc;
+
+    if (!watch->active) {
+      continue;
+    }
+
+    rc = hil_read_watch_value(watch->addr, watch->type, &value);
+    if (rc != 0) {
+      continue;
+    }
+
+    if (force_emit || !watch->has_last || watch->last_raw != value.raw) {
+      hil_emit_watch_json(s_hil_shell, watch->addr, watch->type_name, &value,
+                          watch->type);
+      watch->last_raw = value.raw;
+      watch->has_last = true;
+    }
+  }
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+  (void)zplc_sched_unlock();
+#endif
+}
+
+static void hil_watch_work_handler(struct k_work *work) {
+  ARG_UNUSED(work);
+
+  if (hil_active_watch_count() == 0 || hil_get_mode() == HIL_MODE_OFF) {
+    return;
+  }
+
+  hil_watch_poll_once(false);
+  (void)k_work_reschedule(&s_hil_watch_work, K_MSEC(HIL_WATCH_POLL_MS));
+}
+
+static void hil_watch_arm_poll(void) {
+  if (hil_active_watch_count() == 0 || hil_get_mode() == HIL_MODE_OFF) {
+    (void)k_work_cancel_delayable(&s_hil_watch_work);
+    return;
+  }
+
+  (void)k_work_reschedule(&s_hil_watch_work, K_MSEC(HIL_WATCH_POLL_MS));
+}
+#endif
 
 /* ============================================================================
  * Shell Command Handlers - Global
@@ -171,14 +491,12 @@ static int cmd_zplc_version(const struct shell *sh, size_t argc, char **argv) {
  * ============================================================================
  */
 
-#ifndef CONFIG_ZPLC_SCHEDULER
 static int cmd_zplc_load(const struct shell *sh, size_t argc, char **argv);
 static int cmd_zplc_data(const struct shell *sh, size_t argc, char **argv);
 static int cmd_zplc_start(const struct shell *sh, size_t argc, char **argv);
 static int cmd_zplc_stop(const struct shell *sh, size_t argc, char **argv);
 static int cmd_zplc_status(const struct shell *sh, size_t argc, char **argv);
 static int cmd_zplc_reset(const struct shell *sh, size_t argc, char **argv);
-#endif
 
 /* Debug Handlers */
 static int cmd_dbg_pause(const struct shell *sh, size_t argc, char **argv);
@@ -348,6 +666,105 @@ static int cmd_sched_data(const struct shell *sh, size_t argc, char **argv) {
                 program_received_size, program_expected_size);
   }
   return 0;
+}
+
+static int sched_clear_registered_tasks(void) {
+  int first_error = 0;
+
+  for (int i = 0; i < CONFIG_ZPLC_MAX_TASKS; i++) {
+    int rc = zplc_sched_unregister_task(i);
+    if (rc < 0 && rc != -2 && first_error == 0) {
+      first_error = rc;
+    }
+  }
+
+  return first_error;
+}
+
+static int sched_reset_runtime(bool restart) {
+  int rc;
+
+  rc = zplc_sched_stop();
+  if (rc < 0) {
+    return rc;
+  }
+
+  rc = sched_clear_registered_tasks();
+  if (rc < 0) {
+    return rc;
+  }
+
+  if (program_received_size == 0U) {
+    return 0;
+  }
+
+  rc = zplc_sched_load(program_buffer, program_received_size);
+  if (rc < 0) {
+    return rc;
+  }
+
+  if (restart) {
+    rc = zplc_sched_start();
+    if (rc < 0) {
+      return rc;
+    }
+  }
+
+  return 0;
+}
+
+static int cmd_zplc_load(const struct shell *sh, size_t argc, char **argv) {
+  return cmd_sched_load(sh, argc, argv);
+}
+
+static int cmd_zplc_data(const struct shell *sh, size_t argc, char **argv) {
+  return cmd_sched_data(sh, argc, argv);
+}
+
+static int cmd_zplc_start(const struct shell *sh, size_t argc, char **argv) {
+  ARG_UNUSED(argc);
+  ARG_UNUSED(argv);
+
+  int rc = zplc_sched_start();
+  if (rc < 0) {
+    shell_error(sh, "ERROR: Scheduler start failed (%d)", rc);
+    return rc;
+  }
+
+  shell_print(sh, "OK: Scheduler started");
+  return 0;
+}
+
+static int cmd_zplc_stop(const struct shell *sh, size_t argc, char **argv) {
+  ARG_UNUSED(argc);
+  ARG_UNUSED(argv);
+
+  int rc = zplc_sched_stop();
+  if (rc < 0) {
+    shell_error(sh, "ERROR: Scheduler stop failed (%d)", rc);
+    return rc;
+  }
+
+  shell_print(sh, "OK: Scheduler stopped");
+  return 0;
+}
+
+static int cmd_zplc_reset(const struct shell *sh, size_t argc, char **argv) {
+  ARG_UNUSED(argc);
+  ARG_UNUSED(argv);
+
+  int rc = sched_reset_runtime(false);
+  if (rc < 0) {
+    shell_error(sh, "ERROR: Scheduler reset failed (%d)", rc);
+    return rc;
+  }
+
+  shell_print(sh, "OK: Scheduler reset");
+  return 0;
+}
+
+static int cmd_zplc_status(const struct shell *sh, size_t argc, char **argv) {
+  return cmd_sched_status(sh, argc, argv);
 }
 
 static int cmd_sys_info(const struct shell *sh, size_t argc, char **argv) {
@@ -1153,32 +1570,236 @@ static int cmd_adc_read(const struct shell *sh, size_t argc, char **argv) {
 
 #ifdef CONFIG_ZPLC_HIL_DEBUG
 static int cmd_hil_mode(const struct shell *sh, size_t argc, char **argv) {
+  hil_mode_t mode;
+
   if (argc < 2) {
-    shell_error(sh, "Usage: hil mode <off|summary|verbose>");
+    hil_set_shell(sh);
+    s_hil_shell = sh;
+    hil_send_ack("mode", "", false, "usage: hil mode <off|summary|verbose>");
     return -EINVAL;
   }
-  shell_print(sh, "HIL mode set to %s", argv[1]);
+
+  if (strcmp(argv[1], "off") == 0) {
+    mode = HIL_MODE_OFF;
+  } else if (strcmp(argv[1], "summary") == 0) {
+    mode = HIL_MODE_SUMMARY;
+  } else if (strcmp(argv[1], "verbose") == 0) {
+    mode = HIL_MODE_VERBOSE;
+  } else {
+    hil_set_shell(sh);
+    s_hil_shell = sh;
+    hil_send_ack("mode", argv[1], false, "invalid mode");
+    return -EINVAL;
+  }
+
+  s_hil_shell = sh;
+  hil_set_shell(sh);
+  hil_set_mode(mode);
+  hil_send_ack("mode", hil_mode_name(mode), true, NULL);
+  hil_watch_arm_poll();
   return 0;
 }
 
 static int cmd_hil_status(const struct shell *sh, size_t argc, char **argv) {
-  ARG_UNUSED(sh);
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
+
+  s_hil_shell = sh;
+  hil_set_shell(sh);
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+  zplc_sched_stats_t stats;
+  zplc_vm_t *vm = NULL;
+  uint16_t pc = 0;
+  uint16_t sp = 0;
+  int rc = zplc_sched_get_stats(&stats);
+  if (rc != 0) {
+    hil_send_ack("status", "", false, "stats unavailable");
+    return rc;
+  }
+
+  for (int i = 0; i < CONFIG_ZPLC_MAX_TASKS; i++) {
+    vm = zplc_sched_get_vm_ptr(i);
+    if (vm != NULL) {
+      pc = zplc_vm_get_pc(vm);
+      sp = zplc_vm_get_sp(vm);
+      break;
+    }
+  }
+
+  shell_fprintf(sh, SHELL_NORMAL,
+                "{\"t\":\"status\",\"mode\":\"%s\",\"state\":\"%s\",\"pc\":%u,\"sp\":%u,\"cycle\":%u,\"uptime\":%u,\"tasks\":%u}\n",
+                hil_mode_name(hil_get_mode()), sched_state_name(zplc_sched_get_state()),
+                pc, sp, stats.total_cycles, stats.uptime_ms, stats.active_tasks);
+#else
+  zplc_vm_t *vm = zplc_core_get_default_vm();
+  uint16_t pc = vm ? zplc_vm_get_pc(vm) : 0;
+  uint16_t sp = vm ? zplc_vm_get_sp(vm) : 0;
+  shell_fprintf(sh, SHELL_NORMAL,
+                "{\"t\":\"status\",\"mode\":\"%s\",\"state\":\"%s\",\"pc\":%u,\"sp\":%u,\"cycle\":%u,\"uptime\":%u}\n",
+                hil_mode_name(hil_get_mode()), state_name(runtime_state), pc, sp,
+                cycle_count, k_uptime_get_32());
+#endif
+
   return 0;
 }
 
 static int cmd_hil_watch(const struct shell *sh, size_t argc, char **argv) {
-  ARG_UNUSED(sh);
-  ARG_UNUSED(argc);
-  ARG_UNUSED(argv);
-  return 0;
+  s_hil_shell = sh;
+  hil_set_shell(sh);
+
+  if (argc < 2) {
+    hil_send_ack("watch", "", false, "usage: hil watch <add|del|clear|list|poll>");
+    return -EINVAL;
+  }
+
+  if (strcmp(argv[1], "clear") == 0) {
+    memset(s_hil_watches, 0, sizeof(s_hil_watches));
+    hil_send_ack("watch", "clear", true, NULL);
+    hil_watch_arm_poll();
+    return 0;
+  }
+
+  if (strcmp(argv[1], "list") == 0) {
+    bool first = true;
+    shell_fprintf(sh, SHELL_NORMAL,
+                  "{\"t\":\"ack\",\"cmd\":\"watch\",\"val\":\"list\",\"ok\":true,\"items\":[");
+    for (int i = 0; i < HIL_MAX_WATCHES; i++) {
+      if (!s_hil_watches[i].active) {
+        continue;
+      }
+      shell_fprintf(sh, SHELL_NORMAL, "%s{\"addr\":%u,\"type\":\"%s\"}",
+                    first ? "" : ",", s_hil_watches[i].addr,
+                    s_hil_watches[i].type_name);
+      first = false;
+    }
+    shell_fprintf(sh, SHELL_NORMAL, "]}\n");
+    return 0;
+  }
+
+  if (strcmp(argv[1], "poll") == 0) {
+    hil_send_ack("watch", "poll", true, NULL);
+    hil_watch_poll_once(true);
+    return 0;
+  }
+
+  if (strcmp(argv[1], "add") == 0) {
+    unsigned long parsed_addr;
+    char *endptr = NULL;
+    hil_watch_type_t type;
+    size_t width = 0;
+    int slot = -1;
+    uint8_t *mem_ptr = NULL;
+
+    if (argc < 4) {
+      hil_send_ack("watch", "add", false,
+                   "usage: hil watch add <addr> <type>");
+      return -EINVAL;
+    }
+
+    parsed_addr = strtoul(argv[2], &endptr, 0);
+    if (endptr == NULL || *endptr != '\0' || parsed_addr > 0xFFFFU) {
+      hil_send_ack("watch", argv[2], false, "invalid address");
+      return -EINVAL;
+    }
+
+    if (hil_parse_watch_type(argv[3], &type, &width) != 0) {
+      hil_send_ack("watch", argv[3], false, "invalid type");
+      return -EINVAL;
+    }
+
+    if (hil_resolve_mem_ptr((uint16_t)parsed_addr, width, &mem_ptr) != 0) {
+      hil_send_ack("watch", argv[2], false, "address out of range");
+      return -ERANGE;
+    }
+
+    for (int i = 0; i < HIL_MAX_WATCHES; i++) {
+      if (s_hil_watches[i].active && s_hil_watches[i].addr == (uint16_t)parsed_addr) {
+        slot = i;
+        break;
+      }
+      if (!s_hil_watches[i].active && slot < 0) {
+        slot = i;
+      }
+    }
+
+    if (slot < 0) {
+      hil_send_ack("watch", argv[2], false, "watch table full");
+      return -ENOMEM;
+    }
+
+    s_hil_watches[slot].active = true;
+    s_hil_watches[slot].addr = (uint16_t)parsed_addr;
+    s_hil_watches[slot].type = type;
+    strncpy(s_hil_watches[slot].type_name, argv[3],
+            sizeof(s_hil_watches[slot].type_name) - 1U);
+    s_hil_watches[slot].type_name[sizeof(s_hil_watches[slot].type_name) - 1U] = '\0';
+    s_hil_watches[slot].has_last = false;
+
+    hil_send_ack("watch", argv[2], true, NULL);
+    hil_watch_poll_once(true);
+    hil_watch_arm_poll();
+    return 0;
+  }
+
+  if (strcmp(argv[1], "del") == 0) {
+    unsigned long parsed_addr;
+    char *endptr = NULL;
+
+    if (argc < 3) {
+      hil_send_ack("watch", "del", false,
+                   "usage: hil watch del <addr>");
+      return -EINVAL;
+    }
+
+    parsed_addr = strtoul(argv[2], &endptr, 0);
+    if (endptr == NULL || *endptr != '\0' || parsed_addr > 0xFFFFU) {
+      hil_send_ack("watch", argv[2], false, "invalid address");
+      return -EINVAL;
+    }
+
+    for (int i = 0; i < HIL_MAX_WATCHES; i++) {
+      if (s_hil_watches[i].active && s_hil_watches[i].addr == (uint16_t)parsed_addr) {
+        memset(&s_hil_watches[i], 0, sizeof(s_hil_watches[i]));
+        hil_send_ack("watch", argv[2], true, NULL);
+        hil_watch_arm_poll();
+        return 0;
+      }
+    }
+
+    hil_send_ack("watch", argv[2], false, "watch not found");
+    return -ENOENT;
+  }
+
+  hil_send_ack("watch", argv[1], false, "unknown subcommand");
+  return -EINVAL;
 }
 
 static int cmd_hil_reset(const struct shell *sh, size_t argc, char **argv) {
-  ARG_UNUSED(sh);
+  int rc;
+
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
+
+  s_hil_shell = sh;
+  hil_set_shell(sh);
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+  rc = sched_reset_runtime(true);
+#else
+  rc = cmd_zplc_reset(sh, 0, NULL);
+  if (rc == 0) {
+    rc = cmd_zplc_start(sh, 0, NULL);
+  }
+#endif
+
+  if (rc != 0) {
+    hil_send_ack("reset", "runtime", false, "reset failed");
+    return rc;
+  }
+
+  hil_send_ack("reset", "runtime", true, NULL);
+  hil_watch_poll_once(true);
   return 0;
 }
 #endif
@@ -1297,6 +1918,16 @@ static int cmd_config_get(const struct shell *sh, size_t argc, char **argv) {
   shell_print(sh, "  Modbus RTU:   %s", zplc_config_get_modbus_rtu_enabled() ? "Enabled" : "Disabled");
   shell_print(sh, "  Modbus RTU Baud: %u", (unsigned)zplc_config_get_modbus_rtu_baud());
   shell_print(sh, "  Modbus RTU Parity: %u", (unsigned)zplc_config_get_modbus_rtu_parity());
+  shell_print(sh, "  Modbus RTU Client: %s", zplc_config_get_modbus_rtu_client_enabled() ? "Enabled" : "Disabled");
+  shell_print(sh, "  Modbus RTU Client Slave: %u", (unsigned)zplc_config_get_modbus_rtu_client_slave_id());
+  shell_print(sh, "  Modbus RTU Client Poll: %u ms", (unsigned)zplc_config_get_modbus_rtu_client_poll_ms());
+  shell_print(sh, "  Modbus TCP Client: %s", zplc_config_get_modbus_tcp_client_enabled() ? "Enabled" : "Disabled");
+  zplc_config_get_modbus_tcp_client_host(buf, sizeof(buf));
+  shell_print(sh, "  Modbus TCP Client Host: %s", buf);
+  shell_print(sh, "  Modbus TCP Client Port: %u", zplc_config_get_modbus_tcp_client_port());
+  shell_print(sh, "  Modbus TCP Client Unit: %u", (unsigned)zplc_config_get_modbus_tcp_client_unit_id());
+  shell_print(sh, "  Modbus TCP Client Poll: %u ms", (unsigned)zplc_config_get_modbus_tcp_client_poll_ms());
+  shell_print(sh, "  Modbus TCP Client Timeout: %u ms", (unsigned)zplc_config_get_modbus_tcp_client_timeout_ms());
   
   zplc_config_get_mqtt_broker(buf, sizeof(buf));
   shell_print(sh, "  MQTT Broker:  %s", buf);
@@ -1349,6 +1980,31 @@ static int cmd_config_get(const struct shell *sh, size_t argc, char **argv) {
   shell_print(sh, "  MQTT LWT Payload: %s", (buf[0] != '\0') ? buf : "(none)");
   shell_print(sh, "  MQTT LWT QoS: %u", (unsigned)zplc_config_get_mqtt_lwt_qos());
   shell_print(sh, "  MQTT LWT Retain: %s", zplc_config_get_mqtt_lwt_retain() ? "Yes" : "No");
+  shell_print(sh, "  Azure Twin: %s", zplc_config_get_azure_twin_enabled() ? "Enabled" : "Disabled");
+  shell_print(sh, "  Azure Direct Methods: %s", zplc_config_get_azure_direct_methods_enabled() ? "Enabled" : "Disabled");
+  shell_print(sh, "  Azure C2D: %s", zplc_config_get_azure_c2d_enabled() ? "Enabled" : "Disabled");
+  shell_print(sh, "  Azure DPS: %s", zplc_config_get_azure_dps_enabled() ? "Enabled" : "Disabled");
+  zplc_config_get_azure_dps_id_scope(buf, sizeof(buf));
+  shell_print(sh, "  Azure DPS Scope: %s", buf);
+  zplc_config_get_azure_dps_registration_id(buf, sizeof(buf));
+  shell_print(sh, "  Azure DPS Registration: %s", buf);
+  zplc_config_get_azure_dps_endpoint(buf, sizeof(buf));
+  shell_print(sh, "  Azure DPS Endpoint: %s", buf);
+  zplc_config_get_azure_event_grid_topic(buf, sizeof(buf));
+  shell_print(sh, "  Azure Event Grid Topic: %s", buf);
+  zplc_config_get_azure_event_grid_source(buf, sizeof(buf));
+  shell_print(sh, "  Azure Event Grid Source: %s", buf);
+  zplc_config_get_azure_event_grid_event_type(buf, sizeof(buf));
+  shell_print(sh, "  Azure Event Grid Type: %s", buf);
+  shell_print(sh, "  AWS Shadow: %s", zplc_config_get_aws_shadow_enabled() ? "Enabled" : "Disabled");
+  shell_print(sh, "  AWS Jobs: %s", zplc_config_get_aws_jobs_enabled() ? "Enabled" : "Disabled");
+  shell_print(sh, "  AWS Fleet: %s", zplc_config_get_aws_fleet_enabled() ? "Enabled" : "Disabled");
+  zplc_config_get_aws_fleet_template_name(buf, sizeof(buf));
+  shell_print(sh, "  AWS Fleet Template: %s", buf);
+  zplc_config_get_aws_claim_cert_path(buf, sizeof(buf));
+  shell_print(sh, "  AWS Claim Cert: %s", buf);
+  zplc_config_get_aws_claim_key_path(buf, sizeof(buf));
+  shell_print(sh, "  AWS Claim Key: %s", buf);
   
   return 0;
 }
@@ -1356,7 +2012,7 @@ static int cmd_config_get(const struct shell *sh, size_t argc, char **argv) {
 static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
   if (argc < 3) {
     shell_error(sh, "Usage: zplc config set <key> <value>");
-    shell_print(sh, "Keys: hostname, dhcp, ip, ntp_enabled, ntp_server, modbus_id, modbus_tcp_enabled, modbus_tcp_port, modbus_rtu_enabled, modbus_rtu_baud, modbus_rtu_parity, mqtt_enabled, mqtt_broker, mqtt_client_id, mqtt_group_id, mqtt_topic_namespace, mqtt_profile, mqtt_protocol, mqtt_transport, mqtt_port, mqtt_username, mqtt_password, mqtt_keepalive, mqtt_publish_interval, mqtt_publish_qos, mqtt_subscribe_qos, mqtt_publish_retain, mqtt_clean_session, mqtt_session_expiry, mqtt_security, mqtt_websocket_path, mqtt_alpn, mqtt_lwt_enabled, mqtt_lwt_topic, mqtt_lwt_payload, mqtt_lwt_qos, mqtt_lwt_retain, mqtt_ca_cert_path, mqtt_client_cert_path, mqtt_client_key_path");
+    shell_print(sh, "Keys: hostname, dhcp, ip, ntp_enabled, ntp_server, modbus_id, modbus_tcp_enabled, modbus_tcp_port, modbus_rtu_enabled, modbus_rtu_baud, modbus_rtu_parity, modbus_rtu_client_enabled, modbus_rtu_client_slave_id, modbus_rtu_client_poll_ms, modbus_tcp_client_enabled, modbus_tcp_client_host, modbus_tcp_client_port, modbus_tcp_client_unit_id, modbus_tcp_client_poll_ms, modbus_tcp_client_timeout_ms, mqtt_enabled, mqtt_broker, mqtt_client_id, mqtt_group_id, mqtt_topic_namespace, mqtt_profile, mqtt_protocol, mqtt_transport, mqtt_port, mqtt_username, mqtt_password, mqtt_keepalive, mqtt_publish_interval, mqtt_publish_qos, mqtt_subscribe_qos, mqtt_publish_retain, mqtt_clean_session, mqtt_session_expiry, mqtt_security, mqtt_websocket_path, mqtt_alpn, mqtt_lwt_enabled, mqtt_lwt_topic, mqtt_lwt_payload, mqtt_lwt_qos, mqtt_lwt_retain, mqtt_ca_cert_path, mqtt_client_cert_path, mqtt_client_key_path, azure_sas_key, azure_sas_expiry_s, azure_twin_enabled, azure_direct_methods_enabled, azure_c2d_enabled, azure_dps_enabled, azure_dps_id_scope, azure_dps_registration_id, azure_dps_endpoint, azure_event_grid_topic, azure_event_grid_source, azure_event_grid_event_type, aws_shadow_enabled, aws_jobs_enabled, aws_fleet_enabled, aws_fleet_template_name, aws_claim_cert_path, aws_claim_key_path");
     return -EINVAL;
   }
 
@@ -1385,6 +2041,24 @@ static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
     zplc_config_set_modbus_rtu_baud((uint32_t)strtoul(val, NULL, 10));
   } else if (strcmp(key, "modbus_rtu_parity") == 0) {
     zplc_config_set_modbus_rtu_parity((zplc_modbus_parity_t)atoi(val));
+  } else if (strcmp(key, "modbus_rtu_client_enabled") == 0) {
+    zplc_config_set_modbus_rtu_client_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
+  } else if (strcmp(key, "modbus_rtu_client_slave_id") == 0) {
+    zplc_config_set_modbus_rtu_client_slave_id((uint8_t)atoi(val));
+  } else if (strcmp(key, "modbus_rtu_client_poll_ms") == 0) {
+    zplc_config_set_modbus_rtu_client_poll_ms((uint32_t)strtoul(val, NULL, 10));
+  } else if (strcmp(key, "modbus_tcp_client_enabled") == 0) {
+    zplc_config_set_modbus_tcp_client_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
+  } else if (strcmp(key, "modbus_tcp_client_host") == 0) {
+    zplc_config_set_modbus_tcp_client_host(val);
+  } else if (strcmp(key, "modbus_tcp_client_port") == 0) {
+    zplc_config_set_modbus_tcp_client_port((uint16_t)atoi(val));
+  } else if (strcmp(key, "modbus_tcp_client_unit_id") == 0) {
+    zplc_config_set_modbus_tcp_client_unit_id((uint8_t)atoi(val));
+  } else if (strcmp(key, "modbus_tcp_client_poll_ms") == 0) {
+    zplc_config_set_modbus_tcp_client_poll_ms((uint32_t)strtoul(val, NULL, 10));
+  } else if (strcmp(key, "modbus_tcp_client_timeout_ms") == 0) {
+    zplc_config_set_modbus_tcp_client_timeout_ms((uint32_t)strtoul(val, NULL, 10));
   } else if (strcmp(key, "mqtt_broker") == 0) {
     zplc_config_set_mqtt_broker(val);
   } else if (strcmp(key, "mqtt_client_id") == 0) {
@@ -1443,6 +2117,42 @@ static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
     zplc_config_set_mqtt_client_cert_path(val);
   } else if (strcmp(key, "mqtt_client_key_path") == 0) {
     zplc_config_set_mqtt_client_key_path(val);
+  } else if (strcmp(key, "azure_sas_key") == 0) {
+    zplc_config_set_azure_sas_key(val);
+  } else if (strcmp(key, "azure_sas_expiry_s") == 0) {
+    zplc_config_set_azure_sas_expiry_s((uint32_t)strtoul(val, NULL, 10));
+  } else if (strcmp(key, "azure_twin_enabled") == 0) {
+    zplc_config_set_azure_twin_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
+  } else if (strcmp(key, "azure_direct_methods_enabled") == 0) {
+    zplc_config_set_azure_direct_methods_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
+  } else if (strcmp(key, "azure_c2d_enabled") == 0) {
+    zplc_config_set_azure_c2d_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
+  } else if (strcmp(key, "azure_dps_enabled") == 0) {
+    zplc_config_set_azure_dps_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
+  } else if (strcmp(key, "azure_dps_id_scope") == 0) {
+    zplc_config_set_azure_dps_id_scope(val);
+  } else if (strcmp(key, "azure_dps_registration_id") == 0) {
+    zplc_config_set_azure_dps_registration_id(val);
+  } else if (strcmp(key, "azure_dps_endpoint") == 0) {
+    zplc_config_set_azure_dps_endpoint(val);
+  } else if (strcmp(key, "azure_event_grid_topic") == 0) {
+    zplc_config_set_azure_event_grid_topic(val);
+  } else if (strcmp(key, "azure_event_grid_source") == 0) {
+    zplc_config_set_azure_event_grid_source(val);
+  } else if (strcmp(key, "azure_event_grid_event_type") == 0) {
+    zplc_config_set_azure_event_grid_event_type(val);
+  } else if (strcmp(key, "aws_shadow_enabled") == 0) {
+    zplc_config_set_aws_shadow_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
+  } else if (strcmp(key, "aws_jobs_enabled") == 0) {
+    zplc_config_set_aws_jobs_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
+  } else if (strcmp(key, "aws_fleet_enabled") == 0) {
+    zplc_config_set_aws_fleet_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
+  } else if (strcmp(key, "aws_fleet_template_name") == 0) {
+    zplc_config_set_aws_fleet_template_name(val);
+  } else if (strcmp(key, "aws_claim_cert_path") == 0) {
+    zplc_config_set_aws_claim_cert_path(val);
+  } else if (strcmp(key, "aws_claim_key_path") == 0) {
+    zplc_config_set_aws_claim_key_path(val);
   } else {
     shell_error(sh, "Unknown config key: %s", key);
     return -EINVAL;
@@ -1952,7 +2662,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_hil,
     SHELL_CMD_ARG(mode, NULL, "Set debug mode", cmd_hil_mode, 2, 0),
     SHELL_CMD(status, NULL, "Show status", cmd_hil_status),
-    SHELL_CMD_ARG(watch, NULL, "Manage watches", cmd_hil_watch, 2, 1),
+    SHELL_CMD_ARG(watch, NULL, "Manage watches", cmd_hil_watch, 2, 2),
     SHELL_CMD(reset, NULL, "Reset VM", cmd_hil_reset),
     SHELL_SUBCMD_SET_END);
 #endif
@@ -2059,14 +2769,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_zplc,
-#ifndef CONFIG_ZPLC_SCHEDULER
     SHELL_CMD_ARG(load, NULL, "Prepare load", cmd_zplc_load, 2, 0),
     SHELL_CMD_ARG(data, NULL, "Receive data", cmd_zplc_data, 2, 0),
     SHELL_CMD(start, NULL, "Start execution", cmd_zplc_start),
     SHELL_CMD(stop, NULL, "Stop execution", cmd_zplc_stop),
     SHELL_CMD_ARG(status, NULL, "Runtime status", cmd_zplc_status, 1, 1),
     SHELL_CMD(reset, NULL, "Reset VM", cmd_zplc_reset),
-#endif
     SHELL_CMD(version, NULL, "Version info", cmd_zplc_version),
     SHELL_CMD(dbg, &sub_dbg, "Debug commands", NULL),
     SHELL_CMD(config, &sub_config, "Configuration commands", NULL),

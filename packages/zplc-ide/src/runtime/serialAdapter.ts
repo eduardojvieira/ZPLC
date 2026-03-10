@@ -598,12 +598,24 @@ export class SerialAdapter implements IDebugAdapter {
 
     if (communication?.modbus) {
       const modbus = communication.modbus;
+      const client = modbus.client;
       await this.sendCommand(`zplc config set modbus_id ${modbus.unitId}`);
       await this.sendCommand(`zplc config set modbus_tcp_enabled ${modbus.enabled && modbus.tcpEnabled ? '1' : '0'}`);
       await this.sendCommand(`zplc config set modbus_tcp_port ${modbus.tcpPort}`);
       await this.sendCommand(`zplc config set modbus_rtu_enabled ${modbus.enabled && modbus.rtuEnabled ? '1' : '0'}`);
       await this.sendCommand(`zplc config set modbus_rtu_baud ${modbus.rtuBaud}`);
       await this.sendCommand(`zplc config set modbus_rtu_parity ${this.modbusParityToRuntimeLevel(modbus.rtuParity)}`);
+      if (client) {
+        await this.sendCommand(`zplc config set modbus_rtu_client_enabled ${client.rtuClientEnabled ? '1' : '0'}`);
+        await this.sendCommand(`zplc config set modbus_rtu_client_slave_id ${client.rtuClientSlaveId}`);
+        await this.sendCommand(`zplc config set modbus_rtu_client_poll_ms ${client.rtuClientPollMs}`);
+        await this.sendCommand(`zplc config set modbus_tcp_client_enabled ${client.tcpClientEnabled ? '1' : '0'}`);
+        await this.sendCommand(`zplc config set modbus_tcp_client_host ${this.quoteShellArg(client.tcpClientHost)}`);
+        await this.sendCommand(`zplc config set modbus_tcp_client_port ${client.tcpClientPort}`);
+        await this.sendCommand(`zplc config set modbus_tcp_client_unit_id ${client.tcpClientUnitId}`);
+        await this.sendCommand(`zplc config set modbus_tcp_client_poll_ms ${client.tcpClientPollMs}`);
+        await this.sendCommand(`zplc config set modbus_tcp_client_timeout_ms ${client.tcpClientTimeoutMs}`);
+      }
     }
 
     if (communication?.mqtt) {
@@ -636,7 +648,26 @@ export class SerialAdapter implements IDebugAdapter {
       await this.sendCommand(`zplc config set mqtt_ca_cert_path ${this.quoteShellArg(mqtt.caCertPath ?? '')}`);
       await this.sendCommand(`zplc config set mqtt_client_cert_path ${this.quoteShellArg(mqtt.clientCertPath ?? '')}`);
       await this.sendCommand(`zplc config set mqtt_client_key_path ${this.quoteShellArg(mqtt.clientKeyPath ?? '')}`);
+      await this.sendCommand(`zplc config set azure_sas_key ${this.quoteShellArg(mqtt.azureSasKey ?? '')}`);
+      await this.sendCommand(`zplc config set azure_sas_expiry_s ${mqtt.azureSasExpirySec ?? 3600}`);
+      await this.sendCommand(`zplc config set azure_twin_enabled ${mqtt.azureTwinEnabled ? '1' : '0'}`);
+      await this.sendCommand(`zplc config set azure_direct_methods_enabled ${mqtt.azureDirectMethodsEnabled ? '1' : '0'}`);
+      await this.sendCommand(`zplc config set azure_c2d_enabled ${mqtt.azureC2dEnabled ? '1' : '0'}`);
+      await this.sendCommand(`zplc config set azure_dps_enabled ${mqtt.azureDpsEnabled ? '1' : '0'}`);
+      await this.sendCommand(`zplc config set azure_dps_id_scope ${this.quoteShellArg(mqtt.azureDpsIdScope ?? '')}`);
+      await this.sendCommand(`zplc config set azure_dps_registration_id ${this.quoteShellArg(mqtt.azureDpsRegistrationId ?? '')}`);
+      await this.sendCommand(`zplc config set azure_dps_endpoint ${this.quoteShellArg(mqtt.azureDpsEndpoint ?? '')}`);
+      await this.sendCommand(`zplc config set azure_event_grid_topic ${this.quoteShellArg(mqtt.azureEventGridTopic ?? '')}`);
+      await this.sendCommand(`zplc config set azure_event_grid_source ${this.quoteShellArg(mqtt.azureEventGridSource ?? '')}`);
+      await this.sendCommand(`zplc config set azure_event_grid_event_type ${this.quoteShellArg(mqtt.azureEventGridEventType ?? '')}`);
+      await this.sendCommand(`zplc config set aws_shadow_enabled ${mqtt.awsShadowEnabled ? '1' : '0'}`);
+      await this.sendCommand(`zplc config set aws_jobs_enabled ${mqtt.awsJobsEnabled ? '1' : '0'}`);
+      await this.sendCommand(`zplc config set aws_fleet_enabled ${mqtt.awsFleetEnabled ? '1' : '0'}`);
+      await this.sendCommand(`zplc config set aws_fleet_template_name ${this.quoteShellArg(mqtt.awsFleetTemplateName ?? '')}`);
+      await this.sendCommand(`zplc config set aws_claim_cert_path ${this.quoteShellArg(mqtt.awsClaimCertPath ?? '')}`);
+      await this.sendCommand(`zplc config set aws_claim_key_path ${this.quoteShellArg(mqtt.awsClaimKeyPath ?? '')}`);
     }
+
 
     await this.sendCommand('zplc config save');
   }

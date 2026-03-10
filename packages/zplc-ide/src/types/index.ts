@@ -312,6 +312,8 @@ export interface IOConfig {
 
 export type CommunicationTagMode = 'publish' | 'subscribe' | 'modbus';
 
+export type ModbusAddressSpace = 'coil' | 'discrete-input' | 'input-register' | 'holding-register';
+
 export type CommunicationTagType = 'BOOL' | 'INT' | 'UINT' | 'REAL';
 
 export interface CommunicationTagConfig {
@@ -322,6 +324,7 @@ export interface CommunicationTagConfig {
   publish?: boolean;
   subscribe?: boolean;
   modbusAddress?: number;
+  modbusArea?: ModbusAddressSpace;
   description?: string;
 }
 
@@ -364,10 +367,34 @@ export interface MQTTCommunicationConfig {
   azureTwinEnabled?: boolean;
   /** Azure IoT Hub — enable Direct Methods (subscribe to $iothub/methods/POST/# and respond). Default: false. */
   azureDirectMethodsEnabled?: boolean;
+  azureC2dEnabled?: boolean;
+  azureDpsEnabled?: boolean;
+  azureDpsIdScope?: string;
+  azureDpsRegistrationId?: string;
+  azureDpsEndpoint?: string;
+  azureEventGridTopic?: string;
+  azureEventGridSource?: string;
+  azureEventGridEventType?: string;
   /** AWS IoT Core — enable Device Shadow synchronisation (delta subscription + reported publish). Default: false. */
   awsShadowEnabled?: boolean;
   /** AWS IoT Core — enable Jobs (subscribe to $aws/things/{clientId}/jobs/notify). Default: false. */
   awsJobsEnabled?: boolean;
+  awsFleetEnabled?: boolean;
+  awsFleetTemplateName?: string;
+  awsClaimCertPath?: string;
+  awsClaimKeyPath?: string;
+}
+
+export interface ModbusClientConfig {
+  rtuClientEnabled: boolean;
+  rtuClientSlaveId: number;
+  rtuClientPollMs: number;
+  tcpClientEnabled: boolean;
+  tcpClientHost: string;
+  tcpClientPort: number;
+  tcpClientUnitId: number;
+  tcpClientPollMs: number;
+  tcpClientTimeoutMs: number;
 }
 
 export interface ModbusCommunicationConfig {
@@ -379,6 +406,7 @@ export interface ModbusCommunicationConfig {
   rtuBaud: number;
   rtuParity: 'none' | 'even' | 'odd';
   pollIntervalMs: number;
+  client?: ModbusClientConfig;
 }
 
 export interface CommunicationConfig {
@@ -457,8 +485,12 @@ export const DEFAULT_ZPLC_CONFIG: ZPLCProjectConfig = {
       lwtRetain: false,
       azureTwinEnabled: false,
       azureDirectMethodsEnabled: false,
+      azureC2dEnabled: false,
+      azureDpsEnabled: false,
+      azureDpsEndpoint: 'global.azure-devices-provisioning.net',
       awsShadowEnabled: false,
       awsJobsEnabled: false,
+      awsFleetEnabled: false,
     },
     modbus: {
       enabled: true,
@@ -469,6 +501,17 @@ export const DEFAULT_ZPLC_CONFIG: ZPLCProjectConfig = {
       rtuBaud: 19200,
       rtuParity: 'none',
       pollIntervalMs: 100,
+      client: {
+        rtuClientEnabled: false,
+        rtuClientSlaveId: 1,
+        rtuClientPollMs: 100,
+        tcpClientEnabled: false,
+        tcpClientHost: '192.168.1.100',
+        tcpClientPort: 502,
+        tcpClientUnitId: 1,
+        tcpClientPollMs: 100,
+        tcpClientTimeoutMs: 500,
+      },
     },
     bindings: [],
     tags: [],

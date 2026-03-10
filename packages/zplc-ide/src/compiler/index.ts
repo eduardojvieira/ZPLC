@@ -267,12 +267,53 @@ function getTagAnnotations(tag: CommunicationTagConfig): string[] {
     return annotations;
 }
 
-export function applyCommunicationTags(stSource: string, tags: CommunicationTagConfig[]): string {
-    if (!tags.length) {
+const MODBUS_HELPER_REGEX = /^\s*MODBUS_(COIL|DISCRETE_INPUT|INPUT_REGISTER|HOLDING_REGISTER)\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*,\s*(\d+)\s*\)\s*;\s*$/i;
+
+function applyModbusBindingHelpers(stSource: string): string {
+    const lines = stSource.split('\n');
+    const bindings = new Map<string, number>();
+    const keptLines: string[] = [];
+
+    for (const line of lines) {
+        const match = line.match(MODBUS_HELPER_REGEX);
+        if (!match) {
+            keptLines.push(line);
+            continue;
+        }
+
+        bindings.set(match[2], parseInt(match[3], 10));
+    }
+
+    if (bindings.size === 0) {
         return stSource;
     }
 
-    const lines = stSource.split('\n');
+    for (let i = 0; i < keptLines.length; i++) {
+        for (const [symbol, address] of bindings.entries()) {
+            const symbolExpr = escapeRegExp(symbol);
+            const declRegex = new RegExp(`^(\\s*${symbolExpr}\\s*:[^;]*)(;.*)$`, 'i');
+            const match = keptLines[i].match(declRegex);
+            if (!match) {
+                continue;
+            }
+
+            const annotation = `{modbus:${address}}`;
+            if (!keptLines[i].includes(annotation)) {
+                keptLines[i] = `${match[1]} ${annotation}${match[2]}`;
+            }
+        }
+    }
+
+    return keptLines.join('\n');
+}
+
+export function applyCommunicationTags(stSource: string, tags: CommunicationTagConfig[]): string {
+    const withHelpers = applyModbusBindingHelpers(stSource);
+    if (!tags.length) {
+        return withHelpers;
+    }
+
+    const lines = withHelpers.split('\n');
     const missing: CommunicationTagConfig[] = [];
 
     for (const tag of tags) {
@@ -411,6 +452,7 @@ export function compileMultiTaskProject(
         }
 
         stSource = applyCommunicationTags(stSource, communicationTags);
+        stSource = applyModbusBindingHelpers(stSource);
 
         // Compile to assembly
         let assembly: string;

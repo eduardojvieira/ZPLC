@@ -64,4 +64,19 @@ END_PROGRAM`;
 
     expect(transformed).toContain('Pressure : REAL {publish} {subscribe} {modbus:40010};');
   });
+
+  it('supports Modbus helper directives in ST source', () => {
+    const source = `PROGRAM Main
+VAR
+    PumpRun : BOOL;
+END_VAR
+
+MODBUS_COIL(PumpRun, 1);
+
+END_PROGRAM`;
+
+    const transformed = applyCommunicationTags(source, []);
+
+    expect(transformed).toContain('PumpRun : BOOL {modbus:1};');
+  });
 });

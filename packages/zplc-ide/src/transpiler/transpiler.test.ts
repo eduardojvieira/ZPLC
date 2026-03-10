@@ -184,6 +184,37 @@ describe('FBD to ST Transpiler', () => {
       expect(result.source).toContain('RisingEdge : R_TRIG;');
       expect(result.source).toContain('FallingEdge : F_TRIG;');
     });
+
+    it('should generate Modbus server helper bindings for FBD blocks', () => {
+      const model = {
+        name: 'ModbusServerBlocks',
+        variables: {
+          local: [
+            { name: 'PumpRun', type: 'BOOL' },
+          ],
+          outputs: [],
+        },
+        blocks: [
+          {
+            id: 'mb1',
+            type: 'MB_COIL',
+            variableName: 'PumpRun',
+            position: { x: 100, y: 100 },
+            inputs: [
+              { name: 'EN', type: 'BOOL' },
+              { name: 'IN', type: 'BOOL' },
+              { name: 'ADDR', type: 'UINT' },
+            ],
+            outputs: [{ name: 'STATUS', type: 'BOOL' }],
+          },
+        ],
+        connections: [],
+      } as any as FBDModel;
+
+      const result = transpileFBDToST(model);
+      expect(result.success).toBe(true);
+      expect(result.source).toContain('MODBUS_COIL(PumpRun,');
+    });
   });
   
   describe('Logic Gates', () => {
@@ -881,6 +912,37 @@ describe('LD to ST Transpiler', () => {
       // Should generate rung result but with TRUE (no contacts)
       expect(result.source).toContain('_rung1_result := TRUE;');
     });
+  });
+
+  it('should emit Modbus helper bindings for LD function blocks', () => {
+    const model: LDModel = {
+      name: 'LDModbus',
+      variables: {
+        local: [{ name: 'PumpRun', type: 'BOOL' }],
+        outputs: [],
+      },
+      rungs: [
+        {
+          number: 1,
+          cells: [],
+          elements: [
+            {
+              id: 'mb_ld_1',
+              type: 'function_block',
+              fbType: 'MB_COIL',
+              instance: 'MB1',
+              parameters: { IN: 'PumpRun', ADDR: '1' },
+              outputs: { STATUS: 'PumpRun' },
+            } as any,
+          ],
+          connections: [],
+        } as any,
+      ],
+    } as LDModel;
+
+    const result = transpileLDToST(model);
+    expect(result.success).toBe(true);
+    expect(result.source).toContain('MODBUS_COIL(PumpRun, 1);');
   });
 });
 

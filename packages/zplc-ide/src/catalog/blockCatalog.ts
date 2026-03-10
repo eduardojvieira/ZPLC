@@ -10,6 +10,10 @@ const CUSTOM_COMMUNICATION_BLOCKS = [
   'COMM_PUBLISH',
   'COMM_SUBSCRIBE',
   'COMM_MODBUS',
+  'MB_COIL',
+  'MB_DISCRETE_INPUT',
+  'MB_INPUT_REGISTER',
+  'MB_HOLDING_REGISTER',
 ] as const;
 
 const CATEGORY_RULES: Array<{ name: string; blocks: string[] }> = [
