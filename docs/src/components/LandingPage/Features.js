@@ -123,7 +123,7 @@ function CTASection() {
                     Open Source. No License Keys. No Dongles.
                 </p>
                 <div className={styles.ctaButtons}>
-                    <Link className={`button button--primary button--lg ${styles.ctaButton}`} to="/docs/runtime/intro">
+                    <Link className={`button button--primary button--lg ${styles.ctaButton}`} to="/docs/runtime">
                         Read the Docs
                     </Link>
                     <a className={`button button--secondary button--lg ${styles.ctaButton}`} href="https://github.com/eduardojvieira/ZPLC" target="_blank" rel="noopener noreferrer">
