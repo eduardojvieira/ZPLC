@@ -38,10 +38,10 @@ To publish new documentation:
 
 ## Versioning a Release
 
-When the ZPLC project hits a major milestone (e.g., `v1.0.0`), you should take a snapshot of the documentation.
+When the ZPLC project hits a major milestone (e.g., `v1.4.8`), you should take a snapshot of the documentation.
 
 1. Create a branch for the release.
-2. Run `npm run docusaurus docs:version 1.0.0` inside the `docs/` folder.
+2. Run `npm run docusaurus docs:version 1.4.8` inside the `docs/` folder.
 3. Commit the new `versions.json` and the `versioned_docs/` folder.
 4. Merge the PR.
 
