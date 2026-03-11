@@ -1,0 +1,12 @@
+services:
+  emqx:
+    image: emqx/emqx:5.8.6
+    container_name: zplc-emqx
+    ports:
+      - "1883:1883"
+      - "8883:8883"
+      - "18083:18083"
+    environment:
+      EMQX_DASHBOARD__DEFAULT_USERNAME: admin
+      EMQX_DASHBOARD__DEFAULT_PASSWORD: public
+      EMQX_LISTENERS__SSL__DEFAULT__BIND: "0.0.0.0:8883"
