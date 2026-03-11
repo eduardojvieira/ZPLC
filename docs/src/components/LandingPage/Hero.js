@@ -32,13 +32,13 @@ export default function Hero() {
                     <div className={styles.buttons} style={{ justifyContent: 'flex-start' }}>
                         <Link
                             className={`button button--primary button--lg ${styles.heroButton} ${styles.primaryButton}`}
-                            to="/docs/runtime/intro">
+                            to="/docs/runtime">
                             Get Started
                             <span className={styles.buttonArrow}>→</span>
                         </Link>
                         <Link
                             className={`button button--secondary button--lg ${styles.heroButton} ${styles.secondaryButton}`}
-                            to="/docs/ide/overview">
+                            to="/docs/ide">
                             Open IDE
                         </Link>
                     </div>

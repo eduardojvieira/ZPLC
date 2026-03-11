@@ -22,6 +22,19 @@ ZPLC is a portable, deterministic PLC runtime environment powered by [Zephyr RTO
 - **Advanced Debugging**: Breakpoints, step execution, variable watch, and real-time memory inspection.
 - **Modern Tooling**: TypeScript compiler, WebAssembly simulation, and comprehensive test suite.
 
+## Documentation
+
+The full documentation for ZPLC, including the runtime architecture, hardware integration guides, and language references, is hosted on our **[Docusaurus Site](https://eduardojvieira.github.io/ZPLC/)**.
+
+- [Getting Started & Platform Overview](https://eduardojvieira.github.io/ZPLC/docs/platform-overview)
+- [System Architecture](https://eduardojvieira.github.io/ZPLC/docs/architecture)
+- [Runtime & Hardware Abstraction (HAL)](https://eduardojvieira.github.io/ZPLC/docs/runtime)
+- [Languages & Structured Text Reference](https://eduardojvieira.github.io/ZPLC/docs/languages)
+- [IDE & Tooling](https://eduardojvieira.github.io/ZPLC/docs/ide)
+- [Integration & Deployment](https://eduardojvieira.github.io/ZPLC/docs/integration)
+
+*Note for AI Assistants & Contributors: Please refer to [AGENTS.md](AGENTS.md) for contribution guidelines, project architecture rules, and testing requirements before modifying the codebase.*
+
 ## Current Status: v1.4.x (Released)
 
 | Version | Status | Description |
@@ -136,32 +149,6 @@ cp build/zephyr/zephyr.uf2 /Volumes/RPI-RP2/
 
 ---
 
-## Standard Library
-
-ZPLC includes a comprehensive IEC 61131-3 standard library:
-
-### Functions (45+)
-
-| Category | Functions |
-|----------|-----------|
-| **Math** | ABS, SQRT, LN, LOG, EXP, SIN, COS, TAN, ASIN, ACOS, ATAN, EXPT |
-| **Arithmetic** | ADD, SUB, MUL, DIV, MOD, MIN, MAX, LIMIT, SEL, MUX |
-| **Bitwise** | AND, OR, XOR, NOT, SHL, SHR, ROL, ROR |
-| **Comparison** | EQ, NE, LT, LE, GT, GE |
-| **Type Conversion** | INT_TO_REAL, REAL_TO_INT, BOOL_TO_INT, etc. |
-| **String** | LEN, CONCAT, LEFT, RIGHT, MID, FIND, INSERT, DELETE, REPLACE |
-
-### Function Blocks (22)
-
-| Category | Blocks |
-|----------|--------|
-| **Timers** | TON, TOF, TP, TONR |
-| **Counters** | CTU, CTD, CTUD |
-| **Edge Detection** | R_TRIG, F_TRIG |
-| **Bistables** | SR, RS |
-
----
-
 ## Supported Platforms
 
 ### Embedded (Zephyr RTOS)
@@ -205,19 +192,8 @@ ZPLC/
 │   ├── zplc-ide/                  # Desktop & Web IDE (React + Electron)
 │   └── ...
 ├── docs/                          # Documentation (Docusaurus)
-├── AGENTS.md                      # AI agent & contributor guide
-└── TECHNICAL_SPEC.md              # Full technical specification
+└── AGENTS.md                      # AI agent & contributor guide
 ```
-
----
-
-## Documentation
-
-| Document | Description |
-|----------|-------------|
-| [TECHNICAL_SPEC.md](TECHNICAL_SPEC.md) | Complete architecture, binary format, and roadmap |
-| [AGENTS.md](AGENTS.md) | Context for AI agents and contributors |
-| [docs/](docs/) | Full documentation site (Docusaurus) |
 
 ---
 
@@ -255,29 +231,6 @@ CONFIG_ZPLC_WORK_MEMORY_SIZE=8192
 CONFIG_ZPLC_SCHEDULER=y
 CONFIG_ZPLC_MAX_TASKS=4
 ```
-
----
-
-## Key Features
-
-### Visual IDE
-- **Ladder Diagram (LD)**: Interactive editor with nested branches and real-time animation
-- **Function Block Diagram (FBD)**: Modular logic design with standard IEC blocks
-- **Sequential Function Chart (SFC)**: Visual state machine design
-- **Structured Text (ST)**: Full compiler with syntax highlighting and error reporting
-
-### Simulation & Debugging
-- **WebAssembly Simulation**: Run PLC logic in browser, no hardware required
-- **Hardware Debugging**: Serial connection for real-time variable inspection
-- **Breakpoints**: Pause execution at specific lines
-- **Step Execution**: Execute one cycle at a time
-- **Watch Window**: Monitor variables in real-time
-
-### Hardware Integration
-- **Serial Uploader**: One-click upload to Zephyr boards
-- **NVS Persistence**: Programs survive power cycles
-- **Multitask Scheduling**: Priority-based concurrent task execution
-- **Deterministic Execution**: Fixed cycle times for critical control
 
 ---
 

@@ -1,8 +1,8 @@
-# Connectivity v1.5.2 — Implementation Spec
+# Connectivity v1_5_2 — Implementation Spec
 
-**Phase:** v1.5.2  
+**Phase:** v1_5_2  
 **Status:** 🟡 In Progress  
-**Scope:** All remaining in-scope protocol gaps from Phase 1.5 through 1.5.2, focused on Modbus client work and MQTT/cloud completion.
+**Scope:** All remaining in-scope protocol gaps from Phase 1_5 through 1_5_2, focused on Modbus client work and MQTT/cloud completion.
 
 This document is the authoritative gap analysis and implementation contract for every connectivity feature that is **specified but not yet implemented** in the ZPLC runtime and IDE. It replaces `connectivity.md` as the canonical reference for this phase.
 
@@ -20,7 +20,7 @@ This document is the authoritative gap analysis and implementation contract for 
 | G6 | AWS Fleet Provisioning | Firmware + IDE | 🟡 Medium | L | AWS IoT Core ✅ | 🟡 Partial - mutual-TLS MQTT exchange skeleton exists, but needs compile validation and broker validation |
 | G7 | Azure Event Grid (full impl) | Firmware + IDE | 🟡 Medium | M | Azure IoT Hub ✅ | ✅ Implemented in runtime/config/UI, pending release validation |
 
-**Effort key:** S = Small (<1 day), M = Medium (1–3 days), L = Large (3–7 days), XL = Extra Large (weeks)
+**Effort key:** S = Small (less than 1 day), M = Medium (1–3 days), L = Large (3–7 days), XL = Extra Large (weeks)
 
 ### Release Reality Check (March 2026)
 
@@ -39,7 +39,7 @@ This document is the authoritative gap analysis and implementation contract for 
 
 Note: the server/slave role already exists in runtime. The remaining work in this phase is client/master completion, server hardening, and language-level helpers/visual blocks for server bindings.
 
-### Spec (from `TECHNICAL_SPEC.md` Phase 1.5)
+### Spec (from `TECHNICAL_SPEC.md` Phase 1_5)
 
 > **Modbus RTU (Server + Client)**: Uses Zephyr's native `CONFIG_MODBUS` subsystem. RS-485 half-duplex with automatic direction control. FC01–FC06, FC15–FC16.
 
@@ -88,7 +88,7 @@ void zplc_config_set_modbus_rtu_client_poll_ms(uint32_t ms);
  *
  * @param slave_id  Target slave address (1–247).
  * @param start_reg First register address (0-based).
- * @param count     Number of 16-bit registers to read (1–125).
+ * @param count     Number of 16-bit registers to read (1–1_5).
  * @param out       Output buffer — must hold count × 2 bytes.
  * @return 0 on success, negative Zephyr error code on failure.
  */
@@ -146,7 +146,7 @@ config ZPLC_MODBUS_RTU_CLIENT
 
 Same rationale as G1, over TCP/IP. Common scenario: ZPLC polls a remote Modbus TCP gateway, energy meter, or another PLC on the plant network.
 
-### Spec (from `TECHNICAL_SPEC.md` Phase 1.5)
+### Spec (from `TECHNICAL_SPEC.md` Phase 1_5)
 
 > **Modbus TCP (Server + Client)**: TCP listener on configurable port. Multiple simultaneous client connections. **Gateway mode: Modbus TCP ↔ RTU bridging**.
 
@@ -185,7 +185,7 @@ void zplc_config_set_modbus_tcp_client_timeout_ms(uint32_t ms);
  * @param port      Target port (default 502).
  * @param unit_id   Modbus Unit ID (typically 1 for TCP-native devices, 0xFF for gateways).
  * @param start_reg First register address (0-based).
- * @param count     Number of 16-bit registers (1–125).
+ * @param count     Number of 16-bit registers (1–1_5).
  * @param out       Output buffer — must hold count × 2 bytes.
  * @return 0 on success, negative error code on failure.
  */
@@ -236,7 +236,7 @@ config ZPLC_MODBUS_TCP_CLIENT
 
 `zplc_mqtt.c` handles `ZPLC_MQTT_PROFILE_AZURE_IOT_HUB` and already subscribes to Device Twins and Direct Methods on CONNACK. **Cloud-to-Device messaging** (the third Azure IoT Hub primitive) is completely missing — there is no subscription to `devices/{deviceId}/messages/devicebound/#`.
 
-### Spec (from `TECHNICAL_SPEC.md` Phase 1.5.1)
+### Spec (from `TECHNICAL_SPEC.md` Phase 1_5_1)
 
 > **Azure IoT Hub**: Cloud-to-Device (C2D) messaging.
 
@@ -292,7 +292,7 @@ void zplc_config_set_azure_c2d_enabled(bool enabled);
 
 The spec requires testing: *"Simulate Primary Application REBIRTH request, verify REBIRTH response"* (Phase 5.1 verification). Currently, `zplc_mqtt.c` publishes `NBIRTH` on connect but **never subscribes to `NCMD` or `DCMD` topics**, so a SCADA system (Ignition, HiveMQ) cannot trigger a Rebirth.
 
-### Spec (from `TECHNICAL_SPEC.md` Phase 1.5.1)
+### Spec (from `TECHNICAL_SPEC.md` Phase 1_5_1)
 
 > **MQTT Sparkplug B**: Birth/Death certificates for device lifecycle. Compatible with Ignition, HiveMQ, Cirrus Link.
 
@@ -340,7 +340,7 @@ The spec requires testing: *"Simulate Primary Application REBIRTH request, verif
 
 Azure DPS allows zero-touch device onboarding: the device doesn't need to know its final IoT Hub hostname at compile time. It registers with DPS, receives its assigned Hub hostname, and then connects. This is **mandatory** for production fleet deployments. Currently absent.
 
-### Spec (from `TECHNICAL_SPEC.md` Phase 1.5.1)
+### Spec (from `TECHNICAL_SPEC.md` Phase 1_5_1)
 
 > **Azure IoT Hub**: Device Provisioning Service (DPS) support.
 
@@ -408,7 +408,7 @@ int zplc_azure_dps_provision(void);
 
 AWS Fleet Provisioning allows devices to use a shared "claim certificate" at the factory, then exchange it for a unique device certificate during first boot. Without this, every ZPLC device needs a manually provisioned X.509 cert — impractical at scale.
 
-### Spec (from `TECHNICAL_SPEC.md` Phase 1.5)
+### Spec (from `TECHNICAL_SPEC.md` Phase 1_5)
 
 > **AWS IoT Core**: Fleet Provisioning: zero-touch device onboarding.
 

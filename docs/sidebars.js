@@ -5,66 +5,58 @@
 const sidebars = {
   // Main documentation sidebar
   docsSidebar: [
-    // Development Environment
     {
       type: 'category',
-      label: 'Development Environment',
-      className: 'sidebar-category-ide',
+      label: 'Home & Evaluation',
+      className: 'sidebar-category-home',
       collapsed: false,
       items: [
-        'ide/overview',
-        'ide/editors',
-        'ide/compiler',
-        'ide/deployment',
+        'getting-started/index',
+        'platform-overview/index',
+        'architecture/index',
       ],
     },
-
-    // IEC 61131-3 Reference
     {
       type: 'category',
-      label: 'Language Reference',
-      className: 'sidebar-category-languages',
+      label: 'Getting Started',
+      className: 'sidebar-category-getting-started',
+      collapsed: true,
       items: [
-        'languages/st',
-        'languages/il',
-        'languages/stdlib',
+        'integration/index', // Deployment and usage guidance
       ],
     },
-
-    // Runtime Core
     {
       type: 'category',
-      label: 'Runtime Core',
+      label: 'Runtime & Embedded',
       className: 'sidebar-category-runtime',
+      collapsed: true,
       items: [
-        'runtime/intro',
-        'runtime/isa',
-        'runtime/scheduler',
-        'runtime/native-c',
-        'runtime/persistence',
-        'runtime/hal',
-        'runtime/stdlib',
+        'runtime/index',
+        'runtime/hal-contract',
+        'runtime/memory-model',
       ],
     },
-
-    // Roadmap & Connectivity
     {
       type: 'category',
-      label: 'Roadmap & Ecosystem',
-      className: 'sidebar-category-advanced',
+      label: 'Languages & IDE',
+      className: 'sidebar-category-languages',
+      collapsed: true,
       items: [
-        'runtime/roadmap',
-        'runtime/connectivity',
+        'languages/index',
+        'languages/structured-text',
+        'ide/index',
       ],
     },
-
-    // Advanced Topics
     {
       type: 'category',
-      label: 'Advanced Topics',
-      className: 'sidebar-category-advanced',
+      label: 'Operations & Reference',
+      className: 'sidebar-category-reference',
+      collapsed: true,
       items: [
-        'advanced/ai-agents',
+        'operations/index',
+        'reference/index',
+        'contributing/index',
+        'release-notes/index',
       ],
     },
   ],

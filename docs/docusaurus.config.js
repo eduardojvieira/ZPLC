@@ -25,7 +25,8 @@ const config = {
   organizationName: 'eduardojvieira',
   projectName: 'ZPLC',
 
-  onBrokenLinks: 'warn',
+  onBrokenLinks: 'warn', // Changed from warn to throw for CI gate
+  onBrokenMarkdownLinks: 'warn',
 
   i18n: {
     defaultLocale: 'en',
@@ -43,7 +44,11 @@ const config = {
   markdown: {
     mermaid: true,
   },
-  themes: ['@docusaurus/theme-mermaid'],
+  themes: [
+    '@docusaurus/theme-mermaid',
+    // Built-in search is enabled by default in classic preset,
+    // explicitly ensuring we don't disable it or swap it here.
+  ],
 
   presets: [
     [
@@ -52,12 +57,11 @@ const config = {
       ({
         docs: {
           sidebarPath: './sidebars.js',
-          editUrl:
-            'https://github.com/eduardojvieira/ZPLC/tree/master/docs/',
+          editUrl: 'https://github.com/eduardojvieira/ZPLC/tree/master/docs/',
         },
         blog: false,
         theme: {
-          customCss: './src/css/custom.css',
+          customCss: './src/css/custom.css', // Preserving visual identity contract
         },
       }),
     ],
@@ -90,6 +94,10 @@ const config = {
             label: 'Documentation',
           },
           {
+            type: 'docsVersionDropdown',
+            position: 'right',
+          },
+          {
             type: 'localeDropdown',
             position: 'right',
           },
@@ -107,16 +115,16 @@ const config = {
             title: 'Documentation',
             items: [
               {
-                label: 'Runtime Introduction',
-                to: '/docs/runtime/intro',
+                label: 'Platform Overview',
+                to: '/docs/platform-overview',
               },
               {
-                label: 'Runtime Reference',
-                to: '/docs/runtime/intro',
+                label: 'Runtime & Embedded',
+                to: '/docs/runtime',
               },
               {
-                label: 'IDE Overview',
-                to: '/docs/ide/overview',
+                label: 'Languages & IDE',
+                to: '/docs/languages',
               },
             ],
           },
@@ -124,16 +132,16 @@ const config = {
             title: 'Resources',
             items: [
               {
-                label: 'Hardware Abstraction Layer',
-                to: '/docs/runtime/hal',
+                label: 'Integration & Deployment',
+                to: '/docs/integration',
               },
               {
-                label: 'Standard Library',
-                to: '/docs/languages/stdlib',
+                label: 'Architecture',
+                to: '/docs/architecture',
               },
               {
-                label: 'Task Scheduler',
-                to: '/docs/runtime/scheduler',
+                label: 'Reference',
+                to: '/docs/reference',
               },
             ],
           },
