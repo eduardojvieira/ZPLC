@@ -1,0 +1,64 @@
+cmake:
+  application:
+    configuration-dir: '/Users/eduardo/Documents/Repos/ZPLC/firmware/app'
+    source-dir: '/Users/eduardo/Documents/Repos/ZPLC/firmware/app'
+  board:
+    name: 'esp32s3_devkitc'
+    path:
+     - '/Users/eduardo/zephyrproject/zephyr/boards/espressif/esp32s3_devkitc'
+    qualifiers: 'esp32s3/procpu'
+    revision: ''
+  devicetree:
+    bindings-dirs:
+     - '/Users/eduardo/zephyrproject/zephyr/dts/bindings'
+    files:
+     - '/Users/eduardo/zephyrproject/zephyr/boards/espressif/esp32s3_devkitc/esp32s3_devkitc_procpu.dts'
+     - '/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay'
+    include-dirs:
+     - '/Users/eduardo/zephyrproject/modules/hal/ambiq/dts'
+     - '/Users/eduardo/zephyrproject/modules/hal/atmel/include'
+     - '/Users/eduardo/zephyrproject/modules/hal/bouffalolab/include'
+     - '/Users/eduardo/zephyrproject/modules/hal/bouffalolab/include/zephyr'
+     - '/Users/eduardo/zephyrproject/modules/hal/gigadevice/include'
+     - '/Users/eduardo/zephyrproject/modules/hal/microchip/include'
+     - '/Users/eduardo/zephyrproject/modules/hal/microchip/dts'
+     - '/Users/eduardo/zephyrproject/modules/hal/nuvoton/dts'
+     - '/Users/eduardo/zephyrproject/modules/hal/nxp/dts'
+     - '/Users/eduardo/zephyrproject/modules/hal/stm32/dts'
+     - '/Users/eduardo/zephyrproject/modules/hal/ti/dts'
+     - '/Users/eduardo/Documents/Repos/ZPLC/firmware/app/include'
+     - '/Users/eduardo/zephyrproject/zephyr/include'
+     - '/Users/eduardo/zephyrproject/zephyr/include/zephyr'
+     - '/Users/eduardo/zephyrproject/zephyr/dts/common'
+     - '/Users/eduardo/zephyrproject/zephyr/dts/vendor'
+     - '/Users/eduardo/zephyrproject/zephyr/dts/rx'
+     - '/Users/eduardo/zephyrproject/zephyr/dts/x86'
+     - '/Users/eduardo/zephyrproject/zephyr/dts/xtensa'
+     - '/Users/eduardo/zephyrproject/zephyr/dts/sparc'
+     - '/Users/eduardo/zephyrproject/zephyr/dts/riscv'
+     - '/Users/eduardo/zephyrproject/zephyr/dts/posix'
+     - '/Users/eduardo/zephyrproject/zephyr/dts/arm64'
+     - '/Users/eduardo/zephyrproject/zephyr/dts/arm'
+     - '/Users/eduardo/zephyrproject/zephyr/dts/arc'
+     - '/Users/eduardo/zephyrproject/zephyr/dts'
+    user-files:
+     - '/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay'
+  kconfig:
+    files:
+     - '/Users/eduardo/zephyrproject/zephyr/boards/espressif/esp32s3_devkitc/esp32s3_devkitc_procpu_defconfig'
+     - '/Users/eduardo/Documents/Repos/ZPLC/firmware/app/prj.conf'
+     - '/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf'
+    user-files:
+     - '/Users/eduardo/Documents/Repos/ZPLC/firmware/app/prj.conf'
+     - '/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf'
+  toolchain:
+    name: 'zephyr'
+    path: '/Users/eduardo/zephyr-sdk-0.17.0'
+  zephyr:
+    version: '4.3.0'
+    zephyr-base: '/Users/eduardo/zephyrproject/zephyr'
+version: '0.1.0'
+west:
+  command: '/opt/homebrew/bin/west build -p always -b esp32s3_devkitc/esp32s3/procpu /Users/eduardo/Documents/Repos/ZPLC/firmware/app -d /Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3 -- -DZEPHYR_EXTRA_MODULES=/Users/eduardo/Documents/Repos/ZPLC/firmware'
+  topdir: '/Users/eduardo/zephyrproject'
+  version: '1.5.0'

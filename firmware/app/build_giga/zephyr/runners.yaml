@@ -1,0 +1,45 @@
+# Available runners configured by board.cmake.
+runners:
+- dfu-util
+- blackmagicprobe
+- jlink
+- openocd
+
+# Default flash runner if --runner is not given.
+flash-runner: dfu-util
+
+# Default debug runner if --runner is not given.
+debug-runner: blackmagicprobe
+
+# Common runner configuration values.
+config:
+  board_dir: /Users/eduardo/zephyrproject/zephyr/boards/arduino/giga_r1
+  # Build outputs:
+  elf_file: zephyr.elf
+  hex_file: zephyr.hex
+  bin_file: zephyr.bin
+  # Host tools:
+  gdb: /Users/eduardo/zephyr-sdk-0.17.0/arm-zephyr-eabi/bin/arm-zephyr-eabi-gdb
+  openocd: /opt/homebrew/bin/openocd
+  openocd_search:
+    - /Users/eduardo/zephyr-sdk-0.17.0/sysroots/arm64-pokysdk-linux/usr/share/openocd/scripts
+
+# Runner specific arguments
+args:
+  dfu-util:
+    - --pid=2341:0366
+    - --alt=0
+    - --dfuse
+  blackmagicprobe:
+    - --connect-rst
+  jlink:
+    - --dt-flash=y
+    - --device=STM32H747XI_M7
+    - --speed=4000
+  openocd:
+    - --cmd-load
+    - flash write_image erase
+    - --cmd-verify
+    - verify_image
+    - --config=/Users/eduardo/zephyrproject/zephyr/boards/arduino/giga_r1/support/openocd_arduino_giga_r1_m7.cfg
+    - --target-handle=_CHIPNAME.cpu0

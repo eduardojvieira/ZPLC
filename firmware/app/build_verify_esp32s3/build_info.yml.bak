@@ -1,0 +1,5 @@
+west:
+  command: /Users/eduardo/zephyrproject/.venv/bin/west build -b esp32s3_devkitc/esp32s3/procpu
+    . -d build_verify_esp32s3 --pristine
+  topdir: /Users/eduardo/zephyrproject
+  version: 1.5.0

@@ -5,6 +5,7 @@ build_pico/
 build_release/
 bin/
 dist/
+build_zephyr/
 
 # Root workspace
 node_modules/

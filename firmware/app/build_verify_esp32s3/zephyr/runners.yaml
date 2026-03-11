@@ -1,0 +1,50 @@
+# Available runners configured by board.cmake.
+runners:
+- openocd
+- esp32
+
+# Default flash runner if --runner is not given.
+flash-runner: esp32
+
+# Default debug runner if --runner is not given.
+debug-runner: openocd
+
+# Common runner configuration values.
+config:
+  board_dir: /Users/eduardo/zephyrproject/zephyr/boards/espressif/esp32s3_devkitc
+  # Build outputs:
+  elf_file: zephyr.elf
+  bin_file: zephyr.bin
+  # Host tools:
+  gdb: /Users/eduardo/zephyr-sdk-0.17.0/xtensa-espressif_esp32s3_zephyr-elf/bin/xtensa-espressif_esp32s3_zephyr-elf-gdb
+  openocd: /opt/homebrew/bin/openocd
+  openocd_search:
+    - /Users/eduardo/zephyr-sdk-0.17.0/sysroots/arm64-pokysdk-linux/usr/share/openocd/scripts
+
+# Runner specific arguments
+args:
+  openocd:
+    - --cmd-load
+    - flash write_image erase
+    - --cmd-verify
+    - verify_image
+    - --no-init
+    - --no-halt
+    - --no-targets
+    - --no-load
+    - --gdb-init
+    - set remote hardware-watchpoint-limit 2
+    - --gdb-init
+    - maintenance flush register-cache
+    - --gdb-init
+    - mon reset halt
+    - --gdb-init
+    - thb main
+  esp32:
+    - --esp-monitor-baud=
+    - --esp-idf-path=/Users/eduardo/zephyrproject/modules/hal/espressif
+    - --esp-app-address=0x0
+    - --esp-flash-size=16MB
+    - --esp-flash-freq=80m
+    - --esp-flash-mode=dio
+    - --esp-idf-path=/Users/eduardo/zephyrproject/modules/hal/espressif

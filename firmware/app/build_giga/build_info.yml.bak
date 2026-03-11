@@ -1,0 +1,6 @@
+west:
+  command: /Users/eduardo/zephyrproject/.venv/bin/west build -b arduino_giga_r1/stm32h747xx/m7
+    /Users/eduardo/Documents/Repos/ZPLC/firmware/app --build-dir /Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_giga
+    --pristine -- -DZEPHYR_EXTRA_MODULES=/Users/eduardo/Documents/Repos/ZPLC/firmware
+  topdir: /Users/eduardo/zephyrproject
+  version: 1.5.0
