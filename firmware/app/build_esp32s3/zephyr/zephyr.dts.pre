@@ -1035,7 +1035,16 @@ zephyr_udc0: &usb_otg {
 };
 # 0 "<command-line>" 2
 # 1 "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay" 1
-# 25 "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay"
+# 32 "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay"
+&psram0 {
+    size = <(((8) * 1024) * 1024)>;
+};
+
+
+&flash0 {
+    reg = <0x0 (((16) * 1024) * 1024)>;
+};
+
 / {
     chosen {
         zephyr,console = &usb_serial;
@@ -1050,10 +1059,17 @@ zephyr_udc0: &usb_otg {
             gpios = <&gpio1 6 (0 << 0)>;
             label = "ZPLC Output 0";
         };
+
+
+        led1: led_1 {
+            gpios = <&gpio0 15 (0 << 0)>;
+            label = "ZPLC Output 1";
+        };
     };
 
     aliases {
         led0 = &led0;
+        led1 = &led1;
 
     };
 };

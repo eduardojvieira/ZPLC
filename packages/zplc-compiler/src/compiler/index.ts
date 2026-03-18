@@ -118,7 +118,7 @@ import type { CodeGenOptions } from './codegen.ts';
 import { assemble, createMultiTaskZplcFile, relocateBytecode, TASK_TYPE } from '../assembler/index.ts';
 import type { AssemblyResult, TagDef, TaskDef, TaskType } from '../assembler/index.ts';
 import type { DebugMap, TypeResolver } from './debug-map.ts';
-import { buildDebugMap } from './debug-map.ts';
+import { buildDebugMap, createDebugMap } from './debug-map.ts';
 import { buildSymbolTable, MemoryLayout } from './symbol-table.ts';
 import { getFB } from './stdlib/index.ts';
 import type { DataTypeValue } from './ast.ts';
@@ -425,6 +425,8 @@ export interface MultiTaskCompilationResult {
         size: number;
         assembly: string;
     }[];
+    /** Merged debug map for all programs (always present) */
+    debugMap: DebugMap;
 }
 
 /**
@@ -501,6 +503,7 @@ export function compileMultiTaskProject(
         entryPoint: number;
         size: number;
         tags: TagDef[];
+        debugMap: DebugMap;
     }[] = [];
 
     let currentOffset = 0;
@@ -518,10 +521,12 @@ export function compileMultiTaskProject(
         // Calculate work memory base for this program
         const workMemoryBase = MemoryLayout.WORK_BASE + (programIndex * WORK_MEMORY_REGION_SIZE);
 
-        // Compile to assembly
+        // Compile to assembly — enable source annotations for debug map
         let assembly: string;
+        let programAst: ReturnType<typeof parse>;
         try {
-            assembly = compileST(source.content, { workMemoryBase });
+            programAst = parse(source.content);
+            assembly = generate(programAst, { workMemoryBase, emitSourceAnnotations: true });
         } catch (e) {
             const err = e as Error;
             throw new CompilerError(
@@ -542,6 +547,16 @@ export function compileMultiTaskProject(
             );
         }
 
+        // Build debug map for this program
+        const symbols = buildSymbolTable(programAst.programs[0], workMemoryBase);
+        const progDebugMap = buildDebugMap({
+            programName: progName,
+            symbols,
+            instructionMappings: asmResult.instructionMappings,
+            codeSize: asmResult.bytecode.length,
+            typeResolver: createTypeResolver(symbols),
+        });
+
         compiledPrograms.push({
             name: progName,
             bytecode: asmResult.bytecode,
@@ -550,6 +565,7 @@ export function compileMultiTaskProject(
             entryPoint: currentOffset + asmResult.entryPoint,
             size: asmResult.bytecode.length,
             tags: asmResult.tags ?? [],
+            debugMap: progDebugMap,
         });
 
         currentOffset += asmResult.bytecode.length;
@@ -612,6 +628,15 @@ export function compileMultiTaskProject(
     // Generate .zplc file with TASK segment
     const zplcFile = createMultiTaskZplcFile(concatenatedBytecode, taskDefs, allTags);
 
+    // Merge all per-program debug maps into one (multi-POU debug map)
+    const mergedDebugMap = createDebugMap(config.name ?? 'Project');
+    for (const prog of compiledPrograms) {
+        // Copy each program's POU entry into the merged map
+        for (const [pouName, pouInfo] of Object.entries(prog.debugMap.pou)) {
+            mergedDebugMap.pou[pouName] = pouInfo;
+        }
+    }
+
     return {
         zplcFile,
         bytecode: concatenatedBytecode,
@@ -623,6 +648,7 @@ export function compileMultiTaskProject(
             size: p.size,
             assembly: p.assembly,
         })),
+        debugMap: mergedDebugMap,
     };
 }
 
@@ -688,5 +714,6 @@ export function compileSingleFileWithTask(
         entryPoint: multiResult.tasks[0]?.entryPoint ?? 0,
         codeSize: multiResult.codeSize,
         tasks: multiResult.tasks,
+        debugMap: multiResult.debugMap,
     };
 }

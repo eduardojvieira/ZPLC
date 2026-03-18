@@ -16,10 +16,12 @@ import type {
   VMInfo,
   WatchVariable,
   DebugAdapterEvents,
+  LoadProgramOptions,
+  ReadWatchOptions,
 } from './debugAdapter';
 import {
-  getTypeSize,
   bytesToValue,
+  getTypeSize,
 } from './debugAdapter';
 
 import type { SerialConnection } from '../uploader/webserial';
@@ -28,12 +30,22 @@ import {
   requestPort,
   connect as serialConnect,
   disconnect as serialDisconnect,
+  addDataListener,
+  removeDataListener,
   uploadBytecode,
 } from '../uploader/webserial';
 import type { ZPLCProjectConfig } from '../types';
+import { sanitizeUploadTraceCommand, type UploadTraceCallback } from './uploadTrace';
+import { consumeSerialConsoleChunk, flushSerialConsoleRemainder } from './serialConsole';
+import { buildProvisioningCommands } from './provisioningCommands';
+import { parsePeekBytes, groupVariablesForBatchPeek, extractVariableBytes, parseMpeekResponse, buildMpeekArgument } from './peekParser';
+import type { MpeekRequest } from './peekParser';
 
-/** Command timeout in milliseconds */
-const COMMAND_TIMEOUT_MS = 3000;
+/** Command timeout in milliseconds.
+ * 10 s to accommodate firmware flash writes (NVS page erase can take ~1 s
+ * on ESP32-S3; the firmware fix removes per-setter flushes, but we keep this
+ * generous so older firmware images do not regress). */
+const COMMAND_TIMEOUT_MS = 10000;
 
 /** Line ending for commands */
 const LINE_ENDING = '\r\n';
@@ -156,7 +168,24 @@ export class SerialAdapter implements IDebugAdapter {
   private pollingInterval: ReturnType<typeof setInterval> | null = null;
   private lastPollCycles = 0;
   private _passthroughMode = false;
-  
+  private systemInfoCache: SystemInfo | null = null;
+  private serialConsoleRemainder = '';
+  private readonly handleLiveSerialChunk = (chunk: string): void => {
+    const result = consumeSerialConsoleChunk(this.serialConsoleRemainder, chunk);
+    this.serialConsoleRemainder = result.remainder;
+    result.lines.forEach((line) => this.events.onSerialData?.(line));
+  };
+
+  /**
+   * Command mutex — a promise chain that ensures all serial commands are
+   * executed strictly one at a time. Every sendCommand / sendCommandWithOutput
+   * / sendJsonCommand grabs the tail of this chain and appends itself. This
+   * prevents concurrent commands from clearing each other's _rxBuffer and
+   * corrupting responses, which was the root cause of watch-table timeouts
+   * when connectionManager status polling overlapped with peek commands.
+   */
+  private _commandQueue: Promise<void> = Promise.resolve();
+
   /** When true, SerialAdapter does NOT start its own polling on connect.
    *  This is used when connectionManager handles polling externally. */
   public disableAutoPolling = false;
@@ -251,6 +280,8 @@ export class SerialAdapter implements IDebugAdapter {
     // Connect to the port
     this.connection = await serialConnect(this.port);
     this._connected = true;
+    this.serialConsoleRemainder = '';
+    addDataListener(this.connection, this.handleLiveSerialChunk);
 
     // Get initial state
     try {
@@ -277,6 +308,10 @@ export class SerialAdapter implements IDebugAdapter {
 
     this.stopPolling();
     this._passthroughMode = false;
+    flushSerialConsoleRemainder(this.serialConsoleRemainder).forEach((line) => this.events.onSerialData?.(line));
+    this.serialConsoleRemainder = '';
+
+    removeDataListener(this.connection, this.handleLiveSerialChunk);
 
     await serialDisconnect(this.connection);
     this.connection = null;
@@ -286,7 +321,7 @@ export class SerialAdapter implements IDebugAdapter {
   }
 
   private startPolling(): void {
-    if (this.pollingInterval !== null || this._passthroughMode) {
+    if (this.pollingInterval !== null || this._passthroughMode || this.disableAutoPolling) {
       return;
     }
 
@@ -328,9 +363,14 @@ export class SerialAdapter implements IDebugAdapter {
   // =========================================================================
 
   /**
-   * Send a command that expects a JSON response
+   * Send a command that expects a JSON response.
+   * Serialized through the command mutex.
    */
-  private async sendJsonCommand(command: string): Promise<unknown> {
+  private sendJsonCommand(command: string): Promise<unknown> {
+    return this.withCommandMutex(() => this._sendJsonCommandRaw(command));
+  }
+
+  private async _sendJsonCommandRaw(command: string): Promise<unknown> {
     if (!this.connection || !this.connection.isConnected) {
       throw new Error('Not connected');
     }
@@ -357,7 +397,16 @@ export class SerialAdapter implements IDebugAdapter {
 
     while (Date.now() - startTime < COMMAND_TIMEOUT_MS) {
       // Check buffer for JSON response (starts with { and ends with })
-      const buffer = this.connection._rxBuffer.replace(ansiRegex, '');
+      let buffer = this.connection._rxBuffer.replace(ansiRegex, '');
+      
+      // WORKAROUND: Older firmware outputs malformed JSON for stats object:
+      // '... "uptime_ms":123,{"stats":{ ...' due to an extra JSON_OBJ_START(sh).
+      // We patch it in the raw buffer so the brace counting matches correctly.
+      if (buffer.includes(',{"stats":')) {
+        buffer = buffer.replace(/,\s*\{\s*"stats"\s*:/g, ',"stats":');
+        // also we need to add a missing closing brace at the end if it was truncated,
+        // but the brace matching counts braces. By removing the `{`, we fix the unbalance!
+      }
       
       // Look for complete JSON object
       const jsonStart = buffer.indexOf('{');
@@ -376,10 +425,13 @@ export class SerialAdapter implements IDebugAdapter {
 
         if (jsonEnd > jsonStart) {
           const jsonStr = buffer.slice(jsonStart, jsonEnd + 1);
+          
           try {
             const parsed = JSON.parse(jsonStr);
-            // Clear processed data from buffer
-            this.connection._rxBuffer = buffer.slice(jsonEnd + 1);
+            // Clear processed data from the original buffer (we matched lengths based on patched buffer)
+            // Wait, since we replaced characters in the buffer, we can't slice the original _rxBuffer easily.
+            // Let's just clear the whole buffer or find the original end.
+            this.connection._rxBuffer = ''; // Just wipe it, we got our JSON
             return parsed;
           } catch {
             // JSON not complete yet, keep waiting
@@ -394,7 +446,11 @@ export class SerialAdapter implements IDebugAdapter {
     throw new Error(`Command timeout: ${command}`);
   }
 
-  private async sendCommand(command: string): Promise<string> {
+  private sendCommand(command: string): Promise<string> {
+    return this.withCommandMutex(() => this._sendCommandRaw(command));
+  }
+
+  private async _sendCommandRaw(command: string): Promise<string> {
     if (!this.connection || !this.connection.isConnected) {
       throw new Error('Not connected');
     }
@@ -441,68 +497,39 @@ export class SerialAdapter implements IDebugAdapter {
     throw new Error(`Command timeout: ${command}`);
   }
 
+  /**
+   * Best-effort variant of sendCommand: never throws on timeout or connection
+   * errors. Returns null on failure. Use only for background/optional commands
+   * that must not block or fail an upload (e.g. wifi connect).
+   */
+  private async sendCommandBestEffort(command: string): Promise<string | null> {
+    try {
+      return await this.sendCommand(command);
+    } catch (e) {
+      console.warn(`[serialAdapter] best-effort command failed (${command}):`, e);
+      return null;
+    }
+  }
+
   private quoteShellArg(value: string): string {
     const escaped = value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
     return `"${escaped}"`;
   }
 
-  private mqttSecurityToRuntimeLevel(level: string | undefined): number {
-    if (level === 'tls-no-verify') {
-      return 1;
-    }
-    if (level === 'tls-server-verify') {
-      return 2;
-    }
-    if (level === 'tls-mutual') {
-      return 3;
-    }
-    return 0;
-  }
-
-  private mqttProfileToRuntimeLevel(profile: string | undefined): number {
-    switch (profile) {
-      case 'generic-broker':
-        return 1;
-      case 'aws-iot-core':
-        return 2;
-      case 'azure-iot-hub':
-        return 3;
-      case 'azure-event-grid-mqtt':
-        return 4;
-      case 'sparkplug-b':
-      default:
-        return 0;
-    }
-  }
-
-  private mqttProtocolToRuntimeLevel(version: string | undefined): number {
-    return version === '3.1.1' ? 0 : 1;
-  }
-
-  private mqttTransportToRuntimeLevel(transport: string | undefined): number {
-    switch (transport) {
-      case 'tls':
-        return 1;
-      case 'ws':
-        return 2;
-      case 'wss':
-        return 3;
-      case 'tcp':
-      default:
-        return 0;
-    }
-  }
-
-  private modbusParityToRuntimeLevel(parity: string | undefined): number {
-    switch (parity) {
-      case 'even':
-        return 1;
-      case 'odd':
-        return 2;
-      case 'none':
-      default:
-        return 0;
-    }
+  /**
+   * Acquire the command mutex and run `fn` exclusively.
+   * All three send variants (sendCommand, sendCommandWithOutput, sendJsonCommand)
+   * go through this so they are strictly serialized on the single serial port.
+   */
+  private withCommandMutex<T>(fn: () => Promise<T>): Promise<T> {
+    const result = this._commandQueue.then(fn, fn);
+    // Swallow errors on the queue chain so a failed command doesn't break
+    // all subsequent commands. Each caller gets their own rejection via `result`.
+    this._commandQueue = result.then(
+      () => undefined,
+      () => undefined,
+    );
+    return result;
   }
 
   private async sendDebugCommand(subcommand: string): Promise<string> {
@@ -518,6 +545,7 @@ export class SerialAdapter implements IDebugAdapter {
    */
   async getSystemInfo(): Promise<SystemInfo> {
     const result = await this.sendJsonCommand('zplc sys info') as SystemInfo;
+    this.systemInfoCache = result;
     return result;
   }
 
@@ -566,118 +594,58 @@ export class SerialAdapter implements IDebugAdapter {
   // Program Loading
   // =========================================================================
 
-  async provisionProjectConfig(projectConfig: ZPLCProjectConfig): Promise<void> {
+  async provisionProjectConfig(projectConfig: ZPLCProjectConfig, trace?: UploadTraceCallback): Promise<void> {
     if (!this._connected || !this.connection) {
       throw new Error('Not connected');
     }
 
-    const network = projectConfig.network;
-    const communication = projectConfig.communication;
+    const sendConfigCommand = async (command: string): Promise<string> => {
+      trace?.({ kind: 'command', message: sanitizeUploadTraceCommand(command) });
+      const response = await this.sendCommand(command);
+      trace?.({ kind: 'response', message: response });
+      return response;
+    };
 
-    if (network?.hostname) {
-      await this.sendCommand(`zplc config set hostname ${this.quoteShellArg(network.hostname)}`);
+    trace?.({ kind: 'stage', message: 'Applying runtime configuration to device' });
+    const commands = buildProvisioningCommands(projectConfig, {
+      quoteShellArg: (value) => this.quoteShellArg(value),
+    });
+
+    for (const command of commands) {
+      await sendConfigCommand(command);
     }
-
-    const ipv4 = network?.wifi?.ipv4 ?? network?.ethernet?.ipv4;
-    if (ipv4) {
-      await this.sendCommand(`zplc config set dhcp ${ipv4.dhcp ? '1' : '0'}`);
-      if (!ipv4.dhcp && ipv4.ip) {
-        await this.sendCommand(`zplc config set ip ${this.quoteShellArg(ipv4.ip)}`);
-      }
-    }
-
-    if (network?.wifi?.enabled && network.wifi.ssid) {
-      const ssidArg = this.quoteShellArg(network.wifi.ssid);
-      if (network.wifi.security === 'open') {
-        await this.sendCommand(`wifi connect -s ${ssidArg}`);
-      } else if (network.wifi.password) {
-        const passArg = this.quoteShellArg(network.wifi.password);
-        await this.sendCommand(`wifi connect -s ${ssidArg} -k 2 -p ${passArg}`);
-      }
-    }
-
-    if (communication?.modbus) {
-      const modbus = communication.modbus;
-      const client = modbus.client;
-      await this.sendCommand(`zplc config set modbus_id ${modbus.unitId}`);
-      await this.sendCommand(`zplc config set modbus_tcp_enabled ${modbus.enabled && modbus.tcpEnabled ? '1' : '0'}`);
-      await this.sendCommand(`zplc config set modbus_tcp_port ${modbus.tcpPort}`);
-      await this.sendCommand(`zplc config set modbus_rtu_enabled ${modbus.enabled && modbus.rtuEnabled ? '1' : '0'}`);
-      await this.sendCommand(`zplc config set modbus_rtu_baud ${modbus.rtuBaud}`);
-      await this.sendCommand(`zplc config set modbus_rtu_parity ${this.modbusParityToRuntimeLevel(modbus.rtuParity)}`);
-      if (client) {
-        await this.sendCommand(`zplc config set modbus_rtu_client_enabled ${client.rtuClientEnabled ? '1' : '0'}`);
-        await this.sendCommand(`zplc config set modbus_rtu_client_slave_id ${client.rtuClientSlaveId}`);
-        await this.sendCommand(`zplc config set modbus_rtu_client_poll_ms ${client.rtuClientPollMs}`);
-        await this.sendCommand(`zplc config set modbus_tcp_client_enabled ${client.tcpClientEnabled ? '1' : '0'}`);
-        await this.sendCommand(`zplc config set modbus_tcp_client_host ${this.quoteShellArg(client.tcpClientHost)}`);
-        await this.sendCommand(`zplc config set modbus_tcp_client_port ${client.tcpClientPort}`);
-        await this.sendCommand(`zplc config set modbus_tcp_client_unit_id ${client.tcpClientUnitId}`);
-        await this.sendCommand(`zplc config set modbus_tcp_client_poll_ms ${client.tcpClientPollMs}`);
-        await this.sendCommand(`zplc config set modbus_tcp_client_timeout_ms ${client.tcpClientTimeoutMs}`);
-      }
-    }
-
-    if (communication?.mqtt) {
-      const mqtt = communication.mqtt;
-      await this.sendCommand(`zplc config set mqtt_enabled ${mqtt.enabled ? '1' : '0'}`);
-      await this.sendCommand(`zplc config set mqtt_broker ${this.quoteShellArg(mqtt.broker)}`);
-      await this.sendCommand(`zplc config set mqtt_client_id ${this.quoteShellArg(mqtt.clientId)}`);
-      await this.sendCommand(`zplc config set mqtt_topic_namespace ${this.quoteShellArg(mqtt.topicNamespace)}`);
-      await this.sendCommand(`zplc config set mqtt_profile ${this.mqttProfileToRuntimeLevel(mqtt.profile)}`);
-      await this.sendCommand(`zplc config set mqtt_protocol ${this.mqttProtocolToRuntimeLevel(mqtt.protocolVersion)}`);
-      await this.sendCommand(`zplc config set mqtt_transport ${this.mqttTransportToRuntimeLevel(mqtt.transport)}`);
-      await this.sendCommand(`zplc config set mqtt_port ${mqtt.port}`);
-      await this.sendCommand(`zplc config set mqtt_keepalive ${mqtt.keepAliveSec}`);
-      await this.sendCommand(`zplc config set mqtt_publish_interval ${mqtt.publishIntervalMs}`);
-      await this.sendCommand(`zplc config set mqtt_publish_qos ${mqtt.publishQos}`);
-      await this.sendCommand(`zplc config set mqtt_subscribe_qos ${mqtt.subscribeQos}`);
-      await this.sendCommand(`zplc config set mqtt_publish_retain ${mqtt.publishRetain ? '1' : '0'}`);
-      await this.sendCommand(`zplc config set mqtt_clean_session ${mqtt.cleanSession ? '1' : '0'}`);
-      await this.sendCommand(`zplc config set mqtt_session_expiry ${mqtt.sessionExpirySec}`);
-      await this.sendCommand(`zplc config set mqtt_security ${this.mqttSecurityToRuntimeLevel(mqtt.securityLevel)}`);
-      await this.sendCommand(`zplc config set mqtt_websocket_path ${this.quoteShellArg(mqtt.websocketPath ?? '')}`);
-      await this.sendCommand(`zplc config set mqtt_alpn ${this.quoteShellArg(mqtt.alpnProtocols ?? '')}`);
-      await this.sendCommand(`zplc config set mqtt_lwt_enabled ${mqtt.lwtEnabled ? '1' : '0'}`);
-      await this.sendCommand(`zplc config set mqtt_lwt_topic ${this.quoteShellArg(mqtt.lwtTopic ?? '')}`);
-      await this.sendCommand(`zplc config set mqtt_lwt_payload ${this.quoteShellArg(mqtt.lwtPayload ?? '')}`);
-      await this.sendCommand(`zplc config set mqtt_lwt_qos ${mqtt.lwtQos}`);
-      await this.sendCommand(`zplc config set mqtt_lwt_retain ${mqtt.lwtRetain ? '1' : '0'}`);
-      await this.sendCommand(`zplc config set mqtt_username ${this.quoteShellArg(mqtt.username ?? '')}`);
-      await this.sendCommand(`zplc config set mqtt_password ${this.quoteShellArg(mqtt.password ?? '')}`);
-      await this.sendCommand(`zplc config set mqtt_ca_cert_path ${this.quoteShellArg(mqtt.caCertPath ?? '')}`);
-      await this.sendCommand(`zplc config set mqtt_client_cert_path ${this.quoteShellArg(mqtt.clientCertPath ?? '')}`);
-      await this.sendCommand(`zplc config set mqtt_client_key_path ${this.quoteShellArg(mqtt.clientKeyPath ?? '')}`);
-      await this.sendCommand(`zplc config set azure_sas_key ${this.quoteShellArg(mqtt.azureSasKey ?? '')}`);
-      await this.sendCommand(`zplc config set azure_sas_expiry_s ${mqtt.azureSasExpirySec ?? 3600}`);
-      await this.sendCommand(`zplc config set azure_twin_enabled ${mqtt.azureTwinEnabled ? '1' : '0'}`);
-      await this.sendCommand(`zplc config set azure_direct_methods_enabled ${mqtt.azureDirectMethodsEnabled ? '1' : '0'}`);
-      await this.sendCommand(`zplc config set azure_c2d_enabled ${mqtt.azureC2dEnabled ? '1' : '0'}`);
-      await this.sendCommand(`zplc config set azure_dps_enabled ${mqtt.azureDpsEnabled ? '1' : '0'}`);
-      await this.sendCommand(`zplc config set azure_dps_id_scope ${this.quoteShellArg(mqtt.azureDpsIdScope ?? '')}`);
-      await this.sendCommand(`zplc config set azure_dps_registration_id ${this.quoteShellArg(mqtt.azureDpsRegistrationId ?? '')}`);
-      await this.sendCommand(`zplc config set azure_dps_endpoint ${this.quoteShellArg(mqtt.azureDpsEndpoint ?? '')}`);
-      await this.sendCommand(`zplc config set azure_event_grid_topic ${this.quoteShellArg(mqtt.azureEventGridTopic ?? '')}`);
-      await this.sendCommand(`zplc config set azure_event_grid_source ${this.quoteShellArg(mqtt.azureEventGridSource ?? '')}`);
-      await this.sendCommand(`zplc config set azure_event_grid_event_type ${this.quoteShellArg(mqtt.azureEventGridEventType ?? '')}`);
-      await this.sendCommand(`zplc config set aws_shadow_enabled ${mqtt.awsShadowEnabled ? '1' : '0'}`);
-      await this.sendCommand(`zplc config set aws_jobs_enabled ${mqtt.awsJobsEnabled ? '1' : '0'}`);
-      await this.sendCommand(`zplc config set aws_fleet_enabled ${mqtt.awsFleetEnabled ? '1' : '0'}`);
-      await this.sendCommand(`zplc config set aws_fleet_template_name ${this.quoteShellArg(mqtt.awsFleetTemplateName ?? '')}`);
-      await this.sendCommand(`zplc config set aws_claim_cert_path ${this.quoteShellArg(mqtt.awsClaimCertPath ?? '')}`);
-      await this.sendCommand(`zplc config set aws_claim_key_path ${this.quoteShellArg(mqtt.awsClaimKeyPath ?? '')}`);
-    }
-
-
-    await this.sendCommand('zplc config save');
   }
 
-  async loadProgram(bytecode: Uint8Array): Promise<void> {
+  /**
+   * Triggers background network bring-up AFTER the program is loaded.
+   * Uses best-effort: never throws, never blocks upload.
+   * The board will attempt to connect; result is only logged, not fatal.
+   */
+  async triggerNetworkBringUp(projectConfig: ZPLCProjectConfig): Promise<void> {
+    if (!this._connected || !this.connection) {
+      return; // silently skip if disconnected
+    }
+
+    const wifiEnabled = projectConfig.network?.wifi?.enabled;
+    if (wifiEnabled && projectConfig.network?.wifi?.ssid) {
+      const resp = await this.sendCommandBestEffort('zplc wifi connect');
+      if (resp === null) {
+        console.warn('[serialAdapter] WiFi bring-up timed out (non-fatal)');
+      } else if (resp.startsWith('WARN:') || resp.startsWith('ERROR:')) {
+        console.warn('[serialAdapter] WiFi bring-up:', resp);
+      }
+    }
+  }
+
+  async loadProgram(bytecode: Uint8Array, options?: LoadProgramOptions): Promise<void> {
     if (!this._connected || !this.connection) {
       throw new Error('Not connected');
     }
 
-    await uploadBytecode(this.connection, bytecode);
+    await uploadBytecode(this.connection, bytecode, undefined, {
+      hasSchedulerSupport: this.systemInfoCache?.capabilities.scheduler ?? false,
+      trace: options?.trace,
+    });
     this.setState('running');
   }
 
@@ -772,7 +740,11 @@ export class SerialAdapter implements IDebugAdapter {
    * Unlike sendCommand which only returns the terminator line, this returns
    * all intermediate output lines as well.
    */
-  private async sendCommandWithOutput(command: string): Promise<{ lines: string[]; status: string }> {
+  private readMemoryDump(command: string): Promise<string[]> {
+    return this.withCommandMutex(() => this._readMemoryDumpRaw(command));
+  }
+
+  private async _readMemoryDumpRaw(command: string): Promise<string[]> {
     if (!this.connection?.isConnected) {
       throw new Error('Connection closed');
     }
@@ -780,44 +752,61 @@ export class SerialAdapter implements IDebugAdapter {
     const encoder = new TextEncoder();
     const LINE_ENDING = '\r\n';
     const COMMAND_TIMEOUT_MS = 3000;
+    const QUIET_PERIOD_MS = 120;
     // eslint-disable-next-line no-control-regex
-    const ansiRegex = /\x1b\[[0-9;]*[a-zA-Z]/g;
+    const ansiRegex = /\x1b\[[0-9;]*[mK]/g;
 
-    // Clear buffer before sending
     this.connection._rxBuffer = '';
 
-    const data = encoder.encode(command + LINE_ENDING);
-    await this.connection.writer.write(data);
+    await this.connection.writer.write(encoder.encode(command + LINE_ENDING));
 
-    const outputLines: string[] = [];
     const startTime = Date.now();
+    let lastActivityAt = startTime;
+    let lastBufferSnapshot = '';
+    let sawMemoryDump = false;
 
     while (Date.now() - startTime < COMMAND_TIMEOUT_MS) {
-      const lines = this.connection._rxBuffer.split(/\r?\n/);
+      const buffer = this.connection._rxBuffer;
+      if (buffer !== lastBufferSnapshot) {
+        lastBufferSnapshot = buffer;
+        lastActivityAt = Date.now();
 
-      for (let i = 0; i < lines.length; i++) {
-        const cleanLine = lines[i].replace(ansiRegex, '').trim();
-        if (!cleanLine) continue;
+        const cleanBuffer = buffer.replace(ansiRegex, '');
+        if (cleanBuffer.includes('Memory at 0x')) {
+          sawMemoryDump = true;
+        }
 
-        if (
-          cleanLine.startsWith('OK:') ||
-          cleanLine.startsWith('ERROR:') ||
-          cleanLine.startsWith('WARN:')
-        ) {
-          // Collect all non-empty lines before the terminator
-          for (let j = 0; j < i; j++) {
-            const cl = lines[j].replace(ansiRegex, '').trim();
-            if (cl && !cl.startsWith('uart:~$') && cl !== command) {
-              outputLines.push(cl);
-            }
-          }
-          // Remove processed lines from buffer
-          this.connection._rxBuffer = lines.slice(i + 1).join('\n');
-          return { lines: outputLines, status: cleanLine };
+        // Fast-path terminator for mpeek JSON output
+        if (cleanBuffer.includes('{"t":"mpeek"') && cleanBuffer.includes(']}')) {
+          this.connection._rxBuffer = '';
+          const lines = buffer.split(/\r?\n/)
+            .map((line) => line.replace(ansiRegex, '').trim())
+            .filter((line) => line && !line.startsWith('uart:~$'));
+          return lines.filter((line) => line !== command);
         }
       }
 
-      await new Promise((r) => setTimeout(r, 50));
+      const lines = buffer.split(/\r?\n/)
+        .map((line) => line.replace(ansiRegex, '').trim())
+        .filter((line) => line && !line.startsWith('uart:~$'));
+
+      // DEBUG: Log the lines if it's an mpeek command
+      if (command.includes('mpeek') && lines.length > 0 && buffer !== lastBufferSnapshot) {
+        console.log('[mpeek-raw] Current lines:', lines);
+      }
+
+      const terminator = lines.find((line) => line.startsWith('OK:') || line.startsWith('ERROR:') || line.startsWith('WARN:'));
+      if (terminator) {
+        this.connection._rxBuffer = '';
+        return lines.filter((line) => line !== command && line !== terminator);
+      }
+
+      if (sawMemoryDump && Date.now() - lastActivityAt >= QUIET_PERIOD_MS) {
+        this.connection._rxBuffer = '';
+        return lines.filter((line) => line !== command);
+      }
+
+      await new Promise((r) => setTimeout(r, 25));
     }
 
     throw new Error(`Command timeout: ${command}`);
@@ -828,37 +817,36 @@ export class SerialAdapter implements IDebugAdapter {
       throw new Error('Not connected');
     }
 
-    const { lines, status } = await this.sendCommandWithOutput(
-      `zplc dbg peek 0x${address.toString(16)} ${length}`
-    );
+    const lines = await this.readMemoryDump(`zplc dbg peek 0x${address.toString(16)} ${length}`);
+    return parsePeekBytes(lines, length);
+  }
 
-    if (status.startsWith('ERROR:')) {
-      throw new Error(status);
+  /**
+   * Read multiple non-contiguous memory addresses in a single serial round-trip.
+   *
+   * Sends `zplc dbg mpeek addr:len[,addr:len...]` and parses the firmware's
+   * JSON response. This eliminates the per-group serial latency that still
+   * exists with the batched `peek` approach when variables span multiple
+   * disjoint memory regions.
+   *
+   * @param requests - Array of {address, size} pairs (max 16 entries, max 256
+   *                   total bytes). Any order is fine; the firmware reads them
+   *                   independently.
+   * @returns Map from absolute address → raw bytes as Uint8Array.
+   *          Entries that could not be read are absent from the map.
+   */
+  async mpeek(requests: MpeekRequest[]): Promise<Map<number, Uint8Array>> {
+    if (!this._connected) {
+      throw new Error('Not connected');
     }
 
-    // Parse hex dump lines:
-    //   "Memory at 0xXXXX (Y bytes):"   <- header
-    //   "XXXX: AA BB CC DD EE FF ..."     <- data rows
-    const result = new Uint8Array(length);
-    let byteIndex = 0;
-
-    for (const line of lines) {
-      // Skip header line
-      if (line.startsWith('Memory at')) continue;
-
-      // Match hex data lines: "XXXX: AA BB CC DD ..."
-      const match = line.match(/^[0-9A-Fa-f]+:\s+((?:[0-9A-Fa-f]{2}\s*)+)/);
-      if (!match) continue;
-
-      const hexBytes = match[1].trim().split(/\s+/);
-      for (const hexByte of hexBytes) {
-        if (byteIndex < length) {
-          result[byteIndex++] = parseInt(hexByte, 16);
-        }
-      }
+    if (requests.length === 0) {
+      return new Map();
     }
 
-    return result;
+    const arg = buildMpeekArgument(requests);
+    const lines = await this.readMemoryDump(`zplc dbg mpeek ${arg}`);
+    return parseMpeekResponse(lines);
   }
 
   async poke(address: number, value: number): Promise<void> {
@@ -979,25 +967,81 @@ export class SerialAdapter implements IDebugAdapter {
     return result;
   }
 
-  async readWatchVariables(variables: WatchVariable[]): Promise<WatchVariable[]> {
+  async readWatchVariables(
+    variables: WatchVariable[],
+    options?: ReadWatchOptions,
+  ): Promise<WatchVariable[]> {
     if (!this._connected) {
       throw new Error('Not connected');
     }
 
-    const result: WatchVariable[] = [];
-
-    for (const v of variables) {
-      const size = getTypeSize(v.type, v.maxLength);
-      const bytes = await this.peek(v.address, size);
-      const value = bytesToValue(bytes, v.type);
-
-      result.push({
-        ...v,
-        value,
-      });
+    if (variables.length === 0) {
+      return [];
     }
 
-    return result;
+    // Fast path: use mpeek only when the caller explicitly opts in.
+    // This requires firmware compiled with `zplc dbg mpeek` support.
+    if (options?.useMpeek) {
+      // Build one mpeek request per variable (deduplicated by address).
+      // The firmware reads all addresses in a single serial round-trip, so
+      // there is no cross-cycle skew regardless of memory region count.
+      const seen = new Set<number>();
+      const requests: MpeekRequest[] = [];
+
+      for (const v of variables) {
+        const size = getTypeSize(v.type, v.maxLength);
+        // Deduplicate: two variables at the same address (e.g. bit-addressed
+        // BOOLs) share one read; bytes extracted individually via bitOffset.
+        if (!seen.has(v.address)) {
+          seen.add(v.address);
+          requests.push({ address: v.address, size });
+        }
+      }
+
+      // Cap at 16 entries / 256 total bytes (firmware limits).
+      // If the program has more unique addresses, fall back to the group-peek
+      // strategy which handles arbitrary counts at the cost of multiple RTTs.
+      const MPEEK_MAX_ENTRIES = 16;
+      const MPEEK_MAX_BYTES = 256;
+      const totalBytes = requests.reduce((sum, r) => sum + r.size, 0);
+
+      if (requests.length <= MPEEK_MAX_ENTRIES && totalBytes <= MPEEK_MAX_BYTES) {
+        console.log(`[mpeek] Sending batch for ${requests.length} addresses, ${totalBytes} bytes`);
+        const addrMap = await this.mpeek(requests);
+
+        return variables.map((v) => {
+          const bytes = addrMap.get(v.address);
+          if (bytes === undefined) {
+             console.warn(`[mpeek map] Missing bytes for ${v.name} at addr ${v.address}`);
+             return v;
+          }
+          const value = bytesToValue(bytes, v.type, v.bitOffset);
+          console.log(`[mpeek map] var ${v.name} at ${v.address} -> bytes:`, bytes, `value:`, value);
+          return { ...v, value };
+        });
+      }
+
+      console.warn(`[mpeek] Capacity exceeded (entries=${requests.length}/${MPEEK_MAX_ENTRIES}, bytes=${totalBytes}/${MPEEK_MAX_BYTES}). Falling back to standard peek.`);
+      // Falls through to the slow path if mpeek limits are exceeded.
+    }
+
+    // Slow-path (default): group variables into contiguous regions (multiple
+    // peek round-trips, but handles >16 distinct addresses and works with
+    // any firmware version that supports the basic peek command).
+    const groups = groupVariablesForBatchPeek(variables);
+    const updated = new Map<string, WatchVariable>();
+
+    for (const group of groups) {
+      const buffer = await this.peek(group.baseAddress, group.span);
+
+      for (const v of group.variables) {
+        const bytes = extractVariableBytes(buffer, group.baseAddress, v);
+        const value = bytesToValue(bytes, v.type, v.bitOffset);
+        updated.set(v.name, { ...v, value });
+      }
+    }
+
+    return variables.map((v) => updated.get(v.name) ?? v);
   }
 
   // =========================================================================

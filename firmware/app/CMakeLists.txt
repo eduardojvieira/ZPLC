@@ -42,18 +42,7 @@ target_include_directories(app PRIVATE
     include
 )
 
-# Sparkplug protobuf sources
-# On some ESP32 toolchain/CMake combinations, zephyr_nanopb_sources() can fail
-# during configure. Fall back to checked-in generated sources when available.
-set(SPARKPLUG_FALLBACK_BASE "${CMAKE_CURRENT_SOURCE_DIR}/build_disco")
-set(SPARKPLUG_FALLBACK_SRC "${SPARKPLUG_FALLBACK_BASE}/proto/sparkplug_b.pb.c")
-
-if(EXISTS "${SPARKPLUG_FALLBACK_SRC}")
-  message(WARNING "Using fallback Sparkplug protobuf sources from build_disco/proto")
-  target_sources(app PRIVATE "${SPARKPLUG_FALLBACK_SRC}")
-  target_include_directories(app PRIVATE "${SPARKPLUG_FALLBACK_BASE}")
-else()
-  list(APPEND CMAKE_MODULE_PATH ${ZEPHYR_BASE}/modules/nanopb)
-  include(nanopb)
-  zephyr_nanopb_sources(app proto/sparkplug_b.proto)
-endif()
+# Sparkplug protobuf sources must always be generated from canonical proto inputs.
+list(APPEND CMAKE_MODULE_PATH ${ZEPHYR_BASE}/modules/nanopb)
+include(nanopb)
+zephyr_nanopb_sources(app proto/sparkplug_b.proto)

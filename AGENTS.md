@@ -35,3 +35,10 @@ When working on specific tasks, consider adopting one of the following personas 
 *   **ArchitectureKeeper**: Focus on maintaining system integrity, enforcing rules, and reviewing architectural decisions.
 
 By following these guidelines, you will help maintain the high standards required for an industrial automation platform.
+
+## Active Technologies
+- ANSI C99 (`firmware/lib/zplc_core`), TypeScript 5.9, React 19, + Zephyr RTOS 4.0, west/CMake toolchain, Docusaurus v3, (008-release-foundation)
+- Git-tracked Markdown/JSON/YAML release artifacts and documentation; no new (008-release-foundation)
+
+## Recent Changes
+- 008-release-foundation: Added ANSI C99 (`firmware/lib/zplc_core`), TypeScript 5.9, React 19, + Zephyr RTOS 4.0, west/CMake toolchain, Docusaurus v3,

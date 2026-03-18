@@ -112,12 +112,26 @@ function setupWebSerial(): void {
 }
 
 /**
- * Setup serial port selection handler
- * This is called when navigator.serial.requestPort() is invoked
+ * Setup serial port selection handler and security policies.
+ * This is called when navigator.serial.requestPort() is invoked.
+ * Both concerns are consolidated into a single 'web-contents-created'
+ * listener to avoid stacking duplicate session handlers on HMR reloads.
  */
 function setupSerialPortSelection(): void {
   app.on('web-contents-created', (_event, contents) => {
-    contents.session.on('select-serial-port', (event, portList, _webContents, callback) => {
+    // Security: Prevent new window creation
+    contents.setWindowOpenHandler(() => ({ action: 'deny' }));
+
+    // Guard: register serial session handlers only once per session.
+    // In dev mode, Vite HMR can trigger multiple 'web-contents-created'
+    // events on the same defaultSession, which would stack duplicate
+    // 'select-serial-port' handlers and cause the one-time callback to
+    // be called twice → "One-time callback was called more than once".
+    const sess = contents.session;
+    if ((sess as unknown as Record<string, boolean>)._serialHandlerRegistered) return;
+    (sess as unknown as Record<string, boolean>)._serialHandlerRegistered = true;
+
+    sess.on('select-serial-port', (event, portList, _webContents, callback) => {
       event.preventDefault();
 
       console.log('[WebSerial] Available ports:', portList.map(p => ({
@@ -157,11 +171,11 @@ function setupSerialPortSelection(): void {
     });
 
     // Handle serial port added/removed events
-    contents.session.on('serial-port-added', (_event, port) => {
+    sess.on('serial-port-added', (_event, port) => {
       console.log('[WebSerial] Port added:', port.displayName);
     });
 
-    contents.session.on('serial-port-removed', (_event, port) => {
+    sess.on('serial-port-removed', (_event, port) => {
       console.log('[WebSerial] Port removed:', port.displayName);
     });
   });
@@ -222,13 +236,6 @@ if (!gotTheLock) {
     }
   });
 }
-
-// Security: Prevent new window creation
-app.on('web-contents-created', (_event, contents) => {
-  contents.setWindowOpenHandler(() => {
-    return { action: 'deny' };
-  });
-});
 
 console.log('[Electron] Main process initialized');
 console.log('[Electron] Mode:', isDev ? 'Development' : 'Production');

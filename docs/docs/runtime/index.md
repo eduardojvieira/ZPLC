@@ -19,7 +19,8 @@ The core of ZPLC is a stack-based virtual machine. It interprets instructions ge
 
 ## Scheduler and Execution Model
 
-ZPLC uses a cooperative multitasking model within the context of the underlying RTOS (usually Zephyr).
+ZPLC uses deterministic task execution within the context of the underlying runtime
+environment (usually Zephyr, but also POSIX and WASM for validation paths).
 
 *   **Tasks**: A PLC program is composed of one or more tasks.
 *   **Cycle Time**: Each task is assigned a specific cycle time (e.g., 10ms, 100ms).
@@ -33,7 +34,11 @@ ZPLC uses a cooperative multitasking model within the context of the underlying 
 
 The runtime is completely decoupled from the hardware via the HAL. It can run on any platform where a HAL implementation exists.
 
-Primary supported targets:
-*   **Zephyr RTOS**: The primary target environment, providing robust driver support for STM32, ESP32, NXP, etc.
-*   **POSIX**: Used for host-based simulation and testing (Linux, macOS).
-*   **WASM**: Compiled via Emscripten to run within the Web IDE for browser-based simulation.
+Validation targets in v1.5:
+
+- **Zephyr RTOS**: primary embedded execution target
+- **POSIX**: host-side compile and simulation validation
+- **WASM**: IDE simulation path
+
+Concrete board claims are not defined here. They come from the supported-board manifest and
+the reference section.

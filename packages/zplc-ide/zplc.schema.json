@@ -41,17 +41,9 @@
                     "description": "Target board (e.g., rpi_pico, posix)",
                     "enum": [
                         "rpi_pico",
-                        "rpi_pico_w",
                         "arduino_giga_r1",
-                        "arduino_opta",
-                        "nucleo_h743zi",
-                        "nucleo_f446re",
                         "stm32f746g_disco",
-                        "esp32s3_devkitc",
-                        "esp32_devkitc_wroom",
-                        "esp32_nodemcu",
-                        "nrf52840dk",
-                        "mps2_an385"
+                        "esp32s3_devkitc"
                     ]
                 },
                 "cpu": {

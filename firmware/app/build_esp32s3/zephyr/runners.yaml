@@ -44,7 +44,7 @@ args:
     - --esp-monitor-baud=
     - --esp-idf-path=/Users/eduardo/zephyrproject/modules/hal/espressif
     - --esp-app-address=0x0
-    - --esp-flash-size=8MB
+    - --esp-flash-size=16MB
     - --esp-flash-freq=80m
     - --esp-flash-mode=dio
     - --esp-idf-path=/Users/eduardo/zephyrproject/modules/hal/espressif

@@ -1,6 +1,5 @@
 west:
-  command: /opt/homebrew/bin/west build -p always -b esp32s3_devkitc/esp32s3/procpu
-    /Users/eduardo/Documents/Repos/ZPLC/firmware/app -d /Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3
-    -- -DZEPHYR_EXTRA_MODULES=/Users/eduardo/Documents/Repos/ZPLC/firmware
+  command: /Users/eduardo/zephyrproject/.venv/bin/west build -b esp32s3_devkitc/esp32s3/procpu
+    firmware/app -d firmware/app/build_esp32s3 --pristine
   topdir: /Users/eduardo/zephyrproject
   version: 1.5.0

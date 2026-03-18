@@ -56,6 +56,8 @@ export interface Symbol {
     initialValue: Expression | ArrayLiteral | null;
     /** Tags (like {publish}, {modbus:40001}) */
     tags?: Record<string, string | true>;
+    /** Source line where this variable was declared (1-based) */
+    declarationLine?: number;
 }
 
 /**
@@ -260,6 +262,7 @@ export class SymbolTable {
             members,
             initialValue: decl.initialValue,
             tags: decl.tags,
+            declarationLine: decl.line,
         };
 
         this.symbols.set(decl.name, symbol);

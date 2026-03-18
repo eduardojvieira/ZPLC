@@ -44,7 +44,9 @@ jobs:
       - name: Build website (includes link checking)
         working-directory: ./docs
         # onBrokenLinks=throw is set in docusaurus.config.js, so this fails if links are broken
-        run: bun run build
+        run: |
+          bun run validate:v1.5-docs
+          bun run build
 
       - name: Upload Build Artifact
         uses: actions/upload-pages-artifact@v3

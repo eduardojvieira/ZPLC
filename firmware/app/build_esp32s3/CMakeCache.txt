@@ -334,7 +334,7 @@ DTC:FILEPATH=/opt/homebrew/bin/dtc
 DTC_OVERLAY_FILE:STRING=/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay
 
 //Path to a program.
-ESPTOOL_EXECUTABLE:FILEPATH=/Users/eduardo/.local/bin/esptool
+ESPTOOL_EXECUTABLE:FILEPATH=/Users/eduardo/zephyrproject/.venv/bin/esptool
 
 //Path to a program.
 GEN_KOBJECT_LIST:FILEPATH=/Users/eduardo/zephyrproject/zephyr/scripts/build/gen_kobject_list.py
@@ -351,11 +351,20 @@ GPERF:FILEPATH=/opt/homebrew/bin/gperf
 //Path to a program.
 IMGTOOL:FILEPATH=/Users/eduardo/zephyrproject/bootloader/mcuboot/scripts/imgtool.py
 
+//nanopb generator source
+NANOPB_GENERATOR_SOURCE_DIR:PATH=/Users/eduardo/zephyrproject/modules/lib/nanopb/generator
+
+//Path to a file.
+NANOPB_INCLUDE_DIRS:PATH=/Users/eduardo/zephyrproject/modules/lib/nanopb
+
 //Path to a program.
 OPENOCD:FILEPATH=/opt/homebrew/bin/openocd
 
 //Path to a program.
 PAHOLE:FILEPATH=PAHOLE-NOTFOUND
+
+//The Google Protocol Buffers Compiler
+PROTOBUF_PROTOC_EXECUTABLE:FILEPATH=/Users/eduardo/zephyrproject/modules/lib/nanopb/generator/protoc
 
 //Path to a program.
 PTY_INTERFACE:FILEPATH=PTY_INTERFACE-NOTFOUND
@@ -385,22 +394,13 @@ TOOLCHAIN_HAS_PICOLIBC:BOOL=ON
 TOOLCHAIN_ROOT:STRING=/Users/eduardo/zephyrproject/zephyr
 
 //No help, variable specified on the command line.
-WEST_PYTHON:UNINITIALIZED=/opt/homebrew/Cellar/west/1.5.0/libexec/bin/python
+WEST_PYTHON:UNINITIALIZED=/Users/eduardo/zephyrproject/.venv/bin/python3.14
 
 //Zephyr base
 ZEPHYR_BASE:PATH=/Users/eduardo/zephyrproject/zephyr
 
-//No help, variable specified on the command line.
-ZEPHYR_EXTRA_MODULES:UNINITIALIZED=/Users/eduardo/Documents/Repos/ZPLC/firmware
-
 //Path to Zephyr git repository index file
 ZEPHYR_GIT_INDEX:PATH=/Users/eduardo/zephyrproject/zephyr/.git/index
-
-//Zephyr SDK install directory
-ZEPHYR_SDK_INSTALL_DIR:PATH=/Users/eduardo/zephyr-sdk-0.17.0
-
-//Zephyr toolchain variant
-ZEPHYR_TOOLCHAIN_VARIANT:STRING=zephyr
 
 //Value Computed by CMake
 Zephyr-Kernel_BINARY_DIR:STATIC=/Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3
@@ -422,6 +422,27 @@ ZephyrBuildConfiguration_DIR:PATH=ZephyrBuildConfiguration_DIR-NOTFOUND
 
 //The directory containing a CMake configuration file for Zephyr.
 Zephyr_DIR:PATH=/Users/eduardo/zephyrproject/zephyr/share/zephyr-package/cmake
+
+//Path to a file.
+pb.h__nano_pb_file:FILEPATH=/Users/eduardo/zephyrproject/modules/lib/nanopb/pb.h
+
+//Path to a file.
+pb_common.c__nano_pb_file:FILEPATH=/Users/eduardo/zephyrproject/modules/lib/nanopb/pb_common.c
+
+//Path to a file.
+pb_common.h__nano_pb_file:FILEPATH=/Users/eduardo/zephyrproject/modules/lib/nanopb/pb_common.h
+
+//Path to a file.
+pb_decode.c__nano_pb_file:FILEPATH=/Users/eduardo/zephyrproject/modules/lib/nanopb/pb_decode.c
+
+//Path to a file.
+pb_decode.h__nano_pb_file:FILEPATH=/Users/eduardo/zephyrproject/modules/lib/nanopb/pb_decode.h
+
+//Path to a file.
+pb_encode.c__nano_pb_file:FILEPATH=/Users/eduardo/zephyrproject/modules/lib/nanopb/pb_encode.c
+
+//Path to a file.
+pb_encode.h__nano_pb_file:FILEPATH=/Users/eduardo/zephyrproject/modules/lib/nanopb/pb_encode.h
 
 //Value Computed by CMake
 zplc_zephyr_app_BINARY_DIR:STATIC=/Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3
@@ -556,7 +577,7 @@ CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_NM
 CMAKE_NM-ADVANCED:INTERNAL=1
 //number of local generators
-CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=191
+CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=194
 //ADVANCED property for variable: CMAKE_OBJCOPY
 CMAKE_OBJCOPY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_OBJDUMP
@@ -605,26 +626,52 @@ CMAKE_VERBOSE_MAKEFILE-ADVANCED:INTERNAL=1
 FIND_PACKAGE_MESSAGE_DETAILS_Dtc:INTERNAL=[/opt/homebrew/bin/dtc][v1.7.2(1.4.6)]
 //Details about finding GnuLd
 FIND_PACKAGE_MESSAGE_DETAILS_GnuLd:INTERNAL=[/Users/eduardo/zephyr-sdk-0.17.0/xtensa-espressif_esp32s3_zephyr-elf/xtensa-espressif_esp32s3_zephyr-elf/bin/ld.bfd][v2.38()]
+//Details about finding Nanopb
+FIND_PACKAGE_MESSAGE_DETAILS_Nanopb:INTERNAL=[/Users/eduardo/zephyrproject/modules/lib/nanopb][/Users/eduardo/zephyrproject/modules/lib/nanopb/pb_decode.c;/Users/eduardo/zephyrproject/modules/lib/nanopb/pb_encode.c;/Users/eduardo/zephyrproject/modules/lib/nanopb/pb_common.c][/Users/eduardo/zephyrproject/modules/lib/nanopb/pb_decode.h;/Users/eduardo/zephyrproject/modules/lib/nanopb/pb_encode.h;/Users/eduardo/zephyrproject/modules/lib/nanopb/pb_common.h;/Users/eduardo/zephyrproject/modules/lib/nanopb/pb.h][/Users/eduardo/zephyrproject/modules/lib/nanopb/generator][/Users/eduardo/zephyrproject/modules/lib/nanopb/generator/protoc][v()]
 //Details about finding Python3
-FIND_PACKAGE_MESSAGE_DETAILS_Python3:INTERNAL=[/opt/homebrew/Cellar/west/1.5.0/libexec/bin/python][found components: Interpreter ][v3.14.3(3.10)]
+FIND_PACKAGE_MESSAGE_DETAILS_Python3:INTERNAL=[/Users/eduardo/zephyrproject/.venv/bin/python3.14][found components: Interpreter ][v3.14.3(3.10)]
 //Zephyr hardware model version
 HWM:INTERNAL=v2
 //Zephyr hardware model
 HWMv2:INTERNAL=True
 KERNEL_META_PATH:INTERNAL=/Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/zephyr.meta
+//ADVANCED property for variable: NANOPB_GENERATOR_SOURCE_DIR
+NANOPB_GENERATOR_SOURCE_DIR-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: NANOPB_INCLUDE_DIRS
+NANOPB_INCLUDE_DIRS-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: PROTOBUF_PROTOC_EXECUTABLE
+PROTOBUF_PROTOC_EXECUTABLE-ADVANCED:INTERNAL=1
 //List of SoC directories for SoC (esp32s3)
 SOC_DIRECTORIES:INTERNAL=/Users/eduardo/zephyrproject/zephyr/soc/espressif
 SOC_LINKER_SCRIPT:INTERNAL=/Users/eduardo/zephyrproject/zephyr/soc/espressif/common/../esp32s3/default.ld
 //West
-WEST:INTERNAL=/opt/homebrew/Cellar/west/1.5.0/libexec/bin/python;-m;west
+WEST:INTERNAL=/Users/eduardo/zephyrproject/.venv/bin/python3.14;-m;west
+//Cached environment variable ZEPHYR_SDK_INSTALL_DIR
+ZEPHYR_SDK_INSTALL_DIR:INTERNAL=/Users/eduardo/zephyr-sdk-0.17.0
+//Cached environment variable ZEPHYR_TOOLCHAIN_VARIANT
+ZEPHYR_TOOLCHAIN_VARIANT:INTERNAL=zephyr
 //Compiler reason failure
 _Python3_Compiler_REASON_FAILURE:INTERNAL=
 //Development reason failure
 _Python3_Development_REASON_FAILURE:INTERNAL=
-_Python3_EXECUTABLE:INTERNAL=/opt/homebrew/Cellar/west/1.5.0/libexec/bin/python
+_Python3_EXECUTABLE:INTERNAL=/Users/eduardo/zephyrproject/.venv/bin/python3.14
 //Python3 Properties
-_Python3_INTERPRETER_PROPERTIES:INTERNAL=Python;3;14;3;64;<none>;cpython-314-darwin.so;abi3;/opt/homebrew/opt/python@3.14/Frameworks/Python.framework/Versions/3.14/lib/python3.14;/opt/homebrew/Cellar/west/1.5.0/libexec/lib/python3.14;/opt/homebrew/Cellar/west/1.5.0/libexec/lib/python3.14/site-packages;/opt/homebrew/Cellar/west/1.5.0/libexec/lib/python3.14/site-packages
-_Python3_INTERPRETER_SIGNATURE:INTERNAL=d9e6ad4fa4ce9c152345ef195deb154e
+_Python3_INTERPRETER_PROPERTIES:INTERNAL=Python;3;14;3;64;<none>;cpython-314-darwin.so;abi3;/opt/homebrew/opt/python@3.14/Frameworks/Python.framework/Versions/3.14/lib/python3.14;/Users/eduardo/zephyrproject/.venv/lib/python3.14;/Users/eduardo/zephyrproject/.venv/lib/python3.14/site-packages;/Users/eduardo/zephyrproject/.venv/lib/python3.14/site-packages
+_Python3_INTERPRETER_SIGNATURE:INTERNAL=fded2a3495c076699dd84ed90bbb9f5e
 //NumPy reason failure
 _Python3_NumPy_REASON_FAILURE:INTERNAL=
+//ADVANCED property for variable: pb.h__nano_pb_file
+pb.h__nano_pb_file-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: pb_common.c__nano_pb_file
+pb_common.c__nano_pb_file-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: pb_common.h__nano_pb_file
+pb_common.h__nano_pb_file-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: pb_decode.c__nano_pb_file
+pb_decode.c__nano_pb_file-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: pb_decode.h__nano_pb_file
+pb_decode.h__nano_pb_file-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: pb_encode.c__nano_pb_file
+pb_encode.c__nano_pb_file-ADVANCED:INTERNAL=1
+//ADVANCED property for variable: pb_encode.h__nano_pb_file
+pb_encode.h__nano_pb_file-ADVANCED:INTERNAL=1
 

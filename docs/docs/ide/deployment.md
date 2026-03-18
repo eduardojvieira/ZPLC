@@ -66,7 +66,7 @@ ZPLC supports multiple deployment methods depending on your target platform and 
 | Method | Connection | Use Case | Status |
 |--------|------------|----------|--------|
 | Serial | USB | Direct connection from IDE | ✅ Implemented |
-| Network | TCP/IP | Remote deployment over LAN/WAN | 🔜 Planned (Phase 1.4.1) |
+| Network | TCP/IP | Remote deployment over LAN/WAN | Limited to validated v1.5 scope |
 | File Transfer | SD Card/USB | Offline deployment | ✅ Implemented |
 | OTA | WiFi/Cellular | Field updates | 🔜 Planned (Phase 2.1) |
 
@@ -89,6 +89,11 @@ The most common method for development. Requires a Chromium-based browser (Chrom
 3. Select **Serial Port** when prompted
 4. Choose the correct COM port
 5. Wait for upload confirmation
+
+## v1.5 Release Boundary
+
+Deployment claims for v1.5 are valid only for boards in the supported-board manifest and
+only when the matching desktop or HIL evidence exists.
 
 ```mermaid
 sequenceDiagram
@@ -151,11 +156,12 @@ For devices with Ethernet or WiFi connectivity.
 ### Security Considerations
 
 :::note
-These security features are planned for Phase 1.7. Currently, the debug protocol has no authentication.
+The current debug/deployment flow has known security limitations. Do not treat it as a
+production-security claim in v1.5 unless separate evidence exists.
 :::
 
-- Use TLS for production deployments (planned)
-- Enable authentication on the debug protocol (planned)
+- Use transport security only where the selected runtime/profile actually supports it
+- Treat debug authentication as out of scope for the current v1.5 foundation claim
 - Restrict access via firewall rules
 
 ---
@@ -194,7 +200,8 @@ zplc run
 ## OTA (Over-the-Air) Updates
 
 :::caution Planned Feature
-OTA updates are planned for Phase 2.1. This section describes the intended architecture for future implementation.
+OTA updates are outside the v1.5 release foundation scope unless they are separately
+re-scoped and verified.
 :::
 
 For deployed field devices with network connectivity.

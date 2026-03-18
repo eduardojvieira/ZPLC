@@ -7,10 +7,12 @@
  * interface for the IDE's debug panel.
  */
 
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Plus, X, Trash2, Eye, EyeOff } from 'lucide-react';
-import { useWatchVariables, formatDebugValue } from '../hooks/useDebugValue';
+import { formatDebugValue } from '../hooks/useDebugValue';
 import { useIDEStore } from '../store/useIDEStore';
+import { buildDebugWatchRows } from './debugWatchRows';
+import type { WatchVariable } from '../runtime/debugAdapter';
 
 /**
  * Format address for display
@@ -20,19 +22,45 @@ function formatAddress(address: number | null): string {
   return `0x${address.toString(16).padStart(4, '0').toUpperCase()}`;
 }
 
+type ForceValueFn = (
+  address: number,
+  value: number | boolean | string,
+  type: WatchVariable['type'],
+  maxLength?: number,
+) => Promise<void>;
+
+interface DebugWatchPanelProps {
+  forceValue?: ForceValueFn;
+}
+
+/** Inline editor state — only one cell editable at a time */
+interface EditingCell {
+  path: string;
+  address: number;
+  type: WatchVariable['type'];
+  maxLength?: number;
+  draft: string;
+}
+
 /**
  * Debug Watch Panel Component
  */
-export function DebugWatchPanel(): React.ReactElement {
+export function DebugWatchPanel({ forceValue }: DebugWatchPanelProps): React.ReactElement {
   const [newVarInput, setNewVarInput] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editing, setEditing] = useState<EditingCell | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Get debug state from store
   const debugMode = useIDEStore((state) => state.debug.mode);
   const isPolling = useIDEStore((state) => state.debug.isPolling);
-
-  // Use the watch variables hook
-  const { variables, addWatch, removeWatch, clearAll } = useWatchVariables();
+  const debugMap = useIDEStore((state) => state.debug.debugMap);
+  const liveValues = useIDEStore((state) => state.debug.liveValues);
+  const watchVariables = useIDEStore((state) => state.debug.watchVariables);
+  const addWatch = useIDEStore((state) => state.addWatchVariable);
+  const removeWatch = useIDEStore((state) => state.removeWatchVariable);
+  const clearAll = useIDEStore((state) => state.clearWatchVariables);
+  const variables = buildDebugWatchRows(watchVariables, debugMap, liveValues, isPolling);
 
   // Handle adding a new watch variable
   const handleAddVariable = useCallback(() => {
@@ -44,7 +72,7 @@ export function DebugWatchPanel(): React.ReactElement {
     setShowAddForm(false);
   }, [newVarInput, addWatch]);
 
-  // Handle key press in input
+  // Handle key press in "add variable" input
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -55,6 +83,68 @@ export function DebugWatchPanel(): React.ReactElement {
       setNewVarInput('');
     }
   }, [handleAddVariable]);
+
+  // Begin editing a value cell on double-click
+  const handleValueDoubleClick = useCallback(
+    (
+      path: string,
+      address: number | null,
+      type: WatchVariable['type'] | undefined,
+      currentValue: number | boolean | string | undefined,
+      maxLength?: number,
+    ) => {
+      if (!forceValue || address === null || !type) return;
+      // Only allow forcing when debug is active
+      if (debugMode === 'none') return;
+
+      const draft =
+        currentValue === undefined
+          ? ''
+          : typeof currentValue === 'boolean'
+            ? currentValue ? '1' : '0'
+            : String(currentValue);
+
+      setEditing({ path, address, type, maxLength, draft });
+      // Focus input after React re-renders
+      requestAnimationFrame(() => {
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      });
+    },
+    [forceValue, debugMode],
+  );
+
+  const handleForceKeyDown = useCallback(
+    async (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (!editing || !forceValue) return;
+
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const raw = editing.draft.trim();
+        let coerced: number | boolean | string;
+
+        if (editing.type === 'BOOL') {
+          coerced = raw === '1' || raw.toLowerCase() === 'true';
+        } else if (editing.type === 'STRING') {
+          coerced = raw;
+        } else {
+          const n = Number(raw);
+          if (isNaN(n)) {
+            setEditing(null);
+            return;
+          }
+          coerced = n;
+        }
+
+        await forceValue(editing.address, coerced, editing.type, editing.maxLength);
+        setEditing(null);
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setEditing(null);
+      }
+    },
+    [editing, forceValue],
+  );
 
   // Status indicator color
   const statusColor = debugMode === 'none'
@@ -155,19 +245,55 @@ export function DebugWatchPanel(): React.ReactElement {
                   <td className="px-3 py-1.5 font-mono text-[var(--color-surface-200)]">
                     {path}
                   </td>
-                  <td className="px-3 py-1.5 font-mono">
-                    {result.loading ? (
+                  <td
+                    className="px-3 py-1.5 font-mono"
+                    title={
+                      forceValue && result.address !== null && debugMode !== 'none'
+                        ? 'Double-click to force value'
+                        : undefined
+                    }
+                    onDoubleClick={() =>
+                      handleValueDoubleClick(
+                        path,
+                        result.address,
+                        result.type as WatchVariable['type'] | undefined ?? undefined,
+                        result.value ?? undefined,
+                        undefined,
+                      )
+                    }
+                  >
+                    {editing?.path === path ? (
+                      <input
+                        ref={inputRef}
+                        type="text"
+                        value={editing.draft}
+                        onChange={(e) =>
+                          setEditing((prev) => prev ? { ...prev, draft: e.target.value } : null)
+                        }
+                        onKeyDown={handleForceKeyDown}
+                        onBlur={() => setEditing(null)}
+                        className="w-full bg-[var(--color-surface-900)] border border-amber-500
+                                   rounded px-1 py-0 text-xs text-amber-300
+                                   focus:outline-none focus:border-amber-400"
+                      />
+                    ) : result.loading ? (
                       <span className="text-[var(--color-surface-400)] animate-pulse">...</span>
                     ) : result.error ? (
                       <span className="text-red-400 text-xs" title={result.error}>
                         {result.exists ? '???' : 'N/A'}
                       </span>
                     ) : (
-                      <span className={
-                        result.type === 'BOOL'
-                          ? result.value ? 'text-green-400' : 'text-red-400'
-                          : 'text-blue-400'
-                      }>
+                      <span
+                        className={`${
+                          result.type === 'BOOL'
+                            ? result.value ? 'text-green-400' : 'text-red-400'
+                            : 'text-blue-400'
+                        } ${
+                          forceValue && result.address !== null && debugMode !== 'none'
+                            ? 'cursor-pointer hover:underline decoration-dotted underline-offset-2'
+                            : ''
+                        }`}
+                      >
                         {formatDebugValue(result.value, result.type)}
                       </span>
                     )}
@@ -195,11 +321,17 @@ export function DebugWatchPanel(): React.ReactElement {
         )}
       </div>
 
-      {/* Footer with hint */}
+      {/* Footer with hints */}
       {debugMode === 'none' && variables.length > 0 && (
         <div className="px-3 py-2 bg-[var(--color-surface-700)] border-t border-[var(--color-surface-600)]
                         text-[10px] text-[var(--color-surface-400)]">
           Start debugging to see live values
+        </div>
+      )}
+      {debugMode !== 'none' && forceValue && variables.length > 0 && (
+        <div className="px-3 py-2 bg-[var(--color-surface-700)] border-t border-[var(--color-surface-600)]
+                        text-[10px] text-[var(--color-surface-400)]">
+          Double-click a value to force it · Enter to confirm · Esc to cancel
         </div>
       )}
     </div>

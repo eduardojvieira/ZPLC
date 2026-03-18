@@ -84,12 +84,55 @@ static void test_no_handler(void) {
   assert(status == ZPLC_COMM_NO_HANDLER);
 }
 
+static int failing_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
+                           bool reset) {
+  (void)kind;
+  (void)fb_mem;
+  (void)reset;
+  return -1;
+}
+
+static void test_handler_error_sets_status(void) {
+  printf("test_handler_error_sets_status...\n");
+  uint8_t mem[32] = {0};
+
+  zplc_comm_register_handler(ZPLC_COMM_FB_MQTT_PUBLISH, failing_handler);
+  mem[0] = 1;
+
+  int res = zplc_comm_fb_exec(ZPLC_COMM_FB_MQTT_PUBLISH, mem);
+  assert(res == 0);
+  assert(mem[1] == 0);
+  assert(mem[3] == 1);
+  assert(*(uint32_t *)&mem[4] == ZPLC_COMM_UNKNOWN);
+}
+
+static void test_reset_clears_handshake_state(void) {
+  printf("test_reset_clears_handshake_state...\n");
+  uint8_t mem[32] = {0};
+
+  mem[0] = 1;
+  mem[1] = 1;
+  mem[2] = 1;
+  mem[3] = 1;
+  *(uint32_t *)&mem[4] = 123;
+
+  int res = zplc_comm_fb_reset(ZPLC_COMM_FB_MQTT_SUBSCRIBE, mem);
+  assert(res == 0);
+  assert(mem[0] == 0);
+  assert(mem[1] == 0);
+  assert(mem[2] == 0);
+  assert(mem[3] == 0);
+  assert(*(uint32_t *)&mem[4] == 0);
+}
+
 int main(void) {
   printf("Running zplc_comm_dispatch tests...\n");
   test_registration();
   test_exec_handler_call();
   test_auto_reset_pulse();
   test_no_handler();
+  test_handler_error_sets_status();
+  test_reset_clears_handshake_state();
   printf("All zplc_comm_dispatch tests passed.\n");
   return 0;
 }

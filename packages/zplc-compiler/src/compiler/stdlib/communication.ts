@@ -40,6 +40,21 @@ export interface CommFBDef {
   ) => void;
 }
 
+export const COMM_FB_KIND = {
+  MB_READ_HREG: 0x0001,
+  MB_WRITE_HREG: 0x0002,
+  MB_READ_COIL: 0x0003,
+  MB_WRITE_COIL: 0x0004,
+  MQTT_CONNECT: 0x000a,
+  MQTT_PUBLISH: 0x000b,
+  MQTT_SUBSCRIBE: 0x000c,
+  AZURE_C2D_RECV: 0x0020,
+  AZURE_DPS_PROV: 0x0021,
+  AZURE_EG_PUB: 0x0022,
+  AWS_FLEET_PROV: 0x0030,
+  SPB_REBIRTH: 0x0040,
+} as const;
+
 // ─── Registry ────────────────────────────────────────────────────────────────
 
 export const CommBlocks: Record<string, CommFBDef> = {};
@@ -124,26 +139,29 @@ const MB_TCP_FOOTER: CommMemberDef[] = [
 
 reg({
   name: 'MB_READ_HREG', size: 110,
+  // COUNT defines how many registers are requested. VALUE points at the first
+  // register slot in FB memory; runtime handlers may fill subsequent words.
   members: [...MB_HEADER, inp('COUNT', DataType.UINT, 13), out('VALUE', DataType.UINT, 15), ...MB_TCP_FOOTER],
-  generateCall(baseAddr, params, ctx) { emitCommFB(0x0001, this, baseAddr, params, ctx); },
+  generateCall(baseAddr, params, ctx) { emitCommFB(COMM_FB_KIND.MB_READ_HREG, this, baseAddr, params, ctx); },
 });
 
 reg({
   name: 'MB_WRITE_HREG', size: 110,
+  // COUNT supports multi-register writes. VALUE is the first write slot.
   members: [...MB_HEADER, inp('COUNT', DataType.UINT, 13), inp('VALUE', DataType.UINT, 15), ...MB_TCP_FOOTER],
-  generateCall(baseAddr, params, ctx) { emitCommFB(0x0002, this, baseAddr, params, ctx); },
+  generateCall(baseAddr, params, ctx) { emitCommFB(COMM_FB_KIND.MB_WRITE_HREG, this, baseAddr, params, ctx); },
 });
 
 reg({
   name: 'MB_READ_COIL', size: 110,
   members: [...MB_HEADER, inp('COUNT', DataType.UINT, 13), out('VALUE', DataType.BOOL, 15), ...MB_TCP_FOOTER],
-  generateCall(baseAddr, params, ctx) { emitCommFB(0x0003, this, baseAddr, params, ctx); },
+  generateCall(baseAddr, params, ctx) { emitCommFB(COMM_FB_KIND.MB_READ_COIL, this, baseAddr, params, ctx); },
 });
 
 reg({
   name: 'MB_WRITE_COIL', size: 110,
   members: [...MB_HEADER, inp('COUNT', DataType.UINT, 13), inp('VALUE', DataType.BOOL, 15), ...MB_TCP_FOOTER],
-  generateCall(baseAddr, params, ctx) { emitCommFB(0x0004, this, baseAddr, params, ctx); },
+  generateCall(baseAddr, params, ctx) { emitCommFB(COMM_FB_KIND.MB_WRITE_COIL, this, baseAddr, params, ctx); },
 });
 
 // ─── Phase 4: MQTT FBs ───────────────────────────────────────────────────────
@@ -153,7 +171,7 @@ reg({
 reg({
   name: 'MQTT_CONNECT', size: 12,
   members: [...COMM_HEADER, inp('PROFILE', DataType.USINT, 8), out('CONNECTED', DataType.BOOL, 9)],
-  generateCall(baseAddr, params, ctx) { emitCommFB(0x000A, this, baseAddr, params, ctx); },
+  generateCall(baseAddr, params, ctx) { emitCommFB(COMM_FB_KIND.MQTT_CONNECT, this, baseAddr, params, ctx); },
 });
 
 // MQTT_PUBLISH — 190 bytes
@@ -167,7 +185,7 @@ reg({
     inp('TOPIC',   DataType.STRING, 12),
     inp('PAYLOAD', DataType.STRING, 97),
   ],
-  generateCall(baseAddr, params, ctx) { emitCommFB(0x000B, this, baseAddr, params, ctx); },
+  generateCall(baseAddr, params, ctx) { emitCommFB(COMM_FB_KIND.MQTT_PUBLISH, this, baseAddr, params, ctx); },
 });
 
 // MQTT_SUBSCRIBE — 190 bytes (mirrors PUBLISH, PAYLOAD is output)
@@ -180,7 +198,7 @@ reg({
     inp('TOPIC',   DataType.STRING, 12),
     out('PAYLOAD', DataType.STRING, 97),
   ],
-  generateCall(baseAddr, params, ctx) { emitCommFB(0x000C, this, baseAddr, params, ctx); },
+  generateCall(baseAddr, params, ctx) { emitCommFB(COMM_FB_KIND.MQTT_SUBSCRIBE, this, baseAddr, params, ctx); },
 });
 
 // ─── Phase 5: Cloud Wrapper FBs ──────────────────────────────────────────────
@@ -190,7 +208,7 @@ reg({
 reg({
   name: 'AZURE_C2D_RECV', size: 94,
   members: [...COMM_HEADER, out('PAYLOAD', DataType.STRING, 8), out('VALID', DataType.BOOL, 93)],
-  generateCall(baseAddr, params, ctx) { emitCommFB(0x0020, this, baseAddr, params, ctx); },
+  generateCall(baseAddr, params, ctx) { emitCommFB(COMM_FB_KIND.AZURE_C2D_RECV, this, baseAddr, params, ctx); },
 });
 
 // AZURE_DPS_PROV — 201 bytes
@@ -202,7 +220,7 @@ reg({
     inp('DEVICE_ID',    DataType.STRING, 8),
     out('ASSIGNED_HUB', DataType.STRING, 73),
   ],
-  generateCall(baseAddr, params, ctx) { emitCommFB(0x0021, this, baseAddr, params, ctx); },
+  generateCall(baseAddr, params, ctx) { emitCommFB(COMM_FB_KIND.AZURE_DPS_PROV, this, baseAddr, params, ctx); },
 });
 
 // AZURE_EG_PUB — 266 bytes
@@ -215,7 +233,7 @@ reg({
     inp('EVENT_TYPE', DataType.STRING, 73),
     inp('PAYLOAD',    DataType.STRING, 138),
   ],
-  generateCall(baseAddr, params, ctx) { emitCommFB(0x0022, this, baseAddr, params, ctx); },
+  generateCall(baseAddr, params, ctx) { emitCommFB(COMM_FB_KIND.AZURE_EG_PUB, this, baseAddr, params, ctx); },
 });
 
 // AWS_FLEET_PROV — 137 bytes
@@ -227,12 +245,12 @@ reg({
     inp('TEMPLATE_NAME', DataType.STRING, 8),
     out('THING_NAME',    DataType.STRING, 73),
   ],
-  generateCall(baseAddr, params, ctx) { emitCommFB(0x0030, this, baseAddr, params, ctx); },
+  generateCall(baseAddr, params, ctx) { emitCommFB(COMM_FB_KIND.AWS_FLEET_PROV, this, baseAddr, params, ctx); },
 });
 
 // SPB_REBIRTH — 8 bytes (header only; rising EN triggers REBIRTH)
 reg({
   name: 'SPB_REBIRTH', size: 8,
   members: [...COMM_HEADER],
-  generateCall(baseAddr, params, ctx) { emitCommFB(0x0040, this, baseAddr, params, ctx); },
+  generateCall(baseAddr, params, ctx) { emitCommFB(COMM_FB_KIND.SPB_REBIRTH, this, baseAddr, params, ctx); },
 });

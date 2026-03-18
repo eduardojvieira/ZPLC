@@ -32,6 +32,7 @@
 #endif
 
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -494,10 +495,17 @@ zplc_hal_result_t zplc_hal_adc_read(uint8_t channel, uint16_t *value) {
 #else /* No ADC node in DT */
 
 zplc_hal_result_t zplc_hal_adc_read(uint8_t channel, uint16_t *value) {
+  static bool adc_missing_warned = false;
+
   (void)channel;
   if (value)
     *value = 0;
-  zplc_hal_log("[HAL] ADC: No ADC device in DeviceTree\n");
+
+  if (!adc_missing_warned) {
+    zplc_hal_log("[HAL] ADC: No ADC device in DeviceTree\n");
+    adc_missing_warned = true;
+  }
+
   return ZPLC_HAL_NOT_IMPL;
 }
 

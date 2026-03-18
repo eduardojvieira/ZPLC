@@ -1,30 +1,32 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: 1.0.0 → 1.1.0 (MINOR — principles expanded with ZPLC-specific technical rules)
+Version change: 1.1.0 → 1.1.1 (PATCH — clarified compliance workflow and synced
+dependent templates/docs with existing constitutional rules)
 
 Modified principles:
-  - I. Spec First       → unchanged (kept, wording preserved)
-  - II. Context Hygiene → unchanged (kept)
-  - III. Essentialism & YAGNI → unchanged (kept)
-  - IV. Industrial Quality (Test-First) → expanded with ZPLC-specific CI targets and HIL gate
-  - V. Direct Communication → unchanged (kept)
+  - I. Spec First → unchanged title, wording tightened around active spec/plan usage
+  - IV. Industrial Quality (Test-First — NON-NEGOTIABLE) → clarified test/HIL scope
+  - V. Direct Communication → unchanged title, wording preserved
 
 Added sections:
-  - Technical Domain & Stack (enriched with stack details from README / TECHNICAL_SPEC)
-  - Critical Rules & Workflow (expanded with HAL, Memory, ISA, and IDE-specific rules)
-  - Governance (amended procedure and versioning policy added explicitly)
+  - None
+
+Removed sections:
+  - None
 
 Templates requiring updates:
-  ✅ .specify/memory/constitution.md          — this file
-  ✅ .specify/templates/plan-template.md      — Constitution Check section updated with ZPLC gates
-  ✅ .specify/templates/spec-template.md      — no structural changes required
-  ✅ .specify/templates/tasks-template.md     — no structural changes required
-  ✅ AGENTS.md                                — references constitution; no update needed (correct already)
+  ✅ `.specify/memory/constitution.md`      — sync report refreshed, governance clarified
+  ✅ `.specify/templates/plan-template.md`  — Constitution Check now encodes ZPLC gates
+  ✅ `.specify/templates/spec-template.md`  — requirements/testing prompts aligned to determinism and explicit failures
+  ✅ `.specify/templates/tasks-template.md` — task flow aligned to test-first, HIL, docs parity, ISA/versioning work
+  ✅ `QUICKSTART_AGENTS.md`                 — agent guidance updated to current personas, skills, and paths
+  ✅ `AGENTS.md`                            — reviewed; no change required
+  ⚠ `.specify/templates/commands/*.md`     — directory not present, no command templates to update
 
 Follow-up TODOs:
-  - TODO(SECURITY_REVIEW_CADENCE): Define explicit compliance review cycle for Phase 1.7
-    (Security & Authentication) work — challenge-response auth, TLS, bytecode signing.
+  - TODO(SECURITY_REVIEW_CADENCE): Define explicit security compliance review cadence
+    before Phase 1.7 (Security & Authentication) work begins.
 -->
 
 # ZPLC (Zephyr PLC) Constitution
@@ -33,10 +35,11 @@ Follow-up TODOs:
 
 ### I. Spec First
 
-Before writing a single line of code, look for the `.specify/memory/` active spec or
-`AGENTS.md`. If there is no plan, demand one or create one via `/speckit.specify` +
-`/speckit.plan`. Do not improvise. The `.zplc` binary format is the canonical contract
-between IDE and Runtime — changes to it MUST be planned, versioned, and migration-pathed.
+Before writing a single line of code, look for the active work in `.specify/` and read
+`AGENTS.md`. If no spec or plan exists for a non-trivial change, create one via
+`/speckit.specify` + `/speckit.plan`. Do not improvise. The `.zplc` binary format is the
+canonical contract between IDE and Runtime — changes to it MUST be planned, versioned,
+and migration-pathed.
 
 ### II. Context Hygiene
 
@@ -52,8 +55,9 @@ addition: "Does this really need to be done, or are we procrastinating?"
 
 ### IV. Industrial Quality (Test-First — NON-NEGOTIABLE)
 
-Code without tests is garbage. New functionality MUST have failing tests BEFORE
-implementation (Red-Green-Refactor). The CI pipeline MUST enforce:
+Code without tests is garbage. Any new or changed behavior MUST have failing tests
+BEFORE implementation (Red-Green-Refactor). The verification plan MUST name the exact
+test layers involved, and CI MUST enforce:
 
 - **Static analysis**: `clang-tidy` + `-Werror` for C; `eslint` + `tsc --noEmit` for TS.
 - **Unit tests**: pass on host (POSIX/Win32) via `ctest` or `bun test`.
@@ -63,7 +67,8 @@ implementation (Red-Green-Refactor). The CI pipeline MUST enforce:
   - `nucleo_h743zi`
   - `rpi_pico`
   - `mps2/an385` (QEMU CI default)
-- **HIL gate**: code is NOT "done" until it runs on a physical board in the pipeline.
+- **HIL gate**: firmware/runtime behavior changes are NOT "done" until they run on a
+  physical board in the pipeline.
 
 Explicit error handling is mandatory: `Result` patterns in TS, checked return codes in C.
 Zero silent failures. `any` in TypeScript and `void*` in C require life-or-death
@@ -150,9 +155,18 @@ internal IR before bytecode emission.
 
 The `ArchitectureKeeper` agent role (see `AGENTS.md`) is responsible for enforcing
 constitutional compliance in all code reviews. Violations are blocking PR comments.
-A review is recommended at each major phase release boundary (e.g., before v1.5, v2.0).
+A review is expected for every implementation plan's Constitution Check and at each major
+phase release boundary (e.g., before v1.5, v2.0). Reviews MUST explicitly verify:
+
+- spec-first planning exists for the change;
+- Core changes preserve HAL abstraction and static memory rules;
+- ISA or `.zplc` changes include versioning and migration notes;
+- test-first evidence, warnings-as-errors, and required host/cross/HIL verification are
+  present;
+- documentation changes keep `docs/docs/` and `docs/i18n/es/` in sync, or record a
+  tracked follow-up.
 
 TODO(SECURITY_REVIEW_CADENCE): Define explicit security compliance review cadence before
 Phase 1.7 (Security & Authentication) work begins.
 
-**Version**: 1.1.0 | **Ratified**: 2026-01-20 | **Last Amended**: 2026-03-10
+**Version**: 1.1.1 | **Ratified**: 2026-01-20 | **Last Amended**: 2026-03-12

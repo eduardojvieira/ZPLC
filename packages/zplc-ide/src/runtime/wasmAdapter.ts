@@ -16,6 +16,8 @@ import type {
   VMInfo,
   WatchVariable,
   DebugAdapterEvents,
+  LoadProgramOptions,
+  ReadWatchOptions,
 } from './debugAdapter';
 import {
   getTypeSize,
@@ -216,7 +218,7 @@ export class WASMAdapter implements IDebugAdapter {
   // Program Loading
   // =========================================================================
 
-  async loadProgram(bytecode: Uint8Array): Promise<void> {
+  async loadProgram(bytecode: Uint8Array, _options?: LoadProgramOptions): Promise<void> {
     if (!this._connected || !this.module) {
       throw new Error('Not connected');
     }
@@ -575,7 +577,8 @@ export class WASMAdapter implements IDebugAdapter {
     };
   }
 
-  async readWatchVariables(variables: WatchVariable[]): Promise<WatchVariable[]> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async readWatchVariables(variables: WatchVariable[], _options?: ReadWatchOptions): Promise<WatchVariable[]> {
     if (!this._connected) {
       throw new Error('Not connected');
     }
@@ -585,7 +588,7 @@ export class WASMAdapter implements IDebugAdapter {
     for (const v of variables) {
       const size = getTypeSize(v.type, v.maxLength);
       const bytes = await this.peek(v.address, size);
-      const value = bytesToValue(bytes, v.type);
+      const value = bytesToValue(bytes, v.type, v.bitOffset);
 
       result.push({
         ...v,

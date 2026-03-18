@@ -42,6 +42,7 @@ import {
 import type { ProjectInfo } from '../utils/projectLoader';
 import type { SystemInfo, StatusInfo } from '../runtime/serialAdapter';
 import type { DebugMap } from '../compiler';
+import { appendConsoleEntries, type NewConsoleEntry } from './consoleEntries';
 
 // =============================================================================
 // Theme Types
@@ -106,8 +107,15 @@ export interface DebugState {
   /** Whether the debugger is currently polling for live values */
   isPolling: boolean;
   
-  /** Polling interval in milliseconds (default: 100ms) */
+  /** Polling interval in milliseconds (default: 500ms) */
   pollingInterval: number;
+
+  /**
+   * Whether the mpeek fast-poll path is enabled.
+   * Only meaningful in hardware mode. Requires the new firmware with
+   * `zplc dbg mpeek` support to be flashed. Off by default.
+   */
+  mpeekEnabled: boolean;
 }
 
 // =============================================================================
@@ -190,6 +198,7 @@ interface IDEState {
 
   // Actions - Console
   addConsoleEntry: (entry: Omit<ConsoleEntry, 'id' | 'timestamp'>) => void;
+  addConsoleEntries: (entries: NewConsoleEntry[]) => void;
   clearConsole: () => void;
   setActiveConsoleTab: (tab: ConsoleTab) => void;
   addCompilerMessage: (message: Omit<CompilerMessage, 'timestamp'>) => void;
@@ -217,6 +226,7 @@ interface IDEState {
   clearLiveValues: () => void;
   setPolling: (isPolling: boolean) => void;
   setPollingInterval: (interval: number) => void;
+  toggleMpeek: () => void;
   getBreakpointsForFile: (fileId: string) => Set<number>;
   getAllBreakpointPCs: () => number[];
 
@@ -312,7 +322,8 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     watchVariables: [],
     liveValues: new Map(),
     isPolling: false,
-    pollingInterval: 100,
+    pollingInterval: 500,
+    mpeekEnabled: false,
   },
 
   // ==========================================================================
@@ -574,7 +585,8 @@ export const useIDEStore = create<IDEState>((set, get) => ({
         watchVariables: [],
         liveValues: new Map(),
         isPolling: false,
-        pollingInterval: 100,
+        pollingInterval: 500,
+        mpeekEnabled: false,
       },
     });
 
@@ -982,14 +994,12 @@ export const useIDEStore = create<IDEState>((set, get) => ({
 
   addConsoleEntry: (entry) =>
     set((state) => ({
-      consoleEntries: [
-        ...state.consoleEntries,
-        {
-          ...entry,
-          id: crypto.randomUUID(),
-          timestamp: new Date(),
-        },
-      ],
+      consoleEntries: appendConsoleEntries(state.consoleEntries, [entry]),
+    })),
+
+  addConsoleEntries: (entries) =>
+    set((state) => ({
+      consoleEntries: appendConsoleEntries(state.consoleEntries, entries),
     })),
 
   clearConsole: () => set({ consoleEntries: [] }),
@@ -1160,29 +1170,41 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       debug: { ...state.debug, pollingInterval },
     })),
 
+  toggleMpeek: () =>
+    set((state) => ({
+      debug: { ...state.debug, mpeekEnabled: !state.debug.mpeekEnabled },
+    })),
+
   getBreakpointsForFile: (fileId) => {
     const { debug } = get();
     return debug.breakpoints.get(fileId) || new Set();
   },
 
   getAllBreakpointPCs: () => {
-    const { debug } = get();
+    const { debug, loadedFiles } = get();
     const pcs: number[] = [];
-    
+
     if (!debug.debugMap) return pcs;
-    
-    // For each file's breakpoints, look up the PC from the debug map
+
+    // For each file's breakpoints, look up the PC from the debug map.
+    // fileId is NOT a plain filename — it is a sanitized path key like
+    // "file-src-main-st". We must resolve the actual filename via loadedFiles
+    // and then strip the extension to get the POU name used in the debug map.
     for (const [fileId, lineNumbers] of debug.breakpoints) {
-      // Heuristic: map fileId to POU name by taking the filename without extension
-      const fileName = fileId.split('/').pop() || fileId;
-      const pouNameFromPath = fileName.replace(/\.[^.]+$/, '');
-      
+      // Resolve the human-readable filename (e.g. "main.st") from the store.
+      // Fall back to the raw fileId only if the file is not loaded (shouldn't
+      // happen in practice, but keeps us safe).
+      const resolvedFile = loadedFiles.get(fileId);
+      const rawName = resolvedFile?.name ?? fileId;
+
+      // Strip extension: "main.st" → "main", "CONVEYOR.LD" → "CONVEYOR"
+      const pouNameFromPath = rawName.replace(/\.[^.]+$/, '');
+
       for (const line of lineNumbers) {
-        // Search for the POU that matches this file
+        // Search all POUs in the debug map for a case-insensitive name match.
         for (const [pouName, pouInfo] of Object.entries(debug.debugMap.pou)) {
-          // Check if POU name matches the file name (case-insensitive)
           if (pouName.toLowerCase() === pouNameFromPath.toLowerCase()) {
-            const mapping = pouInfo.sourceMap.find(m => m.line === line);
+            const mapping = pouInfo.sourceMap.find((m) => m.line === line);
             if (mapping) {
               pcs.push(mapping.pc);
             }
@@ -1190,7 +1212,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
         }
       }
     }
-    
+
     return pcs;
   },
 

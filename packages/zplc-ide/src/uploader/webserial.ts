@@ -71,6 +71,9 @@ declare global {
   }
 }
 
+import { getUploadCommandSet } from '../runtime/uploadProtocol';
+import { formatChunkTrace, sanitizeUploadTraceCommand, type UploadTraceCallback } from '../runtime/uploadTrace';
+
 /** Maximum bytes per data chunk (16 bytes = 32 hex characters) - reduced for stability */
 const MAX_CHUNK_SIZE = 16;
 
@@ -90,6 +93,13 @@ export interface SerialConnection {
   _readerTask: Promise<void> | null;
   // Internal: abort controller to stop reader
   _abortController: AbortController;
+  // Internal: live data listeners for non-destructive stream observation
+  _dataListeners: Set<(chunk: string) => void>;
+}
+
+export interface UploadBytecodeOptions {
+  hasSchedulerSupport?: boolean;
+  trace?: UploadTraceCallback;
 }
 
 /**
@@ -173,6 +183,7 @@ function startReaderTask(connection: SerialConnection): void {
         if (value) {
           const text = decoder.decode(value);
           connection._rxBuffer += text;
+          connection._dataListeners.forEach((listener) => listener(text));
           // Keep buffer from growing too large (keep last 10KB)
           if (connection._rxBuffer.length > 10000) {
             connection._rxBuffer = connection._rxBuffer.slice(-5000);
@@ -226,6 +237,7 @@ export async function connect(
     _rxBuffer: '',
     _readerTask: null,
     _abortController: new AbortController(),
+    _dataListeners: new Set(),
   };
 
   // Start background reader
@@ -250,6 +262,14 @@ export async function connect(
   console.log('[WebSerial] Connected and ready');
 
   return connection;
+}
+
+export function addDataListener(connection: SerialConnection, listener: (chunk: string) => void): void {
+  connection._dataListeners.add(listener);
+}
+
+export function removeDataListener(connection: SerialConnection, listener: (chunk: string) => void): void {
+  connection._dataListeners.delete(listener);
 }
 
 /**
@@ -450,8 +470,12 @@ export async function uploadCertificates(
 export async function uploadBytecode(
   connection: SerialConnection,
   bytecode: Uint8Array,
-  onProgress?: ProgressCallback
+  onProgress?: ProgressCallback,
+  options: UploadBytecodeOptions = {}
 ): Promise<void> {
+  const commandSet = getUploadCommandSet(options.hasSchedulerSupport ?? false);
+  const trace = options.trace;
+
   const notify = (
     stage: Parameters<ProgressCallback>[0],
     progress: number,
@@ -472,7 +496,9 @@ export async function uploadBytecode(
 
     // Step 1: Stop any running program
     notify('stopping', 0, 'Stopping current program...');
+    trace?.({ kind: 'command', message: sanitizeUploadTraceCommand('zplc stop') });
     const stopResponse = await sendCommand(connection, 'zplc stop');
+    trace?.({ kind: 'response', message: stopResponse });
     // Accept OK and WARN (WARN is returned if already stopped)
     if (stopResponse.startsWith('ERROR:')) {
       throw new Error(`Stop failed: ${stopResponse}`);
@@ -484,7 +510,11 @@ export async function uploadBytecode(
     // Step 2: Prepare to load
     console.log(`[WebSerial] Starting upload. Bytecode size: ${bytecode.length} bytes`);
     notify('loading', 10, `Preparing to receive ${bytecode.length} bytes...`);
-    const loadResponse = await sendCommand(connection, `zplc load ${bytecode.length}`);
+    const loadCommand = `${commandSet.load} ${bytecode.length}`;
+    trace?.({ kind: 'stage', message: `Preparing device for ${bytecode.length} upload bytes` });
+    trace?.({ kind: 'command', message: sanitizeUploadTraceCommand(loadCommand) });
+    const loadResponse = await sendCommand(connection, loadCommand);
+    trace?.({ kind: 'response', message: loadResponse });
     if (loadResponse.startsWith('ERROR:')) {
       throw new Error(`Load failed: ${loadResponse}`);
     }
@@ -507,7 +537,12 @@ export async function uploadBytecode(
       notify('sending', progress, `Sending chunk ${chunkNum + 1}/${totalChunks}...`);
 
       console.log(`[WebSerial] Sending chunk ${chunkNum + 1}/${totalChunks}: ${hexChunk}`);
-      const dataResponse = await sendCommand(connection, `zplc data ${hexChunk}`);
+      trace?.({
+        kind: 'command',
+        message: formatChunkTrace(commandSet.data, chunkNum + 1, totalChunks, chunkSize),
+      });
+      const dataResponse = await sendCommand(connection, `${commandSet.data} ${hexChunk}`);
+      trace?.({ kind: 'response', message: dataResponse });
       if (dataResponse.startsWith('ERROR:')) {
         throw new Error(`Data transfer failed at offset ${offset}: ${dataResponse}`);
       }
@@ -517,10 +552,14 @@ export async function uploadBytecode(
     }
 
     // Step 4: Start execution
-    notify('starting', 95, 'Starting program...');
-    const startResponse = await sendCommand(connection, 'zplc start');
-    if (startResponse.startsWith('ERROR:')) {
-      throw new Error(`Start failed: ${startResponse}`);
+    if (commandSet.start) {
+      notify('starting', 95, 'Starting program...');
+      trace?.({ kind: 'command', message: sanitizeUploadTraceCommand(commandSet.start) });
+      const startResponse = await sendCommand(connection, commandSet.start);
+      trace?.({ kind: 'response', message: startResponse });
+      if (startResponse.startsWith('ERROR:')) {
+        throw new Error(`Start failed: ${startResponse}`);
+      }
     }
 
     notify('complete', 100, 'Upload complete! Program running.');
