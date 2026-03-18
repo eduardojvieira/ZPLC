@@ -6,6 +6,15 @@ sidebar_position: 1
 
 Structured Text (ST) is a high-level, Pascal-like programming language defined by IEC 61131-3. It is the primary language for ZPLC, offering powerful control flow and complex algorithm capabilities.
 
+## Canonical Role in v1.5
+
+For v1.5, Structured Text is the canonical semantic baseline for all claimed IEC language
+paths. `IL`, `LD`, `FBD`, and `SFC` are supported release architectures when they
+normalize into ST-equivalent behavior and still satisfy the full IDE workflow.
+
+Use the [v1.5 Language Suite](./examples/v1-5-language-suite.md) as the shared parity
+reference when validating language claims.
+
 ## Syntax Overview
 
 ### Comments

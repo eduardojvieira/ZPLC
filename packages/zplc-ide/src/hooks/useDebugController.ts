@@ -25,6 +25,13 @@ import { valueToBytes } from '../runtime/debugAdapter';
 import { WASMAdapter } from '../runtime/wasmAdapter';
 import { connectionManager } from '../runtime/connectionManager';
 import type { DebugMap } from '../compiler';
+import { findVariable } from '../compiler';
+import type { UploadTraceEvent } from '../runtime/uploadTrace';
+import {
+  resolveExecutionLocation,
+} from './debugExecutionLocation';
+
+const DEVICE_LOG_FLUSH_MS = 100;
 
 // =============================================================================
 // Types
@@ -93,6 +100,8 @@ export function useDebugController(): DebugController {
   // Refs for polling
   const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const adapterRef = useRef<IDebugAdapter | null>(null);
+  const deviceLogQueueRef = useRef<string[]>([]);
+  const deviceLogFlushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Store selectors
   const debugMode = useIDEStore((state) => state.debug.mode);
@@ -100,6 +109,7 @@ export function useDebugController(): DebugController {
   const watchVariables = useIDEStore((state) => state.debug.watchVariables);
   const pollingInterval = useIDEStore((state) => state.debug.pollingInterval);
   const isPolling = useIDEStore((state) => state.debug.isPolling);
+  const mpeekEnabled = useIDEStore((state) => state.debug.mpeekEnabled);
   const projectConfig = useIDEStore((state) => state.projectConfig);
 
   // Store actions
@@ -111,6 +121,49 @@ export function useDebugController(): DebugController {
   const setPolling = useIDEStore((state) => state.setPolling);
   const getAllBreakpointPCs = useIDEStore((state) => state.getAllBreakpointPCs);
   const addConsoleEntry = useIDEStore((state) => state.addConsoleEntry);
+  const addConsoleEntries = useIDEStore((state) => state.addConsoleEntries);
+
+  const flushDeviceLogs = useCallback(() => {
+    if (deviceLogFlushTimerRef.current) {
+      clearTimeout(deviceLogFlushTimerRef.current);
+      deviceLogFlushTimerRef.current = null;
+    }
+
+    if (deviceLogQueueRef.current.length === 0) {
+      return;
+    }
+
+    const queuedLines = deviceLogQueueRef.current;
+    deviceLogQueueRef.current = [];
+
+    addConsoleEntries(
+      queuedLines.map((line) => ({
+        type: 'info' as const,
+        message: line,
+        source: 'device',
+      })),
+    );
+  }, [addConsoleEntries]);
+
+  const enqueueDeviceLog = useCallback((line: string) => {
+    deviceLogQueueRef.current.push(line);
+
+    if (deviceLogFlushTimerRef.current !== null) {
+      return;
+    }
+
+    deviceLogFlushTimerRef.current = setTimeout(() => {
+      flushDeviceLogs();
+    }, DEVICE_LOG_FLUSH_MS);
+  }, [flushDeviceLogs]);
+
+  const logUploadTrace = useCallback((event: UploadTraceEvent) => {
+    addConsoleEntry({
+      type: event.kind === 'command' ? 'command' : 'info',
+      message: event.message,
+      source: 'runtime',
+    });
+  }, [addConsoleEntry]);
 
   // Keep adapter ref in sync
   adapterRef.current = adapter;
@@ -135,24 +188,8 @@ export function useDebugController(): DebugController {
       });
     },
     onBreakpointHit: (pc: number, line?: number) => {
-      // Find the source line from debug map
-      if (debugMap) {
-        let foundLine = line;
-        let foundPOU: string | null = null;
-
-        for (const [pouName, pouInfo] of Object.entries(debugMap.pou)) {
-          const mapping = pouInfo.sourceMap.find((m) => m.pc === pc);
-          if (mapping) {
-            foundLine = mapping.line;
-            foundPOU = pouName;
-            break;
-          }
-        }
-
-        setCurrentExecution(foundPOU, foundLine ?? null, pc);
-      } else {
-        setCurrentExecution(null, line ?? null, pc);
-      }
+      const resolved = resolveExecutionLocation(debugMap, pc, line);
+      setCurrentExecution(resolved.pouName, resolved.line, resolved.pc);
 
       addConsoleEntry({
         type: 'info',
@@ -161,24 +198,24 @@ export function useDebugController(): DebugController {
       });
     },
     onStepComplete: (pc: number) => {
-      // Update current execution after step
-      if (debugMap) {
-        for (const [pouName, pouInfo] of Object.entries(debugMap.pou)) {
-          const mapping = pouInfo.sourceMap.find((m) => m.pc === pc);
-          if (mapping) {
-            setCurrentExecution(pouName, mapping.line, pc);
-            return;
-          }
-        }
-      }
-      setCurrentExecution(null, null, pc);
+      const resolved = resolveExecutionLocation(debugMap, pc);
+      setCurrentExecution(resolved.pouName, resolved.line, resolved.pc);
     },
     onGpioChange: (_channel: number, value: number) => {
       // Update OPI-based watch variables
       // The GPIO values are at OPI base addresses
       updateLiveValues(new Map([[`GPIO_OUT`, value]]));
     },
-  }), [debugMap, setCurrentExecution, addConsoleEntry, updateLiveValues]);
+    onSerialData: (line: string) => {
+      enqueueDeviceLog(line);
+    },
+  }), [debugMap, enqueueDeviceLog, setCurrentExecution, addConsoleEntry, updateLiveValues]);
+
+  useEffect(() => {
+    return () => {
+      flushDeviceLogs();
+    };
+  }, [flushDeviceLogs]);
 
   // =========================================================================
   // Adapter Lifecycle
@@ -233,10 +270,18 @@ export function useDebugController(): DebugController {
         throw new Error('Failed to get serial adapter from connection manager');
       }
       
+      // Register event handlers BEFORE reading the current state so that any
+      // future state transitions (running → paused, etc.) are captured.
       serialAdapter.setEventHandlers(createEventHandlers());
 
+      // The adapter may have already determined the VM state during connect()
+      // (e.g., 'running' if cycles > 0 on the device). Sync that state now
+      // instead of forcing 'idle', which would prevent the polling loop from
+      // starting when the device is already executing a program.
+      const initialState = serialAdapter.state;
+
       setAdapter(serialAdapter);
-      setVmState('idle');
+      setVmState(initialState);
       setLastError(null);
       setDebugMode('hardware');
 
@@ -316,12 +361,21 @@ export function useDebugController(): DebugController {
         if (projectConfig) {
           addConsoleEntry({
             type: 'info',
-            message: 'Applying project network and communication settings...',
+            message: 'Applying project configuration...',
             source: 'debugger',
           });
-          await connectionManager.provisionProjectConfig(projectConfig);
+          await connectionManager.provisionProjectConfig(projectConfig, logUploadTrace);
         }
-        await connectionManager.uploadBytecode(bytecode);
+        await connectionManager.uploadBytecode(bytecode, { trace: logUploadTrace });
+
+        // Trigger network bring-up in the background AFTER the program is
+        // loaded. This is intentionally fire-and-forget: a WiFi connect
+        // timeout must never block or fail the upload.
+        if (projectConfig) {
+          connectionManager.triggerNetworkBringUp(projectConfig).catch((e) => {
+            console.warn('[useDebugController] network bring-up error (non-fatal):', e);
+          });
+        }
       } else {
         await adapterRef.current.loadProgram(bytecode);
       }
@@ -357,7 +411,7 @@ export function useDebugController(): DebugController {
         connectionManager.resumePolling();
       }
     }
-  }, [debugMode, projectConfig, setDebugMap, getAllBreakpointPCs, addConsoleEntry]);
+  }, [debugMode, projectConfig, setDebugMap, getAllBreakpointPCs, addConsoleEntry, logUploadTrace]);
 
   // =========================================================================
   // Execution Control
@@ -437,64 +491,96 @@ export function useDebugController(): DebugController {
   // =========================================================================
 
   useEffect(() => {
-    // Only poll when running or paused and we have watch variables
+    // Poll whenever connected and running/paused — even if no explicit watch
+    // variables, because the inline editor overlay also reads from liveValues
+    // and relies on debugMap vars being polled automatically.
     const shouldPoll =
       adapter?.connected &&
-      (vmState === 'running' || vmState === 'paused') &&
-      watchVariables.length > 0;
+      (vmState === 'running' || vmState === 'paused');
 
-    if (shouldPoll && !pollingIntervalRef.current) {
+    if (shouldPoll) {
+      // Always clear any existing interval before (re-)starting.
+      // This ensures that when `debugMap` arrives late via a store update the
+      // effect re-runs and the new closure captures the up-to-date debugMap
+      // instead of keeping the stale null-closure that was registered first.
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
       setPolling(true);
 
+      let isPollingWatch = false;
       pollingIntervalRef.current = setInterval(async () => {
         if (!adapterRef.current?.connected) return;
+        if (isPollingWatch) return;
 
         try {
-          // Build watch variable descriptors from debug map
-          const variables = watchVariables.map((varPath) => {
-            // Look up variable in debug map
-            if (debugMap) {
-              // Check POU variables (all variables are in POUs)
-              for (const [_pouName, pouInfo] of Object.entries(debugMap.pou)) {
-                const varInfo = pouInfo.vars[varPath];
-                if (varInfo) {
-                  // Map debug types to WatchVariable types
-                  type WatchType = 'BOOL' | 'INT' | 'DINT' | 'REAL' | 'BYTE' | 'WORD' | 'DWORD' | 'TIME' | 'STRING';
-                  let mappedType: WatchType = 'DWORD';
-                  const t = varInfo.type.toUpperCase();
-                  if (t === 'BOOL') mappedType = 'BOOL';
-                  else if (t === 'INT' || t === 'SINT' || t === 'USINT' || t === 'UINT') mappedType = 'INT';
-                  else if (t === 'DINT' || t === 'UDINT' || t === 'LINT' || t === 'ULINT') mappedType = 'DINT';
-                  else if (t === 'REAL' || t === 'LREAL') mappedType = 'REAL';
-                  else if (t === 'BYTE') mappedType = 'BYTE';
-                  else if (t === 'WORD') mappedType = 'WORD';
-                  else if (t === 'DWORD' || t === 'LWORD') mappedType = 'DWORD';
-                  else if (t === 'TIME') mappedType = 'TIME';
-                  else if (t === 'STRING') mappedType = 'STRING';
-                  
-                  return {
-                    name: varPath,
-                    address: varInfo.addr,
-                    type: mappedType,
-                    forceable: varInfo.region === 'IPI',
-                    maxLength: mappedType === 'STRING' && varInfo.size ? Math.max(0, varInfo.size - 3) : undefined,
-                  };
-                }
+          isPollingWatch = true;
+          // Build the set of variable paths to poll:
+          //   1. All explicitly added watch variables (shown in Watch panel)
+          //   2. All top-level vars from every POU in the debugMap so that
+          //      the inline editor overlay shows live values automatically
+          //      without requiring the user to add each variable manually.
+          //
+          // Cap at 64 vars to keep serial traffic reasonable on hardware.
+          const pathSet = new Set<string>(watchVariables);
+
+          // Always add all debugMap variables so the inline editor overlay shows live values
+          // regardless of the transport mode (peek vs mpeek).
+          // mpeekEnabled only controls the serial command used — not which vars are polled.
+          if (debugMap) {
+            outer: for (const [, pouInfo] of Object.entries(debugMap.pou)) {
+              for (const varName of Object.keys(pouInfo.vars)) {
+                if (pathSet.size >= 64) break outer;
+                pathSet.add(varName);
               }
             }
+          }
 
-            // Fallback: assume it's a direct memory address
-            return {
-              name: varPath,
-              address: 0,
-              type: 'DWORD' as const,
-              forceable: false,
-            };
-          }).filter((v) => v.address !== 0);
+          // Helper: map a varPath to a WatchVariable descriptor
+          type WatchType = 'BOOL' | 'INT' | 'DINT' | 'REAL' | 'BYTE' | 'WORD' | 'DWORD' | 'TIME' | 'STRING';
+          const toDescriptor = (varPath: string): { name: string; address: number; type: WatchType; forceable: boolean; bitOffset?: number; maxLength?: number } | null => {
+            if (debugMap) {
+              const found = findVariable(debugMap, varPath);
+              if (found) {
+                const varInfo = found.varInfo;
+                let mappedType: WatchType = 'DWORD';
+                const t = varInfo.type.toUpperCase();
+                if (t === 'BOOL') mappedType = 'BOOL';
+                else if (t === 'INT' || t === 'SINT' || t === 'USINT' || t === 'UINT') mappedType = 'INT';
+                else if (t === 'DINT' || t === 'UDINT' || t === 'LINT' || t === 'ULINT') mappedType = 'DINT';
+                else if (t === 'REAL' || t === 'LREAL') mappedType = 'REAL';
+                else if (t === 'BYTE') mappedType = 'BYTE';
+                else if (t === 'WORD') mappedType = 'WORD';
+                else if (t === 'DWORD' || t === 'LWORD') mappedType = 'DWORD';
+                else if (t === 'TIME') mappedType = 'TIME';
+                else if (t === 'STRING') mappedType = 'STRING';
 
-          if (variables.length === 0) return;
+                return {
+                  name: varPath,
+                  address: varInfo.addr,
+                  type: mappedType,
+                  forceable: varInfo.region === 'IPI',
+                  bitOffset: varInfo.bitOffset,
+                  maxLength: mappedType === 'STRING' && varInfo.size ? Math.max(0, varInfo.size - 3) : undefined,
+                };
+              }
+            }
+            return null;
+          };
 
-          const results = await adapterRef.current.readWatchVariables(variables);
+          const variables = Array.from(pathSet)
+            .map(toDescriptor)
+            .filter((v): v is NonNullable<ReturnType<typeof toDescriptor>> => v !== null && v.address !== 0);
+
+          if (variables.length === 0) {
+            console.log('[useDebugController] No variables to poll');
+            return;
+          }
+
+          console.log(`[useDebugController] Polling ${variables.length} variables. mpeekEnabled: ${mpeekEnabled}`);
+
+          const results = await adapterRef.current.readWatchVariables(variables, { useMpeek: mpeekEnabled });
 
           const newValues = new Map<string, LiveValue>();
           for (const result of results) {
@@ -504,10 +590,15 @@ export function useDebugController(): DebugController {
           }
 
           if (newValues.size > 0) {
+            console.log(`[useDebugController] Updating live values with ${newValues.size} items`, Array.from(newValues.entries()));
             updateLiveValues(newValues);
+          } else {
+            console.log(`[useDebugController] readWatchVariables returned 0 new values! results:`, results);
           }
         } catch (err) {
           console.error('Polling error:', err);
+        } finally {
+          isPollingWatch = false;
         }
       }, pollingInterval);
     } else if (!shouldPoll && pollingIntervalRef.current) {
@@ -528,6 +619,7 @@ export function useDebugController(): DebugController {
     watchVariables,
     pollingInterval,
     debugMap,
+    mpeekEnabled,
     setPolling,
     updateLiveValues,
   ]);

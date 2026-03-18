@@ -13,10 +13,14 @@ ZPLC (Zephyr PLC) is a next-generation, deterministic IEC 61131-3 compatible run
 
 ## Core Concepts
 
-*   **Determinism**: Predictable execution times are non-negotiable. ZPLC is built on Zephyr RTOS, ensuring real-time behavior.
-*   **Portability**: "One Execution Core, Any Runtime." The C-based core VM is decoupled from the hardware via a strict Hardware Abstraction Layer (HAL).
-*   **Security**: Built from the ground up with secure principles, targeting robust deployment in industrial environments.
-*   **Modern Developer Experience**: A web-based IDE (using React, TypeScript, and Monaco) brings standard software development workflows (Git, CI/CD) to PLC programming.
+- **Determinism**: Predictable execution time is non-negotiable. The runtime remains
+  bounded, static-memory, and task-oriented.
+- **Portability**: One execution core, multiple runtimes. The VM stays separated from the
+  platform through a strict HAL contract.
+- **Truthful scope**: v1.5 only claims what the repository, docs, CI, and human evidence
+  can actually prove.
+- **Modern engineering workflow**: IDE, compiler, CI, and docs are treated as one product
+  surface instead of disconnected demos.
 
 ## Product Boundaries
 
@@ -24,9 +28,20 @@ ZPLC consists of several distinct subsystems:
 
 1.  **Core VM (`firmware/lib/zplc_core`)**: The C99 bytecode interpreter. It handles scheduling, task management, and executing the compiled logic. It has zero dependencies on specific hardware.
 2.  **Hardware Abstraction Layer (HAL)**: The contract that allows the Core VM to run on various targets (e.g., STM32, ESP32, POSIX).
-3.  **Compiler (`packages/compiler`)**: Translates IEC 61131-3 languages (like Structured Text) into the `.zplc` bytecode format.
-4.  **Web IDE (`packages/ide`)**: The browser-based development environment for authoring, compiling, and deploying PLC logic.
+3.  **Compiler (`packages/zplc-compiler`)**: Translates IEC language paths into `.zplc`
+    bytecode.
+4.  **IDE (`packages/zplc-ide`)**: Authoring, compiling, simulation, deployment, and
+    debugging for the claimed language workflows.
 5.  **Target Runtimes**: Specific firmware builds that combine the Core VM, a HAL implementation, and an RTOS (usually Zephyr).
+
+## v1.5 Release Boundaries
+
+The release foundation is considered real only when:
+
+- supported boards come from one canonical manifest;
+- claimed language workflows have matching automation and docs;
+- protocol features have runtime, compiler, IDE, and docs evidence;
+- desktop and HIL claims have human proof, not only code presence.
 
 ## Why ZPLC?
 

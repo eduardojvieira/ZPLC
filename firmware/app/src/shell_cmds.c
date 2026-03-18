@@ -52,7 +52,9 @@ extern void zplc_mqtt_request_backoff_reset(void);
 #include <hardware/clocks.h>
 #define CPU_FREQ_MHZ (clock_get_hz(clk_sys) / 1000000)
 #else
-#define CPU_FREQ_MHZ 125
+/* Use Zephyr's portable runtime clock API for all other SoCs (ESP32-S3, STM32, etc.) */
+#include <zephyr/sys_clock.h>
+#define CPU_FREQ_MHZ (sys_clock_hw_cycles_per_sec() / 1000000U)
 #endif
 
 typedef enum {
@@ -535,6 +537,7 @@ static int cmd_sched_status(const struct shell *sh, size_t argc, char **argv);
 static int cmd_sched_tasks(const struct shell *sh, size_t argc, char **argv);
 static int cmd_sched_load(const struct shell *sh, size_t argc, char **argv);
 static int cmd_sched_data(const struct shell *sh, size_t argc, char **argv);
+static int sched_reset_runtime(bool restart);
 static int cmd_sys_info(const struct shell *sh, size_t argc, char **argv);
 static int cmd_sys_reboot(const struct shell *sh, size_t argc, char **argv);
 #endif
@@ -563,7 +566,6 @@ static int cmd_sched_status(const struct shell *sh, size_t argc, char **argv) {
     JSON_STR(sh, "state", state_name((zplc_state_t)zplc_sched_get_state()),
              true);
     JSON_UINT(sh, "uptime_ms", stats.uptime_ms, true);
-    JSON_OBJ_START(sh);
     shell_fprintf(sh, SHELL_NORMAL, "\"stats\":");
     JSON_OBJ_START(sh);
     JSON_UINT(sh, "cycles", stats.total_cycles, true);
@@ -649,15 +651,11 @@ static int cmd_sched_data(const struct shell *sh, size_t argc, char **argv) {
   }
   program_received_size += decoded;
   if (program_received_size >= program_expected_size) {
-    int ret = zplc_sched_load(program_buffer, program_received_size);
+    int ret = sched_reset_runtime(true);
     if (ret < 0) {
       shell_error(sh, "ERROR: Scheduler load failed (%d)", ret);
       program_expected_size = 0;
       return ret;
-    }
-    ret = zplc_sched_start();
-    if (ret < 0) {
-      shell_warn(sh, "WARN: zplc_sched_start returned %d (may already be running)", ret);
     }
     shell_print(sh, "OK: Program loaded and started (%zu bytes)", program_received_size);
     program_expected_size = 0;
@@ -895,6 +893,160 @@ static int cmd_dbg_peek(const struct shell *sh, size_t argc, char **argv) {
   return 0;
 }
 
+/**
+ * @brief Handler for 'zplc dbg mpeek <addr:len,...>'
+ *
+ * Reads up to MPEEK_MAX_ENTRIES non-contiguous addresses in a single serial
+ * round-trip and emits a compact JSON response:
+ *   {"t":"mpeek","results":[{"addr":N,"bytes":"HEXHEX"},...]}\n
+ *
+ * Input format: comma-separated addr:len pairs, e.g.
+ *   zplc dbg mpeek 0x2000:2,0x2002:2,0x2004:1
+ *
+ * Constraints:
+ *   - Max MPEEK_MAX_ENTRIES entries per call
+ *   - Max MPEEK_MAX_BYTES total bytes across all entries
+ *   - Each len 1–256
+ *   - Addresses must be in a valid ZPLC memory region
+ */
+#define MPEEK_MAX_ENTRIES 16
+#define MPEEK_MAX_BYTES   256
+
+static int cmd_dbg_mpeek(const struct shell *sh, size_t argc, char **argv) {
+  if (argc < 2) {
+    shell_error(sh, "Usage: zplc dbg mpeek <addr:len>[,<addr:len>...]");
+    return -EINVAL;
+  }
+
+  /* Working storage for parsed entries */
+  struct {
+    unsigned long addr;
+    unsigned long len;
+  } entries[MPEEK_MAX_ENTRIES];
+  int entry_count = 0;
+  unsigned long total_bytes = 0;
+
+  /* Parse comma-separated addr:len pairs from argv[1] */
+  char buf[256];
+  strncpy(buf, argv[1], sizeof(buf) - 1);
+  buf[sizeof(buf) - 1] = '\0';
+
+  char *saveptr = NULL;
+  char *token = strtok_r(buf, ",", &saveptr);
+  while (token != NULL) {
+    if (entry_count >= MPEEK_MAX_ENTRIES) {
+      shell_error(sh, "ERROR: Too many entries (max %d)", MPEEK_MAX_ENTRIES);
+      return -EINVAL;
+    }
+
+    /* Split on ':' to get addr and len */
+    char *colon = strchr(token, ':');
+    if (colon == NULL) {
+      shell_error(sh, "ERROR: Missing ':' in entry '%s'", token);
+      return -EINVAL;
+    }
+    *colon = '\0';
+
+    char *endptr;
+    unsigned long addr = strtoul(token, &endptr, 0);
+    if (*endptr != '\0') {
+      shell_error(sh, "ERROR: Invalid address '%s'", token);
+      return -EINVAL;
+    }
+
+    unsigned long len = strtoul(colon + 1, &endptr, 0);
+    if (*endptr != '\0' || len == 0 || len > 256) {
+      shell_error(sh, "ERROR: Invalid length in entry (1-256)");
+      return -EINVAL;
+    }
+
+    total_bytes += len;
+    if (total_bytes > MPEEK_MAX_BYTES) {
+      shell_error(sh, "ERROR: Total bytes exceed limit (%d)", MPEEK_MAX_BYTES);
+      return -EINVAL;
+    }
+
+    entries[entry_count].addr = addr;
+    entries[entry_count].len  = len;
+    entry_count++;
+
+    token = strtok_r(NULL, ",", &saveptr);
+  }
+
+  if (entry_count == 0) {
+    shell_error(sh, "ERROR: No entries provided");
+    return -EINVAL;
+  }
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+  if (zplc_sched_lock(5) != 0) {
+    shell_error(sh, "ERROR: Could not acquire scheduler lock");
+    return -EBUSY;
+  }
+#endif
+
+  /* Emit JSON response */
+  shell_print(sh, "{\"t\":\"mpeek\",\"results\":[");
+
+  for (int i = 0; i < entry_count; i++) {
+    unsigned long addr = entries[i].addr;
+    unsigned long len  = entries[i].len;
+
+    /* Resolve memory region */
+    uint8_t *base = NULL;
+    uint16_t offset = 0;
+    uint16_t region_size = 0;
+
+    if (addr < ZPLC_MEM_OPI_BASE) {
+      base = zplc_mem_get_region(ZPLC_MEM_IPI_BASE);
+      offset = (uint16_t)addr;
+      region_size = ZPLC_MEM_IPI_SIZE;
+    } else if (addr < ZPLC_MEM_WORK_BASE) {
+      base = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
+      offset = (uint16_t)(addr - ZPLC_MEM_OPI_BASE);
+      region_size = ZPLC_MEM_OPI_SIZE;
+    } else if (addr < ZPLC_MEM_RETAIN_BASE) {
+      base = zplc_mem_get_region(ZPLC_MEM_WORK_BASE);
+      offset = (uint16_t)(addr - ZPLC_MEM_WORK_BASE);
+      region_size = ZPLC_MEM_WORK_SIZE;
+    } else {
+      base = zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE);
+      offset = (uint16_t)(addr - ZPLC_MEM_RETAIN_BASE);
+      region_size = ZPLC_MEM_RETAIN_SIZE;
+    }
+
+    /* Validate bounds */
+    if (base == NULL || (uint32_t)offset + (uint32_t)len > (uint32_t)region_size) {
+#ifdef CONFIG_ZPLC_SCHEDULER
+      (void)zplc_sched_unlock();
+#endif
+      shell_error(sh, "ERROR: Invalid address or out-of-bounds at 0x%lX", addr);
+      return -EINVAL;
+    }
+
+    /* Build hex string for the bytes */
+    char hex[513]; /* max 256 bytes × 2 hex chars + NUL */
+    unsigned int hex_pos = 0;
+    for (unsigned long b = 0; b < len; b++) {
+      hex_pos += (unsigned int)snprintf(hex + hex_pos, sizeof(hex) - hex_pos,
+                                        "%02X", base[offset + b]);
+    }
+    hex[hex_pos] = '\0';
+
+    bool last = (i == entry_count - 1);
+    shell_print(sh, "{\"addr\":%lu,\"bytes\":\"%s\"}%s",
+                addr, hex, last ? "" : ",");
+  }
+
+  shell_print(sh, "]}");
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+  (void)zplc_sched_unlock();
+#endif
+
+  return 0;
+}
+
 static int cmd_dbg_poke(const struct shell *sh, size_t argc, char **argv) {
   if (argc != 3) {
     shell_error(sh, "Usage: zplc dbg poke <addr> <value>");
@@ -1059,23 +1211,21 @@ static int cmd_dbg_mem(const struct shell *sh, size_t argc, char **argv) {
 static int cmd_dbg_pause(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
-  shell_print(
-      sh,
-      "WARN: Pause not supported in scheduler mode (use task-level control)");
+  shell_warn(sh, "WARN: Pause not supported in scheduler mode (use task-level control)");
   return 0;
 }
 
 static int cmd_dbg_resume(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
-  shell_print(sh, "WARN: Resume not supported in scheduler mode");
+  shell_warn(sh, "WARN: Resume not supported in scheduler mode");
   return 0;
 }
 
 static int cmd_dbg_step(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
-  shell_print(sh, "WARN: Step not supported in scheduler mode");
+  shell_warn(sh, "WARN: Step not supported in scheduler mode");
   return 0;
 }
 
@@ -2011,8 +2161,8 @@ static int cmd_config_get(const struct shell *sh, size_t argc, char **argv) {
 
 static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
   if (argc < 3) {
-    shell_error(sh, "Usage: zplc config set <key> <value>");
-    shell_print(sh, "Keys: hostname, dhcp, ip, ntp_enabled, ntp_server, modbus_id, modbus_tcp_enabled, modbus_tcp_port, modbus_rtu_enabled, modbus_rtu_baud, modbus_rtu_parity, modbus_rtu_client_enabled, modbus_rtu_client_slave_id, modbus_rtu_client_poll_ms, modbus_tcp_client_enabled, modbus_tcp_client_host, modbus_tcp_client_port, modbus_tcp_client_unit_id, modbus_tcp_client_poll_ms, modbus_tcp_client_timeout_ms, mqtt_enabled, mqtt_broker, mqtt_client_id, mqtt_group_id, mqtt_topic_namespace, mqtt_profile, mqtt_protocol, mqtt_transport, mqtt_port, mqtt_username, mqtt_password, mqtt_keepalive, mqtt_publish_interval, mqtt_publish_qos, mqtt_subscribe_qos, mqtt_publish_retain, mqtt_clean_session, mqtt_session_expiry, mqtt_security, mqtt_websocket_path, mqtt_alpn, mqtt_lwt_enabled, mqtt_lwt_topic, mqtt_lwt_payload, mqtt_lwt_qos, mqtt_lwt_retain, mqtt_ca_cert_path, mqtt_client_cert_path, mqtt_client_key_path, azure_sas_key, azure_sas_expiry_s, azure_twin_enabled, azure_direct_methods_enabled, azure_c2d_enabled, azure_dps_enabled, azure_dps_id_scope, azure_dps_registration_id, azure_dps_endpoint, azure_event_grid_topic, azure_event_grid_source, azure_event_grid_event_type, aws_shadow_enabled, aws_jobs_enabled, aws_fleet_enabled, aws_fleet_template_name, aws_claim_cert_path, aws_claim_key_path");
+    shell_error(sh, "ERROR: Usage: zplc config set <key> <value>");
+    shell_print(sh, "Keys: hostname, dhcp, ip, wifi_ssid, wifi_pass, wifi_security, ntp_enabled, ntp_server, modbus_id, modbus_tcp_enabled, modbus_tcp_port, modbus_rtu_enabled, modbus_rtu_baud, modbus_rtu_parity, modbus_rtu_client_enabled, modbus_rtu_client_slave_id, modbus_rtu_client_poll_ms, modbus_tcp_client_enabled, modbus_tcp_client_host, modbus_tcp_client_port, modbus_tcp_client_unit_id, modbus_tcp_client_poll_ms, modbus_tcp_client_timeout_ms, mqtt_enabled, mqtt_broker, mqtt_client_id, mqtt_group_id, mqtt_topic_namespace, mqtt_profile, mqtt_protocol, mqtt_transport, mqtt_port, mqtt_username, mqtt_password, mqtt_keepalive, mqtt_publish_interval, mqtt_publish_qos, mqtt_subscribe_qos, mqtt_publish_retain, mqtt_clean_session, mqtt_session_expiry, mqtt_security, mqtt_websocket_path, mqtt_alpn, mqtt_lwt_enabled, mqtt_lwt_topic, mqtt_lwt_payload, mqtt_lwt_qos, mqtt_lwt_retain, mqtt_ca_cert_path, mqtt_client_cert_path, mqtt_client_key_path, azure_sas_key, azure_sas_expiry_s, azure_twin_enabled, azure_direct_methods_enabled, azure_c2d_enabled, azure_dps_enabled, azure_dps_id_scope, azure_dps_registration_id, azure_dps_endpoint, azure_event_grid_topic, azure_event_grid_source, azure_event_grid_event_type, aws_shadow_enabled, aws_jobs_enabled, aws_fleet_enabled, aws_fleet_template_name, aws_claim_cert_path, aws_claim_key_path");
     return -EINVAL;
   }
 
@@ -2025,6 +2175,12 @@ static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
     zplc_config_set_dhcp(strcmp(val, "true") == 0 || strcmp(val, "1") == 0);
   } else if (strcmp(key, "ip") == 0) {
     zplc_config_set_ip(val);
+  } else if (strcmp(key, "wifi_ssid") == 0) {
+    zplc_config_set_wifi_ssid(val);
+  } else if (strcmp(key, "wifi_pass") == 0) {
+    zplc_config_set_wifi_pass(val);
+  } else if (strcmp(key, "wifi_security") == 0) {
+    zplc_config_set_wifi_security((uint8_t)atoi(val));
   } else if (strcmp(key, "ntp_enabled") == 0) {
     zplc_config_set_ntp_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
   } else if (strcmp(key, "ntp_server") == 0) {
@@ -2154,11 +2310,11 @@ static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
   } else if (strcmp(key, "aws_claim_key_path") == 0) {
     zplc_config_set_aws_claim_key_path(val);
   } else {
-    shell_error(sh, "Unknown config key: %s", key);
+    shell_error(sh, "ERROR: Unknown config key: %s", key);
     return -EINVAL;
   }
 
-  shell_print(sh, "Config updated. Use 'zplc config save' to persist.");
+  shell_print(sh, "OK: Config updated");
   return 0;
 }
 
@@ -2167,10 +2323,10 @@ static int cmd_config_save(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argv);
   int err = zplc_config_save();
   if (err) {
-    shell_error(sh, "Failed to save config: %d", err);
+    shell_error(sh, "ERROR: Failed to save config: %d", err);
     return err;
   }
-  shell_print(sh, "Config saved to flash.");
+  shell_print(sh, "OK: Config saved");
   return 0;
 }
 
@@ -2178,7 +2334,7 @@ static int cmd_config_reset(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
   zplc_config_reset();
-  shell_print(sh, "Config reset to defaults.");
+  shell_print(sh, "OK: Config reset");
   return 0;
 }
 
@@ -2533,12 +2689,12 @@ static int cmd_comm_map(const struct shell *sh, size_t argc, char **argv)
 static int cmd_comm_set(const struct shell *sh, size_t argc, char **argv)
 {
   if (argc < 4) {
-    shell_error(sh, "Usage: zplc comm set modbus <index> <address>");
+    shell_error(sh, "ERROR: Usage: zplc comm set modbus <index> <address>");
     return -EINVAL;
   }
 
   if (strcmp(argv[1], "modbus") != 0) {
-    shell_error(sh, "Only modbus overrides are supported");
+    shell_error(sh, "ERROR: Only modbus overrides are supported");
     return -EINVAL;
   }
 
@@ -2546,7 +2702,7 @@ static int cmd_comm_set(const struct shell *sh, size_t argc, char **argv)
   uint32_t address = (uint32_t)strtoul(argv[3], NULL, 10);
   const zplc_tag_entry_t *tag = zplc_core_get_tag(index);
   if (!tag || tag->tag_id != ZPLC_TAG_MODBUS) {
-    shell_error(sh, "Tag index %u is not a Modbus binding", index);
+    shell_error(sh, "ERROR: Tag index %u is not a Modbus binding", index);
     return -EINVAL;
   }
 
@@ -2560,7 +2716,7 @@ static int cmd_comm_set(const struct shell *sh, size_t argc, char **argv)
     uint32_t other_end = other_start + comm_modbus_width(other->var_type) - 1U;
     uint32_t new_end = address + comm_modbus_width(tag->var_type) - 1U;
     if (!(new_end < other_start || address > other_end)) {
-      shell_error(sh, "Modbus range %lu-%lu overlaps tag %u (%lu-%lu)",
+      shell_error(sh, "ERROR: Modbus range %lu-%lu overlaps tag %u (%lu-%lu)",
                   (unsigned long)address,
                   (unsigned long)new_end,
                   i,
@@ -2572,11 +2728,11 @@ static int cmd_comm_set(const struct shell *sh, size_t argc, char **argv)
 
   int err = zplc_config_set_modbus_tag_override(index, address);
   if (err < 0) {
-    shell_error(sh, "Failed to set override (%d)", err);
+    shell_error(sh, "ERROR: Failed to set override (%d)", err);
     return err;
   }
 
-  shell_print(sh, "Modbus tag %u remapped to %lu. Use 'zplc config save' to persist.",
+  shell_print(sh, "OK: Modbus tag %u remapped to %lu",
               index, (unsigned long)address);
   return 0;
 }
@@ -2584,24 +2740,82 @@ static int cmd_comm_set(const struct shell *sh, size_t argc, char **argv)
 static int cmd_comm_clear(const struct shell *sh, size_t argc, char **argv)
 {
   if (argc < 3) {
-    shell_error(sh, "Usage: zplc comm clear modbus <index>");
+    shell_error(sh, "ERROR: Usage: zplc comm clear modbus <index>");
     return -EINVAL;
   }
 
   if (strcmp(argv[1], "modbus") != 0) {
-    shell_error(sh, "Only modbus overrides are supported");
+    shell_error(sh, "ERROR: Only modbus overrides are supported");
     return -EINVAL;
   }
 
   uint16_t index = (uint16_t)strtoul(argv[2], NULL, 10);
   int err = zplc_config_clear_modbus_tag_override(index);
   if (err < 0) {
-    shell_error(sh, "Failed to clear override (%d)", err);
+    shell_error(sh, "ERROR: Failed to clear override (%d)", err);
     return err;
   }
 
-  shell_print(sh, "Cleared Modbus override for tag %u. Use 'zplc config save' to persist.", index);
+  shell_print(sh, "OK: Cleared Modbus override for tag %u", index);
   return 0;
+}
+
+/* ============================================================================
+ * WiFi Commands
+ * ============================================================================
+ */
+
+static int cmd_wifi_connect(const struct shell *sh, size_t argc, char **argv)
+{
+  ARG_UNUSED(argc);
+  ARG_UNUSED(argv);
+
+#ifndef CONFIG_WIFI
+  shell_error(sh, "ERROR: WiFi not enabled in this build");
+  return -ENOTSUP;
+#else
+  char ssid[64] = {0};
+  char pass[64] = {0};
+  uint8_t security = 0;
+
+  zplc_config_get_wifi_ssid(ssid, sizeof(ssid));
+  zplc_config_get_wifi_pass(pass, sizeof(pass));
+  security = zplc_config_get_wifi_security();
+
+  if (ssid[0] == '\0') {
+    shell_error(sh, "ERROR: No SSID configured (use zplc config set wifi_ssid)");
+    return -EINVAL;
+  }
+
+  struct net_if *iface = net_if_get_default();
+  if (iface == NULL) {
+    shell_error(sh, "ERROR: No network interface available");
+    return -ENODEV;
+  }
+
+  struct wifi_connect_req_params params = {0};
+  params.ssid        = (const uint8_t *)ssid;
+  params.ssid_length = (uint8_t)strlen(ssid);
+  params.security    = (enum wifi_security_type)security;
+
+  if (security != WIFI_SECURITY_TYPE_NONE && pass[0] != '\0') {
+    params.psk        = (const uint8_t *)pass;
+    params.psk_length = (uint8_t)strlen(pass);
+  }
+
+  params.channel = WIFI_CHANNEL_ANY;
+  params.band    = WIFI_FREQ_BAND_UNKNOWN;
+  params.mfp     = WIFI_MFP_OPTIONAL;
+
+  int rc = net_mgmt(NET_REQUEST_WIFI_CONNECT, iface, &params, sizeof(params));
+  if (rc == 0 || rc == -EALREADY) {
+    shell_print(sh, "OK: WiFi connect requested for SSID '%s'", ssid);
+  } else {
+    shell_print(sh, "WARN: WiFi connect request returned %d for SSID '%s'",
+                rc, ssid);
+  }
+  return 0;
+#endif /* CONFIG_WIFI */
 }
 
 /* ============================================================================
@@ -2624,6 +2838,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_CMD(step, NULL, "Execute one cycle", cmd_dbg_step),
     SHELL_CMD(bp, &sub_dbg_bp, "Breakpoint management", NULL),
     SHELL_CMD_ARG(peek, NULL, "Read memory", cmd_dbg_peek, 2, 1),
+    SHELL_CMD_ARG(mpeek, NULL, "Multi-read: mpeek addr:len[,addr:len...]", cmd_dbg_mpeek, 2, 0),
     SHELL_CMD_ARG(poke, NULL, "Write memory", cmd_dbg_poke, 3, 0),
     SHELL_CMD_ARG(info, NULL, "VM state", cmd_dbg_info, 1, 1),
     SHELL_CMD_ARG(ticks, NULL, "System tick", cmd_dbg_ticks, 1, 1),
@@ -2690,6 +2905,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
+    sub_wifi,
+    SHELL_CMD(connect, NULL, "Connect using stored credentials", cmd_wifi_connect),
+    SHELL_SUBCMD_SET_END);
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_ntp,
     SHELL_CMD_ARG(status, NULL, "Show NTP sync status", cmd_ntp_status, 1, 1),
     SHELL_CMD(enable, NULL, "Enable NTP time sync", cmd_ntp_enable),
@@ -2703,7 +2923,7 @@ static int cmd_mqtt_reset_backoff(const struct shell *sh, size_t argc, char **ar
     ARG_UNUSED(argc);
     ARG_UNUSED(argv);
     zplc_mqtt_request_backoff_reset();
-    shell_print(sh, "MQTT backoff reset requested.");
+    shell_print(sh, "OK: MQTT backoff reset");
     return 0;
 }
 
@@ -2780,6 +3000,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_CMD(config, &sub_config, "Configuration commands", NULL),
     SHELL_CMD(cert, &sub_cert, "Certificate management", NULL),
     SHELL_CMD(net, &sub_net, "Network diagnostics", NULL),
+    SHELL_CMD(wifi, &sub_wifi, "WiFi management", NULL),
     SHELL_CMD(ntp, &sub_ntp, "NTP time synchronization", NULL),
     SHELL_CMD(mqtt, &sub_mqtt, "MQTT client commands", NULL),
     SHELL_CMD(comm, &sub_comm, "Communication map and overrides", NULL),

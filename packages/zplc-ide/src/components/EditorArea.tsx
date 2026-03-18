@@ -18,6 +18,15 @@ import { parseSFCModel, serializeSFCModel, type SFCModel } from '../models/sfc';
 import { ProjectSettings } from './settings/ProjectSettings';
 import { CodeEditor } from './CodeEditor';
 
+const TEXT_WORKFLOW_LANGUAGES = {
+  ST: 'ST',
+  IL: 'IL',
+} as const;
+
+function supportsTextWorkflow(language: PLCLanguage): boolean {
+  return language === TEXT_WORKFLOW_LANGUAGES.ST || language === TEXT_WORKFLOW_LANGUAGES.IL;
+}
+
 export function EditorArea() {
   const {
     activeFileId,
@@ -172,7 +181,7 @@ export function EditorArea() {
   // No open tabs state (only if settings not shown)
   if (openTabs.length === 0 && !showSettings) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-[var(--color-surface-900)]">
+      <div className="w-full h-full flex items-center justify-center bg-[var(--color-surface-900)]">
         <div className="text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-lg bg-[var(--color-surface-800)] flex items-center justify-center">
             <FileCode size={32} className="text-[var(--color-surface-400)]" />
@@ -187,7 +196,7 @@ export function EditorArea() {
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-[var(--color-surface-900)] overflow-hidden">
+    <div className="w-full h-full flex flex-col bg-[var(--color-surface-900)] overflow-hidden">
       {/* Tab Bar */}
       <div className="h-9 flex items-center bg-[var(--color-surface-800)] border-b border-[var(--color-surface-600)] overflow-x-auto">
         {/* Settings Tab (if open) */}
@@ -256,7 +265,7 @@ export function EditorArea() {
           /* Project Settings Panel */
           <ProjectSettings />
         ) : activeFile ? (
-          PLC_LANGUAGES[activeFile.language]?.isVisual ? (
+          !supportsTextWorkflow(activeFile.language) && PLC_LANGUAGES[activeFile.language]?.isVisual ? (
             /* Visual Editors (FBD, LD, SFC) */
             renderVisualEditor()
           ) : (

@@ -151,10 +151,14 @@ static void sync_inputs_to_ipi(void) {
   }
 
   /* Read GPIO inputs (channels 4-7 are inputs) */
-  /* Maps to IPI[0..3] -> %IB0..%IB3 (or %I0..%I3) */
+  /* Maps to IPI[0] bits 0-3 -> %IX0.0..%IX0.3 (or %I0..%I3) */
   for (int i = 0; i < ZPLC_DIO_CHANNEL_COUNT; i++) {
     if (zplc_hal_gpio_read(4 + i, &value) == ZPLC_HAL_OK) {
-      ipi[i] = value;
+      if (value) {
+        ipi[0] |= (1 << i);
+      } else {
+        ipi[0] &= ~(1 << i);
+      }
     }
   }
 
@@ -190,8 +194,9 @@ static void sync_opi_to_outputs(void) {
   }
 
   /* Write GPIO outputs (channels 0-3 are outputs) */
+  /* Maps %QX0.0..%QX0.3 to physical channels 0-3 */
   for (int i = 0; i < ZPLC_DIO_CHANNEL_COUNT; i++) {
-    zplc_hal_gpio_write(i, opi[i]);
+    zplc_hal_gpio_write(i, (opi[0] & (1 << i)) ? 1 : 0);
   }
 }
 

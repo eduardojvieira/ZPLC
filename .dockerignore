@@ -4,3 +4,7 @@ build/
 dist/
 *.log
 .env*
+coverage/
+docs/build/
+packages/*/dist/
+packages/*/electron-dist/

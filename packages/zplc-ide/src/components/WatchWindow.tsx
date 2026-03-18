@@ -114,12 +114,17 @@ export const WatchWindow: React.FC<WatchWindowProps> = ({
     if (watchedVariables.length === 0) return;
     if (vmState !== 'running' && vmState !== 'paused') return;
 
+    let isPolling = false;
     const pollInterval = setInterval(async () => {
+      if (isPolling) return;
+      isPolling = true;
       try {
         const updated = await adapter.readWatchVariables(watchedVariables);
         setWatchedVariables(updated);
       } catch {
         // Ignore polling errors
+      } finally {
+        isPolling = false;
       }
     }, 250);
 

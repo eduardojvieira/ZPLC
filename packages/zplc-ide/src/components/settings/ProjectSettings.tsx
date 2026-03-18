@@ -5,10 +5,8 @@
  * Sections:
  * - Project Metadata (name, version, description, author)
  * - Target Hardware (board, cpu, clock_mhz)
- * - Compiler Settings (optimization, debug, warnings)
  * - I/O Mapping (inputs, outputs)
  * - Task Configuration (cyclic, event, freewheeling)
- * - Build Settings (outDir, entryPoints)
  */
 
 import { useState } from 'react';
@@ -22,9 +20,7 @@ import {
   ChevronDown,
   ChevronRight,
   Cpu,
-  Wrench,
   Cable,
-  Package,
   User,
   FileText,
   Radio,
@@ -35,7 +31,6 @@ import type {
   TaskTrigger,
   IOPinConfig,
   TargetConfig,
-  CompilerConfig,
   NetworkConfig,
   CommunicationConfig,
   MQTTCommunicationConfig,
@@ -63,11 +58,9 @@ export function ProjectSettings() {
     metadata: true,
     target: true,
     network: true,
-    compiler: false,
     io: true,
     communication: true,
     tasks: true,
-    build: false,
   });
 
   if (!projectConfig) {
@@ -173,16 +166,6 @@ export function ProjectSettings() {
             <NetworkSection config={projectConfig} updateConfig={updateConfig} />
           </SettingsSection>
 
-          {/* ================= COMPILER ================= */}
-          <SettingsSection
-            title="Compiler Settings"
-            icon={<Wrench size={16} />}
-            isExpanded={expandedSections.compiler}
-            onToggle={() => toggleSection('compiler')}
-          >
-            <CompilerSection config={projectConfig} updateConfig={updateConfig} />
-          </SettingsSection>
-
           {/* ================= I/O MAPPING ================= */}
           <SettingsSection
             title="I/O Mapping"
@@ -215,15 +198,6 @@ export function ProjectSettings() {
             <TasksSection config={projectConfig} updateConfig={updateConfig} />
           </SettingsSection>
 
-          {/* ================= BUILD ================= */}
-          <SettingsSection
-            title="Build Settings"
-            icon={<Package size={16} />}
-            isExpanded={expandedSections.build}
-            onToggle={() => toggleSection('build')}
-          >
-            <BuildSection config={projectConfig} updateConfig={updateConfig} />
-          </SettingsSection>
         </div>
 
         {/* Summary Footer */}
@@ -734,69 +708,6 @@ function NetworkSection({ config, updateConfig }: SectionProps) {
 }
 
 // =============================================================================
-// COMPILER SECTION
-// =============================================================================
-
-function CompilerSection({ config, updateConfig }: SectionProps) {
-  const compiler = config.compiler || {};
-
-  const updateCompiler = (updates: Partial<CompilerConfig>) => {
-    updateConfig({ compiler: { ...compiler, ...updates } });
-  };
-
-  return (
-    <div className="pt-4 space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-xs text-[var(--color-surface-400)] mb-1">
-            Optimization Level
-          </label>
-          <select
-            value={compiler.optimization || 'none'}
-            onChange={(e) => updateCompiler({ optimization: e.target.value as 'none' | 'speed' | 'size' })}
-            className="w-full px-3 py-2 bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] focus:outline-none"
-          >
-            <option value="none">None (fastest compile)</option>
-            <option value="speed">Optimize for Speed</option>
-            <option value="size">Optimize for Size</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs text-[var(--color-surface-400)] mb-1">
-            Warnings
-          </label>
-          <select
-            value={compiler.warnings || 'default'}
-            onChange={(e) => updateCompiler({ warnings: e.target.value as 'none' | 'default' | 'all' })}
-            className="w-full px-3 py-2 bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] focus:outline-none"
-          >
-            <option value="none">Suppress All</option>
-            <option value="default">Default</option>
-            <option value="all">All Warnings</option>
-          </select>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-3">
-        <input
-          type="checkbox"
-          id="debug-mode"
-          checked={compiler.debug || false}
-          onChange={(e) => updateCompiler({ debug: e.target.checked })}
-          className="w-4 h-4 rounded border-[var(--color-surface-500)] bg-[var(--color-surface-700)] text-[var(--color-accent-blue)] focus:ring-[var(--color-accent-blue)]"
-        />
-        <label htmlFor="debug-mode" className="text-sm text-[var(--color-surface-200)]">
-          Enable debug symbols
-          <span className="block text-xs text-[var(--color-surface-400)]">
-            Include source mapping for debugging (increases binary size)
-          </span>
-        </label>
-      </div>
-    </div>
-  );
-}
-
-// =============================================================================
 // I/O MAPPING SECTION
 // =============================================================================
 
@@ -1068,8 +979,9 @@ function IOTable({ items, onUpdate, onRemove }: IOTableProps) {
 // =============================================================================
 
 function CommunicationSection({ config, updateConfig }: SectionProps) {
+  const boardNetworkType = getBoardNetworkType(config.target?.board);
   const defaultMqtt: MQTTCommunicationConfig = {
-    enabled: true,
+    enabled: false,
     profile: 'sparkplug-b',
     protocolVersion: '5.0',
     transport: 'tcp',
@@ -1115,7 +1027,7 @@ function CommunicationSection({ config, updateConfig }: SectionProps) {
   const communication: CommunicationConfig = config.communication || {
     mqtt: defaultMqtt,
     modbus: {
-      enabled: true,
+      enabled: false,
       unitId: 1,
       tcpEnabled: true,
       tcpPort: 502,
@@ -1131,7 +1043,7 @@ function CommunicationSection({ config, updateConfig }: SectionProps) {
   const mqtt: MQTTCommunicationConfig = communication.mqtt || defaultMqtt;
 
   const modbus = communication.modbus || {
-    enabled: true,
+    enabled: false,
     unitId: 1,
     tcpEnabled: true,
     tcpPort: 502,
@@ -1179,6 +1091,17 @@ function CommunicationSection({ config, updateConfig }: SectionProps) {
 
   return (
     <div className="pt-4 space-y-6">
+      <div className="rounded-lg border border-[var(--color-surface-600)] bg-[var(--color-surface-800)]/70 p-3 text-xs text-[var(--color-surface-300)]">
+        <p className="font-medium text-[var(--color-surface-100)]">v1.5 communication scope</p>
+        <p className="mt-1">
+          MQTT, Modbus RTU, and Modbus TCP are only release-ready when the selected board,
+          runtime support, and release evidence all agree.
+        </p>
+        <p className="mt-1 text-[var(--color-surface-400)]">
+          Current board network profile: <strong className="text-[var(--color-accent-blue)]">{boardNetworkType}</strong>
+        </p>
+      </div>
+
       <div>
         <label className="block text-xs text-[var(--color-surface-400)] mb-2">MQTT</label>
         <div className="grid grid-cols-5 gap-3">
@@ -1243,6 +1166,11 @@ function CommunicationSection({ config, updateConfig }: SectionProps) {
             className="px-2 py-1 text-sm bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded"
           />
         </div>
+        {boardNetworkType === 'none' && mqtt.enabled && (
+          <p className="mt-2 text-xs text-[var(--color-accent-yellow)]">
+            This board profile does not advertise a network-capable workflow. Keep MQTT disabled or move to a supported network-capable board before treating the configuration as release-ready.
+          </p>
+        )}
         <div className="grid grid-cols-3 gap-3 mt-2">
           <input
             type="text"
@@ -1675,6 +1603,11 @@ function CommunicationSection({ config, updateConfig }: SectionProps) {
             RTU uses the board's configured `zephyr,modbus-serial` UART.
           </div>
         </div>
+        {boardNetworkType === 'none' && modbus.tcpEnabled && (
+          <p className="mt-2 text-xs text-[var(--color-accent-yellow)]">
+            Modbus TCP requires a network-capable board profile in the supported-board list.
+          </p>
+        )}
         <div className="grid grid-cols-5 gap-3 mt-3">
           <label className="flex items-center gap-2 text-xs text-[var(--color-surface-200)]">
             <input
@@ -2106,53 +2039,6 @@ function TaskCard({ task, availablePrograms, onUpdate, onRemove }: TaskCardProps
             No program files found. Create a .st, .fbd, .ld, or .sfc file first.
           </p>
         )}
-      </div>
-    </div>
-  );
-}
-
-// =============================================================================
-// BUILD SECTION
-// =============================================================================
-
-function BuildSection({ config, updateConfig }: SectionProps) {
-  const build = config.build || {};
-
-  const updateBuild = (updates: Partial<{ outDir?: string; entryPoints?: string[] }>) => {
-    updateConfig({ build: { ...build, ...updates } });
-  };
-
-  return (
-    <div className="pt-4 space-y-4">
-      <div>
-        <label className="block text-xs text-[var(--color-surface-400)] mb-1">
-          Output Directory
-        </label>
-        <input
-          type="text"
-          value={build.outDir || ''}
-          onChange={(e) => updateBuild({ outDir: e.target.value || undefined })}
-          placeholder="build (default)"
-          className="w-full px-3 py-2 bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)] placeholder:text-[var(--color-surface-500)]"
-        />
-      </div>
-
-      <div>
-        <label className="block text-xs text-[var(--color-surface-400)] mb-1">
-          Entry Points (comma-separated, optional)
-        </label>
-        <input
-          type="text"
-          value={build.entryPoints?.join(', ') || ''}
-          onChange={(e) => updateBuild({
-            entryPoints: e.target.value ? e.target.value.split(',').map(s => s.trim()).filter(Boolean) : undefined
-          })}
-          placeholder="Auto-detected from tasks"
-          className="w-full px-3 py-2 bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)] placeholder:text-[var(--color-surface-500)]"
-        />
-        <p className="mt-1 text-xs text-[var(--color-surface-400)]">
-          Override: explicitly specify entry point files. Leave empty to auto-detect from task programs.
-        </p>
       </div>
     </div>
   );

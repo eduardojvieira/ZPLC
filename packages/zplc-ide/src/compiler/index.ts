@@ -14,7 +14,6 @@ export * from '@zplc/compiler';
 
 // Override some types that need IDE-specific extensions
 import {
-    compileST,
     compileToBinary,
     assemble,
     CompilerError,
@@ -23,12 +22,22 @@ import {
     createMultiTaskZplcFile,
     relocateBytecode,
     TASK_TYPE,
+    parse,
+    generate,
+    buildSymbolTable,
+    buildDebugMap,
+    createDebugMap,
+    getFB,
     type CompilationResult,
     type CompileOptions,
     type AssemblyResult,
     type TaskDef,
     type TaskType,
+    type DebugMap,
+    type TypeResolver,
+    type DataTypeValue,
 } from '@zplc/compiler';
+import type { SymbolTable } from '@zplc/compiler';
 
 interface CompilerTagDef {
     varAddr: number;
@@ -38,6 +47,34 @@ interface CompilerTagDef {
 }
 
 type AssemblyResultWithTags = AssemblyResult & { tags?: CompilerTagDef[] };
+
+export const LANGUAGE_WORKFLOW_STAGE = {
+    AUTHOR: 'author',
+    COMPILE: 'compile',
+    SIMULATE: 'simulate',
+    DEPLOY: 'deploy',
+    DEBUG: 'debug',
+} as const;
+
+interface LanguageWorkflowSupport {
+    author: boolean;
+    compile: boolean;
+    simulate: boolean;
+    deploy: boolean;
+    debug: boolean;
+}
+
+export const LANGUAGE_WORKFLOW_SUPPORT: Record<PLCLanguage, LanguageWorkflowSupport> = {
+    ST: { author: true, compile: true, simulate: true, deploy: true, debug: true },
+    IL: { author: true, compile: true, simulate: true, deploy: true, debug: true },
+    LD: { author: true, compile: true, simulate: true, deploy: true, debug: true },
+    FBD: { author: true, compile: true, simulate: true, deploy: true, debug: true },
+    SFC: { author: true, compile: true, simulate: true, deploy: true, debug: true },
+};
+
+export function getLanguageWorkflowSupport(language: PLCLanguage): LanguageWorkflowSupport {
+    return LANGUAGE_WORKFLOW_SUPPORT[language];
+}
 
 // =============================================================================
 // IDE-specific: Transpilers (Visual Languages -> ST)
@@ -122,6 +159,8 @@ export interface MultiTaskCompilationResult {
         size: number;
         assembly: string;
     }[];
+    /** Merged debug map for all programs (always present) */
+    debugMap: DebugMap;
 }
 
 /**
@@ -148,6 +187,8 @@ export interface SingleFileTaskResult extends ProjectCompilationResult {
     tasks: TaskDef[];
     /** Whether the file contains TASK segment (always true) */
     hasTaskSegment: boolean;
+    /** Debug map is always present for single-file compilation */
+    debugMap: DebugMap;
 }
 
 // =============================================================================
@@ -226,6 +267,59 @@ export function compileProject(content: string, language: PLCLanguage, options?:
         language,
         intermediateSTSource,
         transpileErrors: transpileErrors.length > 0 ? transpileErrors : undefined,
+    };
+}
+
+/**
+ * Create a TypeResolver from a SymbolTable.
+ * Bridges user-defined FBs/structs and stdlib FBs into the debug-map's TypeResolver interface.
+ */
+function createTypeResolver(symbols: SymbolTable): TypeResolver {
+    return {
+        getMemberInfo(typeName: string, memberName: string): { offset: number; size: number; dataType: string } | undefined {
+            const fbDef = symbols.getFBDefinition(typeName);
+            if (fbDef) {
+                const member = fbDef.members.get(memberName);
+                if (member) {
+                    return {
+                        offset: member.offset,
+                        size: member.size,
+                        dataType: typeof member.dataType === 'string' ? member.dataType : 'DINT',
+                    };
+                }
+            }
+
+            const structDef = symbols.getStructDefinition(typeName);
+            if (structDef) {
+                const member = structDef.members.get(memberName);
+                if (member) {
+                    return {
+                        offset: member.offset,
+                        size: member.size,
+                        dataType: typeof member.dataType === 'string' ? member.dataType : 'DINT',
+                    };
+                }
+            }
+
+            const stdFB = getFB(typeName as DataTypeValue);
+            if (stdFB) {
+                const member = stdFB.members.find(m => m.name === memberName);
+                if (member) {
+                    const dt: string = typeof member.dataType === 'string'
+                        ? member.dataType
+                        : (member.size === 1 ? 'BOOL' : member.size === 2 ? 'INT' : 'DINT');
+                    return { offset: member.offset, size: member.size, dataType: dt };
+                }
+            }
+
+            return undefined;
+        },
+
+        isCompositeType(typeName: string) {
+            return !!symbols.getFBDefinition(typeName)
+                || !!symbols.getStructDefinition(typeName)
+                || !!getFB(typeName as DataTypeValue);
+        },
     };
 }
 
@@ -420,6 +514,7 @@ export function compileMultiTaskProject(
         entryPoint: number;
         size: number;
         tags: CompilerTagDef[];
+        debugMap: DebugMap;
     }[] = [];
 
     let currentOffset = 0;
@@ -454,10 +549,12 @@ export function compileMultiTaskProject(
         stSource = applyCommunicationTags(stSource, communicationTags);
         stSource = applyModbusBindingHelpers(stSource);
 
-        // Compile to assembly
+        // Compile to assembly — enable source annotations for debug map
         let assembly: string;
+        let programAst: ReturnType<typeof parse>;
         try {
-            assembly = compileST(stSource, { workMemoryBase });
+            programAst = parse(stSource);
+            assembly = generate(programAst, { workMemoryBase, emitSourceAnnotations: true });
         } catch (e) {
             const err = e as Error;
             throw new CompilerError(
@@ -478,6 +575,16 @@ export function compileMultiTaskProject(
             );
         }
 
+        // Build debug map for this program
+        const symbols = buildSymbolTable(programAst.programs[0], workMemoryBase);
+        const progDebugMap = buildDebugMap({
+            programName: progName,
+            symbols,
+            instructionMappings: asmResult.instructionMappings,
+            codeSize: asmResult.bytecode.length,
+            typeResolver: createTypeResolver(symbols),
+        });
+
         compiledPrograms.push({
             name: progName,
             bytecode: asmResult.bytecode,
@@ -485,6 +592,7 @@ export function compileMultiTaskProject(
             entryPoint: currentOffset,
             size: asmResult.bytecode.length,
             tags: asmResult.tags ?? [],
+            debugMap: progDebugMap,
         });
 
         currentOffset += asmResult.bytecode.length;
@@ -557,6 +665,14 @@ export function compileMultiTaskProject(
         tags: CompilerTagDef[]
     ) => Uint8Array)(concatenatedBytecode, taskDefs, allTags);
 
+    // Merge all per-program debug maps into one
+    const mergedDebugMap = createDebugMap(config.name ?? 'Project');
+    for (const prog of compiledPrograms) {
+        for (const [pouName, pouInfo] of Object.entries(prog.debugMap.pou)) {
+            mergedDebugMap.pou[pouName] = pouInfo;
+        }
+    }
+
     return {
         zplcFile,
         bytecode: concatenatedBytecode,
@@ -568,6 +684,7 @@ export function compileMultiTaskProject(
             size: p.size,
             assembly: p.assembly,
         })),
+        debugMap: mergedDebugMap,
     };
 }
 
@@ -624,7 +741,7 @@ export function compileSingleFileWithTask(
         assembly: multiResult.programDetails[0]?.assembly ?? '',
         entryPoint: multiResult.tasks[0]?.entryPoint ?? 0,
         codeSize: multiResult.codeSize,
-        debugMap: undefined,
+        debugMap: multiResult.debugMap,
         language,
         tasks: multiResult.tasks,
         hasTaskSegment: true,

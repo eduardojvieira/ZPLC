@@ -15,6 +15,9 @@
 
 LOG_MODULE_REGISTER(zplc_comm_mqtt, LOG_LEVEL_INF);
 
+extern bool zplc_mqtt_is_connected(void);
+extern bool zplc_mqtt_is_subscribed(void);
+
 /* ============================================================================
  * Internal FB Layout (Offsets)
  * ============================================================================
@@ -33,19 +36,19 @@ LOG_MODULE_REGISTER(zplc_comm_mqtt, LOG_LEVEL_INF);
 /* MQTT PUBLISH Layout */
 #define FB_PUB_OFF_QOS 8
 #define FB_PUB_OFF_RETAIN 9
-#define FB_PUB_OFF_TOPIC 10   /* 85 bytes (1+1+83) */
-#define FB_PUB_OFF_PAYLOAD 95 /* 85 bytes (1+1+83) */
+#define FB_PUB_OFF_TOPIC 12   /* STRING header (4) + 81 chars */
+#define FB_PUB_OFF_PAYLOAD 97 /* STRING header (4) + 81 chars */
 
 /* MQTT SUBSCRIBE Layout */
 #define FB_SUB_OFF_QOS 8
-#define FB_SUB_OFF_TOPIC 10     /* 85 bytes */
-#define FB_SUB_OFF_PAYLOAD 95   /* 85 bytes */
-#define FB_SUB_OFF_RECEIVED 180 /* 1 byte */
+#define FB_SUB_OFF_VALID 9
+#define FB_SUB_OFF_TOPIC 12   /* STRING header (4) + 81 chars */
+#define FB_SUB_OFF_PAYLOAD 97 /* STRING header (4) + 81 chars */
 
 /* String Layout */
 #define STR_OFF_LEN 0
-#define STR_OFF_CAPACITY 1
-#define STR_OFF_DATA 2
+#define STR_OFF_CAPACITY 2
+#define STR_OFF_DATA 4
 
 /* ============================================================================
  * String Helper
@@ -53,21 +56,23 @@ LOG_MODULE_REGISTER(zplc_comm_mqtt, LOG_LEVEL_INF);
  */
 
 static void copy_string(char *dest, size_t dest_size, const uint8_t *fb_str) {
-  uint8_t len = fb_str[STR_OFF_LEN];
+  uint16_t len = (uint16_t)(fb_str[STR_OFF_LEN] | (fb_str[STR_OFF_LEN + 1] << 8));
   if (len >= dest_size) {
-    len = dest_size - 1;
+    len = (uint16_t)(dest_size - 1U);
   }
   memcpy(dest, &fb_str[STR_OFF_DATA], len);
   dest[len] = '\0';
 }
 
 static void set_string(uint8_t *fb_str, const char *src, size_t len) {
-  uint8_t capacity = fb_str[STR_OFF_CAPACITY];
+  uint16_t capacity = (uint16_t)(fb_str[STR_OFF_CAPACITY] |
+                                 (fb_str[STR_OFF_CAPACITY + 1] << 8));
   if (len > capacity) {
     len = capacity;
   }
   memcpy(&fb_str[STR_OFF_DATA], src, len);
-  fb_str[STR_OFF_LEN] = (uint8_t)len;
+  fb_str[STR_OFF_LEN] = (uint8_t)(len & 0xFFU);
+  fb_str[STR_OFF_LEN + 1] = (uint8_t)((len >> 8) & 0xFFU);
 }
 
 static inline void set_status(uint8_t *fb_mem, int32_t status) {
@@ -153,27 +158,43 @@ static int exec_mqtt_publish(uint8_t *fb_mem) {
 }
 
 static int exec_mqtt_subscribe(uint8_t *fb_mem) {
-  /* Dynamic subscriptions from FB not fully supported in Phase 1.5.1
-   * We just set them idle or return an unsupported status if EN goes high.
-   * Proper implementation requires dynamic subscription handling in
-   * zplc_mqtt.c.
-   */
   bool en = fb_mem[FB_OFF_EN];
+  bool is_connected = zplc_mqtt_is_connected();
+  bool is_subscribed = zplc_mqtt_is_subscribed();
+  uint8_t payload_len = fb_mem[FB_SUB_OFF_PAYLOAD + STR_OFF_LEN];
 
   if (!en) {
     fb_mem[FB_OFF_BUSY] = 0;
     fb_mem[FB_OFF_DONE] = 0;
     fb_mem[FB_OFF_ERROR] = 0;
     set_status(fb_mem, 0);
-    fb_mem[FB_SUB_OFF_RECEIVED] = 0;
+    fb_mem[FB_SUB_OFF_VALID] = 0;
+    set_string(&fb_mem[FB_SUB_OFF_PAYLOAD], "", 0U);
     return 0;
   }
 
-  /* Feature not implemented natively in VM yet */
   fb_mem[FB_OFF_BUSY] = 0;
-  fb_mem[FB_OFF_DONE] = 0;
-  fb_mem[FB_OFF_ERROR] = 1;
-  set_status(fb_mem, -ENOTSUP);
+  fb_mem[FB_SUB_OFF_VALID] = payload_len > 0U ? 1U : 0U;
+
+  if (!is_connected) {
+    fb_mem[FB_OFF_DONE] = 0;
+    fb_mem[FB_OFF_ERROR] = 1;
+    fb_mem[FB_SUB_OFF_VALID] = 0;
+    set_status(fb_mem, ZPLC_COMM_NOT_CONNECTED);
+    return 0;
+  }
+
+  if (!is_subscribed) {
+    fb_mem[FB_OFF_DONE] = 0;
+    fb_mem[FB_OFF_ERROR] = 0;
+    fb_mem[FB_SUB_OFF_VALID] = 0;
+    set_status(fb_mem, ZPLC_COMM_BUSY);
+    return 0;
+  }
+
+  fb_mem[FB_OFF_DONE] = 1;
+  fb_mem[FB_OFF_ERROR] = 0;
+  set_status(fb_mem, ZPLC_COMM_OK);
 
   return 0;
 }
@@ -194,7 +215,8 @@ static int zplc_comm_mqtt_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
     if (kind == ZPLC_COMM_FB_MQTT_CONNECT) {
       fb_mem[FB_CONNECT_OFF_CONNECTED] = 0;
     } else if (kind == ZPLC_COMM_FB_MQTT_SUBSCRIBE) {
-      fb_mem[FB_SUB_OFF_RECEIVED] = 0;
+      fb_mem[FB_SUB_OFF_VALID] = 0;
+      set_string(&fb_mem[FB_SUB_OFF_PAYLOAD], "", 0U);
     }
     return 0;
   }

@@ -25,8 +25,7 @@ const config = {
   organizationName: 'eduardojvieira',
   projectName: 'ZPLC',
 
-  onBrokenLinks: 'warn', // Changed from warn to throw for CI gate
-  onBrokenMarkdownLinks: 'warn',
+  onBrokenLinks: 'throw',
 
   i18n: {
     defaultLocale: 'en',
@@ -43,6 +42,9 @@ const config = {
 
   markdown: {
     mermaid: true,
+    hooks: {
+      onBrokenMarkdownLinks: 'throw',
+    },
   },
   themes: [
     '@docusaurus/theme-mermaid',
@@ -58,6 +60,15 @@ const config = {
         docs: {
           sidebarPath: './sidebars.js',
           editUrl: 'https://github.com/eduardojvieira/ZPLC/tree/master/docs/',
+          lastVersion: 'current',
+          versions: {
+            current: {
+              label: 'v1.5 Foundation',
+            },
+            '1.4.8': {
+              label: 'v1.4.8',
+            },
+          },
         },
         blog: false,
         theme: {

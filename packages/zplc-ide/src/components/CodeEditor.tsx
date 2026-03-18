@@ -16,7 +16,14 @@ import type * as MonacoEditor from 'monaco-editor';
 import { useIDEStore } from '../store/useIDEStore';
 import { useFileBreakpoints, useCurrentExecution, useDebugValues, formatDebugValue } from '../hooks/useDebugValue';
 import { useTheme } from '../hooks/useTheme';
+import { useEditorLiveValues } from '../hooks/useEditorLiveValues';
 import type { PLCLanguage } from '../types';
+import { filterEligibleBreakpointLines, isLineBreakpointEligible } from './codeEditorBreakpoints';
+import {
+  buildInlineWidgets,
+  extractVariablesFromCode,
+  type InlineValueWidget,
+} from './codeEditorInlineValues';
 import {
   ST_LANGUAGE_ID, stLanguage, stConf,
   IL_LANGUAGE_ID, ilLanguage, ilConf
@@ -43,20 +50,6 @@ interface CodeEditorProps {
   readOnly?: boolean;
 }
 
-interface InlineValueWidget {
-  lineNumber: number;
-  column: number;
-  variableName: string;
-  value: string;
-  type: string | null;
-  isBool: boolean;
-  isTrue?: boolean;
-}
-
-// =============================================================================
-// Helpers
-// =============================================================================
-
 /**
  * Map PLC language to Monaco language ID
  */
@@ -69,213 +62,6 @@ function getMonacoLanguage(lang: PLCLanguage): string {
     default:
       return 'json';
   }
-}
-
-/**
- * Extract all variable references from ST/IL code.
- * Returns variable names and their line positions.
- */
-function extractVariablesFromCode(content: string, _language: PLCLanguage): Map<string, { lines: number[], instances: Array<{ line: number, col: number }> }> {
-  const variables = new Map<string, { lines: number[], instances: Array<{ line: number, col: number }> }>();
-  const lines = content.split('\n');
-
-  // Keywords to ignore (ST + IL instructions)
-  const keywords = new Set([
-    // ST/Common keywords
-    'PROGRAM', 'END_PROGRAM', 'FUNCTION', 'END_FUNCTION', 'FUNCTION_BLOCK', 'END_FUNCTION_BLOCK',
-    'VAR', 'VAR_INPUT', 'VAR_OUTPUT', 'VAR_IN_OUT', 'VAR_TEMP', 'VAR_GLOBAL', 'END_VAR',
-    'IF', 'THEN', 'ELSE', 'ELSIF', 'END_IF', 'CASE', 'OF', 'END_CASE',
-    'FOR', 'TO', 'BY', 'DO', 'END_FOR', 'WHILE', 'END_WHILE', 'REPEAT', 'UNTIL', 'END_REPEAT',
-    'TRUE', 'FALSE', 'AND', 'OR', 'NOT', 'XOR', 'MOD', 'DIV',
-    'BOOL', 'BYTE', 'WORD', 'DWORD', 'LWORD', 'SINT', 'INT', 'DINT', 'LINT',
-    'USINT', 'UINT', 'UDINT', 'ULINT', 'REAL', 'LREAL', 'TIME', 'STRING',
-    'TON', 'TOF', 'TP', 'CTU', 'CTD', 'CTUD', 'R_TRIG', 'F_TRIG', 'SR', 'RS',
-    'AT', 'RETAIN', 'CONSTANT', 'RETURN', 'EXIT',
-    // IL instructions
-    'LD', 'LDN', 'ST', 'STN', 'S', 'R',
-    'AND', 'ANDN', 'OR', 'ORN', 'XOR', 'XORN', 'NOT',
-    'ADD', 'SUB', 'MUL', 'DIV', 'MOD', 'GT', 'GE', 'EQ', 'NE', 'LE', 'LT',
-    'JMP', 'JMPC', 'JMPCN', 'CAL', 'CALC', 'CALCN', 'RET', 'RETC', 'RETCN',
-  ]);
-
-  // Track declared FB instances
-  const fbInstances = new Map<string, string>(); // name -> type
-
-  // First pass: find FB instance declarations
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    // Match pattern: InstanceName : TON; or InstanceName : TON := (...);
-    const fbDeclMatch = line.match(/^\s*(\w+)\s*:\s*(TON|TOF|TP|CTU|CTD|CTUD|R_TRIG|F_TRIG|SR|RS)\b/i);
-    if (fbDeclMatch) {
-      fbInstances.set(fbDeclMatch[1], fbDeclMatch[2].toUpperCase());
-    }
-  }
-
-  // Regex to match identifiers (including dot notation for FB members)
-  const identifierRegex = /\b([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\b/g;
-
-  for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
-    const line = lines[lineIdx];
-    const lineNum = lineIdx + 1;
-
-    // Skip comments
-    if (line.trim().startsWith('//') || line.trim().startsWith('(*')) continue;
-
-    // Remove string literals to avoid false matches
-    const cleanLine = line.replace(/'[^']*'/g, '').replace(/"[^"]*"/g, '');
-
-    let match;
-    while ((match = identifierRegex.exec(cleanLine)) !== null) {
-      const varName = match[1];
-      const baseName = varName.split('.')[0];
-
-      // Skip keywords
-      if (keywords.has(baseName.toUpperCase())) continue;
-      if (keywords.has(varName.toUpperCase())) continue;
-
-      // Skip type annotations (after colon)
-      const beforeMatch = cleanLine.substring(0, match.index);
-      if (beforeMatch.match(/:\s*$/)) continue;
-
-      // Get column position
-      const col = match.index + 1;
-
-      // Track variable
-      const existing = variables.get(varName) || { lines: [], instances: [] };
-      if (!existing.lines.includes(lineNum)) {
-        existing.lines.push(lineNum);
-      }
-      existing.instances.push({ line: lineNum, col });
-      variables.set(varName, existing);
-
-      // For FB instances, also track their outputs
-      if (fbInstances.has(baseName) && !varName.includes('.')) {
-        const fbType = fbInstances.get(baseName)!;
-
-        // Add common FB outputs to watch
-        const outputs: string[] = [];
-        switch (fbType) {
-          case 'TON':
-          case 'TOF':
-          case 'TP':
-            outputs.push(`${baseName}.Q`, `${baseName}.ET`, `${baseName}.IN`, `${baseName}.PT`);
-            break;
-          case 'CTU':
-            outputs.push(`${baseName}.Q`, `${baseName}.CV`, `${baseName}.CU`, `${baseName}.PV`);
-            break;
-          case 'CTD':
-            outputs.push(`${baseName}.Q`, `${baseName}.CV`, `${baseName}.CD`, `${baseName}.PV`);
-            break;
-          case 'CTUD':
-            outputs.push(`${baseName}.QU`, `${baseName}.QD`, `${baseName}.CV`, `${baseName}.CU`, `${baseName}.CD`, `${baseName}.PV`);
-            break;
-          case 'R_TRIG':
-          case 'F_TRIG':
-            outputs.push(`${baseName}.Q`, `${baseName}.CLK`);
-            break;
-          case 'SR':
-          case 'RS':
-            outputs.push(`${baseName}.Q1`, `${baseName}.S`, `${baseName}.R1`);
-            break;
-        }
-
-        for (const output of outputs) {
-          if (!variables.has(output)) {
-            variables.set(output, { lines: existing.lines.slice(), instances: [] });
-          }
-        }
-      }
-    }
-  }
-
-  return variables;
-}
-
-/**
- * Find the best position to show inline value for each line
- */
-function buildInlineWidgets(
-  content: string,
-  variableValues: Map<string, { value: string; type: string | null; isBool: boolean; isTrue?: boolean }>
-): InlineValueWidget[] {
-  const widgets: InlineValueWidget[] = [];
-  const lines = content.split('\n');
-  const shownOnLine = new Map<number, Set<string>>(); // Track which vars shown on each line
-
-  // Keywords to skip for line-end display
-  const skipPatterns = [/^\s*$/, /^\s*\/\//, /^\s*\(\*/, /^\s*VAR/, /^\s*END_VAR/, /^\s*PROGRAM/, /^\s*END_PROGRAM/];
-
-  // IL instructions to ignore when building widgets
-  const ilInstructions = new Set([
-    'LD', 'LDN', 'ST', 'STN', 'S', 'R',
-    'AND', 'ANDN', 'OR', 'ORN', 'XOR', 'XORN', 'NOT',
-    'ADD', 'SUB', 'MUL', 'DIV', 'MOD', 'GT', 'GE', 'EQ', 'NE', 'LE', 'LT',
-    'JMP', 'JMPC', 'JMPCN', 'CAL', 'CALC', 'CALCN', 'RET', 'RETC', 'RETCN',
-    'PT', 'IN', 'TRUE', 'FALSE',
-  ]);
-
-  for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
-    const line = lines[lineIdx];
-    const lineNum = lineIdx + 1;
-
-    // Skip empty lines, comments, declarations
-    if (skipPatterns.some(p => p.test(line))) continue;
-
-    // Find variables on this line
-    const varsOnLine: InlineValueWidget[] = [];
-    const identifierRegex = /\b([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?)\b/g;
-    const cleanLine = line.replace(/'[^']*'/g, '').replace(/"[^"]*"/g, '');
-
-    let match;
-    const seenOnThisLine = new Set<string>();
-
-    while ((match = identifierRegex.exec(cleanLine)) !== null) {
-      const varName = match[1];
-
-      // Skip if we already have this var on this line
-      if (seenOnThisLine.has(varName)) continue;
-      seenOnThisLine.add(varName);
-
-      // Skip IL instructions and keywords
-      if (ilInstructions.has(varName.toUpperCase())) continue;
-
-      // Check if we have a value for this variable
-      const valInfo = variableValues.get(varName);
-      if (valInfo) {
-        varsOnLine.push({
-          lineNumber: lineNum,
-          column: match.index + 1,
-          variableName: varName,
-          value: valInfo.value,
-          type: valInfo.type,
-          isBool: valInfo.isBool,
-          isTrue: valInfo.isTrue,
-        });
-      }
-    }
-
-    // For this line, show up to 3 most relevant variables
-    // Priority: FB outputs (.Q, .ET) > assignments (LHS) > others
-    varsOnLine.sort((a, b) => {
-      const aIsFBOutput = a.variableName.includes('.');
-      const bIsFBOutput = b.variableName.includes('.');
-      if (aIsFBOutput && !bIsFBOutput) return -1;
-      if (!aIsFBOutput && bIsFBOutput) return 1;
-      return a.column - b.column;
-    });
-
-    // Take first 4 unique variables per line
-    const lineVarsShown = shownOnLine.get(lineNum) || new Set();
-    for (const widget of varsOnLine.slice(0, 4)) {
-      if (!lineVarsShown.has(widget.variableName)) {
-        widgets.push(widget);
-        lineVarsShown.add(widget.variableName);
-      }
-    }
-    shownOnLine.set(lineNum, lineVarsShown);
-  }
-
-  return widgets;
 }
 
 // =============================================================================
@@ -293,13 +79,15 @@ export function CodeEditor({
   const editorRef = useRef<MonacoEditor.editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<Monaco | null>(null);
   const decorationsRef = useRef<string[]>([]);
-  const inlineDecorationsRef = useRef<string[]>([]);
+  const inlineDecorationsRef = useRef<MonacoEditor.editor.IEditorDecorationsCollection | null>(null);
   const [editorReady, setEditorReady] = useState(false);
 
   // Debug state from store
   const debugMode = useIDEStore((state) => state.debug.mode);
+  const debugMap = useIDEStore((state) => state.debug.debugMap);
   const toggleBreakpoint = useIDEStore((state) => state.toggleBreakpoint);
   const breakpoints = useFileBreakpoints(fileId);
+  const fileName = useIDEStore((state) => state.loadedFiles.get(fileId)?.name ?? fileId);
   const { isPaused, currentLine, currentPOU } = useCurrentExecution();
 
   // Check if this file is the current execution context
@@ -313,13 +101,21 @@ export function CodeEditor({
     return extractVariablesFromCode(content, language);
   }, [content, language, debugMode]);
 
-  // Get all variable paths to watch
-  const variablePaths = useMemo(() => {
-    return Array.from(variablesInCode.keys());
-  }, [variablesInCode]);
+  // Viewport-aware variable filtering: only read values for variables whose
+  // declaration line is currently visible in the editor.  Falls back to all
+  // vars when the debug map lacks declarationLine data (older compiler output).
+  const { visibleVarNames } = useEditorLiveValues({
+    editorRef,
+    debugMap,
+    debugActive: debugMode !== 'none',
+  });
 
-  // Get live values for all variables
-  const debugValues = useDebugValues(debugMode !== 'none' ? variablePaths : []);
+  // Get live values only for visible variables (or all if no viewport data)
+  const debugValues = useDebugValues(
+    debugMode !== 'none'
+      ? (visibleVarNames.length > 0 ? visibleVarNames : Array.from(variablesInCode.keys()))
+      : [],
+  );
 
   // Build variable value map for widgets
   const variableValueMap = useMemo(() => {
@@ -336,6 +132,10 @@ export function CodeEditor({
           isTrue,
         });
       }
+    }
+
+    if (map.size > 0) {
+      console.log(`[CodeEditor] Found ${map.size} inline widgets to render:`, Array.from(map.entries()));
     }
 
     return map;
@@ -357,9 +157,12 @@ export function CodeEditor({
       if (
         e.target.type === monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN ||
         e.target.type === monaco.editor.MouseTargetType.GUTTER_LINE_NUMBERS
-      ) {
+        ) {
         const lineNumber = e.target.position?.lineNumber;
         if (lineNumber) {
+          if (debugMap && !isLineBreakpointEligible(debugMap, fileName, lineNumber)) {
+            return;
+          }
           toggleBreakpoint(fileId, lineNumber);
         }
       }
@@ -388,7 +191,7 @@ export function CodeEditor({
     monaco.editor.defineTheme(ZPLC_LIGHT_THEME_ID, ZPLC_LIGHT_THEME);
 
     setEditorReady(true);
-  }, [fileId, toggleBreakpoint]);
+  }, [debugMap, fileId, fileName, toggleBreakpoint]);
 
   // Update breakpoint and current line decorations
   useEffect(() => {
@@ -397,9 +200,10 @@ export function CodeEditor({
     if (!editor || !monaco) return;
 
     const newDecorations: MonacoEditor.editor.IModelDeltaDecoration[] = [];
+    const eligibleBreakpoints = filterEligibleBreakpointLines(debugMap, fileName, breakpoints);
 
     // Add breakpoint decorations
-    for (const line of breakpoints) {
+    for (const line of eligibleBreakpoints) {
       newDecorations.push({
         range: new monaco.Range(line, 1, line, 1),
         options: {
@@ -428,13 +232,17 @@ export function CodeEditor({
       decorationsRef.current,
       newDecorations
     );
-  }, [breakpoints, isPaused, currentLine, isCurrentFile]);
+  }, [breakpoints, currentLine, debugMap, fileName, isCurrentFile, isPaused]);
 
   // Update inline value decorations
   useEffect(() => {
     const editor = editorRef.current;
     const monaco = monacoRef.current;
     if (!editor || !monaco || !editorReady) return;
+
+    if (!inlineDecorationsRef.current) {
+      inlineDecorationsRef.current = editor.createDecorationsCollection();
+    }
 
     const newDecorations: MonacoEditor.editor.IModelDeltaDecoration[] = [];
 
@@ -457,35 +265,44 @@ export function CodeEditor({
           return `${label}=${w.value}`;
         });
 
-        const combinedText = `  // ${valueParts.join(' | ')}`;
+        const combinedText = `  ${valueParts.join('  ·  ')}`;
+
+        // Determine CSS class based on bool state
+        const cssClass = widgets.some(w => w.isBool && w.isTrue)
+          ? 'inline-debug-value-true'
+          : widgets.some(w => w.isBool && !w.isTrue)
+            ? 'inline-debug-value-false'
+            : 'inline-debug-value';
 
         // Get end of line
         const model = editor.getModel();
         if (!model) continue;
-        const lineLength = model.getLineLength(lineNum);
+        const maxCol = model.getLineMaxColumn(lineNum);
 
+        console.log(`[CodeEditor] Adding decoration to line ${lineNum} at col ${maxCol}:`, combinedText);
         newDecorations.push({
-          range: new monaco.Range(lineNum, lineLength + 1, lineNum, lineLength + 1),
+          range: new monaco.Range(lineNum, maxCol, lineNum, maxCol),
           options: {
+            // Monaco drops empty-range decorations unless showIfCollapsed is true.
+            // These inline values are intentionally attached to a collapsed range
+            // at end-of-line, so this flag is REQUIRED for rendering.
+            showIfCollapsed: true,
+            // after: injects actual text content into the view after the line end.
+            // inlineClassName is applied to the injected-text <span>.
+            // CSS for these classes lives in src/index.css (static, guaranteed loaded).
             after: {
               content: combinedText,
-              inlineClassName: widgets.some(w => w.isBool && w.isTrue)
-                ? 'inline-debug-value-true'
-                : widgets.some(w => w.isBool && !w.isTrue)
-                  ? 'inline-debug-value-false'
-                  : 'inline-debug-value',
+              inlineClassName: cssClass,
+              inlineClassNameAffectsLetterSpacing: true,
             },
-            isWholeLine: false,
           },
         });
       }
     }
 
+    console.log(`[CodeEditor] Setting ${newDecorations.length} inline decorations!`);
     // Apply inline decorations
-    inlineDecorationsRef.current = editor.deltaDecorations(
-      inlineDecorationsRef.current,
-      newDecorations
-    );
+    inlineDecorationsRef.current.set(newDecorations);
   }, [inlineWidgets, debugMode, editorReady]);
 
   // Handle content change
@@ -495,97 +312,8 @@ export function CodeEditor({
     }
   }, [onChange]);
 
-  // Custom CSS for decorations
-  useEffect(() => {
-    const styleId = 'zplc-editor-debug-styles';
-    let styleElement = document.getElementById(styleId) as HTMLStyleElement | null;
-
-    if (!styleElement) {
-      styleElement = document.createElement('style');
-      styleElement.id = styleId;
-      document.head.appendChild(styleElement);
-    }
-
-    styleElement.textContent = `
-      /* Breakpoint glyph (red dot in margin) */
-      .breakpoint-glyph {
-        background: #ef4444;
-        border-radius: 50%;
-        width: 12px !important;
-        height: 12px !important;
-        margin-left: 4px;
-        margin-top: 4px;
-        cursor: pointer;
-      }
-      
-      /* Breakpoint line decoration (subtle red background) */
-      .breakpoint-line-decoration {
-        background: rgba(239, 68, 68, 0.15);
-        width: 3px !important;
-      }
-      
-      /* Current execution line (yellow highlight) */
-      .current-line-highlight {
-        background: rgba(250, 204, 21, 0.2) !important;
-        border-left: 3px solid #facc15;
-      }
-      
-      /* Current line glyph (yellow arrow) */
-      .current-line-glyph {
-        background: #facc15;
-        clip-path: polygon(0 0, 100% 50%, 0 100%);
-        width: 10px !important;
-        height: 14px !important;
-        margin-left: 5px;
-        margin-top: 3px;
-      }
-      
-      /* Hover effect for gutter */
-      .monaco-editor .margin-view-overlays .line-numbers:hover {
-        cursor: pointer;
-      }
-      
-      /* Inline debug value (default - numeric/string) */
-      .inline-debug-value {
-        color: #60a5fa !important;
-        font-style: italic;
-        opacity: 0.9;
-        margin-left: 8px;
-        font-size: 0.9em;
-        background: rgba(96, 165, 250, 0.1);
-        padding: 0 4px;
-        border-radius: 2px;
-      }
-      
-      /* Inline debug value (BOOL TRUE) */
-      .inline-debug-value-true {
-        color: #4ade80 !important;
-        font-style: italic;
-        opacity: 0.9;
-        margin-left: 8px;
-        font-size: 0.9em;
-        background: rgba(74, 222, 128, 0.15);
-        padding: 0 4px;
-        border-radius: 2px;
-      }
-      
-      /* Inline debug value (BOOL FALSE) */
-      .inline-debug-value-false {
-        color: #f87171 !important;
-        font-style: italic;
-        opacity: 0.9;
-        margin-left: 8px;
-        font-size: 0.9em;
-        background: rgba(248, 113, 113, 0.15);
-        padding: 0 4px;
-        border-radius: 2px;
-      }
-    `;
-
-    return () => {
-      // Don't remove on unmount as other editors may use it
-    };
-  }, []);
+  // NOTE: All debug decoration CSS (breakpoints, inline values) is defined in
+  // src/index.css — static stylesheet loaded by Vite. No dynamic injection here.
 
   return (
     <div className="relative w-full h-full">

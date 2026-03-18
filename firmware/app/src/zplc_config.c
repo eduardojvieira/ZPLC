@@ -79,6 +79,10 @@ static struct {
   bool mqtt_lwt_retain;
   bool modbus_tag_override_valid[ZPLC_MAX_TAGS];
   uint32_t modbus_tag_override_addr[ZPLC_MAX_TAGS];
+  /* Wi-Fi credentials */
+  char wifi_ssid[64];
+  char wifi_pass[64];
+  uint8_t wifi_security; /* 0=open, 1=WEP, 2=WPA/WPA2-PSK, 3=WPA2-EAP */
   /* Time synchronization */
   bool ntp_enabled;
   char ntp_server[64];
@@ -136,6 +140,25 @@ static int zplc_settings_set(const char *name, size_t len,
     if (rc >= 0)
       config.ip[rc] = '\0';
     return 0;
+  }
+
+  if (settings_name_steq(name, "wifi_ssid", &next) && !next) {
+    rc = read_cb(cb_arg, config.wifi_ssid, sizeof(config.wifi_ssid) - 1);
+    if (rc >= 0)
+      config.wifi_ssid[rc] = '\0';
+    return 0;
+  }
+
+  if (settings_name_steq(name, "wifi_pass", &next) && !next) {
+    rc = read_cb(cb_arg, config.wifi_pass, sizeof(config.wifi_pass) - 1);
+    if (rc >= 0)
+      config.wifi_pass[rc] = '\0';
+    return 0;
+  }
+
+  if (settings_name_steq(name, "wifi_security", &next) && !next) {
+    rc = read_cb(cb_arg, &config.wifi_security, sizeof(config.wifi_security));
+    return (rc >= 0) ? 0 : rc;
   }
 
   if (settings_name_steq(name, "modbus_id", &next) && !next) {
@@ -587,7 +610,7 @@ static void zplc_config_set_defaults(void) {
   config.dhcp = true;
   strncpy(config.ip, "0.0.0.0", sizeof(config.ip));
   config.modbus_id = 1;
-  config.modbus_tcp_enabled = true;
+  config.modbus_tcp_enabled = false;
   config.modbus_tcp_port = 502;
   config.modbus_rtu_enabled = false;
   config.modbus_rtu_baud = 19200U;
@@ -602,7 +625,7 @@ static void zplc_config_set_defaults(void) {
   config.modbus_tcp_client_unit_id = 1U;
   config.modbus_tcp_client_poll_ms = 100U;
   config.modbus_tcp_client_timeout_ms = 500U;
-  config.mqtt_enabled = true;
+  config.mqtt_enabled = false;
   strncpy(config.mqtt_broker, "test.mosquitto.org", sizeof(config.mqtt_broker));
   config.mqtt_client_id[0] = '\0';
   strncpy(config.mqtt_topic_namespace, "spBv1.0/ZPLC",
@@ -639,7 +662,7 @@ static void zplc_config_set_defaults(void) {
          sizeof(config.modbus_tag_override_valid));
   memset(config.modbus_tag_override_addr, 0,
          sizeof(config.modbus_tag_override_addr));
-  config.ntp_enabled = true;
+  config.ntp_enabled = false;
   strncpy(config.ntp_server, "pool.ntp.org", sizeof(config.ntp_server));
   strncpy(config.mqtt_group_id, "ZPLC", sizeof(config.mqtt_group_id));
   config.azure_sas_key[0] = '\0';
@@ -699,8 +722,8 @@ int zplc_config_init(void) {
 }
 
 int zplc_config_save(void) {
-  /* Individual keys saved inline with each setter via settings_save_one().
-   * This top-level call saves the entire subtree as a fallback. */
+  /* Setters only update the in-memory config struct.
+   * This is the ONLY NVS flush point — call after a batch of config sets. */
   return settings_save();
 }
 
@@ -722,13 +745,11 @@ void zplc_config_get_hostname(char *buf, size_t len) {
 void zplc_config_set_hostname(const char *name) {
   strncpy(config.hostname, name, sizeof(config.hostname));
   config.hostname[sizeof(config.hostname) - 1] = '\0';
-  settings_save_one("zplc/hostname", config.hostname, strlen(config.hostname));
 }
 
 bool zplc_config_get_dhcp(void) { return config.dhcp; }
 void zplc_config_set_dhcp(bool enabled) {
   config.dhcp = enabled;
-  settings_save_one("zplc/dhcp", &config.dhcp, sizeof(config.dhcp));
 }
 
 void zplc_config_get_ip(char *buf, size_t len) {
@@ -739,7 +760,32 @@ void zplc_config_get_ip(char *buf, size_t len) {
 void zplc_config_set_ip(const char *ip) {
   strncpy(config.ip, ip, sizeof(config.ip));
   config.ip[sizeof(config.ip) - 1] = '\0';
-  settings_save_one("zplc/ip", config.ip, strlen(config.ip));
+}
+
+void zplc_config_get_wifi_ssid(char *buf, size_t len) {
+  strncpy(buf, config.wifi_ssid, len);
+  buf[len - 1] = '\0';
+}
+
+void zplc_config_set_wifi_ssid(const char *ssid) {
+  strncpy(config.wifi_ssid, ssid, sizeof(config.wifi_ssid));
+  config.wifi_ssid[sizeof(config.wifi_ssid) - 1] = '\0';
+}
+
+void zplc_config_get_wifi_pass(char *buf, size_t len) {
+  strncpy(buf, config.wifi_pass, len);
+  buf[len - 1] = '\0';
+}
+
+void zplc_config_set_wifi_pass(const char *pass) {
+  strncpy(config.wifi_pass, pass, sizeof(config.wifi_pass));
+  config.wifi_pass[sizeof(config.wifi_pass) - 1] = '\0';
+}
+
+uint8_t zplc_config_get_wifi_security(void) { return config.wifi_security; }
+
+void zplc_config_set_wifi_security(uint8_t security) {
+  config.wifi_security = security;
 }
 
 /* ============================================================================
@@ -750,8 +796,6 @@ void zplc_config_set_ip(const char *ip) {
 uint16_t zplc_config_get_modbus_id(void) { return config.modbus_id; }
 void zplc_config_set_modbus_id(uint16_t id) {
   config.modbus_id = id;
-  settings_save_one("zplc/modbus_id", &config.modbus_id,
-                    sizeof(config.modbus_id));
 }
 
 bool zplc_config_get_modbus_tcp_enabled(void) {
@@ -759,8 +803,6 @@ bool zplc_config_get_modbus_tcp_enabled(void) {
 }
 void zplc_config_set_modbus_tcp_enabled(bool enabled) {
   config.modbus_tcp_enabled = enabled;
-  settings_save_one("zplc/modbus_tcp_enabled", &config.modbus_tcp_enabled,
-                    sizeof(config.modbus_tcp_enabled));
 }
 
 uint16_t zplc_config_get_modbus_tcp_port(void) {
@@ -768,8 +810,6 @@ uint16_t zplc_config_get_modbus_tcp_port(void) {
 }
 void zplc_config_set_modbus_tcp_port(uint16_t port) {
   config.modbus_tcp_port = port;
-  settings_save_one("zplc/modbus_tcp_port", &config.modbus_tcp_port,
-                    sizeof(config.modbus_tcp_port));
 }
 
 bool zplc_config_get_modbus_rtu_enabled(void) {
@@ -777,8 +817,6 @@ bool zplc_config_get_modbus_rtu_enabled(void) {
 }
 void zplc_config_set_modbus_rtu_enabled(bool enabled) {
   config.modbus_rtu_enabled = enabled;
-  settings_save_one("zplc/modbus_rtu_enabled", &config.modbus_rtu_enabled,
-                    sizeof(config.modbus_rtu_enabled));
 }
 
 uint32_t zplc_config_get_modbus_rtu_baud(void) {
@@ -786,8 +824,6 @@ uint32_t zplc_config_get_modbus_rtu_baud(void) {
 }
 void zplc_config_set_modbus_rtu_baud(uint32_t baud) {
   config.modbus_rtu_baud = baud;
-  settings_save_one("zplc/modbus_rtu_baud", &config.modbus_rtu_baud,
-                    sizeof(config.modbus_rtu_baud));
 }
 
 zplc_modbus_parity_t zplc_config_get_modbus_rtu_parity(void) {
@@ -796,8 +832,6 @@ zplc_modbus_parity_t zplc_config_get_modbus_rtu_parity(void) {
 
 void zplc_config_set_modbus_rtu_parity(zplc_modbus_parity_t parity) {
   config.modbus_rtu_parity = (uint8_t)parity;
-  settings_save_one("zplc/modbus_rtu_parity", &config.modbus_rtu_parity,
-                    sizeof(config.modbus_rtu_parity));
 }
 
 bool zplc_config_get_modbus_rtu_client_enabled(void) {
@@ -805,9 +839,6 @@ bool zplc_config_get_modbus_rtu_client_enabled(void) {
 }
 void zplc_config_set_modbus_rtu_client_enabled(bool enabled) {
   config.modbus_rtu_client_enabled = enabled;
-  settings_save_one("zplc/modbus_rtu_client_enabled",
-                    &config.modbus_rtu_client_enabled,
-                    sizeof(config.modbus_rtu_client_enabled));
 }
 
 uint8_t zplc_config_get_modbus_rtu_client_slave_id(void) {
@@ -815,9 +846,6 @@ uint8_t zplc_config_get_modbus_rtu_client_slave_id(void) {
 }
 void zplc_config_set_modbus_rtu_client_slave_id(uint8_t id) {
   config.modbus_rtu_client_slave_id = id;
-  settings_save_one("zplc/modbus_rtu_client_slave_id",
-                    &config.modbus_rtu_client_slave_id,
-                    sizeof(config.modbus_rtu_client_slave_id));
 }
 
 uint32_t zplc_config_get_modbus_rtu_client_poll_ms(void) {
@@ -825,9 +853,6 @@ uint32_t zplc_config_get_modbus_rtu_client_poll_ms(void) {
 }
 void zplc_config_set_modbus_rtu_client_poll_ms(uint32_t ms) {
   config.modbus_rtu_client_poll_ms = ms;
-  settings_save_one("zplc/modbus_rtu_client_poll_ms",
-                    &config.modbus_rtu_client_poll_ms,
-                    sizeof(config.modbus_rtu_client_poll_ms));
 }
 
 bool zplc_config_get_modbus_tcp_client_enabled(void) {
@@ -835,9 +860,6 @@ bool zplc_config_get_modbus_tcp_client_enabled(void) {
 }
 void zplc_config_set_modbus_tcp_client_enabled(bool enabled) {
   config.modbus_tcp_client_enabled = enabled;
-  settings_save_one("zplc/modbus_tcp_client_enabled",
-                    &config.modbus_tcp_client_enabled,
-                    sizeof(config.modbus_tcp_client_enabled));
 }
 
 void zplc_config_get_modbus_tcp_client_host(char *buf, size_t len) {
@@ -850,9 +872,6 @@ void zplc_config_set_modbus_tcp_client_host(const char *host) {
           sizeof(config.modbus_tcp_client_host));
   config.modbus_tcp_client_host[sizeof(config.modbus_tcp_client_host) - 1] =
       '\0';
-  settings_save_one("zplc/modbus_tcp_client_host",
-                    config.modbus_tcp_client_host,
-                    strlen(config.modbus_tcp_client_host));
 }
 
 uint16_t zplc_config_get_modbus_tcp_client_port(void) {
@@ -860,9 +879,6 @@ uint16_t zplc_config_get_modbus_tcp_client_port(void) {
 }
 void zplc_config_set_modbus_tcp_client_port(uint16_t port) {
   config.modbus_tcp_client_port = port;
-  settings_save_one("zplc/modbus_tcp_client_port",
-                    &config.modbus_tcp_client_port,
-                    sizeof(config.modbus_tcp_client_port));
 }
 
 uint8_t zplc_config_get_modbus_tcp_client_unit_id(void) {
@@ -870,9 +886,6 @@ uint8_t zplc_config_get_modbus_tcp_client_unit_id(void) {
 }
 void zplc_config_set_modbus_tcp_client_unit_id(uint8_t id) {
   config.modbus_tcp_client_unit_id = id;
-  settings_save_one("zplc/modbus_tcp_client_unit_id",
-                    &config.modbus_tcp_client_unit_id,
-                    sizeof(config.modbus_tcp_client_unit_id));
 }
 
 uint32_t zplc_config_get_modbus_tcp_client_poll_ms(void) {
@@ -880,9 +893,6 @@ uint32_t zplc_config_get_modbus_tcp_client_poll_ms(void) {
 }
 void zplc_config_set_modbus_tcp_client_poll_ms(uint32_t ms) {
   config.modbus_tcp_client_poll_ms = ms;
-  settings_save_one("zplc/modbus_tcp_client_poll_ms",
-                    &config.modbus_tcp_client_poll_ms,
-                    sizeof(config.modbus_tcp_client_poll_ms));
 }
 
 uint32_t zplc_config_get_modbus_tcp_client_timeout_ms(void) {
@@ -890,9 +900,6 @@ uint32_t zplc_config_get_modbus_tcp_client_timeout_ms(void) {
 }
 void zplc_config_set_modbus_tcp_client_timeout_ms(uint32_t ms) {
   config.modbus_tcp_client_timeout_ms = ms;
-  settings_save_one("zplc/modbus_tcp_client_timeout_ms",
-                    &config.modbus_tcp_client_timeout_ms,
-                    sizeof(config.modbus_tcp_client_timeout_ms));
 }
 
 /* ============================================================================
@@ -914,12 +921,6 @@ int zplc_config_set_modbus_tag_override(uint16_t index, uint32_t address) {
     return -EINVAL;
   config.modbus_tag_override_valid[index] = true;
   config.modbus_tag_override_addr[index] = address;
-  settings_save_one("zplc/modbus_tag_override_valid",
-                    config.modbus_tag_override_valid,
-                    sizeof(config.modbus_tag_override_valid));
-  settings_save_one("zplc/modbus_tag_override_addr",
-                    config.modbus_tag_override_addr,
-                    sizeof(config.modbus_tag_override_addr));
   return 0;
 }
 
@@ -928,9 +929,6 @@ int zplc_config_clear_modbus_tag_override(uint16_t index) {
     return -EINVAL;
   config.modbus_tag_override_valid[index] = false;
   config.modbus_tag_override_addr[index] = 0;
-  settings_save_one("zplc/modbus_tag_override_valid",
-                    config.modbus_tag_override_valid,
-                    sizeof(config.modbus_tag_override_valid));
   return 0;
 }
 
@@ -942,8 +940,6 @@ int zplc_config_clear_modbus_tag_override(uint16_t index) {
 bool zplc_config_get_mqtt_enabled(void) { return config.mqtt_enabled; }
 void zplc_config_set_mqtt_enabled(bool enabled) {
   config.mqtt_enabled = enabled;
-  settings_save_one("zplc/mqtt_enabled", &config.mqtt_enabled,
-                    sizeof(config.mqtt_enabled));
 }
 
 void zplc_config_get_mqtt_broker(char *buf, size_t len) {
@@ -954,8 +950,6 @@ void zplc_config_get_mqtt_broker(char *buf, size_t len) {
 void zplc_config_set_mqtt_broker(const char *broker) {
   strncpy(config.mqtt_broker, broker, sizeof(config.mqtt_broker));
   config.mqtt_broker[sizeof(config.mqtt_broker) - 1] = '\0';
-  settings_save_one("zplc/mqtt_broker", config.mqtt_broker,
-                    strlen(config.mqtt_broker));
 }
 
 void zplc_config_get_mqtt_client_id(char *buf, size_t len) {
@@ -966,8 +960,6 @@ void zplc_config_get_mqtt_client_id(char *buf, size_t len) {
 void zplc_config_set_mqtt_client_id(const char *client_id) {
   strncpy(config.mqtt_client_id, client_id, sizeof(config.mqtt_client_id));
   config.mqtt_client_id[sizeof(config.mqtt_client_id) - 1] = '\0';
-  settings_save_one("zplc/mqtt_client_id", config.mqtt_client_id,
-                    strlen(config.mqtt_client_id));
 }
 
 void zplc_config_get_mqtt_topic_namespace(char *buf, size_t len) {
@@ -979,8 +971,6 @@ void zplc_config_set_mqtt_topic_namespace(const char *topic_namespace) {
   strncpy(config.mqtt_topic_namespace, topic_namespace,
           sizeof(config.mqtt_topic_namespace));
   config.mqtt_topic_namespace[sizeof(config.mqtt_topic_namespace) - 1] = '\0';
-  settings_save_one("zplc/mqtt_topic_namespace", config.mqtt_topic_namespace,
-                    strlen(config.mqtt_topic_namespace));
 }
 
 zplc_mqtt_profile_t zplc_config_get_mqtt_profile(void) {
@@ -988,8 +978,6 @@ zplc_mqtt_profile_t zplc_config_get_mqtt_profile(void) {
 }
 void zplc_config_set_mqtt_profile(zplc_mqtt_profile_t profile) {
   config.mqtt_profile = (uint8_t)profile;
-  settings_save_one("zplc/mqtt_profile", &config.mqtt_profile,
-                    sizeof(config.mqtt_profile));
 }
 
 zplc_mqtt_protocol_t zplc_config_get_mqtt_protocol(void) {
@@ -997,8 +985,6 @@ zplc_mqtt_protocol_t zplc_config_get_mqtt_protocol(void) {
 }
 void zplc_config_set_mqtt_protocol(zplc_mqtt_protocol_t protocol) {
   config.mqtt_protocol = (uint8_t)protocol;
-  settings_save_one("zplc/mqtt_protocol", &config.mqtt_protocol,
-                    sizeof(config.mqtt_protocol));
 }
 
 zplc_mqtt_transport_t zplc_config_get_mqtt_transport(void) {
@@ -1006,15 +992,11 @@ zplc_mqtt_transport_t zplc_config_get_mqtt_transport(void) {
 }
 void zplc_config_set_mqtt_transport(zplc_mqtt_transport_t transport) {
   config.mqtt_transport = (uint8_t)transport;
-  settings_save_one("zplc/mqtt_transport", &config.mqtt_transport,
-                    sizeof(config.mqtt_transport));
 }
 
 uint16_t zplc_config_get_mqtt_port(void) { return config.mqtt_port; }
 void zplc_config_set_mqtt_port(uint16_t port) {
   config.mqtt_port = port;
-  settings_save_one("zplc/mqtt_port", &config.mqtt_port,
-                    sizeof(config.mqtt_port));
 }
 
 void zplc_config_get_mqtt_username(char *buf, size_t len) {
@@ -1025,8 +1007,6 @@ void zplc_config_get_mqtt_username(char *buf, size_t len) {
 void zplc_config_set_mqtt_username(const char *username) {
   strncpy(config.mqtt_username, username, sizeof(config.mqtt_username));
   config.mqtt_username[sizeof(config.mqtt_username) - 1] = '\0';
-  settings_save_one("zplc/mqtt_username", config.mqtt_username,
-                    strlen(config.mqtt_username));
 }
 
 void zplc_config_get_mqtt_password(char *buf, size_t len) {
@@ -1037,8 +1017,6 @@ void zplc_config_get_mqtt_password(char *buf, size_t len) {
 void zplc_config_set_mqtt_password(const char *password) {
   strncpy(config.mqtt_password, password, sizeof(config.mqtt_password));
   config.mqtt_password[sizeof(config.mqtt_password) - 1] = '\0';
-  settings_save_one("zplc/mqtt_password", config.mqtt_password,
-                    strlen(config.mqtt_password));
 }
 
 uint16_t zplc_config_get_mqtt_keepalive_sec(void) {
@@ -1046,8 +1024,6 @@ uint16_t zplc_config_get_mqtt_keepalive_sec(void) {
 }
 void zplc_config_set_mqtt_keepalive_sec(uint16_t keepalive_sec) {
   config.mqtt_keepalive_sec = keepalive_sec;
-  settings_save_one("zplc/mqtt_keepalive_sec", &config.mqtt_keepalive_sec,
-                    sizeof(config.mqtt_keepalive_sec));
 }
 
 uint32_t zplc_config_get_mqtt_publish_interval_ms(void) {
@@ -1055,9 +1031,6 @@ uint32_t zplc_config_get_mqtt_publish_interval_ms(void) {
 }
 void zplc_config_set_mqtt_publish_interval_ms(uint32_t publish_interval_ms) {
   config.mqtt_publish_interval_ms = publish_interval_ms;
-  settings_save_one("zplc/mqtt_publish_interval_ms",
-                    &config.mqtt_publish_interval_ms,
-                    sizeof(config.mqtt_publish_interval_ms));
 }
 
 zplc_mqtt_qos_t zplc_config_get_mqtt_publish_qos(void) {
@@ -1065,8 +1038,6 @@ zplc_mqtt_qos_t zplc_config_get_mqtt_publish_qos(void) {
 }
 void zplc_config_set_mqtt_publish_qos(zplc_mqtt_qos_t qos) {
   config.mqtt_publish_qos = (uint8_t)qos;
-  settings_save_one("zplc/mqtt_publish_qos", &config.mqtt_publish_qos,
-                    sizeof(config.mqtt_publish_qos));
 }
 
 zplc_mqtt_qos_t zplc_config_get_mqtt_subscribe_qos(void) {
@@ -1074,8 +1045,6 @@ zplc_mqtt_qos_t zplc_config_get_mqtt_subscribe_qos(void) {
 }
 void zplc_config_set_mqtt_subscribe_qos(zplc_mqtt_qos_t qos) {
   config.mqtt_subscribe_qos = (uint8_t)qos;
-  settings_save_one("zplc/mqtt_subscribe_qos", &config.mqtt_subscribe_qos,
-                    sizeof(config.mqtt_subscribe_qos));
 }
 
 bool zplc_config_get_mqtt_publish_retain(void) {
@@ -1083,8 +1052,6 @@ bool zplc_config_get_mqtt_publish_retain(void) {
 }
 void zplc_config_set_mqtt_publish_retain(bool retain) {
   config.mqtt_publish_retain = retain;
-  settings_save_one("zplc/mqtt_publish_retain", &config.mqtt_publish_retain,
-                    sizeof(config.mqtt_publish_retain));
 }
 
 bool zplc_config_get_mqtt_clean_session(void) {
@@ -1092,8 +1059,6 @@ bool zplc_config_get_mqtt_clean_session(void) {
 }
 void zplc_config_set_mqtt_clean_session(bool clean_session) {
   config.mqtt_clean_session = clean_session;
-  settings_save_one("zplc/mqtt_clean_session", &config.mqtt_clean_session,
-                    sizeof(config.mqtt_clean_session));
 }
 
 uint32_t zplc_config_get_mqtt_session_expiry_sec(void) {
@@ -1101,9 +1066,6 @@ uint32_t zplc_config_get_mqtt_session_expiry_sec(void) {
 }
 void zplc_config_set_mqtt_session_expiry_sec(uint32_t session_expiry_sec) {
   config.mqtt_session_expiry_sec = session_expiry_sec;
-  settings_save_one("zplc/mqtt_session_expiry_sec",
-                    &config.mqtt_session_expiry_sec,
-                    sizeof(config.mqtt_session_expiry_sec));
 }
 
 zplc_mqtt_security_t zplc_config_get_mqtt_security(void) {
@@ -1111,8 +1073,6 @@ zplc_mqtt_security_t zplc_config_get_mqtt_security(void) {
 }
 void zplc_config_set_mqtt_security(zplc_mqtt_security_t security) {
   config.mqtt_security = (uint8_t)security;
-  settings_save_one("zplc/mqtt_security", &config.mqtt_security,
-                    sizeof(config.mqtt_security));
 }
 
 void zplc_config_get_mqtt_websocket_path(char *buf, size_t len) {
@@ -1123,8 +1083,6 @@ void zplc_config_get_mqtt_websocket_path(char *buf, size_t len) {
 void zplc_config_set_mqtt_websocket_path(const char *path) {
   strncpy(config.mqtt_websocket_path, path, sizeof(config.mqtt_websocket_path));
   config.mqtt_websocket_path[sizeof(config.mqtt_websocket_path) - 1] = '\0';
-  settings_save_one("zplc/mqtt_websocket_path", config.mqtt_websocket_path,
-                    strlen(config.mqtt_websocket_path));
 }
 
 void zplc_config_get_mqtt_alpn(char *buf, size_t len) {
@@ -1135,8 +1093,6 @@ void zplc_config_get_mqtt_alpn(char *buf, size_t len) {
 void zplc_config_set_mqtt_alpn(const char *alpn) {
   strncpy(config.mqtt_alpn, alpn, sizeof(config.mqtt_alpn));
   config.mqtt_alpn[sizeof(config.mqtt_alpn) - 1] = '\0';
-  settings_save_one("zplc/mqtt_alpn", config.mqtt_alpn,
-                    strlen(config.mqtt_alpn));
 }
 
 /* ============================================================================
@@ -1147,8 +1103,6 @@ void zplc_config_set_mqtt_alpn(const char *alpn) {
 bool zplc_config_get_mqtt_lwt_enabled(void) { return config.mqtt_lwt_enabled; }
 void zplc_config_set_mqtt_lwt_enabled(bool enabled) {
   config.mqtt_lwt_enabled = enabled;
-  settings_save_one("zplc/mqtt_lwt_enabled", &config.mqtt_lwt_enabled,
-                    sizeof(config.mqtt_lwt_enabled));
 }
 
 void zplc_config_get_mqtt_lwt_topic(char *buf, size_t len) {
@@ -1159,8 +1113,6 @@ void zplc_config_get_mqtt_lwt_topic(char *buf, size_t len) {
 void zplc_config_set_mqtt_lwt_topic(const char *topic) {
   strncpy(config.mqtt_lwt_topic, topic, sizeof(config.mqtt_lwt_topic));
   config.mqtt_lwt_topic[sizeof(config.mqtt_lwt_topic) - 1] = '\0';
-  settings_save_one("zplc/mqtt_lwt_topic", config.mqtt_lwt_topic,
-                    strlen(config.mqtt_lwt_topic));
 }
 
 void zplc_config_get_mqtt_lwt_payload(char *buf, size_t len) {
@@ -1171,8 +1123,6 @@ void zplc_config_get_mqtt_lwt_payload(char *buf, size_t len) {
 void zplc_config_set_mqtt_lwt_payload(const char *payload) {
   strncpy(config.mqtt_lwt_payload, payload, sizeof(config.mqtt_lwt_payload));
   config.mqtt_lwt_payload[sizeof(config.mqtt_lwt_payload) - 1] = '\0';
-  settings_save_one("zplc/mqtt_lwt_payload", config.mqtt_lwt_payload,
-                    strlen(config.mqtt_lwt_payload));
 }
 
 zplc_mqtt_qos_t zplc_config_get_mqtt_lwt_qos(void) {
@@ -1180,15 +1130,11 @@ zplc_mqtt_qos_t zplc_config_get_mqtt_lwt_qos(void) {
 }
 void zplc_config_set_mqtt_lwt_qos(zplc_mqtt_qos_t qos) {
   config.mqtt_lwt_qos = (uint8_t)qos;
-  settings_save_one("zplc/mqtt_lwt_qos", &config.mqtt_lwt_qos,
-                    sizeof(config.mqtt_lwt_qos));
 }
 
 bool zplc_config_get_mqtt_lwt_retain(void) { return config.mqtt_lwt_retain; }
 void zplc_config_set_mqtt_lwt_retain(bool retain) {
   config.mqtt_lwt_retain = retain;
-  settings_save_one("zplc/mqtt_lwt_retain", &config.mqtt_lwt_retain,
-                    sizeof(config.mqtt_lwt_retain));
 }
 
 /* ============================================================================
@@ -1204,8 +1150,6 @@ void zplc_config_get_mqtt_ca_cert_path(char *buf, size_t len) {
 void zplc_config_set_mqtt_ca_cert_path(const char *path) {
   strncpy(config.mqtt_ca_cert_path, path, sizeof(config.mqtt_ca_cert_path));
   config.mqtt_ca_cert_path[sizeof(config.mqtt_ca_cert_path) - 1] = '\0';
-  settings_save_one("zplc/mqtt_ca_cert_path", config.mqtt_ca_cert_path,
-                    strlen(config.mqtt_ca_cert_path));
 }
 
 void zplc_config_get_mqtt_client_cert_path(char *buf, size_t len) {
@@ -1217,8 +1161,6 @@ void zplc_config_set_mqtt_client_cert_path(const char *path) {
   strncpy(config.mqtt_client_cert_path, path,
           sizeof(config.mqtt_client_cert_path));
   config.mqtt_client_cert_path[sizeof(config.mqtt_client_cert_path) - 1] = '\0';
-  settings_save_one("zplc/mqtt_client_cert_path", config.mqtt_client_cert_path,
-                    strlen(config.mqtt_client_cert_path));
 }
 
 void zplc_config_get_mqtt_client_key_path(char *buf, size_t len) {
@@ -1230,8 +1172,6 @@ void zplc_config_set_mqtt_client_key_path(const char *path) {
   strncpy(config.mqtt_client_key_path, path,
           sizeof(config.mqtt_client_key_path));
   config.mqtt_client_key_path[sizeof(config.mqtt_client_key_path) - 1] = '\0';
-  settings_save_one("zplc/mqtt_client_key_path", config.mqtt_client_key_path,
-                    strlen(config.mqtt_client_key_path));
 }
 
 /* ============================================================================
@@ -1242,8 +1182,6 @@ void zplc_config_set_mqtt_client_key_path(const char *path) {
 bool zplc_config_get_ntp_enabled(void) { return config.ntp_enabled; }
 void zplc_config_set_ntp_enabled(bool enabled) {
   config.ntp_enabled = enabled;
-  settings_save_one("zplc/ntp_enabled", &config.ntp_enabled,
-                    sizeof(config.ntp_enabled));
 }
 
 void zplc_config_get_ntp_server(char *buf, size_t len) {
@@ -1254,8 +1192,6 @@ void zplc_config_get_ntp_server(char *buf, size_t len) {
 void zplc_config_set_ntp_server(const char *server) {
   strncpy(config.ntp_server, server, sizeof(config.ntp_server));
   config.ntp_server[sizeof(config.ntp_server) - 1] = '\0';
-  settings_save_one("zplc/ntp_server", config.ntp_server,
-                    strlen(config.ntp_server));
 }
 
 /* ============================================================================
@@ -1271,8 +1207,6 @@ void zplc_config_get_mqtt_group_id(char *buf, size_t len) {
 void zplc_config_set_mqtt_group_id(const char *group_id) {
   strncpy(config.mqtt_group_id, group_id, sizeof(config.mqtt_group_id));
   config.mqtt_group_id[sizeof(config.mqtt_group_id) - 1] = '\0';
-  settings_save_one("zplc/mqtt_group_id", config.mqtt_group_id,
-                    strlen(config.mqtt_group_id));
 }
 
 /* ============================================================================
@@ -1288,8 +1222,6 @@ void zplc_config_get_azure_sas_key(char *buf, size_t len) {
 void zplc_config_set_azure_sas_key(const char *key) {
   strncpy(config.azure_sas_key, key, sizeof(config.azure_sas_key));
   config.azure_sas_key[sizeof(config.azure_sas_key) - 1] = '\0';
-  settings_save_one("zplc/azure_sas_key", config.azure_sas_key,
-                    strlen(config.azure_sas_key));
 }
 
 uint32_t zplc_config_get_azure_sas_expiry_s(void) {
@@ -1301,8 +1233,6 @@ void zplc_config_set_azure_sas_expiry_s(uint32_t expiry_s) {
   if (expiry_s > 31536000U)
     expiry_s = 31536000U;
   config.azure_sas_expiry_s = expiry_s;
-  settings_save_one("zplc/azure_sas_expiry_s", &config.azure_sas_expiry_s,
-                    sizeof(config.azure_sas_expiry_s));
 }
 
 /* ============================================================================
@@ -1315,8 +1245,6 @@ bool zplc_config_get_azure_twin_enabled(void) {
 }
 void zplc_config_set_azure_twin_enabled(bool enabled) {
   config.azure_twin_enabled = enabled;
-  settings_save_one("zplc/azure_twin_enabled", &config.azure_twin_enabled,
-                    sizeof(config.azure_twin_enabled));
 }
 
 bool zplc_config_get_azure_direct_methods_enabled(void) {
@@ -1324,9 +1252,6 @@ bool zplc_config_get_azure_direct_methods_enabled(void) {
 }
 void zplc_config_set_azure_direct_methods_enabled(bool enabled) {
   config.azure_direct_methods_enabled = enabled;
-  settings_save_one("zplc/azure_direct_methods_enabled",
-                    &config.azure_direct_methods_enabled,
-                    sizeof(config.azure_direct_methods_enabled));
 }
 
 bool zplc_config_get_azure_c2d_enabled(void) {
@@ -1334,8 +1259,6 @@ bool zplc_config_get_azure_c2d_enabled(void) {
 }
 void zplc_config_set_azure_c2d_enabled(bool enabled) {
   config.azure_c2d_enabled = enabled;
-  settings_save_one("zplc/azure_c2d_enabled", &config.azure_c2d_enabled,
-                    sizeof(config.azure_c2d_enabled));
 }
 
 /* ============================================================================
@@ -1348,8 +1271,6 @@ bool zplc_config_get_azure_dps_enabled(void) {
 }
 void zplc_config_set_azure_dps_enabled(bool enabled) {
   config.azure_dps_enabled = enabled;
-  settings_save_one("zplc/azure_dps_enabled", &config.azure_dps_enabled,
-                    sizeof(config.azure_dps_enabled));
 }
 
 void zplc_config_get_azure_dps_id_scope(char *buf, size_t len) {
@@ -1360,8 +1281,6 @@ void zplc_config_get_azure_dps_id_scope(char *buf, size_t len) {
 void zplc_config_set_azure_dps_id_scope(const char *scope) {
   strncpy(config.azure_dps_id_scope, scope, sizeof(config.azure_dps_id_scope));
   config.azure_dps_id_scope[sizeof(config.azure_dps_id_scope) - 1] = '\0';
-  settings_save_one("zplc/azure_dps_id_scope", config.azure_dps_id_scope,
-                    strlen(config.azure_dps_id_scope));
 }
 
 void zplc_config_get_azure_dps_registration_id(char *buf, size_t len) {
@@ -1375,9 +1294,6 @@ void zplc_config_set_azure_dps_registration_id(const char *id) {
   config
       .azure_dps_registration_id[sizeof(config.azure_dps_registration_id) - 1] =
       '\0';
-  settings_save_one("zplc/azure_dps_registration_id",
-                    config.azure_dps_registration_id,
-                    strlen(config.azure_dps_registration_id));
 }
 
 void zplc_config_get_azure_dps_endpoint(char *buf, size_t len) {
@@ -1389,8 +1305,6 @@ void zplc_config_set_azure_dps_endpoint(const char *endpoint) {
   strncpy(config.azure_dps_endpoint, endpoint,
           sizeof(config.azure_dps_endpoint));
   config.azure_dps_endpoint[sizeof(config.azure_dps_endpoint) - 1] = '\0';
-  settings_save_one("zplc/azure_dps_endpoint", config.azure_dps_endpoint,
-                    strlen(config.azure_dps_endpoint));
 }
 
 /* Stub — real implementation lives in zplc_azure_dps.c */
@@ -1414,9 +1328,6 @@ void zplc_config_set_azure_event_grid_topic(const char *topic) {
           sizeof(config.azure_event_grid_topic));
   config.azure_event_grid_topic[sizeof(config.azure_event_grid_topic) - 1] =
       '\0';
-  settings_save_one("zplc/azure_event_grid_topic",
-                    config.azure_event_grid_topic,
-                    strlen(config.azure_event_grid_topic));
 }
 
 void zplc_config_get_azure_event_grid_source(char *buf, size_t len) {
@@ -1429,9 +1340,6 @@ void zplc_config_set_azure_event_grid_source(const char *source) {
           sizeof(config.azure_event_grid_source));
   config.azure_event_grid_source[sizeof(config.azure_event_grid_source) - 1] =
       '\0';
-  settings_save_one("zplc/azure_event_grid_source",
-                    config.azure_event_grid_source,
-                    strlen(config.azure_event_grid_source));
 }
 
 void zplc_config_get_azure_event_grid_event_type(char *buf, size_t len) {
@@ -1445,9 +1353,6 @@ void zplc_config_set_azure_event_grid_event_type(const char *type) {
   config
       .azure_event_grid_event_type[sizeof(config.azure_event_grid_event_type) -
                                    1] = '\0';
-  settings_save_one("zplc/azure_event_grid_event_type",
-                    config.azure_event_grid_event_type,
-                    strlen(config.azure_event_grid_event_type));
 }
 
 /* ============================================================================
@@ -1460,15 +1365,11 @@ bool zplc_config_get_aws_shadow_enabled(void) {
 }
 void zplc_config_set_aws_shadow_enabled(bool enabled) {
   config.aws_shadow_enabled = enabled;
-  settings_save_one("zplc/aws_shadow_enabled", &config.aws_shadow_enabled,
-                    sizeof(config.aws_shadow_enabled));
 }
 
 bool zplc_config_get_aws_jobs_enabled(void) { return config.aws_jobs_enabled; }
 void zplc_config_set_aws_jobs_enabled(bool enabled) {
   config.aws_jobs_enabled = enabled;
-  settings_save_one("zplc/aws_jobs_enabled", &config.aws_jobs_enabled,
-                    sizeof(config.aws_jobs_enabled));
 }
 
 /* ============================================================================
@@ -1481,8 +1382,6 @@ bool zplc_config_get_aws_fleet_enabled(void) {
 }
 void zplc_config_set_aws_fleet_enabled(bool enabled) {
   config.aws_fleet_enabled = enabled;
-  settings_save_one("zplc/aws_fleet_enabled", &config.aws_fleet_enabled,
-                    sizeof(config.aws_fleet_enabled));
 }
 
 void zplc_config_get_aws_fleet_template_name(char *buf, size_t len) {
@@ -1495,9 +1394,6 @@ void zplc_config_set_aws_fleet_template_name(const char *name) {
           sizeof(config.aws_fleet_template_name));
   config.aws_fleet_template_name[sizeof(config.aws_fleet_template_name) - 1] =
       '\0';
-  settings_save_one("zplc/aws_fleet_template_name",
-                    config.aws_fleet_template_name,
-                    strlen(config.aws_fleet_template_name));
 }
 
 void zplc_config_get_aws_claim_cert_path(char *buf, size_t len) {
@@ -1508,8 +1404,6 @@ void zplc_config_get_aws_claim_cert_path(char *buf, size_t len) {
 void zplc_config_set_aws_claim_cert_path(const char *path) {
   strncpy(config.aws_claim_cert_path, path, sizeof(config.aws_claim_cert_path));
   config.aws_claim_cert_path[sizeof(config.aws_claim_cert_path) - 1] = '\0';
-  settings_save_one("zplc/aws_claim_cert_path", config.aws_claim_cert_path,
-                    strlen(config.aws_claim_cert_path));
 }
 
 void zplc_config_get_aws_claim_key_path(char *buf, size_t len) {
@@ -1520,8 +1414,6 @@ void zplc_config_get_aws_claim_key_path(char *buf, size_t len) {
 void zplc_config_set_aws_claim_key_path(const char *path) {
   strncpy(config.aws_claim_key_path, path, sizeof(config.aws_claim_key_path));
   config.aws_claim_key_path[sizeof(config.aws_claim_key_path) - 1] = '\0';
-  settings_save_one("zplc/aws_claim_key_path", config.aws_claim_key_path,
-                    strlen(config.aws_claim_key_path));
 }
 
 /* Stubs — real implementations live in zplc_aws_fleet.c */

@@ -34,6 +34,7 @@ import {
   RotateCcw,
   Radio,
   Unplug,
+  Zap,
 } from 'lucide-react';
 import { useIDEStore } from '../store/useIDEStore';
 import { useTheme } from '../hooks/useTheme';
@@ -45,7 +46,7 @@ import { parseFBDModel } from '../models/fbd';
 import { parseLDModel } from '../models/ld';
 import { parseSFCModel } from '../models/sfc';
 import { compileSingleFileWithTask, compileMultiTaskProject, CompilerError, AssemblerError } from '../compiler';
-import type { PLCLanguage, ProgramSource } from '../compiler';
+import type { PLCLanguage, ProgramSource, DebugMap } from '../compiler';
 import { GeneratedCodeDialog } from './GeneratedCodeDialog';
 import { loadFileFromTree } from '../utils/fileSystem';
 import type { FileTreeNode } from '../types';
@@ -81,6 +82,9 @@ export function Toolbar({ debugController }: ToolbarProps) {
     activeFileId,
     fileTree,
   } = useIDEStore();
+
+  const mpeekEnabled = useIDEStore((s) => s.debug.mpeekEnabled);
+  const toggleMpeek = useIDEStore((s) => s.toggleMpeek);
 
   const { theme, setTheme, isDark } = useTheme();
 
@@ -125,6 +129,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     codeSize: number;
     hasTaskSegment: boolean;
     taskCount: number;
+    debugMap: DebugMap;
   } | null>(null);
 
   // Get the active file
@@ -487,6 +492,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
           codeSize: result.codeSize,
           hasTaskSegment: true,
           taskCount: result.tasks.length,
+          debugMap: result.debugMap,
         });
 
         addConsoleEntry({
@@ -528,6 +534,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
           codeSize: result.codeSize,
           hasTaskSegment: result.hasTaskSegment,
           taskCount: result.tasks.length,
+          debugMap: result.debugMap,
         });
 
         addConsoleEntry({
@@ -656,7 +663,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
         : `Loading bytecode (${dataToUpload.length} bytes)...`;
 
       addConsoleEntry({ type: 'info', message: description, source: 'runtime' });
-      await loadProgram(dataToUpload);
+      await loadProgram(dataToUpload, lastCompileResult.debugMap);
       addConsoleEntry({ type: 'success', message: 'Program loaded', source: 'runtime' });
     } catch (e) {
       addConsoleEntry({ type: 'error', message: `Upload failed: ${e instanceof Error ? e.message : String(e)}`, source: 'runtime' });
@@ -680,7 +687,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
         const dataToUpload = executionMode === 'hardware'
           ? lastCompileResult.zplcFile
           : lastCompileResult.bytecode;
-        await loadProgram(dataToUpload);
+        await loadProgram(dataToUpload, lastCompileResult.debugMap);
       } catch (e) {
         addConsoleEntry({ type: 'error', message: `Failed to load: ${e instanceof Error ? e.message : String(e)}`, source: 'runtime' });
         return;
@@ -918,6 +925,24 @@ export function Toolbar({ debugController }: ToolbarProps) {
           >
             {isUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
             <span className="hidden md:inline">Upload</span>
+          </button>
+        )}
+
+        {/* Live Values (mpeek) toggle - hardware mode only */}
+        {executionMode === 'hardware' && isConnected && (
+          <button
+            onClick={toggleMpeek}
+            className={`flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium transition-colors ${
+              mpeekEnabled
+                ? 'bg-amber-500 hover:bg-amber-400 text-black'
+                : 'bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-400)]'
+            }`}
+            title={mpeekEnabled
+              ? 'Fast Live (mpeek batch): one serial round-trip for all vars. Click to use standard peek.'
+              : 'Live values use standard peek. Click to enable fast mpeek (requires mpeek-capable firmware).'}
+          >
+            <Zap size={13} />
+            <span className="hidden lg:inline">Live</span>
           </button>
         )}
 

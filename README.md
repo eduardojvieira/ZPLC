@@ -13,11 +13,11 @@ ZPLC is a portable, deterministic PLC runtime environment powered by [Zephyr RTO
 
 ## Features
 
-- **Portable Core**: ANSI C99 compliant core, running on 500+ microcontrollers (via Zephyr), Linux, macOS, Windows, and WebAssembly.
+- **Portable Core**: ANSI C99 compliant core for Zephyr targets, POSIX hosts, desktop tooling, and WebAssembly simulation.
 - **Cross-Platform Desktop App**: Electron-based IDE for Windows, macOS, and Linux with native serial support.
 - **Visual IDE**: Powerful editor for Ladder Diagrams (LD), Function Block Diagrams (FBD), and Sequential Function Charts (SFC).
 - **Unified Architecture**: Hardware-agnostic `.zplc` bytecode allows you to "compile once, run anywhere."
-- **IEC 61131-3 Support**: First-class support for Structured Text (ST) with 45+ standard functions and 22 function blocks.
+- **IEC 61131-3 Workflows**: v1.5 focuses on truthful end-to-end workflows for `ST`, `IL`, `LD`, `FBD`, and `SFC`.
 - **Industrial Grade**: Deterministic execution, retentive memory, multitask scheduling, and sub-millisecond jitter on RTOS targets.
 - **Advanced Debugging**: Breakpoints, step execution, variable watch, and real-time memory inspection.
 - **Modern Tooling**: TypeScript compiler, WebAssembly simulation, and comprehensive test suite.
@@ -48,6 +48,11 @@ The full documentation for ZPLC, including the runtime architecture, hardware in
 | **v1.2** | Complete | STRING Type + Indirect Memory + Standard Library |
 | **v1.3** | Complete | Advanced Debugging + Professional IDE |
 | **v1.4** | Complete | **Cross-Platform Desktop App (Electron)** |
+
+## v1.5 Foundation Status
+
+The active `v1.5.0` work is a release-foundation effort. Claims are intentionally limited
+to what the repository, documentation, CI, and human validation can prove.
 
 ---
 
@@ -152,13 +157,9 @@ cp build/zephyr/zephyr.uf2 /Volumes/RPI-RP2/
 ## Supported Platforms
 
 ### Embedded (Zephyr RTOS)
-ZPLC is a Zephyr Module, supporting 500+ boards including:
-- **Raspberry Pi**: Pico (RP2040)
-- **STMicroelectronics**: STM32F4, STM32L4, STM32H7, Nucleo boards
-- **Arduino**: Giga R1 (STM32H747)
-- **Espressif**: ESP32, ESP32-S2, ESP32-S3, ESP32-C3
-- **Nordic**: nRF52840, nRF5340, nRF9160
-- **NXP**: i.MX RT, LPC, Kinetis
+ZPLC is a Zephyr module. The v1.5 supported-board claim set is intentionally limited to
+the boards listed in `firmware/app/boards/supported-boards.v1.5.0.json` and published in
+the docs reference section.
 
 ### Desktop & Development
 - **Desktop App**: Windows, macOS, Linux (Electron)

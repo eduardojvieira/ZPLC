@@ -15,13 +15,8 @@ Esta sección cubre cómo integrar el runtime de ZPLC en sus objetivos de hardwa
 
 ZPLC está diseñado para ser altamente portable. Principalmente tiene como objetivo Zephyr RTOS, que proporciona un amplio soporte de hardware.
 
-Los objetivos actualmente soportados y probados incluyen:
-
-*   **STM32H7 / M7 Core** (`arduino_giga_r1/stm32h747xx/m7`, `nucleo_h743zi`)
-*   **ESP32-S3** (`esp32s3_devkitc`)
-*   **Raspberry Pi Pico** (`rpi_pico`)
-*   **POSIX** (Linux/macOS para simulación y pruebas)
-*   **WASM** (Simulación en navegador)
+El soporte real de v1.5 debe leerse desde el manifiesto de placas soportadas y la
+evidencia del release, no desde una lista fija en esta pagina.
 
 ## Integración de ZPLC
 
@@ -39,3 +34,10 @@ Una vez que el runtime está integrado en un dispositivo, el despliegue de la l�
 2.  **Despliegue de Red**: Para dispositivos remotos (por ejemplo, a través de Wi-Fi en ESP32), el despliegue puede ocurrir sobre TCP/IP (MQTT o un protocolo personalizado, dependiendo de la implementación de su HAL).
 
 *Nota: Para guías detalladas de implementación de HAL, consulte la [Documentación del Runtime](../runtime/index.md).*
+
+## Expectativas de Configuracion de Protocolos
+
+- use MQTT solo en placas cuyo perfil soportado exponga una ruta real de red;
+- use Modbus TCP solo cuando la placa y el runtime soporten transporte de red;
+- use Modbus RTU solo cuando la placa y el firmware expongan la ruta serial requerida;
+- mantenga alineados la configuracion del proyecto, la documentacion y la evidencia del release.

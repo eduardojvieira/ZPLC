@@ -64,6 +64,8 @@ export interface WatchVariable {
   name: string;
   /** Memory address */
   address: number;
+  /** Bit offset for bit-addressed BOOL variables */
+  bitOffset?: number;
   /** Data type */
   type: 'BOOL' | 'INT' | 'DINT' | 'REAL' | 'BYTE' | 'WORD' | 'DWORD' | 'TIME' | 'STRING';
   /** Current value (updated by polling) */
@@ -90,6 +92,24 @@ export interface DebugAdapterEvents {
   onBreakpointHit?: (pc: number, line?: number) => void;
   /** Called when a single step completes */
   onStepComplete?: (pc: number) => void;
+  /** Called when raw serial/device output is observed during a connected session */
+  onSerialData?: (line: string) => void;
+}
+
+export interface LoadProgramOptions {
+  trace?: import('./uploadTrace').UploadTraceCallback;
+}
+
+/**
+ * Options for readWatchVariables
+ */
+export interface ReadWatchOptions {
+  /**
+   * Whether to use the mpeek fast-path (serial adapter only).
+   * Defaults to false. Only enable when the firmware has been reflashed
+   * with `zplc dbg mpeek` support.
+   */
+  useMpeek?: boolean;
 }
 
 /**
@@ -137,7 +157,7 @@ export interface IDebugAdapter {
    * @param bytecode Raw bytecode bytes
    * @returns Promise that resolves when loaded
    */
-  loadProgram(bytecode: Uint8Array): Promise<void>;
+  loadProgram(bytecode: Uint8Array, options?: LoadProgramOptions): Promise<void>;
 
   // =========================================================================
   // Execution Control
@@ -226,7 +246,7 @@ export interface IDebugAdapter {
    * @param variables List of variables to read
    * @returns Updated variables with current values
    */
-  readWatchVariables(variables: WatchVariable[]): Promise<WatchVariable[]>;
+  readWatchVariables(variables: WatchVariable[], options?: ReadWatchOptions): Promise<WatchVariable[]>;
 
   // =========================================================================
   // GPIO Simulation (for WASM adapter)
@@ -326,12 +346,16 @@ export function getTypeSize(type: WatchVariable['type'], maxLength?: number): nu
  */
 export function bytesToValue(
   bytes: Uint8Array,
-  type: WatchVariable['type']
+  type: WatchVariable['type'],
+  bitOffset?: number,
 ): number | boolean | string {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
 
   switch (type) {
     case 'BOOL':
+      if (bitOffset !== undefined) {
+        return ((bytes[0] >> bitOffset) & 0x01) !== 0;
+      }
       return bytes[0] !== 0;
     case 'BYTE':
       return bytes[0];

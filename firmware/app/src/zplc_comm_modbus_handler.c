@@ -13,6 +13,8 @@ LOG_MODULE_REGISTER(zplc_comm_modbus, LOG_LEVEL_INF);
  */
 
 #define MAX_ASYNC_TX 8
+#define MAX_MODBUS_REG_COUNT 123
+#define MAX_MODBUS_COIL_BYTES 250
 
 typedef enum {
   TX_STATE_FREE = 0,
@@ -34,8 +36,8 @@ struct modbus_async_tx {
   char host[81];
   uint16_t port;
   int status;
-  uint16_t read_regs[1]; // We only map the first VALUE for now
-  uint8_t read_coils[1];
+  uint16_t read_regs[MAX_MODBUS_REG_COUNT];
+  uint8_t read_coils[MAX_MODBUS_COIL_BYTES];
 };
 
 static struct modbus_async_tx s_tx_pool[MAX_ASYNC_TX];
@@ -51,6 +53,10 @@ extern int zplc_modbus_rtu_client_read_holding(uint8_t slave_id,
                                                uint16_t count, uint16_t *out);
 extern int zplc_modbus_rtu_client_write_register(uint8_t slave_id, uint16_t reg,
                                                  uint16_t value);
+extern int zplc_modbus_rtu_client_write_multiple(uint8_t slave_id,
+                                                 uint16_t start_reg,
+                                                 uint16_t count,
+                                                 const uint16_t *values);
 extern int zplc_modbus_rtu_client_read_coils(uint8_t slave_id,
                                              uint16_t start_addr,
                                              uint16_t count, uint8_t *out_bits);
@@ -64,6 +70,11 @@ extern int zplc_modbus_tcp_client_read_holding(const char *host, uint16_t port,
 extern int zplc_modbus_tcp_client_write_register(const char *host,
                                                  uint16_t port, uint8_t unit_id,
                                                  uint16_t reg, uint16_t value);
+extern int zplc_modbus_tcp_client_write_multiple(const char *host, uint16_t port,
+                                                 uint8_t unit_id,
+                                                 uint16_t start_reg,
+                                                 uint16_t count,
+                                                 const uint16_t *values);
 extern int zplc_modbus_tcp_client_read_coils(const char *host, uint16_t port,
                                              uint8_t unit_id,
                                              uint16_t start_addr,
@@ -88,16 +99,22 @@ static void modbus_async_thread(void *p1, void *p2, void *p3) {
       if (tx->proto == 0) { // RTU
         switch (tx->kind) {
         case ZPLC_COMM_FB_MB_READ_HREG:
-          rc = zplc_modbus_rtu_client_read_holding(tx->unit_id, tx->addr, 1,
-                                                   tx->read_regs);
+          rc = zplc_modbus_rtu_client_read_holding(tx->unit_id, tx->addr,
+                                                   tx->count, tx->read_regs);
           break;
         case ZPLC_COMM_FB_MB_WRITE_HREG:
-          rc = zplc_modbus_rtu_client_write_register(tx->unit_id, tx->addr,
-                                                     tx->write_val_word);
+          if (tx->count > 1U) {
+            rc = zplc_modbus_rtu_client_write_multiple(tx->unit_id, tx->addr,
+                                                       tx->count,
+                                                       tx->read_regs);
+          } else {
+            rc = zplc_modbus_rtu_client_write_register(tx->unit_id, tx->addr,
+                                                       tx->write_val_word);
+          }
           break;
         case ZPLC_COMM_FB_MB_READ_COIL:
-          rc = zplc_modbus_rtu_client_read_coils(tx->unit_id, tx->addr, 1,
-                                                 tx->read_coils);
+          rc = zplc_modbus_rtu_client_read_coils(tx->unit_id, tx->addr,
+                                                 tx->count, tx->read_coils);
           break;
         case ZPLC_COMM_FB_MB_WRITE_COIL:
           rc = zplc_modbus_rtu_client_write_coil(tx->unit_id, tx->addr,
@@ -110,15 +127,23 @@ static void modbus_async_thread(void *p1, void *p2, void *p3) {
         switch (tx->kind) {
         case ZPLC_COMM_FB_MB_READ_HREG:
           rc = zplc_modbus_tcp_client_read_holding(
-              tx->host, tx->port, tx->unit_id, tx->addr, 1, tx->read_regs);
+              tx->host, tx->port, tx->unit_id, tx->addr, tx->count,
+              tx->read_regs);
           break;
         case ZPLC_COMM_FB_MB_WRITE_HREG:
-          rc = zplc_modbus_tcp_client_write_register(
-              tx->host, tx->port, tx->unit_id, tx->addr, tx->write_val_word);
+          if (tx->count > 1U) {
+            rc = zplc_modbus_tcp_client_write_multiple(
+                tx->host, tx->port, tx->unit_id, tx->addr, tx->count,
+                tx->read_regs);
+          } else {
+            rc = zplc_modbus_tcp_client_write_register(
+                tx->host, tx->port, tx->unit_id, tx->addr, tx->write_val_word);
+          }
           break;
         case ZPLC_COMM_FB_MB_READ_COIL:
           rc = zplc_modbus_tcp_client_read_coils(
-              tx->host, tx->port, tx->unit_id, tx->addr, 1, tx->read_coils);
+              tx->host, tx->port, tx->unit_id, tx->addr, tx->count,
+              tx->read_coils);
           break;
         case ZPLC_COMM_FB_MB_WRITE_COIL:
           rc = zplc_modbus_tcp_client_write_coil(
@@ -148,6 +173,33 @@ static void extract_string(uint8_t *fb_mem, uint16_t offset, char *dest,
 
   memcpy(dest, &fb_mem[offset + 4], copy_len);
   dest[copy_len] = '\0';
+}
+
+static bool validate_modbus_count(zplc_comm_fb_kind_t kind, uint16_t count) {
+  if (count == 0U) {
+    return false;
+  }
+
+  switch (kind) {
+  case ZPLC_COMM_FB_MB_READ_HREG:
+  case ZPLC_COMM_FB_MB_WRITE_HREG:
+    return count <= MAX_MODBUS_REG_COUNT;
+  case ZPLC_COMM_FB_MB_READ_COIL:
+  case ZPLC_COMM_FB_MB_WRITE_COIL:
+    return count <= 2000U;
+  default:
+    return false;
+  }
+}
+
+static void copy_modbus_write_words(struct modbus_async_tx *tx,
+                                    const uint8_t *fb_mem) {
+  for (uint16_t i = 0U; i < tx->count; i++) {
+    uint16_t offset = (uint16_t)(15U + (i * 2U));
+    tx->read_regs[i] = (uint16_t)(fb_mem[offset] | (fb_mem[offset + 1U] << 8));
+  }
+
+  tx->write_val_word = tx->read_regs[0];
 }
 
 //
@@ -209,10 +261,18 @@ int zplc_comm_modbus_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
       } else {
         // Map outputs based on kind
         if (kind == ZPLC_COMM_FB_MB_READ_HREG) {
-          fb_mem[15] = tx->read_regs[0] & 0xFF;
-          fb_mem[16] = (tx->read_regs[0] >> 8) & 0xFF;
+          for (uint16_t i = 0U; i < tx->count; i++) {
+            uint16_t offset = (uint16_t)(15U + (i * 2U));
+            fb_mem[offset] = (uint8_t)(tx->read_regs[i] & 0xFFU);
+            fb_mem[offset + 1U] = (uint8_t)((tx->read_regs[i] >> 8) & 0xFFU);
+          }
         } else if (kind == ZPLC_COMM_FB_MB_READ_COIL) {
-          fb_mem[15] = tx->read_coils[0] ? 1 : 0;
+          for (uint16_t i = 0U; i < tx->count; i++) {
+            uint16_t byte_index = (uint16_t)(i / 8U);
+            uint8_t bit_index = (uint8_t)(i % 8U);
+            fb_mem[15U + i] =
+                (uint8_t)((tx->read_coils[byte_index] >> bit_index) & 0x01U);
+          }
         }
       }
 
@@ -254,8 +314,19 @@ int zplc_comm_modbus_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
     tx->addr = fb_mem[11] | (fb_mem[12] << 8);
     tx->count = fb_mem[13] | (fb_mem[14] << 8);
 
+    if (!validate_modbus_count(kind, tx->count)) {
+      tx->state = TX_STATE_FREE;
+      fb_mem[1] = 0;
+      fb_mem[3] = 1;
+      fb_mem[4] = ZPLC_COMM_INVALID_ADDR;
+      fb_mem[5] = 0;
+      fb_mem[6] = 0;
+      fb_mem[7] = 0;
+      return 0;
+    }
+
     if (kind == ZPLC_COMM_FB_MB_WRITE_HREG) {
-      tx->write_val_word = fb_mem[15] | (fb_mem[16] << 8);
+      copy_modbus_write_words(tx, fb_mem);
     } else if (kind == ZPLC_COMM_FB_MB_WRITE_COIL) {
       tx->write_val_bool = fb_mem[15] != 0;
     }

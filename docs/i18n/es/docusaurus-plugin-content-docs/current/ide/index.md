@@ -9,14 +9,15 @@ tags: [ide, tooling, debugging]
 
 # IDE y Herramientas
 
-El Entorno de Desarrollo Integrado (IDE) de ZPLC es una aplicación web moderna diseñada para llevar las mejores prácticas de ingeniería de software a la programación de PLC.
+El IDE de ZPLC es la superficie de ingeniería que debe probar las afirmaciones de workflow
+de la versión v1.5.
 
 ## Capacidades
 
-*   **Basado en Navegador**: Se ejecuta completamente en el navegador utilizando React y Vite, sin requerir instalación local para comenzar a escribir lógica.
-*   **Edición Enriquecida**: Desarrollado con Monaco Editor, proporcionando resaltado de sintaxis, autocompletado y comprobación de errores para Texto Estructurado.
-*   **Compilador Integrado**: El compilador está integrado en el IDE (a través de WebAssembly o un servicio backend), lo que permite una retroalimentación instantánea sobre los cambios de código.
-*   **Gestión de Proyectos**: Organice sus programas de PLC, variables y tareas dentro de un formato de proyecto estructurado.
+- autoría multi-lenguaje para texto y editores visuales
+- compilación integrada con contrato común
+- simulación y depuración
+- configuración de proyecto alineada con placas soportadas y capacidades reales
 
 ## Flujos de Trabajo Web y de Escritorio
 
