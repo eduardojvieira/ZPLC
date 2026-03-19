@@ -38,6 +38,9 @@ compile_commands.json
 # Python files
 __pycache__/
 *.py[cod]
+.venv/
+venv/
+.pytest_cache/
 
 # Compiled ZPLC files
 *.zplc
@@ -68,6 +71,10 @@ task_boundary_history.json
 *.tmp
 temp/
 .cache/
+coverage/
+out/
+obj/
+.env*
 
 build_wasm/
 

@@ -18,3 +18,16 @@ export { transpileLDToST } from './ld';
 export { transpileFBDToST } from './fbd';
 export { transpileSFCToST } from './sfc';
 export { transpileILToST } from './il';
+
+export const TRANSPILED_LANGUAGE = {
+  IL: 'IL',
+  LD: 'LD',
+  FBD: 'FBD',
+  SFC: 'SFC',
+} as const;
+
+export function supportsTranspileWorkflow(language: string): boolean {
+  return Object.values(TRANSPILED_LANGUAGE).includes(
+    language as (typeof TRANSPILED_LANGUAGE)[keyof typeof TRANSPILED_LANGUAGE]
+  );
+}

@@ -52,7 +52,9 @@ extern void zplc_mqtt_request_backoff_reset(void);
 #include <hardware/clocks.h>
 #define CPU_FREQ_MHZ (clock_get_hz(clk_sys) / 1000000)
 #else
-#define CPU_FREQ_MHZ 125
+/* Use Zephyr's portable runtime clock API for all other SoCs (ESP32-S3, STM32, etc.) */
+#include <zephyr/sys_clock.h>
+#define CPU_FREQ_MHZ (sys_clock_hw_cycles_per_sec() / 1000000U)
 #endif
 
 typedef enum {
@@ -79,6 +81,7 @@ extern size_t program_received_size;
 extern uint8_t step_requested;
 
 #define CERT_STAGING_MAX_BYTES 4096U
+#define SHELL_FORCE_MAX_BYTES 260U
 
 static struct {
   bool active;
@@ -193,6 +196,23 @@ static const char *sched_state_name(zplc_sched_state_t state) {
   case ZPLC_SCHED_STATE_UNINIT:
   default:
     return "uninit";
+  }
+}
+
+static const char *task_state_name(zplc_task_state_t state) {
+  switch (state) {
+  case ZPLC_TASK_STATE_IDLE:
+    return "idle";
+  case ZPLC_TASK_STATE_READY:
+    return "ready";
+  case ZPLC_TASK_STATE_RUNNING:
+    return "running";
+  case ZPLC_TASK_STATE_PAUSED:
+    return "paused";
+  case ZPLC_TASK_STATE_ERROR:
+    return "error";
+  default:
+    return "unknown";
   }
 }
 #endif
@@ -514,6 +534,11 @@ static int cmd_dbg_bp_add(const struct shell *sh, size_t argc, char **argv);
 static int cmd_dbg_bp_remove(const struct shell *sh, size_t argc, char **argv);
 static int cmd_dbg_bp_clear(const struct shell *sh, size_t argc, char **argv);
 static int cmd_dbg_bp_list(const struct shell *sh, size_t argc, char **argv);
+static int cmd_dbg_force_set(const struct shell *sh, size_t argc, char **argv);
+static int cmd_dbg_force_clear(const struct shell *sh, size_t argc, char **argv);
+static int cmd_dbg_force_clear_all(const struct shell *sh, size_t argc,
+                                   char **argv);
+static int cmd_dbg_force_list(const struct shell *sh, size_t argc, char **argv);
 
 /* ADC Handlers */
 #ifdef CONFIG_ADC
@@ -535,6 +560,7 @@ static int cmd_sched_status(const struct shell *sh, size_t argc, char **argv);
 static int cmd_sched_tasks(const struct shell *sh, size_t argc, char **argv);
 static int cmd_sched_load(const struct shell *sh, size_t argc, char **argv);
 static int cmd_sched_data(const struct shell *sh, size_t argc, char **argv);
+static int sched_reset_runtime(bool restart);
 static int cmd_sys_info(const struct shell *sh, size_t argc, char **argv);
 static int cmd_sys_reboot(const struct shell *sh, size_t argc, char **argv);
 #endif
@@ -559,25 +585,54 @@ static int cmd_sched_status(const struct shell *sh, size_t argc, char **argv) {
   zplc_sched_get_stats(&stats);
 
   if (json) {
+#ifdef CONFIG_ZPLC_SCHEDULER
+    zplc_vm_t *vm = NULL;
+    for (int i = 0; i < CONFIG_ZPLC_MAX_TASKS; i++) {
+      zplc_vm_t *candidate = zplc_sched_get_vm_ptr(i);
+      if (candidate == NULL) {
+        continue;
+      }
+
+      if (zplc_vm_is_paused(candidate)) {
+        vm = candidate;
+        break;
+      }
+
+      if (vm == NULL) {
+        vm = candidate;
+      }
+    }
+#endif
+
     JSON_OBJ_START(sh);
-    JSON_STR(sh, "state", state_name((zplc_state_t)zplc_sched_get_state()),
-             true);
+    JSON_STR(sh, "state", sched_state_name(zplc_sched_get_state()), true);
     JSON_UINT(sh, "uptime_ms", stats.uptime_ms, true);
-    JSON_OBJ_START(sh);
     shell_fprintf(sh, SHELL_NORMAL, "\"stats\":");
     JSON_OBJ_START(sh);
     JSON_UINT(sh, "cycles", stats.total_cycles, true);
     JSON_UINT(sh, "overruns", stats.total_overruns, true);
     JSON_UINT(sh, "active_tasks", stats.active_tasks, false);
     JSON_OBJ_END(sh);
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+    if (vm != NULL) {
+      shell_fprintf(sh, SHELL_NORMAL, ",\"vm\":");
+      JSON_OBJ_START(sh);
+      JSON_UINT(sh, "pc", vm->pc, true);
+      JSON_UINT(sh, "sp", vm->sp, true);
+      JSON_BOOL(sh, "halted", zplc_vm_is_paused(vm) != 0, true);
+      JSON_INT(sh, "error", vm->error, false);
+      JSON_OBJ_END(sh);
+    }
+#endif
+
     JSON_OBJ_END(sh);
     JSON_NEWLINE(sh);
     return 0;
   }
 
   shell_print(sh, "Scheduler Status:");
-  shell_print(sh, "  State:      %s",
-              state_name((zplc_state_t)zplc_sched_get_state()));
+  shell_print(sh, "  State:      %s", sched_state_name(zplc_sched_get_state()));
   shell_print(sh, "  Uptime:     %u ms", stats.uptime_ms);
   shell_print(sh, "  Tasks:      %u active", stats.active_tasks);
   shell_print(sh, "  Tot Cycles: %u", stats.total_cycles);
@@ -601,7 +656,7 @@ static int cmd_sched_tasks(const struct shell *sh, size_t argc, char **argv) {
       shell_print(sh, " %2d | %4d | %6u us | %6u | %8u | %s", task.config.id,
                   task.config.priority, task.config.interval_us,
                   task.stats.cycle_count, task.stats.overrun_count,
-                  state_name((zplc_state_t)task.state));
+                  task_state_name(task.state));
     }
   }
 
@@ -649,15 +704,11 @@ static int cmd_sched_data(const struct shell *sh, size_t argc, char **argv) {
   }
   program_received_size += decoded;
   if (program_received_size >= program_expected_size) {
-    int ret = zplc_sched_load(program_buffer, program_received_size);
+    int ret = sched_reset_runtime(true);
     if (ret < 0) {
       shell_error(sh, "ERROR: Scheduler load failed (%d)", ret);
       program_expected_size = 0;
       return ret;
-    }
-    ret = zplc_sched_start();
-    if (ret < 0) {
-      shell_warn(sh, "WARN: zplc_sched_start returned %d (may already be running)", ret);
     }
     shell_print(sh, "OK: Program loaded and started (%zu bytes)", program_received_size);
     program_expected_size = 0;
@@ -895,6 +946,160 @@ static int cmd_dbg_peek(const struct shell *sh, size_t argc, char **argv) {
   return 0;
 }
 
+/**
+ * @brief Handler for 'zplc dbg mpeek <addr:len,...>'
+ *
+ * Reads up to MPEEK_MAX_ENTRIES non-contiguous addresses in a single serial
+ * round-trip and emits a compact JSON response:
+ *   {"t":"mpeek","results":[{"addr":N,"bytes":"HEXHEX"},...]}\n
+ *
+ * Input format: comma-separated addr:len pairs, e.g.
+ *   zplc dbg mpeek 0x2000:2,0x2002:2,0x2004:1
+ *
+ * Constraints:
+ *   - Max MPEEK_MAX_ENTRIES entries per call
+ *   - Max MPEEK_MAX_BYTES total bytes across all entries
+ *   - Each len 1–256
+ *   - Addresses must be in a valid ZPLC memory region
+ */
+#define MPEEK_MAX_ENTRIES 16
+#define MPEEK_MAX_BYTES   256
+
+static int cmd_dbg_mpeek(const struct shell *sh, size_t argc, char **argv) {
+  if (argc < 2) {
+    shell_error(sh, "Usage: zplc dbg mpeek <addr:len>[,<addr:len>...]");
+    return -EINVAL;
+  }
+
+  /* Working storage for parsed entries */
+  struct {
+    unsigned long addr;
+    unsigned long len;
+  } entries[MPEEK_MAX_ENTRIES];
+  int entry_count = 0;
+  unsigned long total_bytes = 0;
+
+  /* Parse comma-separated addr:len pairs from argv[1] */
+  char buf[256];
+  strncpy(buf, argv[1], sizeof(buf) - 1);
+  buf[sizeof(buf) - 1] = '\0';
+
+  char *saveptr = NULL;
+  char *token = strtok_r(buf, ",", &saveptr);
+  while (token != NULL) {
+    if (entry_count >= MPEEK_MAX_ENTRIES) {
+      shell_error(sh, "ERROR: Too many entries (max %d)", MPEEK_MAX_ENTRIES);
+      return -EINVAL;
+    }
+
+    /* Split on ':' to get addr and len */
+    char *colon = strchr(token, ':');
+    if (colon == NULL) {
+      shell_error(sh, "ERROR: Missing ':' in entry '%s'", token);
+      return -EINVAL;
+    }
+    *colon = '\0';
+
+    char *endptr;
+    unsigned long addr = strtoul(token, &endptr, 0);
+    if (*endptr != '\0') {
+      shell_error(sh, "ERROR: Invalid address '%s'", token);
+      return -EINVAL;
+    }
+
+    unsigned long len = strtoul(colon + 1, &endptr, 0);
+    if (*endptr != '\0' || len == 0 || len > 256) {
+      shell_error(sh, "ERROR: Invalid length in entry (1-256)");
+      return -EINVAL;
+    }
+
+    total_bytes += len;
+    if (total_bytes > MPEEK_MAX_BYTES) {
+      shell_error(sh, "ERROR: Total bytes exceed limit (%d)", MPEEK_MAX_BYTES);
+      return -EINVAL;
+    }
+
+    entries[entry_count].addr = addr;
+    entries[entry_count].len  = len;
+    entry_count++;
+
+    token = strtok_r(NULL, ",", &saveptr);
+  }
+
+  if (entry_count == 0) {
+    shell_error(sh, "ERROR: No entries provided");
+    return -EINVAL;
+  }
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+  if (zplc_sched_lock(5) != 0) {
+    shell_error(sh, "ERROR: Could not acquire scheduler lock");
+    return -EBUSY;
+  }
+#endif
+
+  /* Emit JSON response */
+  shell_print(sh, "{\"t\":\"mpeek\",\"results\":[");
+
+  for (int i = 0; i < entry_count; i++) {
+    unsigned long addr = entries[i].addr;
+    unsigned long len  = entries[i].len;
+
+    /* Resolve memory region */
+    uint8_t *base = NULL;
+    uint16_t offset = 0;
+    uint16_t region_size = 0;
+
+    if (addr < ZPLC_MEM_OPI_BASE) {
+      base = zplc_mem_get_region(ZPLC_MEM_IPI_BASE);
+      offset = (uint16_t)addr;
+      region_size = ZPLC_MEM_IPI_SIZE;
+    } else if (addr < ZPLC_MEM_WORK_BASE) {
+      base = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
+      offset = (uint16_t)(addr - ZPLC_MEM_OPI_BASE);
+      region_size = ZPLC_MEM_OPI_SIZE;
+    } else if (addr < ZPLC_MEM_RETAIN_BASE) {
+      base = zplc_mem_get_region(ZPLC_MEM_WORK_BASE);
+      offset = (uint16_t)(addr - ZPLC_MEM_WORK_BASE);
+      region_size = ZPLC_MEM_WORK_SIZE;
+    } else {
+      base = zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE);
+      offset = (uint16_t)(addr - ZPLC_MEM_RETAIN_BASE);
+      region_size = ZPLC_MEM_RETAIN_SIZE;
+    }
+
+    /* Validate bounds */
+    if (base == NULL || (uint32_t)offset + (uint32_t)len > (uint32_t)region_size) {
+#ifdef CONFIG_ZPLC_SCHEDULER
+      (void)zplc_sched_unlock();
+#endif
+      shell_error(sh, "ERROR: Invalid address or out-of-bounds at 0x%lX", addr);
+      return -EINVAL;
+    }
+
+    /* Build hex string for the bytes */
+    char hex[513]; /* max 256 bytes × 2 hex chars + NUL */
+    unsigned int hex_pos = 0;
+    for (unsigned long b = 0; b < len; b++) {
+      hex_pos += (unsigned int)snprintf(hex + hex_pos, sizeof(hex) - hex_pos,
+                                        "%02X", base[offset + b]);
+    }
+    hex[hex_pos] = '\0';
+
+    bool last = (i == entry_count - 1);
+    shell_print(sh, "{\"addr\":%lu,\"bytes\":\"%s\"}%s",
+                addr, hex, last ? "" : ",");
+  }
+
+  shell_print(sh, "]}");
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+  (void)zplc_sched_unlock();
+#endif
+
+  return 0;
+}
+
 static int cmd_dbg_poke(const struct shell *sh, size_t argc, char **argv) {
   if (argc != 3) {
     shell_error(sh, "Usage: zplc dbg poke <addr> <value>");
@@ -914,42 +1119,234 @@ static int cmd_dbg_poke(const struct shell *sh, size_t argc, char **argv) {
     return -EINVAL;
   }
 
-  /* Get memory region pointer */
-  uint8_t *base = NULL;
-  uint16_t offset = 0;
-  uint16_t region_size = 0;
+  uint8_t byte = (uint8_t)value;
+  int rc;
 
-  if (addr < ZPLC_MEM_OPI_BASE) {
-    base = zplc_mem_get_region(ZPLC_MEM_IPI_BASE);
-    offset = (uint16_t)addr;
-    region_size = ZPLC_MEM_IPI_SIZE;
-  } else if (addr < ZPLC_MEM_WORK_BASE) {
-    base = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
-    offset = (uint16_t)(addr - ZPLC_MEM_OPI_BASE);
-    region_size = ZPLC_MEM_OPI_SIZE;
-  } else if (addr < ZPLC_MEM_RETAIN_BASE) {
-    base = zplc_mem_get_region(ZPLC_MEM_WORK_BASE);
-    offset = (uint16_t)(addr - ZPLC_MEM_WORK_BASE);
-    region_size = ZPLC_MEM_WORK_SIZE;
-  } else {
-    base = zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE);
-    offset = (uint16_t)(addr - ZPLC_MEM_RETAIN_BASE);
-    region_size = ZPLC_MEM_RETAIN_SIZE;
+#ifdef CONFIG_ZPLC_SCHEDULER
+  if (zplc_sched_lock(5) != 0) {
+    shell_error(sh, "ERROR: Could not acquire scheduler lock");
+    return -EBUSY;
   }
+#endif
 
-  if (base == NULL) {
+  rc = zplc_force_write_bytes((uint16_t)addr, &byte, 1U);
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+  (void)zplc_sched_unlock();
+#endif
+
+  if (rc != 0) {
     shell_error(sh, "ERROR: Invalid memory address");
     return -EINVAL;
   }
 
-  if (offset >= region_size) {
-    shell_error(sh, "ERROR: Offset out of bounds (offset %u >= size %u)", offset,
-                region_size);
+  shell_print(sh, "OK: Wrote 0x%02X to 0x%04lX", (uint8_t)value, addr);
+
+  return 0;
+}
+
+static int cmd_dbg_force_set(const struct shell *sh, size_t argc, char **argv) {
+  char *endptr;
+  unsigned long addr;
+  int decoded;
+  int rc;
+  uint8_t bytes[SHELL_FORCE_MAX_BYTES];
+
+  if (argc != 3) {
+    shell_error(sh, "Usage: zplc dbg force set <addr> <hexbytes>");
     return -EINVAL;
   }
 
-  base[offset] = (uint8_t)value;
-  shell_print(sh, "OK: Wrote 0x%02X to 0x%04lX", (uint8_t)value, addr);
+  addr = strtoul(argv[1], &endptr, 0);
+  if (*endptr != '\0' || addr > UINT16_MAX) {
+    shell_error(sh, "ERROR: Invalid address");
+    return -EINVAL;
+  }
+
+  decoded = hex_decode(argv[2], bytes, sizeof(bytes));
+  if (decoded <= 0) {
+    shell_error(sh, "ERROR: Invalid hex payload");
+    return -EINVAL;
+  }
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+  if (zplc_sched_lock(5) != 0) {
+    shell_error(sh, "ERROR: Could not acquire scheduler lock");
+    return -EBUSY;
+  }
+#endif
+
+  rc = zplc_force_set_bytes((uint16_t)addr, bytes, (uint16_t)decoded);
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+  (void)zplc_sched_unlock();
+#endif
+
+  if (rc == -2) {
+    shell_error(sh, "ERROR: Address range out of bounds");
+    return rc;
+  }
+  if (rc == -3) {
+    shell_error(sh, "ERROR: Force range overlaps an existing force entry");
+    return rc;
+  }
+  if (rc == -4) {
+    shell_error(sh, "ERROR: Force table full");
+    return rc;
+  }
+  if (rc != 0) {
+    shell_error(sh, "ERROR: Failed to set force (%d)", rc);
+    return rc;
+  }
+
+  shell_print(sh, "OK: Forced %d byte(s) at 0x%04lX", decoded, addr);
+  return 0;
+}
+
+static int cmd_dbg_force_clear(const struct shell *sh, size_t argc, char **argv) {
+  char *endptr;
+  unsigned long addr;
+  int rc;
+
+  if (argc != 2) {
+    shell_error(sh, "Usage: zplc dbg force clear <addr>");
+    return -EINVAL;
+  }
+
+  addr = strtoul(argv[1], &endptr, 0);
+  if (*endptr != '\0' || addr > UINT16_MAX) {
+    shell_error(sh, "ERROR: Invalid address");
+    return -EINVAL;
+  }
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+  if (zplc_sched_lock(5) != 0) {
+    shell_error(sh, "ERROR: Could not acquire scheduler lock");
+    return -EBUSY;
+  }
+#endif
+
+  rc = zplc_force_clear((uint16_t)addr);
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+  (void)zplc_sched_unlock();
+#endif
+
+  if (rc != 0) {
+    shell_error(sh, "ERROR: Force entry not found at 0x%04lX", addr);
+    return rc;
+  }
+
+  shell_print(sh, "OK: Cleared force at 0x%04lX", addr);
+  return 0;
+}
+
+static int cmd_dbg_force_clear_all(const struct shell *sh, size_t argc,
+                                   char **argv) {
+  ARG_UNUSED(argc);
+  ARG_UNUSED(argv);
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+  if (zplc_sched_lock(5) != 0) {
+    shell_error(sh, "ERROR: Could not acquire scheduler lock");
+    return -EBUSY;
+  }
+#endif
+
+  zplc_force_clear_all();
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+  (void)zplc_sched_unlock();
+#endif
+
+  shell_print(sh, "OK: Cleared all force entries");
+  return 0;
+}
+
+static int cmd_dbg_force_list(const struct shell *sh, size_t argc, char **argv) {
+  bool json = (argc > 1 && strcmp(argv[1], "--json") == 0);
+  uint8_t count;
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+  if (zplc_sched_lock(5) != 0) {
+    shell_error(sh, "ERROR: Could not acquire scheduler lock");
+    return -EBUSY;
+  }
+#endif
+
+  count = zplc_force_get_count();
+
+  if (json) {
+    JSON_OBJ_START(sh);
+    JSON_UINT(sh, "count", count, true);
+    shell_fprintf(sh, SHELL_NORMAL, "\"items\":[");
+
+    for (uint8_t i = 0; i < count; i++) {
+      uint16_t addr = 0;
+      uint16_t size = 0;
+      uint8_t bytes[SHELL_FORCE_MAX_BYTES];
+      int rc = zplc_force_get(i, &addr, &size, bytes);
+
+      if (rc != 0) {
+        continue;
+      }
+
+      if (i > 0U) {
+        shell_fprintf(sh, SHELL_NORMAL, ",");
+      }
+
+      JSON_OBJ_START(sh);
+      JSON_UINT(sh, "addr", addr, true);
+      JSON_UINT(sh, "size", size, true);
+      JSON_KEY(sh, "bytes");
+      shell_fprintf(sh, SHELL_NORMAL, "\"");
+      for (uint16_t j = 0; j < size; j++) {
+        shell_fprintf(sh, SHELL_NORMAL, "%02X", bytes[j]);
+      }
+      shell_fprintf(sh, SHELL_NORMAL, "\"");
+      JSON_OBJ_END(sh);
+    }
+
+    shell_fprintf(sh, SHELL_NORMAL, "]");
+    JSON_OBJ_END(sh);
+    JSON_NEWLINE(sh);
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+    (void)zplc_sched_unlock();
+#endif
+    return 0;
+  }
+
+  if (count == 0U) {
+#ifdef CONFIG_ZPLC_SCHEDULER
+    (void)zplc_sched_unlock();
+#endif
+    shell_print(sh, "No active force entries");
+    return 0;
+  }
+
+  shell_print(sh, "Active force entries: %u", count);
+  for (uint8_t i = 0; i < count; i++) {
+    uint16_t addr = 0;
+    uint16_t size = 0;
+    uint8_t bytes[SHELL_FORCE_MAX_BYTES];
+    int rc = zplc_force_get(i, &addr, &size, bytes);
+
+    if (rc != 0) {
+      continue;
+    }
+
+    shell_fprintf(sh, SHELL_NORMAL, "  [%u] 0x%04X (%u byte%s): ", i, addr,
+                  size, (size == 1U) ? "" : "s");
+    for (uint16_t j = 0; j < size; j++) {
+      shell_fprintf(sh, SHELL_NORMAL, "%02X", bytes[j]);
+    }
+    shell_fprintf(sh, SHELL_NORMAL, "\n");
+  }
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+  (void)zplc_sched_unlock();
+#endif
 
   return 0;
 }
@@ -1055,27 +1452,52 @@ static int cmd_dbg_mem(const struct shell *sh, size_t argc, char **argv) {
   return 0;
 }
 
-/* Stub commands for scheduler mode (pause/resume/step not applicable) */
 static int cmd_dbg_pause(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
-  shell_print(
-      sh,
-      "WARN: Pause not supported in scheduler mode (use task-level control)");
+
+  const int rc = zplc_sched_pause();
+  if (rc < 0) {
+    shell_warn(sh, "WARN: Not running (state=%s)",
+               sched_state_name(zplc_sched_get_state()));
+    return 0;
+  }
+
+  shell_print(sh, "OK: Scheduler paused");
   return 0;
 }
 
 static int cmd_dbg_resume(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
-  shell_print(sh, "WARN: Resume not supported in scheduler mode");
+
+  const int rc = zplc_sched_resume();
+  if (rc < 0) {
+    shell_warn(sh, "WARN: Not paused (state=%s)",
+               sched_state_name(zplc_sched_get_state()));
+    return 0;
+  }
+
+  shell_print(sh, "OK: Scheduler resumed");
   return 0;
 }
 
 static int cmd_dbg_step(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
-  shell_print(sh, "WARN: Step not supported in scheduler mode");
+
+  const int rc = zplc_sched_step();
+  if (rc == -1) {
+    shell_error(sh, "ERROR: Cannot step (state=%s)",
+                sched_state_name(zplc_sched_get_state()));
+    return rc;
+  }
+  if (rc == -2) {
+    shell_warn(sh, "WARN: No paused or ready tasks to step");
+    return 0;
+  }
+
+  shell_print(sh, "OK: Scheduler step complete");
   return 0;
 }
 
@@ -1422,22 +1844,61 @@ static int cmd_dbg_info(const struct shell *sh, size_t argc, char **argv) {
   bool json = (argc > 1 && strcmp(argv[1], "--json") == 0);
 #ifdef CONFIG_ZPLC_SCHEDULER
   zplc_sched_stats_t stats;
+  zplc_vm_t *vm = NULL;
+  int paused_task_id = -1;
   zplc_sched_get_stats(&stats);
+
+  for (int i = 0; i < CONFIG_ZPLC_MAX_TASKS; i++) {
+    zplc_vm_t *candidate = zplc_sched_get_vm_ptr(i);
+    if (candidate == NULL) {
+      continue;
+    }
+
+    if (zplc_vm_is_paused(candidate)) {
+      vm = candidate;
+      paused_task_id = i;
+      break;
+    }
+
+    if (vm == NULL) {
+      vm = candidate;
+      paused_task_id = i;
+    }
+  }
+
   if (json) {
     JSON_OBJ_START(sh);
-    JSON_STR(sh, "state", state_name((zplc_state_t)zplc_sched_get_state()), true);
+    JSON_STR(sh, "state", sched_state_name(zplc_sched_get_state()), true);
     JSON_UINT(sh, "uptime_ms", stats.uptime_ms, true);
     JSON_UINT(sh, "cycles", stats.total_cycles, true);
-    JSON_INT(sh, "active_tasks", stats.active_tasks, false);
+    JSON_INT(sh, "active_tasks", stats.active_tasks, true);
+    if (vm != NULL) {
+      JSON_UINT(sh, "pc", vm->pc, true);
+      JSON_UINT(sh, "sp", vm->sp, true);
+      JSON_BOOL(sh, "halted", zplc_vm_is_paused(vm) != 0, true);
+      JSON_INT(sh, "error", vm->error, true);
+      JSON_INT(sh, "task_id", paused_task_id, false);
+    } else {
+      JSON_UINT(sh, "pc", 0, true);
+      JSON_UINT(sh, "sp", 0, true);
+      JSON_BOOL(sh, "halted", false, true);
+      JSON_INT(sh, "error", 0, true);
+      JSON_INT(sh, "task_id", -1, false);
+    }
     JSON_OBJ_END(sh);
     JSON_NEWLINE(sh);
     return 0;
   }
   shell_print(sh, "VM Info (Scheduler Mode):");
-  shell_print(sh, "  State:  %s", state_name((zplc_state_t)zplc_sched_get_state()));
+  shell_print(sh, "  State:  %s", sched_state_name(zplc_sched_get_state()));
   shell_print(sh, "  Uptime: %u ms", stats.uptime_ms);
   shell_print(sh, "  Cycles: %u", stats.total_cycles);
   shell_print(sh, "  Tasks:  %u", stats.active_tasks);
+  if (vm != NULL) {
+    shell_print(sh, "  VM:     PC=%04X, SP=%d, Halted=%s, Error=%d, Task=%d",
+                vm->pc, vm->sp, (zplc_vm_is_paused(vm) != 0) ? "YES" : "NO",
+                vm->error, paused_task_id);
+  }
 #else
   zplc_vm_t *vm = zplc_core_get_default_vm();
   if (json) {
@@ -1483,7 +1944,7 @@ static int cmd_dbg_task(const struct shell *sh, size_t argc, char **argv) {
   if (json) {
     JSON_OBJ_START(sh);
     JSON_INT(sh, "id", task.config.id, true);
-    JSON_STR(sh, "state", state_name((zplc_state_t)task.state), true);
+    JSON_STR(sh, "state", task_state_name(task.state), true);
     JSON_UINT(sh, "cycles", task.stats.cycle_count, true);
     JSON_UINT(sh, "overruns", task.stats.overrun_count, true);
     JSON_UINT(sh, "interval", task.config.interval_us, false);
@@ -1492,7 +1953,7 @@ static int cmd_dbg_task(const struct shell *sh, size_t argc, char **argv) {
     return 0;
   }
   shell_print(sh, "Task %d Info:", id);
-  shell_print(sh, "  State:    %s", state_name((zplc_state_t)task.state));
+  shell_print(sh, "  State:    %s", task_state_name(task.state));
   shell_print(sh, "  Interval: %u us", task.config.interval_us);
   shell_print(sh, "  Cycles:   %u", task.stats.cycle_count);
   shell_print(sh, "  Overruns: %u", task.stats.overrun_count);
@@ -2011,8 +2472,8 @@ static int cmd_config_get(const struct shell *sh, size_t argc, char **argv) {
 
 static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
   if (argc < 3) {
-    shell_error(sh, "Usage: zplc config set <key> <value>");
-    shell_print(sh, "Keys: hostname, dhcp, ip, ntp_enabled, ntp_server, modbus_id, modbus_tcp_enabled, modbus_tcp_port, modbus_rtu_enabled, modbus_rtu_baud, modbus_rtu_parity, modbus_rtu_client_enabled, modbus_rtu_client_slave_id, modbus_rtu_client_poll_ms, modbus_tcp_client_enabled, modbus_tcp_client_host, modbus_tcp_client_port, modbus_tcp_client_unit_id, modbus_tcp_client_poll_ms, modbus_tcp_client_timeout_ms, mqtt_enabled, mqtt_broker, mqtt_client_id, mqtt_group_id, mqtt_topic_namespace, mqtt_profile, mqtt_protocol, mqtt_transport, mqtt_port, mqtt_username, mqtt_password, mqtt_keepalive, mqtt_publish_interval, mqtt_publish_qos, mqtt_subscribe_qos, mqtt_publish_retain, mqtt_clean_session, mqtt_session_expiry, mqtt_security, mqtt_websocket_path, mqtt_alpn, mqtt_lwt_enabled, mqtt_lwt_topic, mqtt_lwt_payload, mqtt_lwt_qos, mqtt_lwt_retain, mqtt_ca_cert_path, mqtt_client_cert_path, mqtt_client_key_path, azure_sas_key, azure_sas_expiry_s, azure_twin_enabled, azure_direct_methods_enabled, azure_c2d_enabled, azure_dps_enabled, azure_dps_id_scope, azure_dps_registration_id, azure_dps_endpoint, azure_event_grid_topic, azure_event_grid_source, azure_event_grid_event_type, aws_shadow_enabled, aws_jobs_enabled, aws_fleet_enabled, aws_fleet_template_name, aws_claim_cert_path, aws_claim_key_path");
+    shell_error(sh, "ERROR: Usage: zplc config set <key> <value>");
+    shell_print(sh, "Keys: hostname, dhcp, ip, wifi_ssid, wifi_pass, wifi_security, ntp_enabled, ntp_server, modbus_id, modbus_tcp_enabled, modbus_tcp_port, modbus_rtu_enabled, modbus_rtu_baud, modbus_rtu_parity, modbus_rtu_client_enabled, modbus_rtu_client_slave_id, modbus_rtu_client_poll_ms, modbus_tcp_client_enabled, modbus_tcp_client_host, modbus_tcp_client_port, modbus_tcp_client_unit_id, modbus_tcp_client_poll_ms, modbus_tcp_client_timeout_ms, mqtt_enabled, mqtt_broker, mqtt_client_id, mqtt_group_id, mqtt_topic_namespace, mqtt_profile, mqtt_protocol, mqtt_transport, mqtt_port, mqtt_username, mqtt_password, mqtt_keepalive, mqtt_publish_interval, mqtt_publish_qos, mqtt_subscribe_qos, mqtt_publish_retain, mqtt_clean_session, mqtt_session_expiry, mqtt_security, mqtt_websocket_path, mqtt_alpn, mqtt_lwt_enabled, mqtt_lwt_topic, mqtt_lwt_payload, mqtt_lwt_qos, mqtt_lwt_retain, mqtt_ca_cert_path, mqtt_client_cert_path, mqtt_client_key_path, azure_sas_key, azure_sas_expiry_s, azure_twin_enabled, azure_direct_methods_enabled, azure_c2d_enabled, azure_dps_enabled, azure_dps_id_scope, azure_dps_registration_id, azure_dps_endpoint, azure_event_grid_topic, azure_event_grid_source, azure_event_grid_event_type, aws_shadow_enabled, aws_jobs_enabled, aws_fleet_enabled, aws_fleet_template_name, aws_claim_cert_path, aws_claim_key_path");
     return -EINVAL;
   }
 
@@ -2025,6 +2486,12 @@ static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
     zplc_config_set_dhcp(strcmp(val, "true") == 0 || strcmp(val, "1") == 0);
   } else if (strcmp(key, "ip") == 0) {
     zplc_config_set_ip(val);
+  } else if (strcmp(key, "wifi_ssid") == 0) {
+    zplc_config_set_wifi_ssid(val);
+  } else if (strcmp(key, "wifi_pass") == 0) {
+    zplc_config_set_wifi_pass(val);
+  } else if (strcmp(key, "wifi_security") == 0) {
+    zplc_config_set_wifi_security((uint8_t)atoi(val));
   } else if (strcmp(key, "ntp_enabled") == 0) {
     zplc_config_set_ntp_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
   } else if (strcmp(key, "ntp_server") == 0) {
@@ -2154,11 +2621,11 @@ static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
   } else if (strcmp(key, "aws_claim_key_path") == 0) {
     zplc_config_set_aws_claim_key_path(val);
   } else {
-    shell_error(sh, "Unknown config key: %s", key);
+    shell_error(sh, "ERROR: Unknown config key: %s", key);
     return -EINVAL;
   }
 
-  shell_print(sh, "Config updated. Use 'zplc config save' to persist.");
+  shell_print(sh, "OK: Config updated");
   return 0;
 }
 
@@ -2167,10 +2634,10 @@ static int cmd_config_save(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argv);
   int err = zplc_config_save();
   if (err) {
-    shell_error(sh, "Failed to save config: %d", err);
+    shell_error(sh, "ERROR: Failed to save config: %d", err);
     return err;
   }
-  shell_print(sh, "Config saved to flash.");
+  shell_print(sh, "OK: Config saved");
   return 0;
 }
 
@@ -2178,7 +2645,7 @@ static int cmd_config_reset(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
   zplc_config_reset();
-  shell_print(sh, "Config reset to defaults.");
+  shell_print(sh, "OK: Config reset");
   return 0;
 }
 
@@ -2533,12 +3000,12 @@ static int cmd_comm_map(const struct shell *sh, size_t argc, char **argv)
 static int cmd_comm_set(const struct shell *sh, size_t argc, char **argv)
 {
   if (argc < 4) {
-    shell_error(sh, "Usage: zplc comm set modbus <index> <address>");
+    shell_error(sh, "ERROR: Usage: zplc comm set modbus <index> <address>");
     return -EINVAL;
   }
 
   if (strcmp(argv[1], "modbus") != 0) {
-    shell_error(sh, "Only modbus overrides are supported");
+    shell_error(sh, "ERROR: Only modbus overrides are supported");
     return -EINVAL;
   }
 
@@ -2546,7 +3013,7 @@ static int cmd_comm_set(const struct shell *sh, size_t argc, char **argv)
   uint32_t address = (uint32_t)strtoul(argv[3], NULL, 10);
   const zplc_tag_entry_t *tag = zplc_core_get_tag(index);
   if (!tag || tag->tag_id != ZPLC_TAG_MODBUS) {
-    shell_error(sh, "Tag index %u is not a Modbus binding", index);
+    shell_error(sh, "ERROR: Tag index %u is not a Modbus binding", index);
     return -EINVAL;
   }
 
@@ -2560,7 +3027,7 @@ static int cmd_comm_set(const struct shell *sh, size_t argc, char **argv)
     uint32_t other_end = other_start + comm_modbus_width(other->var_type) - 1U;
     uint32_t new_end = address + comm_modbus_width(tag->var_type) - 1U;
     if (!(new_end < other_start || address > other_end)) {
-      shell_error(sh, "Modbus range %lu-%lu overlaps tag %u (%lu-%lu)",
+      shell_error(sh, "ERROR: Modbus range %lu-%lu overlaps tag %u (%lu-%lu)",
                   (unsigned long)address,
                   (unsigned long)new_end,
                   i,
@@ -2572,11 +3039,11 @@ static int cmd_comm_set(const struct shell *sh, size_t argc, char **argv)
 
   int err = zplc_config_set_modbus_tag_override(index, address);
   if (err < 0) {
-    shell_error(sh, "Failed to set override (%d)", err);
+    shell_error(sh, "ERROR: Failed to set override (%d)", err);
     return err;
   }
 
-  shell_print(sh, "Modbus tag %u remapped to %lu. Use 'zplc config save' to persist.",
+  shell_print(sh, "OK: Modbus tag %u remapped to %lu",
               index, (unsigned long)address);
   return 0;
 }
@@ -2584,24 +3051,82 @@ static int cmd_comm_set(const struct shell *sh, size_t argc, char **argv)
 static int cmd_comm_clear(const struct shell *sh, size_t argc, char **argv)
 {
   if (argc < 3) {
-    shell_error(sh, "Usage: zplc comm clear modbus <index>");
+    shell_error(sh, "ERROR: Usage: zplc comm clear modbus <index>");
     return -EINVAL;
   }
 
   if (strcmp(argv[1], "modbus") != 0) {
-    shell_error(sh, "Only modbus overrides are supported");
+    shell_error(sh, "ERROR: Only modbus overrides are supported");
     return -EINVAL;
   }
 
   uint16_t index = (uint16_t)strtoul(argv[2], NULL, 10);
   int err = zplc_config_clear_modbus_tag_override(index);
   if (err < 0) {
-    shell_error(sh, "Failed to clear override (%d)", err);
+    shell_error(sh, "ERROR: Failed to clear override (%d)", err);
     return err;
   }
 
-  shell_print(sh, "Cleared Modbus override for tag %u. Use 'zplc config save' to persist.", index);
+  shell_print(sh, "OK: Cleared Modbus override for tag %u", index);
   return 0;
+}
+
+/* ============================================================================
+ * WiFi Commands
+ * ============================================================================
+ */
+
+static int cmd_wifi_connect(const struct shell *sh, size_t argc, char **argv)
+{
+  ARG_UNUSED(argc);
+  ARG_UNUSED(argv);
+
+#ifndef CONFIG_WIFI
+  shell_error(sh, "ERROR: WiFi not enabled in this build");
+  return -ENOTSUP;
+#else
+  char ssid[64] = {0};
+  char pass[64] = {0};
+  uint8_t security = 0;
+
+  zplc_config_get_wifi_ssid(ssid, sizeof(ssid));
+  zplc_config_get_wifi_pass(pass, sizeof(pass));
+  security = zplc_config_get_wifi_security();
+
+  if (ssid[0] == '\0') {
+    shell_error(sh, "ERROR: No SSID configured (use zplc config set wifi_ssid)");
+    return -EINVAL;
+  }
+
+  struct net_if *iface = net_if_get_default();
+  if (iface == NULL) {
+    shell_error(sh, "ERROR: No network interface available");
+    return -ENODEV;
+  }
+
+  struct wifi_connect_req_params params = {0};
+  params.ssid        = (const uint8_t *)ssid;
+  params.ssid_length = (uint8_t)strlen(ssid);
+  params.security    = (enum wifi_security_type)security;
+
+  if (security != WIFI_SECURITY_TYPE_NONE && pass[0] != '\0') {
+    params.psk        = (const uint8_t *)pass;
+    params.psk_length = (uint8_t)strlen(pass);
+  }
+
+  params.channel = WIFI_CHANNEL_ANY;
+  params.band    = WIFI_FREQ_BAND_UNKNOWN;
+  params.mfp     = WIFI_MFP_OPTIONAL;
+
+  int rc = net_mgmt(NET_REQUEST_WIFI_CONNECT, iface, &params, sizeof(params));
+  if (rc == 0 || rc == -EALREADY) {
+    shell_print(sh, "OK: WiFi connect requested for SSID '%s'", ssid);
+  } else {
+    shell_print(sh, "WARN: WiFi connect request returned %d for SSID '%s'",
+                rc, ssid);
+  }
+  return 0;
+#endif /* CONFIG_WIFI */
 }
 
 /* ============================================================================
@@ -2618,12 +3143,22 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
+    sub_dbg_force,
+    SHELL_CMD_ARG(set, NULL, "Set force bytes: dbg force set <addr> <hexbytes>", cmd_dbg_force_set, 3, 0),
+    SHELL_CMD_ARG(clear, NULL, "Clear force entry: dbg force clear <addr>", cmd_dbg_force_clear, 2, 0),
+    SHELL_CMD(clear_all, NULL, "Clear all force entries", cmd_dbg_force_clear_all),
+    SHELL_CMD_ARG(list, NULL, "List force entries", cmd_dbg_force_list, 1, 1),
+    SHELL_SUBCMD_SET_END);
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_dbg, 
     SHELL_CMD(pause, NULL, "Pause VM execution", cmd_dbg_pause),
     SHELL_CMD(resume, NULL, "Resume VM execution", cmd_dbg_resume),
     SHELL_CMD(step, NULL, "Execute one cycle", cmd_dbg_step),
     SHELL_CMD(bp, &sub_dbg_bp, "Breakpoint management", NULL),
+    SHELL_CMD(force, &sub_dbg_force, "Force value management", NULL),
     SHELL_CMD_ARG(peek, NULL, "Read memory", cmd_dbg_peek, 2, 1),
+    SHELL_CMD_ARG(mpeek, NULL, "Multi-read: mpeek addr:len[,addr:len...]", cmd_dbg_mpeek, 2, 0),
     SHELL_CMD_ARG(poke, NULL, "Write memory", cmd_dbg_poke, 3, 0),
     SHELL_CMD_ARG(info, NULL, "VM state", cmd_dbg_info, 1, 1),
     SHELL_CMD_ARG(ticks, NULL, "System tick", cmd_dbg_ticks, 1, 1),
@@ -2690,6 +3225,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
+    sub_wifi,
+    SHELL_CMD(connect, NULL, "Connect using stored credentials", cmd_wifi_connect),
+    SHELL_SUBCMD_SET_END);
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_ntp,
     SHELL_CMD_ARG(status, NULL, "Show NTP sync status", cmd_ntp_status, 1, 1),
     SHELL_CMD(enable, NULL, "Enable NTP time sync", cmd_ntp_enable),
@@ -2703,7 +3243,7 @@ static int cmd_mqtt_reset_backoff(const struct shell *sh, size_t argc, char **ar
     ARG_UNUSED(argc);
     ARG_UNUSED(argv);
     zplc_mqtt_request_backoff_reset();
-    shell_print(sh, "MQTT backoff reset requested.");
+    shell_print(sh, "OK: MQTT backoff reset");
     return 0;
 }
 
@@ -2780,6 +3320,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_CMD(config, &sub_config, "Configuration commands", NULL),
     SHELL_CMD(cert, &sub_cert, "Certificate management", NULL),
     SHELL_CMD(net, &sub_net, "Network diagnostics", NULL),
+    SHELL_CMD(wifi, &sub_wifi, "WiFi management", NULL),
     SHELL_CMD(ntp, &sub_ntp, "NTP time synchronization", NULL),
     SHELL_CMD(mqtt, &sub_mqtt, "MQTT client commands", NULL),
     SHELL_CMD(comm, &sub_comm, "Communication map and overrides", NULL),

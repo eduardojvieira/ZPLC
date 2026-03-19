@@ -22,8 +22,13 @@ import { useIDEStore } from '../store/useIDEStore';
 import type { ConsoleEntry, ConsoleTab } from '../types';
 import { TerminalTab } from './TerminalTab';
 import { DebugWatchPanel } from './DebugWatchPanel';
+import type { DebugController } from '../hooks/useDebugController';
 
-export function Console() {
+interface ConsoleProps {
+  debugController?: DebugController;
+}
+
+export function Console({ debugController }: ConsoleProps) {
   const {
     consoleEntries,
     activeConsoleTab,
@@ -135,7 +140,7 @@ export function Console() {
   }
 
   return (
-    <div className="h-52 flex flex-col bg-[var(--color-surface-800)] border-t border-[var(--color-surface-600)]">
+    <div className="h-full flex flex-col bg-[var(--color-surface-800)] border-t border-[var(--color-surface-600)]">
       {/* Tab Bar */}
       <div className="h-8 flex items-center border-b border-[var(--color-surface-600)] px-2">
         {/* Collapse Button */}
@@ -260,7 +265,10 @@ export function Console() {
         )}
 
         {activeConsoleTab === 'watch' && (
-          <DebugWatchPanel />
+          <DebugWatchPanel
+            setValue={debugController?.setValue}
+            toggleForceValue={debugController?.toggleForceValue}
+          />
         )}
       </div>
     </div>

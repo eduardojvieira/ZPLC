@@ -1,4 +1,5 @@
 import type { NetworkConfig } from '../types';
+import supportedBoardsManifest from '../../../../firmware/app/boards/supported-boards.v1.5.0.json';
 
 export const NETWORK_INTERFACE = {
   NONE: 'none',
@@ -18,20 +19,37 @@ interface BoardProfile {
   network: NetworkInterfaceKind;
 }
 
-const BOARD_PROFILES: Record<string, BoardProfile> = {
-  rpi_pico: { label: 'Raspberry Pi Pico (RP2040)', network: NETWORK_INTERFACE.NONE },
-  rpi_pico_w: { label: 'Raspberry Pi Pico W (RP2040 + WiFi)', network: NETWORK_INTERFACE.WIFI },
-  arduino_giga_r1: { label: 'Arduino GIGA R1 (STM32H747)', network: NETWORK_INTERFACE.WIFI },
-  arduino_opta: { label: 'Arduino Opta (Industrial PLC)', network: NETWORK_INTERFACE.ETHERNET },
-  nucleo_h743zi: { label: 'STM32 Nucleo H743ZI', network: NETWORK_INTERFACE.ETHERNET },
-  nucleo_f446re: { label: 'STM32 Nucleo F446RE', network: NETWORK_INTERFACE.NONE },
-  stm32f746g_disco: { label: 'STM32F746G Discovery', network: NETWORK_INTERFACE.ETHERNET },
-  esp32s3_devkitc: { label: 'ESP32-S3 DevKitC', network: NETWORK_INTERFACE.WIFI },
-  esp32_devkitc_wroom: { label: 'ESP32 DevKitC WROOM', network: NETWORK_INTERFACE.WIFI },
-  esp32_nodemcu: { label: 'ESP32 NodeMCU', network: NETWORK_INTERFACE.WIFI },
-  nrf52840dk: { label: 'Nordic nRF52840 DK', network: NETWORK_INTERFACE.NONE },
-  mps2_an385: { label: 'ARM MPS2+ AN385 (QEMU)', network: NETWORK_INTERFACE.NONE },
-};
+interface SupportedBoardManifestEntry {
+  board_id: string;
+  display_name: string;
+  ide_id: string;
+  network_class: 'serial-focused' | 'network-capable' | 'other';
+  network_interface: 'none' | 'wifi' | 'ethernet';
+}
+
+function mapNetworkClassToInterface(
+  networkInterface: SupportedBoardManifestEntry['network_interface']
+): NetworkInterfaceKind {
+  if (networkInterface === 'wifi') {
+    return NETWORK_INTERFACE.WIFI;
+  }
+
+  if (networkInterface === 'ethernet') {
+    return NETWORK_INTERFACE.ETHERNET;
+  }
+
+  return NETWORK_INTERFACE.NONE;
+}
+
+const BOARD_PROFILES: Record<string, BoardProfile> = Object.fromEntries(
+  (supportedBoardsManifest as SupportedBoardManifestEntry[]).map((board) => [
+    board.ide_id,
+    {
+      label: board.display_name,
+      network: mapNetworkClassToInterface(board.network_interface),
+    },
+  ])
+);
 
 export const BOARD_OPTIONS: BoardOption[] = [
   { value: '', label: 'Select a board...' },

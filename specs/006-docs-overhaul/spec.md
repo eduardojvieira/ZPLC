@@ -2,7 +2,7 @@
 
 **Feature Branch**: `006-docs-overhaul`  
 **Created**: 2024-05-24
-**Status**: Draft  
+**Status**: Completed  
 **Input**: User description detailing a comprehensive ZPLC Documentation Overhaul via a rewritten Docusaurus site, hosted on GitHub Pages, while preserving the existing industrial styling and improving the information architecture.
 
 ## Clarifications

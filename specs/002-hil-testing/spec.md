@@ -2,7 +2,7 @@
 
 **Feature Branch**: `002-hil-testing`  
 **Created**: 2026-01-22  
-**Status**: Draft  
+**Status**: In Progress  
 **Input**: Hardware-in-the-loop testing for ZPLC runtime validation using Raspberry Pi Pico with serial debug reporting. Full verification of runtime functions, function blocks, programs, tasks, and all instructions across all languages.
 
 ## User Scenarios & Testing

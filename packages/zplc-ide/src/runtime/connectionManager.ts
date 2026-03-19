@@ -13,6 +13,8 @@
 import { SerialAdapter } from './serialAdapter';
 import type { CommunicationMapEntry, MqttRuntimeStatus, SystemInfo, StatusInfo } from './serialAdapter';
 import type { ZPLCProjectConfig } from '../types';
+import type { LoadProgramOptions } from './debugAdapter';
+import type { UploadTraceCallback } from './uploadTrace';
 
 /** Connection state change callback */
 export type ConnectionCallback = (connected: boolean) => void;
@@ -429,24 +431,35 @@ class ConnectionManager {
   // Upload (delegates to adapter)
   // =========================================================================
 
-  async provisionProjectConfig(config: ZPLCProjectConfig): Promise<void> {
+  async provisionProjectConfig(config: ZPLCProjectConfig, trace?: UploadTraceCallback): Promise<void> {
     if (!this.adapter?.connected) {
       throw new Error('Not connected');
     }
 
-    await this.adapter.provisionProjectConfig(config);
+    await this.adapter.provisionProjectConfig(config, trace);
+  }
+
+  /**
+   * Triggers WiFi / network bring-up after the program is loaded.
+   * Best-effort: never throws. Call without await to keep it non-blocking.
+   */
+  async triggerNetworkBringUp(config: ZPLCProjectConfig): Promise<void> {
+    if (!this.adapter?.connected) {
+      return;
+    }
+    await this.adapter.triggerNetworkBringUp(config);
   }
 
   /**
    * Upload bytecode to device
    * NOTE: Caller should use pausePolling()/resumePolling() to manage polling
    */
-  async uploadBytecode(bytecode: Uint8Array): Promise<void> {
+  async uploadBytecode(bytecode: Uint8Array, options?: LoadProgramOptions): Promise<void> {
     if (!this.adapter?.connected) {
       throw new Error('Not connected');
     }
     
-    await this.adapter.loadProgram(bytecode);
+    await this.adapter.loadProgram(bytecode, options);
     await this.refreshCommunicationMap();
   }
 

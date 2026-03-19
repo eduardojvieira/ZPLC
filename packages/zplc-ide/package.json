@@ -27,6 +27,8 @@
     "electron:build:mac": "npm run build && npm run electron:compile && electron-builder --mac",
     "electron:build:win": "npm run build && npm run electron:compile && electron-builder --win",
     "electron:build:linux": "npm run build && npm run electron:compile && electron-builder --linux",
+    "smoke:desktop": "bun run scripts/run-desktop-smoke.ts",
+    "smoke:desktop-builds": "bun run scripts/smoke-desktop-builds.ts",
     "cli:build": "bun build --compile --minify --target bun-darwin-arm64 src/cli/index.ts --outfile dist/zplc-cli"
   },
   "bin": {

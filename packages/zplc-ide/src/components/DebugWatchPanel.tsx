@@ -7,10 +7,13 @@
  * interface for the IDE's debug panel.
  */
 
-import React, { useState, useCallback } from 'react';
+import { useRef, useState } from 'react';
 import { Plus, X, Trash2, Eye, EyeOff } from 'lucide-react';
-import { useWatchVariables, formatDebugValue } from '../hooks/useDebugValue';
+import { formatDebugValue } from '../hooks/useDebugValue';
 import { useIDEStore } from '../store/useIDEStore';
+import { buildDebugWatchRows } from './debugWatchRows';
+import { WATCH_FORCE_STATE, type WatchVariable } from '../runtime/debugAdapter';
+import { resolveWatchCommitAction, WATCH_COMMIT_ACTION } from './debugWatchPanelLogic';
 
 /**
  * Format address for display
@@ -20,32 +23,69 @@ function formatAddress(address: number | null): string {
   return `0x${address.toString(16).padStart(4, '0').toUpperCase()}`;
 }
 
+type SetValueFn = (
+  address: number,
+  value: number | boolean | string,
+  type: WatchVariable['type'],
+  maxLength?: number,
+) => Promise<void>;
+
+type ToggleForceValueFn = (
+  path: string,
+  address: number,
+  value: number | boolean | string,
+  type: WatchVariable['type'],
+  force: boolean,
+  maxLength?: number,
+) => Promise<void>;
+
+interface DebugWatchPanelProps {
+  setValue?: SetValueFn;
+  toggleForceValue?: ToggleForceValueFn;
+}
+
+/** Inline editor state — only one cell editable at a time */
+interface EditingCell {
+  path: string;
+  address: number;
+  type: WatchVariable['type'];
+  maxLength?: number;
+  draft: string;
+}
+
 /**
  * Debug Watch Panel Component
  */
-export function DebugWatchPanel(): React.ReactElement {
+export function DebugWatchPanel({ setValue, toggleForceValue }: DebugWatchPanelProps): React.ReactElement {
   const [newVarInput, setNewVarInput] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editing, setEditing] = useState<EditingCell | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Get debug state from store
   const debugMode = useIDEStore((state) => state.debug.mode);
   const isPolling = useIDEStore((state) => state.debug.isPolling);
-
-  // Use the watch variables hook
-  const { variables, addWatch, removeWatch, clearAll } = useWatchVariables();
+  const debugMap = useIDEStore((state) => state.debug.debugMap);
+  const liveValues = useIDEStore((state) => state.debug.liveValues);
+  const forcedValues = useIDEStore((state) => state.debug.forcedValues);
+  const watchVariables = useIDEStore((state) => state.debug.watchVariables);
+  const addWatch = useIDEStore((state) => state.addWatchVariable);
+  const removeWatch = useIDEStore((state) => state.removeWatchVariable);
+  const clearAll = useIDEStore((state) => state.clearWatchVariables);
+  const variables = buildDebugWatchRows(watchVariables, debugMap, liveValues, forcedValues, isPolling);
 
   // Handle adding a new watch variable
-  const handleAddVariable = useCallback(() => {
+  const handleAddVariable = () => {
     const varPath = newVarInput.trim();
     if (!varPath) return;
 
     addWatch(varPath);
     setNewVarInput('');
     setShowAddForm(false);
-  }, [newVarInput, addWatch]);
+  };
 
-  // Handle key press in input
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+  // Handle key press in "add variable" input
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       handleAddVariable();
@@ -54,7 +94,106 @@ export function DebugWatchPanel(): React.ReactElement {
       setShowAddForm(false);
       setNewVarInput('');
     }
-  }, [handleAddVariable]);
+  };
+
+  // Begin editing a value cell on double-click
+  const handleValueDoubleClick = (
+    path: string,
+    address: number | null,
+    type: WatchVariable['type'] | undefined,
+    currentValue: number | boolean | string | undefined,
+    maxLength?: number,
+  ) => {
+    if (!setValue || address === null || !type) return;
+    if (debugMode === 'none') return;
+
+    const draft =
+      currentValue === undefined
+        ? ''
+        : typeof currentValue === 'boolean'
+          ? currentValue ? '1' : '0'
+          : String(currentValue);
+
+    setEditing({ path, address, type, maxLength, draft });
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    });
+  };
+
+  const parseDraftValue = (raw: string, type: WatchVariable['type']): number | boolean | string | null => {
+    if (type === 'BOOL') {
+      return raw === '1' || raw.toLowerCase() === 'true';
+    }
+
+    if (type === 'STRING') {
+      return raw;
+    }
+
+    const parsed = Number(raw);
+    if (Number.isNaN(parsed)) {
+      return null;
+    }
+
+    return parsed;
+  };
+
+  const handleSetKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!editing || !setValue) return;
+
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const coerced = parseDraftValue(editing.draft.trim(), editing.type);
+      if (coerced === null) {
+        setEditing(null);
+        return;
+      }
+
+      const currentRow = variables.find((entry) => entry.path === editing.path);
+      const action = resolveWatchCommitAction(currentRow?.result.forceEntry?.state);
+
+      if (action === WATCH_COMMIT_ACTION.UPDATE_FORCE && toggleForceValue) {
+        await toggleForceValue(
+          editing.path,
+          editing.address,
+          coerced,
+          editing.type,
+          true,
+          editing.maxLength,
+        );
+      } else {
+        await setValue(editing.address, coerced, editing.type, editing.maxLength);
+      }
+
+      setEditing(null);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setEditing(null);
+    }
+  };
+
+  const handleForceToggle = async (
+    path: string,
+    address: number | null,
+    type: WatchVariable['type'] | undefined,
+    currentValue: number | boolean | string | null,
+    nextForced: boolean,
+    maxLength?: number,
+  ) => {
+    if (!toggleForceValue || address === null || !type || debugMode === 'none') {
+      return;
+    }
+
+    const draftValue = editing?.path === path
+      ? parseDraftValue(editing.draft.trim(), editing.type)
+      : currentValue;
+
+    if (draftValue === null) {
+      return;
+    }
+
+    await toggleForceValue(path, address, draftValue, type, nextForced, maxLength);
+  };
 
   // Status indicator color
   const statusColor = debugMode === 'none'
@@ -141,6 +280,7 @@ export function DebugWatchPanel(): React.ReactElement {
               <tr className="text-left text-[10px] text-[var(--color-surface-400)] uppercase tracking-wide">
                 <th className="px-3 py-1.5 font-medium">Name</th>
                 <th className="px-3 py-1.5 font-medium">Value</th>
+                <th className="px-3 py-1.5 font-medium w-16">Force</th>
                 <th className="px-3 py-1.5 font-medium w-20">Type</th>
                 <th className="px-3 py-1.5 font-medium w-16">Addr</th>
                 <th className="w-8"></th>
@@ -155,22 +295,85 @@ export function DebugWatchPanel(): React.ReactElement {
                   <td className="px-3 py-1.5 font-mono text-[var(--color-surface-200)]">
                     {path}
                   </td>
-                  <td className="px-3 py-1.5 font-mono">
-                    {result.loading ? (
+                  <td
+                    className="px-3 py-1.5 font-mono"
+                    title={
+                      setValue && result.address !== null && debugMode !== 'none'
+                        ? 'Double-click to set value'
+                        : undefined
+                    }
+                    onDoubleClick={() =>
+                      handleValueDoubleClick(
+                        path,
+                        result.address,
+                        result.type as WatchVariable['type'] | undefined ?? undefined,
+                        result.value ?? undefined,
+                        result.maxLength,
+                      )
+                    }
+                  >
+                    {editing?.path === path ? (
+                      <input
+                        ref={inputRef}
+                        type="text"
+                        value={editing.draft}
+                        onChange={(e) =>
+                          setEditing((prev) => prev ? { ...prev, draft: e.target.value } : null)
+                        }
+                        onKeyDown={handleSetKeyDown}
+                        onBlur={() => setEditing(null)}
+                        className="w-full bg-[var(--color-surface-900)] border border-amber-500
+                                   rounded px-1 py-0 text-xs text-amber-300
+                                   focus:outline-none focus:border-amber-400"
+                      />
+                    ) : result.loading ? (
                       <span className="text-[var(--color-surface-400)] animate-pulse">...</span>
                     ) : result.error ? (
                       <span className="text-red-400 text-xs" title={result.error}>
                         {result.exists ? '???' : 'N/A'}
                       </span>
                     ) : (
-                      <span className={
-                        result.type === 'BOOL'
-                          ? result.value ? 'text-green-400' : 'text-red-400'
-                          : 'text-blue-400'
-                      }>
+                      <span
+                        className={`${
+                          result.forced
+                            ? 'text-amber-300'
+                            : result.type === 'BOOL'
+                            ? result.value ? 'text-green-400' : 'text-red-400'
+                            : 'text-blue-400'
+                        } ${
+                          result.forced ? 'font-semibold decoration-amber-400' : ''
+                        } ${
+                          setValue && result.address !== null && debugMode !== 'none'
+                            ? 'cursor-pointer hover:underline decoration-dotted underline-offset-2'
+                            : ''
+                        }`}
+                        data-forced={result.forced ? 'true' : 'false'}
+                      >
                         {formatDebugValue(result.value, result.type)}
                       </span>
                     )}
+                  </td>
+                  <td className="px-3 py-1.5 text-[var(--color-surface-400)] text-xs">
+                    <input
+                      type="checkbox"
+                      checked={result.forced}
+                      disabled={!toggleForceValue || result.address === null || debugMode === 'none' || !result.exists}
+                      title={
+                        result.forceEntry?.state === WATCH_FORCE_STATE.FORCED
+                          ? 'Forced until cleared'
+                          : 'Force current value'
+                      }
+                      onChange={(e) => {
+                        void handleForceToggle(
+                          path,
+                          result.address,
+                          result.type as WatchVariable['type'] | undefined,
+                          result.value,
+                          e.target.checked,
+                          result.maxLength,
+                        );
+                      }}
+                    />
                   </td>
                   <td className="px-3 py-1.5 text-[var(--color-surface-400)] text-xs">
                     {result.type || '?'}
@@ -195,11 +398,17 @@ export function DebugWatchPanel(): React.ReactElement {
         )}
       </div>
 
-      {/* Footer with hint */}
+      {/* Footer with hints */}
       {debugMode === 'none' && variables.length > 0 && (
         <div className="px-3 py-2 bg-[var(--color-surface-700)] border-t border-[var(--color-surface-600)]
                         text-[10px] text-[var(--color-surface-400)]">
           Start debugging to see live values
+        </div>
+      )}
+      {debugMode !== 'none' && (setValue || toggleForceValue) && variables.length > 0 && (
+        <div className="px-3 py-2 bg-[var(--color-surface-700)] border-t border-[var(--color-surface-600)]
+                        text-[10px] text-[var(--color-surface-400)]">
+          Double-click a value to set it once · Use Force to hold the value until cleared
         </div>
       )}
     </div>

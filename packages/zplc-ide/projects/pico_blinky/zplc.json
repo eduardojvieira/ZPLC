@@ -5,9 +5,9 @@
   "description": "Raspberry Pi Pico LED blink demo - toggles onboard LED every 500ms",
   "author": "ZPLC Team",
   "target": {
-    "board": "rpi_pico",
-    "cpu": "rp2040",
-    "clock_mhz": 133
+    "board": "esp32s3_devkitc",
+    "cpu": "ESP32-S3",
+    "clock_mhz": 240
   },
   "compiler": {
     "optimization": "speed",
@@ -20,8 +20,14 @@
         "name": "LED_Output",
         "address": "%Q0.0",
         "type": "BOOL",
-        "pin": 25,
+        "pin": 38,
         "description": "Onboard LED (GPIO 25)"
+      },
+      {
+        "name": "PWR",
+        "address": "%Q0.1",
+        "type": "BOOL",
+        "pin": 15
       }
     ]
   },
@@ -29,7 +35,7 @@
     {
       "name": "MainTask",
       "trigger": "cyclic",
-      "interval_ms": 10,
+      "interval_ms": 13,
       "priority": 1,
       "watchdog_ms": 100,
       "programs": [
@@ -39,5 +45,72 @@
   ],
   "build": {
     "outDir": "build"
+  },
+  "network": {
+    "wifi": {
+      "enabled": true,
+      "ssid": "Casa",
+      "password": "Micaela#39412396",
+      "security": "wpa2-psk",
+      "hiddenSsid": false,
+      "ipv4": {
+        "dhcp": true
+      }
+    }
+  },
+  "communication": {
+    "mqtt": {
+      "enabled": false,
+      "profile": "sparkplug-b",
+      "protocolVersion": "5.0",
+      "transport": "tcp",
+      "broker": "test.mosquitto.org",
+      "port": 1883,
+      "clientId": "zplc-device",
+      "keepAliveSec": 60,
+      "cleanSession": true,
+      "sessionExpirySec": 0,
+      "topicNamespace": "spBv1.0/ZPLC",
+      "publishIntervalMs": 2000,
+      "publishQos": 0,
+      "subscribeQos": 0,
+      "publishRetain": false,
+      "securityLevel": "none",
+      "websocketPath": "/mqtt",
+      "lwtEnabled": false,
+      "lwtPayload": "offline",
+      "lwtQos": 0,
+      "lwtRetain": false,
+      "azureTwinEnabled": false,
+      "azureDirectMethodsEnabled": false,
+      "azureC2dEnabled": false,
+      "azureDpsEnabled": false,
+      "azureDpsEndpoint": "global.azure-devices-provisioning.net",
+      "awsShadowEnabled": false,
+      "awsJobsEnabled": false,
+      "awsFleetEnabled": false
+    },
+    "modbus": {
+      "enabled": false,
+      "unitId": 1,
+      "tcpEnabled": true,
+      "tcpPort": 502,
+      "rtuEnabled": false,
+      "rtuBaud": 19200,
+      "rtuParity": "none",
+      "pollIntervalMs": 100,
+      "client": {
+        "rtuClientEnabled": false,
+        "rtuClientSlaveId": 1,
+        "rtuClientPollMs": 100,
+        "tcpClientEnabled": false,
+        "tcpClientHost": "192.168.1.100",
+        "tcpClientPort": 502,
+        "tcpClientUnitId": 1,
+        "tcpClientPollMs": 100,
+        "tcpClientTimeoutMs": 500
+      }
+    },
+    "tags": []
   }
 }

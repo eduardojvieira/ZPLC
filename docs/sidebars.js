@@ -34,6 +34,9 @@ const sidebars = {
         'runtime/index',
         'runtime/hal-contract',
         'runtime/memory-model',
+        'runtime/scheduler',
+        'runtime/connectivity',
+        'runtime/communication-function-blocks',
       ],
     },
     {
@@ -43,8 +46,12 @@ const sidebars = {
       collapsed: true,
       items: [
         'languages/index',
-        'languages/structured-text',
+        'languages/st',
+        'languages/examples/v1-5-language-suite',
         'ide/index',
+        'ide/overview',
+        'ide/compiler',
+        'ide/deployment',
       ],
     },
     {

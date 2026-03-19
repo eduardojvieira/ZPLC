@@ -64,6 +64,8 @@ export interface WatchVariable {
   name: string;
   /** Memory address */
   address: number;
+  /** Bit offset for bit-addressed BOOL variables */
+  bitOffset?: number;
   /** Data type */
   type: 'BOOL' | 'INT' | 'DINT' | 'REAL' | 'BYTE' | 'WORD' | 'DWORD' | 'TIME' | 'STRING';
   /** Current value (updated by polling) */
@@ -72,6 +74,24 @@ export interface WatchVariable {
   forceable: boolean;
   /** For STRING: max length */
   maxLength?: number;
+}
+
+export const WATCH_FORCE_STATE = {
+  IDLE: 'idle',
+  FORCED: 'forced',
+  PENDING: 'pending',
+} as const;
+
+export type WatchForceState = (typeof WATCH_FORCE_STATE)[keyof typeof WATCH_FORCE_STATE];
+
+export interface WatchForceEntry {
+  path: string;
+  address: number;
+  size?: number;
+  type: WatchVariable['type'];
+  bytesHex: string;
+  maxLength?: number;
+  state: WatchForceState;
 }
 
 /**
@@ -90,6 +110,24 @@ export interface DebugAdapterEvents {
   onBreakpointHit?: (pc: number, line?: number) => void;
   /** Called when a single step completes */
   onStepComplete?: (pc: number) => void;
+  /** Called when raw serial/device output is observed during a connected session */
+  onSerialData?: (line: string) => void;
+}
+
+export interface LoadProgramOptions {
+  trace?: import('./uploadTrace').UploadTraceCallback;
+}
+
+/**
+ * Options for readWatchVariables
+ */
+export interface ReadWatchOptions {
+  /**
+   * Whether to use the mpeek fast-path (serial adapter only).
+   * Defaults to false. Only enable when the firmware has been reflashed
+   * with `zplc dbg mpeek` support.
+   */
+  useMpeek?: boolean;
 }
 
 /**
@@ -137,7 +175,7 @@ export interface IDebugAdapter {
    * @param bytecode Raw bytecode bytes
    * @returns Promise that resolves when loaded
    */
-  loadProgram(bytecode: Uint8Array): Promise<void>;
+  loadProgram(bytecode: Uint8Array, options?: LoadProgramOptions): Promise<void>;
 
   // =========================================================================
   // Execution Control
@@ -200,6 +238,31 @@ export interface IDebugAdapter {
   pokeN(address: number, bytes: Uint8Array): Promise<void>;
 
   /**
+   * Write multiple bytes once without enabling runtime force semantics.
+   */
+  setValue(address: number, bytes: Uint8Array): Promise<void>;
+
+  /**
+   * Force multiple bytes in the runtime until explicitly cleared.
+   */
+  forceValue(address: number, bytes: Uint8Array): Promise<void>;
+
+  /**
+   * Clear a forced value by its starting address.
+   */
+  clearForcedValue(address: number): Promise<void>;
+
+  /**
+   * Clear all active forced values.
+   */
+  clearAllForcedValues(): Promise<void>;
+
+  /**
+   * List active force entries, if supported by the adapter/runtime.
+   */
+  listForcedValues(): Promise<WatchForceEntry[]>;
+
+  /**
    * Get a single OPI byte value
    * @param offset Byte offset within OPI (0-4095)
    */
@@ -226,7 +289,7 @@ export interface IDebugAdapter {
    * @param variables List of variables to read
    * @returns Updated variables with current values
    */
-  readWatchVariables(variables: WatchVariable[]): Promise<WatchVariable[]>;
+  readWatchVariables(variables: WatchVariable[], options?: ReadWatchOptions): Promise<WatchVariable[]>;
 
   // =========================================================================
   // GPIO Simulation (for WASM adapter)
@@ -326,12 +389,16 @@ export function getTypeSize(type: WatchVariable['type'], maxLength?: number): nu
  */
 export function bytesToValue(
   bytes: Uint8Array,
-  type: WatchVariable['type']
+  type: WatchVariable['type'],
+  bitOffset?: number,
 ): number | boolean | string {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
 
   switch (type) {
     case 'BOOL':
+      if (bitOffset !== undefined) {
+        return ((bytes[0] >> bitOffset) & 0x01) !== 0;
+      }
       return bytes[0] !== 0;
     case 'BYTE':
       return bytes[0];
@@ -412,6 +479,12 @@ export function valueToBytes(
   }
 
   return bytes;
+}
+
+export function bytesToHex(bytes: Uint8Array): string {
+  return Array.from(bytes)
+    .map((byte) => byte.toString(16).padStart(2, '0').toUpperCase())
+    .join('');
 }
 
 /**

@@ -2,7 +2,7 @@
 
 **Feature Branch**: `001-agents-infra`
 **Created**: 2026-01-20
-**Status**: Draft
+**Status**: Completed
 **Input**: Infrastructure setup for AI agents (agents.md + skills)
 
 ## User Scenarios & Testing

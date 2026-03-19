@@ -73,10 +73,6 @@ function createWindow(): void {
     mainWindow = null;
   });
 
-  // Log when the window is ready
-  mainWindow.webContents.on('did-finish-load', () => {
-    console.log('[Electron] Window loaded successfully');
-  });
 }
 
 /**
@@ -104,7 +100,6 @@ function setupWebSerial(): void {
   // Handle device permission requests
   session.defaultSession.setDevicePermissionHandler((details) => {
     if (details.deviceType === 'serial') {
-      console.log('[WebSerial] Device permission granted:', details.device);
       return true;
     }
     return false;
@@ -112,20 +107,27 @@ function setupWebSerial(): void {
 }
 
 /**
- * Setup serial port selection handler
- * This is called when navigator.serial.requestPort() is invoked
+ * Setup serial port selection handler and security policies.
+ * This is called when navigator.serial.requestPort() is invoked.
+ * Both concerns are consolidated into a single 'web-contents-created'
+ * listener to avoid stacking duplicate session handlers on HMR reloads.
  */
 function setupSerialPortSelection(): void {
   app.on('web-contents-created', (_event, contents) => {
-    contents.session.on('select-serial-port', (event, portList, _webContents, callback) => {
-      event.preventDefault();
+    // Security: Prevent new window creation
+    contents.setWindowOpenHandler(() => ({ action: 'deny' }));
 
-      console.log('[WebSerial] Available ports:', portList.map(p => ({
-        portId: p.portId,
-        displayName: p.displayName,
-        vendorId: p.vendorId ? p.vendorId.toString() : undefined,
-        productId: p.productId ? p.productId.toString() : undefined,
-      })));
+    // Guard: register serial session handlers only once per session.
+    // In dev mode, Vite HMR can trigger multiple 'web-contents-created'
+    // events on the same defaultSession, which would stack duplicate
+    // 'select-serial-port' handlers and cause the one-time callback to
+    // be called twice → "One-time callback was called more than once".
+    const sess = contents.session;
+    if ((sess as unknown as Record<string, boolean>)._serialHandlerRegistered) return;
+    (sess as unknown as Record<string, boolean>)._serialHandlerRegistered = true;
+
+    sess.on('select-serial-port', (event, portList, _webContents, callback) => {
+      event.preventDefault();
 
       if (portList && portList.length > 0) {
         // Strategy 1: Look for known PLC/Arduino USB VID/PIDs
@@ -143,27 +145,18 @@ function setupSerialPortSelection(): void {
         );
 
         if (preferredPort) {
-          console.log('[WebSerial] Auto-selecting preferred port:', preferredPort.displayName);
           callback(preferredPort.portId);
         } else {
           // Fallback: Select the first available port
-          console.log('[WebSerial] Auto-selecting first port:', portList[0].displayName);
           callback(portList[0].portId);
         }
       } else {
-        console.log('[WebSerial] No serial ports available');
         callback(''); // No ports found
       }
     });
 
-    // Handle serial port added/removed events
-    contents.session.on('serial-port-added', (_event, port) => {
-      console.log('[WebSerial] Port added:', port.displayName);
-    });
-
-    contents.session.on('serial-port-removed', (_event, port) => {
-      console.log('[WebSerial] Port removed:', port.displayName);
-    });
+    sess.on('serial-port-added', () => undefined);
+    sess.on('serial-port-removed', () => undefined);
   });
 }
 
@@ -187,8 +180,6 @@ function setupIPC(): void {
 
 // App lifecycle handlers
 app.whenReady().then(() => {
-  console.log('[Electron] App ready, setting up...');
-
   setupWebSerial();
   setupSerialPortSelection();
   setupIPC();
@@ -222,13 +213,3 @@ if (!gotTheLock) {
     }
   });
 }
-
-// Security: Prevent new window creation
-app.on('web-contents-created', (_event, contents) => {
-  contents.setWindowOpenHandler(() => {
-    return { action: 'deny' };
-  });
-});
-
-console.log('[Electron] Main process initialized');
-console.log('[Electron] Mode:', isDev ? 'Development' : 'Production');
