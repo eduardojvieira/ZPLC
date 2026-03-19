@@ -338,6 +338,27 @@ Use the same block set and port schema as LD.
 
 Use these FBs naturally in action bodies after SFC transpiles to ST.
 
+## 10.1 v1.5 Release Guidance
+
+For the v1.5 release foundation, communication blocks are only considered complete when
+all four surfaces agree:
+
+1. runtime behavior
+2. compiler contract
+3. IDE configuration flow
+4. bilingual documentation and troubleshooting
+
+Minimum user-facing guidance for release scope:
+
+- explain `PROTO`, `COUNT`, address, host, and port semantics for Modbus
+- explain `BUSY`, `DONE`, `ERROR`, and `STATUS` for every communication block
+- explain how MQTT `CONNECT`, `PUBLISH`, and `SUBSCRIBE` behave when the broker is not connected
+- state clearly which steps still require human HIL or desktop evidence before sign-off
+
+If a communication block still returns `not supported`, lacks deterministic handshake
+behavior, or cannot be configured honestly from the IDE, it must not ship as a complete
+v1.5 claim.
+
 ---
 
 ## 11. Compiler Work Required

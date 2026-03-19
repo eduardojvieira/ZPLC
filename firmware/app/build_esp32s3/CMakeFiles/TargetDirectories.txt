@@ -17,6 +17,9 @@
 /Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/CMakeFiles/pristine.dir
 /Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/CMakeFiles/zephyr_property_target.dir
 /Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/CMakeFiles/app.dir
+/Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/CMakeFiles/nanopb.dir
+/Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/CMakeFiles/nanopb_generated_headers.dir
+/Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/CMakeFiles/app_proto_640a2d96506edf67918211b619a673f5.dir
 /Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/CMakeFiles/edit_cache.dir
 /Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/CMakeFiles/rebuild_cache.dir
 /Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/CMakeFiles/zephyr.dir
@@ -134,6 +137,7 @@
 /Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/mem_mgmt/CMakeFiles/rebuild_cache.dir
 /Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/mgmt/CMakeFiles/edit_cache.dir
 /Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/mgmt/CMakeFiles/rebuild_cache.dir
+/Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/modbus/CMakeFiles/subsys__modbus.dir
 /Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/modbus/CMakeFiles/edit_cache.dir
 /Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/modbus/CMakeFiles/rebuild_cache.dir
 /Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/pm/CMakeFiles/edit_cache.dir
@@ -188,6 +192,8 @@
 /Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/net/lib/CMakeFiles/rebuild_cache.dir
 /Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/net/lib/utils/CMakeFiles/edit_cache.dir
 /Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/net/lib/utils/CMakeFiles/rebuild_cache.dir
+/Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/net/lib/sntp/CMakeFiles/edit_cache.dir
+/Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/net/lib/sntp/CMakeFiles/rebuild_cache.dir
 /Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/net/lib/mqtt/CMakeFiles/subsys__net__lib__mqtt.dir
 /Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/net/lib/mqtt/CMakeFiles/edit_cache.dir
 /Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/net/lib/mqtt/CMakeFiles/rebuild_cache.dir
@@ -206,6 +212,12 @@
 /Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/net/lib/dns/CMakeFiles/subsys__net__lib__dns.dir
 /Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/net/lib/dns/CMakeFiles/edit_cache.dir
 /Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/net/lib/dns/CMakeFiles/rebuild_cache.dir
+/Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/net/lib/http/CMakeFiles/subsys__net__lib__http.dir
+/Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/net/lib/http/CMakeFiles/edit_cache.dir
+/Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/net/lib/http/CMakeFiles/rebuild_cache.dir
+/Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/net/lib/websocket/CMakeFiles/websocket_client.dir
+/Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/net/lib/websocket/CMakeFiles/edit_cache.dir
+/Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/net/lib/websocket/CMakeFiles/rebuild_cache.dir
 /Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/settings/CMakeFiles/edit_cache.dir
 /Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/settings/CMakeFiles/rebuild_cache.dir
 /Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/settings/src/CMakeFiles/edit_cache.dir

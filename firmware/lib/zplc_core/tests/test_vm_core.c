@@ -2317,6 +2317,94 @@ static void test_breakpoints(void)
 }
 
 /* ============================================================================
+ * Force Override Tests
+ * ============================================================================ */
+
+static void test_force_overrides(void)
+{
+    uint8_t code[64];
+    size_t len = 0;
+    const zplc_vm_state_t *state;
+    const uint8_t forced_value[4] = {0x44, 0x33, 0x22, 0x11};
+    const uint8_t raw_write[4] = {0xDD, 0xCC, 0xBB, 0xAA};
+    uint16_t forced_addr = 0;
+    uint16_t forced_size = 0;
+    uint8_t forced_bytes[8] = {0};
+
+    printf("\n=== Test: Force Overrides ===\n");
+
+    zplc_core_init();
+
+    TEST_ASSERT_EQ(zplc_force_set_bytes(0x2000, forced_value, 4), 0,
+                   "Set force entry for work memory");
+    TEST_ASSERT_EQ(zplc_force_get_count(), 1, "Force entry count = 1");
+    TEST_ASSERT_EQ(zplc_force_get(0, &forced_addr, &forced_size, forced_bytes), 0,
+                   "Read back force entry");
+    TEST_ASSERT_EQ(forced_addr, 0x2000, "Force entry address = 0x2000");
+    TEST_ASSERT_EQ(forced_size, 4, "Force entry size = 4");
+    TEST_ASSERT_EQ(forced_bytes[0], 0x44, "Force entry byte[0] = 0x44");
+    TEST_ASSERT_EQ(forced_bytes[1], 0x33, "Force entry byte[1] = 0x33");
+    TEST_ASSERT_EQ(forced_bytes[2], 0x22, "Force entry byte[2] = 0x22");
+    TEST_ASSERT_EQ(forced_bytes[3], 0x11, "Force entry byte[3] = 0x11");
+
+    /* Program tries to overwrite the forced work value. */
+    len = 0;
+    len = emit_push32(code, len, 0xAABBCCDD);
+    len = emit_store32(code, len, 0x2000);
+    len = emit_load32(code, len, 0x2000);
+    len = emit_op(code, len, OP_HALT);
+
+    zplc_core_load_raw(code, len);
+    zplc_core_run(0);
+
+    state = zplc_core_get_state();
+    TEST_ASSERT_EQ(state->stack[0], 0x11223344,
+                   "Forced work value survives VM STORE32");
+
+    /* External raw writes must also preserve overlapping forced bytes. */
+    TEST_ASSERT_EQ(zplc_force_set_bytes(0x0000, forced_value, 4), 0,
+                   "Set force entry for IPI memory");
+    TEST_ASSERT_EQ(zplc_force_write_bytes(0x0000, raw_write, 4), 0,
+                   "Raw write with overlapping force succeeds");
+    TEST_ASSERT_EQ(zplc_ipi_read32(0), 0x11223344,
+                   "Forced IPI value survives raw write overlay");
+
+    TEST_ASSERT_EQ(zplc_force_clear(0x2000), 0, "Clear work-memory force entry");
+    TEST_ASSERT_EQ(zplc_force_clear(0x0000), 0, "Clear IPI force entry");
+    TEST_ASSERT_EQ(zplc_force_get_count(), 0, "Force entry count = 0 after clear");
+
+    /* After clearing, the program can write the value normally. */
+    zplc_core_init();
+    zplc_core_load_raw(code, len);
+    zplc_core_run(0);
+    state = zplc_core_get_state();
+    TEST_ASSERT_EQ(state->stack[0], 0xAABBCCDD,
+                   "Cleared force allows normal VM STORE32");
+
+    zplc_core_init();
+    TEST_ASSERT_EQ(zplc_force_set_bytes(0x2004, forced_value, 4), 0,
+                   "Set second force entry");
+    zplc_force_clear_all();
+    TEST_ASSERT_EQ(zplc_force_get_count(), 0, "Clear-all removes every force entry");
+
+    zplc_core_init();
+    TEST_ASSERT_EQ(zplc_force_set_bytes(0x0000, forced_value, 4), 0,
+                   "Set force entry for partial overlap test");
+    TEST_ASSERT_EQ(zplc_force_write_bytes(0x0002, raw_write, 2), 0,
+                   "Partial overlapping raw write succeeds");
+    TEST_ASSERT_EQ(zplc_ipi_read32(0), 0x11223344,
+                   "Partial overlap still preserves all forced bytes");
+
+    zplc_core_init();
+    TEST_ASSERT_EQ(zplc_force_set_bytes(0x2008, forced_value, 4), 0,
+                   "Set baseline force entry");
+    TEST_ASSERT_EQ(zplc_force_set_bytes(0x200A, raw_write, 4), -3,
+                   "Reject overlapping force ranges");
+    TEST_ASSERT_EQ(zplc_force_get_count(), 1,
+                   "Overlapping force rejection keeps existing table intact");
+}
+
+/* ============================================================================
  * Main
  * ============================================================================ */
 
@@ -2362,6 +2450,9 @@ int main(void)
 
     /* Debugger Breakpoint Tests (v1.3: Debug support) */
     test_breakpoints();
+
+    /* Force Override Tests */
+    test_force_overrides();
 
     printf("\n================================================\n");
     printf("  Results: %d tests, %d passed, %d failed\n",

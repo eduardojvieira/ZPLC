@@ -19,7 +19,7 @@ ZPLC v1.4 officially supports the following reference boards. CI/CD pipelines mu
 | :--- | :--- | :--- | :--- |
 | **Arduino GIGA R1** | STM32H747XI (Cortex-M7/M4) | `arduino_giga_r1/stm32h747xx/m7` | Dual-core (targeting M7) |
 | **ESP32-S3 DevKit-C** | ESP32-S3 (Xtensa LX7) | `esp32s3_devkitc` | WiFi/BLE capable |
-| **STM32 Nucleo-H743ZI** | STM32H743ZI (Cortex-M7) | `nucleo_h743zi` | High-perf industrial Ref |
+| **Supported boards** | Published via the v1.5 supported-board manifest | `firmware/app/boards/supported-boards.v1.5.0.json` | Release-truth source |
 | **Raspberry Pi Pico** | RP2040 (Cortex-M0+) | `rpi_pico` | Low-cost, tested target |
 | **macOS / Linux** | x86_64 / ARM64 | `native_sim` | Native execution |
 | **QEMU (Simulation)** | Cortex-M3 | `mps2/an385` | CI Default |

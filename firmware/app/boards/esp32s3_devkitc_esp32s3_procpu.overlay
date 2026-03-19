@@ -52,10 +52,17 @@
             gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;  /* GPIO38 = gpio1 pin 6 */
             label = "ZPLC Output 0";
         };
+
+        /* LCD Power on GPIO15 */
+        led1: led_1 {
+            gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;  /* GPIO15 = gpio0 pin 15 */
+            label = "ZPLC Output 1";
+        };
     };
     
     aliases {
         led0 = &led0;
+        led1 = &led1;
         /* sw0 already defined in base board as button0 (BOOT button) */
     };
 };

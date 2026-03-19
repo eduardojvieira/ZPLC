@@ -399,6 +399,31 @@ describe('Parser', () => {
     });
 });
 
+describe('Language workflow parity baseline', () => {
+    it('compiles the canonical v1.5 ST workflow baseline', () => {
+        const source = `
+            PROGRAM WorkflowBaseline
+            VAR
+                Start : BOOL := TRUE;
+                Count : INT := 0;
+                Timer : TON;
+                Done : BOOL := FALSE;
+            END_VAR
+            Timer(IN := Start, PT := T#500ms);
+            IF Timer.Q THEN
+                Count := Count + 1;
+                Done := TRUE;
+            END_IF;
+            END_PROGRAM
+        `;
+
+        const result = compileToBinary(source);
+
+        expect(result.bytecode.length).toBeGreaterThan(0);
+        expect(result.zplcFile.length).toBeGreaterThan(result.bytecode.length);
+    });
+});
+
 // ============================================================================
 // Symbol Table Tests
 // ============================================================================

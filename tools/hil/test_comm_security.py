@@ -205,6 +205,11 @@ def assert_not_contains_any(lines: list[str], needles: tuple[str, ...]) -> None:
             raise AssertionError(f"Found unexpected log matching ({expected}): {line}")
 
 
+# v1.5 release note:
+# This script remains part of the MQTT/HIL evidence path. Human release validation must
+# capture the resulting evidence record after any AI-assisted fixes are applied.
+
+
 def wait_for_any_log(
     ser: serial.Serial, needles: tuple[str, ...], timeout_s: float
 ) -> list[str]:

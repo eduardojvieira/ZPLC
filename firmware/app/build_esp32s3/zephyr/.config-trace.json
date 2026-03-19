@@ -15,7 +15,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      66
+      92
     ]
   ],
   [
@@ -66,7 +66,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      51
+      65
     ]
   ],
   [
@@ -77,7 +77,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      26
+      23
     ]
   ],
   [
@@ -96,7 +96,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      27
+      25
     ]
   ],
   [
@@ -185,7 +185,7 @@
     "CONFIG_FLASH_SIZE",
     "n",
     "int",
-    "8388608",
+    "16777216",
     "default",
     [
       "/Users/eduardo/zephyrproject/zephyr/soc/espressif/esp32s3/Kconfig.defconfig",
@@ -240,7 +240,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      22
+      24
     ]
   ],
   [
@@ -516,7 +516,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/prj.conf",
-      40
+      46
     ]
   ],
   [
@@ -622,7 +622,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/prj.conf",
-      24
+      30
     ]
   ],
   [
@@ -671,7 +671,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/prj.conf",
-      49
+      55
     ]
   ],
   [
@@ -812,7 +812,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/prj.conf",
-      88
+      94
     ]
   ],
   [
@@ -1829,7 +1829,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      33
+      31
     ]
   ],
   [
@@ -1982,6 +1982,7 @@
     "select",
     [
       "WIFI_ESP32 && DT_HAS_ESPRESSIF_ESP32_WIFI_ENABLED && (ZEPHYR_HAL_ESPRESSIF_MODULE_BLOBS || BUILD_ONLY_NO_BLOBS) && !SMP && WIFI",
+      "WEBSOCKET_CLIENT && NETWORKING",
       "NET_SOCKETS_SOCKOPT_TLS && NET_NATIVE && NET_SOCKETS && NETWORKING"
     ]
   ],
@@ -2323,9 +2324,11 @@
     "CONFIG_MBEDTLS_SHA1",
     "y",
     "bool",
-    null,
-    "unset",
-    null
+    "y",
+    "select",
+    [
+      "WEBSOCKET_CLIENT && MBEDTLS_BUILTIN && NETWORKING"
+    ]
   ],
   [
     "CONFIG_MBEDTLS_SHA224",
@@ -2444,7 +2447,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      85
+      114
     ]
   ],
   [
@@ -2755,7 +2758,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      83
+      62
     ]
   ],
   [
@@ -2766,7 +2769,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      84
+      63
     ]
   ],
   [
@@ -2856,7 +2859,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      88
+      117
     ]
   ],
   [
@@ -3091,55 +3094,55 @@
     "CONFIG_ZPLC_STACK_DEPTH",
     "y",
     "int",
-    "256",
-    "default",
+    "64",
+    "assign",
     [
-      "/Users/eduardo/Documents/Repos/ZPLC/firmware/zephyr/Kconfig",
-      20
+      "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
+      128
     ]
   ],
   [
     "CONFIG_ZPLC_CALL_STACK_DEPTH",
     "y",
     "int",
-    "32",
-    "default",
+    "16",
+    "assign",
     [
-      "/Users/eduardo/Documents/Repos/ZPLC/firmware/zephyr/Kconfig",
-      27
+      "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
+      129
     ]
   ],
   [
     "CONFIG_ZPLC_WORK_MEMORY_SIZE",
     "y",
     "int",
-    "8192",
-    "default",
+    "2048",
+    "assign",
     [
-      "/Users/eduardo/Documents/Repos/ZPLC/firmware/zephyr/Kconfig",
-      33
+      "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
+      125
     ]
   ],
   [
     "CONFIG_ZPLC_RETAIN_MEMORY_SIZE",
     "y",
     "int",
-    "4096",
-    "default",
+    "1024",
+    "assign",
     [
-      "/Users/eduardo/Documents/Repos/ZPLC/firmware/zephyr/Kconfig",
-      39
+      "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
+      126
     ]
   ],
   [
     "CONFIG_ZPLC_CODE_SIZE_MAX",
     "y",
     "int",
-    "45056",
-    "default",
+    "8192",
+    "assign",
     [
-      "/Users/eduardo/Documents/Repos/ZPLC/firmware/zephyr/Kconfig",
-      46
+      "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
+      127
     ]
   ],
   [
@@ -3150,7 +3153,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/prj.conf",
-      25
+      31
     ]
   ],
   [
@@ -3161,7 +3164,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/prj.conf",
-      77
+      83
     ]
   ],
   [
@@ -3172,7 +3175,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/prj.conf",
-      78
+      84
     ]
   ],
   [
@@ -3183,7 +3186,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/prj.conf",
-      79
+      85
     ]
   ],
   [
@@ -3194,7 +3197,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/prj.conf",
-      80
+      86
     ]
   ],
   [
@@ -3205,7 +3208,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/prj.conf",
-      81
+      87
     ]
   ],
   [
@@ -3216,7 +3219,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/prj.conf",
-      82
+      88
     ]
   ],
   [
@@ -3227,16 +3230,19 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/prj.conf",
-      83
+      89
     ]
   ],
   [
     "CONFIG_ZPLC_HIL_DEBUG",
     "y",
     "bool",
-    null,
-    "unset",
-    null
+    "y",
+    "assign",
+    [
+      "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
+      130
+    ]
   ],
   [
     "CONFIG_ZEPHYR_ZPLC_MODULE",
@@ -3734,7 +3740,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      91
+      49
     ]
   ],
   [
@@ -3742,10 +3748,10 @@
     "y",
     "int",
     "1048576",
-    "default",
+    "assign",
     [
-      "/Users/eduardo/zephyrproject/zephyr/soc/espressif/common/Kconfig.spiram",
-      23
+      "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
+      51
     ]
   ],
   [
@@ -3763,19 +3769,16 @@
     "CONFIG_SPIRAM_MODE_QUAD",
     "y",
     "bool",
-    "y",
-    "default",
-    [
-      "/Users/eduardo/zephyrproject/zephyr/soc/espressif/common/Kconfig.spiram",
-      35
-    ]
+    null,
+    "unset",
+    null
   ],
   [
     "CONFIG_SPIRAM_MODE_OCT",
     "y",
     "bool",
-    null,
-    "unset",
+    "y",
+    "assign",
     null
   ],
   [
@@ -3794,10 +3797,10 @@
     "y",
     "int",
     "8388608",
-    "assign",
+    "default",
     [
-      "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      92
+      "/Users/eduardo/zephyrproject/zephyr/soc/espressif/common/Kconfig.spiram",
+      67
     ]
   ],
   [
@@ -3813,14 +3816,6 @@
   ],
   [
     "CONFIG_SPIRAM_SPEED_80M",
-    "y",
-    "bool",
-    null,
-    "unset",
-    null
-  ],
-  [
-    "CONFIG_SPIRAM_SPEED_120M",
     "y",
     "bool",
     null,
@@ -3870,6 +3865,14 @@
   ],
   [
     "CONFIG_SPIRAM_RODATA",
+    "y",
+    "bool",
+    null,
+    "unset",
+    null
+  ],
+  [
+    "CONFIG_SPIRAM_ECC_ENABLE",
     "y",
     "bool",
     null,
@@ -4757,7 +4760,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      34
+      32
     ]
   ],
   [
@@ -4768,7 +4771,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      35
+      33
     ]
   ],
   [
@@ -5533,11 +5536,11 @@
     "CONFIG_HEAP_MEM_POOL_SIZE",
     "y",
     "int",
-    "4096",
+    "8192",
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      50
+      60
     ]
   ],
   [
@@ -6665,7 +6668,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/prj.conf",
-      41
+      47
     ]
   ],
   [
@@ -7792,30 +7795,27 @@
     "CONFIG_HEAP_MEM_POOL_ADD_SIZE_ESP_WIFI",
     "n",
     "int",
-    "40960",
+    "19456",
     "default",
     [
       "/Users/eduardo/zephyrproject/zephyr/drivers/wifi/esp32/Kconfig.esp32",
-      26
+      27
     ]
   ],
   [
     "CONFIG_ESP_WIFI_HEAP_SYSTEM",
     "y",
     "bool",
-    "y",
-    "default",
-    [
-      "/Users/eduardo/zephyrproject/zephyr/drivers/wifi/esp32/Kconfig.esp32",
-      33
-    ]
+    null,
+    "unset",
+    null
   ],
   [
     "CONFIG_ESP_WIFI_HEAP_SPIRAM",
     "y",
     "bool",
-    null,
-    "unset",
+    "y",
+    "assign",
     null
   ],
   [
@@ -7833,11 +7833,11 @@
     "CONFIG_NET_MGMT_EVENT_STACK_SIZE",
     "y",
     "int",
-    "2048",
-    "default",
+    "4096",
+    "assign",
     [
-      "/Users/eduardo/zephyrproject/zephyr/drivers/wifi/esp32/Kconfig.esp32",
-      50
+      "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
+      37
     ]
   ],
   [
@@ -7871,9 +7871,12 @@
     "CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM",
     "y",
     "bool",
-    null,
-    "unset",
-    null
+    "y",
+    "assign",
+    [
+      "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
+      57
+    ]
   ],
   [
     "CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM",
@@ -7925,6 +7928,17 @@
     [
       "/Users/eduardo/zephyrproject/zephyr/drivers/wifi/esp32/Kconfig.esp32",
       149
+    ]
+  ],
+  [
+    "CONFIG_ESP32_WIFI_CACHE_TX_BUFFER_NUM",
+    "y",
+    "int",
+    "32",
+    "default",
+    [
+      "/Users/eduardo/zephyrproject/zephyr/drivers/wifi/esp32/Kconfig.esp32",
+      171
     ]
   ],
   [
@@ -9261,9 +9275,11 @@
     "CONFIG_BASE64",
     "y",
     "bool",
-    null,
-    "unset",
-    null
+    "y",
+    "select",
+    [
+      "WEBSOCKET_CLIENT && NETWORKING"
+    ]
   ],
   [
     "CONFIG_ONOFF",
@@ -9337,6 +9353,7 @@
     "select",
     [
       "NVS && FLASH && FLASH_PAGE_LAYOUT",
+      "MODBUS",
       "DNS_RESOLVER && NET_NATIVE && NETWORKING"
     ]
   ],
@@ -9654,7 +9671,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      42
+      70
     ]
   ],
   [
@@ -9706,7 +9723,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      44
+      72
     ]
   ],
   [
@@ -9806,7 +9823,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      43
+      71
     ]
   ],
   [
@@ -10257,7 +10274,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/prj.conf",
-      43
+      49
     ]
   ],
   [
@@ -11005,9 +11022,150 @@
     "CONFIG_MODBUS",
     "y",
     "bool",
+    "y",
+    "assign",
+    [
+      "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/prj.conf",
+      23
+    ]
+  ],
+  [
+    "CONFIG_MODBUS_BUFFER_SIZE",
+    "y",
+    "int",
+    "256",
+    "default",
+    [
+      "/Users/eduardo/zephyrproject/zephyr/subsys/modbus/Kconfig",
+      12
+    ]
+  ],
+  [
+    "CONFIG_MODBUS_ROLE_CLIENT",
+    "y",
+    "bool",
     null,
     "unset",
     null
+  ],
+  [
+    "CONFIG_MODBUS_ROLE_SERVER",
+    "y",
+    "bool",
+    "y",
+    "assign",
+    null
+  ],
+  [
+    "CONFIG_MODBUS_ROLE_CLIENT_SERVER",
+    "y",
+    "bool",
+    null,
+    "unset",
+    null
+  ],
+  [
+    "CONFIG_MODBUS_SERVER",
+    "n",
+    "bool",
+    "y",
+    "default",
+    [
+      "/Users/eduardo/zephyrproject/zephyr/subsys/modbus/Kconfig",
+      36
+    ]
+  ],
+  [
+    "CONFIG_MODBUS_RAW_ADU",
+    "y",
+    "bool",
+    null,
+    "unset",
+    null
+  ],
+  [
+    "CONFIG_MODBUS_FP_EXTENSIONS",
+    "y",
+    "bool",
+    "y",
+    "default",
+    [
+      "/Users/eduardo/zephyrproject/zephyr/subsys/modbus/Kconfig",
+      77
+    ]
+  ],
+  [
+    "CONFIG_MODBUS_FC08_DIAGNOSTIC",
+    "y",
+    "bool",
+    "y",
+    "default",
+    [
+      "/Users/eduardo/zephyrproject/zephyr/subsys/modbus/Kconfig",
+      84
+    ]
+  ],
+  [
+    "CONFIG_MODBUS_LOG_LEVEL_OFF",
+    "y",
+    "bool",
+    null,
+    "unset",
+    null
+  ],
+  [
+    "CONFIG_MODBUS_LOG_LEVEL_ERR",
+    "y",
+    "bool",
+    null,
+    "unset",
+    null
+  ],
+  [
+    "CONFIG_MODBUS_LOG_LEVEL_WRN",
+    "y",
+    "bool",
+    null,
+    "unset",
+    null
+  ],
+  [
+    "CONFIG_MODBUS_LOG_LEVEL_INF",
+    "y",
+    "bool",
+    null,
+    "unset",
+    null
+  ],
+  [
+    "CONFIG_MODBUS_LOG_LEVEL_DBG",
+    "y",
+    "bool",
+    null,
+    "unset",
+    null
+  ],
+  [
+    "CONFIG_MODBUS_LOG_LEVEL_DEFAULT",
+    "y",
+    "bool",
+    "y",
+    "default",
+    [
+      "/Users/eduardo/zephyrproject/zephyr/subsys/logging/Kconfig.template.log_config",
+      5
+    ]
+  ],
+  [
+    "CONFIG_MODBUS_LOG_LEVEL",
+    "n",
+    "int",
+    "3",
+    "default",
+    [
+      "/Users/eduardo/zephyrproject/zephyr/subsys/logging/Kconfig.template.log_config",
+      36
+    ]
   ],
   [
     "CONFIG_MODEM_MODULES",
@@ -11025,7 +11183,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      54
+      80
     ]
   ],
   [
@@ -11347,7 +11505,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      67
+      93
     ]
   ],
   [
@@ -11754,7 +11912,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      55
+      81
     ]
   ],
   [
@@ -12160,7 +12318,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      58
+      84
     ]
   ],
   [
@@ -12338,7 +12496,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      59
+      85
     ]
   ],
   [
@@ -13032,7 +13190,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      62
+      88
     ]
   ],
   [
@@ -13258,7 +13416,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      74
+      102
     ]
   ],
   [
@@ -13307,24 +13465,30 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      75
+      103
     ]
   ],
   [
     "CONFIG_MQTT_LIB_TLS_USE_ALPN",
     "y",
     "bool",
-    null,
-    "unset",
-    null
+    "y",
+    "assign",
+    [
+      "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
+      105
+    ]
   ],
   [
     "CONFIG_MQTT_LIB_WEBSOCKET",
     "y",
     "bool",
-    null,
-    "unset",
-    null
+    "y",
+    "assign",
+    [
+      "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
+      104
+    ]
   ],
   [
     "CONFIG_MQTT_LIB_CUSTOM_TRANSPORT",
@@ -13342,7 +13506,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      78
+      108
     ]
   ],
   [
@@ -13353,7 +13517,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      77
+      107
     ]
   ],
   [
@@ -13417,12 +13581,27 @@
     "CONFIG_HTTP_PARSER",
     "y",
     "bool",
-    null,
-    "unset",
-    null
+    "y",
+    "select",
+    [
+      "HTTP_CLIENT && NETWORKING",
+      "WEBSOCKET_CLIENT && NETWORKING"
+    ]
   ],
   [
     "CONFIG_HTTP_PARSER_URL",
+    "y",
+    "bool",
+    "y",
+    "select",
+    [
+      "HTTP_PARSER && NETWORKING",
+      "HTTP_CLIENT && NETWORKING",
+      "WEBSOCKET_CLIENT && NETWORKING"
+    ]
+  ],
+  [
+    "CONFIG_HTTP_PARSER_STRICT",
     "y",
     "bool",
     null,
@@ -13433,9 +13612,11 @@
     "CONFIG_HTTP_CLIENT",
     "y",
     "bool",
-    null,
-    "unset",
-    null
+    "y",
+    "select",
+    [
+      "WEBSOCKET_CLIENT && NETWORKING"
+    ]
   ],
   [
     "CONFIG_HTTP_SERVER",
@@ -13444,6 +13625,17 @@
     null,
     "unset",
     null
+  ],
+  [
+    "CONFIG_HTTP",
+    "n",
+    "bool",
+    "y",
+    "default",
+    [
+      "/Users/eduardo/zephyrproject/zephyr/subsys/net/lib/http/Kconfig",
+      240
+    ]
   ],
   [
     "CONFIG_NET_HTTP_LOG_LEVEL",
@@ -13471,9 +13663,45 @@
     "CONFIG_WEBSOCKET_CLIENT",
     "y",
     "bool",
-    null,
-    "unset",
-    null
+    "y",
+    "assign",
+    [
+      "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
+      110
+    ]
+  ],
+  [
+    "CONFIG_WEBSOCKET",
+    "n",
+    "bool",
+    "y",
+    "default",
+    [
+      "/Users/eduardo/zephyrproject/zephyr/subsys/net/lib/websocket/Kconfig",
+      19
+    ]
+  ],
+  [
+    "CONFIG_WEBSOCKET_MAX_CONTEXTS",
+    "y",
+    "int",
+    "1",
+    "default",
+    [
+      "/Users/eduardo/zephyrproject/zephyr/subsys/net/lib/websocket/Kconfig",
+      28
+    ]
+  ],
+  [
+    "CONFIG_NET_WEBSOCKET_LOG_LEVEL",
+    "n",
+    "int",
+    "0",
+    "default",
+    [
+      "/Users/eduardo/zephyrproject/zephyr/subsys/net/Kconfig.template.log_config.net",
+      50
+    ]
   ],
   [
     "CONFIG_LWM2M",
@@ -13495,9 +13723,31 @@
     "CONFIG_SNTP",
     "y",
     "bool",
+    "y",
+    "assign",
+    [
+      "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/prj.conf",
+      101
+    ]
+  ],
+  [
+    "CONFIG_SNTP_UNCERTAINTY",
+    "y",
+    "bool",
     null,
     "unset",
     null
+  ],
+  [
+    "CONFIG_SNTP_LOG_LEVEL",
+    "n",
+    "int",
+    "0",
+    "default",
+    [
+      "/Users/eduardo/zephyrproject/zephyr/subsys/net/Kconfig.template.log_config.net",
+      50
+    ]
   ],
   [
     "CONFIG_NET_CONFIG_LOG_LEVEL",
@@ -13519,6 +13769,14 @@
     null
   ],
   [
+    "CONFIG_NET_CONFIG_CLOCK_SNTP_INIT",
+    "y",
+    "bool",
+    null,
+    "unset",
+    null
+  ],
+  [
     "CONFIG_NET_SOCKETS",
     "y",
     "bool",
@@ -13526,7 +13784,8 @@
     "select",
     [
       "DNS_RESOLVER && NET_NATIVE && NETWORKING",
-      "MQTT_LIB && NETWORKING"
+      "MQTT_LIB && NETWORKING",
+      "WEBSOCKET_CLIENT && NETWORKING"
     ]
   ],
   [
@@ -13570,7 +13829,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      63
+      89
     ]
   ],
   [
@@ -13658,7 +13917,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      79
+      109
     ]
   ],
   [
@@ -13691,7 +13950,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      80
+      111
     ]
   ],
   [
@@ -13835,7 +14094,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      81
+      112
     ]
   ],
   [
@@ -13923,6 +14182,14 @@
     ]
   ],
   [
+    "CONFIG_TLS_CREDENTIALS_SHELL",
+    "y",
+    "bool",
+    null,
+    "unset",
+    null
+  ],
+  [
     "CONFIG_NET_SHELL",
     "y",
     "bool",
@@ -13930,7 +14197,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      68
+      94
     ]
   ],
   [
@@ -14257,7 +14524,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      56
+      82
     ]
   ],
   [
@@ -14316,6 +14583,17 @@
     null,
     "unset",
     null
+  ],
+  [
+    "CONFIG_NET_DHCPV4_OPTION_NTP_SERVER",
+    "y",
+    "bool",
+    "y",
+    "default",
+    [
+      "/Users/eduardo/zephyrproject/zephyr/subsys/net/lib/dhcpv4/Kconfig",
+      78
+    ]
   ],
   [
     "CONFIG_NET_DHCPV4_OPTION_DNS_ADDRESS",
@@ -14431,7 +14709,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      69
+      95
     ]
   ],
   [
@@ -14534,7 +14812,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      71
+      97
     ]
   ],
   [
@@ -14749,7 +15027,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      45
+      73
     ]
   ],
   [
@@ -14883,7 +15161,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      47
+      75
     ]
   ],
   [
@@ -15023,7 +15301,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/prj.conf",
-      52
+      58
     ]
   ],
   [
@@ -15034,7 +15312,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/prj.conf",
-      64
+      70
     ]
   ],
   [
@@ -15087,11 +15365,11 @@
     "CONFIG_SHELL_BACKEND_SERIAL_RX_RING_BUFFER_SIZE",
     "y",
     "int",
-    "2048",
+    "1024",
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      30
+      28
     ]
   ],
   [
@@ -15266,11 +15544,11 @@
     "CONFIG_SHELL_CMD_BUFF_SIZE",
     "y",
     "int",
-    "2048",
+    "1024",
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      28
+      26
     ]
   ],
   [
@@ -15281,7 +15559,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
-      29
+      27
     ]
   ],
   [
@@ -15780,7 +16058,7 @@
     "assign",
     [
       "/Users/eduardo/Documents/Repos/ZPLC/firmware/app/prj.conf",
-      42
+      48
     ]
   ],
   [
@@ -16576,6 +16854,7 @@
       "DYNAMIC_THREAD && THREAD_STACK_INFO",
       "ZVFS",
       "MQTT_VERSION_5_0 && <choice MQTT_VERSION_SUPPORT>",
+      "WEBSOCKET_CLIENT && NETWORKING",
       "WIFI_CREDENTIALS && NETWORKING"
     ]
   ],

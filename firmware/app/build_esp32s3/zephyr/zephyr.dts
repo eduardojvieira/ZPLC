@@ -16,8 +16,8 @@
 		zephyr,flash = &flash0;                   /* in zephyr/boards/espressif/esp32s3_devkitc/esp32s3_devkitc_procpu.dts:27 */
 		zephyr,code-partition = &slot0_partition; /* in zephyr/boards/espressif/esp32s3_devkitc/esp32s3_devkitc_procpu.dts:28 */
 		zephyr,bt-hci = &esp32_bt_hci;            /* in zephyr/boards/espressif/esp32s3_devkitc/esp32s3_devkitc_procpu.dts:29 */
-		zephyr,console = &usb_serial;             /* in ../Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay:27 */
-		zephyr,shell-uart = &usb_serial;          /* in ../Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay:28 */
+		zephyr,console = &usb_serial;             /* in ../Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay:43 */
+		zephyr,shell-uart = &usb_serial;          /* in ../Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay:44 */
 	};
 
 	/* node '/aliases' defined in zephyr/dts/common/skeleton.dtsi:15 */
@@ -27,7 +27,8 @@
 		watchdog0 = &wdt0;     /* in zephyr/boards/espressif/esp32s3_devkitc/esp32s3_devkitc_procpu.dts:20 */
 		uart-0 = &uart0;       /* in zephyr/boards/espressif/esp32s3_devkitc/esp32s3_devkitc_procpu.dts:33 */
 		sw0 = &button0;        /* in zephyr/boards/espressif/esp32s3_devkitc/esp32s3_devkitc_procpu.dts:34 */
-		led0 = &led0;          /* in ../Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay:42 */
+		led0 = &led0;          /* in ../Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay:64 */
+		led1 = &led1;          /* in ../Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay:65 */
 	};
 
 	/* node '/soc' defined in zephyr/dts/xtensa/xtensa.dtsi:10 */
@@ -53,7 +54,7 @@
 			/* node '/soc/memory@3c000000/psram0' defined in zephyr/dts/xtensa/espressif/esp32s3/esp32s3_common.dtsi:107 */
 			psram0: psram0 {
 				compatible = "espressif,esp32-psram"; /* in zephyr/dts/xtensa/espressif/esp32s3/esp32s3_common.dtsi:108 */
-				size = < 0x0 >;                       /* in zephyr/dts/xtensa/espressif/esp32s3/esp32s3_common.dtsi:109 */
+				size = < 0x800000 >;                  /* in ../Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay:33 */
 			};
 		};
 
@@ -162,7 +163,7 @@
 				compatible = "soc-nv-flash";   /* in zephyr/dts/xtensa/espressif/esp32s3/esp32s3_common.dtsi:198 */
 				erase-block-size = < 0x1000 >; /* in zephyr/dts/xtensa/espressif/esp32s3/esp32s3_common.dtsi:199 */
 				write-block-size = < 0x4 >;    /* in zephyr/dts/xtensa/espressif/esp32s3/esp32s3_common.dtsi:200 */
-				reg = < 0x0 0x800000 >;        /* in zephyr/dts/xtensa/espressif/esp32s3/esp32s3_wroom_n8.dtsi:11 */
+				reg = < 0x0 0x1000000 >;       /* in ../Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay:38 */
 
 				/* node '/soc/flash-controller@60002000/flash@0/partitions' defined in zephyr/dts/vendor/espressif/partitions_0x0_amp_4M.dtsi:8 */
 				partitions {
@@ -485,7 +486,7 @@
 			interrupts = < 0x60 0x0 0x0 >;             /* in zephyr/dts/xtensa/espressif/esp32s3/esp32s3_common.dtsi:396 */
 			interrupt-parent = < &intc >;              /* in zephyr/dts/xtensa/espressif/esp32s3/esp32s3_common.dtsi:397 */
 			clocks = < &clock 0x4 >;                   /* in zephyr/dts/xtensa/espressif/esp32s3/esp32s3_common.dtsi:398 */
-			status = "okay";                           /* in ../Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay:48 */
+			status = "okay";                           /* in ../Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay:71 */
 		};
 
 		/* node '/soc/usb_otg@60080000' defined in zephyr/dts/xtensa/espressif/esp32s3/esp32s3_common.dtsi:401 */
@@ -935,14 +936,20 @@
 		};
 	};
 
-	/* node '/leds' defined in ../Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay:31 */
+	/* node '/leds' defined in ../Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay:47 */
 	leds {
-		compatible = "gpio-leds"; /* in ../Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay:32 */
+		compatible = "gpio-leds"; /* in ../Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay:48 */
 
-		/* node '/leds/led_0' defined in ../Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay:35 */
+		/* node '/leds/led_0' defined in ../Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay:51 */
 		led0: led_0 {
-			gpios = < &gpio1 0x6 0x0 >; /* in ../Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay:36 */
-			label = "ZPLC Output 0";    /* in ../Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay:37 */
+			gpios = < &gpio1 0x6 0x0 >; /* in ../Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay:52 */
+			label = "ZPLC Output 0";    /* in ../Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay:53 */
+		};
+
+		/* node '/leds/led_1' defined in ../Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay:57 */
+		led1: led_1 {
+			gpios = < &gpio0 0xf 0x0 >; /* in ../Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay:58 */
+			label = "ZPLC Output 1";    /* in ../Documents/Repos/ZPLC/firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay:59 */
 		};
 	};
 };

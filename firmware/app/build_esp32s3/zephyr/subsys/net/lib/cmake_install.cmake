@@ -44,6 +44,11 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
+  include("/Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/net/lib/sntp/cmake_install.cmake")
+endif()
+
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for the subdirectory.
   include("/Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/net/lib/mqtt/cmake_install.cmake")
 endif()
 
@@ -75,6 +80,16 @@ endif()
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
   include("/Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/net/lib/dns/cmake_install.cmake")
+endif()
+
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for the subdirectory.
+  include("/Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/net/lib/http/cmake_install.cmake")
+endif()
+
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for the subdirectory.
+  include("/Users/eduardo/Documents/Repos/ZPLC/firmware/app/build_esp32s3/zephyr/subsys/net/lib/websocket/cmake_install.cmake")
 endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT

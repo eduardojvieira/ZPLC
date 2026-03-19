@@ -201,6 +201,202 @@ html, body, #root {
 }
 
 /* =============================================================================
+   Resizable Panels — Separator Handle
+   ============================================================================= */
+
+/* Horizontal separator (between sidebar and editor) */
+[data-panel-group-direction="horizontal"] > [data-panel-resize-handle-id] {
+  width: 4px;
+  cursor: col-resize;
+  background-color: var(--color-surface-600);
+  transition: background-color 0.15s ease;
+  position: relative;
+  flex-shrink: 0;
+}
+
+[data-panel-group-direction="horizontal"] > [data-panel-resize-handle-id]::after {
+  content: "";
+  position: absolute;
+  inset: 0 -3px;
+}
+
+[data-panel-group-direction="horizontal"] > [data-panel-resize-handle-id]:hover,
+[data-panel-group-direction="horizontal"] > [data-panel-resize-handle-id][data-resize-handle-active] {
+  background-color: var(--color-accent-blue);
+}
+
+/* Vertical separator (between editor area and console) */
+[data-panel-group-direction="vertical"] > [data-panel-resize-handle-id] {
+  height: 4px;
+  cursor: row-resize;
+  background-color: var(--color-surface-600);
+  transition: background-color 0.15s ease;
+  position: relative;
+  flex-shrink: 0;
+}
+
+[data-panel-group-direction="vertical"] > [data-panel-resize-handle-id]::after {
+  content: "";
+  position: absolute;
+  inset: -3px 0;
+}
+
+[data-panel-group-direction="vertical"] > [data-panel-resize-handle-id]:hover,
+[data-panel-group-direction="vertical"] > [data-panel-resize-handle-id][data-resize-handle-active] {
+  background-color: var(--color-accent-blue);
+}
+
+/* =============================================================================
+   Monaco Inline Debug Decorations
+   These MUST live here (static CSS) so they are guaranteed to be in the
+   document's CSSOM before Monaco reads them for injected-text spans.
+   ============================================================================= */
+
+/* Breakpoint glyph (red dot in gutter margin) */
+.breakpoint-glyph {
+  display: block !important;
+  background: #ef4444;
+  border: 1px solid #991b1b;
+  box-sizing: border-box;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.18);
+  border-radius: 50%;
+  width: 12px !important;
+  height: 12px !important;
+  margin-left: 4px;
+  margin-top: 4px;
+  cursor: pointer;
+}
+
+/* Breakpoint line decoration (subtle red left bar) */
+.breakpoint-line-decoration {
+  background: rgba(239, 68, 68, 0.15);
+  width: 3px !important;
+}
+
+/* Current execution line (yellow highlight when paused) */
+.current-line-highlight {
+  background: rgba(239, 68, 68, 0.18) !important;
+  border-left: 3px solid #ef4444;
+}
+
+/* Current line glyph (yellow arrow) */
+.current-line-glyph {
+  background: #ef4444;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  width: 10px !important;
+  height: 14px !important;
+  margin-left: 5px;
+  margin-top: 3px;
+}
+
+:root[data-theme='light'] .current-line-highlight {
+  background: rgba(220, 38, 38, 0.14) !important;
+  border-left-color: #b91c1c;
+}
+
+:root[data-theme='dark'] .current-line-highlight {
+  background: rgba(248, 113, 113, 0.16) !important;
+  border-left-color: #f87171;
+}
+
+:root[data-theme='light'] .current-line-glyph {
+  background: #b91c1c;
+}
+
+:root[data-theme='dark'] .current-line-glyph {
+  background: #f87171;
+}
+
+/*
+ * Inline debug value decorations.
+ *
+ * Monaco applies `inlineClassName` from InjectedTextOptions directly to the
+ * injected-text <span> elements rendered inside the view layer.
+ *
+ * We intentionally style them like compact chips instead of fake comments.
+ * Keep them readable, high-contrast, and visually secondary to the source code.
+ */
+
+/* Theme tokens for live-value chips */
+:root {
+  --debug-chip-bg: rgba(37, 99, 235, 0.12);
+  --debug-chip-border: rgba(37, 99, 235, 0.35);
+  --debug-chip-text: #1d4ed8;
+
+  --debug-chip-true-bg: rgba(22, 163, 74, 0.14);
+  --debug-chip-true-border: rgba(22, 163, 74, 0.38);
+  --debug-chip-true-text: #166534;
+
+  --debug-chip-false-bg: rgba(220, 38, 38, 0.12);
+  --debug-chip-false-border: rgba(220, 38, 38, 0.34);
+  --debug-chip-false-text: #b91c1c;
+}
+
+:root.dark {
+  --debug-chip-bg: rgba(59, 130, 246, 0.18);
+  --debug-chip-border: rgba(96, 165, 250, 0.34);
+  --debug-chip-text: #bfdbfe;
+
+  --debug-chip-true-bg: rgba(34, 197, 94, 0.18);
+  --debug-chip-true-border: rgba(74, 222, 128, 0.34);
+  --debug-chip-true-text: #dcfce7;
+
+  --debug-chip-false-bg: rgba(239, 68, 68, 0.18);
+  --debug-chip-false-border: rgba(248, 113, 113, 0.34);
+  --debug-chip-false-text: #fee2e2;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light):not(.dark) {
+    --debug-chip-bg: rgba(59, 130, 246, 0.18);
+    --debug-chip-border: rgba(96, 165, 250, 0.34);
+    --debug-chip-text: #bfdbfe;
+
+    --debug-chip-true-bg: rgba(34, 197, 94, 0.18);
+    --debug-chip-true-border: rgba(74, 222, 128, 0.34);
+    --debug-chip-true-text: #dcfce7;
+
+    --debug-chip-false-bg: rgba(239, 68, 68, 0.18);
+    --debug-chip-false-border: rgba(248, 113, 113, 0.34);
+    --debug-chip-false-text: #fee2e2;
+  }
+}
+
+.monaco-editor .inline-debug-value,
+.monaco-editor .inline-debug-value-true,
+.monaco-editor .inline-debug-value-false {
+  border-radius: 6px;
+  border: 1px solid transparent;
+  padding: 1px 7px;
+  font-size: 0.82em;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  vertical-align: middle;
+  box-shadow: 0 1px 1px rgb(15 23 42 / 0.08);
+}
+
+/* Default: numeric / string values */
+.monaco-editor .inline-debug-value {
+  color: var(--debug-chip-text) !important;
+  background: var(--debug-chip-bg);
+  border-color: var(--debug-chip-border);
+}
+
+/* BOOL TRUE */
+.monaco-editor .inline-debug-value-true {
+  color: var(--debug-chip-true-text) !important;
+  background: var(--debug-chip-true-bg);
+  border-color: var(--debug-chip-true-border);
+}
+
+/* BOOL FALSE */
+.monaco-editor .inline-debug-value-false {
+  color: var(--debug-chip-false-text) !important;
+  background: var(--debug-chip-false-bg);
+  border-color: var(--debug-chip-false-border);
+}
+
+/* =============================================================================
    Utility Classes
    ============================================================================= */
 

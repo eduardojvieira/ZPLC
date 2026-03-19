@@ -961,8 +961,7 @@ function emitAssignment(state: CodeGenState, stmt: Assignment): void {
 
         emit(state, `    ; ${stmt.target.name} := ...`);
         emitExpression(state, stmt.value);
-        const suffix = getLoadStoreSuffix(sym.dataType as DataTypeValue);
-        emit(state, `    STORE${suffix} ${formatAddress(sym.address)}`);
+        emitStore(state, sym);
     } else if (stmt.target.kind === 'MemberAccess') {
         emit(state, `    ; ${stringifyExpression(stmt.target)} := ...`);
         emitExpression(state, stmt.value);
@@ -1657,6 +1656,21 @@ function emitIdentifier(state: CodeGenState, expr: Identifier): void {
         return;
     }
 
+    // Bit-addressed BOOL (e.g. AT %QX0.1): extract the specific bit from the byte
+    // Stack result: [0 or 1] (the bit value as BOOL)
+    if (sym.dataType === 'BOOL' && sym.ioAddress &&
+        (sym.ioAddress.size === 'X' || sym.ioAddress.bitOffset !== undefined)) {
+        const bitPos = sym.ioAddress.bitOffset;
+        emit(state, `    LOAD8 ${formatAddress(sym.address)}   ; ${expr.name} (byte)`);
+        if (bitPos > 0) {
+            emit(state, `    PUSH8 ${bitPos}`);
+            emit(state, `    SHR                 ; extract bit ${bitPos}`);
+        }
+        emit(state, `    PUSH8 1`);
+        emit(state, `    AND                 ; mask to 0 or 1`);
+        return;
+    }
+
     const suffix = getLoadStoreSuffix(sym.dataType as DataTypeValue);
     emit(state, `    LOAD${suffix} ${formatAddress(sym.address)}   ; ${expr.name}`);
 }
@@ -1994,6 +2008,38 @@ function emitFunctionCall(state: CodeGenState, expr: FunctionCall): void {
 // ============================================================================
 
 function emitStore(state: CodeGenState, sym: Symbol): void {
+    // Bit-addressed BOOL (e.g. AT %QX0.0, AT %Q0.1): requires Read-Modify-Write.
+    // The symbol address points to the byte; ioAddress.bitOffset selects the bit within it.
+    // This handles ALL bit offsets (0..7) to avoid clobbering sibling bits in the same byte.
+    //
+    // Stack entry: [value]   (1 or 0)
+    // Sequence:
+    //   DUP                        ; [value, value]
+    //   PUSH8 bitPos               ; [value, value, bitPos]
+    //   SHL                        ; [value, shifted_value]   a=value << bitPos
+    //   LOAD8 addr                 ; [value, shifted_value, current_byte]
+    //   PUSH8 andMask              ; [value, shifted_value, current_byte, andMask]
+    //   AND                        ; [value, shifted_value, cleared_byte]
+    //   OR                         ; [value, new_byte]
+    //   STORE8 addr                ; [value]
+    //   DROP                       ; []
+    if (sym.dataType === 'BOOL' && sym.ioAddress &&
+        (sym.ioAddress.size === 'X' || sym.ioAddress.bitOffset !== undefined)) {
+        const bitPos = sym.ioAddress.bitOffset;
+        const andMask = (~(1 << bitPos)) & 0xFF;  // Clear the target bit
+        emit(state, `    ; RMW STORE BOOL bit ${bitPos} at ${formatAddress(sym.address)}`);
+        emit(state, `    DUP`);
+        emit(state, `    PUSH8 ${bitPos}`);
+        emit(state, `    SHL                 ; shift value into bit position`);
+        emit(state, `    LOAD8 ${formatAddress(sym.address)}`);
+        emit(state, `    PUSH8 ${andMask}`);
+        emit(state, `    AND                 ; clear target bit`);
+        emit(state, `    OR                  ; merge new bit into byte`);
+        emit(state, `    STORE8 ${formatAddress(sym.address)}`);
+        emit(state, `    DROP                ; consume original value`);
+        return;
+    }
+
     const suffix = getLoadStoreSuffix(sym.dataType as DataTypeValue);
     emit(state, `    STORE${suffix} ${formatAddress(sym.address)}`);
 }

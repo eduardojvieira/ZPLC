@@ -1651,6 +1651,10 @@ function js_persist_load(key,data,len) { try { const keyStr = UTF8ToString(key);
 function js_persist_delete(key) { try { const keyStr = UTF8ToString(key); const item = localStorage.getItem('zplc_' + keyStr); if (!item) return -4; localStorage.removeItem('zplc_' + keyStr); return 0; } catch (e) { console.error('Persist delete error:', e); return -1; } }
 
 // Imports from the Wasm binary.
+var _zplc_mem_get_region = Module['_zplc_mem_get_region'] = makeInvalidEarlyAccess('_zplc_mem_get_region');
+var _zplc_ipi_write8 = Module['_zplc_ipi_write8'] = makeInvalidEarlyAccess('_zplc_ipi_write8');
+var _zplc_ipi_read8 = Module['_zplc_ipi_read8'] = makeInvalidEarlyAccess('_zplc_ipi_read8');
+var _zplc_opi_read8 = Module['_zplc_opi_read8'] = makeInvalidEarlyAccess('_zplc_opi_read8');
 var _zplc_hal_tick = Module['_zplc_hal_tick'] = makeInvalidEarlyAccess('_zplc_hal_tick');
 var _zplc_core_init = Module['_zplc_core_init'] = makeInvalidEarlyAccess('_zplc_core_init');
 var _zplc_core_shutdown = Module['_zplc_core_shutdown'] = makeInvalidEarlyAccess('_zplc_core_shutdown');
@@ -1666,6 +1670,14 @@ var _zplc_core_get_error = Module['_zplc_core_get_error'] = makeInvalidEarlyAcce
 var _zplc_core_is_halted = Module['_zplc_core_is_halted'] = makeInvalidEarlyAccess('_zplc_core_is_halted');
 var _zplc_core_set_ipi = Module['_zplc_core_set_ipi'] = makeInvalidEarlyAccess('_zplc_core_set_ipi');
 var _zplc_core_get_opi = Module['_zplc_core_get_opi'] = makeInvalidEarlyAccess('_zplc_core_get_opi');
+var _zplc_core_get_default_vm = Module['_zplc_core_get_default_vm'] = makeInvalidEarlyAccess('_zplc_core_get_default_vm');
+var _zplc_vm_is_paused = Module['_zplc_vm_is_paused'] = makeInvalidEarlyAccess('_zplc_vm_is_paused');
+var _zplc_vm_resume = Module['_zplc_vm_resume'] = makeInvalidEarlyAccess('_zplc_vm_resume');
+var _zplc_vm_add_breakpoint = Module['_zplc_vm_add_breakpoint'] = makeInvalidEarlyAccess('_zplc_vm_add_breakpoint');
+var _zplc_vm_remove_breakpoint = Module['_zplc_vm_remove_breakpoint'] = makeInvalidEarlyAccess('_zplc_vm_remove_breakpoint');
+var _zplc_vm_clear_breakpoints = Module['_zplc_vm_clear_breakpoints'] = makeInvalidEarlyAccess('_zplc_vm_clear_breakpoints');
+var _zplc_vm_get_breakpoint_count = Module['_zplc_vm_get_breakpoint_count'] = makeInvalidEarlyAccess('_zplc_vm_get_breakpoint_count');
+var _zplc_vm_get_breakpoint = Module['_zplc_vm_get_breakpoint'] = makeInvalidEarlyAccess('_zplc_vm_get_breakpoint');
 var _zplc_hal_init = Module['_zplc_hal_init'] = makeInvalidEarlyAccess('_zplc_hal_init');
 var _zplc_hal_shutdown = Module['_zplc_hal_shutdown'] = makeInvalidEarlyAccess('_zplc_hal_shutdown');
 var _zplc_wasm_set_input = Module['_zplc_wasm_set_input'] = makeInvalidEarlyAccess('_zplc_wasm_set_input');
@@ -1686,6 +1698,10 @@ var __indirect_function_table = makeInvalidEarlyAccess('__indirect_function_tabl
 var wasmMemory = makeInvalidEarlyAccess('wasmMemory');
 
 function assignWasmExports(wasmExports) {
+  assert(typeof wasmExports['zplc_mem_get_region'] != 'undefined', 'missing Wasm export: zplc_mem_get_region');
+  assert(typeof wasmExports['zplc_ipi_write8'] != 'undefined', 'missing Wasm export: zplc_ipi_write8');
+  assert(typeof wasmExports['zplc_ipi_read8'] != 'undefined', 'missing Wasm export: zplc_ipi_read8');
+  assert(typeof wasmExports['zplc_opi_read8'] != 'undefined', 'missing Wasm export: zplc_opi_read8');
   assert(typeof wasmExports['zplc_hal_tick'] != 'undefined', 'missing Wasm export: zplc_hal_tick');
   assert(typeof wasmExports['zplc_core_init'] != 'undefined', 'missing Wasm export: zplc_core_init');
   assert(typeof wasmExports['zplc_core_shutdown'] != 'undefined', 'missing Wasm export: zplc_core_shutdown');
@@ -1701,6 +1717,14 @@ function assignWasmExports(wasmExports) {
   assert(typeof wasmExports['zplc_core_is_halted'] != 'undefined', 'missing Wasm export: zplc_core_is_halted');
   assert(typeof wasmExports['zplc_core_set_ipi'] != 'undefined', 'missing Wasm export: zplc_core_set_ipi');
   assert(typeof wasmExports['zplc_core_get_opi'] != 'undefined', 'missing Wasm export: zplc_core_get_opi');
+  assert(typeof wasmExports['zplc_core_get_default_vm'] != 'undefined', 'missing Wasm export: zplc_core_get_default_vm');
+  assert(typeof wasmExports['zplc_vm_is_paused'] != 'undefined', 'missing Wasm export: zplc_vm_is_paused');
+  assert(typeof wasmExports['zplc_vm_resume'] != 'undefined', 'missing Wasm export: zplc_vm_resume');
+  assert(typeof wasmExports['zplc_vm_add_breakpoint'] != 'undefined', 'missing Wasm export: zplc_vm_add_breakpoint');
+  assert(typeof wasmExports['zplc_vm_remove_breakpoint'] != 'undefined', 'missing Wasm export: zplc_vm_remove_breakpoint');
+  assert(typeof wasmExports['zplc_vm_clear_breakpoints'] != 'undefined', 'missing Wasm export: zplc_vm_clear_breakpoints');
+  assert(typeof wasmExports['zplc_vm_get_breakpoint_count'] != 'undefined', 'missing Wasm export: zplc_vm_get_breakpoint_count');
+  assert(typeof wasmExports['zplc_vm_get_breakpoint'] != 'undefined', 'missing Wasm export: zplc_vm_get_breakpoint');
   assert(typeof wasmExports['zplc_hal_init'] != 'undefined', 'missing Wasm export: zplc_hal_init');
   assert(typeof wasmExports['zplc_hal_shutdown'] != 'undefined', 'missing Wasm export: zplc_hal_shutdown');
   assert(typeof wasmExports['zplc_wasm_set_input'] != 'undefined', 'missing Wasm export: zplc_wasm_set_input');
@@ -1718,6 +1742,10 @@ function assignWasmExports(wasmExports) {
   assert(typeof wasmExports['emscripten_stack_get_current'] != 'undefined', 'missing Wasm export: emscripten_stack_get_current');
   assert(typeof wasmExports['memory'] != 'undefined', 'missing Wasm export: memory');
   assert(typeof wasmExports['__indirect_function_table'] != 'undefined', 'missing Wasm export: __indirect_function_table');
+  _zplc_mem_get_region = Module['_zplc_mem_get_region'] = createExportWrapper('zplc_mem_get_region', 1);
+  _zplc_ipi_write8 = Module['_zplc_ipi_write8'] = createExportWrapper('zplc_ipi_write8', 2);
+  _zplc_ipi_read8 = Module['_zplc_ipi_read8'] = createExportWrapper('zplc_ipi_read8', 1);
+  _zplc_opi_read8 = Module['_zplc_opi_read8'] = createExportWrapper('zplc_opi_read8', 1);
   _zplc_hal_tick = Module['_zplc_hal_tick'] = createExportWrapper('zplc_hal_tick', 0);
   _zplc_core_init = Module['_zplc_core_init'] = createExportWrapper('zplc_core_init', 0);
   _zplc_core_shutdown = Module['_zplc_core_shutdown'] = createExportWrapper('zplc_core_shutdown', 0);
@@ -1733,6 +1761,14 @@ function assignWasmExports(wasmExports) {
   _zplc_core_is_halted = Module['_zplc_core_is_halted'] = createExportWrapper('zplc_core_is_halted', 0);
   _zplc_core_set_ipi = Module['_zplc_core_set_ipi'] = createExportWrapper('zplc_core_set_ipi', 2);
   _zplc_core_get_opi = Module['_zplc_core_get_opi'] = createExportWrapper('zplc_core_get_opi', 1);
+  _zplc_core_get_default_vm = Module['_zplc_core_get_default_vm'] = createExportWrapper('zplc_core_get_default_vm', 0);
+  _zplc_vm_is_paused = Module['_zplc_vm_is_paused'] = createExportWrapper('zplc_vm_is_paused', 1);
+  _zplc_vm_resume = Module['_zplc_vm_resume'] = createExportWrapper('zplc_vm_resume', 1);
+  _zplc_vm_add_breakpoint = Module['_zplc_vm_add_breakpoint'] = createExportWrapper('zplc_vm_add_breakpoint', 2);
+  _zplc_vm_remove_breakpoint = Module['_zplc_vm_remove_breakpoint'] = createExportWrapper('zplc_vm_remove_breakpoint', 2);
+  _zplc_vm_clear_breakpoints = Module['_zplc_vm_clear_breakpoints'] = createExportWrapper('zplc_vm_clear_breakpoints', 1);
+  _zplc_vm_get_breakpoint_count = Module['_zplc_vm_get_breakpoint_count'] = createExportWrapper('zplc_vm_get_breakpoint_count', 1);
+  _zplc_vm_get_breakpoint = Module['_zplc_vm_get_breakpoint'] = createExportWrapper('zplc_vm_get_breakpoint', 2);
   _zplc_hal_init = Module['_zplc_hal_init'] = createExportWrapper('zplc_hal_init', 0);
   _zplc_hal_shutdown = Module['_zplc_hal_shutdown'] = createExportWrapper('zplc_hal_shutdown', 0);
   _zplc_wasm_set_input = Module['_zplc_wasm_set_input'] = createExportWrapper('zplc_wasm_set_input', 2);

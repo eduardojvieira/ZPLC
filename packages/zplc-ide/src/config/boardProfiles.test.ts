@@ -1,23 +1,28 @@
 import { describe, expect, test } from 'bun:test';
+import supportedBoardsManifest from '../../../../firmware/app/boards/supported-boards.v1.5.0.json';
 
 import {
+  BOARD_OPTIONS,
   getBoardNetworkType,
   normalizeNetworkConfigForBoard,
 } from './boardProfiles';
 
 describe('board network profile mapping', () => {
-  test('maps Wi-Fi boards correctly', () => {
+  test('maps manifest-declared network boards correctly', () => {
     expect(getBoardNetworkType('esp32s3_devkitc')).toBe('wifi');
-    expect(getBoardNetworkType('esp32_devkitc_wroom')).toBe('wifi');
-    expect(getBoardNetworkType('esp32_nodemcu')).toBe('wifi');
-    expect(getBoardNetworkType('rpi_pico_w')).toBe('wifi');
     expect(getBoardNetworkType('arduino_giga_r1')).toBe('wifi');
+    expect(getBoardNetworkType('stm32f746g_disco')).toBe('ethernet');
   });
 
-  test('maps Ethernet boards correctly', () => {
-    expect(getBoardNetworkType('stm32f746g_disco')).toBe('ethernet');
-    expect(getBoardNetworkType('nucleo_h743zi')).toBe('ethernet');
-    expect(getBoardNetworkType('arduino_opta')).toBe('ethernet');
+  test('keeps board options aligned with the supported-board manifest', () => {
+    const manifestBoardIds = (supportedBoardsManifest as Array<{ ide_id: string }>).map(
+      (entry) => entry.ide_id
+    );
+    const optionIds = BOARD_OPTIONS.map((option) => option.value).filter(
+      (value) => value && value !== 'custom'
+    );
+
+    expect(optionIds).toEqual(manifestBoardIds);
   });
 
   test('returns none for unknown or non-network boards', () => {

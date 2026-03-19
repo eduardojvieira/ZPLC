@@ -21,19 +21,21 @@ The system can be broadly divided into three main components:
 
 ### 1. The IDE
 
-The IDE is a web-based application built with React, TypeScript, and Vite. It provides the user interface for writing PLC programs, managing projects, and interacting with the target hardware.
+The IDE is the engineering surface for authoring, compiling, simulating, deploying, and
+debugging the claimed language paths.
 
-*   **Editor**: Utilizes Monaco Editor for a rich text editing experience (syntax highlighting, autocomplete) for Structured Text.
-*   **State Management**: Uses Zustand for managing application state.
-*   **Deployment**: Handles communicating with the target hardware via serial or network protocols to deploy compiled bytecode.
+- **Text editing**: Monaco-based workflows for `ST` and `IL`
+- **Visual editing**: model-driven paths for `LD`, `FBD`, and `SFC`
+- **Deployment/debugging**: shared workflow across simulation, desktop, and hardware paths
 
 ### 2. The Compiler
 
-The compiler takes source code written in IEC 61131-3 languages (currently focusing on Structured Text) and translates it into a binary format that the ZPLC runtime can execute.
+The compiler normalizes all claimed IEC language paths into the same bytecode/runtime
+contract.
 
-*   **Frontend**: Parses the source code into an Abstract Syntax Tree (AST).
-*   **Intermediate Representation (IR)**: All supported languages are converted into a common IR.
-*   **Backend**: Emits the `.zplc` bytecode.
+- **Frontend**: parses text or transpiled source into the compiler pipeline
+- **Normalization path**: `IL`, `LD`, `FBD`, and `SFC` converge to the canonical ST-like path
+- **Backend**: emits `.zplc` bytecode and related debug data
 
 ### 3. The Runtime (Core VM)
 
@@ -45,7 +47,7 @@ The runtime is the heart of ZPLC. It is a C99 interpreter designed to run on res
 
 ## Data Flow
 
-1.  **Authoring**: The user writes a Structured Text program in the IDE.
-2.  **Compilation**: The IDE invokes the compiler (often running as WebAssembly in the browser, or as a backend service). The output is a `.zplc` binary file.
-3.  **Deployment**: The IDE sends the `.zplc` file to the target device.
-4.  **Execution**: The ZPLC Runtime on the device loads the bytecode, schedules tasks based on their configured cycle times, and executes the instructions, interacting with physical I/O via the HAL.
+1. **Authoring**: The user works in text or visual language paths.
+2. **Compilation**: The IDE invokes the compiler and emits `.zplc`.
+3. **Simulation / Deployment**: The result is executed in WASM, POSIX, or embedded targets.
+4. **Debugging**: Watch, breakpoint, and force-value flows use the same execution contract.

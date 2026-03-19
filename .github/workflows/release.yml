@@ -97,6 +97,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
+      - name: Validate macOS build artifacts
+        working-directory: packages/zplc-ide
+        run: bun run smoke:desktop-builds macos
+
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -158,6 +162,11 @@ jobs:
           bun x electron-builder --win --${{ matrix.arch }} --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate Windows build artifacts
+        working-directory: packages/zplc-ide
+        shell: bash
+        run: bun run smoke:desktop-builds windows
 
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@v4
@@ -224,6 +233,10 @@ jobs:
           bun x electron-builder --linux --${{ matrix.arch }} --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate Linux build artifacts
+        working-directory: packages/zplc-ide
+        run: bun run smoke:desktop-builds linux
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@v4

@@ -9,18 +9,30 @@ tags: [languages, iec61131-3]
 
 # Lenguajes y Modelo de Programación
 
-ZPLC tiene como objetivo una fuerte alineación con el estándar IEC 61131-3 para controladores lógicos programables. El enfoque principal del IDE web moderno es el **Texto Estructurado (ST)**.
+ZPLC v1.5 reclama cobertura completa de autor, compilar, simular, desplegar y depurar para
+cinco rutas de lenguaje IEC 61131-3: `ST`, `IL`, `LD`, `FBD` y `SFC`.
 
 ## Alineación con IEC 61131-3
 
 El estándar define cinco lenguajes:
-1.  Texto Estructurado (ST) - *Actualmente el enfoque principal de ZPLC*
-2.  Lista de Instrucciones (IL)
-3.  Diagrama de Contactos (LD)
-4.  Diagrama de Bloques de Función (FBD)
-5.  Diagrama de Funciones Secuenciales (SFC)
+1. Texto Estructurado (ST)
+2. Lista de Instrucciones (IL)
+3. Diagrama de Contactos (LD)
+4. Diagrama de Bloques de Función (FBD)
+5. Diagrama de Funciones Secuenciales (SFC)
 
-Independientemente del lenguaje de entrada utilizado en el IDE, el compilador traduce la lógica a una Representación Intermedia (IR) común antes de emitir el bytecode `.zplc`.
+ZPLC usa una ruta canónica de compilación. `ST` es la base semántica. `IL`, `LD`, `FBD`
+y `SFC` se normalizan hacia el mismo contrato antes de producir bytecode `.zplc`.
+
+## Contrato de Workflow para los Lenguajes Reclamados
+
+Cada lenguaje reclamado en v1.5 debe cubrir:
+
+- autoría en el IDE
+- compilación exitosa a `.zplc`
+- soporte de simulación
+- soporte de despliegue
+- soporte de depuración
 
 ## Modelo de Bytecode
 

@@ -351,7 +351,7 @@ export function Sidebar() {
   // Handle collapsed sidebar
   if (isSidebarCollapsed) {
     return (
-      <div className="w-12 bg-[var(--color-surface-800)] border-r border-[var(--color-surface-600)] flex flex-col items-center py-2">
+      <div className="w-full h-full bg-[var(--color-surface-800)] border-r border-[var(--color-surface-600)] flex flex-col items-center py-2">
         <button
           onClick={toggleSidebar}
           className="p-2 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-200)]"
@@ -381,7 +381,7 @@ export function Sidebar() {
   };
 
   return (
-    <div className="w-64 bg-[var(--color-surface-800)] border-r border-[var(--color-surface-600)] flex flex-col">
+    <div className="w-full h-full bg-[var(--color-surface-800)] border-r border-[var(--color-surface-600)] flex flex-col">
       {/* Header */}
       <div className="h-10 flex items-center justify-between px-3 border-b border-[var(--color-surface-600)]">
         <span className="text-xs font-semibold uppercase text-[var(--color-surface-300)]">

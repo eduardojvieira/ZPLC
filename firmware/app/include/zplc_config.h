@@ -111,6 +111,15 @@ void zplc_config_set_dhcp(bool enabled);
 void zplc_config_get_ip(char *buf, size_t len);
 void zplc_config_set_ip(const char *ip);
 
+void zplc_config_get_wifi_ssid(char *buf, size_t len);
+void zplc_config_set_wifi_ssid(const char *ssid);
+
+void zplc_config_get_wifi_pass(char *buf, size_t len);
+void zplc_config_set_wifi_pass(const char *pass);
+
+uint8_t zplc_config_get_wifi_security(void);
+void zplc_config_set_wifi_security(uint8_t security);
+
 /* ============================================================================
  * Protocol Configuration
  * ============================================================================

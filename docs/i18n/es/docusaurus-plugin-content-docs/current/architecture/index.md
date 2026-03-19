@@ -21,19 +21,16 @@ El sistema se puede dividir a grandes rasgos en tres componentes principales:
 
 ### 1. El IDE
 
-El IDE es una aplicación web construida con React, TypeScript y Vite. Proporciona la interfaz de usuario para escribir programas de PLC, gestionar proyectos e interactuar con el hardware de destino.
-
-*   **Editor**: Utiliza Monaco Editor para una experiencia de edición de texto enriquecida (resaltado de sintaxis, autocompletado) para Texto Estructurado.
-*   **Gestión de Estado**: Usa Zustand para gestionar el estado de la aplicación.
-*   **Despliegue**: Maneja la comunicación con el hardware de destino a través de protocolos serie o de red para desplegar el bytecode compilado.
+El IDE cubre autoría, compilación, simulación, despliegue y depuración para las rutas de
+lenguaje reclamadas.
 
 ### 2. El Compilador
 
-El compilador toma el código fuente escrito en lenguajes IEC 61131-3 (actualmente centrándose en Texto Estructurado) y lo traduce a un formato binario que el runtime de ZPLC puede ejecutar.
+El compilador normaliza las rutas de lenguaje reclamadas hacia el mismo contrato de runtime.
 
-*   **Frontend**: Analiza el código fuente para crear un Árbol Sintáctico Abstracto (AST).
-*   **Representación Intermedia (IR)**: Todos los lenguajes soportados se convierten a un IR común.
-*   **Backend**: Emite el bytecode `.zplc`.
+- **Frontend**: analiza texto o fuente normalizada
+- **Ruta de normalización**: `IL`, `LD`, `FBD` y `SFC` convergen en la ruta canónica
+- **Backend**: emite bytecode `.zplc`
 
 ### 3. El Runtime (Core VM)
 

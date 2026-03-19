@@ -1,12 +1,13 @@
-# ST Compiler
+# Compiler Workflow
 
-The ZPLC Structured Text compiler transforms IEC 61131-3 ST source code into optimized bytecode for the ZPLC Virtual Machine. The compiler is written in TypeScript and runs entirely in the browser.
+The ZPLC compiler transforms the claimed IEC language paths into optimized `.zplc`
+bytecode for the runtime.
 
 ## Compilation Pipeline
 
 ```mermaid
 graph LR
-    A[ST Source] --> B[Lexer]
+    A[Language Source] --> B[Lexer / Transpiler]
     B --> C[Parser]
     C --> D[AST]
     D --> E[Semantic Analysis]
@@ -16,9 +17,14 @@ graph LR
     H --> I[.zplc Binary]
 ```
 
-### 1. Lexical Analysis (Lexer)
+### 1. Language Input
 
-The lexer tokenizes the ST source code into a stream of tokens:
+`ST` enters directly. `IL`, `LD`, `FBD`, and `SFC` first normalize into the canonical
+compiler path and then use the same backend contract.
+
+### 2. Lexical Analysis (Lexer)
+
+The lexer tokenizes canonical source into a stream of tokens:
 
 ```
 Input:  IF counter > 10 THEN motor := TRUE; END_IF;
@@ -27,7 +33,7 @@ Tokens: [IF] [IDENT:counter] [GT] [INT:10] [THEN]
         [IDENT:motor] [ASSIGN] [TRUE] [SEMI] [END_IF] [SEMI]
 ```
 
-### 2. Parsing
+### 3. Parsing
 
 The parser builds an Abstract Syntax Tree (AST) from the token stream using a recursive descent parser.
 
@@ -42,7 +48,7 @@ The parser builds an Abstract Syntax Tree (AST) from the token stream using a re
 - Function calls
 - Function block instantiation
 
-### 3. Semantic Analysis
+### 4. Semantic Analysis
 
 Type checking and scope resolution:
 
@@ -51,7 +57,7 @@ Type checking and scope resolution:
 - Resolve function block instance methods
 - Validate array bounds (when possible)
 
-### 4. IR Generation
+### 5. IR Generation
 
 The AST is lowered to an intermediate representation closer to the bytecode:
 
@@ -66,20 +72,23 @@ IR:  LOAD a
      STORE result
 ```
 
-### 5. Optimization
+### 6. Optimization
 
 Current optimizations:
 - **Constant folding**: `2 + 3` → `5`
 - **Dead code elimination**: Remove unreachable code
 - **Peephole optimization**: `PUSH 0; ADD` → (removed)
 
-### 6. Code Generation
+### 7. Code Generation
 
 The IR is serialized to ZPLC bytecode in the `.zplc` binary format.
 
 ---
 
-## Language Support
+## Release Language Support
+
+For v1.5, the compiler release claim is not “five separate backends.” It is one verified
+workflow contract across `ST`, `IL`, `LD`, `FBD`, and `SFC`.
 
 ### Data Types
 

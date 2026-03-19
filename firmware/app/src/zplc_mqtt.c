@@ -166,6 +166,7 @@ static struct mqtt_topic s_sub_topics[MQTT_SUB_MAX_TOPICS];
 static zplc_azure_c2d_cb_t s_c2d_callback;
 
 bool zplc_mqtt_is_connected(void) { return s_connected; }
+bool zplc_mqtt_is_subscribed(void) { return s_subscribed; }
 
 /**
  * Shared Sparkplug B payload workspace.

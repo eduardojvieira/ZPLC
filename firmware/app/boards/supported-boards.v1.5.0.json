@@ -1,0 +1,70 @@
+[
+  {
+    "board_id": "rpi-pico-rp2040",
+    "display_name": "Raspberry Pi Pico (RP2040)",
+    "ide_id": "rpi_pico",
+    "zephyr_board": "rpi_pico/rp2040",
+    "variant": "rp2040",
+    "support_assets": [
+      "firmware/app/boards/rpi_pico_rp2040.conf",
+      "firmware/app/boards/rpi_pico_rp2040.overlay"
+    ],
+    "build_command": "west build -b rpi_pico/rp2040 firmware/app --pristine",
+    "network_class": "serial-focused",
+    "network_interface": "none",
+    "validation_level": "cross-build",
+    "evidence_refs": [],
+    "docs_ref": "docs/docs/reference/index.md#supported-boards"
+  },
+  {
+    "board_id": "arduino-giga-r1-m7",
+    "display_name": "Arduino GIGA R1 (STM32H747 M7)",
+    "ide_id": "arduino_giga_r1",
+    "zephyr_board": "arduino_giga_r1/stm32h747xx/m7",
+    "variant": "stm32h747xx/m7",
+    "support_assets": [
+      "firmware/app/boards/arduino_giga_r1_stm32h747xx_m7.conf",
+      "firmware/app/boards/arduino_giga_r1_stm32h747xx_m7.overlay"
+    ],
+    "build_command": "west build -b arduino_giga_r1/stm32h747xx/m7 firmware/app --pristine",
+    "network_class": "network-capable",
+    "network_interface": "wifi",
+    "validation_level": "cross-build",
+    "evidence_refs": [],
+    "docs_ref": "docs/docs/reference/index.md#supported-boards"
+  },
+  {
+    "board_id": "esp32-s3-devkitc",
+    "display_name": "ESP32-S3 DevKitC",
+    "ide_id": "esp32s3_devkitc",
+    "zephyr_board": "esp32s3_devkitc/esp32s3/procpu",
+    "variant": "esp32s3/procpu",
+    "support_assets": [
+      "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
+      "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay"
+    ],
+    "build_command": "west build -b esp32s3_devkitc/esp32s3/procpu firmware/app --pristine",
+    "network_class": "network-capable",
+    "network_interface": "wifi",
+    "validation_level": "cross-build",
+    "evidence_refs": [],
+    "docs_ref": "docs/docs/reference/index.md#supported-boards"
+  },
+  {
+    "board_id": "stm32f746g-disco",
+    "display_name": "STM32F746G Discovery",
+    "ide_id": "stm32f746g_disco",
+    "zephyr_board": "stm32f746g_disco",
+    "variant": "stm32f746g",
+    "support_assets": [
+      "firmware/app/boards/stm32f746g_disco.conf",
+      "firmware/app/boards/stm32f746g_disco.overlay"
+    ],
+    "build_command": "west build -b stm32f746g_disco firmware/app --pristine",
+    "network_class": "network-capable",
+    "network_interface": "ethernet",
+    "validation_level": "cross-build",
+    "evidence_refs": [],
+    "docs_ref": "docs/docs/reference/index.md#supported-boards"
+  }
+]

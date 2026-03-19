@@ -28,6 +28,31 @@ describe('Communication FBs (Phase 1 & 2)', () => {
     expect(topic?.type).toBe(DataType.STRING);
   });
 
+  test('MQTT_SUBSCRIBE exposes the deterministic handshake contract', () => {
+    const fb = CommBlocks['MQTT_SUBSCRIBE'];
+    expect(fb).toBeDefined();
+    expect(fb.size).toBe(190);
+
+    const valid = fb.members.find(m => m.name === 'VALID');
+    expect(valid?.offset).toBe(9);
+    expect(valid?.type).toBe(DataType.BOOL);
+
+    const payload = fb.members.find(m => m.name === 'PAYLOAD');
+    expect(payload?.offset).toBe(97);
+    expect(payload?.type).toBe(DataType.STRING);
+  });
+
+  test('MB_WRITE_HREG preserves COUNT for multi-value contracts', () => {
+    const fb = CommBlocks['MB_WRITE_HREG'];
+    const count = fb.members.find(m => m.name === 'COUNT');
+    const value = fb.members.find(m => m.name === 'VALUE');
+
+    expect(count?.offset).toBe(13);
+    expect(count?.type).toBe(DataType.UINT);
+    expect(value?.offset).toBe(15);
+    expect(value?.type).toBe(DataType.UINT);
+  });
+
   test('generateCall emits correct OP_COMM_EXEC for MB_READ_HREG', () => {
     const fb = CommBlocks['MB_READ_HREG'];
     let emitted: string[] = [];

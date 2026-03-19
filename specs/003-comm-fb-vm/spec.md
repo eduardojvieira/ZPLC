@@ -2,7 +2,7 @@
 
 **Feature Branch**: `003-comm-fb-vm`
 **Created**: 2026-03-10
-**Status**: Draft
+**Status**: In Progress
 
 ---
 

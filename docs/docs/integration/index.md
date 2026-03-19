@@ -13,15 +13,10 @@ This section covers how to embed the ZPLC runtime into your hardware targets and
 
 ## Platform Support
 
-ZPLC is designed to be highly portable. It primarily targets Zephyr RTOS, which provides broad hardware support.
+ZPLC remains portable, but v1.5 support claims are intentionally narrower than “anything
+Zephyr can build.”
 
-Currently supported and tested targets include:
-
-*   **STM32H7 / M7 Core** (`arduino_giga_r1/stm32h747xx/m7`, `nucleo_h743zi`)
-*   **ESP32-S3** (`esp32s3_devkitc`)
-*   **Raspberry Pi Pico** (`rpi_pico`)
-*   **POSIX** (Linux/macOS for simulation and testing)
-*   **WASM** (Browser simulation)
+Use the supported-board manifest and reference pages for the actual v1.5 claim set.
 
 ## Embedding ZPLC
 
@@ -36,6 +31,19 @@ Integrating ZPLC into a custom Zephyr board involves:
 Once the runtime is embedded on a device, deploying logic is managed via the IDE:
 
 1.  **Serial Deployment**: For local development, the IDE can transfer compiled `.zplc` files directly over a serial connection.
-2.  **Network Deployment**: For remote devices (e.g., via ESP32 Wi-Fi), deployment can occur over TCP/IP (MQTT or a custom protocol, depending on your HAL implementation).
+2.  **Network Deployment**: For remote devices, deployment must match validated board and
+    runtime capabilities.
 
 *Note: For detailed HAL implementation guides, refer to the [Runtime Documentation](../runtime/index.md).*
+
+## Truth Rule for Integrators
+
+If a board, transport, or deployment path is not present in the release evidence and the
+supported-board list, treat it as out of scope for v1.5.
+
+## Protocol Configuration Expectations
+
+- use MQTT only on boards whose supported profile exposes a real network workflow;
+- use Modbus TCP only when the board profile and runtime support network transport;
+- use Modbus RTU only when the target board and firmware expose the required serial path;
+- keep protocol docs, project settings, and release evidence aligned.

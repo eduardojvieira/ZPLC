@@ -17,7 +17,7 @@ procpu_ext_iram_org = procpu_irom_org;
 procpu_ext_iram_len = 8388608;
 MEMORY
 {
-  FLASH (R): org = 0x0, len = 8388608 - 0x100
+  FLASH (R): org = 0x0, len = 16777216 - 0x100
   iram0_0_seg(RX): org = procpu_iram_org, len = procpu_iram_len
   dram0_0_seg(RW): org = procpu_dram_org, len = procpu_dram_len
   irom0_0_seg(RX): org = procpu_irom_org, len = procpu_irom_len
@@ -487,8 +487,18 @@ SECTIONS
   {
     . = ALIGN(4);
     __dram_noinit_start = ABSOLUTE(.);
-    *(.noinit)
-    *(.noinit.*)
+    *(EXCLUDE_FILE(
+      *libdrivers__wifi.a:*
+      *libsubsys__net__l2__ethernet.a:*
+      *libsubsys__net__lib__config.a:*
+      *libsubsys__net__ip.a:*
+      *libsubsys__net.a:* ) .noinit)
+    *(EXCLUDE_FILE(
+      *libdrivers__wifi.a:*
+      *libsubsys__net__l2__ethernet.a:*
+      *libsubsys__net__lib__config.a:*
+      *libsubsys__net__ip.a:*
+      *libsubsys__net.a:* ) .noinit.*)
     __dram_noinit_end = ABSOLUTE(.);
     . = ALIGN(4) ;
   } > dram0_0_seg
@@ -792,6 +802,11 @@ ztest : ALIGN_WITH_INPUT
   {
     _ext_ram_start = ABSOLUTE(.);
     _ext_ram_noinit_start = ABSOLUTE(.);
+    *libdrivers__wifi.a:(.noinit .noinit.*)
+    *libsubsys__net__l2__ethernet.a:(.noinit .noinit.*)
+    *libsubsys__net__lib__config.a:(.noinit .noinit.*)
+    *libsubsys__net__ip.a:(.noinit .noinit.*)
+    *libsubsys__net.a:(.noinit .noinit.*)
     . = ALIGN(16);
     *(.ext_ram_noinit.*)
     . = ALIGN(16);

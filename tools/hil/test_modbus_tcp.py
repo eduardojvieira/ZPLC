@@ -60,6 +60,12 @@ Tag entry (8 bytes):
 Modbus frame builder (raw TCP, no pymodbus):
   MBAP: TID(2) + PID(2=0) + LEN(2) + UID(1)
   PDU:  FC(1) + Data
+
+v1.5 release additions
+----------------------
+- The supported-board list comes from `firmware/app/boards/supported-boards.v1.5.0.json`.
+- Human HIL evidence must include one serial-focused board and one network-capable board.
+- Multi-register validation should cover COUNT > 1 for holding-register operations.
 """
 
 import argparse

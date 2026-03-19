@@ -43,12 +43,20 @@ export interface DebugVarInfo {
     region: MemoryRegion;
     /** Size in bytes */
     size: number;
+    /** Bit offset for bit-addressed BOOL variables */
+    bitOffset?: number;
     /** For STRING: max capacity */
     capacity?: number;
     /** Tags associated with the variable */
     tags?: Record<string, string | true>;
     /** For FB instances: child member information */
     children?: Record<string, DebugMemberInfo>;
+    /**
+     * Source line where this variable was declared (1-based).
+     * Used by the live editor overlay to map Monaco viewport lines → variable
+     * addresses for inline value annotations (CodeSys-style online monitoring).
+     */
+    declarationLine?: number;
 }
 
 /**
@@ -197,6 +205,7 @@ export function createDebugVarInfo(
     type: string,
     region: MemoryRegion,
     size: number,
+    bitOffset?: number,
     children?: Record<string, DebugMemberInfo>
 ): DebugVarInfo {
     return {
@@ -204,6 +213,7 @@ export function createDebugVarInfo(
         type: type as DebugDataType,
         region,
         size,
+        bitOffset,
         children,
     };
 }
@@ -271,6 +281,7 @@ export function findVariable(
                         type: member.type,
                         region: rootVar.region,
                         size: member.size,
+                        bitOffset: rootVar.bitOffset,
                     },
                     absoluteAddr: currentAddr,
                 };
@@ -355,7 +366,12 @@ function buildVarInfoFromSymbol(sym: Symbol, typeResolver?: TypeResolver): Debug
         region: getRegionFromAddress(sym.address),
         size: sym.size,
         tags: sym.tags,
+        declarationLine: sym.declarationLine,
     };
+
+    if (sym.ioAddress?.size === 'X') {
+        varInfo.bitOffset = sym.ioAddress.bitOffset;
+    }
     
     // Add FB member children if present
     if (sym.members && sym.members.size > 0) {

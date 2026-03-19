@@ -24,6 +24,23 @@ class LanguageTester(ZPLCTester):
         print(f"Running for {duration}s...")
         self.start_and_wait(duration=duration)
 
+    def compile_language_matrix(self, sources):
+        """Compile a canonical language suite and return per-language results."""
+        results = {}
+        for language, source_file in sources.items():
+            try:
+                bytecode = self.compile_st(source_file)
+                results[language] = {
+                    "success": bool(bytecode),
+                    "bytecode_size": len(bytecode),
+                }
+            except Exception as exc:  # pragma: no cover - HIL helper path
+                results[language] = {
+                    "success": False,
+                    "error": str(exc),
+                }
+        return results
+
     def start_running(self):
         """Starts the PLC runtime without blocking."""
         self.send("zplc hil mode off")
