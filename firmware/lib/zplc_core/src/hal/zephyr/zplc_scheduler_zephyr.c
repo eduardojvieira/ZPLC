@@ -142,23 +142,20 @@ static struct k_work_q high_workq;
  * Called at the beginning of each task cycle.
  */
 static void sync_inputs_to_ipi(void) {
-  uint8_t *ipi = zplc_mem_get_region(ZPLC_MEM_IPI_BASE);
   uint8_t value;
   uint16_t adc_val;
-
-  if (ipi == NULL) {
-    return;
-  }
 
   /* Read GPIO inputs (channels 4-7 are inputs) */
   /* Maps to IPI[0] bits 0-3 -> %IX0.0..%IX0.3 (or %I0..%I3) */
   for (int i = 0; i < ZPLC_DIO_CHANNEL_COUNT; i++) {
     if (zplc_hal_gpio_read(4 + i, &value) == ZPLC_HAL_OK) {
+      uint8_t current = zplc_ipi_read8(0);
       if (value) {
-        ipi[0] |= (1 << i);
+        current = (uint8_t)(current | (uint8_t)(1U << i));
       } else {
-        ipi[0] &= ~(1 << i);
+        current = (uint8_t)(current & (uint8_t)~(1U << i));
       }
+      (void)zplc_ipi_write8(0, current);
     }
   }
 
@@ -173,8 +170,7 @@ static void sync_inputs_to_ipi(void) {
       int offset = 8 + (ch * 2);
       /* Check bounds */
       if (offset + 1 < ZPLC_MEM_IPI_SIZE) {
-        ipi[offset] = (uint8_t)(adc_val & 0xFF);
-        ipi[offset + 1] = (uint8_t)((adc_val >> 8) & 0xFF);
+        (void)zplc_ipi_write16((uint16_t)offset, adc_val);
       }
     }
   }
@@ -212,28 +208,17 @@ static void sync_opi_to_outputs(void) {
  */
 static void update_system_registers(uint8_t task_id, uint32_t cycle_time_us,
                                     bool first_scan) {
-  uint8_t *ipi = zplc_mem_get_region(ZPLC_MEM_IPI_BASE);
   uint8_t flags = 0;
 
-  if (ipi == NULL) {
-    return;
-  }
-
   /* Write cycle time at offset 0x0FF0 (4 bytes, little-endian) */
-  ipi[0x0FF0] = (uint8_t)(cycle_time_us & 0xFF);
-  ipi[0x0FF1] = (uint8_t)((cycle_time_us >> 8) & 0xFF);
-  ipi[0x0FF2] = (uint8_t)((cycle_time_us >> 16) & 0xFF);
-  ipi[0x0FF3] = (uint8_t)((cycle_time_us >> 24) & 0xFF);
+  (void)zplc_ipi_write32(0x0FF0, cycle_time_us);
 
   /* Write uptime at offset 0x0FF4 (4 bytes, little-endian) */
   uint32_t uptime_ms = k_uptime_get_32();
-  ipi[0x0FF4] = (uint8_t)(uptime_ms & 0xFF);
-  ipi[0x0FF5] = (uint8_t)((uptime_ms >> 8) & 0xFF);
-  ipi[0x0FF6] = (uint8_t)((uptime_ms >> 16) & 0xFF);
-  ipi[0x0FF7] = (uint8_t)((uptime_ms >> 24) & 0xFF);
+  (void)zplc_ipi_write32(0x0FF4, uptime_ms);
 
   /* Write task ID at offset 0x0FF8 */
-  ipi[0x0FF8] = task_id;
+  (void)zplc_ipi_write8(0x0FF8, task_id);
 
   /* Build flags byte */
   if (first_scan) {
@@ -244,7 +229,7 @@ static void update_system_registers(uint8_t task_id, uint32_t cycle_time_us,
   }
 
   /* Write flags at offset 0x0FF9 */
-  ipi[0x0FF9] = flags;
+  (void)zplc_ipi_write8(0x0FF9, flags);
 }
 
 /* ============================================================================
@@ -254,6 +239,7 @@ static void update_system_registers(uint8_t task_id, uint32_t cycle_time_us,
 
 static void task_timer_handler(struct k_timer *timer);
 static void task_work_handler(struct k_work *work);
+static int execute_task_cycle(zplc_task_internal_t *t, bool single_step_mode);
 
 /* ============================================================================
  * Helper Functions
@@ -340,9 +326,6 @@ static void task_timer_handler(struct k_timer *timer) {
  */
 static void task_work_handler(struct k_work *work) {
   zplc_task_internal_t *t = find_task_by_work(work);
-  uint32_t start_tick, end_tick, exec_time;
-  int result;
-  bool first_scan;
 
   if (t == NULL || !t->registered) {
     return;
@@ -353,8 +336,21 @@ static void task_work_handler(struct k_work *work) {
     return;
   }
 
+  (void)execute_task_cycle(t, false);
+  t->work_pending = 0;
+}
+
+static int execute_task_cycle(zplc_task_internal_t *t, bool single_step_mode) {
+  uint32_t start_tick, end_tick, exec_time;
+  int result;
+  bool first_scan;
+  bool continue_from_current_pc;
+
   /* Check if this is the first scan */
   first_scan = (t->task.stats.cycle_count == 0);
+  continue_from_current_pc =
+      (!single_step_mode) && (t->vm.pc != t->vm.entry_point) &&
+      (t->vm.halted == 0U);
 
   /* Record start time */
   start_tick = k_uptime_get_32();
@@ -370,8 +366,14 @@ static void task_work_handler(struct k_work *work) {
   update_system_registers(t->task.config.id, t->task.stats.last_exec_time_us,
                           first_scan);
 
-  /* Execute one VM cycle */
-  result = zplc_vm_run_cycle(&t->vm);
+  /* Execute from the current PC when resuming from a breakpoint, otherwise run
+   * a fresh PLC scan cycle from the task entry point.
+   */
+  if (continue_from_current_pc) {
+    result = zplc_vm_run(&t->vm, 0);
+  } else {
+    result = zplc_vm_run_cycle(&t->vm);
+  }
 
   /* Sync outputs from OPI to GPIO after execution */
   sync_opi_to_outputs();
@@ -409,14 +411,31 @@ static void task_work_handler(struct k_work *work) {
   /* HIL Trace */
   hil_trace_task(t->task.config.id, start_tick, end_tick, exec_time, overrun);
 
+  if (result >= 0 && t->vm.error == ZPLC_VM_HALTED && !single_step_mode) {
+    zplc_vm_reset_cycle(&t->vm);
+    result = 0;
+  }
+
   /* Handle errors */
   if (result < 0) {
     t->task.state = ZPLC_TASK_STATE_ERROR;
     zplc_hal_log("[SCHED] Task %d error: %d\n", t->task.config.id, t->vm.error);
+    return result;
   }
 
-  /* Clear work pending flag */
-  t->work_pending = 0;
+  if (zplc_vm_is_paused(&t->vm)) {
+    t->task.state = ZPLC_TASK_STATE_PAUSED;
+    (void)zplc_sched_pause();
+    zplc_hal_log("[SCHED] Task %d paused at PC=%u\n", t->task.config.id,
+                 zplc_vm_get_pc(&t->vm));
+    return ZPLC_VM_PAUSED;
+  }
+
+  if (single_step_mode) {
+    t->task.state = ZPLC_TASK_STATE_PAUSED;
+  }
+
+  return result;
 }
 
 /* ============================================================================
@@ -821,6 +840,10 @@ int zplc_sched_pause(void) {
     }
 
     if (t->task.state == ZPLC_TASK_STATE_RUNNING) {
+      if (t->timer_running) {
+        k_timer_stop(&t->timer);
+        t->timer_running = 0;
+      }
       t->task.state = ZPLC_TASK_STATE_PAUSED;
     }
   }
@@ -844,12 +867,56 @@ int zplc_sched_resume(void) {
     }
 
     if (t->task.state == ZPLC_TASK_STATE_PAUSED) {
+      (void)zplc_vm_resume(&t->vm);
+
+      if (!t->timer_running) {
+        uint32_t interval_ms = t->task.config.interval_us / 1000;
+        if (interval_ms == 0U) {
+          interval_ms = 1U;
+        }
+        k_timer_start(&t->timer, K_MSEC(interval_ms), K_MSEC(interval_ms));
+        t->timer_running = 1;
+      }
+
       t->task.state = ZPLC_TASK_STATE_RUNNING;
     }
   }
 
   sched_state = ZPLC_SCHED_STATE_RUNNING;
 
+  return 0;
+}
+
+int zplc_sched_step(void) {
+  bool stepped = false;
+
+  if (sched_state != ZPLC_SCHED_STATE_PAUSED &&
+      sched_state != ZPLC_SCHED_STATE_IDLE) {
+    return -1;
+  }
+
+  for (int i = 0; i < CONFIG_ZPLC_MAX_TASKS; i++) {
+    zplc_task_internal_t *t = &tasks[i];
+
+    if (!t->registered) {
+      continue;
+    }
+
+    if (t->task.state != ZPLC_TASK_STATE_PAUSED &&
+        t->task.state != ZPLC_TASK_STATE_READY) {
+      continue;
+    }
+
+    t->task.state = ZPLC_TASK_STATE_RUNNING;
+    (void)execute_task_cycle(t, true);
+    stepped = true;
+  }
+
+  if (!stepped) {
+    return -2;
+  }
+
+  sched_state = ZPLC_SCHED_STATE_PAUSED;
   return 0;
 }
 

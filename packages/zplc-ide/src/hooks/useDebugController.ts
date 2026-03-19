@@ -20,8 +20,10 @@ import type {
   VMInfo,
   DebugAdapterEvents,
   WatchVariable,
+  WatchForceEntry,
+  WatchForceState,
 } from '../runtime/debugAdapter';
-import { valueToBytes } from '../runtime/debugAdapter';
+import { WATCH_FORCE_STATE, bytesToHex, valueToBytes } from '../runtime/debugAdapter';
 import { WASMAdapter } from '../runtime/wasmAdapter';
 import { connectionManager } from '../runtime/connectionManager';
 import type { DebugMap } from '../compiler';
@@ -30,6 +32,9 @@ import type { UploadTraceEvent } from '../runtime/uploadTrace';
 import {
   resolveExecutionLocation,
 } from './debugExecutionLocation';
+import { buildPolledDebugPaths } from './debugPollingPaths';
+import { debugLog } from '../utils/debugLog';
+import { deriveHardwareDebugState } from '../runtime/debugStatus';
 
 const DEVICE_LOG_FLUSH_MS = 100;
 
@@ -72,12 +77,23 @@ export interface DebugControllerActions {
   /** Reset VM */
   reset: () => Promise<void>;
   /** Force a value in IPI */
-  forceValue: (
+  setValue: (
     address: number,
     value: number | boolean | string,
     type: WatchVariable['type'],
     maxLength?: number
   ) => Promise<void>;
+  /** Enable or disable a runtime-owned forced value */
+  toggleForceValue: (
+    path: string,
+    address: number,
+    value: number | boolean | string,
+    type: WatchVariable['type'],
+    force: boolean,
+    maxLength?: number
+  ) => Promise<void>;
+  /** Clear all forced values before disconnecting */
+  clearAllForcedValues: () => Promise<void>;
   /** Set virtual input (WASM only) */
   setVirtualInput: (channel: number, value: number) => Promise<void>;
   /** Get virtual output (WASM only) */
@@ -107,10 +123,12 @@ export function useDebugController(): DebugController {
   const debugMode = useIDEStore((state) => state.debug.mode);
   const debugMap = useIDEStore((state) => state.debug.debugMap);
   const watchVariables = useIDEStore((state) => state.debug.watchVariables);
+  const breakpointMap = useIDEStore((state) => state.debug.breakpoints);
   const pollingInterval = useIDEStore((state) => state.debug.pollingInterval);
   const isPolling = useIDEStore((state) => state.debug.isPolling);
   const mpeekEnabled = useIDEStore((state) => state.debug.mpeekEnabled);
   const projectConfig = useIDEStore((state) => state.projectConfig);
+  const setControllerStatus = useIDEStore((state) => state.setControllerStatus);
 
   // Store actions
   const setDebugMode = useIDEStore((state) => state.setDebugMode);
@@ -122,6 +140,9 @@ export function useDebugController(): DebugController {
   const getAllBreakpointPCs = useIDEStore((state) => state.getAllBreakpointPCs);
   const addConsoleEntry = useIDEStore((state) => state.addConsoleEntry);
   const addConsoleEntries = useIDEStore((state) => state.addConsoleEntries);
+  const setForcedValue = useIDEStore((state) => state.setForcedValue);
+  const clearForcedValue = useIDEStore((state) => state.clearForcedValue);
+  const clearForcedValues = useIDEStore((state) => state.clearForcedValues);
 
   const flushDeviceLogs = useCallback(() => {
     if (deviceLogFlushTimerRef.current) {
@@ -168,6 +189,7 @@ export function useDebugController(): DebugController {
   // Keep adapter ref in sync
   adapterRef.current = adapter;
 
+
   // =========================================================================
   // Event Handlers
   // =========================================================================
@@ -189,6 +211,11 @@ export function useDebugController(): DebugController {
     },
     onBreakpointHit: (pc: number, line?: number) => {
       const resolved = resolveExecutionLocation(debugMap, pc, line);
+      debugLog('[Execution] Breakpoint hit resolved', {
+        pc,
+        requestedLine: line ?? null,
+        resolved,
+      });
       setCurrentExecution(resolved.pouName, resolved.line, resolved.pc);
 
       addConsoleEntry({
@@ -199,6 +226,7 @@ export function useDebugController(): DebugController {
     },
     onStepComplete: (pc: number) => {
       const resolved = resolveExecutionLocation(debugMap, pc);
+      debugLog('[Execution] Step complete resolved', { pc, resolved });
       setCurrentExecution(resolved.pouName, resolved.line, resolved.pc);
     },
     onGpioChange: (_channel: number, value: number) => {
@@ -210,6 +238,53 @@ export function useDebugController(): DebugController {
       enqueueDeviceLog(line);
     },
   }), [debugMap, enqueueDeviceLog, setCurrentExecution, addConsoleEntry, updateLiveValues]);
+
+  useEffect(() => {
+    if (!adapter) {
+      return;
+    }
+
+    adapter.setEventHandlers(createEventHandlers());
+    debugLog('[Execution] Refreshed adapter event handlers', {
+      adapterType: adapter.type,
+      hasDebugMap: Boolean(debugMap),
+      debugPouKeys: debugMap ? Object.keys(debugMap.pou) : [],
+    });
+  }, [adapter, createEventHandlers, debugMap]);
+
+  useEffect(() => {
+    if (debugMode !== 'hardware') {
+      return;
+    }
+
+    return connectionManager.onStatusUpdate((status) => {
+      setControllerStatus(status);
+      const derivedState = deriveHardwareDebugState(status);
+      setVmState(derivedState.vmState);
+
+      if (status.vm) {
+        debugLog('[Execution] Hardware status update', {
+          state: derivedState.vmState,
+          pc: status.vm.pc,
+          halted: derivedState.halted,
+          error: status.vm.error,
+        });
+        setVmInfo({
+          pc: status.vm.pc,
+          sp: status.vm.sp,
+          halted: derivedState.halted,
+          cycles: status.stats.cycles,
+          error: status.vm.error,
+        });
+
+        if (derivedState.vmState === 'paused') {
+          const resolved = resolveExecutionLocation(debugMap, status.vm.pc);
+          debugLog('[Execution] Paused status resolved', { pc: status.vm.pc, resolved });
+          setCurrentExecution(resolved.pouName, resolved.line, resolved.pc);
+        }
+      }
+    });
+  }, [debugMap, debugMode, setControllerStatus, setCurrentExecution]);
 
   useEffect(() => {
     return () => {
@@ -302,8 +377,16 @@ export function useDebugController(): DebugController {
   }, [createEventHandlers, setDebugMode, addConsoleEntry]);
 
   const disconnect = useCallback(async () => {
-    console.log('[DebugController] disconnect called, debugMode:', debugMode);
     try {
+      if (adapterRef.current) {
+        try {
+          await adapterRef.current.clearAllForcedValues();
+          clearForcedValues();
+        } catch (forceErr) {
+          console.warn('[DebugController] failed to clear forced values during disconnect:', forceErr);
+        }
+      }
+
       // For hardware mode, use connectionManager to disconnect
       // For simulation, disconnect the WASM adapter directly
       if (debugMode === 'hardware') {
@@ -333,11 +416,12 @@ export function useDebugController(): DebugController {
       setVmState('disconnected');
       setVmInfo(null);
       clearLiveValues();
+      clearForcedValues();
       setPolling(false);
       setCurrentExecution(null, null, null);
       setDebugMode('none');
     }
-  }, [debugMode, clearLiveValues, setPolling, setCurrentExecution, setDebugMode, addConsoleEntry]);
+  }, [debugMode, clearForcedValues, clearLiveValues, setPolling, setCurrentExecution, setDebugMode, addConsoleEntry]);
 
   // =========================================================================
   // Program Loading
@@ -436,8 +520,7 @@ export function useDebugController(): DebugController {
   const resume = useCallback(async () => {
     if (!adapterRef.current) return;
     await adapterRef.current.resume();
-    setCurrentExecution(null, null, null);
-  }, [setCurrentExecution]);
+  }, []);
 
   const step = useCallback(async () => {
     if (!adapterRef.current) return;
@@ -462,7 +545,7 @@ export function useDebugController(): DebugController {
   // Memory Access
   // =========================================================================
 
-  const forceValue = useCallback(
+  const setValue = useCallback(
     async (
       address: number,
       value: number | boolean | string,
@@ -471,10 +554,88 @@ export function useDebugController(): DebugController {
     ) => {
       if (!adapterRef.current) return;
       const bytes = valueToBytes(value, type, maxLength);
-      await adapterRef.current.pokeN(address, bytes);
+      await adapterRef.current.setValue(address, bytes);
     },
     []
   );
+
+  const buildForceEntry = useCallback((
+    path: string,
+    address: number,
+    type: WatchVariable['type'],
+    bytes: Uint8Array,
+    maxLength: number | undefined,
+    state: WatchForceState,
+  ): WatchForceEntry => ({
+    path,
+    address,
+    size: bytes.length,
+    type,
+    bytesHex: bytesToHex(bytes),
+    maxLength,
+    state,
+  }), []);
+
+  const toggleForceValue = useCallback(
+    async (
+      path: string,
+      address: number,
+      value: number | boolean | string,
+      type: WatchVariable['type'],
+      force: boolean,
+      maxLength?: number,
+    ) => {
+      if (!adapterRef.current) return;
+
+      if (force) {
+        const bytes = valueToBytes(value, type, maxLength);
+        await adapterRef.current.forceValue(address, bytes);
+        setForcedValue(buildForceEntry(path, address, type, bytes, maxLength, WATCH_FORCE_STATE.FORCED));
+        return;
+      }
+
+      await adapterRef.current.clearForcedValue(address);
+      clearForcedValue(path);
+    },
+    [buildForceEntry, clearForcedValue, setForcedValue],
+  );
+
+  const clearAllForcedValues = useCallback(async () => {
+    if (!adapterRef.current) return;
+    await adapterRef.current.clearAllForcedValues();
+    clearForcedValues();
+  }, [clearForcedValues]);
+
+  useEffect(() => {
+    const currentAdapter = adapterRef.current;
+    if (!currentAdapter || debugMode === 'none') {
+      return;
+    }
+
+    void currentAdapter.listForcedValues()
+      .then((entries) => {
+        clearForcedValues();
+
+        for (const entry of entries) {
+          const matchedPath = watchVariables.find((watchPath) => watchPath === entry.path)
+            ?? watchVariables.find((watchPath) => {
+              if (!debugMap) {
+                return false;
+              }
+              const found = findVariable(debugMap, watchPath);
+              return found?.absoluteAddr === entry.address;
+            });
+
+          setForcedValue({
+            ...entry,
+            path: matchedPath ?? entry.path,
+          });
+        }
+      })
+      .catch((err) => {
+        console.warn('[DebugController] failed to refresh forced values:', err);
+      });
+  }, [adapter, clearForcedValues, debugMap, debugMode, setForcedValue, watchVariables]);
 
   const setVirtualInput = useCallback(async (channel: number, value: number) => {
     if (!adapterRef.current) return;
@@ -491,9 +652,10 @@ export function useDebugController(): DebugController {
   // =========================================================================
 
   useEffect(() => {
-    // Poll whenever connected and running/paused — even if no explicit watch
-    // variables, because the inline editor overlay also reads from liveValues
-    // and relies on debugMap vars being polled automatically.
+    // Poll whenever connected and running/paused.
+    // Explicit watch-table variables are always polled.
+    // Extra debug-map variables for inline editor preview are only added when
+    // the Live button is enabled in hardware mode.
     const shouldPoll =
       adapter?.connected &&
       (vmState === 'running' || vmState === 'paused');
@@ -516,26 +678,13 @@ export function useDebugController(): DebugController {
 
         try {
           isPollingWatch = true;
-          // Build the set of variable paths to poll:
-          //   1. All explicitly added watch variables (shown in Watch panel)
-          //   2. All top-level vars from every POU in the debugMap so that
-          //      the inline editor overlay shows live values automatically
-          //      without requiring the user to add each variable manually.
-          //
-          // Cap at 64 vars to keep serial traffic reasonable on hardware.
-          const pathSet = new Set<string>(watchVariables);
-
-          // Always add all debugMap variables so the inline editor overlay shows live values
-          // regardless of the transport mode (peek vs mpeek).
-          // mpeekEnabled only controls the serial command used — not which vars are polled.
-          if (debugMap) {
-            outer: for (const [, pouInfo] of Object.entries(debugMap.pou)) {
-              for (const varName of Object.keys(pouInfo.vars)) {
-                if (pathSet.size >= 64) break outer;
-                pathSet.add(varName);
-              }
-            }
-          }
+          // Build the set of variable paths to poll.
+          // 1. Explicit watch-table variables are always included.
+          // 2. Inline editor preview variables are added only when the Live
+          //    button is enabled.
+          const pathSet = new Set<string>(
+            buildPolledDebugPaths(watchVariables, debugMap, mpeekEnabled, 64),
+          );
 
           // Helper: map a varPath to a WatchVariable descriptor
           type WatchType = 'BOOL' | 'INT' | 'DINT' | 'REAL' | 'BYTE' | 'WORD' | 'DWORD' | 'TIME' | 'STRING';
@@ -574,11 +723,11 @@ export function useDebugController(): DebugController {
             .filter((v): v is NonNullable<ReturnType<typeof toDescriptor>> => v !== null && v.address !== 0);
 
           if (variables.length === 0) {
-            console.log('[useDebugController] No variables to poll');
+            debugLog('[useDebugController] No variables to poll');
             return;
           }
 
-          console.log(`[useDebugController] Polling ${variables.length} variables. mpeekEnabled: ${mpeekEnabled}`);
+          debugLog(`[useDebugController] Polling ${variables.length} variables. mpeekEnabled: ${mpeekEnabled}`);
 
           const results = await adapterRef.current.readWatchVariables(variables, { useMpeek: mpeekEnabled });
 
@@ -590,10 +739,10 @@ export function useDebugController(): DebugController {
           }
 
           if (newValues.size > 0) {
-            console.log(`[useDebugController] Updating live values with ${newValues.size} items`, Array.from(newValues.entries()));
+            debugLog(`[useDebugController] Updating live values with ${newValues.size} items`, Array.from(newValues.entries()));
             updateLiveValues(newValues);
           } else {
-            console.log(`[useDebugController] readWatchVariables returned 0 new values! results:`, results);
+            debugLog(`[useDebugController] readWatchVariables returned 0 new values! results:`, results);
           }
         } catch (err) {
           console.error('Polling error:', err);
@@ -635,9 +784,19 @@ export function useDebugController(): DebugController {
       try {
         const pcs = getAllBreakpointPCs();
 
+        debugLog('[Breakpoint] Syncing to adapter', {
+          adapterType: adapter.type,
+          breakpointFiles: Array.from(breakpointMap.entries()).map(([fileId, lines]) => ({
+            fileId,
+            lines: Array.from(lines),
+          })),
+          pcs,
+        });
+
         // Clear existing and set new
         await adapter.clearBreakpoints();
         for (const pc of pcs) {
+          debugLog('[Breakpoint] Setting hardware breakpoint', { pc });
           await adapter.setBreakpoint(pc);
         }
       } catch (err) {
@@ -646,7 +805,7 @@ export function useDebugController(): DebugController {
     };
 
     syncBreakpoints();
-  }, [adapter, debugMap, getAllBreakpointPCs]);
+  }, [adapter, breakpointMap, debugMap, getAllBreakpointPCs]);
 
   // =========================================================================
   // Cleanup on Mode Change
@@ -695,7 +854,9 @@ export function useDebugController(): DebugController {
     resume,
     step,
     reset,
-    forceValue,
+    setValue,
+    toggleForceValue,
+    clearAllForcedValues,
     setVirtualInput,
     getVirtualOutput,
   };

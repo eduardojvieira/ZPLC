@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 
 import type { DebugMap } from '../compiler';
+import { WATCH_FORCE_STATE, type WatchForceEntry } from '../runtime/debugAdapter';
 import { buildDebugWatchRows } from './debugWatchRows';
 
 const DEBUG_MAP: DebugMap = {
@@ -41,18 +42,46 @@ const DEBUG_MAP: DebugMap = {
 
 describe('buildDebugWatchRows', () => {
   it('uses live values from the store for existing watch variables', () => {
-    const rows = buildDebugWatchRows(['Counter'], DEBUG_MAP, new Map([['Counter', 42]]), true);
+    const rows = buildDebugWatchRows(
+      ['Counter'],
+      DEBUG_MAP,
+      new Map([['Counter', 42]]),
+      new Map(),
+      true,
+    );
 
     expect(rows).toHaveLength(1);
     expect(rows[0]?.result.value).toBe(42);
     expect(rows[0]?.result.loading).toBe(false);
     expect(rows[0]?.result.address).toBe(0x2000);
+    expect(rows[0]?.result.forced).toBe(false);
   });
 
   it('shows loading only when polling and no live value exists yet', () => {
-    const rows = buildDebugWatchRows(['Counter'], DEBUG_MAP, new Map(), true);
+    const rows = buildDebugWatchRows(['Counter'], DEBUG_MAP, new Map(), new Map(), true);
 
     expect(rows[0]?.result.loading).toBe(true);
     expect(rows[0]?.result.value).toBeNull();
+  });
+
+  it('marks rows as forced when a force entry exists for the watch path', () => {
+    const forceEntry: WatchForceEntry = {
+      path: 'Counter',
+      address: 0x2000,
+      type: 'INT',
+      bytesHex: '2A00',
+      state: WATCH_FORCE_STATE.FORCED,
+    };
+
+    const rows = buildDebugWatchRows(
+      ['Counter'],
+      DEBUG_MAP,
+      new Map([['Counter', 42]]),
+      new Map([['Counter', forceEntry]]),
+      false,
+    );
+
+    expect(rows[0]?.result.forced).toBe(true);
+    expect(rows[0]?.result.forceEntry).toEqual(forceEntry);
   });
 });

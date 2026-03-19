@@ -71,6 +71,18 @@ static zplc_vm_t default_vm;
 /** @brief Flag indicating if default VM has a program loaded */
 static int default_program_loaded = 0;
 
+#define ZPLC_FORCE_MAX_ENTRIES 8U
+#define ZPLC_FORCE_MAX_BYTES 260U
+
+typedef struct {
+  uint8_t active;
+  uint16_t addr;
+  uint16_t size;
+  uint8_t bytes[ZPLC_FORCE_MAX_BYTES];
+} zplc_force_entry_t;
+
+static zplc_force_entry_t force_entries[ZPLC_FORCE_MAX_ENTRIES];
+
 /* ============================================================================
  * Internal Helper Macros
  * ============================================================================
@@ -191,6 +203,119 @@ static uint8_t *mem_ptr(uint16_t addr, uint8_t size, int writable) {
   return NULL;
 }
 
+static uint8_t *mem_ptr_raw(uint16_t addr, uint16_t size) {
+  if (addr < ZPLC_MEM_OPI_BASE) {
+    if ((uint32_t)addr + (uint32_t)size > (uint32_t)ZPLC_MEM_IPI_SIZE) {
+      return NULL;
+    }
+    return &mem_ipi[addr];
+  }
+
+  if (addr < ZPLC_MEM_WORK_BASE) {
+    uint16_t offset = addr - ZPLC_MEM_OPI_BASE;
+    if ((uint32_t)offset + (uint32_t)size > (uint32_t)ZPLC_MEM_OPI_SIZE) {
+      return NULL;
+    }
+    return &mem_opi[offset];
+  }
+
+  if (addr < ZPLC_MEM_RETAIN_BASE) {
+    uint16_t offset = addr - ZPLC_MEM_WORK_BASE;
+    if ((uint32_t)offset + (uint32_t)size > (uint32_t)ZPLC_MEM_WORK_SIZE) {
+      return NULL;
+    }
+    return &mem_work[offset];
+  }
+
+  if (addr < ZPLC_MEM_CODE_BASE) {
+    uint16_t offset = addr - ZPLC_MEM_RETAIN_BASE;
+    if ((uint32_t)offset + (uint32_t)size > (uint32_t)ZPLC_MEM_RETAIN_SIZE) {
+      return NULL;
+    }
+    return &mem_retain[offset];
+  }
+
+  return NULL;
+}
+
+static int force_entry_overlaps(const zplc_force_entry_t *entry, uint16_t addr,
+                                uint16_t size) {
+  uint32_t entry_start;
+  uint32_t entry_end;
+  uint32_t req_start;
+  uint32_t req_end;
+
+  if (entry == NULL || !entry->active || size == 0U) {
+    return 0;
+  }
+
+  entry_start = (uint32_t)entry->addr;
+  entry_end = entry_start + (uint32_t)entry->size;
+  req_start = (uint32_t)addr;
+  req_end = req_start + (uint32_t)size;
+
+  return req_start < entry_end && entry_start < req_end;
+}
+
+static int force_get_byte(uint16_t addr, uint8_t *value) {
+  for (uint8_t i = 0; i < ZPLC_FORCE_MAX_ENTRIES; i++) {
+    zplc_force_entry_t *entry = &force_entries[i];
+    if (!entry->active) {
+      continue;
+    }
+    if (addr >= entry->addr && addr < (uint16_t)(entry->addr + entry->size)) {
+      if (value != NULL) {
+        *value = entry->bytes[addr - entry->addr];
+      }
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
+static int raw_write_bytes(uint16_t addr, const uint8_t *bytes, uint16_t size) {
+  uint8_t *ptr;
+
+  if (bytes == NULL || size == 0U) {
+    return -1;
+  }
+
+  ptr = mem_ptr_raw(addr, size);
+  if (ptr == NULL) {
+    return -2;
+  }
+
+  memcpy(ptr, bytes, size);
+  return 0;
+}
+
+static void reapply_overlapping_forces(uint16_t addr, uint16_t size) {
+  for (uint8_t i = 0; i < ZPLC_FORCE_MAX_ENTRIES; i++) {
+    zplc_force_entry_t *entry = &force_entries[i];
+    if (!force_entry_overlaps(entry, addr, size)) {
+      continue;
+    }
+    (void)raw_write_bytes(entry->addr, entry->bytes, entry->size);
+  }
+}
+
+static int mem_write_bytes(uint16_t addr, const uint8_t *bytes, uint8_t size) {
+  uint8_t *ptr = mem_ptr(addr, size, 1);
+  if (ptr == NULL) {
+    return ZPLC_VM_OUT_OF_BOUNDS;
+  }
+
+  for (uint8_t i = 0; i < size; i++) {
+    if (force_get_byte((uint16_t)(addr + i), NULL)) {
+      continue;
+    }
+    ptr[i] = bytes[i];
+  }
+
+  return ZPLC_VM_OK;
+}
+
 /**
  * @brief Read an 8-bit value from memory.
  */
@@ -232,40 +357,29 @@ static int mem_read32(uint16_t addr, uint32_t *value) {
  * @brief Write an 8-bit value to memory.
  */
 static int mem_write8(uint16_t addr, uint8_t value) {
-  uint8_t *ptr = mem_ptr(addr, 1, 1);
-  if (ptr == NULL) {
-    return ZPLC_VM_OUT_OF_BOUNDS;
-  }
-  *ptr = value;
-  return ZPLC_VM_OK;
+  return mem_write_bytes(addr, &value, 1);
 }
 
 /**
  * @brief Write a 16-bit little-endian value to memory.
  */
 static int mem_write16(uint16_t addr, uint16_t value) {
-  uint8_t *ptr = mem_ptr(addr, 2, 1);
-  if (ptr == NULL) {
-    return ZPLC_VM_OUT_OF_BOUNDS;
-  }
-  ptr[0] = (uint8_t)(value & 0xFF);
-  ptr[1] = (uint8_t)((value >> 8) & 0xFF);
-  return ZPLC_VM_OK;
+  uint8_t bytes[2];
+  bytes[0] = (uint8_t)(value & 0xFF);
+  bytes[1] = (uint8_t)((value >> 8) & 0xFF);
+  return mem_write_bytes(addr, bytes, 2);
 }
 
 /**
  * @brief Write a 32-bit little-endian value to memory.
  */
 static int mem_write32(uint16_t addr, uint32_t value) {
-  uint8_t *ptr = mem_ptr(addr, 4, 1);
-  if (ptr == NULL) {
-    return ZPLC_VM_OUT_OF_BOUNDS;
-  }
-  ptr[0] = (uint8_t)(value & 0xFF);
-  ptr[1] = (uint8_t)((value >> 8) & 0xFF);
-  ptr[2] = (uint8_t)((value >> 16) & 0xFF);
-  ptr[3] = (uint8_t)((value >> 24) & 0xFF);
-  return ZPLC_VM_OK;
+  uint8_t bytes[4];
+  bytes[0] = (uint8_t)(value & 0xFF);
+  bytes[1] = (uint8_t)((value >> 8) & 0xFF);
+  bytes[2] = (uint8_t)((value >> 16) & 0xFF);
+  bytes[3] = (uint8_t)((value >> 24) & 0xFF);
+  return mem_write_bytes(addr, bytes, 4);
 }
 
 /**
@@ -287,19 +401,16 @@ static int mem_read64(uint16_t addr, uint32_t *low, uint32_t *high) {
  * @brief Write a 64-bit little-endian value to memory.
  */
 static int mem_write64(uint16_t addr, uint32_t low, uint32_t high) {
-  uint8_t *ptr = mem_ptr(addr, 8, 1);
-  if (ptr == NULL) {
-    return ZPLC_VM_OUT_OF_BOUNDS;
-  }
-  ptr[0] = (uint8_t)(low & 0xFF);
-  ptr[1] = (uint8_t)((low >> 8) & 0xFF);
-  ptr[2] = (uint8_t)((low >> 16) & 0xFF);
-  ptr[3] = (uint8_t)((low >> 24) & 0xFF);
-  ptr[4] = (uint8_t)(high & 0xFF);
-  ptr[5] = (uint8_t)((high >> 8) & 0xFF);
-  ptr[6] = (uint8_t)((high >> 16) & 0xFF);
-  ptr[7] = (uint8_t)((high >> 24) & 0xFF);
-  return ZPLC_VM_OK;
+  uint8_t bytes[8];
+  bytes[0] = (uint8_t)(low & 0xFF);
+  bytes[1] = (uint8_t)((low >> 8) & 0xFF);
+  bytes[2] = (uint8_t)((low >> 16) & 0xFF);
+  bytes[3] = (uint8_t)((low >> 24) & 0xFF);
+  bytes[4] = (uint8_t)(high & 0xFF);
+  bytes[5] = (uint8_t)((high >> 8) & 0xFF);
+  bytes[6] = (uint8_t)((high >> 16) & 0xFF);
+  bytes[7] = (uint8_t)((high >> 24) & 0xFF);
+  return mem_write_bytes(addr, bytes, 8);
 }
 
 /* ============================================================================
@@ -313,6 +424,7 @@ int zplc_mem_init(void) {
   memset(mem_work, 0, sizeof(mem_work));
   memset(mem_retain, 0, sizeof(mem_retain));
   memset(mem_code, 0, sizeof(mem_code));
+  memset(force_entries, 0, sizeof(force_entries));
   code_size = 0;
   return 0;
 }
@@ -364,31 +476,23 @@ uint32_t zplc_mem_get_code_size(void) { return code_size; }
  */
 
 int zplc_ipi_write32(uint16_t offset, uint32_t value) {
-  if (offset + 4 > ZPLC_MEM_IPI_SIZE) {
-    return -1;
-  }
-  mem_ipi[offset] = (uint8_t)(value & 0xFF);
-  mem_ipi[offset + 1] = (uint8_t)((value >> 8) & 0xFF);
-  mem_ipi[offset + 2] = (uint8_t)((value >> 16) & 0xFF);
-  mem_ipi[offset + 3] = (uint8_t)((value >> 24) & 0xFF);
-  return 0;
+  uint8_t bytes[4];
+  bytes[0] = (uint8_t)(value & 0xFF);
+  bytes[1] = (uint8_t)((value >> 8) & 0xFF);
+  bytes[2] = (uint8_t)((value >> 16) & 0xFF);
+  bytes[3] = (uint8_t)((value >> 24) & 0xFF);
+  return zplc_force_write_bytes(offset, bytes, 4);
 }
 
 int zplc_ipi_write16(uint16_t offset, uint16_t value) {
-  if (offset + 2 > ZPLC_MEM_IPI_SIZE) {
-    return -1;
-  }
-  mem_ipi[offset] = (uint8_t)(value & 0xFF);
-  mem_ipi[offset + 1] = (uint8_t)((value >> 8) & 0xFF);
-  return 0;
+  uint8_t bytes[2];
+  bytes[0] = (uint8_t)(value & 0xFF);
+  bytes[1] = (uint8_t)((value >> 8) & 0xFF);
+  return zplc_force_write_bytes(offset, bytes, 2);
 }
 
 int zplc_ipi_write8(uint16_t offset, uint8_t value) {
-  if (offset >= ZPLC_MEM_IPI_SIZE) {
-    return -1;
-  }
-  mem_ipi[offset] = value;
-  return 0;
+  return zplc_force_write_bytes(offset, &value, 1);
 }
 
 uint32_t zplc_ipi_read32(uint16_t offset) {
@@ -437,6 +541,104 @@ uint8_t zplc_opi_read8(uint16_t offset) {
   return mem_opi[offset];
 }
 
+int zplc_force_set_bytes(uint16_t addr, const uint8_t *bytes, uint16_t size) {
+  int free_index = -1;
+
+  if (bytes == NULL || size == 0U || size > ZPLC_FORCE_MAX_BYTES) {
+    return -1;
+  }
+
+  if (mem_ptr_raw(addr, size) == NULL) {
+    return -2;
+  }
+
+  for (uint8_t i = 0; i < ZPLC_FORCE_MAX_ENTRIES; i++) {
+    zplc_force_entry_t *entry = &force_entries[i];
+    if (entry->active && entry->addr == addr) {
+      entry->size = size;
+      memcpy(entry->bytes, bytes, size);
+      return raw_write_bytes(addr, bytes, size);
+    }
+    if (!entry->active && free_index < 0) {
+      free_index = (int)i;
+      continue;
+    }
+    if (force_entry_overlaps(entry, addr, size)) {
+      return -3;
+    }
+  }
+
+  if (free_index < 0) {
+    return -4;
+  }
+
+  force_entries[free_index].active = 1U;
+  force_entries[free_index].addr = addr;
+  force_entries[free_index].size = size;
+  memcpy(force_entries[free_index].bytes, bytes, size);
+  return raw_write_bytes(addr, bytes, size);
+}
+
+int zplc_force_clear(uint16_t addr) {
+  for (uint8_t i = 0; i < ZPLC_FORCE_MAX_ENTRIES; i++) {
+    if (force_entries[i].active && force_entries[i].addr == addr) {
+      memset(&force_entries[i], 0, sizeof(force_entries[i]));
+      return 0;
+    }
+  }
+  return -1;
+}
+
+void zplc_force_clear_all(void) { memset(force_entries, 0, sizeof(force_entries)); }
+
+uint8_t zplc_force_get_count(void) {
+  uint8_t count = 0;
+  for (uint8_t i = 0; i < ZPLC_FORCE_MAX_ENTRIES; i++) {
+    if (force_entries[i].active) {
+      count++;
+    }
+  }
+  return count;
+}
+
+int zplc_force_get(uint8_t index, uint16_t *addr, uint16_t *size,
+                   uint8_t *bytes) {
+  uint8_t current = 0;
+
+  for (uint8_t i = 0; i < ZPLC_FORCE_MAX_ENTRIES; i++) {
+    if (!force_entries[i].active) {
+      continue;
+    }
+    if (current == index) {
+      if (addr != NULL) {
+        *addr = force_entries[i].addr;
+      }
+      if (size != NULL) {
+        *size = force_entries[i].size;
+      }
+      if (bytes != NULL) {
+        memcpy(bytes, force_entries[i].bytes, force_entries[i].size);
+      }
+      return 0;
+    }
+    current++;
+  }
+
+  return -1;
+}
+
+int zplc_force_write_bytes(uint16_t addr, const uint8_t *bytes, uint16_t size) {
+  int rc;
+
+  rc = raw_write_bytes(addr, bytes, size);
+  if (rc != 0) {
+    return rc;
+  }
+
+  reapply_overlapping_forces(addr, size);
+  return 0;
+}
+
 /* ============================================================================
  * Thread-Safe Process Image Access
  * ============================================================================
@@ -474,6 +676,7 @@ int zplc_vm_init(zplc_vm_t *vm) {
   vm->error = ZPLC_VM_OK;
   vm->halted = 0;
   vm->paused = 0;
+  vm->resume_skip_breakpoint_once = 0;
   vm->breakpoint_count = 0;
   vm->code = mem_code;
   vm->code_size = code_size;
@@ -513,6 +716,7 @@ void zplc_vm_reset_cycle(zplc_vm_t *vm) {
   vm->call_depth = 0;
   vm->halted = 0;
   vm->paused = 0;
+  vm->resume_skip_breakpoint_once = 0;
   vm->error = ZPLC_VM_OK;
   /* Note: breakpoints are preserved across cycles */
 }
@@ -599,12 +803,16 @@ int zplc_vm_step(zplc_vm_t *vm) {
   }
 
   /* Check for breakpoints at current PC */
-  for (bp_idx = 0; bp_idx < vm->breakpoint_count; bp_idx++) {
-    if (vm->breakpoints[bp_idx] == vm->pc) {
-      vm->paused = 1;
-      vm->error = ZPLC_VM_PAUSED;
-      hil_trace_break(vm->pc);
-      return ZPLC_VM_PAUSED;
+  if (vm->resume_skip_breakpoint_once != 0U) {
+    vm->resume_skip_breakpoint_once = 0U;
+  } else {
+    for (bp_idx = 0; bp_idx < vm->breakpoint_count; bp_idx++) {
+      if (vm->breakpoints[bp_idx] == vm->pc) {
+        vm->paused = 1;
+        vm->error = ZPLC_VM_PAUSED;
+        hil_trace_break(vm->pc);
+        return ZPLC_VM_PAUSED;
+      }
     }
   }
 
@@ -2178,6 +2386,7 @@ int zplc_vm_resume(zplc_vm_t *vm) {
     return -1;
   }
   vm->paused = 0;
+  vm->resume_skip_breakpoint_once = 1U;
   vm->error = ZPLC_VM_OK;
   return 0;
 }

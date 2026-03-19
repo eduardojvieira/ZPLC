@@ -76,6 +76,24 @@ export interface WatchVariable {
   maxLength?: number;
 }
 
+export const WATCH_FORCE_STATE = {
+  IDLE: 'idle',
+  FORCED: 'forced',
+  PENDING: 'pending',
+} as const;
+
+export type WatchForceState = (typeof WATCH_FORCE_STATE)[keyof typeof WATCH_FORCE_STATE];
+
+export interface WatchForceEntry {
+  path: string;
+  address: number;
+  size?: number;
+  type: WatchVariable['type'];
+  bytesHex: string;
+  maxLength?: number;
+  state: WatchForceState;
+}
+
 /**
  * Event callbacks for debug adapter
  */
@@ -218,6 +236,31 @@ export interface IDebugAdapter {
    * @param bytes Raw bytes to write (in order, little-endian)
    */
   pokeN(address: number, bytes: Uint8Array): Promise<void>;
+
+  /**
+   * Write multiple bytes once without enabling runtime force semantics.
+   */
+  setValue(address: number, bytes: Uint8Array): Promise<void>;
+
+  /**
+   * Force multiple bytes in the runtime until explicitly cleared.
+   */
+  forceValue(address: number, bytes: Uint8Array): Promise<void>;
+
+  /**
+   * Clear a forced value by its starting address.
+   */
+  clearForcedValue(address: number): Promise<void>;
+
+  /**
+   * Clear all active forced values.
+   */
+  clearAllForcedValues(): Promise<void>;
+
+  /**
+   * List active force entries, if supported by the adapter/runtime.
+   */
+  listForcedValues(): Promise<WatchForceEntry[]>;
 
   /**
    * Get a single OPI byte value
@@ -436,6 +479,12 @@ export function valueToBytes(
   }
 
   return bytes;
+}
+
+export function bytesToHex(bytes: Uint8Array): string {
+  return Array.from(bytes)
+    .map((byte) => byte.toString(16).padStart(2, '0').toUpperCase())
+    .join('');
 }
 
 /**

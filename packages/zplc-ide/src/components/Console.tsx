@@ -265,7 +265,10 @@ export function Console({ debugController }: ConsoleProps) {
         )}
 
         {activeConsoleTab === 'watch' && (
-          <DebugWatchPanel forceValue={debugController?.forceValue} />
+          <DebugWatchPanel
+            setValue={debugController?.setValue}
+            toggleForceValue={debugController?.toggleForceValue}
+          />
         )}
       </div>
     </div>

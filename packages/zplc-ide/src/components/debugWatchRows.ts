@@ -1,5 +1,6 @@
 import { findVariable } from '../compiler';
 import type { DebugMap } from '../compiler';
+import type { WatchForceEntry } from '../runtime/debugAdapter';
 import type { LiveValue } from '../store/useIDEStore';
 
 export interface DebugWatchRowResult {
@@ -8,9 +9,12 @@ export interface DebugWatchRowResult {
   address: number | null;
   region: string | null;
   size: number | null;
+  maxLength?: number;
   loading: boolean;
   exists: boolean;
   error: string | null;
+  forced: boolean;
+  forceEntry: WatchForceEntry | null;
 }
 
 export interface DebugWatchRow {
@@ -22,6 +26,7 @@ export function buildDebugWatchRows(
   watchVariables: string[],
   debugMap: DebugMap | null,
   liveValues: Map<string, LiveValue>,
+  forcedValues: Map<string, WatchForceEntry>,
   isPolling: boolean,
 ): DebugWatchRow[] {
   return watchVariables.map((path) => {
@@ -37,6 +42,8 @@ export function buildDebugWatchRows(
           loading: false,
           exists: false,
           error: 'No variable path provided',
+          forced: false,
+          forceEntry: null,
         },
       };
     }
@@ -53,6 +60,8 @@ export function buildDebugWatchRows(
           loading: false,
           exists: false,
           error: 'No debug map available',
+          forced: false,
+          forceEntry: null,
         },
       };
     }
@@ -70,11 +79,16 @@ export function buildDebugWatchRows(
           loading: false,
           exists: false,
           error: `Variable "${path}" not found`,
+          forced: false,
+          forceEntry: null,
         },
       };
     }
 
     const liveValue = liveValues.get(path) ?? null;
+    const forceEntry = forcedValues.get(path)
+      ?? Array.from(forcedValues.values()).find((entry) => entry.address === variable.absoluteAddr)
+      ?? null;
 
     return {
       path,
@@ -84,9 +98,15 @@ export function buildDebugWatchRows(
         address: variable.absoluteAddr,
         region: variable.varInfo.region,
         size: variable.varInfo.size,
+        maxLength:
+          variable.varInfo.type === 'STRING' && variable.varInfo.size
+            ? Math.max(0, variable.varInfo.size - 3)
+            : undefined,
         loading: isPolling && liveValue === null,
         exists: true,
         error: null,
+        forced: forceEntry !== null,
+        forceEntry,
       },
     };
   });

@@ -15,13 +15,16 @@ import type {
   VMState,
   VMInfo,
   WatchVariable,
+  WatchForceEntry,
   DebugAdapterEvents,
   LoadProgramOptions,
   ReadWatchOptions,
 } from './debugAdapter';
 import {
+  bytesToHex,
   bytesToValue,
   getTypeSize,
+  WATCH_FORCE_STATE,
 } from './debugAdapter';
 
 import type { SerialConnection } from '../uploader/webserial';
@@ -40,6 +43,8 @@ import { consumeSerialConsoleChunk, flushSerialConsoleRemainder } from './serial
 import { buildProvisioningCommands } from './provisioningCommands';
 import { parsePeekBytes, groupVariablesForBatchPeek, extractVariableBytes, parseMpeekResponse, buildMpeekArgument } from './peekParser';
 import type { MpeekRequest } from './peekParser';
+import { debugLog } from '../utils/debugLog';
+import { deriveHardwareDebugState } from './debugStatus';
 
 /** Command timeout in milliseconds.
  * 10 s to accommodate firmware flash writes (NVS page erase can take ~1 s
@@ -166,7 +171,6 @@ export class SerialAdapter implements IDebugAdapter {
   private _state: VMState = 'disconnected';
   private events: DebugAdapterEvents = {};
   private pollingInterval: ReturnType<typeof setInterval> | null = null;
-  private lastPollCycles = 0;
   private _passthroughMode = false;
   private systemInfoCache: SystemInfo | null = null;
   private serialConsoleRemainder = '';
@@ -285,11 +289,18 @@ export class SerialAdapter implements IDebugAdapter {
 
     // Get initial state
     try {
-      const info = await this.getInfo();
-      if (info.cycles > 0 && !info.halted) {
-        this.setState('running');
-      } else {
-        this.setState('idle');
+      const status = await this.getStatus();
+      const derivedState = deriveHardwareDebugState(status);
+      this.setState(derivedState.vmState);
+
+      if (status.vm) {
+        this.events.onInfoUpdate?.({
+          pc: status.vm.pc,
+          sp: status.vm.sp,
+          halted: derivedState.halted,
+          cycles: status.stats.cycles,
+          error: status.vm.error,
+        });
       }
     } catch {
       this.setState('idle');
@@ -333,17 +344,23 @@ export class SerialAdapter implements IDebugAdapter {
       }
 
       try {
-        const info = await this.getInfo();
+        const status = await this.getStatus();
+        const derivedState = deriveHardwareDebugState(status);
+        const previousState = this._state;
+        const info: VMInfo = {
+          pc: status.vm?.pc ?? 0,
+          sp: status.vm?.sp ?? 0,
+          halted: derivedState.halted,
+          cycles: status.stats.cycles,
+          error: status.vm?.error ?? 0,
+        };
 
-        // Detect state changes based on cycle count changes
-        if (this._state === 'running' && info.cycles === this.lastPollCycles) {
-          // Cycles not advancing - might be paused or halted
-          if (info.halted) {
-            this.setState('paused');
-          }
+        this.setState(derivedState.vmState);
+
+        if (derivedState.vmState === 'paused' && previousState !== 'paused') {
+          this.events.onBreakpointHit?.(info.pc);
         }
 
-        this.lastPollCycles = info.cycles;
         this.events.onInfoUpdate?.(info);
       } catch {
         // Ignore polling errors
@@ -689,7 +706,8 @@ export class SerialAdapter implements IDebugAdapter {
       throw new Error(response);
     }
 
-    this.setState('paused');
+    const status = await this.getStatus();
+    this.setState(deriveHardwareDebugState(status).vmState);
   }
 
   async resume(): Promise<void> {
@@ -702,7 +720,8 @@ export class SerialAdapter implements IDebugAdapter {
       throw new Error(response);
     }
 
-    this.setState('running');
+    const status = await this.getStatus();
+    this.setState(deriveHardwareDebugState(status).vmState);
   }
 
   async step(): Promise<void> {
@@ -715,7 +734,13 @@ export class SerialAdapter implements IDebugAdapter {
       throw new Error(response);
     }
 
-    this.setState('paused');
+    const status = await this.getStatus();
+    const derivedState = deriveHardwareDebugState(status);
+    this.setState(derivedState.vmState);
+
+    if (status.vm) {
+      this.events.onStepComplete?.(status.vm.pc);
+    }
   }
 
   async reset(): Promise<void> {
@@ -792,7 +817,7 @@ export class SerialAdapter implements IDebugAdapter {
 
       // DEBUG: Log the lines if it's an mpeek command
       if (command.includes('mpeek') && lines.length > 0 && buffer !== lastBufferSnapshot) {
-        console.log('[mpeek-raw] Current lines:', lines);
+        debugLog('[mpeek-raw] Current lines:', lines);
       }
 
       const terminator = lines.find((line) => line.startsWith('OK:') || line.startsWith('ERROR:') || line.startsWith('WARN:'));
@@ -871,6 +896,64 @@ export class SerialAdapter implements IDebugAdapter {
     }
   }
 
+  async setValue(address: number, bytes: Uint8Array): Promise<void> {
+    await this.pokeN(address, bytes);
+  }
+
+  async forceValue(address: number, bytes: Uint8Array): Promise<void> {
+    if (!this._connected) {
+      throw new Error('Not connected');
+    }
+
+    const response = await this.sendDebugCommand(
+      `force set 0x${address.toString(16)} ${bytesToHex(bytes)}`,
+    );
+    if (response.startsWith('ERROR:')) {
+      throw new Error(response);
+    }
+  }
+
+  async clearForcedValue(address: number): Promise<void> {
+    if (!this._connected) {
+      throw new Error('Not connected');
+    }
+
+    const response = await this.sendDebugCommand(`force clear 0x${address.toString(16)}`);
+    if (response.startsWith('ERROR:')) {
+      throw new Error(response);
+    }
+  }
+
+  async clearAllForcedValues(): Promise<void> {
+    if (!this._connected) {
+      throw new Error('Not connected');
+    }
+
+    const response = await this.sendDebugCommand('force clear_all');
+    if (response.startsWith('ERROR:')) {
+      throw new Error(response);
+    }
+  }
+
+  async listForcedValues(): Promise<WatchForceEntry[]> {
+    if (!this._connected) {
+      throw new Error('Not connected');
+    }
+
+    const response = await this.sendJsonCommand('zplc dbg force list') as {
+      items?: Array<{ addr: number; size: number; bytes: string }>;
+    };
+
+    return (response.items ?? []).map((item) => ({
+      path: `0x${item.addr.toString(16).toUpperCase().padStart(4, '0')}`,
+      address: item.addr,
+      size: item.size,
+      type: item.size === 1 ? 'BYTE' : item.size === 2 ? 'WORD' : 'DWORD',
+      bytesHex: item.bytes,
+      state: WATCH_FORCE_STATE.FORCED,
+    }));
+  }
+
   async getOPI(offset: number): Promise<number> {
     // Use JSON status to get OPI values
     try {
@@ -898,14 +981,14 @@ export class SerialAdapter implements IDebugAdapter {
     }
 
     try {
-      // Try JSON format first
-      const result = await this.sendJsonCommand('zplc dbg info') as ExtendedVMInfo;
+      const status = await this.getStatus();
+      const derivedState = deriveHardwareDebugState(status);
       return {
-        pc: result.pc ?? 0,
-        sp: result.sp ?? 0,
-        halted: result.halted ?? (result.state !== 'RUNNING'),
-        cycles: result.cycles ?? 0,
-        error: result.error ?? 0,
+        pc: status.vm?.pc ?? 0,
+        sp: status.vm?.sp ?? 0,
+        halted: derivedState.halted,
+        cycles: status.stats.cycles ?? 0,
+        error: status.vm?.error ?? 0,
       };
     } catch {
       // Fallback to text parsing
@@ -1006,7 +1089,7 @@ export class SerialAdapter implements IDebugAdapter {
       const totalBytes = requests.reduce((sum, r) => sum + r.size, 0);
 
       if (requests.length <= MPEEK_MAX_ENTRIES && totalBytes <= MPEEK_MAX_BYTES) {
-        console.log(`[mpeek] Sending batch for ${requests.length} addresses, ${totalBytes} bytes`);
+        debugLog(`[mpeek] Sending batch for ${requests.length} addresses, ${totalBytes} bytes`);
         const addrMap = await this.mpeek(requests);
 
         return variables.map((v) => {
@@ -1016,7 +1099,7 @@ export class SerialAdapter implements IDebugAdapter {
              return v;
           }
           const value = bytesToValue(bytes, v.type, v.bitOffset);
-          console.log(`[mpeek map] var ${v.name} at ${v.address} -> bytes:`, bytes, `value:`, value);
+          debugLog(`[mpeek map] var ${v.name} at ${v.address} -> bytes:`, bytes, `value:`, value);
           return { ...v, value };
         });
       }
@@ -1146,6 +1229,23 @@ export class SerialAdapter implements IDebugAdapter {
    * Get list of currently set breakpoint addresses.
    */
   async getBreakpoints(): Promise<number[]> {
+    if (!this._connected) {
+      throw new Error('Not connected');
+    }
+
+    try {
+      const response = await this.sendJsonCommand('zplc dbg bp list') as {
+        bps?: number[];
+        ok?: boolean;
+      };
+
+      if (Array.isArray(response.bps)) {
+        this.breakpoints = new Set(response.bps);
+      }
+    } catch {
+      // Fall back to local cache only
+    }
+
     return Array.from(this.breakpoints);
   }
 

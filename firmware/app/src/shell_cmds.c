@@ -81,6 +81,7 @@ extern size_t program_received_size;
 extern uint8_t step_requested;
 
 #define CERT_STAGING_MAX_BYTES 4096U
+#define SHELL_FORCE_MAX_BYTES 260U
 
 static struct {
   bool active;
@@ -195,6 +196,23 @@ static const char *sched_state_name(zplc_sched_state_t state) {
   case ZPLC_SCHED_STATE_UNINIT:
   default:
     return "uninit";
+  }
+}
+
+static const char *task_state_name(zplc_task_state_t state) {
+  switch (state) {
+  case ZPLC_TASK_STATE_IDLE:
+    return "idle";
+  case ZPLC_TASK_STATE_READY:
+    return "ready";
+  case ZPLC_TASK_STATE_RUNNING:
+    return "running";
+  case ZPLC_TASK_STATE_PAUSED:
+    return "paused";
+  case ZPLC_TASK_STATE_ERROR:
+    return "error";
+  default:
+    return "unknown";
   }
 }
 #endif
@@ -516,6 +534,11 @@ static int cmd_dbg_bp_add(const struct shell *sh, size_t argc, char **argv);
 static int cmd_dbg_bp_remove(const struct shell *sh, size_t argc, char **argv);
 static int cmd_dbg_bp_clear(const struct shell *sh, size_t argc, char **argv);
 static int cmd_dbg_bp_list(const struct shell *sh, size_t argc, char **argv);
+static int cmd_dbg_force_set(const struct shell *sh, size_t argc, char **argv);
+static int cmd_dbg_force_clear(const struct shell *sh, size_t argc, char **argv);
+static int cmd_dbg_force_clear_all(const struct shell *sh, size_t argc,
+                                   char **argv);
+static int cmd_dbg_force_list(const struct shell *sh, size_t argc, char **argv);
 
 /* ADC Handlers */
 #ifdef CONFIG_ADC
@@ -562,9 +585,27 @@ static int cmd_sched_status(const struct shell *sh, size_t argc, char **argv) {
   zplc_sched_get_stats(&stats);
 
   if (json) {
+#ifdef CONFIG_ZPLC_SCHEDULER
+    zplc_vm_t *vm = NULL;
+    for (int i = 0; i < CONFIG_ZPLC_MAX_TASKS; i++) {
+      zplc_vm_t *candidate = zplc_sched_get_vm_ptr(i);
+      if (candidate == NULL) {
+        continue;
+      }
+
+      if (zplc_vm_is_paused(candidate)) {
+        vm = candidate;
+        break;
+      }
+
+      if (vm == NULL) {
+        vm = candidate;
+      }
+    }
+#endif
+
     JSON_OBJ_START(sh);
-    JSON_STR(sh, "state", state_name((zplc_state_t)zplc_sched_get_state()),
-             true);
+    JSON_STR(sh, "state", sched_state_name(zplc_sched_get_state()), true);
     JSON_UINT(sh, "uptime_ms", stats.uptime_ms, true);
     shell_fprintf(sh, SHELL_NORMAL, "\"stats\":");
     JSON_OBJ_START(sh);
@@ -572,14 +613,26 @@ static int cmd_sched_status(const struct shell *sh, size_t argc, char **argv) {
     JSON_UINT(sh, "overruns", stats.total_overruns, true);
     JSON_UINT(sh, "active_tasks", stats.active_tasks, false);
     JSON_OBJ_END(sh);
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+    if (vm != NULL) {
+      shell_fprintf(sh, SHELL_NORMAL, ",\"vm\":");
+      JSON_OBJ_START(sh);
+      JSON_UINT(sh, "pc", vm->pc, true);
+      JSON_UINT(sh, "sp", vm->sp, true);
+      JSON_BOOL(sh, "halted", zplc_vm_is_paused(vm) != 0, true);
+      JSON_INT(sh, "error", vm->error, false);
+      JSON_OBJ_END(sh);
+    }
+#endif
+
     JSON_OBJ_END(sh);
     JSON_NEWLINE(sh);
     return 0;
   }
 
   shell_print(sh, "Scheduler Status:");
-  shell_print(sh, "  State:      %s",
-              state_name((zplc_state_t)zplc_sched_get_state()));
+  shell_print(sh, "  State:      %s", sched_state_name(zplc_sched_get_state()));
   shell_print(sh, "  Uptime:     %u ms", stats.uptime_ms);
   shell_print(sh, "  Tasks:      %u active", stats.active_tasks);
   shell_print(sh, "  Tot Cycles: %u", stats.total_cycles);
@@ -603,7 +656,7 @@ static int cmd_sched_tasks(const struct shell *sh, size_t argc, char **argv) {
       shell_print(sh, " %2d | %4d | %6u us | %6u | %8u | %s", task.config.id,
                   task.config.priority, task.config.interval_us,
                   task.stats.cycle_count, task.stats.overrun_count,
-                  state_name((zplc_state_t)task.state));
+                  task_state_name(task.state));
     }
   }
 
@@ -1066,42 +1119,234 @@ static int cmd_dbg_poke(const struct shell *sh, size_t argc, char **argv) {
     return -EINVAL;
   }
 
-  /* Get memory region pointer */
-  uint8_t *base = NULL;
-  uint16_t offset = 0;
-  uint16_t region_size = 0;
+  uint8_t byte = (uint8_t)value;
+  int rc;
 
-  if (addr < ZPLC_MEM_OPI_BASE) {
-    base = zplc_mem_get_region(ZPLC_MEM_IPI_BASE);
-    offset = (uint16_t)addr;
-    region_size = ZPLC_MEM_IPI_SIZE;
-  } else if (addr < ZPLC_MEM_WORK_BASE) {
-    base = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
-    offset = (uint16_t)(addr - ZPLC_MEM_OPI_BASE);
-    region_size = ZPLC_MEM_OPI_SIZE;
-  } else if (addr < ZPLC_MEM_RETAIN_BASE) {
-    base = zplc_mem_get_region(ZPLC_MEM_WORK_BASE);
-    offset = (uint16_t)(addr - ZPLC_MEM_WORK_BASE);
-    region_size = ZPLC_MEM_WORK_SIZE;
-  } else {
-    base = zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE);
-    offset = (uint16_t)(addr - ZPLC_MEM_RETAIN_BASE);
-    region_size = ZPLC_MEM_RETAIN_SIZE;
+#ifdef CONFIG_ZPLC_SCHEDULER
+  if (zplc_sched_lock(5) != 0) {
+    shell_error(sh, "ERROR: Could not acquire scheduler lock");
+    return -EBUSY;
   }
+#endif
 
-  if (base == NULL) {
+  rc = zplc_force_write_bytes((uint16_t)addr, &byte, 1U);
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+  (void)zplc_sched_unlock();
+#endif
+
+  if (rc != 0) {
     shell_error(sh, "ERROR: Invalid memory address");
     return -EINVAL;
   }
 
-  if (offset >= region_size) {
-    shell_error(sh, "ERROR: Offset out of bounds (offset %u >= size %u)", offset,
-                region_size);
+  shell_print(sh, "OK: Wrote 0x%02X to 0x%04lX", (uint8_t)value, addr);
+
+  return 0;
+}
+
+static int cmd_dbg_force_set(const struct shell *sh, size_t argc, char **argv) {
+  char *endptr;
+  unsigned long addr;
+  int decoded;
+  int rc;
+  uint8_t bytes[SHELL_FORCE_MAX_BYTES];
+
+  if (argc != 3) {
+    shell_error(sh, "Usage: zplc dbg force set <addr> <hexbytes>");
     return -EINVAL;
   }
 
-  base[offset] = (uint8_t)value;
-  shell_print(sh, "OK: Wrote 0x%02X to 0x%04lX", (uint8_t)value, addr);
+  addr = strtoul(argv[1], &endptr, 0);
+  if (*endptr != '\0' || addr > UINT16_MAX) {
+    shell_error(sh, "ERROR: Invalid address");
+    return -EINVAL;
+  }
+
+  decoded = hex_decode(argv[2], bytes, sizeof(bytes));
+  if (decoded <= 0) {
+    shell_error(sh, "ERROR: Invalid hex payload");
+    return -EINVAL;
+  }
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+  if (zplc_sched_lock(5) != 0) {
+    shell_error(sh, "ERROR: Could not acquire scheduler lock");
+    return -EBUSY;
+  }
+#endif
+
+  rc = zplc_force_set_bytes((uint16_t)addr, bytes, (uint16_t)decoded);
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+  (void)zplc_sched_unlock();
+#endif
+
+  if (rc == -2) {
+    shell_error(sh, "ERROR: Address range out of bounds");
+    return rc;
+  }
+  if (rc == -3) {
+    shell_error(sh, "ERROR: Force range overlaps an existing force entry");
+    return rc;
+  }
+  if (rc == -4) {
+    shell_error(sh, "ERROR: Force table full");
+    return rc;
+  }
+  if (rc != 0) {
+    shell_error(sh, "ERROR: Failed to set force (%d)", rc);
+    return rc;
+  }
+
+  shell_print(sh, "OK: Forced %d byte(s) at 0x%04lX", decoded, addr);
+  return 0;
+}
+
+static int cmd_dbg_force_clear(const struct shell *sh, size_t argc, char **argv) {
+  char *endptr;
+  unsigned long addr;
+  int rc;
+
+  if (argc != 2) {
+    shell_error(sh, "Usage: zplc dbg force clear <addr>");
+    return -EINVAL;
+  }
+
+  addr = strtoul(argv[1], &endptr, 0);
+  if (*endptr != '\0' || addr > UINT16_MAX) {
+    shell_error(sh, "ERROR: Invalid address");
+    return -EINVAL;
+  }
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+  if (zplc_sched_lock(5) != 0) {
+    shell_error(sh, "ERROR: Could not acquire scheduler lock");
+    return -EBUSY;
+  }
+#endif
+
+  rc = zplc_force_clear((uint16_t)addr);
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+  (void)zplc_sched_unlock();
+#endif
+
+  if (rc != 0) {
+    shell_error(sh, "ERROR: Force entry not found at 0x%04lX", addr);
+    return rc;
+  }
+
+  shell_print(sh, "OK: Cleared force at 0x%04lX", addr);
+  return 0;
+}
+
+static int cmd_dbg_force_clear_all(const struct shell *sh, size_t argc,
+                                   char **argv) {
+  ARG_UNUSED(argc);
+  ARG_UNUSED(argv);
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+  if (zplc_sched_lock(5) != 0) {
+    shell_error(sh, "ERROR: Could not acquire scheduler lock");
+    return -EBUSY;
+  }
+#endif
+
+  zplc_force_clear_all();
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+  (void)zplc_sched_unlock();
+#endif
+
+  shell_print(sh, "OK: Cleared all force entries");
+  return 0;
+}
+
+static int cmd_dbg_force_list(const struct shell *sh, size_t argc, char **argv) {
+  bool json = (argc > 1 && strcmp(argv[1], "--json") == 0);
+  uint8_t count;
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+  if (zplc_sched_lock(5) != 0) {
+    shell_error(sh, "ERROR: Could not acquire scheduler lock");
+    return -EBUSY;
+  }
+#endif
+
+  count = zplc_force_get_count();
+
+  if (json) {
+    JSON_OBJ_START(sh);
+    JSON_UINT(sh, "count", count, true);
+    shell_fprintf(sh, SHELL_NORMAL, "\"items\":[");
+
+    for (uint8_t i = 0; i < count; i++) {
+      uint16_t addr = 0;
+      uint16_t size = 0;
+      uint8_t bytes[SHELL_FORCE_MAX_BYTES];
+      int rc = zplc_force_get(i, &addr, &size, bytes);
+
+      if (rc != 0) {
+        continue;
+      }
+
+      if (i > 0U) {
+        shell_fprintf(sh, SHELL_NORMAL, ",");
+      }
+
+      JSON_OBJ_START(sh);
+      JSON_UINT(sh, "addr", addr, true);
+      JSON_UINT(sh, "size", size, true);
+      JSON_KEY(sh, "bytes");
+      shell_fprintf(sh, SHELL_NORMAL, "\"");
+      for (uint16_t j = 0; j < size; j++) {
+        shell_fprintf(sh, SHELL_NORMAL, "%02X", bytes[j]);
+      }
+      shell_fprintf(sh, SHELL_NORMAL, "\"");
+      JSON_OBJ_END(sh);
+    }
+
+    shell_fprintf(sh, SHELL_NORMAL, "]");
+    JSON_OBJ_END(sh);
+    JSON_NEWLINE(sh);
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+    (void)zplc_sched_unlock();
+#endif
+    return 0;
+  }
+
+  if (count == 0U) {
+#ifdef CONFIG_ZPLC_SCHEDULER
+    (void)zplc_sched_unlock();
+#endif
+    shell_print(sh, "No active force entries");
+    return 0;
+  }
+
+  shell_print(sh, "Active force entries: %u", count);
+  for (uint8_t i = 0; i < count; i++) {
+    uint16_t addr = 0;
+    uint16_t size = 0;
+    uint8_t bytes[SHELL_FORCE_MAX_BYTES];
+    int rc = zplc_force_get(i, &addr, &size, bytes);
+
+    if (rc != 0) {
+      continue;
+    }
+
+    shell_fprintf(sh, SHELL_NORMAL, "  [%u] 0x%04X (%u byte%s): ", i, addr,
+                  size, (size == 1U) ? "" : "s");
+    for (uint16_t j = 0; j < size; j++) {
+      shell_fprintf(sh, SHELL_NORMAL, "%02X", bytes[j]);
+    }
+    shell_fprintf(sh, SHELL_NORMAL, "\n");
+  }
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+  (void)zplc_sched_unlock();
+#endif
 
   return 0;
 }
@@ -1207,25 +1452,52 @@ static int cmd_dbg_mem(const struct shell *sh, size_t argc, char **argv) {
   return 0;
 }
 
-/* Stub commands for scheduler mode (pause/resume/step not applicable) */
 static int cmd_dbg_pause(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
-  shell_warn(sh, "WARN: Pause not supported in scheduler mode (use task-level control)");
+
+  const int rc = zplc_sched_pause();
+  if (rc < 0) {
+    shell_warn(sh, "WARN: Not running (state=%s)",
+               sched_state_name(zplc_sched_get_state()));
+    return 0;
+  }
+
+  shell_print(sh, "OK: Scheduler paused");
   return 0;
 }
 
 static int cmd_dbg_resume(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
-  shell_warn(sh, "WARN: Resume not supported in scheduler mode");
+
+  const int rc = zplc_sched_resume();
+  if (rc < 0) {
+    shell_warn(sh, "WARN: Not paused (state=%s)",
+               sched_state_name(zplc_sched_get_state()));
+    return 0;
+  }
+
+  shell_print(sh, "OK: Scheduler resumed");
   return 0;
 }
 
 static int cmd_dbg_step(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
-  shell_warn(sh, "WARN: Step not supported in scheduler mode");
+
+  const int rc = zplc_sched_step();
+  if (rc == -1) {
+    shell_error(sh, "ERROR: Cannot step (state=%s)",
+                sched_state_name(zplc_sched_get_state()));
+    return rc;
+  }
+  if (rc == -2) {
+    shell_warn(sh, "WARN: No paused or ready tasks to step");
+    return 0;
+  }
+
+  shell_print(sh, "OK: Scheduler step complete");
   return 0;
 }
 
@@ -1572,22 +1844,61 @@ static int cmd_dbg_info(const struct shell *sh, size_t argc, char **argv) {
   bool json = (argc > 1 && strcmp(argv[1], "--json") == 0);
 #ifdef CONFIG_ZPLC_SCHEDULER
   zplc_sched_stats_t stats;
+  zplc_vm_t *vm = NULL;
+  int paused_task_id = -1;
   zplc_sched_get_stats(&stats);
+
+  for (int i = 0; i < CONFIG_ZPLC_MAX_TASKS; i++) {
+    zplc_vm_t *candidate = zplc_sched_get_vm_ptr(i);
+    if (candidate == NULL) {
+      continue;
+    }
+
+    if (zplc_vm_is_paused(candidate)) {
+      vm = candidate;
+      paused_task_id = i;
+      break;
+    }
+
+    if (vm == NULL) {
+      vm = candidate;
+      paused_task_id = i;
+    }
+  }
+
   if (json) {
     JSON_OBJ_START(sh);
-    JSON_STR(sh, "state", state_name((zplc_state_t)zplc_sched_get_state()), true);
+    JSON_STR(sh, "state", sched_state_name(zplc_sched_get_state()), true);
     JSON_UINT(sh, "uptime_ms", stats.uptime_ms, true);
     JSON_UINT(sh, "cycles", stats.total_cycles, true);
-    JSON_INT(sh, "active_tasks", stats.active_tasks, false);
+    JSON_INT(sh, "active_tasks", stats.active_tasks, true);
+    if (vm != NULL) {
+      JSON_UINT(sh, "pc", vm->pc, true);
+      JSON_UINT(sh, "sp", vm->sp, true);
+      JSON_BOOL(sh, "halted", zplc_vm_is_paused(vm) != 0, true);
+      JSON_INT(sh, "error", vm->error, true);
+      JSON_INT(sh, "task_id", paused_task_id, false);
+    } else {
+      JSON_UINT(sh, "pc", 0, true);
+      JSON_UINT(sh, "sp", 0, true);
+      JSON_BOOL(sh, "halted", false, true);
+      JSON_INT(sh, "error", 0, true);
+      JSON_INT(sh, "task_id", -1, false);
+    }
     JSON_OBJ_END(sh);
     JSON_NEWLINE(sh);
     return 0;
   }
   shell_print(sh, "VM Info (Scheduler Mode):");
-  shell_print(sh, "  State:  %s", state_name((zplc_state_t)zplc_sched_get_state()));
+  shell_print(sh, "  State:  %s", sched_state_name(zplc_sched_get_state()));
   shell_print(sh, "  Uptime: %u ms", stats.uptime_ms);
   shell_print(sh, "  Cycles: %u", stats.total_cycles);
   shell_print(sh, "  Tasks:  %u", stats.active_tasks);
+  if (vm != NULL) {
+    shell_print(sh, "  VM:     PC=%04X, SP=%d, Halted=%s, Error=%d, Task=%d",
+                vm->pc, vm->sp, (zplc_vm_is_paused(vm) != 0) ? "YES" : "NO",
+                vm->error, paused_task_id);
+  }
 #else
   zplc_vm_t *vm = zplc_core_get_default_vm();
   if (json) {
@@ -1633,7 +1944,7 @@ static int cmd_dbg_task(const struct shell *sh, size_t argc, char **argv) {
   if (json) {
     JSON_OBJ_START(sh);
     JSON_INT(sh, "id", task.config.id, true);
-    JSON_STR(sh, "state", state_name((zplc_state_t)task.state), true);
+    JSON_STR(sh, "state", task_state_name(task.state), true);
     JSON_UINT(sh, "cycles", task.stats.cycle_count, true);
     JSON_UINT(sh, "overruns", task.stats.overrun_count, true);
     JSON_UINT(sh, "interval", task.config.interval_us, false);
@@ -1642,7 +1953,7 @@ static int cmd_dbg_task(const struct shell *sh, size_t argc, char **argv) {
     return 0;
   }
   shell_print(sh, "Task %d Info:", id);
-  shell_print(sh, "  State:    %s", state_name((zplc_state_t)task.state));
+  shell_print(sh, "  State:    %s", task_state_name(task.state));
   shell_print(sh, "  Interval: %u us", task.config.interval_us);
   shell_print(sh, "  Cycles:   %u", task.stats.cycle_count);
   shell_print(sh, "  Overruns: %u", task.stats.overrun_count);
@@ -2832,11 +3143,20 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
     SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
+    sub_dbg_force,
+    SHELL_CMD_ARG(set, NULL, "Set force bytes: dbg force set <addr> <hexbytes>", cmd_dbg_force_set, 3, 0),
+    SHELL_CMD_ARG(clear, NULL, "Clear force entry: dbg force clear <addr>", cmd_dbg_force_clear, 2, 0),
+    SHELL_CMD(clear_all, NULL, "Clear all force entries", cmd_dbg_force_clear_all),
+    SHELL_CMD_ARG(list, NULL, "List force entries", cmd_dbg_force_list, 1, 1),
+    SHELL_SUBCMD_SET_END);
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_dbg, 
     SHELL_CMD(pause, NULL, "Pause VM execution", cmd_dbg_pause),
     SHELL_CMD(resume, NULL, "Resume VM execution", cmd_dbg_resume),
     SHELL_CMD(step, NULL, "Execute one cycle", cmd_dbg_step),
     SHELL_CMD(bp, &sub_dbg_bp, "Breakpoint management", NULL),
+    SHELL_CMD(force, &sub_dbg_force, "Force value management", NULL),
     SHELL_CMD_ARG(peek, NULL, "Read memory", cmd_dbg_peek, 2, 1),
     SHELL_CMD_ARG(mpeek, NULL, "Multi-read: mpeek addr:len[,addr:len...]", cmd_dbg_mpeek, 2, 0),
     SHELL_CMD_ARG(poke, NULL, "Write memory", cmd_dbg_poke, 3, 0),

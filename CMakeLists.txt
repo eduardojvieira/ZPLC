@@ -58,6 +58,7 @@ if(EMSCRIPTEN OR WASM_BUILD)
 
     add_executable(zplc_sim
         ${ZPLC_CORE_DIR}/src/core/zplc_core.c
+        ${ZPLC_CORE_DIR}/src/core/zplc_comm_dispatch.c
         ${ZPLC_CORE_DIR}/src/hal/wasm/zplc_hal_wasm.c
     )
 
@@ -91,6 +92,18 @@ if(EMSCRIPTEN OR WASM_BUILD)
                 \"_zplc_hal_tick\", \
                 \"_zplc_wasm_set_input\", \
                 \"_zplc_wasm_get_output\", \
+                \"_zplc_ipi_read8\", \
+                \"_zplc_opi_read8\", \
+                \"_zplc_ipi_write8\", \
+                \"_zplc_mem_get_region\", \
+                \"_zplc_core_get_default_vm\", \
+                \"_zplc_vm_add_breakpoint\", \
+                \"_zplc_vm_remove_breakpoint\", \
+                \"_zplc_vm_clear_breakpoints\", \
+                \"_zplc_vm_is_paused\", \
+                \"_zplc_vm_resume\", \
+                \"_zplc_vm_get_breakpoint_count\", \
+                \"_zplc_vm_get_breakpoint\", \
                 \"_malloc\", \
                 \"_free\" \
             ]' \

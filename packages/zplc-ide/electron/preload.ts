@@ -46,6 +46,3 @@ declare global {
     };
   }
 }
-
-console.log('[Preload] ZPLC IDE preload script loaded');
-console.log('[Preload] Platform:', process.platform);

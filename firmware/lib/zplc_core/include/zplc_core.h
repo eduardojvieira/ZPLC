@@ -59,6 +59,7 @@ typedef struct {
     
     /* Debugger state */
     uint8_t paused;                           /**< Paused at breakpoint */
+    uint8_t resume_skip_breakpoint_once;      /**< Skip one breakpoint check after resume */
     uint8_t breakpoint_count;                 /**< Number of active breakpoints */
     uint16_t breakpoints[ZPLC_MAX_BREAKPOINTS]; /**< Breakpoint PC addresses */
     
@@ -384,6 +385,68 @@ uint16_t zplc_opi_read16(uint16_t offset);
  * @return Value at offset, or 0 if out of bounds
  */
 uint8_t zplc_opi_read8(uint16_t offset);
+
+/* ============================================================================
+ * Force Override API
+ * ============================================================================
+ *
+ * Runtime-owned force entries override raw memory writes for overlapping bytes.
+ * VM stores honor forces automatically. External writers (shell, scheduler input
+ * sync, debugger) should use zplc_force_write_bytes() so active forces are
+ * re-applied deterministically.
+ */
+
+/**
+ * @brief Set a forced byte range and apply it immediately.
+ *
+ * @param addr Absolute logical address
+ * @param bytes Forced bytes buffer
+ * @param size Number of bytes in the buffer
+ * @return 0 on success, negative on error
+ */
+int zplc_force_set_bytes(uint16_t addr, const uint8_t *bytes, uint16_t size);
+
+/**
+ * @brief Clear the force entry that starts at the given address.
+ *
+ * @param addr Absolute logical address of the force entry
+ * @return 0 on success, negative on error
+ */
+int zplc_force_clear(uint16_t addr);
+
+/**
+ * @brief Clear all active force entries.
+ */
+void zplc_force_clear_all(void);
+
+/**
+ * @brief Get the number of active force entries.
+ *
+ * @return Active entry count
+ */
+uint8_t zplc_force_get_count(void);
+
+/**
+ * @brief Get a force entry by index.
+ *
+ * @param index Force table index
+ * @param addr Output absolute address
+ * @param size Output byte count
+ * @param bytes Output buffer receiving the stored bytes
+ * @return 0 on success, negative on error
+ */
+int zplc_force_get(uint8_t index, uint16_t *addr, uint16_t *size,
+                   uint8_t *bytes);
+
+/**
+ * @brief Write raw bytes then re-apply any overlapping force overrides.
+ *
+ * @param addr Absolute logical address
+ * @param bytes Source bytes
+ * @param size Number of bytes to write
+ * @return 0 on success, negative on error
+ */
+int zplc_force_write_bytes(uint16_t addr, const uint8_t *bytes, uint16_t size);
 
 /* ============================================================================
  * Thread-Safe Process Image Access (Phase 1.4.1+)

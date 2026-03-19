@@ -174,7 +174,7 @@ interface MpeekResponse {
 export function parseMpeekResponse(lines: string[]): Map<number, Uint8Array> {
   const result = new Map<number, Uint8Array>();
 
-  console.log('[parseMpeekResponse] Raw lines incoming:', lines);
+  debugLog('[parseMpeekResponse] Raw lines incoming:', lines);
 
   // Concatenate all lines (the firmware emits JSON across multiple shell_print
   // calls) and strip ANSI escape sequences + shell prompts.
@@ -185,7 +185,7 @@ export function parseMpeekResponse(lines: string[]): Map<number, Uint8Array> {
     .filter((l) => l.length > 0 && !l.startsWith('uart:~$'))
     .join('');
 
-  console.log('[parseMpeekResponse] Combined string:', combined);
+  debugLog('[parseMpeekResponse] Combined string:', combined);
 
   // Find the outermost JSON object boundaries.
   const jsonStart = combined.indexOf('{');
@@ -211,9 +211,9 @@ export function parseMpeekResponse(lines: string[]): Map<number, Uint8Array> {
         // Fix any trailing commas in the array just in case
         .replace(/,\s*\]/, ']');
         
-    console.log('[parseMpeekResponse] Clean JSON string:', cleanJsonStr);
+    debugLog('[parseMpeekResponse] Clean JSON string:', cleanJsonStr);
     parsed = JSON.parse(cleanJsonStr) as MpeekResponse;
-    console.log('[parseMpeekResponse] Parsed Object:', parsed);
+    debugLog('[parseMpeekResponse] Parsed Object:', parsed);
   } catch (err) {
     console.error('[mpeek parse error]', err, combined);
     return result;
@@ -239,7 +239,7 @@ export function parseMpeekResponse(lines: string[]): Map<number, Uint8Array> {
     result.set(entry.addr, bytes);
   }
 
-  console.log('[parseMpeekResponse] Final parsed map size:', result.size);
+  debugLog('[parseMpeekResponse] Final parsed map size:', result.size);
   return result;
 }
 
@@ -252,3 +252,4 @@ export function buildMpeekArgument(requests: MpeekRequest[]): string {
     .map((r) => `0x${r.address.toString(16)}:${r.size}`)
     .join(',');
 }
+import { debugLog } from '../utils/debugLog';
