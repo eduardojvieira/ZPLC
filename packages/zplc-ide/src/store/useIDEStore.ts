@@ -42,6 +42,8 @@ import {
 import type { ProjectInfo } from '../utils/projectLoader';
 import type { SystemInfo, StatusInfo } from '../runtime/serialAdapter';
 import type { DebugMap } from '../compiler';
+import type { WatchForceEntry } from '../runtime/debugAdapter';
+import { getBreakpointPCForLine } from '../components/codeEditorBreakpoints';
 import { appendConsoleEntries, type NewConsoleEntry } from './consoleEntries';
 
 // =============================================================================
@@ -103,6 +105,9 @@ export interface DebugState {
    * Key is the variable path, value is the current value.
    */
   liveValues: Map<string, LiveValue>;
+
+  /** Active forced watch entries indexed by variable path. */
+  forcedValues: Map<string, WatchForceEntry>;
   
   /** Whether the debugger is currently polling for live values */
   isPolling: boolean;
@@ -224,6 +229,9 @@ interface IDEState {
   updateLiveValue: (varPath: string, value: LiveValue) => void;
   updateLiveValues: (values: Map<string, LiveValue>) => void;
   clearLiveValues: () => void;
+  setForcedValue: (entry: WatchForceEntry) => void;
+  clearForcedValue: (varPath: string) => void;
+  clearForcedValues: () => void;
   setPolling: (isPolling: boolean) => void;
   setPollingInterval: (interval: number) => void;
   toggleMpeek: () => void;
@@ -321,6 +329,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     currentPC: null,
     watchVariables: [],
     liveValues: new Map(),
+    forcedValues: new Map(),
     isPolling: false,
     pollingInterval: 500,
     mpeekEnabled: false,
@@ -582,9 +591,10 @@ export const useIDEStore = create<IDEState>((set, get) => ({
         currentLine: null,
         currentPOU: null,
         currentPC: null,
-        watchVariables: [],
-        liveValues: new Map(),
-        isPolling: false,
+          watchVariables: [],
+          liveValues: new Map(),
+          forcedValues: new Map(),
+          isPolling: false,
         pollingInterval: 500,
         mpeekEnabled: false,
       },
@@ -1117,23 +1127,27 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     set((state) => {
       const newLiveValues = new Map(state.debug.liveValues);
       newLiveValues.delete(varPath);
+      const newForcedValues = new Map(state.debug.forcedValues);
+      newForcedValues.delete(varPath);
       return {
         debug: {
           ...state.debug,
           watchVariables: state.debug.watchVariables.filter(v => v !== varPath),
           liveValues: newLiveValues,
+          forcedValues: newForcedValues,
         },
       };
     }),
 
   clearWatchVariables: () =>
     set((state) => ({
-      debug: {
-        ...state.debug,
-        watchVariables: [],
-        liveValues: new Map(),
-      },
-    })),
+        debug: {
+          ...state.debug,
+          watchVariables: [],
+          liveValues: new Map(),
+          forcedValues: new Map(),
+        },
+      })),
 
   updateLiveValue: (varPath, value) =>
     set((state) => {
@@ -1158,6 +1172,29 @@ export const useIDEStore = create<IDEState>((set, get) => ({
   clearLiveValues: () =>
     set((state) => ({
       debug: { ...state.debug, liveValues: new Map() },
+    })),
+
+  setForcedValue: (entry) =>
+    set((state) => {
+      const forcedValues = new Map(state.debug.forcedValues);
+      forcedValues.set(entry.path, entry);
+      return {
+        debug: { ...state.debug, forcedValues },
+      };
+    }),
+
+  clearForcedValue: (varPath) =>
+    set((state) => {
+      const forcedValues = new Map(state.debug.forcedValues);
+      forcedValues.delete(varPath);
+      return {
+        debug: { ...state.debug, forcedValues },
+      };
+    }),
+
+  clearForcedValues: () =>
+    set((state) => ({
+      debug: { ...state.debug, forcedValues: new Map() },
     })),
 
   setPolling: (isPolling) =>
@@ -1197,18 +1234,10 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       const resolvedFile = loadedFiles.get(fileId);
       const rawName = resolvedFile?.name ?? fileId;
 
-      // Strip extension: "main.st" → "main", "CONVEYOR.LD" → "CONVEYOR"
-      const pouNameFromPath = rawName.replace(/\.[^.]+$/, '');
-
       for (const line of lineNumbers) {
-        // Search all POUs in the debug map for a case-insensitive name match.
-        for (const [pouName, pouInfo] of Object.entries(debug.debugMap.pou)) {
-          if (pouName.toLowerCase() === pouNameFromPath.toLowerCase()) {
-            const mapping = pouInfo.sourceMap.find((m) => m.line === line);
-            if (mapping) {
-              pcs.push(mapping.pc);
-            }
-          }
+        const pc = getBreakpointPCForLine(debug.debugMap, rawName, line);
+        if (pc !== null) {
+          pcs.push(pc);
         }
       }
     }

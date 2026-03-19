@@ -73,10 +73,6 @@ function createWindow(): void {
     mainWindow = null;
   });
 
-  // Log when the window is ready
-  mainWindow.webContents.on('did-finish-load', () => {
-    console.log('[Electron] Window loaded successfully');
-  });
 }
 
 /**
@@ -104,7 +100,6 @@ function setupWebSerial(): void {
   // Handle device permission requests
   session.defaultSession.setDevicePermissionHandler((details) => {
     if (details.deviceType === 'serial') {
-      console.log('[WebSerial] Device permission granted:', details.device);
       return true;
     }
     return false;
@@ -134,13 +129,6 @@ function setupSerialPortSelection(): void {
     sess.on('select-serial-port', (event, portList, _webContents, callback) => {
       event.preventDefault();
 
-      console.log('[WebSerial] Available ports:', portList.map(p => ({
-        portId: p.portId,
-        displayName: p.displayName,
-        vendorId: p.vendorId ? p.vendorId.toString() : undefined,
-        productId: p.productId ? p.productId.toString() : undefined,
-      })));
-
       if (portList && portList.length > 0) {
         // Strategy 1: Look for known PLC/Arduino USB VID/PIDs
         const knownVendors = [
@@ -157,27 +145,18 @@ function setupSerialPortSelection(): void {
         );
 
         if (preferredPort) {
-          console.log('[WebSerial] Auto-selecting preferred port:', preferredPort.displayName);
           callback(preferredPort.portId);
         } else {
           // Fallback: Select the first available port
-          console.log('[WebSerial] Auto-selecting first port:', portList[0].displayName);
           callback(portList[0].portId);
         }
       } else {
-        console.log('[WebSerial] No serial ports available');
         callback(''); // No ports found
       }
     });
 
-    // Handle serial port added/removed events
-    sess.on('serial-port-added', (_event, port) => {
-      console.log('[WebSerial] Port added:', port.displayName);
-    });
-
-    sess.on('serial-port-removed', (_event, port) => {
-      console.log('[WebSerial] Port removed:', port.displayName);
-    });
+    sess.on('serial-port-added', () => undefined);
+    sess.on('serial-port-removed', () => undefined);
   });
 }
 
@@ -201,8 +180,6 @@ function setupIPC(): void {
 
 // App lifecycle handlers
 app.whenReady().then(() => {
-  console.log('[Electron] App ready, setting up...');
-
   setupWebSerial();
   setupSerialPortSelection();
   setupIPC();
@@ -236,6 +213,3 @@ if (!gotTheLock) {
     }
   });
 }
-
-console.log('[Electron] Main process initialized');
-console.log('[Electron] Mode:', isDev ? 'Development' : 'Production');

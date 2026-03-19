@@ -24,6 +24,7 @@ import {
   extractVariablesFromCode,
   type InlineValueWidget,
 } from './codeEditorInlineValues';
+import { isInlineLivePreviewEnabled } from './codeEditorLivePreview';
 import {
   ST_LANGUAGE_ID, stLanguage, stConf,
   IL_LANGUAGE_ID, ilLanguage, ilConf
@@ -32,6 +33,7 @@ import {
   ZPLC_DARK_THEME, ZPLC_DARK_THEME_ID,
   ZPLC_LIGHT_THEME, ZPLC_LIGHT_THEME_ID
 } from '../utils/monaco-themes';
+import { debugLog } from '../utils/debugLog';
 
 // =============================================================================
 // Types
@@ -48,6 +50,14 @@ interface CodeEditorProps {
   onChange?: (value: string) => void;
   /** Read-only mode */
   readOnly?: boolean;
+}
+
+function normalizeExecutionName(value: string | null | undefined): string {
+  if (!value) {
+    return '';
+  }
+
+  return value.replace(/\.[^.]+$/, '').toLowerCase();
 }
 
 /**
@@ -84,16 +94,50 @@ export function CodeEditor({
 
   // Debug state from store
   const debugMode = useIDEStore((state) => state.debug.mode);
+  const livePreviewEnabled = useIDEStore((state) => state.debug.mpeekEnabled);
   const debugMap = useIDEStore((state) => state.debug.debugMap);
   const toggleBreakpoint = useIDEStore((state) => state.toggleBreakpoint);
   const breakpoints = useFileBreakpoints(fileId);
   const fileName = useIDEStore((state) => state.loadedFiles.get(fileId)?.name ?? fileId);
+  const debugMapRef = useRef(debugMap);
+  const fileNameRef = useRef(fileName);
   const { isPaused, currentLine, currentPOU } = useCurrentExecution();
 
   // Check if this file is the current execution context
   const isCurrentFile = useMemo(() => {
-    return currentPOU ? fileId.toLowerCase().includes(currentPOU.toLowerCase()) : false;
-  }, [fileId, currentPOU]);
+    if (!currentPOU) {
+      return false;
+    }
+
+    const normalizedCurrentPOU = normalizeExecutionName(currentPOU);
+    const normalizedFileName = normalizeExecutionName(fileName);
+    const normalizedFileId = normalizeExecutionName(fileId.replace(/-/g, '.'));
+
+    return normalizedCurrentPOU === normalizedFileName ||
+      normalizedCurrentPOU === normalizedFileId ||
+      fileId.toLowerCase().includes(normalizedCurrentPOU);
+  }, [fileId, fileName, currentPOU]);
+
+  const inlinePreviewEnabled = isInlineLivePreviewEnabled(debugMode, livePreviewEnabled);
+
+  useEffect(() => {
+    debugMapRef.current = debugMap;
+  }, [debugMap]);
+
+  useEffect(() => {
+    fileNameRef.current = fileName;
+  }, [fileName]);
+
+  const isBreakpointGutterTarget = useCallback((type: MonacoEditor.editor.MouseTargetType): boolean => {
+    const monaco = monacoRef.current;
+    if (!monaco) {
+      return false;
+    }
+
+    return type === monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN ||
+      type === monaco.editor.MouseTargetType.GUTTER_LINE_NUMBERS ||
+      type === monaco.editor.MouseTargetType.GUTTER_LINE_DECORATIONS;
+  }, []);
 
   // Extract variables from code for debug value lookup
   const variablesInCode = useMemo(() => {
@@ -107,12 +151,12 @@ export function CodeEditor({
   const { visibleVarNames } = useEditorLiveValues({
     editorRef,
     debugMap,
-    debugActive: debugMode !== 'none',
+    debugActive: inlinePreviewEnabled,
   });
 
   // Get live values only for visible variables (or all if no viewport data)
   const debugValues = useDebugValues(
-    debugMode !== 'none'
+    inlinePreviewEnabled
       ? (visibleVarNames.length > 0 ? visibleVarNames : Array.from(variablesInCode.keys()))
       : [],
   );
@@ -134,18 +178,14 @@ export function CodeEditor({
       }
     }
 
-    if (map.size > 0) {
-      console.log(`[CodeEditor] Found ${map.size} inline widgets to render:`, Array.from(map.entries()));
-    }
-
     return map;
   }, [debugValues]);
 
   // Build inline widgets
   const inlineWidgets = useMemo(() => {
-    if (debugMode === 'none' || variableValueMap.size === 0) return [];
+    if (!inlinePreviewEnabled || variableValueMap.size === 0) return [];
     return buildInlineWidgets(content, variableValueMap);
-  }, [content, variableValueMap, debugMode]);
+  }, [content, inlinePreviewEnabled, variableValueMap]);
 
   // Handle editor mount
   const handleEditorDidMount: OnMount = useCallback((editor, monaco) => {
@@ -154,15 +194,41 @@ export function CodeEditor({
 
     // Add mouse down listener for gutter clicks (breakpoints)
     editor.onMouseDown((e) => {
-      if (
-        e.target.type === monaco.editor.MouseTargetType.GUTTER_GLYPH_MARGIN ||
-        e.target.type === monaco.editor.MouseTargetType.GUTTER_LINE_NUMBERS
-        ) {
+      debugLog('[Breakpoint] Mouse down', {
+        fileId,
+        fileName: fileNameRef.current,
+        targetType: e.target.type,
+        hasPosition: Boolean(e.target.position),
+        lineNumber: e.target.position?.lineNumber ?? null,
+      });
+
+      if (isBreakpointGutterTarget(e.target.type)) {
         const lineNumber = e.target.position?.lineNumber;
         if (lineNumber) {
-          if (debugMap && !isLineBreakpointEligible(debugMap, fileName, lineNumber)) {
+          const activeDebugMap = debugMapRef.current;
+          const activeFileName = fileNameRef.current;
+
+          debugLog('[Breakpoint] Gutter click detected', {
+            fileId,
+            fileName: activeFileName,
+            lineNumber,
+            hasDebugMap: Boolean(activeDebugMap),
+          });
+
+          if (activeDebugMap && !isLineBreakpointEligible(activeDebugMap, activeFileName, lineNumber)) {
+            debugLog('[Breakpoint] Rejected non-executable line', {
+              fileId,
+              fileName: activeFileName,
+              lineNumber,
+            });
             return;
           }
+
+          debugLog('[Breakpoint] Toggling breakpoint', {
+            fileId,
+            fileName: activeFileName,
+            lineNumber,
+          });
           toggleBreakpoint(fileId, lineNumber);
         }
       }
@@ -191,7 +257,7 @@ export function CodeEditor({
     monaco.editor.defineTheme(ZPLC_LIGHT_THEME_ID, ZPLC_LIGHT_THEME);
 
     setEditorReady(true);
-  }, [debugMap, fileId, fileName, toggleBreakpoint]);
+  }, [fileId, isBreakpointGutterTarget, toggleBreakpoint]);
 
   // Update breakpoint and current line decorations
   useEffect(() => {
@@ -202,8 +268,23 @@ export function CodeEditor({
     const newDecorations: MonacoEditor.editor.IModelDeltaDecoration[] = [];
     const eligibleBreakpoints = filterEligibleBreakpointLines(debugMap, fileName, breakpoints);
 
+    const showPendingBreakpoints = debugMap === null;
+    const displayedBreakpoints = showPendingBreakpoints ? Array.from(breakpoints) : eligibleBreakpoints;
+
+    debugLog('[Breakpoint] Decorations update', {
+      fileId,
+      fileName,
+      rawBreakpoints: Array.from(breakpoints),
+      eligibleBreakpoints,
+      displayedBreakpoints,
+      showPendingBreakpoints,
+      isPaused,
+      currentLine,
+      isCurrentFile,
+    });
+
     // Add breakpoint decorations
-    for (const line of eligibleBreakpoints) {
+    for (const line of displayedBreakpoints) {
       newDecorations.push({
         range: new monaco.Range(line, 1, line, 1),
         options: {
@@ -234,6 +315,40 @@ export function CodeEditor({
     );
   }, [breakpoints, currentLine, debugMap, fileName, isCurrentFile, isPaused]);
 
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor || !isPaused || !isCurrentFile || currentLine === null) {
+      return;
+    }
+
+    debugLog('[Execution] Revealing paused line', {
+      fileId,
+      fileName,
+      currentPOU,
+      currentLine,
+      isCurrentFile,
+    });
+
+    editor.revealLineInCenterIfOutsideViewport(currentLine);
+  }, [currentLine, currentPOU, fileId, fileName, isCurrentFile, isPaused]);
+
+  useEffect(() => {
+    if (!debugMap) {
+      return;
+    }
+
+    const eligibleBreakpoints = filterEligibleBreakpointLines(debugMap, fileName, breakpoints);
+    if (eligibleBreakpoints.length !== breakpoints.size) {
+      debugLog('[Breakpoint] Pruning invalid breakpoint lines', {
+        fileId,
+        fileName,
+        rawBreakpoints: Array.from(breakpoints),
+        eligibleBreakpoints,
+      });
+      useIDEStore.getState().setBreakpoints(fileId, eligibleBreakpoints);
+    }
+  }, [breakpoints, debugMap, fileId, fileName]);
+
   // Update inline value decorations
   useEffect(() => {
     const editor = editorRef.current;
@@ -246,7 +361,7 @@ export function CodeEditor({
 
     const newDecorations: MonacoEditor.editor.IModelDeltaDecoration[] = [];
 
-    if (debugMode !== 'none') {
+    if (inlinePreviewEnabled) {
       // Group widgets by line for combined display
       const widgetsByLine = new Map<number, InlineValueWidget[]>();
       for (const widget of inlineWidgets) {
@@ -279,7 +394,7 @@ export function CodeEditor({
         if (!model) continue;
         const maxCol = model.getLineMaxColumn(lineNum);
 
-        console.log(`[CodeEditor] Adding decoration to line ${lineNum} at col ${maxCol}:`, combinedText);
+        debugLog(`[CodeEditor] Adding decoration to line ${lineNum} at col ${maxCol}:`, combinedText);
         newDecorations.push({
           range: new monaco.Range(lineNum, maxCol, lineNum, maxCol),
           options: {
@@ -300,10 +415,10 @@ export function CodeEditor({
       }
     }
 
-    console.log(`[CodeEditor] Setting ${newDecorations.length} inline decorations!`);
+    debugLog(`[CodeEditor] Setting ${newDecorations.length} inline decorations!`);
     // Apply inline decorations
     inlineDecorationsRef.current.set(newDecorations);
-  }, [inlineWidgets, debugMode, editorReady]);
+  }, [inlinePreviewEnabled, inlineWidgets, editorReady]);
 
   // Handle content change
   const handleChange = useCallback((value: string | undefined) => {
@@ -329,9 +444,9 @@ export function CodeEditor({
               ({variableValueMap.size} values)
             </span>
           )}
-          {breakpoints.size > 0 && (
+          {filterEligibleBreakpointLines(debugMap, fileName, breakpoints).length > 0 && (
             <span className="text-[var(--color-surface-400)]">
-              • {breakpoints.size} BP{breakpoints.size !== 1 ? 's' : ''}
+              • {filterEligibleBreakpointLines(debugMap, fileName, breakpoints).length} BP{filterEligibleBreakpointLines(debugMap, fileName, breakpoints).length !== 1 ? 's' : ''}
             </span>
           )}
         </div>

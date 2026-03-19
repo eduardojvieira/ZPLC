@@ -166,18 +166,18 @@ function startReaderTask(connection: SerialConnection): void {
   // Store reader reference so we can cancel it on disconnect
   (connection as any)._reader = reader;
 
-  console.log('[WebSerial] Starting background reader...');
+  debugLog('[WebSerial] Starting background reader...');
 
   connection._readerTask = (async () => {
     try {
       while (connection.isConnected) {
         const { value, done } = await reader.read();
         if (done) {
-          console.log('[WebSerial] Reader done signal received');
+          debugLog('[WebSerial] Reader done signal received');
           break;
         }
         if (!connection.isConnected) {
-          console.log('[WebSerial] Connection closed during read');
+          debugLog('[WebSerial] Connection closed during read');
           break;
         }
         if (value) {
@@ -196,7 +196,7 @@ function startReaderTask(connection: SerialConnection): void {
         console.error('[WebSerial] Reader error:', e);
       }
     } finally {
-      console.log('[WebSerial] Reader task ending');
+      debugLog('[WebSerial] Reader task ending');
       try {
         reader.releaseLock();
       } catch {
@@ -223,7 +223,7 @@ export async function connect(
   // Set DTR and RTS signals
   try {
     await port.setSignals({ dataTerminalReady: true, requestToSend: true });
-    console.log('[WebSerial] DTR/RTS signals set');
+    debugLog('[WebSerial] DTR/RTS signals set');
   } catch (e) {
     console.warn('[WebSerial] Could not set DTR/RTS signals:', e);
   }
@@ -248,18 +248,18 @@ export async function connect(
 
   // Send a few newlines to wake up the shell and trigger some output
   const encoder = new TextEncoder();
-  console.log('[WebSerial] Sending wake-up newlines...');
+  debugLog('[WebSerial] Sending wake-up newlines...');
   await writer.write(encoder.encode('\n\n\n'));
 
   // Wait for any response
   await new Promise((r) => setTimeout(r, 500));
 
-  console.log('[WebSerial] After wake-up, buffer has:', connection._rxBuffer.length, 'bytes');
-  console.log('[WebSerial] Buffer contents:', connection._rxBuffer.slice(0, 200));
+  debugLog('[WebSerial] After wake-up, buffer has:', connection._rxBuffer.length, 'bytes');
+  debugLog('[WebSerial] Buffer contents:', connection._rxBuffer.slice(0, 200));
 
   // Clear any startup messages
   connection._rxBuffer = '';
-  console.log('[WebSerial] Connected and ready');
+  debugLog('[WebSerial] Connected and ready');
 
   return connection;
 }
@@ -276,14 +276,14 @@ export function removeDataListener(connection: SerialConnection, listener: (chun
  * Disconnect from a serial port
  */
 export async function disconnect(connection: SerialConnection): Promise<void> {
-  console.log('[WebSerial] Disconnecting...');
+  debugLog('[WebSerial] Disconnecting...');
   connection.isConnected = false;
 
   // Cancel the reader to unblock the read() call
   const reader = (connection as any)._reader;
   if (reader) {
     try {
-      console.log('[WebSerial] Cancelling reader...');
+      debugLog('[WebSerial] Cancelling reader...');
       await reader.cancel();
     } catch (e) {
       console.warn('[WebSerial] Error cancelling reader:', e);
@@ -306,12 +306,12 @@ export async function disconnect(connection: SerialConnection): Promise<void> {
   // Close the port
   try {
     await connection.port.close();
-    console.log('[WebSerial] Port closed');
+    debugLog('[WebSerial] Port closed');
   } catch (e) {
     console.warn('[WebSerial] Error closing port:', e);
   }
 
-  console.log('[WebSerial] Disconnect complete');
+  debugLog('[WebSerial] Disconnect complete');
 }
 
 /**
@@ -347,7 +347,7 @@ async function waitForResponse(
 
     if (match) {
       const response = match[0].trim();
-      console.log('[WebSerial] Found response:', response);
+      debugLog('[WebSerial] Found response:', response);
 
       // Find where this response ends in the buffer and clear up to there
       const responseEnd = cleanBuffer.indexOf(response) + response.length;
@@ -387,7 +387,7 @@ async function sendCommand(
   connection._rxBuffer = '';
 
   // Send command with newline
-  console.log('[WebSerial] Sending:', command);
+  debugLog('[WebSerial] Sending:', command);
   await connection.writer.write(encoder.encode(command + '\n'));
 
   // Give the device a moment to start processing
@@ -395,7 +395,7 @@ async function sendCommand(
 
   // Wait for response
   const response = await waitForResponse(connection);
-  console.log('[WebSerial] Response:', response);
+  debugLog('[WebSerial] Response:', response);
 
   return response;
 }
@@ -508,7 +508,7 @@ export async function uploadBytecode(
     await new Promise((r) => setTimeout(r, 200));
 
     // Step 2: Prepare to load
-    console.log(`[WebSerial] Starting upload. Bytecode size: ${bytecode.length} bytes`);
+    debugLog(`[WebSerial] Starting upload. Bytecode size: ${bytecode.length} bytes`);
     notify('loading', 10, `Preparing to receive ${bytecode.length} bytes...`);
     const loadCommand = `${commandSet.load} ${bytecode.length}`;
     trace?.({ kind: 'stage', message: `Preparing device for ${bytecode.length} upload bytes` });
@@ -536,7 +536,7 @@ export async function uploadBytecode(
       const progress = 10 + Math.floor((chunkNum / totalChunks) * 80);
       notify('sending', progress, `Sending chunk ${chunkNum + 1}/${totalChunks}...`);
 
-      console.log(`[WebSerial] Sending chunk ${chunkNum + 1}/${totalChunks}: ${hexChunk}`);
+      debugLog(`[WebSerial] Sending chunk ${chunkNum + 1}/${totalChunks}: ${hexChunk}`);
       trace?.({
         kind: 'command',
         message: formatChunkTrace(commandSet.data, chunkNum + 1, totalChunks, chunkSize),
@@ -589,3 +589,4 @@ export async function resetDevice(connection: SerialConnection): Promise<void> {
 export async function getVersion(connection: SerialConnection): Promise<string> {
   return await sendCommand(connection, 'zplc version');
 }
+import { debugLog } from '../utils/debugLog';

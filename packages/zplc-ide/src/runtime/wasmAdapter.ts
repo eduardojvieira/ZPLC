@@ -15,15 +15,19 @@ import type {
   VMState,
   VMInfo,
   WatchVariable,
+  WatchForceEntry,
   DebugAdapterEvents,
   LoadProgramOptions,
   ReadWatchOptions,
 } from './debugAdapter';
 import {
+  bytesToHex,
   getTypeSize,
   bytesToValue,
+  WATCH_FORCE_STATE,
 } from './debugAdapter';
 import { loadZPLCModule, type EmscriptenModule } from './wasmLoader';
+import { debugLog } from '../utils/debugLog';
 
 /**
  * WASM Debug Adapter
@@ -44,12 +48,14 @@ export class WASMAdapter implements IDebugAdapter {
   // Virtual GPIO state
   private virtualInputs: number[] = [0, 0, 0, 0];
   private virtualOutputs: number[] = [0, 0, 0, 0];
+  private forcedEntries = new Map<number, Uint8Array>();
 
   // Wrapped C functions — core lifecycle
   private coreInit: (() => number) | null = null;
   private coreShutdown: (() => number) | null = null;
   private coreLoadRaw: ((ptr: number, size: number) => number) | null = null;
   private coreRunCycle: (() => number) | null = null;
+  private coreRun: ((max: number) => number) | null = null;
   private coreGetPc: (() => number) | null = null;
   private coreGetSp: (() => number) | null = null;
   private coreGetStack: ((index: number) => number) | null = null;
@@ -79,6 +85,7 @@ export class WASMAdapter implements IDebugAdapter {
 
   // Cycle counter (maintained locally since VM resets PC each cycle)
   private cycleCount = 0;
+  private _isMidCycle = false;
 
   get connected(): boolean {
     return this._connected;
@@ -157,6 +164,7 @@ export class WASMAdapter implements IDebugAdapter {
     window.zplcOnGpioRead = undefined;
 
     this.module = null;
+    this.forcedEntries.clear();
     this._connected = false;
     this.setState('disconnected');
   }
@@ -174,6 +182,7 @@ export class WASMAdapter implements IDebugAdapter {
       'number',
     ]) as (ptr: number, size: number) => number;
     this.coreRunCycle = m.cwrap('zplc_core_run_cycle', 'number', []) as () => number;
+    this.coreRun = m.cwrap('zplc_core_run', 'number', ['number']) as (max: number) => number;
     this.coreGetPc = m.cwrap('zplc_core_get_pc', 'number', []) as () => number;
     this.coreGetSp = m.cwrap('zplc_core_get_sp', 'number', []) as () => number;
     this.coreGetStack = m.cwrap('zplc_core_get_stack', 'number', [
@@ -212,6 +221,27 @@ export class WASMAdapter implements IDebugAdapter {
     this.vmResume = m.cwrap('zplc_vm_resume', 'number', ['number']) as (vm: number) => number;
     this.vmGetBreakpointCount = m.cwrap('zplc_vm_get_breakpoint_count', 'number', ['number']) as (vm: number) => number;
     this.vmGetBreakpoint = m.cwrap('zplc_vm_get_breakpoint', 'number', ['number', 'number']) as (vm: number, index: number) => number;
+
+    // Validate missing exports to avoid silent failures
+    const criticalExports = [
+      '_zplc_ipi_read8',
+      '_zplc_opi_read8',
+      '_zplc_ipi_write8',
+      '_zplc_mem_get_region',
+      '_zplc_core_get_default_vm',
+      '_zplc_vm_add_breakpoint',
+      '_zplc_vm_remove_breakpoint',
+      '_zplc_vm_clear_breakpoints',
+      '_zplc_vm_is_paused',
+      '_zplc_vm_resume',
+      '_zplc_vm_get_breakpoint_count',
+      '_zplc_vm_get_breakpoint'
+    ];
+    for (const exp of criticalExports) {
+      if (typeof (m as unknown as Record<string, unknown>)[exp] !== 'function') {
+        console.warn(`WASM Adapter: Critical C function ${exp} is not exported! Breakpoints and watch tables may fail.`);
+      }
+    }
   }
 
   // =========================================================================
@@ -297,6 +327,12 @@ export class WASMAdapter implements IDebugAdapter {
       throw new Error('Not connected');
     }
 
+    debugLog('[WASM] Resume requested', {
+      cycleCount: this.cycleCount,
+      pc: this.coreGetPc?.() ?? 0,
+      isMidCycle: this._isMidCycle,
+    });
+
     this.setState('running');
     this.startExecutionLoop();
   }
@@ -333,6 +369,7 @@ export class WASMAdapter implements IDebugAdapter {
 
     // Reset inputs
     this.virtualInputs = [0, 0, 0, 0];
+    this.forcedEntries.clear();
 
     // Clear breakpoints on reset
     await this.clearBreakpoints();
@@ -348,6 +385,7 @@ export class WASMAdapter implements IDebugAdapter {
     }
 
     this.lastCycleTime = performance.now();
+    this._isMidCycle = false;
 
     const loop = (timestamp: number) => {
       if (this._state !== 'running') {
@@ -355,11 +393,18 @@ export class WASMAdapter implements IDebugAdapter {
         return;
       }
 
-      // Check if enough time has passed for next cycle
-      const elapsed = timestamp - this.lastCycleTime;
-      if (elapsed >= this.cycleTimeMs) {
+      // Run multiple cycles if we are lagging behind (cap at 100ms to avoid freeze)
+      let elapsed = timestamp - this.lastCycleTime;
+      if (elapsed > 100) elapsed = 100;
+
+      while (elapsed >= this.cycleTimeMs) {
         this.executeCycle();
-        this.lastCycleTime = timestamp;
+        elapsed -= this.cycleTimeMs;
+        this.lastCycleTime += this.cycleTimeMs;
+
+        if (this._state !== 'running') {
+          break;
+        }
       }
 
       this.animationFrameId = requestAnimationFrame(loop);
@@ -376,38 +421,62 @@ export class WASMAdapter implements IDebugAdapter {
   }
 
   private executeCycle(): void {
-    // Update virtual inputs to IPI via WASM HAL
-    for (let i = 0; i < this.virtualInputs.length; i++) {
-      this.wasmSetInput?.(i, this.virtualInputs[i]);
+    const vm = this.coreGetDefaultVm?.() ?? 0;
+
+    if (!this._isMidCycle) {
+      // Update virtual inputs to IPI via WASM HAL
+      for (let i = 0; i < this.virtualInputs.length; i++) {
+        this.wasmSetInput?.(i, this.virtualInputs[i]);
+      }
+
+      // Re-apply forced values before each cycle (match hardware runtime force table behavior)
+      for (const [address, bytes] of this.forcedEntries.entries()) {
+        this.pokeN(address, bytes).catch(e => console.error('Failed to re-inject forced value', e));
+      }
     }
 
-    // If VM was paused at a breakpoint, resume before running next cycle
-    const vm = this.coreGetDefaultVm?.() ?? 0;
+    // If VM was paused at a breakpoint, resume it to set skip flags
     if (vm && this.vmIsPaused?.(vm)) {
+      debugLog('[WASM] Resuming paused VM before executeCycle', {
+        pc: this.coreGetPc?.() ?? 0,
+        isMidCycle: this._isMidCycle,
+      });
       this.vmResume?.(vm);
     }
 
-    // Run one PLC cycle — the C VM checks breakpoints internally
-    const result = this.coreRunCycle?.() ?? -1;
+    // Run VM — if mid-cycle (resuming from breakpoint), call coreRun(0) to continue.
+    // Otherwise call coreRunCycle() to start a new cycle.
+    const result = this._isMidCycle 
+      ? (this.coreRun?.(0) ?? -1)
+      : (this.coreRunCycle?.() ?? -1);
 
     if (result < 0) {
       const error = this.coreGetError?.() ?? -1;
       this.events.onError?.(`VM error: ${error}`);
       this.stopExecutionLoop();
       this.setState('error');
+      this._isMidCycle = false;
       return;
     }
-
-    this.cycleCount++;
 
     // Check if VM hit a breakpoint during this cycle
     if (vm && this.vmIsPaused?.(vm)) {
       const pc = this.coreGetPc?.() ?? 0;
+      debugLog('[WASM] Breakpoint pause detected', {
+        pc,
+        isMidCycle: this._isMidCycle,
+        cycleCount: this.cycleCount,
+      });
+      this._isMidCycle = true;
       this.stopExecutionLoop();
       this.setState('paused');
       this.events.onBreakpointHit?.(pc);
       return;
     }
+
+    // Cycle completed successfully
+    this._isMidCycle = false;
+    this.cycleCount++;
 
     // Read virtual outputs
     for (let i = 0; i < 4; i++) {
@@ -532,6 +601,35 @@ export class WASMAdapter implements IDebugAdapter {
         this.writeRegionByte(0x4000, addr - 0x4000, val);
       }
     }
+  }
+
+  async setValue(address: number, bytes: Uint8Array): Promise<void> {
+    await this.pokeN(address, bytes);
+  }
+
+  async forceValue(address: number, bytes: Uint8Array): Promise<void> {
+    const copy = new Uint8Array(bytes);
+    this.forcedEntries.set(address, copy);
+    await this.pokeN(address, copy);
+  }
+
+  async clearForcedValue(address: number): Promise<void> {
+    this.forcedEntries.delete(address);
+  }
+
+  async clearAllForcedValues(): Promise<void> {
+    this.forcedEntries.clear();
+  }
+
+  async listForcedValues(): Promise<WatchForceEntry[]> {
+    return Array.from(this.forcedEntries.entries()).map(([address, bytes]) => ({
+      path: `0x${address.toString(16).toUpperCase().padStart(4, '0')}`,
+      address,
+      size: bytes.length,
+      type: bytes.length === 1 ? 'BYTE' : bytes.length === 2 ? 'WORD' : 'DWORD',
+      bytesHex: bytesToHex(bytes),
+      state: WATCH_FORCE_STATE.FORCED,
+    }));
   }
 
   async getOPI(offset: number): Promise<number> {

@@ -20,7 +20,8 @@
 
 #include <stdint.h>
 #include <stddef.h>
-#include <zplc_isa.h>
+#include "zplc_isa.h"
+#include "zplc_core.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -212,6 +213,16 @@ int zplc_sched_pause(void);
  * @return 0 on success, negative error code on failure
  */
 int zplc_sched_resume(void);
+
+/**
+ * @brief Execute exactly one cycle for each paused/ready task.
+ *
+ * Used by the debugger when the scheduler is paused. Tasks remain paused after
+ * the stepped cycle unless a task enters error state.
+ *
+ * @return 0 on success, negative error code on failure
+ */
+int zplc_sched_step(void);
 
 /**
  * @brief Get scheduler state.

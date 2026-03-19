@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'bun:test';
 
 import type { DebugMap } from '../compiler';
-import { isLineBreakpointEligible } from './codeEditorBreakpoints';
+import {
+  getBreakpointPCForLine,
+  getEligibleBreakpointLines,
+  isLineBreakpointEligible,
+} from './codeEditorBreakpoints';
 
 const DEBUG_MAP: DebugMap = {
   version: '1.0.0',
@@ -50,8 +54,54 @@ describe('isLineBreakpointEligible', () => {
     expect(isLineBreakpointEligible(DEBUG_MAP, 'MAIN.ST', 25)).toBe(true);
   });
 
+  it('matches debug map keys that include file extensions', () => {
+    const extensionMap: DebugMap = {
+      ...DEBUG_MAP,
+      pou: {
+        'main.st': DEBUG_MAP.pou.main,
+      },
+    };
+
+    expect(isLineBreakpointEligible(extensionMap, 'main.st', 22)).toBe(true);
+    expect(getBreakpointPCForLine(extensionMap, 'main.st', 25)).toBe(41);
+  });
+
   it('rejects unknown files and missing debug maps', () => {
     expect(isLineBreakpointEligible(DEBUG_MAP, 'other.st', 22)).toBe(false);
     expect(isLineBreakpointEligible(null, 'main.st', 22)).toBe(false);
+  });
+
+  it('returns sorted executable code lines only', () => {
+    expect(getEligibleBreakpointLines(DEBUG_MAP, 'main.st')).toEqual([22, 25]);
+  });
+
+  it('maps an eligible line to its PC', () => {
+    expect(getBreakpointPCForLine(DEBUG_MAP, 'main.st', 25)).toBe(41);
+    expect(getBreakpointPCForLine(DEBUG_MAP, 'main.st', 13)).toBe(null);
+  });
+});
+
+describe('sourceMap fallback', () => {
+  const FALLBACK_MAP: DebugMap = {
+    ...DEBUG_MAP,
+    pou: {
+      main: {
+        ...DEBUG_MAP.pou.main,
+        breakpoints: [],
+        sourceMap: [
+          { line: 24, pc: 29, length: 2 },
+          { line: 27, pc: 46, length: 3 },
+        ],
+      },
+    },
+  };
+
+  it('allows executable lines when explicit breakpoint metadata is absent', () => {
+    expect(isLineBreakpointEligible(FALLBACK_MAP, 'main.st', 24)).toBe(true);
+    expect(isLineBreakpointEligible(FALLBACK_MAP, 'main.st', 14)).toBe(false);
+  });
+
+  it('falls back to source-map PCs when needed', () => {
+    expect(getBreakpointPCForLine(FALLBACK_MAP, 'main.st', 27)).toBe(46);
   });
 });

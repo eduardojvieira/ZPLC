@@ -50,6 +50,7 @@ import type { PLCLanguage, ProgramSource, DebugMap } from '../compiler';
 import { GeneratedCodeDialog } from './GeneratedCodeDialog';
 import { loadFileFromTree } from '../utils/fileSystem';
 import type { FileTreeNode } from '../types';
+import { PROGRAM_LOAD_STATE, shouldAutoLoadBeforeStart } from './debugSessionState';
 
 // =============================================================================
 // Types
@@ -111,6 +112,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
   const [executionMode, setExecutionMode] = useState<ExecutionMode>('simulate');
   const [isConnecting, setIsConnecting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [programLoadState, setProgramLoadState] = useState<typeof PROGRAM_LOAD_STATE[keyof typeof PROGRAM_LOAD_STATE]>(PROGRAM_LOAD_STATE.EMPTY);
 
   const themeMenuRef = useRef<HTMLDivElement>(null);
   const compileMenuRef = useRef<HTMLDivElement>(null);
@@ -628,6 +630,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
         addConsoleEntry({ type: 'success', message: 'Simulator ready', source: 'runtime' });
       } else {
         await connectHardware();
+        setProgramLoadState(PROGRAM_LOAD_STATE.EMPTY);
         addConsoleEntry({ type: 'success', message: 'Hardware connected', source: 'runtime' });
       }
     } catch (e) {
@@ -664,6 +667,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
 
       addConsoleEntry({ type: 'info', message: description, source: 'runtime' });
       await loadProgram(dataToUpload, lastCompileResult.debugMap);
+      setProgramLoadState(PROGRAM_LOAD_STATE.LOADED);
       addConsoleEntry({ type: 'success', message: 'Program loaded', source: 'runtime' });
     } catch (e) {
       addConsoleEntry({ type: 'error', message: `Upload failed: ${e instanceof Error ? e.message : String(e)}`, source: 'runtime' });
@@ -680,7 +684,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     }
 
     // If we have bytecode but haven't loaded it, load it first
-    if (lastCompileResult && isIdle) {
+    if (lastCompileResult && shouldAutoLoadBeforeStart(vmState, programLoadState)) {
       try {
         // Hardware mode: Send full .zplc file with TASK segment for multi-task support
         // Simulation mode: Send raw bytecode (WASM uses coreLoadRaw)
@@ -688,6 +692,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
           ? lastCompileResult.zplcFile
           : lastCompileResult.bytecode;
         await loadProgram(dataToUpload, lastCompileResult.debugMap);
+        setProgramLoadState(PROGRAM_LOAD_STATE.LOADED);
       } catch (e) {
         addConsoleEntry({ type: 'error', message: `Failed to load: ${e instanceof Error ? e.message : String(e)}`, source: 'runtime' });
         return;
@@ -719,6 +724,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
 
   const handleReset = async () => {
     await reset();
+    setProgramLoadState(PROGRAM_LOAD_STATE.EMPTY);
     addConsoleEntry({ type: 'info', message: 'Reset', source: 'runtime' });
   };
 
@@ -928,8 +934,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
           </button>
         )}
 
-        {/* Live Values (mpeek) toggle - hardware mode only */}
-        {executionMode === 'hardware' && isConnected && (
+        {/* Live Values (mpeek) toggle */}
+        {isConnected && (
           <button
             onClick={toggleMpeek}
             className={`flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium transition-colors ${
@@ -938,8 +944,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
                 : 'bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-400)]'
             }`}
             title={mpeekEnabled
-              ? 'Fast Live (mpeek batch): one serial round-trip for all vars. Click to use standard peek.'
-              : 'Live values use standard peek. Click to enable fast mpeek (requires mpeek-capable firmware).'}
+              ? 'Inline live preview enabled. Click to disable editor live preview.'
+              : 'Inline live preview disabled. Watch table still updates. Click to enable editor live preview.'}
           >
             <Zap size={13} />
             <span className="hidden lg:inline">Live</span>
