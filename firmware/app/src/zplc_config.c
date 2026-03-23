@@ -8,14 +8,21 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#if defined(CONFIG_FILE_SYSTEM)
 #include <zephyr/fs/fs.h>
+#endif
+#if defined(CONFIG_FILE_SYSTEM_LITTLEFS)
 #include <zephyr/fs/littlefs.h>
+#endif
+#if defined(CONFIG_SETTINGS)
 #include <zephyr/settings/settings.h>
+#endif
 #include <zephyr/storage/flash_map.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(zplc_config, LOG_LEVEL_INF);
 
+#if defined(CONFIG_FILE_SYSTEM_LITTLEFS)
 /* LittleFS mount on external QSPI NOR flash (storage_partition).
  * Must be mounted before settings_subsys_init() when using SETTINGS_FILE.
  * Variable renamed to zplc_lfs_mount to avoid collision with lfs_mount()
@@ -28,6 +35,7 @@ static struct fs_mount_t zplc_lfs_mount = {
     .storage_dev = (void *)FIXED_PARTITION_ID(storage_partition),
     .mnt_point = "/lfs",
 };
+#endif
 
 /* Internal configuration state */
 static struct {
@@ -118,6 +126,7 @@ static struct {
  * ============================================================================
  */
 
+#if defined(CONFIG_SETTINGS)
 static int zplc_settings_set(const char *name, size_t len,
                              settings_read_cb read_cb, void *cb_arg) {
   const char *next;
@@ -604,6 +613,7 @@ static struct settings_handler zplc_conf_handler = {
     .name = "zplc",
     .h_set = zplc_settings_set,
 };
+#endif
 
 static void zplc_config_set_defaults(void) {
   strncpy(config.hostname, "zplc-device", sizeof(config.hostname));
@@ -693,12 +703,19 @@ static void zplc_config_set_defaults(void) {
 
 int zplc_config_init(void) {
   zplc_config_set_defaults();
+  int rc;
 
-  int rc = fs_mount(&zplc_lfs_mount);
+#if defined(CONFIG_FILE_SYSTEM_LITTLEFS)
+  rc = fs_mount(&zplc_lfs_mount);
   if (rc < 0 && rc != -EBUSY) {
     LOG_WRN("LittleFS mount failed (%d), using defaults", rc);
   }
+#endif
 
+#if !defined(CONFIG_SETTINGS)
+  LOG_WRN("Settings subsystem disabled; using in-memory defaults only");
+  return 0;
+#else
   rc = settings_subsys_init();
   if (rc) {
     LOG_ERR("settings_subsys_init failed: %d", rc);
@@ -719,17 +736,26 @@ int zplc_config_init(void) {
   LOG_INF("Config loaded. MQTT=%s broker=%s",
           config.mqtt_enabled ? "on" : "off", config.mqtt_broker);
   return 0;
+#endif
 }
 
 int zplc_config_save(void) {
+#if !defined(CONFIG_SETTINGS)
+  return -ENOTSUP;
+#else
   /* Setters only update the in-memory config struct.
    * This is the ONLY NVS flush point — call after a batch of config sets. */
   return settings_save();
+#endif
 }
 
 int zplc_config_reset(void) {
   zplc_config_set_defaults();
+#if !defined(CONFIG_SETTINGS)
+  return 0;
+#else
   return settings_save();
+#endif
 }
 
 /* ============================================================================
@@ -912,7 +938,9 @@ bool zplc_config_get_modbus_tag_override(uint16_t index, uint32_t *address) {
     return false;
   if (!config.modbus_tag_override_valid[index])
     return false;
-  *address = config.modbus_tag_override_addr[index];
+  if (address != NULL) {
+    *address = config.modbus_tag_override_addr[index];
+  }
   return true;
 }
 
@@ -940,6 +968,54 @@ int zplc_config_clear_modbus_tag_override(uint16_t index) {
 bool zplc_config_get_mqtt_enabled(void) { return config.mqtt_enabled; }
 void zplc_config_set_mqtt_enabled(bool enabled) {
   config.mqtt_enabled = enabled;
+}
+
+/* Stubs — real MQTT implementations live in zplc_mqtt.c */
+__attribute__((weak)) int zplc_mqtt_init(void) {
+  LOG_WRN("zplc_mqtt_init: MQTT module not linked");
+  return -ENOTSUP;
+}
+
+__attribute__((weak)) void zplc_mqtt_request_backoff_reset(void) {
+  LOG_WRN("zplc_mqtt_request_backoff_reset: MQTT module not linked");
+}
+
+__attribute__((weak)) void zplc_mqtt_get_status(zplc_mqtt_status_t *status) {
+  if (status != NULL) {
+    memset(status, 0, sizeof(*status));
+  }
+}
+
+__attribute__((weak)) void
+zplc_mqtt_set_azure_c2d_callback(zplc_azure_c2d_cb_t cb) {
+  ARG_UNUSED(cb);
+  LOG_WRN("zplc_mqtt_set_azure_c2d_callback: MQTT module not linked");
+}
+
+__attribute__((weak)) bool zplc_mqtt_is_connected(void) { return false; }
+
+__attribute__((weak)) int
+zplc_mqtt_enqueue_publish(const char *topic, const uint8_t *payload, size_t len,
+                          uint8_t qos, bool retain) {
+  ARG_UNUSED(topic);
+  ARG_UNUSED(payload);
+  ARG_UNUSED(len);
+  ARG_UNUSED(qos);
+  ARG_UNUSED(retain);
+  LOG_WRN("zplc_mqtt_enqueue_publish: MQTT module not linked");
+  return -ENOTSUP;
+}
+
+__attribute__((weak)) int zplc_azure_event_grid_publish(const char *event_type,
+                                                        const char *source,
+                                                        const char *topic,
+                                                        const char *data) {
+  ARG_UNUSED(event_type);
+  ARG_UNUSED(source);
+  ARG_UNUSED(topic);
+  ARG_UNUSED(data);
+  LOG_WRN("zplc_azure_event_grid_publish: MQTT module not linked");
+  return -ENOTSUP;
 }
 
 void zplc_config_get_mqtt_broker(char *buf, size_t len) {

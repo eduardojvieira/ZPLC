@@ -25,14 +25,19 @@ target_sources(app PRIVATE
     src/zplc_modbus.c
     src/zplc_modbus_client.c
     src/zplc_comm_modbus_handler.c
-    src/zplc_comm_mqtt_handler.c
-    src/zplc_comm_cloud_handler.c
-    src/zplc_mqtt.c
     src/zplc_time.c
-    src/zplc_azure_sas.c
-    src/zplc_azure_dps.c
-    src/zplc_aws_fleet.c
 )
+
+if(CONFIG_MQTT_LIB)
+  target_sources(app PRIVATE
+      src/zplc_comm_mqtt_handler.c
+      src/zplc_comm_cloud_handler.c
+      src/zplc_mqtt.c
+      src/zplc_azure_sas.c
+      src/zplc_azure_dps.c
+      src/zplc_aws_fleet.c
+  )
+endif()
 
 if(CONFIG_SHELL)
   target_sources(app PRIVATE src/shell_cmds.c)
@@ -43,6 +48,8 @@ target_include_directories(app PRIVATE
 )
 
 # Sparkplug protobuf sources must always be generated from canonical proto inputs.
-list(APPEND CMAKE_MODULE_PATH ${ZEPHYR_BASE}/modules/nanopb)
-include(nanopb)
-zephyr_nanopb_sources(app proto/sparkplug_b.proto)
+if(CONFIG_NANOPB)
+  list(APPEND CMAKE_MODULE_PATH ${ZEPHYR_BASE}/modules/nanopb)
+  include(nanopb)
+  zephyr_nanopb_sources(app proto/sparkplug_b.proto)
+endif()

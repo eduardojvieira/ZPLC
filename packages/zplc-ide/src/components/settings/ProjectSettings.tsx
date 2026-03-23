@@ -26,6 +26,7 @@ import {
   Radio,
 } from 'lucide-react';
 import { useIDEStore } from '../../store/useIDEStore';
+import { getTaskIntervalMs, getTaskWatchdogMs } from './taskFieldAccessors';
 import type {
   TaskDefinition,
   TaskTrigger,
@@ -1975,8 +1976,8 @@ function TaskCard({ task, availablePrograms, onUpdate, onRemove }: TaskCardProps
             type="number"
             min={1}
             max={10000}
-            value={task.interval || 100}
-            onChange={(e) => onUpdate({ interval: parseInt(e.target.value) || 100 })}
+            value={getTaskIntervalMs(task)}
+            onChange={(e) => onUpdate({ interval_ms: parseInt(e.target.value) || 100 })}
             disabled={task.trigger !== 'cyclic'}
             className="w-full px-2 py-1 text-sm bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] focus:outline-none disabled:opacity-50"
           />
@@ -2006,8 +2007,8 @@ function TaskCard({ task, availablePrograms, onUpdate, onRemove }: TaskCardProps
             type="number"
             min={0}
             max={10000}
-            value={task.watchdog || ''}
-            onChange={(e) => onUpdate({ watchdog: e.target.value ? parseInt(e.target.value) : undefined })}
+            value={getTaskWatchdogMs(task)}
+            onChange={(e) => onUpdate({ watchdog_ms: e.target.value ? parseInt(e.target.value) : undefined })}
             placeholder="Optional"
             className="w-full px-2 py-1 text-sm bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] focus:outline-none placeholder:text-[var(--color-surface-500)]"
           />

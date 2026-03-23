@@ -19,6 +19,7 @@
 
 #include "zplc_azure_sas.h"
 #include "zplc_config.h"
+#include "zplc_platform_attrs.h"
 #include "zplc_time.h"
 #include <errno.h>
 #include <stdio.h>
@@ -31,7 +32,6 @@
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
 #include <zephyr/net/websocket.h>
-#include <esp_attr.h>
 #include <zplc_core.h>
 #include <zplc_hal.h>
 #include <zplc_isa.h>

@@ -68,6 +68,9 @@ static zplc_hal_mutex_t pi_mutex = NULL;
 /** @brief Default VM instance for legacy API */
 static zplc_vm_t default_vm;
 
+/** @brief Legacy-compatible VM state snapshot for old tests/APIs */
+static zplc_vm_state_t legacy_default_vm_state;
+
 /** @brief Flag indicating if default VM has a program loaded */
 static int default_program_loaded = 0;
 
@@ -708,6 +711,8 @@ int zplc_vm_set_entry(zplc_vm_t *vm, uint16_t entry_point,
 }
 
 void zplc_vm_reset_cycle(zplc_vm_t *vm) {
+  const uint8_t resume_skip_breakpoint_once = vm != NULL ? vm->resume_skip_breakpoint_once : 0U;
+
   if (vm == NULL) {
     return;
   }
@@ -716,7 +721,7 @@ void zplc_vm_reset_cycle(zplc_vm_t *vm) {
   vm->call_depth = 0;
   vm->halted = 0;
   vm->paused = 0;
-  vm->resume_skip_breakpoint_once = 0;
+  vm->resume_skip_breakpoint_once = resume_skip_breakpoint_once;
   vm->error = ZPLC_VM_OK;
   /* Note: breakpoints are preserved across cycles */
 }
@@ -2158,11 +2163,26 @@ int zplc_core_run_cycle(void) {
 }
 
 const zplc_vm_state_t *zplc_core_get_state(void) {
-  /*
-   * Legacy API returns zplc_vm_state_t*, but our new zplc_vm_t is compatible
-   * since it starts with the same fields. Cast is safe for read-only access.
-   */
-  return (const zplc_vm_state_t *)&default_vm;
+  legacy_default_vm_state.pc = default_vm.pc;
+  legacy_default_vm_state.sp = default_vm.sp;
+  legacy_default_vm_state.bp = default_vm.bp;
+  legacy_default_vm_state.call_depth = default_vm.call_depth;
+  legacy_default_vm_state.flags = default_vm.flags;
+  legacy_default_vm_state.error = default_vm.error;
+  legacy_default_vm_state.halted = default_vm.halted;
+  legacy_default_vm_state.paused = default_vm.paused;
+  legacy_default_vm_state.breakpoint_count = default_vm.breakpoint_count;
+  memcpy(legacy_default_vm_state.breakpoints,
+         default_vm.breakpoints,
+         sizeof(legacy_default_vm_state.breakpoints));
+  memcpy(legacy_default_vm_state.stack,
+         default_vm.stack,
+         sizeof(legacy_default_vm_state.stack));
+  memcpy(legacy_default_vm_state.call_stack,
+         default_vm.call_stack,
+         sizeof(legacy_default_vm_state.call_stack));
+
+  return &legacy_default_vm_state;
 }
 
 uint16_t zplc_core_get_sp(void) { return default_vm.sp; }

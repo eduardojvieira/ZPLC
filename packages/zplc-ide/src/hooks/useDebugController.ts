@@ -24,7 +24,7 @@ import type {
   WatchForceState,
 } from '../runtime/debugAdapter';
 import { WATCH_FORCE_STATE, bytesToHex, valueToBytes } from '../runtime/debugAdapter';
-import { WASMAdapter } from '../runtime/wasmAdapter';
+import { createSimulationAdapter } from '../runtime/simulationAdapterFactory';
 import { connectionManager } from '../runtime/connectionManager';
 import type { DebugMap } from '../compiler';
 import { findVariable } from '../compiler';
@@ -32,9 +32,16 @@ import type { UploadTraceEvent } from '../runtime/uploadTrace';
 import {
   resolveExecutionLocation,
 } from './debugExecutionLocation';
-import { buildPolledDebugPaths } from './debugPollingPaths';
+import { buildPolledDebugPaths, describePolledDebugVariable } from './debugPollingPaths';
 import { debugLog } from '../utils/debugLog';
 import { deriveHardwareDebugState } from '../runtime/debugStatus';
+import {
+  type DebugCapabilities,
+} from '../runtime/debugCapabilities';
+import {
+  getDebugCapabilitiesForAdapter,
+  getDebugFeatureActionability,
+} from './debugCapabilityActions';
 
 const DEVICE_LOG_FLUSH_MS = 100;
 
@@ -53,6 +60,8 @@ export interface DebugControllerState {
   isPolling: boolean;
   /** Last error message */
   lastError: string | null;
+  /** Capability model for the active adapter/runtime */
+  debugCapabilities: DebugCapabilities | null;
 }
 
 export interface DebugControllerActions {
@@ -112,6 +121,7 @@ export function useDebugController(): DebugController {
   const [vmState, setVmState] = useState<VMState>('disconnected');
   const [vmInfo, setVmInfo] = useState<VMInfo | null>(null);
   const [lastError, setLastError] = useState<string | null>(null);
+  const [debugCapabilities, setDebugCapabilities] = useState<DebugCapabilities | null>(null);
 
   // Refs for polling
   const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -129,6 +139,7 @@ export function useDebugController(): DebugController {
   const mpeekEnabled = useIDEStore((state) => state.debug.mpeekEnabled);
   const projectConfig = useIDEStore((state) => state.projectConfig);
   const setControllerStatus = useIDEStore((state) => state.setControllerStatus);
+  const controllerInfo = useIDEStore((state) => state.controllerInfo);
 
   // Store actions
   const setDebugMode = useIDEStore((state) => state.setDebugMode);
@@ -188,6 +199,10 @@ export function useDebugController(): DebugController {
 
   // Keep adapter ref in sync
   adapterRef.current = adapter;
+
+  useEffect(() => {
+    setDebugCapabilities(getDebugCapabilitiesForAdapter(adapter, debugMode, controllerInfo));
+  }, [adapter, controllerInfo, debugMode]);
 
 
   // =========================================================================
@@ -303,19 +318,20 @@ export function useDebugController(): DebugController {
         await adapterRef.current.disconnect();
       }
 
-      const wasmAdapter = new WASMAdapter();
-      wasmAdapter.setEventHandlers(createEventHandlers());
+      const simulationAdapter = createSimulationAdapter();
+      simulationAdapter.setEventHandlers(createEventHandlers());
 
-      await wasmAdapter.connect();
+      await simulationAdapter.connect();
 
-      setAdapter(wasmAdapter);
+      setAdapter(simulationAdapter);
       setVmState('idle');
       setLastError(null);
+      setDebugCapabilities(getDebugCapabilitiesForAdapter(simulationAdapter, 'simulation', controllerInfo));
       setDebugMode('simulation');
 
       addConsoleEntry({
         type: 'success',
-        message: 'WASM simulation connected',
+        message: `${simulationAdapter.type === 'native' ? 'Native' : 'WASM'} simulation connected`,
         source: 'debugger',
       });
     } catch (err) {
@@ -358,6 +374,7 @@ export function useDebugController(): DebugController {
       setAdapter(serialAdapter);
       setVmState(initialState);
       setLastError(null);
+      setDebugCapabilities(getDebugCapabilitiesForAdapter(serialAdapter, 'hardware', controllerInfo));
       setDebugMode('hardware');
 
       addConsoleEntry({
@@ -415,6 +432,7 @@ export function useDebugController(): DebugController {
       setAdapter(null);
       setVmState('disconnected');
       setVmInfo(null);
+      setDebugCapabilities(null);
       clearLiveValues();
       clearForcedValues();
       setPolling(false);
@@ -472,9 +490,26 @@ export function useDebugController(): DebugController {
       const breakpointPCs = getAllBreakpointPCs();
       if (breakpointPCs.length > 0) {
         try {
-          await adapterRef.current.clearBreakpoints();
-          for (const pc of breakpointPCs) {
-            await adapterRef.current.setBreakpoint(pc);
+          const capability = getDebugFeatureActionability(debugCapabilities, 'breakpoints', 'Breakpoint sync');
+          if (!capability.allowed) {
+            addConsoleEntry({
+              type: 'warning',
+              message: capability.message ?? 'Breakpoint sync unavailable in the active runtime',
+              source: 'debugger',
+            });
+          } else {
+            if (capability.message) {
+              addConsoleEntry({
+                type: 'warning',
+                message: capability.message,
+                source: 'debugger',
+              });
+            }
+
+            await adapterRef.current.clearBreakpoints();
+            for (const pc of breakpointPCs) {
+              await adapterRef.current.setBreakpoint(pc);
+            }
           }
         } catch (e) {
           // Breakpoints may not be supported on hardware, log but don't fail
@@ -495,7 +530,7 @@ export function useDebugController(): DebugController {
         connectionManager.resumePolling();
       }
     }
-  }, [debugMode, projectConfig, setDebugMap, getAllBreakpointPCs, addConsoleEntry, logUploadTrace]);
+  }, [debugCapabilities, debugMode, projectConfig, setDebugMap, getAllBreakpointPCs, addConsoleEntry, logUploadTrace]);
 
   // =========================================================================
   // Execution Control
@@ -514,18 +549,42 @@ export function useDebugController(): DebugController {
 
   const pause = useCallback(async () => {
     if (!adapterRef.current) return;
+    const capability = getDebugFeatureActionability(debugCapabilities, 'pause', 'Pause');
+    if (!capability.allowed) {
+      addConsoleEntry({ type: 'warning', message: capability.message ?? 'Pause unavailable', source: 'debugger' });
+      return;
+    }
+    if (capability.message) {
+      addConsoleEntry({ type: 'warning', message: capability.message, source: 'debugger' });
+    }
     await adapterRef.current.pause();
-  }, []);
+  }, [addConsoleEntry, debugCapabilities]);
 
   const resume = useCallback(async () => {
     if (!adapterRef.current) return;
+    const capability = getDebugFeatureActionability(debugCapabilities, 'resume', 'Resume');
+    if (!capability.allowed) {
+      addConsoleEntry({ type: 'warning', message: capability.message ?? 'Resume unavailable', source: 'debugger' });
+      return;
+    }
+    if (capability.message) {
+      addConsoleEntry({ type: 'warning', message: capability.message, source: 'debugger' });
+    }
     await adapterRef.current.resume();
-  }, []);
+  }, [addConsoleEntry, debugCapabilities]);
 
   const step = useCallback(async () => {
     if (!adapterRef.current) return;
+    const capability = getDebugFeatureActionability(debugCapabilities, 'step', 'Step');
+    if (!capability.allowed) {
+      addConsoleEntry({ type: 'warning', message: capability.message ?? 'Step unavailable', source: 'debugger' });
+      return;
+    }
+    if (capability.message) {
+      addConsoleEntry({ type: 'warning', message: capability.message, source: 'debugger' });
+    }
     await adapterRef.current.step();
-  }, []);
+  }, [addConsoleEntry, debugCapabilities]);
 
   const reset = useCallback(async () => {
     if (!adapterRef.current) return;
@@ -686,41 +745,9 @@ export function useDebugController(): DebugController {
             buildPolledDebugPaths(watchVariables, debugMap, mpeekEnabled, 64),
           );
 
-          // Helper: map a varPath to a WatchVariable descriptor
-          type WatchType = 'BOOL' | 'INT' | 'DINT' | 'REAL' | 'BYTE' | 'WORD' | 'DWORD' | 'TIME' | 'STRING';
-          const toDescriptor = (varPath: string): { name: string; address: number; type: WatchType; forceable: boolean; bitOffset?: number; maxLength?: number } | null => {
-            if (debugMap) {
-              const found = findVariable(debugMap, varPath);
-              if (found) {
-                const varInfo = found.varInfo;
-                let mappedType: WatchType = 'DWORD';
-                const t = varInfo.type.toUpperCase();
-                if (t === 'BOOL') mappedType = 'BOOL';
-                else if (t === 'INT' || t === 'SINT' || t === 'USINT' || t === 'UINT') mappedType = 'INT';
-                else if (t === 'DINT' || t === 'UDINT' || t === 'LINT' || t === 'ULINT') mappedType = 'DINT';
-                else if (t === 'REAL' || t === 'LREAL') mappedType = 'REAL';
-                else if (t === 'BYTE') mappedType = 'BYTE';
-                else if (t === 'WORD') mappedType = 'WORD';
-                else if (t === 'DWORD' || t === 'LWORD') mappedType = 'DWORD';
-                else if (t === 'TIME') mappedType = 'TIME';
-                else if (t === 'STRING') mappedType = 'STRING';
-
-                return {
-                  name: varPath,
-                  address: varInfo.addr,
-                  type: mappedType,
-                  forceable: varInfo.region === 'IPI',
-                  bitOffset: varInfo.bitOffset,
-                  maxLength: mappedType === 'STRING' && varInfo.size ? Math.max(0, varInfo.size - 3) : undefined,
-                };
-              }
-            }
-            return null;
-          };
-
           const variables = Array.from(pathSet)
-            .map(toDescriptor)
-            .filter((v): v is NonNullable<ReturnType<typeof toDescriptor>> => v !== null && v.address !== 0);
+            .map((varPath) => describePolledDebugVariable(debugMap, varPath))
+            .filter((v): v is NonNullable<ReturnType<typeof describePolledDebugVariable>> => v !== null);
 
           if (variables.length === 0) {
             debugLog('[useDebugController] No variables to poll');
@@ -783,6 +810,11 @@ export function useDebugController(): DebugController {
 
       try {
         const pcs = getAllBreakpointPCs();
+        const capability = getDebugFeatureActionability(debugCapabilities, 'breakpoints', 'Breakpoint sync');
+
+        if (!capability.allowed) {
+          return;
+        }
 
         debugLog('[Breakpoint] Syncing to adapter', {
           adapterType: adapter.type,
@@ -805,7 +837,7 @@ export function useDebugController(): DebugController {
     };
 
     syncBreakpoints();
-  }, [adapter, breakpointMap, debugMap, getAllBreakpointPCs]);
+  }, [adapter, breakpointMap, debugCapabilities, debugMap, getAllBreakpointPCs]);
 
   // =========================================================================
   // Cleanup on Mode Change
@@ -843,6 +875,7 @@ export function useDebugController(): DebugController {
     vmInfo,
     isPolling,
     lastError,
+    debugCapabilities,
     // Actions
     startSimulation,
     connectHardware,

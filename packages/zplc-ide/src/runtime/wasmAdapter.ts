@@ -3,8 +3,12 @@
  * @brief WASM Debug Adapter for ZPLC Runtime
  *
  * This adapter runs the ZPLC VM in the browser using WebAssembly.
- * It provides a simulation environment for testing PLC programs
- * without real hardware.
+ * It is now an explicit legacy fallback, not the primary parity path.
+ *
+ * Important: pause/resume/step/breakpoint semantics here still depend on
+ * renderer-owned orchestration. That makes the adapter useful for quick local
+ * feedback, but degraded for parity claims compared with native simulation or
+ * hardware sessions.
  *
  * The WASM module is built from the C core using Emscripten and
  * exposes functions via the Emscripten runtime.
@@ -12,6 +16,7 @@
 
 import type {
   IDebugAdapter,
+  RuntimeSnapshot,
   VMState,
   VMInfo,
   WatchVariable,
@@ -24,6 +29,7 @@ import {
   bytesToHex,
   getTypeSize,
   bytesToValue,
+  RUNTIME_SESSION_SOURCE,
   WATCH_FORCE_STATE,
 } from './debugAdapter';
 import { loadZPLCModule, type EmscriptenModule } from './wasmLoader';
@@ -146,6 +152,9 @@ export class WASMAdapter implements IDebugAdapter {
 
     this._connected = true;
     this.setState('idle');
+    this.events.onSerialData?.(
+      '[WASM] Connected in legacy fallback mode. Pause/resume/step/breakpoint semantics are degraded versus native simulation or hardware.',
+    );
   }
 
   async disconnect(): Promise<void> {
@@ -672,6 +681,25 @@ export class WASMAdapter implements IDebugAdapter {
       cycles: this.cycleCount,
       error,
       tos,
+    };
+  }
+
+  async getRuntimeSnapshot(): Promise<RuntimeSnapshot> {
+    const info = await this.getInfo();
+    return {
+      source: RUNTIME_SESSION_SOURCE.WASM,
+      state: this.state,
+      uptimeMs: 0,
+      stats: {
+        cycles: this.cycleCount,
+        activeTasks: 1,
+        overruns: 0,
+        programSize: 0,
+      },
+      focusedVm: info,
+      tasks: [],
+      opi: [...this.virtualOutputs],
+      forceEntries: await this.listForcedValues(),
     };
   }
 
