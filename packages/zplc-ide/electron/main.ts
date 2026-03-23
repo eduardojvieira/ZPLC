@@ -9,6 +9,15 @@ import { app, BrowserWindow, session, ipcMain, shell } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
+import type { NativeSimulationRequest } from './nativeSimulationIpc.js';
+import { NativeSimulationSupervisor } from './nativeSimulationSupervisor.js';
+
+const NATIVE_SIMULATION_CHANNEL = {
+  START_SESSION: 'native-simulation:start-session',
+  STOP_SESSION: 'native-simulation:stop-session',
+  REQUEST: 'native-simulation:request',
+  EVENT: 'native-simulation:event',
+} as const;
 
 // ESM equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -16,6 +25,8 @@ const __dirname = path.dirname(__filename);
 
 // Keep a global reference of the window object to prevent GC
 let mainWindow: BrowserWindow | null = null;
+let nativeSimulationSupervisor: NativeSimulationSupervisor | null = null;
+let nativeSimulationUnsubscribe: (() => void) | null = null;
 
 // Determine if we're in development mode
 const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
@@ -70,6 +81,12 @@ function createWindow(): void {
 
   // Handle window close
   mainWindow.on('closed', () => {
+    nativeSimulationUnsubscribe?.();
+    nativeSimulationUnsubscribe = null;
+    if (nativeSimulationSupervisor) {
+      void nativeSimulationSupervisor.stopSession().catch(() => undefined);
+      nativeSimulationSupervisor = null;
+    }
     mainWindow = null;
   });
 
@@ -175,6 +192,42 @@ function setupIPC(): void {
   // Handle opening external URLs
   ipcMain.handle('open-external', async (_event, url: string) => {
     return shell.openExternal(url);
+  });
+
+  ipcMain.handle(NATIVE_SIMULATION_CHANNEL.START_SESSION, async () => {
+    if (!nativeSimulationSupervisor) {
+      nativeSimulationSupervisor = new NativeSimulationSupervisor({
+        clientName: 'zplc-ide',
+        clientVersion: appVersion,
+      });
+    }
+
+    nativeSimulationUnsubscribe?.();
+    nativeSimulationUnsubscribe = nativeSimulationSupervisor.onEvent((event) => {
+      mainWindow?.webContents.send(NATIVE_SIMULATION_CHANNEL.EVENT, event);
+    });
+
+    return nativeSimulationSupervisor.startSession();
+  });
+
+  ipcMain.handle(NATIVE_SIMULATION_CHANNEL.STOP_SESSION, async () => {
+    nativeSimulationUnsubscribe?.();
+    nativeSimulationUnsubscribe = null;
+
+    if (!nativeSimulationSupervisor) {
+      return;
+    }
+
+    await nativeSimulationSupervisor.stopSession();
+    nativeSimulationSupervisor = null;
+  });
+
+  ipcMain.handle(NATIVE_SIMULATION_CHANNEL.REQUEST, async (_event, request: NativeSimulationRequest) => {
+    if (!nativeSimulationSupervisor) {
+      throw new Error('Native simulation session is not active');
+    }
+
+    return nativeSimulationSupervisor.request(request);
   });
 }
 

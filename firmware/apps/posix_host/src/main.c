@@ -1,117 +1,122 @@
 /**
  * @file main.c
- * @brief ZPLC Runtime Entry Point
+ * @brief POSIX native runtime session entry point.
  *
- * SPDX-License-Identifier: MIT
- *
- * Phase 0: Dummy runtime that prints "Tick" every 100ms.
- * This validates the build system and HAL timing functions.
- *
- * Future phases will:
- * - Load a .zplc binary
- * - Initialize the VM
- * - Run the scan cycle
+ * Reads one JSON request per line from stdin, writes one JSON response per line
+ * to stdout, and emits async JSON events on stdout as they occur.
  */
+
+#include "native_runtime_session.h"
+#include "host_stdio.h"
+
+#include <signal.h>
+#include <stdio.h>
+#include <string.h>
 
 #include <zplc_hal.h>
-#include <zplc_core.h>
-#include <signal.h>
 
-/* ============================================================================
- * Signal Handling
- * ============================================================================
- * Industrial code needs clean shutdown. Ctrl+C should not leave IO in
- * an undefined state.
- */
+#define ZPLC_NATIVE_REQUEST_MAX 8192U
+#define ZPLC_NATIVE_RESPONSE_MAX 8192U
+#define ZPLC_NATIVE_EVENT_MAX 8192U
+#define ZPLC_NATIVE_REQUEST_POLL_MS 10U
 
-static volatile int running = 1;
-
-/**
- * @brief Signal handler for graceful shutdown.
- *
- * Catches SIGINT (Ctrl+C) and SIGTERM to allow clean exit.
- */
-static void signal_handler(int sig)
+static void emit_session_ready_event(void)
 {
-    (void)sig;
-    running = 0;
-    zplc_hal_log("\n[RUNTIME] Shutdown requested...\n");
+    (void)fprintf(stdout,
+                  "{\"type\":\"event\",\"method\":\"session.ready\",\"params\":{\"runtime_kind\":\"native-posix\"}}\n");
+    (void)fflush(stdout);
 }
 
-/* ============================================================================
- * Main Entry Point
- * ============================================================================ */
+static volatile sig_atomic_t keep_running = 1;
+
+static void signal_handler(int signal_value)
+{
+    (void)signal_value;
+    keep_running = 0;
+}
+
+static void write_json_line(FILE *stream, const char *line)
+{
+    if (stream == NULL || line == NULL || line[0] == '\0') {
+        return;
+    }
+
+    (void)fprintf(stream, "%s\n", line);
+    (void)fflush(stream);
+}
 
 int main(void)
 {
-    uint32_t tick;
-    uint32_t last_tick;
-    uint32_t cycle_count = 0;
+    zplc_native_runtime_session_t session;
+    char request_line[ZPLC_NATIVE_REQUEST_MAX];
+    char response[ZPLC_NATIVE_RESPONSE_MAX];
+    char event[ZPLC_NATIVE_EVENT_MAX];
+    zplc_host_stdio_result_t io_result;
 
-    /* Banner */
-    zplc_hal_log("================================================\n");
-    zplc_hal_log("  ZPLC Runtime v%s\n", zplc_core_version());
-    zplc_hal_log("  Phase 0: Build System Validation\n");
-    zplc_hal_log("================================================\n");
-
-    /* Set up signal handlers for clean shutdown */
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
 
-    /* Initialize HAL */
     if (zplc_hal_init() != ZPLC_HAL_OK) {
-        zplc_hal_log("[RUNTIME] ERROR: HAL initialization failed!\n");
+        (void)fprintf(stderr, "[native-sim] HAL initialization failed\n");
         return 1;
     }
 
-    /* Get initial tick for relative timing */
-    last_tick = zplc_hal_tick();
-    zplc_hal_log("[RUNTIME] Starting scan loop (100ms cycle)...\n");
-    zplc_hal_log("[RUNTIME] Press Ctrl+C to stop.\n\n");
+    zplc_native_runtime_session_init(&session);
+    emit_session_ready_event();
 
-    /*
-     * Main scan loop.
-     *
-     * In a real PLC runtime, this would be:
-     * 1. Read inputs (HAL_IO_Read -> Process Image)
-     * 2. Execute tasks (VM cycle)
-     * 3. Write outputs (Process Image -> HAL_IO_Write)
-     * 4. Handle comms/debug
-     *
-     * For Phase 0, we just tick and log.
-     */
-    while (running) {
-        /* Get current tick */
-        tick = zplc_hal_tick();
+    while (keep_running && !zplc_native_runtime_session_should_exit(&session)) {
+        const uint32_t now_ms = zplc_hal_tick();
+        const uint32_t poll_timeout_ms = zplc_native_runtime_session_poll_timeout_ms(
+            &session,
+            now_ms,
+            ZPLC_NATIVE_REQUEST_POLL_MS);
 
-        /* Log the tick - this is our "proof of life" */
-        zplc_hal_log("Tick at %u ms (cycle #%u)\n", tick, cycle_count);
+        event[0] = '\0';
+        (void)zplc_native_runtime_session_tick(&session, now_ms, event, sizeof(event));
+        write_json_line(stdout, event);
 
-        /*
-         * Store for jitter calculation in future phases.
-         * For now, just track it.
-         */
-        last_tick = tick;
-        cycle_count++;
+        io_result = zplc_host_wait_for_request_line(stdin,
+                                                    request_line,
+                                                    sizeof(request_line),
+                                                    poll_timeout_ms);
+        if (io_result == ZPLC_HOST_STDIO_TIMEOUT) {
+            continue;
+        }
 
-        /*
-         * Sleep for 100ms.
-         * In production, we'd calculate remaining time based on
-         * cycle execution duration to maintain precise timing.
-         */
-        zplc_hal_sleep(100);
+        if (io_result == ZPLC_HOST_STDIO_EOF) {
+            break;
+        }
+
+        if (io_result != ZPLC_HOST_STDIO_READY) {
+            (void)fprintf(stderr, "[native-sim] stdin read error\n");
+            zplc_hal_sleep(ZPLC_NATIVE_REQUEST_POLL_MS);
+            continue;
+        }
+
+        if (request_line[0] == '\0') {
+            if (feof(stdin) != 0) {
+                break;
+            }
+        }
+
+        response[0] = '\0';
+        event[0] = '\0';
+
+        (void)zplc_native_runtime_session_handle_request(&session,
+                                                         request_line,
+                                                         response,
+                                                         sizeof(response),
+                                                         event,
+                                                         sizeof(event));
+
+        write_json_line(stdout, response);
+        write_json_line(stdout, event);
     }
 
-    /* Suppress unused variable warning */
-    (void)last_tick;
-
-    /* Clean shutdown */
-    zplc_hal_log("\n[RUNTIME] Completed %u cycles.\n", cycle_count);
-    zplc_hal_log("[RUNTIME] Shutting down...\n");
-
+    zplc_native_runtime_session_shutdown(&session);
+    (void)fprintf(stdout, "{\"type\":\"event\",\"method\":\"session.exited\",\"params\":{}}\n");
+    (void)fflush(stdout);
     zplc_hal_shutdown();
-
-    zplc_hal_log("[RUNTIME] Goodbye.\n");
 
     return 0;
 }

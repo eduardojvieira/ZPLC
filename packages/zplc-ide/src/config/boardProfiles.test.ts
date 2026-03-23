@@ -10,8 +10,9 @@ import {
 describe('board network profile mapping', () => {
   test('maps manifest-declared network boards correctly', () => {
     expect(getBoardNetworkType('esp32s3_devkitc')).toBe('wifi');
-    expect(getBoardNetworkType('arduino_giga_r1')).toBe('wifi');
+    expect(getBoardNetworkType('arduino_giga_r1')).toBe('none');
     expect(getBoardNetworkType('stm32f746g_disco')).toBe('ethernet');
+    expect(getBoardNetworkType('nucleo_h743zi')).toBe('ethernet');
   });
 
   test('keeps board options aligned with the supported-board manifest', () => {

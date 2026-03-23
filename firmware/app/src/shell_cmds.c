@@ -17,7 +17,9 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/adc.h>
+#if defined(CONFIG_FILE_SYSTEM)
 #include <zephyr/fs/fs.h>
+#endif
 #ifdef CONFIG_NETWORKING
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_ip.h>
@@ -169,19 +171,6 @@ static const char *state_name(zplc_state_t state) {
   }
 }
 
-#ifdef CONFIG_ZPLC_HIL_DEBUG
-static const char *hil_mode_name(hil_mode_t mode) {
-  switch (mode) {
-  case HIL_MODE_SUMMARY:
-    return "summary";
-  case HIL_MODE_VERBOSE:
-    return "verbose";
-  case HIL_MODE_OFF:
-  default:
-    return "off";
-  }
-}
-
 #ifdef CONFIG_ZPLC_SCHEDULER
 static const char *sched_state_name(zplc_sched_state_t state) {
   switch (state) {
@@ -216,6 +205,19 @@ static const char *task_state_name(zplc_task_state_t state) {
   }
 }
 #endif
+
+#ifdef CONFIG_ZPLC_HIL_DEBUG
+static const char *hil_mode_name(hil_mode_t mode) {
+  switch (mode) {
+  case HIL_MODE_SUMMARY:
+    return "summary";
+  case HIL_MODE_VERBOSE:
+    return "verbose";
+  case HIL_MODE_OFF:
+  default:
+    return "off";
+  }
+}
 
 static int hil_parse_watch_type(const char *type, hil_watch_type_t *out_type,
                                 size_t *out_size) {
@@ -2702,6 +2704,7 @@ static int cmd_net_status(const struct shell *sh, size_t argc, char **argv) {
 #endif
 }
 
+#if defined(CONFIG_FILE_SYSTEM)
 static const char *cert_path_from_kind(const char *kind) {
   if (strcmp(kind, "ca") == 0) return "/lfs/certs/ca.pem";
   if (strcmp(kind, "client") == 0) return "/lfs/certs/client.pem";
@@ -2868,6 +2871,42 @@ static int cmd_cert_status(const struct shell *sh, size_t argc, char **argv) {
 
   return 0;
 }
+#else
+static int cmd_cert_begin(const struct shell *sh, size_t argc, char **argv) {
+  ARG_UNUSED(argc);
+  ARG_UNUSED(argv);
+  shell_error(sh, "ERROR: File system support not enabled in this build");
+  return -ENOTSUP;
+}
+
+static int cmd_cert_chunk(const struct shell *sh, size_t argc, char **argv) {
+  ARG_UNUSED(argc);
+  ARG_UNUSED(argv);
+  shell_error(sh, "ERROR: File system support not enabled in this build");
+  return -ENOTSUP;
+}
+
+static int cmd_cert_commit(const struct shell *sh, size_t argc, char **argv) {
+  ARG_UNUSED(argc);
+  ARG_UNUSED(argv);
+  shell_error(sh, "ERROR: File system support not enabled in this build");
+  return -ENOTSUP;
+}
+
+static int cmd_cert_erase(const struct shell *sh, size_t argc, char **argv) {
+  ARG_UNUSED(argc);
+  ARG_UNUSED(argv);
+  shell_error(sh, "ERROR: File system support not enabled in this build");
+  return -ENOTSUP;
+}
+
+static int cmd_cert_status(const struct shell *sh, size_t argc, char **argv) {
+  ARG_UNUSED(argc);
+  ARG_UNUSED(argv);
+  shell_error(sh, "ERROR: File system support not enabled in this build");
+  return -ENOTSUP;
+}
+#endif
 
 static const char *comm_tag_name(uint8_t tag_id)
 {

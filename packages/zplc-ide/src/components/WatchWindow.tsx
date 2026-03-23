@@ -9,6 +9,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { valueToBytes } from '../runtime/debugAdapter';
 import type { IDebugAdapter, WatchVariable, VMInfo, VMState } from '../runtime/debugAdapter';
+import { useIDEStore } from '../store/useIDEStore';
 
 /**
  * Props for the WatchWindow component
@@ -77,6 +78,7 @@ export const WatchWindow: React.FC<WatchWindowProps> = ({
   const [newVarName, setNewVarName] = useState('');
   const [newVarAddress, setNewVarAddress] = useState('');
   const [newVarType, setNewVarType] = useState<WatchVariable['type']>('BYTE');
+  const pollingInterval = useIDEStore((state) => state.debug.pollingInterval);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingVar, setEditingVar] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
@@ -126,10 +128,10 @@ export const WatchWindow: React.FC<WatchWindowProps> = ({
       } finally {
         isPolling = false;
       }
-    }, 250);
+    }, pollingInterval);
 
     return () => clearInterval(pollInterval);
-  }, [adapter, watchedVariables.length, vmState]);
+  }, [adapter, pollingInterval, watchedVariables.length, vmState]);
 
   // Add a new watch variable
   const handleAddVariable = useCallback(() => {

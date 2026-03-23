@@ -43,7 +43,8 @@
                         "rpi_pico",
                         "arduino_giga_r1",
                         "stm32f746g_disco",
-                        "esp32s3_devkitc"
+                        "esp32s3_devkitc",
+                        "nucleo_h743zi"
                     ]
                 },
                 "cpu": {
