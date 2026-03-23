@@ -9,6 +9,15 @@
 
 import type { Expression, FBParameter, STDataType } from '../ast.ts';
 
+export const MEMBER_SIZE = {
+    BYTE: 1,
+    WORD: 2,
+    DWORD: 4,
+    LWORD: 8,
+    STRING: 85,
+    WSTRING: 166,
+} as const;
+
 // ============================================================================
 // Member Types
 // ============================================================================
@@ -16,7 +25,7 @@ import type { Expression, FBParameter, STDataType } from '../ast.ts';
 /**
  * Data size for a member variable.
  */
-export type MemberSize = 1 | 2 | 4 | 8;
+export type MemberSize = (typeof MEMBER_SIZE)[keyof typeof MEMBER_SIZE];
 
 /**
  * Member variable definition for a function block.
