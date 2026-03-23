@@ -288,7 +288,6 @@ jobs:
           cp -r tools "${PACKAGE_NAME}/"
           cp firmware/CMakeLists.txt "${PACKAGE_NAME}/"
           cp README.md "${PACKAGE_NAME}/"
-          cp TECHNICAL_SPEC.md "${PACKAGE_NAME}/"
           cp AGENTS.md "${PACKAGE_NAME}/"
           
           # Create build instructions
@@ -422,7 +421,7 @@ jobs:
           ## Documentation
           
           - Full documentation: https://eduardojvieira.github.io/ZPLC/
-          - Technical spec: See TECHNICAL_SPEC.md
+          - Reference docs: https://eduardojvieira.github.io/ZPLC/reference
           - Agent context: See AGENTS.md
           
           EOF
@@ -566,7 +565,7 @@ jobs:
             ### Documentation
 
             - 📚 [Full Documentation](https://eduardojvieira.github.io/ZPLC/)
-            - 📖 [Technical Specification](https://github.com/eduardojvieira/ZPLC/blob/master/TECHNICAL_SPEC.md)
+            - 📖 [Reference Documentation](https://eduardojvieira.github.io/ZPLC/reference)
           files: |
             release/*.dmg
             release/*.zip
