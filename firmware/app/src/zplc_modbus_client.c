@@ -6,7 +6,9 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
 #include <zephyr/modbus/modbus.h>
+#if defined(CONFIG_NET_SOCKETS)
 #include <zephyr/net/socket.h>
+#endif
 #include <zephyr/sys/byteorder.h>
 
 #include <errno.h>
@@ -139,6 +141,7 @@ static int zplc_modbus_rtu_client_iface_init(void)
 #endif
 }
 
+#if defined(CONFIG_NET_SOCKETS)
 static int tcp_connect_socket(const char *host, uint16_t port, uint32_t timeout_ms)
 {
     struct zsock_addrinfo hints = {
@@ -240,9 +243,11 @@ static int tcp_transaction(const char *host, uint16_t port, uint8_t unit_id,
 
     return 0;
 }
+#endif
+
 
 int zplc_modbus_rtu_client_read_holding(uint8_t slave_id, uint16_t start_reg,
-                                        uint16_t count, uint16_t *out)
+                                          uint16_t count, uint16_t *out)
 {
     if (out == NULL || count == 0U || count > 125U) {
         return -EINVAL;
@@ -295,9 +300,10 @@ int zplc_modbus_rtu_client_write_coil(uint8_t slave_id, uint16_t addr, bool stat
     return modbus_write_coil(s_rtu_client_iface, slave_id, addr, state);
 }
 
+#if defined(CONFIG_NET_SOCKETS)
 int zplc_modbus_tcp_client_read_holding(const char *host, uint16_t port,
-                                        uint8_t unit_id, uint16_t start_reg,
-                                        uint16_t count, uint16_t *out)
+                                         uint8_t unit_id, uint16_t start_reg,
+                                         uint16_t count, uint16_t *out)
 {
     uint8_t req[5];
     uint8_t resp[ZPLC_MODBUS_TCP_MAX_ADU];
@@ -438,6 +444,69 @@ int zplc_modbus_tcp_client_write_coil(const char *host, uint16_t port,
     return tcp_transaction(host, port, unit_id, req, sizeof(req), resp, &resp_len,
                            zplc_config_get_modbus_tcp_client_timeout_ms());
 }
+#else
+int zplc_modbus_tcp_client_read_holding(const char *host, uint16_t port,
+                                        uint8_t unit_id, uint16_t start_reg,
+                                        uint16_t count, uint16_t *out)
+{
+    ARG_UNUSED(host);
+    ARG_UNUSED(port);
+    ARG_UNUSED(unit_id);
+    ARG_UNUSED(start_reg);
+    ARG_UNUSED(count);
+    ARG_UNUSED(out);
+    return -ENOTSUP;
+}
+
+int zplc_modbus_tcp_client_write_register(const char *host, uint16_t port,
+                                          uint8_t unit_id, uint16_t reg,
+                                          uint16_t value)
+{
+    ARG_UNUSED(host);
+    ARG_UNUSED(port);
+    ARG_UNUSED(unit_id);
+    ARG_UNUSED(reg);
+    ARG_UNUSED(value);
+    return -ENOTSUP;
+}
+
+int zplc_modbus_tcp_client_write_multiple(const char *host, uint16_t port,
+                                          uint8_t unit_id, uint16_t start_reg,
+                                          uint16_t count, const uint16_t *values)
+{
+    ARG_UNUSED(host);
+    ARG_UNUSED(port);
+    ARG_UNUSED(unit_id);
+    ARG_UNUSED(start_reg);
+    ARG_UNUSED(count);
+    ARG_UNUSED(values);
+    return -ENOTSUP;
+}
+
+int zplc_modbus_tcp_client_read_coils(const char *host, uint16_t port,
+                                      uint8_t unit_id, uint16_t start_addr,
+                                      uint16_t count, uint8_t *out_bits)
+{
+    ARG_UNUSED(host);
+    ARG_UNUSED(port);
+    ARG_UNUSED(unit_id);
+    ARG_UNUSED(start_addr);
+    ARG_UNUSED(count);
+    ARG_UNUSED(out_bits);
+    return -ENOTSUP;
+}
+
+int zplc_modbus_tcp_client_write_coil(const char *host, uint16_t port,
+                                      uint8_t unit_id, uint16_t addr, bool state)
+{
+    ARG_UNUSED(host);
+    ARG_UNUSED(port);
+    ARG_UNUSED(unit_id);
+    ARG_UNUSED(addr);
+    ARG_UNUSED(state);
+    return -ENOTSUP;
+}
+#endif
 
 static int poll_modbus_tags(bool use_tcp)
 {
@@ -537,11 +606,15 @@ int zplc_modbus_client_init(void)
     }
 
     if (zplc_config_get_modbus_tcp_client_enabled()) {
+#if defined(CONFIG_NET_SOCKETS)
         k_thread_create(&s_tcp_client_thread, s_tcp_client_stack,
                         K_THREAD_STACK_SIZEOF(s_tcp_client_stack),
                         modbus_tcp_client_thread, NULL, NULL, NULL,
                         K_PRIO_PREEMPT(8), 0, K_NO_WAIT);
         k_thread_name_set(&s_tcp_client_thread, "modbus_tcp_client");
+#else
+        LOG_WRN("Modbus TCP client disabled: NET_SOCKETS not enabled");
+#endif
     }
 
     return 0;

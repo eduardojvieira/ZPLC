@@ -351,6 +351,7 @@ int main(void) {
     zplc_hal_log("[INIT] ERROR: Modbus Handler init failed: %d\n", rc);
   }
 
+#ifdef CONFIG_MQTT_LIB
   zplc_hal_log("[INIT] Starting MQTT Client...\n");
   ret = zplc_mqtt_init();
   if (ret != 0) {
@@ -371,6 +372,9 @@ int main(void) {
 
   (void)zplc_azure_dps_provision();
   (void)zplc_aws_fleet_provision();
+#else
+  zplc_hal_log("[INIT] MQTT/Cloud features disabled for this board build.\n");
+#endif
 
   zplc_hal_log("[INIT] Shell ready. Use 'zplc help' for commands.\n\n");
 

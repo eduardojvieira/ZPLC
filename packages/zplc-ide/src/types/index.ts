@@ -18,6 +18,34 @@ declare global {
         isPackaged: boolean;
       }>;
       openExternal: (url: string) => Promise<void>;
+      nativeSimulation?: {
+        startSession: () => Promise<{
+          protocol_version: string;
+          runtime_kind: string;
+          runtime_version: string;
+          capability_profile: {
+            profile_id: string;
+            features: Array<{
+              name: string;
+              status: 'supported' | 'degraded' | 'unavailable';
+              reason?: string;
+              recommended_action?: string;
+            }>;
+          };
+        }>;
+        stopSession: () => Promise<void>;
+        request: <TResult = unknown>(request: {
+          id: string;
+          type: 'request';
+          method: string;
+          params: Record<string, unknown>;
+        }) => Promise<TResult>;
+        onEvent?: (callback: (event: {
+          type: 'event';
+          method: string;
+          params: Record<string, unknown>;
+        }) => void) => () => void;
+      };
       isElectron: boolean;
       platform: string;
     };

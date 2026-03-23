@@ -16,9 +16,12 @@
 #include "zplc_time.h"
 #include "zplc_config.h"
 
+#include <errno.h>
 #include <zephyr/kernel.h>
+#if defined(CONFIG_SNTP)
 #include <zephyr/net/sntp.h>
 #include <zephyr/net/socketutils.h>
+#endif
 #include <zephyr/logging/log.h>
 #include <string.h>
 
@@ -56,6 +59,7 @@ static bool     s_synced         = false;
  * @return 0 on success with s_epoch_base_ms / s_uptime_base_ms updated,
  *         negative errno on failure.
  */
+#if defined(CONFIG_SNTP)
 static int do_sntp_sync(const char *server)
 {
     struct sntp_time sntp_result;
@@ -86,6 +90,7 @@ static int do_sntp_sync(const char *server)
     LOG_INF("SNTP: synchronized — Unix epoch %lld ms", (long long)s_epoch_base_ms);
     return 0;
 }
+#endif
 
 /* ============================================================================
  * Public API
@@ -95,6 +100,7 @@ int zplc_time_init(void)
 {
     k_mutex_init(&s_lock);
 
+#if defined(CONFIG_SNTP)
     /* Check if NTP is enabled in config */
     if (!zplc_config_get_ntp_enabled()) {
         LOG_INF("SNTP: disabled by config — timestamps will use k_uptime_get()");
@@ -112,6 +118,10 @@ int zplc_time_init(void)
     }
 
     return 0;
+#else
+    LOG_INF("SNTP support disabled in this build");
+    return 0;
+#endif
 }
 
 bool zplc_time_is_synced(void)
@@ -136,6 +146,9 @@ int64_t zplc_time_get_unix_ms(void)
 
 int zplc_time_resync(void)
 {
+#if !defined(CONFIG_SNTP)
+    return -ENOTSUP;
+#else
     if (!zplc_config_get_ntp_enabled()) {
         return 0;
     }
@@ -143,4 +156,5 @@ int zplc_time_resync(void)
     char server[64];
     zplc_config_get_ntp_server(server, sizeof(server));
     return do_sntp_sync(server);
+#endif
 }

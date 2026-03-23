@@ -12,6 +12,14 @@
  */
 export type VMState = 'idle' | 'running' | 'paused' | 'error' | 'disconnected';
 
+export const DEBUG_ADAPTER_TYPE = {
+  WASM: 'wasm',
+  SERIAL: 'serial',
+  NATIVE: 'native',
+} as const;
+
+export type DebugAdapterType = (typeof DEBUG_ADAPTER_TYPE)[keyof typeof DEBUG_ADAPTER_TYPE];
+
 /**
  * VM information snapshot
  */
@@ -94,6 +102,47 @@ export interface WatchForceEntry {
   state: WatchForceState;
 }
 
+export const RUNTIME_SESSION_SOURCE = {
+  NATIVE: 'native',
+  SERIAL: 'serial',
+  WASM: 'wasm',
+} as const;
+
+export type RuntimeSessionSource =
+  (typeof RUNTIME_SESSION_SOURCE)[keyof typeof RUNTIME_SESSION_SOURCE];
+
+export interface RuntimeTaskSnapshot {
+  taskId: number;
+  state: string;
+  cycles: number;
+  overruns: number;
+  intervalUs: number;
+  priority: number;
+  pc: number;
+  sp: number;
+  halted: boolean;
+  error: number;
+  name?: string;
+}
+
+export interface RuntimeSnapshotStats {
+  cycles: number;
+  activeTasks: number;
+  overruns: number;
+  programSize: number;
+}
+
+export interface RuntimeSnapshot {
+  source: RuntimeSessionSource;
+  state: VMState;
+  uptimeMs: number;
+  stats: RuntimeSnapshotStats;
+  focusedVm: VMInfo | null;
+  tasks: RuntimeTaskSnapshot[];
+  opi: number[];
+  forceEntries: WatchForceEntry[];
+}
+
 /**
  * Event callbacks for debug adapter
  */
@@ -112,6 +161,10 @@ export interface DebugAdapterEvents {
   onStepComplete?: (pc: number) => void;
   /** Called when raw serial/device output is observed during a connected session */
   onSerialData?: (line: string) => void;
+  /** Called when a normalized runtime snapshot becomes available */
+  onRuntimeSnapshot?: (snapshot: RuntimeSnapshot) => void;
+  /** Called when adapter capability state changes */
+  onCapabilitiesChange?: () => void;
 }
 
 export interface LoadProgramOptions {
@@ -139,7 +192,7 @@ export interface IDebugAdapter {
   /**
    * Get the adapter type identifier
    */
-  readonly type: 'wasm' | 'serial';
+  readonly type: DebugAdapterType;
 
   /**
    * Get current connection state
@@ -283,6 +336,11 @@ export interface IDebugAdapter {
    * Get current VM information
    */
   getInfo(): Promise<VMInfo>;
+
+  /**
+   * Get a normalized runtime snapshot for workflow parity.
+   */
+  getRuntimeSnapshot(): Promise<RuntimeSnapshot>;
 
   /**
    * Get values for multiple watch variables
