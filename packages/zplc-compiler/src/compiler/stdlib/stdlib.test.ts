@@ -18,6 +18,21 @@ import {
 import type { FunctionBlockDef, FunctionDef, CodeGenContext } from './types.ts';
 import type { Expression } from '../ast.ts';
 
+const COMM_FB_NAMES = [
+    'MB_READ_HREG',
+    'MB_WRITE_HREG',
+    'MB_READ_COIL',
+    'MB_WRITE_COIL',
+    'MQTT_CONNECT',
+    'MQTT_PUBLISH',
+    'MQTT_SUBSCRIBE',
+    'AZURE_C2D_RECV',
+    'AZURE_DPS_PROV',
+    'AZURE_EG_PUB',
+    'AWS_FLEET_PROV',
+    'SPB_REBIRTH',
+] as const;
+
 // ============================================================================
 // Helper to capture emitted assembly
 // ============================================================================
@@ -83,7 +98,8 @@ describe('stdlib registry', () => {
         // New in v1.2 - System Buffers
         expect(fbNames).toContain('FIFO');
         expect(fbNames).toContain('LIFO');
-        expect(fbNames.length).toBe(22);
+        COMM_FB_NAMES.forEach(name => expect(fbNames).toContain(name));
+        expect(fbNames.length).toBe(34);
     });
 
     test('all functions are registered', () => {
@@ -183,6 +199,18 @@ describe('stdlib registry', () => {
         expect(ton!.name).toBe('TON');
         expect(ton!.size).toBe(16);
         expect(ton!.members.length).toBe(6);
+    });
+
+    test('getFB returns communication FBs with generic member metadata', () => {
+        const mqttPublish = getFB('MQTT_PUBLISH');
+
+        expect(mqttPublish).toBeDefined();
+
+        const topic = mqttPublish!.members.find(member => member.name === 'TOPIC');
+        expect(topic).toBeDefined();
+        expect(topic!.size).toBe(85);
+        expect(topic!.isInternal).toBe(false);
+        expect(topic!.dataType).toBe('STRING');
     });
 
     test('getFn returns correct function definitions', () => {
