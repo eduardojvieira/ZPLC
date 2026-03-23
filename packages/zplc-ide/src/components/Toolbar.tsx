@@ -51,12 +51,11 @@ import { GeneratedCodeDialog } from './GeneratedCodeDialog';
 import { loadFileFromTree } from '../utils/fileSystem';
 import type { FileTreeNode } from '../types';
 import { PROGRAM_LOAD_STATE, shouldAutoLoadBeforeStart } from './debugSessionState';
+import { EXECUTION_MODE, selectRuntimeArtifact, type ExecutionMode } from './runtimeArtifactSelection';
 
 // =============================================================================
 // Types
 // =============================================================================
-
-type ExecutionMode = 'simulate' | 'hardware';
 
 interface ToolbarProps {
   /** Debug controller instance from App */
@@ -109,7 +108,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
   // Local UI state
   const [isThemeMenuOpen, setIsThemeMenuOpen] = useState(false);
   const [isCompileMenuOpen, setIsCompileMenuOpen] = useState(false);
-  const [executionMode, setExecutionMode] = useState<ExecutionMode>('simulate');
+  const [executionMode, setExecutionMode] = useState<ExecutionMode>(EXECUTION_MODE.SIMULATE);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [programLoadState, setProgramLoadState] = useState<typeof PROGRAM_LOAD_STATE[keyof typeof PROGRAM_LOAD_STATE]>(PROGRAM_LOAD_STATE.EMPTY);
@@ -657,11 +656,12 @@ export function Toolbar({ debugController }: ToolbarProps) {
     try {
       // Hardware mode: Send full .zplc file with TASK segment for multi-task support
       // Simulation mode: Send raw bytecode (WASM uses coreLoadRaw)
-      const dataToUpload = executionMode === 'hardware'
-        ? lastCompileResult.zplcFile
-        : lastCompileResult.bytecode;
+      const dataToUpload = selectRuntimeArtifact(executionMode, adapter?.type ?? null, {
+        bytecode: lastCompileResult.bytecode,
+        zplcFile: lastCompileResult.zplcFile,
+      });
 
-      const description = executionMode === 'hardware'
+      const description = dataToUpload === lastCompileResult.zplcFile
         ? `Uploading .zplc file (${dataToUpload.length} bytes, ${lastCompileResult.taskCount} task(s))...`
         : `Loading bytecode (${dataToUpload.length} bytes)...`;
 
@@ -688,9 +688,10 @@ export function Toolbar({ debugController }: ToolbarProps) {
       try {
         // Hardware mode: Send full .zplc file with TASK segment for multi-task support
         // Simulation mode: Send raw bytecode (WASM uses coreLoadRaw)
-        const dataToUpload = executionMode === 'hardware'
-          ? lastCompileResult.zplcFile
-          : lastCompileResult.bytecode;
+        const dataToUpload = selectRuntimeArtifact(executionMode, adapter?.type ?? null, {
+          bytecode: lastCompileResult.bytecode,
+          zplcFile: lastCompileResult.zplcFile,
+        });
         await loadProgram(dataToUpload, lastCompileResult.debugMap);
         setProgramLoadState(PROGRAM_LOAD_STATE.LOADED);
       } catch (e) {
@@ -863,11 +864,11 @@ export function Toolbar({ debugController }: ToolbarProps) {
       {/* Mode Toggle */}
       <div className="flex items-center bg-[var(--color-surface-700)] rounded overflow-hidden">
         <button
-          onClick={() => {
-            if (isConnected) disconnect();
-            setExecutionMode('simulate');
-          }}
-          className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors ${executionMode === 'simulate'
+            onClick={() => {
+              if (isConnected) disconnect();
+              setExecutionMode(EXECUTION_MODE.SIMULATE);
+            }}
+           className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors ${executionMode === EXECUTION_MODE.SIMULATE
             ? 'bg-cyan-600 text-white'
             : 'text-[var(--color-surface-300)] hover:bg-[var(--color-surface-600)]'
             }`}
@@ -877,11 +878,11 @@ export function Toolbar({ debugController }: ToolbarProps) {
           <span className="hidden sm:inline">Simulate</span>
         </button>
         <button
-          onClick={() => {
-            if (isConnected) disconnect();
-            setExecutionMode('hardware');
-          }}
-          className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors ${executionMode === 'hardware'
+            onClick={() => {
+              if (isConnected) disconnect();
+              setExecutionMode(EXECUTION_MODE.HARDWARE);
+            }}
+           className={`flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium transition-colors ${executionMode === EXECUTION_MODE.HARDWARE
             ? 'bg-green-600 text-white'
             : 'text-[var(--color-surface-300)] hover:bg-[var(--color-surface-600)]'
             }`}

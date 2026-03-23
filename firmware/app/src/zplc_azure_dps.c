@@ -1,13 +1,12 @@
 #include "zplc_config.h"
 #include "zplc_azure_sas.h"
+#include "zplc_platform_attrs.h"
 
 #include <zephyr/fs/fs.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net/mqtt.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
-#include <esp_attr.h>
-
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>

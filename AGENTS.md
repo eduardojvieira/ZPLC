@@ -39,6 +39,9 @@ By following these guidelines, you will help maintain the high standards require
 ## Active Technologies
 - ANSI C99 (`firmware/lib/zplc_core`), TypeScript 5.9, React 19, + Zephyr RTOS 4.0, west/CMake toolchain, Docusaurus v3, (008-release-foundation)
 - Git-tracked Markdown/JSON/YAML release artifacts and documentation; no new (008-release-foundation)
+- ANSI C99 (`firmware/lib/zplc_core`, host runtime), TypeScript 5.9 (IDE + Electron), React 19, Electron 39, Bun runtime + ZPLC core + POSIX HAL, existing Zephyr scheduler/runtime behavior as reference, Electron main/preload IPC boundary, IDE runtime adapter layer (009-native-runtime-sim)
+- Local files for projects and evidence; host persistence through existing POSIX HAL-backed retentive storage (009-native-runtime-sim)
 
 ## Recent Changes
 - 008-release-foundation: Added ANSI C99 (`firmware/lib/zplc_core`), TypeScript 5.9, React 19, + Zephyr RTOS 4.0, west/CMake toolchain, Docusaurus v3,
+- 009-native-runtime-sim: Native POSIX simulation now uses Electron main/preload supervision, framed stdio session APIs, capability-aware IDE workflows, host-side memory/breakpoint/force handling, POSIX HAL retentive persistence tests, and explicit degraded WASM fallback semantics.

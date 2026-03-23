@@ -14,6 +14,7 @@ import type {
   IDebugAdapter,
   VMState,
   VMInfo,
+  RuntimeSnapshot,
   WatchVariable,
   WatchForceEntry,
   DebugAdapterEvents,
@@ -45,6 +46,7 @@ import { parsePeekBytes, groupVariablesForBatchPeek, extractVariableBytes, parse
 import type { MpeekRequest } from './peekParser';
 import { debugLog } from '../utils/debugLog';
 import { deriveHardwareDebugState } from './debugStatus';
+import { normalizeSerialRuntimeSnapshot } from './runtimeSnapshot';
 
 /** Command timeout in milliseconds.
  * 10 s to accommodate firmware flash writes (NVS page erase can take ~1 s
@@ -994,6 +996,18 @@ export class SerialAdapter implements IDebugAdapter {
       // Fallback to text parsing
       return this.getInfoLegacy();
     }
+  }
+
+  async getRuntimeSnapshot(): Promise<RuntimeSnapshot> {
+    if (!this._connected) {
+      throw new Error('Not connected');
+    }
+
+    const status = await this.getStatus();
+    const forceEntries = await this.listForcedValues().catch(() => []);
+    const snapshot = normalizeSerialRuntimeSnapshot(status, forceEntries);
+    this.events.onRuntimeSnapshot?.(snapshot);
+    return snapshot;
   }
 
   /**

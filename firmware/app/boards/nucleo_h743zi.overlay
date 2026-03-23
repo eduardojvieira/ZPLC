@@ -19,21 +19,8 @@
     /* Board has sufficient default aliases for ZPLC GPIO HAL */
 };
 
-/* Define flash partitions for NVS storage */
-&flash0 {
-    partitions {
-        compatible = "fixed-partitions";
-        #address-cells = <1>;
-        #size-cells = <1>;
-
-        /*
-         * Storage partition for NVS (Non-Volatile Storage)
-         * Located at the end of flash: 128KB for program persistence
-         * STM32H7 has 128KB sectors, so we use one sector.
-         */
-        storage_partition: partition@1e0000 {
-            label = "storage";
-            reg = <0x1e0000 0x20000>;
-        };
-    };
-};
+/*
+ * The upstream Nucleo H743ZI board DTS already defines `storage_partition`
+ * on internal flash. Do not redefine it here or devicetree label collisions
+ * will break the build.
+ */

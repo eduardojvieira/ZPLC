@@ -33,8 +33,14 @@ static int hal_initialized = 0;
 /** @brief Directory for persistent storage */
 #define ZPLC_PERSIST_DIR ".zplc"
 
+/** @brief Environment override for testable persistence root */
+#define ZPLC_PERSIST_ROOT_ENV "ZPLC_PERSIST_ROOT"
+
 /** @brief Maximum path length */
 #define ZPLC_PATH_MAX 256
+
+/** @brief Maximum persistence key length */
+#define ZPLC_PERSIST_KEY_MAX 128
 
 /* ============================================================================
  * Timing Functions
@@ -148,26 +154,34 @@ zplc_hal_result_t zplc_hal_dac_write(uint8_t channel, uint16_t value) {
  * @return 0 on success, -1 on error
  */
 static int persist_build_path(const char *key, char *path, size_t path_len) {
-  const char *home;
+  const char *persist_root;
+  char sanitized_key[ZPLC_PERSIST_KEY_MAX];
   int ret;
+  size_t index;
 
-  home = getenv("HOME");
-  if (home == NULL) {
-    home = "/tmp"; /* Fallback if HOME is not set */
+  if (key == NULL) {
+    return -1;
   }
 
-  /* Sanitize key: replace '/' with '_' to avoid subdirectory issues */
-  ret = snprintf(path, path_len, "%s/%s/%s.bin", home, ZPLC_PERSIST_DIR, key);
+  for (index = 0; index + 1U < sizeof(sanitized_key) && key[index] != '\0'; ++index) {
+    sanitized_key[index] = (key[index] == '/') ? '_' : key[index];
+  }
+  sanitized_key[index] = '\0';
+
+  persist_root = getenv(ZPLC_PERSIST_ROOT_ENV);
+  if (persist_root == NULL || persist_root[0] == '\0') {
+    persist_root = getenv("HOME");
+    if (persist_root == NULL) {
+      persist_root = "/tmp"; /* Fallback if HOME is not set */
+    }
+
+    ret = snprintf(path, path_len, "%s/%s/%s.bin", persist_root, ZPLC_PERSIST_DIR, sanitized_key);
+  } else {
+    ret = snprintf(path, path_len, "%s/%s.bin", persist_root, sanitized_key);
+  }
+
   if (ret < 0 || (size_t)ret >= path_len) {
     return -1; /* Path too long */
-  }
-
-  /* Replace '/' in key portion with '_' */
-  char *key_start = path + strlen(home) + strlen(ZPLC_PERSIST_DIR) + 2;
-  for (char *p = key_start; *p != '\0' && *p != '.'; p++) {
-    if (*p == '/') {
-      *p = '_';
-    }
   }
 
   return 0;
@@ -178,16 +192,25 @@ static int persist_build_path(const char *key, char *path, size_t path_len) {
  * @return 0 on success, -1 on error
  */
 static int persist_ensure_dir(void) {
-  const char *home;
+  const char *persist_root;
   char dir_path[ZPLC_PATH_MAX];
   int ret;
 
-  home = getenv("HOME");
-  if (home == NULL) {
-    home = "/tmp";
+  persist_root = getenv(ZPLC_PERSIST_ROOT_ENV);
+  if (persist_root != NULL && persist_root[0] != '\0') {
+    if (mkdir(persist_root, 0755) != 0 && errno != EEXIST) {
+      zplc_hal_log("[HAL] Failed to create persist root dir: %s\n", strerror(errno));
+      return -1;
+    }
+    return 0;
   }
 
-  ret = snprintf(dir_path, sizeof(dir_path), "%s/%s", home, ZPLC_PERSIST_DIR);
+  persist_root = getenv("HOME");
+  if (persist_root == NULL) {
+    persist_root = "/tmp";
+  }
+
+  ret = snprintf(dir_path, sizeof(dir_path), "%s/%s", persist_root, ZPLC_PERSIST_DIR);
   if (ret < 0 || (size_t)ret >= sizeof(dir_path)) {
     return -1;
   }
@@ -445,6 +468,13 @@ zplc_hal_result_t zplc_hal_init(void) {
   }
 
   zplc_hal_log("[HAL] POSIX HAL initializing...\n");
+
+  if (persist_ensure_dir() != 0) {
+    zplc_hal_log("[HAL] Failed to prepare persistence directory\n");
+    return ZPLC_HAL_ERROR;
+  }
+
+  zplc_hal_log("[HAL] Persistence root ready\n");
 
   /*
    * Phase 0: Nothing to initialize.

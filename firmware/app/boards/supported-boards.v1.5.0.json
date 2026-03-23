@@ -27,8 +27,8 @@
       "firmware/app/boards/arduino_giga_r1_stm32h747xx_m7.overlay"
     ],
     "build_command": "west build -b arduino_giga_r1/stm32h747xx/m7 firmware/app --pristine",
-    "network_class": "network-capable",
-    "network_interface": "wifi",
+    "network_class": "serial-focused",
+    "network_interface": "none",
     "validation_level": "cross-build",
     "evidence_refs": [],
     "docs_ref": "docs/docs/reference/index.md#supported-boards"
@@ -61,6 +61,23 @@
       "firmware/app/boards/stm32f746g_disco.overlay"
     ],
     "build_command": "west build -b stm32f746g_disco firmware/app --pristine",
+    "network_class": "network-capable",
+    "network_interface": "ethernet",
+    "validation_level": "cross-build",
+    "evidence_refs": [],
+    "docs_ref": "docs/docs/reference/index.md#supported-boards"
+  },
+  {
+    "board_id": "nucleo-h743zi",
+    "display_name": "STM32 Nucleo-H743ZI",
+    "ide_id": "nucleo_h743zi",
+    "zephyr_board": "nucleo_h743zi",
+    "variant": "stm32h743zi",
+    "support_assets": [
+      "firmware/app/boards/nucleo_h743zi.conf",
+      "firmware/app/boards/nucleo_h743zi.overlay"
+    ],
+    "build_command": "west build -b nucleo_h743zi firmware/app --pristine",
     "network_class": "network-capable",
     "network_interface": "ethernet",
     "validation_level": "cross-build",

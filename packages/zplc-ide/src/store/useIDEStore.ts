@@ -45,6 +45,7 @@ import type { DebugMap } from '../compiler';
 import type { WatchForceEntry } from '../runtime/debugAdapter';
 import { getBreakpointPCForLine } from '../components/codeEditorBreakpoints';
 import { appendConsoleEntries, type NewConsoleEntry } from './consoleEntries';
+import { DEFAULT_DEBUG_POLLING_INTERVAL_MS } from './debugDefaults';
 
 // =============================================================================
 // Theme Types
@@ -331,7 +332,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     liveValues: new Map(),
     forcedValues: new Map(),
     isPolling: false,
-    pollingInterval: 500,
+    pollingInterval: DEFAULT_DEBUG_POLLING_INTERVAL_MS,
     mpeekEnabled: false,
   },
 
@@ -595,7 +596,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
           liveValues: new Map(),
           forcedValues: new Map(),
           isPolling: false,
-        pollingInterval: 500,
+          pollingInterval: DEFAULT_DEBUG_POLLING_INTERVAL_MS,
         mpeekEnabled: false,
       },
     });

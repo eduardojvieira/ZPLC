@@ -11,7 +11,11 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
 #include <zephyr/modbus/modbus.h>
+#if defined(CONFIG_NET_SOCKETS)
 #include <zephyr/net/socket.h>
+#endif
+
+#include <errno.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(zplc_modbus, LOG_LEVEL_INF);
@@ -49,11 +53,15 @@ typedef enum {
     MODBUS_AREA_HOLDING_REGISTER = 3,
 } zplc_modbus_area_t;
 
+#if defined(CONFIG_NET_SOCKETS)
 static struct k_thread modbus_thread_data;
 static K_THREAD_STACK_DEFINE(modbus_stack_area, 3072);
+#endif
 
 /* Client socket table — -1 means slot is free */
+#if defined(CONFIG_NET_SOCKETS)
 static int s_clients[MODBUS_TCP_MAX_CLIENTS];
+#endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(zephyr_modbus_serial)
 #define ZPLC_MODBUS_RTU_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_modbus_serial)
@@ -394,6 +402,7 @@ static struct modbus_user_callbacks zplc_modbus_rtu_callbacks = {
 /**
  * @brief Handle an incoming Modbus ADU
  */
+#if defined(CONFIG_NET_SOCKETS)
 static void process_modbus_request(int sock, uint8_t *req, int req_len) {
     if (req_len < 8) return; // Minimum length: MBAP (7) + FC (1)
 
@@ -494,10 +503,12 @@ static void process_modbus_request(int sock, uint8_t *req, int req_len) {
     
     zsock_send(sock, resp, resp_len, 0);
 }
+#endif
 
 /**
  * @brief Find a free slot in the client table. Returns -1 if full.
  */
+#if defined(CONFIG_NET_SOCKETS)
 static int find_free_client_slot(void)
 {
     for (int i = 0; i < MODBUS_TCP_MAX_CLIENTS; i++) {
@@ -625,6 +636,7 @@ static void modbus_server_thread(void *arg1, void *arg2, void *arg3)
         }
     }
 }
+#endif
 
 static enum uart_config_parity zplc_modbus_parity_to_uart(zplc_modbus_parity_t parity)
 {
@@ -671,12 +683,16 @@ static int zplc_modbus_rtu_init(void)
 
 int zplc_modbus_init(void) {
     if (zplc_config_get_modbus_tcp_enabled()) {
+#if defined(CONFIG_NET_SOCKETS)
         k_thread_create(&modbus_thread_data, modbus_stack_area,
                         K_THREAD_STACK_SIZEOF(modbus_stack_area),
                         modbus_server_thread,
                         NULL, NULL, NULL,
                         K_PRIO_COOP(7), 0, K_NO_WAIT);
         k_thread_name_set(&modbus_thread_data, "modbus_tcp");
+#else
+        LOG_WRN("Modbus TCP disabled: NET_SOCKETS not enabled");
+#endif
     } else {
         LOG_INF("Modbus TCP disabled by configuration");
     }

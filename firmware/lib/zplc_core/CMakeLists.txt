@@ -72,6 +72,8 @@ target_include_directories(zplc_core PUBLIC
 
 add_executable(zplc_runtime
     ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/main.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/host_stdio.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/native_runtime_session.c
     src/hal/posix/zplc_hal_posix.c
 )
 
@@ -122,6 +124,51 @@ endif()
 
 add_test(NAME test_vm_core COMMAND test_vm_core)
 
+# Test: Native Runtime Session Protocol
+add_executable(test_native_runtime_session
+    tests/test_native_runtime_session.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/native_runtime_session.c
+    src/core/zplc_core.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_native_runtime_session PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src
+)
+
+target_link_libraries(test_native_runtime_session PRIVATE zplc_core)
+
+if(NOT APPLE)
+    target_link_libraries(test_native_runtime_session PRIVATE rt)
+endif()
+
+add_test(NAME test_native_runtime_session COMMAND test_native_runtime_session)
+
+# Test: POSIX host stdio polling behavior
+add_executable(test_host_stdio
+    tests/test_host_stdio.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/host_stdio.c
+)
+
+target_include_directories(test_host_stdio PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src
+)
+
+add_test(NAME test_host_stdio COMMAND test_host_stdio)
+
+# Test: POSIX HAL persistence behavior
+add_executable(test_hal_posix_persist
+    tests/test_hal_posix_persist.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_hal_posix_persist PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+add_test(NAME test_hal_posix_persist COMMAND test_hal_posix_persist)
+
 # Test: Communication Dispatch
 add_executable(test_comm_dispatch
     tests/test_comm_dispatch.c
@@ -139,7 +186,7 @@ add_test(NAME test_comm_dispatch COMMAND test_comm_dispatch)
 # Custom target to run all tests
 add_custom_target(check
     COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-    DEPENDS test_isa test_vm_core test_comm_dispatch
+    DEPENDS test_isa test_vm_core test_comm_dispatch test_native_runtime_session test_hal_posix_persist
     COMMENT "Running all tests..."
 )
 

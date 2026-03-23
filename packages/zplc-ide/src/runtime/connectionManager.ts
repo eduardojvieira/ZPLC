@@ -13,7 +13,7 @@
 import { SerialAdapter } from './serialAdapter';
 import type { CommunicationMapEntry, MqttRuntimeStatus, SystemInfo, StatusInfo } from './serialAdapter';
 import type { ZPLCProjectConfig } from '../types';
-import type { LoadProgramOptions } from './debugAdapter';
+import type { LoadProgramOptions, RuntimeSnapshot } from './debugAdapter';
 import type { UploadTraceCallback } from './uploadTrace';
 
 /** Connection state change callback */
@@ -21,6 +21,7 @@ export type ConnectionCallback = (connected: boolean) => void;
 
 /** Status update callback */
 export type StatusCallback = (status: StatusInfo) => void;
+export type RuntimeSnapshotCallback = (snapshot: RuntimeSnapshot) => void;
 
 /** System info update callback */
 export type SystemInfoCallback = (info: SystemInfo) => void;
@@ -40,6 +41,7 @@ class ConnectionManager {
   // Callbacks
   private connectionCallbacks: Set<ConnectionCallback> = new Set();
   private statusCallbacks: Set<StatusCallback> = new Set();
+  private runtimeSnapshotCallbacks: Set<RuntimeSnapshotCallback> = new Set();
   private systemInfoCallbacks: Set<SystemInfoCallback> = new Set();
   private communicationMapCallbacks: Set<CommunicationMapCallback> = new Set();
   private mqttStatusCallbacks: Set<MqttStatusCallback> = new Set();
@@ -47,6 +49,7 @@ class ConnectionManager {
   // Cached state
   private _systemInfo: SystemInfo | null = null;
   private _status: StatusInfo | null = null;
+  private _runtimeSnapshot: RuntimeSnapshot | null = null;
   private _communicationMap: CommunicationMapEntry[] = [];
   private _mqttStatus: MqttRuntimeStatus | null = null;
 
@@ -83,6 +86,10 @@ class ConnectionManager {
    */
   get status(): StatusInfo | null {
     return this._status;
+  }
+
+  get runtimeSnapshot(): RuntimeSnapshot | null {
+    return this._runtimeSnapshot;
   }
 
   get communicationMap(): CommunicationMapEntry[] {
@@ -166,6 +173,7 @@ class ConnectionManager {
     
     this._systemInfo = null;
     this._status = null;
+    this._runtimeSnapshot = null;
     this._communicationMap = [];
     this._mqttStatus = null;
     this._passthroughMode = false;
@@ -298,6 +306,8 @@ class ConnectionManager {
     try {
       this._status = await this.adapter.getStatus();
       this.notifyStatus(this._status);
+      this._runtimeSnapshot = await this.adapter.getRuntimeSnapshot();
+      this.notifyRuntimeSnapshot(this._runtimeSnapshot);
       this._mqttStatus = await this.adapter.getMqttStatus();
       this.notifyMqttStatus(this._mqttStatus);
     } catch (e) {
@@ -383,6 +393,14 @@ class ConnectionManager {
     return () => this.statusCallbacks.delete(callback);
   }
 
+  onRuntimeSnapshotUpdate(callback: RuntimeSnapshotCallback): () => void {
+    this.runtimeSnapshotCallbacks.add(callback);
+    if (this._runtimeSnapshot) {
+      callback(this._runtimeSnapshot);
+    }
+    return () => this.runtimeSnapshotCallbacks.delete(callback);
+  }
+
   /**
    * Subscribe to system info updates
    */
@@ -413,6 +431,10 @@ class ConnectionManager {
 
   private notifyStatus(status: StatusInfo): void {
     this.statusCallbacks.forEach(cb => cb(status));
+  }
+
+  private notifyRuntimeSnapshot(snapshot: RuntimeSnapshot): void {
+    this.runtimeSnapshotCallbacks.forEach(cb => cb(snapshot));
   }
 
   private notifySystemInfo(info: SystemInfo): void {
