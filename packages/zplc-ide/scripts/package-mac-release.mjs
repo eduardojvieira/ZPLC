@@ -116,9 +116,13 @@ function main() {
       },
     );
 
-    const stagedAppPath = path.join(stagedDistElectron, `mac-${arch}`, 'zplc-ide.app');
-    if (!existsSync(stagedAppPath)) {
-      throw new Error(`Missing staged mac app bundle at ${stagedAppPath}`);
+    const stagedAppCandidates = [
+      path.join(stagedDistElectron, `mac-${arch}`, 'zplc-ide.app'),
+      path.join(stagedDistElectron, 'mac', 'zplc-ide.app'),
+    ];
+    const stagedAppPath = stagedAppCandidates.find((candidate) => existsSync(candidate));
+    if (!stagedAppPath) {
+      throw new Error(`Missing staged mac app bundle in any expected path: ${stagedAppCandidates.join(', ')}`);
     }
 
     run('codesign', ['--verify', '--deep', '--strict', '--verbose=2', stagedAppPath], stagedIde);
