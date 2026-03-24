@@ -499,7 +499,7 @@ int zplc_ipi_write8(uint16_t offset, uint8_t value) {
 }
 
 uint32_t zplc_ipi_read32(uint16_t offset) {
-  if (offset + 4 > ZPLC_MEM_IPI_SIZE) {
+  if ((uint32_t)offset > ((uint32_t)ZPLC_MEM_IPI_SIZE - 4U)) {
     return 0;
   }
   return (uint32_t)mem_ipi[offset] | ((uint32_t)mem_ipi[offset + 1] << 8) |
@@ -508,7 +508,7 @@ uint32_t zplc_ipi_read32(uint16_t offset) {
 }
 
 uint16_t zplc_ipi_read16(uint16_t offset) {
-  if (offset + 2 > ZPLC_MEM_IPI_SIZE) {
+  if ((uint32_t)offset > ((uint32_t)ZPLC_MEM_IPI_SIZE - 2U)) {
     return 0;
   }
   return (uint16_t)mem_ipi[offset] | ((uint16_t)mem_ipi[offset + 1] << 8);
@@ -522,7 +522,7 @@ uint8_t zplc_ipi_read8(uint16_t offset) {
 }
 
 uint32_t zplc_opi_read32(uint16_t offset) {
-  if (offset + 4 > ZPLC_MEM_OPI_SIZE) {
+  if ((uint32_t)offset > ((uint32_t)ZPLC_MEM_OPI_SIZE - 4U)) {
     return 0;
   }
   return (uint32_t)mem_opi[offset] | ((uint32_t)mem_opi[offset + 1] << 8) |
@@ -531,7 +531,7 @@ uint32_t zplc_opi_read32(uint16_t offset) {
 }
 
 uint16_t zplc_opi_read16(uint16_t offset) {
-  if (offset + 2 > ZPLC_MEM_OPI_SIZE) {
+  if ((uint32_t)offset > ((uint32_t)ZPLC_MEM_OPI_SIZE - 2U)) {
     return 0;
   }
   return (uint16_t)mem_opi[offset] | ((uint16_t)mem_opi[offset + 1] << 8);
@@ -1538,7 +1538,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
     /* ===== Push with 8-bit operand ===== */
 
   case OP_PUSH8:
-    if (vm->pc + 1 >= vm->code_size) {
+    if ((uint32_t)vm->pc > (vm->code_size - 2U)) {
       vm->error = ZPLC_VM_INVALID_JUMP;
       vm->halted = 1;
       return ZPLC_VM_INVALID_JUMP;
@@ -1553,7 +1553,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
      * etc.) Stack before: [..., a, b, c, d] (d on top) PICK 2 -> Stack after:
      * [..., a, b, c, d, b] This is a standard Forth/stack-machine operation for
      * accessing deep stack values. */
-    if (vm->pc + 1 >= vm->code_size) {
+    if ((uint32_t)vm->pc > (vm->code_size - 2U)) {
       vm->error = ZPLC_VM_INVALID_JUMP;
       vm->halted = 1;
       return ZPLC_VM_INVALID_JUMP;
@@ -1568,7 +1568,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
     break;
 
   case OP_JR:
-    if (vm->pc + 1 >= vm->code_size) {
+    if ((uint32_t)vm->pc > (vm->code_size - 2U)) {
       vm->error = ZPLC_VM_INVALID_JUMP;
       vm->halted = 1;
       return ZPLC_VM_INVALID_JUMP;
@@ -1579,7 +1579,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
 
   case OP_JRZ:
     VM_CHECK_STACK_UNDERFLOW(vm, 1);
-    if (vm->pc + 1 >= vm->code_size) {
+    if ((uint32_t)vm->pc > (vm->code_size - 2U)) {
       vm->error = ZPLC_VM_INVALID_JUMP;
       vm->halted = 1;
       return ZPLC_VM_INVALID_JUMP;
@@ -1595,7 +1595,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
 
   case OP_JRNZ:
     VM_CHECK_STACK_UNDERFLOW(vm, 1);
-    if (vm->pc + 1 >= vm->code_size) {
+    if ((uint32_t)vm->pc > (vm->code_size - 2U)) {
       vm->error = ZPLC_VM_INVALID_JUMP;
       vm->halted = 1;
       return ZPLC_VM_INVALID_JUMP;
@@ -1612,7 +1612,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
     /* ===== Load/Store with 16-bit address ===== */
 
   case OP_LOAD8:
-    if (vm->pc + 2 >= vm->code_size) {
+    if ((uint32_t)vm->pc > (vm->code_size - 3U)) {
       vm->error = ZPLC_VM_INVALID_JUMP;
       vm->halted = 1;
       return ZPLC_VM_INVALID_JUMP;
@@ -1632,7 +1632,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
     break;
 
   case OP_LOAD16:
-    if (vm->pc + 2 >= vm->code_size) {
+    if ((uint32_t)vm->pc > (vm->code_size - 3U)) {
       vm->error = ZPLC_VM_INVALID_JUMP;
       vm->halted = 1;
       return ZPLC_VM_INVALID_JUMP;
@@ -1652,7 +1652,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
     break;
 
   case OP_LOAD32:
-    if (vm->pc + 2 >= vm->code_size) {
+    if ((uint32_t)vm->pc > (vm->code_size - 3U)) {
       vm->error = ZPLC_VM_INVALID_JUMP;
       vm->halted = 1;
       return ZPLC_VM_INVALID_JUMP;
@@ -1672,7 +1672,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
     break;
 
   case OP_LOAD64:
-    if (vm->pc + 2 >= vm->code_size) {
+    if ((uint32_t)vm->pc > (vm->code_size - 3U)) {
       vm->error = ZPLC_VM_INVALID_JUMP;
       vm->halted = 1;
       return ZPLC_VM_INVALID_JUMP;
@@ -1694,7 +1694,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
 
   case OP_STORE8:
     VM_CHECK_STACK_UNDERFLOW(vm, 1);
-    if (vm->pc + 2 >= vm->code_size) {
+    if ((uint32_t)vm->pc > (vm->code_size - 3U)) {
       vm->error = ZPLC_VM_INVALID_JUMP;
       vm->halted = 1;
       return ZPLC_VM_INVALID_JUMP;
@@ -1712,7 +1712,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
 
   case OP_STORE16:
     VM_CHECK_STACK_UNDERFLOW(vm, 1);
-    if (vm->pc + 2 >= vm->code_size) {
+    if ((uint32_t)vm->pc > (vm->code_size - 3U)) {
       vm->error = ZPLC_VM_INVALID_JUMP;
       vm->halted = 1;
       return ZPLC_VM_INVALID_JUMP;
@@ -1730,7 +1730,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
 
   case OP_STORE32:
     VM_CHECK_STACK_UNDERFLOW(vm, 1);
-    if (vm->pc + 2 >= vm->code_size) {
+    if ((uint32_t)vm->pc > (vm->code_size - 3U)) {
       vm->error = ZPLC_VM_INVALID_JUMP;
       vm->halted = 1;
       return ZPLC_VM_INVALID_JUMP;
@@ -1748,7 +1748,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
 
   case OP_STORE64:
     VM_CHECK_STACK_UNDERFLOW(vm, 2);
-    if (vm->pc + 2 >= vm->code_size) {
+    if ((uint32_t)vm->pc > (vm->code_size - 3U)) {
       vm->error = ZPLC_VM_INVALID_JUMP;
       vm->halted = 1;
       return ZPLC_VM_INVALID_JUMP;
@@ -1768,7 +1768,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
     break;
 
   case OP_PUSH16:
-    if (vm->pc + 2 >= vm->code_size) {
+    if ((uint32_t)vm->pc > (vm->code_size - 3U)) {
       vm->error = ZPLC_VM_INVALID_JUMP;
       vm->halted = 1;
       return ZPLC_VM_INVALID_JUMP;
@@ -1781,7 +1781,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
     /* ===== Control Flow with 16-bit address ===== */
 
   case OP_JMP:
-    if (vm->pc + 2 >= vm->code_size) {
+    if ((uint32_t)vm->pc > (vm->code_size - 3U)) {
       vm->error = ZPLC_VM_INVALID_JUMP;
       vm->halted = 1;
       return ZPLC_VM_INVALID_JUMP;
@@ -1792,7 +1792,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
 
   case OP_JZ:
     VM_CHECK_STACK_UNDERFLOW(vm, 1);
-    if (vm->pc + 2 >= vm->code_size) {
+    if ((uint32_t)vm->pc > (vm->code_size - 3U)) {
       vm->error = ZPLC_VM_INVALID_JUMP;
       vm->halted = 1;
       return ZPLC_VM_INVALID_JUMP;
@@ -1808,7 +1808,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
 
   case OP_JNZ:
     VM_CHECK_STACK_UNDERFLOW(vm, 1);
-    if (vm->pc + 2 >= vm->code_size) {
+    if ((uint32_t)vm->pc > (vm->code_size - 3U)) {
       vm->error = ZPLC_VM_INVALID_JUMP;
       vm->halted = 1;
       return ZPLC_VM_INVALID_JUMP;
@@ -1850,7 +1850,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
     /* ===== Push with 32-bit operand ===== */
 
   case OP_PUSH32:
-    if (vm->pc + 4 >= vm->code_size) {
+    if ((uint32_t)vm->pc > (vm->code_size - 5U)) {
       vm->error = ZPLC_VM_INVALID_JUMP;
       vm->halted = 1;
       return ZPLC_VM_INVALID_JUMP;
@@ -1865,7 +1865,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
   case OP_COMM_EXEC:
   case OP_COMM_STATUS:
   case OP_COMM_RESET:
-    if (vm->pc + 4 >= vm->code_size) {
+    if ((uint32_t)vm->pc > (vm->code_size - 5U)) {
       vm->error = ZPLC_VM_INVALID_JUMP;
       vm->halted = 1;
       return ZPLC_VM_INVALID_JUMP;

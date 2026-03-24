@@ -9,20 +9,6 @@ function run(command, args, cwd) {
   });
 }
 
-function createWindowsIcon(sourceIcon, buildDir) {
-  const pythonScript = [
-    'from pathlib import Path',
-    'from PIL import Image',
-    `source = Path(r"${sourceIcon}")`,
-    `target = Path(r"${path.join(buildDir, 'icon.ico')}")`,
-    'img = Image.open(source).convert("RGBA")',
-    'sizes = [(16,16), (24,24), (32,32), (48,48), (64,64), (128,128), (256,256)]',
-    'img.save(target, format="ICO", sizes=sizes)',
-  ].join('\n');
-
-  run('python3', ['-c', pythonScript], buildDir);
-}
-
 function createMacIcon(sourceIcon, buildDir) {
   if (process.platform !== 'darwin') {
     return;
@@ -35,21 +21,18 @@ function createMacIcon(sourceIcon, buildDir) {
   rmSync(iconsetDir, { recursive: true, force: true });
   mkdirSync(iconsetDir, { recursive: true });
 
-  const pythonScript = [
-    'from pathlib import Path',
-    'from PIL import Image',
-    `source = Path(r"${sourceIcon}")`,
-    `iconset = Path(r"${iconsetDir}")`,
-    'img = Image.open(source).convert("RGBA")',
-    `sizes = ${JSON.stringify(sizes)}`,
-    'for size in sizes:',
-    '    normal = img.resize((size, size), Image.Resampling.LANCZOS)',
-    '    retina = img.resize((size * 2, size * 2), Image.Resampling.LANCZOS)',
-    '    normal.save(iconset / f"icon_{size}x{size}.png", format="PNG")',
-    '    retina.save(iconset / f"icon_{size}x{size}@2x.png", format="PNG")',
-  ].join('\n');
-
-  run('python3', ['-c', pythonScript], buildDir);
+  for (const size of sizes) {
+    run(
+      'sips',
+      ['-s', 'format', 'png', '-z', String(size), String(size), sourceIcon, '--out', path.join(iconsetDir, `icon_${size}x${size}.png`)],
+      buildDir,
+    );
+    run(
+      'sips',
+      ['-s', 'format', 'png', '-z', String(size * 2), String(size * 2), sourceIcon, '--out', path.join(iconsetDir, `icon_${size}x${size}@2x.png`)],
+      buildDir,
+    );
+  }
 
   run('iconutil', ['-c', 'icns', iconsetDir, '-o', icnsPath], buildDir);
 }
@@ -66,7 +49,6 @@ function main() {
 
   mkdirSync(buildDir, { recursive: true });
   copyFileSync(sourceIcon, targetIcon);
-  createWindowsIcon(sourceIcon, buildDir);
   createMacIcon(sourceIcon, buildDir);
 
   console.log(`Prepared Electron build icons in ${buildDir}`);

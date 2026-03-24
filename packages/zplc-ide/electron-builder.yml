@@ -72,7 +72,7 @@ dmg:
 # Windows Configuration
 # ============================================================================
 win:
-  icon: build/icon.ico
+  icon: build/icon.png
   target:
     - nsis
     - portable
