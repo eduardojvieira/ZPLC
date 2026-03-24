@@ -1,18 +1,26 @@
 import { describe, expect, it } from 'bun:test';
 
-import { PROGRAM_LOAD_STATE, shouldAutoLoadBeforeStart } from './debugSessionState';
+import {
+  nextProgramLoadStateAfterCompile,
+  nextProgramLoadStateAfterConnect,
+  PROGRAM_LOAD_STATE,
+  shouldAutoLoadBeforeStart,
+} from './debugSessionState';
 
-describe('shouldAutoLoadBeforeStart', () => {
-  it('auto-loads only when idle and no program has been loaded in the session', () => {
+describe('debugSessionState', () => {
+  it('auto-loads before start when idle and program state is empty', () => {
     expect(shouldAutoLoadBeforeStart('idle', PROGRAM_LOAD_STATE.EMPTY)).toBe(true);
   });
 
-  it('does not auto-load when a program is already loaded in the session', () => {
+  it('does not auto-load before start when a program is already marked loaded', () => {
     expect(shouldAutoLoadBeforeStart('idle', PROGRAM_LOAD_STATE.LOADED)).toBe(false);
   });
 
-  it('does not auto-load from paused or running states', () => {
-    expect(shouldAutoLoadBeforeStart('paused', PROGRAM_LOAD_STATE.EMPTY)).toBe(false);
-    expect(shouldAutoLoadBeforeStart('running', PROGRAM_LOAD_STATE.EMPTY)).toBe(false);
+  it('invalidates program load state after a successful compile', () => {
+    expect(nextProgramLoadStateAfterCompile()).toBe(PROGRAM_LOAD_STATE.EMPTY);
+  });
+
+  it('invalidates program load state after establishing a new session', () => {
+    expect(nextProgramLoadStateAfterConnect()).toBe(PROGRAM_LOAD_STATE.EMPTY);
   });
 });

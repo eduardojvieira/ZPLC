@@ -49,8 +49,14 @@ import { compileSingleFileWithTask, compileMultiTaskProject, CompilerError, Asse
 import type { PLCLanguage, ProgramSource, DebugMap } from '../compiler';
 import { GeneratedCodeDialog } from './GeneratedCodeDialog';
 import { loadFileFromTree } from '../utils/fileSystem';
+import { getProgramReferenceCandidates, resolveProgramSource } from '../utils/programSourceResolution';
 import type { FileTreeNode } from '../types';
-import { PROGRAM_LOAD_STATE, shouldAutoLoadBeforeStart } from './debugSessionState';
+import {
+  nextProgramLoadStateAfterCompile,
+  nextProgramLoadStateAfterConnect,
+  PROGRAM_LOAD_STATE,
+  shouldAutoLoadBeforeStart,
+} from './debugSessionState';
 import { EXECUTION_MODE, selectRuntimeArtifact, type ExecutionMode } from './runtimeArtifactSelection';
 
 // =============================================================================
@@ -394,6 +400,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
    * Falls back to loadedFiles only for virtual projects with no fileTree handles.
    */
   const findProgramSource = async (programName: string): Promise<ProgramSource | null> => {
+    const aliases = getProgramReferenceCandidates(programName);
+
     // Helper to search fileTree recursively
     const findFileByName = (node: FileTreeNode, targetName: string): FileTreeNode | null => {
       if (node.type === 'file' && node.name.toLowerCase() === targetName.toLowerCase()) {
@@ -407,17 +415,20 @@ export function Toolbar({ debugController }: ToolbarProps) {
       }
       return null;
     };
-
+    
     // Try to load fresh from disk first (via fileTree)
     if (fileTree) {
-      const fileNode = findFileByName(fileTree, programName);
-      if (fileNode) {
+      for (const alias of aliases) {
+        const fileNode = findFileByName(fileTree, alias);
+        if (!fileNode) {
+          continue;
+        }
+
         try {
           // loadFileFromTree reads fresh content from disk via the file handle
           const loadedFile = await loadFileFromTree(fileNode);
           if (loadedFile) {
-            const baseName = loadedFile.name.replace(/\.(st|fbd|ld|sfc|il)(\.json)?$/i, '');
-            return { name: baseName, content: loadedFile.content, language: loadedFile.language as PLCLanguage };
+            return resolveProgramSource(programName, [loadedFile]);
           }
         } catch (err) {
           console.error(`Failed to load file from disk: ${programName}:`, err);
@@ -427,14 +438,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     }
 
     // Fallback: check loadedFiles cache (for virtual projects or if disk read failed)
-    for (const file of loadedFiles.values()) {
-      if (file.name.toLowerCase() === programName.toLowerCase()) {
-        const baseName = file.name.replace(/\.(st|fbd|ld|sfc|il)(\.json)?$/i, '');
-        return { name: baseName, content: file.content, language: file.language as PLCLanguage };
-      }
-    }
-
-    return null;
+    return resolveProgramSource(programName, loadedFiles.values());
   };
 
   const hasValidProjectConfig = (): boolean => {
@@ -495,6 +499,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
           taskCount: result.tasks.length,
           debugMap: result.debugMap,
         });
+        setProgramLoadState(nextProgramLoadStateAfterCompile());
 
         addConsoleEntry({
           type: 'success',
@@ -537,6 +542,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
           taskCount: result.tasks.length,
           debugMap: result.debugMap,
         });
+        setProgramLoadState(nextProgramLoadStateAfterCompile());
 
         addConsoleEntry({
           type: 'success',
@@ -626,10 +632,11 @@ export function Toolbar({ debugController }: ToolbarProps) {
     try {
       if (executionMode === 'simulate') {
         await startSimulation();
+        setProgramLoadState(nextProgramLoadStateAfterConnect());
         addConsoleEntry({ type: 'success', message: 'Simulator ready', source: 'runtime' });
       } else {
         await connectHardware();
-        setProgramLoadState(PROGRAM_LOAD_STATE.EMPTY);
+        setProgramLoadState(nextProgramLoadStateAfterConnect());
         addConsoleEntry({ type: 'success', message: 'Hardware connected', source: 'runtime' });
       }
     } catch (e) {
