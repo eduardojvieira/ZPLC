@@ -66,9 +66,6 @@ jobs:
             echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Apply release version metadata
-        run: bun scripts/release-version.ts "${{ steps.version.outputs.version }}"
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -78,6 +75,9 @@ jobs:
         uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest
+
+      - name: Apply release version metadata
+        run: bun scripts/release-version.ts "${{ steps.version.outputs.version }}"
 
       - name: Install dependencies (with retry)
         run: |
@@ -168,9 +168,6 @@ jobs:
             echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Apply release version metadata
-        run: bun scripts/release-version.ts "${{ steps.version.outputs.version }}"
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -180,6 +177,9 @@ jobs:
         uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest
+
+      - name: Apply release version metadata
+        run: bun scripts/release-version.ts "${{ steps.version.outputs.version }}"
 
       - name: Install dependencies (with retry)
         shell: bash
@@ -217,6 +217,7 @@ jobs:
       - name: Build Electron app (Windows ${{ matrix.arch }})
         working-directory: packages/zplc-ide
         run: |
+          bun run build:assets
           bun run build
           bun run electron:compile
           bun x electron-builder --win --${{ matrix.arch }} --publish never
@@ -259,9 +260,6 @@ jobs:
             echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Apply release version metadata
-        run: bun scripts/release-version.ts "${{ steps.version.outputs.version }}"
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -271,6 +269,9 @@ jobs:
         uses: oven-sh/setup-bun@v1
         with:
           bun-version: latest
+
+      - name: Apply release version metadata
+        run: bun scripts/release-version.ts "${{ steps.version.outputs.version }}"
 
       - name: Install dependencies (with retry)
         run: |
@@ -307,6 +308,7 @@ jobs:
       - name: Build Electron app (Linux ${{ matrix.arch }})
         working-directory: packages/zplc-ide
         run: |
+          bun run build:assets
           bun run build
           bun run electron:compile
           bun x electron-builder --linux --${{ matrix.arch }} --publish never
