@@ -91,7 +91,7 @@ target_include_directories(zplc_runtime PRIVATE
 target_link_libraries(zplc_runtime PRIVATE zplc_core)
 
 # POSIX-specific: librt for clock_gettime on Linux
-if(NOT APPLE)
+if(UNIX AND NOT APPLE)
     target_link_libraries(zplc_runtime PRIVATE rt)
 endif()
 
@@ -125,7 +125,7 @@ target_include_directories(test_vm_core PRIVATE
 
 target_link_libraries(test_vm_core PRIVATE zplc_core)
 
-if(NOT APPLE)
+if(UNIX AND NOT APPLE)
     target_link_libraries(test_vm_core PRIVATE rt)
 endif()
 
@@ -146,7 +146,7 @@ target_include_directories(test_native_runtime_session PRIVATE
 
 target_link_libraries(test_native_runtime_session PRIVATE zplc_core)
 
-if(NOT APPLE)
+if(UNIX AND NOT APPLE)
     target_link_libraries(test_native_runtime_session PRIVATE rt)
 endif()
 
