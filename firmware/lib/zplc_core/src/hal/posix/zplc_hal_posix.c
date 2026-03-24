@@ -19,9 +19,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef _WIN32
+#include <direct.h>
+#include <io.h>
+#include <windows.h>
+#else
 #include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
+#endif
 
 /* ============================================================================
  * Internal State
@@ -29,6 +35,20 @@
  */
 
 static int hal_initialized = 0;
+
+#ifdef _WIN32
+#define ZPLC_PATH_SEP '/'
+#define zplc_mkdir(path) _mkdir(path)
+#define zplc_unlink(path) _unlink(path)
+#define zplc_fsync(fd) _commit(fd)
+#define zplc_fileno(stream) _fileno(stream)
+#else
+#define ZPLC_PATH_SEP '/'
+#define zplc_mkdir(path) mkdir((path), 0755)
+#define zplc_unlink(path) unlink(path)
+#define zplc_fsync(fd) fsync(fd)
+#define zplc_fileno(stream) fileno(stream)
+#endif
 
 /** @brief Directory for persistent storage */
 #define ZPLC_PERSIST_DIR ".zplc"
@@ -48,6 +68,9 @@ static int hal_initialized = 0;
  */
 
 uint32_t zplc_hal_tick(void) {
+#ifdef _WIN32
+  return (uint32_t)(GetTickCount64() & 0xFFFFFFFFULL);
+#else
   struct timespec ts;
   uint64_t ms;
 
@@ -70,9 +93,13 @@ uint32_t zplc_hal_tick(void) {
    * will have watchdogs and scheduled restarts anyway.
    */
   return (uint32_t)(ms & 0xFFFFFFFFULL);
+#endif
 }
 
 void zplc_hal_sleep(uint32_t ms) {
+#ifdef _WIN32
+  Sleep(ms);
+#else
   struct timespec req, rem;
 
   req.tv_sec = ms / 1000;
@@ -86,6 +113,7 @@ void zplc_hal_sleep(uint32_t ms) {
   while (nanosleep(&req, &rem) == -1 && errno == EINTR) {
     req = rem;
   }
+#endif
 }
 
 /* ============================================================================
@@ -172,12 +200,22 @@ static int persist_build_path(const char *key, char *path, size_t path_len) {
   if (persist_root == NULL || persist_root[0] == '\0') {
     persist_root = getenv("HOME");
     if (persist_root == NULL) {
+#ifdef _WIN32
+      persist_root = getenv("TEMP");
+      if (persist_root == NULL) {
+        persist_root = ".";
+      }
+#else
       persist_root = "/tmp"; /* Fallback if HOME is not set */
+#endif
     }
 
-    ret = snprintf(path, path_len, "%s/%s/%s.bin", persist_root, ZPLC_PERSIST_DIR, sanitized_key);
+    ret = snprintf(path, path_len, "%s%c%s%c%s.bin", persist_root,
+                   ZPLC_PATH_SEP, ZPLC_PERSIST_DIR, ZPLC_PATH_SEP,
+                   sanitized_key);
   } else {
-    ret = snprintf(path, path_len, "%s/%s.bin", persist_root, sanitized_key);
+    ret = snprintf(path, path_len, "%s%c%s.bin", persist_root,
+                   ZPLC_PATH_SEP, sanitized_key);
   }
 
   if (ret < 0 || (size_t)ret >= path_len) {
@@ -198,7 +236,7 @@ static int persist_ensure_dir(void) {
 
   persist_root = getenv(ZPLC_PERSIST_ROOT_ENV);
   if (persist_root != NULL && persist_root[0] != '\0') {
-    if (mkdir(persist_root, 0755) != 0 && errno != EEXIST) {
+    if (zplc_mkdir(persist_root) != 0 && errno != EEXIST) {
       zplc_hal_log("[HAL] Failed to create persist root dir: %s\n", strerror(errno));
       return -1;
     }
@@ -207,16 +245,24 @@ static int persist_ensure_dir(void) {
 
   persist_root = getenv("HOME");
   if (persist_root == NULL) {
+#ifdef _WIN32
+    persist_root = getenv("TEMP");
+    if (persist_root == NULL) {
+      persist_root = ".";
+    }
+#else
     persist_root = "/tmp";
+#endif
   }
 
-  ret = snprintf(dir_path, sizeof(dir_path), "%s/%s", persist_root, ZPLC_PERSIST_DIR);
+  ret = snprintf(dir_path, sizeof(dir_path), "%s%c%s", persist_root,
+                 ZPLC_PATH_SEP, ZPLC_PERSIST_DIR);
   if (ret < 0 || (size_t)ret >= sizeof(dir_path)) {
     return -1;
   }
 
   /* Create directory if it doesn't exist (mode 0755) */
-  if (mkdir(dir_path, 0755) != 0 && errno != EEXIST) {
+  if (zplc_mkdir(dir_path) != 0 && errno != EEXIST) {
     zplc_hal_log("[HAL] Failed to create persist dir: %s\n", strerror(errno));
     return -1;
   }
@@ -263,20 +309,20 @@ zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data,
     zplc_hal_log("[HAL] Failed to write data: wrote %zu of %zu bytes\n",
                  written, len);
     fclose(fp);
-    unlink(tmp_path); /* Clean up failed write */
+    zplc_unlink(tmp_path); /* Clean up failed write */
     return ZPLC_HAL_ERROR;
   }
 
   /* Flush and sync to ensure data is on disk */
   fflush(fp);
-  fsync(fileno(fp));
+  zplc_fsync(zplc_fileno(fp));
   fclose(fp);
 
   /* Atomic rename: tmp -> final */
   if (rename(tmp_path, path) != 0) {
     zplc_hal_log("[HAL] Failed to rename %s -> %s: %s\n", tmp_path, path,
                  strerror(errno));
-    unlink(tmp_path);
+    zplc_unlink(tmp_path);
     return ZPLC_HAL_ERROR;
   }
 
@@ -347,7 +393,7 @@ zplc_hal_result_t zplc_hal_persist_delete(const char *key) {
   }
 
   /* Delete the file */
-  if (unlink(path) != 0) {
+  if (zplc_unlink(path) != 0) {
     if (errno == ENOENT) {
       /* File doesn't exist - not an error */
       return ZPLC_HAL_NOT_IMPL;
