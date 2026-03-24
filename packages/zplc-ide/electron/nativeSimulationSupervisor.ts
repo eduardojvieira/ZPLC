@@ -81,29 +81,87 @@ function createSessionTerminatedError(message: string): Error {
   return new Error(`Native simulator session terminated: ${message}`);
 }
 
-function getDefaultSimulatorBinaryPath(): string {
-  const envPath = process.env.ZPLC_NATIVE_SIM_BIN;
-  const currentFilePath = fileURLToPath(import.meta.url);
-  const currentDir = path.dirname(currentFilePath);
-  const candidates = [
+interface SimulatorBinaryResolutionOptions {
+  cwd: string;
+  currentDir: string;
+  envPath?: string;
+  pathExists: (candidate: string) => boolean;
+  resourcesPath: string | null;
+}
+
+function getDefaultSimulatorBinaryCandidates(options: Pick<SimulatorBinaryResolutionOptions, 'cwd' | 'currentDir' | 'resourcesPath'>): string[] {
+  const { cwd, currentDir, resourcesPath } = options;
+
+  return [
+    ...(resourcesPath
+      ? [
+          path.resolve(resourcesPath, 'native-runtime/zplc_runtime'),
+          path.resolve(resourcesPath, 'native-runtime/zplc_runtime.exe'),
+        ]
+      : []),
     path.resolve(currentDir, '../../../firmware/lib/zplc_core/build/zplc_runtime'),
-    path.resolve(process.cwd(), 'firmware/lib/zplc_core/build/zplc_runtime'),
-    path.resolve(process.cwd(), '../firmware/lib/zplc_core/build/zplc_runtime'),
-    path.resolve(process.cwd(), '../../firmware/lib/zplc_core/build/zplc_runtime'),
-    path.resolve(process.cwd(), '../../../firmware/lib/zplc_core/build/zplc_runtime'),
+    path.resolve(currentDir, '../../../firmware/lib/zplc_core/build/zplc_runtime.exe'),
+    path.resolve(cwd, 'firmware/lib/zplc_core/build/zplc_runtime'),
+    path.resolve(cwd, 'firmware/lib/zplc_core/build/zplc_runtime.exe'),
+    path.resolve(cwd, '../firmware/lib/zplc_core/build/zplc_runtime'),
+    path.resolve(cwd, '../firmware/lib/zplc_core/build/zplc_runtime.exe'),
+    path.resolve(cwd, '../../firmware/lib/zplc_core/build/zplc_runtime'),
+    path.resolve(cwd, '../../firmware/lib/zplc_core/build/zplc_runtime.exe'),
+    path.resolve(cwd, '../../../firmware/lib/zplc_core/build/zplc_runtime'),
+    path.resolve(cwd, '../../../firmware/lib/zplc_core/build/zplc_runtime.exe'),
   ];
+}
+
+function resolveDefaultSimulatorBinaryPath(options: SimulatorBinaryResolutionOptions): string {
+  const { envPath, pathExists, resourcesPath } = options;
+  const candidates = getDefaultSimulatorBinaryCandidates(options);
 
   if (envPath) {
     return envPath;
   }
 
   for (const candidate of candidates) {
-    if (existsSync(candidate)) {
+    if (pathExists(candidate)) {
       return candidate;
     }
   }
 
-  return candidates[0] ?? path.resolve(process.cwd(), 'firmware/lib/zplc_core/build/zplc_runtime');
+  return resourcesPath
+    ? path.resolve(resourcesPath, 'native-runtime/zplc_runtime')
+    : path.resolve(options.cwd, 'firmware/lib/zplc_core/build/zplc_runtime');
+}
+
+function getDefaultSimulatorBinaryPath(): string {
+  const currentFilePath = fileURLToPath(import.meta.url);
+  const currentDir = path.dirname(currentFilePath);
+
+  return resolveDefaultSimulatorBinaryPath({
+    cwd: process.cwd(),
+    currentDir,
+    envPath: process.env.ZPLC_NATIVE_SIM_BIN,
+    pathExists: existsSync,
+    resourcesPath: typeof process.resourcesPath === 'string' ? process.resourcesPath : null,
+  });
+}
+
+export function resolveDefaultSimulatorBinaryPathForTests(
+  overrides: Partial<Omit<SimulatorBinaryResolutionOptions, 'pathExists'>> & {
+    existingPaths?: readonly string[];
+  } = {},
+): string {
+  const currentFilePath = fileURLToPath(import.meta.url);
+  const currentDir = path.dirname(currentFilePath);
+  const existingPaths = new Set(overrides.existingPaths ?? []);
+
+  return resolveDefaultSimulatorBinaryPath({
+    cwd: overrides.cwd ?? process.cwd(),
+    currentDir: overrides.currentDir ?? currentDir,
+    envPath: overrides.envPath,
+    pathExists: (candidate) => existingPaths.has(candidate),
+    resourcesPath:
+      overrides.resourcesPath ??
+      (typeof process.resourcesPath === 'string' ? process.resourcesPath : null),
+  });
 }
 
 function createDefaultSpawnProcess(): NativeSimulationChildProcess {

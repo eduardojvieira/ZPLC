@@ -43,6 +43,19 @@ function main(): void {
     );
   }
 
+  const nativeRuntimeDir = join(process.cwd(), 'dist-native');
+  if (!existsSync(nativeRuntimeDir)) {
+    throw new Error(`Desktop smoke build check failed: missing bundled native runtime directory ${nativeRuntimeDir}`);
+  }
+
+  const nativeRuntimeFiles = readdirSync(nativeRuntimeDir);
+  const expectedRuntimeFile = platform === 'windows' ? 'zplc_runtime.exe' : 'zplc_runtime';
+  if (!nativeRuntimeFiles.includes(expectedRuntimeFile)) {
+    throw new Error(
+      `Desktop smoke build check failed for ${platform}: missing bundled native runtime ${expectedRuntimeFile}`
+    );
+  }
+
   console.log(`Desktop smoke build check passed for ${platform}`);
 }
 

@@ -1,7 +1,7 @@
 {
   "name": "@zplc/ide",
   "private": true,
-  "version": "1.4.8",
+  "version": "1.5.0-preview.2",
   "description": "ZPLC IDE - Industrial PLC Development Environment",
   "author": "ZPLC Team",
   "license": "MIT",
@@ -25,6 +25,7 @@
     "electron:preview": "npm run build && npm run electron:compile && electron .",
     "electron:build": "npm run build && npm run electron:compile && electron-builder",
     "electron:build:mac": "npm run build && npm run electron:compile && electron-builder --mac",
+    "electron:build:mac:release": "bun run scripts/package-mac-release.mjs arm64",
     "electron:build:win": "npm run build && npm run electron:compile && electron-builder --win",
     "electron:build:linux": "npm run build && npm run electron:compile && electron-builder --linux",
     "smoke:desktop": "bun run scripts/run-desktop-smoke.ts",

@@ -57,6 +57,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Apply release version metadata
+        run: bun scripts/release-version.ts "${{ steps.version.outputs.version }}"
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -87,15 +99,38 @@ jobs:
         run: |
           cd packages/zplc-compiler && bun run build
 
+      - name: Build native simulator runtime
+        run: |
+          cmake -S firmware/lib/zplc_core -B firmware/lib/zplc_core/build
+          cmake --build firmware/lib/zplc_core/build --target zplc_runtime
+          mkdir -p packages/zplc-ide/dist-native
+          cp firmware/lib/zplc_core/build/zplc_runtime packages/zplc-ide/dist-native/
+
       - name: Build Electron app (macOS ${{ matrix.arch }})
         working-directory: packages/zplc-ide
         run: |
-          bun run build
-          bun run electron:compile
-          bun x electron-builder --mac --${{ matrix.arch }} --publish never
+          bun run scripts/package-mac-release.mjs ${{ matrix.arch }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
+          ZPLC_MAC_COPY_APP_BUNDLE: '1'
+
+      - name: Verify macOS bundle code signing
+        working-directory: packages/zplc-ide
+        run: |
+          APP_PATH=$(python3 - <<'PY'
+from pathlib import Path
+apps = sorted(Path('dist-electron').glob('mac*/**/*.app'))
+print(apps[0] if apps else '')
+PY
+)
+          if [ -z "$APP_PATH" ]; then
+            echo "Missing .app bundle in dist-electron"
+            exit 1
+          fi
+          codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+          codesign -dv --verbose=4 "$APP_PATH" 2>&1
+          codesign -dv --verbose=4 "$APP_PATH/Contents/Frameworks/Electron Framework.framework/Versions/A/Electron Framework" 2>&1
 
       - name: Validate macOS build artifacts
         working-directory: packages/zplc-ide
@@ -122,6 +157,19 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Apply release version metadata
+        run: bun scripts/release-version.ts "${{ steps.version.outputs.version }}"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -153,6 +201,18 @@ jobs:
       - name: Build dependencies
         run: |
           cd packages/zplc-compiler && bun run build
+
+      - name: Build native simulator runtime
+        shell: bash
+        run: |
+          cmake -S firmware/lib/zplc_core -B firmware/lib/zplc_core/build
+          cmake --build firmware/lib/zplc_core/build --target zplc_runtime --config Release
+          mkdir -p packages/zplc-ide/dist-native
+          if [ -f firmware/lib/zplc_core/build/zplc_runtime.exe ]; then
+            cp firmware/lib/zplc_core/build/zplc_runtime.exe packages/zplc-ide/dist-native/
+          else
+            cp firmware/lib/zplc_core/build/Release/zplc_runtime.exe packages/zplc-ide/dist-native/
+          fi
 
       - name: Build Electron app (Windows ${{ matrix.arch }})
         working-directory: packages/zplc-ide
@@ -190,6 +250,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Apply release version metadata
+        run: bun scripts/release-version.ts "${{ steps.version.outputs.version }}"
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -219,6 +291,13 @@ jobs:
       - name: Build dependencies
         run: |
           cd packages/zplc-compiler && bun run build
+
+      - name: Build native simulator runtime
+        run: |
+          cmake -S firmware/lib/zplc_core -B firmware/lib/zplc_core/build
+          cmake --build firmware/lib/zplc_core/build --target zplc_runtime
+          mkdir -p packages/zplc-ide/dist-native
+          cp firmware/lib/zplc_core/build/zplc_runtime packages/zplc-ide/dist-native/
 
       - name: Install Linux build tools
         run: |
@@ -509,6 +588,7 @@ jobs:
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: "v${{ steps.version.outputs.version }} - Cross-Platform Desktop App"
+          prerelease: ${{ contains(steps.version.outputs.version, '-') }}
           body: |
             ## Release v${{ steps.version.outputs.version }}
 
