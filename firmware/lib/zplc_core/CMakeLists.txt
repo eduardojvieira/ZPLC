@@ -45,6 +45,9 @@ set(CMAKE_C_EXTENSIONS OFF)
 
 # Compiler flags: Warnings as errors
 if(MSVC)
+    add_compile_definitions(
+        _CRT_SECURE_NO_WARNINGS
+    )
     add_compile_options(
         /W4
         /WX
