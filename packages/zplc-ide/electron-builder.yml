@@ -15,6 +15,9 @@ directories:
   output: dist-electron
   buildResources: build
 
+afterExtract: scripts/after-extract.mjs
+afterPack: scripts/after-pack.mjs
+
 # Files to include in the app
 files:
   - dist/**/*
@@ -27,6 +30,10 @@ extraResources:
     filter:
       - "**/*.zplc"
       - "**/*.st"
+  - from: dist-native
+    to: native-runtime
+    filter:
+      - "**/*"
 
 # Asset Index - for faster builds
 asar: true
@@ -40,6 +47,7 @@ publish: null
 # ============================================================================
 mac:
   category: public.app-category.developer-tools
+  identity: '-'
   darkModeSupport: true
   hardenedRuntime: true
   gatekeeperAssess: false

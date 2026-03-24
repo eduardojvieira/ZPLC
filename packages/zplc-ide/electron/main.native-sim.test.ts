@@ -6,6 +6,7 @@ import { PassThrough } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 
 import { NativeSimulationSupervisor } from './nativeSimulationSupervisor';
+import { resolveDefaultSimulatorBinaryPathForTests } from './nativeSimulationSupervisor';
 
 const NATIVE_MESSAGE_TYPE = {
   REQUEST: 'request',
@@ -54,15 +55,35 @@ const ELECTRON_DIR = path.dirname(TEST_FILE_PATH);
 
 describe('NativeSimulationSupervisor', () => {
   let child: FakeChildProcess;
+  const originalResourcesPathDescriptor = Object.getOwnPropertyDescriptor(process, 'resourcesPath');
+
+  function setResourcesPathForTest(value: string | undefined): void {
+    Object.defineProperty(process, 'resourcesPath', {
+      value,
+      configurable: true,
+      writable: false,
+    });
+  }
+
+  function restoreResourcesPathForTest(): void {
+    if (originalResourcesPathDescriptor) {
+      Object.defineProperty(process, 'resourcesPath', originalResourcesPathDescriptor);
+      return;
+    }
+
+    Reflect.deleteProperty(process, 'resourcesPath');
+  }
 
   beforeEach(() => {
     child = new FakeChildProcess();
+    restoreResourcesPathForTest();
   });
 
   afterEach(() => {
     child.stdin.end();
     child.stdout.end();
     child.stderr.end();
+    restoreResourcesPathForTest();
   });
 
   it('starts a session with a hello handshake', async () => {
@@ -342,5 +363,28 @@ describe('NativeSimulationSupervisor', () => {
     ]);
 
     unsubscribe();
+  });
+
+  it('keeps packaged native runtime lookup ahead of repo build fallbacks', () => {
+    const supervisorSource = readFileSync(path.join(ELECTRON_DIR, 'nativeSimulationSupervisor.ts'), 'utf8');
+    const packagedRuntimePath = '/tmp/zplc-packaged-app/Contents/Resources/native-runtime/zplc_runtime';
+    const repoRuntimePath = '/workspace/ZPLC/firmware/lib/zplc_core/build/zplc_runtime';
+    const resolvedPath = resolveDefaultSimulatorBinaryPathForTests({
+      cwd: '/workspace/ZPLC/packages/zplc-ide',
+      resourcesPath: '/tmp/zplc-packaged-app/Contents/Resources',
+      existingPaths: [repoRuntimePath, packagedRuntimePath],
+    });
+
+    expect(supervisorSource).toContain("path.resolve(resourcesPath, 'native-runtime/zplc_runtime')");
+    expect(supervisorSource).toContain("path.resolve(resourcesPath, 'native-runtime/zplc_runtime.exe')");
+    expect(resolvedPath).toBe(packagedRuntimePath);
+  });
+
+  it('falls back to repo lookup when Electron resourcesPath is unavailable', () => {
+    const resolvedPath = resolveDefaultSimulatorBinaryPathForTests({
+      cwd: '/workspace/ZPLC/packages/zplc-ide',
+    });
+
+    expect(resolvedPath).toContain('firmware/lib/zplc_core/build/zplc_runtime');
   });
 });
