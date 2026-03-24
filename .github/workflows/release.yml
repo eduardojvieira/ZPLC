@@ -119,11 +119,11 @@ jobs:
         working-directory: packages/zplc-ide
         run: |
           APP_PATH=$(python3 - <<'PY'
-from pathlib import Path
-apps = sorted(Path('dist-electron').glob('mac*/**/*.app'))
-print(apps[0] if apps else '')
-PY
-)
+          from pathlib import Path
+          apps = sorted(Path('dist-electron').glob('mac*/**/*.app'))
+          print(apps[0] if apps else '')
+          PY
+          )
           if [ -z "$APP_PATH" ]; then
             echo "Missing .app bundle in dist-electron"
             exit 1
