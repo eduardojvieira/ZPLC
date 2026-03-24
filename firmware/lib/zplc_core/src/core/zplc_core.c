@@ -1896,6 +1896,8 @@ int zplc_vm_step(zplc_vm_t *vm) {
         return ZPLC_VM_OUT_OF_BOUNDS;
       }
 
+      mem_result = ZPLC_VM_OK;
+
       switch (opcode) {
       case OP_COMM_EXEC:
         mem_result = zplc_comm_fb_exec(kind, fb_mem);
@@ -1913,6 +1915,10 @@ int zplc_vm_step(zplc_vm_t *vm) {
         mem_result = 0;
         break;
       }
+      default:
+        vm->error = ZPLC_VM_INVALID_OPCODE;
+        vm->halted = 1;
+        return ZPLC_VM_INVALID_OPCODE;
       }
 
       if (mem_result < 0) {

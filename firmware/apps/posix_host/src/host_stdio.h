@@ -1,6 +1,10 @@
 #ifndef ZPLC_HOST_STDIO_H
 #define ZPLC_HOST_STDIO_H
 
+#if !defined(_WIN32) && !defined(_POSIX_C_SOURCE)
+#define _POSIX_C_SOURCE 200809L
+#endif
+
 #include <stddef.h>
 #include <stdio.h>
 
