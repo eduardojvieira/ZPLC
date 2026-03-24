@@ -44,12 +44,19 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
 # Compiler flags: Warnings as errors
-add_compile_options(
-    -Wall
-    -Wextra
-    -Werror
-    -pedantic
-)
+if(MSVC)
+    add_compile_options(
+        /W4
+        /WX
+    )
+else()
+    add_compile_options(
+        -Wall
+        -Wextra
+        -Werror
+        -pedantic
+    )
+endif()
 
 # =============================================================================
 # Target: zplc_core (Static Library)
