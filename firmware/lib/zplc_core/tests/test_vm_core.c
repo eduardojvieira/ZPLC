@@ -9,6 +9,7 @@
  */
 
 #include <zplc_core.h>
+#include <zplc_comm_dispatch.h>
 #include <zplc_isa.h>
 #include <stdio.h>
 #include <string.h>
@@ -107,6 +108,19 @@ static size_t emit_push16(uint8_t *buf, size_t offset, uint16_t value)
     buf[offset++] = OP_PUSH16;
     buf[offset++] = (uint8_t)(value & 0xFF);
     buf[offset++] = (uint8_t)((value >> 8) & 0xFF);
+    return offset;
+}
+
+/**
+ * @brief Append a communication opcode with a 32-bit FB kind operand.
+ */
+static size_t emit_comm32(uint8_t *buf, size_t offset, uint8_t opcode, uint32_t operand)
+{
+    buf[offset++] = opcode;
+    buf[offset++] = (uint8_t)(operand & 0xFFU);
+    buf[offset++] = (uint8_t)((operand >> 8) & 0xFFU);
+    buf[offset++] = (uint8_t)((operand >> 16) & 0xFFU);
+    buf[offset++] = (uint8_t)((operand >> 24) & 0xFFU);
     return offset;
 }
 
@@ -2404,6 +2418,33 @@ static void test_force_overrides(void)
                    "Overlapping force rejection keeps existing table intact");
 }
 
+static void test_comm_status_reads_fb_status_word(void)
+{
+    uint8_t code[16];
+    size_t len = 0;
+    const zplc_vm_state_t *state;
+    const uint32_t expected_status = 0x78563412U;
+
+    printf("\n=== Test: Communication STATUS opcode ===\n");
+
+    zplc_core_init();
+    TEST_ASSERT_EQ(zplc_ipi_write32(4U, expected_status), 0,
+                   "Write FB STATUS word into IPI memory");
+
+    len = emit_push16(code, len, ZPLC_MEM_IPI_BASE);
+    len = emit_comm32(code, len, OP_COMM_STATUS, ZPLC_COMM_FB_COMM_STATUS);
+    len = emit_op(code, len, OP_HALT);
+
+    zplc_core_load_raw(code, len);
+    zplc_core_run(0);
+
+    state = zplc_core_get_state();
+    TEST_ASSERT(state->halted, "VM halted after COMM_STATUS program");
+    TEST_ASSERT_EQ(state->sp, 1, "COMM_STATUS leaves one stack result");
+    TEST_ASSERT_EQ(state->stack[0], expected_status,
+                   "COMM_STATUS pushes FB STATUS word");
+}
+
 /* ============================================================================
  * Main
  * ============================================================================ */
@@ -2453,6 +2494,9 @@ int main(void)
 
     /* Force Override Tests */
     test_force_overrides();
+
+    /* Communication opcode regression tests */
+    test_comm_status_reads_fb_status_word();
 
     printf("\n================================================\n");
     printf("  Results: %d tests, %d passed, %d failed\n",
