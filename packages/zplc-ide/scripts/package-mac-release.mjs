@@ -68,6 +68,17 @@ function main() {
   const stagedRepo = path.join(stageDir, 'ZPLC');
   const stagedIde = path.join(stagedRepo, 'packages/zplc-ide');
   const stagedDistElectron = path.join(stagedIde, 'dist-electron');
+  const hasExplicitMacSigningIdentity = Boolean(
+    process.env.CSC_LINK
+    || process.env.CSC_NAME
+    || process.env.APPLE_ID
+    || process.env.APPLE_TEAM_ID
+    || process.env.APPLE_API_KEY
+    || process.env.APPLE_API_KEY_ID
+    || process.env.APPLE_API_ISSUER,
+  );
+  const shouldDisableHardenedRuntimeForPreview =
+    process.env.CSC_IDENTITY_AUTO_DISCOVERY === 'false' && !hasExplicitMacSigningIdentity;
 
   const copyTargets = [
     { path: 'package.json', directory: false },
@@ -106,9 +117,17 @@ function main() {
     run('bun', ['run', 'build:assets'], path.join(stagedRepo, 'packages/zplc-ide'));
     run('bun', ['run', 'build'], path.join(stagedRepo, 'packages/zplc-ide'));
     run('bun', ['run', 'electron:compile'], path.join(stagedRepo, 'packages/zplc-ide'));
+    const electronBuilderArgs = ['x', 'electron-builder', '--mac', `--${arch}`, '--publish', 'never'];
+    if (shouldDisableHardenedRuntimeForPreview) {
+      console.warn(
+        `[mac-release] No explicit Apple signing identity detected for ${arch}; disabling hardened runtime for preview artifact compatibility.`,
+      );
+      electronBuilderArgs.push('-c.mac.hardenedRuntime=false');
+    }
+
     run(
       'bun',
-      ['x', 'electron-builder', '--mac', `--${arch}`, '--publish', 'never'],
+      electronBuilderArgs,
       path.join(stagedRepo, 'packages/zplc-ide'),
       {
         ...process.env,
