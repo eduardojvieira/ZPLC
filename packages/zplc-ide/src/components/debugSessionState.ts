@@ -10,3 +10,11 @@ export type ProgramLoadState = (typeof PROGRAM_LOAD_STATE)[keyof typeof PROGRAM_
 export function shouldAutoLoadBeforeStart(vmState: VMState, programLoadState: ProgramLoadState): boolean {
   return vmState === 'idle' && programLoadState === PROGRAM_LOAD_STATE.EMPTY;
 }
+
+export function nextProgramLoadStateAfterCompile(): ProgramLoadState {
+  return PROGRAM_LOAD_STATE.EMPTY;
+}
+
+export function nextProgramLoadStateAfterConnect(): ProgramLoadState {
+  return PROGRAM_LOAD_STATE.EMPTY;
+}
