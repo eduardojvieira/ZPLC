@@ -1161,7 +1161,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
       uint16_t len1, len2;
       uint16_t min_len, i;
       uint8_t ch1, ch2;
-      int32_t result = 0;
+      int32_t strcmp_result = 0;
 
       /* Read lengths */
       mem_result = mem_read16((uint16_t)a, &len1);
@@ -1193,24 +1193,24 @@ int zplc_vm_step(zplc_vm_t *vm) {
           return mem_result;
         }
         if (ch1 < ch2) {
-          result = -1;
+          strcmp_result = -1;
           break;
         } else if (ch1 > ch2) {
-          result = 1;
+          strcmp_result = 1;
           break;
         }
       }
 
       /* If all compared chars equal, shorter string is "less" */
-      if (result == 0) {
+      if (strcmp_result == 0) {
         if (len1 < len2) {
-          result = -1;
+          strcmp_result = -1;
         } else if (len1 > len2) {
-          result = 1;
+          strcmp_result = 1;
         }
       }
 
-      VM_PUSH(vm, (uint32_t)result);
+      VM_PUSH(vm, (uint32_t)strcmp_result);
     }
     vm->pc++;
     break;
@@ -1823,7 +1823,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
     break;
 
   case OP_CALL:
-    if (vm->pc + 2 >= vm->code_size) {
+    if ((uint32_t)vm->pc > (vm->code_size - 3U)) {
       vm->error = ZPLC_VM_INVALID_JUMP;
       vm->halted = 1;
       return ZPLC_VM_INVALID_JUMP;
@@ -2302,7 +2302,7 @@ int zplc_core_load_tasks(const uint8_t *binary, size_t size,
       task_seg_size = seg_table[i].size;
       task_found = 1;
     } else if (seg_table[i].type == ZPLC_SEG_TAGS) {
-      tags_seg_offset = data_offset;
+      tags_seg_offset = (uint32_t)data_offset;
       tags_seg_size = seg_table[i].size;
       tags_found = 1;
     }
