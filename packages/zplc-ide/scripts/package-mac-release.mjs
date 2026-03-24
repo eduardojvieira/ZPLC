@@ -103,6 +103,7 @@ function main() {
       ['firmware/lib/zplc_core/build/zplc_runtime', 'packages/zplc-ide/dist-native/'],
       stagedRepo,
     );
+    run('bun', ['run', 'build:assets'], path.join(stagedRepo, 'packages/zplc-ide'));
     run('bun', ['run', 'build'], path.join(stagedRepo, 'packages/zplc-ide'));
     run('bun', ['run', 'electron:compile'], path.join(stagedRepo, 'packages/zplc-ide'));
     run(
