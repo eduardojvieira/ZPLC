@@ -80,7 +80,7 @@ That split matters because v1.5 release claims must distinguish **helpful simula
 - [Visual and Text Editors](./editors.md)
 - [Compiler Workflow](./compiler.md)
 - [Deployment & Runtime Sessions](./deployment.md)
-- [Languages & Programming Model](/languages)
+- [Languages & Programming Model](../languages/index.md)
 
 ## Release boundary
 

@@ -82,6 +82,6 @@ Build commands are canonicalized in the supported-board manifest. Flashing is st
 
 That is why the docs split the responsibilities:
 
-- [Supported Boards](/reference/boards) owns board facts and support assets
-- [Zephyr Workspace Setup](/reference/zephyr-workspace-setup) owns the canonical workspace/build shape
+- [Supported Boards](../reference/boards.md) owns board facts and support assets
+- [Zephyr Workspace Setup](../reference/zephyr-workspace-setup.md) owns the canonical workspace/build shape
 - this page owns the handoff between project output and runtime target

@@ -86,5 +86,5 @@ If you are evaluating the IDE honestly for v1.5, read these pages together:
 
 1. this page for authoring surfaces
 2. [Compiler Workflow](./compiler.md) for normalization and bytecode generation
-3. [Languages Overview](/languages) for support boundaries
+3. [Languages Overview](../languages/index.md) for support boundaries
 4. [Deployment & Runtime Sessions](./deployment.md) for simulation/hardware execution paths

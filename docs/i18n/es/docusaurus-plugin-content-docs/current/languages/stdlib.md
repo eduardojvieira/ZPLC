@@ -76,8 +76,8 @@ El repo actual registra bloques como:
 
 Para los detalles del contrato runtime y los límites del release, seguí con:
 
-- [Bloques de Función de Comunicación](/runtime/communication-function-blocks)
-- [Conectividad](/runtime/connectivity)
+- [Bloques de Función de Comunicación](../runtime/communication-function-blocks.md)
+- [Conectividad](../runtime/connectivity.md)
 
 ## Regla práctica
 

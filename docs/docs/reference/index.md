@@ -13,9 +13,9 @@ This section holds the release-facing reference material for ZPLC.
 
 ## Start here for the core rewrite surfaces
 
-- [Getting Started](/getting-started) — install, first project, simulation paths, and supported hardware handoff
-- [System Architecture](/architecture) — system boundaries, IDE/compiler/runtime relationships, and working principles
-- [Runtime Overview](/runtime) — runtime responsibilities, execution model, and subsystem map
+- [Getting Started](../getting-started/index.md) — install, first project, simulation paths, and supported hardware handoff
+- [System Architecture](../architecture/index.md) — system boundaries, IDE/compiler/runtime relationships, and working principles
+- [Runtime Overview](../runtime/index.md) — runtime responsibilities, execution model, and subsystem map
 
 ## v1.5 Release References
 

@@ -78,7 +78,7 @@ Los PLC tradicionales a menudo encierran a los usuarios en ecosistemas propietar
 
 ## Seguí por acá
 
-- [Primeros Pasos](/getting-started)
-- [Arquitectura del Sistema](/architecture)
-- [Visión General del Runtime](/runtime)
-- [Integración y Despliegue](/integration)
+- [Primeros Pasos](../getting-started/index.md)
+- [Arquitectura del Sistema](../architecture/index.md)
+- [Visión General del Runtime](../runtime/index.md)
+- [Integración y Despliegue](../integration/index.md)

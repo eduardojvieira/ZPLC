@@ -45,7 +45,7 @@ If you plan to use embedded hardware, also make sure you already have:
 - `west` in your environment
 - an activated Zephyr environment with `ZEPHYR_BASE` available
 
-See [Zephyr Workspace Setup](/reference/zephyr-workspace-setup) for the canonical
+See [Zephyr Workspace Setup](../reference/zephyr-workspace-setup.md) for the canonical
 workspace shape used by the v1.5 docs.
 
 ## 2. Know the supported boards before you target hardware
@@ -64,7 +64,7 @@ At the time of this rewrite, the published release-facing targets are:
 | STM32F746G Discovery | `stm32f746g_disco` | `stm32f746g_disco` | Network-capable (Ethernet) |
 | STM32 Nucleo-H743ZI | `nucleo_h743zi` | `nucleo_h743zi` | Network-capable (Ethernet) |
 
-Use [Supported Boards](/reference/boards) for the detailed build commands and support assets.
+Use [Supported Boards](../reference/boards.md) for the detailed build commands and support assets.
 
 ## 3. Validate the docs truth sources without building the site
 
@@ -187,7 +187,7 @@ them to the same bytecode/runtime contract.
 
 When you are ready for embedded validation:
 
-1. put the repo in a Zephyr workspace as documented in [Zephyr Workspace Setup](/reference/zephyr-workspace-setup)
+1. put the repo in a Zephyr workspace as documented in [Zephyr Workspace Setup](../reference/zephyr-workspace-setup.md)
 2. build `firmware/app` with the canonical board command from the board manifest
 3. flash using the board-appropriate flow (`west flash` for many boards, UF2 copy for RP2040-class flows)
 4. connect from the IDE and upload the compiled `.zplc` program
@@ -204,13 +204,13 @@ For v1.5.0, code presence alone is not enough.
 
 - supported boards must match the board manifest
 - language and IDE workflow claims must match the packages and exported adapters
-- docs claims must remain aligned with the [Source of Truth](/reference/source-of-truth)
+- docs claims must remain aligned with the [Source of Truth](../reference/source-of-truth.md)
 - desktop smoke and hardware-in-the-loop validation still require evidence under `specs/008-release-foundation/artifacts/`
 
 ## Related pages
 
-- [Platform Overview](/platform-overview)
-- [Integration & Deployment](/integration)
-- [System Architecture](/architecture)
-- [Runtime Overview](/runtime)
-- [Supported Boards](/reference/boards)
+- [Platform Overview](../platform-overview/index.md)
+- [Integration & Deployment](../integration/index.md)
+- [System Architecture](../architecture/index.md)
+- [Runtime Overview](../runtime/index.md)
+- [Supported Boards](../reference/boards.md)

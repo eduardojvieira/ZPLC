@@ -45,7 +45,7 @@ Use `specs/008-release-foundation/artifacts/release-evidence-matrix.md` as the c
 When a validation or deployment step fails, use this sequence instead of patching docs by intuition:
 
 1. identify the broken claim surface (`runtime-api`, boards, release notes, landing copy, or workflow docs)
-2. trace it back to its canonical source using [`/docs/reference/source-of-truth`](/reference/source-of-truth)
+2. trace it back to its canonical source using [`/docs/reference/source-of-truth`](../reference/source-of-truth.md)
 3. fix the source artifact or generator, not just the rendered markdown
 4. regenerate references if the source is generated
 5. rerun the non-build validation checks and record the outcome

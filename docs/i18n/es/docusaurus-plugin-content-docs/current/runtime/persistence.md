@@ -93,6 +93,6 @@ La forma exacta de sincronización depende de la plataforma. La documentación p
 
 ## Relación con otras páginas
 
-- [ISA del Runtime](/runtime/isa) define la región lógica `RETAIN`
-- [Runtime API](/reference/runtime-api) documenta la API pública del HAL
-- [Configuración del workspace Zephyr](/reference/zephyr-workspace-setup) cubre el entorno de build del runtime embebido
+- [ISA del Runtime](./isa.md) define la región lógica `RETAIN`
+- [Runtime API](../reference/runtime-api.md) documenta la API pública del HAL
+- [Configuración del workspace Zephyr](../reference/zephyr-workspace-setup.md) cubre el entorno de build del runtime embebido

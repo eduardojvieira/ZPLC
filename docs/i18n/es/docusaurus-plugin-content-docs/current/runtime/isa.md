@@ -135,8 +135,8 @@ No documentes una ISA imaginaria que el header público todavía no define.
 
 Para el contrato de carga del binario, complementá esta página con:
 
-- [Visión general del runtime](/runtime)
-- [Modelo de Memoria](/runtime/memory-model)
-- [Runtime API](/reference/runtime-api)
-- [Persistencia](/runtime/persistence)
-- [Runtime nativo en C](/runtime/native-c)
+- [Visión general del runtime](./index.md)
+- [Modelo de Memoria](./memory-model.md)
+- [Runtime API](../reference/runtime-api.md)
+- [Persistencia](./persistence.md)
+- [Runtime nativo en C](./native-c.md)

@@ -77,6 +77,6 @@ Los comandos de build están canonizados en el manifiesto de placas soportadas. 
 
 Por eso la documentación reparte las responsabilidades así:
 
-- [Placas Soportadas](/reference/boards) es dueña de los facts de placas y assets de soporte
-- [Configuración del Workspace Zephyr](/reference/zephyr-workspace-setup) es dueña de la forma canónica del workspace/build
+- [Placas Soportadas](../reference/boards.md) es dueña de los facts de placas y assets de soporte
+- [Configuración del Workspace Zephyr](../reference/zephyr-workspace-setup.md) es dueña de la forma canónica del workspace/build
 - esta página es dueña del handoff entre la salida del proyecto y el target runtime

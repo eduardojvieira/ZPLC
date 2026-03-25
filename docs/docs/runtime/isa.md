@@ -140,4 +140,4 @@ Do not document an aspirational ISA that the public header does not define.
 - [Runtime Overview](./index.md)
 - [Memory Model](./memory-model.md)
 - [Persistence & Retain Memory](./persistence.md)
-- [Runtime API](/reference/runtime-api)
+- [Runtime API](../reference/runtime-api.md)

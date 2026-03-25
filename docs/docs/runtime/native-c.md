@@ -128,4 +128,4 @@ That split keeps the architecture honest and maintainable.
 - [Runtime Overview](./index.md)
 - [Scheduler](./scheduler.md)
 - [Hardware Abstraction Layer](./hal-contract.md)
-- [Zephyr Workspace Setup](/reference/zephyr-workspace-setup)
+- [Zephyr Workspace Setup](../reference/zephyr-workspace-setup.md)

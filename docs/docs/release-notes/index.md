@@ -56,8 +56,8 @@ As of this scope freeze, the desktop smoke records, representative HIL records, 
 Use these notes together with the canonical docs manifest, the source-of-truth map, and the
 release evidence matrix:
 
-- [`/docs/reference/v1-5-canonical-docs-manifest`](/reference/v1-5-canonical-docs-manifest)
-- [`/docs/reference/source-of-truth`](/reference/source-of-truth)
+- [`/docs/reference/v1-5-canonical-docs-manifest`](../reference/v1-5-canonical-docs-manifest.md)
+- [`/docs/reference/source-of-truth`](../reference/source-of-truth.md)
 - `specs/008-release-foundation/artifacts/release-evidence-matrix.md`
 
 If a capability cannot be tied back to those artifacts, remove it from the public v1.5 claim set

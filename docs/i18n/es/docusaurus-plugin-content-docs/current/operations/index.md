@@ -45,7 +45,7 @@ Usá `specs/008-release-foundation/artifacts/release-evidence-matrix.md` como li
 Cuando falle una validación o un paso de despliegue, seguí esta secuencia en vez de parchear docs por intuición:
 
 1. identificá la superficie rota (`runtime-api`, placas, notas de versión, landing copy o docs de workflow)
-2. rastreala hasta su fuente canónica con [`/docs/reference/source-of-truth`](/reference/source-of-truth)
+2. rastreala hasta su fuente canónica con [`/docs/reference/source-of-truth`](../reference/source-of-truth.md)
 3. corregí el artefacto fuente o el generador, no solo el markdown renderizado
 4. regenerá las referencias si la superficie es generada
 5. reejecutá los checks no-build y registrá el resultado

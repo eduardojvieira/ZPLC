@@ -45,7 +45,7 @@ Si además vas a usar hardware embebido, asegurate de tener:
 - `west` disponible en el entorno
 - el entorno de Zephyr activado con `ZEPHYR_BASE`
 
-Mirá [Configuración del Workspace Zephyr](/reference/zephyr-workspace-setup) para la forma
+Mirá [Configuración del Workspace Zephyr](../reference/zephyr-workspace-setup.md) para la forma
 canónica del workspace usada por las docs de v1.5.
 
 ## 2. Mirá primero qué placas están realmente soportadas
@@ -64,7 +64,7 @@ Al momento de esta reescritura, los targets publicados para el release son:
 | STM32F746G Discovery | `stm32f746g_disco` | `stm32f746g_disco` | Capacidad de red (Ethernet) |
 | STM32 Nucleo-H743ZI | `nucleo_h743zi` | `nucleo_h743zi` | Capacidad de red (Ethernet) |
 
-Usá [Placas Soportadas](/reference/boards) para los comandos de build y assets de soporte.
+Usá [Placas Soportadas](../reference/boards.md) para los comandos de build y assets de soporte.
 
 ## 3. Validá las fuentes de verdad de docs sin hacer build del sitio
 
@@ -185,7 +185,7 @@ y los normaliza al mismo contrato bytecode/runtime.
 
 Cuando estés listo para validar en embebido:
 
-1. poné el repo dentro de un workspace Zephyr como se documenta en [Configuración del Workspace Zephyr](/reference/zephyr-workspace-setup)
+1. poné el repo dentro de un workspace Zephyr como se documenta en [Configuración del Workspace Zephyr](../reference/zephyr-workspace-setup.md)
 2. compilá `firmware/app` con el comando canónico de la placa desde el manifiesto
 3. flasheá usando el flujo apropiado para la placa (`west flash` en muchas placas, copia UF2 en flujos RP2040)
 4. conectate desde el IDE y subí el programa `.zplc` compilado
@@ -202,13 +202,13 @@ En v1.5.0, la mera presencia de código no alcanza.
 
 - las placas soportadas tienen que coincidir con el manifiesto
 - los claims sobre lenguajes y workflow del IDE deben coincidir con los paquetes y adapters exportados
-- los claims documentales deben mantenerse alineados con las [Fuentes de Verdad](/reference/source-of-truth)
+- los claims documentales deben mantenerse alineados con las [Fuentes de Verdad](../reference/source-of-truth.md)
 - el smoke desktop y la validación hardware-in-the-loop siguen necesitando evidencia en `specs/008-release-foundation/artifacts/`
 
 ## Páginas relacionadas
 
-- [Visión General de la Plataforma](/platform-overview)
-- [Integración y Despliegue](/integration)
-- [Arquitectura del Sistema](/architecture)
-- [Visión General del Runtime](/runtime)
-- [Placas Soportadas](/reference/boards)
+- [Visión General de la Plataforma](../platform-overview/index.md)
+- [Integración y Despliegue](../integration/index.md)
+- [Arquitectura del Sistema](../architecture/index.md)
+- [Visión General del Runtime](../runtime/index.md)
+- [Placas Soportadas](../reference/boards.md)

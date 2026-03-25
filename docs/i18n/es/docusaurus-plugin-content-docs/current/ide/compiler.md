@@ -59,7 +59,7 @@ Ahí viven categorías como:
 - funciones matemáticas y de sistema
 - bloques de comunicación Modbus/MQTT/cloud
 
-Ver [Biblioteca estándar de lenguajes](/languages/stdlib).
+Ver [Biblioteca estándar de lenguajes](../languages/stdlib.md).
 
 ## Guía de release
 
