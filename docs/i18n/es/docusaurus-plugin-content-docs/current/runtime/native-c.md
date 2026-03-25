@@ -115,7 +115,7 @@ Usá C nativo del runtime para:
 
 ## Páginas relacionadas
 
-- [Visión General del Runtime](/runtime)
-- [Scheduler](/runtime/scheduler)
-- [Contrato HAL](/runtime/hal-contract)
-- [Configuración del workspace Zephyr](/reference/zephyr-workspace-setup)
+- [Visión General del Runtime](./index.md)
+- [Scheduler](./scheduler.md)
+- [Contrato HAL](./hal-contract.md)
+- [Configuración del workspace Zephyr](../reference/zephyr-workspace-setup.md)

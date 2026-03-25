@@ -169,7 +169,7 @@ sequenceDiagram
 
 ## A dónde seguir
 
-- [Visión General de la Plataforma](/platform-overview) para el mapa del producto
-- [Primeros Pasos](/getting-started) para el primer camino funcional
-- [Visión General del Runtime](/runtime) para responsabilidades y subsistemas del runtime
-- [Integración y Despliegue](/integration) para expectativas de despliegue en hardware soportado
+- [Visión General de la Plataforma](../platform-overview/index.md) para el mapa del producto
+- [Primeros Pasos](../getting-started/index.md) para el primer camino funcional
+- [Visión General del Runtime](../runtime/index.md) para responsabilidades y subsistemas del runtime
+- [Integración y Despliegue](../integration/index.md) para expectativas de despliegue en hardware soportado

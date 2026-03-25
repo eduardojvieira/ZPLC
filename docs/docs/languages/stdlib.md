@@ -79,8 +79,8 @@ The current repo registers blocks such as:
 
 For the runtime-side details and release constraints, continue with:
 
-- [Communication Function Blocks](/runtime/communication-function-blocks)
-- [Connectivity](/runtime/connectivity)
+- [Communication Function Blocks](../runtime/communication-function-blocks.md)
+- [Connectivity](../runtime/connectivity.md)
 
 ## Practical rule
 

@@ -80,8 +80,8 @@ El formato `.zplc` es un contrato de bytecode basado en stack definido por la IS
 
 Si necesitás detalle del binario y del layout de memoria, seguí con:
 
-- [ISA del Runtime](/runtime/isa)
-- [API del Runtime](/reference/runtime-api)
+- [ISA del Runtime](../runtime/isa.md)
+- [API del Runtime](../reference/runtime-api.md)
 
 ## Biblioteca Estándar
 

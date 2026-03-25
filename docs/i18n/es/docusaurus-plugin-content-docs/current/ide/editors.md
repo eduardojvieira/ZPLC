@@ -82,5 +82,5 @@ Todos los editores tienen que alinearse con el mismo modelo de proyecto:
 
 1. esta página para las superficies de autoría
 2. [Workflow del compilador](./compiler.md)
-3. [Lenguajes y modelo de programación](/languages)
+3. [Lenguajes y modelo de programación](../languages/index.md)
 4. [Despliegue y sesiones de runtime](./deployment.md)

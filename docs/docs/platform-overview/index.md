@@ -84,7 +84,7 @@ Traditional PLCs often lock users into proprietary ecosystems and outdated devel
 
 ## Continue with
 
-- [Getting Started](/getting-started)
-- [System Architecture](/architecture)
-- [Runtime Overview](/runtime)
-- [Integration & Deployment](/integration)
+- [Getting Started](../getting-started/index.md)
+- [System Architecture](../architecture/index.md)
+- [Runtime Overview](../runtime/index.md)
+- [Integration & Deployment](../integration/index.md)

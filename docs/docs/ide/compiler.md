@@ -79,7 +79,7 @@ High-value categories exposed there include:
 - math, logic, scaling, and system functions
 - communication FB definitions such as Modbus and MQTT blocks
 
-See [Languages Standard Library](/languages/stdlib) for the release-facing summary.
+See [Languages Standard Library](../languages/stdlib.md) for the release-facing summary.
 
 ## String handling in the compiler/runtime contract
 

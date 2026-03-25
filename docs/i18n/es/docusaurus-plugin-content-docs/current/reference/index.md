@@ -13,9 +13,9 @@ Esta seccion contiene el material de referencia visible para la version v1.5 de 
 
 ## Empezá por acá para las superficies centrales reescritas
 
-- [Primeros Pasos](/getting-started) — instalación, primer proyecto, caminos de simulación y handoff a hardware soportado
-- [Arquitectura del Sistema](/architecture) — límites del sistema, relaciones IDE/compilador/runtime y principios de funcionamiento
-- [Visión General del Runtime](/runtime) — responsabilidades del runtime, modelo de ejecución y mapa de subsistemas
+- [Primeros Pasos](../getting-started/index.md) — instalación, primer proyecto, caminos de simulación y handoff a hardware soportado
+- [Arquitectura del Sistema](../architecture/index.md) — límites del sistema, relaciones IDE/compilador/runtime y principios de funcionamiento
+- [Visión General del Runtime](../runtime/index.md) — responsabilidades del runtime, modelo de ejecución y mapa de subsistemas
 
 ## Referencias de la version v1.5
 

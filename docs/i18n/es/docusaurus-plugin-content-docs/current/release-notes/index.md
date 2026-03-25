@@ -55,8 +55,8 @@ Al congelar este alcance, los registros desktop, la evidencia HIL representativa
 
 Usá estas notas junto con el manifiesto canónico, el mapa de fuentes de verdad y la matriz de evidencia:
 
-- [`/docs/reference/v1-5-canonical-docs-manifest`](/reference/v1-5-canonical-docs-manifest)
-- [`/docs/reference/source-of-truth`](/reference/source-of-truth)
+- [`/docs/reference/v1-5-canonical-docs-manifest`](../reference/v1-5-canonical-docs-manifest.md)
+- [`/docs/reference/source-of-truth`](../reference/source-of-truth.md)
 - `specs/008-release-foundation/artifacts/release-evidence-matrix.md`
 
 Si una capacidad no puede vincularse con esos artefactos, sacala del claim set público de v1.5

@@ -65,7 +65,7 @@ La depuración es consciente de capacidades, no ingenua.
 - [Editores visuales y de texto](./editors.md)
 - [Workflow del compilador](./compiler.md)
 - [Despliegue y sesiones de runtime](./deployment.md)
-- [Lenguajes y modelo de programación](/languages)
+- [Lenguajes y modelo de programación](../languages/index.md)
 
 ## Límite de release
 

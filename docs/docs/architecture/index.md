@@ -174,7 +174,7 @@ sequenceDiagram
 
 ## Where to go next
 
-- [Platform Overview](/platform-overview) for the product-level map
-- [Getting Started](/getting-started) for the first working path
-- [Runtime Overview](/runtime) for runtime responsibilities and subsystems
-- [Integration & Deployment](/integration) for supported hardware deployment expectations
+- [Platform Overview](../platform-overview/index.md) for the product-level map
+- [Getting Started](../getting-started/index.md) for the first working path
+- [Runtime Overview](../runtime/index.md) for runtime responsibilities and subsystems
+- [Integration & Deployment](../integration/index.md) for supported hardware deployment expectations

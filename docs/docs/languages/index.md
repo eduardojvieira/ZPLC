@@ -82,8 +82,8 @@ The `.zplc` format is a stack-based bytecode contract defined by the public runt
 
 If you need the binary and memory layout details, continue with:
 
-- [Runtime ISA](/runtime/isa)
-- [Runtime API](/reference/runtime-api)
+- [Runtime ISA](../runtime/isa.md)
+- [Runtime API](../reference/runtime-api.md)
 
 ## Standard Library
 
