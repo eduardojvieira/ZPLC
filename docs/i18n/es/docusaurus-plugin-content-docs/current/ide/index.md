@@ -3,36 +3,72 @@ slug: /ide
 id: index
 title: IDE y Herramientas
 sidebar_label: Visión General del IDE
-description: Capacidades del IDE web de ZPLC y herramientas de depuración.
+description: Visión general alineada al release del IDE de ZPLC, su modelo de proyecto, adapters de runtime y workflows de depuración.
 tags: [ide, tooling, debugging]
 ---
 
 # IDE y Herramientas
 
-El IDE de ZPLC es la superficie de ingeniería que debe probar las afirmaciones de workflow
-de la versión v1.5.
+El IDE es la superficie de ingeniería que tiene que demostrar que ZPLC v1.5.0 es un producto coherente y no solo un compilador con linda cara.
 
-## Capacidades
+## Qué le toca al IDE
 
-- autoría multi-lenguaje para texto y editores visuales
-- compilación integrada con contrato común
-- simulación y depuración
-- configuración de proyecto alineada con placas soportadas y capacidades reales
+- modelo de proyecto basado en `zplc.json` y archivos reales
+- workflows de lenguaje para `ST`, `IL`, `LD`, `FBD` y `SFC`
+- compilación a través del backend compartido `@zplc/compiler`
+- adapters de runtime para simulación WASM, simulación nativa y hardware real
+- operaciones de debug como breakpoints, watch, force values e inspección de estado
 
-## Flujos de Trabajo Web y de Escritorio
+## Workflow end-to-end
 
-ZPLC soporta dos flujos de trabajo principales:
+```mermaid
+flowchart LR
+  Autor[Autor IEC] --> Config[Configurar proyecto + target]
+  Config --> Compile[Compilar a .zplc]
+  Compile --> Sim[Simular en runtime nativo o WASM]
+  Sim --> Deploy[Desplegar a hardware]
+  Deploy --> Debug[Depurar estado runtime]
+```
 
-1.  **Flujo de Trabajo Web**: Se puede acceder al IDE a través de una URL alojada. Los proyectos se pueden guardar localmente en el navegador o sincronizar con un backend en la nube.
-2.  **Flujo de Trabajo de Escritorio**: Para desarrollo local y conexión directa al hardware a través de puertos serie, el IDE se puede ejecutar localmente (por ejemplo, usando Electron o un servidor Node.js local).
+## Modelo de proyecto
 
-## Simulación y Depuración
+El proyecto del IDE es intencionalmente transparente:
 
-Una característica principal del IDE es la capacidad de simular la lógica del PLC antes de desplegarla en el hardware físico.
+- `zplc.json` guarda metadata, target, red, I/O, comunicación y tareas
+- los archivos fuente siguen siendo archivos comunes del proyecto
+- si el navegador soporta File System Access API, el IDE trabaja contra carpetas reales
+- si no, puede usar proyectos virtuales en memoria
 
-*   **Simulación WASM**: La VM Core C99 real se compila en WebAssembly, lo que permite al IDE ejecutar el bytecode `.zplc` directamente en el navegador con un comportamiento exacto a nivel de ciclo.
-*   **Monitorización de Variables en Vivo**: Vea el estado de las entradas, salidas y variables internas en tiempo real durante la simulación.
+Eso está reflejado en `packages/zplc-ide/src/store/useIDEStore.ts` y en los tipos compartidos de `packages/zplc-ide/src/types/index.ts`.
 
-## Arquitectura para Colaboradores
+## Targets de runtime que expone el IDE
 
-El IDE está construido usando `packages/ide`. Depende en gran medida de `zustand` para la gestión del estado y se comunica con el hardware de destino o simulador a través de interfaces de servicio definidas. El compilador se encuentra en `packages/compiler`.
+| Camino | Adapter | Propósito | Guía de release |
+|---|---|---|---|
+| simulación en navegador | `WASMAdapter` | feedback rápido en browser | útil, pero degradado para paridad de pause/resume/step/breakpoints |
+| simulación nativa desktop | `NativeAdapter` | sesión host respaldada por Electron | camino preferido para paridad de simulación en release |
+| runtime en hardware | `SerialAdapter` | carga, ejecución y debug sobre Zephyr real | camino autoritativo para validación de placas y HIL |
+
+`createSimulationAdapter()` selecciona simulación nativa si existe el bridge de Electron; si no, cae a WASM.
+
+## Modelo de depuración
+
+La depuración es consciente de capacidades, no ingenua.
+
+- la simulación nativa publica un perfil de capacidades
+- el hardware deriva estado desde el runtime y los comandos de debug por serial
+- WASM queda disponible, pero explícitamente marcado como fallback degradado
+
+## Seguí por acá
+
+- [Arquitectura y modelo de proyecto del IDE](./overview.md)
+- [Editores visuales y de texto](./editors.md)
+- [Workflow del compilador](./compiler.md)
+- [Despliegue y sesiones de runtime](./deployment.md)
+- [Lenguajes y modelo de programación](/languages)
+
+## Límite de release
+
+La versión del paquete del IDE alineada con esta reescritura es `1.5.0` en `packages/zplc-ide/package.json`.
+
+Eso NO reemplaza los gates humanos del release: la credibilidad final sigue dependiendo de la matriz de evidencia en `specs/008-release-foundation/artifacts/release-evidence-matrix.md`.

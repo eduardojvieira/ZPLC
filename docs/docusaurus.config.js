@@ -1,4 +1,4 @@
-// @ts-check
+// @ts-nocheck
 // `@type` JSDoc annotations allow editor autocompletion and type checking
 // (when paired with `@ts-check`).
 // There are various equivalent ways to declare your Docusaurus config.
@@ -11,7 +11,7 @@ import { themes as prismThemes } from 'prism-react-renderer';
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'ZPLC',
-  tagline: 'One Execution Core, Any Runtime.',
+  tagline: 'v1.5.0 · One execution core, any runtime, one truthful release.',
   favicon: 'img/favicon.ico',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
@@ -63,7 +63,7 @@ const config = {
           lastVersion: 'current',
           versions: {
             current: {
-              label: 'v1.5 Foundation',
+              label: 'v1.5.0',
             },
             '1.4.8': {
               label: 'v1.4.8',
@@ -85,7 +85,7 @@ const config = {
       image: 'img/banner.png',
       metadata: [
         { name: 'keywords', content: 'plc, iec 61131-3, zephyr rtos, industrial automation, open source, stm32, esp32, raspberry pi pico, modbus, mqtt, scada, softplc, real-time' },
-        { name: 'description', content: 'ZPLC - The deterministic, portable, and secure IEC 61131-3 compatible runtime for modern industrial automation. The 2026 Standard.' },
+        { name: 'description', content: 'ZPLC v1.5.0 aligns runtime, IDE, supported boards, bilingual docs, and release evidence into one truthful industrial automation release.' },
       ],
       colorMode: {
         defaultMode: 'dark',
@@ -102,7 +102,7 @@ const config = {
             type: 'docSidebar',
             sidebarId: 'docsSidebar',
             position: 'left',
-            label: 'Documentation',
+            label: 'Docs / Documentación',
           },
           {
             type: 'docsVersionDropdown',
@@ -123,36 +123,40 @@ const config = {
         style: 'dark',
         links: [
           {
-            title: 'Documentation',
+            title: 'Docs / Documentación',
             items: [
               {
-                label: 'Platform Overview',
+                label: 'Quickstart / Inicio',
+                to: '/docs/getting-started',
+              },
+              {
+                label: 'Platform Overview / Visión general',
                 to: '/docs/platform-overview',
               },
               {
-                label: 'Runtime & Embedded',
+                label: 'Runtime / Runtime',
                 to: '/docs/runtime',
               },
               {
-                label: 'Languages & IDE',
-                to: '/docs/languages',
+                label: 'IDE / IDE',
+                to: '/docs/ide',
               },
             ],
           },
           {
-            title: 'Resources',
+            title: 'Release / Release',
             items: [
               {
-                label: 'Integration & Deployment',
-                to: '/docs/integration',
+                label: 'Canonical Manifest / Manifiesto',
+                to: '/docs/reference/v1-5-canonical-docs-manifest',
               },
               {
-                label: 'Architecture',
-                to: '/docs/architecture',
+                label: 'Source of Truth / Fuentes de verdad',
+                to: '/docs/reference/source-of-truth',
               },
               {
-                label: 'Reference',
-                to: '/docs/reference',
+                label: 'Release Notes / Notas de versión',
+                to: '/docs/release-notes',
               },
             ],
           },
@@ -174,7 +178,7 @@ const config = {
             ],
           },
         ],
-        copyright: `Copyright © 2026 ZPLC Project. Built for Resilience. Built with Docusaurus.`,
+        copyright: `Copyright © 2026 ZPLC Project. v1.5.0 docs aligned with runtime, IDE, and release evidence.`,
       },
       prism: {
         theme: prismThemes.github,

@@ -1,84 +1,63 @@
-# Industrial Connectivity (Phase 1.5)
+# Connectivity
 
-Industrial protocols are the nervous system of automation. ZPLC is designed to focus on the connectivity stack it actually ships: **Modbus**, **MQTT**, and cloud integration over MQTT.
+This page describes the connectivity surface that is visible in the current repo and relevant to the v1.5.0 release.
 
-:::important
-Connectivity features are currently in **Phase 1.5 Development**. Many of these features require the Native Networking HAL extension.
-:::
+## Truth sources for connectivity claims
 
-## 1. Modbus (RTU & TCP)
-Modbus is the universal language of industrial devices. ZPLC implements Modbus using the native Zephyr stack for maximum reliability.
+Connectivity claims should be grounded in three places:
 
-*   **Modbus RTU**: RS-485 half-duplex communication for local sensors and VFDs.
-*   **Modbus TCP**: High-speed communication over Ethernet.
-*   **Mapping**: Variables are tagged in Structured Text or the I/O Map and automatically exposed as Coils or Holding Registers.
+- IDE configuration types in `packages/zplc-ide/src/types/index.ts`
+- compiler communication stdlib definitions in `packages/zplc-compiler/src/compiler/stdlib/communication.ts`
+- runtime communication dispatch vocabulary in `firmware/lib/zplc_core/include/zplc_comm_dispatch.h`
 
-Language helpers are available across the IDE pipeline and compile down to standard Modbus tag bindings:
+## Board capability boundary
 
-```st
-PROGRAM Main
-VAR
-    PumpRun : BOOL;
-    MotorSpeed : UINT;
-END_VAR
+Connectivity is not only a protocol question. It is also a **board capability** question.
 
-MODBUS_COIL(PumpRun, 1);
-MODBUS_HOLDING_REGISTER(MotorSpeed, 40001);
-END_PROGRAM
-```
+The supported-board manifest marks boards as:
 
-Visual language blocks map to the same helpers:
+- serial-focused with no network interface
+- network-capable with Wi-Fi
+- network-capable with Ethernet
 
-- `MB_COIL`
-- `MB_DISCRETE_INPUT`
-- `MB_INPUT_REGISTER`
-- `MB_HOLDING_REGISTER`
+That board truth is imported directly into the IDE board profiles.
 
-```st
-VAR
-    // @modbus:holding:40001
-    MotorSpeed : INT; 
-END_VAR
-```
+## IDE-facing connectivity configuration
 
-## 2. IIoT: MQTT & Sparkplug B
-For modern data architectures, ZPLC provides a memory-safe MQTT client.
+`zplc.json` can currently express configuration for:
 
-*   **MQTT v5.0**: Support for user properties and session expiry.
-*   **Sparkplug B**: Implements the Eclipse Tahu specification for a Unified Namespace.
-*   **Payloads**: Uses `nanopb` for Protobuf encoding, ensuring zero dynamic memory allocation during message construction.
+- Modbus RTU and Modbus TCP
+- MQTT profiles such as Sparkplug B, generic broker, AWS IoT Core, Azure IoT Hub, and Azure Event Grid MQTT
+- communication tags/bindings that associate symbols with publish/subscribe/Modbus metadata
 
-## 3. Cloud Integration: AWS IoT Core
-Direct integration with AWS IoT Core via the official Embedded C SDK.
+That means the IDE surface is broader than the final signed-off release claim.
 
-*   **Device Shadows**: Synchronize PLC state with the cloud automatically.
-*   **Security**: X.509 certificate-based authentication managed via the ZPLC Shell.
+## Runtime/compiler contract
 
-## 4. Connectivity Architecture
+At the public contract level, communication flows through three layers:
 
 ```mermaid
-graph LR
-    subgraph "ZPLC Runtime"
-        PI[Process Image]
-        VM[Logic Engine]
-    end
-
-    PI <--> VM
-
-    subgraph "Communication Layer"
-        MB[Modbus Stack]
-        MQ[MQTT Client]
-        AWS[AWS SDK]
-    end
-
-    PI <--> MB
-    PI <--> MQ
-    PI <--> AWS
-
-    MB --- S[(Sensors)]
-    MQ --- B[MQTT Broker]
-    AWS --- C[AWS Cloud]
+flowchart LR
+  IDE[IDE project settings + IEC calls] --> Compiler[compiler stdlib communication FBs]
+  Compiler --> ISA[communication opcodes in ISA]
+  ISA --> Dispatch[runtime communication dispatch]
+  Dispatch --> Services[platform/runtime protocol services]
 ```
 
-## 5. Security & Isolation
-To maintain real-time determinism, all connectivity stacks run in low-priority Zephyr threads. Access to the **Process Image** is protected by mutexes, ensuring that a slow network connection never affects the 1ms control loop jitter.
+## Modbus and MQTT in release scope
+
+The release evidence matrix currently treats **Modbus RTU/TCP and MQTT product behavior** as the protocol-completion gate under `REL-003`.
+
+That is the honest v1.5 line:
+
+- these protocols are part of the intended release-facing product scope
+- the repo contains IDE/compiler/runtime surfaces for them
+- final sign-off still depends on matching automated and human evidence
+
+## What to avoid claiming too strongly
+
+The project configuration types already include AWS/Azure-oriented options, and the compiler/runtime surfaces already include cloud-wrapper block names.
+
+That does **not** automatically mean those flows should be marketed as fully signed-off v1.5 capabilities.
+
+If the release evidence gate is still pending, the docs should say so plainly.

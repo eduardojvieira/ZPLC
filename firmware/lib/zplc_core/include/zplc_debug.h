@@ -187,11 +187,11 @@ void hil_trace_watch(uint16_t addr, const char *type, int32_t val);
 /**
  * @brief Send the ready signal on boot.
  *
- * Emits: {"t":"ready","fw":"1.4.0","caps":["sched","hil"]}
+ * Emits: {"t":"ready","fw":"1.5.0","caps":["sched","hil"]}
  *
  * Should be called once after boot when shell is ready.
  *
- * @param fw_version  Firmware version string (e.g., "1.4.0")
+ * @param fw_version  Firmware version string (e.g., "1.5.0")
  * @param caps        Comma-separated capability list (e.g., "sched,hil,sfc")
  */
 void hil_send_ready(const char *fw_version, const char *caps);

@@ -1,41 +1,56 @@
 ---
-sidebar_position: 3
+id: native-c
+title: Native C in the Runtime
+sidebar_label: Native C
+description: How to add Zephyr-native or board-specific C code without breaking the public ZPLC runtime contract.
+tags: [runtime, zephyr, native-c]
 ---
 
-# Native Zephyr C in the Runtime
+# Native C in the Runtime
 
-ZPLC keeps user-facing IEC logic in `.zplc` bytecode and runs it through the VM/scheduler.
-If you need board-specific or low-level behavior, keep that code in the **runtime**, not in the IDE.
+ZPLC keeps user-facing IEC logic in `.zplc` bytecode and executes it through the VM and scheduler.
 
-This is the right place for:
+If you need board-specific or low-level behavior, that code belongs in the **runtime firmware**, not in the IDE authoring model.
+
+This page is grounded in:
+
+- `firmware/app/README.md`
+- `firmware/lib/zplc_core/include/zplc_scheduler.h`
+- `firmware/lib/zplc_core/include/zplc_hal.h`
+
+## What belongs here
+
+This is the right layer for:
 
 - Zephyr service threads
-- board-specific drivers or protocol helpers
-- integration with vendor SDKs
-- deterministic support code that should ship with firmware
+- board-specific drivers and protocol helpers
+- vendor SDK integration
+- deterministic support code that ships with firmware
 
-This is **not** the same thing as an IEC task compiled from ST/LD/FBD/SFC.
+## What this is not
 
-## Current Reality
+This is **not** the same as an IEC task compiled from `ST`, `IL`, `LD`, `FBD`, or `SFC`.
 
-Today, the public scheduler API is bytecode-oriented:
+The public scheduler API is bytecode-oriented today:
 
-- `.zplc` tasks are loaded with `zplc_sched_load()`
-- manual registration uses `zplc_sched_register_task()`
-- each registered scheduler task initializes a `zplc_vm_t`
+- `zplc_sched_load()` loads `.zplc` binaries
+- `zplc_sched_register_task()` takes a `zplc_task_def_t`, a bytecode pointer, and bytecode size
+- scheduler-managed tasks are modeled as VM-backed runtime tasks
 
-In other words: there is **no first-class public API today for registering a raw C callback as a scheduler-owned ZPLC task**.
+That means there is **no stable public API today for registering an arbitrary C callback as a first-class ZPLC scheduler task**.
 
-So the supported path for native code is:
+## Supported path today
 
-1. keep the C file in the Zephyr runtime application
-2. build it into firmware
-3. run it as a Zephyr thread/work item/service
-4. interact with ZPLC through stable runtime APIs, not by bypassing internals
+If you need native code, the supported path is:
 
-## Recommended Structure
+1. place it inside `firmware/app`
+2. compile it into the firmware image
+3. run it as a Zephyr thread, work item, or service
+4. interact with ZPLC through public runtime and HAL APIs
 
-Put custom runtime code in a dedicated subtree instead of mixing it randomly into core files.
+## Recommended structure
+
+The Zephyr runtime README recommends keeping project-specific code in a dedicated subtree:
 
 ```text
 firmware/app/
@@ -47,15 +62,15 @@ firmware/app/
         └── custom_task.c
 ```
 
-That keeps the intent clear:
+That keeps the architectural split clear:
 
-- `src/main.c` remains the runtime entry point
-- `src/zplc_*.c` remains platform/runtime infrastructure
-- `src/custom/*.c` is project-specific native behavior
+- `main.c` remains the runtime entry point
+- runtime infrastructure stays separate from project hacks
+- custom native behavior has an explicit home
 
-## Build Integration
+## Build integration
 
-Add the source file to `firmware/app/CMakeLists.txt`.
+Integrate native code through the runtime application's build system.
 
 ```cmake
 target_sources(app PRIVATE
@@ -67,7 +82,7 @@ target_sources(app PRIVATE
 )
 ```
 
-If the code is optional, gate it with Kconfig instead of always compiling it.
+If the feature is optional, gate it with Kconfig instead of compiling it unconditionally.
 
 ```cmake
 if(CONFIG_ZPLC_CUSTOM_TASKS)
@@ -75,109 +90,42 @@ if(CONFIG_ZPLC_CUSTOM_TASKS)
 endif()
 ```
 
-## Kconfig Switch
+## Safe interaction rules
 
-Add an app-local Kconfig option if the feature is board- or project-specific.
+When native code interacts with ZPLC:
 
-```kconfig
-config ZPLC_CUSTOM_TASKS
-	bool "Enable custom runtime C tasks"
-	help
-	  Builds project-specific Zephyr-native runtime tasks.
-```
+- prefer `zplc_hal_*` for platform-facing operations
+- do not bypass the HAL to poke hardware directly from shared runtime code
+- if you access shared process-image memory outside task context, use `zplc_sched_lock()` and `zplc_sched_unlock()`
+- keep execution bounded and deterministic
+- avoid dynamic allocation unless there is a strong platform reason
 
-Then enable it in the appropriate board `.conf` file.
+## What not to do
 
-```ini
-CONFIG_ZPLC_CUSTOM_TASKS=y
-```
+- do not assume the scheduler accepts native callbacks as first-class ZPLC tasks
+- do not hide board-specific hacks inside the portable core
+- do not build a competing scheduler model if ZPLC timing semantics matter
 
-## Minimal Native Task Pattern
-
-Use a normal Zephyr thread or work item. Keep memory static.
-
-```c
-#include <zephyr/kernel.h>
-#include <zplc_hal.h>
-
-#define CUSTOM_STACK_SIZE 1024
-#define CUSTOM_PRIORITY 7
-
-K_THREAD_STACK_DEFINE(custom_stack, CUSTOM_STACK_SIZE);
-static struct k_thread custom_thread;
-
-static void custom_task_entry(void *p1, void *p2, void *p3)
-{
-    ARG_UNUSED(p1);
-    ARG_UNUSED(p2);
-    ARG_UNUSED(p3);
-
-    while (1) {
-        zplc_hal_log("[CUSTOM] periodic native task\n");
-        k_msleep(100);
-    }
-}
-
-int zplc_custom_runtime_init(void)
-{
-    k_thread_create(&custom_thread,
-                    custom_stack,
-                    K_THREAD_STACK_SIZEOF(custom_stack),
-                    custom_task_entry,
-                    NULL, NULL, NULL,
-                    CUSTOM_PRIORITY,
-                    0,
-                    K_NO_WAIT);
-    k_thread_name_set(&custom_thread, "zplc_custom");
-    return 0;
-}
-```
-
-Call that init function from `firmware/app/src/main.c` after the runtime services you depend on are initialized.
-
-## How Native Code Should Interact with ZPLC
-
-Use the runtime like a gentleman, not like a maniac.
-
-- Prefer `zplc_hal_*` for hardware-facing operations
-- Prefer stable config/runtime APIs over touching private globals
-- If reading or writing shared VM/process-image state from outside task context, use scheduler locking APIs where appropriate
-- Keep execution bounded and deterministic
-- Avoid dynamic allocation
-
-## What Not To Do
-
-- Do not touch MCU registers directly; use HAL/Zephyr drivers
-- Do not fork your own competing scheduler model if IDE/ZPLC task timing matters
-- Do not assume `zplc_sched_register_task()` accepts native C callbacks; it is currently VM/bytecode-oriented
-- Do not hide board-specific hacks inside core runtime files without a feature flag
-
-## If You Need "Native Tasks" with IDE-Level Semantics
-
-That requires extra runtime architecture that does **not** exist as a stable public API today.
-
-You would need, at minimum:
-
-- a first-class native task backend in the scheduler
-- a registry of allowed native task entry points
-- task metadata binding between config and compiled symbols
-- a build/flash flow for firmware changes
-
-Until that exists, keep native C as **runtime extension code**, and keep IEC logic as `.zplc` VM tasks.
-
-## Practical Rule of Thumb
+## Practical rule of thumb
 
 Use IEC `.zplc` tasks for:
 
 - control logic
 - user-editable automation behavior
-- IDE debugging and online changes
+- IDE-driven debugging and deployment workflows
 
-Use native Zephyr C for:
+Use native runtime C for:
 
 - device drivers
 - board services
 - high-performance protocol glue
-- trusted, firmware-level support code
+- trusted firmware-level support code
 
-That split keeps the architecture clean and saves you from a spectacular maintenance mess later.
+That split keeps the architecture honest and maintainable.
+
+## Related pages
+
+- [Runtime Overview](./index.md)
+- [Scheduler](./scheduler.md)
+- [Hardware Abstraction Layer](./hal-contract.md)
+- [Zephyr Workspace Setup](/reference/zephyr-workspace-setup)

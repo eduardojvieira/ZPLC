@@ -113,7 +113,7 @@ describe('NativeSimulationSupervisor', () => {
         result: {
           protocol_version: '1.0',
           runtime_kind: 'native-posix',
-          runtime_version: '1.5.0-dev',
+          runtime_version: '1.5.0',
           capability_profile: {
             profile_id: 'cap-01',
             features: [{ name: 'pause', status: 'supported' }],
@@ -159,7 +159,7 @@ describe('NativeSimulationSupervisor', () => {
         result: {
           protocol_version: '1.0',
           runtime_kind: 'native-posix',
-          runtime_version: '1.5.0-dev',
+          runtime_version: '1.5.0',
           capability_profile: { profile_id: 'cap-01', features: [] },
         },
       })}\n`,
@@ -216,7 +216,7 @@ describe('NativeSimulationSupervisor', () => {
         result: {
           protocol_version: '1.0',
           runtime_kind: 'native-posix',
-          runtime_version: '1.5.0-dev',
+          runtime_version: '1.5.0',
           capability_profile: { profile_id: 'cap-01', features: [] },
         },
       })}\n`,
@@ -282,7 +282,7 @@ describe('NativeSimulationSupervisor', () => {
         result: {
           protocol_version: '1.0',
           runtime_kind: 'native-posix',
-          runtime_version: '1.5.0-dev',
+          runtime_version: '1.5.0',
           capability_profile: { profile_id: 'cap-01', features: [] },
         },
       })}\n`,
@@ -327,7 +327,7 @@ describe('NativeSimulationSupervisor', () => {
         result: {
           protocol_version: '1.0',
           runtime_kind: 'native-posix',
-          runtime_version: '1.5.0-dev',
+          runtime_version: '1.5.0',
           capability_profile: { profile_id: 'cap-01', features: [] },
         },
       })}\n`,

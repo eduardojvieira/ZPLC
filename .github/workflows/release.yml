@@ -5,7 +5,7 @@
 #
 # Triggers:
 #   - Manual dispatch (workflow_dispatch) with version input
-#   - Push to release/* branches
+#   - Push of version tags that match v*
 #
 # Artifacts:
 #   - IDE: macOS (x64, arm64), Windows (x64, arm64), Linux (x64, arm64)
@@ -23,7 +23,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version (e.g., 1.4.0)'
+        description: 'Release version (e.g., 1.5.0)'
         required: true
         type: string
       upload_to_release:
@@ -589,17 +589,21 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
-          name: "v${{ steps.version.outputs.version }} - Cross-Platform Desktop App"
+          name: "v${{ steps.version.outputs.version }} - Truth-Scoped Release"
           prerelease: ${{ contains(steps.version.outputs.version, '-') }}
           body: |
             ## Release v${{ steps.version.outputs.version }}
 
-            ### Highlights
-            - **Cross-Platform Desktop App**: Electron-based IDE for macOS, Windows, and Linux
-            - **Multitask Scheduler**: Run multiple PLC tasks with different intervals and priorities
-            - **NVS Persistence**: Programs survive power cycles (stored in Flash)
-            - **75 VM Opcodes**: Complete instruction set including STRING operations
-            - **Standard Library**: 45+ functions + 22 function blocks
+            ### Repo-verified scope
+            - **Canonical docs + release governance**: Public scope is tied to the docs site and release evidence artifacts in this repo
+            - **Supported-board claim set**: Public board messaging is limited to `firmware/app/boards/supported-boards.v1.5.0.json`
+            - **IEC language workflow contract**: `ST`, `IL`, `LD`, `FBD`, and `SFC` are claimed only at the repo-declared and automated-tested workflow level
+            - **Protocol scope**: Modbus RTU/TCP and MQTT are described only where runtime, compiler, IDE, and docs surfaces agree in-repo
+
+            ### Pending human validation (not claimed complete here)
+            - Desktop launch/smoke validation on macOS, Linux, and Windows
+            - Representative HIL proof for one serial-focused board and one network-capable board
+            - Final release-owner sign-off on human-owned gates
 
             ### IDE Downloads
 
@@ -630,19 +634,15 @@ jobs:
             | Tarball (Linux/macOS) | `zplc-runtime-${{ steps.version.outputs.version }}.tar.gz` |
             | ZIP (Windows) | `zplc-runtime-${{ steps.version.outputs.version }}.zip` |
 
-            The runtime package includes:
-            - Complete C99 source code for the VM
-            - Zephyr module configuration
-            - Board overlays (Pi Pico, Nucleo H743, Arduino Giga R1, ESP32-S3)
-            - Build instructions for 500+ Zephyr-supported boards
+            The runtime package includes the repo-tracked C99 runtime source, Zephyr module configuration,
+            and the support assets referenced by the canonical board manifest.
 
-            ### Supported Boards (Tested)
+            ### Supported Boards (public claim set)
 
-            - Raspberry Pi Pico (RP2040)
-            - STM32 Nucleo-H743ZI
-            - Arduino Giga R1 (STM32H747)
-            - ESP32-S3 DevKit
-            - Any board with 32KB+ RAM and Zephyr support
+            See the canonical manifest and generated docs reference instead of treating this release body as a separate source of truth:
+
+            - `firmware/app/boards/supported-boards.v1.5.0.json`
+            - https://eduardojvieira.github.io/ZPLC/reference/boards
 
             ### Documentation
 

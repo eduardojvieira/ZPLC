@@ -5,10 +5,18 @@ on:
     branches: [master, main]
     paths:
       - 'docs/**'
+      - 'tools/docs/**'
+      - 'tools/hil/validate_docs_parity.py'
+      - 'firmware/lib/zplc_core/include/**'
+      - 'firmware/app/boards/supported-boards.v1.5.0.json'
   pull_request:
     branches: [master, main]
     paths:
       - 'docs/**'
+      - 'tools/docs/**'
+      - 'tools/hil/validate_docs_parity.py'
+      - 'firmware/lib/zplc_core/include/**'
+      - 'firmware/app/boards/supported-boards.v1.5.0.json'
   workflow_dispatch:
 
 permissions:
@@ -35,6 +43,12 @@ jobs:
       - name: Install documentation dependencies
         working-directory: docs
         run: bun install
+
+      - name: Generate and validate docs references
+        working-directory: docs
+        run: |
+          bun run generate:v1.5-docs
+          bun run validate:v1.5-docs
 
       - name: Build documentation
         working-directory: docs

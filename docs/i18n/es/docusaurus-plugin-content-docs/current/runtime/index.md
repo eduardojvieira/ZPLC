@@ -3,37 +3,141 @@ slug: /runtime
 id: index
 title: Runtime y Sistemas Embebidos
 sidebar_label: Visión General del Runtime
-description: Visión general de la Máquina Virtual ZPLC, planificación y modelo de ejecución.
+description: Responsabilidades del runtime, modelo de ejecución, subsistemas principales y referencias detalladas para ZPLC v1.5.0.
 tags: [runtime, embedded]
 ---
 
 # Runtime y Sistemas Embebidos
 
-El Runtime ZPLC es una Máquina Virtual C99 determinista y altamente portable diseñada para ejecutar bytecode `.zplc` en dispositivos embebidos con recursos limitados.
+El runtime ZPLC es el core de ejecución detrás de cualquier claim honesto de v1.5.0.
 
-## Modelo de la VM
+Es donde se carga el bytecode `.zplc`, se planifican las tareas, se coordina la memoria compartida
+y se consumen los servicios de plataforma a través de la HAL en lugar de cablearlos directamente en el core.
 
-El núcleo de ZPLC es una máquina virtual basada en pila (stack). Interpreta las instrucciones generadas por el compilador.
-*   **Determinismo**: La VM está diseñada para ejecutar instrucciones con una temporización altamente predecible, un requisito crítico para el control industrial.
-*   **Sin Memoria Dinámica**: Después de la inicialización, la VM central realiza cero asignaciones dinámicas de memoria (`malloc`, `free`). Toda la memoria se asigna estáticamente o se gestiona a través de grupos (pools) preasignados, eliminando los riesgos de fragmentación de memoria durante operaciones prolongadas.
+## Responsabilidades del runtime
 
-## Planificador y Modelo de Ejecución
+A nivel de contrato público, el runtime se encarga de:
 
-ZPLC utiliza un modelo cooperativo multitarea dentro del contexto del RTOS subyacente (generalmente Zephyr).
+- cargar programas `.zplc` y sus definiciones de tarea
+- ofrecer instancias VM que ejecutan ciclos de bytecode
+- coordinar regiones de memoria compartida como IPI, OPI, work, retain y code
+- planificar tareas PLC con estadísticas, pause/resume y stepping
+- delegar hardware, timing, persistencia y networking a la HAL
 
-*   **Tareas**: Un programa PLC está compuesto por una o más tareas.
-*   **Tiempo de Ciclo**: A cada tarea se le asigna un tiempo de ciclo específico (por ejemplo, 10 ms, 100 ms).
-*   **Bucle de Ejecución**: 
-    1.  **Leer Entradas**: La HAL lee el estado actual de las entradas físicas.
-    2.  **Ejecutar Lógica**: La VM ejecuta el bytecode para la tarea.
-    3.  **Escribir Salidas**: La HAL escribe el nuevo estado en las salidas físicas.
-    4.  **Esperar**: El planificador cede el control hasta que comience el siguiente ciclo.
+## Subsistemas principales
 
-## Objetivos Soportados
+```mermaid
+flowchart TD
+  Loader[Loader\nzplc_loader.h]
+  Core[Core VM\nzplc_core.h]
+  Sched[Scheduler\nzplc_scheduler.h]
+  ISA[ISA + contrato de memoria\nzplc_isa.h]
+  HAL[Boundary HAL\nzplc_hal.h]
+  Debug[Superficie de debug\nzplc_debug.h]
+  Comm[Dispatch de comunicación\nzplc_comm_dispatch.h]
 
-El runtime está completamente desacoplado del hardware a través de la HAL. Puede ejecutarse en cualquier plataforma donde exista una implementación HAL.
+  Loader --> Core
+  ISA --> Core
+  Core --> Sched
+  Sched --> HAL
+  Debug --> Sched
+  Comm --> HAL
+```
 
-Objetivos principales soportados:
-*   **Zephyr RTOS**: El entorno de destino principal, proporcionando un soporte robusto de controladores para STM32, ESP32, NXP, etc.
-*   **POSIX**: Utilizado para simulación y pruebas basadas en host (Linux, macOS).
-*   **WASM**: Compilado a través de Emscripten para ejecutarse dentro del IDE web para simulación basada en navegador.
+## Modelo de VM
+
+`zplc_core.h` expone un modelo VM por instancias.
+
+- cada `zplc_vm_t` lleva estado privado de ejecución como `pc`, `sp`, flags, profundidad de llamadas, breakpoints y stacks
+- el código puede compartirse entre múltiples instancias VM
+- la identidad y prioridad de tarea se adjuntan a la VM desde el scheduler
+
+Eso le da a ZPLC una separación limpia entre **datos de proceso compartidos** y **contexto privado de ejecución**.
+
+## Modelo de ejecución
+
+En alto nivel, la ejecución del runtime sigue este ciclo:
+
+1. inicializar la memoria runtime compartida
+2. cargar código `.zplc` y metadatos de tareas
+3. configurar una o más instancias VM para los entry points de cada tarea
+4. planificar ciclos de tarea según intervalo y prioridad
+5. interactuar con tiempo, I/O, persistencia y red mediante la HAL
+6. exponer estado de debug, estadísticas e inspección de memoria a las herramientas de nivel superior
+
+```mermaid
+flowchart LR
+  A[Cargar .zplc] --> B[Registrar tareas]
+  B --> C[Configurar instancias VM]
+  C --> D[Ejecutar ciclo]
+  D --> E[Leer/escribir memoria compartida + servicios HAL]
+  E --> F[Publicar estadísticas/estado debug]
+  F --> D
+```
+
+## Modelo de memoria compartida
+
+El header ISA define el contrato de memoria del runtime.
+
+- **IPI** arranca en `0x0000`
+- **OPI** arranca en `0x1000`
+- **Work memory** arranca en `0x2000`
+- **Retain memory** arranca en `0x4000`
+- **Code segment** arranca en `0x5000`
+
+Lo importante no son solo los números. Lo importante es el contrato:
+
+- las regiones de memoria del proceso y del runtime son explícitas
+- la memoria retentiva es una parte de primera clase del contrato de la VM
+- la memoria de código se carga y comparte en vez de estar incrustada en un único estado monolítico de ejecución
+
+## Modelo del scheduler
+
+`zplc_scheduler.h` expone el ciclo de vida público del scheduler:
+
+- `zplc_sched_init()` / `zplc_sched_shutdown()`
+- `zplc_sched_load()` para cargar binarios multitarea `.zplc`
+- `zplc_sched_start()`, `stop()`, `pause()`, `resume()` y `step()`
+- APIs de estadísticas e inspección de tareas
+- lock/unlock explícitos para acceso a memoria compartida fuera del contexto de tarea
+
+El header del scheduler también documenta la arquitectura actual orientada a Zephyr:
+
+- timers disparan según los intervalos de tarea
+- los callbacks envían work items a work queues por prioridad
+- los threads de esas work queues ejecutan los ciclos PLC
+- la memoria compartida se protege con primitivas de sincronización
+
+## Targets soportados
+
+El runtime se mantiene portable porque el core habla con el mundo exterior a través de la HAL.
+
+Targets de validación en v1.5:
+
+- **Zephyr RTOS**: target embebido principal
+- **runtime host nativo**: camino de simulación nativa respaldado por Electron
+- **WASM**: camino de simulación en navegador del IDE
+
+Los claims concretos de placas no se definen acá. Vienen del manifiesto de placas soportadas y de la sección de referencia.
+
+## Lo que el runtime no posee
+
+El runtime **no** es dueño de:
+
+- la UX del editor
+- la ergonomía de autoría del proyecto
+- los claims públicos de release
+- la política de drivers específicos de hardware fuera del límite HAL/runtime app
+
+Todo eso vive en las capas de IDE, docs y aplicación runtime objetivo.
+
+## Referencias detalladas
+
+- [Capa de Abstracción de Hardware](./hal-contract.md)
+- [Modelo de Memoria](./memory-model.md)
+- [Scheduler](./scheduler.md)
+- [Conectividad](./connectivity.md)
+- [Bloques de Función de Comunicación](./communication-function-blocks.md)
+- [ISA del Runtime](./isa.md)
+- [Persistencia y Memoria Retentiva](./persistence.md)
+- [C Nativo en el Runtime](./native-c.md)

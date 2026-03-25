@@ -3,37 +3,89 @@ slug: /ide
 id: index
 title: IDE & Tooling
 sidebar_label: IDE Overview
-description: Capabilities of the ZPLC Web IDE and debugging tools.
+description: Release-aligned overview of the ZPLC IDE, project model, runtime adapters, and debugging workflows.
 tags: [ide, tooling, debugging]
 ---
 
 # IDE & Tooling
 
-The ZPLC IDE is the engineering surface that must prove the v1.5 workflow claims.
+The IDE is the operator-facing proof that ZPLC v1.5.0 is more than a compiler demo.
 
-## Capabilities
+It owns the engineering workflow that starts with IEC authoring and ends with simulation,
+hardware deployment, and runtime debugging.
 
-- **Multi-language authoring**: text workflows for `ST` and `IL`; visual workflows for
-  `LD`, `FBD`, and `SFC`
-- **Integrated compilation**: shared compiler contract for all claimed language paths
-- **Simulation and debugging**: breakpoint, watch, force-value, and execution-state flows
-- **Project configuration**: supported-board-aware target, network, and communication setup
+## What the IDE is responsible for
 
-## Desktop and Web Workflows
+Grounded in `packages/zplc-ide`, the IDE currently owns five release-critical surfaces:
 
-The release claim for v1.5 depends on the desktop workflow being validated on real
-macOS, Linux, and Windows environments. The web path remains useful for simulation, but
-does not replace human desktop evidence.
+- **Project model** backed by `zplc.json`, source files, and task metadata
+- **Language workflows** for `ST`, `IL`, `LD`, `FBD`, and `SFC`
+- **Compilation** through the shared `@zplc/compiler` backend
+- **Runtime adapters** for browser simulation, native desktop simulation, and serial hardware sessions
+- **Debug operations** such as breakpoints, watch values, force values, and execution-state inspection
 
-## Simulation and Debugging
+## End-to-end workflow
 
-- **WASM Simulation**: the runtime executes `.zplc` in-browser for fast iteration
-- **Live variable inspection**: watch values and current execution state
-- **Force value flow**: validate interaction between simulated/runtime state and the UI
-- **Breakpoints and step control**: part of the release claim, not optional polish
+```mermaid
+flowchart LR
+  Author[Author IEC logic] --> Config[Configure project + target]
+  Config --> Compile[Compile to .zplc]
+  Compile --> Sim[Simulate in native or WASM runtime]
+  Sim --> Deploy[Deploy to hardware]
+  Deploy --> Debug[Debug runtime state]
+```
 
-## Architecture for Contributors
+Every claimed language path in v1.5 is expected to move through that same chain.
 
-The active IDE implementation lives in `packages/zplc-ide` and integrates with
-`packages/zplc-compiler`. The release evidence for language workflows and desktop smoke
-validation must stay aligned with those packages.
+## Project model
+
+The IDE project model is file-based and intentionally transparent.
+
+- project metadata, target, network, I/O, communication, and task settings live in `zplc.json`
+- program files remain plain text or model files under the project folder
+- browser-capable environments can use the File System Access API
+- unsupported browsers can still work with **virtual projects** stored in memory
+
+That behavior is visible in `packages/zplc-ide/src/store/useIDEStore.ts` and the shared types
+under `packages/zplc-ide/src/types/index.ts`.
+
+## Runtime targets exposed by the IDE
+
+The IDE does not talk to "the runtime" as a single thing. It selects an adapter based on the
+execution context:
+
+| Path | Backing adapter | Purpose | Release guidance |
+|---|---|---|---|
+| Browser simulation | `WASMAdapter` | fast local feedback in the browser | useful, but explicitly degraded for pause/resume/step/breakpoint parity |
+| Native desktop simulation | `NativeAdapter` | Electron-backed host runtime session | preferred simulation path for release-facing parity work |
+| Hardware runtime | `SerialAdapter` | Zephyr device over serial/WebSerial | authoritative path for board and HIL validation |
+
+`createSimulationAdapter()` in `packages/zplc-ide/src/runtime/simulationAdapterFactory.ts`
+chooses native simulation when the Electron bridge is available, and falls back to WASM otherwise.
+
+## Debugging model
+
+The debug workflow is capability-aware, not assumption-driven.
+
+- native simulation exposes a capability profile through the Electron bridge
+- hardware sessions derive state from runtime status and serial debug commands
+- legacy WASM simulation remains available, but its control semantics are intentionally marked as degraded
+
+That split matters because v1.5 release claims must distinguish **helpful simulation** from
+**authoritative parity evidence**.
+
+## Read next
+
+- [IDE Architecture & Project Model](./overview.md)
+- [Visual and Text Editors](./editors.md)
+- [Compiler Workflow](./compiler.md)
+- [Deployment & Runtime Sessions](./deployment.md)
+- [Languages & Programming Model](/languages)
+
+## Release boundary
+
+The IDE package version currently aligned to this docs rewrite is `1.5.0` in
+`packages/zplc-ide/package.json`.
+
+That does **not** mean every workflow is automatically signed off. Final release credibility still
+depends on the evidence gates tracked in `specs/008-release-foundation/artifacts/release-evidence-matrix.md`.

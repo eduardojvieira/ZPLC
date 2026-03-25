@@ -14,12 +14,12 @@ ZPLC is a portable, deterministic PLC runtime environment powered by [Zephyr RTO
 ## Features
 
 - **Portable Core**: ANSI C99 compliant core for Zephyr targets, POSIX hosts, desktop tooling, and WebAssembly simulation.
-- **Cross-Platform Desktop App**: Electron-based IDE for Windows, macOS, and Linux with native serial support.
+- **Desktop IDE Surface**: Electron-based IDE codebase for Windows, macOS, and Linux; release claims stay limited to repo-visible packaging and documented workflows.
 - **Visual IDE**: Powerful editor for Ladder Diagrams (LD), Function Block Diagrams (FBD), and Sequential Function Charts (SFC).
 - **Unified Architecture**: Hardware-agnostic `.zplc` bytecode allows you to "compile once, run anywhere."
 - **IEC 61131-3 Workflows**: v1.5 focuses on truthful end-to-end workflows for `ST`, `IL`, `LD`, `FBD`, and `SFC`.
 - **Industrial Grade**: Deterministic execution, retentive memory, multitask scheduling, and sub-millisecond jitter on RTOS targets.
-- **Advanced Debugging**: Breakpoints, step execution, variable watch, and real-time memory inspection.
+- **Debugging Surfaces**: Breakpoints, step execution, variable watch, and memory inspection APIs are present in the repo; platform sign-off remains evidence-gated.
 - **Modern Tooling**: TypeScript compiler, WebAssembly simulation, and comprehensive test suite.
 
 ## Documentation
@@ -35,7 +35,7 @@ The full documentation for ZPLC, including the runtime architecture, hardware in
 
 *Note for AI Assistants & Contributors: Please refer to [AGENTS.md](AGENTS.md) for contribution guidelines, project architecture rules, and testing requirements before modifying the codebase.*
 
-## Current Status: v1.4.x (Released)
+## Current Status: v1.5.0 Release Scope
 
 | Version | Status | Description |
 |---------|--------|-------------|
@@ -49,18 +49,19 @@ The full documentation for ZPLC, including the runtime architecture, hardware in
 | **v1.3** | Complete | Advanced Debugging + Professional IDE |
 | **v1.4** | Complete | **Cross-Platform Desktop App (Electron)** |
 
-## v1.5 Foundation Status
+## v1.5 Release Posture
 
-The active `v1.5.0` work is a release-foundation effort. Claims are intentionally limited
-to what the repository, documentation, CI, and human validation can prove.
+`v1.5.0` is the current release target across the runtime, IDE, documentation, and release tooling.
+Public claims are intentionally limited to repository-visible sources, CI validation, and release evidence artifacts.
+Human desktop, HIL, and final sign-off gates remain tracked separately in `specs/008-release-foundation/artifacts/release-evidence-matrix.md`.
 
 ---
 
 ## Quick Start
 
-### Option 1: Desktop App (Recommended)
+### Option 1: Electron Desktop Workflow
 
-Download the pre-built desktop application for your platform:
+Run the desktop app locally from source:
 
 ```bash
 bun install
@@ -162,7 +163,7 @@ the boards listed in `firmware/app/boards/supported-boards.v1.5.0.json` and publ
 the docs reference section.
 
 ### Desktop & Development
-- **Desktop App**: Windows, macOS, Linux (Electron)
+- **Desktop App Surface**: Windows, macOS, Linux (Electron codebase; human smoke evidence still tracked separately)
 - **POSIX**: Linux/macOS for development and unit testing
 - **QEMU**: Cortex-M3 emulation for CI/CD pipelines
 - **WASM**: Browser-based simulation

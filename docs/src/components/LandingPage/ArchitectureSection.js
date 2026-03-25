@@ -1,46 +1,43 @@
-import React from 'react';
+import { Fragment } from 'react';
 import styles from './LandingPage.module.css';
-import Translate from '@docusaurus/Translate';
+import { useLandingPageContent } from './content';
 
 export default function ArchitectureSection() {
-    return (
-        <section className={`${styles.section} ${styles.sectionAlt}`} id="architecture">
-            <div className={styles.sectionHeader}>
-                <span className={styles.sectionLabel}>SYSTEM ARCHITECTURE</span>
-                <h2 className={styles.sectionTitle}>Data Flow</h2>
-                <p className={styles.sectionSubtitle}>
-                    A transparent pipeline from IEC 61131-3 source to hard real-time execution.
-                </p>
-            </div>
+  const { architectureSection } = useLandingPageContent();
 
-            <div style={{ display: 'flex', justifyContent: 'center', margin: '2rem 0' }}>
-                <img
-                    src={require('@site/static/img/architecture-diagram.png').default}
-                    alt="ZPLC Architecture Diagram"
-                    className={styles.ideScreenshot}
-                    style={{ maxWidth: '100%', maxHeight: '600px', objectFit: 'contain' }}
-                />
-            </div>
+  return (
+    <section className={`${styles.section} ${styles.sectionAlt}`} id="architecture">
+      <div className={styles.sectionHeader}>
+        <span className={styles.sectionLabel}>{architectureSection.label}</span>
+        <h2 className={styles.sectionTitle}>{architectureSection.title}</h2>
+        <p className={styles.sectionSubtitle}>{architectureSection.subtitle}</p>
+      </div>
 
-            <div className={styles.archFlow}>
-                <div className={styles.archFlowStep}>
-                    <div className={styles.archFlowIcon}>1</div>
-                    <h4>Compiler</h4>
-                    <p>Transpiles ST/LD/FBD to optimized bytecode with static analysis.</p>
-                </div>
-                <div className={styles.archFlowArrow}>→</div>
-                <div className={styles.archFlowStep}>
-                    <div className={styles.archFlowIcon}>2</div>
-                    <h4>Loader</h4>
-                    <p>Validates bytecode integrity and links standard libraries.</p>
-                </div>
-                <div className={styles.archFlowArrow}>→</div>
-                <div className={styles.archFlowStep}>
-                    <div className={styles.archFlowIcon}>3</div>
-                    <h4>VM Runtime</h4>
-                    <p>Executes logic in a deterministic, memory-safe loop.</p>
-                </div>
+      <div style={{ display: 'flex', justifyContent: 'center', margin: '2rem 0' }}>
+        <img
+          src={require('@site/static/img/architecture-diagram.png').default}
+          alt={architectureSection.title}
+          className={styles.ideScreenshot}
+          style={{ maxWidth: '100%', maxHeight: '600px', objectFit: 'contain' }}
+        />
+      </div>
+
+      <div className={styles.archFlow}>
+        {architectureSection.steps.map((step, index) => (
+          <Fragment key={step.title}>
+            <div className={styles.archFlowStep}>
+              <div className={styles.archFlowIcon}>{step.icon}</div>
+              <h4>{step.title}</h4>
+              <p>{step.description}</p>
             </div>
-        </section>
-    );
+            {index < architectureSection.steps.length - 1 ? (
+              <div className={styles.archFlowArrow}>
+                →
+              </div>
+            ) : null}
+          </Fragment>
+        ))}
+      </div>
+    </section>
+  );
 }
