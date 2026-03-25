@@ -3,13 +3,37 @@ slug: /platform-overview
 id: index
 title: Platform Overview
 sidebar_label: Platform Overview
-description: Learn about ZPLC, a deterministic IEC 61131-3 compatible runtime for modern industrial automation.
+description: Product-level map of the ZPLC v1.5.0 platform, including engineering surfaces, execution targets, and release boundaries.
 tags: [evaluator, architecture]
 ---
 
 # Platform Overview
 
-ZPLC (Zephyr PLC) is a next-generation, deterministic IEC 61131-3 compatible runtime designed for modern industrial automation. It bridges the gap between traditional industrial controllers and modern software engineering practices.
+ZPLC (Zephyr PLC) is a deterministic IEC 61131-3-oriented platform that combines a portable
+execution core with a modern engineering toolchain.
+
+For v1.5.0, the important mindset is simple: ZPLC is not just “a VM” and not just “an IDE”.
+It is the combined system of docs, compiler, IDE, runtime, board support, and release evidence.
+
+## Product map
+
+```mermaid
+flowchart TB
+  Docs[Docs + website]
+  IDE[IDE]
+  Compiler[Compiler]
+  Runtime[Runtime core]
+  Boards[Supported boards]
+  Evidence[Release evidence]
+
+  IDE --> Compiler
+  Compiler --> Runtime
+  Runtime --> Boards
+  Docs -. documents .-> IDE
+  Docs -. documents .-> Runtime
+  Evidence -. constrains public release claims .-> Docs
+  Evidence -. constrains public release claims .-> Boards
+```
 
 ## Core Concepts
 
@@ -34,6 +58,17 @@ ZPLC consists of several distinct subsystems:
     debugging for the claimed language workflows.
 5.  **Target Runtimes**: Specific firmware builds that combine the Core VM, a HAL implementation, and an RTOS (usually Zephyr).
 
+## How users move through the platform
+
+The highest-value user path is usually:
+
+1. understand the release-facing boundaries in docs
+2. create or open a `zplc.json` project in the IDE
+3. author logic in one of the supported language workflows
+4. compile to `.zplc`
+5. validate in WASM or native simulation
+6. move to supported hardware when hardware proof is needed
+
 ## v1.5 Release Boundaries
 
 The release foundation is considered real only when:
@@ -46,3 +81,10 @@ The release foundation is considered real only when:
 ## Why ZPLC?
 
 Traditional PLCs often lock users into proprietary ecosystems and outdated development tools. ZPLC provides an open, modern alternative that leverages standard microcontrollers while adhering to the established IEC 61131-3 standard for automation logic.
+
+## Continue with
+
+- [Getting Started](/getting-started)
+- [System Architecture](/architecture)
+- [Runtime Overview](/runtime)
+- [Integration & Deployment](/integration)

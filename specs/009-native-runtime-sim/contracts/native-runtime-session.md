@@ -52,7 +52,7 @@ Every message uses the same outer shape.
   "method": "session.hello",
   "params": {
     "client_name": "zplc-ide",
-    "client_version": "1.4.8",
+    "client_version": "1.5.0",
     "protocol_version": "1.0"
   }
 }
@@ -67,7 +67,7 @@ Every message uses the same outer shape.
   "result": {
     "protocol_version": "1.0",
     "runtime_kind": "native-posix",
-    "runtime_version": "1.5.0-dev",
+    "runtime_version": "1.5.0",
     "capability_profile": {
       "profile_id": "cap-001",
       "features": [

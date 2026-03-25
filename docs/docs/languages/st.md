@@ -4,218 +4,74 @@ sidebar_position: 1
 
 # Structured Text (ST)
 
-Structured Text (ST) is a high-level, Pascal-like programming language defined by IEC 61131-3. It is the primary language for ZPLC, offering powerful control flow and complex algorithm capabilities.
+Structured Text (ST) is the canonical semantic baseline for ZPLC.
 
 ## Canonical Role in v1.5
 
-For v1.5, Structured Text is the canonical semantic baseline for all claimed IEC language
-paths. `IL`, `LD`, `FBD`, and `SFC` are supported release architectures when they
-normalize into ST-equivalent behavior and still satisfy the full IDE workflow.
+For v1.5.0:
+
+- `ST` is the direct path into the shared compiler backend
+- `IL`, `LD`, `FBD`, and `SFC` are release-facing workflow paths when they converge into the same backend contract
+- the runtime still executes `.zplc`, not source-language-specific code
 
 Use the [v1.5 Language Suite](./examples/v1-5-language-suite.md) as the shared parity
 reference when validating language claims.
 
-## Syntax Overview
+## Why ST matters architecturally
 
-### Comments
+`packages/zplc-ide/src/compiler/index.ts` treats ST differently from the other language paths:
+
+- `ST` bypasses the transpilation stage
+- the other languages normalize into ST before compilation
+
+That makes ST the best place to understand the public automation semantics that the runtime is expected to execute.
+
+## Typical usage in ZPLC
+
+ST is the natural fit for:
+
+- textual control logic
+- arithmetic and data manipulation
+- calling stdlib functions and function blocks directly
+- action bodies that originate from higher-level visual flows
+
+## Minimal canonical example
 
 ```st
-(* Multi-line comment 
-   spanning lines *)
-
-// Single-line comment
-```
-
-### Variables
-
-Variables are declared inside `VAR ... END_VAR` blocks.
-
-```st
+PROGRAM WorkflowST
 VAR
-    myBool : BOOL := FALSE;
-    myInt : INT := 123;
-    myString : STRING := 'Hello World';
+    Start : BOOL := TRUE;
+    Timer : TON;
+    Out1 : BOOL := FALSE;
 END_VAR
+Timer(IN := Start, PT := T#250ms);
+Out1 := Timer.Q;
+END_PROGRAM
 ```
 
-**Scopes:**
-*   `VAR`: Local temporary variables.
-*   `VAR_INPUT`: Input parameters (for Function Blocks).
-*   `VAR_OUTPUT`: Output parameters.
-*   `VAR_IN_OUT`: Input/Output references.
-*   `VAR_GLOBAL`: Global variables shared across tasks.
-*   `VAR RETAIN`: Variables saved to flash.
+## What this page should and should not claim
 
-### Assignment
+This page is safe ground for:
 
-```st
-Target := Expression;
-Count := Count + 1;
-```
+- ST as the direct compiler input path
+- ST as the semantic baseline for the other languages
+- ST examples that match the shared language workflow tests
+- stdlib usage that is backed by the compiler stdlib registry
 
-## Data Types
+This page should **not** pretend ST has special runtime privileges. It compiles into the same
+bytecode contract as the other language paths.
 
-### Standard Types
+## Common ST building blocks in the current repo
 
-ZPLC supports standard IEC data types: `BOOL`, `SINT`, `INT`, `DINT`, `LINT`, `USINT`, `UINT`, `UDINT`, `ULINT`, `REAL`, `LREAL`, `TIME`, `STRING`.
+The compiler and stdlib surfaces show ST being used with:
 
-### Arrays
+- variables and task-oriented program bodies
+- timers such as `TON`, `TOF`, and `TP`
+- counters such as `CTU`, `CTD`, and `CTUD`
+- string functions such as `LEN`, `CONCAT`, `LEFT`, `RIGHT`, and `MID`
+- communication FB calls where the runtime/compiler contract supports them
 
-Arrays can be single or multi-dimensional (up to 3 dimensions).
+## Standard library entry point
 
-```st
-VAR
-    Arr1 : ARRAY[0..9] OF INT;
-    Matrix : ARRAY[0..4, 0..4] OF REAL;
-    Cube : ARRAY[0..2, 0..2, 0..2] OF BYTE;
-END_VAR
-
-Arr1[0] := 10;
-Matrix[1, 2] := 3.14;
-Cube[0, 1, 0] := 255;
-```
-
-### Structs (User-Defined Types)
-
-You can define custom structures using the `TYPE` keyword.
-
-```st
-TYPE MotorData : 
-    STRUCT
-        Speed : REAL;
-        Direction : BOOL;
-        ErrorCode : INT;
-    END_STRUCT;
-END_TYPE
-
-VAR
-    Motor1 : MotorData;
-END_VAR
-
-Motor1.Speed := 100.0;
-```
-
-## Control Structures
-
-### IF-THEN-ELSE
-
-```st
-IF temp > 100.0 THEN
-    Alarm := TRUE;
-ELSIF temp > 80.0 THEN
-    Warning := TRUE;
-ELSE
-    Alarm := FALSE;
-    Warning := FALSE;
-END_IF;
-```
-
-### CASE
-
-```st
-CASE State OF
-    0:  (* Idle *)
-        Motor := FALSE;
-    1:  (* Run *)
-        Motor := TRUE;
-    ELSE
-        Error := TRUE;
-END_CASE;
-```
-
-### Loops
-
-**WHILE** (Check condition before):
-```st
-WHILE i < 10 DO
-    i := i + 1;
-END_WHILE;
-```
-
-**FOR** (Fixed iteration):
-```st
-FOR i := 0 TO 9 BY 1 DO
-    arr[i] := 0;
-END_FOR;
-```
-
-### REPEAT (Check condition after)
-
-```st
-REPEAT
-    i := i - 1;
-UNTIL i = 0
-END_REPEAT;
-```
-
-## User-Defined Units
-
-### Functions (FUNCTION)
-
-Functions return a single value and do not store state.
-
-```st
-FUNCTION Add : INT
-    VAR_INPUT
-        A : INT;
-        B : INT;
-    END_VAR
-    Add := A + B;
-END_FUNCTION
-```
-
-### Function Blocks (FUNCTION_BLOCK)
-
-Function Blocks maintain state between calls.
-
-```st
-FUNCTION_BLOCK Counter
-    VAR_INPUT
-        Up : BOOL;
-    END_VAR
-    VAR_OUTPUT
-        Count : INT;
-    END_VAR
-    VAR
-        InternalVal : INT := 0;
-    END_VAR
-
-    IF Up THEN
-        InternalVal := InternalVal + 1;
-    END_IF;
-    Count := InternalVal;
-END_FUNCTION_BLOCK
-```
-
-## Operators
-
-| Precedence | Operator | Description |
-|---|---|---|
-| Highest | `(...)` | Parentheses |
-| | `function()` | Function Call |
-| | `**` | Exponentiation (EXPT) |
-| | `-`, `NOT` | Negation |
-| | `*`, `/`, `MOD` | Multiply, Divide, Modulo |
-| | `+`, `-` | Add, Subtract |
-| | `<`, `>`, `<=`, `>=` | Comparison |
-| | `=`, `<>` | Equality |
-| | `AND` | Boolean AND |
-| | `XOR` | Boolean XOR |
-| Lowest | `OR` | Boolean OR |
-
-## String Operations
-
-ZPLC supports the IEC 61131-3 `STRING` type with standard operators.
-
-```st
-VAR
-    Str1 : STRING := 'Hello';
-    Str2 : STRING := 'World';
-    Result : STRING;
-    IsEqual : BOOL;
-END_VAR
-
-Result := CONCAT(Str1, ' ', Str2); (* 'Hello World' *)
-IsEqual := (Str1 = 'Hello');       (* TRUE *)
-Len := LEN(Str1);                  (* 5 *)
-```
+See [Standard Library](./stdlib.md) for the built-in functions and function blocks grounded in
+`packages/zplc-compiler/src/compiler/stdlib/index.ts`.

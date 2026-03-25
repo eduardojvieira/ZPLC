@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -29,7 +31,7 @@ function main(): void {
 
   if (!version || !isValidReleaseVersion(version)) {
     throw new Error(
-      `Invalid or missing release version '${version ?? ''}'. Expected semver like 1.5.0 or 1.5.0-preview.1`
+      `Invalid or missing release version '${version ?? ''}'. Expected semver like 1.5.0 or 1.5.1-rc.1`
     );
   }
 

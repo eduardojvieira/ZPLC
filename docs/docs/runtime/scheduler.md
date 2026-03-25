@@ -4,21 +4,32 @@ sidebar_position: 2
 
 # Multitask Scheduler
 
-ZPLC supports deterministic multitasking, allowing you to run different parts of your program at different intervals and priority levels. This is essential for complex industrial applications where fast control loops (e.g., motion control) must run alongside slower monitoring tasks (e.g., temperature logging).
+The public scheduler contract is defined in `firmware/lib/zplc_core/include/zplc_scheduler.h`.
 
 ## Overview
 
-The scheduler uses a **priority-based preemptive** model.
+The scheduler exists to load, register, and execute PLC tasks with explicit interval and priority metadata.
+
+Public task and scheduler states include:
+
+- task states such as `IDLE`, `READY`, `RUNNING`, `PAUSED`, `ERROR`
+- scheduler states such as `UNINIT`, `IDLE`, `RUNNING`, `PAUSED`, `ERROR`
 
 :::note Native C code
 The scheduler documentation on this page describes **ZPLC VM tasks** loaded from `.zplc` binaries.
 If you need custom Zephyr-native C code, keep it in the runtime application as a built-in service/thread instead of treating it like an IDE-managed PLC program. See `runtime/native-c`.
 :::
 
-*   **Priority**: Lower number = Higher priority. Task 0 (High) can interrupt Task 1 (Low).
-*   **Interval**: Each task has a defined cycle time (e.g., 10ms, 100ms).
-*   **Isolation**: Each task has its own isolated "Work Memory" (Stack + Heap) to prevent data corruption.
-*   **Shared Memory**: All tasks share the Process Images (IPI/OPI) and Global/Retain variables for inter-task communication.
+## Public lifecycle API
+
+The scheduler header exposes these core operations:
+
+- `zplc_sched_init()` / `zplc_sched_shutdown()`
+- `zplc_sched_register_task()`
+- `zplc_sched_load()` for multi-task `.zplc` binaries
+- `zplc_sched_start()` / `stop()` / `pause()` / `resume()` / `step()`
+- `zplc_sched_get_state()` / `get_stats()` / `get_task()` / `get_task_count()`
+- `zplc_sched_lock()` / `unlock()` for shared-memory access outside task context
 
 ## Task Configuration
 
@@ -37,44 +48,55 @@ Tasks are defined in the project configuration (`zplc.json`) and compiled into t
 
 ## Execution Model
 
-The scheduler runs on top of the underlying RTOS (Zephyr or POSIX).
+The current public header documents a Zephyr-oriented implementation model:
 
-1.  **Tick**: The system timer triggers the scheduler every 1ms (or configured tick rate).
-2.  **Ready Queue**: The scheduler checks which tasks are due based on their interval.
-3.  **Preemption**: If a higher-priority task becomes ready while a lower-priority task is running, the current task is paused, and the high-priority task runs immediately.
-4.  **Completion**: When a task finishes (`RET` opcode), control returns to the scheduler or the interrupted task.
+1. timers fire at task intervals
+2. callbacks submit work items to priority-oriented work queues
+3. work queue threads execute PLC cycles
+4. shared memory is protected with synchronization primitives
 
-### Example Scenario
-
-*   **Task A (Fast)**: 10ms interval, Priority 0. Handles encoder reading.
-*   **Task B (Slow)**: 100ms interval, Priority 1. Handles UI updates.
-
-**Timeline:**
-```
-0ms:   Task A starts -> Task A ends
-       Task B starts
-10ms:  Task A interrupts Task B -> Task A runs -> Task A ends -> Task B resumes
-20ms:  Task A interrupts Task B -> ...
-...
-100ms: Task B finally finishes (if CPU load allows)
+```mermaid
+flowchart LR
+  Timer[Timer interval fires] --> Queue[Work item queued]
+  Queue --> Worker[Priority work queue thread]
+  Worker --> Cycle[PLC task cycle executes]
+  Cycle --> Stats[Task stats updated]
 ```
 
-## Watchdog
+## Statistics and inspection
 
-To prevent system lockups, each task has a **Watchdog Timer**. If a task takes longer than its configured `Interval` (or a global limit) to complete, the runtime will trigger a system fault and enter a safe state.
+The public scheduler statistics include values such as:
 
-*   **Common Causes**: Infinite loops (`WHILE TRUE DO`), extremely heavy computations.
-*   **Recovery**: Requires a system reset or manual intervention via shell.
+- cycle counts
+- overrun counts
+- last/max/average execution time
+- active task count
+- scheduler uptime
 
-## Memory Isolation
+That is why scheduler-aware debug surfaces can report more than just VM PC/SP values.
 
-While tasks share global variables, their **local** execution state is completely isolated:
+## Shared-memory access from outside tasks
 
-*   **Evaluation Stack**: Private to the task.
-*   **Call Stack**: Private to the task.
-*   **Work Memory**: Private temporary storage.
+The explicit `zplc_sched_lock()` / `zplc_sched_unlock()` API is part of the public contract for safe shared-memory access outside normal PLC task execution.
 
-This means you can call the same Function Block from different tasks without stack corruption, *provided* the Function Block instance itself (its state) is unique or thread-safe.
+That matters for:
+
+- debug tools
+- runtime services
+- native support code
+- protocol services that need synchronized access to shared memory
+
+## Release-facing guidance
+
+The scheduler docs are solid ground for claiming:
+
+- explicit task metadata
+- pause/resume/step scheduler control
+- scheduler statistics
+- shared-memory locking APIs
+- a Zephyr work-queue-oriented execution model
+
+They are **not** permission to invent extra scheduler semantics that are not visible in the public header or verified elsewhere.
 
 :::warning Concurrency
 If two tasks write to the same Global Variable or Output, the "Last Write Wins" rule still

@@ -26,3 +26,9 @@ jobs:
         run: |
           python3 tools/hil/validate_supported_boards.py
           python3 tools/hil/validate_release_evidence.py
+
+      - name: Generate and validate v1.5 docs references
+        working-directory: docs
+        run: |
+          bun run generate:v1.5-docs
+          bun run validate:v1.5-docs

@@ -4,111 +4,72 @@ sidebar_position: 2
 
 # Instruction List (IL)
 
-Instruction List (IL) is a low-level, assembler-like language defined by IEC 61131-3. It is closer to the hardware execution model and is often used for small, optimized code segments.
+Instruction List (IL) is the low-level textual IEC 61131-3 path documented by ZPLC.
 
-ZPLC includes a fully-featured **IL Compiler** that translates IL source code directly into ZPLC bytecode.
+## Position of IL in ZPLC
 
-## Basic Concept
+IL is a **supported workflow path**, not a separate execution backend.
 
-IL is stack-based accumulator logic. Most instructions operate on a "Current Result" (CR) register (conceptually the top of the stack).
+The real compiler flow is visible in `packages/zplc-ide/src/compiler/index.ts`:
 
-```il
-LD  Var1    (* Load Var1 into Accumulator *)
-ADD 10      (* Add 10 to Accumulator *)
-ST  Result  (* Store Accumulator to Result *)
+- `parseIL(...)` parses IL source
+- `transpileILToST(...)` normalizes it into ST
+- the shared backend then compiles the resulting program to `.zplc`
+
+```mermaid
+flowchart LR
+  IL[IL source] --> Parse[parseIL]
+  Parse --> ToST[transpileILToST]
+  ToST --> Compile[shared compiler backend]
+  Compile --> ZPLC[.zplc]
 ```
 
-## Supported Instructions
+## Why that matters
 
-### Load / Store
+This is the honest public contract for v1.5.0:
 
-| Instruction | Operand | Description |
-|---|---|---|
-| `LD` | Var / Const | Load value to Accumulator (pushes to stack). |
-| `LDN` | Var | Load negated value. |
-| `ST` | Var | Store Accumulator to variable. |
-| `STN` | Var | Store negated Accumulator. |
+- IL authoring is supported in the IDE
+- IL compiles through the shared backend
+- IL participates in simulation, deployment, and debug claims through the same workflow contract
+- the runtime executes `.zplc`, not "raw IL"
 
-### Logic & Arithmetic
+## Canonical workflow example
 
-| Instruction | Operand | Description |
-|---|---|---|
-| `AND` | Var / Const | Bitwise AND with Accumulator. |
-| `OR` | Var / Const | Bitwise OR with Accumulator. |
-| `XOR` | Var / Const | Bitwise XOR with Accumulator. |
-| `NOT` | - | Bitwise Invert Accumulator. |
-| `ADD` | Var / Const | Add to Accumulator. |
-| `SUB` | Var / Const | Subtract from Accumulator. |
-| `MUL` | Var / Const | Multiply with Accumulator. |
-| `DIV` | Var / Const | Divide Accumulator by operand. |
-| `MOD` | Var / Const | Modulo operation. |
-| `GT`, `LT`, `EQ` | Var | Comparison (Result is BOOL). |
+```iecst
+PROGRAM WorkflowIL
+VAR
+    Start : BOOL := TRUE;
+    Timer : TON;
+END_VAR
+VAR_OUTPUT
+    Out1 AT %Q0.0 : BOOL;
+END_VAR
 
-### Modifiers
-
-Most instructions support the `(` (deferred) modifier, which acts like opening a parenthesis.
-
-```il
-LD  A
-AND ( B   (* Push A, start new evaluation for B OR C *)
-OR  C
-)         (* Pop A, AND with (B OR C) *)
-ST  D
-```
-
-### Jumps and Calls
-
-| Instruction | Operand | Description |
-|---|---|---|
-| `JMP` | Label | Unconditional Jump. |
-| `JMPC` | Label | Jump if Accumulator is TRUE. |
-| `JMPCN` | Label | Jump if Accumulator is FALSE. |
-| `CAL` | FunctionBlock | Call a Function Block. |
-| `RET` | - | Return from program/function. |
-
-## Example Program
-
-**Structured Text:**
-```st
-IF StartBtn AND NOT StopBtn THEN
-    Motor := TRUE;
-ELSE
-    Motor := FALSE;
-END_IF;
-```
-
-**Equivalent Instruction List:**
-```il
-    LD   StartBtn
-    ANDN StopBtn
-    ST   Motor
-```
-
-## Using IL in ZPLC IDE
-
-1.  Create a new file with the `.il` extension.
-2.  Write your program inside `PROGRAM ... END_PROGRAM`.
-3.  The compiler will automatically detect the language and generate the corresponding bytecode.
-
-```il
-PROGRAM Main
-    VAR
-        Counter : INT := 0;
-        Limit : INT := 100;
-    END_VAR
-
-    LD  Counter
-    ADD 1
-    ST  Counter
-
-    LD  Counter
-    GT  Limit
-    JMPC Reset
-
-    RET
-
-Reset:
-    LD  0
-    ST  Counter
+    LD Start
+    ST Timer.IN
+    CAL Timer(
+        PT := T#250ms
+    )
+    LD Timer.Q
+    ST Out1
 END_PROGRAM
 ```
+
+That example is also used in the canonical [v1.5 Language Suite](./examples/v1-5-language-suite.md).
+
+## What this page should not overclaim
+
+Do not describe IL as if it owned an isolated runtime or a separate product architecture.
+
+The release-facing truth is simpler and better:
+
+- IL is a first-class IDE workflow path
+- IL converges into the same compiler/runtime contract as the other languages
+- end-to-end parity still depends on the same release evidence gates as the rest of the language stack
+
+## Related pages
+
+- [Languages Overview](./index.md)
+- [Structured Text (ST)](./st.md)
+- [Standard Library](./stdlib.md)
+- [v1.5 Language Suite](./examples/v1-5-language-suite.md)

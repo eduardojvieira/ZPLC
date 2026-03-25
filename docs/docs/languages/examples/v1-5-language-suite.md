@@ -6,18 +6,20 @@ description: Canonical cross-language workflow examples for the v1.5 release cla
 
 # v1.5 Language Suite
 
-This page defines the canonical workflow samples used to support the v1.5 release claim
+This page defines the canonical workflow samples used to audit the repo-visible v1.5 language claim
 for `ST`, `IL`, `LD`, `FBD`, and `SFC`.
 
 ## Shared Behavior
 
-Every sample in this suite proves the same workflow-level behavior:
+Every sample in this suite anchors the same repo-visible workflow contract:
 
 - authoring in the claimed language path
 - successful compilation to `.zplc`
-- simulation support
-- deployment support
-- debugging support
+- declared simulation support
+- declared deployment support
+- declared debugging support
+
+These examples do **not** replace the pending human desktop/debug validation tracked separately in `REL-004`.
 
 The canonical logic shape is intentionally small:
 
@@ -63,14 +65,14 @@ END_PROGRAM
 ## Ladder Diagram (LD)
 
 LD uses the visual model path. The canonical rung expresses `Start -> Out1` and must
-compile, simulate, deploy, and debug through the same task flow as ST.
+compile through the same task flow as ST while preserving the declared workflow contract.
 
 ## Function Block Diagram (FBD)
 
 FBD uses the visual model path. The canonical diagram connects an input block to an output
-block through the standard transpilation path.
+block through the standard transpilation path used by the repo-visible workflow contract.
 
 ## Sequential Function Chart (SFC)
 
 SFC uses a single initial step and one action that sets the output. The release claim is
-not tied to a separate backend; it is tied to the verified end-to-end workflow.
+not tied to a separate backend; it is tied to the declared compile/workflow contract and automated coverage.

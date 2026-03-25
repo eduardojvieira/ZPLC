@@ -1,295 +1,107 @@
-# Deployment
+# Deployment & Runtime Sessions
 
-This guide covers how to deploy your compiled ZPLC program to target hardware.
+This page covers the real deployment-facing surfaces exposed by the IDE in v1.5.0.
 
-## Desktop Application (Electron)
+## Three practical execution targets
 
-ZPLC is available as a cross-platform desktop application with native serial port access.
+| Target | Primary adapter | Typical use |
+|---|---|---|
+| WASM simulation | `WASMAdapter` | quick browser-side validation |
+| Native desktop simulation | `NativeAdapter` | release-facing host runtime debugging |
+| Physical controller | `SerialAdapter` | upload, run, inspect, and debug on Zephyr hardware |
 
-### Installation
+## Native desktop workflow
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
+The desktop application is the only IDE surface that can expose the Electron native simulation bridge.
 
-<Tabs>
-  <TabItem value="mac" label="macOS" default>
+Repository evidence for that path includes:
 
-```bash
-# Download from GitHub Releases
-# Or build from source:
-git clone https://github.com/eduardojvieira/ZPLC.git
-cd ZPLC
-bun install
-cd packages/zplc-ide
-bun run electron:build
-```
+- Electron build scripts in `packages/zplc-ide/package.json`
+- preload/main bridge types in `packages/zplc-ide/src/types/index.ts`
+- native runtime session handling in `packages/zplc-ide/src/runtime/nativeAdapter.ts`
 
-</TabItem>
-<TabItem value="win" label="Windows">
+In other words: desktop is not just a wrapper around the browser UI. It unlocks the native runtime simulation path.
 
-```powershell
-# Download the .exe installer from GitHub Releases
-# Or build from source with Bun for Windows
-```
+## Browser workflow
 
-</TabItem>
-<TabItem value="linux" label="Linux">
+The browser path remains important for:
 
-```bash
-# AppImage from GitHub Releases
-chmod +x ZPLC-*.AppImage
-./ZPLC-*.AppImage
+- File System Access API projects when the browser supports it
+- quick simulation through the WASM runtime
+- serial/WebSerial hardware sessions where the browser and operator environment allow it
 
-# Or .deb package
-sudo dpkg -i zplc_*.deb
-```
+But the browser path is **not** a substitute for desktop evidence when a release gate explicitly requires desktop validation.
 
-</TabItem>
-</Tabs>
+## Hardware deployment path
 
-### Features over Web Version
+The hardware-oriented adapter is `SerialAdapter`.
 
-| Feature | Web IDE | Desktop App |
-|---------|---------|-------------|
-| Serial Port Access | WebSerial (Chrome only) | Native (all ports) |
-| File System Access | Limited | Full |
-| Offline Mode | ✅ | ✅ |
-| Auto-Updates | - | ✅ |
-| System Tray | - | ✅ |
+Its responsibilities include:
 
----
+- serial connection management
+- bytecode upload through `uploadBytecode(...)`
+- project configuration provisioning
+- polling runtime status and reading debug information
+- issuing runtime commands such as pause, resume, step, peek, poke, and force operations
 
-## Deployment Methods
-
-ZPLC supports multiple deployment methods depending on your target platform and connectivity:
-
-| Method | Connection | Use Case | Status |
-|--------|------------|----------|--------|
-| Serial | USB | Direct connection from IDE | ✅ Implemented |
-| Network | TCP/IP | Remote deployment over LAN/WAN | Limited to validated v1.5 scope |
-| File Transfer | SD Card/USB | Offline deployment | ✅ Implemented |
-| OTA | WiFi/Cellular | Field updates | 🔜 Planned (Phase 2.1) |
-
----
-
-## WebSerial Deployment
-
-The most common method for development. Requires a Chromium-based browser (Chrome, Edge, Brave).
-
-### Prerequisites
-
-1. Target hardware connected via USB
-2. Appropriate USB drivers installed (if needed)
-3. ZPLC runtime flashed to the device
-
-### Steps
-
-1. **Compile your program** (F5 or Build button)
-2. Click **Deploy** in the IDE toolbar
-3. Select **Serial Port** when prompted
-4. Choose the correct COM port
-5. Wait for upload confirmation
-
-## v1.5 Release Boundary
-
-Deployment claims for v1.5 are valid only for boards in the supported-board manifest and
-only when the matching desktop or HIL evidence exists.
+## Serial deployment lifecycle
 
 ```mermaid
 sequenceDiagram
-    participant IDE as ZPLC IDE
-    participant Browser as Browser API
-    participant Device as Target Device
-    
-    IDE->>Browser: Request serial port
-    Browser->>IDE: Port selected
-    IDE->>Device: Send SYNC command
-    Device->>IDE: ACK + version info
-    IDE->>Device: Upload bytecode (chunked)
-    Device->>IDE: ACK per chunk
-    IDE->>Device: Send RUN command
-    Device->>IDE: Program running
+  participant IDE as ZPLC IDE
+  participant Adapter as SerialAdapter
+  participant Device as Zephyr runtime
+
+  IDE->>Adapter: compile project to .zplc
+  IDE->>Adapter: provision runtime config (optional)
+  Adapter->>Device: upload bytecode
+  Adapter->>Device: zplc start
+  Adapter->>Device: zplc status / dbg commands
+  Device-->>IDE: runtime state, task info, watch data
 ```
 
-### Serial Protocol
+## Board-aware configuration before deploy
 
-The upload uses a simple ACK-based protocol:
+The IDE uses the supported-board manifest to understand whether a board is:
 
-| Command | Byte | Description |
-|---------|------|-------------|
-| SYNC | `0x55` | Synchronization |
-| UPLOAD | `0x01` | Start upload |
-| CHUNK | `0x02` | Data chunk (256 bytes) |
-| RUN | `0x03` | Start execution |
-| STOP | `0x04` | Stop execution |
-| ACK | `0x06` | Acknowledgment |
-| NAK | `0x15` | Error/retry |
+- serial-focused
+- Wi-Fi capable
+- Ethernet capable
 
-### Baud Rate
+That board awareness feeds:
 
-Default: **115200 bps** (configurable in device settings)
+- target selection in project settings
+- network configuration shape
+- communication expectations for Modbus and MQTT pages
 
----
+## Release boundary for deployment claims
 
-## Network Deployment
+Deployment claims in v1.5 are only credible when all of these agree:
 
-:::caution Planned Feature
-Network deployment requires the networking foundation (Phase 1.4.1) which is not yet implemented. This section describes the intended functionality for future releases.
-:::
+1. the board exists in `supported-boards.v1.5.0.json`
+2. the IDE exposes a matching configuration/runtime path
+3. the runtime actually supports the claimed flow
+4. the release evidence gate for that surface is not still pending human validation
 
-For devices with Ethernet or WiFi connectivity.
+That is why the docs distinguish between:
 
-### Prerequisites
+- **implemented engineering surfaces** in the repo
+- **final sign-off evidence** still tracked in the release matrix
 
-1. Device connected to network
-2. Known IP address or hostname
-3. Port 5000 open (default ZPLC debug port)
+## Useful runtime-side commands surfaced by the IDE/hardware flow
 
-### Steps
+The Zephyr runtime README documents the shell contract the IDE depends on:
 
-1. **Compile your program**
-2. Click **Deploy** → **Network**
-3. Enter device IP address and port
-4. Authenticate if required
-5. Upload and run
+- `zplc start`, `zplc stop`, `zplc reset`, `zplc status`
+- `zplc dbg pause`, `resume`, `step`, `peek`, `poke`, `info`, `watch`
+- `zplc sched status`, `zplc sched tasks`
+- `zplc persist info`, `zplc persist clear`
 
-### Security Considerations
+## Troubleshooting priorities
 
-:::note
-The current debug/deployment flow has known security limitations. Do not treat it as a
-production-security claim in v1.5 unless separate evidence exists.
-:::
+When a deploy or debug session fails, check in this order:
 
-- Use transport security only where the selected runtime/profile actually supports it
-- Treat debug authentication as out of scope for the current v1.5 foundation claim
-- Restrict access via firewall rules
-
----
-
-## File-Based Deployment
-
-For offline or air-gapped systems.
-
-### Export Binary
-
-1. Compile your program
-2. Click **Export** → **Binary (.zplc)**
-3. Save to removable media
-
-### Load on Device
-
-**Option A: SD Card**
-1. Copy `.zplc` file to SD card root
-2. Insert into device
-3. Device auto-loads on boot (if configured)
-
-**Option B: USB Mass Storage**
-1. Connect device in bootloader mode
-2. Device appears as USB drive
-3. Copy `.zplc` to the drive
-4. Eject and reset device
-
-**Option C: Shell Command**
-```bash
-zplc load /path/to/program.zplc
-zplc run
-```
-
----
-
-## OTA (Over-the-Air) Updates
-
-:::caution Planned Feature
-OTA updates are outside the v1.5 release foundation scope unless they are separately
-re-scoped and verified.
-:::
-
-For deployed field devices with network connectivity.
-
-### Architecture
-
-```mermaid
-graph LR
-    Cloud[Update Server] -->|HTTPS| Gateway[Edge Gateway]
-    Gateway -->|MQTT/CoAP| Device1[Device 1]
-    Gateway -->|MQTT/CoAP| Device2[Device 2]
-    Gateway -->|MQTT/CoAP| DeviceN[Device N]
-```
-
-### Update Process
-
-1. New binary uploaded to update server
-2. Server notifies devices of available update
-3. Device downloads binary in background
-4. Integrity check (CRC32 + signature verification)
-5. Device schedules restart at safe time
-6. New program loads after reboot
-
-### Rollback
-
-If the new program fails to start:
-1. Watchdog triggers after timeout
-2. Bootloader restores previous version
-3. Device reports rollback to server
-
----
-
-## Deployment Verification
-
-After deploying, verify the program is running correctly:
-
-### Status Check
-
-In the IDE, the status bar shows:
-- **Connected**: Communication established
-- **Running**: Program executing
-- **Cycle Time**: Current scan time
-- **Errors**: Any runtime errors
-
-### Variable Watch
-
-1. Open the **Watch** panel
-2. Add variables to monitor
-3. Verify values update in real-time
-
-### Diagnostic Commands
-
-Via serial shell:
-```bash
-zplc status      # Show runtime status
-zplc stats       # Show cycle timing statistics
-zplc vars        # List all variables
-zplc watch VAR   # Continuously print variable value
-```
-
----
-
-## Troubleshooting
-
-### Serial Port Not Found
-
-- Check USB cable connection
-- Verify drivers are installed
-- Try a different USB port
-- Check if another application is using the port
-
-### Upload Fails
-
-- Reduce baud rate to 9600 and retry
-- Check for firmware version compatibility
-- Ensure sufficient flash space on device
-- Verify CRC matches after upload
-
-### Program Doesn't Run
-
-- Check for runtime errors in console
-- Verify I/O configuration matches hardware
-- Ensure all required function blocks are available
-- Check memory usage doesn't exceed limits
-
-### Network Connection Refused
-
-- Verify IP address is correct
-- Check firewall settings
-- Ensure device is not in fault state
-- Verify authentication credentials
+1. **target truth** — selected board matches the supported-board manifest
+2. **project truth** — `zplc.json` task, I/O, network, and communication settings are sane
+3. **adapter truth** — are you using WASM, native simulation, or serial hardware?
+4. **release truth** — is the missing behavior actually signed off, or still pending?

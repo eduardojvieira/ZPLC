@@ -12,16 +12,16 @@ The ZPLC documentation is built using Docusaurus and automatically deployed to G
 
 ## The Deployment Pipeline
 
-The pipeline is defined in `.github/workflows/docs-deploy.yml`. It handles both Pull Requests and merges to the main branch.
+The pipeline is defined in `.github/workflows/docs-deploy.yml` and runs as **Deploy Docusaurus to GitHub Pages**. It handles both pull requests and pushes to the main branch.
 
 ### Pull Requests (Validation)
 When a PR is opened that modifies the `docs/` directory:
 1. The CI pipeline installs dependencies.
-2. It runs `bun run build`.
+2. It runs `bun run validate:v1.5-docs` and then `bun run build`.
 3. **Crucially**, Docusaurus is configured with `onBrokenLinks: 'throw'`. If your PR introduces a broken internal link, a missing markdown import, or invalid frontmatter, the build will fail, blocking the merge.
 
 ### Merges to Main (Deployment)
-When a PR is merged into `main` (or `master`):
+When changes are pushed to `main` (or `master`):
 1. The CI pipeline performs the build validation step.
 2. It uploads the `docs/build` directory as an artifact.
 3. A subsequent job deploys that artifact directly to the `github-pages` environment.
@@ -30,18 +30,17 @@ When a PR is merged into `main` (or `master`):
 
 To publish new documentation:
 1. Make your changes in a feature branch.
-2. Run `npm run start` locally to verify changes.
-3. Run `npm run build` locally to ensure no broken links.
-4. Open a Pull Request.
-5. Wait for the `Build Documentation` CI job to pass.
-6. Merge the PR. GitHub Actions will handle the rest. The site should update within a few minutes.
+2. Run `bun --cwd docs run validate:v1.5-docs` locally to verify manifest parity and generated references.
+3. Open a Pull Request.
+4. Wait for the `Build Documentation` job in **Deploy Docusaurus to GitHub Pages** to pass.
+5. Merge the PR or push the approved change to `main`. GitHub Actions will upload `docs/build` and deploy it to GitHub Pages automatically.
 
 ## Versioning a Release
 
-When the ZPLC project hits a major milestone (e.g., `v1.4.8`), you should take a snapshot of the documentation.
+When the ZPLC project hits a release milestone (for example, `v1.5.0`), you should take a snapshot of the documentation.
 
 1. Create a branch for the release.
-2. Run `npm run docusaurus docs:version 1.4.8` inside the `docs/` folder.
+2. Run `bun --cwd docs run docusaurus docs:version 1.5.0`.
 3. Commit the new `versions.json` and the `versioned_docs/` folder.
 4. Merge the PR.
 

@@ -11,10 +11,12 @@
 #include <string.h>
 
 #include <zplc_core.h>
+#include <zplc_isa.h>
+#include <zplc_scheduler.h>
 
 #define ZPLC_NATIVE_PROTOCOL_VERSION "1.0"
 #define ZPLC_NATIVE_RUNTIME_KIND "native-posix"
-#define ZPLC_NATIVE_RUNTIME_VERSION "1.5.0-dev"
+#define ZPLC_NATIVE_RUNTIME_VERSION "1.5.0"
 #define ZPLC_NATIVE_RESPONSE_ERR_INVALID_REQUEST -10
 #define ZPLC_NATIVE_RESPONSE_ERR_PROGRAM_LOAD -11
 #define ZPLC_NATIVE_RESPONSE_ERR_INVALID_STATE -12

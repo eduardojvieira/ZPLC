@@ -2,38 +2,96 @@
 id: memory-model
 title: Memory Model
 sidebar_label: Memory Model
-description: How ZPLC handles memory safely on constrained devices.
+description: Public VM memory regions, shared/private state boundaries, and bounded-memory expectations for ZPLC.
 tags: [runtime, embedded, memory]
 ---
 
 # Memory Model
 
-Industrial runtimes cannot crash due to memory leaks or fragmentation. Therefore, the ZPLC VM enforces a strict, static memory model.
+The public memory contract is defined primarily by:
 
-## No Dynamic Allocation
+- `firmware/lib/zplc_core/include/zplc_isa.h`
+- `firmware/lib/zplc_core/include/zplc_core.h`
 
-The core VM does not use `malloc`, `calloc`, `realloc`, or `free`. Once the runtime is initialized, the memory footprint is fixed and guaranteed.
+## Logical memory regions
 
-## Memory Pools
+`zplc_isa.h` exposes five logical memory regions:
 
-Instead of dynamic allocation, ZPLC uses Kconfig-configurable memory pools.
+| Region | Base | Role |
+|---|---:|---|
+| IPI | `0x0000` | input process image |
+| OPI | `0x1000` | output process image |
+| WORK | `0x2000` | working memory |
+| RETAIN | `0x4000` | retentive memory |
+| CODE | `0x5000` | loaded bytecode |
 
-*   **Bytecode Pool**: A dedicated block of memory for storing the uploaded `.zplc` executable.
-*   **Variable State**: Global variables, inputs, and outputs are mapped to fixed memory locations at compile time.
-*   **Task Stacks**: Each PLC task has a bounded, pre-allocated work memory stack.
-
-## Exact-Width Types
-
-To ensure portability across 32-bit and 64-bit architectures, the core uses exact-width integer types (`uint8_t`, `uint16_t`, `int32_t`, etc.) exclusively. Bare `int` or `long` are forbidden in the core logic.
-
-## Configuration
-
-When building the firmware (e.g., via Zephyr's `menuconfig` or `prj.conf`), the system integrator defines the limits:
-
-```kconfig
-CONFIG_ZPLC_MAX_TASKS=4
-CONFIG_ZPLC_BYTECODE_MEM_SIZE=16384
-CONFIG_ZPLC_STATE_MEM_SIZE=4096
+```mermaid
+flowchart LR
+  HALIN[HAL input sync] --> IPI[IPI]
+  IPI --> VM[VM instances]
+  VM --> OPI[OPI]
+  VM --> WORK[WORK]
+  VM --> RETAIN[RETAIN]
+  Loader[Loader] --> CODE[CODE]
+  CODE --> VM
+  OPI --> HALOUT[HAL output sync]
 ```
 
-If a downloaded program exceeds these static limits, the runtime rejects it during the load phase, preventing a crash during execution.
+## Shared vs private state
+
+`zplc_core.h` makes a very important split explicit.
+
+### Shared across VM instances
+
+- IPI
+- OPI
+- work and retain address space
+- loaded code segment
+
+### Private per VM instance
+
+- program counter (`pc`)
+- stack pointer (`sp`)
+- base pointer (`bp`)
+- call depth
+- flags and error state
+- breakpoint table
+- evaluation stack
+- call stack
+
+That is the architectural reason multitask scheduling can share process data without pretending every task has the same execution context.
+
+## System registers inside IPI
+
+`zplc_isa.h` reserves the last 16 bytes of IPI for system information, including:
+
+- cycle time
+- system uptime
+- current task id
+- runtime flags such as first-scan and scheduler-running state
+
+That means user memory and runtime metadata are not mixed arbitrarily.
+
+## Bounded memory expectations
+
+The public headers also expose bounded limits such as:
+
+- `ZPLC_STACK_MAX_DEPTH`
+- `ZPLC_CALL_STACK_MAX`
+- `ZPLC_MAX_BREAKPOINTS`
+- configurable work, retain, and code sizes through `CONFIG_*` overrides
+
+The Zephyr runtime README also documents representative configuration keys such as:
+
+```kconfig
+CONFIG_ZPLC_WORK_MEMORY_SIZE=8192
+CONFIG_ZPLC_RETAIN_MEMORY_SIZE=4096
+CONFIG_ZPLC_CODE_SIZE_MAX=4096
+```
+
+## Why this matters for docs
+
+When documentation talks about memory safety, determinism, retain behavior, or stack limits,
+those claims should be anchored to these public contracts.
+
+Do not invent a second undocumented memory model in prose.

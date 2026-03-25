@@ -1,342 +1,102 @@
 # Compiler Workflow
 
-The ZPLC compiler transforms the claimed IEC language paths into optimized `.zplc`
-bytecode for the runtime.
+The IDE compiler layer is built around one core rule for v1.5:
 
-## Compilation Pipeline
+> there is **one executable backend contract**, not five unrelated compilers.
+
+That rule is visible in `packages/zplc-ide/src/compiler/index.ts`.
+
+## Canonical pipeline
 
 ```mermaid
-graph LR
-    A[Language Source] --> B[Lexer / Transpiler]
-    B --> C[Parser]
-    C --> D[AST]
-    D --> E[Semantic Analysis]
-    E --> F[IR Generation]
-    F --> G[Optimization]
-    G --> H[Code Generation]
-    H --> I[.zplc Binary]
+flowchart LR
+  ST[ST source] --> Core[compileToBinary]
+  IL[IL source] --> ILParse[parseIL]
+  ILParse --> ILToST[transpileILToST]
+  LD[LD model] --> LDToST[transpileLDToST]
+  FBD[FBD model] --> FBDToST[transpileFBDToST]
+  SFC[SFC model] --> SFCToST[transpileSFCToST]
+  ILToST --> Core
+  LDToST --> Core
+  FBDToST --> Core
+  SFCToST --> Core
+  Core --> ZPLC[.zplc + debug map + task metadata]
 ```
 
-### 1. Language Input
+## What `compileProject()` actually does
 
-`ST` enters directly. `IL`, `LD`, `FBD`, and `SFC` first normalize into the canonical
-compiler path and then use the same backend contract.
+`compileProject()` follows two stages:
 
-### 2. Lexical Analysis (Lexer)
+1. **Normalize to ST when required**
+2. **Compile the resulting ST to bytecode**
 
-The lexer tokenizes canonical source into a stream of tokens:
+That means:
 
-```
-Input:  IF counter > 10 THEN motor := TRUE; END_IF;
+- `ST` goes directly to the shared backend
+- `IL` is parsed and transpiled to ST first
+- `LD`, `FBD`, and `SFC` are loaded as models and transpiled to ST first
 
-Tokens: [IF] [IDENT:counter] [GT] [INT:10] [THEN] 
-        [IDENT:motor] [ASSIGN] [TRUE] [SEMI] [END_IF] [SEMI]
-```
+This is why the public release claim is a **workflow parity claim**, not a claim that each language owns a fully separate backend.
 
-### 3. Parsing
+## Language workflow support flags
 
-The parser builds an Abstract Syntax Tree (AST) from the token stream using a recursive descent parser.
+The IDE exports explicit workflow support flags for every claimed language:
 
-**Supported Constructs:**
-- Variable declarations (`VAR`, `VAR_INPUT`, `VAR_OUTPUT`, `VAR_RETAIN`)
-- Assignments
-- IF/THEN/ELSIF/ELSE/END_IF
-- CASE/OF/END_CASE
-- FOR/TO/BY/DO/END_FOR
-- WHILE/DO/END_WHILE
-- REPEAT/UNTIL/END_REPEAT
-- Function calls
-- Function block instantiation
+| Language | Author | Compile | Simulate | Deploy | Debug |
+|---|---|---|---|---|---|
+| `ST` | yes | yes | yes | yes | yes |
+| `IL` | yes | yes | yes | yes | yes |
+| `LD` | yes | yes | yes | yes | yes |
+| `FBD` | yes | yes | yes | yes | yes |
+| `SFC` | yes | yes | yes | yes | yes |
 
-### 4. Semantic Analysis
+Those flags live in `LANGUAGE_WORKFLOW_SUPPORT`, and `languageWorkflow.test.ts` verifies the declared support matrix and the canonical compile path.
 
-Type checking and scope resolution:
+## Single-file and multi-task outputs
 
-- Verify all variables are declared
-- Check type compatibility in assignments and expressions
-- Resolve function block instance methods
-- Validate array bounds (when possible)
+The compiler surface used by the IDE can generate:
 
-### 5. IR Generation
+- **single-file programs** with an automatically generated task segment
+- **multi-task project binaries** with merged bytecode and debug maps
 
-The AST is lowered to an intermediate representation closer to the bytecode:
+`compileMultiTaskProject()` also ties together:
 
-```
-ST:  result := a + b * c;
+- program entry points
+- task definitions
+- communication tag injection
+- merged debug map information for the debugger
 
-IR:  LOAD a
-     LOAD b
-     LOAD c
-     MUL
-     ADD
-     STORE result
-```
+## Standard library resolution
 
-### 6. Optimization
+The compiler stdlib registry in `packages/zplc-compiler/src/compiler/stdlib/index.ts` is the authoritative source for built-in functions and function blocks.
 
-Current optimizations:
-- **Constant folding**: `2 + 3` → `5`
-- **Dead code elimination**: Remove unreachable code
-- **Peephole optimization**: `PUSH 0; ADD` → (removed)
+High-value categories exposed there include:
 
-### 7. Code Generation
+- timers (`TON`, `TOF`, `TP`)
+- counters (`CTU`, `CTD`, `CTUD`)
+- edge and bistable blocks
+- string functions
+- math, logic, scaling, and system functions
+- communication FB definitions such as Modbus and MQTT blocks
 
-The IR is serialized to ZPLC bytecode in the `.zplc` binary format.
+See [Languages Standard Library](/languages/stdlib) for the release-facing summary.
 
----
+## String handling in the compiler/runtime contract
 
-## Release Language Support
+Strings matter because they cross compiler and runtime boundaries.
 
-For v1.5, the compiler release claim is not “five separate backends.” It is one verified
-workflow contract across `ST`, `IL`, `LD`, `FBD`, and `SFC`.
+- the compiler stdlib defines string helpers in `stdlib/strings.ts`
+- the ISA header defines the fixed `STRING` layout in `zplc_isa.h`
+- the runtime uses dedicated string opcodes such as `STRLEN`, `STRCPY`, `STRCAT`, `STRCMP`, and `STRCLR`
 
-### Data Types
+That is why string support belongs to the compiler/runtime contract, not to ad-hoc IDE-only behavior.
 
-| Type | Description | Example |
-|------|-------------|---------|
-| BOOL | Boolean | `TRUE`, `FALSE` |
-| INT | 16-bit signed | `-32768` to `32767` |
-| DINT | 32-bit signed | `-2147483648` to `2147483647` |
-| REAL | 32-bit float | `3.14159` |
-| TIME | Duration | `T#5s`, `T#100ms` |
-| STRING | Text (80 chars default) | `'Hello'` |
-| STRING[n] | Text with capacity n | `'Hello'` (max n chars) |
+## Release guidance
 
-### STRING Type Details
+For v1.5.0, the compiler docs should claim only what the repo currently exports and tests:
 
-Strings in ZPLC follow the IEC 61131-3 specification with bounded buffers for safety.
+- language workflow support is declared and tested
+- visual and IL paths converge into the same backend
+- `.zplc` output, task metadata, and debug maps are part of the same compile result
 
-#### Declaration
-
-```st
-VAR
-    message : STRING;           (* Default: 80 char capacity *)
-    short_msg : STRING[20];     (* Custom: 20 char capacity *)
-    initialized : STRING := 'Hello World';
-END_VAR
-```
-
-#### Memory Layout
-
-Each STRING variable occupies a fixed buffer in work memory:
-
-```
-┌───────────────┬───────────────┬──────────────────────┐
-│ current_len   │ max_capacity  │      data[]          │
-│   (2 bytes)   │   (2 bytes)   │  (max_capacity + 1)  │
-└───────────────┴───────────────┴──────────────────────┘
-```
-
-- **current_len**: Number of characters currently stored
-- **max_capacity**: Maximum allowed characters (from declaration)
-- **data[]**: Character bytes + null terminator
-
-Total size: 4 + capacity + 1 = 85 bytes for `STRING[80]`
-
-#### String Literals
-
-String literals use single quotes with `''` for escaped quotes:
-
-```st
-msg := 'Hello World';      (* Simple string *)
-msg := 'It''s working';    (* Escaped quote → It's working *)
-msg := '';                 (* Empty string *)
-```
-
-#### String Operations
-
-The compiler automatically handles string operations:
-
-```st
-(* Comparison - uses STRCMP opcode *)
-IF status = 'OK' THEN
-    (* ... *)
-END_IF;
-
-IF error <> 'NONE' THEN
-    (* ... *)
-END_IF;
-
-(* Function calls *)
-len := LEN(message);
-CONCAT(message, ' World');
-COPY(source, destination);
-```
-
-#### Code Generation
-
-String literals are allocated in a pool during compilation:
-
-1. **Collection Phase**: All string literals in the AST are gathered
-2. **Allocation Phase**: Unique addresses assigned after declared variables
-3. **Initialization Phase**: Startup code stores length, capacity, and characters
-
-Example generated code for `msg := 'Hi'`:
-```asm
-; Initialize literal '_str0' at 0x2055
-PUSH16 2           ; length = 2
-STORE16 0x2055     ; store at offset 0
-PUSH16 2           ; capacity = 2
-STORE16 0x2057     ; store at offset 2
-PUSH8 72           ; 'H'
-STORE8 0x2059      ; data[0]
-PUSH8 105          ; 'i'
-STORE8 0x205a      ; data[1]
-PUSH8 0            ; null terminator
-STORE8 0x205b      ; data[2]
-
-; Assignment: copy literal to variable
-PUSH16 0x2000      ; &msg (destination)
-PUSH16 0x2055      ; &'Hi' (source)
-STRCPY
-```
-
-#### String Functions
-
-See the [Standard Library Reference](/docs/runtime/stdlib#7-string-functions) for the complete list of string functions including:
-
-- **Basic**: `LEN`, `CONCAT`, `COPY`, `CLEAR`
-- **Substring**: `LEFT`, `RIGHT`, `MID`
-- **Search**: `FIND`, `INSERT`, `DELETE`, `REPLACE`
-- **Comparison**: `STRCMP`, `EQ_STRING`, `NE_STRING`
-
-### Operators
-
-| Category | Operators |
-|----------|-----------|
-| Arithmetic | `+`, `-`, `*`, `/`, `MOD` |
-| Comparison | `=`, `<>`, `<`, `<=`, `>`, `>=` |
-| Logical | `AND`, `OR`, `XOR`, `NOT` |
-| Bitwise | `AND`, `OR`, `XOR`, `NOT`, `SHL`, `SHR` |
-
-### Control Structures
-
-```st
-// Conditional
-IF condition THEN
-    // statements
-ELSIF other_condition THEN
-    // statements  
-ELSE
-    // statements
-END_IF;
-
-// Case selection
-CASE selector OF
-    1: action1();
-    2, 3: action2();
-    ELSE: default_action();
-END_CASE;
-
-// Counted loop
-FOR i := 1 TO 10 BY 1 DO
-    // statements
-END_FOR;
-
-// While loop
-WHILE condition DO
-    // statements
-END_WHILE;
-
-// Repeat loop
-REPEAT
-    // statements
-UNTIL condition
-END_REPEAT;
-```
-
----
-
-## Function Blocks
-
-### Using Standard FBs
-
-```st
-VAR
-    start_delay : TON;  // Instance of TON timer
-    motor_running : BOOL;
-END_VAR
-
-// Call the FB
-start_delay(IN := start_button, PT := T#2s);
-
-// Access outputs
-motor_running := start_delay.Q;
-```
-
-### Defining Custom FBs
-
-```st
-FUNCTION_BLOCK Hysteresis
-VAR_INPUT
-    input_val : REAL;
-    high_limit : REAL;
-    low_limit : REAL;
-END_VAR
-VAR_OUTPUT
-    output : BOOL;
-END_VAR
-VAR
-    state : BOOL;
-END_VAR
-
-IF input_val >= high_limit THEN
-    state := TRUE;
-ELSIF input_val <= low_limit THEN
-    state := FALSE;
-END_IF;
-
-output := state;
-
-END_FUNCTION_BLOCK
-```
-
----
-
-## Compiler Messages
-
-### Error Format
-
-```
-ERROR: [line:col] message
-```
-
-### Common Errors
-
-| Error | Cause | Fix |
-|-------|-------|-----|
-| `Undeclared identifier 'x'` | Variable not in VAR block | Add declaration |
-| `Type mismatch: BOOL vs INT` | Incompatible assignment | Use type conversion |
-| `Function 'foo' not found` | Missing FB or function | Check spelling/import |
-| `Expected ';'` | Missing statement terminator | Add semicolon |
-
-### Warnings
-
-- Unused variables
-- Unreachable code
-- Implicit type conversions
-
----
-
-## Compiler Options
-
-| Option | Description |
-|--------|-------------|
-| `--optimize` | Enable all optimizations |
-| `--debug` | Include debug symbols |
-| `--strict` | Treat warnings as errors |
-| `--target <version>` | Target VM version |
-
----
-
-## Output: The .zplc File
-
-The compiler produces a binary package containing:
-
-1. **Header**: Magic number, version, CRC32
-2. **Code Segment**: Bytecode instructions
-3. **Data Segment**: Constants and initial values
-4. **Symbol Table**: Variable names and addresses (optional)
-5. **Debug Info**: Source line mapping (optional)
-
-File size is typically 1-10 KB for most programs.
+Human release sign-off for end-to-end language parity is still tracked separately under `REL-002`.
