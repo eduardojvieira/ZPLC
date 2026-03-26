@@ -612,6 +612,13 @@ table tbody tr:hover {
    RESPONSIVE ADJUSTMENTS
    ============================================ */
 @media (max-width: 996px) {
+  /* Ensure the navbar itself does NOT use backdrop-filter on mobile
+     as it can interfere with fixed-position child elements */
+  .navbar {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
   .markdown h1 {
     font-size: 1.75rem;
   }
@@ -622,6 +629,109 @@ table tbody tr:hover {
   
   .markdown h3 {
     font-size: 1.25rem;
+  }
+}
+
+/* ============================================
+   MOBILE NAVBAR DRAWER (FULL-SCREEN FIX)
+   ============================================ */
+
+/* Force the mobile sidebar to be a proper full-screen drawer */
+.navbar-sidebar {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  transform: translateX(-100%) !important;
+  transition: transform 0.3s ease !important;
+  z-index: 10000 !important;
+  overflow-y: auto !important;
+  background: var(--ifm-navbar-background-color) !important;
+}
+
+.navbar-sidebar--show .navbar-sidebar {
+  transform: translateX(0) !important;
+}
+
+/* Backdrop behind the drawer */
+.navbar-sidebar__backdrop {
+  display: block !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: rgba(0, 0, 0, 0.6) !important;
+  z-index: 9999 !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transition: opacity 0.3s ease !important;
+}
+
+.navbar-sidebar--show .navbar-sidebar__backdrop {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Sidebar header area */
+.navbar-sidebar__brand {
+  display: flex !important;
+  align-items: center !important;
+  padding: 1rem 1.5rem !important;
+  border-bottom: 1px solid var(--zplc-border) !important;
+}
+
+/* Sidebar nav items list — make each item big and tappable */
+.navbar-sidebar__items .menu__list-item a,
+.navbar-sidebar__items .navbar__item {
+  display: block !important;
+  font-size: 1.1rem !important;
+  padding: 0.9rem 1.5rem !important;
+  border-bottom: 1px solid var(--zplc-border) !important;
+  color: var(--zplc-text-main) !important;
+}
+
+/* ============================================
+   MOBILE DOCS SIDEBAR FIX
+   ============================================ */
+
+/* On mobile the docs sidebar is hidden by default; 
+   the toggle button that shows it must be visible */
+@media (max-width: 996px) {
+  /* Show the sidebar toggle button at top of docs page */
+  .docSidebarContainer {
+    display: none; /* hidden panel */
+  }
+
+  /* The "menu" toggle button that Docusaurus inserts on mobile */
+  .navbar__toggle {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 40px !important;
+    height: 40px !important;
+    color: var(--zplc-text-main) !important;
+  }
+
+  /* Docusaurus v3 uses a sidebar button component: make it huge */
+  button[class*="sidebarToggle"],
+  .sidebarToggleButton,
+  [class*="collapseSidebarButton"] {
+    display: flex !important;
+    width: 100% !important;
+    padding: 0.75rem 1.5rem !important;
+    font-size: 1rem !important;
+    color: var(--zplc-text-main) !important;
+    background: var(--zplc-bg-card) !important;
+    border-bottom: 1px solid var(--zplc-border) !important;
+  }
+
+  /* Make tables horizontally scrollable on small screens */
+  table {
+    display: block !important;
+    overflow-x: auto !important;
   }
 }
 
