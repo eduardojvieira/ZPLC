@@ -30,7 +30,7 @@ When changes are pushed to `main` (or `master`):
 
 To publish new documentation:
 1. Make your changes in a feature branch.
-2. Run `bun --cwd docs run validate:v1.5-docs` locally to verify manifest parity and generated references.
+2. Run `cd docs && bun run validate:v1.5-docs` locally to verify manifest parity and generated references.
 3. Open a Pull Request.
 4. Wait for the `Build Documentation` job in **Deploy Docusaurus to GitHub Pages** to pass.
 5. Merge the PR or push the approved change to `main`. GitHub Actions will upload `docs/build` and deploy it to GitHub Pages automatically.
@@ -40,7 +40,7 @@ To publish new documentation:
 When the ZPLC project hits a release milestone (for example, `v1.5.0`), you should take a snapshot of the documentation.
 
 1. Create a branch for the release.
-2. Run `bun --cwd docs run docusaurus docs:version 1.5.0`.
+2. Run `cd docs && bun run docusaurus docs:version 1.5.0`.
 3. Commit the new `versions.json` and the `versioned_docs/` folder.
 4. Merge the PR.
 

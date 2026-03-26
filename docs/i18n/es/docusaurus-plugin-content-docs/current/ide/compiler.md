@@ -1,72 +1,46 @@
-# Workflow del Compilador
+# Construcción y Compilador
 
-La regla central del compilador en v1.5 es simple:
+ZPLC simplifica radicalmente los cuellos de botella programáticos en la automatización industrial al emplear un **único backend de compilar central** hacia toda la gama de lenguajes bajo el estándar IEC 61131-3.
 
-> hay **un solo contrato ejecutable de backend**, no cinco compiladores separados.
+## Tubería de Ejecución
 
-Eso se ve directo en `packages/zplc-ide/src/compiler/index.ts`.
-
-## Pipeline canónico
+ZPLC, distinto de las ingenierías redundantes donde persisten lenguajes y librerías compiladoras separadas, es altamente transpilador: toma el enfoque universal transpilar internamente las estructuras gráficas o modelo nativos al código principal Texto Estructurado (ST) permitiendo la universalización previo a generar o ejecutar opcodes de embutido.
 
 ```mermaid
 flowchart LR
-  ST[fuente ST] --> Core[compileToBinary]
-  IL[fuente IL] --> ILParse[parseIL]
-  ILParse --> ILToST[transpileILToST]
-  LD[modelo LD] --> LDToST[transpileLDToST]
-  FBD[modelo FBD] --> FBDToST[transpileFBDToST]
-  SFC[modelo SFC] --> SFCToST[transpileSFCToST]
+  ST[Código ST] --> Core[Compilar al Bytecode]
+  IL[Código IL] --> ILToST[Transpilar a ST]
+  LD[Modelo Lógico LD] --> LDToST[Transpilar a ST]
+  FBD[Diagrama de Bloques FBD] --> FBDToST[Transpilar a ST]
+  SFC[Plano Semántico SFC] --> SFCToST[Transpilar a ST]
+
   ILToST --> Core
   LDToST --> Core
   FBDToST --> Core
   SFCToST --> Core
-  Core --> ZPLC[.zplc + debug map + metadata de tareas]
+
+  Core --> ZPLC[Binario .zplc + Mapas Debug + Metadata Nominal]
 ```
 
-## Qué hace `compileProject()`
+## Homogeneidad Pura
 
-1. normaliza a ST cuando hace falta
-2. compila ese ST al backend compartido
+Su estructura certificada asegura verdadera paridad equitativa a través de todos los editores integrados. Sabiendo que incluso un modelo basado en compuertas mediante un circuito Ladder (LD) termina corriendo o resolviéndose mediante la misma tubería de ensamblaje interna generalizada (ST), nunca padecerás escollos generacionales o funciones subyacentes carentes entre uno o diferentes editores funcionales en tus etapas.
 
-Eso implica:
+## Proyectos Multitarea Consolidados
 
-- `ST` entra directo
-- `IL` se parsea y transpila a ST
-- `LD`, `FBD` y `SFC` se cargan como modelos y luego se transpilan a ST
+El compilador base genera asombrosamente más que el producto de ejecución simple `.zplc` . Consolidará todos recuadros multitarea que abarcan un ecosistema completo para el funcionamiento del ciclo:
 
-## Matriz declarada de soporte
+1. **Unión de la Lógica Base (Bytecode Merged)**: Convergencia interlineal entre programas o lenguajes que funcionarán juntos.
+2. **Ciclos Prioritarios (Metadatas)**: Ciclos base, disrupciones orientativas y el valor priorizado del `zplc.json`.
+3. **Asignación Red/Red** Ruteos tag mediante MQTT o Modbus automatícamente inyectados a subred/dispositivos.
+4. **Mapas Topográficos Mapped (Debug Maps)**. Vínculos artificiales y coordenadas ligadas a los opcodes en bruto para localizar visualmente con una extrema rigidez matemática y referencial hasta las propias sub-rutinas asíncronas, facultando debug por saltos detallados en tiempo de ejecución.
 
-El IDE exporta `LANGUAGE_WORKFLOW_SUPPORT` para `ST`, `IL`, `LD`, `FBD` y `SFC`, marcando `author`, `compile`, `simulate`, `deploy` y `debug` en `true`.
+## Resolución Orgánica Integrada (Stdlib)
 
-`languageWorkflow.test.ts` verifica esa matriz y además compila ejemplos canónicos de los cinco caminos.
+El proceso asimila explícitamente inclusiones primordiales y bibliotecas IEC Standard Library (`stdlib`). Permite ejecutar subconjuntos implementados muy profundamente hacia los ciclos RTOS a velocidad ininterrumpida sin penalidades funcionales complejas con recursos base como:
+- Relojería Compleja (`TON`, `TOF`, `TP`)
+- Contabilidades (`CTU`, `CTD`, `CTUD`)
+- Gatillos de rebote físico o anclaje de registros biestables (`SR`, `RS`)
+- Integraciones Modbus y Nubes integradas mediante subyugación IP asíncrona (`MB_READ_HREG`, `MQTT_PUBLISH`, etc.)
 
-## Salidas single-file y multi-task
-
-La capa de compilación del IDE puede generar:
-
-- binarios single-file con task segment automático
-- binarios multi-task con bytecode concatenado, tareas y debug map combinado
-
-## Biblioteca estándar
-
-La fuente de verdad para funciones y bloques integrados es `packages/zplc-compiler/src/compiler/stdlib/index.ts`.
-
-Ahí viven categorías como:
-
-- temporizadores
-- contadores
-- strings
-- funciones matemáticas y de sistema
-- bloques de comunicación Modbus/MQTT/cloud
-
-Ver [Biblioteca estándar de lenguajes](../languages/stdlib.md).
-
-## Guía de release
-
-Para v1.5.0, la documentación del compilador debería reclamar solo esto:
-
-- la matriz de soporte está declarada y testeada
-- las rutas visuales e IL convergen al mismo backend
-- el resultado de compilación incluye `.zplc`, task metadata y debug maps
-
-La aprobación humana final del workflow end-to-end sigue siendo parte de `REL-002`.
+Asimismo como strings y manipulaciones en cadena con protección para buffer, delegándose sobre OPCODES del procesador asilados para no sufrir *overriding* o Memory leaks (`STRLEN`, `STRCPY`, etc.).

@@ -1,120 +1,76 @@
 ---
 slug: /getting-started
 id: index
-title: Primeros Pasos
-sidebar_label: Primeros Pasos
-description: Quickstart integral para instalar ZPLC, crear un primer proyecto y elegir entre simulación o hardware.
+title: Inicio Rápido
+sidebar_label: Inicio Rápido
+description: Guía de inicio rápido para instalar ZPLC, crear un primer proyecto y elegir opciones de simulación o pruebas en hardware.
 tags: [quickstart]
 ---
 
-# Primeros Pasos
+# Inicio Rápido
 
-Usá esta página para validar el workflow real de ZPLC v1.5.0 desde un checkout limpio.
-Cubre la instalación, la forma del primer proyecto, los caminos de simulación/runtime y la
-ruta soportada de hardware sin inventar capacidades que el repositorio no pueda probar.
+Utiliza esta página para validar el flujo de trabajo real de ZPLC v1.5.0. 
+Cubre la instalación, la estructura del primer proyecto, la simulación nativa y el entorno de hardware soportado, sin prometer más de lo que el repositorio puede probar.
 
-## Qué estás preparando
+## Qué estás configurando
 
-ZPLC v1.5.0 es un solo producto con cuatro superficies visibles para el release:
+ZPLC v1.5.0 provee un entorno completo de programación industrial compuesto por dos partes principales:
 
-- el **sitio de documentación** (`docs/`)
-- el **IDE** (`packages/zplc-ide`)
-- el **compilador** (`packages/zplc-compiler` y exports del compilador del IDE)
-- el **runtime** (runtime embebido con Zephyr más caminos host/nativos de simulación)
+- el **IDE** (Aplicación de escritorio)
+- el **runtime** (runtime embebido en Zephyr RTOS y simulación nativa POSIX / SoftPLC)
 
 ```mermaid
 flowchart LR
-  A[Autoría en el IDE] --> B[Compilar a .zplc]
+  A[Programar en IDE] --> B[Compilar a .zplc]
   B --> C{Elegir runtime}
-  C --> D[Simulación WASM en navegador]
-  C --> E[Simulación nativa en Electron]
-  C --> F[Runtime Zephyr en hardware soportado]
+  C --> E[Simulación Nativa en Escritorio]
+  C --> F[Runtime Zephyr en placa soportada]
 ```
 
-## 1. Instalá las dependencias del repositorio
+## 1. Descargar e Instalar el IDE
 
-```bash
-bun install
-```
+El enfoque de la v1.5 son los binarios de release. No es necesario compilar el IDE desde el código fuente para usarlo.
 
-Esto instala las dependencias del workspace para docs e IDE.
+1. Ve a la página de [GitHub Releases de ZPLC](https://github.com/eduardojvieira/ZPLC/releases).
+2. Descarga el instalador para tu sistema operativo (Windows `.exe`, macOS `.dmg` o `.pkg`, Linux `.AppImage` o `.deb`).
+3. Ejecuta el instalador para instalar el ZPLC IDE.
 
-Si además vas a usar hardware embebido, asegurate de tener:
+## 2. Configurar el Entorno Zephyr (Para Hardware)
 
-- un SDK/toolchain de Zephyr
-- `west` disponible en el entorno
-- el entorno de Zephyr activado con `ZEPHYR_BASE`
+Si planeas compilar y flashear hacia placas reales, en lugar de usar solo la simulación local, debes instalar Zephyr RTOS.
 
-Mirá [Configuración del Workspace Zephyr](../reference/zephyr-workspace-setup.md) para la forma
-canónica del workspace usada por las docs de v1.5.
+1. Instala el Zephyr SDK y sus dependencias siguiendo la [guía oficial de inicio de Zephyr](https://docs.zephyrproject.org/latest/develop/getting_started/index.html).
+2. Asegúrate de tener la herramienta `west` disponible en tu línea de comandos.
+3. Inicializa el workspace Zephyr de ZPLC:
+   ```bash
+   # Crear una carpeta para el workspace
+   mkdir zplc-workspace && cd zplc-workspace
+   
+   # Inicializar con el manifiesto de ZPLC
+   west init -m https://github.com/eduardojvieira/ZPLC --mr main
+   west update
+   ```
+4. Exporta las variables del entorno de Zephyr (`source zephyr/zephyr-env.sh` en Linux/macOS, o `.venv\Scripts\activate` en Windows).
 
-## 2. Mirá primero qué placas están realmente soportadas
+Ve el [Setup del Workspace Zephyr](../reference/zephyr-workspace-setup.md) para más detalles.
 
-La única lista canónica de placas para v1.5 es:
+## 3. Conoce las placas soportadas
 
-- `firmware/app/boards/supported-boards.v1.5.0.json`
+A la hora de este lanzamiento, las placas soportadas son:
 
-Al momento de esta reescritura, los targets publicados para el release son:
-
-| Placa | IDE ID | Target Zephyr | Clase de red |
+| Placa | IDE ID | Target de Zephyr | Red |
 |---|---|---|---|
-| Raspberry Pi Pico (RP2040) | `rpi_pico` | `rpi_pico/rp2040` | Enfoque serial |
-| Arduino GIGA R1 (STM32H747 M7) | `arduino_giga_r1` | `arduino_giga_r1/stm32h747xx/m7` | Enfoque serial |
-| ESP32-S3 DevKitC | `esp32s3_devkitc` | `esp32s3_devkitc/esp32s3/procpu` | Capacidad de red (Wi-Fi) |
-| STM32F746G Discovery | `stm32f746g_disco` | `stm32f746g_disco` | Capacidad de red (Ethernet) |
-| STM32 Nucleo-H743ZI | `nucleo_h743zi` | `nucleo_h743zi` | Capacidad de red (Ethernet) |
+| Raspberry Pi Pico (RP2040) | `rpi_pico` | `rpi_pico/rp2040` | Serial |
+| Arduino GIGA R1 (STM32H747 M7) | `arduino_giga_r1` | `arduino_giga_r1/stm32h747xx/m7` | Serial |
+| ESP32-S3 DevKitC | `esp32s3_devkitc` | `esp32s3_devkitc/esp32s3/procpu` | Wi-Fi |
+| STM32F746G Discovery | `stm32f746g_disco` | `stm32f746g_disco` | Ethernet |
+| STM32 Nucleo-H743ZI | `nucleo_h743zi` | `nucleo_h743zi` | Ethernet |
 
-Usá [Placas Soportadas](../reference/boards.md) para los comandos de build y assets de soporte.
+Consulta [Placas Soportadas](../reference/boards.md) para ver detalles técnicos de cada binario.
 
-## 3. Validá las fuentes de verdad de docs sin hacer build del sitio
+## 4. Crear el primer proyecto
 
-```bash
-bun --cwd docs run validate:v1.5-docs
-```
-
-Ésta es la validación no-build correcta para la superficie documental. Verifica cobertura del
-manifiesto canónico, paridad de slug EN/ES, frescura de páginas generadas y drift del resumen
-de placas.
-
-## 4. Levantá el IDE
-
-Elegí la superficie de ingeniería que quieras usar:
-
-### Workflow en navegador
-
-```bash
-bun --cwd packages/zplc-ide run dev
-```
-
-Usalo cuando quieras la iteración más rápida con simulación.
-
-### Workflow desktop con Electron
-
-```bash
-bun --cwd packages/zplc-ide run electron:dev
-```
-
-Usalo cuando quieras el shell de Electron y el bridge de simulación nativa. El preload del
-desktop expone `window.electronAPI.nativeSimulation`, y el IDE prefiere ese adapter cuando existe.
-
-## 5. Creá un primer proyecto
-
-El contrato del proyecto es un archivo `zplc.json` con al menos:
-
-- nombre y versión del proyecto
-- una placa objetivo
-- una o más tareas
-- uno o más archivos de programa asignados a cada tarea
-
-El schema en `packages/zplc-ide/zplc.schema.json` hoy autoriza estos board IDs visibles para el release:
-
-- `rpi_pico`
-- `arduino_giga_r1`
-- `stm32f746g_disco`
-- `esp32s3_devkitc`
-- `nucleo_h743zi`
-
-La muestra `packages/zplc-ide/projects/blinky/zplc.json` muestra la forma básica:
+Inicia la aplicación ZPLC IDE. La configuración del proyecto se almacena en `zplc.json`. Crea un nuevo proyecto "Blinky":
 
 ```json
 {
@@ -135,80 +91,43 @@ La muestra `packages/zplc-ide/projects/blinky/zplc.json` muestra la forma básic
 }
 ```
 
-Para un primer proyecto, mantenelo simple a propósito:
+Para tu primer proyecto:
+1. crea una tarea (task) cíclica.
+2. asigna un archivo de programa (ej. `main.st` o `main.sfc`).
+3. presiona **Compile** para generar el bytecode.
+4. presiona **Start Simulation** para dar arranque a la lógica de forma local.
 
-1. creá una tarea cíclica
-2. asignale un archivo de programa
-3. compilá a `.zplc`
-4. validá primero en simulación
+## 5. Validación en Simulación Nativa
 
-## 6. Elegí un camino de runtime
+Para probar la lógica sin hardware, utiliza la Simulación de Escritorio.
 
-### Camino A — simulación en navegador
+- El IDE incluye un runtime nativo conectado internamente (`window.electronAPI.nativeSimulation`).
+- Dar click en `Start Simulation` corre el bytecode `.zplc` directamente en el procesador de tu PC mediante un runtime POSIX SoftPLC simulado.
+- Puedes verificar el estado, observar variables via *Watch tables*, colocar breakpoints, o forzar valores (Forces).
 
-Usalo cuando quieras el loop de feedback más rápido.
+## 6. Pasar al hardware soportado
 
-- El IDE cae al adapter WASM cuando el bridge nativo de Electron no existe.
-- Es ideal para iterar lógica, inspeccionar variables y depurar con breakpoints en navegador.
-- Sirve muchísimo, pero **no** reemplaza la evidencia desktop o hardware para el sign-off del release.
+Cuando te encuentres listo para mover tu código a una placa física:
 
-### Camino B — simulación nativa desktop
+1. Abre tu consola con el entorno Zephyr activo (Paso 2).
+2. Compila la app base de firmware con el comando correspondiente (cambia el target por el tuyo):
+   ```bash
+   west build -b esp32s3_devkitc/esp32s3/procpu firmware/app --pristine
+   ```
+3. Flashea el firmware vía USB a tu microcontrolador:
+   ```bash
+   west flash
+   ```
+4. **Conecta desde el IDE**: 
+   - Abre ZPLC IDE.
+   - Selecciona tu placa y presiona **Connect**.
+   - Ingresa el puerto Serie correcto de tu tarjeta.
+   - Una vez que la conexión haya sido exitosa, presiona **Upload** para enviar tu bytecode `.zplc` a la memoria.
 
-Usalo cuando corrés la app desktop de Electron.
+## Páginas Relacionadas
 
-- El IDE crea un adapter de simulación nativa cuando existe `window.electronAPI.nativeSimulation`.
-- Electron arranca una sesión host-side del runtime nativo a través del bridge IPC preload/main.
-- Este camino te da una validación host más cercana al runtime real que la simulación solo WASM.
-
-### Camino C — runtime en hardware
-
-Usalo cuando necesitás un target Zephyr real.
-
-- La aplicación runtime vive en `firmware/app`.
-- La conexión hardware del IDE usa el adapter serial / workflow WebSerial para upload y debug vía shell.
-- Los claims sobre placas con red siguen viniendo del manifiesto de placas soportadas y de la evidencia del release, no de marketing.
-
-## 7. Ejecutá el primer proyecto en simulación
-
-El workflow mínimo y honesto es:
-
-1. abrir o crear un proyecto en el IDE
-2. escribir lógica en `ST`, `IL`, `LD`, `FBD` o `SFC`
-3. compilar el proyecto a `.zplc`
-4. arrancar la simulación
-5. inspeccionar watch values, breakpoints y estado de ejecución
-
-El compilador del IDE exporta soporte de workflow para los cinco lenguajes visibles en el release
-y los normaliza al mismo contrato bytecode/runtime.
-
-## 8. Pasá a hardware soportado
-
-Cuando estés listo para validar en embebido:
-
-1. poné el repo dentro de un workspace Zephyr como se documenta en [Configuración del Workspace Zephyr](../reference/zephyr-workspace-setup.md)
-2. compilá `firmware/app` con el comando canónico de la placa desde el manifiesto
-3. flasheá usando el flujo apropiado para la placa (`west flash` en muchas placas, copia UF2 en flujos RP2040)
-4. conectate desde el IDE y subí el programa `.zplc` compilado
-
-Ejemplo de comando canónico de build:
-
-```bash
-west build -b rpi_pico/rp2040 firmware/app --pristine
-```
-
-## 9. Entendé qué cuenta como evidencia lista para release
-
-En v1.5.0, la mera presencia de código no alcanza.
-
-- las placas soportadas tienen que coincidir con el manifiesto
-- los claims sobre lenguajes y workflow del IDE deben coincidir con los paquetes y adapters exportados
-- los claims documentales deben mantenerse alineados con las [Fuentes de Verdad](../reference/source-of-truth.md)
-- el smoke desktop y la validación hardware-in-the-loop siguen necesitando evidencia en `specs/008-release-foundation/artifacts/`
-
-## Páginas relacionadas
-
-- [Visión General de la Plataforma](../platform-overview/index.md)
-- [Integración y Despliegue](../integration/index.md)
+- [Features del IDE](../ide/features.md)
+- [Soporte de Lenguajes](../languages/index.md)
 - [Arquitectura del Sistema](../architecture/index.md)
-- [Visión General del Runtime](../runtime/index.md)
+- [Referencia del Runtime API](../runtime/stdlib.md)
 - [Placas Soportadas](../reference/boards.md)

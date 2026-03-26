@@ -1,367 +1,247 @@
+---
+slug: /runtime/stdlib
+id: stdlib
+title: Standard Library Reference
+sidebar_label: Standard Library
+description: Complete reference of all ZPLC standard functions and function blocks (Timers, Math, Bitwise, Strings, System).
+tags: [reference, stdlib, iec61131-3]
+---
+
 # ZPLC Standard Library Reference
 
-ZPLC provides a suite of standard function blocks (FBs) and functions compliant with IEC 61131-3. These are available in both the Structured Text (ST) compiler and the visual editors (LD/FBD).
+ZPLC provides a complete suite of standard function blocks (FBs) and functions compliant with IEC 61131-3. These are available across all editors (ST, IL, LD, FBD, SFC).
+
+Below is the exhaustive reference to every standard function available in the ZPLC runtime.
+
+---
 
 ## 1. Timers
 
 ### TON (On-Delay Timer)
-Delays a rising edge.
+Delays a rising edge. The output `Q` goes TRUE only after `IN` has been TRUE for the duration of `PT`.
 - **Inputs:**
-  - `IN` (BOOL): Trigger.
-  - `PT` (TIME): Preset Time.
+  - `IN` (BOOL): Trigger condition.
+  - `PT` (TIME): Preset Time (duration to wait).
 - **Outputs:**
-  - `Q` (BOOL): High if `IN` has been high for `PT`.
-  - `ET` (TIME): Elapsed Time.
+  - `Q` (BOOL): High if `IN` has been continuously high for `PT`.
+  - `ET` (TIME): Elapsed Time since `IN` went high.
 
 ### TOF (Off-Delay Timer)
-Preserves a high state for a duration after falling edge.
+Preserves a high state for a duration after a falling edge. `Q` follows `IN` to TRUE immediately, but delays going FALSE until `PT` has elapsed.
 - **Inputs:**
-  - `IN` (BOOL): Trigger.
-  - `PT` (TIME): Preset Time.
+  - `IN` (BOOL): Trigger condition.
+  - `PT` (TIME): Preset Time (duration to keep high).
 - **Outputs:**
   - `Q` (BOOL): True while `IN` is true, plus `PT` duration after `IN` goes false.
-  - `ET` (TIME): Elapsed Time.
+  - `ET` (TIME): Elapsed Time since `IN` went low.
 
 ### TP (Pulse Timer)
-Generates a pulse of fixed duration.
+Generates a pulse of fixed duration regardless of how long the input stays high.
 - **Inputs:**
-  - `IN` (BOOL): Trigger.
-  - `PT` (TIME): Preset Time.
+  - `IN` (BOOL): Trigger condition (rising edge starts the pulse).
+  - `PT` (TIME): Preset Time (pulse width).
 - **Outputs:**
-  - `Q` (BOOL): Pulses true for `PT` duration on `IN` rising edge.
-  - `ET` (TIME): Elapsed Time.
+  - `Q` (BOOL): Pulses true for exactly `PT` duration upon `IN` rising edge.
+  - `ET` (TIME): Elapsed Time since pulse started.
 
 ---
 
 ## 2. Counters
 
 ### CTU (Count Up)
+Increments a value on every rising edge of the input.
 - **Inputs:**
   - `CU` (BOOL): Count up trigger (rising edge).
-  - `R` (BOOL): Reset count to 0.
-  - `PV` (INT): Preset Value.
+  - `R` (BOOL): Reset input; when TRUE, `CV` resets to 0.
+  - `PV` (INT): Preset Value (target).
 - **Outputs:**
-  - `Q` (BOOL): True if `CV >= PV`.
-  - `CV` (INT): Current Value.
+  - `Q` (BOOL): TRUE if `CV >= PV`.
+  - `CV` (INT): Current counter value.
 
 ### CTD (Count Down)
+Decrements a value on every rising edge of the input.
 - **Inputs:**
   - `CD` (BOOL): Count down trigger (rising edge).
-  - `LD` (BOOL): Load `PV` into `CV`.
-  - `PV` (INT): Preset Value.
+  - `LD` (BOOL): Load input; when TRUE, `CV` is set to `PV`.
+  - `PV` (INT): Preset Value (initial value).
 - **Outputs:**
-  - `Q` (BOOL): True if `CV <= 0`.
-  - `CV` (INT): Current Value.
+  - `Q` (BOOL): TRUE if `CV <= 0`.
+  - `CV` (INT): Current counter value.
 
 ### CTUD (Count Up/Down)
-Combines CTU and CTD.
+Combines the features of CTU and CTD.
+- **Inputs:**
+  - `CU` (BOOL): Count up trigger.
+  - `CD` (BOOL): Count down trigger.
+  - `R` (BOOL): Reset to 0.
+  - `LD` (BOOL): Load `PV` to `CV`.
+  - `PV` (INT): Preset value.
+- **Outputs:**
+  - `QU` (BOOL): TRUE if `CV >= PV`.
+  - `QD` (BOOL): TRUE if `CV <= 0`.
+  - `CV` (INT): Current counter value.
 
 ---
 
-## 3. Bistable Elements
+## 3. Bistable (Flip-Flop) Elements
 
 ### RS (Reset-Dominant Flip-Flop)
-- **Inputs:** `S` (Set), `R1` (Reset).
-- **Behavior:** If both high, output is reset.
+- **Inputs:** `S` (BOOL, Set), `R1` (BOOL, Reset).
+- **Outputs:** `Q1` (BOOL).
+- **Behavior:** Latches `Q1` to TRUE when `S` is TRUE. Resets `Q1` to FALSE when `R1` is TRUE. *If both `S` and `R1` are TRUE, the output is FALSE (Reset wins).*
 
 ### SR (Set-Dominant Flip-Flop)
-- **Inputs:** `S1` (Set), `R` (Reset).
-- **Behavior:** If both high, output is set.
+- **Inputs:** `S1` (BOOL, Set), `R` (BOOL, Reset).
+- **Outputs:** `Q1` (BOOL).
+- **Behavior:** Latches `Q1` to TRUE when `S1` is TRUE. Resets `Q1` to FALSE when `R` is TRUE. *If both `S1` and `R` are TRUE, the output is TRUE (Set wins).*
 
 ---
 
 ## 4. Edge Detection
 
 ### R_TRIG (Rising Edge Detector)
-- **Output:** `Q` is true for exactly one cycle on rising edge of `CLK`.
+- **Inputs:** `CLK` (BOOL).
+- **Outputs:** `Q` (BOOL).
+- **Behavior:** `Q` is TRUE for exactly one execution cycle when `CLK` transitions from FALSE to TRUE.
 
 ### F_TRIG (Falling Edge Detector)
-- **Output:** `Q` is true for exactly one cycle on falling edge of `CLK`.
+- **Inputs:** `CLK` (BOOL).
+- **Outputs:** `Q` (BOOL).
+- **Behavior:** `Q` is TRUE for exactly one execution cycle when `CLK` transitions from TRUE to FALSE.
 
 ---
 
 ## 5. Math Functions
 
-Standard operators `ADD`, `SUB`, `MUL`, `DIV`, `MOD` are supported for both Integer and Real types.
+### Arithmetic Operators
+- **ADD(IN1, IN2)**: Returns `IN1 + IN2`. Supports ANY_NUM (INT, REAL).
+- **SUB(IN1, IN2)**: Returns `IN1 - IN2`. Supports ANY_NUM.
+- **MUL(IN1, IN2)**: Returns `IN1 * IN2`. Supports ANY_NUM.
+- **DIV(IN1, IN2)**: Returns `IN1 / IN2`. Supports ANY_NUM.
+- **MOD(IN1, IN2)**: Returns the integer remainder of `IN1 / IN2`. Supports ANY_INT.
 
+### Advanced Math
 ### ABS
-Absolute value.
+Calculates the absolute value.
+- **Inputs:** `IN` (ANY_NUM).
+- **Outputs:** (ANY_NUM) Absolute value of IN.
 
 ### SQRT
-Square root (REAL only).
+Calculates the square root of a number.
+- **Inputs:** `IN` (REAL).
+- **Outputs:** (REAL) Square root of IN.
 
 ### SIN / COS / TAN
-Trigonometric functions (REAL only).
+Standard trigonometric functions (evaluated in radians).
+- **Inputs:** `IN` (REAL).
+- **Outputs:** (REAL) Sine, Cosine, or Tangent of IN.
 
 ---
 
-## 6. Type Conversions
+## 6. Selection Functions
 
-- `REAL_TO_INT` / `INT_TO_REAL`
-- `BOOL_TO_INT` / `INT_TO_BOOL`
-- `TIME_TO_DINT` / `DINT_TO_TIME`
+### MAX
+Returns the maximum of two values.
+- **Inputs:** `IN1` (ANY_NUM), `IN2` (ANY_NUM).
+- **Outputs:** (ANY_NUM) The larger of the two inputs.
 
----
-
-## 7. String Functions
-
-ZPLC provides full IEC 61131-3 compliant string manipulation. All strings use bounded buffers with automatic overflow protection.
-
-### Memory Layout
-
-```
-┌───────────────┬───────────────┬──────────────────────┐
-│ current_len   │ max_capacity  │      data[]          │
-│   (2 bytes)   │   (2 bytes)   │  (max_capacity + 1)  │
-└───────────────┴───────────────┴──────────────────────┘
-     Offset 0        Offset 2         Offset 4
-```
-
-Default `STRING` = `STRING[80]` = 85 bytes total.
-
-### Basic Operations
-
-#### LEN(s)
-Returns the current length of a string.
-- **Input:** `s` (STRING)
-- **Output:** (INT) Number of characters
-
-```st
-VAR
-    msg : STRING := 'Hello';
-    length : INT;
-END_VAR
-
-length := LEN(msg);  (* length = 5 *)
-```
-
-#### CONCAT(s1, s2)
-Appends s2 to the end of s1 (modifies s1 in place).
-- **Input:** `s1` (STRING), `s2` (STRING)
-- **Output:** None (s1 is modified)
-
-```st
-VAR
-    greeting : STRING := 'Hello';
-    name : STRING := ' World';
-END_VAR
-
-CONCAT(greeting, name);  (* greeting = 'Hello World' *)
-```
-
-#### COPY(src, dst)
-Copies the contents of src into dst.
-- **Input:** `src` (STRING), `dst` (STRING)
-- **Output:** None (dst is modified)
-
-```st
-VAR
-    original : STRING := 'Test';
-    backup : STRING;
-END_VAR
-
-COPY(original, backup);  (* backup = 'Test' *)
-```
-
-#### CLEAR(s)
-Clears a string to empty.
-- **Input:** `s` (STRING)
-- **Output:** None (s is modified)
-
-```st
-VAR
-    buffer : STRING := 'Data';
-END_VAR
-
-CLEAR(buffer);  (* buffer = '' *)
-```
-
-### Substring Extraction
-
-#### LEFT(s, n)
-Keeps only the leftmost n characters (modifies s in place).
-- **Input:** `s` (STRING), `n` (INT)
-- **Output:** None (s is modified)
-
-```st
-VAR
-    text : STRING := 'Hello World';
-END_VAR
-
-LEFT(text, 5);  (* text = 'Hello' *)
-```
-
-#### RIGHT(s, n)
-Keeps only the rightmost n characters (modifies s in place).
-- **Input:** `s` (STRING), `n` (INT)
-- **Output:** None (s is modified)
-
-```st
-VAR
-    text : STRING := 'Hello World';
-END_VAR
-
-RIGHT(text, 5);  (* text = 'World' *)
-```
-
-#### MID(s, pos, n)
-Keeps only n characters starting at position pos (1-based, modifies s in place).
-- **Input:** `s` (STRING), `pos` (INT), `n` (INT)
-- **Output:** None (s is modified)
-
-```st
-VAR
-    text : STRING := 'Hello World';
-END_VAR
-
-MID(text, 7, 5);  (* text = 'World' *)
-```
-
-### Search and Manipulation
-
-#### FIND(s1, s2)
-Finds the position of s2 within s1.
-- **Input:** `s1` (STRING), `s2` (STRING)
-- **Output:** (INT) 1-based position, or 0 if not found
-
-```st
-VAR
-    text : STRING := 'Hello World';
-    search : STRING := 'World';
-    pos : INT;
-END_VAR
-
-pos := FIND(text, search);  (* pos = 7 *)
-```
-
-#### INSERT(s1, s2, pos)
-Inserts s2 into s1 at position pos.
-- **Input:** `s1` (STRING), `s2` (STRING), `pos` (INT)
-- **Output:** None (s1 is modified)
-
-```st
-VAR
-    text : STRING := 'Hello!';
-    insert : STRING := ' World';
-END_VAR
-
-INSERT(text, insert, 6);  (* text = 'Hello World!' *)
-```
-
-#### DELETE(s, pos, n)
-Deletes n characters from s starting at position pos.
-- **Input:** `s` (STRING), `pos` (INT), `n` (INT)
-- **Output:** None (s is modified)
-
-```st
-VAR
-    text : STRING := 'Hello World';
-END_VAR
-
-DELETE(text, 6, 6);  (* text = 'Hello' *)
-```
-
-#### REPLACE(s1, s2, pos, n)
-Replaces n characters in s1 starting at pos with s2.
-- **Input:** `s1` (STRING), `s2` (STRING), `pos` (INT), `n` (INT)
-- **Output:** None (s1 is modified)
-
-```st
-VAR
-    text : STRING := 'Hello World';
-    replacement : STRING := 'ZPLC';
-END_VAR
-
-REPLACE(text, replacement, 7, 5);  (* text = 'Hello ZPLC' *)
-```
-
-### Comparison
-
-#### STRCMP(s1, s2)
-Compares two strings lexicographically.
-- **Input:** `s1` (STRING), `s2` (STRING)
-- **Output:** (INT) -1 if s1 < s2, 0 if equal, 1 if s1 > s2
-
-```st
-VAR
-    a : STRING := 'Apple';
-    b : STRING := 'Banana';
-    result : INT;
-END_VAR
-
-result := STRCMP(a, b);  (* result = -1 *)
-```
-
-#### EQ_STRING(s1, s2)
-Tests if two strings are equal.
-- **Input:** `s1` (STRING), `s2` (STRING)
-- **Output:** (BOOL) TRUE if equal
-
-```st
-VAR
-    password : STRING := 'secret';
-    input : STRING := 'secret';
-    match : BOOL;
-END_VAR
-
-match := EQ_STRING(password, input);  (* match = TRUE *)
-```
-
-#### NE_STRING(s1, s2)
-Tests if two strings are different.
-- **Input:** `s1` (STRING), `s2` (STRING)
-- **Output:** (BOOL) TRUE if not equal
-
-### Operator Overloading
-
-The compiler automatically uses string comparison for `=` and `<>` operators when both operands are STRING type:
-
-```st
-VAR
-    status : STRING := 'OK';
-    is_ok : BOOL;
-END_VAR
-
-(* These are equivalent: *)
-is_ok := status = 'OK';           (* Uses STRCMP internally *)
-is_ok := EQ_STRING(status, 'OK'); (* Explicit function call *)
-```
-
----
-
-## 8. Selection Functions
-
-### MAX / MIN
-Returns the maximum or minimum of two values.
+### MIN
+Returns the minimum of two values.
+- **Inputs:** `IN1` (ANY_NUM), `IN2` (ANY_NUM).
+- **Outputs:** (ANY_NUM) The smaller of the two inputs.
 
 ### LIMIT
-Constrains a value within bounds: `LIMIT(low, val, high)`
+Constrains a value within a specified range.
+- **Inputs:** `MN` (ANY_NUM, minimum), `IN` (ANY_NUM, input), `MX` (ANY_NUM, maximum).
+- **Outputs:** (ANY_NUM) Returns `MN` if `IN < MN`, returns `MX` if `IN > MX`, otherwise returns `IN`.
 
 ### SEL
-Binary selection: `SEL(cond, val_false, val_true)`
+Selects one of two values based on a boolean condition.
+- **Inputs:** `G` (BOOL, condition), `IN0` (ANY, returned if G is FALSE), `IN1` (ANY, returned if G is TRUE).
+- **Outputs:** (ANY) `IN0` or `IN1`.
 
 ### MUX
-Multiplexer: Selects one of N values based on index.
+Multiplexer. Selects one of N inputs based on an integer index.
+- **Inputs:** `K` (INT, selector index), `IN0`, `IN1`, `...` (ANY).
+- **Outputs:** (ANY) Returns `INk`.
 
 ---
 
-## 9. Bitwise Functions
+## 7. Bitwise Functions
 
-### SHL / SHR
-Shift left/right by n bits.
+### Logical Operators
+- **AND(IN1, IN2)**: Bitwise AND. Supports ANY_BIT (BYTE, WORD, DWORD).
+- **OR(IN1, IN2)**: Bitwise OR. Supports ANY_BIT.
+- **XOR(IN1, IN2)**: Bitwise Exclusive OR. Supports ANY_BIT.
+- **NOT(IN)**: Bitwise Inversion. Supports ANY_BIT.
 
-### ROL / ROR
-Rotate left/right by n bits.
+### Shifting and Rotating
+### SHL
+Shift Left mathematically multiplies by 2 for each shifted bit.
+- **Inputs:** `IN` (ANY_BIT), `N` (INT, number of bits to shift).
+- **Outputs:** (ANY_BIT) `IN` shifted left. Rightmost bits filled with 0.
+
+### SHR
+Shift Right mathematically divides by 2 for each shifted bit.
+- **Inputs:** `IN` (ANY_BIT), `N` (INT, number of bits to shift).
+- **Outputs:** (ANY_BIT) `IN` shifted right. Leftmost bits filled with 0.
+
+### ROL
+Rotate Left. Shift bits out of the left side re-enter on the right side.
+- **Inputs:** `IN` (ANY_BIT), `N` (INT).
+- **Outputs:** (ANY_BIT) Rotated value.
+
+### ROR
+Rotate Right. Shift bits out of the right side re-enter on the left side.
+- **Inputs:** `IN` (ANY_BIT), `N` (INT).
+- **Outputs:** (ANY_BIT) Rotated value.
+
+---
+
+## 8. String Functions
+
+ZPLC strings use bounded buffers (`STRING[80]`) with built-in overflow protection. Memory holds current length and maximum capacity.
+
+- **LEN(s)**: Returns `INT` representing current character count of string `s`.
+- **CONCAT(s1, s2)**: Appends `s2` to `s1` (modifies `s1`).
+- **COPY(src, dst)**: Copies `src` string into `dst`.
+- **CLEAR(s)**: Empties string `s` to 0 length.
+- **LEFT(s, n)**: Modifies `s` to keep only the leftmost `n` characters.
+- **RIGHT(s, n)**: Modifies `s` to keep only the rightmost `n` characters.
+- **MID(s, pos, n)**: Modifies `s` to keep `n` characters starting at 1-based index `pos`.
+- **FIND(s1, s2)**: Returns `INT` position (1-based) of `s2` within `s1`, or 0 if not found.
+- **INSERT(s1, s2, pos)**: Inserts `s2` into `s1` starting at index `pos`.
+- **DELETE(s, pos, n)**: Removes `n` characters from `s` starting at index `pos`.
+- **REPLACE(s1, s2, pos, n)**: Overwrites `n` characters in `s1` starting at index `pos` using `s2`.
+- **STRCMP(s1, s2)**: Lexicographical comparison. Returns `INT` (-1 if s1 < s2, 0 if s1 == s2, 1 if s1 > s2).
+
+*Note: You can also use standard `=` and `< >` operators directly on STRING variables to compare them for equality.*
+
+---
+
+## 9. Type Conversions
+
+Use type conversion functions to safely move payloads between memory classes.
+
+- **REAL_TO_INT(IN)** / **INT_TO_REAL(IN)**: Input INT or REAL, outputs corresponding conversion.
+- **BOOL_TO_INT(IN)** / **INT_TO_BOOL(IN)**: TRUE becomes 1; FALSE becomes 0.
+- **TIME_TO_DINT(IN)** / **DINT_TO_TIME(IN)**: Conversion between milliseconds integer and IEC TIME definitions.
 
 ---
 
 ## 10. System Functions
 
 ### UPTIME
-Returns system uptime in milliseconds.
+Returns the millisecond representation of the hardware/processor uptime.
+- **Inputs:** None.
+- **Outputs:** (UDINT / TIME) Uptime in milliseconds.
 
 ### CYCLE_TIME
-Returns last cycle execution time.
+Retrieves the execution time taken for the previous complete PLC scheduling scan.
+- **Inputs:** None.
+- **Outputs:** (UDINT / TIME) Last cycle duration in milliseconds. useful for profiling cyclic logic.
 
 ### WATCHDOG_RESET
-Resets the watchdog timer (prevents system reset).
+Forces a clear on the hardware/software task watchdog. Use internally inside extended loops.
+- **Inputs:** None.
+- **Outputs:** (BOOL) `TRUE` if successful.

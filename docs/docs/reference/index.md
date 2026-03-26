@@ -3,29 +3,25 @@ slug: /reference
 id: index
 title: Reference
 sidebar_label: Reference
-description: API references, command lists, and configuration details.
+description: API references, supported boards, and configuration details.
 tags: [reference]
 ---
 
 # Reference
 
-This section holds the release-facing reference material for ZPLC.
+This section holds the detailed technical reference material for ZPLC.
 
-## Start here for the core rewrite surfaces
+## Start Here for Core Architectural Concepts
 
 - [Getting Started](../getting-started/index.md) — install, first project, simulation paths, and supported hardware handoff
 - [System Architecture](../architecture/index.md) — system boundaries, IDE/compiler/runtime relationships, and working principles
 - [Runtime Overview](../runtime/index.md) — runtime responsibilities, execution model, and subsystem map
 
-## v1.5 Release References
+## ZPLC v1.5 Technical References
 
-- [Canonical Docs Manifest](./v1-5-canonical-docs-manifest.md)
-- [Source of Truth](./source-of-truth.md)
 - [Runtime API](./runtime-api.md)
 - [Supported Boards](./boards.md)
 - [Zephyr Workspace Setup](./zephyr-workspace-setup.md)
-- Supported boards are sourced from `firmware/app/boards/supported-boards.v1.5.0.json`
-- Release validation is tracked in `specs/008-release-foundation/artifacts/release-evidence-matrix.md`
 
 ## Supported Boards
 
@@ -37,5 +33,4 @@ This section holds the release-facing reference material for ZPLC.
 | STM32F746G Discovery | `stm32f746g_disco` | `stm32f746g_disco` | Network-capable (Ethernet) | cross-build |
 | STM32 Nucleo-H743ZI | `nucleo_h743zi` | `nucleo_h743zi` | Network-capable (Ethernet) | cross-build |
 
-The human-validated subset for v1.5.0 must include at least one serial-focused board and
-one network-capable board before release sign-off.
+*For a full list of automatically tracked compatible boards, check the Supported Boards section or inspect `firmware/app/boards/supported-boards.v1.5.0.json`.*

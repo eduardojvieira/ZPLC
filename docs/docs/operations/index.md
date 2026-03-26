@@ -3,66 +3,51 @@ slug: /operations
 id: index
 title: Operations
 sidebar_label: Operations
-description: Guidance on upgrading, observability, and diagnostics.
+description: Guidance on observability, firmware diagnostics, and system recovery.
 tags: [operations]
 ---
 
 # Operations
 
-Operations for v1.5 focus on release evidence, diagnostics, controlled recovery, and truthful scope management across runtime, IDE, hardware, and docs.
+Operating ZPLC in an industrial environment requires understanding how to observe running logic, diagnose faults, and recover custom hardware gracefully. This section outlines standard operational procedures for ZPLC v1.5.0.
 
-## Operating model for v1.5.0
+For a full list of low-level diagnostic string commands, consult [The ZPLC Shell](./shell.md) reference.
 
-Treat ZPLC v1.5.0 as a coordinated release train. Documentation, supported boards,
-IDE workflows, and runtime behavior must all point back to the same source-backed claim set.
+## Diagnostics and Recovery Workflow
 
-## Before sign-off
+When a deployment step fails or an MCU behaves unexpectedly, use this sequence to diagnose the root cause instead of blindly reflashing:
 
-Run the release-facing non-build checks before approving documentation or public messaging:
+1. **Check the ZPLC Shell**: Connect via serial using a tool like PuTTY or Minicom (115200 baud). ZPLC provides a built-in Zephyr shell. Run `zplc status` to see the VM state.
+2. **Review Task Violations**: Execute `zplc sched tasks`. If a task has locked up the CPU, it will be marked explicitly, allowing you to trace the overload back to a specific IEC program.
+3. **Inspect Output Pins Physically**: Use a multimeter to confirm if the output matches the logic state shown in the ZPLC IDE Watch Tables. If the IDE shows TRUE but the pin is 0V, you may have a misconfigured `zplc.json` I/O map.
+4. **Halt and Clear**: If a program continuously crashes the MCU, interrupt the boot cycle via the shell with `zplc stop` and execute `zplc persist clear` to wipe the internal `.zplc` bytecode from the NVS (Non-Volatile Storage), allowing a clean upload.
 
-- `python3 tools/hil/validate_supported_boards.py`
-- `python3 tools/hil/validate_release_evidence.py`
-- `bun run generate:v1.5-docs`
-- `bun run validate:v1.5-docs`
-- targeted automated tests that back the workflow or runtime area being changed
+## IDE Observability
 
-If any of these fail, stop the sign-off flow and repair the source of truth first.
+The ZPLC IDE provides deep introspection utilities for running systems:
 
-## Human-owned evidence gates
+- **Watch Tables**: Allow you to pin global variables, Timers, or individual struct members and stream their live values directly from the hardware.
+- **Cycle Statistics**: The IDE bottom bar displays the Maximum Cycle Time (latency) of the underlying RTOS. If this value approaches your Task Interval, your machine is mathematically overloaded. 
+- **Force / Write**: You can manually override a sensor value (e.g., forcing a temperature reading to `100.0` from the IDE) to test logic branches safely before actual operation.
 
-The release evidence matrix still marks several gates as pending. Operators and release owners
-must keep human evidence aligned with the published claim set:
+## Network Troubleshooting
 
-- desktop smoke evidence for macOS, Linux, and Windows
-- one serial-focused board validation record
-- one network-capable board validation record
-- human confirmation that release notes describe only verified scope
+If your `MQTT_PUBLISH` blocks or your Modbus TCP connection drops:
+- Ensure the Zephyr board has acquired a DHCP address (visible via `zplc status` in the shell).
+- Check the subnet alignment between the IDE workstation and the PLC target.
+- Confirm that the `network_interface` parameter for your MCU supports your networking topology.
 
-Use `specs/008-release-foundation/artifacts/release-evidence-matrix.md` as the canonical list of gates and statuses.
+## Hardware Upgrades
 
-## Diagnostics and recovery workflow
+ZPLC is built on Zephyr RTOS. Over time, base layers require patching.
+- Upgrading the `libzplc_core` engine does **not** erase the `.zplc` bytecode stored in NVS. 
+- You can update the C firmware via `west flash` safely. 
+- Upon reboot, the new ZPLC engine will seamlessly load and execute the existing automation logic.
 
-When a validation or deployment step fails, use this sequence instead of patching docs by intuition:
+## Operator Checklist
 
-1. identify the broken claim surface (`runtime-api`, boards, release notes, landing copy, or workflow docs)
-2. trace it back to its canonical source using [`/docs/reference/source-of-truth`](../reference/source-of-truth.md)
-3. fix the source artifact or generator, not just the rendered markdown
-4. regenerate references if the source is generated
-5. rerun the non-build validation checks and record the outcome
-
-## Scope correction rules
-
-Never leave unsupported or weakly-supported claims in public release surfaces.
-
-- If a board is not present in `firmware/app/boards/supported-boards.v1.5.0.json`, remove it from docs and website copy.
-- If a release gate is pending in the evidence matrix, describe it as pending — never complete.
-- If generated references are stale or semantically broken, block sign-off until the generator is fixed and outputs are regenerated.
-- If an operations or release-notes page is too shallow to guide a reviewer, deepen it or remove it from the release-blocking surface.
-
-## Operator checklist
-
-- confirm the canonical manifest still matches the release-blocking page set
-- confirm English and Spanish remain aligned for release-blocking pages
-- confirm generated runtime and board references are fresh and trustworthy
-- confirm landing-page claims still match supported boards, runtime headers, and release evidence
-- confirm pending human gates are called out explicitly in release notes
+Before commissioning a machine running ZPLC, verify:
+- Task Intervals in `zplc.json` have realistic timeframes (e.g. 10ms for fast reading, 500ms for slow temperature reading) to avoid CPU saturation.
+- Retain Memory limits have not been exceeded for critical machine state variables.
+- Hardware UART or Network sockets match the requirements configured in the Communication tabs for Modbus/MQTT.
+- The Zephyr shell connects successfully via serial on 115200 baud.

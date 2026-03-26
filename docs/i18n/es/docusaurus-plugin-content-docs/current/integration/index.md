@@ -1,82 +1,51 @@
 ---
 slug: /integration
 id: index
-title: Integración y Despliegue
-sidebar_label: Integración
-description: Expectativas reales de despliegue para ZPLC v1.5.0, desde la simulación hasta la integración con hardware Zephyr.
+title: Despliegue y Montaje de Hardware
+sidebar_label: Hardware e Integración
+description: Adaptando, flasheando y engranando rutinas personalizadas de Zephyr Firmware con tu lógica ZPLC.
 tags: [integration, runtime]
 ---
 
-# Integración y Despliegue
+# Despliegue de Hardware Local o Personalizado
 
-Esta página conecta la historia de primeros pasos con la historia real de integración del runtime.
+La instancia a detallar enmarca o traza el proceso intermedio e interactivo donde la abstracción general viaja desde simuladores hacia su fin e incrustación en Hardware Zephyr Operativo para fabricantes masivos u OEM integraciones dedicadas del sistema.
 
-Responde una pregunta práctica: una vez que ya tenés un programa `.zplc`, ¿cómo llega a un
-target runtime real sin fingir que placas o transportes no soportados ya están listos para release?
+## Ciclos y Cargas
 
-## Soporte de Plataforma
-
-ZPLC sigue siendo portable, pero el alcance público de v1.5 es mucho más chico que “todo lo que Zephyr podría soportar”.
-
-El soporte real de v1.5 debe leerse desde el manifiesto de placas soportadas y la
-evidencia del release, no desde una lista fija en esta pagina.
-
-## Flujo de integración
+El objetivo se cumple y es emitido hacia tres opciones funcionales, todas gobernadas en última o única instancia vía interface nativa IDE ZPLC:
 
 ```mermaid
 flowchart LR
-  A[Compilar proyecto a .zplc] --> B{Camino de validación}
-  B --> C[Simulación WASM]
-  B --> D[Simulación nativa en Electron]
-  B --> E[Runtime Zephyr en hardware]
-  E --> F[Upload/debug serial mediante shell del runtime]
+  A[Bytecode validado y Compilado .zplc] --> B{Flujo Objetivo a desplegar}
+  B --> D[Software Simulado POSIX SoftPLC base]
+  B --> E[Descargas Vía Firmware e Imagen Original Base (Zephyr RTOS HW)]
+  E --> F[Vistas OnLine Vía Sensores Replicados IDE]
 ```
 
-## Integración de ZPLC
+## Embebiendo o Fusionando Custom Firmware en Fabricantes (OEM)
 
-La integración de ZPLC en una placa Zephyr personalizada implica:
+Si integras ZPLC a un modelo comercializado e innovado que precise directrices estrictas que ZPLC no trae en su base por su particularidad electrónica (ej; manejo y operación compleja de controladores para display CAN nativo, manejo SPI a ultra velocidades asíncronas para cámaras IoT etc):
 
-1.  **Incluir la Biblioteca**: Añada `libzplc_core` a su compilación CMake.
-2.  **Implementar la HAL**: Proporcione implementaciones específicas para las interfaces de hardware requeridas (`zplc_hal_*`) definidas en `docs/docs/runtime/hal-contract.md`.
-3.  **Inicializar el Core**: Llame a las funciones de inicialización desde su aplicación `main()` de Zephyr.
+1. **Ligando C Núcleos Oficiales**: Instanciar la base Core `libzplc_core` al subruteado o árbol Build del IDE con su configuración CMake en Zephyr de Custom.
+2. **Re-Mapeo al Contracto HAL**: Rellenar implementaciones manualizadas hacia los punteros o abstracciones básicas (Ej `zplc_hal_tick` por temporización Zephyr Nativa o implementado lectura Custom de registros Aislados GPIO en `zplc_hal_io_read`).
+3. **Inicio Cíclico Inyectable**: Arrastre el inicializado base con la instancia globalizada nativa `zplc_scheduler_init()` permitiendo así el multihilo cíclico principal C de Zephyr para encolamiento asíncrono sin pérdidas a sus periféricos o librerías del MCU elegida.
 
-Para el runtime de referencia que trae este repositorio, no arrancás desde cero. Arrancás desde
-`firmware/app`, que ya empaqueta el core, el scheduler, el workflow shell, soporte de persistencia
-y assets de configuración por placa.
+Sorteado favorablemente el listado inferior a librerías ZPLC se es portador pleno del entorno y motor determinístico a hardware no comerciales que cuenten con implementaciones Linux o baremetals nativos listados para RTOS POSIX/Zephyr globalmente conocidos.
 
-## Flujos de Trabajo de Despliegue
+## Dependientes Globales Modbus o Nube Sensórica
 
-Una vez que el runtime está integrado en un dispositivo, el despliegue de la lógica se gestiona a través del IDE:
+ZPLC acata operaciones en su runtime independientemente y con plena versatilidad, pero está sujeto férreamente bajo el limitante estructural si la conectividad no existe de su hardware original al tratar de operar:
 
-1.  **Despliegue Serie**: Para desarrollo local, el IDE puede transferir archivos `.zplc` por una conexión serie cuando la ruta placa/runtime elegida expone ese flujo serial.
-2.  **Despliegue de Red**: Tratá cualquier despliegue orientado a red como algo específico de la placa y de la evidencia, no como una promesa general de v1.5 para cualquier target.
+- **Buses Criptográficos IoT / Nube (MQTT)**: Condicionado si posee Wifi Nativo su HW, transcodificadores serial a Wi-Fi implementados nativamente a LwIP local o stacks para Módems con sockets TCP por PPP, caso contrario estas rutinas IEC en ST compilan a `.zplc` pero caen a errores en llamadas HAL asertivas físicas por RTOS.
+- **Red Fuerte Ethernet Local (Modbus TCP)**: Estricto control local enclavado Ethernet base (SPI Ethernet Módulos, PHY). Modbus actuará y abrirá el socket mediante ruteo.
+- **Plataformas de Dispositivos Maestro Esclavo Analógico (Modbus RTU)**: Solicitudes que dependan de interconectores RS-485 requiriendo inyección hardware con MAX485 y tracción por Software e impliquen pines bidireccionales asignados por Serial/UART Zephyr nativo a rutear correctamente por la aplicación.
 
-Más concretamente, la verdad actual del repo dice:
+Dado el diseño de abstracción base ZPLC los errores de software jamás escalan a problemas o paralizaciones generalizadas. Las peticiones a interfaces irreales por el MCU, abortarán in-situ reportando loggings a registros visualizados de IDE salvaguardando o manteniendo control industrial activo del resto programático sin colisión del firmware.
 
-- la conexión navegador/hardware usa el adapter serial / flujo WebSerial
-- el desktop con Electron agrega un bridge de simulación nativa, no un nuevo contrato mágico de transporte a hardware
-- la gestión de programas y el control de debug del runtime hardware se exponen mediante los comandos de shell Zephyr documentados en `firmware/app/README.md`
+## Actualizaciones Firmwares (Descargas y Quemadores)
 
-*Nota: Para guías detalladas de implementación de HAL, consulte la [Documentación del Runtime](../runtime/index.md).*
-
-## Expectativas de Configuracion de Protocolos
-
-- use MQTT solo en placas cuyo perfil soportado exponga una ruta real de red;
-- use Modbus TCP solo cuando la placa y el runtime soporten transporte de red;
-- use Modbus RTU solo cuando la placa y el firmware expongan la ruta serial requerida;
-- mantenga alineados la configuracion del proyecto, la documentacion y la evidencia del release.
-
-La prueba HIL humana representativa para caminos seriales y de red sigue estando fuera del claim set público y todavía está pendiente.
-
-## Flasheo y realidad específica por placa
-
-Los comandos de build están canonizados en el manifiesto de placas soportadas. El flasheo sigue siendo específico por placa.
-
-- muchas placas pueden usar `west flash`
-- los targets tipo RP2040 pueden requerir copiar un artefacto UF2 generado al volumen de la placa
-
-Por eso la documentación reparte las responsabilidades así:
-
-- [Placas Soportadas](../reference/boards.md) es dueña de los facts de placas y assets de soporte
-- [Configuración del Workspace Zephyr](../reference/zephyr-workspace-setup.md) es dueña de la forma canónica del workspace/build
-- esta página es dueña del handoff entre la salida del proyecto y el target runtime
+Ajustando los procesos antes de desplegar `.zplc` y rutear en línea lógica con hardware, debe obligarse primero el cargado base C de imagen C/Zephyr ZPLC Boot mediante las matrices originales predispuestas u opcionales según manufacturado (Microchips o Target Selection):
+- Cargas C genéricas orientadas por ARM pueden operar transitoriamente en su OS por `west flash --runner` acudiendo con STLinks/JLinks nativos por interfaces de la PC Host.
+- Despliegue puro masificado o rápido (como líneas ESP32 Series o Teensys robustos) con herramientas integradas `python -esptool` inter USB sin requerimiento ST-Link hardware o puentes dedicados extra.
+- Tarjetas embebidas y series tipo MicroPython/RP2040 Pico (Raspberry) asimilarán archivos auto extraíbles (Bootloader y Payload listos UF2 format) y asolazándose al conectarlos de inmediato y flasheando memorias.

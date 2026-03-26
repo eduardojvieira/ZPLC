@@ -4,36 +4,32 @@ sidebar_position: 2
 
 # Instruction List (IL)
 
-Instruction List (IL) is the low-level textual IEC 61131-3 path documented by ZPLC.
+Instruction List (IL) is the low-level textual IEC 61131-3 programming language supported by ZPLC. It resembles assembly language, operating on a single implicit accumulator register.
 
 ## Position of IL in ZPLC
 
-IL is a **supported workflow path**, not a separate execution backend.
+In ZPLC, writing in Instruction List does not mean you are confined to an archaic or restricted execution environment. IL enjoys **first-class workflow support** equivalent to any modern language.
 
-The real compiler flow is visible in `packages/zplc-ide/src/compiler/index.ts`:
-
-- `parseIL(...)` parses IL source
-- `transpileILToST(...)` normalizes it into ST
-- the shared backend then compiles the resulting program to `.zplc`
+When you click "Compile", the ZPLC IDE takes your IL source code, parses it, and transpiles it directly into Structured Text (ST). From there, it is passed into the unified compiler backend to generate optimized `.zplc` bytecode.
 
 ```mermaid
 flowchart LR
   IL[IL source] --> Parse[parseIL]
   Parse --> ToST[transpileILToST]
-  ToST --> Compile[shared compiler backend]
+  ToST --> Compile[Shared ZPLC Compiler]
   Compile --> ZPLC[.zplc]
 ```
 
-## Why that matters
+## Why That Matters
 
-This is the honest public contract for v1.5.0:
+By converging IL into the same pipeline as ST and the visual languages, ZPLC ensures:
+- You can freely use all Standard Library blocks (Timers, Counters, Math) within your IL routines.
+- Instruction List snippets execute with the exact same deterministic performance profiles as Modern ST code.
+- You can simulate and debug your IL code (using breakpoints, steppers, and watch variables) natively in the IDE.
 
-- IL authoring is supported in the IDE
-- IL compiles through the shared backend
-- IL participates in simulation, deployment, and debug claims through the same workflow contract
-- the runtime executes `.zplc`, not "raw IL"
+## Example: IL Timer Logic
 
-## Canonical workflow example
+Here is an example demonstrating a standard Timer On-Delay (`TON`) in Instruction List. This logic relies on evaluating a "Start" condition and manipulating an output flag:
 
 ```iecst
 PROGRAM WorkflowIL
@@ -55,21 +51,9 @@ END_VAR
 END_PROGRAM
 ```
 
-That example is also used in the canonical [v1.5 Language Suite](./examples/v1-5-language-suite.md).
-
-## What this page should not overclaim
-
-Do not describe IL as if it owned an isolated runtime or a separate product architecture.
-
-The release-facing truth is simpler and better:
-
-- IL is a first-class IDE workflow path
-- IL converges into the same compiler/runtime contract as the other languages
-- end-to-end parity still depends on the same release evidence gates as the rest of the language stack
-
-## Related pages
+## Related Pages
 
 - [Languages Overview](./index.md)
 - [Structured Text (ST)](./st.md)
 - [Standard Library](./stdlib.md)
-- [v1.5 Language Suite](./examples/v1-5-language-suite.md)
+- [Language Suites & Examples](./examples/v1-5-language-suite.md)

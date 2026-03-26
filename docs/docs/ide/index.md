@@ -3,89 +3,54 @@ slug: /ide
 id: index
 title: IDE & Tooling
 sidebar_label: IDE Overview
-description: Release-aligned overview of the ZPLC IDE, project model, runtime adapters, and debugging workflows.
+description: Overview of the ZPLC IDE, project model, simulation, and debugging workflows.
 tags: [ide, tooling, debugging]
 ---
 
 # IDE & Tooling
 
-The IDE is the operator-facing proof that ZPLC v1.5.0 is more than a compiler demo.
+The ZPLC Integrated Development Environment (IDE) provides a complete engineering workflow for creating, simulating, and deploying IEC 61131-3 automation logic.
 
-It owns the engineering workflow that starts with IEC authoring and ends with simulation,
-hardware deployment, and runtime debugging.
+## Core Capabilities
 
-## What the IDE is responsible for
+The IDE serves as the central orchestration layer for your automation projects. Its main responsibilities include:
 
-Grounded in `packages/zplc-ide`, the IDE currently owns five release-critical surfaces:
+- **Project Management**: Editing `zplc.json` configurations, organizing source files, and managing tasks.
+- **Language Workflows**: Seamless authoring in Structured Text (ST), Instruction List (IL), Ladder Diagram (LD), Function Block Diagram (FBD), and Sequential Function Chart (SFC).
+- **Compilation**: Transpiling visual models to ST and compiling them to compact `.zplc` bytecode.
+- **Simulation**: Testing logic natively on your PC without needing physical hardware.
+- **Deployment & Debugging**: Flashing bytecode to targets via Serial, managing breakpoints, forcing variables, and inspecting runtime state.
 
-- **Project model** backed by `zplc.json`, source files, and task metadata
-- **Language workflows** for `ST`, `IL`, `LD`, `FBD`, and `SFC`
-- **Compilation** through the shared `@zplc/compiler` backend
-- **Runtime adapters** for browser simulation, native desktop simulation, and serial hardware sessions
-- **Debug operations** such as breakpoints, watch values, force values, and execution-state inspection
-
-## End-to-end workflow
+## End-to-End Workflow
 
 ```mermaid
 flowchart LR
   Author[Author IEC logic] --> Config[Configure project + target]
   Config --> Compile[Compile to .zplc]
-  Compile --> Sim[Simulate in native or WASM runtime]
+  Compile --> Sim[Simulate in native POSIX runtime]
   Sim --> Deploy[Deploy to hardware]
-  Deploy --> Debug[Debug runtime state]
+  Deploy --> Debug[Monitor & Debug online]
 ```
 
-Every claimed language path in v1.5 is expected to move through that same chain.
+## Project Model
 
-## Project model
+The ZPLC project model is file-based and transparent. All your project configurations—including target CPU, networking, I/O mapping, Modbus/MQTT communications, and task execution rates—are cleanly stored in a transparent `zplc.json` manifest.
 
-The IDE project model is file-based and intentionally transparent.
+This makes ZPLC projects inherently source-control friendly (Git), portable, and easily scriptable.
 
-- project metadata, target, network, I/O, communication, and task settings live in `zplc.json`
-- program files remain plain text or model files under the project folder
-- browser-capable environments can use the File System Access API
-- unsupported browsers can still work with **virtual projects** stored in memory
+## Runtime Environments
 
-That behavior is visible in `packages/zplc-ide/src/store/useIDEStore.ts` and the shared types
-under `packages/zplc-ide/src/types/index.ts`.
+When you start a debugging session, the IDE automatically routes your logic to the correct execution runtime:
 
-## Runtime targets exposed by the IDE
+| Execution Path | Purpose | Behavior |
+|---|---|---|
+| **Native Desktop Simulation** | Preferred simulation path | Runs logic on a host POSIX SoftPLC natively. Full support for breakpoints and pause/resume. |
+| **Hardware Execution** | Real-world deployment | Runs on Zephyr RTOS over a physical Serial connection. The IDE acts as an online monitor. |
 
-The IDE does not talk to "the runtime" as a single thing. It selects an adapter based on the
-execution context:
+## Advanced Debugging
 
-| Path | Backing adapter | Purpose | Release guidance |
-|---|---|---|---|
-| Browser simulation | `WASMAdapter` | fast local feedback in the browser | useful, but explicitly degraded for pause/resume/step/breakpoint parity |
-| Native desktop simulation | `NativeAdapter` | Electron-backed host runtime session | preferred simulation path for release-facing parity work |
-| Hardware runtime | `SerialAdapter` | Zephyr device over serial/WebSerial | authoritative path for board and HIL validation |
-
-`createSimulationAdapter()` in `packages/zplc-ide/src/runtime/simulationAdapterFactory.ts`
-chooses native simulation when the Electron bridge is available, and falls back to WASM otherwise.
-
-## Debugging model
-
-The debug workflow is capability-aware, not assumption-driven.
-
-- native simulation exposes a capability profile through the Electron bridge
-- hardware sessions derive state from runtime status and serial debug commands
-- legacy WASM simulation remains available, but its control semantics are intentionally marked as degraded
-
-That split matters because v1.5 release claims must distinguish **helpful simulation** from
-**authoritative parity evidence**.
-
-## Read next
-
-- [IDE Architecture & Project Model](./overview.md)
-- [Visual and Text Editors](./editors.md)
-- [Compiler Workflow](./compiler.md)
-- [Deployment & Runtime Sessions](./deployment.md)
-- [Languages & Programming Model](../languages/index.md)
-
-## Release boundary
-
-The IDE package version currently aligned to this docs rewrite is `1.5.0` in
-`packages/zplc-ide/package.json`.
-
-That does **not** mean every workflow is automatically signed off. Final release credibility still
-depends on the evidence gates tracked in `specs/008-release-foundation/artifacts/release-evidence-matrix.md`.
+The IDE includes a comprehensive debugging suite for both simulation and live hardware workflows:
+- **Watch Tables**: Monitor variable state in real-time.
+- **Breakpoints**: Pause logic execution precisely at a line of code.
+- **Step Execution**: Step over and step into operations.
+- **Forced Values**: Override live sensor data or internal states directly from the IDE to simulate edge cases.
