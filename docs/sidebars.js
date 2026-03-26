@@ -66,6 +66,7 @@ const sidebars = {
         'reference/zephyr-workspace-setup',
         'release-notes/index',
         'operations/index',
+        'operations/shell',
         'contributing/index',
       ],
     },

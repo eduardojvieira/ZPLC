@@ -1,23 +1,26 @@
 # Arquitectura y Modelo de Proyecto del IDE
 
-Esta página explica cómo está armado hoy el IDE usando fuentes del repositorio, no humo de brochure.
+El IDE de ZPLC se basa en una estricta separación de responsabilidades para proporcionar una experiencia de desarrollo moderna y de alta capacidad de respuesta.
 
-## Límites de paquetes
+## Límites entre Paquetes (Packages)
 
-- `packages/zplc-ide` — UI, estado del proyecto, adapters de runtime, despliegue, debug
-- `packages/zplc-compiler` — parser, transpilers, generación de bytecode, stdlib, debug maps
+Las herramientas de ZPLC están divididas en dos áreas lógicas bajo el capó:
+- **`@zplc/ide`** — La interfaz de usuario, gestión de estado del proyecto, editores de código, adaptadores de simulación y flujos de despliegue.
+- **`@zplc/compiler`** — El motor subyacente que maneja el parseo, la transpilación de lenguajes visuales a ST, la emisión de bytecode, la resolución de la biblioteca estándar y la generación de mapas de depuración.
 
-## Modelo de estado del proyecto
+Esta separación asegura que el compilador se pueda ejecutar de manera oculta (headless) en canales CI/CD para integraciones, mientras que el IDE gestiona la orquestación de la UI visual de manera independiente.
 
-`useIDEStore.ts` muestra el modelo real de trabajo del IDE.
+## Modelo de Estado de la Aplicación
+
+El IDE utiliza una arquitectura de estado robusta y reactiva internamente para manejar proyectos industriales complejos sin problemas.
 
 ```mermaid
 flowchart TD
   Config[zplc.json]
-  Files[Archivos del proyecto]
-  Store[store Zustand del IDE]
-  Runtime[adapter de runtime]
-  Debug[estado de debug]
+  Files[Archivos del Proyecto]
+  Store[Estado Activo de la Aplicación]
+  Runtime[Adaptador de Ejecución]
+  Debug[Datos de Debug en Vivo]
 
   Config --> Store
   Files --> Store
@@ -26,69 +29,17 @@ flowchart TD
   Debug --> Store
 ```
 
-El store mantiene:
+## Configuración del Proyecto: `zplc.json`
 
-- archivos cargados y tabs abiertos
-- estado de conexión
-- estado del controlador/runtime
-- debug map, breakpoints, watch variables y forced values
-- layout del editor y estado de UI
+El archivo `zplc.json` es el corazón de cualquier proyecto ZPLC. Define de forma declarativa todo el alcance de la automatización:
 
-## Qué vive en `zplc.json`
+- `target` — Selección de placa de hardware, CPU y restricciones de reloj requeridas.
+- `network` — Credenciales Wi-Fi o configuraciones IP Ethernet.
+- `io` — Mapeos fijos (hardcodeados) entre pines físicos del chip y variables lógicas.
+- `communication` — Ajustes de brokers MQTT, IDs de nodos Modbus y enrutamiento remoto global.
+- `tasks` — Declaración de tareas Cíclicas/Por eventos, velocidades de intervalo, prioridades y registro del ruteo.
 
-Los tipos compartidos muestran que el proyecto puede definir:
+## Sensibilidad al Entorno (Target Auto-Awareness)
 
-- `target`
-- `network`
-- `io`
-- `communication`
-- `tasks`
-
-Eso hace que el modelo del IDE sea portable, auditable y amigable con Git.
-
-## Proyectos de navegador, desktop y virtuales
-
-| Contexto | Comportamiento base | Para qué sirve |
-|---|---|---|
-| carpeta real | File System Access API | edición persistente sobre un directorio real |
-| proyecto virtual/ejemplo | estado en memoria | fallback para browsers sin soporte o ejemplos embebidos |
-| proyecto desktop | Electron + filesystem local | workflow más fuerte para uso release-facing |
-
-## Conocimiento del target desde el manifiesto de placas
-
-`packages/zplc-ide/src/config/boardProfiles.ts` importa directamente `firmware/app/boards/supported-boards.v1.5.0.json`.
-
-Eso evita que el IDE invente una segunda fuente manual para labels, capacidades de red o tipos de placa.
-
-## Modelo de sesiones de runtime
-
-El IDE exporta tres adapters principales:
-
-- `WASMAdapter`
-- `NativeAdapter`
-- `SerialAdapter`
-
-```mermaid
-flowchart LR
-  Start[Necesito una sesión de simulación o debug]
-  Start --> Check{¿hay bridge nativo de Electron?}
-  Check -->|Sí| Native[NativeAdapter]
-  Check -->|No| Wasm[WASMAdapter]
-  Hardware[Controlador físico] --> Serial[SerialAdapter]
-```
-
-## Depuración consciente de capacidades
-
-El IDE no asume que todas las sesiones exponen el mismo nivel de control.
-
-- nativo publica un perfil de capacidades
-- hardware deriva estado desde el runtime y comandos shell/debug
-- WASM marca pause/resume/step/breakpoints como degradados
-
-Eso es exactamente lo que querés en una herramienta industrial seria: que diga la verdad sobre lo que puede garantizar.
-
-## Siguiente lectura
-
-- [Editores visuales y de texto](./editors.md)
-- [Workflow del compilador](./compiler.md)
-- [Despliegue y sesiones de runtime](./deployment.md)
+Cuando seleccionas un target de hardware en la configuración, el IDE importa automáticamente el manifiesto de capacidades de dicha placa física.
+Significa que la base de datos de ZPLC evita que asocies puertos de red integrados a proyectos en chips como el Arduino MCU (el cual solo goza de una UART simple), o impedir que indiques puertos físicos de E/S irreales donde dichas patillas no operan. Opciones irrealizables como conectividad en placas rudimentarias y asignamientos no nativos desaparecen inteligentemente de los menús contextuados de la vista visual del proyecto y autocompletado del código.

@@ -40,6 +40,7 @@ Las siguientes páginas bloquean el release y deben existir en inglés y españo
 | reference/boards | docs/docs/reference/boards.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/boards.md | boards | yes | docs | generated |
 | reference/zephyr-workspace-setup | docs/docs/reference/zephyr-workspace-setup.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/zephyr-workspace-setup.md | zephyr-setup | yes | docs | in-progress |
 | operations/index | docs/docs/operations/index.md | docs/i18n/es/docusaurus-plugin-content-docs/current/operations/index.md | operations | yes | docs | in-progress |
+| operations/shell | docs/docs/operations/shell.md | docs/i18n/es/docusaurus-plugin-content-docs/current/operations/shell.md | operations | yes | docs | in-progress |
 | release-notes/index | docs/docs/release-notes/index.md | docs/i18n/es/docusaurus-plugin-content-docs/current/release-notes/index.md | release-notes | yes | docs | release-ready |
 
 ## Placas soportadas

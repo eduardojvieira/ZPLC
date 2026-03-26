@@ -1,121 +1,37 @@
 ---
-title: C Nativo en el Runtime
-sidebar_label: Runtime nativo en C
-description: Cómo integrar código C específico de Zephyr o de la placa sin romper el contrato del runtime ZPLC.
+id: native-c
+title: Integrando Código Nativo C
+sidebar_label: Soluciones C Nativas
+description: Extender el comportamiento de ZPLC compilando tareas en lenguaje C personalizadas dentro de la lógica del firmware.
+tags: [runtime, zephyr, native-c]
 ---
 
-# C Nativo en el Runtime
+# Integrando Código Nativo en C
 
-ZPLC mantiene la lógica IEC del usuario como bytecode `.zplc` y la ejecuta a través de la VM y del scheduler. Si necesitás comportamiento específico de placa o de muy bajo nivel, ese código tiene que vivir en el **runtime**, no en el modelo editable del IDE.
+ZPLC separa la lógica IEC editable de forma visual (`.zplc`) de las tareas operacionales complejas escritas en hardware. Sin embargo, los desarrolladores que trabajan en integraciones OEM a menudo necesitan escribir drivers de alto rendimiento, utilizar bibliotecas o SDK propietarios de proveedores, o implementar hardware altamente especializado que no se pueden mapear a bibliotecas estándar de forma nativa en sistemas tradicionales.
 
-Esta página se apoya en:
+Para solucionar estos cuellos de botella programáticos, ZPLC le permite extender libremente las bibliotecas core en lenguaje C mediante el manejo integral dentro del ecosistema Zephyr RTOS.
 
-- `firmware/app/README.md`
-- `firmware/lib/zplc_core/include/zplc_scheduler.h`
-- `firmware/lib/zplc_core/include/zplc_hal.h`
+## Separación Arquitectónica
 
-## Qué entra en esta categoría
+Es fundamental mantener la separación de responsabilidades:
+- **Use Funciones del entorno IEC (ST, SFC, LD)**: Para automatización general, control de domótica de la fábrica, control secuencial, cálculos de matemática general o manipulación de I/Os cotidianos.
+- **Use Funciones en lenguaje C y RTOS**: Para operar controladores de comunicación SPI o I2C a alta velocidad, operar micro-servicios mediante REST APIs o cifrados criptográficos embebidos sobre un canal protegido, etc.
 
-- threads o servicios nativos de Zephyr
-- drivers o helpers específicos de placa
-- integración con SDKs del fabricante
-- código de soporte confiable que se distribuye junto con el firmware
+*Las inserciones en C de Zephyr no están encoladas dentro de la plataforma ZPLC como lógica visible; no operan cíclicamente junto a su programa. Estas viven y funcionan dentro de su núcleo embebido como módulos en segundo plano paralelos.*
 
-## Qué NO es
+## Método Regular e Instalación
 
-No es lo mismo que una tarea IEC gestionada por el scheduler a partir de un `.zplc`.
+1. Enlace archivos fuentes (extensiones `.c` / `.h`) dentro del proyecto original. Se dispone de la vía `firmware/app/src/custom`.
+2. Genere configuraciones de funciones o rutinas con llamados dependientes de Zephyr orientadas al requerimiento en cuestión.
+3. Actualice o llame estos procesos nuevos modificando el entorno base `CMakeLists.txt` en el mismo directorio.
+4. Interactúe recíprocamente entre ZPLC y Zephyr aprovechando directivas expuestas mediante `zplc_hal_*` de ser necesario.
 
-`zplc_sched_register_task()` recibe:
-
-- una definición `zplc_task_def_t`
-- un puntero a bytecode
-- el tamaño del bytecode
-
-Y `zplc_sched_load()` también carga binarios `.zplc`. Eso significa que **la API pública del scheduler hoy es bytecode-oriented**, no una API pública de callbacks nativos en C.
-
-## Camino soportado hoy
-
-Si necesitás código nativo:
-
-1. ponelo dentro de `firmware/app`
-2. compilalo como parte del firmware
-3. ejecutalo como thread, work item o servicio de Zephyr
-4. interactuá con ZPLC mediante APIs públicas del runtime y la HAL
-
-## Estructura recomendada
-
-El README del runtime recomienda separar el código específico del proyecto:
-
-```text
-firmware/app/
-├── include/
-│   └── custom/
-└── src/
-    └── custom/
-```
-
-Así queda claro que:
-
-- `main.c` sigue siendo el punto de entrada del runtime
-- la infraestructura del runtime no se mezcla con hacks de placa
-- el código nativo del proyecto tiene un lugar explícito
-
-## Integración con el build
-
-La integración correcta del código nativo pasa por el sistema de build de la aplicación runtime.
-
-```cmake
-target_sources(app PRIVATE
-    src/main.c
-    src/zplc_config.c
-    src/zplc_modbus.c
-    src/zplc_mqtt.c
-    src/custom/custom_task.c
-)
-```
-
-Si la capacidad es opcional, conviene gatearla con Kconfig en vez de compilarla siempre.
-
+**Ejemplo de llamada en extensión a `CMakeLists.txt`:**
 ```cmake
 if(CONFIG_ZPLC_CUSTOM_TASKS)
-  target_sources(app PRIVATE src/custom/custom_task.c)
+  target_sources(app PRIVATE src/custom/custom_sensor_driver.c)
 endif()
 ```
 
-## Reglas de interacción segura
-
-Cuando el código nativo interactúe con ZPLC:
-
-- preferí `zplc_hal_*` para operaciones dependientes de plataforma
-- no toques hardware directamente desde el core
-- si accedés a memoria compartida fuera del contexto de tarea, usá `zplc_sched_lock()` y `zplc_sched_unlock()`
-- mantené ejecución acotada y determinista
-- evitá asignación dinámica si no es estrictamente necesaria
-
-## Lo que no conviene hacer
-
-- no supongas que el scheduler acepta callbacks nativos como tareas ZPLC de primera clase
-- no metas código específico de placa adentro del core sin flags o límites claros
-- no construyas un scheduler paralelo si la semántica temporal del runtime importa
-
-## Regla práctica
-
-Usá tareas IEC `.zplc` para:
-
-- lógica de control
-- comportamiento editable por el usuario
-- depuración y despliegue desde el IDE
-
-Usá C nativo del runtime para:
-
-- drivers
-- servicios de placa
-- glue de protocolos de alto rendimiento
-- soporte de firmware confiable que no pertenece al lenguaje IEC
-
-## Páginas relacionadas
-
-- [Visión General del Runtime](./index.md)
-- [Scheduler](./scheduler.md)
-- [Contrato HAL](./hal-contract.md)
-- [Configuración del workspace Zephyr](../reference/zephyr-workspace-setup.md)
+Este procedimiento garantiza un estado pulcro al compilar la ejecución paralela y conserva una estricta estabilidad para los desarrolladores industriales de firmware frente a futuros despliegues complejos de mantenimiento mecánico.

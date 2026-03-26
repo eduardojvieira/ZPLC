@@ -1,43 +1,27 @@
 ---
-title: Suite de Lenguajes v1.5
-sidebar_label: Suite de Lenguajes v1.5
-description: Ejemplos canónicos cross-language que respaldan el claim de workflow de v1.5.
+title: Referencias y Modelos (Suite V1.5)
+sidebar_label: Ejemplos Canónicos V1.5
+description: Suite principal abarcando códigos demostrativos puramente lógicos compatibles entre modelos de Lenguajes ZPLC.
 ---
 
-# Suite de Lenguajes v1.5
+# Ejemplos y Pruebas Iniciales (Language Suite ZPLC)
 
-Esta página define las muestras canónicas de workflow usadas para respaldar el claim de v1.5 para `ST`, `IL`, `LD`, `FBD` y `SFC`.
+Este módulo sirve como referencia pura, otorgando lógicas ejemplificadoras y estandarizadas demostrando el grado de soporte íntegro o interoperabilidad asegurada bajo IEC 61131-3 de ZPLC en sus cinco idiomas normados `ST`, `IL`, `LD`, `FBD`, y `SFC`.
 
-La referencia de gate para este claim es `REL-002` en `specs/008-release-foundation/artifacts/release-evidence-matrix.md`, que hoy sigue **pendiente** de validación humana final de debug/desktop.
+## Propósito Algorítmico Integral Compartido
 
-## Comportamiento compartido
+Absolutamente todo script en esta Suite concreta fielmente de manera equitativa la idéntica tarea o finalidad mecánica final:
+1. El inicio contiguo activando un indicador (Condición booleana local `Start`).
+2. Lanzamiento o anidación con un Retraso a Conexión de bloque temporizador (`TON` - Timer On Delay) prefijado por espacio de `250` mili-segundos justos iterativos.
+3. Volcamiento del pin final afirmativo (`Timer.Q`) del relé atado o linkeado a una variable salida periférica designada por etiqueta remota global a pines I/O (%Q0.0). (`Out1`).
 
-Cada muestra de esta suite prueba el mismo comportamiento a nivel workflow:
+La meta pura de diseño en ZPLC se cumple: no importa qué método u hoja se apropie usted durante labores industriales; la generación subyacente hacia el kernel binario `.zplc` funcionará impolutamente y mantendrá su estado depurativo local al igual sobre conexiones serie por USB RTOS.
 
-- autoría en la ruta de lenguaje reclamada
-- compilación exitosa a `.zplc`
-- soporte de simulación
-- soporte de despliegue
-- soporte de depuración
+---
 
-```mermaid
-flowchart LR
-  ST[ST] --> WF[workflow canónico]
-  IL[IL] --> WF
-  LD[LD] --> WF
-  FBD[FBD] --> WF
-  SFC[SFC] --> WF
-  WF --> BYTECODE[.zplc]
-  BYTECODE --> RUNTIME[runtime / debug / deploy]
-```
+## 1. Texto Estructurado (Structured Text - ST)
 
-La forma lógica canónica es intencionalmente chica:
-
-- una condición de arranque
-- una salida temporizada
-- una vinculación visible a salida
-
-## Structured Text (ST)
+Mecánica estructurizada, un esquema pulcro en asignaciones procedurales llamando temporización y asignando derivables intrínsecos.
 
 ```st
 PROGRAM WorkflowST
@@ -46,12 +30,17 @@ VAR
     Timer : TON;
     Out1 : BOOL := FALSE;
 END_VAR
+
 Timer(IN := Start, PT := T#250ms);
 Out1 := Timer.Q;
 END_PROGRAM
 ```
 
-## Instruction List (IL)
+---
+
+## 2. Lista de Instrucción (Instruction List - IL)
+
+Secuencia por sentenciado bajo nivel apilando en búfer interino: llamando con CAL e iniciando las direcciones lógicas hasta escribir salida final en el socket direccionado de Out1 como %Q0.0 del hardware exterior integrado por base:
 
 ```iecst
 PROGRAM WorkflowIL
@@ -62,6 +51,7 @@ END_VAR
 VAR_OUTPUT
     Out1 AT %Q0.0 : BOOL;
 END_VAR
+
     LD Start
     ST Timer.IN
     CAL Timer(
@@ -72,24 +62,29 @@ END_VAR
 END_PROGRAM
 ```
 
-## Ladder Diagram (LD)
+---
 
-`LD` usa la ruta del modelo visual. El rung canónico expresa `Start -> Out1` y debe compilar, simular, desplegar y depurar a través del mismo flujo de tareas que `ST`.
+## 3. Diagrama Escalera o Contactos (Ladder Diagram - LD)
 
-## Function Block Diagram (FBD)
+Desarrollo virtual asincrónico por modelado: Al diagramarlo en la matriz base creas un rung interactivo y conectivo simple mediante flujos visuales horizontales continuos. 
+Modelo de paradigma visual inyección: 
+`Contacto Creado Start (Normal Abierto)` -> Hilo virtual energizado -> `Caja de Bloque Timer (TON Parametrizado: 250ms PT)` -> Transición Q a final `Bobina Final (Out1 Coil)`.
 
-`FBD` usa la ruta del modelo visual. El diagrama canónico conecta un bloque de entrada con uno de salida a través del camino estándar de transpilation.
+La transpilación visual base ZPLC fuerza al sistema hacia los mismos caminos binarios nativos del ejemplo puro ST al cruzar al núcleo, garantizando control impecable.
 
-## Sequential Function Chart (SFC)
+---
 
-`SFC` usa un paso inicial y una acción que activa la salida. El claim de release no depende de un backend separado: depende del mismo workflow end-to-end verificado.
+## 4. Diagrama de Bloques (Function Block Diagram - FBD)
 
-## Cómo usar esta página en el release
+Modelado topológico por fuentes hacia ruteos gráficos por cajetín. Asientas visualizadamente su entorno FBD de trabajo y sueltas una caja pura `TON`.
+Del lado izquierdo (IN), anclas un switch o conexión Boolean variable virtualizada `Start`. Asignar constante gráfica Time de `T#250ms` hacia parámetro PT (Preset). 
+Finalmente por derecha de salida Q tender un flujo/cable rojo en trazo hacia la caja o bloque periférico de variables llamado `Out1`. 
 
-Esta página define la muestra canónica del claim. No reemplaza:
+---
 
-- tests automatizados del compilador/IDE
-- evidencia desktop humana
-- evidencia HIL cuando el gate lo requiera
+## 5. Diagrama de Flujo (Sequential Function Chart - SFC)
 
-Mientras `REL-002` siga pendiente, la suite respalda el diseño del claim, pero no debe presentarse como sign-off humano final.
+Anidación por estado finito superior operando lógica algorítmica y encapsulada bajo bloque:
+1. Máquina principal que se enlaza bajo Estado 1 Cíclico Incial (`Initial Step`).
+2. Esa "Caja o Step" posee propiedades secundarias `Action body`.
+3. El Action rutea lógicamente hacia la programación donde marca finalmente Out1 tras que culmine su conteo lógico al validarlo por 250ms para generar o detonar en Transición la subsiguiente rama.

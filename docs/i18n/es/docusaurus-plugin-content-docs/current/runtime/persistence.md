@@ -1,98 +1,51 @@
 ---
-title: Persistencia y Memoria Retentiva
+sidebar_position: 3
+slug: /runtime/persistence
+id: persistence
+title: Persistencia y Memoria Retenida
 sidebar_label: Persistencia
-description: Cómo define ZPLC la persistencia del programa y la región RETAIN.
+description: Cómo ZPLC guarda y restaura de manera segura la lógica compilada y los datos de estado RETAIN críticos.
 ---
 
-# Persistencia y Memoria Retentiva
+# Persistencia y Memoria Retenida
 
-La persistencia en ZPLC tiene dos niveles distintos:
+ZPLC asegura que tanto tu lógica compilada como las variables críticas de la máquina sobrevivan a un ciclo de encendido/apagado. Este modelo de persistencia depende de dos capas distintas:
+1. Persistencia del bytecode `.zplc` desplegado.
+2. Persistencia de datos `RETAIN`.
 
-1. **persistencia del programa `.zplc`** en el runtime embebido
-2. **persistencia de datos `RETAIN`** a través del contrato `zplc_hal_persist_*`
+## Backends de Plataforma
 
-Las fuentes canónicas para esta página son:
+El core del runtime ZPLC depende de una Capa de Abstracción de Hardware (HAL) abstracta para las operaciones de persistencia. Esto permite que el sistema se adapte sin problemas a las capacidades de almacenamiento de distintos entornos:
 
-- `firmware/lib/zplc_core/include/zplc_hal.h`
-- `firmware/lib/zplc_core/include/zplc_isa.h`
-- `firmware/app/README.md`
-
-## Contrato HAL de persistencia
-
-El header público `zplc_hal.h` expone tres funciones para almacenamiento persistente:
-
-- `zplc_hal_persist_save(const char *key, const void *data, size_t len)`
-- `zplc_hal_persist_load(const char *key, void *data, size_t len)`
-- `zplc_hal_persist_delete(const char *key)`
-
-Ese es el límite correcto: el core depende del contrato HAL y no de una API directa de flash, filesystem o browser.
-
-## Backends previstos por el contrato
-
-Los comentarios públicos del HAL describen el mapeo esperado por plataforma:
-
-| Plataforma | Backend esperado por contrato |
+| Plataforma | Backend de Almacenamiento |
 |---|---|
-| embebido | NVS / EEPROM |
-| desktop/host | archivo |
-| WASM | `localStorage` |
+| **Hardware Zephyr** | NVS (Almacenamiento No Volátil) en Flash interna/externa en MCUs. |
+| **Simulación Nativa (PC)** | Almacenamiento basado en archivos directamente en el SO anfitrión. |
 
-En el runtime de referencia para Zephyr, `firmware/app/README.md` documenta el caso embebido con **NVS**.
+## Persistencia de Programa en Hardware
 
-## Persistencia del programa en Zephyr
-
-El runtime de referencia para Zephyr documenta este flujo:
+Cuando se carga un binario `.zplc` desde el IDE a una placa objetivo, el runtime lo guarda en memoria no volátil (NVS).
 
 ```mermaid
 flowchart LR
-  LOAD[Usuario carga .zplc] --> START[zplc start]
-  START --> SAVE[guardar programa en NVS]
-  BOOT[reinicio] --> RESTORE[restaurar desde NVS]
-  RESTORE --> RUN[volver a ejecutar]
+  Load[Subir .zplc] --> Save[Guardar en Flash NVS]
+  Save --> Run[Iniciar Ejecución]
+  Boot[Reinicio de Dispositivo] --> Restore[Restaurar desde NVS]
+  Restore --> Run
 ```
 
-Comandos shell públicos documentados hoy:
+Al iniciar, el runtime verifica automáticamente la NVS. Si se encuentra un binario ZPLC válido, se restaura automáticamente en memoria y la ejecución comienza al instante sin intervención manual.
 
-```bash
-zplc persist info
-zplc persist clear
+## Memoria Retentiva (`RETAIN`)
+
+ZPLC soporta completamente las variables `RETAIN` del estándar IEC 61131-3. Esta región de memoria se usa para preservar el estado operativo crítico (como setpoints, contadores de error y horas de funcionamiento de la máquina) a través de reinicios.
+
+**Ejemplo de Implementación:**
+```st
+VAR RETAIN
+    setpoint : REAL := 25.5;
+    run_hours : UDINT;
+END_VAR
 ```
 
-Según `firmware/app/README.md`:
-
-- `zplc start` guarda automáticamente el programa en NVS
-- en el próximo arranque, el runtime intenta restaurarlo automáticamente
-- `zplc persist info` muestra si existe un programa guardado
-- `zplc persist clear` borra el programa persistido
-
-## Región RETAIN
-
-`zplc_isa.h` reserva una región pública de memoria retentiva:
-
-- base: `ZPLC_MEM_RETAIN_BASE = 0x4000`
-- tamaño por defecto: `ZPLC_MEM_RETAIN_SIZE = 0x1000`
-- el tamaño puede ajustarse por `CONFIG_ZPLC_RETAIN_MEMORY_SIZE`
-
-Eso significa que la documentación puede reclamar con seguridad que existe una región lógica RETAIN en el contrato de la VM. Lo que cambia por plataforma es **cómo** se respalda físicamente esa región.
-
-## Qué debe hacer una plataforma
-
-Una implementación HAL correcta debe:
-
-- guardar bloques persistentes por clave
-- restaurarlos al arranque del runtime
-- permitir borrar almacenamiento persistente cuando el operador lo pide
-
-La forma exacta de sincronización depende de la plataforma. La documentación pública no debe inventar políticas de flush que no estén justificadas por implementación o evidencia.
-
-## Reglas prácticas para documentación v1.5
-
-- cuando hables de persistencia embebida, usá el runtime Zephyr de referencia y NVS
-- cuando hables del core, describí el contrato HAL, no detalles internos no públicos
-- cuando hables de `RETAIN`, anclá el claim en `zplc_isa.h`
-
-## Relación con otras páginas
-
-- [ISA del Runtime](./isa.md) define la región lógica `RETAIN`
-- [Runtime API](../reference/runtime-api.md) documenta la API pública del HAL
-- [Configuración del workspace Zephyr](../reference/zephyr-workspace-setup.md) cubre el entorno de build del runtime embebido
+Estas variables se ubican en un sector de memoria designado por el compilador ZPLC. El runtime rastrea las actualizaciones de esta región y la persiste a través de la HAL, asegurando que, incluso después de un corte de energía, tu proceso retome exactamente donde lo dejó.

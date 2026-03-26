@@ -1,41 +1,37 @@
 ---
 slug: /reference
 id: index
-title: Referencia
-sidebar_label: Referencia
-description: Referencias de configuracion, listas de comandos y matrices de soporte.
+title: Index de Referencias
+sidebar_label: Referencias
+description: APIS, Comandos, Compatibilidad y Documentos técnicos.
 tags: [reference]
 ---
 
-# Referencia
+# Referencias Técnicas
 
-Esta seccion contiene el material de referencia visible para la version v1.5 de ZPLC.
+Esta sección aloja y vincula referencias técnicas en bruto para ZPLC.
 
-## Empezá por acá para las superficies centrales reescritas
+## Puntos de Partida de Arquitectura Estructural
 
-- [Primeros Pasos](../getting-started/index.md) — instalación, primer proyecto, caminos de simulación y handoff a hardware soportado
-- [Arquitectura del Sistema](../architecture/index.md) — límites del sistema, relaciones IDE/compilador/runtime y principios de funcionamiento
-- [Visión General del Runtime](../runtime/index.md) — responsabilidades del runtime, modelo de ejecución y mapa de subsistemas
+- [Puesta y Primeros Pasos](../getting-started/index.md) — instalación, proyecto uno, simulación nativa y compatibilidad de base.
+- [Arquitectura Topológica](../architecture/index.md) — delimitaciones e implementaciones entre el engine ide, compilación, librerías stdlib y Zephyr.
+- [Visual General del Motor (Runtime)](../runtime/index.md) — desmenuzado responsivo e internos del microkernel multi-threading y su modelo iterativo nativo en Host/HW Zephyr.
 
-## Referencias de la version v1.5
+## Documentos Técnicos para ZPLC V1.5 
 
-- [Manifiesto canónico de documentación](./v1-5-canonical-docs-manifest.md)
-- [Fuentes de verdad](./source-of-truth.md)
-- [API del Runtime](./runtime-api.md)
-- [Placas soportadas](./boards.md)
-- [Configuración del Workspace Zephyr](./zephyr-workspace-setup.md)
-- Las placas soportadas se obtienen de `firmware/app/boards/supported-boards.v1.5.0.json`
-- La validacion del release se registra en `specs/008-release-foundation/artifacts/release-evidence-matrix.md`
+- [Funciones del Runtime C Base](./runtime-api.md)
+- [Hardwares Testeados y Compatibilizados](./boards.md)
+- [Instanciando el Motor Interno Zephyr](./zephyr-workspace-setup.md)
+
 
 ## Placas Soportadas
 
-| Placa | IDE ID | Objetivo Zephyr | Red | Validacion |
-|-------|--------|-----------------|-----|------------|
+| Placa | IDE ID | Zephyr Target | Capacidad de red | Validación |
+|-------|--------|---------------|------------------|------------|
 | Raspberry Pi Pico (RP2040) | `rpi_pico` | `rpi_pico/rp2040` | Enfoque serial | cross-build |
 | Arduino GIGA R1 (STM32H747 M7) | `arduino_giga_r1` | `arduino_giga_r1/stm32h747xx/m7` | Enfoque serial | cross-build |
 | ESP32-S3 DevKitC | `esp32s3_devkitc` | `esp32s3_devkitc/esp32s3/procpu` | Capacidad de red (Wi-Fi) | cross-build |
 | STM32F746G Discovery | `stm32f746g_disco` | `stm32f746g_disco` | Capacidad de red (Ethernet) | cross-build |
 | STM32 Nucleo-H743ZI | `nucleo_h743zi` | `nucleo_h743zi` | Capacidad de red (Ethernet) | cross-build |
 
-El subconjunto validado por humanos para v1.5.0 debe incluir al menos una placa enfocada
-en serial y una placa con capacidad de red antes de la aprobacion final del release.
+*Para informarse más sobre listados exhaustivos y perfiles dinámicos asimilados consulte las hojas detalladas de Hardwares Listados.*

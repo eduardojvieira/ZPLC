@@ -1,84 +1,59 @@
 ---
 slug: /platform-overview
 id: index
-title: Visión General de la Plataforma
-sidebar_label: Visión General
-description: Mapa del producto ZPLC v1.5.0, incluyendo superficies de ingeniería, targets de ejecución y límites del release.
-tags: [evaluator, architecture]
+title: Mapa Genérico de la Plataforma
+sidebar_label: Generalidades de Plataforma
+description: Diagramas de producto y mapas de dependencias tecnológicas sobre ZPLC.
+tags: [architecture, introduction]
 ---
 
-# Visión General de la Plataforma
+# Mapas de Plataforma 
 
-ZPLC (Zephyr PLC) es una plataforma determinista orientada a IEC 61131-3 que combina un core
-de ejecución portable con una toolchain moderna de ingeniería.
+ZPLC es una plataforma lógica compatible IEC 61131-3 centrada al determinismo estricto, combinando portabilidad en su ejecución por un core virtual `VM` basado íntegramente de librerías ANSI C, con una cadena moderna visual basada fuertemente en software desktop host (Su sistema y PC/Mac).
 
-Para v1.5.0, la idea importante es ésta: ZPLC no es solo “una VM” ni solo “un IDE”.
-Es el sistema combinado de docs, compilador, IDE, runtime, soporte de placas y evidencia del release.
+## El Ecosistema Integral
 
-## Mapa del producto
+ZPLC representa una suite completa, fuertemente amalgamada y diseñada para escalar verticalmente entre herramientas visuales a bases metálicas de baja energía.
 
 ```mermaid
 flowchart TB
-  Docs[Docs + website]
-  IDE[IDE]
-  Compiler[Compilador]
-  Runtime[Core runtime]
-  Boards[Placas soportadas]
-  Evidence[Evidencia de release]
+  IDE[Interfaz IDE]
+  Compiler[Consolidación Transpiladora ZPLC]
+  Runtime[Base Carga y RTOS]
+  Boards[Zephyr OS Placas y Cadenas Custom]
 
   IDE --> Compiler
   Compiler --> Runtime
   Runtime --> Boards
-  Docs -. documenta .-> IDE
-  Docs -. documenta .-> Runtime
-  Evidence -. restringe claims públicos .-> Docs
-  Evidence -. restringe claims públicos .-> Boards
 ```
 
-## Conceptos Centrales
+## Sus Pilares Esenciales
 
-*   **Determinismo**: Los tiempos de ejecución predecibles no son negociables. ZPLC está construido sobre Zephyr RTOS, asegurando un comportamiento en tiempo real.
-*   **Portabilidad**: "Un único núcleo de ejecución, cualquier runtime". La máquina virtual principal (escrita en C) está desacoplada del hardware a través de una estricta Capa de Abstracción de Hardware (HAL).
-*   **Seguridad**: Construido desde cero con principios seguros, orientado a un despliegue robusto en entornos industriales.
-*   **Experiencia de Desarrollo Moderna**: Un IDE basado en web (usando React, TypeScript y Monaco) trae los flujos de trabajo de desarrollo de software estándar (Git, CI/CD) a la programación de PLC.
+- **Determinismo Estricto Absoluto**: Predicción del uso y velocidad matemática inamovible para líneas de tracción automotriz. Asigna memorias rígidamente evitando fluctuaciones (Sin asincronías JS o Garbage Collection) y programando hardware directo a metrónomo.
+- **Migración a Placas Múltiples**: Acuñado hacia una frase fuerte: "Bajo Ejecución Única, Entornos Diferentes". La Maquina Principal nunca choca con controladores y permite saltos asombrosos portando lógicas creadas sin alterarlas; saltando por HW sin reescribir su script y su ingeniería IEC base.
+- **Independencia Real Comercial (Sin Vendor Lock-In)**: Desanclado orgánicamente usando sistemas amparados globalizados basados en proyectos Open Souce (Zephyr Base). Flasheos pueden operar por ARM básicos de STM32 Series y hasta arquitecturas modernas como ESP32, sin la penalización pesada o sobrecosto monetario por licencias a pagar de marca privativa en su HW industrial.
 
-## Límites del Producto
+## Componentes y Fronteras Técnicas
 
-ZPLC consta de varios subsistemas distintos:
+Para el ensamblado final, ZPLC despliega varios segmentos independientes:
 
-1.  **Máquina Virtual Central (Core VM) (`firmware/lib/zplc_core`)**: El intérprete de bytecode C99. Maneja la programación (scheduling), la gestión de tareas y la ejecución de la lógica compilada. Tiene cero dependencias de hardware específico.
-2.  **Capa de Abstracción de Hardware (HAL)**: El contrato que permite que la VM central se ejecute en varios objetivos (por ejemplo, STM32, ESP32, POSIX).
-3.  **Compilador (`packages/zplc-compiler`)**: Traduce caminos de lenguaje IEC al bytecode `.zplc`.
-4.  **IDE (`packages/zplc-ide`)**: Autoría, compilación, simulación, despliegue y depuración para los workflows de lenguaje reclamados.
-5.  **Runtimes de Destino**: Compilaciones de firmware específicas que combinan la VM central, una implementación HAL y un RTOS (generalmente Zephyr).
+1. **Kernel y Computo Virtual `libzplc_core`**: Enlazador byte a byte C99 puro para gestionar el multi-threading cíclico veloz. Comprobación constante de topes y estándares, carente y ciego funcionalmente con todo el sustrato hardware en donde anide.
+2. **Capa HAL Contract**: Traductores en "espejo", un adaptador virtual al que su hardware Zephyr de bajo entorno escucha. Brinda puertas físicas al hardware simulando temporizadores `Sleep` o activando patillaje y relés para las funciones estándar del núcleo inmovilizado.
+3. **Consolidador-Compilador (Transpiler/Compiler)**: Su función magna es asimilar lenguajes gráficos en flujos abstractos nativos al chip. Transforma diagramas a bytecodes empaquetándolo velozmente y logrando compatibilidades de depuración.
+4. **Programa Generalizado y Frontend Desktop `IDE`**: Entorno en donde el maquinista y estructurador vivencian al ZPLC. Generador visual, conectores seriales puros `COM` o puenteador para monitoreos y visualización de relés encendiéndose local o remoto por sondas digitales online en ejecución ininterrumpida.
 
-## Cómo recorren la plataforma los usuarios
+## Puesta a Marcha Típica
 
-El camino de mayor valor para un usuario suele ser:
+El proceder normal que afrontará en planta o taller el arquitecto o ingeniero industrial a cargo operará:
 
-1. entender los límites del release en la documentación
-2. crear o abrir un proyecto `zplc.json` en el IDE
-3. escribir lógica en uno de los workflows de lenguaje soportados
-4. compilar a `.zplc`
-5. validar en simulación WASM o nativa
-6. pasar a hardware soportado cuando hace falta prueba real en embebido
+1. Iniciar un árbol bajo un manifiesto puro en ZPLC asignándoles sus prioridades al archivo de variables `zplc.json`.
+2. Trazar líneas, contactos lógicos e interruptores y codificar sus fórmulas en PASCAL-like y diagramados estándar clásicos o inter-mistas (ST/FBD/LD).
+3. Evaluar e iniciar test compilables y emitir código puro comprimido `.zplc`.
+4. Visualizar mediante simuladores puros y Nativos POSIX los resultados desde su misma netbook, revisando integridades boolean y test de latencias matemáticas.
+5. Inyectarlo Serialmente hacia la máquina instalada o tarjeta conectora Zephyr OS de su elección que gobierne motores, y monitorizar en planta variables online en caliente usando tableros diagnósticos de ZPLC Ide.
 
-## Límites del release v1.5
+## Siga Navegando
 
-La base del release se considera real solo cuando:
-
-- las placas soportadas salen de un único manifiesto canónico;
-- los workflows de lenguaje reclamados tienen automatización y docs coherentes;
-- las features de protocolos tienen evidencia en runtime, compilador, IDE y docs;
-- los claims de desktop y HIL tienen prueba humana, no solo presencia de código.
-
-## ¿Por qué ZPLC?
-
-Los PLC tradicionales a menudo encierran a los usuarios en ecosistemas propietarios y herramientas de desarrollo obsoletas. ZPLC proporciona una alternativa abierta y moderna que aprovecha microcontroladores estándar mientras se adhiere al estándar establecido IEC 61131-3 para la lógica de automatización.
-
-## Seguí por acá
-
-- [Primeros Pasos](../getting-started/index.md)
-- [Arquitectura del Sistema](../architecture/index.md)
-- [Visión General del Runtime](../runtime/index.md)
-- [Integración y Despliegue](../integration/index.md)
+- [Puesta a Marcha y Setup Zephyr](../getting-started/index.md)
+- [Suite de Pruebas de Lenguajes Estándar](../languages/examples/v1-5-language-suite.md)
+- [Diagramado Base del Proyecto](../architecture/index.md)

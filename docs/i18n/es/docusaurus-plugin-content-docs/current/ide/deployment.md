@@ -1,177 +1,49 @@
-# Despliegue y Sesiones de Runtime
+# Despliegue y Sesiones de Ejecución
 
-Esta página cubre las superficies reales de despliegue y ejecución que expone el IDE en v1.5.0.
+Esta página cubre el flujo de trabajo para desplegar y depurar lógica funcional desde el IDE de ZPLC hacia sus entornos compatibles.
 
-## Tres targets prácticos de ejecución
+## Entornos de Ejecución Disposición
 
-| Target | Adapter principal | Uso típico |
+ZPLC ofrece dos principales entornos de ejecución compatibles:
+
+| Target | Adapter Utilizado | Uso Típico |
 |---|---|---|
-| simulación WASM | `WASMAdapter` | validación rápida en browser |
-| simulación nativa desktop | `NativeAdapter` | debugging host release-facing |
-| controlador físico | `SerialAdapter` | carga, ejecución e inspección sobre hardware Zephyr |
+| **Simulación Nativa (SoftPLC)** | `NativeAdapter` | Validar control de flujo numérico a velocidad nativa en la PC en paralelo. |
+| **Controlador de Hardware** | `SerialAdapter` | Subida de programa, ejecución e introspección en tarjetas de hardware basadas en Zephyr RTOS. |
 
-## Workflow nativo desktop
+## Flujo de Trabajo en Simulación Nativa
 
-La aplicación desktop es la única superficie del IDE que puede exponer el bridge de simulación nativa de Electron.
+Cuando corres el IDE de ZPLC desde aplicación de escritorio, al dar click en **Start Simulation** inicia un SoftPLC POSIX en segundo plano asíncrono. El IDE se mantiene en modo visualizado sobre este SoftPLC nativo.
+Te permite depurar lógica IEC 61131-3 sin contar obligatoriamente con una tarjeta microcontroladora. Sirve vitalmente para depurar cálculos lógicos, FBD combinatorios densos y matemáticas algorítmicas veloces.
 
-Eso está respaldado por:
+## Flujo de Trabajo en Hardware Físico
 
-- scripts Electron en `packages/zplc-ide/package.json`
-- tipos del bridge en `packages/zplc-ide/src/types/index.ts`
-- manejo de sesión nativa en `packages/zplc-ide/src/runtime/nativeAdapter.ts`
+En fases de puesta a punto o ensamble final, el canal de `SerialAdapter` asume la responsabilidad física sobre el cordón físico entre el PC y el MCU (A través de Serioal).
+Responsabilidades:
+- Administrar anchos de banda a nivel de baudios o ruteos serial.
+- Transmitir de forma binaria el bytecode `.zplc` directamente al chip o al NVS interno.
+- Provisionar cabeceras y detalles de configuración nativos.
+- Extracción de metadata vital y estado de la red o sensores a través de sondas internas e imprimirlas en las **Watch Tables** del IDE.
+- Accionar comandos del usuario durante el debug, tal como pausar, step, y valores *forced*.
 
-## Workflow en navegador
-
-El camino web sigue siendo útil para:
-
-- proyectos basados en File System Access API
-- simulación rápida vía WASM
-- sesiones serial/WebSerial cuando el navegador lo soporta
-
-Pero NO reemplaza la evidencia desktop cuando un gate del release la exige explícitamente.
-
-## Camino de despliegue a hardware
-
-`SerialAdapter` se encarga de:
-
-- la conexión serial
-- la carga del bytecode
-- la provisión de configuración del proyecto
-- el polling de estado runtime
-- los comandos de debug como pause, resume, step, peek, poke y force
-
-## Ciclo de despliegue serial
+### Ciclo de Vida del Despliegue
 
 ```mermaid
 sequenceDiagram
-  participant IDE as IDE ZPLC
-  participant Adapter as SerialAdapter
-  participant Device as runtime Zephyr
+  participant IDE as IDE de ZPLC
+  participant Adapter as Enlace Serial
+  participant Device as MCU (Zephyr)
 
-  IDE->>Adapter: compilar proyecto a .zplc
-  IDE->>Adapter: provisionar config runtime (opcional)
-  Adapter->>Device: subir bytecode
-  Adapter->>Device: zplc start
-  Adapter->>Device: zplc status / comandos dbg
-  Device-->>IDE: estado runtime, tareas, watch data
+  IDE->>Adapter: Compilar proyecto a .zplc
+  Adapter->>Device: Cargar bytecode en la Memoria Flash
+  Adapter->>Device: Iniciar Ejecución del ciclo
+  Adapter->>Device: Petición de lecturas / establecer Breakpoints
+  Device-->>IDE: Estadisticas de tarea, estado, y datos analizados
 ```
 
-## Configuración consciente de la placa
+## Configuración y Solución de Problemas de Despliegues
 
-El IDE usa el manifiesto de placas soportadas para entender si una placa es:
-
-- serial-focused
-- Wi-Fi capable
-- Ethernet capable
-
-Eso impacta en target selection, configuración de red y expectativas de comunicación.
-
-## Límite de release para claims de despliegue
-
-Un claim de despliegue en v1.5 solo es creíble cuando coinciden:
-
-1. la placa existe en `supported-boards.v1.5.0.json`
-2. el IDE expone un flujo compatible
-3. el runtime soporta realmente ese camino
-4. el gate de evidencia no sigue pendiente de validación humana
-
-## Comandos runtime relevantes
-
-El README del runtime Zephyr documenta los contratos shell que el IDE usa:
-
-- `zplc start`, `zplc stop`, `zplc reset`, `zplc status`
-- `zplc dbg pause`, `resume`, `step`, `peek`, `poke`, `info`, `watch`
-- `zplc sched status`, `zplc sched tasks`
-- `zplc persist info`, `zplc persist clear`
-
-## Orden correcto para troubleshooting
-
-1. verificar la verdad del target
-2. verificar la verdad del `zplc.json`
-3. verificar qué adapter estás usando
-4. verificar si el comportamiento ya está firmado o sigue pendiente en la matriz de release
-*** Add File: /Users/eduardo/Documents/Repos/ZPLC/docs/i18n/es/docusaurus-plugin-content-docs/current/ide/editors.md
-# Editores Visuales y de Texto
-
-El IDE expone superficies de autoría text-first y model-first.
-
-Eso importa porque el claim del release habla de **workflow soportado**, no de extensiones de archivo sueltas.
-
-## Editores de texto
-
-Las superficies text-first cubren:
-
-- `ST`
-- `IL`
-
-Estos editores alimentan directamente el pipeline definido en `packages/zplc-ide/src/compiler/index.ts`.
-
-## Editores respaldados por modelos
-
-Las superficies model-first cubren:
-
-- `LD`
-- `FBD`
-- `SFC`
-
-El IDE mantiene parsers/modelos dedicados para esos lenguajes y luego los transpila a ST antes de generar bytecode.
-
-## Arquitectura editorial
-
-```mermaid
-flowchart LR
-  User[Usuario edita archivo o modelo]
-  Model[modelo LD/FBD/SFC o texto ST/IL]
-  Validate[validación IDE + símbolos del proyecto]
-  Transpile[transpilación opcional a ST]
-  Compile[backend compartido del compilador]
-
-  User --> Model
-  Model --> Validate
-  Validate --> Transpile
-  Transpile --> Compile
-```
-
-## Ladder Diagram (LD)
-
-`LD` se edita como modelo y luego se normaliza por el camino de transpilation.
-
-Lo importante para v1.5 es conservar:
-
-- topología del rung
-- bindings de símbolos
-- mapeo determinista al contrato compartido de compilación
-
-## Function Block Diagram (FBD)
-
-`FBD` muestra clarísimo el límite IDE/compilador:
-
-- el editor maneja ubicación de bloques y conexiones
-- el transpiler convierte eso a una forma ST compilable
-- el runtime sigue ejecutando `.zplc`, no un backend FBD separado
-
-## Sequential Function Chart (SFC)
-
-`SFC` se representa como modelo de pasos, transiciones y acciones.
-
-El punto arquitectónico importante es:
-
-- la autoría SFC está soportada en el IDE
-- el comportamiento se normaliza antes de ejecutar
-- el runtime sigue siendo bytecode-oriented
-
-## Responsabilidades compartidas
-
-Todos los editores tienen que alinearse con el mismo modelo de proyecto:
-
-- acceso a símbolos del proyecto
-- compilación por el backend compartido
-- compatibilidad con debug maps cuando el workflow lo reclama
-- comportamiento consistente al cambiar entre simulación y hardware
-
-## Orden de lectura recomendado
-
-1. esta página para las superficies de autoría
-2. [Workflow del compilador](./compiler.md)
-3. [Lenguajes y modelo de programación](../languages/index.md)
-4. [Despliegue y sesiones de runtime](./deployment.md)
+Cuando una descarga presenta problemas ante conexiones en hardware, verifica los listados base:
+1. **Target Real** — Revisa tu manifiesto activo `zplc.json` indicando el microcontrolador activo si coincide con el objeto montado o puente en la placa MCU base.
+2. **Puerto COM/Serial** — Asegúrate que el cable u hub detectan el TTY correctamente asignado en su OS evitando que herramientas terceras monopolizen el uso.
+3. **Firmware Preparatorio** —  Para que se establezca la respuesta en comunicación, el MCU debe tener cargado el boot de Zephyr del runtime Core de ZPLC anticipadamente; para recibir tus inyecciones automatas de lógica en base IEC 61131-3 sin requerir recompilaciones posteriores por C.

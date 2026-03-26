@@ -3,88 +3,57 @@ slug: /platform-overview
 id: index
 title: Platform Overview
 sidebar_label: Platform Overview
-description: Product-level map of the ZPLC v1.5.0 platform, including engineering surfaces, execution targets, and release boundaries.
-tags: [evaluator, architecture]
+description: Product-level map of the ZPLC platform, including engineering surfaces and execution targets.
+tags: [architecture, introduction]
 ---
 
 # Platform Overview
 
-ZPLC (Zephyr PLC) is a deterministic IEC 61131-3-oriented platform that combines a portable
-execution core with a modern engineering toolchain.
+ZPLC (Zephyr PLC) is a deterministic IEC 61131-3 compatible logical platform that combines a portable execution core written in C99 with a modern, browser/desktop-based engineering toolchain.
 
-For v1.5.0, the important mindset is simple: ZPLC is not just “a VM” and not just “an IDE”.
-It is the combined system of docs, compiler, IDE, runtime, board support, and release evidence.
+## The ZPLC Ecosystem
 
-## Product map
+ZPLC represents a full suite of tightly integrated automation tooling ranging from high-level visual editing down to bare-metal hardware registers.
 
 ```mermaid
 flowchart TB
-  Docs[Docs + website]
-  IDE[IDE]
-  Compiler[Compiler]
-  Runtime[Runtime core]
-  Boards[Supported boards]
-  Evidence[Release evidence]
+  IDE[ZPLC IDE]
+  Compiler[Unified Compiler]
+  Runtime[Runtime Core]
+  Boards[Supported Zephyr Boards]
 
   IDE --> Compiler
   Compiler --> Runtime
   Runtime --> Boards
-  Docs -. documents .-> IDE
-  Docs -. documents .-> Runtime
-  Evidence -. constrains public release claims .-> Docs
-  Evidence -. constrains public release claims .-> Boards
 ```
 
-## Core Concepts
+## Core Principles
 
-- **Determinism**: Predictable execution time is non-negotiable. The runtime remains
-  bounded, static-memory, and task-oriented.
-- **Portability**: One execution core, multiple runtimes. The VM stays separated from the
-  platform through a strict HAL contract.
-- **Truthful scope**: v1.5 only claims what the repository, docs, CI, and human evidence
-  can actually prove.
-- **Modern engineering workflow**: IDE, compiler, CI, and docs are treated as one product
-  surface instead of disconnected demos.
+- **Determinism**: Predictable execution time is non-negotiable for industrial machinery. The runtime uses bounded, pre-allocated static memory with hard real-time scheduling.
+- **Portability**: ZPLC features "One execution core, multiple runtimes." The core VM stays strictly separated from the platform hardware through a strict HAL contract.
+- **No Vendor Lock-In**: Because ZPLC leverages standard open-source technologies (Zephyr RTOS), it can run on everything from low-cost ESP32 chips to standard industrial STM32 hardware without exorbitant licensing fees.
 
 ## Product Boundaries
 
-ZPLC consists of several distinct subsystems:
+The platform consists of several distinct subsystems:
 
-1.  **Core VM (`firmware/lib/zplc_core`)**: The C99 bytecode interpreter. It handles scheduling, task management, and executing the compiled logic. It has zero dependencies on specific hardware.
-2.  **Hardware Abstraction Layer (HAL)**: The contract that allows the Core VM to run on various targets (e.g., STM32, ESP32, POSIX).
-3.  **Compiler (`packages/zplc-compiler`)**: Translates IEC language paths into `.zplc`
-    bytecode.
-4.  **IDE (`packages/zplc-ide`)**: Authoring, compiling, simulation, deployment, and
-    debugging for the claimed language workflows.
-5.  **Target Runtimes**: Specific firmware builds that combine the Core VM, a HAL implementation, and an RTOS (usually Zephyr).
+1. **Core VM (`libzplc_core`)**: The C99 bytecode interpreter. It handles multi-task scheduling, logical execution, memory bounds checking, and standards-compliant IEC processing. It has zero dependencies on specific hardware.
+2. **Hardware Abstraction Layer (HAL)**: The mapping contract that allows the Core VM to communicate securely with underlying interfaces: timers, EEPROM/Flash storage, I/O pins, and TCP/UDP networking.
+3. **Compiler**: Takes user project files (Structured Text, Ladder Diagram) and translates everything into standard `.zplc` bytecode optimized for embedded space.
+4. **IDE**: The graphical user interface responsible for visual code authoring, real-time debugging, online monitoring, forcing variables, and project management.
 
-## How users move through the platform
+## Project Workflow
 
-The highest-value user path is usually:
+The standard operational path for an automation engineer looks like this:
 
-1. understand the release-facing boundaries in docs
-2. create or open a `zplc.json` project in the IDE
-3. author logic in one of the supported language workflows
-4. compile to `.zplc`
-5. validate in WASM or native simulation
-6. move to supported hardware when hardware proof is needed
+1. Open the ZPLC IDE and configure a new project target in `zplc.json`.
+2. Author your machine logic via Structured Text or graphical diagrams (FBD/LD/SFC).
+3. Execute a validation compile to generate `.zplc` code.
+4. Launch the Native Simulation to debug mathematical logic and flows directly on your PC.
+5. Deploy over USB/Serial to physically wired Zephyr-based microcontrollers, monitoring sensors in real-time.
 
-## v1.5 Release Boundaries
-
-The release foundation is considered real only when:
-
-- supported boards come from one canonical manifest;
-- claimed language workflows have matching automation and docs;
-- protocol features have runtime, compiler, IDE, and docs evidence;
-- desktop and HIL claims have human proof, not only code presence.
-
-## Why ZPLC?
-
-Traditional PLCs often lock users into proprietary ecosystems and outdated development tools. ZPLC provides an open, modern alternative that leverages standard microcontrollers while adhering to the established IEC 61131-3 standard for automation logic.
-
-## Continue with
+## Continue With
 
 - [Getting Started](../getting-started/index.md)
+- [Language Suite Examples](../languages/examples/v1-5-language-suite.md)
 - [System Architecture](../architecture/index.md)
-- [Runtime Overview](../runtime/index.md)
-- [Integration & Deployment](../integration/index.md)

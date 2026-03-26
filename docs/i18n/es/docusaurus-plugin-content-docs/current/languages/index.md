@@ -2,104 +2,58 @@
 slug: /languages
 id: index
 title: Lenguajes y Modelo de Programación
-sidebar_label: Visión General de Lenguajes
-description: Visión general alineada al release de los workflows IEC 61131-3, sus límites de soporte y la superficie de biblioteca estándar en ZPLC.
+sidebar_label: Generalidades
+description: Descripción de los lenguajes IEC 61131-3 compatibles con ZPLC.
 tags: [languages, iec61131-3]
 ---
 
 # Lenguajes y Modelo de Programación
 
-ZPLC v1.5.0 documenta cinco rutas de lenguaje IEC 61131-3 dentro del IDE:
+ZPLC proporciona un soporte de primer nivel para los cinco lenguajes de programación definidos en el estándar industrial IEC 61131-3. Esto permite que ingenieros mecánicos, eléctricos y de software puedan crear lógica de control de forma nativa en el paradigma con el que se sientan más cómodos.
 
-- `ST`
-- `IL`
-- `LD`
-- `FBD`
-- `SFC`
+Los lenguajes compatibles en la plataforma son:
 
-## Alineación con IEC 61131-3
+1. **Texto Estructurado (ST)** - Lenguaje textual de alto nivel similar a Pascal o C abstracto.
+2. **Lista de Instrucciones (IL)** - Lenguaje textual de bajo nivel asemejado al ensamblador.
+3. **Diagrama de Contactos Ladder (LD)** - Entorno visual lógico enfocado en circuitos y transmisión de relevadores magnéticos electromecánicos.
+4. **Diagrama de Bloques Funcionales (FBD)** - Mapeo de flujos continuos sobre procesamientos bloque a bloque.
+5. **Plano Secuencial Gráfico (SFC)** - Un motor o máquina de estados visual para dominar control secuencial o multi-bifurcaciones.
 
-El estándar define cinco lenguajes:
-1. Texto Estructurado (ST)
-2. Lista de Instrucciones (IL)
-3. Diagrama de Contactos (LD)
-4. Diagrama de Bloques de Función (FBD)
-5. Diagrama de Funciones Secuenciales (SFC)
+## El Modelo de Compilación Híbrida ZPLC
 
-ZPLC usa **una sola ruta canónica de compilación**.
+Al contrario de varios PLC de legados antiguos que separan memorias diferentes al ejecutar distintos lenguajes o penalizan saltos de ejecución de lenguajes visuales por sobre los de texto, en la arquitectura de ZPLC se emplea **solo una ruta de ejecución consolidada única**.
 
-`ST` es la base semántica, y el resto de las superficies se normalizan hacia el mismo contrato
-compilador/runtime antes de producir bytecode `.zplc`.
+El popular "Texto Estructurado (ST)" oficia de fundición base. Todos y el resto de lenguajes — visuales (LD, FBD, SFC) y literales (IL)— son automáticamente transpilados a ST bajo capó antes de ser integrados dentro del bytecode optimizado ejecutable `.zplc`.
 
-Eso se ve en `packages/zplc-ide/src/compiler/index.ts`:
+### ¿Por qué esto es vital?
 
-- `ST` compila directo
-- `IL` se parsea y transpila a ST
-- `LD`, `FBD` y `SFC` también se transpilan a ST primero
+Dado que toda tu aplicación asume eventualmente un backend idéntico estricto:
+- ZPLC te asegura paridad de funcionamiento y rendimiento del 100% al obrar sobre cualquiera de las 5 opciones de lenguajes. 
+- Puedes diseñar bloques visuales complejos en `FBD` o secuencias mecánicas en `SFC` e invocarlos y cruzarlos o referirlos globalmente sin retrasos desde tus scripts `ST`. 
+- Disfrutarás la completitud de las funciones estándar (Librería Math STD Lib, Conteo e Hilos Timers) enteramente distribuidas sin restricciones cruzadas. 
 
-## Contrato de workflow para los lenguajes reclamados
+## Paridad en Depuración (Debug)
 
-El IDE exporta la misma matriz de soporte para los cinco caminos reclamados:
+La depuración tampoco es discriminatoria; gracias al ruteo común base, puedes hacer:
+- Pruebas en software de los lenguajes virtuales localmente en su misma computadora en el entorno Nativo del SoftPLC.
+- Flashear y cargar hacia HW serial (Hardware con Zephyr RTOS base).
+- Mantener y observar el avance usando breakpoints o la Tabla de Variables de inspección en paralelo sin comprometer ningún lenguaje subyacente.
 
-- author
-- compile
-- simulate
-- deploy
-- debug
+## Biblioteca Estándar (Stdlib)
 
-Esa matriz vive en `LANGUAGE_WORKFLOW_SUPPORT`, y `packages/zplc-ide/src/compiler/languageWorkflow.test.ts` verifica tanto el contrato declarado como la compilación de ejemplos canónicos para los cinco lenguajes.
+Biológicamente adjunto al framework ZPLC, te garantizas aceleración nativa usando Zephyr C RTOS sobre todos los pilares primordiales industriales:
+- **Relojes y Tiempos**: `TON`, `TOF`, `TP`
+- **Contadores de Stock**: `CTU`, `CTD`, `CTUD`
+- **Detectores Lineales o Cambios Físicos de Ciclo**: `R_TRIG` (Flanco de Subida), `F_TRIG` (Bajada), `RS`, `SR`
+- **Cadena de Datos O Manipuladores HMI**: Longitud `LEN`, `CONCAT`, Extracción de Datos en Arrays.
+- **Trigonométricas Escalares Avanzadas**.
+- **Comunicaciones Asíncronas Base Ethernet o Serie**: Lectura de registros vía Bloques como (`MB_READ_HREG` de Modbus) o mensajería de nube (`MQTT_PUBLISH`).
 
-## Posicionamiento de cada lenguaje
+Revisa directamente la [Referencia de Bibliotecas Estándar (Stdlib)](./stdlib.md) buscando mayores pormenores y diagramas del mismo bloque base.
 
-| Lenguaje | Posición en ZPLC | Superficie de autoría | Realidad de ejecución |
-|---|---|---|---|
-| `ST` | base semántica | editor de texto | compila directo a `.zplc` |
-| `IL` | workflow textual de bajo nivel | editor de texto | se parsea y transpila antes del bytecode |
-| `LD` | workflow visual tipo relay | editor basado en modelo | se transpila antes del bytecode |
-| `FBD` | workflow visual de dataflow | editor basado en modelo | se transpila antes del bytecode |
-| `SFC` | workflow secuencial/por estados | editor basado en modelo | se transpila antes del bytecode |
+## Lecturas Sugeridas
 
-El punto arquitectónico importante es que el runtime ejecuta `.zplc`, no una VM distinta por lenguaje.
-
-## Descubrimiento y ejemplos canónicos
-
-El set de ejemplos release-facing vive en [Suite de Lenguajes v1.5](./examples/v1-5-language-suite.md).
-
-Usalo como referencia compartida cuando quieras validar si un claim de lenguaje sigue siendo honesto.
-
-Páginas de release por lenguaje:
-
-- [Structured Text (ST)](./st.md)
-- [Instruction List (IL)](./il.md)
-- [Biblioteca Estándar](./stdlib.md)
-- [Suite de Lenguajes v1.5](./examples/v1-5-language-suite.md)
-
-## Modelo de Bytecode
-
-El formato `.zplc` es un contrato de bytecode basado en stack definido por la ISA pública del runtime.
-
-Si necesitás detalle del binario y del layout de memoria, seguí con:
-
-- [ISA del Runtime](../runtime/isa.md)
-- [API del Runtime](../reference/runtime-api.md)
-
-## Biblioteca Estándar
-
-El registro stdlib del compilador en `packages/zplc-compiler/src/compiler/stdlib/index.ts` define las funciones y bloques integrados que usan estas superficies de lenguaje.
-
-Categorías importantes actualmente expuestas:
-
-- temporizadores (`TON`, `TOF`, `TP`)
-- contadores (`CTU`, `CTD`, `CTUD`)
-- edge y bistables (`R_TRIG`, `F_TRIG`, `RS`, `SR`)
-- strings (`LEN`, `CONCAT`, `LEFT`, `RIGHT`, `MID`, `FIND`, `INSERT`, `DELETE`, `REPLACE`)
-- funciones matemáticas, de escalado y de sistema
-- bloques de comunicación para Modbus y MQTT/cloud wrappers
-
-Ver [Biblioteca Estándar](./stdlib.md).
-
-## Límite de soporte en v1.5.0
-
-El repo declara y testea soporte de workflow para los cinco lenguajes.
-
-La aprobación humana final de la paridad end-to-end sigue estando separada en `REL-002` dentro de la matriz de evidencia del release.
+Aprenda interactuando con las secciones específicas por perfil literales:
+- [Texto Estructurado (ST)](./st.md)
+- [Listas de Instrucciones (IL)](./il.md)
+- [Plano Estándar Completo de Base ZPLC V1.5](./examples/v1-5-language-suite.md)

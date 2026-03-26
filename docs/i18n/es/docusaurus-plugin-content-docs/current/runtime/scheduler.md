@@ -1,75 +1,58 @@
-# Scheduler Multitarea
+---
+sidebar_position: 2
+slug: /runtime/scheduler
+id: scheduler
+title: Programador Multitarea (Scheduler)
+sidebar_label: Programador
+description: Ejecución de tareas, mecánicas de prioridad e integración con Zephyr dentro del Runtime ZPLC.
+---
 
-El contrato público del scheduler está en `firmware/lib/zplc_core/include/zplc_scheduler.h`.
+# Programador Multitarea (Scheduler)
 
-## Vista general
+ZPLC ejecuta la lógica de automatización IEC 61131-3 usando un programador (scheduler) multitarea orientado por prioridades y en tiempo real.
 
-El scheduler existe para cargar, registrar y ejecutar tareas PLC con metadatos explícitos de intervalo y prioridad.
+## Resumen del Modelo de Ejecución
 
-Estados públicos visibles hoy:
+El scheduler coordina múltiples tareas definidas por el usuario mapeadas dentro del binario `.zplc`. Su ciclo de vida incluye:
+1. Cargar las declaraciones de tareas desde la cabecera del binario.
+2. Asignar las secuencias de ejecución según rangos de preferencia y límite temporal.
+3. Administrar transiciones de estado (`READY`, `RUNNING`, `PAUSED`, `ERROR`).
+4. Triaje sobre validaciones concurrentes o cierres de ejecución obligados por software en bucles infinitos.
 
-- tareas: `IDLE`, `READY`, `RUNNING`, `PAUSED`, `ERROR`
-- scheduler: `UNINIT`, `IDLE`, `RUNNING`, `PAUSED`, `ERROR`
+## Configuración de Tareas
 
-## APIs públicas principales
+Las tareas dictan cómo y cuándo se ejecutan los programas. Las tareas se configuran en `zplc.json` y se compilan directamente al bytecode.
 
-- `zplc_sched_init()` / `zplc_sched_shutdown()`
-- `zplc_sched_register_task()`
-- `zplc_sched_load()` para binarios `.zplc` multitarea
-- `zplc_sched_start()` / `stop()` / `pause()` / `resume()` / `step()`
-- `zplc_sched_get_state()` / `get_stats()` / `get_task()` / `get_task_count()`
-- `zplc_sched_lock()` / `unlock()` para memoria compartida fuera del contexto de tarea
+| Propiedad | Descripción |
+|---|---|
+| **Tipo (Type)** | `CYCLIC` (impulsado por intervalos de tiempo) o `EVENT` (impulsado por disparador de hardware). |
+| **Intervalo (Interval)** | Tiempo de ciclo determinista en milisegundos (ms). |
+| **Prioridad (Priority)** | Rango desde 0 (Prioridad Máxima) a 255 (Ejecución en segundo plano). |
+| **Punto de Entrada** | Función o ubicación del programa principal. |
 
-## Configuración de tareas
+## Integración con Zephyr y Determinismo
 
-Las tareas se definen en `zplc.json` y se embeben en el binario `.zplc`.
-
-Propiedades públicas importantes:
-
-- `id`
-- `type`
-- `priority`
-- `interval_us`
-- `entry_point`
-- `stack_size`
-
-## Modelo de ejecución
-
-El header documenta una implementación actual orientada a Zephyr:
-
-1. timers disparan según el intervalo de la tarea
-2. callbacks envían work items a work queues por prioridad
-3. los threads de esas work queues ejecutan los ciclos PLC
-4. la memoria compartida se protege con primitivas de sincronización
+Al desplegarse en Zephyr RTOS, ZPLC traduce directamente su ejecución lógica interna a paradigmas nativos de Zephyr:
+- Los temporizadores de hardware basados en el tiempo disparan secuencias de tareas de forma exacta.
+- Estos disparadores inyectan las tareas cíclicas en las colas de trabajo orientadas a la prioridad de Zephyr.
+- La ejecución ocurre concurrentemente a través de las colas para evitar solapamientos y minimizar problemas de latencia o 'jitter' de hardware.
 
 ```mermaid
 flowchart LR
-  Timer[timer de intervalo] --> Queue[work item en cola]
-  Queue --> Worker[thread de work queue]
-  Worker --> Cycle[ciclo PLC de la tarea]
-  Cycle --> Stats[actualización de estadísticas]
+  Timer[Disparador de Ciclo] --> Queue[Cola Preferencial Zephyr]
+  Queue --> Thread[Proceso de Trabajo]
+  Thread --> Cycle[Ejecución de un solo Scan]
+  Cycle --> Stats[Actualización Estadística]
 ```
 
-## Estadísticas e inspección
+## Concurrencia y Seguridad de Recursos
 
-El contrato público expone estadísticas como:
+Las tareas de ZPLC comparten memoria física global. Debido al comportamiento estándar de IEC 61131-3, se aplica una estricta regla de concurrencia donde **la última escritura gana** cuando dos tareas distintas intentan manipular las mismas variables o salidas.
+Para evitar choques durante rutinas complejas se aconseja segmentar responsabilidades a lo largo de tareas en intervalos dispares.
 
-- cycle count
-- overrun count
-- tiempos de ejecución last/max/avg
-- cantidad de tareas activas
-- uptime del scheduler
+## Diagnósticos
 
-## Acceso a memoria compartida fuera de tareas
-
-`zplc_sched_lock()` y `zplc_sched_unlock()` forman parte del contrato correcto para debug tools, servicios runtime y código nativo que necesite tocar memoria compartida fuera del contexto normal PLC.
-
-## Guía release-facing
-
-Esta página sí autoriza claims sobre:
-
-- metadatos de tareas explícitos
-- control pause/resume/step del scheduler
-- estadísticas del scheduler
-- locking explícito de memoria compartida
-- modelo de ejecución orientado a work queues en Zephyr
+El ZPLC IDE lee estadísticas de ejecución en tiempo real desde este subsistema, brindando un marco preciso respecto al peso algorítmico, detallando:
+- Número de ciclos superados.
+- Detecciones de errores en intervalos saturados por cómputo intenso.
+- Latencia en el ciclo máximo promedio según tiempo acumulado.

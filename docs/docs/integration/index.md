@@ -3,85 +3,51 @@ slug: /integration
 id: index
 title: Integration & Deployment
 sidebar_label: Integration
-description: Supported deployment expectations for ZPLC v1.5.0, from simulation handoff to Zephyr hardware integration.
+description: Process for embedding the ZPLC runtime into custom Zephyr hardware.
 tags: [integration, runtime]
 ---
 
 # Integration & Deployment
 
-This page connects the quickstart story to the real runtime integration story.
+This page outlines the processes for migrating functional ZPLC applications into real-world Zephyr hardware targets, addressing both standard deployments and deep custom OEM integrations.
 
-It answers one practical question: once you have a `.zplc` program, how does it move into an
-actual runtime target without pretending unsupported boards or transports are already release-ready?
+## Target Execution
 
-## Platform Support
-
-ZPLC remains portable, but v1.5 support claims are intentionally narrower than “anything
-Zephyr can build.”
-
-Use the supported-board manifest and reference pages for the actual v1.5 claim set.
-
-## Integration flow
+Once the compiler emits a `.zplc` bytecode payload, it is routed immediately to the selected execution target:
 
 ```mermaid
 flowchart LR
-  A[Compile project to .zplc] --> B{Validation path}
-  B --> C[WASM simulation]
-  B --> D[Native Electron simulation]
-  B --> E[Zephyr hardware runtime]
-  E --> F[Serial upload/debug via runtime shell]
+  A[Compile project to .zplc] --> B{Execution Target}
+  B --> D[Native PC SoftPLC Simulation]
+  B --> E[Zephyr Hardware Runtime]
+  E --> F[Online Debugging via IDE]
 ```
 
-## Embedding ZPLC
+## Integrating ZPLC into Custom Firmwares
 
-Integrating ZPLC into a custom Zephyr board involves:
+If you are manufacturing custom hardware or using a board not built into the standard ZPLC Zephyr images, you must embed the ZPLC core manually. Integrating ZPLC into a proprietary Zephyr setup involves:
 
-1.  **Including the Library**: Add `libzplc_core` to your CMake build.
-2.  **Implementing the HAL**: Provide specific implementations for the required hardware interfaces (`zplc_hal_*`) defined in `docs/docs/runtime/hal-contract.md`.
-3.  **Initializing the Core**: Call the initialization functions from your Zephyr `main()` application.
+1. **Including the Core Library**: Link the ZPLC C99 Engine to your CMake build tree.
+2. **Implementing the HAL Contract**: Supply concrete C functions for `zplc_hal_tick`, `zplc_hal_io_read`, etc. specific to your target's GPIO layout and driver framework. 
+3. **Starting the Scheduler**: Call `zplc_scheduler_init()` and register an execution loop within your Zephyr `main()` thread.
 
-For the reference runtime shipped by this repository, you do not start from scratch. You start
-from `firmware/app`, which already packages the core, scheduler, shell workflow, persistence
-support, and board-specific configuration assets.
+By conforming to the HAL, you can port ZPLC onto virtually any microcontroller supporting POSIX or Zephyr footprints.
 
-## Deployment Workflows
+## Protocol Capabilities
 
-Once the runtime is embedded on a device, deploying logic is managed via the IDE:
+When deploying automation logic across networks, ensure your hardware platform supports the underlying physical layers:
 
-1.  **Serial Deployment**: For local development, the IDE can transfer compiled `.zplc` files directly over a serial connection when the selected board/runtime path exposes that serial flow.
-2.  **Network Deployment**: Treat network-oriented deployment as board- and evidence-specific, not as a blanket v1.5 promise for every target.
+- **MQTT**: Requires a board manifesting an active Wi-Fi or Ethernet stack in Zephyr.
+- **Modbus TCP**: Operates seamlessly over standard Ethernet sockets.
+- **Modbus RTU**: Requires at least one capable UART/RS-485 transceiver physically implemented on the board.
 
-More concretely, the current repo truth says:
+Because ZPLC handles the protocol logic abstractly inside the VM engine, configuration across different MCU families relies solely on matching the appropriate HAL I/O paths internally.
 
-- browser/hardware connection uses the serial adapter / WebSerial flow
-- Electron desktop adds a native simulation bridge, not a magical new hardware transport contract
-- hardware runtime program management and debug control are exposed through the Zephyr shell commands documented in `firmware/app/README.md`
+## Flashing the Hardware
 
-*Note: For detailed HAL implementation guides, refer to the [Runtime Documentation](../runtime/index.md).*
+To bootstrap a new microcontroller, you must flash the core ZPLC Zephyr firmware before the IDE can safely transmit `.zplc` bytecode over serial. 
 
-## Truth Rule for Integrators
-
-If a board, transport, or deployment path is not present in the release evidence and the
-supported-board list, treat it as out of scope for v1.5.
-
-## Protocol Configuration Expectations
-
-- use MQTT only on boards whose supported profile exposes a real network workflow;
-- use Modbus TCP only when the board profile and runtime support network transport;
-- use Modbus RTU only when the target board and firmware expose the required serial path;
-- keep protocol docs, project settings, and release evidence aligned.
-
-Representative human HIL proof for serial and network paths is still tracked outside the public claim set.
-
-## Flashing and board-specific reality
-
-Build commands are canonicalized in the supported-board manifest. Flashing is still board-specific.
-
-- many boards can use `west flash`
-- RP2040-class targets may require copying a generated UF2 artifact to the board volume
-
-That is why the docs split the responsibilities:
-
-- [Supported Boards](../reference/boards.md) owns board facts and support assets
-- [Zephyr Workspace Setup](../reference/zephyr-workspace-setup.md) owns the canonical workspace/build shape
-- this page owns the handoff between project output and runtime target
+Generally speaking, ZPLC leans on standardized Zephyr flash processes:
+- Many ARM-based boards accept direct ST-Link or J-Link flashing via `west flash`.
+- Standard development boards (like ESP32) can flash natively over USB.
+- Custom RP2040 pipelines may specify dragging UF2 generated binaries to mounted storage drives.

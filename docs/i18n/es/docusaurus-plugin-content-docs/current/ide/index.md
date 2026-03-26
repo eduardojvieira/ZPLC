@@ -1,74 +1,57 @@
 ---
 slug: /ide
 id: index
-title: IDE y Herramientas
-sidebar_label: Visión General del IDE
-description: Visión general alineada al release del IDE de ZPLC, su modelo de proyecto, adapters de runtime y workflows de depuración.
+title: Entorno de Desarrollo y Herramientas
+sidebar_label: Generalidades del IDE
+description: Visión general del ZPLC IDE, modelo de proyecto, simulación y flujos de depuración.
 tags: [ide, tooling, debugging]
 ---
 
-# IDE y Herramientas
+# ZPLC IDE
 
-El IDE es la superficie de ingeniería que tiene que demostrar que ZPLC v1.5.0 es un producto coherente y no solo un compilador con linda cara.
+El Entorno de Desarrollo Integrado (IDE) de ZPLC provee un flujo de trabajo de ingeniería completo para crear, simular y desplegar lógica de automatización IEC 61131-3.
 
-## Qué le toca al IDE
+## Capacidades Principales
 
-- modelo de proyecto basado en `zplc.json` y archivos reales
-- workflows de lenguaje para `ST`, `IL`, `LD`, `FBD` y `SFC`
-- compilación a través del backend compartido `@zplc/compiler`
-- adapters de runtime para simulación WASM, simulación nativa y hardware real
-- operaciones de debug como breakpoints, watch, force values e inspección de estado
+El IDE sirve como la capa central de orquestación para todos tus proyectos de automatización. Sus principales responsabilidades incluyen:
 
-## Workflow end-to-end
+- **Gestión de Proyecto**: Edición de configuraciones `zplc.json`, organización de archivos fuente y gestión de ruteo de tareas.
+- **Flujos Multi-Lenguaje**: Edición perfecta en Texto Estructurado (ST), Lista de Instrucciones (IL), Diagrama de Contactos / Ladder (LD), Diagramas de Bloques Funcionales (FBD) y Diagramas Secuenciales y Gráficos (SFC).
+- **Compilación**: Transpilación de los modelos visuales a ST, validación sintáctica estricta y compilación a código binario ultracompacto `.zplc`.
+- **Simulación**: Prueba nativa de lógica directamente en la PC anfitriona sin requerimiento de hardware físico.
+- **Despliegue y Depuración (Debug)**: Flasheo y traspaso de memoria binaria directa a las placas MCU mediante Serial. Soporta utilidades asíncronas de lectura como Breakpoints, forzado de variables y monitorización de RTOS.
+
+## Flujo de Trabajo Extremo a Extremo
 
 ```mermaid
 flowchart LR
-  Autor[Autor IEC] --> Config[Configurar proyecto + target]
-  Config --> Compile[Compilar a .zplc]
-  Compile --> Sim[Simular en runtime nativo o WASM]
-  Sim --> Deploy[Desplegar a hardware]
-  Deploy --> Debug[Depurar estado runtime]
+  Author[Autor de lógica IEC] --> Config[Setup de proyecto y target]
+  Config --> Compile[Construcción/Compilación a .zplc]
+  Compile --> Sim[Simular en runtime nativo POSIX]
+  Sim --> Deploy[Despliegue a plataforma de hardware]
+  Deploy --> Debug[Monitor & Depuración Online]
 ```
 
-## Modelo de proyecto
+## Arquitectura de Proyecto
 
-El proyecto del IDE es intencionalmente transparente:
+El modelo de proyecto ZPLC está basado puramente en un árbol de directorios y es transparente.
+Todas las configuraciones requeridas —como objetivos de CPU en hardware, configuración Wi-Fi, mapeo atómico de IO físicos, transacciones de comunicación en MQTT o Modbus y priorizaciones de carga por cada Tarea— se guardan limpiamente en el manifiesto principal `zplc.json`.
 
-- `zplc.json` guarda metadata, target, red, I/O, comunicación y tareas
-- los archivos fuente siguen siendo archivos comunes del proyecto
-- si el navegador soporta File System Access API, el IDE trabaja contra carpetas reales
-- si no, puede usar proyectos virtuales en memoria
+Esto hace que los proyectos de ZPLC estén profundamente preparados para control de versiones (Git), uso en línea de comandos o ser migrados fácilmente entre computadoras.
 
-Eso está reflejado en `packages/zplc-ide/src/store/useIDEStore.ts` y en los tipos compartidos de `packages/zplc-ide/src/types/index.ts`.
+## Entornos de Ejecución
 
-## Targets de runtime que expone el IDE
+Al iniciar un estado de la depuración, el IDE enruta transparentemente toda tu lógica y el canal binario hacia la instancia de validación que escojas:
 
-| Camino | Adapter | Propósito | Guía de release |
-|---|---|---|---|
-| simulación en navegador | `WASMAdapter` | feedback rápido en browser | útil, pero degradado para paridad de pause/resume/step/breakpoints |
-| simulación nativa desktop | `NativeAdapter` | sesión host respaldada por Electron | camino preferido para paridad de simulación en release |
-| runtime en hardware | `SerialAdapter` | carga, ejecución y debug sobre Zephyr real | camino autoritativo para validación de placas y HIL |
+| Vía de Ejecución | Uso | Comportamiento |
+|---|---|---|
+| **Simulación Nativa (Desktop)** | Vía predeterminada | Levanta en el sistema anfitrión u OS bajo SoftPLC nativo. Dispone del 100% de la tabla de depuración. |
+| **Ejecución de Hardware real** | Entorno físico real | Ejecución oficial embebida nativa en Zephyr RTOS sobre las conexiones TTY o COM física de la placa. El IDE funciona como monitor e inspector de estados remotos. |
 
-`createSimulationAdapter()` selecciona simulación nativa si existe el bridge de Electron; si no, cae a WASM.
+## Diagnósticos y Depuración
 
-## Modelo de depuración
-
-La depuración es consciente de capacidades, no ingenua.
-
-- la simulación nativa publica un perfil de capacidades
-- el hardware deriva estado desde el runtime y los comandos de debug por serial
-- WASM queda disponible, pero explícitamente marcado como fallback degradado
-
-## Seguí por acá
-
-- [Arquitectura y modelo de proyecto del IDE](./overview.md)
-- [Editores visuales y de texto](./editors.md)
-- [Workflow del compilador](./compiler.md)
-- [Despliegue y sesiones de runtime](./deployment.md)
-- [Lenguajes y modelo de programación](../languages/index.md)
-
-## Límite de release
-
-La versión del paquete del IDE alineada con esta reescritura es `1.5.0` en `packages/zplc-ide/package.json`.
-
-Eso NO reemplaza los gates humanos del release: la credibilidad final sigue dependiendo de la matriz de evidencia en `specs/008-release-foundation/artifacts/release-evidence-matrix.md`.
+Se dispone de una vasta caja de herramientas online a través del flujo productivo, tanto desde pruebas virtuales en mesa hasta implementaciones complejas sobre Hardware montado:
+- **Watch Tables (Tabla de Diagnósticos)**: Supervisa estados continuos nominales o analógicos en directo.
+- **Breakpoints (Pausas)**: Interrumpe el RTOS justo a la medida que el programa llega a tu nodo marcado.
+- **Stepping (Pasos)**: Inspección de bloque y progreso meticulosos a velocidad manual.
+- **Variables Forzadas (Forces)**: Inyección cruda de lógicas no presentes para puentear sensores averiados y recuperar control manual del flujo al rescate.

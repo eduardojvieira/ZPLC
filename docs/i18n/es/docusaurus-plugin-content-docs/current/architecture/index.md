@@ -3,32 +3,30 @@ slug: /architecture
 id: index
 title: Arquitectura del Sistema
 sidebar_label: Arquitectura
-description: Límites del sistema, relaciones del runtime y principios de funcionamiento de la arquitectura ZPLC v1.5.0.
-tags: [architecture, evaluator, contributor]
+description: Límites del sistema, fronteras e implementación interna en la arquitectura ZPLC.
+tags: [architecture, integrator]
 ---
 
 # Arquitectura del Sistema
 
-ZPLC está dividido a propósito entre superficies de ingeniería y superficies de ejecución.
+ZPLC está fragmentado intencionalmente en zonas de ingeniería y fronteras de ejecución crudas.
 
-Esa separación no es decoración. Es la forma de proteger el comportamiento determinista del
-runtime mientras el proyecto sigue ofreciendo IDE, compilador, desktop y documentación modernos.
+Esta gran separación resguarda o protege el inmaculado determinismo necesario en una computadora o control industrial, permitiendo gozar de características modernas y complejas requeridas por desarrolladores actuales como validación por IDE, interfaces compuestas y modelos gráficos transpilados.
 
-## Arquitectura de un vistazo
+## Vistazo de Arquitectura
 
 ```mermaid
 flowchart LR
-  subgraph Engineering[Superficies de ingeniería]
-    IDE[IDE\npackages/zplc-ide]
-    COMPILER[Pipeline de compilación\npackages/zplc-compiler + exports del IDE]
-    DOCS[Docs + verdad del release\ndocs/ y specs/]
+  subgraph Engineering[Interfaces de Ingeniería]
+    IDE[Interfaz Gráfica IDE]
+    COMPILER[ZPLC - Tubería de Compilaciones]
   end
 
-  subgraph Execution[Superficies de ejecución]
-    BYTECODE[Bytecode .zplc]
-    VM[Core VM ZPLC\nfirmware/lib/zplc_core]
-    HAL[Contrato HAL\nzplc_hal_*]
-    TARGETS[WASM / host nativo / hardware Zephyr]
+  subgraph Execution[Motores Ejecutivos (Runtime)]
+    BYTECODE[Archivos Bytecode Binarios .zplc]
+    VM[ZPLC Core de MV (Máquina Virtual)]
+    HAL[Reglamentos y Contrato HAL]
+    TARGETS[Simulación Host Windows/Mac / Zephyr Boards]
   end
 
   IDE --> COMPILER
@@ -36,140 +34,53 @@ flowchart LR
   BYTECODE --> VM
   VM --> HAL
   HAL --> TARGETS
-  DOCS -. restringe claims públicos .-> IDE
-  DOCS -. restringe claims públicos .-> VM
 ```
 
-## Límites principales del sistema
+## Fronteras Fundacionales
 
-ZPLC v1.5.0 se entiende mucho mejor si lo pensás como cinco límites y no como una sola masa:
+Dominar las funcionalidades y componentes del ZPLC moderno significa dominar 4 fronteras conceptuales que cortan de izquierda a derecha en la concepción del programa:
 
-1. **límite de autoría** — los usuarios trabajan en el IDE y en archivos de configuración
-2. **límite de compilación** — los distintos lenguajes convergen a un contrato `.zplc`
-3. **límite de runtime** — el core C99 interpreta ese contrato de forma determinista
-4. **límite de plataforma** — hardware, persistencia, timing, sockets y OS quedan detrás de la HAL
-5. **límite de release** — los claims de docs y website quedan atados a fuentes y evidencia reales
+1. **Frontera de Autoría** — Ingenieros trabajan y diagraman en IDE sobre visuales modelo `.ld` o scripts de literales `.st`.
+2. **Frontera de Compilado** — Distintos idiomas y autores convergen uniformemente, estandarizados bajo Texto Estructurado compartiendo en código un solo ensamblado binario resultante.
+3. **Frontera de Ejecución** — El corazón ejecutor "Core escrito en C99" transita el bytecode por hilos controlando matemáticamente cada acción cíclica programada en su target local.
+4. **Frontera de Plataforma** — Hardware de la MCU base, Relojes o Sockets TCP nunca tocan la VM principal, operan confinados e inmovilizados siempre detrás de un protocolo cruzado estricto HAL (Capa de Abstracción Estándar).
 
-## Componentes principales
+## Componentes Elementales
 
-### 1. El IDE (`packages/zplc-ide`)
+### 1. Sistema Base y Herramientas Gráficas (IDE)
 
-El IDE es la superficie de ingeniería para usuarios y contributors.
+El motor principal interactivo con usted. Opera los editores visuales amigables, orquesta las creaciones en tu proyecto sobre los FBD o SFC y despliega los enlaces de diagnóstico permitiendo inspecciones crudas.
 
-Se encarga de:
+### 2. Contrato de Traspaso (Compiler)
 
-- autoría textual para `ST` y `IL`
-- autoría visual para `LD`, `FBD` y `SFC`
-- configuración de proyectos mediante `zplc.json`
-- workflows de compilación, simulación, despliegue y depuración
-- selección de adapters entre simulación en navegador, simulación nativa en Electron y conexión a hardware
+El compilador trasgrede todos las metodologías IEC diagramadas, absorbiéndolas hacia sí conformando opcodes que el RTOS asimile y entienda. Al arrojar salidas universalizadas como un único e indivisible `.zplc` certifica al integrador lograr "Un único motor y modelo interno sobre incontables y extensivas alternativas superficiales visuales sin inconsistencias". 
 
-Al IDE le está permitido ser moderno, stateful y pesado en UI. Al runtime no. Ése es justamente el sentido de la separación.
+### 3. Nucleo C99 Principal (Runtime Core)
 
-### 2. El contrato del compilador
+La Máquina Virtual de Zephyr escrita enteramente en ANSI C puro `libzplc_core` ejecuta fronteras de hardware y depende siempre de tres modelos rígidos de seguridad y eficiencia temporal:
+- **Zonas seguras de memoria universalizada**: Fragmentos mapeado lógicamente para acomodar las patillas entradas y sensores (IPI), Salidas energizadas de actuadores (OPI), retención y memoria temporal asiladas.
+- **Instancias Individuales**: Punteros estancos guardados por un proceso virtual protegiendo datos entre Multi-tareas.
+- **Micro Programador Multihilo (Scheduler)**: Cicla los escaneos asíncronos y mide frecuencias de respuesta.
 
-El compilador normaliza todos los caminos IEC reclamados hacia el mismo contrato bytecode/runtime.
+### 4. Capa Abstraccion Hardware (HAL Contract)
 
-- `LANGUAGE_WORKFLOW_SUPPORT` en el compilador del IDE hoy expone workflows visibles de release para `ST`, `IL`, `LD`, `FBD` y `SFC`
-- los caminos visuales y alternativos convergen al mismo contrato del compilador/runtime
-- la salida es bytecode `.zplc` más información de debug relacionada
+Constituyéndose obligadamente como único portal y compuerta al plano material de una computadora, El hardware a implementar define rigurosamente e implementa `zplc_hal.h`:
+- Transcripción del pulso del CPU Base local (`zplc_hal_tick`, `zplc_hal_sleep`).
+- Manejo analógico crudo o Modulación de Switches y Leds.
+- Persistencia NVS o Chips NOR Externos.
+- Comunicación local o LAN por sockets de nube.
+- Arranques o Loggings.
 
-Por eso ZPLC puede decir “un único core de ejecución, muchos caminos de autoría” sin vender humo.
+Al reescribir esta franja el integrador o desarrollador podrá exportar las lógicas de ZPLC prácticamente sobre toda electrónica industrial construible.
 
-### 3. El core runtime (`firmware/lib/zplc_core`)
+## Operaciones de Confianza
 
-El runtime es el límite de ejecución.
+1. **Destierro estricto del kernel desde zonas C Core**: No podrás jamás llamar directamente a registros nativos o interrupciones RTOS de capa física desde el nucleo programable ZPLC Core, mitigando inyecciones y cuellos sin importar plataforma.
+2. **Determinismo real Inquebrantable**: Mapeos son 100% pre-escritos e inicializados en su boot. Las fugas por mala codificación y excepciones de Paginado/Memoria Heap son lógicamente inexistentes.
+3. **Escalar Multi-Tarea Cíclica**: ZPLC orquesta unificados buffers aisládamente por hilo pero comparte datos públicos simultaneamos de lectura al mismo clock y frecuencia para el globalizado de etiquetas de todo proyecto.
 
-Sus headers públicos muestran tres ideas clave:
+## Temáticas Subyacentes
 
-- existen regiones de memoria compartida para IPI, OPI, work, retain y code
-- las instancias VM guardan el estado privado de ejecución por tarea
-- las APIs del scheduler manejan registro, carga, control, estadísticas y sincronización
-
-`zplc_core.h` documenta el modelo VM por instancias, y `zplc_scheduler.h` documenta la API
-multitarea basada en conceptos IEC.
-
-### 4. El contrato HAL
-
-La HAL es el único puente permitido entre el core determinista y el mundo exterior.
-
-`zplc_hal.h` autoriza implementaciones de plataforma para:
-
-- timing (`zplc_hal_tick`, `zplc_hal_sleep`)
-- I/O digital y analógica
-- persistencia
-- networking y sockets
-- mutexes y sincronización
-- logging e inicialización/shutdown
-
-Si algo saltea ese límite, no es solo una mala decisión arquitectónica: también rompe portabilidad y contrato público.
-
-### 5. Los runtimes objetivo
-
-El mismo contrato del core aparece en distintos entornos de ejecución:
-
-- **WASM** para simulación en navegador
-- **runtime host nativo** para simulación nativa en Electron
-- **aplicación runtime Zephyr** en `firmware/app` para hardware soportado
-
-Esos targets son hermanos, no productos separados.
-
-## Principios de funcionamiento
-
-### Principio 1: autoría única, ejecución sobre un solo contrato runtime
-
-Sea cual sea el punto de entrada del lenguaje, el sistema busca el mismo contrato downstream:
-`.zplc` más los headers públicos del runtime.
-
-### Principio 2: el código de plataforma no entra al core
-
-El core no debe tocar registros de MCU, drivers Zephyr, APIs del navegador ni APIs desktop.
-Todo eso pasa por la HAL o por la capa de adapters del runtime.
-
-### Principio 3: la multitarea usa memoria compartida + estado VM privado
-
-`zplc_core.h` describe explícitamente:
-
-- regiones IPI/OPI/code compartidas
-- coordinación compartida de work/retain por dirección
-- PC/stack/call-stack privados por instancia VM
-
-Ese modelo permite compartir datos de proceso entre tareas sin perder contexto de ejecución por tarea.
-
-### Principio 4: los claims públicos están limitados por evidencia
-
-El website y las docs son parte de la arquitectura del producto porque definen qué puede prometerse públicamente.
-
-En v1.5.0, los claims públicos deben mantenerse alineados con:
-
-- headers públicos del runtime
-- manifiesto de placas soportadas
-- exports reales del IDE/compilador/runtime
-- artefactos de evidencia del release
-
-## Flujo end-to-end
-
-```mermaid
-sequenceDiagram
-  participant User as Usuario
-  participant IDE
-  participant Compiler as Compilador
-  participant Runtime
-  participant HAL
-  participant Target as Target
-
-  User->>IDE: Autoría del proyecto + programas
-  IDE->>Compiler: Compilar tareas/programas configurados
-  Compiler-->>IDE: Emitir .zplc + datos de debug
-  IDE->>Runtime: Cargar .zplc en el adapter/runtime elegido
-  Runtime->>HAL: Leer tiempo, I/O, persistencia, red, sync
-  HAL->>Target: Usar servicios del navegador, host OS o Zephyr
-  Runtime-->>IDE: Estado, watches, breakpoints, estadísticas
-```
-
-## A dónde seguir
-
-- [Visión General de la Plataforma](../platform-overview/index.md) para el mapa del producto
-- [Primeros Pasos](../getting-started/index.md) para el primer camino funcional
-- [Visión General del Runtime](../runtime/index.md) para responsabilidades y subsistemas del runtime
-- [Integración y Despliegue](../integration/index.md) para expectativas de despliegue en hardware soportado
+- [Mapas Genéricos de Plataforma](../platform-overview/index.md)
+- [Componentes Centralizadas Internas](../runtime/index.md)
+- [Implementación y Generación Zephyr](../integration/index.md)

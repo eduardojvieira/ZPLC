@@ -1,68 +1,56 @@
 ---
 slug: /operations
 id: index
-title: Operaciones
-sidebar_label: Operaciones
-description: Guias de operacion, diagnostico y recuperacion para ZPLC.
+title: Guía Operativa
+sidebar_label: Diagnósticos de Operación
+description: Métodos de recuperación controlada, monitorización activa profunda y testeo para máquinas desplegadas.
 tags: [operations]
 ---
 
-# Operaciones
+# Operación de la Plataforma
 
-La operación de v1.5 se enfoca en evidencia de release, diagnóstico, recuperación controlada y manejo honesto del alcance entre runtime, IDE, hardware y docs.
+Asumir la instalación en planta bajo sistemas de control ZPLC de misión crítica requerirá familiarizarse fundamentalmente interactuando o respondiendo fallos al interior del Zephyr Base ante la presencia inminente o esporádica de comportamientos inesperados, cuellos lógicos industriales de comunicación entre terminales ajenos y reinicios en microcontrolador abruptos no deseados. 
 
-## Modelo operativo para v1.5.0
+Para consultar el listado total de comandos en cadena, visita la documentación completa de [Consola ZPLC Shell](./shell.md).
 
-Tratā ZPLC v1.5.0 como un único tren de release. La documentación, las placas soportadas,
-los workflows del IDE y el comportamiento del runtime tienen que apuntar al mismo conjunto de claims respaldados por fuentes.
+Esta sección lista reglas operativas rutinarias sobre cómo manejar diagnósticamente tu producto embebido en la base V1.5.0 de ZPLC.  
 
-## Antes del sign-off
+## Flujo de Trabajo en Recuperaciones Físicas y Analítica de Hardware Base
 
-Ejecutá estos checks no-build antes de aprobar documentación o mensajería pública:
+Cuando notes detenciones temporales graves en tu modelo programado asincrónicamente o reportes de comportamientos ilógicos:
 
-- `python3 tools/hil/validate_supported_boards.py`
-- `python3 tools/hil/validate_release_evidence.py`
-- `bun run generate:v1.5-docs`
-- `bun run validate:v1.5-docs`
-- tests automatizados puntuales que respalden el área de workflow o runtime que cambió
+1. **Intrusión Terminal**: Realizar ping inverso acudiendo hacia un programa de shell terminal como `Putty` o `Minicom` usando interface clásica Serial `115200 Bauds`. El sistema nativo levantará consola sobre RTOS Zephyr. Introducir comando `zplc status` reportará el vigor o salud lógica de los búfer internos del sistema operativo RTOS.
+2. **Revisión Infracción Computacional (Bucle Infinito / Jittering)**: Operar desde misma shell terminal listando `zplc sched tasks`. En los modelos en los cuales erróneamente hallare condicionales o bucles interminables mal proyectados como `WHILE TRUE END_WHILE` por ejemplo, Zephyr atrapará su task errático, listándolo al log sin corromper el hardware físicamente. 
+3. **Revisión de Direcciones y Mapeos**: Toma instrumentos y puntas lógicas y sondea directamente en tarjeta base evaluando con multímetro. Si su Interface Virtual en línea o Monitor Watch reporta señal `Activa (1)` bajo variables Out en el software de su computadora en la solapa debug, pero evalúa visualmente un Output LED base o terminal del chip a pin con `0 Voltios` apagando salidas; posiblemente estés vinculando lógicamente de mala forma en el registro del manifiesto `zplc.json` I/O.
+4. **Reseteo Estructural Completo**: Cundo logres perder control absoluto bloqueando o deteniendo al RTOS tras una programación errante que persista tras apagado por memorizarse o retener lógicas a boot (Non-Volatile Storage (NVS)); acude nuevamente a las shells seriales indicando `zplc stop` congelando lecturas, instanciando posterior o seguido a la ejecución total por `zplc persist clear`. 
 
-Si alguno falla, frená el sign-off y corregí primero la fuente de verdad.
+## Herramientas Diagnósticas Embebidas (Online Observability ZPLC)
 
-## Gates con evidencia humana
+Mediante la conexión al motor subyacente interactuando con ZPLC desde interface central de trabajo en tu host PC de la red obtienes de inmediato utilidades activas online:
 
-La matriz de evidencia del release todavía marca varios gates como pendientes. Operaciones y el release owner
-tienen que mantener la evidencia humana alineada con el claim set publicado:
+- **Mirilla (Watch Tables)**: Interroga mediante ventanas o bloques visuales a valores y bits variables transitoriamente.  
+- **Estadísticas De Uso General**: Inspeccione frecuentemente para cada máquina configurada que latencia media / jitter reportan en campo o ejecución plena en el dashboard de UI de IDE; ciclos saturados cerca de 100% causan pausas irrecuperables por software.
+- **Sobreescritura Virtual Mapeada (Forzados / Forces)**: Interrumpe localizaciones lógicas en variables por medio del teclado para asumir posturas manual base y by-pasear sistemas quemados de planta.
 
-- evidencia de smoke desktop para macOS, Linux y Windows
-- un registro de validación para una placa enfocada en serial
-- un registro de validación para una placa con capacidad de red
-- confirmación humana de que las notas de versión describen solo alcance verificado
+## Diagnósticos de Red
 
-Usá `specs/008-release-foundation/artifacts/release-evidence-matrix.md` como lista canónica de gates y estados.
+Si tu bloque de `MQTT` se estanca o el cliente Modbus TCP no contesta:
+- Verifica que Zephyr obtuvo satisfactoriamente una IP vía DHCP (Se revisa en la serial con `zplc status`).
+- Asegúrate que tu computadora host corriendo el IDE ZPLC esté exactamente en la misma máscara de sub-red que el hardware embebido.
+- Confirma que la placa compilada tenga un chip Wi-Fi o Ethernet plenamente soportado.
 
-## Flujo de diagnóstico y recuperación
+## Recomendaciones Actualización (Upgrades OS Framework y Toolchain)
 
-Cuando falle una validación o un paso de despliegue, seguí esta secuencia en vez de parchear docs por intuición:
+Flashear un binario Core para saltar a sistemas con base kernel Linux Zephyr renovadas: 
 
-1. identificá la superficie rota (`runtime-api`, placas, notas de versión, landing copy o docs de workflow)
-2. rastreala hasta su fuente canónica con [`/docs/reference/source-of-truth`](../reference/source-of-truth.md)
-3. corregí el artefacto fuente o el generador, no solo el markdown renderizado
-4. regenerá las referencias si la superficie es generada
-5. reejecutá los checks no-build y registrá el resultado
+- Utilice comando `west flash`. 
+- ZPLC aloja los espacios físicos lógicos de variables retentivas o configuraciones compiladoras `zplc bytecodes` en esquemas físicos apartados lógicamente (Flash NVS Offset).
+- Es factible flashear sin riesgos de que lógicas cargadas a memoria anterior por personal productivo sean sobreescritas o corrompidas.
 
-## Reglas para corregir alcance
+## Lista de Control Operativo
 
-Nunca dejes claims no soportados o flojos en superficies públicas del release.
-
-- Si una placa no está en `firmware/app/boards/supported-boards.v1.5.0.json`, removela de las docs y del copy del website.
-- Si un gate sigue pendiente en la matriz de evidencia, describilo como pendiente, nunca como completo.
-- Si una referencia generada está desactualizada o semánticamente rota, bloqueá el sign-off hasta corregir el generador y regenerar la salida.
-- Si una página de operaciones o notas de versión es demasiado superficial para guiar una revisión, profundizala o sacala de la superficie bloqueante del release.
-
-## Checklist operativo
-
-- confirmar que el manifiesto canónico sigue representando el conjunto de páginas bloqueantes
-- confirmar que inglés y español siguen alineados en las páginas bloqueantes
-- confirmar que las referencias generadas de runtime y placas están frescas y son confiables
-- confirmar que los claims de la landing siguen coincidiendo con placas soportadas, headers públicos y evidencia de release
-- confirmar que los gates humanos pendientes están explicitados en las notas de versión
+Revise antes de dejar produciendo a la máquina:
+- Los periodos asignados en `zplc.json` disponen de márgenes operativos sobredimensionados.
+- Las memorias `Retain` no colman la EEPROM de la unidad seleccionada.
+- Todos los enchufes físicos coinciden con lo trazado nativamente.
+- La terminal UART responde satisfactoriamente a 115200 sin arrojar mensajes extraños por log.

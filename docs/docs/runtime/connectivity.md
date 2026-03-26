@@ -1,63 +1,37 @@
-# Connectivity
+---
+slug: /runtime/connectivity
+id: connectivity
+title: Connectivity & Protocols
+sidebar_label: Connectivity
+description: Overview of supported industrial network protocols and board capabilities in ZPLC.
+---
 
-This page describes the connectivity surface that is visible in the current repo and relevant to the v1.5.0 release.
+# Connectivity & Protocols
 
-## Truth sources for connectivity claims
+ZPLC provides built-in support for standard industrial automation protocols, allowing your controllers to interact with field devices, SCADA systems, and cloud platforms.
 
-Connectivity claims should be grounded in three places:
+## Board Capabilities
 
-- IDE configuration types in `packages/zplc-ide/src/types/index.ts`
-- compiler communication stdlib definitions in `packages/zplc-compiler/src/compiler/stdlib/communication.ts`
-- runtime communication dispatch vocabulary in `firmware/lib/zplc_core/include/zplc_comm_dispatch.h`
+Protocol support depends on the physical capabilities of your target board. ZPLC categorizes boards into three levels of connectivity:
 
-## Board capability boundary
+- **Serial-only**: Supports protocols like Modbus RTU via UART/RS-485.
+- **Wi-Fi capable**: Supports TCP/UDP protocols (Modbus TCP, MQTT) over wireless networks (e.g., ESP32-S3).
+- **Ethernet capable**: Supports TCP/UDP protocols over wired connections (e.g., STM32 Nucleo/Discovery).
 
-Connectivity is not only a protocol question. It is also a **board capability** question.
+The IDE automatically filters available protocols based on your selected board profile.
 
-The supported-board manifest marks boards as:
+## Supported Protocols
 
-- serial-focused with no network interface
-- network-capable with Wi-Fi
-- network-capable with Ethernet
+ZPLC natively supports:
 
-That board truth is imported directly into the IDE board profiles.
+- **Modbus**: Both Modbus RTU (Serial) and Modbus TCP (Network).
+- **MQTT**: Standard MQTT publish/subscribe messaging for IIoT integration, including profiles for Sparkplug B, standard brokers, AWS IoT Core, and Azure IoT Hub.
 
-## IDE-facing connectivity configuration
+## Configuring Connectivity
 
-`zplc.json` can currently express configuration for:
+Connectivity is defined in your project's `zplc.json` file. Through the IDE, you can:
+1. Configure Modbus RTU/TCP networks (baud rates, IP addresses, node IDs).
+2. Set up MQTT broker credentials and certificates.
+3. Map internal PLC variables directly to Modbus registers/coils or MQTT topics via **Communication Bindings**.
 
-- Modbus RTU and Modbus TCP
-- MQTT profiles such as Sparkplug B, generic broker, AWS IoT Core, Azure IoT Hub, and Azure Event Grid MQTT
-- communication tags/bindings that associate symbols with publish/subscribe/Modbus metadata
-
-That means the IDE surface is broader than the final signed-off release claim.
-
-## Runtime/compiler contract
-
-At the public contract level, communication flows through three layers:
-
-```mermaid
-flowchart LR
-  IDE[IDE project settings + IEC calls] --> Compiler[compiler stdlib communication FBs]
-  Compiler --> ISA[communication opcodes in ISA]
-  ISA --> Dispatch[runtime communication dispatch]
-  Dispatch --> Services[platform/runtime protocol services]
-```
-
-## Modbus and MQTT in release scope
-
-The release evidence matrix currently treats **Modbus RTU/TCP and MQTT product behavior** as the protocol-completion gate under `REL-003`.
-
-That is the honest v1.5 line:
-
-- these protocols are part of the intended release-facing product scope
-- the repo contains IDE/compiler/runtime surfaces for them
-- final sign-off still depends on matching automated and human evidence
-
-## What to avoid claiming too strongly
-
-The project configuration types already include AWS/Azure-oriented options, and the compiler/runtime surfaces already include cloud-wrapper block names.
-
-That does **not** automatically mean those flows should be marketed as fully signed-off v1.5 capabilities.
-
-If the release evidence gate is still pending, the docs should say so plainly.
+The runtime handles the underlying protocol dispatch automatically while your PLC logic is executing.

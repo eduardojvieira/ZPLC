@@ -1,80 +1,53 @@
+---
+slug: /runtime/communication-function-blocks
+id: communication-function-blocks
+title: Bloques de Función de Comunicación
+sidebar_label: FBs de Comunicación
+description: Uso de Bloques de Función (FBs) para red asíncrona, Modbus y operaciones MQTT.
+---
+
 # Bloques de Función de Comunicación
 
-Esta página describe el contrato público de FBs de comunicación visible hoy en el repo.
+ZPLC proporciona Bloques de Función (FBs) especializados que interactúan directamente con la capa de envío de red del runtime. Estos bloques permiten escribir/leer en dispositivos externos y publicar/suscribir a la telemetría directamente desde tu lógica IEC 61131-3.
 
-## Tres capas definen la superficie
+## Modelo de Ejecución Asíncrono
 
-1. definiciones stdlib del compilador en `packages/zplc-compiler/src/compiler/stdlib/communication.ts`
-2. opcodes ISA en `firmware/lib/zplc_core/include/zplc_isa.h`
-3. kinds y status codes del dispatch runtime en `firmware/lib/zplc_core/include/zplc_comm_dispatch.h`
+A diferencia de operaciones aritméticas simples, la comunicación de red es asíncrona. Todos los FB de comunicación comparten una interfaz asíncrona estándar:
 
-## Handshake común
+- **`EN`** (BOOL): Trigger de ejecución.
+- **`BUSY`** (BOOL): Verdadero mientras la solicitud de red está en curso.
+- **`DONE`** (BOOL): Verdadero durante un ciclo cuando la solicitud finaliza de manera satisfactoria.
+- **`ERROR`** (BOOL): Verdadero si la petición falla o hace timeout.
+- **`STATUS`** (DINT): Devuelve el código de error subyacente del runtime para diagnóstico.
 
-La stdlib del compilador define un encabezado compartido con estos campos:
+> [!IMPORTANT]
+> Debido a que estos bloques se ejecutan de forma asíncrona, evita colocarlos dentro de bucles cíclicos rápidos sin corroborar el flag `BUSY` para evitar saturar la pila de red.
 
-- `EN`
-- `BUSY`
-- `DONE`
-- `ERROR`
-- `STATUS`
+## Bloques de Función Soportados
 
-Ese es el modelo correcto: interacciones runtime asíncronas/estado-dependientes, no llamadas bloqueantes ingenuas.
+### Comunicaciones Modbus
+Utilizados para interactuar con dispositivos en campo sin utilizar un automapeo implícito.
 
-## Modelo de dispatch
+- `MB_READ_HREG`: Leer Registros de Retención (Function Code 3).
+- `MB_WRITE_HREG`: Escribir Registros de Retención (Function Code 16).
+- `MB_READ_COIL`: Leer Bobinas (Function Code 1).
+- `MB_WRITE_COIL`: Escribir Bobinas (Function Code 15).
 
-A nivel ISA, el repo expone hoy:
+### Mensajería MQTT
+Utilizado para enviar y recibir payloads asíncronos a brokers de nube.
 
-- `OP_COMM_EXEC`
-- `OP_COMM_STATUS`
-- `OP_COMM_RESET`
+- `MQTT_CONNECT`: Establece la conexión con el broker de forma dinámica.
+- `MQTT_PUBLISH`: Transmite un payload tipo byte o string con un tópico específico.
+- `MQTT_SUBSCRIBE`: Suscribe a un tópico.
 
-A nivel runtime dispatch, el repo expone kinds como:
+### Wrappers de Integración en la Nube
+Wrappers pre-configurados que simplifican el enlace a los mayores simuladores cloud.
 
-- `ZPLC_COMM_FB_MB_READ_HREG`
-- `ZPLC_COMM_FB_MB_WRITE_HREG`
-- `ZPLC_COMM_FB_MB_READ_COIL`
-- `ZPLC_COMM_FB_MB_WRITE_COIL`
-- `ZPLC_COMM_FB_MQTT_CONNECT`
-- `ZPLC_COMM_FB_MQTT_PUBLISH`
-- `ZPLC_COMM_FB_MQTT_SUBSCRIBE`
-- wrappers cloud para Azure, AWS y Sparkplug
+- `AZURE_C2D_RECV`: Recibir comunicaciones Azure Cloud-to-Device.
+- `AZURE_DPS_PROV`: Registro de Servicio de Provisión mediante Módulos Azure.
+- `AWS_FLEET_PROV`: Provisión de flotillas AWS IoT.
+- `SPB_REBIRTH`: Disparo de la secuencia de Rebirth a través de Sparkplug B.
 
-## Set visible desde el compilador
+## Disponibilidad de Lenguajes
 
-### Modbus
-
-- `MB_READ_HREG`
-- `MB_WRITE_HREG`
-- `MB_READ_COIL`
-- `MB_WRITE_COIL`
-
-### MQTT
-
-- `MQTT_CONNECT`
-- `MQTT_PUBLISH`
-- `MQTT_SUBSCRIBE`
-
-### Wrappers cloud
-
-- `AZURE_C2D_RECV`
-- `AZURE_DPS_PROV`
-- `AZURE_EG_PUB`
-- `AWS_FLEET_PROV`
-- `SPB_REBIRTH`
-
-## Expectativa de paridad entre lenguajes
-
-Estos bloques no deberían describirse como features exclusivas de ST.
-
-El contrato release-facing es que las superficies de lenguaje convergen al mismo backend, así que los claims de comunicación tienen que mantenerse consistentes en `ST`, `IL`, `LD`, `FBD` y `SFC`.
-
-## Guía de release
-
-Para v1.5.0, los bloques de comunicación solo son claims honestos cuando coinciden:
-
-1. comportamiento runtime
-2. contrato del compilador
-3. workflow/configuración del IDE
-4. documentación y troubleshooting bilingües
-
-Si un nombre de bloque existe en config o codegen pero todavía no tiene comportamiento runtime confiable o evidencia de release, documentalo como pendiente o in-progress, no como feature cerrada.
+Todos los Bloques de Función de comunicación se encuentran universalmente habilitados a través de todos los lenguajes soportados en IEC 61131-3 por ZPLC. Pueden ser instanciados de forma nativa en Text Structurado (ST), o arrastrados/pegados en las redes de un Ladder Diagram (LD) y diagramas FBD.

@@ -1,44 +1,36 @@
 ---
-title: Instruction List (IL)
-sidebar_label: IL
-description: Cómo encaja Instruction List en el workflow canónico de lenguajes de ZPLC v1.5.
+sidebar_position: 2
 ---
 
-# Instruction List (IL)
+# Lista de Instrucciones (IL)
 
-En ZPLC v1.5, `IL` forma parte del mismo contrato de workflow que `ST`, `LD`, `FBD` y `SFC`.
+Instruction List (IL) es el lenguaje de programación textual y plano estandarizado de bajo perfil amparado por IEC 61131-3 y compatibilizado dentro de ZPLC.
+Funciona estrictamente apilando datos analíticos contra la memoria simulada emulando acumuladores del propio microprocesador ensamblador base subyacente.
 
-La fuente canónica para este claim es `packages/zplc-ide/src/compiler/index.ts`, donde:
+## La Ejecución Integral
 
-- `LANGUAGE_WORKFLOW_SUPPORT.IL` marca `author`, `compile`, `simulate`, `deploy` y `debug` en `true`
-- `compileProject()` normaliza los lenguajes no-ST antes de la compilación
-- para `IL`, el IDE usa `parseIL()` y `transpileILToST()` antes de compilar a bytecode `.zplc`
+Trabajando Instruction List sobre un framework ZPLC asume características poderosas alejándole del entorno arcaico al que este paradigma solía estar confinado. Posee un robusto y moderno ruteo directo sobre la plataforma del IDE con flujos estandarizados para uso industrial.
 
-## Qué significa eso en la práctica
-
-`IL` no usa un backend separado del runtime. La ruta soportada es:
+Al clickear en Iniciar Compilación bajo el panel, la máquina tomará sus directrices explícitas en modelo fuente para parsearlas y trasladarlas interlinealmente a Texto Estructurado Puntero (ST). Ya preparado y lógicamente igual asume su trayecto sobre el motor unísono generando opcodes y Bytecodes optimizado (`.zplc`) capaz de alojarse sin pérdida por overhead dentro del Zephyr en la Memoria RAM y ROM de destino.
 
 ```mermaid
 flowchart LR
-  IL[fuente IL] --> PARSE[parseIL]
-  PARSE --> TRANSPILE[transpileILToST]
-  TRANSPILE --> ST[ST intermedio]
-  ST --> COMPILE[compileToBinary]
-  COMPILE --> ZPLC[.zplc]
-  ZPLC --> RUNTIME[runtime + debug]
+  IL[Fuentes Crudas IL] --> Parse[Estructurizado semántico IL]
+  Parse --> ToST[Traduplicación/Transpilado IL --> ST]
+  ToST --> Compile[Gestor de Compilados Universal Base]
+  Compile --> ZPLC[.zplc]
 ```
 
-## Contrato de soporte en v1.5
+## Beneficio Subyacente
 
-| Etapa | Estado para IL | Fuente |
-|---|---|---|
-| Autoría | soportada | `LANGUAGE_WORKFLOW_SUPPORT.IL.author` |
-| Compilación | soportada | `LANGUAGE_WORKFLOW_SUPPORT.IL.compile` |
-| Simulación | soportada | `LANGUAGE_WORKFLOW_SUPPORT.IL.simulate` |
-| Despliegue | soportado | `LANGUAGE_WORKFLOW_SUPPORT.IL.deploy` |
-| Depuración | soportada | `LANGUAGE_WORKFLOW_SUPPORT.IL.debug` |
+Generando IL directamente englobado sobre cadenas universales homólogas a la rama ST de diagramas, se propician bondades instantáneas:
+- Acceso indiscriminado o pleno uso sobre la Stdlib Standard (Matemática, Timers o Contabilizadoras industriales) mediante funciones integradas por IL (CAL / ST).
+- Cero degradación. Al descender hasta códigos bases nativos corren con perfiles exactos de consumo en ciclos CPU C-Kernel Zephyr tal cual algoritmos pesados en texto libre directo ST.
+- Posibilidad completa de inyectar breakpoints en línea directa y parar ciclos, inyectar watch variables y emular sin requerir herramientas extra sobre entorno nativo POSIX a nivel PC.
 
-## Ejemplo mínimo
+## Script Orientativo: Temporización de Señales en IL
+
+Las demostraciones abajo marcan sentencias funcionales estándar; El arranque e inyección directa (`TON` y Evaluación Start) interactúan marcando un Output final validando y reteniendo las cargas binarias en los ciclos correctos:
 
 ```iecst
 PROGRAM WorkflowIL
@@ -60,18 +52,9 @@ END_VAR
 END_PROGRAM
 ```
 
-Ese patrón aparece también en la [suite canónica de lenguajes v1.5](./examples/v1-5-language-suite.md).
+## Exploración Completa
 
-## Qué NO deberías reclamar
-
-La documentación de v1.5 no debería vender a `IL` como una implementación aislada del runtime. El contrato público real es más simple:
-
-- `IL` está soportado como workflow del IDE
-- el pipeline converge al mismo contrato de compilación/ejecución que el resto
-- el runtime ejecuta `.zplc`, no un backend IL separado
-
-## Relación con otras páginas
-
-- [Lenguajes y modelo de programación](./index.md)
-- [Structured Text (ST)](./st.md)
-- [Suite canónica de lenguajes v1.5](./examples/v1-5-language-suite.md)
+- [Ecosistema de Múltiples Lenguajes ZPLC](./index.md)
+- [Fundamentos de Texto Estructurado (ST)](./st.md)
+- [Funciones IEC Incorporadas en Standard Library](./stdlib.md)
+- [Casos Comunes en Lenguajes V1.5 Suite ZPLC](./examples/v1-5-language-suite.md)

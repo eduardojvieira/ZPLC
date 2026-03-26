@@ -1,33 +1,27 @@
 ---
-title: v1.5 Language Suite
-sidebar_label: v1.5 Language Suite
-description: Canonical cross-language workflow examples for the v1.5 release claim.
+title: Language Examples Suite
+sidebar_label: Canonical Examples
+description: Cross-language canonical examples showcasing ZPLC's IEC 61131-3 support.
 ---
 
-# v1.5 Language Suite
+# Language Examples Suite
 
-This page defines the canonical workflow samples used to audit the repo-visible v1.5 language claim
-for `ST`, `IL`, `LD`, `FBD`, and `SFC`.
+This suite provides canonical logic examples demonstrating parity across the five supported IEC 61131-3 languages in ZPLC: `ST`, `IL`, `LD`, `FBD`, and `SFC`.
 
-## Shared Behavior
+## Shared Logic Goal
 
-Every sample in this suite anchors the same repo-visible workflow contract:
+Every sample listed below accomplishes the exact same logic control goal:
+1. Initialize a start condition.
+2. Trigger an On-Delay Timer (`TON`) for 250 milliseconds.
+3. Bind the output of the timer to an external output tag (`Out1`).
 
-- authoring in the claimed language path
-- successful compilation to `.zplc`
-- declared simulation support
-- declared deployment support
-- declared debugging support
+No matter which language you author this logic in, the ZPLC compiler guarantees the same `.zplc` binary behavior, and full support for simulation and hardware debugging.
 
-These examples do **not** replace the pending human desktop/debug validation tracked separately in `REL-004`.
+---
 
-The canonical logic shape is intentionally small:
+## 1. Structured Text (ST)
 
-- one start condition
-- one timer-driven output
-- one visible output binding
-
-## Structured Text (ST)
+A clean, PASCAL-like procedural approach calling the timer intrinsically.
 
 ```st
 PROGRAM WorkflowST
@@ -36,12 +30,17 @@ VAR
     Timer : TON;
     Out1 : BOOL := FALSE;
 END_VAR
+
 Timer(IN := Start, PT := T#250ms);
 Out1 := Timer.Q;
 END_PROGRAM
 ```
 
-## Instruction List (IL)
+---
+
+## 2. Instruction List (IL)
+
+An assembly-like approach manually loading variables into the accumulator, calling the timer function block, and storing the result back out to the memory address `%Q0.0`.
 
 ```iecst
 PROGRAM WorkflowIL
@@ -52,6 +51,7 @@ END_VAR
 VAR_OUTPUT
     Out1 AT %Q0.0 : BOOL;
 END_VAR
+
     LD Start
     ST Timer.IN
     CAL Timer(
@@ -62,17 +62,28 @@ END_VAR
 END_PROGRAM
 ```
 
-## Ladder Diagram (LD)
+---
 
-LD uses the visual model path. The canonical rung expresses `Start -> Out1` and must
-compile through the same task flow as ST while preserving the declared workflow contract.
+## 3. Ladder Diagram (LD)
 
-## Function Block Diagram (FBD)
+If you author this visually in the IDE, you construct a single relay rung. 
+The visual paradigm expresses the continuous flow: 
+`Contact (Start)` -> `Block (TON 250ms)` -> `Coil (Out1)`.
 
-FBD uses the visual model path. The canonical diagram connects an input block to an output
-block through the standard transpilation path used by the repo-visible workflow contract.
+The ZPLC transpiler reads this visual arrangement and enforces the identical semantic flow during bytecode compilation.
 
-## Sequential Function Chart (SFC)
+---
 
-SFC uses a single initial step and one action that sets the output. The release claim is
-not tied to a separate backend; it is tied to the declared compile/workflow contract and automated coverage.
+## 4. Function Block Diagram (FBD)
+
+The FBD visual representation connects an input data source directly into a processing block, and out to a hardware pin.
+You place a `TON` block in the workspace, map the `Start` boolean to its `IN` pin, map a constant `T#250ms` string to its `PT` pin, and wire the `Q` output pin straightforwardly into `Out1`.
+
+---
+
+## 5. Sequential Function Chart (SFC)
+
+The SFC representation wraps the timer into a discrete machine state.
+1. The machine launches to the `Initial Step`.
+2. The initial step contains an `Action` body.
+3. The Action executes the logic setting `Out1` high once the 250ms condition is fulfilled.

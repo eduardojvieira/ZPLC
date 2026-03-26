@@ -1,55 +1,37 @@
-# Conectividad
+---
+slug: /runtime/connectivity
+id: connectivity
+title: Conectividad y Protocolos
+sidebar_label: Conectividad
+description: Resumen de los protocolos de red industrial soportados y capacidades de las placas en ZPLC.
+---
 
-Esta página describe la superficie de conectividad visible hoy en el repo y relevante para el release v1.5.0.
+# Conectividad y Protocolos
 
-## Fuentes de verdad para claims de conectividad
+ZPLC provee soporte integrado para protocolos de automatización industrial estándar, permitiendo que tus controladores interactúen con dispositivos de campo, sistemas SCADA y plataformas en la nube.
 
-- tipos de configuración del IDE en `packages/zplc-ide/src/types/index.ts`
-- stdlib de comunicación del compilador en `packages/zplc-compiler/src/compiler/stdlib/communication.ts`
-- vocabulario de dispatch runtime en `firmware/lib/zplc_core/include/zplc_comm_dispatch.h`
+## Capacidades de la Placa
 
-## Límite por capacidad de placa
+El soporte de protocolos depende de las capacidades físicas de tu placa objetivo. ZPLC categoriza las placas en tres niveles de conectividad:
 
-La conectividad no depende solo del protocolo; también depende de la placa.
+- **Solo Serial**: Soporta protocolos como Modbus RTU a través de UART/RS-485.
+- **Con capacidad Wi-Fi**: Soporta protocolos TCP/UDP (Modbus TCP, MQTT) mediante redes inalámbricas (ej. ESP32-S3).
+- **Con capacidad Ethernet**: Soporta protocolos TCP/UDP sobre conexiones cableadas (ej. STM32 Nucleo/Discovery).
 
-El manifiesto de placas soportadas clasifica boards como:
+El IDE filtra automáticamente los protocolos disponibles basándose en el perfil de placa seleccionado.
 
-- serial-focused sin interfaz de red
-- network-capable con Wi-Fi
-- network-capable con Ethernet
+## Protocolos Soportados
 
-## Configuración visible desde el IDE
+ZPLC soporta de forma nativa:
 
-`zplc.json` puede expresar hoy configuración para:
+- **Modbus**: Tanto Modbus RTU (Serial) como Modbus TCP (Red).
+- **MQTT**: Mensajería estándar MQTT publicación/suscripción para integración IIoT, incluyendo perfiles para Sparkplug B, brokers estándar, AWS IoT Core y Azure IoT Hub.
 
-- Modbus RTU y Modbus TCP
-- perfiles MQTT como Sparkplug B, generic broker, AWS IoT Core, Azure IoT Hub y Azure Event Grid MQTT
-- tags/bindings de comunicación asociados a símbolos del proyecto
+## Configurando la Conectividad
 
-## Contrato compiler/runtime
+La conectividad se define en el archivo `zplc.json` de tu proyecto. A través del IDE, puedes:
+1. Configurar redes Modbus RTU/TCP (baud rates, direcciones IP, node IDs).
+2. Configurar credenciales de brokers MQTT y certificados.
+3. Mapear variables de PLC internas directamente hacia registros/bobinas Modbus o tópicos MQTT a través de **Bindings de Comunicación**.
 
-En términos públicos, la conectividad fluye por tres capas:
-
-```mermaid
-flowchart LR
-  IDE[settings del IDE + llamadas IEC] --> Compiler[FBs de comunicación del compilador]
-  Compiler --> ISA[opcodes de comunicación]
-  ISA --> Dispatch[dispatch runtime]
-  Dispatch --> Services[servicios/protocolos de plataforma]
-```
-
-## Modbus y MQTT dentro del alcance release
-
-La matriz de evidencia trata el comportamiento de producto de **Modbus RTU/TCP y MQTT** como el gate de protocolos `REL-003`.
-
-La línea honesta para v1.5 es:
-
-- esos protocolos forman parte del scope público del producto
-- el repo ya tiene superficies de IDE/compilador/runtime para ellos
-- el sign-off final todavía depende de evidencia automática y humana que coincida
-
-## Qué no conviene sobre-vender
-
-Aunque los tipos del IDE ya incluyen opciones orientadas a AWS/Azure y el compilador/runtime ya nombran wrappers cloud, eso NO significa que todas esas rutas deban venderse como totalmente aprobadas para v1.5.
-
-Si el gate de evidencia sigue pendiente, la documentación tiene que decirlo sin vueltas.
+El runtime maneja automáticamente la retransmisión del protocolo por debajo mientras tu lógica de PLC ejecuta.
