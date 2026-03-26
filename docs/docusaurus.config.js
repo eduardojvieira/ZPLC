@@ -65,9 +65,6 @@ const config = {
             current: {
               label: 'v1.5.0',
             },
-            '1.4.8': {
-              label: 'v1.4.8',
-            },
           },
         },
         blog: false,
