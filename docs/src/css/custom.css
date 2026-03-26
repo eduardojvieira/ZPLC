@@ -146,6 +146,11 @@
   box-shadow: none;
 }
 
+/* Ensure mobile hamburger toggle is clearly visible */
+.navbar__toggle, .clean-btn {
+  color: var(--zplc-text-main) !important;
+}
+
 .navbar__title {
   font-weight: 700;
   font-size: 1.25rem;
