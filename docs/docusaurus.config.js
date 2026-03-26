@@ -96,8 +96,8 @@ const config = {
         },
         items: [
           {
-            type: 'docSidebar',
-            sidebarId: 'docsSidebar',
+            type: 'doc',
+            docId: 'getting-started/index',
             position: 'left',
             label: 'Docs / Documentación',
           },
