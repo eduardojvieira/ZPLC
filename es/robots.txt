@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://eduardojvieira.github.io/ZPLC/sitemap.xml
