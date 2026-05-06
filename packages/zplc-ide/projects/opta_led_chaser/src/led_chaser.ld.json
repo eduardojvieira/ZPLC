@@ -1,0 +1,216 @@
+{
+  "$schema": "../../schemas/ld.schema.json",
+  "name": "Opta_LED_Chaser",
+  "description": "Larson scanner on D0-D3 using TON timers and contacts only",
+  "version": "2.0.0",
+  "variables": {
+    "local": [
+      { "name": "Tick",        "type": "BOOL",  "initialValue": false },
+      { "name": "Direction",   "type": "INT",   "initialValue": 1 },
+      { "name": "Step",        "type": "INT",   "initialValue": 0 },
+      { "name": "At0",         "type": "BOOL",  "initialValue": true },
+      { "name": "At1",         "type": "BOOL",  "initialValue": false },
+      { "name": "At2",         "type": "BOOL",  "initialValue": false },
+      { "name": "At3",         "type": "BOOL",  "initialValue": false },
+      { "name": "TimerInst",   "type": "TON" },
+      { "name": "T1",          "type": "BOOL",  "initialValue": false },
+      { "name": "T2",          "type": "BOOL",  "initialValue": false },
+      { "name": "T3",          "type": "BOOL",  "initialValue": false },
+      { "name": "Fwd",         "type": "BOOL",  "initialValue": true },
+      { "name": "Bwd",         "type": "BOOL",  "initialValue": false }
+    ],
+    "inputs": [],
+    "outputs": [
+      { "name": "LED_D0", "type": "BOOL", "address": "%Q0.0" },
+      { "name": "LED_D1", "type": "BOOL", "address": "%Q0.1" },
+      { "name": "LED_D2", "type": "BOOL", "address": "%Q0.2" },
+      { "name": "LED_D3", "type": "BOOL", "address": "%Q0.3" }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_timer",
+      "number": 1,
+      "comment": "150 ms tick via TON — auto-reset using NC contact on Q (Tick)",
+      "grid": [
+        [
+          { "element": { "id": "nc_tick", "type": "contact_nc", "variable": "Tick", "row": 0, "col": 0 }, "hasWire": true },
+          { "element": { "id": "fb_ton",  "type": "function_block", "fbType": "TON", "instance": "TimerInst",
+                          "parameters": { "PT": "T#150ms" },
+                          "outputs":    { "Q": "Tick" },
+                          "row": 0, "col": 1 }, "hasWire": true },
+          { "element": null, "hasWire": true },
+          { "element": null, "hasWire": false }
+        ]
+      ],
+      "gridConfig": { "cols": 4, "rows": 1, "cellWidth": 80, "cellHeight": 60 }
+    },
+    {
+      "id": "rung_fwd",
+      "number": 2,
+      "comment": "Fwd = Tick AND NOT at step 3",
+      "grid": [
+        [
+          { "element": { "id": "tick_c_fwd", "type": "contact_no", "variable": "Tick",  "row": 0, "col": 0 }, "hasWire": true },
+          { "element": { "id": "at3_nc_fwd", "type": "contact_nc", "variable": "At3",   "row": 0, "col": 1 }, "hasWire": true },
+          { "element": { "id": "coil_fwd",   "type": "coil",        "variable": "Fwd",   "row": 0, "col": 2 }, "hasWire": true },
+          { "element": null, "hasWire": false }
+        ]
+      ],
+      "gridConfig": { "cols": 4, "rows": 1, "cellWidth": 80, "cellHeight": 60 }
+    },
+    {
+      "id": "rung_bwd",
+      "number": 3,
+      "comment": "Bwd = Tick AND NOT at step 0",
+      "grid": [
+        [
+          { "element": { "id": "tick_c_bwd", "type": "contact_no", "variable": "Tick",  "row": 0, "col": 0 }, "hasWire": true },
+          { "element": { "id": "at0_nc_bwd", "type": "contact_nc", "variable": "At0",   "row": 0, "col": 1 }, "hasWire": true },
+          { "element": { "id": "coil_bwd",   "type": "coil",        "variable": "Bwd",   "row": 0, "col": 2 }, "hasWire": true },
+          { "element": null, "hasWire": false }
+        ]
+      ],
+      "gridConfig": { "cols": 4, "rows": 1, "cellWidth": 80, "cellHeight": 60 }
+    },
+    {
+      "id": "rung_set_at0",
+      "number": 4,
+      "comment": "Set At0 when: (At0 AND NOT Fwd) OR (At1 AND Bwd)",
+      "grid": [
+        [
+          { "element": { "id": "at0_c1",  "type": "contact_no", "variable": "At0", "row": 0, "col": 0 }, "hasWire": true },
+          { "element": { "id": "fwd_nc1", "type": "contact_nc", "variable": "Fwd", "row": 0, "col": 1 }, "hasWire": true },
+          { "element": { "id": "coil_at0","type": "coil",        "variable": "At0", "row": 0, "col": 2 }, "hasWire": true },
+          { "element": null, "hasWire": false }
+        ],
+        [
+          { "element": { "id": "at1_c1",  "type": "contact_no", "variable": "At1", "row": 1, "col": 0 }, "hasWire": true },
+          { "element": { "id": "bwd_c1",  "type": "contact_no", "variable": "Bwd", "row": 1, "col": 1 }, "hasWire": true },
+          { "element": null, "hasWire": false },
+          { "element": null, "hasWire": false }
+        ]
+      ],
+      "branches": [ { "id": "b_at0", "startCol": 0, "endCol": 2, "rows": [0, 1] } ],
+      "gridConfig": { "cols": 4, "rows": 2, "cellWidth": 80, "cellHeight": 60 }
+    },
+    {
+      "id": "rung_set_at1",
+      "number": 5,
+      "comment": "Set At1 when: (At0 AND Fwd) OR (At1 AND NOT Fwd AND NOT Bwd) OR (At2 AND Bwd)",
+      "grid": [
+        [
+          { "element": { "id": "at0_c2",  "type": "contact_no", "variable": "At0", "row": 0, "col": 0 }, "hasWire": true },
+          { "element": { "id": "fwd_c2",  "type": "contact_no", "variable": "Fwd", "row": 0, "col": 1 }, "hasWire": true },
+          { "element": { "id": "coil_at1","type": "coil",        "variable": "At1", "row": 0, "col": 2 }, "hasWire": true },
+          { "element": null, "hasWire": false }
+        ],
+        [
+          { "element": { "id": "at2_c2",  "type": "contact_no", "variable": "At2", "row": 1, "col": 0 }, "hasWire": true },
+          { "element": { "id": "bwd_c2",  "type": "contact_no", "variable": "Bwd", "row": 1, "col": 1 }, "hasWire": true },
+          { "element": null, "hasWire": false },
+          { "element": null, "hasWire": false }
+        ]
+      ],
+      "branches": [ { "id": "b_at1", "startCol": 0, "endCol": 2, "rows": [0, 1] } ],
+      "gridConfig": { "cols": 4, "rows": 2, "cellWidth": 80, "cellHeight": 60 }
+    },
+    {
+      "id": "rung_set_at2",
+      "number": 6,
+      "comment": "Set At2 when: (At1 AND Fwd) OR (At3 AND Bwd)",
+      "grid": [
+        [
+          { "element": { "id": "at1_c3",  "type": "contact_no", "variable": "At1", "row": 0, "col": 0 }, "hasWire": true },
+          { "element": { "id": "fwd_c3",  "type": "contact_no", "variable": "Fwd", "row": 0, "col": 1 }, "hasWire": true },
+          { "element": { "id": "coil_at2","type": "coil",        "variable": "At2", "row": 0, "col": 2 }, "hasWire": true },
+          { "element": null, "hasWire": false }
+        ],
+        [
+          { "element": { "id": "at3_c3",  "type": "contact_no", "variable": "At3", "row": 1, "col": 0 }, "hasWire": true },
+          { "element": { "id": "bwd_c3",  "type": "contact_no", "variable": "Bwd", "row": 1, "col": 1 }, "hasWire": true },
+          { "element": null, "hasWire": false },
+          { "element": null, "hasWire": false }
+        ]
+      ],
+      "branches": [ { "id": "b_at2", "startCol": 0, "endCol": 2, "rows": [0, 1] } ],
+      "gridConfig": { "cols": 4, "rows": 2, "cellWidth": 80, "cellHeight": 60 }
+    },
+    {
+      "id": "rung_set_at3",
+      "number": 7,
+      "comment": "Set At3 when: At2 AND Fwd AND NOT At3",
+      "grid": [
+        [
+          { "element": { "id": "at2_c4",  "type": "contact_no", "variable": "At2", "row": 0, "col": 0 }, "hasWire": true },
+          { "element": { "id": "fwd_c4",  "type": "contact_no", "variable": "Fwd", "row": 0, "col": 1 }, "hasWire": true },
+          { "element": { "id": "coil_at3","type": "coil",        "variable": "At3", "row": 0, "col": 2 }, "hasWire": true },
+          { "element": null, "hasWire": false }
+        ]
+      ],
+      "gridConfig": { "cols": 4, "rows": 1, "cellWidth": 80, "cellHeight": 60 }
+    },
+    {
+      "id": "rung_led0",
+      "number": 8,
+      "comment": "LED D0 on when at position 0",
+      "grid": [
+        [
+          { "element": { "id": "at0_led", "type": "contact_no", "variable": "At0",   "row": 0, "col": 0 }, "hasWire": true },
+          { "element": null, "hasWire": true },
+          { "element": { "id": "coil_d0", "type": "coil",        "variable": "LED_D0","row": 0, "col": 2 }, "hasWire": true },
+          { "element": null, "hasWire": false }
+        ]
+      ],
+      "gridConfig": { "cols": 4, "rows": 1, "cellWidth": 80, "cellHeight": 60 }
+    },
+    {
+      "id": "rung_led1",
+      "number": 9,
+      "comment": "LED D1 on when at position 1",
+      "grid": [
+        [
+          { "element": { "id": "at1_led", "type": "contact_no", "variable": "At1",   "row": 0, "col": 0 }, "hasWire": true },
+          { "element": null, "hasWire": true },
+          { "element": { "id": "coil_d1", "type": "coil",        "variable": "LED_D1","row": 0, "col": 2 }, "hasWire": true },
+          { "element": null, "hasWire": false }
+        ]
+      ],
+      "gridConfig": { "cols": 4, "rows": 1, "cellWidth": 80, "cellHeight": 60 }
+    },
+    {
+      "id": "rung_led2",
+      "number": 10,
+      "comment": "LED D2 on when at position 2",
+      "grid": [
+        [
+          { "element": { "id": "at2_led", "type": "contact_no", "variable": "At2",   "row": 0, "col": 0 }, "hasWire": true },
+          { "element": null, "hasWire": true },
+          { "element": { "id": "coil_d2", "type": "coil",        "variable": "LED_D2","row": 0, "col": 2 }, "hasWire": true },
+          { "element": null, "hasWire": false }
+        ]
+      ],
+      "gridConfig": { "cols": 4, "rows": 1, "cellWidth": 80, "cellHeight": 60 }
+    },
+    {
+      "id": "rung_led3",
+      "number": 11,
+      "comment": "LED D3 on when at position 3",
+      "grid": [
+        [
+          { "element": { "id": "at3_led", "type": "contact_no", "variable": "At3",   "row": 0, "col": 0 }, "hasWire": true },
+          { "element": null, "hasWire": true },
+          { "element": { "id": "coil_d3", "type": "coil",        "variable": "LED_D3","row": 0, "col": 2 }, "hasWire": true },
+          { "element": null, "hasWire": false }
+        ]
+      ],
+      "gridConfig": { "cols": 4, "rows": 1, "cellWidth": 80, "cellHeight": 60 }
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2024-12-24",
+    "iecStandard": "IEC 61131-3",
+    "notes": "Larson scanner using contacts/coils + TON FB only"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "$schema": "../../zplc.schema.json",
+  "name": "Opta LED Chaser",
+  "version": "1.0.0",
+  "description": "Sequential LED animation across Opta D0-D3 with fading User LED",
+  "target": {
+    "board": "arduino_opta_wifi"
+  },
+  "compiler": {
+    "optimization": "none",
+    "debug": true
+  },
+  "tasks": [
+    {
+      "name": "ChaserTask",
+      "trigger": "cyclic",
+      "interval_ms": 10,
+      "priority": 1,
+      "watchdog_ms": 50,
+      "programs": [
+        "led_chaser.ld",
+        "user_led_fade.st"
+      ]
+    }
+  ],
+  "build": {
+    "outDir": "build"
+  }
+}

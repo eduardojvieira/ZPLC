@@ -1,0 +1,16 @@
+/*
+ * ZPLC Board Overlay - Arduino Opta WiFi (STM32H747 M7)
+ * SPDX-License-Identifier: MIT
+ *
+ * The Arduino Opta already defines:
+ *   - led0..led3 = Status LEDs D0..D3
+ *   - sw0 = User button
+ *
+ * This overlay adds:
+ *   - Modbus RTU configuration on the RS485 port
+ */
+
+/ {
+	/* The Opta has 4 status LEDs mapped to led0-led3 natively */
+};
+

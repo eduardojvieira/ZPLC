@@ -22,11 +22,16 @@ project(zplc_zephyr_app)
 target_sources(app PRIVATE
     src/main.c
     src/zplc_config.c
-    src/zplc_modbus.c
-    src/zplc_modbus_client.c
-    src/zplc_comm_modbus_handler.c
     src/zplc_time.c
 )
+
+if(CONFIG_MODBUS)
+  target_sources(app PRIVATE
+      src/zplc_modbus.c
+      src/zplc_modbus_client.c
+      src/zplc_comm_modbus_handler.c
+  )
+endif()
 
 if(CONFIG_MQTT_LIB)
   target_sources(app PRIVATE
