@@ -139,6 +139,7 @@ export async function requestPort(): Promise<SerialPort | null> {
         { usbVendorId: 0x1366 }, // SEGGER J-Link
         { usbVendorId: 0x303A }, // Espressif
         { usbVendorId: 0x2E8A }, // Raspberry Pi (Pico, RP2040)
+        { usbVendorId: 0x2FE3 }, // Zephyr USB CDC ACM (Arduino Opta, etc.)
       ]
     });
     return port;

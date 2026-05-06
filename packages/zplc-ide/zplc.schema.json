@@ -42,6 +42,7 @@
                     "enum": [
                         "rpi_pico",
                         "arduino_giga_r1",
+                        "arduino_opta_wifi",
                         "stm32f746g_disco",
                         "esp32s3_devkitc",
                         "nucleo_h743zi"

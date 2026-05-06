@@ -261,10 +261,8 @@ static int run_scheduler_mode(void) {
     return ret;
   }
 
-  /* Try to restore a previously saved program from NVS - DISABLED FOR DEBUGGING
-   */
-  // restored_tasks = try_restore_saved_program();
-  restored_tasks = 0;
+  /* Try to restore a previously saved program from NVS */
+  restored_tasks = try_restore_saved_program();
 
   if (restored_tasks > 0) {
     zplc_hal_log("[SCHED] Program restored from Flash. Running.\n");
@@ -344,12 +342,16 @@ int main(void) {
   zplc_hal_log("[INIT] Synchronizing RTC via SNTP...\n");
   zplc_time_init();
 
+#ifdef CONFIG_MODBUS
   zplc_hal_log("[INIT] Starting Modbus communication services...\n");
   zplc_modbus_init();
   rc = zplc_comm_modbus_handler_init();
   if (rc != 0) {
     zplc_hal_log("[INIT] ERROR: Modbus Handler init failed: %d\n", rc);
   }
+#else
+  zplc_hal_log("[INIT] Modbus features disabled for this board build.\n");
+#endif
 
 #ifdef CONFIG_MQTT_LIB
   zplc_hal_log("[INIT] Starting MQTT Client...\n");

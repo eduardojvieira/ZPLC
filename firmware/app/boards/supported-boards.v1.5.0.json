@@ -83,5 +83,22 @@
     "validation_level": "cross-build",
     "evidence_refs": [],
     "docs_ref": "docs/docs/reference/index.md#supported-boards"
+  },
+  {
+    "board_id": "arduino-opta-wifi-m7",
+    "display_name": "Arduino Opta WiFi (STM32H747 M7)",
+    "ide_id": "arduino_opta_wifi",
+    "zephyr_board": "arduino_opta/stm32h747xx/m7",
+    "variant": "stm32h747xx/m7",
+    "support_assets": [
+      "firmware/app/boards/arduino_opta_stm32h747xx_m7.conf",
+      "firmware/app/boards/arduino_opta_stm32h747xx_m7.overlay"
+    ],
+    "build_command": "west build -b arduino_opta/stm32h747xx/m7 firmware/app --pristine",
+    "network_class": "network-capable",
+    "network_interface": "wifi",
+    "validation_level": "cross-build",
+    "evidence_refs": [],
+    "docs_ref": "docs/docs/reference/index.md#supported-boards"
   }
 ]

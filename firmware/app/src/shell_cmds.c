@@ -706,6 +706,9 @@ static int cmd_sched_data(const struct shell *sh, size_t argc, char **argv) {
   }
   program_received_size += decoded;
   if (program_received_size >= program_expected_size) {
+    uint32_t saved_len = (uint32_t)program_received_size;
+    zplc_hal_persist_save("code_len", &saved_len, sizeof(saved_len));
+    zplc_hal_persist_save("code", program_buffer, program_received_size);
     int ret = sched_reset_runtime(true);
     if (ret < 0) {
       shell_error(sh, "ERROR: Scheduler load failed (%d)", ret);
@@ -1556,6 +1559,9 @@ static int cmd_zplc_data(const struct shell *sh, size_t argc, char **argv) {
   }
   program_received_size += decoded;
   if (program_received_size >= program_expected_size) {
+    uint32_t saved_len = (uint32_t)program_received_size;
+    zplc_hal_persist_save("code_len", &saved_len, sizeof(saved_len));
+    zplc_hal_persist_save("code", program_buffer, program_received_size);
     int ret = zplc_core_load_raw(program_buffer, program_received_size);
     if (ret != 0) {
       shell_error(sh, "ERROR: Program load failed (%d)", ret);
