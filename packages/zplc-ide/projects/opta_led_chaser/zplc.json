@@ -18,8 +18,7 @@
       "priority": 1,
       "watchdog_ms": 50,
       "programs": [
-        "led_chaser.ld",
-        "user_led_fade.st"
+        "led_chaser.st"
       ]
     }
   ],
