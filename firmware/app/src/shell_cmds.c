@@ -707,13 +707,20 @@ static int cmd_sched_data(const struct shell *sh, size_t argc, char **argv) {
   program_received_size += decoded;
   if (program_received_size >= program_expected_size) {
     uint32_t saved_len = (uint32_t)program_received_size;
-    zplc_hal_persist_save("code_len", &saved_len, sizeof(saved_len));
-    zplc_hal_persist_save("code", program_buffer, program_received_size);
+    zplc_hal_result_t persist_ret_len;
+    zplc_hal_result_t persist_ret_code;
+    persist_ret_len = zplc_hal_persist_save("code_len", &saved_len, sizeof(saved_len));
+    persist_ret_code = zplc_hal_persist_save("code", program_buffer, program_received_size);
     int ret = sched_reset_runtime(true);
     if (ret < 0) {
       shell_error(sh, "ERROR: Scheduler load failed (%d)", ret);
       program_expected_size = 0;
       return ret;
+    }
+    if (persist_ret_len != ZPLC_HAL_OK || persist_ret_code != ZPLC_HAL_OK) {
+      shell_error(sh, "ERROR: Persistence failed (%d)", (persist_ret_len != ZPLC_HAL_OK) ? persist_ret_len : persist_ret_code);
+      program_expected_size = 0;
+      return (persist_ret_len != ZPLC_HAL_OK) ? persist_ret_len : persist_ret_code;
     }
     shell_print(sh, "OK: Program loaded and started (%zu bytes)", program_received_size);
     program_expected_size = 0;
@@ -1560,8 +1567,10 @@ static int cmd_zplc_data(const struct shell *sh, size_t argc, char **argv) {
   program_received_size += decoded;
   if (program_received_size >= program_expected_size) {
     uint32_t saved_len = (uint32_t)program_received_size;
-    zplc_hal_persist_save("code_len", &saved_len, sizeof(saved_len));
-    zplc_hal_persist_save("code", program_buffer, program_received_size);
+    zplc_hal_result_t persist_ret_len;
+    zplc_hal_result_t persist_ret_code;
+    persist_ret_len = zplc_hal_persist_save("code_len", &saved_len, sizeof(saved_len));
+    persist_ret_code = zplc_hal_persist_save("code", program_buffer, program_received_size);
     int ret = zplc_core_load_raw(program_buffer, program_received_size);
     if (ret != 0) {
       shell_error(sh, "ERROR: Program load failed (%d)", ret);
@@ -1569,6 +1578,10 @@ static int cmd_zplc_data(const struct shell *sh, size_t argc, char **argv) {
       return ret;
     }
     runtime_state = ZPLC_STATE_READY;
+    if (persist_ret_len != ZPLC_HAL_OK || persist_ret_code != ZPLC_HAL_OK) {
+      shell_error(sh, "ERROR: Persistence failed (%d)", (persist_ret_len != ZPLC_HAL_OK) ? persist_ret_len : persist_ret_code);
+      return (persist_ret_len != ZPLC_HAL_OK) ? persist_ret_len : persist_ret_code;
+    }
     shell_print(sh, "OK: Program loaded (%zu bytes)", program_received_size);
   } else {
     shell_print(sh, "OK: Received %d bytes (%zu/%zu)", decoded,
