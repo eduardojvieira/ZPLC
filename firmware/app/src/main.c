@@ -5,7 +5,8 @@
  * SPDX-License-Identifier: MIT
  *
  * This is the main entry point for the ZPLC runtime on Zephyr OS.
- * On boot, it attempts to restore a previously saved program from Flash.
+ * On boot, it attempts to restore a previously saved program from Flash
+ * in both scheduler and legacy single-task modes.
  * If no program is found, it waits for shell commands to load one.
  */
 
@@ -58,6 +59,10 @@ size_t program_buffer_size = 4096;
 volatile size_t program_expected_size = 0;
 volatile size_t program_received_size = 0;
 
+/** @brief Persistence keys for saving program to NVS */
+#define ZPLC_PERSIST_KEY_CODE "code"
+#define ZPLC_PERSIST_KEY_LEN "code_len"
+
 /* ============================================================================
  * Legacy Single-Task Mode (when scheduler is disabled)
  * ============================================================================
@@ -85,13 +90,63 @@ static void sync_opi_to_gpio(void) {
   }
 }
 
+/**
+ * @brief Try to restore a saved program from NVS in legacy mode.
+ *
+ * @return 0 on success (program restored and running), or negative on error.
+ *         Returns 0 silently if no saved program exists.
+ */
+static int try_restore_legacy_program(void) {
+  uint32_t saved_len = 0;
+  int ret;
+
+  zplc_hal_log("[RESTORE] Checking for saved program...\n");
+
+  ret = zplc_hal_persist_load(ZPLC_PERSIST_KEY_LEN, &saved_len, sizeof(saved_len));
+  if (ret != ZPLC_HAL_OK) {
+    zplc_hal_log("[RESTORE] No saved program found (first boot)\n");
+    return 0;
+  }
+
+  if (saved_len == 0 || saved_len > program_buffer_size) {
+    zplc_hal_log("[RESTORE] Invalid saved length: %u\n", saved_len);
+    return 0;
+  }
+
+  ret = zplc_hal_persist_load(ZPLC_PERSIST_KEY_CODE, program_buffer, saved_len);
+  if (ret != ZPLC_HAL_OK) {
+    zplc_hal_log("[RESTORE] Failed to load program bytecode\n");
+    return 0;
+  }
+
+  zplc_hal_log("[RESTORE] Loaded %u bytes from Flash\n", saved_len);
+
+  ret = zplc_core_load_raw(program_buffer, saved_len);
+  if (ret != 0) {
+    zplc_hal_log("[RESTORE] Failed to load program into VM: %d\n", ret);
+    return ret;
+  }
+
+  program_received_size = saved_len;
+  runtime_state = ZPLC_STATE_RUNNING;
+  zplc_hal_log("[RESTORE] Restored raw program (%u bytes) and started\n", saved_len);
+  return 0;
+}
+
 static int run_legacy_mode(void) {
   int ret;
   uint32_t tick_start, tick_end, elapsed;
   int instructions_executed;
 
   zplc_hal_log("[LEGACY] Single-task mode (scheduler disabled)\n");
-  zplc_hal_log("[LEGACY] Waiting for program via shell. Use 'zplc help'.\n");
+
+  /* Try to restore a previously saved program from NVS */
+  ret = try_restore_legacy_program();
+  if (ret == 0 && runtime_state == ZPLC_STATE_RUNNING) {
+    zplc_hal_log("[LEGACY] Program restored from Flash. Running.\n");
+  } else {
+    zplc_hal_log("[LEGACY] Waiting for program via shell. Use 'zplc help'.\n");
+  }
 
   /* Wait for a program to be loaded via shell */
   while (runtime_state == ZPLC_STATE_IDLE) {
@@ -140,10 +195,6 @@ static int run_legacy_mode(void) {
  */
 
 #ifdef CONFIG_ZPLC_SCHEDULER
-
-/** @brief Persistence keys for saving program to NVS */
-#define ZPLC_PERSIST_KEY_CODE "code"
-#define ZPLC_PERSIST_KEY_LEN "code_len"
 
 /** @brief Buffer for restored program (shared with shell) */
 static uint8_t restored_program_buffer[0xB000];

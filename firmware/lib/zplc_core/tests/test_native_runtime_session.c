@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <zplc_isa.h>
@@ -538,6 +539,124 @@ static void test_poll_timeout_tracks_remaining_interval(void)
     zplc_native_runtime_session_shutdown(&session);
 }
 
+static void test_native_restore_after_reinit(void)
+{
+    zplc_native_runtime_session_t session;
+    char request[4096];
+    char response[4096];
+    char event[4096];
+    uint8_t program[16];
+    char program_hex[64];
+    size_t length = 0U;
+    char temp_dir[] = "/tmp/zplc_test_persist_XXXXXX";
+    char *persist_root;
+
+    printf("\n=== Test: native restore after reinit ===\n");
+
+    /* Remember original persist root */
+    persist_root = getenv("ZPLC_PERSIST_ROOT");
+
+    /* Create a temporary directory for isolated persistence */
+    if (mkdtemp(temp_dir) == NULL) {
+        TEST_ASSERT(0, "mkdtemp succeeded for isolated persistence");
+        return;
+    }
+    setenv("ZPLC_PERSIST_ROOT", temp_dir, 1);
+
+    length = emit_push32(program, length, 99U);
+    length = emit_store32(program, length, ZPLC_MEM_OPI_BASE);
+    length = emit_halt(program, length);
+    bytes_to_hex(program, length, program_hex, sizeof(program_hex));
+
+    /* First session: init and load */
+    zplc_native_runtime_session_init(&session);
+    snprintf(request,
+             sizeof(request),
+             "{\"id\":\"load\",\"type\":\"request\",\"method\":\"program.load\",\"params\":{\"bytecode_hex\":\"%s\"}}",
+             program_hex);
+    (void)zplc_native_runtime_session_handle_request(&session,
+                                                     request,
+                                                     response,
+                                                     sizeof(response),
+                                                     event,
+                                                     sizeof(event));
+    TEST_ASSERT(session.program_loaded == 1U, "first session program_loaded after load");
+
+    /* Shutdown first session */
+    zplc_native_runtime_session_shutdown(&session);
+
+    /* Second session: init should restore persisted program */
+    zplc_native_runtime_session_init(&session);
+    TEST_ASSERT(session.program_loaded == 1U, "second session program_loaded after init restore");
+
+    /* execution.start should succeed without an explicit program.load */
+    (void)zplc_native_runtime_session_handle_request(
+        &session,
+        "{\"id\":\"start\",\"type\":\"request\",\"method\":\"execution.start\",\"params\":{}}",
+        response,
+        sizeof(response),
+        event,
+        sizeof(event));
+    TEST_ASSERT(session.state == ZPLC_NATIVE_SESSION_RUNNING, "execution.start succeeds on restored program");
+
+    zplc_native_runtime_session_shutdown(&session);
+
+    /* Restore original persist root */
+    if (persist_root != NULL) {
+        setenv("ZPLC_PERSIST_ROOT", persist_root, 1);
+    } else {
+        unsetenv("ZPLC_PERSIST_ROOT");
+    }
+}
+
+static void test_native_persist_warning_on_failure(void)
+{
+    zplc_native_runtime_session_t session;
+    char request[4096];
+    char response[4096];
+    char event[4096];
+    uint8_t program[16];
+    char program_hex[64];
+    size_t length = 0U;
+    char *persist_root;
+
+    printf("\n=== Test: native persist warning on failure ===\n");
+
+    /* Remember original persist root */
+    persist_root = getenv("ZPLC_PERSIST_ROOT");
+
+    /* Point at a non-writable path to force persistence failure */
+    setenv("ZPLC_PERSIST_ROOT", "/dev/null/bad", 1);
+
+    length = emit_push32(program, length, 88U);
+    length = emit_store32(program, length, ZPLC_MEM_OPI_BASE);
+    length = emit_halt(program, length);
+    bytes_to_hex(program, length, program_hex, sizeof(program_hex));
+
+    zplc_native_runtime_session_init(&session);
+    snprintf(request,
+             sizeof(request),
+             "{\"id\":\"load\",\"type\":\"request\",\"method\":\"program.load\",\"params\":{\"bytecode_hex\":\"%s\"}}",
+             program_hex);
+    (void)zplc_native_runtime_session_handle_request(&session,
+                                                     request,
+                                                     response,
+                                                     sizeof(response),
+                                                     event,
+                                                     sizeof(event));
+    TEST_ASSERT_CONTAINS(response, "\"warning\"", "program.load response contains warning on persist failure");
+    TEST_ASSERT(session.program_loaded == 1U, "program remains loaded despite persist failure");
+
+    zplc_native_runtime_session_shutdown(&session);
+
+    /* Restore original persist root */
+    if (persist_root != NULL) {
+        setenv("ZPLC_PERSIST_ROOT", persist_root, 1);
+    } else {
+        unsetenv("ZPLC_PERSIST_ROOT");
+    }
+}
+
 static void test_session_ready_event_from_runtime_main(void)
 {
     printf("\n=== Test: runtime main emits session.ready ===\n");
@@ -553,6 +672,8 @@ int main(void)
     test_breakpoint_hit_pauses_runtime();
     test_zplc_program_load_uses_task_interval();
     test_poll_timeout_tracks_remaining_interval();
+    test_native_restore_after_reinit();
+    test_native_persist_warning_on_failure();
     test_session_ready_event_from_runtime_main();
 
     printf("\n=== Native runtime session tests complete ===\n");

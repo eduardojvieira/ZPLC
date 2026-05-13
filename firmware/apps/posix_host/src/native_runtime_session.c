@@ -1,6 +1,11 @@
 /**
  * @file native_runtime_session.c
  * @brief Request/response session helpers for the POSIX host runtime.
+ *
+ * On successful program.load, the decoded bytecode is persisted via the
+ * POSIX HAL so it survives across session restarts. session_init attempts
+ * to restore the last saved program automatically, leaving the session in
+ * IDLE with program_loaded == 1 when restoration succeeds.
  */
 
 #include "native_runtime_session.h"
@@ -11,6 +16,7 @@
 #include <string.h>
 
 #include <zplc_core.h>
+#include <zplc_hal.h>
 #include <zplc_isa.h>
 #include <zplc_scheduler.h>
 
@@ -20,6 +26,9 @@
 #define ZPLC_NATIVE_RESPONSE_ERR_INVALID_REQUEST -10
 #define ZPLC_NATIVE_RESPONSE_ERR_PROGRAM_LOAD -11
 #define ZPLC_NATIVE_RESPONSE_ERR_INVALID_STATE -12
+
+#define ZPLC_NATIVE_PERSIST_KEY_CODE "code"
+#define ZPLC_NATIVE_PERSIST_KEY_LEN  "code_len"
 
 typedef struct {
     char id[64];
@@ -557,6 +566,24 @@ static int handle_program_load(zplc_native_runtime_session_t *session,
     session->cycle_count = 0U;
     session->overrun_count = 0U;
 
+    {
+        zplc_hal_result_t persist_ret;
+        uint32_t saved_len = (uint32_t)program_size;
+        persist_ret = zplc_hal_persist_save(ZPLC_NATIVE_PERSIST_KEY_LEN, &saved_len, sizeof(saved_len));
+        if (persist_ret == ZPLC_HAL_OK) {
+            persist_ret = zplc_hal_persist_save(ZPLC_NATIVE_PERSIST_KEY_CODE, session->program, program_size);
+        }
+        if (persist_ret != ZPLC_HAL_OK) {
+            return snprintf(response,
+                            response_size,
+                            "{\"id\":\"%s\",\"type\":\"response\",\"result\":{"
+                            "\"program_size\":%u},"
+                            "\"warning\":\"persistence failed\"}",
+                            request->id,
+                            (unsigned)program_size);
+        }
+    }
+
     return snprintf(response,
                     response_size,
                     "{\"id\":\"%s\",\"type\":\"response\",\"result\":{"
@@ -599,6 +626,26 @@ static int handle_stop_or_reset(zplc_native_runtime_session_t *session,
 
     if (reset_program != 0 && session->program_loaded != 0U) {
         if (load_program_artifact(session, session->program, session->program_size) != 0) {
+            uint32_t fallback_len = 0U;
+            zplc_hal_result_t persist_ret;
+            uint8_t fallback_program[ZPLC_MEM_CODE_SIZE];
+
+            /* Fallback: try to reload from HAL persistence */
+            persist_ret = zplc_hal_persist_load(ZPLC_NATIVE_PERSIST_KEY_LEN, &fallback_len, sizeof(fallback_len));
+            if (persist_ret == ZPLC_HAL_OK && fallback_len > 0U && fallback_len <= sizeof(fallback_program)) {
+                persist_ret = zplc_hal_persist_load(ZPLC_NATIVE_PERSIST_KEY_CODE, fallback_program, fallback_len);
+                if (persist_ret == ZPLC_HAL_OK &&
+                    load_program_artifact(session, fallback_program, fallback_len) == 0) {
+                    session->program_size = fallback_len;
+                    session->cycle_count = 0U;
+                    session->overrun_count = 0U;
+                    return snprintf(response,
+                                    response_size,
+                                    "{\"id\":\"%s\",\"type\":\"response\",\"result\":{}}",
+                                    request->id);
+                }
+            }
+
             session->state = ZPLC_NATIVE_SESSION_ERROR;
             return format_error_response(request->id,
                                          "RUNTIME_FAILURE",
@@ -815,6 +862,9 @@ static int handle_force_clear_all(const zplc_native_request_t *request,
 
 void zplc_native_runtime_session_init(zplc_native_runtime_session_t *session)
 {
+    uint32_t saved_len = 0U;
+    zplc_hal_result_t persist_ret;
+
     if (session == NULL) {
         return;
     }
@@ -823,6 +873,18 @@ void zplc_native_runtime_session_init(zplc_native_runtime_session_t *session)
     session->state = ZPLC_NATIVE_SESSION_IDLE;
     session->scan_interval_ms = 100U;
     zplc_core_init();
+
+    /* Attempt to restore previously persisted program */
+    persist_ret = zplc_hal_persist_load(ZPLC_NATIVE_PERSIST_KEY_LEN, &saved_len, sizeof(saved_len));
+    if (persist_ret == ZPLC_HAL_OK && saved_len > 0U && saved_len <= sizeof(session->program)) {
+        persist_ret = zplc_hal_persist_load(ZPLC_NATIVE_PERSIST_KEY_CODE, session->program, saved_len);
+        if (persist_ret == ZPLC_HAL_OK) {
+            if (load_program_artifact(session, session->program, saved_len) == 0) {
+                session->program_loaded = 1U;
+                session->program_size = saved_len;
+            }
+        }
+    }
 }
 
 void zplc_native_runtime_session_shutdown(zplc_native_runtime_session_t *session)
