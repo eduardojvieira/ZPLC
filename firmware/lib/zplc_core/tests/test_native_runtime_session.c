@@ -3,6 +3,8 @@
  * @brief Native runtime session protocol tests for the POSIX host runtime.
  */
 
+#define _POSIX_C_SOURCE 200809L
+
 #include "native_runtime_session.h"
 
 #include <stdio.h>
