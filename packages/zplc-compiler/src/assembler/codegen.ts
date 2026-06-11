@@ -12,6 +12,36 @@ import type { Instruction, TaskDef, TagDef } from './types';
 import { ZPLC_CONSTANTS } from './types';
 import type { ParseResult } from './parser';
 
+// =============================================================================
+// CRC32 (IEEE 802.3 / Ethernet / zlib / PKZIP)
+// Polynomial: 0xEDB88320
+// =============================================================================
+
+const CRC32_TABLE = new Uint32Array(256);
+(function initCrc32Table() {
+    for (let i = 0; i < 256; i++) {
+        let c = i;
+        for (let k = 0; k < 8; k++) {
+            c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+        }
+        CRC32_TABLE[i] = c >>> 0;
+    }
+})();
+
+/**
+ * Compute CRC32 over a byte array.
+ *
+ * @param data - Bytes to checksum
+ * @returns CRC32 value (unsigned 32-bit)
+ */
+export function crc32(data: Uint8Array): number {
+    let c = 0xFFFFFFFF;
+    for (let i = 0; i < data.length; i++) {
+        c = (CRC32_TABLE[(c ^ data[i]) & 0xFF] ^ (c >>> 8)) >>> 0;
+    }
+    return (c ^ 0xFFFFFFFF) >>> 0;
+}
+
 /**
  * Set of opcodes that use absolute 16-bit addresses and need relocation.
  * These are jumps and calls that target absolute code addresses.
@@ -239,6 +269,19 @@ export function createZplcFile(bytecode: Uint8Array, entryPoint: number, tags?: 
         }
     }
 
+    // =========================================================================
+    // CRC32: checksum everything EXCEPT the crc32 field itself (bytes 12-15)
+    // =========================================================================
+    const crcOffset = 12; // crc32 field starts at byte 12
+    const crcSize = 4;
+    const preCrc = output.subarray(0, crcOffset);
+    const postCrc = output.subarray(crcOffset + crcSize);
+    const payload = new Uint8Array(preCrc.length + postCrc.length);
+    payload.set(preCrc, 0);
+    payload.set(postCrc, preCrc.length);
+    const checksum = crc32(payload);
+    view.setUint32(crcOffset, checksum, true);
+
     return output;
 }
 
@@ -412,6 +455,19 @@ export function createMultiTaskZplcFile(bytecode: Uint8Array, tasks: TaskDef[], 
             offset += 4;
         }
     }
+
+    // =========================================================================
+    // CRC32: checksum everything EXCEPT the crc32 field itself (bytes 12-15)
+    // =========================================================================
+    const crcOffset = 12; // crc32 field starts at byte 12
+    const crcSize = 4;
+    const preCrc = output.subarray(0, crcOffset);
+    const postCrc = output.subarray(crcOffset + crcSize);
+    const payload = new Uint8Array(preCrc.length + postCrc.length);
+    payload.set(preCrc, 0);
+    payload.set(postCrc, preCrc.length);
+    const checksum = crc32(payload);
+    view.setUint32(crcOffset, checksum, true);
 
     return output;
 }

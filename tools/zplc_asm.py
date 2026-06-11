@@ -27,6 +27,7 @@ import argparse
 import struct
 import sys
 import re
+import zlib
 from dataclasses import dataclass
 from enum import IntEnum
 from pathlib import Path
@@ -489,7 +490,7 @@ class ZPLCAssembler:
             ZPLC_VERSION_MAJOR,   # version_major (2)
             ZPLC_VERSION_MINOR,   # version_minor (2)
             0,                    # flags (4)
-            0,                    # crc32 (4) - TODO
+            0,                    # crc32 (4) - computed below
             code_size,            # code_size (4)
             0,                    # data_size (4)
             self.entry_point if isinstance(self.entry_point, int) else 0,  # entry_point (2)
@@ -505,7 +506,16 @@ class ZPLCAssembler:
         
         assert len(segment_entry) == 8, f"Segment entry size mismatch: {len(segment_entry)}"
         
-        return header + segment_entry + bytecode
+        zplc_data = header + segment_entry + bytecode
+        
+        # Compute CRC32 over everything EXCEPT the crc32 field (bytes 12-15)
+        crc_payload = zplc_data[:12] + zplc_data[16:]
+        checksum = zlib.crc32(crc_payload) & 0xFFFFFFFF
+        
+        # Patch crc32 into header
+        zplc_data = zplc_data[:12] + struct.pack('<I', checksum) + zplc_data[16:]
+        
+        return zplc_data
     
     def assemble(self, source: str) -> bytes:
         """

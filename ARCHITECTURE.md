@@ -133,7 +133,7 @@ ZPLC/
 | Fake POSIX mutexes | HIGH | `zplc_hal_mutex_create()` returns `(zplc_hal_mutex_t)1`. All lock/unlock are no-ops. Process image "protection" is a lie. |
 | Loader overflow-prone bounds | HIGH | Segment checks use `offset + size` arithmetic — wraparound bypass possible. |
 | CI is documentation-only | HIGH | `ci.yml` validates board lists and release evidence. No C compilation, no C tests, no TS tests, no linting. |
-| CRC32 is hardcoded zero | HIGH | `.zplc` binary integrity field is always 0. Firmware cannot detect corruption. |
+| CRC32 is hardcoded zero | HIGH | `.zplc` binary integrity field is always 0. Firmware cannot detect corruption. **FIXED in assemblers — firmware loader still needs verification.** |
 | Multiple polling loops in IDE | MEDIUM | `TerminalTab` polls via `requestAnimationFrame`, `WatchWindow` duplicates `useDebugController` polling, serial command queue contention. |
 | Electron default-allow | MEDIUM | Permission handler returns `true` for everything. No CSP enforcement in production. |
 | Scheduler holds mutex across scan+I/O | MEDIUM | Zephyr scheduler locks `mem_mutex` for entire VM execution + I/O sync, blocking comm/debug threads. |
@@ -150,6 +150,7 @@ ZPLC/
 | `zplc_core.c` size | HIGH | HIGH | 2,498 lines, ~87 functions. Single-point failure. Any change risks the entire VM. Hard to review, hard to test in isolation. |
 | Loader bound checks | HIGH | HIGH | `offset + size` overflow allows malformed binaries to bypass validation. Remote code execution surface on embedded target. |
 | CRC32 always zero | HIGH | MEDIUM | No integrity verification on bytecode. Corrupt flash / partial uploads detected only at runtime via undefined behavior. |
+| CRC32 implemented (assembler half) | FIXED | LOW | Both TypeScript (`codegen.ts`) and Python (`zplc_asm.py`) assemblers now compute IEEE 802.3 CRC32 over the full file excluding the crc32 field itself. Firmware loader verification is the remaining half (see R2 spec). |
 | CI gap | HIGH | MEDIUM | No automated C compilation, C unit tests, TS unit tests, or linting on push/PR. Regression risk on every merge. |
 | Compiler codegen monolith | HIGH | MEDIUM | Unreviewable, hard to test edge cases. Bytecode validator doesn't exist yet. |
 | IDE polling contention | MEDIUM | MEDIUM | Dual polling (`WatchWindow` + `useDebugController`), rAF-based terminal read. Burns CPU, delays debug updates. |
