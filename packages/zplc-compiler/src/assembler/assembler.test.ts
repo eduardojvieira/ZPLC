@@ -22,6 +22,7 @@ import {
     createMultiTaskZplcFile,
     relocateBytecode,
     TASK_TYPE,
+    crc32,
 } from './index';
 import type { TagDef, TaskDef } from './index';
 
@@ -322,6 +323,27 @@ describe('ZPLC file format', () => {
         const result = assemble('HALT');
         const view = new DataView(result.zplcFile.buffer);
         expect(view.getUint16(26, true)).toBe(1);  // segment_count
+    });
+
+    test('crc32 is non-zero and verifiable', () => {
+        const result = assemble('HALT');
+        const view = new DataView(result.zplcFile.buffer);
+        const storedCrc = view.getUint32(12, true);
+        expect(storedCrc).not.toBe(0);
+
+        // Recompute CRC over everything except the crc32 field itself
+        const preCrc = result.zplcFile.subarray(0, 12);
+        const postCrc = result.zplcFile.subarray(16);
+        const payload = new Uint8Array(preCrc.length + postCrc.length);
+        payload.set(preCrc, 0);
+        payload.set(postCrc, preCrc.length);
+        expect(crc32(payload)).toBe(storedCrc);
+    });
+
+    test('crc32 matches Python zlib.crc32 for same payload', () => {
+        // Known test vector: "123456789" -> 0xCBF43926
+        const testData = new TextEncoder().encode('123456789');
+        expect(crc32(testData)).toBe(0xCBF43926);
     });
 });
 

@@ -40,7 +40,7 @@ export type {
 } from './types';
 export { parseNumber, parse } from './parser';
 export type { ParseResult } from './parser';
-export { emitBytecode, createZplcFile, createMultiTaskZplcFile, relocateBytecode, disassemble, hexDump } from './codegen';
+export { emitBytecode, createZplcFile, createMultiTaskZplcFile, relocateBytecode, disassemble, hexDump, crc32 } from './codegen';
 
 import { parse } from './parser';
 import { generate } from './codegen';
