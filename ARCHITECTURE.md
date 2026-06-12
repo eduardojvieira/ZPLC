@@ -14,9 +14,6 @@ ZPLC/
 │   │   │   ├── zplc_mqtt.c           # MQTT (Sparkplug B) integration
 │   │   │   └── zplc_comm_modbus_handler.c  # Comm FB Modbus handler
 │   │   ├── boards/                   # Board overlays & Kconfig per target
-│   │   ├── build_disco/              # ⚠️ 1,132 committed build artifacts
-│   │   ├── build_esp32s3/            # ⚠️ more committed build artifacts
-│   │   └── build_giga/               # ⚠️ more committed build artifacts
 │   ├── apps/posix_host/              # POSIX dev runtime (native simulation)
 │   │   └── src/
 │   │       ├── main.c                # POSIX main
@@ -127,13 +124,12 @@ ZPLC/
 
 | Issue | Severity | Detail |
 |-------|----------|--------|
-| Build artifacts committed | CRITICAL | `firmware/app/build_disco/` (1,132 files) committed to git. `.gitignore` only excludes `build/` not `build_disco/`. Also `build_esp32s3/`, `build_giga/`, `build_verify_esp32s3/`. |
 | Legacy + Instance API coexistence | HIGH | `zplc_core_*` singleton functions wrap `zplc_vm_*`. Adds surface area and confuses callers. |
 | Codegen monolith | HIGH | `zplc_core.c` at 2,498 lines. Compiler `codegen.ts` described as "unreviewable." |
 | Fake POSIX mutexes | HIGH | `zplc_hal_mutex_create()` returns `(zplc_hal_mutex_t)1`. All lock/unlock are no-ops. Process image "protection" is a lie. |
 | Loader overflow-prone bounds | HIGH | Segment checks use `offset + size` arithmetic — wraparound bypass possible. |
 | CI is documentation-only | HIGH | `ci.yml` validates board lists and release evidence. No C compilation, no C tests, no TS tests, no linting. |
-| CRC32 is hardcoded zero | HIGH | `.zplc` binary integrity field is always 0. Firmware cannot detect corruption. **FIXED in assemblers — firmware loader still needs verification.** |
+| CRC32 is hardcoded zero | HIGH | `.zplc` binary integrity field is always 0. Firmware cannot detect corruption. **Assemblers now compute real CRC32 (IEEE 802.3). Firmware loader still does not verify it — this is the remaining half (Spec R2).** |
 | Multiple polling loops in IDE | MEDIUM | `TerminalTab` polls via `requestAnimationFrame`, `WatchWindow` duplicates `useDebugController` polling, serial command queue contention. |
 | Electron default-allow | MEDIUM | Permission handler returns `true` for everything. No CSP enforcement in production. |
 | Scheduler holds mutex across scan+I/O | MEDIUM | Zephyr scheduler locks `mem_mutex` for entire VM execution + I/O sync, blocking comm/debug threads. |
@@ -146,7 +142,6 @@ ZPLC/
 | Area | Debt | Risk | Why |
 |------|------|------|-----|
 | POSIX HAL mutexes | CRITICAL | HIGH | All process image "locking" is fake. Race conditions in native sim and any POSIX deployment. Affects all shared-memory correctness. |
-| Build artifacts in git | CRITICAL | MEDIUM | 1,132+ object files, cmake caches, ninja logs in repo. Bloat. Merge conflicts on generated files. `.gitignore` gap. |
 | `zplc_core.c` size | HIGH | HIGH | 2,498 lines, ~87 functions. Single-point failure. Any change risks the entire VM. Hard to review, hard to test in isolation. |
 | Loader bound checks | HIGH | HIGH | `offset + size` overflow allows malformed binaries to bypass validation. Remote code execution surface on embedded target. |
 | CRC32 always zero | HIGH | MEDIUM | No integrity verification on bytecode. Corrupt flash / partial uploads detected only at runtime via undefined behavior. |
@@ -191,7 +186,6 @@ These are non-negotiable for any downstream work:
 | TS IDE tests | 31 | — |
 | TS total test lines | — | 8,225 |
 | HIL Python scripts | 50+ | — |
-| Committed build artifacts | 1,132 | N/A |
 | Spec documents | 9 dirs | — |
 | Assembly examples | 10 | — |
 
