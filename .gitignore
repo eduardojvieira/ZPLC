@@ -3,6 +3,10 @@ build/
 build_posix/
 build_pico/
 build_release/
+build_disco/
+build_esp32s3/
+build_giga/
+build_verify_esp32s3/
 bin/
 dist/
 build_zephyr/
@@ -47,6 +51,8 @@ venv/
 !examples/*.zplc
 
 # Local artifacts
+Screenshots/
+*.bak
 .gemini/
 .agent/
 .opencode/
