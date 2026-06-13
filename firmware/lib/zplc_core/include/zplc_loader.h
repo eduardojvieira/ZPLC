@@ -24,6 +24,7 @@
 #define ZPLC_LOADER_ERR_SIZE -3
 #define ZPLC_LOADER_ERR_NO_CODE -4
 #define ZPLC_LOADER_ERR_MEMORY -5
+#define ZPLC_LOADER_ERR_CRC32 -6
 
 /**
  * @brief Load a ZPLC binary file from memory buffer.
