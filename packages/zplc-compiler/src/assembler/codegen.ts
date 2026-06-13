@@ -337,7 +337,7 @@ export function createMultiTaskZplcFile(bytecode: Uint8Array, tasks: TaskDef[], 
     view.setUint32(offset, 0, true);
     offset += 4;
 
-    // crc32 (TODO)
+    // crc32 (computed below)
     view.setUint32(offset, 0, true);
     offset += 4;
 
