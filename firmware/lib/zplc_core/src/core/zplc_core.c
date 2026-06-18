@@ -1877,6 +1877,13 @@ int zplc_vm_step(zplc_vm_t *vm) {
       zplc_comm_fb_kind_t kind = (zplc_comm_fb_kind_t)operand32;
       uint16_t fb_base = (uint16_t)a;
 
+      /* Validate FB kind before dispatch */
+      if (kind == ZPLC_COMM_FB_NONE || kind >= ZPLC_COMM_FB_KIND_MAX) {
+        vm->error = ZPLC_VM_INVALID_OPCODE;
+        vm->halted = 1;
+        return ZPLC_VM_INVALID_OPCODE;
+      }
+
       /* First, determine the physical pointer to FB memory. Comm FBs are mostly
        * in WORK or RETAIN memory */
       uint8_t *fb_mem = zplc_mem_get_region(fb_base & 0xF000);

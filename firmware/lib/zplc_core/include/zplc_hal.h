@@ -235,6 +235,14 @@ zplc_hal_result_t zplc_hal_mutex_lock(zplc_hal_mutex_t mutex);
 zplc_hal_result_t zplc_hal_mutex_unlock(zplc_hal_mutex_t mutex);
 
 /**
+ * @brief Destroy a mutex and release its resources.
+ *
+ * @param mutex Mutex handle.
+ * @return ZPLC_HAL_OK on success, error code otherwise.
+ */
+zplc_hal_result_t zplc_hal_mutex_destroy(zplc_hal_mutex_t mutex);
+
+/**
  * @brief Create a TCP socket and connect to a remote host.
  *
  * @param host   Hostname or IP address string.

@@ -9,7 +9,7 @@
  * and simulation.
  */
 
-/* Required for clock_gettime, snprintf, fsync, fileno on some systems */
+/* Required for clock_gettime, snprintf, fsync, fileno, pthread_mutex_t on some systems */
 #define _POSIX_C_SOURCE 200809L
 
 #include <zplc_hal.h>
@@ -27,6 +27,7 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
+#include <pthread.h>
 #endif
 
 /* ============================================================================
@@ -408,24 +409,133 @@ zplc_hal_result_t zplc_hal_persist_delete(const char *key) {
 
 /* ============================================================================
  * Synchronization Functions
- * ============================================================================
+ * ============================================================================ */
+
+#ifndef _WIN32
+
+/**
+ * @brief POSIX mutex wrapper structure.
+ *
+ * Wraps a pthread_mutex_t so we can return it as an opaque zplc_hal_mutex_t.
  */
+typedef struct {
+  pthread_mutex_t mtx;
+} zplc_posix_mutex_t;
 
 zplc_hal_mutex_t zplc_hal_mutex_create(void) {
-  /* Single-threaded desktop/test environment: Mutexes not strictly required,
-     but could be implemented with pthread_mutex_t if needed. */
-  return (zplc_hal_mutex_t)1; /* Dummy handle */
+  zplc_posix_mutex_t *wrapper =
+      (zplc_posix_mutex_t *)malloc(sizeof(zplc_posix_mutex_t));
+  if (wrapper == NULL) {
+    return NULL;
+  }
+
+  if (pthread_mutex_init(&wrapper->mtx, NULL) != 0) {
+    free(wrapper);
+    return NULL;
+  }
+
+  return (zplc_hal_mutex_t)wrapper;
 }
 
 zplc_hal_result_t zplc_hal_mutex_lock(zplc_hal_mutex_t mutex) {
-  (void)mutex;
+  zplc_posix_mutex_t *wrapper = (zplc_posix_mutex_t *)mutex;
+  if (wrapper == NULL) {
+    return ZPLC_HAL_ERROR;
+  }
+
+  if (pthread_mutex_lock(&wrapper->mtx) != 0) {
+    return ZPLC_HAL_ERROR;
+  }
+
   return ZPLC_HAL_OK;
 }
 
 zplc_hal_result_t zplc_hal_mutex_unlock(zplc_hal_mutex_t mutex) {
-  (void)mutex;
+  zplc_posix_mutex_t *wrapper = (zplc_posix_mutex_t *)mutex;
+  if (wrapper == NULL) {
+    return ZPLC_HAL_ERROR;
+  }
+
+  if (pthread_mutex_unlock(&wrapper->mtx) != 0) {
+    return ZPLC_HAL_ERROR;
+  }
+
   return ZPLC_HAL_OK;
 }
+
+zplc_hal_result_t zplc_hal_mutex_destroy(zplc_hal_mutex_t mutex) {
+  zplc_posix_mutex_t *wrapper = (zplc_posix_mutex_t *)mutex;
+  if (wrapper == NULL) {
+    return ZPLC_HAL_ERROR;
+  }
+
+  (void)pthread_mutex_destroy(&wrapper->mtx);
+  free(wrapper);
+  return ZPLC_HAL_OK;
+}
+
+#else /* _WIN32 */
+
+typedef struct {
+  HANDLE mtx;
+} zplc_win32_mutex_t;
+
+zplc_hal_mutex_t zplc_hal_mutex_create(void) {
+  zplc_win32_mutex_t *wrapper =
+      (zplc_win32_mutex_t *)malloc(sizeof(zplc_win32_mutex_t));
+  if (wrapper == NULL) {
+    return NULL;
+  }
+
+  wrapper->mtx = CreateMutex(NULL, FALSE, NULL);
+  if (wrapper->mtx == NULL) {
+    free(wrapper);
+    return NULL;
+  }
+
+  return (zplc_hal_mutex_t)wrapper;
+}
+
+zplc_hal_result_t zplc_hal_mutex_lock(zplc_hal_mutex_t mutex) {
+  zplc_win32_mutex_t *wrapper = (zplc_win32_mutex_t *)mutex;
+  if (wrapper == NULL || wrapper->mtx == NULL) {
+    return ZPLC_HAL_ERROR;
+  }
+
+  if (WaitForSingleObject(wrapper->mtx, INFINITE) != WAIT_OBJECT_0) {
+    return ZPLC_HAL_ERROR;
+  }
+
+  return ZPLC_HAL_OK;
+}
+
+zplc_hal_result_t zplc_hal_mutex_unlock(zplc_hal_mutex_t mutex) {
+  zplc_win32_mutex_t *wrapper = (zplc_win32_mutex_t *)mutex;
+  if (wrapper == NULL || wrapper->mtx == NULL) {
+    return ZPLC_HAL_ERROR;
+  }
+
+  if (!ReleaseMutex(wrapper->mtx)) {
+    return ZPLC_HAL_ERROR;
+  }
+
+  return ZPLC_HAL_OK;
+}
+
+zplc_hal_result_t zplc_hal_mutex_destroy(zplc_hal_mutex_t mutex) {
+  zplc_win32_mutex_t *wrapper = (zplc_win32_mutex_t *)mutex;
+  if (wrapper == NULL) {
+    return ZPLC_HAL_ERROR;
+  }
+
+  if (wrapper->mtx != NULL) {
+    CloseHandle(wrapper->mtx);
+  }
+  free(wrapper);
+  return ZPLC_HAL_OK;
+}
+
+#endif /* _WIN32 */
 
 /* ============================================================================
  * Network Functions (Stubs for Phase 0)
