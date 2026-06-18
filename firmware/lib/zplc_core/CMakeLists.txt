@@ -179,6 +179,18 @@ target_include_directories(test_hal_posix_persist PRIVATE
 
 add_test(NAME test_hal_posix_persist COMMAND test_hal_posix_persist)
 
+# Test: POSIX HAL mutex behavior
+add_executable(test_hal_posix_mutex
+    tests/test_hal_posix_mutex.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_hal_posix_mutex PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+add_test(NAME test_hal_posix_mutex COMMAND test_hal_posix_mutex)
+
 # Test: Communication Dispatch
 add_executable(test_comm_dispatch
     tests/test_comm_dispatch.c
@@ -196,7 +208,7 @@ add_test(NAME test_comm_dispatch COMMAND test_comm_dispatch)
 # Custom target to run all tests
 add_custom_target(check
     COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-    DEPENDS test_isa test_vm_core test_comm_dispatch test_native_runtime_session test_hal_posix_persist
+    DEPENDS test_isa test_vm_core test_comm_dispatch test_native_runtime_session test_hal_posix_persist test_hal_posix_mutex
     COMMENT "Running all tests..."
 )
 

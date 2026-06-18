@@ -192,7 +192,11 @@ int zplc_loader_load(const uint8_t *data, size_t len) {
     size_t offset = sizeof(struct zplc_file_header);
     size_t segment_table_size = hdr->segment_count * sizeof(struct zplc_segment_entry);
     
-    if (len < offset + segment_table_size) {
+    if (hdr->segment_count > 0 && segment_table_size / hdr->segment_count != sizeof(struct zplc_segment_entry)) {
+        return ZPLC_LOADER_ERR_SIZE; /* Overflow in segment table size */
+    }
+    
+    if (len < offset || len - offset < segment_table_size) {
         return ZPLC_LOADER_ERR_SIZE;
     }
 
@@ -204,7 +208,7 @@ int zplc_loader_load(const uint8_t *data, size_t len) {
     
     for (int i = 0; i < hdr->segment_count; i++) {
         if (segments[i].type == ZPLC_SEGMENT_TYPE_CODE) {
-            if (len < offset + segments[i].size) return ZPLC_LOADER_ERR_SIZE;
+            if (segments[i].size > len - offset) return ZPLC_LOADER_ERR_SIZE;
             
             /* Copy code to VM memory using public API */
             if (zplc_mem_load_code(data + offset, segments[i].size, 0) != 0) {
@@ -212,6 +216,7 @@ int zplc_loader_load(const uint8_t *data, size_t len) {
             }
             code_loaded = 1;
         }
+        if (segments[i].size > len - offset) return ZPLC_LOADER_ERR_SIZE;
         offset += segments[i].size;
     }
 
@@ -223,7 +228,7 @@ int zplc_loader_load(const uint8_t *data, size_t len) {
 
     for (int i = 0; i < hdr->segment_count; i++) {
         if (segments[i].type == ZPLC_SEGMENT_TYPE_TASK) {
-            if (len < offset + segments[i].size) return ZPLC_LOADER_ERR_SIZE;
+            if (segments[i].size > len - offset) return ZPLC_LOADER_ERR_SIZE;
             
             size_t task_count = segments[i].size / sizeof(struct zplc_task_def_file);
             const struct zplc_task_def_file *tasks = (const struct zplc_task_def_file *)(data + offset);
@@ -247,6 +252,7 @@ int zplc_loader_load(const uint8_t *data, size_t len) {
                 tasks_found++;
             }
         }
+        if (segments[i].size > len - offset) return ZPLC_LOADER_ERR_SIZE;
         offset += segments[i].size;
     }
 
