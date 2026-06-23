@@ -32,3 +32,20 @@ jobs:
         run: |
           bun run generate:v1.5-docs
           bun run validate:v1.5-docs
+
+  c-build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build and test ZPLC Core
+        working-directory: firmware/lib/zplc_core
+        run: |
+          mkdir -p build
+          cd build
+          cmake ..
+          make -j$(nproc)
+          ctest --output-on-failure
