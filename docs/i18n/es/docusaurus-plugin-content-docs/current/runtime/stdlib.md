@@ -3,15 +3,15 @@ slug: /runtime/stdlib
 id: stdlib
 title: Referencia de la Biblioteca Estándar
 sidebar_label: Standard Library
-description: Referencia completa de todas las funciones estándar y function blocks de ZPLC (Timers, Math, Bitwise, Strings, System).
+description: Referencia de las funciones y bloques de la biblioteca estándar de ZPLC documentados actualmente.
 tags: [reference, stdlib, iec61131-3]
 ---
 
 # Referencia de la Biblioteca Estándar de ZPLC
 
-ZPLC proporciona un conjunto completo de bloques de función estándar (FBs) y funciones que cumplen con IEC 61131-3. Estos están disponibles en todos los editores (ST, IL, LD, FBD, SFC).
+ZPLC documenta las funciones y bloques de la biblioteca estándar implementados por sus rutas de compilador/runtime. La disponibilidad depende del flujo de lenguaje y del perfil de capacidades del destino; ST es el frontend central.
 
-A continuación se muestra la referencia exhaustiva a todas las funciones estándar disponibles en el runtime de ZPLC.
+Esta página describe las funciones cubiertas hoy por la referencia. Validá el proyecto contra el flujo y perfil seleccionados.
 
 ---
 
@@ -215,12 +215,15 @@ Combina características de CTU y CTD.
 
 ### UPTIME
 - **Entradas:** Ninguna.
-- **Salidas:** (UDINT / TIME) Uptime del hardware en milisegundos.
+- **Salidas:** (UDINT / TIME) Campo de uptime del runtime en milisegundos.
 
 ### CYCLE_TIME
 - **Entradas:** Ninguna.
-- **Salidas:** (UDINT / TIME) Duración del último ciclo de escaneo del PLC en ms.
+- **Salidas:** (UDINT / TIME) Último valor de ciclo informado. Su unidad, resolución, punto de actualización y relación con el tiempo físico dependen del runtime/perfil; no lo uses como garantía de timing de hardware.
 
 ### WATCHDOG_RESET
+Stub de compatibilidad. Hoy compila a `NOP` y no alimenta, reinicia ni valida un watchdog de hardware o software.
 - **Entradas:** Ninguna.
-- **Salidas:** (BOOL) `TRUE` si se reseteó con éxito el watchdog de hardware de forma explícita.
+- **Salidas:** Ninguna.
+
+No debe usarse como control de seguridad.

@@ -452,15 +452,16 @@ def parse_header(path: Path) -> HeaderDoc:
                 index += 1
                 continue
 
-            functions.append(
-                FunctionDoc(
-                    name=name,
-                    signature=f"{signature};",
-                    return_type=return_type,
-                    params=params,
-                    comment=pending_comment or CommentInfo(),
+            if "_test_" not in name:
+                functions.append(
+                    FunctionDoc(
+                        name=name,
+                        signature=f"{signature};",
+                        return_type=return_type,
+                        params=params,
+                        comment=pending_comment or CommentInfo(),
+                    )
                 )
-            )
             pending_comment = None
             index = next_index
             continue

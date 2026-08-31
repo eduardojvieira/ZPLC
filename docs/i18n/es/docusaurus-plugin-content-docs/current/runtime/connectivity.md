@@ -35,3 +35,13 @@ La conectividad se define en el archivo `zplc.json` de tu proyecto. A través de
 3. Mapear variables de PLC internas directamente hacia registros/bobinas Modbus o tópicos MQTT a través de **Bindings de Comunicación**.
 
 El runtime maneja automáticamente la retransmisión del protocolo por debajo mientras tu lógica de PLC ejecuta.
+
+### Overrides de mapeo del servidor Modbus
+
+El Communication Map del controlador puede sobrescribir temporalmente el
+binding de **servidor** Modbus de un tag cargado. El override valida el rango
+según el ancho del tag y sólo cambia el mapeo del servidor RTU/TCP local. Nunca
+cambia la dirección remota compilada que usan los clientes de polling Modbus
+RTU/TCP. Tratálo como configuración de runtime: no asumas que persiste salvo
+que un flujo verificado de guardado/carga de configuración lo haya registrado
+para el target.

@@ -4,32 +4,29 @@ sidebar_position: 2
 
 # Instruction List (IL)
 
-Instruction List (IL) is the low-level textual IEC 61131-3 programming language supported by ZPLC. It resembles assembly language, operating on a single implicit accumulator register.
+Instruction List (IL) is a low-level textual IEC 61131-3-style workflow in ZPLC. It uses an implicit accumulator model and follows the repository's IL parser/transpiler path.
 
-## Position of IL in ZPLC
+## Compilation path
 
-In ZPLC, writing in Instruction List does not mean you are confined to an archaic or restricted execution environment. IL enjoys **first-class workflow support** equivalent to any modern language.
-
-When you click "Compile", the ZPLC IDE takes your IL source code, parses it, and transpiles it directly into Structured Text (ST). From there, it is passed into the unified compiler backend to generate optimized `.zplc` bytecode.
+The IDE parses IL and transpiles it to Structured Text (ST), then sends that generated ST through the compiler to produce `.zplc` bytecode.
 
 ```mermaid
 flowchart LR
   IL[IL source] --> Parse[parseIL]
   Parse --> ToST[transpileILToST]
-  ToST --> Compile[Shared ZPLC Compiler]
+  ToST --> Compile[ZPLC compiler]
   Compile --> ZPLC[.zplc]
 ```
 
-## Why That Matters
+This is a source-to-generated-ST workflow. Validate the generated result, diagnostics, and target capability profile; it does not establish an arbitrary IL/ST round trip or identical feature coverage with ST.
 
-By converging IL into the same pipeline as ST and the visual languages, ZPLC ensures:
-- You can freely use all Standard Library blocks (Timers, Counters, Math) within your IL routines.
-- Instruction List snippets execute with the exact same deterministic performance profiles as Modern ST code.
-- You can simulate and debug your IL code (using breakpoints, steppers, and watch variables) natively in the IDE.
+## Runtime and debugging limits
 
-## Example: IL Timer Logic
+IL uses the common compiler destination, but execution cost, standard-library availability, stepping, watches, breakpoints, and hardware behavior depend on the active runtime and profile. POSIX simulation is host-side logical evidence only. Use target or HIL evidence for claims about a physical device.
 
-Here is an example demonstrating a standard Timer On-Delay (`TON`) in Instruction List. This logic relies on evaluating a "Start" condition and manipulating an output flag:
+## Example: IL timer logic
+
+This example evaluates `Start`, calls `TON`, and writes an output flag:
 
 ```iecst
 PROGRAM WorkflowIL
@@ -51,7 +48,7 @@ END_VAR
 END_PROGRAM
 ```
 
-## Related Pages
+## Related pages
 
 - [Languages Overview](./index.md)
 - [Structured Text (ST)](./st.md)

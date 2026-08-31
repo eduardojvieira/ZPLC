@@ -20,6 +20,7 @@ tags: [reference, runtime, generated]
 - `firmware/lib/zplc_core/include/zplc_core.h`
 - `firmware/lib/zplc_core/include/zplc_debug.h`
 - `firmware/lib/zplc_core/include/zplc_hal.h`
+- `firmware/lib/zplc_core/include/zplc_hal_posix.h`
 - `firmware/lib/zplc_core/include/zplc_isa.h`
 - `firmware/lib/zplc_core/include/zplc_loader.h`
 - `firmware/lib/zplc_core/include/zplc_scheduler.h`
@@ -133,24 +134,6 @@ uint8_t* zplc_mem_get_region(uint16_t base);
 
 **Retorno fuente:** Pointer to memory region, or NULL if invalid
 
-#### `zplc_mem_load_code`
-
-```c
-int zplc_mem_load_code(const uint8_t *code, size_t size, uint16_t offset);
-```
-
-**Resumen fuente:** Load code into the shared code segment.
-
-**Parámetros**
-
-| Nombre | Tipo | Descripción fuente |
-| --- | --- | --- |
-| `code` | `const uint8_t *` | Bytecode to load |
-| `size` | `size_t` | Size in bytes |
-| `offset` | `uint16_t` | Offset within code segment (for multiple programs) |
-
-**Retorno fuente:** 0 on success, negative on error
-
 #### `zplc_mem_get_code`
 
 ```c
@@ -220,6 +203,9 @@ int zplc_vm_set_entry(zplc_vm_t *vm, uint16_t entry_point, uint32_t code_size);
 
 **Retorno fuente:** 0 on success, negative on error
 
+**Notas fuente:**
+- This low-level API is for trusted embedders and does not verify bytecode. Product artifact-admission routes must use zplc_core_load or zplc_core_load_tasks; embedders must verify before supplying or modifying executable code.
+
 #### `zplc_vm_step`
 
 ```c
@@ -253,6 +239,25 @@ int zplc_vm_run(zplc_vm_t *vm, uint32_t max_instructions);
 
 **Retorno fuente:** Number of instructions executed, or negative error code
 
+#### `zplc_vm_run_bounded`
+
+```c
+int zplc_vm_run_bounded(zplc_vm_t *vm, uint32_t max_instructions);
+```
+
+**Resumen fuente:** Run a VM with a mandatory logical instruction bound.
+
+Unlike zplc_vm_run(), reaching the bound is a controlled VM watchdog fault. A NULL VM or zero bound is rejected without changing VM state.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `vm` | `zplc_vm_t *` | — |
+| `max_instructions` | `uint32_t` | — |
+
+**Retorno fuente:** Number of instructions executed, or negative VM error code.
+
 #### `zplc_vm_run_cycle`
 
 ```c
@@ -261,7 +266,7 @@ int zplc_vm_run_cycle(zplc_vm_t *vm);
 
 **Resumen fuente:** Run one complete PLC scan cycle.
 
-Resets PC to entry point, executes until HALT, returns.
+Resets PC to entry point and executes with ZPLC_VM_CYCLE_INSTRUCTION_BUDGET. Exhausting that logical bound returns -ZPLC_VM_WATCHDOG; it is not a physical watchdog or a WCET guarantee.
 
 **Parámetros**
 
@@ -701,7 +706,7 @@ uint8_t zplc_force_get_count(void);
 #### `zplc_force_get`
 
 ```c
-int zplc_force_get(uint8_t index, uint16_t *addr, uint16_t *size, uint8_t *bytes);
+int zplc_force_get(uint8_t index, uint16_t *addr, uint16_t *size, uint8_t *bytes, size_t bytes_capacity);
 ```
 
 **Resumen fuente:** Get a force entry by index.
@@ -713,7 +718,8 @@ int zplc_force_get(uint8_t index, uint16_t *addr, uint16_t *size, uint8_t *bytes
 | `index` | `uint8_t` | Force table index |
 | `addr` | `uint16_t *` | Output absolute address |
 | `size` | `uint16_t *` | Output byte count |
-| `bytes` | `uint8_t *` | Output buffer receiving the stored bytes |
+| `bytes` | `uint8_t *` | Output buffer receiving the stored bytes, or NULL to query metadata only when @p bytes_capacity is zero |
+| `bytes_capacity` | `size_t` | Capacity of @p bytes in bytes |
 
 **Retorno fuente:** 0 on success, negative on error
 
@@ -852,10 +858,12 @@ int zplc_core_shutdown(void);
 #### `zplc_core_load`
 
 ```c
-int zplc_core_load(const uint8_t *binary, size_t size);
+int zplc_core_load(const uint8_t *binary, size_t size, uint8_t *workspace, size_t workspace_size);
 ```
 
 **Resumen fuente:** Load a .zplc binary program.
+
+On success this replaces the loaded program and resets process/work/retain memory and forces to their safe initialized state before committing it. On rejection it leaves the current core state intact. The artifact must not overlap core-owned memory because the successful reset invalidates it.
 
 **Parámetros**
 
@@ -863,25 +871,10 @@ int zplc_core_load(const uint8_t *binary, size_t size);
 | --- | --- | --- |
 | `binary` | `const uint8_t *` | Pointer to .zplc file contents |
 | `size` | `size_t` | Size of binary data |
+| `workspace` | `uint8_t *` | Caller-owned verifier scratch |
+| `workspace_size` | `size_t` | Size of @p workspace in bytes |
 
-**Retorno fuente:** 0 on success, negative error code otherwise
-
-#### `zplc_core_load_raw`
-
-```c
-int zplc_core_load_raw(const uint8_t *bytecode, size_t size);
-```
-
-**Resumen fuente:** Load raw bytecode directly.
-
-**Parámetros**
-
-| Nombre | Tipo | Descripción fuente |
-| --- | --- | --- |
-| `bytecode` | `const uint8_t *` | Raw bytecode bytes |
-| `size` | `size_t` | Size of bytecode |
-
-**Retorno fuente:** 0 on success
+**Retorno fuente:** 0 on success, ZPLC_LOADER_* error otherwise
 
 #### `zplc_core_step`
 
@@ -1098,7 +1091,7 @@ Useful for transitioning code to instance-based API.
 #### `zplc_core_load_tasks`
 
 ```c
-int zplc_core_load_tasks(const uint8_t *binary, size_t size, zplc_task_def_t *tasks, uint8_t max_tasks);
+int zplc_core_load_tasks(const uint8_t *binary, size_t size, zplc_task_def_t *tasks, uint8_t max_tasks, uint8_t *workspace, size_t workspace_size);
 ```
 
 **Resumen fuente:** Load tasks from a .zplc binary containing a TASK segment.
@@ -1113,8 +1106,10 @@ Parses the TASK segment and populates an array of task definitions. Also loads t
 | `size` | `size_t` | Size of binary data |
 | `tasks` | `zplc_task_def_t *` | Output array to fill with task definitions |
 | `max_tasks` | `uint8_t` | Maximum number of tasks to load |
+| `workspace` | `uint8_t *` | Caller-owned verifier scratch |
+| `workspace_size` | `size_t` | Size of @p workspace in bytes |
 
-**Retorno fuente:** Number of tasks loaded, or negative error code
+**Retorno fuente:** Number of tasks loaded, or a ZPLC_LOADER_* error code
 
 #### `zplc_task_get_entry`
 
@@ -1172,7 +1167,12 @@ static inline uint8_t zplc_task_get_priority(const zplc_task_def_t *task);
 
 ### Constantes y macros
 
-Ninguno.
+| Nombre | Valor | Resumen fuente |
+| --- | --- | --- |
+| `ZPLC_VM_CYCLE_INSTRUCTION_BUDGET` | `CONFIG_ZPLC_VM_CYCLE_INSTRUCTION_BUDGET` | — |
+| `ZPLC_VM_CYCLE_INSTRUCTION_BUDGET` | `100000U` | — |
+| `ZPLC_FORCE_MAX_ENTRIES` | `8U` | Maximum number of independent forced ranges. |
+| `ZPLC_FORCE_MAX_BYTES` | `260U` | Maximum byte length of one forced range. |
 
 ## `zplc_debug.h`
 
@@ -1570,7 +1570,7 @@ zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data, size_
 | `data` | `const void *` | Pointer to data to save. |
 | `len` | `size_t` | Length of data in bytes. |
 
-**Retorno fuente:** ZPLC_HAL_OK on success, error code otherwise.
+**Retorno fuente:** ZPLC_HAL_OK on success, ZPLC_HAL_COMMIT_UNKNOWN when a visible mutation could not be confirmed durable, error code otherwise.
 
 #### `zplc_hal_persist_load`
 
@@ -1588,7 +1588,7 @@ zplc_hal_result_t zplc_hal_persist_load(const char *key, void *data, size_t len)
 | `data` | `void *` | Buffer to load data into. |
 | `len` | `size_t` | Maximum length to read. |
 
-**Retorno fuente:** ZPLC_HAL_OK on success, error code otherwise.
+**Retorno fuente:** ZPLC_HAL_OK on success, ZPLC_HAL_NOT_IMPL if key not found, ZPLC_HAL_CORRUPT if an existing record is structurally invalid, error code otherwise.
 
 #### `zplc_hal_persist_delete`
 
@@ -1698,6 +1698,22 @@ zplc_hal_result_t zplc_hal_mutex_unlock(zplc_hal_mutex_t mutex);
 ```
 
 **Resumen fuente:** Unlock a mutex.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `mutex` | `zplc_hal_mutex_t` | Mutex handle. |
+
+**Retorno fuente:** ZPLC_HAL_OK on success, error code otherwise.
+
+#### `zplc_hal_mutex_destroy`
+
+```c
+zplc_hal_result_t zplc_hal_mutex_destroy(zplc_hal_mutex_t mutex);
+```
+
+**Resumen fuente:** Destroy a mutex and release its resources.
 
 **Parámetros**
 
@@ -1844,6 +1860,54 @@ Clean shutdown - close sockets, flush persistence, release resources.
 
 Ninguno.
 
+## `zplc_hal_posix.h`
+
+POSIX-only logical clock seam for deterministic host scenarios.
+
+The override is process-global because the native POSIX simulator currently owns one VM/session on one thread. If concurrent sessions are introduced, move this clock into the VM/session context rather than adding locking here.
+
+Fuente: `firmware/lib/zplc_core/include/zplc_hal_posix.h`
+
+### Funciones
+
+#### `zplc_hal_posix_set_tick_override`
+
+```c
+void zplc_hal_posix_set_tick_override(uint32_t tick_ms);
+```
+
+**Resumen fuente:** No se encontró un resumen en el comentario del header.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `tick_ms` | `uint32_t` | — |
+
+#### `zplc_hal_posix_clear_tick_override`
+
+```c
+void zplc_hal_posix_clear_tick_override(void);
+```
+
+**Resumen fuente:** No se encontró un resumen en el comentario del header.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| — | — | Ninguno. |
+
+### Tipos
+
+Ninguno.
+
+### Constantes y macros
+
+| Nombre | Valor | Resumen fuente |
+| --- | --- | --- |
+| `ZPLC_HAL_POSIX_H` | `—` | — |
+
 ## `zplc_isa.h`
 
 ZPLC Virtual Machine Instruction Set Architecture Definitions
@@ -1951,7 +2015,7 @@ static inline int zplc_opcode_is_valid(uint8_t opcode);
 | `ZPLC_MAX_BREAKPOINTS` | `16` | — |
 | `ZPLC_SYS_REG_OFFSET` | `0x0FF0U` | Offset within IPI for system registers (last 16 bytes) |
 | `ZPLC_SYS_FLAG_FIRST_SCAN` | `0x01` | System flags: First scan bit (set on first cycle after start) |
-| `ZPLC_SYS_FLAG_WDG_WARN` | `0x02` | System flags: Watchdog warning (cycle time exceeded 80% of interval) |
+| `ZPLC_SYS_FLAG_WDG_WARN` | `0x02` | Reserved system flag; not produced by current runtimes. |
 | `ZPLC_SYS_FLAG_RUNNING` | `0x04` | System flags: Scheduler is running |
 | `ZPLC_STRING_LEN_OFFSET` | `0` | STRING memory layout. |
 | `ZPLC_STRING_CAP_OFFSET` | `2` | — |
@@ -1968,21 +2032,21 @@ static inline int zplc_opcode_is_valid(uint8_t opcode);
 
 ZPLC Binary File Loader
 
-Handles loading of .zplc files, parsing headers/segments, and registering tasks with the scheduler.
+Verifies the structural and bytecode integrity of .zplc files without changing runtime state. The current v1 subset accepts flags=0 and CODE, TASK, and TAGS segments only. The returned view borrows the input buffer.
 
 Fuente: `firmware/lib/zplc_core/include/zplc_loader.h`
 
 ### Funciones
 
-#### `zplc_loader_load`
+#### `zplc_loader_verify`
 
 ```c
-int zplc_loader_load(const uint8_t *data, size_t len);
+int zplc_loader_verify(const uint8_t *data, size_t len, uint8_t *workspace, size_t workspace_size, zplc_program_view_t *out);
 ```
 
-**Resumen fuente:** Load a ZPLC binary file from memory buffer.
+**Resumen fuente:** Verify the supported structural and semantic v1 ZPLC subset.
 
-This function parses the header, loads the code segment into VM memory, and registers any defined tasks with the scheduler.
+This does not load or authorize a runtime. Product load paths remain a separate integration gate.
 
 **Parámetros**
 
@@ -1990,32 +2054,46 @@ This function parses the header, loads the code segment into VM memory, and regi
 | --- | --- | --- |
 | `data` | `const uint8_t *` | Pointer to the file data |
 | `len` | `size_t` | Length of the data in bytes |
+| `workspace` | `uint8_t *` | Caller-owned transient scratch of at least ZPLC_LOADER_VERIFY_WORKSPACE_SIZE bytes |
+| `workspace_size` | `size_t` | Size of @p workspace in bytes |
+| `out` | `zplc_program_view_t *` | Destination for the verified view; untouched on failure |
 
-**Retorno fuente:** 0 on success, negative error code on failure
+**Retorno fuente:** 0 on success, negative error code on failure. The view remains valid only while @p data remains valid.
 
 ### Tipos
 
-Ninguno.
+| Nombre | Tipo | Resumen fuente |
+| --- | --- | --- |
+| `type` | Estructura | — |
+| `binary` | Estructura | — |
 
 ### Constantes y macros
 
 | Nombre | Valor | Resumen fuente |
 | --- | --- | --- |
-| `ZPLC_FILE_MAGIC` | `0x5A504C43` | — |
-| `ZPLC_SEGMENT_TYPE_CODE` | `1` | — |
-| `ZPLC_SEGMENT_TYPE_TASK` | `2` | — |
 | `ZPLC_LOADER_OK` | `0` | — |
 | `ZPLC_LOADER_ERR_MAGIC` | `-1` | — |
 | `ZPLC_LOADER_ERR_VERSION` | `-2` | — |
 | `ZPLC_LOADER_ERR_SIZE` | `-3` | — |
 | `ZPLC_LOADER_ERR_NO_CODE` | `-4` | — |
-| `ZPLC_LOADER_ERR_MEMORY` | `-5` | — |
+| `ZPLC_LOADER_ERR_CRC32` | `-6` | — |
+| `ZPLC_LOADER_ERR_FLAGS` | `-7` | — |
+| `ZPLC_LOADER_ERR_SEGMENT` | `-8` | — |
+| `ZPLC_LOADER_ERR_ENTRY_POINT` | `-9` | — |
+| `ZPLC_LOADER_ERR_WORKSPACE` | `-10` | — |
+| `ZPLC_LOADER_ERR_OPCODE` | `-11` | — |
+| `ZPLC_LOADER_ERR_CONTROL_FLOW` | `-12` | — |
+| `ZPLC_LOADER_ERR_MEMORY` | `-13` | — |
+| `ZPLC_LOADER_ERR_TASK` | `-14` | — |
+| `ZPLC_LOADER_ERR_TAGS` | `-15` | — |
+| `ZPLC_LOADER_ERR_COMM` | `-16` | — |
+| `ZPLC_LOADER_MAX_TASKS` | `16U` | — |
 
 ## `zplc_scheduler.h`
 
 ZPLC Multitask Scheduler API
 
-This header defines the API for the ZPLC multitask scheduler. The scheduler supports multiple PLC tasks with different intervals and priorities, following IEC 61131-3 task model. Architecture (Zephyr implementation): - Each task has a k_timer that fires at the configured interval - Timer callbacks submit work items to priority-based work queues - Work queue threads execute the actual PLC program cycles - Shared memory (IPI/OPI) is protected by a mutex
+This header defines the API for the ZPLC multitask scheduler. The scheduler supports multiple PLC tasks with different intervals and priorities, following IEC 61131-3 task model. Architecture (Zephyr implementation): - Each task has a k_timer that fires at the configured interval - Timer callbacks admit due task releases without executing PLC code - One coordinator executes each ordered due-set as a batch - Each batch takes one IPI snapshot and performs at most one normal OPI commit - Shared memory (IPI/OPI) is protected by a mutex
 
 Fuente: `firmware/lib/zplc_core/include/zplc_scheduler.h`
 
@@ -2065,15 +2143,36 @@ int zplc_sched_register_task(const zplc_task_def_t *def, const uint8_t *code, si
 
 **Resumen fuente:** Register a task with the scheduler.
 
+The scheduler accepts only a reference to code already loaded in the core. Raw code buffers are rejected.
+
 **Parámetros**
 
 | Nombre | Tipo | Descripción fuente |
 | --- | --- | --- |
 | `def` | `const zplc_task_def_t *` | Task definition (from .zplc file or manual config) |
-| `code` | `const uint8_t *` | Pointer to bytecode for this task |
-| `code_size` | `size_t` | Size of bytecode |
+| `code` | `const uint8_t *` | Must be NULL |
+| `code_size` | `size_t` | Must be zero |
 
 **Retorno fuente:** Task handle (0-based index) on success, negative error code on failure
+
+#### `zplc_sched_validate_program`
+
+```c
+int zplc_sched_validate_program(const uint8_t *binary, size_t size);
+```
+
+**Resumen fuente:** Validate whether a .zplc program can be admitted by this scheduler.
+
+This does not alter scheduler, core, process-image, timer, or persistence state. Only cyclic tasks aligned to the scheduler's millisecond timer are accepted.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `binary` | `const uint8_t *` | — |
+| `size` | `size_t` | — |
+
+**Retorno fuente:** ZPLC_LOADER_OK on success, otherwise a ZPLC_LOADER_* error code.
 
 #### `zplc_sched_load`
 
@@ -2092,7 +2191,10 @@ This is the preferred way to load multi-task PLC programs. It parses the .zplc f
 | `binary` | `const uint8_t *` | Pointer to .zplc file contents |
 | `size` | `size_t` | Size of binary data |
 
-**Retorno fuente:** Number of tasks loaded on success, negative error code on failure: -1: Scheduler not initialized -2: Invalid arguments -3: zplc_core_load_tasks() error (bad file format) -4: Task registration failed
+**Retorno fuente:** Number of tasks loaded on success, negative error code on failure: -1: Scheduler not initialized -2: Invalid arguments -3: Program rejected by the verifier or scheduler policy -4: Scheduler is not empty or not idle
+
+**Notas fuente:**
+- The scheduler must be IDLE with no registered tasks.
 
 #### `zplc_sched_unregister_task`
 
@@ -2261,21 +2363,72 @@ int zplc_sched_get_task_count(void);
 
 **Retorno fuente:** Number of registered tasks
 
-#### `zplc_sched_get_vm_ptr`
+#### `zplc_sched_debug_snapshot`
 
 ```c
-zplc_vm_t* zplc_sched_get_vm_ptr(int task_id);
+int zplc_sched_debug_snapshot(int task_id, zplc_sched_vm_snapshot_t *snapshot);
 ```
 
-**Resumen fuente:** Get pointer to the VM instance for a task.
+**Resumen fuente:** No se encontró un resumen en el comentario del header.
 
 **Parámetros**
 
 | Nombre | Tipo | Descripción fuente |
 | --- | --- | --- |
-| `task_id` | `int` | Task handle |
+| `task_id` | `int` | — |
+| `snapshot` | `zplc_sched_vm_snapshot_t *` | — |
 
-**Retorno fuente:** Pointer to VM instance, or NULL if task not found
+**Retorno fuente:** 0 on success, -1 for invalid state/arguments, -2 for no task.
+
+#### `zplc_sched_debug_add_breakpoint`
+
+```c
+int zplc_sched_debug_add_breakpoint(int task_id, uint16_t pc);
+```
+
+**Resumen fuente:** No se encontró un resumen en el comentario del header.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `task_id` | `int` | — |
+| `pc` | `uint16_t` | — |
+
+**Retorno fuente:** 0 on success, or the underlying breakpoint error.
+
+#### `zplc_sched_debug_remove_breakpoint`
+
+```c
+int zplc_sched_debug_remove_breakpoint(int task_id, uint16_t pc);
+```
+
+**Resumen fuente:** No se encontró un resumen en el comentario del header.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `task_id` | `int` | — |
+| `pc` | `uint16_t` | — |
+
+**Retorno fuente:** 0 on success, or the underlying breakpoint error.
+
+#### `zplc_sched_debug_clear_breakpoints`
+
+```c
+int zplc_sched_debug_clear_breakpoints(int task_id);
+```
+
+**Resumen fuente:** No se encontró un resumen en el comentario del header.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `task_id` | `int` | — |
+
+**Retorno fuente:** 0 on success, -1 for invalid state/arguments, -2 for no task.
 
 #### `zplc_sched_lock`
 
@@ -2320,6 +2473,7 @@ int zplc_sched_unlock(void);
 | `config` | Estructura | Task runtime instance. |
 | `zplc_sched_state_t` | Enumeración | Scheduler runtime state. |
 | `total_cycles` | Estructura | Scheduler statistics. |
+| `task_id` | Estructura | Copy debugger-visible VM state for a registered task slot. |
 
 ### Constantes y macros
 
@@ -2327,5 +2481,5 @@ int zplc_sched_unlock(void);
 | --- | --- | --- |
 | `ZPLC_MAX_TASKS` | `CONFIG_ZPLC_MAX_TASKS` | — |
 | `ZPLC_MAX_TASKS` | `8` | — |
-| `ZPLC_MIN_INTERVAL_US` | `100` | Minimum task interval in microseconds (100us) |
+| `ZPLC_MIN_INTERVAL_US` | `1000` | Minimum task interval in microseconds (1ms) |
 | `ZPLC_MAX_INTERVAL_US` | `3600000000UL` | Maximum task interval in microseconds (1 hour) |

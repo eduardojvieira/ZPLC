@@ -3,57 +3,60 @@ slug: /release-notes
 id: index
 title: Release Notes
 sidebar_label: Release Notes
-description: Version history and new features added to the ZPLC platform.
+description: Evidence-aware release posture for the ZPLC platform.
 tags: [releases, changelog]
 ---
 
-# Release Notes 
+# Release Notes
 
-Welcome to the ZPLC v1.5.0 milestone. This release marks the transition of ZPLC from a proof-of-concept prototype into a stable, deterministic, multi-architecture industrial platform.
+There is no released ZPLC v1.5.0 artifact recorded by this repository yet.
+v1.5.0 remains a release target while desktop validation, hardware-in-the-loop
+(HIL), and final sign-off are pending.
 
-## What's New in v1.5.0
+## Current release posture
 
-This release completely re-architects the underlying execution foundation and vastly expands the visual engineering surface.
+| Area | Current public posture | Evidence boundary |
+|---|---|---|
+| C99 core and HAL | Source and automated tests exist | Host tests do not qualify a board or timing target |
+| IDE and native simulation | Development surface exists | Desktop and hardware parity remain evidence-gated |
+| IEC language paths | Repository paths exist | End-to-end release support requires per-language evidence |
+| Board profiles | Catalogued in the board manifest | Presence is not a prebuilt, HIL, or production claim |
+| Timing/determinism | Requires measurement by profile | No stable hard-real-time claim is published here |
 
-### 1. New C99 Deterministic Core VM
-- The legacy experimental WASM execution engine has been officially replaced by a **strict, ANSI C99 interpreter** (`libzplc_core`). 
-- Features a hard real-time scheduler built directly on top of Zephyr RTOS, minimizing execution jitter and completely eliminating garbage collection penalties.
-- Includes isolated static memory boundaries for Process Images (IPI/OPI) and Retained values.
+The release evidence matrix is the review record for v1.5 scope:
+[`specs/008-release-foundation/artifacts/release-evidence-matrix.md`](https://github.com/eduardojvieira/ZPLC/blob/master/specs/008-release-foundation/artifacts/release-evidence-matrix.md).
 
-### 2. Full 5-Language IEC 61131-3 Support
-The IDE now includes production-grade editor paths spanning the entire IEC standard. All languages are seamlessly transpiled to a unified `.zplc` bytecode:
-- **Structured Text (ST)** and **Instruction List (IL)** for code purists.
-- **Ladder Diagram (LD)** for classical relay logic mapping.
-- **Function Block Diagram (FBD)** for data-flow processing.
-- **Sequential Function Chart (SFC)** for state machine handling.
+## What repository automation verifies
 
-### 3. Native Desktop Simulation
-- The IDE now features an embedded POSIX execution engine (Native Simulation). 
-- Allows near-instant software-in-the-loop (SIL) testing on Windows, macOS, and Linux without deploying to physical Zephyr hardware.
-- Fully supports Breakpoints, Visual Stepping, and Force Values.
+- Host CMake/CTest checks exercise the C99 core on the development host.
+- Compiler and IDE build, test, and lint checks exercise repository code.
+- Generated documentation and EN/ES parity validators detect documentation drift.
+- Structural board and evidence validators check manifests and recorded evidence.
+- Release automation is configured to produce a candidate SPDX SBOM, SHA-256
+  checksums, identity manifest, and installer attestations bound to the candidate SHA.
 
-### 4. Advanced Networking & Comms
-- Direct support for **Modbus RTU (Serial)** and **Modbus TCP (Ethernet/Wi-Fi)**.
-- First-class **MQTT** integration mapped organically as IEC Function Blocks (`MQTT_PUBLISH`, `MQTT_SUBSCRIBE`), bringing native IoT telemetry straight to your PLC logic.
+These are host and repository checks. They do not establish HIL, target timing,
+or hardware qualification. The checksum and manifest establish the integrity and
+identity of the candidate file, not artifact authenticity/signing or
+reproducibility between runners. This local worktree is not release evidence:
+the candidate SHA must run and be verified in the hosted workflow before an
+SBOM or attestation can be claimed to exist.
 
-## Breaking Changes from v1.4
+## Still required before publication
 
-- `.wasm` binary formats are no longer supported. The compiler strictly emits `.zplc` custom bytecode.
-- IDE instances must be upgraded to v1.5.0 to sync with the new compiler transpilation engine.
-- Older hardware definitions must pass through the new `zplc_hal.h` contract to function on Zephyr OS.
+- Desktop smoke evidence is required for each supported operating system.
+- A traceable HIL run of the release SHA is required on representative hardware.
+- Code signing/notarization, reproducibility evidence, HIL, and final release
+  sign-off remain required after the hosted candidate workflow is verified.
+- Final human release sign-off is required after reviewing the evidence.
 
-## Supported Boards
-ZPLC v1.5.0 officially packages out-of-the-box binaries for major industrial profiles, covering STMicroelectronics (STM32H7, STM32F7), Espressif (ESP32-S3), and Raspberry Pi (RP2040) lines. Check the [Supported Boards](../reference/boards.md) page for exact MCU specifications.
+## ZPLC 2.0
 
-## Stability Improvements
+ZPLC 2.0 is an approved implementation RFC, not a public release or support
+commitment. It moves Studio and orchestration forward incrementally while the
+current core, compiler, POSIX/Zephyr runtimes, native protocol, and editors are
+validated and evolved. Its gates and non-goals are recorded in
+[`specs/010-zplc-2-0-foundation/spec.md`](https://github.com/eduardojvieira/ZPLC/blob/master/specs/010-zplc-2-0-foundation/spec.md).
 
-- The Zephyr Core VM drastically improves overall loop execution times by relying on a linear C interpreter rather than wrapping WASM.
-- The IDE now consumes 40% less RAM during compilation sweeps.
-- Real-time Watch Tables poll at 100ms intervals instead of the legacy 500ms, making troubleshooting snappier.
-- Ladder Logic diagrams render faster using a custom HTML5 canvas backend.
-
-## Internal Firmware Changes
-
-- `zplc_hal.h` was reorganized to separate UART paths from standard GPIO.
-- `libzplc_core` has passed extreme fuzz testing methodologies for IEC math operators.
-- Internal RAM footprint for the base core was reduced to less than 64KB, freeing memory for complex `.zplc` programs.
+Do not infer a release, board qualification, timing result, feature parity, or
+safety property from this page or the presence of source code.

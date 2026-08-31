@@ -1,35 +1,47 @@
 ---
-title: Fuente de Verdad Documental
-sidebar_label: Mapas Internos Código
-description: Reglas y Mapeo estructural guiado a mantenedores y desarrolladores.
+title: Fuente de verdad
+sidebar_label: Fuente de verdad
+description: Mapa honesto de autoridad para hechos, compatibilidad y evidencia de ZPLC.
 ---
 
-# Archivos Transversales en Códigos o Referencias
+# Fuente de verdad
 
-Instructivo netamente guiado y asolado hacia personalización desarrolladores informáticos u OS contribuyentes, esquematizando qué variables anidadas son fuentes de la verdad que ruten las variables y compatibilidad central de ecosistemas dentro ZPLC base.
-	
-Todas las características de arquitectura no se duplican, por consiguiente el sistema de scripts IDE, el marco documental y flujos abstractos consumirán bases maestras (Archivos JSON matrices compiladores O Headers C de Zephyr Puros). 
+Este mapa identifica autoridad sin afirmar que todos los consumidores leen
+archivos dinámicamente. Si las fuentes difieren, el código actual, los tests,
+los contratos y la evidencia registrada prevalecen sobre la prosa.
 
-## Repositios Maestros
+## Camino rápido
 
-| Zona Central a Abstraer | Elementos / Directorios y Ficheros Estructurales |
-|---|---|
-| **Estructuras Runtime API Base / Motor C Engine** | C-Headers Matrices Oficiales `firmware/lib/zplc_core/include/zplc_core.h`, `zplc_scheduler.h`, `zplc_hal.h`, `zplc_isa.h` | 
-| **Dispositivos y Controlaciones Adscritas o Modificables** | Configuraciones Base Universales JSON `firmware/app/boards/supported-boards.v1.5.0.json` | 
-| **Motores y Dependencias Multi-Lenguaje / Transpiladores** | Archivos IDE Core TypeScript `packages/zplc-ide/src/compiler/index.ts` |
+1. Encontrá el contrato de implementación del comportamiento a cambiar.
+2. Encontrá la evidencia requerida antes de publicar un claim.
+3. Actualizá documentación en inglés y español en el mismo cambio.
 
+## Mapa de autoridad
 
-## Distribución Semántica Generaliza por Header ANSI C 
-Afinando implementaciones de bajo nivel los desarrolladores base operaran:
+| Pregunta | Autoridad | Nota |
+|---|---|---|
+| Runtime C y HAL | Headers públicos e implementación en `firmware/lib/zplc_core/` | Los tests muestran el comportamiento demostrado. |
+| Compatibilidad de bytecode/ISA | `zplc_isa.h`, salida del compilador y tests de compatibilidad | La versión del producto no es la ABI. |
+| Sesión nativa de desktop | `packages/zplc-ide/src/runtime/` y spec 009 | Las capabilities indican soporte o degradación. |
+| Schema y migración actual del proyecto | `packages/zplc-ide/zplc.schema.json` y su migrador actual | Autoridad del formato actual; no implica actualización automática de consumidores. |
+| Perfiles de placas | `firmware/app/boards/supported-boards.v1.5.0.json` | Estar listado no equivale a HIL. |
+| Calificación de placa/release | `specs/008-release-foundation/artifacts/` | El nivel de evidencia limita el claim público. |
+| Política de versiones | `VERSIONING.md` | Producto, schema, ABI y protocolo son ejes separados. |
+| Paridad de documentación | `docs/docs/` y `docs/i18n/es/` | Ambas fuentes se actualizan juntas. |
+| Ejecución de ZPLC 2.0 | `specs/010-zplc-2-0-foundation/spec.md` | RFC aprobado, no claim de release. |
 
-| Fichero `.h` Clave | Dominio o Uso Operativo Específico |
-|---|---|
-| `zplc_core.h` | Gestión Global Model VM Base (Inicializa Stack Pointers).|
-| `zplc_scheduler.h` | Listados estados en Thread o Tick Control multihilos y Estadisticas de Frecuencia Pura. |
-| `zplc_hal.h` | Componentes Físicas y Operadores Asíncronas Puenteables: Tick de OS, Manejadores de Analógicos e I/O Registros y Modulaciones. Almacenaje/Sockets Puros (Transpositor O Lwip Stack Callers). |
-| `zplc_isa.h` | Bytecodes de instrucciones puros. Péndulos Operativos de Máquina e Introspecciones Matemáticas a Búfer.  |
-| `zplc_comm_dispatch.h` | Mapeados directivos o descriptivos referenciales base MQTT Transacciones o Red MODBUS TCP/RTU. |
+## Niveles de evidencia
 
-## Generación Compatibilidades Extras HW
+| Nivel | Qué demuestra | Qué no demuestra |
+|---|---|---|
+| Host | Código y runtime locales | Timing físico o comportamiento eléctrico |
+| QEMU | Target emulado configurado | Periféricos o cableado de la placa |
+| Build de target | Que un profile compila | Que un dispositivo arranca o controla una máquina |
+| HIL | Comportamiento registrado en hardware identificado | Certificación o toda condición operativa |
+| Manual | Procedimiento observado por una persona | Automatización reproducible sin artifacts guardados |
 
-Para incorporar plataformas que consuman frameworks base OS Zephyr de MCUS complejas que aún corren en tableros o arquitecturas de la factoría se deberá manipular y mapear `firmware/app/boards/supported-boards.v1.5.0.json` al repositorio local ZPLC OS Framework Core para asegurar de inmediato inyecciones del IDE en tu UI gráfica asimilada. Automáticamente detectara si tus perfiles pueden habilitar opciones como interfaces en Modbus TPC IP asincronal o denegarte estas de configurador de proyecto `zplc.json`.
+## Regla de actualización
+
+Cambiá primero la implementación o el registro autoritativo y después la
+documentación. No afirmes consumo automático por IDE, compilador o docs salvo
+que un test o la implementación prueben esa relación.

@@ -2,35 +2,31 @@
 sidebar_position: 2
 ---
 
-# Lista de Instrucciones (IL)
+# Lista de instrucciones (IL)
 
-Instruction List (IL) es el lenguaje de programación textual y plano estandarizado de bajo perfil amparado por IEC 61131-3 y compatibilizado dentro de ZPLC.
-Funciona estrictamente apilando datos analíticos contra la memoria simulada emulando acumuladores del propio microprocesador ensamblador base subyacente.
+Instruction List (IL) es un flujo textual de bajo nivel con estilo IEC 61131-3 en ZPLC. Usa un modelo de acumulador implícito y sigue la ruta de parser/transpilador IL del repositorio.
 
-## La Ejecución Integral
+## Ruta de compilación
 
-Trabajando Instruction List sobre un framework ZPLC asume características poderosas alejándole del entorno arcaico al que este paradigma solía estar confinado. Posee un robusto y moderno ruteo directo sobre la plataforma del IDE con flujos estandarizados para uso industrial.
-
-Al clickear en Iniciar Compilación bajo el panel, la máquina tomará sus directrices explícitas en modelo fuente para parsearlas y trasladarlas interlinealmente a Texto Estructurado Puntero (ST). Ya preparado y lógicamente igual asume su trayecto sobre el motor unísono generando opcodes y Bytecodes optimizado (`.zplc`) capaz de alojarse sin pérdida por overhead dentro del Zephyr en la Memoria RAM y ROM de destino.
+El IDE parsea IL y lo transpila a Structured Text (ST); después envía ese ST generado al compilador para producir bytecode `.zplc`.
 
 ```mermaid
 flowchart LR
-  IL[Fuentes Crudas IL] --> Parse[Estructurizado semántico IL]
-  Parse --> ToST[Traduplicación/Transpilado IL --> ST]
-  ToST --> Compile[Gestor de Compilados Universal Base]
+  IL[Fuente IL] --> Parse[parseIL]
+  Parse --> ToST[transpileILToST]
+  ToST --> Compile[Compilador ZPLC]
   Compile --> ZPLC[.zplc]
 ```
 
-## Beneficio Subyacente
+Es un flujo de fuente a ST generado. Validá el resultado generado, los diagnósticos y el perfil de capacidades de destino; no establece un round trip arbitrario IL/ST ni cobertura de funciones idéntica a ST.
 
-Generando IL directamente englobado sobre cadenas universales homólogas a la rama ST de diagramas, se propician bondades instantáneas:
-- Acceso indiscriminado o pleno uso sobre la Stdlib Standard (Matemática, Timers o Contabilizadoras industriales) mediante funciones integradas por IL (CAL / ST).
-- Cero degradación. Al descender hasta códigos bases nativos corren con perfiles exactos de consumo en ciclos CPU C-Kernel Zephyr tal cual algoritmos pesados en texto libre directo ST.
-- Posibilidad completa de inyectar breakpoints en línea directa y parar ciclos, inyectar watch variables y emular sin requerir herramientas extra sobre entorno nativo POSIX a nivel PC.
+## Límites de runtime y depuración
 
-## Script Orientativo: Temporización de Señales en IL
+IL usa el destino común del compilador, pero el costo de ejecución, la disponibilidad de la biblioteca estándar, los pasos, watches, breakpoints y el comportamiento de hardware dependen del runtime y perfil activos. La simulación POSIX es evidencia lógica de host únicamente. Usá evidencia target o HIL para afirmar comportamiento de un dispositivo físico.
 
-Las demostraciones abajo marcan sentencias funcionales estándar; El arranque e inyección directa (`TON` y Evaluación Start) interactúan marcando un Output final validando y reteniendo las cargas binarias en los ciclos correctos:
+## Ejemplo: temporización en IL
+
+Este ejemplo evalúa `Start`, llama a `TON` y escribe una bandera de salida:
 
 ```iecst
 PROGRAM WorkflowIL
@@ -52,9 +48,9 @@ END_VAR
 END_PROGRAM
 ```
 
-## Exploración Completa
+## Páginas relacionadas
 
-- [Ecosistema de Múltiples Lenguajes ZPLC](./index.md)
-- [Fundamentos de Texto Estructurado (ST)](./st.md)
-- [Funciones IEC Incorporadas en Standard Library](./stdlib.md)
-- [Casos Comunes en Lenguajes V1.5 Suite ZPLC](./examples/v1-5-language-suite.md)
+- [Generalidades de lenguajes](./index.md)
+- [Structured Text (ST)](./st.md)
+- [Biblioteca estándar](./stdlib.md)
+- [Suites y ejemplos de lenguajes](./examples/v1-5-language-suite.md)

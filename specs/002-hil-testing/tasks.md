@@ -466,17 +466,23 @@
 ## Phase 5: CI Integration
 
 ### T5.1: GitHub Actions Workflow
-**File**: `.github/workflows/hil-tests.yml`  
+**File**: future trusted/manual HIL workflow (not yet implemented)
 **Estimate**: 2h  
 **Dependencies**: T4.*  
 
-- [x] Trigger on push/PR to relevant paths
-- [x] Use `runs-on: [self-hosted, pico]`
-- [x] Checkout, install, build, test
-- [x] Upload JUnit results
-- [x] Fail on test failures
+- [ ] Restrict invocation to trusted/manual release qualification; never use
+  untrusted `pull_request` events on a privileged hardware runner.
+- [ ] Build the exact candidate SHA from a clean checkout and record artifact,
+  toolchain, configuration, and firmware hashes.
+- [ ] Identify the exact board/revision, perform human-approved flash and
+  program deployment, then execute the scenario and collect trace evidence.
+- [ ] Restart the target and record persistence and safe-state results.
+- [ ] Store JUnit/raw logs/evidence artifacts and fail the run on any failed
+  qualification assertion.
 
-**Acceptance**: CI runs HIL tests on self-hosted runner.
+**Acceptance**: A trusted/manual workflow produces a SHA-traceable HIL record
+for an exact board profile without exposing privileged hardware to untrusted
+pull requests.
 
 ---
 

@@ -65,8 +65,12 @@ The last 16 bytes of IPI (`0x0FF0` through `0x0FFF`) are reserved for scheduler/
 Public flags defined today:
 
 - `ZPLC_SYS_FLAG_FIRST_SCAN`
-- `ZPLC_SYS_FLAG_WDG_WARN`
+- `ZPLC_SYS_FLAG_WDG_WARN` (reserved; current runtimes do not produce it)
 - `ZPLC_SYS_FLAG_RUNNING`
+
+`ZPLC_SYS_FLAG_WDG_WARN` is not evidence of a watchdog, timing monitor, or
+safe-state mechanism. The runtime's instruction budget is a separate logical
+execution bound.
 
 ## Opcode families
 

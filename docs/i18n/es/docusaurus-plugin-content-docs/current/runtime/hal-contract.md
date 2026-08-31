@@ -45,6 +45,11 @@ La HAL es dueña de:
 - `zplc_hal_persist_load()`
 - `zplc_hal_persist_delete()`
 
+Estas primitivas permiten que el core portable use un program store
+independiente del backend. No proporcionan asignación, restore ni retención
+end-to-end calificada de `RETAIN` a nivel de fuente; esas declaraciones no están
+soportadas hoy.
+
 ## Red y sockets
 
 La superficie pública de red incluye:

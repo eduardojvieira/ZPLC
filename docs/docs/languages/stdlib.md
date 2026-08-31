@@ -87,30 +87,4 @@ For the runtime-side details and release constraints, continue with:
 If a built-in function or block is not registered in the compiler stdlib or justified by the
 runtime contract, it should not be documented as a firm v1.5 capability.
 
-*   **`CTU`**: Count Up.
-*   **`CTD`**: Count Down.
-*   **`CTUD`**: Count Up/Down.
-
-## Bistables (Flip-Flops)
-
-*   **`SR`**: Set Dominant (Set takes priority).
-*   **`RS`**: Reset Dominant.
-
-## Edge Detection
-
-*   **`R_TRIG`**: Rising Edge Detector (FALSE -> TRUE).
-*   **`F_TRIG`**: Falling Edge Detector (TRUE -> FALSE).
-
-## Control Functions
-
-*   **`PID_Compact`**: Basic PID controller.
-*   **`HYSTERESIS`**: Two-point controller with deadband.
-*   **`LIMIT`**: Clamp value between Min and Max.
-*   **`MUX`**: Multiplexer (Select one of N inputs).
-*   **`SEL`**: Select one of two inputs.
-*   **`MAX`**, **`MIN`**: Maximum/Minimum of two values.
-
-## System Functions
-
-*   **`GET_TICKS()`**: Returns system uptime in milliseconds.
-*   **`CYCLE_TIME()`**: Returns last scan cycle duration in microseconds.
+For runtime and profile-specific semantics, see [Runtime Standard Library](../runtime/stdlib.md).

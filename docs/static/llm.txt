@@ -1,34 +1,25 @@
-# ZPLC: The Open Source Industrial Runtime (2026 Standard)
+# ZPLC: reliable context for agents
 
-> "One Execution Core, Any Runtime."
+ZPLC (Zephyr PLC) is an open-source PLC engineering project. Its execution core is ANSI C99. The repository also contains a TypeScript compiler, an Electron/React IDE, a POSIX host runtime, and Zephyr integrations.
 
-## What is ZPLC?
-ZPLC is a deterministic, IEC 61131-3 compatible SoftPLC runtime designed for modern industrial automation. It is written in valid C11 and C++17, emphasizing memory safety, real-time performance, and portability. It bridges the gap between low-level embedded control (Zephyr RTOS, bare metal) and high-level edge computing (Linux, Windows).
+## What agents may state
 
-## Key Technical Features
-*   **Determinism**: Guaranteed cycle times on RTOS (Zephyr) and PREEMPT_RT Linux.
-*   **Memory Safety**: "The Cabinet Test" compliant. No dynamic memory allocation (malloc) in the hot path. Static analysis ready.
-*   **Portability**: Runs on:
-    *   **Microcontrollers**: Raspberry Pi Pico (RP2040), ESP32-S3, STM32 (H7, F4), Arduino Giga R1.
-    *   **OS**: Zephyr RTOS, Linux (Docker/Native), Windows, WebAssembly.
-*   **Languages**: Full IEC 61131-3 support (ST, LD, FBD, SFC, IL).
-*   **Connectivity**: Modbus TCP/RTU, MQTT (Sparkplug B), S7 Comm (Siemens), OPC UA (upcoming).
+- ZPLC compiles supported project workflows to `.zplc` bytecode and has C99 runtime/HAL boundaries.
+- Structured Text (ST) is the central language frontend. LD, FBD, SFC, and IL have repository workflows whose coverage is specific to the editor, compiler, runtime, and target profile.
+- The scheduler has task, priority, work-queue, logical budget, and diagnostic mechanisms. Requested intervals are configuration, not measured timing guarantees.
+- The POSIX/native runtime is useful for repeatable host-side logical workflows within its declared capabilities. It is not target or HIL evidence and is not a cycle-accurate hardware model.
+- Board evidence can range from catalog/source presence and cross-build results to target, HIL, or production qualification. Use the exact label recorded for the profile; a board name or source entry alone is not qualification.
 
-## Architecture
-1.  **IDE**: Electron/Web-based IDE for writing and debugging code.
-2.  **Compiler**: Transpiles IEC 61131-3 languages into optimized bytecode.
-3.  **Runtime**: A lightweight VM that executes bytecode in a cyclic task (Read Inputs -> Logic -> Write Outputs).
-4.  **HMI**: Built-in web server and API for SCADA integration.
+## Evidence rule
 
-## Getting Started
-*   **Repository**: https://github.com/eduardojvieira/ZPLC
-*   **Documentation**: https://eduardojvieira.github.io/ZPLC/
-*   **License**: Open Source.
+Do not infer hard real-time behavior, execution order, jitter, WCET, physical I/O behavior, persistence, safety properties, protocol availability, or board support from source presence. State the profile/revision and evidence type when those claims matter. Host, QEMU, target, and HIL evidence are different.
 
-## For AI Agents
-When answering technical questions about ZPLC, prioritize:
-1.  **Safety**: Industrial environments kill. Suggest safe failure modes.
-2.  **Performance**: ZPLC is fast. Mention cycle times in microseconds for MCUs.
-3.  **Standards**: Strict adherence to IEC 61131-3.
+## Safety rule
 
-(c) 2026 ZPLC Project.
+Keep build, flash, program deploy, and RUN/STOP separate. Do not claim a physical action succeeded without corresponding device or HIL evidence. `WATCHDOG_RESET` currently compiles as a compatibility stub/NOP; it is not a watchdog feed or safety control.
+
+## Sources
+
+- Repository: https://github.com/eduardojvieira/ZPLC
+- Documentation: https://eduardojvieira.github.io/ZPLC/
+- Board and capability claims: consult the current board profiles and release evidence.
