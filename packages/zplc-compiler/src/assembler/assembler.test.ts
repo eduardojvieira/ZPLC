@@ -80,6 +80,8 @@ describe('Opcodes', () => {
         // Type conversion
         expect(Opcode.I2F).toBe(0xA0);
         expect(Opcode.F2I).toBe(0xA1);
+        expect(Opcode.COMM_EXEC).toBe(0xD0);
+        expect(Opcode.COMM_STATUS).toBe(0xD1);
     });
 
     test('operand sizes are correct', () => {
@@ -101,6 +103,7 @@ describe('Opcodes', () => {
 
         // 32-bit operand
         expect(getOperandSize(Opcode.PUSH32)).toBe(4);
+        expect(getOperandSize(Opcode.COMM_EXEC)).toBe(4);
 
         // Special cases: no operand despite range
         expect(getOperandSize(Opcode.RET)).toBe(0);  // 0x94 is in 16-bit range but has no operand
@@ -467,6 +470,20 @@ describe('Integration', () => {
 // =============================================================================
 
 describe('Multi-Task Support', () => {
+    test('shared v1 loader fixture is emitted by the assembler', () => {
+        const fixture = readFileSync(
+            join(__dirname, '..', '..', '..', '..', 'firmware', 'lib', 'zplc_core', 'tests', 'fixtures', 'zplc-v1-code-task-tags.hex'),
+            'utf8',
+        ).trim();
+        const zplcFile = createMultiTaskZplcFile(
+            new Uint8Array([0x00, 0x01]),
+            [{ id: 1, type: TASK_TYPE.CYCLIC, priority: 0, intervalUs: 10000, entryPoint: 0, stackSize: 64 }],
+            [{ varAddr: 0x2000, varType: 0x0A, tagId: 2, value: 40001 }],
+        );
+
+        expect(toHex(zplcFile).replaceAll(' ', '')).toBe(fixture);
+    });
+
     test('createMultiTaskZplcFile generates correct header', () => {
         const bytecode = new Uint8Array([0x00, 0x01]); // NOP, HALT
         const tasks: TaskDef[] = [
@@ -525,7 +542,8 @@ describe('Multi-Task Support', () => {
     });
 
     test('createMultiTaskZplcFile generates correct task definitions', () => {
-        const bytecode = new Uint8Array([0x01]); // HALT
+        const bytecode = new Uint8Array(64);
+        bytecode[0] = 0x01; // HALT
         const tasks: TaskDef[] = [
             { id: 1, type: TASK_TYPE.CYCLIC, priority: 0, intervalUs: 10000, entryPoint: 0, stackSize: 64 },
             { id: 2, type: TASK_TYPE.CYCLIC, priority: 2, intervalUs: 100000, entryPoint: 50, stackSize: 128 },
@@ -534,8 +552,8 @@ describe('Multi-Task Support', () => {
         const zplcFile = createMultiTaskZplcFile(bytecode, tasks);
         const view = new DataView(zplcFile.buffer);
 
-        // Task segment starts after: header (32) + 2 segment entries (16) + code (1) = 49
-        const taskSegmentStart = 32 + 16 + 1;
+        // Task segment starts after: header (32) + 2 segment entries (16) + code (64)
+        const taskSegmentStart = 32 + 16 + 64;
 
         // Task 1 (16 bytes)
         expect(view.getUint16(taskSegmentStart + 0, true)).toBe(1);      // id
@@ -584,6 +602,67 @@ describe('Multi-Task Support', () => {
         expect(view.getUint16(26, true)).toBe(3);
         expect(view.getUint16(48, true)).toBe(ZPLC_CONSTANTS.SEGMENT_TYPE_TAGS);
         expect(view.getUint32(52, true)).toBe(ZPLC_CONSTANTS.TAG_ENTRY_SIZE);
+    });
+
+    test('rejects task metadata that the task ABI cannot represent', () => {
+        const bytecode = new Uint8Array([0x01]);
+        const validTask: TaskDef = {
+            id: 1,
+            type: TASK_TYPE.CYCLIC,
+            priority: 1,
+            intervalUs: 10_000,
+            entryPoint: 0,
+            stackSize: 64,
+        };
+        const invalidTasks: TaskDef[] = [
+            { ...validTask, id: 65_536 },
+            { ...validTask, type: 3 as TaskDef['type'] },
+            { ...validTask, priority: 256 },
+            { ...validTask, intervalUs: 0 },
+            { ...validTask, intervalUs: 2 ** 32 },
+            { ...validTask, entryPoint: 65_536 },
+            { ...validTask, entryPoint: 1 },
+            { ...validTask, stackSize: 0 },
+            { ...validTask, stackSize: 257 },
+        ];
+
+        for (const task of invalidTasks) {
+            expect(() => createMultiTaskZplcFile(bytecode, [task])).toThrow();
+        }
+        expect(() => createMultiTaskZplcFile(bytecode, [validTask, { ...validTask }])).toThrow(/duplicate/i);
+    });
+
+    test('admits at most the portable v1 task count', () => {
+        const bytecode = new Uint8Array([Opcode.HALT]);
+        const task = (id: number): TaskDef => ({
+            id,
+            type: TASK_TYPE.CYCLIC,
+            priority: 1,
+            intervalUs: 10_000,
+            entryPoint: 0,
+            stackSize: 64,
+        });
+        const maximum = Array.from({ length: 16 }, (_, id) => task(id));
+
+        expect(ZPLC_CONSTANTS.MAX_TASKS).toBe(16);
+        expect(() => createMultiTaskZplcFile(bytecode, maximum)).not.toThrow();
+        expect(() => createMultiTaskZplcFile(bytecode, [...maximum, task(16)]))
+            .toThrow(/at most 16 tasks/i);
+    });
+
+    test('admits only the portable loader CODE maximum', () => {
+        const task: TaskDef = {
+            id: 1,
+            type: TASK_TYPE.CYCLIC,
+            priority: 1,
+            intervalUs: 10_000,
+            entryPoint: 0,
+            stackSize: 64,
+        };
+
+        expect(() => createMultiTaskZplcFile(new Uint8Array(ZPLC_CONSTANTS.CODE_SIZE_MAX), [task])).not.toThrow();
+        expect(() => createMultiTaskZplcFile(new Uint8Array(ZPLC_CONSTANTS.CODE_SIZE_MAX + 1), [task]))
+            .toThrow(/CODE.*45056/);
     });
 });
 

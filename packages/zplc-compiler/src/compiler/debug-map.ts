@@ -123,6 +123,8 @@ export interface DebugPOUInfo {
     sourceMap: SourceLineMapping[];
     /** Valid breakpoint locations */
     breakpoints: BreakpointLocation[];
+    /** Physical source reference used to compile this POU, when available. */
+    sourceRef?: string;
 }
 
 // ============================================================================
@@ -175,7 +177,7 @@ export interface DebugMap {
 /**
  * Creates an empty debug map with default values.
  */
-export function createDebugMap(programName: string): DebugMap {
+export function createDebugMap(programName: string, memoryProfile?: { workSize: number; retainSize: number; codeSizeMax: number }): DebugMap {
     return {
         version: '1.0.0',
         programName,
@@ -188,11 +190,11 @@ export function createDebugMap(programName: string): DebugMap {
             opiBase: 0x1000,
             opiSize: 0x1000,
             workBase: 0x2000,
-            workSize: 0x2000,
+            workSize: memoryProfile?.workSize ?? 0x2000,
             retainBase: 0x4000,
-            retainSize: 0x1000,
+            retainSize: memoryProfile?.retainSize ?? 0x1000,
             codeBase: 0x5000,
-            codeSize: 0xB000,
+            codeSize: memoryProfile?.codeSizeMax ?? 0xB000,
         },
     };
 }
@@ -457,6 +459,8 @@ function buildBreakpointLocations(sourceMappings: SourceLineMapping[]): Breakpoi
 export interface BuildDebugMapOptions {
     /** Program name */
     programName: string;
+    /** Physical source reference used to compile this program (optional for legacy maps). */
+    sourceRef?: string;
     /** Symbol table with all variables */
     symbols: { all(): Symbol[] };
     /** Instruction mappings from assembler */
@@ -474,6 +478,8 @@ export interface BuildDebugMapOptions {
     codeSize?: number;
     /** Optional type resolver for FB/struct member types */
     typeResolver?: TypeResolver;
+    /** Effective target memory limits. */
+    memoryProfile?: { workSize: number; retainSize: number; codeSizeMax: number };
 }
 
 /**
@@ -492,9 +498,9 @@ export interface BuildDebugMapOptions {
  * ```
  */
 export function buildDebugMap(options: BuildDebugMapOptions): DebugMap {
-    const { programName, symbols, instructionMappings = [], stringPool, codeSize = 0, typeResolver } = options;
+    const { programName, sourceRef, symbols, instructionMappings = [], stringPool, codeSize = 0, typeResolver, memoryProfile } = options;
     
-    const map = createDebugMap(programName);
+    const map = createDebugMap(programName, memoryProfile);
     
     // Build POU info
     const pouInfo: DebugPOUInfo = {
@@ -504,6 +510,10 @@ export function buildDebugMap(options: BuildDebugMapOptions): DebugMap {
         sourceMap: buildSourceMappings(instructionMappings),
         breakpoints: [],
     };
+
+    if (sourceRef) {
+        pouInfo.sourceRef = sourceRef;
+    }
     
     // Add variables from symbol table
     for (const sym of symbols.all()) {

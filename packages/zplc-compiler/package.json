@@ -22,7 +22,7 @@
     "test": "bun test",
     "test:watch": "bun test --watch",
     "clean": "rm -rf dist",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "bun run build"
   },
   "keywords": [
     "plc",

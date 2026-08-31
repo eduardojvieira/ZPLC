@@ -73,8 +73,8 @@ export type { FunctionBlockDef, FunctionDef, CodeGenContext, MemberDef } from '.
 // =============================================================================
 // Code generator exports
 // =============================================================================
-export { generate, WORK_MEMORY_REGION_SIZE } from './codegen.ts';
-export type { CodeGenOptions } from './codegen.ts';
+export { generate, WORK_MEMORY_REGION_SIZE, validateCompilerMemoryProfile } from './codegen.ts';
+export type { CodeGenOptions, CompilerMemoryProfile } from './codegen.ts';
 
 // =============================================================================
 // Assembler exports (ASM -> bytecode)
@@ -113,15 +113,18 @@ export type {
 // Internal imports for main functions
 // =============================================================================
 import { parse } from './parser.ts';
-import { generate, WORK_MEMORY_REGION_SIZE } from './codegen.ts';
-import type { CodeGenOptions } from './codegen.ts';
-import { assemble, createMultiTaskZplcFile, relocateBytecode, TASK_TYPE } from '../assembler/index.ts';
+import { ParseError } from './parser.ts';
+import { LexerError } from './lexer.ts';
+import { generate, TagAdmissionError, WORK_MEMORY_REGION_SIZE, DEFAULT_COMPILER_MEMORY_PROFILE, validateCompilerMemoryProfile } from './codegen.ts';
+import type { CodeGenOptions, CompilerMemoryProfile } from './codegen.ts';
+import { assemble, createMultiTaskZplcFile, relocateBytecode, TASK_TYPE, ZPLC_CONSTANTS } from '../assembler/index.ts';
 import type { AssemblyResult, TagDef, TaskDef, TaskType } from '../assembler/index.ts';
 import type { DebugMap, TypeResolver } from './debug-map.ts';
 import { buildDebugMap, createDebugMap } from './debug-map.ts';
 import { buildSymbolTable, MemoryLayout } from './symbol-table.ts';
 import { getFB } from './stdlib/index.ts';
 import type { DataTypeValue } from './ast.ts';
+import type { CompilationUnit, Program } from './ast.ts';
 
 // =============================================================================
 // Error types
@@ -131,16 +134,22 @@ import type { DataTypeValue } from './ast.ts';
  * Compiler error with source location.
  */
 export class CompilerError extends Error {
+    /** Unformatted diagnostic detail, retained when a caller needs to relocate it. */
+    detail: string;
     line: number;
     column: number;
     phase: 'lexer' | 'parser' | 'codegen' | 'assembler';
+    /** Physical project-relative source identity, when the diagnostic belongs to one source. */
+    sourceRef?: string;
 
-    constructor(message: string, line: number, column: number, phase: 'lexer' | 'parser' | 'codegen' | 'assembler') {
+    constructor(message: string, line: number, column: number, phase: 'lexer' | 'parser' | 'codegen' | 'assembler', sourceRef?: string) {
         super(`[${phase}] Error at ${line}:${column}: ${message}`);
         this.name = 'CompilerError';
+        this.detail = message;
         this.line = line;
         this.column = column;
         this.phase = phase;
+        this.sourceRef = sourceRef;
     }
 }
 
@@ -172,6 +181,21 @@ export interface CompilationResult {
 export interface CompileOptions extends CodeGenOptions {
     /** Generate debug map for source-level debugging */
     generateDebugMap?: boolean;
+}
+
+function requireSingleProgram(ast: CompilationUnit, sourceRef?: string): Program {
+    if (ast.programs.length > 1) {
+        const secondProgram = ast.programs[1]!;
+        throw new CompilerError(
+            'Exactly one PROGRAM is required per source unit',
+            secondProgram.line,
+            secondProgram.column,
+            'codegen',
+            sourceRef,
+        );
+    }
+
+    return ast.programs[0]!;
 }
 
 // =============================================================================
@@ -210,8 +234,17 @@ export function compileST(source: string, options?: CodeGenOptions): string {
         throw new CompilerError('No program found in source', 1, 1, 'parser');
     }
 
+    requireSingleProgram(ast);
+
     // Pass the full CompilationUnit to generate() to support functions
-    return generate(ast, options);
+    try {
+        return generate(ast, options);
+    } catch (e) {
+        if (e instanceof TagAdmissionError) {
+            throw new CompilerError(e.message, e.line, e.column, 'codegen');
+        }
+        throw e;
+    }
 }
 
 /**
@@ -297,13 +330,22 @@ function createTypeResolver(symbols: import('./symbol-table.ts').SymbolTable): T
 }
 
 export function compileToBinary(source: string, options?: CompileOptions): CompilationResult {
+    let memoryProfile: CompilerMemoryProfile;
+    try {
+        memoryProfile = validateCompilerMemoryProfile(options?.memoryProfile ?? DEFAULT_COMPILER_MEMORY_PROFILE);
+    } catch (e) {
+        if (e instanceof TagAdmissionError) {
+            throw new CompilerError(e.message, e.line, e.column, 'codegen');
+        }
+        throw e;
+    }
     const ast = parse(source);
 
     if (ast.programs.length === 0) {
         throw new CompilerError('No program found in source', 1, 1, 'parser');
     }
 
-    const program = ast.programs[0]; // Still need main program for name/entry point
+    const program = requireSingleProgram(ast);
     const generateDebugMap = options?.generateDebugMap ?? false;
 
     // Build codegen options - enable source annotations if debug map is requested
@@ -313,7 +355,15 @@ export function compileToBinary(source: string, options?: CompileOptions): Compi
     };
 
     // Generate assembly using full AST
-    const assembly = generate(ast, codegenOptions);
+    let assembly: string;
+    try {
+        assembly = generate(ast, codegenOptions);
+    } catch (e) {
+        if (e instanceof TagAdmissionError) {
+            throw new CompilerError(e.message, e.line, e.column, 'codegen');
+        }
+        throw e;
+    }
 
     // Assemble to bytecode
     let asmResult: AssemblyResult;
@@ -322,6 +372,9 @@ export function compileToBinary(source: string, options?: CompileOptions): Compi
     } catch (e) {
         const err = e as Error;
         throw new CompilerError(err.message, 0, 0, 'assembler');
+    }
+    if (asmResult.bytecode.length > memoryProfile.codeSizeMax) {
+        throw new CompilerError('CODE exceeds the target memory profile', 0, 0, 'codegen');
     }
 
     const result: CompilationResult = {
@@ -343,6 +396,7 @@ export function compileToBinary(source: string, options?: CompileOptions): Compi
             instructionMappings: asmResult.instructionMappings,
             codeSize: asmResult.codeSize,
             typeResolver: createTypeResolver(symbols),
+            memoryProfile: options?.memoryProfile,
         });
     }
 
@@ -396,6 +450,17 @@ export interface ProjectConfig {
     tasks: TaskConfig[];
 }
 
+export function assertTaskProgramCardinality(config: Pick<ProjectConfig, 'tasks'>): void {
+    for (const task of config.tasks) {
+        if (task.programs?.length !== 1) {
+            throw new CompilerError(
+                `Task '${task.name}' must reference exactly one PROGRAM`,
+                0, 0, 'codegen',
+            );
+        }
+    }
+}
+
 /**
  * Program source for multi-task compilation.
  */
@@ -404,6 +469,13 @@ export interface ProgramSource {
     name: string;
     /** ST source code */
     content: string;
+    /** Physical project-relative source identity for diagnostics and debug provenance. */
+    sourceRef?: string;
+}
+
+function attachSourceRef(error: CompilerError, sourceRef: string): CompilerError {
+    if (!error.sourceRef) error.sourceRef = sourceRef;
+    return error;
 }
 
 /**
@@ -441,7 +513,73 @@ function mapTaskTrigger(trigger: TaskConfig['trigger']): TaskType {
         case 'freewheeling':
             return TASK_TYPE.CYCLIC;
         default:
-            return TASK_TYPE.CYCLIC;
+            throw new Error(`Unsupported task trigger '${trigger as string}'`);
+    }
+}
+
+function validateTaskConfigs(config: Pick<ProjectConfig, 'tasks'>): void {
+    if (config.tasks.length > ZPLC_CONSTANTS.MAX_TASKS) {
+        throw new CompilerError(
+            `Project supports at most ${ZPLC_CONSTANTS.MAX_TASKS} tasks`,
+            0, 0, 'codegen',
+        );
+    }
+    for (const task of config.tasks) {
+        const label = `Task '${task.name}'`;
+        if (task.trigger !== 'cyclic' && task.trigger !== 'event' && task.trigger !== 'freewheeling') {
+            throw new CompilerError(`${label} has invalid trigger`, 0, 0, 'codegen');
+        }
+        const interval = task.interval === undefined ? 10 : task.interval;
+        if (!Number.isInteger(interval) || interval < 1 || interval > 3_600_000) {
+            throw new CompilerError(`${label} has invalid interval`, 0, 0, 'codegen');
+        }
+        const priority = task.priority === undefined ? 1 : task.priority;
+        if (!Number.isInteger(priority) || priority < 0 || priority > 0xFF) {
+            throw new CompilerError(`${label} has invalid priority`, 0, 0, 'codegen');
+        }
+    }
+}
+
+interface PhysicalOutputOwner {
+    programName: string;
+    variableName: string;
+    sourceRef: string;
+    startBit: number;
+    endBit: number;
+}
+
+function admitPhysicalOutputOwners(
+    owners: PhysicalOutputOwner[],
+    programName: string,
+    sourceRef: string,
+    debugMap: DebugMap,
+): void {
+    const variables = debugMap.pou[programName]?.vars ?? {};
+    for (const [variableName, variable] of Object.entries(variables)) {
+        if (variable.region !== 'OPI') continue;
+
+        const startBit = variable.addr * 8 + (variable.bitOffset ?? 0);
+        const endBit = variable.type === 'BOOL' && variable.bitOffset !== undefined
+            ? startBit + 1
+            : (variable.addr + variable.size) * 8;
+        const previous = owners.find((owner) => owner.programName !== programName
+            && startBit < owner.endBit && owner.startBit < endBit);
+        if (previous) {
+            throw new CompilerError(
+                `Physical output '${programName}.${variableName}' (${sourceRef}) overlaps '${previous.programName}.${previous.variableName}' (${previous.sourceRef})`,
+                variable.declarationLine ?? 0,
+                0,
+                'codegen',
+                sourceRef,
+            );
+        }
+        owners.push({
+            programName,
+            variableName,
+            sourceRef,
+            startBit,
+            endBit,
+        });
     }
 }
 
@@ -474,11 +612,15 @@ function mapTaskTrigger(trigger: TaskConfig['trigger']): TaskType {
  */
 export function compileMultiTaskProject(
     config: ProjectConfig,
-    programSources: ProgramSource[]
+    programSources: ProgramSource[],
+    options?: { memoryProfile?: CompilerMemoryProfile },
 ): MultiTaskCompilationResult {
     if (!config.tasks || config.tasks.length === 0) {
         throw new CompilerError('No tasks defined in project configuration', 0, 0, 'codegen');
     }
+
+    validateTaskConfigs(config);
+    assertTaskProgramCardinality(config);
 
     // Build source map for lookup
     const sourceMap = new Map<string, ProgramSource>();
@@ -489,6 +631,15 @@ export function compileMultiTaskProject(
 
     // Collect all unique programs
     const referencedPrograms = new Set<string>();
+    let memoryProfile: CompilerMemoryProfile;
+    try {
+        memoryProfile = validateCompilerMemoryProfile(options?.memoryProfile ?? DEFAULT_COMPILER_MEMORY_PROFILE);
+    } catch (e) {
+        if (e instanceof TagAdmissionError) {
+            throw new CompilerError(e.message, e.line, e.column, 'codegen');
+        }
+        throw e;
+    }
     for (const task of config.tasks) {
         for (const progName of task.programs) {
             referencedPrograms.add(progName);
@@ -498,6 +649,7 @@ export function compileMultiTaskProject(
     // Compile each program
     const compiledPrograms: {
         name: string;
+        baseOffset: number;
         bytecode: Uint8Array;
         assembly: string;
         entryPoint: number;
@@ -508,6 +660,8 @@ export function compileMultiTaskProject(
 
     let currentOffset = 0;
     let programIndex = 0;
+    const declaredProgramSources = new Map<string, string>();
+    const physicalOutputOwners: PhysicalOutputOwner[] = [];
 
     for (const progName of referencedPrograms) {
         const source = sourceMap.get(progName) || sourceMap.get(progName.toLowerCase());
@@ -516,6 +670,11 @@ export function compileMultiTaskProject(
                 `Program '${progName}' referenced by task but not found in sources`,
                 0, 0, 'codegen'
             );
+        }
+        const sourceRef = source.sourceRef ?? progName;
+
+        if ((programIndex + 1) * WORK_MEMORY_REGION_SIZE > memoryProfile.workSize) {
+            throw new CompilerError('WORK task buckets exceed the target memory profile', 0, 0, 'codegen', sourceRef);
         }
 
         // Calculate work memory base for this program
@@ -526,12 +685,47 @@ export function compileMultiTaskProject(
         let programAst: ReturnType<typeof parse>;
         try {
             programAst = parse(source.content);
-            assembly = generate(programAst, { workMemoryBase, emitSourceAnnotations: true });
+            if (programAst.programs.length === 0) {
+                throw new CompilerError('No program found in source', 1, 1, 'parser', sourceRef);
+            }
+            const program = requireSingleProgram(programAst, sourceRef);
+
+            const normalizedProgramName = program.name.toLowerCase();
+            const previousSourceRef = declaredProgramSources.get(normalizedProgramName);
+            if (previousSourceRef) {
+                throw new CompilerError(
+                    `Duplicate PROGRAM name '${program.name}' in '${progName}' (already declared by '${previousSourceRef}')`,
+                    program.line,
+                    program.column,
+                    'codegen',
+                    sourceRef,
+                );
+            }
+            declaredProgramSources.set(normalizedProgramName, progName);
+            assembly = generate(programAst, {
+                workMemoryBase,
+                workMemorySize: WORK_MEMORY_REGION_SIZE,
+                memoryProfile,
+                emitSourceAnnotations: true,
+            });
         } catch (e) {
+            if (e instanceof CompilerError) throw attachSourceRef(e, sourceRef);
+            if (e instanceof TagAdmissionError) {
+                throw attachSourceRef(
+                    new CompilerError(e.message, e.line, e.column, 'codegen'),
+                    sourceRef,
+                );
+            }
+            if (e instanceof LexerError) {
+                throw new CompilerError(`Compilation of '${progName}' failed: ${e.message.replace(/^Lexer error at \d+:\d+:\s*/, '')}`, e.line, e.column, 'lexer', sourceRef);
+            }
+            if (e instanceof ParseError) {
+                throw new CompilerError(`Compilation of '${progName}' failed: ${e.message.replace(/^Parse error at \d+:\d+:\s*/, '')}`, e.line, e.column, 'parser', sourceRef);
+            }
             const err = e as Error;
             throw new CompilerError(
                 `Compilation of '${progName}' failed: ${err.message}`,
-                0, 0, 'codegen'
+                0, 0, 'codegen', sourceRef
             );
         }
 
@@ -543,22 +737,27 @@ export function compileMultiTaskProject(
             const err = e as Error;
             throw new CompilerError(
                 `Assembly of '${progName}' failed: ${err.message}`,
-                0, 0, 'assembler'
+                0, 0, 'assembler', sourceRef
             );
         }
 
         // Build debug map for this program
-        const symbols = buildSymbolTable(programAst.programs[0], workMemoryBase);
+        const program = programAst.programs[0]!;
+        const symbols = buildSymbolTable(program, workMemoryBase);
         const progDebugMap = buildDebugMap({
-            programName: progName,
+            programName: program.name,
+            sourceRef,
             symbols,
             instructionMappings: asmResult.instructionMappings,
             codeSize: asmResult.bytecode.length,
             typeResolver: createTypeResolver(symbols),
+            memoryProfile,
         });
+        admitPhysicalOutputOwners(physicalOutputOwners, program.name, sourceRef, progDebugMap);
 
         compiledPrograms.push({
             name: progName,
+            baseOffset: currentOffset,
             bytecode: asmResult.bytecode,
             assembly,
             // The entry point for the task is the global offset + the program's local entry point (_start)
@@ -574,6 +773,9 @@ export function compileMultiTaskProject(
 
     // Concatenate all bytecode with relocation
     const totalCodeSize = compiledPrograms.reduce((sum, p) => sum + p.size, 0);
+    if (totalCodeSize > memoryProfile.codeSizeMax) {
+        throw new CompilerError('CODE exceeds the target memory profile', 0, 0, 'codegen');
+    }
     const concatenatedBytecode = new Uint8Array(totalCodeSize);
     let offset = 0;
     for (const prog of compiledPrograms) {
@@ -599,13 +801,7 @@ export function compileMultiTaskProject(
     let taskId = 0;
 
     for (const taskConfig of config.tasks) {
-        const firstProgram = taskConfig.programs[0];
-        if (!firstProgram) {
-            throw new CompilerError(
-                `Task '${taskConfig.name}' has no programs assigned`,
-                0, 0, 'codegen'
-            );
-        }
+        const [firstProgram] = taskConfig.programs;
 
         const entryPoint = entryPointMap.get(firstProgram) ?? entryPointMap.get(firstProgram.toLowerCase());
         if (entryPoint === undefined) {
@@ -629,11 +825,17 @@ export function compileMultiTaskProject(
     const zplcFile = createMultiTaskZplcFile(concatenatedBytecode, taskDefs, allTags);
 
     // Merge all per-program debug maps into one (multi-POU debug map)
-    const mergedDebugMap = createDebugMap(config.name ?? 'Project');
+    const mergedDebugMap = createDebugMap(config.name ?? 'Project', memoryProfile);
     for (const prog of compiledPrograms) {
-        // Copy each program's POU entry into the merged map
+        // Publish global bytecode coordinates without mutating per-program maps.
         for (const [pouName, pouInfo] of Object.entries(prog.debugMap.pou)) {
-            mergedDebugMap.pou[pouName] = pouInfo;
+            mergedDebugMap.pou[pouName] = {
+                ...pouInfo,
+                entryPoint: prog.entryPoint,
+                vars: { ...pouInfo.vars },
+                sourceMap: pouInfo.sourceMap.map((mapping) => ({ ...mapping, pc: mapping.pc + prog.baseOffset })),
+                breakpoints: pouInfo.breakpoints.map((breakpoint) => ({ ...breakpoint, pc: breakpoint.pc + prog.baseOffset })),
+            };
         }
     }
 
@@ -668,6 +870,8 @@ export interface SingleFileTaskOptions {
     priority?: number;
     /** Program name (default: 'Main') */
     programName?: string;
+    /** Physical project-relative source identity for diagnostics and debug provenance. */
+    sourceRef?: string;
 }
 
 /**
@@ -686,6 +890,7 @@ export function compileSingleFileWithTask(
         intervalMs = 10,
         priority = 1,
         programName = 'Main',
+        sourceRef,
     } = options;
 
     const config: ProjectConfig = {
@@ -703,6 +908,7 @@ export function compileSingleFileWithTask(
     const programSources: ProgramSource[] = [{
         name: programName,
         content: source,
+        sourceRef,
     }];
 
     const multiResult = compileMultiTaskProject(config, programSources);

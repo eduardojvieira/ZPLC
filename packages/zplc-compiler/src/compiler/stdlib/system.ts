@@ -503,14 +503,14 @@ export const CYCLE_TIME_FN: FunctionDef = {
 };
 
 // ============================================================================
-// WATCHDOG_RESET - Reset Watchdog Timer
+// WATCHDOG_RESET - Compatibility NOP
 // ============================================================================
 
 /**
  * WATCHDOG_RESET()
  *
- * Resets the software watchdog timer.
- * Note: This is a stub - actual implementation depends on HAL.
+ * Compatibility stub that emits one NOP.
+ * It has no watchdog effect and must not be used as a safety control.
  */
 export const WATCHDOG_RESET_FN: FunctionDef = {
     name: 'WATCHDOG_RESET',
@@ -518,8 +518,7 @@ export const WATCHDOG_RESET_FN: FunctionDef = {
     variadic: false,
 
     generateInline(ctx: CodeGenContext, _args: Expression[]): void {
-        ctx.emit(`    ; WATCHDOG_RESET() - Reset watchdog (stub)`);
-        ctx.emit(`    ; TODO: Requires HAL integration`);
+        ctx.emit(`    ; WATCHDOG_RESET() - compatibility NOP; no watchdog effect`);
         ctx.emit(`    NOP`);
     }
 };

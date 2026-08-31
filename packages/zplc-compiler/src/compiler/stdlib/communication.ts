@@ -119,7 +119,7 @@ function out(name: string, type: DataTypeValue, offset: number): CommMemberDef {
 }
 
 /**
- * Write all bound input params into FB work-memory then emit OP_COMM_EXEC.
+ * Write all bound input params into FB work-memory then emit COMM_EXEC.
  * Signature: (baseAddr, params, ctx) to match the test contract.
  */
 function emitCommFB(
@@ -152,7 +152,7 @@ function emitCommFB(
 
   ctx.emit(`    ; ${def.name}: dispatch (kind=0x${kind.toString(16)})`);
   ctx.emit(`    PUSH16 ${baseAddr}`);
-  ctx.emit(`    OP_COMM_EXEC 0x${kind.toString(16).padStart(4, '0')}`);
+  ctx.emit(`    COMM_EXEC 0x${kind.toString(16).padStart(4, '0')}`);
 }
 
 function defineCommFB(definition: Omit<CommFBDef, 'generateCall'>, kind: number): CommFBDef {

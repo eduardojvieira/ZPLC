@@ -53,7 +53,7 @@ describe('Communication FBs (Phase 1 & 2)', () => {
     expect(value?.type).toBe(DataType.UINT);
   });
 
-  test('generateCall emits correct OP_COMM_EXEC for MB_READ_HREG', () => {
+  test('generateCall emits assemblable COMM_EXEC for MB_READ_HREG', async () => {
     const fb = CommBlocks['MB_READ_HREG'];
     let emitted: string[] = [];
     const ctx: any = {
@@ -66,10 +66,13 @@ describe('Communication FBs (Phase 1 & 2)', () => {
     // Should push base address 0x1000
     expect(emitted).toContain('PUSH16 4096');
     // Should exec kind 0x0001
-    expect(emitted).toContain('OP_COMM_EXEC 0x0001');
+    expect(emitted).toContain('COMM_EXEC 0x0001');
+    const { assembleRaw } = await import('../../assembler');
+    const bytecode = assembleRaw(emitted.filter(line => !line.startsWith(';')).join('\n'));
+    expect(bytecode.slice(-5)).toEqual(new Uint8Array([0xD0, 0x01, 0x00, 0x00, 0x00]));
   });
 
-  test('generateCall emits correct OP_COMM_EXEC for MQTT_PUBLISH', () => {
+  test('generateCall emits correct COMM_EXEC for MQTT_PUBLISH', () => {
     const fb = CommBlocks['MQTT_PUBLISH'];
     let emitted: string[] = [];
     const ctx: any = {
@@ -80,6 +83,6 @@ describe('Communication FBs (Phase 1 & 2)', () => {
     fb.generateCall(0x1000, [{name: 'EN', value: 'node_expr'}], ctx);
 
     expect(emitted).toContain('PUSH16 4096');
-    expect(emitted).toContain('OP_COMM_EXEC 0x000b');
+    expect(emitted).toContain('COMM_EXEC 0x000b');
   });
 });
