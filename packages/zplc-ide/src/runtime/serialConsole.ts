@@ -1,4 +1,7 @@
-const ANSI_REGEX = /\x1B\[[0-9;]*[a-zA-Z]/g;
+const ESCAPE = String.fromCharCode(0x1b);
+const BACKSPACE = String.fromCharCode(0x08);
+const ANSI_REGEX = new RegExp(`${ESCAPE}\\[[0-9;]*[a-zA-Z]`, 'g');
+const BACKSPACE_REGEX = new RegExp(BACKSPACE, 'g');
 const PROMPT_ONLY_REGEX = /^[A-Za-z0-9_-]+:~\$\s*$/;
 const LEADING_PROMPT_REGEX = /^(?:[A-Za-z0-9_-]+:~\$\s*)+/;
 
@@ -8,7 +11,7 @@ export interface SerialConsoleChunkResult {
 }
 
 function normalizeLine(rawLine: string): string | null {
-  const withoutAnsi = rawLine.replace(ANSI_REGEX, '').replace(/\r/g, '').replace(/\x08/g, '');
+  const withoutAnsi = rawLine.replace(ANSI_REGEX, '').replace(/\r/g, '').replace(BACKSPACE_REGEX, '');
   const withoutPrompt = withoutAnsi.replace(LEADING_PROMPT_REGEX, '');
   const line = withoutPrompt.trimEnd();
 

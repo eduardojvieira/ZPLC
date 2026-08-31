@@ -9,24 +9,26 @@ const SENSITIVE_CONFIG_KEYS = [
   'wifi_pass',
   'mqtt_password',
   'azure_sas_key',
+  'mqtt_client_key_path',
+  'aws_claim_key_path',
 ] as const;
 
-function maskQuotedValue(command: string, key: string): string {
-  const pattern = new RegExp(`^(zplc\\s+config\\s+set\\s+${key}\\s+)".*"$`);
-  if (pattern.test(command)) {
-    return command.replace(pattern, `$1"***"`);
-  }
+const SENSITIVE_CONFIG_COMMAND_PATTERN = new RegExp(
+  `(\\bzplc[\\t ]+config[\\t ]+set[\\t ]+(?:${SENSITIVE_CONFIG_KEYS.join('|')})[\\t ]+)("(?:\\\\[^\\r\\n]|[^"\\\\\\r\\n])*"?|[^\\s\\r\\n]*)`,
+  'g',
+);
+const CERTIFICATE_CHUNK_PATTERN = /(\bzplc[\t ]+cert[\t ]+chunk[\t ]+)[^\s\r\n]*/g;
 
-  const plainPattern = new RegExp(`^(zplc\\s+config\\s+set\\s+${key}\\s+)\\S+$`);
-  if (plainPattern.test(command)) {
-    return command.replace(plainPattern, '$1***');
-  }
-
-  return command;
+export function sanitizeUploadTraceText(text: string): string {
+  return text
+    .replace(SENSITIVE_CONFIG_COMMAND_PATTERN, (_match, prefix: string, value: string) => (
+      `${prefix}${value.startsWith('"') ? '"***"' : '***'}`
+    ))
+    .replace(CERTIFICATE_CHUNK_PATTERN, '$1<payload redacted>');
 }
 
 export function sanitizeUploadTraceCommand(command: string): string {
-  return SENSITIVE_CONFIG_KEYS.reduce((sanitized, key) => maskQuotedValue(sanitized, key), command);
+  return sanitizeUploadTraceText(command);
 }
 
 export function formatChunkTrace(commandPrefix: string, chunkIndex: number, totalChunks: number, chunkSize: number): string {

@@ -186,7 +186,7 @@ describe('FBD to ST Transpiler', () => {
     });
 
     it('should generate Modbus server helper bindings for FBD blocks', () => {
-      const model = {
+      const model: FBDModel = {
         name: 'ModbusServerBlocks',
         variables: {
           local: [
@@ -209,7 +209,7 @@ describe('FBD to ST Transpiler', () => {
           },
         ],
         connections: [],
-      } as any as FBDModel;
+      };
 
       const result = transpileFBDToST(model);
       expect(result.success).toBe(true);
@@ -923,6 +923,7 @@ describe('LD to ST Transpiler', () => {
       },
       rungs: [
         {
+          id: 'rung1',
           number: 1,
           cells: [],
           elements: [
@@ -933,16 +934,111 @@ describe('LD to ST Transpiler', () => {
               instance: 'MB1',
               parameters: { IN: 'PumpRun', ADDR: '1' },
               outputs: { STATUS: 'PumpRun' },
-            } as any,
+            },
           ],
           connections: [],
-        } as any,
+        },
       ],
-    } as LDModel;
+    };
 
     const result = transpileLDToST(model);
     expect(result.success).toBe(true);
     expect(result.source).toContain('MODBUS_COIL(PumpRun, 1);');
+  });
+
+  it('fails closed instead of silently dropping invalid LD semantics', () => {
+    const base: LDModel = {
+      name: 'FailClosedLD',
+      variables: {
+        local: [{ name: 'Start', type: 'BOOL' }],
+        outputs: [{ name: 'Out1', type: 'BOOL' }],
+      },
+      rungs: [{
+        id: 'rung_1', number: 1,
+        elements: [
+          { id: 'contact_1', type: 'contact_no', variable: 'Start' },
+          { id: 'coil_1', type: 'coil', variable: 'Out1' },
+        ],
+        connections: [],
+      }],
+    };
+
+    const invalidModels: Array<[string, unknown]> = [
+      ['unknown element type', { ...base, rungs: [{ ...base.rungs[0], elements: [{ id: 'bad', type: 'NOT_A_REAL_TYPE' }] }] }],
+      ['unknown contact type', { ...base, rungs: [{ ...base.rungs[0], elements: [{ id: 'bad', type: 'contact_UNKNOWN', variable: 'Start' }] }] }],
+      ['unsupported edge contact', { ...base, rungs: [{ ...base.rungs[0], elements: [{ id: 'bad', type: 'contact_p', variable: 'Start' }] }] }],
+      ['contact without variable', { ...base, rungs: [{ ...base.rungs[0], elements: [{ id: 'bad', type: 'contact_no' }] }] }],
+      ['coil without variable', { ...base, rungs: [{ ...base.rungs[0], elements: [{ id: 'bad', type: 'coil' }] }] }],
+      ['FB without type or instance', { ...base, rungs: [{ ...base.rungs[0], elements: [{ id: 'bad', type: 'function_block' }] }] }],
+      ['non-empty legacy connections', { ...base, rungs: [{ ...base.rungs[0], connections: [{ from: 'contact_1', to: 'coil_1' }] }] }],
+      ['out-of-range branch', { ...base, rungs: [{
+        id: 'rung_1', number: 1,
+        gridConfig: { rows: 1, cols: 1, cellWidth: 80, cellHeight: 60 },
+        grid: [[{ element: { id: 'contact_1', type: 'contact_no', variable: 'Start', row: 0, col: 0 } }]],
+        branches: [{ id: 'bad_branch', startCol: 0, endCol: 2, rows: [0, 1] }],
+      }] }],
+      ['duplicate case-insensitive variables', { ...base, variables: { local: [{ name: 'Start', type: 'BOOL' }, { name: 'start', type: 'BOOL' }], outputs: [{ name: 'Out1', type: 'BOOL' }] } }],
+      ['duplicate output writer', { ...base, rungs: [base.rungs[0], { ...base.rungs[0], id: 'rung_2', number: 2, elements: [{ id: 'contact_2', type: 'contact_no', variable: 'Start' }, { id: 'coil_2', type: 'coil', variable: 'Out1' }], connections: [] }] }],
+    ];
+
+    for (const [label, model] of invalidModels) {
+      const result = transpileLDToST(model as LDModel);
+      expect(result.success, label).toBe(false);
+      expect(result.source, label).toBe('');
+      expect(result.errors.length, label).toBeGreaterThan(0);
+    }
+  });
+
+  it('protects writable ownership, generated state, and grid power paths', () => {
+    const grid = (element: Record<string, unknown>, hasWire = true) => ({
+      name: 'StrictGrid',
+      variables: { local: [{ name: 'Start', type: 'BOOL' }], inputs: [{ name: 'In', type: 'BOOL', address: '%I0.0' }], outputs: [{ name: 'Out', type: 'BOOL' }] },
+      rungs: [{ id: 'rung_1', number: 1, gridConfig: { rows: 1, cols: 1, cellWidth: 80, cellHeight: 60 }, grid: [[{ element: { ...element, row: 0, col: 0 }, hasWire }]], branches: [] }],
+    });
+    const invalid = [
+      grid({ id: 'coil', type: 'coil', variable: 'In' }),
+      { ...grid({ id: 'coil', type: 'coil', variable: 'Out' }), variables: { local: [{ name: '_rung1_result', type: 'BOOL' }], outputs: [{ name: 'Out', type: 'BOOL' }] } },
+      grid({ id: 'contact', type: 'contact_no', variable: 'Start' }, false),
+      { ...grid({ id: 'coil', type: 'coil', variable: 'Out' }), rungs: [{ id: 'rung_1', number: 1, gridConfig: { rows: 2, cols: 1, cellWidth: 80, cellHeight: 60 }, grid: [[{ element: null, hasWire: true }], [{ element: { id: 'orphan', type: 'contact_no', variable: 'Start', row: 1, col: 0 }, hasWire: true }]], branches: [] }] },
+      { ...grid({ id: 'mb', type: 'function_block', fbType: 'MB_COIL', instance: 'MB1', parameters: { IN: 'Out', EVIL: 'FALSE' } }), },
+      { name: 'BadInitializer', variables: { local: [{ name: 'Bad', type: 'BOOL', initialValue: 'oops' }], outputs: [] }, rungs: [] },
+      { name: 'BadTimerPorts', variables: { local: [{ name: 'Timer', type: 'TON' }, { name: 'IntOut', type: 'INT' }], outputs: [] }, rungs: [{ id: 'rung_1', number: 1, elements: [{ id: 'timer', type: 'function_block', fbType: 'TON', instance: 'Timer', parameters: { PT: 'TRUE' }, outputs: { Q: 'IntOut' } }], connections: [] }] },
+      { name: 'BadModbusInput', variables: { local: [], outputs: [] }, rungs: [{ id: 'rung_1', number: 1, elements: [{ id: 'mb', type: 'function_block', fbType: 'MB_COIL', instance: 'MB1', parameters: { IN: 'Missing' } }], connections: [] }] },
+    ];
+    for (const model of invalid) {
+      const result = transpileLDToST(model as LDModel);
+      expect(result.success).toBe(false);
+      expect(result.source).toBe('');
+      expect(result.errors.length).toBeGreaterThan(0);
+    }
+
+    const mapped = transpileLDToST({
+      name: 'MappedLocal', variables: { local: [{ name: 'Mapped', type: 'BOOL', address: '%M200.0' }], outputs: [] }, rungs: [],
+    });
+    expect(mapped).toMatchObject({ success: true });
+    expect(mapped.source).toContain('Mapped AT %M200.0 : BOOL;');
+    expect(assemble(compileST(mapped.source)).bytecode.length).toBeGreaterThan(0);
+
+    const latch = {
+      name: 'LatchPair', variables: { local: [{ name: 'Start', type: 'BOOL' }, { name: 'Stop', type: 'BOOL' }], outputs: [{ name: 'Latched', type: 'BOOL' }] },
+      rungs: [
+        { id: 'rung_1', number: 1, elements: [{ id: 'start', type: 'contact_no', variable: 'Start' }, { id: 'set', type: 'coil_set', variable: 'Latched' }], connections: [] },
+        { id: 'rung_2', number: 2, elements: [{ id: 'stop', type: 'contact_no', variable: 'Stop' }, { id: 'reset', type: 'coil_reset', variable: 'Latched' }], connections: [] },
+      ],
+    };
+    expect(transpileLDToST(latch as LDModel).success).toBe(true);
+    expect(transpileLDToST({ ...latch, rungs: [...latch.rungs, { ...latch.rungs[0], id: 'rung_3', number: 3 }] } as LDModel).success).toBe(false);
+    expect(transpileLDToST({ ...latch, rungs: [{ id: 'rung_1', number: 1, elements: [{ id: 'start', type: 'contact_no', variable: 'Start' }, { id: 'set', type: 'coil_set', variable: 'Latched' }, { id: 'reset', type: 'coil_reset', variable: 'Latched' }], connections: [] }] } as LDModel)).toMatchObject({ success: false, source: '' });
+
+    const disconnectedBranch = {
+      name: 'DisconnectedBranch', variables: { local: [{ name: 'Start', type: 'BOOL' }], outputs: [] },
+      rungs: [{ id: 'rung_1', number: 1, gridConfig: { rows: 3, cols: 1, cellWidth: 80, cellHeight: 60 }, grid: [
+        [{ element: null, hasWire: true }],
+        [{ element: { id: 'lower_1', type: 'contact_no', variable: 'Start', row: 1, col: 0 }, hasWire: true }],
+        [{ element: { id: 'lower_2', type: 'contact_no', variable: 'Start', row: 2, col: 0 }, hasWire: true }],
+      ], branches: [{ id: 'bad_branch', startCol: 0, endCol: 0, rows: [1, 2] }] }],
+    };
+    expect(transpileLDToST(disconnectedBranch as LDModel)).toMatchObject({ success: false, source: '' });
   });
 });
 
@@ -1301,6 +1397,203 @@ describe('SFC to ST Transpiler', () => {
       expect(result.success).toBe(true);
       expect(result.source).toContain('IF X_step1 THEN');
       expect(result.source).toContain('LED := TRUE;');
+    });
+  });
+
+  describe('Semantic preflight', () => {
+    const validModel = (): SFCModel => ({
+      name: 'Preflight',
+      steps: [
+        { id: 'idle', name: 'Idle', isInitial: true, position: { x: 0, y: 0 }, actions: [{ qualifier: 'N', actionName: 'SetOutput' }] },
+        { id: 'run', name: 'Run', isInitial: false, position: { x: 0, y: 100 } },
+      ],
+      transitions: [{ id: 'start', fromStep: 'idle', toStep: 'run', condition: 'TRUE' }],
+      actions: [{ id: 'set_output', name: 'SetOutput', type: 'ST', body: 'Output := TRUE;' }],
+    });
+
+    const expectRejected = (model: SFCModel, message: string) => {
+      const result = transpileSFCToST(model);
+      expect(result.success).toBe(false);
+      expect(result.source).toBe('');
+      expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining(message)]));
+    };
+
+    it('accepts the implemented N/ST subset', () => {
+      expect(transpileSFCToST(validModel()).success).toBe(true);
+    });
+
+    it('returns structured failures for malformed direct input', () => {
+      expectRejected(null as never, 'SFC model must be an object');
+      expectRejected({ name: 'Malformed', steps: [], transitions: [] } as SFCModel, 'at least one initial step');
+
+      const invalidInitial = validModel();
+      invalidInitial.steps[0].isInitial = 'false' as never;
+      expectRejected(invalidInitial, 'isInitial must be a boolean');
+    });
+
+    it('rejects duplicate or empty semantic identifiers and duplicate step names', () => {
+      const duplicateStep = validModel();
+      duplicateStep.steps[1].id = 'idle';
+      expectRejected(duplicateStep, 'Duplicate step id');
+
+      const emptyStep = validModel();
+      emptyStep.steps[1].id = '';
+      expectRejected(emptyStep, 'Step id must be non-empty');
+
+      const emptyTransition = validModel();
+      emptyTransition.transitions[0].id = '';
+      expectRejected(emptyTransition, 'Transition id must be non-empty');
+
+      const duplicateTransition = validModel();
+      duplicateTransition.transitions.push({ ...duplicateTransition.transitions[0] });
+      expectRejected(duplicateTransition, 'Duplicate transition id');
+
+      const duplicateAction = validModel();
+      duplicateAction.actions!.push({ id: 'set_output', name: 'Another', type: 'ST', body: 'Output := FALSE;' });
+      expectRejected(duplicateAction, 'Duplicate action id');
+
+      const emptyAction = validModel();
+      emptyAction.actions![0].id = '';
+      expectRejected(emptyAction, 'Action id must be non-empty');
+
+      const duplicateName = validModel();
+      duplicateName.steps[1].name = 'Idle';
+      expectRejected(duplicateName, 'Duplicate step name');
+    });
+
+    it('rejects transitions that cannot be compiled', () => {
+      const missingStep = validModel();
+      missingStep.transitions[0].toStep = 'missing';
+      expectRejected(missingStep, 'unknown step');
+
+      const emptyCondition = validModel();
+      emptyCondition.transitions[0].condition = '  ';
+      expectRejected(emptyCondition, 'condition must be non-empty');
+    });
+
+    it('rejects unresolved or ambiguous action references', () => {
+      const missingAction = validModel();
+      missingAction.steps[0].actions![0].actionName = 'missing';
+      expectRejected(missingAction, 'does not resolve');
+
+      const ambiguousAction = validModel();
+      ambiguousAction.actions!.push({ id: 'another', name: 'set_output', type: 'ST', body: 'Output := FALSE;' });
+      ambiguousAction.steps[0].actions![0].actionName = 'set_output';
+      expectRejected(ambiguousAction, 'resolves to multiple actions');
+    });
+
+    it('rejects unsupported action types and qualifiers', () => {
+      const unsupportedType = validModel();
+      unsupportedType.actions![0].type = 'LD';
+      expectRejected(unsupportedType, 'only ST actions are supported');
+
+      const emptyBody = validModel();
+      emptyBody.actions![0].body = ' ';
+      expectRejected(emptyBody, 'body must be a non-empty string');
+
+      const unsupportedQualifier = validModel();
+      unsupportedQualifier.steps[0].actions![0].qualifier = 'S';
+      expectRejected(unsupportedQualifier, 'only N action qualifier is supported');
+    });
+
+    it('rejects code and comment interpolation while accepting nested ST and inputs', () => {
+      const nested = validModel();
+      nested.variables = {
+        local: [
+          { name: 'Label', type: 'STRING', initialValue: "O'Brien" },
+          { name: 'Latch', type: 'BOOL', initialValue: false, address: '%M200.0' },
+        ],
+        inputs: [{ name: 'Start', type: 'BOOL', address: '%I0.0', initialValue: false }],
+        outputs: [{ name: 'Output', type: 'BOOL', address: '%Q0.0', initialValue: true }],
+      };
+      nested.actions![0].body = 'IF Start THEN\n  IF TRUE THEN Output := TRUE; END_IF;\nEND_IF;';
+      const valid = transpileSFCToST(nested);
+      expect(valid.success).toBe(true);
+      expect(valid.source).toContain('VAR_INPUT');
+      expect(valid.source).toContain("Label : STRING := 'O''Brien'");
+      expect(valid.source).toContain('Latch AT %M200.0 : BOOL := FALSE');
+      expect(valid.source).toContain('Start AT %I0.0 : BOOL := FALSE');
+      expect(valid.source).toContain('Output AT %Q0.0 : BOOL := TRUE');
+      expect(assemble(compileST(valid.source)).bytecode.length).toBeGreaterThan(0);
+
+      const bodyEscape = validModel();
+      bodyEscape.actions![0].body = 'END_IF; Output := FALSE; IF TRUE THEN';
+      expectRejected(bodyEscape, 'unmatched END_IF');
+
+      const bodyCommentEscape = validModel();
+      bodyCommentEscape.actions![0].body = '(* never closes';
+      expectRejected(bodyCommentEscape, 'block-comment delimiters');
+
+      const commentEscape = validModel();
+      commentEscape.steps[0].comment = '*) END_PROGRAM';
+      expectRejected(commentEscape, 'block-comment delimiters');
+
+      const conditionEscape = validModel();
+      conditionEscape.transitions[0].condition = 'TRUE); Output := FALSE; IF TRUE THEN';
+      expectRejected(conditionEscape, 'single expression');
+
+      const conditionComment = validModel();
+      conditionComment.transitions[0].condition = 'TRUE (*';
+      expectRejected(conditionComment, 'condition may not contain comments');
+
+      const variableCommentEscape = validModel();
+      variableCommentEscape.variables = { local: [{ name: 'Safe', type: 'BOOL', comment: '*) END_VAR' }], outputs: [] };
+      expectRejected(variableCommentEscape, 'Variable Safe comment may not contain ST block-comment delimiters');
+    });
+
+    it('keeps .T substitutions at identifier boundaries and rejects unsafe identifiers', () => {
+      const boundary = validModel();
+      boundary.steps[0].id = 'good';
+      boundary.steps[0].name = 'good';
+      boundary.transitions[0].fromStep = 'good';
+      boundary.transitions[0].condition = 'Xgood.T >= T#1s';
+      const result = transpileSFCToST(boundary);
+      expect(result.success).toBe(true);
+      expect(result.source).toContain('(Xgood.T >= T#1s)');
+      expect(result.source).not.toContain('XT_good.ET');
+
+      const unsafe = validModel();
+      unsafe.steps[0].id = 'good.*';
+      expectRejected(unsafe, 'IEC identifier');
+
+      const caseCollision = validModel();
+      caseCollision.steps[1].id = 'IDLE';
+      expectRejected(caseCollision, 'Duplicate step id');
+
+      const aliasCollision = validModel();
+      aliasCollision.steps[1].name = 'Idle';
+      expectRejected(aliasCollision, 'ambiguous');
+
+      const keyword = validModel();
+      keyword.name = 'PROGRAM';
+      expectRejected(keyword, 'IEC keyword');
+    });
+
+    it('rejects malformed variable declarations', () => {
+      const invalid = validModel();
+      invalid.variables = { local: [], outputs: [] };
+      (invalid.variables as { outputs: unknown }).outputs = 'not-an-array';
+      expectRejected(invalid, 'Variables outputs must be an array');
+
+      const invalidAddress = validModel();
+      invalidAddress.variables = { local: [], outputs: [{ name: 'Output', type: 'BOOL', address: 'not-an-address' }] };
+      expectRejected(invalidAddress, 'Invalid I/O address');
+
+      const invalidTime = validModel();
+      invalidTime.variables = { local: [{ name: 'Delay', type: 'TIME', initialValue: 'tomorrow' }], outputs: [] };
+      expectRejected(invalidTime, 'Invalid time literal');
+
+      const caseDuplicate = validModel();
+      caseDuplicate.variables = { local: [{ name: 'Pump', type: 'BOOL' }], outputs: [{ name: 'pump', type: 'BOOL' }] };
+      expectRejected(caseDuplicate, 'Duplicate variable name');
+
+      const generatedCollision = validModel();
+      generatedCollision.variables = { local: [{ name: 'x_idle', type: 'BOOL' }], outputs: [] };
+      expectRejected(generatedCollision, 'collides with generated step state');
+
+      const timedN = validModel();
+      timedN.steps[0].actions![0].time = 'T#1s';
+      expectRejected(timedN, 'does not support time');
     });
   });
   

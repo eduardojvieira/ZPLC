@@ -1,0 +1,22 @@
+{
+  "$schema": "../../zplc.schema.json",
+  "schemaVersion": 2,
+  "name": "Motor Plant",
+  "version": "1.0.0",
+  "description": "Host-native deterministic motor plant closed-loop golden slice",
+  "target": {
+    "board": "posix"
+  },
+  "tasks": [
+    {
+      "name": "MainTask",
+      "trigger": "cyclic",
+      "interval_ms": 10,
+      "priority": 1,
+      "watchdog_ms": 100,
+      "programs": [
+        "MotorPlant.st"
+      ]
+    }
+  ]
+}

@@ -138,7 +138,7 @@ export function ControllerView() {
         <p className="text-sm text-[var(--color-surface-400)]">
           No device connected
         </p>
-        <p className="text-xs text-[var(--color-surface-500)] mt-1">
+        <p className="text-xs text-[var(--color-surface-400)] mt-1">
           Use Toolbar → Connect
         </p>
       </div>
@@ -346,11 +346,12 @@ export function ControllerView() {
                         {entry.kind === 'modbus' ? (
                           <div className="mt-2 flex items-center gap-2">
                             <span className="text-[var(--color-surface-500)]">
-                              Addr {entry.effective_value}{entry.width > 1 ? `-${entry.effective_value + entry.width - 1}` : ''}
+                              Server map {entry.effective_value}{entry.width > 1 ? `-${entry.effective_value + entry.width - 1}` : ''}
                             </span>
                             <input
                               type="number"
                               min={1}
+                              max={65535 - entry.width + 1}
                               value={modbusDrafts[entry.index] ?? String(entry.effective_value)}
                               onChange={(e) => setModbusDrafts((prev) => ({ ...prev, [entry.index]: e.target.value }))}
                               className="w-24 rounded border border-[var(--color-surface-600)] bg-[var(--color-surface-800)] px-2 py-1 text-[var(--color-surface-100)]"

@@ -4,11 +4,23 @@ function normalizeBreakpointName(fileName: string): string {
   return fileName.replace(/\.[^.]+$/, '').toLowerCase();
 }
 
+function sourceRefMatchesFile(sourceRef: string, fileName: string): boolean {
+  const normalizeModelAlias = (value: string) => value.replace(/\.json$/i, '').toLowerCase();
+  return normalizeModelAlias(sourceRef) === normalizeModelAlias(fileName);
+}
+
 function findPOU(debugMap: DebugMap, fileName: string): DebugPOUInfo | null {
   const normalizedFileName = normalizeBreakpointName(fileName);
   const fullFileName = fileName.toLowerCase();
 
   for (const [name, info] of Object.entries(debugMap.pou)) {
+    if (info.sourceRef) {
+      if (sourceRefMatchesFile(info.sourceRef, fileName)) {
+        return info;
+      }
+      continue;
+    }
+
     const normalizedPouName = normalizeBreakpointName(name);
     const fullPouName = name.toLowerCase();
 
@@ -21,6 +33,36 @@ function findPOU(debugMap: DebugMap, fileName: string): DebugPOUInfo | null {
   }
 
   return null;
+}
+
+/**
+ * Match a paused semantic POU to the editor's physical file.
+ * Legacy maps have no sourceRef and retain the historical name-based fallback.
+ */
+export function doesCurrentPOUMatchFile(
+  debugMap: DebugMap | null,
+  currentPOU: string | null | undefined,
+  fileName: string,
+  fileId: string,
+): boolean {
+  if (!currentPOU) {
+    return false;
+  }
+
+  const currentInfo = debugMap
+    ? Object.entries(debugMap.pou).find(([name]) => name.toLowerCase() === currentPOU.toLowerCase())?.[1]
+    : undefined;
+  if (currentInfo?.sourceRef) {
+    return sourceRefMatchesFile(currentInfo.sourceRef, fileName)
+      || sourceRefMatchesFile(currentInfo.sourceRef, fileId);
+  }
+
+  const normalizedCurrentPOU = normalizeBreakpointName(currentPOU);
+  const normalizedFileName = normalizeBreakpointName(fileName);
+  const normalizedFileId = normalizeBreakpointName(fileId.replace(/-/g, '.'));
+  return normalizedCurrentPOU === normalizedFileName
+    || normalizedCurrentPOU === normalizedFileId
+    || fileId.toLowerCase().includes(normalizedCurrentPOU);
 }
 
 function getExecutableLines(pouInfo: DebugPOUInfo): Set<number> {

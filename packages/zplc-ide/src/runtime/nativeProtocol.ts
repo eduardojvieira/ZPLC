@@ -34,6 +34,12 @@ export interface NativeRuntimeStats {
   program_size: number;
 }
 
+export interface NativeHostCadence {
+  kind: 'observed_poll_cadence';
+  missed_intervals: number;
+  last_dispatch_lateness_ms: number;
+}
+
 export interface NativeFocusedVm {
   pc: number;
   sp: number;
@@ -83,11 +89,35 @@ export interface NativeParityEvidenceRecord {
 export interface NativeRuntimeSnapshot {
   state: string;
   uptime_ms: number;
+  program_generation: number;
   stats: NativeRuntimeStats;
+  host_cadence?: NativeHostCadence;
   focused_vm: NativeFocusedVm;
   tasks: NativeTaskSnapshot[];
   opi: number[];
+  ipi: number[];
   force_entries: NativeForceEntry[];
+}
+
+export interface NativeProgramActivationResult {
+  program_size: number;
+  program_generation: number;
+}
+
+export interface NativeSimulationInputResult {
+  input_id: 'motor.start' | 'motor.stop' | 'motor.estop';
+  active: boolean;
+  program_generation: number;
+  cycle_count_at_apply: number;
+  state: 'staged';
+}
+
+export interface NativeProgramResetResult {
+  program_generation: number;
+}
+
+export interface NativeScenarioStepParams extends Record<string, unknown> {
+  at_ms: number;
 }
 
 export interface NativeHelloResult {

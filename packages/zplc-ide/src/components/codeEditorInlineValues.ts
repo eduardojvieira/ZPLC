@@ -1,5 +1,3 @@
-import type { PLCLanguage } from '../types';
-
 export interface InlineValueWidget {
   lineNumber: number;
   column: number;
@@ -119,7 +117,7 @@ export function stripCommentsPreserveLayout(content: string): string {
  * Extract all variable references from ST/IL code.
  * Returns variable names and their line positions.
  */
-export function extractVariablesFromCode(content: string, _language: PLCLanguage): Map<string, VariableInstances> {
+export function extractVariablesFromCode(content: string): Map<string, VariableInstances> {
   const variables = new Map<string, VariableInstances>();
   const sanitizedContent = stripCommentsPreserveLayout(content);
   const lines = sanitizedContent.split('\n');

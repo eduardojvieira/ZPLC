@@ -9,12 +9,7 @@
  */
 
 import { getToolboxItems, type LDToolboxItem } from '../../models/ld';
-
-// =============================================================================
-// Constants
-// =============================================================================
-
-const DRAG_MIME_TYPE = 'application/zplc-ld-element';
+import { DRAG_MIME_TYPE } from './ldDragData';
 
 // =============================================================================
 // Toolbox Item Component
@@ -64,8 +59,8 @@ function ToolboxItem({ item }: ToolboxItemProps) {
       `}
       title={item.label}
     >
-      <span className="font-mono text-xs font-bold">{item.symbol}</span>
-      <span className="text-[9px] text-[var(--color-surface-200)] mt-0.5">{item.label}</span>
+      <span className="max-w-full break-all text-center font-mono text-xs font-bold leading-tight">{item.symbol}</span>
+      <span className="max-w-full break-words text-center text-[9px] leading-tight text-[var(--color-surface-200)] mt-0.5">{item.label}</span>
     </div>
   );
 }
@@ -126,31 +121,3 @@ export default function LDToolbox() {
     </div>
   );
 }
-
-// =============================================================================
-// Export helper for parsing drop data
-// =============================================================================
-
-export interface LDDropData {
-  type: string;
-  fbType?: string;
-  category: 'contact' | 'coil' | 'function_block' | 'structure';
-  // Move operation fields
-  isMove?: boolean;
-  elementId?: string;
-  fromRow?: number;
-  fromCol?: number;
-}
-
-export function parseLDDropData(e: React.DragEvent): LDDropData | null {
-  const data = e.dataTransfer.getData(DRAG_MIME_TYPE);
-  if (!data) return null;
-
-  try {
-    return JSON.parse(data) as LDDropData;
-  } catch {
-    return null;
-  }
-}
-
-export { DRAG_MIME_TYPE };

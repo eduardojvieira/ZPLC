@@ -67,7 +67,7 @@ export const stLanguage: languages.IMonarchLanguage = {
     ],
 
     // Common symbols
-    symbols: /[=><!~?:&|+\-*\/\^%]+/,
+    symbols: /[=><!~?:&|+\-*/^%]+/,
 
     tokenizer: {
         root: [
@@ -95,7 +95,7 @@ export const stLanguage: languages.IMonarchLanguage = {
             { include: '@whitespace' },
 
             // Delimiters
-            [/[{}()\[\]]/, '@brackets'],
+            [/[{}()[\]]/, '@brackets'],
             [/[;,.]/, 'delimiter'],
 
             // Operators
@@ -109,12 +109,12 @@ export const stLanguage: languages.IMonarchLanguage = {
 
         whitespace: [
             [/[ \t\r\n]+/, 'white'],
-            [/\(\*/, 'comment', '@comment'],
+            [/[(][*]/, 'comment', '@comment'],
             [/\/\/.*$/, 'comment'],
         ],
 
         comment: [
-            [/[^\(*]+/, 'comment'],
+            [/[^(*]+/, 'comment'],
             [/\*\)/, 'comment', '@pop'],
             [/\(*$/, 'comment']
         ],

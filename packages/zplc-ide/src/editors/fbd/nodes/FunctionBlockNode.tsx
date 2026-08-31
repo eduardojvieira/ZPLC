@@ -13,7 +13,7 @@
 import { memo, useState, useCallback } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { Eye, MoreVertical, Activity } from 'lucide-react';
-import { getDefaultPorts, isFunctionBlock } from '../../../models/fbd';
+import { getDefaultPorts, isFunctionBlock, type FBDPort } from '../../../models/fbd';
 import NodeComment from './NodeComment';
 
 interface FunctionBlockData {
@@ -26,6 +26,10 @@ interface FunctionBlockData {
   debugActive?: boolean;
   /** Callback to open instance monitor */
   onOpenMonitor?: (instanceName: string, blockType: string) => void;
+  onChangeData?: (nodeId: string, data: Record<string, unknown>) => void;
+  readOnly?: boolean;
+  inputs?: FBDPort[];
+  outputs?: FBDPort[];
 }
 
 /**
@@ -58,10 +62,10 @@ function formatLiveValue(value: unknown, type: string): string {
  * Get CSS class for value display based on type and value
  */
 function getValueClass(value: unknown, type: string): string {
-  if (value === undefined || value === null) return 'text-slate-500';
+  if (value === undefined || value === null) return 'text-[var(--text-tertiary)]';
   
   if (type === 'BOOL') {
-    return value ? 'text-green-400 font-bold' : 'text-red-400';
+    return value ? 'text-green-400 font-bold' : 'text-[var(--text-secondary)]';
   }
   if (type === 'TIME') {
     return 'text-amber-400';
@@ -77,9 +81,12 @@ const FunctionBlockNode = memo(({ id, data, selected }: NodeProps) => {
     liveValues,
     debugActive,
     onOpenMonitor,
+    onChangeData,
+    readOnly, inputs, outputs,
   } = data as unknown as FunctionBlockData;
   
-  const ports = getDefaultPorts(type);
+  const defaults = getDefaultPorts(type);
+  const ports = { inputs: inputs ?? defaults.inputs, outputs: outputs ?? defaults.outputs };
   const [showMenu, setShowMenu] = useState(false);
   
   // Handle context menu / right-click
@@ -102,14 +109,13 @@ const FunctionBlockNode = memo(({ id, data, selected }: NodeProps) => {
     if (['R_TRIG', 'F_TRIG'].includes(type)) return 'bg-purple-600';
     if (['SR', 'RS'].includes(type)) return 'bg-blue-600';
     if (['COMM_CONNECT', 'COMM_PUBLISH', 'COMM_SUBSCRIBE', 'COMM_MODBUS', 'MB_COIL', 'MB_DISCRETE_INPUT', 'MB_INPUT_REGISTER', 'MB_HOLDING_REGISTER'].includes(type)) return 'bg-cyan-700';
-    return 'bg-slate-600';
+    return 'bg-[var(--color-accent-blue)]';
   };
 
   // Width needs to be larger when debug is active to show values
   const baseWidth = debugActive ? 160 : 120;
   const maxPorts = Math.max(ports.inputs.length, ports.outputs.length);
   const portHeight = debugActive ? 28 : 24;  // More space for value display
-  const headerHeight = 32;
   const bodyHeight = Math.max(maxPorts * portHeight + 16, 60);
 
   // Get live value and metadata for a port
@@ -137,7 +143,7 @@ const FunctionBlockNode = memo(({ id, data, selected }: NodeProps) => {
   });
 
   return (
-    <div className="flex flex-col items-center relative">
+    <div className="zplc-visual-node flex flex-col items-center relative">
       <div
         className={`
           rounded border-2 shadow-lg transition-all duration-200
@@ -145,9 +151,9 @@ const FunctionBlockNode = memo(({ id, data, selected }: NodeProps) => {
             ? 'border-blue-400 ring-2 ring-blue-400/50' 
             : hasActiveOutput
               ? 'border-green-500 ring-2 ring-green-500/30'
-              : 'border-slate-500'
+              : 'border-[var(--border-color)]'
           }
-          bg-slate-800
+          zplc-visual-card bg-[var(--visual-node)]
         `}
         style={{ minWidth: baseWidth }}
         title={comment}
@@ -185,7 +191,7 @@ const FunctionBlockNode = memo(({ id, data, selected }: NodeProps) => {
         >
           {/* Input ports (left side) */}
           <div className="flex flex-col gap-1">
-            {ports.inputs.map((port, idx) => {
+            {ports.inputs.map((port) => {
               const { display, raw, type: portType } = getPortValue(port.name);
               const valueClass = getValueClass(raw, portType);
               return (
@@ -195,13 +201,13 @@ const FunctionBlockNode = memo(({ id, data, selected }: NodeProps) => {
                     position={Position.Left}
                     id={port.name}
                     className="!w-3 !h-3 !bg-blue-400 !border-2 !border-blue-600"
-                    style={{ top: headerHeight + 12 + idx * portHeight }}
+                    style={{ top: '50%' }}
                   />
-                  <span className="text-xs text-slate-300 font-mono pl-3">
+                  <span className="max-w-[72px] truncate text-xs text-[var(--text-secondary)] font-mono pl-3" title={port.name}>
                     {port.name}
                   </span>
                   {debugActive && display && (
-                    <span className={`text-[10px] font-mono ml-1 px-1 py-0.5 rounded bg-slate-900/50 ${valueClass}`}>
+                    <span className={`text-[10px] font-mono ml-1 px-1 py-0.5 rounded bg-[var(--color-surface-900)]/50 ${valueClass}`}>
                       {display}
                     </span>
                   )}
@@ -212,17 +218,17 @@ const FunctionBlockNode = memo(({ id, data, selected }: NodeProps) => {
 
           {/* Output ports (right side) */}
           <div className="flex flex-col gap-1 items-end">
-            {ports.outputs.map((port, idx) => {
+            {ports.outputs.map((port) => {
               const { display, raw, type: portType } = getPortValue(port.name);
               const valueClass = getValueClass(raw, portType);
               return (
                 <div key={port.name} className="flex items-center gap-1 relative" style={{ height: portHeight }}>
                   {debugActive && display && (
-                    <span className={`text-[10px] font-mono mr-1 px-1 py-0.5 rounded bg-slate-900/50 ${valueClass}`}>
+                    <span className={`text-[10px] font-mono mr-1 px-1 py-0.5 rounded bg-[var(--color-surface-900)]/50 ${valueClass}`}>
                       {display}
                     </span>
                   )}
-                  <span className="text-xs text-slate-300 font-mono pr-3">
+                  <span className="max-w-[72px] truncate text-xs text-[var(--text-secondary)] font-mono pr-3" title={port.name}>
                     {port.name}
                   </span>
                   <Handle
@@ -234,7 +240,7 @@ const FunctionBlockNode = memo(({ id, data, selected }: NodeProps) => {
                         ? '!bg-green-400 !border-green-600'
                         : '!bg-green-400 !border-green-600'
                     }`}
-                    style={{ top: headerHeight + 12 + idx * portHeight }}
+                    style={{ top: '50%' }}
                   />
                 </div>
               );
@@ -244,12 +250,12 @@ const FunctionBlockNode = memo(({ id, data, selected }: NodeProps) => {
 
         {/* Instance name footer (if applicable) */}
         {isFunctionBlock(type) && instanceName && (
-          <div className="bg-slate-700 px-2 py-1 rounded-b border-t border-slate-600 flex items-center justify-between">
-            <span className="text-xs text-slate-400 font-mono">
+          <div className="bg-[var(--color-surface-700)] px-2 py-1 rounded-b border-t border-[var(--border-color)] flex items-center justify-between">
+            <span className="max-w-[110px] truncate text-xs text-[var(--text-tertiary)] font-mono" title={instanceName}>
               {instanceName}
             </span>
             {debugActive && (
-              <span className={`w-2 h-2 rounded-full ${hasActiveOutput ? 'bg-green-500' : 'bg-slate-500'} ${hasActiveOutput ? 'animate-pulse' : ''}`} />
+              <span className={`w-2 h-2 rounded-full ${hasActiveOutput ? 'bg-green-500' : 'bg-[var(--color-surface-500)]'} ${hasActiveOutput ? 'animate-pulse' : ''}`} />
             )}
           </div>
         )}
@@ -263,10 +269,10 @@ const FunctionBlockNode = memo(({ id, data, selected }: NodeProps) => {
             className="fixed inset-0 z-40" 
             onClick={() => setShowMenu(false)}
           />
-          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 z-50 bg-slate-800 border border-slate-600 rounded shadow-lg min-w-[140px]">
+          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 z-50 bg-[var(--color-surface-800)] border border-[var(--border-color)] rounded shadow-lg min-w-[140px]">
             <button
               onClick={handleOpenMonitor}
-              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-slate-200 hover:bg-slate-700 rounded"
+              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--color-surface-700)] rounded"
             >
               <Eye size={14} />
               Instance Monitor
@@ -276,7 +282,7 @@ const FunctionBlockNode = memo(({ id, data, selected }: NodeProps) => {
       )}
 
       {/* Editable comment below node */}
-      <NodeComment nodeId={id} comment={comment} />
+      <NodeComment nodeId={id} comment={comment} onChange={onChangeData} readOnly={readOnly} />
     </div>
   );
 });

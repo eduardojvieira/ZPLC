@@ -74,7 +74,8 @@ export const WatchWindow: React.FC<WatchWindowProps> = ({
 }) => {
   const [watchedVariables, setWatchedVariables] = useState<WatchVariable[]>([]);
   const [vmInfo, setVmInfo] = useState<VMInfo | null>(null);
-  const [vmState, setVmState] = useState<VMState>('disconnected');
+  const [vmState, setVmState] = useState<VMState>(() => adapter?.state ?? 'disconnected');
+  const [previousAdapter, setPreviousAdapter] = useState(adapter);
   const [newVarName, setNewVarName] = useState('');
   const [newVarAddress, setNewVarAddress] = useState('');
   const [newVarType, setNewVarType] = useState<WatchVariable['type']>('BYTE');
@@ -83,12 +84,15 @@ export const WatchWindow: React.FC<WatchWindowProps> = ({
   const [editingVar, setEditingVar] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
 
+  if (adapter !== previousAdapter) {
+    setPreviousAdapter(adapter);
+    setVmState(adapter?.state ?? 'disconnected');
+    setVmInfo(null);
+  }
+
   // Set up event handlers when adapter changes
   useEffect(() => {
-    if (!adapter) {
-      setVmState('disconnected');
-      return;
-    }
+    if (!adapter) return;
 
     adapter.setEventHandlers({
       onStateChange: (state) => {
@@ -101,9 +105,6 @@ export const WatchWindow: React.FC<WatchWindowProps> = ({
         console.error('[WatchWindow] Adapter error:', message);
       },
     });
-
-    // Initial state sync
-    setVmState(adapter.state);
 
     return () => {
       adapter.clearEventHandlers();
@@ -131,7 +132,7 @@ export const WatchWindow: React.FC<WatchWindowProps> = ({
     }, pollingInterval);
 
     return () => clearInterval(pollInterval);
-  }, [adapter, pollingInterval, watchedVariables.length, vmState]);
+  }, [adapter, pollingInterval, watchedVariables, vmState]);
 
   // Add a new watch variable
   const handleAddVariable = useCallback(() => {

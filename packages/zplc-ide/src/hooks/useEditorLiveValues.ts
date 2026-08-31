@@ -167,7 +167,6 @@ export function useEditorLiveValues({
 
   useEffect(() => {
     if (!debugActive || !debugMap) {
-      setVisibleVarNames([]);
       return;
     }
 
@@ -177,13 +176,13 @@ export function useEditorLiveValues({
     // If no variable in the debug map has a declarationLine, fall back to
     // returning all vars (older compiler output without Phase 4 changes).
     const hasAnyDeclarationLine = lineMap.size > 0;
-    if (!hasAnyDeclarationLine) {
-      setVisibleVarNames(allVarNames);
-      return;
-    }
-
     /** Compute and apply the current visible set */
     const updateVisible = () => {
+      if (!hasAnyDeclarationLine) {
+        setVisibleVarNames(allVarNames);
+        return;
+      }
+
       const editor = editorRef.current;
       if (!editor) {
         setVisibleVarNames(allVarNames);
@@ -214,11 +213,12 @@ export function useEditorLiveValues({
       setVisibleVarNames(merged);
     };
 
-    // Run immediately on mount / debugMap change
-    updateVisible();
+    const animationFrame = requestAnimationFrame(updateVisible);
 
     const editor = editorRef.current;
-    if (!editor) return;
+    if (!editor) {
+      return () => cancelAnimationFrame(animationFrame);
+    }
 
     // Debounced scroll listener
     const onScroll = () => {
@@ -233,6 +233,7 @@ export function useEditorLiveValues({
     const layoutDisposable = editor.onDidLayoutChange(onScroll);
 
     return () => {
+      cancelAnimationFrame(animationFrame);
       scrollDisposable.dispose();
       layoutDisposable.dispose();
       if (debounceTimerRef.current !== null) {
@@ -242,5 +243,5 @@ export function useEditorLiveValues({
     };
   }, [debugActive, debugMap, editorRef]);
 
-  return { visibleVarNames };
+  return { visibleVarNames: debugActive && debugMap ? visibleVarNames : [] };
 }

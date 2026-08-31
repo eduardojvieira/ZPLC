@@ -11,10 +11,12 @@ import NodeComment from './NodeComment';
 interface ComparisonData {
   type: string;
   comment?: string;
+  onChangeData?: (nodeId: string, data: Record<string, unknown>) => void;
+  readOnly?: boolean;
 }
 
 const ComparisonNode = memo(({ id, data, selected }: NodeProps) => {
-  const { type, comment } = data as unknown as ComparisonData;
+  const { type, comment, onChangeData, readOnly } = data as unknown as ComparisonData;
 
   // Get operator symbol
   const getSymbol = () => {
@@ -30,11 +32,11 @@ const ComparisonNode = memo(({ id, data, selected }: NodeProps) => {
   };
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="zplc-visual-node flex flex-col items-center">
       <div
         className={`
           w-16 rounded border-2 shadow-md
-          bg-indigo-800 border-indigo-500
+          zplc-visual-card relative bg-[var(--visual-node)] border-[var(--color-accent-blue)]
           ${selected ? 'ring-2 ring-blue-400/50' : ''}
         `}
         title={comment || type}
@@ -58,7 +60,7 @@ const ComparisonNode = memo(({ id, data, selected }: NodeProps) => {
           />
 
           {/* Symbol */}
-          <span className="text-2xl font-bold text-white">
+          <span className="text-2xl font-bold text-[var(--text-primary)]">
             {getSymbol()}
           </span>
 
@@ -72,13 +74,13 @@ const ComparisonNode = memo(({ id, data, selected }: NodeProps) => {
         </div>
 
         {/* Type label */}
-        <div className="bg-indigo-900 px-1 py-0.5 text-center rounded-b border-t border-indigo-600">
-          <span className="text-[10px] text-indigo-300 font-mono">
+        <div className="bg-[var(--color-surface-700)] px-1 py-0.5 text-center rounded-b border-t border-[var(--border-color)]">
+          <span className="text-[10px] text-[var(--text-tertiary)] font-mono">
             {type}
           </span>
         </div>
       </div>
-      <NodeComment nodeId={id} comment={comment} />
+      <NodeComment nodeId={id} comment={comment} onChange={onChangeData} readOnly={readOnly} />
     </div>
   );
 });

@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "MotorPlant",
+  "plant": "motor-v1",
+  "tickMs": 10,
+  "durationMs": 60,
+  "events": [
+    { "atMs": 0, "set": { "MotorPlant.Start": false, "MotorPlant.Stop": false } },
+    { "atMs": 10, "set": { "MotorPlant.Start": true } },
+    { "atMs": 20, "set": { "MotorPlant.Start": false } },
+    { "atMs": 40, "set": { "MotorPlant.Stop": true } },
+    { "atMs": 50, "set": { "MotorPlant.Stop": false } }
+  ],
+  "expectations": [
+    { "kind": "AT", "atMs": 0, "condition": { "MotorPlant.Command": false, "MotorPlant.Running": false } },
+    { "kind": "AT", "atMs": 10, "condition": { "MotorPlant.Command": true, "MotorPlant.Running": false } },
+    { "kind": "AT", "atMs": 30, "condition": { "MotorPlant.Command": true, "MotorPlant.Running": true } },
+    { "kind": "AT", "atMs": 40, "condition": { "MotorPlant.Command": false, "MotorPlant.Running": false } },
+    { "kind": "RISING", "fromMs": 30, "withinMs": 0, "condition": { "MotorPlant.Running": true } },
+    { "kind": "FALLING", "fromMs": 40, "withinMs": 0, "condition": { "MotorPlant.Running": false } },
+    { "kind": "NEVER", "condition": { "MotorPlant.Running": true, "MotorPlant.Command": false } }
+  ]
+}

@@ -1,5 +1,6 @@
 {
   "$schema": "../../zplc.schema.json",
+  "schemaVersion": 2,
   "name": "Pico Blinky",
   "version": "1.0.0",
   "description": "Raspberry Pi Pico LED blink demo - toggles onboard LED every 500ms",
@@ -50,7 +51,6 @@
     "wifi": {
       "enabled": true,
       "ssid": "Casa",
-      "password": "Micaela#39412396",
       "security": "wpa2-psk",
       "hiddenSsid": false,
       "ipv4": {
@@ -111,6 +111,6 @@
         "tcpClientTimeoutMs": 500
       }
     },
-    "tags": []
+    "bindings": []
   }
 }

@@ -1,5 +1,6 @@
 {
   "$schema": "../../zplc.schema.json",
+  "schemaVersion": 2,
   "name": "Blinky",
   "version": "1.0.0",
   "description": "Simple LED blinker using Ladder Diagram",

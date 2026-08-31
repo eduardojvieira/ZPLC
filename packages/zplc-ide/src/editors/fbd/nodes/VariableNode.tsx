@@ -10,6 +10,7 @@
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import NodeComment from './NodeComment';
+import type { FBDPort } from '../../../models/fbd';
 
 interface VariableData {
   type: 'variable' | 'input' | 'output';
@@ -17,6 +18,10 @@ interface VariableData {
   dataType?: string;
   address?: string;  // e.g., "%Q0.0" for physical I/O
   comment?: string;
+  onChangeData?: (nodeId: string, data: Record<string, unknown>) => void;
+  readOnly?: boolean;
+  inputs?: FBDPort[];
+  outputs?: FBDPort[];
 }
 
 const VariableNode = memo(({ id, data, selected }: NodeProps) => {
@@ -25,23 +30,20 @@ const VariableNode = memo(({ id, data, selected }: NodeProps) => {
     variableName = '???', 
     dataType,
     address,
-    comment 
+    comment,
+    onChangeData, readOnly, inputs, outputs,
   } = data as unknown as VariableData;
 
-  const isInput = type === 'input' || type === 'variable';
-  const isOutput = type === 'output' || type === 'variable';
+  const isInput = outputs ? outputs.length > 0 : type === 'input' || type === 'variable';
+  const isOutput = inputs ? inputs.length > 0 : type === 'output' || type === 'variable';
 
-  // Color coding by type
+  // Direction is a reference, not an energized/fault state.
   const getBorderColor = () => {
-    if (type === 'input') return 'border-green-500';
-    if (type === 'output') return 'border-red-500';
-    return 'border-yellow-500';
+    return 'border-[var(--color-accent-blue)]';
   };
 
   const getHeaderColor = () => {
-    if (type === 'input') return 'bg-green-700';
-    if (type === 'output') return 'bg-red-700';
-    return 'bg-yellow-700';
+    return 'bg-[var(--color-accent-blue)]';
   };
 
   const getIcon = () => {
@@ -51,11 +53,11 @@ const VariableNode = memo(({ id, data, selected }: NodeProps) => {
   };
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="zplc-visual-node flex flex-col items-center">
       <div
         className={`
-          min-w-[100px] rounded border-2 shadow-md
-          bg-slate-800
+          min-w-[124px] rounded border-2 shadow-md
+          zplc-visual-card bg-[var(--visual-node)]
           ${getBorderColor()}
           ${selected ? 'ring-2 ring-blue-400/50' : ''}
         `}
@@ -63,15 +65,15 @@ const VariableNode = memo(({ id, data, selected }: NodeProps) => {
       >
         {/* Header */}
         <div className={`${getHeaderColor()} px-2 py-1 flex items-center justify-center gap-1 rounded-t`}>
-          <span className="text-white text-xs">{getIcon()}</span>
-          <span className="text-white font-mono text-xs font-medium">
+          <span className="text-[var(--color-surface-800)] text-xs">{getIcon()}</span>
+          <span className="text-[var(--color-surface-800)] font-mono text-xs font-medium">
             {type.toUpperCase()}
           </span>
         </div>
 
         {/* Variable name */}
         <div className="px-3 py-2 text-center relative">
-          <span className="text-white font-mono text-sm">
+          <span className="block max-w-[156px] break-words text-[var(--text-primary)] font-mono text-sm" title={variableName}>
             {variableName}
           </span>
           
@@ -98,8 +100,8 @@ const VariableNode = memo(({ id, data, selected }: NodeProps) => {
 
         {/* Footer with type/address info */}
         {(dataType || address) && (
-          <div className="bg-slate-700 px-2 py-0.5 text-center rounded-b border-t border-slate-600">
-            <span className="text-[10px] text-slate-400 font-mono">
+          <div className="bg-[var(--color-surface-700)] px-2 py-0.5 text-center rounded-b border-t border-[var(--border-color)]">
+            <span className="text-[10px] text-[var(--text-tertiary)] font-mono">
               {address || dataType}
             </span>
           </div>
@@ -107,7 +109,7 @@ const VariableNode = memo(({ id, data, selected }: NodeProps) => {
       </div>
 
       {/* Editable comment below node */}
-      <NodeComment nodeId={id} comment={comment} />
+      <NodeComment nodeId={id} comment={comment} onChange={onChangeData} readOnly={readOnly} />
     </div>
   );
 });

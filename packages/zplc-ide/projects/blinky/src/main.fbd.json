@@ -31,7 +31,7 @@
     {
       "id": "not_enable",
       "type": "NOT",
-      "position": { "x": 150, "y": 50 },
+      "position": { "x": 220, "y": 50 },
       "inputs": [
         { "name": "IN", "type": "BOOL" }
       ],
@@ -45,7 +45,7 @@
       "type": "constant",
       "dataType": "TIME",
       "value": "T#500ms",
-      "position": { "x": 150, "y": 120 },
+      "position": { "x": 220, "y": 180 },
       "outputs": [
         { "name": "OUT", "type": "TIME" }
       ]
@@ -54,7 +54,7 @@
       "id": "ton_timer",
       "type": "TON",
       "instanceName": "BlinkTimer",
-      "position": { "x": 280, "y": 50 },
+      "position": { "x": 350, "y": 50 },
       "inputs": [
         { "name": "IN", "type": "BOOL" },
         { "name": "PT", "type": "TIME" }
@@ -69,7 +69,7 @@
       "id": "output_led",
       "type": "output",
       "variableName": "LED_Output",
-      "position": { "x": 420, "y": 50 },
+      "position": { "x": 540, "y": 50 },
       "inputs": [
         { "name": "IN", "type": "BOOL" }
       ],

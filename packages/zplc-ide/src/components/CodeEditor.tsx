@@ -11,14 +11,16 @@
  */
 
 import { useRef, useEffect, useCallback, useMemo, useState } from 'react';
-import Editor, { type OnMount, type Monaco } from '@monaco-editor/react';
+import Editor, { loader, type OnMount, type Monaco } from '@monaco-editor/react';
+import * as monaco from 'monaco-editor';
 import type * as MonacoEditor from 'monaco-editor';
+import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
 import { useIDEStore } from '../store/useIDEStore';
 import { useFileBreakpoints, useCurrentExecution, useDebugValues, formatDebugValue } from '../hooks/useDebugValue';
 import { useTheme } from '../hooks/useTheme';
 import { useEditorLiveValues } from '../hooks/useEditorLiveValues';
 import type { PLCLanguage } from '../types';
-import { filterEligibleBreakpointLines, isLineBreakpointEligible } from './codeEditorBreakpoints';
+import { doesCurrentPOUMatchFile, filterEligibleBreakpointLines, isLineBreakpointEligible } from './codeEditorBreakpoints';
 import {
   buildInlineWidgets,
   extractVariablesFromCode,
@@ -34,6 +36,18 @@ import {
   ZPLC_LIGHT_THEME, ZPLC_LIGHT_THEME_ID
 } from '../utils/monaco-themes';
 import { debugLog } from '../utils/debugLog';
+import { compilerMarkersForFile } from './compilerMarkers';
+import { ensureSTLanguageService, getSTSyntaxDiagnostics } from './stLanguageService';
+
+const ST_LIVE_MARKER_OWNER = 'zplc.st-live';
+const ST_LIVE_ANALYSIS_DELAY_MS = 300;
+
+const monacoEnvironment = globalThis as typeof globalThis & {
+  MonacoEnvironment?: { getWorker: () => Worker };
+};
+
+monacoEnvironment.MonacoEnvironment ??= { getWorker: () => new EditorWorker() };
+loader.config({ monaco });
 
 // =============================================================================
 // Types
@@ -50,14 +64,6 @@ interface CodeEditorProps {
   onChange?: (value: string) => void;
   /** Read-only mode */
   readOnly?: boolean;
-}
-
-function normalizeExecutionName(value: string | null | undefined): string {
-  if (!value) {
-    return '';
-  }
-
-  return value.replace(/\.[^.]+$/, '').toLowerCase();
 }
 
 /**
@@ -99,6 +105,13 @@ export function CodeEditor({
   const toggleBreakpoint = useIDEStore((state) => state.toggleBreakpoint);
   const breakpoints = useFileBreakpoints(fileId);
   const fileName = useIDEStore((state) => state.loadedFiles.get(fileId)?.name ?? fileId);
+  const filePath = useIDEStore((state) => state.loadedFiles.get(fileId)?.path ?? '');
+  const compilerMessages = useIDEStore((state) => state.compilerMessages);
+  const compilerNavigationTarget = useIDEStore((state) => state.compilerNavigationTarget);
+  const projectSession = useIDEStore((state) => state.projectSession);
+  const compilerRunId = useIDEStore((state) => state.compilerRunId);
+  const stBufferDiagnostics = useIDEStore((state) => state.stBufferDiagnostics);
+  const consumeCompilerNavigationTarget = useIDEStore((state) => state.consumeCompilerNavigationTarget);
   const debugMapRef = useRef(debugMap);
   const fileNameRef = useRef(fileName);
   const { isPaused, currentLine, currentPOU } = useCurrentExecution();
@@ -109,14 +122,8 @@ export function CodeEditor({
       return false;
     }
 
-    const normalizedCurrentPOU = normalizeExecutionName(currentPOU);
-    const normalizedFileName = normalizeExecutionName(fileName);
-    const normalizedFileId = normalizeExecutionName(fileId.replace(/-/g, '.'));
-
-    return normalizedCurrentPOU === normalizedFileName ||
-      normalizedCurrentPOU === normalizedFileId ||
-      fileId.toLowerCase().includes(normalizedCurrentPOU);
-  }, [fileId, fileName, currentPOU]);
+    return doesCurrentPOUMatchFile(debugMap, currentPOU, fileName, fileId);
+  }, [debugMap, fileId, fileName, currentPOU]);
 
   const inlinePreviewEnabled = isInlineLivePreviewEnabled(debugMode, livePreviewEnabled);
 
@@ -142,8 +149,8 @@ export function CodeEditor({
   // Extract variables from code for debug value lookup
   const variablesInCode = useMemo(() => {
     if (debugMode === 'none') return new Map();
-    return extractVariablesFromCode(content, language);
-  }, [content, language, debugMode]);
+    return extractVariablesFromCode(content);
+  }, [content, debugMode]);
 
   // Viewport-aware variable filtering: only read values for variables whose
   // declaration line is currently visible in the editor.  Falls back to all
@@ -246,6 +253,7 @@ export function CodeEditor({
       monaco.languages.setMonarchTokensProvider(ST_LANGUAGE_ID, stLanguage);
       monaco.languages.setLanguageConfiguration(ST_LANGUAGE_ID, stConf);
     }
+    ensureSTLanguageService(monaco);
     if (!languages.some((l: { id: string }) => l.id === IL_LANGUAGE_ID)) {
       monaco.languages.register({ id: IL_LANGUAGE_ID });
       monaco.languages.setMonarchTokensProvider(IL_LANGUAGE_ID, ilLanguage);
@@ -313,7 +321,80 @@ export function CodeEditor({
       decorationsRef.current,
       newDecorations
     );
-  }, [breakpoints, currentLine, debugMap, fileName, isCurrentFile, isPaused]);
+  }, [breakpoints, currentLine, debugMap, fileId, fileName, isCurrentFile, isPaused]);
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    const monaco = monacoRef.current;
+    const model = editor?.getModel();
+    if (!editor || !monaco || !model) return;
+    const markers = compilerMarkersForFile(compilerMessages, filePath, model.getLineCount(), (line) => model.getLineMaxColumn(line)).map((marker) => ({
+      message: marker.message,
+      severity: marker.type === 'error' ? monaco.MarkerSeverity.Error : marker.type === 'warning' ? monaco.MarkerSeverity.Warning : monaco.MarkerSeverity.Info,
+      startLineNumber: marker.line,
+      startColumn: marker.column,
+      endLineNumber: marker.line,
+      endColumn: marker.endColumn,
+    }));
+    monaco.editor.setModelMarkers(model, 'zplc.compiler', markers);
+    return () => monaco.editor.setModelMarkers(model, 'zplc.compiler', []);
+  }, [compilerMessages, editorReady, filePath]);
+
+  useEffect(() => {
+    if (language !== 'ST' || !filePath) return;
+    const state = useIDEStore.getState();
+    const identity = { projectSession, compilerRunId, fileId, file: filePath };
+    if (state.activeFileId !== fileId || state.projectSession !== projectSession || state.compilerRunId !== compilerRunId) return;
+
+    const timer = window.setTimeout(() => {
+      const diagnostics = getSTSyntaxDiagnostics(content);
+      useIDEStore.getState().setSTBufferDiagnostics({ ...identity, diagnostics }, content);
+    }, ST_LIVE_ANALYSIS_DELAY_MS);
+
+    return () => {
+      window.clearTimeout(timer);
+      useIDEStore.getState().clearSTBufferDiagnostics(identity);
+    };
+  }, [compilerRunId, content, fileId, filePath, language, projectSession]);
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    const monaco = monacoRef.current;
+    const model = editor?.getModel();
+    if (!editor || !monaco || !model) return;
+    const current = stBufferDiagnostics;
+    const isCurrent = language === 'ST' && current?.projectSession === projectSession
+      && current.compilerRunId === compilerRunId && current.fileId === fileId && current.file === filePath;
+    const markers = !isCurrent ? [] : current.diagnostics.flatMap((diagnostic) => {
+      if (!diagnostic.line || diagnostic.line < 1) return [];
+      const line = Math.min(diagnostic.line, model.getLineCount());
+      const column = Math.min(Math.max(1, diagnostic.column ?? 1), model.getLineMaxColumn(line));
+      const endColumn = Math.min(column + 1, model.getLineMaxColumn(line));
+      return [{
+        message: diagnostic.message,
+        severity: diagnostic.type === 'error' ? monaco.MarkerSeverity.Error : monaco.MarkerSeverity.Warning,
+        startLineNumber: line,
+        startColumn: column,
+        endLineNumber: line,
+        endColumn,
+      }];
+    });
+    monaco.editor.setModelMarkers(model, ST_LIVE_MARKER_OWNER, markers);
+    return () => monaco.editor.setModelMarkers(model, ST_LIVE_MARKER_OWNER, []);
+  }, [compilerRunId, editorReady, fileId, filePath, language, projectSession, stBufferDiagnostics]);
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor || !compilerNavigationTarget || compilerNavigationTarget.file !== filePath) return;
+    const model = editor.getModel();
+    if (!model) return;
+    const lineNumber = Math.min(compilerNavigationTarget.line, model.getLineCount());
+    const column = Math.min(compilerNavigationTarget.column, model.getLineMaxColumn(lineNumber));
+    editor.setPosition({ lineNumber, column });
+    editor.revealPositionInCenter({ lineNumber, column });
+    editor.focus();
+    consumeCompilerNavigationTarget(compilerNavigationTarget);
+  }, [compilerNavigationTarget, consumeCompilerNavigationTarget, filePath, editorReady]);
 
   useEffect(() => {
     const editor = editorRef.current;
@@ -437,8 +518,8 @@ export function CodeEditor({
         <div className="absolute top-2 right-2 z-10 flex items-center gap-2 px-2 py-1 
                         bg-[var(--color-surface-800)]/90 rounded text-xs text-[var(--color-surface-300)]
                         border border-[var(--color-surface-600)]">
-          <span className={`w-2 h-2 rounded-full ${isPaused ? 'bg-yellow-500' : 'bg-green-500 animate-pulse'}`} />
-          <span>{isPaused ? 'Paused' : 'Running'}</span>
+          <span className={`w-2 h-2 rounded-full ${isPaused ? 'bg-yellow-500' : 'bg-[var(--color-accent-blue)]'}`} />
+          <span>{isPaused ? 'Paused' : debugMode === 'simulation' ? 'Simulation' : 'Hardware'}</span>
           {variableValueMap.size > 0 && (
             <span className="text-blue-400">
               ({variableValueMap.size} values)

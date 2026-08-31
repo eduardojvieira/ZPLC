@@ -88,6 +88,7 @@ export const WATCH_FORCE_STATE = {
   IDLE: 'idle',
   FORCED: 'forced',
   PENDING: 'pending',
+  UNCONFIRMED: 'unconfirmed',
 } as const;
 
 export type WatchForceState = (typeof WATCH_FORCE_STATE)[keyof typeof WATCH_FORCE_STATE];
@@ -132,14 +133,25 @@ export interface RuntimeSnapshotStats {
   programSize: number;
 }
 
+export interface RuntimeHostCadence {
+  kind: 'observed_poll_cadence';
+  missedIntervals: number;
+  lastDispatchLatenessMs: number;
+}
+
 export interface RuntimeSnapshot {
   source: RuntimeSessionSource;
   state: VMState;
   uptimeMs: number;
   stats: RuntimeSnapshotStats;
+  hostCadence?: RuntimeHostCadence;
   focusedVm: VMInfo | null;
   tasks: RuntimeTaskSnapshot[];
   opi: number[];
+  /** Native POSIX process-input image; absent for serial and WASM sessions. */
+  ipi?: number[];
+  /** Native POSIX program activation generation; absent for serial and WASM sessions. */
+  programGeneration?: number;
   forceEntries: WatchForceEntry[];
 }
 

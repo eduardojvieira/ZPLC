@@ -8,12 +8,12 @@
  */
 
 import { useRef, useState } from 'react';
-import { Plus, X, Trash2, Eye, EyeOff } from 'lucide-react';
+import { Plus, X, Trash2, Eye, EyeOff, AlertTriangle, LoaderCircle } from 'lucide-react';
 import { formatDebugValue } from '../hooks/useDebugValue';
 import { useIDEStore } from '../store/useIDEStore';
 import { buildDebugWatchRows } from './debugWatchRows';
 import { WATCH_FORCE_STATE, type WatchVariable } from '../runtime/debugAdapter';
-import { resolveWatchCommitAction, WATCH_COMMIT_ACTION } from './debugWatchPanelLogic';
+import { canEditWatchValue, canReleaseForces, resolveWatchCommitAction, WATCH_COMMIT_ACTION } from './debugWatchPanelLogic';
 
 /**
  * Format address for display
@@ -42,6 +42,8 @@ type ToggleForceValueFn = (
 interface DebugWatchPanelProps {
   setValue?: SetValueFn;
   toggleForceValue?: ToggleForceValueFn;
+  clearAllForcedValues?: () => Promise<void>;
+  hasActiveSerialSession?: boolean;
 }
 
 /** Inline editor state — only one cell editable at a time */
@@ -56,10 +58,13 @@ interface EditingCell {
 /**
  * Debug Watch Panel Component
  */
-export function DebugWatchPanel({ setValue, toggleForceValue }: DebugWatchPanelProps): React.ReactElement {
+export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValues, hasActiveSerialSession = false }: DebugWatchPanelProps): React.ReactElement {
   const [newVarInput, setNewVarInput] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [editing, setEditing] = useState<EditingCell | null>(null);
+  const [releaseBusy, setReleaseBusy] = useState(false);
+  const [releaseError, setReleaseError] = useState<string | null>(null);
+  const [forceChangeError, setForceChangeError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Get debug state from store
@@ -68,11 +73,15 @@ export function DebugWatchPanel({ setValue, toggleForceValue }: DebugWatchPanelP
   const debugMap = useIDEStore((state) => state.debug.debugMap);
   const liveValues = useIDEStore((state) => state.debug.liveValues);
   const forcedValues = useIDEStore((state) => state.debug.forcedValues);
+  const forcesUnconfirmed = useIDEStore((state) => state.debug.forcesUnconfirmed);
   const watchVariables = useIDEStore((state) => state.debug.watchVariables);
   const addWatch = useIDEStore((state) => state.addWatchVariable);
   const removeWatch = useIDEStore((state) => state.removeWatchVariable);
   const clearAll = useIDEStore((state) => state.clearWatchVariables);
   const variables = buildDebugWatchRows(watchVariables, debugMap, liveValues, forcedValues, isPolling);
+  const hasForceEvidence = forcedValues.size > 0 || forcesUnconfirmed;
+  const controlsBlocked = debugMode === 'none' || forcesUnconfirmed;
+  const releaseEnabled = canReleaseForces(hasActiveSerialSession, hasForceEvidence, releaseBusy);
 
   // Handle adding a new watch variable
   const handleAddVariable = () => {
@@ -104,8 +113,11 @@ export function DebugWatchPanel({ setValue, toggleForceValue }: DebugWatchPanelP
     currentValue: number | boolean | string | undefined,
     maxLength?: number,
   ) => {
-    if (!setValue || address === null || !type) return;
-    if (debugMode === 'none') return;
+    if (address === null || !type || controlsBlocked) return;
+
+    const forceState = variables.find((entry) => entry.path === path)?.result.forceEntry?.state;
+    const action = resolveWatchCommitAction(forceState, hasActiveSerialSession);
+    if (!canEditWatchValue(action, Boolean(setValue), Boolean(toggleForceValue))) return;
 
     const draft =
       currentValue === undefined
@@ -139,7 +151,7 @@ export function DebugWatchPanel({ setValue, toggleForceValue }: DebugWatchPanelP
   };
 
   const handleSetKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (!editing || !setValue) return;
+    if (!editing || forcesUnconfirmed) return;
 
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -150,19 +162,37 @@ export function DebugWatchPanel({ setValue, toggleForceValue }: DebugWatchPanelP
       }
 
       const currentRow = variables.find((entry) => entry.path === editing.path);
-      const action = resolveWatchCommitAction(currentRow?.result.forceEntry?.state);
+      const action = resolveWatchCommitAction(currentRow?.result.forceEntry?.state, hasActiveSerialSession);
 
-      if (action === WATCH_COMMIT_ACTION.UPDATE_FORCE && toggleForceValue) {
-        await toggleForceValue(
-          editing.path,
-          editing.address,
-          coerced,
-          editing.type,
-          true,
-          editing.maxLength,
-        );
-      } else {
-        await setValue(editing.address, coerced, editing.type, editing.maxLength);
+      if (!canEditWatchValue(action, Boolean(setValue), Boolean(toggleForceValue))) {
+        setEditing(null);
+        return;
+      }
+
+      setForceChangeError(null);
+      try {
+        if (action === WATCH_COMMIT_ACTION.UPDATE_FORCE) {
+          if (!toggleForceValue) {
+            setEditing(null);
+            return;
+          }
+          await toggleForceValue(
+            editing.path,
+            editing.address,
+            coerced,
+            editing.type,
+            true,
+            editing.maxLength,
+          );
+        } else {
+          if (!setValue) {
+            setEditing(null);
+            return;
+          }
+          await setValue(editing.address, coerced, editing.type, editing.maxLength);
+        }
+      } catch {
+        setForceChangeError('Force change could not be confirmed. Verify device state before operating.');
       }
 
       setEditing(null);
@@ -180,7 +210,7 @@ export function DebugWatchPanel({ setValue, toggleForceValue }: DebugWatchPanelP
     nextForced: boolean,
     maxLength?: number,
   ) => {
-    if (!toggleForceValue || address === null || !type || debugMode === 'none') {
+    if (!toggleForceValue || address === null || !type || controlsBlocked) {
       return;
     }
 
@@ -192,7 +222,25 @@ export function DebugWatchPanel({ setValue, toggleForceValue }: DebugWatchPanelP
       return;
     }
 
-    await toggleForceValue(path, address, draftValue, type, nextForced, maxLength);
+    setForceChangeError(null);
+    try {
+      await toggleForceValue(path, address, draftValue, type, nextForced, maxLength);
+    } catch {
+      setForceChangeError('Force change could not be confirmed. Verify device state before operating.');
+    }
+  };
+
+  const handleReleaseAllForces = async () => {
+    if (!clearAllForcedValues || !releaseEnabled) return;
+    setReleaseBusy(true);
+    setReleaseError(null);
+    try {
+      await clearAllForcedValues();
+    } catch {
+      setReleaseError('Force release could not be confirmed. Reconnect and verify before operating.');
+    } finally {
+      setReleaseBusy(false);
+    }
   };
 
   // Status indicator color
@@ -232,6 +280,52 @@ export function DebugWatchPanel({ setValue, toggleForceValue }: DebugWatchPanelP
           )}
         </div>
       </div>
+
+      {forceChangeError && (
+        <div role="alert" className="mx-3 mt-2 rounded border border-[var(--color-accent-red)]/60 bg-[var(--color-accent-red)]/10 px-2 py-1.5 text-xs text-[var(--color-surface-100)]">
+          {forceChangeError}
+        </div>
+      )}
+
+      {hasForceEvidence && (
+        <div
+          className={`mx-3 mt-3 rounded-md border px-3 py-2 ${
+            forcesUnconfirmed
+              ? 'border-[var(--color-accent-yellow)] bg-[var(--color-surface-700)] text-[var(--color-surface-100)]'
+              : 'border-[var(--color-surface-500)] bg-[var(--color-surface-700)] text-[var(--color-surface-200)]'
+          }`}
+          role={forcesUnconfirmed ? 'alert' : 'status'}
+          aria-live={forcesUnconfirmed ? 'assertive' : 'polite'}
+        >
+          <div className="flex items-start gap-2">
+            <AlertTriangle size={16} className={forcesUnconfirmed ? 'mt-0.5 shrink-0 text-[var(--color-accent-yellow)]' : 'mt-0.5 shrink-0 text-amber-300'} aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold">
+                {forcesUnconfirmed
+                  ? 'Force state unconfirmed. Reconnect and verify before operating.'
+                  : `${forcedValues.size} active force${forcedValues.size === 1 ? '' : 's'} retained by the PLC.`}
+              </p>
+              <p className="mt-0.5 text-[11px] text-[var(--color-surface-300)]">
+                {forcesUnconfirmed
+                  ? 'The device may still retain forced outputs or inputs.'
+                  : 'Forces remain active until explicitly released.'}
+              </p>
+            </div>
+          </div>
+          <div className="mt-2 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => { void handleReleaseAllForces(); }}
+              disabled={!clearAllForcedValues || !releaseEnabled}
+              className="inline-flex items-center gap-1.5 rounded bg-[var(--color-surface-600)] px-2 py-1 text-[11px] font-medium text-[var(--color-surface-100)] transition-colors hover:bg-[var(--color-surface-500)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-yellow)] disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none"
+            >
+              {releaseBusy && <LoaderCircle size={12} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />}
+              Release all forces
+            </button>
+            {releaseError && <span className="text-[11px] text-[var(--color-accent-yellow)]">{releaseError}</span>}
+          </div>
+        </div>
+      )}
 
       {/* Add Form */}
       {showAddForm && (
@@ -287,8 +381,13 @@ export function DebugWatchPanel({ setValue, toggleForceValue }: DebugWatchPanelP
               </tr>
             </thead>
             <tbody>
-              {variables.map(({ path, result }) => (
-                <tr
+              {variables.map(({ path, result }) => {
+                const action = resolveWatchCommitAction(result.forceEntry?.state, hasActiveSerialSession);
+                const valueEditable = result.address !== null
+                  && !controlsBlocked
+                  && canEditWatchValue(action, Boolean(setValue), Boolean(toggleForceValue));
+
+                return <tr
                   key={path}
                   className="border-t border-[var(--color-surface-700)] hover:bg-[var(--color-surface-700)]/50"
                 >
@@ -298,8 +397,10 @@ export function DebugWatchPanel({ setValue, toggleForceValue }: DebugWatchPanelP
                   <td
                     className="px-3 py-1.5 font-mono"
                     title={
-                      setValue && result.address !== null && debugMode !== 'none'
-                        ? 'Double-click to set value'
+                      valueEditable
+                        ? result.forceEntry?.state === WATCH_FORCE_STATE.FORCED
+                          ? 'Double-click to update forced value'
+                          : 'Double-click to set value'
                         : undefined
                     }
                     onDoubleClick={() =>
@@ -343,7 +444,7 @@ export function DebugWatchPanel({ setValue, toggleForceValue }: DebugWatchPanelP
                         } ${
                           result.forced ? 'font-semibold decoration-amber-400' : ''
                         } ${
-                          setValue && result.address !== null && debugMode !== 'none'
+                          valueEditable
                             ? 'cursor-pointer hover:underline decoration-dotted underline-offset-2'
                             : ''
                         }`}
@@ -354,26 +455,33 @@ export function DebugWatchPanel({ setValue, toggleForceValue }: DebugWatchPanelP
                     )}
                   </td>
                   <td className="px-3 py-1.5 text-[var(--color-surface-400)] text-xs">
-                    <input
-                      type="checkbox"
-                      checked={result.forced}
-                      disabled={!toggleForceValue || result.address === null || debugMode === 'none' || !result.exists}
-                      title={
-                        result.forceEntry?.state === WATCH_FORCE_STATE.FORCED
-                          ? 'Forced until cleared'
-                          : 'Force current value'
-                      }
-                      onChange={(e) => {
-                        void handleForceToggle(
-                          path,
-                          result.address,
-                          result.type as WatchVariable['type'] | undefined,
-                          result.value,
-                          e.target.checked,
-                          result.maxLength,
-                        );
-                      }}
-                    />
+                    {result.forceEntry?.state === WATCH_FORCE_STATE.UNCONFIRMED ? (
+                      <span className="font-medium text-[var(--color-accent-yellow)]" title="Force state unconfirmed">Unconfirmed</span>
+                    ) : (
+                      <input
+                        type="checkbox"
+                        checked={result.forced}
+                        disabled={!toggleForceValue || result.address === null || controlsBlocked || !result.exists}
+                        title={
+                          forcesUnconfirmed
+                            ? 'Force state unconfirmed. Reconnect and verify before operating.'
+                            : result.forceEntry?.state === WATCH_FORCE_STATE.FORCED
+                              ? 'Forced until cleared'
+                              : 'Force current value'
+                        }
+                        aria-label={`Force ${path}`}
+                        onChange={(e) => {
+                          void handleForceToggle(
+                            path,
+                            result.address,
+                            result.type as WatchVariable['type'] | undefined,
+                            result.value,
+                            e.target.checked,
+                            result.maxLength,
+                          );
+                        }}
+                      />
+                    )}
                   </td>
                   <td className="px-3 py-1.5 text-[var(--color-surface-400)] text-xs">
                     {result.type || '?'}
@@ -391,8 +499,8 @@ export function DebugWatchPanel({ setValue, toggleForceValue }: DebugWatchPanelP
                       <X size={12} />
                     </button>
                   </td>
-                </tr>
-              ))}
+                </tr>;
+              })}
             </tbody>
           </table>
         )}
@@ -408,7 +516,9 @@ export function DebugWatchPanel({ setValue, toggleForceValue }: DebugWatchPanelP
       {debugMode !== 'none' && (setValue || toggleForceValue) && variables.length > 0 && (
         <div className="px-3 py-2 bg-[var(--color-surface-700)] border-t border-[var(--color-surface-600)]
                         text-[10px] text-[var(--color-surface-400)]">
-          Double-click a value to set it once · Use Force to hold the value until cleared
+          {hasActiveSerialSession
+            ? 'Direct value edits are simulation-only. Use Force for hardware.'
+            : 'Double-click a value to set it once · Use Force to hold the value until cleared'}
         </div>
       )}
     </div>

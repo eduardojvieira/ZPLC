@@ -4,20 +4,22 @@
  * Provides functions for opening directories, reading files, and writing
  * changes back to disk using the browser's File System Access API.
  * 
- * Fallback: If the API is not available (Firefox), we provide virtual
- * project functionality using in-memory storage.
  */
 
 import type {
   FileTreeNode,
   ZPLCProjectConfig,
+  ZPLCProjectV2,
   ProjectFileWithHandle,
   POUType,
 } from '../types';
+import { parseAndMigrateProject, type ProjectMigrationChange, type ProjectModelDiagnostic } from '../project/projectModel';
 import { 
   getLanguageFromFilename,
   DEFAULT_ZPLC_CONFIG,
 } from '../types';
+
+const PROJECT_CONFIG_MAX_BYTES = 128 * 1024;
 
 // =============================================================================
 // Feature Detection
@@ -63,6 +65,14 @@ export async function openDirectoryPicker(): Promise<FileSystemDirectoryHandle |
 const ZPLC_EXTENSIONS = ['.st', '.il', '.ld.json', '.fbd.json', '.sfc.json', '.gvl'];
 const IGNORED_DIRS = ['node_modules', '.git', 'build', 'dist', '.vscode'];
 
+export function fileTreeFileId(path: string): string {
+  return `file:${path}`;
+}
+
+function fileTreeDirectoryId(path: string): string {
+  return `dir:${path || '/'}`;
+}
+
 /**
  * Recursively read a directory and build a file tree
  */
@@ -103,7 +113,7 @@ export async function readDirectoryRecursive(
         const pouType = detectPOUType(entry.name);
 
         children.push({
-          id: `file-${entryPath.replace(/[^a-zA-Z0-9]/g, '-')}`,
+          id: fileTreeFileId(entryPath),
           name: entry.name,
           type: 'file',
           path: entryPath,
@@ -124,7 +134,7 @@ export async function readDirectoryRecursive(
   });
 
   return {
-    id: `dir-${path || 'root'}`.replace(/[^a-zA-Z0-9]/g, '-'),
+    id: fileTreeDirectoryId(path),
     name: dirHandle.name,
     type: 'directory',
     path: path || '/',
@@ -202,25 +212,74 @@ export async function loadFileFromTree(
 /**
  * Read zplc.json from a directory
  */
+export type ProjectConfigReadResult =
+  | { kind: 'missing' }
+  | { kind: 'valid'; config: ZPLCProjectV2; changed: boolean; sourceSchemaVersion: 1 | 2; changes: ProjectMigrationChange[] }
+  | { kind: 'invalid'; diagnostics: ProjectModelDiagnostic[] };
+
+function isNotFoundError(error: unknown): boolean {
+  return typeof error === 'object' && error !== null && 'name' in error && error.name === 'NotFoundError';
+}
+
+async function assertProjectFileAbsent(
+  dirHandle: FileSystemDirectoryHandle,
+  name: string,
+  path: string,
+): Promise<void> {
+  try {
+    await dirHandle.getFileHandle(name);
+  } catch (error) {
+    if (isNotFoundError(error)) return;
+    throw new Error(`Cannot create project: unable to inspect ${path}`);
+  }
+  throw new Error(`Cannot create project: ${path} already exists`);
+}
+
+async function preflightNewProject(dirHandle: FileSystemDirectoryHandle): Promise<void> {
+  await assertProjectFileAbsent(dirHandle, 'zplc.json', 'zplc.json');
+  await assertProjectFileAbsent(dirHandle, '.gitignore', '.gitignore');
+
+  let srcHandle: FileSystemDirectoryHandle;
+  try {
+    srcHandle = await dirHandle.getDirectoryHandle('src');
+  } catch (error) {
+    if (isNotFoundError(error)) return;
+    throw new Error('Cannot create project: unable to inspect src');
+  }
+
+  await assertProjectFileAbsent(srcHandle, 'main.st', 'src/main.st');
+  await assertProjectFileAbsent(srcHandle, 'globals.gvl', 'src/globals.gvl');
+}
+
 export async function readProjectConfig(
   dirHandle: FileSystemDirectoryHandle
-): Promise<ZPLCProjectConfig | null> {
+): Promise<ProjectConfigReadResult> {
+  let configHandle: FileSystemFileHandle;
   try {
-    const configHandle = await dirHandle.getFileHandle('zplc.json');
-    const content = await readFileContent(configHandle);
-    return JSON.parse(content) as ZPLCProjectConfig;
-  } catch {
-    // zplc.json doesn't exist, try project.yaml for backward compatibility
+    configHandle = await dirHandle.getFileHandle('zplc.json');
+  } catch (error) {
+    if (!isNotFoundError(error)) return { kind: 'invalid', diagnostics: [{ path: '$', message: 'Unable to read project configuration' }] };
     try {
-      const yamlHandle = await dirHandle.getFileHandle('project.yaml');
-      const content = await readFileContent(yamlHandle);
-      // Would need js-yaml here, but for now return null
-      console.warn('Found project.yaml but yaml parsing not implemented in fileSystem.ts');
-      console.log('project.yaml content:', content.substring(0, 200));
-      return null;
+      await dirHandle.getFileHandle('project.yaml');
+      console.warn('Found unsupported project.yaml; zplc.json was not created automatically');
     } catch {
-      return null;
+      // No legacy project file is also a missing configuration.
     }
+    return { kind: 'missing' };
+  }
+
+  try {
+    const file = await configHandle.getFile();
+    if (file.size > PROJECT_CONFIG_MAX_BYTES) {
+      return { kind: 'invalid', diagnostics: [{ path: '$', message: 'Project configuration exceeds the size limit' }] };
+    }
+    const content = await file.text();
+    const parsed = parseAndMigrateProject(JSON.parse(content) as unknown);
+    return parsed.ok
+      ? { kind: 'valid', config: parsed.project, changed: parsed.changed, sourceSchemaVersion: parsed.sourceSchemaVersion, changes: parsed.changes }
+      : { kind: 'invalid', diagnostics: parsed.diagnostics };
+  } catch {
+    return { kind: 'invalid', diagnostics: [{ path: '$', message: 'Unable to parse project configuration' }] };
   }
 }
 
@@ -230,10 +289,13 @@ export async function readProjectConfig(
 export async function writeProjectConfig(
   dirHandle: FileSystemDirectoryHandle,
   config: ZPLCProjectConfig
-): Promise<void> {
+): Promise<ZPLCProjectV2> {
+  const parsed = parseAndMigrateProject(config);
+  if (!parsed.ok) throw new Error('Project configuration is invalid');
+  const content = JSON.stringify(parsed.project, null, 2);
   const configHandle = await dirHandle.getFileHandle('zplc.json', { create: true });
-  const content = JSON.stringify(config, null, 2);
   await writeFileContent(configHandle, content);
+  return parsed.project;
 }
 
 // =============================================================================
@@ -246,20 +308,23 @@ export async function writeProjectConfig(
 export async function createNewProject(
   dirHandle: FileSystemDirectoryHandle,
   projectName: string
-): Promise<ZPLCProjectConfig> {
+): Promise<ZPLCProjectV2> {
+  await preflightNewProject(dirHandle);
+
   // Create zplc.json
-  const config: ZPLCProjectConfig = {
+  const config: ZPLCProjectV2 = {
     ...DEFAULT_ZPLC_CONFIG,
     name: projectName,
   };
-  await writeProjectConfig(dirHandle, config);
+  try {
+    await writeProjectConfig(dirHandle, config);
 
-  // Create src directory
-  const srcHandle = await dirHandle.getDirectoryHandle('src', { create: true });
+    // Create src directory
+    const srcHandle = await dirHandle.getDirectoryHandle('src', { create: true });
 
-  // Create main.st with template
-  const mainHandle = await srcHandle.getFileHandle('main.st', { create: true });
-  const mainContent = `(* =============================================================================
+    // Create main.st with template
+    const mainHandle = await srcHandle.getFileHandle('main.st', { create: true });
+    const mainContent = `(* =============================================================================
  * ${projectName} - Main Program
  * ============================================================================= *)
 
@@ -278,11 +343,11 @@ END_IF;
 
 END_PROGRAM
 `;
-  await writeFileContent(mainHandle, mainContent);
+    await writeFileContent(mainHandle, mainContent);
 
-  // Create globals.gvl
-  const globalsHandle = await srcHandle.getFileHandle('globals.gvl', { create: true });
-  const globalsContent = `(* =============================================================================
+    // Create globals.gvl
+    const globalsHandle = await srcHandle.getFileHandle('globals.gvl', { create: true });
+    const globalsContent = `(* =============================================================================
  * Global Variable List
  * ============================================================================= *)
 
@@ -291,11 +356,11 @@ VAR_GLOBAL
     SystemReady : BOOL := FALSE;
 END_VAR
 `;
-  await writeFileContent(globalsHandle, globalsContent);
+    await writeFileContent(globalsHandle, globalsContent);
 
-  // Create .gitignore
-  const gitignoreHandle = await dirHandle.getFileHandle('.gitignore', { create: true });
-  const gitignoreContent = `# Build output
+    // Create .gitignore
+    const gitignoreHandle = await dirHandle.getFileHandle('.gitignore', { create: true });
+    const gitignoreContent = `# Build output
 build/
 *.bin
 *.hex
@@ -307,105 +372,88 @@ build/
 .DS_Store
 Thumbs.db
 `;
-  await writeFileContent(gitignoreHandle, gitignoreContent);
+    await writeFileContent(gitignoreHandle, gitignoreContent);
 
-  return config;
+    return config;
+  } catch {
+    throw new Error('Project creation stopped. The folder may contain incomplete project files; review the folder before trying again.');
+  }
 }
 
 // =============================================================================
-// Virtual Project (Fallback for unsupported browsers)
+// Bundled example copying
 // =============================================================================
 
-/**
- * Create a virtual (in-memory) project for browsers without File System Access API
- */
-export function createVirtualProject(name: string): {
-  config: ZPLCProjectConfig;
-  files: ProjectFileWithHandle[];
-  fileTree: FileTreeNode;
-} {
-  const config: ZPLCProjectConfig = {
-    ...DEFAULT_ZPLC_CONFIG,
-    name,
-  };
+export type ProjectCopyFile = { path: string; content: string };
 
-  const mainFile: ProjectFileWithHandle = {
-    id: 'virtual-main-st',
-    name: 'main.st',
-    language: 'ST',
-    content: `(* ${name} - Main Program *)
+function splitCopyPath(path: string): string[] {
+  if (!path || path.startsWith('/') || /^[a-z]:\//i.test(path) || path.includes('\\') || path.includes('\0')) throw new Error(`Cannot copy example: unsafe path ${path || '(empty)'}`);
+  const segments = path.split('/');
+  if (segments.some((segment) => !segment || segment === '.' || segment === '..')) throw new Error(`Cannot copy example: unsafe path ${path}`);
+  return segments;
+}
 
-PROGRAM Main
-VAR
-    Counter : INT := 0;
-END_VAR
+async function directoryForCopy(root: FileSystemDirectoryHandle, segments: string[], create: boolean): Promise<FileSystemDirectoryHandle> {
+  let directory = root;
+  for (const segment of segments) {
+    try {
+      directory = await directory.getDirectoryHandle(segment, create ? { create: true } : undefined);
+    } catch (error) {
+      if (isNotFoundError(error)) throw error;
+      throw new Error(`Cannot copy example: unable to inspect ${segments.join('/')}`);
+    }
+  }
+  return directory;
+}
 
-Counter := Counter + 1;
+async function assertCopyTargetAbsent(root: FileSystemDirectoryHandle, path: string): Promise<void> {
+  const segments = splitCopyPath(path);
+  let directory = root;
+  for (const segment of segments.slice(0, -1)) {
+    try {
+      directory = await directory.getDirectoryHandle(segment);
+    } catch (error) {
+      if (isNotFoundError(error)) return;
+      throw new Error(`Cannot copy example: unable to inspect ${path}`);
+    }
+  }
+  await assertProjectFileAbsent(directory, segments.at(-1)!, path);
+}
 
-END_PROGRAM
-`,
-    isModified: false,
-    path: 'src/main.st',
-    parentPath: 'src',
-  };
+/** Copy a validated example into a destination without overwriting user files. */
+export async function copyProjectToFolder(
+  dirHandle: FileSystemDirectoryHandle,
+  config: ZPLCProjectConfig,
+  files: readonly ProjectCopyFile[],
+): Promise<ZPLCProjectV2> {
+  const portableConfig = { ...config } as ZPLCProjectConfig & { $schema?: unknown };
+  delete portableConfig.$schema;
+  const parsed = parseAndMigrateProject(portableConfig);
+  if (!parsed.ok) throw new Error('Cannot copy example: project configuration is invalid');
 
-  const globalsFile: ProjectFileWithHandle = {
-    id: 'virtual-globals-gvl',
-    name: 'globals.gvl',
-    language: 'ST', // GVL uses ST syntax
-    content: `(* Global Variables *)
+  const destinations = new Map<string, string>();
+  for (const file of files) {
+    splitCopyPath(file.path);
+    const destination = file.path.toLocaleLowerCase('en-US');
+    if (destination === 'zplc.json') throw new Error('Cannot copy example: zplc.json is managed separately');
+    if (destinations.has(destination)) throw new Error(`Cannot copy example: duplicate destination ${file.path}`);
+    destinations.set(destination, file.path);
+  }
+  if (destinations.has('zplc.json')) throw new Error('Cannot copy example: zplc.json is managed separately');
+  destinations.set('zplc.json', 'zplc.json');
+  for (const path of destinations.values()) await assertCopyTargetAbsent(dirHandle, path);
 
-VAR_GLOBAL
-    SystemReady : BOOL := FALSE;
-END_VAR
-`,
-    isModified: false,
-    path: 'src/globals.gvl',
-    parentPath: 'src',
-  };
-
-  // Note: zplc.json is intentionally NOT shown in the file tree
-  // Users edit config through ProjectSettings, not by editing the JSON directly
-  const fileTree: FileTreeNode = {
-    id: 'dir-root',
-    name: name,
-    type: 'directory',
-    path: '/',
-    isExpanded: true,
-    children: [
-      {
-        id: 'dir-src',
-        name: 'src',
-        type: 'directory',
-        path: 'src',
-        isExpanded: true,
-        children: [
-          {
-            id: mainFile.id,
-            name: mainFile.name,
-            type: 'file',
-            path: mainFile.path,
-            language: 'ST',
-            pouType: 'PRG',
-          },
-          {
-            id: globalsFile.id,
-            name: globalsFile.name,
-            type: 'file',
-            path: globalsFile.path,
-            language: 'ST',
-            pouType: 'GVL',
-          },
-        ],
-      },
-    ],
-  };
-
-  return {
-    config,
-    files: [mainFile, globalsFile],
-    fileTree,
-  };
+  try {
+    for (const file of files) {
+      const segments = splitCopyPath(file.path);
+      const directory = await directoryForCopy(dirHandle, segments.slice(0, -1), true);
+      await writeFileContent(await directory.getFileHandle(segments.at(-1)!, { create: true }), file.content);
+    }
+    await writeProjectConfig(dirHandle, parsed.project);
+    return parsed.project;
+  } catch {
+    throw new Error('Example copy stopped. The folder may contain incomplete copied files; review the folder before trying again.');
+  }
 }
 
 // =============================================================================

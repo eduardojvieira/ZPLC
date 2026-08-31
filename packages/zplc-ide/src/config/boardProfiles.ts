@@ -1,4 +1,5 @@
 import type { NetworkConfig } from '../types';
+import type { CompilerMemoryProfile } from '@zplc/compiler';
 import supportedBoardsManifest from '../../../../firmware/app/boards/supported-boards.v1.5.0.json';
 
 export const NETWORK_INTERFACE = {
@@ -17,14 +18,18 @@ export interface BoardOption {
 interface BoardProfile {
   label: string;
   network: NetworkInterfaceKind;
+  zephyrBoard: string;
+  memory: CompilerMemoryProfile;
 }
 
 interface SupportedBoardManifestEntry {
   board_id: string;
   display_name: string;
   ide_id: string;
+  zephyr_board: string;
   network_class: 'serial-focused' | 'network-capable' | 'other';
   network_interface: 'none' | 'wifi' | 'ethernet';
+  memory: { work_size: number; retain_size: number; code_size_max: number };
 }
 
 function mapNetworkClassToInterface(
@@ -47,6 +52,12 @@ const BOARD_PROFILES: Record<string, BoardProfile> = Object.fromEntries(
     {
       label: board.display_name,
       network: mapNetworkClassToInterface(board.network_interface),
+      zephyrBoard: board.zephyr_board,
+      memory: {
+        workSize: board.memory.work_size,
+        retainSize: board.memory.retain_size,
+        codeSizeMax: board.memory.code_size_max,
+      },
     },
   ])
 );
@@ -63,6 +74,26 @@ export function getBoardNetworkType(board: string | undefined): NetworkInterface
   }
 
   return BOARD_PROFILES[board]?.network ?? NETWORK_INTERFACE.NONE;
+}
+
+/** Exact Zephyr board target declared for an IDE board identifier. */
+export function getZephyrBoardTarget(board: string | undefined): string | undefined {
+  return board ? BOARD_PROFILES[board]?.zephyrBoard : undefined;
+}
+
+/** Effective compiler limits for a catalogue board; host/custom remain default. */
+export function getCompilerMemoryProfile(board: string | undefined): CompilerMemoryProfile | undefined {
+  return board ? BOARD_PROFILES[board]?.memory : undefined;
+}
+
+/** Whether an IDE board identifier is in the single supported-board catalogue. */
+export function isKnownBoardTarget(board: string | undefined): boolean {
+  return getZephyrBoardTarget(board) !== undefined;
+}
+
+/** Whether a device-reported full Zephyr board target is in the catalogue. */
+export function isKnownZephyrBoardTarget(target: string | undefined): boolean {
+  return Boolean(target) && Object.values(BOARD_PROFILES).some((profile) => profile.zephyrBoard === target);
 }
 
 function defaultWifiConfig(existing: NetworkConfig | undefined): NetworkConfig {

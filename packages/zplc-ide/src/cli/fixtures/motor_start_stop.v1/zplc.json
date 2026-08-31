@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "name": "Motor Start Stop",
+  "version": "1.0.0",
+  "description": "Host-native logical start, seal-in, and safe-stop golden slice",
+  "target": {
+    "board": "posix"
+  },
+  "communication": {
+    "tags": []
+  },
+  "tasks": [
+    {
+      "name": "MainTask",
+      "type": "CYCLIC",
+      "interval": 10,
+      "priority": 1,
+      "watchdog": 100,
+      "file": "Motor.st"
+    }
+  ]
+}

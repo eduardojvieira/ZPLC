@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'bun:test';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 import {
   getDebugCapabilitiesForAdapter,
@@ -92,7 +94,7 @@ describe('getDebugCapabilitiesForAdapter', () => {
     expect(result?.features.breakpoints.status).toBe(DEBUG_CAPABILITY_STATUS.UNAVAILABLE);
   });
 
-  it('treats WASM simulation as a degraded legacy fallback', () => {
+  it('treats disabled browser WASM simulation as unavailable', () => {
     const result = getDebugCapabilitiesForAdapter(
       {
         type: 'wasm',
@@ -101,10 +103,57 @@ describe('getDebugCapabilitiesForAdapter', () => {
       null,
     );
 
-    expect(result?.features.pause.status).toBe(DEBUG_CAPABILITY_STATUS.DEGRADED);
-    expect(result?.features.resume.status).toBe(DEBUG_CAPABILITY_STATUS.DEGRADED);
-    expect(result?.features.step.status).toBe(DEBUG_CAPABILITY_STATUS.DEGRADED);
-    expect(result?.features.breakpoints.status).toBe(DEBUG_CAPABILITY_STATUS.DEGRADED);
+    expect(result?.features.pause.status).toBe(DEBUG_CAPABILITY_STATUS.UNAVAILABLE);
+    expect(result?.features.resume.status).toBe(DEBUG_CAPABILITY_STATUS.UNAVAILABLE);
+    expect(result?.features.step.status).toBe(DEBUG_CAPABILITY_STATUS.UNAVAILABLE);
+    expect(result?.features.breakpoints.status).toBe(DEBUG_CAPABILITY_STATUS.UNAVAILABLE);
+  });
+});
+
+describe('native simulation input controller boundary', () => {
+  it('uses the native staged input contract, refreshes status, and never writes memory', () => {
+    const source = readFileSync(join(import.meta.dir, 'useDebugController.ts'), 'utf8');
+    const action = source.slice(source.indexOf('const setSimulationInput ='), source.indexOf('// =========================================================================\n  // Polling for Live Values'));
+
+    expect(action).toContain('owner instanceof NativeAdapter');
+    expect(action).toContain('await owner.setSimulationInput(inputId, active);');
+    expect(action).toContain('await owner.getRuntimeSnapshot();');
+    expect(action).not.toContain('setVirtualInput');
+    expect(action).not.toContain('memory.write');
+    expect(action).not.toContain('setIPI');
+    expect(action).not.toContain('poke');
+    expect(source).toContain('onCapabilitiesChange: () =>');
+    expect(source).toContain('setCapabilityRevision((revision) => revision + 1);');
+    expect(source).toContain('useMemo(');
+    expect(source).toContain('[adapter, capabilityRevision, controllerInfo, debugMode]');
+  });
+});
+
+describe('direct watch-write hardware boundary', () => {
+  it('rejects a serial adapter before encoding or writing and retains the captured adapter as owner', () => {
+    const source = readFileSync(join(import.meta.dir, 'useDebugController.ts'), 'utf8');
+    const action = source.slice(source.indexOf('const setValue ='), source.indexOf('const buildForceEntry ='));
+    const serialGuard = action.indexOf("currentAdapter.type === 'serial'");
+    const encode = action.indexOf('valueToBytes(value, type, maxLength)');
+    const write = action.indexOf('await currentAdapter.setValue(address, bytes);');
+
+    expect(serialGuard).toBeGreaterThanOrEqual(0);
+    expect(encode).toBeGreaterThan(serialGuard);
+    expect(write).toBeGreaterThan(encode);
+    expect(action).toContain('const currentAdapter = adapterRef.current;');
+    expect(action).toContain('Direct value edits are simulation-only. Use Force for hardware.');
+  });
+});
+
+describe('breakpoint teardown boundary', () => {
+  it('stops stale synchronization without suppressing active-session errors', () => {
+    const source = readFileSync(join(import.meta.dir, 'useDebugController.ts'), 'utf8');
+    const effect = source.slice(source.indexOf('// Sync Breakpoints to Adapter'), source.indexOf('// Cleanup on Unmount'));
+
+    expect(effect).toContain('let disposed = false;');
+    expect(effect).toContain('if (disposed || adapterRef.current !== adapter || !adapter.connected) return;');
+    expect(effect).toContain('return () => { disposed = true; };');
+    expect(effect).toContain("console.error('Failed to sync breakpoints:', err);");
   });
 });
 

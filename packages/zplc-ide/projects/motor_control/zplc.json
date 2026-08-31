@@ -1,5 +1,6 @@
 {
   "$schema": "../../zplc.schema.json",
+  "schemaVersion": 2,
   "name": "Motor Control",
   "version": "1.0.0",
   "description": "Motor start/stop circuit with seal-in logic",

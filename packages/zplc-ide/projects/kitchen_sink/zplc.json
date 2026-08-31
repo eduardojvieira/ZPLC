@@ -1,5 +1,6 @@
 {
   "$schema": "../../zplc.schema.json",
+  "schemaVersion": 2,
   "name": "Kitchen Sink Test",
   "version": "1.0.0",
   "description": "Comprehensive test project using ALL standard library FBs and Functions",

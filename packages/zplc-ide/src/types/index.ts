@@ -17,7 +17,6 @@ declare global {
         arch: string;
         isPackaged: boolean;
       }>;
-      openExternal: (url: string) => Promise<void>;
       nativeSimulation?: {
         startSession: () => Promise<{
           protocol_version: string;
@@ -45,6 +44,23 @@ declare global {
           method: string;
           params: Record<string, unknown>;
         }) => void) => () => void;
+      };
+      workspaceTests: {
+        registerProjectFile: (file: File) => Promise<{ workspaceId: string } | null>;
+        run: (request: { workspaceId: string; scenarioId?: string }) => Promise<unknown>;
+        cancel: () => Promise<{ requested: boolean }>;
+        compile: (request: { workspaceId: string }) => Promise<unknown>;
+        safetyCheck: (request: { workspaceId: string }) => Promise<unknown>;
+      };
+      candidateChangeSet?: {
+        review: (request: { workspaceId: string; edit: { path: string; content: string } }) => Promise<unknown>;
+      };
+      toolchain?: {
+        inspect: () => Promise<unknown | null>;
+      };
+      firmwareBuild?: {
+        start: (request: { ideId: string }) => Promise<unknown | null>;
+        cancel: () => Promise<{ requested: boolean }>;
       };
       isElectron: boolean;
       platform: string;
@@ -171,6 +187,24 @@ export interface CompilerMessage {
   timestamp: Date;
 }
 
+/** Ephemeral syntax feedback for the current ST editor buffer. Never build evidence. */
+export interface STLiveDiagnostic {
+  code: 'ST_LEXER' | 'ST_PARSER' | 'ST_SOURCE_LIMIT' | 'ST_ANALYSIS_UNAVAILABLE';
+  type: Extract<CompilerMessageType, 'warning' | 'error'>;
+  message: string;
+  line?: number;
+  column?: number;
+}
+
+/** Identity-fenced result for one active Structured Text buffer. */
+export interface STBufferDiagnostics {
+  projectSession: number;
+  compilerRunId: number;
+  fileId: string;
+  file: string;
+  diagnostics: STLiveDiagnostic[];
+}
+
 export interface BuildResult {
   success: boolean;
   messages: CompilerMessage[];
@@ -182,7 +216,7 @@ export interface BuildResult {
 // Console / Output
 // =============================================================================
 
-export type ConsoleTab = 'output' | 'problems' | 'terminal' | 'watch';
+export type ConsoleTab = 'explorer' | 'inspector' | 'output' | 'problems' | 'tests' | 'learn' | 'changes' | 'terminal' | 'watch' | 'trace';
 
 export interface ConsoleEntry {
   id: string;
@@ -257,13 +291,14 @@ export interface TaskDefinition {
   trigger: TaskTrigger;
   interval_ms?: number;        // Cycle time in ms (for cyclic tasks)
   priority: number;            // 0 = highest, 255 = lowest
-  watchdog_ms?: number;        // Watchdog timeout in ms
+  /** Reserved compatibility metadata; current runtimes do not apply it. */
+  watchdog_ms?: number;
   programs: string[];          // List of program names assigned to this task
 
   // Deprecated fields (for backwards compatibility)
   /** @deprecated Use interval_ms instead */
   interval?: number;
-  /** @deprecated Use watchdog_ms instead */
+  /** @deprecated Reserved compatibility metadata; use watchdog_ms instead. */
   watchdog?: number;
   /** @deprecated Use programs[] instead */
   file?: string;
@@ -470,6 +505,11 @@ export interface ZPLCProjectConfig {
   // Network configuration (board-specific: Wi-Fi or Ethernet)
   network?: NetworkConfig;
 
+  /** Declarative logical interlocks checked against compiled scenario assertions. */
+  safety?: {
+    incompatibleOutputs: [string, string][];
+  };
+
   // Task configuration (IEC 61131-3 style)
   tasks: TaskDefinition[];
 
@@ -480,11 +520,17 @@ export interface ZPLCProjectConfig {
   };
 }
 
+/** Canonical in-memory project configuration after v1 migration. */
+export interface ZPLCProjectV2 extends ZPLCProjectConfig {
+  schemaVersion: 2;
+}
+
 /** Alias for ZPLCProjectConfig (shorter name for common usage) */
 export type ZPLCConfig = ZPLCProjectConfig;
 
 /** Default project configuration (v1.4.3+ format) */
-export const DEFAULT_ZPLC_CONFIG: ZPLCProjectConfig = {
+export const DEFAULT_ZPLC_CONFIG: ZPLCProjectV2 = {
+  schemaVersion: 2,
   name: 'New Project',
   version: '1.0.0',
   communication: {
@@ -550,8 +596,8 @@ export const DEFAULT_ZPLC_CONFIG: ZPLCProjectConfig = {
       trigger: 'cyclic',
       interval_ms: 10,
       priority: 1,
-      watchdog_ms: 100,
-      programs: ['Main'],
+      watchdog_ms: 100, // Reserved compatibility metadata; not runtime-enforced.
+      programs: ['main.st'],
     },
   ],
 };
@@ -566,6 +612,7 @@ export interface ProjectConfig {
   taskMode: TaskMode;
   cycleTimeMs: number;
   priority: number;
+  /** Reserved compatibility metadata; current runtimes do not apply it. */
   watchdogMs: number;
   startPOU: string;      // Entry point program name
 }
@@ -576,7 +623,7 @@ export const DEFAULT_PROJECT_CONFIG: ProjectConfig = {
   taskMode: 'cyclic',
   cycleTimeMs: 10,
   priority: 1,
-  watchdogMs: 100,
+  watchdogMs: 100, // Reserved compatibility metadata; not runtime-enforced.
   startPOU: 'Main',
 };
 
@@ -681,11 +728,12 @@ export interface EditorTab {
 // =============================================================================
 
 export function getLanguageFromFilename(filename: string): PLCLanguage {
-  if (filename.endsWith('.st')) return 'ST';
-  if (filename.endsWith('.il')) return 'IL';
-  if (filename.endsWith('.ld.json') || filename.endsWith('.ld')) return 'LD';
-  if (filename.endsWith('.fbd.json') || filename.endsWith('.fbd')) return 'FBD';
-  if (filename.endsWith('.sfc.json') || filename.endsWith('.sfc')) return 'SFC';
+  const normalized = filename.toLowerCase();
+  if (normalized.endsWith('.st')) return 'ST';
+  if (normalized.endsWith('.il')) return 'IL';
+  if (normalized.endsWith('.ld.json') || normalized.endsWith('.ld')) return 'LD';
+  if (normalized.endsWith('.fbd.json') || normalized.endsWith('.fbd')) return 'FBD';
+  if (normalized.endsWith('.sfc.json') || normalized.endsWith('.sfc')) return 'SFC';
   return 'ST'; // default
 }
 

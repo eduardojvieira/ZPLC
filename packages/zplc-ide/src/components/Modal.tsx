@@ -7,6 +7,14 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 
+const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+function focusableElements(container: HTMLElement): HTMLElement[] {
+  return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+    (element) => element.getAttribute('aria-hidden') !== 'true' && element.offsetParent !== null,
+  );
+}
+
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -27,36 +35,57 @@ export function Modal({
   showCloseButton = true,
 }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
 
-  // Handle Escape key
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  // Keep keyboard focus inside the declared modal and restore it on close.
   useEffect(() => {
     if (!isOpen) return;
 
+    const dialog = modalRef.current;
+    if (!dialog) return;
+
+    const previousActiveElement = document.activeElement as HTMLElement;
+    const focusFirst = () => {
+      const [first] = focusableElements(dialog);
+      (first ?? dialog).focus();
+    };
+
+    focusFirst();
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        onCloseRef.current();
+        return;
+      }
+      if (e.key !== 'Tab') return;
+
+      const focusable = focusableElements(dialog);
+      if (focusable.length === 0) {
+        e.preventDefault();
+        dialog.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (document.activeElement === last || !dialog.contains(document.activeElement))) {
+        e.preventDefault();
+        first.focus();
       }
     };
 
     document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
-
-  // Focus trap and body scroll lock
-  useEffect(() => {
-    if (!isOpen) return;
-
-    // Save current focus
-    const previousActiveElement = document.activeElement as HTMLElement;
-
-    // Focus the modal
-    modalRef.current?.focus();
-
-    // Prevent body scroll
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
     return () => {
+      document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = originalOverflow;
       previousActiveElement?.focus();
     };
@@ -89,8 +118,9 @@ export function Modal({
           </h2>
           {showCloseButton && (
             <button
+              type="button"
               onClick={onClose}
-              className="p-1 rounded hover:bg-[var(--color-surface-600)] text-[var(--color-surface-300)] hover:text-[var(--color-surface-100)] transition-colors"
+              className="p-1 rounded hover:bg-[var(--color-surface-600)] text-[var(--color-surface-300)] hover:text-[var(--color-surface-100)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-blue)]"
               aria-label="Close"
             >
               <X size={20} />

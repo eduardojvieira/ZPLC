@@ -9,15 +9,15 @@
  * - Instance Monitor popup for Function Block inspection
  */
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import {
   ReactFlow,
   Background,
   Controls,
   MiniMap,
   addEdge,
-  useNodesState,
-  useEdgesState,
+  applyEdgeChanges,
+  applyNodeChanges,
   useReactFlow,
   ReactFlowProvider,
   type Node,
@@ -31,6 +31,7 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import { type FBDModel, type FBDBlock, type FBDConnection, getDefaultPorts } from '../../models/fbd';
+import { copyFBDFragment, edgesToConnections, hasCanonicalEdgeChanges, hasCanonicalNodeChanges, nodesToBlocks, pasteFBDFragment, uniqueNodeId, type FBDClipboardFragment } from './graphModel';
 import { nodeTypes, getNodeType } from './nodes';
 import { edgeTypes } from './edges';
 import FBDToolbox from './FBDToolbox';
@@ -78,6 +79,7 @@ function blocksToNodes(
       type: block.type,
       instanceName: block.instanceName,
       variableName: block.variableName,
+      address: block.address,
       dataType: block.dataType,
       value: block.value,
       comment: block.comment,
@@ -109,7 +111,7 @@ function connectionsToEdges(
     type: debugActive ? 'debug' : 'smoothstep',
     animated: false,
     style: debugActive ? undefined : {
-      stroke: '#64748b',
+      stroke: 'var(--visual-wire)',
       strokeWidth: 2,
     },
     data: debugActive ? {
@@ -122,41 +124,6 @@ function connectionsToEdges(
 /**
  * Convert ReactFlow nodes back to FBD blocks
  */
-function nodesToBlocks(nodes: Node[]): FBDBlock[] {
-  return nodes.map((node) => {
-    const data = node.data as Record<string, unknown>;
-    return {
-      id: node.id,
-      type: data.type as string,
-      position: node.position,
-      instanceName: data.instanceName as string | undefined,
-      variableName: data.variableName as string | undefined,
-      dataType: data.dataType as string | undefined,
-      value: data.value,
-      comment: data.comment as string | undefined,
-      inputs: data.inputs as FBDBlock['inputs'],
-      outputs: data.outputs as FBDBlock['outputs'],
-    };
-  });
-}
-
-/**
- * Convert ReactFlow edges back to FBD connections
- */
-function edgesToConnections(edges: Edge[]): FBDConnection[] {
-  return edges.map((edge) => ({
-    id: edge.id,
-    from: {
-      block: edge.source,
-      port: edge.sourceHandle || 'OUT',
-    },
-    to: {
-      block: edge.target,
-      port: edge.targetHandle || 'IN',
-    },
-  }));
-}
-
 // =============================================================================
 // Component
 // =============================================================================
@@ -181,12 +148,51 @@ function FBDEditorInner({
 }: FBDEditorInnerProps) {
   const { screenToFlowPosition } = useReactFlow();
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const updateNodeDataRef = useRef<((nodeId: string, data: Record<string, unknown>) => void) | undefined>(undefined);
+  const [nodes, replaceNodes] = useReducer((_current: Node[], next: Node[]) => next, initialNodes.map((node) => ({
+    ...node,
+    data: { ...node.data, readOnly, onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data) },
+  })));
+  const [edges, replaceEdges] = useReducer((_current: Edge[], next: Edge[]) => next, initialEdges);
+  const nodesRef = useRef(nodes);
+  const edgesRef = useRef(edges);
+  const clipboardRef = useRef<FBDClipboardFragment | undefined>(undefined);
+
+  const commitGraph = useCallback((nextNodes: Node[], nextEdges: Edge[]) => {
+    nodesRef.current = nextNodes;
+    edgesRef.current = nextEdges;
+    replaceNodes(nextNodes);
+    replaceEdges(nextEdges);
+    if (!readOnly && onChange) {
+      onChange({
+        ...model,
+        blocks: nodesToBlocks(nextNodes),
+        connections: edgesToConnections(nextEdges),
+      });
+    }
+  }, [model, onChange, readOnly]);
+
+  const updateNodeData = useCallback((nodeId: string, data: Record<string, unknown>) => {
+    if (readOnly) return;
+    commitGraph(nodesRef.current.map((node) => node.id === nodeId
+      ? { ...node, data: { ...node.data, ...data } }
+      : node), edgesRef.current);
+  }, [commitGraph, readOnly]);
+  useEffect(() => {
+    updateNodeDataRef.current = updateNodeData;
+  }, [updateNodeData]);
+
+  useEffect(() => {
+    const nextNodes = initialNodes.map((node) => ({ ...node, data: { ...node.data, readOnly, onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data) } }));
+    nodesRef.current = nextNodes;
+    edgesRef.current = initialEdges;
+    replaceNodes(nextNodes);
+    replaceEdges(initialEdges);
+  }, [initialNodes, initialEdges, readOnly]);
 
   // Update nodes/edges when debug state changes
-  useMemo(() => {
-    setNodes((nds) => nds.map((node) => ({
+  useEffect(() => {
+    const nextNodes = nodesRef.current.map((node) => ({
       ...node,
       data: {
         ...node.data,
@@ -194,64 +200,63 @@ function FBDEditorInner({
         liveValues,
         onOpenMonitor,
       },
-    })));
-  }, [debugActive, liveValues, onOpenMonitor, setNodes]);
+    }));
+    nodesRef.current = nextNodes;
+    replaceNodes(nextNodes);
+  }, [debugActive, liveValues, onOpenMonitor]);
 
-  useMemo(() => {
-    setEdges((eds) => eds.map((edge) => ({
+  useEffect(() => {
+    const nextEdges = edgesRef.current.map((edge) => ({
       ...edge,
       type: debugActive ? 'debug' : 'smoothstep',
-      style: debugActive ? undefined : { stroke: '#64748b', strokeWidth: 2 },
+      style: debugActive ? undefined : { stroke: 'var(--visual-wire)', strokeWidth: 2 },
       data: debugActive ? {
         liveValue: liveValues.get(`${edge.source}.${edge.sourceHandle}`),
         debugActive: true,
       } : undefined,
-    })));
-  }, [debugActive, liveValues, setEdges]);
+    }));
+    edgesRef.current = nextEdges;
+    replaceEdges(nextEdges);
+  }, [debugActive, liveValues]);
 
   // Handle new connections
   const onConnect: OnConnect = useCallback(
     (params) => {
       if (readOnly) return;
-      setEdges((eds) => addEdge({
+      commitGraph(nodesRef.current, addEdge({
         ...params,
         type: 'smoothstep',
-        style: { stroke: '#64748b', strokeWidth: 2 },
-      }, eds));
+        style: { stroke: 'var(--visual-wire)', strokeWidth: 2 },
+      }, edgesRef.current));
     },
-    [setEdges, readOnly]
+    [commitGraph, readOnly]
   );
 
   // Notify parent of changes
   const handleNodesChange = useCallback(
-    (changes: Parameters<typeof onNodesChange>[0]) => {
-      onNodesChange(changes);
-      if (onChange && !readOnly) {
-        // Debounce this in production
-        const updatedModel: FBDModel = {
-          ...model,
-          blocks: nodesToBlocks(nodes),
-          connections: edgesToConnections(edges),
-        };
-        onChange(updatedModel);
+    (changes: Parameters<typeof applyNodeChanges>[0]) => {
+      if (readOnly) return;
+      const nextNodes = applyNodeChanges(changes, nodesRef.current);
+      if (hasCanonicalNodeChanges(changes)) commitGraph(nextNodes, edgesRef.current);
+      else {
+        nodesRef.current = nextNodes;
+        replaceNodes(nextNodes);
       }
     },
-    [onNodesChange, onChange, model, nodes, edges, readOnly]
+    [commitGraph, readOnly]
   );
 
   const handleEdgesChange = useCallback(
-    (changes: Parameters<typeof onEdgesChange>[0]) => {
-      onEdgesChange(changes);
-      if (onChange && !readOnly) {
-        const updatedModel: FBDModel = {
-          ...model,
-          blocks: nodesToBlocks(nodes),
-          connections: edgesToConnections(edges),
-        };
-        onChange(updatedModel);
+    (changes: Parameters<typeof applyEdgeChanges>[0]) => {
+      if (readOnly) return;
+      const nextEdges = applyEdgeChanges(changes, edgesRef.current);
+      if (hasCanonicalEdgeChanges(changes)) commitGraph(nodesRef.current, nextEdges);
+      else {
+        edgesRef.current = nextEdges;
+        replaceEdges(nextEdges);
       }
     },
-    [onEdgesChange, onChange, model, nodes, edges, readOnly]
+    [commitGraph, readOnly]
   );
 
   // Handle drop from toolbox
@@ -270,7 +275,7 @@ function FBDEditorInner({
       });
 
       // Generate unique ID
-      const id = `${blockType.toLowerCase()}_${Date.now()}`;
+      const id = uniqueNodeId(`${blockType.toLowerCase()}_${Date.now()}`, nodesRef.current);
 
       const newNode: Node = {
         id,
@@ -278,18 +283,23 @@ function FBDEditorInner({
         position,
         data: {
           type: blockType,
+          readOnly,
+          onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data),
+          debugActive,
+          liveValues,
+          onOpenMonitor,
           inputs: getDefaultPorts(blockType).inputs,
           outputs: getDefaultPorts(blockType).outputs,
           variableName: blockType.startsWith('COMM_') ? `${blockType}_TAG` : undefined,
           instanceName: blockType.match(/^(TON|TOF|TP|CTU|CTD|CTUD|R_TRIG|F_TRIG|SR|RS)$/)
-            ? `${blockType}_${Date.now().toString(36)}`
+            ? `${blockType}_${id}`
             : undefined,
         },
       };
 
-      setNodes((nds) => [...nds, newNode]);
+      commitGraph([...nodesRef.current, newNode], edgesRef.current);
     },
-    [setNodes, readOnly, screenToFlowPosition]
+    [commitGraph, debugActive, liveValues, onOpenMonitor, readOnly, screenToFlowPosition]
   );
 
   const onDragOver = useCallback((event: React.DragEvent) => {
@@ -297,11 +307,45 @@ function FBDEditorInner({
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
+  const onKeyDown = useCallback((event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (readOnly || event.altKey || event.shiftKey || event.ctrlKey === event.metaKey) return;
+    const target = event.target as HTMLElement;
+    if (target.closest('input, textarea, select, [contenteditable="true"]')) return;
+    if (event.key.toLowerCase() === 'c') {
+      const fragment = copyFBDFragment(nodesRef.current, edgesRef.current);
+      if (!fragment) return;
+      clipboardRef.current = fragment;
+      event.preventDefault();
+      return;
+    }
+    if (event.key.toLowerCase() !== 'v' || !clipboardRef.current) return;
+    const currentModel = { ...model, blocks: nodesToBlocks(nodesRef.current), connections: edgesToConnections(edgesRef.current) };
+    const pasted = pasteFBDFragment(currentModel, clipboardRef.current);
+    if (!pasted) return;
+    const added = pasted.blocks.slice(currentModel.blocks.length);
+    const addedConnections = pasted.connections.slice(currentModel.connections.length);
+    const nextNodes = [
+      ...nodesRef.current.map((node) => ({ ...node, selected: false })),
+      ...blocksToNodes(added, debugActive, liveValues, onOpenMonitor).map((node) => ({
+        ...node,
+        selected: true,
+        data: { ...node.data, readOnly, onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data) },
+      })),
+    ];
+    const nextEdges = [...edgesRef.current.map((edge) => ({ ...edge, selected: false })), ...connectionsToEdges(addedConnections, debugActive, liveValues)];
+    event.preventDefault();
+    commitGraph(nextNodes, nextEdges);
+  }, [commitGraph, debugActive, liveValues, model, onOpenMonitor, readOnly]);
+
   return (
     <div
       className="flex-1 h-full"
+      tabIndex={0}
+      role="region"
+      aria-label="Function block diagram canvas"
       onDrop={onDrop}
       onDragOver={onDragOver}
+      onKeyDown={onKeyDown}
     >
       <ReactFlow
         nodes={nodes}
@@ -309,6 +353,10 @@ function FBDEditorInner({
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
         onConnect={onConnect}
+        nodesDraggable={!readOnly}
+        nodesConnectable={!readOnly}
+        elementsSelectable={!readOnly}
+        edgesFocusable={!readOnly}
         nodeTypes={nodeTypes as NodeTypes}
         edgeTypes={edgeTypes as EdgeTypes}
         connectionMode={ConnectionMode.Loose}
@@ -340,9 +388,9 @@ function FBDEditorInner({
             if (n.type === 'logicGate') return '#6366f1';
             if (n.type === 'constant') return '#8b5cf6';
             if (n.type === 'variable') return '#eab308';
-            return '#64748b';
+            return 'var(--visual-wire)';
           }}
-          maskColor="rgba(0, 0, 0, 0.8)"
+          maskColor="var(--color-surface-600)"
         />
       </ReactFlow>
     </div>
@@ -392,16 +440,16 @@ export default function FBDEditor({ model, onChange, readOnly = false }: FBDEdit
   
   // Convert model to ReactFlow format with debug data
   const initialNodes = useMemo(
-    () => blocksToNodes(model.blocks, debugActive, liveValues, handleOpenMonitor),
-    [model.blocks, debugActive, liveValues, handleOpenMonitor]
+    () => blocksToNodes(model.blocks, false, new Map(), handleOpenMonitor),
+    [model.blocks, handleOpenMonitor]
   );
   const initialEdges = useMemo(
-    () => connectionsToEdges(model.connections, debugActive, liveValues),
-    [model.connections, debugActive, liveValues]
+    () => connectionsToEdges(model.connections, false, new Map()),
+    [model.connections]
   );
 
   return (
-    <div className="w-full h-full flex">
+    <div className="zplc-visual-editor w-full h-full flex">
       {/* Toolbox sidebar */}
       {!readOnly && <FBDToolbox />}
 

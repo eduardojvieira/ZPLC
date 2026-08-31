@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test';
 
 import type { DebugMap } from '../compiler';
 import {
+  doesCurrentPOUMatchFile,
   getBreakpointPCForLine,
   getEligibleBreakpointLines,
   isLineBreakpointEligible,
@@ -103,5 +104,28 @@ describe('sourceMap fallback', () => {
 
   it('falls back to source-map PCs when needed', () => {
     expect(getBreakpointPCForLine(FALLBACK_MAP, 'main.st', 27)).toBe(46);
+  });
+});
+
+describe('physical source references', () => {
+  const physicalMap: DebugMap = {
+    ...DEBUG_MAP,
+    pou: {
+      Main: {
+        ...DEBUG_MAP.pou.main,
+        sourceRef: 'main.ld',
+      },
+    },
+  };
+
+  it('uses sourceRef for breakpoints, including LD model aliases', () => {
+    expect(isLineBreakpointEligible(physicalMap, 'main.ld.json', 22)).toBe(true);
+    expect(getBreakpointPCForLine(physicalMap, 'main.ld', 25)).toBe(41);
+    expect(isLineBreakpointEligible(physicalMap, 'main.st', 22)).toBe(false);
+  });
+
+  it('uses a semantic POU sourceRef for paused-line file matching', () => {
+    expect(doesCurrentPOUMatchFile(physicalMap, 'Main', 'main.ld.json', 'editor-main-ld')).toBe(true);
+    expect(doesCurrentPOUMatchFile(physicalMap, 'Main', 'main.st', 'editor-main-st')).toBe(false);
   });
 });

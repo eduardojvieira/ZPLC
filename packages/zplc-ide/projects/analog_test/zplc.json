@@ -1,5 +1,6 @@
 {
     "$schema": "../../zplc.schema.json",
+    "schemaVersion": 2,
     "name": "Analog Test",
     "version": "1.0.0",
     "description": "Test project for analog I/O (ADC/DAC) functionality",

@@ -23,6 +23,17 @@ import type {
   ZPLCConfig,
 } from '../types';
 import { getLanguageFromFilename } from '../types';
+import { fileTreeFileId, type ProjectCopyFile } from './fileSystem';
+import { parseAndMigrateProject } from '../project/projectModel';
+import type { ProjectMigrationChange } from '../project/projectModel';
+
+type LoadedProjectWithMigration = LoadedProject & {
+  migrationPreview: {
+    sourceSchemaVersion: 1 | 2;
+    targetSchemaVersion: 2;
+    changes: ProjectMigrationChange[];
+  } | null;
+};
 
 // =============================================================================
 // Vite Glob Imports - Build-time file discovery
@@ -37,6 +48,11 @@ const projectConfigModules = import.meta.glob<string>(
 // Import all source files from projects/*/src/
 const projectSourceModules = import.meta.glob<string>(
   '/projects/*/src/*.{st,il,ld.json,fbd.json,sfc.json}',
+  { query: '?raw', import: 'default', eager: true }
+);
+
+const projectAssetModules = import.meta.glob<string>(
+  '/projects/**/*',
   { query: '?raw', import: 'default', eager: true }
 );
 
@@ -60,7 +76,12 @@ export function getAvailableProjects(): ProjectInfo[] {
 
   for (const [path, content] of Object.entries(projectConfigModules)) {
     try {
-      const config = JSON.parse(content) as ZPLCConfig;
+      const parsed = parseAndMigrateProject(JSON.parse(content) as unknown);
+      if (!parsed.ok) {
+        console.error('Invalid project configuration', { path, diagnostics: parsed.diagnostics });
+        continue;
+      }
+      const config = parsed.project;
 
       // Extract project folder name from path: /projects/blinky/zplc.json -> blinky
       const match = path.match(/\/projects\/([^/]+)\/zplc\.json$/);
@@ -75,67 +96,12 @@ export function getAvailableProjects(): ProjectInfo[] {
         version: config.version || '1.0.0',
         path: `/projects/${folderId}`,
       });
-    } catch (err) {
-      console.error(`Failed to parse zplc.json at ${path}:`, err);
+    } catch {
+      console.error('Failed to parse project configuration', { path });
     }
   }
 
   return projects;
-}
-
-// =============================================================================
-// Configuration Migration (v1.4.3+)
-// =============================================================================
-
-/**
- * Migrate old zplc.json format to v1.4.3 unified format.
- * Handles backwards compatibility for:
- * - interval -> interval_ms
- * - watchdog -> watchdog_ms  
- * - file -> programs[]
- * - type -> trigger
- */
-function migrateZPLCConfig(config: ZPLCConfig): ZPLCConfig {
-  const migrated = { ...config };
-
-  // Migrate tasks
-  if (migrated.tasks) {
-    migrated.tasks = migrated.tasks.map((task: any) => {
-      const migratedTask = { ...task };
-
-      // interval -> interval_ms
-      if (task.interval !== undefined && task.interval_ms === undefined) {
-        migratedTask.interval_ms = task.interval;
-        delete migratedTask.interval;
-        console.warn(`[ZPLC Migration] Task "${task.name}": 'interval' is deprecated, use 'interval_ms'`);
-      }
-
-      // watchdog -> watchdog_ms
-      if (task.watchdog !== undefined && task.watchdog_ms === undefined) {
-        migratedTask.watchdog_ms = task.watchdog;
-        delete migratedTask.watchdog;
-        console.warn(`[ZPLC Migration] Task "${task.name}": 'watchdog' is deprecated, use 'watchdog_ms'`);
-      }
-
-      // file -> programs[]
-      if (task.file !== undefined && task.programs === undefined) {
-        migratedTask.programs = [task.file];
-        delete migratedTask.file;
-        console.warn(`[ZPLC Migration] Task "${task.name}": 'file' is deprecated, use 'programs[]'`);
-      }
-
-      // type -> trigger (lowercase)
-      if (task.type !== undefined && task.trigger === undefined) {
-        migratedTask.trigger = task.type.toLowerCase();
-        delete migratedTask.type;
-        console.warn(`[ZPLC Migration] Task "${task.name}": 'type' is deprecated, use 'trigger'`);
-      }
-
-      return migratedTask;
-    });
-  }
-
-  return migrated;
 }
 
 // =============================================================================
@@ -145,7 +111,7 @@ function migrateZPLCConfig(config: ZPLCConfig): ZPLCConfig {
 /**
  * Load a project by its folder ID
  */
-export function loadProject(projectId: string): LoadedProject | null {
+export function loadProject(projectId: string): LoadedProjectWithMigration | null {
   const configPath = `/projects/${projectId}/zplc.json`;
   const configContent = projectConfigModules[configPath];
 
@@ -155,8 +121,12 @@ export function loadProject(projectId: string): LoadedProject | null {
   }
 
   try {
-    const rawConfig = JSON.parse(configContent) as ZPLCConfig;
-    const zplcConfig = migrateZPLCConfig(rawConfig);
+    const parsed = parseAndMigrateProject(JSON.parse(configContent) as unknown);
+    if (!parsed.ok) {
+      console.error('Invalid project configuration', { projectId, diagnostics: parsed.diagnostics });
+      return null;
+    }
+    const zplcConfig = parsed.project;
     const files = loadProjectFiles(projectId);
     const config = zplcConfigToProjectConfig(zplcConfig);
 
@@ -165,11 +135,27 @@ export function loadProject(projectId: string): LoadedProject | null {
       zplcConfig,
       files,
       config,
+      migrationPreview: parsed.changes.length > 0 ? {
+        sourceSchemaVersion: parsed.sourceSchemaVersion,
+        targetSchemaVersion: 2,
+        changes: parsed.changes,
+      } : null,
     };
-  } catch (err) {
-    console.error(`Failed to load project ${projectId}:`, err);
+  } catch {
+    console.error('Failed to load project configuration', { projectId });
     return null;
   }
+}
+
+/** Return every bundled file except the manifest, preserving its project-relative path. */
+export function loadProjectAssets(projectId: string): ProjectCopyFile[] | null {
+  const prefix = `/projects/${projectId}/`;
+  if (!( `${prefix}zplc.json` in projectAssetModules)) return null;
+  const files = Object.entries(projectAssetModules)
+    .filter(([path]) => path.startsWith(prefix) && path !== `${prefix}zplc.json`)
+    .map(([path, content]) => ({ path: path.substring(prefix.length), content }));
+  files.sort((a, b) => a.path.localeCompare(b.path));
+  return files;
 }
 
 /**
@@ -185,7 +171,7 @@ function loadProjectFiles(projectId: string): ProjectFile[] {
     // Get just the filename without the src/ prefix
     const filename = path.substring(srcPrefix.length);
     const language = getLanguageFromFilename(filename);
-    const fileId = `${projectId}-${filename.replace(/[^a-zA-Z0-9]/g, '-')}`;
+    const fileId = fileTreeFileId(`src/${filename}`);
 
     files.push({
       id: fileId,
@@ -220,10 +206,9 @@ function zplcConfigToProjectConfig(config: ZPLCConfig): ProjectConfig {
   return {
     name: config.name,
     taskMode: firstTask?.trigger === 'cyclic' ? 'cyclic' : 'freewheeling',
-    // Use unified field names (v1.4.3+), with fallback for compatibility
-    cycleTimeMs: (firstTask as any)?.interval_ms ?? (firstTask as any)?.interval ?? 10,
+    cycleTimeMs: firstTask?.interval_ms ?? 10,
     priority: firstTask?.priority ?? 1,
-    watchdogMs: (firstTask as any)?.watchdog_ms ?? (firstTask as any)?.watchdog ?? 100,
+    watchdogMs: firstTask?.watchdog_ms ?? 100,
     startPOU: firstProgram,
   };
 }
@@ -237,7 +222,7 @@ const DEFAULT_PROJECT_ID = 'blinky';
 /**
  * Load the default project (blinky)
  */
-export function loadDefaultProject(): LoadedProject | null {
+export function loadDefaultProject(): LoadedProjectWithMigration | null {
   return loadProject(DEFAULT_PROJECT_ID);
 }
 

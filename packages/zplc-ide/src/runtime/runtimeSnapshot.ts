@@ -15,12 +15,20 @@ import type { StatusInfo } from './serialAdapter';
 import { deriveHardwareDebugState } from './debugStatus';
 
 export function isNativeCapabilityProfile(value: unknown): value is NativeCapabilityProfile {
-  if (typeof value !== 'object' || value === null) {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return false;
   }
 
   const candidate = value as Partial<NativeCapabilityProfile>;
-  return typeof candidate.profile_id === 'string' && Array.isArray(candidate.features);
+  return typeof candidate.profile_id === 'string' && Array.isArray(candidate.features)
+    && candidate.features.every((feature) => {
+      if (typeof feature !== 'object' || feature === null || Array.isArray(feature)) return false;
+      const entry = feature as Partial<NativeCapabilityProfile['features'][number]>;
+      return typeof entry.name === 'string' && entry.name.length > 0
+        && (entry.status === 'supported' || entry.status === 'degraded' || entry.status === 'unavailable')
+        && (entry.reason === undefined || typeof entry.reason === 'string')
+        && (entry.recommended_action === undefined || typeof entry.recommended_action === 'string');
+    });
 }
 
 function mapForceEntries(
@@ -48,6 +56,13 @@ export function normalizeNativeRuntimeSnapshot(snapshot: NativeRuntimeSnapshot):
       overruns: snapshot.stats.overruns,
       programSize: snapshot.stats.program_size,
     },
+    hostCadence: snapshot.host_cadence
+      ? {
+          kind: snapshot.host_cadence.kind,
+          missedIntervals: snapshot.host_cadence.missed_intervals,
+          lastDispatchLatenessMs: snapshot.host_cadence.last_dispatch_lateness_ms,
+        }
+      : undefined,
     focusedVm: {
       pc: snapshot.focused_vm.pc,
       sp: snapshot.focused_vm.sp,
@@ -67,7 +82,9 @@ export function normalizeNativeRuntimeSnapshot(snapshot: NativeRuntimeSnapshot):
       halted: task.halted,
       error: task.error,
     })),
-    opi: snapshot.opi,
+    opi: [...snapshot.opi],
+    ipi: [...snapshot.ipi],
+    programGeneration: snapshot.program_generation,
     forceEntries: mapForceEntries(
       RUNTIME_SESSION_SOURCE.NATIVE,
       snapshot.force_entries.map((entry) => ({

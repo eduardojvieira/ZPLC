@@ -12,7 +12,7 @@
  */
 
 import type { FBDModel, FBDBlock, FBDConnection } from '../models/fbd';
-import { isFunctionBlock, isLogicGate, isComparison, isMathOperator } from '../models/fbd';
+import { isFunctionBlock, isLogicGate, isComparison, isMathOperator, validateFBDModel } from '../models/fbd';
 
 // =============================================================================
 // Types
@@ -35,6 +35,10 @@ interface BlockOutput {
   tempVar: string;
 }
 
+function endpointKey(block: string, port: string): string {
+  return JSON.stringify([block, port]);
+}
+
 // =============================================================================
 // Transpiler
 // =============================================================================
@@ -44,29 +48,30 @@ export function transpileFBDToST(model: FBDModel): TranspileResult {
   const lines: string[] = [];
   
   try {
+    const validatedModel = validateFBDModel(model);
     // Build connection map
-    const inputMap = buildInputMap(model.connections);
-    const outputMap = buildOutputMap(model.blocks, inputMap);
+    const inputMap = buildInputMap(validatedModel.connections);
+    const outputMap = buildOutputMap(validatedModel.blocks, inputMap);
     
     // Topological sort blocks
-    const sortedBlocks = topologicalSort(model.blocks, inputMap);
+    const sortedBlocks = topologicalSort(validatedModel.blocks, inputMap);
     
     // Generate program header
-    lines.push(`PROGRAM ${model.name}`);
+    lines.push(`PROGRAM ${validatedModel.name}`);
     lines.push('');
     
     // Generate variable declarations
     lines.push('VAR');
     
     // Local variables from model
-    for (const v of model.variables.local) {
+    for (const v of validatedModel.variables.local) {
       const init = v.initialValue !== undefined ? ` := ${formatValue(v.initialValue, v.type)}` : '';
       const comment = v.comment ? ` (* ${v.comment} *)` : '';
       lines.push(`    ${v.name} : ${v.type}${init};${comment}`);
     }
     
     // Function block instances
-    for (const block of model.blocks) {
+    for (const block of validatedModel.blocks) {
       if (isFunctionBlock(block.type) && block.instanceName) {
         const comment = block.comment ? ` (* ${block.comment} *)` : '';
         lines.push(`    ${block.instanceName} : ${block.type};${comment}`);
@@ -88,9 +93,9 @@ export function transpileFBDToST(model: FBDModel): TranspileResult {
     lines.push('');
     
     // Output variables (I/O mapped)
-    if (model.variables.outputs.length > 0) {
+    if (validatedModel.variables.outputs.length > 0) {
       lines.push('VAR_OUTPUT');
-      for (const v of model.variables.outputs) {
+      for (const v of validatedModel.variables.outputs) {
         const address = v.address ? ` AT ${v.address}` : '';
         const comment = v.comment ? ` (* ${v.comment} *)` : '';
         lines.push(`    ${v.name}${address} : ${v.type};${comment}`);
@@ -104,7 +109,7 @@ export function transpileFBDToST(model: FBDModel): TranspileResult {
     lines.push('');
     
     for (const block of sortedBlocks) {
-      const code = generateBlockCode(block, inputMap, outputMap, model);
+      const code = generateBlockCode(block, inputMap, outputMap, validatedModel);
       if (code) {
         // Add block comment if present
         if (block.comment) {
@@ -163,12 +168,13 @@ function buildOutputMap(
   inputMap: Map<string, BlockInput[]>
 ): Map<string, BlockOutput[]> {
   const map = new Map<string, BlockOutput[]>();
+  const temporaryOwners = new Map<string, { key: string; label: string }>();
   
   // Find all blocks that have connections FROM them
   const usedOutputs = new Set<string>();
   for (const inputs of inputMap.values()) {
     for (const input of inputs) {
-      usedOutputs.add(`${input.sourceBlock}.${input.sourcePort}`);
+      usedOutputs.add(endpointKey(input.sourceBlock, input.sourcePort));
     }
   }
   
@@ -180,11 +186,17 @@ function buildOutputMap(
     const blockOutputs = block.outputs || [];
     
     for (const port of blockOutputs) {
-      const key = `${block.id}.${port.name}`;
+      const key = endpointKey(block.id, port.name);
       if (usedOutputs.has(key)) {
+        const tempVar = `_${block.id}_${port.name}`.replace(/[^a-zA-Z0-9_]/g, '_');
+        const owner = temporaryOwners.get(tempVar);
+        if (owner && owner.key !== key) {
+          throw new Error(`FBD temporary name collision: '${owner.label}' and '${block.id}.${port.name}' both map to '${tempVar}'`);
+        }
+        temporaryOwners.set(tempVar, { key, label: `${block.id}.${port.name}` });
         outputs.push({
           port: port.name,
-          tempVar: `_${block.id}_${port.name}`.replace(/[^a-zA-Z0-9_]/g, '_'),
+          tempVar,
         });
       }
     }

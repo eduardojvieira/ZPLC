@@ -1,5 +1,6 @@
 {
   "$schema": "../../zplc.schema.json",
+  "schemaVersion": 2,
   "name": "Pico Blinky TON",
   "version": "1.0.0",
   "description": "Raspberry Pi Pico LED blink demos - counter, BLINK FB, and TON timer versions",

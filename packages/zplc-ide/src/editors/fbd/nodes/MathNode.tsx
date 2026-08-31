@@ -11,10 +11,12 @@ import NodeComment from './NodeComment';
 interface MathData {
   type: string;
   comment?: string;
+  onChangeData?: (nodeId: string, data: Record<string, unknown>) => void;
+  readOnly?: boolean;
 }
 
 const MathNode = memo(({ id, data, selected }: NodeProps) => {
-  const { type, comment } = data as unknown as MathData;
+  const { type, comment, onChangeData, readOnly } = data as unknown as MathData;
 
   // Get operator symbol
   const getSymbol = () => {
@@ -51,11 +53,11 @@ const MathNode = memo(({ id, data, selected }: NodeProps) => {
   const inputLabels = getInputLabels();
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="zplc-visual-node flex flex-col items-center">
       <div
         className={`
           w-16 rounded border-2 shadow-md
-          bg-teal-800 border-teal-500
+          zplc-visual-card relative bg-[var(--visual-node)] border-[var(--color-accent-blue)]
           ${selected ? 'ring-2 ring-blue-400/50' : ''}
         `}
         title={comment || type}
@@ -80,7 +82,7 @@ const MathNode = memo(({ id, data, selected }: NodeProps) => {
           ))}
 
           {/* Symbol */}
-          <span className={`font-bold text-white ${type.length > 1 ? 'text-xs' : 'text-2xl'}`}>
+          <span className={`font-bold text-[var(--text-primary)] ${type.length > 1 ? 'text-xs' : 'text-2xl'}`}>
             {getSymbol()}
           </span>
 
@@ -94,13 +96,13 @@ const MathNode = memo(({ id, data, selected }: NodeProps) => {
         </div>
 
         {/* Type label */}
-        <div className="bg-teal-900 px-1 py-0.5 text-center rounded-b border-t border-teal-600">
-          <span className="text-[10px] text-teal-300 font-mono">
+        <div className="bg-[var(--color-surface-700)] px-1 py-0.5 text-center rounded-b border-t border-[var(--border-color)]">
+          <span className="text-[10px] text-[var(--text-tertiary)] font-mono">
             {type}
           </span>
         </div>
       </div>
-      <NodeComment nodeId={id} comment={comment} />
+      <NodeComment nodeId={id} comment={comment} onChange={onChangeData} readOnly={readOnly} />
     </div>
   );
 });

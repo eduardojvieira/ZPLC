@@ -1,5 +1,6 @@
 {
   "$schema": "../../zplc.schema.json",
+  "schemaVersion": 2,
   "name": "MultiTask Demo",
   "version": "1.0.0",
   "description": "Demonstrates multi-task scheduling with fast and slow tasks",

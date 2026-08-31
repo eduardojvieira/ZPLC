@@ -10,7 +10,7 @@
  * Supports live value updates during debugging.
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { X, RefreshCw, Clock, Hash, ToggleLeft, Zap } from 'lucide-react';
 import { useDebugValues } from '../../hooks/useDebugValue';
 import { useIDEStore } from '../../store/useIDEStore';
@@ -89,8 +89,8 @@ function formatPortValue(value: unknown, type: string): string {
  */
 function getBoolColor(value: unknown): string {
   if (value === true) return 'text-green-400';
-  if (value === false) return 'text-red-400';
-  return 'text-slate-400';
+  if (value === false) return 'text-[var(--text-secondary)]';
+  return 'text-[var(--text-tertiary)]';
 }
 
 // =============================================================================
@@ -106,12 +106,16 @@ export function InstanceMonitor({
   const addWatchVariable = useIDEStore((state) => state.addWatchVariable);
   
   // Get port definitions for this block type
-  const ports = getDefaultPorts(blockType);
+  const ports = useMemo(() => getDefaultPorts(blockType), [blockType]);
   
   // Build variable paths for all ports
-  const inputPaths = ports.inputs.map((p) => `${instanceName}.${p.name}`);
-  const outputPaths = ports.outputs.map((p) => `${instanceName}.${p.name}`);
-  const allPaths = [...inputPaths, ...outputPaths];
+  const allPaths = useMemo(
+    () => [
+      ...ports.inputs.map((port) => `${instanceName}.${port.name}`),
+      ...ports.outputs.map((port) => `${instanceName}.${port.name}`),
+    ],
+    [instanceName, ports],
+  );
   
   // Subscribe to live values for all ports
   const liveValues = useDebugValues(allPaths);
@@ -142,21 +146,21 @@ export function InstanceMonitor({
     if (['CTU', 'CTD', 'CTUD'].includes(blockType)) return 'bg-emerald-600';
     if (['R_TRIG', 'F_TRIG'].includes(blockType)) return 'bg-purple-600';
     if (['SR', 'RS'].includes(blockType)) return 'bg-blue-600';
-    return 'bg-slate-600';
+    return 'bg-[var(--color-accent-blue)]';
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[color-mix(in_srgb,var(--color-surface-900)_55%,transparent)]">
       <div className="bg-[var(--color-surface-800)] rounded-lg shadow-2xl border border-[var(--color-surface-600)] min-w-[320px] max-w-[480px]">
         {/* Header */}
         <div className={`${getHeaderColor()} px-4 py-3 rounded-t-lg flex items-center justify-between`}>
           <div>
-            <h2 className="text-white font-bold text-lg">{blockType}</h2>
-            <p className="text-white/80 text-sm font-mono">{instanceName}</p>
+            <h2 className="text-[var(--color-surface-800)] font-bold text-lg">{blockType}</h2>
+            <p className="text-[var(--color-surface-800)] text-sm font-mono">{instanceName}</p>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded hover:bg-white/20 text-white/80 hover:text-white transition-colors"
+            className="p-1 rounded hover:bg-[var(--color-surface-800)]/20 text-[var(--color-surface-800)] transition-colors"
           >
             <X size={20} />
           </button>

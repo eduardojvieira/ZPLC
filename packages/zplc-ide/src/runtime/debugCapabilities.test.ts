@@ -61,6 +61,7 @@ describe('getDebugCapabilities', () => {
         { name: 'resume', status: 'supported' },
         { name: 'step', status: 'degraded', reason: 'single-cycle only' },
         { name: 'breakpoints', status: 'unavailable', reason: 'not loaded' },
+        { name: 'simulation-inputs', status: 'supported' },
       ],
     });
 
@@ -71,6 +72,7 @@ describe('getDebugCapabilities', () => {
     expect(result.supportsBreakpoints).toBe(false);
     expect(result.features.step.status).toBe(DEBUG_CAPABILITY_STATUS.DEGRADED);
     expect(result.features.breakpoints.status).toBe(DEBUG_CAPABILITY_STATUS.UNAVAILABLE);
+    expect(result.features['simulation-inputs']?.status).toBe(DEBUG_CAPABILITY_STATUS.SUPPORTED);
   });
 
   it('treats missing native features as unavailable instead of pretending support', () => {
@@ -85,7 +87,7 @@ describe('getDebugCapabilities', () => {
     expect(result.features.breakpoints.status).toBe(DEBUG_CAPABILITY_STATUS.UNAVAILABLE);
   });
 
-  it('marks legacy WASM simulation semantics as degraded fallback behavior', () => {
+  it('marks disabled browser WASM controls as unavailable', () => {
     const result = getLegacyWasmCapabilities();
 
     expect(result.mode).toBe(DEBUG_CAPABILITY_MODE.LEGACY);
@@ -93,9 +95,9 @@ describe('getDebugCapabilities', () => {
     expect(result.supportsResume).toBe(false);
     expect(result.supportsStep).toBe(false);
     expect(result.supportsBreakpoints).toBe(false);
-    expect(result.features.pause.status).toBe(DEBUG_CAPABILITY_STATUS.DEGRADED);
+    expect(result.features.pause.status).toBe(DEBUG_CAPABILITY_STATUS.UNAVAILABLE);
     expect(result.features.step.recommendedAction).toBe(
-      'Prefer native simulation or hardware for authoritative stepping',
+      'Use native simulation',
     );
   });
 });

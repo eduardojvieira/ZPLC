@@ -12,7 +12,7 @@
  * - Cleanup on unmount or mode change
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useIDEStore, type LiveValue } from '../store/useIDEStore';
 import type {
   IDebugAdapter,
@@ -25,6 +25,7 @@ import type {
 } from '../runtime/debugAdapter';
 import { WATCH_FORCE_STATE, bytesToHex, valueToBytes } from '../runtime/debugAdapter';
 import { createSimulationAdapter } from '../runtime/simulationAdapterFactory';
+import { NativeAdapter } from '../runtime/nativeAdapter';
 import { connectionManager } from '../runtime/connectionManager';
 import type { DebugMap } from '../compiler';
 import { findVariable } from '../compiler';
@@ -42,6 +43,13 @@ import {
   getDebugCapabilitiesForAdapter,
   getDebugFeatureActionability,
 } from './debugCapabilityActions';
+import { isCurrentSerialAdapter, shouldMarkForceCommandFailureUnconfirmed, usesConnectionManager } from './forceReconciliation';
+import {
+  appendNativeTrace as appendNativeTraceSample,
+  canCaptureNativeTrace,
+  canCommitNativeLoad,
+  canReenableNativeTrace,
+} from '../runtime/nativeTrace';
 
 const DEVICE_LOG_FLUSH_MS = 100;
 
@@ -65,14 +73,14 @@ export interface DebugControllerState {
 }
 
 export interface DebugControllerActions {
-  /** Start simulation mode with WASM adapter */
+  /** Start simulation mode with the local runtime adapter */
   startSimulation: () => Promise<void>;
   /** Connect to hardware via WebSerial */
   connectHardware: () => Promise<void>;
   /** Disconnect from current adapter */
   disconnect: () => Promise<void>;
   /** Load bytecode into the adapter */
-  loadProgram: (bytecode: Uint8Array, debugMap?: DebugMap) => Promise<void>;
+  loadProgram: (bytecode: Uint8Array, debugMap?: DebugMap, projectBoard?: string) => Promise<void>;
   /** Start/resume execution */
   start: () => Promise<void>;
   /** Stop execution */
@@ -107,6 +115,8 @@ export interface DebugControllerActions {
   setVirtualInput: (channel: number, value: number) => Promise<void>;
   /** Get virtual output (WASM only) */
   getVirtualOutput: (channel: number) => Promise<number>;
+  /** Stage a closed native-POSIX simulation input and publish its observed snapshot. */
+  setSimulationInput: (inputId: 'motor.start' | 'motor.stop' | 'motor.estop', active: boolean) => Promise<void>;
 }
 
 export type DebugController = DebugControllerState & DebugControllerActions;
@@ -121,13 +131,18 @@ export function useDebugController(): DebugController {
   const [vmState, setVmState] = useState<VMState>('disconnected');
   const [vmInfo, setVmInfo] = useState<VMInfo | null>(null);
   const [lastError, setLastError] = useState<string | null>(null);
-  const [debugCapabilities, setDebugCapabilities] = useState<DebugCapabilities | null>(null);
+  const [capabilityRevision, setCapabilityRevision] = useState(0);
 
   // Refs for polling
   const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const adapterRef = useRef<IDebugAdapter | null>(null);
+  const explicitHardwareDisconnectRef = useRef(false);
+  const externalDisconnectReportedRef = useRef(false);
   const deviceLogQueueRef = useRef<string[]>([]);
   const deviceLogFlushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const traceEpochRef = useRef(0);
+  const traceCaptureEnabledRef = useRef(true);
+  const traceBoundCompilerRunIdRef = useRef<number | null>(null);
 
   // Store selectors
   const debugMode = useIDEStore((state) => state.debug.mode);
@@ -137,9 +152,16 @@ export function useDebugController(): DebugController {
   const pollingInterval = useIDEStore((state) => state.debug.pollingInterval);
   const isPolling = useIDEStore((state) => state.debug.isPolling);
   const mpeekEnabled = useIDEStore((state) => state.debug.mpeekEnabled);
-  const projectConfig = useIDEStore((state) => state.projectConfig);
+  const compilerRunId = useIDEStore((state) => state.compilerRunId);
   const setControllerStatus = useIDEStore((state) => state.setControllerStatus);
   const controllerInfo = useIDEStore((state) => state.controllerInfo);
+  // Capability events mutate a native adapter in place; revision forces this
+  // projection to be recalculated instead of leaving stale controls enabled.
+  const debugCapabilities: DebugCapabilities | null = useMemo(
+    () => getDebugCapabilitiesForAdapter(adapter, debugMode, controllerInfo),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- native capability events mutate their adapter in place.
+    [adapter, capabilityRevision, controllerInfo, debugMode],
+  );
 
   // Store actions
   const setDebugMode = useIDEStore((state) => state.setDebugMode);
@@ -154,6 +176,16 @@ export function useDebugController(): DebugController {
   const setForcedValue = useIDEStore((state) => state.setForcedValue);
   const clearForcedValue = useIDEStore((state) => state.clearForcedValue);
   const clearForcedValues = useIDEStore((state) => state.clearForcedValues);
+  const markForcedValuesUnconfirmed = useIDEStore((state) => state.markForcedValuesUnconfirmed);
+  const appendNativeTrace = useIDEStore((state) => state.appendNativeTrace);
+  const clearNativeTrace = useIDEStore((state) => state.clearNativeTrace);
+
+  const invalidateNativeTrace = useCallback(() => {
+    traceCaptureEnabledRef.current = false;
+    traceEpochRef.current += 1;
+    clearNativeTrace();
+  }, [clearNativeTrace]);
+  const forcesUnconfirmed = useIDEStore((state) => state.debug.forcesUnconfirmed);
 
   const flushDeviceLogs = useCallback(() => {
     if (deviceLogFlushTimerRef.current) {
@@ -197,26 +229,28 @@ export function useDebugController(): DebugController {
     });
   }, [addConsoleEntry]);
 
-  // Keep adapter ref in sync
-  adapterRef.current = adapter;
-
   useEffect(() => {
-    setDebugCapabilities(getDebugCapabilitiesForAdapter(adapter, debugMode, controllerInfo));
-  }, [adapter, controllerInfo, debugMode]);
+    adapterRef.current = adapter;
+  }, [adapter]);
 
 
   // =========================================================================
   // Event Handlers
   // =========================================================================
 
-  const createEventHandlers = useCallback((): DebugAdapterEvents => ({
+  const createEventHandlers = useCallback((owner: IDebugAdapter, traceContext: { compilerRunId: number; epoch: number }): DebugAdapterEvents => {
+    const isCurrentOwner = () => adapterRef.current === owner;
+    return {
     onStateChange: (state: VMState) => {
+      if (!isCurrentOwner()) return;
       setVmState(state);
     },
     onInfoUpdate: (info: VMInfo) => {
+      if (!isCurrentOwner()) return;
       setVmInfo(info);
     },
     onError: (message: string) => {
+      if (!isCurrentOwner()) return;
       setLastError(message);
       addConsoleEntry({
         type: 'error',
@@ -225,6 +259,7 @@ export function useDebugController(): DebugController {
       });
     },
     onBreakpointHit: (pc: number, line?: number) => {
+      if (!isCurrentOwner()) return;
       const resolved = resolveExecutionLocation(debugMap, pc, line);
       debugLog('[Execution] Breakpoint hit resolved', {
         pc,
@@ -240,32 +275,80 @@ export function useDebugController(): DebugController {
       });
     },
     onStepComplete: (pc: number) => {
+      if (!isCurrentOwner()) return;
       const resolved = resolveExecutionLocation(debugMap, pc);
       debugLog('[Execution] Step complete resolved', { pc, resolved });
       setCurrentExecution(resolved.pouName, resolved.line, resolved.pc);
     },
     onGpioChange: (_channel: number, value: number) => {
+      if (!isCurrentOwner()) return;
       // Update OPI-based watch variables
       // The GPIO values are at OPI base addresses
       updateLiveValues(new Map([[`GPIO_OUT`, value]]));
     },
     onSerialData: (line: string) => {
+      if (!isCurrentOwner()) return;
       enqueueDeviceLog(line);
     },
-  }), [debugMap, enqueueDeviceLog, setCurrentExecution, addConsoleEntry, updateLiveValues]);
+    onRuntimeSnapshot: (snapshot) => {
+      const currentState = useIDEStore.getState();
+      if (!traceCaptureEnabledRef.current || !canCaptureNativeTrace({
+        activeAdapter: adapterRef.current,
+        owner,
+        snapshot,
+        capturedCompilerRunId: traceContext.compilerRunId,
+        currentCompilerRunId: currentState.compilerRunId,
+        capturedTraceEpoch: traceContext.epoch,
+        currentTraceEpoch: traceEpochRef.current,
+      })) {
+        return;
+      }
+      const trace = appendNativeTraceSample(currentState.debug.nativeTrace, adapterRef.current, owner, snapshot, {
+        compilerRunId: traceContext.compilerRunId,
+        receivedAtMs: Date.now(),
+      });
+      if (trace !== currentState.debug.nativeTrace) {
+        appendNativeTrace(trace.at(-1)!);
+      }
+    },
+    onCapabilitiesChange: () => {
+      if (isCurrentOwner()) {
+        setCapabilityRevision((revision) => revision + 1);
+      }
+    },
+  };
+  }, [debugMap, enqueueDeviceLog, setCurrentExecution, addConsoleEntry, updateLiveValues, appendNativeTrace]);
+
+  const bindAdapterEventHandlers = useCallback((owner: IDebugAdapter, enableTrace: boolean) => {
+    if (adapterRef.current !== owner) {
+      return;
+    }
+    traceCaptureEnabledRef.current = enableTrace;
+    if (enableTrace) {
+      traceBoundCompilerRunIdRef.current = useIDEStore.getState().compilerRunId;
+    }
+    owner.setEventHandlers(createEventHandlers(owner, {
+      compilerRunId: useIDEStore.getState().compilerRunId,
+      epoch: traceEpochRef.current,
+    }));
+  }, [createEventHandlers]);
 
   useEffect(() => {
     if (!adapter) {
       return;
     }
 
-    adapter.setEventHandlers(createEventHandlers());
+    bindAdapterEventHandlers(adapter, traceCaptureEnabledRef.current);
     debugLog('[Execution] Refreshed adapter event handlers', {
       adapterType: adapter.type,
       hasDebugMap: Boolean(debugMap),
       debugPouKeys: debugMap ? Object.keys(debugMap.pou) : [],
     });
-  }, [adapter, createEventHandlers, debugMap]);
+  }, [adapter, bindAdapterEventHandlers, debugMap]);
+
+  useEffect(() => {
+    invalidateNativeTrace();
+  }, [compilerRunId, invalidateNativeTrace]);
 
   useEffect(() => {
     if (debugMode !== 'hardware') {
@@ -311,148 +394,187 @@ export function useDebugController(): DebugController {
   // Adapter Lifecycle
   // =========================================================================
 
-  const startSimulation = useCallback(async () => {
-    try {
-      // Disconnect existing adapter
-      if (adapterRef.current) {
-        await adapterRef.current.disconnect();
-      }
-
-      const simulationAdapter = createSimulationAdapter();
-      simulationAdapter.setEventHandlers(createEventHandlers());
-
-      await simulationAdapter.connect();
-
-      setAdapter(simulationAdapter);
-      setVmState('idle');
-      setLastError(null);
-      setDebugCapabilities(getDebugCapabilitiesForAdapter(simulationAdapter, 'simulation', controllerInfo));
-      setDebugMode('simulation');
-
-      addConsoleEntry({
-        type: 'success',
-        message: `${simulationAdapter.type === 'native' ? 'Native' : 'WASM'} simulation connected`,
-        source: 'debugger',
-      });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
-      setLastError(message);
-      addConsoleEntry({
-        type: 'error',
-        message: `Failed to start simulation: ${message}`,
-        source: 'debugger',
-      });
+  const resetConnectionState = useCallback(() => {
+    invalidateNativeTrace();
+    adapterRef.current = null;
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
     }
-  }, [createEventHandlers, setDebugMode, addConsoleEntry]);
+    setAdapter(null);
+    setVmState('disconnected');
+    setVmInfo(null);
+    clearLiveValues();
+    setPolling(false);
+    setCurrentExecution(null, null, null);
+    setDebugMode('none');
+  }, [clearLiveValues, invalidateNativeTrace, setCurrentExecution, setDebugMode, setPolling]);
 
-  const connectHardware = useCallback(async () => {
-    try {
-      // Disconnect existing adapter
-      if (adapterRef.current) {
-        await adapterRef.current.disconnect();
-      }
-
-      // Use the global connectionManager for hardware connections
-      // This ensures ControllerView, Terminal, and DebugController share the same connection
-      await connectionManager.connect();
-      
-      const serialAdapter = connectionManager.serialAdapter;
-      if (!serialAdapter) {
-        throw new Error('Failed to get serial adapter from connection manager');
-      }
-      
-      // Register event handlers BEFORE reading the current state so that any
-      // future state transitions (running → paused, etc.) are captured.
-      serialAdapter.setEventHandlers(createEventHandlers());
-
-      // The adapter may have already determined the VM state during connect()
-      // (e.g., 'running' if cycles > 0 on the device). Sync that state now
-      // instead of forcing 'idle', which would prevent the polling loop from
-      // starting when the device is already executing a program.
-      const initialState = serialAdapter.state;
-
-      setAdapter(serialAdapter);
-      setVmState(initialState);
-      setLastError(null);
-      setDebugCapabilities(getDebugCapabilitiesForAdapter(serialAdapter, 'hardware', controllerInfo));
-      setDebugMode('hardware');
-
-      addConsoleEntry({
-        type: 'success',
-        message: 'Hardware connected via WebSerial',
-        source: 'debugger',
-      });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
-      setLastError(message);
-      addConsoleEntry({
-        type: 'error',
-        message: `Failed to connect hardware: ${message}`,
-        source: 'debugger',
-      });
+  useEffect(() => {
+    const currentAdapter = adapter;
+    if (currentAdapter?.type !== 'serial') {
+      return;
     }
-  }, [createEventHandlers, setDebugMode, addConsoleEntry]);
+
+    return connectionManager.onConnectionChange((connected) => {
+      if (connected || explicitHardwareDisconnectRef.current || externalDisconnectReportedRef.current) {
+        return;
+      }
+      if (!isCurrentSerialAdapter(adapterRef.current, currentAdapter)) {
+        return;
+      }
+
+      externalDisconnectReportedRef.current = true;
+      markForcedValuesUnconfirmed();
+      resetConnectionState();
+      setLastError('Hardware connection lost. Force state unconfirmed.');
+      addConsoleEntry({
+        type: 'warning',
+        message: 'Hardware connection lost. Force state is unconfirmed; reconnect and verify before operating.',
+        source: 'debugger',
+      });
+    });
+  }, [adapter, addConsoleEntry, markForcedValuesUnconfirmed, resetConnectionState]);
 
   const disconnect = useCallback(async () => {
+    invalidateNativeTrace();
+    const currentAdapter = adapterRef.current;
+    const isHardware = currentAdapter?.type === 'serial';
+    if (isHardware) {
+      explicitHardwareDisconnectRef.current = true;
+    }
+    let forceReleaseFailed = false;
     try {
-      if (adapterRef.current) {
+      if (currentAdapter) {
         try {
-          await adapterRef.current.clearAllForcedValues();
-          clearForcedValues();
+          await currentAdapter.clearAllForcedValues();
+          if (isHardware && isCurrentSerialAdapter(adapterRef.current, currentAdapter) && currentAdapter.connected) {
+            clearForcedValues();
+          } else if (!useIDEStore.getState().debug.forcesUnconfirmed) {
+            clearForcedValues();
+          }
         } catch (forceErr) {
+          forceReleaseFailed = true;
+          if (isHardware) {
+            markForcedValuesUnconfirmed();
+          }
           console.warn('[DebugController] failed to clear forced values during disconnect:', forceErr);
         }
       }
 
       // For hardware mode, use connectionManager to disconnect
       // For simulation, disconnect the WASM adapter directly
-      if (debugMode === 'hardware') {
+      if (isHardware) {
         await connectionManager.disconnect();
-      } else if (adapterRef.current) {
-        await adapterRef.current.disconnect();
+      } else if (currentAdapter) {
+        await currentAdapter.disconnect();
       }
 
-      addConsoleEntry({
-        type: 'info',
-        message: 'Debug session disconnected',
-        source: 'debugger',
-      });
+      if (forceReleaseFailed) {
+        setLastError('Force state unconfirmed. Reconnect and verify before operating.');
+        addConsoleEntry({
+          type: 'warning',
+          message: 'Disconnected, but force release could not be confirmed. Reconnect and verify before operating.',
+          source: 'debugger',
+        });
+      } else {
+        addConsoleEntry({
+          type: 'info',
+          message: 'Debug session disconnected',
+          source: 'debugger',
+        });
+        setLastError(null);
+      }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
       console.error('[DebugController] disconnect error:', err);
+      const message = 'Connection close failed. Verify device state before operating.';
       setLastError(message);
-      // Still show disconnect message even if there was an error
       addConsoleEntry({
         type: 'warning',
-        message: `Disconnected with error: ${message}`,
+        message,
         source: 'debugger',
       });
+      throw new Error(message);
     } finally {
       // Always clean up state, even if disconnect threw an error
-      setAdapter(null);
-      setVmState('disconnected');
-      setVmInfo(null);
-      setDebugCapabilities(null);
-      clearLiveValues();
-      clearForcedValues();
-      setPolling(false);
-      setCurrentExecution(null, null, null);
-      setDebugMode('none');
+      resetConnectionState();
+      explicitHardwareDisconnectRef.current = false;
     }
-  }, [debugMode, clearForcedValues, clearLiveValues, setPolling, setCurrentExecution, setDebugMode, addConsoleEntry]);
+  }, [clearForcedValues, invalidateNativeTrace, markForcedValuesUnconfirmed, resetConnectionState, addConsoleEntry]);
+
+  const startSimulation = useCallback(async () => {
+    try {
+      if (adapterRef.current) {
+        await disconnect();
+      }
+
+      invalidateNativeTrace();
+      const simulationAdapter = createSimulationAdapter();
+      await simulationAdapter.connect();
+
+      adapterRef.current = simulationAdapter;
+      setAdapter(simulationAdapter);
+      bindAdapterEventHandlers(simulationAdapter, true);
+      setVmState('idle');
+      setLastError(null);
+      setDebugMode('simulation');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      setLastError(message);
+      resetConnectionState();
+      throw err;
+    }
+  }, [bindAdapterEventHandlers, disconnect, invalidateNativeTrace, resetConnectionState, setDebugMode]);
+
+  const connectHardware = useCallback(async () => {
+    try {
+      externalDisconnectReportedRef.current = false;
+      explicitHardwareDisconnectRef.current = false;
+      if (adapterRef.current) {
+        await disconnect();
+      }
+
+      invalidateNativeTrace();
+      await connectionManager.connect();
+      const serialAdapter = connectionManager.serialAdapter;
+      if (!serialAdapter) {
+        throw new Error('Failed to get serial adapter from connection manager');
+      }
+
+      adapterRef.current = serialAdapter;
+      setAdapter(serialAdapter);
+      bindAdapterEventHandlers(serialAdapter, true);
+      setVmState(serialAdapter.state);
+      setLastError(null);
+      setDebugMode('hardware');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      setLastError(message);
+      try {
+        await connectionManager.disconnect();
+      } catch (disconnectError) {
+        console.warn('[DebugController] failed to clean up partial hardware connection:', disconnectError);
+      }
+      resetConnectionState();
+      throw err;
+    }
+  }, [bindAdapterEventHandlers, disconnect, invalidateNativeTrace, resetConnectionState, setDebugMode]);
 
   // =========================================================================
   // Program Loading
   // =========================================================================
 
-  const loadProgram = useCallback(async (bytecode: Uint8Array, newDebugMap?: DebugMap) => {
-    if (!adapterRef.current) {
+  const loadProgram = useCallback(async (bytecode: Uint8Array, newDebugMap?: DebugMap, projectBoard?: string) => {
+    const currentAdapter = adapterRef.current;
+    if (!currentAdapter) {
       throw new Error('No adapter connected');
     }
 
     // For hardware mode, pause polling during entire load operation
     // (upload + breakpoint sync) to avoid serial conflicts
     const isHardware = debugMode === 'hardware';
+    const loadedCompilerRunId = useIDEStore.getState().compilerRunId;
+    invalidateNativeTrace();
     if (isHardware) {
       connectionManager.pausePolling();
     }
@@ -460,31 +582,21 @@ export function useDebugController(): DebugController {
     try {
       // Upload bytecode
       if (isHardware) {
-        if (projectConfig) {
-          addConsoleEntry({
-            type: 'info',
-            message: 'Applying project configuration...',
-            source: 'debugger',
-          });
-          await connectionManager.provisionProjectConfig(projectConfig, logUploadTrace);
-        }
-        await connectionManager.uploadBytecode(bytecode, { trace: logUploadTrace });
-
-        // Trigger network bring-up in the background AFTER the program is
-        // loaded. This is intentionally fire-and-forget: a WiFi connect
-        // timeout must never block or fail the upload.
-        if (projectConfig) {
-          connectionManager.triggerNetworkBringUp(projectConfig).catch((e) => {
-            console.warn('[useDebugController] network bring-up error (non-fatal):', e);
-          });
-        }
+        await connectionManager.deployProgram(bytecode, projectBoard, { trace: logUploadTrace });
       } else {
-        await adapterRef.current.loadProgram(bytecode);
+        await currentAdapter.loadProgram(bytecode);
+      }
+
+      const ownerIsCurrent = adapterRef.current === currentAdapter;
+      if (!canCommitNativeLoad(ownerIsCurrent, loadedCompilerRunId, useIDEStore.getState().compilerRunId)) {
+        throw new Error('Program load became stale; compile again before running.');
       }
 
       if (newDebugMap) {
         setDebugMap(newDebugMap);
       }
+
+      bindAdapterEventHandlers(currentAdapter, true);
 
       // Sync breakpoints to adapter (skip for hardware if not supported)
       const breakpointPCs = getAllBreakpointPCs();
@@ -506,9 +618,9 @@ export function useDebugController(): DebugController {
               });
             }
 
-            await adapterRef.current.clearBreakpoints();
+            await currentAdapter.clearBreakpoints();
             for (const pc of breakpointPCs) {
-              await adapterRef.current.setBreakpoint(pc);
+              await currentAdapter.setBreakpoint(pc);
             }
           }
         } catch (e) {
@@ -519,7 +631,9 @@ export function useDebugController(): DebugController {
 
       addConsoleEntry({
         type: 'success',
-        message: `Loaded ${bytecode.length} bytes, ${breakpointPCs.length} breakpoints set`,
+        message: isHardware
+          ? `Program deployed and stopped: ${bytecode.length} bytes, ${breakpointPCs.length} breakpoints set`
+          : `Loaded ${bytecode.length} bytes, ${breakpointPCs.length} breakpoints set`,
         source: 'debugger',
       });
     } finally {
@@ -530,7 +644,7 @@ export function useDebugController(): DebugController {
         connectionManager.resumePolling();
       }
     }
-  }, [debugCapabilities, debugMode, projectConfig, setDebugMap, getAllBreakpointPCs, addConsoleEntry, logUploadTrace]);
+  }, [bindAdapterEventHandlers, invalidateNativeTrace, debugCapabilities, debugMode, setDebugMap, getAllBreakpointPCs, addConsoleEntry, logUploadTrace]);
 
   // =========================================================================
   // Execution Control
@@ -587,18 +701,31 @@ export function useDebugController(): DebugController {
   }, [addConsoleEntry, debugCapabilities]);
 
   const reset = useCallback(async () => {
-    if (!adapterRef.current) return;
+    const currentAdapter = adapterRef.current;
+    if (!currentAdapter) return;
+    const currentCompilerRunId = useIDEStore.getState().compilerRunId;
+    const reenableTrace = canReenableNativeTrace(
+      traceCaptureEnabledRef.current,
+      traceBoundCompilerRunIdRef.current,
+      currentCompilerRunId,
+    );
+    invalidateNativeTrace();
     try {
-      await adapterRef.current.reset();
+      await currentAdapter.reset();
       clearLiveValues();
       setCurrentExecution(null, null, null);
+      if (adapterRef.current === currentAdapter) {
+        bindAdapterEventHandlers(currentAdapter, reenableTrace && useIDEStore.getState().compilerRunId === currentCompilerRunId);
+      }
     } catch (err) {
-      // If reset fails (e.g., connection lost), just clear local state
+      // If reset fails (e.g., connection lost), clear stale local state but
+      // keep the failure observable to the caller.
       console.warn('[DebugController] reset failed:', err);
       clearLiveValues();
       setCurrentExecution(null, null, null);
+      throw err;
     }
-  }, [clearLiveValues, setCurrentExecution]);
+  }, [bindAdapterEventHandlers, clearLiveValues, invalidateNativeTrace, setCurrentExecution]);
 
   // =========================================================================
   // Memory Access
@@ -611,11 +738,18 @@ export function useDebugController(): DebugController {
       type: WatchVariable['type'],
       maxLength?: number
     ) => {
-      if (!adapterRef.current) return;
+      const currentAdapter = adapterRef.current;
+      if (!currentAdapter) return;
+      if (currentAdapter.type === 'serial') {
+        throw new Error('Direct value edits are simulation-only. Use Force for hardware.');
+      }
+      if (forcesUnconfirmed) {
+        throw new Error('Force state unconfirmed. Reconnect and verify before operating.');
+      }
       const bytes = valueToBytes(value, type, maxLength);
-      await adapterRef.current.setValue(address, bytes);
+      await currentAdapter.setValue(address, bytes);
     },
-    []
+    [forcesUnconfirmed]
   );
 
   const buildForceEntry = useCallback((
@@ -644,35 +778,63 @@ export function useDebugController(): DebugController {
       force: boolean,
       maxLength?: number,
     ) => {
-      if (!adapterRef.current) return;
-
-      if (force) {
-        const bytes = valueToBytes(value, type, maxLength);
-        await adapterRef.current.forceValue(address, bytes);
-        setForcedValue(buildForceEntry(path, address, type, bytes, maxLength, WATCH_FORCE_STATE.FORCED));
-        return;
+      if (forcesUnconfirmed) {
+        throw new Error('Force state unconfirmed. Reconnect and verify before operating.');
       }
+      const currentAdapter = adapterRef.current;
+      if (!currentAdapter) return;
 
-      await adapterRef.current.clearForcedValue(address);
-      clearForcedValue(path);
+      try {
+        if (force) {
+          const bytes = valueToBytes(value, type, maxLength);
+          await currentAdapter.forceValue(address, bytes);
+          setForcedValue(buildForceEntry(path, address, type, bytes, maxLength, WATCH_FORCE_STATE.FORCED));
+          return;
+        }
+
+        await currentAdapter.clearForcedValue(address);
+        clearForcedValue(path);
+      } catch (error) {
+        if (shouldMarkForceCommandFailureUnconfirmed(adapterRef.current, currentAdapter)) {
+          markForcedValuesUnconfirmed();
+        }
+        throw error;
+      }
     },
-    [buildForceEntry, clearForcedValue, setForcedValue],
+    [buildForceEntry, clearForcedValue, forcesUnconfirmed, markForcedValuesUnconfirmed, setForcedValue],
   );
 
   const clearAllForcedValues = useCallback(async () => {
-    if (!adapterRef.current) return;
-    await adapterRef.current.clearAllForcedValues();
-    clearForcedValues();
-  }, [clearForcedValues]);
+    const currentAdapter = adapterRef.current;
+    if (!currentAdapter) return;
+    const isHardware = currentAdapter.type === 'serial';
+    try {
+      await currentAdapter.clearAllForcedValues();
+      if (isHardware && isCurrentSerialAdapter(adapterRef.current, currentAdapter) && currentAdapter.connected) {
+        clearForcedValues();
+      } else if (!useIDEStore.getState().debug.forcesUnconfirmed) {
+        clearForcedValues();
+      }
+    } catch (error) {
+      if (isHardware && isCurrentSerialAdapter(adapterRef.current, currentAdapter)) {
+        markForcedValuesUnconfirmed();
+      }
+      throw error;
+    }
+  }, [clearForcedValues, markForcedValuesUnconfirmed]);
 
   useEffect(() => {
     const currentAdapter = adapterRef.current;
-    if (!currentAdapter || debugMode === 'none') {
+    if (!currentAdapter || currentAdapter.type !== 'serial') {
       return;
     }
+    let cancelled = false;
 
     void currentAdapter.listForcedValues()
       .then((entries) => {
+        if (cancelled || !isCurrentSerialAdapter(adapterRef.current, currentAdapter) || !currentAdapter.connected) {
+          return;
+        }
         clearForcedValues();
 
         for (const entry of entries) {
@@ -692,9 +854,16 @@ export function useDebugController(): DebugController {
         }
       })
       .catch((err) => {
+        if (cancelled || !isCurrentSerialAdapter(adapterRef.current, currentAdapter)) {
+          return;
+        }
         console.warn('[DebugController] failed to refresh forced values:', err);
+        markForcedValuesUnconfirmed();
       });
-  }, [adapter, clearForcedValues, debugMap, debugMode, setForcedValue, watchVariables]);
+    return () => {
+      cancelled = true;
+    };
+  }, [adapter, clearForcedValues, debugMap, markForcedValuesUnconfirmed, setForcedValue, watchVariables]);
 
   const setVirtualInput = useCallback(async (channel: number, value: number) => {
     if (!adapterRef.current) return;
@@ -704,6 +873,26 @@ export function useDebugController(): DebugController {
   const getVirtualOutput = useCallback(async (channel: number) => {
     if (!adapterRef.current) return 0;
     return await adapterRef.current.getVirtualOutput(channel);
+  }, []);
+
+  const setSimulationInput = useCallback(async (
+    inputId: 'motor.start' | 'motor.stop' | 'motor.estop',
+    active: boolean,
+  ) => {
+    const owner = adapterRef.current;
+    if (!(owner instanceof NativeAdapter) || !owner.connected || !owner.supportsSimulationInput) {
+      throw new Error('Native simulation input controls are unavailable');
+    }
+
+    await owner.setSimulationInput(inputId, active);
+    if (adapterRef.current !== owner || !owner.connected || !owner.supportsSimulationInput) {
+      throw new Error('Native simulation input controls changed before confirmation');
+    }
+
+    await owner.getRuntimeSnapshot();
+    if (adapterRef.current !== owner || !owner.connected || !owner.supportsSimulationInput) {
+      throw new Error('Native simulation input confirmation is no longer current');
+    }
   }, []);
 
   // =========================================================================
@@ -805,6 +994,7 @@ export function useDebugController(): DebugController {
   // =========================================================================
 
   useEffect(() => {
+    let disposed = false;
     const syncBreakpoints = async () => {
       if (!adapter?.connected || !debugMap) return;
 
@@ -827,27 +1017,21 @@ export function useDebugController(): DebugController {
 
         // Clear existing and set new
         await adapter.clearBreakpoints();
+        if (disposed || adapterRef.current !== adapter || !adapter.connected) return;
         for (const pc of pcs) {
+          if (disposed || adapterRef.current !== adapter || !adapter.connected) return;
           debugLog('[Breakpoint] Setting hardware breakpoint', { pc });
           await adapter.setBreakpoint(pc);
         }
       } catch (err) {
+        if (disposed || adapterRef.current !== adapter || !adapter.connected) return;
         console.error('Failed to sync breakpoints:', err);
       }
     };
 
-    syncBreakpoints();
+    void syncBreakpoints();
+    return () => { disposed = true; };
   }, [adapter, breakpointMap, debugCapabilities, debugMap, getAllBreakpointPCs]);
-
-  // =========================================================================
-  // Cleanup on Mode Change
-  // =========================================================================
-
-  useEffect(() => {
-    if (debugMode === 'none' && adapter) {
-      disconnect();
-    }
-  }, [debugMode, adapter, disconnect]);
 
   // =========================================================================
   // Cleanup on Unmount
@@ -855,8 +1039,12 @@ export function useDebugController(): DebugController {
 
   useEffect(() => {
     return () => {
-      if (adapterRef.current) {
-        adapterRef.current.disconnect().catch(console.error);
+      const currentAdapter = adapterRef.current;
+      if (usesConnectionManager(currentAdapter)) {
+        useIDEStore.getState().markForcedValuesUnconfirmed();
+        void connectionManager.disconnect().catch(() => undefined);
+      } else if (currentAdapter) {
+        void currentAdapter.disconnect().catch(() => undefined);
       }
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
@@ -892,6 +1080,7 @@ export function useDebugController(): DebugController {
     clearAllForcedValues,
     setVirtualInput,
     getVirtualOutput,
+    setSimulationInput,
   };
 }
 

@@ -15,6 +15,7 @@
  */
 
 import { type LDElement as LDElementType, isContact, isCoil, isFunctionBlock } from '../../models/ld';
+import { splitFBIdentifier } from './fbLabel';
 import type { DebugValueResult } from '../../hooks/useDebugValue';
 
 // =============================================================================
@@ -37,19 +38,19 @@ const STROKE_WIDTH = 2;
 const COLORS = {
   wire: 'var(--color-surface-400)',
   wireEnergized: '#22c55e', // Bright green for power flow
-  contact: 'var(--color-accent-green)',
-  contactNC: 'var(--color-accent-red)',
+  contact: 'var(--color-surface-300)',
+  contactNC: 'var(--color-surface-300)',
   coil: 'var(--color-accent-blue)',
   coilSet: 'var(--color-accent-blue)', // simplified
   coilReset: 'var(--color-accent-orange)',
   fb: 'var(--color-accent-yellow)',
   text: 'var(--color-surface-100)',
   textDim: 'var(--color-surface-200)',
-  selected: 'var(--color-accent-yellow)',
+  selected: 'var(--color-accent-blue)',
   hover: 'rgba(255,255,255,0.1)',
   energizedGlow: 'rgba(34, 197, 94, 0.3)', // Glow effect for energized state
   valueTrue: '#22c55e',  // Green for TRUE
-  valueFalse: '#ef4444', // Red for FALSE
+  valueFalse: 'var(--color-surface-300)', // FALSE is a value, not a fault
   valueNumber: '#22d3ee', // Cyan for numbers
   valueTime: '#fbbf24',  // Amber for TIME values
 };
@@ -231,7 +232,7 @@ function ContactSymbol({ type, variable, selected, energized, valueDisplay, valu
             y={boxY - 2}
             width={14}
             height={12}
-            fill="rgba(0,0,0,0.7)"
+            fill="var(--color-surface-800)"
             rx={2}
           />
           <text
@@ -381,7 +382,7 @@ function CoilSymbol({ type, variable, selected, energized, valueDisplay, valueCo
             y={centerY - radius - 2}
             width={14}
             height={12}
-            fill="rgba(0,0,0,0.7)"
+            fill="var(--color-surface-800)"
             rx={2}
           />
           <text
@@ -525,6 +526,9 @@ function FBSymbol({ fbType, instance, selected, energized, debugValues }: FBSymb
 
   // Get ports for this FB type
   const ports = fbType ? getFBPorts(fbType) : { inputs: [], outputs: [] };
+  const showsOutputValues = Boolean(debugValues && instance && ports.outputs.length > 0);
+  const typeLines = splitFBIdentifier(fbType || 'FB');
+  const instanceLines = splitFBIdentifier(instance || '').slice(0, showsOutputValues ? 1 : 2);
 
   // Get debug value for a port
   const getPortDebug = (portName: string): DebugValueResult | undefined => {
@@ -572,7 +576,7 @@ function FBSymbol({ fbType, instance, selected, energized, debugValues }: FBSymb
         y={boxY}
         width={boxWidth}
         height={boxHeight}
-        fill="#1e293b"
+        fill="var(--color-surface-700)"
         stroke={strokeColor}
         strokeWidth={STROKE_WIDTH}
         rx={3}
@@ -581,30 +585,25 @@ function FBSymbol({ fbType, instance, selected, energized, debugValues }: FBSymb
       {/* FB type */}
       <text
         x={CELL_WIDTH / 2}
-        y={boxY + 12}
+        y={boxY + (typeLines.length > 1 ? 9 : 12)}
         fill={strokeColor}
-        fontSize={10}
+        fontSize={typeLines.length > 1 ? 7 : 10}
         fontWeight="bold"
         textAnchor="middle"
         fontFamily="sans-serif"
       >
-        {fbType || 'FB'}
+        <title>{fbType || 'FB'}</title>
+        {typeLines.map((line, index) => <tspan key={`${line}-${index}`} x={CELL_WIDTH / 2} dy={index === 0 ? 0 : 7}>{line}</tspan>)}
       </text>
 
-      {/* Instance name */}
-      <text
-        x={CELL_WIDTH / 2}
-        y={boxY + 23}
-        fill={COLORS.textDim}
-        fontSize={7}
-        textAnchor="middle"
-        fontFamily="monospace"
-      >
-        {instance?.substring(0, 10) || ''}
-      </text>
+      {/* Instance name remains inside the fixed IEC block. */}
+      <title>{instance || fbType || 'FB'}</title>
+      {instanceLines.map((line, index) => (
+        <text key={`${line}-${index}`} x={CELL_WIDTH / 2} y={boxY + 24 + index * 6} fill={COLORS.textDim} fontSize={6} textAnchor="middle" fontFamily="monospace">{line}</text>
+      ))}
 
       {/* Output port values (shown inside the box at bottom) */}
-      {debugValues && instance && ports.outputs.length > 0 && (
+      {showsOutputValues && (
         <g>
           {/* Divider line */}
           <line
@@ -690,6 +689,20 @@ function Wire({ hasWire, energized }: WireProps) {
 export default function LDElement({ element, x, y, selected, energized, debugValues, onClick, onDragStart, draggable = false }: LDElementProps) {
   const translateX = x * CELL_WIDTH;
   const translateY = y * CELL_HEIGHT;
+  const selectable = Boolean(onClick);
+  const elementName = isFunctionBlock(element.type) ? [element.fbType, element.instance].filter(Boolean).join(' ') : element.variable;
+  const elementKind = {
+    contact_no: 'normally open contact', contact_nc: 'normally closed contact', contact_p: 'positive transition contact', contact_n: 'negative transition contact',
+    coil: 'coil', coil_negated: 'negated coil', coil_set: 'set coil', coil_reset: 'reset coil', coil_p: 'positive transition coil', coil_n: 'negative transition coil',
+    function_block: 'function block', left_rail: 'left power rail', right_rail: 'right power rail',
+  }[element.type];
+  const selectionLabel = `Select ${elementKind}${elementName ? ` ${elementName}` : ''}`;
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!onClick || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || (e.key !== 'Enter' && e.key !== ' ')) return;
+    e.preventDefault();
+    onClick();
+  };
 
   // Handle drag start for moving elements
   // This is called from the foreignObject div which supports HTML5 drag
@@ -783,8 +796,8 @@ export default function LDElement({ element, x, y, selected, energized, debugVal
         y={0}
         width={CELL_WIDTH}
         height={CELL_HEIGHT}
-        fill={selected ? 'rgba(251, 191, 36, 0.15)' : 'transparent'}
-        className="hover:fill-white/5 transition-colors"
+        fill={selected ? 'color-mix(in srgb, var(--color-accent-blue) 15%, transparent)' : 'transparent'}
+        className="transition-colors"
         style={{ pointerEvents: 'none' }}
       />
 
@@ -795,9 +808,16 @@ export default function LDElement({ element, x, y, selected, energized, debugVal
       {/* SVG <g> elements don't support HTML5 drag, so we use foreignObject */}
       <foreignObject x={0} y={0} width={CELL_WIDTH} height={CELL_HEIGHT}>
         <div
+          data-ld-element-id={element.id}
+          className={selectable ? 'focus-ring' : undefined}
           draggable={draggable}
           onDragStart={handleDragStart}
           onClick={onClick}
+          onKeyDown={handleKeyDown}
+          tabIndex={selectable ? 0 : undefined}
+          role={selectable ? 'button' : undefined}
+          aria-pressed={selectable ? selected : undefined}
+          aria-label={selectable ? selectionLabel : undefined}
           style={{
             width: '100%',
             height: '100%',

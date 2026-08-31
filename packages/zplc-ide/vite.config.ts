@@ -1,27 +1,16 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
-import { execSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-function getRepoVersion(): string {
-  try {
-    const repoRoot = path.resolve(__dirname, '../..')
-    return execSync('git describe --tags --always --dirty', {
-      cwd: repoRoot,
-      stdio: ['ignore', 'pipe', 'ignore'],
-      encoding: 'utf8',
-    }).trim()
-  } catch {
-    return 'dev'
-  }
-}
-
-const repoVersion = getRepoVersion()
+const repoVersion = JSON.parse(
+  readFileSync(path.resolve(__dirname, '../..', 'package.json'), 'utf8'),
+).version
 
 // https://vite.dev/config/
 export default defineConfig({

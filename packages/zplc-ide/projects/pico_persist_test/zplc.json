@@ -1,5 +1,6 @@
 {
   "$schema": "../../zplc.schema.json",
+  "schemaVersion": 2,
   "name": "Pico Persistence Test",
   "version": "1.0.0",
   "description": "Tests NVS persistence with multitask scheduling on RPi Pico",

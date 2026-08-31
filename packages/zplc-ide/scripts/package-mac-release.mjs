@@ -103,11 +103,17 @@ function main() {
     }
 
     run('xattr', ['-cr', stagedRepo], repoRoot);
-    run('bun', ['install'], stagedRepo);
+    run('bun', ['install', '--frozen-lockfile'], stagedRepo);
 
     run('bun', ['run', 'build'], path.join(stagedRepo, 'packages/zplc-compiler'));
-    run('cmake', ['-S', 'firmware/lib/zplc_core', '-B', 'firmware/lib/zplc_core/build'], stagedRepo);
-    run('cmake', ['--build', 'firmware/lib/zplc_core/build', '--target', 'zplc_runtime'], stagedRepo);
+    const cmakeArch = arch === 'x64' ? 'x86_64' : 'arm64';
+    run('cmake', [
+      '-S', 'firmware/lib/zplc_core',
+      '-B', 'firmware/lib/zplc_core/build',
+      '-DCMAKE_BUILD_TYPE=Release',
+      `-DCMAKE_OSX_ARCHITECTURES=${cmakeArch}`,
+    ], stagedRepo);
+    run('cmake', ['--build', 'firmware/lib/zplc_core/build', '--target', 'zplc_runtime', '--config', 'Release'], stagedRepo);
     mkdirSync(path.join(stagedIde, 'dist-native'), { recursive: true });
     run(
       'cp',

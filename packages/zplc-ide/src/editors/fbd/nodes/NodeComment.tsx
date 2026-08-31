@@ -6,18 +6,18 @@
  */
 
 import { useState, useRef, useEffect, useCallback, memo } from 'react';
-import { useReactFlow } from '@xyflow/react';
 
 interface NodeCommentProps {
   nodeId: string;
   comment?: string;
+  onChange?: (nodeId: string, data: Record<string, unknown>) => void;
+  readOnly?: boolean;
 }
 
-const NodeComment = memo(({ nodeId, comment }: NodeCommentProps) => {
+const NodeComment = memo(({ nodeId, comment, onChange, readOnly = false }: NodeCommentProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(comment || '');
   const inputRef = useRef<HTMLInputElement>(null);
-  const { setNodes } = useReactFlow();
 
   // Sync draft when comment prop changes
   useEffect(() => {
@@ -36,22 +36,9 @@ const NodeComment = memo(({ nodeId, comment }: NodeCommentProps) => {
 
   const handleSave = useCallback(() => {
     const trimmed = draft.trim();
-    setNodes((nodes) =>
-      nodes.map((node) => {
-        if (node.id === nodeId) {
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              comment: trimmed || undefined,
-            },
-          };
-        }
-        return node;
-      })
-    );
+    onChange?.(nodeId, { comment: trimmed || undefined });
     setIsEditing(false);
-  }, [nodeId, draft, setNodes]);
+  }, [nodeId, draft, onChange]);
 
   const handleCancel = useCallback(() => {
     setDraft(comment || '');
@@ -72,12 +59,12 @@ const NodeComment = memo(({ nodeId, comment }: NodeCommentProps) => {
 
   const handleDoubleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsEditing(true);
-  }, []);
+    if (!readOnly) setIsEditing(true);
+  }, [readOnly]);
 
   if (isEditing) {
     return (
-      <div className="mt-1 px-1" onClick={(e) => e.stopPropagation()}>
+      <div className="absolute top-full left-1/2 z-10 mt-1 w-[120px] -translate-x-1/2 px-1" onClick={(e) => e.stopPropagation()}>
         <input
           ref={inputRef}
           type="text"
@@ -85,8 +72,8 @@ const NodeComment = memo(({ nodeId, comment }: NodeCommentProps) => {
           onChange={(e) => setDraft(e.target.value)}
           onBlur={handleSave}
           onKeyDown={handleKeyDown}
-          className="w-full text-[10px] italic bg-slate-700 border border-slate-500 
-                     rounded px-1 py-0.5 text-slate-200 focus:outline-none focus:border-blue-500
+          className="w-full text-[10px] italic bg-[var(--color-surface-700)] border border-[var(--border-color)]
+                     rounded px-1 py-0.5 text-[var(--text-secondary)] focus:outline-none focus:border-[var(--color-accent-blue)]
                      text-center"
           placeholder="Add comment..."
         />
@@ -96,12 +83,12 @@ const NodeComment = memo(({ nodeId, comment }: NodeCommentProps) => {
 
   return (
     <div
-      className="mt-1 px-1 cursor-pointer"
+      className="absolute top-full left-1/2 z-10 mt-1 w-[120px] -translate-x-1/2 px-1 cursor-pointer"
       onDoubleClick={handleDoubleClick}
       title="Double-click to edit comment"
     >
       <div className={`text-[10px] italic text-center truncate max-w-[120px] ${
-        comment ? 'text-slate-400' : 'text-slate-600 hover:text-slate-500'
+        comment ? 'text-[var(--text-tertiary)]' : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
       }`}>
         {comment || '(+ comment)'}
       </div>

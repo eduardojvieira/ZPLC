@@ -1,13 +1,10 @@
 import { describe, expect, it } from 'bun:test';
 
-import type { PLCLanguage } from '../types';
 import {
   buildInlineWidgets,
   extractVariablesFromCode,
   stripCommentsPreserveLayout,
 } from './codeEditorInlineValues';
-
-const ST_LANGUAGE: PLCLanguage = 'ST';
 
 describe('stripCommentsPreserveLayout', () => {
   it('removes inline // comments while preserving line structure', () => {
@@ -57,7 +54,7 @@ describe('extractVariablesFromCode', () => {
       'SlowCounter := SlowCounter + 1;',
     ].join('\n');
 
-    const variables = extractVariablesFromCode(source, ST_LANGUAGE);
+    const variables = extractVariablesFromCode(source);
 
     expect(variables.has('Counter')).toBe(true);
     expect(variables.has('SlowCounter')).toBe(true);

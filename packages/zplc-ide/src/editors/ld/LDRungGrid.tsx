@@ -26,7 +26,7 @@ import {
   type LDBranch,
 } from '../../models/ld';
 import LDElement, { CELL_WIDTH, CELL_HEIGHT, WIRE_Y, COLORS, type DebugValuesMap } from './LDElement';
-import { parseLDDropData, DRAG_MIME_TYPE } from './LDToolbox';
+import { parseLDDropData, DRAG_MIME_TYPE } from './ldDragData';
 
 // =============================================================================
 // Constants
@@ -35,6 +35,7 @@ import { parseLDDropData, DRAG_MIME_TYPE } from './LDToolbox';
 const RAIL_WIDTH = 20;
 const PADDING = 10;
 const STROKE_WIDTH = 2;
+const EMPTY_GRID: LDCell[][] = [];
 
 // =============================================================================
 // Props
@@ -253,7 +254,7 @@ function BranchConnector({ branch, gridOffsetX, readOnly, onDelete }: BranchConn
             height={20}
             fill={COLORS.selected}
             cursor="ew-resize"
-            // @ts-ignore - draggable is valid on SVG elements in modern browsers/React
+            // @ts-expect-error React's SVG rect props omit the browser-supported draggable attribute.
             draggable={true}
             onDragStart={handleResizeStart}
             rx={2}
@@ -290,7 +291,6 @@ interface DropZoneProps {
   row: number;
   gridOffsetX: number;
   isOver: boolean;
-  onDrop: (col: number, row: number) => void;
   onDragOver: (col: number, row: number) => void;
   onDragLeave: () => void;
   hasElement: boolean;
@@ -302,7 +302,6 @@ function DropZone({
   row,
   gridOffsetX,
   isOver,
-  onDrop,
   onDragOver,
   onDragLeave,
   hasElement,
@@ -315,11 +314,6 @@ function DropZone({
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
     onDragOver(col, row);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    onDrop(col, row);
   };
 
   // Visual states: default, dragging (highlight available), hover (strong highlight)
@@ -349,7 +343,6 @@ function DropZone({
       strokeWidth={isOver ? 2 : 1}
       strokeDasharray={isOver ? 'none' : '4,2'}
       onDragOver={handleDragOver}
-      onDrop={handleDrop}
       onDragLeave={onDragLeave}
       style={{
         cursor: hasElement ? 'default' : 'crosshair',
@@ -384,15 +377,9 @@ function RungHeader({ rung, cols, rows, readOnly, onChange }: RungHeaderProps) {
     }
   }, [isEditing]);
 
-  // Sync draft when rung.comment changes externally
-  useEffect(() => {
-    if (!isEditing) {
-      setCommentDraft(rung.comment || '');
-    }
-  }, [rung.comment, isEditing]);
-
   const handleStartEdit = () => {
     if (readOnly) return;
+    setCommentDraft(rung.comment || '');
     setIsEditing(true);
   };
 
@@ -516,7 +503,7 @@ export default function LDRungGrid({
 
   // Grid configuration
   const config = gridRung.gridConfig || DEFAULT_GRID_CONFIG;
-  const grid = gridRung.grid || [];
+  const grid = gridRung.grid || EMPTY_GRID;
   const rows = Math.max(1, grid.length);
   const cols = config.cols;
 
@@ -527,12 +514,10 @@ export default function LDRungGrid({
   const totalHeight = PADDING + rows * CELL_HEIGHT + PADDING;
 
   // Check if rung is empty (no elements)
-  const isRungEmpty = useMemo(() => {
-    return grid.every(row => row.every(cell => cell.element === null));
-  }, [grid]);
+  const isRungEmpty = grid.every(row => row.every(cell => cell.element === null));
 
   // Find selected element position for delete button overlay
-  const selectedElementPosition = useMemo(() => {
+  const selectedElementPosition = (() => {
     if (!selectedElementId) return null;
     for (let rowIdx = 0; rowIdx < grid.length; rowIdx++) {
       for (let colIdx = 0; colIdx < grid[rowIdx].length; colIdx++) {
@@ -547,16 +532,7 @@ export default function LDRungGrid({
       }
     }
     return null;
-  }, [selectedElementId, grid, gridOffsetX]);
-
-  // Handle element drop
-  const handleDrop = useCallback((_col: number, _row: number) => {
-    if (readOnly || !onChange) return;
-
-    // Get the dropped element data from the event
-    // This is handled via the native drag event, so we use a workaround
-    setHoverCell(null);
-  }, [readOnly, onChange]);
+  })();
 
   // Handle drag over
   const handleDragOver = useCallback((col: number, row: number) => {
@@ -609,7 +585,7 @@ export default function LDRungGrid({
       }
     }
 
-    const dropData = parseLDDropData(e);
+    const dropData = parseLDDropData(e.dataTransfer);
     if (!dropData) return;
     if (resizeData) {
       try {
@@ -1004,7 +980,6 @@ export default function LDRungGrid({
                 row={rowIdx}
                 gridOffsetX={gridOffsetX}
                 isOver={hoverCell?.col === colIdx && hoverCell?.row === rowIdx}
-                onDrop={handleDrop}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 hasElement={cell.element !== null}
@@ -1032,7 +1007,7 @@ export default function LDRungGrid({
                       selected={cell.element.id === selectedElementId}
                       energized={isElementEnergized(cell.element)}
                       debugValues={debugValues}
-                      onClick={() => handleElementClick(cell.element!)}
+                      onClick={readOnly ? undefined : () => handleElementClick(cell.element!)}
                       draggable={!readOnly}
                       onDragStart={handleElementDragStart}
                     />

@@ -1,5 +1,6 @@
 {
   "$schema": "../../zplc.schema.json",
+  "schemaVersion": 2,
   "name": "Opta LED Chaser",
   "version": "1.0.0",
   "description": "Sequential LED animation across Opta D0-D3 with fading User LED",

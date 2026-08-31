@@ -1,0 +1,22 @@
+{
+  "$schema": "../../zplc.schema.json",
+  "schemaVersion": 2,
+  "name": "Tank Level Controller",
+  "version": "1.0.0",
+  "description": "Host-native deterministic discrete tank controller with plant-owned level sensors",
+  "target": {
+    "board": "posix"
+  },
+  "tasks": [
+    {
+      "name": "MainTask",
+      "trigger": "cyclic",
+      "interval_ms": 10,
+      "priority": 1,
+      "watchdog_ms": 100,
+      "programs": [
+        "TankLevel.st"
+      ]
+    }
+  ]
+}

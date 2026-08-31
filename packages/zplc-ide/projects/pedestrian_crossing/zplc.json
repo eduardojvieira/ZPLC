@@ -1,0 +1,22 @@
+{
+  "$schema": "../../zplc.schema.json",
+  "schemaVersion": 2,
+  "name": "Pedestrian Crossing",
+  "version": "1.0.0",
+  "description": "Deterministic host-native logical pedestrian crossing scenario; not a physical crossing model.",
+  "target": {
+    "board": "posix"
+  },
+  "tasks": [
+    {
+      "name": "MainTask",
+      "trigger": "cyclic",
+      "interval_ms": 10,
+      "priority": 1,
+      "watchdog_ms": 100,
+      "programs": [
+        "PedestrianCrossing.st"
+      ]
+    }
+  ]
+}

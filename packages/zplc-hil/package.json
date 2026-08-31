@@ -13,7 +13,7 @@
     "@serialport/parser-readline": "^12.0.0"
   },
   "devDependencies": {
-    "bun-types": "latest",
+    "bun-types": "1.3.14",
     "@types/node": "^20.0.0",
     "typescript": "^5.0.0"
   }

@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 
-import { DEFAULT_ZPLC_CONFIG } from './index';
+import { DEFAULT_ZPLC_CONFIG, getLanguageFromFilename } from './index';
 import { normalizeNetworkConfigForBoard } from '../config/boardProfiles';
 
 describe('DEFAULT_ZPLC_CONFIG connectivity v1.5.2', () => {
@@ -77,5 +77,12 @@ describe('protocol configuration defaults', () => {
     expect(DEFAULT_ZPLC_CONFIG.communication?.mqtt?.transport).toBe('tcp');
     expect(DEFAULT_ZPLC_CONFIG.communication?.modbus?.tcpEnabled).toBe(true);
     expect(DEFAULT_ZPLC_CONFIG.communication?.modbus?.rtuEnabled).toBe(false);
+  });
+});
+
+describe('filename language detection', () => {
+  it('normalizes extensions before selecting a language', () => {
+    expect(getLanguageFromFilename('Counter.IL')).toBe('IL');
+    expect(getLanguageFromFilename('Main.LD.JSON')).toBe('LD');
   });
 });
