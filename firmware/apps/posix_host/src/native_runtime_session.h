@@ -10,6 +10,8 @@
 #include <stdint.h>
 
 #include <zplc_isa.h>
+#include <zplc_core.h>
+#include <zplc_loader.h>
 
 #ifndef ZPLC_MEM_CODE_SIZE
 #define ZPLC_MEM_CODE_SIZE 0xB000U
@@ -27,26 +29,41 @@ typedef enum {
 } zplc_native_session_state_t;
 
 typedef enum {
-    ZPLC_NATIVE_PROGRAM_RAW = 0,
+    ZPLC_NATIVE_PROGRAM_NONE = 0,
     ZPLC_NATIVE_PROGRAM_ZPLC = 1,
 } zplc_native_program_format_t;
 
 typedef struct {
     uint8_t program_loaded;
     uint8_t should_exit;
-    uint8_t reserved0;
-    uint8_t reserved1;
+    uint8_t timed_scan_started;
+    uint8_t scenario_clock_enabled;
+    uint8_t scenario_timestamp_started;
+    /* Start/stop are host-owned one-scan pulses; E-stop is maintained. */
+    uint8_t simulation_pulse_mask;
     zplc_native_session_state_t state;
     uint32_t cycle_count;
     uint32_t overrun_count;
     uint32_t scan_interval_ms;
     uint32_t last_scan_tick_ms;
+    uint32_t scenario_last_timestamp_ms;
+    uint32_t missed_interval_count;
+    uint32_t last_dispatch_lateness_ms;
+    uint32_t program_generation;
     uint32_t program_size;
     zplc_native_program_format_t program_format;
+    uint8_t task_count;
+    uint8_t has_task_segment;
+    zplc_task_def_t tasks[ZPLC_LOADER_MAX_TASKS];
+    zplc_vm_t task_vms[ZPLC_LOADER_MAX_TASKS];
     uint8_t program[ZPLC_MEM_CODE_SIZE];
 } zplc_native_runtime_session_t;
 
 void zplc_native_runtime_session_init(zplc_native_runtime_session_t *session);
+
+void zplc_native_runtime_session_set_scenario_clock_enabled(
+    zplc_native_runtime_session_t *session,
+    int enabled);
 
 void zplc_native_runtime_session_shutdown(zplc_native_runtime_session_t *session);
 

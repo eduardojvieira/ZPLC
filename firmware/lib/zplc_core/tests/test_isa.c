@@ -109,6 +109,8 @@ static void test_opcode_uniqueness(void)
         OP_LOAD8, OP_LOAD16, OP_LOAD32, OP_LOAD64,
         OP_STORE8, OP_STORE16, OP_STORE32, OP_STORE64,
         OP_PUSH16, OP_JMP, OP_JZ, OP_JNZ, OP_CALL, OP_RET,
+        /* Communication */
+        OP_COMM_EXEC, OP_COMM_STATUS, OP_COMM_RESET,
         /* Conversion */
         OP_I2F, OP_F2I, OP_I2B, OP_EXT8, OP_EXT16, OP_ZEXT8, OP_ZEXT16,
         /* 32-bit operand */
@@ -159,10 +161,24 @@ static void test_opcode_encoding(void)
                    "OP_LOAD32 operand size");
     TEST_ASSERT_EQ(zplc_opcode_operand_size(OP_JMP), 2,
                    "OP_JMP operand size");
+    TEST_ASSERT_EQ(zplc_opcode_operand_size(OP_RET), 0,
+                   "OP_RET operand size");
+    {
+        const uint8_t conversions[] = {
+            OP_I2F, OP_F2I, OP_I2B, OP_EXT8, OP_EXT16, OP_ZEXT8, OP_ZEXT16
+        };
+        size_t i;
+        for (i = 0; i < sizeof(conversions); i++) {
+            TEST_ASSERT_EQ(zplc_opcode_operand_size(conversions[i]), 0,
+                           "conversion operand size");
+        }
+    }
 
     /* 32-bit operand opcodes (0xC0-0xFF) */
     TEST_ASSERT_EQ(zplc_opcode_operand_size(OP_PUSH32), 4,
                    "OP_PUSH32 operand size");
+    TEST_ASSERT_EQ(zplc_opcode_operand_size(OP_COMM_EXEC), 4,
+                   "OP_COMM_EXEC operand size");
 
     /* Instruction sizes */
     TEST_ASSERT_EQ(zplc_opcode_instruction_size(OP_NOP), 1,
@@ -187,6 +203,9 @@ static void test_opcode_validation(void)
     TEST_ASSERT(zplc_opcode_is_valid(OP_NOP), "OP_NOP is valid");
     TEST_ASSERT(zplc_opcode_is_valid(OP_ADD), "OP_ADD is valid");
     TEST_ASSERT(zplc_opcode_is_valid(OP_PUSH32), "OP_PUSH32 is valid");
+    TEST_ASSERT(zplc_opcode_is_valid(OP_COMM_EXEC), "OP_COMM_EXEC is valid");
+    TEST_ASSERT(zplc_opcode_is_valid(OP_COMM_STATUS), "OP_COMM_STATUS is valid");
+    TEST_ASSERT(zplc_opcode_is_valid(OP_COMM_RESET), "OP_COMM_RESET is valid");
 
     /* Valid system opcode GET_TICKS */
     TEST_ASSERT(zplc_opcode_is_valid(OP_GET_TICKS), "OP_GET_TICKS is valid");

@@ -26,7 +26,25 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <zplc_loader.h>
 #include "zplc_isa.h"
+
+/* Logical instruction bound for production scan cycles.  Zephyr projects can
+ * override this through Kconfig; standalone hosts use the conservative default.
+ * This is not a physical watchdog or a WCET guarantee. */
+#ifndef ZPLC_VM_CYCLE_INSTRUCTION_BUDGET
+#ifdef CONFIG_ZPLC_VM_CYCLE_INSTRUCTION_BUDGET
+#define ZPLC_VM_CYCLE_INSTRUCTION_BUDGET CONFIG_ZPLC_VM_CYCLE_INSTRUCTION_BUDGET
+#else
+#define ZPLC_VM_CYCLE_INSTRUCTION_BUDGET 100000U
+#endif
+#endif
+
+/** Maximum number of independent forced ranges. */
+#define ZPLC_FORCE_MAX_ENTRIES 8U
+
+/** Maximum byte length of one forced range. */
+#define ZPLC_FORCE_MAX_BYTES 260U
 
 #ifdef __cplusplus
 extern "C" {
@@ -76,6 +94,7 @@ typedef struct {
     uint16_t task_id;                         /**< Task ID (0 = default) */
     uint8_t priority;                         /**< Task priority */
     uint8_t reserved;                         /**< Padding */
+    uint16_t stack_limit;                     /**< Per-task evaluation stack limit */
 } zplc_vm_t;
 
 /* ============================================================================
@@ -105,16 +124,6 @@ int zplc_mem_init(void);
 uint8_t* zplc_mem_get_region(uint16_t base);
 
 /**
- * @brief Load code into the shared code segment.
- *
- * @param code Bytecode to load
- * @param size Size in bytes
- * @param offset Offset within code segment (for multiple programs)
- * @return 0 on success, negative on error
- */
-int zplc_mem_load_code(const uint8_t *code, size_t size, uint16_t offset);
-
-/**
  * @brief Get pointer to code segment.
  *
  * @param offset Offset within code segment
@@ -134,8 +143,10 @@ uint32_t zplc_mem_get_code_size(void);
  * VM Instance API (zplc_vm_*)
  * ============================================================================
  * 
- * Instance-based API for multi-task support.
- * Each task creates and manages its own zplc_vm_t.
+ * Instance-based API for multi-task support. Each task creates and manages
+ * its own zplc_vm_t. This is a low-level trusted-embedder API, not a product
+ * artifact-admission boundary: the embedder owns verification before
+ * supplying or modifying code.
  */
 
 /**
@@ -151,6 +162,11 @@ int zplc_vm_init(zplc_vm_t *vm);
 
 /**
  * @brief Configure VM to execute code at specified entry point.
+ *
+ * @note This low-level API is for trusted embedders and does not verify
+ * bytecode. Product artifact-admission routes must use zplc_core_load or
+ * zplc_core_load_tasks; embedders must verify before supplying or modifying
+ * executable code.
  *
  * @param vm Pointer to VM instance
  * @param entry_point Offset within code segment
@@ -177,9 +193,21 @@ int zplc_vm_step(zplc_vm_t *vm);
 int zplc_vm_run(zplc_vm_t *vm, uint32_t max_instructions);
 
 /**
+ * @brief Run a VM with a mandatory logical instruction bound.
+ *
+ * Unlike zplc_vm_run(), reaching the bound is a controlled VM watchdog fault.
+ * A NULL VM or zero bound is rejected without changing VM state.
+ *
+ * @return Number of instructions executed, or negative VM error code.
+ */
+int zplc_vm_run_bounded(zplc_vm_t *vm, uint32_t max_instructions);
+
+/**
  * @brief Run one complete PLC scan cycle.
  *
- * Resets PC to entry point, executes until HALT, returns.
+ * Resets PC to entry point and executes with
+ * ZPLC_VM_CYCLE_INSTRUCTION_BUDGET. Exhausting that logical bound returns
+ * -ZPLC_VM_WATCHDOG; it is not a physical watchdog or a WCET guarantee.
  *
  * @param vm Pointer to VM instance
  * @return Number of instructions executed, or negative error code
@@ -432,11 +460,13 @@ uint8_t zplc_force_get_count(void);
  * @param index Force table index
  * @param addr Output absolute address
  * @param size Output byte count
- * @param bytes Output buffer receiving the stored bytes
+ * @param bytes Output buffer receiving the stored bytes, or NULL to query
+ *              metadata only when @p bytes_capacity is zero
+ * @param bytes_capacity Capacity of @p bytes in bytes
  * @return 0 on success, negative on error
  */
 int zplc_force_get(uint8_t index, uint16_t *addr, uint16_t *size,
-                   uint8_t *bytes);
+                   uint8_t *bytes, size_t bytes_capacity);
 
 /**
  * @brief Write raw bytes then re-apply any overlapping force overrides.
@@ -527,18 +557,17 @@ int zplc_core_shutdown(void);
  *
  * @param binary Pointer to .zplc file contents
  * @param size Size of binary data
- * @return 0 on success, negative error code otherwise
- */
-int zplc_core_load(const uint8_t *binary, size_t size);
-
-/**
- * @brief Load raw bytecode directly.
+ * @param workspace Caller-owned verifier scratch
+ * @param workspace_size Size of @p workspace in bytes
+ * @return 0 on success, ZPLC_LOADER_* error otherwise
  *
- * @param bytecode Raw bytecode bytes
- * @param size Size of bytecode
- * @return 0 on success
+ * On success this replaces the loaded program and resets process/work/retain
+ * memory and forces to their safe initialized state before committing it.
+ * On rejection it leaves the current core state intact. The artifact must not
+ * overlap core-owned memory because the successful reset invalidates it.
  */
-int zplc_core_load_raw(const uint8_t *bytecode, size_t size);
+int zplc_core_load(const uint8_t *binary, size_t size, uint8_t *workspace,
+                   size_t workspace_size);
 
 /**
  * @brief Execute a single instruction.
@@ -658,10 +687,13 @@ zplc_vm_t* zplc_core_get_default_vm(void);
  * @param size Size of binary data
  * @param tasks Output array to fill with task definitions
  * @param max_tasks Maximum number of tasks to load
- * @return Number of tasks loaded, or negative error code
+ * @param workspace Caller-owned verifier scratch
+ * @param workspace_size Size of @p workspace in bytes
+ * @return Number of tasks loaded, or a ZPLC_LOADER_* error code
  */
 int zplc_core_load_tasks(const uint8_t *binary, size_t size,
-                         zplc_task_def_t *tasks, uint8_t max_tasks);
+                         zplc_task_def_t *tasks, uint8_t max_tasks,
+                         uint8_t *workspace, size_t workspace_size);
 
 /**
  * @brief Get entry point for a loaded task.

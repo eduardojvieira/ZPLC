@@ -31,7 +31,7 @@
  */
 
 #ifndef ZPLC_CORE_VERSION_STR
-#define ZPLC_CORE_VERSION_STR "0.3.0"
+#define ZPLC_CORE_VERSION_STR "unversioned"
 #endif
 
 /* ============================================================================
@@ -74,9 +74,6 @@ static zplc_vm_state_t legacy_default_vm_state;
 /** @brief Flag indicating if default VM has a program loaded */
 static int default_program_loaded = 0;
 
-#define ZPLC_FORCE_MAX_ENTRIES 8U
-#define ZPLC_FORCE_MAX_BYTES 260U
-
 typedef struct {
   uint8_t active;
   uint16_t addr;
@@ -108,7 +105,8 @@ static zplc_force_entry_t force_entries[ZPLC_FORCE_MAX_ENTRIES];
  */
 #define VM_CHECK_STACK_OVERFLOW(vm)                                            \
   do {                                                                         \
-    if ((vm)->sp >= ZPLC_STACK_MAX_DEPTH) {                                    \
+    if ((vm)->sp >= (vm)->stack_limit ||                                      \
+        (vm)->sp >= ZPLC_STACK_MAX_DEPTH) {                                   \
       (vm)->error = ZPLC_VM_STACK_OVERFLOW;                                    \
       (vm)->halted = 1;                                                        \
       return ZPLC_VM_STACK_OVERFLOW;                                           \
@@ -447,11 +445,13 @@ uint8_t *zplc_mem_get_region(uint16_t base) {
   }
 }
 
-int zplc_mem_load_code(const uint8_t *code, size_t size, uint16_t offset) {
+#if defined(ZPLC_CORE_TESTING)
+int zplc_test_mem_load_code(const uint8_t *code, size_t size,
+                            uint16_t offset) {
   if (code == NULL || size == 0) {
     return -1;
   }
-  if (offset + size > ZPLC_MEM_CODE_SIZE) {
+  if (size > ZPLC_MEM_CODE_SIZE || offset > ZPLC_MEM_CODE_SIZE - size) {
     return -2;
   }
   memcpy(&mem_code[offset], code, size);
@@ -463,6 +463,7 @@ int zplc_mem_load_code(const uint8_t *code, size_t size, uint16_t offset) {
 
   return 0;
 }
+#endif
 
 const uint8_t *zplc_mem_get_code(uint16_t offset, size_t size) {
   if (offset + size > code_size) {
@@ -605,7 +606,7 @@ uint8_t zplc_force_get_count(void) {
 }
 
 int zplc_force_get(uint8_t index, uint16_t *addr, uint16_t *size,
-                   uint8_t *bytes) {
+                   uint8_t *bytes, size_t bytes_capacity) {
   uint8_t current = 0;
 
   for (uint8_t i = 0; i < ZPLC_FORCE_MAX_ENTRIES; i++) {
@@ -619,9 +620,13 @@ int zplc_force_get(uint8_t index, uint16_t *addr, uint16_t *size,
       if (size != NULL) {
         *size = force_entries[i].size;
       }
-      if (bytes != NULL) {
-        memcpy(bytes, force_entries[i].bytes, force_entries[i].size);
+      if (bytes == NULL) {
+        return bytes_capacity == 0U ? 0 : -2;
       }
+      if (bytes_capacity < force_entries[i].size) {
+        return -2;
+      }
+      memcpy(bytes, force_entries[i].bytes, force_entries[i].size);
       return 0;
     }
     current++;
@@ -673,6 +678,7 @@ int zplc_vm_init(zplc_vm_t *vm) {
   memset(vm, 0, sizeof(zplc_vm_t));
   vm->pc = 0;
   vm->sp = 0;
+  vm->stack_limit = ZPLC_STACK_MAX_DEPTH;
   vm->bp = 0;
   vm->call_depth = 0;
   vm->flags = 0;
@@ -741,7 +747,9 @@ int zplc_vm_is_halted(const zplc_vm_t *vm) {
 }
 
 uint32_t zplc_vm_get_stack(const zplc_vm_t *vm, uint16_t index) {
-  if (vm == NULL || index >= vm->sp) {
+  if (vm == NULL || vm->stack_limit == 0U ||
+      vm->stack_limit > ZPLC_STACK_MAX_DEPTH || index >= vm->sp ||
+      index >= vm->stack_limit || index >= ZPLC_STACK_MAX_DEPTH) {
     return 0;
   }
   return vm->stack[index];
@@ -780,6 +788,14 @@ int zplc_vm_step(zplc_vm_t *vm) {
 
   if (vm == NULL) {
     return ZPLC_VM_INVALID_OPCODE;
+  }
+
+  if (vm->stack_limit == 0U || vm->stack_limit > ZPLC_STACK_MAX_DEPTH ||
+      vm->sp > vm->stack_limit || vm->sp > ZPLC_STACK_MAX_DEPTH) {
+    vm->error = ZPLC_VM_STACK_OVERFLOW;
+    vm->halted = 1U;
+    vm->paused = 0U;
+    return ZPLC_VM_STACK_OVERFLOW;
   }
 
   /* Check if paused (at breakpoint) */
@@ -2057,6 +2073,24 @@ int zplc_vm_run(zplc_vm_t *vm, uint32_t max_instructions) {
   return (int)count;
 }
 
+int zplc_vm_run_bounded(zplc_vm_t *vm, uint32_t max_instructions) {
+  int result;
+
+  if (vm == NULL || max_instructions == 0U) {
+    return -1;
+  }
+
+  result = zplc_vm_run(vm, max_instructions);
+  if (result < 0 || vm->halted != 0U || vm->paused != 0U) {
+    return result;
+  }
+
+  vm->error = ZPLC_VM_WATCHDOG;
+  vm->halted = 1U;
+  vm->paused = 0U;
+  return -ZPLC_VM_WATCHDOG;
+}
+
 int zplc_vm_run_cycle(zplc_vm_t *vm) {
   if (vm == NULL) {
     return -1;
@@ -2065,8 +2099,7 @@ int zplc_vm_run_cycle(zplc_vm_t *vm) {
   /* Reset for new cycle */
   zplc_vm_reset_cycle(vm);
 
-  /* Run until HALT */
-  return zplc_vm_run(vm, 0);
+  return zplc_vm_run_bounded(vm, ZPLC_VM_CYCLE_INSTRUCTION_BUDGET);
 }
 
 /* ============================================================================
@@ -2098,53 +2131,56 @@ int zplc_core_shutdown(void) {
   return 0;
 }
 
-int zplc_core_load(const uint8_t *binary, size_t size) {
-  const zplc_file_header_t *header;
-  size_t code_offset;
+static void zplc_core_commit_verified(const zplc_program_view_t *view) {
+  uint32_t index;
 
-  if (binary == NULL || size < ZPLC_FILE_HEADER_SIZE) {
-    return -1;
+  memcpy(mem_code, view->code, view->code_size);
+  code_size = view->code_size;
+  memset(mem_tags, 0, sizeof(mem_tags));
+  tag_count = (uint16_t)view->tag_count;
+  for (index = 0U; index < view->tag_count; index++) {
+    const uint8_t *tag = view->tags + index * ZPLC_TAG_ENTRY_SIZE;
+    mem_tags[index].var_addr = (uint16_t)tag[0] | ((uint16_t)tag[1] << 8);
+    mem_tags[index].var_type = tag[2];
+    mem_tags[index].tag_id = tag[3];
+    mem_tags[index].value = (uint32_t)tag[4] | ((uint32_t)tag[5] << 8) |
+                            ((uint32_t)tag[6] << 16) |
+                            ((uint32_t)tag[7] << 24);
   }
-
-  header = (const zplc_file_header_t *)binary;
-
-  if (header->magic != ZPLC_MAGIC) {
-    return -2;
-  }
-
-  if (header->version_major > ZPLC_VERSION_MAJOR) {
-    return -3;
-  }
-
-  if (header->code_size > ZPLC_MEM_CODE_SIZE) {
-    return -4;
-  }
-
-  code_offset =
-      ZPLC_FILE_HEADER_SIZE + (header->segment_count * ZPLC_SEGMENT_ENTRY_SIZE);
-
-  if (size < code_offset + header->code_size) {
-    return -5;
-  }
-
-  /* Load code into shared segment */
-  zplc_mem_load_code(binary + code_offset, header->code_size, 0);
-
-  /* Configure default VM */
   zplc_vm_init(&default_vm);
-  zplc_vm_set_entry(&default_vm, header->entry_point, header->code_size);
+  default_vm.entry_point = view->entry_point;
+  default_vm.pc = view->entry_point;
+  default_vm.code = mem_code;
+  default_vm.code_size = view->code_size;
   default_program_loaded = 1;
-
-  return 0;
 }
 
-int zplc_core_load_raw(const uint8_t *bytecode, size_t size) {
+int zplc_core_load(const uint8_t *binary, size_t size, uint8_t *workspace,
+                   size_t workspace_size) {
+  zplc_program_view_t view;
+  int result = zplc_loader_verify(binary, size, workspace, workspace_size, &view);
+
+  if (result != ZPLC_LOADER_OK) {
+    return result;
+  }
+  zplc_mem_init();
+  zplc_core_commit_verified(&view);
+  return ZPLC_LOADER_OK;
+}
+
+#if defined(ZPLC_CORE_TESTING)
+int zplc_test_load_raw(const uint8_t *bytecode, size_t size) {
+  int result;
+
   if (bytecode == NULL || size == 0 || size > ZPLC_MEM_CODE_SIZE) {
     return -1;
   }
 
   /* Load code into shared segment at offset 0 */
-  zplc_mem_load_code(bytecode, size, 0);
+  result = zplc_test_mem_load_code(bytecode, size, 0);
+  if (result != 0) {
+    return result;
+  }
 
   /* Configure default VM */
   zplc_vm_init(&default_vm);
@@ -2153,6 +2189,7 @@ int zplc_core_load_raw(const uint8_t *bytecode, size_t size) {
 
   return 0;
 }
+#endif
 
 int zplc_core_step(void) {
   if (!default_program_loaded) {
@@ -2237,168 +2274,49 @@ zplc_vm_t *zplc_core_get_default_vm(void) { return &default_vm; }
  * @param size Size of binary data
  * @param tasks Output array to fill with task definitions
  * @param max_tasks Maximum number of tasks to load
- * @return Number of tasks loaded, or negative error code:
- *         -1: NULL pointer or insufficient size
- *         -2: Invalid magic number
- *         -3: Unsupported version
- *         -4: Code too large
- *         -5: File truncated
- *         -6: No TASK segment found
+ * @return Number of tasks loaded, or a ZPLC_LOADER_* error code
  */
 int zplc_core_load_tasks(const uint8_t *binary, size_t size,
-                         zplc_task_def_t *tasks, uint8_t max_tasks) {
-  const zplc_file_header_t *header;
-  const zplc_segment_entry_t *seg_table;
-  size_t seg_table_size;
-  size_t data_offset;
+                         zplc_task_def_t *tasks, uint8_t max_tasks,
+                         uint8_t *workspace, size_t workspace_size) {
+  zplc_program_view_t view;
+  uint32_t task_count;
+  uint32_t index;
+  int result;
 
-  /* Segment locations (filled during scan) */
-  size_t code_seg_offset = 0;
-  uint32_t code_seg_size = 0;
-  size_t task_seg_offset = 0;
-  uint32_t task_seg_size = 0;
-  int code_found = 0;
-  int task_found = 0;
-
-  uint32_t tags_seg_offset = 0;
-  uint32_t tags_seg_size = 0;
-  int tags_found = 0;
-
-  uint8_t task_count;
-  uint8_t i;
-
-  /* Validate inputs */
-  if (binary == NULL || size < ZPLC_FILE_HEADER_SIZE || tasks == NULL) {
-    return -1;
+  if (tasks == NULL) {
+    return ZPLC_LOADER_ERR_SIZE;
   }
-
-  /* Parse header */
-  header = (const zplc_file_header_t *)binary;
-
-  zplc_hal_log("[CORE] Header Magic: 0x%08X (Expected: 0x%08X)\n",
-               header->magic, ZPLC_MAGIC);
-  zplc_hal_log("[CORE] Version: %u.%u\n", header->version_major,
-               header->version_minor);
-  zplc_hal_log("[CORE] Segment Count: %u\n", header->segment_count);
-  zplc_hal_log("[CORE] Header Code Size: %u bytes\n", header->code_size);
-
-  if (header->magic != ZPLC_MAGIC) {
-    zplc_hal_log("[CORE] ERROR: Invalid magic number\n");
-    return -2;
+  result = zplc_loader_verify(binary, size, workspace, workspace_size, &view);
+  if (result != ZPLC_LOADER_OK) {
+    return result;
   }
-
-  if (header->version_major > ZPLC_VERSION_MAJOR) {
-    zplc_hal_log("[CORE] ERROR: Unsupported version\n");
-    return -3;
+  if (view.tasks == NULL) {
+    return ZPLC_LOADER_ERR_TASK;
   }
-
-  /* Calculate segment table size and data offset */
-  seg_table_size = header->segment_count * ZPLC_SEGMENT_ENTRY_SIZE;
-
-  if (size < ZPLC_FILE_HEADER_SIZE + seg_table_size) {
-    return -5; /* File truncated */
-  }
-
-  seg_table = (const zplc_segment_entry_t *)(binary + ZPLC_FILE_HEADER_SIZE);
-  data_offset = ZPLC_FILE_HEADER_SIZE + seg_table_size;
-
-  /* Scan segment table to find CODE and TASK segments */
-  for (i = 0; i < header->segment_count; i++) {
-    zplc_hal_log("[CORE] Segment %d: Type=0x%02X, Size=%u\n", i,
-                 seg_table[i].type, seg_table[i].size);
-    if (seg_table[i].type == ZPLC_SEG_CODE) {
-      code_seg_offset = data_offset;
-      code_seg_size = seg_table[i].size;
-      code_found = 1;
-    } else if (seg_table[i].type == ZPLC_SEG_TASK) {
-      task_seg_offset = data_offset;
-      task_seg_size = seg_table[i].size;
-      task_found = 1;
-    } else if (seg_table[i].type == ZPLC_SEG_TAGS) {
-      tags_seg_offset = (uint32_t)data_offset;
-      tags_seg_size = seg_table[i].size;
-      tags_found = 1;
-    }
-    /* Advance data_offset past this segment's data */
-    data_offset += seg_table[i].size;
-  }
-
-  /* Verify we found required segments */
-  if (!code_found) {
-    /* No code segment - use header's code_size for backwards compat */
-    code_seg_offset = ZPLC_FILE_HEADER_SIZE + seg_table_size;
-    code_seg_size = header->code_size;
-  }
-
-  if (!task_found) {
-    return -6; /* No TASK segment */
-  }
-
-  /* Validate code size */
-  zplc_hal_log("[CORE] Validating Code Segment Size: %u (Limit: %u)\n",
-               code_seg_size, (uint32_t)ZPLC_MEM_CODE_SIZE);
-  if (code_seg_size > ZPLC_MEM_CODE_SIZE) {
-    zplc_hal_log("[CORE] ERROR: Code segment too large (%u > %u)\n",
-                 code_seg_size, (uint32_t)ZPLC_MEM_CODE_SIZE);
-    return -4;
-  }
-
-  /* Verify file has enough data */
-  if (code_seg_offset + code_seg_size > size ||
-      task_seg_offset + task_seg_size > size) {
-    return -5;
-  }
-
-  /* Load code into shared segment */
-  zplc_mem_load_code(binary + code_seg_offset, code_seg_size, 0);
-
-  /* Load tags if present */
-  tag_count = 0;
-  if (tags_found && tags_seg_size > 0 &&
-      tags_seg_offset + tags_seg_size <= size) {
-    uint16_t found_tags = (uint16_t)(tags_seg_size / ZPLC_TAG_ENTRY_SIZE);
-    if (found_tags > ZPLC_MAX_TAGS) {
-      found_tags = ZPLC_MAX_TAGS;
-      zplc_hal_log("[CORE] WARNING: Too many tags, truncating to %d\n",
-                   ZPLC_MAX_TAGS);
-    }
-
-    for (uint16_t t = 0; t < found_tags; t++) {
-      const uint8_t *ptr = binary + tags_seg_offset + (t * ZPLC_TAG_ENTRY_SIZE);
-      mem_tags[t].var_addr = (uint16_t)ptr[0] | ((uint16_t)ptr[1] << 8);
-      mem_tags[t].var_type = ptr[2];
-      mem_tags[t].tag_id = ptr[3];
-      mem_tags[t].value = (uint32_t)ptr[4] | ((uint32_t)ptr[5] << 8) |
-                          ((uint32_t)ptr[6] << 16) | ((uint32_t)ptr[7] << 24);
-    }
-    tag_count = found_tags;
-    zplc_hal_log("[CORE] Loaded %u variable tags\n", tag_count);
-  }
-
-  /* Parse task definitions */
-  task_count = (uint8_t)(task_seg_size / ZPLC_TASK_DEF_SIZE);
+  task_count = view.task_count;
   if (task_count > max_tasks) {
-    task_count = max_tasks;
+    return ZPLC_LOADER_ERR_TASK;
   }
-
-  /* Copy task definitions with endian-safe parsing */
-  for (i = 0; i < task_count; i++) {
-    const uint8_t *task_ptr =
-        binary + task_seg_offset + (i * ZPLC_TASK_DEF_SIZE);
-
-    /* Parse little-endian fields manually for portability */
-    tasks[i].id = (uint16_t)task_ptr[0] | ((uint16_t)task_ptr[1] << 8);
-    tasks[i].type = task_ptr[2];
-    tasks[i].priority = task_ptr[3];
-    tasks[i].interval_us =
-        (uint32_t)task_ptr[4] | ((uint32_t)task_ptr[5] << 8) |
-        ((uint32_t)task_ptr[6] << 16) | ((uint32_t)task_ptr[7] << 24);
-    tasks[i].entry_point = (uint16_t)task_ptr[8] | ((uint16_t)task_ptr[9] << 8);
-    tasks[i].stack_size =
-        (uint16_t)task_ptr[10] | ((uint16_t)task_ptr[11] << 8);
-    tasks[i].reserved = 0; /* Ignore reserved field */
+  if ((size_t)task_count * sizeof(zplc_task_def_t) > workspace_size) {
+    return ZPLC_LOADER_ERR_WORKSPACE;
   }
-
+  for (index = 0U; index < task_count; index++) {
+    const uint8_t *source = view.tasks + index * ZPLC_TASK_DEF_SIZE;
+    zplc_task_def_t parsed;
+    parsed.id = (uint16_t)source[0] | ((uint16_t)source[1] << 8);
+    parsed.type = source[2];
+    parsed.priority = source[3];
+    parsed.interval_us = (uint32_t)source[4] | ((uint32_t)source[5] << 8) |
+                         ((uint32_t)source[6] << 16) |
+                         ((uint32_t)source[7] << 24);
+    parsed.entry_point = (uint16_t)source[8] | ((uint16_t)source[9] << 8);
+    parsed.stack_size = (uint16_t)source[10] | ((uint16_t)source[11] << 8);
+    parsed.reserved = 0U;
+    memcpy(workspace + index * sizeof(parsed), &parsed, sizeof(parsed));
+  }
+  zplc_core_commit_verified(&view);
+  memmove(tasks, workspace, task_count * sizeof(*tasks));
   return (int)task_count;
 }
 

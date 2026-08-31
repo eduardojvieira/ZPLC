@@ -17,7 +17,9 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/sys/printk.h>
+#include <errno.h>
 
 /* Settings subsystem for NVS persistence */
 #ifdef CONFIG_SETTINGS
@@ -71,6 +73,13 @@ static zplc_gpio_channel_t gpio_channels[ZPLC_GPIO_MAX_CHANNELS];
 
 /** @brief HAL initialization state */
 static bool hal_initialized = false;
+
+#ifdef CONFIG_ZTEST
+/* Test-only one-shot failure before a shutdown GPIO safe-off write. */
+static bool test_fail_next_safe_off;
+
+void zplc_hal_test_fail_next_safe_off(void) { test_fail_next_safe_off = true; }
+#endif
 
 /* ============================================================================
  * DeviceTree GPIO Specifications
@@ -169,8 +178,8 @@ void zplc_hal_sleep(uint32_t ms) { k_msleep((int32_t)ms); }
  * @param is_output true for output, false for input
  * @return 0 on success, negative error code on failure
  */
-static int gpio_channel_configure(uint8_t idx, const struct gpio_dt_spec *spec,
-                                  bool is_output) {
+static int __maybe_unused gpio_channel_configure(
+    uint8_t idx, const struct gpio_dt_spec *spec, bool is_output) {
   int ret;
   gpio_flags_t flags;
 
@@ -286,6 +295,19 @@ static int gpio_init_all(void) {
   return configured;
 }
 
+static uint8_t gpio_output_configured_mask(void) {
+  uint8_t mask = 0U;
+  uint8_t channel;
+
+  for (channel = 0U; channel < ZPLC_GPIO_OUTPUT_COUNT; channel++) {
+    if (gpio_channels[channel].configured) {
+      mask |= (uint8_t)BIT(channel);
+    }
+  }
+
+  return mask;
+}
+
 /**
  * @brief Read a digital input channel.
  *
@@ -328,11 +350,18 @@ zplc_hal_result_t zplc_hal_gpio_read(uint8_t channel, uint8_t *value) {
 zplc_hal_result_t zplc_hal_gpio_write(uint8_t channel, uint8_t value) {
   int ret;
 
+  if (!hal_initialized) {
+    return ZPLC_HAL_ERROR;
+  }
+
   if (channel >= ZPLC_GPIO_OUTPUT_COUNT) {
     return ZPLC_HAL_ERROR;
   }
 
   if (!gpio_channels[channel].configured) {
+    if ((CONFIG_ZPLC_REQUIRED_GPIO_OUTPUT_MASK & BIT(channel)) != 0U) {
+      return ZPLC_HAL_ERROR;
+    }
     return ZPLC_HAL_NOT_IMPL;
   }
 
@@ -541,6 +570,7 @@ zplc_hal_result_t zplc_hal_dac_write(uint8_t channel, uint16_t value) {
  *   ID 1: "code_len" - Program length (4 bytes)
  *   ID 2: "code"     - Program bytecode (up to 4KB)
  *   ID 3: "retain"   - Retentive memory region (future)
+ *   IDs 4-8: transactional .zplc program store v1
  *
  * The storage_partition must be defined in the board's DeviceTree overlay.
  */
@@ -559,6 +589,11 @@ zplc_hal_result_t zplc_hal_dac_write(uint8_t channel, uint16_t value) {
 
 /** @brief NVS ID for retentive memory */
 #define NVS_ID_RETAIN 3
+#define NVS_ID_PROGRAM_ACTIVE 4
+#define NVS_ID_PROGRAM_SLOT_A_PAYLOAD 5
+#define NVS_ID_PROGRAM_SLOT_A_META 6
+#define NVS_ID_PROGRAM_SLOT_B_PAYLOAD 7
+#define NVS_ID_PROGRAM_SLOT_B_META 8
 
 /** @brief NVS filesystem handle */
 static struct nvs_fs nvs_handle;
@@ -576,6 +611,16 @@ static uint16_t key_to_nvs_id(const char *key) {
     return NVS_ID_CODE;
   if (strcmp(key, "retain") == 0)
     return NVS_ID_RETAIN;
+  if (strcmp(key, "program_v1_active") == 0)
+    return NVS_ID_PROGRAM_ACTIVE;
+  if (strcmp(key, "program_v1_slot_a_payload") == 0)
+    return NVS_ID_PROGRAM_SLOT_A_PAYLOAD;
+  if (strcmp(key, "program_v1_slot_a_meta") == 0)
+    return NVS_ID_PROGRAM_SLOT_A_META;
+  if (strcmp(key, "program_v1_slot_b_payload") == 0)
+    return NVS_ID_PROGRAM_SLOT_B_PAYLOAD;
+  if (strcmp(key, "program_v1_slot_b_meta") == 0)
+    return NVS_ID_PROGRAM_SLOT_B_META;
   return 0; /* Invalid */
 }
 
@@ -673,7 +718,7 @@ zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data,
  * @param len    Maximum length to read.
  *
  * @return ZPLC_HAL_OK on success, error code otherwise.
- *         Returns ZPLC_HAL_ERROR if key not found or read fails.
+ *         Returns ZPLC_HAL_NOT_IMPL if key is not found.
  */
 zplc_hal_result_t zplc_hal_persist_load(const char *key, void *data,
                                         size_t len) {
@@ -699,8 +744,9 @@ zplc_hal_result_t zplc_hal_persist_load(const char *key, void *data,
   /* Read from NVS */
   ret = nvs_read(&nvs_handle, id, data, len);
   if (ret < 0) {
-    /* Key not found or error - this is normal on first boot */
-    zplc_hal_log("[HAL] NVS read '%s': not found\n", key);
+    if (ret == -ENOENT)
+      return ZPLC_HAL_NOT_IMPL;
+    zplc_hal_log("[HAL] NVS read '%s' failed: %zd\n", key, ret);
     return ZPLC_HAL_ERROR;
   }
 
@@ -739,6 +785,8 @@ zplc_hal_result_t zplc_hal_persist_delete(const char *key) {
   /* Delete from NVS */
   ret = nvs_delete(&nvs_handle, id);
   if (ret != 0) {
+    if (ret == -ENOENT)
+      return ZPLC_HAL_NOT_IMPL;
     zplc_hal_log("[HAL] NVS delete '%s' failed: %d\n", key, ret);
     return ZPLC_HAL_ERROR;
   }
@@ -758,7 +806,7 @@ zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data,
   (void)data;
   (void)len;
 
-  zplc_hal_log("[HAL] Persist save: CONFIG_SETTINGS not enabled\n");
+  zplc_hal_log("[HAL] Persist save: CONFIG_NVS not enabled\n");
   return ZPLC_HAL_NOT_IMPL;
 }
 
@@ -780,11 +828,11 @@ zplc_hal_result_t zplc_hal_persist_load(const char *key, void *data,
 zplc_hal_result_t zplc_hal_persist_delete(const char *key) {
   (void)key;
 
-  zplc_hal_log("[HAL] Persist delete: CONFIG_SETTINGS not enabled\n");
+  zplc_hal_log("[HAL] Persist delete: CONFIG_NVS not enabled\n");
   return ZPLC_HAL_NOT_IMPL;
 }
 
-#endif /* CONFIG_SETTINGS */
+#endif /* CONFIG_NVS */
 
 /* ============================================================================
  * Synchronization Functions
@@ -985,6 +1033,8 @@ void zplc_hal_log(const char *fmt, ...) {
  */
 zplc_hal_result_t zplc_hal_init(void) {
   int gpio_count;
+  uint8_t configured_output_mask;
+  uint8_t missing_output_mask;
 
   if (hal_initialized) {
     return ZPLC_HAL_OK;
@@ -994,6 +1044,15 @@ zplc_hal_result_t zplc_hal_init(void) {
 
   /* Initialize GPIO from DeviceTree */
   gpio_count = gpio_init_all();
+  configured_output_mask = gpio_output_configured_mask();
+  missing_output_mask = (uint8_t)(CONFIG_ZPLC_REQUIRED_GPIO_OUTPUT_MASK &
+                                  ~configured_output_mask);
+
+  if (missing_output_mask != 0U) {
+    zplc_hal_log("[HAL] Required output mask 0x%x missing 0x%x\n",
+                 CONFIG_ZPLC_REQUIRED_GPIO_OUTPUT_MASK, missing_output_mask);
+    return ZPLC_HAL_ERROR;
+  }
 
   if (gpio_count == 0) {
     zplc_hal_log("[HAL] Warning: No GPIO channels configured\n");
@@ -1012,16 +1071,32 @@ zplc_hal_result_t zplc_hal_init(void) {
  * Releases resources and turns off outputs.
  */
 zplc_hal_result_t zplc_hal_shutdown(void) {
+  zplc_hal_result_t result = ZPLC_HAL_OK;
+
   zplc_hal_log("[HAL] Zephyr HAL shutting down...\n");
 
   /* Turn off all outputs */
   for (int i = 0; i < ZPLC_GPIO_OUTPUT_COUNT; i++) {
     if (gpio_channels[i].configured) {
-      gpio_pin_set_dt(&gpio_channels[i].spec, 0);
+      int ret;
+
+#ifdef CONFIG_ZTEST
+      if (test_fail_next_safe_off) {
+        test_fail_next_safe_off = false;
+        ret = -EIO;
+      } else
+#endif
+      {
+        ret = gpio_pin_set_dt(&gpio_channels[i].spec, 0);
+      }
+
+      if (ret < 0) {
+        result = ZPLC_HAL_ERROR;
+      }
     }
   }
 
   hal_initialized = false;
 
-  return ZPLC_HAL_OK;
+  return result;
 }

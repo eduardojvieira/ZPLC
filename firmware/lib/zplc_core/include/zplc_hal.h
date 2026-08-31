@@ -35,7 +35,10 @@ typedef enum {
     ZPLC_HAL_ERROR      = -1,   /**< Generic error */
     ZPLC_HAL_TIMEOUT    = -2,   /**< Operation timed out */
     ZPLC_HAL_BUSY       = -3,   /**< Resource busy */
-    ZPLC_HAL_NOT_IMPL   = -4    /**< Function not implemented */
+    ZPLC_HAL_NOT_IMPL   = -4,   /**< Function unavailable, or persisted key absent */
+    ZPLC_HAL_CORRUPT    = -5,   /**< Persisted record exists but is structurally invalid */
+    /* The mutation is visible but its durable commit could not be confirmed. */
+    ZPLC_HAL_COMMIT_UNKNOWN = -6
 } zplc_hal_result_t;
 
 /* ============================================================================
@@ -140,7 +143,8 @@ zplc_hal_result_t zplc_hal_dac_write(uint8_t channel, uint16_t value);
  * @param data   Pointer to data to save.
  * @param len    Length of data in bytes.
  *
- * @return ZPLC_HAL_OK on success, error code otherwise.
+ * @return ZPLC_HAL_OK on success, ZPLC_HAL_COMMIT_UNKNOWN when a visible
+ *         mutation could not be confirmed durable, error code otherwise.
  */
 zplc_hal_result_t zplc_hal_persist_save(const char *key,
                                          const void *data,
@@ -153,7 +157,9 @@ zplc_hal_result_t zplc_hal_persist_save(const char *key,
  * @param data   Buffer to load data into.
  * @param len    Maximum length to read.
  *
- * @return ZPLC_HAL_OK on success, error code otherwise.
+ * @return ZPLC_HAL_OK on success, ZPLC_HAL_NOT_IMPL if key not found,
+ *         ZPLC_HAL_CORRUPT if an existing record is structurally invalid,
+ *         error code otherwise.
  */
 zplc_hal_result_t zplc_hal_persist_load(const char *key,
                                          void *data,

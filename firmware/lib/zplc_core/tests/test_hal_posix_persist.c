@@ -15,6 +15,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+extern void zplc_hal_persist_test_parent_sync_fail(int enabled);
+extern unsigned long zplc_hal_persist_test_parent_sync_attempts(void);
+
 static int test_count = 0;
 static int fail_count = 0;
 
@@ -121,10 +124,109 @@ static void test_key_sanitization(void)
     (void)unsetenv("ZPLC_PERSIST_ROOT");
 }
 
+static void test_empty_record_is_corrupt(void)
+{
+    char temp_dir[256];
+    char path[512];
+    FILE *file;
+    uint8_t value = 0U;
+
+    printf("\n=== Test: empty persistence record ===\n");
+    TEST_ASSERT(create_temp_dir(temp_dir, sizeof(temp_dir)) == 0,
+                "temporary directory created for empty record");
+    if (access(temp_dir, F_OK) != 0) return;
+    TEST_ASSERT(setenv("ZPLC_PERSIST_ROOT", temp_dir, 1) == 0,
+                "ZPLC_PERSIST_ROOT override applied for empty record");
+    (void)snprintf(path, sizeof(path), "%s/empty.bin", temp_dir);
+    file = fopen(path, "wb");
+    TEST_ASSERT(file != NULL && fclose(file) == 0, "empty persisted record is created");
+    TEST_ASSERT(zplc_hal_persist_load("empty", &value, sizeof(value)) == ZPLC_HAL_CORRUPT,
+                "existing empty persisted record is reported as corrupt");
+    (void)unlink(path);
+    (void)rmdir(temp_dir);
+    (void)unsetenv("ZPLC_PERSIST_ROOT");
+}
+
+static void test_oversized_record_is_rejected(void)
+{
+    char temp_dir[256];
+    char path[512];
+    uint8_t saved[5] = {1U, 2U, 3U, 4U, 5U};
+    uint8_t loaded[4] = {0U, 0U, 0U, 0U};
+
+    printf("\n=== Test: oversized persistence record ===\n");
+    TEST_ASSERT(create_temp_dir(temp_dir, sizeof(temp_dir)) == 0,
+                "temporary directory created for oversized record");
+    if (access(temp_dir, F_OK) != 0) return;
+    TEST_ASSERT(setenv("ZPLC_PERSIST_ROOT", temp_dir, 1) == 0,
+                "persistence root applied for oversized record");
+    TEST_ASSERT(zplc_hal_persist_save("oversized", saved, sizeof(saved)) == ZPLC_HAL_OK,
+                "oversized source record saved");
+    TEST_ASSERT(zplc_hal_persist_load("oversized", loaded, sizeof(loaded)) == ZPLC_HAL_CORRUPT,
+                "persist_load reports a file larger than its destination buffer as corrupt");
+    (void)snprintf(path, sizeof(path), "%s/oversized.bin", temp_dir);
+    (void)unlink(path);
+    (void)rmdir(temp_dir);
+    (void)unsetenv("ZPLC_PERSIST_ROOT");
+}
+
+#if defined(__linux__)
+static void test_parent_sync_failure_is_reported_after_rename(void)
+{
+    char temp_dir[256];
+    char final_path[512];
+    char tmp_path[512];
+    uint8_t old_value = 0x11U;
+    uint8_t new_value = 0x22U;
+    uint8_t loaded_value = 0U;
+
+    printf("\n=== Test: parent directory sync failure ===\n");
+    TEST_ASSERT(create_temp_dir(temp_dir, sizeof(temp_dir)) == 0,
+                "temporary directory created for parent sync failure");
+    if (access(temp_dir, F_OK) != 0) return;
+
+    TEST_ASSERT(setenv("ZPLC_PERSIST_ROOT", temp_dir, 1) == 0,
+                "persistence root applied for parent sync failure");
+    zplc_hal_persist_test_parent_sync_fail(0);
+    TEST_ASSERT(zplc_hal_persist_save("durability", &old_value, sizeof(old_value)) == ZPLC_HAL_OK,
+                "initial value saved before injected parent sync failure");
+    TEST_ASSERT(zplc_hal_persist_test_parent_sync_attempts() == 1UL,
+                "successful save synced its parent directory");
+
+    zplc_hal_persist_test_parent_sync_fail(1);
+    errno = 0;
+    TEST_ASSERT(zplc_hal_persist_save("durability", &new_value, sizeof(new_value)) == ZPLC_HAL_COMMIT_UNKNOWN,
+                "post-rename parent sync reports an unknown commit");
+    TEST_ASSERT(errno == EIO, "post-rename parent sync preserves fsync errno");
+    TEST_ASSERT(zplc_hal_persist_test_parent_sync_attempts() == 1UL,
+                "parent directory sync was attempted exactly once");
+
+    (void)snprintf(final_path, sizeof(final_path), "%s/durability.bin", temp_dir);
+    (void)snprintf(tmp_path, sizeof(tmp_path), "%s/durability.bin.tmp", temp_dir);
+    TEST_ASSERT(access(final_path, F_OK) == 0,
+                "new final path remains visible after post-rename failure");
+    TEST_ASSERT(access(tmp_path, F_OK) != 0,
+                "no temporary file remains after post-rename failure");
+    TEST_ASSERT(zplc_hal_persist_load("durability", &loaded_value, sizeof(loaded_value)) == ZPLC_HAL_OK &&
+                loaded_value == new_value,
+                "visible record is the new value after post-rename failure");
+
+    zplc_hal_persist_test_parent_sync_fail(0);
+    (void)unlink(final_path);
+    (void)rmdir(temp_dir);
+    (void)unsetenv("ZPLC_PERSIST_ROOT");
+}
+#endif
+
 int main(void)
 {
     test_persist_roundtrip();
     test_key_sanitization();
+    test_empty_record_is_corrupt();
+    test_oversized_record_is_rejected();
+#if defined(__linux__)
+    test_parent_sync_failure_is_reported_after_rename();
+#endif
 
     printf("\n=== POSIX HAL persistence tests complete ===\n");
     printf("Tests run: %d\n", test_count);

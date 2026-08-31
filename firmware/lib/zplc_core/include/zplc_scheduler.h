@@ -10,8 +10,9 @@
  *
  * Architecture (Zephyr implementation):
  *   - Each task has a k_timer that fires at the configured interval
- *   - Timer callbacks submit work items to priority-based work queues
- *   - Work queue threads execute the actual PLC program cycles
+ *   - Timer callbacks admit due task releases without executing PLC code
+ *   - One coordinator executes each ordered due-set as a batch
+ *   - Each batch takes one IPI snapshot and performs at most one normal OPI commit
  *   - Shared memory (IPI/OPI) is protected by a mutex
  */
 
@@ -22,6 +23,7 @@
 #include <stddef.h>
 #include "zplc_isa.h"
 #include "zplc_core.h"
+#include "zplc_hal.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,8 +40,8 @@ extern "C" {
 #define ZPLC_MAX_TASKS 8
 #endif
 
-/** @brief Minimum task interval in microseconds (100us) */
-#define ZPLC_MIN_INTERVAL_US 100
+/** @brief Minimum task interval in microseconds (1ms) */
+#define ZPLC_MIN_INTERVAL_US 1000
 
 /** @brief Maximum task interval in microseconds (1 hour) */
 #define ZPLC_MAX_INTERVAL_US 3600000000UL
@@ -113,10 +115,14 @@ typedef enum {
  * @brief Scheduler statistics.
  */
 typedef struct {
-    uint32_t total_cycles;         /**< Sum of all task cycles */
-    uint32_t total_overruns;       /**< Sum of all overruns */
-    uint32_t uptime_ms;            /**< Time since start */
-    uint8_t active_tasks;          /**< Number of active tasks */
+  uint32_t total_cycles;         /**< Sum of all task cycles */
+  uint32_t total_overruns;       /**< Sum of all overruns */
+  uint32_t uptime_ms;            /**< Time since start */
+  uint8_t active_tasks;          /**< Number of active tasks */
+  /** Logical input process-image latches since scheduler initialization. */
+  uint32_t input_latch_count;
+  /** Logical normal output process-image commits since initialization. */
+  uint32_t output_commit_count;
 } zplc_sched_stats_t;
 
 /* ============================================================================
@@ -145,14 +151,28 @@ int zplc_sched_shutdown(void);
 /**
  * @brief Register a task with the scheduler.
  *
+ * The scheduler accepts only a reference to code already loaded in the core.
+ * Raw code buffers are rejected.
+ *
  * @param def Task definition (from .zplc file or manual config)
- * @param code Pointer to bytecode for this task
- * @param code_size Size of bytecode
+ * @param code Must be NULL
+ * @param code_size Must be zero
  * @return Task handle (0-based index) on success, negative error code on failure
  */
 int zplc_sched_register_task(const zplc_task_def_t *def,
                               const uint8_t *code,
                               size_t code_size);
+
+/**
+ * @brief Validate whether a .zplc program can be admitted by this scheduler.
+ *
+ * This does not alter scheduler, core, process-image, timer, or persistence
+ * state. Only cyclic tasks aligned to the scheduler's millisecond timer are
+ * accepted.
+ *
+ * @return ZPLC_LOADER_OK on success, otherwise a ZPLC_LOADER_* error code.
+ */
+int zplc_sched_validate_program(const uint8_t *binary, size_t size);
 
 /**
  * @brief Load a multi-task .zplc binary and register all tasks.
@@ -164,13 +184,16 @@ int zplc_sched_register_task(const zplc_task_def_t *def,
  * The function internally uses zplc_core_load_tasks() to parse
  * the binary and then configures VMs with appropriate entry points.
  *
+ * @note The scheduler must be IDLE with no registered tasks.
+ *
  * @param binary Pointer to .zplc file contents
  * @param size Size of binary data
+ *
  * @return Number of tasks loaded on success, negative error code on failure:
  *         -1: Scheduler not initialized
  *         -2: Invalid arguments
- *         -3: zplc_core_load_tasks() error (bad file format)
- *         -4: Task registration failed
+ *         -3: Program rejected by the verifier or scheduler policy
+ *         -4: Scheduler is not empty or not idle
  */
 int zplc_sched_load(const uint8_t *binary, size_t size);
 
@@ -239,6 +262,19 @@ zplc_sched_state_t zplc_sched_get_state(void);
  */
 int zplc_sched_get_stats(zplc_sched_stats_t *stats);
 
+#ifdef CONFIG_ZTEST
+void zplc_sched_test_hold_before_commit(void);
+int zplc_sched_test_wait_before_commit(int timeout_ms);
+void zplc_sched_test_release_before_commit(void);
+void zplc_sched_test_reset_debug_before_mem(void);
+int zplc_sched_test_wait_debug_before_mem(int timeout_ms);
+void zplc_sched_test_fail_next_output_commit(uint8_t channel,
+                                             zplc_hal_result_t result);
+uint8_t zplc_sched_test_output_commit_write_count(void);
+void zplc_sched_test_fail_next_gpio_read(uint8_t channel,
+                                         zplc_hal_result_t result);
+#endif
+
 /**
  * @brief Get task information.
  *
@@ -256,12 +292,33 @@ int zplc_sched_get_task(int task_id, zplc_task_t *task);
 int zplc_sched_get_task_count(void);
 
 /**
- * @brief Get pointer to the VM instance for a task.
+ * @brief Copy debugger-visible VM state for a registered task slot.
  *
- * @param task_id Task handle
- * @return Pointer to VM instance, or NULL if task not found
+ * The scheduler retains ownership of VM storage. Callers must use these
+ * copy/mutation APIs instead of retaining VM pointers across scheduler work.
  */
-zplc_vm_t* zplc_sched_get_vm_ptr(int task_id);
+typedef struct {
+  uint16_t task_id;
+  uint16_t pc;
+  uint16_t sp;
+  int error;
+  uint8_t halted;
+  uint8_t paused;
+  uint8_t breakpoint_count;
+  uint16_t breakpoints[ZPLC_MAX_BREAKPOINTS];
+} zplc_sched_vm_snapshot_t;
+
+/** @return 0 on success, -1 for invalid state/arguments, -2 for no task. */
+int zplc_sched_debug_snapshot(int task_id, zplc_sched_vm_snapshot_t *snapshot);
+
+/** @return 0 on success, or the underlying breakpoint error. */
+int zplc_sched_debug_add_breakpoint(int task_id, uint16_t pc);
+
+/** @return 0 on success, or the underlying breakpoint error. */
+int zplc_sched_debug_remove_breakpoint(int task_id, uint16_t pc);
+
+/** @return 0 on success, -1 for invalid state/arguments, -2 for no task. */
+int zplc_sched_debug_clear_breakpoints(int task_id);
 
 /* ============================================================================
  * Memory Synchronization
@@ -284,6 +341,24 @@ int zplc_sched_lock(int timeout_ms);
  * @return 0 on success, negative error code on failure
  */
 int zplc_sched_unlock(void);
+
+#ifdef CONFIG_ZTEST
+/* Test-only seams for portable release and duration arithmetic. */
+int zplc_sched_test_release_before(uint64_t left_uptime_ms,
+                                   uint32_t left_cycle32, uint8_t left_priority,
+                                   uint16_t left_id, uint64_t right_uptime_ms,
+                                   uint32_t right_cycle32,
+                                   uint8_t right_priority, uint16_t right_id);
+uint32_t zplc_sched_test_elapsed_us(uint64_t start_uptime_ms,
+                                    uint32_t start_cycle32,
+                                    uint64_t end_uptime_ms,
+                                    uint32_t end_cycle32);
+int zplc_sched_test_deadline_missed(uint64_t release_uptime_ms,
+                                    uint32_t release_cycle32,
+                                    uint64_t end_uptime_ms,
+                                    uint32_t end_cycle32, uint32_t interval_us);
+int zplc_sched_test_admit_release(int task_id);
+#endif
 
 #ifdef __cplusplus
 }
