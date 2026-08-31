@@ -10,10 +10,13 @@ build_verify_esp32s3/
 bin/
 dist/
 build_zephyr/
+/twister-out*/
 
 # Root workspace
 node_modules/
 bun.lock
+!bun.lock
+/.worktrees/
 
 # Packages
 packages/*/node_modules/
@@ -21,6 +24,7 @@ packages/*/dist/
 packages/*/electron-dist/
 packages/*/.env
 packages/*/.DS_Store
+packages/zplc-ide/dist-native/
 
 # HIL local credentials (never commit)
 tools/hil/.env
@@ -60,6 +64,7 @@ task.md
 walkthrough.md
 implementation_plan.md
 task_boundary_history.json
+packages/zplc-ide/.impeccable/
 # *.png  <-- COMENTADO PARA PERMITIR IMÁGENES
 *.webp
 *.video

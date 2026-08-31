@@ -13,21 +13,16 @@
 
 if(CONFIG_ZPLC)
 
-  set(ZPLC_GIT_VERSION "unknown")
-  execute_process(
-    COMMAND git -C ${CMAKE_CURRENT_LIST_DIR}/.. describe --tags --always --dirty
-    OUTPUT_VARIABLE ZPLC_GIT_VERSION
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    ERROR_QUIET
-  )
-  if(ZPLC_GIT_VERSION STREQUAL "")
-    set(ZPLC_GIT_VERSION "unknown")
+  file(READ "${CMAKE_CURRENT_LIST_DIR}/../package.json" ZPLC_PACKAGE_JSON)
+  string(JSON ZPLC_CORE_VERSION_STR ERROR_VARIABLE ZPLC_VERSION_ERROR GET "${ZPLC_PACKAGE_JSON}" version)
+  set(ZPLC_SEMVER_PATTERN "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(\\.(0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*))?$")
+  if(NOT ZPLC_VERSION_ERROR STREQUAL "NOTFOUND" OR NOT ZPLC_CORE_VERSION_STR MATCHES "${ZPLC_SEMVER_PATTERN}")
+    message(FATAL_ERROR "package.json must contain a valid ZPLC product semver version")
   endif()
-  string(REGEX REPLACE "^v" "" ZPLC_GIT_VERSION "${ZPLC_GIT_VERSION}")
 
   zephyr_library_named(zplc)
 
-  zephyr_library_compile_definitions(ZPLC_CORE_VERSION_STR="${ZPLC_GIT_VERSION}")
+  zephyr_library_compile_definitions(ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}")
 
   # Core VM sources (platform-independent C99)
   zephyr_library_sources(

@@ -1,7 +1,7 @@
 # =============================================================================
 # ZPLC Release Build Workflow
 # =============================================================================
-# Builds cross-platform IDE binaries and runtime source packages for releases.
+# Builds cross-platform IDE binaries for releases.
 #
 # Triggers:
 #   - Manual dispatch (workflow_dispatch) with version input
@@ -9,7 +9,6 @@
 #
 # Artifacts:
 #   - IDE: macOS (x64, arm64), Windows (x64, arm64), Linux (x64, arm64)
-#   - Runtime: Source tarball with everything needed to build for Zephyr boards
 #
 # Architecture:
 #   Each matrix job builds ONE architecture only. The arch is passed to
@@ -36,7 +35,7 @@ on:
       - 'v*'
 
 permissions:
-  contents: write
+  contents: read
 
 env:
   NODE_VERSION: '20'
@@ -44,67 +43,89 @@ env:
   ELECTRON_BUILDER_CACHE: ~/.cache/electron-builder
 
 jobs:
+  # Resolve the release identity once from the checked-out commit. Builds consume
+  # that identity but never rewrite repository metadata during a release.
+  validate-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@f4d14e03ff726c06358e5557344e1da148b56cf7 # v1.2.2
+        with:
+          bun-version: 1.3.14
+
+      - name: Validate canonical version
+        id: version
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_REF: ${{ github.ref }}
+          REQUESTED_VERSION: "${{ inputs.version }}"
+          UPLOAD_TO_RELEASE: "${{ inputs.upload_to_release }}"
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          bun run check:versions
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            requested="$REQUESTED_VERSION"
+          else
+            requested="${REF_NAME#v}"
+          fi
+          canonical_version="$(bun -e 'console.log(JSON.parse(require("fs").readFileSync("package.json", "utf8")).version)')"
+          if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ "$UPLOAD_TO_RELEASE" = "true" ] && [ "$EVENT_REF" != "refs/tags/v$canonical_version" ]; then
+            echo "Select the exact release tag refs/tags/v$canonical_version before uploading a release."
+            exit 1
+          fi
+          if [ "$requested" != "$canonical_version" ]; then
+            echo "Requested release version $requested does not match canonical package.json version $canonical_version"
+            exit 1
+          fi
+          echo "version=$canonical_version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$canonical_version" >> "$GITHUB_OUTPUT"
+
   # ===========================================================================
   # Build IDE for macOS (x64 and arm64)
   # ===========================================================================
   build-macos:
-    runs-on: macos-latest
+    needs: validate-version
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
-        arch: [x64, arm64]
+        include:
+          - arch: x64
+            runner: macos-15-intel
+          - arch: arm64
+            runner: macos-15
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Get version
-        id: version
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
-          else
-            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-          fi
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          ref: ${{ github.sha }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
+        uses: oven-sh/setup-bun@f4d14e03ff726c06358e5557344e1da148b56cf7 # v1.2.2
         with:
-          bun-version: latest
+          bun-version: 1.3.14
 
-      - name: Apply release version metadata
-        run: bun scripts/release-version.ts "${{ steps.version.outputs.version }}"
-
-      - name: Install dependencies (with retry)
+      - name: Install dependencies
         run: |
-          for attempt in 1 2 3; do
-            echo "=== Attempt $attempt of 3 ==="
-            if bun install; then
-              echo "Install succeeded on attempt $attempt"
-              break
-            fi
-            if [ $attempt -eq 3 ]; then
-              echo "Install failed after 3 attempts"
-              exit 1
-            fi
-            echo "Install failed, retrying in 15s..."
-            sleep 15
-          done
+          test -f bun.lock
+          bun install --frozen-lockfile
 
       - name: Build dependencies
         run: |
           cd packages/zplc-compiler && bun run build
-
-      - name: Build native simulator runtime
-        run: |
-          cmake -S firmware/lib/zplc_core -B firmware/lib/zplc_core/build
-          cmake --build firmware/lib/zplc_core/build --target zplc_runtime
-          mkdir -p packages/zplc-ide/dist-native
-          cp firmware/lib/zplc_core/build/zplc_runtime packages/zplc-ide/dist-native/
 
       - name: Build Electron app (macOS ${{ matrix.arch }})
         working-directory: packages/zplc-ide
@@ -134,10 +155,10 @@ jobs:
 
       - name: Validate macOS build artifacts
         working-directory: packages/zplc-ide
-        run: bun run smoke:desktop-builds macos
+        run: bun run smoke:desktop-builds macos ${{ matrix.arch }}
 
       - name: Upload macOS artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: macos-${{ matrix.arch }}
           path: |
@@ -149,54 +170,39 @@ jobs:
   # Build IDE for Windows (x64 and arm64)
   # ===========================================================================
   build-windows:
-    runs-on: windows-latest
+    needs: validate-version
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
-        arch: [x64, arm64]
+        include:
+          - arch: x64
+            runner: windows-2025
+            cmake_arch: x64
+          - arch: arm64
+            runner: windows-11-vs2026-arm
+            cmake_arch: ARM64
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Get version
-        id: version
-        shell: bash
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
-          else
-            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-          fi
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          ref: ${{ github.sha }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
+        uses: oven-sh/setup-bun@f4d14e03ff726c06358e5557344e1da148b56cf7 # v1.2.2
         with:
-          bun-version: latest
+          bun-version: 1.3.14
 
-      - name: Apply release version metadata
-        run: bun scripts/release-version.ts "${{ steps.version.outputs.version }}"
-
-      - name: Install dependencies (with retry)
+      - name: Install dependencies
         shell: bash
         run: |
-          for attempt in 1 2 3; do
-            echo "=== Attempt $attempt of 3 ==="
-            if bun install; then
-              echo "Install succeeded on attempt $attempt"
-              break
-            fi
-            if [ $attempt -eq 3 ]; then
-              echo "Install failed after 3 attempts"
-              exit 1
-            fi
-            echo "Install failed, retrying in 15s..."
-            sleep 15
-          done
+          test -f bun.lock
+          bun install --frozen-lockfile
 
       - name: Build dependencies
         run: |
@@ -205,7 +211,7 @@ jobs:
       - name: Build native simulator runtime
         shell: bash
         run: |
-          cmake -S firmware/lib/zplc_core -B firmware/lib/zplc_core/build
+          cmake -S firmware/lib/zplc_core -B firmware/lib/zplc_core/build -A ${{ matrix.cmake_arch }} -DCMAKE_BUILD_TYPE=Release
           cmake --build firmware/lib/zplc_core/build --target zplc_runtime --config Release
           mkdir -p packages/zplc-ide/dist-native
           if [ -f firmware/lib/zplc_core/build/zplc_runtime.exe ]; then
@@ -227,10 +233,10 @@ jobs:
       - name: Validate Windows build artifacts
         working-directory: packages/zplc-ide
         shell: bash
-        run: bun run smoke:desktop-builds windows
+        run: bun run smoke:desktop-builds windows ${{ matrix.arch }}
 
       - name: Upload Windows artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: windows-${{ matrix.arch }}
           path: |
@@ -242,52 +248,36 @@ jobs:
   # Build IDE for Linux (x64 and arm64)
   # ===========================================================================
   build-linux:
-    runs-on: ubuntu-latest
+    needs: validate-version
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
-        arch: [x64, arm64]
+        include:
+          - arch: x64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Get version
-        id: version
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
-          else
-            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-          fi
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          ref: ${{ github.sha }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
+        uses: oven-sh/setup-bun@f4d14e03ff726c06358e5557344e1da148b56cf7 # v1.2.2
         with:
-          bun-version: latest
+          bun-version: 1.3.14
 
-      - name: Apply release version metadata
-        run: bun scripts/release-version.ts "${{ steps.version.outputs.version }}"
-
-      - name: Install dependencies (with retry)
+      - name: Install dependencies
         run: |
-          for attempt in 1 2 3; do
-            echo "=== Attempt $attempt of 3 ==="
-            if bun install; then
-              echo "Install succeeded on attempt $attempt"
-              break
-            fi
-            if [ $attempt -eq 3 ]; then
-              echo "Install failed after 3 attempts"
-              exit 1
-            fi
-            echo "Install failed, retrying in 15s..."
-            sleep 15
-          done
+          test -f bun.lock
+          bun install --frozen-lockfile
 
       - name: Build dependencies
         run: |
@@ -295,8 +285,8 @@ jobs:
 
       - name: Build native simulator runtime
         run: |
-          cmake -S firmware/lib/zplc_core -B firmware/lib/zplc_core/build
-          cmake --build firmware/lib/zplc_core/build --target zplc_runtime
+          cmake -S firmware/lib/zplc_core -B firmware/lib/zplc_core/build -DCMAKE_BUILD_TYPE=Release
+          cmake --build firmware/lib/zplc_core/build --target zplc_runtime --config Release
           mkdir -p packages/zplc-ide/dist-native
           cp firmware/lib/zplc_core/build/zplc_runtime packages/zplc-ide/dist-native/
 
@@ -317,10 +307,14 @@ jobs:
 
       - name: Validate Linux build artifacts
         working-directory: packages/zplc-ide
-        run: bun run smoke:desktop-builds linux
+        run: bun run smoke:desktop-builds linux ${{ matrix.arch }}
+
+      - name: Launch packaged Linux app
+        working-directory: packages/zplc-ide
+        run: bun run smoke:desktop-packaged
 
       - name: Upload Linux artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: linux-${{ matrix.arch }}
           path: |
@@ -330,269 +324,116 @@ jobs:
           retention-days: 7
 
   # ===========================================================================
-  # Package Runtime Source for Board Builds
+  # Prepare integrity evidence for every candidate, including dry-runs.
   # ===========================================================================
-  package-runtime:
+  prepare-release-evidence:
+    needs: [validate-version, build-macos, build-windows, build-linux]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Get version
-        id: version
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
-          else
-            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Create runtime source package
-        run: |
-          VERSION=${{ steps.version.outputs.version }}
-          PACKAGE_NAME="zplc-runtime-${VERSION}"
-          
-          # Create package directory
-          mkdir -p "${PACKAGE_NAME}"
-          
-          # Copy runtime source files
-          cp -r firmware/lib/zplc_core/include "${PACKAGE_NAME}/"
-          cp -r firmware/lib/zplc_core/src "${PACKAGE_NAME}/"
-          cp -r firmware/zephyr "${PACKAGE_NAME}/"
-          
-          # Create apps directory structure
-          mkdir -p "${PACKAGE_NAME}/apps"
-          cp -r firmware/apps/posix_host "${PACKAGE_NAME}/apps/"
-          cp -r firmware/app "${PACKAGE_NAME}/apps/zephyr_app"
-          
-          cp -r examples "${PACKAGE_NAME}/"
-          cp -r tools "${PACKAGE_NAME}/"
-          cp firmware/CMakeLists.txt "${PACKAGE_NAME}/"
-          cp README.md "${PACKAGE_NAME}/"
-          cp AGENTS.md "${PACKAGE_NAME}/"
-          
-          # Create build instructions
-          cat > "${PACKAGE_NAME}/BUILD.md" << 'EOF'
-          # ZPLC Runtime Build Instructions
-          
-          ## Overview
-          
-          This package contains the ZPLC runtime source code ready for building on:
-          - POSIX systems (Linux, macOS, BSD)
-          - Zephyr RTOS (500+ supported boards)
-          - WebAssembly (for browser simulation)
-          
-          ## Directory Structure
-          
-          ```
-          zplc-runtime/
-          ├── include/          # Public C headers
-          │   ├── zplc_core.h   # VM Core API
-          │   ├── zplc_hal.h    # Hardware Abstraction Layer
-          │   ├── zplc_isa.h    # Instruction Set Architecture
-          │   └── zplc_scheduler.h  # Multitask Scheduler
-          ├── src/
-          │   ├── core/         # VM implementation (C99)
-          │   └── hal/          # HAL implementations
-          │       ├── posix/    # Linux/macOS/BSD
-          │       ├── zephyr/   # Zephyr RTOS
-          │       └── wasm/     # WebAssembly
-          ├── apps/
-          │   ├── posix_host/   # Desktop development runtime
-          │   └── zephyr_app/   # Zephyr application with shell
-          ├── zephyr/           # Zephyr module configuration
-          ├── examples/         # Example .zplc and .asm programs
-          └── tools/            # Assembler and utilities
-          ```
-          
-          ## POSIX Build (Development)
-          
-          Quick build for development and testing:
-          
-          ```bash
-          mkdir build && cd build
-          cmake .. -DZEPHYR_BUILD=OFF
-          make
-          
-          # Run tests
-          ctest --output-on-failure
-          
-          # Run demo runtime
-          ./zplc_runtime
-          ```
-          
-          ## Zephyr Build (Production)
-          
-          ### Prerequisites
-          
-          1. Install Zephyr SDK: https://docs.zephyrproject.org/latest/getting_started/
-          2. Initialize workspace:
-             ```bash
-             west init ~/zephyrproject
-             cd ~/zephyrproject
-             west update
-             ```
-          3. Add ZPLC as a module (choose one):
-             - Copy this directory to `~/zephyrproject/modules/lib/zplc`
-             - Or add to `west.yml` manifest
-          
-          ### Build for Specific Boards
-          
-          ```bash
-          cd ~/zephyrproject
-          
-          # Raspberry Pi Pico (RP2040)
-          west build -b rpi_pico modules/lib/zplc/apps/zephyr_app --pristine
-          # Flash: cp build/zephyr/zephyr.uf2 /Volumes/RPI-RP2/
-          
-          # STM32 Nucleo-H743ZI
-          west build -b nucleo_h743zi modules/lib/zplc/apps/zephyr_app
-          west flash
-          
-          # Arduino Giga R1 (STM32H747)
-          west build -b arduino_giga_r1/stm32h747xx/m7 modules/lib/zplc/apps/zephyr_app
-          west flash
-          
-          # ESP32-S3 DevKit
-          west build -b esp32s3_devkitc modules/lib/zplc/apps/zephyr_app
-          west flash
-          
-          # QEMU (for testing without hardware)
-          west build -b mps2/an385 modules/lib/zplc/apps/zephyr_app
-          west build -t run
-          ```
-          
-          ### Board Overlays
-          
-          Pre-configured overlays are available in `apps/zephyr_app/boards/`:
-          - `rpi_pico_rp2040.overlay` - Pi Pico with USB serial and NVS
-          - `nucleo_h743zi.overlay` - STM32H743 with UART and NVS
-          - `arduino_giga_r1_stm32h747xx_m7.overlay` - Arduino Giga R1
-          - `esp32s3_devkitc_esp32s3_procpu.overlay` - ESP32-S3
-          
-          ## WebAssembly Build
-          
-          For browser-based simulation:
-          
-          ```bash
-          # Install Emscripten: https://emscripten.org/docs/getting_started/
-          source ~/emsdk/emsdk_env.sh
-          
-          mkdir build_wasm && cd build_wasm
-          emcmake cmake .. -DWASM_BUILD=ON
-          emmake make
-          
-          # Output: zplc_sim.js + zplc_sim.wasm
-          ```
-          
-          ## Serial Commands (Zephyr Shell)
-          
-          Once running on hardware, connect via serial (115200 baud):
-          
-          ```bash
-          zplc load <size>      # Prepare to receive bytecode
-          zplc data <hex>       # Send hex-encoded chunk
-          zplc start            # Start execution
-          zplc stop             # Stop execution
-          zplc status           # Show VM state
-          zplc persist info     # Show saved program
-          zplc dbg info         # Detailed debugging info
-          ```
-          
-          ## Documentation
-          
-          - Full documentation: https://eduardojvieira.github.io/ZPLC/
-          - Reference docs: https://eduardojvieira.github.io/ZPLC/reference
-          - Agent context: See AGENTS.md
-          
-          EOF
-          
-          # Create tarball
-          tar -czvf "${PACKAGE_NAME}.tar.gz" "${PACKAGE_NAME}"
-          
-          # Create zip for Windows users
-          zip -r "${PACKAGE_NAME}.zip" "${PACKAGE_NAME}"
-          
-          # Show package contents
-          echo "=== Package Contents ==="
-          tar -tvf "${PACKAGE_NAME}.tar.gz" | head -50
-          echo "..."
-          
-      - name: Upload runtime package artifacts
-        uses: actions/upload-artifact@v4
+      - name: Checkout release tooling
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
         with:
-          name: runtime-source
-          path: |
-            zplc-runtime-*.tar.gz
-            zplc-runtime-*.zip
+          ref: ${{ github.sha }}
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          path: artifacts
+
+      - name: Bind evidence to the checked-out SHA
+        run: test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+
+      - name: Generate SPDX SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          path: artifacts
+          format: spdx-json
+          output-file: artifacts/ZPLC-${{ needs.validate-version.outputs.version }}.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+          dependency-snapshot: false
+
+      - name: Create release integrity bundle
+        env:
+          RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
+          RELEASE_TAG: ${{ needs.validate-version.outputs.tag }}
+          RELEASE_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          node scripts/release-artifacts.mjs \
+            --input-dir artifacts \
+            --output-dir release \
+            --version "$RELEASE_VERSION" \
+            --tag "$RELEASE_TAG" \
+            --commit-sha "$RELEASE_COMMIT_SHA"
+
+      - name: Attest installer provenance
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        with:
+          subject-path: |
+            release/*.dmg
+            release/*.zip
+            release/*-Setup.exe
+            release/*-Portable.exe
+            release/*.AppImage
+            release/*.deb
+            release/*.rpm
+
+      - name: Attest installer SBOM
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        with:
+          subject-path: |
+            release/*.dmg
+            release/*.zip
+            release/*-Setup.exe
+            release/*-Portable.exe
+            release/*.AppImage
+            release/*.deb
+            release/*.rpm
+          sbom-path: artifacts/ZPLC-${{ needs.validate-version.outputs.version }}.spdx.json
+
+      - name: Upload release bundle
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-bundle
+          path: release/
           retention-days: 7
 
   # ===========================================================================
-  # Upload to GitHub Release
+  # Upload the already-attested integrity bundle to GitHub Release.
   # ===========================================================================
   upload-release:
-    needs: [build-macos, build-windows, build-linux, package-runtime]
+    needs: [validate-version, prepare-release-evidence]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     # Skip upload when workflow_dispatch with upload_to_release=false (dry-run testing)
     if: >-
       ${{
         always()
         && (github.event_name == 'push' || inputs.upload_to_release != false)
-        && needs.package-runtime.result == 'success'
-        && (needs.build-macos.result == 'success' || needs.build-windows.result == 'success' || needs.build-linux.result == 'success')
+        && needs.validate-version.result == 'success'
+        && needs.prepare-release-evidence.result == 'success'
       }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Get version
-        id: version
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
-            echo "tag=v${{ inputs.version }}" >> $GITHUB_OUTPUT
-          else
-            echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
+      - name: Download release bundle
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          path: artifacts
-
-      - name: Flatten and deduplicate artifacts
-        run: |
-          echo "=== Downloaded Artifacts ===" 
-          find artifacts -type f -name "*" | sort
-          
-          echo ""
-          echo "=== Flattening to release/ ===" 
-          mkdir -p release
-          
-          # Copy all files to a flat directory, avoiding duplicates
-          find artifacts -type f \( -name "*.dmg" -o -name "*.zip" -o -name "*.exe" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" -o -name "*.tar.gz" \) | while read f; do
-            basename=$(basename "$f")
-            if [ ! -f "release/$basename" ]; then
-              cp "$f" "release/"
-              echo "  Copied: $basename"
-            else
-              echo "  Skipped (duplicate): $basename"
-            fi
-          done
-          
-          echo ""
-          echo "=== Final release files ===" 
-          ls -la release/
+          name: release-bundle
+          path: release/
 
       - name: Update release with assets
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
-          tag_name: ${{ steps.version.outputs.tag }}
-          name: "v${{ steps.version.outputs.version }} - Truth-Scoped Release"
-          prerelease: ${{ contains(steps.version.outputs.version, '-') }}
+          tag_name: ${{ needs.validate-version.outputs.tag }}
+          name: "v${{ needs.validate-version.outputs.version }} - Truth-Scoped Release"
+          prerelease: ${{ contains(needs.validate-version.outputs.version, '-') }}
           body: |
-            ## Release v${{ steps.version.outputs.version }}
+            ## Release v${{ needs.validate-version.outputs.version }}
 
             ### Repo-verified scope
             - **Canonical docs + release governance**: Public scope is tied to the docs site and release evidence artifacts in this repo
@@ -625,18 +466,6 @@ jobs:
             | x64 (64-bit) | `ZPLC IDE-*-linux-x64.AppImage` | `ZPLC IDE-*-linux-x64.deb` | `ZPLC IDE-*-linux-x64.rpm` |
             | ARM64 | `ZPLC IDE-*-linux-arm64.AppImage` | `ZPLC IDE-*-linux-arm64.deb` | - |
 
-            ### Runtime Source Package
-
-            For building on embedded boards (Zephyr RTOS):
-
-            | Format | File |
-            |--------|------|
-            | Tarball (Linux/macOS) | `zplc-runtime-${{ steps.version.outputs.version }}.tar.gz` |
-            | ZIP (Windows) | `zplc-runtime-${{ steps.version.outputs.version }}.zip` |
-
-            The runtime package includes the repo-tracked C99 runtime source, Zephyr module configuration,
-            and the support assets referenced by the canonical board manifest.
-
             ### Supported Boards (public claim set)
 
             See the canonical manifest and generated docs reference instead of treating this release body as a separate source of truth:
@@ -656,7 +485,9 @@ jobs:
             release/*.AppImage
             release/*.deb
             release/*.rpm
-            release/*.tar.gz
-          fail_on_unmatched_files: false
+            release/*.spdx.json
+            release/SHA256SUMS
+            release/release-evidence.json
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

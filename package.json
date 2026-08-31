@@ -3,13 +3,30 @@
   "private": true,
   "version": "1.5.0",
   "description": "ZPLC - Open Source IEC 61131-3 PLC Runtime",
+  "packageManager": "bun@1.3.14",
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "docs"
   ],
+  "overrides": {
+    "webpack": "5.105.4"
+  },
   "scripts": {
-    "build": "bun run --filter '*' build",
-    "test": "bun run --filter '*' test",
-    "lint": "bun run --filter '*' lint"
+    "build": "bun run build:compiler && bun run build:ide",
+    "test": "bun run test:compiler && bun run test:ide",
+    "lint": "bun run lint:ide",
+    "build:compiler": "bun run --cwd=packages/zplc-compiler build",
+    "test:compiler": "bun run --cwd=packages/zplc-compiler test",
+    "build:ide": "bun run --cwd=packages/zplc-ide build",
+    "test:ide": "bun run --cwd=packages/zplc-ide test",
+    "lint:ide": "bun run --cwd=packages/zplc-ide lint",
+    "typecheck:hil": "bun run --cwd=packages/zplc-hil typecheck",
+    "docs:generate": "bun run --cwd=docs generate:v1.5-docs",
+    "docs:validate": "bun run --cwd=docs validate:v1.5-docs",
+    "docs:build": "bun run --cwd=docs build",
+    "check:versions": "bun scripts/release-version.ts --check",
+    "check:typescript": "bun run build:compiler && bun run test:compiler && bun run typecheck:hil && bun run build:ide && bun run test:ide && bun run lint:ide",
+    "check:docs": "bun run docs:generate && bun run docs:validate && bun run docs:build"
   },
   "devDependencies": {
     "typescript": "~5.9.3"

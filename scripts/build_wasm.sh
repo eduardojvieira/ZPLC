@@ -65,6 +65,10 @@ emmake make -j$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
 
 # Copy to IDE
 echo -e "${YELLOW}Copying to IDE public folder...${NC}"
+if grep -q 'zplc_core_load_raw' zplc_sim.js || ! grep -q 'zplc_core_load' zplc_sim.js; then
+    echo -e "${RED}Error: generated WASM module must export zplc_core_load and must not contain zplc_core_load_raw${NC}"
+    exit 1
+fi
 mkdir -p "$IDE_PUBLIC"
 cp zplc_sim.js zplc_sim.wasm "$IDE_PUBLIC/"
 
