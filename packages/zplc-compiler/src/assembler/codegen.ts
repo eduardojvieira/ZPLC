@@ -9,7 +9,7 @@
 
 import { getOperandSize, OPCODE_BY_VALUE, isRelativeJump, Opcode } from './opcodes';
 import type { Instruction, TaskDef, TagDef } from './types';
-import { ZPLC_CONSTANTS } from './types';
+import { AssemblerError, TASK_TYPE, ZPLC_CONSTANTS } from './types';
 import type { ParseResult } from './parser';
 
 // =============================================================================
@@ -52,6 +52,77 @@ const RELOCATABLE_OPCODES: Set<number> = new Set([
     Opcode.JNZ,   // 0x92 - Jump if not zero
     Opcode.CALL,  // 0x93 - Call subroutine
 ]);
+
+const UINT16_MAX = 0xFFFF;
+const UINT32_MAX = 0xFFFFFFFF;
+
+function isIntegerInRange(value: unknown, minimum: number, maximum: number): value is number {
+    return typeof value === 'number'
+        && Number.isInteger(value)
+        && value >= minimum
+        && value <= maximum;
+}
+
+function validateMultiTaskLayout(bytecode: Uint8Array, tasks: TaskDef[], tags?: TagDef[]): void {
+    if (!(bytecode instanceof Uint8Array)) {
+        throw new AssemblerError('Multi-task bytecode must be a Uint8Array');
+    }
+    if (!Array.isArray(tasks) || tasks.length === 0) {
+        throw new AssemblerError('Multi-task programs require at least one task');
+    }
+    if (tasks.length > ZPLC_CONSTANTS.MAX_TASKS) {
+        throw new AssemblerError(`Multi-task programs support at most ${ZPLC_CONSTANTS.MAX_TASKS} tasks`);
+    }
+    if (!isIntegerInRange(bytecode.length, 1, ZPLC_CONSTANTS.CODE_SIZE_MAX)) {
+        throw new AssemblerError(`Multi-task CODE length must be an integer from 1 to ${ZPLC_CONSTANTS.CODE_SIZE_MAX}`);
+    }
+
+    const taskSegmentSize = tasks.length * ZPLC_CONSTANTS.TASK_DEF_SIZE;
+    const tagSegmentSize = (tags?.length ?? 0) * ZPLC_CONSTANTS.TAG_ENTRY_SIZE;
+    const segmentCount = tags?.length ? 3 : 2;
+    const totalSize = ZPLC_CONSTANTS.HEADER_SIZE
+        + (ZPLC_CONSTANTS.SEGMENT_ENTRY_SIZE * segmentCount)
+        + bytecode.length
+        + taskSegmentSize
+        + tagSegmentSize;
+    if (!Number.isSafeInteger(taskSegmentSize) || taskSegmentSize > UINT32_MAX
+        || !Number.isSafeInteger(tagSegmentSize) || tagSegmentSize > UINT32_MAX
+        || !Number.isSafeInteger(totalSize) || totalSize > UINT32_MAX) {
+        throw new AssemblerError('Multi-task file layout exceeds the ZPLC ABI');
+    }
+
+    const taskIds = new Set<number>();
+    const taskTypes = new Set<number>(Object.values(TASK_TYPE));
+    for (let index = 0; index < tasks.length; index++) {
+        const task = tasks[index];
+        const label = `Task ${index}`;
+        if (!task || typeof task !== 'object') {
+            throw new AssemblerError(`${label} must be a task definition`);
+        }
+        if (!isIntegerInRange(task.id, 0, UINT16_MAX)) {
+            throw new AssemblerError(`${label} id must be an integer from 0 to 65535`);
+        }
+        if (taskIds.has(task.id)) {
+            throw new AssemblerError(`${label} has duplicate id ${task.id}`);
+        }
+        taskIds.add(task.id);
+        if (!taskTypes.has(task.type)) {
+            throw new AssemblerError(`${label} type is not a supported task type`);
+        }
+        if (!isIntegerInRange(task.priority, 0, 0xFF)) {
+            throw new AssemblerError(`${label} priority must be an integer from 0 to 255`);
+        }
+        if (!isIntegerInRange(task.intervalUs, 1, UINT32_MAX)) {
+            throw new AssemblerError(`${label} intervalUs must be an integer from 1 to 4294967295`);
+        }
+        if (!isIntegerInRange(task.entryPoint, 0, UINT16_MAX) || task.entryPoint >= bytecode.length) {
+            throw new AssemblerError(`${label} entryPoint must be an integer within the code segment`);
+        }
+        if (!isIntegerInRange(task.stackSize, 1, ZPLC_CONSTANTS.TASK_STACK_MAX_DEPTH)) {
+            throw new AssemblerError(`${label} stackSize must be an integer from 1 to ${ZPLC_CONSTANTS.TASK_STACK_MAX_DEPTH}`);
+        }
+    }
+}
 
 /**
  * Emit bytecode from parsed instructions.
@@ -299,6 +370,7 @@ export function createZplcFile(bytecode: Uint8Array, entryPoint: number, tags?: 
  * @returns Complete .zplc file with task segment
  */
 export function createMultiTaskZplcFile(bytecode: Uint8Array, tasks: TaskDef[], tags?: TagDef[]): Uint8Array {
+    validateMultiTaskLayout(bytecode, tasks, tags);
     const codeSize = bytecode.length;
     const taskCount = tasks.length;
     const taskSegmentSize = taskCount * ZPLC_CONSTANTS.TASK_DEF_SIZE;
@@ -351,7 +423,7 @@ export function createMultiTaskZplcFile(bytecode: Uint8Array, tasks: TaskDef[], 
 
     // entry_point (first task's entry point for legacy compatibility)
     const primaryEntryPoint = tasks.length > 0 ? tasks[0].entryPoint : 0;
-    view.setUint16(offset, primaryEntryPoint & 0xFFFF, true);
+    view.setUint16(offset, primaryEntryPoint, true);
     offset += 2;
 
     // segment_count
@@ -415,27 +487,27 @@ export function createMultiTaskZplcFile(bytecode: Uint8Array, tasks: TaskDef[], 
 
     for (const task of tasks) {
         // id
-        view.setUint16(offset, task.id & 0xFFFF, true);
+        view.setUint16(offset, task.id, true);
         offset += 2;
 
         // type
-        view.setUint8(offset, task.type & 0xFF);
+        view.setUint8(offset, task.type);
         offset += 1;
 
         // priority
-        view.setUint8(offset, task.priority & 0xFF);
+        view.setUint8(offset, task.priority);
         offset += 1;
 
         // interval_us
-        view.setUint32(offset, task.intervalUs >>> 0, true);
+        view.setUint32(offset, task.intervalUs, true);
         offset += 4;
 
         // entry_point
-        view.setUint16(offset, task.entryPoint & 0xFFFF, true);
+        view.setUint16(offset, task.entryPoint, true);
         offset += 2;
 
         // stack_size
-        view.setUint16(offset, task.stackSize & 0xFFFF, true);
+        view.setUint16(offset, task.stackSize, true);
         offset += 2;
 
         // reserved

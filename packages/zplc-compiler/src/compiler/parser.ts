@@ -561,6 +561,7 @@ class Parser {
     private parseGlobalVarBlock(): GlobalVarBlock {
         const start = this.expect(TokenType.VAR_GLOBAL, 'Expected VAR_GLOBAL');
         const isConstant = this.match(TokenType.CONSTANT);
+        this.rejectRetainDeclaration();
 
         const variables: VarDecl[] = [];
         while (!this.check(TokenType.END_VAR) && !this.isAtEnd()) {
@@ -648,6 +649,8 @@ class Parser {
             this.error('Expected VAR, VAR_OUTPUT, VAR_INPUT, VAR_IN_OUT, VAR_GLOBAL, or VAR_TEMP');
         }
 
+        this.rejectRetainDeclaration();
+
         const variables: VarDecl[] = [];
         while (!this.check(TokenType.END_VAR) && !this.isAtEnd()) {
             variables.push(this.parseVarDecl(section));
@@ -662,6 +665,13 @@ class Parser {
             line: start.line,
             column: start.column,
         };
+    }
+
+    private rejectRetainDeclaration(): void {
+        const token = this.current();
+        if (token.type === TokenType.IDENTIFIER && token.value.toUpperCase() === 'RETAIN') {
+            this.error('RETAIN declarations are not supported');
+        }
     }
 
     /**

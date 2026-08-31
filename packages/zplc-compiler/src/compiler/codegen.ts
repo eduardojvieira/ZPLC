@@ -69,25 +69,40 @@ import {
 // ============================================================================
 
 /**
- * Default address for the "already initialized" flag.
- * Located at the last byte of work memory to avoid conflicts with user variables.
- * Work memory: 0x2000-0x3FFF (8KB), so we use 0x3FFF by default.
- *
- * This flag ensures variable initialization only runs on the first cycle.
- * The VM resets PC to 0 each cycle, so without this guard, all variables
- * would be reset to initial values every scan cycle.
- * 
- * For multi-task compilation, each program gets its own init flag address
- * calculated relative to its work memory region.
- */
-const DEFAULT_INIT_FLAG_ADDR = 0x3FFF;
-
-/**
  * Size of work memory region allocated per program in multi-task mode.
  * Each program gets this many bytes of isolated work memory.
  * Must be a power of 2 for efficient alignment.
  */
 export const WORK_MEMORY_REGION_SIZE = 256;
+
+export interface CompilerMemoryProfile {
+    workSize: number;
+    retainSize: number;
+    codeSizeMax: number;
+}
+
+export const DEFAULT_COMPILER_MEMORY_PROFILE: CompilerMemoryProfile = {
+    workSize: 0x2000,
+    retainSize: 0x1000,
+    codeSizeMax: 0xB000,
+};
+
+const VM_WORK_SIZE_MAX = 0x2000;
+const VM_RETAIN_SIZE_MAX = 0x1000;
+const VM_CODE_SIZE_MAX = 0xB000;
+
+/** Validate public target capacities before any address arithmetic. */
+export function validateCompilerMemoryProfile(profile: CompilerMemoryProfile): CompilerMemoryProfile {
+    const capacities: Array<[number, number]> = [
+        [profile.workSize, VM_WORK_SIZE_MAX],
+        [profile.retainSize, VM_RETAIN_SIZE_MAX],
+        [profile.codeSizeMax, VM_CODE_SIZE_MAX],
+    ];
+    if (capacities.some(([value, maximum]) => !Number.isSafeInteger(value) || value <= 0 || value > maximum)) {
+        throw new TagAdmissionError('Invalid target memory profile', 0, 0);
+    }
+    return profile;
+}
 
 // ============================================================================
 // Code Generator Configuration
@@ -97,6 +112,10 @@ export const WORK_MEMORY_REGION_SIZE = 256;
  * Configuration options for code generation.
  */
 export interface CodeGenOptions {
+    /** Effective target memory limits; omitted preserves the host defaults. */
+    memoryProfile?: CompilerMemoryProfile;
+    /** Internal multi-task bucket size; defaults to the target WORK capacity. */
+    workMemorySize?: number;
     /**
      * Base address for work memory allocation.
      * Default: 0x2000 (standard ZPLC work memory base)
@@ -105,7 +124,7 @@ export interface CodeGenOptions {
 
     /**
      * Address of the initialization flag.
-     * If not specified, calculated as workMemoryBase + WORK_MEMORY_REGION_SIZE - 1
+     * If not specified, calculated as workMemoryBase + workMemorySize - 1.
      */
     initFlagAddress?: number;
 
@@ -178,6 +197,8 @@ interface CodeGenState {
     currentFBInstance: Symbol | null;
     /** Current method being inlined (for return value handling) */
     currentMethod: MethodDecl | null;
+    memoryProfile: CompilerMemoryProfile;
+    workMemorySize: number;
 }
 
 /**
@@ -235,13 +256,16 @@ function resolveSymbol(state: CodeGenState, name: string): Symbol | undefined {
  */
 export function generate(unit: CompilationUnit | Program, options?: CodeGenOptions): string {
     const workMemoryBase = options?.workMemoryBase ?? MemoryLayout.WORK_BASE;
+    const memoryProfile = validateCompilerMemoryProfile(options?.memoryProfile ?? DEFAULT_COMPILER_MEMORY_PROFILE);
+    const workMemorySize = options?.workMemorySize
+        ?? (options?.workMemoryBase !== undefined ? WORK_MEMORY_REGION_SIZE : memoryProfile.workSize);
     const initFlagAddr = options?.initFlagAddress ??
-        (options?.workMemoryBase !== undefined
-            ? workMemoryBase + WORK_MEMORY_REGION_SIZE - 1
-            : DEFAULT_INIT_FLAG_ADDR);
+        workMemoryBase + workMemorySize - 1;
 
+    validateWorkRegionOptions(workMemoryBase, workMemorySize, initFlagAddr, memoryProfile);
 
     const symbols = buildSymbolTable(unit, workMemoryBase);
+    validateWorkSymbols(symbols, workMemoryBase, workMemorySize, initFlagAddr);
 
     // Calculate string literal pool base address
     const workOffset = symbols.getWorkOffset();
@@ -262,6 +286,8 @@ export function generate(unit: CompilationUnit | Program, options?: CodeGenOptio
         currentFunction: null,
         currentFBInstance: null,
         currentMethod: null,
+        memoryProfile,
+        workMemorySize,
     };
 
     const isUnit = unit.kind === 'CompilationUnit';
@@ -284,6 +310,8 @@ export function generate(unit: CompilationUnit | Program, options?: CodeGenOptio
     } else {
         collectStringLiterals(state, mainProgram);
     }
+
+    validateStringLiteralPool(state, workMemoryBase, workMemorySize);
 
     // Emit header
     emit(state, `; ============================================================================`);
@@ -436,6 +464,114 @@ const TAG_MAP: Record<string, number> = {
     'subscribe': 3,
 };
 
+export class TagAdmissionError extends Error {
+    constructor(message: string, readonly line: number, readonly column: number) {
+        super(message);
+        this.name = 'TagAdmissionError';
+    }
+}
+
+function rangesOverlap(firstAddress: number, firstSize: number, secondAddress: number, secondSize: number): boolean {
+    return firstAddress < secondAddress + secondSize && secondAddress < firstAddress + firstSize;
+}
+
+function validateWorkRegionOptions(
+    workMemoryBase: number,
+    workMemorySize: number,
+    initFlagAddr: number,
+    profile: CompilerMemoryProfile,
+): void {
+    if (!Number.isSafeInteger(workMemoryBase) || !Number.isSafeInteger(workMemorySize) || workMemorySize <= 0) {
+        throw new TagAdmissionError('Invalid WORK region options', 0, 0);
+    }
+
+    const workEnd = workMemoryBase + workMemorySize;
+    const profileEnd = MemoryLayout.WORK_BASE + profile.workSize;
+    if (!Number.isSafeInteger(workEnd)
+        || workMemoryBase < MemoryLayout.WORK_BASE
+        || workEnd > profileEnd) {
+        throw new TagAdmissionError('WORK allocation exceeds the target memory profile', 0, 0);
+    }
+
+    if (!Number.isSafeInteger(initFlagAddr)
+        || initFlagAddr < workMemoryBase
+        || initFlagAddr >= workEnd) {
+        throw new TagAdmissionError('Invalid initFlagAddress for the WORK region', 0, 0);
+    }
+}
+
+function validateWorkSymbols(symbols: SymbolTable, workMemoryBase: number, workMemorySize: number, initFlagAddr: number): void {
+    const workEnd = workMemoryBase + workMemorySize;
+    const automaticWorkSymbols: Symbol[] = [];
+    const directlyLocatedWorkSymbols: Symbol[] = [];
+    for (const symbol of symbols.all()) {
+        const symbolEnd = symbol.address + symbol.size;
+        if (!Number.isSafeInteger(symbol.address)
+            || !Number.isSafeInteger(symbol.size)
+            || symbol.size < 0
+            || !Number.isSafeInteger(symbolEnd)) {
+            throw new TagAdmissionError('Invalid memory symbol allocation', symbol.declarationLine ?? 0, 0);
+        }
+
+        if (symbol.ioAddress) {
+            if (!Number.isSafeInteger(symbol.ioAddress.bitOffset) || symbol.ioAddress.bitOffset < 0 || symbol.ioAddress.bitOffset > 7) {
+                throw new TagAdmissionError('Invalid located bit address', symbol.declarationLine ?? 0, 0);
+            }
+            if (symbol.ioAddress.size === 'X' && symbol.dataType !== 'BOOL') {
+                throw new TagAdmissionError('Bit-addressed locations require BOOL values', symbol.declarationLine ?? 0, 0);
+            }
+
+            const [regionBase, regionEnd, regionName] = symbol.ioAddress.type === 'I'
+                ? [MemoryLayout.IPI_BASE, MemoryLayout.OPI_BASE, 'IPI']
+                : symbol.ioAddress.type === 'Q'
+                    ? [MemoryLayout.OPI_BASE, MemoryLayout.WORK_BASE, 'OPI']
+                    : [workMemoryBase, workEnd, 'WORK'];
+            if (symbol.address < regionBase || symbolEnd > regionEnd) {
+                throw new TagAdmissionError(`${regionName} allocation exceeds its memory region`, symbol.declarationLine ?? 0, 0);
+            }
+        } else if (symbol.address < workMemoryBase || symbolEnd > workEnd) {
+            throw new TagAdmissionError('WORK allocation exceeds the target memory profile', symbol.declarationLine ?? 0, 0);
+        }
+
+        if ((!symbol.ioAddress || symbol.ioAddress.type === 'M')
+            && rangesOverlap(symbol.address, symbol.size, initFlagAddr, 1)) {
+            throw new TagAdmissionError('WORK symbol collides with the initialization flag', symbol.declarationLine ?? 0, 0);
+        }
+
+        if (symbol.ioAddress === null) automaticWorkSymbols.push(symbol);
+        if (symbol.ioAddress?.type === 'M') directlyLocatedWorkSymbols.push(symbol);
+    }
+
+    for (const automaticSymbol of automaticWorkSymbols) {
+        for (const locatedSymbol of directlyLocatedWorkSymbols) {
+            if (rangesOverlap(automaticSymbol.address, automaticSymbol.size, locatedSymbol.address, locatedSymbol.size)) {
+                throw new TagAdmissionError('automatic WORK symbol collides with located %M symbol', locatedSymbol.declarationLine ?? 0, 0);
+            }
+        }
+    }
+}
+
+function validateStringLiteralPool(state: CodeGenState, workMemoryBase: number, workMemorySize: number): void {
+    const workEnd = workMemoryBase + workMemorySize;
+    const directlyLocatedSymbols = state.symbols.all().filter(symbol => symbol.ioAddress?.type === 'M');
+    for (const literal of state.stringLiterals) {
+        const literalEnd = literal.address + literal.size;
+        if (!Number.isSafeInteger(literalEnd)
+            || literal.address < workMemoryBase
+            || literalEnd > workEnd) {
+            throw new TagAdmissionError('WORK allocation exceeds the target memory profile', 0, 0);
+        }
+        if (rangesOverlap(literal.address, literal.size, state.initFlagAddr, 1)) {
+            throw new TagAdmissionError('WORK allocation collides with the initialization flag', 0, 0);
+        }
+        for (const symbol of directlyLocatedSymbols) {
+            if (rangesOverlap(literal.address, literal.size, symbol.address, symbol.size)) {
+                throw new TagAdmissionError('string literal pool collides with WORK symbol', symbol.declarationLine ?? 0, 0);
+            }
+        }
+    }
+}
+
 /**
  * Map DataType string to numeric ID from zplc_isa.h
  */
@@ -463,6 +599,64 @@ function getDataTypeId(type: any): number {
     }
 }
 
+function tagTypeWidth(tagId: number, typeId: number): number {
+    if (tagId === TAG_MAP.publish || tagId === TAG_MAP.subscribe) {
+        if (typeId === 0x01) return 1;
+        if (typeId === 0x04 || typeId === 0x05 || typeId === 0x11) return 2;
+        if (typeId === 0x0A) return 4;
+        return 0;
+    }
+    if (tagId === TAG_MAP.modbus) {
+        if (typeId === 0x01 || typeId === 0x02 || typeId === 0x03 || typeId === 0x10) return 1;
+        if (typeId === 0x04 || typeId === 0x05 || typeId === 0x11) return 2;
+        if (typeId === 0x06 || typeId === 0x07 || typeId === 0x0A || typeId === 0x12) return 4;
+    }
+    return 0;
+}
+
+function tagMemoryRegion(address: number, width: number, profile: CompilerMemoryProfile): 'IPI' | 'OPI' | 'WORK' | 'RETAIN' | undefined {
+    const end = address + width;
+    if (address >= 0x0000 && end <= 0x1000) return 'IPI';
+    if (address >= 0x1000 && end <= 0x2000) return 'OPI';
+    if (address >= 0x2000 && end <= 0x2000 + profile.workSize) return 'WORK';
+    if (address >= 0x4000 && end <= 0x4000 + profile.retainSize) return 'RETAIN';
+    return undefined;
+}
+
+function tagAdmissionError(sym: Symbol, message: string): TagAdmissionError {
+    return new TagAdmissionError(message, sym.declarationLine ?? 0, 0);
+}
+
+function validateVariableTag(sym: Symbol, tagIdName: string, tagId: number,
+                             tagValue: string | true, profile: CompilerMemoryProfile): number {
+    const typeId = getDataTypeId(sym.dataType);
+    const width = tagTypeWidth(tagId, typeId);
+    const region = tagMemoryRegion(sym.address, width, profile);
+    const tagName = tagIdName.toUpperCase();
+
+    if (width === 0) {
+        throw tagAdmissionError(sym, `${tagName} tag on '${sym.name}' does not support ${String(sym.dataType)}`);
+    }
+    if ((sym.address & 0xF000) === 0x3000) {
+        throw tagAdmissionError(sym, `${tagName} tag on '${sym.name}' cannot use the unsupported 0x3000 WORK alias`);
+    }
+    if (!region) {
+        throw tagAdmissionError(sym, `${tagName} tag on '${sym.name}' exceeds a valid VM memory region`);
+    }
+    if (tagId !== TAG_MAP.publish && region !== 'WORK' && region !== 'RETAIN') {
+        throw tagAdmissionError(sym, `${tagName} tag on '${sym.name}' cannot write ${region}`);
+    }
+    if (tagId !== TAG_MAP.modbus) {
+        return typeof tagValue === 'string' ? parseInt(tagValue, 10) : 0;
+    }
+
+    const modbusAddress = tagValue === true ? 0 : Number(tagValue);
+    if (!Number.isInteger(modbusAddress) || modbusAddress < 0 || modbusAddress > 0xFFFF) {
+        throw tagAdmissionError(sym, `MODBUS address for '${sym.name}' must be an unsigned 16-bit integer`);
+    }
+    return modbusAddress;
+}
+
 /**
  * Emit .TAG directives for variables with attributes.
  */
@@ -482,7 +676,7 @@ function emitVariableTags(state: CodeGenState): void {
             if (tagId === undefined) continue;
             
             const typeId = getDataTypeId(sym.dataType);
-            const val = typeof tagValue === 'string' ? parseInt(tagValue, 10) : 0;
+            const val = validateVariableTag(sym, tagIdName, tagId, tagValue, state.memoryProfile);
             
             emit(state, `.TAG ${formatAddress(sym.address)} ${typeId} ${tagId} ${val}  ; ${sym.name} {${tagIdName}${tagValue === true ? '' : ':' + tagValue}}`);
         }
@@ -1438,7 +1632,29 @@ function emitReturnStatement(state: CodeGenState): void {
 
 function emitFBCallStatement(state: CodeGenState, stmt: FBCallStatement): void {
     const sym = state.symbols.get(stmt.fbName);
+
+    // ponytail: WATCHDOG_RESET is the sole built-in void-like statement; generalize only if another appears.
     if (!sym) {
+        if (stmt.fbName.toUpperCase() === 'WATCHDOG_RESET') {
+            if (stmt.parameters.length !== 0) {
+                throw new Error('WATCHDOG_RESET expects no parameters');
+            }
+
+            const watchdogReset = getFn(stmt.fbName);
+            if (!watchdogReset) {
+                throw new Error('WATCHDOG_RESET is not available');
+            }
+
+            watchdogReset.generateInline({
+                baseAddress: 0,
+                instanceName: stmt.fbName,
+                newLabel: (prefix: string) => newLabel(state, prefix),
+                emit: (line: string) => emit(state, line),
+                emitExpression: (expr: Expression) => emitExpression(state, expr),
+            }, []);
+            return;
+        }
+
         emit(state, `    ; ERROR: Unknown FB instance '${stmt.fbName}'`);
         return;
     }
@@ -1969,6 +2185,10 @@ function emitFunctionCall(state: CodeGenState, expr: FunctionCall): void {
 
         emit(state, `    CALL ${userFn.label}`);
         return;
+    }
+
+    if (expr.name.toUpperCase() === 'WATCHDOG_RESET') {
+        throw new Error('WATCHDOG_RESET is statement-only');
     }
 
     // 2. Check if it's a built-in function

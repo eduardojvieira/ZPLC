@@ -119,6 +119,11 @@ export const Opcode = {
 
     // ===== 32-bit operand instructions (0xC0-0xFF) =====
     PUSH32: 0xC0,     // Push 32-bit immediate
+
+    // ===== Communication with 32-bit operand (0xD0-0xDF) =====
+    COMM_EXEC: 0xD0,
+    COMM_STATUS: 0xD1,
+    COMM_RESET: 0xD2,
 } as const;
 
 export type OpcodeValue = typeof Opcode[keyof typeof Opcode];

@@ -106,8 +106,14 @@ export const ZPLC_CONSTANTS = {
     SEGMENT_TYPE_TAGS: 0x30,
     /** Task definition size in bytes (per zplc_isa.h) */
     TASK_DEF_SIZE: 16,
+    /** Portable ABI v1 task limit accepted by the shared loader. */
+    MAX_TASKS: 16,
+    /** Default loader maximum evaluation stack depth (per zplc_isa.h). */
+    TASK_STACK_MAX_DEPTH: 256,
     /** Tag entry size in bytes (per zplc_isa.h) */
     TAG_ENTRY_SIZE: 8,
+    /** Portable/default maximum CODE size accepted by the runtime loader (ZPLC_MEM_CODE_SIZE). */
+    CODE_SIZE_MAX: 0xB000,
 } as const;
 
 /**

@@ -12,7 +12,8 @@ import { tokenize, TokenType } from './lexer.ts';
 import { parse } from './parser.ts';
 import { buildSymbolTable, MemoryLayout } from './symbol-table.ts';
 import { generate } from './codegen.ts';
-import { compileST, compileToBinary, validate } from './index.ts';
+import { compileST, compileToBinary, compileSingleFileWithTask, validate, CompilerError } from './index.ts';
+import { findPC, findSourceLine } from './debug-map.ts';
 
 // ============================================================================
 // Helper Functions
@@ -142,6 +143,289 @@ describe('Lexer', () => {
         expect(tokens.length).toBeGreaterThan(20);
         expect(tokens[tokens.length - 1].type).toBe(TokenType.EOF);
     });
+});
+
+describe('Communication tag admission', () => {
+    it('emits an operable PUBLISH tag', () => {
+        const result = compileToBinary(`
+            PROGRAM Tags
+            VAR
+                Published : BOOL {publish};
+            END_VAR
+            END_PROGRAM
+        `);
+
+        expect(result.assembly).toContain('.TAG 0x2000 1 1 0');
+    });
+
+    it('rejects tags the shared verifier cannot operate', () => {
+        const cases = [
+            ['PUBLISH SINT', `VAR Value : SINT {publish}; END_VAR`, /PUBLISH tag.*SINT/],
+            ['SUBSCRIBE IPI', `VAR_INPUT Value AT %I0.0 : BOOL {subscribe}; END_VAR`, /SUBSCRIBE tag.*IPI/],
+            ['SUBSCRIBE OPI', `VAR_OUTPUT Value AT %Q0.0 : BOOL {subscribe}; END_VAR`, /SUBSCRIBE tag.*OPI/],
+            ['MODBUS IPI', `VAR_INPUT Value AT %I0.0 : BOOL {modbus:40001}; END_VAR`, /MODBUS tag.*IPI/],
+            ['MODBUS OPI', `VAR_OUTPUT Value AT %Q0.0 : BOOL {modbus:40001}; END_VAR`, /MODBUS tag.*OPI/],
+            ['MODBUS address', `VAR Value : BOOL {modbus:65536}; END_VAR`, /MODBUS address/],
+        ] as const;
+
+        for (const [name, declaration, message] of cases) {
+            expect(() => compileToBinary(`PROGRAM Tags ${declaration} END_PROGRAM`), name)
+                .toThrow(CompilerError);
+            expect(() => compileToBinary(`PROGRAM Tags ${declaration} END_PROGRAM`), name)
+                .toThrow(message);
+        }
+    });
+
+    it('rejects a tag emitted from the unsupported 0x3000 WORK alias', () => {
+        expect(() => compileToBinary(`
+            PROGRAM Tags
+            VAR
+                Published : BOOL {publish};
+            END_VAR
+            END_PROGRAM
+        `, { workMemoryBase: 0x3000 })).toThrow(/0x3000/);
+    });
+});
+
+describe('target memory profiles', () => {
+    const source = 'PROGRAM Limits VAR Value : BOOL; END_VAR END_PROGRAM';
+
+    const programWithBytes = (count: number) => `PROGRAM Limits\nVAR\n${Array.from({ length: count }, (_, index) => `Value${index} : BOOL;`).join('\n')}\nEND_VAR\nEND_PROGRAM`;
+
+    it('keeps host defaults and publishes effective debug memory limits', () => {
+        expect(compileToBinary(source).bytecode.length).toBeGreaterThan(0);
+        const result = compileToBinary(source, {
+            generateDebugMap: true,
+            memoryProfile: { workSize: 2048, retainSize: 1024, codeSizeMax: 8192 },
+        });
+        expect(result.debugMap?.memoryLayout).toMatchObject({ workSize: 2048, retainSize: 1024 });
+    });
+
+    it('rejects WORK exhaustion and CODE above the target limit', () => {
+        expect(() => compileToBinary(source, {
+            memoryProfile: { workSize: 1, retainSize: 1024, codeSizeMax: 8192 },
+        })).toThrow(/WORK (allocation|symbol collides)/);
+        expect(() => compileToBinary(source, {
+            memoryProfile: { workSize: 2048, retainSize: 1024, codeSizeMax: 1 },
+        })).toThrow(/CODE exceeds/);
+    });
+
+    it('accepts exactly the target WORK bucket count and rejects one additional task with its source', () => {
+        const profile = { workSize: 2048, retainSize: 1024, codeSizeMax: 8192 };
+        const sources = Array.from({ length: 9 }, (_, index) => ({
+            name: `Program${index}`,
+            sourceRef: `src/Program${index}.st`,
+            content: `PROGRAM Program${index} END_PROGRAM`,
+        }));
+        const config = (count: number) => ({
+            name: 'Buckets',
+            version: '1.0.0',
+            tasks: sources.slice(0, count).map((source, index) => ({
+                name: `Task${index}`,
+                trigger: 'cyclic' as const,
+                interval: 10,
+                priority: 1,
+                programs: [source.name],
+            })),
+        });
+
+        expect(compileMultiTaskProject(config(8), sources.slice(0, 8), { memoryProfile: profile }).debugMap.memoryLayout)
+            .toMatchObject({ workSize: 2048, retainSize: 1024 });
+        try {
+            compileMultiTaskProject(config(9), sources, { memoryProfile: profile });
+            throw new Error('expected WORK bucket admission failure');
+        } catch (error) {
+            expect(error).toMatchObject({ phase: 'codegen', sourceRef: 'src/Program8.st' });
+            expect(error).toHaveProperty('detail', 'WORK task buckets exceed the target memory profile');
+        }
+    });
+
+    it('rejects malformed target memory profiles before code generation', () => {
+        const invalidProfiles = [
+            { workSize: Number.NaN, retainSize: 1, codeSizeMax: 1 },
+            { workSize: Number.POSITIVE_INFINITY, retainSize: 1, codeSizeMax: 1 },
+            { workSize: 1.5, retainSize: 1, codeSizeMax: 1 },
+            { workSize: 0, retainSize: 1, codeSizeMax: 1 },
+            { workSize: -1, retainSize: 1, codeSizeMax: 1 },
+            { workSize: 0x2001, retainSize: 1, codeSizeMax: 1 },
+            { workSize: 1, retainSize: 0x1001, codeSizeMax: 1 },
+            { workSize: 1, retainSize: 1, codeSizeMax: 0xB001 },
+        ];
+
+        for (const memoryProfile of invalidProfiles) {
+            expect(() => compileToBinary(source, { memoryProfile })).toThrow(/Invalid target memory profile/);
+        }
+
+        expect(() => compileMultiTaskProject(
+            { name: 'InvalidProfile', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval: 10, programs: ['Main'] }] },
+            [{ name: 'Main', sourceRef: 'src/Main.st', content: source }],
+            { memoryProfile: invalidProfiles[0] },
+        )).toThrow(/Invalid target memory profile/);
+    });
+
+    it('reserves the init flag, validates direct WORK widths, and keeps declaration provenance', () => {
+        expect(() => compileToBinary(programWithBytes(255), {
+            memoryProfile: { workSize: 256, retainSize: 1, codeSizeMax: 0xB000 },
+        })).not.toThrow();
+        expect(() => compileToBinary(programWithBytes(256), {
+            memoryProfile: { workSize: 256, retainSize: 1, codeSizeMax: 0xB000 },
+        })).toThrow(/initialization flag/);
+
+        expect(() => compileToBinary(`PROGRAM Direct\nVAR\nValue AT %MD63 : DINT;\nEND_VAR\nEND_PROGRAM`, {
+            memoryProfile: { workSize: 256, retainSize: 1, codeSizeMax: 0xB000 },
+            workMemorySize: 256,
+            initFlagAddress: 0x2000,
+        })).not.toThrow();
+
+        const directOverflow = () => compileMultiTaskProject(
+            { name: 'Direct', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval: 10, programs: ['Main'] }] },
+            [{ name: 'Main', sourceRef: 'src/Direct.st', content: 'PROGRAM Direct\nVAR\nValue AT %MD64 : DINT;\nEND_VAR\nEND_PROGRAM' }],
+            { memoryProfile: { workSize: 256, retainSize: 1, codeSizeMax: 0xB000 } },
+        );
+        expect(directOverflow).toThrow(/WORK allocation/);
+        try {
+            directOverflow();
+        } catch (error) {
+            expect(error).toMatchObject({ line: 3, sourceRef: 'src/Direct.st' });
+        }
+
+        expect(() => compileToBinary(`PROGRAM Init\nVAR\nFlag AT %MB0 : BOOL;\nEND_VAR\nEND_PROGRAM`, {
+            memoryProfile: { workSize: 8, retainSize: 1, codeSizeMax: 0xB000 },
+            workMemorySize: 8,
+            initFlagAddress: 0x2000,
+        })).toThrow(/initialization flag/);
+        expect(() => compileToBinary('PROGRAM Init VAR Flag : BOOL; END_VAR END_PROGRAM', {
+            memoryProfile: { workSize: 8, retainSize: 1, codeSizeMax: 0xB000 },
+            workMemorySize: 8,
+            initFlagAddress: 0x2000,
+        })).toThrow(/initialization flag/);
+        expect(() => compileToBinary(source, {
+            memoryProfile: { workSize: 8, retainSize: 1, codeSizeMax: 0xB000 },
+            workMemorySize: 8,
+            initFlagAddress: 0x2008,
+        })).toThrow(/initFlagAddress/);
+        for (const options of [
+            { workMemoryBase: Number.NaN },
+            { workMemorySize: 1.5 },
+            { initFlagAddress: 0x2000 + 0.5 },
+        ]) {
+            expect(() => compileToBinary(source, {
+                memoryProfile: { workSize: 8, retainSize: 1, codeSizeMax: 0xB000 },
+                ...options,
+            })).toThrow(/Invalid (WORK region options|initFlagAddress)/);
+        }
+    });
+
+    it('admits direct I/Q locations only within their full VM regions', () => {
+        expect(() => compileToBinary('PROGRAM Input VAR Value AT %IW2047 : INT; END_VAR END_PROGRAM')).not.toThrow();
+        expect(() => compileToBinary('PROGRAM Output VAR Value AT %QW2047 : INT; END_VAR END_PROGRAM')).not.toThrow();
+        expect(() => compileToBinary('PROGRAM InputOverflow VAR Value AT %IW2048 : INT; END_VAR END_PROGRAM')).toThrow(/IPI allocation/);
+        expect(() => compileToBinary('PROGRAM OutputOverflow VAR Value AT %QW2048 : INT; END_VAR END_PROGRAM')).toThrow(/OPI allocation/);
+        expect(() => compileToBinary('PROGRAM BadBit VAR Value AT %IX0.8 : BOOL; END_VAR END_PROGRAM')).toThrow(/Invalid located bit address/);
+
+        const locatedInputOverflow = () => compileMultiTaskProject(
+            { name: 'LocatedInput', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval: 10, programs: ['Main'] }] },
+            [{ name: 'Main', sourceRef: 'src/LocatedInput.st', content: 'PROGRAM LocatedInput\nVAR\nValue AT %IW2048 : INT;\nEND_VAR\nEND_PROGRAM' }],
+            { memoryProfile: { workSize: 256, retainSize: 1, codeSizeMax: 0xB000 } },
+        );
+        expect(locatedInputOverflow).toThrow(/IPI allocation/);
+        try {
+            locatedInputOverflow();
+        } catch (error) {
+            expect(error).toMatchObject({ line: 3, sourceRef: 'src/LocatedInput.st' });
+        }
+    });
+
+    it('rejects non-BOOL values at bit-addressed locations', () => {
+        const compile = () => compileToBinary('PROGRAM InvalidBit\nVAR_OUTPUT\nValue AT %QX0.0 : INT;\nEND_VAR\nEND_PROGRAM');
+        expect(compile).toThrow(CompilerError);
+        try {
+            compile();
+        } catch (error) {
+            expect(error).toMatchObject({ phase: 'codegen', line: 3 });
+        }
+    });
+
+    it('rejects automatic WORK storage overlapping direct %M while preserving direct aliases', () => {
+        expect(() => compileToBinary('PROGRAM Overlap\nVAR\nAuto : DINT;\nLocated AT %MD0 : DINT;\nEND_VAR\nEND_PROGRAM'))
+            .toThrow(/automatic WORK symbol collides with located %M symbol/);
+        expect(() => compileToBinary('PROGRAM Adjacent\nVAR\nAuto : DINT;\nLocated AT %MD1 : DINT;\nEND_VAR\nEND_PROGRAM')).not.toThrow();
+        expect(() => compileToBinary('PROGRAM Alias\nVAR\nFirst AT %MD0 : DINT;\nSecond AT %MD0 : DINT;\nEND_VAR\nEND_PROGRAM')).not.toThrow();
+
+        const overlap = () => compileMultiTaskProject(
+            { name: 'Overlap', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval: 10, programs: ['Main'] }] },
+            [{ name: 'Main', sourceRef: 'src/Overlap.st', content: 'PROGRAM Overlap\nVAR\nAuto : DINT;\nLocated AT %MD0 : DINT;\nEND_VAR\nEND_PROGRAM' }],
+            { memoryProfile: { workSize: 256, retainSize: 1, codeSizeMax: 0xB000 } },
+        );
+        expect(overlap).toThrow(/automatic WORK symbol collides with located %M symbol/);
+        try {
+            overlap();
+        } catch (error) {
+            expect(error).toMatchObject({ line: 4, sourceRef: 'src/Overlap.st' });
+        }
+    });
+
+    it('keeps pooled STRING and WSTRING storage inside WORK and away from direct locations', () => {
+        const profile = { workSize: 96, retainSize: 1, codeSizeMax: 0xB000 };
+        expect(() => compileToBinary(`PROGRAM Strings\nVAR\nSink : STRING;\nEND_VAR\nSink := 'abc';\nEND_PROGRAM`, { memoryProfile: profile })).not.toThrow();
+        expect(() => compileToBinary(`PROGRAM WStrings\nVAR\nSink : STRING;\nEND_VAR\nSink := "x";\nEND_PROGRAM`, { memoryProfile: profile })).not.toThrow();
+        expect(() => compileToBinary(`PROGRAM Collision\nVAR\nSink : STRING;\nLocated AT %MB86 : BOOL;\nEND_VAR\nSink := 'abc';\nEND_PROGRAM`, { memoryProfile: profile })).toThrow(/string literal pool collides with WORK symbol/);
+    });
+
+    it('keeps sub-bucket WORK profiles deterministic and preserves the first overflowing source', () => {
+        const config = (programs: string[]) => ({
+            name: 'SmallBuckets', version: '1.0.0', tasks: programs.map((name) => ({ name, trigger: 'cyclic' as const, interval: 10, programs: [name] })),
+        });
+        const sources = ['First', 'Second'].map((name) => ({ name, sourceRef: `src/${name}.st`, content: `PROGRAM ${name} END_PROGRAM` }));
+        const subBucket = () => compileMultiTaskProject(config(['First']), sources.slice(0, 1), {
+            memoryProfile: { workSize: 255, retainSize: 1, codeSizeMax: 0xB000 },
+        });
+        expect(subBucket).toThrow(/WORK task buckets/);
+        try {
+            subBucket();
+        } catch (error) {
+            expect(error).toMatchObject({ sourceRef: 'src/First.st' });
+        }
+        expect(() => compileMultiTaskProject(config(['First', 'Second']), sources, {
+            memoryProfile: { workSize: 511, retainSize: 1, codeSizeMax: 0xB000 },
+        })).toThrow(/WORK task buckets/);
+        try {
+            compileMultiTaskProject(config(['First', 'Second']), sources, {
+                memoryProfile: { workSize: 511, retainSize: 1, codeSizeMax: 0xB000 },
+            });
+        } catch (error) {
+            expect(error).toMatchObject({ sourceRef: 'src/Second.st' });
+        }
+    });
+});
+
+describe('RETAIN declarations', () => {
+    const config = {
+        name: 'RetainReject',
+        version: '1.0.0',
+        tasks: [{ name: 'MainTask', trigger: 'cyclic' as const, interval: 10, priority: 1, programs: ['Main'] }],
+    };
+
+    for (const [label, content] of [
+        ['VAR RETAIN', 'PROGRAM Main\nVAR RETAIN\nState : BOOL;\nEND_VAR\nEND_PROGRAM'],
+        ['VAR_GLOBAL RETAIN', 'VAR_GLOBAL RETAIN\nState : BOOL;\nEND_VAR\nPROGRAM Main\nEND_PROGRAM'],
+    ] as const) {
+        it(`rejects ${label} as an unsupported parser feature with source provenance`, () => {
+            try {
+                compileMultiTaskProject(config, [{ name: 'Main', sourceRef: `src/${label.replaceAll(' ', '_')}.st`, content }]);
+                throw new Error('expected RETAIN declaration rejection');
+            } catch (error) {
+                expect(error).toBeInstanceOf(CompilerError);
+                expect(error).toMatchObject({
+                    phase: 'parser',
+                    line: label === 'VAR RETAIN' ? 2 : 1,
+                    column: label === 'VAR RETAIN' ? 5 : 12,
+                    sourceRef: `src/${label.replaceAll(' ', '_')}.st`,
+                });
+                expect(error).toHaveProperty('detail', `Compilation of 'Main' failed: RETAIN declarations are not supported`);
+            }
+        });
+    }
 });
 
 // ============================================================================
@@ -424,6 +708,52 @@ describe('Language workflow parity baseline', () => {
     });
 });
 
+describe('Canonical PROGRAM admission', () => {
+    const multiplePrograms = 'PROGRAM First END_PROGRAM\nPROGRAM Second END_PROGRAM';
+
+    it('rejects every high-level single-source compiler at the second PROGRAM', () => {
+        for (const compile of [
+            () => compileST(multiplePrograms),
+            () => compileToBinary(multiplePrograms),
+            () => compileSingleFileWithTask(multiplePrograms, { sourceRef: 'src/Main.st' }),
+        ]) {
+            expect(compile).toThrow(CompilerError);
+            try {
+                compile();
+            } catch (error) {
+                const diagnostic = error as CompilerError;
+                expect(diagnostic.phase).toBe('codegen');
+                expect(diagnostic.line).toBe(2);
+                expect(diagnostic.column).toBe(1);
+                expect(diagnostic.detail).toBe('Exactly one PROGRAM is required per source unit');
+            }
+        }
+    });
+
+    it('rejects invalid task program cardinality before source compilation', () => {
+        for (const programs of [[], ['First', 'Second']]) {
+            expect(() => compileMultiTaskProject(
+                { name: 'InvalidTaskPrograms', version: '1.0.0', tasks: [{ name: 'MainTask', trigger: 'cyclic', programs }] },
+                [{ name: 'First', content: 'PROGRAM First END_PROGRAM' }],
+            )).toThrow(CompilerError);
+
+            try {
+                compileMultiTaskProject(
+                    { name: 'InvalidTaskPrograms', version: '1.0.0', tasks: [{ name: 'MainTask', trigger: 'cyclic', programs }] },
+                    [{ name: 'First', content: 'PROGRAM First END_PROGRAM' }],
+                );
+            } catch (error) {
+                const diagnostic = error as CompilerError;
+                expect(diagnostic.phase).toBe('codegen');
+                expect(diagnostic.line).toBe(0);
+                expect(diagnostic.column).toBe(0);
+                expect(diagnostic.sourceRef).toBeUndefined();
+                expect(diagnostic.detail).toBe("Task 'MainTask' must reference exactly one PROGRAM");
+            }
+        }
+    });
+});
+
 // ============================================================================
 // Symbol Table Tests
 // ============================================================================
@@ -585,6 +915,51 @@ describe('Integration', () => {
         expect(asm).toContain('HALT');
     });
 
+    it('compiles WATCHDOG_RESET statement as one compatibility NOP', () => {
+        const result = compileToBinary('PROGRAM Main WATCHDOG_RESET(); END_PROGRAM');
+        const asm = result.assembly;
+
+        expect(asm).not.toContain('; ERROR:');
+        expect(asm.split('\n').filter(line => line.trim() === 'NOP')).toHaveLength(1);
+        expect(result.bytecode.length).toBeGreaterThan(0);
+
+        const lowercase = compileToBinary('PROGRAM Main watchdog_reset(); END_PROGRAM').assembly;
+        expect(lowercase).not.toContain('; ERROR:');
+        expect(lowercase.split('\n').filter(line => line.trim() === 'NOP')).toHaveLength(1);
+
+        expect(() => compileToBinary('PROGRAM Main WATCHDOG_RESET(unused := 1); END_PROGRAM'))
+            .toThrow('WATCHDOG_RESET expects no parameters');
+        expect(() => compileToBinary('PROGRAM Main VAR x : INT; END_VAR x := WATCHDOG_RESET(); END_PROGRAM'))
+            .toThrow('WATCHDOG_RESET is statement-only');
+
+        const collidingInstance = compileToBinary(`
+            PROGRAM Main
+            VAR
+                WATCHDOG_RESET : TON;
+            END_VAR
+            WATCHDOG_RESET(IN := TRUE, PT := T#1s);
+            END_PROGRAM
+        `).assembly;
+        expect(collidingInstance).toContain('TON Timer Logic');
+
+        const collidingFunction = compileToBinary(`
+            FUNCTION WATCHDOG_RESET : INT
+            VAR_INPUT
+                value : INT;
+            END_VAR
+            WATCHDOG_RESET := value;
+            END_FUNCTION
+
+            PROGRAM Main
+            VAR
+                result : INT;
+            END_VAR
+            result := WATCHDOG_RESET(1);
+            END_PROGRAM
+        `).assembly;
+        expect(collidingFunction).toContain('CALL func_WATCHDOG_RESET');
+    });
+
     it('validates correct ST', () => {
         const error = validate('PROGRAM Test END_PROGRAM');
         expect(error).toBeNull();
@@ -677,6 +1052,162 @@ import type { ZPLCProjectConfig } from '../types/index.ts';
 import { ZPLC_CONSTANTS, TASK_TYPE } from '../assembler/index.ts';
 
 describe('Multi-Task Compiler', () => {
+    it('keeps ST diagnostics attached to the physical source reference', () => {
+        const config = {
+            name: 'DiagnosticProvenance', version: '1.0.0', tasks: [
+                { name: 'MotorTask', trigger: 'cyclic' as const, interval: 10, priority: 1, programs: ['MotorTask'] },
+            ],
+        };
+
+        const lexerFailure = () => compileMultiTaskProject(config, [{
+            name: 'MotorTask',
+            sourceRef: 'src/Motor.st',
+            content: 'PROGRAM Motor\n@\nEND_PROGRAM',
+        }]);
+        expect(lexerFailure).toThrow(CompilerError);
+        try {
+            lexerFailure();
+        } catch (error) {
+            const diagnostic = error as CompilerError;
+            expect(diagnostic.phase).toBe('lexer');
+            expect(diagnostic.line).toBe(2);
+            expect(diagnostic.column).toBe(1);
+            expect(diagnostic.sourceRef).toBe('src/Motor.st');
+        }
+
+        const parserFailure = () => compileMultiTaskProject(config, [{
+            name: 'MotorTask',
+            sourceRef: 'src/Motor.st',
+            content: 'PROGRAM Motor\nVAR\n  Start BOOL;\nEND_VAR\nEND_PROGRAM',
+        }]);
+        expect(parserFailure).toThrow(CompilerError);
+        try {
+            parserFailure();
+        } catch (error) {
+            const diagnostic = error as CompilerError;
+            expect(diagnostic.phase).toBe('parser');
+            expect(diagnostic.line).toBe(3);
+            expect(diagnostic.column).toBe(9);
+            expect(diagnostic.sourceRef).toBe('src/Motor.st');
+        }
+    });
+
+    it('keeps unmappable code generation diagnostics at 0:0', () => {
+        expect(() => compileMultiTaskProject(
+            { name: 'GlobalDiagnostic', version: '1.0.0', tasks: [{ name: 'MainTask', trigger: 'cyclic', interval: 10, programs: ['Main'] }] },
+            [{ name: 'Main', sourceRef: 'src/Main.st', content: 'PROGRAM Main\nWATCHDOG_RESET(unused := 1);\nEND_PROGRAM' }],
+        )).toThrow(CompilerError);
+
+        try {
+            compileMultiTaskProject(
+                { name: 'GlobalDiagnostic', version: '1.0.0', tasks: [{ name: 'MainTask', trigger: 'cyclic', interval: 10, programs: ['Main'] }] },
+                [{ name: 'Main', sourceRef: 'src/Main.st', content: 'PROGRAM Main\nWATCHDOG_RESET(unused := 1);\nEND_PROGRAM' }],
+            );
+        } catch (error) {
+            const diagnostic = error as CompilerError;
+            expect(diagnostic.phase).toBe('codegen');
+            expect(diagnostic.line).toBe(0);
+            expect(diagnostic.column).toBe(0);
+            expect(diagnostic.sourceRef).toBe('src/Main.st');
+        }
+    });
+
+    it('does not let source provenance alter compiled output', () => {
+        const config = { name: 'ProvenanceStable', version: '1.0.0', tasks: [{ name: 'MainTask', trigger: 'cyclic' as const, interval: 10, programs: ['Main'] }] };
+        const content = 'PROGRAM Main VAR Value : BOOL; END_VAR Value := TRUE; END_PROGRAM';
+        const withoutSourceRef = compileMultiTaskProject(config, [{ name: 'Main', content }]);
+        const withSourceRef = compileMultiTaskProject(config, [{ name: 'Main', sourceRef: 'src/Main.st', content }]);
+
+        expect(withSourceRef.bytecode).toEqual(withoutSourceRef.bytecode);
+        expect(withSourceRef.zplcFile).toEqual(withoutSourceRef.zplcFile);
+        expect(withSourceRef.debugMap.pou.Main?.sourceRef).toBe('src/Main.st');
+    });
+
+    it('publishes absolute, independent debug PCs for every multi-task POU', () => {
+        const fastSource = { name: 'Fast.st', language: 'ST' as const, content: 'PROGRAM Fast\nVAR x : BOOL; END_VAR\nx := TRUE;\nEND_PROGRAM' };
+        const slowSource = { name: 'Slow.st', language: 'ST' as const, content: 'PROGRAM Slow\nVAR y : BOOL; END_VAR\ny := FALSE;\nEND_PROGRAM' };
+        const result = compileMultiTaskProject(
+            {
+                name: 'DebugOffsets', version: '1.0.0', tasks: [
+                    { name: 'FastTask', trigger: 'cyclic', interval: 10, priority: 0, programs: ['Fast.st'] },
+                    { name: 'SlowTask', trigger: 'cyclic', interval: 10, priority: 1, programs: ['Slow.st'] },
+                ],
+            },
+            [fastSource, slowSource],
+        );
+        const fastOnly = compileMultiTaskProject(
+            { name: 'FastOnly', version: '1.0.0', tasks: [{ name: 'FastTask', trigger: 'cyclic', interval: 10, priority: 0, programs: ['Fast.st'] }] },
+            [fastSource],
+        );
+        const slowOnly = compileMultiTaskProject(
+            { name: 'SlowOnly', version: '1.0.0', tasks: [{ name: 'SlowTask', trigger: 'cyclic', interval: 10, priority: 1, programs: ['Slow.st'] }] },
+            [slowSource],
+        );
+        const fast = result.debugMap.pou.Fast!;
+        const slow = result.debugMap.pou.Slow!;
+        const slowBase = result.programDetails[0]!.size;
+        const slowLine = slow.sourceMap[0]!.line;
+        const slowPc = slow.sourceMap[0]!.pc;
+        const localSlowPc = slowOnly.debugMap.pou.Slow!.sourceMap[0]!.pc;
+
+        expect(slowPc).toBe(slowBase + localSlowPc);
+        expect(slowPc).toBeGreaterThanOrEqual(slowBase);
+        expect(slowPc).toBeLessThan(slowBase + result.programDetails[1]!.size);
+        expect(slow.breakpoints).not.toHaveLength(0);
+        for (const breakpoint of slow.breakpoints) {
+            expect(breakpoint.pc).toBeGreaterThanOrEqual(slowBase);
+            expect(breakpoint.pc).toBeLessThan(slowBase + result.programDetails[1]!.size);
+        }
+        expect(fast.sourceMap).toEqual(fastOnly.debugMap.pou.Fast!.sourceMap);
+        expect(findSourceLine(result.debugMap, slowPc)).toEqual({ pou: 'Slow', line: slowLine });
+        expect(findPC(result.debugMap, 'Slow', slowLine)).toBe(slowPc);
+        expect(slow.entryPoint).toBe(result.tasks[1]!.entryPoint);
+        expect(slow.entryPoint).toBe(result.programDetails[1]!.entryPoint);
+        expect(slowOnly.debugMap.pou.Slow!.entryPoint).toBe(slowOnly.tasks[0]!.entryPoint);
+        expect(slowOnly.debugMap.pou.Slow!.entryPoint).toBe(slowOnly.programDetails[0]!.entryPoint);
+        expect(fast).not.toBe(slow);
+        expect(fast.sourceMap).not.toBe(slow.sourceMap);
+        expect(fast.breakpoints).not.toBe(slow.breakpoints);
+        expect(fast.vars).not.toBe(slow.vars);
+    });
+
+    it('keeps task source references separate from declared PROGRAM debug identities', () => {
+        const config: ZPLCProjectConfig = {
+            name: 'SourceIdentity',
+            version: '1.0.0',
+            tasks: [{ name: 'MotorTask', trigger: 'cyclic', interval: 10, priority: 1, programs: ['Motor.st'] }],
+        };
+        const source = 'PROGRAM Motor VAR_INPUT Start AT %I0.0 : BOOL; END_VAR VAR_OUTPUT Forward AT %Q0.0 : BOOL; END_VAR Forward := Start; END_PROGRAM';
+
+        const physicalRef = compileMultiTaskProject(config, [{ name: 'Motor.st', content: source, language: 'ST' }]);
+        const semanticRef = compileMultiTaskProject(
+            { ...config, tasks: [{ ...config.tasks[0], programs: ['Motor'] }] },
+            [{ name: 'Motor', content: source, language: 'ST' }],
+        );
+
+        expect(physicalRef.programDetails[0]?.name).toBe('Motor.st');
+        expect(physicalRef.tasks[0]?.entryPoint).toBe(physicalRef.programDetails[0]?.entryPoint);
+        expect(Object.keys(physicalRef.debugMap.pou)).toEqual(['Motor']);
+        expect(physicalRef.debugMap.pou.Motor?.sourceRef).toBe('Motor.st');
+        expect(physicalRef.zplcFile).toEqual(semanticRef.zplcFile);
+    });
+
+    it('rejects duplicate declared PROGRAM names case-insensitively', () => {
+        const config: ZPLCProjectConfig = {
+            name: 'DuplicateProgram',
+            version: '1.0.0',
+            tasks: [
+                { name: 'FirstTask', trigger: 'cyclic', interval: 10, priority: 1, programs: ['Motor.st'] },
+                { name: 'SecondTask', trigger: 'cyclic', interval: 10, priority: 1, programs: ['Backup.st'] },
+            ],
+        };
+
+        expect(() => compileMultiTaskProject(config, [
+            { name: 'Motor.st', content: 'PROGRAM Motor END_PROGRAM', language: 'ST' },
+            { name: 'Backup.st', content: 'PROGRAM motor END_PROGRAM', language: 'ST' },
+        ])).toThrow(/Duplicate PROGRAM name 'motor'/);
+    });
+
     it('compiles a single-task project', () => {
         const config: ZPLCProjectConfig = {
             name: 'SingleTask',
@@ -756,6 +1287,86 @@ describe('Multi-Task Compiler', () => {
         expect(result.programDetails[1].entryPoint).toBe(result.tasks[1].entryPoint);
     });
 
+    describe('physical output ownership', () => {
+        const configFor = (...programs: string[]): ZPLCProjectConfig => ({
+            name: 'OutputOwnership',
+            version: '1.0.0',
+            tasks: programs.map((program, index) => ({
+                name: `${program}Task`,
+                trigger: 'cyclic' as const,
+                interval: 10,
+                priority: index,
+                programs: [program],
+            })),
+        });
+
+        const sourceFor = (program: string, declaration: string, sourceRef = `src/${program}.st`): ProgramSource => ({
+            name: program,
+            sourceRef,
+            content: `PROGRAM ${program}\nVAR_OUTPUT\n    ${declaration}\nEND_VAR\nEND_PROGRAM`,
+        });
+
+        it.each([
+            ['the same output bit', 'OutA AT %Q0.0 : BOOL;', 'OutB AT %Q0.0 : BOOL;'],
+            ['a bit covered by a word', 'OutBit AT %Q0.0 : BOOL;', 'OutWord AT %QW0 : WORD;'],
+            ['partially overlapping byte ranges', 'OutWord AT %QW1 : WORD;', 'OutDword AT %QD0 : DWORD;'],
+        ])('rejects %s across PROGRAMs', (_label, firstDeclaration, secondDeclaration) => {
+            const compile = () => compileMultiTaskProject(configFor('First', 'Second'), [
+                sourceFor('First', firstDeclaration, 'src/First.st'),
+                sourceFor('Second', secondDeclaration, 'src/Second.st'),
+            ]);
+
+            expect(compile).toThrow(CompilerError);
+            try {
+                compile();
+            } catch (error) {
+                const diagnostic = error as CompilerError;
+                expect(diagnostic).toMatchObject({
+                    phase: 'codegen',
+                    sourceRef: 'src/Second.st',
+                    line: 3,
+                });
+                expect(diagnostic.detail).toContain('First.Out');
+                expect(diagnostic.detail).toContain('Second.Out');
+                expect(diagnostic.detail).toContain('src/First.st');
+                expect(diagnostic.detail).toContain('src/Second.st');
+            }
+        });
+
+        it('allows adjacent non-overlapping physical outputs', () => {
+            expect(() => compileMultiTaskProject(configFor('First', 'Second'), [
+                sourceFor('First', 'OutA AT %QW0 : WORD;'),
+                sourceFor('Second', 'OutB AT %QD2 : DWORD;'),
+            ])).not.toThrow();
+        });
+
+        it('keeps explicit aliases within one PROGRAM compatible', () => {
+            expect(() => compileMultiTaskProject(configFor('Aliases'), [{
+                name: 'Aliases',
+                sourceRef: 'src/Aliases.st',
+                content: 'PROGRAM Aliases\nVAR_OUTPUT\n    First AT %Q0.0 : BOOL;\n    Second AT %Q0.0 : BOOL;\nEND_VAR\nEND_PROGRAM',
+            }])).not.toThrow();
+        });
+
+        it('rejects a non-BOOL bit address before it can overlap another PROGRAM', () => {
+            const compile = () => compileMultiTaskProject(configFor('Wide', 'Bit'), [
+                sourceFor('Wide', 'WideOutput AT %QX0.0 : INT;', 'src/Wide.st'),
+                sourceFor('Bit', 'BitOutput AT %QX0.1 : BOOL;', 'src/Bit.st'),
+            ]);
+
+            expect(compile).toThrow(CompilerError);
+            try {
+                compile();
+            } catch (error) {
+                expect(error).toMatchObject({
+                    phase: 'codegen',
+                    sourceRef: 'src/Wide.st',
+                    line: 3,
+                });
+            }
+        });
+    });
+
     it('generates correct .zplc file structure', () => {
         const config: ZPLCProjectConfig = {
             name: 'Test',
@@ -820,6 +1431,51 @@ describe('Multi-Task Compiler', () => {
         expect(() => compileMultiTaskProject(config, sources)).toThrow(/No tasks/);
     });
 
+    it('rejects more than the portable v1 task maximum before compiling sources', () => {
+        const config: ZPLCProjectConfig = {
+            name: 'TooManyTasks',
+            version: '1.0.0',
+            tasks: Array.from({ length: 17 }, (_, id) => ({
+                name: `Task${id}`,
+                trigger: 'cyclic' as const,
+                interval: 10,
+                programs: ['Main'],
+            })),
+        };
+        const source: ProgramSource[] = [{ name: 'Main', content: 'not valid ST', language: 'ST' }];
+
+        const compile = () => compileMultiTaskProject(config, source);
+
+        expect(compile).toThrow(CompilerError);
+        expect(compile).toThrow(/at most 16 tasks/i);
+        try {
+            compile();
+        } catch (error) {
+            expect(error).toMatchObject({
+                phase: 'codegen',
+                line: 0,
+                column: 0,
+                sourceRef: undefined,
+            });
+        }
+    });
+
+    it('accepts exactly the portable v1 task maximum', () => {
+        const config: ZPLCProjectConfig = {
+            name: 'MaximumTasks',
+            version: '1.0.0',
+            tasks: Array.from({ length: 16 }, (_, id) => ({
+                name: `Task${id}`,
+                trigger: 'cyclic' as const,
+                interval: 10,
+                programs: ['Main'],
+            })),
+        };
+        const source: ProgramSource[] = [{ name: 'Main', content: 'PROGRAM Main END_PROGRAM', language: 'ST' }];
+
+        expect(compileMultiTaskProject(config, source).tasks).toHaveLength(16);
+    });
+
     it('handles event trigger type', () => {
         const config: ZPLCProjectConfig = {
             name: 'EventTask',
@@ -865,6 +1521,59 @@ describe('Multi-Task Compiler', () => {
         expect(result.tasks[0].priority).toBe(1); // Default
         expect(result.tasks[0].intervalUs).toBe(10000); // 10ms default
         expect(result.tasks[0].stackSize).toBe(64); // Default
+
+        const explicit = compileMultiTaskProject({
+            ...config,
+            tasks: [{ name: 'Task1', trigger: 'cyclic', interval: 10, priority: 1, programs: ['Prog1'] }],
+        }, sources);
+        expect(result.zplcFile).toEqual(explicit.zplcFile);
+    });
+
+    it('validates task metadata before parsing program sources', () => {
+        const source = [{
+            name: 'Main',
+            sourceRef: 'src/Main.st',
+            content: 'PROGRAM Main END_PROGRAM',
+        }];
+        const config = (task: Record<string, unknown>) => ({
+            name: 'TaskMetadata',
+            version: '1.0.0',
+            tasks: [{ name: 'MainTask', trigger: 'cyclic', programs: ['Main'], ...task }],
+        });
+
+        for (const interval of [0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, 3_600_001]) {
+            expect(() => compileMultiTaskProject(config({ interval }) as any, source)).toThrow(/MainTask.*interval/);
+        }
+        for (const priority of [-1, 1.5, 256, Number.NaN]) {
+            expect(() => compileMultiTaskProject(config({ priority }) as any, source)).toThrow(/MainTask.*priority/);
+        }
+        expect(() => compileMultiTaskProject(config({ trigger: 'invalid' }) as any, source)).toThrow(/MainTask.*trigger/);
+
+        for (const interval of [1, 3_600_000]) {
+            expect(compileMultiTaskProject(config({ interval, priority: 0 }) as any, source).tasks[0])
+                .toMatchObject({ intervalUs: interval * 1000, priority: 0 });
+        }
+        expect(compileMultiTaskProject(config({ priority: 255 }) as any, source).tasks[0]?.priority).toBe(255);
+    });
+
+    it('reports task configuration failures as global codegen diagnostics', () => {
+        const compile = () => compileMultiTaskProject({
+            name: 'TaskMetadata',
+            version: '1.0.0',
+            tasks: [{ name: 'MainTask', trigger: 'cyclic', interval: 0, programs: ['Main'] }],
+        } as any, [{ name: 'Main', sourceRef: 'src/Main.st', content: 'not parsed' }]);
+
+        expect(compile).toThrow(CompilerError);
+        try {
+            compile();
+        } catch (error) {
+            expect(error).toMatchObject({
+                phase: 'codegen',
+                line: 0,
+                column: 0,
+                sourceRef: undefined,
+            });
+        }
     });
 });
 

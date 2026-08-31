@@ -466,4 +466,19 @@ describe('standard functions', () => {
         expect(output.some(l => l.includes('MUX'))).toBe(true);
         expect(output.some(l => l.includes('EQ'))).toBe(true);  // Comparison for each case
     });
+
+    test('WATCHDOG_RESET is a compatibility NOP with no watchdog effect', () => {
+        const watchdogReset = getFn('WATCHDOG_RESET')!;
+        const { ctx, output } = createMockContext(0, '');
+
+        watchdogReset.generateInline(ctx, []);
+
+        const instructions = output
+            .map(line => line.trim())
+            .filter(line => line && !line.startsWith(';'));
+
+        expect(instructions).toEqual(['NOP']);
+        expect(output.join('\n')).toContain('compatibility NOP');
+        expect(output.join('\n')).not.toContain('TODO');
+    });
 });
