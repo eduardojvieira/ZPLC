@@ -152,7 +152,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ZEPHYR_TOOLCHAIN_VARIANT: zephyr
-      ZEPHYR_SDK_INSTALL_DIR: ${{ runner.temp }}/zephyr-sdk-1.0.1
     steps:
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
@@ -168,6 +167,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          ZEPHYR_SDK_INSTALL_DIR="${RUNNER_TEMP}/zephyr-sdk-1.0.1"
+          echo "ZEPHYR_SDK_INSTALL_DIR=${ZEPHYR_SDK_INSTALL_DIR}" >> "${GITHUB_ENV}"
           VENV_DIR="${RUNNER_TEMP}/zplc-zephyr-venv"
           python3 -m venv "${VENV_DIR}"
           "${VENV_DIR}/bin/pip" install west==1.5.0
@@ -205,7 +206,6 @@ jobs:
             board: arduino_opta/stm32h747xx/m7
     env:
       ZEPHYR_TOOLCHAIN_VARIANT: zephyr
-      ZEPHYR_SDK_INSTALL_DIR: ${{ runner.temp }}/zephyr-sdk-1.0.1
     steps:
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
@@ -221,6 +221,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          ZEPHYR_SDK_INSTALL_DIR="${RUNNER_TEMP}/zephyr-sdk-1.0.1"
+          echo "ZEPHYR_SDK_INSTALL_DIR=${ZEPHYR_SDK_INSTALL_DIR}" >> "${GITHUB_ENV}"
           VENV_DIR="${RUNNER_TEMP}/zplc-zephyr-venv"
           python3 -m venv "${VENV_DIR}"
           "${VENV_DIR}/bin/pip" install west==1.5.0

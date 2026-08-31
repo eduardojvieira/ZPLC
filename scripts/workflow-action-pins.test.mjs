@@ -70,6 +70,22 @@ function validateFrozenLockfileGuards(workflowPath, workflow, expectedInstallCou
   }
 }
 
+function validateJobEnvContexts(workflowPath, workflow) {
+  const lines = workflow.split('\n');
+  for (let index = 0; index < lines.length; index += 1) {
+    if (!/^ {4}env:\s*$/.test(lines[index])) continue;
+    for (let nested = index + 1; nested < lines.length; nested += 1) {
+      const line = lines[nested];
+      if (line.trim() && (line.match(/^\s*/)?.[0].length ?? 0) <= 4) break;
+      assert.doesNotMatch(
+        line,
+        /\$\{\{\s*runner\./,
+        `${workflowPath}:${nested + 1} cannot use the runner context in job-level env`,
+      );
+    }
+  }
+}
+
 test('pins every third-party action in CI, release, and docs workflows to its approved commit and version', async () => {
   const foundActions = new Set();
   for (const workflowPath of workflows) {
@@ -109,4 +125,11 @@ test('rejects a frozen Bun install without its immediate lockfile guard', () => 
     '          bun install --frozen-lockfile',
   ].join('\n');
   assert.throws(() => validateFrozenLockfileGuards('fixture.yml', workflow, 1));
+});
+
+test('rejects runner-only contexts in job-level workflow env', async () => {
+  for (const workflowPath of workflows) {
+    const workflow = await readFile(new URL(`../${workflowPath}`, import.meta.url), 'utf8');
+    validateJobEnvContexts(workflowPath, workflow);
+  }
 });
