@@ -83,6 +83,7 @@ function main() {
   const copyTargets = [
     { path: 'package.json', directory: false },
     { path: 'bun.lock', directory: false },
+    { path: 'docs/package.json', directory: false },
     { path: 'packages/zplc-compiler', directory: true },
     { path: 'packages/zplc-ide', directory: true },
     { path: 'packages/zplc-ide/build', directory: true },
