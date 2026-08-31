@@ -1,3 +1,7 @@
+/* Keep the test assertions enabled in CMake Release builds. */
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>

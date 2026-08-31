@@ -150,8 +150,7 @@ extern "C" {
 /** @brief System flags: First scan bit (set on first cycle after start) */
 #define ZPLC_SYS_FLAG_FIRST_SCAN 0x01
 
-/** @brief System flags: Watchdog warning (cycle time exceeded 80% of interval)
- */
+/** @brief Reserved system flag; not produced by current runtimes. */
 #define ZPLC_SYS_FLAG_WDG_WARN 0x02
 
 /** @brief System flags: Scheduler is running */
@@ -543,7 +542,7 @@ typedef enum {
  * This structure holds the complete state of the virtual machine.
  * It's designed to be saveable/restorable for debugging.
  *
- * NOTE: This must match the first fields of zplc_vm_t in zplc_core.h
+ * This legacy snapshot is populated field-by-field from zplc_vm_t.
  */
 typedef struct {
   uint16_t pc;        /**< Program counter */
@@ -575,6 +574,9 @@ typedef struct {
  * @return Operand size in bytes (0, 1, 2, or 4).
  */
 static inline uint8_t zplc_opcode_operand_size(uint8_t opcode) {
+  if (opcode == OP_RET || (opcode >= OP_I2F && opcode <= OP_ZEXT16)) {
+    return 0;
+  }
   if (opcode < 0x40) {
     return 0; /* No operand */
   } else if (opcode < 0x80) {
@@ -692,6 +694,9 @@ static inline int zplc_opcode_is_valid(uint8_t opcode) {
   case OP_ZEXT16:
   /* 32-bit operand */
   case OP_PUSH32:
+  case OP_COMM_EXEC:
+  case OP_COMM_STATUS:
+  case OP_COMM_RESET:
     return 1;
   default:
     return 0;

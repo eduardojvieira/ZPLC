@@ -16,23 +16,20 @@
 
 cmake_minimum_required(VERSION 3.20)
 
+file(READ "${CMAKE_CURRENT_LIST_DIR}/../../../package.json" ZPLC_PACKAGE_JSON)
+string(JSON ZPLC_CORE_VERSION_STR ERROR_VARIABLE ZPLC_VERSION_ERROR GET "${ZPLC_PACKAGE_JSON}" version)
+set(ZPLC_SEMVER_PATTERN "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(\\.(0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*))?$")
+if(NOT ZPLC_VERSION_ERROR STREQUAL "NOTFOUND" OR NOT ZPLC_CORE_VERSION_STR MATCHES "${ZPLC_SEMVER_PATTERN}")
+    message(FATAL_ERROR "package.json must contain a valid ZPLC product semver version")
+endif()
+string(REGEX MATCH "^([0-9]+)\\.([0-9]+)\\.([0-9]+)" ZPLC_PROJECT_VERSION_MATCH "${ZPLC_CORE_VERSION_STR}")
+set(ZPLC_PROJECT_VERSION "${CMAKE_MATCH_1}.${CMAKE_MATCH_2}.${CMAKE_MATCH_3}")
+
 project(zplc_core
-    VERSION 1.4.3
+    VERSION ${ZPLC_PROJECT_VERSION}
     DESCRIPTION "ZPLC Core Runtime Library"
     LANGUAGES C
 )
-
-set(ZPLC_GIT_VERSION "${PROJECT_VERSION}")
-execute_process(
-    COMMAND git -C ${CMAKE_CURRENT_LIST_DIR}/../.. describe --tags --always --dirty
-    OUTPUT_VARIABLE ZPLC_GIT_VERSION
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    ERROR_QUIET
-)
-if(ZPLC_GIT_VERSION STREQUAL "")
-    set(ZPLC_GIT_VERSION "${PROJECT_VERSION}")
-endif()
-string(REGEX REPLACE "^v" "" ZPLC_GIT_VERSION "${ZPLC_GIT_VERSION}")
 
 # =============================================================================
 # Compiler Configuration
@@ -68,9 +65,10 @@ endif()
 add_library(zplc_core STATIC
     src/core/zplc_core.c
     src/core/zplc_comm_dispatch.c
+    src/core/zplc_loader.c
 )
 
-target_compile_definitions(zplc_core PUBLIC ZPLC_CORE_VERSION_STR="${ZPLC_GIT_VERSION}")
+target_compile_definitions(zplc_core PUBLIC ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}")
 
 target_include_directories(zplc_core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -84,6 +82,7 @@ add_executable(zplc_runtime
     ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/main.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/host_stdio.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/native_runtime_session.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/native_program_store.c
     src/hal/posix/zplc_hal_posix.c
 )
 
@@ -101,6 +100,32 @@ endif()
 # =============================================================================
 # Testing
 # =============================================================================
+
+option(ZPLC_BUILD_FUZZER "Build the libFuzzer loader verification target" OFF)
+
+if(ZPLC_BUILD_FUZZER)
+    if(NOT CMAKE_C_COMPILER_ID MATCHES "Clang")
+        message(FATAL_ERROR "ZPLC_BUILD_FUZZER requires Clang")
+    endif()
+
+    add_executable(fuzz_loader_verify
+        tests/fuzz_loader_verify.c
+        src/core/zplc_loader.c
+    )
+
+    target_include_directories(fuzz_loader_verify PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+    )
+
+    target_compile_options(fuzz_loader_verify PRIVATE
+        -fsanitize=fuzzer,address,undefined
+        -fno-omit-frame-pointer
+    )
+    target_link_options(fuzz_loader_verify PRIVATE
+        -fsanitize=fuzzer,address,undefined
+        -fno-omit-frame-pointer
+    )
+endif()
 
 enable_testing()
 
@@ -126,6 +151,8 @@ target_include_directories(test_vm_core PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
+target_compile_definitions(test_vm_core PRIVATE ZPLC_CORE_TESTING)
+
 target_link_libraries(test_vm_core PRIVATE zplc_core)
 
 if(UNIX AND NOT APPLE)
@@ -138,6 +165,7 @@ add_test(NAME test_vm_core COMMAND test_vm_core)
 add_executable(test_native_runtime_session
     tests/test_native_runtime_session.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/native_runtime_session.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src/native_program_store.c
     src/core/zplc_core.c
     src/hal/posix/zplc_hal_posix.c
 )
@@ -145,6 +173,11 @@ add_executable(test_native_runtime_session
 target_include_directories(test_native_runtime_session PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src
+)
+
+target_compile_definitions(test_native_runtime_session PRIVATE
+    ZPLC_EXPECTED_PRODUCT_VERSION="${ZPLC_CORE_VERSION_STR}"
+    ZPLC_HAL_PERSIST_TESTING
 )
 
 target_link_libraries(test_native_runtime_session PRIVATE zplc_core)
@@ -176,6 +209,7 @@ add_executable(test_hal_posix_persist
 target_include_directories(test_hal_posix_persist PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
+target_compile_definitions(test_hal_posix_persist PRIVATE ZPLC_HAL_PERSIST_TESTING)
 
 add_test(NAME test_hal_posix_persist COMMAND test_hal_posix_persist)
 
@@ -205,10 +239,26 @@ target_link_libraries(test_comm_dispatch PRIVATE zplc_core)
 
 add_test(NAME test_comm_dispatch COMMAND test_comm_dispatch)
 
+add_executable(test_loader_verify
+    tests/test_loader_verify.c
+)
+
+target_include_directories(test_loader_verify PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_compile_definitions(test_loader_verify PRIVATE
+    ZPLC_LOADER_FIXTURE_PATH="${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/zplc-v1-code-task-tags.hex"
+)
+
+target_link_libraries(test_loader_verify PRIVATE zplc_core)
+
+add_test(NAME test_loader_verify COMMAND test_loader_verify)
+
 # Custom target to run all tests
 add_custom_target(check
     COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-    DEPENDS test_isa test_vm_core test_comm_dispatch test_native_runtime_session test_hal_posix_persist test_hal_posix_mutex
+    DEPENDS test_isa test_vm_core test_comm_dispatch test_loader_verify test_native_runtime_session test_host_stdio test_hal_posix_persist test_hal_posix_mutex
     COMMENT "Running all tests..."
 )
 

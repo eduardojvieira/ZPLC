@@ -11,6 +11,7 @@
 
 #include <signal.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <zplc_hal.h>
@@ -62,6 +63,11 @@ int main(void)
     }
 
     zplc_native_runtime_session_init(&session);
+    {
+        const char *scenario_clock = getenv("ZPLC_NATIVE_SCENARIO_VIRTUAL_CLOCK");
+        zplc_native_runtime_session_set_scenario_clock_enabled(
+            &session, scenario_clock != NULL && strcmp(scenario_clock, "1") == 0);
+    }
     emit_session_ready_event();
 
     while (keep_running && !zplc_native_runtime_session_should_exit(&session)) {

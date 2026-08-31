@@ -13,6 +13,7 @@
 #define _POSIX_C_SOURCE 200809L
 
 #include <zplc_hal.h>
+#include <zplc_hal_posix.h>
 
 #include <errno.h>
 #include <stdarg.h>
@@ -24,6 +25,7 @@
 #include <io.h>
 #include <windows.h>
 #else
+#include <fcntl.h>
 #include <sys/stat.h>
 #include <time.h>
 #include <unistd.h>
@@ -36,6 +38,84 @@
  */
 
 static int hal_initialized = 0;
+static int tick_override_active = 0;
+static uint32_t tick_override_ms = 0U;
+
+void zplc_hal_posix_set_tick_override(uint32_t tick_ms)
+{
+  tick_override_ms = tick_ms;
+  tick_override_active = 1;
+}
+
+void zplc_hal_posix_clear_tick_override(void)
+{
+  tick_override_active = 0;
+  tick_override_ms = 0U;
+}
+
+#ifdef ZPLC_HAL_PERSIST_TESTING
+static unsigned long persist_operation_count = 0UL;
+static unsigned long persist_fail_at = 0UL;
+static int persist_failure_triggered = 0;
+static zplc_hal_result_t persist_failure_result = ZPLC_HAL_ERROR;
+static unsigned long persist_parent_sync_attempt_count = 0UL;
+static unsigned long persist_parent_sync_fail_at = 0UL;
+
+void zplc_hal_persist_test_fail_at(unsigned long operation)
+{
+  persist_operation_count = 0UL;
+  persist_fail_at = operation;
+  persist_failure_triggered = 0;
+  persist_failure_result = ZPLC_HAL_ERROR;
+}
+
+void zplc_hal_persist_test_fail_result(zplc_hal_result_t result)
+{
+  persist_failure_result = result;
+}
+
+unsigned long zplc_hal_persist_test_operation_count(void)
+{
+  return persist_operation_count;
+}
+
+int zplc_hal_persist_test_failure_triggered(void)
+{
+  return persist_failure_triggered;
+}
+
+void zplc_hal_persist_test_parent_sync_fail(int enabled)
+{
+  persist_parent_sync_attempt_count = 0UL;
+  persist_parent_sync_fail_at = enabled != 0 ? 1UL : 0UL;
+}
+
+void zplc_hal_persist_test_parent_sync_fail_at(unsigned long attempt)
+{
+  persist_parent_sync_attempt_count = 0UL;
+  persist_parent_sync_fail_at = attempt;
+}
+
+unsigned long zplc_hal_persist_test_parent_sync_attempts(void)
+{
+  return persist_parent_sync_attempt_count;
+}
+
+static zplc_hal_result_t persist_test_result(void)
+{
+  persist_operation_count++;
+  if (persist_fail_at != 0UL && persist_operation_count == persist_fail_at) {
+    persist_failure_triggered = 1;
+    return persist_failure_result;
+  }
+  return ZPLC_HAL_OK;
+}
+#else
+static zplc_hal_result_t persist_test_result(void)
+{
+  return ZPLC_HAL_OK;
+}
+#endif
 
 #ifdef _WIN32
 #define ZPLC_PATH_SEP '/'
@@ -69,6 +149,9 @@ static int hal_initialized = 0;
  */
 
 uint32_t zplc_hal_tick(void) {
+  if (tick_override_active != 0) {
+    return tick_override_ms;
+  }
 #ifdef _WIN32
   return (uint32_t)(GetTickCount64() & 0xFFFFFFFFULL);
 #else
@@ -271,16 +354,73 @@ static int persist_ensure_dir(void) {
   return 0;
 }
 
+/* Linux fsync() provides the directory-entry durability contract required
+ * after rename().  Other host platforms retain the pre-existing semantics
+ * until their corresponding directory-sync contract is verified. */
+static int persist_sync_parent_dir(const char *path)
+{
+#if !defined(__linux__)
+  (void)path;
+  return 0;
+#else
+  char dir_path[ZPLC_PATH_MAX];
+  char *separator;
+  int directory_fd;
+  int saved_errno;
+
+  if (path == NULL || strlen(path) >= sizeof(dir_path)) {
+    errno = EINVAL;
+    return -1;
+  }
+  (void)strcpy(dir_path, path);
+  separator = strrchr(dir_path, ZPLC_PATH_SEP);
+  if (separator == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (separator == dir_path) {
+    separator[1] = '\0';
+  } else {
+    *separator = '\0';
+  }
+
+#ifdef ZPLC_HAL_PERSIST_TESTING
+  persist_parent_sync_attempt_count++;
+  if (persist_parent_sync_fail_at != 0UL &&
+      persist_parent_sync_attempt_count == persist_parent_sync_fail_at) {
+    errno = EIO;
+    return -1;
+  }
+#endif
+
+  directory_fd = open(dir_path, O_RDONLY);
+  if (directory_fd < 0) {
+    return -1;
+  }
+  if (fsync(directory_fd) != 0) {
+    saved_errno = errno;
+    (void)close(directory_fd);
+    errno = saved_errno;
+    return -1;
+  }
+  (void)close(directory_fd);
+  return 0;
+#endif
+}
+
 zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data,
                                         size_t len) {
   char path[ZPLC_PATH_MAX];
   char tmp_path[ZPLC_PATH_MAX];
   FILE *fp;
   size_t written;
+  int flush_failed;
+  int tmp_path_length;
 
   if (key == NULL || data == NULL || len == 0) {
     return ZPLC_HAL_ERROR;
   }
+  { zplc_hal_result_t injected = persist_test_result(); if (injected != ZPLC_HAL_OK) return injected; }
 
   /* Ensure directory exists */
   if (persist_ensure_dir() != 0) {
@@ -294,7 +434,8 @@ zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data,
   }
 
   /* Build temp file path for atomic write */
-  if (snprintf(tmp_path, sizeof(tmp_path), "%s.tmp", path) < 0) {
+  tmp_path_length = snprintf(tmp_path, sizeof(tmp_path), "%s.tmp", path);
+  if (tmp_path_length < 0 || (size_t)tmp_path_length >= sizeof(tmp_path)) {
     return ZPLC_HAL_ERROR;
   }
 
@@ -315,9 +456,18 @@ zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data,
   }
 
   /* Flush and sync to ensure data is on disk */
-  fflush(fp);
-  zplc_fsync(zplc_fileno(fp));
-  fclose(fp);
+  flush_failed = fflush(fp) != 0;
+  if (flush_failed == 0 && zplc_fsync(zplc_fileno(fp)) != 0) {
+    flush_failed = 1;
+  }
+  if (fclose(fp) != 0) {
+    flush_failed = 1;
+  }
+  if (flush_failed != 0) {
+    zplc_hal_log("[HAL] Failed to flush %s: %s\n", tmp_path, strerror(errno));
+    zplc_unlink(tmp_path);
+    return ZPLC_HAL_ERROR;
+  }
 
   /* Atomic rename: tmp -> final */
   if (rename(tmp_path, path) != 0) {
@@ -325,6 +475,13 @@ zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data,
                  strerror(errno));
     zplc_unlink(tmp_path);
     return ZPLC_HAL_ERROR;
+  }
+  if (persist_sync_parent_dir(path) != 0) {
+    int sync_errno = errno;
+    zplc_hal_log("[HAL] Failed to sync parent directory for %s: %s\n", path,
+                 strerror(sync_errno));
+    errno = sync_errno;
+    return ZPLC_HAL_COMMIT_UNKNOWN;
   }
 
   zplc_hal_log("[HAL] Saved %zu bytes to %s\n", len, path);
@@ -337,10 +494,13 @@ zplc_hal_result_t zplc_hal_persist_load(const char *key, void *data,
   FILE *fp;
   size_t bytes_read;
   long file_size;
+  int read_error;
+  int close_error;
 
   if (key == NULL || data == NULL || len == 0) {
     return ZPLC_HAL_ERROR;
   }
+  { zplc_hal_result_t injected = persist_test_result(); if (injected != ZPLC_HAL_OK) return injected; }
 
   /* Build the file path */
   if (persist_build_path(key, path, sizeof(path)) != 0) {
@@ -359,22 +519,37 @@ zplc_hal_result_t zplc_hal_persist_load(const char *key, void *data,
   }
 
   /* Get file size to verify it matches expected length */
-  fseek(fp, 0, SEEK_END);
+  if (fseek(fp, 0, SEEK_END) != 0) {
+    (void)fclose(fp);
+    return ZPLC_HAL_ERROR;
+  }
   file_size = ftell(fp);
-  fseek(fp, 0, SEEK_SET);
-
-  if (file_size < 0) {
-    fclose(fp);
+  if (fseek(fp, 0, SEEK_SET) != 0) {
+    (void)fclose(fp);
     return ZPLC_HAL_ERROR;
   }
 
-  /* Read the data (up to len bytes) */
-  bytes_read = fread(data, 1, len, fp);
-  fclose(fp);
+  if (file_size < 0) {
+    (void)fclose(fp);
+    return ZPLC_HAL_ERROR;
+  }
+  if ((unsigned long)file_size > (unsigned long)len) {
+    (void)fclose(fp);
+    return ZPLC_HAL_CORRUPT;
+  }
+
+  /* Existing callers intentionally accept shorter records; reject only
+   * oversize and actual read errors. Length-sensitive users use an envelope. */
+  bytes_read = fread(data, 1, (size_t)file_size, fp);
+  read_error = bytes_read != (size_t)file_size || ferror(fp) != 0;
+  close_error = fclose(fp) != 0;
+  if (read_error != 0 || close_error != 0) {
+    return ZPLC_HAL_ERROR;
+  }
 
   if (bytes_read == 0) {
-    zplc_hal_log("[HAL] No data read from %s\n", path);
-    return ZPLC_HAL_ERROR;
+    zplc_hal_log("[HAL] Empty persisted record in %s\n", path);
+    return ZPLC_HAL_CORRUPT;
   }
 
   zplc_hal_log("[HAL] Loaded %zu bytes from %s\n", bytes_read, path);
@@ -387,6 +562,7 @@ zplc_hal_result_t zplc_hal_persist_delete(const char *key) {
   if (key == NULL) {
     return ZPLC_HAL_ERROR;
   }
+  { zplc_hal_result_t injected = persist_test_result(); if (injected != ZPLC_HAL_OK) return injected; }
 
   /* Build the file path */
   if (persist_build_path(key, path, sizeof(path)) != 0) {
@@ -618,6 +794,7 @@ void zplc_hal_log(const char *fmt, ...) {
  */
 
 zplc_hal_result_t zplc_hal_init(void) {
+  zplc_hal_posix_clear_tick_override();
   if (hal_initialized) {
     zplc_hal_log("[HAL] Warning: Already initialized\n");
     return ZPLC_HAL_OK;
@@ -647,6 +824,7 @@ zplc_hal_result_t zplc_hal_init(void) {
 }
 
 zplc_hal_result_t zplc_hal_shutdown(void) {
+  zplc_hal_posix_clear_tick_override();
   if (!hal_initialized) {
     return ZPLC_HAL_OK;
   }
