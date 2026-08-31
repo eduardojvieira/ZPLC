@@ -1,0 +1,12 @@
+tests:
+  zplc.modbus_tcp:
+    tags:
+      - zplc
+      - modbus
+      - safety
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    harness: ztest
+    timeout: 20

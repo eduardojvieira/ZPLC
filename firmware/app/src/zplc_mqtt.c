@@ -19,14 +19,15 @@
 
 #include "zplc_azure_sas.h"
 #include "zplc_config.h"
+#include "zplc_mqtt_command.h"
 #include "zplc_platform_attrs.h"
 #include "zplc_time.h"
+#include "zplc_tls_credentials.h"
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
-#include <zephyr/fs/fs.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net/mqtt.h>
 #include <zephyr/net/socket.h>
@@ -457,45 +458,6 @@ static int configure_lwt(struct mqtt_client *client) {
   return 0;
 }
 
-static int read_file_to_buf(const char *path, uint8_t *buf, size_t buf_len) {
-  static const char persist_prefix[] = "persist://";
-  if (path == NULL || buf == NULL || buf_len == 0U) {
-    return -EINVAL;
-  }
-
-  if (strncmp(path, persist_prefix, sizeof(persist_prefix) - 1U) == 0) {
-    const char *key = path + (sizeof(persist_prefix) - 1U);
-    if (key[0] == '\0') {
-      return -EINVAL;
-    }
-
-    if (zplc_hal_persist_load(key, buf, buf_len) != ZPLC_HAL_OK) {
-      return -ENOENT;
-    }
-
-    buf[buf_len - 1U] = '\0';
-    return (int)strlen((const char *)buf);
-  }
-
-  struct fs_file_t file;
-  fs_file_t_init(&file);
-
-  int rc = fs_open(&file, path, FS_O_READ);
-  if (rc < 0) {
-    return rc;
-  }
-
-  ssize_t rd = fs_read(&file, buf, buf_len - 1U);
-  (void)fs_close(&file);
-
-  if (rd < 0) {
-    return (int)rd;
-  }
-
-  buf[rd] = '\0';
-  return (int)rd;
-}
-
 static void setup_auth(struct mqtt_client *client) {
   zplc_config_get_mqtt_broker(s_mqtt_hostname, sizeof(s_mqtt_hostname));
   zplc_config_get_mqtt_client_id(s_mqtt_client_id, sizeof(s_mqtt_client_id));
@@ -626,45 +588,47 @@ static int setup_tls(struct mqtt_client *client) {
   zplc_config_get_mqtt_client_key_path(s_mqtt_client_key_path,
                                        sizeof(s_mqtt_client_key_path));
 
-  int ca_len =
-      read_file_to_buf(s_mqtt_ca_cert_path, s_tls_ca_buf, sizeof(s_tls_ca_buf));
+  int ca_len = zplc_tls_credential_read_pem(s_mqtt_ca_cert_path, s_tls_ca_buf,
+                                             sizeof(s_tls_ca_buf));
   if (ca_len <= 0) {
     LOG_ERR("TLS CA file missing: %s (err %d)", s_mqtt_ca_cert_path, ca_len);
-    return -ENOENT;
+    return ca_len;
   }
 
-  int rc = tls_credential_add(MQTT_TLS_CA_TAG, TLS_CREDENTIAL_CA_CERTIFICATE,
-                              s_tls_ca_buf, (size_t)ca_len + 1U);
-  if (rc < 0 && rc != -EEXIST) {
-    LOG_ERR("tls_credential_add(CA) failed: %d", rc);
+  int rc = zplc_tls_credential_replace(MQTT_TLS_CA_TAG,
+                                       TLS_CREDENTIAL_CA_CERTIFICATE,
+                                       s_tls_ca_buf, (size_t)ca_len + 1U);
+  if (rc != 0) {
+    LOG_ERR("TLS CA credential replace failed: %d", rc);
     return rc;
   }
 
   s_mqtt_sec_tags[s_mqtt_sec_tag_count++] = MQTT_TLS_CA_TAG;
 
   if (security == ZPLC_MQTT_SECURITY_TLS_MUTUAL) {
-    int cert_len = read_file_to_buf(s_mqtt_client_cert_path, s_tls_cert_buf,
-                                    sizeof(s_tls_cert_buf));
-    int key_len = read_file_to_buf(s_mqtt_client_key_path, s_tls_key_buf,
-                                   sizeof(s_tls_key_buf));
+    int cert_len = zplc_tls_credential_read_pem(s_mqtt_client_cert_path,
+                                                s_tls_cert_buf, sizeof(s_tls_cert_buf));
+    int key_len = zplc_tls_credential_read_pem(s_mqtt_client_key_path,
+                                               s_tls_key_buf, sizeof(s_tls_key_buf));
     if (cert_len <= 0 || key_len <= 0) {
       LOG_ERR("Mutual TLS requires cert+key in %s and %s",
               s_mqtt_client_cert_path, s_mqtt_client_key_path);
-      return -ENOENT;
+      return cert_len <= 0 ? cert_len : key_len;
     }
 
-    rc = tls_credential_add(MQTT_TLS_CLIENT_CERT_TAG,
-                            TLS_CREDENTIAL_SERVER_CERTIFICATE, s_tls_cert_buf,
-                            (size_t)cert_len + 1U);
-    if (rc < 0 && rc != -EEXIST) {
-      LOG_ERR("tls_credential_add(client cert) failed: %d", rc);
+    rc = zplc_tls_credential_replace(MQTT_TLS_CLIENT_CERT_TAG,
+                                     TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
+                                     s_tls_cert_buf, (size_t)cert_len + 1U);
+    if (rc != 0) {
+      LOG_ERR("TLS client certificate replace failed: %d", rc);
       return rc;
     }
 
-    rc = tls_credential_add(MQTT_TLS_CLIENT_KEY_TAG, TLS_CREDENTIAL_PRIVATE_KEY,
-                            s_tls_key_buf, (size_t)key_len + 1U);
-    if (rc < 0 && rc != -EEXIST) {
-      LOG_ERR("tls_credential_add(client key) failed: %d", rc);
+    rc = zplc_tls_credential_replace(MQTT_TLS_CLIENT_KEY_TAG,
+                                     TLS_CREDENTIAL_PRIVATE_KEY,
+                                     s_tls_key_buf, (size_t)key_len + 1U);
+    if (rc != 0) {
+      LOG_ERR("TLS client key replace failed: %d", rc);
       return rc;
     }
 
@@ -1399,71 +1363,75 @@ static int publish_periodic_data(struct mqtt_client *client) {
 }
 
 static int parse_payload_to_tag(const zplc_tag_entry_t *tag,
-                                const char *payload) {
-  if (!tag || !payload) {
+                                const uint8_t *payload, size_t payload_len) {
+  uint8_t bytes[4U];
+  size_t size = 0U;
+  int rc;
+
+  if (!tag || tag->tag_id != ZPLC_TAG_SUBSCRIBE) {
+    return -EINVAL;
+  }
+  rc = zplc_mqtt_command_decode(tag->var_type, payload, payload_len, bytes,
+                                &size);
+  if (rc != 0) {
+    return rc;
+  }
+
+  if (!((tag->var_addr >= ZPLC_MEM_WORK_BASE &&
+         (uint32_t)tag->var_addr + size <=
+             (uint32_t)ZPLC_MEM_WORK_BASE + ZPLC_MEM_WORK_SIZE) ||
+        (tag->var_addr >= ZPLC_MEM_RETAIN_BASE &&
+         (uint32_t)tag->var_addr + size <=
+             (uint32_t)ZPLC_MEM_RETAIN_BASE + ZPLC_MEM_RETAIN_SIZE))) {
     return -EINVAL;
   }
 
-  uint16_t base = tag->var_addr & 0xF000U;
-  uint16_t offset = tag->var_addr & 0x0FFFU;
-  if (base == 0x3000U) {
-    base = 0x2000U;
+  rc = zplc_pi_lock();
+  if (rc != 0) {
+    return rc;
   }
-
-  uint8_t *region = zplc_mem_get_region(base);
-  if (!region) {
-    return -EINVAL;
-  }
-
-  zplc_pi_lock();
-  switch (tag->var_type) {
-  case ZPLC_TYPE_BOOL: {
-    bool v = (strcmp(payload, "1") == 0) || (strcasecmp(payload, "true") == 0);
-    region[offset] = v ? 1U : 0U;
-    break;
-  }
-  case ZPLC_TYPE_INT:
-  case ZPLC_TYPE_UINT:
-  case ZPLC_TYPE_WORD: {
-    long v = strtol(payload, NULL, 10);
-    uint16_t raw = (uint16_t)v;
-    region[offset] = (uint8_t)(raw & 0xFFU);
-    region[offset + 1U] = (uint8_t)((raw >> 8U) & 0xFFU);
-    break;
-  }
-  case ZPLC_TYPE_REAL: {
-    float f = strtof(payload, NULL);
-    uint32_t raw;
-    memcpy(&raw, &f, sizeof(raw));
-    region[offset] = (uint8_t)(raw & 0xFFU);
-    region[offset + 1U] = (uint8_t)((raw >> 8U) & 0xFFU);
-    region[offset + 2U] = (uint8_t)((raw >> 16U) & 0xFFU);
-    region[offset + 3U] = (uint8_t)((raw >> 24U) & 0xFFU);
-    break;
-  }
-  default:
-    zplc_pi_unlock();
-    return -ENOTSUP;
-  }
+  rc = zplc_force_write_bytes(tag->var_addr, bytes, (uint16_t)size);
   zplc_pi_unlock();
-  return 0;
+  return rc;
+}
+
+static int abort_incoming_publish(struct mqtt_client *client, int error) {
+  s_last_error = error;
+  s_connected = false;
+  s_subscribed = false;
+  (void)mqtt_abort(client);
+  return error;
 }
 
 static int handle_incoming_publish(struct mqtt_client *client,
                                    const struct mqtt_publish_param *pub) {
-  uint32_t to_copy = MIN((uint32_t)pub->message.payload.len,
-                         (uint32_t)(sizeof(s_publish_buf) - 1U));
-  int rc = mqtt_read_publish_payload(client, s_publish_buf, to_copy);
-  if (rc < 0) {
-    return rc;
-  }
+  size_t payload_len;
+  int rc;
 
-  s_publish_buf[to_copy] = '\0';
+  if (!client || !pub) {
+    return -EINVAL;
+  }
+  payload_len = pub->message.payload.len;
+  if (payload_len > ZPLC_MQTT_COMMAND_MAX_PAYLOAD) {
+    return abort_incoming_publish(client, -EMSGSIZE);
+  }
+  rc = mqtt_readall_publish_payload(client, s_publish_buf, payload_len);
+  if (rc != 0) {
+    return abort_incoming_publish(client, rc);
+  }
+  s_publish_buf[payload_len] = '\0';
 
   char topic[TOPIC_WILDCARD_BUFFER_SIZE];
-  size_t topic_len =
-      MIN((size_t)pub->message.topic.topic.size, sizeof(topic) - 1U);
-  memcpy(topic, pub->message.topic.topic.utf8, topic_len);
+  size_t topic_len = pub->message.topic.topic.size;
+  if (topic_len >= sizeof(topic) ||
+      (topic_len != 0U && pub->message.topic.topic.utf8 == NULL) ||
+      (topic_len != 0U &&
+       memchr(pub->message.topic.topic.utf8, '\0', topic_len) != NULL)) {
+    return -EINVAL;
+  }
+  if (topic_len != 0U) {
+    memcpy(topic, pub->message.topic.topic.utf8, topic_len);
+  }
   topic[topic_len] = '\0';
 
   uint16_t count = zplc_core_get_tag_count();
@@ -1477,7 +1445,8 @@ static int handle_incoming_publish(struct mqtt_client *client,
      */
     if (zplc_config_get_azure_twin_enabled() &&
         strncmp(topic, "$iothub/twin/", 13) == 0) {
-      LOG_INF("Azure Twin msg on '%s' (%u bytes)", topic, (unsigned)to_copy);
+      LOG_INF("Azure Twin msg on '%s' (%u bytes)", topic,
+              (unsigned)payload_len);
       return 0;
     }
 
@@ -1542,18 +1511,19 @@ static int handle_incoming_publish(struct mqtt_client *client,
     if (zplc_config_get_azure_c2d_enabled() &&
         strncmp(topic, "devices/", 8) == 0 &&
         strstr(topic, "/messages/devicebound/") != NULL) {
-      LOG_INF("Azure C2D message received (%u bytes)", (unsigned)to_copy);
+      LOG_INF("Azure C2D message received (%u bytes)", (unsigned)payload_len);
       if (s_c2d_callback != NULL) {
-        s_c2d_callback(s_publish_buf, to_copy);
+        s_c2d_callback(s_publish_buf, payload_len);
       }
       return 0;
     }
 
     /* Legacy Azure key=value tag update (original behaviour) */
-    char *sep = strchr((char *)s_publish_buf, '=');
+    const uint8_t *sep = memchr(s_publish_buf, '=', payload_len);
     if (sep != NULL) {
-      *sep = '\0';
-      const char *value = sep + 1;
+      size_t name_len = (size_t)(sep - s_publish_buf);
+      const uint8_t *value = sep + 1U;
+      size_t value_len = payload_len - name_len - 1U;
       for (uint16_t i = 0U; i < count; i++) {
         const zplc_tag_entry_t *tag = zplc_core_get_tag(i);
         if (!tag || tag->tag_id != ZPLC_TAG_SUBSCRIBE) {
@@ -1563,8 +1533,9 @@ static int handle_incoming_publish(struct mqtt_client *client,
         char expected_name[16];
         snprintf(expected_name, sizeof(expected_name), "tag_%04x",
                  tag->var_addr);
-        if (strcmp((char *)s_publish_buf, expected_name) == 0) {
-          return parse_payload_to_tag(tag, value);
+        if (name_len == strlen(expected_name) &&
+            memcmp(s_publish_buf, expected_name, name_len) == 0) {
+          return parse_payload_to_tag(tag, value, value_len);
         }
       }
     }
@@ -1587,8 +1558,7 @@ static int handle_incoming_publish(struct mqtt_client *client,
                        "$aws/things/%s/shadow/update/delta", client_id);
       if (n > 0 && (size_t)n < sizeof(delta_topic) &&
           strcmp(topic, delta_topic) == 0) {
-        LOG_INF("AWS Shadow delta (%u bytes): %.*s", (unsigned)to_copy,
-                (int)to_copy, (char *)s_publish_buf);
+        LOG_INF("AWS Shadow delta (%u bytes)", (unsigned)payload_len);
         return 0;
       }
 
@@ -1628,8 +1598,7 @@ static int handle_incoming_publish(struct mqtt_client *client,
                        "$aws/things/%s/jobs/notify", client_id);
       if (n > 0 && (size_t)n < sizeof(jobs_topic) &&
           strcmp(topic, jobs_topic) == 0) {
-        LOG_INF("AWS Jobs notify (%u bytes): %.*s", (unsigned)to_copy,
-                (int)to_copy, (char *)s_publish_buf);
+        LOG_INF("AWS Jobs notify (%u bytes)", (unsigned)payload_len);
         return 0;
       }
     }
@@ -1656,7 +1625,7 @@ static int handle_incoming_publish(struct mqtt_client *client,
       *ncmd_payload = (org_eclipse_tahu_protobuf_Payload)
           org_eclipse_tahu_protobuf_Payload_init_zero;
 
-      pb_istream_t istream = pb_istream_from_buffer(s_publish_buf, to_copy);
+      pb_istream_t istream = pb_istream_from_buffer(s_publish_buf, payload_len);
       if (pb_decode(&istream, org_eclipse_tahu_protobuf_Payload_fields,
                     ncmd_payload)) {
         for (pb_size_t i = 0U; i < ncmd_payload->metrics_count; i++) {
@@ -1686,7 +1655,7 @@ static int handle_incoming_publish(struct mqtt_client *client,
       *dcmd_payload = (org_eclipse_tahu_protobuf_Payload)
           org_eclipse_tahu_protobuf_Payload_init_zero;
 
-      pb_istream_t istream = pb_istream_from_buffer(s_publish_buf, to_copy);
+      pb_istream_t istream = pb_istream_from_buffer(s_publish_buf, payload_len);
       if (pb_decode(&istream, org_eclipse_tahu_protobuf_Payload_fields,
                     dcmd_payload)) {
         for (pb_size_t i = 0U; i < dcmd_payload->metrics_count; i++) {
@@ -1722,8 +1691,7 @@ static int handle_incoming_publish(struct mqtt_client *client,
     }
 
     if (strcmp(topic, expected) == 0) {
-      (void)parse_payload_to_tag(tag, (char *)s_publish_buf);
-      break;
+      return parse_payload_to_tag(tag, s_publish_buf, payload_len);
     }
   }
 
@@ -1923,15 +1891,22 @@ static void mqtt_evt_handler(struct mqtt_client *const client,
     clear_fds();
     break;
 
-  case MQTT_EVT_PUBLISH:
-    (void)handle_incoming_publish(client, &evt->param.publish);
-    if (evt->param.publish.message.topic.qos == MQTT_QOS_1_AT_LEAST_ONCE) {
+  case MQTT_EVT_PUBLISH: {
+    int rc = handle_incoming_publish(client, &evt->param.publish);
+
+    if (rc != 0 && s_connected) {
+      s_last_error = rc;
+      LOG_WRN("MQTT publish rejected (rc %d)", rc);
+    }
+    if (s_connected &&
+        evt->param.publish.message.topic.qos == MQTT_QOS_1_AT_LEAST_ONCE) {
       struct mqtt_puback_param ack = {
           .message_id = evt->param.publish.message_id,
       };
       (void)mqtt_publish_qos1_ack(client, &ack);
     }
     break;
+  }
 
   case MQTT_EVT_PUBACK:
     if (evt->result != 0) {
@@ -2039,23 +2014,16 @@ static void resolve_broker(struct sockaddr_in *out) {
 
 static int client_init(struct mqtt_client *client) {
   mqtt_client_init(client);
-
+  setup_auth(client);
+  if (s_mqtt_client_id[0] == '\0') {
+    zplc_config_get_hostname(s_mqtt_client_id, sizeof(s_mqtt_client_id));
+  }
   resolve_broker((struct sockaddr_in *)&s_broker_addr);
-
-  char hostname[32];
-  zplc_config_get_hostname(hostname, sizeof(hostname));
-  zplc_config_get_mqtt_client_id(s_mqtt_client_id, sizeof(s_mqtt_client_id));
 
   client->broker = &s_broker_addr;
   client->evt_cb = mqtt_evt_handler;
-  if (s_mqtt_client_id[0] != '\0') {
-    client->client_id.utf8 = (const uint8_t *)s_mqtt_client_id;
-    client->client_id.size = strlen(s_mqtt_client_id);
-  } else {
-    client->client_id.utf8 = (const uint8_t *)hostname;
-    client->client_id.size = strlen(hostname);
-  }
-  setup_auth(client);
+  client->client_id.utf8 = (const uint8_t *)s_mqtt_client_id;
+  client->client_id.size = strlen(s_mqtt_client_id);
   client->protocol_version =
       ((mqtt_profile_is_azure_iot_hub()) ||
        (!mqtt_profile_is_azure_event_grid() &&

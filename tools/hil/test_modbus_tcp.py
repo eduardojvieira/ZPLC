@@ -9,7 +9,7 @@ Strategy
 4. Upload a minimal .zplc binary that registers two Modbus tags:
      - Tag A: Modbus address 100 → WORK memory 0x2000 (UINT16)
      - Tag B: Modbus address 101 → WORK memory 0x2002 (UINT16)
-5. Start the PLC (scheduler mode: it auto-starts; legacy mode: zplc start).
+5. Start the PLC explicitly with `zplc start` after upload.
 6. Inject known values with `zplc dbg poke`.
 7. Open a raw TCP socket to <board_ip>:502 and test:
      Phase 1 – FC03 read holding registers (Modbus addr 100/101) → check value
@@ -23,11 +23,11 @@ File header (32 bytes, little-endian):
   version_maj  u16  = 1
   version_min  u16  = 0
   flags        u32  = 0
-  crc32        u32  = 0  (we skip CRC — firmware accepts 0 in non-strict builds)
+  crc32        u32  = CRC32 over bytes [0:12] + [16:] (strict verified artifact)
   code_size    u32  = size of code segment payload
   data_size    u32  = 0
   entry_point  u16  = 0
-  segment_count u16 = 2   (TASK seg + TAGS seg)
+  segment_count u16 = 3   (CODE + TASK + TAGS segments)
   reserved     u32  = 0
 
 Segment table entry (8 bytes each):
@@ -69,6 +69,7 @@ v1.5 release additions
 """
 
 import argparse
+import binascii
 import os
 import re
 import socket
@@ -252,7 +253,7 @@ def build_zplc_binary() -> bytes:
     seg_task_entry = struct.pack("<HHI", ZPLC_SEG_TASK, 0, len(task_payload))
     seg_tags_entry = struct.pack("<HHI", ZPLC_SEG_TAGS, 0, len(tags_payload))
 
-    return (
+    artifact = (
         header
         + seg_code_entry
         + seg_task_entry
@@ -261,6 +262,9 @@ def build_zplc_binary() -> bytes:
         + task_payload
         + tags_payload
     )
+    crc = binascii.crc32(artifact[:12])
+    crc = binascii.crc32(artifact[16:], crc)
+    return artifact[:12] + struct.pack("<I", crc & 0xFFFFFFFF) + artifact[16:]
 
 
 def send_cmd_wait_for(
@@ -304,8 +308,8 @@ def upload_bytecode(ser: serial.Serial, bytecode: bytes) -> None:
     """Upload bytecode using zplc sched load / zplc sched data shell protocol.
 
     NOTE: In CONFIG_ZPLC_SCHEDULER=y builds, zplc load/data/start/stop are NOT
-    registered. The upload goes through zplc sched load / zplc sched data, which
-    internally call zplc_sched_load() + zplc_sched_start().
+    registered. The upload goes through zplc sched load / zplc sched data and
+    leaves the verified program stopped until a human explicitly starts it.
     """
     # Announce size — wait for "OK:" confirmation (robust against boot-log noise)
     send_cmd_wait_for(
@@ -581,6 +585,7 @@ def main() -> int:
         bytecode = build_zplc_binary()
         print(f"[HIL] Binary size: {len(bytecode)} bytes")
         upload_bytecode(ser, bytecode)
+        send_cmd_wait_for(ser, "zplc start", success="OK:", timeout_s=5.0)
 
         # Give Modbus server a moment to spin up (it starts on boot, but just in case)
         time.sleep(1.0)

@@ -1,0 +1,12 @@
+&gpio0 {
+  compatible = "zephyr,gpio-emul";
+  gpio-controller;
+  ngpios = <1>;
+  status = "okay";
+};
+
+/ {
+  zplc_test_gpio_emul: zplc-test-gpio-emul {
+    status = "okay";
+  };
+};

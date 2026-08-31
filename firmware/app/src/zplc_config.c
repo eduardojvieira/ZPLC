@@ -20,7 +20,37 @@
 #include <zephyr/storage/flash_map.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/kernel.h>
 LOG_MODULE_REGISTER(zplc_config, LOG_LEVEL_INF);
+
+/* Only shell/settings and the Modbus server access this pair; none runs in ISR. */
+K_MUTEX_DEFINE(modbus_tag_override_lock);
+
+#if defined(CONFIG_ZTEST)
+static void (*modbus_tag_override_publish_hook)(void);
+
+void zplc_config_test_set_modbus_override_publish_hook(void (*hook)(void))
+{
+  modbus_tag_override_publish_hook = hook;
+}
+#endif
+
+#if defined(CONFIG_SETTINGS)
+static bool modbus_tag_override_load_valid[ZPLC_MAX_TAGS];
+static uint32_t modbus_tag_override_load_addr[ZPLC_MAX_TAGS];
+static bool modbus_tag_override_load_valid_seen;
+static bool modbus_tag_override_load_addr_seen;
+
+static void zplc_modbus_override_load_reset(void)
+{
+  memset(modbus_tag_override_load_valid, 0,
+         sizeof(modbus_tag_override_load_valid));
+  memset(modbus_tag_override_load_addr, 0,
+         sizeof(modbus_tag_override_load_addr));
+  modbus_tag_override_load_valid_seen = false;
+  modbus_tag_override_load_addr_seen = false;
+}
+#endif
 
 #if defined(CONFIG_FILE_SYSTEM_LITTLEFS)
 /* LittleFS mount on external QSPI NOR flash (storage_partition).
@@ -446,15 +476,25 @@ static int zplc_settings_set(const char *name, size_t len,
   }
 
   if (settings_name_steq(name, "modbus_tag_override_valid", &next) && !next) {
-    rc = read_cb(cb_arg, config.modbus_tag_override_valid,
-                 sizeof(config.modbus_tag_override_valid));
-    return (rc >= 0) ? 0 : rc;
+    rc = read_cb(cb_arg, modbus_tag_override_load_valid,
+                 sizeof(modbus_tag_override_load_valid));
+    if (rc != (int)sizeof(modbus_tag_override_load_valid)) {
+      modbus_tag_override_load_valid_seen = false;
+      return (rc < 0) ? rc : -EINVAL;
+    }
+    modbus_tag_override_load_valid_seen = true;
+    return 0;
   }
 
   if (settings_name_steq(name, "modbus_tag_override_addr", &next) && !next) {
-    rc = read_cb(cb_arg, config.modbus_tag_override_addr,
-                 sizeof(config.modbus_tag_override_addr));
-    return (rc >= 0) ? 0 : rc;
+    rc = read_cb(cb_arg, modbus_tag_override_load_addr,
+                 sizeof(modbus_tag_override_load_addr));
+    if (rc != (int)sizeof(modbus_tag_override_load_addr)) {
+      modbus_tag_override_load_addr_seen = false;
+      return (rc < 0) ? rc : -EINVAL;
+    }
+    modbus_tag_override_load_addr_seen = true;
+    return 0;
   }
 
   if (settings_name_steq(name, "ntp_enabled", &next) && !next) {
@@ -609,9 +649,33 @@ static int zplc_settings_set(const char *name, size_t len,
   return -ENOENT;
 }
 
+static int zplc_settings_commit(void)
+{
+  k_mutex_lock(&modbus_tag_override_lock, K_FOREVER);
+  memset(config.modbus_tag_override_valid, 0,
+         sizeof(config.modbus_tag_override_valid));
+  memset(config.modbus_tag_override_addr, 0,
+         sizeof(config.modbus_tag_override_addr));
+
+  if (modbus_tag_override_load_valid_seen &&
+      modbus_tag_override_load_addr_seen) {
+    for (uint16_t i = 0U; i < ZPLC_MAX_TAGS; ++i) {
+      if (modbus_tag_override_load_valid[i] &&
+          modbus_tag_override_load_addr[i] <= UINT16_MAX) {
+        config.modbus_tag_override_addr[i] = modbus_tag_override_load_addr[i];
+        config.modbus_tag_override_valid[i] = true;
+      }
+    }
+  }
+  k_mutex_unlock(&modbus_tag_override_lock);
+  zplc_modbus_override_load_reset();
+  return 0;
+}
+
 static struct settings_handler zplc_conf_handler = {
     .name = "zplc",
     .h_set = zplc_settings_set,
+    .h_commit = zplc_settings_commit,
 };
 #endif
 
@@ -668,10 +732,12 @@ static void zplc_config_set_defaults(void) {
   strncpy(config.mqtt_lwt_payload, "offline", sizeof(config.mqtt_lwt_payload));
   config.mqtt_lwt_qos = ZPLC_MQTT_QOS0;
   config.mqtt_lwt_retain = false;
+  k_mutex_lock(&modbus_tag_override_lock, K_FOREVER);
   memset(config.modbus_tag_override_valid, 0,
          sizeof(config.modbus_tag_override_valid));
   memset(config.modbus_tag_override_addr, 0,
          sizeof(config.modbus_tag_override_addr));
+  k_mutex_unlock(&modbus_tag_override_lock);
   config.ntp_enabled = false;
   strncpy(config.ntp_server, "pool.ntp.org", sizeof(config.ntp_server));
   strncpy(config.mqtt_group_id, "ZPLC", sizeof(config.mqtt_group_id));
@@ -702,8 +768,10 @@ static void zplc_config_set_defaults(void) {
  */
 
 int zplc_config_init(void) {
-  zplc_config_set_defaults();
+#if defined(CONFIG_FILE_SYSTEM_LITTLEFS) || defined(CONFIG_SETTINGS)
   int rc;
+#endif
+  zplc_config_set_defaults();
 
 #if defined(CONFIG_FILE_SYSTEM_LITTLEFS)
   rc = fs_mount(&zplc_lfs_mount);
@@ -728,6 +796,7 @@ int zplc_config_init(void) {
     return rc;
   }
 
+  zplc_modbus_override_load_reset();
   rc = settings_load();
   if (rc) {
     LOG_WRN("settings_load failed (%d), using defaults", rc);
@@ -933,30 +1002,56 @@ void zplc_config_set_modbus_tcp_client_timeout_ms(uint32_t ms) {
  * ============================================================================
  */
 
-bool zplc_config_get_modbus_tag_override(uint16_t index, uint32_t *address) {
-  if (index >= ZPLC_MAX_TAGS)
+bool zplc_config_get_modbus_tag_override(uint16_t index,
+                                         uint16_t register_count,
+                                         uint32_t *address) {
+  uint32_t override_addr;
+
+  if (index >= ZPLC_MAX_TAGS || register_count == 0U)
     return false;
-  if (!config.modbus_tag_override_valid[index])
+  k_mutex_lock(&modbus_tag_override_lock, K_FOREVER);
+  if (!config.modbus_tag_override_valid[index]) {
+    k_mutex_unlock(&modbus_tag_override_lock);
     return false;
-  if (address != NULL) {
-    *address = config.modbus_tag_override_addr[index];
   }
+  override_addr = config.modbus_tag_override_addr[index];
+  if (override_addr > UINT16_MAX ||
+      register_count - 1U > UINT16_MAX - override_addr) {
+    k_mutex_unlock(&modbus_tag_override_lock);
+    return false;
+  }
+  if (address != NULL) {
+    *address = override_addr;
+  }
+  k_mutex_unlock(&modbus_tag_override_lock);
   return true;
 }
 
-int zplc_config_set_modbus_tag_override(uint16_t index, uint32_t address) {
-  if (index >= ZPLC_MAX_TAGS)
+int zplc_config_set_modbus_tag_override(uint16_t index, uint32_t address,
+                                        uint16_t register_count) {
+  if (index >= ZPLC_MAX_TAGS || register_count == 0U)
     return -EINVAL;
-  config.modbus_tag_override_valid[index] = true;
+  if (address > UINT16_MAX || register_count - 1U > UINT16_MAX - address)
+    return -ERANGE;
+  k_mutex_lock(&modbus_tag_override_lock, K_FOREVER);
   config.modbus_tag_override_addr[index] = address;
+#if defined(CONFIG_ZTEST)
+  if (modbus_tag_override_publish_hook != NULL) {
+    modbus_tag_override_publish_hook();
+  }
+#endif
+  config.modbus_tag_override_valid[index] = true;
+  k_mutex_unlock(&modbus_tag_override_lock);
   return 0;
 }
 
 int zplc_config_clear_modbus_tag_override(uint16_t index) {
   if (index >= ZPLC_MAX_TAGS)
     return -EINVAL;
+  k_mutex_lock(&modbus_tag_override_lock, K_FOREVER);
   config.modbus_tag_override_valid[index] = false;
   config.modbus_tag_override_addr[index] = 0;
+  k_mutex_unlock(&modbus_tag_override_lock);
   return 0;
 }
 

@@ -1,9 +1,9 @@
 #include "zplc_config.h"
 #include "zplc_platform_attrs.h"
+#include "zplc_tls_credentials.h"
 
 #include <zplc_hal.h>
 
-#include <zephyr/fs/fs.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net/mqtt.h>
 #include <zephyr/net/socket.h>
@@ -49,6 +49,9 @@ static volatile bool s_aws_done;
 static volatile int s_aws_result;
 static volatile bool s_aws_register_ready;
 static uint16_t s_aws_message_id;
+static char s_aws_hostname[128];
+static char s_aws_client_id[64];
+K_MUTEX_DEFINE(s_aws_mutex);
 
 typedef struct {
     char certificate_id[128];
@@ -63,28 +66,6 @@ typedef struct {
 
 static EXT_RAM_BSS_ATTR zplc_aws_fleet_payload_t s_aws_create_payload;
 static EXT_RAM_BSS_ATTR zplc_aws_fleet_payload_t s_aws_register_payload;
-
-static int read_file_to_buf(const char *path, uint8_t *buf, size_t buf_len)
-{
-    struct fs_file_t file;
-    ssize_t rd;
-    int rc;
-
-    fs_file_t_init(&file);
-    rc = fs_open(&file, path, FS_O_READ);
-    if (rc < 0) {
-        return rc;
-    }
-
-    rd = fs_read(&file, buf, buf_len - 1U);
-    (void)fs_close(&file);
-    if (rd < 0) {
-        return (int)rd;
-    }
-
-    buf[rd] = '\0';
-    return (int)rd;
-}
 
 static int json_extract_string_unescaped(const char *json, const char *key,
                                          char *out, size_t out_len)
@@ -264,26 +245,28 @@ static int aws_setup_tls(struct mqtt_client *client, const char *host,
         AWS_FLEET_KEY_TAG,
     };
 
-    ca_len = read_file_to_buf(ca_path, s_aws_ca_buf, sizeof(s_aws_ca_buf));
-    cert_len = read_file_to_buf(claim_cert_path, s_aws_cert_buf, sizeof(s_aws_cert_buf));
-    key_len = read_file_to_buf(claim_key_path, s_aws_key_buf, sizeof(s_aws_key_buf));
+    ca_len = zplc_tls_credential_read_pem(ca_path, s_aws_ca_buf, sizeof(s_aws_ca_buf));
+    cert_len = zplc_tls_credential_read_pem(claim_cert_path, s_aws_cert_buf,
+                                             sizeof(s_aws_cert_buf));
+    key_len = zplc_tls_credential_read_pem(claim_key_path, s_aws_key_buf,
+                                            sizeof(s_aws_key_buf));
     if (ca_len <= 0 || cert_len <= 0 || key_len <= 0) {
-        return -ENOENT;
+        return ca_len <= 0 ? ca_len : (cert_len <= 0 ? cert_len : key_len);
     }
 
-    rc = tls_credential_add(AWS_FLEET_CA_TAG, TLS_CREDENTIAL_CA_CERTIFICATE,
-                            s_aws_ca_buf, (size_t)ca_len + 1U);
-    if (rc < 0 && rc != -EEXIST) {
+    rc = zplc_tls_credential_replace(AWS_FLEET_CA_TAG, TLS_CREDENTIAL_CA_CERTIFICATE,
+                                     s_aws_ca_buf, (size_t)ca_len + 1U);
+    if (rc != 0) {
         return rc;
     }
-    rc = tls_credential_add(AWS_FLEET_CERT_TAG, TLS_CREDENTIAL_SERVER_CERTIFICATE,
-                            s_aws_cert_buf, (size_t)cert_len + 1U);
-    if (rc < 0 && rc != -EEXIST) {
+    rc = zplc_tls_credential_replace(AWS_FLEET_CERT_TAG, TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
+                                     s_aws_cert_buf, (size_t)cert_len + 1U);
+    if (rc != 0) {
         return rc;
     }
-    rc = tls_credential_add(AWS_FLEET_KEY_TAG, TLS_CREDENTIAL_PRIVATE_KEY,
-                            s_aws_key_buf, (size_t)key_len + 1U);
-    if (rc < 0 && rc != -EEXIST) {
+    rc = zplc_tls_credential_replace(AWS_FLEET_KEY_TAG, TLS_CREDENTIAL_PRIVATE_KEY,
+                                     s_aws_key_buf, (size_t)key_len + 1U);
+    if (rc != 0) {
         return rc;
     }
 
@@ -552,7 +535,6 @@ static int aws_client_init(const char *host, const char *ca_path,
                            const char *claim_cert_path, const char *claim_key_path)
 {
     int rc;
-    char client_id[64];
 
     mqtt_client_init(&s_aws_client);
     rc = aws_resolve_broker(host, zplc_config_get_mqtt_port(), &s_aws_broker);
@@ -560,11 +542,11 @@ static int aws_client_init(const char *host, const char *ca_path,
         return rc;
     }
 
-    zplc_config_get_hostname(client_id, sizeof(client_id));
+    zplc_config_get_hostname(s_aws_client_id, sizeof(s_aws_client_id));
     s_aws_client.broker = &s_aws_broker;
     s_aws_client.evt_cb = aws_evt_handler;
-    s_aws_client.client_id.utf8 = (const uint8_t *)client_id;
-    s_aws_client.client_id.size = strlen(client_id);
+    s_aws_client.client_id.utf8 = (const uint8_t *)s_aws_client_id;
+    s_aws_client.client_id.size = strlen(s_aws_client_id);
     s_aws_client.keepalive = 60U;
     s_aws_client.protocol_version = MQTT_VERSION_3_1_1;
     s_aws_client.clean_session = 1U;
@@ -576,7 +558,7 @@ static int aws_client_init(const char *host, const char *ca_path,
     return aws_setup_tls(&s_aws_client, host, ca_path, claim_cert_path, claim_key_path);
 }
 
-bool zplc_aws_fleet_is_provisioned(void)
+static bool zplc_aws_fleet_is_provisioned_locked(void)
 {
     char cert_buf[16];
     char key_buf[16];
@@ -593,9 +575,8 @@ bool zplc_aws_fleet_is_provisioned(void)
     return cert_path[0] != '\0' && key_path[0] != '\0' && !zplc_config_get_aws_fleet_enabled();
 }
 
-int zplc_aws_fleet_provision(void)
+static int zplc_aws_fleet_provision_locked(void)
 {
-    char broker[128];
     char ca_path[96];
     char claim_cert_path[96];
     char claim_key_path[96];
@@ -616,16 +597,16 @@ int zplc_aws_fleet_provision(void)
         return -ENOTSUP;
     }
 
-    if (zplc_aws_fleet_is_provisioned()) {
+    if (zplc_aws_fleet_is_provisioned_locked()) {
         return 0;
     }
 
-    zplc_config_get_mqtt_broker(broker, sizeof(broker));
+    zplc_config_get_mqtt_broker(s_aws_hostname, sizeof(s_aws_hostname));
     zplc_config_get_mqtt_ca_cert_path(ca_path, sizeof(ca_path));
     zplc_config_get_aws_claim_cert_path(claim_cert_path, sizeof(claim_cert_path));
     zplc_config_get_aws_claim_key_path(claim_key_path, sizeof(claim_key_path));
     zplc_config_get_aws_fleet_template_name(template_name, sizeof(template_name));
-    if (broker[0] == '\0' || ca_path[0] == '\0' || claim_cert_path[0] == '\0' ||
+    if (s_aws_hostname[0] == '\0' || ca_path[0] == '\0' || claim_cert_path[0] == '\0' ||
         claim_key_path[0] == '\0' || template_name[0] == '\0') {
         return -EINVAL;
     }
@@ -649,7 +630,7 @@ int zplc_aws_fleet_provision(void)
     memset(&s_aws_create_payload, 0, sizeof(s_aws_create_payload));
     memset(&s_aws_register_payload, 0, sizeof(s_aws_register_payload));
 
-    rc = aws_client_init(broker, ca_path, claim_cert_path, claim_key_path);
+    rc = aws_client_init(s_aws_hostname, ca_path, claim_cert_path, claim_key_path);
     if (rc != 0) {
         return rc;
     }
@@ -661,6 +642,7 @@ int zplc_aws_fleet_provision(void)
 
     rc = aws_prepare_fds(&s_aws_client);
     if (rc != 0) {
+        mqtt_abort(&s_aws_client);
         return rc;
     }
 
@@ -746,4 +728,28 @@ int zplc_aws_fleet_provision(void)
 
     mqtt_abort(&s_aws_client);
     return s_aws_done ? s_aws_result : -ETIMEDOUT;
+}
+
+bool zplc_aws_fleet_is_provisioned(void)
+{
+    bool provisioned;
+
+    if (k_mutex_lock(&s_aws_mutex, K_NO_WAIT) != 0) {
+        return false;
+    }
+    provisioned = zplc_aws_fleet_is_provisioned_locked();
+    k_mutex_unlock(&s_aws_mutex);
+    return provisioned;
+}
+
+int zplc_aws_fleet_provision(void)
+{
+    int rc = k_mutex_lock(&s_aws_mutex, K_NO_WAIT);
+
+    if (rc != 0) {
+        return -EBUSY;
+    }
+    rc = zplc_aws_fleet_provision_locked();
+    k_mutex_unlock(&s_aws_mutex);
+    return rc;
 }

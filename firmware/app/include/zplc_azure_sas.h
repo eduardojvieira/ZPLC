@@ -2,8 +2,8 @@
  * ZPLC Azure IoT Hub — SAS Token Generator
  *
  * Generates a SharedAccessSignature token for authenticating to Azure IoT Hub
- * over MQTT. The token is computed entirely on-device using HMAC-SHA256 (via
- * mbedTLS) so no pre-generated secret string needs to be stored in flash.
+ * over MQTT. The token is computed entirely on-device using PSA HMAC-SHA256,
+ * so no pre-generated secret string needs to be stored in flash.
  *
  * Token format:
  *   SharedAccessSignature sr={uri}&sig={base64(HMAC-SHA256(key, "{uri}\n{expiry}"))}&se={expiry}
@@ -40,7 +40,7 @@ extern "C" {
  * @return 0 on success, negative errno on failure:
  *         -EINVAL  invalid arguments (NULL pointers or zero lengths)
  *         -ENOMEM  out_buf too small
- *         -EIO     mbedTLS crypto operation failed
+ *         -EIO     crypto operation failed
  */
 int zplc_azure_sas_generate(const char *hub_host,
                               const char *device_id,

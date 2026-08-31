@@ -21,6 +21,8 @@ project(zplc_zephyr_app)
 
 target_sources(app PRIVATE
     src/main.c
+    src/program_admission.c
+    src/program_store.c
     src/zplc_config.c
     src/zplc_time.c
 )
@@ -28,6 +30,7 @@ target_sources(app PRIVATE
 if(CONFIG_MODBUS)
   target_sources(app PRIVATE
       src/zplc_modbus.c
+      src/zplc_modbus_tcp.c
       src/zplc_modbus_client.c
       src/zplc_comm_modbus_handler.c
   )
@@ -38,6 +41,8 @@ if(CONFIG_MQTT_LIB)
       src/zplc_comm_mqtt_handler.c
       src/zplc_comm_cloud_handler.c
       src/zplc_mqtt.c
+      src/zplc_mqtt_command.c
+      src/zplc_tls_credentials.c
       src/zplc_azure_sas.c
       src/zplc_azure_dps.c
       src/zplc_aws_fleet.c

@@ -1,0 +1,12 @@
+tests:
+  zplc.azure_sas:
+    tags:
+      - zplc
+      - azure
+      - crypto
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    harness: ztest
+    timeout: 20

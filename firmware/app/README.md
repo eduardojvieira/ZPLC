@@ -8,7 +8,7 @@ This is the reference implementation of the ZPLC runtime for Zephyr RTOS targets
 - **Shell Integration**: Full control via Zephyr Shell (Stop/Start/Reset/Monitor).
 - **IO Sync**: Automatically maps `IPI` (Inputs) and `OPI` (Outputs) to physical GPIO defined in the DeviceTree.
 - **Multitask Scheduler**: Run multiple concurrent tasks with different intervals and priorities.
-- **Program Persistence**: Programs are saved to NVS and automatically restored on boot.
+- **Program Persistence**: When enabled for the selected profile, verified programs are committed transactionally and restored stopped on boot.
 - **Native Runtime Extensions**: Board/project-specific Zephyr C code can live in the runtime firmware and be built as native threads/services.
 
 ## Native C in the Runtime
@@ -55,17 +55,10 @@ west build -t run
 | `zplc version`          | Show Core and ISA version.                             |
 | `zplc load <size>`      | Prepare to receive `<size>` bytes of bytecode.         |
 | `zplc data <hex_bytes>` | Send a chunk of bytecode (64 chars max).               |
-| `zplc start`            | Initialize VM and start execution (auto-saves to NVS). |
+| `zplc start`            | Explicitly start a verified, loaded program.            |
 | `zplc stop`             | Stop VM execution.                                     |
 | `zplc status`           | Show current VM state (Running/Halted/Error).          |
-| `zplc reset`            | Clear all memory regions (IPI/OPI/Work/RETAIN).        |
-
-### Persistence (NVS)
-
-| Command              | Description                                       |
-| -------------------- | ------------------------------------------------- |
-| `zplc persist info`  | Show saved program info (size, auto-load status). |
-| `zplc persist clear` | Erase saved program from Flash.                   |
+| `zplc reset`            | Requests logical safe outputs and reloads the active in-memory artifact in READY state when successful. |
 
 ### Debugging
 
@@ -117,26 +110,23 @@ for i in range(0, len(hex_data), 64):
     ser.write(f'zplc data {chunk}\r\n'.encode())
     time.sleep(0.3)
 
-# 3. Start (also saves to NVS)
+# 3. Start explicitly after the verified upload persisted
 ser.write(b'zplc start\r\n')
 ```
 
 ## 💾 Program Persistence
 
-Programs are automatically saved to Flash (NVS) when you run `zplc start`. On the next boot, the program is automatically restored and started.
-
-```bash
-# Check if a program is saved
-uart:~$ zplc persist info
-Saved program: 167 bytes
-Will auto-load on next boot
-
-# Clear saved program
-uart:~$ zplc persist clear
-Program cleared from NVS
-```
+When the selected profile has a functioning program-store backend, a verified
+load is committed transactionally. On the next boot, the runtime verifies and
+restores the artifact stopped; `zplc start` is a separate human operation.
+Host/native_sim persistence tests exist, but target/HIL qualification and
+power-cut evidence are profile-specific and are not established here.
 
 ### NVS Configuration
+
+Profiles using the Zephyr NVS program-store backend must define a
+`storage_partition`; other profiles can use a different backend or have no
+program persistence.
 
 Boards must define a `storage_partition` in their DeviceTree overlay:
 
@@ -176,13 +166,10 @@ CONFIG_FLASH_MAP=y
 CONFIG_NVS=y
 ```
 
-## 🎯 Supported Boards
+## 🎯 Board support
 
-| Board               | Zephyr ID                        | Notes                     |
-| ------------------- | -------------------------------- | ------------------------- |
-| Raspberry Pi Pico   | `rpi_pico`                       | Tested, persistence works |
-| STM32 Nucleo-H743ZI | `nucleo_h743zi`                  | High-performance          |
-| STM32F746G-DISCO    | `stm32f746g_disco`               | TFT display, touch, audio |
-| Arduino Giga R1     | `arduino_giga_r1/stm32h747xx/m7` | Dual-core                 |
-| ESP32-S3 DevKit     | `esp32s3_devkitc`                | WiFi/BLE capable          |
-| QEMU                | `mps2/an385`                     | For CI/testing            |
+The canonical [board manifest](boards/supported-boards.v1.5.0.json) and the
+published board reference define each profile's hardware revision, capabilities
+and evidence tier (`catalogued`, `build-verified`, `HIL-verified`, or
+`production-qualified`). Source presence or a successful cross-build does not
+qualify a board for physical operation.
