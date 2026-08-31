@@ -202,7 +202,7 @@ jobs:
         shell: bash
         run: |
           test -f bun.lock
-          bun install --frozen-lockfile
+          bun install --filter '!./' --filter './packages/zplc-ide' --filter './packages/zplc-compiler' --frozen-lockfile
 
       - name: Build dependencies
         run: |

@@ -41,7 +41,7 @@ function validateFrozenLockfileGuards(workflowPath, workflow, expectedInstallCou
   const lines = workflow.split('\n');
   const installLines = lines
     .map((line, index) => ({ line, index }))
-    .filter(({ line }) => /bun install --frozen-lockfile\s*$/.test(line));
+    .filter(({ line }) => /bun install\b.*--frozen-lockfile\s*$/.test(line));
 
   assert.equal(
     installLines.length,
@@ -125,6 +125,17 @@ test('rejects a frozen Bun install without its immediate lockfile guard', () => 
     '          bun install --frozen-lockfile',
   ].join('\n');
   assert.throws(() => validateFrozenLockfileGuards('fixture.yml', workflow, 1));
+});
+
+test('limits Windows release installs to the IDE and compiler workspaces', async () => {
+  const workflow = await readFile(new URL('../.github/workflows/release.yml', import.meta.url), 'utf8');
+  const windowsJob = workflow.match(/^  build-windows:\n([\s\S]*?)(?=^  \S|\Z)/m)?.[1] ?? '';
+
+  assert.match(
+    windowsJob,
+    /test -f bun\.lock\n\s+bun install --filter '!\.\/' --filter '\.\/packages\/zplc-ide' --filter '\.\/packages\/zplc-compiler' --frozen-lockfile/,
+  );
+  assert.doesNotMatch(windowsJob, /bun install --frozen-lockfile/);
 });
 
 test('rejects runner-only contexts in job-level workflow env', async () => {
