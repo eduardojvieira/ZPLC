@@ -1,6 +1,7 @@
 import { SerialPort } from 'serialport';
 import { ReadlineParser } from '@serialport/parser-readline';
 import { EventEmitter } from 'events';
+import type { DebugFrame } from './protocol';
 
 export type DeviceStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 
@@ -13,13 +14,6 @@ export interface DeviceInfo {
 export interface ConnectionOptions {
   baudRate?: number;
   autoOpen?: boolean;
-}
-
-export interface DebugFrame {
-  type: 'opcode' | 'fb' | 'task' | 'error' | 'cycle' | 'ack' | 'ready' | 'watch';
-  timestamp: number;
-  raw: string;
-  payload: any;
 }
 
 export interface IDeviceConnection {

@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "ConveyorTwoParts",
+  "tickMs": 10,
+  "durationMs": 80,
+  "events": [
+    { "atMs": 0, "set": { "Conveyor.Start": true, "Conveyor.Stop": false, "Conveyor.Reset": false, "Conveyor.PartAtClassifier": false, "Conveyor.MetalDetected": false, "Conveyor.PartAtDiverter": false, "Conveyor.JamDetected": false } },
+    { "atMs": 10, "set": { "Conveyor.Start": false } },
+    { "atMs": 20, "set": { "Conveyor.PartAtClassifier": true, "Conveyor.MetalDetected": true } },
+    { "atMs": 30, "set": { "Conveyor.PartAtClassifier": false, "Conveyor.MetalDetected": false, "Conveyor.PartAtDiverter": true } },
+    { "atMs": 40, "set": { "Conveyor.PartAtDiverter": false } },
+    { "atMs": 50, "set": { "Conveyor.PartAtClassifier": true, "Conveyor.MetalDetected": false } },
+    { "atMs": 60, "set": { "Conveyor.PartAtClassifier": false } },
+    { "atMs": 70, "set": { "Conveyor.PartAtDiverter": true } },
+    { "atMs": 80, "set": { "Conveyor.PartAtDiverter": false } }
+  ],
+  "expectations": [
+    { "kind": "AT", "atMs": 30, "condition": { "Conveyor.BeltCommand": true, "Conveyor.DiverterCommand": true } },
+    { "kind": "AT", "atMs": 70, "condition": { "Conveyor.BeltCommand": true, "Conveyor.DiverterCommand": false } },
+    { "kind": "NEVER", "condition": { "Conveyor.DiverterCommand": true, "Conveyor.BeltCommand": false } }
+  ]
+}

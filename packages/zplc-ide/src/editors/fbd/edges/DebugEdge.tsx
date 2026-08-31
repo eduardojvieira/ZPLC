@@ -94,7 +94,7 @@ const DebugEdge = memo(({
   const energized = hasValue && isEnergized(liveValue);
   
   // Wire colors
-  const strokeColor = energized ? '#22c55e' : '#64748b'; // green-500 or slate-500
+  const strokeColor = energized ? 'var(--color-accent-green)' : 'var(--visual-wire)';
   const strokeWidth = energized ? 3 : 2;
   const glowFilter = energized ? 'drop-shadow(0 0 4px rgba(34, 197, 94, 0.6))' : undefined;
 
@@ -130,10 +130,10 @@ const DebugEdge = memo(({
                 ${typeof liveValue === 'boolean'
                   ? (energized
                     ? 'bg-green-600 text-white border-green-500'
-                    : 'bg-slate-700 text-slate-300 border-slate-600')
+                    : 'bg-[var(--color-surface-700)] text-[var(--text-secondary)] border-[var(--border-color)]')
                   : (energized
                     ? 'bg-blue-600 text-white border-blue-500'
-                    : 'bg-slate-700 text-slate-300 border-slate-600')
+                    : 'bg-[var(--color-surface-700)] text-[var(--text-secondary)] border-[var(--border-color)]')
                 }
               `}
             >

@@ -5,6 +5,7 @@ import {
   normalizeNativeRuntimeSnapshot,
   normalizeSerialRuntimeSnapshot,
 } from './runtimeSnapshot';
+import type { NativeRuntimeSnapshot } from './nativeProtocol';
 
 describe('bytesToHex', () => {
   it('encodes a byte array as uppercase hex without separators', () => {
@@ -14,7 +15,7 @@ describe('bytesToHex', () => {
 
 describe('runtime snapshot normalization', () => {
   it('normalizes native runtime snapshots into shared renderer shape', () => {
-    const snapshot = normalizeNativeRuntimeSnapshot({
+    const native: NativeRuntimeSnapshot = {
       state: 'paused',
       uptime_ms: 1234,
       stats: {
@@ -44,12 +45,29 @@ describe('runtime snapshot normalization', () => {
         },
       ],
       opi: [0, 1, 0, 0],
+      ipi: [4, 0, 0, 0, 0, 0, 0, 0],
+      program_generation: 7,
       force_entries: [{ address: 0, size: 1, bytes_hex: '01', state: 'forced' }],
-    });
+      host_cadence: {
+        kind: 'observed_poll_cadence',
+        missed_intervals: 2,
+        last_dispatch_lateness_ms: 24,
+      },
+    };
+    const snapshot = normalizeNativeRuntimeSnapshot(native);
 
     expect(snapshot.source).toBe(RUNTIME_SESSION_SOURCE.NATIVE);
     expect(snapshot.tasks[0]?.taskId).toBe(1);
     expect(snapshot.forceEntries[0]?.bytesHex).toBe('01');
+    expect(snapshot.hostCadence).toEqual({
+      kind: 'observed_poll_cadence',
+      missedIntervals: 2,
+      lastDispatchLatenessMs: 24,
+    });
+    expect(snapshot.ipi).toEqual(native.ipi);
+    expect(snapshot.programGeneration).toBe(7);
+    native.ipi[0] = 0;
+    expect(snapshot.ipi?.[0]).toBe(4);
   });
 
   it('normalizes serial status snapshots into the same renderer shape', () => {
@@ -97,5 +115,7 @@ describe('runtime snapshot normalization', () => {
     expect(snapshot.focusedVm?.pc).toBe(44);
     expect(snapshot.tasks[0]?.name).toBe('Task 3');
     expect(snapshot.forceEntries[0]?.state).toBe('forced');
+    expect(snapshot.ipi).toBeUndefined();
+    expect(snapshot.programGeneration).toBeUndefined();
   });
 });

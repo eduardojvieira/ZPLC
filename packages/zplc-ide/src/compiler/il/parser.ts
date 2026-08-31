@@ -260,8 +260,10 @@ export function parseIL(source: string): ILProgram {
         const variables: ILVarDecl[] = [];
 
         while (!check(ILTokenType.END_VAR) && !isAtEnd()) {
-            // Skip RETAIN keyword if present
-            match(ILTokenType.RETAIN);
+            if (check(ILTokenType.RETAIN)) {
+                const token = current();
+                throw new ILParseError('RETAIN declarations are not supported', token.line, token.column);
+            }
             variables.push(parseVarDecl());
         }
 

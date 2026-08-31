@@ -1,5 +1,3 @@
-import { DEBUG_ADAPTER_TYPE, type DebugAdapterType } from '../runtime/debugAdapter';
-
 export const EXECUTION_MODE = {
   SIMULATE: 'simulate',
   HARDWARE: 'hardware',
@@ -12,18 +10,6 @@ export interface CompileArtifactBundle {
   zplcFile: Uint8Array;
 }
 
-export function selectRuntimeArtifact(
-  executionMode: ExecutionMode,
-  adapterType: DebugAdapterType | null,
-  artifacts: CompileArtifactBundle,
-): Uint8Array {
-  if (executionMode === EXECUTION_MODE.HARDWARE) {
-    return artifacts.zplcFile;
-  }
-
-  if (adapterType === DEBUG_ADAPTER_TYPE.NATIVE) {
-    return artifacts.zplcFile;
-  }
-
-  return artifacts.bytecode;
+export function selectRuntimeArtifact(artifacts: CompileArtifactBundle): Uint8Array {
+  return artifacts.zplcFile;
 }

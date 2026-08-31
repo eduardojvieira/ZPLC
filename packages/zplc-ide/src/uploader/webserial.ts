@@ -8,7 +8,8 @@
  *   1. Stop any running program: "zplc stop\n"
  *   2. Prepare buffer: "zplc load <size>\n"
  *   3. Send hex chunks: "zplc data <hex>\n" (max 32 bytes per chunk = 64 hex chars)
- *   4. Start execution: "zplc start\n"
+ * The program remains stopped after transfer. Execution is a separate,
+ * explicit operator action.
  *   
  * Each command returns "OK: ..." on success or "ERROR: ..." on failure.
  */
@@ -72,7 +73,7 @@ declare global {
 }
 
 import { getUploadCommandSet } from '../runtime/uploadProtocol';
-import { formatChunkTrace, sanitizeUploadTraceCommand, type UploadTraceCallback } from '../runtime/uploadTrace';
+import { formatChunkTrace, sanitizeUploadTraceCommand, sanitizeUploadTraceText, type UploadTraceCallback } from '../runtime/uploadTrace';
 
 /** Maximum bytes per data chunk (16 bytes = 32 hex characters) - reduced for stability */
 const MAX_CHUNK_SIZE = 16;
@@ -91,10 +92,14 @@ export interface SerialConnection {
   _rxBuffer: string;
   // Internal: reader running in background
   _readerTask: Promise<void> | null;
+  // Internal: reader used to stop the background task during disconnect
+  _reader: ReadableStreamDefaultReader<Uint8Array> | null;
   // Internal: abort controller to stop reader
   _abortController: AbortController;
   // Internal: live data listeners for non-destructive stream observation
   _dataListeners: Set<(chunk: string) => void>;
+  // Internal: one-shot notification for an unexpected reader termination
+  onReaderTerminated?: (reason: string) => void;
 }
 
 export interface UploadBytecodeOptions {
@@ -106,7 +111,7 @@ export interface UploadBytecodeOptions {
  * Upload progress callback
  */
 export type ProgressCallback = (
-  stage: 'connecting' | 'stopping' | 'loading' | 'sending' | 'starting' | 'complete' | 'error',
+  stage: 'connecting' | 'stopping' | 'loading' | 'sending' | 'complete' | 'error',
   progress: number,
   message: string
 ) => void;
@@ -165,16 +170,18 @@ function startReaderTask(connection: SerialConnection): void {
   const decoder = new TextDecoder();
 
   // Store reader reference so we can cancel it on disconnect
-  (connection as any)._reader = reader;
+  connection._reader = reader;
 
   debugLog('[WebSerial] Starting background reader...');
 
   connection._readerTask = (async () => {
+    let unexpectedTermination = false;
     try {
       while (connection.isConnected) {
         const { value, done } = await reader.read();
         if (done) {
           debugLog('[WebSerial] Reader done signal received');
+          unexpectedTermination = connection.isConnected;
           break;
         }
         if (!connection.isConnected) {
@@ -195,6 +202,7 @@ function startReaderTask(connection: SerialConnection): void {
       // Only log errors if we're still supposed to be connected
       if (connection.isConnected) {
         console.error('[WebSerial] Reader error:', e);
+        unexpectedTermination = true;
       }
     } finally {
       debugLog('[WebSerial] Reader task ending');
@@ -203,7 +211,13 @@ function startReaderTask(connection: SerialConnection): void {
       } catch {
         // Ignore
       }
-      (connection as any)._reader = null;
+      connection._reader = null;
+      if (unexpectedTermination && connection.isConnected) {
+        connection.isConnected = false;
+        const onReaderTerminated = connection.onReaderTerminated;
+        connection.onReaderTerminated = undefined;
+        onReaderTerminated?.('Serial reader terminated unexpectedly');
+      }
     }
   })();
 }
@@ -216,53 +230,70 @@ export async function connect(
   baudRate: number = 115200
 ): Promise<SerialConnection> {
   await port.open({ baudRate });
-
-  if (!port.readable || !port.writable) {
-    throw new Error('Port is not readable/writable');
-  }
-
-  // Set DTR and RTS signals
+  let connection: SerialConnection | null = null;
   try {
-    await port.setSignals({ dataTerminalReady: true, requestToSend: true });
-    debugLog('[WebSerial] DTR/RTS signals set');
-  } catch (e) {
-    console.warn('[WebSerial] Could not set DTR/RTS signals:', e);
+    if (!port.readable || !port.writable) {
+      throw new Error('Port is not readable/writable');
+    }
+
+    // Set DTR and RTS signals
+    try {
+      await port.setSignals({ dataTerminalReady: true, requestToSend: true });
+      debugLog('[WebSerial] DTR/RTS signals set');
+    } catch (e) {
+      console.warn('[WebSerial] Could not set DTR/RTS signals:', e);
+    }
+
+    const writer = port.writable.getWriter();
+    connection = {
+      port,
+      writer,
+      isConnected: true,
+      _rxBuffer: '',
+      _readerTask: null,
+      _reader: null,
+      _abortController: new AbortController(),
+      _dataListeners: new Set(),
+    };
+
+    // Start background reader
+    startReaderTask(connection);
+
+    // Give the device a moment to initialize
+    await new Promise((r) => setTimeout(r, 200));
+
+    // Send a few newlines to wake up the shell and trigger some output
+    const encoder = new TextEncoder();
+    debugLog('[WebSerial] Sending wake-up newlines...');
+    await writer.write(encoder.encode('\n\n\n'));
+
+    // Wait for any response
+    await new Promise((r) => setTimeout(r, 500));
+
+    if (!connection.isConnected) {
+      throw new Error('Serial reader terminated during connection startup');
+    }
+
+    debugLog('[WebSerial] After wake-up, buffer has:', connection._rxBuffer.length, 'bytes');
+    debugLog('[WebSerial] Buffer contents:', sanitizeUploadTraceText(connection._rxBuffer.slice(0, 200)));
+
+    // Clear any startup messages
+    connection._rxBuffer = '';
+    debugLog('[WebSerial] Connected and ready');
+
+    return connection;
+  } catch (error) {
+    try {
+      if (connection) {
+        await disconnect(connection);
+      } else {
+        await port.close();
+      }
+    } catch (cleanupError) {
+      console.warn('[WebSerial] Error cleaning up failed connection:', cleanupError);
+    }
+    throw error;
   }
-
-  const writer = port.writable.getWriter();
-
-  const connection: SerialConnection = {
-    port,
-    writer,
-    isConnected: true,
-    _rxBuffer: '',
-    _readerTask: null,
-    _abortController: new AbortController(),
-    _dataListeners: new Set(),
-  };
-
-  // Start background reader
-  startReaderTask(connection);
-
-  // Give the device a moment to initialize
-  await new Promise((r) => setTimeout(r, 200));
-
-  // Send a few newlines to wake up the shell and trigger some output
-  const encoder = new TextEncoder();
-  debugLog('[WebSerial] Sending wake-up newlines...');
-  await writer.write(encoder.encode('\n\n\n'));
-
-  // Wait for any response
-  await new Promise((r) => setTimeout(r, 500));
-
-  debugLog('[WebSerial] After wake-up, buffer has:', connection._rxBuffer.length, 'bytes');
-  debugLog('[WebSerial] Buffer contents:', connection._rxBuffer.slice(0, 200));
-
-  // Clear any startup messages
-  connection._rxBuffer = '';
-  debugLog('[WebSerial] Connected and ready');
-
-  return connection;
 }
 
 export function addDataListener(connection: SerialConnection, listener: (chunk: string) => void): void {
@@ -281,7 +312,7 @@ export async function disconnect(connection: SerialConnection): Promise<void> {
   connection.isConnected = false;
 
   // Cancel the reader to unblock the read() call
-  const reader = (connection as any)._reader;
+  const reader = connection._reader;
   if (reader) {
     try {
       debugLog('[WebSerial] Cancelling reader...');
@@ -310,6 +341,7 @@ export async function disconnect(connection: SerialConnection): Promise<void> {
     debugLog('[WebSerial] Port closed');
   } catch (e) {
     console.warn('[WebSerial] Error closing port:', e);
+    throw e;
   }
 
   debugLog('[WebSerial] Disconnect complete');
@@ -348,7 +380,7 @@ async function waitForResponse(
 
     if (match) {
       const response = match[0].trim();
-      debugLog('[WebSerial] Found response:', response);
+      debugLog('[WebSerial] Found response:', sanitizeUploadTraceText(response));
 
       // Find where this response ends in the buffer and clear up to there
       const responseEnd = cleanBuffer.indexOf(response) + response.length;
@@ -370,7 +402,7 @@ async function waitForResponse(
   // Timeout - log what we received for debugging
   const cleanBuffer = connection._rxBuffer.replace(ansiRegex, '');
   console.error('[WebSerial] Timeout waiting for response.');
-  console.error('[WebSerial] Buffer contents (cleaned):', cleanBuffer);
+  console.error('[WebSerial] Buffer contents (cleaned):', sanitizeUploadTraceText(cleanBuffer));
   console.error('[WebSerial] Buffer length:', cleanBuffer.length);
   throw new Error('Command timeout');
 }
@@ -388,7 +420,7 @@ async function sendCommand(
   connection._rxBuffer = '';
 
   // Send command with newline
-  debugLog('[WebSerial] Sending:', command);
+  debugLog('[WebSerial] Sending:', sanitizeUploadTraceText(command));
   await connection.writer.write(encoder.encode(command + '\n'));
 
   // Give the device a moment to start processing
@@ -396,7 +428,7 @@ async function sendCommand(
 
   // Wait for response
   const response = await waitForResponse(connection);
-  debugLog('[WebSerial] Response:', response);
+  debugLog('[WebSerial] Response:', sanitizeUploadTraceText(response));
 
   return response;
 }
@@ -552,18 +584,7 @@ export async function uploadBytecode(
       chunkNum++;
     }
 
-    // Step 4: Start execution
-    if (commandSet.start) {
-      notify('starting', 95, 'Starting program...');
-      trace?.({ kind: 'command', message: sanitizeUploadTraceCommand(commandSet.start) });
-      const startResponse = await sendCommand(connection, commandSet.start);
-      trace?.({ kind: 'response', message: startResponse });
-      if (startResponse.startsWith('ERROR:')) {
-        throw new Error(`Start failed: ${startResponse}`);
-      }
-    }
-
-    notify('complete', 100, 'Upload complete! Program running.');
+    notify('complete', 100, 'Program deployed; execution remains stopped.');
   } catch (e) {
     notify('error', 0, e instanceof Error ? e.message : String(e));
     throw e;

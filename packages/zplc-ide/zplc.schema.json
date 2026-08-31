@@ -2,7 +2,7 @@
     "$schema": "http://json-schema.org/draft-07/schema#",
     "$id": "https://zplc.dev/schemas/zplc.schema.json",
     "title": "ZPLC Project Configuration",
-    "description": "Configuration file for ZPLC projects (v1.4.3+)",
+    "description": "Configuration file for ZPLC projects (v2-compatible; legacy files without schemaVersion remain supported)",
     "type": "object",
     "required": [
         "name",
@@ -14,6 +14,11 @@
             "type": "string",
             "description": "JSON Schema reference"
         },
+        "schemaVersion": {
+            "type": "integer",
+            "enum": [1, 2],
+            "description": "Project schema version; legacy v1 is migrated in memory and canonical writes use v2"
+        },
         "name": {
             "type": "string",
             "description": "Project name",
@@ -22,7 +27,7 @@
         "version": {
             "type": "string",
             "description": "Project version (semver)",
-            "pattern": "^\\d+\\.\\d+\\.\\d+(-[a-zA-Z0-9.]+)?$"
+            "pattern": "^\\d+\\.\\d+\\.\\d+(-[a-zA-Z0-9.-]+)?(\\+[a-zA-Z0-9.-]+)?$"
         },
         "description": {
             "type": "string",
@@ -176,15 +181,35 @@
                 }
             }
         },
+        "safety": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["incompatibleOutputs"],
+            "properties": {
+                "incompatibleOutputs": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 64,
+                    "items": {
+                        "type": "array",
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "items": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Za-z_][A-Za-z0-9_]*\\.[A-Za-z_][A-Za-z0-9_]*$" }
+                    }
+                }
+            }
+        },
         "tasks": {
             "type": "array",
             "description": "Task definitions",
             "minItems": 1,
+            "maxItems": 16,
             "items": {
                 "type": "object",
-                "required": [
-                    "name",
-                    "programs"
+                "required": ["name"],
+                "anyOf": [
+                    { "required": ["programs"] },
+                    { "required": ["file"] }
                 ],
                 "properties": {
                     "name": {
@@ -196,7 +221,8 @@
                         "type": "string",
                         "enum": [
                             "cyclic",
-                            "event"
+                            "event",
+                            "freewheeling"
                         ],
                         "default": "cyclic",
                         "description": "Task trigger type"
@@ -206,6 +232,15 @@
                         "minimum": 1,
                         "default": 100,
                         "description": "Task interval in milliseconds (for cyclic tasks)"
+                    },
+                    "interval": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "Legacy alias for interval_ms"
+                    },
+                    "type": {
+                        "type": "string",
+                        "description": "Legacy alias for trigger"
                     },
                     "priority": {
                         "type": "integer",
@@ -218,15 +253,26 @@
                         "type": "integer",
                         "minimum": 0,
                         "default": 0,
-                        "description": "Watchdog timeout in milliseconds (0 = disabled)"
+                        "description": "Reserved watchdog compatibility metadata in milliseconds; current runtimes do not apply it"
+                    },
+                    "watchdog": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Legacy alias for watchdog_ms"
                     },
                     "programs": {
                         "type": "array",
                         "description": "List of program files to execute in this task",
                         "minItems": 1,
-                        "items": {
-                            "type": "string"
+                    "items": {
+                        "type": "string",
+                        "minLength": 1
                         }
+                    },
+                    "file": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Legacy alias for a single programs entry"
                     }
                 }
             }

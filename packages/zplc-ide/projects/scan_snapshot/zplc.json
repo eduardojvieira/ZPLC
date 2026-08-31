@@ -1,0 +1,22 @@
+{
+  "$schema": "../../zplc.schema.json",
+  "schemaVersion": 2,
+  "name": "Scan Snapshot",
+  "version": "1.0.0",
+  "description": "Host-native scan-by-scan snapshot and one-cycle memory golden scenario",
+  "target": {
+    "board": "posix"
+  },
+  "tasks": [
+    {
+      "name": "MainTask",
+      "trigger": "cyclic",
+      "interval_ms": 10,
+      "priority": 1,
+      "watchdog_ms": 100,
+      "programs": [
+        "ScanSnapshot.st"
+      ]
+    }
+  ]
+}

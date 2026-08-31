@@ -9,7 +9,7 @@
  * - Element selection and property editing
  */
 
-import { useCallback, useState, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Trash2, ChevronDown, ChevronUp, Rows3 } from 'lucide-react';
 import {
   type LDModel,
@@ -23,6 +23,7 @@ import {
 } from '../../models/ld';
 import LDToolbox from './LDToolbox';
 import LDRungGrid from './LDRungGrid';
+import { copyLDRungFragment, pasteLDRungFragment, type LDClipboardFragment } from './graphModel';
 import { useIDEStore } from '../../store/useIDEStore';
 import { useDebugValues } from '../../hooks/useDebugValue';
 
@@ -50,6 +51,9 @@ function ElementProperties({ element, onChange, onClose }: ElementPropertiesProp
   const [variable, setVariable] = useState(element.variable || '');
   const [fbInstance, setFbInstance] = useState(element.instance || '');
   const [comment, setComment] = useState(element.comment || '');
+  const [presetTime, setPresetTime] = useState(element.parameters?.PT ?? 'T#1s');
+  const isFB = element.type === 'function_block';
+  const isTimer = element.fbType === 'TON' || element.fbType === 'TOF' || element.fbType === 'TP';
 
   const handleSave = () => {
     onChange({
@@ -57,19 +61,18 @@ function ElementProperties({ element, onChange, onClose }: ElementPropertiesProp
       variable: variable || undefined,
       instance: fbInstance || undefined,
       comment: comment.trim() || undefined,
+      ...(isTimer ? { parameters: { ...element.parameters, PT: presetTime } } : {}),
     });
     onClose();
   };
 
-  const isFB = element.type === 'function_block';
-
   return (
-    <div className="absolute top-0 right-0 w-64 bg-slate-800 border border-slate-600 rounded-lg shadow-xl z-50 p-3">
+    <div className="zplc-visual-node absolute top-0 right-0 w-64 border rounded-lg shadow-xl z-50 p-3">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-bold text-slate-200">Element Properties</h3>
+        <h3 className="text-sm font-bold text-[var(--text-primary)]">Element Properties</h3>
         <button
           onClick={onClose}
-          className="text-slate-400 hover:text-slate-200 text-lg"
+          className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)] text-lg"
         >
           ×
         </button>
@@ -77,20 +80,20 @@ function ElementProperties({ element, onChange, onClose }: ElementPropertiesProp
 
       <div className="space-y-3">
         <div>
-          <label className="block text-xs text-slate-400 mb-1">Type</label>
-          <div className="text-sm text-slate-200 font-mono bg-slate-700 px-2 py-1 rounded">
+          <label className="block text-xs text-[var(--text-tertiary)] mb-1">Type</label>
+          <div className="text-sm text-[var(--text-secondary)] font-mono bg-[var(--color-surface-700)] px-2 py-1 rounded">
             {isFB ? element.fbType : element.type}
           </div>
         </div>
 
         {!isFB && (
           <div>
-            <label className="block text-xs text-slate-400 mb-1">Variable</label>
+            <label className="block text-xs text-[var(--text-tertiary)] mb-1">Variable</label>
             <input
               type="text"
               value={variable}
               onChange={(e) => setVariable(e.target.value)}
-              className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1 text-sm text-slate-200
+              className="w-full bg-[var(--color-surface-700)] border border-[var(--border-color)] rounded px-2 py-1 text-sm text-[var(--text-secondary)]
                          focus:outline-none focus:border-blue-500"
               placeholder="Variable name"
             />
@@ -100,24 +103,26 @@ function ElementProperties({ element, onChange, onClose }: ElementPropertiesProp
         {isFB && (
           <>
             <div>
-              <label className="block text-xs text-slate-400 mb-1">Instance Name</label>
+              <label className="block text-xs text-[var(--text-tertiary)] mb-1">Instance Name</label>
               <input
                 type="text"
                 value={fbInstance}
                 onChange={(e) => setFbInstance(e.target.value)}
-                className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1 text-sm text-slate-200
+                className="w-full bg-[var(--color-surface-700)] border border-[var(--border-color)] rounded px-2 py-1 text-sm text-[var(--text-secondary)]
                            focus:outline-none focus:border-blue-500"
                 placeholder="Instance name"
               />
             </div>
 
-            {element.fbType === 'TON' || element.fbType === 'TOF' || element.fbType === 'TP' ? (
+            {isTimer ? (
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Preset Time (PT)</label>
+                <label className="block text-xs text-[var(--text-tertiary)] mb-1">Preset Time (PT)</label>
                 <input
                   type="text"
-                  defaultValue={element.parameters?.PT || 'T#1s'}
-                  className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1 text-sm text-slate-200
+                  value={presetTime}
+                  onChange={(e) => setPresetTime(e.target.value)}
+                  aria-label="Preset Time (PT)"
+                  className="w-full bg-[var(--color-surface-700)] border border-[var(--border-color)] rounded px-2 py-1 text-sm text-[var(--text-secondary)]
                              focus:outline-none focus:border-blue-500 font-mono"
                   placeholder="T#1s"
                 />
@@ -128,12 +133,12 @@ function ElementProperties({ element, onChange, onClose }: ElementPropertiesProp
 
         {/* Comment field - available for all element types */}
         <div>
-          <label className="block text-xs text-slate-400 mb-1">Comment</label>
+          <label className="block text-xs text-[var(--text-tertiary)] mb-1">Comment</label>
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             rows={2}
-            className="w-full bg-slate-700 border border-slate-600 rounded px-2 py-1 text-sm text-slate-200
+            className="w-full bg-[var(--color-surface-700)] border border-[var(--border-color)] rounded px-2 py-1 text-sm text-[var(--text-secondary)]
                        focus:outline-none focus:border-blue-500 resize-none"
             placeholder="Optional description..."
           />
@@ -149,7 +154,7 @@ function ElementProperties({ element, onChange, onClose }: ElementPropertiesProp
           </button>
           <button
             onClick={onClose}
-            className="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm py-1.5 rounded
+            className="flex-1 bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--text-secondary)] text-sm py-1.5 rounded
                        transition-colors"
           >
             Cancel
@@ -167,17 +172,23 @@ function ElementProperties({ element, onChange, onClose }: ElementPropertiesProp
 export default function LDEditor({ model, onChange, readOnly = false }: LDEditorProps) {
   const [selectedElement, setSelectedElement] = useState<LDElementType | null>(null);
   const [selectedRungId, setSelectedRungId] = useState<string | null>(null);
+  const clipboardRef = useRef<LDClipboardFragment | undefined>(undefined);
 
   // Get debug mode from store
   const debugMode = useIDEStore((state) => state.debug.mode);
 
   // Ensure all rungs are grid-based
-  const normalizedModel: LDModel = {
+  const normalizedModel = useMemo<LDModel>(() => ({
     ...model,
     rungs: model.rungs.map(rung =>
       isGridBasedRung(rung) ? rung : convertToGridRung(rung)
     ),
-  };
+  }), [model]);
+  const latestModelRef = useRef(normalizedModel);
+
+  useEffect(() => {
+    latestModelRef.current = normalizedModel;
+  }, [normalizedModel]);
 
   // Extract all variable names from the model for debug value lookup
   // This includes FB port paths for rich value display
@@ -378,7 +389,30 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
   }, [normalizedModel, selectedRungId, handleRungChange, onChange]);
 
   // Handle element deletion (via keyboard)
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('input, textarea, select, [contenteditable="true"]')) return;
+    const shortcut = (e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.ctrlKey !== e.metaKey;
+    if (shortcut && e.key.toLowerCase() === 'c') {
+      if (readOnly || !selectedRungId) return;
+      const fragment = copyLDRungFragment(latestModelRef.current, selectedRungId);
+      if (!fragment) return;
+      clipboardRef.current = fragment;
+      e.preventDefault();
+      return;
+    }
+    if (shortcut && e.key.toLowerCase() === 'v') {
+      if (readOnly || !onChange || !selectedRungId || !clipboardRef.current) return;
+      const pasted = pasteLDRungFragment(latestModelRef.current, clipboardRef.current, selectedRungId);
+      if (!pasted) return;
+      latestModelRef.current = pasted;
+      const copiedRung = pasted.rungs[pasted.rungs.findIndex((rung) => rung.id === selectedRungId) + 1];
+      e.preventDefault();
+      onChange(pasted);
+      setSelectedElement(null);
+      setSelectedRungId(copiedRung?.id ?? null);
+      return;
+    }
     if (e.key === 'Delete' || e.key === 'Backspace') {
       if (selectedElement && selectedRungId && !readOnly && onChange) {
         const rung = normalizedModel.rungs.find(r => r.id === selectedRungId);
@@ -386,20 +420,25 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
           const updatedRung = removeElementAt(rung, selectedElement.row, selectedElement.col);
           handleRungChange(selectedRungId, updatedRung);
           setSelectedElement(null);
+          e.preventDefault();
         }
       }
     }
     if (e.key === 'Escape') {
+      if (!selectedElement && !selectedRungId) return;
       setSelectedElement(null);
       setSelectedRungId(null);
+      e.preventDefault();
     }
   }, [selectedElement, selectedRungId, normalizedModel, handleRungChange, readOnly, onChange]);
 
   return (
     <div
-      className="w-full h-full flex bg-slate-900 overflow-hidden"
+      className="zplc-visual-editor w-full h-full flex overflow-hidden"
       onKeyDown={handleKeyDown}
       tabIndex={0}
+      role="region"
+      aria-label="Ladder diagram editor"
     >
       {/* Toolbox sidebar */}
       {!readOnly && <LDToolbox />}
@@ -407,12 +446,12 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
       {/* Main editor area */}
       <div className="flex-1 flex flex-col overflow-hidden relative">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-2 bg-slate-800 border-b border-slate-600">
+        <div className="flex items-center justify-between px-4 py-2 bg-[var(--color-surface-800)] border-b border-[var(--border-color)]">
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-slate-200">
+            <span className="text-sm font-medium text-[var(--text-primary)]">
               {normalizedModel.name}
             </span>
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-[var(--text-tertiary)]">
               {normalizedModel.rungs.length} rung{normalizedModel.rungs.length !== 1 ? 's' : ''}
             </span>
           </div>
@@ -420,8 +459,8 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
           {!readOnly && (
             <button
               onClick={handleAddRung}
-              className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-slate-200 
-                         bg-slate-700 hover:bg-slate-600 rounded border border-slate-600
+              className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-[var(--text-primary)]
+                         bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] rounded border border-[var(--border-color)]
                          transition-colors"
             >
               <Plus size={14} />
@@ -435,7 +474,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
           {normalizedModel.rungs.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
-                <p className="text-slate-400 text-sm">No rungs defined</p>
+                <p className="text-[var(--text-tertiary)] text-sm">No rungs defined</p>
                 {!readOnly && (
                   <button
                     onClick={handleAddRung}
@@ -449,7 +488,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
           ) : (
             <div className="space-y-4">
               {normalizedModel.rungs.map((rung, idx) => (
-                <div key={rung.id} className="relative group">
+                <div key={rung.id} className="relative group" data-ld-rung-id={rung.id}>
                   <LDRungGrid
                     rung={rung}
                     onChange={(updated) => handleRungChange(rung.id, updated)}
@@ -477,7 +516,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                       {idx > 0 && (
                         <button
                           onClick={() => handleMoveRungUp(rung.id)}
-                          className="p-1 rounded bg-slate-600 hover:bg-slate-500 text-white"
+                        className="p-1 rounded bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--text-primary)]"
                           title="Move rung up"
                         >
                           <ChevronUp size={12} />
@@ -488,7 +527,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
                       {idx < normalizedModel.rungs.length - 1 && (
                         <button
                           onClick={() => handleMoveRungDown(rung.id)}
-                          className="p-1 rounded bg-slate-600 hover:bg-slate-500 text-white"
+                        className="p-1 rounded bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--text-primary)]"
                           title="Move rung down"
                         >
                           <ChevronDown size={12} />
@@ -512,8 +551,8 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
         </div>
 
         {/* Legend */}
-        <div className="px-4 py-2 bg-slate-800 border-t border-slate-600">
-          <div className="flex items-center gap-4 text-[10px] text-slate-400">
+        <div className="px-4 py-2 bg-[var(--color-surface-800)] border-t border-[var(--border-color)]">
+          <div className="flex items-center gap-4 text-[10px] text-[var(--text-tertiary)]">
             <span className="flex items-center gap-1">
               <span className="font-mono text-green-400">| |</span> NO Contact
             </span>
@@ -529,8 +568,8 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
             <span className="flex items-center gap-1">
               <span className="font-mono text-orange-400">(R)</span> Reset
             </span>
-            <span className="flex items-center gap-1 ml-auto text-slate-500">
-              Drag elements from toolbox • Click to select • Delete to remove
+            <span className="flex items-center gap-1 ml-auto text-[var(--text-tertiary)]">
+              Drag elements from toolbox • Click to select • Ctrl/Cmd+C/V copies the selected rung • Delete to remove
             </span>
           </div>
         </div>
@@ -538,6 +577,7 @@ export default function LDEditor({ model, onChange, readOnly = false }: LDEditor
         {/* Element properties panel */}
         {selectedElement && !readOnly && (
           <ElementProperties
+            key={selectedElement.id}
             element={selectedElement}
             onChange={handleElementUpdate}
             onClose={() => setSelectedElement(null)}

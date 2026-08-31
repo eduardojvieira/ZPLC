@@ -2,8 +2,7 @@
  * ZPLC IDE Global State Store
  * 
  * Uses Zustand for state management.
- * Supports File System Access API for opening real folders,
- * with fallback to virtual projects for unsupported browsers.
+ * Supports File System Access API for opening real folders.
  */
 
 import { create } from 'zustand';
@@ -13,12 +12,13 @@ import type {
   ConsoleTab,
   PLCLanguage,
   CompilerMessage,
+  STBufferDiagnostics,
   ZPLCProjectConfig,
+  ZPLCProjectV2,
   FileTreeNode,
   ProjectFileWithHandle,
 } from '../types';
 import {
-  DEFAULT_ZPLC_CONFIG,
   getExtensionForLanguage,
   createEmptyFileContent,
   isFileSystemAccessSupported,
@@ -31,27 +31,115 @@ import {
   loadFileFromTree,
   writeFileContent,
   createNewProject,
-  createVirtualProject,
+  copyProjectToFolder,
   toggleDirectoryExpanded,
   findFileInTree,
+  fileTreeFileId,
 } from '../utils/fileSystem';
 import {
   getAvailableProjects,
   loadProject,
+  loadProjectAssets,
 } from '../utils/projectLoader';
 import type { ProjectInfo } from '../utils/projectLoader';
 import type { SystemInfo, StatusInfo } from '../runtime/serialAdapter';
 import type { DebugMap } from '../compiler';
-import type { WatchForceEntry } from '../runtime/debugAdapter';
+import { WATCH_FORCE_STATE, type WatchForceEntry } from '../runtime/debugAdapter';
+import type { ProjectMigrationChange } from '../project/projectModel';
 import { getBreakpointPCForLine } from '../components/codeEditorBreakpoints';
 import { appendConsoleEntries, type NewConsoleEntry } from './consoleEntries';
 import { DEFAULT_DEBUG_POLLING_INTERVAL_MS } from './debugDefaults';
+import { NATIVE_TRACE_LIMIT, type NativeTraceSample } from '../runtime/nativeTrace';
+import type { CanonicalWorkspaceBuildEvidence } from '../components/workspaceTestPresentation';
+
+let openFileIntent = 0;
+let fileTreeRefreshIntent = 0;
+let openProjectIntent = 0;
+const fileCreationReservations = new Set<string>();
+
+function findTreeFileById(tree: FileTreeNode, fileId: string): FileTreeNode | null {
+  if (tree.id === fileId && tree.type === 'file') return tree;
+  for (const child of tree.children ?? []) {
+    const found = findTreeFileById(child, fileId);
+    if (found) return found;
+  }
+  return null;
+}
+
+function resolveTreeFile(tree: FileTreeNode, fileId: string): FileTreeNode | null {
+  return findTreeFileById(tree, fileId);
+}
+
+function firstTreeFile(tree: FileTreeNode): FileTreeNode | null {
+  if (tree.type === 'file') return tree;
+  for (const child of tree.children ?? []) {
+    const found = firstTreeFile(child);
+    if (found) return found;
+  }
+  return null;
+}
+
+function findTreeFileWithParent(tree: FileTreeNode, fileId: string): { node: FileTreeNode; parent: FileTreeNode } | null {
+  const node = resolveTreeFile(tree, fileId);
+  if (!node) return null;
+
+  const visit = (parent: FileTreeNode): { node: FileTreeNode; parent: FileTreeNode } | null => {
+    for (const child of parent.children ?? []) {
+      if (child === node) return { node: child, parent };
+      const found = visit(child);
+      if (found) return found;
+    }
+    return null;
+  };
+
+  return visit(tree);
+}
+
+function pruneTreeFile(tree: FileTreeNode, fileId: string): FileTreeNode | null {
+  let changed = false;
+  const children = (tree.children ?? []).flatMap((child) => {
+    if (child.type === 'file' && child.id === fileId) {
+      changed = true;
+      return [];
+    }
+    const pruned = pruneTreeFile(child, fileId);
+    if (pruned) {
+      changed = true;
+      return [pruned];
+    }
+    return [child];
+  });
+
+  if (!changed) return null;
+  return { ...tree, children };
+}
+
+function appendTreeFile(tree: FileTreeNode, parentPath: string, file: FileTreeNode): FileTreeNode | null {
+  if (tree.type === 'directory' && tree.path === parentPath) {
+    return { ...tree, children: [...(tree.children ?? []), file] };
+  }
+
+  let changed = false;
+  const children = (tree.children ?? []).map((child) => {
+    const updated = child.type === 'directory' ? appendTreeFile(child, parentPath, file) : null;
+    if (!updated) return child;
+    changed = true;
+    return updated;
+  });
+  return changed ? { ...tree, children } : null;
+}
+
+function isSafePathSegment(value: string): boolean {
+  return value.length > 0 && value !== '.' && value !== '..' && !/[\\/\0]/.test(value);
+}
 
 // =============================================================================
 // Theme Types
 // =============================================================================
 
 export type Theme = 'light' | 'dark' | 'system';
+export interface CompilerNavigationTarget { file: string; line: number; column: number; }
+export interface CloseProjectOptions { discardUnsaved?: boolean; }
 
 // =============================================================================
 // Debug State Types
@@ -109,6 +197,12 @@ export interface DebugState {
 
   /** Active forced watch entries indexed by variable path. */
   forcedValues: Map<string, WatchForceEntry>;
+
+  /** True when a hardware disconnect prevented force-state reconciliation. */
+  forcesUnconfirmed: boolean;
+
+  /** Bounded, host-only samples from the active native POSIX session. */
+  nativeTrace: NativeTraceSample[];
   
   /** Whether the debugger is currently polling for live values */
   isPolling: boolean;
@@ -137,6 +231,15 @@ interface IDEState {
   isVirtualProject: boolean;             // True if in-memory only (Firefox fallback)
   projectName: string | null;
   projectConfig: ZPLCProjectConfig | null;
+  /** Monotonic identity for the currently open project session. */
+  projectSession: number;
+  /** Ephemeral desktop-test capability for one physical project session. */
+  workspaceScenarioLink: { workspaceId: string; projectSession: number } | null;
+  /** Evidence for the exact saved-workspace build; invalidated by session/run/link fences. */
+  canonicalWorkspaceBuildEvidence: CanonicalWorkspaceBuildEvidence | null;
+  /** Configuration differs from the last successful disk save. */
+  projectConfigDirty: boolean;
+  projectMigrationPreview: { sourceSchemaVersion: 1 | 2; targetSchemaVersion: 2; changes: ProjectMigrationChange[] } | null;
   directoryHandle: FileSystemDirectoryHandle | null;
   fileTree: FileTreeNode | null;
   
@@ -156,11 +259,15 @@ interface IDEState {
   consoleEntries: ConsoleEntry[];
   activeConsoleTab: ConsoleTab;
   compilerMessages: CompilerMessage[];
+  /** True after the current compiler result has reported diagnostics or completed cleanly. */
+  compilerMessagesChecked: boolean;
+  compilerRunId: number;
+  compilerNavigationTarget: CompilerNavigationTarget | null;
+  /** Current editor-only ST syntax result. It is not compiler/build evidence. */
+  stBufferDiagnostics: STBufferDiagnostics | null;
 
   // UI State
-  sidebarWidth: number;
   consoleHeight: number;
-  isSidebarCollapsed: boolean;
   isConsoleCollapsed: boolean;
   showSettings: boolean;
 
@@ -173,11 +280,13 @@ interface IDEState {
   // Actions - Project Management (File System)
   openProjectFromFolder: () => Promise<boolean>;
   createNewProjectInFolder: () => Promise<boolean>;
-  createVirtualProject: (name: string) => void;
-  openExampleProject: (projectId: string) => void;
+  copyExampleProjectToFolder: (projectId: string) => Promise<boolean>;
   getExampleProjects: () => ProjectInfo[];
-  closeProject: () => void;
+  closeProject: (options?: CloseProjectOptions) => boolean;
+  updateProjectConfig: (updates: Partial<ZPLCProjectConfig>) => void;
   saveProjectConfig: () => Promise<void>;
+  linkWorkspaceScenarios: (workspaceId: string, expectedProjectSession: number) => boolean;
+  recordCanonicalWorkspaceBuildEvidence: (evidence: CanonicalWorkspaceBuildEvidence) => boolean;
 
   // Actions - File Tree
   toggleDirectory: (dirPath: string) => void;
@@ -188,7 +297,7 @@ interface IDEState {
   saveFile: (fileId: string) => Promise<boolean>;
   saveAllFiles: () => Promise<void>;
   createFile: (name: string, language: PLCLanguage, parentPath?: string) => Promise<string>;
-  deleteFile: (fileId: string) => Promise<void>;
+  deleteFile: (fileId: string, expectedProjectSession?: number) => Promise<boolean>;
   setActiveFile: (fileId: string | null) => void;
   updateFileContent: (fileId: string, content: string) => void;
   closeTab: (fileId: string) => void;
@@ -208,12 +317,15 @@ interface IDEState {
   clearConsole: () => void;
   setActiveConsoleTab: (tab: ConsoleTab) => void;
   addCompilerMessage: (message: Omit<CompilerMessage, 'timestamp'>) => void;
+  markCompilerMessagesChecked: () => void;
   clearCompilerMessages: () => void;
+  setSTBufferDiagnostics: (result: STBufferDiagnostics, expectedContent: string) => boolean;
+  clearSTBufferDiagnostics: (identity?: Pick<STBufferDiagnostics, 'projectSession' | 'compilerRunId' | 'fileId' | 'file'>) => void;
+  navigateToCompilerDiagnostic: (file: string, line: number, column: number) => Promise<boolean>;
+  consumeCompilerNavigationTarget: (target: CompilerNavigationTarget) => void;
 
   // Actions - UI
-  setSidebarWidth: (width: number) => void;
   setConsoleHeight: (height: number) => void;
-  toggleSidebar: () => void;
   toggleConsole: () => void;
   toggleSettings: () => void;
 
@@ -232,7 +344,10 @@ interface IDEState {
   clearLiveValues: () => void;
   setForcedValue: (entry: WatchForceEntry) => void;
   clearForcedValue: (varPath: string) => void;
+  markForcedValuesUnconfirmed: () => void;
   clearForcedValues: () => void;
+  appendNativeTrace: (sample: NativeTraceSample) => void;
+  clearNativeTrace: () => void;
   setPolling: (isPolling: boolean) => void;
   setPollingInterval: (interval: number) => void;
   toggleMpeek: () => void;
@@ -284,6 +399,10 @@ export const useIDEStore = create<IDEState>((set, get) => ({
   isVirtualProject: false,
   projectName: null,
   projectConfig: null,
+  projectSession: 0,
+  workspaceScenarioLink: null,
+  projectConfigDirty: false,
+  projectMigrationPreview: null,
   directoryHandle: null,
   fileTree: null,
   loadedFiles: new Map(),
@@ -313,10 +432,13 @@ export const useIDEStore = create<IDEState>((set, get) => ({
   ],
   activeConsoleTab: 'output',
   compilerMessages: [],
+  compilerMessagesChecked: false,
+  compilerRunId: 0,
+  compilerNavigationTarget: null,
+  stBufferDiagnostics: null,
+  canonicalWorkspaceBuildEvidence: null,
 
-  sidebarWidth: 260,
   consoleHeight: 200,
-  isSidebarCollapsed: false,
   isConsoleCollapsed: false,
   showSettings: false,
 
@@ -331,6 +453,8 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     watchVariables: [],
     liveValues: new Map(),
     forcedValues: new Map(),
+    forcesUnconfirmed: false,
+    nativeTrace: [],
     isPolling: false,
     pollingInterval: DEFAULT_DEBUG_POLLING_INTERVAL_MS,
     mpeekEnabled: false,
@@ -350,10 +474,30 @@ export const useIDEStore = create<IDEState>((set, get) => ({
   // ==========================================================================
 
   openProjectFromFolder: async () => {
+    const blockUnsafeOpen = (): boolean => {
+      const debug = get().debug;
+      if (debug.forcedValues.size > 0 || debug.forcesUnconfirmed) {
+        set({ activeConsoleTab: 'watch', isConsoleCollapsed: false });
+        get().addConsoleEntry({ type: 'warning', message: 'Release or verify all forces before closing the project.', source: 'system' });
+        return true;
+      }
+      if (get().hasUnsavedChanges()) {
+        get().addConsoleEntry({ type: 'warning', message: 'Save or discard changes before opening another folder.', source: 'system' });
+        return true;
+      }
+      return false;
+    };
+
+    if (blockUnsafeOpen()) return false;
+    const expectedProjectSession = get().projectSession;
+    const intent = ++openProjectIntent;
+    const isCurrent = () => openProjectIntent === intent && get().projectSession === expectedProjectSession;
+
     if (!isFileSystemAccessSupported()) {
+      if (!isCurrent()) return false;
       get().addConsoleEntry({
         type: 'error',
-        message: 'File System Access API not supported. Use Chrome or Edge, or create a Virtual Project.',
+        message: 'File System Access API not supported. Use a browser with folder access.',
         source: 'system',
       });
       return false;
@@ -361,57 +505,62 @@ export const useIDEStore = create<IDEState>((set, get) => ({
 
     try {
       const dirHandle = await openDirectoryPicker();
-      if (!dirHandle) {
-        // User cancelled
+      if (!isCurrent()) return false;
+      if (!dirHandle) return false;
+
+      get().addConsoleEntry({ type: 'info', message: `Opening folder: ${dirHandle.name}...`, source: 'system' });
+
+      const readResult = await readProjectConfig(dirHandle);
+      if (!isCurrent()) return false;
+      if (readResult.kind === 'invalid') {
+        get().addConsoleEntry({ type: 'error', message: 'Invalid zplc.json. The existing configuration was not changed.', source: 'system' });
         return false;
       }
 
-      get().addConsoleEntry({
-        type: 'info',
-        message: `Opening folder: ${dirHandle.name}...`,
-        source: 'system',
-      });
-
-      // Read project config
-      let config = await readProjectConfig(dirHandle);
-      if (!config) {
-        // No zplc.json found - ask if we should create one
+      let config: ZPLCProjectV2;
+      if (readResult.kind === 'valid') {
+        config = readResult.config;
+      } else {
         get().addConsoleEntry({
           type: 'warning',
-          message: 'No zplc.json found. Creating default configuration...',
+          message: 'No zplc.json found. This folder was not changed. Use New Project to create a project in an empty folder.',
           source: 'system',
         });
-        config = { ...DEFAULT_ZPLC_CONFIG, name: dirHandle.name };
-        await writeProjectConfig(dirHandle, config);
+        return false;
       }
 
-      // Read file tree
       const fileTree = await readDirectoryRecursive(dirHandle);
+      if (!isCurrent()) return false;
+      if (blockUnsafeOpen()) return false;
 
       set({
         isProjectOpen: true,
         isVirtualProject: false,
         projectName: config.name,
         projectConfig: config,
+        projectMigrationPreview: readResult.changes.length > 0
+          ? { sourceSchemaVersion: readResult.sourceSchemaVersion, targetSchemaVersion: 2, changes: readResult.changes }
+          : null,
         directoryHandle: dirHandle,
         fileTree,
         loadedFiles: new Map(),
         activeFileId: null,
         openTabs: [],
+        projectSession: expectedProjectSession + 1,
+        workspaceScenarioLink: null,
+        canonicalWorkspaceBuildEvidence: null,
+        projectConfigDirty: false,
+        compilerMessages: [], compilerMessagesChecked: false, compilerNavigationTarget: null, compilerRunId: get().compilerRunId + 1,
       });
 
-      get().addConsoleEntry({
-        type: 'success',
-        message: `Opened project: ${config.name}`,
-        source: 'system',
-      });
-
+      if (openProjectIntent !== intent || get().projectSession !== expectedProjectSession + 1) return false;
+      get().addConsoleEntry({ type: 'success', message: `Opened project: ${config.name}`, source: 'system' });
       return true;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
+    } catch {
+      if (!isCurrent()) return false;
       get().addConsoleEntry({
         type: 'error',
-        message: `Failed to open folder: ${message}`,
+        message: 'Failed to open folder. Check access and project files, then try again.',
         source: 'system',
       });
       return false;
@@ -422,7 +571,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     if (!isFileSystemAccessSupported()) {
       get().addConsoleEntry({
         type: 'error',
-        message: 'File System Access API not supported. Use a Virtual Project instead.',
+        message: 'File System Access API not supported. Use a browser with folder access.',
         source: 'system',
       });
       return false;
@@ -448,11 +597,17 @@ export const useIDEStore = create<IDEState>((set, get) => ({
         isVirtualProject: false,
         projectName: config.name,
         projectConfig: config,
+        projectMigrationPreview: null,
         directoryHandle: dirHandle,
         fileTree,
         loadedFiles: new Map(),
         activeFileId: null,
         openTabs: [],
+        projectSession: get().projectSession + 1,
+        workspaceScenarioLink: null,
+        canonicalWorkspaceBuildEvidence: null,
+        projectConfigDirty: false,
+        compilerMessages: [], compilerMessagesChecked: false, compilerNavigationTarget: null, compilerRunId: get().compilerRunId + 1,
       });
 
       get().addConsoleEntry({
@@ -473,117 +628,118 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     }
   },
 
-  createVirtualProject: (name: string) => {
-    const { config, files, fileTree } = createVirtualProject(name);
-    
-    const loadedFiles = new Map<string, ProjectFileWithHandle>();
-    files.forEach(f => loadedFiles.set(f.id, f));
-
-    set({
-      isProjectOpen: true,
-      isVirtualProject: true,
-      projectName: name,
-      projectConfig: config,
-      directoryHandle: null,
-      fileTree,
-      loadedFiles,
-      activeFileId: files[0]?.id || null,
-      openTabs: files.length > 0 ? [files[0].id] : [],
-    });
-
-    get().addConsoleEntry({
-      type: 'success',
-      message: `Created virtual project: ${name}`,
-      source: 'system',
-    });
-  },
-
-  openExampleProject: (projectId: string) => {
+  copyExampleProjectToFolder: async (projectId: string) => {
+    const blockUnsafeOpen = (): boolean => {
+      const debug = get().debug;
+      if (debug.forcedValues.size > 0 || debug.forcesUnconfirmed) {
+        set({ activeConsoleTab: 'watch', isConsoleCollapsed: false });
+        get().addConsoleEntry({ type: 'warning', message: 'Release or verify all forces before closing the project.', source: 'system' });
+        return true;
+      }
+      if (get().hasUnsavedChanges()) {
+        get().addConsoleEntry({ type: 'warning', message: 'Save or discard changes before opening another folder.', source: 'system' });
+        return true;
+      }
+      return false;
+    };
+    if (blockUnsafeOpen()) return false;
+    const expectedProjectSession = get().projectSession;
+    const intent = ++openProjectIntent;
+    const isCurrent = () => openProjectIntent === intent && get().projectSession === expectedProjectSession;
+    if (!isFileSystemAccessSupported()) {
+      get().addConsoleEntry({ type: 'error', message: 'File System Access API not supported. Use a browser with folder access.', source: 'system' });
+      return false;
+    }
     const loaded = loadProject(projectId);
-    if (!loaded) {
+    const assets = loadProjectAssets(projectId);
+    if (!loaded || !assets) {
       get().addConsoleEntry({
         type: 'error',
         message: `Failed to load example project: ${projectId}`,
         source: 'system',
       });
-      return;
+      return false;
     }
-
-    // Convert ProjectFile[] to Map<string, ProjectFileWithHandle>
-    const loadedFiles = new Map<string, ProjectFileWithHandle>();
-    for (const file of loaded.files) {
-      const fileWithHandle: ProjectFileWithHandle = {
-        ...file,
-        parentPath: file.path.includes('/') ? file.path.substring(0, file.path.lastIndexOf('/')) : '',
-      };
-      loadedFiles.set(file.id, fileWithHandle);
+    try {
+      const dirHandle = await openDirectoryPicker();
+      if (!isCurrent() || !dirHandle) return false;
+      get().addConsoleEntry({ type: 'info', message: `Copying example to: ${dirHandle.name}...`, source: 'system' });
+      await copyProjectToFolder(dirHandle, loaded.zplcConfig, assets);
+      if (!isCurrent()) return false;
+      const readResult = await readProjectConfig(dirHandle);
+      if (!isCurrent() || readResult.kind !== 'valid') throw new Error('copied project could not be read back');
+      const fileTree = await readDirectoryRecursive(dirHandle);
+      if (!isCurrent() || blockUnsafeOpen()) return false;
+      const firstFile = firstTreeFile(fileTree);
+      const firstLoadedFile = firstFile ? await loadFileFromTree(firstFile) : null;
+      if (!isCurrent()) return false;
+      const loadedFiles = new Map<string, ProjectFileWithHandle>();
+      if (firstLoadedFile) loadedFiles.set(firstLoadedFile.id, firstLoadedFile);
+      set({
+        isProjectOpen: true,
+        isVirtualProject: false,
+        projectName: readResult.config.name,
+        projectConfig: readResult.config,
+        projectMigrationPreview: null,
+        directoryHandle: dirHandle,
+        fileTree,
+        loadedFiles,
+        activeFileId: firstLoadedFile?.id ?? null,
+        openTabs: firstLoadedFile ? [firstLoadedFile.id] : [],
+        projectSession: expectedProjectSession + 1,
+        workspaceScenarioLink: null,
+        canonicalWorkspaceBuildEvidence: null,
+        projectConfigDirty: false,
+        compilerMessages: [], compilerMessagesChecked: false, compilerNavigationTarget: null, compilerRunId: get().compilerRunId + 1,
+      });
+      if (openProjectIntent !== intent || get().projectSession !== expectedProjectSession + 1) return false;
+      get().addConsoleEntry({ type: 'success', message: `Copied example project: ${readResult.config.name}`, source: 'system' });
+      return true;
+    } catch (error) {
+      if (!isCurrent()) return false;
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      get().addConsoleEntry({ type: 'error', message: `Failed to copy example: ${message}`, source: 'system' });
+      return false;
     }
-
-    // Build a file tree from the loaded files
-    const fileTree: FileTreeNode = {
-      id: 'root',
-      name: loaded.zplcConfig.name || projectId,
-      type: 'directory',
-      path: '',
-      isExpanded: true,
-      children: [
-        {
-          id: 'src',
-          name: 'src',
-          type: 'directory',
-          path: 'src',
-          isExpanded: true,
-          children: loaded.files.map(f => ({
-            id: f.id,
-            name: f.name,
-            type: 'file' as const,
-            path: f.path,
-            language: f.language,
-          })),
-        },
-      ],
-    };
-
-    set({
-      isProjectOpen: true,
-      isVirtualProject: true,  // Example projects are read-only (no disk handle)
-      projectName: loaded.zplcConfig.name || projectId,
-      projectConfig: loaded.zplcConfig,
-      directoryHandle: null,
-      fileTree,
-      loadedFiles,
-      activeFileId: loaded.files[0]?.id || null,
-      openTabs: loaded.files.length > 0 ? [loaded.files[0].id] : [],
-    });
-
-    get().addConsoleEntry({
-      type: 'success',
-      message: `Loaded example project: ${loaded.zplcConfig.name || projectId}`,
-      source: 'system',
-    });
   },
 
   getExampleProjects: () => {
     return getAvailableProjects();
   },
 
-  closeProject: () => {
-    const hasUnsaved = get().hasUnsavedChanges();
-    if (hasUnsaved) {
-      // In a real app, we'd show a confirmation dialog
-      console.warn('Closing project with unsaved changes');
+  closeProject: (options = {}) => {
+    const currentDebug = get().debug;
+    if (currentDebug.forcedValues.size > 0 || currentDebug.forcesUnconfirmed) {
+      set({ activeConsoleTab: 'watch', isConsoleCollapsed: false });
+      get().addConsoleEntry({
+        type: 'warning',
+        message: 'Release or verify all forces before closing the project.',
+        source: 'system',
+      });
+      return false;
     }
+
+    if (get().hasUnsavedChanges() && !options.discardUnsaved) return false;
 
     set({
       isProjectOpen: false,
       isVirtualProject: false,
       projectName: null,
       projectConfig: null,
+      projectMigrationPreview: null,
       directoryHandle: null,
       fileTree: null,
       loadedFiles: new Map(),
       activeFileId: null,
       openTabs: [],
+      projectSession: get().projectSession + 1,
+      workspaceScenarioLink: null,
+      canonicalWorkspaceBuildEvidence: null,
+      projectConfigDirty: false,
+      compilerMessages: [],
+      compilerMessagesChecked: false,
+      compilerNavigationTarget: null,
+      compilerRunId: get().compilerRunId + 1,
       // Reset debug state when closing project
       debug: {
         mode: 'none',
@@ -595,6 +751,8 @@ export const useIDEStore = create<IDEState>((set, get) => ({
           watchVariables: [],
           liveValues: new Map(),
           forcedValues: new Map(),
+          forcesUnconfirmed: false,
+          nativeTrace: [],
           isPolling: false,
           pollingInterval: DEFAULT_DEBUG_POLLING_INTERVAL_MS,
         mpeekEnabled: false,
@@ -606,10 +764,47 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       message: 'Project closed',
       source: 'system',
     });
+    return true;
+  },
+
+  updateProjectConfig: (updates) =>
+    set((state) => ({
+      projectConfig: state.projectConfig ? { ...state.projectConfig, ...updates } : null,
+      projectConfigDirty: Boolean(state.projectConfig),
+      compilerMessages: [],
+      compilerMessagesChecked: false,
+      compilerNavigationTarget: null,
+      compilerRunId: state.compilerRunId + 1,
+    })),
+
+  linkWorkspaceScenarios: (workspaceId, expectedProjectSession) => {
+    const state = get();
+    if (!workspaceId || !state.isProjectOpen || state.isVirtualProject || state.projectSession !== expectedProjectSession) {
+      return false;
+    }
+    set({ workspaceScenarioLink: { workspaceId, projectSession: expectedProjectSession }, canonicalWorkspaceBuildEvidence: null });
+    return true;
+  },
+
+  recordCanonicalWorkspaceBuildEvidence: (evidence) => {
+    let recorded = false;
+    set((state) => {
+      const link = state.workspaceScenarioLink;
+      if (!state.isProjectOpen || state.isVirtualProject
+        || state.projectSession !== evidence.projectSession || state.compilerRunId !== evidence.compilerRunId
+        || link?.projectSession !== evidence.projectSession || link.workspaceId !== evidence.workspaceId
+        || evidence.zplc.kind !== 'zplc' || !/^[a-f0-9]{64}$/.test(evidence.zplc.sha256)
+        || !Number.isSafeInteger(evidence.zplc.byteLength) || evidence.zplc.byteLength <= 0) return {};
+      recorded = true;
+      return { canonicalWorkspaceBuildEvidence: evidence };
+    });
+    return recorded;
   },
 
   saveProjectConfig: async () => {
     const { directoryHandle, projectConfig, isVirtualProject } = get();
+    const expectedProjectSession = get().projectSession;
+    const isCurrentProjectSession = () => get().projectSession === expectedProjectSession;
     
     if (!projectConfig) {
       get().addConsoleEntry({
@@ -643,10 +838,12 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     try {
       // Verify we still have write permission
       const permission = await directoryHandle.queryPermission({ mode: 'readwrite' });
+      if (!isCurrentProjectSession()) return;
       
       if (permission !== 'granted') {
         // Try to request permission again
         const requestResult = await directoryHandle.requestPermission({ mode: 'readwrite' });
+        if (!isCurrentProjectSession()) return;
         if (requestResult !== 'granted') {
           get().addConsoleEntry({
             type: 'error',
@@ -657,14 +854,18 @@ export const useIDEStore = create<IDEState>((set, get) => ({
         }
       }
       
-      await writeProjectConfig(directoryHandle, projectConfig);
-      
-      get().addConsoleEntry({
-        type: 'success',
-        message: 'Saved zplc.json',
-        source: 'system',
-      });
+      const canonicalConfig = await writeProjectConfig(directoryHandle, projectConfig);
+      const latest = get();
+      if (latest.projectSession === expectedProjectSession && latest.projectConfig === projectConfig) {
+        set({ projectConfig: canonicalConfig, projectConfigDirty: false, projectMigrationPreview: null });
+        get().addConsoleEntry({
+          type: 'success',
+          message: 'Saved zplc.json',
+          source: 'system',
+        });
+      }
     } catch (err) {
+      if (!isCurrentProjectSession()) return;
       const message = err instanceof Error ? err.message : 'Unknown error';
       get().addConsoleEntry({
         type: 'error',
@@ -687,11 +888,14 @@ export const useIDEStore = create<IDEState>((set, get) => ({
   },
 
   refreshFileTree: async () => {
-    const { directoryHandle } = get();
+    const { directoryHandle, projectSession } = get();
     if (!directoryHandle) return;
+    const intent = ++fileTreeRefreshIntent;
 
     try {
       const fileTree = await readDirectoryRecursive(directoryHandle);
+      const current = get();
+      if (fileTreeRefreshIntent !== intent || current.projectSession !== projectSession || current.directoryHandle !== directoryHandle) return;
       set({ fileTree });
     } catch (err) {
       console.error('Failed to refresh file tree:', err);
@@ -703,68 +907,23 @@ export const useIDEStore = create<IDEState>((set, get) => ({
   // ==========================================================================
 
   openFile: async (fileId: string) => {
-    const { loadedFiles, fileTree, openTabs } = get();
-
-    // Check if already loaded
-    if (loadedFiles.has(fileId)) {
-      set({
-        activeFileId: fileId,
-        openTabs: openTabs.includes(fileId) ? openTabs : [...openTabs, fileId],
-      });
-      return;
-    }
-
-    // Find the file in the tree
+    const intent = ++openFileIntent;
+    const { fileTree, projectSession } = get();
     if (!fileTree) return;
-    
-    const node = findFileInTree(fileTree, fileId.replace('file-', '').replace(/-/g, '/'));
-    if (!node || node.type !== 'file') {
-      // Try finding by ID directly
-      const findById = (tree: FileTreeNode): FileTreeNode | null => {
-        if (tree.id === fileId) return tree;
-        if (tree.children) {
-          for (const child of tree.children) {
-            const found = findById(child);
-            if (found) return found;
-          }
-        }
-        return null;
-      };
-      
-      const foundNode = findById(fileTree);
-      if (!foundNode || foundNode.type !== 'file') {
-        console.error(`File not found: ${fileId}`);
-        return;
-      }
-
-      try {
-        const file = await loadFileFromTree(foundNode);
-        if (file) {
-          const newLoadedFiles = new Map(loadedFiles);
-          newLoadedFiles.set(fileId, file);
-          set({
-            loadedFiles: newLoadedFiles,
-            activeFileId: fileId,
-            openTabs: [...openTabs, fileId],
-          });
-        }
-      } catch (err) {
-        console.error('Failed to load file:', err);
-      }
-      return;
-    }
-
+    const node = resolveTreeFile(fileTree, fileId);
+    if (!node) return;
     try {
-      const file = await loadFileFromTree(node);
-      if (file) {
-        const newLoadedFiles = new Map(loadedFiles);
-        newLoadedFiles.set(fileId, file);
-        set({
-          loadedFiles: newLoadedFiles,
-          activeFileId: fileId,
-          openTabs: [...openTabs, fileId],
-        });
-      }
+      const loaded = get().loadedFiles.get(fileId) ?? await loadFileFromTree(node);
+      const current = get();
+      if (!loaded || current.projectSession !== projectSession || !current.fileTree || !resolveTreeFile(current.fileTree, fileId)) return;
+      const loadedFiles = new Map(current.loadedFiles);
+      if (!loadedFiles.has(fileId)) loadedFiles.set(fileId, loaded);
+      const openTabs = current.openTabs.includes(fileId) ? current.openTabs : [...current.openTabs, fileId];
+      set({
+        loadedFiles,
+        openTabs,
+        activeFileId: openFileIntent === intent ? fileId : current.activeFileId,
+      });
     } catch (err) {
       console.error('Failed to load file:', err);
     }
@@ -773,6 +932,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
   saveFile: async (fileId: string) => {
     const { loadedFiles, isVirtualProject } = get();
     const file = loadedFiles.get(fileId);
+    const expectedProjectSession = get().projectSession;
     
     if (!file) {
       console.error(`File not found: ${fileId}`);
@@ -780,11 +940,8 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     }
 
     if (isVirtualProject) {
-      // Virtual projects can't save to disk, just mark as saved
-      const newLoadedFiles = new Map(loadedFiles);
-      newLoadedFiles.set(fileId, { ...file, isModified: false });
-      set({ loadedFiles: newLoadedFiles });
-      return true;
+      // A file download is not a durable project save; let the caller offer it.
+      return false;
     }
 
     if (!file.handle) {
@@ -794,9 +951,12 @@ export const useIDEStore = create<IDEState>((set, get) => ({
 
     try {
       await writeFileContent(file.handle, file.content);
-      
-      const newLoadedFiles = new Map(loadedFiles);
-      newLoadedFiles.set(fileId, { ...file, isModified: false });
+      const latest = get();
+      const latestFile = latest.loadedFiles.get(fileId);
+      if (latest.projectSession !== expectedProjectSession || latestFile !== file) return false;
+
+      const newLoadedFiles = new Map(latest.loadedFiles);
+      newLoadedFiles.set(fileId, { ...latestFile, isModified: false });
       set({ loadedFiles: newLoadedFiles });
 
       get().addConsoleEntry({
@@ -807,6 +967,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
 
       return true;
     } catch (err) {
+      if (get().projectSession !== expectedProjectSession) return false;
       const message = err instanceof Error ? err.message : 'Unknown error';
       get().addConsoleEntry({
         type: 'error',
@@ -818,9 +979,10 @@ export const useIDEStore = create<IDEState>((set, get) => ({
   },
 
   saveAllFiles: async () => {
-    const { loadedFiles } = get();
+    const { loadedFiles, projectSession } = get();
     
     for (const [fileId, file] of loadedFiles) {
+      if (get().projectSession !== projectSession) return;
       if (file.isModified) {
         await get().saveFile(fileId);
       }
@@ -828,12 +990,22 @@ export const useIDEStore = create<IDEState>((set, get) => ({
   },
 
   createFile: async (name: string, language: PLCLanguage, parentPath: string = 'src') => {
-    const { directoryHandle, loadedFiles, openTabs, isVirtualProject, fileTree } = get();
-    
+    const initial = get();
+    const { directoryHandle, isVirtualProject, fileTree, projectSession: expectedProjectSession } = initial;
+    const trimmedName = name.trim();
+    if (!initial.isProjectOpen || !fileTree) throw new Error('Open a project before creating a file.');
+    if (!isSafePathSegment(trimmedName)) throw new Error('Enter a single file name without path separators.');
+    if (!parentPath || parentPath.split('/').some((part) => !isSafePathSegment(part))) {
+      throw new Error('Choose an existing project folder for the new file.');
+    }
+    if (isVirtualProject ? directoryHandle : !directoryHandle) {
+      throw new Error('The current project cannot create files.');
+    }
+
     const ext = getExtensionForLanguage(language);
-    const fileName = name.endsWith(ext) ? name : `${name}${ext}`;
+    const fileName = trimmedName.endsWith(ext) ? trimmedName : `${trimmedName}${ext}`;
     const filePath = `${parentPath}/${fileName}`;
-    const fileId = `file-${filePath.replace(/[^a-zA-Z0-9]/g, '-')}`;
+    const fileId = fileTreeFileId(filePath);
     const content = createEmptyFileContent(language);
 
     const newFile: ProjectFileWithHandle = {
@@ -846,96 +1018,150 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       parentPath,
     };
 
-    if (!isVirtualProject && directoryHandle) {
-      try {
-        // Navigate to parent directory
-        const pathParts = parentPath.split('/').filter(p => p);
+    const isCurrentProject = () => {
+      const current = get();
+      return current.projectSession === expectedProjectSession
+        && current.isProjectOpen
+        && current.isVirtualProject === isVirtualProject
+        && current.fileTree !== null
+        && current.directoryHandle === directoryHandle;
+    };
+
+    const currentTreeForCreation = () => {
+      if (!isCurrentProject()) throw new Error('Project changed while creating the file.');
+      const current = get();
+      const parent = findFileInTree(current.fileTree!, parentPath);
+      if (!parent || parent.type !== 'directory') throw new Error('Choose an existing project folder for the new file.');
+      if (current.loadedFiles.has(fileId) || findFileInTree(current.fileTree!, filePath)) {
+        throw new Error('A file with that name already exists.');
+      }
+      return current.fileTree!;
+    };
+
+    currentTreeForCreation();
+    const reservationKey = `${expectedProjectSession}:${filePath}`;
+    if (fileCreationReservations.has(reservationKey)) throw new Error('A file with that name is already being created.');
+    fileCreationReservations.add(reservationKey);
+
+    let createdPhysicalEntry = false;
+    try {
+      if (!isVirtualProject && directoryHandle) {
+        const pathParts = parentPath.split('/');
         let currentDir = directoryHandle;
         for (const part of pathParts) {
-          currentDir = await currentDir.getDirectoryHandle(part, { create: true });
+          currentTreeForCreation();
+          currentDir = await currentDir.getDirectoryHandle(part);
+          currentTreeForCreation();
         }
 
-        // Create the file
+        let exists = false;
+        try {
+          await currentDir.getFileHandle(fileName);
+          exists = true;
+        } catch (error) {
+          if (!(typeof error === 'object' && error !== null && 'name' in error && error.name === 'NotFoundError')) throw error;
+        }
+        if (exists) throw new Error('A file with that name already exists.');
+        currentTreeForCreation();
         const fileHandle = await currentDir.getFileHandle(fileName, { create: true });
+        createdPhysicalEntry = true;
+        currentTreeForCreation();
         await writeFileContent(fileHandle, content);
+        currentTreeForCreation();
         newFile.handle = fileHandle;
         newFile.isModified = false;
+      }
 
-        // Refresh file tree
-        await get().refreshFileTree();
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Unknown error';
-        get().addConsoleEntry({
-          type: 'error',
-          message: `Failed to create file: ${message}`,
-          source: 'system',
-        });
-        throw err;
+      let committed = false;
+      set((state) => {
+        if (state.projectSession !== expectedProjectSession || !state.isProjectOpen || state.isVirtualProject !== isVirtualProject || state.directoryHandle !== directoryHandle || !state.fileTree) return {};
+        const parent = findFileInTree(state.fileTree, parentPath);
+        if (!parent || parent.type !== 'directory' || state.loadedFiles.has(fileId) || findFileInTree(state.fileTree, filePath)) return {};
+        const newTree = appendTreeFile(state.fileTree, parentPath, { id: fileId, name: fileName, type: 'file', path: filePath, language, handle: newFile.handle });
+        if (!newTree) return {};
+        committed = true;
+        return {
+          fileTree: newTree,
+          loadedFiles: new Map(state.loadedFiles).set(fileId, newFile),
+          activeFileId: fileId,
+          openTabs: state.openTabs.includes(fileId) ? state.openTabs : [...state.openTabs, fileId],
+          compilerMessages: [],
+          compilerMessagesChecked: false,
+          compilerNavigationTarget: null,
+          compilerRunId: state.compilerRunId + 1,
+        };
+      });
+      if (!committed) {
+        if (!isCurrentProject()) throw new Error('Project changed while creating the file.');
+        throw new Error(createdPhysicalEntry
+          ? 'The file may exist on disk. Refresh the project before trying again.'
+          : 'Could not create the file. Check the name and folder access, then try again.');
       }
-    } else if (isVirtualProject && fileTree) {
-      // Update virtual file tree
-      const newTree = { ...fileTree };
-      // Find or create parent directory in tree
-      const srcDir = newTree.children?.find(c => c.name === 'src');
-      if (srcDir && srcDir.children) {
-        srcDir.children.push({
-          id: fileId,
-          name: fileName,
-          type: 'file',
-          path: filePath,
-          language,
-        });
-      }
-      set({ fileTree: newTree });
+
+      get().addConsoleEntry({ type: 'success', message: `Created: ${fileName}`, source: 'system' });
+      return fileId;
+    } catch (error) {
+      if (!isCurrentProject()) throw new Error('Project changed while creating the file.');
+      const message = createdPhysicalEntry
+        ? 'The file may exist on disk. Refresh the project before trying again.'
+        : error instanceof Error && (error.message === 'A file with that name already exists.'
+        || error.message === 'A file with that name is already being created.'
+        || error.message === 'Choose an existing project folder for the new file.'
+        || error.message === 'The file may exist on disk. Refresh the project before trying again.')
+        ? error.message
+        : 'Could not create the file. Check the name and folder access, then try again.';
+      get().addConsoleEntry({ type: 'error', message, source: 'system' });
+      throw new Error(message);
+    } finally {
+      fileCreationReservations.delete(reservationKey);
     }
-
-    const newLoadedFiles = new Map(loadedFiles);
-    newLoadedFiles.set(fileId, newFile);
-
-    set({
-      loadedFiles: newLoadedFiles,
-      activeFileId: fileId,
-      openTabs: [...openTabs, fileId],
-    });
-
-    get().addConsoleEntry({
-      type: 'success',
-      message: `Created: ${fileName}`,
-      source: 'system',
-    });
-
-    return fileId;
   },
 
-  deleteFile: async (fileId: string) => {
-    const { loadedFiles, openTabs, activeFileId, isVirtualProject } = get();
-    const file = loadedFiles.get(fileId);
+  deleteFile: async (fileId: string, expectedProjectSession = get().projectSession) => {
+    const initial = get();
+    if (initial.projectSession !== expectedProjectSession) return false;
+    const located = initial.fileTree && findTreeFileWithParent(initial.fileTree, fileId);
+    if (!located || located.node.type !== 'file') return false;
 
-    if (!isVirtualProject && file?.handle) {
-      // Note: File System Access API doesn't have a direct delete method
-      // on FileSystemFileHandle. You'd need to use the parent directory's
-      // removeEntry method. For now, we just remove from our state.
-      console.warn('Disk file deletion not implemented - file removed from project only');
+    if (!initial.isVirtualProject) {
+      if (!located.parent.dirHandle) {
+        if (get().projectSession === expectedProjectSession) {
+          get().addConsoleEntry({ type: 'error', message: `Could not delete ${located.node.name}. The file was not removed.`, source: 'system' });
+        }
+        return false;
+      }
+      try {
+        await located.parent.dirHandle.removeEntry(located.node.name);
+      } catch {
+        if (get().projectSession === expectedProjectSession) {
+          get().addConsoleEntry({ type: 'error', message: `Could not delete ${located.node.name}. The file was not removed.`, source: 'system' });
+        }
+        return false;
+      }
     }
 
-    const newLoadedFiles = new Map(loadedFiles);
-    newLoadedFiles.delete(fileId);
+    const current = get();
+    if (current.projectSession !== expectedProjectSession) return false;
 
-    const newTabs = openTabs.filter(id => id !== fileId);
-    const newActiveId = activeFileId === fileId 
-      ? newTabs[newTabs.length - 1] || null 
-      : activeFileId;
+    fileTreeRefreshIntent += 1;
 
-    set({
-      loadedFiles: newLoadedFiles,
-      openTabs: newTabs,
-      activeFileId: newActiveId,
-    });
-
-    // Refresh file tree
-    if (!isVirtualProject) {
-      await get().refreshFileTree();
-    }
+    const loadedFiles = new Map(current.loadedFiles);
+    loadedFiles.delete(fileId);
+    const openTabs = current.openTabs.filter(id => id !== fileId);
+    const breakpoints = new Map(current.debug.breakpoints);
+    breakpoints.delete(fileId);
+    set((state) => ({
+      fileTree: current.fileTree ? pruneTreeFile(current.fileTree, fileId) ?? current.fileTree : null,
+      loadedFiles,
+      openTabs,
+      activeFileId: current.activeFileId === fileId ? openTabs.at(-1) ?? null : current.activeFileId,
+      compilerMessages: [],
+      compilerMessagesChecked: false,
+      compilerNavigationTarget: null,
+      compilerRunId: state.compilerRunId + 1,
+      debug: { ...current.debug, breakpoints },
+    }));
+    return true;
   },
 
   setActiveFile: (fileId: string | null) => {
@@ -956,7 +1182,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
 
     const newLoadedFiles = new Map(loadedFiles);
     newLoadedFiles.set(fileId, { ...file, content, isModified: true });
-    set({ loadedFiles: newLoadedFiles });
+    set((state) => ({ loadedFiles: newLoadedFiles, compilerMessages: [], compilerMessagesChecked: false, compilerNavigationTarget: null, stBufferDiagnostics: null, compilerRunId: state.compilerRunId + 1 }));
   },
 
   closeTab: (fileId: string) => {
@@ -1023,17 +1249,54 @@ export const useIDEStore = create<IDEState>((set, get) => ({
         ...state.compilerMessages,
         { ...message, timestamp: new Date() },
       ],
+      compilerMessagesChecked: true,
     })),
 
-  clearCompilerMessages: () => set({ compilerMessages: [] }),
+  markCompilerMessagesChecked: () => set({ compilerMessagesChecked: true }),
+
+  clearCompilerMessages: () => set((state) => ({ compilerMessages: [], compilerMessagesChecked: false, compilerNavigationTarget: null, compilerRunId: state.compilerRunId + 1 })),
+
+  setSTBufferDiagnostics: (result, expectedContent) => {
+    let accepted = false;
+    set((state) => {
+      const file = state.loadedFiles.get(result.fileId);
+      if (!state.isProjectOpen || state.projectSession !== result.projectSession || state.compilerRunId !== result.compilerRunId
+        || state.activeFileId !== result.fileId || !file || file.language !== 'ST' || file.path !== result.file || file.content !== expectedContent) return {};
+      accepted = true;
+      return { stBufferDiagnostics: result };
+    });
+    return accepted;
+  },
+
+  clearSTBufferDiagnostics: (identity) => set((state) => {
+    const current = state.stBufferDiagnostics;
+    if (!current || !identity) return { stBufferDiagnostics: null };
+    return current.projectSession === identity.projectSession && current.compilerRunId === identity.compilerRunId
+      && current.fileId === identity.fileId && current.file === identity.file
+      ? { stBufferDiagnostics: null }
+      : {};
+  }),
+
+  navigateToCompilerDiagnostic: async (file, line, column) => {
+    if (!file || line < 1) return false;
+    const tree = get().fileTree;
+    const compilerRunId = get().compilerRunId;
+    const node = tree ? findFileInTree(tree, file) : null;
+    if (!node || node.type !== 'file' || node.path !== file) return false;
+    await get().openFile(node.id);
+    const opened = get().loadedFiles.get(node.id);
+    if (!opened || opened.path !== file || get().activeFileId !== node.id || get().fileTree !== tree || get().compilerRunId !== compilerRunId) return false;
+    set({ showSettings: false, compilerNavigationTarget: { file, line, column: Math.max(1, column) } });
+    return true;
+  },
+
+  consumeCompilerNavigationTarget: (target) => set((state) => state.compilerNavigationTarget === target ? { compilerNavigationTarget: null } : {}),
 
   // ==========================================================================
   // UI Actions
   // ==========================================================================
 
-  setSidebarWidth: (width) => set({ sidebarWidth: width }),
   setConsoleHeight: (height) => set({ consoleHeight: height }),
-  toggleSidebar: () => set((state) => ({ isSidebarCollapsed: !state.isSidebarCollapsed })),
   toggleConsole: () => set((state) => ({ isConsoleCollapsed: !state.isConsoleCollapsed })),
   toggleSettings: () => set((state) => ({ showSettings: !state.showSettings })),
 
@@ -1128,14 +1391,11 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     set((state) => {
       const newLiveValues = new Map(state.debug.liveValues);
       newLiveValues.delete(varPath);
-      const newForcedValues = new Map(state.debug.forcedValues);
-      newForcedValues.delete(varPath);
       return {
         debug: {
           ...state.debug,
           watchVariables: state.debug.watchVariables.filter(v => v !== varPath),
           liveValues: newLiveValues,
-          forcedValues: newForcedValues,
         },
       };
     }),
@@ -1146,7 +1406,6 @@ export const useIDEStore = create<IDEState>((set, get) => ({
           ...state.debug,
           watchVariables: [],
           liveValues: new Map(),
-          forcedValues: new Map(),
         },
       })),
 
@@ -1193,9 +1452,32 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       };
     }),
 
+  markForcedValuesUnconfirmed: () =>
+    set((state) => {
+      const forcedValues = new Map(
+        Array.from(state.debug.forcedValues, ([path, entry]) => [
+          path,
+          { ...entry, state: WATCH_FORCE_STATE.UNCONFIRMED },
+        ]),
+      );
+      return {
+        debug: { ...state.debug, forcedValues, forcesUnconfirmed: true },
+      };
+    }),
+
   clearForcedValues: () =>
     set((state) => ({
-      debug: { ...state.debug, forcedValues: new Map() },
+      debug: { ...state.debug, forcedValues: new Map(), forcesUnconfirmed: false },
+    })),
+
+  appendNativeTrace: (sample) =>
+    set((state) => ({
+      debug: { ...state.debug, nativeTrace: [...state.debug.nativeTrace, sample].slice(-NATIVE_TRACE_LIMIT) },
+    })),
+
+  clearNativeTrace: () =>
+    set((state) => ({
+      debug: { ...state.debug, nativeTrace: [] },
     })),
 
   setPolling: (isPolling) =>
@@ -1261,7 +1543,8 @@ export const useIDEStore = create<IDEState>((set, get) => ({
   },
 
   hasUnsavedChanges: () => {
-    const { loadedFiles } = get();
+    const { loadedFiles, projectConfigDirty } = get();
+    if (projectConfigDirty) return true;
     for (const file of loadedFiles.values()) {
       if (file.isModified) return true;
     }

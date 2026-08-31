@@ -34,24 +34,24 @@ export interface DebugCapabilities {
 
 export const LEGACY_WASM_FEATURES = {
   pause: {
-    status: DEBUG_CAPABILITY_STATUS.DEGRADED,
-    reason: 'Legacy WASM simulation still owns pause boundaries in the renderer',
-    recommendedAction: 'Prefer native simulation or hardware for authoritative pause semantics',
+    status: DEBUG_CAPABILITY_STATUS.UNAVAILABLE,
+    reason: 'Browser WASM simulation is disabled until a verifier-enabled artifact is built',
+    recommendedAction: 'Use native simulation',
   },
   resume: {
-    status: DEBUG_CAPABILITY_STATUS.DEGRADED,
-    reason: 'Legacy WASM simulation resumes from renderer-managed execution state',
-    recommendedAction: 'Prefer native simulation or hardware for authoritative resume semantics',
+    status: DEBUG_CAPABILITY_STATUS.UNAVAILABLE,
+    reason: 'Browser WASM simulation is disabled until a verifier-enabled artifact is built',
+    recommendedAction: 'Use native simulation',
   },
   step: {
-    status: DEBUG_CAPABILITY_STATUS.DEGRADED,
-    reason: 'Legacy WASM stepping is cycle-oriented and not runtime-session owned',
-    recommendedAction: 'Prefer native simulation or hardware for authoritative stepping',
+    status: DEBUG_CAPABILITY_STATUS.UNAVAILABLE,
+    reason: 'Browser WASM simulation is disabled until a verifier-enabled artifact is built',
+    recommendedAction: 'Use native simulation',
   },
   breakpoints: {
-    status: DEBUG_CAPABILITY_STATUS.DEGRADED,
-    reason: 'Legacy WASM breakpoints depend on browser-side execution orchestration',
-    recommendedAction: 'Use native simulation or hardware before trusting breakpoint parity',
+    status: DEBUG_CAPABILITY_STATUS.UNAVAILABLE,
+    reason: 'Browser WASM simulation is disabled until a verifier-enabled artifact is built',
+    recommendedAction: 'Use native simulation',
   },
 } as const satisfies Record<string, DebugFeatureSupport>;
 
@@ -111,13 +111,16 @@ export function getDebugCapabilitiesFromProfile(
   profile: NativeCapabilityProfile | null,
 ): DebugCapabilities {
   const buildSupport = (featureName: string): DebugFeatureSupport => {
-    const feature = profile?.features.find((entry) => entry.name === featureName);
-    if (!feature) {
+    const matches = profile?.features.filter((entry) => entry.name === featureName) ?? [];
+    if (matches.length !== 1) {
       return {
         status: DEBUG_CAPABILITY_STATUS.UNAVAILABLE,
-        reason: 'Feature not reported by native simulator capability profile',
+        reason: matches.length === 0
+          ? 'Feature not reported by native simulator capability profile'
+          : 'Feature reported more than once by native simulator capability profile',
       };
     }
+    const feature = matches[0]!;
 
     return {
       status: feature.status,
@@ -130,6 +133,7 @@ export function getDebugCapabilitiesFromProfile(
   const resume = buildSupport('resume');
   const step = buildSupport('step');
   const breakpoints = buildSupport('breakpoints');
+  const simulationInputs = buildSupport('simulation-inputs');
 
   return {
     mode: DEBUG_CAPABILITY_MODE.SCHEDULER,
@@ -142,6 +146,7 @@ export function getDebugCapabilitiesFromProfile(
       resume,
       step,
       breakpoints,
+      'simulation-inputs': simulationInputs,
     },
   };
 }

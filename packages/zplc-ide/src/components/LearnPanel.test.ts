@@ -1,0 +1,48 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { describe, expect, it } from 'bun:test';
+
+describe('Learn panel contract', () => {
+  it('selects either canonical example, copies it only through the folder action, and opens Tests without running anything', () => {
+    const source = readFileSync(join(import.meta.dir, 'LearnPanel.tsx'), 'utf8');
+    const lessonSource = readFileSync(join(import.meta.dir, 'learnLesson.ts'), 'utf8');
+    expect(source).toContain('copyExampleProjectToFolder(lesson.exampleId)');
+    expect(source).toContain("setActiveConsoleTab('tests')");
+    expect(source).toContain('copyingRef.current');
+    expect(source).toContain('isFileSystemAccessSupported()');
+    expect(source).toContain('aria-pressed={lessonId === candidate.id}');
+    expect(source).toContain("disabled={copyStatus === 'copying'}");
+    expect(source).toContain('{candidate.title}');
+    expect(source).toContain("setCopyStatus('idle')");
+    expect(source).toContain('gradeRecordedScenarioLesson(lesson, workspaceTestPresentation)');
+    expect(source).toContain('readLearnMastery()');
+    expect(source).toContain("recordLearnMastery(lesson.id, { kind: 'passed', assertions: 0 }, previous)");
+    expect(source).toContain('text-[var(--color-surface-900)]');
+    expect(source).not.toContain('text-white');
+    expect((source.match(/role="group"/g) ?? [])).toHaveLength(2);
+    expect(source).not.toContain('setTimeout');
+    expect(source).not.toContain('clearTimeout');
+    expect(source).toContain('Completada anteriormente');
+    expect(source).toContain('Previously completed');
+    expect(source).toContain('data-learn-grade={grade.kind}');
+    expect(source).toContain('{lesson.scope}');
+    expect(lessonSource).toContain("exampleId: 'motor_start_stop'");
+    expect(lessonSource).toContain("exampleId: 'pedestrian_crossing'");
+    expect(lessonSource).toContain("exampleId: 'tank_level'");
+    expect(lessonSource).toContain("exampleId: 'conveyor_01'");
+    expect(lessonSource).toContain("exampleId: 'blinky'");
+    expect(lessonSource).toContain("exampleId: 'motor_plant'");
+    expect(lessonSource).toContain("exampleId: 'edge_counter'");
+    expect(lessonSource).toContain("exampleId: 'scan_snapshot'");
+    expect(lessonSource).toContain("id: 'temporal-assertions-jam-fault'");
+    expect(lessonSource).toContain("title: 'Assertions temporales y falla por atasco'");
+    expect(lessonSource).toContain("title: 'Temporal assertions and jam fault'");
+    expect(lessonSource).toContain("exampleId: 'conveyor_01'");
+    expect(lessonSource).toContain("id: 'conveyor-two-parts-diagnosis'");
+    expect(lessonSource).toContain("requiredScenario: 'ConveyorTwoParts'");
+    expect(lessonSource).toContain("scenarioPath: 'tests/conveyor-two-parts.scenario.json'");
+    expect(lessonSource).toContain("title: 'Diagnóstico reproducible: dos piezas, una decisión'");
+    expect(lessonSource).toContain("title: 'Reproducible diagnosis: two parts, one decision'");
+    expect(source).not.toMatch(/localStorage|workspaceTests\.|runWorkspaceTests|flash|deploy|force|RUN\/STOP|local-first|virtual project|LLM|mark complete|reset mastery/i);
+  });
+});

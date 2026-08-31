@@ -17,6 +17,11 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Terminal, Trash2, Plug, PlugZap } from 'lucide-react';
 import { connectionManager } from '../runtime/connectionManager';
 import { isWebSerialSupported } from '../uploader/webserial';
+import { terminalDisconnectMessage } from './terminalConnectionPresentation';
+import {
+  isTerminalForceMutation,
+  TERMINAL_FORCE_COMMAND_BLOCKED_MESSAGE,
+} from './terminalForceCommandPolicy';
 
 /** Line ending for commands */
 const LINE_ENDING = '\r\n';
@@ -122,10 +127,10 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
       stopReading();
       try {
         await connectionManager.disconnect();
-      } catch (e) {
-        console.error('Disconnect error:', e);
+        appendOutput(terminalDisconnectMessage(true));
+      } catch {
+        appendOutput(terminalDisconnectMessage(false));
       }
-      appendOutput('\n[Disconnected]\n');
       return;
     }
 
@@ -154,6 +159,11 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
    * Send command to device
    */
   const sendCommand = async (cmd: string) => {
+    if (isTerminalForceMutation(cmd)) {
+      appendOutput(TERMINAL_FORCE_COMMAND_BLOCKED_MESSAGE);
+      return;
+    }
+
     if (!connectionManager.connected) {
       appendOutput('[Not connected]\n');
       return;
@@ -177,6 +187,12 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
     
     const cmd = inputValue.trim();
     if (!cmd) return;
+
+    if (isTerminalForceMutation(cmd)) {
+      setInputValue('');
+      appendOutput(TERMINAL_FORCE_COMMAND_BLOCKED_MESSAGE);
+      return;
+    }
     
     // Add to history
     setCommandHistory(prev => {
@@ -249,11 +265,15 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
 
   // Handle passthrough mode based on tab activation
   useEffect(() => {
+    let notificationTimeout: ReturnType<typeof setTimeout> | null = null;
+
     if (isActive && isConnected) {
       // Terminal is active - enable passthrough mode (pauses polling)
       connectionManager.enablePassthrough();
       startReading();
-      appendOutput('[Passthrough mode enabled - polling paused]\n');
+      notificationTimeout = setTimeout(() => {
+        appendOutput('[Passthrough mode enabled - polling paused]\n');
+      }, 0);
     } else if (!isActive && isConnected) {
       // Terminal is inactive - disable passthrough (resumes polling)
       stopReading();
@@ -261,6 +281,9 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
     }
     
     return () => {
+      if (notificationTimeout !== null) {
+        clearTimeout(notificationTimeout);
+      }
       // Cleanup: restore polling when component unmounts
       if (connectionManager.passthroughMode) {
         connectionManager.disablePassthrough();

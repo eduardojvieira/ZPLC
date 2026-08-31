@@ -39,7 +39,7 @@ import {
   uploadBytecode,
 } from '../uploader/webserial';
 import type { ZPLCProjectConfig } from '../types';
-import { sanitizeUploadTraceCommand, type UploadTraceCallback } from './uploadTrace';
+import { sanitizeUploadTraceCommand, sanitizeUploadTraceText, type UploadTraceCallback } from './uploadTrace';
 import { consumeSerialConsoleChunk, flushSerialConsoleRemainder } from './serialConsole';
 import { buildProvisioningCommands } from './provisioningCommands';
 import { parsePeekBytes, groupVariablesForBatchPeek, extractVariableBytes, parseMpeekResponse, buildMpeekArgument } from './peekParser';
@@ -47,6 +47,7 @@ import type { MpeekRequest } from './peekParser';
 import { debugLog } from '../utils/debugLog';
 import { deriveHardwareDebugState } from './debugStatus';
 import { normalizeSerialRuntimeSnapshot } from './runtimeSnapshot';
+import { parseDeviceSystemInfo, type DeviceSystemInfo } from './deviceHandshake';
 
 /** Command timeout in milliseconds.
  * 10 s to accommodate firmware flash writes (NVS page erase can take ~1 s
@@ -56,6 +57,103 @@ const COMMAND_TIMEOUT_MS = 10000;
 
 /** Line ending for commands */
 const LINE_ENDING = '\r\n';
+
+const ZPLC_STATUS_STATES = new Set(['idle', 'loading', 'ready', 'running', 'paused', 'error', 'uninit']);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isNonNegativeInteger(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
+}
+
+function isByte(value: unknown): value is number {
+  return isNonNegativeInteger(value) && value <= 0xff;
+}
+
+function requireForceCommandConfirmation(response: string): void {
+  if (!response.startsWith('OK:')) {
+    throw new Error('Force command confirmation failed');
+  }
+}
+
+function parseStatusInfo(value: unknown): StatusInfo {
+  if (!isRecord(value)
+    || typeof value.state !== 'string'
+    || !ZPLC_STATUS_STATES.has(value.state.toLowerCase())
+    || !isNonNegativeInteger(value.uptime_ms)
+    || !isRecord(value.stats)
+    || !isNonNegativeInteger(value.stats.cycles)
+    || !Array.isArray(value.opi)
+    || !value.opi.every(isByte)) {
+    throw new Error('Invalid ZPLC status response');
+  }
+
+  for (const field of ['overruns', 'active_tasks', 'program_size'] as const) {
+    if (value.stats[field] !== undefined && !isNonNegativeInteger(value.stats[field])) {
+      throw new Error('Invalid ZPLC status response');
+    }
+  }
+
+  if (value.vm !== undefined) {
+    if (!isRecord(value.vm)
+      || !isNonNegativeInteger(value.vm.pc)
+      || !isNonNegativeInteger(value.vm.sp)
+      || typeof value.vm.halted !== 'boolean'
+      || typeof value.vm.error !== 'number'
+      || !Number.isSafeInteger(value.vm.error)) {
+      throw new Error('Invalid ZPLC status response');
+    }
+  }
+
+  return value as unknown as StatusInfo;
+}
+
+function parseForcedValues(value: unknown): WatchForceEntry[] {
+  if (!isRecord(value)
+    || !isNonNegativeInteger(value.count)
+    || value.count > 8
+    || !Array.isArray(value.items)
+    || value.count !== value.items.length) {
+    throw new Error('Invalid force list response');
+  }
+
+  const ranges: Array<{ start: number; end: number }> = [];
+  return value.items.map((item) => {
+    if (!isRecord(item)
+      || !isNonNegativeInteger(item.addr)
+      || item.addr > 0xffff
+      || !isNonNegativeInteger(item.size)
+      || item.size === 0
+      || item.size > 260
+      || typeof item.bytes !== 'string'
+      || !/^[0-9a-f]*$/i.test(item.bytes)
+      || item.bytes.length !== item.size * 2) {
+      throw new Error('Invalid force list response');
+    }
+
+    const address = item.addr as number;
+    const size = item.size as number;
+    const bytes = item.bytes as string;
+    const end = address + size;
+    const regionStart = address < 0x1000 ? 0 : address < 0x2000 ? 0x1000 : address < 0x4000 ? 0x2000 : 0x4000;
+    const regionEnd = regionStart === 0 ? 0x1000 : regionStart === 0x1000 ? 0x2000 : regionStart === 0x2000 ? 0x4000 : 0x5000;
+    if (end > 0x5000 || end > regionEnd || ranges.some((range) => address < range.end && range.start < end)) {
+      throw new Error('Invalid force list response');
+    }
+    ranges.push({ start: address, end });
+
+    return {
+      path: `0x${address.toString(16).toUpperCase().padStart(4, '0')}`,
+      address,
+      size,
+      type: size === 1 ? 'BYTE' : size === 2 ? 'WORD' : 'DWORD',
+      bytesHex: bytes,
+      state: WATCH_FORCE_STATE.FORCED,
+    };
+  });
+}
 
 /**
  * Extended VMInfo with additional fields from JSON responses
@@ -72,25 +170,7 @@ export interface ExtendedVMInfo extends VMInfo {
 /**
  * System information from device
  */
-export interface SystemInfo {
-  board: string;
-  zplc_version: string;
-  zephyr_version: string;
-  uptime_ms: number;
-  cpu_freq_mhz: number;
-  capabilities: {
-    fpu: boolean;
-    mpu: boolean;
-    scheduler: boolean;
-    max_tasks: number;
-  };
-  memory: {
-    work_size: number;
-    retain_size: number;
-    ipi_size: number;
-    opi_size: number;
-  };
-}
+export type SystemInfo = DeviceSystemInfo;
 
 /**
  * Status information from device
@@ -174,12 +254,14 @@ export class SerialAdapter implements IDebugAdapter {
   private events: DebugAdapterEvents = {};
   private pollingInterval: ReturnType<typeof setInterval> | null = null;
   private _passthroughMode = false;
+  private connectionAttempt = 0;
+  private readonly onUnexpectedDisconnect?: (adapter: SerialAdapter, message: string) => void;
   private systemInfoCache: SystemInfo | null = null;
   private serialConsoleRemainder = '';
   private readonly handleLiveSerialChunk = (chunk: string): void => {
     const result = consumeSerialConsoleChunk(this.serialConsoleRemainder, chunk);
     this.serialConsoleRemainder = result.remainder;
-    result.lines.forEach((line) => this.events.onSerialData?.(line));
+    result.lines.forEach((line) => this.events.onSerialData?.(sanitizeUploadTraceText(line)));
   };
 
   /**
@@ -191,10 +273,15 @@ export class SerialAdapter implements IDebugAdapter {
    * when connectionManager status polling overlapped with peek commands.
    */
   private _commandQueue: Promise<void> = Promise.resolve();
+  private activeCommandCount = 0;
 
   /** When true, SerialAdapter does NOT start its own polling on connect.
    *  This is used when connectionManager handles polling externally. */
   public disableAutoPolling = false;
+
+  constructor(onUnexpectedDisconnect?: (adapter: SerialAdapter, message: string) => void) {
+    this.onUnexpectedDisconnect = onUnexpectedDisconnect;
+  }
 
   // Breakpoint state (managed locally, synced to hardware when commands available)
   private breakpoints: Set<number> = new Set();
@@ -227,7 +314,7 @@ export class SerialAdapter implements IDebugAdapter {
    * When enabled, polling is paused and all received data is forwarded
    * to the callback instead of being parsed.
    */
-  setPassthroughMode(enabled: boolean, _callback?: (data: string) => void): void {
+  setPassthroughMode(enabled: boolean): void {
     this._passthroughMode = enabled;
 
     if (enabled) {
@@ -241,25 +328,36 @@ export class SerialAdapter implements IDebugAdapter {
    * Send raw data in passthrough mode
    */
   async sendRaw(data: string): Promise<void> {
-    if (!this.connection || !this.connection.isConnected) {
+    const connection = this.connection;
+    if (!connection || !connection.isConnected) {
       throw new Error('Not connected');
     }
     const encoder = new TextEncoder();
-    await this.connection.writer.write(encoder.encode(data));
+    await this.withCommandMutex(async () => {
+      if (this.connection !== connection || !connection.isConnected) {
+        throw new Error('Not connected');
+      }
+      await connection.writer.write(encoder.encode(data));
+    });
   }
 
   /**
-   * Get the raw receive buffer (for passthrough mode)
+   * Get complete, sanitized receive text for passthrough mode.
+   * Incomplete chunks remain internal until a line boundary prevents a
+   * credential split across serial reads from reaching the terminal.
    */
   getRxBuffer(): string {
-    return this.connection?._rxBuffer || '';
+    if (this.activeCommandCount > 0) return '';
+    const buffer = this.connection?._rxBuffer || '';
+    if (!/[\r\n]$/.test(buffer)) return '';
+    return sanitizeUploadTraceText(buffer);
   }
 
   /**
    * Clear the raw receive buffer
    */
   clearRxBuffer(): void {
-    if (this.connection) {
+    if (this.activeCommandCount === 0 && this.connection) {
       this.connection._rxBuffer = '';
     }
   }
@@ -267,6 +365,54 @@ export class SerialAdapter implements IDebugAdapter {
   // =========================================================================
   // Connection Management
   // =========================================================================
+
+  private isCurrentConnection(connection: SerialConnection, attempt: number): boolean {
+    return this.connection === connection && this.port === connection.port && this.connectionAttempt === attempt;
+  }
+
+  private async closeLocalConnection(connection: SerialConnection): Promise<void> {
+    connection.onReaderTerminated = undefined;
+    removeDataListener(connection, this.handleLiveSerialChunk);
+    try {
+      await serialDisconnect(connection);
+    } catch (disconnectError) {
+      console.warn('[SerialAdapter] failed to close connection:', disconnectError);
+    }
+  }
+
+  private async failInitialStatusHandshake(connection: SerialConnection, attempt: number): Promise<never> {
+    if (!this.isCurrentConnection(connection, attempt)) {
+      throw new Error('Connection attempt cancelled');
+    }
+    await this.closeLocalConnection(connection);
+    this.connection = null;
+    this.port = null;
+    this._connected = false;
+    this.setState('disconnected');
+    throw new Error('Initial ZPLC status handshake failed');
+  }
+
+  private handleUnexpectedReaderTermination(connection: SerialConnection, attempt: number, message: string): void {
+    if (!this.isCurrentConnection(connection, attempt)) {
+      return;
+    }
+
+    this.stopPolling();
+    removeDataListener(connection, this.handleLiveSerialChunk);
+    this.connection = null;
+    this.port = null;
+    this._connected = false;
+    this.setState('disconnected');
+    this.onUnexpectedDisconnect?.(this, message);
+    const close = () => {
+      void this.closeLocalConnection(connection);
+    };
+    if (connection._readerTask) {
+      void connection._readerTask.then(close, close);
+    } else {
+      queueMicrotask(close);
+    }
+  }
 
   async connect(): Promise<void> {
     if (this._connected) {
@@ -277,19 +423,29 @@ export class SerialAdapter implements IDebugAdapter {
       throw new Error('WebSerial is not supported in this browser');
     }
 
-    // Request port from user
-    this.port = await requestPort();
-    if (!this.port) {
+    const attempt = ++this.connectionAttempt;
+    const port = await requestPort();
+    if (!port) {
       throw new Error('No serial port selected');
     }
+    if (attempt !== this.connectionAttempt) {
+      throw new Error('Connection attempt cancelled');
+    }
 
-    // Connect to the port
-    this.connection = await serialConnect(this.port);
+    const connection = await serialConnect(port);
+    if (attempt !== this.connectionAttempt) {
+      await this.closeLocalConnection(connection);
+      throw new Error('Connection attempt cancelled');
+    }
+
+    this.port = port;
+    this.connection = connection;
     this._connected = true;
     this.serialConsoleRemainder = '';
-    addDataListener(this.connection, this.handleLiveSerialChunk);
+    addDataListener(connection, this.handleLiveSerialChunk);
+    connection.onReaderTerminated = (message) => this.handleUnexpectedReaderTermination(connection, attempt, message);
 
-    // Get initial state
+    // A physical port is not a ZPLC session until status validates the runtime.
     try {
       const status = await this.getStatus();
       const derivedState = deriveHardwareDebugState(status);
@@ -305,7 +461,11 @@ export class SerialAdapter implements IDebugAdapter {
         });
       }
     } catch {
-      this.setState('idle');
+      await this.failInitialStatusHandshake(connection, attempt);
+    }
+
+    if (!this.isCurrentConnection(connection, attempt)) {
+      throw new Error('Connection attempt cancelled');
     }
 
     // Start polling for state updates (unless externally managed)
@@ -315,22 +475,31 @@ export class SerialAdapter implements IDebugAdapter {
   }
 
   async disconnect(): Promise<void> {
-    if (!this._connected || !this.connection) {
+    this.connectionAttempt += 1;
+    const connection = this.connection;
+    if (!connection) {
+      this.port = null;
+      this._connected = false;
+      this.setState('disconnected');
       return;
     }
 
     this.stopPolling();
     this._passthroughMode = false;
-    flushSerialConsoleRemainder(this.serialConsoleRemainder).forEach((line) => this.events.onSerialData?.(line));
+    flushSerialConsoleRemainder(this.serialConsoleRemainder).forEach((line) => this.events.onSerialData?.(sanitizeUploadTraceText(line)));
     this.serialConsoleRemainder = '';
 
-    removeDataListener(this.connection, this.handleLiveSerialChunk);
+    connection.onReaderTerminated = undefined;
+    removeDataListener(connection, this.handleLiveSerialChunk);
 
-    await serialDisconnect(this.connection);
-    this.connection = null;
-    this.port = null;
-    this._connected = false;
-    this.setState('disconnected');
+    try {
+      await serialDisconnect(connection);
+    } finally {
+      this.connection = null;
+      this.port = null;
+      this._connected = false;
+      this.setState('disconnected');
+    }
   }
 
   private startPolling(): void {
@@ -462,7 +631,7 @@ export class SerialAdapter implements IDebugAdapter {
       await new Promise((r) => setTimeout(r, 50));
     }
 
-    throw new Error(`Command timeout: ${command}`);
+    throw new Error('Command timeout');
   }
 
   private sendCommand(command: string): Promise<string> {
@@ -513,7 +682,7 @@ export class SerialAdapter implements IDebugAdapter {
       await new Promise((r) => setTimeout(r, 50));
     }
 
-    throw new Error(`Command timeout: ${command}`);
+    throw new Error('Command timeout');
   }
 
   /**
@@ -525,14 +694,9 @@ export class SerialAdapter implements IDebugAdapter {
     try {
       return await this.sendCommand(command);
     } catch (e) {
-      console.warn(`[serialAdapter] best-effort command failed (${command}):`, e);
+      console.warn('[serialAdapter] best-effort command failed:', e);
       return null;
     }
-  }
-
-  private quoteShellArg(value: string): string {
-    const escaped = value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-    return `"${escaped}"`;
   }
 
   /**
@@ -541,7 +705,15 @@ export class SerialAdapter implements IDebugAdapter {
    * go through this so they are strictly serialized on the single serial port.
    */
   private withCommandMutex<T>(fn: () => Promise<T>): Promise<T> {
-    const result = this._commandQueue.then(fn, fn);
+    const run = async (): Promise<T> => {
+      this.activeCommandCount += 1;
+      try {
+        return await fn();
+      } finally {
+        this.activeCommandCount -= 1;
+      }
+    };
+    const result = this._commandQueue.then(run, run);
     // Swallow errors on the queue chain so a failed command doesn't break
     // all subsequent commands. Each caller gets their own rejection via `result`.
     this._commandQueue = result.then(
@@ -563,17 +735,21 @@ export class SerialAdapter implements IDebugAdapter {
    * Get system information from the device (board, version, capabilities)
    */
   async getSystemInfo(): Promise<SystemInfo> {
-    const result = await this.sendJsonCommand('zplc sys info') as SystemInfo;
-    this.systemInfoCache = result;
-    return result;
+    try {
+      const result = parseDeviceSystemInfo(await this.sendJsonCommand('zplc sys info'));
+      this.systemInfoCache = result;
+      return result;
+    } catch {
+      this.systemInfoCache = null;
+      throw new Error('ZPLC_DEVICE_HANDSHAKE_INVALID');
+    }
   }
 
   /**
    * Get detailed status information in JSON format
    */
   async getStatus(): Promise<StatusInfo> {
-    const result = await this.sendJsonCommand('zplc status') as StatusInfo;
-    return result;
+    return parseStatusInfo(await this.sendJsonCommand('zplc status'));
   }
 
   async getCommunicationMap(): Promise<CommunicationMapEntry[]> {
@@ -626,9 +802,7 @@ export class SerialAdapter implements IDebugAdapter {
     };
 
     trace?.({ kind: 'stage', message: 'Applying runtime configuration to device' });
-    const commands = buildProvisioningCommands(projectConfig, {
-      quoteShellArg: (value) => this.quoteShellArg(value),
-    });
+    const commands = buildProvisioningCommands(projectConfig);
 
     for (const command of commands) {
       await sendConfigCommand(command);
@@ -665,7 +839,7 @@ export class SerialAdapter implements IDebugAdapter {
       hasSchedulerSupport: this.systemInfoCache?.capabilities.scheduler ?? false,
       trace: options?.trace,
     });
-    this.setState('running');
+    this.setState('idle');
   }
 
   // =========================================================================
@@ -836,7 +1010,7 @@ export class SerialAdapter implements IDebugAdapter {
       await new Promise((r) => setTimeout(r, 25));
     }
 
-    throw new Error(`Command timeout: ${command}`);
+    throw new Error('Command timeout');
   }
 
   async peek(address: number, length: number): Promise<Uint8Array> {
@@ -907,11 +1081,12 @@ export class SerialAdapter implements IDebugAdapter {
       throw new Error('Not connected');
     }
 
-    const response = await this.sendDebugCommand(
-      `force set 0x${address.toString(16)} ${bytesToHex(bytes)}`,
-    );
-    if (response.startsWith('ERROR:')) {
-      throw new Error(response);
+    try {
+      requireForceCommandConfirmation(await this.sendDebugCommand(
+        `force set 0x${address.toString(16)} ${bytesToHex(bytes)}`,
+      ));
+    } catch {
+      throw new Error('Force command confirmation failed');
     }
   }
 
@@ -920,9 +1095,10 @@ export class SerialAdapter implements IDebugAdapter {
       throw new Error('Not connected');
     }
 
-    const response = await this.sendDebugCommand(`force clear 0x${address.toString(16)}`);
-    if (response.startsWith('ERROR:')) {
-      throw new Error(response);
+    try {
+      requireForceCommandConfirmation(await this.sendDebugCommand(`force clear 0x${address.toString(16)}`));
+    } catch {
+      throw new Error('Force command confirmation failed');
     }
   }
 
@@ -931,9 +1107,10 @@ export class SerialAdapter implements IDebugAdapter {
       throw new Error('Not connected');
     }
 
-    const response = await this.sendDebugCommand('force clear_all');
-    if (response.startsWith('ERROR:')) {
-      throw new Error(response);
+    try {
+      requireForceCommandConfirmation(await this.sendDebugCommand('force clear_all'));
+    } catch {
+      throw new Error('Force command confirmation failed');
     }
   }
 
@@ -942,18 +1119,7 @@ export class SerialAdapter implements IDebugAdapter {
       throw new Error('Not connected');
     }
 
-    const response = await this.sendJsonCommand('zplc dbg force list') as {
-      items?: Array<{ addr: number; size: number; bytes: string }>;
-    };
-
-    return (response.items ?? []).map((item) => ({
-      path: `0x${item.addr.toString(16).toUpperCase().padStart(4, '0')}`,
-      address: item.addr,
-      size: item.size,
-      type: item.size === 1 ? 'BYTE' : item.size === 2 ? 'WORD' : 'DWORD',
-      bytesHex: item.bytes,
-      state: WATCH_FORCE_STATE.FORCED,
-    }));
+    return parseForcedValues(await this.sendJsonCommand('zplc dbg force list'));
   }
 
   async getOPI(offset: number): Promise<number> {
@@ -1004,7 +1170,7 @@ export class SerialAdapter implements IDebugAdapter {
     }
 
     const status = await this.getStatus();
-    const forceEntries = await this.listForcedValues().catch(() => []);
+    const forceEntries = await this.listForcedValues();
     const snapshot = normalizeSerialRuntimeSnapshot(status, forceEntries);
     this.events.onRuntimeSnapshot?.(snapshot);
     return snapshot;

@@ -34,7 +34,7 @@
       "id": "step_led_off",
       "name": "LED_OFF", 
       "isInitial": false,
-      "position": { "x": 200, "y": 250 },
+      "position": { "x": 200, "y": 270 },
       "actions": [
         {
           "qualifier": "N",
@@ -52,7 +52,7 @@
       "toStep": "step_led_off",
       "condition": "step_led_on.T >= T#500ms",
       "comment": "After 500ms in ON state, transition to OFF",
-      "position": { "x": 200, "y": 150 }
+      "position": { "x": 200, "y": 165 }
     },
     {
       "id": "trans_off_to_on",
@@ -60,7 +60,7 @@
       "toStep": "step_led_on",
       "condition": "step_led_off.T >= T#500ms",
       "comment": "After 500ms in OFF state, transition to ON",
-      "position": { "x": 200, "y": 350 }
+      "position": { "x": 200, "y": 385 }
     }
   ],
 

@@ -11,7 +11,7 @@
  * - Shows "armed" transitions (ready to fire)
  */
 
-import { useCallback, useMemo, useRef, useEffect } from 'react';
+import { useCallback, useMemo, useRef, useEffect, useReducer, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -19,20 +19,25 @@ import {
   Controls,
   MiniMap,
   addEdge,
-  useNodesState,
-  useEdgesState,
+  applyEdgeChanges,
+  applyNodeChanges,
   useReactFlow,
   type Node,
   type Edge,
   type OnConnect,
   type NodeTypes,
+  type EdgeTypes,
+  type Connection,
+  MarkerType,
   BackgroundVariant,
   ConnectionMode,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
 import { type SFCModel, type SFCStep, type SFCTransition } from '../../models/sfc';
+import { copySFCFragment, hasCanonicalEdgeChanges, hasCanonicalNodeChanges, isCanonicalSFCConnection, nodesToSteps, nodesToTransitions, pasteSFCFragment, uniqueNodeId, type SFCClipboardFragment } from './graphModel';
 import { nodeTypes } from './nodes';
+import { edgeTypes } from './edges';
 import SFCToolbox from './SFCToolbox';
 import { useIDEStore } from '../../store/useIDEStore';
 import { useDebugValues } from '../../hooks/useDebugValue';
@@ -136,33 +141,34 @@ function transitionsToEdges(
   for (const trans of transitions) {
     const fromStepActive = activeSteps.has(trans.fromStep);
     
-    // Edge from source step to transition
-    edges.push({
+    if (trans.fromStep) edges.push({
       id: `${trans.fromStep}_to_${trans.id}`,
       source: trans.fromStep,
       sourceHandle: 'out',
       target: trans.id,
       targetHandle: 'in',
-      type: 'smoothstep',
-      style: { 
-        stroke: debugActive && fromStepActive ? '#22c55e' : '#94a3b8', 
+      type: 'sfc',
+      style: {
+        stroke: debugActive && fromStepActive ? 'var(--color-accent-green)' : 'var(--visual-wire)',
         strokeWidth: debugActive && fromStepActive ? 3 : 2,
       },
       animated: debugActive && fromStepActive,
+      markerEnd: { type: MarkerType.ArrowClosed, width: 10, height: 10 },
     });
     
     // Edge from transition to target step
-    edges.push({
+    if (trans.toStep) edges.push({
       id: `${trans.id}_to_${trans.toStep}`,
       source: trans.id,
       sourceHandle: 'out',
       target: trans.toStep,
       targetHandle: 'in',
-      type: 'smoothstep',
-      style: { 
-        stroke: '#94a3b8', 
+      type: 'sfc',
+      style: {
+        stroke: 'var(--visual-wire)',
         strokeWidth: 2,
       },
+      markerEnd: { type: MarkerType.ArrowClosed, width: 10, height: 10 },
     });
   }
   
@@ -172,46 +178,6 @@ function transitionsToEdges(
 /**
  * Convert ReactFlow nodes back to SFC steps
  */
-function nodesToSteps(nodes: Node[]): SFCStep[] {
-  return nodes
-    .filter((node) => node.type === 'step')
-    .map((node) => {
-      const data = node.data as Record<string, unknown>;
-      return {
-        id: node.id,
-        name: data.name as string,
-        isInitial: data.isInitial as boolean || false,
-        position: node.position,
-        actions: data.actions as SFCStep['actions'],
-        comment: data.comment as string | undefined,
-      };
-    });
-}
-
-/**
- * Convert ReactFlow nodes back to SFC transitions
- */
-function nodesToTransitions(nodes: Node[], edges: Edge[]): SFCTransition[] {
-  return nodes
-    .filter((node) => node.type === 'transition')
-    .map((node) => {
-      const data = node.data as Record<string, unknown>;
-      
-      // Find connected steps from edges
-      const incomingEdge = edges.find((e) => e.target === node.id);
-      const outgoingEdge = edges.find((e) => e.source === node.id);
-      
-      return {
-        id: node.id,
-        fromStep: incomingEdge?.source || (data.fromStep as string) || '',
-        toStep: outgoingEdge?.target || (data.toStep as string) || '',
-        condition: data.condition as string || 'TRUE',
-        position: node.position,
-        comment: data.comment as string | undefined,
-      };
-    });
-}
-
 // =============================================================================
 // Inner Editor Component (has access to ReactFlow context)
 // =============================================================================
@@ -239,15 +205,49 @@ function SFCEditorInner({
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition } = useReactFlow();
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const updateNodeDataRef = useRef<((nodeId: string, data: Record<string, unknown>) => void) | undefined>(undefined);
+  const [nodes, replaceNodes] = useReducer((_current: Node[], next: Node[]) => next, initialNodes.map((node) => ({
+    ...node,
+    data: { ...node.data, readOnly, onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data) },
+  })));
+  const [edges, replaceEdges] = useReducer((_current: Edge[], next: Edge[]) => next, initialEdges);
+  const nodesRef = useRef(nodes);
+  const edgesRef = useRef(edges);
+  const clipboardRef = useRef<SFCClipboardFragment | undefined>(undefined);
+
+  const commitGraph = useCallback((nextNodes: Node[], nextEdges: Edge[]) => {
+    nodesRef.current = nextNodes;
+    edgesRef.current = nextEdges;
+    replaceNodes(nextNodes);
+    replaceEdges(nextEdges);
+    if (!readOnly && onChange) {
+      onChange({ ...model, steps: nodesToSteps(nextNodes), transitions: nodesToTransitions(nextNodes, nextEdges) });
+    }
+  }, [model, onChange, readOnly]);
+
+  const updateNodeData = useCallback((nodeId: string, data: Record<string, unknown>) => {
+    if (readOnly) return;
+    commitGraph(nodesRef.current.map((node) => node.id === nodeId
+      ? { ...node, data: { ...node.data, ...data } }
+      : node), edgesRef.current);
+  }, [commitGraph, readOnly]);
+  useEffect(() => {
+    updateNodeDataRef.current = updateNodeData;
+  }, [updateNodeData]);
+
+  useEffect(() => {
+    const nextNodes = initialNodes.map((node) => ({ ...node, data: { ...node.data, readOnly, onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data) } }));
+    nodesRef.current = nextNodes;
+    edgesRef.current = initialEdges;
+    replaceNodes(nextNodes);
+    replaceEdges(initialEdges);
+  }, [initialNodes, initialEdges, readOnly]);
 
   // Update nodes when debug info changes
   useEffect(() => {
     if (!debugActive) return;
     
-    setNodes((currentNodes) => 
-      currentNodes.map((node) => {
+    const nextNodes = nodesRef.current.map((node) => {
         if (node.type === 'step') {
           const data = node.data as Record<string, unknown>;
           const stepName = data.name as string;
@@ -279,94 +279,87 @@ function SFCEditorInner({
           };
         }
         return node;
-      })
-    );
-  }, [debugActive, stepDebugInfo, transitionDebugInfo, setNodes]);
+      });
+    nodesRef.current = nextNodes;
+    replaceNodes(nextNodes);
+  }, [debugActive, stepDebugInfo, transitionDebugInfo]);
 
   // Update edges when active steps change
   useEffect(() => {
     if (!debugActive) return;
     
-    setEdges((currentEdges) =>
-      currentEdges.map((edge) => {
+    const nextEdges = edgesRef.current.map((edge) => {
         // Check if this edge is from an active step
         const fromStepActive = activeSteps.has(edge.source);
-        const isFromStepToTransition = !edge.source.startsWith('transition');
+        const sourceNode = nodesRef.current.find((node) => node.id === edge.source);
+        const isFromStepToTransition = sourceNode?.type === 'step';
         
         if (isFromStepToTransition && debugActive) {
           return {
             ...edge,
             style: {
-              stroke: fromStepActive ? '#22c55e' : '#94a3b8',
+              stroke: fromStepActive ? 'var(--color-accent-green)' : 'var(--visual-wire)',
               strokeWidth: fromStepActive ? 3 : 2,
             },
             animated: fromStepActive,
           };
         }
         return edge;
-      })
-    );
-  }, [debugActive, activeSteps, setEdges]);
+      });
+    edgesRef.current = nextEdges;
+    replaceEdges(nextEdges);
+  }, [debugActive, activeSteps]);
 
   // Handle new connections
   const onConnect: OnConnect = useCallback(
     (params) => {
       if (readOnly) return;
       
-      setEdges((eds) => addEdge({
+      if (!isCanonicalSFCConnection(params, nodesRef.current)) return;
+      const source = nodesRef.current.find((node) => node.id === params.source);
+      const target = nodesRef.current.find((node) => node.id === params.target);
+      if (!source || !target) return;
+      const nextEdges = edgesRef.current.filter((edge) => {
+        if (target.type === 'transition') return edge.target !== target.id;
+        return edge.source !== source.id;
+      });
+      commitGraph(nodesRef.current, addEdge({
         ...params,
-        type: 'smoothstep',
-        style: { stroke: '#94a3b8', strokeWidth: 2 },
-      }, eds));
+        type: 'sfc',
+        style: { stroke: 'var(--visual-wire)', strokeWidth: 2 },
+        markerEnd: { type: MarkerType.ArrowClosed, width: 10, height: 10 },
+      }, nextEdges));
     },
-    [setEdges, readOnly]
+    [commitGraph, readOnly]
   );
+
+  const isValidConnection = useCallback((connection: Connection | Edge) => isCanonicalSFCConnection(connection, nodesRef.current), []);
 
   // Notify parent of changes
   const handleNodesChange = useCallback(
-    (changes: Parameters<typeof onNodesChange>[0]) => {
-      onNodesChange(changes);
-      if (onChange && !readOnly) {
-        setTimeout(() => {
-          setNodes((currentNodes) => {
-            setEdges((currentEdges) => {
-              const updatedModel: SFCModel = {
-                ...model,
-                steps: nodesToSteps(currentNodes),
-                transitions: nodesToTransitions(currentNodes, currentEdges),
-              };
-              onChange(updatedModel);
-              return currentEdges;
-            });
-            return currentNodes;
-          });
-        }, 0);
+    (changes: Parameters<typeof applyNodeChanges>[0]) => {
+      if (readOnly) return;
+      const nextNodes = applyNodeChanges(changes, nodesRef.current);
+      if (hasCanonicalNodeChanges(changes)) commitGraph(nextNodes, edgesRef.current);
+      else {
+        nodesRef.current = nextNodes;
+        replaceNodes(nextNodes);
       }
     },
-    [onNodesChange, onChange, model, readOnly, setNodes, setEdges]
+    [commitGraph, readOnly]
   );
 
   const handleEdgesChange = useCallback(
-    (changes: Parameters<typeof onEdgesChange>[0]) => {
-      onEdgesChange(changes);
-      if (onChange && !readOnly) {
-        setTimeout(() => {
-          setNodes((currentNodes) => {
-            setEdges((currentEdges) => {
-              const updatedModel: SFCModel = {
-                ...model,
-                steps: nodesToSteps(currentNodes),
-                transitions: nodesToTransitions(currentNodes, currentEdges),
-              };
-              onChange(updatedModel);
-              return currentEdges;
-            });
-            return currentNodes;
-          });
-        }, 0);
+    (changes: Parameters<typeof applyEdgeChanges>[0]) => {
+      if (readOnly) return;
+      const nextEdges = applyEdgeChanges(changes, edgesRef.current);
+      if (hasCanonicalEdgeChanges(changes)) commitGraph(nodesRef.current, nextEdges);
+      else {
+        edgesRef.current = nextEdges;
+        replaceEdges(nextEdges);
       }
     },
-    [onEdgesChange, onChange, model, readOnly, setNodes, setEdges]
+    [commitGraph, readOnly]
   );
 
   // Handle drop from toolbox
@@ -383,8 +376,7 @@ function SFCEditorInner({
         y: event.clientY,
       });
 
-      const id = `${elementType}_${Date.now()}`;
-      const timestamp = Date.now().toString(36);
+      const id = uniqueNodeId(`${elementType}_${Date.now()}`, nodesRef.current);
 
       let newNode: Node;
 
@@ -395,7 +387,9 @@ function SFCEditorInner({
             type: 'step',
             position,
             data: {
-              name: `Step_${timestamp}`,
+              readOnly,
+              onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data),
+              name: `Step_${id}`,
               isInitial: false,
               actions: [],
               debugActive: false,
@@ -409,7 +403,9 @@ function SFCEditorInner({
             type: 'step',
             position,
             data: {
-              name: `Init_${timestamp}`,
+              readOnly,
+              onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data),
+              name: `Init_${id}`,
               isInitial: true,
               actions: [],
               debugActive: false,
@@ -423,6 +419,8 @@ function SFCEditorInner({
             type: 'transition',
             position,
             data: {
+              readOnly,
+              onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data),
               condition: 'TRUE',
               fromStep: '',
               toStep: '',
@@ -435,9 +433,9 @@ function SFCEditorInner({
           return;
       }
 
-      setNodes((nds) => [...nds, newNode]);
+      commitGraph([...nodesRef.current, newNode], edgesRef.current);
     },
-    [setNodes, readOnly, screenToFlowPosition]
+    [commitGraph, readOnly, screenToFlowPosition]
   );
 
   const onDragOver = useCallback((event: React.DragEvent) => {
@@ -445,10 +443,41 @@ function SFCEditorInner({
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
+  const onKeyDown = useCallback((event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (readOnly || event.altKey || event.shiftKey || event.ctrlKey === event.metaKey) return;
+    const target = event.target as HTMLElement;
+    if (target.closest('input, textarea, select, [contenteditable="true"]')) return;
+    if (event.key.toLowerCase() === 'c') {
+      const fragment = copySFCFragment(nodesRef.current, edgesRef.current);
+      if (!fragment) return;
+      clipboardRef.current = fragment;
+      event.preventDefault();
+      return;
+    }
+    if (event.key.toLowerCase() !== 'v' || !clipboardRef.current) return;
+    const currentModel = { ...model, steps: nodesToSteps(nodesRef.current), transitions: nodesToTransitions(nodesRef.current, edgesRef.current) };
+    const pasted = pasteSFCFragment(currentModel, clipboardRef.current);
+    if (!pasted) return;
+    const addedSteps = pasted.model.steps.slice(currentModel.steps.length);
+    const addedTransitions = pasted.model.transitions.slice(currentModel.transitions.length);
+    const nextNodes = [
+      ...nodesRef.current.map((node) => ({ ...node, selected: false })),
+      ...stepsToNodes(addedSteps, debugActive, stepDebugInfo).map((node) => ({ ...node, selected: true, data: { ...node.data, readOnly, onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data) } })),
+      ...transitionsToNodes(addedTransitions, debugActive, transitionDebugInfo).map((node) => ({ ...node, selected: true, data: { ...node.data, readOnly, onChangeData: (nodeId: string, data: Record<string, unknown>) => updateNodeDataRef.current?.(nodeId, data) } })),
+    ];
+    const nextEdges = [...edgesRef.current.map((edge) => ({ ...edge, selected: false })), ...pasted.edges.map((edge) => ({ ...edge, selected: false, style: { stroke: 'var(--visual-wire)', strokeWidth: 2 }, markerEnd: { type: MarkerType.ArrowClosed, width: 10, height: 10 } }))];
+    event.preventDefault();
+    commitGraph(nextNodes, nextEdges);
+  }, [commitGraph, debugActive, model, readOnly, stepDebugInfo, transitionDebugInfo]);
+
   return (
     <div 
       ref={reactFlowWrapper}
       className="flex-1 h-full"
+      tabIndex={0}
+      role="region"
+      aria-label="Sequential function chart canvas"
+      onKeyDown={onKeyDown}
     >
       <ReactFlow
         nodes={nodes}
@@ -456,11 +485,19 @@ function SFCEditorInner({
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
         onConnect={onConnect}
+        nodesDraggable={!readOnly}
+        nodesConnectable={!readOnly}
+        elementsSelectable={!readOnly}
+        edgesFocusable={!readOnly}
         onDrop={onDrop}
         onDragOver={onDragOver}
         nodeTypes={nodeTypes as NodeTypes}
-        connectionMode={ConnectionMode.Loose}
+        edgeTypes={edgeTypes as EdgeTypes}
+        isValidConnection={isValidConnection}
+        connectionMode={ConnectionMode.Strict}
         defaultViewport={{ x: 50, y: 50, zoom: 1 }}
+        fitView
+        fitViewOptions={{ padding: 0.24 }}
         snapToGrid
         snapGrid={[10, 10]}
         minZoom={0.5}
@@ -486,16 +523,16 @@ function SFCEditorInner({
             if (n.type === 'step') {
               const data = n.data as Record<string, unknown>;
               if (debugActive && data.isActive) return '#22c55e'; // Green for active
-              return data.isInitial ? '#d97706' : '#64748b';
+              return 'var(--color-accent-blue)';
             }
             if (n.type === 'transition') {
               const data = n.data as Record<string, unknown>;
               if (debugActive && data.isArmed) return '#f59e0b'; // Amber for armed
-              return '#64748b';
+              return 'var(--visual-wire)';
             }
-            return '#64748b';
+            return 'var(--visual-wire)';
           }}
-          maskColor="rgba(0, 0, 0, 0.8)"
+          maskColor="var(--color-surface-600)"
         />
         
         {/* Debug mode indicator */}
@@ -652,17 +689,17 @@ export default function SFCEditor({ model, onChange, readOnly = false }: SFCEdit
 
   // Convert model to ReactFlow format with debug data
   const initialNodes = useMemo(() => [
-    ...stepsToNodes(model.steps, debugActive, stepDebugInfo),
-    ...transitionsToNodes(model.transitions, debugActive, transitionDebugInfo),
-  ], [model.steps, model.transitions, debugActive, stepDebugInfo, transitionDebugInfo]);
+    ...stepsToNodes(model.steps, false, new Map()),
+    ...transitionsToNodes(model.transitions, false, new Map()),
+  ], [model.steps, model.transitions]);
   
   const initialEdges = useMemo(
-    () => transitionsToEdges(model.transitions, debugActive, activeSteps), 
-    [model.transitions, debugActive, activeSteps]
+    () => transitionsToEdges(model.transitions, false, new Set()),
+    [model.transitions]
   );
 
   return (
-    <div className="w-full h-full flex">
+    <div className="zplc-visual-editor w-full h-full flex">
       {/* Toolbox sidebar */}
       {!readOnly && !debugActive && <SFCToolbox />}
 

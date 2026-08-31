@@ -70,10 +70,10 @@ export default function FBDToolbox() {
   };
 
   return (
-    <div className="w-48 h-full bg-slate-800 border-r border-slate-600 overflow-y-auto">
+    <div className="zplc-visual-toolbox w-48 h-full border-r overflow-y-auto">
       {/* Header */}
-      <div className="px-3 py-2 border-b border-slate-600 bg-slate-700">
-        <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+      <div className="px-3 py-2 border-b border-[var(--border-color)] bg-[var(--color-surface-700)]">
+        <span className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
           Blocks
         </span>
       </div>
@@ -88,13 +88,13 @@ export default function FBDToolbox() {
               {/* Category header */}
               <button
                 onClick={() => toggleCategory(category.name)}
-                className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-slate-700 transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-[var(--color-surface-700)] transition-colors"
               >
-                <span className="text-slate-400">
+                <span className="text-[var(--text-tertiary)]">
                   {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                 </span>
-                <span className="text-slate-400">{category.icon}</span>
-                <span className="text-xs text-slate-300 font-medium">
+                <span className="text-[var(--text-tertiary)]">{category.icon}</span>
+                <span className="text-xs text-[var(--text-secondary)] font-medium">
                   {category.name}
                 </span>
               </button>
@@ -107,9 +107,9 @@ export default function FBDToolbox() {
                       key={block}
                       draggable
                       onDragStart={(e) => onDragStart(e, block)}
-                      className="mx-2 my-0.5 px-2 py-1 rounded text-xs font-mono text-slate-200 
-                                 bg-slate-700 hover:bg-slate-600 cursor-grab active:cursor-grabbing
-                                 border border-transparent hover:border-slate-500 transition-colors"
+                      className="mx-2 my-0.5 px-2 py-1 rounded text-xs font-mono text-[var(--text-primary)]
+                                 bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] cursor-grab active:cursor-grabbing
+                                 border border-transparent hover:border-[var(--color-accent-blue)] transition-colors"
                     >
                       {block}
                     </div>
@@ -122,9 +122,9 @@ export default function FBDToolbox() {
       </div>
 
       {/* Special blocks section */}
-      <div className="border-t border-slate-600 py-1">
+      <div className="border-t border-[var(--border-color)] py-1">
         <div className="px-3 py-1.5">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+          <span className="text-xs font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">
             I/O
           </span>
         </div>
@@ -133,9 +133,9 @@ export default function FBDToolbox() {
             key={block}
             draggable
             onDragStart={(e) => onDragStart(e, block)}
-            className="mx-2 my-0.5 px-2 py-1 rounded text-xs font-mono text-slate-200 
-                       bg-slate-700 hover:bg-slate-600 cursor-grab active:cursor-grabbing
-                       border border-transparent hover:border-slate-500 transition-colors"
+            className="mx-2 my-0.5 px-2 py-1 rounded text-xs font-mono text-[var(--text-primary)]
+                       bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] cursor-grab active:cursor-grabbing
+                       border border-transparent hover:border-[var(--color-accent-blue)] transition-colors"
           >
             {block.toUpperCase()}
           </div>
@@ -143,8 +143,8 @@ export default function FBDToolbox() {
       </div>
 
       {/* Help text */}
-      <div className="px-3 py-2 border-t border-slate-600">
-        <p className="text-[10px] text-slate-500 leading-relaxed">
+      <div className="px-3 py-2 border-t border-[var(--border-color)]">
+        <p className="text-[10px] text-[var(--text-tertiary)] leading-relaxed">
           Drag blocks onto the canvas. Connect outputs (green) to inputs (blue).
         </p>
       </div>

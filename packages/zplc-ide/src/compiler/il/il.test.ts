@@ -113,6 +113,25 @@ describe('IL Parser', () => {
         expect(program.labels.has('LOOP')).toBe(true);
         expect(program.instructions.some(i => i.operator === 'JMP')).toBe(true);
     });
+
+    it('rejects RETAIN instead of silently transpiling it as a normal VAR block', () => {
+        const source = `
+            PROGRAM Retained
+            VAR RETAIN
+                State : BOOL;
+            END_VAR
+                LD State
+            END_PROGRAM
+        `;
+
+        expect(() => parseIL(source)).toThrow(/RETAIN declarations are not supported/);
+        expect(() => compileProject(source, 'IL')).toThrow(/RETAIN declarations are not supported/);
+        try {
+            parseIL(source);
+        } catch (error) {
+            expect(error).toMatchObject({ line: 3, column: 17 });
+        }
+    });
 });
 
 describe('IL-to-ST Transpiler', () => {

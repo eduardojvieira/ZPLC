@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'bun:test';
 
 import type { ZPLCProjectConfig } from '../types';
-import { buildProvisioningCommands } from './provisioningCommands';
+import { buildProvisioningCommands, quoteZephyrShellArg } from './provisioningCommands';
 
-const quoteShellArg = (value: string): string => `"${value}"`;
+function decodeZephyrShellArgument(encoded: string): string {
+  return encoded.slice(1, -1).replace(/\\x([0-9a-f]{2})|\\(["\\])/gi, (_match, hex: string | undefined, escaped: string | undefined) => (
+    hex ? String.fromCharCode(Number.parseInt(hex, 16)) : escaped
+  ));
+}
 
 const BASE_CONFIG: ZPLCProjectConfig = {
   name: 'Test',
@@ -69,7 +73,7 @@ describe('buildProvisioningCommands', () => {
           },
         },
       },
-    }, { quoteShellArg });
+    });
 
     expect(commands).toContain('zplc config set mqtt_enabled 0');
     expect(commands).toContain('zplc config set modbus_tcp_enabled 0');
@@ -80,10 +84,38 @@ describe('buildProvisioningCommands', () => {
   });
 
   it('disables stale services even when communication section is absent', () => {
-    const commands = buildProvisioningCommands(BASE_CONFIG, { quoteShellArg });
+    const commands = buildProvisioningCommands(BASE_CONFIG);
 
     expect(commands).toContain('zplc config set mqtt_enabled 0');
     expect(commands).toContain('zplc config set modbus_tcp_enabled 0');
     expect(commands).toContain('zplc config set modbus_rtu_enabled 0');
+  });
+
+  it.each(['\n', '\r', '\u0000', '\u0001', '\u007f'])('rejects control characters before producing commands', (control) => {
+    const injectedValue = `controller${control}zplc stop`;
+    expect(() => buildProvisioningCommands({ ...BASE_CONFIG, network: { hostname: injectedValue } })).toThrow(
+      'Project configuration contains unsupported control characters',
+    );
+  });
+
+  it('rejects non-finite numeric config values before producing commands', () => {
+    expect(() => buildProvisioningCommands({
+      ...BASE_CONFIG,
+      target: { board: 'test', clock_mhz: Number.NaN },
+    })).toThrow('Project configuration contains unsupported numeric values');
+  });
+});
+
+describe('quoteZephyrShellArg', () => {
+  it.each([
+    [String.raw`\x1b`, '"\\x5cx1b"'],
+    [String.raw`\x0a`, '"\\x5cx0a"'],
+    [String.raw`\012`, '"\\x5c012"'],
+    [String.raw`\"`, '"\\x5c\\""'],
+    [String.raw`C:\plant\cert.pem`, '"C:\\x5cplant\\x5ccert.pem"'],
+  ])('preserves literal backslashes without creating a Zephyr escape: %s', (value, expected) => {
+    const encoded = quoteZephyrShellArg(value);
+    expect(encoded).toBe(expected);
+    expect(decodeZephyrShellArgument(encoded)).toBe(value);
   });
 });

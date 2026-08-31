@@ -1,7 +1,31 @@
 import type { ZPLCProjectConfig } from '../types';
 
-export interface ProvisioningCommandOptions {
-  quoteShellArg: (value: string) => string;
+// eslint-disable-next-line no-control-regex
+const CONTROL_CHARACTER_PATTERN = /[\u0000-\u001F\u007F]/;
+const UNSAFE_PROJECT_CONFIG_ERROR = 'Project configuration contains unsupported control characters';
+const UNSAFE_PROJECT_CONFIG_NUMBER_ERROR = 'Project configuration contains unsupported numeric values';
+
+function assertSafeProjectConfigValue(value: unknown): void {
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) throw new Error(UNSAFE_PROJECT_CONFIG_NUMBER_ERROR);
+    return;
+  }
+  if (typeof value === 'string') {
+    if (CONTROL_CHARACTER_PATTERN.test(value)) throw new Error(UNSAFE_PROJECT_CONFIG_ERROR);
+    return;
+  }
+  if (Array.isArray(value)) {
+    value.forEach(assertSafeProjectConfigValue);
+    return;
+  }
+  if (value !== null && typeof value === 'object') {
+    Object.values(value).forEach(assertSafeProjectConfigValue);
+  }
+}
+
+export function quoteZephyrShellArg(value: string): string {
+  assertSafeProjectConfigValue(value);
+  return `"${value.replace(/\\/g, '\\x5c').replace(/"/g, '\\"')}"`;
 }
 
 function mqttSecurityToRuntimeLevel(level: string | undefined): number {
@@ -50,10 +74,10 @@ function modbusParityToRuntimeLevel(parity: string | undefined): number {
 
 export function buildProvisioningCommands(
   projectConfig: ZPLCProjectConfig,
-  options: ProvisioningCommandOptions,
 ): string[] {
+  assertSafeProjectConfigValue(projectConfig);
   const commands: string[] = [];
-  const quote = options.quoteShellArg;
+  const quote = quoteZephyrShellArg;
 
   const network = projectConfig.network;
   const communication = projectConfig.communication;

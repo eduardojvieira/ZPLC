@@ -9,7 +9,7 @@
  */
 
 import { memo, useState, useCallback, useRef, useEffect } from 'react';
-import { Handle, Position, type NodeProps, useReactFlow } from '@xyflow/react';
+import { Handle, Position, type NodeProps } from '@xyflow/react';
 import { CheckCircle, XCircle, Zap } from 'lucide-react';
 
 interface TransitionData {
@@ -20,6 +20,8 @@ interface TransitionData {
   conditionResult?: boolean; // Current evaluation of the condition
   isArmed?: boolean; // True if preceding step is active
   wasFired?: boolean; // True if this transition just fired
+  readOnly?: boolean;
+  onChangeData?: (nodeId: string, data: Record<string, unknown>) => void;
 }
 
 const SFCTransitionNode = memo(({ id, data, selected }: NodeProps) => {
@@ -30,12 +32,13 @@ const SFCTransitionNode = memo(({ id, data, selected }: NodeProps) => {
     conditionResult,
     isArmed = false,
     wasFired = false,
+    readOnly = false,
+    onChangeData,
   } = data as unknown as TransitionData;
   
   const [isEditing, setIsEditing] = useState(false);
   const [editCondition, setEditCondition] = useState(condition || 'TRUE');
   const inputRef = useRef<HTMLInputElement>(null);
-  const { setNodes } = useReactFlow();
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -44,23 +47,20 @@ const SFCTransitionNode = memo(({ id, data, selected }: NodeProps) => {
     }
   }, [isEditing]);
 
+  useEffect(() => {
+    if (!isEditing || readOnly || debugActive) {
+      setEditCondition(condition || 'TRUE');
+      if (readOnly || debugActive) setIsEditing(false);
+    }
+  }, [condition, isEditing, readOnly, debugActive]);
+
   const handleSave = useCallback(() => {
     const trimmed = editCondition.trim() || 'TRUE';
     if (trimmed !== condition) {
-      setNodes((nodes) =>
-        nodes.map((node) => {
-          if (node.id === id) {
-            return {
-              ...node,
-              data: { ...node.data, condition: trimmed },
-            };
-          }
-          return node;
-        })
-      );
+      onChangeData?.(id, { condition: trimmed });
     }
     setIsEditing(false);
-  }, [id, editCondition, condition, setNodes]);
+  }, [id, editCondition, condition, onChangeData]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -87,29 +87,26 @@ const SFCTransitionNode = memo(({ id, data, selected }: NodeProps) => {
       : isArmed
         ? 'bg-amber-400'
         : debugActive
-          ? 'bg-slate-500'
-          : 'bg-slate-300';
+          ? 'bg-[var(--visual-wire)]'
+          : 'bg-[var(--visual-wire)]';
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="zplc-visual-node sfc-transition-node relative h-[80px] w-[120px]">
       {/* Top connection point */}
       <Handle
         type="target"
         position={Position.Top}
         id="in"
-        className={`!w-3 !h-3 !border-2 !-top-1.5 transition-colors
-          ${isArmed 
-            ? '!bg-amber-400 !border-amber-600' 
-            : '!bg-blue-400 !border-blue-600'
-          }`}
+        className="!h-3 !w-3 !-top-1.5 !left-[60px] !border-2 !border-[var(--color-accent-blue)] !bg-[var(--color-accent-blue)] transition-colors"
       />
       
-      {/* Transition bar + condition */}
-      <div className="flex items-center gap-2">
+      <div className="sfc-transition-axis absolute left-[60px] top-0 h-full border-l-2 border-[var(--visual-wire)]" aria-hidden="true" />
+      {/* Transition bar is the IEC flow center; condition is an annotation to its right. */}
+      <div className="absolute left-[28px] top-[38px] h-[3px] w-16">
         {/* The horizontal transition bar */}
         <div
-          className={`
-            w-16 h-2 rounded-sm transition-all duration-200
+          className={`relative
+            h-[3px] w-16 transition-all duration-200
             ${barColorClass}
             ${selected ? 'ring-2 ring-blue-400/50' : ''}
           `}
@@ -123,8 +120,9 @@ const SFCTransitionNode = memo(({ id, data, selected }: NodeProps) => {
         
         {/* Condition text/editor with debug value */}
         <div
-          className="min-w-[60px] cursor-pointer"
-          onDoubleClick={() => !debugActive && setIsEditing(true)}
+          data-sfc-guard
+          className="absolute left-full top-1/2 ml-3 min-w-[60px] max-w-[180px] -translate-y-1/2 cursor-pointer"
+          onDoubleClick={() => !debugActive && !readOnly && setIsEditing(true)}
         >
           {isEditing ? (
             <input
@@ -134,28 +132,27 @@ const SFCTransitionNode = memo(({ id, data, selected }: NodeProps) => {
               onChange={(e) => setEditCondition(e.target.value)}
               onBlur={handleSave}
               onKeyDown={handleKeyDown}
-              className="w-full px-1 py-0.5 text-xs font-mono bg-slate-700 border border-slate-500 
-                         rounded text-green-300 outline-none focus:border-blue-400"
+              className="w-full border-b border-[var(--border-color)] bg-transparent px-1 py-0.5 font-mono text-xs text-[var(--text-primary)] outline-none focus:border-[var(--color-accent-blue)]"
               onClick={(e) => e.stopPropagation()}
             />
           ) : (
-            <div className={`px-1 py-0.5 text-xs font-mono rounded border transition-colors flex items-center gap-1
+            <div className={`flex items-center gap-1 px-1 py-0.5 font-mono text-xs transition-colors
               ${debugActive
                 ? isConditionTrue
-                  ? 'text-green-300 bg-green-900/80 border-green-600'
+                  ? 'text-green-300'
                   : isConditionFalse
-                    ? 'text-red-300 bg-red-900/50 border-red-600/50'
-                    : 'text-slate-400 bg-slate-800/80 border-slate-600'
-                : 'text-green-400 bg-slate-800/80 border-slate-600 hover:border-slate-500'
+                    ? 'text-[var(--text-secondary)]'
+                    : 'text-[var(--text-secondary)]'
+                : 'text-[var(--text-primary)] hover:text-[var(--color-accent-blue)]'
               }`}
             >
               {/* Condition result icon */}
               {debugActive && conditionResult !== undefined && (
                 isConditionTrue 
                   ? <CheckCircle size={10} className="text-green-400 flex-shrink-0" />
-                  : <XCircle size={10} className="text-red-400 flex-shrink-0" />
+                  : <XCircle size={10} className="text-[var(--text-secondary)] flex-shrink-0" />
               )}
-              <span>{condition || 'TRUE'}</span>
+              <span className="max-h-[30px] overflow-hidden break-words">{condition || 'TRUE'}</span>
             </div>
           )}
         </div>
@@ -163,14 +160,14 @@ const SFCTransitionNode = memo(({ id, data, selected }: NodeProps) => {
 
       {/* Debug status below transition */}
       {debugActive && (
-        <div className="mt-1 flex items-center gap-1 text-[9px]">
+        <div className="absolute left-[132px] top-full mt-1 flex items-center gap-1 text-[9px]">
           {isArmed ? (
             <span className="text-amber-300">Armed</span>
           ) : (
-            <span className="text-slate-500">Waiting</span>
+            <span className="text-[var(--text-tertiary)]">Waiting</span>
           )}
           {conditionResult !== undefined && (
-            <span className={isConditionTrue ? 'text-green-400' : 'text-red-400'}>
+            <span className={isConditionTrue ? 'text-green-400' : 'text-[var(--text-secondary)]'}>
               = {conditionResult ? 'TRUE' : 'FALSE'}
             </span>
           )}
@@ -182,16 +179,12 @@ const SFCTransitionNode = memo(({ id, data, selected }: NodeProps) => {
         type="source"
         position={Position.Bottom}
         id="out"
-        className={`!w-3 !h-3 !border-2 !-bottom-1.5 transition-colors
-          ${isConditionTrue && isArmed
-            ? '!bg-green-400 !border-green-600' 
-            : '!bg-green-400 !border-green-600'
-          }`}
+        className="!h-3 !w-3 !-bottom-1.5 !left-[60px] !border-2 !border-[var(--color-accent-blue)] !bg-[var(--color-accent-blue)] transition-colors"
       />
 
       {/* Comment (if present and not debugging) */}
       {comment && !debugActive && (
-        <div className="mt-1 px-1 text-[10px] italic text-slate-500 text-center max-w-[150px] truncate">
+        <div data-sfc-transition-comment className="absolute left-[132px] top-[54px] w-[150px] px-1 text-left text-[10px] italic text-[var(--text-tertiary)] line-clamp-2">
           {comment}
         </div>
       )}

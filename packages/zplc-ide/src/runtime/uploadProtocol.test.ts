@@ -7,7 +7,6 @@ describe('getUploadCommandSet', () => {
     expect(getUploadCommandSet(true)).toEqual({
       load: 'zplc sched load',
       data: 'zplc sched data',
-      start: null,
     });
   });
 
@@ -15,7 +14,6 @@ describe('getUploadCommandSet', () => {
     expect(getUploadCommandSet(false)).toEqual({
       load: 'zplc load',
       data: 'zplc data',
-      start: 'zplc start',
     });
   });
 });

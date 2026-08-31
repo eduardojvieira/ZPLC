@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 
 import { consumeSerialConsoleChunk, flushSerialConsoleRemainder } from './serialConsole';
+import { sanitizeUploadTraceText } from './uploadTrace';
 
 describe('consumeSerialConsoleChunk', () => {
   it('extracts complete lines and preserves partial remainder', () => {
@@ -22,6 +23,24 @@ describe('consumeSerialConsoleChunk', () => {
       lines: ['[CORE] loaded'],
       remainder: '',
     });
+  });
+
+  it('strips backspace control characters from device logs', () => {
+    expect(consumeSerialConsoleChunk('', 'zplc\u0008 status\n')).toEqual({
+      lines: ['zplc status'],
+      remainder: '',
+    });
+  });
+
+  it('keeps a split sensitive echo in the remainder until the complete line can be redacted', () => {
+    const first = consumeSerialConsoleChunk('', 'zplc:~$ zplc config set wifi_pass "test-');
+    expect(first.lines).toEqual([]);
+    const second = consumeSerialConsoleChunk(first.remainder, 'secret"\nnormal line\n');
+
+    expect(second.lines.map(sanitizeUploadTraceText)).toEqual([
+      'zplc config set wifi_pass "***"',
+      'normal line',
+    ]);
   });
 });
 

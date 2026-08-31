@@ -116,6 +116,7 @@ export interface FBDBlock {
   
   // For variable/output/input blocks
   variableName?: string;
+  address?: string;
   
   comment?: string;
 }
@@ -172,9 +173,114 @@ export interface FBDModel {
  * Parse a JSON string into an FBDModel
  */
 export function parseFBDModel(json: string): FBDModel {
-  const parsed = JSON.parse(json) as FBDModel;
-  // TODO: Add validation
-  return parsed;
+  return validateFBDModel(JSON.parse(json));
+}
+
+function record(value: unknown, label: string): Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(`Invalid FBD ${label}: expected object`);
+  }
+  return value as Record<string, unknown>;
+}
+
+function nonEmptyString(value: unknown, label: string): string {
+  if (typeof value !== 'string' || value.trim() === '') {
+    throw new Error(`Invalid FBD ${label}: expected non-empty string`);
+  }
+  return value;
+}
+
+function endpointKey(block: string, port: string): string {
+  return JSON.stringify([block, port]);
+}
+
+function ports(value: unknown, label: string): FBDPort[] {
+  if (!Array.isArray(value)) {
+    throw new Error(`Invalid FBD ${label}: expected array`);
+  }
+  const names = new Set<string>();
+  return value.map((port, index) => {
+    const source = record(port, `${label}[${index}]`);
+    const name = nonEmptyString(source.name, `${label}[${index}].name`);
+    const type = nonEmptyString(source.type, `${label}[${index}].type`);
+    if (names.has(name)) throw new Error(`Invalid FBD ${label}: duplicate port '${name}'`);
+    names.add(name);
+    return { ...source, name, type } as FBDPort;
+  });
+}
+
+/** Validate and normalize an untrusted FBD document before it reaches the transpiler. */
+export function validateFBDModel(value: unknown): FBDModel {
+  const source = record(value, 'top-level object');
+  const variables = record(source.variables, 'variables');
+  for (const name of ['local', 'outputs'] as const) {
+    if (!Array.isArray(variables[name])) throw new Error(`Invalid FBD variables.${name}: expected array`);
+  }
+  if (variables.inputs !== undefined && !Array.isArray(variables.inputs)) {
+    throw new Error('Invalid FBD variables.inputs: expected array');
+  }
+  if (!Array.isArray(source.blocks)) throw new Error('Invalid FBD blocks: expected array');
+  if (!Array.isArray(source.connections)) throw new Error('Invalid FBD connections: expected array');
+
+  const blockIds = new Set<string>();
+  const blocks = source.blocks.map((value, index) => {
+    const block = record(value, `blocks[${index}]`);
+    const id = nonEmptyString(block.id, `blocks[${index}].id`);
+    const type = nonEmptyString(block.type, `blocks[${index}].type`);
+    if (blockIds.has(id)) throw new Error(`Invalid FBD: duplicate block id '${id}'`);
+    blockIds.add(id);
+    const position = record(block.position, `blocks[${index}].position`);
+    if (!Number.isFinite(position.x) || !Number.isFinite(position.y)) {
+      throw new Error(`Invalid FBD blocks[${index}].position: coordinates must be finite`);
+    }
+    const defaults = getDefaultPorts(type);
+    return {
+      ...block,
+      id,
+      type,
+      position: { x: position.x, y: position.y },
+      inputs: block.inputs === undefined ? defaults.inputs : ports(block.inputs, `blocks[${index}].inputs`),
+      outputs: block.outputs === undefined ? defaults.outputs : ports(block.outputs, `blocks[${index}].outputs`),
+    } as FBDBlock;
+  });
+  const blocksById = new Map(blocks.map((block) => [block.id, block]));
+
+  const connectionIds = new Set<string>();
+  const writtenInputs = new Set<string>();
+  const connections = source.connections.map((value, index) => {
+    const connection = record(value, `connections[${index}]`);
+    const id = nonEmptyString(connection.id, `connections[${index}].id`);
+    if (connectionIds.has(id)) throw new Error(`Invalid FBD: duplicate connection id '${id}'`);
+    connectionIds.add(id);
+    const from = record(connection.from, `connections[${index}].from`);
+    const to = record(connection.to, `connections[${index}].to`);
+    const fromBlock = nonEmptyString(from.block, `connections[${index}].from.block`);
+    const fromPort = nonEmptyString(from.port, `connections[${index}].from.port`);
+    const toBlock = nonEmptyString(to.block, `connections[${index}].to.block`);
+    const toPort = nonEmptyString(to.port, `connections[${index}].to.port`);
+    const sourceBlock = blocksById.get(fromBlock);
+    const destinationBlock = blocksById.get(toBlock);
+    if (!sourceBlock) throw new Error(`Invalid FBD connection '${id}': unknown source block '${fromBlock}'`);
+    if (!destinationBlock) throw new Error(`Invalid FBD connection '${id}': unknown destination block '${toBlock}'`);
+    if (!sourceBlock.outputs!.some((port) => port.name === fromPort)) {
+      throw new Error(`Invalid FBD connection '${id}': unknown source output port '${fromBlock}.${fromPort}'`);
+    }
+    if (!destinationBlock.inputs!.some((port) => port.name === toPort)) {
+      throw new Error(`Invalid FBD connection '${id}': unknown destination input port '${toBlock}.${toPort}'`);
+    }
+    const destination = endpointKey(toBlock, toPort);
+    if (writtenInputs.has(destination)) throw new Error(`Invalid FBD connection '${id}': multiple writers for '${toBlock}.${toPort}'`);
+    writtenInputs.add(destination);
+    return { ...connection, id, from: { block: fromBlock, port: fromPort }, to: { block: toBlock, port: toPort } } as FBDConnection;
+  });
+
+  return {
+    ...source,
+    name: nonEmptyString(source.name, 'name'),
+    variables: { ...variables, local: variables.local as FBDVariable[], outputs: variables.outputs as FBDVariable[], inputs: variables.inputs as FBDVariable[] | undefined },
+    blocks,
+    connections,
+  } as FBDModel;
 }
 
 /**

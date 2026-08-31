@@ -5,122 +5,117 @@
    Supports: Light, Dark, and System preference
    ============================================================================= */
 
-/* Light Theme Variables (Default) */
+/* Drawing Sheet light; aliases keep existing Studio components on one vocabulary. */
 :root {
-  /* Surface colors - Light mode */
-  --color-surface-900: #f8fafc;
-  --color-surface-800: #f1f5f9;
-  --color-surface-700: #e2e8f0;
-  --color-surface-600: #cbd5e1;
-  --color-surface-500: #94a3b8;
-  --color-surface-400: #64748b;
-  --color-surface-300: #475569;
-  --color-surface-200: #334155;
-  --color-surface-100: #1e293b;
-  
-  /* Accent colors (same for both themes) */
-  --color-accent-blue: #2563eb;
-  --color-accent-green: #16a34a;
-  --color-accent-yellow: #ca8a04;
-  --color-accent-red: #dc2626;
-  --color-accent-orange: #ea580c;
-  --color-accent-purple: #9333ea;
-  
-  /* Status colors for PLC states */
-  --color-status-running: #16a34a;
-  --color-status-stopped: #dc2626;
-  --color-status-warning: #ca8a04;
-  --color-status-connected: #2563eb;
-  --color-status-disconnected: #64748b;
-  
-  /* Fonts */
-  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  
-  /* Theme-specific text colors */
-  --text-primary: #1e293b;
-  --text-secondary: #475569;
-  --text-muted: #64748b;
-  
-  /* Borders and shadows for light mode */
-  --border-color: #e2e8f0;
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  color-scheme: light;
+  --color-surface-900: #e7ece8;
+  --color-surface-800: #f8faf7;
+  --color-surface-700: #ffffff;
+  --color-surface-600: #d7dfda;
+  --color-surface-500: #a8b5b0;
+  --color-surface-400: #5f6d6b;
+  --color-surface-300: #4c5a59;
+  --color-surface-200: #273537;
+  --color-surface-100: #172127;
+  --color-accent-blue: #245d8f;
+  --color-accent-cyan: #245d8f;
+  --color-accent-green: #177344;
+  --color-accent-yellow: #8a5800;
+  --color-accent-orange: #8a5800;
+  --color-accent-red: #a33838;
+  --color-accent-purple: #635b95;
+  --color-status-running: var(--color-accent-green);
+  --color-status-stopped: var(--color-surface-400);
+  --color-status-warning: var(--color-accent-orange);
+  --color-status-connected: var(--color-accent-blue);
+  --color-status-disconnected: var(--color-surface-400);
+  --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+  --font-sans: Bahnschrift, Aptos, 'Segoe UI', system-ui, sans-serif;
+  --text-primary: var(--color-surface-100);
+  --text-secondary: var(--color-surface-300);
+  --text-tertiary: var(--color-surface-400);
+  --text-muted: var(--color-surface-400);
+  --border-color: var(--color-surface-600);
+  --shadow-sm: 0 1px 2px rgb(23 33 39 / 0.08);
+  --shadow-md: 0 8px 20px rgb(23 33 39 / 0.14);
+  --visual-canvas: var(--color-surface-900);
+  --visual-panel: var(--color-surface-800);
+  --visual-node: var(--color-surface-700);
+  --visual-muted: var(--color-surface-400);
+  --visual-wire: var(--color-surface-500);
 }
 
-/* Dark Theme Variables */
+/* Commissioning Spine dark. */
 :root.dark {
-  /* Surface colors - Dark mode (industrial) */
-  --color-surface-900: #0a0a0b;
-  --color-surface-800: #111113;
-  --color-surface-700: #1a1a1d;
-  --color-surface-600: #242428;
-  --color-surface-500: #2e2e33;
-  --color-surface-400: #3d3d44;
-  --color-surface-300: #5c5c66;
-  --color-surface-200: #8b8b99;
-  --color-surface-100: #c4c4cc;
-  
-  /* Slightly brighter accents for dark mode visibility */
-  --color-accent-blue: #3b82f6;
-  --color-accent-green: #22c55e;
-  --color-accent-yellow: #eab308;
-  --color-accent-red: #ef4444;
-  --color-accent-orange: #f97316;
-  --color-accent-purple: #a855f7;
-  
-  /* Status colors adjusted for dark */
-  --color-status-running: #22c55e;
-  --color-status-stopped: #ef4444;
-  --color-status-warning: #eab308;
-  --color-status-connected: #3b82f6;
-  --color-status-disconnected: #6b7280;
-  
-  /* Theme-specific text colors */
-  --text-primary: #f1f5f9;
-  --text-secondary: #cbd5e1;
-  --text-muted: #94a3b8;
-  
-  /* Borders and shadows for dark mode */
-  --border-color: #242428;
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4);
+  color-scheme: dark;
+  --color-surface-900: #0f171b;
+  --color-surface-800: #141e23;
+  --color-surface-700: #19262c;
+  --color-surface-600: #34464d;
+  --color-surface-500: #52666e;
+  --color-surface-400: #8e9e9a;
+  --color-surface-300: #b7c4c0;
+  --color-surface-200: #d3ddda;
+  --color-surface-100: #e5edeb;
+  --color-accent-blue: #5ba7df;
+  --color-accent-cyan: #5ba7df;
+  --color-accent-green: #65c98e;
+  --color-accent-yellow: #e0ae4f;
+  --color-accent-orange: #e0ae4f;
+  --color-accent-red: #ed7070;
+  --color-accent-purple: #b9a8ef;
+  --color-status-running: var(--color-accent-green);
+  --color-status-stopped: var(--color-surface-400);
+  --color-status-warning: var(--color-accent-orange);
+  --color-status-connected: var(--color-accent-blue);
+  --color-status-disconnected: var(--color-surface-400);
+  --text-primary: var(--color-surface-100);
+  --text-secondary: var(--color-surface-300);
+  --text-tertiary: var(--color-surface-400);
+  --text-muted: var(--color-surface-400);
+  --border-color: var(--color-surface-600);
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3);
+  --shadow-md: 0 8px 20px rgb(0 0 0 / 0.42);
+}
+
+
+.zplc-visual-editor { background: var(--visual-canvas); color: var(--text-primary); }
+.zplc-visual-toolbox { background: var(--visual-panel); border-color: var(--border-color); color: var(--text-primary); }
+.zplc-visual-node { position: relative; background: transparent; border-color: transparent; color: var(--text-primary); }
+.zplc-visual-card { position: relative; background: var(--visual-node); border-color: var(--border-color); color: var(--text-primary); }
+.sfc-step-box { position: relative; background: var(--visual-node); color: var(--text-primary); }
+.sfc-step-node .react-flow__handle, .sfc-transition-node .react-flow__handle { opacity: 0; }
+.sfc-step-node:hover .react-flow__handle, .sfc-step-node:focus-within .react-flow__handle, .sfc-transition-node:hover .react-flow__handle, .sfc-transition-node:focus-within .react-flow__handle, .react-flow__node.selected .sfc-step-node .react-flow__handle, .react-flow__node.selected .sfc-transition-node .react-flow__handle, .react-flow__handle.connecting, .react-flow__handle.valid { opacity: 1 !important; }
+.sfc-edge-path { fill: none; stroke-linejoin: miter; stroke-linecap: square; }
+.zplc-visual-editor .react-flow__container, .zplc-visual-editor .react-flow__pane { background: var(--visual-canvas) !important; }
+.zplc-visual-editor .react-flow__edge-path { stroke: var(--visual-wire); }
+.zplc-visual-editor .react-flow__controls, .zplc-visual-editor .react-flow__minimap { background: var(--visual-panel); border: 1px solid var(--border-color); fill: var(--visual-panel); }
+.zplc-visual-editor .react-flow__controls-button { background: var(--visual-panel); border-bottom-color: var(--border-color); color: var(--text-primary); fill: currentColor; }
+.zplc-visual-editor .react-flow__controls-button:hover { background: var(--visual-node); }
+.zplc-visual-editor .react-flow__controls-button svg { fill: currentColor; }
+
+@media (forced-colors: active) {
+  .zplc-visual-editor, .zplc-visual-toolbox, .zplc-visual-card, .sfc-step-box, .zplc-visual-editor .react-flow__container, .zplc-visual-editor .react-flow__controls, .zplc-visual-editor .react-flow__minimap { background: Canvas !important; color: CanvasText !important; border-color: CanvasText !important; }
+  .zplc-visual-editor .react-flow__edge-path { stroke: CanvasText !important; }
+  .sfc-transition-axis { border-color: CanvasText !important; }
+  .zplc-visual-editor .react-flow__controls-button { background: Canvas !important; color: CanvasText !important; border-color: CanvasText !important; }
+  .zplc-visual-editor .react-flow__controls-button:hover { background: Highlight !important; color: HighlightText !important; }
+  .zplc-visual-editor :focus-visible { outline: 2px solid Highlight !important; outline-offset: 2px; }
 }
 
 /* System preference detection - applies if no explicit theme set */
 @media (prefers-color-scheme: dark) {
   :root:not(.light):not(.dark) {
-    /* Surface colors - Dark mode */
-    --color-surface-900: #0a0a0b;
-    --color-surface-800: #111113;
-    --color-surface-700: #1a1a1d;
-    --color-surface-600: #242428;
-    --color-surface-500: #2e2e33;
-    --color-surface-400: #3d3d44;
-    --color-surface-300: #5c5c66;
-    --color-surface-200: #8b8b99;
-    --color-surface-100: #c4c4cc;
-    
-    --color-accent-blue: #3b82f6;
-    --color-accent-green: #22c55e;
-    --color-accent-yellow: #eab308;
-    --color-accent-red: #ef4444;
-    --color-accent-orange: #f97316;
-    --color-accent-purple: #a855f7;
-    
-    --color-status-running: #22c55e;
-    --color-status-stopped: #ef4444;
-    --color-status-warning: #eab308;
-    --color-status-connected: #3b82f6;
-    --color-status-disconnected: #6b7280;
-    
-    --text-primary: #f1f5f9;
-    --text-secondary: #cbd5e1;
-    --text-muted: #94a3b8;
-    
-    --border-color: #242428;
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4);
+    color-scheme: dark;
+    --color-surface-900: #0f171b; --color-surface-800: #141e23; --color-surface-700: #19262c;
+    --color-surface-600: #34464d; --color-surface-500: #52666e; --color-surface-400: #8e9e9a;
+    --color-surface-300: #b7c4c0; --color-surface-200: #d3ddda; --color-surface-100: #e5edeb;
+    --color-accent-blue: #5ba7df; --color-accent-cyan: #5ba7df; --color-accent-green: #65c98e;
+    --color-accent-yellow: #e0ae4f; --color-accent-orange: #e0ae4f; --color-accent-red: #ed7070; --color-accent-purple: #b9a8ef;
+    --color-status-running: var(--color-accent-green); --color-status-stopped: var(--color-surface-400);
+    --color-status-warning: var(--color-accent-orange); --color-status-connected: var(--color-accent-blue); --color-status-disconnected: var(--color-surface-400);
+    --text-primary: var(--color-surface-100); --text-secondary: var(--color-surface-300); --text-tertiary: var(--color-surface-400); --text-muted: var(--color-surface-400);
+    --border-color: var(--color-surface-600); --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3); --shadow-md: 0 8px 20px rgb(0 0 0 / 0.42);
   }
 }
 
@@ -133,12 +128,6 @@ html, body, #root {
   background-color: var(--color-surface-900);
   color: var(--color-surface-100);
   font-family: var(--font-sans);
-  transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-/* Smooth theme transitions */
-* {
-  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 /* Disable transitions on initial load to prevent flash */
@@ -420,4 +409,39 @@ html, body, #root {
 
 .btn-industrial:active {
   transform: translateY(0);
+}
+
+/* Wiring Ledger shell: flat technical regions, not a card dashboard. */
+.ledger-workspace { min-width: 0; }
+.ledger-inspector { height: 100%; overflow: auto; background: var(--color-surface-800); color: var(--text-primary); }
+.ledger-index { color: var(--text-tertiary); font-family: var(--font-mono); font-weight: 500; }
+.ledger-inspector section { border-bottom: 1px solid var(--border-color); padding: 10px; }
+.ledger-inspector h2 { margin: 0 0 7px; color: var(--color-accent-blue); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.ledger-inspector p { margin: 0; color: var(--text-secondary); font-size: 12px; line-height: 1.45; }
+.ledger-inspector dl { margin: 0; }
+.ledger-inspector-row { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 8px; padding: 3px 0; font-size: 12px; line-height: 1.35; }
+.ledger-inspector-row dt { color: var(--text-tertiary); }
+.ledger-inspector-row dd { min-width: 0; margin: 0; overflow-wrap: anywhere; color: var(--text-primary); }
+.ledger-inspector-note { margin-top: 8px !important; color: var(--text-tertiary) !important; }
+
+button, [role="button"], [role="tab"] { transition: background-color .12s ease, border-color .12s ease, color .12s ease; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+/* Let Windows High Contrast supply the palette while preserving the ledger's structure. */
+@media (forced-colors: active) {
+  .ledger-inspector,
+  .ledger-inspector section,
+  [aria-label="Operational status"] {
+    background: Canvas;
+    color: CanvasText;
+    border-color: CanvasText;
+  }
+  .focus-ring:focus-visible { outline: 2px solid Highlight; outline-offset: 2px; box-shadow: none; }
+  .ledger-inspector h2,
+  .ledger-inspector-row dt,
+  .ledger-inspector p,
+  .ledger-index { color: CanvasText; }
+  [data-panel-group-direction] > [data-panel-resize-handle-id] { background: CanvasText; }
 }

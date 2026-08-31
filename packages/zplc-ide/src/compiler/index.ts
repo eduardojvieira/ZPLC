@@ -14,39 +14,18 @@ export * from '@zplc/compiler';
 
 // Override some types that need IDE-specific extensions
 import {
+    compileMultiTaskProject as compileCoreMultiTaskProject,
+    assertTaskProgramCardinality,
     compileToBinary,
-    assemble,
     CompilerError,
-    WORK_MEMORY_REGION_SIZE,
-    MemoryLayout,
-    createMultiTaskZplcFile,
-    relocateBytecode,
-    TASK_TYPE,
-    parse,
-    generate,
-    buildSymbolTable,
-    buildDebugMap,
-    createDebugMap,
-    getFB,
+    ZPLC_CONSTANTS,
     type CompilationResult,
     type CompileOptions,
-    type AssemblyResult,
     type TaskDef,
-    type TaskType,
     type DebugMap,
-    type TypeResolver,
-    type DataTypeValue,
+    type ProjectConfig as CoreProjectConfig,
+    type ProgramSource as CoreProgramSource,
 } from '@zplc/compiler';
-import type { SymbolTable } from '@zplc/compiler';
-
-interface CompilerTagDef {
-    varAddr: number;
-    varType: number;
-    tagId: number;
-    value: number;
-}
-
-type AssemblyResultWithTags = AssemblyResult & { tags?: CompilerTagDef[] };
 
 export const LANGUAGE_WORKFLOW_STAGE = {
     AUTHOR: 'author',
@@ -88,15 +67,14 @@ import { transpileLDToST } from './transpilers/ld.ts';
 import { transpileFBDToST } from './transpilers/fbd.ts';
 import { transpileSFCToST } from './transpilers/sfc.ts';
 import { transpileILToST } from './transpilers/il.ts';
-import { parseLDModel } from '../models/ld.ts';
 import { parseFBDModel } from '../models/fbd.ts';
 import { parseSFCModel } from '../models/sfc.ts';
 import { parseIL } from './il/parser.ts';
 import type {
     ZPLCProjectConfig,
-    TaskDefinition,
     CommunicationTagConfig,
 } from '../types/index.ts';
+import { getCompilerMemoryProfile } from '../config/boardProfiles.ts';
 
 // =============================================================================
 // IDE-specific Types
@@ -138,6 +116,8 @@ export interface ProgramSource {
     content: string;
     /** Source language */
     language: PLCLanguage;
+    /** Exact project-relative source path for diagnostics and debug provenance. */
+    sourceRef?: string;
 }
 
 /**
@@ -175,6 +155,8 @@ export interface SingleFileTaskOptions {
     priority?: number;
     /** Program name extracted from source (default: 'Main') */
     programName?: string;
+    /** Exact project-relative source path for diagnostics and debug provenance. */
+    sourceRef?: string;
     /** Communication tags to inject as ST variable tags */
     communicationTags?: CommunicationTagConfig[];
 }
@@ -205,16 +187,25 @@ export interface SingleFileTaskResult extends ProjectCompilationResult {
 export function transpileToST(content: string, language: PLCLanguage): TranspileResult {
     switch (language) {
         case 'LD': {
-            const model = parseLDModel(content);
-            return transpileLDToST(model);
+            try {
+                return transpileLDToST(JSON.parse(content));
+            } catch (error) {
+                return { success: false, source: '', errors: [error instanceof Error ? error.message : String(error)] };
+            }
         }
         case 'FBD': {
-            const model = parseFBDModel(content);
-            return transpileFBDToST(model);
+            try {
+                return transpileFBDToST(parseFBDModel(content));
+            } catch (error) {
+                return { success: false, source: '', errors: [error instanceof Error ? error.message : String(error)] };
+            }
         }
         case 'SFC': {
-            const model = parseSFCModel(content);
-            return transpileSFCToST(model);
+            try {
+                return transpileSFCToST(parseSFCModel(content));
+            } catch (error) {
+                return { success: false, source: '', errors: [error instanceof Error ? error.message : String(error)] };
+            }
         }
         case 'ST':
             return { success: true, source: content, errors: [] };
@@ -268,75 +259,6 @@ export function compileProject(content: string, language: PLCLanguage, options?:
         intermediateSTSource,
         transpileErrors: transpileErrors.length > 0 ? transpileErrors : undefined,
     };
-}
-
-/**
- * Create a TypeResolver from a SymbolTable.
- * Bridges user-defined FBs/structs and stdlib FBs into the debug-map's TypeResolver interface.
- */
-function createTypeResolver(symbols: SymbolTable): TypeResolver {
-    return {
-        getMemberInfo(typeName: string, memberName: string): { offset: number; size: number; dataType: string } | undefined {
-            const fbDef = symbols.getFBDefinition(typeName);
-            if (fbDef) {
-                const member = fbDef.members.get(memberName);
-                if (member) {
-                    return {
-                        offset: member.offset,
-                        size: member.size,
-                        dataType: typeof member.dataType === 'string' ? member.dataType : 'DINT',
-                    };
-                }
-            }
-
-            const structDef = symbols.getStructDefinition(typeName);
-            if (structDef) {
-                const member = structDef.members.get(memberName);
-                if (member) {
-                    return {
-                        offset: member.offset,
-                        size: member.size,
-                        dataType: typeof member.dataType === 'string' ? member.dataType : 'DINT',
-                    };
-                }
-            }
-
-            const stdFB = getFB(typeName as DataTypeValue);
-            if (stdFB) {
-                const member = stdFB.members.find(m => m.name === memberName);
-                if (member) {
-                    const dt: string = typeof member.dataType === 'string'
-                        ? member.dataType
-                        : (member.size === 1 ? 'BOOL' : member.size === 2 ? 'INT' : 'DINT');
-                    return { offset: member.offset, size: member.size, dataType: dt };
-                }
-            }
-
-            return undefined;
-        },
-
-        isCompositeType(typeName: string) {
-            return !!symbols.getFBDefinition(typeName)
-                || !!symbols.getStructDefinition(typeName)
-                || !!getFB(typeName as DataTypeValue);
-        },
-    };
-}
-
-/**
- * Map TaskTrigger from project config to TaskType for assembler.
- */
-function mapTaskTrigger(trigger: TaskDefinition['trigger']): TaskType {
-    switch (trigger) {
-        case 'cyclic':
-            return TASK_TYPE.CYCLIC;
-        case 'event':
-            return TASK_TYPE.EVENT;
-        case 'freewheeling':
-            return TASK_TYPE.CYCLIC;
-        default:
-            return TASK_TYPE.CYCLIC;
-    }
 }
 
 function escapeRegExp(input: string): string {
@@ -481,8 +403,15 @@ export function compileMultiTaskProject(
     if (!config.tasks || config.tasks.length === 0) {
         throw new CompilerError('No tasks defined in project configuration', 0, 0, 'codegen');
     }
+    if (config.tasks.length > ZPLC_CONSTANTS.MAX_TASKS) {
+        throw new CompilerError(
+            `Project supports at most ${ZPLC_CONSTANTS.MAX_TASKS} tasks`,
+            0, 0, 'codegen',
+        );
+    }
 
-    // Build source map for lookup
+    assertTaskProgramCardinality(config);
+
     const sourceMap = new Map<string, ProgramSource>();
     for (const source of programSources) {
         sourceMap.set(source.name, source);
@@ -490,202 +419,68 @@ export function compileMultiTaskProject(
     }
 
     const findSource = (progName: string): ProgramSource | undefined => {
-        let source = sourceMap.get(progName);
-        if (source) return source;
-        source = sourceMap.get(progName.toLowerCase());
-        if (source) return source;
         const baseName = progName.replace(/\.(st|fbd|ld|sfc|il)$/i, '');
-        return sourceMap.get(baseName) || sourceMap.get(baseName.toLowerCase());
+        return sourceMap.get(progName)
+            || sourceMap.get(progName.toLowerCase())
+            || sourceMap.get(baseName)
+            || sourceMap.get(baseName.toLowerCase());
     };
-
-    // Collect referenced programs
-    const referencedPrograms = new Set<string>();
-    for (const task of config.tasks) {
-        for (const progName of task.programs) {
-            referencedPrograms.add(progName);
-        }
-    }
-
-    // Compile each program
-    const compiledPrograms: {
-        name: string;
-        bytecode: Uint8Array;
-        assembly: string;
-        entryPoint: number;
-        size: number;
-        tags: CompilerTagDef[];
-        debugMap: DebugMap;
-    }[] = [];
-
-    let currentOffset = 0;
-    let programIndex = 0;
 
     const communicationTags = config.communication?.bindings || config.communication?.tags || [];
+    const coreSources: CoreProgramSource[] = [];
+    const compiledPrograms = new Set<string>();
+    const visualSourceRefs = new Set<string>();
 
-    for (const progName of referencedPrograms) {
-        const source = findSource(progName);
-        if (!source) {
-            throw new CompilerError(
-                `Program '${progName}' referenced by task but not found in sources`,
-                0, 0, 'codegen'
-            );
-        }
+    for (const task of config.tasks) {
+        for (const progName of task.programs) {
+            if (compiledPrograms.has(progName)) continue;
+            compiledPrograms.add(progName);
 
-        const workMemoryBase = MemoryLayout.WORK_BASE + (programIndex * WORK_MEMORY_REGION_SIZE);
-
-        // Transpile if needed
-        let stSource = source.content;
-        if (source.language !== 'ST') {
-            const transpileResult = transpileToST(source.content, source.language);
-            if (!transpileResult.success) {
-                throw new CompilerError(
-                    `Transpilation of '${progName}' failed: ${transpileResult.errors.join('; ')}`,
-                    0, 0, 'parser'
-                );
+            const source = findSource(progName);
+            if (!source) {
+                throw new CompilerError(`Program '${progName}' referenced by task but not found in sources`, 0, 0, 'codegen');
             }
-            stSource = transpileResult.source;
-        }
 
-        stSource = applyCommunicationTags(stSource, communicationTags);
-        stSource = applyModbusBindingHelpers(stSource);
+            const transpiled = source.language === 'ST'
+                ? { success: true, source: source.content, errors: [] }
+                : transpileToST(source.content, source.language);
+            if (!transpiled.success) {
+                throw new CompilerError(`Transpilation of '${progName}' failed: ${transpiled.errors.join('; ')}`, 0, 0, 'parser', source.sourceRef);
+            }
+            if (source.language !== 'ST') visualSourceRefs.add(source.sourceRef ?? progName);
 
-        // Compile to assembly — enable source annotations for debug map
-        let assembly: string;
-        let programAst: ReturnType<typeof parse>;
-        try {
-            programAst = parse(stSource);
-            assembly = generate(programAst, { workMemoryBase, emitSourceAnnotations: true });
-        } catch (e) {
-            const err = e as Error;
-            throw new CompilerError(
-                `Compilation of '${progName}' failed: ${err.message}`,
-                0, 0, 'codegen'
-            );
-        }
-
-        // Assemble to bytecode
-        let asmResult: AssemblyResultWithTags;
-        try {
-            asmResult = assemble(assembly);
-        } catch (e) {
-            const err = e as Error;
-            throw new CompilerError(
-                `Assembly of '${progName}' failed: ${err.message}`,
-                0, 0, 'assembler'
-            );
-        }
-
-        // Build debug map for this program
-        const symbols = buildSymbolTable(programAst.programs[0], workMemoryBase);
-        const progDebugMap = buildDebugMap({
-            programName: progName,
-            symbols,
-            instructionMappings: asmResult.instructionMappings,
-            codeSize: asmResult.bytecode.length,
-            typeResolver: createTypeResolver(symbols),
-        });
-
-        compiledPrograms.push({
-            name: progName,
-            bytecode: asmResult.bytecode,
-            assembly,
-            entryPoint: currentOffset,
-            size: asmResult.bytecode.length,
-            tags: asmResult.tags ?? [],
-            debugMap: progDebugMap,
-        });
-
-        currentOffset += asmResult.bytecode.length;
-        programIndex++;
-    }
-
-    // Concatenate bytecode with relocation
-    const totalCodeSize = compiledPrograms.reduce((sum, p) => sum + p.size, 0);
-    const concatenatedBytecode = new Uint8Array(totalCodeSize);
-    let offset = 0;
-    for (const prog of compiledPrograms) {
-        const relocatedBytecode = new Uint8Array(prog.bytecode);
-        relocateBytecode(relocatedBytecode, prog.entryPoint);
-        concatenatedBytecode.set(relocatedBytecode, offset);
-        offset += prog.size;
-    }
-
-    // Build entry point map
-    const entryPointMap = new Map<string, number>();
-    for (const prog of compiledPrograms) {
-        entryPointMap.set(prog.name, prog.entryPoint);
-        entryPointMap.set(prog.name.toLowerCase(), prog.entryPoint);
-    }
-
-    const findEntryPoint = (progName: string): number | undefined => {
-        let ep = entryPointMap.get(progName);
-        if (ep !== undefined) return ep;
-        ep = entryPointMap.get(progName.toLowerCase());
-        if (ep !== undefined) return ep;
-        const baseName = progName.replace(/\.(st|fbd|ld|sfc|il)$/i, '');
-        return entryPointMap.get(baseName) || entryPointMap.get(baseName.toLowerCase());
-    };
-
-    // Build task definitions
-    const taskDefs: TaskDef[] = [];
-    let taskId = 0;
-
-    const allTags = compiledPrograms.flatMap((prog) => prog.tags);
-
-    for (const taskConfig of config.tasks) {
-        const firstProgram = taskConfig.programs[0];
-        if (!firstProgram) {
-            throw new CompilerError(
-                `Task '${taskConfig.name}' has no programs assigned`,
-                0, 0, 'codegen'
-            );
-        }
-
-        const entryPoint = findEntryPoint(firstProgram);
-        if (entryPoint === undefined) {
-            throw new CompilerError(
-                `Program '${firstProgram}' for task '${taskConfig.name}' was not compiled`,
-                0, 0, 'codegen'
-            );
-        }
-
-        taskDefs.push({
-            id: taskId++,
-            type: mapTaskTrigger(taskConfig.trigger),
-            priority: taskConfig.priority ?? 1,
-            intervalUs: ((taskConfig.interval_ms ?? taskConfig.interval ?? 10) * 1000),
-            entryPoint,
-            stackSize: 64,
-        });
-    }
-
-    const zplcFile = (createMultiTaskZplcFile as unknown as (
-        bytecode: Uint8Array,
-        tasks: TaskDef[],
-        tags: CompilerTagDef[]
-    ) => Uint8Array)(concatenatedBytecode, taskDefs, allTags);
-
-    // Merge all per-program debug maps into one
-    const mergedDebugMap = createDebugMap(config.name ?? 'Project');
-    for (const prog of compiledPrograms) {
-        for (const [pouName, pouInfo] of Object.entries(prog.debugMap.pou)) {
-            mergedDebugMap.pou[pouName] = pouInfo;
+            coreSources.push({
+                name: progName,
+                content: applyCommunicationTags(transpiled.source, communicationTags),
+                sourceRef: source.sourceRef,
+            });
         }
     }
 
-    return {
-        zplcFile,
-        bytecode: concatenatedBytecode,
-        tasks: taskDefs,
-        codeSize: totalCodeSize,
-        programDetails: compiledPrograms.map(p => ({
-            name: p.name,
-            entryPoint: p.entryPoint,
-            size: p.size,
-            assembly: p.assembly,
+    const coreConfig: CoreProjectConfig = {
+        name: config.name,
+        version: config.version,
+        tasks: config.tasks.map((task) => ({
+            name: task.name,
+            trigger: task.trigger,
+            interval: task.interval_ms ?? task.interval,
+            priority: task.priority,
+            programs: task.programs,
         })),
-        debugMap: mergedDebugMap,
     };
+
+    try {
+        return compileCoreMultiTaskProject(coreConfig, coreSources, {
+            memoryProfile: getCompilerMemoryProfile(config.target?.board),
+        });
+    } catch (error) {
+        if (error instanceof CompilerError) {
+            if (error.sourceRef && visualSourceRefs.has(error.sourceRef) && error.line > 0) {
+                throw new CompilerError(error.detail, 0, 0, error.phase, error.sourceRef);
+            }
+        }
+        throw error;
+    }
 }
 
 /**
@@ -709,6 +504,7 @@ export function compileSingleFileWithTask(
         intervalMs = 10,
         priority = 1,
         programName = 'Main',
+        sourceRef,
         communicationTags = [],
     } = options;
 
@@ -731,6 +527,7 @@ export function compileSingleFileWithTask(
         name: programName,
         content,
         language,
+        sourceRef,
     }];
 
     const multiResult = compileMultiTaskProject(config, programSources);

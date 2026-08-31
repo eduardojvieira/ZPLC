@@ -5,7 +5,7 @@
  */
 
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, Circle, ArrowDown, Play, GitBranch } from 'lucide-react';
+import { ChevronDown, ChevronRight, Circle, ArrowDown } from 'lucide-react';
 
 // =============================================================================
 // Element Categories
@@ -37,23 +37,6 @@ const SFC_CATEGORIES: SFCElementCategory[] = [
       { type: 'transition', label: 'Transition', description: 'Condition between steps' },
     ],
   },
-  {
-    name: 'Branches',
-    icon: <GitBranch size={14} />,
-    elements: [
-      { type: 'divergence_or', label: 'OR Divergence', description: 'Alternative paths' },
-      { type: 'convergence_or', label: 'OR Convergence', description: 'Alternative join' },
-      { type: 'divergence_and', label: 'AND Divergence', description: 'Parallel paths' },
-      { type: 'convergence_and', label: 'AND Convergence', description: 'Parallel join' },
-    ],
-  },
-  {
-    name: 'Special',
-    icon: <Play size={14} />,
-    elements: [
-      { type: 'jump', label: 'Jump', description: 'Jump to another step' },
-    ],
-  },
 ];
 
 // =============================================================================
@@ -83,10 +66,10 @@ export default function SFCToolbox() {
   };
 
   return (
-    <div className="w-48 h-full bg-slate-800 border-r border-slate-600 overflow-y-auto">
+    <div className="zplc-visual-toolbox w-48 h-full border-r overflow-y-auto">
       {/* Header */}
-      <div className="px-3 py-2 border-b border-slate-600 bg-slate-700">
-        <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+      <div className="px-3 py-2 border-b border-[var(--border-color)] bg-[var(--color-surface-700)]">
+        <span className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider">
           SFC Elements
         </span>
       </div>
@@ -101,13 +84,13 @@ export default function SFCToolbox() {
               {/* Category header */}
               <button
                 onClick={() => toggleCategory(category.name)}
-                className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-slate-700 transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-left hover:bg-[var(--color-surface-700)] transition-colors"
               >
-                <span className="text-slate-400">
+                <span className="text-[var(--text-tertiary)]">
                   {isExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                 </span>
-                <span className="text-slate-400">{category.icon}</span>
-                <span className="text-xs text-slate-300 font-medium">
+                <span className="text-[var(--text-tertiary)]">{category.icon}</span>
+                <span className="text-xs text-[var(--text-secondary)] font-medium">
                   {category.name}
                 </span>
               </button>
@@ -121,12 +104,12 @@ export default function SFCToolbox() {
                       draggable
                       onDragStart={(e) => onDragStart(e, element.type)}
                       className="mx-2 my-0.5 px-2 py-1.5 rounded text-xs 
-                                 bg-slate-700 hover:bg-slate-600 cursor-grab active:cursor-grabbing
-                                 border border-transparent hover:border-slate-500 transition-colors"
+                                 bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] cursor-grab active:cursor-grabbing
+                                 border border-transparent hover:border-[var(--color-accent-blue)] transition-colors"
                       title={element.description}
                     >
-                      <div className="text-slate-200 font-medium">{element.label}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">
+                      <div className="text-[var(--text-primary)] font-medium">{element.label}</div>
+                      <div className="text-[10px] text-[var(--text-tertiary)] mt-0.5">
                         {element.description}
                       </div>
                     </div>
@@ -139,21 +122,21 @@ export default function SFCToolbox() {
       </div>
 
       {/* Help text */}
-      <div className="px-3 py-2 border-t border-slate-600">
-        <p className="text-[10px] text-slate-500 leading-relaxed">
+      <div className="px-3 py-2 border-t border-[var(--border-color)]">
+        <p className="text-[10px] text-[var(--text-tertiary)] leading-relaxed">
           Drag elements onto the canvas. Connect Steps with Transitions.
           Double-click to edit names and conditions.
         </p>
       </div>
 
       {/* Legend */}
-      <div className="px-3 py-2 border-t border-slate-600">
-        <div className="text-[10px] text-slate-500 mb-1">Action Qualifiers:</div>
+      <div className="px-3 py-2 border-t border-[var(--border-color)]">
+        <div className="text-[10px] text-[var(--text-tertiary)] mb-1">Action Qualifiers:</div>
         <div className="grid grid-cols-2 gap-1 text-[9px]">
-          <div className="text-slate-400"><span className="font-mono bg-slate-700 px-1 rounded">N</span> Non-stored</div>
-          <div className="text-slate-400"><span className="font-mono bg-slate-700 px-1 rounded">S</span> Set</div>
-          <div className="text-slate-400"><span className="font-mono bg-slate-700 px-1 rounded">R</span> Reset</div>
-          <div className="text-slate-400"><span className="font-mono bg-slate-700 px-1 rounded">P</span> Pulse</div>
+          <div className="text-[var(--text-tertiary)]"><span className="font-mono bg-[var(--color-surface-700)] px-1 rounded">N</span> Non-stored</div>
+          <div className="text-[var(--text-tertiary)]"><span className="font-mono bg-[var(--color-surface-700)] px-1 rounded">S</span> Set</div>
+          <div className="text-[var(--text-tertiary)]"><span className="font-mono bg-[var(--color-surface-700)] px-1 rounded">R</span> Reset</div>
+          <div className="text-[var(--text-tertiary)]"><span className="font-mono bg-[var(--color-surface-700)] px-1 rounded">P</span> Pulse</div>
         </div>
       </div>
     </div>

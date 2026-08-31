@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "BlinkyVisual",
+  "tickMs": 10,
+  "durationMs": 1100,
+  "events": [],
+  "expectations": [
+    { "kind": "FALLING", "fromMs": 10, "withinMs": 540, "condition": { "Blinky.LED_Output": false } },
+    { "kind": "RISING", "fromMs": 10, "withinMs": 1080, "condition": { "Blinky.LED_Output": true } }
+  ]
+}

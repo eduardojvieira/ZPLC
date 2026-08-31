@@ -2,13 +2,9 @@
  * @file wasmAdapter.ts
  * @brief WASM Debug Adapter for ZPLC Runtime
  *
- * This adapter runs the ZPLC VM in the browser using WebAssembly.
- * It is now an explicit legacy fallback, not the primary parity path.
- *
- * Important: pause/resume/step/breakpoint semantics here still depend on
- * renderer-owned orchestration. That makes the adapter useful for quick local
- * feedback, but degraded for parity claims compared with native simulation or
- * hardware sessions.
+ * Browser WASM simulation is retained fail-closed until a verifier-enabled
+ * Emscripten artifact is rebuilt. Native simulation is the supported local
+ * simulation path.
  *
  * The WASM module is built from the C core using Emscripten and
  * exposes functions via the Emscripten runtime.
@@ -22,8 +18,6 @@ import type {
   WatchVariable,
   WatchForceEntry,
   DebugAdapterEvents,
-  LoadProgramOptions,
-  ReadWatchOptions,
 } from './debugAdapter';
 import {
   bytesToHex,
@@ -35,10 +29,14 @@ import {
 import { loadZPLCModule, type EmscriptenModule } from './wasmLoader';
 import { debugLog } from '../utils/debugLog';
 
+export const WASM_SIMULATION_ENABLED = false;
+export const WASM_SIMULATION_DISABLED_ERROR =
+  'Browser WASM simulation is unavailable until a verifier-enabled runtime artifact is built.';
+
 /**
  * WASM Debug Adapter
  *
- * Implements IDebugAdapter for running ZPLC programs in WebAssembly.
+ * Implements IDebugAdapter for a future verifier-enabled WASM runtime.
  */
 export class WASMAdapter implements IDebugAdapter {
   readonly type = 'wasm' as const;
@@ -59,7 +57,7 @@ export class WASMAdapter implements IDebugAdapter {
   // Wrapped C functions — core lifecycle
   private coreInit: (() => number) | null = null;
   private coreShutdown: (() => number) | null = null;
-  private coreLoadRaw: ((ptr: number, size: number) => number) | null = null;
+  private coreLoad: ((ptr: number, size: number, workspace: number, workspaceSize: number) => number) | null = null;
   private coreRunCycle: (() => number) | null = null;
   private coreRun: ((max: number) => number) | null = null;
   private coreGetPc: (() => number) | null = null;
@@ -113,6 +111,10 @@ export class WASMAdapter implements IDebugAdapter {
   // =========================================================================
 
   async connect(): Promise<void> {
+    if (!WASM_SIMULATION_ENABLED) {
+      throw new Error(WASM_SIMULATION_DISABLED_ERROR);
+    }
+
     if (this._connected) {
       return;
     }
@@ -153,7 +155,7 @@ export class WASMAdapter implements IDebugAdapter {
     this._connected = true;
     this.setState('idle');
     this.events.onSerialData?.(
-      '[WASM] Connected in legacy fallback mode. Pause/resume/step/breakpoint semantics are degraded versus native simulation or hardware.',
+      '[WASM] Connected with a verifier-enabled browser runtime. Native simulation remains the supported local parity path.',
     );
   }
 
@@ -186,10 +188,12 @@ export class WASMAdapter implements IDebugAdapter {
     // Core lifecycle
     this.coreInit = m.cwrap('zplc_core_init', 'number', []) as () => number;
     this.coreShutdown = m.cwrap('zplc_core_shutdown', 'number', []) as () => number;
-    this.coreLoadRaw = m.cwrap('zplc_core_load_raw', 'number', [
+    this.coreLoad = m.cwrap('zplc_core_load', 'number', [
       'number',
       'number',
-    ]) as (ptr: number, size: number) => number;
+      'number',
+      'number',
+    ]) as (ptr: number, size: number, workspace: number, workspaceSize: number) => number;
     this.coreRunCycle = m.cwrap('zplc_core_run_cycle', 'number', []) as () => number;
     this.coreRun = m.cwrap('zplc_core_run', 'number', ['number']) as (max: number) => number;
     this.coreGetPc = m.cwrap('zplc_core_get_pc', 'number', []) as () => number;
@@ -233,6 +237,7 @@ export class WASMAdapter implements IDebugAdapter {
 
     // Validate missing exports to avoid silent failures
     const criticalExports = [
+      '_zplc_core_load',
       '_zplc_ipi_read8',
       '_zplc_opi_read8',
       '_zplc_ipi_write8',
@@ -257,39 +262,46 @@ export class WASMAdapter implements IDebugAdapter {
   // Program Loading
   // =========================================================================
 
-  async loadProgram(bytecode: Uint8Array, _options?: LoadProgramOptions): Promise<void> {
+  async loadProgram(bytecode: Uint8Array): Promise<void> {
     if (!this._connected || !this.module) {
       throw new Error('Not connected');
     }
 
-    // Stop any running execution
-    this.stopExecutionLoop();
-
-    // Allocate memory for bytecode
-    const ptr = this.module._malloc(bytecode.length);
-    if (ptr === 0) {
+    const programPtr = this.module._malloc(bytecode.length);
+    if (programPtr === 0) {
       throw new Error('Failed to allocate memory for bytecode');
     }
 
+    // ABI v1 caps CODE at uint16_t, so its boundary bitmap needs at most 8192 bytes.
+    const verifierWorkspaceSize = 8192;
+    const verifierWorkspacePtr = this.module._malloc(verifierWorkspaceSize);
+    if (verifierWorkspacePtr === 0) {
+      this.module._free(programPtr);
+      throw new Error('Failed to allocate verifier workspace');
+    }
+
     try {
-      // Copy bytecode to WASM memory
-      this.module.HEAPU8.set(bytecode, ptr);
+      this.module.HEAPU8.set(bytecode, programPtr);
 
-      // Re-initialize core
-      this.coreInit?.();
-
-      // Load the program
-      const result = this.coreLoadRaw?.(ptr, bytecode.length) ?? -1;
+      const result = this.coreLoad?.(
+        programPtr,
+        bytecode.length,
+        verifierWorkspacePtr,
+        verifierWorkspaceSize,
+      ) ?? -1;
       if (result !== 0) {
         throw new Error(`Failed to load program: ${result}`);
       }
+
+      this.stopExecutionLoop();
 
       // Reset state but preserve breakpoints (user might want to debug same program)
       this.cycleCount = 0;
 
       this.setState('idle');
     } finally {
-      this.module._free(ptr);
+      this.module._free(verifierWorkspacePtr);
+      this.module._free(programPtr);
     }
   }
 
@@ -703,8 +715,7 @@ export class WASMAdapter implements IDebugAdapter {
     };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async readWatchVariables(variables: WatchVariable[], _options?: ReadWatchOptions): Promise<WatchVariable[]> {
+  async readWatchVariables(variables: WatchVariable[]): Promise<WatchVariable[]> {
     if (!this._connected) {
       throw new Error('Not connected');
     }

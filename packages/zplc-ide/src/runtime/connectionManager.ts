@@ -15,6 +15,12 @@ import type { CommunicationMapEntry, MqttRuntimeStatus, SystemInfo, StatusInfo }
 import type { ZPLCProjectConfig } from '../types';
 import type { LoadProgramOptions, RuntimeSnapshot } from './debugAdapter';
 import type { UploadTraceCallback } from './uploadTrace';
+import {
+  DeviceAdmissionError,
+  DEVICE_ADMISSION_CODE,
+  parseDeviceHandshake,
+  validateHardwareDeployAdmission,
+} from './deviceHandshake';
 
 /** Connection state change callback */
 export type ConnectionCallback = (connected: boolean) => void;
@@ -33,8 +39,12 @@ export type MqttStatusCallback = (status: MqttRuntimeStatus | null) => void;
 /**
  * Global connection manager singleton
  */
-class ConnectionManager {
+export class ConnectionManager {
   private adapter: SerialAdapter | null = null;
+  private generation = 0;
+  private connectPromise: Promise<void> | null = null;
+  private disconnectPromise: Promise<void> | null = null;
+  private connectionPublished = false;
   private _passthroughMode = false;
   private pollInterval: ReturnType<typeof setInterval> | null = null;
   
@@ -64,7 +74,7 @@ class ConnectionManager {
    * Check if connected
    */
   get connected(): boolean {
-    return this.adapter?.connected ?? false;
+    return this.connectionPublished && (this.adapter?.connected ?? false);
   }
 
   /**
@@ -107,82 +117,166 @@ class ConnectionManager {
     return this.adapter;
   }
 
-  /**
-   * Connect to a device
-   */
-  async connect(): Promise<void> {
-    if (this.adapter?.connected) {
-      return;
-    }
-
-    // Create adapter if needed
-    if (!this.adapter) {
-      this.adapter = new SerialAdapter();
-      // Disable auto-polling - connectionManager will handle polling
-      this.adapter.disableAutoPolling = true;
-    }
-
-    await this.adapter.connect();
-    
-    // Notify subscribers
-    this.notifyConnectionChange(true);
-
-    // Fetch system info once
-    try {
-      this._systemInfo = await this.adapter.getSystemInfo();
-      this.notifySystemInfo(this._systemInfo);
-    } catch (e) {
-      console.error('Failed to fetch system info:', e);
-    }
-
-    try {
-      this._communicationMap = await this.adapter.getCommunicationMap();
-      this.notifyCommunicationMap(this._communicationMap);
-    } catch (e) {
-      console.error('Failed to fetch communication map:', e);
-    }
-
-    try {
-      this._mqttStatus = await this.adapter.getMqttStatus();
-      this.notifyMqttStatus(this._mqttStatus);
-    } catch (e) {
-      console.error('Failed to fetch MQTT status:', e);
-    }
-
-    // Start polling if not in passthrough mode
-    if (!this._passthroughMode) {
-      this.startPolling();
-    }
+  private isCurrent(generation: number, adapter: SerialAdapter): boolean {
+    return this.generation === generation && this.adapter === adapter;
   }
 
-  /**
-   * Disconnect from device
-   */
-  async disconnect(): Promise<void> {
-    console.log('[ConnectionManager] disconnect called');
+  private clearConnectionState(): void {
     this.stopPolling();
-    
-    if (this.adapter) {
-      try {
-        await this.adapter.disconnect();
-      } catch (err) {
-        console.warn('[ConnectionManager] Error during adapter disconnect:', err);
-      }
-      this.adapter = null;
-    }
-    
     this._systemInfo = null;
     this._status = null;
     this._runtimeSnapshot = null;
     this._communicationMap = [];
     this._mqttStatus = null;
     this._passthroughMode = false;
-    
-    // Notify subscribers
-    this.notifyConnectionChange(false);
     this.notifyCommunicationMap(this._communicationMap);
     this.notifyMqttStatus(this._mqttStatus);
-    console.log('[ConnectionManager] disconnect complete');
+  }
+
+  private publishDisconnected(): void {
+    if (!this.connectionPublished) {
+      return;
+    }
+    this.connectionPublished = false;
+    this.notifyConnectionChange(false);
+  }
+
+  private handleUnexpectedDisconnect = (adapter: SerialAdapter): void => {
+    if (adapter !== this.adapter) {
+      return;
+    }
+    this.generation += 1;
+    this.adapter = null;
+    this.clearConnectionState();
+    this.publishDisconnected();
+  };
+
+  /** Connect to a device. Concurrent callers share one physical attempt. */
+  connect(): Promise<void> {
+    if (this.connected) {
+      return Promise.resolve();
+    }
+    if (this.connectPromise) {
+      return this.connectPromise;
+    }
+
+    const attempt = (async () => {
+      if (this.disconnectPromise) {
+        await this.disconnectPromise;
+      }
+
+      const generation = ++this.generation;
+      const adapter = this.adapter ?? new SerialAdapter(this.handleUnexpectedDisconnect);
+      adapter.disableAutoPolling = true;
+      this.adapter = adapter;
+
+      try {
+        await adapter.connect();
+        if (!this.isCurrent(generation, adapter)) {
+          throw new Error('Connection attempt cancelled');
+        }
+
+        this.connectionPublished = true;
+        this.notifyConnectionChange(true);
+
+        try {
+          const systemInfo = await adapter.getSystemInfo();
+          if (!this.isCurrent(generation, adapter)) throw new Error('Connection attempt cancelled');
+          this._systemInfo = systemInfo;
+          this.notifySystemInfo(systemInfo);
+        } catch (error) {
+          if (!this.isCurrent(generation, adapter)) throw new Error('Connection attempt cancelled');
+          console.error('Failed to fetch system info:', error);
+        }
+
+        try {
+          const communicationMap = await adapter.getCommunicationMap();
+          if (!this.isCurrent(generation, adapter)) throw new Error('Connection attempt cancelled');
+          this._communicationMap = communicationMap;
+          this.notifyCommunicationMap(communicationMap);
+        } catch (error) {
+          if (!this.isCurrent(generation, adapter)) throw new Error('Connection attempt cancelled');
+          console.error('Failed to fetch communication map:', error);
+        }
+
+        try {
+          const mqttStatus = await adapter.getMqttStatus();
+          if (!this.isCurrent(generation, adapter)) throw new Error('Connection attempt cancelled');
+          this._mqttStatus = mqttStatus;
+          this.notifyMqttStatus(mqttStatus);
+        } catch (error) {
+          if (!this.isCurrent(generation, adapter)) throw new Error('Connection attempt cancelled');
+          console.error('Failed to fetch MQTT status:', error);
+        }
+
+        if (!this.isCurrent(generation, adapter)) {
+          throw new Error('Connection attempt cancelled');
+        }
+        if (!this._passthroughMode) {
+          this.startPolling(generation, adapter);
+        }
+      } catch (error) {
+        if (this.isCurrent(generation, adapter)) {
+          this.adapter = null;
+          this.clearConnectionState();
+          this.publishDisconnected();
+          try {
+            await adapter.disconnect();
+          } catch (disconnectError) {
+            console.warn('[ConnectionManager] Error cleaning up failed connection:', disconnectError);
+          }
+          throw error;
+        }
+        throw new Error('Connection attempt cancelled');
+      }
+    })();
+
+    this.connectPromise = attempt;
+    void attempt.then(
+      () => { if (this.connectPromise === attempt) this.connectPromise = null; },
+      () => { if (this.connectPromise === attempt) this.connectPromise = null; },
+    );
+    return attempt;
+  }
+
+  /** Disconnect from device. Concurrent callers share one physical close. */
+  disconnect(): Promise<void> {
+    if (this.disconnectPromise) {
+      return this.disconnectPromise;
+    }
+
+    this.generation += 1;
+    const adapter = this.adapter;
+    const pendingConnect = this.connectPromise;
+    this.connectPromise = null;
+    this.adapter = null;
+    this.clearConnectionState();
+    this.publishDisconnected();
+
+    const attempt = (async () => {
+      let disconnectFailed = false;
+      let disconnectError: unknown;
+      try {
+        await adapter?.disconnect();
+      } catch (error) {
+        disconnectFailed = true;
+        disconnectError = error;
+        console.warn('[ConnectionManager] Error during adapter disconnect:', error);
+      }
+      if (pendingConnect) {
+        await pendingConnect.catch(() => undefined);
+      }
+      if (disconnectFailed) {
+        throw disconnectError;
+      }
+    })();
+
+    this.disconnectPromise = attempt;
+    void attempt.then(
+      () => { if (this.disconnectPromise === attempt) this.disconnectPromise = null; },
+      () => { if (this.disconnectPromise === attempt) this.disconnectPromise = null; },
+    );
+    return attempt;
   }
 
   // =========================================================================
@@ -279,15 +373,15 @@ class ConnectionManager {
   // Status Polling
   // =========================================================================
 
-  private startPolling(): void {
-    if (this.pollInterval !== null || this._passthroughMode) {
+  private startPolling(generation = this.generation, adapter = this.adapter): void {
+    if (this.pollInterval !== null || this._passthroughMode || !adapter) {
       return;
     }
 
     // Start polling after a short delay to let serial buffer settle
     // Don't poll immediately to avoid conflicts with recent commands
     this.pollInterval = setInterval(() => {
-      this.poll();
+      void this.poll(generation, adapter);
     }, this.POLL_INTERVAL);
   }
 
@@ -298,18 +392,24 @@ class ConnectionManager {
     }
   }
 
-  private async poll(): Promise<void> {
-    if (!this.adapter?.connected || this._passthroughMode) {
+  private async poll(generation: number, adapter: SerialAdapter): Promise<void> {
+    if (!this.isCurrent(generation, adapter) || !this.connected || this._passthroughMode) {
       return;
     }
 
     try {
-      this._status = await this.adapter.getStatus();
-      this.notifyStatus(this._status);
-      this._runtimeSnapshot = await this.adapter.getRuntimeSnapshot();
-      this.notifyRuntimeSnapshot(this._runtimeSnapshot);
-      this._mqttStatus = await this.adapter.getMqttStatus();
-      this.notifyMqttStatus(this._mqttStatus);
+      const status = await adapter.getStatus();
+      if (!this.isCurrent(generation, adapter) || this._passthroughMode) return;
+      this._status = status;
+      this.notifyStatus(status);
+      const runtimeSnapshot = await adapter.getRuntimeSnapshot();
+      if (!this.isCurrent(generation, adapter) || this._passthroughMode) return;
+      this._runtimeSnapshot = runtimeSnapshot;
+      this.notifyRuntimeSnapshot(runtimeSnapshot);
+      const mqttStatus = await adapter.getMqttStatus();
+      if (!this.isCurrent(generation, adapter) || this._passthroughMode) return;
+      this._mqttStatus = mqttStatus;
+      this.notifyMqttStatus(mqttStatus);
     } catch (e) {
       // Silently ignore poll errors
       console.debug('Poll error:', e);
@@ -320,30 +420,48 @@ class ConnectionManager {
    * Force a refresh of system info
    */
   async refreshSystemInfo(): Promise<SystemInfo | null> {
-    if (!this.adapter?.connected) {
+    const adapter = this.adapter;
+    const generation = this.generation;
+    if (!adapter?.connected) {
       return null;
     }
 
     try {
-      this._systemInfo = await this.adapter.getSystemInfo();
-      this.notifySystemInfo(this._systemInfo);
-      return this._systemInfo;
+      const systemInfo = await adapter.getSystemInfo();
+      if (!this.isCurrent(generation, adapter)) {
+        return null;
+      }
+      this._systemInfo = systemInfo;
+      this.notifySystemInfo(systemInfo);
+      return systemInfo;
     } catch (e) {
+      if (!this.isCurrent(generation, adapter)) {
+        return null;
+      }
       console.error('Failed to refresh system info:', e);
       return null;
     }
   }
 
   async refreshCommunicationMap(): Promise<CommunicationMapEntry[]> {
-    if (!this.adapter?.connected) {
+    const adapter = this.adapter;
+    const generation = this.generation;
+    if (!adapter?.connected) {
       return [];
     }
 
     try {
-      this._communicationMap = await this.adapter.getCommunicationMap();
-      this.notifyCommunicationMap(this._communicationMap);
-      return this._communicationMap;
+      const communicationMap = await adapter.getCommunicationMap();
+      if (!this.isCurrent(generation, adapter)) {
+        return [];
+      }
+      this._communicationMap = communicationMap;
+      this.notifyCommunicationMap(communicationMap);
+      return communicationMap;
     } catch (e) {
+      if (!this.isCurrent(generation, adapter)) {
+        return [];
+      }
       console.error('Failed to refresh communication map:', e);
       return this._communicationMap;
     }
@@ -476,13 +594,31 @@ class ConnectionManager {
    * Upload bytecode to device
    * NOTE: Caller should use pausePolling()/resumePolling() to manage polling
    */
-  async uploadBytecode(bytecode: Uint8Array, options?: LoadProgramOptions): Promise<void> {
-    if (!this.adapter?.connected) {
-      throw new Error('Not connected');
+  async deployProgram(
+    bytecode: Uint8Array,
+    projectBoard: string | undefined,
+    options?: LoadProgramOptions,
+  ): Promise<void> {
+    const adapter = this.adapter;
+    const generation = this.generation;
+    if (!adapter || !this.connected) {
+      throw new DeviceAdmissionError(DEVICE_ADMISSION_CODE.PREFLIGHT_STALE);
     }
-    
-    await this.adapter.loadProgram(bytecode, options);
-    await this.refreshCommunicationMap();
+
+    const handshake = parseDeviceHandshake(this._systemInfo);
+    validateHardwareDeployAdmission(bytecode, projectBoard, handshake);
+    if (!this.isCurrent(generation, adapter) || !this.connected) {
+      throw new DeviceAdmissionError(DEVICE_ADMISSION_CODE.PREFLIGHT_STALE);
+    }
+
+    try {
+      await adapter.loadProgram(bytecode, options);
+    } catch {
+      throw new DeviceAdmissionError(DEVICE_ADMISSION_CODE.RESULT_UNKNOWN);
+    }
+    if (!this.isCurrent(generation, adapter) || !this.connected) {
+      throw new DeviceAdmissionError(DEVICE_ADMISSION_CODE.RESULT_UNKNOWN);
+    }
   }
 
   /**

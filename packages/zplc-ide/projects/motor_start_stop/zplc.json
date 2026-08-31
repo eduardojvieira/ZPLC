@@ -1,0 +1,27 @@
+{
+  "$schema": "../../zplc.schema.json",
+  "schemaVersion": 2,
+  "name": "Motor Start Stop",
+  "version": "1.0.0",
+  "description": "Host-native logical start, seal-in, and safe-stop golden slice",
+  "target": {
+    "board": "posix"
+  },
+  "safety": {
+    "incompatibleOutputs": [
+      ["Motor.Forward", "Motor.Reverse"]
+    ]
+  },
+  "tasks": [
+    {
+      "name": "MainTask",
+      "trigger": "cyclic",
+      "interval_ms": 10,
+      "priority": 1,
+      "watchdog_ms": 100,
+      "programs": [
+        "Motor.st"
+      ]
+    }
+  ]
+}

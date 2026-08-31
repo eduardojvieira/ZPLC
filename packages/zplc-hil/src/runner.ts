@@ -1,5 +1,5 @@
-import { Device, DebugFrame } from './device';
-import { DebugFrame as ProtocolFrame } from './protocol';
+import { Device } from './device';
+import type { DebugFrame } from './protocol';
 import { assertPattern, assertValue, assertError, assertTiming, assertNoError, TimingSpec } from './assertions';
 
 export type TestCategory = 'opcode' | 'fb' | 'scheduler' | 'language' | 'debug';
@@ -33,7 +33,7 @@ export interface TestResult {
   status: 'pass' | 'fail' | 'skip' | 'error';
   duration: number;
   attempts: number;
-  frames: ProtocolFrame[];
+  frames: DebugFrame[];
   error?: string;
   failedAssertion?: Assertion;
 }
@@ -95,7 +95,7 @@ export class TestRunner {
   }
 
   private async executeTest(test: HILTestCase, attempt: number): Promise<TestResult> {
-    const frames: ProtocolFrame[] = [];
+    const frames: DebugFrame[] = [];
     const startTime = Date.now();
 
     // 1. Compile (Mocked)
@@ -119,13 +119,13 @@ export class TestRunner {
     await new Promise<void>((resolve) => {
         const timeoutMs = test.timeout ?? 5000;
         
-        const frameHandler = (frame: any) => { 
+        const frameHandler = (frame: DebugFrame) => {
             frames.push(frame);
             // Stop on HALT or error
-            if (frame.type === 'opcode' && frame.payload.op === 'HALT') {
+            if (frame.payload.t === 'opcode' && frame.payload.op === 'HALT') {
                 // We might want to wait a bit more for pending frames?
             }
-            if (frame.type === 'error' && frame.payload.msg === 'HALTED') {
+            if (frame.payload.t === 'error' && frame.payload.msg === 'HALTED') {
                 resolve();
             }
         };
