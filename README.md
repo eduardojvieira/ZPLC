@@ -1,8 +1,10 @@
 # ZPLC (Zephyr PLC)
 
-**One Execution Core, Any Runtime.**
+**One execution core, evidence-aware runtimes.**
 
-ZPLC is a portable, deterministic PLC runtime environment powered by [Zephyr RTOS](https://zephyrproject.org/) for embedded targets and native OS layers for desktop/server hosting. It brings modern software development practices to industrial automation.
+ZPLC is a portable IEC 61131-3 runtime environment with a C99 core, Zephyr
+targets, and native host tooling. Its timing, hardware, and release claims are
+limited to recorded evidence rather than inferred from source presence.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Zephyr 4.0](https://img.shields.io/badge/Zephyr-4.0.0-blue.svg)](https://zephyrproject.org/)
@@ -13,14 +15,10 @@ ZPLC is a portable, deterministic PLC runtime environment powered by [Zephyr RTO
 
 ## Features
 
-- **Portable Core**: ANSI C99 compliant core for Zephyr targets, POSIX hosts, desktop tooling, and WebAssembly simulation.
-- **Desktop IDE Surface**: Electron-based IDE codebase for Windows, macOS, and Linux; release claims stay limited to repo-visible packaging and documented workflows.
-- **Visual IDE**: Powerful editor for Ladder Diagrams (LD), Function Block Diagrams (FBD), and Sequential Function Charts (SFC).
-- **Unified Architecture**: Hardware-agnostic `.zplc` bytecode allows you to "compile once, run anywhere."
-- **IEC 61131-3 Workflows**: v1.5 focuses on truthful end-to-end workflows for `ST`, `IL`, `LD`, `FBD`, and `SFC`.
-- **Industrial Grade**: Deterministic execution, retentive memory, multitask scheduling, and sub-millisecond jitter on RTOS targets.
-- **Debugging Surfaces**: Breakpoints, step execution, variable watch, and memory inspection APIs are present in the repo; platform sign-off remains evidence-gated.
-- **Modern Tooling**: TypeScript compiler, WebAssembly simulation, and comprehensive test suite.
+- **Portable core**: ANSI C99 runtime separated from its hardware abstraction layer.
+- **Language and editor assets**: ST, IL, LD, FBD, and SFC paths exist in the repository; release support is evidence-gated.
+- **Desktop tooling**: Electron, native POSIX simulation, and a degraded WASM fallback are available development surfaces.
+- **Evidence-aware validation**: Host, QEMU, target build, HIL, and manual checks are distinct evidence levels.
 
 ## Documentation
 
@@ -35,25 +33,15 @@ The full documentation for ZPLC, including the runtime architecture, hardware in
 
 *Note for AI Assistants & Contributors: Please refer to [AGENTS.md](AGENTS.md) for contribution guidelines, project architecture rules, and testing requirements before modifying the codebase.*
 
-## Current Status: v1.5.0 Release Scope
+## Current posture
 
-| Version | Status | Description |
-|---------|--------|-------------|
-| Phase 1 | Complete | VM Core (75 opcodes) & ISA Definition |
-| Phase 2 | Complete | Visual IDE (LD, FBD, SFC) & ST Compiler |
-| Phase 3 | Complete | Hardware Integration (Zephyr Serial Loader) |
-| Phase 4 | Complete | Debugging & Simulation (WASM + Hardware) |
-| Phase 5 | Complete | Final Polish & Release v1.0.0 |
-| **v1.1** | Complete | Multitask Scheduler + NVS Persistence |
-| **v1.2** | Complete | STRING Type + Indirect Memory + Standard Library |
-| **v1.3** | Complete | Advanced Debugging + Professional IDE |
-| **v1.4** | Complete | **Cross-Platform Desktop App (Electron)** |
+`v1.5.0` is a release target, not a completed release. Desktop validation, HIL,
+and final sign-off remain pending in the [release evidence matrix](specs/008-release-foundation/artifacts/release-evidence-matrix.md).
 
-## v1.5 Release Posture
-
-`v1.5.0` is the current release target across the runtime, IDE, documentation, and release tooling.
-Public claims are intentionally limited to repository-visible sources, CI validation, and release evidence artifacts.
-Human desktop, HIL, and final sign-off gates remain tracked separately in `specs/008-release-foundation/artifacts/release-evidence-matrix.md`.
+ZPLC 2.0 is an [approved implementation RFC](specs/010-zplc-2-0-foundation/spec.md),
+not a released product. It is an incremental rewrite of Studio and orchestration
+around the existing core and compiler assets. See the public [roadmap](docs/docs/runtime/roadmap.md)
+and [source-of-truth map](docs/docs/reference/source-of-truth.md) for scope and authority.
 
 ---
 
@@ -64,7 +52,8 @@ Human desktop, HIL, and final sign-off gates remain tracked separately in `specs
 Run the desktop app locally from source:
 
 ```bash
-bun install
+bun --version  # requires 1.3.14
+bun install --frozen-lockfile
 cd packages/zplc-ide
 bun run electron:dev    # Development mode
 bun run electron:build  # Build distributable
@@ -75,7 +64,8 @@ bun run electron:build  # Build distributable
 Run the IDE in your browser:
 
 ```bash
-bun install
+bun --version  # requires 1.3.14
+bun install --frozen-lockfile
 cd packages/zplc-ide
 bun run dev
 # Open http://localhost:5173
@@ -102,7 +92,7 @@ ctest --output-on-failure
 ./zplc_runtime
 ```
 
-### Option 4: Zephyr Build (Embedded Hardware)
+### Option 4: Zephyr Build (Manual or Emulated Hardware)
 
 Run on real hardware or the QEMU emulator:
 
@@ -114,10 +104,10 @@ source ~/zephyrproject/activate.sh
 cd ~/zephyrproject
 west build -b mps2/an385 $ZEPLC_PATH/firmware/app --pristine
 
-# Run in QEMU
+# Run in QEMU (manual/emulated workflow; no CI workflow is claimed yet)
 west build -t run
 
-# Or build for Raspberry Pi Pico
+# Or build for Raspberry Pi Pico (manual hardware operation)
 west build -b rpi_pico $ZEPLC_PATH/firmware/app --pristine
 cp build/zephyr/zephyr.uf2 /Volumes/RPI-RP2/
 ```
@@ -158,15 +148,15 @@ cp build/zephyr/zephyr.uf2 /Volumes/RPI-RP2/
 ## Supported Platforms
 
 ### Embedded (Zephyr RTOS)
-ZPLC is a Zephyr module. The v1.5 supported-board claim set is intentionally limited to
-the boards listed in `firmware/app/boards/supported-boards.v1.5.0.json` and published in
-the docs reference section.
+ZPLC is a Zephyr module. Board entries describe repository profiles; their
+validation level and evidence determine what can be claimed. Refer to the
+board manifest and release evidence before treating any profile as hardware-qualified.
 
 ### Desktop & Development
-- **Desktop App Surface**: Windows, macOS, Linux (Electron codebase; human smoke evidence still tracked separately)
-- **POSIX**: Linux/macOS for development and unit testing
-- **QEMU**: Cortex-M3 emulation for CI/CD pipelines
-- **WASM**: Browser-based simulation
+- **Desktop app surface**: Windows, macOS, and Linux source/build workflows; human smoke evidence remains pending.
+- **POSIX**: host development and test runtime.
+- **QEMU**: emulated target evidence where configured.
+- **WASM**: degraded browser fallback, not parity-authoritative evidence.
 
 ---
 
@@ -210,7 +200,7 @@ manifest:
   projects:
     - name: zplc
       url: https://github.com/eduardojvieira/ZPLC
-      revision: main
+      revision: master
       path: modules/lib/zplc
       import:
         path-prefix: firmware
@@ -247,8 +237,8 @@ See [AGENTS.md](AGENTS.md) for detailed contribution guidelines, coding standard
 cmake .. && make && ctest --output-on-failure
 
 # TypeScript (Monorepo)
-bun install
-bun test
+bun install --frozen-lockfile
+bun run test
 
 # Single test file (Compiler)
 cd packages/zplc-compiler

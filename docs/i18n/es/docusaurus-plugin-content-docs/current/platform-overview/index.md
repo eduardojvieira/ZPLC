@@ -1,59 +1,53 @@
 ---
 slug: /platform-overview
 id: index
-title: Mapa Genérico de la Plataforma
-sidebar_label: Generalidades de Plataforma
-description: Diagramas de producto y mapas de dependencias tecnológicas sobre ZPLC.
+title: Panorama de plataforma
+sidebar_label: Panorama de plataforma
+description: Mapa de producto de las superficies de ingeniería y destinos de ejecución de ZPLC.
 tags: [architecture, introduction]
 ---
 
-# Mapas de Plataforma 
+# Panorama de plataforma
 
-ZPLC es una plataforma lógica compatible IEC 61131-3 centrada al determinismo estricto, combinando portabilidad en su ejecución por un core virtual `VM` basado íntegramente de librerías ANSI C, con una cadena moderna visual basada fuertemente en software desktop host (Su sistema y PC/Mac).
+ZPLC (Zephyr PLC) combina un core de ejecución ANSI C99 portable con herramientas de ingeniería TypeScript. Sus capacidades están condicionadas por evidencia: la simulación host, los builds de target y los resultados HIL responden preguntas distintas.
 
-## El Ecosistema Integral
-
-ZPLC representa una suite completa, fuertemente amalgamada y diseñada para escalar verticalmente entre herramientas visuales a bases metálicas de baja energía.
+## El ecosistema ZPLC
 
 ```mermaid
 flowchart TB
-  IDE[Interfaz IDE]
-  Compiler[Consolidación Transpiladora ZPLC]
-  Runtime[Base Carga y RTOS]
-  Boards[Zephyr OS Placas y Cadenas Custom]
+  IDE[IDE ZPLC]
+  Compiler[Compilador]
+  Runtime[Core de runtime]
+  Boards[Perfiles de placa]
 
   IDE --> Compiler
   Compiler --> Runtime
   Runtime --> Boards
 ```
 
-## Sus Pilares Esenciales
+## Principios centrales
 
-- **Determinismo Estricto Absoluto**: Predicción del uso y velocidad matemática inamovible para líneas de tracción automotriz. Asigna memorias rígidamente evitando fluctuaciones (Sin asincronías JS o Garbage Collection) y programando hardware directo a metrónomo.
-- **Migración a Placas Múltiples**: Acuñado hacia una frase fuerte: "Bajo Ejecución Única, Entornos Diferentes". La Maquina Principal nunca choca con controladores y permite saltos asombrosos portando lógicas creadas sin alterarlas; saltando por HW sin reescribir su script y su ingeniería IEC base.
-- **Independencia Real Comercial (Sin Vendor Lock-In)**: Desanclado orgánicamente usando sistemas amparados globalizados basados en proyectos Open Souce (Zephyr Base). Flasheos pueden operar por ARM básicos de STM32 Series y hasta arquitecturas modernas como ESP32, sin la penalización pesada o sobrecosto monetario por licencias a pagar de marca privativa en su HW industrial.
+- **Memoria acotada en runtime**: el core C99 usa límites de memoria definidos; la validación sigue siendo parte de cada perfil de destino.
+- **Separación mediante HAL**: el core y los adaptadores de hardware se separan para inspeccionar y probar cada comportamiento de plataforma de forma independiente.
+- **Evidencia antes que claims**: timing del scheduler, I/O, persistencia, protocolos y soporte de placas sólo se afirman para el perfil/revisión con evidencia correspondiente.
 
-## Componentes y Fronteras Técnicas
+## Fronteras de producto
 
-Para el ensamblado final, ZPLC despliega varios segmentos independientes:
+1. **Core VM (`libzplc_core`)**: intérprete de bytecode C99, validación de programas, estado de runtime e interfaces de scheduler.
+2. **Capa de abstracción de hardware (HAL)**: adaptadores para facilidades de plataforma como relojes, almacenamiento, I/O y transportes configurados.
+3. **Compilador**: transforma flujos de proyecto soportados—centrados en Structured Text—en bytecode `.zplc`.
+4. **IDE**: superficie de ingeniería de escritorio para autoría, diagnósticos y flujos de runtime según capacidades.
 
-1. **Kernel y Computo Virtual `libzplc_core`**: Enlazador byte a byte C99 puro para gestionar el multi-threading cíclico veloz. Comprobación constante de topes y estándares, carente y ciego funcionalmente con todo el sustrato hardware en donde anide.
-2. **Capa HAL Contract**: Traductores en "espejo", un adaptador virtual al que su hardware Zephyr de bajo entorno escucha. Brinda puertas físicas al hardware simulando temporizadores `Sleep` o activando patillaje y relés para las funciones estándar del núcleo inmovilizado.
-3. **Consolidador-Compilador (Transpiler/Compiler)**: Su función magna es asimilar lenguajes gráficos en flujos abstractos nativos al chip. Transforma diagramas a bytecodes empaquetándolo velozmente y logrando compatibilidades de depuración.
-4. **Programa Generalizado y Frontend Desktop `IDE`**: Entorno en donde el maquinista y estructurador vivencian al ZPLC. Generador visual, conectores seriales puros `COM` o puenteador para monitoreos y visualización de relés encendiéndose local o remoto por sondas digitales online en ejecución ininterrumpida.
+## Flujo típico
 
-## Puesta a Marcha Típica
+1. Elegí un target de proyecto e inspeccioná su perfil de placa/capacidades.
+2. Escribí lógica en un flujo de lenguaje soportado y compilala a `.zplc`.
+3. Usá simulación POSIX nativa para checks lógicos repetibles en host dentro de sus capacidades declaradas.
+4. Construí firmware, flashealo, desplegá el programa PLC y operalo como acciones humanas separadas.
+5. Usá evidencia target o HIL de la placa/revisión exactas antes de depender de timing o comportamiento físico.
 
-El proceder normal que afrontará en planta o taller el arquitecto o ingeniero industrial a cargo operará:
+## Continuá con
 
-1. Iniciar un árbol bajo un manifiesto puro en ZPLC asignándoles sus prioridades al archivo de variables `zplc.json`.
-2. Trazar líneas, contactos lógicos e interruptores y codificar sus fórmulas en PASCAL-like y diagramados estándar clásicos o inter-mistas (ST/FBD/LD).
-3. Evaluar e iniciar test compilables y emitir código puro comprimido `.zplc`.
-4. Visualizar mediante simuladores puros y Nativos POSIX los resultados desde su misma netbook, revisando integridades boolean y test de latencias matemáticas.
-5. Inyectarlo Serialmente hacia la máquina instalada o tarjeta conectora Zephyr OS de su elección que gobierne motores, y monitorizar en planta variables online en caliente usando tableros diagnósticos de ZPLC Ide.
-
-## Siga Navegando
-
-- [Puesta a Marcha y Setup Zephyr](../getting-started/index.md)
-- [Suite de Pruebas de Lenguajes Estándar](../languages/examples/v1-5-language-suite.md)
-- [Diagramado Base del Proyecto](../architecture/index.md)
+- [Primeros pasos](../getting-started/index.md)
+- [Ejemplos de lenguajes](../languages/examples/v1-5-language-suite.md)
+- [Arquitectura del sistema](../architecture/index.md)

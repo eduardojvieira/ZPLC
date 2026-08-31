@@ -42,7 +42,7 @@ To guarantee both safety and performance in resource-constrained ICs, the ZPLC R
 - **IPI** (Input Process Image): Isolated memory mapped buffer for safe physical input reading.
 - **OPI** (Output Process Image): Buffer mapping logic results to hardware outputs.
 - **Work Memory**: Dynamic volatile execution stack allocated during runtime execution.
-- **Retain Memory**: Persisted state memory (non-volatile) tracking block metadata and `RETAIN` values.
+- **Retain Memory**: Reserved retain address region and HAL persistence primitives; source-level `RETAIN` declarations are currently unsupported.
 
 ## Target Portability 
 

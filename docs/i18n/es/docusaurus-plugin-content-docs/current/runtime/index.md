@@ -42,7 +42,7 @@ Para garantizar tanto la seguridad como el rendimiento en ICs con recursos limit
 - **IPI** (Imagen de Proceso de Entradas): Búfer asignado y aislado para una lectura segura de entradas físicas.
 - **OPI** (Imagen de Proceso de Salidas): Búfer que mapea los resultados lógicos a las salidas de hardware.
 - **Work Memory** (Memoria de Trabajo): Pila de ejecución volátil y dinámica asignada durante el proceso en tiempo real.
-- **Retain Memory** (Memoria Retenida): Memoria de estado persistida (no volátil) que rastrea los metadatos de los bloques y los valores `RETAIN`.
+- **Retain Memory** (Memoria Retenida): Región de direcciones retain reservada y primitivas HAL de persistencia; las declaraciones `RETAIN` a nivel de fuente no están soportadas hoy.
 
 ## Portabilidad de Target
 

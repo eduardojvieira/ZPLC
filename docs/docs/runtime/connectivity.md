@@ -35,3 +35,12 @@ Connectivity is defined in your project's `zplc.json` file. Through the IDE, you
 3. Map internal PLC variables directly to Modbus registers/coils or MQTT topics via **Communication Bindings**.
 
 The runtime handles the underlying protocol dispatch automatically while your PLC logic is executing.
+
+### Modbus server mapping overrides
+
+The controller's Communication Map can temporarily override a Modbus **server**
+binding for a loaded tag. The override is range-checked for the tag width and
+only changes the local RTU/TCP server mapping. It never changes the compiled
+remote address used by Modbus RTU/TCP polling clients. Treat it as runtime
+configuration: do not assume it is persisted unless a verified configuration
+save/load workflow has recorded it for the target.

@@ -28,6 +28,8 @@ flowchart TD
   network --> b4
   b5["STM32 Nucleo-H743ZI"]
   network --> b5
+  b6["Arduino Opta WiFi (STM32H747 M7)"]
+  network --> b6
 ```
 
 ## Matriz de placas
@@ -37,8 +39,9 @@ flowchart TD
 | Raspberry Pi Pico (RP2040) | `rpi-pico-rp2040` | `rpi_pico` | `rpi_pico/rp2040` | Enfoque serial | cross-build |
 | Arduino GIGA R1 (STM32H747 M7) | `arduino-giga-r1-m7` | `arduino_giga_r1` | `arduino_giga_r1/stm32h747xx/m7` | Enfoque serial | cross-build |
 | ESP32-S3 DevKitC | `esp32-s3-devkitc` | `esp32s3_devkitc` | `esp32s3_devkitc/esp32s3/procpu` | Capacidad de red (Wi-Fi) | cross-build |
-| STM32F746G Discovery | `stm32f746g-disco` | `stm32f746g_disco` | `stm32f746g_disco` | Capacidad de red (Ethernet) | cross-build |
-| STM32 Nucleo-H743ZI | `nucleo-h743zi` | `nucleo_h743zi` | `nucleo_h743zi` | Capacidad de red (Ethernet) | cross-build |
+| STM32F746G Discovery | `stm32f746g-disco` | `stm32f746g_disco` | `stm32f746g_disco/stm32f746xx` | Capacidad de red (Ethernet) | cross-build |
+| STM32 Nucleo-H743ZI | `nucleo-h743zi` | `nucleo_h743zi` | `nucleo_h743zi/stm32h743xx` | Capacidad de red (Ethernet) | cross-build |
+| Arduino Opta WiFi (STM32H747 M7) | `arduino-opta-wifi-m7` | `arduino_opta_wifi` | `arduino_opta/stm32h747xx/m7` | Capacidad de red (Wi-Fi) | cross-build |
 
 ## Detalle por placa
 
@@ -88,11 +91,11 @@ flowchart TD
 
 - **Board ID:** `stm32f746g-disco`
 - **IDE ID:** `stm32f746g_disco`
-- **Zephyr target:** `stm32f746g_disco`
-- **Variant:** `stm32f746g`
+- **Zephyr target:** `stm32f746g_disco/stm32f746xx`
+- **Variant:** `stm32f746xx`
 - **Network:** Capacidad de red (Ethernet)
 - **Validation:** cross-build
-- **Comando de build:** `west build -b stm32f746g_disco firmware/app --pristine`
+- **Comando de build:** `west build -b stm32f746g_disco/stm32f746xx firmware/app --pristine`
 - **Ancla de referencia:** `docs/docs/reference/index.md#supported-boards`
 - **Assets de soporte:**
   - `firmware/app/boards/stm32f746g_disco.conf`
@@ -102,12 +105,26 @@ flowchart TD
 
 - **Board ID:** `nucleo-h743zi`
 - **IDE ID:** `nucleo_h743zi`
-- **Zephyr target:** `nucleo_h743zi`
-- **Variant:** `stm32h743zi`
+- **Zephyr target:** `nucleo_h743zi/stm32h743xx`
+- **Variant:** `stm32h743xx`
 - **Network:** Capacidad de red (Ethernet)
 - **Validation:** cross-build
-- **Comando de build:** `west build -b nucleo_h743zi firmware/app --pristine`
+- **Comando de build:** `west build -b nucleo_h743zi/stm32h743xx firmware/app --pristine`
 - **Ancla de referencia:** `docs/docs/reference/index.md#supported-boards`
 - **Assets de soporte:**
   - `firmware/app/boards/nucleo_h743zi.conf`
   - `firmware/app/boards/nucleo_h743zi.overlay`
+
+### Arduino Opta WiFi (STM32H747 M7)
+
+- **Board ID:** `arduino-opta-wifi-m7`
+- **IDE ID:** `arduino_opta_wifi`
+- **Zephyr target:** `arduino_opta/stm32h747xx/m7`
+- **Variant:** `stm32h747xx/m7`
+- **Network:** Capacidad de red (Wi-Fi)
+- **Validation:** cross-build
+- **Comando de build:** `west build -b arduino_opta/stm32h747xx/m7 firmware/app --pristine`
+- **Ancla de referencia:** `docs/docs/reference/index.md#supported-boards`
+- **Assets de soporte:**
+  - `firmware/app/boards/arduino_opta_stm32h747xx_m7.conf`
+  - `firmware/app/boards/arduino_opta_stm32h747xx_m7.overlay`

@@ -4,14 +4,16 @@ slug: /runtime/persistence
 id: persistence
 title: Persistence & Retain Memory
 sidebar_label: Persistence
-description: How ZPLC securely saves and restores compiled logic and critical RETAIN state data.
+description: How ZPLC stores verified compiled logic and the current limits of RETAIN evidence.
 ---
 
 # Persistence & Retain Memory
 
-ZPLC ensures that both your compiled logic and your critical machine variables survive a power cycle. This persistence model relies on two distinct layers:
-1. Persistence of the deployed `.zplc` bytecode.
-2. Persistence of `RETAIN` data.
+For profiles with an enabled, operational program-store backend, ZPLC can
+commit a verified deployed `.zplc` artifact transactionally. Restore publishes
+the artifact as logically stopped/READY. Output behavior before execution is
+target-profile-specific and requires recorded evidence. A human must explicitly
+issue `zplc start`.
 
 ## Platform Backends
 
@@ -19,33 +21,39 @@ The ZPLC runtime core relies on an abstract Hardware Abstraction Layer (HAL) for
 
 | Platform | Storage Backend |
 |---|---|
-| **Zephyr Hardware** | NVS (Non-Volatile Storage) on internal/external Flash in MCUs. |
-| **Native Sim (Desktop)** | File-based storage directly on the host OS. |
+| **Zephyr profile** | Program-store backend when enabled and operational; NVS is one implementation, not a universal board guarantee. |
+| **Native Sim (Desktop)** | File-based program-store used by host tests. |
 
 ## Program Persistence on Hardware
 
-When a `.zplc` binary is uploaded from the IDE to a target board, the runtime saves it into non-volatile memory (NVS).
+When a profile provides an operational program-store backend, a verified `.zplc`
+load can be committed through that backend.
 
 ```mermaid
 flowchart LR
-  Load[Upload .zplc] --> Save[Save to Flash NVS]
-  Save --> Run[Start Execution]
-  Boot[Device Reboot] --> Restore[Restore from NVS]
-  Restore --> Run
+  Load[Verified .zplc upload] --> Save[Profile program-store commit]
+  Save --> Ready[Loaded and stopped]
+  Boot[Device Reboot] --> Restore[Verify and restore]
+  Restore --> Ready
+  Ready --> Start[Explicit zplc start]
 ```
 
-Upon boot, the runtime automatically checks NVS. If a valid ZPLC binary is found, it is automatically restored to memory and execution begins instantly without manual intervention.
+Upon boot, an enabled program store can provide a valid artifact for verification
+and logical stopped/READY restore. Output behavior before execution is
+target-profile-specific and requires recorded evidence. Deployment is complete
+when the verified load completes; it never starts the machine. Start is a
+separate, explicit human operation. Target, power-cut, HIL and electrical
+evidence remain specific to the exact profile and have not been executed here.
 
 ## Retentive Memory (`RETAIN`)
 
-ZPLC fully supports IEC 61131-3 `RETAIN` variables. This memory region is used to preserve critical operational state (such as setpoints, error counters, and machine running hours) across reboots.
+ZPLC defines a `RETAIN` memory region and HAL persistence primitives. The POSIX
+runtime has host-side persistence tests. Source-level `VAR RETAIN` and
+`VAR_GLOBAL RETAIN` declarations are deliberately rejected: there is no
+end-to-end allocation, restore, or qualified persistence contract for them yet.
 
-**Example Implementation:**
-```st
-VAR RETAIN
-    setpoint : REAL := 25.5;
-    run_hours : UDINT;
-END_VAR
-```
-
-These variables are placed in a designated memory sector by the ZPLC compiler. The runtime tracks updates to this region and persists it through the HAL, ensuring that even after a power outage, your process resumes exactly where it left off.
+Do not rely on `RETAIN` for recovery-critical state. The region and HAL
+primitives are internal capabilities, not evidence of source-level or target
+retention. Target, power-cut, and HIL evidence remain required for the exact
+profile before a future supported retention workflow can make a commissioning
+claim.

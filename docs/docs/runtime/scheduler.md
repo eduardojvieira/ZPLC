@@ -4,55 +4,45 @@ slug: /runtime/scheduler
 id: scheduler
 title: Multitask Scheduler
 sidebar_label: Scheduler
-description: Task execution, priority mechanics, and Zephyr integration within the ZPLC Runtime.
+description: Task configuration, lifecycle, and diagnostics in the ZPLC runtime.
 ---
 
 # Multitask Scheduler
 
-ZPLC runs IEC 61131-3 automation logic using a real-time, priority-driven multitask scheduler.
+ZPLC schedules configured PLC tasks through runtime-specific adapters. The current Zephyr path admits timer releases into one batch coordinator; the POSIX path supports repeatable host-side workflows. These are logical runtime contracts, not evidence of timing or physical-I/O behavior on a board.
 
-## Execution Model Overview
+## Task model
 
-The scheduler coordinates multiple user-defined tasks mapped inside your `.zplc` binary. Its lifecycle involves:
-1. Loading task declarations from the binary header.
-2. Allocating priority-oriented execution queues.
-3. Managing state transitions (`READY`, `RUNNING`, `PAUSED`, `ERROR`).
-4. Triaging synchronized memory locks when necessary.
+Tasks are declared in the project and compiled into the `.zplc` program.
 
-## Task Configuration
-
-Tasks dictate how and when programs execute. Tasks are authored in `zplc.json` and compiled directly into bytecode.
-
-| Property | Description |
+| Property | Current meaning |
 |---|---|
-| **Type** | `CYCLIC` (time-interval driven) or `EVENT` (hardware trigger driver). |
-| **Interval** | Deterministic cycle time in milliseconds (ms). |
-| **Priority** | Ranging from 0 (Highest Priority) to 255 (Background execution). |
-| **Entry Point** | Function or Program location. |
+| **Type** | The current Zephyr scheduler admits `CYCLIC` tasks. It rejects `EVENT` tasks before loading. |
+| **Interval** | Requested cyclic interval in milliseconds, not a measured cycle-time guarantee. |
+| **Priority** | For Zephyr releases with the same release time, a lower numeric priority runs first. Task ID breaks a remaining tie. |
+| **Entry point** | Program or function location in the compiled program. |
 
-## Zephyr Integration & Determinism
+## Lifecycle
 
-When deployed on Zephyr RTOS, ZPLC directly translates its internal logic execution into Zephyr-native paradigms:
-- Time-based hardware timers trigger task execution sequences on the dot.
-- These triggers inject cyclic tasks into Zephyr's priority-oriented work queues.
-- Execution happens strictly concurrently via dedicated queue threads, minimizing jitter.
+The scheduler loads task declarations, prepares its runtime queues, and reports state transitions such as `READY`, `RUNNING`, `PAUSED`, and `ERROR`. A program is admitted and validated before it is allowed to run. Logical execution budgets and runtime diagnostics are used to identify bounded-scan failures and overruns.
 
 ```mermaid
 flowchart LR
-  Timer[Cycle Interval Trigger] --> Queue[Zephyr Priority Queue]
-  Queue --> Thread[Worker Thread]
-  Thread --> Cycle[Logic Execution (One Scan)]
-  Cycle --> Stats[Stats Updated]
+  Program[Validated .zplc program] --> Timers[Per-task timers]
+  Timers --> Admission[Release admission]
+  Admission --> Batch[Single ordered batch coordinator]
+  Batch --> Snapshot[One input snapshot]
+  Snapshot --> Tasks[Due task execution]
+  Tasks --> Commit[At most one normal output commit]
+  Commit --> Stats[Diagnostics]
 ```
 
-## Concurrency & Resource Safety
+## Shared state
 
-ZPLC tasks share physical global memory. Because of standard IEC 61131-3 behavior, a strict **Last Write Wins** concurrency rule applies when two separate tasks attempt to manipulate identical variables or outputs. 
-Using distinct memory boundaries and data mapping mitigates task clashes during highly complex automation scripts.
+For each Zephyr due-set, timer callbacks only admit releases; they do not run PLC code. The coordinator orders admitted tasks by release time, priority, and task ID, then takes one input process-image snapshot. Due tasks run against shared runtime memory in that order. If no fault or control-plane closure occurs, the batch performs at most one normal output-process-image commit.
 
-## Diagnostics
+`STOP`, external pause, unregister, and scheduler faults close admission and drain in-flight coordinator work before returning. `STOP` and faults apply safe/off outputs; pause does not claim a new safe state. These guarantees describe the scheduler implementation and its host/native-sim tests. They do not establish WCET, jitter, electrical state, or board qualification.
 
-The ZPLC IDE reads runtime statistics directly from the scheduler, giving you detailed analytics down to the millisecond over:
-- Total execution cycles.
-- Interval overrun events.
-- Average/Maximum execution time latency metrics.
+## Diagnostics and evidence
+
+Runtime diagnostics expose cycle counts, logical budget faults, process-image latch/commit counts, and timing-related observations. Their resolution, collection method, and meaning depend on the runtime and target profile. Native-sim evidence checks logical ordering and state transitions only. Measure WCET, jitter, deadline behavior, and physical outputs on the exact target/revision before relying on them operationally.

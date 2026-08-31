@@ -1,27 +1,28 @@
 ---
 slug: /reference
 id: index
-title: Index de Referencias
+title: Referencias
 sidebar_label: Referencias
-description: APIS, Comandos, Compatibilidad y Documentos técnicos.
+description: APIs, placas catalogadas y documentación técnica de ZPLC.
 tags: [reference]
 ---
 
-# Referencias Técnicas
+# Referencias técnicas
 
-Esta sección aloja y vincula referencias técnicas en bruto para ZPLC.
+Esta sección reúne la referencia técnica de ZPLC. Las placas de la tabla
+reproducen el manifest versionado: no son una calificación HIL ni de producción.
 
-## Puntos de Partida de Arquitectura Estructural
+## Empezar por la arquitectura
 
-- [Puesta y Primeros Pasos](../getting-started/index.md) — instalación, proyecto uno, simulación nativa y compatibilidad de base.
-- [Arquitectura Topológica](../architecture/index.md) — delimitaciones e implementaciones entre el engine ide, compilación, librerías stdlib y Zephyr.
-- [Visual General del Motor (Runtime)](../runtime/index.md) — desmenuzado responsivo e internos del microkernel multi-threading y su modelo iterativo nativo en Host/HW Zephyr.
+- [Primeros pasos](../getting-started/index.md) — instalación, primer proyecto, simulación y paso a hardware compatible.
+- [Arquitectura del sistema](../architecture/index.md) — límites entre IDE, compilador, runtime y Zephyr.
+- [Runtime](../runtime/index.md) — responsabilidades, modelo de ejecución y subsistemas.
 
-## Documentos Técnicos para ZPLC V1.5 
+## Referencia de ZPLC v1.5
 
-- [Funciones del Runtime C Base](./runtime-api.md)
-- [Hardwares Testeados y Compatibilizados](./boards.md)
-- [Instanciando el Motor Interno Zephyr](./zephyr-workspace-setup.md)
+- [API del runtime](./runtime-api.md)
+- [Placas catalogadas](./boards.md)
+- [Preparar el workspace de Zephyr](./zephyr-workspace-setup.md)
 
 
 ## Placas Soportadas
@@ -31,7 +32,10 @@ Esta sección aloja y vincula referencias técnicas en bruto para ZPLC.
 | Raspberry Pi Pico (RP2040) | `rpi_pico` | `rpi_pico/rp2040` | Enfoque serial | cross-build |
 | Arduino GIGA R1 (STM32H747 M7) | `arduino_giga_r1` | `arduino_giga_r1/stm32h747xx/m7` | Enfoque serial | cross-build |
 | ESP32-S3 DevKitC | `esp32s3_devkitc` | `esp32s3_devkitc/esp32s3/procpu` | Capacidad de red (Wi-Fi) | cross-build |
-| STM32F746G Discovery | `stm32f746g_disco` | `stm32f746g_disco` | Capacidad de red (Ethernet) | cross-build |
-| STM32 Nucleo-H743ZI | `nucleo_h743zi` | `nucleo_h743zi` | Capacidad de red (Ethernet) | cross-build |
+| STM32F746G Discovery | `stm32f746g_disco` | `stm32f746g_disco/stm32f746xx` | Capacidad de red (Ethernet) | cross-build |
+| STM32 Nucleo-H743ZI | `nucleo_h743zi` | `nucleo_h743zi/stm32h743xx` | Capacidad de red (Ethernet) | cross-build |
+| Arduino Opta WiFi (STM32H747 M7) | `arduino_opta_wifi` | `arduino_opta/stm32h747xx/m7` | Capacidad de red (Wi-Fi) | cross-build |
 
-*Para informarse más sobre listados exhaustivos y perfiles dinámicos asimilados consulte las hojas detalladas de Hardwares Listados.*
+La tabla refleja `firmware/app/boards/supported-boards.v1.5.0.json`. El nivel
+`cross-build` sólo registra la validación del manifest; no afirma HIL ni
+calificación de producción.

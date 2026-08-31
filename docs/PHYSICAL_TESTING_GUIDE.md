@@ -4,7 +4,12 @@
 
 **Versión:** 2.0  
 **Fecha:** 2026-01-08  
-**Objetivo:** Validar HAL y DeviceTree Overlay en TODAS las arquitecturas soportadas
+**Objetivo:** Proponer una campaña de validación HAL y DeviceTree Overlay para perfiles seleccionados
+
+> Este es un procedimiento físico propuesto con resultados vacíos. No constituye
+> evidencia HIL ni calificación de ninguna placa. La [referencia canónica de
+> placas](./docs/reference/boards.md) gobierna perfiles, capabilities y tiers de
+> evidencia.
 
 ---
 
@@ -19,7 +24,7 @@ Esta guía verifica:
 
 ---
 
-## 2. Placas Soportadas - Especificaciones
+## 2. Perfiles propuestos para esta campaña
 
 | Board                   | SoC         | Arquitectura    | Clock   | Flash | RAM    | GPIO | ADC         |
 | ----------------------- | ----------- | --------------- | ------- | ----- | ------ | ---- | ----------- |
@@ -468,16 +473,18 @@ END_PROGRAM
 
 1. Cargar programa blinky
 2. Verificar ejecución
-3. `zplc persist info` → anotar tamaño
+3. Registrar el hash/tamaño del artefacto cargado y el perfil de placa
 4. Power cycle (desconectar/reconectar USB)
-5. Verificar auto-restore
+5. Verificar que el artefacto se restaura detenido: cero scans y salidas sin
+   transición observada antes de un `zplc start` humano
+6. Ejecutar `zplc start` y registrar la primera transición esperada
 
-| Placa    | Tamaño Guardado | Auto-Restore  | Tiempo Boot | PASS/FAIL |
-| -------- | --------------- | ------------- | ----------- | --------- |
-| Pico     | \_\_\_\_ bytes  | [ ] SI [ ] NO | \_\_\_\_ ms | [ ]       |
-| GIGA R1  | \_\_\_\_ bytes  | [ ] SI [ ] NO | \_\_\_\_ ms | [ ]       |
-| ESP32-S3 | \_\_\_\_ bytes  | [ ] SI [ ] NO | \_\_\_\_ ms | [ ]       |
-| Nucleo   | \_\_\_\_ bytes  | [ ] SI [ ] NO | \_\_\_\_ ms | [ ]       |
+| Placa    | Hash/tamaño | Restore detenido | Start explícito | PASS/FAIL |
+| -------- | ----------- | ---------------- | ---------------- | --------- |
+| Pico     | \_\_\_\_   | [ ] SI [ ] NO    | [ ] SI [ ] NO    | [ ]       |
+| GIGA R1  | \_\_\_\_   | [ ] SI [ ] NO    | [ ] SI [ ] NO    | [ ]       |
+| ESP32-S3 | \_\_\_\_   | [ ] SI [ ] NO    | [ ] SI [ ] NO    | [ ]       |
+| Nucleo   | \_\_\_\_   | [ ] SI [ ] NO    | [ ] SI [ ] NO    | [ ]       |
 
 ---
 
@@ -507,9 +514,8 @@ for cycle in range(1000):
     ser.write(b'zplc start\r\n')
     time.sleep(0.5)
 
-    # Clear
-    ser.write(b'zplc persist clear\r\n')
-    time.sleep(0.2)
+    # Clearing a persisted artifact has no generic shell command. Use only the
+    # profile-supported erase/recovery procedure, then record the outcome.
 
     if cycle % 100 == 0:
         print(f"Cycle {cycle} complete")
@@ -652,7 +658,8 @@ Temp Interna (si aplica): ____°C (IR: ____°C)
 RESULTADOS NVS
 ──────────────
 Guardado: [ ] OK [ ] FAIL  Tamaño: ____ bytes
-Auto-restore: [ ] OK [ ] FAIL  Tiempo: ____ ms
+Restore detenido: [ ] OK [ ] FAIL  Sin scans/salidas antes de start: [ ] OK [ ] FAIL
+Start explícito: [ ] OK [ ] FAIL
 Endurance 1000 ciclos: [ ] OK [ ] FAIL
 
 RESULTADO GLOBAL: [ ] PASS  [ ] FAIL

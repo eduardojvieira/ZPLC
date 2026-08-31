@@ -82,3 +82,5 @@ Para los detalles del contrato runtime y los límites del release, seguí con:
 ## Regla práctica
 
 Si una función o bloque no está registrado en la stdlib del compilador ni justificado por el contrato runtime, no debería documentarse como capacidad firme de v1.5.
+
+Para la semántica específica del runtime y perfil, consultá la [Biblioteca estándar del runtime](../runtime/stdlib.md).

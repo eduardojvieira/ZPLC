@@ -20,16 +20,16 @@ Esta sección lista reglas operativas rutinarias sobre cómo manejar diagnóstic
 Cuando notes detenciones temporales graves en tu modelo programado asincrónicamente o reportes de comportamientos ilógicos:
 
 1. **Intrusión Terminal**: Realizar ping inverso acudiendo hacia un programa de shell terminal como `Putty` o `Minicom` usando interface clásica Serial `115200 Bauds`. El sistema nativo levantará consola sobre RTOS Zephyr. Introducir comando `zplc status` reportará el vigor o salud lógica de los búfer internos del sistema operativo RTOS.
-2. **Revisión Infracción Computacional (Bucle Infinito / Jittering)**: Operar desde misma shell terminal listando `zplc sched tasks`. En los modelos en los cuales erróneamente hallare condicionales o bucles interminables mal proyectados como `WHILE TRUE END_WHILE` por ejemplo, Zephyr atrapará su task errático, listándolo al log sin corromper el hardware físicamente. 
+2. **Revisión de violaciones de tarea**: Ejecutá `zplc sched tasks`. Un fallo de ejecución acotada de VM se reporta como fault lógico controlado; verificá la respuesta física de seguridad en el target exacto antes de commissioning.
 3. **Revisión de Direcciones y Mapeos**: Toma instrumentos y puntas lógicas y sondea directamente en tarjeta base evaluando con multímetro. Si su Interface Virtual en línea o Monitor Watch reporta señal `Activa (1)` bajo variables Out en el software de su computadora en la solapa debug, pero evalúa visualmente un Output LED base o terminal del chip a pin con `0 Voltios` apagando salidas; posiblemente estés vinculando lógicamente de mala forma en el registro del manifiesto `zplc.json` I/O.
-4. **Reseteo Estructural Completo**: Cundo logres perder control absoluto bloqueando o deteniendo al RTOS tras una programación errante que persista tras apagado por memorizarse o retener lógicas a boot (Non-Volatile Storage (NVS)); acude nuevamente a las shells seriales indicando `zplc stop` congelando lecturas, instanciando posterior o seguido a la ejecución total por `zplc persist clear`. 
+4. **Detener y limpiar**: Un programa restaurado queda cargado y detenido. Usá `zplc stop` para solicitar salidas lógicas seguras, inspeccioná el fallo y usá el procedimiento de recovery soportado por el perfil si necesitás eliminar deliberadamente un artefacto guardado antes de una carga limpia.
 
 ## Herramientas Diagnósticas Embebidas (Online Observability ZPLC)
 
 Mediante la conexión al motor subyacente interactuando con ZPLC desde interface central de trabajo en tu host PC de la red obtienes de inmediato utilidades activas online:
 
 - **Mirilla (Watch Tables)**: Interroga mediante ventanas o bloques visuales a valores y bits variables transitoriamente.  
-- **Estadísticas De Uso General**: Inspeccione frecuentemente para cada máquina configurada que latencia media / jitter reportan en campo o ejecución plena en el dashboard de UI de IDE; ciclos saturados cerca de 100% causan pausas irrecuperables por software.
+- **Estadísticas De Uso General**: Tratá el timing host/native_sim como evidencia diagnóstica, no como calificación temporal de target. Validalo en el target exacto antes de commissioning.
 - **Sobreescritura Virtual Mapeada (Forzados / Forces)**: Interrumpe localizaciones lógicas en variables por medio del teclado para asumir posturas manual base y by-pasear sistemas quemados de planta.
 
 ## Diagnósticos de Red
@@ -43,14 +43,13 @@ Si tu bloque de `MQTT` se estanca o el cliente Modbus TCP no contesta:
 
 Flashear un binario Core para saltar a sistemas con base kernel Linux Zephyr renovadas: 
 
-- Utilice comando `west flash`. 
-- ZPLC aloja los espacios físicos lógicos de variables retentivas o configuraciones compiladoras `zplc bytecodes` en esquemas físicos apartados lógicamente (Flash NVS Offset).
-- Es factible flashear sin riesgos de que lógicas cargadas a memoria anterior por personal productivo sean sobreescritas o corrompidas.
+- Build de firmware, flash de firmware, deploy de programa y RUN son operaciones separadas. Verificá el procedimiento de recovery para la placa/perfil antes de actualizar firmware.
+- Un artefacto persistido válido se verifica y restaura detenido al arrancar; una persona debe ejecutar `zplc start` tras inspeccionarlo.
 
 ## Lista de Control Operativo
 
 Revise antes de dejar produciendo a la máquina:
 - Los periodos asignados en `zplc.json` disponen de márgenes operativos sobredimensionados.
-- Las memorias `Retain` no colman la EEPROM de la unidad seleccionada.
+- Las declaraciones `RETAIN` a nivel de fuente hoy se rechazan. No dependas de una futura recuperación `RETAIN` hasta contar con evidencia end-to-end target/HIL para el perfil exacto de placa.
 - Todos los enchufes físicos coinciden con lo trazado nativamente.
 - La terminal UART responde satisfactoriamente a 115200 sin arrojar mensajes extraños por log.

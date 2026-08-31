@@ -63,8 +63,12 @@ Los últimos 16 bytes de la IPI (`0x0FF0` a `0x0FFF`) están reservados para inf
 Flags públicos definidos hoy:
 
 - `ZPLC_SYS_FLAG_FIRST_SCAN`
-- `ZPLC_SYS_FLAG_WDG_WARN`
+- `ZPLC_SYS_FLAG_WDG_WARN` (reservado; los runtimes actuales no lo producen)
 - `ZPLC_SYS_FLAG_RUNNING`
+
+`ZPLC_SYS_FLAG_WDG_WARN` no es evidencia de un watchdog, monitor de timing ni
+mecanismo de estado seguro. El presupuesto de instrucciones del runtime es un
+límite lógico de ejecución separado.
 
 ## Familias de opcodes
 

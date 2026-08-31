@@ -2,57 +2,47 @@
 sidebar_position: 2
 slug: /runtime/scheduler
 id: scheduler
-title: Programador Multitarea (Scheduler)
+title: Programador multitarea
 sidebar_label: Programador
-description: Ejecución de tareas, mecánicas de prioridad e integración con Zephyr dentro del Runtime ZPLC.
+description: Configuración de tareas, ciclo de vida y diagnósticos del runtime ZPLC.
 ---
 
-# Programador Multitarea (Scheduler)
+# Programador multitarea
 
-ZPLC ejecuta la lógica de automatización IEC 61131-3 usando un programador (scheduler) multitarea orientado por prioridades y en tiempo real.
+ZPLC programa las tareas PLC configuradas mediante adaptadores específicos del runtime. La ruta actual de Zephyr admite liberaciones de timers en un único coordinador batch; la ruta POSIX permite flujos repetibles en host. Son contratos lógicos del runtime, no evidencia de timing ni de I/O físico en una placa.
 
-## Resumen del Modelo de Ejecución
+## Modelo de tareas
 
-El scheduler coordina múltiples tareas definidas por el usuario mapeadas dentro del binario `.zplc`. Su ciclo de vida incluye:
-1. Cargar las declaraciones de tareas desde la cabecera del binario.
-2. Asignar las secuencias de ejecución según rangos de preferencia y límite temporal.
-3. Administrar transiciones de estado (`READY`, `RUNNING`, `PAUSED`, `ERROR`).
-4. Triaje sobre validaciones concurrentes o cierres de ejecución obligados por software en bucles infinitos.
+Las tareas se declaran en el proyecto y se compilan dentro del programa `.zplc`.
 
-## Configuración de Tareas
-
-Las tareas dictan cómo y cuándo se ejecutan los programas. Las tareas se configuran en `zplc.json` y se compilan directamente al bytecode.
-
-| Propiedad | Descripción |
+| Propiedad | Significado actual |
 |---|---|
-| **Tipo (Type)** | `CYCLIC` (impulsado por intervalos de tiempo) o `EVENT` (impulsado por disparador de hardware). |
-| **Intervalo (Interval)** | Tiempo de ciclo determinista en milisegundos (ms). |
-| **Prioridad (Priority)** | Rango desde 0 (Prioridad Máxima) a 255 (Ejecución en segundo plano). |
-| **Punto de Entrada** | Función o ubicación del programa principal. |
+| **Tipo** | El scheduler Zephyr actual admite tareas `CYCLIC`. Rechaza las tareas `EVENT` antes de cargarlas. |
+| **Intervalo** | Intervalo cíclico solicitado en milisegundos, no una garantía de tiempo de ciclo medido. |
+| **Prioridad** | Para liberaciones Zephyr con el mismo tiempo, primero ejecuta la prioridad numérica menor. El ID de tarea desempata. |
+| **Punto de entrada** | Ubicación de programa o función dentro del programa compilado. |
 
-## Integración con Zephyr y Determinismo
+## Ciclo de vida
 
-Al desplegarse en Zephyr RTOS, ZPLC traduce directamente su ejecución lógica interna a paradigmas nativos de Zephyr:
-- Los temporizadores de hardware basados en el tiempo disparan secuencias de tareas de forma exacta.
-- Estos disparadores inyectan las tareas cíclicas en las colas de trabajo orientadas a la prioridad de Zephyr.
-- La ejecución ocurre concurrentemente a través de las colas para evitar solapamientos y minimizar problemas de latencia o 'jitter' de hardware.
+El scheduler carga las declaraciones de tareas, prepara sus colas de runtime e informa transiciones como `READY`, `RUNNING`, `PAUSED` y `ERROR`. Un programa se admite y valida antes de poder ejecutarse. Los presupuestos lógicos de ejecución y los diagnósticos del runtime sirven para identificar fallos de scans acotados y overruns.
 
 ```mermaid
 flowchart LR
-  Timer[Disparador de Ciclo] --> Queue[Cola Preferencial Zephyr]
-  Queue --> Thread[Proceso de Trabajo]
-  Thread --> Cycle[Ejecución de un solo Scan]
-  Cycle --> Stats[Actualización Estadística]
+  Program[Programa .zplc validado] --> Timers[Timers por tarea]
+  Timers --> Admission[Admisión de liberaciones]
+  Admission --> Batch[Único coordinador batch ordenado]
+  Batch --> Snapshot[Un snapshot de entradas]
+  Snapshot --> Tasks[Ejecución de tareas debidas]
+  Tasks --> Commit[Como máximo un commit normal de salidas]
+  Commit --> Stats[Diagnósticos]
 ```
 
-## Concurrencia y Seguridad de Recursos
+## Estado compartido
 
-Las tareas de ZPLC comparten memoria física global. Debido al comportamiento estándar de IEC 61131-3, se aplica una estricta regla de concurrencia donde **la última escritura gana** cuando dos tareas distintas intentan manipular las mismas variables o salidas.
-Para evitar choques durante rutinas complejas se aconseja segmentar responsabilidades a lo largo de tareas en intervalos dispares.
+En cada conjunto de tareas debidas de Zephyr, los callbacks de timer sólo admiten liberaciones; no ejecutan código PLC. El coordinador ordena las tareas admitidas por tiempo de liberación, prioridad e ID de tarea, y luego toma un snapshot de la imagen de entradas. Las tareas debidas se ejecutan en ese orden contra la memoria compartida del runtime. Si no ocurre un fault ni un cierre desde el plano de control, el batch realiza como máximo un commit normal de la imagen de salidas.
 
-## Diagnósticos
+`STOP`, la pausa externa, el unregister y los faults del scheduler cierran la admisión y drenan el trabajo en curso del coordinador antes de retornar. `STOP` y los faults aplican salidas seguras/apagadas; la pausa no declara un nuevo estado seguro. Estas garantías describen la implementación del scheduler y sus pruebas host/native-sim. No demuestran WCET, jitter, estado eléctrico ni cualificación de una placa.
 
-El ZPLC IDE lee estadísticas de ejecución en tiempo real desde este subsistema, brindando un marco preciso respecto al peso algorítmico, detallando:
-- Número de ciclos superados.
-- Detecciones de errores en intervalos saturados por cómputo intenso.
-- Latencia en el ciclo máximo promedio según tiempo acumulado.
+## Diagnósticos y evidencia
+
+Los diagnósticos del runtime exponen conteos de ciclos, fallos de presupuesto lógico, conteos de latch/commit de process image y observaciones relacionadas con timing. Su resolución, método de recolección y significado dependen del runtime y perfil de destino. La evidencia native-sim sólo comprueba orden lógico y transiciones de estado. Medí WCET, jitter, deadlines y salidas físicas en el target/revisión exactos antes de depender de ellos operacionalmente.

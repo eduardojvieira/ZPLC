@@ -4,14 +4,16 @@ slug: /runtime/persistence
 id: persistence
 title: Persistencia y Memoria Retenida
 sidebar_label: Persistencia
-description: Cómo ZPLC guarda y restaura de manera segura la lógica compilada y los datos de estado RETAIN críticos.
+description: Cómo ZPLC almacena lógica compilada verificada y los límites actuales de evidencia para RETAIN.
 ---
 
 # Persistencia y Memoria Retenida
 
-ZPLC asegura que tanto tu lógica compilada como las variables críticas de la máquina sobrevivan a un ciclo de encendido/apagado. Este modelo de persistencia depende de dos capas distintas:
-1. Persistencia del bytecode `.zplc` desplegado.
-2. Persistencia de datos `RETAIN`.
+Para perfiles con un backend program-store habilitado y operativo, ZPLC puede
+confirmar transaccionalmente un artefacto `.zplc` desplegado y verificado. El
+restore publica el artefacto como lógicamente detenido/READY. El comportamiento
+de las salidas antes de ejecutar es específico del perfil de target y requiere
+evidencia registrada. Una persona debe ejecutar explícitamente `zplc start`.
 
 ## Backends de Plataforma
 
@@ -19,33 +21,40 @@ El core del runtime ZPLC depende de una Capa de Abstracción de Hardware (HAL) a
 
 | Plataforma | Backend de Almacenamiento |
 |---|---|
-| **Hardware Zephyr** | NVS (Almacenamiento No Volátil) en Flash interna/externa en MCUs. |
-| **Simulación Nativa (PC)** | Almacenamiento basado en archivos directamente en el SO anfitrión. |
+| **Perfil Zephyr** | Backend program-store cuando está habilitado y operativo; NVS es una implementación, no una garantía universal de placa. |
+| **Simulación Nativa (PC)** | Program-store basado en archivos usado por pruebas host. |
 
 ## Persistencia de Programa en Hardware
 
-Cuando se carga un binario `.zplc` desde el IDE a una placa objetivo, el runtime lo guarda en memoria no volátil (NVS).
+Cuando un perfil dispone de un backend program-store operativo, una carga
+`.zplc` verificada puede confirmarse mediante ese backend.
 
 ```mermaid
 flowchart LR
-  Load[Subir .zplc] --> Save[Guardar en Flash NVS]
-  Save --> Run[Iniciar Ejecución]
-  Boot[Reinicio de Dispositivo] --> Restore[Restaurar desde NVS]
-  Restore --> Run
+  Load[Upload .zplc verificado] --> Save[Commit program-store del perfil]
+  Save --> Ready[Cargado y detenido]
+  Boot[Reinicio] --> Restore[Verificar y restaurar]
+  Restore --> Ready
+  Ready --> Start[zplc start explícito]
 ```
 
-Al iniciar, el runtime verifica automáticamente la NVS. Si se encuentra un binario ZPLC válido, se restaura automáticamente en memoria y la ejecución comienza al instante sin intervención manual.
+Al iniciar, un program store habilitado puede proporcionar un artefacto válido
+para verificación y restore lógicamente detenido/READY. El comportamiento de
+las salidas antes de ejecutar es específico del perfil de target y requiere
+evidencia registrada. El deploy termina al completar la carga verificada; nunca
+arranca la máquina. El arranque es una operación humana separada y explícita.
+La evidencia target, power-cut, HIL y eléctrica sigue siendo específica del
+perfil exacto y no se ejecutó aquí.
 
 ## Memoria Retentiva (`RETAIN`)
 
-ZPLC soporta completamente las variables `RETAIN` del estándar IEC 61131-3. Esta región de memoria se usa para preservar el estado operativo crítico (como setpoints, contadores de error y horas de funcionamiento de la máquina) a través de reinicios.
+ZPLC define una región de memoria `RETAIN` y primitivas HAL de persistencia. El
+runtime POSIX tiene pruebas de persistencia host. Las declaraciones de fuente
+`VAR RETAIN` y `VAR_GLOBAL RETAIN` se rechazan deliberadamente: todavía no
+existe un contrato end-to-end de asignación, restore o persistencia calificada.
 
-**Ejemplo de Implementación:**
-```st
-VAR RETAIN
-    setpoint : REAL := 25.5;
-    run_hours : UDINT;
-END_VAR
-```
-
-Estas variables se ubican en un sector de memoria designado por el compilador ZPLC. El runtime rastrea las actualizaciones de esta región y la persiste a través de la HAL, asegurando que, incluso después de un corte de energía, tu proceso retome exactamente donde lo dejó.
+No uses `RETAIN` para estado crítico de recuperación. La región y las
+primitivas HAL son capacidades internas, no evidencia de retención a nivel de
+fuente o target. La evidencia target, power-cut y HIL sigue siendo necesaria
+para el perfil exacto antes de que un futuro flujo de retención soportado pueda
+declararse en commissioning.

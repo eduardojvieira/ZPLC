@@ -63,7 +63,9 @@ The HAL owns persistence through:
 - `zplc_hal_persist_load()`
 - `zplc_hal_persist_delete()`
 
-This is how the portable core can rely on retain/program persistence without being tied to one storage backend.
+These primitives let the portable core use a backend-independent program store.
+They do not provide source-level `RETAIN` allocation, restore, or qualified
+end-to-end retention; those declarations are currently unsupported.
 
 ## Networking and sockets
 

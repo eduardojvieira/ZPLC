@@ -3,15 +3,15 @@ slug: /runtime/stdlib
 id: stdlib
 title: Standard Library Reference
 sidebar_label: Standard Library
-description: Complete reference of all ZPLC standard functions and function blocks (Timers, Math, Bitwise, Strings, System).
+description: Reference for the ZPLC standard-library functions and function blocks currently documented here.
 tags: [reference, stdlib, iec61131-3]
 ---
 
 # ZPLC Standard Library Reference
 
-ZPLC provides a complete suite of standard function blocks (FBs) and functions compliant with IEC 61131-3. These are available across all editors (ST, IL, LD, FBD, SFC).
+ZPLC documents the standard-library functions and function blocks implemented by its compiler/runtime paths. Availability depends on the language workflow and target capability profile; ST is the central frontend.
 
-Below is the exhaustive reference to every standard function available in the ZPLC runtime.
+This page describes the functions currently covered by this reference. Validate a project against its selected workflow and profile.
 
 ---
 
@@ -232,16 +232,18 @@ Use type conversion functions to safely move payloads between memory classes.
 ## 10. System Functions
 
 ### UPTIME
-Returns the millisecond representation of the hardware/processor uptime.
+Returns the runtime uptime field in milliseconds.
 - **Inputs:** None.
 - **Outputs:** (UDINT / TIME) Uptime in milliseconds.
 
 ### CYCLE_TIME
-Retrieves the execution time taken for the previous complete PLC scheduling scan.
+Reads the runtime `ZPLC_SYS_CYCLE_TIME` field for the previous cycle as exposed by the active runtime.
 - **Inputs:** None.
-- **Outputs:** (UDINT / TIME) Last cycle duration in milliseconds. useful for profiling cyclic logic.
+- **Outputs:** (UDINT / TIME) Last reported cycle value. Its unit, resolution, update point, and relation to physical time are runtime/profile-specific; do not use it as a hardware timing guarantee.
 
 ### WATCHDOG_RESET
-Forces a clear on the hardware/software task watchdog. Use internally inside extended loops.
+Compatibility stub only. It compiles to `NOP` today and does not feed, reset, or validate a hardware or software watchdog.
 - **Inputs:** None.
-- **Outputs:** (BOOL) `TRUE` if successful.
+- **Outputs:** None.
+
+It must not be used as a safety control.

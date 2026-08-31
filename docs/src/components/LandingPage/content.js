@@ -3,88 +3,88 @@ import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 const landingPageContent = {
   en: {
     home: {
-      metaTitle: 'ZPLC - The Modern IEC 61131-3 Runtime',
+      metaTitle: 'ZPLC - Portable PLC Runtime and Studio',
       metaDescription:
-        'A deterministic, portable PLC runtime powered by Zephyr RTOS. Industrial quality automation with a professional modern IDE.',
+        'A portable C99 PLC runtime and engineering IDE for Zephyr and POSIX workflows, with capabilities documented by profile.',
     },
     hero: {
       badge: 'ZPLC',
-      titleLead: 'The Modern',
-      titleAccent: 'IEC 61131-3 Runtime.',
+      titleLead: 'Portable',
+      titleAccent: 'PLC Runtime & Studio.',
       subtitle:
-        'A deterministic, hardware-agnostic PLC runtime built on Zephyr RTOS with a professional desktop IDE. Write your logic once, deploy it anywhere—from resource-constrained microcontrollers to POSIX-based bare-metal SoftPLCs.',
+        'A portable C99 PLC runtime with a professional desktop IDE. Build and test logic across Zephyr and POSIX workflows, then verify behavior for the target profile you use.',
       primaryCta: 'Download IDE',
       primaryTo: '/docs/getting-started',
-      secondaryCta: 'View Supported Hardware',
+      secondaryCta: 'Board Profiles',
       secondaryTo: '/docs/reference',
-      chips: ['IEC 61131-3', 'Zephyr RTOS', 'POSIX Native'],
+      chips: ['IEC 61131-3 workflows', 'Zephyr RTOS', 'POSIX Native'],
       imageAlt: 'ZPLC IDE and Runtime',
     },
     runtimeSection: {
-      label: 'INDUSTRIAL QUALITY',
-      title: 'Sub-millisecond Determinism',
+      label: 'RUNTIME FOUNDATION',
+      title: 'Evidence-Gated Execution',
       subtitle:
-        'A highly optimized C99 core built to satisfy mission-critical constraints.',
+        'A C99 core and engineering workflow built to make capabilities and evidence explicit.',
       cards: [
         {
           icon: '🛡️',
-          title: 'Memory Safety & State',
+          title: 'Bounded Memory & State',
           description:
-            'Built with robust constraints in mind, featuring retentive memory handling for absolute state persistence between reboots.',
+            'Bounded runtime memory and retentive-storage paths available according to the selected target profile.',
         },
         {
           icon: '⏱️',
-          title: 'Real-time Execution',
+          title: 'Task Scheduling',
           description:
-            'Sub-millisecond jitter and a strict multitask deterministic scheduler powered entirely by Zephyr RTOS.',
+            'Tasks, priorities, logical budgets, and diagnostics help inspect each runtime workflow; timing evidence is target-specific.',
         },
         {
           icon: '⚡',
           title: 'Portable Architecture',
           description:
-            'A lightweight core that interprets pre-compiled logic blocks and functions perfectly, entirely abstracting away the hardware layer.',
+            'A bytecode runtime separated from hardware through a HAL, so platform work can be reviewed per profile and revision.',
         },
         {
           icon: '💻',
-          title: 'SoftPLC Ready',
+          title: 'Native Simulation',
           description:
-            'Advanced POSIX native runtime support capabilities for cycle-accurate hardware simulation and frictionless deployment on servers.',
+            'Use the POSIX runtime for repeatable host-side logic workflows within its declared capabilities—not as a hardware twin.',
         },
       ],
     },
     architectureSection: {
       label: 'IT MEETS OT',
-      title: 'Connectivity & Communication',
+      title: 'Runtime Boundaries',
       subtitle:
-        'Bridge the gap between operational technology operations and the cloud natively.',
+        'Keep execution, device integration, and operational evidence clear at every step.',
       steps: [
         {
           icon: '1',
-          title: 'Logic Execution',
-          description: 'Standard IEC 61131-3 blocks dynamically govern the process image state.',
+          title: 'Compile',
+          description: 'Compile supported project workflows into `.zplc` bytecode with diagnostics.',
         },
         {
           icon: '2',
-          title: 'Modbus TCP/RTU',
-          description: 'Zero-overhead, high-performance Modbus servers actively exposed for SCADA and HMI integration.',
+          title: 'Simulate',
+          description: 'Run supported logical workflows on POSIX and inspect the resulting runtime data.',
         },
         {
           icon: '3',
-          title: 'MQTT Integration',
-          description: 'Native MQTT telemetry fired directly from the core runtime to local or remote brokers.',
+          title: 'Integrate',
+          description: 'Use only the transports and services declared for the selected board profile.',
         },
         {
           icon: '4',
-          title: 'Cloud Dashboarding',
-          description: 'Achieve complete IT integration without ever relying on complex middleware layers.',
+          title: 'Verify',
+          description: 'Separate host, target, and HIL evidence before making operational claims.',
         },
       ],
     },
     hardwareSection: {
-      label: 'HARDWARE AGNOSTIC',
-      title: 'Support & Extensibility',
+      label: 'BOARD PROFILES',
+      title: 'Catalogued Hardware',
       subtitle:
-        'Deploy instantly to industrial-grade boards or effortlessly port the runtime to your own custom architecture utilizing the Zephyr device tree.',
+        'Board entries are catalogued examples. Their support tier and available capabilities vary by exact profile and revision.',
       boards: [
         { value: 'RP2040', label: 'Raspberry Pi Pico' },
         { value: 'STM32H7', label: 'Arduino GIGA R1' },
@@ -92,47 +92,47 @@ const landingPageContent = {
         { value: 'F746', label: 'STM32F746G Discovery' },
         { value: 'H743', label: 'Nucleo-H743ZI' },
       ],
-      architectures: 'Out-of-the-box support: RP2040 • STM32H747 M7 • ESP32-S3 • STM32F746 • STM32H743ZI',
+      architectures: 'Catalogued examples: RP2040 • STM32H747 M7 • ESP32-S3 • STM32F746 • STM32H743ZI',
     },
     documentationSection: {
       label: 'MODERN EXPERIENCE',
       title: 'Developer-First Tooling',
       subtitle:
-        'We provide absolutely everything you need to engineer next-generation automation intelligently.',
+        'Build, inspect, and test with the workflows available for your selected language and runtime profile.',
       languageBlock: {
         title: 'IEC 61131-3 Languages',
-        description: 'Enjoy first-class support for industry standard languages designed to match your specific workflow needs.',
+        description: 'Structured Text is the central frontend. Visual and IL workflows are available according to their documented workflow evidence.',
         items: ['Ladder Logic (LD)', 'Function Block Diagrams (FBD)', 'Sequential Function Charts (SFC)', 'Structured Text (ST)'],
       },
       referenceBlock: {
         title: 'Professional Workflow',
-        items: ['Live variable watch tables', 'Cycle-accurate step execution', 'Hardware breakpoints support', 'Automated testing paths'],
+        items: ['Live variable inspection', 'Controlled runtime stepping', 'Capability-aware debugging', 'Automated test paths'],
       },
     },
     roadmapSection: {
       label: 'CONTINUOUS EVOLUTION',
-      title: 'Built to Scale Natively',
+      title: 'Contracts Built to Evolve',
       subtitle:
-        'An uncompromising runtime architecture designed from the ground up for continuous improvement and integration.',
+        'Core, IDE, and integrations evolve through versioned contracts and evidence recorded for each profile.',
       phases: [
         {
           badge: 'CORE ENGINE',
           title: 'C99 VM Interpreter',
-          items: ['Strict deterministic scheduler', 'Retentive NVRAM handling', 'Seamless Zephyr HAL integration'],
+          items: ['Task scheduler and diagnostics', 'Profile-aware persistence', 'Zephyr HAL integration'],
           accentStyle: { border: '1px solid #22d3ee', background: 'rgba(34, 211, 238, 0.05)' },
           badgeStyle: {},
         },
         {
           badge: 'IDE WORKFLOW',
           title: 'Visual Environments',
-          items: ['React Flow powered interface', 'Fast TypeScript compiler', 'POSIX native simulation'],
+          items: ['React Flow interface', 'TypeScript compiler', 'POSIX native simulation'],
           accentStyle: {},
           badgeStyle: { color: '#a855f7', borderColor: 'rgba(168, 85, 247, 0.2)', background: 'rgba(168, 85, 247, 0.05)' },
         },
         {
           badge: 'CONNECTIVITY',
           title: 'Standard Protocols',
-          items: ['Unified Modbus TCP/RTU', 'Native IoT edge MQTT client', 'Networking security layers'],
+          items: ['Profile-declared transports', 'Capability-aware integration', 'Network boundaries'],
           accentStyle: {},
           badgeStyle: { color: '#f59e0b', borderColor: 'rgba(245, 158, 11, 0.2)', background: 'rgba(245, 158, 11, 0.05)' },
         },
@@ -141,18 +141,18 @@ const landingPageContent = {
     ideSection: {
       label: 'ZPLC IDE',
       title: 'Professional Desktop Environment',
-      subtitle: 'Seamless visual authoring, compilation, and remote deployment delivered as a standalone app across Windows, macOS, and Linux.',
+      subtitle: 'Visual authoring, compilation, and runtime inspection delivered as a desktop workflow. Availability depends on the released platform and target profile.',
       cards: [
-        { icon: '✏️', title: 'Author', description: 'Visual and textual editors providing a modern, incredibly responsive development experience.' },
-        { icon: '🚀', title: 'Simulate', description: 'Test logic safely using the integrated POSIX native runtime for a precise match of actual hardware behavior.' },
-        { icon: '📦', title: 'Compile', description: 'Translate your automation logic directly into highly optimized bytecode blocks instantly.' },
-        { icon: '🛠️', title: 'Diagnostics', description: 'Monitor the process image in real-time, inspect internal states, and override variables seamlessly.' },
+        { icon: '✏️', title: 'Author', description: 'Visual and textual editors in one consistent desktop workflow.' },
+        { icon: '🚀', title: 'Simulate', description: 'Test supported logic with the POSIX runtime and its declared host capabilities.' },
+        { icon: '📦', title: 'Compile', description: 'Translate supported automation logic into `.zplc` bytecode with diagnostics.' },
+        { icon: '🛠️', title: 'Diagnostics', description: 'Inspect runtime state through the controls available for the selected capability profile.' },
       ],
       snippet: `PROGRAM Main\nVAR\n  PumpEnabled : BOOL := FALSE;\n  TankLevel : INT := 42;\nEND_VAR\n\nIF TankLevel < 30 THEN\n  PumpEnabled := TRUE;\nEND_IF;\nEND_PROGRAM`,
     },
     ctaSection: {
       title: 'Start Building Automation',
-      subtitle: 'Join the next generation of industrial control systems powered by modern open standards.',
+      subtitle: 'Review the documentation, board profiles, and recorded evidence before selecting a workflow.',
       primaryCta: 'Read the Documentation',
       primaryTo: '/docs/getting-started',
       secondaryCta: 'GitHub Repository',
@@ -160,88 +160,88 @@ const landingPageContent = {
   },
   es: {
     home: {
-      metaTitle: 'ZPLC - El Runtime Moderno IEC 61131-3',
+      metaTitle: 'ZPLC - Runtime PLC Portable y Studio',
       metaDescription:
-        'Un runtime PLC determinista y portable impulsado por Zephyr RTOS. Calidad industrial con un IDE profesional y moderno.',
+        'Un runtime PLC C99 portable y un IDE de ingeniería para flujos Zephyr y POSIX, con capacidades documentadas por perfil.',
     },
     hero: {
       badge: 'ZPLC',
-      titleLead: 'El Runtime Moderno',
-      titleAccent: 'IEC 61131-3.',
+      titleLead: 'Runtime PLC',
+      titleAccent: 'Portable y Studio.',
       subtitle:
-        'Un entorno de ejecución PLC determinista y agnóstico al hardware construido sobre Zephyr RTOS con un IDE de escritorio profesional. Escribe tu lógica una vez y despliégala donde sea: desde microcontroladores con recursos limitados hasta SoftPLCs bare-metal basados en POSIX.',
+        'Un runtime PLC C99 portable con un IDE de escritorio profesional. Construí y probá lógica en flujos Zephyr y POSIX, y verificá el comportamiento del perfil de destino que uses.',
       primaryCta: 'Descargar IDE',
       primaryTo: '/docs/getting-started',
-      secondaryCta: 'Ver Hardware Soportado',
+      secondaryCta: 'Perfiles de placa',
       secondaryTo: '/docs/reference',
-      chips: ['IEC 61131-3', 'Zephyr RTOS', 'POSIX Native'],
+      chips: ['Flujos IEC 61131-3', 'Zephyr RTOS', 'POSIX Native'],
       imageAlt: 'ZPLC IDE y Runtime',
     },
     runtimeSection: {
-      label: 'CALIDAD INDUSTRIAL',
-      title: 'Determinismo Sub-milisegundo',
+      label: 'BASE DEL RUNTIME',
+      title: 'Ejecución con evidencia',
       subtitle:
-        'Un núcleo C99 altamente optimizado, construido para satisfacer restricciones de misión crítica.',
+        'Un núcleo C99 y un flujo de ingeniería que hacen explícitas las capacidades y su evidencia.',
       cards: [
         {
           icon: '🛡️',
-          title: 'Seguridad de Memoria y Estado',
+          title: 'Memoria acotada y estado',
           description:
-            'Construido pensando en requerimientos robustos, con manejo de memoria retentiva para persistencia absoluta del estado entre reinicios.',
+            'Memoria acotada en el runtime y rutas de almacenamiento retentivo disponibles según el perfil de destino seleccionado.',
         },
         {
           icon: '⏱️',
-          title: 'Ejecución en Tiempo Real',
+          title: 'Planificación de tareas',
           description:
-            'Jitter sub-milisegundo y un estricto planificador determinista multitarea impulsado completamente por Zephyr RTOS.',
+            'Tareas, prioridades, presupuestos lógicos y diagnósticos permiten inspeccionar cada flujo; la evidencia de timing depende del destino.',
         },
         {
           icon: '⚡',
           title: 'Arquitectura Portable',
           description:
-            'Un núcleo ágil que interpreta bloques y funciones lógicas precompiladas de forma perfecta, abstrayendo completamente la capa de hardware.',
+            'Un runtime de bytecode separado del hardware mediante HAL, para revisar cada plataforma por perfil y revisión.',
         },
         {
           icon: '💻',
-          title: 'Listo para SoftPLC',
+          title: 'Simulación nativa',
           description:
-            'Capacidades avanzadas con el runtime nativo POSIX para simulación de hardware de ciclo exacto y despliegue sin fricciones en servidores.',
+            'Usá el runtime POSIX para flujos lógicos repetibles en host dentro de sus capacidades declaradas, no como gemelo de hardware.',
         },
       ],
     },
     architectureSection: {
       label: 'IT CONVERGE A OT',
-      title: 'Conectividad y Comunicación',
+      title: 'Límites del runtime',
       subtitle:
-        'Cerrando la brecha entre la tecnología operacional y la nube de forma nativa.',
+        'Mantené claras la ejecución, la integración de dispositivos y la evidencia operacional en cada paso.',
       steps: [
         {
           icon: '1',
-          title: 'Ejecución Lógica',
-          description: 'Bloques estándar IEC 61131-3 gobiernan dinámicamente el estado del proceso.',
+          title: 'Compilar',
+          description: 'Compilá flujos de proyecto soportados a bytecode `.zplc` con diagnósticos.',
         },
         {
           icon: '2',
-          title: 'Modbus TCP/RTU',
-          description: 'Servidores Modbus de alto rendimiento y cero sobrecarga expuestos para integración con SCADA y HMI.',
+          title: 'Simular',
+          description: 'Ejecutá flujos lógicos soportados en POSIX e inspeccioná los datos de runtime resultantes.',
         },
         {
           icon: '3',
-          title: 'Integración MQTT',
-          description: 'Telemetría MQTT nativa enviada directamente desde el engine principal a brokers locales o remotos.',
+          title: 'Integrar',
+          description: 'Usá sólo los transportes y servicios declarados para el perfil de placa seleccionado.',
         },
         {
           icon: '4',
-          title: 'Dashboarding Cloud',
-          description: 'Logre una integración TI completa sin depender jamás de complejas capas de middleware informático.',
+          title: 'Verificar',
+          description: 'Separá evidencia host, target y HIL antes de afirmar comportamiento operacional.',
         },
       ],
     },
     hardwareSection: {
-      label: 'AGNÓSTICO AL HARDWARE',
-      title: 'Soporte y Extensibilidad',
+      label: 'PERFILES DE PLACA',
+      title: 'Hardware catalogado',
       subtitle:
-        'Despliega instantáneamente a placas de grado industrial o porta fácilmente el framework a tu propia arquitectura personalizada utilizando el device tree de Zephyr.',
+        'Las placas son ejemplos catalogados. El nivel de soporte y las capacidades disponibles varían según el perfil y la revisión exactos.',
       boards: [
         { value: 'RP2040', label: 'Raspberry Pi Pico' },
         { value: 'STM32H7', label: 'Arduino GIGA R1' },
@@ -249,47 +249,47 @@ const landingPageContent = {
         { value: 'F746', label: 'STM32F746G Discovery' },
         { value: 'H743', label: 'Nucleo-H743ZI' },
       ],
-      architectures: 'Soporte inmediato: RP2040 • STM32H747 M7 • ESP32-S3 • STM32F746 • STM32H743ZI',
+      architectures: 'Ejemplos catalogados: RP2040 • STM32H747 M7 • ESP32-S3 • STM32F746 • STM32H743ZI',
     },
     documentationSection: {
       label: 'EXPERIENCIA MODERNA',
       title: 'Herramientas para Desarrolladores',
       subtitle:
-        'Proveemos absolutamente todo lo que necesitas para diseñar la automatización inteligente del futuro.',
+        'Construí, inspeccioná y probá con los flujos disponibles para el lenguaje y perfil de runtime que selecciones.',
       languageBlock: {
         title: 'Lenguajes IEC 61131-3',
-        description: 'Disfruta de soporte de primera clase para los lenguajes estándar de la industria, diseñados para adaptarse a tus necesidades.',
+        description: 'Structured Text es el frontend central. Los flujos visuales e IL están disponibles según su evidencia documentada por workflow.',
         items: ['Ladder Logic (LD)', 'Function Block Diagrams (FBD)', 'Sequential Function Charts (SFC)', 'Structured Text (ST)'],
       },
       referenceBlock: {
         title: 'Flujo de Trabajo Profesional',
-        items: ['Tablas de monitoreo de variables en vivo', 'Ejecución paso a paso de ciclo exacto', 'Soporte para breakpoints en hardware', 'Flujos de automatización C99'],
+        items: ['Inspección de variables en vivo', 'Ejecución controlada por pasos', 'Debug según capacidades', 'Flujos de prueba automatizados'],
       },
     },
     roadmapSection: {
       label: 'EVOLUCIÓN CONTINUA',
-      title: 'Construido para Escalar Nativamente',
+      title: 'Contratos preparados para evolucionar',
       subtitle:
-        'Una arquitectura de diseño sin concesiones elaborada desde cero para la mejora constante y la integración veloz.',
+        'El core, el IDE y las integraciones evolucionan mediante contratos versionados y evidencia registrada para cada perfil.',
       phases: [
         {
           badge: 'CORE ENGINE',
           title: 'Intérprete VM C99',
-          items: ['Scheduler fuertemente determinista', 'Despliegue NVRAM retentiva', 'Sinergia absoluta con el HAL Zephyr'],
+          items: ['Scheduler y diagnósticos', 'Persistencia según perfil', 'Integración HAL Zephyr'],
           accentStyle: { border: '1px solid #22d3ee', background: 'rgba(34, 211, 238, 0.05)' },
           badgeStyle: {},
         },
         {
           badge: 'WORKFLOW IDE',
           title: 'Entornos Visuales',
-          items: ['Interfaz responsiva React Flow', 'Compilador TypeScript ultrarrápido', 'Simulación POSIX nativa'],
+          items: ['Interfaz React Flow', 'Compilador TypeScript', 'Simulación POSIX nativa'],
           accentStyle: {},
           badgeStyle: { color: '#a855f7', borderColor: 'rgba(168, 85, 247, 0.2)', background: 'rgba(168, 85, 247, 0.05)' },
         },
         {
           badge: 'CONECTIVIDAD',
           title: 'Protocolos Estándar',
-          items: ['Modbus TCP/RTU Unificado', 'Cliente edge MQTT IoT nativo', 'Capas de seguridad en redes'],
+          items: ['Transportes declarados por perfil', 'Integración por capacidades', 'Límites de red'],
           accentStyle: {},
           badgeStyle: { color: '#f59e0b', borderColor: 'rgba(245, 158, 11, 0.2)', background: 'rgba(245, 158, 11, 0.05)' },
         },
@@ -298,18 +298,18 @@ const landingPageContent = {
     ideSection: {
       label: 'IDE ZPLC',
       title: 'Entorno de Escritorio Profesional',
-      subtitle: 'Creación visual, compilación y despliegue remoto sin fricciones, distribuido como una aplicación independiente para Windows, macOS y Linux.',
+      subtitle: 'Creación visual, compilación e inspección de runtime como flujo de escritorio. La disponibilidad depende de la plataforma publicada y del perfil de destino.',
       cards: [
-        { icon: '✏️', title: 'Diseñar', description: 'Editores visuales y textuales que brindan una experiencia de desarrollo moderna e increíblemente receptiva.' },
-        { icon: '🚀', title: 'Simular', description: 'Mida la lógica de forma segura utilizando el runtime POSIX nativo integrado, emulando con exactitud el hardware físico.' },
-        { icon: '📦', title: 'Compilar', description: 'Traduzca su lógica en bloques bytecode altamente optimizados en cuestión de milisegundos.' },
-        { icon: '🛠️', title: 'Diagnosticar', description: 'Supervise la imagen de proceso en tiempo real, inspeccione el estado y anule parámetros dinámicamente.' },
+        { icon: '✏️', title: 'Diseñar', description: 'Editores visuales y textuales en un flujo de escritorio consistente.' },
+        { icon: '🚀', title: 'Simular', description: 'Probá lógica soportada con el runtime POSIX y sus capacidades host declaradas.' },
+        { icon: '📦', title: 'Compilar', description: 'Traducí lógica de automatización soportada a bytecode `.zplc` con diagnósticos.' },
+        { icon: '🛠️', title: 'Diagnosticar', description: 'Inspeccioná estado de runtime mediante los controles disponibles para el perfil de capacidades seleccionado.' },
       ],
       snippet: `PROGRAM Main\nVAR\n  PumpEnabled : BOOL := FALSE;\n  TankLevel : INT := 42;\nEND_VAR\n\nIF TankLevel < 30 THEN\n  PumpEnabled := TRUE;\nEND_IF;\nEND_PROGRAM`,
     },
     ctaSection: {
       title: 'Comienza a automatizar',
-      subtitle: 'Únete a la próxima generación de sistemas de control industrial impulsados por los más modernos estándares.',
+      subtitle: 'Revisá la documentación, los perfiles de placa y la evidencia registrada antes de elegir un flujo.',
       primaryCta: 'Leer la Documentación',
       primaryTo: '/docs/getting-started',
       secondaryCta: 'Repositorio GitHub',

@@ -3,56 +3,50 @@ slug: /platform-overview
 id: index
 title: Platform Overview
 sidebar_label: Platform Overview
-description: Product-level map of the ZPLC platform, including engineering surfaces and execution targets.
+description: Product-level map of ZPLC engineering surfaces and execution targets.
 tags: [architecture, introduction]
 ---
 
 # Platform Overview
 
-ZPLC (Zephyr PLC) is a deterministic IEC 61131-3 compatible logical platform that combines a portable execution core written in C99 with a modern, browser/desktop-based engineering toolchain.
+ZPLC (Zephyr PLC) combines a portable ANSI C99 execution core with TypeScript engineering tools. Its capabilities are evidence-gated: host simulation, target builds, and HIL results answer different questions.
 
-## The ZPLC Ecosystem
-
-ZPLC represents a full suite of tightly integrated automation tooling ranging from high-level visual editing down to bare-metal hardware registers.
+## The ZPLC ecosystem
 
 ```mermaid
 flowchart TB
   IDE[ZPLC IDE]
-  Compiler[Unified Compiler]
-  Runtime[Runtime Core]
-  Boards[Supported Zephyr Boards]
+  Compiler[Compiler]
+  Runtime[Runtime core]
+  Boards[Board profiles]
 
   IDE --> Compiler
   Compiler --> Runtime
   Runtime --> Boards
 ```
 
-## Core Principles
+## Core principles
 
-- **Determinism**: Predictable execution time is non-negotiable for industrial machinery. The runtime uses bounded, pre-allocated static memory with hard real-time scheduling.
-- **Portability**: ZPLC features "One execution core, multiple runtimes." The core VM stays strictly separated from the platform hardware through a strict HAL contract.
-- **No Vendor Lock-In**: Because ZPLC leverages standard open-source technologies (Zephyr RTOS), it can run on everything from low-cost ESP32 chips to standard industrial STM32 hardware without exorbitant licensing fees.
+- **Bounded runtime memory**: the C99 core uses defined memory boundaries; validation remains part of every target profile.
+- **HAL separation**: the core and hardware adapters are separate so platform behavior can be inspected and tested independently.
+- **Evidence before claims**: scheduler timing, I/O behavior, persistence, protocols, and board support are stated only for the profile/revision with matching evidence.
 
-## Product Boundaries
+## Product boundaries
 
-The platform consists of several distinct subsystems:
+1. **Core VM (`libzplc_core`)**: C99 bytecode interpreter, program validation, runtime state, and scheduler interfaces.
+2. **Hardware Abstraction Layer (HAL)**: adapters for platform facilities such as clocks, storage, I/O, and configured transports.
+3. **Compiler**: turns supported project workflows—centered on Structured Text—into `.zplc` bytecode.
+4. **IDE**: desktop engineering surface for authoring, diagnostics, and capability-aware runtime workflows.
 
-1. **Core VM (`libzplc_core`)**: The C99 bytecode interpreter. It handles multi-task scheduling, logical execution, memory bounds checking, and standards-compliant IEC processing. It has zero dependencies on specific hardware.
-2. **Hardware Abstraction Layer (HAL)**: The mapping contract that allows the Core VM to communicate securely with underlying interfaces: timers, EEPROM/Flash storage, I/O pins, and TCP/UDP networking.
-3. **Compiler**: Takes user project files (Structured Text, Ladder Diagram) and translates everything into standard `.zplc` bytecode optimized for embedded space.
-4. **IDE**: The graphical user interface responsible for visual code authoring, real-time debugging, online monitoring, forcing variables, and project management.
+## Typical workflow
 
-## Project Workflow
+1. Select a project target and inspect its board/capability profile.
+2. Author logic in a supported language workflow, then compile it to `.zplc`.
+3. Use native POSIX simulation for repeatable host-side logical checks within its declared capabilities.
+4. Build firmware, flash it, deploy the PLC program, and operate it as separate human actions.
+5. Use target or HIL evidence from the exact board/revision before relying on timing or physical behavior.
 
-The standard operational path for an automation engineer looks like this:
-
-1. Open the ZPLC IDE and configure a new project target in `zplc.json`.
-2. Author your machine logic via Structured Text or graphical diagrams (FBD/LD/SFC).
-3. Execute a validation compile to generate `.zplc` code.
-4. Launch the Native Simulation to debug mathematical logic and flows directly on your PC.
-5. Deploy over USB/Serial to physically wired Zephyr-based microcontrollers, monitoring sensors in real-time.
-
-## Continue With
+## Continue with
 
 - [Getting Started](../getting-started/index.md)
 - [Language Suite Examples](../languages/examples/v1-5-language-suite.md)
