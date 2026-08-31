@@ -199,9 +199,21 @@ int zplc_modbus_tcp_client_write_coil(const char *host, uint16_t port,
                                       uint8_t unit_id, uint16_t addr,
                                       bool state);
 
-bool zplc_config_get_modbus_tag_override(uint16_t index, uint32_t *address);
-int zplc_config_set_modbus_tag_override(uint16_t index, uint32_t address);
+/**
+ * Modbus server mapping overrides. These never change the compiled remote
+ * address consumed by Modbus polling clients.
+ */
+bool zplc_config_get_modbus_tag_override(uint16_t index,
+                                         uint16_t register_count,
+                                         uint32_t *address);
+int zplc_config_set_modbus_tag_override(uint16_t index,
+                                         uint32_t address,
+                                         uint16_t register_count);
 int zplc_config_clear_modbus_tag_override(uint16_t index);
+
+#if defined(CONFIG_ZTEST)
+void zplc_config_test_set_modbus_override_publish_hook(void (*hook)(void));
+#endif
 
 int zplc_modbus_init(void);
 int zplc_mqtt_init(void);

@@ -5,6 +5,7 @@
  */
 
 #include "zplc_config.h"
+#include "zplc_modbus_tcp.h"
 #include <zplc_core.h>
 #include <zplc_hal.h>
 #include <zplc_isa.h>
@@ -31,7 +32,7 @@ int zplc_modbus_client_init(void);
  * PDU:  [FC (1)][Data (n)]
  */
 
-#define MODBUS_MAX_ADU 260
+#define MODBUS_MAX_ADU ZPLC_MODBUS_TCP_ADU_MAX
 
 /* Supported function codes */
 #define FC_READ_COILS 0x01
@@ -46,13 +47,6 @@ int zplc_modbus_client_init(void);
 /* Maximum simultaneous Modbus TCP clients — static, no malloc */
 #define MODBUS_TCP_MAX_CLIENTS 4
 
-typedef enum {
-    MODBUS_AREA_COIL = 0,
-    MODBUS_AREA_DISCRETE_INPUT = 1,
-    MODBUS_AREA_INPUT_REGISTER = 2,
-    MODBUS_AREA_HOLDING_REGISTER = 3,
-} zplc_modbus_area_t;
-
 #if defined(CONFIG_NET_SOCKETS)
 static struct k_thread modbus_thread_data;
 static K_THREAD_STACK_DEFINE(modbus_stack_area, 3072);
@@ -61,6 +55,7 @@ static K_THREAD_STACK_DEFINE(modbus_stack_area, 3072);
 /* Client socket table — -1 means slot is free */
 #if defined(CONFIG_NET_SOCKETS)
 static int s_clients[MODBUS_TCP_MAX_CLIENTS];
+static zplc_modbus_tcp_stream_t s_client_streams[MODBUS_TCP_MAX_CLIENTS];
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(zephyr_modbus_serial)
@@ -90,7 +85,9 @@ static uint32_t get_effective_modbus_address(uint16_t tag_index,
                                              const zplc_tag_entry_t *tag)
 {
     uint32_t override_addr = 0U;
-    if (zplc_config_get_modbus_tag_override(tag_index, &override_addr)) {
+    if (zplc_config_get_modbus_tag_override(
+            tag_index, modbus_register_width((zplc_data_type_t)tag->var_type),
+            &override_addr)) {
         return override_addr;
     }
 
@@ -126,25 +123,6 @@ static bool modbus_address_matches_area(uint32_t configured_addr,
     }
 
     return false;
-}
-
-static zplc_modbus_area_t modbus_area_from_fc(uint8_t fc)
-{
-    switch (fc) {
-    case FC_READ_COILS:
-    case FC_WRITE_SINGLE_COIL:
-    case FC_WRITE_MULTIPLE_COILS:
-        return MODBUS_AREA_COIL;
-    case FC_READ_DISCRETE_INPUTS:
-        return MODBUS_AREA_DISCRETE_INPUT;
-    case FC_READ_INPUT_REGISTERS:
-        return MODBUS_AREA_INPUT_REGISTER;
-    case FC_READ_HOLDING_REGISTERS:
-    case FC_WRITE_SINGLE_REGISTER:
-    case FC_WRITE_MULTIPLE_REGISTERS:
-    default:
-        return MODBUS_AREA_HOLDING_REGISTER;
-    }
 }
 
 static const zplc_tag_entry_t* find_modbus_tag(uint16_t modbus_addr,
@@ -242,7 +220,12 @@ static void mem_write_val(uint16_t addr, zplc_data_type_t type, uint32_t val) {
  */
 static int handle_read(uint16_t addr, uint16_t count, uint8_t *resp_data, bool is_bit,
                        zplc_modbus_area_t area) {
-    zplc_pi_lock();
+    if (count == 0U || (uint32_t)addr + (uint32_t)count > UINT16_MAX + 1U) {
+        return -1;
+    }
+    if (zplc_pi_lock() != 0) {
+        return -1;
+    }
     
     for (uint16_t i = 0; i < count; i++) {
         uint16_t word_offset = 0U;
@@ -289,13 +272,26 @@ static int handle_read(uint16_t addr, uint16_t count, uint8_t *resp_data, bool i
 /**
  * @brief Map a memory write from Modbus to ZPLC format
  */
-static int handle_write(uint16_t addr, uint16_t count, const uint8_t *req_data, bool is_bit,
-                        bool is_multiple, zplc_modbus_area_t area) {
-    zplc_pi_lock();
-    
+int zplc_modbus_write_mapped(uint16_t addr, uint16_t count, const uint8_t *req_data,
+                             bool is_bit, bool is_multiple, zplc_modbus_area_t area) {
+    if (count == 0U || (uint32_t)addr + (uint32_t)count > UINT16_MAX + 1U) {
+        return -1;
+    }
+    if (zplc_pi_lock() != 0) {
+        return -1;
+    }
+
+    /* Preflight under the same process-image lock: no partial range writes. */
+    for (uint16_t i = 0; i < count; i++) {
+        if (find_modbus_tag((uint16_t)((uint32_t)addr + i), area, NULL, NULL) == NULL) {
+            zplc_pi_unlock();
+            return -1;
+        }
+    }
+
     for (uint16_t i = 0; i < count; i++) {
         uint16_t word_offset = 0U;
-        const zplc_tag_entry_t* tag = find_modbus_tag(addr + i, area, NULL, &word_offset);
+        const zplc_tag_entry_t* tag = find_modbus_tag((uint16_t)((uint32_t)addr + i), area, NULL, &word_offset);
         if (!tag) {
             zplc_pi_unlock();
             return -1; /* Address not mapped */
@@ -333,9 +329,31 @@ static int handle_write(uint16_t addr, uint16_t count, const uint8_t *req_data, 
     return 0;
 }
 
+static int modbus_tcp_read(uint16_t addr, uint16_t count, uint8_t *response,
+                           size_t response_capacity, bool bits,
+                           zplc_modbus_area_t area, void *context)
+{
+    size_t required = bits ? ((size_t)count + 7U) / 8U : (size_t)count * 2U;
+
+    ARG_UNUSED(context);
+    if (required > response_capacity) {
+        return -1;
+    }
+    return handle_read(addr, count, response, bits, area);
+}
+
+static int modbus_tcp_write(uint16_t addr, uint16_t count, const uint8_t *data,
+                            bool bits, bool multiple, zplc_modbus_area_t area,
+                            void *context)
+{
+    ARG_UNUSED(context);
+    return zplc_modbus_write_mapped(addr, count, data, bits, multiple, area);
+}
+
+#if ZPLC_HAS_MODBUS_RTU
 static int coil_rd_cb(uint16_t addr, bool *state) {
     uint8_t value = 0U;
-    int rc = handle_read(addr, 1U, &value, true, MODBUS_AREA_COIL);
+    int rc = handle_read(addr, 1U, &value, true, ZPLC_MODBUS_AREA_COIL);
     if (rc < 0) {
         return -ENOTSUP;
     }
@@ -346,13 +364,13 @@ static int coil_rd_cb(uint16_t addr, bool *state) {
 
 static int coil_wr_cb(uint16_t addr, bool state) {
     const uint8_t req_data[2] = { state ? 0xFFU : 0x00U, 0x00U };
-    int rc = handle_write(addr, 1U, req_data, true, false, MODBUS_AREA_COIL);
+    int rc = zplc_modbus_write_mapped(addr, 1U, req_data, true, false, ZPLC_MODBUS_AREA_COIL);
     return (rc < 0) ? -ENOTSUP : 0;
 }
 
 static int discrete_input_rd_cb(uint16_t addr, bool *state) {
     uint8_t value = 0U;
-    int rc = handle_read(addr, 1U, &value, true, MODBUS_AREA_DISCRETE_INPUT);
+    int rc = handle_read(addr, 1U, &value, true, ZPLC_MODBUS_AREA_DISCRETE_INPUT);
     if (rc < 0) {
         return -ENOTSUP;
     }
@@ -363,7 +381,7 @@ static int discrete_input_rd_cb(uint16_t addr, bool *state) {
 
 static int input_reg_rd_cb(uint16_t addr, uint16_t *reg) {
     uint8_t resp_data[2] = {0U, 0U};
-    int rc = handle_read(addr, 1U, resp_data, false, MODBUS_AREA_INPUT_REGISTER);
+    int rc = handle_read(addr, 1U, resp_data, false, ZPLC_MODBUS_AREA_INPUT_REGISTER);
     if (rc < 0) {
         return -ENOTSUP;
     }
@@ -374,7 +392,7 @@ static int input_reg_rd_cb(uint16_t addr, uint16_t *reg) {
 
 static int holding_reg_rd_cb(uint16_t addr, uint16_t *reg) {
     uint8_t resp_data[2] = {0U, 0U};
-    int rc = handle_read(addr, 1U, resp_data, false, MODBUS_AREA_HOLDING_REGISTER);
+    int rc = handle_read(addr, 1U, resp_data, false, ZPLC_MODBUS_AREA_HOLDING_REGISTER);
     if (rc < 0) {
         return -ENOTSUP;
     }
@@ -387,7 +405,7 @@ static int holding_reg_wr_cb(uint16_t addr, uint16_t reg) {
     uint8_t req_data[2];
     req_data[0] = (uint8_t)((reg >> 8) & 0xFFU);
     req_data[1] = (uint8_t)(reg & 0xFFU);
-    return (handle_write(addr, 1U, req_data, false, false, MODBUS_AREA_HOLDING_REGISTER) < 0) ? -ENOTSUP : 0;
+    return (zplc_modbus_write_mapped(addr, 1U, req_data, false, false, ZPLC_MODBUS_AREA_HOLDING_REGISTER) < 0) ? -ENOTSUP : 0;
 }
 
 static struct modbus_user_callbacks zplc_modbus_rtu_callbacks = {
@@ -398,110 +416,31 @@ static struct modbus_user_callbacks zplc_modbus_rtu_callbacks = {
     .holding_reg_rd = holding_reg_rd_cb,
     .holding_reg_wr = holding_reg_wr_cb,
 };
+#endif
 
 /**
  * @brief Handle an incoming Modbus ADU
  */
 #if defined(CONFIG_NET_SOCKETS)
-static void process_modbus_request(int sock, uint8_t *req, int req_len) {
-    if (req_len < 8) return; // Minimum length: MBAP (7) + FC (1)
+static int process_modbus_request(const uint8_t *request, size_t request_length,
+                                  void *context)
+{
+    int sock = *(const int *)context;
+    uint8_t response[MODBUS_MAX_ADU];
+    size_t response_length = 0U;
+    const zplc_modbus_tcp_ops_t ops = {
+        .unit_id = zplc_config_get_modbus_id(),
+        .read = modbus_tcp_read,
+        .write = modbus_tcp_write,
+        .context = NULL,
+    };
+    int rc = zplc_modbus_tcp_process_adu(request, request_length, response,
+                                          sizeof(response), &response_length, &ops);
 
-    uint16_t pid = (req[2] << 8) | req[3];
-    uint8_t uid = req[6];
-    uint8_t fc = req[7];
-    
-    if (pid != 0) return; // Only Modbus TCP
-    
-    uint16_t my_id = zplc_config_get_modbus_id();
-    if (uid != my_id && uid != 0 && uid != 255) return;
-    
-    uint8_t resp[MODBUS_MAX_ADU];
-    int resp_len = 0;
-    
-    /* Copy MBAP header (we will fix length later) */
-    memcpy(resp, req, 7);
-    resp[7] = fc;
-    
-    if (fc == FC_READ_COILS || fc == FC_READ_DISCRETE_INPUTS || 
-        fc == FC_READ_HOLDING_REGISTERS || fc == FC_READ_INPUT_REGISTERS) {
-            
-        if (req_len < 12) return;
-        uint16_t start_addr = (req[8] << 8) | req[9];
-        uint16_t count = (req[10] << 8) | req[11];
-        
-        bool is_bit = (fc == FC_READ_COILS || fc == FC_READ_DISCRETE_INPUTS);
-        
-        if (count == 0 || (is_bit && count > 2000) || (!is_bit && count > 125)) {
-            /* Exception 0x03 (Illegal Data Value) */
-            resp[7] = fc | 0x80;
-            resp[8] = 0x03;
-            resp_len = 9;
-        } else {
-            memset(&resp[9], 0, 250); // Clear data area
-            int data_bytes = handle_read(start_addr, count, &resp[9], is_bit,
-                                         modbus_area_from_fc(fc));
-            if (data_bytes < 0) {
-                /* Exception 0x02 (Illegal Data Address) */
-                resp[7] = fc | 0x80;
-                resp[8] = 0x02;
-                resp_len = 9;
-            } else {
-                resp[8] = data_bytes;
-                resp_len = 9 + data_bytes;
-            }
-        }
-    } else if (fc == FC_WRITE_SINGLE_COIL || fc == FC_WRITE_SINGLE_REGISTER) {
-        if (req_len < 12) return;
-        uint16_t addr = (req[8] << 8) | req[9];
-        
-        bool is_bit = (fc == FC_WRITE_SINGLE_COIL);
-        
-        if (handle_write(addr, 1, &req[10], is_bit, false,
-                         modbus_area_from_fc(fc)) < 0) {
-            resp[7] = fc | 0x80;
-            resp[8] = 0x02;
-            resp_len = 9;
-        } else {
-            /* Echo request */
-            memcpy(&resp[8], &req[8], 4);
-            resp_len = 12;
-        }
-    } else if (fc == FC_WRITE_MULTIPLE_COILS || fc == FC_WRITE_MULTIPLE_REGISTERS) {
-        if (req_len < 13) return;
-        uint16_t start_addr = (req[8] << 8) | req[9];
-        uint16_t count = (req[10] << 8) | req[11];
-        uint8_t byte_count = req[12];
-        
-        if (req_len < 13 + byte_count) return;
-        
-        bool is_bit = (fc == FC_WRITE_MULTIPLE_COILS);
-        
-        if (count == 0 || (is_bit && count > 1968) || (!is_bit && count > 123)) {
-            resp[7] = fc | 0x80;
-            resp[8] = 0x03;
-            resp_len = 9;
-        } else if (handle_write(start_addr, count, &req[13], is_bit, true,
-                                modbus_area_from_fc(fc)) < 0) {
-            resp[7] = fc | 0x80;
-            resp[8] = 0x02;
-            resp_len = 9;
-        } else {
-            memcpy(&resp[8], &req[8], 4);
-            resp_len = 12;
-        }
-    } else {
-        /* Exception 0x01 (Illegal Function) */
-        resp[7] = fc | 0x80;
-        resp[8] = 0x01;
-        resp_len = 9;
+    if (rc == 0 && response_length != 0U) {
+        (void)zsock_send(sock, response, response_length, 0);
     }
-    
-    /* Update MBAP length (from Unit ID to end of ADU) */
-    uint16_t pdu_len = resp_len - 6;
-    resp[4] = (pdu_len >> 8) & 0xFF;
-    resp[5] = pdu_len & 0xFF;
-    
-    zsock_send(sock, resp, resp_len, 0);
+    return rc;
 }
 #endif
 
@@ -528,6 +467,7 @@ static void close_client(int slot)
         zsock_close(s_clients[slot]);
         s_clients[slot] = -1;
     }
+    zplc_modbus_tcp_stream_reset(&s_client_streams[slot]);
 }
 
 /**
@@ -546,6 +486,7 @@ static void modbus_server_thread(void *arg1, void *arg2, void *arg3)
     /* Initialise client table */
     for (int i = 0; i < MODBUS_TCP_MAX_CLIENTS; i++) {
         s_clients[i] = -1;
+        zplc_modbus_tcp_stream_reset(&s_client_streams[i]);
     }
 
     int serv = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -612,6 +553,7 @@ static void modbus_server_thread(void *arg1, void *arg2, void *arg3)
                     zsock_close(client);
                 } else {
                     s_clients[slot] = client;
+                    zplc_modbus_tcp_stream_reset(&s_client_streams[slot]);
                     LOG_INF("Modbus client connected (slot %d)", slot);
                 }
             }
@@ -627,17 +569,29 @@ static void modbus_server_thread(void *arg1, void *arg2, void *arg3)
             }
 
             int received = zsock_recv(s_clients[i], buf, sizeof(buf), ZSOCK_MSG_DONTWAIT);
-            if (received <= 0) {
+            if (received == 0) {
                 LOG_INF("Modbus client disconnected (slot %d)", i);
                 close_client(i);
+            } else if (received < 0) {
+                if (errno != EAGAIN && errno != EWOULDBLOCK) {
+                    LOG_INF("Modbus client disconnected (slot %d)", i);
+                    close_client(i);
+                }
             } else {
-                process_modbus_request(s_clients[i], buf, received);
+                int sock = s_clients[i];
+                if (zplc_modbus_tcp_stream_feed(&s_client_streams[i], buf,
+                                                (size_t)received,
+                                                process_modbus_request, &sock) < 0) {
+                    LOG_WRN("Modbus invalid TCP frame (slot %d)", i);
+                    close_client(i);
+                }
             }
         }
     }
 }
 #endif
 
+#if ZPLC_HAS_MODBUS_RTU
 static enum uart_config_parity zplc_modbus_parity_to_uart(zplc_modbus_parity_t parity)
 {
     switch (parity) {
@@ -650,6 +604,7 @@ static enum uart_config_parity zplc_modbus_parity_to_uart(zplc_modbus_parity_t p
         return UART_CFG_PARITY_NONE;
     }
 }
+#endif
 
 static int zplc_modbus_rtu_init(void)
 {

@@ -5,6 +5,7 @@
     "ide_id": "rpi_pico",
     "zephyr_board": "rpi_pico/rp2040",
     "variant": "rp2040",
+    "memory": { "work_size": 8192, "retain_size": 4096, "code_size_max": 45056 },
     "support_assets": [
       "firmware/app/boards/rpi_pico_rp2040.conf",
       "firmware/app/boards/rpi_pico_rp2040.overlay"
@@ -22,6 +23,7 @@
     "ide_id": "arduino_giga_r1",
     "zephyr_board": "arduino_giga_r1/stm32h747xx/m7",
     "variant": "stm32h747xx/m7",
+    "memory": { "work_size": 8192, "retain_size": 4096, "code_size_max": 45056 },
     "support_assets": [
       "firmware/app/boards/arduino_giga_r1_stm32h747xx_m7.conf",
       "firmware/app/boards/arduino_giga_r1_stm32h747xx_m7.overlay"
@@ -39,6 +41,7 @@
     "ide_id": "esp32s3_devkitc",
     "zephyr_board": "esp32s3_devkitc/esp32s3/procpu",
     "variant": "esp32s3/procpu",
+    "memory": { "work_size": 2048, "retain_size": 1024, "code_size_max": 8192 },
     "support_assets": [
       "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf",
       "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay"
@@ -54,13 +57,14 @@
     "board_id": "stm32f746g-disco",
     "display_name": "STM32F746G Discovery",
     "ide_id": "stm32f746g_disco",
-    "zephyr_board": "stm32f746g_disco",
-    "variant": "stm32f746g",
+    "zephyr_board": "stm32f746g_disco/stm32f746xx",
+    "variant": "stm32f746xx",
+    "memory": { "work_size": 8192, "retain_size": 4096, "code_size_max": 45056 },
     "support_assets": [
       "firmware/app/boards/stm32f746g_disco.conf",
       "firmware/app/boards/stm32f746g_disco.overlay"
     ],
-    "build_command": "west build -b stm32f746g_disco firmware/app --pristine",
+    "build_command": "west build -b stm32f746g_disco/stm32f746xx firmware/app --pristine",
     "network_class": "network-capable",
     "network_interface": "ethernet",
     "validation_level": "cross-build",
@@ -71,13 +75,14 @@
     "board_id": "nucleo-h743zi",
     "display_name": "STM32 Nucleo-H743ZI",
     "ide_id": "nucleo_h743zi",
-    "zephyr_board": "nucleo_h743zi",
-    "variant": "stm32h743zi",
+    "zephyr_board": "nucleo_h743zi/stm32h743xx",
+    "variant": "stm32h743xx",
+    "memory": { "work_size": 8192, "retain_size": 4096, "code_size_max": 45056 },
     "support_assets": [
       "firmware/app/boards/nucleo_h743zi.conf",
       "firmware/app/boards/nucleo_h743zi.overlay"
     ],
-    "build_command": "west build -b nucleo_h743zi firmware/app --pristine",
+    "build_command": "west build -b nucleo_h743zi/stm32h743xx firmware/app --pristine",
     "network_class": "network-capable",
     "network_interface": "ethernet",
     "validation_level": "cross-build",
@@ -90,6 +95,7 @@
     "ide_id": "arduino_opta_wifi",
     "zephyr_board": "arduino_opta/stm32h747xx/m7",
     "variant": "stm32h747xx/m7",
+    "memory": { "work_size": 8192, "retain_size": 4096, "code_size_max": 45056 },
     "support_assets": [
       "firmware/app/boards/arduino_opta_stm32h747xx_m7.conf",
       "firmware/app/boards/arduino_opta_stm32h747xx_m7.overlay"

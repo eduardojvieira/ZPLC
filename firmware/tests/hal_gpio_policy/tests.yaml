@@ -1,0 +1,55 @@
+tests:
+  zplc.hal_gpio_policy.required_missing:
+    tags:
+      - zplc
+      - hal
+      - gpio
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    harness: ztest
+    timeout: 20
+    extra_configs:
+      - CONFIG_ZPLC_REQUIRED_GPIO_OUTPUT_MASK=0x1
+  zplc.hal_gpio_policy.optional_missing:
+    tags:
+      - zplc
+      - hal
+      - gpio
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    harness: ztest
+    timeout: 20
+  zplc.hal_gpio_policy.partial_required:
+    tags:
+      - zplc
+      - hal
+      - gpio
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    harness: ztest
+    timeout: 20
+    extra_configs:
+      - CONFIG_ZPLC_REQUIRED_GPIO_OUTPUT_MASK=0x3
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_emul.overlay
+  zplc.hal_gpio_policy.post_shutdown:
+    tags:
+      - zplc
+      - hal
+      - gpio
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    harness: ztest
+    timeout: 20
+    extra_configs:
+      - CONFIG_ZPLC_REQUIRED_GPIO_OUTPUT_MASK=0x1
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/native_sim_emul.overlay

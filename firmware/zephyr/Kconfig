@@ -47,6 +47,25 @@ config ZPLC_CODE_SIZE_MAX
     help
       Maximum size of the bytecode segment.
 
+config ZPLC_REQUIRED_GPIO_OUTPUT_MASK
+    hex "Required logical digital-output mask"
+    range 0x0 0xF
+    default 0x0
+    help
+      Bit mask of logical DO0-DO3 channels that must be configured from
+      DeviceTree for this profile to initialize the Zephyr HAL. A missing or
+      unconfigurable required channel fails HAL initialization; this setting
+      does not qualify the electrical behavior of any mapped pin.
+
+config ZPLC_VM_CYCLE_INSTRUCTION_BUDGET
+    int "PLC scan instruction budget"
+    default 100000
+    range 1 10000000
+    help
+      Maximum VM instructions permitted in one production PLC scan. Reaching
+      the limit is a controlled logical VM watchdog fault. It is not a physical
+      watchdog, timing measurement, or WCET guarantee.
+
 config ZPLC_LOG_LEVEL
     int "Log level"
     default 3
@@ -98,9 +117,8 @@ config ZPLC_SCHED_HIGH_PRIO_WORKQ
     bool "Use separate high-priority work queue"
     default y
     help
-      Create a separate high-priority work queue for fast tasks.
-      When enabled, tasks with priority 0-1 run on high-priority queue,
-      and tasks with priority 2+ run on standard work queue.
+      Run the single scheduler batch coordinator on a dedicated high-priority
+      work queue. Task ordering remains deterministic within each batch.
 
 config ZPLC_SCHED_HIGH_PRIO_STACK_SIZE
     int "High-priority work queue stack size"

@@ -1,8 +1,8 @@
 #include "zplc_config.h"
 #include "zplc_azure_sas.h"
 #include "zplc_platform_attrs.h"
+#include "zplc_tls_credentials.h"
 
-#include <zephyr/fs/fs.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net/mqtt.h>
 #include <zephyr/net/socket.h>
@@ -42,6 +42,8 @@ static volatile bool s_dps_publish_poll;
 static char s_dps_operation_id[96];
 static uint32_t s_dps_retry_after_s;
 static uint32_t s_dps_request_id;
+static char s_dps_endpoint[128];
+K_MUTEX_DEFINE(s_dps_mutex);
 
 typedef struct {
     int status_code;
@@ -64,28 +66,6 @@ static int dps_parse_payload(const char *payload,
 static int dps_build_register_topic(char *buf, size_t buf_len, uint32_t rid);
 static int dps_build_poll_topic(char *buf, size_t buf_len, uint32_t rid,
                                 const char *operation_id);
-
-static int read_file_to_buf(const char *path, uint8_t *buf, size_t buf_len)
-{
-    struct fs_file_t file;
-    ssize_t rd;
-    int rc;
-
-    fs_file_t_init(&file);
-    rc = fs_open(&file, path, FS_O_READ);
-    if (rc < 0) {
-        return rc;
-    }
-
-    rd = fs_read(&file, buf, buf_len - 1U);
-    (void)fs_close(&file);
-    if (rd < 0) {
-        return (int)rd;
-    }
-
-    buf[rd] = '\0';
-    return (int)rd;
-}
 
 static int dps_prepare_fds(struct mqtt_client *client)
 {
@@ -134,14 +114,14 @@ static int dps_setup_tls(struct mqtt_client *client, const char *host)
     static const sec_tag_t sec_tags[] = { DPS_TLS_CA_TAG };
 
     zplc_config_get_mqtt_ca_cert_path(ca_path, sizeof(ca_path));
-    ca_len = read_file_to_buf(ca_path, s_dps_ca_buf, sizeof(s_dps_ca_buf));
+    ca_len = zplc_tls_credential_read_pem(ca_path, s_dps_ca_buf, sizeof(s_dps_ca_buf));
     if (ca_len <= 0) {
-        return -ENOENT;
+        return ca_len;
     }
 
-    rc = tls_credential_add(DPS_TLS_CA_TAG, TLS_CREDENTIAL_CA_CERTIFICATE,
-                            s_dps_ca_buf, (size_t)ca_len + 1U);
-    if (rc < 0 && rc != -EEXIST) {
+    rc = zplc_tls_credential_replace(DPS_TLS_CA_TAG, TLS_CREDENTIAL_CA_CERTIFICATE,
+                                     s_dps_ca_buf, (size_t)ca_len + 1U);
+    if (rc != 0) {
         return rc;
     }
 
@@ -539,9 +519,8 @@ static int dps_build_poll_topic(char *buf, size_t buf_len, uint32_t rid,
     return 0;
 }
 
-int zplc_azure_dps_provision(void)
+static int zplc_azure_dps_provision_locked(void)
 {
-    char endpoint[128];
     char scope[64];
     char registration_id[128];
     char sas_key[96];
@@ -560,11 +539,11 @@ int zplc_azure_dps_provision(void)
         return -ENOTSUP;
     }
 
-    zplc_config_get_azure_dps_endpoint(endpoint, sizeof(endpoint));
+    zplc_config_get_azure_dps_endpoint(s_dps_endpoint, sizeof(s_dps_endpoint));
     zplc_config_get_azure_dps_id_scope(scope, sizeof(scope));
     zplc_config_get_azure_dps_registration_id(registration_id, sizeof(registration_id));
     zplc_config_get_azure_sas_key(sas_key, sizeof(sas_key));
-    if (endpoint[0] == '\0' || scope[0] == '\0' || registration_id[0] == '\0' ||
+    if (s_dps_endpoint[0] == '\0' || scope[0] == '\0' || registration_id[0] == '\0' ||
         sas_key[0] == '\0') {
         return -EINVAL;
     }
@@ -588,7 +567,7 @@ int zplc_azure_dps_provision(void)
     s_dps_retry_after_s = 0U;
     s_dps_request_id = 0U;
 
-    rc = dps_client_init(endpoint, registration_id, username, password);
+    rc = dps_client_init(s_dps_endpoint, registration_id, username, password);
     if (rc != 0) {
         return rc;
     }
@@ -598,7 +577,11 @@ int zplc_azure_dps_provision(void)
         return rc;
     }
 
-    dps_prepare_fds(&s_dps_client);
+    rc = dps_prepare_fds(&s_dps_client);
+    if (rc != 0) {
+        mqtt_abort(&s_dps_client);
+        return rc;
+    }
     deadline = k_uptime_get() + DPS_TIMEOUT_MS;
     while (!s_dps_connected && k_uptime_get() < deadline) {
         if (dps_poll_for_data(250) > 0) {
@@ -640,6 +623,7 @@ int zplc_azure_dps_provision(void)
     }
 
     if (dps_build_register_topic(register_topic, sizeof(register_topic), 1U) < 0) {
+        mqtt_abort(&s_dps_client);
         return -ENOMEM;
     }
 
@@ -654,7 +638,7 @@ int zplc_azure_dps_provision(void)
         poll_topic[0] = '\0';
     }
 
-    LOG_INF("Azure DPS bootstrap prepared for %s", endpoint);
+    LOG_INF("Azure DPS bootstrap prepared for %s", s_dps_endpoint);
     LOG_INF("DPS register topic: %s", register_topic);
     if (poll_topic[0] != '\0') {
         LOG_INF("DPS poll topic template: %s", poll_topic);
@@ -684,4 +668,16 @@ int zplc_azure_dps_provision(void)
 
     mqtt_abort(&s_dps_client);
     return s_dps_done ? s_dps_result : -ETIMEDOUT;
+}
+
+int zplc_azure_dps_provision(void)
+{
+    int rc = k_mutex_lock(&s_dps_mutex, K_NO_WAIT);
+
+    if (rc != 0) {
+        return -EBUSY;
+    }
+    rc = zplc_azure_dps_provision_locked();
+    k_mutex_unlock(&s_dps_mutex);
+    return rc;
 }

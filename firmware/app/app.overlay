@@ -28,7 +28,5 @@
         /* Default cycle time: 10ms */
         cycle-time-us = <10000>;
         
-        /* Watchdog timeout: 1 second */
-        watchdog-timeout-ms = <1000>;
     };
 };
