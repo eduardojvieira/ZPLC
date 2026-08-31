@@ -22,7 +22,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version (e.g., 1.5.0)'
+        description: 'Release version (e.g., 2.0.0-rc.1)'
         required: true
         type: string
       upload_to_release:
@@ -430,21 +430,19 @@ jobs:
         uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
           tag_name: ${{ needs.validate-version.outputs.tag }}
-          name: "v${{ needs.validate-version.outputs.version }} - Truth-Scoped Release"
+          name: "ZPLC v${{ needs.validate-version.outputs.version }}"
           prerelease: ${{ contains(needs.validate-version.outputs.version, '-') }}
           body: |
             ## Release v${{ needs.validate-version.outputs.version }}
 
-            ### Repo-verified scope
-            - **Canonical docs + release governance**: Public scope is tied to the docs site and release evidence artifacts in this repo
-            - **Supported-board claim set**: Public board messaging is limited to `firmware/app/boards/supported-boards.v1.5.0.json`
-            - **IEC language workflow contract**: `ST`, `IL`, `LD`, `FBD`, and `SFC` are claimed only at the repo-declared and automated-tested workflow level
-            - **Protocol scope**: Modbus RTU/TCP and MQTT are described only where runtime, compiler, IDE, and docs surfaces agree in-repo
+            ### Repository evidence
+            - Release artifacts include checksums, an SPDX SBOM, and identity evidence produced by this workflow.
+            - `ST`, `IL`, `LD`, `FBD`, and `SFC` are described only at the repository-declared and automated-tested workflow level.
+            - `firmware/app/boards/supported-boards.v1.5.0.json` is the current board catalog/evidence baseline, not 2.0 HIL qualification.
 
-            ### Pending human validation (not claimed complete here)
-            - Desktop launch/smoke validation on macOS, Linux, and Windows
-            - Representative HIL proof for one serial-focused board and one network-capable board
-            - Final release-owner sign-off on human-owned gates
+            ### Evidence boundary
+            Repository and hosted workflow results do not establish HIL, board qualification, timing, safety certification, or human release sign-off.
+            Prerelease tags remain release candidates, not GA declarations.
 
             ### IDE Downloads
 
@@ -466,7 +464,7 @@ jobs:
             | x64 (64-bit) | `ZPLC IDE-*-linux-x64.AppImage` | `ZPLC IDE-*-linux-x64.deb` | `ZPLC IDE-*-linux-x64.rpm` |
             | ARM64 | `ZPLC IDE-*-linux-arm64.AppImage` | `ZPLC IDE-*-linux-arm64.deb` | - |
 
-            ### Supported Boards (public claim set)
+            ### Board catalog/evidence baseline
 
             See the canonical manifest and generated docs reference instead of treating this release body as a separate source of truth:
 
