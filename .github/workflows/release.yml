@@ -293,7 +293,7 @@ jobs:
       - name: Install Linux build tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y rpm
+          sudo apt-get install -y rpm xvfb
 
       - name: Build Electron app (Linux ${{ matrix.arch }})
         working-directory: packages/zplc-ide
@@ -328,7 +328,7 @@ jobs:
 
       - name: Launch packaged Linux app
         working-directory: packages/zplc-ide
-        run: bun run smoke:desktop-packaged
+        run: xvfb-run --auto-servernum bun run smoke:desktop-packaged
 
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
