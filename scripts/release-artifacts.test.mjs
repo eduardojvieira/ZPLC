@@ -136,6 +136,11 @@ test('keeps the release body version-generic and evidence-scoped', async () => {
   assert.match(uploadRelease, /prerelease: \$\{\{ contains\(needs\.validate-version\.outputs\.version, '-'\) \}\}/);
   assert.match(uploadRelease, /catalog\/evidence baseline, not 2\.0 HIL qualification/);
   assert.match(uploadRelease, /do not establish HIL, board qualification, timing, safety certification, or human release sign-off/);
+  assert.match(uploadRelease, /macOS x64 and ARM64: DMG and ZIP/);
+  assert.match(uploadRelease, /Windows x64 and ARM64: Setup and Portable executables/);
+  assert.match(uploadRelease, /Linux x64 and ARM64: AppImage, DEB, and RPM/);
+  assert.match(uploadRelease, /`SHA256SUMS` and `release-evidence\.json`/);
+  assert.doesNotMatch(uploadRelease, /ZPLC IDE-\*-/);
   assert.doesNotMatch(uploadRelease, /Truth-Scoped Release/);
   assert.doesNotMatch(uploadRelease, /Representative HIL proof/);
 });

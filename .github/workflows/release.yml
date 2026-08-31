@@ -461,25 +461,13 @@ jobs:
             Repository and hosted workflow results do not establish HIL, board qualification, timing, safety certification, or human release sign-off.
             Prerelease tags remain release candidates, not GA declarations.
 
-            ### IDE Downloads
+            ### IDE download coverage
 
-            #### macOS
-            | Architecture | DMG | ZIP |
-            |-------------|-----|-----|
-            | Apple Silicon (M1/M2/M3) | `ZPLC IDE-*-mac-arm64.dmg` | `ZPLC IDE-*-mac-arm64.zip` |
-            | Intel (x64) | `ZPLC IDE-*-mac-x64.dmg` | `ZPLC IDE-*-mac-x64.zip` |
+            - macOS x64 and ARM64: DMG and ZIP.
+            - Windows x64 and ARM64: Setup and Portable executables.
+            - Linux x64 and ARM64: AppImage, DEB, and RPM.
 
-            #### Windows
-            | Architecture | Installer | Portable |
-            |-------------|-----------|----------|
-            | x64 (64-bit) | `ZPLC IDE-*-win-x64-Setup.exe` | `ZPLC IDE-*-win-x64-Portable.exe` |
-            | ARM64 | `ZPLC IDE-*-win-arm64-Setup.exe` | - |
-
-            #### Linux
-            | Architecture | AppImage | DEB | RPM |
-            |-------------|----------|-----|-----|
-            | x64 (64-bit) | `ZPLC IDE-*-linux-x64.AppImage` | `ZPLC IDE-*-linux-x64.deb` | `ZPLC IDE-*-linux-x64.rpm` |
-            | ARM64 | `ZPLC IDE-*-linux-arm64.AppImage` | `ZPLC IDE-*-linux-arm64.deb` | - |
+            Verify the exact attached filenames and their integrity with `SHA256SUMS` and `release-evidence.json`.
 
             ### Board catalog/evidence baseline
 
