@@ -51,7 +51,8 @@ test('release runs the packaged launch smoke in every Linux matrix lane', () => 
   expect(sandbox).toContain('sudo chown root:root "$sandbox"');
   expect(sandbox).toContain('sudo chmod 4755 "$sandbox"');
   expect(sandbox).toContain("stat -c '%U:%G:%a' \"$sandbox\"");
-  expect(launch).toContain('run: bun run smoke:desktop-packaged');
+  expect(linux).toContain('sudo apt-get install -y rpm xvfb');
+  expect(launch).toContain('run: xvfb-run --auto-servernum bun run smoke:desktop-packaged');
   expect(launch).not.toContain('if:');
   expect(linux).not.toContain('--no-sandbox');
 });
