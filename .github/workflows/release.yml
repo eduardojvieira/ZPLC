@@ -309,6 +309,23 @@ jobs:
         working-directory: packages/zplc-ide
         run: bun run smoke:desktop-builds linux ${{ matrix.arch }}
 
+      - name: Prepare Linux Electron sandbox
+        working-directory: packages/zplc-ide
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          unpacked_dirs=(dist-electron/*-unpacked)
+          [ "${#unpacked_dirs[@]}" -eq 1 ] || { echo "Expected exactly one Linux unpacked app, found ${#unpacked_dirs[@]}"; exit 1; }
+          unpacked="${unpacked_dirs[0]}"
+          [ -d "$unpacked" ] || { echo "Unpacked app is not a directory: $unpacked"; exit 1; }
+          mapfile -t sandboxes < <(find "$unpacked" -type f -name chrome-sandbox -print)
+          [ "${#sandboxes[@]}" -eq 1 ] || { echo "Expected exactly one chrome-sandbox in $unpacked, found ${#sandboxes[@]}"; exit 1; }
+          sandbox="${sandboxes[0]}"
+          sudo chown root:root "$sandbox"
+          sudo chmod 4755 "$sandbox"
+          [ "$(stat -c '%U:%G:%a' "$sandbox")" = 'root:root:4755' ] || { echo "Incorrect chrome-sandbox ownership or mode"; stat -c '%U:%G:%a %n' "$sandbox"; exit 1; }
+
       - name: Launch packaged Linux app
         working-directory: packages/zplc-ide
         run: bun run smoke:desktop-packaged

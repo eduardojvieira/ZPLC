@@ -43,8 +43,15 @@ test('release runs the packaged launch smoke in every Linux matrix lane', () => 
   const linux = workflow.match(/ {2}build-linux:\n[\s\S]*?(?=\n {2}[a-z-]+:|$)/)?.[0] ?? '';
   expect(linux).toContain('runner: ubuntu-24.04\n');
   expect(linux).toContain('runner: ubuntu-24.04-arm\n');
+  const sandbox = linux.match(/ {6}- name: Prepare Linux Electron sandbox[\s\S]*?(?=\n {6}- name:|$)/)?.[0] ?? '';
   const launch = linux.match(/ {6}- name: Launch packaged Linux app[\s\S]*?(?=\n {6}- name:|$)/)?.[0] ?? '';
   expect(packageJson.scripts?.['smoke:desktop-packaged']).toBe('bun run scripts/run-packaged-desktop-smoke.ts');
+  expect(sandbox).toContain('dist-electron/*-unpacked');
+  expect(sandbox).toContain('find "$unpacked" -type f -name chrome-sandbox -print');
+  expect(sandbox).toContain('sudo chown root:root "$sandbox"');
+  expect(sandbox).toContain('sudo chmod 4755 "$sandbox"');
+  expect(sandbox).toContain("stat -c '%U:%G:%a' \"$sandbox\"");
   expect(launch).toContain('run: bun run smoke:desktop-packaged');
   expect(launch).not.toContain('if:');
+  expect(linux).not.toContain('--no-sandbox');
 });
