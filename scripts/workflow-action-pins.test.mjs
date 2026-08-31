@@ -133,9 +133,9 @@ test('limits Windows release installs to the IDE and compiler workspaces', async
 
   assert.match(
     windowsJob,
-    /test -f bun\.lock\n\s+bun install --filter '!\.\/' --filter '\.\/packages\/zplc-ide' --filter '\.\/packages\/zplc-compiler' --frozen-lockfile/,
+    /test -f bun\.lock\n\s+bun install --filter '@zplc\/ide' --filter '@zplc\/compiler' --frozen-lockfile/,
   );
-  assert.doesNotMatch(windowsJob, /bun install --frozen-lockfile/);
+  assert.doesNotMatch(windowsJob, /--filter '!\.\//);
 });
 
 test('rejects runner-only contexts in job-level workflow env', async () => {
