@@ -41,7 +41,7 @@ function operations(overrides: Partial<McpOperations> = {}): McpOperations {
 
 describe('local MCP adapter', () => {
   test('exposes only the fixed safe tool allowlist', () => {
-    expect(MCP_SERVER_VERSION).toBe('1.5.0');
+    expect(MCP_SERVER_VERSION).toBe('2.0.0-rc.1');
     expect(MCP_TOOL_NAMES).toEqual(['project_inspect', 'project_validate', 'compiler_check', 'compiler_compile', 'symbols_list', 'safety_check', 'tests_run', 'scenario_run']);
     expect(MCP_TOOL_NAMES.filter((name) => ['flash', 'deploy', 'force', 'stop', 'serial', 'shell', 'firmware', 'write'].some((forbidden) => name.includes(forbidden)))).toEqual([]);
   });

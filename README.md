@@ -35,13 +35,18 @@ The full documentation for ZPLC, including the runtime architecture, hardware in
 
 ## Current posture
 
-`v1.5.0` is a release target, not a completed release. Desktop validation, HIL,
-and final sign-off remain pending in the [release evidence matrix](specs/008-release-foundation/artifacts/release-evidence-matrix.md).
+`v2.0.0-rc.1` is the current prerelease candidate. Repository and host checks
+cover the candidate's source, native simulation, packaging, and documentation;
+they do not establish HIL, board qualification, target timing, safety
+certification, signed/notarized installers, or final human sign-off. See the
+[release notes](docs/docs/release-notes/index.md) and [release evidence
+matrix](specs/008-release-foundation/artifacts/release-evidence-matrix.md) for
+the current boundary.
 
-ZPLC 2.0 is an [approved implementation RFC](specs/010-zplc-2-0-foundation/spec.md),
-not a released product. It is an incremental rewrite of Studio and orchestration
-around the existing core and compiler assets. See the public [roadmap](docs/docs/runtime/roadmap.md)
-and [source-of-truth map](docs/docs/reference/source-of-truth.md) for scope and authority.
+ZPLC 2.0 remains an incremental evolution of Studio and orchestration around
+the existing core and compiler assets. Its implemented and pending gates are
+recorded in the [Foundation specification](specs/010-zplc-2-0-foundation/spec.md),
+[roadmap](docs/docs/runtime/roadmap.md), and [source-of-truth map](docs/docs/reference/source-of-truth.md).
 
 ---
 

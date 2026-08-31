@@ -127,3 +127,15 @@ test('pins every upload-release action to an exact commit SHA', async () => {
   ]);
   for (const action of actions) assert.match(action ?? '', /^[^@\s]+@[a-f0-9]{40}$/);
 });
+
+test('keeps the release body version-generic and evidence-scoped', async () => {
+  const workflow = await readFile(new URL('../.github/workflows/release.yml', import.meta.url), 'utf8');
+  const uploadRelease = workflow.match(/^  upload-release:\n[\s\S]*$/m)?.[0];
+  assert.ok(uploadRelease, 'upload-release job is missing');
+  assert.match(uploadRelease, /name: "ZPLC v\$\{\{ needs\.validate-version\.outputs\.version \}\}"/);
+  assert.match(uploadRelease, /prerelease: \$\{\{ contains\(needs\.validate-version\.outputs\.version, '-'\) \}\}/);
+  assert.match(uploadRelease, /catalog\/evidence baseline, not 2\.0 HIL qualification/);
+  assert.match(uploadRelease, /do not establish HIL, board qualification, timing, safety certification, or human release sign-off/);
+  assert.doesNotMatch(uploadRelease, /Truth-Scoped Release/);
+  assert.doesNotMatch(uploadRelease, /Representative HIL proof/);
+});

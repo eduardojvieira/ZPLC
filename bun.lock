@@ -28,7 +28,7 @@
     },
     "packages/zplc-compiler": {
       "name": "@zplc/compiler",
-      "version": "1.5.0",
+      "version": "2.0.0-rc.1",
       "devDependencies": {
         "esbuild": "^0.27.2",
         "typescript": "^5.9.3",
@@ -36,7 +36,7 @@
     },
     "packages/zplc-hil": {
       "name": "@zplc/hil",
-      "version": "1.5.0",
+      "version": "2.0.0-rc.1",
       "dependencies": {
         "@serialport/parser-readline": "^12.0.0",
         "serialport": "^12.0.0",
@@ -49,7 +49,7 @@
     },
     "packages/zplc-ide": {
       "name": "@zplc/ide",
-      "version": "1.5.0",
+      "version": "2.0.0-rc.1",
       "bin": {
         "zplc-cli": "./dist/zplc-cli",
       },
