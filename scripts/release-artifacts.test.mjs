@@ -139,3 +139,8 @@ test('keeps the release body version-generic and evidence-scoped', async () => {
   assert.doesNotMatch(uploadRelease, /Truth-Scoped Release/);
   assert.doesNotMatch(uploadRelease, /Representative HIL proof/);
 });
+
+test('mac packaging stages the docs workspace manifest required by the frozen lockfile', async () => {
+  const script = await readFile(new URL('../packages/zplc-ide/scripts/package-mac-release.mjs', import.meta.url), 'utf8');
+  assert.match(script, /\{ path: 'docs\/package\.json', directory: false \}/);
+});
