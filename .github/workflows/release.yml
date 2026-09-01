@@ -366,12 +366,12 @@ jobs:
           if ($env:ZPLC_PUBLISHING -eq 'true') {
             $env:CSC_LINK = $env:ZPLC_WINDOWS_CSC_LINK
             $env:CSC_KEY_PASSWORD = $env:ZPLC_WINDOWS_CSC_KEY_PASSWORD
-            bun x electron-builder --win --${{ matrix.arch }} --publish never -c.forceCodeSigning=true
+            bun x electron-builder --win --${{ matrix.arch }} --publish never --config.forceCodeSigning=true
           } else {
             $env:CSC_IDENTITY_AUTO_DISCOVERY = 'false'
             Remove-Item Env:CSC_LINK -ErrorAction SilentlyContinue
             Remove-Item Env:CSC_KEY_PASSWORD -ErrorAction SilentlyContinue
-            bun x electron-builder --win --${{ matrix.arch }} --publish never -c.forceCodeSigning=false
+            bun x electron-builder --win --${{ matrix.arch }} --publish never --config.forceCodeSigning=false
           }
         env:
           ZPLC_PUBLISHING: ${{ needs.validate-version.outputs.publishing }}
