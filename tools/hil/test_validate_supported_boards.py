@@ -103,11 +103,38 @@ class Rc3CrossBuildGuardTests(unittest.TestCase):
                 r"if\(NOT TARGET subsys__net__lib__mqtt\).*?"
                 r"message\(FATAL_ERROR.*?"
                 r"target_compile_options\(subsys__net__lib__mqtt PRIVATE "
-                r"-include zephyr/net/net_log\.h\).*?endif\(\)",
+                r"\"SHELL:-include zephyr/net/net_log\.h\"\).*?endif\(\)",
                 re.DOTALL,
             ),
         )
         self.assertIn("target_compile_options(app PRIVATE -Werror)", cmake)
+
+    def test_rc3_cross_build_guards_and_sdk_download_authentication(self) -> None:
+        modbus = (ROOT / "firmware/app/src/zplc_modbus.c").read_text()
+        ci = (ROOT / ".github/workflows/ci.yml").read_text()
+        nightly = (ROOT / ".github/workflows/nightly-quality.yml").read_text()
+
+        self.assertRegex(
+            modbus,
+            re.compile(
+                r"#if ZPLC_HAS_MODBUS_RTU \|\| defined\(CONFIG_NET_SOCKETS\)\s*"
+                r"static int handle_read.*?\n}\s*#endif",
+                re.DOTALL,
+            ),
+        )
+        for workflow, expected_installs in ((ci, 2), (nightly, 1)):
+            installs = re.findall(r'^.*west" sdk install.*$', workflow, re.MULTILINE)
+            self.assertEqual(len(installs), expected_installs)
+            self.assertEqual(
+                workflow.count("ZPLC_WEST_SDK_GITHUB_TOKEN: ${{ github.token }}"),
+                expected_installs,
+            )
+            for install in installs:
+                self.assertIn(
+                    '--personal-access-token "${ZPLC_WEST_SDK_GITHUB_TOKEN}"',
+                    install,
+                )
+                self.assertNotIn("secrets.", install)
 
     def test_modbus_role_follows_zephyr_choice_defaults(self) -> None:
         common = (ROOT / "firmware/app/prj.conf").read_text()

@@ -218,6 +218,7 @@ static void mem_write_val(uint16_t addr, zplc_data_type_t type, uint32_t val) {
 /**
  * @brief Map a memory read from ZPLC to Modbus format
  */
+#if ZPLC_HAS_MODBUS_RTU || defined(CONFIG_NET_SOCKETS)
 static int handle_read(uint16_t addr, uint16_t count, uint8_t *resp_data, bool is_bit,
                        zplc_modbus_area_t area) {
     if (count == 0U || (uint32_t)addr + (uint32_t)count > UINT16_MAX + 1U) {
@@ -268,6 +269,7 @@ static int handle_read(uint16_t addr, uint16_t count, uint8_t *resp_data, bool i
         return count * 2;
     }
 }
+#endif
 
 /**
  * @brief Map a memory write from Modbus to ZPLC format

@@ -197,6 +197,8 @@ jobs:
 
       - name: Setup pinned Zephyr workspace
         shell: bash
+        env:
+          ZPLC_WEST_SDK_GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           ZEPHYR_SDK_INSTALL_DIR="${RUNNER_TEMP}/zephyr-sdk-1.0.1"
@@ -209,7 +211,7 @@ jobs:
           test "$(git -C "${GITHUB_WORKSPACE}/zephyr" rev-parse HEAD)" = "dccb09599635bdff17633fa7e9dab014b91dce90"
           "${VENV_DIR}/bin/west" zephyr-export
           "${VENV_DIR}/bin/west" packages pip --install --ignore-venv-check
-          "${VENV_DIR}/bin/west" sdk install --version 1.0.1 --install-dir "${ZEPHYR_SDK_INSTALL_DIR}" --gnu-toolchains arm-zephyr-eabi xtensa-espressif_esp32s3_zephyr-elf
+          "${VENV_DIR}/bin/west" sdk install --version 1.0.1 --install-dir "${ZEPHYR_SDK_INSTALL_DIR}" --gnu-toolchains arm-zephyr-eabi xtensa-espressif_esp32s3_zephyr-elf --personal-access-token "${ZPLC_WEST_SDK_GITHUB_TOKEN}"
           test -d "${ZEPHYR_SDK_INSTALL_DIR}/gnu/arm-zephyr-eabi"
           test -d "${ZEPHYR_SDK_INSTALL_DIR}/gnu/xtensa-espressif_esp32s3_zephyr-elf"
           echo "${VENV_DIR}/bin" >> "${GITHUB_PATH}"
@@ -252,6 +254,8 @@ jobs:
 
       - name: Setup pinned Zephyr workspace
         shell: bash
+        env:
+          ZPLC_WEST_SDK_GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           ZEPHYR_SDK_INSTALL_DIR="${RUNNER_TEMP}/zephyr-sdk-1.0.1"
@@ -264,7 +268,7 @@ jobs:
           test "$(git -C "${GITHUB_WORKSPACE}/zephyr" rev-parse HEAD)" = "dccb09599635bdff17633fa7e9dab014b91dce90"
           "${VENV_DIR}/bin/west" zephyr-export
           "${VENV_DIR}/bin/west" packages pip --install --ignore-venv-check
-          "${VENV_DIR}/bin/west" sdk install --version 1.0.1 --install-dir "${ZEPHYR_SDK_INSTALL_DIR}" --gnu-toolchains arm-zephyr-eabi xtensa-espressif_esp32s3_zephyr-elf
+          "${VENV_DIR}/bin/west" sdk install --version 1.0.1 --install-dir "${ZEPHYR_SDK_INSTALL_DIR}" --gnu-toolchains arm-zephyr-eabi xtensa-espressif_esp32s3_zephyr-elf --personal-access-token "${ZPLC_WEST_SDK_GITHUB_TOKEN}"
           test -d "${ZEPHYR_SDK_INSTALL_DIR}/gnu/arm-zephyr-eabi"
           test -d "${ZEPHYR_SDK_INSTALL_DIR}/gnu/xtensa-espressif_esp32s3_zephyr-elf"
           echo "${VENV_DIR}/bin" >> "${GITHUB_PATH}"
