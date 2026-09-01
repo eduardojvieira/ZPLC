@@ -131,6 +131,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
   const compileMenuFirstItemRef = useRef<HTMLButtonElement>(null);
   const connectionButtonRef = useRef<HTMLButtonElement>(null);
   const pendingConnectionFocusRef = useRef<boolean | null>(null);
+  const executionButtonRef = useRef<HTMLButtonElement>(null);
+  const pendingExecutionFocusRef = useRef<'running' | 'paused' | null>(null);
   const uploadInFlightRef = useRef(false);
 
   const openCompileMenu = () => {
@@ -209,6 +211,13 @@ export function Toolbar({ debugController }: ToolbarProps) {
     pendingConnectionFocusRef.current = null;
     requestAnimationFrame(() => connectionButtonRef.current?.focus());
   }, [isConnected, isConnecting]);
+
+  useEffect(() => {
+    const pendingTarget = pendingExecutionFocusRef.current;
+    if (!pendingTarget || (pendingTarget === 'running' ? !isRunning : !isPaused)) return;
+    pendingExecutionFocusRef.current = null;
+    requestAnimationFrame(() => executionButtonRef.current?.focus());
+  }, [isPaused, isRunning]);
 
   // ==========================================================================
   // File Operations
@@ -570,7 +579,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     }
   };
 
-  const handleStart = async () => {
+  const handleStart = async (keyboardInitiated = false) => {
     if (controlsBusy) return;
     if (!isConnected) {
       addConsoleEntry({ type: 'error', message: 'Connect first.', source: 'runtime' });
@@ -588,6 +597,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
       return;
     }
 
+    pendingExecutionFocusRef.current = keyboardInitiated ? 'running' : null;
+
     // Simulation keeps the local convenience; hardware requires an explicit deploy.
     if (result && shouldAutoLoadBeforeStart(executionMode, vmState, programLoadState)) {
       try {
@@ -597,12 +608,14 @@ export function Toolbar({ debugController }: ToolbarProps) {
         });
         await loadProgram(dataToUpload, result.debugMap);
         if (!isCompileResultCurrent(result.compilerRunId, useIDEStore.getState().compilerRunId)) {
+          pendingExecutionFocusRef.current = null;
           setProgramLoadState(PROGRAM_LOAD_STATE.EMPTY);
           addConsoleEntry({ type: 'warning', message: 'Simulator received an earlier build. Build the current source before Run.', source: 'runtime' });
           return;
         }
         setProgramLoadState(PROGRAM_LOAD_STATE.LOADED);
       } catch (e) {
+        pendingExecutionFocusRef.current = null;
         addConsoleEntry({ type: 'error', message: `Failed to load: ${e instanceof Error ? e.message : String(e)}`, source: 'runtime' });
         return;
       }
@@ -612,30 +625,35 @@ export function Toolbar({ debugController }: ToolbarProps) {
       await start();
       addConsoleEntry({ type: 'info', message: 'Execution started', source: 'runtime' });
     } catch (e) {
+      pendingExecutionFocusRef.current = null;
       addConsoleEntry({ type: 'error', message: `Run failed: ${e instanceof Error ? e.message : String(e)}`, source: 'runtime' });
     }
   };
 
-  const handlePause = async () => {
+  const handlePause = async (keyboardInitiated = false) => {
     if (controlsBusy) return;
+    pendingExecutionFocusRef.current = keyboardInitiated ? 'paused' : null;
     try {
       await pause();
       addConsoleEntry({ type: 'info', message: `Paused at cycle ${vmInfo?.cycles || 0}`, source: 'runtime' });
     } catch (e) {
+      pendingExecutionFocusRef.current = null;
       addConsoleEntry({ type: 'error', message: `Pause failed: ${e instanceof Error ? e.message : String(e)}`, source: 'runtime' });
     }
   };
 
-  const handleResume = async () => {
+  const handleResume = async (keyboardInitiated = false) => {
     if (controlsBusy) return;
     if (!canRunCurrentProgram(executionMode, Boolean(currentCompileResult()), programLoadState)) {
       addConsoleEntry({ type: 'error', message: 'Deploy the current build before Resume.', source: 'runtime' });
       return;
     }
+    pendingExecutionFocusRef.current = keyboardInitiated ? 'running' : null;
     try {
       await resume();
       addConsoleEntry({ type: 'info', message: 'Resumed', source: 'runtime' });
     } catch (e) {
+      pendingExecutionFocusRef.current = null;
       addConsoleEntry({ type: 'error', message: `Resume failed: ${e instanceof Error ? e.message : String(e)}`, source: 'runtime' });
     }
   };
@@ -716,9 +734,9 @@ export function Toolbar({ debugController }: ToolbarProps) {
         if (isRunning) {
           // Already running, do nothing
         } else if (isPaused) {
-          handleResume();
+          handleResume(true);
         } else {
-          handleStart();
+          handleStart(true);
         }
         return;
       }
@@ -736,7 +754,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
       if (key === 'F6') {
         event.preventDefault();
         if (isRunning) {
-          handlePause();
+          handlePause(true);
         }
         return;
       }
@@ -1050,7 +1068,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
             {isRunning ? (
               <button
                 type="button"
-                onClick={handlePause}
+                ref={executionButtonRef}
+                onClick={(event) => { void handlePause(event.detail === 0); }}
                 disabled={controlsBusy}
                 className="focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium transition-colors"
                 aria-label="Pause (F6)"
@@ -1062,7 +1081,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
             ) : isPaused ? (
               <button
                 type="button"
-                onClick={handleResume}
+                ref={executionButtonRef}
+                onClick={(event) => { void handleResume(event.detail === 0); }}
                 disabled={!canRunCurrentProgram(executionMode, hasCurrentCompileResult, programLoadState) || controlsBusy}
                 className="focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-green-600 hover:bg-green-500 text-white text-xs font-medium transition-colors"
                 aria-label="Resume (F5)"
@@ -1074,7 +1094,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
             ) : (
               <button
                 type="button"
-                onClick={handleStart}
+                ref={executionButtonRef}
+                onClick={(event) => { void handleStart(event.detail === 0); }}
                 disabled={!canRunCurrentProgram(executionMode, hasCurrentCompileResult, programLoadState) || controlsBusy}
                 className="focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-green-600 hover:bg-green-500 text-white text-xs font-medium transition-colors disabled:opacity-40"
                 aria-label="Run (F5)"
