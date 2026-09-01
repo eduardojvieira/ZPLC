@@ -329,6 +329,7 @@ int zplc_modbus_write_mapped(uint16_t addr, uint16_t count, const uint8_t *req_d
     return 0;
 }
 
+#if defined(CONFIG_NET_SOCKETS)
 static int modbus_tcp_read(uint16_t addr, uint16_t count, uint8_t *response,
                            size_t response_capacity, bool bits,
                            zplc_modbus_area_t area, void *context)
@@ -349,6 +350,7 @@ static int modbus_tcp_write(uint16_t addr, uint16_t count, const uint8_t *data,
     ARG_UNUSED(context);
     return zplc_modbus_write_mapped(addr, count, data, bits, multiple, area);
 }
+#endif
 
 #if ZPLC_HAS_MODBUS_RTU
 static int coil_rd_cb(uint16_t addr, bool *state) {

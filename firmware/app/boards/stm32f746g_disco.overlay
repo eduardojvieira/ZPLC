@@ -28,6 +28,10 @@
  */
 
 
+&quadspi_memory {
+	status = "disabled";
+};
+
 &usart6 {
 	modbus0: modbus0 {
 		compatible = "zephyr,modbus-serial";

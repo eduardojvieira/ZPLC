@@ -97,8 +97,8 @@ extern int zplc_legacy_apply_safe_outputs_locked(void);
 #endif
 extern volatile int step_requested;
 
+#if defined(CONFIG_FILE_SYSTEM)
 #define CERT_STAGING_MAX_BYTES 4096U
-
 static struct {
   bool active;
   size_t expected;
@@ -106,6 +106,7 @@ static struct {
   char path[32];
   uint8_t data[CERT_STAGING_MAX_BYTES];
 } cert_staging;
+#endif
 
 #ifdef CONFIG_ZPLC_HIL_DEBUG
 #define HIL_MAX_WATCHES 8
