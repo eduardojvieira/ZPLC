@@ -176,7 +176,23 @@ test('keeps nightly quality read-only and limited to extended fuzzing plus repea
   assert.match(workflow, /--target fuzz_loader_verify/);
   assert.match(workflow, /-max_total_time=900 -max_len=65536 -timeout=2/);
   assert.match(workflow, /^  native-sim-twister:\n[\s\S]*?timeout-minutes: 45/m);
-  assert.match(workflow, /west twister -T zplc\/firmware\/tests -p native_sim[\s\S]*?zplc-twister-1/);
-  assert.match(workflow, /west twister -T zplc\/firmware\/tests -p native_sim[\s\S]*?zplc-twister-2/);
+  assert.match(workflow, /west twister -T zplc\/firmware\/tests -p native_sim\/native\/64[\s\S]*?zplc-twister-1/);
+  assert.match(workflow, /west twister -T zplc\/firmware\/tests -p native_sim\/native\/64[\s\S]*?zplc-twister-2/);
   assert.doesNotMatch(workflow, /\b(hil|serial|flash|deploy|secrets|environment|upload-artifact)\b/i);
+});
+
+test('keeps ESP32 blob admission explicit and all Twister targets 64-bit native', async () => {
+  const ci = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+  const testcases = await Promise.all([
+    'azure_sas', 'hal_gpio_policy', 'legacy_program_admission', 'modbus_override', 'modbus_tcp',
+    'mqtt_command', 'program_boot_restore', 'program_store', 'scheduler_admission', 'tls_credentials',
+  ].map((name) => readFile(new URL(`../firmware/tests/${name}/testcase.yaml`, import.meta.url), 'utf8')));
+
+  assert.match(ci, /if: matrix\.id == 'esp32s3-devkitc'\n\s+run: west blobs fetch hal_espressif/);
+  assert.doesNotMatch(ci, /BUILD_ONLY_NO_BLOBS/);
+  assert.match(ci, /west twister -T zplc\/firmware\/tests -p native_sim\/native\/64/);
+  for (const testcase of testcases) {
+    assert.match(testcase, /platform_allow:\n\s+- native_sim\/native\/64/);
+    assert.match(testcase, /integration_platforms:\n\s+- native_sim\/native\/64/);
+  }
 });

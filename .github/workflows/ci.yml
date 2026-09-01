@@ -155,7 +155,7 @@ jobs:
             -runs=10000 -max_len=65536 -timeout=2
 
   zephyr-twister:
-    name: Zephyr Twister (native_sim)
+    name: Zephyr Twister (native_sim/native/64)
     runs-on: ubuntu-latest
     env:
       ZEPHYR_TOOLCHAIN_VARIANT: zephyr
@@ -191,7 +191,7 @@ jobs:
           echo "${VENV_DIR}/bin" >> "${GITHUB_PATH}"
 
       - name: Run Twister
-        run: west twister -T zplc/firmware/tests -p native_sim --inline-logs --outdir "${RUNNER_TEMP}/zplc-twister"
+        run: west twister -T zplc/firmware/tests -p native_sim/native/64 --inline-logs --outdir "${RUNNER_TEMP}/zplc-twister"
 
   zephyr-cross-build:
     name: Zephyr cross-build (${{ matrix.id }})
@@ -244,6 +244,10 @@ jobs:
           test -d "${ZEPHYR_SDK_INSTALL_DIR}/gnu/arm-zephyr-eabi"
           test -d "${ZEPHYR_SDK_INSTALL_DIR}/gnu/xtensa-espressif_esp32s3_zephyr-elf"
           echo "${VENV_DIR}/bin" >> "${GITHUB_PATH}"
+
+      - name: Fetch ESP32 HAL blobs
+        if: matrix.id == 'esp32s3-devkitc'
+        run: west blobs fetch hal_espressif
 
       - name: Cross-build firmware app
         run: west build -p always -b "${{ matrix.board }}" zplc/firmware/app -d "${RUNNER_TEMP}/zplc-${{ matrix.id }}"
