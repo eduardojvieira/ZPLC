@@ -36,12 +36,14 @@ LOG_MODULE_REGISTER(zplc_modbus_client, LOG_LEVEL_INF);
 #endif
 
 static struct k_thread s_rtu_client_thread;
-static struct k_thread s_tcp_client_thread;
 static K_THREAD_STACK_DEFINE(s_rtu_client_stack, 2048);
-static K_THREAD_STACK_DEFINE(s_tcp_client_stack, 3072);
 
 static int s_rtu_client_iface = -ENODEV;
+#if defined(CONFIG_NET_SOCKETS)
+static struct k_thread s_tcp_client_thread;
+static K_THREAD_STACK_DEFINE(s_tcp_client_stack, 3072);
 static uint16_t s_tcp_transaction_id;
+#endif
 
 static uint16_t modbus_register_width(zplc_data_type_t type)
 {
@@ -573,6 +575,7 @@ static void modbus_rtu_client_thread(void *arg1, void *arg2, void *arg3)
     }
 }
 
+#if defined(CONFIG_NET_SOCKETS)
 static void modbus_tcp_client_thread(void *arg1, void *arg2, void *arg3)
 {
     uint32_t delay_ms = zplc_config_get_modbus_tcp_client_poll_ms();
@@ -592,6 +595,7 @@ static void modbus_tcp_client_thread(void *arg1, void *arg2, void *arg3)
         k_msleep(delay_ms);
     }
 }
+#endif
 
 int zplc_modbus_client_init(void)
 {

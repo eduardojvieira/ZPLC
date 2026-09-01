@@ -109,11 +109,15 @@ class Rc3CrossBuildGuardTests(unittest.TestCase):
         )
         self.assertIn("target_compile_options(app PRIVATE -Werror)", cmake)
 
-    def test_opta_keeps_modbus_disabled_without_disabling_warnings(self) -> None:
-        config = (ROOT / "firmware/app/boards/arduino_opta_stm32h747xx_m7.conf").read_text()
-        self.assertIn("CONFIG_MODBUS=n", config)
-        self.assertIn("CONFIG_MODBUS_ROLE_CLIENT_SERVER=n", config)
-        self.assertNotIn("CONFIG_COMPILER_WARNINGS_AS_ERRORS=n", config)
+    def test_modbus_role_follows_zephyr_choice_defaults(self) -> None:
+        common = (ROOT / "firmware/app/prj.conf").read_text()
+        opta = (ROOT / "firmware/app/boards/arduino_opta_stm32h747xx_m7.conf").read_text()
+
+        self.assertIn("CONFIG_MODBUS=y", common)
+        self.assertNotIn("CONFIG_MODBUS_ROLE_CLIENT_SERVER", common)
+        self.assertIn("CONFIG_MODBUS=n", opta)
+        self.assertNotIn("CONFIG_MODBUS_ROLE_CLIENT_SERVER", opta)
+        self.assertNotIn("CONFIG_COMPILER_WARNINGS_AS_ERRORS=n", opta)
 
     def test_owned_warning_fixes_remain_guarded_or_removed(self) -> None:
         modbus_client = (ROOT / "firmware/app/src/zplc_modbus_client.c").read_text()
@@ -130,11 +134,68 @@ class Rc3CrossBuildGuardTests(unittest.TestCase):
         self.assertIn(
             "#ifndef CONFIG_ZPLC_SCHEDULER\nstatic const char *state_name", shell
         )
-        self.assertIn("PARTITION_DEVICE(storage_partition)", config)
+        self.assertIn(".storage_dev = (void *)PARTITION_DEVICE(storage_partition)", config)
         self.assertNotIn("copy_to_fb_str", cloud_handler)
         self.assertNotIn("static int json_extract_string(", aws_fleet)
         self.assertIn("json_extract_string_unescaped", aws_fleet)
         self.assertNotIn("s_c2d_topic", mqtt)
+
+    def test_cross_build_warning_fixes_keep_feature_boundaries(self) -> None:
+        common = (ROOT / "firmware/app/prj.conf").read_text()
+        esp32 = (
+            ROOT / "firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.conf"
+        ).read_text()
+        giga = (ROOT / "firmware/app/boards/arduino_giga_r1_stm32h747xx_m7.conf").read_text()
+        f746 = (ROOT / "firmware/app/boards/stm32f746g_disco.conf").read_text()
+        f746_overlay = (ROOT / "firmware/app/boards/stm32f746g_disco.overlay").read_text()
+        modbus = (ROOT / "firmware/app/src/zplc_modbus.c").read_text()
+        modbus_client = (ROOT / "firmware/app/src/zplc_modbus_client.c").read_text()
+        shell = (ROOT / "firmware/app/src/shell_cmds.c").read_text()
+
+        self.assertNotIn("CONFIG_SNTP=y", common)
+        self.assertIn("CONFIG_SNTP=y", esp32)
+        self.assertNotIn("CONFIG_USB_DEVICE_PRODUCT", giga)
+        self.assertNotIn("CONFIG_USB_DEVICE_", f746)
+        self.assertRegex(
+            f746_overlay,
+            r"&quadspi_memory\s*\{\s*status\s*=\s*\"disabled\";\s*\};",
+        )
+        self.assertRegex(
+            modbus,
+            re.compile(
+                r"#if defined\(CONFIG_NET_SOCKETS\)\s*"
+                r"static int modbus_tcp_read.*?"
+                r"static int modbus_tcp_write.*?#endif",
+                re.DOTALL,
+            ),
+        )
+        self.assertRegex(
+            modbus_client,
+            re.compile(
+                r"#if defined\(CONFIG_NET_SOCKETS\)\s*"
+                r"static struct k_thread s_tcp_client_thread;\s*"
+                r"static K_THREAD_STACK_DEFINE\(s_tcp_client_stack, 3072\);\s*"
+                r"static uint16_t s_tcp_transaction_id;\s*#endif",
+                re.DOTALL,
+            ),
+        )
+        self.assertRegex(
+            modbus_client,
+            re.compile(
+                r"#if defined\(CONFIG_NET_SOCKETS\)\s*"
+                r"static void modbus_tcp_client_thread.*?\n}\s*#endif",
+                re.DOTALL,
+            ),
+        )
+        self.assertRegex(
+            shell,
+            re.compile(
+                r"#if defined\(CONFIG_FILE_SYSTEM\)\s*"
+                r"#define CERT_STAGING_MAX_BYTES 4096U\s*"
+                r"static struct \{.*?\} cert_staging;\s*#endif",
+                re.DOTALL,
+            ),
+        )
 
 
 if __name__ == "__main__":
