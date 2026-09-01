@@ -21,6 +21,7 @@ project(zplc_zephyr_app)
 
 target_sources(app PRIVATE
     src/main.c
+    src/program_boot_restore.c
     src/program_admission.c
     src/program_store.c
     src/zplc_config.c

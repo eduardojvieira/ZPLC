@@ -17,6 +17,14 @@ typedef enum {
   ZPLC_PROGRAM_STORE_ERROR = -1,
 } zplc_program_store_restore_t;
 
+typedef enum {
+  ZPLC_PROGRAM_STORE_COMMIT_OK = 0,
+  ZPLC_PROGRAM_STORE_COMMIT_ERROR = -1,
+  /* The active pointer may already be visible. Callers must fail safe rather
+   * than continuing with either in-memory program. */
+  ZPLC_PROGRAM_STORE_COMMIT_UNKNOWN = -2,
+} zplc_program_store_commit_result_t;
+
 /* workspace must have room for program_size plus ZPLC_PROGRAM_STORE_FOOTER_SIZE;
  * program_size must not exceed ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE. This code
  * only records an already mode-admitted artifact; it never loads a VM. */

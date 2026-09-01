@@ -12,6 +12,7 @@
 
 #include "zplc_comm_modbus_handler.h"
 #include "program_admission.h"
+#include "program_boot_restore.h"
 #include "program_store.h"
 #include "zplc_config.h"
 #include "zplc_time.h"
@@ -129,6 +130,25 @@ int zplc_legacy_apply_safe_outputs_locked(void) {
   return first_error;
 }
 
+static int legacy_latch_boot_restore_failure(void) {
+  int safe_result;
+
+  k_mutex_lock(&legacy_runtime_lock, K_FOREVER);
+  step_requested = 0;
+  zplc_core_init();
+  safe_result = zplc_legacy_apply_safe_outputs_locked();
+  runtime_state = ZPLC_STATE_ERROR;
+  memset(program_buffer, 0, program_buffer_size);
+  memset(program_staging_buffer, 0,
+         program_buffer_size + ZPLC_PROGRAM_STORE_FOOTER_SIZE);
+  program_expected_size = 0U;
+  program_received_size = 0U;
+  program_staging_received_size = 0U;
+  k_mutex_unlock(&legacy_runtime_lock);
+  zplc_legacy_wake();
+  return safe_result;
+}
+
 /**
  * @brief Try to restore a saved program from NVS in legacy mode.
  *
@@ -137,36 +157,30 @@ int zplc_legacy_apply_safe_outputs_locked(void) {
  */
 static int try_restore_legacy_program(void) {
   size_t saved_len = 0U;
-  zplc_program_store_restore_t restore;
   uint32_t restored_scan_interval_ms;
+  int result;
   int ret;
 
   zplc_hal_log("[RESTORE] Checking for saved program...\n");
 
-  restore = zplc_program_store_restore(program_staging_buffer,
-                                       sizeof(s_program_staging_buf), &saved_len);
-  if (restore == ZPLC_PROGRAM_STORE_EMPTY) {
+  result = zplc_boot_restore_legacy_prepare(
+      program_staging_buffer, sizeof(s_program_staging_buf), s_program_workspace,
+      sizeof(s_program_workspace), &saved_len, &restored_scan_interval_ms);
+  if (result == ZPLC_BOOT_RESTORE_EMPTY) {
+    k_mutex_lock(&legacy_runtime_lock, K_FOREVER);
+    ret = zplc_legacy_apply_safe_outputs_locked();
+    if (ret != 0)
+      runtime_state = ZPLC_STATE_ERROR;
+    k_mutex_unlock(&legacy_runtime_lock);
+    zplc_legacy_wake();
+    if (ret != 0)
+      return ret;
     zplc_hal_log("[RESTORE] No saved program found (first boot)\n");
     return 0;
   }
-  if (restore == ZPLC_PROGRAM_STORE_ERROR) {
-    zplc_hal_log("[RESTORE] Program store unavailable or failed\n");
-    return 0;
-  }
-
-  ret = zplc_program_admit_legacy(program_staging_buffer, saved_len,
-                                  s_program_workspace,
-                                  sizeof(s_program_workspace),
-                                  &restored_scan_interval_ms);
-  if (ret != 0) {
-    zplc_hal_log("[RESTORE] Rejected saved .zplc program: %d\n", ret);
-    return ret;
-  }
-
-  if (restore == ZPLC_PROGRAM_STORE_LEGACY &&
-      zplc_program_store_commit(program_staging_buffer, saved_len,
-                                sizeof(s_program_staging_buf)) != 0) {
-    zplc_hal_log("[RESTORE] Legacy migration failed; keeping outputs safe\n");
+  if (result != ZPLC_BOOT_RESTORE_READY) {
+    (void)legacy_latch_boot_restore_failure();
+    zplc_hal_log("[RESTORE] Rejected or ambiguous saved program; runtime latched safe\n");
     return -EIO;
   }
 
@@ -175,6 +189,7 @@ static int try_restore_legacy_program(void) {
                        sizeof(s_program_workspace));
   if (ret != 0) {
     k_mutex_unlock(&legacy_runtime_lock);
+    (void)legacy_latch_boot_restore_failure();
     zplc_hal_log("[RESTORE] Failed to load verified program into VM: %d\n", ret);
     return ret;
   }
@@ -184,10 +199,18 @@ static int try_restore_legacy_program(void) {
   legacy_scan_interval_ms = restored_scan_interval_ms;
   step_requested = 0;
   ret = zplc_legacy_apply_safe_outputs_locked();
-  runtime_state = ret == 0 ? ZPLC_STATE_READY : ZPLC_STATE_ERROR;
+  if (ret == 0) {
+    runtime_state = ZPLC_STATE_READY;
+  } else {
+    runtime_state = ZPLC_STATE_ERROR;
+  }
   k_mutex_unlock(&legacy_runtime_lock);
   zplc_legacy_wake();
   if (ret != 0) {
+    /* The verified payload was copied before the physical safe-output
+     * operation.  Do not leave that resident program recoverable when the
+     * safe state itself could not be established. */
+    (void)legacy_latch_boot_restore_failure();
     zplc_hal_log("[RESTORE] Failed to apply safe outputs: %d\n", ret);
     return ret;
   }
@@ -298,71 +321,10 @@ static int run_legacy_mode(void) {
  * @return Number of tasks loaded (>0), 0 if no saved program, or negative
  * error.
  */
-static int try_restore_saved_program(void) {
-  size_t saved_len = 0U;
-  zplc_program_store_restore_t restore;
-  int ret;
-  int task_count;
-
-  zplc_hal_log("[RESTORE] Checking for saved program...\n");
-
-  restore = zplc_program_store_restore(program_staging_buffer,
-                                       sizeof(s_program_staging_buf), &saved_len);
-  if (restore == ZPLC_PROGRAM_STORE_EMPTY) {
-    zplc_hal_log("[RESTORE] No saved program found (first boot)\n");
-    return 0;
-  }
-  if (restore == ZPLC_PROGRAM_STORE_ERROR) {
-    zplc_hal_log("[RESTORE] Program store unavailable or failed\n");
-    return 0;
-  }
-
-  zplc_hal_log("[RESTORE] Loaded %zu bytes from Flash\n", saved_len);
-
-  /* Validate the header - check for ZPLC magic */
-  if (saved_len >= 4 && program_staging_buffer[0] == 'Z' &&
-      program_staging_buffer[1] == 'P' && program_staging_buffer[2] == 'L' &&
-      program_staging_buffer[3] == 'C') {
-
-    /* It's a .zplc file with TASK segment - use zplc_sched_load */
-    ret = zplc_sched_validate_program(program_staging_buffer, saved_len);
-    if (ret != ZPLC_LOADER_OK) {
-      zplc_hal_log("[RESTORE] Rejected saved .zplc program: %d\n", ret);
-      return ret;
-    }
-    if (restore == ZPLC_PROGRAM_STORE_LEGACY &&
-        zplc_program_store_commit(program_staging_buffer, saved_len,
-                                  sizeof(s_program_staging_buf)) != 0) {
-      zplc_hal_log("[RESTORE] Legacy migration failed; keeping outputs safe\n");
-      return -EIO;
-    }
-    task_count = zplc_sched_load(program_staging_buffer, saved_len);
-
-    if (task_count < 0) {
-      zplc_hal_log("[RESTORE] Failed to parse .zplc file: %d\n", task_count);
-      return task_count;
-    }
-
-    if (task_count == 0) {
-      zplc_hal_log("[RESTORE] No tasks found in .zplc file\n");
-      return 0;
-    }
-
-    memcpy(program_buffer, program_staging_buffer, saved_len);
-    program_received_size = saved_len;
-
-    zplc_hal_log("[RESTORE] Restored %d tasks from Flash; waiting for zplc start\n",
-                 task_count);
-    return task_count;
-  }
-
-  zplc_hal_log("[RESTORE] Rejected saved payload without .zplc header\n");
-  return -EINVAL;
-}
-
 static int run_scheduler_mode(void) {
   int ret;
   int restored_tasks;
+  size_t restored_size = 0U;
 
   zplc_hal_log("[SCHED] Multitask scheduler mode\n");
 
@@ -374,15 +336,22 @@ static int run_scheduler_mode(void) {
   }
 
   /* Try to restore a previously saved program from NVS */
-  restored_tasks = try_restore_saved_program();
+  restored_tasks = zplc_boot_restore_scheduler(
+      program_staging_buffer, sizeof(s_program_staging_buf), program_buffer,
+      program_buffer_size, &restored_size);
+  program_received_size = restored_size;
 
   if (restored_tasks > 0) {
     zplc_hal_log("[SCHED] Program restored from Flash. Waiting for 'zplc start'.\n");
-  } else {
+  } else if (restored_tasks == 0) {
     zplc_hal_log("[SCHED] Scheduler ready. Waiting for shell commands.\n");
     zplc_hal_log("[SCHED] Use 'zplc load <size>' then 'zplc data <hex>' to "
                  "load a program.\n");
     zplc_hal_log("[SCHED] Use 'zplc start' to begin execution.\n");
+  } else {
+    zplc_hal_log("[SCHED] ERROR: Saved program rejected; runtime is latched safe.\n");
+    zplc_hal_log("[SCHED] Upload a verified replacement with 'zplc load <size>' "
+                 "then 'zplc data <hex>'.\n");
   }
 
   zplc_hal_log("[SCHED] Shell available. Use 'zplc help' for commands.\n");

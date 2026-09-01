@@ -19,6 +19,8 @@
 #include <zplc_hal.h>
 #include <zplc_hal_posix.h>
 
+#include "process_image_differential.h"
+
 /* Test-only hooks; production zplc_hal.h deliberately stays clean. */
 extern void zplc_hal_persist_test_fail_at(unsigned long operation);
 extern void zplc_hal_persist_test_fail_result(zplc_hal_result_t result);
@@ -2070,6 +2072,84 @@ static void test_rejected_load_preserves_running_session(void)
     else unsetenv("ZPLC_PERSIST_ROOT");
 }
 
+static void test_process_image_differential_artifacts(void)
+{
+    zplc_native_runtime_session_t session;
+    char request[512], response[4096], event[4096];
+    char ordered_hex[(ZPLC_PROCESS_IMAGE_ORDERED_PROGRAM_SIZE * 2U) + 1U];
+    char fault_hex[(ZPLC_PROCESS_IMAGE_FAULT_PROGRAM_SIZE * 2U) + 1U];
+    uint8_t force = 1U;
+
+    printf("\n=== Test: shared process-image differential artifacts ===\n");
+    bytes_to_hex(zplc_process_image_ordered_program,
+                 ZPLC_PROCESS_IMAGE_ORDERED_PROGRAM_SIZE, ordered_hex,
+                 sizeof(ordered_hex));
+    bytes_to_hex(zplc_process_image_fault_program,
+                 ZPLC_PROCESS_IMAGE_FAULT_PROGRAM_SIZE, fault_hex,
+                 sizeof(fault_hex));
+    zplc_native_runtime_session_init(&session);
+
+    snprintf(request, sizeof(request),
+             "{\"id\":\"differential-ordered-load\",\"type\":\"request\",\"method\":\"program.load\",\"params\":{\"bytecode_hex\":\"%s\"}}",
+             ordered_hex);
+    (void)zplc_native_runtime_session_handle_request(&session, request,
+                                                     response, sizeof(response),
+                                                     event, sizeof(event));
+    TEST_ASSERT_CONTAINS(response, "\"result\"",
+                         "POSIX accepts the shared ordered artifact");
+    TEST_ASSERT(session.task_count == 3U && session.task_vms[0].task_id == 10U &&
+                    session.task_vms[1].task_id == 20U &&
+                    session.task_vms[2].task_id == 30U,
+                "POSIX sorts shared tasks by priority then task ID");
+    (void)zplc_native_runtime_session_handle_request(
+        &session,
+        "{\"id\":\"differential-ordered-step\",\"type\":\"request\",\"method\":\"execution.step\",\"params\":{}}",
+        response, sizeof(response), event, sizeof(event));
+    TEST_ASSERT_CONTAINS(response, "\"result\"",
+                         "POSIX completes one shared ordered step");
+    TEST_ASSERT(zplc_mem_get_region(ZPLC_MEM_OPI_BASE)[0] == 0x11U &&
+                    zplc_mem_get_region(ZPLC_MEM_WORK_BASE)[0] == 0x11U,
+                "POSIX final OPI follows priority then task ID order");
+    TEST_ASSERT(session.cycle_count == 1U &&
+                    session.task_vms[0].halted != 0U &&
+                    session.task_vms[1].halted != 0U &&
+                    session.task_vms[2].halted != 0U,
+                "each POSIX task executes one halted cycle");
+
+    (void)zplc_native_runtime_session_handle_request(
+        &session,
+        "{\"id\":\"differential-reset\",\"type\":\"request\",\"method\":\"execution.reset\",\"params\":{}}",
+        response, sizeof(response), event, sizeof(event));
+    snprintf(request, sizeof(request),
+             "{\"id\":\"differential-fault-load\",\"type\":\"request\",\"method\":\"program.load\",\"params\":{\"bytecode_hex\":\"%s\"}}",
+             fault_hex);
+    (void)zplc_native_runtime_session_handle_request(&session, request,
+                                                     response, sizeof(response),
+                                                     event, sizeof(event));
+    TEST_ASSERT_CONTAINS(response, "\"result\"",
+                         "POSIX accepts the shared fault artifact");
+    TEST_ASSERT(zplc_force_set_bytes(ZPLC_MEM_OPI_BASE, &force, sizeof(force)) == 0,
+                "POSIX force exists before shared fault");
+    (void)zplc_native_runtime_session_handle_request(
+        &session,
+        "{\"id\":\"differential-fault-start\",\"type\":\"request\",\"method\":\"execution.start\",\"params\":{}}",
+        response, sizeof(response), event, sizeof(event));
+    TEST_ASSERT(zplc_native_runtime_session_tick(&session, 1U, event, sizeof(event)) < 0,
+                "POSIX shared watchdog artifact faults its timed cycle");
+    TEST_ASSERT_CONTAINS(event, "\"method\":\"runtime.error\"",
+                         "POSIX exposes the shared watchdog fault event");
+    TEST_ASSERT(session.state == ZPLC_NATIVE_SESSION_ERROR && session.cycle_count == 0U,
+                "POSIX fault never completes a cycle");
+    TEST_ASSERT(zplc_mem_get_region(ZPLC_MEM_WORK_BASE)[0] == 0x11U &&
+                    zplc_mem_get_region(ZPLC_MEM_WORK_BASE)[7] == 0U,
+                "POSIX fault skips the later shared sentinel task");
+    TEST_ASSERT(zplc_mem_get_region(ZPLC_MEM_OPI_BASE)[0] == 0U &&
+                    zplc_mem_get_region(ZPLC_MEM_IPI_BASE)[0] == 0U &&
+                    zplc_force_get_count() == 0U,
+                "POSIX shared fault leaves process images and forces safe");
+    zplc_native_runtime_session_shutdown(&session);
+}
+
 static void test_single_task_uses_task_metadata(void)
 {
     zplc_native_runtime_session_t session;
@@ -3084,6 +3164,7 @@ int main(void)
     test_native_persist_failure_preserves_clean_session();
     test_native_code_only_and_corrupt_restore();
     test_rejected_load_preserves_running_session();
+    test_process_image_differential_artifacts();
     test_single_task_uses_task_metadata();
     test_persist_commit_fault_sweep();
 #if defined(__linux__)

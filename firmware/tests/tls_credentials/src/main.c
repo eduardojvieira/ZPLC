@@ -2,11 +2,24 @@
 #include <string.h>
 
 #include <zephyr/fs/fs.h>
+#include <zephyr/fs/littlefs.h>
 #include <zephyr/net/tls_credentials.h>
+#include <zephyr/storage/flash_map.h>
 #include <zephyr/ztest.h>
 
 #include <zplc_hal.h>
 #include "zplc_tls_credentials.h"
+
+#define CERTS_PARTITION certs_partition
+
+FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(certs);
+
+static struct fs_mount_t certs_mount = {
+    .type = FS_LITTLEFS,
+    .fs_data = &certs,
+    .storage_dev = (void *)PARTITION_ID(CERTS_PARTITION),
+    .mnt_point = "/certs",
+};
 
 zplc_hal_result_t zplc_hal_persist_load(const char *key, void *data, size_t len)
 {
@@ -30,6 +43,26 @@ static void write_file(const char *path, const uint8_t *data, size_t len)
     zassert_ok(fs_open(&file, path, FS_O_CREATE | FS_O_WRITE), "open %s", path);
     zassert_equal(fs_write(&file, data, len), len, "write %s", path);
     zassert_ok(fs_close(&file), "close %s", path);
+}
+
+static void *tls_credentials_setup(void)
+{
+    const struct flash_area *area;
+    const uintptr_t device_id = (uintptr_t)certs_mount.storage_dev;
+
+    zassert_ok(flash_area_open(device_id, &area), "open certs flash");
+    zassert_ok(flash_area_flatten(area, 0, area->fa_size), "erase certs flash");
+    flash_area_close(area);
+    zassert_ok(fs_mkfs(FS_LITTLEFS, device_id, certs_mount.fs_data, 0), "format certs");
+    zassert_ok(fs_mount(&certs_mount), "mount certs");
+
+    return NULL;
+}
+
+static void tls_credentials_teardown(void *fixture)
+{
+    ARG_UNUSED(fixture);
+    zassert_ok(fs_unmount(&certs_mount), "unmount certs");
 }
 
 ZTEST(tls_credentials, test_reader_rejects_stale_and_truncated_files)
@@ -95,4 +128,5 @@ ZTEST(tls_credentials, test_persisted_reader_requires_a_nonempty_key)
     zassert_mem_equal(out, (uint8_t[8]){0}, sizeof(out), "empty key clears output");
 }
 
-ZTEST_SUITE(tls_credentials, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(tls_credentials, NULL, tls_credentials_setup, NULL, NULL,
+            tls_credentials_teardown);
