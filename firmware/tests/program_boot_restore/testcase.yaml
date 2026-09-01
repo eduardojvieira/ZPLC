@@ -1,0 +1,12 @@
+tests:
+  zplc.program_boot_restore:
+    tags:
+      - zplc
+      - persistence
+      - scheduler
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    harness: ztest
+    timeout: 20

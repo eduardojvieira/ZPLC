@@ -29,14 +29,20 @@
  * orders all releases, runs them, then performs at most one output commit.
  */
 
+#include <errno.h>
 #include <stdbool.h>
 #include <string.h>
 #include <zephyr/kernel.h>
+#if defined(CONFIG_ZPLC_HARDWARE_WATCHDOG)
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/watchdog.h>
+#endif
 #include <zplc_core.h>
+#include <zplc_debug.h>
 #include <zplc_hal.h>
 #include <zplc_isa.h>
 #include <zplc_scheduler.h>
-#include <zplc_debug.h>
 
 /* ============================================================================
  * Configuration
@@ -130,6 +136,9 @@ static struct k_mutex mem_mutex;
 static struct k_work coordinator_work;
 static uint32_t input_latch_count;
 static uint32_t output_commit_count;
+/* This is deliberately owned by the coordinator, never by a timer or ISR. */
+/* -1 is disarmed; Zephyr watchdog channels are int and must not truncate. */
+static int hardware_watchdog_channel = -1;
 
 #ifdef CONFIG_ZTEST
 /* Native-sim seam: hold one coordinator after task execution, before commit. */
@@ -142,6 +151,15 @@ static uint8_t test_output_commit_failure_channel;
 static uint8_t test_output_commit_write_count;
 static zplc_hal_result_t test_gpio_read_failure;
 static uint8_t test_gpio_read_failure_channel;
+static int test_watchdog_prepare_failure;
+static int test_watchdog_setup_failure;
+static int test_watchdog_feed_failure;
+static int test_watchdog_disarm_failure;
+static int test_safe_output_failure;
+static uint32_t test_watchdog_prepare_count;
+static uint32_t test_watchdog_feed_count;
+static uint32_t test_watchdog_disarm_count;
+static uint8_t test_force_next_deadline_miss;
 #endif
 
 /** @brief Normal priority work queue */
@@ -357,9 +375,145 @@ static void update_system_registers(uint8_t task_id, uint32_t cycle_time_us,
 static void task_timer_handler(struct k_timer *timer);
 static void coordinator_work_handler(struct k_work *work);
 static int execute_task_cycle_locked(zplc_task_internal_t *t,
-                                     bool single_step_mode);
+                                     bool single_step_mode,
+                                     bool *deadline_missed);
 static int apply_safe_outputs_with_mem_locked(void);
 static void increment_counter(uint32_t *counter);
+static int watchdog_disarm(void);
+
+#ifdef CONFIG_ZTEST
+#define ZPLC_TEST_WATCHDOG_TIMEOUT_MS 1000U
+#endif
+
+static int watchdog_timeout_admits_tasks(void) {
+  uint64_t max_interval_us = 0U;
+  uint64_t timeout_us;
+  int index;
+
+#if defined(CONFIG_ZTEST)
+  timeout_us = (uint64_t)ZPLC_TEST_WATCHDOG_TIMEOUT_MS * 1000U;
+#elif defined(CONFIG_ZPLC_HARDWARE_WATCHDOG)
+  timeout_us = (uint64_t)CONFIG_ZPLC_HARDWARE_WATCHDOG_TIMEOUT_MS * 1000U;
+#else
+  return 0;
+#endif
+  for (index = 0; index < CONFIG_ZPLC_MAX_TASKS; ++index) {
+    if (tasks[index].registered != 0U &&
+        tasks[index].task.config.interval_us > max_interval_us) {
+      max_interval_us = tasks[index].task.config.interval_us;
+    }
+  }
+  return timeout_us > max_interval_us * 2U ? 0 : -ERANGE;
+}
+
+/*
+ * The physical watchdog is intentionally opt-in per exact board profile.
+ * No public profile enables CONFIG_ZPLC_HARDWARE_WATCHDOG until HIL proves
+ * reset timing and electrical safe-state behavior.  Tests use the narrow
+ * ztest seam below rather than pretending native_sim owns a physical WDT.
+ */
+static int watchdog_prepare(void) {
+  int admission = watchdog_timeout_admits_tasks();
+
+  if (admission != 0) {
+    return admission;
+  }
+#ifdef CONFIG_ZTEST
+  increment_counter(&test_watchdog_prepare_count);
+  if (test_watchdog_prepare_failure != 0) {
+    int failure = test_watchdog_prepare_failure;
+    test_watchdog_prepare_failure = 0;
+    return failure;
+  }
+  hardware_watchdog_channel = 0;
+  if (test_watchdog_setup_failure != 0) {
+    int failure = test_watchdog_setup_failure;
+    test_watchdog_setup_failure = 0;
+    return failure;
+  }
+  return 0;
+#elif defined(CONFIG_ZPLC_HARDWARE_WATCHDOG)
+#if DT_HAS_CHOSEN(zephyr_watchdog)
+  static const struct device *const watchdog =
+      DEVICE_DT_GET(DT_CHOSEN(zephyr_watchdog));
+  struct wdt_timeout_cfg timeout = {
+      .window = {.min = 0U, .max = CONFIG_ZPLC_HARDWARE_WATCHDOG_TIMEOUT_MS},
+      .flags = WDT_FLAG_RESET_SOC,
+  };
+  int channel;
+
+  if (!device_is_ready(watchdog)) {
+    return -ENODEV;
+  }
+  channel = wdt_install_timeout(watchdog, &timeout);
+  if (channel < 0) {
+    return channel;
+  }
+  hardware_watchdog_channel = channel;
+  {
+    int setup_result = wdt_setup(watchdog, 0U);
+    if (setup_result != 0) {
+      return setup_result;
+    }
+  }
+  return 0;
+#else
+  return -ENODEV;
+#endif
+#else
+  return 0;
+#endif
+}
+
+static int watchdog_feed_after_commit(void) {
+  if (hardware_watchdog_channel < 0) {
+    return 0;
+  }
+#ifdef CONFIG_ZTEST
+  increment_counter(&test_watchdog_feed_count);
+  if (test_watchdog_feed_failure != 0) {
+    int failure = test_watchdog_feed_failure;
+    test_watchdog_feed_failure = 0;
+    return failure;
+  }
+  return 0;
+#elif defined(CONFIG_ZPLC_HARDWARE_WATCHDOG)
+#if DT_HAS_CHOSEN(zephyr_watchdog)
+  const struct device *const watchdog =
+      DEVICE_DT_GET(DT_CHOSEN(zephyr_watchdog));
+  return wdt_feed(watchdog, hardware_watchdog_channel);
+#else
+  return -ENODEV;
+#endif
+#else
+  return 0;
+#endif
+}
+
+/* Safe output application precedes disarm.  If a driver cannot disarm, the
+ * already-safe system deliberately receives no more feeds and will reset. */
+static int watchdog_disarm(void) {
+  int result = 0;
+
+  if (hardware_watchdog_channel < 0) {
+    return 0;
+  }
+#ifdef CONFIG_ZTEST
+  increment_counter(&test_watchdog_disarm_count);
+  if (test_watchdog_disarm_failure != 0) {
+    result = test_watchdog_disarm_failure;
+    test_watchdog_disarm_failure = 0;
+  }
+#elif defined(CONFIG_ZPLC_HARDWARE_WATCHDOG)
+#if DT_HAS_CHOSEN(zephyr_watchdog)
+  result = wdt_disable(DEVICE_DT_GET(DT_CHOSEN(zephyr_watchdog)));
+#else
+  result = -ENODEV;
+#endif
+#endif
+  hardware_watchdog_channel = -1;
+  return result;
+}
 
 /*
  * k_cycle_get_64() is not available on every supported Zephyr target.  Pair
@@ -505,7 +659,8 @@ static void task_timer_handler(struct k_timer *timer) {
 }
 
 static int execute_task_cycle_locked(zplc_task_internal_t *t,
-                                     bool single_step_mode) {
+                                     bool single_step_mode,
+                                     bool *deadline_missed) {
   scheduler_stamp_t start_stamp;
   scheduler_stamp_t end_stamp;
   uint64_t exec_time_us;
@@ -513,6 +668,11 @@ static int execute_task_cycle_locked(zplc_task_internal_t *t,
   int result;
   bool first_scan;
   bool continue_from_current_pc;
+
+  if (deadline_missed == NULL) {
+    return -EINVAL;
+  }
+  *deadline_missed = false;
 
   /* Check if this is the first scan */
   first_scan = (t->task.stats.cycle_count == 0);
@@ -564,7 +724,16 @@ static int execute_task_cycle_locked(zplc_task_internal_t *t,
                                   t->task.config.interval_us)) {
       increment_counter(&t->task.stats.overrun_count);
       overrun = true;
+      *deadline_missed = true;
     }
+#ifdef CONFIG_ZTEST
+    if (!single_step_mode && test_force_next_deadline_miss != 0U) {
+      test_force_next_deadline_miss = 0U;
+      increment_counter(&t->task.stats.overrun_count);
+      overrun = true;
+      *deadline_missed = true;
+    }
+#endif
     k_spin_unlock(&admission_lock, key);
     hil_trace_task(t->task.config.id, (uint32_t)start_stamp.uptime_ms,
                    (uint32_t)end_stamp.uptime_ms, exec_time, overrun);
@@ -691,7 +860,7 @@ static void stop_all_task_timers(void) {
 }
 
 /* mem_mutex is held. The caller stops timers after releasing admission_lock. */
-static void latch_fault_locked(void) {
+static int latch_fault_locked(void) {
   int index;
   k_spinlock_key_t key = k_spin_lock(&admission_lock);
 
@@ -707,9 +876,15 @@ static void latch_fault_locked(void) {
   k_spin_unlock(&admission_lock, key);
   {
     int safe_result = apply_safe_outputs_with_mem_locked();
+    int watchdog_result = safe_result == 0 ? watchdog_disarm() : 0;
     if (safe_result != 0) {
       zplc_hal_log("[SCHED] Failed to apply safe outputs: %d\n", safe_result);
     }
+    if (watchdog_result != 0) {
+      zplc_hal_log("[SCHED] Failed to disarm hardware watchdog: %d\n",
+                   watchdog_result);
+    }
+    return safe_result != 0 ? safe_result : watchdog_result;
   }
 }
 
@@ -728,7 +903,8 @@ static int execute_batch(zplc_task_internal_t *const *batch, uint8_t count,
   k_mutex_lock(&mem_mutex, K_FOREVER);
   {
     k_spinlock_key_t key = k_spin_lock(&admission_lock);
-    if (scheduler_fault_latched != 0U || sched_state != ZPLC_SCHED_STATE_RUNNING) {
+    if (scheduler_fault_latched != 0U ||
+        sched_state != ZPLC_SCHED_STATE_RUNNING) {
       k_spin_unlock(&admission_lock, key);
       k_mutex_unlock(&mem_mutex);
       return 0;
@@ -759,13 +935,20 @@ static int execute_batch(zplc_task_internal_t *const *batch, uint8_t count,
       continue;
     }
 
-    result = execute_task_cycle_locked(t, single_step_mode);
+    bool deadline_missed;
+
+    result = execute_task_cycle_locked(t, single_step_mode, &deadline_missed);
     {
       k_spinlock_key_t key = k_spin_lock(&admission_lock);
       t->work_pending = 0U;
       k_spin_unlock(&admission_lock, key);
     }
-    if (result < 0) {
+    if (result < 0 || deadline_missed) {
+      if (deadline_missed) {
+        result = -ETIMEDOUT;
+        zplc_hal_log("[SCHED] Task %d exceeded its activation deadline\n",
+                     t->task.config.id);
+      }
       latch_fault_locked();
       faulted = 1;
       break;
@@ -798,7 +981,8 @@ static int execute_batch(zplc_task_internal_t *const *batch, uint8_t count,
   if (!faulted) {
     int commit_allowed;
     k_spinlock_key_t key = k_spin_lock(&admission_lock);
-    /* mem_mutex prevents stop/pause from closing admission before this commit. */
+    /* mem_mutex prevents stop/pause from closing admission before this commit.
+     */
     commit_allowed = scheduler_fault_latched == 0U &&
                      sched_state == ZPLC_SCHED_STATE_RUNNING;
     k_spin_unlock(&admission_lock, key);
@@ -806,6 +990,12 @@ static int execute_batch(zplc_task_internal_t *const *batch, uint8_t count,
       result = (int)sync_opi_to_outputs();
       if (result == ZPLC_HAL_OK) {
         increment_counter(&output_commit_count);
+        if (!paused && watchdog_feed_after_commit() != 0) {
+          zplc_hal_log("[SCHED] Hardware watchdog feed failed\n");
+          result = -EIO;
+          latch_fault_locked();
+          faulted = 1;
+        }
       } else {
         latch_fault_locked();
         faulted = 1;
@@ -820,8 +1010,10 @@ static int execute_batch(zplc_task_internal_t *const *batch, uint8_t count,
   }
   if (paused) {
     int task_index;
+    int safe_result = 0;
     k_spinlock_key_t key = k_spin_lock(&admission_lock);
-    if (scheduler_fault_latched == 0U && sched_state == ZPLC_SCHED_STATE_RUNNING) {
+    if (scheduler_fault_latched == 0U &&
+        sched_state == ZPLC_SCHED_STATE_RUNNING) {
       sched_state = ZPLC_SCHED_STATE_PAUSED;
       for (task_index = 0; task_index < CONFIG_ZPLC_MAX_TASKS; ++task_index) {
         if (tasks[task_index].registered != 0U) {
@@ -832,7 +1024,19 @@ static int execute_batch(zplc_task_internal_t *const *batch, uint8_t count,
       }
     }
     k_spin_unlock(&admission_lock, key);
+    k_mutex_lock(&mem_mutex, K_FOREVER);
+    safe_result = apply_safe_outputs_with_mem_locked();
+    if (safe_result != 0) {
+      (void)latch_fault_locked();
+    }
+    k_mutex_unlock(&mem_mutex);
     stop_all_task_timers();
+    if (safe_result == 0 && watchdog_disarm() != 0) {
+      k_mutex_lock(&mem_mutex, K_FOREVER);
+      (void)latch_fault_locked();
+      k_mutex_unlock(&mem_mutex);
+      result = -EIO;
+    }
   }
   return result;
 }
@@ -899,6 +1103,42 @@ uint8_t zplc_sched_test_output_commit_write_count(void) {
   k_mutex_unlock(&mem_mutex);
   return count;
 }
+
+void zplc_sched_test_fail_next_watchdog_prepare(int result) {
+  test_watchdog_prepare_failure = result;
+}
+
+void zplc_sched_test_fail_next_watchdog_setup(int result) {
+  test_watchdog_setup_failure = result;
+}
+
+void zplc_sched_test_fail_next_watchdog_feed(int result) {
+  test_watchdog_feed_failure = result;
+}
+
+void zplc_sched_test_fail_next_watchdog_disarm(int result) {
+  test_watchdog_disarm_failure = result;
+}
+
+void zplc_sched_test_fail_safe_outputs(int result) {
+  test_safe_output_failure = result;
+}
+
+uint32_t zplc_sched_test_watchdog_prepare_count(void) {
+  return test_watchdog_prepare_count;
+}
+
+uint32_t zplc_sched_test_watchdog_feed_count(void) {
+  return test_watchdog_feed_count;
+}
+
+uint32_t zplc_sched_test_watchdog_disarm_count(void) {
+  return test_watchdog_disarm_count;
+}
+
+void zplc_sched_test_force_next_deadline_miss(void) {
+  test_force_next_deadline_miss = 1U;
+}
 #endif
 
 static void coordinator_work_handler(struct k_work *work) {
@@ -909,7 +1149,8 @@ static void coordinator_work_handler(struct k_work *work) {
   ARG_UNUSED(work);
   {
     k_spinlock_key_t key = k_spin_lock(&admission_lock);
-    if (scheduler_fault_latched == 0U && sched_state == ZPLC_SCHED_STATE_RUNNING) {
+    if (scheduler_fault_latched == 0U &&
+        sched_state == ZPLC_SCHED_STATE_RUNNING) {
       for (index = 0; index < CONFIG_ZPLC_MAX_TASKS; ++index) {
         zplc_task_internal_t *t = &tasks[index];
         if (t->registered != 0U && t->task.state == ZPLC_TASK_STATE_RUNNING &&
@@ -988,7 +1229,14 @@ static int apply_safe_outputs_with_mem_locked(void) {
     memset(opi, 0, ZPLC_MEM_OPI_SIZE);
   }
   for (index = 0; index < ZPLC_DIO_CHANNEL_COUNT; ++index) {
-    zplc_hal_result_t result = zplc_hal_gpio_write(index, 0U);
+    zplc_hal_result_t result;
+
+#ifdef CONFIG_ZTEST
+    result = test_safe_output_failure != 0 ? test_safe_output_failure
+                                           : zplc_hal_gpio_write(index, 0U);
+#else
+    result = zplc_hal_gpio_write(index, 0U);
+#endif
     if (result != ZPLC_HAL_OK && result != ZPLC_HAL_NOT_IMPL &&
         first_error == 0) {
       first_error = (int)result;
@@ -1024,6 +1272,20 @@ static int stop_locked(void) {
   k_mutex_unlock(&mem_mutex);
   stop_all_task_timers();
   (void)k_work_cancel_sync(&coordinator_work, &sync);
+  if (safe_result != 0) {
+    k_mutex_lock(&mem_mutex, K_FOREVER);
+    (void)latch_fault_locked();
+    k_mutex_unlock(&mem_mutex);
+  } else if (watchdog_disarm() != 0) {
+    /* Outputs are already safe; no further feed makes an unsupported WDT
+     * reset fail-safe rather than silently remaining armed. */
+    k_mutex_lock(&mem_mutex, K_FOREVER);
+    (void)latch_fault_locked();
+    k_mutex_unlock(&mem_mutex);
+    if (safe_result == 0) {
+      safe_result = -EIO;
+    }
+  }
   zplc_hal_log("[SCHED] Scheduler stopped\n");
   return safe_result;
 }
@@ -1032,6 +1294,7 @@ static int unregister_task_locked(int task_id) {
   zplc_task_internal_t *t;
   k_spinlock_key_t key;
   struct k_work_sync sync;
+  int last_task;
 
   if (task_id < 0 || task_id >= CONFIG_ZPLC_MAX_TASKS) {
     return -1;
@@ -1051,16 +1314,36 @@ static int unregister_task_locked(int task_id) {
   key = k_spin_lock(&admission_lock);
   t->registered = 0U;
   task_count--;
+  last_task = task_count == 0U;
   if (task_count == 0U && scheduler_fault_latched != 0U) {
     sched_state = ZPLC_SCHED_STATE_IDLE;
   }
   k_spin_unlock(&admission_lock, key);
+  if (last_task) {
+    int safe_result;
+
+    k_mutex_lock(&mem_mutex, K_FOREVER);
+    safe_result = apply_safe_outputs_with_mem_locked();
+    if (safe_result != 0 || watchdog_disarm() != 0) {
+      (void)latch_fault_locked();
+      k_mutex_unlock(&mem_mutex);
+      return safe_result != 0 ? safe_result : -EIO;
+    }
+    key = k_spin_lock(&admission_lock);
+    sched_state = ZPLC_SCHED_STATE_IDLE;
+    k_spin_unlock(&admission_lock, key);
+    k_mutex_unlock(&mem_mutex);
+    zplc_hal_log("[SCHED] Last task unregistered; outputs safe\n");
+    return 0;
+  }
   key = k_spin_lock(&admission_lock);
-  if (sched_state == ZPLC_SCHED_STATE_RUNNING && scheduler_fault_latched == 0U) {
+  if (sched_state == ZPLC_SCHED_STATE_RUNNING &&
+      scheduler_fault_latched == 0U) {
     int index;
     for (index = 0; index < CONFIG_ZPLC_MAX_TASKS; ++index) {
       if (tasks[index].registered != 0U && tasks[index].work_pending != 0U) {
-        (void)k_work_submit_to_queue(get_coordinator_workq(), &coordinator_work);
+        (void)k_work_submit_to_queue(get_coordinator_workq(),
+                                     &coordinator_work);
         break;
       }
     }
@@ -1072,6 +1355,7 @@ static int unregister_task_locked(int task_id) {
 
 static int pause_locked(void) {
   int index;
+  int safe_result;
   struct k_work_sync sync;
 
   k_mutex_lock(&mem_mutex, K_FOREVER);
@@ -1098,10 +1382,23 @@ static int pause_locked(void) {
     }
     k_spin_unlock(&admission_lock, key);
   }
+  safe_result = apply_safe_outputs_with_mem_locked();
   k_mutex_unlock(&mem_mutex);
   stop_all_task_timers();
   (void)k_work_cancel_sync(&coordinator_work, &sync);
-  return 0;
+  if (safe_result != 0) {
+    k_mutex_lock(&mem_mutex, K_FOREVER);
+    (void)latch_fault_locked();
+    k_mutex_unlock(&mem_mutex);
+  } else if (watchdog_disarm() != 0) {
+    k_mutex_lock(&mem_mutex, K_FOREVER);
+    (void)latch_fault_locked();
+    k_mutex_unlock(&mem_mutex);
+    if (safe_result == 0) {
+      safe_result = -EIO;
+    }
+  }
+  return safe_result;
 }
 
 /* ============================================================================
@@ -1139,6 +1436,7 @@ int zplc_sched_init(void) {
   scheduler_fault_latched = 0U;
   input_latch_count = 0U;
   output_commit_count = 0U;
+  hardware_watchdog_channel = -1;
 #ifdef CONFIG_ZTEST
   k_sem_init(&test_before_commit_entered, 0U, 1U);
   k_sem_init(&test_before_commit_release, 0U, 1U);
@@ -1149,6 +1447,15 @@ int zplc_sched_init(void) {
   test_output_commit_write_count = 0U;
   test_gpio_read_failure = ZPLC_HAL_OK;
   test_gpio_read_failure_channel = 0U;
+  test_watchdog_prepare_failure = 0;
+  test_watchdog_setup_failure = 0;
+  test_watchdog_feed_failure = 0;
+  test_watchdog_disarm_failure = 0;
+  test_safe_output_failure = 0;
+  test_watchdog_prepare_count = 0U;
+  test_watchdog_feed_count = 0U;
+  test_watchdog_disarm_count = 0U;
+  test_force_next_deadline_miss = 0U;
 #endif
 
   /* Initialize shared memory */
@@ -1163,13 +1470,18 @@ int zplc_sched_init(void) {
 
 int zplc_sched_shutdown(void) {
   int index;
+  int result;
 
   if (sched_state == ZPLC_SCHED_STATE_UNINIT ||
       scheduler_called_from_workqueue()) {
     return -1;
   }
   k_mutex_lock(&control_mutex, K_FOREVER);
-  (void)stop_locked();
+  result = stop_locked();
+  if (result != 0) {
+    k_mutex_unlock(&control_mutex);
+    return result;
+  }
   for (index = 0; index < CONFIG_ZPLC_MAX_TASKS; index++) {
     if (tasks[index].registered) {
       (void)unregister_task_locked(index);
@@ -1247,8 +1559,8 @@ int zplc_sched_register_task(const zplc_task_def_t *def, const uint8_t *code,
   memset(t, 0, sizeof(zplc_task_internal_t));
   memcpy(&t->task.config, def, sizeof(zplc_task_def_t));
   t->task.state = ZPLC_TASK_STATE_READY;
-  t->task.code = zplc_mem_get_code(def->entry_point,
-                                   total_code_size - def->entry_point);
+  t->task.code =
+      zplc_mem_get_code(def->entry_point, total_code_size - def->entry_point);
   t->task.code_size = total_code_size - def->entry_point;
 
   /* Initialize VM for this task */
@@ -1302,7 +1614,9 @@ int zplc_sched_load(const uint8_t *binary, size_t size) {
 
   k_mutex_lock(&control_mutex, K_FOREVER);
 
-  if (sched_state != ZPLC_SCHED_STATE_IDLE || !scheduler_slots_empty()) {
+  if ((sched_state != ZPLC_SCHED_STATE_IDLE &&
+       sched_state != ZPLC_SCHED_STATE_ERROR) ||
+      !scheduler_slots_empty()) {
     k_mutex_unlock(&control_mutex);
     return -4;
   }
@@ -1312,11 +1626,16 @@ int zplc_sched_load(const uint8_t *binary, size_t size) {
     return -3;
   }
 
-  /* Validation above makes this one core commit and task materialization safe. */
+  /* Validation above makes this one core commit and task materialization safe.
+   */
   count = zplc_core_load_tasks(binary, size, defs, CONFIG_ZPLC_MAX_TASKS,
                                load_workspace, sizeof(load_workspace));
   if (count < 0) {
     zplc_hal_log("[SCHED] Failed to parse .zplc file: %d\n", count);
+    k_mutex_unlock(&control_mutex);
+    return -3;
+  }
+  if (sched_state == ZPLC_SCHED_STATE_ERROR && count == 0) {
     k_mutex_unlock(&control_mutex);
     return -3;
   }
@@ -1338,8 +1657,8 @@ int zplc_sched_load(const uint8_t *binary, size_t size) {
     t->task.state = ZPLC_TASK_STATE_READY;
 
     /* Point to code in shared segment (already loaded) */
-    t->task.code = zplc_mem_get_code(def->entry_point,
-                                     total_code_size - def->entry_point);
+    t->task.code =
+        zplc_mem_get_code(def->entry_point, total_code_size - def->entry_point);
     t->task.code_size = total_code_size - def->entry_point;
 
     /* Initialize VM with entry point */
@@ -1366,6 +1685,7 @@ int zplc_sched_load(const uint8_t *binary, size_t size) {
   /* A successful, fully materialized replacement is the only recovery path. */
   key = k_spin_lock(&admission_lock);
   scheduler_fault_latched = 0U;
+  sched_state = ZPLC_SCHED_STATE_IDLE;
   k_spin_unlock(&admission_lock, key);
 
   k_mutex_unlock(&control_mutex);
@@ -1375,7 +1695,8 @@ int zplc_sched_load(const uint8_t *binary, size_t size) {
 int zplc_sched_unregister_task(int task_id) {
   int result;
 
-  if (sched_state == ZPLC_SCHED_STATE_UNINIT || scheduler_called_from_workqueue()) {
+  if (sched_state == ZPLC_SCHED_STATE_UNINIT ||
+      scheduler_called_from_workqueue()) {
     return -1;
   }
   k_mutex_lock(&control_mutex, K_FOREVER);
@@ -1401,6 +1722,23 @@ int zplc_sched_start(void) {
     k_mutex_unlock(&control_mutex);
     return -2;
   }
+  /* Arm before RUN/timers. A failed prepare leaves the logical scheduler idle
+   * and explicitly re-applies safe outputs; no background feeder exists. */
+  if (watchdog_prepare() != 0) {
+    int safe_result;
+
+    k_mutex_lock(&mem_mutex, K_FOREVER);
+    safe_result = apply_safe_outputs_with_mem_locked();
+    if (safe_result != 0) {
+      (void)latch_fault_locked();
+    }
+    k_mutex_unlock(&mem_mutex);
+    if (safe_result == 0) {
+      (void)watchdog_disarm();
+    }
+    k_mutex_unlock(&control_mutex);
+    return -3;
+  }
   k_mutex_lock(&mem_mutex, K_FOREVER);
   for (index = 0; index < CONFIG_ZPLC_MAX_TASKS; index++) {
     if (tasks[index].registered != 0U &&
@@ -1417,7 +1755,19 @@ int zplc_sched_start(void) {
   k_mutex_unlock(&mem_mutex);
   key = k_spin_lock(&admission_lock);
   if (scheduler_fault_latched != 0U || sched_state != ZPLC_SCHED_STATE_IDLE) {
+    int safe_result;
+
     k_spin_unlock(&admission_lock, key);
+    stop_all_task_timers();
+    k_mutex_lock(&mem_mutex, K_FOREVER);
+    safe_result = apply_safe_outputs_with_mem_locked();
+    if (safe_result != 0) {
+      (void)latch_fault_locked();
+    }
+    k_mutex_unlock(&mem_mutex);
+    if (safe_result == 0) {
+      (void)watchdog_disarm();
+    }
     k_mutex_unlock(&control_mutex);
     return -1;
   }
@@ -1457,6 +1807,27 @@ int zplc_sched_stop(void) {
   return result;
 }
 
+int zplc_sched_enter_safe_error(void) {
+  int safe_result;
+  struct k_work_sync sync;
+
+  if (sched_state == ZPLC_SCHED_STATE_UNINIT ||
+      scheduler_called_from_workqueue()) {
+    return -1;
+  }
+
+  /* Control-plane ownership is control -> memory -> admission. The
+   * coordinator only owns memory -> admission, so it cannot deadlock here. */
+  k_mutex_lock(&control_mutex, K_FOREVER);
+  k_mutex_lock(&mem_mutex, K_FOREVER);
+  safe_result = latch_fault_locked();
+  k_mutex_unlock(&mem_mutex);
+  stop_all_task_timers();
+  (void)k_work_cancel_sync(&coordinator_work, &sync);
+  k_mutex_unlock(&control_mutex);
+  return safe_result;
+}
+
 int zplc_sched_pause(void) {
   int result;
 
@@ -1482,6 +1853,21 @@ int zplc_sched_resume(void) {
     k_mutex_unlock(&control_mutex);
     return -1;
   }
+  if (watchdog_prepare() != 0) {
+    int safe_result;
+
+    k_mutex_lock(&mem_mutex, K_FOREVER);
+    safe_result = apply_safe_outputs_with_mem_locked();
+    if (safe_result != 0) {
+      (void)latch_fault_locked();
+    }
+    k_mutex_unlock(&mem_mutex);
+    if (safe_result == 0) {
+      (void)watchdog_disarm();
+    }
+    k_mutex_unlock(&control_mutex);
+    return -2;
+  }
   k_mutex_lock(&mem_mutex, K_FOREVER);
   for (index = 0; index < CONFIG_ZPLC_MAX_TASKS; index++) {
     if (tasks[index].registered != 0U &&
@@ -1495,7 +1881,19 @@ int zplc_sched_resume(void) {
   k_mutex_unlock(&mem_mutex);
   key = k_spin_lock(&admission_lock);
   if (scheduler_fault_latched != 0U || sched_state != ZPLC_SCHED_STATE_PAUSED) {
+    int safe_result;
+
     k_spin_unlock(&admission_lock, key);
+    stop_all_task_timers();
+    k_mutex_lock(&mem_mutex, K_FOREVER);
+    safe_result = apply_safe_outputs_with_mem_locked();
+    if (safe_result != 0) {
+      (void)latch_fault_locked();
+    }
+    k_mutex_unlock(&mem_mutex);
+    if (safe_result == 0) {
+      (void)watchdog_disarm();
+    }
     k_mutex_unlock(&control_mutex);
     return -1;
   }
@@ -1546,9 +1944,8 @@ int zplc_sched_step(void) {
     for (index = 0; index < CONFIG_ZPLC_MAX_TASKS; index++) {
       zplc_task_internal_t *t = &tasks[index];
 
-      if (!t->registered ||
-          (t->task.state != ZPLC_TASK_STATE_PAUSED &&
-           t->task.state != ZPLC_TASK_STATE_READY)) {
+      if (!t->registered || (t->task.state != ZPLC_TASK_STATE_PAUSED &&
+                             t->task.state != ZPLC_TASK_STATE_READY)) {
         continue;
       }
       t->task.state = ZPLC_TASK_STATE_RUNNING;

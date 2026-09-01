@@ -12,18 +12,19 @@
  *   - Each task has a k_timer that fires at the configured interval
  *   - Timer callbacks admit due task releases without executing PLC code
  *   - One coordinator executes each ordered due-set as a batch
- *   - Each batch takes one IPI snapshot and performs at most one normal OPI commit
+ *   - Each batch takes one IPI snapshot and performs at most one normal OPI
+ * commit
  *   - Shared memory (IPI/OPI) is protected by a mutex
  */
 
 #ifndef ZPLC_SCHEDULER_H
 #define ZPLC_SCHEDULER_H
 
-#include <stdint.h>
-#include <stddef.h>
-#include "zplc_isa.h"
 #include "zplc_core.h"
 #include "zplc_hal.h"
+#include "zplc_isa.h"
+#include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,7 +32,8 @@ extern "C" {
 
 /* ============================================================================
  * Configuration
- * ============================================================================ */
+ * ============================================================================
+ */
 
 /** @brief Maximum number of concurrent tasks */
 #ifdef CONFIG_ZPLC_MAX_TASKS
@@ -48,28 +50,29 @@ extern "C" {
 
 /* ============================================================================
  * Task State
- * ============================================================================ */
+ * ============================================================================
+ */
 
 /**
  * @brief Task runtime state.
  */
 typedef enum {
-    ZPLC_TASK_STATE_IDLE = 0,      /**< Not configured */
-    ZPLC_TASK_STATE_READY,         /**< Configured, waiting to start */
-    ZPLC_TASK_STATE_RUNNING,       /**< Actively executing cycles */
-    ZPLC_TASK_STATE_PAUSED,        /**< Paused for debugging */
-    ZPLC_TASK_STATE_ERROR          /**< Error occurred */
+  ZPLC_TASK_STATE_IDLE = 0, /**< Not configured */
+  ZPLC_TASK_STATE_READY,    /**< Configured, waiting to start */
+  ZPLC_TASK_STATE_RUNNING,  /**< Actively executing cycles */
+  ZPLC_TASK_STATE_PAUSED,   /**< Paused for debugging */
+  ZPLC_TASK_STATE_ERROR     /**< Error occurred */
 } zplc_task_state_t;
 
 /**
  * @brief Task runtime statistics.
  */
 typedef struct {
-    uint32_t cycle_count;          /**< Total cycles executed */
-    uint32_t overrun_count;        /**< Number of deadline misses */
-    uint32_t last_exec_time_us;    /**< Last execution time in us */
-    uint32_t max_exec_time_us;     /**< Maximum execution time seen */
-    uint32_t avg_exec_time_us;     /**< Average execution time */
+  uint32_t cycle_count;       /**< Total cycles executed */
+  uint32_t overrun_count;     /**< Number of deadline misses */
+  uint32_t last_exec_time_us; /**< Last execution time in us */
+  uint32_t max_exec_time_us;  /**< Maximum execution time seen */
+  uint32_t avg_exec_time_us;  /**< Average execution time */
 } zplc_task_stats_t;
 
 /**
@@ -79,46 +82,47 @@ typedef struct {
  * The scheduler maintains an array of these.
  */
 typedef struct {
-    /* Configuration (from .zplc file) */
-    zplc_task_def_t config;
-    
-    /* Runtime state */
-    zplc_task_state_t state;
-    
-    /* Statistics */
-    zplc_task_stats_t stats;
-    
-    /* Bytecode pointer (within shared code segment) */
-    const uint8_t *code;
-    size_t code_size;
-    
-    /* Platform-specific data (opaque) */
-    void *platform_data;
+  /* Configuration (from .zplc file) */
+  zplc_task_def_t config;
+
+  /* Runtime state */
+  zplc_task_state_t state;
+
+  /* Statistics */
+  zplc_task_stats_t stats;
+
+  /* Bytecode pointer (within shared code segment) */
+  const uint8_t *code;
+  size_t code_size;
+
+  /* Platform-specific data (opaque) */
+  void *platform_data;
 } zplc_task_t;
 
 /* ============================================================================
  * Scheduler State
- * ============================================================================ */
+ * ============================================================================
+ */
 
 /**
  * @brief Scheduler runtime state.
  */
 typedef enum {
-    ZPLC_SCHED_STATE_UNINIT = 0,   /**< Not initialized */
-    ZPLC_SCHED_STATE_IDLE,         /**< Initialized but not running */
-    ZPLC_SCHED_STATE_RUNNING,      /**< Tasks are executing */
-    ZPLC_SCHED_STATE_PAUSED,       /**< All tasks paused */
-    ZPLC_SCHED_STATE_ERROR         /**< Error occurred */
+  ZPLC_SCHED_STATE_UNINIT = 0, /**< Not initialized */
+  ZPLC_SCHED_STATE_IDLE,       /**< Initialized but not running */
+  ZPLC_SCHED_STATE_RUNNING,    /**< Tasks are executing */
+  ZPLC_SCHED_STATE_PAUSED,     /**< All tasks paused */
+  ZPLC_SCHED_STATE_ERROR       /**< Error occurred */
 } zplc_sched_state_t;
 
 /**
  * @brief Scheduler statistics.
  */
 typedef struct {
-  uint32_t total_cycles;         /**< Sum of all task cycles */
-  uint32_t total_overruns;       /**< Sum of all overruns */
-  uint32_t uptime_ms;            /**< Time since start */
-  uint8_t active_tasks;          /**< Number of active tasks */
+  uint32_t total_cycles;   /**< Sum of all task cycles */
+  uint32_t total_overruns; /**< Sum of all overruns */
+  uint32_t uptime_ms;      /**< Time since start */
+  uint8_t active_tasks;    /**< Number of active tasks */
   /** Logical input process-image latches since scheduler initialization. */
   uint32_t input_latch_count;
   /** Logical normal output process-image commits since initialization. */
@@ -127,7 +131,8 @@ typedef struct {
 
 /* ============================================================================
  * Scheduler API
- * ============================================================================ */
+ * ============================================================================
+ */
 
 /**
  * @brief Initialize the scheduler.
@@ -157,11 +162,11 @@ int zplc_sched_shutdown(void);
  * @param def Task definition (from .zplc file or manual config)
  * @param code Must be NULL
  * @param code_size Must be zero
- * @return Task handle (0-based index) on success, negative error code on failure
+ * @return Task handle (0-based index) on success, negative error code on
+ * failure
  */
-int zplc_sched_register_task(const zplc_task_def_t *def,
-                              const uint8_t *code,
-                              size_t code_size);
+int zplc_sched_register_task(const zplc_task_def_t *def, const uint8_t *code,
+                             size_t code_size);
 
 /**
  * @brief Validate whether a .zplc program can be admitted by this scheduler.
@@ -224,6 +229,18 @@ int zplc_sched_start(void);
 int zplc_sched_stop(void);
 
 /**
+ * @brief Latch the scheduler in ERROR and de-energize its outputs.
+ *
+ * For a control-plane failure whose durable outcome is ambiguous. This stops
+ * timers and pending work, clears forces and the OPI, and rejects start until
+ * a fully validated replacement is loaded into an empty scheduler.
+ *
+ * @return 0 when safe outputs were applied, otherwise the first HAL error;
+ *         the ERROR latch is retained in either case.
+ */
+int zplc_sched_enter_safe_error(void);
+
+/**
  * @brief Pause the scheduler (for debugging).
  *
  * @return 0 on success, negative error code on failure
@@ -273,6 +290,15 @@ void zplc_sched_test_fail_next_output_commit(uint8_t channel,
 uint8_t zplc_sched_test_output_commit_write_count(void);
 void zplc_sched_test_fail_next_gpio_read(uint8_t channel,
                                          zplc_hal_result_t result);
+void zplc_sched_test_fail_next_watchdog_prepare(int result);
+void zplc_sched_test_fail_next_watchdog_setup(int result);
+void zplc_sched_test_fail_next_watchdog_feed(int result);
+void zplc_sched_test_fail_next_watchdog_disarm(int result);
+void zplc_sched_test_fail_safe_outputs(int result);
+uint32_t zplc_sched_test_watchdog_prepare_count(void);
+uint32_t zplc_sched_test_watchdog_feed_count(void);
+uint32_t zplc_sched_test_watchdog_disarm_count(void);
+void zplc_sched_test_force_next_deadline_miss(void);
 #endif
 
 /**
@@ -322,7 +348,8 @@ int zplc_sched_debug_clear_breakpoints(int task_id);
 
 /* ============================================================================
  * Memory Synchronization
- * ============================================================================ */
+ * ============================================================================
+ */
 
 /**
  * @brief Lock shared memory for exclusive access.

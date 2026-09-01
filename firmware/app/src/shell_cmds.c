@@ -579,6 +579,7 @@ static int cmd_sched_tasks(const struct shell *sh, size_t argc, char **argv);
 static int cmd_sched_load(const struct shell *sh, size_t argc, char **argv);
 static int cmd_sched_data(const struct shell *sh, size_t argc, char **argv);
 static int sched_reset_runtime(const uint8_t *binary, size_t size);
+static int sched_latch_ambiguous_program_publication(void);
 static int cmd_sys_info(const struct shell *sh, size_t argc, char **argv);
 static int cmd_sys_reboot(const struct shell *sh, size_t argc, char **argv);
 #endif
@@ -689,6 +690,10 @@ static int cmd_sched_load(const struct shell *sh, size_t argc, char **argv) {
     shell_error(sh, "Usage: zplc sched load <size>");
     return -EINVAL;
   }
+  /* A faulted scheduler may accept a replacement upload.  The completed
+   * payload is still canonical-verified before persistence and before
+   * zplc_sched_load clears the fault latch, so an invalid replacement cannot
+   * revive the runtime. */
   char *endptr;
   unsigned long size = strtoul(argv[1], &endptr, 10);
   if (*endptr != '\0' || size == 0) {
@@ -735,9 +740,17 @@ static int cmd_sched_data(const struct shell *sh, size_t argc, char **argv) {
       memset(program_staging_buffer, 0, program_buffer_size);
       return validation;
     }
-    if (zplc_program_store_commit(program_staging_buffer,
-                                  program_staging_received_size,
-                                  program_buffer_size + ZPLC_PROGRAM_STORE_FOOTER_SIZE) != 0) {
+    int store_result = zplc_program_store_commit(
+        program_staging_buffer, program_staging_received_size,
+        program_buffer_size + ZPLC_PROGRAM_STORE_FOOTER_SIZE);
+    if (store_result != ZPLC_PROGRAM_STORE_COMMIT_OK) {
+      if (store_result == ZPLC_PROGRAM_STORE_COMMIT_UNKNOWN) {
+        int safe_result = sched_latch_ambiguous_program_publication();
+        shell_error(sh,
+                    "ERROR: Active publication outcome unknown; scheduler latched safe (%d)",
+                    safe_result);
+        return -EIO;
+      }
       shell_error(sh, "ERROR: Transactional persistence failed");
       program_expected_size = 0;
       program_staging_received_size = 0;
@@ -800,6 +813,21 @@ static int sched_reset_runtime(const uint8_t *binary, size_t size) {
   }
 
   return 0;
+}
+
+/* An ambiguous active-pointer write means neither resident program is trusted
+ * for this session. The scheduler owns timer/work shutdown; the shell owns
+ * the upload and active-program buffers. */
+static int sched_latch_ambiguous_program_publication(void) {
+  int safe_result = zplc_sched_enter_safe_error();
+
+  memset(program_buffer, 0, program_buffer_size);
+  memset(program_staging_buffer, 0,
+         program_buffer_size + ZPLC_PROGRAM_STORE_FOOTER_SIZE);
+  program_expected_size = 0U;
+  program_received_size = 0U;
+  program_staging_received_size = 0U;
+  return safe_result;
 }
 
 static int cmd_zplc_load(const struct shell *sh, size_t argc, char **argv) {
@@ -1551,9 +1579,18 @@ static int cmd_dbg_step(const struct shell *sh, size_t argc, char **argv) {
  */
 
 static int cmd_zplc_load(const struct shell *sh, size_t argc, char **argv) {
+  bool faulted;
+
   if (argc != 2) {
     shell_error(sh, "Usage: zplc load <size>");
     return -EINVAL;
+  }
+  k_mutex_lock(&legacy_runtime_lock, K_FOREVER);
+  faulted = runtime_state == ZPLC_STATE_ERROR;
+  k_mutex_unlock(&legacy_runtime_lock);
+  if (faulted) {
+    shell_error(sh, "ERROR: Runtime faulted; use 'zplc reset' before loading");
+    return -EACCES;
   }
   char *endptr;
   unsigned long size = strtoul(argv[1], &endptr, 10);
@@ -1578,6 +1615,28 @@ static int legacy_validate_program(const uint8_t *binary, size_t size,
   return zplc_program_admit_legacy(binary, size, program_admission_workspace,
                                    sizeof(program_admission_workspace),
                                    scan_interval_ms);
+}
+
+/* Once active publication is ambiguous, a reset must not revive either
+ * resident buffer. This helper serializes the legacy execution loop before
+ * invalidating both buffers and leaving outputs de-energized. */
+static int legacy_latch_ambiguous_program_publication(void) {
+  int safe_result;
+
+  k_mutex_lock(&legacy_runtime_lock, K_FOREVER);
+  step_requested = 0;
+  zplc_core_init();
+  safe_result = zplc_legacy_apply_safe_outputs_locked();
+  runtime_state = ZPLC_STATE_ERROR;
+  memset(program_buffer, 0, program_buffer_size);
+  memset(program_staging_buffer, 0,
+         program_buffer_size + ZPLC_PROGRAM_STORE_FOOTER_SIZE);
+  program_expected_size = 0U;
+  program_received_size = 0U;
+  program_staging_received_size = 0U;
+  k_mutex_unlock(&legacy_runtime_lock);
+  zplc_legacy_wake();
+  return safe_result;
 }
 
 static int cmd_zplc_data(const struct shell *sh, size_t argc, char **argv) {
@@ -1610,9 +1669,17 @@ static int cmd_zplc_data(const struct shell *sh, size_t argc, char **argv) {
       memset(program_staging_buffer, 0, program_buffer_size);
       return ret;
     }
-    if (zplc_program_store_commit(program_staging_buffer,
-                                  program_staging_received_size,
-                                  program_buffer_size + ZPLC_PROGRAM_STORE_FOOTER_SIZE) != 0) {
+    int store_result = zplc_program_store_commit(
+        program_staging_buffer, program_staging_received_size,
+        program_buffer_size + ZPLC_PROGRAM_STORE_FOOTER_SIZE);
+    if (store_result != ZPLC_PROGRAM_STORE_COMMIT_OK) {
+      if (store_result == ZPLC_PROGRAM_STORE_COMMIT_UNKNOWN) {
+        int safe_result = legacy_latch_ambiguous_program_publication();
+        shell_error(sh,
+                    "ERROR: Active publication outcome unknown; runtime latched safe (%d)",
+                    safe_result);
+        return -EIO;
+      }
       shell_error(sh, "ERROR: Transactional persistence failed");
       program_expected_size = 0;
       program_staging_received_size = 0;

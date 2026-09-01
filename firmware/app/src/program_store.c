@@ -380,7 +380,10 @@ static int program_store_commit_locked(uint8_t *workspace, size_t program_size,
   }
 
   make_active(active, slot, generation);
-  if (zplc_hal_persist_save(STORE_ACTIVE, active, sizeof(active)) != ZPLC_HAL_OK)
+  result = zplc_hal_persist_save(STORE_ACTIVE, active, sizeof(active));
+  if (result == ZPLC_HAL_COMMIT_UNKNOWN)
+    return ZPLC_PROGRAM_STORE_COMMIT_UNKNOWN;
+  if (result != ZPLC_HAL_OK)
     return -1;
 
   make_meta(meta, slot, STORE_SLOT_COMMITTED, generation, workspace, program_size);
@@ -400,6 +403,38 @@ int zplc_program_store_commit(uint8_t *workspace, size_t program_size,
   result = program_store_commit_locked(workspace, program_size, workspace_capacity);
   k_mutex_unlock(&program_store_mutex);
   return result;
+}
+
+/* A lone valid PREPARED record is an interrupted first publication, not a
+ * corrupt active program. It has no resident payload authority at boot. */
+static int only_orphan_prepared_slots(void) {
+  uint32_t generation;
+  uint32_t length;
+  unsigned active_slot;
+  int active;
+  int active_exists;
+  int a;
+  int b;
+
+  active = read_active(&active_slot, &generation);
+  if (active != 1)
+    return active < 0 ? -1 : 0;
+  active_exists = durable_record_exists(STORE_ACTIVE);
+  if (active_exists < 0)
+    return -1;
+  if (active_exists != 0)
+    return 0;
+  a = read_meta(0U, 0, &generation, &length, NULL);
+  b = read_meta(1U, 0, &generation, &length, NULL);
+  if (a < 0 || b < 0)
+    return -1;
+  if (a == 0 || b == 0)
+    return 0;
+  a = read_meta(0U, 1, &generation, &length, NULL);
+  b = read_meta(1U, 1, &generation, &length, NULL);
+  if (a < 0 || b < 0)
+    return -1;
+  return a == 0 || b == 0;
 }
 
 static zplc_program_store_restore_t program_store_restore_locked(
@@ -463,7 +498,16 @@ static zplc_program_store_restore_t program_store_restore_locked(
   }
   if (!absent_or_corrupt(legacy) && legacy != ZPLC_HAL_OK)
     return ZPLC_PROGRAM_STORE_ERROR;
-  return ZPLC_PROGRAM_STORE_EMPTY;
+  int orphan_prepared = only_orphan_prepared_slots();
+
+  if (orphan_prepared < 0)
+    return ZPLC_PROGRAM_STORE_ERROR;
+  if (orphan_prepared != 0)
+    return ZPLC_PROGRAM_STORE_EMPTY;
+  /* A blank device is different from durable data that cannot be verified.
+   * The boot path must not silently treat the latter as a first boot. */
+  return durable_state_exists() == 0 ? ZPLC_PROGRAM_STORE_EMPTY
+                                     : ZPLC_PROGRAM_STORE_ERROR;
 }
 
 zplc_program_store_restore_t zplc_program_store_restore(

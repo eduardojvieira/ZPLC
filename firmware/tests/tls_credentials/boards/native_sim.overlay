@@ -1,0 +1,18 @@
+&flashcontroller0 {
+    reg = <0x00000000 DT_SIZE_K(64)>;
+};
+
+&flash0 {
+    reg = <0x00000000 DT_SIZE_K(64)>;
+
+    partitions {
+        compatible = "fixed-partitions";
+        #address-cells = <1>;
+        #size-cells = <1>;
+
+        certs_partition: partition@0 {
+            label = "certs";
+            reg = <0x00000000 DT_SIZE_K(64)>;
+        };
+    };
+};

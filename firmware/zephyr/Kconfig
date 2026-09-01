@@ -88,6 +88,29 @@ config ZPLC_SCHEDULER
 
 if ZPLC_SCHEDULER
 
+config ZPLC_HARDWARE_WATCHDOG
+    bool "Enable the profile-owned hardware watchdog"
+    default n
+    depends on WATCHDOG
+    help
+      Arms the Zephyr watchdog only while a ZPLC scheduler batch completes
+      input snapshot, all due tasks, deadline checks, and one normal output
+      commit. It is never fed by an ISR, timer, shell, network, or idle path.
+
+      This default is intentionally off. Enable it only in an exact
+      board/revision profile after HIL has verified watchdog reset timing and
+      safe outputs. The VM instruction budget remains a logical fault limit;
+      it is not this physical watchdog.
+
+config ZPLC_HARDWARE_WATCHDOG_TIMEOUT_MS
+    int "Hardware watchdog timeout (ms)"
+    range 100 60000
+    default 1000
+    depends on ZPLC_HARDWARE_WATCHDOG
+    help
+      Exact profile-owned timeout passed to the Zephyr watchdog driver. This
+      setting has no evidence value until HIL verifies the selected device.
+
 config ZPLC_MAX_TASKS
     int "Maximum number of concurrent tasks"
     default 8

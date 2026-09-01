@@ -173,6 +173,7 @@ add_executable(test_native_runtime_session
 target_include_directories(test_native_runtime_session PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures
 )
 
 target_compile_definitions(test_native_runtime_session PRIVATE

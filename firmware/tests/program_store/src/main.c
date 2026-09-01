@@ -24,6 +24,7 @@ static int operation;
 static int fail_operation;
 static const char *fail_load_key;
 static const char *fail_save_key;
+static int copy_active_then_commit_unknown;
 static size_t truncate_read;
 static const char *truncate_key;
 static uint8_t readback_override[WORKSPACE_CAPACITY];
@@ -83,6 +84,9 @@ zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data, size_
   memcpy(record->data, data, length);
   record->length = length;
   record->present = 1;
+  if (copy_active_then_commit_unknown != 0 &&
+      strcmp(key, "program_v1_active") == 0)
+    return ZPLC_HAL_COMMIT_UNKNOWN;
   return ZPLC_HAL_OK;
 }
 
@@ -230,6 +234,7 @@ static void reset_store(void)
   fail_operation = 0;
   fail_load_key = NULL;
   fail_save_key = NULL;
+  copy_active_then_commit_unknown = 0;
   truncate_read = 0U;
   truncate_key = NULL;
   readback_override_length = 0U;
@@ -296,6 +301,26 @@ ZTEST(program_store, test_second_commit_failure_preserves_a_until_active_publish
     zassert_equal(restored[40], commit == 0 ? OP_HALT : OP_NOP,
                   "only published B survives");
   }
+}
+
+ZTEST(program_store, test_active_publish_commit_unknown_has_dedicated_result)
+{
+  uint8_t candidate[WORKSPACE_CAPACITY];
+  size_t candidate_size;
+
+  reset_store();
+  (void)commit_program(OP_NOP);
+  candidate_size = build_program(candidate, OP_HALT);
+  copy_active_then_commit_unknown = 1;
+
+  zassert_equal(zplc_program_store_commit(candidate, candidate_size,
+                                          sizeof(candidate)),
+                ZPLC_PROGRAM_STORE_COMMIT_UNKNOWN,
+                "ambiguous active publish must be distinguished");
+  zassert_equal(records[0].data[6], 1U,
+                "test seam copied the newly visible active pointer");
+  zassert_equal(records[4].data[7], 1U,
+                "candidate remains prepared when publication is ambiguous");
 }
 
 ZTEST(program_store, test_concurrent_commits_serialize_store_transaction)
@@ -600,7 +625,7 @@ ZTEST(program_store, test_short_metadata_length_and_coherent_readback_fail_close
   records[2].data[15] = 0U;
   put_u32(records[2].data + 28U, record_crc(records[2].data, 28U));
   zassert_equal(zplc_program_store_restore(workspace, sizeof(workspace), &restored),
-                ZPLC_PROGRAM_STORE_EMPTY, "short metadata must be rejected");
+                ZPLC_PROGRAM_STORE_ERROR, "short metadata must fail closed");
 
   reset_store();
   size = build_program(candidate, OP_HALT);
