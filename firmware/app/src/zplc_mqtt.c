@@ -136,7 +136,6 @@ static char s_mqtt_hostname[192];
 static char s_mqtt_client_id[128];
 static char s_mqtt_topic_namespace[128];
 static char s_mqtt_group_id[64];
-static char s_c2d_topic[128];
 static char s_mqtt_websocket_path[128];
 static char s_mqtt_alpn[128];
 static char s_mqtt_ca_cert_path[96];

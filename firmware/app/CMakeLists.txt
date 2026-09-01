@@ -19,6 +19,13 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 project(zplc_zephyr_app)
 
+if(CONFIG_MQTT_LIB_WEBSOCKET)
+  if(NOT TARGET subsys__net__lib__mqtt)
+    message(FATAL_ERROR "Zephyr MQTT target subsys__net__lib__mqtt is required for the WebSocket net_log workaround")
+  endif()
+  target_compile_options(subsys__net__lib__mqtt PRIVATE -include zephyr/net/net_log.h)
+endif()
+
 target_sources(app PRIVATE
     src/main.c
     src/program_boot_restore.c
@@ -57,6 +64,8 @@ endif()
 target_include_directories(app PRIVATE
     include
 )
+
+target_compile_options(app PRIVATE -Werror)
 
 # Sparkplug protobuf sources must always be generated from canonical proto inputs.
 if(CONFIG_NANOPB)

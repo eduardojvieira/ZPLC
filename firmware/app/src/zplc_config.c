@@ -62,7 +62,7 @@ FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(qspi_lfs_data);
 static struct fs_mount_t zplc_lfs_mount = {
     .type = FS_LITTLEFS,
     .fs_data = &qspi_lfs_data,
-    .storage_dev = (void *)FIXED_PARTITION_ID(storage_partition),
+    .storage_dev = PARTITION_DEVICE(storage_partition),
     .mnt_point = "/lfs",
 };
 #endif

@@ -125,49 +125,6 @@ static int json_extract_string_unescaped(const char *json, const char *key,
     return 0;
 }
 
-static int json_extract_string(const char *json, const char *key,
-                               char *out, size_t out_len)
-{
-    char needle[64];
-    const char *start;
-    const char *end;
-    size_t len;
-
-    if (json == NULL || key == NULL || out == NULL || out_len == 0U) {
-        return -EINVAL;
-    }
-
-    snprintf(needle, sizeof(needle), "\"%s\"", key);
-    start = strstr(json, needle);
-    if (start == NULL) {
-        return -ENOENT;
-    }
-
-    start = strchr(start + strlen(needle), ':');
-    if (start == NULL) {
-        return -EINVAL;
-    }
-
-    start = strchr(start, '"');
-    if (start == NULL) {
-        return -EINVAL;
-    }
-    start++;
-    end = strchr(start, '"');
-    if (end == NULL) {
-        return -EINVAL;
-    }
-
-    len = (size_t)(end - start);
-    if (len >= out_len) {
-        return -ENOMEM;
-    }
-
-    memcpy(out, start, len);
-    out[len] = '\0';
-    return 0;
-}
-
 static int json_extract_int(const char *json, const char *key, int *out)
 {
     char needle[64];

@@ -101,24 +101,6 @@ static void fb_reset_common(uint8_t *fb_mem) {
 }
 
 /**
- * Copy a C string into a ZPLC STRING field (LEN + CAP + DATA layout).
- * Returns ZPLC_COMM_STRING_OVERFLOW if truncated.
- */
-static int copy_to_fb_str(uint8_t *fb_str, const char *src) {
-  uint8_t cap = fb_str[STR_OFF_CAP];
-  size_t src_len = strnlen(src, cap + 1);
-  int rc = 0;
-
-  if (src_len > cap) {
-    src_len = cap;
-    rc = ZPLC_COMM_STRING_OVERFLOW;
-  }
-  memcpy(&fb_str[STR_OFF_DATA], src, src_len);
-  fb_str[STR_OFF_LEN] = (uint8_t)src_len;
-  return rc;
-}
-
-/**
  * Read a ZPLC STRING field into a C string buffer.
  */
 static void read_fb_str(const uint8_t *fb_str, char *dest, size_t dest_size) {

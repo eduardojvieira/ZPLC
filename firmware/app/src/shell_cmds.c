@@ -166,6 +166,7 @@ static int hex_decode(const char *hex, uint8_t *out, size_t out_len) {
 /**
  * @brief Get state name as string.
  */
+#ifndef CONFIG_ZPLC_SCHEDULER
 static const char *state_name(zplc_state_t state) {
   switch (state) {
   case ZPLC_STATE_IDLE:
@@ -184,6 +185,7 @@ static const char *state_name(zplc_state_t state) {
     return "UNKNOWN";
   }
 }
+#endif
 
 #ifdef CONFIG_ZPLC_SCHEDULER
 static const char *sched_state_name(zplc_sched_state_t state) {
