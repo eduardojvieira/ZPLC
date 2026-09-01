@@ -345,7 +345,7 @@ END_PROGRAM`);
     } finally { if (oldPath === undefined) delete process.env.PATH; else process.env.PATH = oldPath; await rm(bin, { recursive: true, force: true }); await rm(root, { recursive: true, force: true }); }
   });
   it.skipIf(process.platform === 'win32')('maps a ready canonical toolchain build to sanitized ELF evidence', async () => {
-    const root = await toolchainRepository(); const marker = join(root, 'west-build-ran'); let restore: (() => Promise<void>) | undefined;
+    const root = await toolchainRepository(); const markerRoot = await mkdtemp(join(tmpdir(), 'zplc-build-marker-')); const marker = join(markerRoot, 'west-build-ran'); let restore: (() => Promise<void>) | undefined;
     try {
       restore = await toolchainHost(root, undefined, undefined, `while [ "$#" -gt 0 ]; do [ "$1" = -d ] && { shift; out=$1; }; shift; done\n/bin/mkdir -p "$out/zephyr"\n/bin/dd if=/dev/zero of="$out/zephyr/zephyr.elf" bs=52 count=1 2>/dev/null\nprintf '\\177ELF\\001\\001\\001' | /bin/dd of="$out/zephyr/zephyr.elf" bs=1 seek=0 conv=notrunc 2>/dev/null\nprintf '\\002\\000\\003\\000\\001\\000\\000\\000' | /bin/dd of="$out/zephyr/zephyr.elf" bs=1 seek=16 conv=notrunc 2>/dev/null\nprintf '\\064\\000' | /bin/dd of="$out/zephyr/zephyr.elf" bs=1 seek=40 conv=notrunc 2>/dev/null\nprintf build > '${marker}'\nprintf built`);
       const result = await firmwareBuild(root, 'alpha');
@@ -353,7 +353,7 @@ END_PROGRAM`);
       if (result.ok) expect(result.evidence.artifacts).toEqual([result.summary.artifact]);
       expect(existsSync(marker)).toBe(true);
       const serialized = JSON.stringify(result); for (const value of [root, 'argv', 'cwd', 'PATH', 'built']) expect(serialized).not.toContain(value);
-    } finally { await restore?.(); await rm(root, { recursive: true, force: true }); }
+    } finally { await restore?.(); await rm(markerRoot, { recursive: true, force: true }); await rm(root, { recursive: true, force: true }); }
   });
   it.skipIf(process.platform === 'win32')('fails closed when the admitted board plan changes during west execution', async () => {
     const root = await toolchainRepository(); let restore: (() => Promise<void>) | undefined;

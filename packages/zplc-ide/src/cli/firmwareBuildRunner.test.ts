@@ -4,7 +4,7 @@ import { lstat, mkdir, mkdtemp, rename, rm, symlink, truncate, writeFile } from 
 import { PassThrough } from 'node:stream';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { runFirmwareBuild } from './firmwareBuildRunner';
+import { runFirmwareBuild, sameDirectoryIdentity } from './firmwareBuildRunner';
 
 class FakeChild extends EventEmitter {
   stdout = new PassThrough(); stderr = new PassThrough(); pid = undefined;
@@ -24,6 +24,13 @@ function validElf64BigEndian(): Buffer {
 }
 
 describe('runFirmwareBuild', () => {
+  it('rejects a directory replacement when only its nanosecond generation changes', () => {
+    expect(sameDirectoryIdentity(
+      { path: '/workspace', dev: 1n, ino: 2n, ctimeNs: 3n },
+      { path: '/workspace', dev: 1n, ino: 2n, ctimeNs: 4n },
+    )).toBe(false);
+  });
+
   it('uses only fixed west argv, hashes the ELF, and never runs catalog text', async () => {
     const root = await mkdtemp(join(tmpdir(), 'zplc-runner-root-')); let observed: unknown;
     try {
