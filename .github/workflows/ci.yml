@@ -83,13 +83,37 @@ jobs:
           test -x "$ZPLC_NATIVE_SIM_BIN"
           bun run --cwd packages/zplc-ide smoke:studio-vertical
 
-      - name: Smoke Electron development host vertical
+      - name: Install Electron smoke display
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+          command -v xvfb-run
+
+      - name: Compile Electron development host
         env:
           ZPLC_NATIVE_SIM_BIN: ${{ runner.temp }}/zplc-native-sim-build/zplc_runtime
         run: |
           test -x "$ZPLC_NATIVE_SIM_BIN"
           bun run --cwd packages/zplc-ide electron:compile
-          bun run --cwd packages/zplc-ide smoke:desktop
+
+      - name: Prepare development Electron sandbox
+        working-directory: packages/zplc-ide
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t sandboxes < <(find node_modules/electron/dist -type f -name chrome-sandbox -print)
+          [ "${#sandboxes[@]}" -eq 1 ] || { echo "Expected exactly one development chrome-sandbox, found ${#sandboxes[@]}"; exit 1; }
+          sandbox="${sandboxes[0]}"
+          sudo chown root:root "$sandbox"
+          sudo chmod 4755 "$sandbox"
+          [ "$(stat -c '%U:%G:%a' "$sandbox")" = 'root:root:4755' ] || { echo "Incorrect chrome-sandbox ownership or mode"; stat -c '%U:%G:%a %n' "$sandbox"; exit 1; }
+
+      - name: Smoke Electron development host vertical
+        env:
+          ZPLC_NATIVE_SIM_BIN: ${{ runner.temp }}/zplc-native-sim-build/zplc_runtime
+        run: |
+          test -x "$ZPLC_NATIVE_SIM_BIN"
+          xvfb-run --auto-servernum bun run --cwd packages/zplc-ide smoke:desktop
 
   host-core:
     name: C99 host core

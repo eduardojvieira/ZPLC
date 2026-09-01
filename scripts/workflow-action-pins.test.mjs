@@ -196,3 +196,17 @@ test('keeps ESP32 blob admission explicit and all Twister targets 64-bit native'
     assert.match(testcase, /integration_platforms:\n\s+- native_sim\/native\/64/);
   }
 });
+
+test('prepares the development Electron sandbox without disabling it', async () => {
+  const ci = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+
+  assert.match(ci, /Prepare development Electron sandbox[\s\S]*?find node_modules\/electron\/dist -type f -name chrome-sandbox -print/);
+  assert.match(ci, /Expected exactly one development chrome-sandbox/);
+  assert.match(ci, /sudo chown root:root "\$sandbox"/);
+  assert.match(ci, /sudo chmod 4755 "\$sandbox"/);
+  assert.match(ci, /stat -c '%U:%G:%a' "\$sandbox"\)" = 'root:root:4755'/);
+  assert.match(ci, /Install Electron smoke display[\s\S]*?sudo apt-get update[\s\S]*?sudo apt-get install -y xvfb[\s\S]*?command -v xvfb-run/);
+  assert.match(ci, /xvfb-run --auto-servernum bun run --cwd packages\/zplc-ide smoke:desktop/);
+  assert.ok(ci.indexOf('sudo apt-get install -y xvfb') < ci.indexOf('xvfb-run --auto-servernum'), 'xvfb must be installed before the desktop smoke');
+  assert.doesNotMatch(ci, /--no-sandbox/);
+});
