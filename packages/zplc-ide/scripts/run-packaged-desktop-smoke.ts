@@ -146,8 +146,8 @@ class Cdp {
 async function press(cdp: Cdp, key: string, code = key): Promise<void> {
   const keyCode = key === 'Enter' ? 13 : key === 'Escape' ? 27 : 0;
   const text = key === 'Enter' ? '\r' : undefined;
-  await cdp.command('Input.dispatchKeyEvent', { type: 'keyDown', key, code, text, unmodifiedText: text, windowsVirtualKeyCode: keyCode, nativeVirtualKeyCode: keyCode });
-  await cdp.command('Input.dispatchKeyEvent', { type: 'keyUp', key, code, windowsVirtualKeyCode: keyCode, nativeVirtualKeyCode: keyCode });
+  await cdp.command('Input.dispatchKeyEvent', { type: 'keyDown', key, code, text, unmodifiedText: text, windowsVirtualKeyCode: keyCode });
+  await cdp.command('Input.dispatchKeyEvent', { type: 'keyUp', key, code, windowsVirtualKeyCode: keyCode });
 }
 
 async function main(): Promise<void> {
@@ -188,7 +188,7 @@ async function main(): Promise<void> {
     assert(rendererBoundary.welcome, 'Packaged renderer did not render the folder-backed Welcome screen.');
     assert(await cdp.evaluate(`(() => { const button = document.querySelector('button[aria-label="Toggle high contrast theme"]'); button?.focus(); return Boolean(button && document.activeElement === button && button.matches(':focus-visible') && getComputedStyle(button).outlineStyle !== 'none'); })()`), 'Packaged Welcome high-contrast control is not keyboard focusable.');
     await press(cdp, 'Enter');
-    assert(await cdp.evaluate(`document.documentElement.classList.contains('high-contrast') && getComputedStyle(document.body).backgroundColor === 'rgb(0, 0, 0)'`), 'Packaged Welcome did not activate explicit high contrast by keyboard.');
+    await waitFor('packaged high-contrast keyboard activation', async () => await cdp!.evaluate(`document.documentElement.classList.contains('high-contrast') && getComputedStyle(document.body).backgroundColor === 'rgb(0, 0, 0)'`) === true ? true : undefined);
     const targetCount = (await fetch(`http://${HOST}:${cdpPort}/json/list`).then((response) => response.json()) as Array<{ type?: string }>).filter((item) => item.type === 'page').length;
     const navigation = (await cdp.evaluate(`(() => { const href = location.href; const opened = window.open('https://example.invalid/zplc-packaged-smoke'); return { href, sameDocument: location.href === href, opened: opened === null }; })()`)) as { sameDocument: boolean; opened: boolean };
     await Bun.sleep(100);

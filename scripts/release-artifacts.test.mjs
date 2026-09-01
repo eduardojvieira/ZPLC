@@ -264,8 +264,12 @@ test('publishing requires verified native signatures while previews remain isola
   assert.match(mac, /spctl --assess --type execute/);
   assert.match(mac, /spctl --assess --type open/);
 
-  const windows = workflow;
-  assert.match(windows, /-c\.forceCodeSigning=true/);
+  const windowsStart = workflow.indexOf('  build-windows:');
+  const windowsEnd = workflow.indexOf('  upload-release:', windowsStart);
+  const windows = workflow.slice(windowsStart, windowsEnd);
+  assert.match(windows, /--config\.forceCodeSigning=true/);
+  assert.match(windows, /--config\.forceCodeSigning=false/);
+  assert.doesNotMatch(windows, /-c\.forceCodeSigning=(?:true|false)/);
   assert.match(windows, /Get-Command signtool\.exe/);
   assert.match(windows, /dist-electron\/win-unpacked\/zplc-ide\.exe/);
   assert.match(windows, /dist-electron\/win-unpacked\/resources\/native-runtime\/zplc_runtime\.exe/);

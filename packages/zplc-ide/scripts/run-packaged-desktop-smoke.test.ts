@@ -91,9 +91,12 @@ test('desktop smoke exercises real renderer accessibility and packaged isolation
   expect(developmentSmoke).toContain("forced-colors");
   expect(developmentSmoke).toContain("Toggle high contrast theme");
   expect(developmentSmoke).toContain("Learn keyboard selection");
+  expect(developmentSmoke).not.toContain('nativeVirtualKeyCode');
   expect(packagedSmoke).toContain("Node globals leaked into packaged renderer");
   expect(packagedSmoke).toContain("Unexpected packaged preload surface");
   expect(packagedSmoke).toContain("'isElectron', 'learnProgress', 'nativeSimulation'");
   expect(packagedSmoke).toContain("Packaged renderer opened a new window");
   expect(packagedSmoke).toContain("Toggle high contrast theme");
+  expect(packagedSmoke).not.toContain('nativeVirtualKeyCode');
+  expect(packagedSmoke).toContain("await waitFor('packaged high-contrast keyboard activation'");
 });
