@@ -1,6 +1,6 @@
 {
   "name": "@zplc/compiler",
-  "version": "2.0.0-rc.1",
+  "version": "2.0.0-rc.3",
   "description": "IEC 61131-3 Structured Text compiler for ZPLC runtime",
   "type": "module",
   "main": "./src/index.ts",

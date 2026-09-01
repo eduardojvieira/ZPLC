@@ -41,7 +41,7 @@ describe('useIDEStore workspace-test boundary', () => {
 describe('useIDEStore canonical saved-build evidence', () => {
   it('publishes only the current linked session/run and clears a relink', () => {
     useIDEStore.setState({
-      isProjectOpen: true, isVirtualProject: false, projectSession: 77, compilerRunId: 9,
+      isProjectOpen: true, projectSession: 77, compilerRunId: 9,
       workspaceScenarioLink: { workspaceId: 'workspace-token', projectSession: 77 }, canonicalWorkspaceBuildEvidence: null,
     });
     const evidence = { projectSession: 77, compilerRunId: 9, workspaceId: 'workspace-token', zplc: { kind: 'zplc' as const, sha256: 'a'.repeat(64), byteLength: 1 } };
@@ -56,7 +56,7 @@ describe('useIDEStore canonical saved-build evidence', () => {
 function replaceProject(name = 'replacement') {
   const current = useIDEStore.getState();
   useIDEStore.setState({
-    isProjectOpen: true, isVirtualProject: true, projectName: name, projectConfig: { ...DEFAULT_ZPLC_CONFIG, name },
+    isProjectOpen: true, projectName: name, projectConfig: { ...DEFAULT_ZPLC_CONFIG, name },
     projectMigrationPreview: null, directoryHandle: { name } as FileSystemDirectoryHandle,
     fileTree: { id: 'dir:/', name, type: 'directory', path: '/', children: [] }, loadedFiles: new Map(), activeFileId: null, openTabs: [],
     projectSession: current.projectSession + 1, workspaceScenarioLink: null, projectConfigDirty: false,
@@ -329,7 +329,7 @@ describe('useIDEStore live ST syntax diagnostics', () => {
 });
 
 describe('useIDEStore project migration disclosure', () => {
-  it('clears the in-memory migration preview when a project closes or a virtual project replaces it', () => {
+  it('clears the migration preview when a project closes or another folder replaces it', () => {
     useIDEStore.setState({ projectMigrationPreview: migrationPreview });
 
     useIDEStore.getState().closeProject();
@@ -340,9 +340,9 @@ describe('useIDEStore project migration disclosure', () => {
     expect(useIDEStore.getState().projectMigrationPreview).toBeNull();
   });
 
-  it('does not expose virtual example-opening actions', () => {
-    expect('openExampleProject' in useIDEStore.getState()).toBe(false);
-    expect('createVirtualProject' in useIDEStore.getState()).toBe(false);
+  it('exposes folder-backed example copying only', () => {
+    expect(typeof useIDEStore.getState().copyExampleProjectToFolder).toBe('function');
+    expect(typeof useIDEStore.getState().openProjectFromFolder).toBe('function');
   });
 });
 
@@ -426,7 +426,7 @@ describe('useIDEStore folder opening', () => {
     const config = { ...DEFAULT_ZPLC_CONFIG, name: 'old-project' };
     useIDEStore.getState().clearForcedValues();
     useIDEStore.setState({
-      isProjectOpen: true, isVirtualProject: false, projectName: 'old-project', projectConfig: config, projectConfigDirty: false,
+      isProjectOpen: true, projectName: 'old-project', projectConfig: config, projectConfigDirty: false,
       projectSession: 710, directoryHandle: { name: 'old-project' } as FileSystemDirectoryHandle, fileTree: tree,
       loadedFiles: new Map([[file.id, file]]), activeFileId: file.id, openTabs: [file.id],
     });
@@ -540,7 +540,7 @@ describe('useIDEStore folder opening', () => {
     expect(destination.files.get('src/main.st')).toBe('PROGRAM Main END_PROGRAM');
     expect(destination.files.get('tests/main.scenario.json')).toBe('{"schemaVersion":1}');
     expect(destination.files.get('zplc.json')).toContain('"schemaVersion": 2');
-    expect(current).toMatchObject({ isVirtualProject: false, directoryHandle: destination.handle, projectMigrationPreview: null, activeFileId: 'file:src/main.st', openTabs: ['file:src/main.st'] });
+    expect(current).toMatchObject({ directoryHandle: destination.handle, projectMigrationPreview: null, activeFileId: 'file:src/main.st', openTabs: ['file:src/main.st'] });
     expect(current.loadedFiles.get('file:src/main.st')?.handle).toBeDefined();
   });
 
@@ -640,7 +640,7 @@ describe('useIDEStore folder opening', () => {
 
 describe('useIDEStore workspace scenario links', () => {
   it('binds a local workspace only to the current physical project session', () => {
-    useIDEStore.setState({ isProjectOpen: true, isVirtualProject: false, projectSession: 100, workspaceScenarioLink: null });
+    useIDEStore.setState({ isProjectOpen: true, projectSession: 100, workspaceScenarioLink: null });
     const state = useIDEStore.getState();
 
     expect(state.linkWorkspaceScenarios('workspace-token', 99)).toBe(false);
@@ -651,14 +651,14 @@ describe('useIDEStore workspace scenario links', () => {
     replaceProject();
     expect(useIDEStore.getState().workspaceScenarioLink).toBeNull();
     expect(useIDEStore.getState().projectSession).toBe(101);
-    expect(useIDEStore.getState().linkWorkspaceScenarios('workspace-token', 101)).toBe(false);
+    expect(useIDEStore.getState().linkWorkspaceScenarios('workspace-token', 101)).toBe(true);
   });
 
   it('does not clear a link or advance the session when close is blocked by force evidence', () => {
     const state = useIDEStore.getState();
     state.clearForcedValues();
     state.setForcedValue({ path: 'Motor.Enable', address: 16, size: 1, type: 'BOOL', bytesHex: '01', state: WATCH_FORCE_STATE.FORCED });
-    useIDEStore.setState({ isProjectOpen: true, isVirtualProject: false, projectSession: 200, workspaceScenarioLink: { workspaceId: 'workspace-token', projectSession: 200 } });
+    useIDEStore.setState({ isProjectOpen: true, projectSession: 200, workspaceScenarioLink: { workspaceId: 'workspace-token', projectSession: 200 } });
 
     state.closeProject();
     expect(useIDEStore.getState()).toMatchObject({ projectSession: 200, workspaceScenarioLink: { workspaceId: 'workspace-token', projectSession: 200 } });
@@ -689,7 +689,6 @@ describe('useIDEStore project close admission', () => {
     state.clearForcedValues();
     useIDEStore.setState({
       isProjectOpen: true,
-      isVirtualProject: false,
       projectName: 'Unsaved project',
       projectConfig: { name: 'Unsaved project', version: '1.0.0', schemaVersion: 2, tasks: [] },
       projectSession: 900,
@@ -757,7 +756,7 @@ describe('useIDEStore deferred saves', () => {
       }),
     } as unknown as FileSystemFileHandle;
     const file = { id: 'file-src-main-st', name: 'main.st', path: 'src/main.st', parentPath: 'src', language: 'ST' as const, content: 'old', isModified: true, handle };
-    useIDEStore.setState({ isProjectOpen: true, isVirtualProject: false, projectSession: 300, loadedFiles: new Map([[file.id, file]]) });
+    useIDEStore.setState({ isProjectOpen: true, projectSession: 300, loadedFiles: new Map([[file.id, file]]) });
 
     const saving = useIDEStore.getState().saveFile(file.id);
     await closeStarted.promise;
@@ -777,7 +776,7 @@ describe('useIDEStore deferred saves', () => {
       getFileHandle: async () => configHandle,
     } as unknown as FileSystemDirectoryHandle;
     useIDEStore.setState({
-      isProjectOpen: true, isVirtualProject: false, projectSession: 300, projectConfig: { ...DEFAULT_ZPLC_CONFIG, name: 'legacy' },
+      isProjectOpen: true, projectSession: 300, projectConfig: { ...DEFAULT_ZPLC_CONFIG, name: 'legacy' },
       projectConfigDirty: true, projectMigrationPreview: migrationPreview, directoryHandle,
     });
     useIDEStore.getState().clearConsole();
@@ -797,7 +796,7 @@ describe('useIDEStore deferred saves', () => {
       getFileHandle: async () => configHandle,
     } as unknown as FileSystemDirectoryHandle;
     useIDEStore.setState({
-      isProjectOpen: true, isVirtualProject: false, projectSession: 300, projectConfig: { ...DEFAULT_ZPLC_CONFIG, name: 'legacy' },
+      isProjectOpen: true, projectSession: 300, projectConfig: { ...DEFAULT_ZPLC_CONFIG, name: 'legacy' },
       projectConfigDirty: true, projectMigrationPreview: migrationPreview, directoryHandle,
     });
     useIDEStore.getState().clearConsole();
@@ -823,7 +822,7 @@ describe('useIDEStore deferred saves', () => {
     } as unknown as FileSystemDirectoryHandle;
     const config = { ...DEFAULT_ZPLC_CONFIG, name: 'local' };
     useIDEStore.getState().clearConsole();
-    useIDEStore.setState({ isProjectOpen: true, isVirtualProject: false, projectSession: 301, projectConfig: config, projectConfigDirty: true, directoryHandle });
+    useIDEStore.setState({ isProjectOpen: true, projectSession: 301, projectConfig: config, projectConfigDirty: true, directoryHandle });
 
     const saving = useIDEStore.getState().saveProjectConfig();
     await closeStarted.promise;
@@ -850,7 +849,7 @@ describe('useIDEStore deferred saves', () => {
       getFileHandle: async () => configHandle,
     } as unknown as FileSystemDirectoryHandle;
     useIDEStore.getState().clearConsole();
-    useIDEStore.setState({ isProjectOpen: true, isVirtualProject: false, projectSession: 302, projectConfig: { ...DEFAULT_ZPLC_CONFIG, name: 'before' }, projectConfigDirty: true, projectMigrationPreview: migrationPreview, directoryHandle });
+    useIDEStore.setState({ isProjectOpen: true, projectSession: 302, projectConfig: { ...DEFAULT_ZPLC_CONFIG, name: 'before' }, projectConfigDirty: true, projectMigrationPreview: migrationPreview, directoryHandle });
 
     const saving = useIDEStore.getState().saveProjectConfig();
     await closeStarted.promise;
@@ -871,7 +870,7 @@ describe('useIDEStore deferred saves', () => {
       getFileHandle: async () => { getFileHandleCalls += 1; throw new Error('must not write'); },
     } as unknown as FileSystemDirectoryHandle;
     useIDEStore.getState().clearConsole();
-    useIDEStore.setState({ isProjectOpen: true, isVirtualProject: false, projectSession: 303, projectConfig: { ...DEFAULT_ZPLC_CONFIG, name: 'permission-query' }, projectConfigDirty: true, directoryHandle });
+    useIDEStore.setState({ isProjectOpen: true, projectSession: 303, projectConfig: { ...DEFAULT_ZPLC_CONFIG, name: 'permission-query' }, projectConfigDirty: true, directoryHandle });
 
     const saving = useIDEStore.getState().saveProjectConfig();
     await queryStarted.promise;
@@ -894,7 +893,7 @@ describe('useIDEStore deferred saves', () => {
       getFileHandle: async () => { getFileHandleCalls += 1; throw new Error('must not write'); },
     } as unknown as FileSystemDirectoryHandle;
     useIDEStore.getState().clearConsole();
-    useIDEStore.setState({ isProjectOpen: true, isVirtualProject: false, projectSession: 304, projectConfig: { ...DEFAULT_ZPLC_CONFIG, name: 'permission-request' }, projectConfigDirty: true, directoryHandle });
+    useIDEStore.setState({ isProjectOpen: true, projectSession: 304, projectConfig: { ...DEFAULT_ZPLC_CONFIG, name: 'permission-request' }, projectConfigDirty: true, directoryHandle });
 
     const saving = useIDEStore.getState().saveProjectConfig();
     await requestStarted.promise;
@@ -925,11 +924,11 @@ describe('useIDEStore deferred saves', () => {
       handle: { createWritable: async () => { replacementWrites += 1; return { write: async () => {}, close: async () => {} }; } } as unknown as FileSystemFileHandle,
     };
     useIDEStore.getState().clearConsole();
-    useIDEStore.setState({ isProjectOpen: true, isVirtualProject: false, projectSession: 305, loadedFiles: new Map([[first.id, first], [second.id, second]]) });
+    useIDEStore.setState({ isProjectOpen: true, projectSession: 305, loadedFiles: new Map([[first.id, first], [second.id, second]]) });
 
     const saving = useIDEStore.getState().saveAllFiles();
     await firstCloseStarted.promise;
-    useIDEStore.setState({ isProjectOpen: true, isVirtualProject: false, projectSession: 306, loadedFiles: new Map([[replacement.id, replacement]]) });
+    useIDEStore.setState({ isProjectOpen: true, projectSession: 306, loadedFiles: new Map([[replacement.id, replacement]]) });
     useIDEStore.getState().clearConsole();
     completeFirstClose.resolve();
 
@@ -937,35 +936,6 @@ describe('useIDEStore deferred saves', () => {
     expect(replacementWrites).toBe(0);
     expect(useIDEStore.getState().loadedFiles.get(replacement.id)).toBe(replacement);
     expect(useIDEStore.getState().consoleEntries).toEqual([]);
-  });
-});
-
-describe('useIDEStore virtual saves', () => {
-  it('keeps an edited virtual file dirty because no durable project write occurred', async () => {
-    const file = {
-      id: 'file-src-main-st', name: 'main.st', path: 'src/main.st', parentPath: 'src',
-      language: 'ST' as const, content: 'PROGRAM Main END_PROGRAM', isModified: true,
-    };
-    useIDEStore.setState({
-      isProjectOpen: true,
-      isVirtualProject: true,
-      projectName: 'Virtual project',
-      projectConfig: { name: 'Virtual project', version: '1.0.0', schemaVersion: 2, tasks: [] },
-      projectSession: 400,
-      loadedFiles: new Map([[file.id, file]]),
-      activeFileId: file.id,
-      openTabs: [file.id],
-    });
-    const before = useIDEStore.getState().loadedFiles.get(file.id);
-
-    await expect(useIDEStore.getState().saveFile(file.id)).resolves.toBe(false);
-
-    const current = useIDEStore.getState();
-    expect(current.loadedFiles.get(file.id)).toBe(before);
-    expect(current.loadedFiles.get(file.id)).toMatchObject({ content: 'PROGRAM Main END_PROGRAM', isModified: true });
-    expect(current.hasUnsavedChanges()).toBe(true);
-    expect(current.closeProject()).toBe(false);
-    expect(useIDEStore.getState()).toMatchObject({ isProjectOpen: true, projectName: 'Virtual project', projectSession: 400 });
   });
 });
 
@@ -1044,7 +1014,7 @@ describe('useIDEStore file deletion', () => {
       dirHandle: { removeEntry: async (name: string) => { calls.push(name); } } as unknown as FileSystemDirectoryHandle,
       children: [source],
     }]);
-    useIDEStore.setState({ isProjectOpen: true, isVirtualProject: false, projectSession: 801, fileTree: root, loadedFiles: new Map(), openTabs: [], activeFileId: null });
+    useIDEStore.setState({ isProjectOpen: true, projectSession: 801, fileTree: root, loadedFiles: new Map(), openTabs: [], activeFileId: null });
 
     await expect(useIDEStore.getState().deleteFile(source.id)).resolves.toBe(true);
 
@@ -1061,7 +1031,7 @@ describe('useIDEStore file deletion', () => {
       dirHandle: { removeEntry: async (name: string) => { calls.push(name); } } as unknown as FileSystemDirectoryHandle,
       children: [first, second],
     }]);
-    useIDEStore.setState({ isProjectOpen: true, isVirtualProject: false, projectSession: 810, fileTree: root, loadedFiles: new Map(), openTabs: [], activeFileId: null });
+    useIDEStore.setState({ isProjectOpen: true, projectSession: 810, fileTree: root, loadedFiles: new Map(), openTabs: [], activeFileId: null });
 
     await expect(useIDEStore.getState().deleteFile(second.id)).resolves.toBe(true);
 
@@ -1079,7 +1049,7 @@ describe('useIDEStore file deletion', () => {
     }]);
     const breakpoints = new Map([['motor', new Set([3])]]);
     useIDEStore.setState({
-      isProjectOpen: true, isVirtualProject: false, projectSession: 802, fileTree: root,
+      isProjectOpen: true, projectSession: 802, fileTree: root,
       loadedFiles: new Map([[source.id, sourceFile]]), openTabs: [source.id], activeFileId: source.id,
       compilerMessages: [{ type: 'error', message: 'old', timestamp: Date.now() }],
       compilerNavigationTarget: { file: source.path, line: 1, column: 1 },
@@ -1098,14 +1068,14 @@ describe('useIDEStore file deletion', () => {
     expect(state.debug.breakpoints).toBe(breakpoints);
   });
 
-  it('immutably prunes a virtual file and returns the active-tab fallback', async () => {
+  it('prunes a deleted folder-backed file and returns the active-tab fallback', async () => {
     const first = fileNode('first');
     const second = fileNode('second');
-    const src = { id: 'src', name: 'src', path: 'src', type: 'directory' as const, children: [first, second] };
+    const src = { id: 'src', name: 'src', path: 'src', type: 'directory' as const, dirHandle: { removeEntry: async () => {} } as unknown as FileSystemDirectoryHandle, children: [first, second] };
     const root = tree([src]);
     const breakpoints = new Map([[second.id, new Set([3])]]);
     useIDEStore.setState({
-      isProjectOpen: true, isVirtualProject: true, projectSession: 803, fileTree: root,
+      isProjectOpen: true, projectSession: 803, fileTree: root,
       loadedFiles: new Map([[first.id, loaded(first.id)], [second.id, loaded(second.id)]]),
       openTabs: [first.id, second.id], activeFileId: second.id,
       compilerMessages: [{ type: 'error', message: 'old', timestamp: Date.now() }],
@@ -1135,11 +1105,11 @@ describe('useIDEStore file deletion', () => {
       dirHandle: { removeEntry: async () => removal.promise } as unknown as FileSystemDirectoryHandle,
       children: [source],
     }]);
-    useIDEStore.setState({ isProjectOpen: true, isVirtualProject: false, projectSession: 804, fileTree: root, loadedFiles: new Map(), openTabs: [], activeFileId: null });
+    useIDEStore.setState({ isProjectOpen: true, projectSession: 804, fileTree: root, loadedFiles: new Map(), openTabs: [], activeFileId: null });
 
     const deleting = useIDEStore.getState().deleteFile(source.id);
     const replacement = tree([]);
-    useIDEStore.setState({ isVirtualProject: true, projectSession: 805, fileTree: replacement, loadedFiles: new Map(), openTabs: [], activeFileId: null });
+    useIDEStore.setState({ projectSession: 805, fileTree: replacement, loadedFiles: new Map(), openTabs: [], activeFileId: null });
     removal.resolve();
 
     await expect(deleting).resolves.toBe(false);
@@ -1155,8 +1125,8 @@ describe('useIDEStore file deletion', () => {
       dirHandle: { removeEntry: async () => { removals += 1; } } as unknown as FileSystemDirectoryHandle,
       children: [source],
     }]);
-    useIDEStore.setState({ isProjectOpen: true, isVirtualProject: false, projectSession: 807, fileTree: initialTree, loadedFiles: new Map(), openTabs: [], activeFileId: null });
-    useIDEStore.setState({ isProjectOpen: true, isVirtualProject: false, projectSession: 808, fileTree: replacement, loadedFiles: new Map(), openTabs: [], activeFileId: null });
+    useIDEStore.setState({ isProjectOpen: true, projectSession: 807, fileTree: initialTree, loadedFiles: new Map(), openTabs: [], activeFileId: null });
+    useIDEStore.setState({ isProjectOpen: true, projectSession: 808, fileTree: replacement, loadedFiles: new Map(), openTabs: [], activeFileId: null });
 
     await expect(useIDEStore.getState().deleteFile(source.id, 807)).resolves.toBe(false);
 
@@ -1171,7 +1141,8 @@ describe('useIDEStore file deletion', () => {
       ...fileNode('motor'),
       handle: { getFile: async () => ({ text: () => content.promise }) } as unknown as FileSystemFileHandle,
     };
-    useIDEStore.setState({ isProjectOpen: true, isVirtualProject: true, projectSession: 806, fileTree: tree([source]), loadedFiles: new Map(), openTabs: [], activeFileId: null });
+    const root = tree([{ id: 'src', name: 'src', path: 'src', type: 'directory', dirHandle: { removeEntry: async () => {} } as unknown as FileSystemDirectoryHandle, children: [source] }]);
+    useIDEStore.setState({ isProjectOpen: true, projectSession: 806, fileTree: root, loadedFiles: new Map(), openTabs: [], activeFileId: null });
 
     const opening = useIDEStore.getState().openFile(source.id);
     await expect(useIDEStore.getState().deleteFile(source.id)).resolves.toBe(true);
@@ -1200,7 +1171,7 @@ describe('useIDEStore file deletion', () => {
     } as unknown as FileSystemDirectoryHandle;
     const source: FileTreeNode = { id: 'file:gone.st', name: 'gone.st', path: 'gone.st', type: 'file', language: 'ST' };
     const root = { id: 'dir:/', name: 'root', path: '/', type: 'directory' as const, dirHandle: handle, children: [source] };
-    useIDEStore.setState({ isProjectOpen: true, isVirtualProject: false, projectSession: 809, directoryHandle: handle, fileTree: root, loadedFiles: new Map(), openTabs: [], activeFileId: null });
+    useIDEStore.setState({ isProjectOpen: true, projectSession: 809, directoryHandle: handle, fileTree: root, loadedFiles: new Map(), openTabs: [], activeFileId: null });
 
     const refreshing = useIDEStore.getState().refreshFileTree();
     await started.promise;
@@ -1224,26 +1195,31 @@ describe('useIDEStore file creation admission', () => {
     ] };
   }
 
-  function seedVirtual(root = tree()): void {
-    useIDEStore.setState({ isProjectOpen: true, isVirtualProject: true, projectSession: 910, directoryHandle: null, fileTree: root, loadedFiles: new Map(), openTabs: [], activeFileId: null });
+  function seedFolder(root = tree(), directoryHandle: FileSystemDirectoryHandle | null = null): void {
+    useIDEStore.setState({ isProjectOpen: true, projectSession: 910, directoryHandle, fileTree: root, loadedFiles: new Map(), openTabs: [], activeFileId: null });
   }
 
-  it('rejects invalid, missing, and duplicate virtual files without mutating the project tree', async () => {
+  it('requires a folder-backed project before creating files', async () => {
     useIDEStore.setState({ isProjectOpen: false, fileTree: null, loadedFiles: new Map() });
     await expect(useIDEStore.getState().createFile('motor', 'ST')).rejects.toThrow('Open a project');
 
     const original = fileNode('motor');
     const root = tree([original]);
-    seedVirtual(root);
+    seedFolder(root);
     await expect(useIDEStore.getState().createFile('../motor', 'ST')).rejects.toThrow('single file name');
-    await expect(useIDEStore.getState().createFile('motor', 'ST')).rejects.toThrow('already exists');
+    await expect(useIDEStore.getState().createFile('motor', 'ST')).rejects.toThrow('cannot create files');
     expect(useIDEStore.getState().fileTree).toBe(root);
     expect(root.children?.[0].children).toEqual([original]);
   });
 
-  it('creates a virtual file immutably in an existing folder and opens one tab', async () => {
+  it('creates a folder-backed file and opens one tab', async () => {
     const root = tree();
-    seedVirtual(root);
+    const fileHandle = { createWritable: async () => ({ write: async () => {}, close: async () => {} }) } as unknown as FileSystemFileHandle;
+    const src = { getFileHandle: async (_name: string, options?: FileSystemGetFileOptions) => {
+      if (options?.create) return fileHandle;
+      throw Object.assign(new Error('missing'), { name: 'NotFoundError' });
+    } } as unknown as FileSystemDirectoryHandle;
+    seedFolder(root, { getDirectoryHandle: async () => src } as unknown as FileSystemDirectoryHandle);
 
     await expect(useIDEStore.getState().createFile(' motor ', 'ST')).resolves.toBe('file:src/motor.st');
 
@@ -1251,7 +1227,7 @@ describe('useIDEStore file creation admission', () => {
     expect(root.children?.[0].children).toEqual([]);
     expect(state.fileTree).not.toBe(root);
     expect(state.fileTree?.children?.[0].children?.map((node) => node.path)).toEqual(['src/motor.st']);
-    expect(state.loadedFiles.get('file:src/motor.st')?.isModified).toBe(true);
+    expect(state.loadedFiles.get('file:src/motor.st')?.isModified).toBe(false);
     expect(state.openTabs.filter((id) => id === 'file:src/motor.st')).toHaveLength(1);
   });
 
@@ -1262,8 +1238,7 @@ describe('useIDEStore file creation admission', () => {
     const source = tree();
     const src = { getFileHandle: async (_name: string, options?: FileSystemGetFileOptions) => { if (options?.create) creates += 1; return existing; } } as unknown as FileSystemDirectoryHandle;
     const root = { getDirectoryHandle: async () => src } as unknown as FileSystemDirectoryHandle;
-    seedVirtual(source);
-    useIDEStore.setState({ isVirtualProject: false, directoryHandle: root });
+    seedFolder(source, root);
 
     await expect(useIDEStore.getState().createFile('motor', 'ST')).rejects.toThrow('already exists');
     expect({ creates, writables }).toEqual({ creates: 0, writables: 0 });
@@ -1278,8 +1253,7 @@ describe('useIDEStore file creation admission', () => {
       getDirectoryHandle: async () => { throw new Error('/private/project/src permission denied'); },
       getFileHandle: async (_name: string, options?: FileSystemGetFileOptions) => { if (options?.create) creates += 1; return {} as FileSystemFileHandle; },
     } as unknown as FileSystemDirectoryHandle;
-    seedVirtual(source);
-    useIDEStore.setState({ isVirtualProject: false, directoryHandle: root });
+    seedFolder(source, root);
 
     await expect(useIDEStore.getState().createFile('motor', 'ST')).rejects.toThrow('Check the name and folder access');
     expect(creates).toBe(0);
@@ -1304,8 +1278,7 @@ describe('useIDEStore file creation admission', () => {
         throw Object.assign(new Error('missing'), { name: 'NotFoundError' });
       },
     } as unknown as FileSystemDirectoryHandle;
-    seedVirtual(source);
-    useIDEStore.setState({ isVirtualProject: false, directoryHandle: { getDirectoryHandle: async () => src } as unknown as FileSystemDirectoryHandle });
+    seedFolder(source, { getDirectoryHandle: async () => src } as unknown as FileSystemDirectoryHandle);
     useIDEStore.getState().clearConsole();
 
     await expect(useIDEStore.getState().createFile('motor', 'ST')).rejects.toThrow('The file may exist on disk. Refresh');
@@ -1322,8 +1295,7 @@ describe('useIDEStore file creation admission', () => {
       getDirectoryHandle: async () => { filesystemCalls += 1; return {} as FileSystemDirectoryHandle; },
       getFileHandle: async () => { filesystemCalls += 1; return {} as FileSystemFileHandle; },
     } as unknown as FileSystemDirectoryHandle;
-    seedVirtual(tree());
-    useIDEStore.setState({ isVirtualProject: false, directoryHandle: root });
+    seedFolder(tree(), root);
 
     await expect(useIDEStore.getState().createFile('motor', 'ST', 'missing')).rejects.toThrow('existing project folder');
     expect(filesystemCalls).toBe(0);
@@ -1333,8 +1305,8 @@ describe('useIDEStore file creation admission', () => {
     const traversal = deferred<FileSystemDirectoryHandle>();
     const source = tree();
     const root = { getDirectoryHandle: async () => traversal.promise } as unknown as FileSystemDirectoryHandle;
-    seedVirtual(source);
-    useIDEStore.setState({ isVirtualProject: false, directoryHandle: root, projectSession: 911 });
+    seedFolder(source, root);
+    useIDEStore.setState({ projectSession: 911 });
     useIDEStore.getState().clearConsole();
 
     const creating = useIDEStore.getState().createFile('motor', 'ST');
@@ -1350,8 +1322,8 @@ describe('useIDEStore file creation admission', () => {
     const traversal = deferred<FileSystemDirectoryHandle>();
     const source = tree();
     const root = { getDirectoryHandle: async () => traversal.promise } as unknown as FileSystemDirectoryHandle;
-    seedVirtual(source);
-    useIDEStore.setState({ isVirtualProject: false, directoryHandle: root, projectSession: 912 });
+    seedFolder(source, root);
+    useIDEStore.setState({ projectSession: 912 });
 
     const creating = useIDEStore.getState().createFile('motor', 'ST');
     const other = { id: 'file:src/other.st', name: 'other.st', path: 'src/other.st', parentPath: 'src', language: 'ST' as const, content: '', isModified: true };
@@ -1384,8 +1356,8 @@ describe('useIDEStore file creation admission', () => {
         return absence.promise;
       },
     } as unknown as FileSystemDirectoryHandle;
-    seedVirtual(source);
-    useIDEStore.setState({ isVirtualProject: false, directoryHandle: { getDirectoryHandle: async () => src } as unknown as FileSystemDirectoryHandle, projectSession: 913 });
+    seedFolder(source, { getDirectoryHandle: async () => src } as unknown as FileSystemDirectoryHandle);
+    useIDEStore.setState({ projectSession: 913 });
 
     const first = useIDEStore.getState().createFile('motor', 'ST');
     await expect(useIDEStore.getState().createFile('motor', 'ST')).rejects.toThrow('already being created');

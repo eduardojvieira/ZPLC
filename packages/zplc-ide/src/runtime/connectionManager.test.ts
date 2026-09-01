@@ -20,7 +20,7 @@ function createAdapter(overrides: Partial<Record<string, unknown>> = {}) {
     connect: async () => { adapter.connected = true; },
     disconnect: async () => { adapter.connected = false; },
     setPassthroughMode: () => undefined,
-    getSystemInfo: async () => ({ board: 'test' }),
+    getSystemInfo: async () => validSystemInfo(),
     getCommunicationMap: async () => [],
     getMqttStatus: async () => null,
     getStatus: async () => ({ state: 'idle', uptime_ms: 0, stats: { cycles: 0 }, opi: [] }),
@@ -76,6 +76,21 @@ describe('ConnectionManager lifecycle', () => {
       get: () => ++connectedChecks === 1,
     });
     await expect(manager.deployProgram(validArtifact(), 'stm32f746g_disco')).rejects.toThrow('ZPLC_DEVICE_PREFLIGHT_STALE');
+    expect(loads).toBe(0);
+  });
+
+  it('rechecks a fresh handshake immediately before send and treats refresh failure as pre-send', async () => {
+    let loads = 0;
+    const adapter = createAdapter({
+      connected: true,
+      getSystemInfo: async () => ({ ...validSystemInfo(), board_profile: 'nucleo_h743zi/stm32h743xx' }),
+      loadProgram: async () => { loads += 1; },
+    });
+    await expect(readyManager(adapter).deployProgram(validArtifact(), 'stm32f746g_disco')).rejects.toThrow('ZPLC_DEVICE_BOARD_PROFILE_MISMATCH');
+    expect(loads).toBe(0);
+
+    const unavailable = createAdapter({ connected: true, getSystemInfo: async () => { throw new Error('unavailable'); }, loadProgram: async () => { loads += 1; } });
+    await expect(readyManager(unavailable).deployProgram(validArtifact(), 'stm32f746g_disco')).rejects.toThrow('ZPLC_DEVICE_PREFLIGHT_STALE');
     expect(loads).toBe(0);
   });
 

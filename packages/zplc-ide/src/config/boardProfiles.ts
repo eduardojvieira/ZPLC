@@ -20,6 +20,8 @@ interface BoardProfile {
   network: NetworkInterfaceKind;
   zephyrBoard: string;
   memory: CompilerMemoryProfile;
+  validationLevel: 'cross-build' | 'human-hil';
+  evidenceCount: number;
 }
 
 interface SupportedBoardManifestEntry {
@@ -30,6 +32,17 @@ interface SupportedBoardManifestEntry {
   network_class: 'serial-focused' | 'network-capable' | 'other';
   network_interface: 'none' | 'wifi' | 'ethernet';
   memory: { work_size: number; retain_size: number; code_size_max: number };
+  validation_level: 'cross-build' | 'human-hil';
+  evidence_refs: string[];
+}
+
+function boardEvidence(board: SupportedBoardManifestEntry): Pick<BoardProfile, 'validationLevel' | 'evidenceCount'> | undefined {
+  if ((board.validation_level !== 'cross-build' && board.validation_level !== 'human-hil')
+    || !Array.isArray(board.evidence_refs)
+    || board.evidence_refs.length > 16
+    || !board.evidence_refs.every((reference) => typeof reference === 'string' && reference.length > 0 && reference.length <= 256)
+    || (board.validation_level === 'human-hil' && board.evidence_refs.length === 0)) return undefined;
+  return { validationLevel: board.validation_level, evidenceCount: board.evidence_refs.length };
 }
 
 function mapNetworkClassToInterface(
@@ -47,9 +60,9 @@ function mapNetworkClassToInterface(
 }
 
 const BOARD_PROFILES: Record<string, BoardProfile> = Object.fromEntries(
-  (supportedBoardsManifest as SupportedBoardManifestEntry[]).map((board) => [
-    board.ide_id,
-    {
+  (supportedBoardsManifest as SupportedBoardManifestEntry[]).flatMap((board) => {
+    const evidence = boardEvidence(board);
+    return evidence ? [[board.ide_id, {
       label: board.display_name,
       network: mapNetworkClassToInterface(board.network_interface),
       zephyrBoard: board.zephyr_board,
@@ -58,8 +71,9 @@ const BOARD_PROFILES: Record<string, BoardProfile> = Object.fromEntries(
         retainSize: board.memory.retain_size,
         codeSizeMax: board.memory.code_size_max,
       },
-    },
-  ])
+      ...evidence,
+    }]] : [];
+  })
 );
 
 export const BOARD_OPTIONS: BoardOption[] = [
@@ -79,6 +93,20 @@ export function getBoardNetworkType(board: string | undefined): NetworkInterface
 /** Exact Zephyr board target declared for an IDE board identifier. */
 export function getZephyrBoardTarget(board: string | undefined): string | undefined {
   return board ? BOARD_PROFILES[board]?.zephyrBoard : undefined;
+}
+
+/** Safe public evidence tier for a catalogue board; paths and references stay private. */
+export function getBoardEvidenceSummary(board: string | undefined): Readonly<{
+  zephyrBoard: string;
+  validationLevel: 'cross-build' | 'human-hil';
+  evidenceCount: number;
+}> | undefined {
+  const profile = board ? BOARD_PROFILES[board] : undefined;
+  return profile && {
+    zephyrBoard: profile.zephyrBoard,
+    validationLevel: profile.validationLevel,
+    evidenceCount: profile.evidenceCount,
+  };
 }
 
 /** Effective compiler limits for a catalogue board; host/custom remain default. */

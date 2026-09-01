@@ -41,7 +41,6 @@ describe('parseAndMigrateProject', () => {
         { op: 'add', path: '/tasks/0/trigger' },
         { op: 'remove', path: '/tasks/0/type' },
         { op: 'remove', path: '/tasks/0/watchdog' },
-        { op: 'add', path: '/tasks/0/watchdog_ms' },
     ]);
   });
 
@@ -51,11 +50,12 @@ describe('parseAndMigrateProject', () => {
 
     expect(input).toEqual(legacyProject);
     expect(migrated).toMatchObject({ schemaVersion: 2, name: ' Legacy project ' });
-    expect(migrated.tasks[0]).toMatchObject({ trigger: 'cyclic', interval_ms: 20, priority: 2, programs: ['Main.st'], watchdog_ms: 50 });
+    expect(migrated.tasks[0]).toMatchObject({ trigger: 'cyclic', interval_ms: 20, priority: 2, programs: ['Main.st'] });
     expect(migrated.tasks[0]).not.toHaveProperty('type');
     expect(migrated.tasks[0]).not.toHaveProperty('interval');
     expect(migrated.tasks[0]).not.toHaveProperty('file');
     expect(migrated.tasks[0]).not.toHaveProperty('watchdog');
+    expect(migrated.tasks[0]).not.toHaveProperty('watchdog_ms');
     expect(parseAndMigrateProject(migrated)).toMatchObject({ ok: true, changed: false, sourceSchemaVersion: 2 });
   });
 
@@ -141,9 +141,10 @@ describe('parseAndMigrateProject', () => {
     expect(result.changes).not.toContainEqual({ op: 'add', path: '/schemaVersion' });
   });
 
-  it('rejects malformed watchdog metadata', () => {
+  it('removes inert watchdog metadata regardless of its legacy value', () => {
     for (const watchdog_ms of ['10', -1]) {
-      expect(parseAndMigrateProject({ ...legacyProject, tasks: [{ name: 'main', programs: ['Main'], watchdog_ms }] })).toMatchObject({ ok: false });
+      const migrated = project({ ...legacyProject, tasks: [{ name: 'main', programs: ['Main'], watchdog_ms }] });
+      expect(migrated.tasks[0]).not.toHaveProperty('watchdog_ms');
     }
   });
 
@@ -152,7 +153,6 @@ describe('parseAndMigrateProject', () => {
       [{ name: 'main', programs: ['Main'], interval_ms: 10, interval: 20 }, 'tasks[0].interval'],
       [{ name: 'main', programs: ['Main'], trigger: 'cyclic', type: 'event' }, 'tasks[0].type'],
       [{ name: 'main', programs: ['Main', 'Other'], file: 'Main' }, 'tasks[0].file'],
-      [{ name: 'main', programs: ['Main'], watchdog_ms: 10, watchdog: 20 }, 'tasks[0].watchdog'],
     ];
     for (const [task, path] of conflicts) {
       const result = parseAndMigrateProject({ ...legacyProject, tasks: [task] });
@@ -161,12 +161,13 @@ describe('parseAndMigrateProject', () => {
     }
   });
 
-  it('removes equivalent canonical and legacy task fields', () => {
+  it('removes canonical and legacy task fields that no longer belong in v2', () => {
     const migrated = project({ ...legacyProject, tasks: [{ name: 'main', programs: ['Main'], file: 'Main', interval_ms: 10, interval: 10, trigger: 'cyclic', type: 'CYCLIC', watchdog_ms: 5, watchdog: 5 }] });
     expect(migrated.tasks[0]).not.toHaveProperty('file');
     expect(migrated.tasks[0]).not.toHaveProperty('interval');
     expect(migrated.tasks[0]).not.toHaveProperty('type');
     expect(migrated.tasks[0]).not.toHaveProperty('watchdog');
+    expect(migrated.tasks[0]).not.toHaveProperty('watchdog_ms');
   });
 
   it('blocks unequivocal credential names but not public identifiers', () => {
@@ -180,7 +181,38 @@ describe('parseAndMigrateProject', () => {
     const task = schema.properties.tasks.items;
     expect(task.required).toEqual(['name']);
     expect(task.anyOf).toEqual([{ required: ['programs'] }, { required: ['file'] }]);
-    expect(task.properties).toMatchObject({ file: { type: 'string' }, interval: { type: 'integer', minimum: 1 }, type: { type: 'string' }, watchdog: { type: 'integer', minimum: 0 } });
+    expect(task.properties).toMatchObject({ file: { type: 'string' }, interval: { type: 'integer', minimum: 1 }, type: { type: 'string' } });
+    expect(task.properties).not.toHaveProperty('watchdog');
+    expect(task.properties).not.toHaveProperty('watchdog_ms');
+  });
+
+  it('keeps the shipped Wi-Fi and MQTT schemas aligned with the parser’s credential boundary', () => {
+    const schema = JSON.parse(readFileSync(fileURLToPath(new URL('../../zplc.schema.json', import.meta.url)), 'utf8'));
+    const wifi = schema.definitions.wifiNetworkConfig;
+    const mqtt = schema.definitions.mqttConfig;
+    const forbidden = ['password', 'clientKeyPath', 'azureSasKey', 'awsClaimKeyPath'];
+
+    expect(wifi.additionalProperties).toBe(false);
+    expect(mqtt.additionalProperties).toBe(false);
+    for (const key of forbidden) {
+      expect(wifi.properties).not.toHaveProperty(key);
+      expect(mqtt.properties).not.toHaveProperty(key);
+      const result = parseAndMigrateProject({
+        ...legacyProject,
+        ...(key === 'password'
+          ? { network: { wifi: { enabled: true, security: 'wpa2-psk', hiddenSsid: false, ipv4: { dhcp: true }, [key]: 'secret' } } }
+          : { communication: { mqtt: { enabled: false, profile: 'generic-broker', protocolVersion: '5.0', transport: 'tls', broker: 'broker.example', port: 8883, clientId: 'controller', keepAliveSec: 60, cleanSession: true, sessionExpirySec: 0, topicNamespace: 'plant', publishIntervalMs: 1000, publishQos: 0, subscribeQos: 0, publishRetain: false, lwtEnabled: false, lwtQos: 0, lwtRetain: false, securityLevel: 'tls-server-verify', [key]: 'secret' } } }),
+      });
+      expect(result).toMatchObject({ ok: false });
+    }
+
+    expect(parseAndMigrateProject({
+      ...legacyProject,
+      communication: { mqtt: { enabled: false, profile: 'generic-broker', protocolVersion: '5.0', transport: 'tls', broker: 'broker.example', port: 8883, clientId: 'controller', keepAliveSec: 60, cleanSession: true, sessionExpirySec: 0, username: 'operator', topicNamespace: 'plant', publishIntervalMs: 1000, publishQos: 0, subscribeQos: 0, publishRetain: false, lwtEnabled: false, lwtQos: 0, lwtRetain: false, securityLevel: 'tls-server-verify', caCertPath: 'certificates/ca.pem', clientCertPath: 'certificates/public.pem' } },
+    })).toMatchObject({ ok: true });
+
+    const canonical = JSON.parse(readFileSync(fileURLToPath(new URL('../../projects/pico_blinky/zplc.json', import.meta.url)), 'utf8'));
+    for (const key of Object.keys(canonical.communication.mqtt)) expect(mqtt.properties).toHaveProperty(key);
   });
 
   it('accepts all versioned project fixtures', () => {

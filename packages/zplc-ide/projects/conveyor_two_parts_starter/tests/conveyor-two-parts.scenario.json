@@ -1,0 +1,1 @@
+{"schemaVersion":1,"id":"ConveyorTwoParts","tickMs":10,"durationMs":10,"events":[{"atMs":0,"set":{"Conveyor.Start":true,"Conveyor.PartAtClassifier":true,"Conveyor.MetalDetected":true,"Conveyor.PartAtDiverter":true}}],"expectations":[{"kind":"AT","atMs":0,"condition":{"Conveyor.DiverterCommand":true}}]}

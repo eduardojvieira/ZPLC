@@ -1,0 +1,1 @@
+{"schemaVersion":1,"id":"PedestrianCrossing","tickMs":10,"durationMs":10,"events":[{"atMs":0,"set":{"PedestrianCrossing.PedRequest":true}}],"expectations":[{"kind":"AT","atMs":10,"condition":{"PedestrianCrossing.VehicleRed":true,"PedestrianCrossing.PedWalk":true}}]}

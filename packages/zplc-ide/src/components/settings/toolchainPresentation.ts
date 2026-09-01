@@ -42,6 +42,7 @@ const SAFE_VERSION = /^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$/;
 const SHA40 = /^[a-f0-9]{40}$/;
 const TOOLCHAIN_DIAGNOSTIC = /^TOOLCHAIN_[A-Z0-9_]{1,63}$/;
 const TOOLCHAIN_MESSAGE = 'Toolchain prerequisite is unavailable';
+const ISO_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 
 function record(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value) && Object.getPrototypeOf(value) === Object.prototype;
@@ -53,6 +54,23 @@ function hasExactKeys(value: Record<string, unknown>, keys: readonly string[]): 
 
 function hasOnlyKeys(value: Record<string, unknown>, allowed: readonly string[]): boolean {
   return Object.keys(value).every((key) => allowed.includes(key));
+}
+
+function validStudioExecution(value: unknown, operation: 'toolchain-inspect' | 'firmware-build', permission: 'toolchain:inspect' | 'firmware:build', outcome: 'passed' | 'failed' | 'cancelled'): boolean {
+  if (!record(value) || !hasExactKeys(value, ['schemaVersion', 'jobId', 'actor', 'permission', 'operation', 'outcome', 'startedAt', 'finishedAt'])) return false;
+  const timestamp = (candidate: unknown): candidate is string => typeof candidate === 'string'
+    && ISO_TIMESTAMP.test(candidate)
+    && Number.isFinite(Date.parse(candidate))
+    && new Date(candidate).toISOString() === candidate;
+  const started = timestamp(value.startedAt) ? Date.parse(value.startedAt) : NaN;
+  const finished = timestamp(value.finishedAt) ? Date.parse(value.finishedAt) : NaN;
+  return value.schemaVersion === 1 && typeof value.jobId === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value.jobId)
+    && value.actor === 'human-studio' && value.permission === permission && value.operation === operation && value.outcome === outcome
+    && Number.isFinite(started) && Number.isFinite(finished) && finished >= started;
+}
+
+function hasResultKeys(value: Record<string, unknown>, keys: readonly string[], operation: 'toolchain-inspect' | 'firmware-build', permission: 'toolchain:inspect' | 'firmware:build', outcome: 'passed' | 'failed' | 'cancelled'): boolean {
+  return hasExactKeys(value, keys) || (hasExactKeys(value, [...keys, 'execution']) && validStudioExecution(value.execution, operation, permission, outcome));
 }
 
 function isCheckId(value: unknown): value is CheckId {
@@ -101,7 +119,7 @@ function validBoards(value: unknown): value is Array<Record<string, unknown>> {
 
 /** Safely reduces the untrusted desktop response to copy that is safe to render. */
 export function presentToolchainInspectResult(value: unknown): ToolchainPresentation {
-  if (!record(value) || !hasExactKeys(value, ['ok', 'summary', 'evidence']) || typeof value.ok !== 'boolean' || !validEvidence(value.evidence, value.ok) || !record(value.summary)) return unavailable();
+  if (!record(value) || !hasResultKeys(value, ['ok', 'summary', 'evidence'], 'toolchain-inspect', 'toolchain:inspect', value.ok === true ? 'passed' : 'failed') || typeof value.ok !== 'boolean' || !validEvidence(value.evidence, value.ok) || !record(value.summary)) return unavailable();
   const summary = value.summary;
   if (!hasExactKeys(summary, ['scope', 'ready', 'checks', 'boards'])
     || summary.scope !== 'local-firmware-build-prerequisites'
@@ -156,14 +174,14 @@ export function presentFirmwareBuildResult(value: unknown): FirmwareBuildPresent
     || evidence.schemaVersion !== 1 || evidence.operation !== 'firmware-build'
     || !Array.isArray(evidence.diagnostics) || !Array.isArray(evidence.artifacts)) return { kind: 'failed' };
   if (!value.ok) {
-    if (!hasExactKeys(value, ['ok', 'evidence']) || evidence.outcome !== 'failed' || evidence.artifacts.length !== 0 || evidence.diagnostics.length !== 1) return { kind: 'failed' };
+    if (!hasResultKeys(value, ['ok', 'evidence'], 'firmware-build', 'firmware:build', evidence.diagnostics.some((diagnostic) => record(diagnostic) && diagnostic.code === 'FIRMWARE_BUILD_CANCELLED') ? 'cancelled' : 'failed') || evidence.outcome !== 'failed' || evidence.artifacts.length !== 0 || evidence.diagnostics.length !== 1) return { kind: 'failed' };
     const diagnostic = evidence.diagnostics[0];
     if (!record(diagnostic) || !hasExactKeys(diagnostic, ['code', 'message']) || diagnostic.message !== 'Firmware build is unavailable' || typeof diagnostic.code !== 'string') return { kind: 'failed' };
     if (diagnostic.code === 'FIRMWARE_BUILD_CANCELLED') return { kind: 'cancelled' };
     if (diagnostic.code === 'FIRMWARE_BUILD_CLEANUP_FAILED') return { kind: 'cleanup-unconfirmed' };
     return { kind: 'failed' };
   }
-  if (!hasExactKeys(value, ['ok', 'summary', 'evidence']) || evidence.outcome !== 'passed' || evidence.diagnostics.length !== 0 || evidence.artifacts.length !== 1 || !record(value.summary)) return { kind: 'failed' };
+  if (!hasResultKeys(value, ['ok', 'summary', 'evidence'], 'firmware-build', 'firmware:build', 'passed') || evidence.outcome !== 'passed' || evidence.diagnostics.length !== 0 || evidence.artifacts.length !== 1 || !record(value.summary)) return { kind: 'failed' };
   const summary = value.summary;
   if (!hasExactKeys(summary, ['schemaVersion', 'scope', 'sourceIdentity', 'board', 'artifact', 'output'])
     || summary.schemaVersion !== 1 || summary.scope !== 'local-ephemeral-cross-build' || summary.sourceIdentity !== 'unverified'

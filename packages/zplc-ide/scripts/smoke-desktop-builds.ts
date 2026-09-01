@@ -82,7 +82,8 @@ export function discoverUnpackedResources(distDir: string): string[] {
 
 export function assertPackagedAppAsar(resourcesPath: string): string {
   const appAsar = join(resourcesPath, 'app.asar');
-  if (!existsSync(appAsar) || !lstatSync(appAsar).isFile()) {
+  const appAsarStat = existsSync(appAsar) ? lstatSync(appAsar) : null;
+  if (!appAsarStat?.isFile() || appAsarStat.size === 0) {
     throw new Error(`Desktop smoke build check failed: missing packaged app.asar in ${resourcesPath}`);
   }
   return appAsar;

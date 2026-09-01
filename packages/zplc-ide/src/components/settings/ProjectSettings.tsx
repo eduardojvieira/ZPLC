@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import { useIDEStore } from '../../store/useIDEStore';
 import { ZPLC_CONSTANTS } from '@zplc/compiler';
-import { getTaskIntervalMs, getTaskWatchdogMs } from './taskFieldAccessors';
+import { getTaskIntervalMs } from './taskFieldAccessors';
 import type {
   TaskDefinition,
   TaskTrigger,
@@ -48,6 +48,7 @@ import type {
 } from '../../types';
 import {
   BOARD_OPTIONS,
+  getBoardEvidenceSummary,
   getBoardNetworkType,
   normalizeNetworkConfigForBoard,
 } from '../../config/boardProfiles';
@@ -58,7 +59,7 @@ import { presentFirmwareBuildResult, presentToolchainInspectResult, type Firmwar
 // =============================================================================
 
 export function ProjectSettings() {
-  const { projectConfig, saveProjectConfig, isVirtualProject, updateProjectConfig } = useIDEStore();
+  const { projectConfig, saveProjectConfig, updateProjectConfig } = useIDEStore();
 
   // Section collapse state
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
@@ -116,31 +117,15 @@ export function ProjectSettings() {
           </div>
           <button
             onClick={handleSave}
-            className={`px-4 py-2 text-sm rounded font-medium transition-colors ${isVirtualProject
-              ? 'bg-[var(--color-surface-600)] hover:bg-[var(--color-surface-500)] text-[var(--color-surface-200)]'
-              : 'bg-[var(--color-accent-blue)] hover:bg-[var(--color-accent-blue)]/80 text-white'
-              }`}
-            title={isVirtualProject ? 'Virtual project - changes are in-memory only' : 'Save changes to zplc.json'}
+            className="px-4 py-2 text-sm rounded font-medium transition-colors bg-[var(--color-accent-blue)] hover:bg-[var(--color-accent-blue)]/80 text-white"
+            title="Save changes to zplc.json"
           >
-            {isVirtualProject ? 'Apply (Virtual)' : 'Save Config'}
+            Save Config
           </button>
         </div>
 
         {/* Settings Sections */}
         <div className="space-y-4">
-          {/* Virtual Project Warning */}
-          {isVirtualProject && (
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-[var(--color-accent-yellow)]/10 border border-[var(--color-accent-yellow)]/30">
-              <Settings size={18} className="text-[var(--color-accent-yellow)] shrink-0 mt-0.5" />
-              <div className="text-sm">
-                <p className="font-medium text-[var(--color-accent-yellow)]">Virtual Project</p>
-                <p className="text-[var(--color-surface-300)] text-xs mt-1">
-                  This is an example or in-memory project. Changes are stored temporarily and will be lost when you close the IDE.
-                  To persist changes, use <strong>File → Open Folder</strong> to work with a real directory.
-                </p>
-              </div>
-            </div>
-          )}
           {/* ================= METADATA ================= */}
           <SettingsSection
             title="Project Metadata"
@@ -369,6 +354,7 @@ function TargetSection({ config, updateConfig }: SectionProps) {
   const [customBoard, setCustomBoard] = useState(
     !BOARD_OPTIONS.find(opt => opt.value === target.board) && target.board ? true : false
   );
+  const evidence = customBoard ? undefined : getBoardEvidenceSummary(target.board);
 
   const updateTarget = (updates: Partial<TargetConfig>) => {
     const newTarget = { ...target, ...updates };
@@ -439,6 +425,16 @@ function TargetSection({ config, updateConfig }: SectionProps) {
           </select>
         )}
       </div>
+
+      {evidence ? (
+        <div className="border-y border-[var(--color-surface-600)] py-3 text-xs leading-5 text-[var(--color-surface-300)]" aria-label="Board evidence tier">
+          <p><span className="font-medium text-[var(--color-surface-100)]">Evidence tier:</span> {evidence.validationLevel}</p>
+          <p><span className="font-medium text-[var(--color-surface-100)]">{evidence.evidenceCount} HIL evidence records</span></p>
+          <p className="mt-1 text-[var(--color-surface-400)]">Flash runtime firmware unavailable until this exact profile is HIL-qualified.</p>
+        </div>
+      ) : target.board ? (
+        <p className="border-y border-[var(--color-surface-600)] py-3 text-xs leading-5 text-[var(--color-surface-400)]">No catalogued evidence for this custom target.</p>
+      ) : null}
 
       <ToolchainCard ideId={customBoard ? undefined : target.board} />
 
@@ -2122,7 +2118,6 @@ function TaskCard({ task, availablePrograms, onUpdate, onRemove }: TaskCardProps
   // Currently only one program per task is supported by the runtime
   // Programs are stored WITH extension (e.g., "main.st", "main.fbd")
   const selectedProgram = task.programs[0] || '';
-  const watchdogHelpId = useId();
 
   return (
     <div className="bg-[var(--color-surface-700)] rounded-lg p-3 border border-[var(--color-surface-500)]">
@@ -2191,25 +2186,6 @@ function TaskCard({ task, availablePrograms, onUpdate, onRemove }: TaskCardProps
           />
         </div>
 
-        {/* Reserved watchdog compatibility metadata */}
-        <div>
-          <label className="block text-xs text-[var(--color-surface-400)] mb-1">
-            Watchdog metadata (ms)
-          </label>
-          <input
-            type="number"
-            min={0}
-            max={10000}
-            value={getTaskWatchdogMs(task)}
-            onChange={(e) => onUpdate({ watchdog_ms: e.target.value ? parseInt(e.target.value) : undefined })}
-            placeholder="Optional"
-            aria-describedby={watchdogHelpId}
-            className="w-full px-2 py-1 text-sm bg-[var(--color-surface-600)] border border-[var(--color-surface-500)] rounded text-[var(--color-surface-100)] focus:outline-none placeholder:text-[var(--color-surface-500)]"
-          />
-          <p id={watchdogHelpId} className="mt-1 text-xs text-[var(--color-surface-400)]">
-            Stored only for project compatibility; current runtimes ignore this value.
-          </p>
-        </div>
       </div>
 
       {/* Program */}

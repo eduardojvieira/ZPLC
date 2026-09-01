@@ -78,6 +78,34 @@
   --shadow-md: 0 8px 20px rgb(0 0 0 / 0.42);
 }
 
+/* High contrast is an explicit author choice; forced-colors remains the OS override below. */
+:root.high-contrast {
+  color-scheme: dark;
+  --color-surface-900: #000;
+  --color-surface-800: #080808;
+  --color-surface-700: #111;
+  --color-surface-600: #fff;
+  --color-surface-500: #d7d7d7;
+  --color-surface-400: #e5e5e5;
+  --color-surface-300: #f2f2f2;
+  --color-surface-200: #fff;
+  --color-surface-100: #fff;
+  --color-accent-blue: #55c8ff;
+  --color-accent-cyan: #55c8ff;
+  --color-accent-green: #7dff9a;
+  --color-accent-yellow: #ffe16b;
+  --color-accent-orange: #ffe16b;
+  --color-accent-red: #ff9393;
+  --color-accent-purple: #d0b8ff;
+  --text-primary: #fff;
+  --text-secondary: #f2f2f2;
+  --text-tertiary: #e5e5e5;
+  --text-muted: #d7d7d7;
+  --border-color: #fff;
+}
+
+:root.high-contrast :focus-visible { outline: 3px solid var(--color-accent-blue) !important; outline-offset: 2px; }
+
 
 .zplc-visual-editor { background: var(--visual-canvas); color: var(--text-primary); }
 .zplc-visual-toolbox { background: var(--visual-panel); border-color: var(--border-color); color: var(--text-primary); }
@@ -296,6 +324,9 @@ html, body, #root {
   background: #f87171;
 }
 
+:root[data-theme='high-contrast'] .current-line-highlight { background: #fff !important; border-left-color: #000; }
+:root[data-theme='high-contrast'] .current-line-glyph { background: #fff; }
+
 /*
  * Inline debug value decorations.
  *
@@ -444,4 +475,14 @@ button, [role="button"], [role="tab"] { transition: background-color .12s ease, 
   .ledger-inspector p,
   .ledger-index { color: CanvasText; }
   [data-panel-group-direction] > [data-panel-resize-handle-id] { background: CanvasText; }
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  [role="tab"]:focus-visible,
+  summary:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: 2px solid Highlight !important;
+    outline-offset: 2px !important;
+  }
 }

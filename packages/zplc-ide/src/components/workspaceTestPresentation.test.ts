@@ -648,12 +648,11 @@ describe('presentRecordedTankLevel', () => {
 });
 
 describe('workspaceTestAvailability', () => {
-  const ready = { desktopAvailable: true, isProjectOpen: true, isVirtualProject: false, hasCurrentLink: true, hasUnsavedChanges: false };
+  const ready = { desktopAvailable: true, isProjectOpen: true, hasCurrentLink: true, hasUnsavedChanges: false };
 
   it('keeps the blocking cause explicit and prioritizes trust boundaries', () => {
     expect(workspaceTestAvailability({ ...ready, desktopAvailable: false })).toBe('desktop-unavailable');
     expect(workspaceTestAvailability({ ...ready, isProjectOpen: false })).toBe('project-required');
-    expect(workspaceTestAvailability({ ...ready, isVirtualProject: true })).toBe('virtual-project');
     expect(workspaceTestAvailability({ ...ready, hasCurrentLink: false })).toBe('link-required');
     expect(workspaceTestAvailability({ ...ready, hasUnsavedChanges: true })).toBe('unsaved');
     expect(workspaceTestAvailability(ready)).toBe('ready');
@@ -673,13 +672,12 @@ describe('isWorkspaceTestRunCurrent', () => {
 });
 
 describe('saved workspace compilation presentation', () => {
-  const ready = { isElectronHost: true, canonicalCompileAvailable: true, isProjectOpen: true, isVirtualProject: false, hasCurrentLink: true, hasUnsavedChanges: false };
+  const ready = { isElectronHost: true, canonicalCompileAvailable: true, isProjectOpen: true, hasCurrentLink: true, hasUnsavedChanges: false };
 
   it('routes every physical desktop project through the saved workspace compiler', () => {
     expect(resolveWorkspaceCompileRoute(ready)).toBe('canonical');
     expect(resolveWorkspaceCompileRoute({ ...ready, hasCurrentLink: false })).toBe('link-required');
     expect(resolveWorkspaceCompileRoute({ ...ready, hasUnsavedChanges: true })).toBe('save-required');
-    expect(resolveWorkspaceCompileRoute({ ...ready, isVirtualProject: true })).toBe('renderer');
     expect(resolveWorkspaceCompileRoute({ ...ready, isElectronHost: false })).toBe('renderer');
     expect(resolveWorkspaceCompileRoute({ ...ready, canonicalCompileAvailable: false })).toBe('canonical-unavailable');
   });
@@ -724,8 +722,7 @@ describe('canonical saved build linkage', () => {
 
 describe('workspaceTestRunFallbackState', () => {
   it('settles discarded async runs without inventing evidence', () => {
-    expect(workspaceTestRunFallbackState({ isProjectOpen: true, isVirtualProject: false, projectSession: 7, workspaceScenarioLink: { workspaceId: 'replacement-token', projectSession: 7 } })).toBe('selected');
-    expect(workspaceTestRunFallbackState({ isProjectOpen: true, isVirtualProject: false, projectSession: 8, workspaceScenarioLink: null })).toBe('idle');
-    expect(workspaceTestRunFallbackState({ isProjectOpen: true, isVirtualProject: true, projectSession: 7, workspaceScenarioLink: { workspaceId: 'token', projectSession: 7 } })).toBe('idle');
+    expect(workspaceTestRunFallbackState({ isProjectOpen: true, projectSession: 7, workspaceScenarioLink: { workspaceId: 'replacement-token', projectSession: 7 } })).toBe('selected');
+    expect(workspaceTestRunFallbackState({ isProjectOpen: true, projectSession: 8, workspaceScenarioLink: null })).toBe('idle');
   });
 });

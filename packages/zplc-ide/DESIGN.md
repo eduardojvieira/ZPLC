@@ -1,6 +1,6 @@
 ---
 name: "ZPLC Studio 2.0"
-description: "Un workbench PLC local-first, denso y verificable."
+description: "Un workbench PLC de escritorio, denso y verificable."
 colors:
   drawing-sheet-canvas: "#e7ece8"
   drawing-sheet-panel: "#f8faf7"

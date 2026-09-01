@@ -1,0 +1,1 @@
+{"schemaVersion":1,"id":"EdgeCounter","tickMs":10,"durationMs":10,"events":[{"atMs":0,"set":{"EdgeCounter.PulseInput":true}}],"expectations":[{"kind":"AT","atMs":10,"condition":{"EdgeCounter.CountReached":true}}]}

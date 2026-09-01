@@ -17,7 +17,7 @@
         "schemaVersion": {
             "type": "integer",
             "enum": [1, 2],
-            "description": "Project schema version; legacy v1 is migrated in memory and canonical writes use v2"
+            "description": "Project schema version; legacy v1 can be previewed, diffed, and explicitly saved as a canonical v2 project"
         },
         "name": {
             "type": "string",
@@ -249,17 +249,6 @@
                         "default": 1,
                         "description": "Task priority (0 = highest)"
                     },
-                    "watchdog_ms": {
-                        "type": "integer",
-                        "minimum": 0,
-                        "default": 0,
-                        "description": "Reserved watchdog compatibility metadata in milliseconds; current runtimes do not apply it"
-                    },
-                    "watchdog": {
-                        "type": "integer",
-                        "minimum": 0,
-                        "description": "Legacy alias for watchdog_ms"
-                    },
                     "programs": {
                         "type": "array",
                         "description": "List of program files to execute in this task",
@@ -377,6 +366,7 @@
         },
         "mqttConfig": {
             "type": "object",
+            "additionalProperties": false,
             "required": [
                 "enabled",
                 "profile",
@@ -442,7 +432,7 @@
                 "username": {
                     "type": "string"
                 },
-                "password": {
+                "groupId": {
                     "type": "string"
                 },
                 "topicNamespace": {
@@ -485,7 +475,53 @@
                 "clientCertPath": {
                     "type": "string"
                 },
-                "clientKeyPath": {
+                "azureSasExpirySec": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "azureTwinEnabled": {
+                    "type": "boolean"
+                },
+                "azureDirectMethodsEnabled": {
+                    "type": "boolean"
+                },
+                "azureC2dEnabled": {
+                    "type": "boolean"
+                },
+                "azureDpsEnabled": {
+                    "type": "boolean"
+                },
+                "azureDpsIdScope": {
+                    "type": "string"
+                },
+                "azureDpsRegistrationId": {
+                    "type": "string"
+                },
+                "azureDpsEndpoint": {
+                    "type": "string"
+                },
+                "azureEventGridTopic": {
+                    "type": "string"
+                },
+                "azureEventGridSource": {
+                    "type": "string"
+                },
+                "azureEventGridEventType": {
+                    "type": "string"
+                },
+                "awsShadowEnabled": {
+                    "type": "boolean"
+                },
+                "awsJobsEnabled": {
+                    "type": "boolean"
+                },
+                "awsFleetEnabled": {
+                    "type": "boolean"
+                },
+                "awsFleetTemplateName": {
+                    "type": "string"
+                },
+                "awsClaimCertPath": {
                     "type": "string"
                 },
                 "lwtEnabled": {
@@ -635,6 +671,7 @@
         },
         "wifiNetworkConfig": {
             "type": "object",
+            "additionalProperties": false,
             "required": [
                 "enabled",
                 "security",
@@ -646,9 +683,6 @@
                     "type": "boolean"
                 },
                 "ssid": {
-                    "type": "string"
-                },
-                "password": {
                     "type": "string"
                 },
                 "security": {

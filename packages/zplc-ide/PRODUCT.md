@@ -16,7 +16,7 @@ workflow explicitly supports them.
 
 ## Product Purpose
 
-ZPLC Studio 2.0 is a local-first environment for programming, testing,
+ZPLC Studio 2.0 is a desktop environment for programming, testing,
 simulating, learning, building, deploying, and debugging PLC projects against
 the same runtime semantics and evidence model. Success is a user completing a
 verified PLC task without needing a terminal for the main Studio path.
@@ -31,8 +31,8 @@ prevented from initiating physical operations.
 ## Operating Context
 
 ZPLC runs as a React web interface inside an Electron desktop application on
-Windows, Linux, and macOS. It is intended for local, offline-first use in a
-factory, lab, or classroom. Its programming surfaces include ST, LD, FBD, and
+Windows, Linux, and macOS. It keeps project work in a user-selected folder and
+can work without AI. Its programming surfaces include ST, LD, FBD, and
 SFC; POSIX provides simulation evidence, while Zephyr hardware workflows stay
 human-controlled.
 
@@ -71,7 +71,7 @@ as proof.
 
 1. One project model and one PLC semantics across every experience.
 2. Evidence over claims; a visible result must identify what verified it.
-3. Local-first operation, with useful workflows available without AI.
+3. Useful workflows remain available without AI.
 4. Human authority over hardware and explicit separation of physical actions.
 5. Progressive migration preserves valuable working assets without freezing
    unsafe or duplicate implementations.

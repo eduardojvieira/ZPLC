@@ -6,7 +6,7 @@ import { parseArgs } from 'node:util';
 import productManifest from '../../../../package.json';
 import { compileSingleFileWithTask, type PLCLanguage } from '../compiler';
 import { getLanguageFromFilename } from '../types';
-import { artifactEvidence, compilerCheck, compilerCompile, firmwareBuild, projectInspect, projectMigrationExport, projectMigrationPreview, projectValidate, safetyCheck, scenarioRun, symbolsList, testsRun, toolchainInspect, type FirmwareBuildSummary, type ProjectMigrationExportResult, type TestRunResult, type ToolEvidence, type ToolResult } from './toolApi';
+import { artifactEvidence, compilerCheck, compilerCompile, executionPermission, finishToolExecution, firmwareBuild, projectInspect, projectMigrationExport, projectMigrationPreview, projectValidate, safetyCheck, scenarioRun, startToolExecution, symbolsList, testsRun, toolchainInspect, withToolExecution, type FirmwareBuildSummary, type ProjectMigrationExportResult, type TestRunResult, type ToolEvidence, type ToolExecutionStart, type ToolResult } from './toolApi';
 
 type Values = { help?: boolean; version?: boolean; json?: boolean; output?: string; language?: string };
 type Output = Pick<typeof console, 'log' | 'error'>;
@@ -26,12 +26,22 @@ export function isInterruptibleInvocation(args: string[]): boolean {
 
 export function isFirmwareBuildInvocation(args: string[]): boolean { return parseCliArgs(args)?.positionals[0] === 'firmware-build'; }
 
+function operationForCommand(command: string): ToolEvidence['operation'] {
+  return command === 'symbols' ? 'symbols-list' : command === 'scenario-run' ? 'scenario-run' : command === 'migrate-preview' ? 'migrate-preview' : command as ToolEvidence['operation'];
+}
+
 function printHelp(output: Output): void {
   output.log(`ZPLC CLI\n\nUsage:\n  zplc-cli inspect <workspace> --json\n  zplc-cli validate <workspace> --json\n  zplc-cli check <workspace> --json\n  zplc-cli safety-check <workspace> [--json]\n  zplc-cli symbols <workspace> [--json]\n  zplc-cli migrate-preview <workspace> [--json]\n  zplc-cli migrate <workspace> --output <manifest-v2.json> [--json]\n  zplc-cli test <workspace> [--json] [--output <trace.json>]\n  zplc-cli scenario-run <workspace> <scenario-id> [--json] [--output <trace.json>]\n  zplc-cli toolchain-inspect <zplc-repository-root> [--json]\n  zplc-cli firmware-build <zplc-repository-root> <ide_id> [--json]\n  zplc-cli compile <workspace|source-file> [--json] [--output <file>] [--language ST|IL|LD|FBD|SFC]\n\nFirmware builds are local POSIX ephemeral cross-builds only: they do not flash, deploy, or qualify hardware.\n\nOptions:\n  -h, --help        Show this help\n  -v, --version     Show version\n  -j, --json        Output one JSON result line\n  -o, --output <f>  Write the requested artifact\n  -l, --language <l> Source language (ST, IL, LD, FBD, SFC)`);
 }
 function failure(operation: ToolEvidence['operation'], message: string): ToolEvidence { return { schemaVersion: 1, operation, outcome: 'failed', diagnostics: [{ code: 'CLI_INVALID', message }], artifacts: [] }; }
 function emitJson(output: Output, value: unknown): void { output.log(JSON.stringify(value)); }
-function emitFailure(output: Output, json: boolean, operation: ToolEvidence['operation'], message: string): number { if (json) emitJson(output, { ok: false, evidence: failure(operation, message) }); else output.error(`Error: ${message}`); return 1; }
+function cliExecution(operation: ToolEvidence['operation'], value: unknown, start = startToolExecution('cli', executionPermission(operation), operation)) {
+  return withToolExecution(value as object, finishToolExecution(start, value));
+}
+function emitFailure(output: Output, json: boolean, operation: ToolEvidence['operation'], message: string, start?: ToolExecutionStart): number {
+  const value = { ok: false, evidence: failure(operation, message) };
+  if (json) emitJson(output, cliExecution(operation, value, start)); else output.error(`Error: ${message}`); return 1;
+}
 export function firmwareBuildExitCode(result: ToolResult<FirmwareBuildSummary>): number {
   if (result.ok) return 0;
   const code = result.evidence.diagnostics[0]?.code;
@@ -81,21 +91,23 @@ async function isProtectedOutput(outputPath: string, input: string, workspace: b
 }
 async function singleFileCompile(file: string, values: Values, output: Output): Promise<number> {
   const json = values.json === true;
+  const start = startToolExecution('cli', 'compiler:check', 'compile');
   let status;
-  try { status = await lstat(file); } catch { return emitFailure(output, json, 'compile', 'Input file is unavailable'); }
-  if (status.isSymbolicLink() || !status.isFile()) return emitFailure(output, json, 'compile', 'Input must be a regular source file');
-  if (values.output && await isProtectedOutput(values.output, file, false)) return emitFailure(output, json, 'compile', 'Output path is protected');
+  try { status = await lstat(file); } catch { return emitFailure(output, json, 'compile', 'Input file is unavailable', start); }
+  if (status.isSymbolicLink() || !status.isFile()) return emitFailure(output, json, 'compile', 'Input must be a regular source file', start);
+  if (values.output && await isProtectedOutput(values.output, file, false)) return emitFailure(output, json, 'compile', 'Output path is protected', start);
   const language = languageFor(file, values.language);
-  if (!language) return emitFailure(output, json, 'compile', 'Unsupported source language');
+  if (!language) return emitFailure(output, json, 'compile', 'Unsupported source language', start);
   try {
     const result = compileSingleFileWithTask(await readFile(file, 'utf8'), language, { taskName: 'Main', intervalMs: 50, priority: 3, programName: 'Main' });
     const artifact = values.output?.toLowerCase().endsWith('.bin') ? result.bytecode : result.zplcFile;
-    if (values.output && !await writeArtifact(values.output, artifact)) return emitFailure(output, json, 'compile', 'Unable to write output artifact');
-    if (json) emitJson(output, { ok: true, summary: { codeSize: result.codeSize, language }, evidence: { schemaVersion: 1, operation: 'compile', outcome: 'passed', diagnostics: [], artifacts: [artifactEvidence(values.output?.toLowerCase().endsWith('.bin') ? 'bytecode' : 'zplc', artifact)] } });
+    if (values.output && !await writeArtifact(values.output, artifact)) return emitFailure(output, json, 'compile', 'Unable to write output artifact', start);
+    const value = { ok: true as const, summary: { codeSize: result.codeSize, language }, evidence: { schemaVersion: 1 as const, operation: 'compile' as const, outcome: 'passed' as const, diagnostics: [], artifacts: [artifactEvidence(values.output?.toLowerCase().endsWith('.bin') ? 'bytecode' : 'zplc', artifact)] } };
+    if (json) emitJson(output, cliExecution('compile', value, start));
     else if (values.output) output.log(`Compiled ${file} (${result.codeSize} bytes)`);
     else output.log(result.assembly);
     return 0;
-  } catch { return emitFailure(output, json, 'compile', 'Compilation failed'); }
+  } catch { return emitFailure(output, json, 'compile', 'Compilation failed', start); }
 }
 
 export async function main(args = Bun.argv.slice(2), output: Output = console, options: { signal?: AbortSignal } = {}): Promise<number> {
@@ -108,13 +120,14 @@ export async function main(args = Bun.argv.slice(2), output: Output = console, o
   if (values.version) { output.log(`zplc-cli ${productManifest.version}`); return 0; }
   const [command, input, ideId] = positionals;
   if (!command || !['inspect', 'validate', 'check', 'safety-check', 'compile', 'symbols', 'test', 'scenario-run', 'migrate-preview', 'migrate', 'toolchain-inspect', 'firmware-build'].includes(command)) return emitFailure(output, values.json === true, 'cli', 'Unknown command');
+  const executionStart = startToolExecution('cli', executionPermission(operationForCommand(command)), operationForCommand(command));
   if (command === 'firmware-build') {
     if (!input || !ideId || !/^[a-z0-9][a-z0-9_]{0,63}$/.test(ideId) || positionals.length !== 3 || values.output !== undefined || values.language !== undefined) return emitFailure(output, values.json === true, 'firmware-build', 'Firmware build requires a repository root and exact ide_id without output or language options');
     let rootStatus;
     try { rootStatus = await lstat(input); } catch { return emitFailure(output, values.json === true, 'firmware-build', 'Firmware build requires a real repository directory'); }
     if (rootStatus.isSymbolicLink() || !rootStatus.isDirectory()) return emitFailure(output, values.json === true, 'firmware-build', 'Firmware build requires a real repository directory');
     const result = await firmwareBuild(input, ideId, { signal: options.signal });
-    if (values.json) emitJson(output, result);
+    if (values.json) emitJson(output, cliExecution('firmware-build', result, executionStart));
     else if (result.ok) output.log('Local ephemeral cross-build passed');
     else output.error(`Firmware build failed (${result.evidence.diagnostics[0]?.code ?? 'FIRMWARE_BUILD_UNAVAILABLE'})`);
     return firmwareBuildExitCode(result);
@@ -137,7 +150,7 @@ export async function main(args = Bun.argv.slice(2), output: Output = console, o
   if (result.ok && command === 'migrate' && !await writeArtifact(values.output!, (result as ProjectMigrationExportResult).manifest!)) return emitFailure(output, values.json === true, command, 'Unable to write output artifact');
   if (result.ok && command === 'compile' && values.output && !await writeArtifact(values.output, result.bytes!)) return emitFailure(output, values.json === true, command, 'Unable to write output artifact');
   if ((command === 'test' || command === 'scenario-run') && values.output && (result as TestRunResult).traceFile && !await writeArtifact(values.output, (result as TestRunResult).traceFile!)) return emitFailure(output, values.json === true, command, 'Unable to write output artifact');
-  if (values.json) emitJson(output, result);
+  if (values.json) emitJson(output, cliExecution(operationForCommand(command), result, executionStart));
   else if (result.ok && command === 'safety-check' && !result.summary.configured) output.log('safety-check: no incompatible outputs declared');
   else if (result.ok && command === 'safety-check') output.log('safety-check coverage checked');
   else if (result.ok) output.log(`${command} passed`); else result.evidence.diagnostics.forEach((diagnostic) => output.error(`Error: ${diagnostic.message}`));

@@ -1,10 +1,22 @@
 import { describe, expect, it } from 'bun:test';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { WorkspaceTestPresentation } from './workspaceTestPresentation';
-import { gradeRecordedScenarioLesson, LEARN_MASTERY_STORAGE_KEY, learnLessonCatalog, readLearnMastery, recordLearnMastery, type LearnLesson } from './learnLesson';
+import { gradeRecordedScenarioLesson, LEARN_MASTERY_STORAGE_KEY, learnLessonCatalog, parseLearnMasteryImport, readLearnMastery, recordLearnMastery, replaceLearnMastery, serializeLearnMastery, type LearnLesson } from './learnLesson';
+import { LEARN_CONTENT_SCHEMA_VERSION, validateLearnContentV1, type VersionedLearnLesson } from './learnContent.v1';
 
 const sha = 'a'.repeat(64);
 
-function recordedPresentation(lesson: LearnLesson): WorkspaceTestPresentation {
+function declaredPrograms(project: string): readonly string[] {
+  const manifest: unknown = JSON.parse(readFileSync(join(project, 'zplc.json'), 'utf8'));
+  if (!manifest || typeof manifest !== 'object' || !Array.isArray((manifest as { tasks?: unknown }).tasks)) return [];
+  return (manifest as { tasks: unknown[] }).tasks.flatMap((task) => {
+    const programs = task && typeof task === 'object' ? (task as { programs?: unknown }).programs : undefined;
+    return Array.isArray(programs) && programs.every((program) => typeof program === 'string') ? programs : [];
+  });
+}
+
+function recordedPresentation(lesson: VersionedLearnLesson): WorkspaceTestPresentation {
   return {
     operation: 'scenario-run', kind: 'passed', message: 'Host POSIX scenario passed.', scenarioCount: 1, diagnostics: [], hasEvidence: true,
     artifacts: [{ kind: 'zplc', sha256: sha, byteLength: 1 }, { kind: 'trace', sha256: sha, byteLength: 1 }],
@@ -57,7 +69,7 @@ describe('Learn lesson catalog', () => {
     expect(en[3]?.stages[4]?.body).toContain('classifier+metal 20, diverter+count=1 at 30, jam 50');
     expect(es[3]?.stages[5]?.body).toBe('La assertion NEVER cubre DiverterCommand ON con BeltCommand OFF sólo en este escenario.');
     expect(en[3]?.stages[5]?.body).toBe('The NEVER assertion covers DiverterCommand ON with BeltCommand OFF only in this scenario.');
-    expect(es[4]).toMatchObject({ exampleId: 'blinky', requiredScenario: 'BlinkyVisual', sourcePath: 'src/main.ld', scenarioPath: 'tests/blinky-visual.scenario.json', title: 'Ladder, TON y realimentación de salida', scope: 'La evidencia de Tests es del host nativo POSIX; no es evidencia de LED físico, timing de hardware, HIL ni certificación.' });
+    expect(es[4]).toMatchObject({ exampleId: 'blinky', requiredScenario: 'BlinkyVisual', sourcePath: 'src/main.ld.json', scenarioPath: 'tests/blinky-visual.scenario.json', title: 'Ladder, TON y realimentación de salida', scope: 'La evidencia de Tests es del host nativo POSIX; no es evidencia de LED físico, timing de hardware, HIL ni certificación.' });
     expect(en[4]).toMatchObject({ title: 'Ladder, TON, and output feedback', scope: 'Tests provide native POSIX host evidence only; they are not physical LED, hardware timing, HIL, or certification evidence.' });
     expect(es[4]?.stages.map(({ title }) => title)).toEqual(['Objetivo', 'Predecí', 'Editá', 'Ejecutá', 'Observá', 'Reflexioná']);
     expect(en[4]?.stages.map(({ title }) => title)).toEqual(['Objective', 'Predict', 'Edit', 'Run', 'Observe', 'Reflect']);
@@ -92,28 +104,14 @@ describe('Learn lesson catalog', () => {
     expect(en[6]?.stages[5]).toEqual({ title: 'Reflect', body: 'The AT/RISING/FALLING assertions cover this discrete logical sequence.', checkpoint: 'They do not establish bounce, electrical pulses, hardware timing, HIL, or certification.' });
     expect(es[7]).toMatchObject({ exampleId: 'scan_snapshot', requiredScenario: 'ScanSnapshot', sourcePath: 'src/ScanSnapshot.st', scenarioPath: 'tests/scan-snapshot.scenario.json', title: 'Ciclo de scan y memoria de un ciclo', summary: 'Seguí cómo una entrada produce una salida actual y una copia demorada un scan.', scope: 'La evidencia de Tests es del runtime nativo POSIX host con una única tarea de 10 ms; no demuestra timing de target, snapshot bajo interrupciones físicas, rebote eléctrico, HIL ni certificación.' });
     expect(en[7]).toMatchObject({ title: 'Scan cycle and one-scan memory', summary: 'Follow how one input produces the current output and a copy delayed by one scan.', scope: 'Tests provide native POSIX host runtime evidence with one 10 ms task; they do not establish target timing, snapshots under physical interrupts, electrical bounce, HIL, or certification.' });
-    expect(es[7]?.stages).toEqual([
-      { title: 'Objetivo', body: 'Ubicá Button, Previous, Current, Delayed y RisingPulse en src/ScanSnapshot.st.', checkpoint: 'Previous se actualiza al final del scan.' },
-      { title: 'Predecí', body: 'Antes de ejecutar, anticipá los cuatro samples registrados.', checkpoint: '000@0, 101@10, 010@20, 000@30.' },
-      { title: 'Editá', body: 'Agregá solamente un comentario explicativo inocuo en src/ScanSnapshot.st. Esta edición no se corrige automáticamente.', checkpoint: 'El comportamiento del programa debe permanecer sin cambios.' },
-      { title: 'Ejecutá', body: 'En Tests, elegí el zplc.json guardado y ejecutá únicamente el escenario ScanSnapshot.', checkpoint: 'El escenario requerido se llama ScanSnapshot.' },
-      { title: 'Observá', body: 'Compará 10, 20 y 30 ms: RisingPulse dura un scan y Delayed conserva la copia demorada.', checkpoint: 'El pulso aparece a 10 ms; Delayed aparece a 20 ms y vuelve OFF a 30 ms.' },
-      { title: 'Evidencia', body: 'AT/RISING/FALLING/NEVER cubren el escenario; los hashes y la traza pertenecen al host.', checkpoint: 'La evidencia registrada es del escenario host ejecutado.' },
-      { title: 'Reflexioná', body: 'Actualizar Previous antes rompería el detector de flanco.', checkpoint: 'La memoria debe conservar el valor anterior hasta el final del scan.' },
-    ]);
-    expect(en[7]?.stages).toEqual([
-      { title: 'Objective', body: 'Locate Button, Previous, Current, Delayed, and RisingPulse in src/ScanSnapshot.st.', checkpoint: 'Previous updates at the end of the scan.' },
-      { title: 'Predict', body: 'Before running, predict the four recorded samples.', checkpoint: '000@0, 101@10, 010@20, 000@30.' },
-      { title: 'Edit', body: 'Add only a harmless explanatory comment in src/ScanSnapshot.st. This edit is not auto-graded.', checkpoint: 'Program behavior must remain unchanged.' },
-      { title: 'Run', body: 'In Tests, choose the saved zplc.json and run only the ScanSnapshot scenario.', checkpoint: 'The required scenario is named ScanSnapshot.' },
-      { title: 'Observe', body: 'Compare 10, 20, and 30 ms: RisingPulse lasts one scan and Delayed keeps the delayed copy.', checkpoint: 'The pulse appears at 10 ms; Delayed appears at 20 ms and returns OFF at 30 ms.' },
-      { title: 'Evidence', body: 'AT/RISING/FALLING/NEVER cover the scenario; hashes and trace belong to the host.', checkpoint: 'Recorded evidence belongs to the executed host scenario.' },
-      { title: 'Reflect', body: 'Updating Previous first would break the edge detector.', checkpoint: 'Memory must retain the prior value until the end of the scan.' },
-    ]);
+    expect(es[7]?.stages[2]).toMatchObject({ title: 'Editá', checkpoint: 'El escenario visible debe pasar con evidencia host guardada.' });
+    expect(en[7]?.stages[2]).toMatchObject({ title: 'Edit', checkpoint: 'The visible scenario must pass with saved host evidence.' });
     expect(es[8]).toMatchObject({ exampleId: 'conveyor_01', requiredScenario: 'Conveyor01', sourcePath: 'src/Conveyor.st', scenarioPath: 'tests/conveyor-01.scenario.json', title: 'Assertions temporales y falla por atasco', scope: 'La evidencia de Tests es del runtime nativo POSIX host y de la planta discreta; el atasco inyectado no es una falla física, despeje físico, timing de target, HIL ni certificación.' });
     expect(en[8]).toMatchObject({ title: 'Temporal assertions and jam fault', scope: 'Tests provide native POSIX host runtime and discrete-plant evidence only; the injected jam is not a physical fault, physical clearance, target timing, HIL, or certification evidence.' });
-    expect(es[8]?.stages.map(({ title }) => title)).toEqual(['Objetivo', 'Predecí', 'Leé el escenario', 'Ejecutá', 'Contrastá', 'Reflexioná']);
-    expect(en[8]?.stages.map(({ title }) => title)).toEqual(['Objective', 'Predict', 'Read the scenario', 'Run', 'Compare', 'Reflect']);
+    expect(es[8]?.stages.map(({ title }) => title)).toEqual(['Objetivo', 'Predecí', 'Editá', 'Ejecutá', 'Contrastá', 'Reflexioná']);
+    expect(en[8]?.stages.map(({ title }) => title)).toEqual(['Objective', 'Predict', 'Edit', 'Run', 'Compare', 'Reflect']);
+    expect(es[8]?.stages.map(({ body, checkpoint }) => `${body} ${checkpoint}`).join(' ')).not.toContain('no requiere editar el programa');
+    expect(en[8]?.stages.map(({ body, checkpoint }) => `${body} ${checkpoint}`).join(' ')).not.toContain('does not require editing');
     for (const operator of ['AT', 'RISING', 'NEVER', 'WITHIN', 'FOR']) {
       expect(es[8]?.stages.map(({ body, checkpoint }) => `${body} ${checkpoint}`).join(' ')).toContain(operator);
       expect(en[8]?.stages.map(({ body, checkpoint }) => `${body} ${checkpoint}`).join(' ')).toContain(operator);
@@ -122,10 +120,10 @@ describe('Learn lesson catalog', () => {
       expect(es[8]?.stages.map(({ body, checkpoint }) => `${body} ${checkpoint}`).join(' ')).toContain(timing);
       expect(en[8]?.stages.map(({ body, checkpoint }) => `${body} ${checkpoint}`).join(' ')).toContain(timing);
     }
-    expect(es[8]?.stages[1]?.checkpoint).toBe('AT exige BeltCommand, DiverterCommand y FaultLamp OFF a 0 ms y BeltCommand ON a 10 ms.');
-    expect(en[8]?.stages[1]?.checkpoint).toBe('AT requires BeltCommand, DiverterCommand, and FaultLamp OFF at 0 ms and BeltCommand ON at 10 ms.');
-    expect(es[8]?.stages[2]?.checkpoint).toContain('a más tardar a 30 ms');
-    expect(en[8]?.stages[2]?.checkpoint).toContain('by 30 ms');
+    expect(es[8]?.stages[1]?.checkpoint).toContain('AT exige BeltCommand, DiverterCommand y FaultLamp OFF a 0 ms y BeltCommand ON a 10 ms.');
+    expect(en[8]?.stages[1]?.checkpoint).toContain('AT requires BeltCommand, DiverterCommand, and FaultLamp OFF at 0 ms and BeltCommand ON at 10 ms.');
+    expect(es[8]?.stages[1]?.checkpoint).toContain('a más tardar a 30 ms');
+    expect(en[8]?.stages[1]?.checkpoint).toContain('by 30 ms');
     expect(es[9]).toMatchObject({ exampleId: 'conveyor_01', requiredScenario: 'ConveyorTwoParts', sourcePath: 'src/Conveyor.st', scenarioPath: 'tests/conveyor-two-parts.scenario.json', title: 'Diagnóstico reproducible: dos piezas, una decisión', scope: 'La evidencia de Tests es del runtime nativo POSIX host con inputs programados por escenario; no es evidencia de sensores ni piezas físicas, timing de target, hardware, HIL ni certificación.' });
     expect(en[9]).toMatchObject({ title: 'Reproducible diagnosis: two parts, one decision', scope: 'Tests provide native POSIX host runtime evidence with scenario-scheduled inputs; they are not physical sensors or parts, target timing, hardware, HIL, or certification evidence.' });
     expect(es[9]?.stages.map(({ title }) => title)).toEqual(['Ubicá', 'Predecí', 'Leé el calendario', 'Ejecutá', 'Diagnosticá', 'Límites']);
@@ -140,6 +138,42 @@ describe('Learn lesson catalog', () => {
     expect(es[9]?.stages.map(({ body, checkpoint }) => `${body} ${checkpoint}`).join(' ')).toContain('Belt=true/Diverter=false');
     expect(en[9]?.stages.map(({ body, checkpoint }) => `${body} ${checkpoint}`).join(' ')).toContain('Belt=true/Diverter=true');
     expect(en[9]?.stages.map(({ body, checkpoint }) => `${body} ${checkpoint}`).join(' ')).toContain('Belt=true/Diverter=false');
+    expect(validateLearnContentV1(learnLessonCatalog)).toBe(true);
+    for (const lesson of [...es, ...en]) {
+      expect(lesson.schemaVersion).toBe(LEARN_CONTENT_SCHEMA_VERSION);
+      expect(lesson.visibleScenarioIds).toEqual([lesson.requiredScenario]);
+      expect(lesson.rubric).toEqual({ requiredScenarioId: lesson.requiredScenario, minimumAssertions: 1, requireSavedEvidence: true });
+      expect(lesson.faultCases.length).toBeGreaterThan(0);
+    }
+    expect(es[8]).toMatchObject({ starterExampleId: 'conveyor_01_starter', referenceExampleId: 'conveyor_01', authorScenarioIds: ['ConveyorTwoParts'] });
+    expect(es.every((lesson) => lesson.starterExampleId !== lesson.referenceExampleId)).toBe(true);
+    expect(es.flatMap((lesson) => lesson.faultCases).join(' ')).not.toContain('The starter');
+    expect(en.flatMap((lesson) => lesson.faultCases).join(' ')).toContain('The starter');
+  });
+
+  it('declares published starter, reference, source, and scenario resources only', () => {
+    const projects = join(import.meta.dir, '..', '..', 'projects');
+    for (const lessons of Object.values(learnLessonCatalog)) for (const lesson of lessons) {
+      const starter = join(projects, lesson.starterExampleId);
+      const reference = join(projects, lesson.referenceExampleId);
+      expect(existsSync(join(starter, 'zplc.json'))).toBe(true);
+      expect(declaredPrograms(starter)).not.toHaveLength(0);
+      for (const program of declaredPrograms(starter)) expect(existsSync(join(starter, 'src', program))).toBe(true);
+      expect(existsSync(join(projects, lesson.starterExampleId, lesson.scenarioPath))).toBe(true);
+      expect(existsSync(join(reference, 'zplc.json'))).toBe(true);
+      expect(declaredPrograms(reference)).not.toHaveLength(0);
+      for (const program of declaredPrograms(reference)) {
+        const direct = join(reference, 'src', program);
+        const visual = join(reference, 'src', `${program}.json`);
+        expect(existsSync(direct) || existsSync(visual)).toBe(true);
+      }
+      expect(existsSync(join(projects, lesson.referenceExampleId, lesson.scenarioPath))).toBe(true);
+      for (const authorScenarioId of lesson.authorScenarioIds) {
+        const scenario = lesson.referenceExampleId === 'conveyor_01' && authorScenarioId === 'ConveyorTwoParts'
+          ? 'tests/conveyor-two-parts.scenario.json' : lesson.scenarioPath;
+        expect(existsSync(join(projects, lesson.referenceExampleId, scenario))).toBe(true);
+      }
+    }
   });
 
   it('grades complete recorded scenario evidence generically for all ten lessons', () => {
@@ -170,6 +204,7 @@ describe('Learn lesson catalog', () => {
     expect(gradeRecordedScenarioLesson(lesson, { ...passed, preview: { ...passed.preview!, scenarios: [{ ...passed.preview!.scenarios[0]!, truncated: true }] } })).toEqual({ kind: 'unavailable' });
     expect(gradeRecordedScenarioLesson(lesson, { ...passed, preview: { ...passed.preview!, scenarios: [{ ...passed.preview!.scenarios[0]!, passed: false, assertions: [{ kind: 'NEVER', passed: false }] }] } })).toEqual({ kind: 'unavailable' });
     expect(gradeRecordedScenarioLesson(lesson, { ...passed, kind: 'assertion-failed' })).toEqual({ kind: 'unavailable' });
+    expect(gradeRecordedScenarioLesson({ ...lesson, rubric: { ...lesson.rubric, requireSavedEvidence: false } }, passed)).toEqual({ kind: 'unavailable' });
   });
 });
 
@@ -236,5 +271,17 @@ describe('Learn mastery persistence', () => {
     const withTemporalAssertions = recordLearnMastery(temporalAssertions.id, gradeRecordedScenarioLesson(temporalAssertions, recordedPresentation(temporalAssertions)), withScanSnapshot, storage(null, (_key, value) => writes.push(value)));
     expect(ids(withTemporalAssertions)).toEqual([...existingCatalog.map(({ id }) => id), scanSnapshot.id, temporalAssertions.id]);
     expect(writes.at(-1)).toBe(JSON.stringify({ schemaVersion: 1, mastered: [...existingCatalog.map(({ id }) => id), scanSnapshot.id, temporalAssertions.id] }));
+  });
+
+  it('exports and imports only canonical bounded mastery in catalog order', () => {
+    const valid = serializeLearnMastery(new Set([temporalAssertions.id, motor.id]));
+    expect(valid).toBe(JSON.stringify({ schemaVersion: 1, mastered: [motor.id, temporalAssertions.id] }));
+    expect(ids(parseLearnMasteryImport(valid)!)).toEqual([motor.id, temporalAssertions.id]);
+    for (const malformed of ['{', 'x'.repeat(4097), 'é'.repeat(2049), JSON.stringify({ schemaVersion: 1, mastered: [motor.id, motor.id] }), JSON.stringify({ schemaVersion: 1, mastered: ['unknown'] }), JSON.stringify({ schemaVersion: 1, mastered: [temporalAssertions.id, motor.id] })]) expect(parseLearnMasteryImport(malformed)).toBeUndefined();
+    const previous = new Set<LearnLesson['id']>([motor.id]); const writes: string[] = [];
+    const merged = replaceLearnMastery(new Set([motor.id, pedestrian.id]), previous, storage(null, (_key, value) => writes.push(value)));
+    expect(ids(merged)).toEqual([motor.id, pedestrian.id]);
+    expect(writes).toEqual([JSON.stringify({ schemaVersion: 1, mastered: [motor.id, pedestrian.id] })]);
+    expect(replaceLearnMastery(new Set([motor.id, pedestrian.id]), previous, storage(null, () => { throw new Error('nope'); }))).toBe(previous);
   });
 });

@@ -18,7 +18,7 @@ describe('firmware build gateway', () => {
     const gateway = createFirmwareBuildGateway();
     const inspected = await gateway.inspect(7, candidate, async (value) => { expect(value).toBe(candidate); return ready(); });
     expect(JSON.stringify(inspected)).not.toContain(candidate);
-    const result = await gateway.start(7, { ideId: 'nucleo_h743zi' }, async (value) => { expect(value).toBe(candidate); return ready(); }, async () => true, async (value, id) => { expect(value).toBe(candidate); expect(id).toBe('nucleo_h743zi'); return { ok: true }; });
+    const result = await gateway.start(7, { ideId: 'nucleo_h743zi' }, async (value) => { expect(value).toBe(candidate); return ready(); }, async () => true, async (value, id, options) => { expect(value).toBe(candidate); expect(id).toBe('nucleo_h743zi'); expect(options.jobId).toMatch(/^[0-9a-f-]{36}$/i); expect(options.startedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/); return { ok: true }; });
     expect(result).toEqual({ ok: true });
   });
 

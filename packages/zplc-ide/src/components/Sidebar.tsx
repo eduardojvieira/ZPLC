@@ -210,14 +210,13 @@ function ContextMenu({ x, y, onClose, onDelete }: ContextMenuProps) {
 interface DeleteModalProps {
   isOpen: boolean;
   fileName: string;
-  isVirtualFile: boolean;
   isDeleting: boolean;
   error: string | null;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-function DeleteModal({ isOpen, fileName, isVirtualFile, isDeleting, error, onConfirm, onCancel }: DeleteModalProps) {
+function DeleteModal({ isOpen, fileName, isDeleting, error, onConfirm, onCancel }: DeleteModalProps) {
   return (
     <Modal isOpen={isOpen} onClose={isDeleting ? () => {} : onCancel} title="Delete File" widthClass="max-w-sm" showCloseButton={!isDeleting}>
       <div className="p-4">
@@ -225,9 +224,7 @@ function DeleteModal({ isOpen, fileName, isVirtualFile, isDeleting, error, onCon
           Are you sure you want to delete <strong className="text-[var(--color-surface-100)]">{fileName}</strong>?
         </p>
         <p className="text-sm text-[var(--color-surface-400)] mb-4">
-          {isVirtualFile
-            ? 'This removes the file from this virtual project and cannot be undone.'
-            : 'This permanently removes the file from disk and cannot be undone.'}
+          This permanently removes the file from disk and cannot be undone.
         </p>
         {error && <p role="alert" aria-live="assertive" className="mb-4 text-sm text-[var(--color-accent-red)]">{error}</p>}
         <div className="flex justify-end gap-2">
@@ -255,23 +252,17 @@ function DeleteModal({ isOpen, fileName, isVirtualFile, isDeleting, error, onCon
 
 interface CloseProjectModalProps {
   isOpen: boolean;
-  isVirtualProject: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-function CloseProjectModal({ isOpen, isVirtualProject, onConfirm, onCancel }: CloseProjectModalProps) {
+function CloseProjectModal({ isOpen, onConfirm, onCancel }: CloseProjectModalProps) {
   return (
     <Modal isOpen={isOpen} onClose={onCancel} title="Discard unsaved changes?" widthClass="max-w-sm">
       <div className="p-4">
         <p className="text-[var(--color-surface-200)]">
           Changes to this project will be lost when it closes.
         </p>
-        {isVirtualProject && (
-          <p className="mt-2 text-sm text-[var(--color-surface-400)]">
-            This virtual project has not been saved to disk.
-          </p>
-        )}
         <div className="flex justify-end gap-2 pt-5">
           <button
             type="button"
@@ -456,7 +447,6 @@ export function Sidebar() {
     projectMigrationPreview,
     fileTree,
     activeFileId,
-    isVirtualProject,
     toggleDirectory,
     openFile,
     deleteFile,
@@ -467,8 +457,8 @@ export function Sidebar() {
   const [newFileModalEpoch, setNewFileModalEpoch] = useState(0);
   const [newFileName, setNewFileName] = useState('');
   const [newFileLanguage, setNewFileLanguage] = useState<PLCLanguage>('ST');
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; node: FileTreeNode; projectSession: number; isVirtualFile: boolean } | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState<{ fileId: string; fileName: string; projectSession: number; isVirtualFile: boolean } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; node: FileTreeNode; projectSession: number } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ fileId: string; fileName: string; projectSession: number } | null>(null);
   const [isDeletingFile, setIsDeletingFile] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isCloseProjectModalOpen, setIsCloseProjectModalOpen] = useState(false);
@@ -527,7 +517,7 @@ export function Sidebar() {
       e.preventDefault();
       setTreeFocus(node.id);
       const state = useIDEStore.getState();
-      setContextMenu({ x: e.clientX, y: e.clientY, node, projectSession: state.projectSession, isVirtualFile: state.isVirtualProject });
+      setContextMenu({ x: e.clientX, y: e.clientY, node, projectSession: state.projectSession });
     }
   };
 
@@ -614,7 +604,6 @@ export function Sidebar() {
         <div className="min-w-0 flex items-center gap-2">
           <FolderOpen size={16} className="shrink-0 text-[var(--color-accent-yellow)]" />
           <span className="truncate text-sm font-medium text-[var(--color-surface-100)]">{projectName || 'Project'}</span>
-          {isVirtualProject && <span className="shrink-0 rounded bg-[var(--color-accent-purple)]/20 px-1.5 py-0.5 text-xs text-[var(--color-accent-purple)]">virtual</span>}
         </div>
         <div className="flex items-center gap-1">
           <button
@@ -625,16 +614,14 @@ export function Sidebar() {
           >
             <Plus size={14} />
           </button>
-          {!isVirtualProject && (
-            <button
-              onClick={() => refreshFileTree()}
-              className="p-1 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-300)]"
-              title="Refresh"
-              aria-label="Refresh"
-            >
-              <RefreshCw size={14} />
-            </button>
-          )}
+          <button
+            onClick={() => refreshFileTree()}
+            className="p-1 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-300)]"
+            title="Refresh"
+            aria-label="Refresh"
+          >
+            <RefreshCw size={14} />
+          </button>
           <button
             type="button"
             onClick={handleCloseProject}
@@ -653,7 +640,7 @@ export function Sidebar() {
             <div className="flex items-start gap-2">
               <TriangleAlert size={15} className="mt-0.5 shrink-0 text-[var(--color-accent-yellow)]" aria-hidden="true" />
               <div className="min-w-0">
-                <div className="font-medium text-[var(--color-surface-100)]">Migrated in memory</div>
+                <div className="font-medium text-[var(--color-surface-100)]">Migration preview</div>
                 <div className="mt-0.5">v{projectMigrationPreview.sourceSchemaVersion} → v2</div>
                 <div className="mt-0.5 text-[var(--color-surface-200)]">No project files were changed.</div>
               </div>
@@ -720,7 +707,6 @@ export function Sidebar() {
 
       <CloseProjectModal
         isOpen={isCloseProjectModalOpen}
-        isVirtualProject={isVirtualProject}
         onConfirm={handleDiscardAndCloseProject}
         onCancel={() => setIsCloseProjectModalOpen(false)}
       />
@@ -732,7 +718,7 @@ export function Sidebar() {
           y={contextMenu.y}
           onClose={() => setContextMenu(null)}
           onDelete={() => {
-            setDeleteConfirm({ fileId: contextMenu.node.id, fileName: contextMenu.node.name, projectSession: contextMenu.projectSession, isVirtualFile: contextMenu.isVirtualFile });
+            setDeleteConfirm({ fileId: contextMenu.node.id, fileName: contextMenu.node.name, projectSession: contextMenu.projectSession });
             setDeleteError(null);
             setContextMenu(null);
           }}
@@ -744,7 +730,6 @@ export function Sidebar() {
         <DeleteModal
           isOpen={true}
           fileName={deleteConfirm.fileName}
-          isVirtualFile={deleteConfirm.isVirtualFile}
           isDeleting={isDeletingFile}
           error={deleteError}
           onConfirm={() => handleDelete(deleteConfirm.fileId, deleteConfirm.projectSession)}

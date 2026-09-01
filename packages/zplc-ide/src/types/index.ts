@@ -52,8 +52,28 @@ declare global {
         compile: (request: { workspaceId: string }) => Promise<unknown>;
         safetyCheck: (request: { workspaceId: string }) => Promise<unknown>;
       };
+      learnProgress?: {
+        read: () => Promise<string[]>;
+        merge: (mastered: string[]) => Promise<string[]>;
+      };
       candidateChangeSet?: {
         review: (request: { workspaceId: string; edit: { path: string; content: string } }) => Promise<unknown>;
+      };
+      aiProvider?: {
+        getStatus: () => Promise<unknown>;
+        getConfig: () => Promise<unknown>;
+        saveConfig: (config: { enabled: boolean; endpoint: string; model: string }) => Promise<unknown>;
+        storeKey: (key: string) => Promise<unknown>;
+        clearKey: () => Promise<unknown>;
+        request: (request: {
+          workspaceId: string;
+          mode: 'ask' | 'plan' | 'edit' | 'debug';
+          prompt: string;
+          activeFile?: { fileId: string; path: string };
+          diagnostics?: Array<{ code: string; path?: string; line?: number; column?: number }>;
+          trace?: Array<{ atMs: number; signal: string; value: boolean | number }>;
+        }) => Promise<unknown>;
+        cancel: () => Promise<{ requested: boolean }>;
       };
       toolchain?: {
         inspect: () => Promise<unknown | null>;
@@ -61,6 +81,9 @@ declare global {
       firmwareBuild?: {
         start: (request: { ideId: string }) => Promise<unknown | null>;
         cancel: () => Promise<{ requested: boolean }>;
+      };
+      toolExecutionAudit?: {
+        list: () => Promise<unknown>;
       };
       isElectron: boolean;
       platform: string;
@@ -216,7 +239,7 @@ export interface BuildResult {
 // Console / Output
 // =============================================================================
 
-export type ConsoleTab = 'explorer' | 'inspector' | 'output' | 'problems' | 'tests' | 'learn' | 'changes' | 'terminal' | 'watch' | 'trace';
+export type ConsoleTab = 'explorer' | 'inspector' | 'output' | 'problems' | 'tests' | 'lab' | 'learn' | 'changes' | 'agent' | 'terminal' | 'watch' | 'trace';
 
 export interface ConsoleEntry {
   id: string;
@@ -291,15 +314,11 @@ export interface TaskDefinition {
   trigger: TaskTrigger;
   interval_ms?: number;        // Cycle time in ms (for cyclic tasks)
   priority: number;            // 0 = highest, 255 = lowest
-  /** Reserved compatibility metadata; current runtimes do not apply it. */
-  watchdog_ms?: number;
   programs: string[];          // List of program names assigned to this task
 
   // Deprecated fields (for backwards compatibility)
   /** @deprecated Use interval_ms instead */
   interval?: number;
-  /** @deprecated Reserved compatibility metadata; use watchdog_ms instead. */
-  watchdog?: number;
   /** @deprecated Use programs[] instead */
   file?: string;
   /** @deprecated Use trigger instead */
@@ -596,7 +615,6 @@ export const DEFAULT_ZPLC_CONFIG: ZPLCProjectV2 = {
       trigger: 'cyclic',
       interval_ms: 10,
       priority: 1,
-      watchdog_ms: 100, // Reserved compatibility metadata; not runtime-enforced.
       programs: ['main.st'],
     },
   ],
@@ -612,8 +630,6 @@ export interface ProjectConfig {
   taskMode: TaskMode;
   cycleTimeMs: number;
   priority: number;
-  /** Reserved compatibility metadata; current runtimes do not apply it. */
-  watchdogMs: number;
   startPOU: string;      // Entry point program name
 }
 
@@ -623,7 +639,6 @@ export const DEFAULT_PROJECT_CONFIG: ProjectConfig = {
   taskMode: 'cyclic',
   cycleTimeMs: 10,
   priority: 1,
-  watchdogMs: 100, // Reserved compatibility metadata; not runtime-enforced.
   startPOU: 'Main',
 };
 

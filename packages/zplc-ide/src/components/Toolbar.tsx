@@ -22,6 +22,7 @@ import {
   Sun,
   Moon,
   Monitor,
+  Contrast,
   ChevronDown,
   FileCode,
   Save,
@@ -39,13 +40,10 @@ import {
 import { useIDEStore } from '../store/useIDEStore';
 import { useTheme } from '../hooks/useTheme';
 import { useDebugController } from '../hooks/useDebugController';
-import { compileSingleFileWithTask, compileMultiTaskProject, CompilerError, AssemblerError, transpileToST } from '../compiler';
-import type { PLCLanguage, ProgramSource, DebugMap } from '../compiler';
+import { transpileToST } from '../compiler';
+import type { DebugMap } from '../compiler';
 import { GeneratedCodeDialog } from './GeneratedCodeDialog';
-import { loadFileFromTree } from '../utils/fileSystem';
-import { getProgramReferenceCandidates, getProgramSourceReadMode, resolveProgramSourceForCompilation } from '../utils/programSourceResolution';
 import { collectProjectFilesForExport, redactProjectConfigForExport } from '../utils/projectExport';
-import type { FileTreeNode } from '../types';
 import {
   canRunCurrentProgram,
   HARDWARE_DEPLOY_UNCONFIRMED_MESSAGE,
@@ -59,6 +57,8 @@ import {
 import { EXECUTION_MODE, selectRuntimeArtifact, type ExecutionMode } from './runtimeArtifactSelection';
 import { OperationalStatusBar } from './OperationalStatusBar';
 import { isWorkspaceTestRunCurrent, presentWorkspaceCompileResult, resolveWorkspaceCompileRoute } from './workspaceTestPresentation';
+import { createHardwareDeployConfirmation } from './hardwareDeployConfirmation';
+import { DeviceAdmissionError, DEVICE_ADMISSION_CODE } from '../runtime/deviceHandshake';
 
 // =============================================================================
 // Types
@@ -79,15 +79,10 @@ export function Toolbar({ debugController }: ToolbarProps) {
     addCompilerMessage,
     clearCompilerMessages,
     markCompilerMessagesChecked,
-    createFile,
     toggleSettings,
     saveFile,
     getActiveFile,
-    isVirtualProject,
-    projectConfig,
-    isProjectOpen,
     activeFileId,
-    fileTree,
     projectSession,
     workspaceScenarioLink,
     hasUnsavedChanges,
@@ -115,6 +110,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     resume,
     step,
     reset,
+    getHardwareSystemInfo,
   } = debugController;
 
   // Local UI state
@@ -135,6 +131,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
   const compileMenuFirstItemRef = useRef<HTMLButtonElement>(null);
   const connectionButtonRef = useRef<HTMLButtonElement>(null);
   const pendingConnectionFocusRef = useRef<boolean | null>(null);
+  const uploadInFlightRef = useRef(false);
 
   const openCompileMenu = () => {
     setIsCompileMenuOpen(true);
@@ -223,24 +220,8 @@ export function Toolbar({ debugController }: ToolbarProps) {
       return;
     }
 
-    const success = await saveFile(activeFileId);
+    await saveFile(activeFileId);
 
-    if (!success && isVirtualProject) {
-      try {
-        const blob = new Blob([activeFile.content], { type: 'text/plain;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = activeFile.name;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        addConsoleEntry({ type: 'success', message: `Downloaded: ${activeFile.name}`, source: 'system' });
-      } catch (e) {
-        addConsoleEntry({ type: 'error', message: `Failed to download: ${e instanceof Error ? e.message : String(e)}`, source: 'system' });
-      }
-    }
   };
 
   const handleExportProject = async () => {
@@ -321,65 +302,9 @@ export function Toolbar({ debugController }: ToolbarProps) {
     }
   };
 
-  const handleCreateSTFile = async (code: string) => {
-    if (!activeFile) return;
-    const baseName = activeFile.name.replace(/\.(fbd|ld|sfc)(\.json)?$/, '');
-    const newFileName = `${baseName}_generated`;
-
-    try {
-      const newFileId = await createFile(newFileName, 'ST');
-      useIDEStore.getState().updateFileContent(newFileId, code);
-      addConsoleEntry({ type: 'success', message: `Created new file: ${newFileName}.st`, source: 'transpiler' });
-    } catch (err) {
-      addConsoleEntry({ type: 'error', message: `Failed to create file: ${err instanceof Error ? err.message : String(err)}`, source: 'transpiler' });
-    }
-  };
-
   // ==========================================================================
   // Compilation
   // ==========================================================================
-
-  /**
-   * Find program source by name.
-   * An open unsaved matching buffer wins; otherwise local disk is authoritative.
-   * A clean loaded fallback is only valid for virtual projects.
-   */
-  const findProgramSource = async (programName: string): Promise<ProgramSource | null> => {
-    const aliases = getProgramReferenceCandidates(programName);
-    const readMode = getProgramSourceReadMode(isVirtualProject, Boolean(fileTree));
-    const localFileTree = fileTree;
-
-    // Helper to search fileTree recursively
-    const findFileByName = (node: FileTreeNode, targetName: string): FileTreeNode | null => {
-      if (node.type === 'file' && node.name.toLowerCase() === targetName.toLowerCase()) {
-        return node;
-      }
-      if (node.children) {
-        for (const child of node.children) {
-          const found = findFileByName(child, targetName);
-          if (found) return found;
-        }
-      }
-      return null;
-    };
-    
-    return resolveProgramSourceForCompilation(programName, () => useIDEStore.getState().loadedFiles.values(), readMode === 'disk' && localFileTree ? async () => {
-      for (const alias of aliases) {
-        const fileNode = findFileByName(localFileTree, alias);
-        if (!fileNode) continue;
-
-        const loadedFile = await loadFileFromTree(fileNode);
-        if (loadedFile) return loadedFile;
-      }
-
-      return null;
-    } : null);
-  };
-
-  const hasValidProjectConfig = (): boolean => {
-    if (!isProjectOpen || !projectConfig?.tasks?.length) return false;
-    return projectConfig.tasks.some(task => task.programs && task.programs.length > 0);
-  };
 
   const revealCompileProblems = () => {
     const current = useIDEStore.getState();
@@ -398,8 +323,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     const workspaceCompileRoute = resolveWorkspaceCompileRoute({
       isElectronHost: window.electronAPI !== undefined || navigator.userAgent.includes('Electron/'),
       canonicalCompileAvailable: typeof workspaceTests?.compile === 'function',
-      isProjectOpen,
-      isVirtualProject,
+      isProjectOpen: useIDEStore.getState().isProjectOpen,
       hasCurrentLink: currentWorkspaceLink !== null,
       hasUnsavedChanges: hasUnsavedChanges(),
     });
@@ -472,166 +396,13 @@ export function Toolbar({ debugController }: ToolbarProps) {
       return;
     }
 
-    const useProjectMode = hasValidProjectConfig();
-
-    if (useProjectMode && projectConfig) {
-      // PROJECT MODE - Compile all tasks from project configuration
-      addConsoleEntry({ type: 'info', message: `Compiling project: ${projectConfig.name || 'Unnamed'}...`, source: 'compiler' });
-
-      try {
-        const referencedPrograms = new Set<string>();
-        for (const task of projectConfig.tasks) {
-          for (const progName of task.programs || []) {
-            referencedPrograms.add(progName);
-          }
-        }
-
-        if (referencedPrograms.size === 0) {
-          if (!isCurrentRun()) return;
-          revealCompileProblems();
-          addConsoleEntry({ type: 'error', message: 'No programs assigned to tasks. Configure tasks in Project Settings.', source: 'compiler' });
-          addCompilerMessage({ type: 'error', message: 'No programs assigned to tasks. Configure tasks in Project Settings.' });
-          return;
-        }
-
-        // Load all program sources (may need to read from disk)
-        const programSources: ProgramSource[] = [];
-        const missingPrograms: string[] = [];
-
-        for (const progName of referencedPrograms) {
-          const source = await findProgramSource(progName);
-          if (!isCurrentRun()) return;
-          if (source) {
-            programSources.push(source);
-          } else {
-            missingPrograms.push(progName);
-          }
-        }
-
-        if (missingPrograms.length > 0) {
-          if (!isCurrentRun()) return;
-          const message = `Missing program files: ${missingPrograms.join(', ')}`;
-          revealCompileProblems();
-          addConsoleEntry({ type: 'error', message, source: 'compiler' });
-          addCompilerMessage({ type: 'error', message });
-          return;
-        }
-
-        const result = compileMultiTaskProject(projectConfig, programSources);
-        if (!isCurrentRun()) return;
-
-        setLastCompileResult({
-          bytecode: result.bytecode,
-          zplcFile: result.zplcFile,
-          assembly: result.programDetails.map(p => `; === ${p.name} ===\n${p.assembly}`).join('\n\n'),
-          fileName: `${projectConfig.name || 'project'}.zplc`,
-          codeSize: result.codeSize,
-          hasTaskSegment: true,
-          taskCount: result.tasks.length,
-          debugMap: result.debugMap,
-          revision: ++compileRevisionRef.current,
-          compilerRunId,
-        });
-        setProgramLoadState(nextProgramLoadStateAfterCompile());
-
-        addConsoleEntry({
-          type: 'success',
-          message: `Compiled! ${result.zplcFile.length} bytes (${result.codeSize} code, ${result.tasks.length} tasks)`,
-          source: 'compiler',
-        });
-        markCompilerMessagesChecked();
-
-      } catch (e) {
-        handleCompileError(e, compilerRunId);
-      }
-
-    } else if (activeFile) {
-      // SINGLE FILE MODE - Compile active file as a single-task project
-      addConsoleEntry({ type: 'info', message: `Compiling ${activeFile.name}...`, source: 'compiler' });
-
-      try {
-        const language = activeFile.language as PLCLanguage;
-        const firstTask = projectConfig?.tasks?.[0];
-        const taskName = firstTask?.name || 'MainTask';
-        const intervalMs = firstTask?.interval_ms ?? firstTask?.interval ?? 10;
-        const priority = firstTask?.priority ?? 1;
-        const programName = activeFile.name.replace(/\.(st|fbd|ld|sfc)(\.json)?$/i, '') || 'Main';
-
-        const result = compileSingleFileWithTask(activeFile.content, language, {
-          taskName,
-          intervalMs,
-          priority,
-          programName,
-          sourceRef: activeFile.path,
-          communicationTags: projectConfig?.communication?.bindings || projectConfig?.communication?.tags || [],
-        });
-        if (!isCurrentRun()) return;
-
-        const outputFileName = activeFile.name.replace(/\.(st|fbd|ld|sfc)(\.json)?$/i, '.zplc');
-        setLastCompileResult({
-          bytecode: result.bytecode,
-          zplcFile: result.zplcFile,
-          assembly: result.assembly,
-          fileName: outputFileName,
-          codeSize: result.codeSize,
-          hasTaskSegment: result.hasTaskSegment,
-          taskCount: result.tasks.length,
-          debugMap: result.debugMap,
-          revision: ++compileRevisionRef.current,
-          compilerRunId,
-        });
-        setProgramLoadState(nextProgramLoadStateAfterCompile());
-
-        addConsoleEntry({
-          type: 'success',
-          message: `Compiled! ${result.zplcFile.length} bytes (${result.codeSize} code, ${result.tasks.length} task)`,
-          source: 'compiler',
-        });
-        markCompilerMessagesChecked();
-
-      } catch (e) {
-        handleCompileError(e, compilerRunId);
-      }
-    } else {
-      // NO PROJECT AND NO FILE - Give helpful error
-      if (!isCurrentRun()) return;
-      if (isProjectOpen) {
-        const message = 'No programs assigned to tasks. Open Project Settings and configure tasks with programs.';
-        revealCompileProblems();
-        addConsoleEntry({
-          type: 'error',
-          message,
-          source: 'compiler'
-        });
-        addCompilerMessage({ type: 'error', message });
-      } else {
-        const message = 'No project or file open. Open a .zplc project or create a new file to compile.';
-        revealCompileProblems();
-        addConsoleEntry({
-          type: 'error',
-          message,
-          source: 'compiler'
-        });
-        addCompilerMessage({ type: 'error', message });
-      }
-    }
-  };
-
-  const handleCompileError = (e: unknown, compilerRunId: number) => {
-    if (useIDEStore.getState().compilerRunId !== compilerRunId) return;
-    revealCompileProblems();
-    if (e instanceof CompilerError) {
-      addConsoleEntry({ type: 'error', message: e.message, source: 'compiler' });
-      addCompilerMessage({ type: 'error', message: e.message, line: e.line, column: e.column, ...(e.sourceRef ? { file: e.sourceRef } : {}) });
-    } else if (e instanceof AssemblerError) {
-      const message = `Assembler: ${e.message}`;
-      addConsoleEntry({ type: 'error', message, source: 'assembler' });
-      addCompilerMessage({ type: 'error', message });
-    } else {
-      const message = `Error: ${e instanceof Error ? e.message : String(e)}`;
-      addConsoleEntry({ type: 'error', message, source: 'compiler' });
-      addCompilerMessage({ type: 'error', message });
-    }
+    if (!isCurrentRun()) return;
+    const current = useIDEStore.getState();
+    if (current.isConsoleCollapsed) current.toggleConsole();
+    current.setActiveConsoleTab('tests');
+    const message = 'Build requires a saved folder opened in ZPLC Studio. Open the project folder in the desktop app, then choose zplc.json in Tests.';
+    addConsoleEntry({ type: 'error', message, source: 'compiler' });
+    addCompilerMessage({ type: 'error', message });
   };
 
   const handleDownloadBytecode = () => {
@@ -728,7 +499,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
   };
 
   const handleUpload = async () => {
-    if (executionMode !== EXECUTION_MODE.HARDWARE || controlsBusy) return;
+    if (executionMode !== EXECUTION_MODE.HARDWARE || controlsBusy || uploadInFlightRef.current) return;
     if (!isConnected) {
       addConsoleEntry({ type: 'error', message: 'Connect first.', source: 'runtime' });
       return;
@@ -738,11 +509,11 @@ export function Toolbar({ debugController }: ToolbarProps) {
       addConsoleEntry({ type: 'error', message: 'No current compiled bytecode. Build the current source first.', source: 'runtime' });
       return;
     }
-    if ((isRunning || isPaused) && !window.confirm('Deploying stops the current PLC program and leaves it stopped. Continue?')) {
-      return;
-    }
-
+    const deployProjectSession = useIDEStore.getState().projectSession;
+    const deployTargetBoard = useIDEStore.getState().projectConfig?.target?.board;
+    uploadInFlightRef.current = true;
     setIsUploading(true);
+    let programSendStarted = false;
     try {
       const deployedRevision = result.revision;
       const deployedCompilerRunId = result.compilerRunId;
@@ -750,11 +521,28 @@ export function Toolbar({ debugController }: ToolbarProps) {
         bytecode: result.bytecode,
         zplcFile: result.zplcFile,
       });
+      const confirmation = await createHardwareDeployConfirmation({
+        bytecode: dataToUpload,
+        projectBoard: deployTargetBoard,
+        systemInfo: getHardwareSystemInfo(),
+        taskCount: result.taskCount,
+      });
+      if (!window.confirm(confirmation.message)) {
+        addConsoleEntry({ type: 'info', message: 'Hardware deploy cancelled; no program was sent.', source: 'runtime' });
+        return;
+      }
+      const current = currentCompileResult();
+      const latest = useIDEStore.getState();
+      if (current !== result || latest.projectSession !== deployProjectSession || latest.projectConfig?.target?.board !== deployTargetBoard) {
+        addConsoleEntry({ type: 'warning', message: 'Project changed before deploy confirmation. Build the current source before deploying.', source: 'runtime' });
+        return;
+      }
 
-      const description = `Deploying .zplc (${dataToUpload.length} bytes, ${result.taskCount} task(s)); execution remains stopped...`;
+      const description = `Deploying admitted .zplc (${confirmation.byteLength} bytes, ${confirmation.taskCount} task(s)); execution remains stopped...`;
 
       addConsoleEntry({ type: 'info', message: description, source: 'runtime' });
-      await loadProgram(dataToUpload, result.debugMap, projectConfig?.target?.board);
+      programSendStarted = true;
+      await loadProgram(dataToUpload, result.debugMap, deployTargetBoard);
       if (nextProgramLoadStateAfterDeploy(deployedRevision, compileRevisionRef.current, deployedCompilerRunId, useIDEStore.getState().compilerRunId) === PROGRAM_LOAD_STATE.LOADED) {
         setProgramLoadState(PROGRAM_LOAD_STATE.LOADED);
         addConsoleEntry({ type: 'success', message: 'Program deployed and stopped.', source: 'runtime' });
@@ -766,10 +554,18 @@ export function Toolbar({ debugController }: ToolbarProps) {
           source: 'runtime',
         });
       }
-    } catch {
+    } catch (error) {
+      const preflightDenied = error instanceof DeviceAdmissionError && error.code !== DEVICE_ADMISSION_CODE.RESULT_UNKNOWN;
       setProgramLoadState(PROGRAM_LOAD_STATE.EMPTY);
-      addConsoleEntry({ type: 'error', message: HARDWARE_DEPLOY_UNCONFIRMED_MESSAGE, source: 'runtime' });
+      addConsoleEntry({
+        type: 'error',
+        message: programSendStarted && !preflightDenied
+          ? HARDWARE_DEPLOY_UNCONFIRMED_MESSAGE
+          : 'Hardware deploy preflight failed. No program was sent.',
+        source: 'runtime',
+      });
     } finally {
+      uploadInFlightRef.current = false;
       setIsUploading(false);
     }
   };
@@ -976,6 +772,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
   const themeOptions = [
     { id: 'light' as const, label: 'Light', icon: Sun },
     { id: 'dark' as const, label: 'Dark', icon: Moon },
+    { id: 'high-contrast' as const, label: 'High contrast', icon: Contrast },
     { id: 'system' as const, label: 'System', icon: Monitor },
   ];
 
@@ -1398,7 +1195,6 @@ export function Toolbar({ debugController }: ToolbarProps) {
         onClose={() => setShowGeneratedCode(false)}
         sourceLanguage={generatedCodeType}
         generatedCode={generatedCode}
-        onCreateFile={generatedCodeType !== 'ASM' ? handleCreateSTFile : undefined}
       />
     </div>
     <OperationalStatusBar

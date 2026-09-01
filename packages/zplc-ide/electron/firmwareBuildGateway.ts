@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { lstat, realpath } from 'node:fs/promises';
 import { isAbsolute } from 'node:path';
 
@@ -6,9 +7,9 @@ import { isAllowedFirmwareBuildRequest } from './security.js';
 interface RootIdentity { dev: string; ino: string; }
 interface Selection { owner: number; root: string; identity: RootIdentity; boards: Set<string>; }
 interface Lease { owner: number; epoch: number; }
-interface BuildOptions { signal: AbortSignal; }
+export interface FirmwareBuildRunOptions { signal: AbortSignal; jobId: string; startedAt: string; }
 type Inspect = (root: string) => Promise<unknown>;
-type Build = (root: string, ideId: string, options: BuildOptions) => Promise<unknown>;
+type Build = (root: string, ideId: string, options: FirmwareBuildRunOptions) => Promise<unknown>;
 type Approve = () => Promise<boolean>;
 
 const UNAVAILABLE = 'Firmware build unavailable';
@@ -54,7 +55,7 @@ export function createFirmwareBuildGateway(options: { platform?: NodeJS.Platform
   let selection: Selection | undefined;
   let epoch = 0;
   let lease: Lease | undefined;
-  let active: (Lease & { controller: AbortController }) | undefined;
+  let active: (Lease & { controller: AbortController; jobId: string; startedAt: string }) | undefined;
 
   const acquire = (owner: number): Lease => {
     if (lease) throw unavailable();
@@ -88,7 +89,8 @@ export function createFirmwareBuildGateway(options: { platform?: NodeJS.Platform
     if ((platform !== 'darwin' && platform !== 'linux') || !validOwner(owner) || !isAllowedFirmwareBuildRequest(request) || !selection || selection.owner !== owner) throw unavailable();
     const operation = acquire(owner);
     const controller = new AbortController();
-    active = { ...operation, controller };
+    const execution = { ...operation, controller, jobId: randomUUID(), startedAt: new Date().toISOString() };
+    active = execution;
     const admitted = selection;
     try {
       if (cancelled(operation, controller)) return null;
@@ -105,7 +107,7 @@ export function createFirmwareBuildGateway(options: { platform?: NodeJS.Platform
       if (cancelled(operation, controller) || selection !== admitted || !approved) return null;
       if (!(await sameRoot(admitted))) throw unavailable();
       if (cancelled(operation, controller) || selection !== admitted) return null;
-      try { return await firmwareBuild(admitted.root, request.ideId, { signal: controller.signal }); }
+      try { return await firmwareBuild(admitted.root, request.ideId, { signal: controller.signal, jobId: execution.jobId, startedAt: execution.startedAt }); }
       catch { throw unavailable(); }
     } finally {
       if (active?.epoch === operation.epoch) active = undefined;

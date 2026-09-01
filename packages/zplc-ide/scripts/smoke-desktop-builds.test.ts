@@ -145,6 +145,8 @@ test('rejects missing app archives and packaged runtimes instead of source build
     writeFileSync(join(root, 'dist-native', 'zplc_runtime'), '#!/bin/sh\n');
     mkdirSync(resources, { recursive: true });
     expect(() => assertPackagedAppAsar(resources)).toThrow('missing packaged app.asar');
+    writeFileSync(join(resources, 'app.asar'), '');
+    expect(() => assertPackagedAppAsar(resources)).toThrow('missing packaged app.asar');
     writeFileSync(join(resources, 'app.asar'), 'archive');
     expect(() => assertPackagedRuntime(resources, 'linux')).toThrow('missing packaged native runtime');
     mkdirSync(join(resources, 'native-runtime'));
