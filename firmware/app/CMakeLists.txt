@@ -23,7 +23,7 @@ if(CONFIG_MQTT_LIB_WEBSOCKET)
   if(NOT TARGET subsys__net__lib__mqtt)
     message(FATAL_ERROR "Zephyr MQTT target subsys__net__lib__mqtt is required for the WebSocket net_log workaround")
   endif()
-  target_compile_options(subsys__net__lib__mqtt PRIVATE -include zephyr/net/net_log.h)
+  target_compile_options(subsys__net__lib__mqtt PRIVATE "SHELL:-include zephyr/net/net_log.h")
 endif()
 
 target_sources(app PRIVATE
