@@ -11,6 +11,7 @@ export interface WorkspaceTestToken {
 interface WorkspaceIdentity {
   dev: string;
   ino: string;
+  ctimeNs: string;
 }
 
 interface RegisteredWorkspace extends WorkspaceTestToken {
@@ -43,22 +44,22 @@ function validOwner(ownerWebContentsId: unknown): ownerWebContentsId is number {
     && ownerWebContentsId > 0;
 }
 
-function identityOf(status: { dev: number; ino: number }): WorkspaceIdentity {
-  return { dev: String(status.dev), ino: String(status.ino) };
+function identityOf(status: { dev: bigint; ino: bigint; ctimeNs: bigint }): WorkspaceIdentity {
+  return { dev: String(status.dev), ino: String(status.ino), ctimeNs: String(status.ctimeNs) };
 }
 
 function sameIdentity(left: WorkspaceIdentity, right: WorkspaceIdentity): boolean {
-  return left.dev === right.dev && left.ino === right.ino;
+  return left.dev === right.dev && left.ino === right.ino && left.ctimeNs === right.ctimeNs;
 }
 
 async function inspectRoot(candidateRoot: unknown): Promise<Pick<RegisteredWorkspace, 'canonicalRoot' | 'identity'>> {
   if (typeof candidateRoot !== 'string' || !isAbsolute(candidateRoot)) throw unavailable();
   try {
-    const selected = await lstat(candidateRoot);
+    const selected = await lstat(candidateRoot, { bigint: true });
     if (selected.isSymbolicLink() || !selected.isDirectory()) throw unavailable();
 
     const canonicalRoot = await realpath(candidateRoot);
-    const canonical = await lstat(canonicalRoot);
+    const canonical = await lstat(canonicalRoot, { bigint: true });
     if (canonical.isSymbolicLink() || !canonical.isDirectory()) throw unavailable();
     return { canonicalRoot, identity: identityOf(canonical) };
   } catch {
@@ -69,12 +70,12 @@ async function inspectRoot(candidateRoot: unknown): Promise<Pick<RegisteredWorks
 async function inspectProjectManifest(candidatePath: unknown): Promise<Pick<RegisteredWorkspace, 'canonicalRoot' | 'identity'>> {
   if (typeof candidatePath !== 'string' || !isAbsolute(candidatePath) || basename(candidatePath) !== 'zplc.json') throw unavailable();
   try {
-    const manifest = await lstat(candidatePath);
+    const manifest = await lstat(candidatePath, { bigint: true });
     if (manifest.isSymbolicLink() || !manifest.isFile()) throw unavailable();
     const inspected = await inspectRoot(dirname(candidatePath));
     const canonicalManifest = await realpath(candidatePath);
     if (canonicalManifest !== join(inspected.canonicalRoot, 'zplc.json')) throw unavailable();
-    const canonical = await lstat(canonicalManifest);
+    const canonical = await lstat(canonicalManifest, { bigint: true });
     if (canonical.isSymbolicLink() || !canonical.isFile()) throw unavailable();
     return inspected;
   } catch {
@@ -86,7 +87,7 @@ async function revalidateRoot(workspace: RegisteredWorkspace): Promise<boolean> 
   try {
     const currentCanonicalRoot = await realpath(workspace.canonicalRoot);
     if (currentCanonicalRoot !== workspace.canonicalRoot) return false;
-    const status = await lstat(workspace.canonicalRoot);
+    const status = await lstat(workspace.canonicalRoot, { bigint: true });
     return !status.isSymbolicLink()
       && status.isDirectory()
       && sameIdentity(workspace.identity, identityOf(status));

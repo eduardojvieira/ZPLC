@@ -4,7 +4,7 @@ import { isAbsolute } from 'node:path';
 
 import { isAllowedFirmwareBuildRequest } from './security.js';
 
-interface RootIdentity { dev: string; ino: string; }
+interface RootIdentity { dev: string; ino: string; ctimeNs: string; }
 interface Selection { owner: number; root: string; identity: RootIdentity; boards: Set<string>; }
 interface Lease { owner: number; epoch: number; }
 export interface FirmwareBuildRunOptions { signal: AbortSignal; jobId: string; startedAt: string; }
@@ -15,17 +15,17 @@ type Approve = () => Promise<boolean>;
 const UNAVAILABLE = 'Firmware build unavailable';
 const unavailable = (): Error => new Error(UNAVAILABLE);
 const validOwner = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value > 0;
-const identityOf = (status: { dev: number; ino: number }): RootIdentity => ({ dev: String(status.dev), ino: String(status.ino) });
-const sameIdentity = (left: RootIdentity, right: RootIdentity): boolean => left.dev === right.dev && left.ino === right.ino;
+const identityOf = (status: { dev: bigint; ino: bigint; ctimeNs: bigint }): RootIdentity => ({ dev: String(status.dev), ino: String(status.ino), ctimeNs: String(status.ctimeNs) });
+const sameIdentity = (left: RootIdentity, right: RootIdentity): boolean => left.dev === right.dev && left.ino === right.ino && left.ctimeNs === right.ctimeNs;
 const plain = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value) && Object.getPrototypeOf(value) === Object.prototype;
 
 async function inspectRoot(candidate: unknown): Promise<Pick<Selection, 'root' | 'identity'>> {
   if (typeof candidate !== 'string' || !isAbsolute(candidate)) throw unavailable();
   try {
-    const selected = await lstat(candidate);
+    const selected = await lstat(candidate, { bigint: true });
     if (selected.isSymbolicLink() || !selected.isDirectory()) throw unavailable();
     const root = await realpath(candidate);
-    const canonical = await lstat(root);
+    const canonical = await lstat(root, { bigint: true });
     if (canonical.isSymbolicLink() || !canonical.isDirectory()) throw unavailable();
     return { root, identity: identityOf(canonical) };
   } catch { throw unavailable(); }
@@ -34,7 +34,7 @@ async function inspectRoot(candidate: unknown): Promise<Pick<Selection, 'root' |
 async function sameRoot(selection: Selection): Promise<boolean> {
   try {
     if (await realpath(selection.root) !== selection.root) return false;
-    const status = await lstat(selection.root);
+    const status = await lstat(selection.root, { bigint: true });
     return !status.isSymbolicLink() && status.isDirectory() && sameIdentity(selection.identity, identityOf(status));
   } catch { return false; }
 }

@@ -5,7 +5,7 @@ import { McpServer, ResourceTemplate } from '@modelcontextprotocol/server';
 import { getBoardEvidenceSummary, getBoardNetworkType, getCompilerMemoryProfile } from '../config/boardProfiles';
 import * as z from 'zod/v4';
 import idePackage from '../../package.json';
-import { directoryIdentity, type DirectoryIdentity } from '../cli/firmwareBuildRunner';
+import { directoryIdentity, sameDirectoryIdentity, type DirectoryIdentity } from '../cli/firmwareBuildRunner';
 import * as toolApi from '../cli/toolApi';
 
 const MAX_OUTPUT_BYTES = 512 * 1024;
@@ -181,9 +181,7 @@ export function toMcpToolResult(tool: McpToolName, value: unknown, execution?: u
   return { content: [{ type: 'text', text }], structuredContent: JSON.parse(text) as Record<string, unknown>, ...(publicValue.ok === false ? { isError: true } : {}) };
 }
 
-function sameIdentity(left: DirectoryIdentity, right: DirectoryIdentity | undefined): boolean {
-  return !!right && left.path === right.path && left.dev === right.dev && left.ino === right.ino;
-}
+const sameIdentity = sameDirectoryIdentity;
 
 export async function openMcpWorkspace(root: string): Promise<McpWorkspace | undefined> {
   try { if (!isAbsolute(root)) return undefined; const identity = await directoryIdentity(root); if (!identity) return undefined; const inspected = await toolApi.projectInspect(identity.path); if (!inspected.ok || !sameIdentity(identity, await directoryIdentity(identity.path))) return undefined; return { root: identity.path, identity }; }
@@ -343,12 +341,17 @@ export function buildMcpServer(workspace: McpWorkspace): McpServer {
 /** @internal Small test seam; never returns paths or raw user-data. */
 export async function courseProgressResource(workspace: McpWorkspace): Promise<Record<string, unknown>> {
   if (!workspace.userData) return { ok: false, error: 'MCP_CAPABILITY_UNAVAILABLE', reason: 'requires-explicit-user-data' };
-  if (!sameIdentity(workspace.userData.identity, await directoryIdentity(workspace.userData.root))) return { ok: false, error: 'MCP_WORKSPACE_CHANGED' };
+  // This directory is user-managed progress storage, so its entry generation changes when the progress file is created.
+  const sameUserData = async (): Promise<boolean> => {
+    const current = await directoryIdentity(workspace.userData!.root);
+    return !!current && workspace.userData!.identity.path === current.path && workspace.userData!.identity.dev === current.dev && workspace.userData!.identity.ino === current.ino;
+  };
+  if (!await sameUserData()) return { ok: false, error: 'MCP_WORKSPACE_CHANGED' };
   const file = join(workspace.userData.root, 'zplc-learn-mastery.v1.json');
   try {
     const status = await lstat(file); if (status.isSymbolicLink() || !status.isFile() || status.size > 4096) return { ok: false, error: 'MCP_INTERNAL_ERROR' };
     const text = await readFile(file, 'utf8');
-    if (Buffer.byteLength(text, 'utf8') > 4096 || !sameIdentity(workspace.userData.identity, await directoryIdentity(workspace.userData.root))) return { ok: false, error: 'MCP_WORKSPACE_CHANGED' };
+    if (Buffer.byteLength(text, 'utf8') > 4096 || !await sameUserData()) return { ok: false, error: 'MCP_WORKSPACE_CHANGED' };
     const parsed = JSON.parse(text) as unknown;
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || Object.getPrototypeOf(parsed) !== Object.prototype || Object.getOwnPropertyNames(parsed).sort().join(',') !== 'mastered,schemaVersion') return { ok: false, error: 'MCP_INTERNAL_ERROR' };
     const mastered = (parsed as { schemaVersion?: unknown; mastered?: unknown }).mastered;
@@ -356,7 +359,7 @@ export async function courseProgressResource(workspace: McpWorkspace): Promise<R
     let previous = -1; for (const id of mastered) { const index = LEARN_LESSON_IDS.indexOf(id as typeof LEARN_LESSON_IDS[number]); if (typeof id !== 'string' || index <= previous) return { ok: false, error: 'MCP_INTERNAL_ERROR' }; previous = index; }
     return { ok: true, schemaVersion: 1, mastered, completed: mastered.length, total: LEARN_LESSON_IDS.length };
   } catch (error) {
-    if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT') return sameIdentity(workspace.userData.identity, await directoryIdentity(workspace.userData.root)) ? { ok: true, schemaVersion: 1, mastered: [], completed: 0, total: LEARN_LESSON_IDS.length } : { ok: false, error: 'MCP_WORKSPACE_CHANGED' };
+    if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT') return await sameUserData() ? { ok: true, schemaVersion: 1, mastered: [], completed: 0, total: LEARN_LESSON_IDS.length } : { ok: false, error: 'MCP_WORKSPACE_CHANGED' };
     return { ok: false, error: 'MCP_INTERNAL_ERROR' };
   }
 }

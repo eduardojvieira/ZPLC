@@ -9,7 +9,7 @@ import type { ProjectMigrationChange } from '../project/projectModel';
 import { resolveProgramSource } from '../utils/programSourceResolution';
 import { compileScenario, runScenario, type CompiledScenario, type ScenarioKind, type ScenarioRunResult } from '../test-engine';
 import { createNativeScenarioSession } from './nativeScenarioRuntime';
-import { directoryIdentity, runFirmwareBuild } from './firmwareBuildRunner';
+import { directoryIdentity, runFirmwareBuild, sameDirectoryIdentity } from './firmwareBuildRunner';
 import { readWorkspace, readWorkspaceScenarios, type ToolDiagnostic, type WorkspaceProject, type WorkspaceScenario } from './workspace';
 
 export type ToolOperation = 'cli' | 'inspect' | 'migrate-preview' | 'migrate' | 'validate' | 'check' | 'compile' | 'symbols-list' | 'safety-check' | 'test' | 'scenario-run' | 'change-set-review' | 'boards-list' | 'toolchain-inspect' | 'firmware-build-plan' | 'firmware-build';
@@ -996,7 +996,7 @@ export async function firmwareBuild(repositoryRoot: string, ideId: string, optio
   if (!inspected.ok || !inspected.summary.ready || !inspectedBoardMatchesPlan(inspected, admitted.summary.board)) return firmwareBuildFailure('FIRMWARE_BUILD_TOOLCHAIN_UNAVAILABLE');
   const run = await runFirmwareBuild(root.path, admitted.summary.board.zephyrBoard, options);
   if (!run.ok) return firmwareBuildFailure(`FIRMWARE_BUILD_${run.failure.replace(/-/g, '_').toUpperCase()}`);
-  const currentRoot = await directoryIdentity(root.path); const revalidated = currentRoot && currentRoot.path === root.path && currentRoot.dev === root.dev && currentRoot.ino === root.ino ? await firmwareBuildPlan(root.path, ideId) : undefined;
+  const currentRoot = await directoryIdentity(root.path); const revalidated = sameDirectoryIdentity(root, currentRoot) ? await firmwareBuildPlan(root.path, ideId) : undefined;
   if (!revalidated?.ok || JSON.stringify(revalidated.summary) !== JSON.stringify(admitted.summary)) return firmwareBuildFailure('FIRMWARE_BUILD_PLAN_STALE');
   const artifact: ToolArtifact & { kind: 'firmware-elf' } = { kind: 'firmware-elf', ...run.artifact };
   return { ok: true, summary: { schemaVersion: 1, scope: 'local-ephemeral-cross-build', sourceIdentity: 'unverified', board: admitted.summary.board, artifact, output: run.output }, evidence: evidence('firmware-build', 'passed', [], [artifact]) };
