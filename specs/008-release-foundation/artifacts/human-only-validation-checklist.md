@@ -1,35 +1,17 @@
-# Human-Only Validation Checklist for v1.5.0
+# ZPLC 2.0 RC3 Physical HIL Checklist
 
-This checklist extracts the work that the current `specs/008-release-foundation/spec.md`
-assigns to a human owner. AI can prepare automation, docs, and fixes, but these items
-require direct human execution or sign-off.
+REL-007 is the only human qualification gate. Run this checklist separately for
+the selected Raspberry Pi Pico RP2040 and ESP32-S3-DevKitC-1-N8R8 profiles and
+record each result with the evidence template.
 
-## Human-Required Validation
+- [ ] Record the exact release tag/SHA, board revision, probe/runner, transport and wiring.
+- [ ] Build runtime firmware from that exact SHA and record the artifact hash/configuration hash.
+- [ ] Flash the identified board and confirm the runtime identity/profile and firmware hash.
+- [ ] Deploy the verified `.zplc` program through the human-controlled flow and confirm program hash/ABI.
+- [ ] Run the golden scenario, capture trace and expected/actual result, then reboot and verify transactional persistence.
+- [ ] Verify safe outputs at boot, failed deploy/recovery, watchdog/fault and released-force conditions.
+- [ ] Measure and record cycle time, jitter, deadline/overrun behavior against that profile's declared budget.
+- [ ] Attach logs, trace, photos or instrument captures and mark each board evidence record pass/fail/blocked.
 
-- [ ] Run desktop smoke validation on real `macOS`
-- [ ] Run desktop smoke validation on real `Linux`
-- [ ] Run desktop smoke validation on real `Windows`
-- [ ] Verify install/launch, project open, compile, simulation, deployment, and debugging on each desktop platform
-- [ ] Manually verify breakpoints, step/continue, watch table, visual inspection, and force-value workflows
-- [ ] Flash and validate at least one serial-focused board in hardware-in-the-loop conditions
-- [ ] Flash and validate at least one network-capable board in hardware-in-the-loop conditions
-- [ ] Capture a standard evidence record for every `Human` release gate
-- [ ] Rerun the human side of every `Shared` gate after AI-assisted fixes
-- [ ] Approve the final supported-board claim set
-- [ ] Approve final release sign-off based on observed evidence
-
-## Evidence Record Minimum Fields
-
-- [ ] Owner
-- [ ] Date
-- [ ] Environment
-- [ ] Steps run
-- [ ] Result
-- [ ] Supporting artifacts
-
-## Notes
-
-- A gate marked `Human` cannot be closed by automation alone.
-- A gate marked `Shared` is not complete until the human rerun is recorded.
-- If a behavior cannot be verified by a human in the real target environment, it must be
-  removed from the `v1.5.0` supported claim set or marked experimental.
+Final release sign-off follows directly from the two complete HIL records; it is
+not a separate technical gate. A failed or blocked record keeps REL-007 pending.

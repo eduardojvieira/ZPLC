@@ -17,7 +17,7 @@ The pipeline is defined in `.github/workflows/docs-deploy.yml` and runs as **Dep
 ### Pull Requests (Validation)
 When a PR is opened that modifies the `docs/` directory:
 1. The CI pipeline installs dependencies.
-2. It runs `bun run validate:v1.5-docs` and then `bun run build`.
+2. It runs `bun run validate:docs` and then `bun run build`.
 3. **Crucially**, Docusaurus is configured with `onBrokenLinks: 'throw'`. If your PR introduces a broken internal link, a missing markdown import, or invalid frontmatter, the build will fail, blocking the merge.
 
 ### Merges to Main (Deployment)
@@ -30,7 +30,7 @@ When changes are pushed to `main` (or `master`):
 
 To publish new documentation:
 1. Make your changes in a feature branch.
-2. Run `cd docs && bun run validate:v1.5-docs` locally to verify manifest parity and generated references.
+2. Run `cd docs && bun run validate:docs` locally to verify manifest parity and generated references.
 3. Open a Pull Request.
 4. Wait for the `Build Documentation` job in **Deploy Docusaurus to GitHub Pages** to pass.
 5. Merge the PR or push the approved change to `main`. GitHub Actions will upload `docs/build` and deploy it to GitHub Pages automatically.

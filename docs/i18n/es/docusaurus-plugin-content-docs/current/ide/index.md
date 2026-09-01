@@ -1,57 +1,39 @@
 ---
 slug: /ide
 id: index
-title: Entorno de Desarrollo y Herramientas
-sidebar_label: Generalidades del IDE
-description: Visión general del ZPLC IDE, modelo de proyecto, simulación y flujos de depuración.
-tags: [ide, tooling, debugging]
+title: ZPLC Studio 2.0
+sidebar_label: Studio
+description: Autoría PLC respaldada por carpetas, validación, simulación, evidencia y flujos de hardware controlados por personas.
+tags: [ide, tooling]
 ---
 
-# ZPLC IDE
+# ZPLC Studio 2.0
 
-El Entorno de Desarrollo Integrado (IDE) de ZPLC provee un flujo de trabajo de ingeniería completo para crear, simular y desplegar lógica de automatización IEC 61131-3.
+Studio es el workbench de escritorio para crear, compilar, testear, simular y
+revisar proyectos PLC en una carpeta elegida por la persona usuaria.
 
-## Capacidades Principales
+## Camino rápido
 
-El IDE sirve como la capa central de orquestación para todos tus proyectos de automatización. Sus principales responsabilidades incluyen:
+1. Creá o copiá un ejemplo a una carpeta.
+2. Editá ST, LD, FBD o SFC y compilá mediante el camino canónico.
+3. Ejecutá tests temporales y simulación POSIX nativa; inspeccioná evidencia en el ledger inferior.
+4. Para hardware, usá flujos humanos separados de build, flash, deploy y RUN/STOP.
 
-- **Gestión de Proyecto**: Edición de configuraciones `zplc.json`, organización de archivos fuente y gestión de ruteo de tareas.
-- **Flujos Multi-Lenguaje**: Edición perfecta en Texto Estructurado (ST), Lista de Instrucciones (IL), Diagrama de Contactos / Ladder (LD), Diagramas de Bloques Funcionales (FBD) y Diagramas Secuenciales y Gráficos (SFC).
-- **Compilación**: Transpilación de los modelos visuales a ST, validación sintáctica estricta y compilación a código binario ultracompacto `.zplc`.
-- **Simulación**: Prueba nativa de lógica directamente en la PC anfitriona sin requerimiento de hardware físico.
-- **Despliegue y Depuración (Debug)**: Flasheo y traspaso de memoria binaria directa a las placas MCU mediante Serial. Soporta utilidades asíncronas de lectura como Breakpoints, forzado de variables y monitorización de RTOS.
+## Qué posee el workbench
 
-## Flujo de Trabajo Extremo a Extremo
+| Superficie | Rol actual |
+| --- | --- |
+| Proyecto | Archivos respaldados por carpeta, export v2 y diff de migración. |
+| Editores | ST es el camino textual principal; LD/FBD/SFC preservan modelos visuales semánticos. |
+| Validación | Diagnósticos, tests temporales, reglas de seguridad, trace y simulación POSIX. |
+| Evidencia | Registra resultados de tools y su alcance; no promociona host a HIL. |
+| Hardware | Connect y deploy siguen siendo acciones humanas explícitas tras controles de compatibilidad. |
 
-```mermaid
-flowchart LR
-  Author[Autor de lógica IEC] --> Config[Setup de proyecto y target]
-  Config --> Compile[Construcción/Compilación a .zplc]
-  Compile --> Sim[Simular en runtime nativo POSIX]
-  Sim --> Deploy[Despliegue a plataforma de hardware]
-  Deploy --> Debug[Monitor & Depuración Online]
-```
+## Límites importantes
 
-## Arquitectura de Proyecto
+La simulación POSIX nativa valida comportamiento host. No afirma timing target
+exacto, I/O eléctrico, HIL ni calificación de producción. Los perfiles de placas
+sólo tienen evidencia cross-build; consultá [capacidades y evidencia](../reference/capabilities-evidence.md).
 
-El modelo de proyecto ZPLC está basado puramente en un árbol de directorios y es transparente.
-Todas las configuraciones requeridas —como objetivos de CPU en hardware, configuración Wi-Fi, mapeo atómico de IO físicos, transacciones de comunicación en MQTT o Modbus y priorizaciones de carga por cada Tarea— se guardan limpiamente en el manifiesto principal `zplc.json`.
-
-Esto hace que los proyectos de ZPLC estén profundamente preparados para control de versiones (Git), uso en línea de comandos o ser migrados fácilmente entre computadoras.
-
-## Entornos de Ejecución
-
-Al iniciar un estado de la depuración, el IDE enruta transparentemente toda tu lógica y el canal binario hacia la instancia de validación que escojas:
-
-| Vía de Ejecución | Uso | Comportamiento |
-|---|---|---|
-| **Simulación Nativa (Desktop)** | Vía predeterminada | Levanta en el sistema anfitrión u OS bajo SoftPLC nativo. Dispone del 100% de la tabla de depuración. |
-| **Ejecución de Hardware real** | Entorno físico real | Ejecución oficial embebida nativa en Zephyr RTOS sobre las conexiones TTY o COM física de la placa. El IDE funciona como monitor e inspector de estados remotos. |
-
-## Diagnósticos y Depuración
-
-Se dispone de una vasta caja de herramientas online a través del flujo productivo, tanto desde pruebas virtuales en mesa hasta implementaciones complejas sobre Hardware montado:
-- **Watch Tables (Tabla de Diagnósticos)**: Supervisa estados continuos nominales o analógicos en directo.
-- **Breakpoints (Pausas)**: Interrumpe el RTOS justo a la medida que el programa llega a tu nodo marcado.
-- **Stepping (Pasos)**: Inspección de bloque y progreso meticulosos a velocidad manual.
-- **Variables Forzadas (Forces)**: Inyección cruda de lógicas no presentes para puentear sensores averiados y recuperar control manual del flujo al rescate.
+La IA puede preparar un cambio candidato aislado, pero sólo una persona puede
+guardarlo o iniciar una operación física. Leé [IA y privacidad](./ai-privacy.md)

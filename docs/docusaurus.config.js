@@ -10,8 +10,8 @@ import { themes as prismThemes } from 'prism-react-renderer';
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'ZPLC',
-  tagline: 'v1.5.0 · One execution core, any runtime, one truthful release.',
+  title: 'ZPLC 2.0',
+  tagline: 'One execution core, evidence-aware runtimes.',
   favicon: 'img/favicon.png',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
@@ -63,7 +63,7 @@ const config = {
           lastVersion: 'current',
           versions: {
             current: {
-              label: 'v1.5.0',
+              label: 'ZPLC 2.0',
             },
           },
         },
@@ -82,7 +82,7 @@ const config = {
       image: 'img/banner.png',
       metadata: [
         { name: 'keywords', content: 'plc, iec 61131-3, zephyr rtos, industrial automation, open source, stm32, esp32, raspberry pi pico, modbus, mqtt, scada, softplc, real-time' },
-        { name: 'description', content: 'ZPLC v1.5.0 aligns runtime, IDE, supported boards, bilingual docs, and release evidence into one truthful industrial automation release.' },
+        { name: 'description', content: 'ZPLC 2.0 documents its runtime, Studio, board profiles, and release evidence without promoting unverified hardware claims.' },
       ],
       colorMode: {
         defaultMode: 'dark',
@@ -175,7 +175,7 @@ const config = {
             ],
           },
         ],
-        copyright: `Copyright © 2026 ZPLC Project. v1.5.0 docs aligned with runtime, IDE, and release evidence.`,
+        copyright: `Copyright © 2026 ZPLC Project. ZPLC 2.0 documentation is aligned with runtime, Studio, and recorded evidence.`,
       },
       prism: {
         theme: prismThemes.github,

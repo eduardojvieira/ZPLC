@@ -1,49 +1,32 @@
-# Despliegue y Sesiones de Ejecución
+# Despliegue y sesiones de runtime
 
-Esta página cubre el flujo de trabajo para desplegar y depurar lógica funcional desde el IDE de ZPLC hacia sus entornos compatibles.
+Build de firmware, flash de firmware, deploy de programa PLC y run/debug son
+cuatro operaciones separadas. IA y MCP nunca las inician.
 
-## Entornos de Ejecución Disposición
+## Camino rápido
 
-ZPLC ofrece dos principales entornos de ejecución compatibles:
+1. Compilá, testeá y simulá el programa esperado.
+2. Elegí el profile de placa exacto y conectá el runtime correspondiente.
+3. Inspeccioná handshake, ABI, board/profile, hash, tamaño y cantidad de tareas.
+4. Una persona confirma el deploy; inspeccioná estado stopped antes de RUN.
 
-| Target | Adapter Utilizado | Uso Típico |
-|---|---|---|
-| **Simulación Nativa (SoftPLC)** | `NativeAdapter` | Validar control de flujo numérico a velocidad nativa en la PC en paralelo. |
-| **Controlador de Hardware** | `SerialAdapter` | Subida de programa, ejecución e introspección en tarjetas de hardware basadas en Zephyr RTOS. |
+## Operaciones
 
-## Flujo de Trabajo en Simulación Nativa
+| Operación | Significado | Autoridad |
+| --- | --- | --- |
+| Build runtime firmware | Produce artefactos firmware Zephyr. | Flujo humano. |
+| Flash runtime firmware | Escribe firmware/boot chain al dispositivo. | Flujo humano; requiere procedimiento del profile. |
+| Deploy PLC program | Transfiere un artefacto `.zplc` verificado a runtime compatible. | Confirmación humana con evidencia del artefacto. |
+| Run / debug | Observa o cambia estado operacional. | Flujo humano y procedimiento del sitio. |
 
-Cuando corres el IDE de ZPLC desde aplicación de escritorio, al dar click en **Start Simulation** inicia un SoftPLC POSIX en segundo plano asíncrono. El IDE se mantiene en modo visualizado sobre este SoftPLC nativo.
-Te permite depurar lógica IEC 61131-3 sin contar obligatoriamente con una tarjeta microcontroladora. Sirve vitalmente para depurar cálculos lógicos, FBD combinatorios densos y matemáticas algorítmicas veloces.
+## Límite de evidencia
 
-## Flujo de Trabajo en Hardware Físico
+El adaptador POSIX nativo es simulación host. Conexión serial y profile
+cross-build no lo convierten en HIL. Los profiles catalogados actuales tienen
+cero referencias HIL; usá el procedimiento Zephyr exacto y registrá un run HIL
+antes de afirmar comportamiento target.
 
-En fases de puesta a punto o ensamble final, el canal de `SerialAdapter` asume la responsabilidad física sobre el cordón físico entre el PC y el MCU (A través de Serioal).
-Responsabilidades:
-- Administrar anchos de banda a nivel de baudios o ruteos serial.
-- Transmitir de forma binaria el bytecode `.zplc` directamente al chip o al NVS interno.
-- Provisionar cabeceras y detalles de configuración nativos.
-- Extracción de metadata vital y estado de la red o sensores a través de sondas internas e imprimirlas en las **Watch Tables** del IDE.
-- Accionar comandos del usuario durante el debug, tal como pausar, step, y valores *forced*.
+## Ante conexión o deploy fallido
 
-### Ciclo de Vida del Despliegue
-
-```mermaid
-sequenceDiagram
-  participant IDE as IDE de ZPLC
-  participant Adapter as Enlace Serial
-  participant Device as MCU (Zephyr)
-
-  IDE->>Adapter: Compilar proyecto a .zplc
-  Adapter->>Device: Cargar bytecode en la Memoria Flash
-  Adapter->>Device: Iniciar Ejecución del ciclo
-  Adapter->>Device: Petición de lecturas / establecer Breakpoints
-  Device-->>IDE: Estadisticas de tarea, estado, y datos analizados
-```
-
-## Configuración y Solución de Problemas de Despliegues
-
-Cuando una descarga presenta problemas ante conexiones en hardware, verifica los listados base:
-1. **Target Real** — Revisa tu manifiesto activo `zplc.json` indicando el microcontrolador activo si coincide con el objeto montado o puente en la placa MCU base.
-2. **Puerto COM/Serial** — Asegúrate que el cable u hub detectan el TTY correctamente asignado en su OS evitando que herramientas terceras monopolizen el uso.
-3. **Firmware Preparatorio** —  Para que se establezca la respuesta en comunicación, el MCU debe tener cargado el boot de Zephyr del runtime Core de ZPLC anticipadamente; para recibir tus inyecciones automatas de lógica en base IEC 61131-3 sin requerir recompilaciones posteriores por C.
+No reintentes a ciegas. Volvé a inspeccionar board/profile y ABI del runtime y
+usá [Límites de recuperación](../operations/recovery.md). El deploy de programa

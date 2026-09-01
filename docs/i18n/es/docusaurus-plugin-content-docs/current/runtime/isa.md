@@ -1,14 +1,14 @@
 ---
 title: ISA del Runtime
 sidebar_label: ISA
-description: Contrato público de instrucciones, memoria y formato .zplc del runtime ZPLC v1.5.0.
+description: Contrato público de instrucciones, memoria y formato .zplc del runtime ZPLC 2.0.
 ---
 
 # ISA del Runtime
 
 La fuente canónica para esta página es `firmware/lib/zplc_core/include/zplc_isa.h`.
 
-En ZPLC v1.5.0, el release usa ese contrato público para definir:
+En ZPLC 2.0, ese header público define el contrato binario/ISA para:
 
 - el layout de memoria de la VM
 - los registros reservados del sistema
@@ -131,9 +131,9 @@ Segmentos públicos definidos hoy:
 - `ZPLC_SEG_TASK`
 - `ZPLC_SEG_TAGS`
 
-## Qué implica para la documentación v1.5
+## Qué implica para la documentación ZPLC 2.0
 
-Cuando la documentación de v1.5 haga claims sobre bytecode, layout de memoria, límites de stack, breakpoints o formato `.zplc`, esos claims tienen que salir de `zplc_isa.h` y no de descripciones aspiracionales.
+Cuando la documentación de ZPLC 2.0 haga claims sobre bytecode, layout de memoria, límites de stack, breakpoints o formato `.zplc`, esos claims tienen que salir de `zplc_isa.h` y no de descripciones aspiracionales.
 
 No documentes una ISA imaginaria que el header público todavía no define.
 

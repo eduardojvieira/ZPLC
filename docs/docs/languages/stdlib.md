@@ -4,7 +4,7 @@ sidebar_position: 3
 
 # Standard Library
 
-The authoritative release-facing source for the language standard library is the compiler
+The authoritative source for the language standard library is the compiler
 stdlib registry in `packages/zplc-compiler/src/compiler/stdlib/index.ts`.
 
 That registry is what the IDE/compiler uses to resolve built-in functions and function blocks.
@@ -85,6 +85,6 @@ For the runtime-side details and release constraints, continue with:
 ## Practical rule
 
 If a built-in function or block is not registered in the compiler stdlib or justified by the
-runtime contract, it should not be documented as a firm v1.5 capability.
+runtime contract, it should not be documented as a firm ZPLC 2.0 capability.
 
 For runtime and profile-specific semantics, see [Runtime Standard Library](../runtime/stdlib.md).

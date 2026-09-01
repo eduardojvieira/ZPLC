@@ -2,7 +2,7 @@
 id: isa
 title: Runtime ISA
 sidebar_label: ISA
-description: Public instruction-set, memory, and .zplc binary contract for ZPLC v1.5.0.
+description: Public instruction-set, memory, and .zplc binary contract for ZPLC 2.0.
 tags: [runtime, isa, bytecode]
 ---
 
@@ -10,7 +10,7 @@ tags: [runtime, isa, bytecode]
 
 The canonical source for this page is `firmware/lib/zplc_core/include/zplc_isa.h`.
 
-In ZPLC v1.5.0, that public header defines the stable contract for:
+In ZPLC 2.0, that public header defines the binary/ISA contract for:
 
 - the VM memory layout
 - reserved system registers
@@ -133,7 +133,7 @@ Public segment identifiers defined today include:
 - `ZPLC_SEG_TASK`
 - `ZPLC_SEG_TAGS`
 
-## Documentation rule for v1.5
+## Documentation rule for ZPLC 2.0
 
 When docs make claims about bytecode layout, stack limits, breakpoints, memory regions, or `.zplc` structure, those claims should come from `zplc_isa.h`.
 

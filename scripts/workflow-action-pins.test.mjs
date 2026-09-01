@@ -4,6 +4,7 @@ import test from 'node:test';
 
 const workflows = [
   '.github/workflows/ci.yml',
+  '.github/workflows/nightly-quality.yml',
   '.github/workflows/release.yml',
   '.github/workflows/deploy-docs.yml',
 ];
@@ -86,11 +87,21 @@ function validateJobEnvContexts(workflowPath, workflow) {
   }
 }
 
+function validateCiCheckoutsUseExactSha(workflow) {
+  const checkouts = [...workflow.matchAll(/^\s*uses:\s*actions\/checkout@[a-f0-9]{40}\s+#\s+v4\.3\.0\n(?:\s+with:\n)?(?:\s+ref:\s*\$\{\{ github\.sha \}\}\n)?(?:\s+path:\s*zplc\n)?/gm)];
+  assert.equal(checkouts.length, 6, 'CI must keep exactly six pinned checkout steps');
+  for (const checkout of checkouts) {
+    assert.match(checkout[0], /\n\s+with:\n\s+ref:\s*\$\{\{ github\.sha \}\}/, 'every CI checkout must use the caller SHA');
+  }
+}
+
 test('pins every third-party action in CI, release, and docs workflows to its approved commit and version', async () => {
   const foundActions = new Set();
   for (const workflowPath of workflows) {
     const workflow = await readFile(new URL(`../${workflowPath}`, import.meta.url), 'utf8');
-    const usesLines = workflow.split('\n').filter((line) => /^\s*uses:/.test(line));
+    const usesLines = workflow.split('\n').filter(
+      (line) => /^\s*uses:/.test(line) && !/^\s*uses:\s*\.\//.test(line),
+    );
     for (const action of validateUsesLines(workflowPath, usesLines)) foundActions.add(action);
   }
   for (const expectedAction of approvedActions.keys()) {
@@ -108,7 +119,8 @@ test('rejects an altered SHA or version comment', () => {
 test('requires every frozen Bun install to guard the checked-out root lockfile', async () => {
   const expectedInstallCounts = new Map([
     ['.github/workflows/ci.yml', 2],
-    ['.github/workflows/release.yml', 3],
+    ['.github/workflows/nightly-quality.yml', 0],
+    ['.github/workflows/release.yml', 4],
     ['.github/workflows/deploy-docs.yml', 1],
   ]);
 
@@ -143,4 +155,28 @@ test('rejects runner-only contexts in job-level workflow env', async () => {
     const workflow = await readFile(new URL(`../${workflowPath}`, import.meta.url), 'utf8');
     validateJobEnvContexts(workflowPath, workflow);
   }
+});
+
+test('binds every reusable-CI checkout to the caller SHA without losing Zephyr paths', async () => {
+  const workflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+  validateCiCheckoutsUseExactSha(workflow);
+  assert.equal((workflow.match(/^\s+path:\s*zplc$/gm) ?? []).length, 2, 'Twister and cross-build must retain their workspace path');
+  assert.throws(() => validateCiCheckoutsUseExactSha(workflow.replace('ref: ${{ github.sha }}', 'ref: ${{ github.ref }}')));
+});
+
+test('keeps nightly quality read-only and limited to extended fuzzing plus repeated native simulation', async () => {
+  const workflow = await readFile(new URL('../.github/workflows/nightly-quality.yml', import.meta.url), 'utf8');
+
+  assert.match(workflow, /^on:\n  schedule:\n    - cron:/m);
+  assert.match(workflow, /^  workflow_dispatch:\s*$/m);
+  assert.doesNotMatch(workflow, /^  (push|pull_request|workflow_call):/m);
+  assert.match(workflow, /^permissions:\n  contents: read\s*$/m);
+  assert.match(workflow, /^  loader-fuzz:\n[\s\S]*?timeout-minutes: 30/m);
+  assert.match(workflow, /-DZPLC_BUILD_FUZZER=ON/);
+  assert.match(workflow, /--target fuzz_loader_verify/);
+  assert.match(workflow, /-max_total_time=900 -max_len=65536 -timeout=2/);
+  assert.match(workflow, /^  native-sim-twister:\n[\s\S]*?timeout-minutes: 45/m);
+  assert.match(workflow, /west twister -T zplc\/firmware\/tests -p native_sim[\s\S]*?zplc-twister-1/);
+  assert.match(workflow, /west twister -T zplc\/firmware\/tests -p native_sim[\s\S]*?zplc-twister-2/);
+  assert.doesNotMatch(workflow, /\b(hil|serial|flash|deploy|secrets|environment|upload-artifact)\b/i);
 });

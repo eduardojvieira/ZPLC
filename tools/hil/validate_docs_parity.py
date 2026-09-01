@@ -198,6 +198,37 @@ def validate_release_blocking_depth(errors: list[str]) -> None:
             errors.append(f"{label}: {path.relative_to(ROOT)}")
 
 
+def validate_release_evidence_links(errors: list[str]) -> None:
+    for path in [RELEASE_NOTES_EN, RELEASE_NOTES_ES]:
+        if "blob/master" in path.read_text():
+            errors.append(
+                f"release evidence link must be checkout-bound, not blob/master: {path.relative_to(ROOT)}"
+            )
+
+
+def validate_current_truth(errors: list[str]) -> None:
+    surfaces = [
+        ROOT / "README.md",
+        ROOT / "packages/zplc-ide/README.md",
+        ROOT / "packages/zplc-ide/PRODUCT.md",
+        ROOT / "packages/zplc-ide/DESIGN.md",
+        ROOT / "docs/docs",
+        ROOT / "docs/i18n/es/docusaurus-plugin-content-docs/current",
+    ]
+    forbidden = re.compile(
+        r"local-first|offline-first|virtual\\s*/\\s*memory mode|virtual project|"
+        r"full parity|true feature parity|canonical v1\\.5|"
+        r"current v1\\.5|for v1\\.5(?:\\.0)?|"
+        r"(?:capacidad|capability) (?:firme|firm|actual) (?:de )?v1\\.5",
+        re.IGNORECASE,
+    )
+    for surface in surfaces:
+        paths = [surface] if surface.is_file() else surface.rglob("*.md")
+        for path in paths:
+            if forbidden.search(path.read_text()):
+                errors.append(f"stale product claim in {path.relative_to(ROOT)}")
+
+
 def main() -> int:
     rows_en = parse_rows(MANIFEST_EN)
     rows_es = parse_rows(MANIFEST_ES)
@@ -237,6 +268,8 @@ def main() -> int:
     validate_reference_index(errors)
     validate_runtime_reference_semantics(errors)
     validate_release_blocking_depth(errors)
+    validate_release_evidence_links(errors)
+    validate_current_truth(errors)
 
     if errors:
         for error in errors:

@@ -613,9 +613,9 @@ def render_function_block(function: FunctionDoc, spanish: bool) -> list[str]:
 def render_runtime_reference(headers: list[HeaderDoc], spanish: bool) -> str:
     title = "Runtime API" if not spanish else "API del Runtime"
     description = (
-        "Generated reference for the public ZPLC runtime headers that ship with v1.5.0."
+        "Generated reference for the public ZPLC runtime headers in ZPLC 2.0."
         if not spanish
-        else "Referencia generada para los headers públicos del runtime ZPLC incluidos en v1.5.0."
+        else "Referencia generada para los headers públicos del runtime ZPLC en ZPLC 2.0."
     )
     intro = (
         "This page is generated from the public C headers under `firmware/lib/zplc_core/include/`. Edit the headers or rerun `python3 tools/docs/generate_runtime_reference.py` instead of editing this file manually."

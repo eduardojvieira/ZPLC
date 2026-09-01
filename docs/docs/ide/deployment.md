@@ -1,51 +1,33 @@
-# Deployment & Runtime Sessions
+# Deployment and Runtime Sessions
 
-This page covers the workflow for deploying and debugging logic from the ZPLC IDE to active runtimes.
+Build firmware, flash firmware, deploy a PLC program, and run/debug are four
+separate operations. They are never initiated by AI or MCP.
 
-## Execution Targets
+## Quick path
 
-ZPLC offers two primary execution execution environments:
+1. Compile, test, and simulate the intended program.
+2. Select the exact board profile and connect the matching runtime.
+3. Inspect handshake, ABI, board/profile, payload hash, size, and task count.
+4. A person confirms deploy; inspect the stopped state before any RUN action.
 
-| Target | Adapter Used | Typical Use |
-|---|---|---|
-| **Native SoftPLC Simulation** | `NativeAdapter` | Validating automation logic locally on your PC. |
-| **Physical Controller** | `SerialAdapter` | Uploading, running, and debugging directly on Zephyr hardware. |
+## Operations
 
-## Desktop Simulation Workflow
+| Operation | Meaning | Authority |
+| --- | --- | --- |
+| Build runtime firmware | Produces Zephyr firmware artifacts. | Human workflow. |
+| Flash runtime firmware | Writes firmware/boot chain to a device. | Human workflow; profile procedure required. |
+| Deploy PLC program | Transfers a verified `.zplc` artifact to a compatible runtime. | Human confirmation with artifact evidence. |
+| Run / debug | Observes or changes operational state. | Human workflow and site procedure. |
 
-When running the ZPLC IDE as a desktop application, clicking **Start Simulation** spins up a native POSIX SoftPLC process in the background. The IDE connects to this process via an internal bridge, allowing you to debug your IEC 61131-3 logic instantly without needing to flash a microcontroller or wire up physical components.
+## Evidence boundary
 
-This is the fastest way to validate timers, logic flows, state machines, and mathematical formulas.
+The native POSIX adapter is a host simulation. Serial connection and a
+cross-build board profile do not turn it into HIL. Current catalogued profiles
+have zero HIL evidence references; use their exact Zephyr procedure and record
+an HIL run before claiming target behavior.
 
-## Hardware Deployment Workflow
+## On a failed connection or deploy
 
-When moving to production, the `SerialAdapter` manages the physical connection to your microcontroller over USB Serial.
-
-Its responsibilities include:
-- Managing baud rates, connections, and port discovery.
-- Compiling the project and transmitting the raw `.zplc` bytecode to the board's flash memory.
-- Provisioning runtime configuration details.
-- Polling the board to stream real-time watch variables, cycle statistics, and debug information back to the IDE.
-- Forwarding user interactions (e.g., pause, step, force value) to the embedded runtime.
-
-### The Deployment Lifecycle
-
-```mermaid
-sequenceDiagram
-  participant IDE as ZPLC IDE
-  participant Adapter as Hardware Link
-  participant Device as MCU (Zephyr)
-
-  IDE->>Adapter: Compile project to .zplc
-  Adapter->>Device: Upload bytecode to Flash
-  Adapter->>Device: Start Execution
-  Adapter->>Device: Request status / setup breakpoints
-  Device-->>IDE: Stream task stats, state, watch data
-```
-
-## Troubleshooting Deployments
-
-When a deploy or debug session fails to connect to hardware, check the following:
-1. **Target Verification** — Ensure the selected board in `zplc.json` matches the physical MCU plugged into your computer.
-2. **Serial Port** — Verify that the correct COM/TTY port is selected and that no other terminal programs are blocking access.
-3. **Firmware Base** — Ensure the MCU has been flashed with the underlying ZPLC Zephyr firmware before attempting to upload bytecode from the IDE.
+Do not retry blindly. Re-inspect the selected board/profile and runtime ABI,
+then use [Recovery Boundaries](../operations/recovery.md). The program deploy
+flow is not firmware recovery and does not replace the board-specific runner

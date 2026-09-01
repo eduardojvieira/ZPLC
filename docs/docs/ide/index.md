@@ -1,56 +1,39 @@
 ---
 slug: /ide
 id: index
-title: IDE & Tooling
-sidebar_label: IDE Overview
-description: Overview of the ZPLC IDE, project model, simulation, and debugging workflows.
-tags: [ide, tooling, debugging]
+title: ZPLC Studio 2.0
+sidebar_label: Studio
+description: Folder-backed PLC authoring, validation, simulation, evidence, and human-controlled hardware workflows.
+tags: [ide, tooling]
 ---
 
-# IDE & Tooling
+# ZPLC Studio 2.0
 
-The ZPLC Integrated Development Environment (IDE) provides a complete engineering workflow for creating, simulating, and deploying IEC 61131-3 automation logic.
+Studio is the desktop workbench for creating, compiling, testing, simulating,
+and reviewing PLC projects in a folder selected by the user.
 
-## Core Capabilities
+## Quick path
 
-The IDE serves as the central orchestration layer for your automation projects. Its main responsibilities include:
+1. Create or copy an example into a folder.
+2. Edit ST, LD, FBD, or SFC and compile through the canonical compiler path.
+3. Run temporal tests and native POSIX simulation; inspect evidence in the lower ledger.
+4. For hardware, use the separate human build, flash, deploy, and RUN/STOP flows.
 
-- **Project Management**: Editing `zplc.json` configurations, organizing source files, and managing tasks.
-- **Language Workflows**: Seamless authoring in Structured Text (ST), Instruction List (IL), Ladder Diagram (LD), Function Block Diagram (FBD), and Sequential Function Chart (SFC).
-- **Compilation**: Transpiling visual models to ST and compiling them to compact `.zplc` bytecode.
-- **Simulation**: Testing logic natively on your PC without needing physical hardware.
-- **Deployment & Debugging**: Flashing bytecode to targets via Serial, managing breakpoints, forcing variables, and inspecting runtime state.
+## What the workbench owns
 
-## End-to-End Workflow
+| Surface | Current role |
+| --- | --- |
+| Project | Folder-backed files, schema v2 export, migration diff. |
+| Editors | ST is the primary text path; LD/FBD/SFC preserve their semantic visual models. |
+| Validation | Compiler diagnostics, temporal tests, safety rules, trace, and POSIX simulation. |
+| Evidence | Records tool results and their scope; it does not promote host results to HIL. |
+| Hardware | Connect and deploy remain explicit human actions after compatibility checks. |
 
-```mermaid
-flowchart LR
-  Author[Author IEC logic] --> Config[Configure project + target]
-  Config --> Compile[Compile to .zplc]
-  Compile --> Sim[Simulate in native POSIX runtime]
-  Sim --> Deploy[Deploy to hardware]
-  Deploy --> Debug[Monitor & Debug online]
-```
+## Important boundaries
 
-## Project Model
+Native POSIX simulation validates host behavior. It is not a claim of exact
+target timing, electrical I/O, HIL, or production qualification. Board profiles
+currently carry cross-build evidence only; see [capabilities and evidence](../reference/capabilities-evidence.md).
 
-The ZPLC project model is file-based and transparent. All your project configurations—including target CPU, networking, I/O mapping, Modbus/MQTT communications, and task execution rates—are cleanly stored in a transparent `zplc.json` manifest.
-
-This makes ZPLC projects inherently source-control friendly (Git), portable, and easily scriptable.
-
-## Runtime Environments
-
-When you start a debugging session, the IDE automatically routes your logic to the correct execution runtime:
-
-| Execution Path | Purpose | Behavior |
-|---|---|---|
-| **Native Desktop Simulation** | Preferred simulation path | Runs logic on a host POSIX SoftPLC natively. Full support for breakpoints and pause/resume. |
-| **Hardware Execution** | Real-world deployment | Runs on Zephyr RTOS over a physical Serial connection. The IDE acts as an online monitor. |
-
-## Advanced Debugging
-
-The IDE includes a comprehensive debugging suite for both simulation and live hardware workflows:
-- **Watch Tables**: Monitor variable state in real-time.
-- **Breakpoints**: Pause logic execution precisely at a line of code.
-- **Step Execution**: Step over and step into operations.
-- **Forced Values**: Override live sensor data or internal states directly from the IDE to simulate edge cases.
+AI may prepare an isolated candidate change, but only a person can save it or
+initiate a physical operation. Read [AI and privacy](./ai-privacy.md) before

@@ -4,7 +4,7 @@ sidebar_position: 3
 
 # Biblioteca Estándar
 
-La fuente release-facing autoritativa para la biblioteca estándar de lenguajes es el registro
+La fuente autoritativa para la biblioteca estándar de lenguajes es el registro
 de stdlib del compilador en `packages/zplc-compiler/src/compiler/stdlib/index.ts`.
 
 Ese registro es lo que usa el IDE/compilador para resolver funciones y bloques integrados.
@@ -81,6 +81,6 @@ Para los detalles del contrato runtime y los límites del release, seguí con:
 
 ## Regla práctica
 
-Si una función o bloque no está registrado en la stdlib del compilador ni justificado por el contrato runtime, no debería documentarse como capacidad firme de v1.5.
+Si una función o bloque no está registrado en la stdlib del compilador ni justificado por el contrato runtime, no debería documentarse como capacidad firme de ZPLC 2.0.
 
 Para la semántica específica del runtime y perfil, consultá la [Biblioteca estándar del runtime](../runtime/stdlib.md).
