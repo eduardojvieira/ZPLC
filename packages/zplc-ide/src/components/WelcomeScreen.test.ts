@@ -21,8 +21,6 @@ describe('Welcome screen contract', () => {
     expect(source).not.toContain('local-first');
     expect(source).not.toContain('Temporary project');
     expect(source).not.toContain('Examples open in memory');
-    expect(source).not.toContain('createVirtualProject');
-    expect(source).not.toContain('openExampleProject');
     expect(source).not.toContain('Industrial PLC Development Environment');
     expect(source).not.toContain('Zephyr RTOS Target');
     expect(source).not.toContain('Chrome');

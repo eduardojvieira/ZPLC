@@ -611,6 +611,20 @@ export class ConnectionManager {
       throw new DeviceAdmissionError(DEVICE_ADMISSION_CODE.PREFLIGHT_STALE);
     }
 
+    let freshSystemInfo: unknown;
+    try {
+      freshSystemInfo = await adapter.getSystemInfo();
+    } catch {
+      throw new DeviceAdmissionError(DEVICE_ADMISSION_CODE.PREFLIGHT_STALE);
+    }
+    if (!this.isCurrent(generation, adapter) || !this.connected) {
+      throw new DeviceAdmissionError(DEVICE_ADMISSION_CODE.PREFLIGHT_STALE);
+    }
+    validateHardwareDeployAdmission(bytecode, projectBoard, parseDeviceHandshake(freshSystemInfo));
+    if (!this.isCurrent(generation, adapter) || !this.connected) {
+      throw new DeviceAdmissionError(DEVICE_ADMISSION_CODE.PREFLIGHT_STALE);
+    }
+
     try {
       await adapter.loadProgram(bytecode, options);
     } catch {

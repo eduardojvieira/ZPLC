@@ -92,7 +92,7 @@ export interface RecordedTankLevel {
   samples: Array<{ atMs: number; pump: 'RUNNING' | 'STOPPED'; alarm: 'ALARM' | 'NORMAL'; levelLowInput: boolean; levelHighInput: boolean; levelPermilleAfterTick: number }>;
 }
 
-export type WorkspaceTestAvailability = 'desktop-unavailable' | 'project-required' | 'virtual-project' | 'link-required' | 'unsaved' | 'ready';
+export type WorkspaceTestAvailability = 'desktop-unavailable' | 'project-required' | 'link-required' | 'unsaved' | 'ready';
 
 export interface WorkspaceCompileDiagnostic {
   code: string;
@@ -110,13 +110,11 @@ export type WorkspaceCompilePresentation =
 export function workspaceTestAvailability(input: {
   desktopAvailable: boolean;
   isProjectOpen: boolean;
-  isVirtualProject: boolean;
   hasCurrentLink: boolean;
   hasUnsavedChanges: boolean;
 }): WorkspaceTestAvailability {
   if (!input.desktopAvailable) return 'desktop-unavailable';
   if (!input.isProjectOpen) return 'project-required';
-  if (input.isVirtualProject) return 'virtual-project';
   if (!input.hasCurrentLink) return 'link-required';
   return input.hasUnsavedChanges ? 'unsaved' : 'ready';
 }
@@ -126,11 +124,10 @@ export function resolveWorkspaceCompileRoute(input: {
   isElectronHost: boolean;
   canonicalCompileAvailable: boolean;
   isProjectOpen: boolean;
-  isVirtualProject: boolean;
   hasCurrentLink: boolean;
   hasUnsavedChanges: boolean;
 }): 'canonical' | 'canonical-unavailable' | 'link-required' | 'save-required' | 'renderer' {
-  if (!input.isProjectOpen || input.isVirtualProject || !input.isElectronHost) return 'renderer';
+  if (!input.isProjectOpen || !input.isElectronHost) return 'renderer';
   if (!input.canonicalCompileAvailable) return 'canonical-unavailable';
   if (!input.hasCurrentLink) return 'link-required';
   return input.hasUnsavedChanges ? 'save-required' : 'canonical';
@@ -163,9 +160,9 @@ export function classifyWorkspaceTestBuildLink(
 
 /** Honest post-run state when a stale result was intentionally discarded. */
 export function workspaceTestRunFallbackState(
-  current: { isProjectOpen: boolean; isVirtualProject: boolean; projectSession: number; workspaceScenarioLink: { workspaceId: string; projectSession: number } | null },
+  current: { isProjectOpen: boolean; projectSession: number; workspaceScenarioLink: { workspaceId: string; projectSession: number } | null },
 ): 'selected' | 'idle' {
-  return current.isProjectOpen && !current.isVirtualProject && current.workspaceScenarioLink?.projectSession === current.projectSession
+  return current.isProjectOpen && current.workspaceScenarioLink?.projectSession === current.projectSession
     ? 'selected'
     : 'idle';
 }

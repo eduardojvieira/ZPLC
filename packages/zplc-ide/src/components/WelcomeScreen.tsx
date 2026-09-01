@@ -3,7 +3,7 @@
  * today. Hardware and workspace evidence stay inside an opened project.
  */
 import React from 'react';
-import { BookOpen, FolderOpen, FolderPlus, Moon, Sun } from 'lucide-react';
+import { BookOpen, Contrast, FolderOpen, FolderPlus, Moon, Sun } from 'lucide-react';
 import { useIDEStore } from '../store/useIDEStore';
 import { useTheme } from '../hooks/useTheme';
 import { isFileSystemAccessSupported } from '../types';
@@ -16,7 +16,7 @@ export function WelcomeScreen() {
     copyExampleProjectToFolder,
     getExampleProjects,
   } = useIDEStore();
-  const { isDark, setTheme } = useTheme();
+  const { isDark, theme, setTheme } = useTheme();
   const fsApiSupported = isFileSystemAccessSupported();
   const exampleProjects = getExampleProjects();
   const [appVersion, setAppVersion] = React.useState(ZPLC_REPO_VERSION);
@@ -56,6 +56,7 @@ export function WelcomeScreen() {
             >
               {isDark ? <Sun size={17} aria-hidden="true" /> : <Moon size={17} aria-hidden="true" />}
             </button>
+            <button type="button" onClick={() => setTheme(theme === 'high-contrast' ? 'light' : 'high-contrast')} aria-label="Toggle high contrast theme" title="Toggle high contrast theme" className="grid size-9 place-items-center border border-[var(--border-color)] bg-[var(--color-surface-800)] text-[var(--text-secondary)] transition-colors duration-150 hover:bg-[var(--color-surface-700)] hover:text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"><Contrast size={17} aria-hidden="true" /></button>
           </div>
         </header>
 

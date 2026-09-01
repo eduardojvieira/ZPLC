@@ -1,4 +1,4 @@
-/** Real packaged Linux Electron launch smoke; host-only, never HIL. */
+/** Real packaged Electron launch smoke; host-only, never HIL. */
 import { accessSync, constants, existsSync, lstatSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
@@ -12,14 +12,21 @@ type OwnedProcess = ReturnType<typeof Bun.spawn>;
 
 function assert(value: unknown, message: string): asserts value { if (!value) throw new Error(message); }
 
-export function discoverPackagedLinuxExecutable(distDir: string): string {
+export function discoverPackagedExecutable(distDir: string, platform: NodeJS.Platform = process.platform): string {
+  if (platform !== 'linux' && platform !== 'win32' && platform !== 'darwin') {
+    throw new Error(`Packaged desktop smoke does not support host platform: ${platform}`);
+  }
   const candidates: string[] = [];
-  const pending = [resolve(distDir)];
+  const root = resolve(distDir);
+  const rootStat = lstatSync(root);
+  assert(rootStat.isDirectory() && !rootStat.isSymbolicLink(), `Packaged desktop smoke requires a real dist directory: ${root}`);
+  const pending = [root];
   while (pending.length > 0) {
     const directory = pending.pop()!;
     for (const entry of readdirSync(directory, { withFileTypes: true })) {
       const path = join(directory, entry.name);
-      if (entry.name.endsWith('-unpacked')) {
+      const isUnpacked = platform === 'darwin' ? entry.name.endsWith('.app') : entry.name.endsWith('-unpacked');
+      if (isUnpacked) {
         if (entry.isSymbolicLink()) throw new Error(`Packaged desktop smoke refused symlink unpacked app: ${path}`);
         if (entry.isDirectory()) candidates.push(path);
         continue;
@@ -27,11 +34,15 @@ export function discoverPackagedLinuxExecutable(distDir: string): string {
       if (entry.isDirectory() && !entry.isSymbolicLink()) pending.push(path);
     }
   }
-  assert(candidates.length === 1, `Packaged desktop smoke requires exactly one Linux unpacked app, found ${candidates.length}.`);
-  const executable = join(candidates[0], 'zplc-ide');
+  assert(candidates.length === 1, `Packaged desktop smoke requires exactly one ${platform} unpacked app, found ${candidates.length}.`);
+  const executable = platform === 'darwin'
+    ? join(candidates[0], 'Contents', 'MacOS', 'zplc-ide')
+    : join(candidates[0], platform === 'win32' ? 'zplc-ide.exe' : 'zplc-ide');
   const stat = existsSync(executable) ? lstatSync(executable) : null;
   assert(stat?.isFile() && !stat.isSymbolicLink(), `Packaged desktop smoke requires a real zplc-ide executable: ${executable}`);
-  try { accessSync(executable, constants.X_OK); } catch { throw new Error(`Packaged desktop smoke executable is not executable: ${executable}`); }
+  if (platform !== 'win32') {
+    try { accessSync(executable, constants.X_OK); } catch { throw new Error(`Packaged desktop smoke executable is not executable: ${executable}`); }
+  }
   return executable;
 }
 
@@ -132,9 +143,15 @@ class Cdp {
   close(): void { this.#socket.close(); }
 }
 
+async function press(cdp: Cdp, key: string, code = key): Promise<void> {
+  const keyCode = key === 'Enter' ? 13 : key === 'Escape' ? 27 : 0;
+  const text = key === 'Enter' ? '\r' : undefined;
+  await cdp.command('Input.dispatchKeyEvent', { type: 'keyDown', key, code, text, unmodifiedText: text, windowsVirtualKeyCode: keyCode, nativeVirtualKeyCode: keyCode });
+  await cdp.command('Input.dispatchKeyEvent', { type: 'keyUp', key, code, windowsVirtualKeyCode: keyCode, nativeVirtualKeyCode: keyCode });
+}
+
 async function main(): Promise<void> {
-  assert(process.platform === 'linux', 'Packaged desktop smoke supports Linux only.');
-  const executable = discoverPackagedLinuxExecutable(join(packageRoot, 'dist-electron'));
+  const executable = discoverPackagedExecutable(join(packageRoot, 'dist-electron'));
   const tempRoot = mkdtempSync(join(tmpdir(), 'zplc-packaged-smoke-'));
   const output: string[] = [];
   let electron: OwnedProcess | undefined;
@@ -151,9 +168,32 @@ async function main(): Promise<void> {
     await cdp.command('Runtime.enable');
     await cdp.command('Log.enable');
     await cdp.command('Page.enable');
+    await cdp.command('Page.bringToFront');
+    await cdp.command('Emulation.setFocusEmulationEnabled', { enabled: true });
     const identity = await waitFor('packaged preload bridge', async () => await cdp!.evaluate('window.electronAPI?.getAppInfo ? Promise.all([location.protocol, window.electronAPI.getAppInfo()]) : undefined') as [string, { isPackaged?: unknown; platform?: unknown; arch?: unknown }] | undefined);
     assert(identity[0] === 'file:', `Packaged renderer origin is not file:: ${identity[0]}`);
-    assert(identity[1].isPackaged === true && identity[1].platform === 'linux' && identity[1].arch === process.arch, `Unexpected packaged preload app info: ${JSON.stringify(identity[1])}`);
+    assert(identity[1].isPackaged === true && identity[1].platform === process.platform && identity[1].arch === process.arch, `Unexpected packaged preload app info: ${JSON.stringify(identity[1])}`);
+    await waitFor('packaged Welcome screen', async () => await cdp!.evaluate(`(() => {
+      const heading = document.querySelector('h1');
+      const contrast = document.querySelector('button[aria-label="Toggle high contrast theme"]');
+      return heading?.textContent === 'ZPLC Studio 2.0' && contrast ? true : undefined;
+    })()`) as boolean | undefined);
+    const rendererBoundary = (await cdp.evaluate(`(() => ({
+      node: ['process', 'require', 'module', 'Buffer'].map((key) => [key, typeof window[key]]),
+      preload: Object.keys(window.electronAPI ?? {}).sort(),
+      welcome: document.body.innerText.includes('ZPLC Studio 2.0'),
+    }))()`)) as { node: Array<[string, string]>; preload: string[]; welcome: boolean };
+    assert(rendererBoundary.node.every(([, value]) => value === 'undefined'), `Node globals leaked into packaged renderer: ${JSON.stringify(rendererBoundary.node)}`);
+    assert(JSON.stringify(rendererBoundary.preload) === JSON.stringify(['aiProvider', 'candidateChangeSet', 'firmwareBuild', 'getAppInfo', 'isElectron', 'learnProgress', 'nativeSimulation', 'platform', 'toolExecutionAudit', 'toolchain', 'workspaceTests']), `Unexpected packaged preload surface: ${JSON.stringify(rendererBoundary.preload)}`);
+    assert(rendererBoundary.welcome, 'Packaged renderer did not render the folder-backed Welcome screen.');
+    assert(await cdp.evaluate(`(() => { const button = document.querySelector('button[aria-label="Toggle high contrast theme"]'); button?.focus(); return Boolean(button && document.activeElement === button && button.matches(':focus-visible') && getComputedStyle(button).outlineStyle !== 'none'); })()`), 'Packaged Welcome high-contrast control is not keyboard focusable.');
+    await press(cdp, 'Enter');
+    assert(await cdp.evaluate(`document.documentElement.classList.contains('high-contrast') && getComputedStyle(document.body).backgroundColor === 'rgb(0, 0, 0)'`), 'Packaged Welcome did not activate explicit high contrast by keyboard.');
+    const targetCount = (await fetch(`http://${HOST}:${cdpPort}/json/list`).then((response) => response.json()) as Array<{ type?: string }>).filter((item) => item.type === 'page').length;
+    const navigation = (await cdp.evaluate(`(() => { const href = location.href; const opened = window.open('https://example.invalid/zplc-packaged-smoke'); return { href, sameDocument: location.href === href, opened: opened === null }; })()`)) as { sameDocument: boolean; opened: boolean };
+    await Bun.sleep(100);
+    const targetCountAfterOpen = (await fetch(`http://${HOST}:${cdpPort}/json/list`).then((response) => response.json()) as Array<{ type?: string }>).filter((item) => item.type === 'page').length;
+    assert(navigation.sameDocument && navigation.opened && targetCountAfterOpen === targetCount, 'Packaged renderer opened a new window or navigated away from its file:// document.');
     await Bun.sleep(250);
     const frame = await cdp.command('Page.getFrameTree') as { frameTree?: { frame?: { id?: string } } };
     const version = JSON.parse(await Bun.file(join(packageRoot, 'node_modules', 'electron', 'package.json')).text()).version as string;
@@ -163,7 +203,7 @@ async function main(): Promise<void> {
     cdp.close();
     cdp = undefined;
     assert(exitCode === 0, `Packaged Electron did not exit cleanly: ${exitCode}`);
-    console.log('Packaged Linux Electron launch smoke passed through file:// preload IPC. Host/package evidence only; not installer, HIL, or hardware evidence.');
+    console.log(`Packaged ${process.platform}/${process.arch} Electron launch smoke passed through file:// preload IPC. Host/package evidence only; not installer, HIL, or hardware evidence.`);
   } catch (error) {
     throw new Error(`${error instanceof Error ? error.message : String(error)}\n${output.join('').slice(-12_000)}`);
   } finally {

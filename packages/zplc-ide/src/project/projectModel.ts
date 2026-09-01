@@ -185,14 +185,13 @@ export function parseAndMigrateProject(value: unknown): ProjectModelResult {
       change('add', `/tasks/${index}/priority`);
       task.priority = 1;
     }
-    const hasWatchdog = Object.hasOwn(task, 'watchdog');
-    if (task.watchdog_ms === undefined && hasWatchdog) {
-      change('add', `/tasks/${index}/watchdog_ms`);
-      task.watchdog_ms = task.watchdog;
-    } else if (hasWatchdog && task.watchdog !== task.watchdog_ms) {
-      return invalid(`${path}.watchdog`, 'Legacy watchdog conflicts with watchdog_ms');
+    /* Neither legacy task watchdog field reaches the fixed bytecode ABI.
+     * Remove it visibly rather than preserving inert project metadata. */
+    if (Object.hasOwn(task, 'watchdog_ms')) {
+      change('remove', `/tasks/${index}/watchdog_ms`);
+      delete task.watchdog_ms;
     }
-    if (hasWatchdog) {
+    if (Object.hasOwn(task, 'watchdog')) {
       change('remove', `/tasks/${index}/watchdog`);
       delete task.watchdog;
     }
@@ -201,7 +200,6 @@ export function parseAndMigrateProject(value: unknown): ProjectModelResult {
     if (task.trigger !== 'cyclic' && task.trigger !== 'event' && task.trigger !== 'freewheeling') return invalid(`${path}.trigger`, 'Task trigger is invalid');
     if (!isPositiveInteger(task.interval_ms)) return invalid(`${path}.interval_ms`, 'Task interval must be a positive integer');
     if (!isPriority(task.priority)) return invalid(`${path}.priority`, 'Task priority must be an integer from 0 to 255');
-    if (task.watchdog_ms !== undefined && (!Number.isInteger(task.watchdog_ms) || typeof task.watchdog_ms !== 'number' || task.watchdog_ms < 0)) return invalid(`${path}.watchdog_ms`, 'Task watchdog must be a non-negative integer');
   }
 
   changes.sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : left.op < right.op ? -1 : left.op > right.op ? 1 : 0);

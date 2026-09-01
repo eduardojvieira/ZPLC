@@ -1,0 +1,1 @@
+{"schemaVersion":1,"id":"MotorPlant","tickMs":10,"durationMs":20,"events":[{"atMs":0,"set":{"MotorPlant.Start":true}},{"atMs":10,"set":{"MotorPlant.Start":false}}],"expectations":[{"kind":"AT","atMs":20,"condition":{"MotorPlant.Command":true}}]}

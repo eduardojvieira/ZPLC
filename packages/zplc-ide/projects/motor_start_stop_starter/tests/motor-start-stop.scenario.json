@@ -1,0 +1,1 @@
+{"schemaVersion":1,"id":"MotorStartStop","tickMs":10,"durationMs":20,"events":[{"atMs":0,"set":{"Motor.Start":false}},{"atMs":10,"set":{"Motor.Start":true}},{"atMs":20,"set":{"Motor.Start":false}}],"expectations":[{"kind":"AT","atMs":20,"condition":{"Motor.Forward":true,"Motor.Reverse":false}}]}

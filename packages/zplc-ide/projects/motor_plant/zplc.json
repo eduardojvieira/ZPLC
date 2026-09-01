@@ -13,7 +13,6 @@
       "trigger": "cyclic",
       "interval_ms": 10,
       "priority": 1,
-      "watchdog_ms": 100,
       "programs": [
         "MotorPlant.st"
       ]

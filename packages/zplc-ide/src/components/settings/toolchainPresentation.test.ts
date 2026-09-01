@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 
 import { presentFirmwareBuildResult, presentToolchainInspectResult } from './toolchainPresentation';
+import { getBoardEvidenceSummary } from '../../config/boardProfiles';
 
 const checks = [
   'repository-manifest', 'west', 'python3', 'cmake', 'ninja',
@@ -14,6 +15,23 @@ const boards = [
 
 function diagnostic() {
   return { code: 'TOOLCHAIN_WEST_MISSING', message: 'Toolchain prerequisite is unavailable' };
+}
+
+function studioExecution(
+  operation: 'toolchain-inspect' | 'firmware-build',
+  permission: 'toolchain:inspect' | 'firmware:build',
+  outcome: 'passed' | 'failed' | 'cancelled' = 'passed',
+) {
+  return {
+    schemaVersion: 1,
+    jobId: '018f4e1d-d941-4a8b-b5f7-8d15d9810001',
+    actor: 'human-studio',
+    permission,
+    operation,
+    outcome,
+    startedAt: '2026-08-31T12:00:00.000Z',
+    finishedAt: '2026-08-31T12:00:01.000Z',
+  };
 }
 
 function result() {
@@ -39,6 +57,12 @@ function attention() {
 }
 
 describe('presentToolchainInspectResult', () => {
+  it('keeps catalogued board evidence scoped to cross-build and hides flash until HIL qualification', () => {
+    expect(getBoardEvidenceSummary('stm32f746g_disco')).toEqual({
+      zephyrBoard: 'stm32f746g_disco/stm32f746xx', validationLevel: 'cross-build', evidenceCount: 0,
+    });
+    expect(getBoardEvidenceSummary('custom')).toBeUndefined();
+  });
   it('only presents all nine ready checks as ready for a local build', () => {
     const presentation = presentToolchainInspectResult(result());
 
@@ -55,6 +79,21 @@ describe('presentToolchainInspectResult', () => {
     expect(presentation.kind).toBe('attention');
     expect(presentation.checks[1]).toMatchObject({ status: 'missing' });
     expect(presentation.checks[1]?.remediation).toContain('Install west');
+  });
+
+  it('accepts a validated Studio execution envelope without rendering it', () => {
+    const value = { ...result(), execution: studioExecution('toolchain-inspect', 'toolchain:inspect') };
+    const presentation = presentToolchainInspectResult(value);
+
+    expect(presentation.kind).toBe('ready');
+    expect(JSON.stringify(presentation)).not.toContain('human-studio');
+    expect(JSON.stringify(presentation)).not.toContain('jobId');
+  });
+
+  it('fails closed for malformed Studio execution envelopes', () => {
+    const value = { ...result(), execution: { ...studioExecution('toolchain-inspect', 'toolchain:inspect'), root: '/do-not-render' } };
+    expect(presentToolchainInspectResult(value).kind).toBe('unavailable');
+    expect(presentToolchainInspectResult({ ...result(), execution: { ...studioExecution('toolchain-inspect', 'toolchain:inspect'), operation: 'compile' } }).kind).toBe('unavailable');
   });
 
   it('fails closed for malformed, contradictory, or secret-bearing results', () => {
@@ -142,6 +181,11 @@ describe('presentFirmwareBuildResult', () => {
     expect(JSON.stringify(presentation)).not.toContain('do-not-render');
   });
 
+  it('accepts a validated Studio execution envelope for firmware builds', () => {
+    const value = { ...success(), execution: studioExecution('firmware-build', 'firmware:build') };
+    expect(presentFirmwareBuildResult(value).kind).toBe('success');
+  });
+
   it('fails closed for malformed, mismatched, or secret-bearing success results', () => {
     const extra = success() as { summary: Record<string, unknown> };
     extra.summary.secret = 'do-not-render';
@@ -169,6 +213,7 @@ describe('presentFirmwareBuildResult', () => {
     expect(presentFirmwareBuildResult(failure('FIRMWARE_BUILD_CLEANUP_FAILED'))).toEqual({ kind: 'cleanup-unconfirmed' });
     expect(presentFirmwareBuildResult(failure('FIRMWARE_BUILD_TIMEOUT'))).toEqual({ kind: 'failed' });
     expect(presentFirmwareBuildResult({ ...failure('FIRMWARE_BUILD_TIMEOUT'), secret: 'do-not-render' })).toEqual({ kind: 'failed' });
+    expect(presentFirmwareBuildResult({ ...failure('FIRMWARE_BUILD_CANCELLED'), execution: studioExecution('firmware-build', 'firmware:build', 'cancelled') })).toEqual({ kind: 'cancelled' });
   });
 
   it('accepts the runner output budget as one combined eight-megabyte limit', () => {

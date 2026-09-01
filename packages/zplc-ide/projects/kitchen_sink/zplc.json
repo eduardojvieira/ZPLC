@@ -17,7 +17,6 @@
       "trigger": "cyclic",
       "interval_ms": 100,
       "priority": 1,
-      "watchdog_ms": 500,
       "programs": [
         "main.st"
       ]

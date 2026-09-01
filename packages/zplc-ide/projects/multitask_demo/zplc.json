@@ -44,7 +44,6 @@
       "trigger": "cyclic",
       "interval_ms": 10,
       "priority": 0,
-      "watchdog_ms": 50,
       "programs": [
         "FastBlink.st"
       ]
@@ -54,7 +53,6 @@
       "trigger": "cyclic",
       "interval_ms": 100,
       "priority": 2,
-      "watchdog_ms": 500,
       "programs": [
         "SlowBlink.st"
       ]

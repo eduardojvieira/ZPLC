@@ -5,5 +5,5 @@
   "version": "1.0.0",
   "description": "Host-native deterministic conveyor golden slice",
   "target": { "board": "posix" },
-  "tasks": [{ "name": "MainTask", "trigger": "cyclic", "interval_ms": 10, "priority": 1, "watchdog_ms": 100, "programs": ["Conveyor.st"] }]
+  "tasks": [{ "name": "MainTask", "trigger": "cyclic", "interval_ms": 10, "priority": 1, "programs": ["Conveyor.st"] }]
 }

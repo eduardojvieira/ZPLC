@@ -54,7 +54,7 @@ describe('CLI JSON boundary', () => {
     const root = await mkdtemp(join(tmpdir(), 'zplc-cli-safety-input-')); const alias = join(root, 'workspace-alias');
     try { await symlink(motorStartStop, alias, process.platform === 'win32' ? 'junction' : 'dir');
     for (const args of [['safety-check', motorStartStop, 'extra', '--json'], ['safety-check', motorStartStop, '--output', 'x', '--json'], ['safety-check', motorStartStop, '--language', 'ST', '--json'], ['safety-check', cli, '--json'], ['safety-check', alias, '--json']]) {
-      const invalid = output(); expect(await main(args, invalid)).toBe(1); expect(JSON.parse(invalid.lines[0] ?? '{}')).toMatchObject({ ok: false, evidence: { diagnostics: [{ code: 'CLI_INVALID' }] } });
+      const invalid = output(); expect(await main(args, invalid)).toBe(1); expect(JSON.parse(invalid.lines[0] ?? '{}')).toMatchObject({ ok: false, evidence: { diagnostics: [{ code: 'CLI_INVALID' }] }, execution: { actor: 'cli', outcome: 'failed', jobId: expect.any(String) } });
     }
     } finally { await rm(root, { recursive: true, force: true }); }
   });
@@ -131,7 +131,7 @@ describe('CLI JSON boundary', () => {
       const success = output();
       expect(await main(['validate', root, '--json'], success)).toBe(0);
       expect(success.errors).toEqual([]); expect(success.lines).toHaveLength(1);
-      expect(JSON.parse(success.lines[0] ?? '{}')).toEqual({ ok: true, summary: { name: 'validate-test', taskCount: 1 }, evidence: { schemaVersion: 1, operation: 'validate', outcome: 'passed', diagnostics: [], artifacts: [] } });
+      expect(JSON.parse(success.lines[0] ?? '{}')).toMatchObject({ ok: true, summary: { name: 'validate-test', taskCount: 1 }, evidence: { schemaVersion: 1, operation: 'validate', outcome: 'passed', diagnostics: [], artifacts: [] }, execution: { schemaVersion: 1, actor: 'cli', permission: 'project:read', operation: 'validate', outcome: 'passed', jobId: expect.any(String), startedAt: expect.any(String), finishedAt: expect.any(String) } });
       expect(await readFile(manifest, 'utf8')).toContain('validate-test');
 
       await rm(join(root, 'src', 'Main.st'));

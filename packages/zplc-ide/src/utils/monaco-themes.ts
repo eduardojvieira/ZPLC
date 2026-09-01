@@ -132,6 +132,22 @@ export const ZPLC_LIGHT_THEME: editor.IStandaloneThemeData = {
     },
 };
 
+/** Uses Monaco's native high-contrast palette instead of treating it as dark mode. */
+export const ZPLC_HIGH_CONTRAST_THEME: editor.IStandaloneThemeData = {
+    base: 'hc-black',
+    inherit: true,
+    rules: [],
+    colors: {
+        'editor.background': '#000000',
+        'editor.foreground': '#FFFFFF',
+        'editor.selectionBackground': '#005A9E',
+        'editorLineNumber.foreground': '#FFFFFF',
+        'editorLineNumber.activeForeground': '#FFFFFF',
+        'editorGutter.background': '#000000',
+    },
+};
+
 // Theme IDs
 export const ZPLC_DARK_THEME_ID = 'zplc-dark';
 export const ZPLC_LIGHT_THEME_ID = 'zplc-light';
+export const ZPLC_HIGH_CONTRAST_THEME_ID = 'zplc-high-contrast';

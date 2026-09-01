@@ -28,6 +28,7 @@ import { createSimulationAdapter } from '../runtime/simulationAdapterFactory';
 import { NativeAdapter } from '../runtime/nativeAdapter';
 import { connectionManager } from '../runtime/connectionManager';
 import type { DebugMap } from '../compiler';
+import type { SystemInfo } from '../runtime/serialAdapter';
 import { findVariable } from '../compiler';
 import type { UploadTraceEvent } from '../runtime/uploadTrace';
 import {
@@ -117,6 +118,8 @@ export interface DebugControllerActions {
   getVirtualOutput: (channel: number) => Promise<number>;
   /** Stage a closed native-POSIX simulation input and publish its observed snapshot. */
   setSimulationInput: (inputId: 'motor.start' | 'motor.stop' | 'motor.estop', active: boolean) => Promise<void>;
+  /** Current hardware handshake cache only; no serial transport is exposed. */
+  getHardwareSystemInfo: () => Readonly<SystemInfo> | null;
 }
 
 export type DebugController = DebugControllerState & DebugControllerActions;
@@ -1081,6 +1084,7 @@ export function useDebugController(): DebugController {
     setVirtualInput,
     getVirtualOutput,
     setSimulationInput,
+    getHardwareSystemInfo: () => connectionManager.systemInfo,
   };
 }
 

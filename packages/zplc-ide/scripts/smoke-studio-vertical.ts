@@ -247,7 +247,13 @@ async function captureReviewScreens(cdp: Cdp, reviewDir: string): Promise<void> 
 
 async function captureLearnReviewScreens(cdp: Cdp, reviewDir: string): Promise<void> {
   mkdirSync(reviewDir, { recursive: true });
-  const original = await cdp.evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => ({ theme: useIDEStore.getState().theme, tab: useIDEStore.getState().activeConsoleTab }))`) as { theme: 'light' | 'dark' | 'system'; tab: string };
+  await cdp.evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { window.__zplcSmoke.learnReviewOriginal = { theme: useIDEStore.getState().theme, tab: useIDEStore.getState().activeConsoleTab }; })`);
+  const original = await waitFor('Learn review state', async () => {
+    const value = await cdp.evaluate('window.__zplcSmoke?.learnReviewOriginal') as { theme?: unknown; tab?: unknown } | undefined;
+    return value && (value.theme === 'light' || value.theme === 'dark' || value.theme === 'system') && typeof value.tab === 'string'
+      ? { theme: value.theme, tab: value.tab }
+      : undefined;
+  });
   const setTheme = async (theme: 'light' | 'dark') => {
     await cdp.evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => useIDEStore.getState().setTheme('${theme}'))`);
     await waitFor(`${theme} Learn theme`, async () => await cdp.evaluate(`document.documentElement.classList.contains('${theme}') ? true : undefined`) === true ? true : undefined);
@@ -454,7 +460,7 @@ function pageSeed(passedResult: Extract<TestRunResult, { ok: true }>, compileEnv
       const ld = { id: 'blinky-ld', name: 'main.ld.json', path: 'src/main.ld.json', language: 'LD', content: visuals.ld, isModified: false, parentPath: 'src' };
       const sfc = { id: 'blinky-sfc', name: 'main.sfc.json', path: 'src/main.sfc.json', language: 'SFC', content: visuals.sfc, isModified: false, parentPath: 'src' };
       const config = { ...DEFAULT_ZPLC_CONFIG, schemaVersion: 2, name: 'Studio smoke', version: '2.0.0', target: { board: 'rpi_pico' }, tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Motor.st'] }] };
-      useIDEStore.setState({ isProjectOpen: true, isVirtualProject: false, projectName: 'Studio smoke', projectConfig: config, projectSession: 7, projectConfigDirty: false, directoryHandle: null, fileTree: { id: 'root', name: 'Studio smoke', type: 'directory', path: '', isExpanded: true, children: [{ id: 'src', name: 'src', type: 'directory', path: 'src', isExpanded: true, children: [{ id: 'motor-st', name: 'Motor.st', type: 'file', path: 'src/Motor.st', language: 'ST' }, { id: 'aux-st', name: 'Aux.st', type: 'file', path: 'src/Aux.st', language: 'ST' }] }] }, loadedFiles: new Map([['motor-st', file], ['aux-st', auxiliary], ['blinky-fbd', fbd], ['blinky-ld', ld], ['blinky-sfc', sfc]]), activeFileId: 'motor-st', openTabs: ['motor-st'], activeConsoleTab: 'problems', isConsoleCollapsed: false, consoleHeight: 320, compilerMessages: [], compilerMessagesChecked: false, compilerRunId: 11, workspaceScenarioLink: null });
+      useIDEStore.setState({ isProjectOpen: true, projectName: 'Studio smoke', projectConfig: config, projectSession: 7, projectConfigDirty: false, directoryHandle: null, fileTree: { id: 'root', name: 'Studio smoke', type: 'directory', path: '', isExpanded: true, children: [{ id: 'src', name: 'src', type: 'directory', path: 'src', isExpanded: true, children: [{ id: 'motor-st', name: 'Motor.st', type: 'file', path: 'src/Motor.st', language: 'ST' }, { id: 'aux-st', name: 'Aux.st', type: 'file', path: 'src/Aux.st', language: 'ST' }] }] }, loadedFiles: new Map([['motor-st', file], ['aux-st', auxiliary], ['blinky-fbd', fbd], ['blinky-ld', ld], ['blinky-sfc', sfc]]), activeFileId: 'motor-st', openTabs: ['motor-st'], activeConsoleTab: 'problems', isConsoleCollapsed: false, consoleHeight: 320, compilerMessages: [], compilerMessagesChecked: false, compilerRunId: 11, workspaceScenarioLink: null });
       window.__zplcSmoke.getState = () => { const state = useIDEStore.getState(); return { activeFileId: state.activeFileId, openTabs: state.openTabs }; };
       window.__zplcSmoke.getBuildState = () => ({ evidence: useIDEStore.getState().canonicalWorkspaceBuildEvidence });
       window.__zplcSmoke.getFileContent = (fileId) => useIDEStore.getState().loadedFiles.get(fileId)?.content;
@@ -486,28 +492,38 @@ async function main(): Promise<void> {
   let vite: OwnedProcess | undefined;
   let browser: OwnedProcess | undefined;
   let cdp: Cdp | undefined;
+  const browserErrors: string[] = [];
   try {
     const vitePort = await freePort();
     vite = Bun.spawn([process.execPath, 'run', 'vite', '--host', HOST, '--port', String(vitePort), '--strictPort'], { cwd: import.meta.dir + '/..', stdout: 'ignore', stderr: 'ignore' });
     await waitFor('Vite', async () => (await fetch(`http://${HOST}:${vitePort}/`).catch(() => null))?.ok ? true : undefined);
-    const profile = join(tempRoot, 'profile');
-    browser = Bun.spawn([chromium(), '--remote-debugging-port=0', `--user-data-dir=${profile}`, '--headless=new', '--disable-gpu', '--disable-dev-shm-usage', 'about:blank'], { stdout: 'ignore', stderr: 'ignore' });
-    const debugPort = await waitFor('Chromium DevTools port', () => {
-      const activePort = join(profile, 'DevToolsActivePort');
-      if (!existsSync(activePort)) return undefined;
-      const port = Number(readFileSync(activePort, 'utf8').split(/\r?\n/, 1)[0]);
-      return Number.isInteger(port) && port > 0 ? port : undefined;
-    });
-    const target = await waitFor('Chromium DevTools', async () => {
-      const targets = await fetch(`http://${HOST}:${debugPort}/json/list`).then((response) => response.json()).catch(() => [] as Array<{ type?: string; webSocketDebuggerUrl?: string }>);
-      return targets.find((item) => item.type === 'page' && item.webSocketDebuggerUrl)?.webSocketDebuggerUrl;
-    });
-    cdp = await Cdp.connect(target);
-    await cdp.command('Runtime.enable'); await cdp.command('Log.enable');
-    await cdp.command('Emulation.setDeviceMetricsOverride', { width: 1366, height: 768, deviceScaleFactor: 1, mobile: false });
-    await cdp.command('Page.enable');
-    await cdp.command('Page.navigate', { url: `http://${HOST}:${vitePort}/` });
-    await waitFor('document load', async () => await cdp!.evaluate("document.readyState === 'complete' ? true : undefined") === true ? true : undefined);
+    let navigation = 0;
+    const closeRenderer = async () => {
+      if (cdp) { browserErrors.push(...cdp.errors); cdp.close(); cdp = undefined; }
+      await stop(browser); browser = undefined;
+    };
+    const navigate = async (description: string) => {
+      const url = `http://${HOST}:${vitePort}/?zplcSmokeNavigation=${++navigation}`;
+      await closeRenderer();
+      const profile = join(tempRoot, `profile-${navigation}`);
+      browser = Bun.spawn([chromium(), '--remote-debugging-port=0', `--user-data-dir=${profile}`, '--headless=new', '--disable-gpu', '--disable-dev-shm-usage', url], { stdout: 'ignore', stderr: 'ignore' });
+      const debugPort = await waitFor(`${description} Chromium DevTools port`, () => {
+        const activePort = join(profile, 'DevToolsActivePort');
+        if (!existsSync(activePort)) return undefined;
+        const port = Number(readFileSync(activePort, 'utf8').split(/\r?\n/, 1)[0]);
+        return Number.isInteger(port) && port > 0 ? port : undefined;
+      });
+      const target = await waitFor(`${description} Chromium DevTools`, async () => {
+        const targets = await fetch(`http://${HOST}:${debugPort}/json/list`).then((response) => response.json()).catch(() => [] as Array<{ type?: string; url?: string; webSocketDebuggerUrl?: string }>);
+        return targets.find((item) => item.type === 'page' && item.url === url && item.webSocketDebuggerUrl)?.webSocketDebuggerUrl;
+      });
+      cdp = await Cdp.connect(target);
+      await cdp.command('Runtime.enable'); await cdp.command('Log.enable');
+      await cdp.command('Emulation.setDeviceMetricsOverride', { width: 1366, height: 768, deviceScaleFactor: 1, mobile: false });
+      await cdp.command('Page.enable');
+      await waitFor(description, async () => await cdp!.evaluate(`location.href === ${JSON.stringify(url)} && performance.getEntriesByType('navigation').some((entry) => entry.name === ${JSON.stringify(url)}) && document.readyState === 'complete' ? true : undefined`) === true ? true : undefined);
+    };
+    await navigate('document load');
     assert(await cdp.evaluate('window.innerWidth === 1366 && window.innerHeight === 768') === true, 'Viewport is not 1366x768');
     const reviewDir = process.env.ZPLC_STUDIO_REVIEW_DIR?.trim();
     if (reviewDir) await captureWelcomeReviewScreens(cdp, reviewDir);
@@ -517,8 +533,7 @@ async function main(): Promise<void> {
     assert(await cdp.evaluate(`(() => { const bar = document.querySelector('[aria-label="Operational status"]'); const live = bar?.querySelectorAll('[role="status"][aria-live="polite"][aria-atomic="true"]') ?? []; return Boolean(bar) && bar?.textContent?.includes('SIMULATION') && bar?.textContent?.includes('No runtime session') && bar.getBoundingClientRect().width <= 1366 && !bar?.hasAttribute('aria-live') && live.length === 1 && !live[0]?.textContent?.includes('cycles') && !live[0]?.textContent?.includes('overruns'); })()`) === true, 'Operational status must isolate its polite live announcement at 1366x768');
     if (reviewDir) {
       await captureReviewScreens(cdp, reviewDir);
-      await cdp.command('Page.navigate', { url: `http://${HOST}:${vitePort}/` });
-      await waitFor('review reset document load', async () => await cdp!.evaluate("document.readyState === 'complete' ? true : undefined") === true ? true : undefined);
+      await navigate('review reset document load');
       await cdp.evaluate(pageSeed(golden, compileEnvelope));
       await waitFor('review reset renderer seed', async () => await cdp!.evaluate('window.__zplcSmoke?.ready ? true : undefined') === true ? true : undefined);
       await waitFor('review reset Studio toolbar', async () => await cdp!.evaluate("document.querySelectorAll('button').length > 0 ? true : undefined") === true ? true : undefined);
@@ -661,7 +676,7 @@ async function main(): Promise<void> {
     assert((await text()).includes('MotorStartStop') && (await text()).includes('20, 40, 90 y 140 ms') && !(await text()).includes('auto-graded'), 'Learn must begin in Spanish with the exact host-only guided path');
     await click('English');
     await waitFor('English Learn lesson', async () => (await text()).includes('Safe motor start-stop') ? true : undefined);
-    assert((await text()).includes('This edit is not auto-graded.') && (await text()).includes('native POSIX host evidence only') && (await text()).includes('not hardware or HIL evidence.'), 'Learn must preserve honest host-only evidence wording');
+    assert((await text()).includes('The starter fails this host scenario until the stated omission is corrected.') && (await text()).includes('native POSIX host evidence only') && (await text()).includes('not hardware or HIL evidence.'), 'Learn must preserve honest host-only evidence wording');
     await click('Open Tests');
     await waitFor('Learn opens Tests', async () => await cdp!.evaluate(`Boolean(document.getElementById('console-panel-tests')) ? true : undefined`) === true ? true : undefined);
     assert(await cdp.evaluate(`window.__zplcSmoke.runRequests.length === 0`) === true, 'Learn must not run a scenario');
@@ -724,8 +739,7 @@ async function main(): Promise<void> {
     assert(!(await text()).includes('Scenario evidence (recorded test result)') && await cdp.evaluate("!document.querySelector('[data-recorded-motor-output]')") === true, 'Recorded scenario preview leaked into live Trace');
     assert(await cdp.evaluate("!document.querySelector('[aria-label=\"Live native POSIX motor outputs\"]')") === true, 'Live motor output must remain hidden without a connected native session');
 
-    await cdp.command('Page.navigate', { url: `http://${HOST}:${vitePort}/` });
-    await waitFor('motor plant document load', async () => await cdp!.evaluate("document.readyState === 'complete' ? true : undefined") === true ? true : undefined);
+    await navigate('motor plant document load');
     await cdp.evaluate(pageSeed(motorPlant, compileEnvelope, validProgram, false));
     await waitFor('motor plant renderer seed', async () => await cdp!.evaluate('window.__zplcSmoke?.ready ? true : undefined') === true ? true : undefined);
     await click('Tests');
@@ -771,8 +785,7 @@ async function main(): Promise<void> {
     await click('Trace');
     assert(await cdp.evaluate(`!document.querySelector('[data-recorded-motor-plant]')`) === true, 'Recorded motor plant must not leak into live Trace');
 
-    await cdp.command('Page.navigate', { url: `http://${HOST}:${vitePort}/` });
-    await waitFor('conveyor document load', async () => await cdp!.evaluate("document.readyState === 'complete' ? true : undefined") === true ? true : undefined);
+    await navigate('conveyor document load');
     await cdp.evaluate(pageSeed(conveyor, compileEnvelope, validProgram, false));
     await waitFor('conveyor renderer seed', async () => await cdp!.evaluate('window.__zplcSmoke?.ready ? true : undefined') === true ? true : undefined);
     await click('Tests');
@@ -810,8 +823,7 @@ async function main(): Promise<void> {
     await click('Trace');
     assert(await cdp.evaluate(`!document.querySelector('[data-recorded-conveyor-plant]')`) === true, 'Recorded conveyor plant must not leak into live Trace');
 
-    await cdp.command('Page.navigate', { url: `http://${HOST}:${vitePort}/` });
-    await waitFor('pedestrian crossing document load', async () => await cdp!.evaluate("document.readyState === 'complete' ? true : undefined") === true ? true : undefined);
+    await navigate('pedestrian crossing document load');
     await cdp.evaluate(pageSeed(pedestrian, compileEnvelope, validProgram, false));
     await waitFor('pedestrian crossing renderer seed', async () => await cdp!.evaluate('window.__zplcSmoke?.ready ? true : undefined') === true ? true : undefined);
     await click('Tests');
@@ -851,8 +863,7 @@ async function main(): Promise<void> {
     await click('Trace');
     assert(await cdp.evaluate(`!document.querySelector('[data-recorded-pedestrian-crossing]')`) === true, 'Recorded pedestrian crossing must not leak into live Trace');
 
-    await cdp.command('Page.navigate', { url: `http://${HOST}:${vitePort}/` });
-    await waitFor('tank level document load', async () => await cdp!.evaluate("document.readyState === 'complete' ? true : undefined") === true ? true : undefined);
+    await navigate('tank level document load');
     await cdp.evaluate(pageSeed(tank, compileEnvelope, validProgram, false));
     await waitFor('tank level renderer seed', async () => await cdp!.evaluate('window.__zplcSmoke?.ready ? true : undefined') === true ? true : undefined);
     await click('Tests');
@@ -891,8 +902,7 @@ async function main(): Promise<void> {
     assert(await cdp.evaluate(`!document.querySelector('[data-recorded-tank-level]')`) === true, 'Recorded tank level must not leak into live Trace');
 
     // Restore the existing smoke fixture so subsequent editor-history checks retain their focused tab setup.
-    await cdp.command('Page.navigate', { url: `http://${HOST}:${vitePort}/` });
-    await waitFor('post motor plant document load', async () => await cdp!.evaluate("document.readyState === 'complete' ? true : undefined") === true ? true : undefined);
+    await navigate('post motor plant document load');
     await cdp.evaluate(pageSeed(golden, compileEnvelope));
     await waitFor('post motor plant renderer seed', async () => await cdp!.evaluate('window.__zplcSmoke?.ready ? true : undefined') === true ? true : undefined);
     await cdp.evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => useIDEStore.setState({ activeFileId: 'aux-st', openTabs: ['aux-st'], workspaceScenarioLink: { workspaceId: 'opaque-workspace-capability', projectSession: 7 } }))`);
@@ -1022,9 +1032,10 @@ async function main(): Promise<void> {
     await waitFor('unsaved close confirmation reopened', async () => await cdp!.evaluate(`document.querySelector('[role="dialog"]') ? true : undefined`) === true ? true : undefined);
     await click('Discard changes and close');
     await waitFor('explicit unsaved project discard', async () => await cdp!.evaluate(`!document.querySelector('[role="dialog"]') && !document.querySelector('button[aria-label="Close Project"]') ? true : undefined`) === true ? true : undefined);
-    assert(cdp.errors.length === 0, `Browser errors: ${cdp.errors.join(' | ')}`);
+    assert([...browserErrors, ...cdp.errors].length === 0, `Browser errors: ${[...browserErrors, ...cdp.errors].join(' | ')}`);
     console.log('Studio renderer vertical smoke passed at 1366x768 (mock bridge backed by a real native POSIX Tool API result; not HIL).');
   } finally {
+    if (cdp) browserErrors.push(...cdp.errors);
     cdp?.close();
     await stop(browser); await stop(vite);
     if (tempRoot.startsWith(join(tmpdir(), 'zplc-studio-smoke-')) && existsSync(tempRoot)) rmSync(tempRoot, { recursive: true, force: true });

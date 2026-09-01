@@ -28,6 +28,8 @@ describe('Console tab boundary', () => {
     expect(source).toContain('document.getElementById(`console-tab-${nextTab}`)?.focus()');
     expect(source).toContain("id: 'trace'");
     expect(source).toContain("id: 'learn'");
+    expect(source).toContain("id: 'lab'");
+    expect(source).toContain('<LabPanel');
     expect(source).toContain("activeConsoleTab === 'learn'");
     expect(source).toContain('<LearnPanel workspaceTestPresentation={typeof workspaceTestStateForLink === \'object\' ? workspaceTestStateForLink.presentation : undefined} />');
     expect(source).toContain("id: 'explorer'");
@@ -80,7 +82,32 @@ describe('Console tab boundary', () => {
     expect(source).toContain('Open a saved project folder to review a change.');
     expect(source).not.toContain('candidateChangeSet.apply');
     expect(source).not.toMatch(/candidateChangeSet\.(flash|deploy|force|run|stop)/);
-    expect(source).not.toMatch(/provider|\bLLM\b|\bMCP\b|graph JSON/i);
+    expect(source).toContain("id: 'agent'");
+    expect(source).toContain("activeConsoleTab === 'agent'");
+    expect(source).toContain('Provider response — not evidence');
+    expect(source).toContain('Send request');
+    expect(source).toContain('Cancel request');
+    expect(source).toContain('Review proposed ST change');
+    expect(source).toContain('aiProvider.request(request)');
+    expect(source).toContain('aiProvider.cancel()');
+    expect(source).toContain('onClick={() => { void sendAgentRequest(); }}');
+    expect(source).not.toContain('useEffect(() => { void sendAgentRequest(); }');
+    expect(source).toContain('updateFileContent(snapshot.fileId, snapshot.candidate)');
+    expect(source).toContain("snapshot.origin === 'agent'");
+    expect(source).toContain('Proposed change is stale. Send a new request.');
+    expect(source).toContain("const agentBusy = agentState === 'sending' || agentState === 'cancelling';");
+    expect(source).toContain('disabled={agentBusy}');
+    expect(source).toContain('tabIndex={agentMode === mode ? 0 : -1}');
+    expect(source).toContain('agentStatus.enabled');
+    expect(source).toContain('fieldset disabled={agentBusy || agentSettingsBusy}');
+    expect(source).toContain('presentAiProviderMutation(await aiProvider.saveConfig(agentConfig))');
+    expect(source).toContain('presentAiProviderMutation(await aiProvider.storeKey(agentKey))');
+    expect(source).toContain('presentAiProviderMutation(await aiProvider.clearKey())');
+    expect(source).not.toMatch(/aiProvider\.(flash|deploy|force|run|stop|shell|serial)/);
+    expect(source).toContain('Do not put secrets in the prompt.');
+    expect(source).toContain('Known sensitive patterns in the prompt or context are rejected before network access; do not paste secrets.');
+    expect(source).toContain('Terminal, raw serial, and physical controls are excluded.');
+    expect(source).not.toContain('No terminal, secrets, raw serial, or physical controls are included.');
   });
 
   it('labels live ST syntax separately from canonical build diagnostics', () => {
@@ -153,7 +180,7 @@ describe('Console tab boundary', () => {
     expect(source).toContain('saveProjectConfig,');
     expect(start).toBeGreaterThan(-1);
     expect(end).toBeGreaterThan(start);
-    expect(handler).toContain('workspaceTestBusy || !current.isProjectOpen || current.isVirtualProject');
+    expect(handler).toContain('workspaceTestBusy || !current.isProjectOpen');
     expect(handler).toContain('latest.projectSession !== expectedProjectSession');
     expect(handler).toContain('latest.loadedFiles.values()).some((file) => file.isModified)');
     expect(handler).toContain('latest.hasUnsavedChanges()');

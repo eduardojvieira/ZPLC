@@ -41,6 +41,16 @@ const FIRMWARE_BUILD_CHANNEL = {
   CANCEL: 'firmware-build:cancel',
 } as const;
 
+const TOOL_EXECUTION_AUDIT_CHANNEL = {
+  LIST: 'tool-execution-audit:list',
+} as const;
+
+const AI_PROVIDER_CHANNEL = {
+  GET_STATUS: 'ai-provider:get-status', GET_CONFIG: 'ai-provider:get-config', SAVE_CONFIG: 'ai-provider:save-config',
+  STORE_KEY: 'ai-provider:store-key', CLEAR_KEY: 'ai-provider:clear-key', REQUEST: 'ai-provider:request', CANCEL: 'ai-provider:cancel',
+} as const;
+const LEARN_PROGRESS_CHANNEL = { READ: 'learn-progress:read', MERGE: 'learn-progress:merge' } as const;
+
 // Expose protected APIs to the renderer process
 contextBridge.exposeInMainWorld('electronAPI', {
   /**
@@ -86,6 +96,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     safetyCheck: (request: { workspaceId: string }) =>
       ipcRenderer.invoke(WORKSPACE_TESTS_CHANNEL.SAFETY_CHECK, request) as Promise<unknown>,
   },
+  learnProgress: {
+    read: () => ipcRenderer.invoke(LEARN_PROGRESS_CHANNEL.READ) as Promise<string[]>,
+    merge: (mastered: string[]) => ipcRenderer.invoke(LEARN_PROGRESS_CHANNEL.MERGE, mastered) as Promise<string[]>,
+  },
 
   candidateChangeSet: {
     review: (request: { workspaceId: string; edit: { path: string; content: string } }) =>
@@ -99,6 +113,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
   firmwareBuild: {
     start: (request: { ideId: string }) => ipcRenderer.invoke(FIRMWARE_BUILD_CHANNEL.START, request) as Promise<unknown | null>,
     cancel: () => ipcRenderer.invoke(FIRMWARE_BUILD_CHANNEL.CANCEL) as Promise<{ requested: boolean }>,
+  },
+
+  toolExecutionAudit: {
+    list: () => ipcRenderer.invoke(TOOL_EXECUTION_AUDIT_CHANNEL.LIST) as Promise<unknown>,
+  },
+
+  aiProvider: {
+    getStatus: () => ipcRenderer.invoke(AI_PROVIDER_CHANNEL.GET_STATUS) as Promise<unknown>,
+    getConfig: () => ipcRenderer.invoke(AI_PROVIDER_CHANNEL.GET_CONFIG) as Promise<unknown>,
+    saveConfig: (config: { enabled: boolean; endpoint: string; model: string }) => ipcRenderer.invoke(AI_PROVIDER_CHANNEL.SAVE_CONFIG, config) as Promise<unknown>,
+    storeKey: (key: string) => ipcRenderer.invoke(AI_PROVIDER_CHANNEL.STORE_KEY, key) as Promise<unknown>,
+    clearKey: () => ipcRenderer.invoke(AI_PROVIDER_CHANNEL.CLEAR_KEY) as Promise<unknown>,
+    request: (request: { workspaceId: string; mode: 'ask' | 'plan' | 'edit' | 'debug'; prompt: string; activeFile?: { fileId: string; path: string }; diagnostics?: Array<{ code: string; path?: string; line?: number; column?: number }>; trace?: Array<{ atMs: number; signal: string; value: boolean | number }> }) => ipcRenderer.invoke(AI_PROVIDER_CHANNEL.REQUEST, request) as Promise<unknown>,
+    cancel: () => ipcRenderer.invoke(AI_PROVIDER_CHANNEL.CANCEL) as Promise<{ requested: boolean }>,
   },
 
   /**
@@ -143,6 +171,18 @@ declare global {
       };
       firmwareBuild: {
         start: (request: { ideId: string }) => Promise<unknown | null>;
+        cancel: () => Promise<{ requested: boolean }>;
+      };
+      toolExecutionAudit: {
+        list: () => Promise<unknown>;
+      };
+      aiProvider: {
+        getStatus: () => Promise<unknown>;
+        getConfig: () => Promise<unknown>;
+        saveConfig: (config: { enabled: boolean; endpoint: string; model: string }) => Promise<unknown>;
+        storeKey: (key: string) => Promise<unknown>;
+        clearKey: () => Promise<unknown>;
+        request: (request: { workspaceId: string; mode: 'ask' | 'plan' | 'edit' | 'debug'; prompt: string; activeFile?: { fileId: string; path: string }; diagnostics?: Array<{ code: string; path?: string; line?: number; column?: number }>; trace?: Array<{ atMs: number; signal: string; value: boolean | number }> }) => Promise<unknown>;
         cancel: () => Promise<{ requested: boolean }>;
       };
       isElectron: boolean;

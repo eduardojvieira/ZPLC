@@ -29,6 +29,8 @@ describe('Workspace test gateway', () => {
     const result = await gateway.run(7, token, async (...args) => {
       expect(args[0]).toBe(root);
       expect(args[1]?.signal).toBeInstanceOf(AbortSignal);
+      expect(args[1]?.jobId).toMatch(/^[0-9a-f-]{36}$/i);
+      expect(args[1]?.startedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
       return 'completed';
     });
     expect(result).toBe('completed');

@@ -1,0 +1,1 @@
+{"schemaVersion":1,"id":"ScanSnapshot","tickMs":10,"durationMs":10,"events":[{"atMs":0,"set":{"ScanSnapshot.Button":true}}],"expectations":[{"kind":"AT","atMs":0,"condition":{"ScanSnapshot.RisingPulse":true}}]}

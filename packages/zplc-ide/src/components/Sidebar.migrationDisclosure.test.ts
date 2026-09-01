@@ -8,7 +8,7 @@ describe('Sidebar migration disclosure', () => {
 
     expect(source).toContain('<details');
     expect(source).toContain('<summary');
-    expect(source).toContain('Migrated in memory');
+    expect(source).toContain('Migration preview');
     expect(source).toContain('No project files were changed.');
     expect(source).toContain('Review {projectMigrationPreview.changes.length} change');
     expect(source).toContain("Add");

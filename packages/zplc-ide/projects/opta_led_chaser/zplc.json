@@ -17,7 +17,6 @@
       "trigger": "cyclic",
       "interval_ms": 10,
       "priority": 1,
-      "watchdog_ms": 50,
       "programs": [
         "led_chaser.st"
       ]

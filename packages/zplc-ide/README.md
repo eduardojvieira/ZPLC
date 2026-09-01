@@ -1,53 +1,35 @@
-# ZPLC IDE: Web-Based PLC Engineering Environment
+# ZPLC Studio 2.0
 
-This directory contains the ZPLC IDE, a high-performance, web-based engineering tool for programming and debugging ZPLC-enabled industrial controllers.
+ZPLC Studio is the Electron desktop workbench for folder-backed PLC projects.
+It shares compiler, test, simulation, evidence, and restricted-tool contracts
+with the CLI and local MCP adapter.
 
-## 🚀 Key Technologies
-- **React + Vite**: Fast, modern frontend framework.
-- **TypeScript**: Type-safe development for complex logic.
-- **React Flow**: Powers the interactive LD, FBD, and SFC visual editors.
-- **Monaco Editor**: Provides the Structured Text (ST) editing experience.
-- **WebAssembly (WASM)**: Runs the ZPLC Core VM directly in the browser for instant simulation.
-- **WebSerial API**: Enables direct, driver-less communication with Zephyr hardware targets.
-- **Zustand**: Lightweight state management for project files and editor state.
+## What is available in the candidate
 
-## 📂 Architecture Overview
+- ST editing plus LD, FBD, and SFC visual-model editing.
+- A canonical compile path, temporal tests, and native POSIX simulation.
+- Explicit, human-controlled build, flash, deploy, and RUN/STOP boundaries.
+- Optional AI candidate changes with review, tool evidence, and human save.
+- A degraded WASM fallback only where native simulation is unavailable.
 
-### 1. Visual Editors (`src/editors/`)
-Each IEC 61131-3 language has a dedicated editor component:
-- **Ladder Diagram (LD)**: Uses a custom grid-based layout for contacts, coils, and nested branches.
-- **Function Block Diagram (FBD)**: Node-based programming via React Flow.
-- **Sequential Function Chart (SFC)**: State-machine visualization and transitions.
+Host simulation, a package build, and a board cross-build do not establish HIL,
+electrical behavior, target timing, or production qualification. See the
+[capabilities and evidence guide](../../docs/docs/reference/capabilities-evidence.md).
 
-### 2. The Transpiler Layer (`src/transpiler/`)
-Visual logic is converted into Structured Text (ST) before final compilation. This ensures that the VM only needs to understand a single high-level IR, simplifying the instruction set.
-
-### 3. Integrated Compiler (`src/compiler/`)
-The ST compiler is written in TypeScript. It performs:
-- Lexical & Syntactic Analysis.
-- Semantic Validation (type checking).
-- Bytecode Generation (`.zplc` format).
-
-### 4. Runtime Adapters (`src/runtime/`)
-The IDE uses an "Adapter Pattern" to bridge the UI to different execution environments:
-- **WASMAdapter**: Loads `zplc_core.wasm` and runs it in a background loop for local simulation.
-- **SerialAdapter**: Communicates with real hardware via the Zephyr Shell over WebSerial.
-
-## 🛠️ Development Setup
+## Development
 
 ```bash
-# Install dependencies
-bun install
-
-# Start development server
-bun run dev
-
-# Build production assets
+bun install --frozen-lockfile
+bun run electron:dev
+bun run test
+bun run lint
 bun run build
 ```
 
-## 🏗️ Project Structure
-- `/src/components`: UI elements (Toolbar, Sidebar, Watch Window).
-- `/src/store`: Global IDE state (useIDEStore).
-- `/src/models`: Core data structures for LD/FBD/SFC models.
-- `/src/uploader`: WebSerial protocol implementation.
+## Boundaries
+
+Examples are copied to a folder selected by the user; Studio does not keep a
+temporary project mode. AI and MCP cannot flash, deploy to hardware, force values,
+change RUN/STOP, recover devices, open raw serial, or invoke a shell.
+
+The local stdio adapter is invoked with `bun src/mcp/index.ts --workspace <absolute-real-directory>`. Add `--repository <absolute-real-directory>` only for catalogue/build inspection. Add `--user-data <absolute-real-directory>` only to expose the current user's bounded Learn mastery record; without that explicit directory `zplc://course/progress` is unavailable. Runtime trace and snapshot resources are stateless deterministic native POSIX replays, never a live runtime or HIL result.

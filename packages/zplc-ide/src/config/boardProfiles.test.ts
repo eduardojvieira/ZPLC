@@ -3,6 +3,7 @@ import supportedBoardsManifest from '../../../../firmware/app/boards/supported-b
 
 import {
   BOARD_OPTIONS,
+  getBoardEvidenceSummary,
   getBoardNetworkType,
   getCompilerMemoryProfile,
   getZephyrBoardTarget,
@@ -12,6 +13,14 @@ import {
 } from './boardProfiles';
 
 describe('board network profile mapping', () => {
+  test('projects only the six catalogued evidence tiers and counts', () => {
+    const catalogue = (supportedBoardsManifest as Array<{ ide_id: string }>).map((board) => board.ide_id);
+    expect(catalogue).toHaveLength(6);
+    expect(catalogue.every((id) => getBoardEvidenceSummary(id)?.validationLevel === 'cross-build')).toBe(true);
+    expect(catalogue.every((id) => getBoardEvidenceSummary(id)?.evidenceCount === 0)).toBe(true);
+    expect(getBoardEvidenceSummary('custom')).toBeUndefined();
+    expect(getBoardEvidenceSummary('unknown')).toBeUndefined();
+  });
   test('maps manifest-declared network boards correctly', () => {
     expect(getBoardNetworkType('esp32s3_devkitc')).toBe('wifi');
     expect(getBoardNetworkType('arduino_giga_r1')).toBe('none');

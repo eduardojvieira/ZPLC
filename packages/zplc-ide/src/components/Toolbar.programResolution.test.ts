@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-import { getProgramSourceReadMode, resolveProgramSource, resolveProgramSourceForCompilation } from '../utils/programSourceResolution';
+import { resolveProgramSource } from '../utils/programSourceResolution';
 
 const toolbarSource = readFileSync(fileURLToPath(new URL('./Toolbar.tsx', import.meta.url)), 'utf8');
 
@@ -77,89 +77,39 @@ describe('resolveProgramSource', () => {
     expect(result).toBeNull();
   });
 
-  it('uses a matching modified buffer before reading the project file', async () => {
-    let diskReads = 0;
-    const result = await resolveProgramSourceForCompilation(
-      'main.ld',
-      () => [
-        { name: 'other.ld.json', content: '{"disk":"unrelated"}', language: 'LD', isModified: true },
-        { name: 'main.ld.json', content: '{"buffer":"new"}', language: 'LD', isModified: true },
-      ],
-      async () => {
-        diskReads += 1;
-        return { name: 'main.ld.json', content: '{"disk":"old"}', language: 'LD' };
-      },
-    );
-
-    expect(result).toEqual({ name: 'main', content: '{"buffer":"new"}', language: 'LD', sourceRef: 'main.ld.json' });
-    expect(diskReads).toBe(0);
-  });
-
-  it('keeps FBD and SFC visual-file aliases when preferring a modified buffer', async () => {
-    for (const [reference, fileName, language] of [
-      ['main.fbd', 'main.fbd.json', 'FBD'],
-      ['main.sfc', 'main.sfc.json', 'SFC'],
-    ] as const) {
-      const result = await resolveProgramSourceForCompilation(
-        reference,
-        () => [{ name: fileName, content: '{}', language, isModified: true }],
-        async () => { throw new Error('must not read disk'); },
-      );
-      expect(result).toEqual({ name: 'main', content: '{}', language, sourceRef: fileName });
-    }
-  });
-
-  it('reads the project file when the matching buffer is not modified', async () => {
-    let diskReads = 0;
-    const result = await resolveProgramSourceForCompilation(
-      'main.st',
-      () => [{ name: 'main.st', content: 'PROGRAM Main // old buffer', language: 'ST', isModified: false }],
-      async () => {
-        diskReads += 1;
-        return { name: 'main.st', content: 'PROGRAM Main // disk', language: 'ST' };
-      },
-    );
-
-    expect(result).toEqual({ name: 'main', content: 'PROGRAM Main // disk', language: 'ST', sourceRef: 'main.st' });
-    expect(diskReads).toBe(1);
-  });
-
-  it('aborts a local compilation when reading disk fails', async () => {
-    await expect(resolveProgramSourceForCompilation(
-      'main.st',
-      () => [{ name: 'main.st', content: 'PROGRAM Main // fallback', language: 'ST', isModified: false }],
-      async () => { throw new Error('disk unavailable'); },
-    )).rejects.toThrow('disk unavailable');
-  });
-
-  it('uses the latest loaded-file snapshot when compilation begins', async () => {
-    let files = [{ name: 'main.st', content: 'PROGRAM Main // stale', language: 'ST', isModified: false }];
-    const readFresh = async () => ({ name: 'main.st', content: 'PROGRAM Main // disk', language: 'ST' });
-    const resolve = () => resolveProgramSourceForCompilation('main.st', () => files, readFresh);
-    files = [{ name: 'main.st', content: 'PROGRAM Main // edited', language: 'ST', isModified: true }];
-
-    await expect(resolve()).resolves.toEqual({ name: 'main', content: 'PROGRAM Main // edited', language: 'ST', sourceRef: 'main.st' });
-  });
-
-  it('uses a clean loaded file only when no local file reader exists', async () => {
-    await expect(resolveProgramSourceForCompilation(
-      'main.st',
-      () => [{ name: 'main.st', content: 'PROGRAM Main // virtual', language: 'ST', isModified: false }],
-      null,
-    )).resolves.toEqual({ name: 'main', content: 'PROGRAM Main // virtual', language: 'ST', sourceRef: 'main.st' });
-  });
-
-  it('treats a virtual project with a display tree as virtual and rejects local projects without a tree', () => {
-    expect(getProgramSourceReadMode(true, true)).toBe('loaded');
-    expect(() => getProgramSourceReadMode(false, false)).toThrow('Local project file tree is unavailable');
-  });
 });
 
 describe('canonical workspace build failures', () => {
+  it('requires an admitted human confirmation for every hardware deploy and leaves cancellation inert', () => {
+    expect(toolbarSource).toContain('createHardwareDeployConfirmation');
+    expect(toolbarSource).toContain('const confirmation = await createHardwareDeployConfirmation');
+    expect(toolbarSource).toContain('if (!window.confirm(confirmation.message)) {');
+    expect(toolbarSource).toContain('const current = currentCompileResult();');
+    expect(toolbarSource).toContain('const deployProjectSession = useIDEStore.getState().projectSession;');
+    expect(toolbarSource).toContain('const deployTargetBoard = useIDEStore.getState().projectConfig?.target?.board;');
+    expect(toolbarSource).toContain('latest.projectSession !== deployProjectSession || latest.projectConfig?.target?.board !== deployTargetBoard');
+    expect(toolbarSource).toContain('projectBoard: deployTargetBoard');
+    expect(toolbarSource).toContain("message: 'Hardware deploy cancelled; no program was sent.'");
+    expect(toolbarSource.indexOf('if (!window.confirm(confirmation.message)) {')).toBeLessThan(toolbarSource.indexOf('await loadProgram(dataToUpload'));
+    expect(toolbarSource).toContain('programSendStarted && !preflightDenied');
+  });
+
+  it('does not label a denied fresh admission as an unknown device state', () => {
+    expect(toolbarSource).toContain("error instanceof DeviceAdmissionError && error.code !== DEVICE_ADMISSION_CODE.RESULT_UNKNOWN");
+    expect(toolbarSource).toContain("'Hardware deploy preflight failed. No program was sent.'");
+  });
+
+  it('claims hardware deploy synchronously before hashing or confirmation can yield', () => {
+    expect(toolbarSource).toContain('const uploadInFlightRef = useRef(false);');
+    expect(toolbarSource).toContain('if (executionMode !== EXECUTION_MODE.HARDWARE || controlsBusy || uploadInFlightRef.current) return;');
+    expect(toolbarSource).toContain('uploadInFlightRef.current = true;');
+    expect(toolbarSource.indexOf('uploadInFlightRef.current = true;')).toBeLessThan(toolbarSource.indexOf('await createHardwareDeployConfirmation'));
+    expect(toolbarSource).toContain('uploadInFlightRef.current = false;');
+  });
   it('reveals Problems for real build failures without changing canonical precondition guidance', () => {
     expect(toolbarSource).toContain("const revealCompileProblems = () => {");
     expect(toolbarSource).toContain("current.setActiveConsoleTab('problems');");
-    expect(toolbarSource.match(/revealCompileProblems\(\);/g)?.length).toBeGreaterThanOrEqual(6);
+    expect(toolbarSource.match(/revealCompileProblems\(\);/g)?.length).toBeGreaterThanOrEqual(2);
     expect(toolbarSource).toContain("current.setActiveConsoleTab('tests');");
   });
 
@@ -168,10 +118,12 @@ describe('canonical workspace build failures', () => {
     expect(toolbarSource.match(/addCompilerMessage\(\{ type: 'error', message: 'Canonical workspace build failed' \}\);/g)?.length).toBe(2);
   });
 
-  it('blocks a partial Electron compiler bridge before renderer compilation', () => {
+  it('uses only the canonical workspace compiler and exposes recovery when unavailable', () => {
     expect(toolbarSource).toContain("window.electronAPI !== undefined || navigator.userAgent.includes('Electron/')");
     expect(toolbarSource).toContain("workspaceCompileRoute === 'canonical-unavailable'");
-    expect(toolbarSource.indexOf("workspaceCompileRoute === 'canonical-unavailable'"))
-      .toBeLessThan(toolbarSource.indexOf('const useProjectMode = hasValidProjectConfig();'));
+    expect(toolbarSource).toContain('Build requires a saved folder opened in ZPLC Studio.');
+    expect(toolbarSource).not.toContain('compileMultiTaskProject');
+    expect(toolbarSource).not.toContain('compileSingleFileWithTask');
+    expect(toolbarSource).not.toContain('onCreateFile=');
   });
 });

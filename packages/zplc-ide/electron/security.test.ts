@@ -8,6 +8,10 @@ import {
   isAllowedWorkspaceTestRunRequest,
   isAllowedFirmwareBuildRequest,
   isAllowedCandidateChangeSetReviewRequest,
+  isAllowedAiProviderConfig,
+  isAllowedAiProviderKey,
+  isAllowedAiProviderRequest,
+  sanitizeToolExecution,
   sanitizeCandidateChangeSetReview,
   sanitizeWorkspaceSafetyCheck,
   isExpectedRendererDocument,
@@ -96,6 +100,22 @@ describe('Electron security boundary', () => {
     expect(isAllowedWorkspaceTestRequest({ workspaceId, scenarioId: 'motor' })).toBe(false);
   });
 
+  it('projects only exact metadata-only execution envelopes', () => {
+    const execution = { schemaVersion: 1, jobId: '0f2ce877-e0d6-43ca-89a7-df17a4927f51', actor: 'human-studio', permission: 'compiler:check', operation: 'compile', outcome: 'passed', startedAt: '2026-08-31T00:00:00.000Z', finishedAt: '2026-08-31T00:00:01.000Z' };
+    expect(sanitizeToolExecution(execution)).toEqual(execution);
+    expect(sanitizeToolExecution({ ...execution, root: '/private' })).toBeNull();
+    expect(sanitizeToolExecution({ ...execution, finishedAt: execution.startedAt })).toEqual({ ...execution, finishedAt: execution.startedAt });
+    expect(sanitizeToolExecution({ ...execution, finishedAt: '2026-08-30T00:00:00.000Z' })).toBeNull();
+    expect(sanitizeToolExecution({ ...execution, actor: 'unknown' })).toBeNull();
+    expect(sanitizeToolExecution({ ...execution, permission: 'firmware:flash' })).toBeNull();
+    expect(sanitizeToolExecution({ ...execution, operation: 'firmware-flash' })).toBeNull();
+    expect(sanitizeToolExecution({ ...execution, permission: 'tests:run' })).toBeNull();
+    const review = { ...execution, actor: 'agent', permission: 'tests:run', operation: 'change-set-review' };
+    expect(sanitizeToolExecution(review)).toEqual(review);
+    Object.defineProperty(review, 'operation', { value: 'change-set-review', enumerable: false });
+    expect(sanitizeToolExecution(review)).toBeNull();
+  });
+
   it('projects only bounded declared interlock coverage and fails closed for hostile safety results', () => {
     const pair = { outputs: ['Motor.Forward', 'Motor.Reverse'] };
     const covered = {
@@ -119,6 +139,8 @@ describe('Electron security boundary', () => {
     expect(sanitizeWorkspaceSafetyCheck({ ...uncovered, evidence: { ...uncovered.evidence, diagnostics: [{ code: 'SAFETY_INTERLOCK_UNCOVERED', path: 'tests/motor.scenario.json' }] } })).toBeNull();
     expect(sanitizeWorkspaceSafetyCheck({ ...covered, summary: { configured: true, declared: [{ outputs: [`${'A'.repeat(64)}.${'B'.repeat(64)}`, 'Motor.Reverse'] }], covered: [{ outputs: [`${'A'.repeat(64)}.${'B'.repeat(64)}`, 'Motor.Reverse'] }], uncovered: [] } })).toBeNull();
     expect(sanitizeWorkspaceSafetyCheck({ ok: false, evidence: { schemaVersion: 1, operation: 'safety-check', outcome: 'failed', diagnostics: [{ code: 'SAFETY_SCENARIO_INVALID', path: 'tests/motor.scenario.json' }], artifacts: [] } })).toEqual({ ok: false, evidence: { schemaVersion: 1, operation: 'safety-check', outcome: 'failed', diagnostics: [{ code: 'SAFETY_SCENARIO_INVALID', path: 'tests/motor.scenario.json' }], artifacts: [] } });
+    expect(sanitizeWorkspaceSafetyCheck({ ok: false, evidence: { schemaVersion: 1, operation: 'safety-check', outcome: 'failed', diagnostics: [{ code: 'SAFETY_UNBOUNDED_WHILE', path: 'src/Main.st', line: 3, message: 'ignored', phase: 'analysis' }], artifacts: [] } })).toEqual({ ok: false, evidence: { schemaVersion: 1, operation: 'safety-check', outcome: 'failed', diagnostics: [{ code: 'SAFETY_UNBOUNDED_WHILE', path: 'src/Main.st', line: 3 }], artifacts: [] } });
+    expect(sanitizeWorkspaceSafetyCheck({ ok: false, evidence: { schemaVersion: 1, operation: 'safety-check', outcome: 'failed', diagnostics: [{ code: 'SAFETY_UNBOUNDED_REPEAT', path: '/escape', line: 0 }], artifacts: [] } })).toBeNull();
     const getter = Object.defineProperty({}, 'ok', { enumerable: true, get: () => { throw new Error('must not read'); } });
     const revoked = Proxy.revocable(covered, {}); revoked.revoke();
     for (const value of [getter, revoked.proxy]) {
@@ -158,6 +180,27 @@ describe('Electron security boundary', () => {
     expect(isAllowedCandidateChangeSetReviewRequest(hiddenExtra)).toBe(false);
     expect(() => isAllowedCandidateChangeSetReviewRequest(revoked.proxy)).not.toThrow();
     expect(isAllowedCandidateChangeSetReviewRequest(revoked.proxy)).toBe(false);
+  });
+
+  it('admits only bounded inert AI context and rejects renderer-controlled provider or physical fields', () => {
+    const workspaceId = '0f2ce877-e0d6-43ca-89a7-df17a4927f51';
+    expect(isAllowedAiProviderRequest({ workspaceId, mode: 'ask', prompt: 'Explain this' })).toBe(true);
+    expect(isAllowedAiProviderRequest({ workspaceId, mode: 'edit', prompt: 'Fix', activeFile: { fileId: 'file:src/Main.st', path: 'src/Main.st' } })).toBe(true);
+    expect(isAllowedAiProviderRequest({ workspaceId, mode: 'debug', prompt: 'Why?', diagnostics: [{ code: 'E_TEST', path: 'src/Main.st', line: 1 }], trace: [{ atMs: 1, signal: 'Q.Motor', value: true }] })).toBe(true);
+    for (const value of [
+      { workspaceId, mode: 'ask', prompt: 'x', endpoint: 'https://evil.test' },
+      { workspaceId, mode: 'edit', prompt: 'x', activeFile: { fileId: 'x', path: 'src/Main.st' }, source: 'secret' },
+      { workspaceId, mode: 'edit', prompt: 'x', activeFile: { fileId: 'file:src/Other.st', path: 'src/Main.st' } },
+      { workspaceId, mode: 'ask', prompt: 'x'.repeat(4097) },
+      { workspaceId, mode: 'plan', prompt: 'x', diagnostics: [] },
+      { workspaceId, mode: 'debug', prompt: 'x', terminal: 'serial' },
+      { workspaceId, mode: 'debug', prompt: 'x', diagnostics: Array(33).fill({ code: 'E' }) },
+    ]) expect(isAllowedAiProviderRequest(value)).toBe(false);
+    expect(isAllowedAiProviderConfig({ enabled: true, endpoint: 'https://api.example.test', model: 'gpt-test' })).toBe(true);
+    expect(isAllowedAiProviderConfig({ enabled: true, endpoint: 'https://api.example.test', model: 'gpt-test', key: 'secret' })).toBe(false);
+    expect(isAllowedAiProviderKey('x'.repeat(16 * 1024))).toBe(true);
+    expect(isAllowedAiProviderKey('bad key')).toBe(false);
+    expect(isAllowedAiProviderKey('x'.repeat(16 * 1024 + 1))).toBe(false);
   });
 
   it('projects only verified candidate evidence and never serializes private values', () => {

@@ -88,6 +88,7 @@ export function getAvailableProjects(): ProjectInfo[] {
       if (!match) continue;
 
       const folderId = match[1];
+      if (folderId.endsWith('_starter')) continue;
 
       projects.push({
         id: folderId,
@@ -208,7 +209,6 @@ function zplcConfigToProjectConfig(config: ZPLCConfig): ProjectConfig {
     taskMode: firstTask?.trigger === 'cyclic' ? 'cyclic' : 'freewheeling',
     cycleTimeMs: firstTask?.interval_ms ?? 10,
     priority: firstTask?.priority ?? 1,
-    watchdogMs: firstTask?.watchdog_ms ?? 100,
     startPOU: firstProgram,
   };
 }

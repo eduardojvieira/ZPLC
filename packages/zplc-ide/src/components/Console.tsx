@@ -25,6 +25,10 @@ import {
   PanelRight,
   FileDiff,
   BookOpen,
+  Bot,
+  Send,
+  CircleStop,
+  Boxes,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DiffEditor, type Monaco } from '@monaco-editor/react';
@@ -42,14 +46,18 @@ import { presentWorkspaceSafetyCheck, type WorkspaceSafetyPresentation } from '.
 import { Sidebar } from './Sidebar';
 import { WorkbenchInspector } from './WorkbenchInspector';
 import { LearnPanel } from './LearnPanel';
+import { LabPanel } from './LabPanel';
+import { presentAiProviderConfig, presentAiProviderMutation, presentAiProviderResponse, presentAiProviderStatus, type AiProviderMode, type AiProviderResponsePresentation, type AiProviderStatusPresentation } from './aiProviderPresentation';
 import { useTheme } from '../hooks/useTheme';
-import { ZPLC_DARK_THEME, ZPLC_DARK_THEME_ID, ZPLC_LIGHT_THEME, ZPLC_LIGHT_THEME_ID } from '../utils/monaco-themes';
+import { ZPLC_DARK_THEME, ZPLC_DARK_THEME_ID, ZPLC_HIGH_CONTRAST_THEME, ZPLC_HIGH_CONTRAST_THEME_ID, ZPLC_LIGHT_THEME, ZPLC_LIGHT_THEME_ID } from '../utils/monaco-themes';
 
 type WorkspaceTestResultState = { presentation: WorkspaceTestPresentation; projectSession: number; compilerRunId: number; workspaceId: string };
 type WorkspaceSafetyTextState = { status: 'running' | 'unavailable'; projectSession: number; compilerRunId: number; workspaceId: string };
 type WorkspaceSafetyState = 'idle' | WorkspaceSafetyTextState | { presentation: WorkspaceSafetyPresentation; projectSession: number; compilerRunId: number; workspaceId: string };
-type CandidateReviewSnapshot = { projectSession: number; compilerRunId: number; workspaceId: string; fileId: string; path: string; content: string; handle: FileSystemFileHandle; beforeSha256: string; afterSha256: string; baseline: string };
+type CandidateReviewSnapshot = { origin: 'manual' | 'agent'; projectSession: number; compilerRunId: number; workspaceId: string; fileId: string; path: string; editorContent: string; candidate: string; handle: FileSystemFileHandle; beforeSha256: string; afterSha256: string; baseline: string };
 type CandidateReviewState = { kind: 'idle' | 'matches-disk' | 'running' | 'cancelling' | 'saving' | 'stale' | 'error' | 'saved' } | { kind: 'result'; snapshot: CandidateReviewSnapshot; presentation: CandidateChangeSetReviewPresentation };
+type AgentEditIdentity = { projectSession: number; compilerRunId: number; workspaceId: string; fileId: string; path: string; content: string; handle: FileSystemFileHandle; baselineSha256: string };
+type AgentState = 'idle' | 'loading' | 'sending' | 'cancelling' | 'unavailable' | 'error' | { kind: 'response'; presentation: AiProviderResponsePresentation; expectedEdit?: AgentEditIdentity };
 
 async function sha256Text(value: string): Promise<string> {
   const bytes = new TextEncoder().encode(value);
@@ -77,9 +85,14 @@ function consoleTabAfterKey(tabs: ConsoleTab[], activeTab: ConsoleTab, key: stri
 
 function SafetyCoverageReport({ presentation }: { presentation: WorkspaceSafetyPresentation }) {
   if (presentation.kind === 'not-configured') return <p role="status" className="text-xs text-[var(--color-surface-400)]">No incompatible outputs are declared in this project.</p>;
-  if (presentation.kind === 'invalid') return <p role="status" className="text-xs text-[var(--color-accent-yellow)]">Declared interlock coverage result was invalid.</p>;
+  if (presentation.kind === 'invalid') return <div className="space-y-1"><p role="status" className="text-xs text-[var(--color-accent-yellow)]">Declared interlock coverage result was invalid.</p><SafetyDiagnostics diagnostics={presentation.diagnostics} /></div>;
   const missing = presentation.kind === 'uncovered' ? new Set(presentation.uncovered.map((pair) => [...pair.outputs].sort().join('\0'))) : new Set<string>();
-  return <div className="overflow-x-auto"><table className="w-full min-w-[420px] text-left text-xs"><caption className="sr-only">Declared output interlock coverage.</caption><thead className="border-b border-[var(--color-surface-700)] text-[var(--color-surface-400)]"><tr><th scope="col" className="px-2 py-1 font-medium">Output A</th><th scope="col" className="px-2 py-1 font-medium">Output B</th><th scope="col" className="px-2 py-1 font-medium">Status</th></tr></thead><tbody>{presentation.declared.map((pair) => { const isMissing = missing.has([...pair.outputs].sort().join('\0')); return <tr key={pair.outputs.join('\0')} className="border-b border-[var(--color-surface-700)]"><td className="px-2 py-1 font-mono text-[var(--color-surface-200)]">{pair.outputs[0]}</td><td className="px-2 py-1 font-mono text-[var(--color-surface-200)]">{pair.outputs[1]}</td><td className={`px-2 py-1 ${isMissing ? 'text-[var(--color-accent-yellow)]' : 'text-[var(--color-accent-green)]'}`}>{isMissing ? 'Missing exact NEVER coverage' : 'Covered'}</td></tr>; })}</tbody></table></div>;
+  return <div className="space-y-2 overflow-x-auto"><table className="w-full min-w-[420px] text-left text-xs"><caption className="sr-only">Declared output interlock coverage.</caption><thead className="border-b border-[var(--color-surface-700)] text-[var(--color-surface-400)]"><tr><th scope="col" className="px-2 py-1 font-medium">Output A</th><th scope="col" className="px-2 py-1 font-medium">Output B</th><th scope="col" className="px-2 py-1 font-medium">Status</th></tr></thead><tbody>{presentation.declared.map((pair) => { const isMissing = missing.has([...pair.outputs].sort().join('\0')); return <tr key={pair.outputs.join('\0')} className="border-b border-[var(--color-surface-700)]"><td className="px-2 py-1 font-mono text-[var(--color-surface-200)]">{pair.outputs[0]}</td><td className="px-2 py-1 font-mono text-[var(--color-surface-200)]">{pair.outputs[1]}</td><td className={`px-2 py-1 ${isMissing ? 'text-[var(--color-accent-yellow)]' : 'text-[var(--color-accent-green)]'}`}>{isMissing ? 'Missing exact NEVER coverage' : 'Covered'}</td></tr>; })}</tbody></table><SafetyDiagnostics diagnostics={presentation.diagnostics} /></div>;
+}
+
+function SafetyDiagnostics({ diagnostics }: { diagnostics: WorkspaceSafetyPresentation['diagnostics'] }) {
+  if (diagnostics.length === 0) return null;
+  return <ul aria-label="Safety diagnostics" className="space-y-1 border-t border-[var(--color-surface-700)] pt-2 text-xs text-[var(--color-surface-200)]">{diagnostics.map((diagnostic, index) => <li key={`${diagnostic.code}-${index}`}><span className="font-mono">{diagnostic.code}</span>{diagnostic.path && <span className="text-[var(--color-surface-400)]"> · {diagnostic.path}{diagnostic.line ? `:${diagnostic.line}` : ''}{diagnostic.column ? `:${diagnostic.column}` : ''}</span>}</li>)}</ul>;
 }
 
 export function Console({ debugController }: ConsoleProps) {
@@ -100,7 +113,6 @@ export function Console({ debugController }: ConsoleProps) {
     fileTree,
     navigateToCompilerDiagnostic,
     isProjectOpen,
-    isVirtualProject,
     projectSession,
     compilerRunId,
     workspaceScenarioLink,
@@ -110,28 +122,38 @@ export function Console({ debugController }: ConsoleProps) {
     saveAllFiles,
     saveProjectConfig,
     saveFile,
+    updateFileContent,
   } = useIDEStore();
-  const { isDark } = useTheme();
+  const { effectiveTheme } = useTheme();
   const [workspaceTestBusy, setWorkspaceTestBusy] = useState(false);
   const [workspaceTestState, setWorkspaceTestState] = useState<'idle' | 'selected' | 'running' | 'cancelling' | 'desktop-unavailable' | WorkspaceTestResultState>('idle');
   const [workspaceSafetyState, setWorkspaceSafetyState] = useState<WorkspaceSafetyState>('idle');
   const workspaceManifestInputRef = useRef<HTMLInputElement>(null);
   const workspaceTests = window.electronAPI?.workspaceTests;
   const candidateChangeSet = window.electronAPI?.candidateChangeSet;
+  const aiProvider = window.electronAPI?.aiProvider;
   const candidateDesktopReady = Boolean(candidateChangeSet && workspaceTests);
   const candidateReviewGeneration = useRef(0);
   const candidateReviewBusy = useRef(false);
   const [candidateReviewState, setCandidateReviewState] = useState<CandidateReviewState>({ kind: 'idle' });
+  const [agentMode, setAgentMode] = useState<AiProviderMode>('ask');
+  const [agentPrompt, setAgentPrompt] = useState('');
+  const [agentState, setAgentState] = useState<AgentState>('idle');
+  const [agentStatus, setAgentStatus] = useState<AiProviderStatusPresentation>({ kind: 'invalid' });
+  const [agentConfig, setAgentConfig] = useState({ enabled: false, endpoint: '', model: '' });
+  const [agentKey, setAgentKey] = useState('');
+  const [agentSettingsBusy, setAgentSettingsBusy] = useState(false);
+  const [agentSettingsMessage, setAgentSettingsMessage] = useState<string | null>(null);
+  const [agentSettingsOpen, setAgentSettingsOpen] = useState(false);
   const hasCurrentWorkspaceLink = workspaceScenarioLink?.projectSession === projectSession;
   const workspaceTestAvailabilityState = workspaceTestAvailability({
     desktopAvailable: Boolean(workspaceTests),
     isProjectOpen,
-    isVirtualProject,
     hasCurrentLink: hasCurrentWorkspaceLink,
     hasUnsavedChanges: hasUnsavedChanges(),
   });
   const workspaceTestStateForLink = typeof workspaceTestState === 'object' && !isWorkspaceTestRunCurrent({ projectSession, compilerRunId, workspaceScenarioLink }, workspaceTestState)
-    ? workspaceTestRunFallbackState({ isProjectOpen, isVirtualProject, projectSession, workspaceScenarioLink })
+    ? workspaceTestRunFallbackState({ isProjectOpen, projectSession, workspaceScenarioLink })
     : hasCurrentWorkspaceLink ? workspaceTestState : 'idle';
   const workspaceSafetyStateForLink = workspaceSafetyState === 'idle' || !isWorkspaceTestRunCurrent({ projectSession, compilerRunId, workspaceScenarioLink }, workspaceSafetyState)
     ? 'idle'
@@ -144,12 +166,12 @@ export function Console({ debugController }: ConsoleProps) {
   const debugMode = useIDEStore((state) => state.debug.mode);
   const latestNativeTrace = nativeTrace.at(-1);
   const activeFile = activeFileId ? loadedFiles.get(activeFileId) : undefined;
-  const candidateEligible = Boolean(candidateDesktopReady && isProjectOpen && !isVirtualProject && hasCurrentWorkspaceLink
+  const candidateEligible = Boolean(candidateDesktopReady && isProjectOpen && hasCurrentWorkspaceLink
     && activeFile && activeFile.language === 'ST' && isCandidateSTPath(activeFile.path) && activeFile.isModified && activeFile.handle);
   const candidateReviewStateForCurrent = candidateReviewState.kind === 'result' && (candidateReviewState.snapshot.projectSession !== projectSession
     || candidateReviewState.snapshot.compilerRunId !== compilerRunId || candidateReviewState.snapshot.workspaceId !== workspaceScenarioLink?.workspaceId
-    || candidateReviewState.snapshot.fileId !== activeFileId || candidateReviewState.snapshot.path !== activeFile?.path || candidateReviewState.snapshot.content !== activeFile?.content
-    || candidateReviewState.snapshot.handle !== activeFile?.handle || !activeFile?.isModified)
+    || candidateReviewState.snapshot.fileId !== activeFileId || candidateReviewState.snapshot.path !== activeFile?.path || candidateReviewState.snapshot.editorContent !== activeFile?.content
+    || candidateReviewState.snapshot.handle !== activeFile?.handle || (candidateReviewState.snapshot.origin === 'manual' ? !activeFile?.isModified : activeFile?.isModified))
     ? { kind: 'stale' } as CandidateReviewState
     : candidateReviewState;
   useEffect(() => { candidateReviewGeneration.current += 1; }, [projectSession, compilerRunId, activeFileId, activeFile?.path, activeFile?.content, activeFile?.handle, activeFile?.isModified, workspaceScenarioLink?.workspaceId]);
@@ -187,8 +209,10 @@ export function Console({ debugController }: ConsoleProps) {
       icon: <FlaskConical size={14} />,
       ariaLabel: 'Tests, host POSIX scenarios',
     },
+    { id: 'lab', label: 'Lab', icon: <Boxes size={14} />, ariaLabel: 'Lab, recorded host scenario playback' },
     { id: 'learn', label: 'Learn', icon: <BookOpen size={14} />, ariaLabel: 'Learn, safe motor start-stop lesson' },
     { id: 'changes', label: 'Changes', icon: <FileDiff size={14} />, ariaLabel: 'Changes, candidate review' },
+    { id: 'agent', label: 'Agent', icon: <Bot size={14} />, ariaLabel: 'Agent, optional provider' },
     {
       id: 'trace',
       label: 'Trace',
@@ -252,7 +276,7 @@ export function Console({ debugController }: ConsoleProps) {
     const input = event.currentTarget;
     const file = input.files?.[0];
     input.value = '';
-    if (!file || !workspaceTests || workspaceTestBusy || !isProjectOpen || isVirtualProject) return;
+    if (!file || !workspaceTests || workspaceTestBusy || !isProjectOpen) return;
     const expectedProjectSession = projectSession;
     setWorkspaceTestBusy(true);
     try {
@@ -274,7 +298,7 @@ export function Console({ debugController }: ConsoleProps) {
 
   const saveWorkspaceProject = async () => {
     const current = useIDEStore.getState();
-    if (workspaceTestBusy || !current.isProjectOpen || current.isVirtualProject) return;
+    if (workspaceTestBusy || !current.isProjectOpen) return;
     const expectedProjectSession = current.projectSession;
     setWorkspaceTestBusy(true);
     try {
@@ -282,7 +306,6 @@ export function Console({ debugController }: ConsoleProps) {
       let latest = useIDEStore.getState();
       if (latest.projectSession !== expectedProjectSession
         || !latest.isProjectOpen
-        || latest.isVirtualProject
         || Array.from(latest.loadedFiles.values()).some((file) => file.isModified)) return;
 
       if (latest.projectConfigDirty) {
@@ -292,7 +315,6 @@ export function Console({ debugController }: ConsoleProps) {
       latest = useIDEStore.getState();
       if (latest.projectSession !== expectedProjectSession
         || !latest.isProjectOpen
-        || latest.isVirtualProject
         || latest.hasUnsavedChanges()) return;
     } finally {
       setWorkspaceTestBusy(false);
@@ -302,7 +324,7 @@ export function Console({ debugController }: ConsoleProps) {
   const runWorkspaceTests = async (scenarioId?: string) => {
     const current = useIDEStore.getState();
     const link = current.workspaceScenarioLink;
-    if (!workspaceTests || workspaceTestBusy || !current.isProjectOpen || current.isVirtualProject || current.hasUnsavedChanges() || !link || link.projectSession !== current.projectSession) return;
+    if (!workspaceTests || workspaceTestBusy || !current.isProjectOpen || current.hasUnsavedChanges() || !link || link.projectSession !== current.projectSession) return;
     const { workspaceId, projectSession: expectedProjectSession } = link;
     const expectedCompilerRunId = current.compilerRunId;
     setWorkspaceTestBusy(true);
@@ -328,7 +350,7 @@ export function Console({ debugController }: ConsoleProps) {
 
   const runWorkspaceSafetyCheck = async () => {
     const current = useIDEStore.getState(); const link = current.workspaceScenarioLink;
-    if (!workspaceTests || workspaceTestBusy || !current.isProjectOpen || current.isVirtualProject || current.hasUnsavedChanges() || !link || link.projectSession !== current.projectSession) return;
+    if (!workspaceTests || workspaceTestBusy || !current.isProjectOpen || current.hasUnsavedChanges() || !link || link.projectSession !== current.projectSession) return;
     const { workspaceId, projectSession: expectedProjectSession } = link; const expectedCompilerRunId = current.compilerRunId;
     let published = false;
     setWorkspaceTestBusy(true); setWorkspaceSafetyState({ status: 'running', projectSession: expectedProjectSession, compilerRunId: expectedCompilerRunId, workspaceId });
@@ -358,7 +380,8 @@ export function Console({ debugController }: ConsoleProps) {
       && current.activeFileId === snapshot.fileId
       && current.workspaceScenarioLink?.projectSession === snapshot.projectSession
       && current.workspaceScenarioLink.workspaceId === snapshot.workspaceId
-      && file?.path === snapshot.path && file.content === snapshot.content && file.handle === snapshot.handle && file.isModified;
+      && file?.path === snapshot.path && file.content === snapshot.editorContent && file.handle === snapshot.handle
+      && (snapshot.origin === 'manual' ? file.isModified : !file.isModified);
   };
 
   const reviewCandidateChange = async () => {
@@ -366,16 +389,16 @@ export function Console({ debugController }: ConsoleProps) {
     const file = current.activeFileId ? current.loadedFiles.get(current.activeFileId) : undefined;
     const link = current.workspaceScenarioLink;
     if (!candidateChangeSet || !workspaceTests || candidateReviewBusy.current || !file || !file.handle || !file.isModified || file.language !== 'ST' || !isCandidateSTPath(file.path)
-      || workspaceTestBusy || !current.isProjectOpen || current.isVirtualProject || !link || link.projectSession !== current.projectSession) return;
+      || workspaceTestBusy || !current.isProjectOpen || !link || link.projectSession !== current.projectSession) return;
     const generation = ++candidateReviewGeneration.current;
     candidateReviewBusy.current = true; setWorkspaceTestBusy(true); setCandidateReviewState({ kind: 'running' });
     try {
       const baseline = await readFileContent(file.handle);
       const [beforeSha256, afterSha256] = await Promise.all([sha256Text(baseline), sha256Text(file.content)]);
-      const snapshot: CandidateReviewSnapshot = { projectSession: current.projectSession, compilerRunId: current.compilerRunId, workspaceId: link.workspaceId, fileId: file.id, path: file.path, content: file.content, handle: file.handle, beforeSha256, afterSha256, baseline };
+      const snapshot: CandidateReviewSnapshot = { origin: 'manual', projectSession: current.projectSession, compilerRunId: current.compilerRunId, workspaceId: link.workspaceId, fileId: file.id, path: file.path, editorContent: file.content, candidate: file.content, handle: file.handle, beforeSha256, afterSha256, baseline };
       if (generation !== candidateReviewGeneration.current || !candidateSnapshotIsCurrent(snapshot)) return;
       if (beforeSha256 === afterSha256) { setCandidateReviewState({ kind: 'matches-disk' }); return; }
-      const result = await candidateChangeSet.review({ workspaceId: snapshot.workspaceId, edit: { path: snapshot.path, content: snapshot.content } });
+      const result = await candidateChangeSet.review({ workspaceId: snapshot.workspaceId, edit: { path: snapshot.path, content: snapshot.candidate } });
       if (generation !== candidateReviewGeneration.current || !candidateSnapshotIsCurrent(snapshot)) return;
       setCandidateReviewState({ kind: 'result', snapshot, presentation: presentCandidateChangeSetReview(result, snapshot) });
     } catch {
@@ -401,15 +424,124 @@ export function Console({ debugController }: ConsoleProps) {
     try {
       const diskHash = await sha256Text(await readFileContent(snapshot.handle));
       if (diskHash !== snapshot.beforeSha256 || !candidateSnapshotIsCurrent(snapshot)) { setCandidateReviewState({ kind: 'stale' }); return; }
+      if (snapshot.origin === 'agent') {
+        updateFileContent(snapshot.fileId, snapshot.candidate);
+        const changed = useIDEStore.getState().loadedFiles.get(snapshot.fileId);
+        if (!changed || changed.content !== snapshot.candidate || !changed.isModified) { setCandidateReviewState({ kind: 'stale' }); return; }
+      }
       if (await saveFile(snapshot.fileId)) setCandidateReviewState({ kind: 'saved' });
       else setCandidateReviewState({ kind: 'error' });
     } catch { setCandidateReviewState({ kind: 'error' }); }
     finally { candidateReviewBusy.current = false; setWorkspaceTestBusy(false); }
   };
 
+  const refreshAiProvider = useCallback(async () => {
+    await Promise.resolve();
+    if (!aiProvider) { setAgentState('unavailable'); setAgentStatus({ kind: 'invalid' }); return; }
+    setAgentState('loading');
+    try {
+      const [statusValue, configValue] = await Promise.all([aiProvider.getStatus(), aiProvider.getConfig()]);
+      const status = presentAiProviderStatus(statusValue); const config = presentAiProviderConfig(configValue);
+      setAgentStatus(status); if (config) setAgentConfig(config);
+      setAgentState(status.kind === 'invalid' ? 'unavailable' : 'idle');
+    } catch { setAgentState('unavailable'); }
+  }, [aiProvider]);
+
+  const agentEditFile = activeFile && activeFile.language === 'ST' && isCandidateSTPath(activeFile.path) && activeFile.handle && !activeFile.isModified ? activeFile : undefined;
+  const agentBusy = agentState === 'sending' || agentState === 'cancelling';
+  const agentProposalCurrent = typeof agentState === 'object' && agentState.kind === 'response' && agentState.expectedEdit !== undefined
+    && agentState.expectedEdit.projectSession === projectSession && agentState.expectedEdit.compilerRunId === compilerRunId && agentState.expectedEdit.workspaceId === workspaceScenarioLink?.workspaceId
+    && agentState.expectedEdit.fileId === activeFile?.id && agentState.expectedEdit.path === activeFile?.path && agentState.expectedEdit.content === activeFile?.content && agentState.expectedEdit.handle === activeFile?.handle && !activeFile?.isModified;
+  const agentCanSend = Boolean(aiProvider && !agentBusy && !agentSettingsBusy && agentStatus.kind === 'ready' && agentStatus.configured && agentStatus.enabled && hasCurrentWorkspaceLink && isProjectOpen && agentPrompt.trim().length > 0 && agentPrompt.length <= 4_000
+    && (agentMode !== 'edit' || agentEditFile));
+  const agentDiagnostics = liveSTDiagnostics.slice(0, 32).map(({ code, line, column }) => ({ code, ...(activeFile?.path ? { path: activeFile.path } : {}), ...(line === undefined ? {} : { line }), ...(column === undefined ? {} : { column }) }));
+  const agentTrace = nativeTrace.slice(-32).map((sample) => ({ atMs: sample.uptimeMs, signal: 'runtime.cycles', value: sample.cycles }));
+
+  const sendAgentRequest = async () => {
+    const current = useIDEStore.getState(); const link = current.workspaceScenarioLink; const file = current.activeFileId ? current.loadedFiles.get(current.activeFileId) : undefined;
+    if (!aiProvider || !link || link.projectSession !== current.projectSession || !current.isProjectOpen || !agentCanSend || (agentMode === 'edit' && (!file || file !== agentEditFile))) return;
+    setCandidateReviewState((state) => state.kind === 'result' ? { kind: 'stale' } : state);
+    setAgentState('sending');
+    try {
+      const request = {
+        workspaceId: link.workspaceId,
+        mode: agentMode,
+        prompt: agentPrompt.trim(),
+        ...(agentMode === 'edit' && file ? { activeFile: { fileId: file.id, path: file.path } } : {}),
+        ...(agentMode === 'debug' ? { diagnostics: agentDiagnostics, trace: agentTrace } : {}),
+      };
+      const response = await aiProvider.request(request);
+      const latest = useIDEStore.getState(); const latestFile = latest.activeFileId ? latest.loadedFiles.get(latest.activeFileId) : undefined;
+      if (latest.projectSession !== current.projectSession || latest.compilerRunId !== current.compilerRunId || latest.workspaceScenarioLink?.workspaceId !== link.workspaceId || (agentMode === 'edit' && (!latestFile || latestFile.id !== file?.id || latestFile.content !== file?.content || latestFile.isModified))) { setAgentState('error'); return; }
+      const baselineSha256 = agentMode === 'edit' && file ? await sha256Text(file.content) : undefined;
+      const expectedEdit = agentMode === 'edit' && file && baselineSha256 ? { projectSession: current.projectSession, compilerRunId: current.compilerRunId, workspaceId: link.workspaceId, fileId: file.id, path: file.path, content: file.content, handle: file.handle!, baselineSha256 } : undefined;
+      const presentation = presentAiProviderResponse(response, expectedEdit);
+      setAgentState({ kind: 'response', presentation, ...(expectedEdit ? { expectedEdit } : {}) });
+    } catch { setAgentState('error'); }
+  };
+
+  const reviewAgentProposal = async () => {
+    const current = useIDEStore.getState(); const link = current.workspaceScenarioLink; const file = current.activeFileId ? current.loadedFiles.get(current.activeFileId) : undefined;
+    const response = typeof agentState === 'object' && agentState.kind === 'response' ? agentState : undefined;
+    const expectedEdit = response?.expectedEdit;
+    if (!candidateChangeSet || !workspaceTests || candidateReviewBusy.current || !response || response.presentation.kind !== 'answer' || !response.presentation.replacement || !expectedEdit || !file || !file.handle || file.isModified || file.language !== 'ST' || !isCandidateSTPath(file.path) || !link || link.projectSession !== current.projectSession || workspaceTestBusy
+      || expectedEdit.projectSession !== current.projectSession || expectedEdit.compilerRunId !== current.compilerRunId || expectedEdit.workspaceId !== link.workspaceId || expectedEdit.fileId !== file.id || expectedEdit.path !== file.path || expectedEdit.content !== file.content || expectedEdit.handle !== file.handle) return;
+    const generation = ++candidateReviewGeneration.current; candidateReviewBusy.current = true; setWorkspaceTestBusy(true); setCandidateReviewState({ kind: 'running' });
+    try {
+      const baseline = await readFileContent(file.handle); const [beforeSha256, afterSha256] = await Promise.all([sha256Text(baseline), sha256Text(response.presentation.replacement.content)]);
+      if (baseline !== file.content || beforeSha256 !== expectedEdit.baselineSha256 || generation !== candidateReviewGeneration.current || file.content !== useIDEStore.getState().loadedFiles.get(file.id)?.content || beforeSha256 !== await sha256Text(file.content)) { setCandidateReviewState({ kind: 'stale' }); return; }
+      const snapshot: CandidateReviewSnapshot = { origin: 'agent', projectSession: current.projectSession, compilerRunId: current.compilerRunId, workspaceId: link.workspaceId, fileId: file.id, path: file.path, editorContent: file.content, candidate: response.presentation.replacement.content, handle: file.handle, beforeSha256, afterSha256, baseline };
+      if (!candidateSnapshotIsCurrent(snapshot)) return;
+      const result = await candidateChangeSet.review({ workspaceId: snapshot.workspaceId, edit: { path: snapshot.path, content: snapshot.candidate } });
+      if (generation !== candidateReviewGeneration.current || !candidateSnapshotIsCurrent(snapshot)) return;
+      setCandidateReviewState({ kind: 'result', snapshot, presentation: presentCandidateChangeSetReview(result, snapshot) });
+    } catch { if (generation === candidateReviewGeneration.current) setCandidateReviewState({ kind: 'error' }); }
+    finally { candidateReviewBusy.current = false; setWorkspaceTestBusy(false); }
+  };
+
+  const cancelAgentRequest = async () => {
+    if (!aiProvider || agentState !== 'sending') return;
+    setAgentState('cancelling'); setCandidateReviewState((state) => state.kind === 'result' ? { kind: 'stale' } : state);
+    try { await aiProvider.cancel(); } catch { /* the provider request remains authoritative */ }
+  };
+
+  const saveAgentConfig = async () => {
+    if (!aiProvider || agentBusy || agentSettingsBusy) return;
+    setAgentSettingsBusy(true); setAgentSettingsMessage(null);
+    try {
+      const result = presentAiProviderMutation(await aiProvider.saveConfig(agentConfig));
+      if (result.kind !== 'ok') { setAgentSettingsMessage(result.kind === 'error' ? `Configuration was not saved: ${result.code}.` : 'Configuration result could not be trusted.'); return; }
+      await refreshAiProvider(); setAgentSettingsMessage('Configuration saved.');
+    } catch { setAgentSettingsMessage('Configuration could not be saved.'); }
+    finally { setAgentSettingsBusy(false); }
+  };
+
+  const storeAgentKey = async () => {
+    if (!aiProvider || !agentKey || agentBusy || agentSettingsBusy) return;
+    setAgentSettingsBusy(true); setAgentSettingsMessage(null);
+    try {
+      const result = presentAiProviderMutation(await aiProvider.storeKey(agentKey));
+      if (result.kind !== 'ok') { setAgentSettingsMessage(result.kind === 'error' ? `Key was not stored: ${result.code}.` : 'Key storage result could not be trusted.'); return; }
+      setAgentKey(''); await refreshAiProvider(); setAgentSettingsMessage('Key stored.');
+    } catch { setAgentSettingsMessage('Key could not be stored.'); }
+    finally { setAgentSettingsBusy(false); }
+  };
+
+  const clearAgentKey = async () => {
+    if (!aiProvider || agentBusy || agentSettingsBusy) return;
+    setAgentSettingsBusy(true); setAgentSettingsMessage(null);
+    try {
+      const result = presentAiProviderMutation(await aiProvider.clearKey());
+      if (result.kind !== 'ok') { setAgentSettingsMessage(result.kind === 'error' ? `Key was not cleared: ${result.code}.` : 'Key clear result could not be trusted.'); return; }
+      await refreshAiProvider(); setAgentSettingsMessage('Stored key cleared.');
+    } catch { setAgentSettingsMessage('Key could not be cleared.'); }
+    finally { setAgentSettingsBusy(false); }
+  };
+
   const beforeMountDiff = (monaco: Monaco) => {
     monaco.editor.defineTheme(ZPLC_DARK_THEME_ID, ZPLC_DARK_THEME);
     monaco.editor.defineTheme(ZPLC_LIGHT_THEME_ID, ZPLC_LIGHT_THEME);
+    monaco.editor.defineTheme(ZPLC_HIGH_CONTRAST_THEME_ID, ZPLC_HIGH_CONTRAST_THEME);
   };
 
   // Collapsed state - just show header bar
@@ -458,12 +590,13 @@ export function Console({ debugController }: ConsoleProps) {
               aria-controls={`console-panel-${tab.id}`}
               aria-label={tab.ariaLabel}
               tabIndex={activeConsoleTab === tab.id ? 0 : -1}
-              onClick={() => setActiveConsoleTab(tab.id)}
+              onClick={() => { setActiveConsoleTab(tab.id); if (tab.id === 'agent') void refreshAiProvider(); }}
               onKeyDown={(event) => {
                 const nextTab = consoleTabAfterKey(tabs.map(({ id }) => id), activeConsoleTab, event.key);
                 if (!nextTab) return;
                 event.preventDefault();
                 setActiveConsoleTab(nextTab);
+                if (nextTab === 'agent') void refreshAiProvider();
                 document.getElementById(`console-tab-${nextTab}`)?.focus();
               }}
               className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap px-3 py-1 text-sm transition-colors ${
@@ -560,7 +693,6 @@ export function Console({ debugController }: ConsoleProps) {
               {workspaceTestAvailabilityState === 'unsaved' && <p role="status" className="text-xs text-[var(--color-surface-400)]">Save all changes before checking declared interlocks.</p>}
               {workspaceTestAvailabilityState === 'desktop-unavailable' && <p role="status" className="text-xs text-[var(--color-surface-400)]">Declared interlock coverage requires the desktop app.</p>}
               {workspaceTestAvailabilityState === 'project-required' && <p role="status" className="text-xs text-[var(--color-surface-400)]">Open a saved project folder to check declared interlocks.</p>}
-              {workspaceTestAvailabilityState === 'virtual-project' && <p role="status" className="text-xs text-[var(--color-surface-400)]">Declared interlock coverage is available only for a saved project folder.</p>}
               {workspaceSafetyStateForLink === 'unavailable' && <p role="status" className="text-xs text-[var(--color-accent-yellow)]">Declared interlock coverage is unavailable.</p>}
               {typeof workspaceSafetyStateForLink === 'object' && <SafetyCoverageReport presentation={workspaceSafetyStateForLink.presentation} />}
               <p className="text-xs text-[var(--color-surface-400)]">Checks exact NEVER coverage in saved scenarios. It does not establish physical safety, timing, or certification.</p>
@@ -628,8 +760,6 @@ export function Console({ debugController }: ConsoleProps) {
               <p role="status" aria-live="polite" className="flex items-center gap-2 text-[var(--color-surface-400)]"><Info size={15} aria-hidden="true" />Workspace tests require the desktop app.</p>
             ) : workspaceTestAvailabilityState === 'project-required' ? (
               <p role="status" aria-live="polite" className="flex items-center gap-2 text-[var(--color-surface-400)]"><Info size={15} aria-hidden="true" />Open a local project before linking workspace tests.</p>
-            ) : workspaceTestAvailabilityState === 'virtual-project' ? (
-              <p role="status" aria-live="polite" className="flex items-center gap-2 text-[var(--color-surface-400)]"><Info size={15} aria-hidden="true" />Workspace tests are available only for a local project folder.</p>
             ) : (
               <>
                 <div className="flex flex-wrap items-center gap-2">
@@ -720,14 +850,14 @@ export function Console({ debugController }: ConsoleProps) {
           <div className="min-h-full p-3 font-sans text-sm text-[var(--color-surface-200)]">
             <div className="border border-[var(--color-surface-600)] bg-[var(--color-surface-800)] p-3">
               <div className="flex flex-wrap items-center gap-2">
-                {!hasCurrentWorkspaceLink && isProjectOpen && !isVirtualProject && candidateDesktopReady && (
+                {!hasCurrentWorkspaceLink && isProjectOpen && candidateDesktopReady && (
                   <button type="button" onClick={() => workspaceManifestInputRef.current?.click()} disabled={workspaceTestBusy} className="inline-flex items-center gap-1.5 border border-[var(--color-surface-600)] px-2.5 py-1.5 hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"><FolderOpen size={14} aria-hidden="true" />Choose zplc.json</button>
                 )}
                 <button type="button" onClick={() => { void reviewCandidateChange(); }} disabled={!candidateEligible || workspaceTestBusy} className="inline-flex items-center gap-1.5 bg-[var(--color-accent-blue)] px-2.5 py-1.5 text-white hover:bg-[var(--color-accent-blue)]/80 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"><FileDiff size={14} aria-hidden="true" />Review active ST change</button>
                 {candidateReviewStateForCurrent.kind === 'running' && <button type="button" onClick={() => { void cancelCandidateReview(); }} className="inline-flex items-center gap-1.5 border border-[var(--color-surface-600)] px-2.5 py-1.5 hover:bg-[var(--color-surface-700)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]">Cancel review</button>}
               </div>
               {!candidateDesktopReady ? <p role="status" aria-live="polite" className="mt-3">Candidate review requires the desktop app.</p>
-                : !isProjectOpen || isVirtualProject ? <p role="status" aria-live="polite" className="mt-3">Open a saved project folder to review a change.</p>
+                : !isProjectOpen ? <p role="status" aria-live="polite" className="mt-3">Open a saved project folder to review a change.</p>
                   : !hasCurrentWorkspaceLink ? <p role="status" aria-live="polite" className="mt-3">Choose the saved workspace zplc.json before reviewing the active file.</p>
                     : !candidateEligible ? <p role="status" aria-live="polite" className="mt-3">Only a modified active Structured Text file under src/ can enter the candidate. Other unsaved buffers remain outside it.</p>
                       : <p className="mt-3 text-[var(--color-surface-300)]">Only the active Structured Text buffer enters this candidate. Other unsaved buffers remain outside it.</p>}
@@ -743,7 +873,31 @@ export function Console({ debugController }: ConsoleProps) {
               {candidateReviewStateForCurrent.kind === 'error' && <p>Candidate review could not be completed. Review again.</p>}
               {candidateReviewStateForCurrent.kind === 'saved' && <p>Reviewed change saved. Review is no longer current.</p>}
             </div>
-            {candidateReviewStateForCurrent.kind === 'result' && <CandidateReviewResult state={candidateReviewStateForCurrent} isDark={isDark} beforeMount={beforeMountDiff} onSave={saveReviewedChange} busy={workspaceTestBusy} />}
+            {candidateReviewStateForCurrent.kind === 'result' && <CandidateReviewResult state={candidateReviewStateForCurrent} effectiveTheme={effectiveTheme} beforeMount={beforeMountDiff} onSave={saveReviewedChange} busy={workspaceTestBusy} />}
+          </div>
+        )}
+
+        {activeConsoleTab === 'agent' && (
+          <div className="min-h-full p-3 font-sans text-sm text-[var(--color-surface-200)]">
+            <section aria-label="Optional Agent" className="max-w-3xl space-y-3 border border-[var(--color-surface-600)] bg-[var(--color-surface-800)] p-3">
+              <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--color-surface-600)] pb-2">
+                <div><h2 className="font-medium text-[var(--color-surface-100)]">Agent</h2><p className="mt-1 text-xs text-[var(--color-surface-400)]">Provider response — not evidence. It cannot operate hardware.</p></div>
+                <button type="button" onClick={() => { if (!agentBusy && !agentSettingsBusy) void refreshAiProvider(); }} disabled={agentState === 'loading' || agentBusy || agentSettingsBusy} className="border border-[var(--color-surface-600)] px-2 py-1 text-xs hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]">Refresh status</button>
+              </div>
+              <div role="radiogroup" aria-label="Agent mode" className="flex flex-wrap gap-1">
+                {(['ask', 'plan', 'edit', 'debug'] as const).map((mode, index, modes) => <button key={mode} type="button" role="radio" aria-checked={agentMode === mode} tabIndex={agentMode === mode ? 0 : -1} disabled={agentBusy} onClick={() => { if (!agentBusy) { setAgentMode(mode); setAgentState('idle'); } }} onKeyDown={(event) => { if (agentBusy) return; const next = event.key === 'ArrowRight' ? modes[(index + 1) % modes.length] : event.key === 'ArrowLeft' ? modes[(index + modes.length - 1) % modes.length] : undefined; if (next) { event.preventDefault(); setAgentMode(next); document.getElementById(`agent-mode-${next}`)?.focus(); } }} id={`agent-mode-${mode}`} className={`border px-2.5 py-1 text-xs font-medium capitalize focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)] disabled:cursor-not-allowed disabled:opacity-60 ${agentMode === mode ? 'border-[var(--color-accent-blue)] text-[var(--color-surface-100)]' : 'border-[var(--color-surface-600)] text-[var(--color-surface-300)] hover:bg-[var(--color-surface-700)]'}`}>{mode}</button>)}
+              </div>
+              <label className="block text-xs font-medium text-[var(--color-surface-200)]">Request<textarea value={agentPrompt} disabled={agentBusy} maxLength={4_000} onChange={(event) => { if (!agentBusy) setAgentPrompt(event.target.value); }} rows={4} placeholder="Describe what you want to understand or review." className="mt-1 block w-full resize-y border border-[var(--color-surface-600)] bg-[var(--color-surface-900)] p-2 text-sm text-[var(--color-surface-100)] placeholder:text-[var(--color-surface-500)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]" /></label>
+              <p className="text-xs tabular-nums text-[var(--color-surface-400)]">{agentPrompt.length}/4000 characters</p>
+              <section aria-label="Agent context preview" className="border-y border-[var(--color-surface-600)] py-2 text-xs text-[var(--color-surface-300)]">
+                <h3 className="font-medium text-[var(--color-surface-200)]">Context preview</h3>
+                <ul className="mt-1 list-disc space-y-1 pl-4"><li>Mode: {agentMode}; prompt length: {agentPrompt.trim().length}.</li><li>Workspace: {hasCurrentWorkspaceLink ? 'linked saved workspace' : 'link zplc.json in Tests before sending'}.</li>{agentMode === 'edit' && <li>{agentEditFile ? `Host will reread saved ${agentEditFile.path}; editor changes are excluded.` : 'Edit requires the active saved, unmodified Structured Text file under src/.'}</li>}{agentMode === 'debug' && <li>Bounded diagnostics: {agentDiagnostics.length}; host trace samples: {agentTrace.length}.</li>}{(agentMode === 'ask' || agentMode === 'plan') && <li>No source file or active editor content is sent.</li>}<li>Do not put secrets in the prompt. Known sensitive patterns in the prompt or context are rejected before network access; do not paste secrets. Terminal, raw serial, and physical controls are excluded.</li></ul>
+              </section>
+              <div className="flex flex-wrap gap-2"><button type="button" onClick={() => { void sendAgentRequest(); }} disabled={!agentCanSend} className="inline-flex items-center gap-1.5 border border-[var(--color-accent-blue)] bg-[var(--color-accent-blue)] px-2.5 py-1.5 text-xs font-medium text-white hover:bg-[var(--color-accent-blue)]/80 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"><Send size={14} aria-hidden="true" />Send request</button>{agentBusy && <button type="button" onClick={() => { void cancelAgentRequest(); }} disabled={agentState === 'cancelling'} className="inline-flex items-center gap-1.5 border border-[var(--color-surface-600)] px-2.5 py-1.5 text-xs hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"><CircleStop size={14} aria-hidden="true" />Cancel request</button>}</div>
+              <AgentStatus state={agentState} status={agentStatus} />
+              {typeof agentState === 'object' && agentState.kind === 'response' && <section className="space-y-2 border-t border-[var(--color-surface-600)] pt-2"><p className="whitespace-pre-wrap text-[var(--color-surface-100)]">{agentState.presentation.kind === 'answer' ? agentState.presentation.answer : agentState.presentation.kind === 'error' ? `Provider request failed: ${agentState.presentation.code}.` : 'Provider response could not be trusted.'}</p><p className="text-xs text-[var(--color-surface-400)]">Provider response — not evidence.</p>{agentState.presentation.kind === 'answer' && agentState.presentation.replacement && (agentProposalCurrent ? <button type="button" onClick={() => { void reviewAgentProposal(); }} disabled={workspaceTestBusy || !agentEditFile} className="inline-flex items-center gap-1.5 border border-[var(--color-accent-blue)] px-2.5 py-1.5 text-xs font-medium text-[var(--color-surface-100)] hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"><FileDiff size={14} aria-hidden="true" />Review proposed ST change</button> : <p role="status" className="text-xs text-[var(--color-accent-yellow)]">Proposed change is stale. Send a new request.</p>)}</section>}
+              <details open={agentSettingsOpen} onToggle={(event) => { if (agentBusy) { event.currentTarget.open = agentSettingsOpen; return; } setAgentSettingsOpen(event.currentTarget.open); }} className="border-t border-[var(--color-surface-600)] pt-2"><summary aria-disabled={agentBusy} className="cursor-pointer text-xs font-medium text-[var(--color-surface-200)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]">Provider settings</summary><fieldset disabled={agentBusy || agentSettingsBusy} className="mt-2 disabled:opacity-60"><div className="grid gap-2 sm:grid-cols-2"><label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={agentConfig.enabled} onChange={(event) => setAgentConfig((config) => ({ ...config, enabled: event.target.checked }))} />Enabled</label><label className="text-xs">Endpoint<input value={agentConfig.endpoint} onChange={(event) => setAgentConfig((config) => ({ ...config, endpoint: event.target.value }))} className="mt-1 block w-full border border-[var(--color-surface-600)] bg-[var(--color-surface-900)] px-2 py-1 text-[var(--color-surface-100)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]" /></label><label className="text-xs">Model<input value={agentConfig.model} onChange={(event) => setAgentConfig((config) => ({ ...config, model: event.target.value }))} className="mt-1 block w-full border border-[var(--color-surface-600)] bg-[var(--color-surface-900)] px-2 py-1 text-[var(--color-surface-100)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]" /></label><label className="text-xs">API key<input type="password" value={agentKey} onChange={(event) => setAgentKey(event.target.value)} autoComplete="new-password" className="mt-1 block w-full border border-[var(--color-surface-600)] bg-[var(--color-surface-900)] px-2 py-1 text-[var(--color-surface-100)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]" /></label></div><div className="mt-2 flex flex-wrap gap-2"><button type="button" onClick={() => { void saveAgentConfig(); }} disabled={!aiProvider} className="border border-[var(--color-surface-600)] px-2 py-1 text-xs hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]">Save configuration</button><button type="button" onClick={() => { void storeAgentKey(); }} disabled={!aiProvider || !agentKey} className="border border-[var(--color-surface-600)] px-2 py-1 text-xs hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]">Store key</button><button type="button" onClick={() => { void clearAgentKey(); }} disabled={!aiProvider} className="border border-[var(--color-surface-600)] px-2 py-1 text-xs hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]">Clear key</button></div></fieldset>{agentSettingsMessage && <p role="status" className="mt-2 text-xs text-[var(--color-surface-300)]">{agentSettingsMessage}</p>}</details>
+            </section>
           </div>
         )}
 
@@ -782,6 +936,15 @@ export function Console({ debugController }: ConsoleProps) {
           </div>
         )}
 
+        {activeConsoleTab === 'lab' && (
+          <LabPanel
+            presentation={typeof workspaceTestStateForLink === 'object' ? workspaceTestStateForLink.presentation : null}
+            runDisabled={workspaceTestAvailabilityState !== 'ready'}
+            running={workspaceTestBusy}
+            onRun={() => { void runWorkspaceTests(); }}
+          />
+        )}
+
         {activeConsoleTab === 'terminal' && (
           <TerminalTab isActive={activeConsoleTab === 'terminal'} />
         )}
@@ -799,7 +962,7 @@ export function Console({ debugController }: ConsoleProps) {
   );
 }
 
-function CandidateReviewResult({ state, isDark, beforeMount, onSave, busy }: { state: Extract<CandidateReviewState, { kind: 'result' }>; isDark: boolean; beforeMount: (monaco: Monaco) => void; onSave: () => void; busy: boolean }) {
+function CandidateReviewResult({ state, effectiveTheme, beforeMount, onSave, busy }: { state: Extract<CandidateReviewState, { kind: 'result' }>; effectiveTheme: 'light' | 'dark' | 'high-contrast'; beforeMount: (monaco: Monaco) => void; onSave: () => void; busy: boolean }) {
   const { presentation, snapshot } = state;
   const accepted = presentation.kind === 'accepted';
   return (
@@ -811,15 +974,26 @@ function CandidateReviewResult({ state, isDark, beforeMount, onSave, busy }: { s
         {presentation.savedTestInputIdentity && <div className="flex justify-between gap-2 sm:col-span-2"><dt>Saved input identity</dt><dd className="break-all tabular-nums" title={presentation.savedTestInputIdentity.sha256} aria-label={`Saved input identity SHA-256 ${presentation.savedTestInputIdentity.sha256}`}>{presentation.savedTestInputIdentity.sha256.slice(0, 12)} · {presentation.savedTestInputIdentity.fileCount} files</dd></div>}
         {presentation.diagnostics.map((diagnostic) => <div key={diagnostic.code} className="sm:col-span-2"><dt className="inline">Diagnostic </dt><dd className="inline">{diagnostic.code}</dd></div>)}
       </dl>
-      <div className="grid gap-1 text-xs text-[var(--color-surface-300)] sm:grid-cols-2"><span>Saved on disk</span><span>Current editor buffer</span></div>
+      <div className="grid gap-1 text-xs text-[var(--color-surface-300)] sm:grid-cols-2"><span>Saved on disk</span><span>{snapshot.origin === 'agent' ? 'Proposed ST change' : 'Current editor buffer'}</span></div>
       <div className="h-72 border border-[var(--color-surface-600)]">
-        <DiffEditor original={snapshot.baseline} modified={snapshot.content} language="st" theme={isDark ? ZPLC_DARK_THEME_ID : ZPLC_LIGHT_THEME_ID} beforeMount={beforeMount} options={{ readOnly: true, automaticLayout: true, minimap: { enabled: false }, wordWrap: 'on', accessibilitySupport: 'on', scrollBeyondLastLine: false, renderSideBySide: true }} />
+        <DiffEditor original={snapshot.baseline} modified={snapshot.candidate} language="st" theme={effectiveTheme === 'high-contrast' ? ZPLC_HIGH_CONTRAST_THEME_ID : effectiveTheme === 'dark' ? ZPLC_DARK_THEME_ID : ZPLC_LIGHT_THEME_ID} beforeMount={beforeMount} options={{ readOnly: true, automaticLayout: true, minimap: { enabled: false }, wordWrap: 'on', accessibilitySupport: 'on', scrollBeyondLastLine: false, renderSideBySide: true }} />
       </div>
       <p className="text-xs text-[var(--color-surface-400)]">Native POSIX host evidence — not hardware or HIL evidence.</p>
       <p className="text-xs text-[var(--color-surface-400)]">No file has been written.</p>
       {accepted && <button type="button" onClick={onSave} disabled={busy} className="border border-[var(--color-accent-blue)] px-2.5 py-1.5 text-[var(--color-surface-100)] hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]">Save reviewed change</button>}
     </section>
   );
+}
+
+function AgentStatus({ state, status }: { state: AgentState; status: AiProviderStatusPresentation }) {
+  if (state === 'loading') return <p role="status" className="text-xs text-[var(--color-surface-400)]">Checking provider configuration…</p>;
+  if (state === 'sending') return <p role="status" className="text-xs text-[var(--color-surface-300)]">Sending explicit provider request…</p>;
+  if (state === 'cancelling') return <p role="status" className="text-xs text-[var(--color-surface-300)]">Cancelling provider request…</p>;
+  if (state === 'unavailable') return <p role="status" className="text-xs text-[var(--color-accent-yellow)]">Agent is unavailable in this host. Use the desktop app and configure a supported vault.</p>;
+  if (state === 'error') return <p role="status" className="text-xs text-[var(--color-accent-yellow)]">Agent request is no longer current or could not be completed. Review the context and try again.</p>;
+  if (status.kind === 'invalid') return <p role="status" className="text-xs text-[var(--color-surface-400)]">Provider status has not been confirmed.</p>;
+  if (status.kind === 'unavailable') return <p role="status" className="text-xs text-[var(--color-accent-yellow)]">Vault unavailable{status.vaultReason ? `: ${status.vaultReason}` : ''}. Keys are not stored here.</p>;
+  return <p role="status" className="text-xs text-[var(--color-surface-400)]">Provider {status.enabled ? 'enabled' : 'disabled'} · key {status.keyStored ? 'stored' : 'not stored'} · vault available.</p>;
 }
 
 function LiveNativeMotorPanel(props: Omit<Parameters<typeof presentLiveNativeMotorControls>[0], 'nowMs'> & {

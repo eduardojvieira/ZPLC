@@ -27,8 +27,16 @@ const SCENARIO_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const FIRMWARE_BUILD_ID = /^[a-z0-9][a-z0-9_]{0,63}$/;
 const SHA256 = /^[0-9a-f]{64}$/;
 const CANDIDATE_PATH = /^src\/[^/\\\0\r\n]+\.st$/;
+const AI_MODE = new Set(['ask', 'plan', 'edit', 'debug']);
 const DIAGNOSTIC_CODE = /^[A-Z][A-Z0-9_]{0,95}$/;
 const EVIDENCE_SCOPE = 'native-posix-host';
+const EXECUTION_JOB_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const EXECUTION_ACTORS = new Set(['human-studio', 'cli', 'mcp', 'agent']);
+const EXECUTION_PERMISSION_BY_OPERATION = Object.freeze({
+  cli: 'compiler:check', inspect: 'project:read', 'migrate-preview': 'project:read', migrate: 'project:migrate', validate: 'project:read',
+  check: 'compiler:check', compile: 'compiler:check', 'symbols-list': 'compiler:check', 'safety-check': 'safety:check',
+  test: 'tests:run', 'scenario-run': 'tests:run', 'change-set-review': 'tests:run', 'toolchain-inspect': 'toolchain:inspect', 'firmware-build-plan': 'firmware:build', 'firmware-build': 'firmware:build',
+});
 export const DEFAULT_DEVELOPMENT_RENDERER_PORT = 3000;
 const DEVELOPMENT_RENDERER_PORT = /^(?:[1-9][0-9]*)$/;
 
@@ -46,6 +54,7 @@ export function trustedDevelopmentRendererUrl(port = DEFAULT_DEVELOPMENT_RENDERE
 const SAFETY_SIGNAL = /^[A-Za-z_][A-Za-z0-9_]{0,63}\.[A-Za-z_][A-Za-z0-9_]{0,63}$/;
 const SAFETY_DIAGNOSTIC_CODES = new Set([
   'SAFETY_OUTPUT_INVALID', 'SAFETY_OUTPUT_DUPLICATE', 'SAFETY_INTERLOCK_UNCOVERED', 'SAFETY_SCENARIO_INVALID', 'SAFETY_SCENARIOS_UNAVAILABLE',
+  'SAFETY_UNBOUNDED_WHILE', 'SAFETY_UNBOUNDED_REPEAT',
   'WORKSPACE_INVALID', 'WORKSPACE_MISSING', 'WORKSPACE_INVALID_DIRECTORY', 'WORKSPACE_SYMLINK', 'WORKSPACE_INVALID_FILE', 'WORKSPACE_READ_FAILED', 'WORKSPACE_LIMIT', 'PROJECT_INVALID', 'PROGRAM_NOT_FOUND', 'COMPILATION_FAILED',
 ]);
 const CANDIDATE_CONTENT_MAX_LENGTH = 256 * 1024;
@@ -87,7 +96,7 @@ function safeRecord(value: unknown): Record<string, unknown> | null {
     const record = value as Record<string, unknown>;
     for (const key of Object.getOwnPropertyNames(record)) {
       const descriptor = Object.getOwnPropertyDescriptor(record, key);
-      if (!descriptor || !('value' in descriptor)) return null;
+      if (!descriptor || !descriptor.enumerable || !('value' in descriptor)) return null;
     }
     return record;
   } catch { return null; }
@@ -288,6 +297,51 @@ export function isAllowedCandidateChangeSetReviewRequest(value: unknown): value 
     && content.length <= CANDIDATE_CONTENT_MAX_LENGTH;
 }
 
+function safeAiDiagnostic(value: unknown): boolean {
+  const diagnostic = safeExactRecord(value, ['code']) ?? safeExactRecord(value, ['code', 'path']) ?? safeExactRecord(value, ['code', 'path', 'line']) ?? safeExactRecord(value, ['code', 'path', 'line', 'column']);
+  if (!diagnostic || typeof ownValue(diagnostic, 'code') !== 'string' || !DIAGNOSTIC_CODE.test(ownValue(diagnostic, 'code') as string)) return false;
+  const path = ownValue(diagnostic, 'path'); const line = ownValue(diagnostic, 'line'); const column = ownValue(diagnostic, 'column');
+  return (path === undefined || Boolean(safeEvidencePath(path))) && (line === undefined || Boolean(safeEvidenceLocation(line))) && (column === undefined || Boolean(safeEvidenceLocation(column)));
+}
+
+function safeAiTrace(value: unknown): boolean {
+  const trace = safeExactRecord(value, ['atMs', 'signal', 'value']);
+  if (!trace) return false;
+  const atMs = ownValue(trace, 'atMs'); const signal = ownValue(trace, 'signal'); const signalValue = ownValue(trace, 'value');
+  return typeof atMs === 'number' && Number.isSafeInteger(atMs) && atMs >= 0 && atMs <= 86_400_000
+    && typeof signal === 'string' && /^[A-Za-z_][A-Za-z0-9_.]{0,127}$/.test(signal)
+    && ((typeof signalValue === 'boolean') || (typeof signalValue === 'number' && Number.isFinite(signalValue) && Math.abs(signalValue) <= 1e12));
+}
+
+/** Rejects every renderer-controlled provider, source, filesystem, and physical-control field. */
+export function isAllowedAiProviderRequest(value: unknown): value is { workspaceId: string; mode: 'ask' | 'plan' | 'edit' | 'debug'; prompt: string; activeFile?: { fileId: string; path: string }; diagnostics?: Array<{ code: string; path?: string; line?: number; column?: number }>; trace?: Array<{ atMs: number; signal: string; value: boolean | number }> } {
+  const request = safeRecord(value);
+  if (!request) return false;
+  const keys = Object.getOwnPropertyNames(request);
+  if (!keys.every((key) => ['workspaceId', 'mode', 'prompt', 'activeFile', 'diagnostics', 'trace'].includes(key))) return false;
+  const workspaceId = ownValue(request, 'workspaceId'); const mode = ownValue(request, 'mode'); const prompt = ownValue(request, 'prompt');
+  if (typeof workspaceId !== 'string' || !WORKSPACE_ID.test(workspaceId) || typeof mode !== 'string' || !AI_MODE.has(mode) || typeof prompt !== 'string' || prompt.length === 0 || Buffer.byteLength(prompt) > 4 * 1024) return false;
+  const activeFile = ownValue(request, 'activeFile'); const diagnostics = ownValue(request, 'diagnostics'); const trace = ownValue(request, 'trace');
+  if (mode === 'edit') {
+    const file = safeExactRecord(activeFile, ['fileId', 'path']);
+    const path = file && ownValue(file, 'path'); const fileId = file && ownValue(file, 'fileId');
+    if (!file || typeof path !== 'string' || !CANDIDATE_PATH.test(path) || fileId !== `file:${path}`) return false;
+  } else if (activeFile !== undefined) return false;
+  const allowedDiagnostics = diagnostics === undefined ? [] : safeDenseArray(diagnostics, 32);
+  const allowedTrace = trace === undefined ? [] : safeDenseArray(trace, 32);
+  if (!allowedDiagnostics || !allowedTrace || !allowedDiagnostics.every(safeAiDiagnostic) || !allowedTrace.every(safeAiTrace)) return false;
+  return mode === 'debug' || (diagnostics === undefined && trace === undefined);
+}
+
+export function isAllowedAiProviderConfig(value: unknown): value is { enabled: boolean; endpoint: string; model: string } {
+  const config = safeExactRecord(value, ['enabled', 'endpoint', 'model']);
+  return Boolean(config && typeof ownValue(config, 'enabled') === 'boolean' && typeof ownValue(config, 'endpoint') === 'string' && typeof ownValue(config, 'model') === 'string');
+}
+
+export function isAllowedAiProviderKey(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0 && Buffer.byteLength(value) <= 16 * 1024 && !/\s/.test(value) && !Array.from(value).some((character) => { const code = character.codePointAt(0) ?? 0; return code < 0x20 || code === 0x7F; });
+}
+
 function safeSha256(value: unknown): string | undefined {
   return typeof value === 'string' && value.length === 64 && SHA256.test(value) ? value : undefined;
 }
@@ -307,6 +361,24 @@ function safeEvidencePath(value: unknown): string | undefined {
 
 function safeEvidenceLocation(value: unknown): number | undefined {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= 1 && value <= 1_000_000 ? value : undefined;
+}
+
+function safeExecutionTimestamp(value: unknown): string | undefined {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value)) return undefined;
+  const parsed = Date.parse(value); return Number.isFinite(parsed) && new Date(parsed).toISOString() === value ? value : undefined;
+}
+
+/** Projects metadata only. This intentionally excludes roots, request payloads, logs, values, and source text. */
+export function sanitizeToolExecution(value: unknown): { schemaVersion: 1; jobId: string; actor: string; permission: string; operation: string; outcome: 'passed' | 'failed' | 'cancelled'; startedAt: string; finishedAt: string } | null {
+  const execution = safeExactRecord(value, ['schemaVersion', 'jobId', 'actor', 'permission', 'operation', 'outcome', 'startedAt', 'finishedAt']);
+  if (!execution || ownValue(execution, 'schemaVersion') !== 1) return null;
+  const jobId = ownValue(execution, 'jobId'); const actor = ownValue(execution, 'actor'); const permission = ownValue(execution, 'permission'); const operation = ownValue(execution, 'operation'); const outcome = ownValue(execution, 'outcome');
+  const startedAt = safeExecutionTimestamp(ownValue(execution, 'startedAt')); const finishedAt = safeExecutionTimestamp(ownValue(execution, 'finishedAt'));
+  if (typeof jobId !== 'string' || !EXECUTION_JOB_ID.test(jobId) || typeof actor !== 'string' || !EXECUTION_ACTORS.has(actor)
+    || typeof operation !== 'string' || !Object.hasOwn(EXECUTION_PERMISSION_BY_OPERATION, operation)
+    || typeof permission !== 'string' || permission !== EXECUTION_PERMISSION_BY_OPERATION[operation as keyof typeof EXECUTION_PERMISSION_BY_OPERATION]
+    || (outcome !== 'passed' && outcome !== 'failed' && outcome !== 'cancelled') || !startedAt || !finishedAt || Date.parse(finishedAt) < Date.parse(startedAt)) return null;
+  return { schemaVersion: 1, jobId, actor, permission, operation, outcome, startedAt, finishedAt };
 }
 
 function safeCandidateDiagnostic(value: unknown): { code: string } | null {
@@ -407,14 +479,20 @@ function safeSafetyPairs(value: unknown): SafetyPair[] | null {
   return new Set(keys).size === keys.length ? pairs as SafetyPair[] : null;
 }
 
-function safeSafetyDiagnostic(value: unknown): { code: string; path?: string } | null {
+function safeSafetyDiagnostic(value: unknown): { code: string; path?: string; line?: number; column?: number } | null {
   const diagnostic = safeRecord(value);
   if (!diagnostic) return null;
-  const code = ownValue(diagnostic, 'code'); const path = ownValue(diagnostic, 'path');
-  if (typeof code !== 'string' || !SAFETY_DIAGNOSTIC_CODES.has(code)) return null;
-  if (path === undefined) return safeExactRecord(diagnostic, ['code']) ? { code } : null;
-  const safePath = safeEvidencePath(path);
-  return safePath && safeExactRecord(diagnostic, ['code', 'path']) ? { code, path: safePath } : null;
+  const keys = Object.getOwnPropertyNames(diagnostic);
+  if (!keys.every((key) => ['code', 'path', 'line', 'column', 'message', 'phase'].includes(key))) return null;
+  const code = ownValue(diagnostic, 'code');
+  const rawPath = ownValue(diagnostic, 'path'); const rawLine = ownValue(diagnostic, 'line'); const rawColumn = ownValue(diagnostic, 'column');
+  const path = safeEvidencePath(rawPath); const line = safeEvidenceLocation(rawLine); const column = safeEvidenceLocation(rawColumn);
+  const message = ownValue(diagnostic, 'message'); const phase = ownValue(diagnostic, 'phase');
+  if (typeof code !== 'string' || !SAFETY_DIAGNOSTIC_CODES.has(code)
+    || (rawPath !== undefined && !path) || (rawLine !== undefined && !line) || (rawColumn !== undefined && !column)
+    || (message !== undefined && (typeof message !== 'string' || message.length > 512))
+    || (phase !== undefined && (typeof phase !== 'string' || phase.length > 64))) return null;
+  return { code, ...(path ? { path } : {}), ...(line ? { line } : {}), ...(column ? { column } : {}) };
 }
 
 /** Projects the bounded logical interlock report; it deliberately carries no runtime or physical evidence. */
@@ -422,14 +500,16 @@ export function sanitizeWorkspaceSafetyCheck(value: unknown): unknown | null {
   try {
     const result = safeRecord(value);
     if (!result || !Object.hasOwn(result, 'ok') || !Object.hasOwn(result, 'evidence')
-      || Object.getOwnPropertyNames(result).length < 2 || Object.getOwnPropertyNames(result).length > 3
+      || Object.getOwnPropertyNames(result).length < 2 || Object.getOwnPropertyNames(result).length > 4
       || typeof ownValue(result, 'ok') !== 'boolean') return null;
     const ok = ownValue(result, 'ok') as boolean;
     const summaryValue = ownValue(result, 'summary');
     const hasSummary = summaryValue !== undefined;
     if (!hasSummary && ok) return null;
-    if (hasSummary && !safeExactRecord(result, ['ok', 'summary', 'evidence'])) return null;
-    if (!hasSummary && !safeExactRecord(result, ['ok', 'evidence'])) return null;
+    const executionValue = ownValue(result, 'execution'); const execution = executionValue === undefined ? undefined : sanitizeToolExecution(executionValue);
+    if (executionValue !== undefined && !execution) return null;
+    if (hasSummary && !safeExactRecord(result, execution ? ['ok', 'summary', 'evidence', 'execution'] : ['ok', 'summary', 'evidence'])) return null;
+    if (!hasSummary && !safeExactRecord(result, execution ? ['ok', 'evidence', 'execution'] : ['ok', 'evidence'])) return null;
     const evidence = safeExactRecord(ownValue(result, 'evidence'), ['schemaVersion', 'operation', 'outcome', 'diagnostics', 'artifacts']);
     const diagnostics = evidence && safeDenseArray(ownValue(evidence, 'diagnostics'), 64);
     const artifacts = evidence && safeDenseArray(ownValue(evidence, 'artifacts'), 0);
@@ -439,7 +519,7 @@ export function sanitizeWorkspaceSafetyCheck(value: unknown): unknown | null {
     const projectedDiagnostics = diagnostics.map(safeSafetyDiagnostic);
     if (projectedDiagnostics.some((diagnostic) => diagnostic === null)) return null;
     if (!hasSummary) return !ok && outcome === 'failed' && projectedDiagnostics.length > 0
-      ? { ok: false, evidence: { schemaVersion: 1, operation: 'safety-check', outcome: 'failed', diagnostics: projectedDiagnostics, artifacts: [] } }
+      ? { ok: false, evidence: { schemaVersion: 1, operation: 'safety-check', outcome: 'failed', diagnostics: projectedDiagnostics, artifacts: [] }, ...(execution ? { execution } : {}) }
       : null;
     const summary = safeExactRecord(summaryValue, ['configured', 'declared', 'covered', 'uncovered']);
     const configured = summary && ownValue(summary, 'configured');
@@ -457,6 +537,7 @@ export function sanitizeWorkspaceSafetyCheck(value: unknown): unknown | null {
       ok,
       summary: { configured, declared, covered, uncovered },
       evidence: { schemaVersion: 1, operation: 'safety-check', outcome, diagnostics: projectedDiagnostics, artifacts: [] },
+      ...(execution ? { execution } : {}),
     };
   } catch { return null; }
 }

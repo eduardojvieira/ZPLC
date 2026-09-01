@@ -1,0 +1,9 @@
+{
+  "$schema": "../../zplc.schema.json",
+  "schemaVersion": 2,
+  "name": "Conveyor 01 starter",
+  "version": "1.0.0",
+  "description": "Educational host-only starter: it intentionally misses the deterministic jam lockout.",
+  "target": { "board": "posix" },
+  "tasks": [{ "name": "MainTask", "trigger": "cyclic", "interval_ms": 10, "priority": 1, "programs": ["Conveyor.st"] }]
+}

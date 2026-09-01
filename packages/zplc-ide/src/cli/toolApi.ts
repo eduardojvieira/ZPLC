@@ -1,10 +1,10 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { lstat, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { isAbsolute, join, relative, resolve, sep, win32 } from 'node:path';
 import { load } from 'js-yaml';
-import { CompilerError, assertTaskProgramCardinality, compileMultiTaskProject, type DebugMap, type DebugVarInfo } from '../compiler';
+import { CompilerError, assertTaskProgramCardinality, compileMultiTaskProject, parse, transpileToST, type DebugMap, type DebugVarInfo, type Statement } from '../compiler';
 import type { ProjectMigrationChange } from '../project/projectModel';
 import { resolveProgramSource } from '../utils/programSourceResolution';
 import { compileScenario, runScenario, type CompiledScenario, type ScenarioKind, type ScenarioRunResult } from '../test-engine';
@@ -12,9 +12,87 @@ import { createNativeScenarioSession } from './nativeScenarioRuntime';
 import { directoryIdentity, runFirmwareBuild } from './firmwareBuildRunner';
 import { readWorkspace, readWorkspaceScenarios, type ToolDiagnostic, type WorkspaceProject, type WorkspaceScenario } from './workspace';
 
-export type ToolOperation = 'cli' | 'inspect' | 'migrate-preview' | 'migrate' | 'validate' | 'check' | 'compile' | 'symbols-list' | 'safety-check' | 'test' | 'scenario-run' | 'toolchain-inspect' | 'firmware-build-plan' | 'firmware-build';
+export type ToolOperation = 'cli' | 'inspect' | 'migrate-preview' | 'migrate' | 'validate' | 'check' | 'compile' | 'symbols-list' | 'safety-check' | 'test' | 'scenario-run' | 'change-set-review' | 'boards-list' | 'toolchain-inspect' | 'firmware-build-plan' | 'firmware-build';
+export const TOOL_OPERATIONS: readonly ToolOperation[] = ['cli', 'inspect', 'migrate-preview', 'migrate', 'validate', 'check', 'compile', 'symbols-list', 'safety-check', 'test', 'scenario-run', 'change-set-review', 'boards-list', 'toolchain-inspect', 'firmware-build-plan', 'firmware-build'];
 export interface ToolArtifact { kind: 'zplc' | 'bytecode' | 'trace' | 'firmware-elf' | 'project-manifest'; sha256: string; byteLength: number; }
 export interface ToolEvidence { schemaVersion: 1; operation: ToolOperation; outcome: 'passed' | 'failed'; diagnostics: ToolDiagnostic[]; artifacts: ToolArtifact[]; }
+export const TOOL_EXECUTION_ACTORS = ['human-studio', 'cli', 'mcp', 'agent'] as const;
+export const TOOL_EXECUTION_PERMISSIONS = ['project:read', 'project:migrate', 'compiler:check', 'safety:check', 'tests:run', 'toolchain:inspect', 'firmware:build'] as const;
+export type ToolExecutionActor = typeof TOOL_EXECUTION_ACTORS[number];
+export type ToolExecutionPermission = typeof TOOL_EXECUTION_PERMISSIONS[number];
+export type ToolExecutionOutcome = 'passed' | 'failed' | 'cancelled';
+/** Metadata-only execution record. ToolEvidence remains stable and continues to describe the tool result itself. */
+export interface ToolExecutionEnvelope {
+  schemaVersion: 1;
+  jobId: string;
+  actor: ToolExecutionActor;
+  permission: ToolExecutionPermission;
+  operation: ToolOperation;
+  outcome: ToolExecutionOutcome;
+  startedAt: string;
+  finishedAt: string;
+}
+export interface ToolExecutionStart {
+  jobId: string;
+  actor: ToolExecutionActor;
+  permission: ToolExecutionPermission;
+  operation: ToolOperation;
+  startedAt: string;
+}
+const EXECUTION_JOB_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const CANCELLED_DIAGNOSTIC_CODES = new Set(['TEST_CANCELLED', 'FIRMWARE_BUILD_CANCELLED']);
+export function executionPermission(operation: ToolOperation): ToolExecutionPermission {
+  switch (operation) {
+    case 'inspect': case 'migrate-preview': case 'validate': return 'project:read';
+    case 'migrate': return 'project:migrate';
+    case 'safety-check': return 'safety:check';
+    case 'test': case 'scenario-run': case 'change-set-review': return 'tests:run';
+    case 'boards-list': case 'toolchain-inspect': return 'toolchain:inspect';
+    case 'firmware-build': case 'firmware-build-plan': return 'firmware:build';
+    default: return 'compiler:check';
+  }
+}
+export function startToolExecution(actor: ToolExecutionActor, permission: ToolExecutionPermission, operation: ToolOperation, now = new Date()): ToolExecutionStart {
+  return { jobId: randomUUID(), actor, permission, operation, startedAt: now.toISOString() };
+}
+function dateValue(value: string): number | undefined {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value)) return undefined;
+  const parsed = Date.parse(value); return Number.isFinite(parsed) && new Date(parsed).toISOString() === value ? parsed : undefined;
+}
+function executionOutcome(value: unknown): ToolExecutionOutcome {
+  const own = (record: unknown, key: string): unknown => {
+    if (!record || typeof record !== 'object' || Array.isArray(record)) return undefined;
+    const descriptor = Object.getOwnPropertyDescriptor(record, key); return descriptor && 'value' in descriptor ? descriptor.value : undefined;
+  };
+  const evidence = own(value, 'evidence'); const diagnostics = own(evidence, 'diagnostics');
+  if (Array.isArray(diagnostics) && diagnostics.every((diagnostic) => diagnostic && typeof diagnostic === 'object')
+    && diagnostics.some((diagnostic) => CANCELLED_DIAGNOSTIC_CODES.has(own(diagnostic, 'code') as string))) return 'cancelled';
+  return own(evidence, 'outcome') === 'passed' ? 'passed' : 'failed';
+}
+export function finishToolExecution(start: ToolExecutionStart, value: unknown, now = new Date()): ToolExecutionEnvelope {
+  const started = dateValue(start.startedAt);
+  const finishedAt = now.getTime() < (started ?? now.getTime()) ? start.startedAt : now.toISOString();
+  return { schemaVersion: 1, ...start, outcome: executionOutcome(value), finishedAt };
+}
+export function isToolExecutionEnvelope(value: unknown): value is ToolExecutionEnvelope {
+  if (!value || typeof value !== 'object' || Array.isArray(value) || Object.getPrototypeOf(value) !== Object.prototype || Object.getOwnPropertySymbols(value).length !== 0) return false;
+  const record = value as Record<string, unknown>; const keys = Object.getOwnPropertyNames(record);
+  if (keys.length !== 8 || !['schemaVersion', 'jobId', 'actor', 'permission', 'operation', 'outcome', 'startedAt', 'finishedAt'].every((key) => keys.includes(key))) return false;
+  if (keys.some((key) => {
+    const descriptor = Object.getOwnPropertyDescriptor(record, key);
+    return !descriptor || !descriptor.enumerable || !('value' in descriptor);
+  })) return false;
+  const started = dateValue(record.startedAt as string); const finished = dateValue(record.finishedAt as string);
+  return record.schemaVersion === 1 && typeof record.jobId === 'string' && EXECUTION_JOB_ID.test(record.jobId)
+    && typeof record.actor === 'string' && (TOOL_EXECUTION_ACTORS as readonly string[]).includes(record.actor)
+    && typeof record.operation === 'string' && TOOL_OPERATIONS.includes(record.operation as ToolOperation)
+    && typeof record.permission === 'string' && record.permission === executionPermission(record.operation as ToolOperation)
+    && typeof record.outcome === 'string' && ['passed', 'failed', 'cancelled'].includes(record.outcome)
+    && started !== undefined && finished !== undefined && finished >= started;
+}
+export function withToolExecution<T extends object>(value: T, execution: ToolExecutionEnvelope): T & { execution: ToolExecutionEnvelope } {
+  return { ...value, execution };
+}
 export type ToolResult<T> = { ok: true; summary: T; evidence: ToolEvidence } | { ok: false; evidence: ToolEvidence };
 export type CompilerSummary = { name: string; version: string; taskCount: number; codeSize: number };
 export type CompilerCheckResult = ToolResult<CompilerSummary>;
@@ -94,6 +172,8 @@ export interface ToolchainSummary {
   boards: Array<{ ideId: string; zephyrBoard: string; validationLevel: string }>;
 }
 export interface ToolchainInspectResult { ok: boolean; summary: ToolchainSummary; evidence: ToolEvidence; }
+export interface BoardsListSummary { boards: Array<{ boardId: string; ideId: string; zephyrBoard: string; validationLevel: 'cross-build' | 'human-hil' }>; }
+export type BoardsListResult = ToolResult<BoardsListSummary>;
 export interface FirmwareBuildPlan {
   schemaVersion: 1;
   board: { boardId: string; ideId: string; zephyrBoard: string; validationLevel: 'cross-build' | 'human-hil' };
@@ -188,10 +268,11 @@ function testPreview(completed: Array<{ id: string; path: string; passed: boolea
   return { schemaVersion: 1, backend: 'native-posix', mode: 'logical-cyclic-task-set-scan', traceEvidenceSha256, totalScenarioCount: completed.length, scenarios };
 }
 
-export async function projectInspect(root: string): Promise<ToolResult<{ schemaVersion: 2; sourceSchemaVersion: 1 | 2; migrated: boolean; name: string; version: string; taskCount: number; sources: Array<{ name: string; language: string }> }>> {
+export async function projectInspect(root: string): Promise<ToolResult<{ schemaVersion: 2; sourceSchemaVersion: 1 | 2; migrated: boolean; name: string; version: string; taskCount: number; sources: Array<{ name: string; language: string }>; target?: { board: string } }>> {
   const loaded = await readWorkspace(root); const failure = loadFailure('inspect', loaded); if (failure) return failure;
   const { workspace } = loaded;
-  return { ok: true, summary: { schemaVersion: 2, sourceSchemaVersion: workspace.sourceSchemaVersion, migrated: workspace.migrated, name: workspace.project.name, version: workspace.project.version, taskCount: workspace.project.tasks.length, sources: workspace.sources.map(({ name, language }) => ({ name, language })) }, evidence: evidence('inspect', 'passed') };
+  const board = workspace.project.target?.board;
+  return { ok: true, summary: { schemaVersion: 2, sourceSchemaVersion: workspace.sourceSchemaVersion, migrated: workspace.migrated, name: workspace.project.name, version: workspace.project.version, taskCount: workspace.project.tasks.length, sources: workspace.sources.map(({ name, language }) => ({ name, language })), ...(typeof board === 'string' && /^[a-z0-9][a-z0-9_-]{0,63}$/i.test(board) ? { target: { board } } : {}) }, evidence: evidence('inspect', 'passed') };
 }
 export async function projectMigrationPreview(root: string): Promise<ToolResult<{ sourceSchemaVersion: 1 | 2; targetSchemaVersion: 2; changed: boolean; changes: ProjectMigrationChange[] }>> {
   const loaded = await readWorkspace(root); const failure = loadFailure<{ sourceSchemaVersion: 1 | 2; targetSchemaVersion: 2; changed: boolean; changes: ProjectMigrationChange[] }>('migrate-preview', loaded); if (failure) return failure;
@@ -268,8 +349,15 @@ export function symbolsList(root: string): Promise<SymbolsListResult> { return c
 
 type SafetyOutput = { signal: string; address: number; bitOffset: number };
 function safetyLocation(output: Pick<SafetyOutput, 'address' | 'bitOffset'>): string { return `${output.address}:${output.bitOffset}`; }
-function safetyDiagnostic(code: 'SAFETY_OUTPUT_INVALID' | 'SAFETY_OUTPUT_DUPLICATE' | 'SAFETY_INTERLOCK_UNCOVERED' | 'SAFETY_SCENARIO_INVALID' | 'SAFETY_SCENARIOS_UNAVAILABLE', path?: string): ToolDiagnostic {
-  return { code, message: code === 'SAFETY_INTERLOCK_UNCOVERED' ? 'Declared incompatible outputs lack exact NEVER coverage' : code === 'SAFETY_SCENARIO_INVALID' ? 'Scenario cannot be used for safety coverage' : code === 'SAFETY_SCENARIOS_UNAVAILABLE' ? 'Scenarios are unavailable for safety coverage' : 'Declared safety output is invalid', ...(path ? { path } : {}) };
+type SafetyDiagnosticCode = 'SAFETY_OUTPUT_INVALID' | 'SAFETY_OUTPUT_DUPLICATE' | 'SAFETY_INTERLOCK_UNCOVERED' | 'SAFETY_SCENARIO_INVALID' | 'SAFETY_SCENARIOS_UNAVAILABLE' | 'SAFETY_UNBOUNDED_WHILE' | 'SAFETY_UNBOUNDED_REPEAT';
+function safetyDiagnostic(code: SafetyDiagnosticCode, path?: string, line?: number): ToolDiagnostic {
+  const message = code === 'SAFETY_INTERLOCK_UNCOVERED' ? 'Declared incompatible outputs lack exact NEVER coverage'
+    : code === 'SAFETY_SCENARIO_INVALID' ? 'Scenario cannot be used for safety coverage'
+      : code === 'SAFETY_SCENARIOS_UNAVAILABLE' ? 'Scenarios are unavailable for safety coverage'
+        : code === 'SAFETY_UNBOUNDED_WHILE' ? 'WHILE has no provable static iteration bound'
+          : code === 'SAFETY_UNBOUNDED_REPEAT' ? 'REPEAT has no provable static iteration bound'
+            : 'Declared safety output is invalid';
+  return { code, message, ...(path ? { path } : {}), ...(line === undefined ? {} : { line }) };
 }
 function safetyOutput(debugMap: DebugMap, signal: string): SafetyOutput | undefined {
   const [pou, name] = signal.split('.');
@@ -281,9 +369,69 @@ function safetyOutput(debugMap: DebugMap, signal: string): SafetyOutput | undefi
 }
 function safetyPairKey(left: SafetyOutput, right: SafetyOutput): string { return [safetyLocation(left), safetyLocation(right)].sort().join('\u0000'); }
 
+function collectUnboundedLoopDiagnostics(statements: Statement[], path: string, includeLine: boolean, diagnostics: ToolDiagnostic[]): void {
+  for (const statement of statements) {
+    switch (statement.kind) {
+      case 'WhileStatement':
+        diagnostics.push(safetyDiagnostic('SAFETY_UNBOUNDED_WHILE', path, includeLine ? statement.line : undefined));
+        collectUnboundedLoopDiagnostics(statement.body, path, includeLine, diagnostics);
+        break;
+      case 'RepeatStatement':
+        diagnostics.push(safetyDiagnostic('SAFETY_UNBOUNDED_REPEAT', path, includeLine ? statement.line : undefined));
+        collectUnboundedLoopDiagnostics(statement.body, path, includeLine, diagnostics);
+        break;
+      case 'IfStatement':
+        collectUnboundedLoopDiagnostics(statement.thenBranch, path, includeLine, diagnostics);
+        for (const branch of statement.elsifBranches) collectUnboundedLoopDiagnostics(branch.statements, path, includeLine, diagnostics);
+        if (statement.elseBranch) collectUnboundedLoopDiagnostics(statement.elseBranch, path, includeLine, diagnostics);
+        break;
+      case 'ForStatement':
+        collectUnboundedLoopDiagnostics(statement.body, path, includeLine, diagnostics);
+        break;
+      case 'CaseStatement':
+        for (const branch of statement.branches) collectUnboundedLoopDiagnostics(branch.statements, path, includeLine, diagnostics);
+        if (statement.elseBranch) collectUnboundedLoopDiagnostics(statement.elseBranch, path, includeLine, diagnostics);
+        break;
+    }
+  }
+}
+
+/**
+ * Parses authored/transpiled ST before compiler-only communication-tag insertion so ST source
+ * lines stay accurate. IL is deliberately excluded: its transpiler emits an internal bounded
+ * WHILE for jumps, not user-authored ST. LD/FBD do not expose statement bodies; SFC action
+ * bodies are transpiled to this AST but have no source map, so their diagnostics omit a line.
+ */
+function safetyLoopDiagnostics(workspace: WorkspaceProject): ToolDiagnostic[] {
+  const diagnostics: ToolDiagnostic[] = [];
+  const seenSourcePaths = new Set<string>();
+  for (const source of compilationSources(workspace)) {
+    const path = source.sourceRef;
+    if (!path || seenSourcePaths.has(path) || source.language === 'IL') continue;
+    seenSourcePaths.add(path);
+    const transpiled = source.language === 'ST' ? { success: true, source: source.content } : transpileToST(source.content, source.language);
+    if (!transpiled.success) throw new CompilerError('Transpilation failed', 0, 0, 'parser', path);
+    const unit = parse(transpiled.source);
+    const includeLine = source.language === 'ST';
+    for (const program of unit.programs) collectUnboundedLoopDiagnostics(program.statements, path, includeLine, diagnostics);
+    for (const fn of unit.functions) collectUnboundedLoopDiagnostics(fn.body, path, includeLine, diagnostics);
+    for (const block of unit.functionBlocks) {
+      collectUnboundedLoopDiagnostics(block.body, path, includeLine, diagnostics);
+      for (const method of block.methods) collectUnboundedLoopDiagnostics(method.body, path, includeLine, diagnostics);
+    }
+  }
+  return diagnostics.sort((left, right) => left.path === right.path
+    ? (left.line ?? 0) - (right.line ?? 0) || left.code.localeCompare(right.code)
+    : (left.path ?? '').localeCompare(right.path ?? ''));
+}
+
 /** Checks declared logical output interlocks against compiled scenario assertions; it never starts a runtime. */
 export async function safetyCheck(root: string): Promise<SafetyCheckResult> {
   const loaded = await readWorkspace(root); const loadingFailure = loadFailure<SafetyCheckSummary>('safety-check', loaded); if (loadingFailure) return loadingFailure;
+  try {
+    const loopDiagnostics = safetyLoopDiagnostics(loaded.workspace);
+    if (loopDiagnostics.length) return failed('safety-check', loopDiagnostics);
+  } catch (error) { return failed('safety-check', [safeCompilerDiagnostic(error)]); }
   const declarations = loaded.workspace.project.safety?.incompatibleOutputs;
   if (!declarations) {
     const summary: SafetyCheckSummary = { configured: false, declared: [], covered: [], uncovered: [] };
@@ -784,6 +932,16 @@ async function parseBoards(root: string, text: string): Promise<ParsedBoard[] | 
     boardIds.add(boardId); ideIds.add(ideId); boards.push({ boardId, ideId, zephyrBoard, validationLevel: validationLevel as ParsedBoard['validationLevel'] });
   }
   return boards.sort((left, right) => left.ideId.localeCompare(right.ideId));
+}
+
+/** Lists the declared board profiles without probing a toolchain or a device. */
+export async function boardsList(repositoryRoot: string): Promise<BoardsListResult> {
+  const root = await realDirectory(repositoryRoot);
+  if (!root) return failed('boards-list', [{ code: 'BOARDS_REPOSITORY_INVALID', message: 'Board profiles are unavailable' }]);
+  const manifest = await containedFile(root, 'firmware/app/boards/supported-boards.v1.5.0.json', TOOLCHAIN_FILE_MAX_BYTES);
+  const boards = manifest.ok && manifest.text ? await parseBoards(root, manifest.text) : undefined;
+  if (!boards) return failed('boards-list', [{ code: 'BOARDS_MANIFEST_INVALID', message: 'Board profiles are unavailable' }]);
+  return { ok: true, summary: { boards: boards.map(({ boardId, ideId, zephyrBoard, validationLevel }) => ({ boardId, ideId, zephyrBoard, validationLevel })) }, evidence: evidence('boards-list', 'passed') };
 }
 
 function firmwareBuildPlanFailure(): ToolResult<FirmwareBuildPlan> {

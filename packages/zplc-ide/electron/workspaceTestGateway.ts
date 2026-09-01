@@ -24,6 +24,13 @@ interface PendingRegistration {
   generation: number;
 }
 
+export interface WorkspaceTestRunOptions {
+  signal: AbortSignal;
+  /** Opaque execution identity allocated after the workspace request is admitted. */
+  jobId: string;
+  startedAt: string;
+}
+
 const UNAVAILABLE = 'Workspace is unavailable';
 
 function unavailable(): Error {
@@ -97,7 +104,7 @@ export function createWorkspaceTestGateway() {
   let pendingRegistration: PendingRegistration | undefined;
   let registrationGeneration = 0;
   let busy = false;
-  let active: { owner: number; controller: AbortController } | undefined;
+  let active: { owner: number; controller: AbortController; jobId: string; startedAt: string } | undefined;
 
   const register = async (
     ownerWebContentsId: number,
@@ -134,7 +141,7 @@ export function createWorkspaceTestGateway() {
     async run<T>(
       ownerWebContentsId: number,
       request: unknown,
-      runner: (canonicalRoot: string, options: { signal: AbortSignal }) => Promise<T> | T,
+      runner: (canonicalRoot: string, options: WorkspaceTestRunOptions) => Promise<T> | T,
     ): Promise<T> {
       if (!validOwner(ownerWebContentsId)
         || busy
@@ -147,11 +154,12 @@ export function createWorkspaceTestGateway() {
 
       busy = true;
       const controller = new AbortController();
-      active = { owner: ownerWebContentsId, controller };
+      const execution = { owner: ownerWebContentsId, controller, jobId: randomUUID(), startedAt: new Date().toISOString() };
+      active = execution;
       try {
         if (!await revalidateRoot(admittedWorkspace)) throw unavailable();
         try {
-          return await runner(admittedWorkspace.canonicalRoot, { signal: controller.signal });
+          return await runner(admittedWorkspace.canonicalRoot, { signal: controller.signal, jobId: execution.jobId, startedAt: execution.startedAt });
         } catch {
           throw unavailable();
         }

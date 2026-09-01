@@ -5,7 +5,7 @@
  * This is the entry point for the Electron desktop application.
  */
 
-import { app, BrowserWindow, dialog, session, ipcMain, type IpcMainInvokeEvent } from 'electron';
+import { app, BrowserWindow, dialog, session, ipcMain, safeStorage, type IpcMainInvokeEvent, type WebContents } from 'electron';
 import { createHash } from 'node:crypto';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
@@ -14,6 +14,10 @@ import { NativeSimulationSupervisor } from './nativeSimulationSupervisor.js';
 import { nativeSimulationEnvironment } from './nativeSimulationEnvironment.js';
 import { createFirmwareBuildGateway } from './firmwareBuildGateway.js';
 import { createWorkspaceTestGateway } from './workspaceTestGateway.js';
+import { createToolExecutionAudit } from './toolExecutionAudit.js';
+import { selectSerialPort } from './serialPortSelection.js';
+import { createAiProvider } from './aiProvider.js';
+import { createLearnProgressStore } from './learnProgressStore.js';
 import {
   DEFAULT_DEVELOPMENT_RENDERER_PORT,
   createContentSecurityPolicy,
@@ -22,6 +26,9 @@ import {
   isAllowedWorkspaceTestRunRequest,
   isAllowedFirmwareBuildRequest,
   isAllowedCandidateChangeSetReviewRequest,
+  isAllowedAiProviderConfig,
+  isAllowedAiProviderKey,
+  isAllowedAiProviderRequest,
   sanitizeCandidateChangeSetReview,
   sanitizeWorkspaceSafetyCheck,
   isExpectedRendererDocument,
@@ -58,6 +65,16 @@ const FIRMWARE_BUILD_CHANNEL = {
   CANCEL: 'firmware-build:cancel',
 } as const;
 
+const TOOL_EXECUTION_AUDIT_CHANNEL = {
+  LIST: 'tool-execution-audit:list',
+} as const;
+
+const AI_PROVIDER_CHANNEL = {
+  GET_STATUS: 'ai-provider:get-status', GET_CONFIG: 'ai-provider:get-config', SAVE_CONFIG: 'ai-provider:save-config',
+  STORE_KEY: 'ai-provider:store-key', CLEAR_KEY: 'ai-provider:clear-key', REQUEST: 'ai-provider:request', CANCEL: 'ai-provider:cancel',
+} as const;
+const LEARN_PROGRESS_CHANNEL = { READ: 'learn-progress:read', MERGE: 'learn-progress:merge' } as const;
+
 // ESM equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -72,7 +89,10 @@ let activeRendererOwner: RendererOwner | null = null;
 let nativeSimulationOwner: RendererOwner | null = null;
 const workspaceTestGateway = createWorkspaceTestGateway();
 const firmwareBuildGateway = createFirmwareBuildGateway();
+const toolExecutionAudit = createToolExecutionAudit();
 const toolApiUrl = pathToFileURL(path.join(__dirname, 'toolApi.js')).href;
+let aiProvider: ReturnType<typeof createAiProvider> | null = null;
+let learnProgress: ReturnType<typeof createLearnProgressStore> | null = null;
 
 function record(value: unknown): Record<string, unknown> | null {
   return typeof value === 'object' && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : null;
@@ -103,9 +123,9 @@ function workspaceCompileFailure(value: unknown): { ok: false; evidence: { outco
 }
 
 /** Turns private Tool API fields into the sole structured-clone payload accepted by Toolbar. */
-function toWorkspaceCompileEnvelope(value: unknown): unknown {
+function toWorkspaceCompileEnvelope(value: unknown, execution?: unknown): unknown {
   const result = record(value);
-  if (!result || result.ok !== true) return workspaceCompileFailure(value);
+  if (!result || result.ok !== true) return { ...workspaceCompileFailure(value), ...(execution ? { execution } : {}) };
   const summary = record(result.summary);
   const debugMap = record(result.debugMap);
   const taskCount = summary?.taskCount;
@@ -130,7 +150,49 @@ function toWorkspaceCompileEnvelope(value: unknown): unknown {
       sha256: createHash('sha256').update(result.zplcFile).digest('hex'),
       byteLength: result.zplcFile.byteLength,
     },
+    ...(execution ? { execution } : {}),
   };
+}
+
+type ExecutionToolApi = {
+  startToolExecution(actor: 'human-studio' | 'agent', permission: string, operation: string): { jobId: string; startedAt: string };
+  finishToolExecution(start: { jobId: string; actor: 'human-studio' | 'agent'; permission: string; operation: string; startedAt: string }, value: unknown): unknown;
+  isToolExecutionEnvelope(value: unknown): boolean;
+};
+
+async function finishStudioExecution(
+  toolApi: ExecutionToolApi,
+  start: { jobId: string; startedAt: string },
+  permission: string,
+  operation: string,
+  value: unknown,
+): Promise<unknown> {
+  const execution = toolApi.finishToolExecution({
+    jobId: start.jobId,
+    startedAt: start.startedAt,
+    actor: 'human-studio',
+    permission,
+    operation,
+  }, value);
+  if (!toolApi.isToolExecutionEnvelope(execution)) throw new Error('Workspace operation failed');
+  await toolExecutionAudit.add(execution);
+  return execution;
+}
+
+async function finishAgentReviewExecution(
+  toolApi: ExecutionToolApi,
+  start: { jobId: string; startedAt: string },
+  value: unknown,
+): Promise<void> {
+  const execution = toolApi.finishToolExecution({
+    jobId: start.jobId,
+    startedAt: start.startedAt,
+    actor: 'agent',
+    permission: 'tests:run',
+    operation: 'change-set-review',
+  }, value);
+  if (!toolApi.isToolExecutionEnvelope(execution)) throw new Error('Workspace operation failed');
+  await toolExecutionAudit.add(execution);
 }
 
 // Packaging is the trust boundary; inherited NODE_ENV must not enable dev behavior.
@@ -162,6 +224,14 @@ function rendererOwnerIsCurrent(owner: RendererOwner): boolean {
     && isExpectedRendererDocument(mainWindow.webContents.getURL(), expectedRendererUrl());
 }
 
+function serialRendererIsCurrent(webContents: WebContents): boolean {
+  const owner = activeRendererOwner;
+  return owner !== null
+    && webContents === mainWindow?.webContents
+    && webContents.id === owner.ownerId
+    && rendererOwnerIsCurrent(owner);
+}
+
 function currentRendererOwner(event: IpcMainInvokeEvent): RendererOwner | null {
   const owner = activeRendererOwner;
   return owner
@@ -181,6 +251,7 @@ function nativeSimulationBelongsTo(owner: RendererOwner): boolean {
 function revokeRendererOwner(ownerId: number): void {
   workspaceTestGateway.revokeOwner(ownerId);
   firmwareBuildGateway.revokeOwner(ownerId);
+  aiProvider?.cancel();
   if (activeRendererOwner?.ownerId === ownerId) {
     activeRendererOwner = null;
     rendererDocumentEpoch += 1;
@@ -265,7 +336,9 @@ function createWindow(): void {
  * so we need to handle the 'select-serial-port' event manually.
  */
 function setupWebSerial(): void {
-  session.defaultSession.setPermissionCheckHandler(() => false);
+  session.defaultSession.setPermissionCheckHandler((webContents, permission) => (
+    permission === 'serial' && webContents !== null && serialRendererIsCurrent(webContents)
+  ));
 
   session.defaultSession.setPermissionRequestHandler((_webContents, _permission, callback) => {
     callback(false);
@@ -314,9 +387,29 @@ function setupSerialPortSelection(): void {
     if ((sess as unknown as Record<string, boolean>)._serialHandlerRegistered) return;
     (sess as unknown as Record<string, boolean>)._serialHandlerRegistered = true;
 
-    sess.on('select-serial-port', (event, _portList, _requestingContents, callback) => {
+    sess.on('select-serial-port', (event, portList, requestingContents, callback) => {
       event.preventDefault();
-      callback('');
+      if (!serialRendererIsCurrent(requestingContents)) {
+        callback('');
+        return;
+      }
+      const ownerWindow = mainWindow;
+      if (!ownerWindow) {
+        callback('');
+        return;
+      }
+      const removedPortIds = new Set<string>();
+      const onPortRemoved = (_event: Electron.Event, port: Electron.SerialPort, contents: WebContents): void => {
+        if (contents === requestingContents) removedPortIds.add(port.portId);
+      };
+      sess.on('serial-port-removed', onPortRemoved);
+      void selectSerialPort({
+        ports: portList,
+        dialog: { showMessageBox: (options) => dialog.showMessageBox(ownerWindow, options) },
+        isCurrent: () => serialRendererIsCurrent(requestingContents),
+        isPortStale: (portId) => removedPortIds.has(portId),
+        callback,
+      }).finally(() => sess.removeListener('serial-port-removed', onPortRemoved));
     });
   });
 }
@@ -336,6 +429,25 @@ function setupIPC(): void {
       arch: process.arch,
       isPackaged: app.isPackaged,
     };
+  });
+
+  ipcMain.handle(TOOL_EXECUTION_AUDIT_CHANNEL.LIST, (event, ...args: unknown[]) => {
+    if (args.length !== 0 || !currentRendererOwner(event)) throw new Error('Request denied');
+    return toolExecutionAudit.list();
+  });
+  ipcMain.handle(LEARN_PROGRESS_CHANNEL.READ, async (event, ...args: unknown[]) => {
+    const owner = currentRendererOwner(event);
+    if (args.length !== 0 || !owner || !learnProgress) throw new Error('Request denied');
+    const mastered = await learnProgress.read();
+    if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied');
+    return [...mastered];
+  });
+  ipcMain.handle(LEARN_PROGRESS_CHANNEL.MERGE, async (event, ...args: unknown[]) => {
+    const owner = currentRendererOwner(event); const ids = args[0];
+    if (args.length !== 1 || !owner || !learnProgress || !Array.isArray(ids) || ids.length > 10 || !ids.every((id) => typeof id === 'string' && id.length > 0 && id.length <= 128)) throw new Error('Request denied');
+    const mastered = await learnProgress.merge(ids);
+    if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied');
+    return [...mastered];
   });
 
   ipcMain.handle(NATIVE_SIMULATION_CHANNEL.START_SESSION, async (event) => {
@@ -437,13 +549,15 @@ function setupIPC(): void {
       const toolApi = await import(toolApiUrl) as {
         testsRun?: (workspaceRoot: string, options: { signal: AbortSignal }) => Promise<unknown>;
         scenarioRun?: (workspaceRoot: string, scenarioId: string, options: { signal: AbortSignal }) => Promise<unknown>;
-      };
+      } & ExecutionToolApi;
       if (scenarioId !== undefined) {
         if (typeof toolApi.scenarioRun !== 'function') throw new Error('Workspace operation failed');
-        return toolApi.scenarioRun(root, scenarioId, options);
+        const value = await toolApi.scenarioRun(root, scenarioId, options);
+        return { ...(value as object), execution: await finishStudioExecution(toolApi, options, 'tests:run', 'scenario-run', value) };
       }
       if (typeof toolApi.testsRun !== 'function') throw new Error('Workspace operation failed');
-      return toolApi.testsRun(root, options);
+      const value = await toolApi.testsRun(root, options);
+      return { ...(value as object), execution: await finishStudioExecution(toolApi, options, 'tests:run', 'test', value) };
     });
     if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied');
     return result;
@@ -462,10 +576,11 @@ function setupIPC(): void {
     if (!owner
       || !isAllowedWorkspaceTestRequest(request)) throw new Error('Request denied');
     try {
-      const result = await workspaceTestGateway.run(owner.ownerId, request, async (root) => {
-        const toolApi = await import(toolApiUrl) as { compilerCompile?: (workspaceRoot: string) => Promise<unknown> };
+      const result = await workspaceTestGateway.run(owner.ownerId, request, async (root, options) => {
+        const toolApi = await import(toolApiUrl) as { compilerCompile?: (workspaceRoot: string) => Promise<unknown> } & ExecutionToolApi;
         if (typeof toolApi.compilerCompile !== 'function') throw new Error('Workspace operation failed');
-        return toWorkspaceCompileEnvelope(await toolApi.compilerCompile(root));
+        const value = await toolApi.compilerCompile(root);
+        return toWorkspaceCompileEnvelope(value, await finishStudioExecution(toolApi, options, 'compiler:check', 'compile', value));
       });
       if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied');
       return result;
@@ -480,10 +595,11 @@ function setupIPC(): void {
     const owner = currentRendererOwner(event);
     if (!owner || !isAllowedWorkspaceTestRequest(request)) throw new Error('Request denied');
     try {
-      const result = await workspaceTestGateway.run(owner.ownerId, request, async (root) => {
-        const toolApi = await import(toolApiUrl) as { safetyCheck?: (workspaceRoot: string) => Promise<unknown> };
+      const result = await workspaceTestGateway.run(owner.ownerId, request, async (root, options) => {
+        const toolApi = await import(toolApiUrl) as { safetyCheck?: (workspaceRoot: string) => Promise<unknown> } & ExecutionToolApi;
         if (typeof toolApi.safetyCheck !== 'function') throw new Error('Workspace operation failed');
-        return toolApi.safetyCheck(root);
+        const value = await toolApi.safetyCheck(root);
+        return { ...(value as object), execution: await finishStudioExecution(toolApi, options, 'safety:check', 'safety-check', value) };
       });
       const safe = sanitizeWorkspaceSafetyCheck(result);
       if (!safe || !rendererOwnerIsCurrent(owner)) throw new Error('Request denied');
@@ -503,9 +619,17 @@ function setupIPC(): void {
       const result = await workspaceTestGateway.run(owner.ownerId, { workspaceId: request.workspaceId }, async (root, options) => {
         const toolApi = await import(toolApiUrl) as {
           createCandidateChangeSet?: (workspaceRoot: string, edits: unknown, options: { signal: AbortSignal }) => Promise<unknown>;
-        };
+        } & ExecutionToolApi;
         if (typeof toolApi.createCandidateChangeSet !== 'function') throw new Error('Workspace operation failed');
-        return toolApi.createCandidateChangeSet(root, [{ path: request.edit.path, content: request.edit.content }], options);
+        let value: unknown;
+        try {
+          value = await toolApi.createCandidateChangeSet(root, [{ path: request.edit.path, content: request.edit.content }], options);
+        } catch {
+          await finishAgentReviewExecution(toolApi, options, { evidence: { outcome: 'failed' } });
+          throw new Error('Workspace operation failed');
+        }
+        await finishAgentReviewExecution(toolApi, options, value);
+        return value;
       });
       safe = sanitizeCandidateChangeSetReview(result, request.edit.path);
       if (!safe) throw new Error('Workspace operation failed');
@@ -514,6 +638,44 @@ function setupIPC(): void {
     }
     if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied');
     return safe;
+  });
+
+  ipcMain.handle(AI_PROVIDER_CHANNEL.GET_STATUS, async (event, ...args: unknown[]) => {
+    const owner = currentRendererOwner(event);
+    if (args.length !== 0 || !owner || !aiProvider) throw new Error('Request denied');
+    const result = await aiProvider.getStatus(); if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied'); return result;
+  });
+  ipcMain.handle(AI_PROVIDER_CHANNEL.GET_CONFIG, async (event, ...args: unknown[]) => {
+    const owner = currentRendererOwner(event);
+    if (args.length !== 0 || !owner || !aiProvider) throw new Error('Request denied');
+    const result = await aiProvider.getConfig(); if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied'); return result;
+  });
+  ipcMain.handle(AI_PROVIDER_CHANNEL.SAVE_CONFIG, async (event, ...args: unknown[]) => {
+    const owner = currentRendererOwner(event); const request = args[0];
+    if (args.length !== 1 || !owner || !aiProvider || !isAllowedAiProviderConfig(request)) throw new Error('Request denied');
+    const result = await aiProvider.saveConfig(request); if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied'); return result;
+  });
+  ipcMain.handle(AI_PROVIDER_CHANNEL.STORE_KEY, async (event, ...args: unknown[]) => {
+    const owner = currentRendererOwner(event); const request = args[0];
+    if (args.length !== 1 || !owner || !aiProvider || !isAllowedAiProviderKey(request)) throw new Error('Request denied');
+    const result = await aiProvider.storeKey(request); if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied'); return result;
+  });
+  ipcMain.handle(AI_PROVIDER_CHANNEL.CLEAR_KEY, async (event, ...args: unknown[]) => {
+    const owner = currentRendererOwner(event);
+    if (args.length !== 0 || !owner || !aiProvider) throw new Error('Request denied');
+    const result = await aiProvider.clearKey(); if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied'); return result;
+  });
+  ipcMain.handle(AI_PROVIDER_CHANNEL.REQUEST, async (event, ...args: unknown[]) => {
+    const owner = currentRendererOwner(event); const request = args[0];
+    if (args.length !== 1 || !owner || !aiProvider || !isAllowedAiProviderRequest(request)) throw new Error('Request denied');
+    const result = await workspaceTestGateway.run(owner.ownerId, { workspaceId: request.workspaceId }, (root, options) => aiProvider!.request(root, request, options.signal));
+    if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied'); return result;
+  });
+  ipcMain.handle(AI_PROVIDER_CHANNEL.CANCEL, async (event, ...args: unknown[]) => {
+    const owner = currentRendererOwner(event);
+    if (args.length !== 0 || !owner || !aiProvider) throw new Error('Request denied');
+    const provider = aiProvider.cancel(); const workspace = workspaceTestGateway.cancel(owner.ownerId);
+    return { requested: provider.requested || workspace.requested };
   });
 
   ipcMain.handle(TOOLCHAIN_CHANNEL.INSPECT, async (event, ...args: unknown[]) => {
@@ -533,10 +695,12 @@ function setupIPC(): void {
         firmwareBuildGateway.revokeOwner(owner.ownerId);
         return null;
       }
-      const toolApi = await import(toolApiUrl) as { toolchainInspect?: (repositoryRoot: string) => Promise<unknown> };
+      const toolApi = await import(toolApiUrl) as { toolchainInspect?: (repositoryRoot: string) => Promise<unknown> } & ExecutionToolApi;
       if (typeof toolApi.toolchainInspect !== 'function') throw new Error('Toolchain inspection failed');
       if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied');
-      const result = await firmwareBuildGateway.inspect(owner.ownerId, selection.filePaths[0], toolApi.toolchainInspect);
+      const start = toolApi.startToolExecution('human-studio', 'toolchain:inspect', 'toolchain-inspect');
+      const value = await firmwareBuildGateway.inspect(owner.ownerId, selection.filePaths[0], toolApi.toolchainInspect);
+      const result = { ...(value as object), execution: await finishStudioExecution(toolApi, start, 'toolchain:inspect', 'toolchain-inspect', value) };
       if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied');
       return result;
     } catch {
@@ -555,7 +719,7 @@ function setupIPC(): void {
       const toolApi = await import(toolApiUrl) as {
         toolchainInspect?: (repositoryRoot: string) => Promise<unknown>;
         firmwareBuild?: (repositoryRoot: string, ideId: string, options: { signal: AbortSignal }) => Promise<unknown>;
-      };
+      } & ExecutionToolApi;
       if (typeof toolApi.toolchainInspect !== 'function' || typeof toolApi.firmwareBuild !== 'function') throw new Error('Firmware build failed');
       if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied');
       const result = await firmwareBuildGateway.start(owner.ownerId, request, toolApi.toolchainInspect, async () => {
@@ -570,7 +734,10 @@ function setupIPC(): void {
         });
         if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied');
         return response.response === 1;
-      }, toolApi.firmwareBuild);
+      }, async (root, ideId, options) => {
+        const value = await toolApi.firmwareBuild!(root, ideId, options);
+        return { ...(value as object), execution: await finishStudioExecution(toolApi, options, 'firmware:build', 'firmware-build', value) };
+      });
       if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied');
       return result;
     } catch {
@@ -588,7 +755,11 @@ function setupIPC(): void {
 }
 
 // App lifecycle handlers
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  const toolApi = await import(toolApiUrl) as Pick<ExecutionToolApi, 'isToolExecutionEnvelope'>;
+  await toolExecutionAudit.open(app.getPath('userData'), toolApi.isToolExecutionEnvelope);
+  aiProvider = createAiProvider({ userDataPath: app.getPath('userData'), vault: safeStorage });
+  learnProgress = createLearnProgressStore(app.getPath('userData'));
   setupContentSecurityPolicy();
   setupWebSerial();
   setupSerialPortSelection();

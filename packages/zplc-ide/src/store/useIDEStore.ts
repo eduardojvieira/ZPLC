@@ -137,7 +137,7 @@ function isSafePathSegment(value: string): boolean {
 // Theme Types
 // =============================================================================
 
-export type Theme = 'light' | 'dark' | 'system';
+export type Theme = 'light' | 'dark' | 'high-contrast' | 'system';
 export interface CompilerNavigationTarget { file: string; line: number; column: number; }
 export interface CloseProjectOptions { discardUnsaved?: boolean; }
 
@@ -228,7 +228,6 @@ interface IDEState {
 
   // Project State - File System Based
   isProjectOpen: boolean;
-  isVirtualProject: boolean;             // True if in-memory only (Firefox fallback)
   projectName: string | null;
   projectConfig: ZPLCProjectConfig | null;
   /** Monotonic identity for the currently open project session. */
@@ -369,21 +368,24 @@ const THEME_STORAGE_KEY = 'zplc-ide-theme';
 function getStoredTheme(): Theme {
   if (typeof window === 'undefined') return 'system';
   const stored = localStorage.getItem(THEME_STORAGE_KEY);
-  if (stored === 'light' || stored === 'dark' || stored === 'system') {
+  if (stored === 'light' || stored === 'dark' || stored === 'high-contrast' || stored === 'system') {
     return stored;
   }
   return 'system';
 }
 
-function applyThemeToDOM(theme: Theme): void {
+export function applyThemeToDOM(theme: Theme): void {
   if (typeof window === 'undefined') return;
 
   const root = document.documentElement;
-  root.classList.remove('light', 'dark');
+  root.classList.remove('light', 'dark', 'high-contrast');
 
   if (theme !== 'system') {
     root.classList.add(theme);
   }
+  root.setAttribute('data-theme', theme === 'system'
+    ? window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+    : theme);
 
   localStorage.setItem(THEME_STORAGE_KEY, theme);
 }
@@ -396,7 +398,6 @@ export const useIDEStore = create<IDEState>((set, get) => ({
   // Initial State - No project open
   theme: getStoredTheme(),
   isProjectOpen: false,
-  isVirtualProject: false,
   projectName: null,
   projectConfig: null,
   projectSession: 0,
@@ -535,7 +536,6 @@ export const useIDEStore = create<IDEState>((set, get) => ({
 
       set({
         isProjectOpen: true,
-        isVirtualProject: false,
         projectName: config.name,
         projectConfig: config,
         projectMigrationPreview: readResult.changes.length > 0
@@ -594,7 +594,6 @@ export const useIDEStore = create<IDEState>((set, get) => ({
 
       set({
         isProjectOpen: true,
-        isVirtualProject: false,
         projectName: config.name,
         projectConfig: config,
         projectMigrationPreview: null,
@@ -677,7 +676,6 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       if (firstLoadedFile) loadedFiles.set(firstLoadedFile.id, firstLoadedFile);
       set({
         isProjectOpen: true,
-        isVirtualProject: false,
         projectName: readResult.config.name,
         projectConfig: readResult.config,
         projectMigrationPreview: null,
@@ -723,7 +721,6 @@ export const useIDEStore = create<IDEState>((set, get) => ({
 
     set({
       isProjectOpen: false,
-      isVirtualProject: false,
       projectName: null,
       projectConfig: null,
       projectMigrationPreview: null,
@@ -779,7 +776,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
 
   linkWorkspaceScenarios: (workspaceId, expectedProjectSession) => {
     const state = get();
-    if (!workspaceId || !state.isProjectOpen || state.isVirtualProject || state.projectSession !== expectedProjectSession) {
+    if (!workspaceId || !state.isProjectOpen || state.projectSession !== expectedProjectSession) {
       return false;
     }
     set({ workspaceScenarioLink: { workspaceId, projectSession: expectedProjectSession }, canonicalWorkspaceBuildEvidence: null });
@@ -790,7 +787,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     let recorded = false;
     set((state) => {
       const link = state.workspaceScenarioLink;
-      if (!state.isProjectOpen || state.isVirtualProject
+      if (!state.isProjectOpen
         || state.projectSession !== evidence.projectSession || state.compilerRunId !== evidence.compilerRunId
         || link?.projectSession !== evidence.projectSession || link.workspaceId !== evidence.workspaceId
         || evidence.zplc.kind !== 'zplc' || !/^[a-f0-9]{64}$/.test(evidence.zplc.sha256)
@@ -802,7 +799,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
   },
 
   saveProjectConfig: async () => {
-    const { directoryHandle, projectConfig, isVirtualProject } = get();
+    const { directoryHandle, projectConfig } = get();
     const expectedProjectSession = get().projectSession;
     const isCurrentProjectSession = () => get().projectSession === expectedProjectSession;
     
@@ -810,17 +807,6 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       get().addConsoleEntry({
         type: 'warning',
         message: 'No project configuration to save',
-        source: 'system',
-      });
-      return;
-    }
-
-    if (isVirtualProject) {
-      // Virtual/example projects can't save to disk
-      // But we can still update the in-memory state (already done via updateConfig)
-      get().addConsoleEntry({
-        type: 'warning',
-        message: 'Virtual project - settings updated in memory only. Use "Open Folder" to save to disk.',
         source: 'system',
       });
       return;
@@ -930,17 +916,12 @@ export const useIDEStore = create<IDEState>((set, get) => ({
   },
 
   saveFile: async (fileId: string) => {
-    const { loadedFiles, isVirtualProject } = get();
+    const { loadedFiles } = get();
     const file = loadedFiles.get(fileId);
     const expectedProjectSession = get().projectSession;
     
     if (!file) {
       console.error(`File not found: ${fileId}`);
-      return false;
-    }
-
-    if (isVirtualProject) {
-      // A file download is not a durable project save; let the caller offer it.
       return false;
     }
 
@@ -991,14 +972,14 @@ export const useIDEStore = create<IDEState>((set, get) => ({
 
   createFile: async (name: string, language: PLCLanguage, parentPath: string = 'src') => {
     const initial = get();
-    const { directoryHandle, isVirtualProject, fileTree, projectSession: expectedProjectSession } = initial;
+    const { directoryHandle, fileTree, projectSession: expectedProjectSession } = initial;
     const trimmedName = name.trim();
     if (!initial.isProjectOpen || !fileTree) throw new Error('Open a project before creating a file.');
     if (!isSafePathSegment(trimmedName)) throw new Error('Enter a single file name without path separators.');
     if (!parentPath || parentPath.split('/').some((part) => !isSafePathSegment(part))) {
       throw new Error('Choose an existing project folder for the new file.');
     }
-    if (isVirtualProject ? directoryHandle : !directoryHandle) {
+    if (!directoryHandle) {
       throw new Error('The current project cannot create files.');
     }
 
@@ -1022,7 +1003,6 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       const current = get();
       return current.projectSession === expectedProjectSession
         && current.isProjectOpen
-        && current.isVirtualProject === isVirtualProject
         && current.fileTree !== null
         && current.directoryHandle === directoryHandle;
     };
@@ -1045,7 +1025,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
 
     let createdPhysicalEntry = false;
     try {
-      if (!isVirtualProject && directoryHandle) {
+      if (directoryHandle) {
         const pathParts = parentPath.split('/');
         let currentDir = directoryHandle;
         for (const part of pathParts) {
@@ -1074,7 +1054,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
 
       let committed = false;
       set((state) => {
-        if (state.projectSession !== expectedProjectSession || !state.isProjectOpen || state.isVirtualProject !== isVirtualProject || state.directoryHandle !== directoryHandle || !state.fileTree) return {};
+        if (state.projectSession !== expectedProjectSession || !state.isProjectOpen || state.directoryHandle !== directoryHandle || !state.fileTree) return {};
         const parent = findFileInTree(state.fileTree, parentPath);
         if (!parent || parent.type !== 'directory' || state.loadedFiles.has(fileId) || findFileInTree(state.fileTree, filePath)) return {};
         const newTree = appendTreeFile(state.fileTree, parentPath, { id: fileId, name: fileName, type: 'file', path: filePath, language, handle: newFile.handle });
@@ -1123,21 +1103,19 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     const located = initial.fileTree && findTreeFileWithParent(initial.fileTree, fileId);
     if (!located || located.node.type !== 'file') return false;
 
-    if (!initial.isVirtualProject) {
-      if (!located.parent.dirHandle) {
-        if (get().projectSession === expectedProjectSession) {
-          get().addConsoleEntry({ type: 'error', message: `Could not delete ${located.node.name}. The file was not removed.`, source: 'system' });
-        }
-        return false;
+    if (!located.parent.dirHandle) {
+      if (get().projectSession === expectedProjectSession) {
+        get().addConsoleEntry({ type: 'error', message: `Could not delete ${located.node.name}. The file was not removed.`, source: 'system' });
       }
-      try {
-        await located.parent.dirHandle.removeEntry(located.node.name);
-      } catch {
-        if (get().projectSession === expectedProjectSession) {
-          get().addConsoleEntry({ type: 'error', message: `Could not delete ${located.node.name}. The file was not removed.`, source: 'system' });
-        }
-        return false;
+      return false;
+    }
+    try {
+      await located.parent.dirHandle.removeEntry(located.node.name);
+    } catch {
+      if (get().projectSession === expectedProjectSession) {
+        get().addConsoleEntry({ type: 'error', message: `Could not delete ${located.node.name}. The file was not removed.`, source: 'system' });
       }
+      return false;
     }
 
     const current = get();

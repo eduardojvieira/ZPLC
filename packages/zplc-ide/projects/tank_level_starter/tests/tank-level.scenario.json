@@ -1,0 +1,1 @@
+{"schemaVersion":1,"id":"TankLevel","tickMs":10,"durationMs":10,"events":[{"atMs":0,"set":{"TankLevel.AutoEnable":true,"TankLevel.PumpFault":true}}],"expectations":[{"kind":"AT","atMs":0,"condition":{"TankLevel.Pump":false,"TankLevel.Alarm":true}}]}

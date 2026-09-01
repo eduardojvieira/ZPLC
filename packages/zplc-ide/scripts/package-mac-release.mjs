@@ -1,7 +1,8 @@
 import { execFileSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
+import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { requireAcceptedNotaryResponse, requireMacReleaseSigning } from './mac-release-signing.mjs';
 
 function run(command, args, cwd, env = process.env) {
   execFileSync(command, args, {
@@ -9,6 +10,20 @@ function run(command, args, cwd, env = process.env) {
     env,
     stdio: 'inherit',
   });
+}
+
+function submitNotaryDmg(args, cwd) {
+  try {
+    const response = execFileSync('xcrun', args, {
+      cwd,
+      encoding: 'utf8',
+      maxBuffer: 64 * 1024,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    requireAcceptedNotaryResponse(response);
+  } catch {
+    throw new Error('macOS DMG notarization failed');
+  }
 }
 
 function copyFileArtifacts(sourceDir, destinationDir) {
@@ -68,17 +83,8 @@ function main() {
   const stagedRepo = path.join(stageDir, 'ZPLC');
   const stagedIde = path.join(stagedRepo, 'packages/zplc-ide');
   const stagedDistElectron = path.join(stagedIde, 'dist-electron');
-  const hasExplicitMacSigningIdentity = Boolean(
-    process.env.CSC_LINK
-    || process.env.CSC_NAME
-    || process.env.APPLE_ID
-    || process.env.APPLE_TEAM_ID
-    || process.env.APPLE_API_KEY
-    || process.env.APPLE_API_KEY_ID
-    || process.env.APPLE_API_ISSUER,
-  );
-  const shouldDisableHardenedRuntimeForPreview =
-    process.env.CSC_IDENTITY_AUTO_DISCOVERY === 'false' && !hasExplicitMacSigningIdentity;
+  const publishing = process.env.ZPLC_PUBLISHING === 'true';
+  if (publishing) requireMacReleaseSigning(process.env);
 
   const copyTargets = [
     { path: 'package.json', directory: false },
@@ -126,21 +132,40 @@ function main() {
     run('bun', ['run', 'build'], path.join(stagedRepo, 'packages/zplc-ide'));
     run('bun', ['run', 'electron:compile'], path.join(stagedRepo, 'packages/zplc-ide'));
     const electronBuilderArgs = ['x', 'electron-builder', '--mac', `--${arch}`, '--publish', 'never'];
-    if (shouldDisableHardenedRuntimeForPreview) {
-      console.warn(
-        `[mac-release] No explicit Apple signing identity detected for ${arch}; disabling hardened runtime for preview artifact compatibility.`,
-      );
-      electronBuilderArgs.push('-c.mac.hardenedRuntime=false');
+    const builderEnv = { ...process.env };
+    const apiKeyPath = publishing ? path.join(stageDir, 'apple-api-key.p8') : undefined;
+    if (publishing) {
+      if (!apiKeyPath) throw new Error('macOS release signing setup failed');
+      writeFileSync(apiKeyPath, process.env.ZPLC_APPLE_API_KEY_P8, { mode: 0o600 });
+      chmodSync(apiKeyPath, 0o600);
+      builderEnv.CSC_LINK = process.env.ZPLC_MACOS_CSC_LINK;
+      builderEnv.CSC_KEY_PASSWORD = process.env.ZPLC_MACOS_CSC_KEY_PASSWORD;
+      builderEnv.APPLE_API_KEY = apiKeyPath;
+      builderEnv.APPLE_API_KEY_ID = process.env.ZPLC_APPLE_API_KEY_ID;
+      builderEnv.APPLE_API_ISSUER = process.env.ZPLC_APPLE_API_ISSUER;
+      builderEnv.APPLE_TEAM_ID = process.env.ZPLC_APPLE_TEAM_ID;
+      for (const key of [
+        'ZPLC_MACOS_CSC_LINK', 'ZPLC_MACOS_CSC_KEY_PASSWORD', 'ZPLC_APPLE_API_KEY_P8',
+        'ZPLC_APPLE_API_KEY_ID', 'ZPLC_APPLE_API_ISSUER', 'ZPLC_APPLE_TEAM_ID',
+      ]) delete builderEnv[key];
+      delete builderEnv.CSC_IDENTITY_AUTO_DISCOVERY;
+      electronBuilderArgs.push('-c.forceCodeSigning=true');
+    } else {
+      // Preview artifacts are deliberately unsigned and cannot reach upload-release.
+      builderEnv.CSC_IDENTITY_AUTO_DISCOVERY = 'false';
+      for (const key of [
+        'CSC_LINK', 'CSC_KEY_PASSWORD', 'APPLE_API_KEY', 'APPLE_API_KEY_ID', 'APPLE_API_ISSUER', 'APPLE_TEAM_ID',
+        'ZPLC_MACOS_CSC_LINK', 'ZPLC_MACOS_CSC_KEY_PASSWORD', 'ZPLC_APPLE_API_KEY_P8',
+        'ZPLC_APPLE_API_KEY_ID', 'ZPLC_APPLE_API_ISSUER', 'ZPLC_APPLE_TEAM_ID',
+      ]) delete builderEnv[key];
+      electronBuilderArgs.push('-c.forceCodeSigning=false', '-c.mac.hardenedRuntime=false', '-c.mac.notarize=false');
     }
 
     run(
       'bun',
       electronBuilderArgs,
       path.join(stagedRepo, 'packages/zplc-ide'),
-      {
-        ...process.env,
-        CSC_IDENTITY_AUTO_DISCOVERY: 'false',
-      },
+      builderEnv,
     );
 
     const stagedAppCandidates = [
@@ -152,7 +177,22 @@ function main() {
       throw new Error(`Missing staged mac app bundle in any expected path: ${stagedAppCandidates.join(', ')}`);
     }
 
-    run('codesign', ['--verify', '--deep', '--strict', '--verbose=2', stagedAppPath], stagedIde);
+    if (publishing) {
+      if (!apiKeyPath) throw new Error('macOS DMG notarization failed');
+      const stagedDmgs = readdirSync(stagedDistElectron, { withFileTypes: true })
+        .filter((entry) => entry.isFile() && entry.name.endsWith('.dmg'))
+        .map((entry) => path.join(stagedDistElectron, entry.name));
+      if (stagedDmgs.length !== 1) {
+        throw new Error(`Expected exactly one staged macOS DMG, found ${stagedDmgs.length}`);
+      }
+      const [stagedDmg] = stagedDmgs;
+      submitNotaryDmg([
+        'notarytool', 'submit', stagedDmg, '--key', apiKeyPath, '--key-id', process.env.ZPLC_APPLE_API_KEY_ID,
+        '--issuer', process.env.ZPLC_APPLE_API_ISSUER, '--wait', '--output-format', 'json',
+      ], stagedIde);
+      run('xcrun', ['stapler', 'staple', stagedDmg], stagedIde);
+    }
+
     run('test', ['-f', path.join(stagedAppPath, 'Contents/Resources/native-runtime/zplc_runtime')], stagedIde);
 
     run('mkdir', ['-p', outputDir], repoRoot);

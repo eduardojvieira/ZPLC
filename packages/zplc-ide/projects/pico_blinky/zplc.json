@@ -38,7 +38,6 @@
       "trigger": "cyclic",
       "interval_ms": 13,
       "priority": 1,
-      "watchdog_ms": 100,
       "programs": [
         "main.st"
       ]

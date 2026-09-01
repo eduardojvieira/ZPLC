@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'bun:test';
+import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { chmod, mkdir, mkdtemp, readFile, readdir, rename, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseAndMigrateProject } from '../project/projectModel';
-import { artifactEvidence, compilerCheck, compilerCompile, createTestDeadline, firmwareBuild, firmwareBuildPlan, projectInspect, projectMigrationExport, projectMigrationPreview, projectValidate, safetyCheck, scenarioRun, symbolsList, testsRun, toolchainInspect } from './toolApi';
+import { artifactEvidence, boardsList, compilerCheck, compilerCompile, createTestDeadline, executionPermission, finishToolExecution, firmwareBuild, firmwareBuildPlan, isToolExecutionEnvelope, projectInspect, projectMigrationExport, projectMigrationPreview, projectValidate, safetyCheck, scenarioRun, startToolExecution, symbolsList, testsRun, toolchainInspect, withToolExecution } from './toolApi';
 
 const demo = fileURLToPath(new URL('../../projects/multitask_demo', import.meta.url));
 const blinky = fileURLToPath(new URL('../../projects/blinky', import.meta.url));
@@ -16,9 +17,46 @@ const motorPlant = fileURLToPath(new URL('../../projects/motor_plant', import.me
 const edgeCounter = fileURLToPath(new URL('../../projects/edge_counter', import.meta.url));
 const scanSnapshot = fileURLToPath(new URL('../../projects/scan_snapshot', import.meta.url));
 const conveyor = fileURLToPath(new URL('../../projects/conveyor_01', import.meta.url));
+const conveyorStarter = fileURLToPath(new URL('../../projects/conveyor_01_starter', import.meta.url));
+const learnExercises = [
+  ['motor_start_stop_starter', 'motor_start_stop', 'MotorStartStop'],
+  ['pedestrian_crossing_starter', 'pedestrian_crossing', 'PedestrianCrossing'],
+  ['tank_level_starter', 'tank_level', 'TankLevel'],
+  ['conveyor_01_starter', 'conveyor_01', 'Conveyor01'],
+  ['blinky_starter', 'blinky', 'BlinkyVisual'],
+  ['motor_plant_starter', 'motor_plant', 'MotorPlant'],
+  ['edge_counter_starter', 'edge_counter', 'EdgeCounter'],
+  ['scan_snapshot_starter', 'scan_snapshot', 'ScanSnapshot'],
+  ['conveyor_01_starter', 'conveyor_01', 'Conveyor01'],
+  ['conveyor_two_parts_starter', 'conveyor_01', 'ConveyorTwoParts'],
+] as const;
 const legacyMotorStartStopFixture = fileURLToPath(new URL('./fixtures/motor_start_stop.v1/zplc.json', import.meta.url));
 const nativeRuntimeBinary = fileURLToPath(new URL('../../../../firmware/lib/zplc_core/build/zplc_runtime', import.meta.url));
 const nativeScenarioBinary = process.env.ZPLC_NATIVE_SIM_BIN ?? nativeRuntimeBinary;
+
+function semanticScenarioTraceHash(result: Awaited<ReturnType<typeof scenarioRun>>, scenarioId: string): string {
+  if (!result.ok || !result.traceFile) throw new Error(`${scenarioId}: native scenario result is unavailable`);
+  const traceFile = JSON.parse(new TextDecoder().decode(result.traceFile)) as { scenarios?: Array<{ id?: unknown; trace?: Array<{ atMs?: unknown; outputs?: unknown; plant?: unknown }>; assertions?: Array<{ kind?: unknown; passed?: unknown; atMs?: unknown }> }> };
+  const scenario = traceFile.scenarios?.find((entry) => entry.id === scenarioId);
+  if (!scenario?.trace || !scenario.assertions) throw new Error(`${scenarioId}: native scenario trace is incomplete`);
+  const trace = scenario.trace.map((sample) => {
+    if (typeof sample.atMs !== 'number' || !sample.outputs || typeof sample.outputs !== 'object' || Array.isArray(sample.outputs)) throw new Error(`${scenarioId}: invalid trace sample`);
+    const outputs = Object.entries(sample.outputs).map(([signal, value]) => {
+      if (typeof value !== 'boolean') throw new Error(`${scenarioId}: invalid output ${signal}`);
+      return [signal, value] as const;
+    }).sort(([left], [right]) => left.localeCompare(right));
+    const plant = sample.plant === undefined ? undefined : (() => {
+      if (!sample.plant || typeof sample.plant !== 'object' || Array.isArray(sample.plant)) throw new Error(`${scenarioId}: invalid plant sample`);
+      return Object.entries(sample.plant).sort(([left], [right]) => left.localeCompare(right));
+    })();
+    return { atMs: sample.atMs, outputs, ...(plant === undefined ? {} : { plant }) };
+  });
+  const assertions = scenario.assertions.map((assertion) => {
+    if (typeof assertion.kind !== 'string' || typeof assertion.passed !== 'boolean' || (assertion.atMs !== undefined && typeof assertion.atMs !== 'number')) throw new Error(`${scenarioId}: invalid assertion`);
+    return { kind: assertion.kind, passed: assertion.passed, ...(assertion.atMs === undefined ? {} : { atMs: assertion.atMs }) };
+  });
+  return createHash('sha256').update(JSON.stringify({ scenarioId, trace, assertions })).digest('hex');
+}
 
 async function legacyMotorStartStop() {
   const root = await mkdtemp(join(tmpdir(), 'zplc-legacy-motor-'));
@@ -96,6 +134,87 @@ describe('local Tool API', () => {
     }
   });
 
+  it('rejects unbounded WHILE and REPEAT statements from the canonical ST AST without starting native POSIX', async () => {
+    const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
+    process.env.ZPLC_NATIVE_SIM_BIN = '/not/a/runtime';
+    const root = await mkdtemp(join(tmpdir(), 'zplc-safety-loops-'));
+    try {
+      await mkdir(join(root, 'src'));
+      await writeFile(join(root, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'loops', version: '1.0.0', communication: { bindings: [{ name: 'Injected', symbol: 'Injected', type: 'BOOL', publish: true }] }, tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Main.st'] }] }));
+      await writeFile(join(root, 'src', 'Main.st'), `FUNCTION Count : INT
+WHILE TRUE DO
+END_WHILE;
+END_FUNCTION
+
+FUNCTION_BLOCK Controller
+METHOD Step
+REPEAT
+UNTIL TRUE
+END_REPEAT;
+END_METHOD
+WHILE FALSE DO
+END_WHILE;
+END_FUNCTION_BLOCK
+
+PROGRAM Main
+VAR
+  i : INT;
+END_VAR
+CASE i OF
+  0:
+    WHILE FALSE DO
+      REPEAT
+      UNTIL TRUE
+      END_REPEAT;
+    END_WHILE;
+END_CASE;
+FOR i := 0 TO 1 DO
+END_FOR;
+END_PROGRAM`);
+      await expect(safetyCheck(root)).resolves.toMatchObject({
+        ok: false,
+        evidence: {
+          operation: 'safety-check',
+          artifacts: [],
+          diagnostics: [
+            { code: 'SAFETY_UNBOUNDED_WHILE', path: 'src/Main.st', line: 2 },
+            { code: 'SAFETY_UNBOUNDED_REPEAT', path: 'src/Main.st', line: 8 },
+            { code: 'SAFETY_UNBOUNDED_WHILE', path: 'src/Main.st', line: 12 },
+            { code: 'SAFETY_UNBOUNDED_WHILE', path: 'src/Main.st', line: 22 },
+            { code: 'SAFETY_UNBOUNDED_REPEAT', path: 'src/Main.st', line: 23 },
+          ],
+        },
+      });
+    } finally {
+      if (oldBinary === undefined) delete process.env.ZPLC_NATIVE_SIM_BIN; else process.env.ZPLC_NATIVE_SIM_BIN = oldBinary;
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+
+  it('does not treat the IL transpiler\'s internal bounded loop as user-authored ST', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-safety-il-'));
+    try {
+      await mkdir(join(root, 'src'));
+      await writeFile(join(root, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'il', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Main.il'] }] }));
+      await writeFile(join(root, 'src', 'Main.il'), 'PROGRAM Main\nVAR\n  Count : INT;\nEND_VAR\n  LD Count\n  ADD 1\n  ST Count\nEND_PROGRAM');
+      await expect(safetyCheck(root)).resolves.toEqual({ ok: true, summary: { configured: false, declared: [], covered: [], uncovered: [] }, evidence: { schemaVersion: 1, operation: 'safety-check', outcome: 'passed', diagnostics: [], artifacts: [] } });
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
+
+  it('checks SFC user action bodies only after their canonical ST transpilation', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-safety-sfc-'));
+    try {
+      await mkdir(join(root, 'src'));
+      await writeFile(join(root, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'sfc', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main.sfc'] }] }));
+      const model = JSON.parse(await readFile(join(blinky, 'src', 'main.sfc.json'), 'utf8')) as { actions: Array<{ id: string; body: string }> };
+      model.actions.find((action) => action.id === 'SET_LED_ON')!.body = 'WHILE TRUE DO\nEND_WHILE;';
+      await writeFile(join(root, 'src', 'main.sfc.json'), JSON.stringify(model));
+      const result = await safetyCheck(root);
+      expect(result).toMatchObject({ ok: false, evidence: { diagnostics: [{ code: 'SAFETY_UNBOUNDED_WHILE', path: 'src/main.sfc.json' }] } });
+      expect(result.evidence.diagnostics[0]).toEqual({ code: 'SAFETY_UNBOUNDED_WHILE', message: 'WHILE has no provable static iteration bound', path: 'src/main.sfc.json' });
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
+
   it('does not treat a three-output NEVER as pair coverage', async () => {
     const root = await mkdtemp(join(tmpdir(), 'zplc-safety-physical-'));
     try {
@@ -135,6 +254,14 @@ describe('local Tool API', () => {
     const root = await mkdtemp(join(tmpdir(), 'zplc-toolchain-file-'));
     try { await writeFile(join(root, 'not-a-directory'), 'file'); await expect(toolchainInspect(join(root, 'not-a-directory'))).resolves.toMatchObject({ ok: false, evidence: { operation: 'toolchain-inspect' } }); }
     finally { await rm(root, { recursive: true, force: true }); }
+  });
+  it('lists only canonical declared board facts without probing a toolchain', async () => {
+    const root = await toolchainRepository();
+    try {
+      const result = await boardsList(root);
+      expect(result.ok).toBe(true); if (result.ok) expect(result.summary.boards[0]).toEqual({ boardId: 'alpha', ideId: 'alpha', zephyrBoard: 'alpha/board', validationLevel: 'cross-build' });
+      expect(result.evidence).toMatchObject({ operation: 'boards-list', outcome: 'passed' });
+    } finally { await rm(root, { recursive: true, force: true }); }
   });
   it('returns a static cross-build plan without probing, writing, or exposing build details', async () => {
     const root = await toolchainRepository();
@@ -1213,6 +1340,66 @@ END_PROGRAM`);
     }
   }, 30_000);
 
+  it.skipIf(!existsSync(nativeScenarioBinary))('keeps the Conveyor Learn starter compilable but red until its host jam lockout is completed', async () => {
+    const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
+    process.env.ZPLC_NATIVE_SIM_BIN = nativeScenarioBinary;
+    try {
+      await expect(compilerCheck(conveyorStarter)).resolves.toMatchObject({ ok: true, evidence: { operation: 'check', outcome: 'passed' } });
+      await expect(scenarioRun(conveyorStarter, 'Conveyor01')).resolves.toMatchObject({ ok: false, evidence: { operation: 'scenario-run', outcome: 'failed', diagnostics: [{ code: 'SCENARIO_ASSERTION_FAILED' }] }, preview: { scenarios: [{ id: 'Conveyor01', passed: false }] } });
+      await expect(scenarioRun(conveyor, 'Conveyor01')).resolves.toMatchObject({ ok: true, evidence: { operation: 'scenario-run', outcome: 'passed' }, preview: { scenarios: [{ id: 'Conveyor01', passed: true }] } });
+    } finally {
+      if (oldBinary === undefined) delete process.env.ZPLC_NATIVE_SIM_BIN;
+      else process.env.ZPLC_NATIVE_SIM_BIN = oldBinary;
+    }
+  }, 30_000);
+
+  it.skipIf(!existsSync(nativeScenarioBinary))('keeps every Learn exercise starter red and its paired reference green on native POSIX', async () => {
+    const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
+    process.env.ZPLC_NATIVE_SIM_BIN = nativeScenarioBinary;
+    try {
+      for (const [starterId, referenceId, scenarioId] of learnExercises) {
+        const starterRoot = fileURLToPath(new URL(`../../projects/${starterId}`, import.meta.url));
+        const referenceRoot = fileURLToPath(new URL(`../../projects/${referenceId}`, import.meta.url));
+        await expect(compilerCheck(starterRoot)).resolves.toMatchObject({ ok: true });
+        await expect(scenarioRun(starterRoot, scenarioId)).resolves.toMatchObject({ ok: false, evidence: { operation: 'scenario-run', outcome: 'failed', diagnostics: [{ code: 'SCENARIO_ASSERTION_FAILED' }] } });
+        await expect(scenarioRun(referenceRoot, scenarioId)).resolves.toMatchObject({ ok: true, evidence: { operation: 'scenario-run', outcome: 'passed' } });
+      }
+    } finally {
+      if (oldBinary === undefined) delete process.env.ZPLC_NATIVE_SIM_BIN;
+      else process.env.ZPLC_NATIVE_SIM_BIN = oldBinary;
+    }
+  }, 30_000);
+
+  it.skipIf(!existsSync(nativeScenarioBinary))('replays every canonical plant scenario 100 times with the same semantic native POSIX trace', async () => {
+    const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
+    const experiences = [
+      { root: motorPlant, scenarioId: 'MotorPlant' },
+      { root: conveyor, scenarioId: 'Conveyor01' },
+      { root: tankLevel, scenarioId: 'TankLevel' },
+      { root: pedestrianCrossing, scenarioId: 'PedestrianCrossing' },
+    ];
+    process.env.ZPLC_NATIVE_SIM_BIN = nativeScenarioBinary;
+    try {
+      for (const { root, scenarioId } of experiences) {
+        let expectedHash: string | undefined;
+        for (let repetition = 1; repetition <= 100; repetition += 1) {
+          const result = await scenarioRun(root, scenarioId);
+          if (!result.ok || result.summary.backend !== 'native-posix' || result.summary.mode !== 'logical-cyclic-task-set-scan'
+            || result.summary.scenarios.length !== 1 || result.summary.scenarios[0]?.id !== scenarioId || !result.summary.scenarios[0]?.passed
+            || result.evidence.outcome !== 'passed' || result.evidence.diagnostics.length !== 0) {
+            throw new Error(`${scenarioId} repetition ${repetition}: native scenario did not pass cleanly`);
+          }
+          const actualHash = semanticScenarioTraceHash(result, scenarioId);
+          if (expectedHash === undefined) expectedHash = actualHash;
+          else if (actualHash !== expectedHash) throw new Error(`${scenarioId} repetition ${repetition}: semantic trace diverged`);
+        }
+      }
+    } finally {
+      if (oldBinary === undefined) delete process.env.ZPLC_NATIVE_SIM_BIN;
+      else process.env.ZPLC_NATIVE_SIM_BIN = oldBinary;
+    }
+  }, 45_000);
+
   it.skipIf(!existsSync(nativeScenarioBinary))('preserves the fixed motor golden observable through an exported v1-to-v2 migration on native POSIX', async () => {
     const v1Root = await legacyMotorStartStop();
     const v2Root = await legacyMotorStartStop();
@@ -1272,4 +1459,32 @@ END_PROGRAM`);
       await Promise.all([rm(v1Root, { recursive: true, force: true }), rm(v2Root, { recursive: true, force: true })]);
     }
   }, 30_000);
+});
+describe('tool execution envelope', () => {
+  it('is versioned, metadata-only, unique, and derives cancellation only from canonical diagnostics', () => {
+    const first = startToolExecution('cli', executionPermission('test'), 'test', new Date('2026-08-31T00:00:00.000Z'));
+    const second = startToolExecution('cli', executionPermission('test'), 'test', new Date('2026-08-31T00:00:00.000Z'));
+    expect(first.jobId).not.toBe(second.jobId);
+    const cancelled = finishToolExecution(first, { ok: false, evidence: { schemaVersion: 1, operation: 'test', outcome: 'failed', diagnostics: [{ code: 'TEST_CANCELLED', message: 'ignored' }], artifacts: [] } }, new Date('2026-08-31T00:00:01.000Z'));
+    expect(cancelled).toEqual({ schemaVersion: 1, jobId: first.jobId, actor: 'cli', permission: 'tests:run', operation: 'test', outcome: 'cancelled', startedAt: '2026-08-31T00:00:00.000Z', finishedAt: '2026-08-31T00:00:01.000Z' });
+    expect(isToolExecutionEnvelope(cancelled)).toBe(true);
+    expect(Object.keys(withToolExecution({ ok: false }, cancelled))).toEqual(['ok', 'execution']);
+    expect(JSON.stringify(cancelled)).not.toMatch(/path|secret|prompt|source|log|value/i);
+    expect(isToolExecutionEnvelope({ ...cancelled, extra: true })).toBe(false);
+    expect(isToolExecutionEnvelope({ ...cancelled, finishedAt: '2026-08-30T23:59:59.999Z' })).toBe(false);
+    expect(isToolExecutionEnvelope({ ...cancelled, jobId: '018f4e1d-d941-4a8b-b5f7-8d15d9810001' })).toBe(true);
+    expect(isToolExecutionEnvelope({ ...cancelled, jobId: '018f4e1d-d941-0a8b-b5f7-8d15d9810001' })).toBe(false);
+    expect(isToolExecutionEnvelope({ ...cancelled, operation: 'firmware-flash' })).toBe(false);
+    expect(isToolExecutionEnvelope({ ...cancelled, permission: 'compiler:check' })).toBe(false);
+    const review = finishToolExecution(
+      startToolExecution('agent', executionPermission('change-set-review'), 'change-set-review', new Date('2026-08-31T00:00:00.000Z')),
+      { ok: true, evidence: { schemaVersion: 1, operation: 'test', outcome: 'passed', diagnostics: [], artifacts: [] } },
+      new Date('2026-08-31T00:00:01.000Z'),
+    );
+    expect(review.permission).toBe('tests:run');
+    expect(isToolExecutionEnvelope(review)).toBe(true);
+    Object.defineProperty(review, 'operation', { value: 'change-set-review', enumerable: false });
+    expect(isToolExecutionEnvelope(review)).toBe(false);
+    expect(executionPermission('validate')).toBe('project:read');
+  });
 });

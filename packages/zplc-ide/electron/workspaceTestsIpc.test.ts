@@ -29,9 +29,10 @@ describe('workspace test IPC boundary', () => {
     expect(mainSource).toContain("SAFETY_CHECK: 'workspace-tests:safety-check'");
     expect(mainSource).toContain('ipcMain.handle(WORKSPACE_TESTS_CHANNEL.SAFETY_CHECK, async (event, ...args: unknown[]) => {');
     expect(mainSource).toContain('isAllowedWorkspaceTestRequest(request)');
-    expect(mainSource).toContain('workspaceTestGateway.run(owner.ownerId, request, async (root) => {');
+    expect(mainSource).toContain('workspaceTestGateway.run(owner.ownerId, request, async (root, options) => {');
     expect(mainSource).toContain("safetyCheck?: (workspaceRoot: string) => Promise<unknown>");
-    expect(mainSource).toContain('toolApi.safetyCheck(root)');
+    expect(mainSource).toContain('const value = await toolApi.safetyCheck(root);');
+    expect(mainSource).toContain("finishStudioExecution(toolApi, options, 'safety:check', 'safety-check', value)");
     expect(mainSource).toContain('sanitizeWorkspaceSafetyCheck(result)');
     expect(mainSource).toContain("typeof toolApi.safetyCheck !== 'function'");
     expect(preloadSource).toContain('WORKSPACE_TESTS_CHANNEL.SAFETY_CHECK');
@@ -78,15 +79,18 @@ describe('workspace test IPC boundary', () => {
     expect(mainSource).toContain('workspaceTestGateway.run(owner.ownerId, workspaceRequest, async (root, options) => {');
     expect(mainSource).toContain("pathToFileURL(path.join(__dirname, 'toolApi.js')).href");
     expect(mainSource).toContain("typeof toolApi.testsRun !== 'function'");
-    expect(mainSource).toContain('return toolApi.testsRun(root, options);');
+    expect(mainSource).toContain('const value = await toolApi.testsRun(root, options);');
+    expect(mainSource).toContain("finishStudioExecution(toolApi, options, 'tests:run', 'test', value)");
     expect(mainSource).toContain("typeof toolApi.scenarioRun !== 'function'");
-    expect(mainSource).toContain('return toolApi.scenarioRun(root, scenarioId, options);');
+    expect(mainSource).toContain('const value = await toolApi.scenarioRun(root, scenarioId, options);');
+    expect(mainSource).toContain("finishStudioExecution(toolApi, options, 'tests:run', 'scenario-run', value)");
     expect(mainSource).toContain("ipcMain.handle(WORKSPACE_TESTS_CHANNEL.CANCEL, async (event, ...args: unknown[]) => {");
     expect(mainSource).toContain('if (args.length !== 0 || !owner) throw new Error(\'Request denied\');');
     expect(mainSource).toContain('workspaceTestGateway.cancel(owner.ownerId)');
     expect(preloadSource).toContain('cancel: () => ipcRenderer.invoke(WORKSPACE_TESTS_CHANNEL.CANCEL)');
     expect(mainSource).toContain("ipcMain.handle(WORKSPACE_TESTS_CHANNEL.COMPILE, async (event, ...args: unknown[]) => {");
-    expect(mainSource).toContain('toWorkspaceCompileEnvelope(await toolApi.compilerCompile(root))');
+    expect(mainSource).toContain('const value = await toolApi.compilerCompile(root);');
+    expect(mainSource).toContain("toWorkspaceCompileEnvelope(value, await finishStudioExecution(toolApi, options, 'compiler:check', 'compile', value))");
     expect(mainSource).toContain('toWorkspaceCompileEnvelope');
     expect(mainSource).toContain("createHash('sha256').update(result.zplcFile).digest('hex')");
     expect(mainSource).toContain('zplcEvidence: {');
@@ -95,6 +99,42 @@ describe('workspace test IPC boundary', () => {
     expect(mainSource).toContain('function revokeRendererOwner(ownerId: number): void {');
     expect(mainSource).toContain("webContents.on('did-start-navigation', (details) => {");
     expect(mainSource).toContain('if (details.isMainFrame && !details.isSameDocument) {');
+  });
+
+  it('records candidate review metadata as an agent test without returning prompt or source data through the audit path', () => {
+    expect(mainSource).toContain("actor: 'agent',");
+    expect(mainSource).toContain("permission: 'tests:run',");
+    expect(mainSource).toContain("operation: 'change-set-review',");
+    expect(mainSource).toContain('await finishAgentReviewExecution(toolApi, options, value);');
+    expect(mainSource).toContain("await finishAgentReviewExecution(toolApi, options, { evidence: { outcome: 'failed' } });");
+    expect(mainSource).toContain("await toolExecutionAudit.open(app.getPath('userData'), toolApi.isToolExecutionEnvelope);");
+    expect(mainSource).not.toContain('tool-execution-audit:write');
+    expect(mainSource).not.toContain('tool-execution-audit:delete');
+    expect(mainSource).not.toContain('tool-execution-audit:export');
+  });
+
+  it('projects gateway execution identity without leaking run options into the audit envelope', () => {
+    const studioHelper = mainSource.slice(
+      mainSource.indexOf('async function finishStudioExecution('),
+      mainSource.indexOf('async function finishAgentReviewExecution('),
+    );
+    const agentHelper = mainSource.slice(
+      mainSource.indexOf('async function finishAgentReviewExecution('),
+      mainSource.indexOf('// Packaging is the trust boundary'),
+    );
+
+    for (const helper of [studioHelper, agentHelper]) {
+      expect(helper).toContain('jobId: start.jobId');
+      expect(helper).toContain('startedAt: start.startedAt');
+      expect(helper).not.toContain('...start');
+      expect(helper).not.toContain('signal');
+    }
+    expect(studioHelper).toContain("actor: 'human-studio',");
+    expect(studioHelper).toContain('permission,');
+    expect(studioHelper).toContain('operation,');
+    expect(agentHelper).toContain("actor: 'agent',");
+    expect(agentHelper).toContain("permission: 'tests:run',");
+    expect(agentHelper).toContain("operation: 'change-set-review',");
   });
 
   it('does not add physical or generic-host operations to the workspace boundary', () => {
