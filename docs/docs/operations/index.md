@@ -3,50 +3,43 @@ slug: /operations
 id: index
 title: Operations
 sidebar_label: Operations
-description: Guidance on observability, firmware diagnostics, and system recovery.
+description: Observe, recover, and change ZPLC systems without crossing evidence or authority boundaries.
 tags: [operations]
 ---
 
 # Operations
 
-Operating ZPLC in an industrial environment requires understanding how to observe running logic, diagnose faults, and recover custom hardware gracefully. This section outlines standard operational procedures for ZPLC v1.5.0.
+ZPLC operations start with safe work and clear evidence. Do not infer physical
+state from a host result or turn a deploy into a firmware recovery procedure.
 
-For a full list of low-level diagnostic string commands, consult [The ZPLC Shell](./shell.md) reference.
+## Routine sequence
 
-## Diagnostics and Recovery Workflow
+1. Inspect runtime status, selected profile, diagnostics, and evidence source.
+2. Preserve the artifact hash and trace before changing anything.
+3. Keep physical actions under explicit human authority and the site procedure.
+4. Use [Recovery Boundaries](./recovery.md) when a connection, program, or firmware path fails.
 
-When a deployment step fails or an MCU behaves unexpectedly, use this sequence to diagnose the root cause instead of blindly reflashing:
+## What Studio can show
 
-1. **Check the ZPLC Shell**: Connect via serial using a tool like PuTTY or Minicom (115200 baud). ZPLC provides a built-in Zephyr shell. Run `zplc status` to see the VM state.
-2. **Review Task Violations**: Execute `zplc sched tasks`. A bounded VM execution fault is reported as a controlled logical fault; verify the physical safety response on the exact target before commissioning.
-3. **Inspect Output Pins Physically**: Use a multimeter to confirm if the output matches the logic state shown in the ZPLC IDE Watch Tables. If the IDE shows TRUE but the pin is 0V, you may have a misconfigured `zplc.json` I/O map.
-4. **Halt and Clear**: A restored program is loaded stopped. Use `zplc stop` to request safe logical outputs, inspect the fault, and use the profile-supported recovery procedure when you intentionally need to remove a saved artifact before a clean upload.
+- Compiler diagnostics, test results, host simulation trace, and a connected runtime’s reported status.
+- The selected board profile and its evidence tier.
+- A deploy confirmation that identifies artifact and runtime compatibility.
 
-## IDE Observability
+## Before a physical action
 
-The ZPLC IDE provides deep introspection utilities for running systems:
+- Confirm the machine is under the site’s approved safe-work procedure.
+- Confirm the selected board, profile, runtime identity, ABI, and artifact hash.
+- Keep flash, deploy, force, RUN/STOP, and recovery as separate human decisions.
 
-- **Watch Tables**: Allow you to pin global variables, Timers, or individual struct members and stream their live values directly from the hardware.
-- **Cycle Statistics**: Treat host/native simulator timing as diagnostic evidence, not a target timing qualification. Validate timing on the exact target before commissioning.
-- **Force / Write**: You can manually override a sensor value (e.g., forcing a temperature reading to `100.0` from the IDE) to test logic branches safely before actual operation.
+## What still needs target/HIL evidence
 
-## Network Troubleshooting
+- Electrical output state, timing/WCET, physical watchdog behavior, power-cut persistence, runner recovery, and production qualification.
+- Any assertion that a board profile works beyond its recorded evidence tier.
 
-If your `MQTT_PUBLISH` blocks or your Modbus TCP connection drops:
-- Ensure the Zephyr board has acquired a DHCP address (visible via `zplc status` in the shell).
-- Check the subnet alignment between the IDE workstation and the PLC target.
-- Confirm that the `network_interface` parameter for your MCU supports your networking topology.
+## Escalation record
 
-## Hardware Upgrades
+- Preserve diagnostics, trace, artifact identity, selected profile, and operator decision.
+- Do not copy credentials or raw sensitive serial material into tickets or prompts.
 
-ZPLC is built on Zephyr RTOS. Over time, base layers require patching.
-- Firmware update, firmware flash, program deploy, and RUN are separate operations. Verify the board/profile recovery procedure before updating firmware.
-- A valid persisted artifact is verified and restored stopped on boot; a human must issue `zplc start` after inspection.
-
-## Operator Checklist
-
-Before commissioning a machine running ZPLC, verify:
-- Task Intervals in `zplc.json` have realistic timeframes (e.g. 10ms for fast reading, 500ms for slow temperature reading) to avoid CPU saturation.
-- Source-level RETAIN declarations are currently rejected. Do not rely on future RETAIN recovery until end-to-end target/HIL evidence exists for the exact board profile.
-- Hardware UART or Network sockets match the requirements configured in the Communication tabs for Modbus/MQTT.
-- The Zephyr shell connects successfully via serial on 115200 baud.
+For low-level diagnostic reference, see [the ZPLC Shell](./shell.md). Raw serial,
+flash, force, RUN/STOP, and recovery are not AI or MCP operations.

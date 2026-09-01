@@ -3,7 +3,7 @@ slug: /reference/runtime-api
 id: runtime-api
 title: Runtime API
 sidebar_label: Runtime API
-description: Generated reference for the public ZPLC runtime headers that ship with v1.5.0.
+description: Generated reference for the public ZPLC runtime headers in ZPLC 2.0.
 tags: [reference, runtime, generated]
 ---
 
@@ -2247,6 +2247,24 @@ Stops all tasks but keeps them registered.
 | — | — | None. |
 
 **Source return value:** 0 on success, negative error code on failure
+
+#### `zplc_sched_enter_safe_error`
+
+```c
+int zplc_sched_enter_safe_error(void);
+```
+
+**Source summary:** Latch the scheduler in ERROR and de-energize its outputs.
+
+For a control-plane failure whose durable outcome is ambiguous. This stops timers and pending work, clears forces and the OPI, and rejects start until a fully validated replacement is loaded into an empty scheduler.
+
+**Parameters**
+
+| Name | Type | Source description |
+| --- | --- | --- |
+| — | — | None. |
+
+**Source return value:** 0 when safe outputs were applied, otherwise the first HAL error; the ERROR latch is retained in either case.
 
 #### `zplc_sched_pause`
 

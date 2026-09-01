@@ -6,16 +6,15 @@ sidebar_position: 1
 
 Structured Text (ST) is the canonical semantic baseline for ZPLC.
 
-## Canonical Role in v1.5
+## Role in ZPLC 2.0
 
-For v1.5.0:
+For ZPLC 2.0:
 
 - `ST` is the direct path into the shared compiler backend
-- `IL`, `LD`, `FBD`, and `SFC` are release-facing workflow paths when they converge into the same backend contract
+- `IL`, `LD`, `FBD`, and `SFC` are workflow paths when their editor, transpiler, and compiler contracts accept them
 - the runtime still executes `.zplc`, not source-language-specific code
 
-Use the [v1.5 Language Suite](./examples/v1-5-language-suite.md) as the shared parity
-reference when validating language claims.
+The [historical language suite](./examples/v1-5-language-suite.md) is compatibility evidence. It does not prove universal parity, target timing, hardware, or HIL behavior.
 
 ## Why ST matters architecturally
 

@@ -1,12 +1,12 @@
 ---
-title: Manifiesto Canónico de Docs v1.5
-sidebar_label: Docs Canónicas v1.5
-description: Superficie documental bloqueante del release para ZPLC v1.5.0.
+title: Manifiesto Canónico de Docs ZPLC 2.0
+sidebar_label: Docs ZPLC 2.0
+description: Superficie documental bloqueante del candidato ZPLC 2.0.
 ---
 
-# Manifiesto Canónico de Docs v1.5
+# Manifiesto Canónico de Docs ZPLC 2.0
 
-Las siguientes páginas bloquean el release y deben existir en inglés y español para v1.5.0.
+Las siguientes páginas bloquean el release y deben existir en inglés y español para ZPLC 2.0.
 
 | slug | english_path | spanish_path | area | release_blocking | owner | status |
 |------|--------------|--------------|------|------------------|-------|--------|
@@ -28,6 +28,8 @@ Las siguientes páginas bloquean el release y deben existir en inglés y españo
 | ide/editors | docs/docs/ide/editors.md | docs/i18n/es/docusaurus-plugin-content-docs/current/ide/editors.md | ide | yes | docs | in-progress |
 | ide/compiler | docs/docs/ide/compiler.md | docs/i18n/es/docusaurus-plugin-content-docs/current/ide/compiler.md | ide | yes | docs | in-progress |
 | ide/deployment | docs/docs/ide/deployment.md | docs/i18n/es/docusaurus-plugin-content-docs/current/ide/deployment.md | ide | yes | docs | in-progress |
+| ide/migration-v1-to-v2 | docs/docs/ide/migration-v1-to-v2.md | docs/i18n/es/docusaurus-plugin-content-docs/current/ide/migration-v1-to-v2.md | ide | yes | docs | candidate |
+| ide/ai-privacy | docs/docs/ide/ai-privacy.md | docs/i18n/es/docusaurus-plugin-content-docs/current/ide/ai-privacy.md | ide | yes | docs | candidate |
 | languages/index | docs/docs/languages/index.md | docs/i18n/es/docusaurus-plugin-content-docs/current/languages/index.md | languages | yes | docs | in-progress |
 | languages/st | docs/docs/languages/st.md | docs/i18n/es/docusaurus-plugin-content-docs/current/languages/st.md | languages | yes | docs | in-progress |
 | languages/il | docs/docs/languages/il.md | docs/i18n/es/docusaurus-plugin-content-docs/current/languages/il.md | languages | yes | docs | in-progress |
@@ -38,14 +40,16 @@ Las siguientes páginas bloquean el release y deben existir en inglés y españo
 | reference/source-of-truth | docs/docs/reference/source-of-truth.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/source-of-truth.md | reference | yes | docs | foundation |
 | reference/runtime-api | docs/docs/reference/runtime-api.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/runtime-api.md | reference | yes | docs | generated |
 | reference/boards | docs/docs/reference/boards.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/boards.md | boards | yes | docs | generated |
+| reference/capabilities-evidence | docs/docs/reference/capabilities-evidence.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/capabilities-evidence.md | reference | yes | docs | candidate |
 | reference/zephyr-workspace-setup | docs/docs/reference/zephyr-workspace-setup.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/zephyr-workspace-setup.md | zephyr-setup | yes | docs | in-progress |
 | operations/index | docs/docs/operations/index.md | docs/i18n/es/docusaurus-plugin-content-docs/current/operations/index.md | operations | yes | docs | in-progress |
 | operations/shell | docs/docs/operations/shell.md | docs/i18n/es/docusaurus-plugin-content-docs/current/operations/shell.md | operations | yes | docs | in-progress |
+| operations/recovery | docs/docs/operations/recovery.md | docs/i18n/es/docusaurus-plugin-content-docs/current/operations/recovery.md | operations | yes | docs | candidate |
 | release-notes/index | docs/docs/release-notes/index.md | docs/i18n/es/docusaurus-plugin-content-docs/current/release-notes/index.md | release-notes | yes | docs | release-ready |
 
-## Placas soportadas
+## Compatibilidad del manifest de placas
 
-El conjunto oficial de claims de placas para v1.5 se publica desde `firmware/app/boards/supported-boards.v1.5.0.json`.
+El nombre histórico del manifest de placas sigue siendo `firmware/app/boards/supported-boards.v1.5.0.json`. Sus entradas son profiles con nivel de evidencia, no un claim de producto v1.5.
 
 ## Regla de fuentes de verdad
 

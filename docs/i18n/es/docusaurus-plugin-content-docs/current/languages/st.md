@@ -6,13 +6,13 @@ sidebar_position: 1
 
 Structured Text (ST) es la base semántica canónica de ZPLC.
 
-## Papel canónico en v1.5
+## Papel en ZPLC 2.0
 
 - `ST` es la entrada directa al backend compartido del compilador
-- `IL`, `LD`, `FBD` y `SFC` son rutas soportadas cuando convergen al mismo contrato
+- `IL`, `LD`, `FBD` y `SFC` son rutas cuando sus contratos de editor, transpilador y compilador las aceptan
 - el runtime sigue ejecutando `.zplc`, no código fuente específico de lenguaje
 
-Usá la [Suite de Lenguajes v1.5](./examples/v1-5-language-suite.md) como referencia compartida para validar claims.
+Usá la [suite histórica de lenguajes](./examples/v1-5-language-suite.md) como evidencia de compatibilidad; no prueba paridad universal, timing target, hardware ni HIL.
 
 ## Por qué ST importa arquitectónicamente
 

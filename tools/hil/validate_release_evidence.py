@@ -10,12 +10,13 @@ ROOT = Path(__file__).resolve().parents[2]
 MATRIX = ROOT / "specs/008-release-foundation/artifacts/release-evidence-matrix.md"
 CLAIMS = ROOT / "specs/008-release-foundation/artifacts/release-claims.md"
 RELEASE_WORKFLOW = ROOT / ".github/workflows/release.yml"
+CI_WORKFLOW = ROOT / ".github/workflows/ci.yml"
 IMMUTABLE_ACTION_SHA = re.compile(r"[0-9a-fA-F]{40}\Z")
 
 
-def parse_rows() -> list[dict[str, str]]:
+def parse_rows(matrix: str | None = None) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
-    for line in MATRIX.read_text().splitlines():
+    for line in (MATRIX.read_text() if matrix is None else matrix).splitlines():
         if not line.startswith("|"):
             continue
         if "gate_id" in line or set(line.replace("|", "").strip()) == {"-"}:
@@ -40,9 +41,9 @@ def parse_rows() -> list[dict[str, str]]:
     return rows
 
 
-def parse_claim_rows() -> list[dict[str, str]]:
+def parse_claim_rows(claims: str | None = None) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
-    for line in CLAIMS.read_text().splitlines():
+    for line in (CLAIMS.read_text() if claims is None else claims).splitlines():
         if not line.startswith("|"):
             continue
         if "claim_id" in line or set(line.replace("|", "").strip()) == {"-"}:
@@ -237,6 +238,15 @@ def job_mapping(job: str, name: str) -> dict[str, str]:
     return result
 
 
+def has_needs(job: str, *required: str) -> bool:
+    """Return whether an inline `needs: [...]` contains every required job."""
+    value = job_field(job, "needs")
+    if value is None or not value.startswith("[") or not value.endswith("]"):
+        return False
+    needs = {item.strip() for item in value[1:-1].split(",") if item.strip()}
+    return set(required).issubset(needs)
+
+
 def action_steps(job: str, action: str) -> list[list[str]]:
     return [
         step
@@ -310,13 +320,25 @@ def validate_release_workflow(errors: list[str], workflow: str | None = None) ->
     ):
         errors.append("release workflow must not mutate manifests with release-version.ts")
 
+    candidate = workflow_job(workflow, "verify-release-candidate")
+    if candidate is None:
+        errors.append("release workflow must define a verify-release-candidate full-CI gate")
+    elif job_field(candidate, "needs") != "validate-version" or job_field(candidate, "uses") != "./.github/workflows/ci.yml":
+        errors.append("verify-release-candidate must run the reusable full CI workflow after validate-version")
+
+    reproducibility = workflow_job(workflow, "verify-linux-x64-payload-reproducibility")
+    if reproducibility is None:
+        errors.append("release workflow must define a Linux payload reproducibility gate")
+    elif not has_needs(reproducibility, "validate-version", "verify-release-candidate"):
+        errors.append("Linux payload reproducibility must require validate-version and full CI")
+
     for build_name in ("build-macos", "build-windows", "build-linux"):
         build = workflow_job(workflow, build_name)
         if build is None:
             errors.append(f"release workflow must define {build_name}")
             continue
-        if job_field(build, "needs") != "validate-version":
-            errors.append(f"{build_name} must depend on validate-version")
+        if not has_needs(build, "validate-version", "verify-release-candidate"):
+            errors.append(f"{build_name} must depend on validate-version and full CI")
         checkout_pinned, checkout_at_sha = has_pinned_checkout_at_sha(build)
         if not checkout_pinned:
             errors.append(
@@ -329,8 +351,15 @@ def validate_release_workflow(errors: list[str], workflow: str | None = None) ->
     if prepare is None:
         errors.append("release workflow must define prepare-release-evidence")
     else:
-        if job_field(prepare, "needs") != "[validate-version, build-macos, build-windows, build-linux]":
-            errors.append("prepare-release-evidence must require validate-version and all platform builds")
+        if not has_needs(
+            prepare,
+            "validate-version",
+            "verify-linux-x64-payload-reproducibility",
+            "build-macos",
+            "build-windows",
+            "build-linux",
+        ):
+            errors.append("prepare-release-evidence must require validation, reproducibility, and all platform builds")
         if job_field(prepare, "runs-on") != "ubuntu-latest":
             errors.append("prepare-release-evidence must run on ubuntu-latest")
         if job_mapping(prepare, "permissions") != {
@@ -371,8 +400,9 @@ def validate_release_workflow(errors: list[str], workflow: str | None = None) ->
         elif step_mapping_field(attestations[0], "with", "sbom-path") is not None or step_mapping_field(attestations[1], "with", "sbom-path") != expected_spdx:
             errors.append("prepare-release-evidence must produce default provenance and SPDX SBOM attestations")
         bundle = action_steps(prepare, "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02")
-        if len(bundle) != 1 or step_mapping_field(bundle[0], "with", "name") != "release-bundle" or step_mapping_field(bundle[0], "with", "path") != "release/":
-            errors.append("prepare-release-evidence must upload release/ as release-bundle")
+        expected_bundle = "release-bundle-${{ needs.validate-version.outputs.publishing == 'true' && 'publishable' || 'preview' }}"
+        if len(bundle) != 1 or step_mapping_field(bundle[0], "with", "name") != expected_bundle or step_mapping_field(bundle[0], "with", "path") != "release/":
+            errors.append("prepare-release-evidence must upload release/ as a publishable-or-preview bundle")
 
     upload = workflow_job(workflow, "upload-release")
     if upload is None:
@@ -381,21 +411,74 @@ def validate_release_workflow(errors: list[str], workflow: str | None = None) ->
     if job_field(upload, "needs") != "[validate-version, prepare-release-evidence]":
         errors.append("upload-release must require validate-version and prepare-release-evidence")
     expected_condition = (
-        "${{ always() && (github.event_name == 'push' || inputs.upload_to_release != false) "
+        "${{ always() && needs.validate-version.outputs.publishing == 'true' "
         "&& needs.validate-version.result == 'success' "
         "&& needs.prepare-release-evidence.result == 'success' }}"
     )
     if normalize_whitespace(job_field(upload, "if") or "") != expected_condition:
-        errors.append("upload-release must require only the complete success conjunction")
+        errors.append("upload-release must require publishing and the complete success conjunction")
+    if job_field(upload, "environment") != "release-signing":
+        errors.append("upload-release must use the protected release-signing environment")
     if action_steps(upload, "actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955") or action_steps(upload, "actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020"):
         errors.append("upload-release must publish the prepared bundle without checkout or setup")
     download = action_steps(upload, "actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093")
-    if len(download) != 1 or step_mapping_field(download[0], "with", "name") != "release-bundle" or step_mapping_field(download[0], "with", "path") != "release/":
-        errors.append("upload-release must download release-bundle directly to release/")
+    if len(download) != 1 or step_mapping_field(download[0], "with", "name") != "release-bundle-publishable" or step_mapping_field(download[0], "with", "path") != "release/":
+        errors.append("upload-release must download release-bundle-publishable directly to release/")
     if any("release-artifacts.mjs" in command for command in run_commands(upload)):
         errors.append("upload-release must not rebuild the prepared release bundle")
     if not re.search(r"(?m)^            release/\*\.spdx\.json$", upload):
         errors.append("upload-release must publish the prepared SPDX SBOM")
+
+
+def validate_ci_checkouts(errors: list[str], workflow: str | None = None) -> None:
+    workflow = active_yaml(CI_WORKFLOW.read_text() if workflow is None else workflow)
+    checkouts = [
+        step
+        for job_name in ("typescript", "host-core", "host-core-sanitized", "zephyr-twister", "zephyr-cross-build", "docs-and-truth")
+        if (job := workflow_job(workflow, job_name)) is not None
+        for step in step_blocks(job)
+        if (uses := step_field(step, "uses")) is not None and uses[0].startswith("actions/checkout@")
+    ]
+    if len(checkouts) != 6:
+        errors.append("CI must contain exactly six pinned checkout steps")
+        return
+    for checkout in checkouts:
+        if step_mapping_field(checkout, "with", "ref") != "${{ github.sha }}":
+            errors.append("every CI checkout must use the exact github.sha")
+            break
+    for job_name in ("zephyr-twister", "zephyr-cross-build"):
+        job = workflow_job(workflow, job_name)
+        if job is None or not any(step_mapping_field(step, "with", "path") == "zplc" for step in step_blocks(job)):
+            errors.append(f"{job_name} must retain checkout path zplc")
+
+
+def validate_rc3_records(errors: list[str], matrix: str | None = None, claims: str | None = None) -> None:
+    matrix = MATRIX.read_text() if matrix is None else matrix
+    claims = CLAIMS.read_text() if claims is None else claims
+    if not matrix.startswith("# ZPLC 2.0 RC3 Release Evidence Matrix"):
+        errors.append("release evidence matrix must have the ZPLC 2.0 RC3 heading")
+    if not claims.startswith("# ZPLC 2.0 RC3 Release Claim Inventory"):
+        errors.append("release claims must have the ZPLC 2.0 RC3 heading")
+    rows = parse_rows(matrix)
+    expected = {"REL-001", "REL-002", "REL-003", "REL-004", "REL-005", "REL-006", "REL-007"}
+    if {row["gate_id"] for row in rows} != expected:
+        errors.append("RC3 evidence matrix must define the seven canonical release gates")
+    for row in rows:
+        if row["gate_id"] == "REL-007":
+            if row["status"] == "passed":
+                serial = ROOT / "specs/008-release-foundation/artifacts/evidence-board-serial.md"
+                network = ROOT / "specs/008-release-foundation/artifacts/evidence-board-network.md"
+                if "Pending" in row["required_evidence"] or any("Status: Passed human execution." not in path.read_text() for path in (serial, network)):
+                    errors.append("HIL cannot pass while its evidence remains pending")
+            continue
+        if row["status"] != "passed":
+            errors.append(f"RC3 non-HIL gate {row['gate_id']} must be passed")
+        for link in (part.strip() for part in row["artifact_links"].split(";") if part.strip()):
+            link_path = link.split("#", 1)[0]
+            if link_path and not link_path.startswith(("http://", "https://")) and not (ROOT / link_path).exists():
+                errors.append(f"{row['gate_id']} references missing local evidence {link_path}")
+    if re.search(r"(?:signed|notarized|notarisation) (?:installer|artifact|release) (?:has been |was )?(?:verified|created|executed)", claims, re.IGNORECASE):
+        errors.append("release claims must not assert that hosted signing or notarization already executed")
 
 
 def main() -> int:
@@ -436,6 +519,8 @@ def main() -> int:
                 errors.append(f"{claim['claim_id']} references unknown gate {gate_id}")
 
     validate_release_workflow(errors)
+    validate_ci_checkouts(errors)
+    validate_rc3_records(errors)
 
     if errors:
         for error in errors:

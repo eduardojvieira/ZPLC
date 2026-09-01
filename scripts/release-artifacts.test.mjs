@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 import { createReleaseIntegrityBundle } from './release-artifacts.mjs';
+import { requireAcceptedNotaryResponse, requireMacReleaseSigning } from '../packages/zplc-ide/scripts/mac-release-signing.mjs';
 
 const identity = { version: '2.0.0-rc.1', tag: 'v2.0.0-rc.1', commitSha: 'a'.repeat(40) };
 const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -145,9 +146,157 @@ test('keeps the release body version-generic and evidence-scoped', async () => {
   assert.doesNotMatch(uploadRelease, /Representative HIL proof/);
 });
 
+test('gates every release build on the reusable full CI for the release SHA', async () => {
+  const [ci, release] = await Promise.all([
+    readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8'),
+    readFile(new URL('../.github/workflows/release.yml', import.meta.url), 'utf8'),
+  ]);
+
+  assert.match(ci, /^  workflow_call:\s*$/m, 'CI must be callable by the release workflow');
+  assert.match(
+    release,
+    /^  verify-release-candidate:\n    needs: validate-version\n    uses: \.\/\.github\/workflows\/ci\.yml$/m,
+    'release must call the existing full CI as a reusable workflow',
+  );
+
+  for (const jobName of ['build-macos', 'build-windows', 'build-linux']) {
+    const job = release.match(new RegExp(`^  ${jobName}:\\n([\\s\\S]*?)(?=^  \\S|\\Z)`, 'm'))?.[0] ?? '';
+    assert.match(
+      job,
+      /^    needs: \[validate-version, verify-release-candidate\]$/m,
+      `${jobName} must wait for the full CI result`,
+    );
+  }
+});
+
+test('gates release evidence on two clean Linux x64 payload builds of the exact SHA', async () => {
+  const workflow = await readFile(new URL('../.github/workflows/release.yml', import.meta.url), 'utf8');
+  const job = workflow.match(/^  verify-linux-x64-payload-reproducibility:\n([\s\S]*?)(?=^  \S|\Z)/m)?.[0] ?? '';
+  assert.ok(job, 'Linux payload reproducibility job is missing');
+  assert.match(job, /^    needs: \[validate-version, verify-release-candidate\]$/m);
+  assert.match(job, /git worktree add --detach .*\$\{\{ github\.sha \}\}/);
+  assert.match(job, /SOURCE_DATE_EPOCH=.*git show -s --format=%ct/);
+  assert.match(job, /verify-reproducible-linux-payload\.ts/);
+  assert.match(job, /Linux x64 packaged payload reproducibility/);
+
+  const evidence = workflow.match(/^  prepare-release-evidence:\n([\s\S]*?)(?=^  \S|\Z)/m)?.[0] ?? '';
+  assert.match(
+    evidence,
+    /^    needs: \[validate-version, verify-linux-x64-payload-reproducibility, build-macos, build-windows, build-linux\]$/m,
+    'release evidence must wait for the Linux x64 payload reproducibility result',
+  );
+});
+
 test('mac packaging stages required workspace manifests for the frozen lockfile', async () => {
   const script = await readFile(new URL('../packages/zplc-ide/scripts/package-mac-release.mjs', import.meta.url), 'utf8');
   for (const manifest of ['docs/package.json', 'packages/zplc-hil/package.json']) {
     assert.match(script, new RegExp(`\\{ path: '${manifest.replace('/', '\\/').replace('.', '\\.')}', directory: false \\}`));
   }
+});
+
+test('fails closed when any macOS signing credential is absent', () => {
+  const complete = {
+    ZPLC_MACOS_CSC_LINK: 'certificate',
+    ZPLC_MACOS_CSC_KEY_PASSWORD: 'password',
+    ZPLC_APPLE_API_KEY_P8: 'private-key',
+    ZPLC_APPLE_API_KEY_ID: 'key-id',
+    ZPLC_APPLE_API_ISSUER: 'issuer',
+    ZPLC_APPLE_TEAM_ID: 'team-id',
+  };
+  assert.doesNotThrow(() => requireMacReleaseSigning(complete));
+  for (const field of Object.keys(complete)) {
+    const incomplete = { ...complete, [field]: '  ' };
+    assert.throws(() => requireMacReleaseSigning(incomplete), new RegExp(field));
+  }
+});
+
+test('accepts only bounded accepted macOS notarization responses', () => {
+  assert.doesNotThrow(() => requireAcceptedNotaryResponse('{"status":"Accepted"}'));
+  for (const response of ['{"status":"Invalid"}', '{}', 'not json', 'x'.repeat(64 * 1024 + 1)]) {
+    assert.throws(() => requireAcceptedNotaryResponse(response), /not accepted/);
+  }
+});
+
+test('publishing requires verified native signatures while previews remain isolated', async () => {
+  const [workflow, builder, macScript] = await Promise.all([
+    readFile(new URL('../.github/workflows/release.yml', import.meta.url), 'utf8'),
+    readFile(new URL('../packages/zplc-ide/electron-builder.yml', import.meta.url), 'utf8'),
+    readFile(new URL('../packages/zplc-ide/scripts/package-mac-release.mjs', import.meta.url), 'utf8'),
+  ]);
+
+  assert.doesNotMatch(builder, /^\s*identity:\s*['"]-['"]\s*$/m, 'ad-hoc macOS signing is forbidden');
+  assert.match(
+    builder,
+    /^win:\n(?:  [^\n]*\n)*?  signtoolOptions:\n    signingHashAlgorithms:\n      - sha256$/m,
+    'Windows must configure SHA-256 under win.signtoolOptions',
+  );
+  assert.match(builder, /^win:\n(?:  [^\n]*\n)*?  signExts:\n    - \.exe$/m, 'Windows must explicitly sign executable extra resources');
+  assert.doesNotMatch(
+    builder,
+    /^win:\n(?:  [^\n]*\n)*?  signingHashAlgorithms:/m,
+    'signingHashAlgorithms is valid only under win.signtoolOptions',
+  );
+  assert.match(macScript, /requireMacReleaseSigning\(process\.env\)/);
+  assert.match(macScript, /writeFileSync\(apiKeyPath, process\.env\.ZPLC_APPLE_API_KEY_P8, \{ mode: 0o600 \}\)/);
+  assert.match(macScript, /builderEnv\.CSC_LINK = process\.env\.ZPLC_MACOS_CSC_LINK/);
+  assert.match(macScript, /builderEnv\.APPLE_API_KEY = apiKeyPath/);
+  assert.match(macScript, /'ZPLC_MACOS_CSC_LINK', 'ZPLC_MACOS_CSC_KEY_PASSWORD', 'ZPLC_APPLE_API_KEY_P8'/);
+  assert.match(macScript, /\) delete builderEnv\[key\];/);
+  assert.match(macScript, /-c\.forceCodeSigning=true/);
+  assert.match(macScript, /-c\.mac\.notarize=false/);
+  assert.match(macScript, /Expected exactly one staged macOS DMG/);
+  assert.match(macScript, /submitNotaryDmg\(\[\n\s*'notarytool', 'submit', stagedDmg, '--key', apiKeyPath/);
+  assert.match(macScript, /'--issuer', process\.env\.ZPLC_APPLE_API_ISSUER, '--wait', '--output-format', 'json'/);
+  assert.match(macScript, /requireAcceptedNotaryResponse\(response\)/);
+  assert.match(macScript, /'stapler', 'staple', stagedDmg/);
+  assert.ok(
+    macScript.indexOf("'stapler', 'staple', stagedDmg") < macScript.indexOf("if (process.env.ZPLC_MAC_COPY_APP_BUNDLE === '1')"),
+    'DMG notarization and stapling must finish before artifacts are copied out of staging',
+  );
+
+  const mac = workflow;
+  assert.match(mac, /environment: \$\{\{ needs\.validate-version\.outputs\.publishing == 'true' && 'release-signing' \|\| 'preview' \}\}/);
+  assert.match(mac, /codesign --verify --deep --strict --verbose=2/);
+  assert.match(mac, /Authority=Developer ID Application:/);
+  assert.match(mac, /TeamIdentifier=\$ZPLC_APPLE_TEAM_ID/);
+  assert.match(mac, /xcrun stapler validate "\$APP_PATH"/);
+  assert.match(mac, /xcrun stapler validate "\$\{dmgs\[0\]\}"/);
+  assert.match(mac, /spctl --assess --type execute/);
+  assert.match(mac, /spctl --assess --type open/);
+
+  const windows = workflow;
+  assert.match(windows, /-c\.forceCodeSigning=true/);
+  assert.match(windows, /Get-Command signtool\.exe/);
+  assert.match(windows, /dist-electron\/win-unpacked\/zplc-ide\.exe/);
+  assert.match(windows, /dist-electron\/win-unpacked\/resources\/native-runtime\/zplc_runtime\.exe/);
+  assert.match(windows, /\$unpackedExecutables\.Count -ne 2/);
+  assert.match(windows, /foreach \(\$artifact in @\(\$artifacts\) \+ \$unpackedExecutables\)/);
+  assert.match(windows, /& \$signtool\.Source verify \/pa \/all \/tw \/v/);
+  assert.match(windows, /Get-AuthenticodeSignature/);
+  assert.match(windows, /\$signature\.Status -ne 'Valid'/);
+  assert.match(windows, /\$null -eq \$signature\.TimeStamperCertificate/);
+  assert.match(windows, /SignerCertificate\.Subject -ne \$env:ZPLC_WINDOWS_EXPECTED_PUBLISHER/);
+  assert.ok(
+    windows.indexOf('Verify Windows artifact signatures') < windows.indexOf('Upload Windows artifacts'),
+    'Windows signature and timestamp verification must precede artifact upload',
+  );
+
+  const upload = workflow.match(/^  upload-release:\n[\s\S]*$/m)?.[0] ?? '';
+  assert.match(upload, /environment: release-signing/);
+  assert.match(upload, /needs\.validate-version\.outputs\.publishing == 'true'/);
+  assert.match(upload, /name: release-bundle-publishable/);
+  assert.doesNotMatch(upload, /release-bundle-preview/);
+});
+
+test('keeps Linux desktop identity and icon metadata aligned with the executable', async () => {
+  const [packageJson, builder, icon] = await Promise.all([
+    readFile(new URL('../packages/zplc-ide/package.json', import.meta.url), 'utf8'),
+    readFile(new URL('../packages/zplc-ide/electron-builder.yml', import.meta.url), 'utf8'),
+    readFile(new URL('../packages/zplc-ide/public/icon.png', import.meta.url)),
+  ]);
+  assert.equal(JSON.parse(packageJson).desktopName, 'zplc-ide');
+  assert.match(builder, /^linux:\n(?:  [^\n]*\n)*?  syncDesktopName: true$/m);
+  assert.deepEqual(icon.subarray(0, 8), Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+  assert.equal(icon.readUInt32BE(16), 1024);
+  assert.equal(icon.readUInt32BE(20), 1024);
 });

@@ -7,7 +7,7 @@ change any of the others.
 | Axis | Current documented direction | Compatibility rule |
 |---|---|---|
 | Product | Root `package.json` `version` | The root semantic version is the only consumed product version. `bun run check:versions` requires the compiler, HIL, and IDE manifests to match it. |
-| Project schema | Schema 2 is planned for ZPLC 2.0 | Migrations must be explicit, previewable, and tested with golden projects. |
+| Project schema | Schema 2 is current | Schema v1 remains supported only through an explicit, previewable migration to v2, tested with golden projects. |
 | `.zplc` ABI | ABI 1.0 is retained initially | Change only for a required artifact incompatibility. |
 | Native runtime protocol | 1.0 | Additive capabilities remain compatible; breaking wire changes require a major bump. |
 

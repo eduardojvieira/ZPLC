@@ -64,9 +64,9 @@ def mermaid_diagram(boards: list[dict[str, object]], spanish: bool) -> list[str]
 def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> str:
     title = "Supported Boards" if not spanish else "Placas Soportadas"
     description = (
-        "Generated board reference for the ZPLC v1.5.0 release."
+        "Generated board reference for the ZPLC 2.0 candidate."
         if not spanish
-        else "Referencia generada de placas para el release ZPLC v1.5.0."
+        else "Referencia generada de placas para el candidato ZPLC 2.0."
     )
     intro = (
         "This page is generated from `firmware/app/boards/supported-boards.v1.5.0.json`. Update the JSON or rerun `python3 tools/docs/generate_board_reference.py` instead of editing this file manually."
@@ -82,7 +82,8 @@ def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> st
     board_col = "Display name" if not spanish else "Nombre visible"
     zephyr_col = "Zephyr target" if not spanish else "Target Zephyr"
     network_col = "Network" if not spanish else "Red"
-    validation_col = "Validation" if not spanish else "Validación"
+    validation_col = "Evidence tier" if not spanish else "Nivel de evidencia"
+    evidence_col = "HIL evidence" if not spanish else "Evidencia HIL"
 
     lines = [
         "---",
@@ -108,19 +109,20 @@ def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> st
             "",
             f"## {summary_title}",
             "",
-            f"| {board_col} | Board ID | IDE ID | {zephyr_col} | {network_col} | {validation_col} |",
-            "| --- | --- | --- | --- | --- | --- |",
+            f"| {board_col} | Board ID | IDE ID | {zephyr_col} | {network_col} | {validation_col} | {evidence_col} |",
+            "| --- | --- | --- | --- | --- | --- | --- |",
         ]
     )
     for board in boards:
         lines.append(
-            "| {display_name} | `{board_id}` | `{ide_id}` | `{zephyr_board}` | {network} | {validation} |".format(
+            "| {display_name} | `{board_id}` | `{ide_id}` | `{zephyr_board}` | {network} | {validation} | {evidence_count} refs |".format(
                 display_name=str(board["display_name"]),
                 board_id=str(board["board_id"]),
                 ide_id=str(board["ide_id"]),
                 zephyr_board=str(board["zephyr_board"]),
                 network=network_summary(board, spanish),
                 validation=validation_summary(board),
+                evidence_count=len(board.get("evidence_refs", [])),
             )
         )
     lines.extend(["", f"## {details_title}"])
@@ -135,7 +137,8 @@ def render_board_reference(boards: list[dict[str, object]], spanish: bool) -> st
                 f"- **Zephyr target:** `{board['zephyr_board']}`",
                 f"- **Variant:** `{board['variant']}`",
                 f"- **Network:** {network_summary(board, spanish)}",
-                f"- **Validation:** {validation_summary(board)}",
+                f"- **{validation_col}:** {validation_summary(board)}",
+                f"- **{evidence_col}:** {len(board.get('evidence_refs', []))} references",
                 f"- **{build_label}:** `{board['build_command']}`",
                 f"- **{docs_ref_label}:** `{board['docs_ref']}`",
                 f"- **{assets_label}:**",

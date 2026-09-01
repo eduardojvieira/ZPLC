@@ -3,26 +3,21 @@ slug: /reference
 id: index
 title: Reference
 sidebar_label: Reference
-description: API references, supported boards, and configuration details.
+description: ZPLC 2.0 APIs, board profiles, evidence tiers, and Zephyr setup.
 tags: [reference]
 ---
 
 # Reference
 
-This section is the technical reference for ZPLC. Board entries below reproduce
-the versioned board manifest; they are not HIL or production qualification.
+Use this section to identify the current contract and the evidence behind a
+claim. Profile presence is not HIL or production qualification.
 
-## Start with the architecture
+## Start here
 
-- [Getting Started](../getting-started/index.md) — install, first project, simulation paths, and supported hardware handoff
-- [System Architecture](../architecture/index.md) — system boundaries, IDE/compiler/runtime relationships, and working principles
-- [Runtime Overview](../runtime/index.md) — runtime responsibilities, execution model, and subsystem map
-
-## ZPLC v1.5 reference
-
-- [Runtime API](./runtime-api.md)
-- [Supported Boards](./boards.md)
-- [Zephyr Workspace Setup](./zephyr-workspace-setup.md)
+- [Capabilities and Evidence](./capabilities-evidence.md) — how to read host, POSIX, package, Twister/QEMU, cross-build, and HIL results.
+- [Board profiles](./boards.md) — generated data from the historical manifest filename.
+- [Runtime API](./runtime-api.md) — generated C header reference.
+- [Zephyr workspace setup](./zephyr-workspace-setup.md) — reproducible build inputs.
 
 ## Supported Boards
 
@@ -35,6 +30,5 @@ the versioned board manifest; they are not HIL or production qualification.
 | STM32 Nucleo-H743ZI | `nucleo_h743zi` | `nucleo_h743zi/stm32h743xx` | Network-capable (Ethernet) | cross-build |
 | Arduino Opta WiFi (STM32H747 M7) | `arduino_opta_wifi` | `arduino_opta/stm32h747xx/m7` | Network-capable (Wi-Fi) | cross-build |
 
-The table mirrors `firmware/app/boards/supported-boards.v1.5.0.json`. Its
-`cross-build` level records manifest validation only; it does not claim HIL
-verification or production qualification.
+The table mirrors `firmware/app/boards/supported-boards.v1.5.0.json`. Every
+current row has zero HIL evidence references.

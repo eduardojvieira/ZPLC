@@ -7,7 +7,7 @@ targets, and native host tooling. Its timing, hardware, and release claims are
 limited to recorded evidence rather than inferred from source presence.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Zephyr 4.0](https://img.shields.io/badge/Zephyr-4.0.0-blue.svg)](https://zephyrproject.org/)
+[![Zephyr 4.4.2](https://img.shields.io/badge/Zephyr-4.4.2-blue.svg)](https://zephyrproject.org/)
 [![C99](https://img.shields.io/badge/C-C99-green.svg)](https://en.wikipedia.org/wiki/C99)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
 
@@ -35,10 +35,13 @@ The full documentation for ZPLC, including the runtime architecture, hardware in
 
 ## Current posture
 
-`v2.0.0-rc.1` is the current prerelease candidate. Repository and host checks
-cover the candidate's source, native simulation, packaging, and documentation;
-they do not establish HIL, board qualification, target timing, safety
-certification, signed/notarized installers, or final human sign-off. See the
+`v2.0.0-rc.3` is the current prerelease candidate. Its non-HIL controls and
+release gates are implemented and locally verifiable: source, native simulation,
+packaging, documentation, exact-SHA CI, and fail-closed signing/release workflow
+checks. A hosted workflow run on the exact tag/SHA creates the concrete signed,
+notarized, SBOM and attestation artifacts where applicable. The only remaining
+product qualification gate is traceable physical HIL on the two selected boards;
+ZPLC is not a safety PLC or production-qualified board release. See the
 [release notes](docs/docs/release-notes/index.md) and [release evidence
 matrix](specs/008-release-foundation/artifacts/release-evidence-matrix.md) for
 the current boundary.
@@ -158,7 +161,7 @@ validation level and evidence determine what can be claimed. Refer to the
 board manifest and release evidence before treating any profile as hardware-qualified.
 
 ### Desktop & Development
-- **Desktop app surface**: Windows, macOS, and Linux source/build workflows; human smoke evidence remains pending.
+- **Desktop app surface**: Windows, macOS, and Linux source/build workflows with packaged smoke gates in the exact-SHA release workflow.
 - **POSIX**: host development and test runtime.
 - **QEMU**: emulated target evidence where configured.
 - **WASM**: degraded browser fallback, not parity-authoritative evidence.

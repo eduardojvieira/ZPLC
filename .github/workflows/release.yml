@@ -22,7 +22,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version (e.g., 2.0.0-rc.1)'
+        description: 'Release version (e.g., 2.0.0-rc.3)'
         required: true
         type: string
       upload_to_release:
@@ -50,6 +50,7 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
       tag: ${{ steps.version.outputs.tag }}
+      publishing: ${{ steps.version.outputs.publishing }}
     steps:
       - name: Checkout
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
@@ -85,15 +86,94 @@ jobs:
             echo "Requested release version $requested does not match canonical package.json version $canonical_version"
             exit 1
           fi
+          publishing=false
+          if [ "$EVENT_NAME" = "push" ] || [ "$UPLOAD_TO_RELEASE" = "true" ]; then
+            publishing=true
+          fi
           echo "version=$canonical_version" >> "$GITHUB_OUTPUT"
           echo "tag=v$canonical_version" >> "$GITHUB_OUTPUT"
+          echo "publishing=$publishing" >> "$GITHUB_OUTPUT"
+
+  # Run the canonical CI workflow for this caller's exact SHA before any
+  # release artifact can be built. HIL remains intentionally out of CI.
+  verify-release-candidate:
+    needs: validate-version
+    uses: ./.github/workflows/ci.yml
+
+  # This checks only the unpacked Linux x64 application payload (app.asar plus
+  # native POSIX runtime). Installers and other operating systems are out of scope.
+  verify-linux-x64-payload-reproducibility:
+    needs: [validate-version, verify-release-candidate]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@f4d14e03ff726c06358e5557344e1da148b56cf7 # v1.2.2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install Linux build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm
+
+      - name: Build two clean Linux x64 payloads from the exact SHA
+        shell: bash
+        run: |
+          set -euo pipefail
+          reproducibility_root="$RUNNER_TEMP/zplc-linux-x64-reproducibility"
+          first_workspace="$reproducibility_root/first"
+          second_workspace="$reproducibility_root/second"
+          git worktree add --detach "$first_workspace" "${{ github.sha }}"
+          git worktree add --detach "$second_workspace" "${{ github.sha }}"
+
+          build_payload() {
+            workspace="$1"
+            (
+              cd "$workspace"
+              export SOURCE_DATE_EPOCH="$(git show -s --format=%ct "${{ github.sha }}")"
+              test -f bun.lock
+              bun install --frozen-lockfile
+              (cd packages/zplc-compiler && bun run build)
+              cmake -S firmware/lib/zplc_core -B firmware/lib/zplc_core/build -DCMAKE_BUILD_TYPE=Release
+              cmake --build firmware/lib/zplc_core/build --target zplc_runtime --config Release
+              mkdir -p packages/zplc-ide/dist-native
+              cp firmware/lib/zplc_core/build/zplc_runtime packages/zplc-ide/dist-native/
+              (
+                cd packages/zplc-ide
+                bun run build:assets
+                bun run build
+                bun run electron:compile
+                bun x electron-builder --linux --x64 --publish never
+              )
+            )
+          }
+
+          build_payload "$first_workspace"
+          build_payload "$second_workspace"
+
+      - name: Verify Linux x64 packaged payload reproducibility (not installers)
+        run: |
+          bun "$RUNNER_TEMP/zplc-linux-x64-reproducibility/first/packages/zplc-ide/scripts/verify-reproducible-linux-payload.ts" \
+            "$RUNNER_TEMP/zplc-linux-x64-reproducibility/first/packages/zplc-ide" \
+            "$RUNNER_TEMP/zplc-linux-x64-reproducibility/second/packages/zplc-ide"
 
   # ===========================================================================
   # Build IDE for macOS (x64 and arm64)
   # ===========================================================================
   build-macos:
-    needs: validate-version
+    needs: [validate-version, verify-release-candidate]
     runs-on: ${{ matrix.runner }}
+    environment: ${{ needs.validate-version.outputs.publishing == 'true' && 'release-signing' || 'preview' }}
     strategy:
       fail-fast: false
       matrix:
@@ -127,18 +207,46 @@ jobs:
         run: |
           cd packages/zplc-compiler && bun run build
 
+      - name: Preflight macOS release signing
+        shell: bash
+        env:
+          ZPLC_PUBLISHING: ${{ needs.validate-version.outputs.publishing }}
+          ZPLC_MACOS_CSC_LINK: ${{ secrets.ZPLC_MACOS_CSC_LINK }}
+          ZPLC_MACOS_CSC_KEY_PASSWORD: ${{ secrets.ZPLC_MACOS_CSC_KEY_PASSWORD }}
+          ZPLC_APPLE_API_KEY_P8: ${{ secrets.ZPLC_APPLE_API_KEY_P8 }}
+          ZPLC_APPLE_API_KEY_ID: ${{ secrets.ZPLC_APPLE_API_KEY_ID }}
+          ZPLC_APPLE_API_ISSUER: ${{ secrets.ZPLC_APPLE_API_ISSUER }}
+          ZPLC_APPLE_TEAM_ID: ${{ vars.ZPLC_APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          [ "$ZPLC_PUBLISHING" = "true" ] || exit 0
+          for variable in ZPLC_MACOS_CSC_LINK ZPLC_MACOS_CSC_KEY_PASSWORD ZPLC_APPLE_API_KEY_P8 ZPLC_APPLE_API_KEY_ID ZPLC_APPLE_API_ISSUER ZPLC_APPLE_TEAM_ID; do
+            [ -n "${!variable:-}" ] || { echo "Missing required macOS release-signing configuration: $variable"; exit 1; }
+          done
+
       - name: Build Electron app (macOS ${{ matrix.arch }})
         working-directory: packages/zplc-ide
         run: |
           bun run scripts/package-mac-release.mjs ${{ matrix.arch }}
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CSC_IDENTITY_AUTO_DISCOVERY: false
+          ZPLC_PUBLISHING: ${{ needs.validate-version.outputs.publishing }}
+          ZPLC_MACOS_CSC_LINK: ${{ secrets.ZPLC_MACOS_CSC_LINK }}
+          ZPLC_MACOS_CSC_KEY_PASSWORD: ${{ secrets.ZPLC_MACOS_CSC_KEY_PASSWORD }}
+          ZPLC_APPLE_API_KEY_P8: ${{ secrets.ZPLC_APPLE_API_KEY_P8 }}
+          ZPLC_APPLE_API_KEY_ID: ${{ secrets.ZPLC_APPLE_API_KEY_ID }}
+          ZPLC_APPLE_API_ISSUER: ${{ secrets.ZPLC_APPLE_API_ISSUER }}
+          ZPLC_APPLE_TEAM_ID: ${{ vars.ZPLC_APPLE_TEAM_ID }}
           ZPLC_MAC_COPY_APP_BUNDLE: '1'
 
       - name: Verify macOS bundle code signing
         working-directory: packages/zplc-ide
+        shell: bash
+        env:
+          ZPLC_PUBLISHING: ${{ needs.validate-version.outputs.publishing }}
+          ZPLC_APPLE_TEAM_ID: ${{ vars.ZPLC_APPLE_TEAM_ID }}
         run: |
+          set -euo pipefail
+          [ "$ZPLC_PUBLISHING" = "true" ] || { echo "Preview artifact: skipping native signature verification."; exit 0; }
           APP_PATH=$(python3 - <<'PY'
           from pathlib import Path
           apps = sorted(Path('dist-electron').glob('mac*/**/*.app'))
@@ -150,17 +258,29 @@ jobs:
             exit 1
           fi
           codesign --verify --deep --strict --verbose=2 "$APP_PATH"
-          codesign -dv --verbose=4 "$APP_PATH" 2>&1
-          codesign -dv --verbose=4 "$APP_PATH/Contents/Frameworks/Electron Framework.framework/Versions/A/Electron Framework" 2>&1
+          signing_info="$(codesign -dv --verbose=4 "$APP_PATH" 2>&1)"
+          grep -Eq '^Authority=Developer ID Application:' <<<"$signing_info"
+          grep -Fqx "TeamIdentifier=$ZPLC_APPLE_TEAM_ID" <<<"$signing_info"
+          shopt -s nullglob
+          dmgs=(dist-electron/*.dmg)
+          [ "${#dmgs[@]}" -eq 1 ] || { echo "Expected exactly one macOS DMG, found ${#dmgs[@]}"; exit 1; }
+          xcrun stapler validate "$APP_PATH"
+          xcrun stapler validate "${dmgs[0]}"
+          spctl --assess --type execute --verbose=4 "$APP_PATH"
+          spctl --assess --type open --context context:primary-signature --verbose=4 "${dmgs[0]}"
 
       - name: Validate macOS build artifacts
         working-directory: packages/zplc-ide
         run: bun run smoke:desktop-builds macos ${{ matrix.arch }}
 
+      - name: Launch packaged macOS app
+        working-directory: packages/zplc-ide
+        run: bun run smoke:desktop-packaged
+
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: macos-${{ matrix.arch }}
+          name: macos-${{ matrix.arch }}-${{ needs.validate-version.outputs.publishing == 'true' && 'signed' || 'preview' }}
           path: |
             packages/zplc-ide/dist-electron/*.dmg
             packages/zplc-ide/dist-electron/*.zip
@@ -170,8 +290,9 @@ jobs:
   # Build IDE for Windows (x64 and arm64)
   # ===========================================================================
   build-windows:
-    needs: validate-version
+    needs: [validate-version, verify-release-candidate]
     runs-on: ${{ matrix.runner }}
+    environment: ${{ needs.validate-version.outputs.publishing == 'true' && 'release-signing' || 'preview' }}
     strategy:
       fail-fast: false
       matrix:
@@ -220,25 +341,82 @@ jobs:
             cp firmware/lib/zplc_core/build/Release/zplc_runtime.exe packages/zplc-ide/dist-native/
           fi
 
+      - name: Preflight Windows release signing
+        shell: pwsh
+        env:
+          ZPLC_PUBLISHING: ${{ needs.validate-version.outputs.publishing }}
+          ZPLC_WINDOWS_CSC_LINK: ${{ secrets.ZPLC_WINDOWS_CSC_LINK }}
+          ZPLC_WINDOWS_CSC_KEY_PASSWORD: ${{ secrets.ZPLC_WINDOWS_CSC_KEY_PASSWORD }}
+          ZPLC_WINDOWS_EXPECTED_PUBLISHER: ${{ vars.ZPLC_WINDOWS_EXPECTED_PUBLISHER }}
+        run: |
+          if ($env:ZPLC_PUBLISHING -ne 'true') { exit 0 }
+          foreach ($name in 'ZPLC_WINDOWS_CSC_LINK', 'ZPLC_WINDOWS_CSC_KEY_PASSWORD', 'ZPLC_WINDOWS_EXPECTED_PUBLISHER') {
+            if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
+              throw "Missing required Windows release-signing configuration: $name"
+            }
+          }
+
       - name: Build Electron app (Windows ${{ matrix.arch }})
         working-directory: packages/zplc-ide
+        shell: pwsh
         run: |
           bun run build:assets
           bun run build
           bun run electron:compile
-          bun x electron-builder --win --${{ matrix.arch }} --publish never
+          if ($env:ZPLC_PUBLISHING -eq 'true') {
+            $env:CSC_LINK = $env:ZPLC_WINDOWS_CSC_LINK
+            $env:CSC_KEY_PASSWORD = $env:ZPLC_WINDOWS_CSC_KEY_PASSWORD
+            bun x electron-builder --win --${{ matrix.arch }} --publish never -c.forceCodeSigning=true
+          } else {
+            $env:CSC_IDENTITY_AUTO_DISCOVERY = 'false'
+            Remove-Item Env:CSC_LINK -ErrorAction SilentlyContinue
+            Remove-Item Env:CSC_KEY_PASSWORD -ErrorAction SilentlyContinue
+            bun x electron-builder --win --${{ matrix.arch }} --publish never -c.forceCodeSigning=false
+          }
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ZPLC_PUBLISHING: ${{ needs.validate-version.outputs.publishing }}
+          ZPLC_WINDOWS_CSC_LINK: ${{ secrets.ZPLC_WINDOWS_CSC_LINK }}
+          ZPLC_WINDOWS_CSC_KEY_PASSWORD: ${{ secrets.ZPLC_WINDOWS_CSC_KEY_PASSWORD }}
 
       - name: Validate Windows build artifacts
         working-directory: packages/zplc-ide
         shell: bash
         run: bun run smoke:desktop-builds windows ${{ matrix.arch }}
 
+      - name: Launch packaged Windows app
+        working-directory: packages/zplc-ide
+        run: bun run smoke:desktop-packaged
+
+      - name: Verify Windows artifact signatures
+        shell: pwsh
+        env:
+          ZPLC_PUBLISHING: ${{ needs.validate-version.outputs.publishing }}
+          ZPLC_WINDOWS_EXPECTED_PUBLISHER: ${{ vars.ZPLC_WINDOWS_EXPECTED_PUBLISHER }}
+        run: |
+          if ($env:ZPLC_PUBLISHING -ne 'true') { Write-Output 'Preview artifact: skipping native signature verification.'; exit 0 }
+          $signtool = Get-Command signtool.exe -ErrorAction Stop
+          $artifacts = Get-ChildItem packages/zplc-ide/dist-electron -File -Include *-Setup.exe,*-Portable.exe -Recurse
+          if ($artifacts.Count -ne 2) { throw "Expected exactly two distributed Windows executables, found $($artifacts.Count)" }
+          $unpackedExecutables = @(
+            Get-ChildItem packages/zplc-ide/dist-electron/win-unpacked/zplc-ide.exe -File -ErrorAction SilentlyContinue
+            Get-ChildItem packages/zplc-ide/dist-electron/win-unpacked/resources/native-runtime/zplc_runtime.exe -File -ErrorAction SilentlyContinue
+          )
+          if ($unpackedExecutables.Count -ne 2) { throw "Expected exactly two unpacked Windows executables (app and native runtime), found $($unpackedExecutables.Count)" }
+          foreach ($artifact in @($artifacts) + $unpackedExecutables) {
+            & $signtool.Source verify /pa /all /tw /v $artifact.FullName
+            if ($LASTEXITCODE -ne 0) { throw "signtool verification failed: $($artifact.Name)" }
+            $signature = Get-AuthenticodeSignature -FilePath $artifact.FullName
+            if ($signature.Status -ne 'Valid') { throw "Invalid Authenticode signature: $($artifact.Name)" }
+            if ($null -eq $signature.TimeStamperCertificate) { throw "Missing Authenticode timestamp: $($artifact.Name)" }
+            if ($signature.SignerCertificate.Subject -ne $env:ZPLC_WINDOWS_EXPECTED_PUBLISHER) {
+              throw "Unexpected Authenticode publisher: $($artifact.Name)"
+            }
+          }
+
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: windows-${{ matrix.arch }}
+          name: windows-${{ matrix.arch }}-${{ needs.validate-version.outputs.publishing == 'true' && 'signed' || 'preview' }}
           path: |
             packages/zplc-ide/dist-electron/*-Setup.exe
             packages/zplc-ide/dist-electron/*-Portable.exe
@@ -248,7 +426,7 @@ jobs:
   # Build IDE for Linux (x64 and arm64)
   # ===========================================================================
   build-linux:
-    needs: validate-version
+    needs: [validate-version, verify-release-candidate]
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -344,7 +522,7 @@ jobs:
   # Prepare integrity evidence for every candidate, including dry-runs.
   # ===========================================================================
   prepare-release-evidence:
-    needs: [validate-version, build-macos, build-windows, build-linux]
+    needs: [validate-version, verify-linux-x64-payload-reproducibility, build-macos, build-windows, build-linux]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -416,7 +594,7 @@ jobs:
       - name: Upload release bundle
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: release-bundle
+          name: release-bundle-${{ needs.validate-version.outputs.publishing == 'true' && 'publishable' || 'preview' }}
           path: release/
           retention-days: 7
 
@@ -426,13 +604,14 @@ jobs:
   upload-release:
     needs: [validate-version, prepare-release-evidence]
     runs-on: ubuntu-latest
+    environment: release-signing
     permissions:
       contents: write
     # Skip upload when workflow_dispatch with upload_to_release=false (dry-run testing)
     if: >-
       ${{
         always()
-        && (github.event_name == 'push' || inputs.upload_to_release != false)
+        && needs.validate-version.outputs.publishing == 'true'
         && needs.validate-version.result == 'success'
         && needs.prepare-release-evidence.result == 'success'
       }}
@@ -440,7 +619,7 @@ jobs:
       - name: Download release bundle
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          name: release-bundle
+          name: release-bundle-publishable
           path: release/
 
       - name: Update release with assets
@@ -453,7 +632,8 @@ jobs:
             ## Release v${{ needs.validate-version.outputs.version }}
 
             ### Repository evidence
-            - Release artifacts include checksums, an SPDX SBOM, and identity evidence produced by this workflow.
+            - Release artifacts include checksums, an SPDX SBOM, and identity evidence produced by this workflow for the exact release SHA.
+            - Publishing validates native macOS and Windows signatures before artifact upload. Linux artifacts are reproducibly payload-checked, checksummed, and attested; they are not represented as natively signed.
             - `ST`, `IL`, `LD`, `FBD`, and `SFC` are described only at the repository-declared and automated-tested workflow level.
             - `firmware/app/boards/supported-boards.v1.5.0.json` is the current board catalog/evidence baseline, not 2.0 HIL qualification.
 

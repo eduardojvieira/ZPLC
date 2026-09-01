@@ -1,51 +1,28 @@
-# IDE Architecture & Project Model
+# Studio Architecture and Project Model
 
-The ZPLC IDE relies on a strict separation of concerns to provide a highly responsive, modern development experience.
+Studio presents a folder-backed project to editors and tools; the renderer does
+not own privileged filesystem, shell, or device access.
 
-## Package Boundaries
+## Quick path
 
-The ZPLC tooling is divided into two distinct logical areas under the hood:
-- **`@zplc/ide`** — The user interface, project state management, code editors, simulation adapters, and deployment flows.
-- **`@zplc/compiler`** — The underlying engine handling parsing, transpilation of visual languages to ST, bytecode emission, standard library resolution, and debug-map generation.
+Open a project folder, inspect its target and tasks, edit a source file, then
+compile through the Tool API. Export a reviewed v2 folder rather than relying on
+an implicit legacy rewrite.
 
-This separation ensures the compiler can be run headlessly in CI/CD pipelines while the IDE handles the visual orchestration.
+## Boundaries
 
-## Application State Model
+| Layer | Responsibility |
+| --- | --- |
+| Renderer | Workbench, visual models, diagnostics, evidence presentation. |
+| Preload/main | Validated, narrow filesystem and supervised runtime operations. |
+| Compiler | Canonical source/visual-model compilation to `.zplc`. |
+| Runtime adapters | Native POSIX simulation or a connected compatible runtime. |
 
-The IDE uses a robust, reactive state architecture internally to manage complex industrial projects smoothly.
+## Project configuration
 
-```mermaid
-flowchart TD
-  Config[zplc.json]
-  Files[Project files]
-  Store[Active Project State]
-  Runtime[Execution Adapter]
-  Debug[Live Debug data]
+`zplc.json` names project metadata, target, tasks, and sources. A board choice
+is checked against the catalogued profile during an operation; it does not
+automatically import a capability model or certify a wiring configuration.
 
-  Config --> Store
-  Files --> Store
-  Store --> Runtime
-  Runtime --> Debug
-  Debug --> Store
-```
-
-## Project Configuration: `zplc.json`
-
-The `zplc.json` file is the heart of any ZPLC project. It declaratively defines the entire automation scope:
-
-- `target` — Hardware board selection, CPU, and required clock constraints.
-- `network` — Wi-Fi credentials or Ethernet IP settings.
-- `io` — Hardcoded mappings between physical pins and logical variables.
-- `communication` — MQTT broker settings, Modbus node IDs, and tag routing.
-- `tasks` — Declaration of Cyclic/Event tasks, interval speeds, priorities, and bound executable programs.
-
-## Contextual Project Editing
-
-The IDE can handle projects across multiple environments:
-- **Local Directory Mode**: Reads and writes files directly to your hard drive (typical desktop workflow).
-- **Virtual / Memory Mode**: Allows testing code snippets, viewing examples, and interacting with ZPLC in environments without a filesystem.
-
-## Target Auto-Awareness
-
-When you select a hardware target in the project settings, the IDE automatically imports the board's capability manifest. 
-This means you cannot accidentally assign Ethernet configurations to a Serial-only Arduino board, or map an ESP32-S3 pin that doesn't exist. All I/O and networking options are dynamically filtered to match real hardware specifications.
+Examples are copied to a destination folder chosen by the user. There is no
+virtual or memory project mode. See [migration](./migration-v1-to-v2.md) for

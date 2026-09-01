@@ -1,47 +1,35 @@
 # Compiler Workflow
 
-ZPLC radically simplifies industrial automation compilation by employing a **single unified compiler backend** for all IEC 61131-3 languages.
+ZPLC uses a canonical compiler path for source and supported visual models.
 
-## The Unified Compilation Pipeline
+## Quick path
 
-Instead of maintaining brittle, completely separate parsing engines for every visual and textual language, ZPLC transpiles all graphical models directly into canonical Structured Text (ST) before executing the final compilation to bytecode.
+1. Compile the folder-backed project.
+2. Read diagnostics and the produced artifact identity.
+3. Run temporal tests and native POSIX simulation against that artifact.
+4. Only then consider the separate human hardware flow.
+
+## Pipeline
 
 ```mermaid
 flowchart LR
-  ST[ST Source] --> Core[Compile To Bytecode]
-  IL[IL Source] --> ILToST[Transpile to ST]
-  LD[LD Visual Model] --> LDToST[Transpile to ST]
-  FBD[FBD Visual Model] --> FBDToST[Transpile to ST]
-  SFC[SFC Visual Graph] --> SFCToST[Transpile to ST]
-
-  ILToST --> Core
-  LDToST --> Core
-  FBDToST --> Core
-  SFCToST --> Core
-
-  Core --> ZPLC[.zplc Binary + Debug Map + Task Metadata]
+  ST[ST source] --> Compile[Canonical compiler]
+  IL[IL source] --> Compile
+  LD[LD model] --> Transpile[Validate and transpile]
+  FBD[FBD model] --> Transpile
+  SFC[SFC model] --> Transpile
+  Transpile --> Compile
+  Compile --> Artifact[.zplc artifact, diagnostics, metadata]
 ```
 
-## Parity Guarantee
+## Scope, not parity promise
 
-This architecture guarantees true feature parity across all languages. Because a Ladder Diagram (LD) circuit eventually passes through the exact same ST compiler engine, you never have to worry about subtle execution discrepancies, missing mathematical functions, or disparate runtime behaviors depending on the language you chose.
+The same backend is useful only for features accepted by the relevant editor,
+transpiler, and compiler contracts. It does not establish universal language
+parity, runtime parity, or identical debug behavior. Use the compiler output
+and scenario result for the exact project as the evidence.
 
-## Multi-Task Projects
+## Artifact boundary
 
-The ZPLC compiler engine does more than just generate executable `.zplc` bytecode. A single compilation pass produces a multi-task project payload that includes:
-
-1. **Merged Bytecode**: The logic from multiple programs consolidated into one executable block.
-2. **Task Metadata**: The cycle speeds, triggers, and execution priorities defined in `zplc.json`.
-3. **Communication Tags**: Network injection variables for Modbus or MQTT protocols.
-4. **Debug Maps**: Source-mapping artifacts linking the compiled processor opcodes back to the exact lines in your ST files or graphical nodes, enabling precise step-by-step debugging.
-
-## Built-In Standard Library Support
-
-During compilation, ZPLC intrinsically resolves calls to the IEC Standard Library (`stdlib`). This encompasses complex logic routines implemented deeply within the runtime:
-- Timers (`TON`, `TOF`, `TP`)
-- Counters (`CTU`, `CTD`, `CTUD`)
-- Edge detectors and Bistable latches
-- Advanced Math, Trignometry, and Bitwise logic
-- Asynchronous Network operations (`MB_READ_HREG`, `MQTT_PUBLISH`, etc.)
-
-Strings also pass across this compiler/runtime boundary organically, supported by dedicated underlying byte-level opcodes (`STRLEN`, `STRCPY`, etc.) ensuring memory safety.
+The artifact is verified before runtime loading. A successful host compile does
+not prove a board can flash, restore, meet timing, or drive an output. Those
