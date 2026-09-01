@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import importlib.util
 from pathlib import Path
+import re
 import tempfile
 import unittest
 
@@ -10,6 +11,7 @@ SPEC = importlib.util.spec_from_file_location("validate_supported_boards", MODUL
 assert SPEC and SPEC.loader
 validator = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(validator)
+ROOT = MODULE_PATH.parents[2]
 
 
 def workflow(include: str, extra: str = "") -> str:
@@ -89,6 +91,50 @@ class CrossBuildMatrixTests(unittest.TestCase):
 """
                 )
             )
+
+
+class Rc3CrossBuildGuardTests(unittest.TestCase):
+    def test_websocket_backport_is_target_scoped_and_zplc_warnings_are_errors(self) -> None:
+        cmake = (ROOT / "firmware/app/CMakeLists.txt").read_text()
+        self.assertRegex(
+            cmake,
+            re.compile(
+                r"if\(CONFIG_MQTT_LIB_WEBSOCKET\).*?"
+                r"if\(NOT TARGET subsys__net__lib__mqtt\).*?"
+                r"message\(FATAL_ERROR.*?"
+                r"target_compile_options\(subsys__net__lib__mqtt PRIVATE "
+                r"-include zephyr/net/net_log\.h\).*?endif\(\)",
+                re.DOTALL,
+            ),
+        )
+        self.assertIn("target_compile_options(app PRIVATE -Werror)", cmake)
+
+    def test_opta_keeps_modbus_disabled_without_disabling_warnings(self) -> None:
+        config = (ROOT / "firmware/app/boards/arduino_opta_stm32h747xx_m7.conf").read_text()
+        self.assertIn("CONFIG_MODBUS=n", config)
+        self.assertIn("CONFIG_MODBUS_ROLE_CLIENT_SERVER=n", config)
+        self.assertNotIn("CONFIG_COMPILER_WARNINGS_AS_ERRORS=n", config)
+
+    def test_owned_warning_fixes_remain_guarded_or_removed(self) -> None:
+        modbus_client = (ROOT / "firmware/app/src/zplc_modbus_client.c").read_text()
+        shell = (ROOT / "firmware/app/src/shell_cmds.c").read_text()
+        config = (ROOT / "firmware/app/src/zplc_config.c").read_text()
+        cloud_handler = (ROOT / "firmware/app/src/zplc_comm_cloud_handler.c").read_text()
+        aws_fleet = (ROOT / "firmware/app/src/zplc_aws_fleet.c").read_text()
+        mqtt = (ROOT / "firmware/app/src/zplc_mqtt.c").read_text()
+
+        self.assertIn(
+            "#if ZPLC_HAS_MODBUS_RTU\nstatic enum uart_config_parity zplc_modbus_parity_to_uart",
+            modbus_client,
+        )
+        self.assertIn(
+            "#ifndef CONFIG_ZPLC_SCHEDULER\nstatic const char *state_name", shell
+        )
+        self.assertIn("PARTITION_DEVICE(storage_partition)", config)
+        self.assertNotIn("copy_to_fb_str", cloud_handler)
+        self.assertNotIn("static int json_extract_string(", aws_fleet)
+        self.assertIn("json_extract_string_unescaped", aws_fleet)
+        self.assertNotIn("s_c2d_topic", mqtt)
 
 
 if __name__ == "__main__":

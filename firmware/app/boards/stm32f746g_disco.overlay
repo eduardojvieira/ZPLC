@@ -18,7 +18,7 @@
  *   all LittleFS flash operations (read/prog/erase/sync).
  *
  *   No DTS changes needed: storage_partition is already defined in the board
- *   DTS and FIXED_PARTITION_ID(storage_partition) resolves to the QSPI NOR.
+ *   DTS and PARTITION_DEVICE(storage_partition) resolves to the QSPI NOR.
  *   LittleFS is mounted by zplc_config_init() before settings_subsys_init().
  *
  * Modbus RTU wiring (production-style):

@@ -98,6 +98,7 @@ static void mem_write_val(uint16_t addr, zplc_data_type_t type, uint32_t val)
     }
 }
 
+#if ZPLC_HAS_MODBUS_RTU
 static enum uart_config_parity zplc_modbus_parity_to_uart(zplc_modbus_parity_t parity)
 {
     switch (parity) {
@@ -110,6 +111,7 @@ static enum uart_config_parity zplc_modbus_parity_to_uart(zplc_modbus_parity_t p
         return UART_CFG_PARITY_NONE;
     }
 }
+#endif
 
 static int zplc_modbus_rtu_client_iface_init(void)
 {
