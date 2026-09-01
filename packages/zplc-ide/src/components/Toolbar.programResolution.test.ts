@@ -126,4 +126,17 @@ describe('canonical workspace build failures', () => {
     expect(toolbarSource).not.toContain('compileSingleFileWithTask');
     expect(toolbarSource).not.toContain('onCreateFile=');
   });
+
+  it('retains keyboard execution focus across Run, Pause, and Resume control replacement only', () => {
+    expect(toolbarSource).toContain("const executionButtonRef = useRef<HTMLButtonElement>(null);");
+    expect(toolbarSource).toContain("const pendingExecutionFocusRef = useRef<'running' | 'paused' | null>(null);");
+    expect(toolbarSource).toContain("pendingExecutionFocusRef.current = keyboardInitiated ? 'running' : null;");
+    expect(toolbarSource).toContain("pendingExecutionFocusRef.current = keyboardInitiated ? 'paused' : null;");
+    expect(toolbarSource).toContain("handleResume(true);");
+    expect(toolbarSource).toContain("handleStart(true);");
+    expect(toolbarSource).toContain("handlePause(true);");
+    expect(toolbarSource.match(/ref=\{executionButtonRef\}/g)?.length).toBe(3);
+    expect(toolbarSource.match(/event\.detail === 0/g)?.length).toBe(3);
+    expect(toolbarSource).toContain("requestAnimationFrame(() => executionButtonRef.current?.focus());");
+  });
 });
