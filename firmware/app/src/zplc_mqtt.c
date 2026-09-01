@@ -43,6 +43,7 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
 LOG_MODULE_REGISTER(zplc_mqtt, LOG_LEVEL_INF);
 
 /* ============================================================================
@@ -56,6 +57,11 @@ LOG_MODULE_REGISTER(zplc_mqtt, LOG_LEVEL_INF);
 #define TOPIC_WILDCARD_BUFFER_SIZE 224U
 
 #define MQTT_SUB_MAX_TOPICS 32U
+
+#if defined(CONFIG_MQTT_VERSION_5_0)
+BUILD_ASSERT(CONFIG_MQTT_USER_PROPERTIES_MAX >= 6,
+             "Azure Event Grid publishes six MQTT v5 user properties");
+#endif
 
 #define MQTT_TLS_CA_TAG 130U
 #define MQTT_TLS_CLIENT_CERT_TAG 131U

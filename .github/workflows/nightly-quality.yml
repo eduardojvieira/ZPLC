@@ -38,7 +38,7 @@ jobs:
             -max_total_time=900 -max_len=65536 -timeout=2
 
   native-sim-twister:
-    name: Repeated Zephyr Twister (native_sim)
+    name: Repeated Zephyr Twister (native_sim/native/64)
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     env:
@@ -75,5 +75,5 @@ jobs:
 
       - name: Run Twister twice from clean output directories
         run: |
-          west twister -T zplc/firmware/tests -p native_sim --inline-logs --outdir "${RUNNER_TEMP}/zplc-twister-1"
-          west twister -T zplc/firmware/tests -p native_sim --inline-logs --outdir "${RUNNER_TEMP}/zplc-twister-2"
+          west twister -T zplc/firmware/tests -p native_sim/native/64 --inline-logs --outdir "${RUNNER_TEMP}/zplc-twister-1"
+          west twister -T zplc/firmware/tests -p native_sim/native/64 --inline-logs --outdir "${RUNNER_TEMP}/zplc-twister-2"

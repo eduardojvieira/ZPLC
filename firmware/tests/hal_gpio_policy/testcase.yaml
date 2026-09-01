@@ -5,9 +5,9 @@ tests:
       - hal
       - gpio
     platform_allow:
-      - native_sim
+      - native_sim/native/64
     integration_platforms:
-      - native_sim
+      - native_sim/native/64
     harness: ztest
     timeout: 20
     extra_configs:
@@ -18,9 +18,9 @@ tests:
       - hal
       - gpio
     platform_allow:
-      - native_sim
+      - native_sim/native/64
     integration_platforms:
-      - native_sim
+      - native_sim/native/64
     harness: ztest
     timeout: 20
   zplc.hal_gpio_policy.partial_required:
@@ -29,9 +29,9 @@ tests:
       - hal
       - gpio
     platform_allow:
-      - native_sim
+      - native_sim/native/64
     integration_platforms:
-      - native_sim
+      - native_sim/native/64
     harness: ztest
     timeout: 20
     extra_configs:
@@ -44,9 +44,9 @@ tests:
       - hal
       - gpio
     platform_allow:
-      - native_sim
+      - native_sim/native/64
     integration_platforms:
-      - native_sim
+      - native_sim/native/64
     harness: ztest
     timeout: 20
     extra_configs:
