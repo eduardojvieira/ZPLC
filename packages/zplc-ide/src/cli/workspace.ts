@@ -16,7 +16,8 @@ const MANIFEST_MAX_BYTES = 128 * 1024;
 const SOURCE_MAX_BYTES = 256 * 1024;
 const SOURCES_MAX_COUNT = 128;
 const SOURCES_MAX_BYTES = 2 * 1024 * 1024;
-const SUPPORTED_SOURCE = /\.(st|il|ld\.json|fbd\.json|sfc\.json)$/i;
+// The short .ld, .fbd and .sfc are what earlier versions created with New File; keep in step with ZPLC_SOURCE_FILE in utils/fileSystem.ts.
+const SUPPORTED_SOURCE = /\.(st|il|(ld|fbd|sfc)(\.json)?)$/i;
 const SCENARIO_MAX_BYTES = 128 * 1024;
 const SCENARIOS_MAX_COUNT = 64;
 const SCENARIOS_MAX_BYTES = 512 * 1024;
@@ -160,8 +161,9 @@ export async function readWorkspace(rootInput: string): Promise<WorkspaceResult>
     if (entry.isSymbolicLink()) return failed('WORKSPACE_SYMLINK', 'Symbolic links are not allowed', logicalPath);
     if (!entry.isFile() || !SUPPORTED_SOURCE.test(entry.name)) continue;
     if (sources.length >= SOURCES_MAX_COUNT) return failed('WORKSPACE_LIMIT', 'Workspace has too many source files', 'src');
-    const normalizedName = entry.name.toLowerCase();
-    if (names.has(normalizedName)) return failed('WORKSPACE_DUPLICATE_SOURCE', 'Source filenames must be unique regardless of case', logicalPath);
+    // A task names its program "main.ld", which is main.ld or main.ld.json, so those two are one name and must not both exist.
+    const normalizedName = entry.name.toLowerCase().replace(/\.(ld|fbd|sfc)$/, '$&.json');
+    if (names.has(normalizedName)) return failed('WORKSPACE_DUPLICATE_SOURCE', 'Source filenames must be unique regardless of case, and main.ld and main.ld.json are the same name', logicalPath);
     names.add(normalizedName);
     const read = await readStableFile(join(sourceDirectory, entry.name), logicalPath, SOURCE_MAX_BYTES, [rootIdentity, sourceIdentity]);
     if (!read.ok) return read.result;

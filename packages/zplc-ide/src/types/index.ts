@@ -110,6 +110,10 @@ export interface PLCLanguageInfo {
   id: PLCLanguage;
   name: string;
   fullName: string;
+  /**
+   * The extension New File gives a file of this language. It is the name family the folder readers list and the
+   * bundled examples use: the visual languages are JSON documents, so `.ld.json`, `.fbd.json` and `.sfc.json`.
+   */
   extension: string;
   isVisual: boolean;
   description: string;
@@ -136,7 +140,7 @@ export const PLC_LANGUAGES: Record<PLCLanguage, PLCLanguageInfo> = {
     id: 'LD',
     name: 'LD',
     fullName: 'Ladder Diagram',
-    extension: '.ld',
+    extension: '.ld.json',
     isVisual: true,
     description: 'Relay ladder logic representation',
   },
@@ -144,7 +148,7 @@ export const PLC_LANGUAGES: Record<PLCLanguage, PLCLanguageInfo> = {
     id: 'FBD',
     name: 'FBD',
     fullName: 'Function Block Diagram',
-    extension: '.fbd',
+    extension: '.fbd.json',
     isVisual: true,
     description: 'Graphical function block network',
   },
@@ -152,7 +156,7 @@ export const PLC_LANGUAGES: Record<PLCLanguage, PLCLanguageInfo> = {
     id: 'SFC',
     name: 'SFC',
     fullName: 'Sequential Function Chart',
-    extension: '.sfc',
+    extension: '.sfc.json',
     isVisual: true,
     description: 'State machine for sequential processes',
   },

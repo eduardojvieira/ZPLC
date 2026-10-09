@@ -63,8 +63,12 @@ export async function openDirectoryPicker(): Promise<FileSystemDirectoryHandle |
 // Directory Reading
 // =============================================================================
 
-/** File extensions we care about for ZPLC projects */
-const ZPLC_EXTENSIONS = ['.st', '.il', '.ld.json', '.fbd.json', '.sfc.json', '.gvl'];
+/**
+ * Files we list for a ZPLC project: .st, .il, .gvl and the visual languages as .ld.json, .fbd.json and .sfc.json.
+ * The short .ld, .fbd and .sfc are listed too, because earlier versions created New File files with them, and the
+ * match ignores case the way getLanguageFromFilename does. Keep it in step with SUPPORTED_SOURCE in cli/workspace.ts.
+ */
+const ZPLC_SOURCE_FILE = /\.(st|il|gvl|(ld|fbd|sfc)(\.json)?)$/i;
 const IGNORED_DIRS = ['node_modules', '.git', 'build', 'dist', '.vscode'];
 
 export function fileTreeFileId(path: string): string {
@@ -107,9 +111,7 @@ export async function readDirectoryRecursive(
       }
 
       // Check if it's a ZPLC-relevant source file
-      const isRelevant = ZPLC_EXTENSIONS.some(ext => entry.name.endsWith(ext));
-
-      if (isRelevant) {
+      if (ZPLC_SOURCE_FILE.test(entry.name)) {
         const fileHandle = await dirHandle.getFileHandle(entry.name);
         const language = getLanguageFromFilename(entry.name);
         const pouType = detectPOUType(entry.name);
