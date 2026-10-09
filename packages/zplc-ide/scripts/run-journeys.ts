@@ -20,7 +20,6 @@ import { JOURNEYS, type Journey } from './journeys';
 export const KNOWN_GAPS: Record<string, string> = {
   '4b Problems say what is wrong': 'CMP-010',
   '5 Build successfully': 'IDE-001',
-  '7 Breakpoint stops execution': 'LNG-005',
   '11 Learn with no project open': 'LRN-001',
   '12 Restore the session': 'IDE-008',
 };
