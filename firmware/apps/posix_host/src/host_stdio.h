@@ -8,6 +8,15 @@
 #include <stddef.h>
 #include <stdio.h>
 
+#include "native_runtime_session.h"
+
+/*
+ * Bytes read from the descriptor and not yet handed out (see host_stdio.c). It
+ * holds one whole request line, so a program.load of the largest program the VM
+ * takes is delivered in one piece rather than cut at the buffer's size.
+ */
+#define ZPLC_HOST_STDIO_PENDING_MAX ZPLC_NATIVE_REQUEST_MAX
+
 typedef enum {
     ZPLC_HOST_STDIO_TIMEOUT = 0,
     ZPLC_HOST_STDIO_READY = 1,

@@ -1,4 +1,5 @@
 #include "host_stdio.h"
+#include "native_runtime_session.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -383,6 +384,132 @@ static void test_end_of_input(void)
     fclose(read_stream);
 }
 
+/*
+ * A pipe holds 64 KiB, so a write that long with nobody reading would block. The IDE's
+ * line reaches the runtime in several reads; feed it the same way, reading after each chunk.
+ * Returns the result of the last read. Every read before the last must find no whole line.
+ */
+#define FEED_CHUNK 30000U
+
+static zplc_host_stdio_result_t feed_line(int write_fd,
+                                          FILE *stream,
+                                          const char *data,
+                                          size_t length,
+                                          char *buffer,
+                                          size_t buffer_size)
+{
+    zplc_host_stdio_result_t result = ZPLC_HOST_STDIO_TIMEOUT;
+    size_t sent = 0U;
+
+    while (sent < length) {
+        const size_t chunk = ((length - sent) < FEED_CHUNK) ? (length - sent) : FEED_CHUNK;
+        const ssize_t written = write(write_fd, data + sent, chunk);
+
+        if (written != (ssize_t)chunk) {
+            TEST_ASSERT(0, "write() sends the whole chunk");
+            return ZPLC_HOST_STDIO_ERROR;
+        }
+        sent += chunk;
+        result = zplc_host_wait_for_request_line(stream, buffer, buffer_size, 25U);
+        if (sent < length && result != ZPLC_HOST_STDIO_TIMEOUT) {
+            TEST_ASSERT(0, "a long line is not ready before its last chunk");
+            return result;
+        }
+    }
+
+    return result;
+}
+
+static char large_line[ZPLC_NATIVE_REQUEST_MAX];
+static char large_buffer[ZPLC_NATIVE_REQUEST_MAX];
+
+static void test_largest_program_load_is_delivered_whole(void)
+{
+    static const char tail[] = "\"}}\n";
+    int pipe_fds[2];
+    FILE *read_stream;
+    char id[64];
+    size_t length;
+
+    printf("\n=== Test: the largest program.load request is delivered whole ===\n");
+
+    /* The longest legal request: a 63-character id and a program of ZPLC_MEM_CODE_SIZE bytes in hex. */
+    memset(id, 'a', 63U);
+    id[63] = '\0';
+    length = (size_t)snprintf(large_line, sizeof(large_line),
+                              "{\"id\":\"%s\",\"type\":\"request\",\"method\":\"program.load\","
+                              "\"params\":{\"bytecode_hex\":\"", id);
+    TEST_ASSERT(length > 0U && length < 256U, "the request envelope is a few hundred bytes at most");
+    TEST_ASSERT(length + (ZPLC_MEM_CODE_SIZE * 2U) + sizeof(tail) <= ZPLC_NATIVE_REQUEST_MAX,
+                "the request buffer holds the largest program.load line, newline and terminator included");
+    TEST_ASSERT(ZPLC_NATIVE_REQUEST_MAX >= (ZPLC_MEM_CODE_SIZE * 2U) + ZPLC_NATIVE_REQUEST_ENVELOPE_MAX,
+                "the request buffer is the hex of a full program plus the envelope allowance");
+    TEST_ASSERT(ZPLC_HOST_STDIO_PENDING_MAX >= ZPLC_NATIVE_REQUEST_MAX,
+                "the pending buffer holds one whole request line");
+    TEST_ASSERT(ZPLC_NATIVE_RESPONSE_MAX >= 8192U && ZPLC_NATIVE_EVENT_MAX >= 8192U,
+                "the response and event buffers are not smaller than before");
+
+    memset(large_line + length, 'A', ZPLC_MEM_CODE_SIZE * 2U);
+    length += ZPLC_MEM_CODE_SIZE * 2U;
+    memcpy(large_line + length, tail, sizeof(tail));
+    length += sizeof(tail) - 1U;
+
+    read_stream = open_pipe_stream(pipe_fds);
+    TEST_ASSERT(read_stream != NULL, "pipe stream opens");
+    if (read_stream == NULL) {
+        return;
+    }
+
+    TEST_ASSERT(feed_line(pipe_fds[1], read_stream, large_line, length,
+                          large_buffer, sizeof(large_buffer)) == ZPLC_HOST_STDIO_READY,
+                "the largest program.load line is ready in one piece");
+    TEST_ASSERT(strlen(large_buffer) == length && strcmp(large_buffer, large_line) == 0,
+                "the largest program.load line arrives intact");
+
+    fclose(read_stream);
+    close(pipe_fds[1]);
+}
+
+static void test_request_buffer_boundary(void)
+{
+    int pipe_fds[2];
+    FILE *read_stream;
+    size_t length;
+
+    printf("\n=== Test: a line fills the request buffer exactly, one more byte is cut ===\n");
+
+    read_stream = open_pipe_stream(pipe_fds);
+    TEST_ASSERT(read_stream != NULL, "pipe stream opens");
+    if (read_stream == NULL) {
+        return;
+    }
+
+    /* The buffer takes the newline and the terminator: ZPLC_NATIVE_REQUEST_MAX - 1 bytes of line. */
+    length = ZPLC_NATIVE_REQUEST_MAX - 1U;
+    memset(large_line, 'x', length - 1U);
+    large_line[length - 1U] = '\n';
+    large_line[length] = '\0';
+    TEST_ASSERT(feed_line(pipe_fds[1], read_stream, large_line, length,
+                          large_buffer, sizeof(large_buffer)) == ZPLC_HOST_STDIO_READY,
+                "a line that exactly fills the request buffer is ready");
+    TEST_ASSERT(strcmp(large_buffer, large_line) == 0, "the exact-fit line arrives intact");
+
+    length = ZPLC_NATIVE_REQUEST_MAX;
+    memset(large_line, 'y', length - 1U);
+    large_line[length - 1U] = '\n';
+    TEST_ASSERT(feed_line(pipe_fds[1], read_stream, large_line, length,
+                          large_buffer, sizeof(large_buffer)) == ZPLC_HOST_STDIO_ERROR,
+                "a line one byte too long is an error");
+    TEST_ASSERT(strlen(large_buffer) == ZPLC_NATIVE_REQUEST_MAX - 1U &&
+                strchr(large_buffer, '\n') == NULL,
+                "the error carries a full buffer without the newline");
+    expect_call(read_stream, large_buffer, sizeof(large_buffer), ZPLC_HOST_STDIO_READY, "\n",
+                "the newline of the cut line is the next line");
+
+    fclose(read_stream);
+    close(pipe_fds[1]);
+}
+
 int main(void)
 {
     /* Keep the log when the alarm below kills the run. */
@@ -400,6 +527,9 @@ int main(void)
     test_line_longer_than_buffer();
     test_end_of_input();
     test_partial_line_alone_does_not_block();
+    /* Last: the pending buffer is shared by every stream, so a failure here must not leak into another test. */
+    test_largest_program_load_is_delivered_whole();
+    test_request_buffer_boundary();
 
     printf("\n=== Host stdio tests complete ===\n");
     printf("Tests run: %d\n", test_count);
