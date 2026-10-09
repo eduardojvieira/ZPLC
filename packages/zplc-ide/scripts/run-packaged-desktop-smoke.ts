@@ -184,8 +184,19 @@ async function main(): Promise<void> {
       welcome: document.body.innerText.includes('ZPLC Studio 2.0'),
     }))()`)) as { node: Array<[string, string]>; preload: string[]; welcome: boolean };
     assert(rendererBoundary.node.every(([, value]) => value === 'undefined'), `Node globals leaked into packaged renderer: ${JSON.stringify(rendererBoundary.node)}`);
-    assert(JSON.stringify(rendererBoundary.preload) === JSON.stringify(['aiProvider', 'candidateChangeSet', 'firmwareBuild', 'getAppInfo', 'isElectron', 'learnProgress', 'nativeSimulation', 'platform', 'toolExecutionAudit', 'toolchain', 'workspaceTests']), `Unexpected packaged preload surface: ${JSON.stringify(rendererBoundary.preload)}`);
+    assert(JSON.stringify(rendererBoundary.preload) === JSON.stringify(['aiProvider', 'candidateChangeSet', 'closeGuard', 'firmwareBuild', 'getAppInfo', 'isElectron', 'learnProgress', 'nativeSimulation', 'platform', 'toolExecutionAudit', 'toolchain', 'workspaceTests']), `Unexpected packaged preload surface: ${JSON.stringify(rendererBoundary.preload)}`);
     assert(rendererBoundary.welcome, 'Packaged renderer did not render the folder-backed Welcome screen.');
+    // IDE-005: no reload or developer-tools entry exists in a packaged build. Key events injected over the DevTools protocol
+    // never reach native menus, so the app reports the roles and accelerators it registered and the smoke reads that line.
+    const menuReport = await waitFor('packaged application menu report', async () => output.join('').split('\n').find((line) => line.includes('[zplc] application menu')));
+    const reported = /roles=(\S*) accelerators=(\S*)/.exec(menuReport);
+    assert(reported && reported[1].length > 0, `Unreadable packaged application menu report: ${menuReport}`);
+    const registeredRoles = reported[1].split(',').map((role) => role.toLowerCase());
+    const registeredAccelerators = reported[2].split(',').filter(Boolean);
+    assert(['reload', 'forcereload', 'toggledevtools'].every((role) => !registeredRoles.includes(role)), `Packaged application menu has a reload or developer-tools entry: ${menuReport}`);
+    assert(registeredAccelerators.every((accelerator) => !/^(F5|F12|.*\+(R|I))$/i.test(accelerator)), `Packaged application menu has a reload or developer-tools accelerator: ${menuReport}`);
+    const closeGuard = (await cdp.evaluate(`(async () => { const guard = window.electronAPI.closeGuard; return { keys: Object.keys(guard).sort(), accepted: await guard.setDirty(false).then(() => true, () => false), rejected: await guard.setDirty('yes').then(() => false, () => true) }; })()`)) as { keys: string[]; accepted: boolean; rejected: boolean };
+    assert(JSON.stringify(closeGuard.keys) === JSON.stringify(['closeNow', 'onCloseRequested', 'setDirty']) && closeGuard.accepted && closeGuard.rejected, `Packaged close guard bridge is not narrow and validated: ${JSON.stringify(closeGuard)}`);
     assert(await cdp.evaluate(`(() => { const button = document.querySelector('button[aria-label="Toggle high contrast theme"]'); button?.focus(); return Boolean(button && document.activeElement === button && button.matches(':focus-visible') && getComputedStyle(button).outlineStyle !== 'none'); })()`), 'Packaged Welcome high-contrast control is not keyboard focusable.');
     await press(cdp, 'Enter');
     await waitFor('packaged high-contrast keyboard activation', async () => await cdp!.evaluate(`document.documentElement.classList.contains('high-contrast') && getComputedStyle(document.body).backgroundColor === 'rgb(0, 0, 0)'`) === true ? true : undefined);

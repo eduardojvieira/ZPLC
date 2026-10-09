@@ -30,4 +30,13 @@ describe('CodeEditor local Monaco bootstrap', () => {
     expect(source).toContain('ST_LIVE_ANALYSIS_DELAY_MS = 300');
     expect(source).toContain('setSTBufferDiagnostics({ ...identity, diagnostics }, content)');
   });
+  it('gives every open text file its own kept Monaco model and reads the current file id in editor handlers', () => {
+    const source = readFileSync(join(import.meta.dir, 'CodeEditor.tsx'), 'utf8');
+
+    expect(source).toContain('const modelPath = editorModelPath(projectSession, fileId);');
+    expect(source).toContain('path={modelPath}');
+    expect(source).toContain('keepCurrentModel');
+    expect(source).toContain('const fileId = fileIdRef.current;');
+    expect(source).toContain('new WeakMap<MonacoEditor.editor.ITextModel, string[]>()');
+  });
 });

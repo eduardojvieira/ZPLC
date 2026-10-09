@@ -48,6 +48,7 @@ import { WATCH_FORCE_STATE, type WatchForceEntry } from '../runtime/debugAdapter
 import type { ProjectMigrationChange } from '../project/projectModel';
 import { getBreakpointPCForLine } from '../components/codeEditorBreakpoints';
 import { appendConsoleEntries, type NewConsoleEntry } from './consoleEntries';
+import { folderErrorReason } from '../utils/errorMessages';
 import { DEFAULT_DEBUG_POLLING_INTERVAL_MS } from './debugDefaults';
 import { NATIVE_TRACE_LIMIT, type NativeTraceSample } from '../runtime/nativeTrace';
 import type { CanonicalWorkspaceBuildEvidence } from '../components/workspaceTestPresentation';
@@ -277,6 +278,9 @@ interface IDEState {
   setTheme: (theme: Theme) => void;
 
   // Actions - Project Management (File System)
+  /** Why the last attempt to open, create or copy a project failed; shown on the screen that started it. */
+  projectOpenError: string | null;
+  reportProjectOpenProblem: (type: 'error' | 'warning', message: string) => void;
   openProjectFromFolder: () => Promise<boolean>;
   createNewProjectInFolder: () => Promise<boolean>;
   copyExampleProjectToFolder: (projectId: string) => Promise<boolean>;
@@ -300,6 +304,8 @@ interface IDEState {
   setActiveFile: (fileId: string | null) => void;
   updateFileContent: (fileId: string, content: string) => void;
   closeTab: (fileId: string) => void;
+  /** Drops a file's unsaved content and closes its tab; the next open reads the file from disk again. */
+  discardFile: (fileId: string) => void;
 
   // Actions - Connection
   setConnectionStatus: (status: ConnectionState['status']) => void;
@@ -409,6 +415,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
   loadedFiles: new Map(),
   activeFileId: null,
   openTabs: [],
+  projectOpenError: null,
 
   connection: {
     status: 'disconnected',
@@ -474,16 +481,22 @@ export const useIDEStore = create<IDEState>((set, get) => ({
   // Project Management Actions
   // ==========================================================================
 
+  reportProjectOpenProblem: (type, message) => {
+    get().addConsoleEntry({ type, message, source: 'system' });
+    set({ projectOpenError: message });
+  },
+
   openProjectFromFolder: async () => {
+    set({ projectOpenError: null });
     const blockUnsafeOpen = (): boolean => {
       const debug = get().debug;
       if (debug.forcedValues.size > 0 || debug.forcesUnconfirmed) {
         set({ activeConsoleTab: 'watch', isConsoleCollapsed: false });
-        get().addConsoleEntry({ type: 'warning', message: 'Release or verify all forces before closing the project.', source: 'system' });
+        get().reportProjectOpenProblem('warning', 'Release or verify all forces before closing the project.');
         return true;
       }
       if (get().hasUnsavedChanges()) {
-        get().addConsoleEntry({ type: 'warning', message: 'Save or discard changes before opening another folder.', source: 'system' });
+        get().reportProjectOpenProblem('warning', 'Save or discard changes before opening another folder.');
         return true;
       }
       return false;
@@ -496,11 +509,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
 
     if (!isFileSystemAccessSupported()) {
       if (!isCurrent()) return false;
-      get().addConsoleEntry({
-        type: 'error',
-        message: 'File System Access API not supported. Use a browser with folder access.',
-        source: 'system',
-      });
+      get().reportProjectOpenProblem('error', 'File System Access API not supported. Use a browser with folder access.');
       return false;
     }
 
@@ -514,7 +523,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       const readResult = await readProjectConfig(dirHandle);
       if (!isCurrent()) return false;
       if (readResult.kind === 'invalid') {
-        get().addConsoleEntry({ type: 'error', message: 'Invalid zplc.json. The existing configuration was not changed.', source: 'system' });
+        get().reportProjectOpenProblem('error', 'Invalid zplc.json. The existing configuration was not changed.');
         return false;
       }
 
@@ -522,11 +531,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       if (readResult.kind === 'valid') {
         config = readResult.config;
       } else {
-        get().addConsoleEntry({
-          type: 'warning',
-          message: 'No zplc.json found. This folder was not changed. Use New Project to create a project in an empty folder.',
-          source: 'system',
-        });
+        get().reportProjectOpenProblem('warning', 'No zplc.json found. This folder was not changed. Use New Project to create a project in an empty folder.');
         return false;
       }
 
@@ -556,24 +561,17 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       if (openProjectIntent !== intent || get().projectSession !== expectedProjectSession + 1) return false;
       get().addConsoleEntry({ type: 'success', message: `Opened project: ${config.name}`, source: 'system' });
       return true;
-    } catch {
+    } catch (error) {
       if (!isCurrent()) return false;
-      get().addConsoleEntry({
-        type: 'error',
-        message: 'Failed to open folder. Check access and project files, then try again.',
-        source: 'system',
-      });
+      get().reportProjectOpenProblem('error', `Failed to open folder. ${folderErrorReason(error)}`);
       return false;
     }
   },
 
   createNewProjectInFolder: async () => {
+    set({ projectOpenError: null });
     if (!isFileSystemAccessSupported()) {
-      get().addConsoleEntry({
-        type: 'error',
-        message: 'File System Access API not supported. Use a browser with folder access.',
-        source: 'system',
-      });
+      get().reportProjectOpenProblem('error', 'File System Access API not supported. Use a browser with folder access.');
       return false;
     }
 
@@ -617,26 +615,22 @@ export const useIDEStore = create<IDEState>((set, get) => ({
 
       return true;
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
-      get().addConsoleEntry({
-        type: 'error',
-        message: `Failed to create project: ${message}`,
-        source: 'system',
-      });
+      get().reportProjectOpenProblem('error', `Failed to create project: ${folderErrorReason(err)}`);
       return false;
     }
   },
 
   copyExampleProjectToFolder: async (projectId: string) => {
+    set({ projectOpenError: null });
     const blockUnsafeOpen = (): boolean => {
       const debug = get().debug;
       if (debug.forcedValues.size > 0 || debug.forcesUnconfirmed) {
         set({ activeConsoleTab: 'watch', isConsoleCollapsed: false });
-        get().addConsoleEntry({ type: 'warning', message: 'Release or verify all forces before closing the project.', source: 'system' });
+        get().reportProjectOpenProblem('warning', 'Release or verify all forces before closing the project.');
         return true;
       }
       if (get().hasUnsavedChanges()) {
-        get().addConsoleEntry({ type: 'warning', message: 'Save or discard changes before opening another folder.', source: 'system' });
+        get().reportProjectOpenProblem('warning', 'Save or discard changes before opening another folder.');
         return true;
       }
       return false;
@@ -646,17 +640,13 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     const intent = ++openProjectIntent;
     const isCurrent = () => openProjectIntent === intent && get().projectSession === expectedProjectSession;
     if (!isFileSystemAccessSupported()) {
-      get().addConsoleEntry({ type: 'error', message: 'File System Access API not supported. Use a browser with folder access.', source: 'system' });
+      get().reportProjectOpenProblem('error', 'File System Access API not supported. Use a browser with folder access.');
       return false;
     }
     const loaded = loadProject(projectId);
     const assets = loadProjectAssets(projectId);
     if (!loaded || !assets) {
-      get().addConsoleEntry({
-        type: 'error',
-        message: `Failed to load example project: ${projectId}`,
-        source: 'system',
-      });
+      get().reportProjectOpenProblem('error', `Failed to load example project: ${projectId}`);
       return false;
     }
     try {
@@ -695,8 +685,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       return true;
     } catch (error) {
       if (!isCurrent()) return false;
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      get().addConsoleEntry({ type: 'error', message: `Failed to copy example: ${message}`, source: 'system' });
+      get().reportProjectOpenProblem('error', `Failed to copy example: ${folderErrorReason(error)}`);
       return false;
     }
   },
@@ -1173,6 +1162,19 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     set({
       openTabs: newTabs,
       activeFileId: newActiveId,
+    });
+  },
+
+  discardFile: (fileId: string) => {
+    const { loadedFiles, openTabs, activeFileId } = get();
+    const newTabs = openTabs.filter(id => id !== fileId);
+    const files = new Map(loadedFiles);
+    files.delete(fileId);
+
+    set({
+      loadedFiles: files,
+      openTabs: newTabs,
+      activeFileId: activeFileId === fileId ? newTabs[newTabs.length - 1] || null : activeFileId,
     });
   },
 

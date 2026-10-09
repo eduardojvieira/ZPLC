@@ -21,9 +21,14 @@ import { Toolbar } from './components/Toolbar';
 import { EditorArea } from './components/EditorArea';
 import { Console } from './components/Console';
 import { WelcomeScreen } from './components/WelcomeScreen';
+import { CloseGuard } from './components/CloseGuard';
 import { useTheme } from './hooks/useTheme';
-import { useIDEStore } from './store/useIDEStore';
+import { initializeTheme, useIDEStore } from './store/useIDEStore';
 import { useDebugController } from './hooks/useDebugController';
+import { useWorkspaceLayout } from './utils/layoutStorage';
+
+// Apply the stored theme while modules load, before React renders the first frame (UX-016).
+initializeTheme();
 
 function App() {
   useTheme();
@@ -32,6 +37,7 @@ function App() {
   const isConsoleCollapsed = useIDEStore((s) => s.isConsoleCollapsed);
 
   const debugController = useDebugController();
+  const { defaultLayout, onLayoutChanged } = useWorkspaceLayout();
 
   // usePanelCallbackRef returns [handle | null, setterFn] — destructure accordingly
   const [consolePanel, setConsolePanel] = usePanelCallbackRef();
@@ -50,25 +56,27 @@ function App() {
     return (
       <div className="h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-surface-900)]">
         <WelcomeScreen />
+        <CloseGuard />
       </div>
     );
   }
 
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-surface-900)]">
+      <CloseGuard />
       {/* Unified Toolbar */}
       <Toolbar debugController={debugController} />
 
       {/* Main resizable workspace */}
       <div className="flex-1 min-h-0 flex ledger-workspace">
-        <Group orientation="vertical" className="h-full min-w-0 flex-1">
+        <Group orientation="vertical" className="h-full min-w-0 flex-1" defaultLayout={defaultLayout} onLayoutChanged={onLayoutChanged}>
 
           {/* Editor Area */}
           <Panel id="editor" defaultSize="72%" minSize="30%" className="overflow-hidden">
             <EditorArea />
           </Panel>
 
-          <Separator />
+          <Separator id="workspace-separator" aria-label="Resize editor and lower panel" />
 
           {/* Lower workbench panel */}
           <Panel

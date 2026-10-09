@@ -25,4 +25,11 @@ describe('Welcome screen contract', () => {
     expect(source).not.toContain('Zephyr RTOS Target');
     expect(source).not.toContain('Chrome');
   });
+  it('shows why a project could not be opened on the screen where the action started', () => {
+    const source = readFileSync(join(import.meta.dir, 'WelcomeScreen.tsx'), 'utf8');
+
+    expect(source).toContain('projectOpenError');
+    expect(source).toContain('role="alert" data-open-error');
+    expect(source.indexOf('projectOpenError &&')).toBeLessThan(source.indexOf('aria-live="polite"'));
+  });
 });

@@ -64,10 +64,33 @@ class Cdp {
 
 function click(text: string): string { return `(() => { const button = [...document.querySelectorAll('button')].find((item) => item.textContent?.includes(${JSON.stringify(text)})); if (!button || button.disabled) return false; button.click(); return true; })()`; }
 async function press(cdp: Cdp, key: string, code = key): Promise<void> {
-  const keyCode = key === 'Enter' ? 13 : key === 'Escape' ? 27 : 0;
+  const keyCode = { Enter: 13, Escape: 27, ArrowUp: 38, ArrowDown: 40 }[key] ?? 0;
   const text = key === 'Enter' ? '\r' : undefined;
   await cdp.command('Input.dispatchKeyEvent', { type: 'keyDown', key, code, text, unmodifiedText: text, windowsVirtualKeyCode: keyCode });
   await cdp.command('Input.dispatchKeyEvent', { type: 'keyUp', key, code, windowsVirtualKeyCode: keyCode });
+}
+const storeEval = (cdp: Cdp, body: string): Promise<unknown> => cdp.evaluate(`import('/src/store/useIDEStore.ts').then(async ({ useIDEStore }) => { const state = () => useIDEStore.getState(); ${body} })`);
+const fileContent = (cdp: Cdp, id: string) => storeEval(cdp, `return state().loadedFiles.get(${JSON.stringify(id)})?.content;`) as Promise<string | undefined>;
+/** Runs `body` with the page's own Monaco module instance, its first editor and its models in scope. */
+const monacoEval = (cdp: Cdp, body: string): Promise<unknown> => cdp.evaluate(`(async () => { const url = performance.getEntriesByType('resource').map((entry) => entry.name).find((name) => /\\/monaco-editor\\.js/.test(name)); const monaco = await import(url); const editor = monaco.editor.getEditors()[0]; ${body} })()`);
+async function showFile(cdp: Cdp, id: string): Promise<void> {
+  assert(await cdp.evaluate(`(() => { const tab = document.getElementById(${JSON.stringify(`editor-tab-${id}`)}); if (!tab) return false; tab.click(); return true; })()`) === true, `Editor tab for ${id} is missing.`);
+  await waitFor(`editor showing ${id}`, async () => {
+    const expected = await fileContent(cdp, id);
+    const active = await storeEval(cdp, `return state().activeFileId;`);
+    return active === id && await monacoEval(cdp, 'return editor?.getModel()?.getValue();') === expected ? true : undefined;
+  });
+}
+const dialogTitle = `document.querySelector('[data-unsaved-changes-dialog]')?.closest('[role="dialog"]')?.querySelector('h2')?.textContent ?? null`;
+const dialogButton = (label: string) => `(() => { const dialog = document.querySelector('[data-unsaved-changes-dialog]'); const button = [...(dialog?.querySelectorAll('button') ?? [])].find((item) => item.textContent === ${JSON.stringify(label)}); if (!button || button.disabled) return false; button.click(); return true; })()`;
+async function expectPrompt(cdp: Cdp, title: string): Promise<void> {
+  await waitFor(`unsaved-changes prompt "${title}"`, async () => await cdp.evaluate(dialogTitle) === title ? true : undefined);
+}
+async function answerPrompt(cdp: Cdp, label: string): Promise<void> {
+  assert(await cdp.evaluate(dialogButton(label)) === true, `The unsaved-changes prompt has no enabled "${label}" button.`);
+}
+async function promptGone(cdp: Cdp): Promise<void> {
+  await waitFor('unsaved-changes prompt to close', async () => await cdp.evaluate(dialogTitle) === null ? true : undefined);
 }
 const card = `(() => { const panel = document.querySelector('[aria-label="Live native POSIX motor"]'); if (!panel) return null; const text = panel.textContent ?? ''; const get = (name) => Array.from(panel.querySelectorAll('button')).find((button) => button.textContent === name)?.disabled; return { text, cycles: Number((text.match(/·\\s*(\\d+) cycles/) ?? [])[1]), startDisabled: get('Start'), stopDisabled: get('Stop'), assertDisabled: get('Assert E-stop'), releaseDisabled: get('Release E-stop') }; })()`;
 
@@ -89,6 +112,18 @@ async function main(): Promise<void> {
     const bridge = await waitFor('real preload bridge', async () => { const value = await cdp!.evaluate('({ href: location.href, bridge: Boolean(window.electronAPI?.isElectron && window.electronAPI.nativeSimulation), keys: Object.keys(window).filter((key) => key.toLowerCase().includes("electron")) })') as { bridge?: unknown }; return value.bridge === true ? value : undefined; }).catch((error: unknown) => { throw new Error(`${error instanceof Error ? error.message : String(error)} targets=${targetSummary}`); });
     assert((bridge as { bridge?: unknown }).bridge === true, `The real preload bridge is unavailable: ${JSON.stringify(bridge)} targets=${targetSummary}`);
     const appInfo = await cdp.evaluate('window.electronAPI.getAppInfo()');
+    const menuReport = output.join('').split('\n').find((line) => line.includes('[zplc] application menu'));
+    const menuAccelerators = /accelerators=(\S*)/.exec(menuReport ?? '')?.[1].split(',') ?? [];
+    assert(menuReport?.includes('toggledevtools') && menuAccelerators.includes('CmdOrCtrl+R') && menuAccelerators.includes('CmdOrCtrl+Shift+R'), `The development menu should keep its guarded reload entries: ${menuReport}`);
+    // UX-016: the window is hidden until the page has painted, is titled with the product name and carries the theme's canvas colour.
+    const windowReport = await waitFor('window report from the main process', () => output.join('').split('\n').find((line) => line.includes('[zplc] window title=')));
+    const reported = /title="([^"]*)" background=(#[0-9a-fA-F]{6})\w* visibleBeforeReveal=(\w+)/.exec(windowReport);
+    assert(reported?.[1] === 'ZPLC Studio' && reported[3] === 'false', `The window must be titled "ZPLC Studio" and hidden until ready-to-show: ${windowReport}`);
+    const rendererSurface = String(await cdp.evaluate('getComputedStyle(document.documentElement).backgroundColor'));
+    const surfaceHex = `#${(/rgb\((\d+), (\d+), (\d+)\)/.exec(rendererSurface) ?? []).slice(1).map((channel) => Number(channel).toString(16).padStart(2, '0')).join('')}`;
+    assert(surfaceHex === reported[2].toLowerCase(), `The native window colour ${reported[2]} must equal the theme canvas ${rendererSurface}.`);
+    assert(await cdp.evaluate('document.title') === 'ZPLC Studio', 'The page title must be "ZPLC Studio".');
+    console.log(`Window set-up observed: ${windowReport.replace('[zplc] ', '')}; renderer canvas ${rendererSurface}`);
     const frame = await cdp.command('Page.getFrameTree') as { frameTree?: { frame?: { id?: string } } };
     const mainFrameId = frame.frameTree?.frame?.id ?? '';
     const electronVersion = JSON.parse(readFileSync(join(packageRoot, 'node_modules', 'electron', 'package.json'), 'utf8')).version as string;
@@ -98,7 +133,12 @@ async function main(): Promise<void> {
     let rendererText = '';
     await waitFor('Motor Start Stop example', async () => { rendererText = String(await cdp!.evaluate('document.body.innerText')); return rendererText.includes('Motor Start Stop') ? true : undefined; }).catch((error: unknown) => { throw new Error(`${error instanceof Error ? error.message : String(error)} renderer=${rendererText.slice(0, 1_000)}`); });
     assert(await cdp.evaluate(`(() => { const button = document.querySelector('button[aria-label="Toggle high contrast theme"]'); button?.focus(); const style = button ? getComputedStyle(button) : null; return Boolean(button && document.activeElement === button && button.matches(':focus-visible') && style?.outlineStyle !== 'none'); })()`), 'Welcome high-contrast control does not expose a visible keyboard focus state.');
+    // UX-005: one global ring, so a control that opts out with focus:outline-none still shows a non-zero outline.
+    const optOut = await cdp.evaluate(`(() => { const input = document.createElement('input'); input.className = 'focus:outline-none'; document.body.append(input); input.focus(); const style = getComputedStyle(input); const result = { utilityLoaded: [...document.querySelectorAll('style')].some((sheet) => sheet.textContent?.includes('focus\\\\:outline-none')), focusVisible: input.matches(':focus-visible'), style: style.outlineStyle, width: Number.parseFloat(style.outlineWidth), color: style.outlineColor }; input.remove(); return result; })()`) as { utilityLoaded: boolean; focusVisible: boolean; style: string; width: number; color: string };
+    assert(optOut.utilityLoaded && optOut.focusVisible && optOut.style === 'solid' && optOut.width > 0 && optOut.color !== 'rgba(0, 0, 0, 0)', `A control with focus:outline-none must still show the global focus ring: ${JSON.stringify(optOut)}`);
     assert(await cdp.evaluate(`(() => { const button = document.querySelector('button[aria-label="Switch to dark theme"]'); button?.click(); return document.documentElement.classList.contains('dark') && getComputedStyle(document.body).backgroundColor === 'rgb(15, 23, 27)'; })()`), 'Explicit dark theme did not apply its authored surface.');
+    // UX-024: text-white on a solid accent fill takes the theme's on-accent colour, so the dark theme's light accents stay legible.
+    assert(await cdp.evaluate(`(() => { const probe = document.createElement('button'); probe.className = 'bg-[var(--color-accent-blue)] text-white'; document.body.append(probe); const style = getComputedStyle(probe); const ok = document.documentElement.classList.contains('dark') && style.color === 'rgb(15, 23, 27)' && style.backgroundColor === 'rgb(91, 167, 223)'; probe.remove(); return ok; })()`), 'Dark theme: text on a solid accent fill must use the on-accent colour.');
     assert(await cdp.evaluate(`(() => { const button = document.querySelector('button[aria-label="Toggle high contrast theme"]'); button?.click(); return document.documentElement.classList.contains('high-contrast') && getComputedStyle(document.body).backgroundColor === 'rgb(0, 0, 0)'; })()`), 'Explicit high-contrast theme did not apply its authored surface.');
     assert(await cdp.evaluate(`(() => { const button = document.querySelector('button[aria-label="Switch to light theme"]'); button?.click(); return document.documentElement.classList.contains('light') && getComputedStyle(document.body).backgroundColor === 'rgb(231, 236, 232)'; })()`), 'Explicit light theme did not restore its authored surface.');
     await cdp.command('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
@@ -107,6 +147,14 @@ async function main(): Promise<void> {
     await cdp.command('Emulation.setEmulatedMedia', { features: [{ name: 'forced-colors', value: 'active' }] });
     assert(await cdp.evaluate(`(() => { const button = document.querySelector('button[aria-label="Toggle high contrast theme"]'); button?.focus(); const style = button ? getComputedStyle(button) : null; return Boolean(matchMedia('(forced-colors: active)').matches && button?.matches(':focus-visible') && style?.outlineStyle !== 'none' && style?.outlineColor !== 'rgba(0, 0, 0, 0)'); })()`), 'Forced-colors media did not preserve a visible keyboard focus outline.');
     await cdp.command('Emulation.setEmulatedMedia', { features: [] });
+    // IDE-003 (part): a folder that cannot be opened is explained on the screen where the action started.
+    const setPicker = (failure: string) => cdp!.evaluate(`(() => { Object.defineProperty(window, 'showDirectoryPicker', { configurable: true, value: async () => { throw new DOMException('picker failure', ${JSON.stringify(failure)}); } }); })()`);
+    await setPicker('NotAllowedError');
+    assert(await cdp.evaluate(click('Open project')) === true, 'Open project is not actionable on the Welcome screen.');
+    await waitFor('Welcome open error', async () => String(await cdp!.evaluate(`document.querySelector('[role="alert"][data-open-error]')?.textContent ?? ''`)).includes('Access to the folder was denied') ? true : undefined);
+    await setPicker('AbortError');
+    assert(await cdp.evaluate(click('Open project')) === true, 'Open project is not actionable after a failed attempt.');
+    await waitFor('Welcome open error cleared by a cancelled picker', async () => await cdp!.evaluate(`document.querySelector('[data-open-error]') === null`) === true ? true : undefined);
     await cdp.evaluate(`(() => {
       const files = new Map(); const directories = new Set(['', 'src', 'tests']);
       const missing = () => { throw new DOMException('Not found', 'NotFoundError'); };
@@ -122,6 +170,25 @@ async function main(): Promise<void> {
     assert(await cdp.evaluate(click('Motor Start Stop')) === true, 'Motor Start Stop example button is not actionable.');
     const copiedExample = await waitFor('copied Motor Start Stop example', async () => await cdp!.evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const state = useIDEStore.getState(); const copy = window.__zplcSmokeExampleCopy; return state.isProjectOpen && state.directoryHandle === copy.handle ? { pickerCalls: copy.pickerCalls, migrationPreview: state.projectMigrationPreview, scenario: copy.files.get('tests/motor-start-stop.scenario.json'), active: state.activeFileId } : undefined; })`) as { pickerCalls: number; migrationPreview: unknown; scenario: string | undefined; active: string | null } | undefined);
     assert(copiedExample?.pickerCalls === 1 && copiedExample.migrationPreview === null && typeof copiedExample.scenario === 'string' && copiedExample.active === 'file:src/Motor.st', `Example copy did not finish as one disk-backed session: ${JSON.stringify(copiedExample)}`);
+    // UX-017: the separator between the editor and the lower panel is visible, reachable, movable by keyboard and pointer, and remembered.
+    const separatorState = `(() => { const el = document.querySelector('[role="separator"]'); const probe = document.createElement('div'); probe.style.backgroundColor = 'var(--color-accent-blue)'; document.body.append(probe); const cobalt = getComputedStyle(probe).backgroundColor; probe.remove(); if (!el) return null; const box = el.getBoundingClientRect(); const saved = JSON.parse(localStorage.getItem('react-resizable-panels:zplc-ide-workspace') ?? 'null'); return { state: el.getAttribute('data-separator'), orientation: el.getAttribute('aria-orientation'), tabindex: el.getAttribute('tabindex'), label: el.getAttribute('aria-label'), now: Number(el.getAttribute('aria-valuenow')), height: box.height, x: box.x + box.width / 2, y: box.y + box.height / 2, background: getComputedStyle(el).backgroundColor, cobalt, saved, focused: document.activeElement === el }; })()`;
+    type SeparatorState = { state: string; orientation: string; tabindex: string; label: string; now: number; height: number; x: number; y: number; background: string; cobalt: string; saved: { editor?: number; console?: number } | null; focused: boolean };
+    const separator = async (): Promise<SeparatorState> => await cdp!.evaluate(separatorState) as SeparatorState;
+    const before = await waitFor('workspace separator', async () => (await separator()) ?? undefined);
+    assert(before.orientation === 'horizontal' && before.tabindex === '0' && before.label === 'Resize editor and lower panel' && before.height >= 4 && before.state === 'inactive' && before.background !== before.cobalt, `The workspace separator is not exposed as a visible, focusable 4px separator: ${JSON.stringify(before)}`);
+    assert(await cdp.evaluate(`(() => { const el = document.querySelector('[role="separator"]'); el.focus(); return document.activeElement === el; })()`), 'The workspace separator cannot take keyboard focus.');
+    await press(cdp, 'ArrowUp');
+    const afterKey = await waitFor('separator moved by keyboard and turned cobalt', async () => { const now = await separator(); return now.now !== before.now && now.background === now.cobalt ? now : undefined; });
+    assert(afterKey.state === 'focus' && afterKey.background === afterKey.cobalt && afterKey.saved?.editor !== undefined && Math.abs(afterKey.saved.editor - afterKey.now) < 0.5, `ArrowUp must move the focused separator and remember the layout: ${JSON.stringify({ before: before.now, afterKey })}`);
+    assert(await cdp.evaluate(`(() => { const el = document.querySelector('[role="separator"]'); el.blur(); return document.activeElement !== el; })()`), 'The workspace separator did not release focus.');
+    await cdp.command('Input.dispatchMouseEvent', { type: 'mouseMoved', x: afterKey.x, y: afterKey.y });
+    await waitFor('separator hover state', async () => (await separator()).state === 'hover' ? true : undefined);
+    await cdp.command('Input.dispatchMouseEvent', { type: 'mousePressed', x: afterKey.x, y: afterKey.y, button: 'left', buttons: 1, clickCount: 1 });
+    await waitFor('separator active state', async () => (await separator()).state === 'active' ? true : undefined);
+    for (const dy of [-20, -40, -60]) await cdp.command('Input.dispatchMouseEvent', { type: 'mouseMoved', x: afterKey.x, y: afterKey.y + dy, button: 'left', buttons: 1 });
+    await cdp.command('Input.dispatchMouseEvent', { type: 'mouseReleased', x: afterKey.x, y: afterKey.y - 60, button: 'left', buttons: 0, clickCount: 1 });
+    const afterDrag = await waitFor('separator moved by pointer and layout saved', async () => { const now = await separator(); return now.now < afterKey.now - 1 && now.saved?.editor !== undefined && Math.abs(now.saved.editor - now.now) < 0.5 ? now : undefined; });
+    console.log(`Separator observed: ${before.state} ${before.height}px, keyboard ${before.now.toFixed(1)} -> ${afterKey.now.toFixed(1)} (${afterKey.state}), pointer -> ${afterDrag.now.toFixed(1)}, saved ${JSON.stringify(afterDrag.saved)}`);
     await waitFor('Tests tab', async () => await cdp!.evaluate(`(() => { const tab = [...document.querySelectorAll('button')].find((item) => item.getAttribute('aria-label')?.startsWith('Tests,')); if (!tab) return false; tab.click(); return true; })()`) === true ? true : undefined);
     const documentRoot = await cdp.command('DOM.getDocument') as { root?: { nodeId?: number } };
     const manifestInputNode = await cdp.command('DOM.querySelector', { nodeId: documentRoot.root?.nodeId, selector: 'input[data-workspace-manifest-input]' }) as { nodeId?: number };
@@ -167,10 +234,100 @@ async function main(): Promise<void> {
       return value.text.includes('Host POSIX scenarios passed.') && value.buildLink?.includes('Canonical saved build linked') && value.hashes.length >= 2 ? value : undefined;
     });
     assert(scenarioEvidence.hashes.every((hash) => /^SHA-256 [0-9a-f]{64}$/.test(hash ?? '')), `Native scenario evidence hashes are invalid: ${JSON.stringify(scenarioEvidence)}`);
+    // LNG-009: every open text file keeps its own content, undo history and cursor.
+    const first = 'file:src/Motor.st';
+    const originalFirst = await fileContent(cdp, first);
+    assert(typeof originalFirst === 'string' && originalFirst.length > 0, 'Motor.st is not loaded for the per-file editor step.');
+    const second = await storeEval(cdp, `return await state().createFile('Second', 'ST');`) as string;
+    assert(second === 'file:src/Second.st', `Unexpected second file id: ${second}`);
+    const originalSecond = await fileContent(cdp, second);
+    await showFile(cdp, first);
+    await monacoEval(cdp, `editor.setPosition({ lineNumber: 1, column: 1 }); editor.trigger('smoke', 'type', { text: 'AB' });`);
+    await waitFor('typing in the first file', async () => (await fileContent(cdp!, first))?.startsWith('AB') ? true : undefined);
+    await showFile(cdp, second);
+    await showFile(cdp, first);
+    await monacoEval(cdp, `editor.trigger('smoke', 'type', { text: 'C' });`);
+    const typed = await waitFor('typing after returning to the first file', async () => { const content = await fileContent(cdp!, first); return content !== originalFirst && content?.includes('C') ? content : undefined; });
+    assert(typed.startsWith('ABC'), `The first file lost its cursor across a tab switch: ${JSON.stringify(typed.slice(0, 20))}`);
+    const modelPaths = (await monacoEval(cdp, `return monaco.editor.getModels().map((model) => model.uri.scheme + ':' + model.uri.path).sort();`) as string[]).filter((path) => path.startsWith('zplc-file:'));
+    assert(modelPaths.length === 2 && /^zplc-file:\/\d+\/file:src\/Motor\.st$/.test(modelPaths[0]) && /^zplc-file:\/\d+\/file:src\/Second\.st$/.test(modelPaths[1]), `Each open text file must have its own Monaco model: ${JSON.stringify(modelPaths)}`);
+    await showFile(cdp, second);
+    await monacoEval(cdp, `editor.trigger('smoke', 'undo', null);`);
+    await Bun.sleep(500);
+    assert(await fileContent(cdp, second) === originalSecond, `Undo in the second file changed it: ${JSON.stringify((await fileContent(cdp, second))?.slice(0, 80))}`);
+    assert(await fileContent(cdp, first) === typed, 'Undo in the second file changed the first file.');
+    await showFile(cdp, first);
+    await monacoEval(cdp, `editor.trigger('smoke', 'undo', null);`);
+    await waitFor('undo in the first file', async () => (await fileContent(cdp!, first)) !== typed ? true : undefined);
+    assert(await fileContent(cdp, second) === originalSecond, 'Undo in the first file changed the second file.');
+    // IDE-005: closing a tab, the window or a reload with modified files asks first; cancel keeps everything.
+    const closeTabButton = (id: string) => `(() => { const button = document.getElementById(${JSON.stringify(`editor-tab-${id}`)})?.parentElement?.querySelector('button[aria-label^="Close "]'); if (!button) return false; button.click(); return true; })()`;
+    const openTabs = () => storeEval(cdp!, `return state().openTabs;`) as Promise<string[]>;
+    assert(await storeEval(cdp, `return state().loadedFiles.get(${JSON.stringify(first)})?.isModified;`) === true, 'The first file should be modified before the close prompts.');
+    assert(await cdp.evaluate(closeTabButton(first)) === true, 'The first file tab has no close button.');
+    await expectPrompt(cdp, 'Unsaved changes in this tab');
+    await answerPrompt(cdp, 'Cancel');
+    await promptGone(cdp);
+    assert((await openTabs()).includes(first) && await fileContent(cdp, first) !== originalFirst, 'Cancel must keep the modified tab open with its changes.');
+    assert(await cdp.evaluate(closeTabButton(first)) === true, 'The first file tab has no close button after cancel.');
+    await expectPrompt(cdp, 'Unsaved changes in this tab');
+    await answerPrompt(cdp, 'Discard and close');
+    await promptGone(cdp);
+    assert(!(await openTabs()).includes(first) && await fileContent(cdp, first) === undefined, 'Discard must close the tab and drop the unsaved content.');
+    assert(!(await monacoEval(cdp, `return monaco.editor.getModels().map((model) => model.uri.path);`) as string[]).some((path) => path.endsWith('/file:src/Motor.st')), 'Closing the tab must drop its Monaco model.');
+    await storeEval(cdp, `await state().openFile(${JSON.stringify(first)}); return true;`);
+    await showFile(cdp, first);
+    assert(await fileContent(cdp, first) === originalFirst, 'Reopening a discarded file must read it from disk again.');
+    await showFile(cdp, second);
+    await monacoEval(cdp, `editor.trigger('smoke', 'type', { text: 'X' });`);
+    await waitFor('second file modified', async () => await storeEval(cdp!, `return state().loadedFiles.get(${JSON.stringify(second)})?.isModified;`) === true ? true : undefined);
+    await cdp.evaluate('window.__zplcSmokeDocument = 1');
+    assert(electron.exitCode === null, 'Electron exited before the window close was requested.');
+    void cdp.command('Browser.close').catch(() => undefined);
+    await expectPrompt(cdp, 'Unsaved changes before you close');
+    await answerPrompt(cdp, 'Cancel');
+    await promptGone(cdp);
+    assert(electron.exitCode === null && await cdp.evaluate('window.__zplcSmokeDocument') === 1, 'Cancel must keep the window open.');
+    assert(await storeEval(cdp, `return state().hasUnsavedChanges();`) === true, 'Cancel must keep the unsaved changes.');
+    // IDE-011: an exception inside the editor or a panel stays in that region; the rest of the window keeps working.
+    assert(cdp.errors.length === 0, `Renderer errors before the containment step: ${cdp.errors.join(' | ')}`);
+    const windowAlive = `(() => ({ tabs: Boolean(document.querySelector('[role="tablist"][aria-label="Editor views"]')), toolbar: Boolean(document.querySelector('[role="toolbar"][aria-label="Project operations"]')), panel: Boolean(document.querySelector('[role="tabpanel"][id^="console-panel-"]')) }))()`;
+    const regionError = (region: string) => `document.querySelector('[role="alert"][data-region-error=${JSON.stringify(region)}]') !== null`;
+    const savedConfig = await storeEval(cdp, `return state().projectConfig;`);
+    await storeEval(cdp, `useIDEStore.setState({ showSettings: true, projectConfig: { name: 'broken', version: '1.0.0' } }); return true;`);
+    await waitFor('Editor region error', async () => await cdp!.evaluate(regionError('Editor')) === true ? true : undefined);
+    assert(JSON.stringify(await cdp.evaluate(windowAlive)) === JSON.stringify({ tabs: true, toolbar: true, panel: true }), 'An editor exception must leave the tabs, toolbar and panel alive.');
+    await storeEval(cdp, `useIDEStore.setState({ projectConfig: ${JSON.stringify(savedConfig)} }); return true;`);
+    assert(await cdp.evaluate(`(() => { const retry = [...document.querySelectorAll('[data-region-error="Editor"] button')].find((item) => item.textContent === 'Retry'); if (!retry) return false; retry.click(); return true; })()`) === true, 'The editor region error has no Retry action.');
+    await waitFor('Editor region recovered after Retry', async () => await cdp!.evaluate(regionError('Editor')) === false ? true : undefined);
+    await storeEval(cdp, `useIDEStore.setState({ showSettings: false }); return true;`);
+    await storeEval(cdp, `useIDEStore.setState({ activeConsoleTab: 'output', isConsoleCollapsed: false, consoleEntries: [{ id: 'broken', type: 'info', message: { not: 'text' }, timestamp: new Date(), source: 'system' }] }); return true;`);
+    await waitFor('Panel region error', async () => await cdp!.evaluate(regionError('Panel')) === true ? true : undefined);
+    assert(JSON.stringify(await cdp.evaluate(windowAlive)) === JSON.stringify({ tabs: true, toolbar: true, panel: true }), 'A panel exception must leave the editor tabs, toolbar and panel tabs alive.');
+    await storeEval(cdp, `state().clearConsole(); useIDEStore.setState({ activeConsoleTab: 'tests' }); return true;`);
+    await waitFor('Panel region recovered by switching tab', async () => await cdp!.evaluate(regionError('Panel')) === false ? true : undefined);
+    cdp.errors.splice(0); cdp.errorDetails.splice(0);
+    // LNG-011: a Ladder file is validated when it opens; an invalid one names itself and its violations and leaves the window alive.
+    const fileError = `document.querySelector('[role="alert"][data-file-error]')?.textContent ?? null`;
+    const ladder = await storeEval(cdp, `return await state().createFile('Broken', 'LD');`) as string;
+    await waitFor('valid new Ladder file shown', async () => await storeEval(cdp!, `return state().activeFileId === ${JSON.stringify(ladder)} ? true : undefined;`) === true ? true : undefined);
+    await Bun.sleep(300);
+    assert(await cdp.evaluate(fileError) === null, 'A valid new Ladder file must open without an error.');
+    await storeEval(cdp, `state().updateFileContent(${JSON.stringify(ladder)}, ${JSON.stringify(JSON.stringify({ name: 'Broken', variables: { local: [], outputs: [] }, rungs: [{ id: 'rung_1' }] }))}); return true;`);
+    const ladderPath = ladder.slice('file:'.length);
+    await waitFor('invalid Ladder file error', async () => String(await cdp!.evaluate(fileError)).includes(ladderPath) ? true : undefined);
+    const ladderError = String(await cdp.evaluate(fileError));
+    assert(ladderError.includes('Invalid LD file') && ladderError.includes('rungs[0].number'), `The Ladder error should name the file and the first violations: ${ladderError}`);
+    assert(JSON.stringify(await cdp.evaluate(windowAlive)) === JSON.stringify({ tabs: true, toolbar: true, panel: true }), 'An invalid Ladder file must leave the window alive.');
+    await storeEval(cdp, `state().discardFile(${JSON.stringify(ladder)}); return true;`);
     const finalFrame = await cdp.command('Page.getFrameTree') as { frameTree?: { frame?: { id?: string } } };
     assert((finalFrame.frameTree?.frame?.id ?? '') === mainFrameId, 'Renderer main frame changed during smoke.');
     assert(JSON.stringify(await cdp.evaluate('window.electronAPI.getAppInfo()')) === JSON.stringify(appInfo), 'Preload IPC identity changed during smoke.');
     assert(cdp.errors.length === 0, `Renderer errors: ${cdp.errors.join(' | ')} details=${cdp.errorDetails.join(' | ')}`);
+    void cdp.command('Browser.close').catch(() => undefined);
+    await expectPrompt(cdp, 'Unsaved changes before you close');
+    await answerPrompt(cdp, 'Discard and close');
+    assert(await Promise.race([electron.exited, Bun.sleep(10_000).then(() => null)]) === 0, 'Discard must close the window and exit cleanly.');
     console.log('Electron development-host Motor Start/Stop smoke passed through real preload/IPC and native POSIX. It is not hardware, HIL, Zephyr, timing, or packaged-artifact evidence.');
   } catch (error) { throw new Error(`${error instanceof Error ? error.message : String(error)}\n${output.join('').slice(-12_000)}`); } finally { if (cdp) await cdp.command('Browser.close').catch(() => undefined); cdp?.close(); await Promise.race([electron?.exited ?? Promise.resolve(), Bun.sleep(3_000)]); await stop(electron); await stop(vite); if (tempRoot.startsWith(join(tmpdir(), 'zplc-electron-smoke-')) && existsSync(tempRoot)) rmSync(tempRoot, { recursive: true, force: true }); }
 }

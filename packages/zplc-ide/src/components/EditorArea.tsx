@@ -12,13 +12,19 @@ import { PLC_LANGUAGES, type PLCLanguage } from '../types';
 import { FBDEditor } from '../editors/fbd';
 import { LDEditor } from '../editors/ld';
 import { SFCEditor } from '../editors/sfc';
-import { parseFBDModel, serializeFBDModel, type FBDModel } from '../models/fbd';
-import { parseLDModel, serializeLDModel, type LDModel } from '../models/ld';
-import { parseSFCModel, serializeSFCModel, type SFCModel } from '../models/sfc';
+import { serializeFBDModel, type FBDModel } from '../models/fbd';
+import { serializeLDModel, type LDModel } from '../models/ld';
+import { serializeSFCModel, type SFCModel } from '../models/sfc';
+import { loadFBDFile, loadLDFile, loadSFCFile, type VisualFileLoad } from '../models/visualFileLoad';
 import { ProjectSettings } from './settings/ProjectSettings';
 import { CodeEditor } from './CodeEditor';
+import { editor as monacoEditor } from 'monaco-editor';
+import { disposeClosedEditorModels } from './editorModels';
 import { canCommitVisualEditorChange } from '../editors/visualCommitGuard';
 import { displayEditorFileName } from './editorFilePresentation';
+import { UnsavedChangesDialog } from './UnsavedChangesDialog';
+import { ErrorBoundary } from './ErrorBoundary';
+import { unsavedOutcome, type UnsavedChoice } from '../utils/unsavedChanges';
 import {
   recordVisualSnapshot,
   redoVisualSnapshot,
@@ -60,6 +66,8 @@ export function EditorArea() {
     openTabs,
     setActiveFile,
     closeTab,
+    discardFile,
+    saveFile,
     updateFileContent,
     showSettings,
     toggleSettings,
@@ -68,6 +76,8 @@ export function EditorArea() {
     projectSession,
   } = useIDEStore();
 
+  const [unsavedTabId, setUnsavedTabId] = useState<string | null>(null);
+  const [savingTab, setSavingTab] = useState(false);
   const activeFile = getActiveFile();
   const tabFiles = openTabs
     .map((id) => getFile(id))
@@ -86,6 +96,11 @@ export function EditorArea() {
     () => visualHistoryState.projectSession === projectSession ? visualHistoryState.histories : new Map<string, never>(),
     [projectSession, visualHistoryState],
   );
+
+  // Text files keep their Monaco model while their tab is open; closing the tab or the project drops it.
+  useEffect(() => {
+    disposeClosedEditorModels(monacoEditor, projectSession, openTabs);
+  }, [openTabs, projectSession]);
 
   useEffect(() => useIDEStore.subscribe((state) => {
     const file = state.getActiveFile();
@@ -114,38 +129,16 @@ export function EditorArea() {
     }
   };
 
-  // Parse FBD model from file content
-  const fbdModel = useMemo((): FBDModel | null => {
-    if (!activeFile || activeFile.language !== 'FBD') return null;
-    try {
-      return parseFBDModel(activeFile.content);
-    } catch (e) {
-      console.error('Failed to parse FBD model:', e);
-      return null;
-    }
-  }, [activeFile]);
-
-  // Parse LD model from file content
-  const ldModel = useMemo((): LDModel | null => {
-    if (!activeFile || activeFile.language !== 'LD') return null;
-    try {
-      return parseLDModel(activeFile.content);
-    } catch (e) {
-      console.error('Failed to parse LD model:', e);
-      return null;
-    }
-  }, [activeFile]);
-
-  // Parse SFC model from file content
-  const sfcModel = useMemo((): SFCModel | null => {
-    if (!activeFile || activeFile.language !== 'SFC') return null;
-    try {
-      return parseSFCModel(activeFile.content);
-    } catch (e) {
-      console.error('Failed to parse SFC model:', e);
-      return null;
-    }
-  }, [activeFile]);
+  // Validate and load the visual model from the file content; an invalid file becomes an error value, never an exception.
+  const fbdLoad = useMemo((): VisualFileLoad<FBDModel> | null => (
+    activeFile?.language === 'FBD' ? loadFBDFile(activeFile.path || activeFile.name, activeFile.content) : null
+  ), [activeFile]);
+  const ldLoad = useMemo((): VisualFileLoad<LDModel> | null => (
+    activeFile?.language === 'LD' ? loadLDFile(activeFile.path || activeFile.name, activeFile.content) : null
+  ), [activeFile]);
+  const sfcLoad = useMemo((): VisualFileLoad<SFCModel> | null => (
+    activeFile?.language === 'SFC' ? loadSFCFile(activeFile.path || activeFile.name, activeFile.content) : null
+  ), [activeFile]);
 
   const updateVisualContent = useCallback((expectedProjectSession: number, expectedFileId: string, expectedLanguage: PLCLanguage, content: string) => {
     const state = useIDEStore.getState();
@@ -239,12 +232,32 @@ export function EditorArea() {
     focusTab(destination);
   }, [focusTab, selectFileTab, showSettings, tabFiles]);
 
-  const handleCloseTab = useCallback((fileId: string) => {
+  const closeTabAndFocus = useCallback((fileId: string, discard: boolean) => {
     const remainingFileIds = tabFiles.filter((file) => file.id !== fileId).map((file) => file.id);
     const nextFileId = selectedFileId === fileId ? (remainingFileIds.at(-1) ?? null) : selectedFileId;
-    closeTab(fileId);
+    if (discard) discardFile(fileId);
+    else closeTab(fileId);
     focusTab(showSettings ? SETTINGS_TAB_ID : nextFileId);
-  }, [closeTab, focusTab, selectedFileId, showSettings, tabFiles]);
+  }, [closeTab, discardFile, focusTab, selectedFileId, showSettings, tabFiles]);
+
+  // Closing a modified tab asks first; an unmodified one closes at once.
+  const handleCloseTab = useCallback((fileId: string) => {
+    if (getFile(fileId)?.isModified) setUnsavedTabId(fileId);
+    else closeTabAndFocus(fileId, false);
+  }, [closeTabAndFocus, getFile]);
+
+  const answerUnsavedTab = useCallback(async (choice: UnsavedChoice) => {
+    const fileId = unsavedTabId;
+    if (!fileId) return;
+    if (choice === 'save') {
+      setSavingTab(true);
+      await saveFile(fileId);
+      setSavingTab(false);
+    }
+    const stillModified = useIDEStore.getState().getFile(fileId)?.isModified ?? false;
+    if (unsavedOutcome(choice, stillModified) === 'proceed') closeTabAndFocus(fileId, choice === 'discard');
+    setUnsavedTabId(null);
+  }, [closeTabAndFocus, saveFile, unsavedTabId]);
 
   const handleCloseSettings = useCallback(() => {
     toggleSettings();
@@ -257,22 +270,13 @@ export function EditorArea() {
 
     switch (activeFile.language) {
       case 'FBD':
-        if (fbdModel) {
-          return <FBDEditor model={fbdModel} onChange={handleFBDChange} />;
-        }
-        return renderParseError('FBD');
-        
+        return fbdLoad?.ok ? <FBDEditor model={fbdLoad.model} onChange={handleFBDChange} /> : renderFileError('FBD', fbdLoad);
+
       case 'LD':
-        if (ldModel) {
-          return <LDEditor model={ldModel} onChange={handleLDChange} />;
-        }
-        return renderParseError('LD');
-        
+        return ldLoad?.ok ? <LDEditor model={ldLoad.model} onChange={handleLDChange} /> : renderFileError('LD', ldLoad);
+
       case 'SFC':
-        if (sfcModel) {
-          return <SFCEditor model={sfcModel} onChange={handleSFCChange} />;
-        }
-        return renderParseError('SFC');
+        return sfcLoad?.ok ? <SFCEditor model={sfcLoad.model} onChange={handleSFCChange} /> : renderFileError('SFC', sfcLoad);
         
       default:
         return renderPlaceholder(activeFile.language, 'Unknown visual language');
@@ -284,20 +288,27 @@ export function EditorArea() {
     activeVisualFile?.content ?? '',
   );
 
-  // Render parse error state
-  const renderParseError = (lang: string) => (
-    <div className="w-full h-full flex items-center justify-center bg-[var(--color-surface-800)]">
-      <div className="text-center">
-        <div className="w-16 h-16 mx-auto mb-4 rounded-lg bg-red-900/30 flex items-center justify-center">
-          <FileCode size={32} className="text-red-400" />
+  // An invalid visual file names itself and its first violations; nothing else in the window is affected.
+  const renderFileError = (lang: string, load: VisualFileLoad<unknown> | null) => {
+    if (!load || load.ok) return null;
+    const { fileName, violations, more } = load.error;
+    return (
+      <div role="alert" data-file-error className="w-full h-full overflow-auto flex items-center justify-center bg-[var(--color-surface-800)] p-6">
+        <div className="max-w-xl">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-lg bg-red-900/30 flex items-center justify-center">
+            <FileCode size={32} className="text-red-400" />
+          </div>
+          <p className="text-red-400 text-lg font-medium text-center">Invalid {lang} file</p>
+          <p className="text-[var(--color-surface-200)] text-sm mt-1 text-center font-mono break-all">{fileName}</p>
+          <ul className="mt-4 list-disc pl-5 text-sm text-[var(--color-surface-300)] space-y-1">
+            {violations.map((violation) => <li key={violation} className="break-words">{violation}</li>)}
+          </ul>
+          {more > 0 && <p className="mt-1 pl-5 text-sm text-[var(--color-surface-400)]">and {more} more.</p>}
+          <p className="text-[var(--color-surface-400)] text-sm mt-4 text-center">Close this tab, correct the file on disk, and open it again.</p>
         </div>
-        <p className="text-red-400 text-lg font-medium">Invalid {lang} Model</p>
-        <p className="text-[var(--color-surface-400)] text-sm mt-1 max-w-md">
-          Failed to parse the {lang} JSON. Check the console for details.
-        </p>
       </div>
-    </div>
-  );
+    );
+  };
 
   // Render placeholder for unimplemented editors
   const renderPlaceholder = (lang: string, message: string) => (
@@ -427,6 +438,7 @@ export function EditorArea() {
         aria-labelledby={`editor-tab-${selectedViewId}`}
         className="flex-1 overflow-hidden"
       >
+        <ErrorBoundary region="Editor" resetKey={selectedViewId}>
         {showSettings ? (
           /* Project Settings Panel */
           <ProjectSettings />
@@ -474,7 +486,18 @@ export function EditorArea() {
             />
           )
         ) : null}
+        </ErrorBoundary>
       </div>
+      {unsavedTabId && (
+        <UnsavedChangesDialog
+          title="Unsaved changes in this tab"
+          items={[getFile(unsavedTabId)?.name ?? unsavedTabId]}
+          busy={savingTab}
+          saveLabel="Save and close"
+          discardLabel="Discard and close"
+          onChoice={(choice) => void answerUnsavedTab(choice)}
+        />
+      )}
     </div>
   );
 }

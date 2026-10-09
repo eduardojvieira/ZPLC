@@ -236,6 +236,11 @@ export function isTrustedRenderer(
   return isExpectedRendererDocument(event.senderFrame.url, expectedRendererUrl);
 }
 
+/** The close guard accepts exactly one boolean: whether any file is modified. */
+export function isAllowedCloseGuardDirty(value: unknown): value is boolean {
+  return typeof value === 'boolean';
+}
+
 export function isAllowedNativeSimulationRequest(value: unknown): boolean {
   if (!isPlainObject(value)) return false;
   if (Object.keys(value).length !== 4) return false;

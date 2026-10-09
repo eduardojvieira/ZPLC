@@ -10,6 +10,7 @@
 import { useRef, useState } from 'react';
 import { Plus, X, Trash2, Eye, EyeOff, AlertTriangle, LoaderCircle } from 'lucide-react';
 import { formatDebugValue } from '../hooks/useDebugValue';
+import { SIGNAL_TEXT_CLASS, signalTone } from '../theme/signalTone';
 import { useIDEStore } from '../store/useIDEStore';
 import { buildDebugWatchRows } from './debugWatchRows';
 import { WATCH_FORCE_STATE, type WatchVariable } from '../runtime/debugAdapter';
@@ -435,14 +436,8 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
                       </span>
                     ) : (
                       <span
-                        className={`${
-                          result.forced
-                            ? 'text-amber-300'
-                            : result.type === 'BOOL'
-                            ? result.value ? 'text-green-400' : 'text-red-400'
-                            : 'text-blue-400'
-                        } ${
-                          result.forced ? 'font-semibold decoration-amber-400' : ''
+                        className={`${SIGNAL_TEXT_CLASS[signalTone(result)]} ${
+                          result.forced ? 'font-semibold' : ''
                         } ${
                           valueEditable
                             ? 'cursor-pointer hover:underline decoration-dotted underline-offset-2'

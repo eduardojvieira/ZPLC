@@ -50,6 +50,8 @@ const AI_PROVIDER_CHANNEL = {
   STORE_KEY: 'ai-provider:store-key', CLEAR_KEY: 'ai-provider:clear-key', REQUEST: 'ai-provider:request', CANCEL: 'ai-provider:cancel',
 } as const;
 const LEARN_PROGRESS_CHANNEL = { READ: 'learn-progress:read', MERGE: 'learn-progress:merge' } as const;
+const CLOSE_GUARD_CHANNEL = { SET_DIRTY: 'close-guard:set-dirty', CLOSE_NOW: 'close-guard:close-now', CLOSE_REQUESTED: 'close-guard:close-requested' } as const;
+type GuardedAction = 'close' | 'reload';
 
 // Expose protected APIs to the renderer process
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -95,6 +97,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke(WORKSPACE_TESTS_CHANNEL.COMPILE, request) as Promise<unknown>,
     safetyCheck: (request: { workspaceId: string }) =>
       ipcRenderer.invoke(WORKSPACE_TESTS_CHANNEL.SAFETY_CHECK, request) as Promise<unknown>,
+  },
+  closeGuard: {
+    setDirty: (dirty: boolean) => ipcRenderer.invoke(CLOSE_GUARD_CHANNEL.SET_DIRTY, dirty) as Promise<void>,
+    closeNow: () => ipcRenderer.invoke(CLOSE_GUARD_CHANNEL.CLOSE_NOW) as Promise<void>,
+    onCloseRequested: (callback: (action: GuardedAction) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, action: unknown) => {
+        callback(action === 'reload' ? 'reload' : 'close');
+      };
+      ipcRenderer.on(CLOSE_GUARD_CHANNEL.CLOSE_REQUESTED, listener);
+      return () => {
+        ipcRenderer.removeListener(CLOSE_GUARD_CHANNEL.CLOSE_REQUESTED, listener);
+      };
+    },
   },
   learnProgress: {
     read: () => ipcRenderer.invoke(LEARN_PROGRESS_CHANNEL.READ) as Promise<string[]>,
@@ -162,6 +177,11 @@ declare global {
         cancel: () => Promise<{ requested: boolean }>;
         compile: (request: { workspaceId: string }) => Promise<unknown>;
         safetyCheck: (request: { workspaceId: string }) => Promise<unknown>;
+      };
+      closeGuard: {
+        setDirty: (dirty: boolean) => Promise<void>;
+        closeNow: () => Promise<void>;
+        onCloseRequested: (callback: (action: GuardedAction) => void) => () => void;
       };
       candidateChangeSet: {
         review: (request: { workspaceId: string; edit: { path: string; content: string } }) => Promise<unknown>;
