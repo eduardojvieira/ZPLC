@@ -4,7 +4,9 @@ import {
   PROJECT_FILES_CHANNEL,
   PROJECT_FILES_LIMITS,
   PROJECT_FILES_OPS,
+  PROJECT_RECENT_OPS,
   parseProjectFilesRequest,
+  parseRecentRequest,
 } from './projectFilesProtocol';
 
 const ROOT = { rootId: 'root-1' };
@@ -23,7 +25,7 @@ describe('project files message schema', () => {
     const channels = Object.values(PROJECT_FILES_CHANNEL);
     expect(new Set(channels).size).toBe(channels.length);
     expect(channels.every((channel) => channel.startsWith('project-files:'))).toBe(true);
-    expect(Object.keys(PROJECT_FILES_CHANNEL).sort()).toEqual(['chooseFolder', ...PROJECT_FILES_OPS].sort());
+    expect(Object.keys(PROJECT_FILES_CHANNEL).sort()).toEqual(['chooseFolder', ...PROJECT_FILES_OPS, ...PROJECT_RECENT_OPS].sort());
   });
 
   it('accepts exactly one well-formed request object per operation', () => {
@@ -78,5 +80,50 @@ describe('project files message schema', () => {
     expect(parseProjectFilesRequest('chooseFolder', [])).toBeNull();
     expect(parseProjectFilesRequest('exec', [VALID.list])).toBeNull();
     expect(parseProjectFilesRequest('__proto__', [VALID.list])).toBeNull();
+  });
+});
+
+const RECENT_VALID: Record<string, unknown> = {
+  openRecent: { recentId: 'a'.repeat(64) },
+  forgetRecent: { recentId: 'a'.repeat(64) },
+  markOpened: { rootId: 'root-1' },
+};
+
+describe('recent project message schema (IDE-008)', () => {
+  it('names the four recent operations in the same namespace and takes no argument for the list', () => {
+    expect([...PROJECT_RECENT_OPS]).toEqual(['listRecent', 'openRecent', 'forgetRecent', 'markOpened']);
+    expect(PROJECT_FILES_CHANNEL.listRecent).toBe('project-files:list-recent');
+    expect(parseRecentRequest('listRecent', [])).toBeNull(); // it has no request object: the handler checks for zero arguments
+  });
+
+  it('accepts exactly one well-formed request object per operation that has one', () => {
+    for (const op of ['openRecent', 'forgetRecent', 'markOpened']) {
+      expect(parseRecentRequest(op, [RECENT_VALID[op]])).toEqual(RECENT_VALID[op] as never);
+    }
+  });
+
+  it('rejects a missing, doubled, array, non-plain, extra, missing or wrongly typed field, and a path where an id belongs', () => {
+    for (const op of ['openRecent', 'forgetRecent', 'markOpened']) {
+      const valid = RECENT_VALID[op] as Record<string, unknown>;
+      const key = Object.keys(valid)[0]!;
+      expect(parseRecentRequest(op, [])).toBeNull();
+      expect(parseRecentRequest(op, [valid, valid])).toBeNull();
+      expect(parseRecentRequest(op, [[valid]])).toBeNull();
+      expect(parseRecentRequest(op, ['x'])).toBeNull();
+      expect(parseRecentRequest(op, [null])).toBeNull();
+      expect(parseRecentRequest(op, [new Map(Object.entries(valid))])).toBeNull();
+      expect(parseRecentRequest(op, [{ ...valid, path: '/home/ana/plant' }])).toBeNull();
+      expect(parseRecentRequest(op, [{}])).toBeNull();
+      expect(parseRecentRequest(op, [{ ...valid, [key]: 42 }])).toBeNull();
+      expect(parseRecentRequest(op, [{ ...valid, [key]: '' }])).toBeNull();
+      expect(parseRecentRequest(op, [{ ...valid, [key]: 'x'.repeat(PROJECT_FILES_LIMITS.maxRootIdChars + 1) }])).toBeNull();
+    }
+  });
+
+  it('does not recognise a file operation or an unknown name', () => {
+    expect(parseRecentRequest('list', [{ rootId: 'root-1', path: '' }])).toBeNull();
+    expect(parseRecentRequest('chooseFolder', [])).toBeNull();
+    expect(parseRecentRequest('__proto__', [RECENT_VALID.openRecent])).toBeNull();
+    expect(parseProjectFilesRequest('openRecent', [RECENT_VALID.openRecent])).toBeNull();
   });
 });

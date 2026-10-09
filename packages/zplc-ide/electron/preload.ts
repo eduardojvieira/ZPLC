@@ -62,6 +62,10 @@ const PROJECT_FILES_CHANNEL = {
   mkdir: 'project-files:mkdir',
   remove: 'project-files:remove',
   rename: 'project-files:rename',
+  listRecent: 'project-files:list-recent',
+  openRecent: 'project-files:open-recent',
+  forgetRecent: 'project-files:forget-recent',
+  markOpened: 'project-files:mark-opened',
 } as const;
 const LEARN_PROGRESS_CHANNEL = { READ: 'learn-progress:read', MERGE: 'learn-progress:merge' } as const;
 const CLOSE_GUARD_CHANNEL = { SET_DIRTY: 'close-guard:set-dirty', CLOSE_NOW: 'close-guard:close-now', CLOSE_REQUESTED: 'close-guard:close-requested' } as const;
@@ -139,6 +143,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     mkdir: (request: unknown) => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.mkdir, request) as Promise<unknown>,
     remove: (request: unknown) => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.remove, request) as Promise<unknown>,
     rename: (request: unknown) => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.rename, request) as Promise<unknown>,
+    // Recent projects (IDE-008): ids and base names only; reopening takes the id of an entry the main process remembers.
+    listRecent: () => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.listRecent) as Promise<unknown>,
+    openRecent: (request: unknown) => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.openRecent, request) as Promise<unknown>,
+    forgetRecent: (request: unknown) => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.forgetRecent, request) as Promise<unknown>,
+    markOpened: (request: unknown) => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.markOpened, request) as Promise<unknown>,
   },
   learnProgress: {
     read: () => ipcRenderer.invoke(LEARN_PROGRESS_CHANNEL.READ) as Promise<string[]>,

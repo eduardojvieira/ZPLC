@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { PROJECT_FILES_CHANNEL, PROJECT_FILES_OPS } from './projectFilesProtocol';
+import { PROJECT_FILES_CHANNEL, PROJECT_FILES_OPS, PROJECT_RECENT_OPS } from './projectFilesProtocol';
 
 const electronDir = path.dirname(fileURLToPath(import.meta.url));
 const read = (name: string) => readFileSync(path.join(electronDir, name), 'utf8');
@@ -29,7 +29,7 @@ describe('project files IPC boundary', () => {
     const bridge = BRIDGE_BLOCK.exec(preloadSource)?.[1] ?? '';
     expect(bridge).not.toBe('');
     const methods = [...bridge.matchAll(/^ {4}(\w+): /gm)].map(([, name]) => name);
-    expect(methods).toEqual(['chooseFolder', ...PROJECT_FILES_OPS]);
+    expect(methods).toEqual(['chooseFolder', ...PROJECT_FILES_OPS, ...PROJECT_RECENT_OPS]);
     for (const name of methods) expect(bridge).toContain(`ipcRenderer.invoke(PROJECT_FILES_CHANNEL.${name}`);
     expect(bridge).not.toMatch(/require\(|readFile|writeFile|webUtils|\bfs\b|process\./);
     expect(bridge).not.toContain('ipcRenderer.send');
@@ -37,6 +37,8 @@ describe('project files IPC boundary', () => {
     expect(preloadSource).not.toContain('ipcRenderer.on(PROJECT_FILES_CHANNEL');
     // chooseFolder takes no argument: the renderer cannot suggest where the dialog opens or what it returns.
     expect(bridge).toContain('chooseFolder: () => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.chooseFolder)');
+    // Nor does listing the recent projects: the renderer cannot ask about a path, and it receives ids and base names only.
+    expect(bridge).toContain('listRecent: () => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.listRecent)');
   });
 
   it('registers every channel behind the sender check, then lets the shared handler validate the message', () => {
@@ -57,14 +59,21 @@ describe('project files IPC boundary', () => {
   });
 
   it('asks the native dialog from the main process, and only a host that is not packaged may answer it from a test file', () => {
-    expect(mainSource).toContain('const projectFiles = createProjectFiles(chooseProjectDirectory);');
+    expect(mainSource).toContain('const projectFiles = createProjectFiles(chooseProjectDirectory, () => recentProjects);');
     expect(mainSource).toContain("dialog.showOpenDialog(win, { title: 'Choose project folder', properties: ['openDirectory', 'createDirectory'] })");
     expect(mainSource).toContain('readFolderDialogHook(app.isPackaged, process.env)');
     expect(mainSource).not.toContain('ZPLC_SMOKE_FOLDER_ANSWER_FILE');
   });
 
+  it('keeps the remembered folders in the private user-data directory of the main process, and nowhere the renderer can name', () => {
+    expect(mainSource).toContain("recentProjects = createRecentProjects(app.getPath('userData'));");
+    const recent = read('recentProjects.ts');
+    expect(recent).not.toMatch(/process\.env|homedir|tmpdir|ipcMain|webContents/);
+    expect(read('projectFilesProtocol.ts')).not.toMatch(/recentProjects|realpath|\bpath: string; (display|last)/);
+  });
+
   it('brings no npm runtime dependency into the main process (the packaged archive lists no node_modules)', () => {
-    for (const source of [read('projectFiles.ts'), read('projectFilesProtocol.ts')]) {
+    for (const source of [read('projectFiles.ts'), read('projectFilesProtocol.ts'), read('recentProjects.ts')]) {
       const specifiers = [...source.matchAll(/^(?:import|export)[^;]*? from '([^']+)'/gms)].map(([, specifier]) => specifier);
       expect(specifiers.filter((specifier) => !/^(\.|node:)/.test(specifier))).toEqual([]);
     }

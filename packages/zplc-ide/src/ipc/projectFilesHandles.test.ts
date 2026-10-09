@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 
-import type { ProjectFilesBridge, ProjectFilesErrorCode, ProjectFilesResult, ProjectFolder } from '../../electron/projectFilesProtocol';
-import { chooseProjectFolder, projectRootId } from './projectFilesHandles';
+import type { ProjectFilesBridge, ProjectFilesErrorCode, ProjectFilesResult, ProjectFolder, RecentProject } from '../../electron/projectFilesProtocol';
+import { chooseProjectFolder, forgetRecentProject, listRecentProjects, markProjectOpened, openRecentFolder, projectRootId } from './projectFilesHandles';
 
 const encode = (text: string) => new TextEncoder().encode(text);
 const decode = (bytes: Uint8Array) => new TextDecoder().decode(bytes);
@@ -12,6 +12,7 @@ function fakeBridge(seed: Record<string, string | null> = {}, folder: ProjectFil
   for (const [path, text] of Object.entries(seed)) nodes.set(path, text === null ? null : encode(text));
   const calls: Array<{ op: string; request: Record<string, unknown> }> = [];
   const forced = new Map<string, ProjectFilesErrorCode>();
+  const recent: RecentProject[] = [{ recentId: 'a'.repeat(64), displayName: 'plant', lastOpenedAt: 1_700_000_000_000, available: true }];
   const parentOf = (path: string) => (path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '');
   const ok = <T>(value: T): ProjectFilesResult<T> => ({ ok: true, value });
   const fail = (code: ProjectFilesErrorCode): ProjectFilesResult<never> => ({ ok: false, code });
@@ -22,6 +23,10 @@ function fakeBridge(seed: Record<string, string | null> = {}, folder: ProjectFil
   };
   const bridge: ProjectFilesBridge = {
     chooseFolder: async () => folder,
+    listRecent: async () => { calls.push({ op: 'listRecent', request: {} }); return forced.has('listRecent') ? fail(forced.get('listRecent')!) : ok(recent); },
+    openRecent: (request) => run('openRecent', request, () => (recent.some((item) => item.recentId === request.recentId) ? ok({ rootId: 'r2', name: 'reopened' }) : fail('not-found'))),
+    forgetRecent: (request) => run('forgetRecent', request, () => ok(null)),
+    markOpened: (request) => run('markOpened', request, () => ok(null)),
     list: (request) => run('list', request, () => {
       if (!nodes.has(request.path)) return fail('not-found');
       if (nodes.get(request.path) !== null) return fail('not-a-directory');
@@ -52,7 +57,7 @@ function fakeBridge(seed: Record<string, string | null> = {}, folder: ProjectFil
     }),
     rename: (request) => run('rename', request, () => { nodes.set(request.to, nodes.get(request.from) ?? null); nodes.delete(request.from); return ok(null); }),
   };
-  return { bridge, nodes, calls, forced };
+  return { bridge, nodes, calls, forced, recent };
 }
 
 async function open(seed: Record<string, string | null> = {}) {
@@ -255,4 +260,60 @@ describe('failure messages', () => {
       expect(error.message).not.toMatch(/[\\/]/);
     });
   }
+});
+
+describe('recent projects over the bridge (IDE-008)', () => {
+  it('lists the entries the main process remembers, as ids, names and times', async () => {
+    const { bridge, recent } = fakeBridge();
+    await expect(listRecentProjects(bridge)).resolves.toEqual(recent);
+  });
+
+  it('lists nothing, and does not throw, when the bridge fails, rejects or answers something else', async () => {
+    const { bridge, forced } = fakeBridge();
+    forced.set('listRecent', 'failed');
+    await expect(listRecentProjects(bridge)).resolves.toEqual([]);
+    await expect(listRecentProjects({ ...bridge, listRecent: async () => { throw new Error('document revoked'); } })).resolves.toEqual([]);
+    for (const value of [null, 'x', {}, [{ recentId: 1 }], [{ recentId: 'a', displayName: 'p', lastOpenedAt: 'x', available: true }]]) {
+      await expect(listRecentProjects({ ...bridge, listRecent: async () => ({ ok: true, value } as never) })).resolves.toEqual([]);
+    }
+  });
+
+  it('opens a remembered folder as the same kind of handle that the dialog gives, with the id as the only argument', async () => {
+    const { bridge, calls, recent } = fakeBridge();
+    const handle = await openRecentFolder(bridge, recent[0]!.recentId);
+    expect(handle.name).toBe('reopened');
+    expect(projectRootId(handle)).toBe('r2');
+    expect(calls.at(-1)).toEqual({ op: 'openRecent', request: { recentId: recent[0]!.recentId } });
+  });
+
+  it('fails to open with a short message and no path when the folder is gone, and for a revoked document', async () => {
+    const { bridge, forced } = fakeBridge();
+    const missing = await rejection(openRecentFolder(bridge, 'b'.repeat(64)));
+    expect(missing.name).toBe('NotFoundError');
+    expect(missing.message).not.toMatch(/[\\/]/);
+    forced.set('openRecent', 'not-a-directory');
+    expect((await rejection(openRecentFolder(bridge, 'a'.repeat(64)))).name).toBe('TypeMismatchError');
+    expect((await rejection(openRecentFolder({ ...bridge, openRecent: async () => { throw new Error('gone'); } }, 'a'.repeat(64)))).name).toBe('Error');
+  });
+
+  it('forgets an entry and marks a folder as opened, silently when the bridge fails', async () => {
+    const { bridge, calls, root, forced } = await open();
+    await forgetRecentProject(bridge, 'a'.repeat(64));
+    await markProjectOpened(bridge, root);
+    expect(calls.filter((call) => call.op === 'forgetRecent' || call.op === 'markOpened')).toEqual([
+      { op: 'forgetRecent', request: { recentId: 'a'.repeat(64) } },
+      { op: 'markOpened', request: { rootId: 'r1' } },
+    ]);
+    forced.set('forgetRecent', 'failed'); forced.set('markOpened', 'failed');
+    await expect(forgetRecentProject(bridge, 'a'.repeat(64))).resolves.toBeUndefined();
+    await expect(markProjectOpened(bridge, root)).resolves.toBeUndefined();
+    await expect(markProjectOpened({ ...bridge, markOpened: async () => { throw new Error('gone'); } }, root)).resolves.toBeUndefined();
+  });
+
+  it('marks nothing for a value that is not the folder handle', async () => {
+    const { bridge, calls } = fakeBridge();
+    await markProjectOpened(bridge, { name: 'plant' });
+    await markProjectOpened(bridge, null);
+    expect(calls.filter((call) => call.op === 'markOpened')).toEqual([]);
+  });
 });
