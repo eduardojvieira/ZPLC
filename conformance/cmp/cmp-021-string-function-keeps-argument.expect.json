@@ -1,0 +1,10 @@
+{
+  "requirement": "CMP-021",
+  "title": "a string function leaves its argument unchanged",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    { "at": "%QW0", "type": "INT", "value": 2 },
+    { "at": "%QW1", "type": "INT", "value": 5 }
+  ]
+}

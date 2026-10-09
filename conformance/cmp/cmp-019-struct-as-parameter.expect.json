@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-019",
+  "title": "structure passed to a function",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QW0", "type": "INT", "value": 7 }]
+}

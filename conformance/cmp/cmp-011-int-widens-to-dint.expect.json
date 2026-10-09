@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-011",
+  "title": "INT widens to DINT keeping its sign",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QD0", "type": "DINT", "value": -5 }]
+}

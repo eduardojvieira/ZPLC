@@ -1,0 +1,6 @@
+PROGRAM Literal
+VAR
+  q AT %QD0 : REAL;
+END_VAR
+  q := -1.5;
+END_PROGRAM

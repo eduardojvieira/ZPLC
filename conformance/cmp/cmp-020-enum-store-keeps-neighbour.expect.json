@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-020",
+  "title": "storing an enumeration keeps the next variable",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QW0", "type": "INT", "value": 7 }]
+}

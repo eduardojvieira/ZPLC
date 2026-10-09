@@ -1,0 +1,6 @@
+PROGRAM Duration
+VAR
+  t AT %QD0 : TIME;
+END_VAR
+  t := T#1h30m;
+END_PROGRAM
