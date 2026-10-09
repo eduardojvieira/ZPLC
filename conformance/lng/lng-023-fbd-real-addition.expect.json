@@ -1,0 +1,7 @@
+{
+  "requirement": "LNG-023",
+  "title": "FBD numeric blocks keep the type of their inputs",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QD0", "type": "REAL", "value": 3.75 }]
+}

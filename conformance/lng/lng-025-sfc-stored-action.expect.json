@@ -1,0 +1,7 @@
+{
+  "requirement": "LNG-025",
+  "title": "an SFC stored (S) action keeps running after its step is left",
+  "scans": 5,
+  "scanMs": 10,
+  "expect": [{ "at": "%QW0", "type": "INT", "value": 4 }]
+}

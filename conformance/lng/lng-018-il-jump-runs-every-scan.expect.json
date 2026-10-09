@@ -1,0 +1,10 @@
+{
+  "requirement": "LNG-018",
+  "title": "an IL program with a jump runs completely on every scan",
+  "scans": 3,
+  "scanMs": 10,
+  "expect": [
+    { "at": "%QW0", "type": "INT", "value": 3 },
+    { "at": "%QW1", "type": "INT", "value": 3 }
+  ]
+}

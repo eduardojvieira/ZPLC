@@ -1,0 +1,96 @@
+{
+  "name": "Blocks",
+  "variables": {
+    "local": [
+      {
+        "name": "R1",
+        "type": "REAL",
+        "initialValue": 1.5
+      },
+      {
+        "name": "R2",
+        "type": "REAL",
+        "initialValue": 2.25
+      }
+    ],
+    "outputs": [
+      {
+        "name": "RSum",
+        "type": "REAL",
+        "address": "%QD0"
+      }
+    ]
+  },
+  "blocks": [
+    {
+      "id": "r1",
+      "type": "input",
+      "variableName": "R1",
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "r2",
+      "type": "input",
+      "variableName": "R2",
+      "position": {
+        "x": 0,
+        "y": 1
+      }
+    },
+    {
+      "id": "add1",
+      "type": "ADD",
+      "position": {
+        "x": 1,
+        "y": 0
+      }
+    },
+    {
+      "id": "out",
+      "type": "output",
+      "variableName": "RSum",
+      "position": {
+        "x": 2,
+        "y": 0
+      }
+    }
+  ],
+  "connections": [
+    {
+      "id": "w_r1_add1",
+      "from": {
+        "block": "r1",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "add1",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "w_r2_add1",
+      "from": {
+        "block": "r2",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "add1",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "w_add1_out",
+      "from": {
+        "block": "add1",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "out",
+        "port": "IN"
+      }
+    }
+  ]
+}

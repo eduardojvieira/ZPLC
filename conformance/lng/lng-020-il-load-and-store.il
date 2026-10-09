@@ -1,0 +1,10 @@
+PROGRAM Gate
+VAR
+  A AT %IX0.0 : BOOL;
+  B AT %IX0.1 : BOOL;
+  X AT %QX0.0 : BOOL;
+END_VAR
+  LD A
+  AND B
+  ST X
+END_PROGRAM

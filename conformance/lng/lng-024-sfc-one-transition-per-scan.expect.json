@@ -1,0 +1,10 @@
+{
+  "requirement": "LNG-024",
+  "title": "an SFC chain crosses one transition per scan",
+  "scans": 2,
+  "scanMs": 10,
+  "expect": [
+    { "at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 1 },
+    { "at": "%QX0.0", "type": "BOOL", "value": true, "afterScan": 2 }
+  ]
+}

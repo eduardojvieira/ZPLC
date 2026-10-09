@@ -1,0 +1,39 @@
+{
+  "name": "Chart",
+  "variables": {
+    "local": [],
+    "outputs": [
+      {
+        "name": "Lamp",
+        "type": "BOOL",
+        "address": "%QX0.0"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "id": "s_run",
+      "name": "Run",
+      "isInitial": true,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "LampOn"
+        }
+      ]
+    }
+  ],
+  "transitions": [],
+  "actions": [
+    {
+      "id": "lamp_on",
+      "name": "LampOn",
+      "type": "ST",
+      "body": "Lamp := TRUE;"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "name": "Chart",
+  "variables": {
+    "local": [],
+    "outputs": [
+      {
+        "name": "Count",
+        "type": "INT",
+        "address": "%QW0"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "id": "s_a",
+      "name": "A",
+      "isInitial": true,
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "s_b",
+      "name": "B",
+      "isInitial": false,
+      "position": {
+        "x": 0,
+        "y": 1
+      },
+      "actions": [
+        {
+          "qualifier": "S",
+          "actionName": "CountUp"
+        }
+      ]
+    },
+    {
+      "id": "s_c",
+      "name": "C",
+      "isInitial": false,
+      "position": {
+        "x": 0,
+        "y": 2
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t_a_b",
+      "fromStep": "s_a",
+      "toStep": "s_b",
+      "condition": "TRUE"
+    },
+    {
+      "id": "t_b_c",
+      "fromStep": "s_b",
+      "toStep": "s_c",
+      "condition": "TRUE"
+    }
+  ],
+  "actions": [
+    {
+      "id": "count_up",
+      "name": "CountUp",
+      "type": "ST",
+      "body": "Count := Count + 1;"
+    }
+  ]
+}

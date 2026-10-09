@@ -1,0 +1,80 @@
+{
+  "name": "Rungs",
+  "variables": {
+    "local": [
+      {
+        "name": "DelayTimer",
+        "type": "TON"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%IX0.0"
+      },
+      {
+        "name": "Permit",
+        "type": "BOOL",
+        "address": "%IX0.1"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Motor",
+        "type": "BOOL",
+        "address": "%QX0.0"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung1",
+      "number": 1,
+      "elements": [
+        {
+          "id": "c1",
+          "type": "contact_no",
+          "position": {
+            "x": 50,
+            "y": 0
+          },
+          "variable": "Start"
+        },
+        {
+          "id": "fb1",
+          "type": "function_block",
+          "position": {
+            "x": 150,
+            "y": 0
+          },
+          "fbType": "TON",
+          "instance": "DelayTimer",
+          "parameters": {
+            "IN": "CONNECTED",
+            "PT": "T#50ms"
+          }
+        },
+        {
+          "id": "c2",
+          "type": "contact_no",
+          "position": {
+            "x": 250,
+            "y": 0
+          },
+          "variable": "Permit"
+        },
+        {
+          "id": "k1",
+          "type": "coil",
+          "position": {
+            "x": 350,
+            "y": 0
+          },
+          "variable": "Motor"
+        }
+      ],
+      "connections": []
+    }
+  ]
+}
