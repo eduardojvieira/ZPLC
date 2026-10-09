@@ -3,7 +3,7 @@
   "schemaVersion": 2,
   "name": "Edge Counter",
   "version": "1.0.0",
-  "description": "Host-native logical R_TRIG+CTU golden scenario",
+  "description": "Host-native pulse counter: CTU counts the rising edges of a pulse input up to a preset of 3",
   "target": {
     "board": "posix"
   },
