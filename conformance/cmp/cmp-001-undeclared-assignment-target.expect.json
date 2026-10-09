@@ -1,0 +1,6 @@
+{
+  "requirement": "CMP-001",
+  "title": "an assignment to an undeclared variable is rejected",
+  "build": "fails",
+  "lines": [5]
+}

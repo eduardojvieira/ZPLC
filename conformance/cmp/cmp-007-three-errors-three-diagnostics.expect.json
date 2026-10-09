@@ -1,0 +1,6 @@
+{
+  "requirement": "CMP-007",
+  "title": "a file with three unrelated errors yields three diagnostics",
+  "build": "fails",
+  "lines": [5, 6, 7]
+}

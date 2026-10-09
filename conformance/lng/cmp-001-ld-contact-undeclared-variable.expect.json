@@ -1,0 +1,5 @@
+{
+  "requirement": "CMP-001",
+  "title": "an LD contact on an undeclared variable is rejected",
+  "build": "fails"
+}

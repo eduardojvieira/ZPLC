@@ -1,0 +1,6 @@
+{
+  "requirement": "CMP-005",
+  "title": "assigning an INT expression to a BOOL is rejected",
+  "build": "fails",
+  "lines": [6]
+}

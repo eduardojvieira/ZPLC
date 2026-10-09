@@ -1,0 +1,9 @@
+VAR_GLOBAL CONSTANT K : INT := 42; END_VAR
+
+PROGRAM Constants
+VAR
+  x : INT;
+END_VAR
+  K := 3;
+  x := K;
+END_PROGRAM

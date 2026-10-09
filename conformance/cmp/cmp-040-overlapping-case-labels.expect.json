@@ -1,0 +1,6 @@
+{
+  "requirement": "CMP-040",
+  "title": "overlapping CASE labels are rejected",
+  "build": "fails",
+  "lines": [8]
+}

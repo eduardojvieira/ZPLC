@@ -1,0 +1,6 @@
+{
+  "requirement": "CMP-009",
+  "title": "an unterminated comment is reported where it opens",
+  "build": "fails",
+  "lines": [6]
+}

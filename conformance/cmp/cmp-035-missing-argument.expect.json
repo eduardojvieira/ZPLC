@@ -1,0 +1,6 @@
+{
+  "requirement": "CMP-035",
+  "title": "a call with a missing required argument is rejected",
+  "build": "fails",
+  "lines": [11]
+}

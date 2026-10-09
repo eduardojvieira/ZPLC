@@ -1,0 +1,6 @@
+{
+  "requirement": "CMP-003",
+  "title": "a declaration with an unknown type name is rejected",
+  "build": "fails",
+  "lines": [3]
+}

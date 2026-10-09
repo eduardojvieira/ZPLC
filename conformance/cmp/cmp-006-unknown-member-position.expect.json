@@ -1,0 +1,6 @@
+{
+  "requirement": "CMP-006",
+  "title": "an unknown member of a function block is reported at its own line",
+  "build": "fails",
+  "lines": [11]
+}

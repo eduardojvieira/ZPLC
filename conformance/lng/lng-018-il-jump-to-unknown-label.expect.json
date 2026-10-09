@@ -1,0 +1,5 @@
+{
+  "requirement": "LNG-018",
+  "title": "an IL jump to an unknown label is rejected",
+  "build": "fails"
+}

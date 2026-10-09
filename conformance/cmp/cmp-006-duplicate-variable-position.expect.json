@@ -1,0 +1,6 @@
+{
+  "requirement": "CMP-006",
+  "title": "a duplicate declaration is reported at its own line",
+  "build": "fails",
+  "lines": [4]
+}

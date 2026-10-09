@@ -1,0 +1,5 @@
+{
+  "requirement": "CMP-044",
+  "title": "a variable that overlaps an AT %M variable is rejected",
+  "build": "fails"
+}
