@@ -213,6 +213,7 @@ export class NativeAdapter implements IDebugAdapter {
   private runtimeKind: string | null = null;
   private unsubscribe: (() => void) | null = null;
   private requestCount = 0;
+  private statusEventCount = 0;
   private parityEvidence: NativeParityEvidenceRecord[] = [];
   private sessionGeneration = 0;
   private programGeneration: number | null = null;
@@ -318,6 +319,7 @@ export class NativeAdapter implements IDebugAdapter {
       if (event.method === 'status.changed' && isNativeRuntimeSnapshot(event.params)) {
         const snapshot = event.params;
         const previousState = this._state;
+        this.statusEventCount += 1;
         const normalizedSnapshot = this.publishSnapshot(snapshot, generation);
         if (normalizedSnapshot.state === 'paused' && previousState !== 'paused') {
           this.events.onBreakpointHit?.(snapshot.focused_vm.pc);
@@ -423,9 +425,20 @@ export class NativeAdapter implements IDebugAdapter {
     this.setState('idle');
   }
 
+  // start and resume leave a state that emits no events (idle, paused), so a status.changed that
+  // lands before the reply was emitted after the command ran (a breakpoint on the first scan) and
+  // is newer than the `running` this reply would set. pause, stop and reset keep their blind set:
+  // an event in flight during them predates the command, so the reply is the newer fact.
+  private async requestThenRun(method: string): Promise<void> {
+    const statusEventsBefore = this.statusEventCount;
+    await this.request(method);
+    if (this.statusEventCount === statusEventsBefore) {
+      this.setState('running');
+    }
+  }
+
   async start(): Promise<void> {
-    await this.request('execution.start');
-    this.setState('running');
+    await this.requestThenRun('execution.start');
   }
 
   async stop(): Promise<void> {
@@ -439,8 +452,7 @@ export class NativeAdapter implements IDebugAdapter {
   }
 
   async resume(): Promise<void> {
-    await this.request('execution.resume');
-    this.setState('running');
+    await this.requestThenRun('execution.resume');
   }
 
   async step(): Promise<void> {

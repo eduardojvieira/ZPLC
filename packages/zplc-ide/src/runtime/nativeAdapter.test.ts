@@ -584,6 +584,125 @@ describe('NativeAdapter', () => {
     expect(hits).toEqual([42]);
   });
 
+  describe('execution.start and execution.resume replies racing a status.changed event', () => {
+    // The runtime ticks (and emits status.changed) right after it answers start/resume, and the
+    // host delivers events synchronously while it delivers replies through a promise, so a
+    // first-scan breakpoint can reach the adapter before the reply that would set `running`.
+    function racingAdapter(heldMethod: 'execution.start' | 'execution.resume') {
+      const eventApi = createEventApi();
+      const reply = deferred<Record<string, unknown>>();
+      const adapter = new NativeAdapter({
+        startSession,
+        stopSession,
+        onEvent: eventApi.onEvent,
+        request: async <TResult>(message: NativeRequest): Promise<TResult> =>
+          (message.method === heldMethod ? reply.promise : {}) as TResult,
+      });
+      const states: string[] = [];
+      const hits: number[] = [];
+      adapter.setEventHandlers({
+        onStateChange: (state) => states.push(state),
+        onBreakpointHit: (pc) => hits.push(pc),
+      });
+      const emitStatus = (state: string, pc: number) => eventApi.emit({
+        type: 'event',
+        method: 'status.changed',
+        params: nativeSnapshot({ state, focused_vm: { pc, sp: 2, halted: false, error: state === 'error' ? 3 : 0 } }),
+      });
+      return { adapter, reply, states, hits, emitStatus };
+    }
+
+    // Fails without start() skipping its blind setState('running') after a status.changed event.
+    it('keeps paused when a breakpoint event beats the start reply', async () => {
+      const { adapter, reply, states, hits, emitStatus } = racingAdapter('execution.start');
+      await adapter.connect();
+
+      const starting = adapter.start();
+      emitStatus('paused', 104);
+      reply.resolve({});
+      await starting;
+
+      expect(adapter.state).toBe('paused');
+      expect(states).toEqual(['idle', 'paused']);
+      expect(hits).toEqual([104]);
+    });
+
+    // Fails without start() skipping its blind setState('running') after a status.changed event.
+    it('keeps a terminal error state delivered before the start reply', async () => {
+      const { adapter, reply, states, emitStatus } = racingAdapter('execution.start');
+      await adapter.connect();
+
+      const starting = adapter.start();
+      emitStatus('error', 40);
+      reply.resolve({});
+      await starting;
+
+      expect(adapter.state).toBe('error');
+      expect(states).toEqual(['idle', 'error']);
+    });
+
+    // Passes today and must keep passing: no event during the request means the reply sets running.
+    it('moves to running when no event arrives during the start reply', async () => {
+      const { adapter, reply, states, hits } = racingAdapter('execution.start');
+      await adapter.connect();
+
+      const starting = adapter.start();
+      reply.resolve({});
+      await starting;
+
+      expect(adapter.state).toBe('running');
+      expect(states).toEqual(['idle', 'running']);
+      expect(hits).toEqual([]);
+    });
+
+    // Fails without resume() skipping its blind setState('running') after a status.changed event.
+    it('keeps paused when a second breakpoint event beats the resume reply', async () => {
+      const { adapter, reply, states, hits, emitStatus } = racingAdapter('execution.resume');
+      await adapter.connect();
+      emitStatus('paused', 104);
+
+      const resuming = adapter.resume();
+      emitStatus('running', 104);
+      emitStatus('paused', 140);
+      reply.resolve({});
+      await resuming;
+
+      expect(adapter.state).toBe('paused');
+      expect(states).toEqual(['idle', 'paused', 'running', 'paused']);
+      expect(hits).toEqual([104, 140]);
+    });
+
+    // Fails if the skip is keyed on a state change instead of on a received event: the runtime
+    // re-stopping inside its first scan sends paused while the adapter is still paused.
+    it('keeps paused when the runtime re-stops in the same scan as the resume', async () => {
+      const { adapter, reply, states, emitStatus } = racingAdapter('execution.resume');
+      await adapter.connect();
+      emitStatus('paused', 104);
+
+      const resuming = adapter.resume();
+      emitStatus('paused', 104);
+      reply.resolve({});
+      await resuming;
+
+      expect(adapter.state).toBe('paused');
+      expect(states).toEqual(['idle', 'paused']);
+    });
+
+    // Fails if the event count is read when the adapter connects instead of when resume() is called.
+    it('moves to running when only earlier events preceded the resume reply', async () => {
+      const { adapter, reply, states, emitStatus } = racingAdapter('execution.resume');
+      await adapter.connect();
+      emitStatus('paused', 104);
+
+      const resuming = adapter.resume();
+      reply.resolve({});
+      await resuming;
+
+      expect(adapter.state).toBe('running');
+      expect(states).toEqual(['idle', 'paused', 'running']);
+    });
+  });
+
   it('marks the adapter disconnected when the native session exits', async () => {
     const eventApi = createEventApi();
     const adapter = new NativeAdapter({ startSession, stopSession, request, onEvent: eventApi.onEvent });
