@@ -3,7 +3,7 @@
     "schemaVersion": 2,
     "name": "Analog Test",
     "version": "1.0.0",
-    "description": "Test project for analog I/O (ADC/DAC) functionality",
+    "description": "Raspberry Pi Pico: reads the internal temperature sensor (ADC channel 4, %IW8), converts it to degrees C in %QW4 and flags an implausible reading on %Q0.0. Analog input only: the Pico HAL has no DAC.",
     "target": {
         "board": "rpi_pico",
         "cpu": "rp2040",
@@ -15,18 +15,25 @@
     },
     "io": {
         "inputs": [],
-        "outputs": [],
+        "outputs": [
+            {
+                "name": "SensorFault",
+                "address": "%Q0.0",
+                "type": "BOOL",
+                "pin": 0,
+                "description": "GP0 in the Pico overlay: ON while the reading is not a plausible temperature"
+            }
+        ],
         "analog": {
             "adc": [
                 {
-                    "name": "AnalogInput",
-                    "address": "%IW0",
-                    "channel": 0,
+                    "name": "TempRaw",
+                    "address": "%IW8",
+                    "channel": 4,
                     "bits": 12,
-                    "description": "ADC Channel 0 (GPIO26)"
+                    "description": "ADC channel 4 = RP2040 internal temperature sensor (the HAL maps channel n to %IW(4+n))"
                 }
-            ],
-            "dac": []
+            ]
         }
     },
     "tasks": [
