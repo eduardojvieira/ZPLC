@@ -8,6 +8,7 @@
     { "pattern": "scripts/release-version.test.ts", "job": "typescript", "command": "bun test scripts/release-version.test.ts" },
     { "pattern": "tools/hil/test_validate_release_evidence.py", "job": "docs-and-truth", "command": "python3 tools/hil/test_validate_release_evidence.py" },
     { "pattern": "tools/hil/test_validate_supported_boards.py", "job": "docs-and-truth", "command": "python3 tools/hil/test_validate_supported_boards.py" },
+    { "pattern": "tools/docs/test_*.py", "job": "docs-and-truth", "command": "python3 tools/docs/test_validate_docs_pages.py" },
     { "pattern": "firmware/lib/zplc_core/tests/fuzz_loader_verify.c", "job": "host-core-sanitized", "command": "fuzz_loader_verify" },
     { "pattern": "firmware/lib/zplc_core/tests/*.c", "job": "host-core", "command": "ctest --test-dir" },
     { "pattern": "firmware/tests/**/*.c", "job": "zephyr-twister", "command": "west twister -T zplc/firmware/tests" }
