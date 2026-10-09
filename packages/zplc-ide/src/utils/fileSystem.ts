@@ -8,6 +8,7 @@
 
 import type {
   FileTreeNode,
+  PLCLanguage,
   ZPLCProjectConfig,
   ZPLCProjectV2,
   ProjectFileWithHandle,
@@ -15,6 +16,7 @@ import type {
 } from '../types';
 import { parseAndMigrateProject, type ProjectMigrationChange, type ProjectModelDiagnostic } from '../project/projectModel';
 import { 
+  getExtensionForLanguage,
   getLanguageFromFilename,
   DEFAULT_ZPLC_CONFIG,
   isFileSystemAccessSupported,
@@ -64,12 +66,76 @@ export async function openDirectoryPicker(): Promise<FileSystemDirectoryHandle |
 // =============================================================================
 
 /**
- * Files we list for a ZPLC project: .st, .il, .gvl and the visual languages as .ld.json, .fbd.json and .sfc.json.
- * The short .ld, .fbd and .sfc are listed too, because earlier versions created New File files with them, and the
- * match ignores case the way getLanguageFromFilename does. Keep it in step with SUPPORTED_SOURCE in cli/workspace.ts.
+ * The programs of a ZPLC project: .st, .il and the visual languages as .ld.json, .fbd.json and .sfc.json. The short
+ * .ld, .fbd and .sfc are programs too, because earlier versions created New File files with them, and the match
+ * ignores case the way getLanguageFromFilename does. This is the rule of SUPPORTED_SOURCE in cli/workspace.ts, which
+ * the build uses (a test keeps the two in step), so a task can pick exactly the files the build reads.
  */
-const ZPLC_SOURCE_FILE = /\.(st|il|gvl|(ld|fbd|sfc)(\.json)?)$/i;
+const PROGRAM_SOURCE_FILE = /\.(st|il|(ld|fbd|sfc)(\.json)?)$/i;
+const GVL_FILE = /\.gvl$/i;
+
+/** True for a file the build reads as a program (and a task can run). */
+export function isProgramSourceFile(name: string): boolean {
+  return PROGRAM_SOURCE_FILE.test(name);
+}
+
+/** Files we list for a ZPLC project: the programs and the .gvl files. */
+function isZplcSourceFile(name: string): boolean {
+  return PROGRAM_SOURCE_FILE.test(name) || GVL_FILE.test(name);
+}
+
 const IGNORED_DIRS = ['node_modules', '.git', 'build', 'dist', '.vscode'];
+
+/**
+ * The programs a task can pick from the file tree, searched recursively, under the name a task uses for each:
+ * main.ld.json is "main.ld", the same name as the legacy main.ld, and main.st stays "main.st".
+ */
+export function listTaskPrograms(fileTree: FileTreeNode | null): string[] {
+  const programs = new Set<string>();
+  const collect = (node: FileTreeNode) => {
+    if (node.type === 'file' && isProgramSourceFile(node.name)) programs.add(node.name.replace(/(\.(?:ld|fbd|sfc))\.json$/i, '$1'));
+    node.children?.forEach(collect);
+  };
+  if (fileTree) collect(fileTree);
+  return [...programs].sort();
+}
+
+/**
+ * The name the build compares to tell whether two source files are the same: case-insensitive, and main.ld is
+ * main.ld.json. It is the rule behind WORKSPACE_DUPLICATE_SOURCE in cli/workspace.ts (a test keeps the two in step).
+ */
+export function sourceNameKey(name: string): string {
+  return name.toLowerCase().replace(/\.(ld|fbd|sfc)$/, '$&.json');
+}
+
+/** The file in this folder that the build would read as the same file as `fileName`, or undefined. */
+export function findSameSourceName(folder: FileTreeNode, fileName: string): FileTreeNode | undefined {
+  const key = sourceNameKey(fileName);
+  return folder.children?.find((child) => child.type === 'file' && sourceNameKey(child.name) === key);
+}
+
+/** New File refused the name because the folder already has that file, or one the build reads as the same file. */
+export class FileNameTakenError extends Error {
+  constructor(existing: string, wanted: string) {
+    super(existing === wanted
+      ? `${existing} already exists.`
+      : `${existing} already exists, and the build reads it as the same name as ${wanted}. Choose another name.`);
+    this.name = 'FileNameTakenError';
+  }
+}
+
+/**
+ * The file name New File saves a typed name under: the language's extension, once. A typed suffix of the same
+ * language (pump.ld, PUMP.LD.JSON) is not doubled, and keeps the case of the name before it; the suffix of another
+ * language is part of the name. The text languages keep their exact-match rule.
+ */
+export function fileNameForNewFile(typed: string, language: PLCLanguage): string {
+  const extension = getExtensionForLanguage(language);
+  if (!extension.endsWith('.json')) return typed.endsWith(extension) ? typed : `${typed}${extension}`;
+  const lowerCased = typed.toLowerCase();
+  const typedSuffix = [extension, extension.replace(/\.json$/, '')].find((suffix) => lowerCased.endsWith(suffix));
+  return `${typedSuffix ? typed.slice(0, -typedSuffix.length) : typed}${extension}`;
+}
 
 export function fileTreeFileId(path: string): string {
   return `file:${path}`;
@@ -111,7 +177,7 @@ export async function readDirectoryRecursive(
       }
 
       // Check if it's a ZPLC-relevant source file
-      if (ZPLC_SOURCE_FILE.test(entry.name)) {
+      if (isZplcSourceFile(entry.name)) {
         const fileHandle = await dirHandle.getFileHandle(entry.name);
         const language = getLanguageFromFilename(entry.name);
         const pouType = detectPOUType(entry.name);

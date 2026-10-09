@@ -21,6 +21,14 @@ describe('Sidebar migration disclosure', () => {
     expect(source).not.toContain('Apply migration');
   });
 
+  // Fails without the FileNameTakenError branch in the New File dialog: the dialog showed the generic "Could not create the file" text.
+  it('shows the reason when New File refuses a name that is taken, instead of the generic failure text', () => {
+    const source = readFileSync(join(import.meta.dir, 'Sidebar.tsx'), 'utf8');
+
+    expect(source).toContain('error instanceof FileNameTakenError');
+    expect(source).toContain("from '../utils/fileSystem'");
+  });
+
   it('keeps a failed new-file creation visible and accessible', () => {
     const source = readFileSync(join(import.meta.dir, 'Sidebar.tsx'), 'utf8');
 

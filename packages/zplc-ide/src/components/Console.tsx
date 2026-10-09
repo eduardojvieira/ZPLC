@@ -39,7 +39,7 @@ import { DebugWatchPanel } from './DebugWatchPanel';
 import type { DebugController } from '../hooks/useDebugController';
 import { classifyWorkspaceTestBuildLink, isWorkspaceManifestRegistrationCurrent, isWorkspaceTestRunCurrent, presentCandidateChangeSetReview, presentRecordedConveyorPlant, presentRecordedMotorPlant, presentRecordedMotorOutput, presentRecordedPedestrianCrossing, presentRecordedTankLevel, presentWorkspaceTestResult, workspaceTestAvailability, workspaceTestRunFallbackState, type CandidateChangeSetReviewPresentation, type WorkspaceTestPresentation } from './workspaceTestPresentation';
 import { findFileInTree, readFileContent } from '../utils/fileSystem';
-import { LIVE_NATIVE_OUTPUT_MAX_AGE_MS, presentLiveNativeMotorControls, presentLiveNativeMotorOutput } from '../runtime/nativeTrace';
+import { LIVE_NATIVE_OUTPUT_MAX_AGE_MS, describeVmError, presentLiveNativeMotorControls, presentLiveNativeMotorOutput } from '../runtime/nativeTrace';
 import { NativeAdapter } from '../runtime/nativeAdapter';
 import { claimMotorInputCommand, shouldClearMotorInputFailure } from './liveNativeMotorPanel';
 import { presentWorkspaceSafetyCheck, type WorkspaceSafetyPresentation } from './workspaceSafetyPresentation';
@@ -928,7 +928,7 @@ export function Console({ debugController }: ConsoleProps) {
                   <tbody>
                     {[...nativeTrace].reverse().map((sample, index) => (
                       <tr key={`${sample.uptimeMs}-${sample.cycles}-${index}`} className="border-b border-[var(--color-surface-700)] text-[var(--color-surface-300)]">
-                        <td className="px-2 py-1">{sample.uptimeMs} ms</td><td className="px-2 py-1">{sample.cycles}</td><td className="px-2 py-1">{sample.state}</td><td className="px-2 py-1">{sample.pc === null ? '—' : `0x${sample.pc.toString(16).toUpperCase()}`}</td><td className="px-2 py-1">{sample.error ?? '—'}</td><td className="px-2 py-1 text-right">{sample.overruns}</td>
+                        <td className="px-2 py-1">{sample.uptimeMs} ms</td><td className="px-2 py-1">{sample.cycles}</td><td className="px-2 py-1">{sample.state}</td><td className="px-2 py-1">{sample.pc === null ? '—' : `0x${sample.pc.toString(16).toUpperCase()}`}</td><td className="px-2 py-1">{describeVmError(sample.error)}</td><td className="px-2 py-1 text-right">{sample.overruns}</td>
                       </tr>
                     ))}
                   </tbody>

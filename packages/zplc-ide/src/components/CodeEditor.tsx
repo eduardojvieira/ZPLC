@@ -20,7 +20,7 @@ import { useFileBreakpoints, useCurrentExecution, useDebugValues, formatDebugVal
 import { useTheme } from '../hooks/useTheme';
 import { useEditorLiveValues } from '../hooks/useEditorLiveValues';
 import type { PLCLanguage } from '../types';
-import { breakpointFileKey, breakpointHoverMessage, doesCurrentPOUMatchFile, filterEligibleBreakpointLines, isLineBreakpointEligible } from './codeEditorBreakpoints';
+import { breakpointDecorationClasses, breakpointFileKey, breakpointHoverMessage, doesCurrentPOUMatchFile, filterEligibleBreakpointLines, isLineBreakpointEligible } from './codeEditorBreakpoints';
 import {
   buildInlineWidgets,
   extractVariablesFromCode,
@@ -312,15 +312,16 @@ export function CodeEditor({
       isCurrentFile,
     });
 
-    // Add breakpoint decorations
+    // Add breakpoint decorations; a dot the runtime will not stop at is drawn hollow and grey
+    const dotClasses = breakpointDecorationClasses(breakpointsInactiveReason);
     for (const line of displayedBreakpoints) {
       newDecorations.push({
         range: new monaco.Range(line, 1, line, 1),
         options: {
           isWholeLine: false,
-          glyphMarginClassName: 'breakpoint-glyph',
+          glyphMarginClassName: dotClasses.glyph,
           glyphMarginHoverMessage: { value: breakpointHoverMessage(line, breakpointsInactiveReason) },
-          linesDecorationsClassName: 'breakpoint-line-decoration',
+          linesDecorationsClassName: dotClasses.line,
         },
       });
     }

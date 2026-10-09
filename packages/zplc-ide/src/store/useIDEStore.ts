@@ -19,7 +19,6 @@ import type {
   ProjectFileWithHandle,
 } from '../types';
 import {
-  getExtensionForLanguage,
   createEmptyFileContent,
   isFileSystemAccessSupported,
 } from '../types';
@@ -34,7 +33,10 @@ import {
   copyProjectToFolder,
   toggleDirectoryExpanded,
   findFileInTree,
+  findSameSourceName,
+  fileNameForNewFile,
   fileTreeFileId,
+  FileNameTakenError,
 } from '../utils/fileSystem';
 import {
   getAvailableProjects,
@@ -987,8 +989,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       throw new Error('The current project cannot create files.');
     }
 
-    const ext = getExtensionForLanguage(language);
-    const fileName = trimmedName.endsWith(ext) ? trimmedName : `${trimmedName}${ext}`;
+    const fileName = fileNameForNewFile(trimmedName, language);
     const filePath = `${parentPath}/${fileName}`;
     const fileId = fileTreeFileId(filePath);
     const content = createEmptyFileContent(language);
@@ -1016,9 +1017,9 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       const current = get();
       const parent = findFileInTree(current.fileTree!, parentPath);
       if (!parent || parent.type !== 'directory') throw new Error('Choose an existing project folder for the new file.');
-      if (current.loadedFiles.has(fileId) || findFileInTree(current.fileTree!, filePath)) {
-        throw new Error('A file with that name already exists.');
-      }
+      if (current.loadedFiles.has(fileId)) throw new FileNameTakenError(fileName, fileName);
+      const taken = findSameSourceName(parent, fileName);
+      if (taken) throw new FileNameTakenError(taken.name, fileName);
       return current.fileTree!;
     };
 
@@ -1045,7 +1046,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
         } catch (error) {
           if (!(typeof error === 'object' && error !== null && 'name' in error && error.name === 'NotFoundError')) throw error;
         }
-        if (exists) throw new Error('A file with that name already exists.');
+        if (exists) throw new FileNameTakenError(fileName, fileName);
         currentTreeForCreation();
         const fileHandle = await currentDir.getFileHandle(fileName, { create: true });
         createdPhysicalEntry = true;
@@ -1086,16 +1087,17 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       return fileId;
     } catch (error) {
       if (!isCurrentProject()) throw new Error('Project changed while creating the file.');
+      const taken = !createdPhysicalEntry && error instanceof FileNameTakenError ? error : null;
       const message = createdPhysicalEntry
         ? 'The file may exist on disk. Refresh the project before trying again.'
-        : error instanceof Error && (error.message === 'A file with that name already exists.'
-        || error.message === 'A file with that name is already being created.'
+        : taken ? taken.message
+        : error instanceof Error && (error.message === 'A file with that name is already being created.'
         || error.message === 'Choose an existing project folder for the new file.'
         || error.message === 'The file may exist on disk. Refresh the project before trying again.')
         ? error.message
         : 'Could not create the file. Check the name and folder access, then try again.';
       get().addConsoleEntry({ type: 'error', message, source: 'system' });
-      throw new Error(message);
+      throw taken ?? new Error(message);
     } finally {
       fileCreationReservations.delete(reservationKey);
     }
