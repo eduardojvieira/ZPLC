@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'bun:test';
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { EXPECTED_ARTIFACTS } from './smoke-desktop-builds';
 
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8');
 
@@ -22,9 +23,11 @@ type Builder = {
   win: Record<string, unknown>;
   deb: Record<string, unknown>;
   rpm: Record<string, unknown>;
+  nsis: { artifactName: string };
+  portable: { artifactName: string };
 };
 
-type Step = { name?: string; uses?: string; run?: string; if?: string; 'working-directory'?: string };
+type Step = { name?: string; uses?: string; run?: string; if?: string; 'working-directory'?: string; with?: Record<string, string> };
 type Job = {
   needs?: string | string[];
   if?: string;
@@ -188,5 +191,19 @@ describe('release.yml publishes each platform independently and only as a draft 
 
   it('offers no input that selects what to upload', () => {
     expect(Object.keys(workflow.on.workflow_dispatch.inputs).sort()).toEqual(['upload_to_release', 'version']);
+  });
+});
+
+describe('Windows installers carry unsigned in their variant until a channel is live (REL-038)', () => {
+  it('names the installer and the portable executable by the REL-020 variants, with unsigned appended', () => {
+    expect(builder.nsis.artifactName.endsWith('-setup-unsigned.${ext}')).toBe(true);
+    expect(builder.portable.artifactName.endsWith('-portable-unsigned.${ext}')).toBe(true);
+  });
+
+  it('expects and uploads exactly those names', () => {
+    expect(EXPECTED_ARTIFACTS.windows).toEqual(['-setup-unsigned.exe', '-portable-unsigned.exe']);
+    const upload = workflow.jobs['build-windows']!.steps!.find((step) => step.uses?.startsWith('actions/upload-artifact@'))!;
+    const paths = upload.with!.path!.split('\n').map((line) => line.trim()).filter(Boolean);
+    expect(paths).toEqual(['packages/zplc-ide/dist-electron/*-setup-unsigned.exe', 'packages/zplc-ide/dist-electron/*-portable-unsigned.exe']);
   });
 });

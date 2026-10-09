@@ -88,13 +88,14 @@ nsis:
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true
-  artifactName: "${productName}-${version}-${os}-${arch}-Setup.${ext}"
+  # `unsigned` stays in the variant until a signed Windows channel is live (REL-038).
+  artifactName: "${productName}-${version}-${os}-${arch}-setup-unsigned.${ext}"
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: ZPLC IDE
 
 portable:
-  artifactName: "${productName}-${version}-${os}-${arch}-Portable.${ext}"
+  artifactName: "${productName}-${version}-${os}-${arch}-portable-unsigned.${ext}"
 
 # ============================================================================
 # Linux Configuration

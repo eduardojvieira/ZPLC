@@ -9,12 +9,23 @@ import { fileURLToPath } from 'node:url';
 
 const SIGNING_STATE = [
   ['macOS DMG and ZIP, x64 and ARM64', 'Signed ad hoc and sealed, with the native runtime signed inside the bundle. Not notarized: macOS asks for approval the first time a downloaded copy opens.'],
-  ['Windows setup and portable executables, x64 and ARM64', 'Unsigned.'],
+  ['Windows setup and portable executables, x64 and ARM64', 'Unsigned, and named so: their file names end in `unsigned`. Windows warns before they run and Smart App Control blocks them.'],
   ['Linux AppImage, DEB and RPM, x64 and ARM64', 'Not signed. Integrity comes from the checksums and the build provenance attestation.'],
   ['SPDX SBOM, per-platform checksum and evidence files', 'Not signed. Published so the installers can be verified.'],
 ];
 
-export function renderReleaseNotes({ version }) {
+// The state of each Windows channel (REL-038): live, submitted, refused or not yet submittable. Edited by hand
+// when a channel changes; both start as not yet submittable.
+const CHANNEL_STATES = ['live', 'submitted', 'refused', 'not yet submittable'];
+const WINDOWS_CHANNELS = [
+  ['Microsoft Store (MSIX package)', 'not yet submittable'],
+  ['SignPath Foundation signing of the setup and portable executables', 'not yet submittable'],
+];
+
+export function renderReleaseNotes({ version, windowsChannels = WINDOWS_CHANNELS }) {
+  for (const [channel, state] of windowsChannels) {
+    if (!CHANNEL_STATES.includes(state)) throw new Error(`Unknown channel state for ${channel}: ${state}`);
+  }
   return `## Release v${version}
 
 ### Repository evidence
@@ -28,6 +39,23 @@ export function renderReleaseNotes({ version }) {
 | --- | --- |
 ${SIGNING_STATE.map(([asset, state]) => `| ${asset} | ${state} |`).join('\n')}
 
+### Windows: unsigned installers
+
+The setup and portable executables are not signed, so their file names carry \`unsigned\`. To run one:
+
+1. Windows shows "Windows protected your PC" (SmartScreen).
+2. Select **More info**, then **Run anyway**.
+
+Smart App Control blocks unsigned apps and offers no Run anyway option. On a PC where Smart App Control is on, these files do not run.
+
+### Windows channels
+
+| Channel | State |
+| --- | --- |
+${windowsChannels.map(([channel, state]) => `| ${channel} | ${state} |`).join('\n')}
+
+A channel is live, submitted, refused or not yet submittable. Until a channel is live, the unsigned files above are the only Windows download.
+
 ### Evidence boundary
 Repository and hosted workflow results do not establish HIL, board qualification, timing, safety certification, or human release sign-off.
 Prerelease tags remain release candidates, not GA declarations.
@@ -35,7 +63,7 @@ Prerelease tags remain release candidates, not GA declarations.
 ### IDE download coverage
 
 - macOS x64 and ARM64: DMG and ZIP.
-- Windows x64 and ARM64: Setup and Portable executables.
+- Windows x64 and ARM64: Setup and Portable executables, both unsigned.
 - Linux x64 and ARM64: AppImage, DEB, and RPM.
 
 Each platform is built and published by its own jobs, so a platform whose jobs failed has no files in this release. Verify the exact attached filenames and their integrity with that platform's checksum and evidence files: \`SHA256SUMS-macos\`, \`SHA256SUMS-windows\` and \`SHA256SUMS-linux\`, and \`release-evidence-macos.json\`, \`release-evidence-windows.json\` and \`release-evidence-linux.json\`.

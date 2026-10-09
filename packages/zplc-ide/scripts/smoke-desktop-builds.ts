@@ -4,9 +4,9 @@ import { createRequire } from 'node:module';
 import { basename, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const EXPECTED_ARTIFACTS = {
+export const EXPECTED_ARTIFACTS = {
   macos: ['.dmg', '.zip'],
-  windows: ['-Setup.exe', '-Portable.exe'],
+  windows: ['-setup-unsigned.exe', '-portable-unsigned.exe'],
   linux: ['.AppImage', '.deb', '.rpm'],
 } as const;
 

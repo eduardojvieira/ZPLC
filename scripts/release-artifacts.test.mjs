@@ -154,6 +154,23 @@ test('release notes state the signing state of every asset the pipeline publishe
   assert.doesNotMatch(notes, /Developer ID|stapl|(?<!not )notariz/i, 'no claim of a certificate or notarization');
 });
 
+test('release notes give the Windows first-run steps, the Smart App Control statement and each channel state (REL-038)', () => {
+  const notes = renderReleaseNotes({ version: '2.0.0-rc.4' });
+  assert.match(notes, /^### Windows: unsigned installers$/m);
+  assert.match(notes, /Windows protected your PC/);
+  assert.match(notes, /select \*\*More info\*\*, then \*\*Run anyway\*\*/i);
+  assert.match(notes, /Smart App Control blocks unsigned apps/);
+  assert.match(notes, /^\| Microsoft Store \(MSIX package\) \| not yet submittable \|$/m);
+  assert.match(notes, /^\| SignPath Foundation signing of the setup and portable executables \| not yet submittable \|$/m);
+  assert.match(notes, /file names end in `unsigned`|names carry `unsigned`/);
+});
+
+test('release notes render the state of a Windows channel only from the four allowed words', () => {
+  const live = renderReleaseNotes({ version: '2.0.0', windowsChannels: [['Microsoft Store (MSIX package)', 'live']] });
+  assert.match(live, /^\| Microsoft Store \(MSIX package\) \| live \|$/m);
+  assert.throws(() => renderReleaseNotes({ version: '2.0.0', windowsChannels: [['Microsoft Store (MSIX package)', 'pending']] }), /channel state/);
+});
+
 test('gates every release build on the reusable full CI for the release SHA', async () => {
   const [ci, release] = await Promise.all([
     readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8'),

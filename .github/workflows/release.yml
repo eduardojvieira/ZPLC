@@ -318,8 +318,8 @@ jobs:
         with:
           name: windows-${{ matrix.arch }}
           path: |
-            packages/zplc-ide/dist-electron/*-Setup.exe
-            packages/zplc-ide/dist-electron/*-Portable.exe
+            packages/zplc-ide/dist-electron/*-setup-unsigned.exe
+            packages/zplc-ide/dist-electron/*-portable-unsigned.exe
           retention-days: 7
 
   # ===========================================================================
