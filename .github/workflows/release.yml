@@ -173,7 +173,6 @@ jobs:
   build-macos:
     needs: [validate-version, verify-release-candidate]
     runs-on: ${{ matrix.runner }}
-    environment: ${{ needs.validate-version.outputs.publishing == 'true' && 'release-signing' || 'preview' }}
     strategy:
       fail-fast: false
       matrix:
@@ -207,67 +206,12 @@ jobs:
         run: |
           cd packages/zplc-compiler && bun run build
 
-      - name: Preflight macOS release signing
-        shell: bash
-        env:
-          ZPLC_PUBLISHING: ${{ needs.validate-version.outputs.publishing }}
-          ZPLC_MACOS_CSC_LINK: ${{ secrets.ZPLC_MACOS_CSC_LINK }}
-          ZPLC_MACOS_CSC_KEY_PASSWORD: ${{ secrets.ZPLC_MACOS_CSC_KEY_PASSWORD }}
-          ZPLC_APPLE_API_KEY_P8: ${{ secrets.ZPLC_APPLE_API_KEY_P8 }}
-          ZPLC_APPLE_API_KEY_ID: ${{ secrets.ZPLC_APPLE_API_KEY_ID }}
-          ZPLC_APPLE_API_ISSUER: ${{ secrets.ZPLC_APPLE_API_ISSUER }}
-          ZPLC_APPLE_TEAM_ID: ${{ vars.ZPLC_APPLE_TEAM_ID }}
-        run: |
-          set -euo pipefail
-          [ "$ZPLC_PUBLISHING" = "true" ] || exit 0
-          for variable in ZPLC_MACOS_CSC_LINK ZPLC_MACOS_CSC_KEY_PASSWORD ZPLC_APPLE_API_KEY_P8 ZPLC_APPLE_API_KEY_ID ZPLC_APPLE_API_ISSUER ZPLC_APPLE_TEAM_ID; do
-            [ -n "${!variable:-}" ] || { echo "Missing required macOS release-signing configuration: $variable"; exit 1; }
-          done
-
       - name: Build Electron app (macOS ${{ matrix.arch }})
         working-directory: packages/zplc-ide
         run: |
           bun run scripts/package-mac-release.mjs ${{ matrix.arch }}
         env:
-          ZPLC_PUBLISHING: ${{ needs.validate-version.outputs.publishing }}
-          ZPLC_MACOS_CSC_LINK: ${{ secrets.ZPLC_MACOS_CSC_LINK }}
-          ZPLC_MACOS_CSC_KEY_PASSWORD: ${{ secrets.ZPLC_MACOS_CSC_KEY_PASSWORD }}
-          ZPLC_APPLE_API_KEY_P8: ${{ secrets.ZPLC_APPLE_API_KEY_P8 }}
-          ZPLC_APPLE_API_KEY_ID: ${{ secrets.ZPLC_APPLE_API_KEY_ID }}
-          ZPLC_APPLE_API_ISSUER: ${{ secrets.ZPLC_APPLE_API_ISSUER }}
-          ZPLC_APPLE_TEAM_ID: ${{ vars.ZPLC_APPLE_TEAM_ID }}
           ZPLC_MAC_COPY_APP_BUNDLE: '1'
-
-      - name: Verify macOS bundle code signing
-        working-directory: packages/zplc-ide
-        shell: bash
-        env:
-          ZPLC_PUBLISHING: ${{ needs.validate-version.outputs.publishing }}
-          ZPLC_APPLE_TEAM_ID: ${{ vars.ZPLC_APPLE_TEAM_ID }}
-        run: |
-          set -euo pipefail
-          [ "$ZPLC_PUBLISHING" = "true" ] || { echo "Preview artifact: skipping native signature verification."; exit 0; }
-          APP_PATH=$(python3 - <<'PY'
-          from pathlib import Path
-          apps = sorted(Path('dist-electron').glob('mac*/**/*.app'))
-          print(apps[0] if apps else '')
-          PY
-          )
-          if [ -z "$APP_PATH" ]; then
-            echo "Missing .app bundle in dist-electron"
-            exit 1
-          fi
-          codesign --verify --deep --strict --verbose=2 "$APP_PATH"
-          signing_info="$(codesign -dv --verbose=4 "$APP_PATH" 2>&1)"
-          grep -Eq '^Authority=Developer ID Application:' <<<"$signing_info"
-          grep -Fqx "TeamIdentifier=$ZPLC_APPLE_TEAM_ID" <<<"$signing_info"
-          shopt -s nullglob
-          dmgs=(dist-electron/*.dmg)
-          [ "${#dmgs[@]}" -eq 1 ] || { echo "Expected exactly one macOS DMG, found ${#dmgs[@]}"; exit 1; }
-          xcrun stapler validate "$APP_PATH"
-          xcrun stapler validate "${dmgs[0]}"
-          spctl --assess --type execute --verbose=4 "$APP_PATH"
-          spctl --assess --type open --context context:primary-signature --verbose=4 "${dmgs[0]}"
 
       - name: Validate macOS build artifacts
         working-directory: packages/zplc-ide
@@ -280,7 +224,7 @@ jobs:
       - name: Upload macOS artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: macos-${{ matrix.arch }}-${{ needs.validate-version.outputs.publishing == 'true' && 'signed' || 'preview' }}
+          name: macos-${{ matrix.arch }}
           path: |
             packages/zplc-ide/dist-electron/*.dmg
             packages/zplc-ide/dist-electron/*.zip
@@ -292,7 +236,6 @@ jobs:
   build-windows:
     needs: [validate-version, verify-release-candidate]
     runs-on: ${{ matrix.runner }}
-    environment: ${{ needs.validate-version.outputs.publishing == 'true' && 'release-signing' || 'preview' }}
     strategy:
       fail-fast: false
       matrix:
@@ -341,21 +284,6 @@ jobs:
             cp firmware/lib/zplc_core/build/Release/zplc_runtime.exe packages/zplc-ide/dist-native/
           fi
 
-      - name: Preflight Windows release signing
-        shell: pwsh
-        env:
-          ZPLC_PUBLISHING: ${{ needs.validate-version.outputs.publishing }}
-          ZPLC_WINDOWS_CSC_LINK: ${{ secrets.ZPLC_WINDOWS_CSC_LINK }}
-          ZPLC_WINDOWS_CSC_KEY_PASSWORD: ${{ secrets.ZPLC_WINDOWS_CSC_KEY_PASSWORD }}
-          ZPLC_WINDOWS_EXPECTED_PUBLISHER: ${{ vars.ZPLC_WINDOWS_EXPECTED_PUBLISHER }}
-        run: |
-          if ($env:ZPLC_PUBLISHING -ne 'true') { exit 0 }
-          foreach ($name in 'ZPLC_WINDOWS_CSC_LINK', 'ZPLC_WINDOWS_CSC_KEY_PASSWORD', 'ZPLC_WINDOWS_EXPECTED_PUBLISHER') {
-            if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
-              throw "Missing required Windows release-signing configuration: $name"
-            }
-          }
-
       - name: Build Electron app (Windows ${{ matrix.arch }})
         working-directory: packages/zplc-ide
         shell: pwsh
@@ -363,20 +291,7 @@ jobs:
           bun run build:assets
           bun run build
           bun run electron:compile
-          if ($env:ZPLC_PUBLISHING -eq 'true') {
-            $env:CSC_LINK = $env:ZPLC_WINDOWS_CSC_LINK
-            $env:CSC_KEY_PASSWORD = $env:ZPLC_WINDOWS_CSC_KEY_PASSWORD
-            bun x electron-builder --win --${{ matrix.arch }} --publish never --config.forceCodeSigning=true
-          } else {
-            $env:CSC_IDENTITY_AUTO_DISCOVERY = 'false'
-            Remove-Item Env:CSC_LINK -ErrorAction SilentlyContinue
-            Remove-Item Env:CSC_KEY_PASSWORD -ErrorAction SilentlyContinue
-            bun x electron-builder --win --${{ matrix.arch }} --publish never --config.forceCodeSigning=false
-          }
-        env:
-          ZPLC_PUBLISHING: ${{ needs.validate-version.outputs.publishing }}
-          ZPLC_WINDOWS_CSC_LINK: ${{ secrets.ZPLC_WINDOWS_CSC_LINK }}
-          ZPLC_WINDOWS_CSC_KEY_PASSWORD: ${{ secrets.ZPLC_WINDOWS_CSC_KEY_PASSWORD }}
+          bun x electron-builder --win --${{ matrix.arch }} --publish never
 
       - name: Validate Windows build artifacts
         working-directory: packages/zplc-ide
@@ -387,36 +302,10 @@ jobs:
         working-directory: packages/zplc-ide
         run: bun run smoke:desktop-packaged
 
-      - name: Verify Windows artifact signatures
-        shell: pwsh
-        env:
-          ZPLC_PUBLISHING: ${{ needs.validate-version.outputs.publishing }}
-          ZPLC_WINDOWS_EXPECTED_PUBLISHER: ${{ vars.ZPLC_WINDOWS_EXPECTED_PUBLISHER }}
-        run: |
-          if ($env:ZPLC_PUBLISHING -ne 'true') { Write-Output 'Preview artifact: skipping native signature verification.'; exit 0 }
-          $signtool = Get-Command signtool.exe -ErrorAction Stop
-          $artifacts = Get-ChildItem packages/zplc-ide/dist-electron -File -Include *-Setup.exe,*-Portable.exe -Recurse
-          if ($artifacts.Count -ne 2) { throw "Expected exactly two distributed Windows executables, found $($artifacts.Count)" }
-          $unpackedExecutables = @(
-            Get-ChildItem packages/zplc-ide/dist-electron/win-unpacked/zplc-ide.exe -File -ErrorAction SilentlyContinue
-            Get-ChildItem packages/zplc-ide/dist-electron/win-unpacked/resources/native-runtime/zplc_runtime.exe -File -ErrorAction SilentlyContinue
-          )
-          if ($unpackedExecutables.Count -ne 2) { throw "Expected exactly two unpacked Windows executables (app and native runtime), found $($unpackedExecutables.Count)" }
-          foreach ($artifact in @($artifacts) + $unpackedExecutables) {
-            & $signtool.Source verify /pa /all /tw /v $artifact.FullName
-            if ($LASTEXITCODE -ne 0) { throw "signtool verification failed: $($artifact.Name)" }
-            $signature = Get-AuthenticodeSignature -FilePath $artifact.FullName
-            if ($signature.Status -ne 'Valid') { throw "Invalid Authenticode signature: $($artifact.Name)" }
-            if ($null -eq $signature.TimeStamperCertificate) { throw "Missing Authenticode timestamp: $($artifact.Name)" }
-            if ($signature.SignerCertificate.Subject -ne $env:ZPLC_WINDOWS_EXPECTED_PUBLISHER) {
-              throw "Unexpected Authenticode publisher: $($artifact.Name)"
-            }
-          }
-
       - name: Upload Windows artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: windows-${{ matrix.arch }}-${{ needs.validate-version.outputs.publishing == 'true' && 'signed' || 'preview' }}
+          name: windows-${{ matrix.arch }}
           path: |
             packages/zplc-ide/dist-electron/*-Setup.exe
             packages/zplc-ide/dist-electron/*-Portable.exe
@@ -633,7 +522,7 @@ jobs:
 
             ### Repository evidence
             - Release artifacts include checksums, an SPDX SBOM, and identity evidence produced by this workflow for the exact release SHA.
-            - Publishing validates native macOS and Windows signatures before artifact upload. Linux artifacts are reproducibly payload-checked, checksummed, and attested; they are not represented as natively signed.
+            - Signing state: macOS bundles are signed ad hoc and are not notarized; Windows installers and Linux packages are not signed. Linux artifacts are reproducibly payload-checked, checksummed, and attested.
             - `ST`, `IL`, `LD`, `FBD`, and `SFC` are described only at the repository-declared and automated-tested workflow level.
             - `firmware/app/boards/supported-boards.v1.5.0.json` is the current board catalog/evidence baseline, not 2.0 HIL qualification.
 

@@ -18,6 +18,7 @@ type Builder = {
     target: string[];
   };
   dmg: { sign?: boolean };
+  win: Record<string, unknown>;
 };
 
 const builder = Bun.YAML.parse(read('../electron-builder.yml')) as Builder;
@@ -51,5 +52,12 @@ describe('electron-builder.yml macOS signing (REL-001)', () => {
       'com.apple.security.cs.allow-jit',
       'com.apple.security.cs.disable-library-validation',
     ]);
+  });
+});
+
+describe('electron-builder.yml Windows signing (REL-003, REL-038)', () => {
+  it('carries no signing settings, because the installers are built unsigned', () => {
+    const signing = Object.keys(builder.win).filter((key) => /sign|cert|publisher/i.test(key));
+    expect(signing).toEqual([]);
   });
 });

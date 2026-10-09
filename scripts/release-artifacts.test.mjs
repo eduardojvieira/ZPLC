@@ -7,7 +7,6 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 import { createReleaseIntegrityBundle } from './release-artifacts.mjs';
-import { requireAcceptedNotaryResponse, requireMacReleaseSigning } from '../packages/zplc-ide/scripts/mac-release-signing.mjs';
 
 const identity = { version: '2.0.0-rc.1', tag: 'v2.0.0-rc.1', commitSha: 'a'.repeat(40) };
 const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -194,102 +193,23 @@ test('mac packaging stages required workspace manifests for the frozen lockfile'
   }
 });
 
-test('fails closed when any macOS signing credential is absent', () => {
-  const complete = {
-    ZPLC_MACOS_CSC_LINK: 'certificate',
-    ZPLC_MACOS_CSC_KEY_PASSWORD: 'password',
-    ZPLC_APPLE_API_KEY_P8: 'private-key',
-    ZPLC_APPLE_API_KEY_ID: 'key-id',
-    ZPLC_APPLE_API_ISSUER: 'issuer',
-    ZPLC_APPLE_TEAM_ID: 'team-id',
-  };
-  assert.doesNotThrow(() => requireMacReleaseSigning(complete));
-  for (const field of Object.keys(complete)) {
-    const incomplete = { ...complete, [field]: '  ' };
-    assert.throws(() => requireMacReleaseSigning(incomplete), new RegExp(field));
-  }
-});
-
-test('accepts only bounded accepted macOS notarization responses', () => {
-  assert.doesNotThrow(() => requireAcceptedNotaryResponse('{"status":"Accepted"}'));
-  for (const response of ['{"status":"Invalid"}', '{}', 'not json', 'x'.repeat(64 * 1024 + 1)]) {
-    assert.throws(() => requireAcceptedNotaryResponse(response), /not accepted/);
-  }
-});
-
-test('publishing requires verified native signatures while previews remain isolated', async () => {
-  const [workflow, builder, macScript] = await Promise.all([
-    readFile(new URL('../.github/workflows/release.yml', import.meta.url), 'utf8'),
-    readFile(new URL('../packages/zplc-ide/electron-builder.yml', import.meta.url), 'utf8'),
-    readFile(new URL('../packages/zplc-ide/scripts/package-mac-release.mjs', import.meta.url), 'utf8'),
+test('contains no paid credential, Developer ID, notarization or Windows certificate path (REL-003)', async () => {
+  const read = (path) => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
+  const [workflow, macScript] = await Promise.all([
+    read('.github/workflows/release.yml'),
+    read('packages/zplc-ide/scripts/package-mac-release.mjs'),
   ]);
+  // Saying "not notarized" is a statement of fact; any other mention of notarization would be a step or an assertion.
+  const paidPath = /notarytool|(?<!not )notariz|stapl|spctl|Developer ID|CSC_|APPLE_|ZPLC_MACOS|ZPLC_WINDOWS|ZPLC_PUBLISHING|signtool|Authenticode|forceCodeSigning=true|release-signing|\.p8\b|\.p12\b|\.pfx\b/i;
 
-  assert.match(builder, /^\s*identity:\s*['"]-['"]\s*$/m, 'macOS must be signed ad hoc by an explicit identity (REL-001)');
-  assert.match(
-    builder,
-    /^win:\n(?:  [^\n]*\n)*?  signtoolOptions:\n    signingHashAlgorithms:\n      - sha256$/m,
-    'Windows must configure SHA-256 under win.signtoolOptions',
-  );
-  assert.match(builder, /^win:\n(?:  [^\n]*\n)*?  signExts:\n    - \.exe$/m, 'Windows must explicitly sign executable extra resources');
-  assert.doesNotMatch(
-    builder,
-    /^win:\n(?:  [^\n]*\n)*?  signingHashAlgorithms:/m,
-    'signingHashAlgorithms is valid only under win.signtoolOptions',
-  );
-  assert.match(macScript, /requireMacReleaseSigning\(process\.env\)/);
-  assert.match(macScript, /writeFileSync\(apiKeyPath, process\.env\.ZPLC_APPLE_API_KEY_P8, \{ mode: 0o600 \}\)/);
-  assert.match(macScript, /builderEnv\.CSC_LINK = process\.env\.ZPLC_MACOS_CSC_LINK/);
-  assert.match(macScript, /builderEnv\.APPLE_API_KEY = apiKeyPath/);
-  assert.match(macScript, /'ZPLC_MACOS_CSC_LINK', 'ZPLC_MACOS_CSC_KEY_PASSWORD', 'ZPLC_APPLE_API_KEY_P8'/);
-  assert.match(macScript, /\) delete builderEnv\[key\];/);
-  assert.match(macScript, /-c\.forceCodeSigning=true/);
-  assert.match(macScript, /-c\.mac\.notarize=false/);
-  assert.match(macScript, /Expected exactly one staged macOS DMG/);
-  assert.match(macScript, /submitNotaryDmg\(\[\n\s*'notarytool', 'submit', stagedDmg, '--key', apiKeyPath/);
-  assert.match(macScript, /'--issuer', process\.env\.ZPLC_APPLE_API_ISSUER, '--wait', '--output-format', 'json'/);
-  assert.match(macScript, /requireAcceptedNotaryResponse\(response\)/);
-  assert.match(macScript, /'stapler', 'staple', stagedDmg/);
-  assert.ok(
-    macScript.indexOf("'stapler', 'staple', stagedDmg") < macScript.indexOf("if (process.env.ZPLC_MAC_COPY_APP_BUNDLE === '1')"),
-    'DMG notarization and stapling must finish before artifacts are copied out of staging',
-  );
-
-  const mac = workflow;
-  assert.match(mac, /environment: \$\{\{ needs\.validate-version\.outputs\.publishing == 'true' && 'release-signing' \|\| 'preview' \}\}/);
-  assert.match(mac, /codesign --verify --deep --strict --verbose=2/);
-  assert.match(mac, /Authority=Developer ID Application:/);
-  assert.match(mac, /TeamIdentifier=\$ZPLC_APPLE_TEAM_ID/);
-  assert.match(mac, /xcrun stapler validate "\$APP_PATH"/);
-  assert.match(mac, /xcrun stapler validate "\$\{dmgs\[0\]\}"/);
-  assert.match(mac, /spctl --assess --type execute/);
-  assert.match(mac, /spctl --assess --type open/);
-
-  const windowsStart = workflow.indexOf('  build-windows:');
-  const windowsEnd = workflow.indexOf('  upload-release:', windowsStart);
-  const windows = workflow.slice(windowsStart, windowsEnd);
-  assert.match(windows, /--config\.forceCodeSigning=true/);
-  assert.match(windows, /--config\.forceCodeSigning=false/);
-  assert.doesNotMatch(windows, /-c\.forceCodeSigning=(?:true|false)/);
-  assert.match(windows, /Get-Command signtool\.exe/);
-  assert.match(windows, /dist-electron\/win-unpacked\/zplc-ide\.exe/);
-  assert.match(windows, /dist-electron\/win-unpacked\/resources\/native-runtime\/zplc_runtime\.exe/);
-  assert.match(windows, /\$unpackedExecutables\.Count -ne 2/);
-  assert.match(windows, /foreach \(\$artifact in @\(\$artifacts\) \+ \$unpackedExecutables\)/);
-  assert.match(windows, /& \$signtool\.Source verify \/pa \/all \/tw \/v/);
-  assert.match(windows, /Get-AuthenticodeSignature/);
-  assert.match(windows, /\$signature\.Status -ne 'Valid'/);
-  assert.match(windows, /\$null -eq \$signature\.TimeStamperCertificate/);
-  assert.match(windows, /SignerCertificate\.Subject -ne \$env:ZPLC_WINDOWS_EXPECTED_PUBLISHER/);
-  assert.ok(
-    windows.indexOf('Verify Windows artifact signatures') < windows.indexOf('Upload Windows artifacts'),
-    'Windows signature and timestamp verification must precede artifact upload',
-  );
-
-  const upload = workflow.match(/^  upload-release:\n[\s\S]*$/m)?.[0] ?? '';
-  assert.match(upload, /environment: release-signing/);
-  assert.match(upload, /needs\.validate-version\.outputs\.publishing == 'true'/);
-  assert.match(upload, /name: release-bundle-publishable/);
-  assert.doesNotMatch(upload, /release-bundle-preview/);
+  assert.equal(existsSync(new URL('../packages/zplc-ide/scripts/mac-release-signing.mjs', import.meta.url)), false, 'the credential helpers must be deleted');
+  assert.doesNotMatch(macScript, paidPath);
+  assert.doesNotMatch(macScript, /mac-release-signing/);
+  assert.doesNotMatch(macScript, /hardenedRuntime=false|forceCodeSigning/, 'electron-builder.yml owns the macOS signing settings');
+  assert.match(macScript, /'x', 'electron-builder', '--mac', `--\$\{arch\}`, '--publish', 'never'/);
+  // The upload job still names the protected environment until the release jobs are restructured.
+  assert.doesNotMatch(workflow.replace(/^    environment: release-signing\n/m, ''), paidPath);
+  assert.doesNotMatch(workflow, /\$\{\{\s*(?:secrets\.(?!GITHUB_TOKEN\b)|vars\.)/, 'the workflow may read no secret but the job token');
 });
 
 test('keeps Linux desktop identity and icon metadata aligned with the executable', async () => {

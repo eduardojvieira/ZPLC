@@ -80,11 +80,6 @@ dmg:
 # ============================================================================
 win:
   icon: build/icon.png
-  signExts:
-    - .exe
-  signtoolOptions:
-    signingHashAlgorithms:
-      - sha256
   target:
     - nsis
     - portable
