@@ -2,9 +2,9 @@ name: ZPLC CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, zplc-2.0-candidate]
   pull_request:
-    branches: [main, master]
+    branches: [main, master, zplc-2.0-candidate]
   workflow_dispatch:
   workflow_call:
 
@@ -35,6 +35,9 @@ jobs:
         run: |
           test -f bun.lock
           bun install --frozen-lockfile
+
+      - name: Test CI tooling
+        run: bun test ./tools/ci
 
       - name: Validate canonical product version
         run: bun run check:versions
@@ -279,6 +282,13 @@ jobs:
 
       - name: Cross-build firmware app
         run: west build -p always -b "${{ matrix.board }}" zplc/firmware/app -d "${RUNNER_TEMP}/zplc-${{ matrix.id }}"
+
+      - name: Keep cross-build firmware
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: firmware-${{ matrix.id }}
+          path: ${{ runner.temp }}/zplc-${{ matrix.id }}/zephyr/zephyr.*
+          if-no-files-found: error
 
   docs-and-truth:
     name: Docs and truth sources
