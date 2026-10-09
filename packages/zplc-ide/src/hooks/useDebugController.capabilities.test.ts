@@ -155,6 +155,8 @@ describe('breakpoint teardown boundary', () => {
     expect(push).toContain('() => useIDEStore.getState().getAllBreakpointPCs(),');
     expect(push).toContain('() => adapterRef.current === target && target.connected,');
     expect(push).toContain("console.error('Failed to sync breakpoints:', err);");
+    // A refusal reaches the Console panel and the store, not only devtools.
+    expect(push).toContain('reportBreakpointSync(outcome, { addConsoleEntry, setBreakpointsInactiveReason });');
   });
 
   it('pushes breakpoints only through the one-at-a-time syncer', () => {

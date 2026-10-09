@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'bun:test';
 
-import { createBreakpointSyncer, type BreakpointSyncTarget } from './useDebugControllerBreakpoints';
+import {
+  createBreakpointSyncer,
+  describeBreakpointSyncFailure,
+  reportBreakpointSync,
+  type BreakpointSyncOutcome,
+  type BreakpointSyncTarget,
+} from './useDebugControllerBreakpoints';
 
 /** A runtime double: every call takes one macrotask, so two rounds started together really interleave. */
 function fakeTarget(options: { refuseAdd?: boolean; refuseClear?: boolean } = {}) {
@@ -206,5 +212,100 @@ describe('createBreakpointSyncer', () => {
 
     expect(outcome?.sent).toBe(true);
     expect(second.calls).toEqual(['clear', 'add 56']);
+  });
+});
+
+describe('describeBreakpointSyncFailure', () => {
+  // Fails without the mapping: the owner would read the runtime's internal wording.
+  it('explains the several-task refusal in plain words, also when Electron wraps the message', () => {
+    const plain = describeBreakpointSyncFailure(new Error('breakpoint operation requires an unambiguous task'));
+    const wrapped = describeBreakpointSyncFailure(
+      new Error("Error invoking remote method 'native:request': Error: breakpoint operation requires an unambiguous task"),
+    );
+
+    expect(plain).toBe('the runtime accepts breakpoints only in a program with one task, and this program has several');
+    expect(wrapped).toBe(plain);
+  });
+
+  it('quotes any other refusal of the runtime', () => {
+    expect(describeBreakpointSyncFailure(new Error('breakpoint.add failed'))).toBe('the runtime refused them (breakpoint.add failed)');
+    expect(describeBreakpointSyncFailure('timeout')).toBe('the runtime refused them (timeout)');
+  });
+});
+
+describe('reportBreakpointSync', () => {
+  function sinks() {
+    const entries: Array<{ type: string; message: string; source: string }> = [];
+    const reasons: Array<string | null> = [];
+    return {
+      entries,
+      reasons,
+      sinks: {
+        addConsoleEntry: (entry: { type: 'warning'; message: string; source: string }) => entries.push(entry),
+        setBreakpointsInactiveReason: (reason: string | null) => reasons.push(reason),
+      },
+    };
+  }
+  const refused: BreakpointSyncOutcome = {
+    pcs: [56, 104],
+    error: new Error('breakpoint operation requires an unambiguous task'),
+    sent: true,
+  };
+
+  // Fails while a refusal only reaches devtools: the Console must say the dots are not active and why.
+  it('tells the Console and marks the dots inactive when the runtime refused a round', () => {
+    const out = sinks();
+
+    reportBreakpointSync(refused, out.sinks);
+
+    expect(out.entries).toEqual([{
+      type: 'warning',
+      message: 'Breakpoints are not active: the runtime accepts breakpoints only in a program with one task, and this program has several. '
+        + 'The dots stay in the editor, but the program will not stop at them.',
+      source: 'debugger',
+    }]);
+    expect(out.reasons).toEqual(['the runtime accepts breakpoints only in a program with one task, and this program has several']);
+  });
+
+  it('marks the dots active again after a round the runtime accepted', () => {
+    const out = sinks();
+
+    reportBreakpointSync({ pcs: [56], error: null, sent: true }, out.sinks);
+
+    expect(out.entries).toEqual([]);
+    expect(out.reasons).toEqual([null]);
+  });
+
+  // Fails if a refused clear with no dots at all (a several-task program without breakpoints) warns the owner.
+  it('stays quiet about a refusal when there are no dots to be inactive', () => {
+    const out = sinks();
+
+    reportBreakpointSync({ ...refused, pcs: [] }, out.sinks);
+
+    expect(out.entries).toEqual([]);
+    expect(out.reasons).toEqual([null]);
+  });
+
+  // Fails if a skipped round repeated the warning (the effect asks again after every load and capability event).
+  it('says nothing for a round that sent nothing, or for a stale one', () => {
+    const out = sinks();
+
+    reportBreakpointSync({ ...refused, sent: false }, out.sinks);
+    reportBreakpointSync(null, out.sinks);
+
+    expect(out.entries).toEqual([]);
+    expect(out.reasons).toEqual([]);
+  });
+
+  it('reports the refusal of a real syncer round once, not on every ask', async () => {
+    const { target } = fakeTarget({ refuseAdd: true });
+    const syncer = createBreakpointSyncer();
+    const out = sinks();
+
+    for (let ask = 0; ask < 3; ask += 1) {
+      reportBreakpointSync(await syncer.sync(target, () => [56], always), out.sinks);
+    }
+
+    expect(out.entries).toHaveLength(1);
   });
 });

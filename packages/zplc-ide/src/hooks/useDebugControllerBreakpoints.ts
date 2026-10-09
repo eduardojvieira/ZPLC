@@ -11,6 +11,7 @@
  */
 
 import type { IDebugAdapter } from '../runtime/debugAdapter';
+import type { NewConsoleEntry } from '../store/consoleEntries';
 
 export type BreakpointSyncTarget = Pick<IDebugAdapter, 'clearBreakpoints' | 'setBreakpoint'>;
 
@@ -88,4 +89,38 @@ export function createBreakpointSyncer(): BreakpointSyncer {
       return result;
     },
   };
+}
+
+/** What the owner reads and what the editor shows on a dot when the runtime did not take the breakpoints. */
+export function describeBreakpointSyncFailure(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  // native_runtime_session.c refuses every breakpoint.* request while more than one task is configured.
+  if (message.includes('requires an unambiguous task')) {
+    return 'the runtime accepts breakpoints only in a program with one task, and this program has several';
+  }
+  return `the runtime refused them (${message})`;
+}
+
+export interface BreakpointSyncReportSinks {
+  addConsoleEntry: (entry: NewConsoleEntry) => void;
+  setBreakpointsInactiveReason: (reason: string | null) => void;
+}
+
+/**
+ * Tell the owner what a round did. Only a round that sent something speaks: a skipped one changed
+ * nothing, a stale one belongs to an adapter that is gone. With no dots there is nothing to be inactive.
+ */
+export function reportBreakpointSync(outcome: BreakpointSyncOutcome | null, sinks: BreakpointSyncReportSinks): void {
+  if (!outcome?.sent) return;
+  if (!outcome.error || outcome.pcs.length === 0) {
+    sinks.setBreakpointsInactiveReason(null);
+    return;
+  }
+  const reason = describeBreakpointSyncFailure(outcome.error);
+  sinks.setBreakpointsInactiveReason(reason);
+  sinks.addConsoleEntry({
+    type: 'warning',
+    message: `Breakpoints are not active: ${reason}. The dots stay in the editor, but the program will not stop at them.`,
+    source: 'debugger',
+  });
 }

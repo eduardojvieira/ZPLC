@@ -36,7 +36,7 @@ import {
 } from './debugExecutionLocation';
 import { buildPolledDebugPaths, describePolledDebugVariable } from './debugPollingPaths';
 import { debugLog } from '../utils/debugLog';
-import { createBreakpointSyncer, type BreakpointSyncOutcome } from './useDebugControllerBreakpoints';
+import { createBreakpointSyncer, reportBreakpointSync, type BreakpointSyncOutcome } from './useDebugControllerBreakpoints';
 import { deriveHardwareDebugState } from '../runtime/debugStatus';
 import {
   type DebugCapabilities,
@@ -176,6 +176,7 @@ export function useDebugController(): DebugController {
   const updateLiveValues = useIDEStore((state) => state.updateLiveValues);
   const clearLiveValues = useIDEStore((state) => state.clearLiveValues);
   const setPolling = useIDEStore((state) => state.setPolling);
+  const setBreakpointsInactiveReason = useIDEStore((state) => state.setBreakpointsInactiveReason);
   const getAllBreakpointPCs = useIDEStore((state) => state.getAllBreakpointPCs);
   const addConsoleEntry = useIDEStore((state) => state.addConsoleEntry);
   const addConsoleEntries = useIDEStore((state) => state.addConsoleEntries);
@@ -407,18 +408,17 @@ export function useDebugController(): DebugController {
         () => useIDEStore.getState().getAllBreakpointPCs(),
         () => adapterRef.current === target && target.connected,
       );
-      if (outcome?.sent && outcome.error) {
-        console.warn('[DebugController] Breakpoint sync failed:', outcome.error);
-      }
+      reportBreakpointSync(outcome, { addConsoleEntry, setBreakpointsInactiveReason });
       return outcome;
     } catch (err) {
       console.error('Failed to sync breakpoints:', err);
       return null;
     }
-  }, [breakpointSyncer]);
+  }, [addConsoleEntry, breakpointSyncer, setBreakpointsInactiveReason]);
 
   const resetConnectionState = useCallback(() => {
     breakpointSyncer.invalidate();
+    setBreakpointsInactiveReason(null);
     invalidateNativeTrace();
     adapterRef.current = null;
     if (pollingIntervalRef.current) {
@@ -432,7 +432,7 @@ export function useDebugController(): DebugController {
     setPolling(false);
     setCurrentExecution(null, null, null);
     setDebugMode('none');
-  }, [breakpointSyncer, clearLiveValues, invalidateNativeTrace, setCurrentExecution, setDebugMode, setPolling]);
+  }, [breakpointSyncer, clearLiveValues, invalidateNativeTrace, setBreakpointsInactiveReason, setCurrentExecution, setDebugMode, setPolling]);
 
   useEffect(() => {
     const currentAdapter = adapter;
