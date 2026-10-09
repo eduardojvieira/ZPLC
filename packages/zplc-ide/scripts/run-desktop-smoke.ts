@@ -352,4 +352,7 @@ async function main(): Promise<void> {
     console.log('Electron development-host Motor Start/Stop smoke passed through real preload/IPC and native POSIX. It is not hardware, HIL, Zephyr, timing, or packaged-artifact evidence.');
   } catch (error) { throw new Error(`${error instanceof Error ? error.message : String(error)}\n${output.join('').slice(-12_000)}`); } finally { if (cdp) await cdp.command('Browser.close').catch(() => undefined); cdp?.close(); await Promise.race([electron?.exited ?? Promise.resolve(), Bun.sleep(3_000)]); await stop(electron); await stop(vite); if (tempRoot.startsWith(join(tmpdir(), 'zplc-electron-smoke-')) && existsSync(tempRoot)) rmSync(tempRoot, { recursive: true, force: true }); }
 }
-await main();
+// The journey runner (run-journeys.ts) reuses these start-up and CDP helpers; importing this file starts nothing.
+export { assert, assertSmokePortAvailable, Cdp, drain, freePort, HOST, packageRoot, preflight, smokeVitePort, stop, waitFor };
+export type { OwnedProcess };
+if (import.meta.main) await main();

@@ -1,0 +1,158 @@
+/**
+ * The app under test for the journeys (VF-008): a real Electron development host on a private user-data directory, driven
+ * only by input events over the DevTools protocol (mouse, wheel, keyboard, text insertion). The native folder dialog is
+ * answered by the main-process hook that exists only when the app is not packaged. Native POSIX only, never HIL.
+ */
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { trustedDevelopmentRendererUrl } from '../electron/security';
+import { assert, assertSmokePortAvailable, Cdp, drain, freePort, HOST, packageRoot, preflight, smokeVitePort, stop, waitFor, type OwnedProcess } from './run-desktop-smoke';
+
+export class NotPossible extends Error {}
+/** A journey that cannot be performed because the product has no way to do it. */
+export const notPossible = (reason: string): never => { throw new NotPossible(reason); };
+
+/** A JavaScript expression, evaluated in the page, that yields the element a user would aim at (or null). */
+export type Target = string;
+const names = (label: string, mode: 'exact' | 'prefix' | 'contains') => `[el.getAttribute('aria-label'), el.textContent?.trim()].some((text) => text !== undefined && text !== null && ${mode === 'exact' ? `text === ${JSON.stringify(label)}` : mode === 'prefix' ? `text.startsWith(${JSON.stringify(label)})` : `text.includes(${JSON.stringify(label)})`})`;
+const query = (selector: string, label: string, mode: 'exact' | 'prefix' | 'contains') => `[...document.querySelectorAll(${JSON.stringify(selector)})].find((el) => ${names(label, mode)})`;
+export const button = (label: string, mode: 'exact' | 'prefix' | 'contains' = 'exact'): Target => query('button', label, mode);
+export const tab = (label: string, mode: 'exact' | 'prefix' | 'contains' = 'prefix'): Target => query('[role="tab"]', label, mode);
+export const menuItem = (label: string): Target => query('[role="menuitem"]', label, 'prefix');
+export const css = (selector: string): Target => `document.querySelector(${JSON.stringify(selector)})`;
+
+/** Where the user would aim at an element: its centre, once it is enabled, on screen and not covered by something else. */
+const centre = (target: Target) => `(() => { const el = ${target}; if (!el || el.disabled || el.getAttribute('aria-disabled') === 'true') return null; el.scrollIntoView({ block: 'nearest', inline: 'nearest' }); const box = el.getBoundingClientRect(); if (box.width === 0 || box.height === 0) return null; const x = box.x + box.width / 2; const y = box.y + box.height / 2; const hit = document.elementFromPoint(x, y); return hit && (el === hit || el.contains(hit)) ? { x, y } : null; })()`;
+
+const KEYS: Record<string, { key: string; code: string; keyCode: number }> = {
+  ArrowUp: { key: 'ArrowUp', code: 'ArrowUp', keyCode: 38 }, Enter: { key: 'Enter', code: 'Enter', keyCode: 13 }, Escape: { key: 'Escape', code: 'Escape', keyCode: 27 },
+  F5: { key: 'F5', code: 'F5', keyCode: 116 }, F6: { key: 'F6', code: 'F6', keyCode: 117 },
+  S: { key: 's', code: 'KeyS', keyCode: 83 }, B: { key: 'b', code: 'KeyB', keyCode: 66 }, Z: { key: 'z', code: 'KeyZ', keyCode: 90 },
+  A: { key: 'a', code: 'KeyA', keyCode: 65 }, End: { key: 'End', code: 'End', keyCode: 35 }, Home: { key: 'Home', code: 'Home', keyCode: 36 },
+};
+
+export interface App {
+  readonly cdp: Cdp;
+  /** The folder the next native dialog "chooses" (null cancels it). */
+  answer(folder: string | null): void;
+  /** Main-process and renderer output, for evidence. */
+  log(): string;
+  eval<T = unknown>(expression: string): Promise<T>;
+  /** Polls an observable condition until it yields a value (not undefined or false), or throws when `timeoutMs` (20 s by default) passes. */
+  until<T>(description: string, check: () => Promise<T | undefined | false> | T | undefined | false, timeoutMs?: number): Promise<T>;
+  /** A real mouse click (or double click) at the centre of the target. */
+  click(target: Target, description?: string, clicks?: number): Promise<void>;
+  /** A real key chord such as `Ctrl+S` or `F5`, sent to whatever has focus. */
+  press(chord: string): Promise<void>;
+  /** Text inserted as the user would type or paste it, into whatever has focus. */
+  type(text: string): Promise<void>;
+  /** A real mouse click, and a real wheel turn, at page coordinates. */
+  clickAt(x: number, y: number, clicks?: number): Promise<void>;
+  wheel(x: number, y: number, deltaY: number): Promise<void>;
+  visible(target: Target): Promise<boolean>;
+  /** True when a user could click the target now: enabled, on screen, not covered. */
+  clickable(target: Target): Promise<boolean>;
+  text(): Promise<string>;
+  /** Records a step the journey needed that a user should not need (shown in the table). */
+  note(text: string): void;
+  /** Renderer errors logged since the page settled. */
+  readonly errors: string[];
+}
+
+async function mouse(cdp: Cdp, x: number, y: number, clicks = 1): Promise<void> {
+  await cdp.command('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
+  for (let clickCount = 1; clickCount <= clicks; clickCount++) {
+    await cdp.command('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', buttons: 1, clickCount });
+    await cdp.command('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', buttons: 0, clickCount });
+  }
+}
+
+export interface Harness { vitePort: number; rendererUrl: string; runtime: string; output: string[] }
+
+export async function launchApp(harness: Harness, root: string): Promise<{ app: App; notes: string[]; stop(): Promise<void> }> {
+  const notes: string[] = [];
+  const answerFile = join(root, 'folder-answer.txt'); writeFileSync(answerFile, '');
+  const cdpPort = await freePort();
+  const electronPath = join(packageRoot, 'node_modules', 'electron', 'dist', process.platform === 'win32' ? 'electron.exe' : 'electron');
+  const output: string[] = [];
+  const electron: OwnedProcess = Bun.spawn([electronPath, '--headless', '--disable-gpu', `--zplc-smoke-port=${harness.vitePort}`, `--remote-debugging-port=${cdpPort}`, `--user-data-dir=${join(root, 'profile')}`, '.'], {
+    cwd: packageRoot, stdout: 'pipe', stderr: 'pipe',
+    env: { ...process.env, NODE_ENV: 'development', ZPLC_NATIVE_SIM_BIN: harness.runtime, ZPLC_PERSIST_ROOT: join(root, 'persist'), ZPLC_SMOKE_FOLDER_ANSWER_FILE: answerFile },
+  });
+  drain(electron, output, 'electron');
+  let cdp: Cdp | undefined;
+  // Browser.close is not awaited: with unsaved changes the app answers it with a prompt, not a reply.
+  const dispose = async () => { if (cdp) void cdp.command('Browser.close').catch(() => undefined); await Promise.race([electron.exited, Bun.sleep(3_000)]); cdp?.close(); await stop(electron); };
+  try {
+    const target = await waitFor('real Electron renderer target', async () => {
+      const targets = await fetch(`http://${HOST}:${cdpPort}/json/list`).then((response) => response.json()).catch(() => [] as Array<{ type?: string; url?: string; webSocketDebuggerUrl?: string }>);
+      return targets.find((item: { type?: string; url?: string; webSocketDebuggerUrl?: string }) => item.type === 'page' && item.url === harness.rendererUrl && item.webSocketDebuggerUrl)?.webSocketDebuggerUrl as string | undefined;
+    });
+    const page = cdp = await Cdp.connect(target);
+    const send = page.command.bind(page);
+    page.command = (method, params) => send(method, params).catch((error: Error) => { throw new Error(`${method}${method.startsWith('Input.') ? ` ${JSON.stringify(params)}` : ''}: ${error.message}`); });
+    for (const method of ['Runtime.enable', 'Log.enable', 'Page.enable', 'Page.bringToFront']) await page.command(method);
+    await page.command('Emulation.setFocusEmulationEnabled', { enabled: true });
+    // The window asks for 1440x900 (electron/main.ts) but the private display is smaller; lay the page out at the size the app asks for.
+    await page.command('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
+    const evaluate = <T,>(expression: string) => page.evaluate(expression) as Promise<T>;
+    const until: App['until'] = async (description, check, timeoutMs = 20_000) => {
+      const started = Date.now(); let last: unknown;
+      while (Date.now() - started < timeoutMs) {
+        try { const value = await check(); if (value !== undefined && value !== false) { if (process.env.ZPLC_JOURNEY_TRACE && Date.now() - started > 1_000) console.log(`  slow wait ${Date.now() - started} ms: ${description}`); return value; } } catch (error) { last = error; }
+        await Bun.sleep(100);
+      }
+      throw new Error(`Timed out waiting for ${description}${last instanceof Error ? `: ${last.message}` : ''}`);
+    };
+    await until('real preload bridge and Welcome screen', async () => await evaluate<boolean>(`Boolean(window.electronAPI?.isElectron && document.body.innerText.includes('ZPLC Studio 2.0'))`) || undefined);
+    page.errors.splice(0); page.errorDetails.splice(0); // the headless bootstrap diagnostics are asserted by run-desktop-smoke.ts
+    const app: App = {
+      cdp: page,
+      answer: (folder) => writeFileSync(answerFile, folder ?? ''),
+      log: () => `${output.join('')}\nrenderer errors: ${page.errorDetails.join(' | ')}`,
+      eval: evaluate,
+      until,
+      click: async (target, description = target.slice(0, 120), clicks = 1) => {
+        const point = await until(`${description} to be clickable`, async () => await evaluate<{ x: number; y: number } | null>(centre(target)) ?? undefined);
+        assert(Number.isFinite(point.x) && Number.isFinite(point.y), `${description} has no usable click point: ${JSON.stringify(point)}`);
+        await mouse(page, point.x, point.y, clicks);
+      },
+      press: async (chord) => {
+        const parts = chord.split('+'); const name = parts.pop()!; const definition = KEYS[name.length === 1 ? name.toUpperCase() : name];
+        assert(definition, `Unknown key ${chord}`);
+        const modifiers = (parts.includes('Alt') ? 1 : 0) | (parts.includes('Ctrl') ? 2 : 0) | (parts.includes('Shift') ? 8 : 0);
+        const text = definition.key === 'Enter' ? '\r' : undefined;
+        await page.command('Input.dispatchKeyEvent', { type: 'keyDown', key: definition.key, code: definition.code, text, unmodifiedText: text, windowsVirtualKeyCode: definition.keyCode, modifiers });
+        await page.command('Input.dispatchKeyEvent', { type: 'keyUp', key: definition.key, code: definition.code, windowsVirtualKeyCode: definition.keyCode, modifiers });
+      },
+      type: async (text) => { await page.command('Input.insertText', { text }); },
+      clickAt: (x, y, clicks) => mouse(page, x, y, clicks),
+      wheel: async (x, y, deltaY) => { await page.command('Input.dispatchMouseEvent', { type: 'mouseWheel', x, y, deltaX: 0, deltaY }); },
+      note: (text) => { if (!notes.includes(text)) notes.push(text); },
+      clickable: async (target) => await evaluate<unknown>(centre(target)) !== null,
+      visible: async (target) => await evaluate<boolean>(`(() => { const el = ${target}; if (!el) return false; const box = el.getBoundingClientRect(); return box.width > 0 && box.height > 0; })()`),
+      text: () => evaluate<string>('document.body.innerText'),
+      errors: page.errors,
+    };
+    return { app, notes, stop: dispose };
+  } catch (error) {
+    await dispose();
+    throw new Error(`${error instanceof Error ? error.message : String(error)}\n${output.join('').slice(-4_000)}`);
+  }
+}
+
+
+/** One Vite server for the whole run; every journey launches its own Electron against it. */
+export async function startHarness(): Promise<{ harness: Harness; scratch: string; stop(): Promise<void> }> {
+  const runtime = preflight(); const vitePort = smokeVitePort();
+  const scratch = mkdtempSync(join(tmpdir(), 'zplc-journeys-'));
+  await assertSmokePortAvailable(vitePort);
+  const vite: OwnedProcess = Bun.spawn([process.execPath, 'run', 'vite', '--host', HOST, '--port', String(vitePort), '--strictPort'], { cwd: packageRoot, stdout: 'pipe', stderr: 'pipe' });
+  const output: string[] = []; drain(vite, output, 'vite');
+  const dispose = async () => { await stop(vite); rmSync(scratch, { recursive: true, force: true }); };
+  try {
+    await waitFor('Vite at the owned trusted origin', async () => (await fetch(`http://${HOST}:${vitePort}/`).catch(() => null))?.ok ? true : undefined);
+  } catch (error) { await dispose(); throw error; }
+  return { harness: { vitePort, rendererUrl: trustedDevelopmentRendererUrl(vitePort), runtime, output }, scratch, stop: dispose };
+}
