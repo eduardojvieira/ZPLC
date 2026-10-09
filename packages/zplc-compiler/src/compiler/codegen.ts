@@ -1517,6 +1517,18 @@ function emitCaseStatement(state: CodeGenState, stmt: CaseStatement): void {
     // Generate labels for each branch
     const branchLabels: string[] = stmt.branches.map(() => newLabel(state, 'case_branch'));
 
+    // Resolve every label to its bounds; an empty range or a label that overlaps an earlier one is an error.
+    const taken: Array<{ lo: number; hi: number }> = [];
+    const bounds = stmt.branches.map((branch) => branch.values.map((label) => {
+        const lo = constantInt(state, label.start);
+        const hi = label.end ? constantInt(state, label.end) : lo;
+        const text = lo === hi ? `${lo}` : `${lo}..${hi}`;
+        if (lo > hi) fail(label, `CASE range ${text} is empty`);
+        if (taken.some((earlier) => lo <= earlier.hi && earlier.lo <= hi)) fail(label, `CASE label ${text} overlaps an earlier label`);
+        taken.push({ lo, hi });
+        return { lo, hi };
+    }));
+
     emit(state, ``);
     emit(state, `    ; CASE statement`);
     emit(state, `    ; evaluate selector`);
@@ -1524,42 +1536,23 @@ function emitCaseStatement(state: CodeGenState, stmt: CaseStatement): void {
 
     // Emit comparison for each branch
     for (let i = 0; i < stmt.branches.length; i++) {
-        const branch = stmt.branches[i];
         const branchLabel = branchLabels[i];
 
         // Each branch can have multiple values or ranges
-        for (const value of branch.values) {
-            if (typeof value === 'number') {
-                // Single value comparison
-                emit(state, `    DUP`);
-                if (value >= -128 && value <= 127) {
-                    emit(state, `    PUSH8 ${value}`);
-                } else if (value >= -32768 && value <= 32767) {
-                    emit(state, `    PUSH16 ${value}`);
-                } else {
-                    emit(state, `    PUSH32 ${value}`);
-                }
+        for (const { lo, hi } of bounds[i]) {
+            emit(state, `    DUP`);
+            emitCaseConstant(state, lo);
+            if (lo === hi) {
                 emit(state, `    EQ`);
                 emit(state, `    JNZ ${branchLabel}`);
             } else {
-                // Range comparison: value.start..value.end
-                // Check: selector >= start AND selector <= end
-                emit(state, `    DUP`);
-                if (value.start >= -128 && value.start <= 127) {
-                    emit(state, `    PUSH8 ${value.start}`);
-                } else {
-                    emit(state, `    PUSH32 ${value.start}`);
-                }
+                // Range lo..hi: selector >= lo AND selector <= hi
                 emit(state, `    GE`);
                 emit(state, `    DUP`);
                 emit(state, `    JZ _skip_range_${state.labelCounter}`);
                 emit(state, `    DROP`);
                 emit(state, `    DUP`);
-                if (value.end >= -128 && value.end <= 127) {
-                    emit(state, `    PUSH8 ${value.end}`);
-                } else {
-                    emit(state, `    PUSH32 ${value.end}`);
-                }
+                emitCaseConstant(state, hi);
                 emit(state, `    LE`);
                 emit(state, `_skip_range_${state.labelCounter++}:`);
                 emit(state, `    JNZ ${branchLabel}`);
@@ -1599,6 +1592,28 @@ function emitCaseStatement(state: CodeGenState, stmt: CaseStatement): void {
     }
 
     emit(state, `${endLabel}:`);
+}
+
+/**
+ * Value of a constant expression: an integer, its negation, or an enumeration value.
+ * ponytail: the symbol table does not record VAR CONSTANT, so a named constant other than an
+ * enumeration value is refused; scoped constants arrive with the semantic phase (WP-24).
+ */
+function constantInt(state: CodeGenState, expr: Expression): number {
+    if (expr.kind === 'IntLiteral') return expr.value;
+    if (expr.kind === 'UnaryExpr' && expr.operator === 'NEG') return -constantInt(state, expr.operand);
+    if (expr.kind === 'Identifier') {
+        const sym = resolveSymbol(state, expr.name);
+        if (!sym) fail(expr, `Unknown identifier '${expr.name}'`);
+        const initial = sym.initialValue as Expression | null;
+        if (sym.section === 'CONSTANT' && initial?.kind === 'IntLiteral') return initial.value;
+        fail(expr, `'${expr.name}' is not an integer constant`);
+    }
+    fail(expr, `A CASE label must be an integer constant`);
+}
+
+function emitCaseConstant(state: CodeGenState, value: number): void {
+    emitIntLiteral(state, { kind: 'IntLiteral', value, line: 0, column: 0 });
 }
 
 /**

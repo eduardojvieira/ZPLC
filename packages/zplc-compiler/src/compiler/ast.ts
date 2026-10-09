@@ -705,8 +705,19 @@ export interface RepeatStatement extends ASTNode {
  * CASE branch for CASE statement.
  */
 export interface CaseBranch {
-    values: (number | { start: number; end: number })[]; // Single values or ranges
+    values: CaseLabel[];
     statements: Statement[];
+}
+
+/**
+ * One label of a CASE branch: a value or a range `start..end`.
+ * The bounds are constant expressions (integer literal, negated literal, or the name
+ * of an integer constant or enumeration value); code generation evaluates them.
+ */
+export interface CaseLabel extends ASTNode {
+    kind: 'CaseLabel';
+    start: Expression;
+    end: Expression | null;
 }
 
 /**
