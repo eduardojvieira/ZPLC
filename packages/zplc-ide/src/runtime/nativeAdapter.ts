@@ -318,10 +318,13 @@ export class NativeAdapter implements IDebugAdapter {
       }
       if (event.method === 'status.changed' && isNativeRuntimeSnapshot(event.params)) {
         const snapshot = event.params;
-        const previousState = this._state;
         this.statusEventCount += 1;
         const normalizedSnapshot = this.publishSnapshot(snapshot, generation);
-        if (normalizedSnapshot.state === 'paused' && previousState !== 'paused') {
+        // The runtime sends status.changed with `paused` once per stop (the tick that hit the breakpoint;
+        // a paused runtime ticks no more) and answers pause/step through the reply, so every such event
+        // is a stop. It must not depend on the previous state: a resume that stops again in the same scan,
+        // or an event that beats the reply, leaves the adapter `paused` all along.
+        if (normalizedSnapshot.state === 'paused') {
           this.events.onBreakpointHit?.(snapshot.focused_vm.pc);
         }
       }
