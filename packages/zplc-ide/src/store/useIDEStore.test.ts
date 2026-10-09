@@ -1614,6 +1614,12 @@ describe('useIDEStore project folders over the project-files bridge', () => {
 
 describe('useIDEStore breakpoint binding', () => {
   const motorStartStop = fileURLToPath(new URL('../../projects/motor_start_stop', import.meta.url));
+  // Lines of src/Motor.st (the header comment pushes everything down): `SealIn := FALSE;`, `Forward := SealIn;`, the
+  // VAR_INPUT declaration and the END_IF. The two executable lines bind to PCs 56 and 104, which a comment-only edit keeps.
+  const MOTOR_SEAL_IN_OFF_LINE = 38;
+  const MOTOR_FORWARD_LINE = 46;
+  const MOTOR_DECLARATION_LINE = 19;
+  const MOTOR_END_IF_LINE = 44;
   const fileId = 'file:src/Motor.st';
   // The file exactly as an opened folder holds it: bare name, project-relative path.
   const motorFile: ProjectFileWithHandle = { id: fileId, name: 'Motor.st', path: 'src/Motor.st', parentPath: 'src', language: 'ST', content: '', isModified: false };
@@ -1628,7 +1634,7 @@ describe('useIDEStore breakpoint binding', () => {
     const built = await compilerCompile(motorStartStop);
     if (!built.ok || !built.debugMap) throw new Error('motor_start_stop did not compile');
     useIDEStore.setState({ loadedFiles: new Map([[fileId, motorFile]]) });
-    useIDEStore.getState().setBreakpoints(fileId, [21, 29]);
+    useIDEStore.getState().setBreakpoints(fileId, [MOTOR_SEAL_IN_OFF_LINE, MOTOR_FORWARD_LINE]);
     useIDEStore.getState().setDebugMap(built.debugMap);
 
     expect(useIDEStore.getState().getAllBreakpointPCs().sort((a, b) => a - b)).toEqual([56, 104]);
@@ -1640,8 +1646,8 @@ describe('useIDEStore breakpoint binding', () => {
     if (!built.ok || !built.debugMap) throw new Error('motor_start_stop did not compile');
     const other: ProjectFileWithHandle = { ...motorFile, id: 'file:src/Other.st', name: 'Other.st', path: 'src/Other.st' };
     useIDEStore.setState({ loadedFiles: new Map([[fileId, motorFile], [other.id, other]]) });
-    useIDEStore.getState().setBreakpoints(fileId, [3, 27]);
-    useIDEStore.getState().setBreakpoints(other.id, [21]);
+    useIDEStore.getState().setBreakpoints(fileId, [MOTOR_DECLARATION_LINE, MOTOR_END_IF_LINE]);
+    useIDEStore.getState().setBreakpoints(other.id, [MOTOR_SEAL_IN_OFF_LINE]);
     useIDEStore.getState().setDebugMap(built.debugMap);
 
     expect(useIDEStore.getState().getAllBreakpointPCs()).toEqual([]);
@@ -1653,7 +1659,7 @@ describe('useIDEStore breakpoint binding', () => {
     if (!built.ok || !built.debugMap) throw new Error('motor_start_stop did not compile');
     const legacyPou = { ...built.debugMap.pou.Motor!, sourceRef: undefined };
     useIDEStore.setState({ loadedFiles: new Map([[fileId, motorFile]]) });
-    useIDEStore.getState().setBreakpoints(fileId, [21, 29]);
+    useIDEStore.getState().setBreakpoints(fileId, [MOTOR_SEAL_IN_OFF_LINE, MOTOR_FORWARD_LINE]);
     useIDEStore.getState().setDebugMap({ ...built.debugMap, pou: { Motor: legacyPou } });
 
     expect(useIDEStore.getState().getAllBreakpointPCs().sort((a, b) => a - b)).toEqual([56, 104]);
