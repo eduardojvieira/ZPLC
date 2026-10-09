@@ -1,0 +1,8 @@
+{
+  "requirement": "RT-007",
+  "title": "a VM fault drives the outputs to their safe state",
+  "scans": 1,
+  "scanMs": 10,
+  "fault": true,
+  "expect": [{ "at": "%QX0.0", "type": "BOOL", "value": false }]
+}
