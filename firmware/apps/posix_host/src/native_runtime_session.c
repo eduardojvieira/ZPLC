@@ -37,6 +37,8 @@ typedef struct {
     char id[64];
     char method[64];
     char bytecode_hex[(ZPLC_MEM_CODE_SIZE * 2U) + 1U];
+    /* program.load only: the hex string's length as sent, kept when it is too long for bytecode_hex. */
+    size_t bytecode_hex_length;
     char input_id[32];
     uint32_t address;
     uint32_t length;
@@ -274,25 +276,32 @@ static void skip_json_space(const char **cursor)
     }
 }
 
-static int parse_canonical_json_string(const char **cursor, char *out, size_t out_size)
+/* Walk past one string that has no escapes or control characters; report where it starts and how long it is. */
+static int scan_canonical_json_string(const char **cursor, const char **start, size_t *length)
 {
-    const char *start;
-    size_t length;
-
     skip_json_space(cursor);
-    if (**cursor != '"' || out == NULL || out_size == 0U) return -1;
+    if (**cursor != '"') return -1;
     (*cursor)++;
-    start = *cursor;
+    *start = *cursor;
     while (**cursor != '\0' && **cursor != '"') {
         if (**cursor == '\\' || (unsigned char)**cursor < 0x20U) return -1;
         (*cursor)++;
     }
     if (**cursor != '"') return -1;
-    length = (size_t)(*cursor - start);
-    if (length >= out_size) return -1;
+    *length = (size_t)(*cursor - *start);
+    (*cursor)++;
+    return 0;
+}
+
+static int parse_canonical_json_string(const char **cursor, char *out, size_t out_size)
+{
+    const char *start;
+    size_t length;
+
+    if (out == NULL || out_size == 0U) return -1;
+    if (scan_canonical_json_string(cursor, &start, &length) != 0 || length >= out_size) return -1;
     memcpy(out, start, length);
     out[length] = '\0';
-    (*cursor)++;
     return 0;
 }
 
@@ -370,6 +379,30 @@ static int parse_simulation_input_params(const char **cursor,
     return seen == 0x07U ? 0 : -1;
 }
 
+/*
+ * The hex field of a control request. program.load measures a string too long for
+ * bytecode_hex instead of rejecting the whole request, so that the handler can
+ * tell the caller how large its program is; any other method still rejects it.
+ */
+static int parse_canonical_hex_param(const char **cursor,
+                                     const char *method,
+                                     zplc_native_request_t *request)
+{
+    const char *start;
+    size_t length;
+
+    if (strcmp(method, "program.load") != 0) {
+        return parse_canonical_json_string(cursor, request->bytecode_hex, sizeof(request->bytecode_hex));
+    }
+    if (scan_canonical_json_string(cursor, &start, &length) != 0) return -1;
+    request->bytecode_hex_length = length;
+    if (length < sizeof(request->bytecode_hex)) {
+        memcpy(request->bytecode_hex, start, length);
+        request->bytecode_hex[length] = '\0';
+    }
+    return 0;
+}
+
 static int parse_canonical_control_params(const char **cursor,
                                           const char *method,
                                           zplc_native_request_t *request)
@@ -417,8 +450,7 @@ static int parse_canonical_control_params(const char **cursor,
         } else if (((strcmp(method, "program.load") == 0 && strcmp(key, "bytecode_hex") == 0) ||
                     (strcmp(method, "program.load") != 0 && strcmp(key, "bytes_hex") == 0)) &&
                    (required & 0x04U) != 0U && (seen & 0x04U) == 0U) {
-            if (parse_canonical_json_string(cursor, request->bytecode_hex,
-                                            sizeof(request->bytecode_hex)) != 0) return -1;
+            if (parse_canonical_hex_param(cursor, method, request) != 0) return -1;
             seen |= 0x04U;
         } else if (strcmp(key, "pc") == 0 && (required & 0x08U) != 0U && (seen & 0x08U) == 0U) {
             if (parse_canonical_json_uint32(cursor, &request->pc) != 0) return -1;
@@ -1035,6 +1067,17 @@ static int handle_program_load(zplc_native_runtime_session_t *session,
         return format_error_response(request->id, "GENERATION_EXHAUSTED",
                                      "program generation is exhausted; restart the session",
                                      response, response_size);
+    }
+
+    if (request->bytecode_hex_length > (size_t)ZPLC_MEM_CODE_SIZE * 2U) {
+        /* Too long for bytecode_hex, so not copied: say how large it is, not that the request is broken. */
+        char message[128];
+
+        (void)snprintf(message, sizeof(message),
+                       "the program is %u bytes, but the native simulation loads at most %u bytes",
+                       (unsigned)((request->bytecode_hex_length + 1U) / 2U),
+                       (unsigned)ZPLC_MEM_CODE_SIZE);
+        return format_error_response(request->id, "PROGRAM_LOAD_FAILED", message, response, response_size);
     }
 
     if (request->bytecode_hex[0] == '\0') {

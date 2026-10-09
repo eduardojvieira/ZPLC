@@ -3387,6 +3387,118 @@ static void test_scenario_virtual_clock(void)
     zplc_native_runtime_session_shutdown(&session);
 }
 
+/*
+ * program.load takes an artifact of at most ZPLC_MEM_CODE_SIZE bytes, header and
+ * tables included. The largest one loads and runs; one byte more is refused by
+ * name, with its size and the limit, and is never mistaken for a broken envelope.
+ */
+static size_t build_program_of_size(uint8_t *artifact, size_t artifact_capacity,
+                                    uint8_t *code, size_t total_size)
+{
+    const size_t code_size = total_size - ZPLC_FILE_HEADER_SIZE - ZPLC_SEGMENT_ENTRY_SIZE;
+    size_t offset = 0U;
+
+    offset = emit_push32(code, offset, 7U);
+    offset = emit_store32(code, offset, ZPLC_MEM_OPI_BASE);
+    while (offset < code_size - 1U) code[offset++] = OP_NOP;
+    code[offset++] = OP_HALT;
+    return build_code_only_zplc(artifact, artifact_capacity, code, offset);
+}
+
+static void load_hex_program(zplc_native_runtime_session_t *session, const char *hex,
+                             char *request, size_t request_size, char *response,
+                             size_t response_size, char *event, size_t event_size)
+{
+    snprintf(request, request_size,
+             "{\"id\":\"big\",\"type\":\"request\",\"method\":\"program.load\","
+             "\"params\":{\"bytecode_hex\":\"%s\"}}", hex);
+    (void)zplc_native_runtime_session_handle_request(session, request, response, response_size,
+                                                     event, event_size);
+}
+
+static void test_program_load_size_boundary(void)
+{
+    static uint8_t code[ZPLC_MEM_CODE_SIZE];
+    static uint8_t artifact[ZPLC_MEM_CODE_SIZE + 64U];
+    static char hex[((ZPLC_MEM_CODE_SIZE + 2000U) * 2U) + 1U];
+    static char request[ZPLC_NATIVE_REQUEST_MAX];
+    zplc_native_runtime_session_t session;
+    char response[512];
+    char event[512];
+    size_t size;
+    char expected[64];
+
+    printf("\n=== Test: program.load size boundary ===\n");
+    zplc_native_runtime_session_init(&session);
+
+    size = build_program_of_size(artifact, sizeof(artifact), code, ZPLC_MEM_CODE_SIZE);
+    TEST_ASSERT(size == ZPLC_MEM_CODE_SIZE, "the largest artifact is exactly ZPLC_MEM_CODE_SIZE bytes");
+    bytes_to_hex(artifact, size, hex, sizeof(hex));
+    load_hex_program(&session, hex, request, sizeof(request), response, sizeof(response),
+                     event, sizeof(event));
+    snprintf(expected, sizeof(expected), "\"program_size\":%u", (unsigned)ZPLC_MEM_CODE_SIZE);
+    TEST_ASSERT_CONTAINS(response, expected, "the largest artifact loads");
+    TEST_ASSERT(session.program_loaded == 1U && session.program_size == ZPLC_MEM_CODE_SIZE,
+                "the largest artifact becomes the active program");
+    (void)zplc_native_runtime_session_handle_request(&session,
+        "{\"id\":\"start\",\"type\":\"request\",\"method\":\"execution.start\",\"params\":{}}",
+        response, sizeof(response), event, sizeof(event));
+    (void)zplc_native_runtime_session_tick(&session, 100U, event, sizeof(event));
+    TEST_ASSERT(zplc_core_get_opi(0U) == 7U && zplc_core_is_halted() != 0 &&
+                zplc_core_get_pc() == size - ZPLC_FILE_HEADER_SIZE - ZPLC_SEGMENT_ENTRY_SIZE,
+                "the largest artifact runs to its last instruction");
+    (void)zplc_native_runtime_session_handle_request(&session,
+        "{\"id\":\"stop\",\"type\":\"request\",\"method\":\"execution.stop\",\"params\":{}}",
+        response, sizeof(response), event, sizeof(event));
+
+    snapshot_native_runtime(&session);
+    zplc_hal_persist_test_fail_at(0UL);
+    size = build_program_of_size(artifact, sizeof(artifact), code, ZPLC_MEM_CODE_SIZE + 1U);
+    TEST_ASSERT(size == ZPLC_MEM_CODE_SIZE + 1U, "the first artifact over the limit is one byte larger");
+    bytes_to_hex(artifact, size, hex, sizeof(hex));
+    load_hex_program(&session, hex, request, sizeof(request), response, sizeof(response),
+                     event, sizeof(event));
+    TEST_ASSERT_CONTAINS(response, "\"id\":\"big\"", "the refusal answers the request id, not 'unknown'");
+    TEST_ASSERT_CONTAINS(response, "PROGRAM_LOAD_FAILED", "one byte over the limit is refused");
+    snprintf(expected, sizeof(expected), "is %u bytes", (unsigned)(ZPLC_MEM_CODE_SIZE + 1U));
+    TEST_ASSERT_CONTAINS(response, expected, "the refusal names the program size");
+    snprintf(expected, sizeof(expected), "at most %u bytes", (unsigned)ZPLC_MEM_CODE_SIZE);
+    TEST_ASSERT_CONTAINS(response, expected, "the refusal names the limit");
+    TEST_ASSERT(strstr(response, "unable to parse request envelope") == NULL,
+                "an oversize program is not reported as a broken request");
+    TEST_ASSERT(zplc_hal_persist_test_operation_count() == 0UL,
+                "an oversize program performs no persistence operation");
+    TEST_ASSERT(native_runtime_matches_snapshot(&session),
+                "an oversize program leaves the active program untouched");
+
+    /* Well past the limit, and a hex string of odd length, are both sized and refused. */
+    memset(hex, '0', (ZPLC_MEM_CODE_SIZE + 2000U) * 2U);
+    hex[(ZPLC_MEM_CODE_SIZE + 2000U) * 2U] = '\0';
+    load_hex_program(&session, hex, request, sizeof(request), response, sizeof(response),
+                     event, sizeof(event));
+    snprintf(expected, sizeof(expected), "is %u bytes", (unsigned)(ZPLC_MEM_CODE_SIZE + 2000U));
+    TEST_ASSERT_CONTAINS(response, expected, "a program far over the limit is sized in the refusal");
+    hex[(ZPLC_MEM_CODE_SIZE * 2U) + 1U] = '\0';
+    load_hex_program(&session, hex, request, sizeof(request), response, sizeof(response),
+                     event, sizeof(event));
+    snprintf(expected, sizeof(expected), "is %u bytes", (unsigned)(ZPLC_MEM_CODE_SIZE + 1U));
+    TEST_ASSERT_CONTAINS(response, expected, "an odd-length hex string over the limit is rounded up and refused");
+    TEST_ASSERT(native_runtime_matches_snapshot(&session), "every refusal leaves the active program untouched");
+
+    /* Only program.load is sized; a string too long for any other method stays a malformed request. */
+    hex[(ZPLC_MEM_CODE_SIZE * 2U) + 1U] = '0';
+    hex[(ZPLC_MEM_CODE_SIZE * 2U) + 2U] = '\0';
+    snprintf(request, sizeof(request),
+             "{\"id\":\"w\",\"type\":\"request\",\"method\":\"memory.write\","
+             "\"params\":{\"address\":0,\"bytes_hex\":\"%s\"}}", hex);
+    (void)zplc_native_runtime_session_handle_request(&session, request, response, sizeof(response),
+                                                     event, sizeof(event));
+    TEST_ASSERT_CONTAINS(response, "unable to parse request envelope",
+                         "a string too long for another method is still a malformed request");
+
+    zplc_native_runtime_session_shutdown(&session);
+}
+
 static void test_posix_hal_lifecycle_clears_tick_override(void)
 {
     printf("\n=== Test: POSIX HAL logical clock lifecycle ===\n");
@@ -3435,6 +3547,7 @@ int main(void)
     test_native_persist_failure_preserves_clean_session();
     test_native_code_only_and_corrupt_restore();
     test_rejected_load_preserves_running_session();
+    test_program_load_size_boundary();
     test_process_image_differential_artifacts();
     test_single_task_uses_task_metadata();
     test_persist_commit_fault_sweep();

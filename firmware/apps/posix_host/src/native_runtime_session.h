@@ -17,6 +17,26 @@
 #define ZPLC_MEM_CODE_SIZE 0xB000U
 #endif
 
+/*
+ * Sizes of the lines the POSIX host reads and writes on stdio (see main.c).
+ *
+ * A request line is a JSON envelope plus, for program.load, the whole program as
+ * hex: two characters per byte, ZPLC_MEM_CODE_SIZE bytes at most. The envelope
+ * is the id (63 characters at most), the method and the JSON punctuation, well
+ * under ZPLC_NATIVE_REQUEST_ENVELOPE_MAX; the room that is left over lets a
+ * program a little past the limit arrive whole, so it is refused by name instead
+ * of being cut. The request buffer holds the line, its newline and the string
+ * terminator. The IDE mirrors these numbers in packages/zplc-ide/electron/security.ts
+ * and a test there fails when they drift apart.
+ *
+ * Responses and events are one line each; the IDE supervisor drops a session
+ * that writes a line over 8191 bytes, so these stay at 8192.
+ */
+#define ZPLC_NATIVE_REQUEST_ENVELOPE_MAX 8192U
+#define ZPLC_NATIVE_REQUEST_MAX ((ZPLC_MEM_CODE_SIZE * 2U) + ZPLC_NATIVE_REQUEST_ENVELOPE_MAX)
+#define ZPLC_NATIVE_RESPONSE_MAX 8192U
+#define ZPLC_NATIVE_EVENT_MAX 8192U
+
 #ifdef __cplusplus
 extern "C" {
 #endif

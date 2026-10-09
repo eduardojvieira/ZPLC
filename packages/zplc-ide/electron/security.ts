@@ -58,7 +58,19 @@ const SAFETY_DIAGNOSTIC_CODES = new Set([
   'WORKSPACE_INVALID', 'WORKSPACE_MISSING', 'WORKSPACE_INVALID_DIRECTORY', 'WORKSPACE_SYMLINK', 'WORKSPACE_INVALID_FILE', 'WORKSPACE_READ_FAILED', 'WORKSPACE_LIMIT', 'PROJECT_INVALID', 'PROGRAM_NOT_FOUND', 'COMPILATION_FAILED',
 ]);
 const CANDIDATE_CONTENT_MAX_LENGTH = 256 * 1024;
-const NATIVE_REQUEST_BUFFER_SIZE = 8192;
+/**
+ * The largest program the native runtime loads, in bytes of the .zplc artifact (header and tables included):
+ * ZPLC_MEM_CODE_SIZE in firmware/lib/zplc_core/include/zplc_isa.h. security.test.ts reads that header and fails
+ * when this number drifts from it.
+ */
+export const NATIVE_PROGRAM_MAX_BYTES = 0xB000;
+/**
+ * What a request line may hold besides the hex of a program: ZPLC_NATIVE_REQUEST_ENVELOPE_MAX in
+ * firmware/apps/posix_host/src/native_runtime_session.h (checked by security.test.ts as well).
+ */
+export const NATIVE_REQUEST_ENVELOPE_MAX = 8192;
+/** The runtime's request buffer, which holds a line, its newline and a terminator: ZPLC_NATIVE_REQUEST_MAX. */
+export const NATIVE_REQUEST_BUFFER_SIZE = NATIVE_PROGRAM_MAX_BYTES * 2 + NATIVE_REQUEST_ENVELOPE_MAX;
 const NATIVE_REQUEST_LINE_MAX = NATIVE_REQUEST_BUFFER_SIZE - 1;
 
 interface RendererFrame {
@@ -178,7 +190,7 @@ function isAllowedNativeSimulationParams(
       return hasExactKeys(params, []);
     case 'program.load':
       return hasExactKeys(params, ['bytecode_hex'])
-        && isNonEmptyHex(params.bytecode_hex)
+        && isHexBytes(params.bytecode_hex, NATIVE_PROGRAM_MAX_BYTES)
         && new TextEncoder().encode(`${JSON.stringify(request)}\n`).length <= NATIVE_REQUEST_LINE_MAX;
     case 'simulation.input.set':
       return hasExactKeys(params, ['input_id', 'active', 'program_generation'])

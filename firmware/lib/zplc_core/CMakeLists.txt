@@ -217,6 +217,7 @@ add_executable(test_host_stdio
 )
 
 target_include_directories(test_host_stdio PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../../apps/posix_host/src
 )
 

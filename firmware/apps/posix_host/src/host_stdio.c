@@ -16,10 +16,11 @@
  * descriptor, so a buffered FILE would hide a second request that arrived in the
  * same read(2) as the first; the lines are therefore split here instead.
  * ponytail: one static buffer for the one input stream the runtime has (stdin);
- * make it a per-stream struct if a second reader ever appears.
+ * make it a per-stream struct if a second reader ever appears. It holds
+ * ZPLC_HOST_STDIO_PENDING_MAX (96 KiB, one whole maximum request line); a
+ * caller whose buffer is larger than that gets lines cut at the pending size,
+ * so raise the constant together with ZPLC_NATIVE_REQUEST_MAX.
  */
-#define ZPLC_HOST_STDIO_PENDING_MAX 65536U
-
 static struct {
     int fd;
     size_t len;

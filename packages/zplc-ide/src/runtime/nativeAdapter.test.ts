@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test';
 
+import { NATIVE_PROGRAM_MAX_BYTES } from '../../electron/security';
 import { DEBUG_ADAPTER_TYPE } from './debugAdapter';
 import { NativeAdapter } from './nativeAdapter';
 import { createNativeRequest } from './nativeProtocol';
@@ -210,6 +211,32 @@ describe('NativeAdapter', () => {
     expect(info.pc).toBe(12);
     expect(info.sp).toBe(2);
     expect(info.cycles).toBe(7);
+  });
+
+  it('sends the largest program the runtime loads, whole', async () => {
+    const adapter = new NativeAdapter({ startSession, stopSession, request });
+    await adapter.connect();
+    requestMock.mockClear();
+
+    await adapter.loadProgram(new Uint8Array(NATIVE_PROGRAM_MAX_BYTES));
+
+    expect(requestMock).toHaveBeenCalledTimes(1);
+    const sent = requestMock.mock.calls[0]![0];
+    expect(sent.method).toBe('program.load');
+    expect(String(sent.params.bytecode_hex)).toHaveLength(NATIVE_PROGRAM_MAX_BYTES * 2);
+  });
+
+  it('refuses a program over the runtime limit in plain words, before sending it', async () => {
+    const adapter = new NativeAdapter({ startSession, stopSession, request });
+    await adapter.connect();
+    requestMock.mockClear();
+
+    await expect(adapter.loadProgram(new Uint8Array(NATIVE_PROGRAM_MAX_BYTES + 1))).rejects.toThrow(
+      `the program is ${NATIVE_PROGRAM_MAX_BYTES + 1} bytes, but the native simulation loads at most ${NATIVE_PROGRAM_MAX_BYTES} bytes`,
+    );
+    expect(requestMock).not.toHaveBeenCalled();
+    expect(adapter.connected).toBe(true);
+    expect(adapter.state).toBe('idle');
   });
 
   it('stages only closed simulation inputs after a native program activation', async () => {
