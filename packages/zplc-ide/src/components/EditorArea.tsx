@@ -21,6 +21,8 @@ import { editor as monacoEditor } from 'monaco-editor';
 import { disposeClosedEditorModels } from './editorModels';
 import { canCommitVisualEditorChange } from '../editors/visualCommitGuard';
 import { displayEditorFileName } from './editorFilePresentation';
+import { UnsavedChangesDialog } from './UnsavedChangesDialog';
+import { unsavedOutcome, type UnsavedChoice } from '../utils/unsavedChanges';
 import {
   recordVisualSnapshot,
   redoVisualSnapshot,
@@ -62,6 +64,8 @@ export function EditorArea() {
     openTabs,
     setActiveFile,
     closeTab,
+    discardFile,
+    saveFile,
     updateFileContent,
     showSettings,
     toggleSettings,
@@ -70,6 +74,8 @@ export function EditorArea() {
     projectSession,
   } = useIDEStore();
 
+  const [unsavedTabId, setUnsavedTabId] = useState<string | null>(null);
+  const [savingTab, setSavingTab] = useState(false);
   const activeFile = getActiveFile();
   const tabFiles = openTabs
     .map((id) => getFile(id))
@@ -246,12 +252,32 @@ export function EditorArea() {
     focusTab(destination);
   }, [focusTab, selectFileTab, showSettings, tabFiles]);
 
-  const handleCloseTab = useCallback((fileId: string) => {
+  const closeTabAndFocus = useCallback((fileId: string, discard: boolean) => {
     const remainingFileIds = tabFiles.filter((file) => file.id !== fileId).map((file) => file.id);
     const nextFileId = selectedFileId === fileId ? (remainingFileIds.at(-1) ?? null) : selectedFileId;
-    closeTab(fileId);
+    if (discard) discardFile(fileId);
+    else closeTab(fileId);
     focusTab(showSettings ? SETTINGS_TAB_ID : nextFileId);
-  }, [closeTab, focusTab, selectedFileId, showSettings, tabFiles]);
+  }, [closeTab, discardFile, focusTab, selectedFileId, showSettings, tabFiles]);
+
+  // Closing a modified tab asks first; an unmodified one closes at once.
+  const handleCloseTab = useCallback((fileId: string) => {
+    if (getFile(fileId)?.isModified) setUnsavedTabId(fileId);
+    else closeTabAndFocus(fileId, false);
+  }, [closeTabAndFocus, getFile]);
+
+  const answerUnsavedTab = useCallback(async (choice: UnsavedChoice) => {
+    const fileId = unsavedTabId;
+    if (!fileId) return;
+    if (choice === 'save') {
+      setSavingTab(true);
+      await saveFile(fileId);
+      setSavingTab(false);
+    }
+    const stillModified = useIDEStore.getState().getFile(fileId)?.isModified ?? false;
+    if (unsavedOutcome(choice, stillModified) === 'proceed') closeTabAndFocus(fileId, choice === 'discard');
+    setUnsavedTabId(null);
+  }, [closeTabAndFocus, saveFile, unsavedTabId]);
 
   const handleCloseSettings = useCallback(() => {
     toggleSettings();
@@ -482,6 +508,16 @@ export function EditorArea() {
           )
         ) : null}
       </div>
+      {unsavedTabId && (
+        <UnsavedChangesDialog
+          title="Unsaved changes in this tab"
+          items={[getFile(unsavedTabId)?.name ?? unsavedTabId]}
+          busy={savingTab}
+          saveLabel="Save and close"
+          discardLabel="Discard and close"
+          onChoice={(choice) => void answerUnsavedTab(choice)}
+        />
+      )}
     </div>
   );
 }

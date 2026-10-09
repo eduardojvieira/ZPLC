@@ -5,7 +5,7 @@
  * This is the entry point for the Electron desktop application.
  */
 
-import { app, BrowserWindow, dialog, session, ipcMain, safeStorage, type IpcMainInvokeEvent, type WebContents } from 'electron';
+import { app, BrowserWindow, dialog, Menu, session, ipcMain, safeStorage, type IpcMainInvokeEvent, type WebContents } from 'electron';
 import { createHash } from 'node:crypto';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
@@ -18,6 +18,8 @@ import { createToolExecutionAudit } from './toolExecutionAudit.js';
 import { selectSerialPort } from './serialPortSelection.js';
 import { createAiProvider } from './aiProvider.js';
 import { createLearnProgressStore } from './learnProgressStore.js';
+import { buildApplicationMenu, describeApplicationMenu } from './appMenu.js';
+import { createCloseGuard } from './closeGuard.js';
 import {
   DEFAULT_DEVELOPMENT_RENDERER_PORT,
   createContentSecurityPolicy,
@@ -26,6 +28,7 @@ import {
   isAllowedWorkspaceTestRunRequest,
   isAllowedFirmwareBuildRequest,
   isAllowedCandidateChangeSetReviewRequest,
+  isAllowedCloseGuardDirty,
   isAllowedAiProviderConfig,
   isAllowedAiProviderKey,
   isAllowedAiProviderRequest,
@@ -74,6 +77,7 @@ const AI_PROVIDER_CHANNEL = {
   STORE_KEY: 'ai-provider:store-key', CLEAR_KEY: 'ai-provider:clear-key', REQUEST: 'ai-provider:request', CANCEL: 'ai-provider:cancel',
 } as const;
 const LEARN_PROGRESS_CHANNEL = { READ: 'learn-progress:read', MERGE: 'learn-progress:merge' } as const;
+const CLOSE_GUARD_CHANNEL = { SET_DIRTY: 'close-guard:set-dirty', CLOSE_NOW: 'close-guard:close-now', CLOSE_REQUESTED: 'close-guard:close-requested' } as const;
 
 // ESM equivalent of __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -90,6 +94,7 @@ let nativeSimulationOwner: RendererOwner | null = null;
 const workspaceTestGateway = createWorkspaceTestGateway();
 const firmwareBuildGateway = createFirmwareBuildGateway();
 const toolExecutionAudit = createToolExecutionAudit();
+const closeGuard = createCloseGuard();
 const toolApiUrl = pathToFileURL(path.join(__dirname, 'toolApi.js')).href;
 let aiProvider: ReturnType<typeof createAiProvider> | null = null;
 let learnProgress: ReturnType<typeof createLearnProgressStore> | null = null;
@@ -271,6 +276,19 @@ function activateRendererDocument(ownerId: number): void {
   activeRendererOwner = { ownerId, epoch: ++rendererDocumentEpoch };
 }
 
+/** Asks the renderer to offer save, discard or cancel; it answers with CLOSE_NOW for save and discard. */
+function askRendererBeforeLosingWork(action: 'close' | 'reload'): void {
+  const webContents = mainWindow?.webContents;
+  if (!webContents || webContents.isDestroyed() || !isExpectedRendererDocument(webContents.getURL(), expectedRendererUrl())) return;
+  webContents.send(CLOSE_GUARD_CHANNEL.CLOSE_REQUESTED, action);
+}
+
+function requestReload(): void {
+  if (!mainWindow) return;
+  if (closeGuard.request('reload') === 'proceed') mainWindow.webContents.reload();
+  else askRendererBeforeLosingWork('reload');
+}
+
 /**
  * Create the main application window
  */
@@ -296,6 +314,9 @@ function createWindow(): void {
   const webContents = mainWindow.webContents;
 
   webContents.on('render-process-gone', () => revokeRendererOwner(ownerWebContentsId));
+  webContents.on('render-process-gone', () => closeGuard.release());
+  mainWindow.on('unresponsive', () => closeGuard.release());
+  mainWindow.on('responsive', () => closeGuard.resume());
   webContents.on('destroyed', () => revokeRendererOwner(ownerWebContentsId));
   webContents.on('did-start-navigation', (details) => {
     if (details.isMainFrame && !details.isSameDocument) {
@@ -320,6 +341,14 @@ function createWindow(): void {
     // In production, load the built index.html
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
   }
+
+  // Closing with modified files asks first: save, discard or cancel (cancel keeps the window).
+  mainWindow.on('close', (event) => {
+    if (closeGuard.request('close') === 'ask') {
+      event.preventDefault();
+      askRendererBeforeLosingWork('close');
+    }
+  });
 
   // Handle window close
   mainWindow.on('closed', () => {
@@ -429,6 +458,18 @@ function setupIPC(): void {
       arch: process.arch,
       isPackaged: app.isPackaged,
     };
+  });
+
+  ipcMain.handle(CLOSE_GUARD_CHANNEL.SET_DIRTY, (event, ...args: unknown[]) => {
+    if (args.length !== 1 || !isAllowedCloseGuardDirty(args[0]) || !currentRendererOwner(event)) throw new Error('Request denied');
+    closeGuard.setDirty(args[0]);
+  });
+  ipcMain.handle(CLOSE_GUARD_CHANNEL.CLOSE_NOW, (event, ...args: unknown[]) => {
+    if (args.length !== 0 || !currentRendererOwner(event)) throw new Error('Request denied');
+    const action = closeGuard.confirm();
+    if (action === 'reload') mainWindow?.webContents.reload();
+    // ponytail: on macOS a vetoed Cmd+Q is not resumed after Discard; a second Cmd+Q quits.
+    else if (action === 'close') mainWindow?.destroy();
   });
 
   ipcMain.handle(TOOL_EXECUTION_AUDIT_CHANNEL.LIST, (event, ...args: unknown[]) => {
@@ -764,6 +805,11 @@ app.whenReady().then(async () => {
   setupWebSerial();
   setupSerialPortSelection();
   setupIPC();
+  Menu.setApplicationMenu(Menu.buildFromTemplate(buildApplicationMenu({
+    platform: process.platform, isPackaged: app.isPackaged, appName: app.getName(), requestReload,
+  })));
+  const registeredMenu = Menu.getApplicationMenu();
+  if (registeredMenu) console.info(describeApplicationMenu(registeredMenu));
   createWindow();
 
   // macOS: Re-create window when dock icon is clicked

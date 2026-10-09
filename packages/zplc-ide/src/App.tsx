@@ -21,6 +21,7 @@ import { Toolbar } from './components/Toolbar';
 import { EditorArea } from './components/EditorArea';
 import { Console } from './components/Console';
 import { WelcomeScreen } from './components/WelcomeScreen';
+import { CloseGuard } from './components/CloseGuard';
 import { useTheme } from './hooks/useTheme';
 import { useIDEStore } from './store/useIDEStore';
 import { useDebugController } from './hooks/useDebugController';
@@ -50,12 +51,14 @@ function App() {
     return (
       <div className="h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-surface-900)]">
         <WelcomeScreen />
+        <CloseGuard />
       </div>
     );
   }
 
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-surface-900)]">
+      <CloseGuard />
       {/* Unified Toolbar */}
       <Toolbar debugController={debugController} />
 

@@ -1366,3 +1366,36 @@ describe('useIDEStore file creation admission', () => {
     expect({ creates, writes }).toEqual({ creates: 1, writes: 1 });
   });
 });
+
+describe('useIDEStore discarding a modified file', () => {
+  const file = (id: string, name: string, isModified: boolean) => ({
+    id, name, path: `src/${name}`, parentPath: 'src', language: 'ST' as const, content: `edited ${name}`, isModified,
+  });
+
+  it('drops the unsaved content, closes the tab and falls back to the previous tab', () => {
+    useIDEStore.setState({
+      loadedFiles: new Map([['a', file('a', 'A.st', false)], ['b', file('b', 'B.st', true)]]),
+      openTabs: ['a', 'b'], activeFileId: 'b', projectConfigDirty: false,
+    });
+
+    useIDEStore.getState().discardFile('b');
+
+    const state = useIDEStore.getState();
+    expect([...state.loadedFiles.keys()]).toEqual(['a']);
+    expect(state.openTabs).toEqual(['a']);
+    expect(state.activeFileId).toBe('a');
+    expect(state.hasUnsavedChanges()).toBe(false);
+  });
+
+  it('keeps the active tab when another tab is discarded', () => {
+    useIDEStore.setState({
+      loadedFiles: new Map([['a', file('a', 'A.st', true)], ['b', file('b', 'B.st', false)]]),
+      openTabs: ['a', 'b'], activeFileId: 'b', projectConfigDirty: false,
+    });
+
+    useIDEStore.getState().discardFile('a');
+
+    expect(useIDEStore.getState().openTabs).toEqual(['b']);
+    expect(useIDEStore.getState().activeFileId).toBe('b');
+  });
+});

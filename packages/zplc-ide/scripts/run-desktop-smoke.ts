@@ -81,6 +81,17 @@ async function showFile(cdp: Cdp, id: string): Promise<void> {
     return active === id && await monacoEval(cdp, 'return editor?.getModel()?.getValue();') === expected ? true : undefined;
   });
 }
+const dialogTitle = `document.querySelector('[data-unsaved-changes-dialog]')?.closest('[role="dialog"]')?.querySelector('h2')?.textContent ?? null`;
+const dialogButton = (label: string) => `(() => { const dialog = document.querySelector('[data-unsaved-changes-dialog]'); const button = [...(dialog?.querySelectorAll('button') ?? [])].find((item) => item.textContent === ${JSON.stringify(label)}); if (!button || button.disabled) return false; button.click(); return true; })()`;
+async function expectPrompt(cdp: Cdp, title: string): Promise<void> {
+  await waitFor(`unsaved-changes prompt "${title}"`, async () => await cdp.evaluate(dialogTitle) === title ? true : undefined);
+}
+async function answerPrompt(cdp: Cdp, label: string): Promise<void> {
+  assert(await cdp.evaluate(dialogButton(label)) === true, `The unsaved-changes prompt has no enabled "${label}" button.`);
+}
+async function promptGone(cdp: Cdp): Promise<void> {
+  await waitFor('unsaved-changes prompt to close', async () => await cdp.evaluate(dialogTitle) === null ? true : undefined);
+}
 const card = `(() => { const panel = document.querySelector('[aria-label="Live native POSIX motor"]'); if (!panel) return null; const text = panel.textContent ?? ''; const get = (name) => Array.from(panel.querySelectorAll('button')).find((button) => button.textContent === name)?.disabled; return { text, cycles: Number((text.match(/·\\s*(\\d+) cycles/) ?? [])[1]), startDisabled: get('Start'), stopDisabled: get('Stop'), assertDisabled: get('Assert E-stop'), releaseDisabled: get('Release E-stop') }; })()`;
 
 async function main(): Promise<void> {
@@ -101,6 +112,9 @@ async function main(): Promise<void> {
     const bridge = await waitFor('real preload bridge', async () => { const value = await cdp!.evaluate('({ href: location.href, bridge: Boolean(window.electronAPI?.isElectron && window.electronAPI.nativeSimulation), keys: Object.keys(window).filter((key) => key.toLowerCase().includes("electron")) })') as { bridge?: unknown }; return value.bridge === true ? value : undefined; }).catch((error: unknown) => { throw new Error(`${error instanceof Error ? error.message : String(error)} targets=${targetSummary}`); });
     assert((bridge as { bridge?: unknown }).bridge === true, `The real preload bridge is unavailable: ${JSON.stringify(bridge)} targets=${targetSummary}`);
     const appInfo = await cdp.evaluate('window.electronAPI.getAppInfo()');
+    const menuReport = output.join('').split('\n').find((line) => line.includes('[zplc] application menu'));
+    const menuAccelerators = /accelerators=(\S*)/.exec(menuReport ?? '')?.[1].split(',') ?? [];
+    assert(menuReport?.includes('toggledevtools') && menuAccelerators.includes('CmdOrCtrl+R') && menuAccelerators.includes('CmdOrCtrl+Shift+R'), `The development menu should keep its guarded reload entries: ${menuReport}`);
     const frame = await cdp.command('Page.getFrameTree') as { frameTree?: { frame?: { id?: string } } };
     const mainFrameId = frame.frameTree?.frame?.id ?? '';
     const electronVersion = JSON.parse(readFileSync(join(packageRoot, 'node_modules', 'electron', 'package.json'), 'utf8')).version as string;
@@ -205,10 +219,43 @@ async function main(): Promise<void> {
     await monacoEval(cdp, `editor.trigger('smoke', 'undo', null);`);
     await waitFor('undo in the first file', async () => (await fileContent(cdp!, first)) !== typed ? true : undefined);
     assert(await fileContent(cdp, second) === originalSecond, 'Undo in the first file changed the second file.');
+    // IDE-005: closing a tab, the window or a reload with modified files asks first; cancel keeps everything.
+    const closeTabButton = (id: string) => `(() => { const button = document.getElementById(${JSON.stringify(`editor-tab-${id}`)})?.parentElement?.querySelector('button[aria-label^="Close "]'); if (!button) return false; button.click(); return true; })()`;
+    const openTabs = () => storeEval(cdp!, `return state().openTabs;`) as Promise<string[]>;
+    assert(await storeEval(cdp, `return state().loadedFiles.get(${JSON.stringify(first)})?.isModified;`) === true, 'The first file should be modified before the close prompts.');
+    assert(await cdp.evaluate(closeTabButton(first)) === true, 'The first file tab has no close button.');
+    await expectPrompt(cdp, 'Unsaved changes in this tab');
+    await answerPrompt(cdp, 'Cancel');
+    await promptGone(cdp);
+    assert((await openTabs()).includes(first) && await fileContent(cdp, first) !== originalFirst, 'Cancel must keep the modified tab open with its changes.');
+    assert(await cdp.evaluate(closeTabButton(first)) === true, 'The first file tab has no close button after cancel.');
+    await expectPrompt(cdp, 'Unsaved changes in this tab');
+    await answerPrompt(cdp, 'Discard and close');
+    await promptGone(cdp);
+    assert(!(await openTabs()).includes(first) && await fileContent(cdp, first) === undefined, 'Discard must close the tab and drop the unsaved content.');
+    assert(!(await monacoEval(cdp, `return monaco.editor.getModels().map((model) => model.uri.path);`) as string[]).some((path) => path.endsWith('/file:src/Motor.st')), 'Closing the tab must drop its Monaco model.');
+    await storeEval(cdp, `await state().openFile(${JSON.stringify(first)}); return true;`);
+    await showFile(cdp, first);
+    assert(await fileContent(cdp, first) === originalFirst, 'Reopening a discarded file must read it from disk again.');
+    await showFile(cdp, second);
+    await monacoEval(cdp, `editor.trigger('smoke', 'type', { text: 'X' });`);
+    await waitFor('second file modified', async () => await storeEval(cdp!, `return state().loadedFiles.get(${JSON.stringify(second)})?.isModified;`) === true ? true : undefined);
+    await cdp.evaluate('window.__zplcSmokeDocument = 1');
+    assert(electron.exitCode === null, 'Electron exited before the window close was requested.');
+    void cdp.command('Browser.close').catch(() => undefined);
+    await expectPrompt(cdp, 'Unsaved changes before you close');
+    await answerPrompt(cdp, 'Cancel');
+    await promptGone(cdp);
+    assert(electron.exitCode === null && await cdp.evaluate('window.__zplcSmokeDocument') === 1, 'Cancel must keep the window open.');
+    assert(await storeEval(cdp, `return state().hasUnsavedChanges();`) === true, 'Cancel must keep the unsaved changes.');
     const finalFrame = await cdp.command('Page.getFrameTree') as { frameTree?: { frame?: { id?: string } } };
     assert((finalFrame.frameTree?.frame?.id ?? '') === mainFrameId, 'Renderer main frame changed during smoke.');
     assert(JSON.stringify(await cdp.evaluate('window.electronAPI.getAppInfo()')) === JSON.stringify(appInfo), 'Preload IPC identity changed during smoke.');
     assert(cdp.errors.length === 0, `Renderer errors: ${cdp.errors.join(' | ')} details=${cdp.errorDetails.join(' | ')}`);
+    void cdp.command('Browser.close').catch(() => undefined);
+    await expectPrompt(cdp, 'Unsaved changes before you close');
+    await answerPrompt(cdp, 'Discard and close');
+    assert(await Promise.race([electron.exited, Bun.sleep(10_000).then(() => null)]) === 0, 'Discard must close the window and exit cleanly.');
     console.log('Electron development-host Motor Start/Stop smoke passed through real preload/IPC and native POSIX. It is not hardware, HIL, Zephyr, timing, or packaged-artifact evidence.');
   } catch (error) { throw new Error(`${error instanceof Error ? error.message : String(error)}\n${output.join('').slice(-12_000)}`); } finally { if (cdp) await cdp.command('Browser.close').catch(() => undefined); cdp?.close(); await Promise.race([electron?.exited ?? Promise.resolve(), Bun.sleep(3_000)]); await stop(electron); await stop(vite); if (tempRoot.startsWith(join(tmpdir(), 'zplc-electron-smoke-')) && existsSync(tempRoot)) rmSync(tempRoot, { recursive: true, force: true }); }
 }

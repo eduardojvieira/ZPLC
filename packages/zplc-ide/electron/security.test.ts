@@ -8,6 +8,7 @@ import {
   isAllowedWorkspaceTestRunRequest,
   isAllowedFirmwareBuildRequest,
   isAllowedCandidateChangeSetReviewRequest,
+  isAllowedCloseGuardDirty,
   isAllowedAiProviderConfig,
   isAllowedAiProviderKey,
   isAllowedAiProviderRequest,
@@ -343,5 +344,10 @@ describe('Electron security boundary', () => {
     expect(smoke).toContain('http://localhost:43127');
     expect(smoke).toContain('ws://localhost:43127');
     expect(smoke).not.toContain('localhost:3000');
+  });
+  it('accepts only a boolean modified-files report from the close guard', () => {
+    expect(isAllowedCloseGuardDirty(true)).toBe(true);
+    expect(isAllowedCloseGuardDirty(false)).toBe(true);
+    for (const value of [undefined, null, 0, 1, 'true', {}, [true]]) expect(isAllowedCloseGuardDirty(value)).toBe(false);
   });
 });

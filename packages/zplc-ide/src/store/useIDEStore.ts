@@ -300,6 +300,8 @@ interface IDEState {
   setActiveFile: (fileId: string | null) => void;
   updateFileContent: (fileId: string, content: string) => void;
   closeTab: (fileId: string) => void;
+  /** Drops a file's unsaved content and closes its tab; the next open reads the file from disk again. */
+  discardFile: (fileId: string) => void;
 
   // Actions - Connection
   setConnectionStatus: (status: ConnectionState['status']) => void;
@@ -1173,6 +1175,19 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     set({
       openTabs: newTabs,
       activeFileId: newActiveId,
+    });
+  },
+
+  discardFile: (fileId: string) => {
+    const { loadedFiles, openTabs, activeFileId } = get();
+    const newTabs = openTabs.filter(id => id !== fileId);
+    const files = new Map(loadedFiles);
+    files.delete(fileId);
+
+    set({
+      loadedFiles: files,
+      openTabs: newTabs,
+      activeFileId: activeFileId === fileId ? newTabs[newTabs.length - 1] || null : activeFileId,
     });
   },
 

@@ -52,6 +52,11 @@ declare global {
         compile: (request: { workspaceId: string }) => Promise<unknown>;
         safetyCheck: (request: { workspaceId: string }) => Promise<unknown>;
       };
+      closeGuard?: {
+        setDirty: (dirty: boolean) => Promise<void>;
+        closeNow: () => Promise<void>;
+        onCloseRequested: (callback: (action: 'close' | 'reload') => void) => () => void;
+      };
       learnProgress?: {
         read: () => Promise<string[]>;
         merge: (mastered: string[]) => Promise<string[]>;
