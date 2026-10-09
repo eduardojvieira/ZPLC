@@ -1,0 +1,40 @@
+{
+  "name": "Rungs",
+  "variables": {
+    "local": [],
+    "outputs": [
+      {
+        "name": "Motor",
+        "type": "BOOL",
+        "address": "%QX0.0"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung1",
+      "number": 1,
+      "connections": [],
+      "elements": [
+        {
+          "id": "c1",
+          "type": "contact_no",
+          "variable": "Nope",
+          "position": {
+            "x": 50,
+            "y": 0
+          }
+        },
+        {
+          "id": "k1",
+          "type": "coil",
+          "variable": "Motor",
+          "position": {
+            "x": 150,
+            "y": 0
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+PROGRAM Names
+VAR
+  MyVar AT %QW0 : INT;
+END_VAR
+  myvar := 7;
+END_PROGRAM

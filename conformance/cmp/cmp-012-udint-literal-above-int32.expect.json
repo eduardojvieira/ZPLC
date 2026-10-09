@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-012",
+  "title": "UDINT literal above 2147483647",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QX0.0", "type": "BOOL", "value": true }]
+}

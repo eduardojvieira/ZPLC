@@ -649,9 +649,44 @@ END_PROGRAM`);
       await writeFile(join(root, 'src', 'missing.st'), 'PROGRAM Main\nVAR\n SecretValue : BOOL;\nEND_VAR\n @\nEND_PROGRAM');
       for (const compile of [compilerCheck, compilerCompile]) {
         const result = await compile(root);
-        expect(result).toMatchObject({ ok: false, evidence: { diagnostics: [{ code: 'COMPILATION_FAILED', message: 'Compilation failed', path: 'src/missing.st' }] } });
+        expect(result).toMatchObject({ ok: false, evidence: { diagnostics: [{ code: 'COMPILATION_FAILED', message: "Compilation of 'missing.st' failed: Unexpected character: '@'", phase: 'lexer', line: 5, column: 2, path: 'src/missing.st' }] } });
         expect(JSON.stringify(result)).not.toContain('SecretValue'); expect(JSON.stringify(result)).not.toContain(root);
       }
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
+  it('passes the compiler message and position through for a semantic error (CMP-010 stopgap)', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-tool-api-message-'));
+    try {
+      await mkdir(join(root, 'src'));
+      await writeFile(join(root, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'test', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Main.st'] }] }));
+      await writeFile(join(root, 'src', 'Main.st'), 'PROGRAM Typo\nVAR\n  x : INT;\nEND_VAR\n  nope := 5;\nEND_PROGRAM\n');
+      for (const compile of [compilerCheck, compilerCompile]) {
+        const result = await compile(root);
+        expect(result).toMatchObject({ ok: false, evidence: { outcome: 'failed', artifacts: [], diagnostics: [{ code: 'COMPILATION_FAILED', message: "Unknown identifier 'nope'", phase: 'codegen', line: 5, column: 3, path: 'src/Main.st' }] } });
+        expect(JSON.stringify(result)).not.toContain(root);
+      }
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
+  it('keeps the compiler position and message when a graphical source fails to build', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-tool-api-visual-message-'));
+    try {
+      await mkdir(join(root, 'src'));
+      await writeFile(join(root, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'test', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main.sfc.json'] }] }));
+      const chart = {
+        name: 'Chart',
+        variables: { local: [], outputs: [{ name: 'Lamp', type: 'BOOL', address: '%QX0.0' }] },
+        steps: [{ id: 's_a', name: 'A', isInitial: true, position: { x: 0, y: 0 }, actions: [{ qualifier: 'N', actionName: 'Mark' }] }],
+        transitions: [],
+        actions: [{ id: 'mark', name: 'Mark', type: 'ST', body: 'Undeclared := TRUE;' }],
+      };
+      await writeFile(join(root, 'src', 'main.sfc.json'), JSON.stringify(chart));
+      const result = await compilerCompile(root);
+      expect(result.ok).toBe(false);
+      const [diagnostic] = result.evidence.diagnostics;
+      expect(diagnostic).toMatchObject({ code: 'COMPILATION_FAILED', phase: 'codegen', path: 'src/main.sfc.json' });
+      expect(diagnostic!.message).toContain("Unknown identifier 'Undeclared'");
+      expect(diagnostic!.line).toBeGreaterThan(0);
+      expect(diagnostic!.column).toBeGreaterThan(0);
     } finally { await rm(root, { recursive: true, force: true }); }
   });
   it('fails check and compile when a source declares multiple PROGRAMs', async () => {
@@ -666,7 +701,7 @@ END_PROGRAM`);
           ok: false,
           evidence: {
             outcome: 'failed',
-            diagnostics: [{ code: 'COMPILATION_FAILED', message: 'Compilation failed', phase: 'codegen', line: 2, column: 1, path: 'src/Main.st' }],
+            diagnostics: [{ code: 'COMPILATION_FAILED', message: 'Exactly one PROGRAM is required per source unit', phase: 'codegen', line: 2, column: 1, path: 'src/Main.st' }],
             artifacts: [],
           },
         });
@@ -688,7 +723,7 @@ END_PROGRAM`);
           ok: false,
           evidence: {
             outcome: 'failed',
-            diagnostics: [{ code: 'COMPILATION_FAILED', message: 'Compilation failed', phase: 'codegen', line: 0, column: 0 }],
+            diagnostics: [{ code: 'COMPILATION_FAILED', message: "Task 'Main' must reference exactly one PROGRAM", phase: 'codegen', line: 0, column: 0 }],
             artifacts: [],
           },
         });
@@ -886,7 +921,7 @@ describe('testsRun', () => {
       process.env.ZPLC_NATIVE_SIM_BIN = join(root, 'missing-runtime');
       for (const run of [() => testsRun(root), () => scenarioRun(root, 'MotorStart')]) {
         const result = await run();
-        expect(result).toMatchObject({ ok: false, evidence: { outcome: 'failed', diagnostics: [{ code: 'COMPILATION_FAILED', message: 'Compilation failed', phase: 'codegen', line: 0, column: 0 }], artifacts: [] } });
+        expect(result).toMatchObject({ ok: false, evidence: { outcome: 'failed', diagnostics: [{ code: 'COMPILATION_FAILED', message: "Task 'Main' must reference exactly one PROGRAM", phase: 'codegen', line: 0, column: 0 }], artifacts: [] } });
         expect(result.evidence.diagnostics[0]).not.toHaveProperty('path');
         expect(JSON.stringify(result)).not.toContain(root);
         expect(JSON.stringify(result)).not.toContain('missing-a.st');

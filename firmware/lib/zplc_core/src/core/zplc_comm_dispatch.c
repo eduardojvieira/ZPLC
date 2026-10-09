@@ -12,6 +12,15 @@ typedef struct {
 static handler_entry_t s_handlers[MAX_HANDLERS];
 static int s_num_handlers = 0;
 
+/* Write a 32-bit value byte by byte, little endian, with no alignment
+ * assumption: the function block sits at any address of PLC memory (RT-004). */
+static void store_u32_le(uint8_t *dst, uint32_t value) {
+  dst[0] = (uint8_t)value;
+  dst[1] = (uint8_t)(value >> 8);
+  dst[2] = (uint8_t)(value >> 16);
+  dst[3] = (uint8_t)(value >> 24);
+}
+
 static zplc_comm_handler_t get_handler(zplc_comm_fb_kind_t kind) {
   for (int i = 0; i < s_num_handlers; i++) {
     if (s_handlers[i].kind == kind) {
@@ -49,7 +58,7 @@ int zplc_comm_fb_exec(zplc_comm_fb_kind_t kind, uint8_t *fb_mem) {
   uint8_t *busy = &fb_mem[1];
   uint8_t *done = &fb_mem[2];
   uint8_t *error = &fb_mem[3];
-  uint32_t *status = (uint32_t *)&fb_mem[4];
+  uint8_t *status = &fb_mem[4];
 
   if (!*en) {
     *busy = 0;
@@ -68,7 +77,7 @@ int zplc_comm_fb_exec(zplc_comm_fb_kind_t kind, uint8_t *fb_mem) {
   if (!handler) {
     if (!*busy) { // Only report if not already waiting for response
       *error = 1;
-      *status = ZPLC_COMM_NO_HANDLER;
+      store_u32_le(status, ZPLC_COMM_NO_HANDLER);
     }
     return 0;
   }
@@ -80,7 +89,7 @@ int zplc_comm_fb_exec(zplc_comm_fb_kind_t kind, uint8_t *fb_mem) {
     if (res < 0) {
       *busy = 0;
       *error = 1;
-      *status = ZPLC_COMM_UNKNOWN;
+      store_u32_le(status, ZPLC_COMM_UNKNOWN);
     }
   }
 
@@ -93,13 +102,13 @@ int zplc_comm_fb_reset(zplc_comm_fb_kind_t kind, uint8_t *fb_mem) {
   uint8_t *busy = &fb_mem[1];
   uint8_t *done = &fb_mem[2];
   uint8_t *error = &fb_mem[3];
-  uint32_t *status = (uint32_t *)&fb_mem[4];
+  uint8_t *status = &fb_mem[4];
 
   *en = 0;
   *busy = 0;
   *done = 0;
   *error = 0;
-  *status = 0;
+  store_u32_le(status, 0);
 
   zplc_comm_handler_t handler = get_handler(kind);
   if (handler) {

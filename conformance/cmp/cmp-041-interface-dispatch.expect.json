@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-041",
+  "title": "a variable of an interface type calls the method of its instance",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QW0", "type": "INT", "value": 1 }]
+}

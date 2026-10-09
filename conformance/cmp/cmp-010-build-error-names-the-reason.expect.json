@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-010",
+  "title": "a failed build reports why, not only where",
+  "build": "fails",
+  "lines": [5],
+  "messageIncludes": ["expression"]
+}

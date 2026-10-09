@@ -1,0 +1,13 @@
+PROGRAM Parens
+VAR
+  A : BOOL;
+  B : BOOL;
+  C : BOOL := TRUE;
+  X AT %QX0.0 : BOOL;
+END_VAR
+  LD A
+  AND( B
+  OR C
+  )
+  ST X
+END_PROGRAM

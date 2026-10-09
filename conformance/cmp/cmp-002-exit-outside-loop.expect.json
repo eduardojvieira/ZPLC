@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-002",
+  "title": "EXIT outside a loop builds no artifact",
+  "build": "fails",
+  "lines": [5],
+  "messageIncludes": ["EXIT"]
+}

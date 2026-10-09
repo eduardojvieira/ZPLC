@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-034",
+  "title": "a function parameter named like a program variable",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QW0", "type": "INT", "value": 11 }]
+}

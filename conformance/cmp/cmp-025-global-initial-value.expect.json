@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-025",
+  "title": "VAR_GLOBAL holds its declared initial value",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QW0", "type": "INT", "value": 42 }]
+}

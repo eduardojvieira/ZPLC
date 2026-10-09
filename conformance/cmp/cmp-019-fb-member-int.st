@@ -1,0 +1,13 @@
+FUNCTION_BLOCK Big
+VAR_OUTPUT o : INT; END_VAR
+  o := 1000;
+END_FUNCTION_BLOCK
+
+PROGRAM Member
+VAR
+  f : Big;
+  seen AT %QW0 : INT;
+END_VAR
+  f();
+  seen := f.o;
+END_PROGRAM

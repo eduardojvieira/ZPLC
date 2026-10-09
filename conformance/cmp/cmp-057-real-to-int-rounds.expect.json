@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-057",
+  "title": "REAL_TO_INT rounds to the nearest integer",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QW0", "type": "INT", "value": 4 }]
+}

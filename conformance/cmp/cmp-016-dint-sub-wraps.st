@@ -1,0 +1,7 @@
+PROGRAM Wrap
+VAR
+  a : DINT := -2147483647;
+  q AT %QD0 : DINT;
+END_VAR
+  q := a - 2;
+END_PROGRAM

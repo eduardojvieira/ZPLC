@@ -1,0 +1,10 @@
+{
+  "requirement": "CMP-058",
+  "title": "TOF holds Q for the preset after IN falls",
+  "scans": 8,
+  "scanMs": 10,
+  "expect": [
+    { "at": "%QX0.0", "type": "BOOL", "value": true, "afterScan": 7 },
+    { "at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 8 }
+  ]
+}

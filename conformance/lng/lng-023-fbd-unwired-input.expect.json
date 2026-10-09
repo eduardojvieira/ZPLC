@@ -1,0 +1,5 @@
+{
+  "requirement": "LNG-023",
+  "title": "an FBD block with an unwired required input is rejected",
+  "build": "fails"
+}

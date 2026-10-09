@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-036",
+  "title": "RETURN leaves a function block body and the scan continues",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QW0", "type": "INT", "value": 5 }, { "at": "%QX2.0", "type": "BOOL", "value": true }]
+}

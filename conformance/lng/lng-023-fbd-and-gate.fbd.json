@@ -1,0 +1,95 @@
+{
+  "name": "Blocks",
+  "variables": {
+    "local": [],
+    "outputs": [
+      {
+        "name": "A",
+        "type": "BOOL",
+        "address": "%IX0.0"
+      },
+      {
+        "name": "B",
+        "type": "BOOL",
+        "address": "%IX0.1"
+      },
+      {
+        "name": "Q",
+        "type": "BOOL",
+        "address": "%QX0.0"
+      }
+    ]
+  },
+  "blocks": [
+    {
+      "id": "a",
+      "type": "input",
+      "variableName": "A",
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "b",
+      "type": "input",
+      "variableName": "B",
+      "position": {
+        "x": 0,
+        "y": 1
+      }
+    },
+    {
+      "id": "and1",
+      "type": "AND",
+      "position": {
+        "x": 1,
+        "y": 0
+      }
+    },
+    {
+      "id": "q",
+      "type": "output",
+      "variableName": "Q",
+      "position": {
+        "x": 2,
+        "y": 0
+      }
+    }
+  ],
+  "connections": [
+    {
+      "id": "w_a_and1",
+      "from": {
+        "block": "a",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "and1",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "w_b_and1",
+      "from": {
+        "block": "b",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "and1",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "w_and1_q",
+      "from": {
+        "block": "and1",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "q",
+        "port": "IN"
+      }
+    }
+  ]
+}

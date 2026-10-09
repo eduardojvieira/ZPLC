@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-016",
+  "title": "DINT multiplication wraps in two's complement",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QD0", "type": "DINT", "value": 1410065408 }]
+}

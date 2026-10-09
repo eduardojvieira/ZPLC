@@ -1,0 +1,9 @@
+PROGRAM BadLabel
+VAR
+  A : BOOL;
+  X : BOOL;
+END_VAR
+  LD A
+  JMPC nowhere
+  ST X
+END_PROGRAM

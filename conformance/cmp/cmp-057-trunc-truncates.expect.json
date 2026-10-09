@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-057",
+  "title": "TRUNC truncates toward zero",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QD0", "type": "REAL", "value": 3.0 }]
+}

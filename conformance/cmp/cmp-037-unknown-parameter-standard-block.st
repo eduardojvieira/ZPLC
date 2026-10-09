@@ -1,0 +1,6 @@
+PROGRAM Timer
+VAR
+  t : TON;
+END_VAR
+  t(IN := TRUE, PT := T#10ms, BOGUS := 5);
+END_PROGRAM

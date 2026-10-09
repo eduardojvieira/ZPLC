@@ -1,0 +1,7 @@
+PROGRAM Wide
+VAR
+  big : LINT := 5000000000;
+  above AT %QX0.0 : BOOL;
+END_VAR
+  above := big > 4294967296;
+END_PROGRAM

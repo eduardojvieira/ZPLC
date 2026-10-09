@@ -61,6 +61,7 @@ function createMockContext(baseAddress: number, instanceName: string): {
                 output.push(`    ; TODO: ${expr.kind}`);
             }
         },
+        fail: (message: string) => { throw new Error(message); },
     };
 
     return { ctx, output, labelCounter };

@@ -1,0 +1,10 @@
+{
+  "requirement": "CMP-027",
+  "title": "a function holds no state between calls",
+  "scans": 3,
+  "scanMs": 10,
+  "expect": [
+    { "at": "%QW0", "type": "INT", "value": 1 },
+    { "at": "%QW1", "type": "INT", "value": 1 }
+  ]
+}

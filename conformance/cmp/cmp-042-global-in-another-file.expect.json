@@ -1,0 +1,8 @@
+{
+  "requirement": "CMP-042",
+  "title": "a global declared in another file",
+  "scans": 1,
+  "scanMs": 10,
+  "files": ["cmp-042-global-in-another-file-globals.st"],
+  "expect": [{ "at": "%QW0", "type": "INT", "value": 7 }]
+}

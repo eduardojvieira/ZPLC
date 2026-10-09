@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-057",
+  "title": "DINT_TO_REAL exists",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QD0", "type": "REAL", "value": 100000.0 }]
+}

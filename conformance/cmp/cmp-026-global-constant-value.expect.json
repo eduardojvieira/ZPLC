@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-026",
+  "title": "VAR_GLOBAL CONSTANT holds its value",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QW0", "type": "INT", "value": 42 }]
+}

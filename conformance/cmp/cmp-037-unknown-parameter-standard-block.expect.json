@@ -1,0 +1,6 @@
+{
+  "requirement": "CMP-037",
+  "title": "an unknown parameter of a standard block is rejected",
+  "build": "fails",
+  "lines": [5]
+}

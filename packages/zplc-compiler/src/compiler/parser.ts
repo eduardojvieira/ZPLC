@@ -25,6 +25,7 @@ import type {
     RepeatStatement,
     CaseStatement,
     CaseBranch,
+    CaseLabel,
     ExitStatement,
     ContinueStatement,
     ReturnStatement,
@@ -1165,37 +1166,39 @@ class Parser {
     /**
      * case_branch := value_list : statement*
      * value_list := value (, value)*
-     * value := INTEGER | INTEGER..INTEGER
+     * value := constant | constant..constant   (constant: integer, -integer, or a constant or enumeration name)
      */
     private parseCaseBranch(): CaseBranch {
-        const values: (number | { start: number; end: number })[] = [];
+        const values: CaseLabel[] = [];
 
         // Parse comma-separated list of values or ranges
         do {
-            const valueToken = this.expect(TokenType.INTEGER, 'Expected integer value in CASE branch');
-            const startValue = parseInt(valueToken.value, 10);
-
-            // Check for range: value..value
-            if (this.check(TokenType.DOT)) {
-                this.advance(); // first .
-                this.expect(TokenType.DOT, 'Expected .. for range');
-                const endToken = this.expect(TokenType.INTEGER, 'Expected end of range');
-                const endValue = parseInt(endToken.value, 10);
-                values.push({ start: startValue, end: endValue });
-            } else {
-                values.push(startValue);
-            }
+            const first = this.current();
+            const start = this.parseUnaryExpr();
+            const end = this.match(TokenType.DOTDOT) ? this.parseUnaryExpr() : null;
+            values.push({ kind: 'CaseLabel', start, end, line: first.line, column: first.column });
         } while (this.match(TokenType.COMMA));
 
         this.expect(TokenType.COLON, 'Expected : after CASE values');
 
         const statements: Statement[] = [];
-        // Parse statements until we see another case value, ELSE, or END_CASE
-        while (!this.check(TokenType.INTEGER) && !this.check(TokenType.ELSE) && !this.check(TokenType.END_CASE) && !this.isAtEnd()) {
+        // Parse statements until we see another case label, ELSE, or END_CASE
+        while (!this.startsCaseLabel() && !this.check(TokenType.ELSE) && !this.check(TokenType.END_CASE) && !this.isAtEnd()) {
             statements.push(this.parseStatement());
         }
 
         return { values, statements };
+    }
+
+    /**
+     * A label starts with a number, a minus sign, or a name followed by `:`, `,` or `..`
+     * (a statement never starts that way, and `:=` is a different token).
+     */
+    private startsCaseLabel(): boolean {
+        if (this.check(TokenType.INTEGER) || this.check(TokenType.MINUS)) return true;
+        if (!this.check(TokenType.IDENTIFIER)) return false;
+        const next = this.peek().type;
+        return next === TokenType.COLON || next === TokenType.COMMA || next === TokenType.DOTDOT;
     }
 
     /**

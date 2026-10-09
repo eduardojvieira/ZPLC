@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-035",
+  "title": "named arguments bind by name",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QW0", "type": "INT", "value": 9 }]
+}

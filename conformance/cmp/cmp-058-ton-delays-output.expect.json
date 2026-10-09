@@ -1,0 +1,10 @@
+{
+  "requirement": "CMP-058",
+  "title": "TON sets Q after the preset",
+  "scans": 6,
+  "scanMs": 10,
+  "expect": [
+    { "at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 5 },
+    { "at": "%QX0.0", "type": "BOOL", "value": true, "afterScan": 6 }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "requirement": "CMP-058",
+  "title": "SQRT, ABS, MAX, LIMIT, SEL, MUX, MIN and MOD with positive operands",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    { "at": "%QD0", "type": "REAL", "value": 4.0 },
+    { "at": "%QW2", "type": "INT", "value": 5 },
+    { "at": "%QW3", "type": "INT", "value": 9 },
+    { "at": "%QW4", "type": "INT", "value": 10 },
+    { "at": "%QW5", "type": "INT", "value": 2 },
+    { "at": "%QW6", "type": "INT", "value": 20 },
+    { "at": "%QW7", "type": "INT", "value": 2 },
+    { "at": "%QW8", "type": "INT", "value": 2 }
+  ]
+}

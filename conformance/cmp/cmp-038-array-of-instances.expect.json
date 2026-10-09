@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-038",
+  "title": "array of function-block instances",
+  "scans": 3,
+  "scanMs": 10,
+  "expect": [{ "at": "%QX0.0", "type": "BOOL", "value": true }]
+}

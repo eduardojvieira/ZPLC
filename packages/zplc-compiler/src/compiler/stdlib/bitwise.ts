@@ -41,8 +41,7 @@ export const ROL_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 2) {
-            ctx.emit(`    ; ERROR: ROL requires 2 arguments (IN, N)`);
-            return;
+            ctx.fail('ROL requires 2 arguments (IN, N)');
         }
 
         ctx.emit(`    ; ROL(IN, N) - Rotate left`);
@@ -105,8 +104,7 @@ export const ROR_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 2) {
-            ctx.emit(`    ; ERROR: ROR requires 2 arguments (IN, N)`);
-            return;
+            ctx.fail('ROR requires 2 arguments (IN, N)');
         }
 
         ctx.emit(`    ; ROR(IN, N) - Rotate right`);
@@ -167,8 +165,7 @@ export const SHL_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 2) {
-            ctx.emit(`    ; ERROR: SHL requires 2 arguments (IN, N)`);
-            return;
+            ctx.fail('SHL requires 2 arguments (IN, N)');
         }
 
         ctx.emit(`    ; SHL(IN, N)`);
@@ -197,8 +194,7 @@ export const SHR_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 2) {
-            ctx.emit(`    ; ERROR: SHR requires 2 arguments (IN, N)`);
-            return;
+            ctx.fail('SHR requires 2 arguments (IN, N)');
         }
 
         ctx.emit(`    ; SHR(IN, N)`);
@@ -227,8 +223,7 @@ export const AND_WORD_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 2) {
-            ctx.emit(`    ; ERROR: AND_WORD requires 2 arguments`);
-            return;
+            ctx.fail('AND_WORD requires 2 arguments');
         }
 
         ctx.emit(`    ; AND_WORD(IN1, IN2)`);
@@ -260,8 +255,7 @@ export const OR_WORD_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 2) {
-            ctx.emit(`    ; ERROR: OR_WORD requires 2 arguments`);
-            return;
+            ctx.fail('OR_WORD requires 2 arguments');
         }
 
         ctx.emit(`    ; OR_WORD(IN1, IN2)`);
@@ -293,8 +287,7 @@ export const XOR_WORD_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 2) {
-            ctx.emit(`    ; ERROR: XOR_WORD requires 2 arguments`);
-            return;
+            ctx.fail('XOR_WORD requires 2 arguments');
         }
 
         ctx.emit(`    ; XOR_WORD(IN1, IN2)`);
@@ -326,8 +319,7 @@ export const NOT_WORD_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 1) {
-            ctx.emit(`    ; ERROR: NOT_WORD requires 1 argument`);
-            return;
+            ctx.fail('NOT_WORD requires 1 argument');
         }
 
         ctx.emit(`    ; NOT_WORD(IN)`);
@@ -357,8 +349,7 @@ export const AND_DWORD_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 2) {
-            ctx.emit(`    ; ERROR: AND_DWORD requires 2 arguments`);
-            return;
+            ctx.fail('AND_DWORD requires 2 arguments');
         }
 
         ctx.emit(`    ; AND_DWORD(IN1, IN2)`);
@@ -386,8 +377,7 @@ export const OR_DWORD_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 2) {
-            ctx.emit(`    ; ERROR: OR_DWORD requires 2 arguments`);
-            return;
+            ctx.fail('OR_DWORD requires 2 arguments');
         }
 
         ctx.emit(`    ; OR_DWORD(IN1, IN2)`);
@@ -415,8 +405,7 @@ export const XOR_DWORD_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 2) {
-            ctx.emit(`    ; ERROR: XOR_DWORD requires 2 arguments`);
-            return;
+            ctx.fail('XOR_DWORD requires 2 arguments');
         }
 
         ctx.emit(`    ; XOR_DWORD(IN1, IN2)`);
@@ -444,8 +433,7 @@ export const NOT_DWORD_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 1) {
-            ctx.emit(`    ; ERROR: NOT_DWORD requires 1 argument`);
-            return;
+            ctx.fail('NOT_DWORD requires 1 argument');
         }
 
         ctx.emit(`    ; NOT_DWORD(IN)`);

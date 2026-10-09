@@ -1,0 +1,5 @@
+{
+  "requirement": "CMP-001",
+  "title": "an SFC action that assigns an undeclared variable is rejected",
+  "build": "fails"
+}

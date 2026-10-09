@@ -1,0 +1,6 @@
+PROGRAM Table
+VAR
+  a : ARRAY[0..3] OF INT;
+END_VAR
+  a[10] := 1;
+END_PROGRAM

@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-014",
+  "title": "NOT on a BYTE",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QB0", "type": "BYTE", "value": 240 }]
+}

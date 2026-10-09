@@ -223,9 +223,9 @@ function failed<T>(operation: ToolOperation, diagnostics: ToolDiagnostic[], arti
 type TestOperation = 'test' | 'scenario-run';
 function testFailed(operation: TestOperation, diagnostics: ToolDiagnostic[], artifacts: ToolArtifact[] = []): TestRunResult { return { ok: false, evidence: evidence(operation, 'failed', diagnostics, artifacts) }; }
 function loadFailure<T>(operation: ToolOperation, loaded: Awaited<ReturnType<typeof readWorkspace>>): ToolResult<T> | null { return loaded.ok ? null : failed(operation, loaded.diagnostics); }
-function safeCompilerDiagnostic(error: unknown): ToolDiagnostic {
+export function safeCompilerDiagnostic(error: unknown): ToolDiagnostic {
   if (error instanceof CompilerError) {
-    return { code: 'COMPILATION_FAILED', message: 'Compilation failed', phase: error.phase, line: error.line, column: error.column, ...(error.sourceRef ? { path: error.sourceRef } : {}) };
+    return { code: 'COMPILATION_FAILED', message: error.detail.slice(0, 512) || 'Compilation failed', phase: error.phase, line: error.line, column: error.column, ...(error.sourceRef ? { path: error.sourceRef } : {}) };
   }
   return { code: 'COMPILATION_FAILED', message: 'Compilation failed' };
 }

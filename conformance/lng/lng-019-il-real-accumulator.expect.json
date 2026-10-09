@@ -1,0 +1,7 @@
+{
+  "requirement": "LNG-019",
+  "title": "IL accumulator holds a REAL",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QD0", "type": "REAL", "value": 3.75 }]
+}

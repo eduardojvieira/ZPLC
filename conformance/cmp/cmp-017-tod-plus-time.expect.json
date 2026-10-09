@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-017",
+  "title": "TOD plus TIME",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QD0", "type": "UDINT", "value": 48600000 }]
+}

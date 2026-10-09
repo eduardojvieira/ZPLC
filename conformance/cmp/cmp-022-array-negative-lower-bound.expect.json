@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-022",
+  "title": "ARRAY[-5..5] with a negative lower bound",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QW0", "type": "INT", "value": 7 }]
+}

@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-032",
+  "title": "block comment written /* */",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QW0", "type": "INT", "value": 1 }]
+}

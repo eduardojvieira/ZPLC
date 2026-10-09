@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-011",
+  "title": "MAX of a negative INT and a positive one",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QW0", "type": "INT", "value": 3 }]
+}

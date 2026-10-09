@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-016",
+  "title": "an in-range REAL converts to the DINT truncated toward zero",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QD0", "type": "DINT", "value": 1 }, { "at": "%QD4", "type": "DINT", "value": -1 }]
+}

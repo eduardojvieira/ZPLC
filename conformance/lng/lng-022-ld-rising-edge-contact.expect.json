@@ -1,0 +1,13 @@
+{
+  "requirement": "LNG-022",
+  "title": "an LD rising-edge contact passes power for one scan",
+  "scans": 4,
+  "scanMs": 10,
+  "inputs": [{ "at": "%IX0.0", "type": "BOOL", "value": true, "beforeScan": 2 }],
+  "expect": [
+    { "at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 1 },
+    { "at": "%QX0.0", "type": "BOOL", "value": true, "afterScan": 2 },
+    { "at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 3 },
+    { "at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 4 }
+  ]
+}

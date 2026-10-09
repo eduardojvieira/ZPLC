@@ -1,0 +1,6 @@
+{
+  "requirement": "CMP-023",
+  "title": "a constant array index outside the bounds is rejected",
+  "build": "fails",
+  "lines": [5]
+}

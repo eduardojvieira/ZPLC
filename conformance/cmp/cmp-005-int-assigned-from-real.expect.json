@@ -1,0 +1,6 @@
+{
+  "requirement": "CMP-005",
+  "title": "assigning a REAL to an INT is rejected",
+  "build": "fails",
+  "lines": [6]
+}

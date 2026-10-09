@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-013",
+  "title": "REAL arithmetic with positive operands",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QD0", "type": "REAL", "value": 3.25 }]
+}

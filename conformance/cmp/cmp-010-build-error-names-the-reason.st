@@ -1,0 +1,6 @@
+PROGRAM Broken
+VAR
+  x : INT;
+END_VAR
+  x := ;
+END_PROGRAM

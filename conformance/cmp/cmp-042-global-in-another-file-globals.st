@@ -1,0 +1,1 @@
+VAR_GLOBAL Shared : INT; END_VAR

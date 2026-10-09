@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-011",
+  "title": "INT_TO_REAL of a negative INT",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QD0", "type": "REAL", "value": -7.0 }]
+}

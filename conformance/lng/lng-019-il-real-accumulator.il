@@ -1,0 +1,9 @@
+PROGRAM RealSum
+VAR
+  R1 : REAL := 1.5;
+  R2 AT %QD0 : REAL;
+END_VAR
+  LD R1
+  ADD 2.25
+  ST R2
+END_PROGRAM

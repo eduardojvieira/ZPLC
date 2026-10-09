@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-013",
+  "title": "REAL negation of a variable",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QD0", "type": "REAL", "value": -1.5 }]
+}

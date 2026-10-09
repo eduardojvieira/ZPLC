@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-002",
+  "title": "a standard function called with the wrong number of arguments builds no artifact",
+  "build": "fails",
+  "lines": [5],
+  "messageIncludes": ["ABS"]
+}

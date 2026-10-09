@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-022",
+  "title": "array element written and read in a loop",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QW0", "type": "INT", "value": 30 }]
+}
