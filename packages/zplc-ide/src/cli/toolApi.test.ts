@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseAndMigrateProject } from '../project/projectModel';
 import { artifactEvidence, boardsList, compilerCheck, compilerCompile, createTestDeadline, executionPermission, finishToolExecution, firmwareBuild, firmwareBuildPlan, isToolExecutionEnvelope, projectInspect, projectMigrationExport, projectMigrationPreview, projectValidate, safetyCheck, scenarioRun, startToolExecution, symbolsList, testsRun, toolchainInspect, withToolExecution } from './toolApi';
+import { itNative, nativeRuntimeBinary } from './nativeRuntimeGuard';
 
 const demo = fileURLToPath(new URL('../../projects/multitask_demo', import.meta.url));
 const blinky = fileURLToPath(new URL('../../projects/blinky', import.meta.url));
@@ -31,8 +32,6 @@ const learnExercises = [
   ['conveyor_two_parts_starter', 'conveyor_01', 'ConveyorTwoParts'],
 ] as const;
 const legacyMotorStartStopFixture = fileURLToPath(new URL('./fixtures/motor_start_stop.v1/zplc.json', import.meta.url));
-const nativeRuntimeBinary = fileURLToPath(new URL('../../../../firmware/lib/zplc_core/build/zplc_runtime', import.meta.url));
-const nativeScenarioBinary = process.env.ZPLC_NATIVE_SIM_BIN ?? nativeRuntimeBinary;
 
 function semanticScenarioTraceHash(result: Awaited<ReturnType<typeof scenarioRun>>, scenarioId: string): string {
   if (!result.ok || !result.traceFile) throw new Error(`${scenarioId}: native scenario result is unavailable`);
@@ -730,7 +729,7 @@ describe('testsRun', () => {
   }
   const scenario = (id: string, tickMs = 10, expected = true) => JSON.stringify({ schemaVersion: 1, id, tickMs, durationMs: tickMs, events: [{ atMs: 0, set: { 'Motor.Start': true } }], expectations: [{ kind: 'AT', atMs: 0, condition: { 'Motor.Forward': expected } }] });
 
-  it.skipIf(!existsSync(nativeRuntimeBinary))('runs one selected scenario reproducibly without admitting an unselected assertion failure', async () => {
+  itNative('runs one selected scenario reproducibly without admitting an unselected assertion failure', async () => {
     const root = await workspace(); const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
     try {
       await writeFile(join(root, 'tests', 'a.scenario.json'), scenario('Alpha'));
@@ -857,7 +856,7 @@ describe('testsRun', () => {
     } finally { await rm(root, { recursive: true, force: true }); }
   });
 
-  it.skipIf(!existsSync(nativeRuntimeBinary))('runs a deterministic homogeneous two-task POSIX scenario', async () => {
+  itNative('runs a deterministic homogeneous two-task POSIX scenario', async () => {
     const root = await mkdtemp(join(tmpdir(), 'zplc-taskset-posix-'));
     const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
     try {
@@ -966,7 +965,7 @@ describe('testsRun', () => {
     }
   });
 
-  it.skipIf(!existsSync(nativeRuntimeBinary))('records complete zplc and trace evidence for assertion failures', async () => {
+  itNative('records complete zplc and trace evidence for assertion failures', async () => {
     const root = await workspace();
     try {
       await writeFile(join(root, 'tests', 'a.scenario.json'), scenario('MotorStart', 10, false));
@@ -992,7 +991,7 @@ describe('testsRun', () => {
     } finally { await rm(root, { recursive: true, force: true }); }
   }, 30_000);
 
-  it.skipIf(!existsSync(nativeRuntimeBinary))('changes aggregate trace evidence when only assertions change', async () => {
+  itNative('changes aggregate trace evidence when only assertions change', async () => {
     const root = await workspace();
     try {
       const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
@@ -1012,7 +1011,7 @@ describe('testsRun', () => {
     } finally { await rm(root, { recursive: true, force: true }); }
   }, 30_000);
 
-  it.skipIf(!existsSync(nativeRuntimeBinary))('runs a reproducible logical single-task scan on native POSIX', async () => {
+  itNative('runs a reproducible logical single-task scan on native POSIX', async () => {
     const root = await workspace();
     try {
       await writeFile(join(root, 'tests', 'motor.scenario.json'), scenario('MotorStart'));
@@ -1035,7 +1034,7 @@ describe('testsRun', () => {
     } finally { await rm(root, { recursive: true, force: true }); }
   }, 30_000);
 
-  it.skipIf(!existsSync(nativeRuntimeBinary))('uses logical scenario time for TON at 0, 10, and 20ms', async () => {
+  itNative('uses logical scenario time for TON at 0, 10, and 20ms', async () => {
     const root = await workspace(`PROGRAM Motor
 VAR_INPUT
   Start AT %I0.0 : BOOL;
@@ -1074,7 +1073,7 @@ END_PROGRAM`);
     }
   }, 30_000);
 
-  it.skipIf(!existsSync(nativeRuntimeBinary))('records only the exact saved inputs used by a completed host scenario run', async () => {
+  itNative('records only the exact saved inputs used by a completed host scenario run', async () => {
     const root = await workspace();
     const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
     const identityOf = (result: Awaited<ReturnType<typeof testsRun>>) => (result as { savedTestInputIdentity?: { schemaVersion: number; sha256: string; fileCount: number } }).savedTestInputIdentity;
@@ -1113,7 +1112,7 @@ END_PROGRAM`);
     }
   }, 30_000);
 
-  it.skipIf(!existsSync(nativeRuntimeBinary))('bounds preview samples while retaining endpoints and an intermediate failed assertion time', async () => {
+  itNative('bounds preview samples while retaining endpoints and an intermediate failed assertion time', async () => {
     const root = await workspace();
     const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
     try {
@@ -1132,9 +1131,9 @@ END_PROGRAM`);
     }
   }, 30_000);
 
-  it.skipIf(!existsSync(nativeScenarioBinary))('runs the checked-in motor start/stop golden scenario reproducibly on native POSIX', async () => {
+  itNative('runs the checked-in motor start/stop golden scenario reproducibly on native POSIX', async () => {
     const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
-    process.env.ZPLC_NATIVE_SIM_BIN = nativeScenarioBinary;
+    process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
     try {
       const first = await testsRun(motorStartStop);
       const second = await testsRun(motorStartStop);
@@ -1155,9 +1154,9 @@ END_PROGRAM`);
     }
   }, 30_000);
 
-  it.skipIf(!existsSync(nativeScenarioBinary))('runs the checked-in pedestrian crossing golden scenario reproducibly on native POSIX', async () => {
+  itNative('runs the checked-in pedestrian crossing golden scenario reproducibly on native POSIX', async () => {
     const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
-    process.env.ZPLC_NATIVE_SIM_BIN = nativeScenarioBinary;
+    process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
     try {
       const first = await testsRun(pedestrianCrossing);
       const second = await testsRun(pedestrianCrossing);
@@ -1184,9 +1183,9 @@ END_PROGRAM`);
     }
   }, 30_000);
 
-  it.skipIf(!existsSync(nativeScenarioBinary))('runs the checked-in tank level golden scenario reproducibly on native POSIX', async () => {
+  itNative('runs the checked-in tank level golden scenario reproducibly on native POSIX', async () => {
     const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
-    process.env.ZPLC_NATIVE_SIM_BIN = nativeScenarioBinary;
+    process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
     try {
       const first = await testsRun(tankLevel);
       const second = await testsRun(tankLevel);
@@ -1213,9 +1212,9 @@ END_PROGRAM`);
     }
   }, 30_000);
 
-  it.skipIf(!existsSync(nativeScenarioBinary))('runs the checked-in motor plant golden scenario reproducibly on native POSIX', async () => {
+  itNative('runs the checked-in motor plant golden scenario reproducibly on native POSIX', async () => {
     const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
-    process.env.ZPLC_NATIVE_SIM_BIN = nativeScenarioBinary;
+    process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
     try {
       const first = await testsRun(motorPlant);
       const second = await testsRun(motorPlant);
@@ -1239,11 +1238,11 @@ END_PROGRAM`);
     }
   }, 30_000);
 
-  it.skipIf(!existsSync(nativeScenarioBinary))('runs the checked-in edge counter golden scenario reproducibly on native POSIX', async () => {
+  itNative('runs the checked-in edge counter golden scenario reproducibly on native POSIX', async () => {
     const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
     const canonicalFiles = ['zplc.json', 'src/EdgeCounter.st', 'tests/edge-counter.scenario.json'];
     const before = await Promise.all(canonicalFiles.map((path) => readFile(join(edgeCounter, path))));
-    process.env.ZPLC_NATIVE_SIM_BIN = nativeScenarioBinary;
+    process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
     try {
       const first = await testsRun(edgeCounter);
       const second = await testsRun(edgeCounter);
@@ -1271,11 +1270,11 @@ END_PROGRAM`);
     }
   }, 30_000);
 
-  it.skipIf(!existsSync(nativeScenarioBinary))('runs the checked-in scan snapshot golden scenario reproducibly on native POSIX', async () => {
+  itNative('runs the checked-in scan snapshot golden scenario reproducibly on native POSIX', async () => {
     const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
     const canonicalFiles = ['zplc.json', 'src/ScanSnapshot.st', 'tests/scan-snapshot.scenario.json'];
     const before = await Promise.all(canonicalFiles.map((path) => readFile(join(scanSnapshot, path))));
-    process.env.ZPLC_NATIVE_SIM_BIN = nativeScenarioBinary;
+    process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
     try {
       await expect(projectValidate(scanSnapshot)).resolves.toMatchObject({ ok: true, summary: { name: 'Scan Snapshot', taskCount: 1 } });
       const checked = await compilerCheck(scanSnapshot);
@@ -1313,9 +1312,9 @@ END_PROGRAM`);
     }
   }, 30_000);
 
-  it.skipIf(!existsSync(nativeScenarioBinary))('runs the checked-in conveyor golden scenario reproducibly on native POSIX', async () => {
+  itNative('runs the checked-in conveyor golden scenario reproducibly on native POSIX', async () => {
     const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
-    process.env.ZPLC_NATIVE_SIM_BIN = nativeScenarioBinary;
+    process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
     try {
       const first = await testsRun(conveyor);
       const second = await testsRun(conveyor);
@@ -1340,9 +1339,9 @@ END_PROGRAM`);
     }
   }, 30_000);
 
-  it.skipIf(!existsSync(nativeScenarioBinary))('keeps the Conveyor Learn starter compilable but red until its host jam lockout is completed', async () => {
+  itNative('keeps the Conveyor Learn starter compilable but red until its host jam lockout is completed', async () => {
     const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
-    process.env.ZPLC_NATIVE_SIM_BIN = nativeScenarioBinary;
+    process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
     try {
       await expect(compilerCheck(conveyorStarter)).resolves.toMatchObject({ ok: true, evidence: { operation: 'check', outcome: 'passed' } });
       await expect(scenarioRun(conveyorStarter, 'Conveyor01')).resolves.toMatchObject({ ok: false, evidence: { operation: 'scenario-run', outcome: 'failed', diagnostics: [{ code: 'SCENARIO_ASSERTION_FAILED' }] }, preview: { scenarios: [{ id: 'Conveyor01', passed: false }] } });
@@ -1353,9 +1352,9 @@ END_PROGRAM`);
     }
   }, 30_000);
 
-  it.skipIf(!existsSync(nativeScenarioBinary))('keeps every Learn exercise starter red and its paired reference green on native POSIX', async () => {
+  itNative('keeps every Learn exercise starter red and its paired reference green on native POSIX', async () => {
     const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
-    process.env.ZPLC_NATIVE_SIM_BIN = nativeScenarioBinary;
+    process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
     try {
       for (const [starterId, referenceId, scenarioId] of learnExercises) {
         const starterRoot = fileURLToPath(new URL(`../../projects/${starterId}`, import.meta.url));
@@ -1370,7 +1369,7 @@ END_PROGRAM`);
     }
   }, 30_000);
 
-  it.skipIf(!existsSync(nativeScenarioBinary))('replays every canonical plant scenario 100 times with the same semantic native POSIX trace', async () => {
+  itNative('replays every canonical plant scenario 100 times with the same semantic native POSIX trace', async () => {
     const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
     const experiences = [
       { root: motorPlant, scenarioId: 'MotorPlant' },
@@ -1378,7 +1377,7 @@ END_PROGRAM`);
       { root: tankLevel, scenarioId: 'TankLevel' },
       { root: pedestrianCrossing, scenarioId: 'PedestrianCrossing' },
     ];
-    process.env.ZPLC_NATIVE_SIM_BIN = nativeScenarioBinary;
+    process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
     try {
       for (const { root, scenarioId } of experiences) {
         let expectedHash: string | undefined;
@@ -1400,7 +1399,7 @@ END_PROGRAM`);
     }
   }, 45_000);
 
-  it.skipIf(!existsSync(nativeScenarioBinary))('preserves the fixed motor golden observable through an exported v1-to-v2 migration on native POSIX', async () => {
+  itNative('preserves the fixed motor golden observable through an exported v1-to-v2 migration on native POSIX', async () => {
     const v1Root = await legacyMotorStartStop();
     const v2Root = await legacyMotorStartStop();
     const v1ManifestPath = join(v1Root, 'zplc.json');
@@ -1408,7 +1407,7 @@ END_PROGRAM`);
     const v1Manifest = await readFile(v1ManifestPath);
     const sourceBody = await readFile(join(v1Root, 'src', 'Motor.st'), 'utf8');
     const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
-    process.env.ZPLC_NATIVE_SIM_BIN = nativeScenarioBinary;
+    process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
     try {
       await expect(projectInspect(v1Root)).resolves.toMatchObject({ ok: true, summary: { schemaVersion: 2, sourceSchemaVersion: 1, migrated: true } });
       const legacy = await testsRun(v1Root);

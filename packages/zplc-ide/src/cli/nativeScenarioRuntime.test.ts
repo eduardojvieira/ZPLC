@@ -1,13 +1,10 @@
-import { existsSync } from 'node:fs';
 import { readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'bun:test';
 
+import { itNative, nativeRuntimeBinary } from './nativeRuntimeGuard';
 import { createNativeScenarioRuntime, createNativeScenarioSession } from './nativeScenarioRuntime';
-
-const nativeRuntimeBinary = fileURLToPath(new URL('../../../../firmware/lib/zplc_core/build/zplc_runtime', import.meta.url));
 
 async function scenarioRoots(): Promise<string[]> {
   return (await readdir(tmpdir())).filter((entry) => entry.startsWith('zplc-scenario-')).sort();
@@ -192,7 +189,7 @@ describe('createNativeScenarioSession', () => {
     expect(await scenarioRoots()).toEqual(before);
   });
 
-  it.skipIf(!existsSync(nativeRuntimeBinary))('handshakes with the POSIX runtime and idempotently removes its private persistence root', async () => {
+  itNative('handshakes with the POSIX runtime and idempotently removes its private persistence root', async () => {
     const before = await scenarioRoots();
     const session = await createNativeScenarioSession({ ...process.env, ZPLC_NATIVE_SIM_BIN: nativeRuntimeBinary });
 

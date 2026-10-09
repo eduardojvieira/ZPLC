@@ -1,15 +1,13 @@
-import { describe, expect, it } from 'bun:test';
-import { existsSync } from 'node:fs';
+import { describe, expect } from 'bun:test';
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { itNative, nativeRuntimeBinary } from './nativeRuntimeGuard';
 import { scenarioRun } from './toolApi';
 
 const blinky = fileURLToPath(new URL('../../projects/blinky', import.meta.url));
-const nativeRuntimeBinary = fileURLToPath(new URL('../../../../firmware/lib/zplc_core/build/zplc_runtime', import.meta.url));
-const nativeScenarioBinary = process.env.ZPLC_NATIVE_SIM_BIN ?? nativeRuntimeBinary;
 const visualPrograms = [
   ['LD', 'main.ld'] as const,
   ['FBD', 'main.fbd'] as const,
@@ -55,9 +53,9 @@ function expectValidArtifacts(result: Awaited<ReturnType<typeof scenarioRun>>): 
 }
 
 describe('Blinky visual languages on native POSIX', () => {
-  it.skipIf(!existsSync(nativeScenarioBinary))('executes the canonical checked-in Ladder project deterministically without mutating it', async () => {
+  itNative('executes the canonical checked-in Ladder project deterministically without mutating it', async () => {
     const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
-    process.env.ZPLC_NATIVE_SIM_BIN = nativeScenarioBinary;
+    process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
     const canonical = await Promise.all(canonicalFiles.map((path) => readFile(join(blinky, path))));
     try {
       const first = await scenarioRun(blinky, 'BlinkyVisual');
@@ -74,9 +72,9 @@ describe('Blinky visual languages on native POSIX', () => {
     }
   }, 30_000);
 
-  it.skipIf(!existsSync(nativeScenarioBinary))('compiles and executes LD, FBD, and SFC deterministically without mutating the checked-in example', async () => {
+  itNative('compiles and executes LD, FBD, and SFC deterministically without mutating the checked-in example', async () => {
     const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
-    process.env.ZPLC_NATIVE_SIM_BIN = nativeScenarioBinary;
+    process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
     try {
       for (const [, program] of visualPrograms) {
         const { root, canonical } = await visualWorkspace(program);
