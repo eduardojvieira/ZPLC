@@ -1366,7 +1366,7 @@ function emitWhileStatement(state: CodeGenState, stmt: WhileStatement): void {
  *   for_loop_N:
  *       LOAD32 <counter_addr>
  *       <end>
- *       GT
+ *       GT                      ; LT when the step is negative
  *       JNZ end_for_N
  *       <body>
  *   for_continue_N:
@@ -1382,8 +1382,8 @@ function emitForStatement(state: CodeGenState, stmt: ForStatement): void {
     const continueLabel = newLabel(state, 'for_continue');
     const endLabel = newLabel(state, 'end_for');
 
-    // Get counter variable symbol
-    const counterSym = state.symbols.get(stmt.counter);
+    // Get counter variable symbol (a local of the function, function block or method, or a global)
+    const counterSym = resolveSymbol(state, stmt.counter);
     if (!counterSym) {
         fail(stmt, `Unknown loop counter variable '${stmt.counter}'`);
     }
@@ -1405,12 +1405,33 @@ function emitForStatement(state: CodeGenState, stmt: ForStatement): void {
     emitExpression(state, stmt.start);
     emit(state, `    STORE${suffix} ${counterAddr}`);
 
-    // Loop condition check
+    // Loop condition check: past the end is counter > end going up, counter < end going down
     emit(state, `${loopLabel}:`);
-    emit(state, `    ; check: counter > end?`);
-    emit(state, `    LOAD${suffix} ${counterAddr}`);
-    emitExpression(state, stmt.end);
-    emit(state, `    GT`);
+    const direction = stepDirection(stmt.step);
+    if (direction === 'runtime') {
+        // The step is not a constant: test its sign on every pass.
+        const downLabel = newLabel(state, 'for_down');
+        const testLabel = newLabel(state, 'for_test');
+        emit(state, `    ; check: step < 0 ? counter < end : counter > end`);
+        emitExpression(state, stmt.step!);
+        emit(state, `    PUSH8 0`);
+        emit(state, `    LT`);
+        emit(state, `    JNZ ${downLabel}`);
+        emit(state, `    LOAD${suffix} ${counterAddr}`);
+        emitExpression(state, stmt.end);
+        emit(state, `    GT`);
+        emit(state, `    JMP ${testLabel}`);
+        emit(state, `${downLabel}:`);
+        emit(state, `    LOAD${suffix} ${counterAddr}`);
+        emitExpression(state, stmt.end);
+        emit(state, `    LT`);
+        emit(state, `${testLabel}:`);
+    } else {
+        emit(state, direction === 'down' ? `    ; check: counter < end?` : `    ; check: counter > end?`);
+        emit(state, `    LOAD${suffix} ${counterAddr}`);
+        emitExpression(state, stmt.end);
+        emit(state, direction === 'down' ? `    LT` : `    GT`);
+    }
     emit(state, `    JNZ ${endLabel}`);
 
     // Loop body
@@ -1436,6 +1457,16 @@ function emitForStatement(state: CodeGenState, stmt: ForStatement): void {
 
     // Pop loop context
     state.loopStack.pop();
+}
+
+/** Direction of a FOR loop: no step or a constant step of 0 or more counts up, a negative constant counts down. */
+function stepDirection(step: Expression | null | undefined): 'up' | 'down' | 'runtime' {
+    if (!step) return 'up';
+    if (step.kind === 'IntLiteral') return step.value < 0 ? 'down' : 'up';
+    if (step.kind === 'UnaryExpr' && step.operator === 'NEG' && step.operand.kind === 'IntLiteral') {
+        return step.operand.value > 0 ? 'down' : 'up';
+    }
+    return 'runtime';
 }
 
 /**
