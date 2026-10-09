@@ -11,6 +11,7 @@ import { itNative, nativeRuntimeBinary } from './nativeRuntimeGuard';
 
 const demo = fileURLToPath(new URL('../../projects/multitask_demo', import.meta.url));
 const blinky = fileURLToPath(new URL('../../projects/blinky', import.meta.url));
+const blinkySfc = fileURLToPath(new URL('../../projects/blinky_sfc', import.meta.url));
 const motorStartStop = fileURLToPath(new URL('../../projects/motor_start_stop', import.meta.url));
 const pedestrianCrossing = fileURLToPath(new URL('../../projects/pedestrian_crossing', import.meta.url));
 const tankLevel = fileURLToPath(new URL('../../projects/tank_level', import.meta.url));
@@ -205,7 +206,7 @@ END_PROGRAM`);
     try {
       await mkdir(join(root, 'src'));
       await writeFile(join(root, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'sfc', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main.sfc'] }] }));
-      const model = JSON.parse(await readFile(join(blinky, 'src', 'main.sfc.json'), 'utf8')) as { actions: Array<{ id: string; body: string }> };
+      const model = JSON.parse(await readFile(join(blinkySfc, 'src', 'main.sfc.json'), 'utf8')) as { actions: Array<{ id: string; body: string }> };
       model.actions.find((action) => action.id === 'SET_LED_ON')!.body = 'WHILE TRUE DO\nEND_WHILE;';
       await writeFile(join(root, 'src', 'main.sfc.json'), JSON.stringify(model));
       const result = await safetyCheck(root);

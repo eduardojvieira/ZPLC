@@ -1,5 +1,4 @@
 {
-  "$schema": "./schemas/sfc.schema.json",
   "name": "Blinky",
   "description": "ZPLC Blinky - Sequential Function Chart with timed steps",
   "version": "2.0.0",

@@ -1,0 +1,361 @@
+{
+  "name": "Blinky",
+  "description": "ZPLC Blinky - Function Block Diagram, two timers and a hold-OR-AND latch (50% duty)",
+  "version": "3.0.0",
+  "variables": {
+    "local": [],
+    "outputs": [
+      {
+        "name": "LED_Output",
+        "type": "BOOL",
+        "address": "%Q0.0",
+        "comment": "Physical LED output"
+      }
+    ]
+  },
+  "blocks": [
+    {
+      "id": "var_led_read",
+      "type": "variable",
+      "variableName": "LED_Output",
+      "direction": "read",
+      "position": {
+        "x": 50,
+        "y": 120
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ],
+      "comment": "Read the current LED state (value from the previous scan)"
+    },
+    {
+      "id": "not_led",
+      "type": "NOT",
+      "position": {
+        "x": 220,
+        "y": 50
+      },
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "BOOL"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ],
+      "comment": "Invert: OffTimer runs while the LED is OFF"
+    },
+    {
+      "id": "const_500ms",
+      "type": "constant",
+      "dataType": "TIME",
+      "value": "T#500ms",
+      "position": {
+        "x": 220,
+        "y": 250
+      },
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "TIME"
+        }
+      ]
+    },
+    {
+      "id": "ton_off",
+      "type": "TON",
+      "instanceName": "OffTimer",
+      "position": {
+        "x": 370,
+        "y": 50
+      },
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "BOOL"
+        },
+        {
+          "name": "PT",
+          "type": "TIME"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "Q",
+          "type": "BOOL"
+        },
+        {
+          "name": "ET",
+          "type": "TIME"
+        }
+      ],
+      "comment": "Times the OFF half period (500 ms)"
+    },
+    {
+      "id": "ton_on",
+      "type": "TON",
+      "instanceName": "OnTimer",
+      "position": {
+        "x": 370,
+        "y": 200
+      },
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "BOOL"
+        },
+        {
+          "name": "PT",
+          "type": "TIME"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "Q",
+          "type": "BOOL"
+        },
+        {
+          "name": "ET",
+          "type": "TIME"
+        }
+      ],
+      "comment": "Times the ON half period (500 ms); runs while the LED is ON"
+    },
+    {
+      "id": "not_on_done",
+      "type": "NOT",
+      "position": {
+        "x": 540,
+        "y": 200
+      },
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "BOOL"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ],
+      "comment": "Invert: stop holding the LED once OnTimer is done"
+    },
+    {
+      "id": "or_set_or_hold",
+      "type": "OR",
+      "position": {
+        "x": 540,
+        "y": 80
+      },
+      "inputs": [
+        {
+          "name": "IN1",
+          "type": "BOOL"
+        },
+        {
+          "name": "IN2",
+          "type": "BOOL"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ],
+      "comment": "Set when OffTimer is done, otherwise hold the LED state"
+    },
+    {
+      "id": "and_run",
+      "type": "AND",
+      "position": {
+        "x": 700,
+        "y": 120
+      },
+      "inputs": [
+        {
+          "name": "IN1",
+          "type": "BOOL"
+        },
+        {
+          "name": "IN2",
+          "type": "BOOL"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ],
+      "comment": "LED = (OffTimer.Q OR LED) AND NOT OnTimer.Q"
+    },
+    {
+      "id": "output_led",
+      "type": "output",
+      "variableName": "LED_Output",
+      "position": {
+        "x": 860,
+        "y": 120
+      },
+      "inputs": [
+        {
+          "name": "IN",
+          "type": "BOOL"
+        }
+      ],
+      "comment": "Physical LED output"
+    }
+  ],
+  "connections": [
+    {
+      "id": "conn_led_to_not",
+      "from": {
+        "block": "var_led_read",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "not_led",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "conn_not_to_off",
+      "from": {
+        "block": "not_led",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "ton_off",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "conn_led_to_on",
+      "from": {
+        "block": "var_led_read",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "ton_on",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "conn_pt_off",
+      "from": {
+        "block": "const_500ms",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "ton_off",
+        "port": "PT"
+      }
+    },
+    {
+      "id": "conn_pt_on",
+      "from": {
+        "block": "const_500ms",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "ton_on",
+        "port": "PT"
+      }
+    },
+    {
+      "id": "conn_off_q_to_or",
+      "from": {
+        "block": "ton_off",
+        "port": "Q"
+      },
+      "to": {
+        "block": "or_set_or_hold",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "conn_led_to_or",
+      "from": {
+        "block": "var_led_read",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "or_set_or_hold",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "conn_on_q_to_not",
+      "from": {
+        "block": "ton_on",
+        "port": "Q"
+      },
+      "to": {
+        "block": "not_on_done",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "conn_or_to_and",
+      "from": {
+        "block": "or_set_or_hold",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "and_run",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "conn_not_to_and",
+      "from": {
+        "block": "not_on_done",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "and_run",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "conn_and_to_led",
+      "from": {
+        "block": "and_run",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "output_led",
+        "port": "IN"
+      }
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2024-12-27",
+    "modified": "2026-10-09",
+    "iecStandard": "IEC 61131-3",
+    "notes": [
+      "A true 50% blinker with two TON timers and a hold latch:",
+      "1. NOT turns the LED state into OffTimer.IN: OffTimer counts 500 ms while the LED is OFF.",
+      "2. OnTimer.IN is the LED state itself: OnTimer counts 500 ms while the LED is ON.",
+      "3. LED = (OffTimer.Q OR LED) AND NOT OnTimer.Q: OffTimer.Q turns the LED ON, the LED then holds itself,",
+      "   and OnTimer.Q releases it.",
+      "Result: ON about 500 ms, OFF about 500 ms (each phase is 500 ms plus one 10 ms scan).",
+      "",
+      "A single TON fed by NOT LED_Output does not work: the LED turning ON disables the timer on the next scan,",
+      "so the LED is ON for ONE scan every 520 ms (a blip, not a blink).",
+      "",
+      "Note: this reads LED_Output as an input, which the transpiler handles by using the value from the previous scan."
+    ]
+  }
+}

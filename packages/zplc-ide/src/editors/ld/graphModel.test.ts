@@ -23,11 +23,11 @@ describe('LD whole-rung clipboard', () => {
     const pasted = fragment && pasteLDRungFragment(model, fragment, 'rung_1');
 
     expect(pasted).toBeDefined();
-    expect(pasted?.rungs).toHaveLength(3);
-    expect(pasted?.rungs.map((rung) => rung.number)).toEqual([1, 2, 3]);
-    expect(pasted?.variables.local.map((variable) => variable.name)).toEqual(['BlinkTimer', 'BlinkTimer_copy']);
+    expect(pasted?.rungs).toHaveLength(5);
+    expect(pasted?.rungs.map((rung) => rung.number)).toEqual([1, 2, 3, 4, 5]);
+    expect(pasted?.variables.local.map((variable) => variable.name)).toEqual(['OffTimer', 'OnTimer', 'OffTimer_copy']);
     expect(new Set(elementIds(pasted!)).size).toBe(elementIds(pasted!).length);
-    expect(pasted?.rungs[1]?.grid?.flat().map((cell) => cell.element?.instance).filter(Boolean)).toContain('BlinkTimer_copy');
+    expect(pasted?.rungs[1]?.grid?.flat().map((cell) => cell.element?.instance).filter(Boolean)).toContain('OffTimer_copy');
     expect(transpileLDToST(pasted).success).toBe(true);
     expect(serializeLDModel(model)).toBe(original);
   });
@@ -38,8 +38,8 @@ describe('LD whole-rung clipboard', () => {
     const once = pasteLDRungFragment(model, fragment, 'rung_1')!;
     const twice = pasteLDRungFragment(once, fragment, once.rungs[1]!.id)!;
 
-    expect(twice.variables.local.map((variable) => variable.name)).toEqual(['BlinkTimer', 'BlinkTimer_copy', 'BlinkTimer_copy_2']);
-    expect(twice.rungs.map((rung) => rung.number)).toEqual([1, 2, 3, 4]);
+    expect(twice.variables.local.map((variable) => variable.name)).toEqual(['OffTimer', 'OnTimer', 'OffTimer_copy', 'OffTimer_copy_2']);
+    expect(twice.rungs.map((rung) => rung.number)).toEqual([1, 2, 3, 4, 5, 6]);
     expect(transpileLDToST(twice).success).toBe(true);
   });
 
@@ -69,11 +69,11 @@ describe('LD whole-rung clipboard', () => {
     const model = await blinky();
     const guarded: LDModel = {
       ...model,
-      variables: { ...model.variables, inputs: [{ name: 'BlinkTimer_copy', type: 'BOOL' }] },
+      variables: { ...model.variables, inputs: [{ name: 'OffTimer_copy', type: 'BOOL' }] },
     };
     const pasted = pasteLDRungFragment(guarded, copyLDRungFragment(guarded, 'rung_1')!, 'rung_1');
 
-    expect(pasted?.variables.local.map((variable) => variable.name)).toContain('BlinkTimer_copy_2');
+    expect(pasted?.variables.local.map((variable) => variable.name)).toContain('OffTimer_copy_2');
     expect(transpileLDToST(pasted).success).toBe(true);
   });
 
@@ -81,16 +81,16 @@ describe('LD whole-rung clipboard', () => {
     const model = await blinky();
     const rung = structuredClone(model.rungs[0]!);
     rung.gridConfig = { ...rung.gridConfig!, rows: 2 };
-    rung.grid![0]![1] = { element: { id: 'timer_contact', type: 'contact_no', variable: 'BlinkTimer.Q', row: 0, col: 1 }, hasWire: true };
+    rung.grid![0]![1] = { element: { id: 'timer_contact', type: 'contact_no', variable: 'OffTimer.Q', row: 0, col: 1 }, hasWire: true };
     rung.grid!.push(Array.from({ length: 8 }, (_, col) => ({ element: col === 0 ? { id: 'parallel_contact', type: 'contact_no' as const, variable: 'LED_Output', row: 1, col } : null, hasWire: col === 0 })));
     rung.branches = [{ id: 'parallel_path', startCol: 0, endCol: 0, rows: [0, 1] }];
-    const branched = { ...model, rungs: [rung, model.rungs[1]!] };
+    const branched = { ...model, rungs: [rung, ...model.rungs.slice(1)] };
     const pasted = pasteLDRungFragment(branched, copyLDRungFragment(branched, 'rung_1')!, 'rung_1')!;
     const clone = pasted.rungs[1]!;
 
     expect(clone.gridConfig).toEqual(rung.gridConfig);
     expect(clone.branches?.[0]).toMatchObject({ id: 'parallel_path_copy', startCol: 0, endCol: 0, rows: [0, 1] });
-    expect(clone.grid?.[0]?.[1]?.element?.variable).toBe('BlinkTimer_copy.Q');
+    expect(clone.grid?.[0]?.[1]?.element?.variable).toBe('OffTimer_copy.Q');
     expect(clone.grid?.[1]?.[0]?.element?.variable).toBe('LED_Output');
     expect(transpileLDToST(pasted).success).toBe(true);
 
@@ -102,8 +102,8 @@ describe('LD whole-rung clipboard', () => {
   it('fails closed for duplicate writers, malformed topology, and missing or mismatched FB locals', async () => {
     const model = await blinky();
     const original = serializeLDModel(model);
-    const outputWriter = copyLDRungFragment(model, 'rung_2')!;
-    expect(pasteLDRungFragment(model, outputWriter, 'rung_2')).toBeUndefined();
+    const outputWriter = copyLDRungFragment(model, 'rung_3')!;
+    expect(pasteLDRungFragment(model, outputWriter, 'rung_3')).toBeUndefined();
 
     const timer = copyLDRungFragment(model, 'rung_1')!;
     expect(copyLDRungFragment({ ...model, variables: { ...model.variables, local: [] } }, 'rung_1')).toBeUndefined();

@@ -22,7 +22,6 @@ const rootOf = (name: string): string => join(projectsRoot, name);
 // Source files that are still not built by any task. The list may only shrink: the test fails when an entry is no
 // longer true, so the entry has to be deleted together with the fix.
 const KNOWN_ORPHANS: Record<string, string[]> = {
-  blinky: ['src/main.fbd.json', 'src/main.il', 'src/main.sfc.json', 'src/main.st'], // split into blinky_* projects next
   opta_led_chaser: ['src/led_chaser.ld.json', 'src/main.st', 'src/user_led_fade.st'], // repaired next
   pico_blinky_ton: ['src/main.st', 'src/main_ton.st'], // LX-5b splits or enables these
 };
@@ -147,6 +146,36 @@ describe('bundled example projects', () => {
           expect(result.ok).toBe(true);
         }, 30_000);
       }
+    });
+  }
+});
+
+// The same 50% blinker in each IEC 61131-3 language, one project per language, so that every variant is built and tested
+// (a build only compiles the files its tasks name). The default example, blinky, is the Ladder one.
+const BLINKY_TOUR = [
+  { project: 'blinky', language: 'LD', source: 'src/main.ld.json' },
+  { project: 'blinky_st', language: 'ST', source: 'src/main.st' },
+  { project: 'blinky_il', language: 'IL', source: 'src/main.il' },
+  { project: 'blinky_fbd', language: 'FBD', source: 'src/main.fbd.json' },
+  { project: 'blinky_sfc', language: 'SFC', source: 'src/main.sfc.json' },
+] as const;
+
+describe('Blinky language tour', () => {
+  for (const { project, language, source } of BLINKY_TOUR) {
+    it(`${project} builds its ${language} source and its scenario asserts both half periods`, async () => {
+      const loaded = await readWorkspace(rootOf(project));
+      if (!loaded.ok) throw new Error(JSON.stringify(loaded.diagnostics));
+      const { sources, project: manifest } = loaded.workspace;
+      const built = manifest.tasks.flatMap((task) => task.programs).flatMap((program) => resolveProgramSource(program, sources) ?? []);
+      expect(built.map((program) => program.sourceRef)).toEqual([source]);
+      expect(built[0]!.language).toBe(language);
+
+      // A blink and a one-scan blip are told apart by long FOR windows: the LED must be seen ON, and OFF, for 400 ms or more.
+      const scenarioFile = readdirSync(join(rootOf(project), 'tests')).find((file) => file.endsWith('.scenario.json'));
+      const scenario = JSON.parse(readFileSync(join(rootOf(project), 'tests', scenarioFile!), 'utf8')) as { expectations: Array<{ kind: string; forMs?: number; condition: Record<string, boolean> }> };
+      const held = scenario.expectations.filter((expectation) => expectation.kind === 'FOR' && expectation.forMs! >= 400).map((expectation) => expectation.condition['Blinky.LED_Output']);
+      expect(held).toContain(true);
+      expect(held).toContain(false);
     });
   }
 });
