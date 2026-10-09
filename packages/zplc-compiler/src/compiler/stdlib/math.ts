@@ -36,8 +36,7 @@ export const ABS_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 1) {
-            ctx.emit(`    ; ERROR: ABS requires 1 argument`);
-            return;
+            ctx.fail('ABS requires 1 argument');
         }
 
         ctx.emit(`    ; ABS(IN)`);
@@ -65,8 +64,7 @@ export const ABSF_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 1) {
-            ctx.emit(`    ; ERROR: ABSF requires 1 argument`);
-            return;
+            ctx.fail('ABSF requires 1 argument');
         }
 
         ctx.emit(`    ; ABSF(IN)`);
@@ -94,8 +92,7 @@ export const NEG_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 1) {
-            ctx.emit(`    ; ERROR: NEG requires 1 argument`);
-            return;
+            ctx.fail('NEG requires 1 argument');
         }
 
         ctx.emit(`    ; NEG(IN)`);
@@ -123,8 +120,7 @@ export const NEGF_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 1) {
-            ctx.emit(`    ; ERROR: NEGF requires 1 argument`);
-            return;
+            ctx.fail('NEGF requires 1 argument');
         }
 
         ctx.emit(`    ; NEGF(IN)`);
@@ -152,8 +148,7 @@ export const MOD_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 2) {
-            ctx.emit(`    ; ERROR: MOD requires 2 arguments`);
-            return;
+            ctx.fail('MOD requires 2 arguments');
         }
 
         ctx.emit(`    ; MOD(IN1, IN2)`);
@@ -188,8 +183,7 @@ export const SQRT_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 1) {
-            ctx.emit(`    ; ERROR: SQRT requires 1 argument`);
-            return;
+            ctx.fail('SQRT requires 1 argument');
         }
 
         const sqrtEnd = ctx.newLabel('sqrt_end');
@@ -250,8 +244,7 @@ export const EXPT_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 2) {
-            ctx.emit(`    ; ERROR: EXPT requires 2 arguments (BASE, EXP)`);
-            return;
+            ctx.fail('EXPT requires 2 arguments (BASE, EXP)');
         }
 
         const loopStart = ctx.newLabel('expt_loop');
@@ -328,8 +321,7 @@ export const INT_TO_REAL_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 1) {
-            ctx.emit(`    ; ERROR: INT_TO_REAL requires 1 argument`);
-            return;
+            ctx.fail('INT_TO_REAL requires 1 argument');
         }
 
         ctx.emit(`    ; INT_TO_REAL(IN)`);
@@ -351,8 +343,7 @@ export const REAL_TO_INT_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 1) {
-            ctx.emit(`    ; ERROR: REAL_TO_INT requires 1 argument`);
-            return;
+            ctx.fail('REAL_TO_INT requires 1 argument');
         }
 
         ctx.emit(`    ; REAL_TO_INT(IN)`);
@@ -373,8 +364,7 @@ export const BOOL_TO_INT_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 1) {
-            ctx.emit(`    ; ERROR: BOOL_TO_INT requires 1 argument`);
-            return;
+            ctx.fail('BOOL_TO_INT requires 1 argument');
         }
 
         ctx.emit(`    ; BOOL_TO_INT(IN)`);
@@ -397,8 +387,7 @@ export const INT_TO_BOOL_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 1) {
-            ctx.emit(`    ; ERROR: INT_TO_BOOL requires 1 argument`);
-            return;
+            ctx.fail('INT_TO_BOOL requires 1 argument');
         }
 
         ctx.emit(`    ; INT_TO_BOOL(IN)`);
@@ -457,8 +446,7 @@ export const TRUNC_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 1) {
-            ctx.emit(`    ; ERROR: TRUNC requires 1 argument`);
-            return;
+            ctx.fail('TRUNC requires 1 argument');
         }
 
         ctx.emit(`    ; TRUNC(IN)`);
@@ -487,8 +475,7 @@ export const ROUND_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 1) {
-            ctx.emit(`    ; ERROR: ROUND requires 1 argument`);
-            return;
+            ctx.fail('ROUND requires 1 argument');
         }
 
         const negLabel = ctx.newLabel('round_neg');
@@ -542,8 +529,7 @@ export const SIN_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 1) {
-            ctx.emit(`    ; ERROR: SIN requires 1 argument`);
-            return;
+            ctx.fail('SIN requires 1 argument');
         }
 
         ctx.emit(`    ; SIN(IN) - Taylor series approximation`);
@@ -610,8 +596,7 @@ export const COS_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 1) {
-            ctx.emit(`    ; ERROR: COS requires 1 argument`);
-            return;
+            ctx.fail('COS requires 1 argument');
         }
 
         ctx.emit(`    ; COS(IN) - Taylor series approximation`);
@@ -670,8 +655,7 @@ export const TAN_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 1) {
-            ctx.emit(`    ; ERROR: TAN requires 1 argument`);
-            return;
+            ctx.fail('TAN requires 1 argument');
         }
 
         ctx.emit(`    ; TAN(IN) = SIN(IN) / COS(IN)`);
@@ -771,8 +755,7 @@ export const LN_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 1) {
-            ctx.emit(`    ; ERROR: LN requires 1 argument`);
-            return;
+            ctx.fail('LN requires 1 argument');
         }
 
         // For now, use a simple Newton-Raphson approach to find y where e^y = x
@@ -838,8 +821,7 @@ export const LOG_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 1) {
-            ctx.emit(`    ; ERROR: LOG requires 1 argument`);
-            return;
+            ctx.fail('LOG requires 1 argument');
         }
 
         ctx.emit(`    ; LOG(IN) = LN(IN) / LN(10)`);
@@ -900,8 +882,7 @@ export const EXP_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 1) {
-            ctx.emit(`    ; ERROR: EXP requires 1 argument`);
-            return;
+            ctx.fail('EXP requires 1 argument');
         }
 
         ctx.emit(`    ; EXP(IN) - Taylor series`);
@@ -963,8 +944,7 @@ export const ASIN_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 1) {
-            ctx.emit(`    ; ERROR: ASIN requires 1 argument`);
-            return;
+            ctx.fail('ASIN requires 1 argument');
         }
 
         ctx.emit(`    ; ASIN(IN) - polynomial approximation`);
@@ -1012,8 +992,7 @@ export const ACOS_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 1) {
-            ctx.emit(`    ; ERROR: ACOS requires 1 argument`);
-            return;
+            ctx.fail('ACOS requires 1 argument');
         }
 
         ctx.emit(`    ; ACOS(IN) = PI/2 - ASIN(IN)`);
@@ -1063,8 +1042,7 @@ export const ATAN_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 1) {
-            ctx.emit(`    ; ERROR: ATAN requires 1 argument`);
-            return;
+            ctx.fail('ATAN requires 1 argument');
         }
 
         ctx.emit(`    ; ATAN(IN) - polynomial approximation`);
@@ -1115,8 +1093,7 @@ export const ATAN2_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 2) {
-            ctx.emit(`    ; ERROR: ATAN2 requires 2 arguments (Y, X)`);
-            return;
+            ctx.fail('ATAN2 requires 2 arguments (Y, X)');
         }
 
         // xNeg and yNeg labels reserved for quadrant handling in full implementation

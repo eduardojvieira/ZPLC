@@ -115,7 +115,7 @@ export type {
 import { parse } from './parser.ts';
 import { ParseError } from './parser.ts';
 import { LexerError } from './lexer.ts';
-import { generate, TagAdmissionError, WORK_MEMORY_REGION_SIZE, DEFAULT_COMPILER_MEMORY_PROFILE, validateCompilerMemoryProfile } from './codegen.ts';
+import { generate, CodegenError, WORK_MEMORY_REGION_SIZE, DEFAULT_COMPILER_MEMORY_PROFILE, validateCompilerMemoryProfile } from './codegen.ts';
 import type { CodeGenOptions, CompilerMemoryProfile } from './codegen.ts';
 import { assemble, createMultiTaskZplcFile, relocateBytecode, TASK_TYPE, ZPLC_CONSTANTS } from '../assembler/index.ts';
 import type { AssemblyResult, TagDef, TaskDef, TaskType } from '../assembler/index.ts';
@@ -240,7 +240,7 @@ export function compileST(source: string, options?: CodeGenOptions): string {
     try {
         return generate(ast, options);
     } catch (e) {
-        if (e instanceof TagAdmissionError) {
+        if (e instanceof CodegenError) {
             throw new CompilerError(e.message, e.line, e.column, 'codegen');
         }
         throw e;
@@ -334,7 +334,7 @@ export function compileToBinary(source: string, options?: CompileOptions): Compi
     try {
         memoryProfile = validateCompilerMemoryProfile(options?.memoryProfile ?? DEFAULT_COMPILER_MEMORY_PROFILE);
     } catch (e) {
-        if (e instanceof TagAdmissionError) {
+        if (e instanceof CodegenError) {
             throw new CompilerError(e.message, e.line, e.column, 'codegen');
         }
         throw e;
@@ -359,7 +359,7 @@ export function compileToBinary(source: string, options?: CompileOptions): Compi
     try {
         assembly = generate(ast, codegenOptions);
     } catch (e) {
-        if (e instanceof TagAdmissionError) {
+        if (e instanceof CodegenError) {
             throw new CompilerError(e.message, e.line, e.column, 'codegen');
         }
         throw e;
@@ -635,7 +635,7 @@ export function compileMultiTaskProject(
     try {
         memoryProfile = validateCompilerMemoryProfile(options?.memoryProfile ?? DEFAULT_COMPILER_MEMORY_PROFILE);
     } catch (e) {
-        if (e instanceof TagAdmissionError) {
+        if (e instanceof CodegenError) {
             throw new CompilerError(e.message, e.line, e.column, 'codegen');
         }
         throw e;
@@ -710,7 +710,7 @@ export function compileMultiTaskProject(
             });
         } catch (e) {
             if (e instanceof CompilerError) throw attachSourceRef(e, sourceRef);
-            if (e instanceof TagAdmissionError) {
+            if (e instanceof CodegenError) {
                 throw attachSourceRef(
                     new CompilerError(e.message, e.line, e.column, 'codegen'),
                     sourceRef,

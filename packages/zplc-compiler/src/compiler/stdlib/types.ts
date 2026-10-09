@@ -65,6 +65,8 @@ export interface CodeGenContext {
     emit: (line: string) => void;
     /** Emit an expression to the stack */
     emitExpression: (expr: Expression) => void;
+    /** Fail the build at the call being generated; nothing is emitted in place of the error */
+    fail: (message: string) => never;
 }
 
 // ============================================================================

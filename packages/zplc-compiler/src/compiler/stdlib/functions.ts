@@ -33,8 +33,7 @@ export const MAX_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 2) {
-            ctx.emit(`    ; ERROR: MAX requires 2 arguments`);
-            return;
+            ctx.fail('MAX requires 2 arguments');
         }
 
         const skipLabel = ctx.newLabel('max_skip');
@@ -73,8 +72,7 @@ export const MIN_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 2) {
-            ctx.emit(`    ; ERROR: MIN requires 2 arguments`);
-            return;
+            ctx.fail('MIN requires 2 arguments');
         }
 
         const skipLabel = ctx.newLabel('min_skip');
@@ -117,8 +115,7 @@ export const LIMIT_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 3) {
-            ctx.emit(`    ; ERROR: LIMIT requires 3 arguments (MN, IN, MX)`);
-            return;
+            ctx.fail('LIMIT requires 3 arguments (MN, IN, MX)');
         }
 
         const belowMin = ctx.newLabel('limit_below_min');
@@ -188,8 +185,7 @@ export const SEL_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 3) {
-            ctx.emit(`    ; ERROR: SEL requires 3 arguments (G, IN0, IN1)`);
-            return;
+            ctx.fail('SEL requires 3 arguments (G, IN0, IN1)');
         }
 
         const selectIN1 = ctx.newLabel('sel_in1');
@@ -237,8 +233,7 @@ export const MUX_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length < 2) {
-            ctx.emit(`    ; ERROR: MUX requires at least 2 arguments (K, IN0)`);
-            return;
+            ctx.fail('MUX requires at least 2 arguments (K, IN0)');
         }
 
         const numInputs = args.length - 1;
@@ -305,8 +300,7 @@ export const NAND_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 2) {
-            ctx.emit(`    ; ERROR: NAND requires 2 arguments`);
-            return;
+            ctx.fail('NAND requires 2 arguments');
         }
 
         ctx.emit(`    ; NAND(IN1, IN2)`);
@@ -337,8 +331,7 @@ export const NOR_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 2) {
-            ctx.emit(`    ; ERROR: NOR requires 2 arguments`);
-            return;
+            ctx.fail('NOR requires 2 arguments');
         }
 
         ctx.emit(`    ; NOR(IN1, IN2)`);
