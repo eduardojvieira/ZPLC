@@ -57,6 +57,8 @@ let openFileIntent = 0;
 let fileTreeRefreshIntent = 0;
 let openProjectIntent = 0;
 const fileCreationReservations = new Set<string>();
+/** Brings the console's output tab into view, where a failed action reports why. */
+const SHOW_OUTPUT = { activeConsoleTab: 'output', isConsoleCollapsed: false } as const;
 
 function findTreeFileById(tree: FileTreeNode, fileId: string): FileTreeNode | null {
   if (tree.id === fileId && tree.type === 'file') return tree;
@@ -483,7 +485,9 @@ export const useIDEStore = create<IDEState>((set, get) => ({
 
   reportProjectOpenProblem: (type, message) => {
     get().addConsoleEntry({ type, message, source: 'system' });
-    set({ projectOpenError: message });
+    // The Welcome screen and the Learn panel show projectOpenError; elsewhere the workbench shows the console, so an error brings it into view (IDE-003).
+    if (type !== 'error') set({ projectOpenError: message });
+    else set({ projectOpenError: message, isConsoleCollapsed: false, ...(get().activeConsoleTab === 'learn' ? {} : { activeConsoleTab: 'output' as const }) });
   },
 
   openProjectFromFolder: async () => {
@@ -847,6 +851,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
         message: `Failed to save config: ${message}`,
         source: 'system',
       });
+      set(SHOW_OUTPUT);
     }
   },
 
@@ -944,6 +949,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
         message: `Failed to save ${file.name}: ${message}`,
         source: 'system',
       });
+      set(SHOW_OUTPUT);
       return false;
     }
   },

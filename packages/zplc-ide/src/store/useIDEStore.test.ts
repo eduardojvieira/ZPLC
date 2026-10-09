@@ -1563,4 +1563,49 @@ describe('useIDEStore project folders over the project-files bridge', () => {
     expect(useIDEStore.getState().projectOpenError).toBe('Failed to create project: The folder, or a file in it, was not found.');
     expect(useIDEStore.getState().consoleEntries.map((entry) => entry.message).join('\n')).not.toContain(sandbox);
   });
+
+  it('brings a failed open to the visible console of a workbench that already has a project', async () => {
+    seedFolder();
+    await useIDEStore.getState().openProjectFromFolder();
+    useIDEStore.setState({ isConsoleCollapsed: true, activeConsoleTab: 'watch' });
+    answer = join(sandbox, 'missing');
+    await expect(useIDEStore.getState().openProjectFromFolder()).resolves.toBe(false);
+    expect(useIDEStore.getState()).toMatchObject({ isProjectOpen: true, isConsoleCollapsed: false, activeConsoleTab: 'output' });
+    expect(useIDEStore.getState().consoleEntries.at(-1)).toMatchObject({ type: 'error', message: expect.stringContaining('Failed to open folder') });
+  });
+
+  it('keeps the Learn tab in view when copying its exercise fails: the panel shows the reason itself', async () => {
+    loadedExample = { zplcConfig: { ...DEFAULT_ZPLC_CONFIG, name: 'Copied example' }, migrationPreview: null };
+    loadedExampleAssets = [{ path: 'src/main.st', content: 'PROGRAM Main END_PROGRAM' }];
+    useIDEStore.setState({ isConsoleCollapsed: true, activeConsoleTab: 'learn' });
+    answer = join(sandbox, 'missing');
+    await expect(useIDEStore.getState().copyExampleProjectToFolder('example')).resolves.toBe(false);
+    expect(useIDEStore.getState()).toMatchObject({ isConsoleCollapsed: false, activeConsoleTab: 'learn' });
+    expect(useIDEStore.getState().projectOpenError).toBe('Failed to copy example: The folder, or a file in it, was not found.');
+  });
+
+  it('shows why a save failed in the visible console, with no path, and keeps the edit', async () => {
+    seedFolder();
+    await useIDEStore.getState().openProjectFromFolder();
+    await useIDEStore.getState().openFile('file:src/main.st');
+    useIDEStore.getState().updateFileContent('file:src/main.st', 'x'.repeat(16 * 1024 * 1024 + 1));
+    useIDEStore.setState({ isConsoleCollapsed: true, activeConsoleTab: 'watch' });
+    await expect(useIDEStore.getState().saveFile('file:src/main.st')).resolves.toBe(false);
+    const state = useIDEStore.getState();
+    expect(state).toMatchObject({ isConsoleCollapsed: false, activeConsoleTab: 'output' });
+    expect(state.consoleEntries.at(-1)).toMatchObject({ type: 'error', message: 'Failed to save main.st: The file is larger than 16 MiB.' });
+    expect(state.loadedFiles.get('file:src/main.st')?.isModified).toBe(true);
+    expect(readFileSync(join(folder, 'src', 'main.st'), 'utf8')).toBe('PROGRAM Main\nEND_PROGRAM\n');
+  });
+
+  it('shows a failed project-configuration save in the visible console too', async () => {
+    seedFolder();
+    await useIDEStore.getState().openProjectFromFolder();
+    rmSync(join(folder, 'zplc.json'));
+    mkdirSync(join(folder, 'zplc.json'));
+    useIDEStore.setState({ isConsoleCollapsed: true, activeConsoleTab: 'watch' });
+    await useIDEStore.getState().saveProjectConfig();
+    expect(useIDEStore.getState()).toMatchObject({ isConsoleCollapsed: false, activeConsoleTab: 'output' });
+    expect(useIDEStore.getState().consoleEntries.at(-1)).toMatchObject({ type: 'error', message: expect.stringContaining('Failed to save config') });
+  });
 });

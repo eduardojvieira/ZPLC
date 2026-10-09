@@ -8,12 +8,13 @@ import { gradeRecordedScenarioLesson, learnLessonCatalog, parseLearnMasteryImpor
 export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresentation?: WorkspaceTestPresentation }) {
   const copyExampleProjectToFolder = useIDEStore((state) => state.copyExampleProjectToFolder);
   const setActiveConsoleTab = useIDEStore((state) => state.setActiveConsoleTab);
+  const projectOpenError = useIDEStore((state) => state.projectOpenError);
   const desktopProgress = window.electronAPI?.learnProgress;
   const [locale, setLocale] = useState<LearnLocale>('es');
   const [lessonId, setLessonId] = useState<LearnLessonId>('motor-start-stop-safe');
   const [mastered, setMastered] = useState<ReadonlySet<LearnLessonId>>(() => desktopProgress ? new Set() : readLearnMastery());
   const [hydrated, setHydrated] = useState(!desktopProgress);
-  const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied'>('idle');
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copying' | 'copied' | 'failed'>('idle');
   const [masteryStatus, setMasteryStatus] = useState<'idle' | 'exported' | 'imported' | 'error'>('idle');
   const copyingRef = useRef(false);
   const importRef = useRef<HTMLInputElement>(null);
@@ -57,7 +58,9 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
     copyingRef.current = true;
     setCopyStatus('copying');
     void copyExampleProjectToFolder(lesson.starterExampleId).then((copied) => {
+      // A cancelled dialog leaves no error in the store, so it shows nothing; a failure is explained below.
       if (copied) setCopyStatus('copied');
+      else if (useIDEStore.getState().projectOpenError) setCopyStatus('failed');
     }).finally(() => {
       copyingRef.current = false;
       setCopyStatus((status) => status === 'copying' ? 'idle' : status);
@@ -155,6 +158,7 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
             <input ref={importRef} type="file" accept="application/json,.json" className="sr-only" aria-label={locale === 'es' ? 'Seleccionar progreso para importar' : 'Select progress to import'} onChange={importMastery} />
           </div>
           <p role="status" className="mt-2 text-xs text-[var(--color-surface-400)]">{!folderAccess ? (locale === 'es' ? 'El acceso a carpetas no está disponible en este entorno.' : 'Folder access is unavailable in this environment.') : copyStatus === 'copying' ? (locale === 'es' ? 'Copiando el ejemplo en la carpeta elegida…' : 'Copying the example into the chosen folder…') : copyStatus === 'copied' ? (locale === 'es' ? 'Ejemplo copiado.' : 'Example copied.') : (locale === 'es' ? `Elegí zplc.json guardado en Tests y ejecutá solamente ${lesson.requiredScenario}.` : `Choose the saved zplc.json in Tests and run only ${lesson.requiredScenario}.`)}</p>
+          {copyStatus === 'failed' && projectOpenError && <p role="alert" data-learn-copy-error className="mt-2 break-words text-xs text-[var(--color-accent-red)]">{projectOpenError}</p>}
           <p role="status" aria-live="polite" className="mt-2 text-xs text-[var(--color-surface-400)]">{masteryStatus === 'exported' ? (locale === 'es' ? 'Progreso exportado.' : 'Progress exported.') : masteryStatus === 'imported' ? (locale === 'es' ? 'Progreso importado y combinado.' : 'Progress imported and merged.') : masteryStatus === 'error' ? (locale === 'es' ? 'No se pudo importar o guardar el progreso.' : 'Progress could not be imported or saved.') : ''}</p>
         </section>
       </div>
