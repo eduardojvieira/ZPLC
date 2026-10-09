@@ -156,3 +156,40 @@ describe('CTU scan by scan', () => {
         ], { CV: 32766 });
     });
 });
+
+// ============================================================================
+// CTD
+// ============================================================================
+
+describe('CTD scan by scan', () => {
+    test('a pulse that rises while LD is TRUE is not counted after LD is released', () => {
+        replay('CTD', 3, [
+            [{ CD: 0, LD: 1 }, { CV: 3, Q: 0 }],
+            [{ CD: 1, LD: 1 }, { CV: 3, Q: 0 }],
+            [{ CD: 1, LD: 0 }, { CV: 3, Q: 0 }], // the edge was seen during Load
+            [{ CD: 0, LD: 0 }, { CV: 3, Q: 0 }],
+            [{ CD: 1, LD: 0 }, { CV: 2, Q: 0 }],
+        ]);
+    });
+
+    test('a pulse that rises on the scan LD is released is counted when CD was FALSE on the scan before', () => {
+        replay('CTD', 3, [
+            [{ CD: 1, LD: 0 }, { CV: 0, Q: 1 }],
+            [{ CD: 1, LD: 1 }, { CV: 3, Q: 0 }],
+            [{ CD: 0, LD: 1 }, { CV: 3, Q: 0 }], // CD falls while LD is held
+            [{ CD: 1, LD: 0 }, { CV: 2, Q: 0 }],
+        ]);
+    });
+});
+
+// ============================================================================
+// Layout: debug maps and retained programs depend on these offsets
+// ============================================================================
+
+describe('counter memory layout', () => {
+    const layout = (name: string) => getFB(name)!.members.map((m) => [m.name, m.offset, m.size]);
+
+    test('CTD keeps its layout', () => {
+        expect(layout('CTD')).toEqual([['CD', 0, 1], ['LD', 1, 1], ['_prev_cd', 2, 1], ['Q', 3, 1], ['PV', 4, 2], ['CV', 6, 2]]);
+    });
+});

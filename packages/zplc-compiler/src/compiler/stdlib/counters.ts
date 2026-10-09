@@ -159,8 +159,14 @@ const CTD_MEMBERS: MemberDef[] = [
  * CTD (Count Down):
  *
  * When LD is TRUE: CV := PV
- * On rising edge of CD: CV := CV - 1 (if CV > 0)
+ * Else on rising edge of CD: CV := CV - 1 (if CV > 0)
  * Q := (CV <= 0)
+ *
+ * The edge detector on CD runs on every call, also while LD is TRUE: a pulse that
+ * rises during Load is not counted when Load is released.
+ *
+ * Known deviation: IEC counts below 0 down to PVmin (-32768); this stops at 0.
+ * LOAD16 zero-extends, so a negative CV would compare as a large positive one (CMP-011).
  */
 export const CTD_FB: FunctionBlockDef = {
     name: 'CTD',
@@ -194,7 +200,6 @@ export const CTD_FB: FunctionBlockDef = {
         }
 
         const skipLoad = ctx.newLabel('ctd_skip_load');
-        const checkCount = ctx.newLabel('ctd_check_count');
         const skipCount = ctx.newLabel('ctd_skip_count');
 
         ctx.emit(`    ; --- CTD Count Down Logic (${ctx.instanceName}) ---`);
@@ -203,10 +208,10 @@ export const CTD_FB: FunctionBlockDef = {
         ctx.emit(`    LOAD8 ${ldAddr}`);
         ctx.emit(`    JZ ${skipLoad}`);
 
-        // Load: CV := PV
+        // Load: CV := PV, then still update _prev_cd below
         ctx.emit(`    LOAD16 ${pvAddr}`);
         ctx.emit(`    STORE16 ${cvAddr}`);
-        ctx.emit(`    JMP ${checkCount}`);
+        ctx.emit(`    JMP ${skipCount}`);
 
         ctx.emit(`${skipLoad}:`);
 
@@ -232,11 +237,9 @@ export const CTD_FB: FunctionBlockDef = {
 
         ctx.emit(`${skipCount}:`);
 
-        // Update _prev_cd
+        // Update _prev_cd on every call, whether or not LD was TRUE
         ctx.emit(`    LOAD8 ${cdAddr}`);
         ctx.emit(`    STORE8 ${prevCdAddr}`);
-
-        ctx.emit(`${checkCount}:`);
 
         // Q := (CV <= 0)
         ctx.emit(`    LOAD16 ${cvAddr}`);
