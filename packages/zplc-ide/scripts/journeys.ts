@@ -88,9 +88,9 @@ const modelText = (app: App, name: string) => monacoEval<string | null>(app, `re
 /** `text` with `addition` appended to its first line, as typing it at the end of that line does. */
 const appendToFirstLine = (text: string, addition: string) => text.replace(/^[^\n]*/, (line) => `${line}${addition}`);
 
-const BUILD_RESULT = /Built saved workspace locally: [^\n]*|Canonical workspace build failed|Open Tests and choose the saved zplc\.json[^\n]*|Save changes before building[^\n]*|Build requires a saved folder[^\n]*|Saved workspace compiler is unavailable[^\n]*/g;
-type BuildKind = 'built' | 'failed' | 'link-required' | 'save-required' | 'unavailable';
-const buildKind = (message: string): BuildKind => message.startsWith('Built') ? 'built' : message.startsWith('Canonical') ? 'failed' : message.startsWith('Open Tests') ? 'link-required' : message.startsWith('Save changes') ? 'save-required' : 'unavailable';
+const BUILD_RESULT = /Built saved workspace locally: [^\n]*|Canonical workspace build failed|Save changes before building[^\n]*|Build requires a saved folder[^\n]*|Saved workspace (?:compiler is unavailable|could not be opened)[^\n]*/g;
+type BuildKind = 'built' | 'failed' | 'save-required' | 'unavailable';
+const buildKind = (message: string): BuildKind => message.startsWith('Built') ? 'built' : message.startsWith('Canonical') ? 'failed' : message.startsWith('Save changes') ? 'save-required' : 'unavailable';
 
 /** What the Output panel says; it selects the Output tab first. */
 async function outputText(app: App): Promise<string> {
@@ -108,31 +108,6 @@ async function compile(app: App): Promise<{ kind: BuildKind; message: string }> 
   return { kind: buildKind(message), message };
 }
 
-/**
- * The step IDE-001 wants removed: choose the project's zplc.json in Tests so that the build can see the folder. The file
- * chooser of the operating system cannot be driven here, so the file is handed to the input as the smoke does.
- */
-async function linkWorkspace(app: App, project: string): Promise<void> {
-  await app.click(tab('Tests'));
-  await app.until('the manifest input in Tests', async () => await app.visible(css('input[data-workspace-manifest-input]')) !== undefined || undefined);
-  const document = await app.cdp.command('DOM.getDocument') as { root: { nodeId: number } };
-  const input = await app.cdp.command('DOM.querySelector', { nodeId: document.root.nodeId, selector: 'input[data-workspace-manifest-input]' }) as { nodeId: number };
-  await app.cdp.command('DOM.setFileInputFiles', { files: [join(project, 'zplc.json')], nodeId: input.nodeId });
-  await app.eval(`document.querySelector('input[data-workspace-manifest-input]')?.dispatchEvent(new Event('change', { bubbles: true }))`);
-  await app.until('the workspace to be linked', async () => (await app.text()).includes('Linked saved workspace ready') || undefined);
-}
-
-/** Build as a user would; where the product demands the zplc.json link, do it and say so in the table. */
-async function buildProject(app: App, project: string): Promise<{ kind: BuildKind; message: string }> {
-  let result = await compile(app);
-  if (result.kind === 'link-required') {
-    app.note('Build asked to choose zplc.json in Tests first (IDE-001)');
-    await linkWorkspace(app, project);
-    result = await compile(app);
-  }
-  return result;
-}
-
 /** Edit Motor.st to use a variable that is not declared, save it, and build: the build must fail. */
 async function buildWithUndeclaredVariable(app: App, project: string): Promise<void> {
   await openFolder(app, project);
@@ -142,7 +117,7 @@ async function buildWithUndeclaredVariable(app: App, project: string): Promise<v
   await app.type('UndefinedVariable := 1;');
   await app.click(saveButton, 'the Save button');
   await app.until('the file with the error on disk', () => disk(join(project, 'src', 'Motor.st')).includes('UndefinedVariable') || undefined);
-  const result = await buildProject(app, project);
+  const result = await compile(app);
   assert(result.kind === 'failed', `A build of a program with an undeclared variable should fail with diagnostics, not: ${result.kind} ${result.message}`);
 }
 
@@ -266,7 +241,8 @@ export const JOURNEYS: Journey[] = [
       await buildWithUndeclaredVariable(app, project);
       await app.click(tab('Problems'));
       const problems = await app.eval<string>(`document.querySelector('[aria-label="Latest build diagnostics"]')?.innerText ?? ''`);
-      assert(/UndefinedVariable|unknown identifier/i.test(problems), `The Problems list does not say what is wrong with the program ("Unknown identifier 'UndefinedVariable'" is what the compiler reports): ${JSON.stringify(problems)}`);
+      assert(problems.includes("Unknown identifier 'UndefinedVariable'"), `The Problems list does not say what is wrong with the program ("Unknown identifier 'UndefinedVariable'" is what the compiler reports): ${JSON.stringify(problems)}`);
+      assert(!/(^|[\s'"(])\/[\w.~@+-]|[A-Za-z]:[\\/]/.test(problems), `The Problems list shows an absolute path of the machine: ${JSON.stringify(problems)}`);
     },
   },
   {
@@ -279,11 +255,20 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
+    name: '5b Tests need no zplc.json to be chosen', example: 'motor_start_stop',
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await app.click(tab('Tests'));
+      await app.until('the Tests tab to report the linked workspace', async () => (await app.text()).includes('Linked saved workspace ready') || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the Tests tab asks for a file instead (${(await app.text()).includes('Select the saved workspace zplc.json') ? 'it says to select the zplc.json' : 'no link is shown'})`); });
+    },
+  },
+  {
     name: '6 Simulate: connect, run, watch a value change', example: 'blinky',
     run: async (app, { project }) => {
       await openFolder(app, project);
       await openFile(app, 'src/main.st');
-      const result = await buildProject(app, project);
+      const result = await compile(app);
       assert(result.kind === 'built', `The Blinky example does not build: ${result.message}`);
       await connectAndRun(app);
       const before = await cycles(app);
@@ -300,7 +285,7 @@ export const JOURNEYS: Journey[] = [
       await openFolder(app, project);
       await openFile(app, 'src/Motor.st');
       assert((await editorText(app)).split('\n')[line - 1]?.includes('Forward := SealIn'), `Line ${line} of the example is no longer the statement the journey aims at.`);
-      const result = await buildProject(app, project);
+      const result = await compile(app);
       assert(result.kind === 'built', `The Motor example does not build: ${result.message}`);
       await clickEditorLine(app, line, 'gutter');
       await app.until(`a breakpoint dot on line ${line}`, async () => (await decoratedLines(app, 'glyphMarginClassName', 'breakpoint-glyph')).includes(line) || undefined)
@@ -321,7 +306,7 @@ export const JOURNEYS: Journey[] = [
     run: async (app, { project }) => {
       await openFolder(app, project);
       await openFile(app, 'src/Motor.st');
-      const result = await buildProject(app, project);
+      const result = await compile(app);
       assert(result.kind === 'built', `The Motor example does not build: ${result.message}`);
       await connectAndRun(app);
       await watch(app, 'Start'); await watch(app, 'Forward');
