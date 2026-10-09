@@ -17,9 +17,7 @@ import { JOURNEYS, type Journey } from './journeys';
  * Journeys that fail (or are not possible) today because of a defect that a later package fixes. Each entry names the
  * requirement that will fix it. A journey in this list that now passes fails the run, so remove its entry then.
  */
-export const KNOWN_GAPS: Record<string, string> = {
-  '12 Restore the session': 'IDE-008',
-};
+export const KNOWN_GAPS: Record<string, string> = {};
 
 /** `detail` is the evidence of a failure or the reason a journey is not possible; `notes` are steps the journey needed that a user should not. */
 export type Outcome = { status: 'pass' | 'fail' | 'not-possible'; detail: string; notes: string[] };

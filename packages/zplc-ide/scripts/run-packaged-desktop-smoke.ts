@@ -185,11 +185,13 @@ async function main(): Promise<void> {
       welcome: document.body.innerText.includes('ZPLC Studio 2.0'),
     }))()`)) as { node: Array<[string, string]>; preload: string[]; welcome: boolean };
     assert(rendererBoundary.node.every(([, value]) => value === 'undefined'), `Node globals leaked into packaged renderer: ${JSON.stringify(rendererBoundary.node)}`);
-    assert(JSON.stringify(rendererBoundary.preload) === JSON.stringify(['aiProvider', 'candidateChangeSet', 'closeGuard', 'firmwareBuild', 'getAppInfo', 'isElectron', 'learnProgress', 'nativeSimulation', 'platform', 'projectFiles', 'toolExecutionAudit', 'toolchain', 'workspaceTests']), `Unexpected packaged preload surface: ${JSON.stringify(rendererBoundary.preload)}`);
+    assert(JSON.stringify(rendererBoundary.preload) === JSON.stringify(['aiProvider', 'candidateChangeSet', 'closeGuard', 'firmwareBuild', 'getAppInfo', 'isElectron', 'learnProgress', 'nativeSimulation', 'platform', 'projectFiles', 'session', 'toolExecutionAudit', 'toolchain', 'workspaceTests']), `Unexpected packaged preload surface: ${JSON.stringify(rendererBoundary.preload)}`);
     assert(rendererBoundary.welcome, 'Packaged renderer did not render the folder-backed Welcome screen.');
-    // IDE-001, IDE-003: the project bridge of the asar's preload offers exactly its eight typed operations and no path-taking helper.
+    // IDE-001, IDE-003: the project bridge of the asar's preload offers exactly its typed operations (the eight file ones and the four of recent projects) and no path-taking helper; the session bridge, its two.
     const projectOperations = (await cdp.evaluate(`Object.keys(window.electronAPI.projectFiles).sort()`)) as string[];
-    assert(JSON.stringify(projectOperations) === JSON.stringify(['chooseFolder', 'list', 'mkdir', 'read', 'remove', 'rename', 'stat', 'write']), `Unexpected packaged project bridge: ${JSON.stringify(projectOperations)}`);
+    assert(JSON.stringify(projectOperations) === JSON.stringify(['chooseFolder', 'forgetRecent', 'list', 'listRecent', 'markOpened', 'mkdir', 'openRecent', 'read', 'remove', 'rename', 'stat', 'write']), `Unexpected packaged project bridge: ${JSON.stringify(projectOperations)}`);
+    const sessionOperations = (await cdp.evaluate(`Object.keys(window.electronAPI.session).sort()`)) as string[];
+    assert(JSON.stringify(sessionOperations) === JSON.stringify(['load', 'save']), `Unexpected packaged session bridge: ${JSON.stringify(sessionOperations)}`);
     // The permission handlers stay deny-by-default: a request other than serial is refused, and the file system permission goes through the same handlers.
     const permissionProbe = (await cdp.evaluate(`Notification.requestPermission().then((requested) => ({ requested, now: Notification.permission }))`)) as { requested: string; now: string };
     assert(permissionProbe.requested === 'denied' && permissionProbe.now === 'denied', `A permission request must be refused in the packaged app: ${JSON.stringify(permissionProbe)}`);
