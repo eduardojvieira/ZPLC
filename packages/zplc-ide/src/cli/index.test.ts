@@ -1,16 +1,15 @@
 import { createHash } from 'node:crypto';
-import { existsSync } from 'node:fs';
 import { chmod, lstat, mkdir, mkdtemp, readFile, readdir, rm, stat, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'bun:test';
 import { firmwareBuildExitCode, isFirmwareBuildInvocation, isInterruptibleInvocation, main, testExitCode } from './index';
+import { itNative, nativeRuntimeBinary } from './nativeRuntimeGuard';
 
 const demo = fileURLToPath(new URL('../../projects/multitask_demo', import.meta.url));
 const motorStartStop = fileURLToPath(new URL('../../projects/motor_start_stop', import.meta.url));
 const cli = fileURLToPath(new URL('./index.ts', import.meta.url));
-const nativeRuntimeBinary = fileURLToPath(new URL('../../../../firmware/lib/zplc_core/build/zplc_runtime', import.meta.url));
 async function legacyMotorStartStop() { const root = await mkdtemp(join(tmpdir(), 'zplc-cli-legacy-motor-')); const manifest = JSON.parse(await readFile(join(motorStartStop, 'zplc.json'), 'utf8')) as Record<string, unknown>; delete manifest.schemaVersion; await mkdir(join(root, 'src')); await writeFile(join(root, 'zplc.json'), JSON.stringify(manifest)); await writeFile(join(root, 'src', 'Motor.st'), await readFile(join(motorStartStop, 'src', 'Motor.st'), 'utf8')); return root; }
 function output() { const lines: string[] = []; const errors: string[] = []; return { lines, errors, log: (line: string) => lines.push(line), error: (line: string) => errors.push(line) }; }
 async function run(...args: string[]) { const proc = Bun.spawn([process.execPath, 'run', cli, ...args], { stdout: 'pipe', stderr: 'pipe' }); return { code: await proc.exited, stdout: await new Response(proc.stdout).text(), stderr: await new Response(proc.stderr).text() }; }
@@ -388,7 +387,7 @@ describe('CLI test command', () => {
     return root;
   }
 
-  it.skipIf(!existsSync(nativeRuntimeBinary))('runs one named scenario with JSON, human output, and a protected trace artifact', async () => {
+  itNative('runs one named scenario with JSON, human output, and a protected trace artifact', async () => {
     const root = await workspace(); const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
     const trace = join(root, 'trace.json'); const outside = await mkdtemp(join(tmpdir(), 'zplc-cli-scenario-output-'));
     try {
@@ -450,7 +449,7 @@ describe('CLI test command', () => {
     expect(testExitCode(failed('TEST_CANCELLED'))).toBe(130); expect(testExitCode(failed('TEST_TIMEOUT'))).toBe(124); expect(testExitCode(failed('RUNTIME_FAILED'))).toBe(1);
   });
 
-  it.skipIf(!existsSync(nativeRuntimeBinary))('exports complete pass and assertion-failure traces without leaking them into JSON', async () => {
+  itNative('exports complete pass and assertion-failure traces without leaking them into JSON', async () => {
     const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
     process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
     const passing = await workspace(true); const failing = await workspace(false);
@@ -486,7 +485,7 @@ describe('CLI test command', () => {
     } finally { await rm(root, { recursive: true, force: true }); await rm(outside, { recursive: true, force: true }); }
   });
 
-  it.skipIf(process.platform === 'win32' || !existsSync(nativeRuntimeBinary))('cancels an owned native POSIX test session on SIGINT and publishes no partial evidence', async () => {
+  (process.platform === 'win32' ? it.skip : itNative)('cancels an owned native POSIX test session on SIGINT and publishes no partial evidence', async () => {
     const root = await workspace(true, 99_990); const wrapper = join(root, 'native-runtime-wrapper'); const pidMarker = join(root, 'native-runtime.pid'); const trace = join(root, 'trace.json');
     try {
       await writeFile(wrapper, '#!/bin/sh\nprintf \'%s\\n\' "$$" > "$ZPLC_FAKE_RUNTIME_PID"\nexec "$ZPLC_REAL_RUNTIME" "$@"\n'); await chmod(wrapper, 0o755);

@@ -5,9 +5,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { __changeSetTestHooks, createCandidateChangeSet } from './toolApi';
+import { itNative, nativeRuntimeBinary } from './nativeRuntimeGuard';
 
 const motorStartStop = fileURLToPath(new URL('../../projects/motor_start_stop', import.meta.url));
-const nativeRuntimeBinary = fileURLToPath(new URL('../../../../firmware/lib/zplc_core/build/zplc_runtime', import.meta.url));
 
 async function copiedMotorWorkspace(): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), 'zplc-change-set-fixture-'));
@@ -17,7 +17,7 @@ async function copiedMotorWorkspace(): Promise<string> {
 }
 
 describe('isolated candidate change sets', () => {
-  it.skipIf(!existsSync(nativeRuntimeBinary))('validates a source-only candidate without leaking or mutating its base', async () => {
+  itNative('validates a source-only candidate without leaking or mutating its base', async () => {
     const original = await readFile(join(motorStartStop, 'src/Motor.st'), 'utf8');
     const candidateRoots: string[] = [];
     __changeSetTestHooks.afterMaterialize = (root) => { candidateRoots.push(root); };
@@ -75,7 +75,7 @@ describe('isolated candidate change sets', () => {
     } finally { __changeSetTestHooks.afterInitialSnapshot = undefined; await rm(root, { recursive: true, force: true }); }
   });
 
-  it.skipIf(!existsSync(nativeRuntimeBinary))('cleans the owned temporary directory and fails closed when cleanup reports a fault', async () => {
+  itNative('cleans the owned temporary directory and fails closed when cleanup reports a fault', async () => {
     const original = await readFile(join(motorStartStop, 'src/Motor.st'), 'utf8');
     const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
     process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
@@ -97,7 +97,7 @@ describe('isolated candidate change sets', () => {
     }
   });
 
-  it.skipIf(!existsSync(nativeRuntimeBinary))('does not accept assertion failures, cancellation, or timeout as successful evidence', async () => {
+  itNative('does not accept assertion failures, cancellation, or timeout as successful evidence', async () => {
     const original = await readFile(join(motorStartStop, 'src/Motor.st'), 'utf8');
     const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
     process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
