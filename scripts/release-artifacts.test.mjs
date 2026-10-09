@@ -224,7 +224,7 @@ test('publishing requires verified native signatures while previews remain isola
     readFile(new URL('../packages/zplc-ide/scripts/package-mac-release.mjs', import.meta.url), 'utf8'),
   ]);
 
-  assert.doesNotMatch(builder, /^\s*identity:\s*['"]-['"]\s*$/m, 'ad-hoc macOS signing is forbidden');
+  assert.match(builder, /^\s*identity:\s*['"]-['"]\s*$/m, 'macOS must be signed ad hoc by an explicit identity (REL-001)');
   assert.match(
     builder,
     /^win:\n(?:  [^\n]*\n)*?  signtoolOptions:\n    signingHashAlgorithms:\n      - sha256$/m,

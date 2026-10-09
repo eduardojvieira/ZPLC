@@ -49,8 +49,15 @@ mac:
   category: public.app-category.developer-tools
   icon: build/icon.icns
   darkModeSupport: true
+  # No paid certificate exists, so the bundle is signed ad hoc and sealed, never notarized (REL-001, REL-003).
+  # The identity is explicit: electron-builder does not fall back to ad hoc by itself.
+  identity: "-"
+  # The native runtime is copied by extraResources; listing it signs it with the bundle.
+  binaries:
+    - Contents/Resources/native-runtime/zplc_runtime
   hardenedRuntime: true
   gatekeeperAssess: false
+  notarize: false
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
   target:
@@ -58,6 +65,7 @@ mac:
     - zip
 
 dmg:
+  sign: false
   artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
   contents:
     - x: 130
