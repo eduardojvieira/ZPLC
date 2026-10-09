@@ -3,10 +3,11 @@
  * expects (assert), or reports that the journey cannot be performed at all (notPossible). Observation reads the screen
  * and the editor; every action is a real click, key or text insertion.
  */
-import { existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { assert } from './run-desktop-smoke';
-import { button, css, menuItem, notPossible, tab, type App, type Target } from './journeyApp';
+import { learnLessonCatalog } from '../src/components/learnLesson';
+import { assert, packageRoot } from './run-desktop-smoke';
+import { button, css, menuItem, tab, type App, type Target } from './journeyApp';
 
 export interface JourneyContext {
   root: string;
@@ -167,7 +168,7 @@ export const JOURNEYS: Journey[] = [
     run: async (app, { root }) => {
       const folder = join(root, 'new-project'); mkdirSync(folder);
       app.answer(folder);
-      await app.click(button('Motor Start Stop', 'contains'), 'the Motor Start Stop example button');
+      await app.click(css('button[data-welcome-example="motor_start_stop"]'), 'the Motor Start Stop example card');
       await app.until('the project workbench to appear', async () => await app.visible(toolbar) || undefined);
       assert(existsSync(join(folder, 'zplc.json')) && existsSync(join(folder, 'src', 'Motor.st')), 'The chosen folder does not hold the example (zplc.json, src/Motor.st).');
       await openFile(app, 'src/Motor.st');
@@ -393,11 +394,17 @@ export const JOURNEYS: Journey[] = [
   },
   {
     name: '11 Learn with no project open', example: 'none',
-    run: async (app) => {
-      const entry = `[...document.querySelectorAll('button, a, [role="button"], [role="link"], [role="tab"]')].find((item) => /learn/i.test(item.getAttribute('aria-label') ?? item.textContent ?? ''))`;
-      if (!await app.visible(entry)) notPossible('The Welcome screen has no Learn entry (LRN-001, UX-022); Learn exists only as a tab of an open project.');
-      await app.click(entry, 'the Learn entry');
-      await app.until('the first lesson', async () => await app.visible(css('#learn-title')) || undefined);
+    run: async (app, { root }) => {
+      const first = learnLessonCatalog.en[0]!;
+      const folder = join(root, 'learn-project'); mkdirSync(folder);
+      app.answer(folder);
+      await app.click(button('Learn', 'prefix'), 'the Learn button on the Welcome screen');
+      await app.until('the project workbench to appear', async () => await app.visible(toolbar) || undefined);
+      const starter = JSON.parse(disk(join(packageRoot, 'projects', first.starterExampleId, 'zplc.json'))) as { name: string };
+      assert(existsSync(join(folder, 'zplc.json')) && (JSON.parse(disk(join(folder, 'zplc.json'))) as { name: string }).name === starter.name, `The chosen folder does not hold the first lesson's starter project (${first.starterExampleId}).`);
+      await app.until('the Learn tab to show the first lesson', async () => await app.eval<boolean>(`document.getElementById('console-tab-learn')?.getAttribute('aria-selected') === 'true' && ${JSON.stringify([learnLessonCatalog.es[0]!.title, first.title])}.includes(document.getElementById('learn-title')?.textContent?.trim() ?? '')`) || undefined);
+      assert(await app.eval<boolean>(`[...document.querySelectorAll('[aria-label="Lesson"] button, [aria-label="Lección"] button')][0]?.getAttribute('aria-pressed') === 'true'`), 'The first lesson is not the one selected in the Learn tab.');
+      assert(!(await app.text()).includes('The project could not be opened'), 'The workbench shows an open error.');
     },
   },
   {
@@ -414,6 +421,37 @@ export const JOURNEYS: Journey[] = [
         await again.until('the project workbench to appear', async () => await again.visible(toolbar) || undefined);
       }
       await again.until('the Motor.st tab restored', async () => await again.visible(editorTab('file:src/Motor.st')) || undefined);
+    },
+  },
+  {
+    name: '13 Welcome helps a newcomer choose', example: 'none',
+    run: async (app) => {
+      assert(await app.visible(button('Learn', 'prefix')), 'The Welcome screen has no Learn button.');
+      const groups = await app.eval<Array<{ heading: string; examples: number; withSummary: number }>>(`[...document.querySelectorAll('[data-example-group]')].map((section) => ({ heading: section.querySelector('h3')?.textContent?.trim() ?? '', examples: section.querySelectorAll('[data-welcome-example]').length, withSummary: section.querySelectorAll('[data-welcome-example] [data-example-summary]').length }))`);
+      assert(groups.length >= 3, `The examples are not grouped under at least three headings: ${JSON.stringify(groups)}`);
+      assert(groups.every((group) => group.heading && group.examples > 0 && group.withSummary === group.examples), `Every group needs a heading and a summary on each of its examples: ${JSON.stringify(groups)}`);
+      const listed = await app.eval<string[]>(`[...document.querySelectorAll('[data-welcome-example]')].map((card) => card.getAttribute('data-welcome-example'))`);
+      assert(!listed.some((id) => id!.endsWith('_starter') || id === 'kitchen_sink' || id === 'pico_persist_test'), `A starter or a test fixture is listed as an example: ${JSON.stringify(listed)}`);
+      assert(await app.eval<boolean>(`(document.querySelector('[data-welcome-example="pico_blinky"]')?.textContent ?? '').includes('ESP32-S3')`), 'The ESP32-S3 target of pico_blinky is not on its card.');
+
+      // Exactly one control changes the theme, and it is the labelled "Theme" select.
+      const controls = await app.eval<string[]>(`[...document.querySelectorAll('button, select, input, [role="switch"], [role="combobox"]')].filter((control) => /theme|contrast/i.test([control.getAttribute('aria-label'), control.getAttribute('title'), ...[...(control.labels ?? [])].map((label) => label.textContent)].join(' '))).map((control) => control.tagName.toLowerCase())`);
+      assert(controls.length === 1 && controls[0] === 'select', `Expected exactly one theme control, a select: ${JSON.stringify(controls)}`);
+      assert((await app.eval<string[]>(`[...document.querySelector('select[data-theme-control]').options].map((option) => option.textContent)`)).join('|') === 'Light|Dark|High contrast', 'The theme control does not offer Light, Dark and High contrast.');
+      // A keyboard user reaches the select with Tab (the key table of the journeys has none), then picks with End, ArrowUp and Home.
+      await app.eval(`document.querySelector('select[data-theme-control]').focus()`);
+      assert(await app.eval<boolean>(`(() => { const select = document.querySelector('select[data-theme-control]'); return select.matches(':focus-visible') && getComputedStyle(select).outlineStyle !== 'none'; })()`), 'The theme control shows no focus ring.');
+      const theme = () => app.eval<string>(`document.documentElement.getAttribute('data-theme')`);
+      await app.press('End');
+      await app.until('High contrast to apply', async () => await theme() === 'high-contrast' || undefined);
+      await app.press('ArrowUp');
+      await app.until('Dark to apply', async () => await theme() === 'dark' || undefined);
+      await app.press('Home');
+      await app.until('Light to apply', async () => await theme() === 'light' || undefined);
+      assert(await app.eval<string>(`document.querySelector('select[data-theme-control]').value`) === 'light', 'The theme control does not show the theme that applies.');
+
+      const shot = process.env.ZPLC_JOURNEY_WELCOME_SHOT;
+      if (shot) { const png = await app.cdp.command('Page.captureScreenshot', { format: 'png' }) as { data: string }; writeFileSync(shot, Buffer.from(png.data, 'base64')); }
     },
   },
 ];
