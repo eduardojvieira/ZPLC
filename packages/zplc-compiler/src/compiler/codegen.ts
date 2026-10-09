@@ -521,6 +521,11 @@ function validateWorkRegionOptions(
     }
 }
 
+/** Names the budget that was exceeded: each program owns WORK_MEMORY_REGION_SIZE bytes, init flag included. */
+function workBudgetMessage(workMemorySize: number): string {
+    return `WORK allocation exceeds the target memory profile (limit: ${workMemorySize} bytes of WORK memory per program, including the initialization flag)`;
+}
+
 function validateWorkSymbols(symbols: SymbolTable, workMemoryBase: number, workMemorySize: number, initFlagAddr: number): void {
     const workEnd = workMemoryBase + workMemorySize;
     const automaticWorkSymbols: Symbol[] = [];
@@ -551,7 +556,7 @@ function validateWorkSymbols(symbols: SymbolTable, workMemoryBase: number, workM
                 throw new TagAdmissionError(`${regionName} allocation exceeds its memory region`, symbol.declarationLine ?? 0, 0);
             }
         } else if (symbol.address < workMemoryBase || symbolEnd > workEnd) {
-            throw new TagAdmissionError('WORK allocation exceeds the target memory profile', symbol.declarationLine ?? 0, 0);
+            throw new TagAdmissionError(workBudgetMessage(workMemorySize), symbol.declarationLine ?? 0, 0);
         }
 
         if ((!symbol.ioAddress || symbol.ioAddress.type === 'M')
@@ -580,7 +585,7 @@ function validateStringLiteralPool(state: CodeGenState, workMemoryBase: number, 
         if (!Number.isSafeInteger(literalEnd)
             || literal.address < workMemoryBase
             || literalEnd > workEnd) {
-            throw new TagAdmissionError('WORK allocation exceeds the target memory profile', 0, 0);
+            throw new TagAdmissionError(workBudgetMessage(workMemorySize), 0, 0);
         }
         if (rangesOverlap(literal.address, literal.size, state.initFlagAddr, 1)) {
             throw new TagAdmissionError('WORK allocation collides with the initialization flag', 0, 0);

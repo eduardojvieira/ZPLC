@@ -240,6 +240,21 @@ describe('target memory profiles', () => {
         }
     });
 
+    it('names the per-program WORK limit when a program does not fit its region', () => {
+        // 250 BOOLs, then a STRING that straddles the end of the 256-byte region.
+        const overBudget = programWithBytes(250).replace('END_VAR', 'Big : STRING;\nEND_VAR');
+        const build = () => compileMultiTaskProject(
+            { name: 'Big', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval: 10, programs: ['Main'] }] },
+            [{ name: 'Main', sourceRef: 'src/Big.st', content: overBudget }],
+        );
+        expect(build).toThrow(/WORK allocation exceeds the target memory profile \(limit: 256 bytes of WORK memory per program/);
+        try {
+            build();
+        } catch (error) {
+            expect(error).toMatchObject({ line: 253, sourceRef: 'src/Big.st' });
+        }
+    });
+
     it('rejects malformed target memory profiles before code generation', () => {
         const invalidProfiles = [
             { workSize: Number.NaN, retainSize: 1, codeSizeMax: 1 },
