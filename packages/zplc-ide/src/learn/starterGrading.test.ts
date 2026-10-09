@@ -23,7 +23,7 @@ const projects = join(import.meta.dir, '..', '..', 'projects');
 /** Lessons whose graded scenario is NOT a byte-for-byte copy of the reference project's scenario, and why. */
 const ownScenario: Partial<Record<LearnLessonId, string>> = {
   'blinky-ladder-timer-feedback': 'the blinky starter grades the ST oscillator with lenient duty windows (a 500 ms and a 510 ms half period both pass) and the reference project carries a different, stricter blinky scenario',
-  'temporal-assertions-jam-fault': 'lesson 9 grades the latched jam fault and its Reset timing, which Conveyor01 does not assert; the reference project has no such scenario yet',
+  'temporal-assertions-jam-fault': 'lesson 9 grades the latched jam fault and its Reset timing with scheduled inputs; conveyor_01 ships ConveyorJamResetNoRestart for the same fault with Start held through the Reset, a different timeline that overlaps it but is not a copy',
 };
 
 interface ScenarioFile { readonly id: string; readonly expectations: readonly unknown[] }
