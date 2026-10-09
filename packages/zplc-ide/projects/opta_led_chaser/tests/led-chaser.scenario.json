@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "OptaLedChaser",
+  "tickMs": 10,
+  "durationMs": 1300,
+  "events": [],
+  "expectations": [
+    {"kind": "AT", "atMs": 80, "condition": {"OptaLEDChaser.LED_D0": true, "OptaLEDChaser.LED_D1": false, "OptaLEDChaser.LED_D2": false, "OptaLEDChaser.LED_D3": false}},
+    {"kind": "AT", "atMs": 240, "condition": {"OptaLEDChaser.LED_D0": false, "OptaLEDChaser.LED_D1": true, "OptaLEDChaser.LED_D2": false, "OptaLEDChaser.LED_D3": false}},
+    {"kind": "AT", "atMs": 400, "condition": {"OptaLEDChaser.LED_D0": false, "OptaLEDChaser.LED_D1": false, "OptaLEDChaser.LED_D2": true, "OptaLEDChaser.LED_D3": false}},
+    {"kind": "AT", "atMs": 570, "condition": {"OptaLEDChaser.LED_D0": false, "OptaLEDChaser.LED_D1": false, "OptaLEDChaser.LED_D2": false, "OptaLEDChaser.LED_D3": true}},
+    {"kind": "AT", "atMs": 740, "condition": {"OptaLEDChaser.LED_D0": false, "OptaLEDChaser.LED_D1": false, "OptaLEDChaser.LED_D2": true, "OptaLEDChaser.LED_D3": false}},
+    {"kind": "AT", "atMs": 910, "condition": {"OptaLEDChaser.LED_D0": false, "OptaLEDChaser.LED_D1": true, "OptaLEDChaser.LED_D2": false, "OptaLEDChaser.LED_D3": false}},
+    {"kind": "AT", "atMs": 1080, "condition": {"OptaLEDChaser.LED_D0": true, "OptaLEDChaser.LED_D1": false, "OptaLEDChaser.LED_D2": false, "OptaLEDChaser.LED_D3": false}},
+    {"kind": "AT", "atMs": 1250, "condition": {"OptaLEDChaser.LED_D0": false, "OptaLEDChaser.LED_D1": true, "OptaLEDChaser.LED_D2": false, "OptaLEDChaser.LED_D3": false}},
+    {"kind": "RISING", "fromMs": 140, "withinMs": 20, "condition": {"OptaLEDChaser.LED_D1": true}},
+    {"kind": "RISING", "fromMs": 310, "withinMs": 20, "condition": {"OptaLEDChaser.LED_D2": true}},
+    {"kind": "RISING", "fromMs": 480, "withinMs": 20, "condition": {"OptaLEDChaser.LED_D3": true}},
+    {"kind": "RISING", "fromMs": 990, "withinMs": 20, "condition": {"OptaLEDChaser.LED_D0": true}},
+    {"kind": "NEVER", "condition": {"OptaLEDChaser.LED_D0": true, "OptaLEDChaser.LED_D3": true}}
+  ]
+}

@@ -22,7 +22,6 @@ const rootOf = (name: string): string => join(projectsRoot, name);
 // Source files that are still not built by any task. The list may only shrink: the test fails when an entry is no
 // longer true, so the entry has to be deleted together with the fix.
 const KNOWN_ORPHANS: Record<string, string[]> = {
-  opta_led_chaser: ['src/led_chaser.ld.json', 'src/main.st', 'src/user_led_fade.st'], // repaired next
   pico_blinky_ton: ['src/main.st', 'src/main_ton.st'], // LX-5b splits or enables these
 };
 
@@ -176,6 +175,36 @@ describe('Blinky language tour', () => {
       const held = scenario.expectations.filter((expectation) => expectation.kind === 'FOR' && expectation.forMs! >= 400).map((expectation) => expectation.condition['Blinky.LED_Output']);
       expect(held).toContain(true);
       expect(held).toContain(false);
+    });
+  }
+});
+
+// The Opta LED chaser, in Structured Text and in Ladder. The Opta has four status LEDs, D0-D3, which the Zephyr HAL
+// exposes as %Q0.0-%Q0.3 (ZPLC_GPIO_OUTPUT_COUNT 4), so a program that drives any other output drives nothing.
+const OPTA_CHASER = [
+  { project: 'opta_led_chaser', source: 'src/led_chaser.st', program: 'OptaLEDChaser' },
+  { project: 'opta_led_chaser_ld', source: 'src/led_chaser.ld.json', program: 'Opta_LED_Chaser' },
+] as const;
+
+describe('Opta LED chaser', () => {
+  for (const { project, source, program } of OPTA_CHASER) {
+    it(`${project} builds ${source}, drives only %Q0.0-%Q0.3 and its scenario lights each LED alone`, async () => {
+      const loaded = await readWorkspace(rootOf(project));
+      if (!loaded.ok) throw new Error(JSON.stringify(loaded.diagnostics));
+      const { sources, project: manifest } = loaded.workspace;
+      const built = manifest.tasks.flatMap((task) => task.programs).flatMap((name) => resolveProgramSource(name, sources)?.sourceRef ?? []);
+      expect(built).toEqual([source]);
+
+      const outputs = new Set([...readFileSync(join(rootOf(project), source), 'utf8').matchAll(/%Q0\.(\d+)/g)].map((match) => Number(match[1])));
+      expect([...outputs].sort()).toEqual([0, 1, 2, 3]);
+
+      const scenarioFile = readdirSync(join(rootOf(project), 'tests')).find((file) => file.endsWith('.scenario.json'));
+      const scenario = JSON.parse(readFileSync(join(rootOf(project), 'tests', scenarioFile!), 'utf8')) as { expectations: Array<{ kind: string; condition: Record<string, boolean> }> };
+      const litAlone = new Set(scenario.expectations.filter((expectation) => expectation.kind === 'AT').flatMap((expectation) => {
+        const lit = [0, 1, 2, 3].filter((led) => expectation.condition[`${program}.LED_D${led}`] === true);
+        return lit.length === 1 && [0, 1, 2, 3].every((led) => `${program}.LED_D${led}` in expectation.condition) ? lit : [];
+      }));
+      expect([...litAlone].sort()).toEqual([0, 1, 2, 3]);
     });
   }
 });

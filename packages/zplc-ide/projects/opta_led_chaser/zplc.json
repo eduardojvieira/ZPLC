@@ -3,7 +3,7 @@
   "schemaVersion": 2,
   "name": "Opta LED Chaser",
   "version": "1.0.0",
-  "description": "Sequential LED animation across Opta D0-D3 with fading User LED",
+  "description": "Larson scanner (bouncing chaser) over the four Opta status LEDs D0-D3 (%Q0.0-%Q0.3), in Structured Text",
   "target": {
     "board": "arduino_opta_wifi"
   },
