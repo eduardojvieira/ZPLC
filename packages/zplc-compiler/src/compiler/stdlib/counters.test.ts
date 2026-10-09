@@ -183,6 +183,60 @@ describe('CTD scan by scan', () => {
 });
 
 // ============================================================================
+// CTUD
+// ============================================================================
+
+describe('CTUD scan by scan', () => {
+    test('R beats an up edge and a down edge in the same scan', () => {
+        replay('CTUD', 3, [
+            [{ CU: 0, CD: 0, R: 0, LD: 1 }, { CV: 3, QU: 1, QD: 0 }],
+            [{ CU: 1, CD: 0, R: 1, LD: 0 }, { CV: 0, QU: 0, QD: 1 }], // CU rises with R
+            [{ CU: 1, CD: 0, R: 0, LD: 0 }, { CV: 0, QU: 0, QD: 1 }], // R released while CU is high
+            [{ CU: 0, CD: 0, R: 0, LD: 1 }, { CV: 3, QU: 1, QD: 0 }],
+            [{ CU: 0, CD: 1, R: 1, LD: 0 }, { CV: 0, QU: 0, QD: 1 }], // CD rises with R
+            [{ CU: 0, CD: 1, R: 0, LD: 0 }, { CV: 0, QU: 0, QD: 1 }],
+        ]);
+    });
+
+    test('LD beats an up edge and a down edge in the same scan', () => {
+        replay('CTUD', 3, [
+            [{ CU: 1, CD: 0, R: 0, LD: 1 }, { CV: 3, QU: 1, QD: 0 }], // CU rises with LD: the preset, not the preset plus one
+            [{ CU: 1, CD: 0, R: 0, LD: 0 }, { CV: 3, QU: 1, QD: 0 }], // LD released while CU is high
+            [{ CU: 0, CD: 0, R: 0, LD: 0 }, { CV: 3, QU: 1, QD: 0 }],
+            [{ CU: 0, CD: 1, R: 0, LD: 1 }, { CV: 3, QU: 1, QD: 0 }], // CD rises with LD
+            [{ CU: 0, CD: 1, R: 0, LD: 0 }, { CV: 3, QU: 1, QD: 0 }],
+        ]);
+    });
+
+    test('R beats LD', () => {
+        replay('CTUD', 3, [
+            [{ CU: 0, CD: 0, R: 0, LD: 1 }, { CV: 3 }],
+            [{ CU: 0, CD: 0, R: 1, LD: 1 }, { CV: 0 }],
+            [{ CU: 0, CD: 0, R: 0, LD: 1 }, { CV: 3 }],
+        ]);
+    });
+
+    test('an up edge and a down edge in one scan cancel; a falling CU does not count', () => {
+        replay('CTUD', 5, [
+            [{ CU: 0, CD: 0, R: 0, LD: 1 }, { CV: 5 }],
+            [{ CU: 1, CD: 1, R: 0, LD: 0 }, { CV: 5 }],
+            [{ CU: 0, CD: 0, R: 0, LD: 0 }, { CV: 5 }],
+            [{ CU: 1, CD: 0, R: 0, LD: 0 }, { CV: 6 }],
+            [{ CU: 0, CD: 1, R: 0, LD: 0 }, { CV: 5 }],
+        ]);
+    });
+
+    test('CV stops at 32767, also when both edges arrive there', () => {
+        replay('CTUD', 32767, [
+            [{ CU: 0, CD: 0, R: 0, LD: 1 }, { CV: 32767, QU: 1 }],
+            [{ CU: 1, CD: 0, R: 0, LD: 0 }, { CV: 32767, QU: 1 }],
+            [{ CU: 0, CD: 0, R: 0, LD: 0 }, { CV: 32767, QU: 1 }],
+            [{ CU: 1, CD: 1, R: 0, LD: 0 }, { CV: 32767, QU: 1 }],
+        ]);
+    });
+});
+
+// ============================================================================
 // Layout: debug maps and retained programs depend on these offsets
 // ============================================================================
 
@@ -191,5 +245,12 @@ describe('counter memory layout', () => {
 
     test('CTD keeps its layout', () => {
         expect(layout('CTD')).toEqual([['CD', 0, 1], ['LD', 1, 1], ['_prev_cd', 2, 1], ['Q', 3, 1], ['PV', 4, 2], ['CV', 6, 2]]);
+    });
+
+    test('CTUD keeps its layout', () => {
+        expect(layout('CTUD')).toEqual([
+            ['CU', 0, 1], ['CD', 1, 1], ['R', 2, 1], ['LD', 3, 1], ['_prev_cu', 4, 1], ['_prev_cd', 5, 1],
+            ['QU', 6, 1], ['QD', 7, 1], ['PV', 8, 2], ['CV', 10, 2],
+        ]);
     });
 });

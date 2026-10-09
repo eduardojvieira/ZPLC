@@ -285,13 +285,19 @@ const CTUD_MEMBERS: MemberDef[] = [
 /**
  * CTUD (Count Up/Down):
  *
- * Combined functionality of CTU and CTD.
  * When R is TRUE: CV := 0
- * When LD is TRUE: CV := PV
- * On rising edge of CU: CV := CV + 1
- * On rising edge of CD: CV := CV - 1
+ * Else when LD is TRUE: CV := PV
+ * Else on rising edge of CU alone: CV := CV + 1 (CV stops at 32767)
+ * Else on rising edge of CD alone: CV := CV - 1
  * QU := (CV >= PV)
  * QD := (CV <= 0)
+ *
+ * R beats LD, and both beat the count edges. The edge detectors on CU and CD run on
+ * every call, also while R or LD is TRUE: a pulse that rises during Reset or Load is
+ * not counted when it is released. Rising edges on CU and CD in the same scan cancel.
+ *
+ * Known deviation: IEC stops CV at PVmin (-32768) when counting down; this does not.
+ * LOAD16 zero-extends, so a negative CV compares as a large positive one (CMP-011).
  */
 export const CTUD_FB: FunctionBlockDef = {
     name: 'CTUD',
@@ -338,79 +344,78 @@ export const CTUD_FB: FunctionBlockDef = {
 
         const skipReset = ctx.newLabel('ctud_skip_reset');
         const skipLoad = ctx.newLabel('ctud_skip_load');
-        const checkUp = ctx.newLabel('ctud_check_up');
-        const skipUp = ctx.newLabel('ctud_skip_up');
         const checkDown = ctx.newLabel('ctud_check_down');
-        const skipDown = ctx.newLabel('ctud_skip_down');
-        const updateOutputs = ctx.newLabel('ctud_outputs');
+        const updatePrev = ctx.newLabel('ctud_update_prev');
+
+        // Push 1 if the input has a rising edge: input AND (NOT previous input)
+        const emitRisingEdge = (inAddr: string, prevAddr: string): void => {
+            ctx.emit(`    LOAD8 ${inAddr}`);
+            ctx.emit(`    LOAD8 ${prevAddr}`);
+            ctx.emit(`    NOT`);
+            ctx.emit(`    PUSH8 1`);
+            ctx.emit(`    AND`);
+            ctx.emit(`    AND`);
+        };
 
         ctx.emit(`    ; --- CTUD Count Up/Down Logic (${ctx.instanceName}) ---`);
 
-        // Check reset
+        // Check reset: CV := 0, no counting, but still update _prev_cu and _prev_cd
         ctx.emit(`    LOAD8 ${rAddr}`);
         ctx.emit(`    JZ ${skipReset}`);
         ctx.emit(`    PUSH16 0`);
         ctx.emit(`    STORE16 ${cvAddr}`);
-        ctx.emit(`    JMP ${checkUp}`);
+        ctx.emit(`    JMP ${updatePrev}`);
 
         ctx.emit(`${skipReset}:`);
 
-        // Check load
+        // Check load: CV := PV, no counting, but still update _prev_cu and _prev_cd
         ctx.emit(`    LOAD8 ${ldAddr}`);
         ctx.emit(`    JZ ${skipLoad}`);
         ctx.emit(`    LOAD16 ${pvAddr}`);
         ctx.emit(`    STORE16 ${cvAddr}`);
-        ctx.emit(`    JMP ${checkUp}`);
+        ctx.emit(`    JMP ${updatePrev}`);
 
         ctx.emit(`${skipLoad}:`);
 
-        ctx.emit(`${checkUp}:`);
+        // Rising edge on CU?
+        emitRisingEdge(cuAddr, prevCuAddr);
+        ctx.emit(`    JZ ${checkDown}`);
 
-        // Check for rising edge on CU
-        ctx.emit(`    LOAD8 ${cuAddr}`);
-        ctx.emit(`    LOAD8 ${prevCuAddr}`);
-        ctx.emit(`    NOT`);
-        ctx.emit(`    PUSH8 1`);
-        ctx.emit(`    AND`);
-        ctx.emit(`    AND`);
-        ctx.emit(`    JZ ${skipUp}`);
+        // A rising edge on CD in the same scan cancels it
+        emitRisingEdge(cdAddr, prevCdAddr);
+        ctx.emit(`    JNZ ${updatePrev}`);
 
-        // Increment
+        // Increment unless CV is at the INT maximum (IEC PVmax).
+        // NE rather than LT: LOAD16 zero-extends, so a negative CV would look larger than 32767.
+        ctx.emit(`    LOAD16 ${cvAddr}`);
+        ctx.emit(`    PUSH16 32767`);
+        ctx.emit(`    NE`);
+        ctx.emit(`    JZ ${updatePrev}`);
+
         ctx.emit(`    LOAD16 ${cvAddr}`);
         ctx.emit(`    PUSH16 1`);
         ctx.emit(`    ADD`);
         ctx.emit(`    STORE16 ${cvAddr}`);
-
-        ctx.emit(`${skipUp}:`);
-
-        // Update _prev_cu
-        ctx.emit(`    LOAD8 ${cuAddr}`);
-        ctx.emit(`    STORE8 ${prevCuAddr}`);
+        ctx.emit(`    JMP ${updatePrev}`);
 
         ctx.emit(`${checkDown}:`);
 
-        // Check for rising edge on CD
-        ctx.emit(`    LOAD8 ${cdAddr}`);
-        ctx.emit(`    LOAD8 ${prevCdAddr}`);
-        ctx.emit(`    NOT`);
-        ctx.emit(`    PUSH8 1`);
-        ctx.emit(`    AND`);
-        ctx.emit(`    AND`);
-        ctx.emit(`    JZ ${skipDown}`);
+        // Rising edge on CD (CU has none here): decrement
+        emitRisingEdge(cdAddr, prevCdAddr);
+        ctx.emit(`    JZ ${updatePrev}`);
 
-        // Decrement
         ctx.emit(`    LOAD16 ${cvAddr}`);
         ctx.emit(`    PUSH16 1`);
         ctx.emit(`    SUB`);
         ctx.emit(`    STORE16 ${cvAddr}`);
 
-        ctx.emit(`${skipDown}:`);
+        ctx.emit(`${updatePrev}:`);
 
-        // Update _prev_cd
+        // Update _prev_cu and _prev_cd on every call, whatever R and LD were
+        ctx.emit(`    LOAD8 ${cuAddr}`);
+        ctx.emit(`    STORE8 ${prevCuAddr}`);
         ctx.emit(`    LOAD8 ${cdAddr}`);
         ctx.emit(`    STORE8 ${prevCdAddr}`);
-
-        ctx.emit(`${updateOutputs}:`);
 
         // QU := (CV >= PV)
         ctx.emit(`    LOAD16 ${cvAddr}`);
