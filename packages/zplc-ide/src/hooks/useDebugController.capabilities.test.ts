@@ -146,14 +146,25 @@ describe('direct watch-write hardware boundary', () => {
 });
 
 describe('breakpoint teardown boundary', () => {
-  it('stops stale synchronization without suppressing active-session errors', () => {
+  // The round itself (stale rounds dropped, errors of a live session reported) is tested in
+  // useDebugControllerBreakpoints.test.ts; this pins what the hook hands to it.
+  it('lets the syncer drop a round once the adapter is replaced or disconnected', () => {
     const source = readFileSync(join(import.meta.dir, 'useDebugController.ts'), 'utf8');
-    const effect = source.slice(source.indexOf('// Sync Breakpoints to Adapter'), source.indexOf('// Cleanup on Unmount'));
+    const push = source.slice(source.indexOf('const pushBreakpoints ='), source.indexOf('const resetConnectionState ='));
 
-    expect(effect).toContain('let disposed = false;');
-    expect(effect).toContain('if (disposed || adapterRef.current !== adapter || !adapter.connected) return;');
-    expect(effect).toContain('return () => { disposed = true; };');
-    expect(effect).toContain("console.error('Failed to sync breakpoints:', err);");
+    expect(push).toContain('() => useIDEStore.getState().getAllBreakpointPCs(),');
+    expect(push).toContain('() => adapterRef.current === target && target.connected,');
+    expect(push).toContain("console.error('Failed to sync breakpoints:', err);");
+  });
+
+  it('pushes breakpoints only through the one-at-a-time syncer', () => {
+    const source = readFileSync(join(import.meta.dir, 'useDebugController.ts'), 'utf8');
+
+    expect(source).not.toContain('.setBreakpoint(');
+    expect(source).not.toContain('.clearBreakpoints(');
+    // program.load and execution.reset empty the runtime table, so both must invalidate what the syncer knows.
+    expect(source.slice(source.indexOf('const loadProgram ='), source.indexOf('const start ='))).toContain('breakpointSyncer.invalidate();');
+    expect(source.slice(source.indexOf('const reset ='), source.indexOf('// Memory Access'))).toContain('breakpointSyncer.invalidate();');
   });
 });
 
