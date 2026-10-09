@@ -274,6 +274,19 @@ async function main(): Promise<void> {
     await storeEval(cdp, `state().clearConsole(); useIDEStore.setState({ activeConsoleTab: 'tests' }); return true;`);
     await waitFor('Panel region recovered by switching tab', async () => await cdp!.evaluate(regionError('Panel')) === false ? true : undefined);
     cdp.errors.splice(0); cdp.errorDetails.splice(0);
+    // LNG-011: a Ladder file is validated when it opens; an invalid one names itself and its violations and leaves the window alive.
+    const fileError = `document.querySelector('[role="alert"][data-file-error]')?.textContent ?? null`;
+    const ladder = await storeEval(cdp, `return await state().createFile('Broken', 'LD');`) as string;
+    await waitFor('valid new Ladder file shown', async () => await storeEval(cdp!, `return state().activeFileId === ${JSON.stringify(ladder)} ? true : undefined;`) === true ? true : undefined);
+    await Bun.sleep(300);
+    assert(await cdp.evaluate(fileError) === null, 'A valid new Ladder file must open without an error.');
+    await storeEval(cdp, `state().updateFileContent(${JSON.stringify(ladder)}, ${JSON.stringify(JSON.stringify({ name: 'Broken', variables: { local: [], outputs: [] }, rungs: [{ id: 'rung_1' }] }))}); return true;`);
+    const ladderPath = ladder.slice('file:'.length);
+    await waitFor('invalid Ladder file error', async () => String(await cdp!.evaluate(fileError)).includes(ladderPath) ? true : undefined);
+    const ladderError = String(await cdp.evaluate(fileError));
+    assert(ladderError.includes('Invalid LD file') && ladderError.includes('rungs[0].number'), `The Ladder error should name the file and the first violations: ${ladderError}`);
+    assert(JSON.stringify(await cdp.evaluate(windowAlive)) === JSON.stringify({ tabs: true, toolbar: true, panel: true }), 'An invalid Ladder file must leave the window alive.');
+    await storeEval(cdp, `state().discardFile(${JSON.stringify(ladder)}); return true;`);
     const finalFrame = await cdp.command('Page.getFrameTree') as { frameTree?: { frame?: { id?: string } } };
     assert((finalFrame.frameTree?.frame?.id ?? '') === mainFrameId, 'Renderer main frame changed during smoke.');
     assert(JSON.stringify(await cdp.evaluate('window.electronAPI.getAppInfo()')) === JSON.stringify(appInfo), 'Preload IPC identity changed during smoke.');

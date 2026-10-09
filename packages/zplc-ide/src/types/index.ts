@@ -825,7 +825,9 @@ END_PROGRAM`;
           "local": [],
           "outputs": []
         },
-        "steps": [],
+        "steps": [
+          { "id": "step_init", "name": "Init", "isInitial": true, "position": { "x": 200, "y": 100 }, "actions": [] }
+        ],
         "transitions": [],
         "actions": [],
         "metadata": {
