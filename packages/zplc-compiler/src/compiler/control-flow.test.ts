@@ -79,3 +79,38 @@ describe('RETURN (CMP-036 stopgap)', () => {
         expect(asm.split('\n').filter((line) => line.trim() === 'HALT')).toHaveLength(2);
     });
 });
+
+describe('debug map (CMP-054 stopgap)', () => {
+    it('gives every variable the address the code uses, in a file with TYPE, FUNCTION_BLOCK and VAR_GLOBAL', () => {
+        const source = [
+            'TYPE Pt : STRUCT x : INT; y : INT; END_STRUCT END_TYPE',
+            'VAR_GLOBAL G : INT; END_VAR',
+            'FUNCTION_BLOCK Fb',
+            'VAR_OUTPUT q : INT; END_VAR',
+            '  q := 1;',
+            'END_FUNCTION_BLOCK',
+            'PROGRAM Mapped',
+            'VAR',
+            '  p : Pt;',
+            '  f : Fb;',
+            '  s : INT;',
+            'END_VAR',
+            '  s := 42;',
+            'END_PROGRAM',
+            '',
+        ].join('\n');
+        const result = compileToBinary(source, { generateDebugMap: true });
+        const vars = result.debugMap!.pou.Mapped.vars;
+        // The memory map comment of the assembly is the layout the code was generated from.
+        const layout = new Map<string, number>();
+        for (const line of result.assembly.split('\n')) {
+            const match = /^; 0x([0-9a-f]{4}): (\S+) \(/i.exec(line);
+            if (match) layout.set(match[2], parseInt(match[1], 16));
+        }
+        expect(layout.get('s')).toBeDefined();
+        for (const name of ['G', 'p', 'f', 's']) {
+            expect(vars[name]).toBeDefined();
+            expect(vars[name].addr).toBe(layout.get(name)!);
+        }
+    });
+});

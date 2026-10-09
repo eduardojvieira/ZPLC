@@ -388,7 +388,8 @@ export function compileToBinary(source: string, options?: CompileOptions): Compi
     // Build debug map if requested
     if (generateDebugMap) {
         const workMemoryBase = options?.workMemoryBase;
-        const symbols = buildSymbolTable(program, workMemoryBase);
+        // The same unit the code was generated from, so the map and the code share one layout.
+        const symbols = buildSymbolTable(ast, workMemoryBase);
 
         result.debugMap = buildDebugMap({
             programName: program.name,
@@ -743,7 +744,7 @@ export function compileMultiTaskProject(
 
         // Build debug map for this program
         const program = programAst.programs[0]!;
-        const symbols = buildSymbolTable(program, workMemoryBase);
+        const symbols = buildSymbolTable(programAst, workMemoryBase);
         const progDebugMap = buildDebugMap({
             programName: program.name,
             sourceRef,
