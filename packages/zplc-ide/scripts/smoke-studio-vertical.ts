@@ -144,10 +144,10 @@ async function captureWelcomeReviewScreens(cdp: Cdp, reviewDir: string): Promise
     const valid = await cdp.evaluate(`(() => {
       const controls = [...document.querySelectorAll('button')];
       const matches = ['Open project', 'New project'].map((label) => controls.find((button) => button.textContent?.includes(label)));
-      const exampleHeading = [...document.querySelectorAll('h3')].find((heading) => heading.textContent?.trim() === 'Copy example');
+      const exampleHeading = [...document.querySelectorAll('h2')].find((heading) => heading.textContent?.trim() === 'Examples');
       const h1 = [...document.querySelectorAll('h1')].find((heading) => heading.textContent?.trim() === 'ZPLC Studio 2.0');
       const examples = [...document.querySelectorAll('button[data-welcome-example]')];
-      const visible = [...matches, document.querySelector('button[aria-label^="Switch to"]')].every((element) => {
+      const visible = [...matches, document.querySelector('select[data-theme-control]')].every((element) => {
         const rect = element?.getBoundingClientRect();
         return Boolean(rect) && rect.left >= 0 && rect.right <= window.innerWidth && rect.top >= 0 && rect.bottom <= window.innerHeight;
       });
