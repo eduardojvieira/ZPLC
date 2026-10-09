@@ -686,6 +686,8 @@ int zplc_vm_init(zplc_vm_t *vm) {
   vm->halted = 0;
   vm->paused = 0;
   vm->resume_skip_breakpoint_once = 0;
+  vm->scan_resumed = 0;
+  vm->scan_instructions = 0;
   vm->breakpoint_count = 0;
   vm->code = mem_code;
   vm->code_size = code_size;
@@ -712,6 +714,8 @@ int zplc_vm_set_entry(zplc_vm_t *vm, uint16_t entry_point,
    * This allows bounds check: pc >= code_size fails if pc goes past end */
   vm->code_size = entry_point + task_code_size;
   vm->pc = entry_point;
+  vm->scan_resumed = 0U;
+  vm->scan_instructions = 0U;
 
   return 0;
 }
@@ -728,6 +732,8 @@ void zplc_vm_reset_cycle(zplc_vm_t *vm) {
   vm->halted = 0;
   vm->paused = 0;
   vm->resume_skip_breakpoint_once = resume_skip_breakpoint_once;
+  vm->scan_resumed = 0U; /* starting over abandons any interrupted scan */
+  vm->scan_instructions = 0U;
   vm->error = ZPLC_VM_OK;
   /* Note: breakpoints are preserved across cycles */
 }
@@ -2131,14 +2137,28 @@ int zplc_vm_run_bounded(zplc_vm_t *vm, uint32_t max_instructions) {
 }
 
 int zplc_vm_run_cycle(zplc_vm_t *vm) {
+  uint32_t spent = 0U;
+  int result;
+
   if (vm == NULL) {
     return -1;
   }
 
-  /* Reset for new cycle */
-  zplc_vm_reset_cycle(vm);
+  if (vm->scan_resumed != 0U && vm->paused == 0U && vm->halted == 0U &&
+      vm->scan_instructions < ZPLC_VM_CYCLE_INSTRUCTION_BUDGET) {
+    /* Continue the scan a debugger resumed: pc, stacks and locals stay as the
+     * pause left them, and the instructions it already spent stay counted. */
+    spent = vm->scan_instructions;
+    vm->scan_resumed = 0U;
+  } else {
+    /* Reset for new cycle */
+    zplc_vm_reset_cycle(vm);
+  }
 
-  return zplc_vm_run_bounded(vm, ZPLC_VM_CYCLE_INSTRUCTION_BUDGET);
+  result = zplc_vm_run_bounded(vm, ZPLC_VM_CYCLE_INSTRUCTION_BUDGET - spent);
+  vm->scan_instructions =
+      (result >= 0 && vm->paused != 0U) ? spent + (uint32_t)result : 0U;
+  return result;
 }
 
 /* ============================================================================
@@ -2374,6 +2394,10 @@ int zplc_vm_is_paused(const zplc_vm_t *vm) {
 int zplc_vm_resume(zplc_vm_t *vm) {
   if (vm == NULL) {
     return -1;
+  }
+  if (vm->paused != 0U) {
+    /* The scan stopped part-way: the next zplc_vm_run_cycle() continues it. */
+    vm->scan_resumed = 1U;
   }
   vm->paused = 0;
   vm->resume_skip_breakpoint_once = 1U;

@@ -2569,6 +2569,144 @@ static void test_breakpoints(void)
     TEST_ASSERT(vm->halted, "VM is halted");
 }
 
+/**
+ * @brief Resume continues the scan a breakpoint interrupted (RT-017).
+ *
+ * zplc_vm_run_cycle() starts a new scan, but after zplc_vm_resume() of a VM
+ * that paused part-way through a scan it must continue that scan from the
+ * preserved pc, stack and call stack instead of restarting at the entry point.
+ */
+static void test_resume_continues_interrupted_scan(void)
+{
+    uint8_t code[64];
+    uint8_t other[16];
+    size_t len = 0;
+    size_t other_len = 0;
+    zplc_vm_t *vm;
+    int result;
+
+    printf("\n=== Test: Resume continues the interrupted scan ===\n");
+
+    /* PC 0: PUSH32 10, PC 5: PUSH32 20, PC 10: ADD, PC 11: STORE32 %Q, PC 14: HALT */
+    len = emit_push32(code, len, 10);
+    len = emit_push32(code, len, 20);
+    len = emit_op(code, len, OP_ADD);
+    len = emit_store32(code, len, ZPLC_MEM_OPI_BASE);
+    len = emit_op(code, len, OP_HALT);
+
+    /* Mid-scan breakpoint: the pushes before it survive, the store after it runs. */
+    zplc_core_init();
+    zplc_test_load_raw(code, len);
+    vm = zplc_core_get_default_vm();
+    zplc_vm_add_breakpoint(vm, 10);
+
+    result = zplc_vm_run_cycle(vm);
+    TEST_ASSERT(zplc_vm_is_paused(vm), "Scan pauses at the mid-scan breakpoint");
+    TEST_ASSERT_EQ(vm->pc, 10, "Paused at the breakpoint pc");
+    TEST_ASSERT_EQ(vm->sp, 2, "Both pushes executed before the breakpoint");
+    TEST_ASSERT_EQ(result, 2, "Only the instructions before the breakpoint ran");
+    TEST_ASSERT_EQ(zplc_core_get_opi(0), 0, "Output after the breakpoint not yet written");
+
+    zplc_vm_resume(vm);
+    result = zplc_vm_run_cycle(vm);
+    TEST_ASSERT(!zplc_vm_is_paused(vm), "Resumed scan does not pause at the same breakpoint again");
+    TEST_ASSERT(vm->halted, "Resumed scan runs to the end of the program");
+    TEST_ASSERT_EQ(result, 2, "Resumed scan runs only the remaining instructions");
+    TEST_ASSERT_EQ(zplc_core_get_opi(0), 30, "Stack built before the breakpoint is used after it");
+    TEST_ASSERT(vm->scan_resumed == 0U, "Continuing the scan consumes the resume marker");
+
+    /* The same pc in a LATER scan pauses again, and resuming finishes that scan too. */
+    result = zplc_vm_run_cycle(vm);
+    TEST_ASSERT(zplc_vm_is_paused(vm) && vm->pc == 10 && vm->sp == 2,
+                "Next scan starts fresh and pauses at the same breakpoint pc");
+    TEST_ASSERT_EQ(result, 2, "Next scan restarted from the entry point");
+    zplc_vm_resume(vm);
+    result = zplc_vm_run_cycle(vm);
+    TEST_ASSERT(vm->halted && !zplc_vm_is_paused(vm), "Second resumed scan also completes");
+
+    /* Breakpoint at the entry point: continuing and restarting coincide. */
+    zplc_core_init();
+    zplc_test_load_raw(code, len);
+    vm = zplc_core_get_default_vm();
+    zplc_vm_add_breakpoint(vm, 0);
+    result = zplc_vm_run_cycle(vm);
+    TEST_ASSERT(zplc_vm_is_paused(vm) && vm->pc == 0 && result == 0,
+                "Entry breakpoint pauses before any instruction");
+    zplc_vm_resume(vm);
+    result = zplc_vm_run_cycle(vm);
+    TEST_ASSERT(vm->halted && result == 4, "Resume from the entry breakpoint runs the whole scan");
+    TEST_ASSERT_EQ(zplc_core_get_opi(0), 30, "Entry breakpoint scan wrote its output");
+
+    /* Without a resume the paused scan is abandoned: the next run_cycle starts over. */
+    zplc_core_init();
+    zplc_test_load_raw(code, len);
+    vm = zplc_core_get_default_vm();
+    zplc_vm_add_breakpoint(vm, 10);
+    (void)zplc_vm_run_cycle(vm);
+    TEST_ASSERT(vm->scan_resumed == 0U, "Pausing alone does not arm a continuation");
+    result = zplc_vm_run_cycle(vm);
+    TEST_ASSERT(zplc_vm_is_paused(vm) && vm->pc == 10 && vm->sp == 2 && result == 2,
+                "run_cycle without resume restarts the scan and pauses again");
+
+    /* Resume of a VM that is not paused does not turn the next scan into a continuation. */
+    zplc_core_init();
+    zplc_test_load_raw(code, len);
+    vm = zplc_core_get_default_vm();
+    (void)zplc_vm_run(vm, 2);
+    TEST_ASSERT(!zplc_vm_is_paused(vm) && vm->pc == 10, "Bounded run leaves the VM mid-scan, not paused");
+    zplc_vm_resume(vm);
+    TEST_ASSERT(vm->scan_resumed == 0U, "Resume of a running VM arms no continuation");
+    result = zplc_vm_run_cycle(vm);
+    TEST_ASSERT(vm->halted && result == 4, "run_cycle after such a resume still starts a new scan");
+
+    /* Every path that restarts the scan drops the continuation. */
+    zplc_core_init();
+    zplc_test_load_raw(code, len);
+    vm = zplc_core_get_default_vm();
+    zplc_vm_add_breakpoint(vm, 10);
+    (void)zplc_vm_run_cycle(vm);
+    zplc_vm_resume(vm);
+    TEST_ASSERT(vm->scan_resumed == 1U, "Resume of a paused scan arms the continuation");
+    zplc_vm_reset_cycle(vm);
+    TEST_ASSERT(vm->scan_resumed == 0U && vm->scan_instructions == 0U, "reset_cycle drops the continuation");
+
+    (void)zplc_vm_run_cycle(vm);
+    zplc_vm_resume(vm);
+    TEST_ASSERT_EQ(zplc_vm_set_entry(vm, 0U, (uint32_t)len), 0, "set_entry accepted");
+    TEST_ASSERT(vm->scan_resumed == 0U && vm->scan_instructions == 0U, "set_entry drops the continuation");
+
+    (void)zplc_vm_run_cycle(vm);
+    zplc_vm_resume(vm);
+    other_len = emit_push32(other, other_len, 7);
+    other_len = emit_store32(other, other_len, ZPLC_MEM_OPI_BASE);
+    other_len = emit_op(other, other_len, OP_HALT);
+    zplc_test_load_raw(other, other_len);
+    vm = zplc_core_get_default_vm();
+    TEST_ASSERT(vm->scan_resumed == 0U && vm->scan_instructions == 0U && vm->breakpoint_count == 0U,
+                "Loading a program drops the continuation and the breakpoints");
+    result = zplc_vm_run_cycle(vm);
+    TEST_ASSERT(vm->halted && zplc_core_get_opi(0) == 7, "Reloaded program runs a whole new scan");
+
+    /* The logical scan budget covers the whole scan, not each resume. */
+    len = 0;
+    code[len++] = OP_NOP;              /* PC 0 */
+    code[len++] = OP_NOP;              /* PC 1: breakpoint */
+    code[len++] = OP_NOP;              /* PC 2 */
+    code[len++] = OP_NOP;              /* PC 3 */
+    code[len++] = OP_HALT;             /* PC 4 */
+    zplc_core_init();
+    zplc_test_load_raw(code, len);
+    vm = zplc_core_get_default_vm();
+    zplc_vm_add_breakpoint(vm, 1);
+    (void)zplc_vm_run_cycle(vm);
+    TEST_ASSERT_EQ(vm->scan_instructions, 1, "Pause records the instructions the scan already used");
+    vm->scan_instructions = ZPLC_VM_CYCLE_INSTRUCTION_BUDGET - 2U; /* as if a long scan paused here */
+    zplc_vm_resume(vm);
+    result = zplc_vm_run_cycle(vm);
+    TEST_ASSERT_EQ(result, -ZPLC_VM_WATCHDOG, "Resumed scan keeps counting against the cycle budget");
+    TEST_ASSERT(vm->halted && vm->error == ZPLC_VM_WATCHDOG, "Budget exhaustion across a pause faults the VM");
+}
+
 /* ============================================================================
  * Force Override Tests
  * ============================================================================ */
@@ -2880,6 +3018,7 @@ int main(void)
 
     /* Debugger Breakpoint Tests (v1.3: Debug support) */
     test_breakpoints();
+    test_resume_continues_interrupted_scan();
 
     /* Force Override Tests */
     test_force_overrides();
