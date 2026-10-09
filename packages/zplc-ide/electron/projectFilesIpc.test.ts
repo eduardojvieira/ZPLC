@@ -40,7 +40,7 @@ describe('project files IPC boundary', () => {
   });
 
   it('registers every channel behind the sender check, then lets the shared handler validate the message', () => {
-    expect(mainSource).toContain("import { createProjectFiles, readFolderDialogHook } from './projectFiles.js';");
+    expect(mainSource).toContain("import { createProjectFiles } from './projectFiles.js';");
     expect(mainSource).toContain("import { PROJECT_FILES_CHANNEL } from './projectFilesProtocol.js';");
     expect(mainSource).toContain('for (const channel of Object.values(PROJECT_FILES_CHANNEL)) {');
     expect(mainSource).toContain('ipcMain.handle(channel, async (event, ...args: unknown[]) => {');
@@ -61,6 +61,9 @@ describe('project files IPC boundary', () => {
     expect(mainSource).toContain("dialog.showOpenDialog(win, { title: 'Choose project folder', properties: ['openDirectory', 'createDirectory'] })");
     expect(mainSource).toContain('readFolderDialogHook(app.isPackaged, process.env)');
     expect(mainSource).not.toContain('ZPLC_SMOKE_FOLDER_ANSWER_FILE');
+    // The hook module is imported inside the not-packaged branch, ahead of the real dialog (scripts/packagingHygiene.test.ts holds the rest of VF-008).
+    expect(mainSource.indexOf("await import('./devFolderDialogHook.js')")).toBeGreaterThan(mainSource.indexOf('if (!app.isPackaged) {'));
+    expect(mainSource.indexOf("await import('./devFolderDialogHook.js')")).toBeLessThan(mainSource.indexOf('dialog.showOpenDialog(win'));
   });
 
   it('brings no npm runtime dependency into the main process (the packaged archive lists no node_modules)', () => {

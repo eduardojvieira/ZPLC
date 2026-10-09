@@ -1,8 +1,8 @@
 /** Real packaged Electron launch smoke; host-only, never HIL. */
-import { accessSync, constants, existsSync, lstatSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
+import { accessSync, constants, existsSync, lstatSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { isElectronHeadlessBootstrapQuarantine } from './electronHeadlessQuarantine';
 
 const HOST = '127.0.0.1';
@@ -44,6 +44,35 @@ export function discoverPackagedExecutable(distDir: string, platform: NodeJS.Pla
     try { accessSync(executable, constants.X_OK); } catch { throw new Error(`Packaged desktop smoke executable is not executable: ${executable}`); }
   }
   return executable;
+}
+
+/** What exists only in a build made for the suite (VF-008): a released installer contains none of it. */
+export const DEV_ONLY_VARIABLE = 'ZPLC_SMOKE_FOLDER_ANSWER_FILE';
+const DEV_ONLY_MODULE = /(^|\/)devFolderDialogHook\.js(\.map)?$/;
+
+/** The archive of the app inside an unpacked package, given the executable that discoverPackagedExecutable found. */
+export function packagedAsarPath(executable: string, platform: NodeJS.Platform = process.platform): string {
+  return platform === 'darwin'
+    ? join(dirname(executable), '..', 'Resources', 'app.asar')
+    : join(dirname(executable), 'resources', 'app.asar');
+}
+
+interface AsarDirectory { files: Record<string, AsarDirectory | { size: number }> }
+
+/** Every file path in the JSON header of an asar archive: four little-endian 32-bit words (the fourth is the header length), then the header text. */
+export function listAsarFiles(asar: Uint8Array): string[] {
+  const length = new DataView(asar.buffer, asar.byteOffset, asar.byteLength).getUint32(12, true);
+  const header = JSON.parse(new TextDecoder().decode(asar.subarray(16, 16 + length))) as AsarDirectory;
+  const walk = (directory: AsarDirectory, prefix: string): string[] => Object.entries(directory.files).flatMap(([name, entry]) =>
+    'files' in entry ? walk(entry, `${prefix}${name}/`) : [`${prefix}${name}`]);
+  return walk(header, '');
+}
+
+/** Fails when the archive lists the dev-only hook module, or holds its variable name in any file (asar stores file bytes uncompressed). */
+export function assertAsarHasNoDevOnlyCode(asar: Uint8Array): void {
+  const modules = listAsarFiles(asar).filter((file) => DEV_ONLY_MODULE.test(file));
+  assert(modules.length === 0, `Packaged app.asar contains the dev-only folder dialog hook module: ${modules.join(', ')}`);
+  assert(!Buffer.from(asar.buffer, asar.byteOffset, asar.byteLength).includes(DEV_ONLY_VARIABLE), `Packaged app.asar contains ${DEV_ONLY_VARIABLE}: the folder dialog test hook shipped.`);
 }
 
 async function freePort(): Promise<number> {
@@ -153,6 +182,8 @@ async function press(cdp: Cdp, key: string, code = key): Promise<void> {
 async function main(): Promise<void> {
   // ZPLC_PACKAGED_DIST points at another output directory of electron-builder, for a package built outside the repository tree.
   const executable = discoverPackagedExecutable(process.env.ZPLC_PACKAGED_DIST ?? join(packageRoot, 'dist-electron'));
+  // VF-008: the folder dialog test hook never ships. Checked on the archive itself, before anything is launched.
+  assertAsarHasNoDevOnlyCode(readFileSync(packagedAsarPath(executable)));
   const tempRoot = mkdtempSync(join(tmpdir(), 'zplc-packaged-smoke-'));
   const output: string[] = [];
   let electron: OwnedProcess | undefined;
@@ -190,6 +221,9 @@ async function main(): Promise<void> {
     // IDE-001, IDE-003: the project bridge of the asar's preload offers exactly its eight typed operations and no path-taking helper.
     const projectOperations = (await cdp.evaluate(`Object.keys(window.electronAPI.projectFiles).sort()`)) as string[];
     assert(JSON.stringify(projectOperations) === JSON.stringify(['chooseFolder', 'list', 'mkdir', 'read', 'remove', 'rename', 'stat', 'write']), `Unexpected packaged project bridge: ${JSON.stringify(projectOperations)}`);
+    // LX-1: the workspace test bridge registers the folder the main process owns by its opaque id, next to the older file-based registration.
+    const workspaceTestOperations = (await cdp.evaluate(`Object.keys(window.electronAPI.workspaceTests).sort()`)) as string[];
+    assert(['registerProjectFile', 'registerProjectRoot'].every((operation) => workspaceTestOperations.includes(operation)), `Packaged workspace test bridge lacks registerProjectRoot: ${JSON.stringify(workspaceTestOperations)}`);
     // The permission handlers stay deny-by-default: a request other than serial is refused, and the file system permission goes through the same handlers.
     const permissionProbe = (await cdp.evaluate(`Notification.requestPermission().then((requested) => ({ requested, now: Notification.permission }))`)) as { requested: string; now: string };
     assert(permissionProbe.requested === 'denied' && permissionProbe.now === 'denied', `A permission request must be refused in the packaged app: ${JSON.stringify(permissionProbe)}`);

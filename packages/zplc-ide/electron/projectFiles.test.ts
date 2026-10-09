@@ -4,7 +4,7 @@ import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSyn
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { createProjectFiles, readFolderDialogHook } from './projectFiles';
+import { createProjectFiles } from './projectFiles';
 import {
   PROJECT_FILES_CHANNEL,
   PROJECT_FILES_LIMITS,
@@ -380,29 +380,5 @@ describe('request validation at the handler', () => {
     expect(refused(await send('project-files:exec', [{ rootId, path: 'a' }]))).toBe('invalid-request');
     expect(refused(await send('project-files:list', [{ rootId, path: '' }, 'extra']))).toBe('invalid-request');
     expect(readdirSync(root)).toEqual(['src']);
-  });
-});
-
-describe('test hook for the native dialog', () => {
-  const env = (answerFile: string | undefined) => ({ ZPLC_SMOKE_FOLDER_ANSWER_FILE: answerFile });
-
-  it('is inert in a packaged build, whatever the environment says', () => {
-    const file = path.join(sandbox, 'answer.txt');
-    writeFileSync(file, root);
-    expect(readFolderDialogHook(true, env(file))).toBeUndefined();
-  });
-
-  it('is absent without the variable', () => {
-    expect(readFolderDialogHook(false, {})).toBeUndefined();
-    expect(readFolderDialogHook(false, env(''))).toBeUndefined();
-  });
-
-  it('answers with the trimmed path in the file, or with a cancel when the file is empty or unreadable', () => {
-    const file = path.join(sandbox, 'answer.txt');
-    writeFileSync(file, `${root}\n`);
-    expect(readFolderDialogHook(false, env(file))).toBe(root);
-    writeFileSync(file, '  \n');
-    expect(readFolderDialogHook(false, env(file))).toBeNull();
-    expect(readFolderDialogHook(false, env(path.join(sandbox, 'absent.txt')))).toBeNull();
   });
 });

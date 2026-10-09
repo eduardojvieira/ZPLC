@@ -13,7 +13,6 @@
  * in the native project service of WP-34.
  */
 import { randomBytes, randomUUID } from 'node:crypto';
-import { readFileSync } from 'node:fs';
 import { lstat, mkdir, readFile, readdir, realpath, rename, rm, rmdir, stat, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
@@ -198,21 +197,6 @@ const operations: Operations = {
 };
 
 const OP_BY_CHANNEL = new Map<string, ProjectFilesOp>(PROJECT_FILES_OPS.map((op) => [PROJECT_FILES_CHANNEL[op], op]));
-
-/**
- * Test hook for the native dialog (T7.5). Only a host that is not packaged reads it: the file named by
- * ZPLC_SMOKE_FOLDER_ANSWER_FILE holds the folder to "choose" (empty or unreadable means cancel).
- * Returns undefined when the hook is not active, so the real dialog is used.
- */
-export function readFolderDialogHook(isPackaged: boolean, env: Record<string, string | undefined>): string | null | undefined {
-  const answerFile = isPackaged ? undefined : env.ZPLC_SMOKE_FOLDER_ANSWER_FILE;
-  if (!answerFile) return undefined;
-  try {
-    return readFileSync(answerFile, 'utf8').trim() || null;
-  } catch {
-    return null;
-  }
-}
 
 interface Folder { id: string; real: string }
 

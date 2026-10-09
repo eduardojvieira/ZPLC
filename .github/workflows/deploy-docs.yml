@@ -46,8 +46,8 @@ jobs:
       - name: Generate and validate docs references
         working-directory: docs
         run: |
-          bun run generate:v1.5-docs
-          bun run validate:v1.5-docs
+          bun run generate:docs
+          bun run validate:docs
 
       - name: Build documentation
         working-directory: docs
