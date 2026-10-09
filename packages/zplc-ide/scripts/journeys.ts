@@ -654,4 +654,58 @@ export const JOURNEYS: Journey[] = [
       await app.click(button('Cancel'), 'the Cancel button');
     },
   },
+  {
+    name: '16 Debug details: stop, trace, resume mid-scan', example: 'motor_start_stop',
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openFile(app, 'src/Motor.st');
+      const line = await lineWith(app, 'Forward := SealIn;'); // the statement after it is Reverse := FALSE
+      assert(line > 0, 'Motor.st no longer has the statement Forward := SealIn; the journey aims at.');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Motor example does not build: ${result.message}`);
+      await clickEditorLine(app, line, 'gutter');
+      await app.until(`a breakpoint dot on line ${line}`, async () => (await decoratedLines(app, 'glyphMarginClassName', 'breakpoint-glyph')).includes(line) || undefined);
+      const hits = async () => (await outputText(app)).match(new RegExp(`Breakpoint hit at PC=0x68, line ${line}\\b`, 'g'))?.length ?? 0;
+      const stoppedAgain = async (count: number) => await hits() >= count && await app.visible(button('Resume (F5)', 'prefix')) || undefined;
+      await app.click(button('Connect'));
+      await app.until('the simulation to connect', async () => await app.visible(button('Disconnect')) || undefined);
+      await app.click(button('Run (F5)', 'prefix'));
+      await app.until(`execution to stop at line ${line}`, async () => await app.visible(button('Resume (F5)', 'prefix')) || undefined);
+
+      // The stop is explained three ways: a Console entry with the line, the toolbar offering Resume, and a Trace row that says paused.
+      await app.until('the Console entry for the stop', async () => await hits() === 1 || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: Output says ${JSON.stringify((await outputText(app)).match(/Breakpoint hit[^\n]*/g))}`); });
+      assert((await decoratedLines(app, 'className', 'current-line-highlight')).includes(line), `Execution paused but the editor does not mark line ${line}.`);
+      await app.click(tab('Trace'));
+      const errorCell = await app.until('a Trace row with the VM error of the stop', async () => await app.eval<string | null>(`document.querySelector('[id^="console-panel-"] table tbody tr td:nth-child(5)')?.innerText.trim() ?? null`) ?? undefined);
+      assert(errorCell === '10 paused', `The Error column of the newest Trace row should read "10 paused", not ${JSON.stringify(errorCell)}.`);
+      const cells = await app.eval<string[]>(`[...document.querySelectorAll('[id^="console-panel-"] table tbody tr:first-child td')].map((cell) => cell.innerText.trim())`);
+      assert(cells[2] === 'paused' && cells[3] === '0x68', `The newest Trace row should read state "paused" at PC 0x68: ${JSON.stringify(cells)}`);
+
+      // Pressing Start while stopped, then Resume: the scan that was interrupted finishes (its Forward and Reverse lines run) and the
+      // next scan stops at the same line again. Before the runtime continued an interrupted scan, Resume began that scan again, so it
+      // never finished and Forward never changed.
+      await watch(app, 'Start'); await watch(app, 'Forward');
+      const startValue = `${watchRow('Start')}?.children[1]`;
+      await app.click(startValue, 'the value of Start', 2);
+      await app.until('the value editor of Start to take focus', async () => await app.eval(`document.activeElement === ${watchRow('Start')}?.querySelector('input[type="text"]')`) || undefined);
+      await app.type('1'); await app.press('Enter');
+      await app.until('Start to read TRUE', async () => await watchValue(app, 'Start') === 'TRUE' || undefined);
+      // Reading the Console switches its tab, so each Watch value is read after going back to the Watch tab.
+      const watched = (name: string) => app.until(`${name} in the Watch table`, async () => { await app.click(tab('Watch', 'prefix')); return await watchValue(app, name) ?? undefined; });
+      assert(await watched('Forward') === 'FALSE', 'Forward should still read FALSE: the stopped scan has not reached the statement.');
+
+      const before = await cycles(app);
+      await app.click(button('Resume (F5)', 'prefix'), 'the Resume button');
+      await app.until('a second stop at the same line (the next scan)', async () => await stoppedAgain(2));
+      await app.until('the interrupted scan to be counted', async () => await cycles(app) >= before + 1 || undefined);
+      // The scan that just stopped is the second one: Start was seen with the motor armed, SealIn is set, but the statement has not written Forward yet.
+      assert(await watched('Forward') === 'FALSE', 'Forward changed before the statement ran in the second scan.');
+      await app.click(button('Resume (F5)', 'prefix'), 'the Resume button');
+      await app.until('a third stop at the same line', async () => await stoppedAgain(3));
+      await app.until('Forward to read TRUE: the rest of the second scan wrote it', async () => await watched('Forward') === 'TRUE' || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: Resume did not finish the interrupted scan (cycles ${await cycles(app)}, Forward ${await watched('Forward')}).`); });
+      assert(await cycles(app) >= before + 2, `Two Resumes should complete two scans (cycles ${before} before, ${await cycles(app)} now).`);
+    },
+  },
 ];
