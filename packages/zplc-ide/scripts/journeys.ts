@@ -62,8 +62,8 @@ async function clickEditorLine(app: App, line: number, where: 'text' | 'gutter' 
   await app.clickAt(point.x, point.y);
 }
 
-/** Open a project file by clicking it in the Explorer tree, expanding its folders first. */
-async function openFile(app: App, path: string): Promise<void> {
+/** Click a project file in the Explorer tree, expanding its folders first. */
+async function clickTreeFile(app: App, path: string): Promise<void> {
   await app.click(tab('Explorer', 'exact'));
   const folders = path.split('/').slice(0, -1);
   for (let depth = 1; depth <= folders.length; depth++) {
@@ -72,6 +72,11 @@ async function openFile(app: App, path: string): Promise<void> {
     if (await app.eval(`${treeItem(id)}.getAttribute('aria-expanded') === 'false'`)) await app.click(treeItem(id));
   }
   await app.click(treeItem(`file:${path}`));
+}
+
+/** Open a project file by clicking it in the Explorer tree, expanding its folders first. */
+async function openFile(app: App, path: string): Promise<void> {
+  await clickTreeFile(app, path);
   const name = path.split('/').at(-1)!;
   await app.until(`${name} in the editor`, async () => (await editorText(app)).length > 0 && await app.eval(`[...document.querySelectorAll('[role="tab"][aria-selected="true"]')].some((item) => item.textContent?.includes(${JSON.stringify(name)}))`) || undefined);
 }
@@ -164,6 +169,37 @@ const savePicture = async (app: App, variable: string) => {
   const file = process.env[variable];
   if (file) { const png = await app.cdp.command('Page.captureScreenshot', { format: 'png' }) as { data: string }; writeFileSync(file, Buffer.from(png.data, 'base64')); }
 };
+
+/** Every file called `name` under `folder`, as paths relative to it (the app decides which subfolder a new file lands in). */
+function findOnDisk(folder: string, name: string): string[] {
+  const found: string[] = [];
+  const visit = (directory: string) => {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      if (entry.isDirectory()) visit(join(directory, entry.name));
+      else if (entry.name === name) found.push(join(directory, entry.name).slice(folder.length + 1));
+    }
+  };
+  visit(folder);
+  return found;
+}
+
+/** Explorer > New File: type a name, pick the language with the keyboard, and press Create (or stop at the dialog when `create` is false). */
+async function newFile(app: App, name: string, language: 'ST' | 'IL' | 'LD' | 'FBD' | 'SFC', create = true): Promise<void> {
+  await app.click(tab('Explorer', 'exact'));
+  await app.click(button('New File'), 'the New File button of the Explorer');
+  const nameField = css('#new-file-name');
+  await app.until('the New File dialog', async () => await app.visible(nameField) || undefined);
+  await app.click(nameField, 'the file name field');
+  await app.type(name);
+  // The language select starts on Structured Text; the arrow keys walk its options in order, as a keyboard user would.
+  const order = ['ST', 'IL', 'LD', 'FBD', 'SFC'];
+  await app.eval(`document.getElementById('new-file-language').focus()`);
+  for (let step = 0; step < order.indexOf(language); step++) await app.press('ArrowDown');
+  await app.until(`${language} in the language field`, async () => await app.eval<string>(`document.getElementById('new-file-language').value`) === language || undefined);
+  if (create) await app.click(button('Create'), 'the Create button');
+}
+const newFileError = (app: App) => app.eval<string | null>(`document.getElementById('new-file-error')?.innerText ?? null`);
+const ladderRungs = (app: App) => app.eval<number | null>(`(() => { const editor = document.querySelector('[aria-label="Ladder diagram editor"]'); const text = editor?.querySelector('.border-b span.text-xs')?.textContent ?? ''; const match = /(\\d+) rungs?/.exec(text); return editor ? (match ? Number(match[1]) : -1) : null; })()`);
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Journeys
@@ -562,6 +598,54 @@ export const JOURNEYS: Journey[] = [
       await third.until('the Welcome screen', async () => await third.visible(button('Open project', 'contains')) || undefined);
       await Bun.sleep(500); // the list is read when the screen opens; give it time to appear if it were still stored
       assert(!await third.visible(recentRow), 'A forgotten project came back after a restart.');
+    },
+  },
+  {
+    name: '15 New file: create, edit, save, reopen', example: 'motor_start_stop',
+    run: async (app, { project }) => {
+      // A file an older version created with New File: the build reads boiler.ld as the same file as boiler.ld.json.
+      writeFileSync(join(project, 'src', 'boiler.ld'), JSON.stringify({ name: 'boiler', rungs: [] }));
+      await openFolder(app, project);
+
+      // A Ladder file called pump: created from the dialog, edited with a click, saved with the keyboard.
+      await newFile(app, 'pump', 'LD');
+      await app.until('the Ladder editor on the new file', async () => await ladderRungs(app) !== null || undefined);
+      const rungs = await ladderRungs(app) as number;
+      await app.click(button('Add Rung', 'contains'), 'the Add Rung button');
+      await app.until('one more rung in the editor', async () => await ladderRungs(app) === rungs + 1 || undefined);
+      await app.press('Ctrl+S');
+      const saved = await app.until('pump.ld.json on disk', () => { const found = findOnDisk(project, 'pump.ld.json'); return found.length === 1 ? found[0] : undefined; });
+      await app.until('the saved file to hold the new rung', () => (JSON.parse(disk(join(project, saved))) as { rungs: unknown[] }).rungs.length === rungs + 1 || undefined);
+      assert(findOnDisk(project, 'pump.ld').length === 0 && findOnDisk(project, 'pump.ld.ld.json').length === 0, 'New File left a file under the old short name next to pump.ld.json.');
+
+      // Typing the extension does not double it.
+      await newFile(app, 'valve.ld', 'LD');
+      await app.until('valve.ld.json on disk', () => findOnDisk(project, 'valve.ld.json').length === 1 || undefined);
+      assert(findOnDisk(project, 'valve.ld.ld.json').length === 0, 'A typed .ld was added to again: valve.ld.ld.json exists.');
+
+      // Close the project and open it again: the Explorer lists the file and a click opens it in the Ladder editor, with its rung.
+      await app.click(tab('Explorer', 'exact'));
+      await app.click(button('Close Project'));
+      await app.until('the Welcome screen', async () => await app.visible(button('Open project', 'contains')) || undefined);
+      await openFolder(app, project);
+      await app.click(tab('Explorer', 'exact'));
+      const listed = await app.until('pump in the Explorer after reopening', async () => {
+        const folders = saved.split('/').slice(0, -1);
+        for (let depth = 1; depth <= folders.length; depth++) { const id = `dir:${folders.slice(0, depth).join('/')}`; if (await app.eval(`${treeItem(id)}?.getAttribute('aria-expanded') === 'false'`)) await app.click(treeItem(id)); }
+        return await app.eval<string | null>(`${treeItem(`file:${saved}`)}?.innerText ?? null`) ?? undefined;
+      });
+      assert(listed.includes('pump.ld'), `The Explorer lists the new file as ${JSON.stringify(listed)} after reopening, not as pump.ld.`);
+      await clickTreeFile(app, saved);
+      await app.until('the Ladder editor with the saved rung', async () => await ladderRungs(app) === rungs + 1 || undefined);
+      assert(await app.eval<boolean>(`[...document.querySelectorAll('[role="tab"][aria-selected="true"]')].some((item) => item.textContent?.includes('pump.ld'))`), 'The tab of pump.ld is not the selected one.');
+
+      // A name that the build would read as an existing file is refused in the dialog, with the file named.
+      await newFile(app, 'boiler', 'LD');
+      const refusal = await app.until('the refusal in the New File dialog', async () => await newFileError(app) ?? undefined);
+      assert(refusal.includes('boiler.ld') && /already exists/.test(refusal), `The refusal should name boiler.ld and say it already exists: ${JSON.stringify(refusal)}`);
+      assert(await app.visible(css('#new-file-name')), 'The New File dialog closed on a refused name.');
+      assert(findOnDisk(project, 'boiler.ld.json').length === 0, 'A twin of the old boiler.ld was created anyway.');
+      await app.click(button('Cancel'), 'the Cancel button');
     },
   },
 ];
