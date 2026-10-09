@@ -42,6 +42,9 @@ jobs:
       - name: Validate canonical product version
         run: bun run check:versions
 
+      - name: Test release version helpers
+        run: bun test scripts/release-version.test.ts
+
       - name: Test release integrity bundle
         run: node --test scripts/release-artifacts.test.mjs
 
@@ -320,6 +323,8 @@ jobs:
           python3 tools/hil/validate_release_evidence.py
           python3 tools/hil/validate_supported_boards.py
           python3 tools/hil/test_validate_supported_boards.py
+          python3 tools/hil/test_validate_release_evidence.py
+          bun tools/ci/test-inventory.ts
 
       - name: Generate and validate documentation references
         run: |
