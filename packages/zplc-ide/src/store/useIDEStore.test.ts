@@ -1,15 +1,17 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
 
+import { compilerCompile } from '../cli/toolApi';
 import { createProjectFiles } from '../../electron/projectFiles';
 import { PROJECT_FILES_CHANNEL, PROJECT_FILES_OPS, type ProjectFilesBridge } from '../../electron/projectFilesProtocol';
 
 import { DEFAULT_DEBUG_POLLING_INTERVAL_MS } from './debugDefaults';
 import { WATCH_FORCE_STATE, type WatchForceEntry } from '../runtime/debugAdapter';
 import type { NativeTraceSample } from '../runtime/nativeTrace';
-import { DEFAULT_ZPLC_CONFIG, type FileTreeNode } from '../types';
+import { DEFAULT_ZPLC_CONFIG, type FileTreeNode, type ProjectFileWithHandle } from '../types';
 
 function deferred<T>() {
   let resolve!: (value: T | PromiseLike<T>) => void;
@@ -1607,5 +1609,53 @@ describe('useIDEStore project folders over the project-files bridge', () => {
     await useIDEStore.getState().saveProjectConfig();
     expect(useIDEStore.getState()).toMatchObject({ isConsoleCollapsed: false, activeConsoleTab: 'output' });
     expect(useIDEStore.getState().consoleEntries.at(-1)).toMatchObject({ type: 'error', message: expect.stringContaining('Failed to save config') });
+  });
+});
+
+describe('useIDEStore breakpoint binding', () => {
+  const motorStartStop = fileURLToPath(new URL('../../projects/motor_start_stop', import.meta.url));
+  const fileId = 'file:src/Motor.st';
+  // The file exactly as an opened folder holds it: bare name, project-relative path.
+  const motorFile: ProjectFileWithHandle = { id: fileId, name: 'Motor.st', path: 'src/Motor.st', parentPath: 'src', language: 'ST', content: '', isModified: false };
+
+  afterEach(() => {
+    useIDEStore.setState((state) => ({ loadedFiles: new Map(), debug: { ...state.debug, breakpoints: new Map(), debugMap: null } }));
+  });
+
+  // Fails without getAllBreakpointPCs keying the lookup by breakpointFileKey (the project path): the compiler records
+  // sourceRef "src/Motor.st", so a bare "Motor.st" binds nothing and Run loads "0 breakpoints".
+  it('turns the lines clicked in a folder-held file into the PCs the compiler assigned', async () => {
+    const built = await compilerCompile(motorStartStop);
+    if (!built.ok || !built.debugMap) throw new Error('motor_start_stop did not compile');
+    useIDEStore.setState({ loadedFiles: new Map([[fileId, motorFile]]) });
+    useIDEStore.getState().setBreakpoints(fileId, [21, 29]);
+    useIDEStore.getState().setDebugMap(built.debugMap);
+
+    expect(useIDEStore.getState().getAllBreakpointPCs().sort((a, b) => a - b)).toEqual([56, 104]);
+  });
+
+  // Guards the fix against over-binding: only executable lines of the file the debug map names may bind.
+  it('binds nothing for a declaration, an END_IF or a file the debug map does not know', async () => {
+    const built = await compilerCompile(motorStartStop);
+    if (!built.ok || !built.debugMap) throw new Error('motor_start_stop did not compile');
+    const other: ProjectFileWithHandle = { ...motorFile, id: 'file:src/Other.st', name: 'Other.st', path: 'src/Other.st' };
+    useIDEStore.setState({ loadedFiles: new Map([[fileId, motorFile], [other.id, other]]) });
+    useIDEStore.getState().setBreakpoints(fileId, [3, 27]);
+    useIDEStore.getState().setBreakpoints(other.id, [21]);
+    useIDEStore.getState().setDebugMap(built.debugMap);
+
+    expect(useIDEStore.getState().getAllBreakpointPCs()).toEqual([]);
+  });
+
+  // Guards the fix: fails if the key becomes a path without the base-name fallback for maps that have no sourceRef.
+  it('still binds a legacy debug map without sourceRef by POU name', async () => {
+    const built = await compilerCompile(motorStartStop);
+    if (!built.ok || !built.debugMap) throw new Error('motor_start_stop did not compile');
+    const legacyPou = { ...built.debugMap.pou.Motor!, sourceRef: undefined };
+    useIDEStore.setState({ loadedFiles: new Map([[fileId, motorFile]]) });
+    useIDEStore.getState().setBreakpoints(fileId, [21, 29]);
+    useIDEStore.getState().setDebugMap({ ...built.debugMap, pou: { Motor: legacyPou } });
+
+    expect(useIDEStore.getState().getAllBreakpointPCs().sort((a, b) => a - b)).toEqual([56, 104]);
   });
 });

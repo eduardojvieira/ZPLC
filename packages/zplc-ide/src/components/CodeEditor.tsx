@@ -20,7 +20,7 @@ import { useFileBreakpoints, useCurrentExecution, useDebugValues, formatDebugVal
 import { useTheme } from '../hooks/useTheme';
 import { useEditorLiveValues } from '../hooks/useEditorLiveValues';
 import type { PLCLanguage } from '../types';
-import { doesCurrentPOUMatchFile, filterEligibleBreakpointLines, isLineBreakpointEligible } from './codeEditorBreakpoints';
+import { breakpointFileKey, doesCurrentPOUMatchFile, filterEligibleBreakpointLines, isLineBreakpointEligible } from './codeEditorBreakpoints';
 import {
   buildInlineWidgets,
   extractVariablesFromCode,
@@ -110,7 +110,7 @@ export function CodeEditor({
   const debugMap = useIDEStore((state) => state.debug.debugMap);
   const toggleBreakpoint = useIDEStore((state) => state.toggleBreakpoint);
   const breakpoints = useFileBreakpoints(fileId);
-  const fileName = useIDEStore((state) => state.loadedFiles.get(fileId)?.name ?? fileId);
+  const fileName = useIDEStore((state) => breakpointFileKey(state.loadedFiles.get(fileId), fileId));
   const filePath = useIDEStore((state) => state.loadedFiles.get(fileId)?.path ?? '');
   const compilerMessages = useIDEStore((state) => state.compilerMessages);
   const compilerNavigationTarget = useIDEStore((state) => state.compilerNavigationTarget);
