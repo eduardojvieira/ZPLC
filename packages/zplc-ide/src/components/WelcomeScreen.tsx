@@ -1,16 +1,17 @@
 /**
  * The first-run surface deliberately offers only project actions that exist today: Open, New, Learn and the bundled
  * examples, grouped by topic with a line that says what each one is (UX-022). Hardware and workspace evidence stay
- * inside an opened project.
+ * inside an opened project. Folders opened before are listed under Recent and reopen without a dialog (IDE-008).
  */
 import React from 'react';
-import { BookOpen, FolderOpen, FolderPlus } from 'lucide-react';
+import { BookOpen, FolderOpen, FolderPlus, History } from 'lucide-react';
 import { useIDEStore } from '../store/useIDEStore';
 import { LANGUAGE_NAMES, LEVEL_NAMES, boardName, buildExampleSections, type ExampleListing } from '../utils/exampleCatalog';
 import { isFileSystemAccessSupported } from '../types';
 import { ZPLC_REPO_VERSION } from '../version';
 import { learnLessonCatalog } from './learnLesson';
 import { ThemeControl } from './ThemeControl';
+import { recentRows } from './welcomeRecent';
 
 /** The Learn entry starts the course where the Learn tab starts: with the first lesson, on its own starter project. */
 const FIRST_LESSON_STARTER = learnLessonCatalog.en[0]!.starterExampleId;
@@ -41,12 +42,38 @@ export function WelcomeScreen() {
     startLearning,
     getExampleProjects,
     projectOpenError,
+    recentProjects,
+    refreshRecentProjects,
+    openRecentProject,
+    forgetRecentProject,
   } = useIDEStore();
   const fsApiSupported = isFileSystemAccessSupported();
   const exampleSections = React.useMemo(() => buildExampleSections(getExampleProjects()), [getExampleProjects]);
   const [appVersion, setAppVersion] = React.useState(ZPLC_REPO_VERSION);
   const [isCopyingExample, setIsCopyingExample] = React.useState(false);
   const copyingExampleRef = React.useRef(false);
+  // When the list was read; the times on the rows count from it. 0 until the first answer.
+  const [now, setNow] = React.useState(0);
+  const [openingRecent, setOpeningRecent] = React.useState<string | null>(null);
+  const [recentFailure, setRecentFailure] = React.useState<{ recentId: string; message: string } | null>(null);
+  const busy = openingRecent !== null;
+
+  React.useEffect(() => {
+    void refreshRecentProjects().then(() => setNow(Date.now()));
+  }, [refreshRecentProjects]);
+
+  const reopen = (recentId: string) => {
+    setOpeningRecent(recentId);
+    setRecentFailure(null);
+    void openRecentProject(recentId).then(async (opened) => {
+      if (opened) return;
+      // The reason is shown on the entry that was clicked; the list is read again so that a folder that is gone says so.
+      const message = useIDEStore.getState().projectOpenError;
+      if (message) setRecentFailure({ recentId, message });
+      await refreshRecentProjects();
+      setNow(Date.now());
+    }).finally(() => setOpeningRecent(null));
+  };
 
   React.useEffect(() => {
     if (!window.electronAPI) return;
@@ -54,6 +81,9 @@ export function WelcomeScreen() {
   }, []);
 
   const unavailable = !fsApiSupported;
+  const rows = recentRows(recentProjects, now);
+  // A failure to open a recent project is shown on its entry; the general alert shows every other failure.
+  const recentError = recentFailure && recentFailure.message === projectOpenError ? recentFailure : null;
   /** Examples and the Learn entry both copy a project into a folder; one copy runs at a time. */
   const startCopy = (start: () => Promise<boolean>) => {
     if (copyingExampleRef.current) return;
@@ -116,14 +146,51 @@ export function WelcomeScreen() {
           </div>
         </section>
 
-        {projectOpenError && (
+        {projectOpenError && !recentError && (
           <div role="alert" data-open-error className="mt-4 border border-[var(--color-accent-red)] bg-[var(--color-surface-800)] px-4 py-3 text-sm leading-5">
             <p className="font-medium text-[var(--color-accent-red)]">The project could not be opened</p>
             <p className="mt-1 break-words text-[var(--text-secondary)]">{projectOpenError}</p>
           </div>
         )}
 
-        {/* Recent projects (IDE-008) take their place here, between the start actions and the examples. */}
+        {rows.length > 0 && (
+          <section aria-labelledby="recent-heading" data-recent-projects className="pt-8">
+            <h2 id="recent-heading" className="text-xs font-bold uppercase tracking-[0.08em] text-[var(--text-secondary)]">Recent</h2>
+            <ul className="mt-3 divide-y divide-[var(--border-color)] border border-[var(--border-color)] bg-[var(--color-surface-800)]">
+              {rows.map((row) => (
+                <li key={row.recentId} data-recent-project={row.recentId} className="flex flex-wrap items-stretch">
+                  <button
+                    type="button"
+                    onClick={() => reopen(row.recentId)}
+                    disabled={!row.available || busy}
+                    className="group flex min-w-0 flex-1 items-start gap-3 px-4 py-3 text-left text-[var(--text-primary)] transition-colors duration-150 hover:bg-[var(--color-surface-700)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-accent-blue)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent"
+                  >
+                    <History size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-[var(--color-accent-blue)]" />
+                    <span className="min-w-0">
+                      <span className="block truncate font-medium">{row.name}</span>
+                      <span className="mt-0.5 block text-sm leading-5 text-[var(--text-secondary)]">
+                        {row.available ? `Opened ${row.opened}` : row.reason}
+                      </span>
+                    </span>
+                  </button>
+                  {(!row.available || recentError?.recentId === row.recentId) && (
+                    <button
+                      type="button"
+                      onClick={() => void forgetRecentProject(row.recentId)}
+                      aria-label={`Forget ${row.name}`}
+                      className="shrink-0 px-4 py-3 text-sm text-[var(--text-secondary)] hover:bg-[var(--color-surface-700)] hover:text-[var(--text-primary)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-accent-blue)]"
+                    >
+                      Forget
+                    </button>
+                  )}
+                  {recentError?.recentId === row.recentId && (
+                    <p role="alert" data-recent-error className="w-full break-words px-4 pb-3 text-sm leading-5 text-[var(--color-accent-red)]">{recentError.message}</p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {exampleSections.length > 0 && (
           <section aria-labelledby="examples-heading" className="pt-8">
