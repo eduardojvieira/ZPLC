@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-004",
+  "title": "type names are matched without regard to case",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QB0", "type": "BYTE", "value": 5 }]
+}

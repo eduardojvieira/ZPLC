@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-027",
+  "title": "VAR_TEMP of a function block is initialised on every call",
+  "scans": 3,
+  "scanMs": 10,
+  "expect": [{ "at": "%QW0", "type": "INT", "value": 1 }]
+}

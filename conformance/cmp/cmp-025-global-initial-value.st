@@ -1,0 +1,8 @@
+VAR_GLOBAL G : INT := 42; END_VAR
+
+PROGRAM Globals
+VAR
+  seen AT %QW0 : INT;
+END_VAR
+  seen := G;
+END_PROGRAM

@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-039",
+  "title": "FOR loop inside a function block",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QW0", "type": "INT", "value": 10 }]
+}

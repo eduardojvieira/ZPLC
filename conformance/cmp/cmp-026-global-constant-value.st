@@ -1,0 +1,8 @@
+VAR_GLOBAL CONSTANT K : INT := 42; END_VAR
+
+PROGRAM Constants
+VAR
+  seen AT %QW0 : INT;
+END_VAR
+  seen := K;
+END_PROGRAM

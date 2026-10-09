@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-004",
+  "title": "identifiers are matched without regard to case",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QW0", "type": "INT", "value": 7 }]
+}

@@ -1,0 +1,9 @@
+PROGRAM Constants
+VAR CONSTANT
+  K : INT := 5;
+END_VAR
+VAR
+  seen AT %QW0 : INT;
+END_VAR
+  seen := K;
+END_PROGRAM

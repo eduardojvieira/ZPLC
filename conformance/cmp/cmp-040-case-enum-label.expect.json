@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-040",
+  "title": "CASE with an enumeration label",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QW0", "type": "INT", "value": 2 }]
+}

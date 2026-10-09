@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-034",
+  "title": "two functions with a parameter of the same name",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QW0", "type": "INT", "value": 6 }]
+}

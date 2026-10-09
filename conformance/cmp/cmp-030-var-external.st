@@ -1,0 +1,10 @@
+VAR_GLOBAL G : INT; END_VAR
+
+PROGRAM External
+VAR_EXTERNAL G : INT; END_VAR
+VAR
+  seen AT %QW0 : INT;
+END_VAR
+  G := 5;
+  seen := G;
+END_PROGRAM
