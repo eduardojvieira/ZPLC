@@ -354,9 +354,10 @@ html, body, #root {
   --debug-chip-true-border: rgba(22, 163, 74, 0.38);
   --debug-chip-true-text: #166534;
 
-  --debug-chip-false-bg: rgba(220, 38, 38, 0.12);
-  --debug-chip-false-border: rgba(220, 38, 38, 0.34);
-  --debug-chip-false-text: #b91c1c;
+  /* FALSE is neutral (UX-009): red is reserved for faults. */
+  --debug-chip-false-bg: rgba(95, 109, 107, 0.12);
+  --debug-chip-false-border: rgba(95, 109, 107, 0.4);
+  --debug-chip-false-text: var(--color-surface-200);
 }
 
 :root.dark {
@@ -368,9 +369,9 @@ html, body, #root {
   --debug-chip-true-border: rgba(74, 222, 128, 0.34);
   --debug-chip-true-text: #dcfce7;
 
-  --debug-chip-false-bg: rgba(239, 68, 68, 0.18);
-  --debug-chip-false-border: rgba(248, 113, 113, 0.34);
-  --debug-chip-false-text: #fee2e2;
+  --debug-chip-false-bg: rgba(142, 158, 154, 0.16);
+  --debug-chip-false-border: rgba(142, 158, 154, 0.4);
+  --debug-chip-false-text: var(--color-surface-200);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -383,9 +384,9 @@ html, body, #root {
     --debug-chip-true-border: rgba(74, 222, 128, 0.34);
     --debug-chip-true-text: #dcfce7;
 
-    --debug-chip-false-bg: rgba(239, 68, 68, 0.18);
-    --debug-chip-false-border: rgba(248, 113, 113, 0.34);
-    --debug-chip-false-text: #fee2e2;
+    --debug-chip-false-bg: rgba(142, 158, 154, 0.16);
+    --debug-chip-false-border: rgba(142, 158, 154, 0.4);
+    --debug-chip-false-text: var(--color-surface-200);
   }
 }
 
@@ -416,11 +417,18 @@ html, body, #root {
   border-color: var(--debug-chip-true-border);
 }
 
-/* BOOL FALSE */
+/* BOOL FALSE: neutral; the chip text says FALSE. */
 .monaco-editor .inline-debug-value-false {
   color: var(--debug-chip-false-text) !important;
   background: var(--debug-chip-false-bg);
   border-color: var(--debug-chip-false-border);
+}
+
+/* A forced Watch value says so in text, not only in amber (UX-009). */
+[data-forced="true"]::after {
+  content: " (forced)";
+  font-size: 0.85em;
+  font-weight: 600;
 }
 
 /* =============================================================================
