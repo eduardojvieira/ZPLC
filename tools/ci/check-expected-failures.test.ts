@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -133,9 +133,16 @@ describe('check-expected-failures command', () => {
     expect(result.stderr).toContain('unlisted failure: packages/zplc-ide/src/a.test.ts > outer > inner > fails');
   });
 
-  it('passes a clean run against the committed list', () => {
-    const clean = junit.replace(/<failure[\s\S]*?<\/failure>/, '');
-    const result = withReport(clean, 0);
+  it('passes a run in which exactly the committed failures fail', () => {
+    const committed = JSON.parse(readFileSync(new URL('./expected-failures.json', import.meta.url), 'utf8')) as Entry[];
+    const escape = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const failing = committed.filter(({ test }) => test.startsWith(`${SUITE}/`)).map(({ test }) => {
+      const [file = '', ...describes] = test.slice(SUITE.length + 1).split(' > ');
+      const name = describes.pop() ?? '';
+      const open = [file, ...describes].map((title) => `<testsuite name="${escape(title)}" file="${escape(file)}">`).join('');
+      return `${open}<testcase name="${escape(name)}" file="${escape(file)}"><failure/></testcase>${'</testsuite>'.repeat(describes.length + 1)}`;
+    });
+    const result = withReport(`<testsuites>${failing.join('')}<testsuite name="src/a.test.ts" file="src/a.test.ts"><testcase name="ok" file="src/a.test.ts"/></testsuite></testsuites>`, 1);
     expect(result.stderr).toBe('');
     expect(result.code).toBe(0);
   });
