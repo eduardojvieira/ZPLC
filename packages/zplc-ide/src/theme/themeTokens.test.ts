@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
-import { parseColor, readThemeTokens, resolveThemeTokens, type ThemeName } from './themeTokens';
+import { composite, contrastRatio, parseColor, readThemeTokens, resolveThemeTokens, type ThemeName } from './themeTokens';
 
 const css = readFileSync(new URL('../index.css', import.meta.url), 'utf8');
 
@@ -38,8 +38,37 @@ describe('theme token reader', () => {
     expect(() => parseColor('Highlight')).toThrow();
   });
 
+  it('leaves out the forced-colors overrides, whose colours the operating system picks', () => {
+    const source = ':root { --ring: #111; }\n@media (forced-colors: active) {\n  :root { --ring: Highlight; }\n  a { color: red; }\n}\n:root.dark { --other: #222; }';
+    expect(resolveThemeTokens(source, 'light')['--ring']).toBe('#111');
+    expect(resolveThemeTokens(source, 'dark')['--other']).toBe('#222');
+  });
+
   it('knows every theme the stylesheet defines', () => {
     const names: ThemeName[] = ['light', 'dark', 'high-contrast', 'system-dark'];
     for (const name of names) expect(Object.keys(resolveThemeTokens(css, name)).length).toBeGreaterThan(20);
+  });
+});
+
+describe('WCAG 2.2 contrast', () => {
+  it('matches the reference ratios', () => {
+    expect(contrastRatio('#000', '#fff')).toBeCloseTo(21, 5);
+    expect(contrastRatio('#fff', '#fff')).toBeCloseTo(1, 5);
+    expect(contrastRatio('#777777', '#ffffff')).toBeCloseTo(4.48, 2);
+    expect(contrastRatio('#767676', '#ffffff')).toBeCloseTo(4.54, 2);
+  });
+
+  it('is symmetric, so a pair does not depend on which side is the text', () => {
+    expect(contrastRatio('#5ba7df', '#0f171b')).toBe(contrastRatio('#0f171b', '#5ba7df'));
+  });
+
+  it('reproduces the white-on-accent figures the design review reported for the dark theme', () => {
+    expect(contrastRatio('#ffffff', '#5ba7df')).toBeCloseTo(2.61, 2);
+    expect(contrastRatio('#ffffff', '#ed7070')).toBeCloseTo(2.94, 2);
+  });
+
+  it('composites a translucent colour over its backdrop before measuring', () => {
+    expect(composite(parseColor('rgba(0, 0, 0, 0.5)'), parseColor('#ffffff'))).toEqual({ r: 127.5, g: 127.5, b: 127.5, a: 1 });
+    expect(contrastRatio('rgba(0, 0, 0, 0.5)', '#ffffff')).toBeCloseTo(contrastRatio('#808080', '#ffffff'), 1);
   });
 });

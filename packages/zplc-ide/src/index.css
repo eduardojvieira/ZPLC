@@ -43,6 +43,10 @@
   --visual-node: var(--color-surface-700);
   --visual-muted: var(--color-surface-400);
   --visual-wire: var(--color-surface-500);
+  /* The one focus indicator (UX-005): applied by the global :focus-visible rule below. */
+  --focus-ring-color: var(--color-accent-blue);
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
 }
 
 /* Commissioning Spine dark. */
@@ -102,10 +106,8 @@
   --text-tertiary: #e5e5e5;
   --text-muted: #d7d7d7;
   --border-color: #fff;
+  --focus-ring-width: 3px;
 }
-
-:root.high-contrast :focus-visible { outline: 3px solid var(--color-accent-blue) !important; outline-offset: 2px; }
-
 
 .zplc-visual-editor { background: var(--visual-canvas); color: var(--text-primary); }
 .zplc-visual-toolbox { background: var(--visual-panel); border-color: var(--border-color); color: var(--text-primary); }
@@ -128,7 +130,6 @@
   .sfc-transition-axis { border-color: CanvasText !important; }
   .zplc-visual-editor .react-flow__controls-button { background: Canvas !important; color: CanvasText !important; border-color: CanvasText !important; }
   .zplc-visual-editor .react-flow__controls-button:hover { background: Highlight !important; color: HighlightText !important; }
-  .zplc-visual-editor :focus-visible { outline: 2px solid Highlight !important; outline-offset: 2px; }
 }
 
 /* System preference detection - applies if no explicit theme set */
@@ -156,6 +157,12 @@ html, body, #root {
   background-color: var(--color-surface-900);
   color: var(--color-surface-100);
   font-family: var(--font-sans);
+}
+
+/* The only focus rule. It is unlayered, so it also wins over the Tailwind utilities that switch outlines off. */
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
 }
 
 /* Disable transitions on initial load to prevent flash */
@@ -420,14 +427,7 @@ html, body, #root {
    Utility Classes
    ============================================================================= */
 
-/* Focus ring styles */
-.focus-ring {
-  @apply outline-none;
-}
-
-.focus-ring:focus-visible {
-  box-shadow: 0 0 0 2px var(--color-accent-blue);
-}
+/* `.focus-ring` carries no rules of its own any more: the global :focus-visible rule draws the ring. */
 
 /* Industrial button hover */
 .btn-industrial {
@@ -469,20 +469,10 @@ button, [role="button"], [role="tab"] { transition: background-color .12s ease, 
     color: CanvasText;
     border-color: CanvasText;
   }
-  .focus-ring:focus-visible { outline: 2px solid Highlight; outline-offset: 2px; box-shadow: none; }
   .ledger-inspector h2,
   .ledger-inspector-row dt,
   .ledger-inspector p,
   .ledger-index { color: CanvasText; }
   [data-panel-group-direction] > [data-panel-resize-handle-id] { background: CanvasText; }
-  button:focus-visible,
-  [role="button"]:focus-visible,
-  [role="tab"]:focus-visible,
-  summary:focus-visible,
-  input:focus-visible,
-  textarea:focus-visible,
-  select:focus-visible {
-    outline: 2px solid Highlight !important;
-    outline-offset: 2px !important;
-  }
+  :root { --focus-ring-color: Highlight; }
 }

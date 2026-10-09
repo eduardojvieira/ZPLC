@@ -17,6 +17,21 @@ const THEME_SELECTOR: Record<ThemeName, string> = {
   'system-dark': ':root:not(.light):not(.dark)',
 };
 
+/** Drops the forced-colors blocks: the operating system, not the tokens, picks those colours. */
+function withoutForcedColors(css: string): string {
+  let out = css;
+  for (let start = out.indexOf('@media (forced-colors: active)'); start !== -1; start = out.indexOf('@media (forced-colors: active)')) {
+    let depth = 0;
+    let end = out.indexOf('{', start);
+    for (; end < out.length; end++) {
+      if (out[end] === '{') depth++;
+      else if (out[end] === '}' && --depth === 0) break;
+    }
+    out = out.slice(0, start) + out.slice(end + 1);
+  }
+  return out;
+}
+
 const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\:]/g, '\\$&');
 
 function declaredTokens(css: string, selector: string): TokenMap {
@@ -30,7 +45,7 @@ function declaredTokens(css: string, selector: string): TokenMap {
 
 /** Declared tokens per theme: the `:root` defaults overlaid with the theme's own block. Values may still hold var(). */
 export function readThemeTokens(source: string): Record<ThemeName, TokenMap> {
-  const css = source.replace(/\/\*[\s\S]*?\*\//g, '');
+  const css = withoutForcedColors(source.replace(/\/\*[\s\S]*?\*\//g, ''));
   const base = declaredTokens(css, THEME_SELECTOR.light);
   const themed = (name: ThemeName): TokenMap => ({ ...base, ...(name === 'light' ? {} : declaredTokens(css, THEME_SELECTOR[name])) });
   return { light: themed('light'), dark: themed('dark'), 'high-contrast': themed('high-contrast'), 'system-dark': themed('system-dark') };
@@ -65,4 +80,28 @@ export function parseColor(value: string): Rgba {
     return { r: Number(fn[1]), g: Number(fn[2]), b: Number(fn[3]), a: alpha };
   }
   throw new Error(`Unsupported colour: ${value}`);
+}
+
+/** `fg` laid over an opaque `bg`, as the browser paints a translucent fill. */
+export function composite(fg: Rgba, bg: Rgba): Rgba {
+  const mix = (top: number, bottom: number): number => top * fg.a + bottom * (1 - fg.a);
+  return { r: mix(fg.r, bg.r), g: mix(fg.g, bg.g), b: mix(fg.b, bg.b), a: 1 };
+}
+
+/** WCAG 2.2 relative luminance of an opaque colour. */
+function luminance({ r, g, b }: Rgba): number {
+  const linear = (value: number): number => {
+    const c = value / 255;
+    return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
+}
+
+/** WCAG 2.2 contrast ratio (1 to 21). A translucent `fg` is composited over `bg`, which must be opaque. */
+export function contrastRatio(fg: string | Rgba, bg: string | Rgba): number {
+  const back = typeof bg === 'string' ? parseColor(bg) : bg;
+  const parsed = typeof fg === 'string' ? parseColor(fg) : fg;
+  const front = parsed.a < 1 ? composite(parsed, back) : parsed;
+  const [light, dark] = [luminance(front), luminance(back)].sort((a, b) => b - a);
+  return (light + 0.05) / (dark + 0.05);
 }
