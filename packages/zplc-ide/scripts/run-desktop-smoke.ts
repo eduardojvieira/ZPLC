@@ -115,6 +115,15 @@ async function main(): Promise<void> {
     const menuReport = output.join('').split('\n').find((line) => line.includes('[zplc] application menu'));
     const menuAccelerators = /accelerators=(\S*)/.exec(menuReport ?? '')?.[1].split(',') ?? [];
     assert(menuReport?.includes('toggledevtools') && menuAccelerators.includes('CmdOrCtrl+R') && menuAccelerators.includes('CmdOrCtrl+Shift+R'), `The development menu should keep its guarded reload entries: ${menuReport}`);
+    // UX-016: the window is hidden until the page has painted, is titled with the product name and carries the theme's canvas colour.
+    const windowReport = await waitFor('window report from the main process', () => output.join('').split('\n').find((line) => line.includes('[zplc] window title=')));
+    const reported = /title="([^"]*)" background=(#[0-9a-fA-F]{6})\w* visibleBeforeReveal=(\w+)/.exec(windowReport);
+    assert(reported?.[1] === 'ZPLC Studio' && reported[3] === 'false', `The window must be titled "ZPLC Studio" and hidden until ready-to-show: ${windowReport}`);
+    const rendererSurface = String(await cdp.evaluate('getComputedStyle(document.documentElement).backgroundColor'));
+    const surfaceHex = `#${(/rgb\((\d+), (\d+), (\d+)\)/.exec(rendererSurface) ?? []).slice(1).map((channel) => Number(channel).toString(16).padStart(2, '0')).join('')}`;
+    assert(surfaceHex === reported[2].toLowerCase(), `The native window colour ${reported[2]} must equal the theme canvas ${rendererSurface}.`);
+    assert(await cdp.evaluate('document.title') === 'ZPLC Studio', 'The page title must be "ZPLC Studio".');
+    console.log(`Window set-up observed: ${windowReport.replace('[zplc] ', '')}; renderer canvas ${rendererSurface}`);
     const frame = await cdp.command('Page.getFrameTree') as { frameTree?: { frame?: { id?: string } } };
     const mainFrameId = frame.frameTree?.frame?.id ?? '';
     const electronVersion = JSON.parse(readFileSync(join(packageRoot, 'node_modules', 'electron', 'package.json'), 'utf8')).version as string;

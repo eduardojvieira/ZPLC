@@ -23,8 +23,11 @@ import { Console } from './components/Console';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { CloseGuard } from './components/CloseGuard';
 import { useTheme } from './hooks/useTheme';
-import { useIDEStore } from './store/useIDEStore';
+import { initializeTheme, useIDEStore } from './store/useIDEStore';
 import { useDebugController } from './hooks/useDebugController';
+
+// Apply the stored theme while modules load, before React renders the first frame (UX-016).
+initializeTheme();
 
 function App() {
   useTheme();
