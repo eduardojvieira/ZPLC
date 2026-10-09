@@ -129,6 +129,44 @@ static void test_reset_clears_handshake_state(void) {
   assert(*(uint32_t *)&mem[4] == 0);
 }
 
+/* RT-004: the STATUS field is written byte by byte, little endian, at any
+ * address. The block starts at an odd offset, so STATUS is misaligned for a
+ * 32-bit store; under UBSan a wide store through a cast pointer is reported. */
+static void test_status_written_bytewise_at_unaligned_address(void) {
+  printf("test_status_written_bytewise_at_unaligned_address...\n");
+  union {
+    uint32_t force_alignment;
+    uint8_t bytes[64];
+  } image;
+  uint8_t *fb;
+
+  memset(&image, 0xA5, sizeof(image));
+  fb = &image.bytes[1];
+
+  /* No handler for this kind: STATUS = ZPLC_COMM_NO_HANDLER (3). */
+  memset(fb, 0, 8);
+  fb[0] = 1;
+  assert(zplc_comm_fb_exec(ZPLC_COMM_FB_MB_WRITE_HREG, fb) == 0);
+  assert(fb[3] == 1);
+  assert(fb[4] == ZPLC_COMM_NO_HANDLER && fb[5] == 0 && fb[6] == 0 && fb[7] == 0);
+
+  /* A failing handler: STATUS = ZPLC_COMM_UNKNOWN (0xFF). */
+  memset(fb, 0, 8);
+  fb[0] = 1;
+  zplc_comm_register_handler(ZPLC_COMM_FB_MQTT_PUBLISH, failing_handler);
+  assert(zplc_comm_fb_exec(ZPLC_COMM_FB_MQTT_PUBLISH, fb) == 0);
+  assert(fb[4] == ZPLC_COMM_UNKNOWN && fb[5] == 0 && fb[6] == 0 && fb[7] == 0);
+
+  /* Reset clears all four STATUS bytes and touches nothing outside the block. */
+  fb[4] = 0x78;
+  fb[5] = 0x56;
+  fb[6] = 0x34;
+  fb[7] = 0x12;
+  assert(zplc_comm_fb_reset(ZPLC_COMM_FB_MQTT_SUBSCRIBE, fb) == 0);
+  assert(fb[4] == 0 && fb[5] == 0 && fb[6] == 0 && fb[7] == 0);
+  assert(image.bytes[0] == 0xA5 && image.bytes[9] == 0xA5);
+}
+
 int main(void) {
   printf("Running zplc_comm_dispatch tests...\n");
   test_registration();
@@ -137,6 +175,7 @@ int main(void) {
   test_no_handler();
   test_handler_error_sets_status();
   test_reset_clears_handshake_state();
+  test_status_written_bytewise_at_unaligned_address();
   printf("All zplc_comm_dispatch tests passed.\n");
   return 0;
 }
