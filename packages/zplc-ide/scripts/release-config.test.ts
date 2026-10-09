@@ -21,7 +21,13 @@ type Builder = {
   win: Record<string, unknown>;
 };
 
+type Step = { name?: string; uses?: string; run?: string; if?: string; 'working-directory'?: string };
+type Job = { steps: Step[]; strategy?: { matrix: { include: Array<{ arch: string; runner: string }> } } };
+type Workflow = { jobs: Record<string, Job> };
+
 const builder = Bun.YAML.parse(read('../electron-builder.yml')) as Builder;
+const workflow = Bun.YAML.parse(read('../../../.github/workflows/release.yml')) as Workflow;
+const indexOfStep = (job: Job, text: string) => job.steps.findIndex((step) => step.run?.includes(text) || step.uses?.includes(text));
 
 // ponytail: reads only the flat `<key>..</key><true/>` pairs of the entitlements file; a nested or typed
 // value would need a real plist parser.
@@ -59,5 +65,27 @@ describe('electron-builder.yml Windows signing (REL-003, REL-038)', () => {
   it('carries no signing settings, because the installers are built unsigned', () => {
     const signing = Object.keys(builder.win).filter((key) => /sign|cert|publisher/i.test(key));
     expect(signing).toEqual([]);
+  });
+});
+
+describe('release.yml macOS build jobs prove the signature on both architectures (REL-002)', () => {
+  const job = workflow.jobs['build-macos']!;
+
+  it('builds one runner per architecture', () => {
+    expect(job.strategy!.matrix.include.map((entry) => entry.arch).sort()).toEqual(['arm64', 'x64']);
+    expect(new Set(job.strategy!.matrix.include.map((entry) => entry.runner)).size).toBe(2);
+  });
+
+  it('verifies the built bundle, unconditionally, between the build and the launch smoke', () => {
+    const build = indexOfStep(job, 'package-mac-release.mjs');
+    const verify = indexOfStep(job, 'verify-mac-signature.ts ${{ matrix.arch }}');
+    const launch = indexOfStep(job, 'smoke:desktop-packaged');
+    const upload = indexOfStep(job, 'actions/upload-artifact@');
+    expect(build).toBeGreaterThan(-1);
+    expect(verify).toBeGreaterThan(build);
+    expect(launch).toBeGreaterThan(verify);
+    expect(upload).toBeGreaterThan(launch);
+    expect(job.steps[verify]!.if).toBeUndefined();
+    expect(job.steps[verify]!['working-directory']).toBe('packages/zplc-ide');
   });
 });

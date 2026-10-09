@@ -213,6 +213,12 @@ jobs:
         env:
           ZPLC_MAC_COPY_APP_BUNDLE: '1'
 
+      # Hosted macOS runners are the only place this can run (REL-002): ad-hoc signature, sealed resources,
+      # hardened runtime, and the native runtime signed with the bundle, on each architecture.
+      - name: Verify the macOS bundle is ad-hoc signed and sealed
+        working-directory: packages/zplc-ide
+        run: bun run scripts/verify-mac-signature.ts ${{ matrix.arch }}
+
       - name: Validate macOS build artifacts
         working-directory: packages/zplc-ide
         run: bun run smoke:desktop-builds macos ${{ matrix.arch }}
