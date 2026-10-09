@@ -695,7 +695,17 @@ describe('saved workspace compilation presentation', () => {
     expect(accepted).toMatchObject({ ok: true, summary: { name: 'Motor', taskCount: 1, codeSize: 4 } });
     expect(presentWorkspaceCompileResult({ ok: true, summary: { name: 'Motor', taskCount: 1, codeSize: 4 }, artifact: { zplcFile: [], bytecode: new Uint8Array([2]), assembly: ';', debugMap: { pou: {}, memoryLayout: {} } }, zplcEvidence: { sha256: sha, byteLength: 0 } })).toEqual({ ok: false, diagnostics: [] });
     expect(presentWorkspaceCompileResult({ ok: true, summary: { name: 'Motor', taskCount: 1, codeSize: 4 }, artifact: { zplcFile: new Uint8Array([1]), bytecode: new Uint8Array([2]), assembly: ';', debugMap: { pou: {}, memoryLayout: {} } }, zplcEvidence: { sha256: sha, byteLength: 2 } })).toEqual({ ok: false, diagnostics: [] });
-    expect(presentWorkspaceCompileResult({ ok: false, evidence: { outcome: 'failed', diagnostics: [{ code: 'COMPILATION_FAILED', path: '/private/root.st', line: 2, column: 1 }] } })).toEqual({ ok: false, diagnostics: [{ code: 'COMPILATION_FAILED', message: 'Compilation failed.', line: 2, column: 1 }] });
+    // The compiler's own message reaches the user with its position; an absolute path never does (CMP-010 stopgap).
+    expect(presentWorkspaceCompileResult({ ok: false, evidence: { outcome: 'failed', diagnostics: [{ code: 'COMPILATION_FAILED', message: "Unknown identifier 'nope'", path: '/private/root.st', line: 2, column: 1 }] } })).toEqual({ ok: false, diagnostics: [{ code: 'COMPILATION_FAILED', message: "Unknown identifier 'nope'", line: 2, column: 1 }] });
+    // A missing, empty, overlong or control-character message falls back to the fixed text.
+    for (const message of [undefined, '', 'x'.repeat(513), 'bad\u0000text', 42]) {
+      expect(presentWorkspaceCompileResult({ ok: false, evidence: { outcome: 'failed', diagnostics: [{ code: 'COMPILATION_FAILED', message, line: 2, column: 1 }] } })).toEqual({ ok: false, diagnostics: [{ code: 'COMPILATION_FAILED', message: 'Compilation failed.', line: 2, column: 1 }] });
+    }
+    // Every other code keeps its fixed text, whatever message arrives.
+    expect(presentWorkspaceCompileResult({ ok: false, evidence: { outcome: 'failed', diagnostics: [{ code: 'PROJECT_INVALID', message: '/private/root leaked' }] } })).toEqual({ ok: false, diagnostics: [{ code: 'PROJECT_INVALID', message: 'Project configuration is invalid.' }] });
+    // A test run that fails to build shows the same message.
+    expect(presentWorkspaceTestResult({ ok: false, evidence: { ...validEvidence, outcome: 'failed', artifacts: [], diagnostics: [{ code: 'COMPILATION_FAILED', message: "Unknown identifier 'nope'" }] } }))
+      .toMatchObject({ kind: 'invalid', diagnostics: [{ code: 'COMPILATION_FAILED', message: "Unknown identifier 'nope'" }] });
   });
 });
 

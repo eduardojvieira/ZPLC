@@ -246,6 +246,11 @@ function safePath(value: unknown): string | undefined {
   return segments.some((segment) => segment === '..') ? undefined : value;
 }
 
+/** The compiler's own message (CMP-010 stopgap): plain text of 512 characters at most, else the fixed text. */
+function compilerMessage(value: unknown): string {
+  return typeof value === 'string' && value.length >= 1 && value.length <= 512 && ![...value].some((char) => char < ' ' || char === '\u007f') ? value : DIAGNOSTIC_MESSAGES.COMPILATION_FAILED;
+}
+
 function diagnostics(value: unknown): WorkspaceTestDiagnostic[] | null {
   const items = array(value);
   if (!items || items.length > 128) return null;
@@ -253,7 +258,7 @@ function diagnostics(value: unknown): WorkspaceTestDiagnostic[] | null {
   for (const item of items) {
     const diagnostic = record(item);
     if (!diagnostic || typeof diagnostic.code !== 'string' || diagnostic.code.length === 0) return null;
-    const message = Object.hasOwn(DIAGNOSTIC_MESSAGES, diagnostic.code) ? DIAGNOSTIC_MESSAGES[diagnostic.code] : undefined;
+    const message = diagnostic.code === 'COMPILATION_FAILED' ? compilerMessage(diagnostic.message) : Object.hasOwn(DIAGNOSTIC_MESSAGES, diagnostic.code) ? DIAGNOSTIC_MESSAGES[diagnostic.code] : undefined;
     result.push({ ...(message ? { code: diagnostic.code, message } : INVALID_DIAGNOSTIC), ...(safePath(diagnostic.path) ? { path: safePath(diagnostic.path) } : {}) });
   }
   return result;
