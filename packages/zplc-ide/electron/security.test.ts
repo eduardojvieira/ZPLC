@@ -5,6 +5,7 @@ import {
   createContentSecurityPolicy,
   isAllowedNativeSimulationRequest,
   isAllowedWorkspaceTestRequest,
+  isAllowedWorkspaceRootRequest,
   isAllowedWorkspaceTestRunRequest,
   isAllowedFirmwareBuildRequest,
   isAllowedCandidateChangeSetReviewRequest,
@@ -76,6 +77,32 @@ describe('Electron security boundary', () => {
     expect(isAllowedWorkspaceTestRequest({ workspaceId: 'not-a-token' })).toBe(false);
     expect(isAllowedWorkspaceTestRequest([])).toBe(false);
     expect(isAllowedWorkspaceTestRequest(Object.create(null))).toBe(false);
+  });
+
+  it('accepts only the id of the project folder as the request to use that folder as the workspace', () => {
+    const rootId = '0f2ce877-e0d6-43ca-89a7-df17a4927f51';
+    expect(isAllowedWorkspaceRootRequest({ rootId })).toBe(true);
+    expect(isAllowedWorkspaceRootRequest({ rootId: 'x' })).toBe(true);
+    expect(isAllowedWorkspaceRootRequest({ rootId: 'x'.repeat(64) })).toBe(true);
+
+    for (const value of [
+      { rootId: '' },
+      { rootId: 'x'.repeat(65) },
+      { rootId: 7 },
+      { rootId: null },
+      { rootId, path: '/home/eduardo/plant' },
+      { rootId, root: '/home/eduardo/plant' },
+      { path: '/home/eduardo/plant' },
+      { workspaceId: rootId },
+      {},
+      [],
+      [rootId],
+      rootId,
+      null,
+      undefined,
+      Object.create(null),
+      Object.assign(Object.create({ rootId }), {}),
+    ]) expect(isAllowedWorkspaceRootRequest(value)).toBe(false);
   });
 
   it('admits an optional bounded ASCII scenario selector only for scenario runs', () => {

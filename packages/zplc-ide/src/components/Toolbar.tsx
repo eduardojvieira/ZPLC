@@ -57,6 +57,7 @@ import {
 import { EXECUTION_MODE, selectRuntimeArtifact, type ExecutionMode } from './runtimeArtifactSelection';
 import { OperationalStatusBar } from './OperationalStatusBar';
 import { isWorkspaceTestRunCurrent, presentWorkspaceCompileResult, resolveWorkspaceCompileRoute } from './workspaceTestPresentation';
+import { canLinkProjectWorkspace, linkProjectWorkspace } from '../utils/workspaceTestLink';
 import { createHardwareDeployConfirmation } from './hardwareDeployConfirmation';
 import { DeviceAdmissionError, DEVICE_ADMISSION_CODE } from '../runtime/deviceHandshake';
 
@@ -88,6 +89,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     hasUnsavedChanges,
   } = useIDEStore();
   const compilerRunId = useIDEStore((s) => s.compilerRunId);
+  const isProjectOpen = useIDEStore((s) => s.isProjectOpen);
   const recordCanonicalWorkspaceBuildEvidence = useIDEStore((s) => s.recordCanonicalWorkspaceBuildEvidence);
 
   const mpeekEnabled = useIDEStore((s) => s.debug.mpeekEnabled);
@@ -219,6 +221,11 @@ export function Toolbar({ debugController }: ToolbarProps) {
     requestAnimationFrame(() => executionButtonRef.current?.focus());
   }, [isPaused, isRunning]);
 
+  // The folder is the main process's: link the project to its workspace as it opens, so that Tests finds it ready (IDE-001).
+  useEffect(() => {
+    if (isProjectOpen) void linkProjectWorkspace();
+  }, [isProjectOpen, projectSession]);
+
   // ==========================================================================
   // File Operations
   // ==========================================================================
@@ -334,6 +341,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
       canonicalCompileAvailable: typeof workspaceTests?.compile === 'function',
       isProjectOpen: useIDEStore.getState().isProjectOpen,
       hasCurrentLink: currentWorkspaceLink !== null,
+      canLinkProject: canLinkProjectWorkspace(),
       hasUnsavedChanges: hasUnsavedChanges(),
     });
 
@@ -351,8 +359,19 @@ export function Toolbar({ debugController }: ToolbarProps) {
       return;
     }
 
-    if (workspaceCompileRoute === 'canonical' && workspaceTests && currentWorkspaceLink) {
-      const workspaceId = currentWorkspaceLink.workspaceId;
+    if (workspaceCompileRoute === 'canonical' && workspaceTests) {
+      // Build the folder the main process owns, registered afresh for this build: the user never chooses a zplc.json (IDE-001).
+      const link = canLinkProjectWorkspace() ? await linkProjectWorkspace() : currentWorkspaceLink;
+      if (!isCurrentRun()) return;
+      if (!link) {
+        revealCompileProblems();
+        const message = 'Saved workspace could not be opened. Check that the project folder still has its zplc.json.';
+        addConsoleEntry({ type: 'error', message, source: 'compiler' });
+        addCompilerMessage({ type: 'error', message });
+        markCompilerMessagesChecked();
+        return;
+      }
+      const workspaceId = link.workspaceId;
       const expected = { projectSession, compilerRunId, workspaceId };
       addConsoleEntry({ type: 'info', message: 'Building saved workspace locally...', source: 'compiler' });
       try {

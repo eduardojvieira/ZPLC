@@ -18,8 +18,6 @@ import { JOURNEYS, type Journey } from './journeys';
  * requirement that will fix it. A journey in this list that now passes fails the run, so remove its entry then.
  */
 export const KNOWN_GAPS: Record<string, string> = {
-  '4b Problems say what is wrong': 'CMP-010',
-  '5 Build successfully': 'IDE-001',
   '11 Learn with no project open': 'LRN-001',
   '12 Restore the session': 'IDE-008',
 };

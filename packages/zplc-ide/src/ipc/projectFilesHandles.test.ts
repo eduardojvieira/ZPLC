@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 
 import type { ProjectFilesBridge, ProjectFilesErrorCode, ProjectFilesResult, ProjectFolder } from '../../electron/projectFilesProtocol';
-import { chooseProjectFolder } from './projectFilesHandles';
+import { chooseProjectFolder, projectRootId } from './projectFilesHandles';
 
 const encode = (text: string) => new TextEncoder().encode(text);
 const decode = (bytes: Uint8Array) => new TextDecoder().decode(bytes);
@@ -210,6 +210,21 @@ describe('the project file handle', () => {
     await writable.write('x');
     forced.set('write', 'too-large');
     expect((await rejection(writable.close())).message).toBe('The file is larger than 16 MiB.');
+  });
+});
+
+describe('the id of the project folder', () => {
+  it('is the opaque id the main process gave the folder, read from the handle of the folder itself', async () => {
+    const { root } = await open({ src: null });
+    expect(projectRootId(root)).toBe('r1');
+  });
+
+  it('is nothing for a folder or file inside it, for a browser handle, or for anything else', async () => {
+    const { root } = await open({ src: null, 'src/main.st': 'A' });
+    const src = await root.getDirectoryHandle('src');
+    expect(projectRootId(src)).toBeNull();
+    expect(projectRootId(await src.getFileHandle('main.st'))).toBeNull();
+    for (const value of [null, undefined, {}, { name: 'plant', kind: 'directory' }, 'r1', 7]) expect(projectRootId(value)).toBeNull();
   });
 });
 

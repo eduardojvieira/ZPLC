@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 
+import { workspaceCompileFailure } from '../../electron/workspaceCompileFailure';
 import { classifyWorkspaceTestBuildLink, isWorkspaceManifestRegistrationCurrent, isWorkspaceTestRunCurrent, presentCandidateChangeSetReview, presentRecordedConveyorPlant, presentRecordedMotorPlant, presentRecordedPedestrianCrossing, presentRecordedTankLevel, presentWorkspaceCompileResult, presentRecordedMotorOutput, presentWorkspaceTestResult, resolveWorkspaceCompileRoute, workspaceTestAvailability, workspaceTestRunFallbackState } from './workspaceTestPresentation';
 
 const sha = 'a'.repeat(64);
@@ -680,6 +681,27 @@ describe('saved workspace compilation presentation', () => {
     expect(resolveWorkspaceCompileRoute({ ...ready, hasUnsavedChanges: true })).toBe('save-required');
     expect(resolveWorkspaceCompileRoute({ ...ready, isElectronHost: false })).toBe('renderer');
     expect(resolveWorkspaceCompileRoute({ ...ready, canonicalCompileAvailable: false })).toBe('canonical-unavailable');
+  });
+
+  it('builds a project the host can link by itself without asking for a zplc.json first (IDE-001)', () => {
+    const unlinked = { ...ready, hasCurrentLink: false, canLinkProject: true };
+    expect(resolveWorkspaceCompileRoute(unlinked)).toBe('canonical');
+    expect(resolveWorkspaceCompileRoute({ ...unlinked, hasUnsavedChanges: true })).toBe('save-required');
+    expect(resolveWorkspaceCompileRoute({ ...unlinked, canonicalCompileAvailable: false })).toBe('canonical-unavailable');
+    expect(resolveWorkspaceCompileRoute({ ...unlinked, isProjectOpen: false })).toBe('renderer');
+    expect(resolveWorkspaceCompileRoute({ ...unlinked, canLinkProject: false })).toBe('link-required');
+    expect(resolveWorkspaceCompileRoute({ ...ready, hasCurrentLink: false })).toBe('link-required');
+  });
+
+  it('shows the compiler message that the main process sends, capped and without a machine path, with its position (CMP-010)', () => {
+    const sent = workspaceCompileFailure({ ok: false, evidence: { outcome: 'failed', diagnostics: [
+      { code: 'COMPILATION_FAILED', message: "Unknown identifier 'UndefinedVariable'\n at /home/eve/plant/src/Motor.st", phase: 'codegen', path: 'src/Motor.st', line: 31, column: 1 },
+      { code: 'COMPILATION_FAILED', message: 'x'.repeat(1000), path: 'src/Motor.st', line: 2, column: 3 },
+    ] } });
+    expect(presentWorkspaceCompileResult(sent)).toEqual({ ok: false, diagnostics: [
+      { code: 'COMPILATION_FAILED', message: "Unknown identifier 'UndefinedVariable' at <path>", path: 'src/Motor.st', line: 31, column: 1 },
+      { code: 'COMPILATION_FAILED', message: 'x'.repeat(300), path: 'src/Motor.st', line: 2, column: 3 },
+    ] });
   });
 
   it('accepts only a complete canonical artifact envelope', () => {

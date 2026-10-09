@@ -125,11 +125,13 @@ export function resolveWorkspaceCompileRoute(input: {
   canonicalCompileAvailable: boolean;
   isProjectOpen: boolean;
   hasCurrentLink: boolean;
+  /** The host links the project to its workspace by itself (the folder is the main process's): no zplc.json has to be chosen. */
+  canLinkProject?: boolean;
   hasUnsavedChanges: boolean;
 }): 'canonical' | 'canonical-unavailable' | 'link-required' | 'save-required' | 'renderer' {
   if (!input.isProjectOpen || !input.isElectronHost) return 'renderer';
   if (!input.canonicalCompileAvailable) return 'canonical-unavailable';
-  if (!input.hasCurrentLink) return 'link-required';
+  if (!input.hasCurrentLink && !input.canLinkProject) return 'link-required';
   return input.hasUnsavedChanges ? 'save-required' : 'canonical';
 }
 

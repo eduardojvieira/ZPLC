@@ -21,12 +21,14 @@ import { createLearnProgressStore } from './learnProgressStore.js';
 import { buildApplicationMenu, describeApplicationMenu } from './appMenu.js';
 import { createCloseGuard } from './closeGuard.js';
 import { createProjectFiles, readFolderDialogHook } from './projectFiles.js';
+import { record, workspaceCompileFailure } from './workspaceCompileFailure.js';
 import { PROJECT_FILES_CHANNEL } from './projectFilesProtocol.js';
 import {
   DEFAULT_DEVELOPMENT_RENDERER_PORT,
   createContentSecurityPolicy,
   isAllowedNativeSimulationRequest,
   isAllowedWorkspaceTestRequest,
+  isAllowedWorkspaceRootRequest,
   isAllowedWorkspaceTestRunRequest,
   isAllowedFirmwareBuildRequest,
   isAllowedCandidateChangeSetReviewRequest,
@@ -51,6 +53,7 @@ const NATIVE_SIMULATION_CHANNEL = {
 
 const WORKSPACE_TESTS_CHANNEL = {
   REGISTER_PROJECT_FILE: 'workspace-tests:register-project-file',
+  REGISTER_PROJECT_ROOT: 'workspace-tests:register-project-root',
   RUN: 'workspace-tests:run',
   CANCEL: 'workspace-tests:cancel',
   COMPILE: 'workspace-tests:compile',
@@ -101,34 +104,6 @@ const projectFiles = createProjectFiles(chooseProjectDirectory);
 const toolApiUrl = pathToFileURL(path.join(__dirname, 'toolApi.js')).href;
 let aiProvider: ReturnType<typeof createAiProvider> | null = null;
 let learnProgress: ReturnType<typeof createLearnProgressStore> | null = null;
-
-function record(value: unknown): Record<string, unknown> | null {
-  return typeof value === 'object' && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : null;
-}
-
-function safeRelativePath(value: unknown): string | undefined {
-  if (typeof value !== 'string' || value.length === 0 || value.length > 512 || value.includes('\0') || value.startsWith('/') || value.startsWith('\\') || /^[a-zA-Z]:/.test(value)) return undefined;
-  return value.split(/[\\/]/).some((part) => part === '..') ? undefined : value;
-}
-
-function safeLocation(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 1 && value <= 1_000_000 ? value : undefined;
-}
-
-function workspaceCompileFailure(value: unknown): { ok: false; evidence: { outcome: 'failed'; diagnostics: Array<{ code: string; path?: string; line?: number; column?: number }> } } {
-  const evidence = record(record(value)?.evidence);
-  const diagnostics = Array.isArray(evidence?.diagnostics) ? evidence.diagnostics.slice(0, 128).flatMap((value) => {
-    const diagnostic = record(value);
-    if (!diagnostic || typeof diagnostic.code !== 'string' || diagnostic.code.length === 0 || diagnostic.code.length > 96) return [];
-    return [{
-      code: diagnostic.code,
-      ...(safeRelativePath(diagnostic.path) ? { path: safeRelativePath(diagnostic.path) } : {}),
-      ...(safeLocation(diagnostic.line) ? { line: safeLocation(diagnostic.line) } : {}),
-      ...(safeLocation(diagnostic.column) ? { column: safeLocation(diagnostic.column) } : {}),
-    }];
-  }) : [];
-  return { ok: false, evidence: { outcome: 'failed', diagnostics } };
-}
 
 /** Turns private Tool API fields into the sole structured-clone payload accepted by Toolbar. */
 function toWorkspaceCompileEnvelope(value: unknown, execution?: unknown): unknown {
@@ -621,6 +596,23 @@ function setupIPC(): void {
     const manifestPath = args[0];
     try {
       const token = await workspaceTestGateway.registerProjectManifest(owner.ownerId, manifestPath);
+      if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied');
+      return token;
+    } catch {
+      throw new Error('Workspace operation failed');
+    }
+  });
+
+  // The project folder the window chose is the workspace of Build, Tests and Simulate: the renderer sends the id of
+  // that folder, never a path, and no zplc.json has to be chosen again (IDE-001).
+  ipcMain.handle(WORKSPACE_TESTS_CHANNEL.REGISTER_PROJECT_ROOT, async (event, ...args: unknown[]) => {
+    const owner = currentRendererOwner(event);
+    const request = args[0];
+    if (args.length !== 1 || !owner || !isAllowedWorkspaceRootRequest(request)) throw new Error('Request denied');
+    const root = projectFiles.rootOf(owner.ownerId, request.rootId);
+    if (root === null) throw new Error('Workspace operation failed');
+    try {
+      const token = await workspaceTestGateway.registerProjectManifest(owner.ownerId, path.join(root, 'zplc.json'));
       if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied');
       return token;
     } catch {
