@@ -69,6 +69,18 @@ async function press(cdp: Cdp, key: string, code = key): Promise<void> {
   await cdp.command('Input.dispatchKeyEvent', { type: 'keyDown', key, code, text, unmodifiedText: text, windowsVirtualKeyCode: keyCode });
   await cdp.command('Input.dispatchKeyEvent', { type: 'keyUp', key, code, windowsVirtualKeyCode: keyCode });
 }
+const storeEval = (cdp: Cdp, body: string): Promise<unknown> => cdp.evaluate(`import('/src/store/useIDEStore.ts').then(async ({ useIDEStore }) => { const state = () => useIDEStore.getState(); ${body} })`);
+const fileContent = (cdp: Cdp, id: string) => storeEval(cdp, `return state().loadedFiles.get(${JSON.stringify(id)})?.content;`) as Promise<string | undefined>;
+/** Runs `body` with the page's own Monaco module instance, its first editor and its models in scope. */
+const monacoEval = (cdp: Cdp, body: string): Promise<unknown> => cdp.evaluate(`(async () => { const url = performance.getEntriesByType('resource').map((entry) => entry.name).find((name) => /\\/monaco-editor\\.js/.test(name)); const monaco = await import(url); const editor = monaco.editor.getEditors()[0]; ${body} })()`);
+async function showFile(cdp: Cdp, id: string): Promise<void> {
+  assert(await cdp.evaluate(`(() => { const tab = document.getElementById(${JSON.stringify(`editor-tab-${id}`)}); if (!tab) return false; tab.click(); return true; })()`) === true, `Editor tab for ${id} is missing.`);
+  await waitFor(`editor showing ${id}`, async () => {
+    const expected = await fileContent(cdp, id);
+    const active = await storeEval(cdp, `return state().activeFileId;`);
+    return active === id && await monacoEval(cdp, 'return editor?.getModel()?.getValue();') === expected ? true : undefined;
+  });
+}
 const card = `(() => { const panel = document.querySelector('[aria-label="Live native POSIX motor"]'); if (!panel) return null; const text = panel.textContent ?? ''; const get = (name) => Array.from(panel.querySelectorAll('button')).find((button) => button.textContent === name)?.disabled; return { text, cycles: Number((text.match(/·\\s*(\\d+) cycles/) ?? [])[1]), startDisabled: get('Start'), stopDisabled: get('Stop'), assertDisabled: get('Assert E-stop'), releaseDisabled: get('Release E-stop') }; })()`;
 
 async function main(): Promise<void> {
@@ -167,6 +179,32 @@ async function main(): Promise<void> {
       return value.text.includes('Host POSIX scenarios passed.') && value.buildLink?.includes('Canonical saved build linked') && value.hashes.length >= 2 ? value : undefined;
     });
     assert(scenarioEvidence.hashes.every((hash) => /^SHA-256 [0-9a-f]{64}$/.test(hash ?? '')), `Native scenario evidence hashes are invalid: ${JSON.stringify(scenarioEvidence)}`);
+    // LNG-009: every open text file keeps its own content, undo history and cursor.
+    const first = 'file:src/Motor.st';
+    const originalFirst = await fileContent(cdp, first);
+    assert(typeof originalFirst === 'string' && originalFirst.length > 0, 'Motor.st is not loaded for the per-file editor step.');
+    const second = await storeEval(cdp, `return await state().createFile('Second', 'ST');`) as string;
+    assert(second === 'file:src/Second.st', `Unexpected second file id: ${second}`);
+    const originalSecond = await fileContent(cdp, second);
+    await showFile(cdp, first);
+    await monacoEval(cdp, `editor.setPosition({ lineNumber: 1, column: 1 }); editor.trigger('smoke', 'type', { text: 'AB' });`);
+    await waitFor('typing in the first file', async () => (await fileContent(cdp!, first))?.startsWith('AB') ? true : undefined);
+    await showFile(cdp, second);
+    await showFile(cdp, first);
+    await monacoEval(cdp, `editor.trigger('smoke', 'type', { text: 'C' });`);
+    const typed = await waitFor('typing after returning to the first file', async () => { const content = await fileContent(cdp!, first); return content !== originalFirst && content?.includes('C') ? content : undefined; });
+    assert(typed.startsWith('ABC'), `The first file lost its cursor across a tab switch: ${JSON.stringify(typed.slice(0, 20))}`);
+    const modelPaths = (await monacoEval(cdp, `return monaco.editor.getModels().map((model) => model.uri.scheme + ':' + model.uri.path).sort();`) as string[]).filter((path) => path.startsWith('zplc-file:'));
+    assert(modelPaths.length === 2 && /^zplc-file:\/\d+\/file:src\/Motor\.st$/.test(modelPaths[0]) && /^zplc-file:\/\d+\/file:src\/Second\.st$/.test(modelPaths[1]), `Each open text file must have its own Monaco model: ${JSON.stringify(modelPaths)}`);
+    await showFile(cdp, second);
+    await monacoEval(cdp, `editor.trigger('smoke', 'undo', null);`);
+    await Bun.sleep(500);
+    assert(await fileContent(cdp, second) === originalSecond, `Undo in the second file changed it: ${JSON.stringify((await fileContent(cdp, second))?.slice(0, 80))}`);
+    assert(await fileContent(cdp, first) === typed, 'Undo in the second file changed the first file.');
+    await showFile(cdp, first);
+    await monacoEval(cdp, `editor.trigger('smoke', 'undo', null);`);
+    await waitFor('undo in the first file', async () => (await fileContent(cdp!, first)) !== typed ? true : undefined);
+    assert(await fileContent(cdp, second) === originalSecond, 'Undo in the first file changed the second file.');
     const finalFrame = await cdp.command('Page.getFrameTree') as { frameTree?: { frame?: { id?: string } } };
     assert((finalFrame.frameTree?.frame?.id ?? '') === mainFrameId, 'Renderer main frame changed during smoke.');
     assert(JSON.stringify(await cdp.evaluate('window.electronAPI.getAppInfo()')) === JSON.stringify(appInfo), 'Preload IPC identity changed during smoke.');

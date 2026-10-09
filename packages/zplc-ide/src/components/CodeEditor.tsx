@@ -37,6 +37,7 @@ import {
 } from '../utils/monaco-themes';
 import { debugLog } from '../utils/debugLog';
 import { compilerMarkersForFile } from './compilerMarkers';
+import { editorModelPath, isMonacoCancellation } from './editorModels';
 import { ensureSTLanguageService, getSTSyntaxDiagnostics } from './stLanguageService';
 
 const ST_LIVE_MARKER_OWNER = 'zplc.st-live';
@@ -48,6 +49,9 @@ const monacoEnvironment = globalThis as typeof globalThis & {
 
 monacoEnvironment.MonacoEnvironment ??= { getWorker: () => new EditorWorker() };
 loader.config({ monaco });
+window.addEventListener('unhandledrejection', (event) => {
+  if (isMonacoCancellation(event.reason)) event.preventDefault();
+});
 
 // =============================================================================
 // Types
@@ -94,8 +98,10 @@ export function CodeEditor({
   const { effectiveTheme } = useTheme();
   const editorRef = useRef<MonacoEditor.editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<Monaco | null>(null);
-  const decorationsRef = useRef<string[]>([]);
-  const inlineDecorationsRef = useRef<MonacoEditor.editor.IEditorDecorationsCollection | null>(null);
+  // Decorations belong to a model, and each open file keeps its own model.
+  const decorationsRef = useRef(new WeakMap<MonacoEditor.editor.ITextModel, string[]>());
+  const inlineDecorationsRef = useRef(new WeakMap<MonacoEditor.editor.ITextModel, MonacoEditor.editor.IEditorDecorationsCollection>());
+  const syncingRef = useRef(false);
   const [editorReady, setEditorReady] = useState(false);
 
   // Debug state from store
@@ -112,8 +118,11 @@ export function CodeEditor({
   const compilerRunId = useIDEStore((state) => state.compilerRunId);
   const stBufferDiagnostics = useIDEStore((state) => state.stBufferDiagnostics);
   const consumeCompilerNavigationTarget = useIDEStore((state) => state.consumeCompilerNavigationTarget);
+  const modelPath = editorModelPath(projectSession, fileId);
   const debugMapRef = useRef(debugMap);
+  const fileIdRef = useRef(fileId);
   const fileNameRef = useRef(fileName);
+  const contentRef = useRef(content);
   const { isPaused, currentLine, currentPOU } = useCurrentExecution();
 
   // Check if this file is the current execution context
@@ -132,8 +141,16 @@ export function CodeEditor({
   }, [debugMap]);
 
   useEffect(() => {
+    fileIdRef.current = fileId;
+  }, [fileId]);
+
+  useEffect(() => {
     fileNameRef.current = fileName;
   }, [fileName]);
+
+  useEffect(() => {
+    contentRef.current = content;
+  }, [content]);
 
   const isBreakpointGutterTarget = useCallback((type: MonacoEditor.editor.MouseTargetType): boolean => {
     const monaco = monacoRef.current;
@@ -201,6 +218,7 @@ export function CodeEditor({
 
     // Add mouse down listener for gutter clicks (breakpoints)
     editor.onMouseDown((e) => {
+      const fileId = fileIdRef.current;
       debugLog('[Breakpoint] Mouse down', {
         fileId,
         fileName: fileNameRef.current,
@@ -266,13 +284,14 @@ export function CodeEditor({
     monaco.editor.defineTheme(ZPLC_HIGH_CONTRAST_THEME_ID, ZPLC_HIGH_CONTRAST_THEME);
 
     setEditorReady(true);
-  }, [fileId, isBreakpointGutterTarget, toggleBreakpoint]);
+  }, [isBreakpointGutterTarget, toggleBreakpoint]);
 
   // Update breakpoint and current line decorations
   useEffect(() => {
     const editor = editorRef.current;
     const monaco = monacoRef.current;
-    if (!editor || !monaco) return;
+    const model = editor?.getModel();
+    if (!editor || !monaco || !model) return;
 
     const newDecorations: MonacoEditor.editor.IModelDeltaDecoration[] = [];
     const eligibleBreakpoints = filterEligibleBreakpointLines(debugMap, fileName, breakpoints);
@@ -318,11 +337,20 @@ export function CodeEditor({
     }
 
     // Apply decorations
-    decorationsRef.current = editor.deltaDecorations(
-      decorationsRef.current,
-      newDecorations
-    );
-  }, [breakpoints, currentLine, debugMap, fileId, fileName, isCurrentFile, isPaused]);
+    decorationsRef.current.set(model, editor.deltaDecorations(decorationsRef.current.get(model) ?? [], newDecorations));
+  }, [breakpoints, currentLine, debugMap, editorReady, fileId, fileName, isCurrentFile, isPaused, modelPath]);
+
+  // A kept model can be older than the store (the file changed while its tab was hidden): bring it up to date when shown.
+  useEffect(() => {
+    const editor = editorRef.current;
+    const model = editor?.getModel();
+    const normalizeEol = (text: string) => text.replace(/\r\n?/g, '\n');
+    if (!editor || !model || normalizeEol(model.getValue()) === normalizeEol(contentRef.current)) return;
+    syncingRef.current = true;
+    editor.executeEdits('zplc.sync', [{ range: model.getFullModelRange(), text: contentRef.current, forceMoveMarkers: true }]);
+    editor.pushUndoStop();
+    syncingRef.current = false;
+  }, [editorReady, modelPath]);
 
   useEffect(() => {
     const editor = editorRef.current;
@@ -437,8 +465,12 @@ export function CodeEditor({
     const monaco = monacoRef.current;
     if (!editor || !monaco || !editorReady) return;
 
-    if (!inlineDecorationsRef.current) {
-      inlineDecorationsRef.current = editor.createDecorationsCollection();
+    const model = editor.getModel();
+    if (!model) return;
+    let inlineDecorations = inlineDecorationsRef.current.get(model);
+    if (!inlineDecorations) {
+      inlineDecorations = editor.createDecorationsCollection();
+      inlineDecorationsRef.current.set(model, inlineDecorations);
     }
 
     const newDecorations: MonacoEditor.editor.IModelDeltaDecoration[] = [];
@@ -472,8 +504,6 @@ export function CodeEditor({
             : 'inline-debug-value';
 
         // Get end of line
-        const model = editor.getModel();
-        if (!model) continue;
         const maxCol = model.getLineMaxColumn(lineNum);
 
         debugLog(`[CodeEditor] Adding decoration to line ${lineNum} at col ${maxCol}:`, combinedText);
@@ -499,12 +529,12 @@ export function CodeEditor({
 
     debugLog(`[CodeEditor] Setting ${newDecorations.length} inline decorations!`);
     // Apply inline decorations
-    inlineDecorationsRef.current.set(newDecorations);
-  }, [inlinePreviewEnabled, inlineWidgets, editorReady]);
+    inlineDecorations.set(newDecorations);
+  }, [inlinePreviewEnabled, inlineWidgets, editorReady, modelPath]);
 
   // Handle content change
   const handleChange = useCallback((value: string | undefined) => {
-    if (value !== undefined && onChange) {
+    if (value !== undefined && onChange && !syncingRef.current) {
       onChange(value);
     }
   }, [onChange]);
@@ -536,6 +566,8 @@ export function CodeEditor({
 
       <Editor
         height="100%"
+        path={modelPath}
+        keepCurrentModel
         language={getMonacoLanguage(language)}
         value={content}
         onChange={handleChange}

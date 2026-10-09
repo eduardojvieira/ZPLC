@@ -17,6 +17,8 @@ import { parseLDModel, serializeLDModel, type LDModel } from '../models/ld';
 import { parseSFCModel, serializeSFCModel, type SFCModel } from '../models/sfc';
 import { ProjectSettings } from './settings/ProjectSettings';
 import { CodeEditor } from './CodeEditor';
+import { editor as monacoEditor } from 'monaco-editor';
+import { disposeClosedEditorModels } from './editorModels';
 import { canCommitVisualEditorChange } from '../editors/visualCommitGuard';
 import { displayEditorFileName } from './editorFilePresentation';
 import {
@@ -86,6 +88,11 @@ export function EditorArea() {
     () => visualHistoryState.projectSession === projectSession ? visualHistoryState.histories : new Map<string, never>(),
     [projectSession, visualHistoryState],
   );
+
+  // Text files keep their Monaco model while their tab is open; closing the tab or the project drops it.
+  useEffect(() => {
+    disposeClosedEditorModels(monacoEditor, projectSession, openTabs);
+  }, [openTabs, projectSession]);
 
   useEffect(() => useIDEStore.subscribe((state) => {
     const file = state.getActiveFile();
