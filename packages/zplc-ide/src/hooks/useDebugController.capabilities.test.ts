@@ -145,6 +145,21 @@ describe('direct watch-write hardware boundary', () => {
   });
 });
 
+describe('force without a value', () => {
+  it('refuses to force a value that has not been read, before anything is encoded or sent, while a release needs no value', () => {
+    const source = readFileSync(join(import.meta.dir, 'useDebugController.ts'), 'utf8');
+    const action = source.slice(source.indexOf('const toggleForceValue ='), source.indexOf('const clearAllForcedValues ='));
+    const refusal = action.indexOf('if (force && value === null) {');
+    const encode = action.indexOf('valueToBytes(value as number | boolean | string, type, maxLength)');
+
+    expect(action).toContain('value: number | boolean | string | null,');
+    expect(refusal).toBeGreaterThanOrEqual(0);
+    expect(action.indexOf('try {')).toBeGreaterThan(refusal);
+    expect(encode).toBeGreaterThan(refusal);
+    expect(action).toContain('await currentAdapter.clearForcedValue(address);');
+  });
+});
+
 describe('breakpoint teardown boundary', () => {
   // The round itself (stale rounds dropped, errors of a live session reported) is tested in
   // useDebugControllerBreakpoints.test.ts; this pins what the hook hands to it.

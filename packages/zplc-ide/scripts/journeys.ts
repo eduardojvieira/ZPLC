@@ -792,4 +792,67 @@ export const JOURNEYS: Journey[] = [
       assert(!(await outputText(third)).includes('unable to parse request envelope'), 'The Console shows the runtime\'s raw parse failure, not the size message.');
     },
   },
+  {
+    name: '18 Force an input while stopped at a breakpoint', example: 'motor_start_stop',
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openFile(app, 'src/Motor.st');
+      const line = await lineWith(app, 'Forward := SealIn;'); // the statement after it is Reverse := FALSE
+      assert(line > 0, 'Motor.st no longer has the statement Forward := SealIn; the journey aims at.');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Motor example does not build: ${result.message}`);
+      await clickEditorLine(app, line, 'gutter');
+      await app.until(`a breakpoint dot on line ${line}`, async () => (await decoratedLines(app, 'glyphMarginClassName', 'breakpoint-glyph')).includes(line) || undefined);
+      await app.click(button('Connect'));
+      await app.until('the simulation to connect', async () => await app.visible(button('Disconnect')) || undefined);
+      await app.click(button('Run (F5)', 'prefix'));
+      await app.until(`execution to stop at line ${line}`, async () => await app.visible(button('Resume (F5)', 'prefix')) || undefined);
+      const stopped = () => app.visible(button('Resume (F5)', 'prefix'));
+
+      // Add Start to the Watch table and aim at its Force checkbox the moment the row appears, before its value has been read (the
+      // table polls every 100 ms). A click then did nothing and said nothing: the handler dropped it for want of a value. The box must
+      // not offer itself until it can work, and the click that waits for it must then force the input.
+      await app.click(tab('Watch', 'prefix'));
+      if (!await app.visible(css('input[placeholder^="Variable path"]'))) await app.click(css('button[title="Add variable"]'));
+      await app.click(css('input[placeholder^="Variable path"]'));
+      await app.type('Start');
+      const forceBox = css('input[aria-label="Force Start"]');
+      const appeared = app.eval<{ disabled: boolean; value: string }>(`new Promise((resolve) => { const look = () => { const box = ${forceBox}; if (!box) return false; resolve({ disabled: box.disabled, value: box.closest('tr').children[1].innerText.trim() }); return true; }; if (!look()) { const observer = new MutationObserver(() => { if (look()) observer.disconnect(); }); observer.observe(document.body, { childList: true, subtree: true }); } })`);
+      await app.press('Enter');
+      const first = await appeared;
+      await app.click(forceBox, 'the Force checkbox of Start');
+      await app.until('Start to be forced', async () => await app.eval(`${watchRow('Start')}?.querySelector('[data-forced="true"]') !== null`) === true || undefined, 5_000)
+        .catch((error: Error) => { throw new Error(`${error.message}: the click on the Force checkbox of Start did nothing while the execution was stopped (when the row appeared its value read ${JSON.stringify(first.value)} and the checkbox was ${first.disabled ? 'disabled' : 'enabled'}).`); });
+      assert((await app.text()).includes('1 active force'), 'The force banner does not show one active force.');
+
+      // The forced value is the one the program sees once it resumes: edit it to 1, as a user holding the input does.
+      const startValue = `${watchRow('Start')}?.children[1]`;
+      if (!await app.clickable(startValue)) {
+        app.note('With a force active the Watch table has no visible row at the default panel size');
+        await app.click(css('[role="separator"]'), 'the separator above the lower panel');
+        for (let step = 0; step < 6; step++) await app.press('ArrowUp');
+      }
+      await app.click(startValue, 'the value of Start', 2);
+      await app.until('the value editor of Start to take focus', async () => await app.eval(`document.activeElement === ${watchRow('Start')}?.querySelector('input[type="text"]')`) || undefined);
+      await app.type('1'); await app.press('Enter');
+      const watched = (name: string) => app.until(`${name} in the Watch table`, async () => { await app.click(tab('Watch', 'prefix')); return await watchValue(app, name) ?? undefined; });
+      await app.until('Start to read TRUE', async () => await watchValue(app, 'Start') === 'TRUE' || undefined);
+      await watch(app, 'Forward');
+      const read = (name: string) => app.until(`${name} to be read`, async () => { const value = await watched(name); return value !== '...' ? value : undefined; });
+      assert(await read('Forward') === 'FALSE', 'Forward should still read FALSE: the stopped scan has not reached the statement.');
+
+      // Two Resumes complete two scans (the first finishes the interrupted one), and Start is seen forced to 1 by the second.
+      const before = await cycles(app);
+      await app.click(button('Resume (F5)', 'prefix'), 'the Resume button');
+      await app.until('a second stop at the same line (the next scan)', async () => await cycles(app) >= before + 1 && await stopped() || undefined);
+      assert(await watched('Forward') === 'FALSE', 'Forward changed before the statement ran in the second scan.');
+      await app.click(button('Resume (F5)', 'prefix'), 'the Resume button');
+      await app.until('a third stop at the same line', async () => await cycles(app) >= before + 2 && await stopped() || undefined);
+      await app.until('Forward to read TRUE: the forced Start reached the motor logic', async () => await watched('Forward') === 'TRUE' || undefined);
+
+      // The force stays until the user releases it, here with the same checkbox, while stopped.
+      await app.click(forceBox, 'the Force checkbox of Start');
+      await app.until('the force to be released', async () => !(await app.text()).includes('active force') && await app.eval(`${watchRow('Start')}?.querySelector('input[type="checkbox"]')?.checked === false`) === true || undefined);
+    },
+  },
 ];

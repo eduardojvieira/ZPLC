@@ -14,7 +14,7 @@ import { SIGNAL_TEXT_CLASS, signalTone } from '../theme/signalTone';
 import { useIDEStore } from '../store/useIDEStore';
 import { buildDebugWatchRows } from './debugWatchRows';
 import { WATCH_FORCE_STATE, type WatchVariable } from '../runtime/debugAdapter';
-import { canEditWatchValue, canReleaseForces, resolveWatchCommitAction, WATCH_COMMIT_ACTION } from './debugWatchPanelLogic';
+import { canEditWatchValue, canReleaseForces, canToggleForce, resolveWatchCommitAction, WATCH_COMMIT_ACTION } from './debugWatchPanelLogic';
 
 /**
  * Format address for display
@@ -34,7 +34,7 @@ type SetValueFn = (
 type ToggleForceValueFn = (
   path: string,
   address: number,
-  value: number | boolean | string,
+  value: number | boolean | string | null,
   type: WatchVariable['type'],
   force: boolean,
   maxLength?: number,
@@ -219,7 +219,8 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
       ? parseDraftValue(editing.draft.trim(), editing.type)
       : currentValue;
 
-    if (draftValue === null) {
+    // Forcing holds a value, so it needs one; releasing a force never does.
+    if (!canToggleForce(nextForced, draftValue !== null)) {
       return;
     }
 
@@ -384,6 +385,7 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
             <tbody>
               {variables.map(({ path, result }) => {
                 const action = resolveWatchCommitAction(result.forceEntry?.state, hasActiveSerialSession);
+                const forceable = canToggleForce(!result.forced, result.value !== null || editing?.path === path);
                 const valueEditable = result.address !== null
                   && !controlsBlocked
                   && canEditWatchValue(action, Boolean(setValue), Boolean(toggleForceValue));
@@ -456,13 +458,15 @@ export function DebugWatchPanel({ setValue, toggleForceValue, clearAllForcedValu
                       <input
                         type="checkbox"
                         checked={result.forced}
-                        disabled={!toggleForceValue || result.address === null || controlsBlocked || !result.exists}
+                        disabled={!toggleForceValue || result.address === null || controlsBlocked || !result.exists || !forceable}
                         title={
                           forcesUnconfirmed
                             ? 'Force state unconfirmed. Reconnect and verify before operating.'
                             : result.forceEntry?.state === WATCH_FORCE_STATE.FORCED
                               ? 'Forced until cleared'
-                              : 'Force current value'
+                              : !forceable
+                                ? 'Waiting for the first value of this variable'
+                                : 'Force current value'
                         }
                         aria-label={`Force ${path}`}
                         onChange={(e) => {

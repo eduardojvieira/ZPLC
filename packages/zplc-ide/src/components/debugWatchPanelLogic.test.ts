@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { WATCH_FORCE_STATE } from '../runtime/debugAdapter';
-import { canEditWatchValue, canReleaseForces, resolveWatchCommitAction, WATCH_COMMIT_ACTION } from './debugWatchPanelLogic';
+import { canEditWatchValue, canReleaseForces, canToggleForce, resolveWatchCommitAction, WATCH_COMMIT_ACTION } from './debugWatchPanelLogic';
 
 describe('resolveWatchCommitAction', () => {
   it('updates the forced value when the row is already forced', () => {
@@ -57,5 +57,26 @@ describe('canReleaseForces', () => {
     expect(canReleaseForces(true, false, false)).toBe(false);
     expect(canReleaseForces(false, false, false)).toBe(false);
     expect(canReleaseForces(true, true, true)).toBe(false);
+  });
+});
+
+describe('canToggleForce', () => {
+  it('needs a value to force: a row whose value has not been read yet offers nothing to hold', () => {
+    expect(canToggleForce(true, false)).toBe(false);
+    expect(canToggleForce(true, true)).toBe(true);
+  });
+
+  it('never needs a value to release a force, so a force can always be let go', () => {
+    expect(canToggleForce(false, false)).toBe(true);
+    expect(canToggleForce(false, true)).toBe(true);
+  });
+
+  it('is what the Force checkbox and its handler both ask, so that a click is never dropped without a word', () => {
+    const source = readFileSync(join(import.meta.dir, 'DebugWatchPanel.tsx'), 'utf8');
+
+    expect(source).toContain('canToggleForce(!result.forced, result.value !== null || editing?.path === path)');
+    expect(source).toContain('canToggleForce(nextForced, draftValue !== null)');
+    expect(source).toContain('Waiting for the first value of this variable');
+    expect(source).not.toContain('if (draftValue === null) {');
   });
 });

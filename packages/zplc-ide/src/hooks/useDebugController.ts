@@ -116,11 +116,11 @@ export interface DebugControllerActions {
     type: WatchVariable['type'],
     maxLength?: number
   ) => Promise<void>;
-  /** Enable or disable a runtime-owned forced value */
+  /** Enable or disable a runtime-owned forced value (a release needs no value, a force needs one) */
   toggleForceValue: (
     path: string,
     address: number,
-    value: number | boolean | string,
+    value: number | boolean | string | null,
     type: WatchVariable['type'],
     force: boolean,
     maxLength?: number
@@ -813,7 +813,7 @@ export function useDebugController(): DebugController {
     async (
       path: string,
       address: number,
-      value: number | boolean | string,
+      value: number | boolean | string | null,
       type: WatchVariable['type'],
       force: boolean,
       maxLength?: number,
@@ -823,10 +823,13 @@ export function useDebugController(): DebugController {
       }
       const currentAdapter = adapterRef.current;
       if (!currentAdapter) return;
+      if (force && value === null) {
+        throw new Error('A value that has not been read cannot be forced.');
+      }
 
       try {
         if (force) {
-          const bytes = valueToBytes(value, type, maxLength);
+          const bytes = valueToBytes(value as number | boolean | string, type, maxLength);
           await currentAdapter.forceValue(address, bytes);
           setForcedValue(buildForceEntry(path, address, type, bytes, maxLength, WATCH_FORCE_STATE.FORCED));
           return;

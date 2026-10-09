@@ -40,3 +40,11 @@ export function canReleaseForces(
 ): boolean {
   return hasActiveSerialSession && hasForceEvidence && !busy;
 }
+
+/**
+ * Whether the Force checkbox of a row can act. Forcing holds a value, so one must have been read (or typed) first; before
+ * that the click used to be dropped without a word. Releasing a force needs no value and is never withheld.
+ */
+export function canToggleForce(nextForced: boolean, hasValue: boolean): boolean {
+  return !nextForced || hasValue;
+}
