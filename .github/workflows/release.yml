@@ -10,6 +10,11 @@
 # Artifacts:
 #   - IDE: macOS (x64, arm64), Windows (x64, arm64), Linux (x64, arm64)
 #
+# Publication:
+#   The release is created only here, as a draft, from the run of its own tag (REL-016). Each platform
+#   builds, collects its integrity evidence and uploads to the draft in jobs of its own, so a failure on one
+#   platform never blocks the others (REL-015). A person publishes the draft after the first-run checks.
+#
 # Architecture:
 #   Each matrix job builds ONE architecture only. The arch is passed to
 #   electron-builder via CLI flag (--x64 or --arm64). The electron-builder.yml
@@ -26,7 +31,7 @@ on:
         required: true
         type: string
       upload_to_release:
-        description: 'Upload artifacts to GitHub Release'
+        description: 'Create the draft GitHub Release and upload the artifacts to it'
         required: false
         type: boolean
         default: true
@@ -445,10 +450,49 @@ jobs:
           retention-days: 7
 
   # ===========================================================================
-  # Prepare integrity evidence for every candidate, including dry-runs.
+  # The release is created here, once, and only as a draft. A person publishes it after the first-run
+  # checks on a real Mac and a real Windows machine (REL-016). Nothing below ever publishes it.
   # ===========================================================================
-  prepare-release-evidence:
-    needs: [validate-version, verify-linux-x64-payload-reproducibility, build-macos, build-windows, build-linux]
+  create-draft-release:
+    needs: [validate-version, verify-release-candidate]
+    if: ${{ needs.validate-version.outputs.publishing == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout release tooling
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Render the release notes
+        env:
+          RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
+        run: node packages/zplc-ide/scripts/release-notes.mjs --version "$RELEASE_VERSION" > "$RUNNER_TEMP/release-notes.md"
+
+      - name: Create or refresh the draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
+          RELEASE_TAG: ${{ needs.validate-version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          prerelease=false
+          [[ "$RELEASE_VERSION" == *-* ]] && prerelease=true
+          if state="$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft 2>/dev/null)"; then
+            [ "$state" = true ] || { echo "Release $RELEASE_TAG is already published. The pipeline only creates drafts."; exit 1; }
+            gh release edit "$RELEASE_TAG" --draft --title "ZPLC v$RELEASE_VERSION" --notes-file "$RUNNER_TEMP/release-notes.md" --prerelease="$prerelease"
+          else
+            gh release create "$RELEASE_TAG" --draft --verify-tag --title "ZPLC v$RELEASE_VERSION" --notes-file "$RUNNER_TEMP/release-notes.md" --prerelease="$prerelease"
+          fi
+
+  # ===========================================================================
+  # macOS: integrity evidence for every candidate, including dry-runs, then the upload to the draft.
+  # Neither job waits for another platform (REL-015).
+  # ===========================================================================
+  prepare-release-evidence-macos:
+    needs: [validate-version, build-macos]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -464,6 +508,7 @@ jobs:
       - name: Download build artifacts
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
+          pattern: macos-*
           path: artifacts
 
       - name: Bind evidence to the checked-out SHA
@@ -474,7 +519,7 @@ jobs:
         with:
           path: artifacts
           format: spdx-json
-          output-file: artifacts/ZPLC-${{ needs.validate-version.outputs.version }}.spdx.json
+          output-file: artifacts/ZPLC-${{ needs.validate-version.outputs.version }}-macos.spdx.json
           upload-artifact: false
           upload-release-assets: false
           dependency-snapshot: false
@@ -491,6 +536,8 @@ jobs:
             --version "$RELEASE_VERSION" \
             --tag "$RELEASE_TAG" \
             --commit-sha "$RELEASE_COMMIT_SHA"
+          mv release/SHA256SUMS release/SHA256SUMS-macos
+          mv release/release-evidence.json release/release-evidence-macos.json
 
       - name: Attest installer provenance
         uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
@@ -498,8 +545,196 @@ jobs:
           subject-path: |
             release/*.dmg
             release/*.zip
-            release/*-Setup.exe
-            release/*-Portable.exe
+
+      - name: Attest installer SBOM
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        with:
+          subject-path: |
+            release/*.dmg
+            release/*.zip
+          sbom-path: artifacts/ZPLC-${{ needs.validate-version.outputs.version }}-macos.spdx.json
+
+      - name: Upload release bundle
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-bundle-macos-${{ needs.validate-version.outputs.publishing == 'true' && 'publishable' || 'preview' }}
+          path: release/
+          retention-days: 7
+
+  upload-release-macos:
+    needs: [validate-version, create-draft-release, prepare-release-evidence-macos]
+    if: ${{ needs.validate-version.outputs.publishing == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download release bundle
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: release-bundle-macos-publishable
+          path: release/
+
+      - name: Upload the bundle to the draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ needs.validate-version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          [ "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true ] || { echo "Release $RELEASE_TAG is not a draft. The pipeline only uploads to drafts."; exit 1; }
+          gh release upload "$RELEASE_TAG" release/* --clobber
+
+  # ===========================================================================
+  # Windows: integrity evidence for every candidate, including dry-runs, then the upload to the draft.
+  # Neither job waits for another platform (REL-015).
+  # ===========================================================================
+  prepare-release-evidence-windows:
+    needs: [validate-version, build-windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    steps:
+      - name: Checkout release tooling
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: windows-*
+          path: artifacts
+
+      - name: Bind evidence to the checked-out SHA
+        run: test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+
+      - name: Generate SPDX SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          path: artifacts
+          format: spdx-json
+          output-file: artifacts/ZPLC-${{ needs.validate-version.outputs.version }}-windows.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+          dependency-snapshot: false
+
+      - name: Create release integrity bundle
+        env:
+          RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
+          RELEASE_TAG: ${{ needs.validate-version.outputs.tag }}
+          RELEASE_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          node scripts/release-artifacts.mjs \
+            --input-dir artifacts \
+            --output-dir release \
+            --version "$RELEASE_VERSION" \
+            --tag "$RELEASE_TAG" \
+            --commit-sha "$RELEASE_COMMIT_SHA"
+          mv release/SHA256SUMS release/SHA256SUMS-windows
+          mv release/release-evidence.json release/release-evidence-windows.json
+
+      - name: Attest installer provenance
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        with:
+          subject-path: |
+            release/*.exe
+
+      - name: Attest installer SBOM
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        with:
+          subject-path: |
+            release/*.exe
+          sbom-path: artifacts/ZPLC-${{ needs.validate-version.outputs.version }}-windows.spdx.json
+
+      - name: Upload release bundle
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-bundle-windows-${{ needs.validate-version.outputs.publishing == 'true' && 'publishable' || 'preview' }}
+          path: release/
+          retention-days: 7
+
+  upload-release-windows:
+    needs: [validate-version, create-draft-release, prepare-release-evidence-windows]
+    if: ${{ needs.validate-version.outputs.publishing == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download release bundle
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: release-bundle-windows-publishable
+          path: release/
+
+      - name: Upload the bundle to the draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ needs.validate-version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          [ "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true ] || { echo "Release $RELEASE_TAG is not a draft. The pipeline only uploads to drafts."; exit 1; }
+          gh release upload "$RELEASE_TAG" release/* --clobber
+
+  # ===========================================================================
+  # Linux: integrity evidence for every candidate, including dry-runs, then the upload to the draft.
+  # Neither job waits for another platform (REL-015).
+  # ===========================================================================
+  prepare-release-evidence-linux:
+    needs: [validate-version, verify-linux-x64-payload-reproducibility, build-linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    steps:
+      - name: Checkout release tooling
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: linux-*
+          path: artifacts
+
+      - name: Bind evidence to the checked-out SHA
+        run: test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+
+      - name: Generate SPDX SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          path: artifacts
+          format: spdx-json
+          output-file: artifacts/ZPLC-${{ needs.validate-version.outputs.version }}-linux.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+          dependency-snapshot: false
+
+      - name: Create release integrity bundle
+        env:
+          RELEASE_VERSION: ${{ needs.validate-version.outputs.version }}
+          RELEASE_TAG: ${{ needs.validate-version.outputs.tag }}
+          RELEASE_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          node scripts/release-artifacts.mjs \
+            --input-dir artifacts \
+            --output-dir release \
+            --version "$RELEASE_VERSION" \
+            --tag "$RELEASE_TAG" \
+            --commit-sha "$RELEASE_COMMIT_SHA"
+          mv release/SHA256SUMS release/SHA256SUMS-linux
+          mv release/release-evidence.json release/release-evidence-linux.json
+
+      - name: Attest installer provenance
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        with:
+          subject-path: |
             release/*.AppImage
             release/*.deb
             release/*.rpm
@@ -508,95 +743,37 @@ jobs:
         uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
         with:
           subject-path: |
-            release/*.dmg
-            release/*.zip
-            release/*-Setup.exe
-            release/*-Portable.exe
             release/*.AppImage
             release/*.deb
             release/*.rpm
-          sbom-path: artifacts/ZPLC-${{ needs.validate-version.outputs.version }}.spdx.json
+          sbom-path: artifacts/ZPLC-${{ needs.validate-version.outputs.version }}-linux.spdx.json
 
       - name: Upload release bundle
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: release-bundle-${{ needs.validate-version.outputs.publishing == 'true' && 'publishable' || 'preview' }}
+          name: release-bundle-linux-${{ needs.validate-version.outputs.publishing == 'true' && 'publishable' || 'preview' }}
           path: release/
           retention-days: 7
 
-  # ===========================================================================
-  # Upload the already-attested integrity bundle to GitHub Release.
-  # ===========================================================================
-  upload-release:
-    needs: [validate-version, prepare-release-evidence]
+  upload-release-linux:
+    needs: [validate-version, create-draft-release, prepare-release-evidence-linux]
+    if: ${{ needs.validate-version.outputs.publishing == 'true' }}
     runs-on: ubuntu-latest
-    environment: release-signing
     permissions:
       contents: write
-    # Skip upload when workflow_dispatch with upload_to_release=false (dry-run testing)
-    if: >-
-      ${{
-        always()
-        && needs.validate-version.outputs.publishing == 'true'
-        && needs.validate-version.result == 'success'
-        && needs.prepare-release-evidence.result == 'success'
-      }}
     steps:
       - name: Download release bundle
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          name: release-bundle-publishable
+          name: release-bundle-linux-publishable
           path: release/
 
-      - name: Update release with assets
-        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
-        with:
-          tag_name: ${{ needs.validate-version.outputs.tag }}
-          name: "ZPLC v${{ needs.validate-version.outputs.version }}"
-          prerelease: ${{ contains(needs.validate-version.outputs.version, '-') }}
-          body: |
-            ## Release v${{ needs.validate-version.outputs.version }}
-
-            ### Repository evidence
-            - Release artifacts include checksums, an SPDX SBOM, and identity evidence produced by this workflow for the exact release SHA.
-            - Signing state: macOS bundles are signed ad hoc and are not notarized; Windows installers and Linux packages are not signed. Linux artifacts are reproducibly payload-checked, checksummed, and attested.
-            - `ST`, `IL`, `LD`, `FBD`, and `SFC` are described only at the repository-declared and automated-tested workflow level.
-            - `firmware/app/boards/supported-boards.v1.5.0.json` is the current board catalog/evidence baseline, not 2.0 HIL qualification.
-
-            ### Evidence boundary
-            Repository and hosted workflow results do not establish HIL, board qualification, timing, safety certification, or human release sign-off.
-            Prerelease tags remain release candidates, not GA declarations.
-
-            ### IDE download coverage
-
-            - macOS x64 and ARM64: DMG and ZIP.
-            - Windows x64 and ARM64: Setup and Portable executables.
-            - Linux x64 and ARM64: AppImage, DEB, and RPM.
-
-            Verify the exact attached filenames and their integrity with `SHA256SUMS` and `release-evidence.json`.
-
-            ### Board catalog/evidence baseline
-
-            See the canonical manifest and generated docs reference instead of treating this release body as a separate source of truth:
-
-            - `firmware/app/boards/supported-boards.v1.5.0.json`
-            - https://eduardojvieira.github.io/ZPLC/reference/boards
-
-            ### Documentation
-
-            - 📚 [Full Documentation](https://eduardojvieira.github.io/ZPLC/)
-            - 📖 [Reference Documentation](https://eduardojvieira.github.io/ZPLC/reference)
-          files: |
-            release/*.dmg
-            release/*.zip
-            release/*-Setup.exe
-            release/*-Portable.exe
-            release/*.AppImage
-            release/*.deb
-            release/*.rpm
-            release/*.spdx.json
-            release/SHA256SUMS
-            release/release-evidence.json
-          fail_on_unmatched_files: true
+      - name: Upload the bundle to the draft release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ needs.validate-version.outputs.tag }}
+        run: |
+          set -euo pipefail
+          [ "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true ] || { echo "Release $RELEASE_TAG is not a draft. The pipeline only uploads to drafts."; exit 1; }
+          gh release upload "$RELEASE_TAG" release/* --clobber

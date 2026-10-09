@@ -37,36 +37,51 @@ class ReleaseWorkflowEvidenceTests(unittest.TestCase):
             '        # run: test "$(git rev-parse HEAD)" = "${{ github.sha }}"',
         )
         self.assertIn(
-            "prepare-release-evidence must bind the bundle to the checked-out github.sha",
+            "prepare-release-evidence-macos must bind the bundle to the checked-out github.sha",
             self.errors(contents),
         )
 
     def test_requires_exact_sha_full_ci_reproducibility_and_build_gates(self) -> None:
         cases = (
             (
+                "build-macos",
                 '          ref: ${{ github.sha }}',
                 '          ref: ${{ github.ref }}',
                 "build-macos must checkout the validated github.sha",
             ),
             (
+                "build-macos",
                 "needs: [validate-version, verify-release-candidate]",
                 "needs: [validate-version]",
                 "build-macos must depend on validate-version and full CI",
             ),
             (
-                "verify-linux-x64-payload-reproducibility, build-macos",
-                "build-macos",
-                "prepare-release-evidence must require validation, reproducibility, and all platform builds",
+                "prepare-release-evidence-linux",
+                "verify-linux-x64-payload-reproducibility, build-linux]",
+                "build-linux]",
+                "prepare-release-evidence-linux must require validation, its own build and the reproducibility gate",
             ),
             (
-                "build-windows, build-linux]",
-                "build-windows]",
-                "prepare-release-evidence must require validation, reproducibility, and all platform builds",
+                "prepare-release-evidence-macos",
+                "needs: [validate-version, build-macos]",
+                "needs: [validate-version]",
+                "prepare-release-evidence-macos must require validation, its own build",
+            ),
+            (
+                "prepare-release-evidence-macos",
+                "needs: [validate-version, build-macos]",
+                "needs: [validate-version, build-macos, build-windows]",
+                "prepare-release-evidence-macos must not wait for the windows build",
+            ),
+            (
+                "upload-release-windows",
+                "needs: [validate-version, create-draft-release, prepare-release-evidence-windows]",
+                "needs: [validate-version, create-draft-release, prepare-release-evidence-windows, prepare-release-evidence-macos]",
+                "upload-release-windows must require validation, the draft release and its own platform's evidence",
             ),
         )
-        for old, new, expected in cases:
+        for job, old, new, expected in cases:
             with self.subTest(expected=expected):
-                job = "build-macos" if expected.startswith("build-macos") else "prepare-release-evidence"
                 self.assertIn(expected, self.errors(self.replace_in_job(self.workflow(), job, old, new)))
 
     def test_rejects_overbroad_or_missing_evidence_permissions(self) -> None:
@@ -76,7 +91,7 @@ class ReleaseWorkflowEvidenceTests(unittest.TestCase):
         ):
             with self.subTest(patch=patch):
                 self.assertIn(
-                    "prepare-release-evidence must use only its minimum evidence permissions",
+                    "prepare-release-evidence-linux must use only its minimum evidence permissions",
                     self.errors(self.workflow().replace(*patch)),
                 )
 
@@ -84,67 +99,95 @@ class ReleaseWorkflowEvidenceTests(unittest.TestCase):
         for field in ("upload-artifact: false", "upload-release-assets: false", "dependency-snapshot: false"):
             with self.subTest(field=field):
                 self.assertIn(
-                    "prepare-release-evidence must generate an unpublished SPDX SBOM from artifacts",
+                    "prepare-release-evidence-windows must generate an unpublished SPDX SBOM from artifacts",
                     self.errors(self.workflow().replace(field, field.replace("false", "true"))),
                 )
 
     def test_requires_both_installer_attestations(self) -> None:
-        contents = self.workflow().replace(
-            "          sbom-path: artifacts/ZPLC-${{ needs.validate-version.outputs.version }}.spdx.json",
+        contents = self.replace_in_job(
+            self.workflow(),
+            "prepare-release-evidence-macos",
+            "          sbom-path: artifacts/ZPLC-${{ needs.validate-version.outputs.version }}-macos.spdx.json",
             "          sbom-path: artifacts/other.spdx.json",
         )
         self.assertIn(
-            "prepare-release-evidence must produce default provenance and SPDX SBOM attestations",
-            self.errors(contents),
-        )
-        contents = self.workflow().replace("            release/*.rpm\n\n      - name: Attest installer SBOM", "\n\n      - name: Attest installer SBOM", 1)
-        self.assertIn(
-            "prepare-release-evidence must attest only the installer paths twice",
-            self.errors(contents),
-        )
-
-    def test_upload_uses_only_prepared_bundle_and_respects_dry_run(self) -> None:
-        self.assertIn(
-            "prepare-release-evidence must upload release/ as a publishable-or-preview bundle",
-            self.errors(
-                self.replace_in_job(
-                    self.workflow(),
-                    "prepare-release-evidence",
-                    "release-bundle-${{ needs.validate-version.outputs.publishing == 'true' && 'publishable' || 'preview' }}",
-                    "release-bundle-signed",
-                )
-            ),
-        )
-        contents = self.workflow().replace(
-            "          name: release-bundle-publishable",
-            "          name: all-artifacts",
-        )
-        self.assertIn(
-            "upload-release must download release-bundle-publishable directly to release/",
+            "prepare-release-evidence-macos must produce default provenance and SPDX SBOM attestations",
             self.errors(contents),
         )
         contents = self.replace_in_job(
             self.workflow(),
-            "upload-release",
+            "prepare-release-evidence-linux",
+            "            release/*.rpm\n\n      - name: Attest installer SBOM",
+            "\n\n      - name: Attest installer SBOM",
+        )
+        self.assertIn(
+            "prepare-release-evidence-linux must attest only its installer paths twice",
+            self.errors(contents),
+        )
+
+    def test_keeps_each_platform_checksum_and_evidence_file_distinct(self) -> None:
+        contents = self.replace_in_job(
+            self.workflow(),
+            "prepare-release-evidence-windows",
+            "mv release/SHA256SUMS release/SHA256SUMS-windows",
+            "mv release/SHA256SUMS release/SHA256SUMS",
+        )
+        self.assertIn(
+            "prepare-release-evidence-windows must give its checksum and evidence files a platform-specific name",
+            self.errors(contents),
+        )
+
+    def test_release_is_created_only_as_a_draft(self) -> None:
+        contents = self.workflow().replace("gh release create \"$RELEASE_TAG\" --draft --verify-tag", "gh release create \"$RELEASE_TAG\" --verify-tag")
+        self.assertIn("create-draft-release must create the release as a draft from the existing tag", self.errors(contents))
+        self.assertIn("create-draft-release must only create or edit draft releases", self.errors(contents))
+        contents = self.replace_in_job(self.workflow(), "create-draft-release", "gh release edit \"$RELEASE_TAG\" --draft ", "gh release edit \"$RELEASE_TAG\" ")
+        self.assertIn("create-draft-release must only create or edit draft releases", self.errors(contents))
+        contents = self.replace_in_job(
+            self.workflow(),
+            "create-draft-release",
+            "if: ${{ needs.validate-version.outputs.publishing == 'true' }}",
+            "if: ${{ always() }}",
+        )
+        self.assertIn("create-draft-release must run only when publishing", self.errors(contents))
+
+    def test_upload_uses_only_prepared_bundle_and_respects_dry_run(self) -> None:
+        self.assertIn(
+            "prepare-release-evidence-macos must upload release/ as a publishable-or-preview bundle",
+            self.errors(
+                self.replace_in_job(
+                    self.workflow(),
+                    "prepare-release-evidence-macos",
+                    "release-bundle-macos-${{ needs.validate-version.outputs.publishing == 'true' && 'publishable' || 'preview' }}",
+                    "release-bundle-macos-signed",
+                )
+            ),
+        )
+        contents = self.workflow().replace(
+            "          name: release-bundle-linux-publishable",
+            "          name: all-artifacts",
+        )
+        self.assertIn(
+            "upload-release-linux must download release-bundle-linux-publishable directly to release/",
+            self.errors(contents),
+        )
+        contents = self.replace_in_job(
+            self.workflow(),
+            "upload-release-macos",
             "needs.validate-version.outputs.publishing == 'true'",
             "needs.validate-version.outputs.publishing != 'true'",
         )
         self.assertIn(
-            "upload-release must require publishing and the complete success conjunction",
+            "upload-release-macos must run only when publishing",
             self.errors(contents),
         )
-        self.assertIn(
-            "upload-release must use the protected release-signing environment",
-            self.errors(self.replace_in_job(self.workflow(), "upload-release", "environment: release-signing", "environment: preview")),
-        )
-        contents = self.workflow().replace("            release/*.spdx.json\n", "")
-        self.assertIn(
-            "upload-release must publish the prepared SPDX SBOM",
-            self.errors(contents),
-        )
+        contents = self.replace_in_job(self.workflow(), "upload-release-windows", "      contents: write", "      contents: read")
+        self.assertIn("upload-release-windows must use only contents: write", self.errors(contents))
+        contents = self.replace_in_job(self.workflow(), "upload-release-linux", "--json isDraft --jq .isDraft)\" = true", "--json url --jq .url)\" = true")
+        self.assertIn("upload-release-linux must refuse a release that is not a draft", self.errors(contents))
         contents = self.workflow().replace("      - name: Download release bundle", "      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0\n\n      - name: Download release bundle")
         self.assertIn(
-            "upload-release must publish the prepared bundle without checkout or setup",
+            "upload-release-macos must publish the prepared bundle without checkout or setup",
             self.errors(contents),
         )
 

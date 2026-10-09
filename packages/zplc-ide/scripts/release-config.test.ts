@@ -25,8 +25,15 @@ type Builder = {
 };
 
 type Step = { name?: string; uses?: string; run?: string; if?: string; 'working-directory'?: string };
-type Job = { steps: Step[]; strategy?: { matrix: { include: Array<{ arch: string; runner: string }> } } };
-type Workflow = { jobs: Record<string, Job> };
+type Job = {
+  needs?: string | string[];
+  if?: string;
+  environment?: unknown;
+  permissions?: Record<string, string>;
+  steps?: Step[];
+  strategy?: { matrix: { include: Array<{ arch: string; runner: string }> } };
+};
+type Workflow = { on: { workflow_dispatch: { inputs: Record<string, unknown> } }; jobs: Record<string, Job> };
 
 const builder = Bun.YAML.parse(read('../electron-builder.yml')) as Builder;
 const workflow = Bun.YAML.parse(read('../../../.github/workflows/release.yml')) as Workflow;
@@ -121,5 +128,65 @@ describe('Linux packages use electron-builder defaults and are installed in clea
     expect(refused.status).toBe(2);
     expect(refused.stderr).toContain('outside the CI container');
     expect(readFileSync(script, 'utf8')).not.toContain('--no-sandbox');
+  });
+});
+
+describe('release.yml publishes each platform independently and only as a draft (REL-015, REL-016)', () => {
+  const platforms = ['macos', 'windows', 'linux'];
+  const jobs = workflow.jobs;
+  const needsOf = (name: string) => [jobs[name]?.needs ?? []].flat();
+  const ancestors = (name: string, seen = new Set<string>()): Set<string> => {
+    for (const need of needsOf(name)) if (!seen.has(need)) ancestors(need, seen.add(need));
+    return seen;
+  };
+  const run = (name: string) => (jobs[name]!.steps ?? []).map((step) => step.run ?? '').join('\n');
+
+  it('lets no job depend on the builds of two platforms', () => {
+    for (const name of Object.keys(jobs)) {
+      const builds = [...ancestors(name)].filter((job) => job.startsWith('build-'));
+      expect(builds.length, `${name} waits for ${builds.join(', ')}`).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it.each(platforms)('chains the %s evidence and upload on that platform alone', (platform) => {
+    expect(needsOf(`prepare-release-evidence-${platform}`)).toEqual(expect.arrayContaining(['validate-version', `build-${platform}`]));
+    expect([...needsOf(`upload-release-${platform}`)].sort()).toEqual(['create-draft-release', `prepare-release-evidence-${platform}`, 'validate-version']);
+    expect(jobs[`upload-release-${platform}`]!.if).toContain("needs.validate-version.outputs.publishing == 'true'");
+  });
+
+  it('keeps the Linux payload reproducibility gate on the Linux chain only', () => {
+    expect(needsOf('prepare-release-evidence-linux')).toContain('verify-linux-x64-payload-reproducibility');
+    for (const platform of ['macos', 'windows']) expect(ancestors(`upload-release-${platform}`).has('verify-linux-x64-payload-reproducibility')).toBe(false);
+  });
+
+  it.each(platforms)('gives the %s checksum and evidence files a platform-specific name', (platform) => {
+    expect(run(`prepare-release-evidence-${platform}`)).toContain(`mv release/SHA256SUMS release/SHA256SUMS-${platform}`);
+    expect(run(`prepare-release-evidence-${platform}`)).toContain(`mv release/release-evidence.json release/release-evidence-${platform}.json`);
+  });
+
+  it('creates the release only as a draft, from the run of its own tag', () => {
+    const create = run('create-draft-release');
+    expect(create).toMatch(/gh release create "\$RELEASE_TAG" --draft --verify-tag /);
+    expect(create).toMatch(/gh release edit "\$RELEASE_TAG" --draft /);
+    expect(create).toContain('--json isDraft');
+    expect(jobs['create-draft-release']!.if).toContain("needs.validate-version.outputs.publishing == 'true'");
+    const everything = Object.keys(jobs).map(run).join('\n') + readFileSync(new URL('../../../.github/workflows/release.yml', import.meta.url), 'utf8');
+    expect(everything).not.toMatch(/gh release (?:publish|delete)|--draft=false|draft:\s*false|softprops/);
+    for (const call of everything.match(/gh release (?:create|edit)[^\n]*/g) ?? []) expect(call).toContain('--draft');
+  });
+
+  it.each(platforms)('uploads %s assets only to a release that is still a draft', (platform) => {
+    expect(run(`upload-release-${platform}`)).toMatch(/\[ "\$\(gh release view "\$RELEASE_TAG" --json isDraft --jq \.isDraft\)" = true \]/);
+    expect(run(`upload-release-${platform}`)).toContain('gh release upload "$RELEASE_TAG" release/* --clobber');
+  });
+
+  it('writes to the repository only in the draft and upload jobs, and uses no protected environment', () => {
+    const writers = Object.keys(jobs).filter((name) => jobs[name]!.permissions?.contents === 'write').sort();
+    expect(writers).toEqual(['create-draft-release', ...platforms.map((platform) => `upload-release-${platform}`)].sort());
+    for (const job of Object.values(jobs)) expect(job.environment).toBeUndefined();
+  });
+
+  it('offers no input that selects what to upload', () => {
+    expect(Object.keys(workflow.on.workflow_dispatch.inputs).sort()).toEqual(['upload_to_release', 'version']);
   });
 });

@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 import { createReleaseIntegrityBundle } from './release-artifacts.mjs';
+import { renderReleaseNotes } from '../packages/zplc-ide/scripts/release-notes.mjs';
 
 const identity = { version: '2.0.0-rc.1', tag: 'v2.0.0-rc.1', commitSha: 'a'.repeat(40) };
 const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -116,33 +117,41 @@ test('CLI writes the same fail-closed bundle from explicit arguments', async () 
   });
 });
 
-test('pins every upload-release action to an exact commit SHA', async () => {
+test('pins every action of the per-platform upload jobs to an exact commit SHA', async () => {
   const workflow = await readFile(new URL('../.github/workflows/release.yml', import.meta.url), 'utf8');
-  const uploadRelease = workflow.match(/^  upload-release:\n[\s\S]*$/m)?.[0];
-  assert.ok(uploadRelease, 'upload-release job is missing');
-  const actions = [...uploadRelease.matchAll(/^\s+uses:\s*([^\s#]+)(?:\s+#.*)?$/gm)].map((match) => match[1]);
-  assert.deepEqual(actions.map((action) => action?.split('@')[0]).sort(), [
-    'actions/download-artifact',
-    'softprops/action-gh-release',
-  ]);
-  for (const action of actions) assert.match(action ?? '', /^[^@\s]+@[a-f0-9]{40}$/);
+  for (const platform of ['macos', 'windows', 'linux']) {
+    const job = workflow.match(new RegExp(`^  upload-release-${platform}:\\n([\\s\\S]*?)(?=^  \\S|(?![\\s\\S]))`, 'm'))?.[0];
+    assert.ok(job, `upload-release-${platform} job is missing`);
+    const actions = [...job.matchAll(/^\s+uses:\s*([^\s#]+)(?:\s+#.*)?$/gm)].map((match) => match[1]);
+    assert.deepEqual(actions.map((action) => action?.split('@')[0]), ['actions/download-artifact']);
+    for (const action of actions) assert.match(action ?? '', /^[^@\s]+@[a-f0-9]{40}$/);
+  }
 });
 
-test('keeps the release body version-generic and evidence-scoped', async () => {
-  const workflow = await readFile(new URL('../.github/workflows/release.yml', import.meta.url), 'utf8');
-  const uploadRelease = workflow.match(/^  upload-release:\n[\s\S]*$/m)?.[0];
-  assert.ok(uploadRelease, 'upload-release job is missing');
-  assert.match(uploadRelease, /name: "ZPLC v\$\{\{ needs\.validate-version\.outputs\.version \}\}"/);
-  assert.match(uploadRelease, /prerelease: \$\{\{ contains\(needs\.validate-version\.outputs\.version, '-'\) \}\}/);
-  assert.match(uploadRelease, /catalog\/evidence baseline, not 2\.0 HIL qualification/);
-  assert.match(uploadRelease, /do not establish HIL, board qualification, timing, safety certification, or human release sign-off/);
-  assert.match(uploadRelease, /macOS x64 and ARM64: DMG and ZIP/);
-  assert.match(uploadRelease, /Windows x64 and ARM64: Setup and Portable executables/);
-  assert.match(uploadRelease, /Linux x64 and ARM64: AppImage, DEB, and RPM/);
-  assert.match(uploadRelease, /`SHA256SUMS` and `release-evidence\.json`/);
-  assert.doesNotMatch(uploadRelease, /ZPLC IDE-\*-/);
-  assert.doesNotMatch(uploadRelease, /Truth-Scoped Release/);
-  assert.doesNotMatch(uploadRelease, /Representative HIL proof/);
+test('keeps the release body version-generic and evidence-scoped', () => {
+  const notes = renderReleaseNotes({ version: '2.0.0-rc.4' });
+  assert.match(notes, /^## Release v2\.0\.0-rc\.4$/m);
+  assert.match(notes, /catalog\/evidence baseline, not 2\.0 HIL qualification/);
+  assert.match(notes, /do not establish HIL, board qualification, timing, safety certification, or human release sign-off/);
+  assert.match(notes, /macOS x64 and ARM64: DMG and ZIP/);
+  assert.match(notes, /Windows x64 and ARM64: Setup and Portable executables/);
+  assert.match(notes, /Linux x64 and ARM64: AppImage, DEB, and RPM/);
+  assert.match(notes, /`SHA256SUMS-macos`/);
+  assert.match(notes, /`release-evidence-linux\.json`/);
+  assert.doesNotMatch(notes, /ZPLC IDE-\*-/);
+  assert.doesNotMatch(notes, /Truth-Scoped Release/);
+  assert.doesNotMatch(notes, /Representative HIL proof/);
+  assert.doesNotMatch(renderReleaseNotes({ version: '2.1.0' }), /2\.0\.0-rc\.4/);
+});
+
+test('release notes state the signing state of every asset the pipeline publishes (REL-015)', () => {
+  const notes = renderReleaseNotes({ version: '2.0.0-rc.4' });
+  assert.match(notes, /^### Signing state of every asset$/m);
+  assert.match(notes, /^\| macOS DMG and ZIP[^\n]*signed ad hoc and sealed[^\n]*not notarized/mi);
+  assert.match(notes, /^\| Windows setup and portable[^\n]*unsigned/mi);
+  assert.match(notes, /^\| Linux AppImage, DEB and RPM[^\n]*not signed/mi);
+  assert.match(notes, /^\| SPDX SBOM[^\n]*not signed/mi);
+  assert.doesNotMatch(notes, /Developer ID|stapl|(?<!not )notariz/i, 'no claim of a certificate or notarization');
 });
 
 test('gates every release build on the reusable full CI for the release SHA', async () => {
@@ -178,11 +187,11 @@ test('gates release evidence on two clean Linux x64 payload builds of the exact 
   assert.match(job, /verify-reproducible-linux-payload\.ts/);
   assert.match(job, /Linux x64 packaged payload reproducibility/);
 
-  const evidence = workflow.match(/^  prepare-release-evidence:\n([\s\S]*?)(?=^  \S|\Z)/m)?.[0] ?? '';
+  const evidence = workflow.match(/^  prepare-release-evidence-linux:\n([\s\S]*?)(?=^  \S|\Z)/m)?.[0] ?? '';
   assert.match(
     evidence,
-    /^    needs: \[validate-version, verify-linux-x64-payload-reproducibility, build-macos, build-windows, build-linux\]$/m,
-    'release evidence must wait for the Linux x64 payload reproducibility result',
+    /^    needs: \[validate-version, verify-linux-x64-payload-reproducibility, build-linux\]$/m,
+    'the Linux release evidence must wait for the Linux x64 payload reproducibility result',
   );
 });
 
@@ -207,8 +216,7 @@ test('contains no paid credential, Developer ID, notarization or Windows certifi
   assert.doesNotMatch(macScript, /mac-release-signing/);
   assert.doesNotMatch(macScript, /hardenedRuntime=false|forceCodeSigning/, 'electron-builder.yml owns the macOS signing settings');
   assert.match(macScript, /'x', 'electron-builder', '--mac', `--\$\{arch\}`, '--publish', 'never'/);
-  // The upload job still names the protected environment until the release jobs are restructured.
-  assert.doesNotMatch(workflow.replace(/^    environment: release-signing\n/m, ''), paidPath);
+  assert.doesNotMatch(workflow, paidPath);
   assert.doesNotMatch(workflow, /\$\{\{\s*(?:secrets\.(?!GITHUB_TOKEN\b)|vars\.)/, 'the workflow may read no secret but the job token');
 });
 
