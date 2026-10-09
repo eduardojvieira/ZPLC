@@ -29,9 +29,7 @@ Es fundamental mantener la separación de responsabilidades:
 
 **Ejemplo de llamada en extensión a `CMakeLists.txt`:**
 ```cmake
-if(CONFIG_ZPLC_CUSTOM_TASKS)
-  target_sources(app PRIVATE src/custom/custom_sensor_driver.c)
-endif()
+target_sources(app PRIVATE src/custom/custom_sensor_driver.c)
 ```
 
-Este procedimiento garantiza un estado pulcro al compilar la ejecución paralela y conserva una estricta estabilidad para los desarrolladores industriales de firmware frente a futuros despliegues complejos de mantenimiento mecánico.
+Mantenga la lógica del PLC en los lenguajes IEC y el código específico del hardware en archivos nativos de Zephyr.

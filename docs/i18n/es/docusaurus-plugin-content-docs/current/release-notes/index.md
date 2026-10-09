@@ -14,20 +14,23 @@ de PLC de seguridad, una calificación de producción de placas ni un resultado 
 
 ## Estado actual de release
 
-Los gates no-HIL de ZPLC 2.0 están implementados y son verificables localmente:
-tests host C99 y sanitizados, checks de compilador/IDE, simulación nativa, Lab/Learn
-deterministas, AI/MCP restringidos, documentación bilingüe, CI exact-SHA y controles
-del workflow de release. El workflow alojado ejecuta ese SHA antes de publicar;
-crea checksums, un SBOM SPDX y provenance, verifica firma nativa macOS/Windows al
-publicar y verifica payloads Linux reproducibles. Esos artifacts concretos no existen
-hasta que el workflow alojado del tag/SHA termine correctamente.
+Los instaladores de rc.3 no están firmados: macOS y Windows advierten antes de
+ejecutarlos, y [Primeros pasos](../getting-started/index.md) explica cómo
+continuar. Provienen de una compilación preliminar del commit `b379d82` y se
+subieron a mano; la compilación que publicaría una versión a partir del tag no
+terminó de ejecutarse. La versión incluye checksums SHA-256 y una lista de
+materiales de software SPDX.
 
-El único gate de calificación de producto pendiente es HIL físico trazable para
-Raspberry Pi Pico RP2040 y ESP32-S3-DevKitC-1-N8R8: build del SHA exacto, flash,
-identidad/hash, deploy del programa, escenario golden, reboot/persistencia, salidas
-seguras y evidencia de timing por perfil.
+Las verificaciones automáticas que se ejecutaron para ese commit son las pruebas
+host de C99, las pruebas con sanitizers y fuzzing, las pruebas de Zephyr Twister en
+`native_sim`, las pruebas de humo de la aplicación de escritorio empaquetada y la
+compilación cruzada de los seis perfiles de placa.
 
-El registro actual está en `specs/008-release-foundation/artifacts/release-evidence-matrix.md` de este checkout.
+Ninguna placa se ha probado en hardware. Una afirmación sobre hardware requiere
+una prueba física trazable (HIL) para la Raspberry Pi Pico RP2040 y la
+ESP32-S3-DevKitC-1-N8R8: compilación del SHA exacto, grabación, identidad y hash,
+despliegue del programa, escenario golden, reinicio y persistencia, salidas
+seguras y tiempos por perfil.
 
 ## Límites de evidencia
 

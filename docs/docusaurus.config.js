@@ -11,7 +11,7 @@ import { themes as prismThemes } from 'prism-react-renderer';
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: 'ZPLC 2.0',
-  tagline: 'One execution core, evidence-aware runtimes.',
+  tagline: 'An open-source IEC 61131-3 PLC runtime and desktop IDE.',
   favicon: 'img/favicon.png',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
@@ -46,11 +46,7 @@ const config = {
       onBrokenMarkdownLinks: 'throw',
     },
   },
-  themes: [
-    '@docusaurus/theme-mermaid',
-    // Built-in search is enabled by default in classic preset,
-    // explicitly ensuring we don't disable it or swap it here.
-  ],
+  themes: ['@docusaurus/theme-mermaid'],
 
   presets: [
     [
@@ -81,8 +77,8 @@ const config = {
       // Replace with your project's social card
       image: 'img/banner.png',
       metadata: [
-        { name: 'keywords', content: 'plc, iec 61131-3, zephyr rtos, industrial automation, open source, stm32, esp32, raspberry pi pico, modbus, mqtt, scada, softplc, real-time' },
-        { name: 'description', content: 'ZPLC 2.0 documents its runtime, Studio, board profiles, and release evidence without promoting unverified hardware claims.' },
+        { name: 'keywords', content: 'plc, iec 61131-3, structured text, ladder diagram, zephyr rtos, industrial automation, open source, stm32, esp32, raspberry pi pico, modbus, mqtt' },
+        { name: 'description', content: 'ZPLC is an open-source IEC 61131-3 PLC runtime in portable C99 and a desktop IDE. Write, test and simulate PLC programs on your computer, and build the runtime for Zephyr boards.' },
       ],
       colorMode: {
         defaultMode: 'dark',
@@ -175,7 +171,7 @@ const config = {
             ],
           },
         ],
-        copyright: `Copyright © 2026 ZPLC Project. ZPLC 2.0 documentation is aligned with runtime, Studio, and recorded evidence.`,
+        copyright: `Copyright © 2026 ZPLC contributors. Released under the MIT licence.`,
       },
       prism: {
         theme: prismThemes.github,

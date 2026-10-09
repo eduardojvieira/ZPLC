@@ -31,9 +31,7 @@ If you require native integration, you must build the ZPLC firmware from its sou
 
 **Example `CMakeLists.txt` extension:**
 ```cmake
-if(CONFIG_ZPLC_CUSTOM_TASKS)
-  target_sources(app PRIVATE src/custom/custom_sensor_driver.c)
-endif()
+target_sources(app PRIVATE src/custom/custom_sensor_driver.c)
 ```
 
-By confining standard application loops inside standard languages and pushing hardware specific abstractions out to native Zephyr files, the ZPLC platform remains robust, deterministically safe, and completely maintainable.
+Keep the PLC logic in the IEC languages and put hardware-specific code in native Zephyr files.

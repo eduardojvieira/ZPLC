@@ -28,8 +28,8 @@ flowchart LR
 If you are manufacturing custom hardware or using a board not built into the standard ZPLC Zephyr images, you must embed the ZPLC core manually. Integrating ZPLC into a proprietary Zephyr setup involves:
 
 1. **Including the Core Library**: Link the ZPLC C99 Engine to your CMake build tree.
-2. **Implementing the HAL Contract**: Supply concrete C functions for `zplc_hal_tick`, `zplc_hal_io_read`, etc. specific to your target's GPIO layout and driver framework. 
-3. **Starting the Scheduler**: Call `zplc_scheduler_init()` and register an execution loop within your Zephyr `main()` thread.
+2. **Implementing the HAL Contract**: Supply concrete C functions for `zplc_hal_tick`, `zplc_hal_gpio_read`, `zplc_hal_gpio_write` and the rest of the [HAL contract](../runtime/hal-contract.md), specific to your target's GPIO layout and driver framework.
+3. **Starting the Scheduler**: Call `zplc_sched_init()`, load a program with `zplc_sched_load()` and start it with `zplc_sched_start()` from your Zephyr `main()` thread. See the [Runtime API](../reference/runtime-api.md).
 
 By conforming to the HAL, you can port ZPLC onto virtually any microcontroller supporting POSIX or Zephyr footprints.
 

@@ -50,4 +50,4 @@ Wrappers pre-configurados que simplifican el enlace a los mayores simuladores cl
 
 ## Disponibilidad de Lenguajes
 
-Todos los Bloques de Función de comunicación se encuentran universalmente habilitados a través de todos los lenguajes soportados en IEC 61131-3 por ZPLC. Pueden ser instanciados de forma nativa en Text Structurado (ST), o arrastrados/pegados en las redes de un Ladder Diagram (LD) y diagramas FBD.
+El compilador registra todos los bloques de función de comunicación, por lo que puede instanciarlos en Structured Text (ST). No se ha verificado en esta versión que los editores de Ladder Diagram (LD) y de Function Block Diagram (FBD) ofrezcan cada bloque.

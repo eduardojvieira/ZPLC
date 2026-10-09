@@ -28,8 +28,8 @@ flowchart LR
 Si integras ZPLC a un modelo comercializado e innovado que precise directrices estrictas que ZPLC no trae en su base por su particularidad electrónica (ej; manejo y operación compleja de controladores para display CAN nativo, manejo SPI a ultra velocidades asíncronas para cámaras IoT etc):
 
 1. **Ligando C Núcleos Oficiales**: Instanciar la base Core `libzplc_core` al subruteado o árbol Build del IDE con su configuración CMake en Zephyr de Custom.
-2. **Re-Mapeo al Contracto HAL**: Rellenar implementaciones manualizadas hacia los punteros o abstracciones básicas (Ej `zplc_hal_tick` por temporización Zephyr Nativa o implementado lectura Custom de registros Aislados GPIO en `zplc_hal_io_read`).
-3. **Inicio Cíclico Inyectable**: Arrastre el inicializado base con la instancia globalizada nativa `zplc_scheduler_init()` permitiendo así el multihilo cíclico principal C de Zephyr para encolamiento asíncrono sin pérdidas a sus periféricos o librerías del MCU elegida.
+2. **Re-Mapeo al Contracto HAL**: Escriba las funciones en C de `zplc_hal_tick`, `zplc_hal_gpio_read`, `zplc_hal_gpio_write` y el resto del [contrato HAL](../runtime/hal-contract.md), según la distribución de GPIO y los controladores de su destino.
+3. **Inicio Cíclico Inyectable**: Llame a `zplc_sched_init()`, cargue un programa con `zplc_sched_load()` e inícielo con `zplc_sched_start()` desde el hilo `main()` de Zephyr. Consulte la [API del runtime](../reference/runtime-api.md).
 
 Sorteado favorablemente el listado inferior a librerías ZPLC se es portador pleno del entorno y motor determinístico a hardware no comerciales que cuenten con implementaciones Linux o baremetals nativos listados para RTOS POSIX/Zephyr globalmente conocidos.
 

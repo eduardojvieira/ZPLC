@@ -18,7 +18,7 @@ Protocol support depends on the physical capabilities of your target board. ZPLC
 - **Wi-Fi capable**: Supports TCP/UDP protocols (Modbus TCP, MQTT) over wireless networks (e.g., ESP32-S3).
 - **Ethernet capable**: Supports TCP/UDP protocols over wired connections (e.g., STM32 Nucleo/Discovery).
 
-The IDE automatically filters available protocols based on your selected board profile.
+Studio shows the Wi-Fi or Ethernet settings only for boards that have that hardware.
 
 ## Supported Protocols
 
