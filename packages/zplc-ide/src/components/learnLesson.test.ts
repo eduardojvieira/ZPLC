@@ -106,8 +106,8 @@ describe('Learn lesson catalog', () => {
     expect(en[6]).toMatchObject({ title: 'Edges and pulse counter', summary: 'Use R_TRIG and CTU to count three discrete pulses and reset the threshold.', scope: 'Tests provide native POSIX host evidence only; they are not physical-sensor, bounce, hardware, HIL, or certification evidence.' });
     expect(es[6]?.stages.map(({ title }) => title)).toEqual(['Objetivo', 'Predecí', 'Editá', 'Ejecutá', 'Observá', 'Reflexioná']);
     expect(en[6]?.stages.map(({ title }) => title)).toEqual(['Objective', 'Predict', 'Edit', 'Run', 'Observe', 'Reflect']);
-    expect(es[6]?.stages[0]).toEqual({ title: 'Objetivo', body: 'Ubicá PulseInput, Reset, Edge, Count y CountReached en src/EdgeCounter.st.', checkpoint: 'R_TRIG convierte cada flanco ascendente en un pulso de un scan; CTU cuenta esos pulsos.' });
-    expect(en[6]?.stages[0]).toEqual({ title: 'Objective', body: 'Locate PulseInput, Reset, Edge, Count, and CountReached in src/EdgeCounter.st.', checkpoint: 'R_TRIG turns each rising edge into a one-scan pulse; CTU counts those pulses.' });
+    expect(es[6]?.stages[0]).toEqual({ title: 'Objetivo', body: 'En src/EdgeCounter.st, usá PulseInput, Reset y CountReached y agregá las instancias Edge (R_TRIG) y Count (CTU).', checkpoint: 'R_TRIG convierte cada flanco ascendente en un pulso de un scan; CTU cuenta esos pulsos.' });
+    expect(en[6]?.stages[0]).toEqual({ title: 'Objective', body: 'In src/EdgeCounter.st, use PulseInput, Reset, and CountReached and add the Edge (R_TRIG) and Count (CTU) instances.', checkpoint: 'R_TRIG turns each rising edge into a one-scan pulse; CTU counts those pulses.' });
     expect(es[6]?.stages[1]).toEqual({ title: 'Predecí', body: 'Antes de ejecutar, anticipá cuándo el contador alcanza PV=3.', checkpoint: 'CountReached permanece OFF a 0, 10 y 30 ms; enciende a 50 tras el tercer flanco; vuelve OFF a 70 con Reset.' });
     expect(en[6]?.stages[1]).toEqual({ title: 'Predict', body: 'Before running, predict when the counter reaches PV=3.', checkpoint: 'CountReached stays OFF at 0, 10, and 30 ms; turns ON at 50 after the third edge; returns OFF at 70 with Reset.' });
     expect(es[6]?.stages[4]).toEqual({ title: 'Observá', body: 'Compará los eventos de 10, 30, 50 y 70 ms con la salida CountReached.', checkpoint: 'El tercer pulso alcanza PV=3; Reset domina y devuelve CountReached a OFF.' });
@@ -190,6 +190,47 @@ describe('Learn lesson catalog', () => {
       expect(shipped.get(lesson.requiredScenario)).toBe(lesson.scenarioPath.replace('tests/', ''));
       for (const authorScenarioId of lesson.authorScenarioIds) expect(shipped.has(authorScenarioId)).toBe(true);
     }
+  });
+
+  it('keeps lesson text, starter source, and scenario in agreement', () => {
+    const projects = join(import.meta.dir, '..', '..', 'projects');
+    for (const lesson of [...learnLessonCatalog.es, ...learnLessonCatalog.en]) {
+      const starter = join(projects, lesson.starterExampleId);
+      const scenario = JSON.parse(readFileSync(join(starter, lesson.scenarioPath), 'utf8')) as { id: string; tickMs: number; durationMs: number; expectations: unknown[] };
+      const text = lesson.stages.map(({ body, checkpoint }) => `${body} ${checkpoint}`).join(' ');
+      // The lesson names only files the learner actually gets: lesson 5 used to cite src/main.ld, a Ladder file the starter does not have.
+      expect(existsSync(join(starter, lesson.sourcePath))).toBe(true);
+      expect(scenario.id).toBe(lesson.requiredScenario);
+      for (const path of text.match(/\b(?:src|tests)\/[\w.-]*\w/g) ?? []) expect({ lesson: lesson.id, path, exists: existsSync(join(starter, path)) }).toEqual({ lesson: lesson.id, path, exists: true });
+      // The Run stage states the real number of assertions in the graded scenario.
+      const run = lesson.stages[3]!;
+      expect({ lesson: lesson.id, run: run.checkpoint }).toEqual({ lesson: lesson.id, run: expect.stringContaining(`${lesson.locale === 'en' ? 'contains' : 'contiene'} ${scenario.expectations.length} assertions`) });
+      // Every instant the lesson predicts exists in the scenario's time base.
+      const predicted = lesson.stages[1]!;
+      for (const [, value] of `${predicted.body} ${predicted.checkpoint}`.matchAll(/(\d+) ?ms/g)) expect({ lesson: lesson.id, atMs: Number(value), inScenario: Number(value) <= scenario.durationMs && Number(value) % scenario.tickMs === 0 }).toEqual({ lesson: lesson.id, atMs: Number(value), inScenario: true });
+    }
+  });
+
+  it('predicts every recorded sample of the scan-cycle scenario (the lesson used to expect 4 samples from a 2-sample starter)', () => {
+    const projects = join(import.meta.dir, '..', '..', 'projects');
+    for (const lesson of [learnLessonCatalog.es[7]!, learnLessonCatalog.en[7]!]) {
+      const scenario = JSON.parse(readFileSync(join(projects, lesson.starterExampleId, lesson.scenarioPath), 'utf8')) as { tickMs: number; durationMs: number };
+      expect(lesson.stages[1]!.checkpoint.match(/@\d+/g)).toHaveLength(scenario.durationMs / scenario.tickMs + 1);
+    }
+  });
+
+  it('keeps the Spanish copy in parity with the English copy: same numbers, file paths, and fault', () => {
+    const facts = (text: string): string[] => [...(text.match(/\d+|\b(?:src|tests)\/[\w.-]*\w/g) ?? [])].sort();
+    learnLessonCatalog.en.forEach((english, index) => {
+      const spanish = learnLessonCatalog.es[index]!;
+      expect(spanish.stages).toHaveLength(english.stages.length);
+      english.stages.forEach((stage, stageIndex) => {
+        const peer = spanish.stages[stageIndex]!;
+        // The Edit stage body is generated from the fault case, so its parity is checked through faultCases below.
+        expect({ lesson: english.id, stage: stageIndex, facts: facts(`${peer.body} ${peer.checkpoint}`) }).toEqual({ lesson: english.id, stage: stageIndex, facts: facts(`${stage.body} ${stage.checkpoint}`) });
+      });
+      expect({ lesson: english.id, facts: facts(spanish.faultCases.join(' ')) }).toEqual({ lesson: english.id, facts: facts(english.faultCases.join(' ')) });
+    });
   });
 
   it('grades complete recorded scenario evidence generically for all ten lessons', () => {
