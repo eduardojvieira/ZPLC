@@ -26,3 +26,4 @@ automatically import a capability model or certify a wiring configuration.
 
 Examples are copied to a destination folder chosen by the user. There is no
 virtual or memory project mode. See [migration](./migration-v1-to-v2.md) for
+how to bring a version 1 project into a folder.

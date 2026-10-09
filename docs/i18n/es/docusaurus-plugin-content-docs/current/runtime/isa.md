@@ -131,13 +131,7 @@ Segmentos públicos definidos hoy:
 - `ZPLC_SEG_TASK`
 - `ZPLC_SEG_TAGS`
 
-## Qué implica para la documentación ZPLC 2.0
-
-Cuando la documentación de ZPLC 2.0 haga claims sobre bytecode, layout de memoria, límites de stack, breakpoints o formato `.zplc`, esos claims tienen que salir de `zplc_isa.h` y no de descripciones aspiracionales.
-
-No documentes una ISA imaginaria que el header público todavía no define.
-
-Para el contrato de carga del binario, complementá esta página con:
+## Páginas relacionadas
 
 - [Visión general del runtime](./index.md)
 - [Modelo de Memoria](./memory-model.md)

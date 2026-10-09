@@ -4,6 +4,7 @@ title: Documentation Publishing
 sidebar_label: Publishing
 description: How to release and deploy the ZPLC documentation to GitHub Pages.
 tags: [operations, docs, github-pages]
+unlisted: true
 ---
 
 # Documentation Publishing

@@ -1,3 +1,7 @@
+---
+unlisted: true
+---
+
 # Connectivity v1_5_2 — Implementation Spec
 
 **Phase:** v1_5_2  
@@ -540,5 +544,3 @@ void zplc_config_set_azure_event_grid_source(const char *source);  /* e.g. "/dev
 void zplc_config_get_azure_event_grid_event_type(char *buf, size_t len);
 void zplc_config_set_azure_event_grid_event_type(const char *type); /* e.g. "com.zplc.telemetry" */
 ```
-
----

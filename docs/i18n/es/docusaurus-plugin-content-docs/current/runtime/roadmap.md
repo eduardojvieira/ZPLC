@@ -1,3 +1,7 @@
+---
+unlisted: true
+---
+
 # Roadmap de desarrollo
 
 ZPLC 2.0 es el RFC de implementación activo y aprobado. Se ejecuta por gates y

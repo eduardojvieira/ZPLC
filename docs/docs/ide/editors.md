@@ -23,3 +23,5 @@ the intended project and scenario to establish the behavior you need.
 ## AI editing
 
 AI edits visual models through typed operations, never raw JSON. The resulting
+candidate change stays isolated in the **Changes** tab until you review it,
+compile and test it, and save it. See [AI and privacy](./ai-privacy.md).

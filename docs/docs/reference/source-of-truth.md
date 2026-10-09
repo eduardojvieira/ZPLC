@@ -42,6 +42,6 @@ recorded evidence outrank prose.
 
 ## Update rule
 
-Change the authoritative implementation or record first, then update the
-documentation that describes it. Do not claim automatic IDE, compiler, or docs
-consumption unless a test or implementation proves that relationship.
+The authoritative implementation or record changes first; the documentation that
+describes it follows. A page says that the IDE, compiler, or docs consume a
+source automatically only when a test or the implementation proves it.

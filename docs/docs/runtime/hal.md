@@ -1,3 +1,7 @@
+---
+unlisted: true
+---
+
 # Hardware Abstraction Layer (HAL)
 
 The ZPLC Hardware Abstraction Layer provides a portable interface between the VM core and the underlying platform. This design allows the same bytecode to run on embedded RTOS, desktop operating systems, and web browsers.

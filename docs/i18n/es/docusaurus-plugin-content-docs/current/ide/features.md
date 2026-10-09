@@ -1,39 +1,45 @@
 ---
 slug: /ide/features
 id: features
-title: Workbench de Studio
-sidebar_label: Workbench
-description: Editor, ledger inferior, simulación y flujo de evidencia de ZPLC Studio 2.0.
+title: Entorno de trabajo de Studio
+sidebar_label: Entorno de trabajo
+description: El editor, el panel inferior, la simulación y el flujo de pruebas de ZPLC Studio 2.0.
 tags: [ide, user-guide]
 ---
 
-# Workbench de Studio
+# Entorno de trabajo de Studio
 
-El workbench mantiene la edición en el centro y reúne Explorer, Inspector,
-Output, Problems, Tests, Trace, Watch y Terminal en un ledger inferior.
+El entorno de trabajo mantiene la edición en el centro y reúne Explorer,
+Inspector, Output, Problems, Tests, Lab, Learn, Changes, Agent, Trace, Watch y
+Terminal en un solo panel inferior.
 
 ## Flujo diario
 
-1. Trabajá en una carpeta de proyecto elegida por vos.
-2. Compilá y resolvé diagnósticos.
-3. Ejecutá un test temporal o escenario POSIX nativo e inspeccioná su trace.
-4. Revisá la fuente de evidencia antes de concluir algo.
+1. Trabaje en una carpeta de proyecto que usted elija.
+2. Compile y resuelva los diagnósticos.
+3. Ejecute una prueba temporal o un escenario POSIX nativo y revise su trace.
+4. Verifique el origen de los resultados antes de sacar una conclusión.
 
 ## Editores
 
-ST es el camino principal de servicio de lenguaje. LD, FBD y SFC abren, editan,
-guardan, copian y deshacen sus modelos semánticos; ST generado es un artefacto,
-no una fuente round-trip. IL es una superficie de compatibilidad donde el
-compilador lo acepta.
+ST es la vía principal con servicio de lenguaje. LD, FBD y SFC abren, editan,
+guardan, copian y deshacen sus modelos; el ST que generan es un artefacto, no una
+fuente de la que se pueda volver al modelo. IL es una vía de compatibilidad, en
+la medida en que el compilador la acepta.
 
 ## Simulación y hardware
 
-POSIX nativo es el camino preferido de validación host. WASM es fallback
-degradado declarado. Las acciones hardware están separadas: build del firmware,
-flash del firmware, deploy del programa compilado y después run/debug. Cada una
-sigue controlada por personas y Studio muestra los niveles de evidencia.
+La simulación POSIX nativa es la forma de ejecutar un programa en su equipo.
+Requiere la aplicación de escritorio, que incluye el runtime nativo; en esta
+versión no hay un simulador WebAssembly en el navegador. Las acciones de hardware
+están separadas: compilar el firmware del runtime, grabarlo, desplegar un
+programa compilado y, después, ejecutar o depurar. Una persona inicia cada una.
 
-## Límite de depuración
+## Límite de la depuración
 
-Watches, traces, breakpoints y forces muestran sólo lo que informa el adaptador
-conectado. Un trace host no es evidencia hardware/HIL; force o RUN/STOP físico
+Los watches, los traces, los breakpoints y los forces solo muestran lo que el
+adaptador conectado puede informar. Un trace en host no es evidencia de hardware
+ni de HIL; forzar un valor o cambiar RUN/STOP en un sistema físico exige la
+autorización expresa de una persona y un procedimiento de seguridad del sitio.
+Las herramientas de IA y MCP no pueden forzar valores ni cambiar RUN/STOP;
+consulte [IA y privacidad](./ai-privacy.md).

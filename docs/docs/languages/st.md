@@ -48,18 +48,6 @@ Out1 := Timer.Q;
 END_PROGRAM
 ```
 
-## What this page should and should not claim
-
-This page is safe ground for:
-
-- ST as the direct compiler input path
-- ST as the semantic baseline for the other languages
-- ST examples that match the shared language workflow tests
-- stdlib usage that is backed by the compiler stdlib registry
-
-This page should **not** pretend ST has special runtime privileges. It compiles into the same
-bytecode contract as the other language paths.
-
 ## Common ST building blocks in the current repo
 
 The compiler and stdlib surfaces show ST being used with:

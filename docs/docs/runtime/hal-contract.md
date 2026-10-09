@@ -14,7 +14,7 @@ That includes:
 
 - Zephyr targets
 - host/POSIX runtimes
-- browser/WASM shims
+- a browser/WebAssembly port (in the source tree, not shipped in this release)
 - any future board-specific port
 
 ## Core rule
@@ -23,6 +23,8 @@ The portable core must not reach directly into platform APIs.
 
 If a behavior belongs to GPIO, timing, persistence, networking, sockets, or synchronization,
 the core should consume it through `zplc_hal_*` instead.
+
+The portable core owns execution semantics. The HAL owns platform integration.
 
 ## HAL surface by responsibility
 
@@ -53,7 +55,7 @@ The current public I/O surface is channel-based:
 - `zplc_hal_adc_read()`
 - `zplc_hal_dac_write()`
 
-That means docs should talk about **logical channels** and runtime mappings, not pretend the core owns raw board-pin semantics.
+The core addresses I/O by **logical channel**, not by board pin. The I/O map in the `.zplc` program maps channels to the process image, and the platform port maps channels to hardware.
 
 ## Persistence
 
@@ -79,8 +81,7 @@ The public networking-facing HAL surface includes:
 - `zplc_hal_socket_recv()`
 - `zplc_hal_socket_close()`
 
-This is the correct place to document network responsibility boundaries for Modbus TCP, MQTT,
-and related runtime services.
+The Zephyr, POSIX, and WebAssembly ports each implement these functions.
 
 ## Synchronization
 
@@ -89,6 +90,7 @@ Because the runtime also exposes shared-memory and multitask behavior, the HAL c
 - `zplc_hal_mutex_create()`
 - `zplc_hal_mutex_lock()`
 - `zplc_hal_mutex_unlock()`
+- `zplc_hal_mutex_destroy()`
 
 Those matter when the runtime path needs platform-owned synchronization for safe concurrent access.
 
@@ -100,31 +102,8 @@ The public lifecycle endpoints are:
 - `zplc_hal_shutdown()`
 - `zplc_hal_log()`
 
-## Practical documentation rule
-
-If a runtime page describes platform behavior that bypasses this header contract, the claim is probably in the wrong layer.
-
-The portable core owns execution semantics. The HAL owns platform integration.
-
 ## Related pages
 
 - [Runtime Overview](./index.md)
 - [Memory Model](./memory-model.md)
 - [Connectivity](./connectivity.md)
-
-```c
-#include "zplc_hal.h"
-#include <stdio.h>
-#include <time.h>
-
-void zplc_hal_init(void) {
-    printf("POSIX HAL Initialized.\n");
-}
-
-uint64_t zplc_hal_get_time_ms(void) {
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return (uint64_t)(ts.tv_sec * 1000) + (ts.tv_nsec / 1000000);
-}
-// ... further implementations
-```
