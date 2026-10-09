@@ -266,7 +266,7 @@ int zplc_vm_run_cycle(zplc_vm_t *vm);
 
 **Source summary:** Run one complete PLC scan cycle.
 
-Resets PC to entry point and executes with ZPLC_VM_CYCLE_INSTRUCTION_BUDGET. Exhausting that logical bound returns -ZPLC_VM_WATCHDOG; it is not a physical watchdog or a WCET guarantee.
+Normally this starts a new scan: it resets PC to the entry point and executes with ZPLC_VM_CYCLE_INSTRUCTION_BUDGET. Exhausting that logical bound returns -ZPLC_VM_WATCHDOG; it is not a physical watchdog or a WCET guarantee. The exception is a scan that a breakpoint or OP_BREAK interrupted and that zplc_vm_resume() then resumed (scan_resumed is set, the VM is neither paused nor halted). That scan is continued, not restarted: PC, evaluation stack, call stack and locals stay as the pause left them, and the budget covers the whole scan, so the instructions spent before the pause still count. Breakpoints reached later in the remainder, or at the same PC in a later scan, pause again. If the VM is still paused (never resumed), the interrupted scan is abandoned and a new scan starts at the entry point. Process-image inputs are read live by the instructions, not latched per scan: whatever the caller writes to the input image while the scan is paused is seen by the rest of that scan.
 
 **Parameters**
 
@@ -274,7 +274,7 @@ Resets PC to entry point and executes with ZPLC_VM_CYCLE_INSTRUCTION_BUDGET. Exh
 | --- | --- | --- |
 | `vm` | `zplc_vm_t *` | Pointer to VM instance |
 
-**Source return value:** Number of instructions executed, or negative error code
+**Source return value:** Number of instructions executed by this call (only the remainder when a scan is continued), or negative error code. A non-negative result with zplc_vm_is_paused() true means the scan was interrupted, not completed.
 
 #### `zplc_vm_reset_cycle`
 
@@ -284,7 +284,7 @@ void zplc_vm_reset_cycle(zplc_vm_t *vm);
 
 **Source summary:** Reset VM for a new cycle without full init.
 
-Faster than zplc_vm_init() - only resets PC, SP, and status.
+Faster than zplc_vm_init() - only resets PC, SP, and status. It also abandons an interrupted scan: the continuation armed by zplc_vm_resume() is dropped, so the next zplc_vm_run_cycle() starts over. Breakpoints and the one-shot breakpoint skip are preserved.
 
 **Parameters**
 
@@ -397,7 +397,7 @@ int zplc_vm_resume(zplc_vm_t *vm);
 
 **Source summary:** Resume execution after a breakpoint pause.
 
-Clears the paused flag so the next zplc_vm_step() continues execution.
+Clears the paused flag so the next zplc_vm_step() continues execution, and arms a one-shot skip of the breakpoint at the current PC. If the VM was paused, the scan it interrupted is marked as resumed: the next zplc_vm_run_cycle() continues that scan from the preserved PC and stacks instead of restarting at the entry point (see zplc_vm_run_cycle()). Resuming a VM that is not paused arms only the breakpoint skip. The mark is dropped by zplc_vm_reset_cycle(), zplc_vm_set_entry(), zplc_vm_init() (and thus by a program load) and when the continued scan starts running.
 
 **Parameters**
 
