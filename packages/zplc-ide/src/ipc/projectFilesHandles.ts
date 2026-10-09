@@ -93,6 +93,8 @@ abstract class ProjectHandle {
   async queryPermission(): Promise<'granted'> { return 'granted'; }
   async requestPermission(): Promise<'granted'> { return 'granted'; }
 
+  get rootId(): string { return this.context.rootId; }
+
   protected get request() { return { rootId: this.context.rootId, path: this.path }; }
 }
 
@@ -210,4 +212,13 @@ export async function chooseProjectFolder(bridge: ProjectFilesBridge): Promise<F
   const folder = await ask(bridge.chooseFolder());
   // Cast: the class implements the subset above, not the whole interface (no `resolve`).
   return folder ? new ProjectDirectoryHandle({ bridge, rootId: folder.rootId }, '', folder.name) as unknown as FileSystemDirectoryHandle : null;
+}
+
+/**
+ * The opaque id the main process gave the project folder, read from the handle of the folder itself (the one that
+ * `chooseProjectFolder` returned); null for any other handle or value. The id is the only thing the renderer sends to
+ * have that folder used as the workspace of Build, Tests and Simulate: it never names a path.
+ */
+export function projectRootId(handle: unknown): string | null {
+  return handle instanceof ProjectDirectoryHandle && handle.path === '' ? handle.rootId : null;
 }

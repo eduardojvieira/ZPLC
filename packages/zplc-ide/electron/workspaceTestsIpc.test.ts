@@ -64,6 +64,23 @@ describe('workspace test IPC boundary', () => {
     expect(preloadSource).not.toContain('getPathForFile(file) as');
   });
 
+  it('registers the project folder the main process owns from its id alone, with no linking step (IDE-001)', () => {
+    expect(mainSource).toContain("REGISTER_PROJECT_ROOT: 'workspace-tests:register-project-root'");
+    expect(preloadSource).toContain("REGISTER_PROJECT_ROOT: 'workspace-tests:register-project-root'");
+    expect(preloadSource).toContain('registerProjectRoot: (request: { rootId: string }) =>');
+    expect(preloadSource).toContain('ipcRenderer.invoke(WORKSPACE_TESTS_CHANNEL.REGISTER_PROJECT_ROOT, request)');
+    expect(mainSource).toContain('ipcMain.handle(WORKSPACE_TESTS_CHANNEL.REGISTER_PROJECT_ROOT, async (event, ...args: unknown[]) => {');
+    const handler = mainSource.slice(mainSource.indexOf('ipcMain.handle(WORKSPACE_TESTS_CHANNEL.REGISTER_PROJECT_ROOT'), mainSource.indexOf('ipcMain.handle(WORKSPACE_TESTS_CHANNEL.RUN'));
+    expect(handler).toContain('isAllowedWorkspaceRootRequest(request)');
+    expect(handler).toContain('const root = projectFiles.rootOf(owner.ownerId, request.rootId);');
+    expect(handler).toContain("workspaceTestGateway.registerProjectManifest(owner.ownerId, path.join(root, 'zplc.json'))");
+    expect(handler).toContain("throw new Error('Workspace operation failed')");
+    expect(handler).toContain("if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied');");
+    const preloadCall = preloadSource.slice(preloadSource.indexOf('registerProjectRoot:'), preloadSource.indexOf('run: (request'));
+    expect(preloadCall).not.toContain('webUtils');
+    expect(preloadCall).not.toContain('path');
+  });
+
   it('has no directory-picker registration path', () => {
     expect(mainSource).not.toContain('workspace-tests:select');
     expect(preloadSource).not.toContain('selectWorkspace');

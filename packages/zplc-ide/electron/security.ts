@@ -264,6 +264,18 @@ export function isAllowedWorkspaceTestRequest(value: unknown): value is { worksp
     && WORKSPACE_ID.test(value.workspaceId);
 }
 
+/**
+ * Validates the request to use the project folder of the window as the workspace of Build, Tests and Simulate: the
+ * opaque id that `projectFiles` gave out when the folder was chosen, and nothing else. The renderer never names a path.
+ */
+export function isAllowedWorkspaceRootRequest(value: unknown): value is { rootId: string } {
+  return isPlainObject(value)
+    && hasExactKeys(value, ['rootId'])
+    && typeof value.rootId === 'string'
+    && value.rootId.length >= 1
+    && value.rootId.length <= 64; // PROJECT_FILES_LIMITS.maxRootIdChars: the same rule as every project operation
+}
+
 /** Validates the narrow optional scenario selector without widening compile admission. */
 export function isAllowedWorkspaceTestRunRequest(value: unknown): value is { workspaceId: string; scenarioId?: string } {
   if (!isPlainObject(value)

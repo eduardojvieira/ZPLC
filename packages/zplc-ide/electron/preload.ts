@@ -22,6 +22,7 @@ const NATIVE_SIMULATION_CHANNEL = {
 
 const WORKSPACE_TESTS_CHANNEL = {
   REGISTER_PROJECT_FILE: 'workspace-tests:register-project-file',
+  REGISTER_PROJECT_ROOT: 'workspace-tests:register-project-root',
   RUN: 'workspace-tests:run',
   CANCEL: 'workspace-tests:cancel',
   COMPILE: 'workspace-tests:compile',
@@ -103,6 +104,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
       if (!manifestPath) return Promise.reject(new Error('Workspace operation failed'));
       return ipcRenderer.invoke(WORKSPACE_TESTS_CHANNEL.REGISTER_PROJECT_FILE, manifestPath) as Promise<{ workspaceId: string } | null>;
     },
+    // The project folder is the one the main process owns (projectFiles); only its opaque id crosses, never a path.
+    registerProjectRoot: (request: { rootId: string }) =>
+      ipcRenderer.invoke(WORKSPACE_TESTS_CHANNEL.REGISTER_PROJECT_ROOT, request) as Promise<{ workspaceId: string } | null>,
     run: (request: { workspaceId: string; scenarioId?: string }) =>
       ipcRenderer.invoke(WORKSPACE_TESTS_CHANNEL.RUN, request) as Promise<unknown>,
     cancel: () => ipcRenderer.invoke(WORKSPACE_TESTS_CHANNEL.CANCEL) as Promise<{ requested: boolean }>,
@@ -198,6 +202,7 @@ declare global {
       };
       workspaceTests: {
         registerProjectFile: (file: File) => Promise<{ workspaceId: string } | null>;
+        registerProjectRoot: (request: { rootId: string }) => Promise<{ workspaceId: string } | null>;
         run: (request: { workspaceId: string; scenarioId?: string }) => Promise<unknown>;
         cancel: () => Promise<{ requested: boolean }>;
         compile: (request: { workspaceId: string }) => Promise<unknown>;
