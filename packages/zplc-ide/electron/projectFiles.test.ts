@@ -5,12 +5,14 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 import { createProjectFiles } from './projectFiles';
+import { createRecentProjects } from './recentProjects';
 import {
   PROJECT_FILES_CHANNEL,
   PROJECT_FILES_LIMITS,
   type ProjectFilesOp,
   type ProjectFilesResult,
   type ProjectFolder,
+  type RecentProject,
 } from './projectFilesProtocol';
 
 const OWNER = 7;
@@ -380,5 +382,140 @@ describe('request validation at the handler', () => {
     expect(refused(await send('project-files:exec', [{ rootId, path: 'a' }]))).toBe('invalid-request');
     expect(refused(await send('project-files:list', [{ rootId, path: '' }, 'extra']))).toBe('invalid-request');
     expect(readdirSync(root)).toEqual(['src']);
+  });
+});
+
+describe('recent projects (IDE-008)', () => {
+  let userData: string;
+  beforeEach(() => { userData = path.join(sandbox, 'user-data'); });
+
+  /** A window whose dialog counts its calls, over a recent store in the private user-data directory. */
+  function windowWithRecent(chosen: string | null = root, owner = OWNER, recent: ReturnType<typeof createRecentProjects> | null = createRecentProjects(userData)) {
+    const dialogCalls = { count: 0 };
+    const files = createProjectFiles(async () => { dialogCalls.count += 1; return chosen; }, () => recent);
+    const send = (channel: string, args: unknown[] = []) => files.handle(owner, channel, args);
+    return { files, send, dialogCalls, recent };
+  }
+  const listed = async (send: (channel: string) => Promise<ProjectFilesResult<unknown>>) => {
+    const answer = await send(PROJECT_FILES_CHANNEL.listRecent);
+    if (!answer.ok) throw new Error(`listRecent: ${answer.code}`);
+    return answer.value as RecentProject[];
+  };
+  const remembered = async () => {
+    const { send } = windowWithRecent();
+    const folder = ((await send(PROJECT_FILES_CHANNEL.chooseFolder)) as { value: ProjectFolder }).value;
+    expect(await send(PROJECT_FILES_CHANNEL.markOpened, [{ rootId: folder.rootId }])).toEqual({ ok: true, value: null });
+    return { folder, recentId: (await listed(send))[0]!.recentId };
+  };
+
+  it('remembers only a folder that the window opened, and lists its base name, never its path', async () => {
+    const { send } = windowWithRecent();
+    expect(await listed(send)).toEqual([]);
+    const folder = ((await send(PROJECT_FILES_CHANNEL.chooseFolder)) as { value: ProjectFolder }).value;
+    expect(await listed(send)).toEqual([]); // chosen is not yet opened: a folder with no zplc.json must not become a recent project
+    await send(PROJECT_FILES_CHANNEL.markOpened, [{ rootId: folder.rootId }]);
+    const entries = await listed(send);
+    expect(entries).toEqual([{ recentId: expect.stringMatching(/^[0-9a-f]{64}$/), displayName: 'project', lastOpenedAt: expect.any(Number), available: true }]);
+    expect(JSON.stringify(entries)).not.toContain(sandbox);
+  });
+
+  it('refuses to remember a folder it does not hold for the window', async () => {
+    const { send } = windowWithRecent();
+    await send(PROJECT_FILES_CHANNEL.chooseFolder);
+    expect(refused(await send(PROJECT_FILES_CHANNEL.markOpened, [{ rootId: 'guess' }]))).toBe('no-folder');
+    expect(refused(await windowWithRecent(root, OWNER + 1).send(PROJECT_FILES_CHANNEL.markOpened, [{ rootId: 'guess' }]))).toBe('no-folder');
+    expect(refused(await send(PROJECT_FILES_CHANNEL.markOpened, [{ rootId: 'x', path: root }]))).toBe('invalid-request');
+    expect(await listed(send)).toEqual([]);
+  });
+
+  it('reopens a remembered folder without a dialog, as the window folder, with the same handle shape as the dialog', async () => {
+    const { recentId, folder } = await remembered();
+    const next = windowWithRecent(root, OWNER + 1);
+    const opened = await next.send(PROJECT_FILES_CHANNEL.openRecent, [{ recentId }]);
+    expect(opened).toEqual({ ok: true, value: { rootId: expect.any(String), name: 'project' } });
+    expect(next.dialogCalls.count).toBe(0);
+    const rootId = (opened as { value: ProjectFolder }).value.rootId;
+    expect(rootId).not.toBe(folder.rootId);
+    expect(next.files.rootOf(OWNER + 1, rootId)).toBe(root);
+    expect((await next.send(PROJECT_FILES_CHANNEL.list, [{ rootId, path: 'src' }])).ok).toBe(true);
+    expect(JSON.stringify(opened)).not.toContain(sandbox);
+  });
+
+  it('reopens for the asking window only', async () => {
+    const { recentId } = await remembered();
+    const asking = windowWithRecent(root, 31);
+    const other = windowWithRecent(root, 32);
+    const rootId = ((await asking.send(PROJECT_FILES_CHANNEL.openRecent, [{ recentId }])) as { value: ProjectFolder }).value.rootId;
+    expect(other.files.rootOf(32, rootId)).toBeNull();
+    expect(refused(await other.send(PROJECT_FILES_CHANNEL.list, [{ rootId, path: '' }]))).toBe('no-folder');
+  });
+
+  it('answers not-found for an id that was never remembered, and keeps the previous folder', async () => {
+    const { send, files } = windowWithRecent();
+    const rootId = ((await send(PROJECT_FILES_CHANNEL.chooseFolder)) as { value: ProjectFolder }).value.rootId;
+    expect(refused(await send(PROJECT_FILES_CHANNEL.openRecent, [{ recentId: 'a'.repeat(64) }]))).toBe('not-found');
+    expect(files.rootOf(OWNER, rootId)).toBe(root);
+  });
+
+  it('refuses a remembered folder that was deleted, replaced by a file or by a link, and lists it unavailable', async () => {
+    const { recentId } = await remembered();
+    const { send } = windowWithRecent(root, OWNER + 1);
+    expect((await listed(send))[0]!.available).toBe(true);
+
+    rmSync(root, { recursive: true });
+    expect(refused(await send(PROJECT_FILES_CHANNEL.openRecent, [{ recentId }]))).toBe('not-found');
+    expect(await listed(send)).toEqual([expect.objectContaining({ displayName: 'project', available: false })]);
+
+    writeFileSync(root, 'now a file');
+    expect(refused(await send(PROJECT_FILES_CHANNEL.openRecent, [{ recentId }]))).toBe('not-a-directory');
+    expect((await listed(send))[0]!.available).toBe(false);
+
+    rmSync(root);
+    symlinkSync(outside, root);
+    expect(refused(await send(PROJECT_FILES_CHANNEL.openRecent, [{ recentId }]))).toBe('not-found'); // not the folder the user chose
+    expect((await listed(send))[0]!.available).toBe(false);
+  });
+
+  it('forgets an entry, and forgetting what is not there is not an error', async () => {
+    const { recentId } = await remembered();
+    const { send } = windowWithRecent(root, OWNER + 1);
+    expect(await send(PROJECT_FILES_CHANNEL.forgetRecent, [{ recentId }])).toEqual({ ok: true, value: null });
+    expect(await listed(send)).toEqual([]);
+    expect(await send(PROJECT_FILES_CHANNEL.forgetRecent, [{ recentId }])).toEqual({ ok: true, value: null });
+    expect(refused(await send(PROJECT_FILES_CHANNEL.openRecent, [{ recentId }]))).toBe('not-found');
+  });
+
+  it('rejects a malformed request, extra arguments or a path where an id belongs', async () => {
+    const { send } = windowWithRecent();
+    expect(refused(await send(PROJECT_FILES_CHANNEL.listRecent, [{}]))).toBe('invalid-request');
+    for (const channel of [PROJECT_FILES_CHANNEL.openRecent, PROJECT_FILES_CHANNEL.forgetRecent]) {
+      expect(refused(await send(channel, []))).toBe('invalid-request');
+      expect(refused(await send(channel, [{ recentId: root }, 'extra']))).toBe('invalid-request');
+      expect(refused(await send(channel, [{ recentId: 'a'.repeat(65) }]))).toBe('invalid-request');
+      expect(refused(await send(channel, [{ recentId: 'a', path: root }]))).toBe('invalid-request');
+      expect(refused(await send(channel, [root]))).toBe('invalid-request');
+    }
+  });
+
+  it('works without a recent store: nothing listed or reopened, nothing remembered, and no error for the open', async () => {
+    const { send } = windowWithRecent(root, OWNER, null);
+    const rootId = ((await send(PROJECT_FILES_CHANNEL.chooseFolder)) as { value: ProjectFolder }).value.rootId;
+    expect(await listed(send)).toEqual([]);
+    expect(await send(PROJECT_FILES_CHANNEL.markOpened, [{ rootId }])).toEqual({ ok: true, value: null });
+    expect(refused(await send(PROJECT_FILES_CHANNEL.openRecent, [{ recentId: 'a'.repeat(64) }]))).toBe('not-found');
+  });
+
+  it('keeps at most ten recent projects', async () => {
+    const recent = createRecentProjects(userData);
+    for (let index = 0; index < 12; index++) {
+      const folder = path.join(sandbox, `plant-${index}`);
+      mkdirSync(folder);
+      const { send } = windowWithRecent(folder, OWNER, recent);
+      const opened = (await send(PROJECT_FILES_CHANNEL.chooseFolder)) as { value: ProjectFolder };
+      await send(PROJECT_FILES_CHANNEL.markOpened, [{ rootId: opened.value.rootId }]);
+    }
+    const entries = await listed(windowWithRecent(root, OWNER, recent).send);
+    expect(entries).toHaveLength(10);
+    expect(entries[0]!.displayName).toBe('plant-11');
   });
 });

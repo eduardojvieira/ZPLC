@@ -16,6 +16,7 @@ import {
   type ProjectFilesErrorCode,
   type ProjectFilesResult,
   type ProjectStat,
+  type RecentProject,
 } from '../../electron/projectFilesProtocol';
 
 const MAX_MIB = PROJECT_FILES_LIMITS.maxFileBytes / (1024 * 1024);
@@ -221,4 +222,44 @@ export async function chooseProjectFolder(bridge: ProjectFilesBridge): Promise<F
  */
 export function projectRootId(handle: unknown): string | null {
   return handle instanceof ProjectDirectoryHandle && handle.path === '' ? handle.rootId : null;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Recent projects (IDE-008)
+// ---------------------------------------------------------------------------------------------------------------------
+
+/** A bridge call that may not exist (an older preload) or may throw at once is a failed call, like a rejected one. */
+const guarded = <T>(call: () => Promise<ProjectFilesResult<T>>) => settle((async () => call())());
+
+const isRecentProject = (value: unknown): value is RecentProject => {
+  if (typeof value !== 'object' || value === null) return false;
+  const item = value as Record<string, unknown>;
+  return typeof item.recentId === 'string' && typeof item.displayName === 'string'
+    && typeof item.lastOpenedAt === 'number' && Number.isFinite(item.lastOpenedAt) && typeof item.available === 'boolean';
+};
+
+/** The folders the user chose before, most recent first. Never throws: no list is an empty list. */
+export async function listRecentProjects(bridge: ProjectFilesBridge): Promise<RecentProject[]> {
+  const answer = await guarded(() => bridge.listRecent());
+  return answer.ok && Array.isArray(answer.value) && answer.value.every(isRecentProject) ? answer.value : [];
+}
+
+/**
+ * Reopens a remembered folder: the main process checks that it is still there and makes it the window's folder, as the
+ * dialog does, and the renderer gets the same handle. Rejects with a short message, naming no path, when it cannot.
+ */
+export async function openRecentFolder(bridge: ProjectFilesBridge, recentId: string): Promise<FileSystemDirectoryHandle> {
+  const folder = await ask(bridge.openRecent({ recentId }));
+  return new ProjectDirectoryHandle({ bridge, rootId: folder.rootId }, '', folder.name) as unknown as FileSystemDirectoryHandle;
+}
+
+/** Drops an entry from the list. A failure leaves the list as it was, and says nothing. */
+export async function forgetRecentProject(bridge: ProjectFilesBridge, recentId: string): Promise<void> {
+  await guarded(() => bridge.forgetRecent({ recentId }));
+}
+
+/** Tells the main process that the folder of this handle opened as a project, so that it is remembered. Silent on failure. */
+export async function markProjectOpened(bridge: ProjectFilesBridge, handle: unknown): Promise<void> {
+  const rootId = projectRootId(handle);
+  if (rootId !== null) await guarded(() => bridge.markOpened({ rootId }));
 }

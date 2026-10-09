@@ -65,10 +65,31 @@ describe('Welcome screen contract', () => {
     expect(source.indexOf('projectOpenError &&')).toBeLessThan(source.indexOf('id="examples-heading"'));
   });
 
-  it('leaves a place for Recent projects between the start actions and the examples', () => {
-    const slot = source.indexOf('Recent projects (IDE-008)');
-    expect(slot).toBeGreaterThan(source.indexOf('projectOpenError &&'));
-    expect(slot).toBeLessThan(source.indexOf('id="examples-heading"'));
+  it('lists the recent projects between the start actions and the examples, each one a button that reopens it without a dialog', () => {
+    expect(source).toContain('id="recent-heading"');
+    expect(source).toContain('data-recent-projects');
+    expect(source.indexOf('projectOpenError &&')).toBeLessThan(source.indexOf('id="recent-heading"'));
+    expect(source.indexOf('id="recent-heading"')).toBeLessThan(source.indexOf('id="examples-heading"'));
+    expect(source).toContain('recentRows(recentProjects, now)');
+    expect(source).toContain('data-recent-project={row.recentId}');
+    expect(source).toContain('onClick={() => reopen(row.recentId)}');
+    expect(source).toContain('openRecentProject(recentId)');
+    expect(source).not.toContain('Recent projects (IDE-008) take their place here');
+  });
+
+  it('shows a folder that is gone disabled, with the reason and a Forget button, and shows a failure on the entry itself', () => {
+    expect(source).toContain('disabled={!row.available || busy}');
+    expect(source).toContain(': row.reason}');
+    expect(source).toContain('forgetRecentProject(row.recentId)');
+    expect(source).toContain('aria-label={`Forget ${row.name}`}');
+    expect(source).toContain('data-recent-error');
+    // The same message is not also shown in the general alert above.
+    expect(source).toContain('projectOpenError && !recentError');
+  });
+
+  it('asks for the list when the screen opens, and offers it only where the desktop app can reopen a folder', () => {
+    expect(source).toContain('refreshRecentProjects()');
+    expect(source).toContain('rows.length > 0 &&');
   });
 });
 

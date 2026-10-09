@@ -20,6 +20,10 @@ export const PROJECT_FILES_CHANNEL = {
   mkdir: 'project-files:mkdir',
   remove: 'project-files:remove',
   rename: 'project-files:rename',
+  listRecent: 'project-files:list-recent',
+  openRecent: 'project-files:open-recent',
+  forgetRecent: 'project-files:forget-recent',
+  markOpened: 'project-files:mark-opened',
 } as const;
 
 export const PROJECT_FILES_LIMITS = {
@@ -51,6 +55,11 @@ export type ProjectFilesResult<T> = { ok: true; value: T } | { ok: false; code: 
 
 export type ProjectEntryKind = 'file' | 'directory';
 export interface ProjectFolder { rootId: string; name: string }
+/**
+ * A folder the user chose earlier through the native dialog (IDE-008). `recentId` is opaque (a hash of the real path),
+ * `displayName` is the folder's base name, never its path, and `available` says whether the folder is still there.
+ */
+export interface RecentProject { recentId: string; displayName: string; lastOpenedAt: number; available: boolean }
 export interface ProjectEntry { name: string; kind: ProjectEntryKind }
 export interface ProjectStat { kind: ProjectEntryKind; size: number }
 
@@ -77,9 +86,23 @@ export interface ProjectFilesValues {
 export type ProjectFilesOp = keyof ProjectFilesRequests;
 export const PROJECT_FILES_OPS = ['list', 'stat', 'read', 'write', 'mkdir', 'remove', 'rename'] as const satisfies readonly ProjectFilesOp[];
 
-/** The only object the preload exposes for project files: eight narrow calls, no generic file access. */
+/** Recent projects: reopening a remembered folder is the only way, besides the dialog, to give a window a project folder. */
+export interface RecentRequests {
+  openRecent: { recentId: string };
+  forgetRecent: { recentId: string };
+  /** The window's current folder opened as a project: remember it. The folder is the window's own, never a path from the renderer. */
+  markOpened: { rootId: string };
+}
+export type RecentOp = 'listRecent' | keyof RecentRequests;
+export const PROJECT_RECENT_OPS = ['listRecent', 'openRecent', 'forgetRecent', 'markOpened'] as const satisfies readonly RecentOp[];
+
+/** The only object the preload exposes for project files: narrow calls, no generic file access. */
 export type ProjectFilesBridge = {
   chooseFolder(): Promise<ProjectFilesResult<ProjectFolder | null>>;
+  listRecent(): Promise<ProjectFilesResult<RecentProject[]>>;
+  openRecent(request: RecentRequests['openRecent']): Promise<ProjectFilesResult<ProjectFolder>>;
+  forgetRecent(request: RecentRequests['forgetRecent']): Promise<ProjectFilesResult<null>>;
+  markOpened(request: RecentRequests['markOpened']): Promise<ProjectFilesResult<null>>;
 } & { [Op in ProjectFilesOp]: (request: ProjectFilesRequests[Op]) => Promise<ProjectFilesResult<ProjectFilesValues[Op]>> };
 
 type Field = 'id' | 'path' | 'bytes' | 'bool';
@@ -92,6 +115,12 @@ const SHAPES: Record<ProjectFilesOp, Record<string, Field>> = {
   mkdir: { rootId: 'id', path: 'path' },
   remove: { rootId: 'id', path: 'path', recursive: 'bool' },
   rename: { rootId: 'id', from: 'path', to: 'path' },
+};
+
+const RECENT_SHAPES: Record<keyof RecentRequests, Record<string, Field>> = {
+  openRecent: { recentId: 'id' },
+  forgetRecent: { recentId: 'id' },
+  markOpened: { rootId: 'id' },
 };
 
 const CHECKS: Record<Field, (value: unknown) => boolean> = {
@@ -108,17 +137,26 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return prototype === Object.prototype || prototype === null;
 }
 
+function parseShape(shape: Record<string, Field>, args: readonly unknown[]): Record<string, unknown> | null {
+  const [request] = args;
+  if (args.length !== 1 || !isPlainObject(request)) return null;
+  const keys = Object.keys(request);
+  const fields = Object.keys(shape);
+  if (keys.length !== fields.length || !fields.every((field) => Object.hasOwn(request, field) && CHECKS[shape[field]](request[field]))) return null;
+  return request;
+}
+
 /**
  * Validates the arguments of one project operation: exactly one plain object holding exactly the fields
  * of that operation, each of the right type. Returns the request, or null for anything else.
  */
 export function parseProjectFilesRequest(op: string, args: readonly unknown[]): ProjectFilesRequests[ProjectFilesOp] | null {
   if (!Object.hasOwn(SHAPES, op)) return null;
-  const shape = SHAPES[op as ProjectFilesOp];
-  const [request] = args;
-  if (args.length !== 1 || !isPlainObject(request)) return null;
-  const keys = Object.keys(request);
-  const fields = Object.keys(shape);
-  if (keys.length !== fields.length || !fields.every((field) => Object.hasOwn(request, field) && CHECKS[shape[field]](request[field]))) return null;
-  return request as unknown as ProjectFilesRequests[ProjectFilesOp];
+  return parseShape(SHAPES[op as ProjectFilesOp], args) as ProjectFilesRequests[ProjectFilesOp] | null;
+}
+
+/** The same for the recent-project operations that take a request (`listRecent` takes none). */
+export function parseRecentRequest(op: string, args: readonly unknown[]): RecentRequests[keyof RecentRequests] | null {
+  if (!Object.hasOwn(RECENT_SHAPES, op)) return null;
+  return parseShape(RECENT_SHAPES[op as keyof RecentRequests], args) as RecentRequests[keyof RecentRequests] | null;
 }

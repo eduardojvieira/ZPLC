@@ -5,6 +5,7 @@
  */
 
 import type { ProjectFilesBridge } from '../../electron/projectFilesProtocol';
+import type { SessionBridge } from '../../electron/sessionStoreProtocol';
 
 // =============================================================================
 // Electron API (exposed via preload script)
@@ -95,6 +96,8 @@ declare global {
       };
       /** Native folder dialog and typed project operations, owned by the main process (IDE-001). */
       projectFiles?: ProjectFilesBridge;
+      /** The per-project session (open tabs, cursors, panel sizes), kept by the main process (IDE-008). */
+      session?: SessionBridge;
       isElectron: boolean;
       platform: string;
     };

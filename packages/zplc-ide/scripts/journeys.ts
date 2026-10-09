@@ -3,7 +3,7 @@
  * expects (assert), or reports that the journey cannot be performed at all (notPossible). Observation reads the screen
  * and the editor; every action is a real click, key or text insertion.
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { learnLessonCatalog } from '../src/components/learnLesson';
 import { assert, packageRoot } from './run-desktop-smoke';
@@ -145,6 +145,25 @@ const watchValue = (app: App, name: string) => app.eval<string | null>(`${watchR
 /** The prompt that asks what to do with unsaved changes, by its title; null when none is open. */
 const dialogTitle = (app: App) => app.eval<string | null>(`document.querySelector('[data-unsaved-changes-dialog]')?.closest('[role="dialog"]')?.querySelector('h2')?.textContent ?? null`);
 const dialogChoice = (label: string) => `(() => { const dialog = document.querySelector('[data-unsaved-changes-dialog]'); return [...(dialog?.querySelectorAll('button') ?? [])].find((item) => item.textContent === ${JSON.stringify(label)}); })()`;
+
+/** The sessions the app keeps under its user-data directory (the journey's private profile), read the way a maintainer would. */
+function savedSessions(root: string): Array<{ tabs: Array<{ path: string; line: number; column: number; scrollTop: number }>; activePath: string | null; panels: { editor: number; console: number; consoleCollapsed: boolean } | null }> {
+  const directory = join(root, 'profile', 'sessions');
+  return existsSync(directory) ? readdirSync(directory).filter((name) => /^[0-9a-f]{64}\.json$/.test(name)).map((name) => JSON.parse(disk(join(directory, name)))) : [];
+}
+
+const recentSection = css('[data-recent-projects]');
+const recentRow = css('[data-recent-project]');
+const recentOpen = css('[data-recent-project] > button');
+/** The editor's cursor and scroll, as the user sees them. */
+const editorView = (app: App) => monacoEval<{ line: number; column: number; scrollTop: number }>(app, 'const position = editor.getPosition(); return { line: position.lineNumber, column: position.column, scrollTop: editor.getScrollTop() };');
+const activeTabId = (app: App) => app.eval<string | null>(`document.querySelector('[role="tab"][aria-selected="true"][id^="editor-tab-"]')?.id ?? null`);
+/** How tall the editor is: with the lower panel it makes the split that a project keeps. */
+const editorHeight = (app: App) => app.eval<number>(`document.getElementById('editor')?.getBoundingClientRect().height ?? 0`);
+const savePicture = async (app: App, variable: string) => {
+  const file = process.env[variable];
+  if (file) { const png = await app.cdp.command('Page.captureScreenshot', { format: 'png' }) as { data: string }; writeFileSync(file, Buffer.from(png.data, 'base64')); }
+};
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Journeys
@@ -409,18 +428,64 @@ export const JOURNEYS: Journey[] = [
   },
   {
     name: '12 Restore the session', example: 'motor_start_stop',
-    run: async (app, { project, relaunch }) => {
+    run: async (app, { project, root, relaunch }) => {
+      const before = readdirSync(project).sort();
+      writeFileSync(join(project, 'src', 'Long.st'), ['PROGRAM Long', 'VAR', '  Flag : BOOL;', 'END_VAR', ...Array.from({ length: 250 }, (_, index) => `(* filler line ${index + 5} *)`), 'Flag := TRUE;', 'END_PROGRAM', ''].join('\n'));
+      const withLong = readdirSync(join(project, 'src')).sort();
+
+      // Work: Motor.st with the cursor on a distinctive line, Long.st scrolled far down with the cursor there, Motor.st active again,
+      // and the lower panel resized with the keyboard.
       await openFolder(app, project);
       await openFile(app, 'src/Motor.st');
+      await cursorAtEndOfLine(app, 30);
+      const motor = await editorView(app);
+      assert(motor.line === 30, `The journey could not put the cursor on line 30 of Motor.st: ${JSON.stringify(motor)}`);
+      await openFile(app, 'src/Long.st');
+      await clickEditorLine(app, 120);
+      await app.until('the cursor on line 120 of Long.st', async () => (await editorView(app)).line === 120 || undefined);
+      const long = await editorView(app);
+      assert(long.scrollTop > 500, `Long.st did not scroll: ${JSON.stringify(long)}`);
+      await app.click(editorTab('file:src/Motor.st'));
+      await app.until('Motor.st in the editor', async () => (await editorText(app)).startsWith('PROGRAM Motor') || undefined);
+      await app.click(css('[role="separator"]'), 'the separator above the lower panel');
+      for (let step = 0; step < 3; step++) await app.press('ArrowUp');
+      const heightBefore = await editorHeight(app);
+      await app.until('a session with both tabs, the active tab and the panel split on disk', () => {
+        const [session] = savedSessions(root);
+        return session?.tabs.map((item) => item.path).join() === 'src/Motor.st,src/Long.st' && session.activePath === 'src/Motor.st' && session.tabs[1]!.line === 120 && session.panels !== null || undefined;
+      });
+      // The user moves the cursor once more and closes the app at once, before any delay could have saved it.
+      await clickEditorLine(app, 12);
+      await app.until('the cursor on line 12 of Motor.st', async () => (await editorView(app)).line === 12 || undefined);
+      assert(JSON.stringify(readdirSync(project).sort()) === JSON.stringify(before), 'The app wrote into the project folder: it must keep recent projects and sessions in its own profile.');
+      assert(JSON.stringify(readdirSync(join(project, 'src')).sort()) === JSON.stringify(withLong), 'The app wrote into the src folder of the project.');
+
       const again = await relaunch();
-      const offered = await again.until('the project to come back or be offered', async () => await again.visible(toolbar) || (await again.text()).includes('Recent') || undefined, 3_000)
-        .catch(() => false);
-      assert(offered, 'After a restart the app shows the plain Welcome screen: no recent project is offered and no tab is restored.');
-      if (!await again.visible(toolbar)) {
-        await again.click(button('Recent', 'contains'), 'a recent project');
-        await again.until('the project workbench to appear', async () => await again.visible(toolbar) || undefined);
-      }
-      await again.until('the Motor.st tab restored', async () => await again.visible(editorTab('file:src/Motor.st')) || undefined);
+      // Welcome offers the project under Recent, and nothing else has opened.
+      await again.until('the Recent section on the Welcome screen', async () => await again.visible(recentSection) || undefined);
+      assert(!await again.visible(toolbar), 'The project opened by itself: the user chose to reopen it, so it must wait on the Welcome screen.');
+      const entry = await again.eval<string>(`document.querySelector('[data-recent-project]')?.innerText ?? ''`);
+      assert(/^project\b/.test(entry) && /Opened (just now|\d+ minutes? ago)/.test(entry) && !entry.includes(root), `The Recent entry should show the folder name and when it was opened, and no path: ${JSON.stringify(entry)}`);
+      await savePicture(again, 'ZPLC_JOURNEY_RECENT_SHOT');
+
+      // A click reopens it without a dialog: the dialog hook now points at a folder that does not exist, so a dialog would fail.
+      again.answer(join(root, 'not-the-project'));
+      await again.click(recentOpen, 'the recent project');
+      await again.until('the project workbench to appear', async () => await again.visible(toolbar) || undefined);
+      assert(!(await again.text()).includes('The project could not be opened'), 'Reopening the recent project shows an open error.');
+      await again.until('the Motor.st and Long.st tabs back', async () => await again.visible(editorTab('file:src/Motor.st')) && await again.visible(editorTab('file:src/Long.st')) || undefined);
+      await again.until('Motor.st, the tab that was active, in the editor', async () => await activeTabId(again) === 'editor-tab-file:src/Motor.st' && (await editorText(again)).startsWith('PROGRAM Motor') || undefined);
+      const restoredMotor = await again.until('the cursor of Motor.st back', async () => { const view = await editorView(again); return view.line === 12 ? view : undefined; })
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the cursor of Motor.st is at ${JSON.stringify(await editorView(again))}; it was moved to line 12 just before the app closed (line 30 before that)`); });
+      assert(restoredMotor.line === 12, 'The cursor of Motor.st is not where it was left.');
+      await again.click(editorTab('file:src/Long.st'));
+      await again.until('Long.st in the editor', async () => (await editorText(again)).startsWith('PROGRAM Long') || undefined);
+      const restoredLong = await again.until('the cursor and scroll of Long.st back', async () => { const view = await editorView(again); return view.line === 120 ? view : undefined; })
+        .catch(async (error: Error) => { throw new Error(`${error.message}: Long.st shows ${JSON.stringify(await editorView(again))}, it was left at ${JSON.stringify(long)}`); });
+      assert(Math.abs(restoredLong.scrollTop - long.scrollTop) <= 30, `Long.st is scrolled to ${restoredLong.scrollTop}, it was left at ${long.scrollTop}.`);
+      const heightAfter = await editorHeight(again);
+      assert(Math.abs(heightAfter - heightBefore) <= 4, `The editor is ${heightAfter}px tall, it was ${heightBefore}px when the app closed: the panel split is not restored.`);
+      assert(!(await again.text()).includes('The project could not be opened'), 'The workbench shows an open error.');
     },
   },
   {
@@ -452,6 +517,39 @@ export const JOURNEYS: Journey[] = [
 
       const shot = process.env.ZPLC_JOURNEY_WELCOME_SHOT;
       if (shot) { const png = await app.cdp.command('Page.captureScreenshot', { format: 'png' }) as { data: string }; writeFileSync(shot, Buffer.from(png.data, 'base64')); }
+    },
+  },
+  {
+    name: '14 A recent project that is gone', example: 'motor_start_stop',
+    run: async (app, { project, root, relaunch }) => {
+      await openFolder(app, project);
+      await app.click(tab('Explorer', 'exact'));
+      await app.click(button('Close Project'));
+      await app.until('the Welcome screen with the project under Recent', async () => await app.visible(recentRow) || undefined);
+
+      // The folder disappears while the Welcome screen still lists it as available.
+      rmSync(project, { recursive: true, force: true });
+      app.answer(join(root, 'not-the-project'));
+      await app.click(recentOpen, 'the recent project');
+      const error = await app.until('the reason on the entry itself', async () => await app.eval<string | null>(`document.querySelector('[data-recent-project] [data-recent-error]')?.innerText ?? null`) ?? undefined);
+      assert(/not found/i.test(error) && !error.includes(root), `The entry should say, without a path, that the folder was not found: ${JSON.stringify(error)}`);
+      assert(!await app.visible(css('[data-open-error]')), 'The failure is also shown in the general alert: it belongs on the entry.');
+      await app.until('the entry disabled with the reason and a Forget button', async () => await app.eval<boolean>(`(() => { const row = document.querySelector('[data-recent-project]'); return Boolean(row?.querySelector('button')?.disabled) && (row?.innerText ?? '').includes('moved or deleted') && Boolean(row?.querySelector('button[aria-label^="Forget "]')); })()`) || undefined);
+      assert(!await app.visible(toolbar), 'A project that is gone must not open a workbench.');
+
+      // After a restart it is listed the same way, and Forget removes it for good.
+      const again = await relaunch();
+      await again.until('the Recent section on the Welcome screen', async () => await again.visible(recentSection) || undefined);
+      assert(await again.eval<boolean>(`document.querySelector('[data-recent-project] > button').disabled === true`), 'After a restart the missing project can be clicked.');
+      assert((await again.eval<string>(`document.querySelector('[data-recent-project]').innerText`)).includes('moved or deleted'), 'After a restart the missing project does not say why it cannot be opened.');
+      await savePicture(again, 'ZPLC_JOURNEY_RECENT_MISSING_SHOT');
+      await again.click(button('Forget project', 'prefix'), 'the Forget button');
+      await again.until('the entry to disappear', async () => !await again.visible(recentRow) && !await again.visible(recentSection) || undefined);
+      assert(await again.visible(button('Open project', 'contains')), 'The Welcome screen should be unchanged apart from the forgotten entry.');
+      const third = await relaunch();
+      await third.until('the Welcome screen', async () => await third.visible(button('Open project', 'contains')) || undefined);
+      await Bun.sleep(500); // the list is read when the screen opens; give it time to appear if it were still stored
+      assert(!await third.visible(recentRow), 'A forgotten project came back after a restart.');
     },
   },
 ];

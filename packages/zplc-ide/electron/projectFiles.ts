@@ -1,8 +1,8 @@
 /**
  * Project files owned by the main process (IDE-001, first task).
  *
- * The folder is chosen only through the native dialog; its real path is kept here, per window, and never
- * reaches the renderer. The renderer asks for typed operations on paths relative to that root. Every
+ * The folder is chosen through the native dialog, or reopened from the list of folders that the user chose that way
+ * before (IDE-008, `recentProjects.ts`); its real path is kept here, per window, and never reaches the renderer. The renderer asks for typed operations on paths relative to that root. Every
  * operation resolves its path through `locate`, the one containment check: no absolute path, no ".."
  * segment, and the real path of the target (or of its nearest existing ancestor) must lie inside the
  * real path of the root, so a link that leaves the folder is refused. Results carry a typed code and
@@ -21,6 +21,7 @@ import {
   PROJECT_FILES_LIMITS,
   PROJECT_FILES_OPS,
   parseProjectFilesRequest,
+  parseRecentRequest,
   type ProjectEntry,
   type ProjectEntryKind,
   type ProjectFilesErrorCode,
@@ -29,7 +30,10 @@ import {
   type ProjectFilesResult,
   type ProjectFilesValues,
   type ProjectFolder,
+  type RecentProject,
+  type RecentRequests,
 } from './projectFilesProtocol.js';
+import type { RecentEntry, RecentProjects } from './recentProjects.js';
 
 class Refusal extends Error {
   code: ProjectFilesErrorCode;
@@ -201,22 +205,50 @@ const OP_BY_CHANNEL = new Map<string, ProjectFilesOp>(PROJECT_FILES_OPS.map((op)
 interface Folder { id: string; real: string }
 
 /**
+ * The real path of a remembered folder if the user's choice still stands: it exists, is a directory, and its real path
+ * is the one recorded. A folder that was moved, deleted, or replaced by a link to somewhere else is not the folder that
+ * the user chose through the dialog, so it is refused rather than followed.
+ */
+async function reopenable(entry: RecentEntry): Promise<string> {
+  const real = await realpath(entry.path);
+  if (real !== entry.path) throw new Refusal('not-found');
+  if (!(await stat(real)).isDirectory()) throw new Refusal('not-a-directory');
+  return real;
+}
+
+/**
  * `chooseDirectory` shows the native dialog for a window and resolves to the chosen path, or null when cancelled.
+ * `recent` gives the list of folders remembered across runs, once the main process has one (IDE-008).
  * `handle` is the single entry point behind every IPC channel: it validates the message, finds the window's
  * folder and runs the operation, answering with a typed result.
  */
-export function createProjectFiles(chooseDirectory: (ownerId: number) => Promise<string | null>) {
+export function createProjectFiles(chooseDirectory: (ownerId: number) => Promise<string | null>, recent: () => RecentProjects | null = () => null) {
   const folders = new Map<number, Folder>();
   const choosing = new Map<number, Promise<ProjectFolder | null>>();
+
+  /** Makes `real` the window's folder, replacing the previous one. */
+  function adopt(ownerId: number, real: string): ProjectFolder {
+    const folder = { id: randomUUID(), real };
+    folders.set(ownerId, folder);
+    return { rootId: folder.id, name: path.basename(real) || 'Project' };
+  }
 
   async function choose(ownerId: number): Promise<ProjectFolder | null> {
     const chosen = await chooseDirectory(ownerId);
     if (chosen === null) return null;
     const real = await realpath(chosen);
     if (!(await stat(real)).isDirectory()) throw new Refusal('not-a-directory');
-    const folder = { id: randomUUID(), real };
-    folders.set(ownerId, folder);
-    return { rootId: folder.id, name: path.basename(real) || 'Project' };
+    return adopt(ownerId, real);
+  }
+
+  async function listRecent(): Promise<RecentProject[]> {
+    const entries = (await recent()?.list()) ?? [];
+    return Promise.all(entries.map(async (entry) => ({
+      recentId: entry.id,
+      displayName: path.basename(entry.path) || 'Project',
+      lastOpenedAt: entry.lastOpenedAt,
+      available: await reopenable(entry).then(() => true, () => false),
+    })));
   }
 
   return {
@@ -230,6 +262,31 @@ export function createProjectFiles(chooseDirectory: (ownerId: number) => Promise
             choosing.set(ownerId, flight);
           }
           return { ok: true, value: await flight };
+        }
+        if (channel === PROJECT_FILES_CHANNEL.listRecent) {
+          if (args.length !== 0) throw new Refusal('invalid-request');
+          return { ok: true, value: await listRecent() };
+        }
+        if (channel === PROJECT_FILES_CHANNEL.openRecent) {
+          const request = parseRecentRequest('openRecent', args) as RecentRequests['openRecent'] | null;
+          if (!request) throw new Refusal('invalid-request');
+          const entry = await recent()?.get(request.recentId);
+          if (!entry) throw new Refusal('not-found');
+          return { ok: true, value: adopt(ownerId, await reopenable(entry)) };
+        }
+        if (channel === PROJECT_FILES_CHANNEL.forgetRecent) {
+          const request = parseRecentRequest('forgetRecent', args) as RecentRequests['forgetRecent'] | null;
+          if (!request) throw new Refusal('invalid-request');
+          await recent()?.forget(request.recentId);
+          return { ok: true, value: null };
+        }
+        if (channel === PROJECT_FILES_CHANNEL.markOpened) {
+          const request = parseRecentRequest('markOpened', args) as RecentRequests['markOpened'] | null;
+          if (!request) throw new Refusal('invalid-request');
+          const folder = folders.get(ownerId);
+          if (!folder || folder.id !== request.rootId) throw new Refusal('no-folder');
+          await recent()?.record(folder.real);
+          return { ok: true, value: null };
         }
         const op = OP_BY_CHANNEL.get(channel);
         const request = op ? parseProjectFilesRequest(op, args) : null;

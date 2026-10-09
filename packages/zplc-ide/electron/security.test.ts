@@ -10,6 +10,8 @@ import {
   isAllowedNativeSimulationRequest,
   isAllowedWorkspaceTestRequest,
   isAllowedWorkspaceRootRequest,
+  isAllowedSessionLoadRequest,
+  isAllowedSessionSaveRequest,
   isAllowedWorkspaceTestRunRequest,
   isAllowedFirmwareBuildRequest,
   isAllowedCandidateChangeSetReviewRequest,
@@ -107,6 +109,37 @@ describe('Electron security boundary', () => {
       Object.create(null),
       Object.assign(Object.create({ rootId }), {}),
     ]) expect(isAllowedWorkspaceRootRequest(value)).toBe(false);
+  });
+
+  it('accepts only the id of the project folder to load its session, and nothing else', () => {
+    const rootId = '0f2ce877-e0d6-43ca-89a7-df17a4927f51';
+    expect(isAllowedSessionLoadRequest({ rootId })).toBe(true);
+    expect(isAllowedSessionLoadRequest({ rootId: 'x'.repeat(64) })).toBe(true);
+    for (const value of [{ rootId: '' }, { rootId: 'x'.repeat(65) }, { rootId: 7 }, { rootId, path: '/home/eduardo/plant' }, { path: '/home/eduardo/plant' }, {}, [], null, undefined, 'x', Object.create(null), Object.assign(Object.create({ rootId }), {})]) {
+      expect(isAllowedSessionLoadRequest(value)).toBe(false);
+    }
+  });
+
+  it('accepts a session to save only as the folder id plus an exact, bounded session document', () => {
+    const rootId = '0f2ce877-e0d6-43ca-89a7-df17a4927f51';
+    const state = { schemaVersion: 1, tabs: [{ path: 'src/Motor.st', line: 3, column: 1, scrollTop: 0 }], activePath: 'src/Motor.st', panels: { editor: 70, console: 30, consoleCollapsed: false } };
+    expect(isAllowedSessionSaveRequest({ rootId, state })).toBe(true);
+    expect(isAllowedSessionSaveRequest({ rootId, state: { ...state, tabs: [], activePath: null, panels: null } })).toBe(true);
+    for (const value of [
+      { rootId, state: { ...state, tabs: [{ path: '../../etc/passwd', line: 1, column: 1, scrollTop: 0 }], activePath: null } },
+      { rootId, state: { ...state, tabs: [{ path: '/etc/passwd', line: 1, column: 1, scrollTop: 0 }], activePath: null } },
+      { rootId, state: { ...state, extra: 'x'.repeat(100_000) } },
+      { rootId, state: { ...state, tabs: Array.from({ length: 33 }, (_, index) => ({ path: `p${index}.st`, line: 1, column: 1, scrollTop: 0 })), activePath: null } },
+      { rootId, state: null },
+      { rootId, state: 'x' },
+      { rootId },
+      { state },
+      { rootId: '', state },
+      { rootId: 'x'.repeat(65), state },
+      { rootId, state, path: '/home/eduardo/plant' },
+      { rootId, root: '/home/eduardo/plant', state },
+      [], null, undefined, 'x', Object.create(null),
+    ]) expect(isAllowedSessionSaveRequest(value)).toBe(false);
   });
 
   it('admits an optional bounded ASCII scenario selector only for scenario runs', () => {

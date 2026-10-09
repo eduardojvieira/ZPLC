@@ -18,6 +18,8 @@ import { createToolExecutionAudit } from './toolExecutionAudit.js';
 import { selectSerialPort } from './serialPortSelection.js';
 import { createAiProvider } from './aiProvider.js';
 import { createLearnProgressStore } from './learnProgressStore.js';
+import { createRecentProjects } from './recentProjects.js';
+import { createSessionStore } from './sessionStore.js';
 import { buildApplicationMenu, describeApplicationMenu } from './appMenu.js';
 import { createCloseGuard } from './closeGuard.js';
 import { createProjectFiles } from './projectFiles.js';
@@ -29,6 +31,8 @@ import {
   isAllowedNativeSimulationRequest,
   isAllowedWorkspaceTestRequest,
   isAllowedWorkspaceRootRequest,
+  isAllowedSessionLoadRequest,
+  isAllowedSessionSaveRequest,
   isAllowedWorkspaceTestRunRequest,
   isAllowedFirmwareBuildRequest,
   isAllowedCandidateChangeSetReviewRequest,
@@ -82,6 +86,7 @@ const AI_PROVIDER_CHANNEL = {
   STORE_KEY: 'ai-provider:store-key', CLEAR_KEY: 'ai-provider:clear-key', REQUEST: 'ai-provider:request', CANCEL: 'ai-provider:cancel',
 } as const;
 const LEARN_PROGRESS_CHANNEL = { READ: 'learn-progress:read', MERGE: 'learn-progress:merge' } as const;
+const SESSION_CHANNEL = { LOAD: 'session:load', SAVE: 'session:save' } as const;
 const CLOSE_GUARD_CHANNEL = { SET_DIRTY: 'close-guard:set-dirty', CLOSE_NOW: 'close-guard:close-now', CLOSE_REQUESTED: 'close-guard:close-requested' } as const;
 
 // ESM equivalent of __dirname
@@ -100,7 +105,9 @@ const workspaceTestGateway = createWorkspaceTestGateway();
 const firmwareBuildGateway = createFirmwareBuildGateway();
 const toolExecutionAudit = createToolExecutionAudit();
 const closeGuard = createCloseGuard();
-const projectFiles = createProjectFiles(chooseProjectDirectory);
+let recentProjects: ReturnType<typeof createRecentProjects> | null = null;
+let sessionStore: ReturnType<typeof createSessionStore> | null = null;
+const projectFiles = createProjectFiles(chooseProjectDirectory, () => recentProjects);
 const toolApiUrl = pathToFileURL(path.join(__dirname, 'toolApi.js')).href;
 let aiProvider: ReturnType<typeof createAiProvider> | null = null;
 let learnProgress: ReturnType<typeof createLearnProgressStore> | null = null;
@@ -514,6 +521,27 @@ function setupIPC(): void {
     return [...mastered];
   });
 
+  // Per-project session (IDE-008): the renderer names the window's folder by its opaque id; the main process finds the real
+  // path, validates the document and keeps it under the user-data directory, never inside the project.
+  ipcMain.handle(SESSION_CHANNEL.LOAD, async (event, ...args: unknown[]) => {
+    const owner = currentRendererOwner(event); const request = args[0];
+    if (args.length !== 1 || !owner || !sessionStore || !isAllowedSessionLoadRequest(request)) throw new Error('Request denied');
+    const root = projectFiles.rootOf(owner.ownerId, request.rootId);
+    if (root === null) throw new Error('Request denied');
+    const state = await sessionStore.load(root);
+    if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied');
+    return state;
+  });
+  ipcMain.handle(SESSION_CHANNEL.SAVE, async (event, ...args: unknown[]) => {
+    const owner = currentRendererOwner(event); const request = args[0];
+    if (args.length !== 1 || !owner || !sessionStore || !isAllowedSessionSaveRequest(request)) throw new Error('Request denied');
+    const root = projectFiles.rootOf(owner.ownerId, request.rootId);
+    if (root === null) throw new Error('Request denied');
+    await sessionStore.save(root, request.state);
+    if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied');
+    return null;
+  });
+
   // Project files (IDE-001): the sender is checked here, the message and the path inside the shared handler.
   for (const channel of Object.values(PROJECT_FILES_CHANNEL)) {
     ipcMain.handle(channel, async (event, ...args: unknown[]) => {
@@ -852,6 +880,10 @@ app.whenReady().then(async () => {
   await toolExecutionAudit.open(app.getPath('userData'), toolApi.isToolExecutionEnvelope);
   aiProvider = createAiProvider({ userDataPath: app.getPath('userData'), vault: safeStorage });
   learnProgress = createLearnProgressStore(app.getPath('userData'));
+  recentProjects = createRecentProjects(app.getPath('userData'));
+  sessionStore = createSessionStore(app.getPath('userData'));
+  // Sessions of projects that dropped off the recent list would otherwise stay for ever.
+  try { await sessionStore.prune(new Set((await recentProjects.list()).map((entry) => entry.id))); } catch { /* a leftover file is harmless */ }
   setupContentSecurityPolicy();
   setupWebSerial();
   setupSerialPortSelection();
