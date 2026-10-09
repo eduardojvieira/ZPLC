@@ -1358,6 +1358,7 @@ END_PROGRAM`);
       const focusedTwoParts = await scenarioRun(conveyor, 'ConveyorTwoParts');
       expect(first).toMatchObject({ ok: true, summary: { backend: 'native-posix', mode: 'logical-cyclic-task-set-scan', scenarios: [
         { id: 'Conveyor01', path: 'tests/conveyor-01.scenario.json', passed: true },
+        { id: 'ConveyorJamResetNoRestart', path: 'tests/conveyor-jam-reset.scenario.json', passed: true },
         { id: 'ConveyorTwoParts', path: 'tests/conveyor-two-parts.scenario.json', passed: true },
       ] }, evidence: { artifacts: [{ kind: 'zplc' }, { kind: 'trace' }] } });
       expect(second).toEqual(first);
