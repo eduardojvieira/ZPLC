@@ -64,7 +64,7 @@ class Cdp {
 
 function click(text: string): string { return `(() => { const button = [...document.querySelectorAll('button')].find((item) => item.textContent?.includes(${JSON.stringify(text)})); if (!button || button.disabled) return false; button.click(); return true; })()`; }
 async function press(cdp: Cdp, key: string, code = key): Promise<void> {
-  const keyCode = key === 'Enter' ? 13 : key === 'Escape' ? 27 : 0;
+  const keyCode = { Enter: 13, Escape: 27, ArrowUp: 38, ArrowDown: 40 }[key] ?? 0;
   const text = key === 'Enter' ? '\r' : undefined;
   await cdp.command('Input.dispatchKeyEvent', { type: 'keyDown', key, code, text, unmodifiedText: text, windowsVirtualKeyCode: keyCode });
   await cdp.command('Input.dispatchKeyEvent', { type: 'keyUp', key, code, windowsVirtualKeyCode: keyCode });
@@ -168,6 +168,25 @@ async function main(): Promise<void> {
     assert(await cdp.evaluate(click('Motor Start Stop')) === true, 'Motor Start Stop example button is not actionable.');
     const copiedExample = await waitFor('copied Motor Start Stop example', async () => await cdp!.evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const state = useIDEStore.getState(); const copy = window.__zplcSmokeExampleCopy; return state.isProjectOpen && state.directoryHandle === copy.handle ? { pickerCalls: copy.pickerCalls, migrationPreview: state.projectMigrationPreview, scenario: copy.files.get('tests/motor-start-stop.scenario.json'), active: state.activeFileId } : undefined; })`) as { pickerCalls: number; migrationPreview: unknown; scenario: string | undefined; active: string | null } | undefined);
     assert(copiedExample?.pickerCalls === 1 && copiedExample.migrationPreview === null && typeof copiedExample.scenario === 'string' && copiedExample.active === 'file:src/Motor.st', `Example copy did not finish as one disk-backed session: ${JSON.stringify(copiedExample)}`);
+    // UX-017: the separator between the editor and the lower panel is visible, reachable, movable by keyboard and pointer, and remembered.
+    const separatorState = `(() => { const el = document.querySelector('[role="separator"]'); const probe = document.createElement('div'); probe.style.backgroundColor = 'var(--color-accent-blue)'; document.body.append(probe); const cobalt = getComputedStyle(probe).backgroundColor; probe.remove(); if (!el) return null; const box = el.getBoundingClientRect(); const saved = JSON.parse(localStorage.getItem('react-resizable-panels:zplc-ide-workspace') ?? 'null'); return { state: el.getAttribute('data-separator'), orientation: el.getAttribute('aria-orientation'), tabindex: el.getAttribute('tabindex'), label: el.getAttribute('aria-label'), now: Number(el.getAttribute('aria-valuenow')), height: box.height, x: box.x + box.width / 2, y: box.y + box.height / 2, background: getComputedStyle(el).backgroundColor, cobalt, saved, focused: document.activeElement === el }; })()`;
+    type SeparatorState = { state: string; orientation: string; tabindex: string; label: string; now: number; height: number; x: number; y: number; background: string; cobalt: string; saved: { editor?: number; console?: number } | null; focused: boolean };
+    const separator = async (): Promise<SeparatorState> => await cdp!.evaluate(separatorState) as SeparatorState;
+    const before = await waitFor('workspace separator', async () => (await separator()) ?? undefined);
+    assert(before.orientation === 'horizontal' && before.tabindex === '0' && before.label === 'Resize editor and lower panel' && before.height >= 4 && before.state === 'inactive' && before.background !== before.cobalt, `The workspace separator is not exposed as a visible, focusable 4px separator: ${JSON.stringify(before)}`);
+    assert(await cdp.evaluate(`(() => { const el = document.querySelector('[role="separator"]'); el.focus(); return document.activeElement === el; })()`), 'The workspace separator cannot take keyboard focus.');
+    await press(cdp, 'ArrowUp');
+    const afterKey = await waitFor('separator moved by keyboard and turned cobalt', async () => { const now = await separator(); return now.now !== before.now && now.background === now.cobalt ? now : undefined; });
+    assert(afterKey.state === 'focus' && afterKey.background === afterKey.cobalt && afterKey.saved?.editor !== undefined && Math.abs(afterKey.saved.editor - afterKey.now) < 0.5, `ArrowUp must move the focused separator and remember the layout: ${JSON.stringify({ before: before.now, afterKey })}`);
+    assert(await cdp.evaluate(`(() => { const el = document.querySelector('[role="separator"]'); el.blur(); return document.activeElement !== el; })()`), 'The workspace separator did not release focus.');
+    await cdp.command('Input.dispatchMouseEvent', { type: 'mouseMoved', x: afterKey.x, y: afterKey.y });
+    await waitFor('separator hover state', async () => (await separator()).state === 'hover' ? true : undefined);
+    await cdp.command('Input.dispatchMouseEvent', { type: 'mousePressed', x: afterKey.x, y: afterKey.y, button: 'left', buttons: 1, clickCount: 1 });
+    await waitFor('separator active state', async () => (await separator()).state === 'active' ? true : undefined);
+    for (const dy of [-20, -40, -60]) await cdp.command('Input.dispatchMouseEvent', { type: 'mouseMoved', x: afterKey.x, y: afterKey.y + dy, button: 'left', buttons: 1 });
+    await cdp.command('Input.dispatchMouseEvent', { type: 'mouseReleased', x: afterKey.x, y: afterKey.y - 60, button: 'left', buttons: 0, clickCount: 1 });
+    const afterDrag = await waitFor('separator moved by pointer and layout saved', async () => { const now = await separator(); return now.now < afterKey.now - 1 && now.saved?.editor !== undefined && Math.abs(now.saved.editor - now.now) < 0.5 ? now : undefined; });
+    console.log(`Separator observed: ${before.state} ${before.height}px, keyboard ${before.now.toFixed(1)} -> ${afterKey.now.toFixed(1)} (${afterKey.state}), pointer -> ${afterDrag.now.toFixed(1)}, saved ${JSON.stringify(afterDrag.saved)}`);
     await waitFor('Tests tab', async () => await cdp!.evaluate(`(() => { const tab = [...document.querySelectorAll('button')].find((item) => item.getAttribute('aria-label')?.startsWith('Tests,')); if (!tab) return false; tab.click(); return true; })()`) === true ? true : undefined);
     const documentRoot = await cdp.command('DOM.getDocument') as { root?: { nodeId?: number } };
     const manifestInputNode = await cdp.command('DOM.querySelector', { nodeId: documentRoot.root?.nodeId, selector: 'input[data-workspace-manifest-input]' }) as { nodeId?: number };

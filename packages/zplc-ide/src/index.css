@@ -47,6 +47,7 @@
   --focus-ring-color: var(--color-accent-blue);
   --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
+  --separator-rule: var(--color-surface-400);
 }
 
 /* Commissioning Spine dark. */
@@ -225,49 +226,44 @@ html, body, #root {
 }
 
 /* =============================================================================
-   Resizable Panels — Separator Handle
+   Resizable Panels — Separator Handle (UX-017)
+   react-resizable-panels sets data-separator to inactive | hover | active | focus | disabled,
+   role="separator", tabindex="0" and moves with the arrow keys, Home, End and Enter itself.
    ============================================================================= */
 
-/* Horizontal separator (between sidebar and editor) */
-[data-panel-group-direction="horizontal"] > [data-panel-resize-handle-id] {
-  width: 4px;
-  cursor: col-resize;
-  background-color: var(--color-surface-600);
-  transition: background-color 0.15s ease;
+/* A 4px grab area with a 1px rule that stays visible at rest. */
+[data-separator] {
   position: relative;
-  flex-shrink: 0;
+  z-index: 1;
+  background-color: var(--color-surface-600);
+  background-image: linear-gradient(var(--separator-rule), var(--separator-rule));
+  background-repeat: no-repeat;
+  background-position: center;
+  transition: background-color 0.15s ease;
 }
 
-[data-panel-group-direction="horizontal"] > [data-panel-resize-handle-id]::after {
-  content: "";
-  position: absolute;
-  inset: 0 -3px;
-}
-
-[data-panel-group-direction="horizontal"] > [data-panel-resize-handle-id]:hover,
-[data-panel-group-direction="horizontal"] > [data-panel-resize-handle-id][data-resize-handle-active] {
-  background-color: var(--color-accent-blue);
-}
-
-/* Vertical separator (between editor area and console) */
-[data-panel-group-direction="vertical"] > [data-panel-resize-handle-id] {
+/* A separator between stacked panels is a horizontal bar; between side-by-side panels, a vertical one. */
+[data-separator][aria-orientation="horizontal"] {
   height: 4px;
+  background-size: 100% 1px;
   cursor: row-resize;
-  background-color: var(--color-surface-600);
-  transition: background-color 0.15s ease;
-  position: relative;
-  flex-shrink: 0;
 }
 
-[data-panel-group-direction="vertical"] > [data-panel-resize-handle-id]::after {
-  content: "";
-  position: absolute;
-  inset: -3px 0;
+[data-separator][aria-orientation="vertical"] {
+  width: 4px;
+  background-size: 1px 100%;
+  cursor: col-resize;
 }
 
-[data-panel-group-direction="vertical"] > [data-panel-resize-handle-id]:hover,
-[data-panel-group-direction="vertical"] > [data-panel-resize-handle-id][data-resize-handle-active] {
+[data-separator="hover"],
+[data-separator="active"],
+[data-separator="focus"] {
   background-color: var(--color-accent-blue);
+  background-image: none;
+}
+
+[data-separator="disabled"] {
+  cursor: not-allowed;
 }
 
 /* =============================================================================
@@ -481,6 +477,7 @@ button, [role="button"], [role="tab"] { transition: background-color .12s ease, 
   .ledger-inspector-row dt,
   .ledger-inspector p,
   .ledger-index { color: CanvasText; }
-  [data-panel-group-direction] > [data-panel-resize-handle-id] { background: CanvasText; }
+  [data-separator] { background-color: CanvasText; background-image: none; }
+  [data-separator="hover"], [data-separator="active"], [data-separator="focus"] { background-color: Highlight; }
   :root { --focus-ring-color: Highlight; }
 }
