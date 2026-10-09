@@ -315,3 +315,52 @@ describe('edge_counter counts edges with CTU alone', () => {
     }
   }, 30_000);
 });
+
+describe('motor_plant supervises the start', () => {
+  // motor_plant is a golden project whose scenario list other tests pin, so these two run inline. The AtSpeed feedback is
+  // written by the scenario itself (no plant), which is what lets one run withhold it.
+  const withoutPlant = (id: string, durationMs: number, events: unknown[], expectations: unknown[]) =>
+    ({ schemaVersion: 1, id, tickMs: 10, durationMs, events, expectations });
+  const at = (atMs: number, condition: Record<string, boolean>) => ({ kind: 'AT', atMs, condition });
+  const STALLED = withoutPlant('MotorStartFails', 1500, [
+    { atMs: 0, set: { 'MotorPlant.Start': false, 'MotorPlant.Stop': false, 'MotorPlant.AtSpeed': false } },
+    { atMs: 10, set: { 'MotorPlant.Start': true } }, { atMs: 20, set: { 'MotorPlant.Start': false } },
+    { atMs: 1300, set: { 'MotorPlant.Stop': true } }, { atMs: 1310, set: { 'MotorPlant.Stop': false } },
+  ], [
+    at(500, { 'MotorPlant.Command': true, 'MotorPlant.Running': false, 'MotorPlant.Fault': false }),   // waiting for speed
+    at(1200, { 'MotorPlant.Command': false, 'MotorPlant.Running': false, 'MotorPlant.Fault': true }),   // timed out: off and latched
+    at(1290, { 'MotorPlant.Command': false, 'MotorPlant.Fault': true }),                                // stays latched
+    at(1310, { 'MotorPlant.Command': false, 'MotorPlant.Fault': false }),                               // Stop clears the fault, does not restart
+    at(1500, { 'MotorPlant.Command': false, 'MotorPlant.Fault': false }),
+  ]);
+  const HEALTHY = withoutPlant('MotorStartsInTime', 1500, [
+    { atMs: 0, set: { 'MotorPlant.Start': false, 'MotorPlant.Stop': false, 'MotorPlant.AtSpeed': false } },
+    { atMs: 10, set: { 'MotorPlant.Start': true } }, { atMs: 20, set: { 'MotorPlant.Start': false } },
+    { atMs: 520, set: { 'MotorPlant.AtSpeed': true } },
+  ], [
+    at(500, { 'MotorPlant.Command': true, 'MotorPlant.Running': false, 'MotorPlant.Fault': false }),
+    at(530, { 'MotorPlant.Command': true, 'MotorPlant.Running': true, 'MotorPlant.Fault': false }),
+    at(1500, { 'MotorPlant.Command': true, 'MotorPlant.Running': true, 'MotorPlant.Fault': false }),     // no late trip
+  ]);
+
+  for (const [title, scenario] of [['drops the command and latches a fault when AtSpeed never arrives', STALLED], ['does not trip when AtSpeed arrives in time', HEALTHY]] as const) {
+    itNative(title, async () => {
+      const previous = process.env.ZPLC_NATIVE_SIM_BIN;
+      process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
+      try {
+        const built = await compilerCompile(rootOf('motor_plant'));
+        if (!built.ok || !built.debugMap) throw new Error(JSON.stringify(built.evidence.diagnostics));
+        const session = await createNativeScenarioSession(process.env);
+        try {
+          const result = await runScenario(compileScenario(scenario, built.debugMap), built.zplcFile, session.runtime);
+          expect(result.assertions.every((assertion) => assertion.passed)).toBe(true);
+        } finally {
+          await session.close();
+        }
+      } finally {
+        if (previous === undefined) delete process.env.ZPLC_NATIVE_SIM_BIN;
+        else process.env.ZPLC_NATIVE_SIM_BIN = previous;
+      }
+    }, 30_000);
+  }
+});
