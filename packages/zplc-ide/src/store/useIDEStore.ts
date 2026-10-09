@@ -46,7 +46,7 @@ import type { SystemInfo, StatusInfo } from '../runtime/serialAdapter';
 import type { DebugMap } from '../compiler';
 import { WATCH_FORCE_STATE, type WatchForceEntry } from '../runtime/debugAdapter';
 import type { ProjectMigrationChange } from '../project/projectModel';
-import { getBreakpointPCForLine } from '../components/codeEditorBreakpoints';
+import { breakpointFileKey, getBreakpointPCForLine } from '../components/codeEditorBreakpoints';
 import { appendConsoleEntries, type NewConsoleEntry } from './consoleEntries';
 import { folderErrorReason } from '../utils/errorMessages';
 import { DEFAULT_DEBUG_POLLING_INTERVAL_MS } from './debugDefaults';
@@ -1497,11 +1497,11 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     // "file-src-main-st". We must resolve the actual filename via loadedFiles
     // and then strip the extension to get the POU name used in the debug map.
     for (const [fileId, lineNumbers] of debug.breakpoints) {
-      // Resolve the human-readable filename (e.g. "main.st") from the store.
-      // Fall back to the raw fileId only if the file is not loaded (shouldn't
-      // happen in practice, but keeps us safe).
-      const resolvedFile = loadedFiles.get(fileId);
-      const rawName = resolvedFile?.name ?? fileId;
+      // Resolve the project-relative path (e.g. "src/main.st") from the store,
+      // the same key the editor uses (breakpointFileKey). Fall back to the raw
+      // fileId only if the file is not loaded (shouldn't happen in practice,
+      // but keeps us safe).
+      const rawName = breakpointFileKey(loadedFiles.get(fileId), fileId);
 
       for (const line of lineNumbers) {
         const pc = getBreakpointPCForLine(debug.debugMap, rawName, line);

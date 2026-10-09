@@ -1,17 +1,27 @@
 import type { DebugMap, DebugPOUInfo } from '../compiler';
 
+/**
+ * The key the editor and the store hand to the helpers below for a file: the project-relative path ("src/Motor.st"),
+ * which is what the compiler records as a POU's sourceRef, then the bare name, then the file id.
+ */
+export function breakpointFileKey(file: { path?: string; name?: string } | undefined, fileId: string): string {
+  return file?.path || file?.name || fileId;
+}
+
 function normalizeBreakpointName(fileName: string): string {
-  return fileName.replace(/\.[^.]+$/, '').toLowerCase();
+  return fileName.replace(/^.*[\\/]/, '').replace(/\.[^.]+$/, '').toLowerCase();
 }
 
 function sourceRefMatchesFile(sourceRef: string, fileName: string): boolean {
-  const normalizeModelAlias = (value: string) => value.replace(/\.json$/i, '').toLowerCase();
-  return normalizeModelAlias(sourceRef) === normalizeModelAlias(fileName);
+  // Project-relative keys; graphical models also match without their ".json" suffix.
+  const normalizeSourceKey = (value: string) =>
+    value.replace(/\\/g, '/').replace(/^(\.\/)+/, '').replace(/^file:/i, '').replace(/\.json$/i, '').toLowerCase();
+  return normalizeSourceKey(sourceRef) === normalizeSourceKey(fileName);
 }
 
 function findPOU(debugMap: DebugMap, fileName: string): DebugPOUInfo | null {
   const normalizedFileName = normalizeBreakpointName(fileName);
-  const fullFileName = fileName.toLowerCase();
+  const fullFileName = fileName.replace(/^.*[\\/]/, '').toLowerCase();
 
   for (const [name, info] of Object.entries(debugMap.pou)) {
     if (info.sourceRef) {

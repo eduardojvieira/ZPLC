@@ -1,7 +1,10 @@
-import { describe, expect, it } from 'bun:test';
+import { fileURLToPath } from 'node:url';
+import { beforeAll, describe, expect, it } from 'bun:test';
 
+import { compilerCompile } from '../cli/toolApi';
 import type { DebugMap } from '../compiler';
 import {
+  breakpointFileKey,
   doesCurrentPOUMatchFile,
   getBreakpointPCForLine,
   getEligibleBreakpointLines,
@@ -127,5 +130,81 @@ describe('physical source references', () => {
   it('uses a semantic POU sourceRef for paused-line file matching', () => {
     expect(doesCurrentPOUMatchFile(physicalMap, 'Main', 'main.ld.json', 'editor-main-ld')).toBe(true);
     expect(doesCurrentPOUMatchFile(physicalMap, 'Main', 'main.st', 'editor-main-st')).toBe(false);
+  });
+});
+
+describe('legacy debug maps without sourceRef', () => {
+  // Fails without the base-name comparison in findPOU / normalizeBreakpointName: once the editor keys files by
+  // project path, "src/main.st" must still find the POU "main".
+  it('still match by POU name, for a bare file name and for a project-relative path', () => {
+    expect(isLineBreakpointEligible(DEBUG_MAP, 'main.st', 22)).toBe(true);
+    expect(isLineBreakpointEligible(DEBUG_MAP, 'src/main.st', 22)).toBe(true);
+    expect(getBreakpointPCForLine(DEBUG_MAP, 'src/main.st', 25)).toBe(41);
+    expect(getEligibleBreakpointLines(DEBUG_MAP, 'src\\main.st')).toEqual([22, 25]);
+    expect(isLineBreakpointEligible(DEBUG_MAP, 'src/other.st', 22)).toBe(false);
+    expect(doesCurrentPOUMatchFile(DEBUG_MAP, 'main', 'src/main.st', 'file:src/main.st')).toBe(true);
+  });
+});
+
+describe('breakpointFileKey', () => {
+  // Fails without the helper preferring path over name over file id (the key CodeEditor and the store must share).
+  it('prefers the project path, then the name, then the file id', () => {
+    expect(breakpointFileKey({ name: 'Motor.st', path: 'src/Motor.st' }, 'file:src/Motor.st')).toBe('src/Motor.st');
+    expect(breakpointFileKey({ name: 'Motor.st', path: '' }, 'file:src/Motor.st')).toBe('Motor.st');
+    expect(breakpointFileKey({ name: 'Motor.st' }, 'file:src/Motor.st')).toBe('Motor.st');
+    expect(breakpointFileKey({ name: '', path: '' }, 'file:src/Motor.st')).toBe('file:src/Motor.st');
+    expect(breakpointFileKey(undefined, 'file:src/Motor.st')).toBe('file:src/Motor.st');
+  });
+});
+
+describe('breakpoint binding against the real compiler output of motor_start_stop', () => {
+  const motorStartStop = fileURLToPath(new URL('../../projects/motor_start_stop', import.meta.url));
+  // Motor.st executable lines and the PC the compiler assigns to each.
+  const PC_BY_LINE: Record<number, number> = { 20: 24, 21: 56, 22: 61, 24: 82, 26: 96, 29: 104, 30: 122 };
+  const fileId = 'file:src/Motor.st';
+  const editorKey = breakpointFileKey({ name: 'Motor.st', path: 'src/Motor.st' }, fileId);
+  let motorMap: DebugMap;
+
+  beforeAll(async () => {
+    const built = await compilerCompile(motorStartStop);
+    if (!built.ok || !built.debugMap) throw new Error('motor_start_stop did not compile');
+    motorMap = built.debugMap;
+  });
+
+  // Guards the compiler/editor contract: fails if the compiler stops recording the project-relative sourceRef
+  // (src/utils/programSourceResolution.ts, packages/zplc-compiler/src/compiler/index.ts) or loses a line's PC.
+  it('records the project-relative path and a PC for every executable line', () => {
+    const pou = motorMap.pou.Motor!;
+    expect(pou.sourceRef).toBe('src/Motor.st');
+    expect(Object.fromEntries(pou.breakpoints.map((entry) => [entry.line, entry.pc]))).toEqual(PC_BY_LINE);
+  });
+
+  // Fails without sourceRefMatchesFile comparing normalised project paths and the editor key being the path.
+  it('makes exactly the executable lines eligible under the key the editor uses', () => {
+    expect(getEligibleBreakpointLines(motorMap, editorKey)).toEqual([20, 21, 22, 24, 26, 29, 30]);
+    for (let line = 1; line <= 33; line += 1) {
+      expect(getBreakpointPCForLine(motorMap, editorKey, line)).toBe(PC_BY_LINE[line] ?? null);
+      expect(isLineBreakpointEligible(motorMap, editorKey, line)).toBe(line in PC_BY_LINE);
+    }
+    expect(isLineBreakpointEligible(motorMap, editorKey, 3)).toBe(false); // VAR_INPUT declaration
+    expect(getBreakpointPCForLine(motorMap, editorKey, 27)).toBeNull(); // END_IF
+  });
+
+  // Fails without sourceRefMatchesFile stripping "./", "file:" and backslashes before comparing.
+  it('matches the same project file however its key is spelled, but not another folder', () => {
+    for (const key of ['src/Motor.st', './src/Motor.st', 'src\\Motor.st', 'file:src/Motor.st', 'SRC/MOTOR.ST']) {
+      expect(isLineBreakpointEligible(motorMap, key, 21)).toBe(true);
+    }
+    expect(isLineBreakpointEligible(motorMap, 'lib/Motor.st', 21)).toBe(false);
+    const ladder: DebugMap = { ...DEBUG_MAP, pou: { Main: { ...DEBUG_MAP.pou.main, sourceRef: 'src/main.ld' } } };
+    expect(isLineBreakpointEligible(ladder, 'src/main.ld.json', 22)).toBe(true);
+  });
+
+  // Fails without the editor key being the project path (or the file: prefix being ignored for the file id).
+  it('highlights the paused line in the file the editor holds and in no other', () => {
+    expect(doesCurrentPOUMatchFile(motorMap, 'Motor', editorKey, fileId)).toBe(true);
+    const otherId = 'file:src/Other.st';
+    const otherKey = breakpointFileKey({ name: 'Other.st', path: 'src/Other.st' }, otherId);
+    expect(doesCurrentPOUMatchFile(motorMap, 'Motor', otherKey, otherId)).toBe(false);
   });
 });
