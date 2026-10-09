@@ -21,7 +21,9 @@ VAR_OUTPUT
     FaultLamp AT %Q0.2 : BOOL;
 END_VAR
 
-(* Educational host exercise: this incomplete starter intentionally omits jam lockout.
+(* Educational host exercise: this incomplete starter intentionally omits the jam lockout.
+   Lesson 4: stop the belt and light FaultLamp while JamDetected. Lesson 9: also latch the fault,
+   release it only with Reset once the jam has cleared, and do not restart the belt without a new Start.
    Outputs still default FALSE on reset; never use this program on hardware. *)
 IF Stop THEN
     Requested := FALSE;

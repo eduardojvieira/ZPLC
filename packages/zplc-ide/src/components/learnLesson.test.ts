@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { WorkspaceTestPresentation } from './workspaceTestPresentation';
 import { gradeRecordedScenarioLesson, LEARN_MASTERY_STORAGE_KEY, learnLessonCatalog, parseLearnMasteryImport, readLearnMastery, recordLearnMastery, replaceLearnMastery, serializeLearnMastery, type LearnLesson } from './learnLesson';
@@ -16,14 +16,21 @@ function declaredPrograms(project: string): readonly string[] {
   });
 }
 
-function recordedPresentation(lesson: VersionedLearnLesson): WorkspaceTestPresentation {
+/** Real number of expectations in the scenario file the starter ships for the lesson. */
+function starterScenarioAssertions(lesson: VersionedLearnLesson): number {
+  const scenario: unknown = JSON.parse(readFileSync(join(import.meta.dir, '..', '..', 'projects', lesson.starterExampleId, lesson.scenarioPath), 'utf8'));
+  return (scenario as { expectations: unknown[] }).expectations.length;
+}
+
+function recordedPresentation(lesson: VersionedLearnLesson, count = lesson.rubric.minimumAssertions): WorkspaceTestPresentation {
+  const assertions = Array.from({ length: count }, () => ({ kind: 'NEVER' as const, passed: true }));
   return {
     operation: 'scenario-run', kind: 'passed', message: 'Host POSIX scenario passed.', scenarioCount: 1, diagnostics: [], hasEvidence: true,
     artifacts: [{ kind: 'zplc', sha256: sha, byteLength: 1 }, { kind: 'trace', sha256: sha, byteLength: 1 }],
     savedTestInputIdentity: { schemaVersion: 1, sha256: sha, fileCount: 3 },
     preview: { traceEvidenceSha256: sha, totalScenarioCount: 1, scenarios: [{
-      id: lesson.requiredScenario, path: lesson.scenarioPath, passed: true, totalSamples: 1, totalSignals: 2, totalAssertions: 1, truncated: false,
-      assertions: [{ kind: 'NEVER', passed: true }], samples: [{ atMs: 1, outputs: {} }],
+      id: lesson.requiredScenario, path: lesson.scenarioPath, passed: true, totalSamples: 1, totalSignals: 2, totalAssertions: count, truncated: false,
+      assertions, samples: [{ atMs: 1, outputs: {} }],
     }] },
   };
 }
@@ -69,13 +76,18 @@ describe('Learn lesson catalog', () => {
     expect(en[3]?.stages[4]?.body).toContain('classifier+metal 20, diverter+count=1 at 30, jam 50');
     expect(es[3]?.stages[5]?.body).toBe('La assertion NEVER cubre DiverterCommand ON con BeltCommand OFF sólo en este escenario.');
     expect(en[3]?.stages[5]?.body).toBe('The NEVER assertion covers DiverterCommand ON with BeltCommand OFF only in this scenario.');
-    expect(es[4]).toMatchObject({ exampleId: 'blinky', requiredScenario: 'BlinkyVisual', sourcePath: 'src/main.ld.json', scenarioPath: 'tests/blinky-visual.scenario.json', title: 'Ladder, TON y realimentación de salida', scope: 'La evidencia de Tests es del host nativo POSIX; no es evidencia de LED físico, timing de hardware, HIL ni certificación.' });
-    expect(en[4]).toMatchObject({ title: 'Ladder, TON, and output feedback', scope: 'Tests provide native POSIX host evidence only; they are not physical LED, hardware timing, HIL, or certification evidence.' });
+    expect(es[4]).toMatchObject({ exampleId: 'blinky', requiredScenario: 'BlinkyVisual', sourcePath: 'src/Blinky.st', scenarioPath: 'tests/blinky-visual.scenario.json', title: 'Oscilador TON y realimentación de salida', scope: 'La evidencia de Tests es del host nativo POSIX; no es evidencia de LED físico, timing de hardware, HIL ni certificación.' });
+    expect(en[4]).toMatchObject({ title: 'TON oscillator and output feedback', scope: 'Tests provide native POSIX host evidence only; they are not physical LED, hardware timing, HIL, or certification evidence.' });
     expect(es[4]?.stages.map(({ title }) => title)).toEqual(['Objetivo', 'Predecí', 'Editá', 'Ejecutá', 'Observá', 'Reflexioná']);
     expect(en[4]?.stages.map(({ title }) => title)).toEqual(['Objective', 'Predict', 'Edit', 'Run', 'Observe', 'Reflect']);
-    expect(es[4]?.stages[1]?.checkpoint).toBe('LED OFF habilita TON; BlinkTimer.Q alimenta coil; el escenario exige FALLING entre 10–550 ms y RISING entre 10–1090 ms.');
-    expect(en[4]?.stages[1]?.checkpoint).toBe('LED OFF enables TON; BlinkTimer.Q feeds the coil; scenario requires FALLING between 10–550 ms and RISING between 10–1090 ms.');
-    for (const value of ['LED_Output', 'BlinkTimer', 'T#500ms']) expect(es[4]?.stages[0]?.body).toContain(value);
+    expect(es[4]?.stages[1]?.checkpoint).toBe('OFF a 250 ms, ON a 750, OFF a 1250, ON a 1750; el primer flanco ascendente cae entre 400 y 600 ms.');
+    expect(en[4]?.stages[1]?.checkpoint).toBe('OFF at 250 ms, ON at 750, OFF at 1250, ON at 1750; the first rising edge lands between 400 and 600 ms.');
+    // The lesson teaches the Structured Text oscillator the starter really contains, not a Ladder file it does not ship.
+    for (const lesson of [es[4]!, en[4]!]) {
+      const text = lesson.stages.map(({ body, checkpoint }) => `${body} ${checkpoint}`).join(' ');
+      for (const value of ['src/Blinky.st', 'LED_Output', 'BlinkTimer', 'T#500ms', '250', '750', '1250', '1750']) expect(`${lesson.sourcePath} ${text}`).toContain(value);
+      expect(text).not.toMatch(/main\.ld|Ladder|contacto NC|NC contact|coil/);
+    }
     expect(es[5]).toMatchObject({ exampleId: 'motor_plant', requiredScenario: 'MotorPlant', sourcePath: 'src/MotorPlant.st', scenarioPath: 'tests/motor-plant.scenario.json', title: 'Comando, realimentación y velocidad', summary: 'Separá la orden del motor de la confirmación de marcha usando la planta Motor Plant.', scope: 'La evidencia de Tests es determinística del host nativo POSIX y de la planta discreta; no es evidencia de motor físico, hardware, HIL ni certificación.' });
     expect(en[5]).toMatchObject({ title: 'Command, feedback, and speed', summary: 'Separate a motor command from the run confirmation using the Motor Plant.', scope: 'Tests provide deterministic native POSIX host and discrete-plant evidence only; they are not physical-motor, hardware, HIL, or certification evidence.' });
     expect(es[5]?.stages.map(({ title }) => title)).toEqual(['Objetivo', 'Predecí', 'Editá', 'Ejecutá', 'Observá', 'Reflexioná']);
@@ -106,24 +118,28 @@ describe('Learn lesson catalog', () => {
     expect(en[7]).toMatchObject({ title: 'Scan cycle and one-scan memory', summary: 'Follow how one input produces the current output and a copy delayed by one scan.', scope: 'Tests provide native POSIX host runtime evidence with one 10 ms task; they do not establish target timing, snapshots under physical interrupts, electrical bounce, HIL, or certification.' });
     expect(es[7]?.stages[2]).toMatchObject({ title: 'Editá', checkpoint: 'El escenario visible debe pasar con evidencia host guardada.' });
     expect(en[7]?.stages[2]).toMatchObject({ title: 'Edit', checkpoint: 'The visible scenario must pass with saved host evidence.' });
-    expect(es[8]).toMatchObject({ exampleId: 'conveyor_01', requiredScenario: 'Conveyor01', sourcePath: 'src/Conveyor.st', scenarioPath: 'tests/conveyor-01.scenario.json', title: 'Assertions temporales y falla por atasco', scope: 'La evidencia de Tests es del runtime nativo POSIX host y de la planta discreta; el atasco inyectado no es una falla física, despeje físico, timing de target, HIL ni certificación.' });
-    expect(en[8]).toMatchObject({ title: 'Temporal assertions and jam fault', scope: 'Tests provide native POSIX host runtime and discrete-plant evidence only; the injected jam is not a physical fault, physical clearance, target timing, HIL, or certification evidence.' });
+    expect(es[8]).toMatchObject({ exampleId: 'conveyor_01', requiredScenario: 'ConveyorJamTiming', sourcePath: 'src/Conveyor.st', scenarioPath: 'tests/conveyor-jam-timing.scenario.json', title: 'Assertions temporales y falla por atasco', scope: 'La evidencia de Tests es del runtime nativo POSIX host y de inputs discretos; el atasco programado no es una falla física, despeje físico, timing de target, HIL ni certificación.' });
+    expect(en[8]).toMatchObject({ title: 'Temporal assertions and jam fault', scope: 'Tests provide native POSIX host runtime and discrete-input evidence only; the scheduled jam is not a physical fault, physical clearance, target timing, HIL, or certification evidence.' });
     expect(es[8]?.stages.map(({ title }) => title)).toEqual(['Objetivo', 'Predecí', 'Editá', 'Ejecutá', 'Contrastá', 'Reflexioná']);
     expect(en[8]?.stages.map(({ title }) => title)).toEqual(['Objective', 'Predict', 'Edit', 'Run', 'Compare', 'Reflect']);
     expect(es[8]?.stages.map(({ body, checkpoint }) => `${body} ${checkpoint}`).join(' ')).not.toContain('no requiere editar el programa');
     expect(en[8]?.stages.map(({ body, checkpoint }) => `${body} ${checkpoint}`).join(' ')).not.toContain('does not require editing');
-    for (const operator of ['AT', 'RISING', 'NEVER', 'WITHIN', 'FOR']) {
+    for (const operator of ['AT', 'WITHIN', 'FOR', 'UNTIL', 'FALLING', 'RISING', 'NEVER']) {
       expect(es[8]?.stages.map(({ body, checkpoint }) => `${body} ${checkpoint}`).join(' ')).toContain(operator);
       expect(en[8]?.stages.map(({ body, checkpoint }) => `${body} ${checkpoint}`).join(' ')).toContain(operator);
     }
-    for (const timing of ['0', '10', '20', '50', '80']) {
+    for (const timing of ['0 ms', '20', '30', '40', '50', '60', '80']) {
       expect(es[8]?.stages.map(({ body, checkpoint }) => `${body} ${checkpoint}`).join(' ')).toContain(timing);
       expect(en[8]?.stages.map(({ body, checkpoint }) => `${body} ${checkpoint}`).join(' ')).toContain(timing);
     }
-    expect(es[8]?.stages[1]?.checkpoint).toContain('AT exige BeltCommand, DiverterCommand y FaultLamp OFF a 0 ms y BeltCommand ON a 10 ms.');
-    expect(en[8]?.stages[1]?.checkpoint).toContain('AT requires BeltCommand, DiverterCommand, and FaultLamp OFF at 0 ms and BeltCommand ON at 10 ms.');
-    expect(es[8]?.stages[1]?.checkpoint).toContain('a más tardar a 30 ms');
-    expect(en[8]?.stages[1]?.checkpoint).toContain('by 30 ms');
+    expect(es[8]?.stages[1]?.checkpoint).toBe('Belt ON y FaultLamp OFF a 20; Belt OFF y FaultLamp ON a 30 y todavía a 50 (Reset a 40 se ignora y despejar el atasco no libera la falla); ambos OFF a 60; Belt ON de nuevo a 80 sólo tras el nuevo Start.');
+    expect(en[8]?.stages[1]?.checkpoint).toBe('Belt ON and FaultLamp OFF at 20; Belt OFF and FaultLamp ON at 30 and still at 50 (Reset at 40 is ignored and the jam clearing does not release the fault); both OFF at 60; Belt ON again at 80 only after the new Start.');
+    // Lessons 4 and 9 share a starter but no longer a graded scenario or a fault to fix.
+    expect(es[3]?.starterExampleId).toBe(es[8]?.starterExampleId);
+    expect(es[3]?.requiredScenario).not.toBe(es[8]?.requiredScenario);
+    expect(es[3]?.scenarioPath).not.toBe(es[8]?.scenarioPath);
+    expect(es[3]?.faultCases).not.toEqual(es[8]?.faultCases);
+    expect(en[3]?.faultCases).not.toEqual(en[8]?.faultCases);
     expect(es[9]).toMatchObject({ exampleId: 'conveyor_01', requiredScenario: 'ConveyorTwoParts', sourcePath: 'src/Conveyor.st', scenarioPath: 'tests/conveyor-two-parts.scenario.json', title: 'Diagnóstico reproducible: dos piezas, una decisión', scope: 'La evidencia de Tests es del runtime nativo POSIX host con inputs programados por escenario; no es evidencia de sensores ni piezas físicas, timing de target, hardware, HIL ni certificación.' });
     expect(en[9]).toMatchObject({ title: 'Reproducible diagnosis: two parts, one decision', scope: 'Tests provide native POSIX host runtime evidence with scenario-scheduled inputs; they are not physical sensors or parts, target timing, hardware, HIL, or certification evidence.' });
     expect(es[9]?.stages.map(({ title }) => title)).toEqual(['Ubicá', 'Predecí', 'Leé el calendario', 'Ejecutá', 'Diagnosticá', 'Límites']);
@@ -142,10 +158,12 @@ describe('Learn lesson catalog', () => {
     for (const lesson of [...es, ...en]) {
       expect(lesson.schemaVersion).toBe(LEARN_CONTENT_SCHEMA_VERSION);
       expect(lesson.visibleScenarioIds).toEqual([lesson.requiredScenario]);
-      expect(lesson.rubric).toEqual({ requiredScenarioId: lesson.requiredScenario, minimumAssertions: 1, requireSavedEvidence: true });
+      expect(lesson.rubric).toEqual({ requiredScenarioId: lesson.requiredScenario, minimumAssertions: starterScenarioAssertions(lesson), requireSavedEvidence: true });
+      expect(lesson.rubric.minimumAssertions).toBeGreaterThanOrEqual(3);
       expect(lesson.faultCases.length).toBeGreaterThan(0);
     }
-    expect(es[8]).toMatchObject({ starterExampleId: 'conveyor_01_starter', referenceExampleId: 'conveyor_01', authorScenarioIds: ['ConveyorTwoParts'] });
+    expect(es[8]).toMatchObject({ starterExampleId: 'conveyor_01_starter', referenceExampleId: 'conveyor_01', authorScenarioIds: ['Conveyor01'] });
+    expect(es[3]?.authorScenarioIds).toEqual([]);
     expect(es.every((lesson) => lesson.starterExampleId !== lesson.referenceExampleId)).toBe(true);
     expect(es.flatMap((lesson) => lesson.faultCases).join(' ')).not.toContain('The starter');
     expect(en.flatMap((lesson) => lesson.faultCases).join(' ')).toContain('The starter');
@@ -167,12 +185,10 @@ describe('Learn lesson catalog', () => {
         const visual = join(reference, 'src', `${program}.json`);
         expect(existsSync(direct) || existsSync(visual)).toBe(true);
       }
-      expect(existsSync(join(projects, lesson.referenceExampleId, lesson.scenarioPath))).toBe(true);
-      for (const authorScenarioId of lesson.authorScenarioIds) {
-        const scenario = lesson.referenceExampleId === 'conveyor_01' && authorScenarioId === 'ConveyorTwoParts'
-          ? 'tests/conveyor-two-parts.scenario.json' : lesson.scenarioPath;
-        expect(existsSync(join(projects, lesson.referenceExampleId, scenario))).toBe(true);
-      }
+      // starterGrading.test.ts reads the reference scenario for every lesson that does not document its own.
+      const shipped = new Map(readdirSync(join(starter, 'tests')).map((file) => [(JSON.parse(readFileSync(join(starter, 'tests', file), 'utf8')) as { id: string }).id, file]));
+      expect(shipped.get(lesson.requiredScenario)).toBe(lesson.scenarioPath.replace('tests/', ''));
+      for (const authorScenarioId of lesson.authorScenarioIds) expect(shipped.has(authorScenarioId)).toBe(true);
     }
   });
 
@@ -180,11 +196,25 @@ describe('Learn lesson catalog', () => {
     for (const lesson of learnLessonCatalog.en) {
       const passed = recordedPresentation(lesson);
       expect(gradeRecordedScenarioLesson(lesson, undefined)).toEqual({ kind: 'not-run' });
-      expect(gradeRecordedScenarioLesson(lesson, passed)).toEqual({ kind: 'passed', assertions: 1 });
-      expect(gradeRecordedScenarioLesson(lesson, { ...passed, kind: 'assertion-failed', diagnostics: [{ code: 'SCENARIO_ASSERTION_FAILED', message: 'failed' }], preview: { ...passed.preview!, scenarios: [{ ...passed.preview!.scenarios[0]!, passed: false, assertions: [{ kind: 'NEVER', passed: false }] }] } })).toEqual({ kind: 'failed', assertions: 1 });
+      expect(gradeRecordedScenarioLesson(lesson, passed)).toEqual({ kind: 'passed', assertions: lesson.rubric.minimumAssertions });
+      const failedAssertions = passed.preview!.scenarios[0]!.assertions.map((assertion, index) => ({ ...assertion, passed: index !== 0 }));
+      expect(gradeRecordedScenarioLesson(lesson, { ...passed, kind: 'assertion-failed', diagnostics: [{ code: 'SCENARIO_ASSERTION_FAILED', message: 'failed' }], preview: { ...passed.preview!, scenarios: [{ ...passed.preview!.scenarios[0]!, passed: false, assertions: failedAssertions }] } })).toEqual({ kind: 'failed', assertions: lesson.rubric.minimumAssertions });
       expect(gradeRecordedScenarioLesson(lesson, { ...passed, operation: 'test' })).toEqual({ kind: 'unrelated' });
       expect(gradeRecordedScenarioLesson(lesson, { ...passed, preview: { ...passed.preview!, scenarios: [{ ...passed.preview!.scenarios[0]!, id: 'Other' }] } })).toEqual({ kind: 'unrelated' });
       expect(gradeRecordedScenarioLesson(lesson, { ...passed, hasEvidence: false })).toEqual({ kind: 'unavailable' });
+    }
+  });
+
+  it('requires every assertion of the lesson scenario: a one-assertion run is not mastery (a weakened scenario file cannot grant it)', () => {
+    for (const lesson of learnLessonCatalog.en) {
+      expect(lesson.rubric.minimumAssertions).toBe(starterScenarioAssertions(lesson));
+      for (const fewer of [1, lesson.rubric.minimumAssertions - 1]) {
+        const grade = gradeRecordedScenarioLesson(lesson, recordedPresentation(lesson, fewer));
+        expect(grade).toEqual({ kind: 'unavailable' });
+        const writes: string[] = [];
+        expect(recordLearnMastery(lesson.id, grade, new Set(), { getItem: () => null, setItem: (_key, value) => writes.push(value) }).size).toBe(0);
+        expect(writes).toEqual([]);
+      }
     }
   });
 
