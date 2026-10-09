@@ -1,3 +1,5 @@
+import { parseSessionState } from './sessionStoreProtocol.js';
+
 const NATIVE_SIMULATION_METHODS = new Set([
   'program.load',
   'execution.start',
@@ -274,6 +276,24 @@ export function isAllowedWorkspaceRootRequest(value: unknown): value is { rootId
     && typeof value.rootId === 'string'
     && value.rootId.length >= 1
     && value.rootId.length <= 64; // PROJECT_FILES_LIMITS.maxRootIdChars: the same rule as every project operation
+}
+
+/** Loading a session takes the id of the window's project folder and nothing else; the main process finds the folder. */
+export function isAllowedSessionLoadRequest(value: unknown): value is { rootId: string } {
+  return isAllowedWorkspaceRootRequest(value);
+}
+
+/**
+ * Saving a session takes that id and one exact session document (`sessionStoreProtocol.ts`: relative tab paths, numbers,
+ * bounded count and size). It names no path of the machine, and the main process stores it under the user-data directory.
+ */
+export function isAllowedSessionSaveRequest(value: unknown): value is { rootId: string; state: unknown } {
+  return isPlainObject(value)
+    && hasExactKeys(value, ['rootId', 'state'])
+    && typeof value.rootId === 'string'
+    && value.rootId.length >= 1
+    && value.rootId.length <= 64
+    && parseSessionState(value.state) !== null;
 }
 
 /** Validates the narrow optional scenario selector without widening compile admission. */

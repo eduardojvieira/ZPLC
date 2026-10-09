@@ -68,6 +68,7 @@ const PROJECT_FILES_CHANNEL = {
   markOpened: 'project-files:mark-opened',
 } as const;
 const LEARN_PROGRESS_CHANNEL = { READ: 'learn-progress:read', MERGE: 'learn-progress:merge' } as const;
+const SESSION_CHANNEL = { LOAD: 'session:load', SAVE: 'session:save' } as const;
 const CLOSE_GUARD_CHANNEL = { SET_DIRTY: 'close-guard:set-dirty', CLOSE_NOW: 'close-guard:close-now', CLOSE_REQUESTED: 'close-guard:close-requested' } as const;
 type GuardedAction = 'close' | 'reload';
 
@@ -148,6 +149,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     openRecent: (request: unknown) => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.openRecent, request) as Promise<unknown>,
     forgetRecent: (request: unknown) => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.forgetRecent, request) as Promise<unknown>,
     markOpened: (request: unknown) => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.markOpened, request) as Promise<unknown>,
+  },
+  // Per-project session (IDE-008): the folder is named by the opaque id that projectFiles gave out; the document holds
+  // relative paths and numbers. The main process validates it and stores it under the user-data directory.
+  session: {
+    load: (request: unknown) => ipcRenderer.invoke(SESSION_CHANNEL.LOAD, request) as Promise<unknown>,
+    save: (request: unknown) => ipcRenderer.invoke(SESSION_CHANNEL.SAVE, request) as Promise<unknown>,
   },
   learnProgress: {
     read: () => ipcRenderer.invoke(LEARN_PROGRESS_CHANNEL.READ) as Promise<string[]>,
