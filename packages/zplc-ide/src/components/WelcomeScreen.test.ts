@@ -27,6 +27,12 @@ describe('Welcome screen contract', () => {
     expect(source).not.toContain('Chrome');
   });
 
+  it('scrolls inside a positioned main, so the absolutely placed sr-only labels do not make the window scroll', () => {
+    // An sr-only span is position:absolute; without a positioned ancestor it is placed against the window, below the fold of the
+    // content area, and the window grows a vertical scrollbar that makes the 100vw root wider than the window (journey 13 measures it).
+    expect(source).toMatch(/<main className="relative [^"]*overflow-y-auto/);
+  });
+
   it('lists the examples under their group headings with a title, badges and a summary, not as name chips', () => {
     expect(source).toContain('buildExampleSections(getExampleProjects())');
     expect(source).toContain('{section.title}</h3>');

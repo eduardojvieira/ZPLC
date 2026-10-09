@@ -497,7 +497,19 @@ export const JOURNEYS: Journey[] = [
       assert(groups.every((group) => group.heading && group.examples > 0 && group.withSummary === group.examples), `Every group needs a heading and a summary on each of its examples: ${JSON.stringify(groups)}`);
       const listed = await app.eval<string[]>(`[...document.querySelectorAll('[data-welcome-example]')].map((card) => card.getAttribute('data-welcome-example'))`);
       assert(!listed.some((id) => id!.endsWith('_starter') || id === 'kitchen_sink' || id === 'pico_persist_test'), `A starter or a test fixture is listed as an example: ${JSON.stringify(listed)}`);
-      assert(await app.eval<boolean>(`(document.querySelector('[data-welcome-example="pico_blinky"]')?.textContent ?? '').includes('ESP32-S3')`), 'The ESP32-S3 target of pico_blinky is not on its card.');
+      const card = (id: string) => app.eval<string>(`document.querySelector('[data-welcome-example="${id}"]')?.textContent ?? ''`);
+      assert((await card('pico_blinky')).includes('Raspberry Pi Pico') && !(await card('pico_blinky')).includes('ESP32'), 'The card of pico_blinky should name the Raspberry Pi Pico it targets.');
+      assert((await card('esp32s3_blinky')).includes('ESP32-S3 DevKitC') && (await card('esp32s3_blinky')).includes('per the current overlay'), 'The card of esp32s3_blinky should name its board and say the pin is per the current overlay.');
+
+      // The page scrolls inside its own area: neither a horizontal nor a vertical scrollbar may appear on the window, at the size
+      // the app asks for (1440 wide) and in the smaller windows a laptop gives.
+      for (const width of [1440, 1280, 1024]) {
+        await app.cdp.command('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: false });
+        const measure = await app.until(`the Welcome page laid out at ${width} px`, async () => { const found = await app.eval<{ innerWidth: number; scrollWidth: number; clientWidth: number; scrollHeight: number; clientHeight: number }>(`(() => { const page = document.documentElement; return { innerWidth, scrollWidth: page.scrollWidth, clientWidth: page.clientWidth, scrollHeight: page.scrollHeight, clientHeight: page.clientHeight }; })()`); return found.innerWidth === width ? found : undefined; });
+        assert(measure.scrollWidth <= measure.clientWidth, `At ${width} px the Welcome page is wider than the window (${JSON.stringify(measure)}): a horizontal scrollbar shows at the bottom.`);
+        assert(measure.scrollHeight <= measure.clientHeight, `At ${width} px the window itself scrolls (${JSON.stringify(measure)}): only the Welcome content area should.`);
+      }
+      await app.cdp.command('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
 
       // Exactly one control changes the theme, and it is the labelled "Theme" select.
       const controls = await app.eval<string[]>(`[...document.querySelectorAll('button, select, input, [role="switch"], [role="combobox"]')].filter((control) => /theme|contrast/i.test([control.getAttribute('aria-label'), control.getAttribute('title'), ...[...(control.labels ?? [])].map((label) => label.textContent)].join(' '))).map((control) => control.tagName.toLowerCase())`);

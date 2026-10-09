@@ -101,7 +101,7 @@ export function WelcomeScreen() {
   }`;
 
   return (
-    <main className="flex min-h-0 flex-1 overflow-y-auto bg-[var(--color-surface-900)] px-5 py-5 text-[var(--text-primary)] sm:px-8 sm:py-8">
+    <main className="relative flex min-h-0 flex-1 overflow-y-auto bg-[var(--color-surface-900)] px-5 py-5 text-[var(--text-primary)] sm:px-8 sm:py-8">
       <div className="mx-auto flex w-full max-w-4xl flex-col">
         <header className="flex items-start justify-between gap-4 border-b border-[var(--border-color)] pb-5">
           <div className="min-w-0">
