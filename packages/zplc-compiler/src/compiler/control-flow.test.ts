@@ -57,3 +57,25 @@ describe('CASE labels (CMP-040 stopgap)', () => {
         expect(error.detail).toContain('picked');
     });
 });
+
+describe('RETURN (CMP-036 stopgap)', () => {
+    const functionSource = `FUNCTION Clamp : INT\nVAR_INPUT a : INT; END_VAR\n  Clamp := a;\n  IF a > 10 THEN\n    Clamp := 10;\n    RETURN;\n  END_IF;\nEND_FUNCTION\nPROGRAM P\nVAR\n  x : INT;\nEND_VAR\n  x := Clamp(50);\nEND_PROGRAM\n`;
+
+    it('leaves a function through its epilogue, not by halting the scan', () => {
+        const asm = compileST(functionSource);
+        const body = asm.slice(asm.indexOf('func_Clamp:'), asm.indexOf('=== Program Entry'));
+        expect(body).toContain('RET');
+        expect(body).not.toContain('HALT');
+    });
+
+    it('leaves an inlined function block body without halting the scan', () => {
+        const source = `FUNCTION_BLOCK Fb\nVAR_INPUT go : BOOL; END_VAR\nVAR_OUTPUT q : INT; END_VAR\n  IF go THEN\n    q := 1;\n    RETURN;\n  END_IF;\n  q := 2;\nEND_FUNCTION_BLOCK\nPROGRAM P\nVAR\n  f : Fb;\n  x : INT;\nEND_VAR\n  f(go := TRUE);\n  x := f.q;\nEND_PROGRAM\n`;
+        const asm = compileST(source);
+        expect(asm.split('\n').filter((line) => line.trim() === 'HALT')).toHaveLength(1);
+    });
+
+    it('still ends the scan of a program', () => {
+        const asm = compileST('PROGRAM P\nVAR x : INT; END_VAR\n  x := 1;\n  RETURN;\n  x := 2;\nEND_PROGRAM\n');
+        expect(asm.split('\n').filter((line) => line.trim() === 'HALT')).toHaveLength(2);
+    });
+});

@@ -197,6 +197,8 @@ interface CodeGenState {
     currentFBInstance: Symbol | null;
     /** Current method being inlined (for return value handling) */
     currentMethod: MethodDecl | null;
+    /** Where RETURN jumps: the end of the function, inlined function block or inlined method; null in a program */
+    returnLabel: string | null;
     memoryProfile: CompilerMemoryProfile;
     workMemorySize: number;
 }
@@ -286,6 +288,7 @@ export function generate(unit: CompilationUnit | Program, options?: CodeGenOptio
         currentFunction: null,
         currentFBInstance: null,
         currentMethod: null,
+        returnLabel: null,
         memoryProfile,
         workMemorySize,
     };
@@ -1032,6 +1035,7 @@ function generateFunctionDecl(state: CodeGenState, func: FunctionDecl): void {
     });
 
     state.currentFunction = func;
+    state.returnLabel = newLabel(state, 'func_return');
 
     emit(state, ``);
     emit(state, `; --- FUNCTION ${func.name} ---`);
@@ -1053,7 +1057,8 @@ function generateFunctionDecl(state: CodeGenState, func: FunctionDecl): void {
         emitStatement(state, stmt);
     }
 
-    // Load return value (stored in the variable named func.name) onto stack
+    // RETURN lands here; load return value (stored in the variable named func.name) onto stack
+    emit(state, `${state.returnLabel}:`);
     const returnSym = state.symbols.get(func.name);
     if (returnSym) {
         emit(state, `    ; Push return value`);
@@ -1065,6 +1070,7 @@ function generateFunctionDecl(state: CodeGenState, func: FunctionDecl): void {
 
     emit(state, `    RET`);
     state.currentFunction = null;
+    state.returnLabel = null;
 }
 
 // ============================================================================
@@ -1677,14 +1683,12 @@ function emitContinueStatement(state: CodeGenState, stmt: Statement): void {
 
 /**
  * Emit a RETURN statement.
- * In PROGRAM context, this acts like HALT (end the cycle early).
- * In FUNCTION/FUNCTION_BLOCK context, this would emit RET.
+ * In a FUNCTION, an inlined FUNCTION_BLOCK body or an inlined method it jumps to the end of
+ * that body, so the caller continues; in a PROGRAM it ends the scan of the program.
  */
 function emitReturnStatement(state: CodeGenState): void {
     emit(state, `    ; RETURN`);
-    // For PROGRAM, RETURN ends the cycle early
-    // We jump to the HALT at the end
-    emit(state, `    HALT`);
+    emit(state, state.returnLabel ? `    JMP ${state.returnLabel}` : `    HALT`);
 }
 
 function emitFBCallStatement(state: CodeGenState, stmt: FBCallStatement): void {
@@ -1734,7 +1738,9 @@ function emitFBCallStatement(state: CodeGenState, stmt: FBCallStatement): void {
 
         // Set context for inlining
         const oldFBInstance = state.currentFBInstance;
+        const oldReturnLabel = state.returnLabel;
         state.currentFBInstance = sym;
+        state.returnLabel = newLabel(state, 'fb_return');
 
         // Inline FB Body
         for (const bodyStmt of userFB.body) {
@@ -1742,7 +1748,9 @@ function emitFBCallStatement(state: CodeGenState, stmt: FBCallStatement): void {
         }
 
         // Restore context
+        emit(state, `${state.returnLabel}:`);
         state.currentFBInstance = oldFBInstance;
+        state.returnLabel = oldReturnLabel;
         emit(state, `    ; --- END FB CALL: ${stmt.fbName} ---`);
         return;
     }
@@ -2537,6 +2545,8 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
     // Save current FB context and set up new one for method execution
     const prevFBInstance = state.currentFBInstance;
     const prevMethod = state.currentMethod;
+    const prevReturnLabel = state.returnLabel;
+    state.returnLabel = newLabel(state, 'method_return');
     state.currentFBInstance = instanceSym;
     // Cast MethodInfo to MethodDecl for compatibility (they share name/body which is what matters)
     state.currentMethod = methodInfo as any;
@@ -2619,6 +2629,7 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
     for (const stmt of methodInfo.body) {
         emitStatement(state, stmt);
     }
+    emit(state, `${state.returnLabel}:`);
     
     // If method has a return type, the result should be on the stack
     // (IEC convention: MethodName := value; leaves value as result)
@@ -2628,6 +2639,7 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
     // Restore previous FB context
     state.currentFBInstance = prevFBInstance;
     state.currentMethod = prevMethod;
+    state.returnLabel = prevReturnLabel;
 }
 
 /**
