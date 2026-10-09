@@ -716,6 +716,7 @@ export const JOURNEYS: Journey[] = [
       await app.until('the Console entry for the stop', async () => await hits() === 1 || undefined)
         .catch(async (error: Error) => { throw new Error(`${error.message}: Output says ${JSON.stringify((await outputText(app)).match(/Breakpoint hit[^\n]*/g))}`); });
       assert((await decoratedLines(app, 'className', 'current-line-highlight')).includes(line), `Execution paused but the editor does not mark line ${line}.`);
+      await savePicture(app, 'ZPLC_JOURNEY_STOP_SHOT');
       await app.click(tab('Trace'));
       const errorCell = await app.until('a Trace row with the VM error of the stop', async () => await app.eval<string | null>(`document.querySelector('[id^="console-panel-"] table tbody tr td:nth-child(5)')?.innerText.trim() ?? null`) ?? undefined);
       assert(errorCell === '10 paused', `The Error column of the newest Trace row should read "10 paused", not ${JSON.stringify(errorCell)}.`);
