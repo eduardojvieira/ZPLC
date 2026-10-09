@@ -1,5 +1,5 @@
 /** Real Electron development-host smoke; native POSIX only, never HIL. */
-import { accessSync, constants, cpSync, existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { accessSync, constants, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -99,13 +99,15 @@ async function main(): Promise<void> {
   let vite: OwnedProcess | undefined; let electron: OwnedProcess | undefined; let cdp: Cdp | undefined;
   try {
     const scenarioWorkspace = join(tempRoot, 'motor-start-stop');
+    // The development-only test hook answers the native folder dialog from this file (empty means cancel); a packaged build ignores it.
+    const folderAnswerFile = join(tempRoot, 'folder-answer.txt'); writeFileSync(folderAnswerFile, '');
     cpSync(join(packageRoot, 'projects', 'motor_start_stop'), scenarioWorkspace, { recursive: true });
     const cdpPort = await freePort();
     await assertSmokePortAvailable(vitePort);
     vite = Bun.spawn([process.execPath, 'run', 'vite', '--host', HOST, '--port', String(vitePort), '--strictPort'], { cwd: packageRoot, stdout: 'pipe', stderr: 'pipe' }); drain(vite, output, 'vite');
     await waitFor('Vite at the owned trusted origin', async () => (await fetch(`http://${HOST}:${vitePort}/`).catch(() => null))?.ok ? true : undefined); assert(vite.exitCode === null, `Vite exited before Electron could use ${rendererUrl} (the port may be occupied).`);
     const electronPath = join(packageRoot, 'node_modules', 'electron', 'dist', process.platform === 'win32' ? 'electron.exe' : 'electron');
-    electron = Bun.spawn([electronPath, '--headless', '--disable-gpu', `--zplc-smoke-port=${vitePort}`, `--remote-debugging-port=${cdpPort}`, `--user-data-dir=${join(tempRoot, 'profile')}`, '.'], { cwd: packageRoot, env: { ...process.env, NODE_ENV: 'development', ZPLC_NATIVE_SIM_BIN: runtime, ZPLC_PERSIST_ROOT: join(tempRoot, 'persist') }, stdout: 'pipe', stderr: 'pipe' }); drain(electron, output, 'electron');
+    electron = Bun.spawn([electronPath, '--headless', '--disable-gpu', `--zplc-smoke-port=${vitePort}`, `--remote-debugging-port=${cdpPort}`, `--user-data-dir=${join(tempRoot, 'profile')}`, '.'], { cwd: packageRoot, env: { ...process.env, NODE_ENV: 'development', ZPLC_NATIVE_SIM_BIN: runtime, ZPLC_PERSIST_ROOT: join(tempRoot, 'persist'), ZPLC_SMOKE_FOLDER_ANSWER_FILE: folderAnswerFile }, stdout: 'pipe', stderr: 'pipe' }); drain(electron, output, 'electron');
     let targetSummary = '';
     const target = await waitFor('real Electron renderer target', async () => { const targets = await fetch(`http://${HOST}:${cdpPort}/json/list`).then((response) => response.json()).catch(() => [] as Array<{ type?: string; url?: string; title?: string; webSocketDebuggerUrl?: string }>); targetSummary = JSON.stringify(targets.map(({ type, url, title }) => ({ type, url, title }))); return targets.find((item) => item.type === 'page' && item.url === rendererUrl && item.webSocketDebuggerUrl)?.webSocketDebuggerUrl; });
     cdp = await Cdp.connect(target); await cdp.command('Runtime.enable'); await cdp.command('Log.enable'); await cdp.command('Page.enable'); await cdp.command('Page.bringToFront'); await cdp.command('Emulation.setFocusEmulationEnabled', { enabled: true });
@@ -147,29 +149,48 @@ async function main(): Promise<void> {
     await cdp.command('Emulation.setEmulatedMedia', { features: [{ name: 'forced-colors', value: 'active' }] });
     assert(await cdp.evaluate(`(() => { const button = document.querySelector('button[aria-label="Toggle high contrast theme"]'); button?.focus(); const style = button ? getComputedStyle(button) : null; return Boolean(matchMedia('(forced-colors: active)').matches && button?.matches(':focus-visible') && style?.outlineStyle !== 'none' && style?.outlineColor !== 'rgba(0, 0, 0, 0)'); })()`), 'Forced-colors media did not preserve a visible keyboard focus outline.');
     await cdp.command('Emulation.setEmulatedMedia', { features: [] });
-    // IDE-003 (part): a folder that cannot be opened is explained on the screen where the action started.
-    const setPicker = (failure: string) => cdp!.evaluate(`(() => { Object.defineProperty(window, 'showDirectoryPicker', { configurable: true, value: async () => { throw new DOMException('picker failure', ${JSON.stringify(failure)}); } }); })()`);
-    await setPicker('NotAllowedError');
-    assert(await cdp.evaluate(click('Open project')) === true, 'Open project is not actionable on the Welcome screen.');
-    await waitFor('Welcome open error', async () => String(await cdp!.evaluate(`document.querySelector('[role="alert"][data-open-error]')?.textContent ?? ''`)).includes('Access to the folder was denied') ? true : undefined);
-    await setPicker('AbortError');
-    assert(await cdp.evaluate(click('Open project')) === true, 'Open project is not actionable after a failed attempt.');
-    await waitFor('Welcome open error cleared by a cancelled picker', async () => await cdp!.evaluate(`document.querySelector('[data-open-error]') === null`) === true ? true : undefined);
-    await cdp.evaluate(`(() => {
-      const files = new Map(); const directories = new Set(['', 'src', 'tests']);
-      const missing = () => { throw new DOMException('Not found', 'NotFoundError'); };
-      const directory = (path) => ({ name: path ? path.split('/').at(-1) : 'copied-motor-start-stop',
-        async getFileHandle(name, options) { const key = path ? path + '/' + name : name; if (!files.has(key)) { if (!options?.create) missing(); files.set(key, ''); } return { async getFile() { const content = files.get(key) ?? ''; return { size: content.length, async text() { return content; } }; }, async createWritable() { return { async write(content) { files.set(key, String(content)); }, async close() {} }; } }; },
-        async getDirectoryHandle(name, options) { const key = path ? path + '/' + name : name; if (!directories.has(key)) { if (!options?.create) missing(); directories.add(key); } return directory(key); },
-        async *values() { const prefix = path ? path + '/' : ''; for (const name of directories) { if (name && name.startsWith(prefix) && !name.slice(prefix.length).includes('/')) yield { kind: 'directory', name: name.slice(prefix.length) }; } for (const name of files.keys()) { if (name.startsWith(prefix) && !name.slice(prefix.length).includes('/')) yield { kind: 'file', name: name.slice(prefix.length) }; } },
-      });
-      const handle = directory(''); let pickerCalls = 0;
-      window.__zplcSmokeExampleCopy = { handle, files, get pickerCalls() { return pickerCalls; } };
-      Object.defineProperty(window, 'showDirectoryPicker', { configurable: true, value: async () => { pickerCalls += 1; return handle; } });
-    })()`);
+    // IDE-001, IDE-003 (T7.5): the folder is chosen by the native dialog of the main process, answered here by the development-only
+    // hook. The renderer must never open a browser picker, so the file system permission is never requested (the handlers stay deny-by-default).
+    await cdp.evaluate(`(() => { window.__zplcSmokePickerCalls = 0; Object.defineProperty(window, 'showDirectoryPicker', { configurable: true, value: async () => { window.__zplcSmokePickerCalls += 1; throw new DOMException('picker', 'AbortError'); } }); })()`);
+    const answerDialog = (folder: string | null) => writeFileSync(folderAnswerFile, folder ?? '');
+    const clickOpenProject = async (when: string) => assert(await cdp!.evaluate(click('Open project')) === true, `Open project is not actionable ${when}.`);
+    const welcomeVisible = `[...document.querySelectorAll('button')].some((item) => item.textContent?.includes('Open project'))`;
+    // A folder that cannot be used is explained on the screen where the action started, without its path.
+    answerDialog(join(tempRoot, 'no-such-folder'));
+    await clickOpenProject('on the Welcome screen');
+    const welcomeFailure = await waitFor('Welcome open error', async () => { const text = String(await cdp!.evaluate(`document.querySelector('[role="alert"][data-open-error]')?.textContent ?? ''`)); return text.includes('was not found') ? text : undefined; });
+    assert(!welcomeFailure.includes(tempRoot) && !welcomeFailure.includes('no-such-folder'), `The Welcome error must not show a path: ${welcomeFailure}`);
+    // A cancelled dialog returns nothing and clears the message.
+    answerDialog(null);
+    await clickOpenProject('after a failed attempt');
+    await waitFor('Welcome open error cleared by a cancelled dialog', async () => await cdp!.evaluate(`document.querySelector('[data-open-error]') === null`) === true ? true : undefined);
+    // The permission handlers stay deny-by-default: a request other than serial is refused (the file system permission goes through the same handlers).
+    const permissionProbe = await cdp.evaluate(`Notification.requestPermission().then((requested) => ({ requested, now: Notification.permission }))`) as { requested: string; now: string };
+    assert(permissionProbe.requested === 'denied' && permissionProbe.now === 'denied', `A permission request must be refused: ${JSON.stringify(permissionProbe)}`);
+    // Journey: open a folder, edit a file, save it, close the project, open the folder again and read the saved content back.
+    const journeyFolder = join(tempRoot, 'journey-project');
+    cpSync(join(packageRoot, 'projects', 'motor_start_stop'), journeyFolder, { recursive: true });
+    const journeyFile = join(journeyFolder, 'src', 'Motor.st');
+    const edited = `${readFileSync(journeyFile, 'utf8')}\n(* smoke edit: ñ 温度 *)\n`;
+    answerDialog(journeyFolder);
+    await clickOpenProject('to open the journey folder');
+    await waitFor('journey project to open', async () => await storeEval(cdp!, `return state().isProjectOpen && state().directoryHandle?.name === 'journey-project' ? true : undefined;`) as true | undefined);
+    assert(await storeEval(cdp, `await state().openFile('file:src/Motor.st'); state().updateFileContent('file:src/Motor.st', ${JSON.stringify(edited)}); return await state().saveFile('file:src/Motor.st');`) === true, 'Saving the edited file reported a failure.');
+    assert(readFileSync(journeyFile, 'utf8') === edited, 'The saved file on disk is not the edited content.');
+    assert(await storeEval(cdp, 'return state().closeProject();') === true, 'The saved project could not be closed.');
+    await waitFor('Welcome screen after closing', async () => await cdp!.evaluate(welcomeVisible) === true ? true : undefined);
+    answerDialog(journeyFolder);
+    await clickOpenProject('to reopen the journey folder');
+    await waitFor('journey project to reopen', async () => await storeEval(cdp!, `return state().isProjectOpen && state().directoryHandle?.name === 'journey-project' ? true : undefined;`) as true | undefined);
+    assert(await storeEval(cdp, `await state().openFile('file:src/Motor.st'); return state().loadedFiles.get('file:src/Motor.st')?.content;`) === edited, 'The reopened project does not show the saved content.');
+    assert(await storeEval(cdp, 'return state().closeProject();') === true, 'The reopened project could not be closed.');
+    await waitFor('Welcome screen before the example copy', async () => await cdp!.evaluate(welcomeVisible) === true ? true : undefined);
+    // The example copy writes into a real folder through the same dialog.
+    const copiedFolder = join(tempRoot, 'copied-motor-start-stop'); mkdirSync(copiedFolder);
+    answerDialog(copiedFolder);
     assert(await cdp.evaluate(click('Motor Start Stop')) === true, 'Motor Start Stop example button is not actionable.');
-    const copiedExample = await waitFor('copied Motor Start Stop example', async () => await cdp!.evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const state = useIDEStore.getState(); const copy = window.__zplcSmokeExampleCopy; return state.isProjectOpen && state.directoryHandle === copy.handle ? { pickerCalls: copy.pickerCalls, migrationPreview: state.projectMigrationPreview, scenario: copy.files.get('tests/motor-start-stop.scenario.json'), active: state.activeFileId } : undefined; })`) as { pickerCalls: number; migrationPreview: unknown; scenario: string | undefined; active: string | null } | undefined);
-    assert(copiedExample?.pickerCalls === 1 && copiedExample.migrationPreview === null && typeof copiedExample.scenario === 'string' && copiedExample.active === 'file:src/Motor.st', `Example copy did not finish as one disk-backed session: ${JSON.stringify(copiedExample)}`);
+    const copiedExample = await waitFor('copied Motor Start Stop example', async () => await storeEval(cdp!, `return state().isProjectOpen && state().directoryHandle?.name === 'copied-motor-start-stop' ? { pickerCalls: window.__zplcSmokePickerCalls, migrationPreview: state().projectMigrationPreview, active: state().activeFileId } : undefined;`) as { pickerCalls: number; migrationPreview: unknown; active: string | null } | undefined);
+    assert(copiedExample?.pickerCalls === 0 && copiedExample.migrationPreview === null && copiedExample.active === 'file:src/Motor.st' && existsSync(join(copiedFolder, 'tests', 'motor-start-stop.scenario.json')) && existsSync(join(copiedFolder, 'zplc.json')), `Example copy did not finish as one disk-backed session without a renderer picker: ${JSON.stringify(copiedExample)}`);
     // UX-017: the separator between the editor and the lower panel is visible, reachable, movable by keyboard and pointer, and remembered.
     const separatorState = `(() => { const el = document.querySelector('[role="separator"]'); const probe = document.createElement('div'); probe.style.backgroundColor = 'var(--color-accent-blue)'; document.body.append(probe); const cobalt = getComputedStyle(probe).backgroundColor; probe.remove(); if (!el) return null; const box = el.getBoundingClientRect(); const saved = JSON.parse(localStorage.getItem('react-resizable-panels:zplc-ide-workspace') ?? 'null'); return { state: el.getAttribute('data-separator'), orientation: el.getAttribute('aria-orientation'), tabindex: el.getAttribute('tabindex'), label: el.getAttribute('aria-label'), now: Number(el.getAttribute('aria-valuenow')), height: box.height, x: box.x + box.width / 2, y: box.y + box.height / 2, background: getComputedStyle(el).backgroundColor, cobalt, saved, focused: document.activeElement === el }; })()`;
     type SeparatorState = { state: string; orientation: string; tabindex: string; label: string; now: number; height: number; x: number; y: number; background: string; cobalt: string; saved: { editor?: number; console?: number } | null; focused: boolean };

@@ -1,6 +1,10 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { describe, expect, it, mock } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
+
+import { createProjectFiles } from '../../electron/projectFiles';
+import { PROJECT_FILES_CHANNEL, PROJECT_FILES_OPS, type ProjectFilesBridge } from '../../electron/projectFilesProtocol';
 
 import { DEFAULT_DEBUG_POLLING_INTERVAL_MS } from './debugDefaults';
 import { WATCH_FORCE_STATE, type WatchForceEntry } from '../runtime/debugAdapter';
@@ -1467,5 +1471,141 @@ describe('useIDEStore folder open failures on the start screen', () => {
     expect(useIDEStore.getState().projectOpenError).toBe('second problem');
     useIDEStore.setState({ projectOpenError: null });
     expect(useIDEStore.getState().projectOpenError).toBeNull();
+  });
+});
+
+describe('useIDEStore project folders over the project-files bridge', () => {
+  let sandbox: string;
+  let folder: string;
+  let answer: string | null;
+  let pickerCalls: number;
+
+  beforeEach(() => {
+    sandbox = realpathSync(mkdtempSync(join(tmpdir(), 'zplc-store-bridge-')));
+    folder = join(sandbox, 'plant');
+    mkdirSync(folder);
+    answer = folder;
+    pickerCalls = 0;
+    const files = createProjectFiles(async () => answer);
+    const send = (channel: string, args: unknown[]) => files.handle(1, channel, args);
+    const calls = PROJECT_FILES_OPS.map((op) => [op, (request: object) => send(PROJECT_FILES_CHANNEL[op], [request])] as const);
+    const bridge = { chooseFolder: () => send(PROJECT_FILES_CHANNEL.chooseFolder, []), ...Object.fromEntries(calls) } as ProjectFilesBridge;
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      value: { electronAPI: { isElectron: true, projectFiles: bridge }, showDirectoryPicker: async () => { pickerCalls += 1; throw new Error('browser picker'); } },
+    });
+    useIDEStore.setState({ isProjectOpen: false, projectConfigDirty: false, loadedFiles: new Map(), fileTree: null, directoryHandle: null, projectOpenError: null, isConsoleCollapsed: false, activeConsoleTab: 'output' });
+    useIDEStore.getState().clearForcedValues();
+    useIDEStore.getState().clearConsole();
+  });
+
+  afterEach(() => {
+    delete (globalThis as { window?: unknown }).window;
+    rmSync(sandbox, { recursive: true, force: true });
+  });
+
+  const seedFolder = () => {
+    writeFileSync(join(folder, 'zplc.json'), JSON.stringify({ ...DEFAULT_ZPLC_CONFIG, name: 'plant' }));
+    mkdirSync(join(folder, 'src'));
+    writeFileSync(join(folder, 'src', 'main.st'), 'PROGRAM Main\nEND_PROGRAM\n');
+  };
+
+  it('opens a folder, saves an edit to disk and reads it back after closing and opening again', async () => {
+    seedFolder();
+    await expect(useIDEStore.getState().openProjectFromFolder()).resolves.toBe(true);
+    expect(useIDEStore.getState()).toMatchObject({ isProjectOpen: true, projectName: 'plant', projectOpenError: null });
+    await useIDEStore.getState().openFile('file:src/main.st');
+    useIDEStore.getState().updateFileContent('file:src/main.st', 'PROGRAM Main\n  (* edited *)\nEND_PROGRAM\n');
+    await expect(useIDEStore.getState().saveFile('file:src/main.st')).resolves.toBe(true);
+    expect(readFileSync(join(folder, 'src', 'main.st'), 'utf8')).toContain('(* edited *)');
+
+    expect(useIDEStore.getState().closeProject()).toBe(true);
+    await expect(useIDEStore.getState().openProjectFromFolder()).resolves.toBe(true);
+    await useIDEStore.getState().openFile('file:src/main.st');
+    expect(useIDEStore.getState().loadedFiles.get('file:src/main.st')?.content).toContain('(* edited *)');
+    expect(pickerCalls).toBe(0);
+  });
+
+  it('creates a project in an empty folder', async () => {
+    await expect(useIDEStore.getState().createNewProjectInFolder()).resolves.toBe(true);
+    expect(useIDEStore.getState()).toMatchObject({ isProjectOpen: true, projectName: 'plant' });
+    expect(existsSync(join(folder, 'zplc.json')) && existsSync(join(folder, 'src', 'main.st'))).toBe(true);
+    expect(pickerCalls).toBe(0);
+  });
+
+  it('copies an example, and the Learn exercise, into a chosen folder and opens its first file', async () => {
+    loadedExample = { zplcConfig: { ...DEFAULT_ZPLC_CONFIG, name: 'Copied example' }, migrationPreview: null };
+    loadedExampleAssets = [{ path: 'src/main.st', content: 'PROGRAM Main END_PROGRAM' }, { path: 'tests/main.scenario.json', content: '{"schemaVersion":1}' }];
+    await expect(useIDEStore.getState().copyExampleProjectToFolder('example')).resolves.toBe(true);
+    expect(readFileSync(join(folder, 'tests', 'main.scenario.json'), 'utf8')).toBe('{"schemaVersion":1}');
+    expect(useIDEStore.getState()).toMatchObject({ isProjectOpen: true, activeFileId: 'file:src/main.st', projectOpenError: null });
+    expect(useIDEStore.getState().loadedFiles.get('file:src/main.st')?.content).toBe('PROGRAM Main END_PROGRAM');
+    expect(pickerCalls).toBe(0);
+  });
+
+  it('shows nothing and changes nothing when the dialog is cancelled', async () => {
+    loadedExample = { zplcConfig: { ...DEFAULT_ZPLC_CONFIG, name: 'Copied example' }, migrationPreview: null };
+    loadedExampleAssets = [{ path: 'src/main.st', content: 'PROGRAM Main END_PROGRAM' }];
+    answer = null;
+    const before = useIDEStore.getState().consoleEntries.length;
+    await expect(useIDEStore.getState().openProjectFromFolder()).resolves.toBe(false);
+    await expect(useIDEStore.getState().createNewProjectInFolder()).resolves.toBe(false);
+    await expect(useIDEStore.getState().copyExampleProjectToFolder('example')).resolves.toBe(false);
+    expect(useIDEStore.getState()).toMatchObject({ isProjectOpen: false, projectOpenError: null });
+    expect(useIDEStore.getState().consoleEntries.length).toBe(before);
+  });
+
+  it('shows a short message without a path where the action started, on the start screen', async () => {
+    answer = join(sandbox, 'missing');
+    await expect(useIDEStore.getState().openProjectFromFolder()).resolves.toBe(false);
+    expect(useIDEStore.getState().projectOpenError).toBe('Failed to open folder. The folder, or a file in it, was not found.');
+    await expect(useIDEStore.getState().createNewProjectInFolder()).resolves.toBe(false);
+    expect(useIDEStore.getState().projectOpenError).toBe('Failed to create project: The folder, or a file in it, was not found.');
+    expect(useIDEStore.getState().consoleEntries.map((entry) => entry.message).join('\n')).not.toContain(sandbox);
+  });
+
+  it('brings a failed open to the visible console of a workbench that already has a project', async () => {
+    seedFolder();
+    await useIDEStore.getState().openProjectFromFolder();
+    useIDEStore.setState({ isConsoleCollapsed: true, activeConsoleTab: 'watch' });
+    answer = join(sandbox, 'missing');
+    await expect(useIDEStore.getState().openProjectFromFolder()).resolves.toBe(false);
+    expect(useIDEStore.getState()).toMatchObject({ isProjectOpen: true, isConsoleCollapsed: false, activeConsoleTab: 'output' });
+    expect(useIDEStore.getState().consoleEntries.at(-1)).toMatchObject({ type: 'error', message: expect.stringContaining('Failed to open folder') });
+  });
+
+  it('keeps the Learn tab in view when copying its exercise fails: the panel shows the reason itself', async () => {
+    loadedExample = { zplcConfig: { ...DEFAULT_ZPLC_CONFIG, name: 'Copied example' }, migrationPreview: null };
+    loadedExampleAssets = [{ path: 'src/main.st', content: 'PROGRAM Main END_PROGRAM' }];
+    useIDEStore.setState({ isConsoleCollapsed: true, activeConsoleTab: 'learn' });
+    answer = join(sandbox, 'missing');
+    await expect(useIDEStore.getState().copyExampleProjectToFolder('example')).resolves.toBe(false);
+    expect(useIDEStore.getState()).toMatchObject({ isConsoleCollapsed: false, activeConsoleTab: 'learn' });
+    expect(useIDEStore.getState().projectOpenError).toBe('Failed to copy example: The folder, or a file in it, was not found.');
+  });
+
+  it('shows why a save failed in the visible console, with no path, and keeps the edit', async () => {
+    seedFolder();
+    await useIDEStore.getState().openProjectFromFolder();
+    await useIDEStore.getState().openFile('file:src/main.st');
+    useIDEStore.getState().updateFileContent('file:src/main.st', 'x'.repeat(16 * 1024 * 1024 + 1));
+    useIDEStore.setState({ isConsoleCollapsed: true, activeConsoleTab: 'watch' });
+    await expect(useIDEStore.getState().saveFile('file:src/main.st')).resolves.toBe(false);
+    const state = useIDEStore.getState();
+    expect(state).toMatchObject({ isConsoleCollapsed: false, activeConsoleTab: 'output' });
+    expect(state.consoleEntries.at(-1)).toMatchObject({ type: 'error', message: 'Failed to save main.st: The file is larger than 16 MiB.' });
+    expect(state.loadedFiles.get('file:src/main.st')?.isModified).toBe(true);
+    expect(readFileSync(join(folder, 'src', 'main.st'), 'utf8')).toBe('PROGRAM Main\nEND_PROGRAM\n');
+  });
+
+  it('shows a failed project-configuration save in the visible console too', async () => {
+    seedFolder();
+    await useIDEStore.getState().openProjectFromFolder();
+    rmSync(join(folder, 'zplc.json'));
+    mkdirSync(join(folder, 'zplc.json'));
+    useIDEStore.setState({ isConsoleCollapsed: true, activeConsoleTab: 'watch' });
+    await useIDEStore.getState().saveProjectConfig();
+    expect(useIDEStore.getState()).toMatchObject({ isConsoleCollapsed: false, activeConsoleTab: 'output' });
+    expect(useIDEStore.getState().consoleEntries.at(-1)).toMatchObject({ type: 'error', message: expect.stringContaining('Failed to save config') });
   });
 });

@@ -20,6 +20,8 @@ import { createAiProvider } from './aiProvider.js';
 import { createLearnProgressStore } from './learnProgressStore.js';
 import { buildApplicationMenu, describeApplicationMenu } from './appMenu.js';
 import { createCloseGuard } from './closeGuard.js';
+import { createProjectFiles, readFolderDialogHook } from './projectFiles.js';
+import { PROJECT_FILES_CHANNEL } from './projectFilesProtocol.js';
 import {
   DEFAULT_DEVELOPMENT_RENDERER_PORT,
   createContentSecurityPolicy,
@@ -95,6 +97,7 @@ const workspaceTestGateway = createWorkspaceTestGateway();
 const firmwareBuildGateway = createFirmwareBuildGateway();
 const toolExecutionAudit = createToolExecutionAudit();
 const closeGuard = createCloseGuard();
+const projectFiles = createProjectFiles(chooseProjectDirectory);
 const toolApiUrl = pathToFileURL(path.join(__dirname, 'toolApi.js')).href;
 let aiProvider: ReturnType<typeof createAiProvider> | null = null;
 let learnProgress: ReturnType<typeof createLearnProgressStore> | null = null;
@@ -256,6 +259,7 @@ function nativeSimulationBelongsTo(owner: RendererOwner): boolean {
 function revokeRendererOwner(ownerId: number): void {
   workspaceTestGateway.revokeOwner(ownerId);
   firmwareBuildGateway.revokeOwner(ownerId);
+  projectFiles.revokeOwner(ownerId);
   aiProvider?.cancel();
   if (activeRendererOwner?.ownerId === ownerId) {
     activeRendererOwner = null;
@@ -287,6 +291,19 @@ function requestReload(): void {
   if (!mainWindow) return;
   if (closeGuard.request('reload') === 'proceed') mainWindow.webContents.reload();
   else askRendererBeforeLosingWork('reload');
+}
+
+/**
+ * The native folder dialog of the main window: the only way a project root is chosen (IDE-001).
+ * A host that is not packaged may answer it from a test file (T7.5); a packaged build never does.
+ */
+async function chooseProjectDirectory(ownerId: number): Promise<string | null> {
+  const win = mainWindow;
+  if (!win || win.isDestroyed() || win.webContents.id !== ownerId) return null;
+  const answer = readFolderDialogHook(app.isPackaged, process.env);
+  if (answer !== undefined) return answer;
+  const result = await dialog.showOpenDialog(win, { title: 'Choose project folder', properties: ['openDirectory', 'createDirectory'] });
+  return result.canceled ? null : result.filePaths[0] ?? null;
 }
 
 const APP_WINDOW_TITLE = 'ZPLC Studio';
@@ -517,6 +534,17 @@ function setupIPC(): void {
     if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied');
     return [...mastered];
   });
+
+  // Project files (IDE-001): the sender is checked here, the message and the path inside the shared handler.
+  for (const channel of Object.values(PROJECT_FILES_CHANNEL)) {
+    ipcMain.handle(channel, async (event, ...args: unknown[]) => {
+      const owner = currentRendererOwner(event);
+      if (!owner) throw new Error('Request denied');
+      const result = await projectFiles.handle(owner.ownerId, channel, args);
+      if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied');
+      return result;
+    });
+  }
 
   ipcMain.handle(NATIVE_SIMULATION_CHANNEL.START_SESSION, async (event) => {
     const owner = currentRendererOwner(event);

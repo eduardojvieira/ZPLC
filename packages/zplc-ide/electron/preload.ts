@@ -49,6 +49,19 @@ const AI_PROVIDER_CHANNEL = {
   GET_STATUS: 'ai-provider:get-status', GET_CONFIG: 'ai-provider:get-config', SAVE_CONFIG: 'ai-provider:save-config',
   STORE_KEY: 'ai-provider:store-key', CLEAR_KEY: 'ai-provider:clear-key', REQUEST: 'ai-provider:request', CANCEL: 'ai-provider:cancel',
 } as const;
+// Repeats projectFilesProtocol.ts: a sandboxed preload cannot require it, and even a type import would make
+// the preload compile re-emit that module as CommonJS over the ES module the main process loads.
+// projectFilesIpc.test.ts keeps this copy equal to the shared one.
+const PROJECT_FILES_CHANNEL = {
+  chooseFolder: 'project-files:choose-folder',
+  list: 'project-files:list',
+  stat: 'project-files:stat',
+  read: 'project-files:read',
+  write: 'project-files:write',
+  mkdir: 'project-files:mkdir',
+  remove: 'project-files:remove',
+  rename: 'project-files:rename',
+} as const;
 const LEARN_PROGRESS_CHANNEL = { READ: 'learn-progress:read', MERGE: 'learn-progress:merge' } as const;
 const CLOSE_GUARD_CHANNEL = { SET_DIRTY: 'close-guard:set-dirty', CLOSE_NOW: 'close-guard:close-now', CLOSE_REQUESTED: 'close-guard:close-requested' } as const;
 type GuardedAction = 'close' | 'reload';
@@ -110,6 +123,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.removeListener(CLOSE_GUARD_CHANNEL.CLOSE_REQUESTED, listener);
       };
     },
+  },
+  // The folder is chosen by a native dialog in the main process; the renderer sends typed requests, never a root path.
+  // The request and result types are ProjectFilesBridge in projectFilesProtocol.ts, applied by the renderer.
+  projectFiles: {
+    chooseFolder: () => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.chooseFolder) as Promise<unknown>,
+    list: (request: unknown) => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.list, request) as Promise<unknown>,
+    stat: (request: unknown) => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.stat, request) as Promise<unknown>,
+    read: (request: unknown) => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.read, request) as Promise<unknown>,
+    write: (request: unknown) => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.write, request) as Promise<unknown>,
+    mkdir: (request: unknown) => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.mkdir, request) as Promise<unknown>,
+    remove: (request: unknown) => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.remove, request) as Promise<unknown>,
+    rename: (request: unknown) => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.rename, request) as Promise<unknown>,
   },
   learnProgress: {
     read: () => ipcRenderer.invoke(LEARN_PROGRESS_CHANNEL.READ) as Promise<string[]>,

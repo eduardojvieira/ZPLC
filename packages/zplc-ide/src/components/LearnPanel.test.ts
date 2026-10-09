@@ -2,6 +2,16 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'bun:test';
 
+describe('Learn panel failures', () => {
+  it('shows why the exercise could not be copied, in the panel where the action started, and nothing for a cancelled dialog', () => {
+    const source = readFileSync(join(import.meta.dir, 'LearnPanel.tsx'), 'utf8');
+    expect(source).toContain("const projectOpenError = useIDEStore((state) => state.projectOpenError);");
+    expect(source).toContain("else if (useIDEStore.getState().projectOpenError) setCopyStatus('failed');");
+    expect(source).toContain("copyStatus === 'failed' && projectOpenError && <p role=\"alert\" data-learn-copy-error");
+    expect(source).toContain('{projectOpenError}</p>');
+  });
+});
+
 describe('Learn panel contract', () => {
   it('selects either canonical example, copies it only through the folder action, and opens Tests without running anything', () => {
     const source = readFileSync(join(import.meta.dir, 'LearnPanel.tsx'), 'utf8');

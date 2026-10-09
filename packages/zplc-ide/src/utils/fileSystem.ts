@@ -17,7 +17,9 @@ import { parseAndMigrateProject, type ProjectMigrationChange, type ProjectModelD
 import { 
   getLanguageFromFilename,
   DEFAULT_ZPLC_CONFIG,
+  isFileSystemAccessSupported,
 } from '../types';
+import { chooseProjectFolder } from '../ipc/projectFilesHandles';
 
 const PROJECT_CONFIG_MAX_BYTES = 128 * 1024;
 
@@ -25,20 +27,20 @@ const PROJECT_CONFIG_MAX_BYTES = 128 * 1024;
 // Feature Detection
 // =============================================================================
 
-/** Check if File System Access API is supported */
-export function isFileSystemAccessSupported(): boolean {
-  return 'showDirectoryPicker' in window;
-}
+export { isFileSystemAccessSupported };
 
 // =============================================================================
 // Directory Picker
 // =============================================================================
 
 /**
- * Open a directory picker dialog
+ * Open a directory picker dialog. In the desktop app the main process shows the native dialog and owns the
+ * chosen root; the renderer gets handles over typed requests and never a filesystem permission (IDE-001).
  * @returns Directory handle or null if cancelled
  */
 export async function openDirectoryPicker(): Promise<FileSystemDirectoryHandle | null> {
+  const bridge = window.electronAPI?.projectFiles;
+  if (bridge) return chooseProjectFolder(bridge);
   if (!isFileSystemAccessSupported()) {
     throw new Error('File System Access API is not supported in this browser. Use Chrome or Edge.');
   }
