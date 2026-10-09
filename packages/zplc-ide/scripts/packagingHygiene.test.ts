@@ -112,3 +112,24 @@ describe('the main process and the hook module', () => {
     expect(main).toMatch(/if \(!app\.isPackaged\) \{\n\s+const \{ readFolderDialogHook \} = await import\('\.\/devFolderDialogHook\.js'\);/);
   });
 });
+
+describe('deploy-docs.yml', () => {
+  type Step = { name?: string; run?: string; 'working-directory'?: string };
+  const repository = join(import.meta.dir, '..', '..', '..');
+  const workflow = Bun.YAML.parse(readFileSync(join(repository, '.github', 'workflows', 'deploy-docs.yml'), 'utf8')) as { jobs: { build: { steps: Step[] } } };
+  const scriptsOf = (directory: string) => (JSON.parse(readFileSync(join(repository, directory, 'package.json'), 'utf8')) as { scripts: Record<string, string> }).scripts;
+
+  it('runs only package scripts that exist in the directory the step runs in', () => {
+    const calls = workflow.jobs.build.steps.flatMap((step) =>
+      [...(step.run ?? '').matchAll(/^\s*bun run ([^\s]+)/gm)].map(([, script]) => ({ directory: step['working-directory'] ?? '.', script: script! })));
+    expect(calls.length).toBeGreaterThan(0);
+    for (const { directory, script } of calls) expect(Object.keys(scriptsOf(directory))).toContain(script);
+  });
+
+  it('generates and validates the documentation references with the scripts the CI docs job uses', () => {
+    const step = workflow.jobs.build.steps.find((candidate) => candidate.name === 'Generate and validate docs references');
+    expect(step?.['working-directory']).toBe('docs');
+    expect(step?.run).toContain('bun run generate:docs');
+    expect(step?.run).toContain('bun run validate:docs');
+  });
+});
