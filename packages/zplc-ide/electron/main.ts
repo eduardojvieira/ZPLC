@@ -20,7 +20,7 @@ import { createAiProvider } from './aiProvider.js';
 import { createLearnProgressStore } from './learnProgressStore.js';
 import { buildApplicationMenu, describeApplicationMenu } from './appMenu.js';
 import { createCloseGuard } from './closeGuard.js';
-import { createProjectFiles, readFolderDialogHook } from './projectFiles.js';
+import { createProjectFiles } from './projectFiles.js';
 import { record, workspaceCompileFailure } from './workspaceCompileFailure.js';
 import { PROJECT_FILES_CHANNEL } from './projectFilesProtocol.js';
 import {
@@ -270,13 +270,17 @@ function requestReload(): void {
 
 /**
  * The native folder dialog of the main window: the only way a project root is chosen (IDE-001).
- * A host that is not packaged may answer it from a test file (T7.5); a packaged build never does.
+ * A host that is not packaged may answer it from a test file (T7.5); a packaged build never does, and its archive
+ * does not even hold the module that reads the file (VF-008), so the module is imported only when not packaged.
  */
 async function chooseProjectDirectory(ownerId: number): Promise<string | null> {
   const win = mainWindow;
   if (!win || win.isDestroyed() || win.webContents.id !== ownerId) return null;
-  const answer = readFolderDialogHook(app.isPackaged, process.env);
-  if (answer !== undefined) return answer;
+  if (!app.isPackaged) {
+    const { readFolderDialogHook } = await import('./devFolderDialogHook.js');
+    const answer = readFolderDialogHook(app.isPackaged, process.env);
+    if (answer !== undefined) return answer;
+  }
   const result = await dialog.showOpenDialog(win, { title: 'Choose project folder', properties: ['openDirectory', 'createDirectory'] });
   return result.canceled ? null : result.filePaths[0] ?? null;
 }
