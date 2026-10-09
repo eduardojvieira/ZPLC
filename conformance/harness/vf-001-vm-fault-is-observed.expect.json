@@ -1,0 +1,8 @@
+{
+  "requirement": "VF-001",
+  "title": "a division by zero ends the scan in a VM fault and stores nothing",
+  "scans": 1,
+  "scanMs": 10,
+  "fault": true,
+  "expect": [{ "at": "%QW0", "type": "INT", "value": 0 }]
+}

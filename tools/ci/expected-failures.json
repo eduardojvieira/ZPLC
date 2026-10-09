@@ -1,1 +1,3 @@
-[]
+[
+  { "test": "packages/zplc-ide/src/conformance/conformance.test.ts > conformance > CMP-011 INT division of a negative operand", "requirement": "CMP-011", "added": "2026-10-09", "reason": "observed 32764 where -4 is expected: 16-bit loads are zero-extended, so a negative INT operand is read as a large positive one" }
+]

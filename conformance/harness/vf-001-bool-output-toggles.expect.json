@@ -1,0 +1,12 @@
+{
+  "requirement": "VF-001",
+  "title": "BOOL output toggles on every scan",
+  "scans": 4,
+  "scanMs": 10,
+  "expect": [
+    { "at": "%QX0.0", "type": "BOOL", "value": true, "afterScan": 1 },
+    { "at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 2 },
+    { "at": "%QX0.0", "type": "BOOL", "value": true, "afterScan": 3 },
+    { "at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 4 }
+  ]
+}

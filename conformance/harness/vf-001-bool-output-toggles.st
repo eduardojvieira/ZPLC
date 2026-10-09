@@ -1,0 +1,6 @@
+PROGRAM Toggle
+VAR
+  q AT %QX0.0 : BOOL;
+END_VAR
+  q := NOT q;
+END_PROGRAM
