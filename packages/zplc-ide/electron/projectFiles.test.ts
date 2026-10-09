@@ -104,6 +104,38 @@ describe('choosing the project folder', () => {
   });
 });
 
+describe('the root held for the main process (IDE-001)', () => {
+  it('is the real path of the folder the window chose, for the window and the root id that chose it', async () => {
+    const { files, rootId } = await open();
+    expect(files.rootOf(OWNER, rootId)).toBe(root);
+  });
+
+  it('is the real path even when the dialog answered with a link to the folder', async () => {
+    const link = path.join(sandbox, 'link');
+    symlinkSync(root, link);
+    const { files, rootId } = await open(link);
+    expect(files.rootOf(OWNER, rootId)).toBe(root);
+  });
+
+  it('is nothing for another window, another root id, a malformed id, or a folder that was never chosen', async () => {
+    const { files, rootId } = await open();
+    expect(files.rootOf(OWNER + 1, rootId)).toBeNull();
+    expect(files.rootOf(OWNER, `${rootId}x`)).toBeNull();
+    expect(files.rootOf(OWNER, '')).toBeNull();
+    expect(files.rootOf(OWNER, undefined as unknown as string)).toBeNull();
+    expect(createProjectFiles(async () => root).rootOf(OWNER, rootId)).toBeNull();
+  });
+
+  it('is nothing once a later choice replaced the folder, or the window was revoked', async () => {
+    const { files, rootId } = await open();
+    const again = await files.handle(OWNER, PROJECT_FILES_CHANNEL.chooseFolder, []);
+    expect(files.rootOf(OWNER, rootId)).toBeNull();
+    expect(files.rootOf(OWNER, (again as { value: ProjectFolder }).value.rootId)).toBe(root);
+    files.revokeOwner(OWNER);
+    expect(files.rootOf(OWNER, (again as { value: ProjectFolder }).value.rootId)).toBeNull();
+  });
+});
+
 describe('operations inside the project root', () => {
   it('lists, reads, writes, creates, renames and deletes', async () => {
     const { call } = await open();

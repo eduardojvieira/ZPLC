@@ -49,6 +49,7 @@ declare global {
       };
       workspaceTests: {
         registerProjectFile: (file: File) => Promise<{ workspaceId: string } | null>;
+        registerProjectRoot: (request: { rootId: string }) => Promise<{ workspaceId: string } | null>;
         run: (request: { workspaceId: string; scenarioId?: string }) => Promise<unknown>;
         cancel: () => Promise<{ requested: boolean }>;
         compile: (request: { workspaceId: string }) => Promise<unknown>;

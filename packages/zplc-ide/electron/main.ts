@@ -28,6 +28,7 @@ import {
   createContentSecurityPolicy,
   isAllowedNativeSimulationRequest,
   isAllowedWorkspaceTestRequest,
+  isAllowedWorkspaceRootRequest,
   isAllowedWorkspaceTestRunRequest,
   isAllowedFirmwareBuildRequest,
   isAllowedCandidateChangeSetReviewRequest,
@@ -52,6 +53,7 @@ const NATIVE_SIMULATION_CHANNEL = {
 
 const WORKSPACE_TESTS_CHANNEL = {
   REGISTER_PROJECT_FILE: 'workspace-tests:register-project-file',
+  REGISTER_PROJECT_ROOT: 'workspace-tests:register-project-root',
   RUN: 'workspace-tests:run',
   CANCEL: 'workspace-tests:cancel',
   COMPILE: 'workspace-tests:compile',
@@ -594,6 +596,23 @@ function setupIPC(): void {
     const manifestPath = args[0];
     try {
       const token = await workspaceTestGateway.registerProjectManifest(owner.ownerId, manifestPath);
+      if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied');
+      return token;
+    } catch {
+      throw new Error('Workspace operation failed');
+    }
+  });
+
+  // The project folder the window chose is the workspace of Build, Tests and Simulate: the renderer sends the id of
+  // that folder, never a path, and no zplc.json has to be chosen again (IDE-001).
+  ipcMain.handle(WORKSPACE_TESTS_CHANNEL.REGISTER_PROJECT_ROOT, async (event, ...args: unknown[]) => {
+    const owner = currentRendererOwner(event);
+    const request = args[0];
+    if (args.length !== 1 || !owner || !isAllowedWorkspaceRootRequest(request)) throw new Error('Request denied');
+    const root = projectFiles.rootOf(owner.ownerId, request.rootId);
+    if (root === null) throw new Error('Workspace operation failed');
+    try {
+      const token = await workspaceTestGateway.registerProjectManifest(owner.ownerId, path.join(root, 'zplc.json'));
       if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied');
       return token;
     } catch {

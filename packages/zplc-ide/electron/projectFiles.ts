@@ -2,11 +2,11 @@
  * Project files owned by the main process (IDE-001, first task).
  *
  * The folder is chosen only through the native dialog; its real path is kept here, per window, and never
- * leaves this module. The renderer asks for typed operations on paths relative to that root. Every
+ * reaches the renderer. The renderer asks for typed operations on paths relative to that root. Every
  * operation resolves its path through `locate`, the one containment check: no absolute path, no ".."
  * segment, and the real path of the target (or of its nearest existing ancestor) must lie inside the
  * real path of the root, so a link that leaves the folder is refused. Results carry a typed code and
- * never a path or an operating-system message.
+ * never a path or an operating-system message. Only `rootOf` hands the real path out, to the main process.
  *
  * ponytail: the check and the use are separate system calls, so a local process that swaps a link inside
  * the project between them can defeat containment. Upgrade: descriptor-relative operations (`openat`)
@@ -257,6 +257,15 @@ export function createProjectFiles(chooseDirectory: (ownerId: number) => Promise
       } catch (error) {
         return { ok: false, code: codeOf(error) };
       }
+    },
+
+    /**
+     * The real path of the window's folder, for the main process only: Build, Tests and Simulate register it as their
+     * workspace (IDE-001) without the renderer ever naming a path. Null unless `rootId` is the id of the window's current folder.
+     */
+    rootOf(ownerId: number, rootId: string): string | null {
+      const folder = folders.get(ownerId);
+      return folder !== undefined && folder.id === rootId ? folder.real : null;
     },
 
     /** Forgets the window's folder: the document changed or the window went away. */
