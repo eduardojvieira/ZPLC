@@ -4,6 +4,9 @@
  */
 
 #define _POSIX_C_SOURCE 200809L
+#ifdef __APPLE__
+#define _DARWIN_C_SOURCE 1 /* macOS hides mkdtemp under a strict _POSIX_C_SOURCE */
+#endif
 
 #include "native_runtime_session.h"
 #include "native_program_store.h"
@@ -49,6 +52,17 @@ static void remove_persist_root(const char *root)
         (void)unlink(path);
     }
     (void)rmdir(root);
+}
+
+/* Copies an environment value into caller storage and returns that storage, or NULL when the variable is unset. */
+static char *copy_env(const char *name, char *storage, size_t size)
+{
+    const char *value = getenv(name);
+    if (value == NULL) {
+        return NULL;
+    }
+    snprintf(storage, size, "%s", value);
+    return storage;
 }
 
 static void remove_test_persist_root(void)
@@ -1982,12 +1996,14 @@ static void test_native_restore_after_reinit(void)
     char program_hex[512];
     size_t length = 0U;
     char temp_dir[] = "/tmp/zplc_test_persist_XXXXXX";
+    char persist_root_copy[512];
     char *persist_root;
 
     printf("\n=== Test: native restore after reinit ===\n");
 
-    /* Remember original persist root */
-    persist_root = getenv("ZPLC_PERSIST_ROOT");
+    /* Remember original persist root. getenv returns a pointer into the environment, which setenv may free or
+     * reuse (it does on macOS), so keep a copy. */
+    persist_root = copy_env("ZPLC_PERSIST_ROOT", persist_root_copy, sizeof(persist_root_copy));
 
     /* Create a temporary directory for isolated persistence */
     if (mkdtemp(temp_dir) == NULL) {
@@ -2070,12 +2086,13 @@ static void test_native_persist_failure_preserves_clean_session(void)
     uint8_t program[16];
     char program_hex[512];
     size_t length = 0U;
+    char persist_root_copy[512];
     char *persist_root;
 
     printf("\n=== Test: native persist failure rejects load ===\n");
 
-    /* Remember original persist root */
-    persist_root = getenv("ZPLC_PERSIST_ROOT");
+    /* Remember original persist root (a copy: setenv may free the pointer getenv returned) */
+    persist_root = copy_env("ZPLC_PERSIST_ROOT", persist_root_copy, sizeof(persist_root_copy));
 
     /* Point at a non-writable path to force persistence failure */
     setenv("ZPLC_PERSIST_ROOT", "/dev/null/bad", 1);
