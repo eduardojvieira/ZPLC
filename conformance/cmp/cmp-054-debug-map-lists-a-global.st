@@ -1,0 +1,9 @@
+VAR_GLOBAL G : INT; END_VAR
+
+PROGRAM Mapped
+VAR
+  seen AT %QW0 : INT;
+END_VAR
+  G := 9;
+  seen := G;
+END_PROGRAM

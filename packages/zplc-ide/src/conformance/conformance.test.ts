@@ -9,6 +9,7 @@ import { NativeSimulationSupervisor } from '../../electron/nativeSimulationSuper
 import { nativeRuntimeBinary, itNative } from '../cli/nativeRuntimeGuard';
 import { compilerCompile } from '../cli/toolApi';
 import { NativeAdapter } from '../runtime/nativeAdapter';
+import compilerManifest from '../../../zplc-compiler/package.json';
 import { cellLocation, cellSize, loadCases, type Cell, type CellType, type ConformanceCase, type RunExpectation } from './cases';
 
 // Each conformance case runs end to end: the repository compiler (through the Tool API that Studio, the CLI
@@ -36,7 +37,7 @@ function diagnosticText(diagnostics: Array<{ code: string; message: string; phas
   return diagnostics.map(({ code, message, phase, line }) => `${code}${phase ? ` in ${phase}` : ''}${line === undefined ? '' : ` at line ${line}`}: ${message}`).join('; ');
 }
 
-async function workspace(found: ConformanceCase, scanMs: number): Promise<string> {
+async function workspace(found: Pick<ConformanceCase, 'source' | 'extension' | 'extras'>, scanMs: number): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), 'zplc-conformance-'));
   await mkdir(join(root, 'src'));
   const program = `main${found.extension}`;
@@ -149,4 +150,44 @@ describe('conformance', () => {
       expect(await runCase(found)).toEqual([]);
     }, 30_000);
   }
+});
+
+// Properties of a build that hold for every program, so no single case can state them. One committed program stands in for all.
+const sample = { source: join(conformanceRoot, 'cmp', 'cmp-058-selection-and-limit-functions.st'), extension: '.st', extras: [] };
+
+async function build() {
+  const root = await workspace(sample, 10);
+  try {
+    const built = await compilerCompile(root);
+    if (!built.ok || !built.zplcFile || !built.debugMap) throw new Error(`the sample program does not build: ${diagnosticText(built.evidence.diagnostics)}`);
+    return { zplc: built.zplcFile, map: built.debugMap };
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+}
+
+describe('conformance: properties of every build', () => {
+  it('CMP-053 two builds of one project produce the same bytecode', async () => {
+    const [first, second] = [await build(), await build()];
+    expect(Buffer.from(second.zplc).equals(Buffer.from(first.zplc))).toBe(true);
+  });
+
+  it('CMP-053 two builds of one project produce the same debug map', async () => {
+    const first = await build();
+    await Bun.sleep(5); // the map carries a millisecond timestamp
+    expect(JSON.stringify((await build()).map)).toBe(JSON.stringify(first.map));
+  });
+
+  it('CMP-053 the debug map records the version of the compiler package', async () => {
+    expect((await build()).map.compilerVersion).toBe(compilerManifest.version);
+  });
+
+  it('CMP-055 every instruction of a statement resolves to that statement in the debug map', async () => {
+    const statements = Object.values((await build()).map.pou).flatMap((pou) => pou.sourceMap).sort((a, b) => a.pc - b.pc);
+    expect(statements.length).toBeGreaterThan(1);
+    // A statement covers all its instructions: it ends where the next one starts.
+    const gaps = statements.slice(0, -1).flatMap((entry, index) => entry.pc + entry.length === statements[index + 1]!.pc ? []
+      : [`line ${entry.line} ends at ${entry.pc + entry.length}, the next statement starts at ${statements[index + 1]!.pc}`]);
+    expect(gaps).toEqual([]);
+  });
 });

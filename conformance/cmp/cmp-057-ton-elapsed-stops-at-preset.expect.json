@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-057",
+  "title": "TON elapsed time stops at the preset",
+  "scans": 9,
+  "scanMs": 10,
+  "expect": [{ "at": "%QD0", "type": "DINT", "value": 50 }]
+}

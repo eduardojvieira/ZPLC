@@ -1,0 +1,7 @@
+PROGRAM Convert
+VAR
+  n : DINT := 100000;
+  r AT %QD0 : REAL;
+END_VAR
+  r := DINT_TO_REAL(n);
+END_PROGRAM

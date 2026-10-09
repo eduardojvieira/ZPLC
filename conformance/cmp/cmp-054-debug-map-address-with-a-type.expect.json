@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-054",
+  "title": "the debug map gives the address of a variable in a file with a TYPE",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "var": "s", "type": "INT", "value": 42 }]
+}
