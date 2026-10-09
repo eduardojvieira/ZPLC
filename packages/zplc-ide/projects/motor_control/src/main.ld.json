@@ -1,36 +1,28 @@
 {
-  "$schema": "./schemas/ld.schema.json",
   "name": "MotorControl",
-  "description": "Motor Start/Stop with Parallel Branches (LD Branching Demo)",
+  "description": "Motor start/stop with a seal-in contact (LD parallel branch demo)",
   "version": "1.0.0",
 
   "variables": {
-    "local": [
-      {
-        "name": "MotorRunning",
-        "type": "BOOL",
-        "initialValue": false,
-        "comment": "Motor running latch"
-      }
-    ],
+    "local": [],
     "inputs": [
       {
         "name": "StartPB",
         "type": "BOOL",
         "address": "%I0.0",
-        "comment": "Start pushbutton"
+        "comment": "Start pushbutton, normally open: TRUE while pressed"
       },
       {
         "name": "StopPB",
         "type": "BOOL",
         "address": "%I0.1",
-        "comment": "Stop pushbutton (NC)"
+        "comment": "Stop pushbutton, normally open: TRUE while pressed. The rung breaks on a press. A safety stop is wired the other way round (normally-closed button, TRUE while healthy), so that a broken wire also stops the motor."
       },
       {
         "name": "Overload",
         "type": "BOOL",
         "address": "%I0.2",
-        "comment": "Overload relay contact"
+        "comment": "Overload relay: TRUE once it has tripped"
       }
     ],
     "outputs": [
@@ -38,13 +30,13 @@
         "name": "MotorContactor",
         "type": "BOOL",
         "address": "%Q0.0",
-        "comment": "Motor contactor output"
+        "comment": "Motor contactor coil. It is also the seal-in memory, as in a hard-wired relay circuit."
       },
       {
         "name": "RunningLamp",
         "type": "BOOL",
         "address": "%Q0.1",
-        "comment": "Motor running indicator"
+        "comment": "Lamp that follows the contactor command. It is not feedback: a real run lamp would use the contactor auxiliary contact."
       }
     ]
   },
@@ -53,7 +45,7 @@
     {
       "id": "rung_1",
       "number": 1,
-      "comment": "Motor Start/Stop with Seal-In (Parallel Branch Demo)",
+      "comment": "Start / stop with seal-in. The branch puts the Start button in parallel with the contactor's own contact: a press energises the contactor, and the contactor then holds itself on after the button is released. Stop or Overload opens the series contacts and drops it. With Start still held, releasing Stop or Overload runs the motor again; motor_start_stop shows the start-armed version that does not.",
       "grid": [
         [
           { "element": { "id": "stop_nc", "type": "contact_nc", "variable": "StopPB", "row": 0, "col": 0 }, "hasWire": true },
@@ -68,7 +60,7 @@
         [
           { "element": null, "hasWire": false },
           { "element": null, "hasWire": false },
-          { "element": { "id": "seal_in", "type": "contact_no", "variable": "MotorRunning", "row": 1, "col": 2 }, "hasWire": true },
+          { "element": { "id": "seal_in", "type": "contact_no", "variable": "MotorContactor", "row": 1, "col": 2 }, "hasWire": true },
           { "element": null, "hasWire": true },
           { "element": null, "hasWire": true },
           { "element": null, "hasWire": false },
@@ -94,74 +86,10 @@
     {
       "id": "rung_2",
       "number": 2,
-      "comment": "Latch Motor Running State",
+      "comment": "Running lamp follows the contactor",
       "grid": [
         [
-          { "element": { "id": "contactor_no", "type": "contact_no", "variable": "MotorContactor", "row": 0, "col": 0 }, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": { "id": "running_set", "type": "coil_set", "variable": "MotorRunning", "row": 0, "col": 7 }, "hasWire": true }
-        ]
-      ],
-      "gridConfig": {
-        "cols": 8,
-        "rows": 1,
-        "cellWidth": 80,
-        "cellHeight": 60
-      }
-    },
-    {
-      "id": "rung_3",
-      "number": 3,
-      "comment": "Reset Motor Running on Stop or Overload",
-      "grid": [
-        [
-          { "element": { "id": "stop_contact", "type": "contact_no", "variable": "StopPB", "row": 0, "col": 0 }, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": { "id": "running_reset", "type": "coil_reset", "variable": "MotorRunning", "row": 0, "col": 7 }, "hasWire": true }
-        ],
-        [
-          { "element": { "id": "overload_contact", "type": "contact_no", "variable": "Overload", "row": 1, "col": 0 }, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": null, "hasWire": true },
-          { "element": null, "hasWire": false }
-        ]
-      ],
-      "branches": [
-        {
-          "id": "branch_or_stop",
-          "startCol": 0,
-          "endCol": 6,
-          "rows": [0, 1]
-        }
-      ],
-      "gridConfig": {
-        "cols": 8,
-        "rows": 2,
-        "cellWidth": 80,
-        "cellHeight": 60
-      }
-    },
-    {
-      "id": "rung_4",
-      "number": 4,
-      "comment": "Running Indicator Lamp",
-      "grid": [
-        [
-          { "element": { "id": "running_indicator", "type": "contact_no", "variable": "MotorRunning", "row": 0, "col": 0 }, "hasWire": true },
+          { "element": { "id": "running_indicator", "type": "contact_no", "variable": "MotorContactor", "row": 0, "col": 0 }, "hasWire": true },
           { "element": null, "hasWire": true },
           { "element": null, "hasWire": true },
           { "element": null, "hasWire": true },
@@ -184,6 +112,6 @@
     "author": "ZPLC Team",
     "created": "2024-12-24",
     "iecStandard": "IEC 61131-3",
-    "notes": "This example demonstrates parallel branching in LD for a motor start/stop circuit with seal-in logic."
+    "notes": "One latch only: the contactor's own contact in parallel with Start holds the coil on. Compare motor_start_stop, which adds a start-armed condition so a held Start button never restarts the motor by itself."
   }
 }
