@@ -21,9 +21,7 @@ const rootOf = (name: string): string => join(projectsRoot, name);
 
 // Source files that are still not built by any task. The list may only shrink: the test fails when an entry is no
 // longer true, so the entry has to be deleted together with the fix.
-const KNOWN_ORPHANS: Record<string, string[]> = {
-  pico_blinky_ton: ['src/main.st', 'src/main_ton.st'], // LX-5b splits or enables these
-};
+const KNOWN_ORPHANS: Record<string, string[]> = {};
 
 // ---- a JSON Schema (draft-07) subset checker -------------------------------------------------------------------
 // The repository carries no JSON Schema library and this test must not add one, so this checks the keywords that

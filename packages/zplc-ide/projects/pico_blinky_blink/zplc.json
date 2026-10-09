@@ -1,0 +1,43 @@
+{
+  "$schema": "../../zplc.schema.json",
+  "schemaVersion": 2,
+  "name": "Pico Blinky BLINK",
+  "version": "1.0.0",
+  "description": "Raspberry Pi Pico: blinks an LED on GP0 (%Q0.0) every 500 ms with the BLINK function block, a ZPLC extension that is not part of IEC 61131-3. Pin from firmware/app/boards/rpi_pico_rp2040.overlay.",
+  "author": "ZPLC Team",
+  "target": {
+    "board": "rpi_pico",
+    "cpu": "rp2040",
+    "clock_mhz": 125
+  },
+  "compiler": {
+    "optimization": "speed",
+    "debug": true
+  },
+  "io": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "LED_Output",
+        "address": "%Q0.0",
+        "type": "BOOL",
+        "pin": 0,
+        "description": "GP0 (led0 in the Pico overlay): wire an LED with a series resistor to GND"
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "MainTask",
+      "trigger": "cyclic",
+      "interval_ms": 10,
+      "priority": 1,
+      "programs": [
+        "main.st"
+      ]
+    }
+  ],
+  "build": {
+    "outDir": "build"
+  }
+}

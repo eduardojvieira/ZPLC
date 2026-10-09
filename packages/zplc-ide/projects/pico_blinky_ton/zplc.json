@@ -3,12 +3,12 @@
   "schemaVersion": 2,
   "name": "Pico Blinky TON",
   "version": "1.0.0",
-  "description": "Raspberry Pi Pico LED blink demos - counter, BLINK FB, and TON timer versions",
+  "description": "Raspberry Pi Pico: blinks an LED on GP0 (%Q0.0) every 500 ms with an IEC 61131-3 TON timer. Pin from firmware/app/boards/rpi_pico_rp2040.overlay.",
   "author": "ZPLC Team",
   "target": {
     "board": "rpi_pico",
     "cpu": "rp2040",
-    "clock_mhz": 133
+    "clock_mhz": 125
   },
   "compiler": {
     "optimization": "speed",
@@ -21,8 +21,8 @@
         "name": "LED_Output",
         "address": "%Q0.0",
         "type": "BOOL",
-        "pin": 25,
-        "description": "Onboard LED (GPIO 25)"
+        "pin": 0,
+        "description": "GP0 (led0 in the Pico overlay): wire an LED with a series resistor to GND"
       }
     ]
   },
@@ -33,7 +33,7 @@
       "interval_ms": 10,
       "priority": 1,
       "programs": [
-        "main_blink.st"
+        "main.st"
       ]
     }
   ],
