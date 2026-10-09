@@ -589,6 +589,62 @@ describe('useIDEStore folder opening', () => {
     expect(useIDEStore.getState().consoleEntries.some((entry) => entry.message.includes('Copied example project'))).toBe(false);
   });
 
+  describe('starting the Learn course from the Welcome screen', () => {
+    function welcome() {
+      useIDEStore.getState().clearForcedValues();
+      useIDEStore.setState({
+        isProjectOpen: false, projectName: null, projectConfigDirty: false, loadedFiles: new Map(), openTabs: [], projectOpenError: null,
+        activeConsoleTab: 'output', isConsoleCollapsed: true,
+      });
+    }
+
+    it('copies the starter through one picker, opens it and shows the Learn tab', async () => {
+      seedExample();
+      welcome();
+      const destination = exampleDestination();
+      let pickerCalls = 0;
+      await withDirectoryPicker(async () => { pickerCalls += 1; return destination.handle; }, async () => {
+        await expect(useIDEStore.getState().startLearning('motor_start_stop_starter')).resolves.toBe(true);
+      });
+      expect(pickerCalls).toBe(1);
+      expect(destination.files.get('src/main.st')).toBe('PROGRAM Main END_PROGRAM');
+      expect(useIDEStore.getState()).toMatchObject({ isProjectOpen: true, projectName: 'Copied example', activeConsoleTab: 'learn', isConsoleCollapsed: false, projectOpenError: null });
+    });
+
+    it('changes nothing when the dialog is cancelled', async () => {
+      seedExample();
+      welcome();
+      await withDirectoryPicker(null, async () => {
+        await expect(useIDEStore.getState().startLearning('motor_start_stop_starter')).resolves.toBe(false);
+      });
+      expect(useIDEStore.getState()).toMatchObject({ isProjectOpen: false, activeConsoleTab: 'output', isConsoleCollapsed: true, projectOpenError: null });
+    });
+
+    it('shows the failure in place and leaves the console alone when the starter cannot be loaded', async () => {
+      loadedExample = null;
+      welcome();
+      let pickerCalls = 0;
+      await withDirectoryPicker(async () => { pickerCalls += 1; return exampleDestination().handle; }, async () => {
+        await expect(useIDEStore.getState().startLearning('motor_start_stop_starter')).resolves.toBe(false);
+      });
+      expect(pickerCalls).toBe(0);
+      expect(useIDEStore.getState().projectOpenError).toBe('Failed to load example project: motor_start_stop_starter');
+      expect(useIDEStore.getState()).toMatchObject({ isProjectOpen: false });
+      expect(useIDEStore.getState().activeConsoleTab).not.toBe('learn');
+    });
+
+    it('keeps the Learn tab hidden when the folder cannot be written', async () => {
+      seedExample();
+      welcome();
+      const denied = Object.assign(new Error('The request is not allowed by the user agent'), { name: 'NotAllowedError' });
+      await withDirectoryPicker(async () => { throw denied; }, async () => {
+        await expect(useIDEStore.getState().startLearning('motor_start_stop_starter')).resolves.toBe(false);
+      });
+      expect(useIDEStore.getState().projectOpenError).toContain('Failed to copy example');
+      expect(useIDEStore.getState()).toMatchObject({ isProjectOpen: false, activeConsoleTab: 'output', isConsoleCollapsed: false });
+    });
+  });
+
   it('lets the latest clean opening intent win without publishing stale results', async () => {
     const first = deferred<FileSystemDirectoryHandle>();
     const second = deferred<FileSystemDirectoryHandle>();

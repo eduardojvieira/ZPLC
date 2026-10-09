@@ -144,7 +144,7 @@ class Cdp {
 }
 
 async function press(cdp: Cdp, key: string, code = key): Promise<void> {
-  const keyCode = key === 'Enter' ? 13 : key === 'Escape' ? 27 : 0;
+  const keyCode = key === 'Enter' ? 13 : key === 'Escape' ? 27 : key === 'End' ? 35 : 0;
   const text = key === 'Enter' ? '\r' : undefined;
   await cdp.command('Input.dispatchKeyEvent', { type: 'keyDown', key, code, text, unmodifiedText: text, windowsVirtualKeyCode: keyCode });
   await cdp.command('Input.dispatchKeyEvent', { type: 'keyUp', key, code, windowsVirtualKeyCode: keyCode });
@@ -176,7 +176,7 @@ async function main(): Promise<void> {
     assert(identity[1].isPackaged === true && identity[1].platform === process.platform && identity[1].arch === process.arch, `Unexpected packaged preload app info: ${JSON.stringify(identity[1])}`);
     await waitFor('packaged Welcome screen', async () => await cdp!.evaluate(`(() => {
       const heading = document.querySelector('h1');
-      const contrast = document.querySelector('button[aria-label="Toggle high contrast theme"]');
+      const contrast = document.querySelector('select[data-theme-control]');
       return heading?.textContent === 'ZPLC Studio 2.0' && contrast ? true : undefined;
     })()`) as boolean | undefined);
     const rendererBoundary = (await cdp.evaluate(`(() => ({
@@ -204,8 +204,8 @@ async function main(): Promise<void> {
     assert(registeredAccelerators.every((accelerator) => !/^(F5|F12|.*\+(R|I))$/i.test(accelerator)), `Packaged application menu has a reload or developer-tools accelerator: ${menuReport}`);
     const closeGuard = (await cdp.evaluate(`(async () => { const guard = window.electronAPI.closeGuard; return { keys: Object.keys(guard).sort(), accepted: await guard.setDirty(false).then(() => true, () => false), rejected: await guard.setDirty('yes').then(() => false, () => true) }; })()`)) as { keys: string[]; accepted: boolean; rejected: boolean };
     assert(JSON.stringify(closeGuard.keys) === JSON.stringify(['closeNow', 'onCloseRequested', 'setDirty']) && closeGuard.accepted && closeGuard.rejected, `Packaged close guard bridge is not narrow and validated: ${JSON.stringify(closeGuard)}`);
-    assert(await cdp.evaluate(`(() => { const button = document.querySelector('button[aria-label="Toggle high contrast theme"]'); button?.focus(); return Boolean(button && document.activeElement === button && button.matches(':focus-visible') && getComputedStyle(button).outlineStyle !== 'none'); })()`), 'Packaged Welcome high-contrast control is not keyboard focusable.');
-    await press(cdp, 'Enter');
+    assert(await cdp.evaluate(`(() => { const control = document.querySelector('select[data-theme-control]'); control?.focus(); return Boolean(control && document.activeElement === control && control.matches(':focus-visible') && getComputedStyle(control).outlineStyle !== 'none'); })()`), 'Packaged Welcome theme control is not keyboard focusable.');
+    await press(cdp, 'End'); // the last option of the theme select is High contrast
     await waitFor('packaged high-contrast keyboard activation', async () => await cdp!.evaluate(`document.documentElement.classList.contains('high-contrast') && getComputedStyle(document.body).backgroundColor === 'rgb(0, 0, 0)'`) === true ? true : undefined);
     const targetCount = (await fetch(`http://${HOST}:${cdpPort}/json/list`).then((response) => response.json()) as Array<{ type?: string }>).filter((item) => item.type === 'page').length;
     const navigation = (await cdp.evaluate(`(() => { const href = location.href; const opened = window.open('https://example.invalid/zplc-packaged-smoke'); return { href, sameDocument: location.href === href, opened: opened === null }; })()`)) as { sameDocument: boolean; opened: boolean };

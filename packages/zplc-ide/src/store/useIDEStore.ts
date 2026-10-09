@@ -294,6 +294,8 @@ interface IDEState {
   openProjectFromFolder: () => Promise<boolean>;
   createNewProjectInFolder: () => Promise<boolean>;
   copyExampleProjectToFolder: (projectId: string) => Promise<boolean>;
+  /** The Welcome screen's Learn entry: copy the first lesson's starter like any example, then show the Learn tab. */
+  startLearning: (starterExampleId: string) => Promise<boolean>;
   getExampleProjects: () => ProjectInfo[];
   closeProject: (options?: CloseProjectOptions) => boolean;
   updateProjectConfig: (updates: Partial<ZPLCProjectConfig>) => void;
@@ -702,6 +704,13 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       get().reportProjectOpenProblem('error', `Failed to copy example: ${folderErrorReason(error)}`);
       return false;
     }
+  },
+
+  startLearning: async (starterExampleId: string) => {
+    const opened = await get().copyExampleProjectToFolder(starterExampleId);
+    // A cancelled dialog or a failure (shown where it happened) leaves the console as it was.
+    if (opened) set({ activeConsoleTab: 'learn', isConsoleCollapsed: false });
+    return opened;
   },
 
   getExampleProjects: () => {
