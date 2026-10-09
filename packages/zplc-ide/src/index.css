@@ -299,6 +299,18 @@ html, body, #root {
   width: 3px !important;
 }
 
+/* A breakpoint the runtime does not hold (the store's breakpointsInactiveReason is set by the breakpoint sync): the
+   same dot, hollow and grey, so it does not look armed. The ring keeps at least the contrast of the filled dot in every theme. */
+.breakpoint-glyph.breakpoint-glyph-inactive {
+  background: transparent;
+  border: 2px solid var(--color-surface-400);
+  box-shadow: none;
+}
+
+.breakpoint-line-decoration.breakpoint-line-decoration-inactive {
+  background: transparent;
+}
+
 /* Current execution line (yellow highlight when paused) */
 .current-line-highlight {
   background: rgba(239, 68, 68, 0.18) !important;

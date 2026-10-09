@@ -169,3 +169,13 @@ export function breakpointHoverMessage(line: number, inactiveReason: string | nu
     ? `Breakpoint at line ${line} is not active: ${inactiveReason}`
     : `Breakpoint at line ${line}`;
 }
+
+/**
+ * The CSS classes of a breakpoint dot (glyph margin) and of its line bar. While the store holds a reason why the
+ * runtime will not stop at the breakpoints, the dot is drawn hollow and grey (index.css) instead of filled red.
+ */
+export function breakpointDecorationClasses(inactiveReason: string | null): { glyph: string; line: string } {
+  return inactiveReason
+    ? { glyph: 'breakpoint-glyph breakpoint-glyph-inactive', line: 'breakpoint-line-decoration breakpoint-line-decoration-inactive' }
+    : { glyph: 'breakpoint-glyph', line: 'breakpoint-line-decoration' };
+}
