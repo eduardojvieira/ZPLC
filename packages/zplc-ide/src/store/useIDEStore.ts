@@ -5,7 +5,7 @@
  * Supports File System Access API for opening real folders.
  */
 
-import { create } from 'zustand';
+import { create, type StoreApi } from 'zustand';
 import type {
   ConnectionState,
   ConsoleEntry,
@@ -49,6 +49,11 @@ import type { ProjectMigrationChange } from '../project/projectModel';
 import { breakpointFileKey, getBreakpointPCForLine } from '../components/codeEditorBreakpoints';
 import { appendConsoleEntries, type NewConsoleEntry } from './consoleEntries';
 import { folderErrorReason } from '../utils/errorMessages';
+import type { RecentProject } from '../../electron/projectFilesProtocol';
+import { forgetRecentProject as forgetRecentOnBridge, listRecentProjects, markProjectOpened, openRecentFolder, projectRootId } from '../ipc/projectFilesHandles';
+import { loadSession } from '../ipc/sessionBridge';
+import { planRestore, type ViewState, type WorkspaceLayout } from '../utils/sessionState';
+import { flushSession, resetViewStates } from './sessionPersistence';
 import { DEFAULT_DEBUG_POLLING_INTERVAL_MS } from './debugDefaults';
 import { NATIVE_TRACE_LIMIT, type NativeTraceSample } from '../runtime/nativeTrace';
 import type { CanonicalWorkspaceBuildEvidence } from '../components/workspaceTestPresentation';
@@ -284,6 +289,15 @@ interface IDEState {
   projectOpenError: string | null;
   reportProjectOpenProblem: (type: 'error' | 'warning', message: string) => void;
   openProjectFromFolder: () => Promise<boolean>;
+  /** Folders opened before, most recent first, as the main process lists them (desktop app only; IDE-008). */
+  recentProjects: RecentProject[];
+  refreshRecentProjects: () => Promise<void>;
+  /** Reopens a remembered folder without the dialog, with the session it was left in. */
+  openRecentProject: (recentId: string) => Promise<boolean>;
+  forgetRecentProject: (recentId: string) => Promise<void>;
+  /** The split of the workbench the user chose in this project; saved with the session and restored with it. */
+  sessionLayout: WorkspaceLayout | null;
+  setSessionLayout: (layout: WorkspaceLayout | null) => void;
   createNewProjectInFolder: () => Promise<boolean>;
   copyExampleProjectToFolder: (projectId: string) => Promise<boolean>;
   /** The Welcome screen's Learn entry: copy the first lesson's starter like any example, then show the Learn tab. */
@@ -401,6 +415,153 @@ export function applyThemeToDOM(theme: Theme): void {
 }
 
 // =============================================================================
+// Opening a folder that already is a project, and restoring its session (IDE-008)
+// =============================================================================
+
+const projectFilesBridge = () => (typeof window === 'undefined' ? undefined : window.electronAPI?.projectFiles);
+
+interface RestoredSession {
+  files: Map<string, ProjectFileWithHandle>;
+  openTabs: string[];
+  activeFileId: string | null;
+  viewStates: Map<string, ViewState>;
+  layout: WorkspaceLayout | null;
+  consoleCollapsed: boolean | null;
+}
+
+/**
+ * The session the main process saved for this folder, applied to the files that are still there: tabs of files that
+ * were deleted are dropped, and so are those that cannot be read. Never throws and never reports: no session is a project
+ * that opens with no tabs. Only what the files hold on disk comes back, never unsaved content.
+ */
+async function restoreSession(dirHandle: FileSystemDirectoryHandle, tree: FileTreeNode): Promise<RestoredSession | null> {
+  const bridge = typeof window === 'undefined' ? undefined : window.electronAPI?.session;
+  const rootId = projectRootId(dirHandle);
+  if (!bridge || rootId === null) return null;
+  const saved = await loadSession(bridge, rootId);
+  if (!saved) return null;
+  const fileAt = (path: string) => { const node = findFileInTree(tree, path); return node?.type === 'file' ? node : null; };
+  const plan = planRestore(saved, (path) => fileAt(path) !== null);
+  const files = new Map<string, ProjectFileWithHandle>();
+  const paths: string[] = [];
+  for (const path of plan.tabPaths) {
+    try {
+      const loaded = await loadFileFromTree(fileAt(path)!);
+      if (loaded) { files.set(loaded.id, loaded); paths.push(path); }
+    } catch {
+      // An unreadable file is a tab that does not come back.
+    }
+  }
+  const openTabs = paths.map(fileTreeFileId);
+  const activeFileId = plan.activePath !== null && paths.includes(plan.activePath) ? fileTreeFileId(plan.activePath) : openTabs.at(-1) ?? null;
+  return {
+    files, openTabs, activeFileId, layout: plan.layout, consoleCollapsed: plan.consoleCollapsed,
+    viewStates: new Map([...plan.viewStates].filter(([path]) => paths.includes(path))),
+  };
+}
+
+/**
+ * Opens a folder that is already a project, from the dialog or from the recent list: reads zplc.json and the tree,
+ * restores the session, shows the project, and has the main process remember the folder. `pick` answers the folder
+ * (null when the user cancelled).
+ */
+async function openExistingProject(
+  set: StoreApi<IDEState>['setState'],
+  get: StoreApi<IDEState>['getState'],
+  pick: () => Promise<FileSystemDirectoryHandle | null>,
+  failure: string,
+): Promise<boolean> {
+  set({ projectOpenError: null });
+  const blockUnsafeOpen = (): boolean => {
+    const debug = get().debug;
+    if (debug.forcedValues.size > 0 || debug.forcesUnconfirmed) {
+      set({ activeConsoleTab: 'watch', isConsoleCollapsed: false });
+      get().reportProjectOpenProblem('warning', 'Release or verify all forces before closing the project.');
+      return true;
+    }
+    if (get().hasUnsavedChanges()) {
+      get().reportProjectOpenProblem('warning', 'Save or discard changes before opening another folder.');
+      return true;
+    }
+    return false;
+  };
+
+  if (blockUnsafeOpen()) return false;
+  const expectedProjectSession = get().projectSession;
+  const intent = ++openProjectIntent;
+  const isCurrent = () => openProjectIntent === intent && get().projectSession === expectedProjectSession;
+
+  if (!isFileSystemAccessSupported()) {
+    if (!isCurrent()) return false;
+    get().reportProjectOpenProblem('error', 'File System Access API not supported. Use a browser with folder access.');
+    return false;
+  }
+
+  try {
+    // The folder of the window is about to be replaced: the session of the project it holds goes out first.
+    flushSession();
+    const dirHandle = await pick();
+    if (!isCurrent()) return false;
+    if (!dirHandle) return false;
+
+    get().addConsoleEntry({ type: 'info', message: `Opening folder: ${dirHandle.name}...`, source: 'system' });
+
+    const readResult = await readProjectConfig(dirHandle);
+    if (!isCurrent()) return false;
+    if (readResult.kind === 'invalid') {
+      get().reportProjectOpenProblem('error', 'Invalid zplc.json. The existing configuration was not changed.');
+      return false;
+    }
+
+    let config: ZPLCProjectV2;
+    if (readResult.kind === 'valid') {
+      config = readResult.config;
+    } else {
+      get().reportProjectOpenProblem('warning', 'No zplc.json found. This folder was not changed. Use New Project to create a project in an empty folder.');
+      return false;
+    }
+
+    const fileTree = await readDirectoryRecursive(dirHandle);
+    if (!isCurrent()) return false;
+    const restored = await restoreSession(dirHandle, fileTree);
+    if (!isCurrent()) return false;
+    if (blockUnsafeOpen()) return false;
+
+    resetViewStates(restored?.viewStates);
+    set({
+      isProjectOpen: true,
+      projectName: config.name,
+      projectConfig: config,
+      projectMigrationPreview: readResult.changes.length > 0
+        ? { sourceSchemaVersion: readResult.sourceSchemaVersion, targetSchemaVersion: 2, changes: readResult.changes }
+        : null,
+      directoryHandle: dirHandle,
+      fileTree,
+      loadedFiles: restored?.files ?? new Map(),
+      activeFileId: restored?.activeFileId ?? null,
+      openTabs: restored?.openTabs ?? [],
+      sessionLayout: restored?.layout ?? null,
+      ...(restored?.consoleCollapsed != null ? { isConsoleCollapsed: restored.consoleCollapsed } : {}),
+      projectSession: expectedProjectSession + 1,
+      workspaceScenarioLink: null,
+      canonicalWorkspaceBuildEvidence: null,
+      projectConfigDirty: false,
+      compilerMessages: [], compilerMessagesChecked: false, compilerNavigationTarget: null, compilerRunId: get().compilerRunId + 1,
+    });
+
+    if (openProjectIntent !== intent || get().projectSession !== expectedProjectSession + 1) return false;
+    get().addConsoleEntry({ type: 'success', message: `Opened project: ${config.name}`, source: 'system' });
+    const bridge = projectFilesBridge();
+    if (bridge) void markProjectOpened(bridge, dirHandle);
+    return true;
+  } catch (error) {
+    if (!isCurrent()) return false;
+    get().reportProjectOpenProblem('error', `${failure} ${folderErrorReason(error)}`);
+    return false;
+  }
+}
+
+// =============================================================================
 // Store Implementation
 // =============================================================================
 
@@ -420,6 +581,8 @@ export const useIDEStore = create<IDEState>((set, get) => ({
   activeFileId: null,
   openTabs: [],
   projectOpenError: null,
+  recentProjects: [],
+  sessionLayout: null,
 
   connection: {
     status: 'disconnected',
@@ -492,87 +655,27 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     else set({ projectOpenError: message, isConsoleCollapsed: false, ...(get().activeConsoleTab === 'learn' ? {} : { activeConsoleTab: 'output' as const }) });
   },
 
-  openProjectFromFolder: async () => {
-    set({ projectOpenError: null });
-    const blockUnsafeOpen = (): boolean => {
-      const debug = get().debug;
-      if (debug.forcedValues.size > 0 || debug.forcesUnconfirmed) {
-        set({ activeConsoleTab: 'watch', isConsoleCollapsed: false });
-        get().reportProjectOpenProblem('warning', 'Release or verify all forces before closing the project.');
-        return true;
-      }
-      if (get().hasUnsavedChanges()) {
-        get().reportProjectOpenProblem('warning', 'Save or discard changes before opening another folder.');
-        return true;
-      }
-      return false;
-    };
+  openProjectFromFolder: () => openExistingProject(set, get, openDirectoryPicker, 'Failed to open folder.'),
 
-    if (blockUnsafeOpen()) return false;
-    const expectedProjectSession = get().projectSession;
-    const intent = ++openProjectIntent;
-    const isCurrent = () => openProjectIntent === intent && get().projectSession === expectedProjectSession;
+  openRecentProject: (recentId) => openExistingProject(set, get, async () => {
+    const bridge = projectFilesBridge();
+    if (!bridge) throw new Error('Recent projects are only available in the desktop app.');
+    return openRecentFolder(bridge, recentId);
+  }, 'Failed to open the recent project.'),
 
-    if (!isFileSystemAccessSupported()) {
-      if (!isCurrent()) return false;
-      get().reportProjectOpenProblem('error', 'File System Access API not supported. Use a browser with folder access.');
-      return false;
-    }
-
-    try {
-      const dirHandle = await openDirectoryPicker();
-      if (!isCurrent()) return false;
-      if (!dirHandle) return false;
-
-      get().addConsoleEntry({ type: 'info', message: `Opening folder: ${dirHandle.name}...`, source: 'system' });
-
-      const readResult = await readProjectConfig(dirHandle);
-      if (!isCurrent()) return false;
-      if (readResult.kind === 'invalid') {
-        get().reportProjectOpenProblem('error', 'Invalid zplc.json. The existing configuration was not changed.');
-        return false;
-      }
-
-      let config: ZPLCProjectV2;
-      if (readResult.kind === 'valid') {
-        config = readResult.config;
-      } else {
-        get().reportProjectOpenProblem('warning', 'No zplc.json found. This folder was not changed. Use New Project to create a project in an empty folder.');
-        return false;
-      }
-
-      const fileTree = await readDirectoryRecursive(dirHandle);
-      if (!isCurrent()) return false;
-      if (blockUnsafeOpen()) return false;
-
-      set({
-        isProjectOpen: true,
-        projectName: config.name,
-        projectConfig: config,
-        projectMigrationPreview: readResult.changes.length > 0
-          ? { sourceSchemaVersion: readResult.sourceSchemaVersion, targetSchemaVersion: 2, changes: readResult.changes }
-          : null,
-        directoryHandle: dirHandle,
-        fileTree,
-        loadedFiles: new Map(),
-        activeFileId: null,
-        openTabs: [],
-        projectSession: expectedProjectSession + 1,
-        workspaceScenarioLink: null,
-        canonicalWorkspaceBuildEvidence: null,
-        projectConfigDirty: false,
-        compilerMessages: [], compilerMessagesChecked: false, compilerNavigationTarget: null, compilerRunId: get().compilerRunId + 1,
-      });
-
-      if (openProjectIntent !== intent || get().projectSession !== expectedProjectSession + 1) return false;
-      get().addConsoleEntry({ type: 'success', message: `Opened project: ${config.name}`, source: 'system' });
-      return true;
-    } catch (error) {
-      if (!isCurrent()) return false;
-      get().reportProjectOpenProblem('error', `Failed to open folder. ${folderErrorReason(error)}`);
-      return false;
-    }
+  refreshRecentProjects: async () => {
+    const bridge = projectFilesBridge();
+    set({ recentProjects: bridge ? await listRecentProjects(bridge) : [] });
   },
+
+  forgetRecentProject: async (recentId) => {
+    const bridge = projectFilesBridge();
+    if (bridge) await forgetRecentOnBridge(bridge, recentId);
+    set({ recentProjects: get().recentProjects.filter((entry) => entry.recentId !== recentId) });
+    await get().refreshRecentProjects();
+  },
+
+  setSessionLayout: (layout) => set({ sessionLayout: layout }),
 
   createNewProjectInFolder: async () => {
     set({ projectOpenError: null });
@@ -582,6 +685,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     }
 
     try {
+      flushSession();
       const dirHandle = await openDirectoryPicker();
       if (!dirHandle) {
         return false;
@@ -596,6 +700,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       const config = await createNewProject(dirHandle, dirHandle.name);
       const fileTree = await readDirectoryRecursive(dirHandle);
 
+      resetViewStates();
       set({
         isProjectOpen: true,
         projectName: config.name,
@@ -606,6 +711,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
         loadedFiles: new Map(),
         activeFileId: null,
         openTabs: [],
+        sessionLayout: null,
         projectSession: get().projectSession + 1,
         workspaceScenarioLink: null,
         canonicalWorkspaceBuildEvidence: null,
@@ -618,6 +724,8 @@ export const useIDEStore = create<IDEState>((set, get) => ({
         message: `Created new project: ${config.name}`,
         source: 'system',
       });
+      const bridge = projectFilesBridge();
+      if (bridge) void markProjectOpened(bridge, dirHandle);
 
       return true;
     } catch (err) {
@@ -656,6 +764,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       return false;
     }
     try {
+      flushSession();
       const dirHandle = await openDirectoryPicker();
       if (!isCurrent() || !dirHandle) return false;
       get().addConsoleEntry({ type: 'info', message: `Copying example to: ${dirHandle.name}...`, source: 'system' });
@@ -670,6 +779,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       if (!isCurrent()) return false;
       const loadedFiles = new Map<string, ProjectFileWithHandle>();
       if (firstLoadedFile) loadedFiles.set(firstLoadedFile.id, firstLoadedFile);
+      resetViewStates();
       set({
         isProjectOpen: true,
         projectName: readResult.config.name,
@@ -680,6 +790,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
         loadedFiles,
         activeFileId: firstLoadedFile?.id ?? null,
         openTabs: firstLoadedFile ? [firstLoadedFile.id] : [],
+        sessionLayout: null,
         projectSession: expectedProjectSession + 1,
         workspaceScenarioLink: null,
         canonicalWorkspaceBuildEvidence: null,
@@ -688,6 +799,8 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       });
       if (openProjectIntent !== intent || get().projectSession !== expectedProjectSession + 1) return false;
       get().addConsoleEntry({ type: 'success', message: `Copied example project: ${readResult.config.name}`, source: 'system' });
+      const bridge = projectFilesBridge();
+      if (bridge) void markProjectOpened(bridge, dirHandle);
       return true;
     } catch (error) {
       if (!isCurrent()) return false;
@@ -721,7 +834,11 @@ export const useIDEStore = create<IDEState>((set, get) => ({
 
     if (get().hasUnsavedChanges() && !options.discardUnsaved) return false;
 
+    // The session of the project goes out before its state is cleared.
+    flushSession();
+    resetViewStates();
     set({
+      sessionLayout: null,
       isProjectOpen: false,
       projectName: null,
       projectConfig: null,

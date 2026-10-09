@@ -6,7 +6,12 @@ import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
 
 import { compilerCompile } from '../cli/toolApi';
 import { createProjectFiles } from '../../electron/projectFiles';
-import { PROJECT_FILES_CHANNEL, PROJECT_FILES_OPS, type ProjectFilesBridge } from '../../electron/projectFilesProtocol';
+import { PROJECT_FILES_CHANNEL, PROJECT_FILES_OPS, PROJECT_RECENT_OPS, type ProjectFilesBridge } from '../../electron/projectFilesProtocol';
+import { createRecentProjects } from '../../electron/recentProjects';
+import { isAllowedSessionLoadRequest, isAllowedSessionSaveRequest } from '../../electron/security';
+import { createSessionStore } from '../../electron/sessionStore';
+import type { SessionBridge, SessionState } from '../../electron/sessionStoreProtocol';
+import { currentViewStates, flushSession, recordViewState, resetViewStates, startSessionPersistence, takePendingViewState } from './sessionPersistence';
 
 import { DEFAULT_DEBUG_POLLING_INTERVAL_MS } from './debugDefaults';
 import { WATCH_FORCE_STATE, type WatchForceEntry } from '../runtime/debugAdapter';
@@ -1713,5 +1718,229 @@ describe('useIDEStore breakpoint binding', () => {
     useIDEStore.getState().setDebugMap({ ...built.debugMap, pou: { Motor: legacyPou } });
 
     expect(useIDEStore.getState().getAllBreakpointPCs().sort((a, b) => a - b)).toEqual([56, 104]);
+  });
+});
+
+describe('useIDEStore recent projects and session restore (IDE-008)', () => {
+  let sandbox: string;
+  let folder: string;
+  let answer: string | null;
+  let dialogCalls: number;
+  let sessions: ReturnType<typeof createSessionStore>;
+  let sessionFailure: boolean;
+  let stopPersistence: (() => void) | null;
+
+  beforeEach(() => {
+    sandbox = realpathSync(mkdtempSync(join(tmpdir(), 'zplc-store-recent-')));
+    folder = join(sandbox, 'plant');
+    mkdirSync(join(folder, 'src'), { recursive: true });
+    writeFileSync(join(folder, 'zplc.json'), JSON.stringify({ ...DEFAULT_ZPLC_CONFIG, name: 'plant' }));
+    for (const name of ['a', 'b', 'c']) writeFileSync(join(folder, 'src', `${name}.st`), `PROGRAM ${name}\nEND_PROGRAM\n`);
+    answer = folder;
+    dialogCalls = 0;
+    sessionFailure = false;
+    stopPersistence = null;
+    const userData = join(sandbox, 'user-data');
+    const recent = createRecentProjects(userData);
+    sessions = createSessionStore(userData);
+    const files = createProjectFiles(async () => { dialogCalls += 1; return answer; }, () => recent);
+    const send = (channel: string, args: unknown[]) => files.handle(1, channel, args);
+    const calls = [...PROJECT_FILES_OPS, ...PROJECT_RECENT_OPS.filter((op) => op !== 'listRecent')].map((op) => [op, (request: object) => send(PROJECT_FILES_CHANNEL[op], [request])] as const);
+    const bridge = { chooseFolder: () => send(PROJECT_FILES_CHANNEL.chooseFolder, []), listRecent: () => send(PROJECT_FILES_CHANNEL.listRecent, []), ...Object.fromEntries(calls) } as ProjectFilesBridge;
+    // What main.ts does for the two session channels: the sender and the message are checked, the folder is the window's own.
+    const session: SessionBridge = {
+      load: async (request) => {
+        const root = isAllowedSessionLoadRequest(request) ? files.rootOf(1, request.rootId) : null;
+        if (sessionFailure || root === null) throw new Error('Request denied');
+        return sessions.load(root);
+      },
+      save: async (request) => {
+        const root = isAllowedSessionSaveRequest(request) ? files.rootOf(1, request.rootId) : null;
+        if (sessionFailure || root === null) throw new Error('Request denied');
+        await sessions.save(root, request.state);
+        return null;
+      },
+    };
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      value: { electronAPI: { isElectron: true, projectFiles: bridge, session }, addEventListener: () => undefined, removeEventListener: () => undefined },
+    });
+    useIDEStore.setState({
+      isProjectOpen: false, projectConfigDirty: false, loadedFiles: new Map(), fileTree: null, directoryHandle: null, openTabs: [], activeFileId: null,
+      projectOpenError: null, isConsoleCollapsed: false, activeConsoleTab: 'output', sessionLayout: null, recentProjects: [],
+    });
+    useIDEStore.getState().clearForcedValues();
+    useIDEStore.getState().clearConsole();
+    resetViewStates();
+  });
+
+  afterEach(() => {
+    stopPersistence?.();
+    resetViewStates();
+    delete (globalThis as { window?: unknown }).window;
+    rmSync(sandbox, { recursive: true, force: true });
+  });
+
+  const state = () => useIDEStore.getState();
+  const until = async (check: () => Promise<boolean> | boolean) => { for (let attempt = 0; attempt < 100; attempt++) { if (await check()) return; await Bun.sleep(10); } throw new Error('condition not reached'); };
+  const savedSession = () => sessions.load(folder);
+  /** Opens the folder through the dialog, opens three files, and leaves b active with a cursor in each, saved. */
+  async function workInTheProject(): Promise<void> {
+    stopPersistence = startSessionPersistence(useIDEStore);
+    await state().openProjectFromFolder();
+    for (const name of ['a', 'b', 'c']) await state().openFile(`file:src/${name}.st`);
+    state().setActiveFile('file:src/b.st');
+    recordViewState('src/a.st', { line: 2, column: 3, scrollTop: 10 });
+    recordViewState('src/b.st', { line: 1, column: 7, scrollTop: 0 });
+    state().setSessionLayout({ editor: 55, console: 45 });
+    flushSession();
+    await until(async () => (await savedSession())?.panels?.editor === 55);
+  }
+
+  it('remembers a folder once it opened as a project, and not one without a zplc.json', async () => {
+    rmSync(join(folder, 'zplc.json'));
+    await state().openProjectFromFolder();
+    await state().refreshRecentProjects();
+    expect(state().recentProjects).toEqual([]);
+
+    writeFileSync(join(folder, 'zplc.json'), JSON.stringify({ ...DEFAULT_ZPLC_CONFIG, name: 'plant' }));
+    await expect(state().openProjectFromFolder()).resolves.toBe(true);
+    await until(async () => { await state().refreshRecentProjects(); return state().recentProjects.length === 1; });
+    expect(state().recentProjects[0]).toMatchObject({ displayName: 'plant', available: true });
+  });
+
+  it('remembers a created project and a copied example too', async () => {
+    answer = join(sandbox, 'created');
+    mkdirSync(answer);
+    await expect(state().createNewProjectInFolder()).resolves.toBe(true);
+    await until(async () => { await state().refreshRecentProjects(); return state().recentProjects.length === 1; });
+    expect(state().recentProjects[0]!.displayName).toBe('created');
+
+    expect(state().closeProject()).toBe(true);
+    loadedExample = { zplcConfig: { ...DEFAULT_ZPLC_CONFIG, name: 'Copied example' }, migrationPreview: null };
+    loadedExampleAssets = [{ path: 'src/main.st', content: 'PROGRAM Main END_PROGRAM' }];
+    answer = join(sandbox, 'copied');
+    mkdirSync(answer);
+    await expect(state().copyExampleProjectToFolder('example')).resolves.toBe(true);
+    await until(async () => { await state().refreshRecentProjects(); return state().recentProjects.length === 2; });
+    expect(state().recentProjects.map((entry) => entry.displayName)).toEqual(['copied', 'created']);
+  });
+
+  it('reopens a remembered project without the dialog, as the same open project the dialog gives', async () => {
+    await state().openProjectFromFolder();
+    await until(async () => { await state().refreshRecentProjects(); return state().recentProjects.length === 1; });
+    expect(state().closeProject()).toBe(true);
+    const dialogCallsBefore = dialogCalls;
+
+    await expect(state().openRecentProject(state().recentProjects[0]!.recentId)).resolves.toBe(true);
+    expect(dialogCalls).toBe(dialogCallsBefore);
+    expect(state()).toMatchObject({ isProjectOpen: true, projectName: 'plant', projectOpenError: null });
+    expect(state().consoleEntries.map((entry) => entry.message).join('\n')).not.toContain(sandbox);
+  });
+
+  it('restores the tabs, the active tab, the cursors and the panels the user left', async () => {
+    await workInTheProject();
+    expect(state().closeProject()).toBe(true);
+    resetViewStates(); // as after a restart: nothing of the previous run survives in memory
+    useIDEStore.setState({ sessionLayout: null, isConsoleCollapsed: false });
+    await state().refreshRecentProjects();
+
+    await expect(state().openRecentProject(state().recentProjects[0]!.recentId)).resolves.toBe(true);
+    expect(state().openTabs).toEqual(['file:src/a.st', 'file:src/b.st', 'file:src/c.st']);
+    expect(state().activeFileId).toBe('file:src/b.st');
+    expect([...state().loadedFiles.keys()].sort()).toEqual(['file:src/a.st', 'file:src/b.st', 'file:src/c.st']);
+    expect(state().loadedFiles.get('file:src/a.st')?.content).toBe('PROGRAM a\nEND_PROGRAM\n');
+    expect(state().sessionLayout).toEqual({ editor: 55, console: 45 });
+    expect(takePendingViewState('src/a.st')).toEqual({ line: 2, column: 3, scrollTop: 10 });
+    expect(takePendingViewState('src/b.st')).toEqual({ line: 1, column: 7, scrollTop: 0 });
+  });
+
+  it('restores the same session when the folder is opened through the dialog', async () => {
+    await workInTheProject();
+    expect(state().closeProject()).toBe(true);
+    await expect(state().openProjectFromFolder()).resolves.toBe(true);
+    expect(state().openTabs).toEqual(['file:src/a.st', 'file:src/b.st', 'file:src/c.st']);
+    expect(state().activeFileId).toBe('file:src/b.st');
+  });
+
+  it('restores what the files hold on disk, never an edit that was not saved', async () => {
+    await workInTheProject();
+    state().updateFileContent('file:src/a.st', 'PROGRAM unsaved\nEND_PROGRAM\n');
+    expect(state().closeProject({ discardUnsaved: true })).toBe(true);
+    await state().openProjectFromFolder();
+    expect(state().loadedFiles.get('file:src/a.st')?.content).toBe('PROGRAM a\nEND_PROGRAM\n');
+    expect(state().loadedFiles.get('file:src/a.st')?.isModified).toBe(false);
+  });
+
+  it('silently drops a tab whose file is gone and falls back to a tab that is still there', async () => {
+    await workInTheProject();
+    expect(state().closeProject()).toBe(true);
+    rmSync(join(folder, 'src', 'b.st'));
+    const before = state().consoleEntries.length;
+    await expect(state().openProjectFromFolder()).resolves.toBe(true);
+    expect(state().openTabs).toEqual(['file:src/a.st', 'file:src/c.st']);
+    expect(state().activeFileId).toBe('file:src/c.st');
+    expect(state().projectOpenError).toBeNull();
+    expect(state().consoleEntries.slice(before).map((entry) => entry.type)).not.toContain('error');
+    expect(takePendingViewState('src/b.st')).toBeUndefined();
+  });
+
+  it('opens with no tabs, and no complaint, when there is no session, when the session cannot be read, or when the bridge fails', async () => {
+    await expect(state().openProjectFromFolder()).resolves.toBe(true);
+    expect(state().openTabs).toEqual([]);
+    expect(state().closeProject()).toBe(true);
+    await sessions.save(folder, { schemaVersion: 1, tabs: [{ path: 'src/a.st', line: 1, column: 1, scrollTop: 0 }], activePath: 'src/a.st', panels: null });
+    sessionFailure = true;
+    await expect(state().openProjectFromFolder()).resolves.toBe(true);
+    expect(state()).toMatchObject({ openTabs: [], projectOpenError: null });
+  });
+
+  it('does not restore a session saved for another folder', async () => {
+    await workInTheProject();
+    expect(state().closeProject()).toBe(true);
+    const other = join(sandbox, 'line');
+    mkdirSync(join(other, 'src'), { recursive: true });
+    writeFileSync(join(other, 'zplc.json'), JSON.stringify({ ...DEFAULT_ZPLC_CONFIG, name: 'line' }));
+    answer = other;
+    await expect(state().openProjectFromFolder()).resolves.toBe(true);
+    expect(state().openTabs).toEqual([]);
+  });
+
+  it('shows an in-place problem, and keeps the Welcome screen, when a remembered folder is gone, and marks it unavailable', async () => {
+    await state().openProjectFromFolder();
+    await until(async () => { await state().refreshRecentProjects(); return state().recentProjects.length === 1; });
+    const { recentId } = state().recentProjects[0]!;
+    expect(state().closeProject()).toBe(true);
+    rmSync(folder, { recursive: true });
+
+    await expect(state().openRecentProject(recentId)).resolves.toBe(false);
+    expect(state().isProjectOpen).toBe(false);
+    expect(state().projectOpenError).toBe('Failed to open the recent project. The folder, or a file in it, was not found.');
+    expect(state().consoleEntries.at(-1)).toMatchObject({ type: 'error' });
+    await state().refreshRecentProjects();
+    expect(state().recentProjects).toEqual([expect.objectContaining({ recentId, available: false })]);
+  });
+
+  it('forgets a remembered project and lists the rest', async () => {
+    await state().openProjectFromFolder();
+    await until(async () => { await state().refreshRecentProjects(); return state().recentProjects.length === 1; });
+    await state().forgetRecentProject(state().recentProjects[0]!.recentId);
+    expect(state().recentProjects).toEqual([]);
+    await state().refreshRecentProjects();
+    expect(state().recentProjects).toEqual([]);
+  });
+
+  it('lists nothing outside the desktop app, where there is no bridge', async () => {
+    Object.defineProperty(globalThis, 'window', { configurable: true, value: {} });
+    await state().refreshRecentProjects();
+    expect(state().recentProjects).toEqual([]);
+  });
+
+  it('keeps the view states of one project from leaking into the next', async () => {
+    await workInTheProject();
+    expect(currentViewStates().size).toBe(2);
+    expect(state().closeProject()).toBe(true);
+    expect(currentViewStates().size).toBe(0);
+    expect(await savedSession()).toMatchObject({ activePath: 'src/b.st' } satisfies Partial<SessionState>);
   });
 });

@@ -36,6 +36,8 @@ import {
   ZPLC_LIGHT_THEME, ZPLC_LIGHT_THEME_ID
 } from '../utils/monaco-themes';
 import { debugLog } from '../utils/debugLog';
+import { projectPathFromModelPath } from '../utils/sessionState';
+import { recordViewState, takePendingViewState } from '../store/sessionPersistence';
 import { compilerMarkersForFile } from './compilerMarkers';
 import { editorModelPath, isMonacoCancellation } from './editorModels';
 import { ensureSTLanguageService, getSTSyntaxDiagnostics } from './stLanguageService';
@@ -82,6 +84,14 @@ function getMonacoLanguage(lang: PLCLanguage): string {
     default:
       return 'json';
   }
+}
+
+/** Tells the session where the cursor and the scroll of the file behind the shown model are (IDE-008). */
+function reportViewState(editor: MonacoEditor.editor.IStandaloneCodeEditor): void {
+  const model = editor.getModel();
+  const path = model ? projectPathFromModelPath(model.uri.path) : null;
+  const position = editor.getPosition();
+  if (path !== null && position) recordViewState(path, { line: position.lineNumber, column: position.column, scrollTop: editor.getScrollTop() });
 }
 
 // =============================================================================
@@ -259,6 +269,10 @@ export function CodeEditor({
       }
     });
 
+    // The session keeps the cursor and the scroll of each open file (IDE-008).
+    editor.onDidChangeCursorPosition(() => reportViewState(editor));
+    editor.onDidScrollChange((change) => { if (change.scrollTopChanged) reportViewState(editor); });
+
     // Enable glyph margin for breakpoint icons
     editor.updateOptions({
       glyphMargin: true,
@@ -411,6 +425,19 @@ export function CodeEditor({
     monaco.editor.setModelMarkers(model, ST_LIVE_MARKER_OWNER, markers);
     return () => monaco.editor.setModelMarkers(model, ST_LIVE_MARKER_OWNER, []);
   }, [compilerRunId, editorReady, fileId, filePath, language, projectSession, stBufferDiagnostics]);
+
+  // A cursor and a scroll restored with the session are put back once, when the editor first shows the file (IDE-008).
+  useEffect(() => {
+    const editor = editorRef.current;
+    const model = editor?.getModel();
+    if (!editor || !model || !editorReady || !filePath || projectPathFromModelPath(model.uri.path) !== filePath) return;
+    const view = takePendingViewState(filePath);
+    if (!view) return;
+    const lineNumber = Math.min(view.line, model.getLineCount());
+    const column = Math.min(view.column, model.getLineMaxColumn(lineNumber));
+    editor.setPosition({ lineNumber, column });
+    editor.setScrollTop(view.scrollTop);
+  }, [editorReady, filePath, modelPath]);
 
   useEffect(() => {
     const editor = editorRef.current;
