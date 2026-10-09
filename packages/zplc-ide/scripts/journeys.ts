@@ -3,9 +3,12 @@
  * expects (assert), or reports that the journey cannot be performed at all (notPossible). Observation reads the screen
  * and the editor; every action is a real click, key or text insertion.
  */
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { learnLessonCatalog } from '../src/components/learnLesson';
+import { compilerCompile } from '../src/cli/toolApi';
+import { NATIVE_PROGRAM_MAX_BYTES } from '../electron/security';
 import { assert, packageRoot } from './run-desktop-smoke';
 import { button, css, menuItem, tab, type App, type Target } from './journeyApp';
 
@@ -206,6 +209,43 @@ async function newFile(app: App, name: string, language: 'ST' | 'IL' | 'LD' | 'F
 }
 const newFileError = (app: App) => app.eval<string | null>(`document.getElementById('new-file-error')?.innerText ?? null`);
 const ladderRungs = (app: App) => app.eval<number | null>(`(() => { const editor = document.querySelector('[aria-label="Ladder diagram editor"]'); const text = editor?.querySelector('.border-b span.text-xs')?.textContent ?? ''; const match = /(\\d+) rungs?/.exec(text); return editor ? (match ? Number(match[1]) : -1) : null; })()`);
+
+/** The size in bytes of the .zplc file the compiler makes of a project with this body in its only program. */
+async function compiledSize(body: string[]): Promise<number> {
+  const folder = mkdtempSync(join(tmpdir(), 'zplc-journey-size-'));
+  try {
+    writeBigProject(folder, body);
+    const compiled = await compilerCompile(folder) as unknown as { ok: boolean; zplcFile?: Uint8Array };
+    assert(compiled.ok && compiled.zplcFile, 'The generated program does not compile.');
+    return compiled.zplcFile.length;
+  } finally { rmSync(folder, { recursive: true, force: true }); }
+}
+function writeBigProject(folder: string, body: string[]): void {
+  mkdirSync(join(folder, 'src'), { recursive: true });
+  writeFileSync(join(folder, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'Big', version: '1.0.0', target: { board: 'posix' }, tasks: [{ name: 'MainTask', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Big.st'] }] }));
+  writeFileSync(join(folder, 'src', 'Big.st'), ['PROGRAM Big', 'VAR', '  X : DINT;', '  Y : DINT;', 'END_VAR', ...body, 'END_PROGRAM', ''].join('\n'));
+}
+/**
+ * A project whose compiled file is exactly `bytes` long. X grows by `n` on every scan. The body is `X := X + 1;` lines plus a few
+ * one-line fillers whose sizes differ by one byte (`Y := 0;` and `Y := X;`), neither of which touches X, which is what lets the size be hit to the byte. The
+ * statement sizes are measured with the compiler, not assumed, and the size of the result is checked.
+ */
+async function writeProjectOfSize(folder: string, bytes: number): Promise<void> {
+  const base = await compiledSize([]);
+  const step = await compiledSize(['  X := X + 1;']) - base;
+  const small = await compiledSize(['  Y := 0;']) - base;
+  const bigger = await compiledSize(['  Y := X;']) - base;
+  assert(bigger === small + 1 && step > small, `The generator needs fillers one byte apart and shorter than a step (${small}, ${bigger} and ${step} bytes).`);
+  // The fillers take at least small * (small - 1) bytes, which any count of both can add up to, and what is left is whole steps.
+  const least = small * (small - 1);
+  const fillers = least + ((bytes - base - least) % step);
+  const b = fillers % small; const a = (fillers - bigger * b) / small;
+  assert(Number.isInteger(a) && a >= 0, `The generator could not split ${fillers} bytes into fillers of ${small} and ${bigger} bytes.`);
+  const steps = (bytes - base - fillers) / step;
+  writeBigProject(folder, [...Array<string>(steps).fill('  X := X + 1;'), ...Array<string>(a).fill('  Y := 0;'), ...Array<string>(b).fill('  Y := X;')]);
+  const made = await compiledSize([...Array<string>(steps).fill('  X := X + 1;'), ...Array<string>(a).fill('  Y := 0;'), ...Array<string>(b).fill('  Y := X;')]);
+  assert(made === bytes, `The generated program is ${made} bytes, not the ${bytes} the journey needs.`);
+}
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Journeys
@@ -706,6 +746,49 @@ export const JOURNEYS: Journey[] = [
       await app.until('Forward to read TRUE: the rest of the second scan wrote it', async () => await watched('Forward') === 'TRUE' || undefined)
         .catch(async (error: Error) => { throw new Error(`${error.message}: Resume did not finish the interrupted scan (cycles ${await cycles(app)}, Forward ${await watched('Forward')}).`); });
       assert(await cycles(app) >= before + 2, `Two Resumes should complete two scans (cycles ${before} before, ${await cycles(app)} now).`);
+    },
+  },
+  {
+    name: '17 Large program, and one over the limit', example: 'none',
+    run: async (app, { root, relaunch }) => {
+      const limit = NATIVE_PROGRAM_MAX_BYTES; // the code size of the VM: 0xB000
+      const builtBytes = async (a: App) => Number(/Built saved workspace locally: (\d+) bytes/.exec((await outputText(a)).match(BUILD_RESULT)?.at(-1) ?? '')?.[1] ?? 'NaN');
+      const simulateAndWatch = async (a: App, folder: string, bytes: number) => {
+        await openFolder(a, folder);
+        const result = await compile(a);
+        assert(result.kind === 'built', `The ${bytes}-byte program does not build: ${result.message}`);
+        assert(await builtBytes(a) === bytes, `The build reports ${await builtBytes(a)} bytes for a program that is ${bytes} bytes long.`);
+        await connectAndRun(a);
+        await watch(a, 'X');
+        const first = await watchValue(a, 'X');
+        await a.until(`X to change in the ${bytes}-byte program`, async () => await watchValue(a, 'X') !== first || undefined);
+      };
+
+      // About 12 KB, three times what the request buffer once carried: it loads, runs and X counts.
+      const big = join(root, 'big');
+      await writeProjectOfSize(big, 12_000);
+      await simulateAndWatch(app, big, 12_000);
+
+      // Exactly the VM's code size still loads and runs; one byte more is refused, in words, in the Console.
+      const largest = join(root, 'largest');
+      await writeProjectOfSize(largest, limit);
+      const second = await relaunch();
+      await simulateAndWatch(second, largest, limit);
+
+      const over = join(root, 'over');
+      await writeProjectOfSize(over, limit + 1);
+      const third = await relaunch();
+      await openFolder(third, over);
+      const built = await compile(third);
+      assert(built.kind === 'built', `The ${limit + 1}-byte program does not build: ${built.message}`);
+      await third.click(button('Connect'));
+      await third.until('the simulation to connect', async () => await third.visible(button('Disconnect')) || undefined);
+      await third.click(button('Run (F5)', 'prefix'));
+      const refusal = `the program is ${limit + 1} bytes, but the native simulation loads at most ${limit} bytes`;
+      await third.until('the refusal in the Console', async () => (await outputText(third)).includes(refusal) || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: Output says ${JSON.stringify((await outputText(third)).slice(-700))}`); });
+      assert(!await third.visible(button('Pause (F6)', 'prefix')), 'The program that is over the limit seems to be running.');
+      assert(!(await outputText(third)).includes('unable to parse request envelope'), 'The Console shows the runtime\'s raw parse failure, not the size message.');
     },
   },
 ];
