@@ -246,7 +246,7 @@ describe('v1.5 language workflow support', () => {
     }
   });
 
-  it('does not report generated ST coordinates on a visual source', () => {
+  it('keeps the generated ST coordinates on a visual source and says what they refer to', () => {
     const invalidModel = {
       ...FBD_MODEL,
       variables: { ...FBD_MODEL.variables, local: [{ name: 'Start@', type: 'BOOL' }] },
@@ -261,10 +261,10 @@ describe('v1.5 language workflow support', () => {
     } catch (error) {
       const diagnostic = error as CompilerError;
       expect(diagnostic.phase).toBe('lexer');
-      expect(diagnostic.line).toBe(0);
-      expect(diagnostic.column).toBe(0);
+      expect(diagnostic.line).toBeGreaterThan(0);
+      expect(diagnostic.column).toBeGreaterThan(0);
       expect(diagnostic.sourceRef).toBe('src/main.fbd.json');
-      expect(diagnostic.message).not.toContain('4:10');
+      expect(diagnostic.detail).toContain('(position in the generated Structured Text)');
     }
   });
 

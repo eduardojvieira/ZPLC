@@ -1,0 +1,6 @@
+PROGRAM Typo
+VAR
+  x : INT;
+END_VAR
+  x := ABS();
+END_PROGRAM

@@ -1,0 +1,7 @@
+PROGRAM Typo
+VAR
+  x : INT;
+END_VAR
+  EXIT;
+  x := 1;
+END_PROGRAM

@@ -476,7 +476,8 @@ export function compileMultiTaskProject(
     } catch (error) {
         if (error instanceof CompilerError) {
             if (error.sourceRef && visualSourceRefs.has(error.sourceRef) && error.line > 0) {
-                throw new CompilerError(error.detail, 0, 0, error.phase, error.sourceRef);
+                // The position is kept: the graphical models have no lines, so it names the generated Structured Text.
+                throw new CompilerError(`${error.detail} (position in the generated Structured Text)`, error.line, error.column, error.phase, error.sourceRef);
             }
         }
         throw error;
