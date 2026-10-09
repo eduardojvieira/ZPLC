@@ -186,6 +186,39 @@ describe('parseAndMigrateProject', () => {
     expect(task.properties).not.toHaveProperty('watchdog_ms');
   });
 
+  /** Every key the IDE writes for an MQTT block (its own copy: no bundled example has to carry a communication block for this). */
+  const canonicalMqtt = {
+    enabled: false,
+    profile: 'sparkplug-b',
+    protocolVersion: '5.0',
+    transport: 'tcp',
+    broker: 'test.mosquitto.org',
+    port: 1883,
+    clientId: 'zplc-device',
+    keepAliveSec: 60,
+    cleanSession: true,
+    sessionExpirySec: 0,
+    topicNamespace: 'spBv1.0/ZPLC',
+    publishIntervalMs: 2000,
+    publishQos: 0,
+    subscribeQos: 0,
+    publishRetain: false,
+    securityLevel: 'none',
+    websocketPath: '/mqtt',
+    lwtEnabled: false,
+    lwtPayload: 'offline',
+    lwtQos: 0,
+    lwtRetain: false,
+    azureTwinEnabled: false,
+    azureDirectMethodsEnabled: false,
+    azureC2dEnabled: false,
+    azureDpsEnabled: false,
+    azureDpsEndpoint: 'global.azure-devices-provisioning.net',
+    awsShadowEnabled: false,
+    awsJobsEnabled: false,
+    awsFleetEnabled: false,
+  };
+
   it('keeps the shipped Wi-Fi and MQTT schemas aligned with the parser’s credential boundary', () => {
     const schema = JSON.parse(readFileSync(fileURLToPath(new URL('../../zplc.schema.json', import.meta.url)), 'utf8'));
     const wifi = schema.definitions.wifiNetworkConfig;
@@ -211,8 +244,7 @@ describe('parseAndMigrateProject', () => {
       communication: { mqtt: { enabled: false, profile: 'generic-broker', protocolVersion: '5.0', transport: 'tls', broker: 'broker.example', port: 8883, clientId: 'controller', keepAliveSec: 60, cleanSession: true, sessionExpirySec: 0, username: 'operator', topicNamespace: 'plant', publishIntervalMs: 1000, publishQos: 0, subscribeQos: 0, publishRetain: false, lwtEnabled: false, lwtQos: 0, lwtRetain: false, securityLevel: 'tls-server-verify', caCertPath: 'certificates/ca.pem', clientCertPath: 'certificates/public.pem' } },
     })).toMatchObject({ ok: true });
 
-    const canonical = JSON.parse(readFileSync(fileURLToPath(new URL('../../projects/pico_blinky/zplc.json', import.meta.url)), 'utf8'));
-    for (const key of Object.keys(canonical.communication.mqtt)) expect(mqtt.properties).toHaveProperty(key);
+    for (const key of Object.keys(canonicalMqtt)) expect(mqtt.properties).toHaveProperty(key);
   });
 
   it('accepts all versioned project fixtures', () => {
