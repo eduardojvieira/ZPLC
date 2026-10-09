@@ -21,6 +21,7 @@ import { createLearnProgressStore } from './learnProgressStore.js';
 import { buildApplicationMenu, describeApplicationMenu } from './appMenu.js';
 import { createCloseGuard } from './closeGuard.js';
 import { createProjectFiles, readFolderDialogHook } from './projectFiles.js';
+import { record, workspaceCompileFailure } from './workspaceCompileFailure.js';
 import { PROJECT_FILES_CHANNEL } from './projectFilesProtocol.js';
 import {
   DEFAULT_DEVELOPMENT_RENDERER_PORT,
@@ -101,34 +102,6 @@ const projectFiles = createProjectFiles(chooseProjectDirectory);
 const toolApiUrl = pathToFileURL(path.join(__dirname, 'toolApi.js')).href;
 let aiProvider: ReturnType<typeof createAiProvider> | null = null;
 let learnProgress: ReturnType<typeof createLearnProgressStore> | null = null;
-
-function record(value: unknown): Record<string, unknown> | null {
-  return typeof value === 'object' && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : null;
-}
-
-function safeRelativePath(value: unknown): string | undefined {
-  if (typeof value !== 'string' || value.length === 0 || value.length > 512 || value.includes('\0') || value.startsWith('/') || value.startsWith('\\') || /^[a-zA-Z]:/.test(value)) return undefined;
-  return value.split(/[\\/]/).some((part) => part === '..') ? undefined : value;
-}
-
-function safeLocation(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 1 && value <= 1_000_000 ? value : undefined;
-}
-
-function workspaceCompileFailure(value: unknown): { ok: false; evidence: { outcome: 'failed'; diagnostics: Array<{ code: string; path?: string; line?: number; column?: number }> } } {
-  const evidence = record(record(value)?.evidence);
-  const diagnostics = Array.isArray(evidence?.diagnostics) ? evidence.diagnostics.slice(0, 128).flatMap((value) => {
-    const diagnostic = record(value);
-    if (!diagnostic || typeof diagnostic.code !== 'string' || diagnostic.code.length === 0 || diagnostic.code.length > 96) return [];
-    return [{
-      code: diagnostic.code,
-      ...(safeRelativePath(diagnostic.path) ? { path: safeRelativePath(diagnostic.path) } : {}),
-      ...(safeLocation(diagnostic.line) ? { line: safeLocation(diagnostic.line) } : {}),
-      ...(safeLocation(diagnostic.column) ? { column: safeLocation(diagnostic.column) } : {}),
-    }];
-  }) : [];
-  return { ok: false, evidence: { outcome: 'failed', diagnostics } };
-}
 
 /** Turns private Tool API fields into the sole structured-clone payload accepted by Toolbar. */
 function toWorkspaceCompileEnvelope(value: unknown, execution?: unknown): unknown {
