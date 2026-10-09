@@ -151,7 +151,8 @@ async function press(cdp: Cdp, key: string, code = key): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  const executable = discoverPackagedExecutable(join(packageRoot, 'dist-electron'));
+  // ZPLC_PACKAGED_DIST points at another output directory of electron-builder, for a package built outside the repository tree.
+  const executable = discoverPackagedExecutable(process.env.ZPLC_PACKAGED_DIST ?? join(packageRoot, 'dist-electron'));
   const tempRoot = mkdtempSync(join(tmpdir(), 'zplc-packaged-smoke-'));
   const output: string[] = [];
   let electron: OwnedProcess | undefined;
@@ -184,8 +185,14 @@ async function main(): Promise<void> {
       welcome: document.body.innerText.includes('ZPLC Studio 2.0'),
     }))()`)) as { node: Array<[string, string]>; preload: string[]; welcome: boolean };
     assert(rendererBoundary.node.every(([, value]) => value === 'undefined'), `Node globals leaked into packaged renderer: ${JSON.stringify(rendererBoundary.node)}`);
-    assert(JSON.stringify(rendererBoundary.preload) === JSON.stringify(['aiProvider', 'candidateChangeSet', 'closeGuard', 'firmwareBuild', 'getAppInfo', 'isElectron', 'learnProgress', 'nativeSimulation', 'platform', 'toolExecutionAudit', 'toolchain', 'workspaceTests']), `Unexpected packaged preload surface: ${JSON.stringify(rendererBoundary.preload)}`);
+    assert(JSON.stringify(rendererBoundary.preload) === JSON.stringify(['aiProvider', 'candidateChangeSet', 'closeGuard', 'firmwareBuild', 'getAppInfo', 'isElectron', 'learnProgress', 'nativeSimulation', 'platform', 'projectFiles', 'toolExecutionAudit', 'toolchain', 'workspaceTests']), `Unexpected packaged preload surface: ${JSON.stringify(rendererBoundary.preload)}`);
     assert(rendererBoundary.welcome, 'Packaged renderer did not render the folder-backed Welcome screen.');
+    // IDE-001, IDE-003: the project bridge of the asar's preload offers exactly its eight typed operations and no path-taking helper.
+    const projectOperations = (await cdp.evaluate(`Object.keys(window.electronAPI.projectFiles).sort()`)) as string[];
+    assert(JSON.stringify(projectOperations) === JSON.stringify(['chooseFolder', 'list', 'mkdir', 'read', 'remove', 'rename', 'stat', 'write']), `Unexpected packaged project bridge: ${JSON.stringify(projectOperations)}`);
+    // The permission handlers stay deny-by-default: a request other than serial is refused, and the file system permission goes through the same handlers.
+    const permissionProbe = (await cdp.evaluate(`Notification.requestPermission().then((requested) => ({ requested, now: Notification.permission }))`)) as { requested: string; now: string };
+    assert(permissionProbe.requested === 'denied' && permissionProbe.now === 'denied', `A permission request must be refused in the packaged app: ${JSON.stringify(permissionProbe)}`);
     // IDE-005: no reload or developer-tools entry exists in a packaged build. Key events injected over the DevTools protocol
     // never reach native menus, so the app reports the roles and accelerators it registered and the smoke reads that line.
     const menuReport = await waitFor('packaged application menu report', async () => output.join('').split('\n').find((line) => line.includes('[zplc] application menu')));
