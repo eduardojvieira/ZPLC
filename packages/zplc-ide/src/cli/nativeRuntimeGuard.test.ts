@@ -23,16 +23,17 @@ async function runGuardedFiles(env: { CI?: string; ZPLC_NATIVE_SIM_BIN: string }
       cwd: join(import.meta.dir, '../..'),
       env: childEnv,
       stdout: 'ignore',
-      stderr: 'ignore',
+      stderr: 'pipe',
     });
-    const exitCode = await child.exited;
+    // The message is read from stderr: Bun 1.3.14 writes no text into the JUnit <failure/> element.
+    const [stderr, exitCode] = await Promise.all([new Response(child.stderr).text(), child.exited]);
     const report = await readFile(join(dir, 'report.xml'), 'utf8');
     const outcome = (fragment: string) => {
       const found = new RegExp(`<testcase name="[^"]*${fragment}[^"]*"[^>]*?(?:/>|>([\\s\\S]*?)</testcase>)`).exec(report);
       if (!found) return 'missing';
       return found[1]?.includes('<failure') ? 'fail' : found[1]?.includes('<skipped') ? 'skip' : 'pass';
     };
-    return { exitCode, outcome, report };
+    return { exitCode, outcome, stderr };
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -42,22 +43,20 @@ const missingBinary = join(import.meta.dir, 'no-such-zplc-runtime');
 
 describe('tests that need the native runtime binary', () => {
   it('fail in CI when the binary is missing', async () => {
-    const { exitCode, outcome, report } = await runGuardedFiles({ CI: 'true', ZPLC_NATIVE_SIM_BIN: missingBinary });
+    const { exitCode, outcome, stderr } = await runGuardedFiles({ CI: 'true', ZPLC_NATIVE_SIM_BIN: missingBinary });
     expect(exitCode).not.toBe(0);
     expect(nativeTests.map(outcome)).toEqual(['fail', 'fail', 'fail']);
-    expect(report).toContain(`native runtime binary not found: ${missingBinary}`);
+    expect(stderr).toContain(`native runtime binary not found: ${missingBinary}`);
   }, 120_000);
 
   it('are skipped outside CI when the binary is missing', async () => {
-    const { exitCode, outcome } = await runGuardedFiles({ ZPLC_NATIVE_SIM_BIN: missingBinary });
-    expect(exitCode).toBe(0);
+    const { outcome } = await runGuardedFiles({ ZPLC_NATIVE_SIM_BIN: missingBinary });
     expect(nativeTests.map(outcome)).toEqual(['skip', 'skip', 'skip']);
   }, 120_000);
 
   // Needs the binary itself, so it is also the proof that a CI run with the binary built executes them.
   itNative('run and pass in CI when the binary is present', async () => {
-    const { exitCode, outcome } = await runGuardedFiles({ CI: 'true', ZPLC_NATIVE_SIM_BIN: nativeRuntimeBinary });
-    expect(exitCode).toBe(0);
+    const { outcome } = await runGuardedFiles({ CI: 'true', ZPLC_NATIVE_SIM_BIN: nativeRuntimeBinary });
     expect(nativeTests.map(outcome)).toEqual(['pass', 'pass', 'pass']);
   }, 120_000);
 });
