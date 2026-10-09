@@ -36,6 +36,7 @@ import {
 } from './debugExecutionLocation';
 import { buildPolledDebugPaths, describePolledDebugVariable } from './debugPollingPaths';
 import { debugLog } from '../utils/debugLog';
+import { createBreakpointSyncer, reportBreakpointSync, type BreakpointSyncOutcome } from './useDebugControllerBreakpoints';
 import { deriveHardwareDebugState } from '../runtime/debugStatus';
 import {
   type DebugCapabilities,
@@ -146,6 +147,8 @@ export function useDebugController(): DebugController {
   const traceEpochRef = useRef(0);
   const traceCaptureEnabledRef = useRef(true);
   const traceBoundCompilerRunIdRef = useRef<number | null>(null);
+  // Every push of breakpoints to the runtime (load, sync effect, reset) goes through this one syncer.
+  const [breakpointSyncer] = useState(createBreakpointSyncer);
 
   // Store selectors
   const debugMode = useIDEStore((state) => state.debug.mode);
@@ -173,6 +176,7 @@ export function useDebugController(): DebugController {
   const updateLiveValues = useIDEStore((state) => state.updateLiveValues);
   const clearLiveValues = useIDEStore((state) => state.clearLiveValues);
   const setPolling = useIDEStore((state) => state.setPolling);
+  const setBreakpointsInactiveReason = useIDEStore((state) => state.setBreakpointsInactiveReason);
   const getAllBreakpointPCs = useIDEStore((state) => state.getAllBreakpointPCs);
   const addConsoleEntry = useIDEStore((state) => state.addConsoleEntry);
   const addConsoleEntries = useIDEStore((state) => state.addConsoleEntries);
@@ -397,7 +401,24 @@ export function useDebugController(): DebugController {
   // Adapter Lifecycle
   // =========================================================================
 
+  const pushBreakpoints = useCallback(async (target: IDebugAdapter): Promise<BreakpointSyncOutcome | null> => {
+    try {
+      const outcome = await breakpointSyncer.sync(
+        target,
+        () => useIDEStore.getState().getAllBreakpointPCs(),
+        () => adapterRef.current === target && target.connected,
+      );
+      reportBreakpointSync(outcome, { addConsoleEntry, setBreakpointsInactiveReason });
+      return outcome;
+    } catch (err) {
+      console.error('Failed to sync breakpoints:', err);
+      return null;
+    }
+  }, [addConsoleEntry, breakpointSyncer, setBreakpointsInactiveReason]);
+
   const resetConnectionState = useCallback(() => {
+    breakpointSyncer.invalidate();
+    setBreakpointsInactiveReason(null);
     invalidateNativeTrace();
     adapterRef.current = null;
     if (pollingIntervalRef.current) {
@@ -411,7 +432,7 @@ export function useDebugController(): DebugController {
     setPolling(false);
     setCurrentExecution(null, null, null);
     setDebugMode('none');
-  }, [clearLiveValues, invalidateNativeTrace, setCurrentExecution, setDebugMode, setPolling]);
+  }, [breakpointSyncer, clearLiveValues, invalidateNativeTrace, setBreakpointsInactiveReason, setCurrentExecution, setDebugMode, setPolling]);
 
   useEffect(() => {
     const currentAdapter = adapter;
@@ -590,6 +611,9 @@ export function useDebugController(): DebugController {
         await currentAdapter.loadProgram(bytecode);
       }
 
+      // program.load (and a hardware deploy) emptied the runtime's breakpoint table.
+      breakpointSyncer.invalidate();
+
       const ownerIsCurrent = adapterRef.current === currentAdapter;
       if (!canCommitNativeLoad(ownerIsCurrent, loadedCompilerRunId, useIDEStore.getState().compilerRunId)) {
         throw new Error('Program load became stale; compile again before running.');
@@ -601,42 +625,36 @@ export function useDebugController(): DebugController {
 
       bindAdapterEventHandlers(currentAdapter, true);
 
-      // Sync breakpoints to adapter (skip for hardware if not supported)
-      const breakpointPCs = getAllBreakpointPCs();
-      if (breakpointPCs.length > 0) {
-        try {
-          const capability = getDebugFeatureActionability(debugCapabilities, 'breakpoints', 'Breakpoint sync');
-          if (!capability.allowed) {
+      // Sync breakpoints to adapter (skip for hardware if not supported). The sync effect reacts to the
+      // debug map stored above; the syncer makes it wait for this round instead of racing it.
+      let breakpointsSet = 0;
+      if (getAllBreakpointPCs().length > 0) {
+        const capability = getDebugFeatureActionability(debugCapabilities, 'breakpoints', 'Breakpoint sync');
+        if (!capability.allowed) {
+          addConsoleEntry({
+            type: 'warning',
+            message: capability.message ?? 'Breakpoint sync unavailable in the active runtime',
+            source: 'debugger',
+          });
+        } else {
+          if (capability.message) {
             addConsoleEntry({
               type: 'warning',
-              message: capability.message ?? 'Breakpoint sync unavailable in the active runtime',
+              message: capability.message,
               source: 'debugger',
             });
-          } else {
-            if (capability.message) {
-              addConsoleEntry({
-                type: 'warning',
-                message: capability.message,
-                source: 'debugger',
-              });
-            }
-
-            await currentAdapter.clearBreakpoints();
-            for (const pc of breakpointPCs) {
-              await currentAdapter.setBreakpoint(pc);
-            }
           }
-        } catch (e) {
-          // Breakpoints may not be supported on hardware, log but don't fail
-          console.warn('Breakpoint sync failed:', e);
+
+          const outcome = await pushBreakpoints(currentAdapter);
+          breakpointsSet = outcome && !outcome.error ? outcome.pcs.length : 0;
         }
       }
 
       addConsoleEntry({
         type: 'success',
         message: isHardware
-          ? `Program deployed and stopped: ${bytecode.length} bytes, ${breakpointPCs.length} breakpoints set`
-          : `Loaded ${bytecode.length} bytes, ${breakpointPCs.length} breakpoints set`,
+          ? `Program deployed and stopped: ${bytecode.length} bytes, ${breakpointsSet} breakpoints set`
+          : `Loaded ${bytecode.length} bytes, ${breakpointsSet} breakpoints set`,
         source: 'debugger',
       });
     } finally {
@@ -647,7 +665,7 @@ export function useDebugController(): DebugController {
         connectionManager.resumePolling();
       }
     }
-  }, [bindAdapterEventHandlers, invalidateNativeTrace, debugCapabilities, debugMode, setDebugMap, getAllBreakpointPCs, addConsoleEntry, logUploadTrace]);
+  }, [bindAdapterEventHandlers, breakpointSyncer, invalidateNativeTrace, debugCapabilities, debugMode, setDebugMap, getAllBreakpointPCs, addConsoleEntry, logUploadTrace, pushBreakpoints]);
 
   // =========================================================================
   // Execution Control
@@ -720,6 +738,11 @@ export function useDebugController(): DebugController {
       if (adapterRef.current === currentAdapter) {
         bindAdapterEventHandlers(currentAdapter, reenableTrace && useIDEStore.getState().compilerRunId === currentCompilerRunId);
       }
+      // execution.reset emptied the runtime's breakpoint table but the editor keeps its dots: send them again.
+      breakpointSyncer.invalidate();
+      if (getDebugFeatureActionability(debugCapabilities, 'breakpoints', 'Breakpoint sync').allowed) {
+        await pushBreakpoints(currentAdapter);
+      }
     } catch (err) {
       // If reset fails (e.g., connection lost), clear stale local state but
       // keep the failure observable to the caller.
@@ -728,7 +751,7 @@ export function useDebugController(): DebugController {
       setCurrentExecution(null, null, null);
       throw err;
     }
-  }, [bindAdapterEventHandlers, clearLiveValues, invalidateNativeTrace, setCurrentExecution]);
+  }, [bindAdapterEventHandlers, breakpointSyncer, clearLiveValues, debugCapabilities, invalidateNativeTrace, pushBreakpoints, setCurrentExecution]);
 
   // =========================================================================
   // Memory Access
@@ -997,44 +1020,18 @@ export function useDebugController(): DebugController {
   // =========================================================================
 
   useEffect(() => {
-    let disposed = false;
-    const syncBreakpoints = async () => {
-      if (!adapter?.connected || !debugMap) return;
+    if (!adapter?.connected || !debugMap) return;
+    if (!getDebugFeatureActionability(debugCapabilities, 'breakpoints', 'Breakpoint sync').allowed) return;
 
-      try {
-        const pcs = getAllBreakpointPCs();
-        const capability = getDebugFeatureActionability(debugCapabilities, 'breakpoints', 'Breakpoint sync');
-
-        if (!capability.allowed) {
-          return;
-        }
-
-        debugLog('[Breakpoint] Syncing to adapter', {
-          adapterType: adapter.type,
-          breakpointFiles: Array.from(breakpointMap.entries()).map(([fileId, lines]) => ({
-            fileId,
-            lines: Array.from(lines),
-          })),
-          pcs,
-        });
-
-        // Clear existing and set new
-        await adapter.clearBreakpoints();
-        if (disposed || adapterRef.current !== adapter || !adapter.connected) return;
-        for (const pc of pcs) {
-          if (disposed || adapterRef.current !== adapter || !adapter.connected) return;
-          debugLog('[Breakpoint] Setting hardware breakpoint', { pc });
-          await adapter.setBreakpoint(pc);
-        }
-      } catch (err) {
-        if (disposed || adapterRef.current !== adapter || !adapter.connected) return;
-        console.error('Failed to sync breakpoints:', err);
-      }
-    };
-
-    void syncBreakpoints();
-    return () => { disposed = true; };
-  }, [adapter, breakpointMap, debugCapabilities, debugMap, getAllBreakpointPCs]);
+    debugLog('[Breakpoint] Syncing to adapter', {
+      adapterType: adapter.type,
+      breakpointFiles: Array.from(breakpointMap.entries()).map(([fileId, lines]) => ({
+        fileId,
+        lines: Array.from(lines),
+      })),
+    });
+    void pushBreakpoints(adapter);
+  }, [adapter, breakpointMap, debugCapabilities, debugMap, pushBreakpoints]);
 
   // =========================================================================
   // Cleanup on Unmount

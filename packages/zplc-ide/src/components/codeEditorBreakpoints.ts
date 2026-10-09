@@ -162,3 +162,10 @@ export function filterEligibleBreakpointLines(
 ): number[] {
   return Array.from(lines).filter((lineNumber) => isLineBreakpointEligible(debugMap, fileName, lineNumber));
 }
+
+/** Hover text of a breakpoint dot: an armed one stays plain, one the runtime refused says why it will not stop. */
+export function breakpointHoverMessage(line: number, inactiveReason: string | null): string {
+  return inactiveReason
+    ? `Breakpoint at line ${line} is not active: ${inactiveReason}`
+    : `Breakpoint at line ${line}`;
+}

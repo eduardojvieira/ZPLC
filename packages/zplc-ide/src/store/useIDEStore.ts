@@ -180,6 +180,12 @@ export interface DebugState {
    */
   breakpoints: Map<string, Set<number>>;
   
+  /**
+   * Why the runtime does not hold the breakpoints the editor shows (null = they are armed or there
+   * is no session). Set from the breakpoint sync, so a dot never claims a stop the runtime refused.
+   */
+  breakpointsInactiveReason: string | null;
+
   /** Current execution line when paused (null if running or not debugging) */
   currentLine: number | null;
   
@@ -341,6 +347,7 @@ interface IDEState {
   setDebugMap: (map: DebugMap | null) => void;
   toggleBreakpoint: (fileId: string, line: number) => void;
   setBreakpoints: (fileId: string, lines: number[]) => void;
+  setBreakpointsInactiveReason: (reason: string | null) => void;
   clearBreakpoints: (fileId?: string) => void;
   setCurrentExecution: (pou: string | null, line: number | null, pc: number | null) => void;
   addWatchVariable: (varPath: string) => void;
@@ -457,6 +464,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     mode: 'none',
     debugMap: null,
     breakpoints: new Map(),
+    breakpointsInactiveReason: null,
     currentLine: null,
     currentPOU: null,
     currentPC: null,
@@ -735,6 +743,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
         mode: 'none',
         debugMap: null,
         breakpoints: new Map(),
+        breakpointsInactiveReason: null,
         currentLine: null,
         currentPOU: null,
         currentPC: null,
@@ -1334,6 +1343,13 @@ export const useIDEStore = create<IDEState>((set, get) => ({
         debug: { ...state.debug, breakpoints: newBreakpoints },
       };
     }),
+
+  setBreakpointsInactiveReason: (reason) =>
+    set((state) => (
+      state.debug.breakpointsInactiveReason === reason
+        ? state
+        : { debug: { ...state.debug, breakpointsInactiveReason: reason } }
+    )),
 
   clearBreakpoints: (fileId) =>
     set((state) => {
