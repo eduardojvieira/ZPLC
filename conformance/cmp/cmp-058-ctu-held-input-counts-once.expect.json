@@ -1,0 +1,25 @@
+{
+  "requirement": "CMP-058",
+  "title": "CTU counts an input held high once",
+  "scans": 6,
+  "scanMs": 10,
+  "inputs": [
+    { "at": "%IX0.0", "type": "BOOL", "value": true, "beforeScan": 1 },
+    { "at": "%IX0.0", "type": "BOOL", "value": false, "beforeScan": 4 },
+    { "at": "%IX0.0", "type": "BOOL", "value": true, "beforeScan": 5 }
+  ],
+  "expect": [
+    { "at": "%QW1", "type": "INT", "value": 1, "afterScan": 1 },
+    { "at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 1 },
+    { "at": "%QW1", "type": "INT", "value": 1, "afterScan": 2 },
+    { "at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 2 },
+    { "at": "%QW1", "type": "INT", "value": 1, "afterScan": 3 },
+    { "at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 3 },
+    { "at": "%QW1", "type": "INT", "value": 1, "afterScan": 4 },
+    { "at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 4 },
+    { "at": "%QW1", "type": "INT", "value": 2, "afterScan": 5 },
+    { "at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 5 },
+    { "at": "%QW1", "type": "INT", "value": 2, "afterScan": 6 },
+    { "at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 6 }
+  ]
+}

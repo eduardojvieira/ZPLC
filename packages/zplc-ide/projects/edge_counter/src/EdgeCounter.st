@@ -5,9 +5,9 @@
  * change. A pulse therefore counts once however many scans it stays high, and PulseInput can be wired straight to CU.
  * An R_TRIG in front of CTU would only turn the same edge into a one-scan pulse that CTU then edge-detects a second time.
  *
- * Reset sets the count to 0 and CountReached to FALSE. Keep Reset and the pulse apart: ZPLC's CTU does not look at CU while
- * Reset is TRUE, so a pulse that rises during Reset is counted on the scan after Reset is released. The IEC definition
- * keeps its edge detector running while R is TRUE and would not count it.
+ * Reset sets the count to 0 and CountReached to FALSE. CTU keeps watching CU while Reset is TRUE, as the IEC definition
+ * does, so a pulse that rises during Reset is not counted when Reset is released, even if it is still high. Only a new
+ * rising edge after that counts: a pulse that arrives while Reset is held is lost.
  *)
 
 PROGRAM EdgeCounter
