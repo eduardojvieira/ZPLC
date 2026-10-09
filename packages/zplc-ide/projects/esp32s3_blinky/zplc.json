@@ -1,0 +1,43 @@
+{
+  "$schema": "../../zplc.schema.json",
+  "schemaVersion": 2,
+  "name": "ESP32-S3 Blinky",
+  "version": "1.0.0",
+  "description": "ESP32-S3 DevKitC: blinks an LED on GPIO38 (%Q0.0) every 500 ms with a scan counter. The pin is the one in the current firmware/app/boards/esp32s3_devkitc_esp32s3_procpu.overlay; that overlay was tuned for a LilyGo T-Display S3, so the ESP32-S3-DevKitC-1 pin mapping is pending.",
+  "author": "ZPLC Team",
+  "target": {
+    "board": "esp32s3_devkitc",
+    "cpu": "ESP32-S3",
+    "clock_mhz": 240
+  },
+  "compiler": {
+    "optimization": "speed",
+    "debug": true
+  },
+  "io": {
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "LED_Output",
+        "address": "%Q0.0",
+        "type": "BOOL",
+        "pin": 38,
+        "description": "GPIO38 per the current overlay (led0): wire an LED with a series resistor to GND. DevKitC-1 mapping pending."
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "name": "MainTask",
+      "trigger": "cyclic",
+      "interval_ms": 10,
+      "priority": 1,
+      "programs": [
+        "main.st"
+      ]
+    }
+  ],
+  "build": {
+    "outDir": "build"
+  }
+}

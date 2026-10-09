@@ -1,19 +1,22 @@
 (*
- * Pico Blinky - Simple Counter-based LED Toggle
- * 
- * Uses simple counters instead of TON timers:
- * - Task runs every 10ms
- * - Count up to 50 cycles = 500ms
- * - Toggle LED and reset counter
- * - Increment SlowCounter every 500ms
+ * Pico Blinky - blink an LED by counting scans.
+ *
+ * Board:  Raspberry Pi Pico (rpi_pico). The pins come from firmware/app/boards/rpi_pico_rp2040.overlay:
+ *           %Q0.0 LED_Output  GP0   wire an LED with a series resistor from GP0 to GND
+ *           %Q0.1 PWR         GP1   held high while the program runs (a run indicator; it does not switch any power)
+ *         The overlay does not drive the Pico's built-in LED on GP25.
+ *
+ * Timing: the task runs every 10 ms (MainTask in zplc.json), so 50 scans are 500 ms and the LED is on for 500 ms and off
+ *         for 500 ms. This is timing by counting scans: it is only right while the task interval stays 10 ms. A TON timer
+ *         does not depend on the interval (see pico_blinky_ton).
  *)
 
 PROGRAM Main
 
 VAR
-    Counter : INT := 0;             (* 10ms cycle counter *)
-    SlowCounter : INT := 0;         (* Increments every 500ms *)
-    LED_State : BOOL := FALSE;      (* Internal LED state *)
+    Counter : INT := 0;             (* scans since the last toggle *)
+    SlowCounter : INT := 0;         (* number of toggles so far; nothing reads it, watch it in the debugger *)
+    LED_State : BOOL := FALSE;      (* internal LED state *)
 END_VAR
 
 VAR_OUTPUT
@@ -23,17 +26,17 @@ END_VAR
 
 PWR := TRUE;
 
-(* Increment counter every 10ms cycle *)
+(* One scan every 10 ms. *)
 Counter := Counter + 1;
 
-(* Toggle every 37 cycles = 481ms *)
-IF Counter >= 37 THEN
+(* Toggle every 50 scans = 500 ms. *)
+IF Counter >= 50 THEN
     LED_State := NOT LED_State;
     SlowCounter := SlowCounter + 1;
     Counter := 0;
 END_IF;
 
-(* Write state to physical output *)
+(* Write the state to the physical output. *)
 LED_Output := LED_State;
 
 END_PROGRAM
