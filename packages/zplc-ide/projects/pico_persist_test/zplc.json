@@ -1,9 +1,9 @@
 {
   "$schema": "../../zplc.schema.json",
   "schemaVersion": 2,
-  "name": "Pico Persistence Test",
+  "name": "Pico Two-Task Smoke Test",
   "version": "1.0.0",
-  "description": "Tests NVS persistence with multitask scheduling on RPi Pico",
+  "description": "Hardware smoke test for a Raspberry Pi Pico: two cyclic tasks, FastCounter (10 ms) and SlowBlink (100 ms), which blinks an LED on GP0 (%Q0.0) every 500 ms. By hand, power-cycling the board and seeing the LED blink again shows the firmware restoring the saved program; no variable is retained, because the compiler does not support source RETAIN yet, so retained data cannot be taught here. It has no scenario: the test engine runs one task per project.",
   "author": "ZPLC Team",
   "target": {
     "board": "rpi_pico",
@@ -18,11 +18,11 @@
     "inputs": [],
     "outputs": [
       {
-        "name": "LED_ONBOARD",
+        "name": "LED",
         "address": "%Q0.0",
         "type": "BOOL",
-        "pin": 25,
-        "description": "Onboard LED (GPIO25)"
+        "pin": 0,
+        "description": "GP0 (led0 in the Pico overlay): wire an LED with a series resistor to GND. Blinks every 500 ms."
       }
     ]
   },

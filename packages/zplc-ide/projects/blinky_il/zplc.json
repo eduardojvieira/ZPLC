@@ -1,0 +1,24 @@
+{
+  "$schema": "../../zplc.schema.json",
+  "schemaVersion": 2,
+  "name": "Blinky (Instruction List)",
+  "version": "1.0.0",
+  "description": "50% LED blinker in Instruction List: two TON timers with S and R operators.",
+  "target": {
+    "board": "posix"
+  },
+  "tasks": [
+    {
+      "name": "MainTask",
+      "trigger": "cyclic",
+      "interval_ms": 10,
+      "priority": 1,
+      "programs": [
+        "main.il"
+      ]
+    }
+  ],
+  "build": {
+    "outDir": "build"
+  }
+}

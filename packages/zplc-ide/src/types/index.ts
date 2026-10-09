@@ -793,7 +793,6 @@ PROGRAM NewProgram
 END_PROGRAM`;
     case 'LD':
       return JSON.stringify({
-        "$schema": "./schemas/ld.schema.json",
         "name": "NewProgram",
         "description": "New Ladder Diagram",
         "version": "1.0.0",
@@ -809,7 +808,6 @@ END_PROGRAM`;
       }, null, 2);
     case 'FBD':
       return JSON.stringify({
-        "$schema": "./schemas/fbd.schema.json",
         "name": "NewProgram",
         "description": "New Function Block Diagram",
         "version": "1.0.0",
@@ -826,7 +824,6 @@ END_PROGRAM`;
       }, null, 2);
     case 'SFC':
       return JSON.stringify({
-        "$schema": "./schemas/sfc.schema.json",
         "name": "NewProgram",
         "description": "New Sequential Function Chart",
         "version": "1.0.0",

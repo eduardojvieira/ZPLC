@@ -2,9 +2,12 @@
 (*  Opta LED Chaser                                             *)
 (*  IEC 61131-3 Structured Text                                 *)
 (*                                                              *)
-(*  D0–D3 Larson scanner driven by a self-resetting TON.        *)
-(*  TON pattern: IN := NOT Timer.Q — fires every 150 ms,        *)
-(*  auto-resets on the next scan cycle.                         *)
+(*  D0–D3 (%Q0.0–%Q0.3, the four Opta status LEDs) Larson       *)
+(*  scanner: one LED lit, bouncing D0 → D3 → D0.                *)
+(*  Driven by a self-resetting TON (IN := NOT Timer.Q): Q is    *)
+(*  TRUE for one scan, then the timer restarts, so a step takes *)
+(*  PT + 2 scans. With the 10 ms task: first step at 150 ms,    *)
+(*  then one every 170 ms.                                      *)
 (* ============================================================ *)
 
 PROGRAM OptaLEDChaser
@@ -23,7 +26,8 @@ END_VAR
 (* Self-resetting 150 ms tick:
    When Timer.Q is FALSE → IN=TRUE → timer counts.
    When Timer.Q becomes TRUE → IN=FALSE → timer resets next scan.
-   Result: a 150 ms pulse every 150 ms, forever. *)
+   Result: Timer.Q is TRUE for one scan every 150 ms + 2 scans
+   (170 ms with a 10 ms task), forever. *)
 Timer(IN := NOT Timer.Q, PT := T#150ms);
 
 IF Timer.Q THEN

@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 
-import { DEFAULT_ZPLC_CONFIG, getLanguageFromFilename } from './index';
+import { DEFAULT_ZPLC_CONFIG, createEmptyFileContent, getLanguageFromFilename } from './index';
 import { normalizeNetworkConfigForBoard } from '../config/boardProfiles';
 
 describe('DEFAULT_ZPLC_CONFIG connectivity v1.5.2', () => {
@@ -84,5 +84,14 @@ describe('filename language detection', () => {
   it('normalizes extensions before selecting a language', () => {
     expect(getLanguageFromFilename('Counter.IL')).toBe('IL');
     expect(getLanguageFromFilename('Main.LD.JSON')).toBe('LD');
+  });
+});
+
+describe('new-file templates', () => {
+  // The repository ships no ld/fbd/sfc JSON schema files, so a "$schema": "./schemas/ld.schema.json" key in a new file points at nothing.
+  it('create visual files without a dangling $schema', () => {
+    for (const language of ['LD', 'FBD', 'SFC'] as const) {
+      expect(JSON.parse(createEmptyFileContent(language)), language).not.toHaveProperty('$schema');
+    }
   });
 });

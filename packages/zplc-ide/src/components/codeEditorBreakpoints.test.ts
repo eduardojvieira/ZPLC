@@ -160,8 +160,9 @@ describe('breakpointFileKey', () => {
 
 describe('breakpoint binding against the real compiler output of motor_start_stop', () => {
   const motorStartStop = fileURLToPath(new URL('../../projects/motor_start_stop', import.meta.url));
-  // Motor.st executable lines and the PC the compiler assigns to each.
-  const PC_BY_LINE: Record<number, number> = { 20: 24, 21: 56, 22: 61, 24: 82, 26: 96, 29: 104, 30: 122 };
+  // Motor.st executable lines and the PC the compiler assigns to each. The header comment of Motor.st and the comment above its first IF
+  // shifted every line by 17; the PCs are the ones the program had before the comments.
+  const PC_BY_LINE: Record<number, number> = { 37: 24, 38: 56, 39: 61, 41: 82, 43: 96, 46: 104, 47: 122 };
   const fileId = 'file:src/Motor.st';
   const editorKey = breakpointFileKey({ name: 'Motor.st', path: 'src/Motor.st' }, fileId);
   let motorMap: DebugMap;
@@ -182,21 +183,21 @@ describe('breakpoint binding against the real compiler output of motor_start_sto
 
   // Fails without sourceRefMatchesFile comparing normalised project paths and the editor key being the path.
   it('makes exactly the executable lines eligible under the key the editor uses', () => {
-    expect(getEligibleBreakpointLines(motorMap, editorKey)).toEqual([20, 21, 22, 24, 26, 29, 30]);
-    for (let line = 1; line <= 33; line += 1) {
+    expect(getEligibleBreakpointLines(motorMap, editorKey)).toEqual([37, 38, 39, 41, 43, 46, 47]);
+    for (let line = 1; line <= 50; line += 1) {
       expect(getBreakpointPCForLine(motorMap, editorKey, line)).toBe(PC_BY_LINE[line] ?? null);
       expect(isLineBreakpointEligible(motorMap, editorKey, line)).toBe(line in PC_BY_LINE);
     }
-    expect(isLineBreakpointEligible(motorMap, editorKey, 3)).toBe(false); // VAR_INPUT declaration
-    expect(getBreakpointPCForLine(motorMap, editorKey, 27)).toBeNull(); // END_IF
+    expect(isLineBreakpointEligible(motorMap, editorKey, 19)).toBe(false); // VAR_INPUT declaration
+    expect(getBreakpointPCForLine(motorMap, editorKey, 44)).toBeNull(); // END_IF
   });
 
   // Fails without sourceRefMatchesFile stripping "./", "file:" and backslashes before comparing.
   it('matches the same project file however its key is spelled, but not another folder', () => {
     for (const key of ['src/Motor.st', './src/Motor.st', 'src\\Motor.st', 'file:src/Motor.st', 'SRC/MOTOR.ST']) {
-      expect(isLineBreakpointEligible(motorMap, key, 21)).toBe(true);
+      expect(isLineBreakpointEligible(motorMap, key, 38)).toBe(true);
     }
-    expect(isLineBreakpointEligible(motorMap, 'lib/Motor.st', 21)).toBe(false);
+    expect(isLineBreakpointEligible(motorMap, 'lib/Motor.st', 38)).toBe(false);
     const ladder: DebugMap = { ...DEBUG_MAP, pou: { Main: { ...DEBUG_MAP.pou.main, sourceRef: 'src/main.ld' } } };
     expect(isLineBreakpointEligible(ladder, 'src/main.ld.json', 22)).toBe(true);
   });

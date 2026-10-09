@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "id": "AnalogNoSensorReading",
+  "tickMs": 100,
+  "durationMs": 300,
+  "events": [],
+  "expectations": [
+    { "kind": "AT", "atMs": 0, "condition": { "Main.SensorFault": true } },
+    { "kind": "FOR", "fromMs": 0, "forMs": 300, "condition": { "Main.SensorFault": true } }
+  ]
+}

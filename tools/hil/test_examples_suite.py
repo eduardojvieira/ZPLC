@@ -16,7 +16,7 @@ def run_tests():
         # Blink period 500ms.
         # Run 100ms -> likely Q=0 (timer running)
         # We just check it runs and doesn't crash.
-        path = "packages/zplc-ide/src/examples/blinky.ld.json"
+        path = "packages/zplc-ide/projects/blinky/src/main.ld.json"
         print(f"Compiling {path}...")
         tester.compile_and_run(path, duration=0.2)
 
@@ -35,7 +35,7 @@ def run_tests():
     # -------------------------------------------------------------------------
     print("\n--- TEST: Blinky (FBD) ---")
     try:
-        path = "packages/zplc-ide/src/examples/blinky.fbd.json"
+        path = "packages/zplc-ide/projects/blinky_fbd/src/main.fbd.json"
         tester.compile_and_run(path, duration=0.2)
         val = tester.peek(0x1000, 1)
         print(f"Output %Q0.0: {val[0] if val else 'ERR'}")
@@ -49,7 +49,7 @@ def run_tests():
     # -------------------------------------------------------------------------
     print("\n--- TEST: Blinky (SFC) ---")
     try:
-        path = "packages/zplc-ide/src/examples/blinky.sfc.json"
+        path = "packages/zplc-ide/projects/blinky_sfc/src/main.sfc.json"
         tester.compile_and_run(path, duration=0.2)
         # Initial step LED_ON -> Output should be TRUE initially
         r1 = tester.expect_bool(0x1000, 0, True, "LED_Output (Initial)")
@@ -63,7 +63,7 @@ def run_tests():
     # -------------------------------------------------------------------------
     print("\n--- TEST: Motor Control (LD) ---")
     try:
-        path = "packages/zplc-ide/src/examples/motor_control.ld.json"
+        path = "packages/zplc-ide/projects/motor_control/src/main.ld.json"
         tester.compile_and_run(path, duration=0.2)
 
         # Initial state: Motor OFF

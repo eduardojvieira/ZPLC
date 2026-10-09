@@ -3,7 +3,7 @@
   "schemaVersion": 2,
   "name": "Kitchen Sink Test",
   "version": "1.0.0",
-  "description": "Comprehensive test project using ALL standard library FBs and Functions",
+  "description": "Standard-library conformance fixture: every block and function, split into ten programs that each fit the 256-byte per-program WORK budget",
   "target": {
     "board": "posix"
   },
@@ -13,12 +13,93 @@
   },
   "tasks": [
     {
-      "name": "MainTask",
+      "name": "SequencingTask",
       "trigger": "cyclic",
       "interval_ms": 100,
       "priority": 1,
       "programs": [
-        "main.st"
+        "sequencing.st"
+      ]
+    },
+    {
+      "name": "ProcessTask",
+      "trigger": "cyclic",
+      "interval_ms": 100,
+      "priority": 2,
+      "programs": [
+        "process_control.st"
+      ]
+    },
+    {
+      "name": "PidTask",
+      "trigger": "cyclic",
+      "interval_ms": 100,
+      "priority": 3,
+      "programs": [
+        "pid.st"
+      ]
+    },
+    {
+      "name": "BuffersTask",
+      "trigger": "cyclic",
+      "interval_ms": 100,
+      "priority": 4,
+      "programs": [
+        "buffers.st"
+      ]
+    },
+    {
+      "name": "MathTask",
+      "trigger": "cyclic",
+      "interval_ms": 100,
+      "priority": 5,
+      "programs": [
+        "math.st"
+      ]
+    },
+    {
+      "name": "BitsScalingTask",
+      "trigger": "cyclic",
+      "interval_ms": 100,
+      "priority": 6,
+      "programs": [
+        "bits_scaling.st"
+      ]
+    },
+    {
+      "name": "StringsMeasureTask",
+      "trigger": "cyclic",
+      "interval_ms": 100,
+      "priority": 7,
+      "programs": [
+        "strings_measure.st"
+      ]
+    },
+    {
+      "name": "StringsBuildTask",
+      "trigger": "cyclic",
+      "interval_ms": 100,
+      "priority": 8,
+      "programs": [
+        "strings_build.st"
+      ]
+    },
+    {
+      "name": "StringsEditTask",
+      "trigger": "cyclic",
+      "interval_ms": 100,
+      "priority": 9,
+      "programs": [
+        "strings_edit.st"
+      ]
+    },
+    {
+      "name": "StringsCompareTask",
+      "trigger": "cyclic",
+      "interval_ms": 100,
+      "priority": 10,
+      "programs": [
+        "strings_compare.st"
       ]
     }
   ],

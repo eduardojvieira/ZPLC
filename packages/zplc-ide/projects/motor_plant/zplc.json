@@ -3,7 +3,7 @@
   "schemaVersion": 2,
   "name": "Motor Plant",
   "version": "1.0.0",
-  "description": "Host-native deterministic motor plant closed-loop golden slice",
+  "description": "Host-native deterministic motor plant closed-loop golden slice: start/stop with speed feedback and a start-failure timeout",
   "target": {
     "board": "posix"
   },

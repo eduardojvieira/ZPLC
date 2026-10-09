@@ -1,0 +1,24 @@
+{
+  "$schema": "../../zplc.schema.json",
+  "schemaVersion": 2,
+  "name": "Blinky (Sequential Function Chart)",
+  "version": "1.0.0",
+  "description": "50% LED blinker in Sequential Function Chart: two timed steps, LED_ON then LED_OFF.",
+  "target": {
+    "board": "posix"
+  },
+  "tasks": [
+    {
+      "name": "MainTask",
+      "trigger": "cyclic",
+      "interval_ms": 10,
+      "priority": 1,
+      "programs": [
+        "main.sfc"
+      ]
+    }
+  ],
+  "build": {
+    "outDir": "build"
+  }
+}

@@ -8,7 +8,7 @@ import { parseSFCModel } from './sfc';
 import { MAX_VIOLATIONS, loadFBDFile, loadLDFile, loadSFCFile } from './visualFileLoad';
 
 const packageRoot = join(import.meta.dir, '../..');
-const fixtures = (suffix: string): string[] => ['projects', 'src/examples'].flatMap((directory) => [...new Bun.Glob(`${directory}/**/*.${suffix}.json`).scanSync({ cwd: packageRoot })]).sort();
+const fixtures = (suffix: string): string[] => [...new Bun.Glob(`projects/**/*.${suffix}.json`).scanSync({ cwd: packageRoot })].sort();
 const read = (path: string): string => readFileSync(join(packageRoot, path), 'utf8');
 
 function failure(result: ReturnType<typeof loadLDFile>) {
@@ -18,9 +18,9 @@ function failure(result: ReturnType<typeof loadLDFile>) {
 
 describe('valid visual files load', () => {
   it('finds the example projects it is checked against', () => {
-    expect(fixtures('ld').length).toBeGreaterThanOrEqual(5);
-    expect(fixtures('fbd').length).toBeGreaterThanOrEqual(2);
-    expect(fixtures('sfc').length).toBeGreaterThanOrEqual(2);
+    expect(fixtures('ld').length).toBeGreaterThanOrEqual(3);
+    expect(fixtures('fbd').length).toBeGreaterThanOrEqual(1);
+    expect(fixtures('sfc').length).toBeGreaterThanOrEqual(1);
   });
 
   it('loads every Ladder example project to the model the editor already used', () => {
@@ -102,7 +102,7 @@ describe('malformed Ladder files are rejected with the file name and the first v
 
 describe('malformed FBD and SFC files are rejected the same way', () => {
   it('rejects an FBD file with a mistyped block and reports the path', () => {
-    const model = JSON.parse(read('projects/blinky/src/main.fbd.json')) as { blocks: Array<Record<string, unknown>> };
+    const model = JSON.parse(read('projects/blinky_fbd/src/main.fbd.json')) as { blocks: Array<Record<string, unknown>> };
     model.blocks[1].position = { x: 'left', y: 10 };
     const error = failure(loadFBDFile('src/main.fbd.json', JSON.stringify(model)));
     expect(error.fileName).toBe('src/main.fbd.json');
@@ -110,13 +110,13 @@ describe('malformed FBD and SFC files are rejected the same way', () => {
   });
 
   it('rejects an FBD file whose connection points at a block that does not exist', () => {
-    const model = JSON.parse(read('projects/blinky/src/main.fbd.json')) as { connections: Array<{ from: { block: string } }> };
+    const model = JSON.parse(read('projects/blinky_fbd/src/main.fbd.json')) as { connections: Array<{ from: { block: string } }> };
     model.connections[0].from.block = 'no_such_block';
     expect(failure(loadFBDFile('a.fbd.json', JSON.stringify(model))).violations[0]).toContain('unknown source block');
   });
 
   it('rejects an SFC file without steps and one without an initial step', () => {
-    const model = JSON.parse(read('projects/blinky/src/main.sfc.json')) as { steps: Array<{ isInitial?: boolean }> };
+    const model = JSON.parse(read('projects/blinky_sfc/src/main.sfc.json')) as { steps: Array<{ isInitial?: boolean }> };
     expect(failure(loadSFCFile('a.sfc.json', JSON.stringify({ ...model, steps: 'none' }))).violations[0]).toMatch(/^steps: /);
     for (const step of model.steps) step.isInitial = false;
     expect(failure(loadSFCFile('a.sfc.json', JSON.stringify(model))).violations[0]).toContain('initial step');

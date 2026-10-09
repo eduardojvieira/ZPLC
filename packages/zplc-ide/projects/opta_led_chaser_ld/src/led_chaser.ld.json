@@ -1,0 +1,1296 @@
+{
+  "name": "Opta_LED_Chaser",
+  "description": "Larson scanner on Opta D0-D3 in Ladder: a TON tick and a one-hot shift register of six positions",
+  "version": "3.0.0",
+  "variables": {
+    "local": [
+      {
+        "name": "Tick",
+        "type": "BOOL",
+        "initialValue": false,
+        "comment": "TRUE for one scan every 150 ms + 2 scans"
+      },
+      {
+        "name": "TimerInst",
+        "type": "TON"
+      },
+      {
+        "name": "Carry",
+        "type": "BOOL",
+        "initialValue": false
+      },
+      {
+        "name": "P0",
+        "type": "BOOL",
+        "initialValue": true,
+        "comment": "Position 0 of the 6-step bounce (D0 D1 D2 D3 D2 D1)"
+      },
+      {
+        "name": "P1",
+        "type": "BOOL",
+        "initialValue": false
+      },
+      {
+        "name": "P2",
+        "type": "BOOL",
+        "initialValue": false
+      },
+      {
+        "name": "P3",
+        "type": "BOOL",
+        "initialValue": false
+      },
+      {
+        "name": "P4",
+        "type": "BOOL",
+        "initialValue": false
+      },
+      {
+        "name": "P5",
+        "type": "BOOL",
+        "initialValue": false
+      }
+    ],
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "LED_D0",
+        "type": "BOOL",
+        "address": "%Q0.0"
+      },
+      {
+        "name": "LED_D1",
+        "type": "BOOL",
+        "address": "%Q0.1"
+      },
+      {
+        "name": "LED_D2",
+        "type": "BOOL",
+        "address": "%Q0.2"
+      },
+      {
+        "name": "LED_D3",
+        "type": "BOOL",
+        "address": "%Q0.3"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung_timer",
+      "number": 1,
+      "comment": "150 ms tick: TimerInst runs while Tick is FALSE; its Q is Tick, TRUE for one scan, which resets it",
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "nc_tick",
+              "type": "contact_nc",
+              "variable": "Tick",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "fb_ton",
+              "type": "function_block",
+              "fbType": "TON",
+              "instance": "TimerInst",
+              "parameters": {
+                "IN": "CONNECTED",
+                "PT": "T#150ms"
+              },
+              "outputs": {
+                "Q": "Tick"
+              },
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ],
+      "branches": []
+    },
+    {
+      "id": "rung_carry",
+      "number": 2,
+      "comment": "Carry = P5 before the shift (P0 takes it back at the end)",
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "p5_carry",
+              "type": "contact_no",
+              "variable": "P5",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_carry",
+              "type": "coil",
+              "variable": "Carry",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ],
+      "branches": []
+    },
+    {
+      "id": "rung_p5",
+      "number": 3,
+      "comment": "P5 takes P4 on a tick, holds otherwise",
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "tick_rung_p5",
+              "type": "contact_no",
+              "variable": "Tick",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "src_rung_p5",
+              "type": "contact_no",
+              "variable": "P4",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_rung_p5",
+              "type": "coil",
+              "variable": "P5",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "notick_rung_p5",
+              "type": "contact_nc",
+              "variable": "Tick",
+              "row": 1,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "hold_rung_p5",
+              "type": "contact_no",
+              "variable": "P5",
+              "row": 1,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ],
+      "branches": [
+        {
+          "id": "branch_rung_p5",
+          "startCol": 0,
+          "endCol": 1,
+          "rows": [
+            0,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rung_p4",
+      "number": 4,
+      "comment": "P4 takes P3 on a tick, holds otherwise",
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "tick_rung_p4",
+              "type": "contact_no",
+              "variable": "Tick",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "src_rung_p4",
+              "type": "contact_no",
+              "variable": "P3",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_rung_p4",
+              "type": "coil",
+              "variable": "P4",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "notick_rung_p4",
+              "type": "contact_nc",
+              "variable": "Tick",
+              "row": 1,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "hold_rung_p4",
+              "type": "contact_no",
+              "variable": "P4",
+              "row": 1,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ],
+      "branches": [
+        {
+          "id": "branch_rung_p4",
+          "startCol": 0,
+          "endCol": 1,
+          "rows": [
+            0,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rung_p3",
+      "number": 5,
+      "comment": "P3 takes P2 on a tick, holds otherwise",
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "tick_rung_p3",
+              "type": "contact_no",
+              "variable": "Tick",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "src_rung_p3",
+              "type": "contact_no",
+              "variable": "P2",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_rung_p3",
+              "type": "coil",
+              "variable": "P3",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "notick_rung_p3",
+              "type": "contact_nc",
+              "variable": "Tick",
+              "row": 1,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "hold_rung_p3",
+              "type": "contact_no",
+              "variable": "P3",
+              "row": 1,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ],
+      "branches": [
+        {
+          "id": "branch_rung_p3",
+          "startCol": 0,
+          "endCol": 1,
+          "rows": [
+            0,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rung_p2",
+      "number": 6,
+      "comment": "P2 takes P1 on a tick, holds otherwise",
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "tick_rung_p2",
+              "type": "contact_no",
+              "variable": "Tick",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "src_rung_p2",
+              "type": "contact_no",
+              "variable": "P1",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_rung_p2",
+              "type": "coil",
+              "variable": "P2",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "notick_rung_p2",
+              "type": "contact_nc",
+              "variable": "Tick",
+              "row": 1,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "hold_rung_p2",
+              "type": "contact_no",
+              "variable": "P2",
+              "row": 1,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ],
+      "branches": [
+        {
+          "id": "branch_rung_p2",
+          "startCol": 0,
+          "endCol": 1,
+          "rows": [
+            0,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rung_p1",
+      "number": 7,
+      "comment": "P1 takes P0 on a tick, holds otherwise",
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "tick_rung_p1",
+              "type": "contact_no",
+              "variable": "Tick",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "src_rung_p1",
+              "type": "contact_no",
+              "variable": "P0",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_rung_p1",
+              "type": "coil",
+              "variable": "P1",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "notick_rung_p1",
+              "type": "contact_nc",
+              "variable": "Tick",
+              "row": 1,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "hold_rung_p1",
+              "type": "contact_no",
+              "variable": "P1",
+              "row": 1,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ],
+      "branches": [
+        {
+          "id": "branch_rung_p1",
+          "startCol": 0,
+          "endCol": 1,
+          "rows": [
+            0,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rung_p0",
+      "number": 8,
+      "comment": "P0 takes the carried P5 on a tick, holds otherwise",
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "tick_rung_p0",
+              "type": "contact_no",
+              "variable": "Tick",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "src_rung_p0",
+              "type": "contact_no",
+              "variable": "Carry",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_rung_p0",
+              "type": "coil",
+              "variable": "P0",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "notick_rung_p0",
+              "type": "contact_nc",
+              "variable": "Tick",
+              "row": 1,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "hold_rung_p0",
+              "type": "contact_no",
+              "variable": "P0",
+              "row": 1,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ],
+      "branches": [
+        {
+          "id": "branch_rung_p0",
+          "startCol": 0,
+          "endCol": 1,
+          "rows": [
+            0,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rung_led0",
+      "number": 9,
+      "comment": "D0 lit at position 0",
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "p0_led",
+              "type": "contact_no",
+              "variable": "P0",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_d0",
+              "type": "coil",
+              "variable": "LED_D0",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ],
+      "branches": []
+    },
+    {
+      "id": "rung_led1",
+      "number": 10,
+      "comment": "D1 lit at positions 1 and 5 (going out and coming back)",
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "a_rung_led1",
+              "type": "contact_no",
+              "variable": "P1",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_rung_led1",
+              "type": "coil",
+              "variable": "LED_D1",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "b_rung_led1",
+              "type": "contact_no",
+              "variable": "P5",
+              "row": 1,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ],
+      "branches": [
+        {
+          "id": "branch_rung_led1",
+          "startCol": 0,
+          "endCol": 0,
+          "rows": [
+            0,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rung_led2",
+      "number": 11,
+      "comment": "D2 lit at positions 2 and 4 (going out and coming back)",
+      "gridConfig": {
+        "cols": 8,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "a_rung_led2",
+              "type": "contact_no",
+              "variable": "P2",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_rung_led2",
+              "type": "coil",
+              "variable": "LED_D2",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": {
+              "id": "b_rung_led2",
+              "type": "contact_no",
+              "variable": "P4",
+              "row": 1,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": null,
+            "hasWire": false
+          }
+        ]
+      ],
+      "branches": [
+        {
+          "id": "branch_rung_led2",
+          "startCol": 0,
+          "endCol": 0,
+          "rows": [
+            0,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "id": "rung_led3",
+      "number": 12,
+      "comment": "D3 lit at position 3 (the turning point)",
+      "gridConfig": {
+        "cols": 8,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "p3_led",
+              "type": "contact_no",
+              "variable": "P3",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "coil_d3",
+              "type": "coil",
+              "variable": "LED_D3",
+              "row": 0,
+              "col": 7
+            },
+            "hasWire": true
+          }
+        ]
+      ],
+      "branches": []
+    }
+  ],
+  "metadata": {
+    "author": "ZPLC Team",
+    "created": "2024-12-24",
+    "modified": "2026-10-09",
+    "iecStandard": "IEC 61131-3",
+    "notes": [
+      "Larson scanner with contacts, coils and one TON:",
+      "1. Rung 1 is a self-resetting tick: TimerInst runs while Tick is FALSE and its Q is Tick, TRUE for one scan.",
+      "2. P0..P5 are a one-hot ring of six positions (D0 D1 D2 D3 D2 D1). On a tick each position takes its",
+      "   predecessor; between ticks it holds its value (the second path of each shift rung).",
+      "3. The shift runs from P5 down to P1 so each rung still sees the old value below it; P5 is saved in Carry",
+      "   first and P0 takes it last.",
+      "4. D0 = P0, D1 = P1 or P5, D2 = P2 or P4, D3 = P3.",
+      "With a 10 ms task the first step is at 150 ms and then one step every 170 ms (150 ms + 2 scans)."
+    ]
+  }
+}

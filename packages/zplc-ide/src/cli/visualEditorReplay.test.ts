@@ -14,6 +14,8 @@ import { copyLDRungFragment, pasteLDRungFragment } from '../editors/ld/graphMode
 import { compilerCompile } from './toolApi';
 
 const blinky = fileURLToPath(new URL('../../projects/blinky', import.meta.url));
+const blinkyFbd = fileURLToPath(new URL('../../projects/blinky_fbd', import.meta.url));
+const blinkySfc = fileURLToPath(new URL('../../projects/blinky_sfc', import.meta.url));
 const manifestPath = 'zplc.json';
 
 async function temporaryVisualWorkspace(sourcePath: string, content: string): Promise<string> {
@@ -45,10 +47,10 @@ async function expectCompiles(root: string): Promise<void> {
 
 describe('Blinky visual editor replay', () => {
   it('replays an FBD edit without losing blocks or connections, then reopens and compiles it', async () => {
-    const canonical = await readFile(join(blinky, 'src/main.fbd.json'), 'utf8');
+    const canonical = await readFile(join(blinkyFbd, 'src/main.fbd.json'), 'utf8');
     const original = serializeFBDModel(parseFBDModel(canonical));
     const model = parseFBDModel(original);
-    const edited = serializeFBDModel({ ...model, blocks: model.blocks.map((block) => block.id === 'not_enable' ? { ...block, comment: 'Reviewed NOT feedback' } : block) });
+    const edited = serializeFBDModel({ ...model, blocks: model.blocks.map((block) => block.id === 'not_led' ? { ...block, comment: 'Reviewed NOT feedback' } : block) });
     replaySnapshot('blinky:fbd', original, edited);
 
     const root = await temporaryVisualWorkspace('main.fbd.json', edited);
@@ -56,17 +58,17 @@ describe('Blinky visual editor replay', () => {
       const reopened = parseFBDModel(await readFile(join(root, 'src/main.fbd.json'), 'utf8'));
       expect(reopened.blocks).toHaveLength(model.blocks.length);
       expect(reopened.connections).toEqual(model.connections);
-      expect(reopened.blocks.find((block) => block.id === 'not_enable')?.comment).toBe('Reviewed NOT feedback');
+      expect(reopened.blocks.find((block) => block.id === 'not_led')?.comment).toBe('Reviewed NOT feedback');
       await expectCompiles(root);
     }
     finally { await rm(root, { recursive: true, force: true }); }
-    expect(await readFile(join(blinky, 'src/main.fbd.json'), 'utf8')).toBe(canonical);
+    expect(await readFile(join(blinkyFbd, 'src/main.fbd.json'), 'utf8')).toBe(canonical);
   });
 
   it('replays a pasted FBD node as one undoable canonical snapshot, then reopens and compiles it', async () => {
-    const canonical = await readFile(join(blinky, 'src/main.fbd.json'), 'utf8');
+    const canonical = await readFile(join(blinkyFbd, 'src/main.fbd.json'), 'utf8');
     const model = parseFBDModel(canonical);
-    const fragment = copyFBDFragment(model.blocks.map((block) => ({ id: block.id, type: 'block', position: block.position, selected: block.id === 'not_enable', data: block })), model.connections.map((connection) => ({ id: connection.id, source: connection.from.block, sourceHandle: connection.from.port, target: connection.to.block, targetHandle: connection.to.port })))!;
+    const fragment = copyFBDFragment(model.blocks.map((block) => ({ id: block.id, type: 'block', position: block.position, selected: block.id === 'not_led', data: block })), model.connections.map((connection) => ({ id: connection.id, source: connection.from.block, sourceHandle: connection.from.port, target: connection.to.block, targetHandle: connection.to.port })))!;
     const edited = serializeFBDModel(pasteFBDFragment(model, fragment)!);
     replaySnapshot('blinky:fbd-paste', serializeFBDModel(model), edited);
     const root = await temporaryVisualWorkspace('main.fbd.json', edited);
@@ -109,15 +111,15 @@ describe('Blinky visual editor replay', () => {
     try {
       const reopened = parseLDModel(await readFile(join(root, 'src/main.ld.json'), 'utf8'));
       expect(reopened.rungs).toHaveLength(model.rungs.length + 1);
-      expect(reopened.variables.local.map((variable) => variable.name)).toContain('BlinkTimer_copy');
-      expect(reopened.rungs[1]?.grid?.flat().map((cell) => cell.element?.instance).filter(Boolean)).toContain('BlinkTimer_copy');
+      expect(reopened.variables.local.map((variable) => variable.name)).toContain('OffTimer_copy');
+      expect(reopened.rungs[1]?.grid?.flat().map((cell) => cell.element?.instance).filter(Boolean)).toContain('OffTimer_copy');
       await expectCompiles(root);
     } finally { await rm(root, { recursive: true, force: true }); }
     expect(await readFile(join(blinky, 'src/main.ld.json'), 'utf8')).toBe(canonical);
   });
 
   it('replays an SFC edit without losing its initial step, transitions, or actions, then reopens and compiles it', async () => {
-    const canonical = await readFile(join(blinky, 'src/main.sfc.json'), 'utf8');
+    const canonical = await readFile(join(blinkySfc, 'src/main.sfc.json'), 'utf8');
     const original = serializeSFCModel(parseSFCModel(canonical));
     const model = parseSFCModel(original);
     const edited = serializeSFCModel({ ...model, steps: model.steps.map((step) => step.id === 'step_led_on' ? { ...step, comment: 'Reviewed initial state' } : step) });
@@ -134,11 +136,11 @@ describe('Blinky visual editor replay', () => {
       await expectCompiles(root);
     }
     finally { await rm(root, { recursive: true, force: true }); }
-    expect(await readFile(join(blinky, 'src/main.sfc.json'), 'utf8')).toBe(canonical);
+    expect(await readFile(join(blinkySfc, 'src/main.sfc.json'), 'utf8')).toBe(canonical);
   });
 
   it('replays a pasted SFC step as one undoable canonical snapshot, then reopens and compiles it', async () => {
-    const canonical = await readFile(join(blinky, 'src/main.sfc.json'), 'utf8');
+    const canonical = await readFile(join(blinkySfc, 'src/main.sfc.json'), 'utf8');
     const model = parseSFCModel(canonical);
     const fragment = copySFCFragment(model.steps.map((step) => ({ id: step.id, type: 'step', position: step.position, selected: step.id === 'step_led_on', data: step })), [])!;
     const pasted = pasteSFCFragment(model, fragment)!;

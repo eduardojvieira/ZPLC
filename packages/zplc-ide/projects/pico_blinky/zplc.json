@@ -3,12 +3,12 @@
   "schemaVersion": 2,
   "name": "Pico Blinky",
   "version": "1.0.0",
-  "description": "Raspberry Pi Pico LED blink demo - toggles onboard LED every 500ms",
+  "description": "Raspberry Pi Pico: blinks an LED on GP0 (%Q0.0) every 500 ms with a scan counter, and holds GP1 (%Q0.1) high while the program runs. Pins are those of firmware/app/boards/rpi_pico_rp2040.overlay.",
   "author": "ZPLC Team",
   "target": {
-    "board": "esp32s3_devkitc",
-    "cpu": "ESP32-S3",
-    "clock_mhz": 240
+    "board": "rpi_pico",
+    "cpu": "rp2040",
+    "clock_mhz": 125
   },
   "compiler": {
     "optimization": "speed",
@@ -21,14 +21,15 @@
         "name": "LED_Output",
         "address": "%Q0.0",
         "type": "BOOL",
-        "pin": 38,
-        "description": "Onboard LED (GPIO 25)"
+        "pin": 0,
+        "description": "GP0 (led0 in the Pico overlay): wire an LED with a series resistor to GND. Blinks every 500 ms."
       },
       {
         "name": "PWR",
         "address": "%Q0.1",
         "type": "BOOL",
-        "pin": 15
+        "pin": 1,
+        "description": "GP1 (led1 in the Pico overlay): held high while the program runs, a run indicator. Despite its name it does not switch any power."
       }
     ]
   },
@@ -36,7 +37,7 @@
     {
       "name": "MainTask",
       "trigger": "cyclic",
-      "interval_ms": 13,
+      "interval_ms": 10,
       "priority": 1,
       "programs": [
         "main.st"
@@ -45,17 +46,6 @@
   ],
   "build": {
     "outDir": "build"
-  },
-  "network": {
-    "wifi": {
-      "enabled": true,
-      "ssid": "Casa",
-      "security": "wpa2-psk",
-      "hiddenSsid": false,
-      "ipv4": {
-        "dhcp": true
-      }
-    }
   },
   "communication": {
     "mqtt": {

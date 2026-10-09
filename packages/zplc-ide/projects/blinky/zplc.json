@@ -3,7 +3,7 @@
   "schemaVersion": 2,
   "name": "Blinky",
   "version": "1.0.0",
-  "description": "Simple LED blinker using Ladder Diagram",
+  "description": "50% LED blinker in Ladder Diagram: two TON timers and SET/RESET coils.",
   "target": {
     "board": "posix"
   },

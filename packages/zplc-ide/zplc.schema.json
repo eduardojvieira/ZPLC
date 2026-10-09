@@ -50,7 +50,8 @@
                         "arduino_opta_wifi",
                         "stm32f746g_disco",
                         "esp32s3_devkitc",
-                        "nucleo_h743zi"
+                        "nucleo_h743zi",
+                        "posix"
                     ]
                 },
                 "cpu": {

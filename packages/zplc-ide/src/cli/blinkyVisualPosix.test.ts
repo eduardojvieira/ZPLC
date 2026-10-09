@@ -1,44 +1,25 @@
 import { describe, expect } from 'bun:test';
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { itNative, nativeRuntimeBinary } from './nativeRuntimeGuard';
 import { scenarioRun } from './toolApi';
 
-const blinky = fileURLToPath(new URL('../../projects/blinky', import.meta.url));
-const visualPrograms = [
-  ['LD', 'main.ld'] as const,
-  ['FBD', 'main.fbd'] as const,
-  ['SFC', 'main.sfc'] as const,
-];
-const canonicalFiles = [
-  'zplc.json',
-  'src/main.ld.json',
-  'src/main.fbd.json',
-  'src/main.il',
-  'src/main.sfc.json',
-  'src/main.st',
-  'tests/blinky-visual.scenario.json',
-];
+// Each language of the Blinky tour is its own checked-in project (a build only compiles the files its tasks name).
+const projectRoot = (name: string): string => fileURLToPath(new URL(`../../projects/${name}`, import.meta.url));
+const visualProjects = [
+  { name: 'blinky', label: 'the canonical checked-in Ladder project', scenarioId: 'BlinkyVisual', scenarioPath: 'tests/blinky-visual.scenario.json', files: ['zplc.json', 'src/main.ld.json', 'tests/blinky-visual.scenario.json'] },
+  { name: 'blinky_fbd', label: 'the checked-in FBD project', scenarioId: 'BlinkyFBD', scenarioPath: 'tests/blinky-fbd.scenario.json', files: ['zplc.json', 'src/main.fbd.json', 'tests/blinky-fbd.scenario.json'] },
+  { name: 'blinky_sfc', label: 'the checked-in SFC project', scenarioId: 'BlinkySFC', scenarioPath: 'tests/blinky-sfc.scenario.json', files: ['zplc.json', 'src/main.sfc.json', 'tests/blinky-sfc.scenario.json'] },
+] as const;
 
-async function visualWorkspace(program: string): Promise<{ root: string; canonical: Uint8Array[] }> {
-  const root = await mkdtemp(join(tmpdir(), 'zplc-blinky-visual-'));
-  await mkdir(join(root, 'src'));
-  await mkdir(join(root, 'tests'));
-  const canonical = await Promise.all(canonicalFiles.map((path) => readFile(join(blinky, path))));
-  await Promise.all(canonicalFiles.map((path, index) => writeFile(join(root, path), canonical[index]!)));
-  const manifest = JSON.parse(new TextDecoder().decode(canonical[0]!)) as { tasks: Array<{ programs: string[] }> };
-  manifest.tasks[0]!.programs = [program];
-  await writeFile(join(root, 'zplc.json'), `${JSON.stringify(manifest, null, 2)}\n`);
-  return { root, canonical };
-}
+const readFiles = (name: string, files: readonly string[]): Promise<Buffer[]> => Promise.all(files.map((path) => readFile(join(projectRoot(name), path))));
 
-function expectValidArtifacts(result: Awaited<ReturnType<typeof scenarioRun>>): void {
+function expectValidArtifacts(result: Awaited<ReturnType<typeof scenarioRun>>, scenarioId: string, scenarioPath: string): void {
   expect(result).toMatchObject({
     ok: true,
-    summary: { backend: 'native-posix', mode: 'logical-cyclic-task-set-scan', scenarios: [{ id: 'BlinkyVisual', path: 'tests/blinky-visual.scenario.json', passed: true }] },
+    summary: { backend: 'native-posix', mode: 'logical-cyclic-task-set-scan', scenarios: [{ id: scenarioId, path: scenarioPath, passed: true }] },
     evidence: { operation: 'scenario-run', outcome: 'passed' },
   });
   expect(result.evidence.artifacts.map((artifact) => artifact.kind)).toEqual(['zplc', 'trace']);
@@ -53,47 +34,24 @@ function expectValidArtifacts(result: Awaited<ReturnType<typeof scenarioRun>>): 
 }
 
 describe('Blinky visual languages on native POSIX', () => {
-  itNative('executes the canonical checked-in Ladder project deterministically without mutating it', async () => {
-    const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
-    process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
-    const canonical = await Promise.all(canonicalFiles.map((path) => readFile(join(blinky, path))));
-    try {
-      const first = await scenarioRun(blinky, 'BlinkyVisual');
-      const second = await scenarioRun(blinky, 'BlinkyVisual');
-      expectValidArtifacts(first);
-      expectValidArtifacts(second);
-      expect(JSON.stringify(second)).toBe(JSON.stringify(first));
-      expect(second.evidence.artifacts).toEqual(first.evidence.artifacts);
-      expect(Buffer.from(second.traceFile!)).toEqual(Buffer.from(first.traceFile!));
-      await expect(Promise.all(canonicalFiles.map((path) => readFile(join(blinky, path))))).resolves.toEqual(canonical);
-    } finally {
-      if (oldBinary === undefined) delete process.env.ZPLC_NATIVE_SIM_BIN;
-      else process.env.ZPLC_NATIVE_SIM_BIN = oldBinary;
-    }
-  }, 30_000);
-
-  itNative('compiles and executes LD, FBD, and SFC deterministically without mutating the checked-in example', async () => {
-    const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
-    process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
-    try {
-      for (const [, program] of visualPrograms) {
-        const { root, canonical } = await visualWorkspace(program);
-        try {
-          const first = await scenarioRun(root, 'BlinkyVisual');
-          const second = await scenarioRun(root, 'BlinkyVisual');
-          expectValidArtifacts(first);
-          expectValidArtifacts(second);
-          expect(JSON.stringify(second)).toBe(JSON.stringify(first));
-          expect(second.evidence.artifacts).toEqual(first.evidence.artifacts);
-          expect(Buffer.from(second.traceFile!)).toEqual(Buffer.from(first.traceFile!));
-          await expect(Promise.all(canonicalFiles.map((path) => readFile(join(blinky, path))))).resolves.toEqual(canonical);
-        } finally {
-          await rm(root, { recursive: true, force: true });
-        }
+  for (const { name, label, scenarioId, scenarioPath, files } of visualProjects) {
+    itNative(`executes ${label} deterministically without mutating it`, async () => {
+      const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
+      process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
+      const canonical = await readFiles(name, files);
+      try {
+        const first = await scenarioRun(projectRoot(name), scenarioId);
+        const second = await scenarioRun(projectRoot(name), scenarioId);
+        expectValidArtifacts(first, scenarioId, scenarioPath);
+        expectValidArtifacts(second, scenarioId, scenarioPath);
+        expect(JSON.stringify(second)).toBe(JSON.stringify(first));
+        expect(second.evidence.artifacts).toEqual(first.evidence.artifacts);
+        expect(Buffer.from(second.traceFile!)).toEqual(Buffer.from(first.traceFile!));
+        await expect(readFiles(name, files)).resolves.toEqual(canonical);
+      } finally {
+        if (oldBinary === undefined) delete process.env.ZPLC_NATIVE_SIM_BIN;
+        else process.env.ZPLC_NATIVE_SIM_BIN = oldBinary;
       }
-    } finally {
-      if (oldBinary === undefined) delete process.env.ZPLC_NATIVE_SIM_BIN;
-      else process.env.ZPLC_NATIVE_SIM_BIN = oldBinary;
-    }
-  }, 60_000);
+    }, 30_000);
+  }
 });
