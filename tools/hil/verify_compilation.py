@@ -47,7 +47,7 @@ def main():
         "ld_tests/*.json",
         "fbd_tests/*.json",
         "sfc_tests/*.json",
-        "../../packages/zplc-ide/src/examples/*.json",
+        "../../packages/zplc-ide/projects/*/src/*.json",
     ]
 
     files = []

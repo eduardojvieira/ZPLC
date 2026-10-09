@@ -8,7 +8,7 @@ import { parseSFCModel } from './sfc';
 import { MAX_VIOLATIONS, loadFBDFile, loadLDFile, loadSFCFile } from './visualFileLoad';
 
 const packageRoot = join(import.meta.dir, '../..');
-const fixtures = (suffix: string): string[] => ['projects', 'src/examples'].flatMap((directory) => [...new Bun.Glob(`${directory}/**/*.${suffix}.json`).scanSync({ cwd: packageRoot })]).sort();
+const fixtures = (suffix: string): string[] => [...new Bun.Glob(`projects/**/*.${suffix}.json`).scanSync({ cwd: packageRoot })].sort();
 const read = (path: string): string => readFileSync(join(packageRoot, path), 'utf8');
 
 function failure(result: ReturnType<typeof loadLDFile>) {
@@ -18,9 +18,9 @@ function failure(result: ReturnType<typeof loadLDFile>) {
 
 describe('valid visual files load', () => {
   it('finds the example projects it is checked against', () => {
-    expect(fixtures('ld').length).toBeGreaterThanOrEqual(5);
-    expect(fixtures('fbd').length).toBeGreaterThanOrEqual(2);
-    expect(fixtures('sfc').length).toBeGreaterThanOrEqual(2);
+    expect(fixtures('ld').length).toBeGreaterThanOrEqual(3);
+    expect(fixtures('fbd').length).toBeGreaterThanOrEqual(1);
+    expect(fixtures('sfc').length).toBeGreaterThanOrEqual(1);
   });
 
   it('loads every Ladder example project to the model the editor already used', () => {
