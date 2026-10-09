@@ -3,7 +3,7 @@
   "schemaVersion": 2,
   "name": "MultiTask Demo",
   "version": "1.0.0",
-  "description": "Demonstrates multi-task scheduling with fast and slow tasks",
+  "description": "Raspberry Pi Pico with two cyclic tasks: FastTask (10 ms) toggles LED1 on GP1 every 100 ms and SlowTask (100 ms) toggles LED2 on GP0 every 500 ms. Pins from firmware/app/boards/rpi_pico_rp2040.overlay. It has no scenario: the test engine runs one task per project, so check it on the board.",
   "author": "ZPLC Team",
   "target": {
     "board": "rpi_pico",
@@ -15,26 +15,19 @@
     "debug": true
   },
   "io": {
-    "inputs": [
-      {
-        "name": "Button",
-        "address": "%I0.0",
-        "description": "User button input",
-        "pin": 14
-      }
-    ],
+    "inputs": [],
     "outputs": [
       {
         "name": "LED1",
         "address": "%Q0.1",
-        "description": "Fast blink LED (external)",
-        "pin": 15
+        "description": "GP1 (led1 in the Pico overlay): fast blink, toggles every 100 ms",
+        "pin": 1
       },
       {
         "name": "LED2",
         "address": "%Q0.0",
-        "description": "Slow blink LED (onboard)",
-        "pin": 25
+        "description": "GP0 (led0 in the Pico overlay): slow blink, toggles every 500 ms",
+        "pin": 0
       }
     ]
   },
