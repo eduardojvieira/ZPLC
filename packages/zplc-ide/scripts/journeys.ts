@@ -37,6 +37,10 @@ async function openFolder(app: App, folder: string): Promise<void> {
 /** The page's own Monaco instance and its active editor, for reading what the editor shows and where things are. */
 const monacoEval = <T>(app: App, body: string) => app.eval<T>(`(async () => { const url = performance.getEntriesByType('resource').map((entry) => entry.name).find((name) => /\\/monaco-editor\\.js/.test(name)); const monaco = await import(url); const editor = monaco.editor.getEditors()[0]; ${body} })()`);
 const editorText = (app: App) => monacoEval<string>(app, 'return editor?.getModel()?.getValue() ?? "";');
+/** True when the text declares `PROGRAM <name>`: an example may open with a comment block, so its first characters say nothing. */
+const hasProgram = (text: string, name: string) => new RegExp(`^PROGRAM ${name}\\b`, 'm').test(text);
+/** The 1-based line of the open file that contains `text` (0 when none does), so that a journey does not hard-code where an example keeps a statement. */
+const lineWith = async (app: App, text: string) => (await editorText(app)).split('\n').findIndex((line) => line.includes(text)) + 1;
 /** Lines of the active editor that carry a decoration with this class (a breakpoint dot, the paused-line highlight). */
 const decoratedLines = (app: App, option: 'glyphMarginClassName' | 'className', value: string) => monacoEval<number[]>(app, `return editor.getModel().getAllDecorations().filter((decoration) => decoration.options.${option} === ${JSON.stringify(value)}).map((decoration) => decoration.range.startLineNumber);`);
 
@@ -118,7 +122,9 @@ async function compile(app: App): Promise<{ kind: BuildKind; message: string }> 
 async function buildWithUndeclaredVariable(app: App, project: string): Promise<void> {
   await openFolder(app, project);
   await openFile(app, 'src/Motor.st');
-  await cursorAtEndOfLine(app, 30);
+  const last = await lineWith(app, 'Reverse := FALSE;'); // the last statement of the program: the new one goes after it, inside the body
+  assert(last > 0, 'Motor.st no longer has the statement Reverse := FALSE; the journey adds a faulty statement after.');
+  await cursorAtEndOfLine(app, last);
   await app.press('Enter');
   await app.type('UndefinedVariable := 1;');
   await app.click(saveButton, 'the Save button');
@@ -227,7 +233,7 @@ export const JOURNEYS: Journey[] = [
       await app.until('the project workbench to appear', async () => await app.visible(toolbar) || undefined);
       assert(existsSync(join(folder, 'zplc.json')) && existsSync(join(folder, 'src', 'Motor.st')), 'The chosen folder does not hold the example (zplc.json, src/Motor.st).');
       await openFile(app, 'src/Motor.st');
-      assert((await editorText(app)).startsWith('PROGRAM Motor'), 'The created project does not open its program.');
+      assert(hasProgram(await editorText(app), 'Motor'), 'The created project does not open its program.');
     },
   },
   {
@@ -320,12 +326,12 @@ export const JOURNEYS: Journey[] = [
     },
   },
   {
-    name: '6 Simulate: connect, run, watch a value change', example: 'blinky',
+    name: '6 Simulate: connect, run, watch a value change', example: 'blinky_st',
     run: async (app, { project }) => {
       await openFolder(app, project);
       await openFile(app, 'src/main.st');
       const result = await compile(app);
-      assert(result.kind === 'built', `The Blinky example does not build: ${result.message}`);
+      assert(result.kind === 'built', `The Blinky (Structured Text) example does not build: ${result.message}`);
       await connectAndRun(app);
       const before = await cycles(app);
       await app.until('the cycle counter to advance', async () => await cycles(app) > before + 20 || undefined);
@@ -337,10 +343,10 @@ export const JOURNEYS: Journey[] = [
   {
     name: '7 Breakpoint stops execution', example: 'motor_start_stop',
     run: async (app, { project }) => {
-      const line = 29;
       await openFolder(app, project);
       await openFile(app, 'src/Motor.st');
-      assert((await editorText(app)).split('\n')[line - 1]?.includes('Forward := SealIn'), `Line ${line} of the example is no longer the statement the journey aims at.`);
+      const line = await lineWith(app, 'Forward := SealIn;');
+      assert(line > 0, 'Motor.st no longer has the statement Forward := SealIn; the journey aims at.');
       const result = await compile(app);
       assert(result.kind === 'built', `The Motor example does not build: ${result.message}`);
       await clickEditorLine(app, line, 'gutter');
@@ -405,7 +411,7 @@ export const JOURNEYS: Journey[] = [
       await app.type(' XY');
       await app.until('the typed text in the second file', async () => await modelText(app, 'Second.st') === appendToFirstLine(second, ' XY') || undefined);
       await app.click(editorTab('file:src/Motor.st'));
-      await app.until('Motor.st in the editor', async () => (await editorText(app)).startsWith('PROGRAM Motor') || undefined);
+      await app.until('Motor.st in the editor', async () => hasProgram(await editorText(app), 'Motor') || undefined);
       await clickEditorLine(app, 5);
       await app.press('Ctrl+Z');
       await app.until('undo in Motor.st', async () => await modelText(app, 'Motor.st') === original || undefined);
@@ -482,7 +488,7 @@ export const JOURNEYS: Journey[] = [
       const long = await editorView(app);
       assert(long.scrollTop > 500, `Long.st did not scroll: ${JSON.stringify(long)}`);
       await app.click(editorTab('file:src/Motor.st'));
-      await app.until('Motor.st in the editor', async () => (await editorText(app)).startsWith('PROGRAM Motor') || undefined);
+      await app.until('Motor.st in the editor', async () => hasProgram(await editorText(app), 'Motor') || undefined);
       await app.click(css('[role="separator"]'), 'the separator above the lower panel');
       for (let step = 0; step < 3; step++) await app.press('ArrowUp');
       const heightBefore = await editorHeight(app);
@@ -510,7 +516,7 @@ export const JOURNEYS: Journey[] = [
       await again.until('the project workbench to appear', async () => await again.visible(toolbar) || undefined);
       assert(!(await again.text()).includes('The project could not be opened'), 'Reopening the recent project shows an open error.');
       await again.until('the Motor.st and Long.st tabs back', async () => await again.visible(editorTab('file:src/Motor.st')) && await again.visible(editorTab('file:src/Long.st')) || undefined);
-      await again.until('Motor.st, the tab that was active, in the editor', async () => await activeTabId(again) === 'editor-tab-file:src/Motor.st' && (await editorText(again)).startsWith('PROGRAM Motor') || undefined);
+      await again.until('Motor.st, the tab that was active, in the editor', async () => await activeTabId(again) === 'editor-tab-file:src/Motor.st' && hasProgram(await editorText(again), 'Motor') || undefined);
       const restoredMotor = await again.until('the cursor of Motor.st back', async () => { const view = await editorView(again); return view.line === 12 ? view : undefined; })
         .catch(async (error: Error) => { throw new Error(`${error.message}: the cursor of Motor.st is at ${JSON.stringify(await editorView(again))}; it was moved to line 12 just before the app closed (line 30 before that)`); });
       assert(restoredMotor.line === 12, 'The cursor of Motor.st is not where it was left.');
