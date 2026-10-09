@@ -1254,7 +1254,33 @@ int zplc_vm_step(zplc_vm_t *vm) {
     vm->pc++;
     break;
 
-    /* ===== Integer Arithmetic ===== */
+    /* ===== Integer Arithmetic =====
+     *
+     * Defined results of the integer and REAL edge cases (RT-005, CMP-016).
+     * No input may crash the process or invoke undefined behaviour in C, and
+     * every result is the same on every platform. The stack holds 32-bit two's
+     * complement values; a narrower type wraps at its own width when its STORE
+     * opcode truncates the result. Until the language reference states these
+     * results (generated reference, DOC-006), this table is the statement.
+     *
+     *   Opcode      Operands                       Result
+     *   ADD SUB MUL any                            wraps modulo 2^32
+     *   DIV         b == 0                         fault ZPLC_VM_DIV_BY_ZERO
+     *               a == INT32_MIN and b == -1     INT32_MIN
+     *               otherwise                      quotient truncated toward zero
+     *   MOD         b == 0                         fault ZPLC_VM_DIV_BY_ZERO
+     *               b == -1                        0
+     *               otherwise                      remainder, sign of the dividend
+     *   NEG ABS     INT32_MIN                      INT32_MIN
+     *   SHL SHR     count >= 32                    0
+     *   SAR         count >= 32                    -1 if the value is negative, else 0
+     *   F2I         NaN                            0
+     *               >= 2^31 (or +Inf)              INT32_MAX
+     *               <= -2^31 (or -Inf)             INT32_MIN
+     *               otherwise                      truncated toward zero
+     *
+     * A shift count is read as unsigned, so a negative count is 32 or more.
+     */
 
   case OP_ADD:
     VM_CHECK_STACK_UNDERFLOW(vm, 2);
@@ -1291,7 +1317,8 @@ int zplc_vm_step(zplc_vm_t *vm) {
     }
     sa = (int32_t)a;
     sb = (int32_t)b;
-    VM_PUSH(vm, (uint32_t)(sa / sb));
+    /* INT32_MIN / -1 does not fit: negate in unsigned arithmetic (INT32_MIN). */
+    VM_PUSH(vm, sb == -1 ? 0U - a : (uint32_t)(sa / sb));
     vm->pc++;
     break;
 
@@ -1306,22 +1333,21 @@ int zplc_vm_step(zplc_vm_t *vm) {
     }
     sa = (int32_t)a;
     sb = (int32_t)b;
-    VM_PUSH(vm, (uint32_t)(sa % sb));
+    VM_PUSH(vm, sb == -1 ? 0U : (uint32_t)(sa % sb));
     vm->pc++;
     break;
 
   case OP_NEG:
     VM_CHECK_STACK_UNDERFLOW(vm, 1);
     a = VM_POP(vm);
-    VM_PUSH(vm, (uint32_t)(-(int32_t)a));
+    VM_PUSH(vm, 0U - a);
     vm->pc++;
     break;
 
   case OP_ABS:
     VM_CHECK_STACK_UNDERFLOW(vm, 1);
     a = VM_POP(vm);
-    sa = (int32_t)a;
-    VM_PUSH(vm, (uint32_t)(sa < 0 ? -sa : sa));
+    VM_PUSH(vm, (a >> 31) != 0U ? 0U - a : a);
     vm->pc++;
     break;
 
@@ -1456,7 +1482,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
     VM_CHECK_STACK_UNDERFLOW(vm, 2);
     b = VM_POP(vm);
     a = VM_POP(vm);
-    VM_PUSH(vm, a << (b & 31));
+    VM_PUSH(vm, b >= 32U ? 0U : a << b);
     vm->pc++;
     break;
 
@@ -1464,7 +1490,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
     VM_CHECK_STACK_UNDERFLOW(vm, 2);
     b = VM_POP(vm);
     a = VM_POP(vm);
-    VM_PUSH(vm, a >> (b & 31));
+    VM_PUSH(vm, b >= 32U ? 0U : a >> b);
     vm->pc++;
     break;
 
@@ -1472,8 +1498,12 @@ int zplc_vm_step(zplc_vm_t *vm) {
     VM_CHECK_STACK_UNDERFLOW(vm, 2);
     b = VM_POP(vm);
     a = VM_POP(vm);
-    sa = (int32_t)a;
-    VM_PUSH(vm, (uint32_t)(sa >> (b & 31)));
+    /* Clamping the count to 31 gives -1 or 0 for a count of 32 or more; the
+     * complement form avoids the implementation-defined signed right shift. */
+    if (b > 31U) {
+      b = 31U;
+    }
+    VM_PUSH(vm, (a >> 31) != 0U ? ~(~a >> b) : a >> b);
     vm->pc++;
     break;
 
@@ -1972,7 +2002,16 @@ int zplc_vm_step(zplc_vm_t *vm) {
     {
       float f;
       memcpy(&f, &a, sizeof(float));
-      VM_PUSH(vm, (uint32_t)(int32_t)f);
+      if (f != f) {
+        result = 0U; /* NaN */
+      } else if (f >= 2147483648.0f) {
+        result = (uint32_t)INT32_MAX;
+      } else if (f <= -2147483648.0f) {
+        result = (uint32_t)INT32_MIN;
+      } else {
+        result = (uint32_t)(int32_t)f;
+      }
+      VM_PUSH(vm, result);
     }
     vm->pc++;
     break;

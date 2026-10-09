@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-016",
+  "title": "the most negative DINT divided by -1 is the most negative DINT",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QD0", "type": "DINT", "value": -2147483648 }]
+}

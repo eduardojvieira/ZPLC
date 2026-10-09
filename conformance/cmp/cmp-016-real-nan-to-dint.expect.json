@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-016",
+  "title": "a not-a-number REAL converts to the integer 0",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [{ "at": "%QD0", "type": "DINT", "value": 0 }]
+}
