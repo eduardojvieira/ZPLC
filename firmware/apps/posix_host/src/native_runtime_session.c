@@ -242,6 +242,31 @@ static int session_dispatch_tasks(zplc_native_runtime_session_t *session)
     return 1;
 }
 
+/* A dispatch that stopped at a breakpoint did not finish its scan. Such a scan
+ * is neither counted nor allowed to consume the staged input pulses: the rest
+ * of it runs on resume or step, and the pulse must last until that scan ends. */
+static int session_complete_scan(zplc_native_runtime_session_t *session)
+{
+    if (session_focused_vm(session)->paused != 0U) return 0;
+    if (session_clear_simulation_pulses(session) != 0) return -1;
+    session->cycle_count += 1U;
+    return 0;
+}
+
+/* Stop and reset begin from a cycle boundary: drop a scan that a breakpoint
+ * interrupted (or that resume armed but no tick has run yet). */
+static void session_abandon_interrupted_scans(zplc_native_runtime_session_t *session)
+{
+    uint8_t index;
+    uint8_t count = session->task_count > 1U ? session->task_count : 1U;
+
+    for (index = 0U; index < count; ++index) {
+        zplc_vm_t *vm = session->task_count > 1U ? &session->task_vms[index]
+                                                  : zplc_core_get_default_vm();
+        if (vm->paused != 0U || vm->scan_resumed != 0U) zplc_vm_reset_cycle(vm);
+    }
+}
+
 static void skip_json_space(const char **cursor)
 {
     while (**cursor != '\0' && isspace((unsigned char)**cursor)) {
@@ -1331,6 +1356,9 @@ static int handle_stop_or_reset(zplc_native_runtime_session_t *session,
         session_reset_observed_cadence(session);
     }
 
+    if (session->program_loaded != 0U) {
+        session_abandon_interrupted_scans(session);
+    }
     zplc_force_clear_all();
     session->simulation_pulse_mask = 0U;
     {
@@ -1419,14 +1447,13 @@ static int handle_step(zplc_native_runtime_session_t *session,
                                      response_size);
     }
 
-    if (session_clear_simulation_pulses(session) != 0) {
+    if (session_complete_scan(session) != 0) {
         session_apply_safe_state(session);
         return format_error_response(request->id, "RUNTIME_FAILURE",
                                      "failed to clear simulation input pulse",
                                      response, response_size);
     }
 
-    session->cycle_count += 1U;
     session->state = ZPLC_NATIVE_SESSION_PAUSED;
 
     if (event != NULL && event_size > 0U) {
@@ -1503,7 +1530,7 @@ static int handle_scenario_step(zplc_native_runtime_session_t *session,
         return format_error_response(request->id, "RUNTIME_FAILURE",
                                      "zplc_core_run_cycle failed", response, response_size);
     }
-    if (session_clear_simulation_pulses(session) != 0) {
+    if (session_complete_scan(session) != 0) {
         session_apply_safe_state(session);
         return format_error_response(request->id, "RUNTIME_FAILURE",
                                      "failed to clear simulation input pulse", response, response_size);
@@ -1512,7 +1539,6 @@ static int handle_scenario_step(zplc_native_runtime_session_t *session,
     session->scenario_timestamp_started = 1U;
     session->scenario_last_timestamp_ms = request->at_ms;
     session->last_scan_tick_ms = request->at_ms;
-    session->cycle_count += 1U;
     session->state = ZPLC_NATIVE_SESSION_PAUSED;
     if (event != NULL && event_size > 0U) {
         (void)format_jsonf(event, event_size,
@@ -2001,7 +2027,7 @@ int zplc_native_runtime_session_tick(zplc_native_runtime_session_t *session,
         return ZPLC_NATIVE_RESPONSE_ERR_INVALID_STATE;
     }
 
-    if (session_clear_simulation_pulses(session) != 0) {
+    if (session_complete_scan(session) != 0) {
         session_apply_safe_state(session);
         if (event != NULL && event_size > 0U) {
             (void)format_jsonf(event, event_size,
@@ -2010,10 +2036,6 @@ int zplc_native_runtime_session_tick(zplc_native_runtime_session_t *session,
                            "\"message\":\"failed to clear simulation input pulse\"}}");
         }
         return ZPLC_NATIVE_RESPONSE_ERR_INVALID_STATE;
-    }
-
-    if (run_result > 0) {
-        session->cycle_count += 1U;
     }
 
     if (session_focused_vm(session)->paused != 0U) {

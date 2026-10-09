@@ -1508,6 +1508,272 @@ static void test_step_after_breakpoint_executes_once(void)
     zplc_native_runtime_session_shutdown(&session);
 }
 
+/* ---- RT-017: resume and step continue the scan a breakpoint interrupted ---- */
+
+static const char *session_call(zplc_native_runtime_session_t *session, const char *json)
+{
+    static char response[4096];
+    static char event[4096];
+
+    (void)zplc_native_runtime_session_handle_request(session, json, response,
+                                                     sizeof(response), event, sizeof(event));
+    return response;
+}
+
+static size_t emit_op1(uint8_t *buf, size_t offset, uint8_t opcode)
+{
+    buf[offset++] = opcode;
+    return offset;
+}
+
+static size_t emit_mem8(uint8_t *buf, size_t offset, uint8_t opcode, uint16_t addr)
+{
+    buf[offset++] = opcode;
+    buf[offset++] = (uint8_t)(addr & 0xFFU);
+    buf[offset++] = (uint8_t)((addr >> 8) & 0xFFU);
+    return offset;
+}
+
+/* PC 0 PUSH32 10, PC 5 PUSH32 20, PC 10 ADD, PC 11 STORE32 %Q0.0, PC 14 HALT.
+ * A breakpoint at PC 10 interrupts the scan with two values on the stack. */
+static size_t build_mid_scan_program(uint8_t *program)
+{
+    size_t length = 0U;
+
+    length = emit_push32(program, length, 10U);
+    length = emit_push32(program, length, 20U);
+    length = emit_op1(program, length, OP_ADD);
+    length = emit_store32(program, length, ZPLC_MEM_OPI_BASE);
+    return emit_halt(program, length);
+}
+
+static void load_session_program(zplc_native_runtime_session_t *session,
+                                 const uint8_t *program, size_t length)
+{
+    char program_hex[512];
+    char request[1024];
+
+    bytecode_to_task_hex(program, length, program_hex, sizeof(program_hex));
+    snprintf(request, sizeof(request),
+             "{\"id\":\"load\",\"type\":\"request\",\"method\":\"program.load\",\"params\":{\"bytecode_hex\":\"%s\"}}",
+             program_hex);
+    (void)session_call(session, request);
+}
+
+static void test_resume_continues_mid_scan_breakpoint(void)
+{
+    zplc_native_runtime_session_t session;
+    char event[4096];
+    uint8_t program[32];
+    uint8_t *opi;
+
+    printf("\n=== Test: resume continues a scan interrupted mid-cycle ===\n");
+
+    zplc_native_runtime_session_init(&session);
+    load_session_program(&session, program, build_mid_scan_program(program));
+    (void)session_call(&session, "{\"id\":\"bp\",\"type\":\"request\",\"method\":\"breakpoint.add\",\"params\":{\"pc\":10}}");
+    (void)session_call(&session, "{\"id\":\"start\",\"type\":\"request\",\"method\":\"execution.start\",\"params\":{}}");
+    opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
+
+    (void)zplc_native_runtime_session_tick(&session, 100U, event, sizeof(event));
+    TEST_ASSERT(session.state == ZPLC_NATIVE_SESSION_PAUSED && zplc_core_get_pc() == 10U,
+                "mid-scan breakpoint pauses at its pc");
+    TEST_ASSERT_CONTAINS(event, "\"pc\":10", "paused snapshot reports the mid-scan breakpoint pc");
+    TEST_ASSERT(opi[0] == 0U && session.cycle_count == 0U,
+                "output after the breakpoint is not written and the unfinished scan is not counted");
+
+    (void)session_call(&session, "{\"id\":\"resume\",\"type\":\"request\",\"method\":\"execution.resume\",\"params\":{}}");
+    (void)zplc_native_runtime_session_tick(&session, 200U, event, sizeof(event));
+    TEST_ASSERT(session.state == ZPLC_NATIVE_SESSION_RUNNING && zplc_core_is_halted(),
+                "resume finishes the interrupted scan instead of pausing at the same pc");
+    TEST_ASSERT(opi[0] == 30U, "resume keeps the stack: the code after the breakpoint writes 10 + 20");
+    TEST_ASSERT(session.cycle_count == 1U, "the interrupted scan is counted once, when it completes");
+
+    opi[0] = 0U;
+    (void)zplc_native_runtime_session_tick(&session, 300U, event, sizeof(event));
+    TEST_ASSERT(session.state == ZPLC_NATIVE_SESSION_PAUSED && zplc_core_get_pc() == 10U && opi[0] == 0U,
+                "the same breakpoint pauses again in a later scan");
+    TEST_ASSERT(session.cycle_count == 1U, "pausing the later scan does not count it");
+
+    (void)session_call(&session, "{\"id\":\"resume2\",\"type\":\"request\",\"method\":\"execution.resume\",\"params\":{}}");
+    (void)zplc_native_runtime_session_tick(&session, 400U, event, sizeof(event));
+    TEST_ASSERT(opi[0] == 30U && session.cycle_count == 2U && session.state == ZPLC_NATIVE_SESSION_RUNNING,
+                "every resume finishes the scan it interrupted");
+
+    zplc_native_runtime_session_shutdown(&session);
+}
+
+static void test_step_completes_mid_scan_breakpoint(void)
+{
+    zplc_native_runtime_session_t session;
+    char event[4096];
+    uint8_t program[32];
+    uint8_t *opi;
+
+    printf("\n=== Test: step completes a scan interrupted mid-cycle ===\n");
+
+    zplc_native_runtime_session_init(&session);
+    load_session_program(&session, program, build_mid_scan_program(program));
+    (void)session_call(&session, "{\"id\":\"bp\",\"type\":\"request\",\"method\":\"breakpoint.add\",\"params\":{\"pc\":10}}");
+    (void)session_call(&session, "{\"id\":\"start\",\"type\":\"request\",\"method\":\"execution.start\",\"params\":{}}");
+    opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
+    (void)zplc_native_runtime_session_tick(&session, 100U, event, sizeof(event));
+    TEST_ASSERT(session.state == ZPLC_NATIVE_SESSION_PAUSED && zplc_core_get_pc() == 10U && opi[0] == 0U,
+                "scan is interrupted at the mid-scan breakpoint");
+
+    (void)session_call(&session, "{\"id\":\"step\",\"type\":\"request\",\"method\":\"execution.step\",\"params\":{}}");
+    TEST_ASSERT(session.state == ZPLC_NATIVE_SESSION_PAUSED && zplc_core_is_halted() && opi[0] == 30U,
+                "step from a mid-scan breakpoint completes the interrupted scan and pauses at the cycle boundary");
+    TEST_ASSERT(session.cycle_count == 1U, "step counts the completed scan once");
+
+    opi[0] = 0U;
+    (void)session_call(&session, "{\"id\":\"step2\",\"type\":\"request\",\"method\":\"execution.step\",\"params\":{}}");
+    TEST_ASSERT(session.state == ZPLC_NATIVE_SESSION_PAUSED && zplc_core_get_pc() == 10U && opi[0] == 0U,
+                "step from a cycle boundary starts a new scan and stops at the breakpoint it reaches");
+    TEST_ASSERT(session.cycle_count == 1U, "a step that stops at a breakpoint has not completed its scan");
+
+    (void)session_call(&session, "{\"id\":\"step3\",\"type\":\"request\",\"method\":\"execution.step\",\"params\":{}}");
+    TEST_ASSERT(zplc_core_is_halted() && opi[0] == 30U && session.cycle_count == 2U,
+                "the next step finishes that scan");
+
+    zplc_native_runtime_session_shutdown(&session);
+}
+
+static void test_op_break_resume_continues_scan(void)
+{
+    zplc_native_runtime_session_t session;
+    char event[4096];
+    uint8_t program[32];
+    size_t length = 0U;
+    uint8_t *opi;
+
+    printf("\n=== Test: resume continues a scan paused by OP_BREAK ===\n");
+
+    length = emit_push32(program, length, 10U);
+    length = emit_op1(program, length, OP_BREAK);
+    length = emit_push32(program, length, 20U);
+    length = emit_op1(program, length, OP_ADD);
+    length = emit_store32(program, length, ZPLC_MEM_OPI_BASE);
+    length = emit_halt(program, length);
+    zplc_native_runtime_session_init(&session);
+    load_session_program(&session, program, length);
+    (void)session_call(&session, "{\"id\":\"start\",\"type\":\"request\",\"method\":\"execution.start\",\"params\":{}}");
+    opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
+
+    (void)zplc_native_runtime_session_tick(&session, 100U, event, sizeof(event));
+    TEST_ASSERT(session.state == ZPLC_NATIVE_SESSION_PAUSED && opi[0] == 0U, "OP_BREAK pauses the scan");
+    (void)session_call(&session, "{\"id\":\"resume\",\"type\":\"request\",\"method\":\"execution.resume\",\"params\":{}}");
+    (void)zplc_native_runtime_session_tick(&session, 200U, event, sizeof(event));
+    TEST_ASSERT(opi[0] == 30U && session.cycle_count == 1U,
+                "resume continues after OP_BREAK instead of restarting into it");
+
+    zplc_native_runtime_session_shutdown(&session);
+}
+
+static void test_simulation_pulse_lasts_until_scan_completes(void)
+{
+    zplc_native_runtime_session_t session;
+    char event[4096];
+    char request[512];
+    uint8_t program[32];
+    size_t length = 0U;
+    uint8_t *ipi;
+    uint8_t *opi;
+
+    printf("\n=== Test: simulation pulse survives a mid-scan pause ===\n");
+
+    length = emit_op1(program, length, OP_NOP);
+    length = emit_mem8(program, length, OP_LOAD8, ZPLC_MEM_IPI_BASE);
+    length = emit_mem8(program, length, OP_STORE8, ZPLC_MEM_OPI_BASE);
+    length = emit_halt(program, length);
+    zplc_native_runtime_session_init(&session);
+    load_session_program(&session, program, length);
+    (void)session_call(&session, "{\"id\":\"bp\",\"type\":\"request\",\"method\":\"breakpoint.add\",\"params\":{\"pc\":1}}");
+    (void)session_call(&session, "{\"id\":\"start\",\"type\":\"request\",\"method\":\"execution.start\",\"params\":{}}");
+    ipi = zplc_mem_get_region(ZPLC_MEM_IPI_BASE);
+    opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
+    snprintf(request, sizeof(request),
+             "{\"id\":\"pulse\",\"type\":\"request\",\"method\":\"simulation.input.set\",\"params\":{\"input_id\":\"motor.start\",\"active\":true,\"program_generation\":%u}}",
+             (unsigned)session.program_generation);
+    TEST_ASSERT_CONTAINS(session_call(&session, request), "\"state\":\"staged\"",
+                         "motor.start pulse is staged for the current program generation");
+
+    (void)zplc_native_runtime_session_tick(&session, 100U, event, sizeof(event));
+    TEST_ASSERT(session.state == ZPLC_NATIVE_SESSION_PAUSED && zplc_core_get_pc() == 1U,
+                "scan pauses before it reads the input byte");
+    TEST_ASSERT((ipi[0] & 0x01U) != 0U && session.simulation_pulse_mask == 0x01U,
+                "the staged pulse stays in the input image while its scan is unfinished");
+
+    (void)session_call(&session, "{\"id\":\"resume\",\"type\":\"request\",\"method\":\"execution.resume\",\"params\":{}}");
+    (void)zplc_native_runtime_session_tick(&session, 200U, event, sizeof(event));
+    TEST_ASSERT(opi[0] == 0x01U, "the rest of the interrupted scan still reads the pulse");
+    TEST_ASSERT(ipi[0] == 0U && session.simulation_pulse_mask == 0U,
+                "the pulse clears when that scan completes");
+
+    zplc_native_runtime_session_shutdown(&session);
+}
+
+static void test_stop_reset_and_load_abandon_interrupted_scan(void)
+{
+    zplc_native_runtime_session_t session;
+    char event[4096];
+    uint8_t program[32];
+    size_t length;
+    uint8_t *opi;
+
+    printf("\n=== Test: stop, reset and load abandon the interrupted scan ===\n");
+
+    length = build_mid_scan_program(program);
+    zplc_native_runtime_session_init(&session);
+    load_session_program(&session, program, length);
+    (void)session_call(&session, "{\"id\":\"bp\",\"type\":\"request\",\"method\":\"breakpoint.add\",\"params\":{\"pc\":10}}");
+    (void)session_call(&session, "{\"id\":\"start\",\"type\":\"request\",\"method\":\"execution.start\",\"params\":{}}");
+    opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
+
+    /* Stop while paused mid-scan: the next start begins a new scan. */
+    (void)zplc_native_runtime_session_tick(&session, 100U, event, sizeof(event));
+    (void)session_call(&session, "{\"id\":\"stop\",\"type\":\"request\",\"method\":\"execution.stop\",\"params\":{}}");
+    (void)session_call(&session, "{\"id\":\"start2\",\"type\":\"request\",\"method\":\"execution.start\",\"params\":{}}");
+    (void)zplc_native_runtime_session_tick(&session, 200U, event, sizeof(event));
+    TEST_ASSERT(session.state == ZPLC_NATIVE_SESSION_PAUSED && zplc_core_get_pc() == 10U &&
+                zplc_vm_get_sp(zplc_core_get_default_vm()) == 2U && opi[0] == 0U,
+                "stop then start after a mid-scan pause runs a new scan, not the old remainder");
+
+    /* Stop after resume but before the resumed scan ran: still a new scan. */
+    (void)session_call(&session, "{\"id\":\"resume\",\"type\":\"request\",\"method\":\"execution.resume\",\"params\":{}}");
+    (void)session_call(&session, "{\"id\":\"stop2\",\"type\":\"request\",\"method\":\"execution.stop\",\"params\":{}}");
+    (void)session_call(&session, "{\"id\":\"start3\",\"type\":\"request\",\"method\":\"execution.start\",\"params\":{}}");
+    (void)zplc_native_runtime_session_tick(&session, 300U, event, sizeof(event));
+    TEST_ASSERT(session.state == ZPLC_NATIVE_SESSION_PAUSED && zplc_core_get_pc() == 10U &&
+                zplc_vm_get_sp(zplc_core_get_default_vm()) == 2U && opi[0] == 0U,
+                "stop between resume and the next scan also drops the continuation");
+
+    /* Reset clears the breakpoints (zplc_vm_init) and the interrupted scan. */
+    (void)session_call(&session, "{\"id\":\"resume2\",\"type\":\"request\",\"method\":\"execution.resume\",\"params\":{}}");
+    (void)session_call(&session, "{\"id\":\"reset\",\"type\":\"request\",\"method\":\"execution.reset\",\"params\":{}}");
+    TEST_ASSERT(zplc_vm_get_breakpoint_count(zplc_core_get_default_vm()) == 0U &&
+                !zplc_vm_is_paused(zplc_core_get_default_vm()) &&
+                zplc_core_get_default_vm()->scan_resumed == 0U,
+                "reset clears breakpoints and the resumed-scan marker");
+    (void)session_call(&session, "{\"id\":\"start4\",\"type\":\"request\",\"method\":\"execution.start\",\"params\":{}}");
+    (void)zplc_native_runtime_session_tick(&session, 400U, event, sizeof(event));
+    TEST_ASSERT(opi[0] == 30U && session.cycle_count == 1U, "the scan after reset runs from the entry point");
+
+    /* Loading a program while a scan is interrupted drops it too. */
+    (void)session_call(&session, "{\"id\":\"stop3\",\"type\":\"request\",\"method\":\"execution.stop\",\"params\":{}}");
+    (void)session_call(&session, "{\"id\":\"bp2\",\"type\":\"request\",\"method\":\"breakpoint.add\",\"params\":{\"pc\":10}}");
+    (void)session_call(&session, "{\"id\":\"start5\",\"type\":\"request\",\"method\":\"execution.start\",\"params\":{}}");
+    (void)zplc_native_runtime_session_tick(&session, 500U, event, sizeof(event));
+    (void)session_call(&session, "{\"id\":\"resume3\",\"type\":\"request\",\"method\":\"execution.resume\",\"params\":{}}");
+    (void)session_call(&session, "{\"id\":\"stop4\",\"type\":\"request\",\"method\":\"execution.stop\",\"params\":{}}");
+    load_session_program(&session, program, length);
+    TEST_ASSERT(zplc_vm_get_breakpoint_count(zplc_core_get_default_vm()) == 0U &&
+                zplc_core_get_default_vm()->scan_resumed == 0U,
+                "loading a program clears breakpoints and the resumed-scan marker");
+
+    zplc_native_runtime_session_shutdown(&session);
+}
+
 static void test_zplc_program_load_uses_task_interval(void)
 {
     zplc_native_runtime_session_t session;
@@ -3157,6 +3423,11 @@ int main(void)
     test_uint16_request_boundaries_reject_without_mutation();
     test_breakpoint_hit_pauses_runtime();
     test_step_after_breakpoint_executes_once();
+    test_resume_continues_mid_scan_breakpoint();
+    test_step_completes_mid_scan_breakpoint();
+    test_op_break_resume_continues_scan();
+    test_simulation_pulse_lasts_until_scan_completes();
+    test_stop_reset_and_load_abandon_interrupted_scan();
     test_zplc_program_load_uses_task_interval();
     test_host_observed_poll_cadence();
     test_poll_timeout_tracks_remaining_interval();
