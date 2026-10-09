@@ -20,7 +20,7 @@ import { useFileBreakpoints, useCurrentExecution, useDebugValues, formatDebugVal
 import { useTheme } from '../hooks/useTheme';
 import { useEditorLiveValues } from '../hooks/useEditorLiveValues';
 import type { PLCLanguage } from '../types';
-import { breakpointFileKey, doesCurrentPOUMatchFile, filterEligibleBreakpointLines, isLineBreakpointEligible } from './codeEditorBreakpoints';
+import { breakpointFileKey, breakpointHoverMessage, doesCurrentPOUMatchFile, filterEligibleBreakpointLines, isLineBreakpointEligible } from './codeEditorBreakpoints';
 import {
   buildInlineWidgets,
   extractVariablesFromCode,
@@ -108,6 +108,7 @@ export function CodeEditor({
   const debugMode = useIDEStore((state) => state.debug.mode);
   const livePreviewEnabled = useIDEStore((state) => state.debug.mpeekEnabled);
   const debugMap = useIDEStore((state) => state.debug.debugMap);
+  const breakpointsInactiveReason = useIDEStore((state) => state.debug.breakpointsInactiveReason);
   const toggleBreakpoint = useIDEStore((state) => state.toggleBreakpoint);
   const breakpoints = useFileBreakpoints(fileId);
   const fileName = useIDEStore((state) => breakpointFileKey(state.loadedFiles.get(fileId), fileId));
@@ -318,7 +319,7 @@ export function CodeEditor({
         options: {
           isWholeLine: false,
           glyphMarginClassName: 'breakpoint-glyph',
-          glyphMarginHoverMessage: { value: `Breakpoint at line ${line}` },
+          glyphMarginHoverMessage: { value: breakpointHoverMessage(line, breakpointsInactiveReason) },
           linesDecorationsClassName: 'breakpoint-line-decoration',
         },
       });
@@ -338,7 +339,7 @@ export function CodeEditor({
 
     // Apply decorations
     decorationsRef.current.set(model, editor.deltaDecorations(decorationsRef.current.get(model) ?? [], newDecorations));
-  }, [breakpoints, currentLine, debugMap, editorReady, fileId, fileName, isCurrentFile, isPaused, modelPath]);
+  }, [breakpoints, breakpointsInactiveReason, currentLine, debugMap, editorReady, fileId, fileName, isCurrentFile, isPaused, modelPath]);
 
   // A kept model can be older than the store (the file changed while its tab was hidden): bring it up to date when shown.
   useEffect(() => {
@@ -559,6 +560,7 @@ export function CodeEditor({
           {filterEligibleBreakpointLines(debugMap, fileName, breakpoints).length > 0 && (
             <span className="text-[var(--color-surface-400)]">
               • {filterEligibleBreakpointLines(debugMap, fileName, breakpoints).length} BP{filterEligibleBreakpointLines(debugMap, fileName, breakpoints).length !== 1 ? 's' : ''}
+              {breakpointsInactiveReason ? ' (not active)' : ''}
             </span>
           )}
         </div>

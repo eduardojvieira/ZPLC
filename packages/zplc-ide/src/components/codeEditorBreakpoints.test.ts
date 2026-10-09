@@ -5,6 +5,7 @@ import { compilerCompile } from '../cli/toolApi';
 import type { DebugMap } from '../compiler';
 import {
   breakpointFileKey,
+  breakpointHoverMessage,
   doesCurrentPOUMatchFile,
   getBreakpointPCForLine,
   getEligibleBreakpointLines,
@@ -206,5 +207,15 @@ describe('breakpoint binding against the real compiler output of motor_start_sto
     const otherId = 'file:src/Other.st';
     const otherKey = breakpointFileKey({ name: 'Other.st', path: 'src/Other.st' }, otherId);
     expect(doesCurrentPOUMatchFile(motorMap, 'Motor', otherKey, otherId)).toBe(false);
+  });
+});
+
+describe('breakpointHoverMessage', () => {
+  // Fails without the helper: the dot of a refused breakpoint must not read like an armed one.
+  it('says why a dot is not active and keeps the plain text for an active one', () => {
+    expect(breakpointHoverMessage(29, null)).toBe('Breakpoint at line 29');
+    expect(breakpointHoverMessage(29, 'the runtime refused them')).toBe(
+      'Breakpoint at line 29 is not active: the runtime refused them',
+    );
   });
 });

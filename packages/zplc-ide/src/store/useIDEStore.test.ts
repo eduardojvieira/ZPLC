@@ -1659,3 +1659,29 @@ describe('useIDEStore breakpoint binding', () => {
     expect(useIDEStore.getState().getAllBreakpointPCs().sort((a, b) => a - b)).toEqual([56, 104]);
   });
 });
+
+describe('useIDEStore breakpoint activity', () => {
+  afterEach(() => {
+    useIDEStore.getState().setBreakpointsInactiveReason(null);
+  });
+
+  // Fails without debug.breakpointsInactiveReason: the editor has nowhere to learn that its dots are not armed.
+  it('starts with the dots active and keeps the reason the runtime refused them', () => {
+    expect(useIDEStore.getState().debug.breakpointsInactiveReason).toBeNull();
+
+    useIDEStore.getState().setBreakpointsInactiveReason('the runtime accepts breakpoints only in a program with one task');
+    expect(useIDEStore.getState().debug.breakpointsInactiveReason).toContain('one task');
+
+    useIDEStore.getState().setBreakpointsInactiveReason(null);
+    expect(useIDEStore.getState().debug.breakpointsInactiveReason).toBeNull();
+  });
+
+  it('forgets the reason when the project closes', () => {
+    useIDEStore.setState({ isProjectOpen: true, projectConfigDirty: false, loadedFiles: new Map() });
+    useIDEStore.getState().setBreakpointsInactiveReason('the runtime refused them');
+
+    expect(useIDEStore.getState().closeProject({ discardUnsaved: true })).toBe(true);
+
+    expect(useIDEStore.getState().debug.breakpointsInactiveReason).toBeNull();
+  });
+});

@@ -595,8 +595,12 @@ describe('NativeAdapter', () => {
         startSession,
         stopSession,
         onEvent: eventApi.onEvent,
-        request: async <TResult>(message: NativeRequest): Promise<TResult> =>
-          (message.method === heldMethod ? reply.promise : {}) as TResult,
+        request: async <TResult>(message: NativeRequest): Promise<TResult> => {
+          if (message.method === 'status.get') {
+            return nativeSnapshot({ state: 'paused', focused_vm: { pc: 104, sp: 2, halted: false, error: 0 } }) as TResult;
+          }
+          return (message.method === heldMethod ? reply.promise : {}) as TResult;
+        },
       });
       const states: string[] = [];
       const hits: number[] = [];
@@ -686,6 +690,54 @@ describe('NativeAdapter', () => {
 
       expect(adapter.state).toBe('paused');
       expect(states).toEqual(['idle', 'paused']);
+    });
+
+    // Fails while onBreakpointHit fires only on a transition into paused: the runtime stops again at
+    // the same breakpoint inside the first scan of Resume, so the adapter never leaves paused.
+    it('reports a re-stop at the same pc while the resume reply is pending', async () => {
+      const { adapter, reply, hits, emitStatus } = racingAdapter('execution.resume');
+      await adapter.connect();
+      emitStatus('paused', 104);
+
+      const resuming = adapter.resume();
+      emitStatus('paused', 104);
+      reply.resolve({});
+      await resuming;
+
+      expect(hits).toEqual([104, 104]);
+    });
+
+    // Fails while the report depends on the previous adapter state: here the reply lands first
+    // (running), then the runtime stops at the next breakpoint. This is the shape Resume has once
+    // it continues the interrupted scan, and it must keep reporting exactly one hit per stop.
+    it('reports the stop at the next breakpoint after the resume reply', async () => {
+      const { adapter, reply, states, hits, emitStatus } = racingAdapter('execution.resume');
+      await adapter.connect();
+      emitStatus('paused', 104);
+
+      const resuming = adapter.resume();
+      reply.resolve({});
+      await resuming;
+      emitStatus('paused', 140);
+
+      expect(states).toEqual(['idle', 'paused', 'running', 'paused']);
+      expect(hits).toEqual([104, 140]);
+    });
+
+    // Fails if a status poll or a running event were counted as a stop.
+    it('reports each stop once: polls and running events do not repeat it', async () => {
+      const { adapter, reply, hits, emitStatus } = racingAdapter('execution.start');
+      await adapter.connect();
+
+      const starting = adapter.start();
+      reply.resolve({});
+      await starting;
+      emitStatus('running', 56);
+      emitStatus('paused', 104);
+      await adapter.getRuntimeSnapshot();
+      await adapter.getInfo();
+
+      expect(hits).toEqual([104]);
     });
 
     // Fails if the event count is read when the adapter connects instead of when resume() is called.
