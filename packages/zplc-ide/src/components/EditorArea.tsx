@@ -22,6 +22,7 @@ import { disposeClosedEditorModels } from './editorModels';
 import { canCommitVisualEditorChange } from '../editors/visualCommitGuard';
 import { displayEditorFileName } from './editorFilePresentation';
 import { UnsavedChangesDialog } from './UnsavedChangesDialog';
+import { ErrorBoundary } from './ErrorBoundary';
 import { unsavedOutcome, type UnsavedChoice } from '../utils/unsavedChanges';
 import {
   recordVisualSnapshot,
@@ -460,6 +461,7 @@ export function EditorArea() {
         aria-labelledby={`editor-tab-${selectedViewId}`}
         className="flex-1 overflow-hidden"
       >
+        <ErrorBoundary region="Editor" resetKey={selectedViewId}>
         {showSettings ? (
           /* Project Settings Panel */
           <ProjectSettings />
@@ -507,6 +509,7 @@ export function EditorArea() {
             />
           )
         ) : null}
+        </ErrorBoundary>
       </div>
       {unsavedTabId && (
         <UnsavedChangesDialog

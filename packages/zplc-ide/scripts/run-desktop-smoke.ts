@@ -133,6 +133,14 @@ async function main(): Promise<void> {
     await cdp.command('Emulation.setEmulatedMedia', { features: [{ name: 'forced-colors', value: 'active' }] });
     assert(await cdp.evaluate(`(() => { const button = document.querySelector('button[aria-label="Toggle high contrast theme"]'); button?.focus(); const style = button ? getComputedStyle(button) : null; return Boolean(matchMedia('(forced-colors: active)').matches && button?.matches(':focus-visible') && style?.outlineStyle !== 'none' && style?.outlineColor !== 'rgba(0, 0, 0, 0)'); })()`), 'Forced-colors media did not preserve a visible keyboard focus outline.');
     await cdp.command('Emulation.setEmulatedMedia', { features: [] });
+    // IDE-003 (part): a folder that cannot be opened is explained on the screen where the action started.
+    const setPicker = (failure: string) => cdp!.evaluate(`(() => { Object.defineProperty(window, 'showDirectoryPicker', { configurable: true, value: async () => { throw new DOMException('picker failure', ${JSON.stringify(failure)}); } }); })()`);
+    await setPicker('NotAllowedError');
+    assert(await cdp.evaluate(click('Open project')) === true, 'Open project is not actionable on the Welcome screen.');
+    await waitFor('Welcome open error', async () => String(await cdp!.evaluate(`document.querySelector('[role="alert"][data-open-error]')?.textContent ?? ''`)).includes('Access to the folder was denied') ? true : undefined);
+    await setPicker('AbortError');
+    assert(await cdp.evaluate(click('Open project')) === true, 'Open project is not actionable after a failed attempt.');
+    await waitFor('Welcome open error cleared by a cancelled picker', async () => await cdp!.evaluate(`document.querySelector('[data-open-error]') === null`) === true ? true : undefined);
     await cdp.evaluate(`(() => {
       const files = new Map(); const directories = new Set(['', 'src', 'tests']);
       const missing = () => { throw new DOMException('Not found', 'NotFoundError'); };
@@ -248,6 +256,24 @@ async function main(): Promise<void> {
     await promptGone(cdp);
     assert(electron.exitCode === null && await cdp.evaluate('window.__zplcSmokeDocument') === 1, 'Cancel must keep the window open.');
     assert(await storeEval(cdp, `return state().hasUnsavedChanges();`) === true, 'Cancel must keep the unsaved changes.');
+    // IDE-011: an exception inside the editor or a panel stays in that region; the rest of the window keeps working.
+    assert(cdp.errors.length === 0, `Renderer errors before the containment step: ${cdp.errors.join(' | ')}`);
+    const windowAlive = `(() => ({ tabs: Boolean(document.querySelector('[role="tablist"][aria-label="Editor views"]')), toolbar: Boolean(document.querySelector('[role="toolbar"][aria-label="Project operations"]')), panel: Boolean(document.querySelector('[role="tabpanel"][id^="console-panel-"]')) }))()`;
+    const regionError = (region: string) => `document.querySelector('[role="alert"][data-region-error=${JSON.stringify(region)}]') !== null`;
+    const savedConfig = await storeEval(cdp, `return state().projectConfig;`);
+    await storeEval(cdp, `useIDEStore.setState({ showSettings: true, projectConfig: { name: 'broken', version: '1.0.0' } }); return true;`);
+    await waitFor('Editor region error', async () => await cdp!.evaluate(regionError('Editor')) === true ? true : undefined);
+    assert(JSON.stringify(await cdp.evaluate(windowAlive)) === JSON.stringify({ tabs: true, toolbar: true, panel: true }), 'An editor exception must leave the tabs, toolbar and panel alive.');
+    await storeEval(cdp, `useIDEStore.setState({ projectConfig: ${JSON.stringify(savedConfig)} }); return true;`);
+    assert(await cdp.evaluate(`(() => { const retry = [...document.querySelectorAll('[data-region-error="Editor"] button')].find((item) => item.textContent === 'Retry'); if (!retry) return false; retry.click(); return true; })()`) === true, 'The editor region error has no Retry action.');
+    await waitFor('Editor region recovered after Retry', async () => await cdp!.evaluate(regionError('Editor')) === false ? true : undefined);
+    await storeEval(cdp, `useIDEStore.setState({ showSettings: false }); return true;`);
+    await storeEval(cdp, `useIDEStore.setState({ activeConsoleTab: 'output', isConsoleCollapsed: false, consoleEntries: [{ id: 'broken', type: 'info', message: { not: 'text' }, timestamp: new Date(), source: 'system' }] }); return true;`);
+    await waitFor('Panel region error', async () => await cdp!.evaluate(regionError('Panel')) === true ? true : undefined);
+    assert(JSON.stringify(await cdp.evaluate(windowAlive)) === JSON.stringify({ tabs: true, toolbar: true, panel: true }), 'A panel exception must leave the editor tabs, toolbar and panel tabs alive.');
+    await storeEval(cdp, `state().clearConsole(); useIDEStore.setState({ activeConsoleTab: 'tests' }); return true;`);
+    await waitFor('Panel region recovered by switching tab', async () => await cdp!.evaluate(regionError('Panel')) === false ? true : undefined);
+    cdp.errors.splice(0); cdp.errorDetails.splice(0);
     const finalFrame = await cdp.command('Page.getFrameTree') as { frameTree?: { frame?: { id?: string } } };
     assert((finalFrame.frameTree?.frame?.id ?? '') === mainFrameId, 'Renderer main frame changed during smoke.');
     assert(JSON.stringify(await cdp.evaluate('window.electronAPI.getAppInfo()')) === JSON.stringify(appInfo), 'Preload IPC identity changed during smoke.');

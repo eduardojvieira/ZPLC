@@ -44,6 +44,7 @@ import { NativeAdapter } from '../runtime/nativeAdapter';
 import { claimMotorInputCommand, shouldClearMotorInputFailure } from './liveNativeMotorPanel';
 import { presentWorkspaceSafetyCheck, type WorkspaceSafetyPresentation } from './workspaceSafetyPresentation';
 import { Sidebar } from './Sidebar';
+import { ErrorBoundary } from './ErrorBoundary';
 import { WorkbenchInspector } from './WorkbenchInspector';
 import { LearnPanel } from './LearnPanel';
 import { LabPanel } from './LabPanel';
@@ -638,6 +639,7 @@ export function Console({ debugController }: ConsoleProps) {
         aria-labelledby={`console-tab-${activeConsoleTab}`}
         className="flex-1 overflow-y-auto font-mono text-sm"
       >
+        <ErrorBoundary region="Panel" resetKey={activeConsoleTab}>
         <input
           ref={workspaceManifestInputRef}
           type="file"
@@ -957,6 +959,7 @@ export function Console({ debugController }: ConsoleProps) {
             hasActiveSerialSession={debugController?.adapter?.type === 'serial' && debugController.adapter.connected}
           />
         )}
+        </ErrorBoundary>
       </div>
     </div>
   );

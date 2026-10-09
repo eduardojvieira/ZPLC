@@ -1399,3 +1399,73 @@ describe('useIDEStore discarding a modified file', () => {
     expect(useIDEStore.getState().activeFileId).toBe('b');
   });
 });
+
+describe('useIDEStore folder open failures on the start screen', () => {
+  async function withPicker(pick: () => Promise<FileSystemDirectoryHandle | null>, test: () => Promise<void>): Promise<void> {
+    const windowDescriptor = Object.getOwnPropertyDescriptor(globalThis, 'window');
+    if (!globalThis.window) Object.defineProperty(globalThis, 'window', { configurable: true, value: {} });
+    Object.defineProperty(globalThis.window, 'showDirectoryPicker', { configurable: true, value: pick });
+    try {
+      await test();
+    } finally {
+      delete (globalThis.window as { showDirectoryPicker?: unknown }).showDirectoryPicker;
+      if (windowDescriptor) Object.defineProperty(globalThis, 'window', windowDescriptor);
+      else delete (globalThis as { window?: unknown }).window;
+    }
+  }
+
+  const denied = async () => { throw Object.assign(new Error('The request is not allowed by the user agent'), { name: 'NotAllowedError' }); };
+  const cancelled = async () => { throw Object.assign(new Error('The user aborted a request.'), { name: 'AbortError' }); };
+
+  function startScreen() {
+    useIDEStore.setState({
+      isProjectOpen: false, projectConfigDirty: false, loadedFiles: new Map(), projectOpenError: null,
+    });
+    useIDEStore.getState().clearForcedValues();
+  }
+
+  it('shows why a folder could not be opened, not only in the console', async () => {
+    startScreen();
+    await withPicker(denied, async () => {
+      await expect(useIDEStore.getState().openProjectFromFolder()).resolves.toBe(false);
+    });
+    expect(useIDEStore.getState().projectOpenError).toBe('Failed to open folder. Access to the folder was denied. Allow access to the folder and try again.');
+    expect(useIDEStore.getState().consoleEntries.at(-1)).toMatchObject({ type: 'error', message: useIDEStore.getState().projectOpenError });
+  });
+
+  it('shows the failure of creating a project', async () => {
+    startScreen();
+    await withPicker(denied, async () => {
+      await expect(useIDEStore.getState().createNewProjectInFolder()).resolves.toBe(false);
+    });
+    expect(useIDEStore.getState().projectOpenError).toBe('Failed to create project: Access to the folder was denied. Allow access to the folder and try again.');
+  });
+
+  it('treats a cancelled picker as a cancel and clears an earlier failure', async () => {
+    startScreen();
+    await withPicker(denied, async () => { await useIDEStore.getState().openProjectFromFolder(); });
+    expect(useIDEStore.getState().projectOpenError).not.toBeNull();
+    await withPicker(cancelled, async () => {
+      await expect(useIDEStore.getState().openProjectFromFolder()).resolves.toBe(false);
+    });
+    expect(useIDEStore.getState().projectOpenError).toBeNull();
+  });
+
+  it('shows the warning for a folder without zplc.json', async () => {
+    startScreen();
+    const missing = () => { throw Object.assign(new Error('Not found'), { name: 'NotFoundError' }); };
+    const folder = { name: 'ordinary-folder', getFileHandle: async () => missing(), values: async function* () { yield* [] as FileSystemHandle[]; } } as unknown as FileSystemDirectoryHandle;
+    await withPicker(async () => folder, async () => {
+      await expect(useIDEStore.getState().openProjectFromFolder()).resolves.toBe(false);
+    });
+    expect(useIDEStore.getState().projectOpenError).toContain('No zplc.json found');
+  });
+
+  it('can be dismissed', () => {
+    useIDEStore.setState({ projectOpenError: 'Failed to open folder. Something.' });
+    useIDEStore.getState().reportProjectOpenProblem('warning', 'second problem');
+    expect(useIDEStore.getState().projectOpenError).toBe('second problem');
+    useIDEStore.setState({ projectOpenError: null });
+    expect(useIDEStore.getState().projectOpenError).toBeNull();
+  });
+});

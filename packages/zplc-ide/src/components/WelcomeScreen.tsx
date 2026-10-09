@@ -15,6 +15,7 @@ export function WelcomeScreen() {
     createNewProjectInFolder,
     copyExampleProjectToFolder,
     getExampleProjects,
+    projectOpenError,
   } = useIDEStore();
   const { isDark, theme, setTheme } = useTheme();
   const fsApiSupported = isFileSystemAccessSupported();
@@ -119,6 +120,13 @@ export function WelcomeScreen() {
             </div>
           </div>
         </section>
+
+        {projectOpenError && (
+          <div role="alert" data-open-error className="mt-4 border border-[var(--color-accent-red)] bg-[var(--color-surface-800)] px-4 py-3 text-sm leading-5">
+            <p className="font-medium text-[var(--color-accent-red)]">The project could not be opened</p>
+            <p className="mt-1 break-words text-[var(--text-secondary)]">{projectOpenError}</p>
+          </div>
+        )}
 
         <aside className="mt-6 border-t border-[var(--border-color)] pt-3 text-sm leading-5 text-[var(--text-secondary)]" aria-live="polite">
           {unavailable
