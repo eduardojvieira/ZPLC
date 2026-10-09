@@ -403,6 +403,37 @@ jobs:
         working-directory: packages/zplc-ide
         run: xvfb-run --auto-servernum bun run smoke:desktop-packaged
 
+      # Docker Hub tags, not actions: Debian 13, Ubuntu 24.04 and the current Fedora are the targets of REL-011.
+      - name: Install and launch the .deb in clean Debian 13 and Ubuntu 24.04 containers
+        working-directory: packages/zplc-ide
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          packages=(dist-electron/*.deb)
+          [ "${#packages[@]}" -eq 1 ] || { echo "Expected exactly one .deb, found ${#packages[@]}"; exit 1; }
+          failed=0
+          for image in debian:13 ubuntu:24.04; do
+            echo "::group::$image"
+            docker run --rm --cap-add=SYS_ADMIN --shm-size=512m -e ZPLC_CONTAINER_CHECK=1 \
+              -v "$PWD/scripts:/scripts:ro" -v "$PWD/dist-electron:/dist:ro" \
+              "$image" bash /scripts/check-linux-package.sh "/dist/$(basename "${packages[0]}")" || { echo "FAILED on $image"; failed=1; }
+            echo "::endgroup::"
+          done
+          exit "$failed"
+
+      - name: Install and launch the .rpm in a clean Fedora container
+        working-directory: packages/zplc-ide
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          packages=(dist-electron/*.rpm)
+          [ "${#packages[@]}" -eq 1 ] || { echo "Expected exactly one .rpm, found ${#packages[@]}"; exit 1; }
+          docker run --rm --cap-add=SYS_ADMIN --shm-size=512m -e ZPLC_CONTAINER_CHECK=1 \
+            -v "$PWD/scripts:/scripts:ro" -v "$PWD/dist-electron:/dist:ro" \
+            fedora:latest bash /scripts/check-linux-package.sh "/dist/$(basename "${packages[0]}")"
+
       - name: Upload Linux artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:

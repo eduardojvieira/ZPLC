@@ -1,6 +1,7 @@
 // Structural checks on the release configuration. The files are parsed, never matched as text.
 // A hosted run of the release workflow is the only proof that electron-builder honours them.
 import { describe, expect, it } from 'bun:test';
+import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8');
@@ -19,6 +20,8 @@ type Builder = {
   };
   dmg: { sign?: boolean };
   win: Record<string, unknown>;
+  deb: Record<string, unknown>;
+  rpm: Record<string, unknown>;
 };
 
 type Step = { name?: string; uses?: string; run?: string; if?: string; 'working-directory'?: string };
@@ -87,5 +90,36 @@ describe('release.yml macOS build jobs prove the signature on both architectures
     expect(upload).toBeGreaterThan(launch);
     expect(job.steps[verify]!.if).toBeUndefined();
     expect(job.steps[verify]!['working-directory']).toBe('packages/zplc-ide');
+  });
+});
+
+describe('Linux packages use electron-builder defaults and are installed in clean containers (REL-011)', () => {
+  const job = workflow.jobs['build-linux']!;
+  const script = new URL('./check-linux-package.sh', import.meta.url).pathname;
+
+  it('overrides no package dependency, so the defaults for current distributions apply', () => {
+    expect(builder.deb.depends).toBeUndefined();
+    expect(builder.rpm.depends).toBeUndefined();
+  });
+
+  it('installs the .deb on Debian 13 and Ubuntu 24.04 and the .rpm on Fedora, after the build and before the upload', () => {
+    const build = indexOfStep(job, 'electron-builder --linux');
+    const upload = indexOfStep(job, 'actions/upload-artifact@');
+    for (const [image, extension] of [['debian:13', 'deb'], ['ubuntu:24.04', 'deb'], ['fedora:latest', 'rpm']] as const) {
+      const step = indexOfStep(job, image);
+      expect(step).toBeGreaterThan(build);
+      expect(step).toBeLessThan(upload);
+      expect(job.steps[step]!.run).toContain(`dist-electron/*.${extension}`);
+      expect(job.steps[step]!.run).toContain('check-linux-package.sh');
+      expect(job.steps[step]!.if).toBeUndefined();
+    }
+  });
+
+  it('is valid bash, refuses to install anything outside the CI container, and keeps the Electron sandbox on', () => {
+    expect(spawnSync('bash', ['-n', script]).status).toBe(0);
+    const refused = spawnSync('bash', [script, 'package.deb'], { env: { PATH: process.env.PATH! }, encoding: 'utf8' });
+    expect(refused.status).toBe(2);
+    expect(refused.stderr).toContain('outside the CI container');
+    expect(readFileSync(script, 'utf8')).not.toContain('--no-sandbox');
   });
 });

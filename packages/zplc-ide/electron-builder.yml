@@ -112,15 +112,9 @@ linux:
 appImage:
   artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
 
+# No `depends` override: electron-builder's defaults track current Debian, Ubuntu and Fedora (REL-011).
 deb:
   artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
-  depends:
-    - gconf2
-    - gconf-service
-    - libnotify4
-    - libappindicator1
-    - libxtst6
-    - libnss3
 
 rpm:
   artifactName: "${productName}-${version}-${os}-${arch}.${ext}"
