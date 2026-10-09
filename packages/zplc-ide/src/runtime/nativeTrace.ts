@@ -256,3 +256,30 @@ export function appendNativeTrace(
   }
   return [...trace, sample].slice(-NATIVE_TRACE_LIMIT);
 }
+
+export interface VmErrorCode { name: string; code: number; label: string }
+
+/**
+ * zplc_vm_error_t of firmware/lib/zplc_core/include/zplc_isa.h with the words the Console trace shows next to the number.
+ * A test reads the header and fails when a name or a number here differs from it.
+ */
+export const VM_ERRORS: readonly VmErrorCode[] = [
+  { name: 'ZPLC_VM_OK', code: 0x00, label: 'ok' },
+  { name: 'ZPLC_VM_STACK_OVERFLOW', code: 0x01, label: 'stack overflow' },
+  { name: 'ZPLC_VM_STACK_UNDERFLOW', code: 0x02, label: 'stack underflow' },
+  { name: 'ZPLC_VM_DIV_BY_ZERO', code: 0x03, label: 'division by zero' },
+  { name: 'ZPLC_VM_INVALID_OPCODE', code: 0x04, label: 'invalid opcode' },
+  { name: 'ZPLC_VM_OUT_OF_BOUNDS', code: 0x05, label: 'memory access out of bounds' },
+  { name: 'ZPLC_VM_CALL_OVERFLOW', code: 0x06, label: 'call stack overflow' },
+  { name: 'ZPLC_VM_INVALID_JUMP', code: 0x07, label: 'invalid jump' },
+  { name: 'ZPLC_VM_WATCHDOG', code: 0x08, label: 'watchdog timeout' },
+  { name: 'ZPLC_VM_HALTED', code: 0x09, label: 'halted' },
+  { name: 'ZPLC_VM_PAUSED', code: 0x0a, label: 'paused' },
+];
+
+/** What the trace table shows in its Error column: "10 paused" for a known code, the bare number for an unknown one, a dash for none. */
+export function describeVmError(code: number | null): string {
+  if (code === null) return '—';
+  const known = VM_ERRORS.find((entry) => entry.code === code);
+  return known ? `${code} ${known.label}` : String(code);
+}
