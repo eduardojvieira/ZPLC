@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'bun:test';
+import { readFileSync } from 'node:fs';
 
 import {
   DEFAULT_DEVELOPMENT_RENDERER_PORT,
+  NATIVE_PROGRAM_MAX_BYTES,
+  NATIVE_REQUEST_BUFFER_SIZE,
+  NATIVE_REQUEST_ENVELOPE_MAX,
   createContentSecurityPolicy,
   isAllowedNativeSimulationRequest,
   isAllowedWorkspaceTestRequest,
@@ -327,7 +331,7 @@ describe('Electron security boundary', () => {
     expect(isAllowedNativeSimulationRequest(request('program.load', { bytecode_hex: '00', extra: true }))).toBe(false);
     expect(isAllowedNativeSimulationRequest(request('program.load', { bytecode_hex: '00g0' }))).toBe(false);
     expect(isAllowedNativeSimulationRequest(request('program.load', { bytecode_hex: '0' }))).toBe(false);
-    expect(isAllowedNativeSimulationRequest(request('program.load', { bytecode_hex: 'AA'.repeat(4100) }))).toBe(false);
+    expect(isAllowedNativeSimulationRequest(request('program.load', { bytecode_hex: 'AA'.repeat(NATIVE_PROGRAM_MAX_BYTES + 1) }))).toBe(false);
     expect(isAllowedNativeSimulationRequest(request('simulation.input.set', { input_id: 'motor.overload', active: true, program_generation: 1 }))).toBe(false);
     expect(isAllowedNativeSimulationRequest(request('simulation.input.set', { input_id: 'motor.start', active: 1, program_generation: 1 }))).toBe(false);
     expect(isAllowedNativeSimulationRequest(request('simulation.input.set', { input_id: 'motor.start', active: true, program_generation: 0 }))).toBe(false);
@@ -335,23 +339,44 @@ describe('Electron security boundary', () => {
     expect(isAllowedNativeSimulationRequest(request('simulation.input.set', { input_id: 'motor.start', active: true, program_generation: 1, address: 0 }))).toBe(false);
   });
 
-  it('accepts the last native request line that fits and rejects the first that does not', () => {
-    const lineBytes = (request: Record<string, unknown>) => new TextEncoder().encode(`${JSON.stringify(request)}\n`).length;
-    const programLoadForLineLength = (id: string, lineLength: number) => {
-      const request = { id, type: 'request', method: 'program.load', params: { bytecode_hex: '' } };
-      const bytecodeHexLength = lineLength - lineBytes(request);
-      expect(bytecodeHexLength % 2).toBe(0);
-      request.params.bytecode_hex = 'AA'.repeat(bytecodeHexLength / 2);
-      return request;
+  it('accepts the largest program the runtime loads and rejects one byte more', () => {
+    const programLoad = (id: string, bytes: number) => ({
+      id, type: 'request', method: 'program.load', params: { bytecode_hex: 'AA'.repeat(bytes) },
+    });
+
+    expect(isAllowedNativeSimulationRequest(programLoad('req-1', NATIVE_PROGRAM_MAX_BYTES))).toBe(true);
+    expect(isAllowedNativeSimulationRequest(programLoad('req-1', NATIVE_PROGRAM_MAX_BYTES + 1))).toBe(false);
+    // A program of about 12 KB, the size that used to be cut into pieces by the 8 KiB request buffer.
+    expect(isAllowedNativeSimulationRequest(programLoad('req-1', 12_679))).toBe(true);
+  });
+
+  it('keeps every program it accepts inside the runtime request buffer', () => {
+    const longestId = 'a'.repeat(63);
+    const largest = {
+      id: longestId, type: 'request', method: 'program.load', params: { bytecode_hex: 'AA'.repeat(NATIVE_PROGRAM_MAX_BYTES) },
     };
+    const line = new TextEncoder().encode(`${JSON.stringify(largest)}\n`).length;
 
-    const lastThatFits = programLoadForLineLength('req-1', 8191);
-    const firstThatDoesNotFit = programLoadForLineLength('req-12', 8192);
+    expect(isAllowedNativeSimulationRequest(largest)).toBe(true);
+    // The buffer holds the line, its newline (already in `line`) and the string terminator.
+    expect(line + 1).toBeLessThanOrEqual(NATIVE_REQUEST_BUFFER_SIZE);
+  });
 
-    expect(lineBytes(lastThatFits)).toBe(8191);
-    expect(isAllowedNativeSimulationRequest(lastThatFits)).toBe(true);
-    expect(lineBytes(firstThatDoesNotFit)).toBe(8192);
-    expect(isAllowedNativeSimulationRequest(firstThatDoesNotFit)).toBe(false);
+  it('keeps the program and request limits equal to the runtime constants in C', () => {
+    const header = (path: string) => readFileSync(new URL(`../../../${path}`, import.meta.url), 'utf8');
+    const define = (text: string, name: string, pattern: string): number => {
+      const match = new RegExp(`#define\\s+${name}\\s+(${pattern})U?\\b`).exec(text);
+      if (!match) throw new Error(`${name} is not defined as a plain number`);
+      return Number(match[1]);
+    };
+    const isa = header('firmware/lib/zplc_core/include/zplc_isa.h');
+    const session = header('firmware/apps/posix_host/src/native_runtime_session.h');
+
+    expect(define(isa, 'ZPLC_MEM_CODE_SIZE', '0x[0-9A-Fa-f]+')).toBe(NATIVE_PROGRAM_MAX_BYTES);
+    expect(define(session, 'ZPLC_NATIVE_REQUEST_ENVELOPE_MAX', '[0-9]+')).toBe(NATIVE_REQUEST_ENVELOPE_MAX);
+    // ZPLC_NATIVE_REQUEST_MAX is built from those two in C, exactly as NATIVE_REQUEST_BUFFER_SIZE is here.
+    expect(session).toContain('#define ZPLC_NATIVE_REQUEST_MAX ((ZPLC_MEM_CODE_SIZE * 2U) + ZPLC_NATIVE_REQUEST_ENVELOPE_MAX)');
+    expect(NATIVE_REQUEST_BUFFER_SIZE).toBe(NATIVE_PROGRAM_MAX_BYTES * 2 + NATIVE_REQUEST_ENVELOPE_MAX);
   });
 
   it('builds a constrained CSP for packaged and development renderers', () => {

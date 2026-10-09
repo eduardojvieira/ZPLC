@@ -1,3 +1,4 @@
+import { NATIVE_PROGRAM_MAX_BYTES } from '../../electron/security';
 import type {
   DebugAdapterEvents,
   IDebugAdapter,
@@ -407,6 +408,12 @@ export class NativeAdapter implements IDebugAdapter {
   async loadProgram(bytecode: Uint8Array, options?: LoadProgramOptions): Promise<void> {
     if (!this._connected) {
       throw new Error('Not connected');
+    }
+    // The runtime refuses it too, but the main process only answers 'Request denied' to a request this size.
+    if (bytecode.length > NATIVE_PROGRAM_MAX_BYTES) {
+      throw new Error(
+        `the program is ${bytecode.length} bytes, but the native simulation loads at most ${NATIVE_PROGRAM_MAX_BYTES} bytes`,
+      );
     }
 
     options?.trace?.({
