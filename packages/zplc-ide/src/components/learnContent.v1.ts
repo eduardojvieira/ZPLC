@@ -1,6 +1,16 @@
 import type { LearnLesson, LearnLessonId, LearnLocale } from './learnLesson';
 import { learnFaultCasesEsV1 } from './learnContent.es.v1';
 import { learnFaultCasesEnV1 } from './learnContent.en.v1';
+import motorStartStopScenario from '../../projects/motor_start_stop_starter/tests/motor-start-stop.scenario.json';
+import pedestrianCrossingScenario from '../../projects/pedestrian_crossing_starter/tests/pedestrian-crossing.scenario.json';
+import tankLevelScenario from '../../projects/tank_level_starter/tests/tank-level.scenario.json';
+import conveyor01Scenario from '../../projects/conveyor_01_starter/tests/conveyor-01.scenario.json';
+import conveyorJamTimingScenario from '../../projects/conveyor_01_starter/tests/conveyor-jam-timing.scenario.json';
+import blinkyVisualScenario from '../../projects/blinky_starter/tests/blinky-visual.scenario.json';
+import motorPlantScenario from '../../projects/motor_plant_starter/tests/motor-plant.scenario.json';
+import edgeCounterScenario from '../../projects/edge_counter_starter/tests/edge-counter.scenario.json';
+import scanSnapshotScenario from '../../projects/scan_snapshot_starter/tests/scan-snapshot.scenario.json';
+import conveyorTwoPartsScenario from '../../projects/conveyor_two_parts_starter/tests/conveyor-two-parts.scenario.json';
 
 /** Stable technical contract shared by the Spanish and English Learn copy. */
 export const LEARN_CONTENT_SCHEMA_VERSION = 1 as const;
@@ -9,20 +19,22 @@ type TechnicalLesson = Readonly<{
   starterExampleId: LearnLesson['exampleId'] | 'motor_start_stop_starter' | 'pedestrian_crossing_starter' | 'tank_level_starter' | 'conveyor_01_starter' | 'blinky_starter' | 'motor_plant_starter' | 'edge_counter_starter' | 'scan_snapshot_starter' | 'conveyor_two_parts_starter';
   referenceExampleId: LearnLesson['exampleId'];
   authorScenarioIds: readonly LearnLesson['requiredScenario'][];
+  /** The starter's graded scenario file; its expectation count is the lesson's real assertion count. */
+  starterScenario: Readonly<{ expectations: readonly unknown[] }>;
   faultCaseId: LearnLessonId;
 }>;
 
 export const learnTechnicalContentV1: Readonly<Record<LearnLessonId, TechnicalLesson>> = Object.freeze({
-  'motor-start-stop-safe': { starterExampleId: 'motor_start_stop_starter', referenceExampleId: 'motor_start_stop', authorScenarioIds: [], faultCaseId: 'motor-start-stop-safe' },
-  'pedestrian-crossing-states': { starterExampleId: 'pedestrian_crossing_starter', referenceExampleId: 'pedestrian_crossing', authorScenarioIds: [], faultCaseId: 'pedestrian-crossing-states' },
-  'tank-level-fault-reset': { starterExampleId: 'tank_level_starter', referenceExampleId: 'tank_level', authorScenarioIds: [], faultCaseId: 'tank-level-fault-reset' },
-  'conveyor-classification-jam': { starterExampleId: 'conveyor_01_starter', referenceExampleId: 'conveyor_01', authorScenarioIds: ['ConveyorTwoParts'], faultCaseId: 'conveyor-classification-jam' },
-  'blinky-ladder-timer-feedback': { starterExampleId: 'blinky_starter', referenceExampleId: 'blinky', authorScenarioIds: [], faultCaseId: 'blinky-ladder-timer-feedback' },
-  'motor-plant-feedback': { starterExampleId: 'motor_plant_starter', referenceExampleId: 'motor_plant', authorScenarioIds: [], faultCaseId: 'motor-plant-feedback' },
-  'edge-counter-pulses': { starterExampleId: 'edge_counter_starter', referenceExampleId: 'edge_counter', authorScenarioIds: [], faultCaseId: 'edge-counter-pulses' },
-  'scan-cycle-one-scan-memory': { starterExampleId: 'scan_snapshot_starter', referenceExampleId: 'scan_snapshot', authorScenarioIds: [], faultCaseId: 'scan-cycle-one-scan-memory' },
-  'temporal-assertions-jam-fault': { starterExampleId: 'conveyor_01_starter', referenceExampleId: 'conveyor_01', authorScenarioIds: ['ConveyorTwoParts'], faultCaseId: 'temporal-assertions-jam-fault' },
-  'conveyor-two-parts-diagnosis': { starterExampleId: 'conveyor_two_parts_starter', referenceExampleId: 'conveyor_01', authorScenarioIds: [], faultCaseId: 'conveyor-two-parts-diagnosis' },
+  'motor-start-stop-safe': { starterExampleId: 'motor_start_stop_starter', referenceExampleId: 'motor_start_stop', authorScenarioIds: [], starterScenario: motorStartStopScenario, faultCaseId: 'motor-start-stop-safe' },
+  'pedestrian-crossing-states': { starterExampleId: 'pedestrian_crossing_starter', referenceExampleId: 'pedestrian_crossing', authorScenarioIds: [], starterScenario: pedestrianCrossingScenario, faultCaseId: 'pedestrian-crossing-states' },
+  'tank-level-fault-reset': { starterExampleId: 'tank_level_starter', referenceExampleId: 'tank_level', authorScenarioIds: [], starterScenario: tankLevelScenario, faultCaseId: 'tank-level-fault-reset' },
+  'conveyor-classification-jam': { starterExampleId: 'conveyor_01_starter', referenceExampleId: 'conveyor_01', authorScenarioIds: [], starterScenario: conveyor01Scenario, faultCaseId: 'conveyor-classification-jam' },
+  'blinky-ladder-timer-feedback': { starterExampleId: 'blinky_starter', referenceExampleId: 'blinky', authorScenarioIds: [], starterScenario: blinkyVisualScenario, faultCaseId: 'blinky-ladder-timer-feedback' },
+  'motor-plant-feedback': { starterExampleId: 'motor_plant_starter', referenceExampleId: 'motor_plant', authorScenarioIds: [], starterScenario: motorPlantScenario, faultCaseId: 'motor-plant-feedback' },
+  'edge-counter-pulses': { starterExampleId: 'edge_counter_starter', referenceExampleId: 'edge_counter', authorScenarioIds: [], starterScenario: edgeCounterScenario, faultCaseId: 'edge-counter-pulses' },
+  'scan-cycle-one-scan-memory': { starterExampleId: 'scan_snapshot_starter', referenceExampleId: 'scan_snapshot', authorScenarioIds: [], starterScenario: scanSnapshotScenario, faultCaseId: 'scan-cycle-one-scan-memory' },
+  'temporal-assertions-jam-fault': { starterExampleId: 'conveyor_01_starter', referenceExampleId: 'conveyor_01', authorScenarioIds: ['Conveyor01'], starterScenario: conveyorJamTimingScenario, faultCaseId: 'temporal-assertions-jam-fault' },
+  'conveyor-two-parts-diagnosis': { starterExampleId: 'conveyor_two_parts_starter', referenceExampleId: 'conveyor_01', authorScenarioIds: [], starterScenario: conveyorTwoPartsScenario, faultCaseId: 'conveyor-two-parts-diagnosis' },
 });
 
 export type VersionedLearnLesson = LearnLesson & Readonly<{
@@ -37,11 +49,12 @@ export type VersionedLearnLesson = LearnLesson & Readonly<{
 }>;
 
 function freezeLesson(locale: LearnLocale, lesson: LearnLesson): VersionedLearnLesson {
-  const technical = learnTechnicalContentV1[lesson.id];
+  const technicalWithScenario = learnTechnicalContentV1[lesson.id];
   const faultCases = locale === 'es' ? learnFaultCasesEsV1[lesson.id] : learnFaultCasesEnV1[lesson.id];
-  if (!technical || !lesson.sourcePath.startsWith('src/') || !lesson.scenarioPath.startsWith('tests/') || faultCases.length === 0) {
+  if (!technicalWithScenario || !lesson.sourcePath.startsWith('src/') || !lesson.scenarioPath.startsWith('tests/') || faultCases.length === 0) {
     throw new Error(`Invalid Learn content v${LEARN_CONTENT_SCHEMA_VERSION}: ${lesson.id}`);
   }
+  const { starterScenario, ...technical } = technicalWithScenario;
   return Object.freeze({
     ...lesson,
     stages: Object.freeze(lesson.stages.map((stage) => Object.freeze((stage.title === 'Editá' || stage.title === 'Edit')
@@ -53,7 +66,7 @@ function freezeLesson(locale: LearnLocale, lesson: LearnLesson): VersionedLearnL
     visibleScenarioIds: Object.freeze([lesson.requiredScenario]),
     authorScenarioIds: Object.freeze([...technical.authorScenarioIds]),
     faultCases: Object.freeze([...faultCases]),
-    rubric: Object.freeze({ requiredScenarioId: lesson.requiredScenario, minimumAssertions: 1, requireSavedEvidence: true }),
+    rubric: Object.freeze({ requiredScenarioId: lesson.requiredScenario, minimumAssertions: starterScenario.expectations.length, requireSavedEvidence: true }),
   });
 }
 
