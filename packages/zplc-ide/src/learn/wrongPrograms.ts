@@ -27,6 +27,13 @@ export interface Wrong { readonly intent: string; readonly source: string }
 export interface Grading {
   /** File inside the reference project's src/ whose source is the lesson's solution; defaults to the starter program file. */
   readonly referenceSource?: string;
+  /**
+   * Projects that may carry that file, tried in order; defaults to the lesson's reference project. Every one that exists must
+   * pass, and at least one must exist, so a reference moved to a sibling project cannot silently drop out of the check.
+   */
+  readonly referenceProjects?: readonly string[];
+  /** Other complete, correct solutions that must also turn the scenario green: the lesson grades behaviour, not one technique. */
+  readonly alsoGreen?: readonly Wrong[];
   readonly wrong: readonly Wrong[];
 }
 
@@ -68,7 +75,19 @@ IF PartAtDiverter THEN Metal := FALSE; END_IF;`) },
     { intent: 'classifies and stops on a jam but never fires the diverter', source: program('Conveyor', `${conveyorDeclarations}\nVAR Requested : BOOL := FALSE; END_VAR`, `IF JamDetected OR Stop THEN Requested := FALSE; ELSIF Start THEN Requested := TRUE; END_IF;
 BeltCommand := Requested; DiverterCommand := FALSE; FaultLamp := JamDetected;`) },
   ] },
-  'blinky-ladder-timer-feedback': { referenceSource: 'main.st', wrong: [
+  'blinky-ladder-timer-feedback': { referenceSource: 'main.st', referenceProjects: ['blinky_st', 'blinky'], alsoGreen: [
+    { intent: 'two TON timers, one per half period (OffTimer and OnTimer)', source: program('Blinky', `${blinkyDeclarations}\nVAR OffTimer : TON; OnTimer : TON; State : BOOL := FALSE; END_VAR`, `OffTimer(IN := NOT State, PT := T#500ms);
+OnTimer(IN := State, PT := T#500ms);
+IF OffTimer.Q THEN State := TRUE; END_IF;
+IF OnTimer.Q THEN State := FALSE; END_IF;
+LED_Output := State;`) },
+    { intent: 'one TON restarted by its own output and a toggled state', source: program('Blinky', `${blinkyDeclarations}\nVAR BlinkTimer : TON; LedState : BOOL := FALSE; END_VAR`, `BlinkTimer(IN := TRUE, PT := T#500ms);
+IF BlinkTimer.Q THEN LedState := NOT LedState; BlinkTimer(IN := FALSE, PT := T#500ms); END_IF;
+LED_Output := LedState;`) },
+    { intent: 'exact 500 ms half period counted in scans', source: program('Blinky', `${blinkyDeclarations}\nVAR Scans : INT := 0; END_VAR`, `Scans := Scans + 1;
+IF Scans >= 100 THEN Scans := 0; END_IF;
+LED_Output := Scans >= 50;`) },
+  ], wrong: [
     { intent: 'LED is always on', source: program('Blinky', blinkyDeclarations, 'LED_Output := TRUE;') },
     { intent: 'LED toggles on every scan: a flicker, not a 500 ms blink', source: program('Blinky', blinkyDeclarations, 'LED_Output := NOT LED_Output;') },
     { intent: 'TON oscillator with a 250 ms half period: twice too fast', source: program('Blinky', `${blinkyDeclarations}\nVAR Timer : TON; State : BOOL := FALSE; END_VAR`, `Timer(IN := TRUE, PT := T#250ms);
@@ -83,7 +102,10 @@ LED_Output := Scans < 10;`) },
     { intent: 'Running copies the command instead of waiting for AtSpeed', source: program('MotorPlant', motorPlantDeclarations, 'IF Stop THEN Command := FALSE; ELSIF Start THEN Command := TRUE; END_IF;\nRunning := Command;') },
     { intent: 'Running follows AtSpeed alone and ignores the command', source: program('MotorPlant', motorPlantDeclarations, 'IF Stop THEN Command := FALSE; ELSIF Start THEN Command := TRUE; END_IF;\nRunning := AtSpeed;') },
   ] },
-  'edge-counter-pulses': { wrong: [
+  'edge-counter-pulses': { alsoGreen: [
+    { intent: 'CTU alone: it edge-detects CU by itself', source: program('EdgeCounter', `${edgeCounterDeclarations}\nVAR Count : CTU; END_VAR`, 'Count(CU := PulseInput, R := Reset, PV := 3);\nCountReached := Count.Q;') },
+    { intent: 'R_TRIG in front of CTU (the form the reference used to teach)', source: program('EdgeCounter', `${edgeCounterDeclarations}\nVAR Edge : R_TRIG; Count : CTU; END_VAR`, 'Edge(CLK := PulseInput);\nCount(CU := Edge.Q, R := Reset, PV := 3);\nCountReached := Count.Q;') },
+  ], wrong: [
     { intent: 'output simply follows the pulse input', source: program('EdgeCounter', edgeCounterDeclarations, 'CountReached := PulseInput;') },
     { intent: 'counts to 2 instead of 3', source: program('EdgeCounter', `${edgeCounterDeclarations}\nVAR Count : CTU; END_VAR`, 'Count(CU := PulseInput, R := Reset, PV := 2);\nCountReached := Count.Q;') },
     { intent: 'counts to 4 instead of 3', source: program('EdgeCounter', `${edgeCounterDeclarations}\nVAR Count : CTU; END_VAR`, 'Count(CU := PulseInput, R := Reset, PV := 4);\nCountReached := Count.Q;') },

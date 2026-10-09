@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
-import { copyFileSync, cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, relative } from 'node:path';
 
 import { itNative, nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';
 import { scenarioRun } from '../cli/toolApi';
@@ -22,7 +22,7 @@ const projects = join(import.meta.dir, '..', '..', 'projects');
 
 /** Lessons whose graded scenario is NOT a byte-for-byte copy of the reference project's scenario, and why. */
 const ownScenario: Partial<Record<LearnLessonId, string>> = {
-  'blinky-ladder-timer-feedback': 'the reference blinky scenario only asserts two edges and describes the Ladder 10 ms blip; the starter teaches the ST 500 ms oscillator and needs duty assertions',
+  'blinky-ladder-timer-feedback': 'the blinky starter grades the ST oscillator with lenient duty windows (a 500 ms and a 510 ms half period both pass) and the reference project carries a different, stricter blinky scenario',
   'temporal-assertions-jam-fault': 'lesson 9 grades the latched jam fault and its Reset timing, which Conveyor01 does not assert; the reference project has no such scenario yet',
 };
 
@@ -61,8 +61,12 @@ describe('Learn starters can tell the lesson solution from a wrong program', () 
   });
 
   for (const lesson of learnLessonCatalog.en) {
-    const { referenceSource, wrong } = starterGrading[lesson.id];
+    const { referenceSource, referenceProjects, alsoGreen = [], wrong } = starterGrading[lesson.id];
     const starterFile = starterProgramFile(lesson.starterExampleId);
+    // Reference solutions that exist in this checkout: the example projects are edited on other branches, so a missing one is skipped, but not all of them.
+    const references = (referenceProjects ?? [lesson.referenceExampleId])
+      .map((project) => join(projects, project, 'src', referenceSource ?? starterFile))
+      .filter((path) => existsSync(path));
 
     describe(lesson.id, () => {
       it('ships the reference scenario in the starter (or documents why it differs)', () => {
@@ -84,13 +88,28 @@ describe('Learn starters can tell the lesson solution from a wrong program', () 
         expect(result.evidence.diagnostics.map(({ code }) => code)).toEqual(['SCENARIO_ASSERTION_FAILED']);
       }, 60_000);
 
-      itNative(`reference solution (${referenceSource ?? starterFile}) turns the starter GREEN with the starter scenario kept`, async () => {
-        const root = scratchStarter(lesson.starterExampleId);
-        copyFileSync(join(projects, lesson.referenceExampleId, 'src', referenceSource ?? starterFile), join(root, 'src', starterFile));
-        const result = await scenarioRun(root, lesson.requiredScenario);
-        expect({ ok: result.ok, diagnostics: result.evidence.diagnostics }).toEqual({ ok: true, diagnostics: [] });
-        expect(result.ok && result.preview.scenarios[0]).toMatchObject({ id: lesson.requiredScenario, path: lesson.scenarioPath, passed: true, totalAssertions: lesson.rubric.minimumAssertions });
-      }, 60_000);
+      it('has a reference solution in the checkout to compare against', () => {
+        expect(references.length).toBeGreaterThan(0);
+      });
+
+      for (const reference of references) {
+        itNative(`reference solution (${relative(projects, reference)}) turns the starter GREEN with the starter scenario kept`, async () => {
+          const root = scratchStarter(lesson.starterExampleId);
+          copyFileSync(reference, join(root, 'src', starterFile));
+          const result = await scenarioRun(root, lesson.requiredScenario);
+          expect({ ok: result.ok, diagnostics: result.evidence.diagnostics }).toEqual({ ok: true, diagnostics: [] });
+          expect(result.ok && result.preview.scenarios[0]).toMatchObject({ id: lesson.requiredScenario, path: lesson.scenarioPath, passed: true, totalAssertions: lesson.rubric.minimumAssertions });
+        }, 60_000);
+      }
+
+      for (const { intent, source } of alsoGreen) {
+        itNative(`another correct solution (${intent}) also turns the starter GREEN`, async () => {
+          const root = scratchStarter(lesson.starterExampleId);
+          writeFileSync(join(root, 'src', starterFile), source);
+          const result = await scenarioRun(root, lesson.requiredScenario);
+          expect({ intent, ok: result.ok, diagnostics: result.evidence.diagnostics }).toEqual({ intent, ok: true, diagnostics: [] });
+        }, 60_000);
+      }
 
       for (const { intent, source } of wrong) {
         itNative(`wrong program that ${intent} stays RED`, async () => {

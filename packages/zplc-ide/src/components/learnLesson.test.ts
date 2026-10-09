@@ -85,8 +85,9 @@ describe('Learn lesson catalog', () => {
     // The lesson teaches the Structured Text oscillator the starter really contains, not a Ladder file it does not ship.
     for (const lesson of [es[4]!, en[4]!]) {
       const text = lesson.stages.map(({ body, checkpoint }) => `${body} ${checkpoint}`).join(' ');
-      for (const value of ['src/Blinky.st', 'LED_Output', 'BlinkTimer', 'T#500ms', '250', '750', '1250', '1750']) expect(`${lesson.sourcePath} ${text}`).toContain(value);
-      expect(text).not.toMatch(/main\.ld|Ladder|contacto NC|NC contact|coil/);
+      for (const value of ['src/Blinky.st', 'LED_Output', 'OffTimer', 'OnTimer', 'T#500ms', '250', '750', '1250', '1750']) expect(`${lesson.sourcePath} ${text}`).toContain(value);
+      // Neither the Ladder file nor the single-timer names of the old reference are taught: the scenario grades the waveform.
+      expect(text).not.toMatch(/main\.ld|Ladder|contacto NC|NC contact|coil|BlinkTimer|LedState/);
     }
     expect(es[5]).toMatchObject({ exampleId: 'motor_plant', requiredScenario: 'MotorPlant', sourcePath: 'src/MotorPlant.st', scenarioPath: 'tests/motor-plant.scenario.json', title: 'Comando, realimentación y velocidad', summary: 'Separá la orden del motor de la confirmación de marcha usando la planta Motor Plant.', scope: 'La evidencia de Tests es determinística del host nativo POSIX y de la planta discreta; no es evidencia de motor físico, hardware, HIL ni certificación.' });
     expect(en[5]).toMatchObject({ title: 'Command, feedback, and speed', summary: 'Separate a motor command from the run confirmation using the Motor Plant.', scope: 'Tests provide deterministic native POSIX host and discrete-plant evidence only; they are not physical-motor, hardware, HIL, or certification evidence.' });
@@ -102,12 +103,12 @@ describe('Learn lesson catalog', () => {
     expect(en[5]?.stages[4]?.body).toContain('10 with 30 ms');
     expect(es[5]?.stages[5]?.body).toBe('RISING/FALLING cubren esta transición y NEVER comprueba que Running no aparezca sin Command dentro de este escenario.');
     expect(en[5]?.stages[5]?.body).toBe('RISING/FALLING cover this transition, and NEVER checks that Running never appears without Command in this scenario.');
-    expect(es[6]).toMatchObject({ exampleId: 'edge_counter', requiredScenario: 'EdgeCounter', sourcePath: 'src/EdgeCounter.st', scenarioPath: 'tests/edge-counter.scenario.json', title: 'Flancos y contador de pulsos', summary: 'Usá R_TRIG y CTU para contar tres pulsos discretos y resetear el umbral.', scope: 'La evidencia de Tests es del host nativo POSIX; no es evidencia de sensor físico, rebote, hardware, HIL ni certificación.' });
-    expect(en[6]).toMatchObject({ title: 'Edges and pulse counter', summary: 'Use R_TRIG and CTU to count three discrete pulses and reset the threshold.', scope: 'Tests provide native POSIX host evidence only; they are not physical-sensor, bounce, hardware, HIL, or certification evidence.' });
+    expect(es[6]).toMatchObject({ exampleId: 'edge_counter', requiredScenario: 'EdgeCounter', sourcePath: 'src/EdgeCounter.st', scenarioPath: 'tests/edge-counter.scenario.json', title: 'Flancos y contador de pulsos', summary: 'Usá un contador CTU para contar tres pulsos discretos y resetear la cuenta.', scope: 'La evidencia de Tests es del host nativo POSIX; no es evidencia de sensor físico, rebote, hardware, HIL ni certificación.' });
+    expect(en[6]).toMatchObject({ title: 'Edges and pulse counter', summary: 'Use a CTU counter to count three discrete pulses and reset the count.', scope: 'Tests provide native POSIX host evidence only; they are not physical-sensor, bounce, hardware, HIL, or certification evidence.' });
     expect(es[6]?.stages.map(({ title }) => title)).toEqual(['Objetivo', 'Predecí', 'Editá', 'Ejecutá', 'Observá', 'Reflexioná']);
     expect(en[6]?.stages.map(({ title }) => title)).toEqual(['Objective', 'Predict', 'Edit', 'Run', 'Observe', 'Reflect']);
-    expect(es[6]?.stages[0]).toEqual({ title: 'Objetivo', body: 'En src/EdgeCounter.st, usá PulseInput, Reset y CountReached y agregá las instancias Edge (R_TRIG) y Count (CTU).', checkpoint: 'R_TRIG convierte cada flanco ascendente en un pulso de un scan; CTU cuenta esos pulsos.' });
-    expect(en[6]?.stages[0]).toEqual({ title: 'Objective', body: 'In src/EdgeCounter.st, use PulseInput, Reset, and CountReached and add the Edge (R_TRIG) and Count (CTU) instances.', checkpoint: 'R_TRIG turns each rising edge into a one-scan pulse; CTU counts those pulses.' });
+    expect(es[6]?.stages[0]).toEqual({ title: 'Objetivo', body: 'En src/EdgeCounter.st, usá PulseInput, Reset y CountReached y agregá una instancia Count (CTU) con PV=3.', checkpoint: 'CTU cuenta una vez cada flanco ascendente de PulseInput, sin importar cuánto tiempo siga en alto el pulso; Reset borra la cuenta.' });
+    expect(en[6]?.stages[0]).toEqual({ title: 'Objective', body: 'In src/EdgeCounter.st, use PulseInput, Reset, and CountReached and add a Count (CTU) instance with PV=3.', checkpoint: 'CTU counts each rising edge of PulseInput once, however long the pulse stays high; Reset clears the count.' });
     expect(es[6]?.stages[1]).toEqual({ title: 'Predecí', body: 'Antes de ejecutar, anticipá cuándo el contador alcanza PV=3.', checkpoint: 'CountReached permanece OFF a 0, 10 y 30 ms; enciende a 50 tras el tercer flanco; vuelve OFF a 70 con Reset.' });
     expect(en[6]?.stages[1]).toEqual({ title: 'Predict', body: 'Before running, predict when the counter reaches PV=3.', checkpoint: 'CountReached stays OFF at 0, 10, and 30 ms; turns ON at 50 after the third edge; returns OFF at 70 with Reset.' });
     expect(es[6]?.stages[4]).toEqual({ title: 'Observá', body: 'Compará los eventos de 10, 30, 50 y 70 ms con la salida CountReached.', checkpoint: 'El tercer pulso alcanza PV=3; Reset domina y devuelve CountReached a OFF.' });
@@ -217,6 +218,15 @@ describe('Learn lesson catalog', () => {
       const scenario = JSON.parse(readFileSync(join(projects, lesson.starterExampleId, lesson.scenarioPath), 'utf8')) as { tickMs: number; durationMs: number };
       expect(lesson.stages[1]!.checkpoint.match(/@\d+/g)).toHaveLength(scenario.durationMs / scenario.tickMs + 1);
     }
+  });
+
+  it('does not make lesson 7 require R_TRIG or an Edge variable: CTU alone must be a complete solution', () => {
+    const projects = join(import.meta.dir, '..', '..', 'projects');
+    for (const lesson of [learnLessonCatalog.es[6]!, learnLessonCatalog.en[6]!]) {
+      const text = [lesson.title, lesson.summary, ...lesson.stages.flatMap(({ body, checkpoint }) => [body, checkpoint]), ...lesson.faultCases].join(' ');
+      expect(text).not.toMatch(/R_TRIG|\bEdge\b/);
+    }
+    expect(readFileSync(join(projects, 'edge_counter_starter', 'src', 'EdgeCounter.st'), 'utf8')).not.toMatch(/R_TRIG|\bEdge\b/);
   });
 
   it('keeps the Spanish copy in parity with the English copy: same numbers, file paths, and fault', () => {
