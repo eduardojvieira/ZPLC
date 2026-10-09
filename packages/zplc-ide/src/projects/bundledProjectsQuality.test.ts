@@ -64,15 +64,12 @@ describe('no credentials in any bundled manifest', () => {
     });
   }
 
-  // A blink demo has nothing to say to a network. The one exception is listed with its reason; delete it with the reason.
-  const DISABLED_COMMUNICATION_ALLOWED: Record<string, string> = {
-    pico_blinky: 'src/project/projectModel.test.ts reads its disabled MQTT block as the canonical communication shape',
-  };
+  // A blink demo has nothing to say to a network: no network block and no communication block, not even a disabled one.
   for (const name of hardwareDemos) {
-    it(`${name} carries no network block${name in DISABLED_COMMUNICATION_ALLOWED ? ' and only the allowed disabled communication block' : ' and no communication block'}`, () => {
+    it(`${name} carries no network block and no communication block`, () => {
       const manifest = manifestOf(name);
       expect(manifest.network).toBeUndefined();
-      if (!(name in DISABLED_COMMUNICATION_ALLOWED)) expect(manifest.communication).toBeUndefined();
+      expect(manifest.communication).toBeUndefined();
     });
   }
 });
