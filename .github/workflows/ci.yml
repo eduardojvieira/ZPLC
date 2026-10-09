@@ -51,7 +51,9 @@ jobs:
       - name: Build and test compiler
         run: |
           bun run build:compiler
-          bun run test:compiler
+          status=0
+          bun run test:compiler -- --reporter=junit --reporter-outfile="${RUNNER_TEMP}/junit-compiler.xml" || status=$?
+          bun tools/ci/check-expected-failures.ts --exit-code "${status}" "packages/zplc-compiler=${RUNNER_TEMP}/junit-compiler.xml"
 
       - name: Verify standalone CLI version
         run: |
@@ -76,7 +78,9 @@ jobs:
         run: |
           test -x "$ZPLC_NATIVE_SIM_BIN"
           bun run build:ide
-          bun run test:ide
+          status=0
+          bun run test:ide -- --reporter=junit --reporter-outfile="${RUNNER_TEMP}/junit-ide.xml" || status=$?
+          bun tools/ci/check-expected-failures.ts --exit-code "${status}" "packages/zplc-ide=${RUNNER_TEMP}/junit-ide.xml"
           bun run lint:ide
 
       - name: Smoke Studio renderer vertical

@@ -17,6 +17,14 @@ describe('ci.yml triggers', () => {
   });
 });
 
+describe('ci.yml expected-failure check', () => {
+  it.each(['test:compiler', 'test:ide'])('runs %s through the JUnit report and the expected-failure rule', (script) => {
+    const step = workflow.jobs.typescript!.steps.find((candidate) => candidate.run?.includes(`bun run ${script}`));
+    expect(step?.run).toContain('--reporter=junit');
+    expect(step?.run).toContain('tools/ci/check-expected-failures.ts');
+  });
+});
+
 describe('ci.yml cross-build artifacts', () => {
   const job = workflow.jobs['zephyr-cross-build']!;
   const boards = job.strategy!.matrix.include;
