@@ -299,13 +299,13 @@ async function captureLearnReviewScreens(cdp: Cdp, reviewDir: string): Promise<v
   await screenshot('learn-conveyor-two-parts-es-1366.png');
   await cdp.evaluate(`(() => { const button = [...document.querySelectorAll('#console-panel-learn button')].find((item) => item.textContent?.trim() === 'English'); if (!button || button.disabled) return false; button.click(); return true; })()`);
   await waitFor('restored English two-parts conveyor Learn lesson', async () => await cdp.evaluate(`document.getElementById('console-panel-learn')?.textContent?.includes('Reproducible diagnosis: two parts, one decision') ? true : undefined`) === true ? true : undefined);
-  await selectLesson('Ladder, TON, and output feedback');
-  await waitFor('English Blinky Learn lesson', async () => await cdp.evaluate(`document.getElementById('console-panel-learn')?.textContent?.includes('Ladder, TON, and output feedback') ? true : undefined`) === true ? true : undefined);
-  await assertLesson('Ladder, TON, and output feedback', 'Copy Ladder, TON, and output feedback example');
+  await selectLesson('TON oscillator and output feedback');
+  await waitFor('English Blinky Learn lesson', async () => await cdp.evaluate(`document.getElementById('console-panel-learn')?.textContent?.includes('TON oscillator and output feedback') ? true : undefined`) === true ? true : undefined);
+  await assertLesson('TON oscillator and output feedback', 'Copy TON oscillator and output feedback example');
   await screenshot('learn-blinky-en-1366.png');
   await cdp.evaluate(`(() => { const button = [...document.querySelectorAll('#console-panel-learn button')].find((item) => item.textContent?.trim() === 'Español'); if (!button || button.disabled) return false; button.click(); return true; })()`);
-  await waitFor('Spanish Blinky Learn lesson', async () => await cdp.evaluate(`document.getElementById('console-panel-learn')?.textContent?.includes('Ladder, TON y realimentación de salida') ? true : undefined`) === true ? true : undefined);
-  await assertLesson('Ladder, TON y realimentación de salida', 'Copiar ejemplo Ladder, TON y realimentación de salida');
+  await waitFor('Spanish Blinky Learn lesson', async () => await cdp.evaluate(`document.getElementById('console-panel-learn')?.textContent?.includes('Oscilador TON y realimentación de salida') ? true : undefined`) === true ? true : undefined);
+  await assertLesson('Oscilador TON y realimentación de salida', 'Copiar ejemplo Oscilador TON y realimentación de salida');
   await screenshot('learn-blinky-es-1366.png');
   await selectLesson('Comando, realimentación y velocidad');
   await waitFor('Spanish motor plant Learn lesson', async () => await cdp.evaluate(`document.getElementById('console-panel-learn')?.textContent?.includes('Comando, realimentación y velocidad') ? true : undefined`) === true ? true : undefined);
@@ -673,7 +673,7 @@ async function main(): Promise<void> {
     };
     await click('Learn');
     await waitFor('Spanish Learn lesson', async () => (await text()).includes('Arranque y parada seguros') ? true : undefined);
-    assert((await text()).includes('MotorStartStop') && (await text()).includes('20, 40, 90 y 140 ms') && !(await text()).includes('auto-graded'), 'Learn must begin in Spanish with the exact host-only guided path');
+    assert((await text()).includes('MotorStartStop') && (await text()).includes('0, 20, 40, 50, 90 y 140 ms') && !(await text()).includes('auto-graded'), 'Learn must begin in Spanish with the exact host-only guided path');
     await click('English');
     await waitFor('English Learn lesson', async () => (await text()).includes('Safe motor start-stop') ? true : undefined);
     assert((await text()).includes('The starter fails this host scenario until the stated omission is corrected.') && (await text()).includes('native POSIX host evidence only') && (await text()).includes('not hardware or HIL evidence.'), 'Learn must preserve honest host-only evidence wording');
