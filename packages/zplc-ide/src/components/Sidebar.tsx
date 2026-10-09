@@ -27,6 +27,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useIDEStore } from '../store/useIDEStore';
 import { PLC_LANGUAGES, type PLCLanguage, type FileTreeNode } from '../types';
 import { Modal } from './Modal';
+import { FileNameTakenError } from '../utils/fileSystem';
 import { flattenVisibleTree, resolveTreeFocus, treeNavigation } from './sidebarTreeNavigation';
 
 // =============================================================================
@@ -73,7 +74,7 @@ function NewFileModal({
       await createFile(fileName.trim(), language);
       onClose();
     } catch (error) {
-      setError(error instanceof Error && error.message === 'The file may exist on disk. Refresh the project before trying again.'
+      setError(error instanceof FileNameTakenError || (error instanceof Error && error.message === 'The file may exist on disk. Refresh the project before trying again.')
         ? error.message
         : 'Could not create the file. Check the name, folder access, and whether it already exists.');
       setTimeout(() => inputRef.current?.select(), 0);
