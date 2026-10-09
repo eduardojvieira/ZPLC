@@ -6,7 +6,7 @@ import { parseArgs } from 'node:util';
 import productManifest from '../../../../package.json';
 import { compileSingleFileWithTask, type PLCLanguage } from '../compiler';
 import { getLanguageFromFilename } from '../types';
-import { artifactEvidence, compilerCheck, compilerCompile, executionPermission, finishToolExecution, firmwareBuild, projectInspect, projectMigrationExport, projectMigrationPreview, projectValidate, safetyCheck, scenarioRun, startToolExecution, symbolsList, testsRun, toolchainInspect, withToolExecution, type FirmwareBuildSummary, type ProjectMigrationExportResult, type TestRunResult, type ToolEvidence, type ToolExecutionStart, type ToolResult } from './toolApi';
+import { artifactEvidence, compilerCheck, compilerCompile, executionPermission, finishToolExecution, firmwareBuild, projectInspect, projectMigrationExport, projectMigrationPreview, projectValidate, safeCompilerDiagnostic, safetyCheck, scenarioRun, startToolExecution, symbolsList, testsRun, toolchainInspect, withToolExecution, type FirmwareBuildSummary, type ProjectMigrationExportResult, type TestRunResult, type ToolEvidence, type ToolExecutionStart, type ToolResult } from './toolApi';
 
 type Values = { help?: boolean; version?: boolean; json?: boolean; output?: string; language?: string };
 type Output = Pick<typeof console, 'log' | 'error'>;
@@ -41,6 +41,19 @@ function cliExecution(operation: ToolEvidence['operation'], value: unknown, star
 function emitFailure(output: Output, json: boolean, operation: ToolEvidence['operation'], message: string, start?: ToolExecutionStart): number {
   const value = { ok: false, evidence: failure(operation, message) };
   if (json) emitJson(output, cliExecution(operation, value, start)); else output.error(`Error: ${message}`); return 1;
+}
+/** `path:line:column: message`; the position is left out when the diagnostic has none (line 0 is "unknown"). */
+function describeDiagnostic(diagnostic: { message: string; path?: string; line?: number; column?: number }, file?: string): string {
+  if (!diagnostic.line) return diagnostic.message;
+  return `${[diagnostic.path ?? file, diagnostic.line, diagnostic.column ?? 0].filter((part) => part !== undefined).join(':')}: ${diagnostic.message}`;
+}
+/** A single-file build failure with the compiler's own message, line and column (CMP-010 stopgap). */
+function emitCompilerFailure(output: Output, json: boolean, operation: ToolEvidence['operation'], error: unknown, file: string, start: ToolExecutionStart): number {
+  const diagnostic = safeCompilerDiagnostic(error);
+  delete diagnostic.path; // the compiler names the program here, not a file; the human line names the file
+  if (json) emitJson(output, cliExecution(operation, { ok: false, evidence: { schemaVersion: 1, operation, outcome: 'failed', diagnostics: [diagnostic], artifacts: [] } }, start));
+  else output.error(`Error: ${describeDiagnostic(diagnostic, file)}`);
+  return 1;
 }
 export function firmwareBuildExitCode(result: ToolResult<FirmwareBuildSummary>): number {
   if (result.ok) return 0;
@@ -107,7 +120,7 @@ async function singleFileCompile(file: string, values: Values, output: Output): 
     else if (values.output) output.log(`Compiled ${file} (${result.codeSize} bytes)`);
     else output.log(result.assembly);
     return 0;
-  } catch { return emitFailure(output, json, 'compile', 'Compilation failed', start); }
+  } catch (error) { return emitCompilerFailure(output, json, 'compile', error, file, start); }
 }
 
 export async function main(args = Bun.argv.slice(2), output: Output = console, options: { signal?: AbortSignal } = {}): Promise<number> {
@@ -153,7 +166,7 @@ export async function main(args = Bun.argv.slice(2), output: Output = console, o
   if (values.json) emitJson(output, cliExecution(operationForCommand(command), result, executionStart));
   else if (result.ok && command === 'safety-check' && !result.summary.configured) output.log('safety-check: no incompatible outputs declared');
   else if (result.ok && command === 'safety-check') output.log('safety-check coverage checked');
-  else if (result.ok) output.log(`${command} passed`); else result.evidence.diagnostics.forEach((diagnostic) => output.error(`Error: ${diagnostic.message}`));
+  else if (result.ok) output.log(`${command} passed`); else result.evidence.diagnostics.forEach((diagnostic) => output.error(`Error: ${describeDiagnostic(diagnostic)}`));
   return command === 'test' || command === 'scenario-run' ? testExitCode(result as TestRunResult) : result.ok ? 0 : 1;
 }
 

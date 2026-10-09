@@ -233,6 +233,42 @@ describe('CLI JSON boundary', () => {
       expect(await readFile(artifact, 'utf8')).toBe('sentinel'); expect(JSON.stringify(io)).not.toContain('PasswordSecret');
     } finally { await rm(root, { recursive: true, force: true }); }
   });
+  it('prints the compiler message and position when a single file does not build (CMP-010 stopgap)', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-cli-message-')); const source = join(root, 'typo.st'); const artifact = join(root, 'result.zplc');
+    try {
+      await writeFile(source, 'PROGRAM Typo\nVAR\n  x : INT;\nEND_VAR\n  nope := 5;\nEND_PROGRAM\n');
+      const human = output(); expect(await main(['compile', source, '--output', artifact], human)).toBe(1);
+      expect(human.lines).toEqual([]); expect(human.errors).toEqual([`Error: ${source}:5:3: Unknown identifier 'nope'`]);
+      await expect(stat(artifact)).rejects.toThrow();
+      const json = output(); expect(await main(['compile', source, '--json'], json)).toBe(1);
+      expect(json.errors).toEqual([]); expect(json.lines).toHaveLength(1);
+      expect(JSON.parse(json.lines[0] ?? '{}')).toMatchObject({ ok: false, evidence: { operation: 'compile', outcome: 'failed', artifacts: [], diagnostics: [{ code: 'COMPILATION_FAILED', message: "Unknown identifier 'nope'", phase: 'codegen', line: 5, column: 3 }] } });
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
+  it('says the position refers to the generated Structured Text for a graphical single file', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-cli-message-sfc-')); const source = join(root, 'chart.sfc.json');
+    try {
+      const chart = { name: 'Chart', variables: { local: [], outputs: [{ name: 'Lamp', type: 'BOOL', address: '%QX0.0' }] }, steps: [{ id: 's_a', name: 'A', isInitial: true, position: { x: 0, y: 0 }, actions: [{ qualifier: 'N', actionName: 'Mark' }] }], transitions: [], actions: [{ id: 'mark', name: 'Mark', type: 'ST', body: 'Undeclared := TRUE;' }] };
+      await writeFile(source, JSON.stringify(chart));
+      const io = output(); expect(await main(['compile', source], io)).toBe(1);
+      expect(io.errors).toHaveLength(1); expect(io.errors[0]).toContain("Unknown identifier 'Undeclared'"); expect(io.errors[0]).toContain('(position in the generated Structured Text)');
+      expect(io.errors[0]).toMatch(/chart\.sfc\.json:[1-9][0-9]*:[1-9][0-9]*: /);
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
+  it('prints the compiler message with file, line and column for workspace commands', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-cli-message-workspace-'));
+    try {
+      await mkdir(join(root, 'src'));
+      await writeFile(join(root, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'test', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Main.st'] }] }));
+      await writeFile(join(root, 'src', 'Main.st'), 'PROGRAM Typo\nVAR\n  x : INT;\nEND_VAR\n  nope := 5;\nEND_PROGRAM\n');
+      for (const command of ['check', 'compile']) {
+        const human = output(); expect(await main([command, root], human)).toBe(1);
+        expect(human.lines).toEqual([]); expect(human.errors).toEqual(["Error: src/Main.st:5:3: Unknown identifier 'nope'"]);
+        const json = output(); expect(await main([command, root, '--json'], json)).toBe(1);
+        expect(JSON.parse(json.lines[0] ?? '{}')).toMatchObject({ ok: false, evidence: { operation: command, diagnostics: [{ code: 'COMPILATION_FAILED', message: "Unknown identifier 'nope'", phase: 'codegen', line: 5, column: 3, path: 'src/Main.st' }] } });
+      }
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
   it('fails closed when output would overwrite a source, manifest, or direct src entry', async () => {
     const root = await mkdtemp(join(tmpdir(), 'zplc-cli-protected-')); const source = join(root, 'source.IL'); const workspace = join(root, 'workspace');
     try {
