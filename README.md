@@ -17,7 +17,7 @@ tests and simulates projects.
 [Documentation](https://eduardojvieira.github.io/ZPLC/) · MIT licence
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Zephyr 4.4.2](https://img.shields.io/badge/Zephyr-4.4.2-blue.svg)](https://zephyrproject.org/)
+[![Zephyr: pinned in west.yml](https://img.shields.io/badge/Zephyr-pinned%20in%20west.yml-blue.svg)](west.yml)
 [![C99](https://img.shields.io/badge/C-C99-green.svg)](https://en.wikipedia.org/wiki/C99)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
 
