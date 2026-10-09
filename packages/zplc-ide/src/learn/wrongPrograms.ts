@@ -75,7 +75,7 @@ IF PartAtDiverter THEN Metal := FALSE; END_IF;`) },
     { intent: 'classifies and stops on a jam but never fires the diverter', source: program('Conveyor', `${conveyorDeclarations}\nVAR Requested : BOOL := FALSE; END_VAR`, `IF JamDetected OR Stop THEN Requested := FALSE; ELSIF Start THEN Requested := TRUE; END_IF;
 BeltCommand := Requested; DiverterCommand := FALSE; FaultLamp := JamDetected;`) },
   ] },
-  'blinky-ladder-timer-feedback': { referenceSource: 'main.st', referenceProjects: ['blinky_st', 'blinky'], alsoGreen: [
+  'blinky-ladder-timer-feedback': { referenceSource: 'main.st', alsoGreen: [
     { intent: 'two TON timers, one per half period (OffTimer and OnTimer)', source: program('Blinky', `${blinkyDeclarations}\nVAR OffTimer : TON; OnTimer : TON; State : BOOL := FALSE; END_VAR`, `OffTimer(IN := NOT State, PT := T#500ms);
 OnTimer(IN := State, PT := T#500ms);
 IF OffTimer.Q THEN State := TRUE; END_IF;

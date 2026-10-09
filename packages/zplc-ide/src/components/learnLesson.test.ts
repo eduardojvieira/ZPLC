@@ -76,7 +76,7 @@ describe('Learn lesson catalog', () => {
     expect(en[3]?.stages[4]?.body).toContain('classifier+metal 20, diverter+count=1 at 30, jam 50');
     expect(es[3]?.stages[5]?.body).toBe('La assertion NEVER cubre DiverterCommand ON con BeltCommand OFF sólo en este escenario.');
     expect(en[3]?.stages[5]?.body).toBe('The NEVER assertion covers DiverterCommand ON with BeltCommand OFF only in this scenario.');
-    expect(es[4]).toMatchObject({ exampleId: 'blinky', requiredScenario: 'BlinkyVisual', sourcePath: 'src/Blinky.st', scenarioPath: 'tests/blinky-visual.scenario.json', title: 'Oscilador TON y realimentación de salida', scope: 'La evidencia de Tests es del host nativo POSIX; no es evidencia de LED físico, timing de hardware, HIL ni certificación.' });
+    expect(es[4]).toMatchObject({ exampleId: 'blinky_st', requiredScenario: 'BlinkyVisual', sourcePath: 'src/Blinky.st', scenarioPath: 'tests/blinky-visual.scenario.json', title: 'Oscilador TON y realimentación de salida', scope: 'La evidencia de Tests es del host nativo POSIX; no es evidencia de LED físico, timing de hardware, HIL ni certificación.' });
     expect(en[4]).toMatchObject({ title: 'TON oscillator and output feedback', scope: 'Tests provide native POSIX host evidence only; they are not physical LED, hardware timing, HIL, or certification evidence.' });
     expect(es[4]?.stages.map(({ title }) => title)).toEqual(['Objetivo', 'Predecí', 'Editá', 'Ejecutá', 'Observá', 'Reflexioná']);
     expect(en[4]?.stages.map(({ title }) => title)).toEqual(['Objective', 'Predict', 'Edit', 'Run', 'Observe', 'Reflect']);
@@ -85,10 +85,17 @@ describe('Learn lesson catalog', () => {
     // The lesson teaches the Structured Text oscillator the starter really contains, not a Ladder file it does not ship.
     for (const lesson of [es[4]!, en[4]!]) {
       const text = lesson.stages.map(({ body, checkpoint }) => `${body} ${checkpoint}`).join(' ');
-      for (const value of ['src/Blinky.st', 'LED_Output', 'OffTimer', 'OnTimer', 'T#500ms', '250', '750', '1250', '1750']) expect(`${lesson.sourcePath} ${text}`).toContain(value);
-      // Neither the Ladder file nor the single-timer names of the old reference are taught: the scenario grades the waveform.
-      expect(text).not.toMatch(/main\.ld|Ladder|contacto NC|NC contact|coil|BlinkTimer|LedState/);
+      for (const value of ['src/Blinky.st', 'LED_Output', 'BlinkTimer', 'LedState', 'IN := FALSE', 'T#500ms', '250', '750', '1250', '1750']) expect(`${lesson.sourcePath} ${text}`).toContain(value);
+      // Neither the Ladder file nor the two-timer construction of the Ladder, IL and FBD projects is taught: the reference is blinky_st.
+      expect(text).not.toMatch(/main\.ld|Ladder|contacto NC|NC contact|coil|OffTimer|OnTimer|two TON|dos temporizadores/);
     }
+    // The reference of lesson 5 is the Structured Text project, and the names the lesson gives are the ones its source uses.
+    expect(es[4]).toMatchObject({ exampleId: 'blinky_st' });
+    expect(en[4]).toMatchObject({ exampleId: 'blinky_st' });
+    const reference = readFileSync(join(import.meta.dir, '..', '..', 'projects', 'blinky_st', 'src', 'main.st'), 'utf8');
+    expect(reference.match(/:\s*TON\b/g)).toHaveLength(1);
+    for (const name of ['BlinkTimer', 'LedState', 'IN := FALSE']) expect(reference).toContain(name);
+    for (const lesson of [es[4]!, en[4]!]) expect(lesson.faultCases.join(' ')).not.toMatch(/OFF y ON|OFF and ON half/);
     expect(es[5]).toMatchObject({ exampleId: 'motor_plant', requiredScenario: 'MotorPlant', sourcePath: 'src/MotorPlant.st', scenarioPath: 'tests/motor-plant.scenario.json', title: 'Comando, realimentación y velocidad', summary: 'Separá la orden del motor de la confirmación de marcha usando la planta Motor Plant.', scope: 'La evidencia de Tests es determinística del host nativo POSIX y de la planta discreta; no es evidencia de motor físico, hardware, HIL ni certificación.' });
     expect(en[5]).toMatchObject({ title: 'Command, feedback, and speed', summary: 'Separate a motor command from the run confirmation using the Motor Plant.', scope: 'Tests provide deterministic native POSIX host and discrete-plant evidence only; they are not physical-motor, hardware, HIL, or certification evidence.' });
     expect(es[5]?.stages.map(({ title }) => title)).toEqual(['Objetivo', 'Predecí', 'Editá', 'Ejecutá', 'Observá', 'Reflexioná']);
@@ -181,6 +188,8 @@ describe('Learn lesson catalog', () => {
       expect(existsSync(join(projects, lesson.starterExampleId, lesson.scenarioPath))).toBe(true);
       expect(existsSync(join(reference, 'zplc.json'))).toBe(true);
       expect(declaredPrograms(reference)).not.toHaveLength(0);
+      // A reference in another language than the starter would send the learner to a file they cannot compare (lesson 5 once pointed a Structured Text starter at the Ladder Blinky).
+      expect({ lesson: lesson.id, sameLanguage: declaredPrograms(reference).some((program) => program.endsWith(lesson.sourcePath.slice(lesson.sourcePath.lastIndexOf('.')))) }).toEqual({ lesson: lesson.id, sameLanguage: true });
       for (const program of declaredPrograms(reference)) {
         const direct = join(reference, 'src', program);
         const visual = join(reference, 'src', `${program}.json`);

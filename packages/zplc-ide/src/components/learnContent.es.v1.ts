@@ -54,10 +54,10 @@ export const learnLessonContentEsV1: readonly LearnLesson[] = Object.freeze([
       scope: 'La evidencia de Tests es determinística del host nativo POSIX; no es evidencia de cinta física, despeje de atasco, hardware, HIL ni certificación.',
     },
     {
-      id: 'blinky-ladder-timer-feedback', exampleId: 'blinky', requiredScenario: 'BlinkyVisual', sourcePath: 'src/Blinky.st', scenarioPath: 'tests/blinky-visual.scenario.json',
+      id: 'blinky-ladder-timer-feedback', exampleId: 'blinky_st', requiredScenario: 'BlinkyVisual', sourcePath: 'src/Blinky.st', scenarioPath: 'tests/blinky-visual.scenario.json',
       title: 'Oscilador TON y realimentación de salida', summary: 'Construí un parpadeo TON de 500 ms en Structured Text y verificá sus tiempos de encendido y apagado con assertions FOR y AT.',
       stages: [
-        { title: 'Objetivo', body: 'En src/Blinky.st, armá el oscilador con dos temporizadores TON con PT T#500ms, por ejemplo OffTimer y OnTimer: uno corre mientras el LED está OFF, el otro mientras está ON, y la Q de cada uno cambia el estado; LED_Output sigue al estado.', checkpoint: 'El estado se realimenta para arrancar el otro temporizador, y el LED arranca en OFF.' },
+        { title: 'Objetivo', body: 'En src/Blinky.st, armá el oscilador alrededor de un TON con PT T#500ms, por ejemplo BlinkTimer: dejalo corriendo con IN := TRUE, y cuando su Q sea TRUE invertí una variable de estado como LedState y reiniciá el temporizador con una llamada con IN := FALSE; LED_Output sigue al estado.', checkpoint: 'La salida del temporizador se realimenta para invertir el estado y reiniciarlo, y el LED arranca en OFF.' },
         { title: 'Predecí', body: 'Antes de ejecutar, anticipá LED_Output a 250, 750, 1250 y 1750 ms.', checkpoint: 'OFF a 250 ms, ON a 750, OFF a 1250, ON a 1750; el primer flanco ascendente cae entre 400 y 600 ms.' },
         { title: 'Editá', body: 'Corregí el starter para que LED_Output esté OFF durante 500 ms, luego ON durante 500 ms, y repita.', checkpoint: 'El escenario visible debe pasar con evidencia host guardada.' },
         { title: 'Ejecutá', body: 'En Tests, elegí el zplc.json guardado y ejecutá únicamente el escenario BlinkyVisual.', checkpoint: 'El escenario requerido se llama BlinkyVisual y contiene 11 assertions.' },
@@ -139,7 +139,7 @@ export const learnFaultCasesEsV1: Readonly<Record<LearnLessonId, readonly string
   'pedestrian-crossing-states': ['El starter ignora el pedido peatonal; tras PedRequest ejecutá amarillo, despeje en rojo, WALK y rojo de recuperación antes de volver a verde, y mostrá WALK sólo con los vehículos en rojo.'],
   'tank-level-fault-reset': ['El starter no tiene histéresis de bomba y sigue funcionando ante una falla de bomba; mantené la bomba desde LevelLow hasta LevelHigh, enclavá la alarma con PumpFault o EStop y liberala sólo con un Reset pulsado tras despejarse la falla.'],
   'conveyor-classification-jam': ['El starter no bloquea la cinta ante el atasco determinista; detenela y encendé FaultLamp mientras la planta informa JamDetected, y evitá que Reset la libere mientras el atasco siga.'],
-  'blinky-ladder-timer-feedback': ['El starter mantiene LED_Output en OFF para siempre; agregá temporizadores TON (T#500ms) para los semiperíodos OFF y ON, de modo que el LED esté OFF unos 500 ms, luego ON unos 500 ms, y repita.'],
+  'blinky-ladder-timer-feedback': ['El starter mantiene LED_Output en OFF para siempre; agregá un temporizador TON (T#500ms) que invierta un estado cada vez que vence, de modo que el LED esté OFF unos 500 ms, luego ON unos 500 ms, y repita.'],
   'motor-plant-feedback': ['El starter pierde Command cuando cae Start y no respeta Stop; retené el pedido hasta Stop y condicioná Running con AtSpeed.'],
   'edge-counter-pulses': ['El starter nunca cuenta; agregá un CTU con PV=3 para que CountReached encienda en el tercer flanco ascendente y Reset lo apague.'],
   'scan-cycle-one-scan-memory': ['El starter no tiene memoria de un scan; conservá Previous, calculá Delayed con él, derivá RisingPulse de Current y Delayed y actualizá Previous al final.'],

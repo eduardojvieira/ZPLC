@@ -13,7 +13,7 @@ export type LearnStage = { title: string; body: string; checkpoint: string };
 
 export type LearnLesson = {
   id: LearnLessonId;
-  exampleId: 'motor_start_stop' | 'pedestrian_crossing' | 'tank_level' | 'conveyor_01' | 'blinky' | 'motor_plant' | 'edge_counter' | 'scan_snapshot';
+  exampleId: 'motor_start_stop' | 'pedestrian_crossing' | 'tank_level' | 'conveyor_01' | 'blinky_st' | 'motor_plant' | 'edge_counter' | 'scan_snapshot';
   requiredScenario: 'MotorStartStop' | 'PedestrianCrossing' | 'TankLevel' | 'Conveyor01' | 'ConveyorJamTiming' | 'ConveyorTwoParts' | 'BlinkyVisual' | 'MotorPlant' | 'EdgeCounter' | 'ScanSnapshot';
   sourcePath: 'src/Motor.st' | 'src/PedestrianCrossing.st' | 'src/TankLevel.st' | 'src/Conveyor.st' | 'src/Blinky.st' | 'src/MotorPlant.st' | 'src/EdgeCounter.st' | 'src/ScanSnapshot.st';
   scenarioPath: 'tests/motor-start-stop.scenario.json' | 'tests/pedestrian-crossing.scenario.json' | 'tests/tank-level.scenario.json' | 'tests/conveyor-01.scenario.json' | 'tests/conveyor-jam-timing.scenario.json' | 'tests/conveyor-two-parts.scenario.json' | 'tests/blinky-visual.scenario.json' | 'tests/motor-plant.scenario.json' | 'tests/edge-counter.scenario.json' | 'tests/scan-snapshot.scenario.json';

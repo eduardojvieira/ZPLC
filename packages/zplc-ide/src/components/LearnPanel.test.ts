@@ -53,7 +53,9 @@ describe('Learn panel contract', () => {
     expect(esContentSource).toContain("exampleId: 'pedestrian_crossing'");
     expect(esContentSource).toContain("exampleId: 'tank_level'");
     expect(esContentSource).toContain("exampleId: 'conveyor_01'");
-    expect(esContentSource).toContain("exampleId: 'blinky'");
+    expect(esContentSource).toContain("exampleId: 'blinky_st'");
+    expect(enContentSource).toContain("exampleId: 'blinky_st'");
+    expect(esContentSource).not.toContain("exampleId: 'blinky'");
     expect(esContentSource).toContain("exampleId: 'motor_plant'");
     expect(esContentSource).toContain("exampleId: 'edge_counter'");
     expect(esContentSource).toContain("exampleId: 'scan_snapshot'");

@@ -54,10 +54,10 @@ export const learnLessonContentEnV1: readonly LearnLesson[] = Object.freeze([
       scope: 'Tests provide deterministic native POSIX host evidence only; they are not physical conveyor, jam clearance, hardware, HIL, or certification evidence.',
     },
     {
-      id: 'blinky-ladder-timer-feedback', exampleId: 'blinky', requiredScenario: 'BlinkyVisual', sourcePath: 'src/Blinky.st', scenarioPath: 'tests/blinky-visual.scenario.json',
+      id: 'blinky-ladder-timer-feedback', exampleId: 'blinky_st', requiredScenario: 'BlinkyVisual', sourcePath: 'src/Blinky.st', scenarioPath: 'tests/blinky-visual.scenario.json',
       title: 'TON oscillator and output feedback', summary: 'Build a 500 ms TON blinker in Structured Text and check its on and off times with FOR and AT assertions.',
       stages: [
-        { title: 'Objective', body: 'In src/Blinky.st, build the oscillator from two TON timers with PT T#500ms, for example OffTimer and OnTimer: one runs while the LED is OFF, the other while it is ON, and each timer\'s Q switches the state; LED_Output follows the state.', checkpoint: 'The state feeds back to start the other timer, and the LED starts OFF.' },
+        { title: 'Objective', body: 'In src/Blinky.st, build the oscillator around one TON with PT T#500ms, for example BlinkTimer: keep it running with IN := TRUE, and when its Q is TRUE flip a state variable such as LedState and restart the timer with one call using IN := FALSE; LED_Output follows the state.', checkpoint: 'The timer\'s output feeds back to flip the state and restart the timer, and the LED starts OFF.' },
         { title: 'Predict', body: 'Before running, predict LED_Output at 250, 750, 1250, and 1750 ms.', checkpoint: 'OFF at 250 ms, ON at 750, OFF at 1250, ON at 1750; the first rising edge lands between 400 and 600 ms.' },
         { title: 'Edit', body: 'Correct the starter so LED_Output is OFF for 500 ms, then ON for 500 ms, repeating.', checkpoint: 'The visible scenario must pass with saved host evidence.' },
         { title: 'Run', body: 'In Tests, choose the saved zplc.json and run only the BlinkyVisual scenario.', checkpoint: 'The required scenario is named BlinkyVisual and contains 11 assertions.' },
@@ -139,7 +139,7 @@ export const learnFaultCasesEnV1: Readonly<Record<LearnLessonId, readonly string
   'pedestrian-crossing-states': ['The starter ignores the pedestrian request; after PedRequest run yellow, red clearance, WALK, and red recovery before returning to green, and show WALK only while the vehicles are red.'],
   'tank-level-fault-reset': ['The starter has no pump hysteresis and runs through a pump fault; keep the pump on from LevelLow until LevelHigh, latch the alarm on PumpFault or EStop, and release it only with a Reset pressed after the fault has cleared.'],
   'conveyor-classification-jam': ['The starter misses the deterministic jam lockout; stop the belt and light FaultLamp while the plant reports JamDetected, and do not let Reset release it while the jam remains.'],
-  'blinky-ladder-timer-feedback': ['The starter holds LED_Output OFF forever; add TON timers (T#500ms) for the OFF and ON half-periods so the LED is OFF for about 500 ms, then ON for about 500 ms, repeating.'],
+  'blinky-ladder-timer-feedback': ['The starter holds LED_Output OFF forever; add a TON timer (T#500ms) that flips a state each time it expires, so the LED is OFF for about 500 ms, then ON for about 500 ms, repeating.'],
   'motor-plant-feedback': ['The starter loses Command when Start falls and ignores Stop; retain the request until Stop and gate Running with AtSpeed.'],
   'edge-counter-pulses': ['The starter never counts; add a CTU with PV=3 so CountReached turns ON on the third rising edge and Reset turns it OFF.'],
   'scan-cycle-one-scan-memory': ['The starter has no one-scan memory; keep Previous, set Delayed from it, derive RisingPulse from Current and Delayed, and update Previous last.'],
