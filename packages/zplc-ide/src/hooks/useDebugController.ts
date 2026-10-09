@@ -33,6 +33,7 @@ import { findVariable } from '../compiler';
 import type { UploadTraceEvent } from '../runtime/uploadTrace';
 import {
   resolveExecutionLocation,
+  type ResolvedExecutionLocation,
 } from './debugExecutionLocation';
 import { buildPolledDebugPaths, describePolledDebugVariable } from './debugPollingPaths';
 import { debugLog } from '../utils/debugLog';
@@ -54,6 +55,19 @@ import {
 } from '../runtime/nativeTrace';
 
 const DEVICE_LOG_FLUSH_MS = 100;
+
+/**
+ * Where the VM stopped at a breakpoint, and the Console entry that says so. The adapters report the pc only
+ * (onBreakpointHit(pc)), so the line is the one the debug map gives for the pc, the same line the editor highlights.
+ * The prefix "Breakpoint hit at PC=0x" is matched by the real-app journeys.
+ */
+export function describeBreakpointHit(debugMap: DebugMap | null, pc: number, line?: number): { resolved: ResolvedExecutionLocation; message: string } {
+  const resolved = resolveExecutionLocation(debugMap, pc, line);
+  return {
+    resolved,
+    message: `Breakpoint hit at PC=0x${pc.toString(16).toUpperCase()}${resolved.line ? `, line ${resolved.line}` : ''}`,
+  };
+}
 
 // =============================================================================
 // Types
@@ -267,7 +281,7 @@ export function useDebugController(): DebugController {
     },
     onBreakpointHit: (pc: number, line?: number) => {
       if (!isCurrentOwner()) return;
-      const resolved = resolveExecutionLocation(debugMap, pc, line);
+      const { resolved, message } = describeBreakpointHit(debugMap, pc, line);
       debugLog('[Execution] Breakpoint hit resolved', {
         pc,
         requestedLine: line ?? null,
@@ -277,7 +291,7 @@ export function useDebugController(): DebugController {
 
       addConsoleEntry({
         type: 'info',
-        message: `Breakpoint hit at PC=0x${pc.toString(16).toUpperCase()}${line ? `, line ${line}` : ''}`,
+        message,
         source: 'debugger',
       });
     },
