@@ -4,6 +4,8 @@
  * Core types for the IEC 61131-3 Web IDE
  */
 
+import type { ProjectFilesBridge } from '../../electron/projectFilesProtocol';
+
 // =============================================================================
 // Electron API (exposed via preload script)
 // =============================================================================
@@ -90,6 +92,8 @@ declare global {
       toolExecutionAudit?: {
         list: () => Promise<unknown>;
       };
+      /** Native folder dialog and typed project operations, owned by the main process (IDE-001). */
+      projectFiles?: ProjectFilesBridge;
       isElectron: boolean;
       platform: string;
     };
@@ -724,9 +728,9 @@ export interface FileSystemProject {
   files: Map<string, ProjectFileWithHandle>;  // Flat map of loaded files
 }
 
-/** Check if File System Access API is available */
+/** Folder access exists in the desktop app (native dialog through the bridge) or in a browser with the picker. */
 export function isFileSystemAccessSupported(): boolean {
-  return 'showDirectoryPicker' in window;
+  return Boolean(window.electronAPI?.projectFiles) || 'showDirectoryPicker' in window;
 }
 
 // =============================================================================
