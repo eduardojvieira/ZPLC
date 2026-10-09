@@ -39,9 +39,12 @@ const CTU_MEMBERS: MemberDef[] = [
 /**
  * CTU (Count Up):
  *
- * On rising edge of CU: CV := CV + 1
  * When R is TRUE: CV := 0
+ * Else on rising edge of CU: CV := CV + 1 (CV stops at 32767)
  * Q := (CV >= PV)
+ *
+ * The edge detector on CU runs on every call, also while R is TRUE: a pulse that
+ * rises during Reset is not counted when Reset is released.
  */
 export const CTU_FB: FunctionBlockDef = {
     name: 'CTU',
@@ -75,7 +78,6 @@ export const CTU_FB: FunctionBlockDef = {
         }
 
         const skipReset = ctx.newLabel('ctu_skip_reset');
-        const checkCount = ctx.newLabel('ctu_check_count');
         const skipCount = ctx.newLabel('ctu_skip_count');
         const ctuEnd = ctx.newLabel('ctu_end');
 
@@ -85,10 +87,10 @@ export const CTU_FB: FunctionBlockDef = {
         ctx.emit(`    LOAD8 ${rAddr}`);
         ctx.emit(`    JZ ${skipReset}`);
 
-        // Reset: CV := 0
+        // Reset: CV := 0, then still update _prev_cu below
         ctx.emit(`    PUSH16 0`);
         ctx.emit(`    STORE16 ${cvAddr}`);
-        ctx.emit(`    JMP ${checkCount}`);
+        ctx.emit(`    JMP ${skipCount}`);
 
         ctx.emit(`${skipReset}:`);
 
@@ -101,7 +103,13 @@ export const CTU_FB: FunctionBlockDef = {
         ctx.emit(`    AND`);
         ctx.emit(`    JZ ${skipCount}`);
 
-        // Rising edge - increment CV
+        // Rising edge - increment CV unless it is at the INT maximum (IEC PVmax).
+        // NE rather than LT: LOAD16 zero-extends, so a negative CV would look larger than 32767.
+        ctx.emit(`    LOAD16 ${cvAddr}`);
+        ctx.emit(`    PUSH16 32767`);
+        ctx.emit(`    NE`);
+        ctx.emit(`    JZ ${skipCount}`);
+
         ctx.emit(`    LOAD16 ${cvAddr}`);
         ctx.emit(`    PUSH16 1`);
         ctx.emit(`    ADD`);
@@ -109,11 +117,9 @@ export const CTU_FB: FunctionBlockDef = {
 
         ctx.emit(`${skipCount}:`);
 
-        // Update _prev_cu
+        // Update _prev_cu on every call, whether or not R was TRUE
         ctx.emit(`    LOAD8 ${cuAddr}`);
         ctx.emit(`    STORE8 ${prevCuAddr}`);
-
-        ctx.emit(`${checkCount}:`);
 
         // Q := (CV >= PV)
         ctx.emit(`    LOAD16 ${cvAddr}`);
