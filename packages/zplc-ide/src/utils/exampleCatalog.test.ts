@@ -25,7 +25,7 @@ const builtLanguages = (id: string) => [...new Set((manifest(id).tasks ?? []).fl
 
 const everyListing = (sections: ReturnType<typeof buildExampleSections>) => sections.flatMap((section) => section.examples);
 
-/** Another change adds these folders; the catalogue already knows them and must cope with their absence or presence. */
+/** The four language-tour folders; the catalogue must cope with their absence as well as their presence. */
 const LANGUAGE_TOUR = ['blinky_st', 'blinky_il', 'blinky_fbd', 'blinky_sfc'];
 
 describe('example catalogue', () => {
@@ -60,11 +60,54 @@ describe('example catalogue', () => {
   });
 
   it('names the board an example really targets, not the one its folder name suggests', () => {
-    expect(EXAMPLE_CATALOG.pico_blinky?.board).toBe('esp32s3_devkitc');
+    const text = (id: string) => `${EXAMPLE_CATALOG[id]?.title} ${EXAMPLE_CATALOG[id]?.summary}`;
+    expect(EXAMPLE_CATALOG.pico_blinky?.board).toBe('rpi_pico');
+    expect(EXAMPLE_CATALOG.esp32s3_blinky?.board).toBe('esp32s3_devkitc');
+    for (const id of ['pico_blinky', 'pico_blinky_ton', 'pico_blinky_blink', 'pico_persist_test']) {
+      expect(text(id), id).toMatch(/pico/i);
+      expect(text(id), id).not.toMatch(/esp32/i);
+    }
+    expect(text('esp32s3_blinky')).toMatch(/esp32/i);
+    expect(text('esp32s3_blinky')).not.toMatch(/pico/i);
     expect(boardName('esp32s3_devkitc')).toContain('ESP32-S3');
-    expect(`${EXAMPLE_CATALOG.pico_blinky?.title} ${EXAMPLE_CATALOG.pico_blinky?.summary}`).not.toMatch(/pico/i);
     expect(boardName('rpi_pico')).toBe('Raspberry Pi Pico');
     expect(boardName('arduino_opta_wifi')).toContain('Opta');
+  });
+
+  it('does not promise a pin mapping the overlay does not give: the ESP32-S3 pin is "per the current overlay"', () => {
+    expect(EXAMPLE_CATALOG.esp32s3_blinky?.summary).toContain('per the current overlay');
+    expect(EXAMPLE_CATALOG.esp32s3_blinky?.summary).toContain('DevKitC-1');
+    expect(EXAMPLE_CATALOG.esp32s3_blinky?.summary).toMatch(/pending/i);
+  });
+
+  it('says that BLINK is a ZPLC extension and TON the IEC timer', () => {
+    expect(EXAMPLE_CATALOG.pico_blinky_blink?.summary).toMatch(/ZPLC extension/);
+    expect(EXAMPLE_CATALOG.pico_blinky_blink?.summary).toMatch(/not (part of )?IEC/);
+    expect(EXAMPLE_CATALOG.pico_blinky_ton?.summary).toMatch(/TON/);
+    expect(EXAMPLE_CATALOG.pico_blinky_ton?.summary).not.toMatch(/BLINK/);
+  });
+
+  it('names a function block only if the project\'s sources use it', () => {
+    for (const id of listedFolders.filter((folder) => folder in EXAMPLE_CATALOG)) {
+      const entry = EXAMPLE_CATALOG[id]!;
+      const sources = readdirSync(join(projectsDir, id, 'src')).map((file) => readFileSync(join(projectsDir, id, 'src', file), 'utf8')).join('\n');
+      for (const block of ['TON', 'TOF', 'TP', 'BLINK', 'CTU', 'CTD', 'CTUD', 'R_TRIG', 'F_TRIG']) {
+        const named = new RegExp(`\\b${block}\\b`).test(`${entry.title} ${entry.summary}`);
+        if (named) expect(new RegExp(`\\b${block}\\b`).test(sources), `${id} names ${block}, which its sources never use`).toBe(true);
+      }
+    }
+  });
+
+  it('describes the persistence test as what it is: a two-task smoke test, not a retained-data test', () => {
+    const entry = EXAMPLE_CATALOG.pico_persist_test!;
+    expect(entry.title).toBe('Pico Two-Task Smoke Test');
+    expect(`${entry.title} ${entry.summary}`).not.toMatch(/persist|retain|retentive/i);
+    expect(entry.summary).toMatch(/two|fast/i);
+  });
+
+  it('counts the Edge Counter with CTU alone', () => {
+    expect(EXAMPLE_CATALOG.edge_counter?.summary).toContain('CTU');
+    expect(EXAMPLE_CATALOG.edge_counter?.summary).not.toContain('R_TRIG');
   });
 
   it('hides the test fixtures and shows every other example', () => {
@@ -82,12 +125,13 @@ describe('Welcome example sections', () => {
   const sections = buildExampleSections(listedFolders.map(projectInfo));
 
   it('groups the examples under their headings, in the order of the groups', () => {
-    const tour = listedFolders.some((id) => LANGUAGE_TOUR.includes(id)) ? ['Language tour'] : [];
-    expect(sections.map((section) => section.title)).toEqual(['First steps', 'Motors and drives', 'Process and sequences', ...tour, 'Boards and hardware']);
+    expect(sections.map((section) => section.title)).toEqual(['First steps', 'Motors and drives', 'Process and sequences', 'Language tour', 'Boards and hardware']);
     const byGroup = Object.fromEntries(sections.map((section) => [section.id, section.examples.map((example) => example.id)]));
     expect(byGroup['first-steps']).toEqual(['scan_snapshot', 'blinky', 'edge_counter']);
     expect(byGroup.motors).toEqual(['motor_start_stop', 'motor_control', 'motor_plant']);
     expect(byGroup.process).toEqual(['tank_level', 'conveyor_01', 'pedestrian_crossing']);
+    expect(byGroup.languages).toEqual(LANGUAGE_TOUR);
+    expect(byGroup.boards).toEqual(['pico_blinky', 'pico_blinky_ton', 'pico_blinky_blink', 'esp32s3_blinky', 'opta_led_chaser', 'opta_led_chaser_ld', 'multitask_demo', 'analog_test']);
   });
 
   it('lists every visible folder exactly once and no fixture', () => {
@@ -141,7 +185,8 @@ describe('Welcome example sections', () => {
 
   it('carries the board of a hardware example to its listing', () => {
     const boards = sections.find((section) => section.id === 'boards')!;
-    expect(boards.examples.find((example) => example.id === 'pico_blinky')?.board).toBe('esp32s3_devkitc');
+    expect(boards.examples.find((example) => example.id === 'pico_blinky')?.board).toBe('rpi_pico');
+    expect(boards.examples.find((example) => example.id === 'esp32s3_blinky')?.board).toBe('esp32s3_devkitc');
     expect(sections.find((section) => section.id === 'motors')!.examples.every((example) => example.board === undefined)).toBe(true);
   });
 });
