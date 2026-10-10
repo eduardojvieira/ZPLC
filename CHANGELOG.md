@@ -4,6 +4,12 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- Three of the fifteen modules over the new size limit are split (IDE-014): the
+  project settings are one module per section (2,181 lines to 213 and eleven
+  files of at most 430), the Explorer's context menu and confirmations are
+  their own module, and the declaration of `window.electronAPI` is out of the
+  shared types. Twelve remain on `tools/ci/module-size-offenders.json`, each
+  with the work package that owns its split.
 - The declared-interlock coverage check is a view of its own (IDE-032): an
   **Interlocks** tab in the lower panel, no longer a section of Problems. It
   runs the same check on the saved project, lists each declared pair as
