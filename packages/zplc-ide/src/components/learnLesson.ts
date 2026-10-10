@@ -1,6 +1,8 @@
 import type { WorkspaceTestPresentation } from './workspaceTestPresentation';
 import { LESSON_IDS, LESSON_INDEX, type LessonId } from '../generated/lessonIndex';
 import { createLearnContentV1, validateLearnContentV1, type VersionedLearnLesson } from './learnContent.v1';
+import type { FailedAssertion } from '../../electron/learnProgressModel';
+import { failedAssertionsOf } from '../learn/gradeRecord';
 
 export type LearnLocale = 'es' | 'en';
 /** One source of lesson ids: the generated index, itself generated from the lesson manifests (LRN-028). */
@@ -25,8 +27,9 @@ export type LearnLesson = {
 };
 
 export type LearnLessonGrade =
-  | { kind: 'not-run' | 'unavailable' | 'unrelated' }
-  | { kind: 'passed' | 'failed'; assertions: number };
+  | { kind: 'not-run' | 'unavailable' | 'unrelated' | 'scenario-changed' }
+  | { kind: 'passed'; assertions: number }
+  | { kind: 'failed'; assertions: number; /** Which assertions failed, at what time, expected against observed, and where in the trace (LRN-026). */ failures: readonly FailedAssertion[] };
 
 const sha256 = /^[a-f0-9]{64}$/;
 const savedInputFileCount = (value: number): boolean => Number.isSafeInteger(value) && value >= 3 && value <= 193;
@@ -120,9 +123,16 @@ export function gradeRecordedScenarioLesson(lesson: VersionedLearnLesson, presen
     || !presentation.artifacts.some((artifact) => artifact.kind === 'zplc' && sha256.test(artifact.sha256) && Number.isSafeInteger(artifact.byteLength) && artifact.byteLength > 0)
     || !presentation.artifacts.some((artifact) => artifact.kind === 'trace' && artifact.sha256 === preview.traceEvidenceSha256 && sha256.test(artifact.sha256) && Number.isSafeInteger(artifact.byteLength) && artifact.byteLength > 0)) return { kind: 'unavailable' };
 
+  // The scenario of the workspace is the learner's to edit. The lesson's own scenario is in its package, so a run counts only
+  // when it recorded the assertions of that scenario, kind for kind. This catches a weakened or replaced scenario; the grade
+  // that does not depend on the workspace's scenario at all is `lessonCheck` (LRN-022).
+  if (scenario.assertions.map((assertion) => assertion.kind).join() !== lesson.scenario.expectations.map((expectation) => expectation.kind).join()) return { kind: 'scenario-changed' };
   const assertionsPassed = scenario.passed && scenario.assertions.every((assertion) => assertion.passed);
   if (presentation.kind === 'passed') return presentation.diagnostics.length === 0 && assertionsPassed ? { kind: 'passed', assertions: scenario.assertions.length } : { kind: 'unavailable' };
-  if (presentation.kind === 'assertion-failed') return presentation.diagnostics.some((diagnostic) => diagnostic.code === 'SCENARIO_ASSERTION_FAILED') && !assertionsPassed ? { kind: 'failed', assertions: scenario.assertions.length } : { kind: 'unavailable' };
+  if (presentation.kind === 'assertion-failed') {
+    if (!presentation.diagnostics.some((diagnostic) => diagnostic.code === 'SCENARIO_ASSERTION_FAILED') || assertionsPassed) return { kind: 'unavailable' };
+    return { kind: 'failed', assertions: scenario.assertions.length, failures: failedAssertionsOf(lesson.scenario, scenario.assertions, scenario.samples, preview.traceEvidenceSha256) };
+  }
   return { kind: 'unavailable' };
 }
 

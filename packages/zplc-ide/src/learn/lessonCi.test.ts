@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { itNative, nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';
-import { scenarioRun } from '../cli/toolApi';
+import { lessonCheck } from '../cli/toolApi';
 import { citedFiles, canonicalJson, expandText, textShape, type LessonProgramCheck } from './lessonPackage';
 import { PROJECTS_DIRECTORY, loadLessonPackages, validateCourse, type LessonPackage } from './lessonPackageFiles';
 
@@ -26,6 +26,12 @@ const LOCALES = ['en', 'es'] as const;
 let workRoot = '';
 let previousBinary: string | undefined;
 let counter = 0;
+const clock = () => new Date('2026-10-10T12:00:00.000Z');
+/** The grade the product gives the program of `root` for the lesson: its reference scenario, not the workspace's. */
+async function grade(root: string, lesson: LessonPackage): Promise<{ built: boolean; result?: string; failed: number }> {
+  const check = await lessonCheck(root, lesson.id, { clock });
+  return check.ok ? { built: true, result: check.record.result, failed: check.record.failedAssertions.length } : { built: false, failed: 0 };
+}
 
 /** Copies the shipped starter into a scratch folder so no run can touch the checked-in example. */
 function scratchStarter(lesson: LessonPackage): string {
@@ -101,26 +107,29 @@ for (const lesson of packages) {
     });
 
     itNative('starter is RED because an assertion fails, not because it does not build', async () => {
-      const result = await scenarioRun(scratchStarter(lesson), scenario.id);
-      expect(result.ok).toBe(false);
-      expect(result.evidence.diagnostics.map(({ code }) => code)).toEqual(['SCENARIO_ASSERTION_FAILED']);
+      expect(await grade(scratchStarter(lesson), lesson)).toMatchObject({ built: true, result: 'failed' });
+      const check = await lessonCheck(scratchStarter(lesson), lesson.id, { clock });
+      if (!check.ok) throw new Error('the starter must build and run');
+      // LRN-026: every failed assertion names what was expected and where in the trace it failed.
+      expect(check.record.failedAssertions.length).toBeGreaterThan(0);
+      for (const failure of check.record.failedAssertions) {
+        expect(Object.keys(failure.expected).length).toBeGreaterThan(0);
+        expect(failure.trace).not.toBeNull();
+      }
     }, 60_000);
 
-    itNative(`reference solution (${manifest.solution.project}/${manifest.solution.program}) turns the starter GREEN with the reference scenario kept`, async () => {
+    itNative(`reference solution (${manifest.solution.project}/${manifest.solution.program}) PASSES the reference scenario`, async () => {
       const root = scratchStarter(lesson);
-      const source = readFileSync(join(PROJECTS_DIRECTORY, manifest.solution.project, manifest.solution.program), 'utf8');
-      writeFileSync(join(root, manifest.starter.program), source);
-      const result = await scenarioRun(root, scenario.id);
-      expect({ ok: result.ok, diagnostics: result.evidence.diagnostics }).toEqual({ ok: true, diagnostics: [] });
-      expect(result.ok && result.preview.scenarios[0]).toMatchObject({ id: scenario.id, path: manifest.scenario.path, passed: true, totalAssertions: scenario.expectations.length });
+      writeFileSync(join(root, manifest.starter.program), readFileSync(join(PROJECTS_DIRECTORY, manifest.solution.project, manifest.solution.program), 'utf8'));
+      const check = await lessonCheck(root, lesson.id, { clock });
+      expect(check.ok && { result: check.record.result, assertions: check.record.assertions, scenario: check.record.scenarioSha256 }).toEqual({ result: 'passed', assertions: { total: scenario.expectations.length, passed: scenario.expectations.length }, scenario: manifest.scenario.sha256 });
     }, 60_000);
 
     for (const { intent, ...check } of checks?.alsoGreen ?? []) {
-      itNative(`another correct solution (${intent}) also turns the starter GREEN`, async () => {
+      itNative(`another correct solution (${intent}) also PASSES`, async () => {
         const root = scratchStarter(lesson);
         apply(root, { intent, ...check });
-        const result = await scenarioRun(root, scenario.id);
-        expect({ intent, ok: result.ok, diagnostics: result.evidence.diagnostics }).toEqual({ intent, ok: true, diagnostics: [] });
+        expect({ intent, ...await grade(root, lesson) }).toMatchObject({ intent, built: true, result: 'passed' });
       }, 60_000);
     }
 
@@ -128,8 +137,7 @@ for (const lesson of packages) {
       itNative(`wrong program that ${intent} stays RED`, async () => {
         const root = scratchStarter(lesson);
         apply(root, { intent, ...check });
-        const result = await scenarioRun(root, scenario.id);
-        expect({ intent, ok: result.ok, codes: result.evidence.diagnostics.map(({ code }) => code) }).toEqual({ intent, ok: false, codes: ['SCENARIO_ASSERTION_FAILED'] });
+        expect({ intent, ...await grade(root, lesson) }).toMatchObject({ intent, built: true, result: 'failed' });
       }, 60_000);
     }
   });

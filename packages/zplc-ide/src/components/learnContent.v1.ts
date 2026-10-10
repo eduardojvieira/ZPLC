@@ -1,5 +1,5 @@
 import type { LearnLesson, LearnLocale } from './learnLesson';
-import type { LessonIndexEntry, LessonLevel } from '../learn/lessonPackage';
+import type { LessonIndexEntry, LessonLevel, ScenarioFile } from '../learn/lessonPackage';
 
 /**
  * The Learn content contract the panel reads. It is built from the generated lesson index (`src/generated/lessonIndex.ts`,
@@ -34,6 +34,8 @@ export type VersionedLearnLesson = LearnLesson & Readonly<{
   hints: readonly string[];
   /** The key of each stage, parallel to `stages` (objective, predict, edit, run, observe, reflect, and any extra). */
   stageKeys: readonly string[];
+  /** The reference scenario the lesson is graded by, as the package carries it (the content `scenarioSha256` names). */
+  scenario: ScenarioFile;
 }>;
 
 /** The lesson of one index entry in one language. */
@@ -69,6 +71,7 @@ export function learnLessonOf(entry: LessonIndexEntry, locale: LearnLocale): Ver
     objectives: Object.freeze([...text.objectives]),
     hints: Object.freeze(text.hints.map((hint) => hint.text)),
     stageKeys: Object.freeze(text.stages.map((stage) => stage.key)),
+    scenario: JSON.parse(entry.scenario.canonical) as ScenarioFile,
   });
 }
 

@@ -23,7 +23,8 @@ function starterScenarioAssertions(lesson: VersionedLearnLesson): number {
 }
 
 function recordedPresentation(lesson: VersionedLearnLesson, count = lesson.rubric.minimumAssertions): WorkspaceTestPresentation {
-  const assertions = Array.from({ length: count }, () => ({ kind: 'NEVER' as const, passed: true }));
+  // The assertions a run of the lesson's own scenario records, kind for kind (a shorter run is cut from the same list).
+  const assertions = Array.from({ length: count }, (_, index) => ({ kind: (lesson.scenario.expectations[index]?.kind ?? 'NEVER') as 'AT', passed: true }));
   return {
     operation: 'scenario-run', kind: 'passed', message: 'Host POSIX scenario passed.', scenarioCount: 1, diagnostics: [], hasEvidence: true,
     artifacts: [{ kind: 'zplc', sha256: sha, byteLength: 1 }, { kind: 'trace', sha256: sha, byteLength: 1 }],
@@ -260,7 +261,9 @@ describe('Learn lesson catalog', () => {
       expect(gradeRecordedScenarioLesson(lesson, undefined)).toEqual({ kind: 'not-run' });
       expect(gradeRecordedScenarioLesson(lesson, passed)).toEqual({ kind: 'passed', assertions: lesson.rubric.minimumAssertions });
       const failedAssertions = passed.preview!.scenarios[0]!.assertions.map((assertion, index) => ({ ...assertion, passed: index !== 0 }));
-      expect(gradeRecordedScenarioLesson(lesson, { ...passed, kind: 'assertion-failed', diagnostics: [{ code: 'SCENARIO_ASSERTION_FAILED', message: 'failed' }], preview: { ...passed.preview!, scenarios: [{ ...passed.preview!.scenarios[0]!, passed: false, assertions: failedAssertions }] } })).toEqual({ kind: 'failed', assertions: lesson.rubric.minimumAssertions });
+      const failed = gradeRecordedScenarioLesson(lesson, { ...passed, kind: 'assertion-failed', diagnostics: [{ code: 'SCENARIO_ASSERTION_FAILED', message: 'failed' }], preview: { ...passed.preview!, scenarios: [{ ...passed.preview!.scenarios[0]!, passed: false, assertions: failedAssertions }] } });
+      expect(failed).toMatchObject({ kind: 'failed', assertions: lesson.rubric.minimumAssertions });
+      expect(failed.kind === 'failed' && failed.failures.map(({ index }) => index)).toEqual([0]);
       expect(gradeRecordedScenarioLesson(lesson, { ...passed, operation: 'test' })).toEqual({ kind: 'unrelated' });
       expect(gradeRecordedScenarioLesson(lesson, { ...passed, preview: { ...passed.preview!, scenarios: [{ ...passed.preview!.scenarios[0]!, id: 'Other' }] } })).toEqual({ kind: 'unrelated' });
       expect(gradeRecordedScenarioLesson(lesson, { ...passed, hasEvidence: false })).toEqual({ kind: 'unavailable' });
@@ -298,6 +301,49 @@ describe('Learn lesson catalog', () => {
     expect(gradeRecordedScenarioLesson(lesson, { ...passed, kind: 'assertion-failed' })).toEqual({ kind: 'unavailable' });
     // A rubric that does not require saved evidence is outside the declared lesson contract, so the grader must refuse it.
     expect(gradeRecordedScenarioLesson({ ...lesson, rubric: { ...lesson.rubric, requireSavedEvidence: false } } as unknown as typeof lesson, passed)).toEqual({ kind: 'unavailable' });
+  });
+});
+
+describe('Learn grading against the lesson package (LRN-022, LRN-026)', () => {
+  it('does not grade a run of a scenario whose assertions are not the lesson\'s own, however complete its evidence', () => {
+    for (const lesson of learnLessonCatalog.en) {
+      const passed = recordedPresentation(lesson);
+      const scenario = passed.preview!.scenarios[0]!;
+      // The learner weakened the scenario in the workspace: same name, same number of assertions, one of another kind.
+      const edited = scenario.assertions.map((assertion, index) => index === 0 ? { ...assertion, kind: assertion.kind === 'NEVER' ? 'ALWAYS' as const : 'NEVER' as const } : assertion);
+      const grade = gradeRecordedScenarioLesson(lesson, { ...passed, preview: { ...passed.preview!, scenarios: [{ ...scenario, assertions: edited }] } });
+      expect(grade).toEqual({ kind: 'scenario-changed' });
+      expect(recordLearnMastery(lesson.id, grade, new Set(), { getItem: () => null, setItem: () => { throw new Error('must not write'); } }).size).toBe(0);
+    }
+  });
+
+  it('says which assertion failed, at what time, expected against observed, and links the trace point', () => {
+    const lesson = learnLessonCatalog.en.find(({ id }) => id === 'motor-plant-feedback')!;
+    const passed = recordedPresentation(lesson);
+    const at = lesson.scenario.expectations.findIndex((expectation) => expectation.kind === 'AT' && expectation.atMs === 30);
+    expect(at).toBeGreaterThanOrEqual(0);
+    const scenario = passed.preview!.scenarios[0]!;
+    const assertions = scenario.assertions.map((assertion, index) => index === at ? { ...assertion, passed: false, atMs: 30 } : assertion);
+    const samples = [{ atMs: 30, outputs: { 'MotorPlant.Command': true, 'MotorPlant.Running': false } }];
+    const grade = gradeRecordedScenarioLesson(lesson, { ...passed, kind: 'assertion-failed', diagnostics: [{ code: 'SCENARIO_ASSERTION_FAILED', message: 'failed' }], preview: { ...passed.preview!, scenarios: [{ ...scenario, passed: false, assertions, samples }] } });
+    expect(grade).toMatchObject({ kind: 'failed' });
+    if (grade.kind !== 'failed') return;
+    expect(grade.failures).toEqual([{
+      index: at, kind: 'AT', atMs: 30,
+      expected: { 'MotorPlant.Command': true, 'MotorPlant.Running': true },
+      observed: { 'MotorPlant.Command': true, 'MotorPlant.Running': false },
+      trace: { scenarioId: 'MotorPlant', traceSha256: sha, cursor: 3, atMs: 30, uri: `zplc://runtime/snapshot/MotorPlant/3/${sha}` },
+    }]);
+  });
+
+  it('carries the package metadata the lesson declares: version, scenario hash, objectives and two hint levels', () => {
+    for (const lesson of [...learnLessonCatalog.es, ...learnLessonCatalog.en]) {
+      expect(lesson.version).toBeGreaterThanOrEqual(1);
+      expect(lesson.scenarioSha256).toMatch(/^[0-9a-f]{64}$/);
+      expect(lesson.objectives.length).toBeGreaterThan(0);
+      expect(lesson.hints).toHaveLength(2);
+      expect(lesson.stageKeys.filter((key) => ['objective', 'predict', 'edit', 'run', 'observe', 'reflect'].includes(key))).toEqual(['objective', 'predict', 'edit', 'run', 'observe', 'reflect']);
+    }
   });
 });
 
@@ -354,7 +400,7 @@ describe('Learn mastery persistence', () => {
     expect(writes).toEqual([JSON.stringify({ schemaVersion: 1, mastered: [motor.id] })]);
     expect(recordLearnMastery(motor.id, approved, mastered, storage(null, (_key, value) => writes.push(value)))).toBe(mastered);
     expect(writes).toHaveLength(1);
-    for (const grade of [{ kind: 'failed', assertions: 1 }, { kind: 'not-run' }, { kind: 'unavailable' }, { kind: 'unrelated' }] as const) expect(recordLearnMastery(pedestrian.id, grade, mastered, storage(null, (_key, value) => writes.push(value)))).toBe(mastered);
+    for (const grade of [{ kind: 'failed', assertions: 1, failures: [] }, { kind: 'not-run' }, { kind: 'unavailable' }, { kind: 'unrelated' }, { kind: 'scenario-changed' }] as const) expect(recordLearnMastery(pedestrian.id, grade, mastered, storage(null, (_key, value) => writes.push(value)))).toBe(mastered);
     expect(writes).toHaveLength(1);
     expect(recordLearnMastery(pedestrian.id, approved, mastered, storage(null, () => { throw new Error('nope'); }))).toBe(mastered);
     const allPrevious = new Set<LearnLesson['id']>(existingCatalog.map(({ id }) => id));
