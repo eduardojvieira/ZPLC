@@ -502,7 +502,8 @@
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_loader_verify.c","test":"the address value is pushed first: RT-003 refuses a path that takes more"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sandbox.c","test":"RT-003 premise: the stack effects of the contract table are what the VM does"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sandbox.c","test":"RT-003: the loader verifies the stack effect of every path"},
-    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sandbox.c","test":"Sandbox closure of the VM and the loader (RT-001, RT-002, RT-003)."}
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sandbox.c","test":"Sandbox closure of the VM and the loader (RT-001, RT-002, RT-003)."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_admission/src/main.c","test":"artifact is loaded (RT-003), so the VM never reaches the overflow at run"}
   ],
   "RT-004": [
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_dispatch.c","test":"RT-004: the STATUS field is written byte by byte, little endian, at any"}
