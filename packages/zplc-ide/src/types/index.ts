@@ -132,6 +132,8 @@ export interface CompilerMessage {
   file?: string;
   line?: number;
   column?: number;
+  /** The element of a diagram or IL source the message is about (LNG-003), as the build named it. */
+  element?: string;
   timestamp: Date;
 }
 

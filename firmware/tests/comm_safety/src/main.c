@@ -23,7 +23,9 @@
 
 #include <zplc_core.h>
 
+#include "zplc_app_test_hooks.h"
 #include "zplc_config.h"
+#include "zplc_exchange.h"
 #include "zplc_parse.h"
 
 #define OUT_MAX 16384
@@ -95,6 +97,7 @@ static void *setup(void)
 	flash_area_close(area);
 
 	zassert_ok(zplc_mem_init(), "memory");
+	zassert_ok(zplc_exchange_init(NULL), "exchange");
 	zassert_ok(zplc_config_init(), "config init");
 	k_usleep(10); /* let the shell back end initialize */
 	return NULL;
@@ -310,11 +313,20 @@ ZTEST(comm_safety, test_zplc_memory_commands_stop_at_the_plc_regions)
  * is not, and each does what it says to PLC memory. */
 ZTEST(comm_safety, test_watch_and_timer_read_plc_memory)
 {
-	uint8_t *work = zplc_mem_get_region(ZPLC_MEM_WORK_BASE);
+	/* PLC memory is written the way everything outside the scan writes it:
+	 * through the exchange, which applies it at once while no scan runs and
+	 * publishes the snapshot that the shell reads (RT-010). */
+	static const uint8_t word[] = {0x34U, 0x12U};
+	static const uint8_t timer[16] = {
+		1U, 0U,                  /* IN, Q */
+		0xE8U, 0x03U, 0U, 0U,   /* PT = 1000 ms */
+		0xFAU, 0U, 0U, 0U,      /* ET = 250 ms */
+		0U, 0U, 0U, 0U,         /* _start */
+		1U, 0U,                  /* running, _prev */
+	};
 
-	zassert_not_null(work, "work memory");
-	work[0x100] = 0x34;
-	work[0x101] = 0x12;
+	zassert_ok(zplc_exchange_write(0x2100U, word, sizeof(word)), "word");
+	zassert_ok(zplc_exchange_write(0x2200U, timer, sizeof(timer)), "timer instance");
 	zassert_ok(run("zplc dbg watch 0x2100 u16"), "watch u16");
 	zassert_not_null(strstr(out, "0x2100 u16 = 4660"), "%s", out);
 	zassert_ok(run("zplc dbg watch 0x2100"), "watch default type");
@@ -323,14 +335,6 @@ ZTEST(comm_safety, test_watch_and_timer_read_plc_memory)
 	zassert_not_null(strstr(out, "true"), "%s", out);
 	zassert_not_equal(run("zplc dbg watch 0x2100 q64"), 0, "unknown type");
 
-	/* A TON/TOF/TP instance: IN +0, Q +1, PT +2, ET +6, running +14. */
-	memset(&work[0x200], 0, 16);
-	work[0x200] = 1;
-	work[0x201] = 0;
-	work[0x202] = 0xE8; /* PT = 1000 ms */
-	work[0x203] = 0x03;
-	work[0x206] = 0xFA; /* ET = 250 ms */
-	work[0x20E] = 1;
 	zassert_ok(run("zplc dbg timer 0x2200"), "timer");
 	zassert_not_null(strstr(out, "IN=1 Q=0 PT=1000 ms ET=250 ms running=1"),
 			 "%s", out);

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "TON oscillator and output feedback",
+  "summary": "Complete a {{t:500}} ms Ladder blinker made of two TON timers and SET and RESET coils, and check its on and off times with FOR and AT assertions.",
+  "scope": "Tests provide native POSIX host evidence only; they are not physical LED, hardware timing, HIL, or certification evidence.",
+  "objectives": [
+    "Read a two-timer Ladder oscillator: each timer runs in one half period and starts the next.",
+    "Complete it with a SET coil and a RESET coil driven by the timers' Q outputs."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/Blinky.ld.json the two timer rungs are already drawn: OffTimer runs while LED_Output is OFF and OnTimer runs while it is ON. Add the two coil rungs: a contact on OffTimer.Q that SETs LED_Output, and a contact on OnTimer.Q that RESETs it.",
+      "checkpoint": "The timers' outputs feed back to set and reset the LED, and the LED starts OFF."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, predict LED_Output at {{t:250}}, {{t:750}}, {{t:1250}}, and {{t:1750}} ms.",
+      "checkpoint": "OFF at {{t:250}} ms, ON at {{t:750}}, OFF at {{t:1250}}, ON at {{t:1750}}; the first rising edge lands between {{t:400}} and {{t:600}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then run: The starter has the two timers but no coils, so LED_Output stays OFF forever; add a SET coil driven by OffTimer.Q and a RESET coil driven by OnTimer.Q, so the LED is OFF for about {{t:500}} ms, then ON for about {{t:500}} ms, and repeats.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "In Tests, choose the saved zplc.json and run only the BlinkyVisual scenario.",
+      "checkpoint": "The required scenario is named BlinkyVisual and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Review the trace and table: OFF until about {{t:500}} ms, ON until about {{t:1000}} ms, OFF again, then ON from about {{t:1500}} ms.",
+      "checkpoint": "The three FOR windows ({{t:20}}-{{t:400}} ms OFF, {{t:620}}-{{t:900}} ms ON, {{t:1120}}-{{t:1400}} ms OFF) hold, and both rising edges and the falling edge are found."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "A program that toggles on every scan, blinks twice as fast, or stays ON only 20% of the time fails the FOR and AT assertions.",
+      "checkpoint": "The host scenario grades the logical waveform, not the technique (a {{t:500}} ms or {{t:510}} ms half period passes); it does not establish electrical period, brightness, hardware timing, HIL, or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Look at the first two rungs: OffTimer only runs while LED_Output is OFF and OnTimer only while it is ON, so something has to flip LED_Output when each one finishes."
+    },
+    {
+      "level": 2,
+      "text": "Add a rung with a normally open contact on OffTimer.Q and a SET coil on LED_Output, and another with a contact on OnTimer.Q and a RESET coil on LED_Output."
+    }
+  ],
+  "faultCases": [
+    "The starter has the two timers but no coils, so LED_Output stays OFF forever; add a SET coil driven by OffTimer.Q and a RESET coil driven by OnTimer.Q, so the LED is OFF for about 500 ms, then ON for about 500 ms, and repeats."
+  ]
+}

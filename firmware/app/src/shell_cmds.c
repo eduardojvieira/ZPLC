@@ -40,21 +40,64 @@
 #include <zplc_hal.h>
 #include <zplc_isa.h>
 #include <zplc_debug.h>
+#include <zplc_fw_identity.h>
 #ifdef CONFIG_ZPLC_RETAIN_PERSIST
 #include <zplc_retain.h>
 #endif
 #include "zplc_config.h"
+#include "zplc_lock.h"
 #include "zplc_parse.h"
 #include "zplc_time.h"
 #include "program_admission.h"
 #include "program_store.h"
+#include "program_boot_restore.h"
 
 /* zplc_mqtt.c has no standalone header — declare the public symbol here */
 extern void zplc_mqtt_request_backoff_reset(void);
 
 #ifdef CONFIG_ZPLC_SCHEDULER
 #include <zplc_scheduler.h>
+#include <zplc_exchange.h>
 #endif
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+/* RT-030: a release of the scheduler lock that fails is reported to the operator; nothing else can be done. */
+static void sched_unlock_reported(const struct shell *sh) {
+  int rc = zplc_sched_unlock();
+
+  if (rc != 0) {
+    shell_error(sh, "ERROR: scheduler lock release failed (%d)", rc);
+  }
+}
+#endif
+
+/* A debug read of PLC memory (RT-010). With the scheduler it comes from the snapshot the scan published at its last
+ * commit: whole values, between two scans, and neither the image lock nor a wait for a scan is needed, so nothing
+ * is printed with a lock held. The single-task runtime has no scan to publish: its loop is the only other writer
+ * and the read is as it always was. Returns 0, or a negative errno when the extent is not inside PLC memory. */
+static int dbg_read(uint16_t addr, uint8_t *out, uint16_t size) {
+#ifdef CONFIG_ZPLC_SCHEDULER
+  return zplc_exchange_read(addr, out, size) == 0 ? 0 : -ERANGE;
+#else
+  static const uint16_t bases[4] = {ZPLC_MEM_IPI_BASE, ZPLC_MEM_OPI_BASE, ZPLC_MEM_WORK_BASE,
+                                    ZPLC_MEM_RETAIN_BASE};
+  static const uint32_t sizes[4] = {ZPLC_MEM_IPI_SIZE, ZPLC_MEM_OPI_SIZE, ZPLC_MEM_WORK_SIZE,
+                                    ZPLC_MEM_RETAIN_SIZE};
+
+  for (unsigned region = 0U; region < 4U; region++) {
+    if (addr >= bases[region] && (uint32_t)(addr - bases[region]) + size <= sizes[region]) {
+      const uint8_t *base = zplc_mem_get_region(bases[region]);
+
+      if (base == NULL) {
+        return -ERANGE;
+      }
+      memcpy(out, base + (addr - bases[region]), size);
+      return 0;
+    }
+  }
+  return -ERANGE;
+#endif
+}
 
 #include <zephyr/version.h>
 
@@ -84,7 +127,9 @@ typedef enum {
 /* Runtime state from main.c */
 extern zplc_state_t runtime_state;
 extern uint32_t cycle_count;
+#ifndef CONFIG_ZPLC_SCHEDULER
 extern uint8_t *program_buffer;
+#endif
 extern size_t program_buffer_size;
 extern volatile size_t program_expected_size;
 extern volatile size_t program_received_size;
@@ -96,6 +141,16 @@ static uint8_t program_admission_workspace[ZPLC_LOADER_VERIFY_WORKSPACE_SIZE];
 extern struct k_mutex legacy_runtime_lock;
 extern uint32_t legacy_scan_interval_ms;
 extern void zplc_legacy_wake(void);
+
+/* RT-030: a command that cannot take the runtime lock says so and does nothing. */
+static int legacy_lock_take(const struct shell *sh) {
+  int rc = zplc_lock_take(&legacy_runtime_lock, "runtime lock");
+
+  if (rc != 0) {
+    shell_error(sh, "ERROR: runtime lock unavailable (%d)", rc);
+  }
+  return rc;
+}
 /* Implemented in main.c; callers hold legacy_runtime_lock. */
 extern int zplc_legacy_apply_safe_outputs_locked(void);
 #endif
@@ -169,43 +224,10 @@ static int hil_parse_watch_type(const char *type, hil_watch_type_t *out_type,
   return 0;
 }
 
-static int hil_resolve_mem_ptr(uint16_t addr, size_t width, uint8_t **ptr) {
-  uint16_t base;
-  uint16_t size;
-  uint8_t *region;
-
-  if (addr >= ZPLC_MEM_IPI_BASE &&
-      addr + width <= ZPLC_MEM_IPI_BASE + ZPLC_MEM_IPI_SIZE) {
-    base = ZPLC_MEM_IPI_BASE;
-    size = ZPLC_MEM_IPI_SIZE;
-  } else if (addr >= ZPLC_MEM_OPI_BASE &&
-             addr + width <= ZPLC_MEM_OPI_BASE + ZPLC_MEM_OPI_SIZE) {
-    base = ZPLC_MEM_OPI_BASE;
-    size = ZPLC_MEM_OPI_SIZE;
-  } else if (addr >= ZPLC_MEM_WORK_BASE &&
-             addr + width <= ZPLC_MEM_WORK_BASE + ZPLC_MEM_WORK_SIZE) {
-    base = ZPLC_MEM_WORK_BASE;
-    size = ZPLC_MEM_WORK_SIZE;
-  } else if (addr >= ZPLC_MEM_RETAIN_BASE &&
-             addr + width <= ZPLC_MEM_RETAIN_BASE + ZPLC_MEM_RETAIN_SIZE) {
-    base = ZPLC_MEM_RETAIN_BASE;
-    size = ZPLC_MEM_RETAIN_SIZE;
-  } else {
-    return -ERANGE;
-  }
-
-  region = zplc_mem_get_region(base);
-  if (region == NULL || (addr - base) + width > size) {
-    return -ERANGE;
-  }
-
-  *ptr = region + (addr - base);
-  return 0;
-}
-
 static int hil_read_watch_value(uint16_t addr, hil_watch_type_t type,
                                 hil_watch_value_t *value) {
-  uint8_t *ptr = NULL;
+  uint8_t raw_bytes[4] = {0U, 0U, 0U, 0U};
+  const uint8_t *ptr = raw_bytes;
   size_t width = 0;
   int rc;
 
@@ -228,7 +250,7 @@ static int hil_read_watch_value(uint16_t addr, hil_watch_type_t type,
     return -EINVAL;
   }
 
-  rc = hil_resolve_mem_ptr(addr, width, &ptr);
+  rc = dbg_read(addr, raw_bytes, (uint16_t)width);
   if (rc != 0) {
     return rc;
   }
@@ -431,12 +453,6 @@ static void hil_watch_poll_once(bool force_emit) {
     return;
   }
 
-#ifdef CONFIG_ZPLC_SCHEDULER
-  if (zplc_sched_lock(5) != 0) {
-    return;
-  }
-#endif
-
   for (int i = 0; i < HIL_MAX_WATCHES; i++) {
     hil_watch_value_t value;
     hil_watch_entry_t *watch = &s_hil_watches[i];
@@ -459,9 +475,6 @@ static void hil_watch_poll_once(bool force_emit) {
     }
   }
 
-#ifdef CONFIG_ZPLC_SCHEDULER
-  (void)zplc_sched_unlock();
-#endif
 }
 
 static void hil_watch_work_handler(struct k_work *work) {
@@ -491,14 +504,28 @@ static void hil_watch_arm_poll(void) {
  */
 
 /**
+ * @brief Sink of the identity formatters: each piece goes to the terminal as it is produced, so the shell thread
+ * needs no buffer for an identity that carries every build option (REL-023).
+ */
+static int identity_to_shell(void *context, const char *text) {
+  shell_fprintf((const struct shell *)context, SHELL_NORMAL, "%s", text);
+  return 0;
+}
+
+/**
  * @brief Handler for 'zplc version'
+ *
+ * The first line is the one the bench tools match. What follows is what this image is: the commit it was built
+ * from, the board, the bytecode ABI and the build options. It used to print the compile date and time, which made
+ * two builds of one commit differ (REL-023).
  */
 static int cmd_zplc_version(const struct shell *sh, size_t argc, char **argv) {
+  const zplc_fw_identity_t identity = zplc_fw_identity();
+
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
 
-  shell_print(sh, "ZPLC Runtime v%s", zplc_core_version());
-  shell_print(sh, "Build: %s %s", __DATE__, __TIME__);
+  (void)zplc_fw_identity_emit_text(&identity, identity_to_shell, (void *)sh);
   return 0;
 }
 
@@ -583,6 +610,7 @@ static int cmd_sched_data(const struct shell *sh, size_t argc, char **argv);
 static int sched_reset_runtime(const uint8_t *binary, size_t size);
 static int sched_latch_ambiguous_program_publication(void);
 static int cmd_sys_info(const struct shell *sh, size_t argc, char **argv);
+static int cmd_sys_build(const struct shell *sh, size_t argc, char **argv);
 static int cmd_sys_reboot(const struct shell *sh, size_t argc, char **argv);
 #endif
 
@@ -823,9 +851,10 @@ static int cmd_sched_data(const struct shell *sh, size_t argc, char **argv) {
     if (ret < 0) {
       shell_error(sh, "ERROR: Scheduler load failed after persistence (%d)", ret);
       program_expected_size = 0;
+      program_received_size = 0U; /* nothing is loaded; a reset has nothing to reload */
       return ret;
     }
-    memcpy(program_buffer, program_staging_buffer, program_staging_received_size);
+    /* The staging buffer now holds the loaded artifact and the store holds the same program: the one copy. */
     program_received_size = program_staging_received_size;
     shell_print(sh, "OK: Program loaded (%zu bytes); use 'zplc start' to execute",
                 program_received_size);
@@ -882,7 +911,6 @@ static int sched_reset_runtime(const uint8_t *binary, size_t size) {
 static int sched_latch_ambiguous_program_publication(void) {
   int safe_result = zplc_sched_enter_safe_error();
 
-  memset(program_buffer, 0, program_buffer_size);
   memset(program_staging_buffer, 0,
          program_buffer_size + ZPLC_PROGRAM_STORE_FOOTER_SIZE);
   program_expected_size = 0U;
@@ -927,11 +955,30 @@ static int cmd_zplc_stop(const struct shell *sh, size_t argc, char **argv) {
   return 0;
 }
 
+/* Reset: the loaded program is reloaded from the program store, which is its only resident copy (RT-028). The
+ * staging buffer is the one buffer of the code size, so an upload in progress is cancelled. With no program
+ * loaded there is nothing to reload: the scheduler is stopped and its tasks cleared, as before. */
+static int sched_reset_loaded_program(void) {
+  size_t size = 0U;
+  int rc;
+
+  program_expected_size = 0U;
+  program_staging_received_size = 0U;
+  if (program_received_size == 0U) {
+    return sched_reset_runtime(NULL, 0U);
+  }
+  rc = zplc_program_reload_scheduler(program_staging_buffer,
+                                     program_buffer_size + ZPLC_PROGRAM_STORE_FOOTER_SIZE,
+                                     &size);
+  program_received_size = rc > 0 ? size : 0U;
+  return rc < 0 ? rc : 0;
+}
+
 static int cmd_zplc_reset(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
 
-  int rc = sched_reset_runtime(program_buffer, program_received_size);
+  int rc = sched_reset_loaded_program();
   if (rc < 0) {
     shell_error(sh, "ERROR: Scheduler reset failed (%d)", rc);
     return rc;
@@ -976,7 +1023,11 @@ static int cmd_sys_info(const struct shell *sh, size_t argc, char **argv) {
     JSON_INT(sh, "work_size", ZPLC_MEM_WORK_SIZE, true);
     JSON_INT(sh, "retain_size", ZPLC_MEM_RETAIN_SIZE, true);
     JSON_INT(sh, "ipi_size", ZPLC_MEM_IPI_SIZE, true);
-    JSON_INT(sh, "opi_size", ZPLC_MEM_OPI_SIZE, false);
+    JSON_INT(sh, "opi_size", ZPLC_MEM_OPI_SIZE, true);
+    /* The largest artifact the program store accepts is the configured code size: one value, advertised here,
+     * accepted by 'zplc load' and kept by the store (RT-028). */
+    JSON_INT(sh, "code_size", ZPLC_MEM_CODE_SIZE, true);
+    JSON_INT(sh, "max_artifact_size", (int)ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE, false);
     JSON_OBJ_END(sh);
 
     JSON_OBJ_END(sh);
@@ -988,13 +1039,36 @@ static int cmd_sys_info(const struct shell *sh, size_t argc, char **argv) {
   shell_print(sh, "  Board:          %s", CONFIG_BOARD);
   shell_print(sh, "  ZPLC Version:   %s", zplc_core_version());
   shell_print(sh, "  Contract Draft: %u", (unsigned int)ZPLC_DRAFT_COUNTER);
+  shell_print(sh, "  Commit:         %s%s", ZPLC_FW_COMMIT,
+              ZPLC_FW_DIRTY != 0 ? " (dirty)" : "");
+  shell_print(sh, "  Options Hash:   %s", ZPLC_FW_OPTIONS_HASH);
   shell_print(sh, "  Zephyr Version: %s", KERNEL_VERSION_STRING);
   shell_print(sh, "  Uptime:         %u ms", k_uptime_get_32());
   shell_print(sh, "  CPU Freq:       %u MHz", (unsigned int)CPU_FREQ_MHZ);
   shell_print(sh, "  Memory Sizes:   WORK=%d, RETAIN=%d, IPI=%d, OPI=%d",
               ZPLC_MEM_WORK_SIZE, ZPLC_MEM_RETAIN_SIZE, ZPLC_MEM_IPI_SIZE,
               ZPLC_MEM_OPI_SIZE);
+  shell_print(sh, "  Program Size:   CODE=%d, largest artifact=%u bytes",
+              ZPLC_MEM_CODE_SIZE, (unsigned int)ZPLC_PROGRAM_STORE_MAX_ARTIFACT_SIZE);
 
+  return 0;
+}
+
+/**
+ * @brief Handler for 'zplc sys build [--json]': which firmware image this is (REL-023).
+ *
+ * A command of its own and not more keys in `sys info --json`: Studio's handshake parser accepts exactly the keys
+ * of that object, so a new key would make every released Studio refuse a device that reports it.
+ */
+static int cmd_sys_build(const struct shell *sh, size_t argc, char **argv) {
+  const zplc_fw_identity_t identity = zplc_fw_identity();
+
+  if (argc > 1 && strcmp(argv[1], "--json") == 0) {
+    (void)zplc_fw_identity_emit_json(&identity, identity_to_shell, (void *)sh);
+    shell_fprintf(sh, SHELL_NORMAL, "\n");
+    return 0;
+  }
+  (void)zplc_fw_identity_emit_text(&identity, identity_to_shell, (void *)sh);
   return 0;
 }
 
@@ -1028,38 +1102,11 @@ static int cmd_dbg_peek(const struct shell *sh, size_t argc, char **argv) {
     }
   }
 
-  /* Get memory region pointer */
-  uint8_t *base = NULL;
-  uint16_t offset = 0;
-  uint16_t region_size = 0;
+  /* The bytes come from the snapshot of the last commit (RT-010), whole, read once. */
+  uint8_t data[256];
 
-  if (addr < ZPLC_MEM_OPI_BASE) {
-    base = zplc_mem_get_region(ZPLC_MEM_IPI_BASE);
-    offset = (uint16_t)addr;
-    region_size = ZPLC_MEM_IPI_SIZE;
-  } else if (addr < ZPLC_MEM_WORK_BASE) {
-    base = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
-    offset = (uint16_t)(addr - ZPLC_MEM_OPI_BASE);
-    region_size = ZPLC_MEM_OPI_SIZE;
-  } else if (addr < ZPLC_MEM_RETAIN_BASE) {
-    base = zplc_mem_get_region(ZPLC_MEM_WORK_BASE);
-    offset = (uint16_t)(addr - ZPLC_MEM_WORK_BASE);
-    region_size = ZPLC_MEM_WORK_SIZE;
-  } else {
-    base = zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE);
-    offset = (uint16_t)(addr - ZPLC_MEM_RETAIN_BASE);
-    region_size = ZPLC_MEM_RETAIN_SIZE;
-  }
-
-  if (base == NULL) {
-    shell_error(sh, "ERROR: Invalid memory region");
-    return -EINVAL;
-  }
-
-  if ((uint32_t)offset + (uint32_t)len > (uint32_t)region_size) {
-    shell_error(sh,
-                "ERROR: Access out of bounds (offset %u + len %lu > size %u)",
-                offset, len, region_size);
+  if (addr > 0xFFFFU || dbg_read((uint16_t)addr, data, (uint16_t)len) != 0) {
+    shell_error(sh, "ERROR: Access out of bounds (address 0x%lX, length %lu)", addr, len);
     return -EINVAL;
   }
 
@@ -1071,7 +1118,7 @@ static int cmd_dbg_peek(const struct shell *sh, size_t argc, char **argv) {
     int pos = 0;
     pos += snprintf(line + pos, sizeof(line) - pos, "%04lX: ", addr + i);
     for (unsigned long j = 0; j < 16 && (i + j) < len; j++) {
-      pos += snprintf(line + pos, sizeof(line) - pos, "%02X ", base[offset + i + j]);
+      pos += snprintf(line + pos, sizeof(line) - pos, "%02X ", data[i + j]);
     }
     shell_print(sh, "%s", line);
   }
@@ -1164,12 +1211,23 @@ static int cmd_dbg_mpeek(const struct shell *sh, size_t argc, char **argv) {
     return -EINVAL;
   }
 
-#ifdef CONFIG_ZPLC_SCHEDULER
-  if (zplc_sched_lock(5) != 0) {
-    shell_error(sh, "ERROR: Could not acquire scheduler lock");
-    return -EBUSY;
+  /* Every entry is read from one snapshot, then printed with no lock held (RT-010, RT-012). */
+  static uint8_t mpeek_data[MPEEK_MAX_BYTES];
+  size_t mpeek_used = 0U;
+  size_t mpeek_offset[MPEEK_MAX_ENTRIES];
+
+  for (int i = 0; i < entry_count; i++) {
+    unsigned long addr = entries[i].addr;
+    unsigned long len = entries[i].len;
+
+    if (addr > 0xFFFFU || mpeek_used + len > sizeof(mpeek_data) ||
+        dbg_read((uint16_t)addr, &mpeek_data[mpeek_used], (uint16_t)len) != 0) {
+      shell_error(sh, "ERROR: Invalid address or out-of-bounds at 0x%lX", addr);
+      return -EINVAL;
+    }
+    mpeek_offset[i] = mpeek_used;
+    mpeek_used += len;
   }
-#endif
 
   /* Emit JSON response */
   shell_print(sh, "{\"t\":\"mpeek\",\"results\":[");
@@ -1178,44 +1236,12 @@ static int cmd_dbg_mpeek(const struct shell *sh, size_t argc, char **argv) {
     unsigned long addr = entries[i].addr;
     unsigned long len  = entries[i].len;
 
-    /* Resolve memory region */
-    uint8_t *base = NULL;
-    uint16_t offset = 0;
-    uint16_t region_size = 0;
-
-    if (addr < ZPLC_MEM_OPI_BASE) {
-      base = zplc_mem_get_region(ZPLC_MEM_IPI_BASE);
-      offset = (uint16_t)addr;
-      region_size = ZPLC_MEM_IPI_SIZE;
-    } else if (addr < ZPLC_MEM_WORK_BASE) {
-      base = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
-      offset = (uint16_t)(addr - ZPLC_MEM_OPI_BASE);
-      region_size = ZPLC_MEM_OPI_SIZE;
-    } else if (addr < ZPLC_MEM_RETAIN_BASE) {
-      base = zplc_mem_get_region(ZPLC_MEM_WORK_BASE);
-      offset = (uint16_t)(addr - ZPLC_MEM_WORK_BASE);
-      region_size = ZPLC_MEM_WORK_SIZE;
-    } else {
-      base = zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE);
-      offset = (uint16_t)(addr - ZPLC_MEM_RETAIN_BASE);
-      region_size = ZPLC_MEM_RETAIN_SIZE;
-    }
-
-    /* Validate bounds */
-    if (base == NULL || (uint32_t)offset + (uint32_t)len > (uint32_t)region_size) {
-#ifdef CONFIG_ZPLC_SCHEDULER
-      (void)zplc_sched_unlock();
-#endif
-      shell_error(sh, "ERROR: Invalid address or out-of-bounds at 0x%lX", addr);
-      return -EINVAL;
-    }
-
     /* Build hex string for the bytes */
     char hex[513]; /* max 256 bytes × 2 hex chars + NUL */
     unsigned int hex_pos = 0;
     for (unsigned long b = 0; b < len; b++) {
       hex_pos += (unsigned int)snprintf(hex + hex_pos, sizeof(hex) - hex_pos,
-                                        "%02X", base[offset + b]);
+                                        "%02X", mpeek_data[mpeek_offset[i] + b]);
     }
     hex[hex_pos] = '\0';
 
@@ -1225,10 +1251,6 @@ static int cmd_dbg_mpeek(const struct shell *sh, size_t argc, char **argv) {
   }
 
   shell_print(sh, "]}");
-
-#ifdef CONFIG_ZPLC_SCHEDULER
-  (void)zplc_sched_unlock();
-#endif
 
   return 0;
 }
@@ -1255,17 +1277,16 @@ static int cmd_dbg_poke(const struct shell *sh, size_t argc, char **argv) {
   uint8_t byte = (uint8_t)value;
   int rc;
 
-#ifdef CONFIG_ZPLC_SCHEDULER
-  if (zplc_sched_lock(5) != 0) {
-    shell_error(sh, "ERROR: Could not acquire scheduler lock");
-    return -EBUSY;
+  if (addr > 0xFFFFU) {
+    shell_error(sh, "ERROR: Invalid memory address");
+    return -EINVAL;
   }
-#endif
-
-  rc = zplc_force_write_bytes((uint16_t)addr, &byte, 1U);
-
 #ifdef CONFIG_ZPLC_SCHEDULER
-  (void)zplc_sched_unlock();
+  /* Like every other external write (RT-010): queued whole, applied by the scan at its next input latch through
+   * the force-aware interface, at once when no scan is running. */
+  rc = zplc_exchange_write((uint16_t)addr, &byte, 1U);
+#else
+  rc = zplc_force_write_bytes((uint16_t)addr, &byte, 1U);
 #endif
 
   if (rc != 0) {
@@ -1310,9 +1331,12 @@ static int cmd_dbg_force_set(const struct shell *sh, size_t argc, char **argv) {
 #endif
 
   rc = zplc_force_set_bytes((uint16_t)addr, bytes, (uint16_t)decoded);
+#ifdef CONFIG_ZPLC_SCHEDULER
+  zplc_exchange_publish(); /* a force changes the memory at once; the snapshot follows (RT-010) */
+#endif
 
 #ifdef CONFIG_ZPLC_SCHEDULER
-  (void)zplc_sched_unlock();
+  sched_unlock_reported(sh);
 #endif
 
   if (rc == -2) {
@@ -1360,9 +1384,12 @@ static int cmd_dbg_force_clear(const struct shell *sh, size_t argc, char **argv)
 #endif
 
   rc = zplc_force_clear((uint16_t)addr);
+#ifdef CONFIG_ZPLC_SCHEDULER
+  zplc_exchange_publish();
+#endif
 
 #ifdef CONFIG_ZPLC_SCHEDULER
-  (void)zplc_sched_unlock();
+  sched_unlock_reported(sh);
 #endif
 
   if (rc != 0) {
@@ -1387,9 +1414,12 @@ static int cmd_dbg_force_clear_all(const struct shell *sh, size_t argc,
 #endif
 
   zplc_force_clear_all();
+#ifdef CONFIG_ZPLC_SCHEDULER
+  zplc_exchange_publish();
+#endif
 
 #ifdef CONFIG_ZPLC_SCHEDULER
-  (void)zplc_sched_unlock();
+  sched_unlock_reported(sh);
 #endif
 
   shell_print(sh, "OK: Cleared all force entries");
@@ -1445,14 +1475,14 @@ static int cmd_dbg_force_list(const struct shell *sh, size_t argc, char **argv) 
     JSON_NEWLINE(sh);
 
 #ifdef CONFIG_ZPLC_SCHEDULER
-    (void)zplc_sched_unlock();
+    sched_unlock_reported(sh);
 #endif
     return 0;
   }
 
   if (count == 0U) {
 #ifdef CONFIG_ZPLC_SCHEDULER
-    (void)zplc_sched_unlock();
+    sched_unlock_reported(sh);
 #endif
     shell_print(sh, "No active force entries");
     return 0;
@@ -1478,7 +1508,7 @@ static int cmd_dbg_force_list(const struct shell *sh, size_t argc, char **argv) 
   }
 
 #ifdef CONFIG_ZPLC_SCHEDULER
-  (void)zplc_sched_unlock();
+  sched_unlock_reported(sh);
 #endif
 
   return 0;
@@ -1554,6 +1584,16 @@ static int cmd_dbg_mem(const struct shell *sh, size_t argc, char **argv) {
     return -EINVAL;
   }
 
+  /* The 64 bytes come from the snapshot of the last commit, read once (RT-010). */
+  uint8_t window[64];
+  size_t window_size = (size_t)(region_size - offset) < sizeof(window) ? (size_t)(region_size - offset)
+                                                                       : sizeof(window);
+
+  if (dbg_read((uint16_t)(region_base_addr + offset), window, (uint16_t)window_size) != 0) {
+    shell_error(sh, "ERROR: Offset out of bounds (0x%04lX)", offset);
+    return -EINVAL;
+  }
+
   shell_print(sh, "--- %s Memory Dump (offset 0x%04lX) ---", region_name,
               offset);
 
@@ -1571,7 +1611,7 @@ static int cmd_dbg_mem(const struct shell *sh, size_t argc, char **argv) {
       if (offset + i + j >= region_size)
         break;
       pos += snprintf(line + pos, sizeof(line) - pos, "%02X ",
-                      base[offset + i + j]);
+                      window[i + j]);
     }
 
     pos += snprintf(line + pos, sizeof(line) - pos, " | ");
@@ -1579,7 +1619,7 @@ static int cmd_dbg_mem(const struct shell *sh, size_t argc, char **argv) {
     for (int j = 0; j < 16; j++) {
       if (offset + i + j >= region_size)
         break;
-      uint8_t c = base[offset + i + j];
+      uint8_t c = window[i + j];
       pos += snprintf(line + pos, sizeof(line) - pos, "%c",
                       isprint(c) ? c : '.');
     }
@@ -1653,7 +1693,9 @@ static int cmd_zplc_load(const struct shell *sh, size_t argc, char **argv) {
     shell_error(sh, "Usage: zplc load <size>");
     return -EINVAL;
   }
-  k_mutex_lock(&legacy_runtime_lock, K_FOREVER);
+  if (legacy_lock_take(sh) != 0) {
+    return -EIO;
+  }
   faulted = runtime_state == ZPLC_STATE_ERROR;
   k_mutex_unlock(&legacy_runtime_lock);
   if (faulted) {
@@ -1690,11 +1732,17 @@ static int legacy_validate_program(const uint8_t *binary, size_t size,
  * invalidating both buffers and leaving outputs de-energized. */
 static int legacy_latch_ambiguous_program_publication(void) {
   int safe_result;
+  int init_result;
 
-  k_mutex_lock(&legacy_runtime_lock, K_FOREVER);
+  if (zplc_lock_take(&legacy_runtime_lock, "runtime lock") != 0) {
+    return -EIO;
+  }
   step_requested = 0;
-  zplc_core_init();
+  init_result = zplc_core_init();
   safe_result = zplc_legacy_apply_safe_outputs_locked();
+  if (safe_result == 0 && init_result != 0) {
+    safe_result = init_result;
+  }
   runtime_state = ZPLC_STATE_ERROR;
   memset(program_buffer, 0, program_buffer_size);
   memset(program_staging_buffer, 0,
@@ -1755,7 +1803,11 @@ static int cmd_zplc_data(const struct shell *sh, size_t argc, char **argv) {
       memset(program_staging_buffer, 0, program_buffer_size);
       return -EIO;
     }
-    k_mutex_lock(&legacy_runtime_lock, K_FOREVER);
+    if (legacy_lock_take(sh) != 0) {
+      program_expected_size = 0;
+      program_staging_received_size = 0;
+      return -EIO;
+    }
     zplc_state_t old_state = runtime_state;
     runtime_state = ZPLC_STATE_IDLE;
     ret = zplc_core_load(program_staging_buffer, program_staging_received_size,
@@ -1797,7 +1849,9 @@ static int cmd_zplc_data(const struct shell *sh, size_t argc, char **argv) {
 static int cmd_zplc_start(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
-  k_mutex_lock(&legacy_runtime_lock, K_FOREVER);
+  if (legacy_lock_take(sh) != 0) {
+    return -EIO;
+  }
   if (runtime_state != ZPLC_STATE_READY && runtime_state != ZPLC_STATE_PAUSED) {
     k_mutex_unlock(&legacy_runtime_lock);
     shell_error(sh, "ERROR: Not ready (state=%s)", state_name(runtime_state));
@@ -1823,7 +1877,9 @@ static int cmd_zplc_stop(const struct shell *sh, size_t argc, char **argv) {
 
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
-  k_mutex_lock(&legacy_runtime_lock, K_FOREVER);
+  if (legacy_lock_take(sh) != 0) {
+    return -EIO;
+  }
   was_faulted = runtime_state == ZPLC_STATE_ERROR;
   step_requested = 0;
   {
@@ -1850,7 +1906,9 @@ static int cmd_zplc_reset(const struct shell *sh, size_t argc, char **argv) {
 
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
-  k_mutex_lock(&legacy_runtime_lock, K_FOREVER);
+  if (legacy_lock_take(sh) != 0) {
+    return -EIO;
+  }
   step_requested = 0;
   runtime_state = ZPLC_STATE_IDLE;
   cycle_count = 0;
@@ -1887,7 +1945,15 @@ static int cmd_zplc_reset(const struct shell *sh, size_t argc, char **argv) {
     runtime_state = ZPLC_STATE_READY;
     k_mutex_unlock(&legacy_runtime_lock);
   } else {
-    zplc_core_init();
+    int init_result = zplc_core_init();
+
+    if (init_result != 0) {
+      runtime_state = ZPLC_STATE_ERROR;
+      k_mutex_unlock(&legacy_runtime_lock);
+      zplc_legacy_wake();
+      shell_error(sh, "ERROR: Core init failed (%d)", init_result);
+      return init_result;
+    }
     legacy_scan_interval_ms = 100U;
     k_mutex_unlock(&legacy_runtime_lock);
   }
@@ -1919,9 +1985,10 @@ static int cmd_zplc_status(const struct shell *sh, size_t argc, char **argv) {
       JSON_OBJ_END(sh);
     }
     shell_fprintf(sh, SHELL_NORMAL, ",\"opi\":[");
-    uint8_t *opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
+    uint8_t opi[8] = {0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U};
+    (void)dbg_read(ZPLC_MEM_OPI_BASE, opi, (uint16_t)sizeof(opi)); /* RT-010: the last commit */
     for (int i = 0; i < 8; i++) {
-      shell_fprintf(sh, SHELL_NORMAL, "%u%s", opi ? opi[i] : 0, (i < 7) ? "," : "");
+      shell_fprintf(sh, SHELL_NORMAL, "%u%s", opi[i], (i < 7) ? "," : "");
     }
     shell_fprintf(sh, SHELL_NORMAL, "]");
     JSON_OBJ_END(sh);
@@ -1942,7 +2009,9 @@ static int cmd_zplc_status(const struct shell *sh, size_t argc, char **argv) {
 static int cmd_dbg_pause(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
-  k_mutex_lock(&legacy_runtime_lock, K_FOREVER);
+  if (legacy_lock_take(sh) != 0) {
+    return -EIO;
+  }
   if (runtime_state != ZPLC_STATE_RUNNING) {
     k_mutex_unlock(&legacy_runtime_lock);
     shell_warn(sh, "WARN: Not running (state=%s)", state_name(runtime_state));
@@ -1959,7 +2028,9 @@ static int cmd_dbg_pause(const struct shell *sh, size_t argc, char **argv) {
 static int cmd_dbg_resume(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
-  k_mutex_lock(&legacy_runtime_lock, K_FOREVER);
+  if (legacy_lock_take(sh) != 0) {
+    return -EIO;
+  }
   if (runtime_state != ZPLC_STATE_PAUSED) {
     k_mutex_unlock(&legacy_runtime_lock);
     shell_warn(sh, "WARN: Not paused (state=%s)", state_name(runtime_state));
@@ -1978,7 +2049,9 @@ static int cmd_dbg_step(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argv);
   zplc_state_t observed_state;
 
-  k_mutex_lock(&legacy_runtime_lock, K_FOREVER);
+  if (legacy_lock_take(sh) != 0) {
+    return -EIO;
+  }
   observed_state = runtime_state;
   k_mutex_unlock(&legacy_runtime_lock);
   if (observed_state == ZPLC_STATE_READY) {
@@ -1988,7 +2061,9 @@ static int cmd_dbg_step(const struct shell *sh, size_t argc, char **argv) {
       return rc;
     }
   }
-  k_mutex_lock(&legacy_runtime_lock, K_FOREVER);
+  if (legacy_lock_take(sh) != 0) {
+    return -EIO;
+  }
   if (runtime_state == ZPLC_STATE_RUNNING) {
     runtime_state = ZPLC_STATE_PAUSED;
   }
@@ -2348,16 +2423,8 @@ static int cmd_dbg_watch(const struct shell *sh, size_t argc, char **argv) {
     }
   }
 
-#ifdef CONFIG_ZPLC_SCHEDULER
-  if (zplc_sched_lock(5) != 0) {
-    shell_error(sh, "ERROR: Could not acquire scheduler lock");
-    return -EBUSY;
-  }
-#endif
+  /* From the snapshot of the exchange: whole values, no lock held while the text is printed (RT-010). */
   rc = hil_read_watch_value((uint16_t)addr, type, &value);
-#ifdef CONFIG_ZPLC_SCHEDULER
-  (void)zplc_sched_unlock();
-#endif
   if (rc != 0) {
     shell_error(sh, "ERROR: 0x%04lX (%u bytes) is not inside a PLC memory region",
                 addr, (unsigned)width);
@@ -2392,7 +2459,7 @@ static int cmd_dbg_watch(const struct shell *sh, size_t argc, char **argv) {
  * @brief `zplc dbg timer <addr>`: the state of one timer instance.
  */
 static int cmd_dbg_timer(const struct shell *sh, size_t argc, char **argv) {
-  uint8_t *ptr = NULL;
+  uint8_t raw[TIMER_INSTANCE_BYTES];
   uint32_t pt = 0U;
   uint32_t et = 0U;
   uint8_t in = 0U;
@@ -2412,23 +2479,15 @@ static int cmd_dbg_timer(const struct shell *sh, size_t argc, char **argv) {
     return -EINVAL;
   }
 
-#ifdef CONFIG_ZPLC_SCHEDULER
-  if (zplc_sched_lock(5) != 0) {
-    shell_error(sh, "ERROR: Could not acquire scheduler lock");
-    return -EBUSY;
-  }
-#endif
-  rc = hil_resolve_mem_ptr((uint16_t)addr, TIMER_INSTANCE_BYTES, &ptr);
+  /* One read of the whole instance from the snapshot, so IN, Q, PT and ET are of one scan. */
+  rc = dbg_read((uint16_t)addr, raw, TIMER_INSTANCE_BYTES);
   if (rc == 0) {
-    in = ptr[0];
-    q = ptr[1];
-    memcpy(&pt, &ptr[2], sizeof(pt));
-    memcpy(&et, &ptr[6], sizeof(et));
-    running = ptr[14];
+    in = raw[0];
+    q = raw[1];
+    memcpy(&pt, &raw[2], sizeof(pt));
+    memcpy(&et, &raw[6], sizeof(et));
+    running = raw[14];
   }
-#ifdef CONFIG_ZPLC_SCHEDULER
-  (void)zplc_sched_unlock();
-#endif
   if (rc != 0) {
     shell_error(sh, "ERROR: 0x%04lX (%u bytes) is not inside a PLC memory region",
                 addr, (unsigned)TIMER_INSTANCE_BYTES);
@@ -2612,7 +2671,7 @@ static int cmd_hil_watch(const struct shell *sh, size_t argc, char **argv) {
     hil_watch_type_t type;
     size_t width = 0;
     int slot = -1;
-    uint8_t *mem_ptr = NULL;
+    uint8_t probe[8];
 
     if (argc < 4) {
       hil_send_ack("watch", "add", false,
@@ -2631,7 +2690,9 @@ static int cmd_hil_watch(const struct shell *sh, size_t argc, char **argv) {
       return -EINVAL;
     }
 
-    if (hil_resolve_mem_ptr((uint16_t)parsed_addr, width, &mem_ptr) != 0) {
+    /* The extent has to lie inside PLC memory; the watch itself reads the snapshot (RT-010). */
+    if (width > sizeof(probe) ||
+        dbg_read((uint16_t)parsed_addr, probe, (uint16_t)width) != 0) {
       hil_send_ack("watch", argv[2], false, "address out of range");
       return -ERANGE;
     }
@@ -2708,7 +2769,7 @@ static int cmd_hil_reset(const struct shell *sh, size_t argc, char **argv) {
   hil_set_shell(sh);
 
 #ifdef CONFIG_ZPLC_SCHEDULER
-  rc = sched_reset_runtime(program_buffer, program_received_size);
+  rc = sched_reset_loaded_program();
 #else
   rc = cmd_zplc_reset(sh, 0, NULL);
 #endif
@@ -3793,6 +3854,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 SHELL_STATIC_SUBCMD_SET_CREATE(
     sub_sys,
     SHELL_CMD_ARG(info, NULL, "System information", cmd_sys_info, 1, 1),
+    SHELL_CMD_ARG(build, NULL, "Firmware identity: commit, board, ABI, options [--json]", cmd_sys_build, 1, 1),
     SHELL_CMD(reboot, NULL, "Reboot", cmd_sys_reboot),
     SHELL_SUBCMD_SET_END);
 #endif

@@ -69,6 +69,50 @@ All notable changes are documented here.
   running slot until it is through, a full request queue writes the whole
   `STATUS` word, and a test holds a request in the client while it resets one
   block and starts another.
+- The release pipeline can be rehearsed and says what it did (REL-030, REL-027,
+  REL-017). **Release Build** has a *Rehearsal* input that is on by default: it
+  runs every job, renders the notes and one `SHA256SUMS` as an artifact, and
+  makes no draft, upload or attestation. A run publishes only for the push of
+  the exact version tag, or a manual run on that tag with the rehearsal
+  unticked (`scripts/release/resolve-release.ts`, tested with the events of the
+  workflow). The notes and the title are rendered from the job results, the
+  platform bundles and the JUnit reports of the run: a file is called signed
+  only when the signature check of that run passed, a platform whose job failed
+  is listed as having no files, and a prerelease title says how complete it is.
+  Prerelease tags continue the `rc` sequence (`alpha`, `beta` and `preview`
+  names, which sort below `rc.3`, are refused), and `CHANGELOG.md` is checked to
+  hold only tagged versions (`2.0.0-rc.2` has no tag and is listed as the
+  exception). `RELEASING.md` is the one checklist, with every external service
+  and its cost (none).
+- The bill of materials is written from the lockfile (REL-018, REL-019).
+  `scripts/release/sbom.ts` produces CycloneDX 1.5 from `bun.lock`, the
+  workspace manifests and `west.yml` (1,670 components) instead of a scan of the
+  installers, and fails when the document holds fewer packages than the
+  lockfile lists or than the recorded floor. The third-party notices of the
+  packages and fonts that ship are generated while packaging and are
+  `THIRD-PARTY-NOTICES.txt` in the resources of every installer; a package with
+  no licence or a font with no entry in `scripts/release/font-licences.json`
+  stops the build.
+- The firmware says which build it is (REL-023). A generated header carries the
+  version, the commit (and whether tracked files differed from it), the board,
+  the bytecode ABI and draft counter and the `CONFIG_ZPLC_*` options with their
+  hash. `zplc version` prints it and no longer prints the compile date, so one
+  commit is one image; `zplc sys build [--json]` reports it as a command of its
+  own, because Studio's handshake accepts exactly the keys of
+  `zplc sys info --json`; the native runtime reports it as `build` in
+  `session.hello`. On the Pico the image grows by 1,472 bytes of flash and none
+  of RAM. A test drives the real shell of `firmware/app` on `native_sim`.
+- The CLI and the MCP server are released as standalone executables (REL-026,
+  IDE-026). `scripts/release/binaries.ts` compiles both with `bun build
+  --compile` for Linux, macOS and Windows on x64 and arm64 and names them
+  `<tool>-<version>-<os>-<arch>[.exe]`; each platform job builds and smokes them
+  on its own architecture (`--version`, a compile of a bundled project, the list
+  of MCP tools). Each is about 98 MB, the size of the embedded runtime.
+- The unpacked application is checked for what it must hold (REL-034):
+  `bun run smoke:packaged-content` looks for the text of every example project
+  file in the renderer bundle inside `app.asar`, the id of every lesson (found
+  by pattern, so a lesson package that is added is covered), every bytecode
+  example, and a licence notice for every package and font of the archive.
 
 - Three of the fifteen modules over the new size limit are split (IDE-014): the
   project settings are one module per section (2,181 lines to 213 and eleven
@@ -121,7 +165,7 @@ All notable changes are documented here.
   Only the Monaco core Studio uses is bundled, so the CSS, HTML, JSON and
   TypeScript language workers (about 9 MB) and the 80 basic languages are no
   longer built, and the installer holds no source maps. `welcomeBundle.test.ts`
-  proves it on the build output, and journey 29 on the development host.
+  proves it on the build output, and journey 38 on the development host.
 - CI checks the structure of Studio's source (IDE-014, IDE-033):
   `tools/ci/ide-structure.ts`, run by `bun run lint:ide` and by
   `bun test ./tools/ci`, fails when a store module imports a component, when a
@@ -135,6 +179,121 @@ All notable changes are documented here.
   imports the breakpoint helpers or the build-evidence types from `components/`,
   and the sensitive-configuration helpers no longer form an import cycle with
   the file system and export modules.
+- The reference pages are generated, in English and Spanish, from the sources they describe, and CI
+  fails when one is stale (DOC-006, DOC-007, DOC-008, DOC-014). A page per language (ST, IL, LD, FBD,
+  SFC) is read off `conformance/matrix.json`, the executed cases and the expected-failures list, with
+  the I/O addressing and what is not supported; the 57 functions, the 240 type conversions and the 34
+  function blocks of the compiler registry each have a signature or pin table, a description and an
+  example that CI compiles and runs; the Kconfig options, shell commands, `zplc.json` fields, scenario
+  files, `zplc-cli` commands, MCP tools and resources, and runtime session requests are read off their
+  source files. A check reads every code span of the documentation and fails on a Kconfig symbol,
+  shell command, C name, IEC call or repository path that the source does not have; what is
+  deliberately absent is listed with its reason in `docs/doc-claims-allowlist.json`. No editor
+  screenshot is published yet: the language pages say so instead of showing a drawing.
+- Runtime hardening of the firmware and the host runtime (RT-010 to RT-034):
+  - Memory seen from outside the scan is whole and respects forces. The Modbus
+    server, MQTT and the shell debug commands read a snapshot that the scan
+    publishes at its commit, and they and the Modbus clients queue their
+    writes, which the scan applies at its next input latch through the
+    force-aware interface: a forced
+    variable keeps its forced value whatever a client writes, and a Modbus
+    write of the two registers of a 32-bit value sets only the half it
+    addresses. A write that does not fit the queue
+    (`CONFIG_ZPLC_EXCHANGE_QUEUE_BYTES`) is refused whole and a Modbus TCP
+    client gets exception 6.
+  - The process-image lock is no longer held while the physical outputs are
+    written, a line is printed or a call can block; the scan reads the inputs
+    before it takes the lock and writes the pins after it releases it. A lock
+    that cannot be created or taken is reported by every caller:
+    `zplc_core_init()` returns -1, a control call returns
+    `ZPLC_SCHED_ERR_LOCK`, and a scan that cannot take the lock drives the pins
+    safe and latches the fault.
+  - A program load is a cold start on every runtime: the variables and the
+    forces of the program it replaces never carry over
+    (`zplc_core_cold_start()` and `zplc_core_warm_start()`).
+  - The firmware starts the scheduler, the program store and the control link
+    before the network, time, fieldbus and cloud services, and a service that
+    fails to start no longer stops the runtime.
+  - The largest artifact is one number, `CONFIG_ZPLC_CODE_SIZE_MAX`: the program
+    store keeps and restores an artifact of that size (it is chunked under
+    `CONFIG_ZPLC_PROGRAM_STORE_CHUNK_SIZE`), the loader accepts it and the shell
+    and the IDE advertise it. **Behaviour change:** the Raspberry Pi Pico
+    profile now advertises 24576 bytes, the STM32F746G Discovery profile
+    16384 bytes and the Arduino Opta WiFi profile 32768 bytes, the largest
+    sizes their storage and RAM hold with three copies of the program in RAM;
+    the build fails when two slots of the configured size do not fit the
+    storage partition. The firmware keeps no resident copy of the program
+    beside the upload staging buffer: `zplc reset` reloads the loaded program
+    from the program store (and cancels an upload in progress), which saves
+    one program of RAM on every board.
+  - A power cut at any moment of a program deploy leaves the previous or the
+    complete new program; the store logic is one implementation shared by the
+    host runtime and the firmware, tested with a power cut and a torn write at
+    every operation.
+  - Every size, depth and priority has a Kconfig range and a build-time rule,
+    and the core compiles without Zephyr headers. The scan coordinator is
+    checked to outrank the communication, shell and log threads
+    (`CONFIG_ZPLC_COMM_THREAD_PRIORITY`), and the boards with a network stack
+    run its threads preemptible.
+  - One CRC-32 and one set of little-endian helpers (`zplc_crc32.h`,
+    `zplc_bytes.h`) replace the copies of the loader, the RETAIN records and
+    the program stores. The test-only entry points moved out of the public
+    headers into `firmware/lib/zplc_core/tests/include/zplc_test_hooks.h`.
+    `zplc_retain_config_t.lock` is now `int (*)(void)` so a lock failure can be
+    reported.
+
+- Learn lessons are data packages with one generated index of ids (LRN-009, LRN-027,
+  LRN-028). Each of the ten lessons lives in `packages/zplc-ide/lessons/<id>/`: a manifest
+  (id, version, module, level, prerequisites, languages, tracks, plant, estimated time,
+  starter, solution, and the reference scenario with its content hash), English and
+  Spanish text with the same structure, learning objectives, two hint levels, and the
+  reference scenario. `tools/ci/generate-lesson-index.ts` produces
+  `src/generated/lessonIndex.ts`, which the panel, the progress store and the MCP course
+  resource read; CI fails when a product file keeps a list of lesson ids, when the index
+  is stale and when a scenario changes without its hash and version being raised. The
+  text marks the times and values it quotes and the generator expands the markup once,
+  so no lesson string is replaced when the application runs (LRN-038). Adding a lesson
+  needs no change to application code: see Contributing.
+- A lesson is graded against the scenario of its package, not the one in the learner's
+  folder (LRN-022, LRN-023, LRN-026). The new `lessonCheck` of the Tool API runs the
+  program of a workspace against the scenario the lesson package carries, identified by
+  its content hash, and returns a grade record: lesson id and version, scenario hash,
+  program hash, runtime version and time, which is the same for the same program and
+  scenario but for the time. A failed check lists each failed assertion with its instant,
+  the values expected and observed, and the address of that sample in the recorded trace.
+  The panel no longer grades a run whose recorded assertions are not those of the lesson
+  scenario, and shows the failures, the objectives and the hints. A run that failed was
+  shown as "evidence is incomplete" in the real application, because a failed run reports
+  no scenario count; it is now graded as failed and lists its failed assertions.
+- The Learn panel grades with the lesson check (LRN-022). A **Check** button sends the id
+  of a lesson to the main process, which runs the saved program of the shown project
+  against the scenario of the lesson package in the tool worker (cancellable, one run at a
+  time, bound to the folder on screen, recorded in the execution audit as a scenario run)
+  and answers a grade record or a fixed reason; the renderer validates the answer again.
+  The scenario files of the learner's folder are never read, so an edited scenario cannot
+  pass a lesson. The panel records the grade, the hints and the solutions shown and the
+  last lesson through typed progress operations, and opens the last lesson again.
+- Lesson CI runs for every lesson and both languages (LRN-025): the starter fails the
+  reference scenario because an assertion fails, the reference solution passes it, wrong
+  programs stay red, other correct programs pass, every time and value the text quotes
+  exists in the scenario and every file it cites exists in the starter. The table of
+  wrong programs moved from TypeScript to `checks.json` of each package.
+- Lesson 5 has the learner edit a Ladder program and lesson 10 has an Edit stage
+  (LRN-038). The starter `blinky_starter` is now the Ladder blinker with its two TON
+  rungs drawn and the SET and RESET coil rungs missing, and its reference solution is the
+  `blinky` Ladder project; the graded scenario is unchanged, so a Structured Text
+  solution still passes. Lesson 10 gets the Edit stage the other lessons have.
+- Learn progress is one versioned file, `zplc-learn-progress.v2.json`, in the user-data
+  directory (LRN-031, LRN-032): passed lessons with their grade record, lessons in
+  progress, the last lesson, and the hints and solutions used. The progress file of the
+  earlier release (`zplc-learn-mastery.v1.json`) is migrated in memory when the new file
+  does not exist and is never written or deleted. The store exports and imports the whole
+  document, validates it exactly, merges it with the newest grade first, and keeps
+  progress for lessons it does not know. The MCP course resource reads the new file and
+  stays read-only (LRN-034). The IPC contract gains `learn-progress:read-progress`,
+  `record-grade`, `note-lesson`, `export` and `import`, each with an exact request schema,
+  and `workspace-tests:lesson-check`; Export and Import progress in the panel move the
+  whole document on the desktop.
 - The palettes of LD, FBD and SFC offer only what their transpiler translates, and every
   element they offer is placed in a program and run in the virtual machine by a generated
   test (LNG-007). The Ladder palette offers the edge coils that the transpiler has
@@ -213,6 +372,59 @@ All notable changes are documented here.
   `tools/contract/restamp_artifacts.py` rewrites the counter and the CRC of the
   artifacts committed to the repository (examples, fixtures, fuzz findings), and
   `bun run contract:check` fails when one is stale.
+- The element of a build diagnostic (LNG-003) crosses the compile channel: the main
+  process keeps it on each diagnostic of a failed build when it is an element id (at
+  most 256 characters, the forms of `models/sourceElements.ts`) and drops it
+  otherwise, the window passes it to the Problems panel, and activating the problem
+  selects that element, also when the open file has changed since the build; without
+  one, the element is derived from the open file as before.
+- Any input that the running program declares can be set from Studio in native
+  simulation, not only three motor signals (IDE-024). The **Simulation inputs**
+  section of the Watch tab lists the variables mapped to the input image (whatever
+  their name) and the inputs of the programs, with their address and live value,
+  and sets each one: a TRUE/FALSE switch for a BOOL (only its own bit changes) and
+  a number box for the other numeric types, with **Force** for the types a force
+  carries. The build marks the program inputs that have no direct address in the
+  debug map (`zplc:input` tag).
+- The security properties of Studio are proven by what the running application
+  does (IDE-016): an inline script and an inline event handler that a page injects
+  are blocked by the production policy, a permission other than serial is
+  refused, `window.open`, a `_blank` link and navigation to another origin are
+  refused, and a project operation given `..`, an absolute path, or a link that
+  leaves the project is refused. The probes run on the development host (journey
+  29) and, with `ZPLC_PACKAGED_DIST`, on the packaged application. They found that
+  a navigation the window refused still revoked its authority (its project folder
+  and its IPC) until a reload; only a navigation that can replace the document
+  revokes it now.
+- Studio shows the result of a build, a save, a deploy, a connection change and
+  a test run as a notification that opens the panel with its details, and shows a
+  long operation with progress and a **Cancel** action (IDE-021). A success goes by
+  itself after a few seconds; a failure, a warning and a cancellation stay until
+  dismissed. The messages of the Output panel are unchanged.
+- Compile, safety check, scenario tests and the candidate review run outside the
+  main process and can be cancelled (IDE-012). Each request starts a worker
+  process of its own (`electron/toolWorker.ts`, bundled with the Tool API); the
+  window keeps answering while it works, **Cancel scenarios** stops a run and the
+  native runtime it started, a run that does not answer a cancel is killed, and a
+  deadline kills a worker that never finishes. A cancelled run is recorded as
+  cancelled in the execution log.
+- Studio defines every IPC channel once and answers all of them through one
+  checked table (IDE-017). `electron/ipcContract.ts` names the channels for the
+  main process, the preload and the renderer (the preload is now bundled into one
+  script that requires only `electron`, so it keeps no copy; the project archive
+  channels of IDE-022 are part of the project-files group there, and
+  `projectArchiveProtocol.ts` re-exports them); the main process
+  refuses to start when a channel has no handler or a handler has no channel, and
+  every call is checked for its sender, its message and the freshness of the
+  document before any handler runs. The processes that Studio starts for compile,
+  test and firmware build (the native runtime, `west build`, the toolchain
+  probes) come from a closed list of fixed argument vectors and never take a
+  command or an argument from the renderer.
+- Build and Test act only on the project that the editor shows (IDE-002). The
+  build, safety-check and test-run requests carry the id of the window's folder,
+  and the main process refuses a workspace that is not that folder's (a stale
+  workspace after another folder was opened, or a `zplc.json` of another
+  folder). A crafted message for another project is refused.
 - The function blocks and functions that the Structured Text files of a project
   declare are blocks of the FBD and LD palettes (LNG-008): a diagram places one
   with the ports of its declaration, and the generated Structured Text calls it

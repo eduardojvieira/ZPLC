@@ -23,6 +23,7 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/kernel.h>
+#include "zplc_lock.h"
 LOG_MODULE_REGISTER(zplc_config, LOG_LEVEL_INF);
 
 /* Only shell/settings and the Modbus server access this pair; none runs in ISR. */
@@ -333,9 +334,14 @@ static int cfg_apply(const char *name, const uint8_t *value, size_t length) {
   return -ENOENT;
 }
 
-/* Publishes the override pair read by cfg_apply(), when it is complete. */
-static void cfg_commit_overrides(void) {
-  k_mutex_lock(&modbus_tag_override_lock, K_FOREVER);
+/* Publishes the override pair read by cfg_apply(), when it is complete. A lock
+ * that cannot be taken (RT-030) leaves the published overrides as they were
+ * and drops what was read. */
+static int cfg_commit_overrides(void) {
+  if (zplc_lock_take(&modbus_tag_override_lock, "modbus override lock") != 0) {
+    zplc_modbus_override_load_reset();
+    return -EIO;
+  }
   memset(config.modbus_tag_override_valid, 0,
          sizeof(config.modbus_tag_override_valid));
   memset(config.modbus_tag_override_addr, 0,
@@ -353,6 +359,7 @@ static void cfg_commit_overrides(void) {
   }
   k_mutex_unlock(&modbus_tag_override_lock);
   zplc_modbus_override_load_reset();
+  return 0;
 }
 
 K_MUTEX_DEFINE(cfg_store_lock);
@@ -455,7 +462,9 @@ static int cfg_save_all(void) {
   uint32_t addr[ZPLC_MAX_TAGS];
   int rc = 0;
 
-  k_mutex_lock(&cfg_store_lock, K_FOREVER);
+  if (zplc_lock_take(&cfg_store_lock, "config store lock") != 0) {
+    return -EIO; /* nothing was written, and the caller is told so */
+  }
   for (size_t i = 0U; i < ARRAY_SIZE(cfg_items) && rc == 0; i++) {
     const struct cfg_item *item = &cfg_items[i];
     size_t length = item->size;
@@ -466,12 +475,15 @@ static int cfg_save_all(void) {
     rc = cfg_store_entry(i, item->name, item->ptr, length);
   }
   if (rc == 0) {
-    k_mutex_lock(&modbus_tag_override_lock, K_FOREVER);
-    memcpy(valid, config.modbus_tag_override_valid, sizeof(valid));
-    memcpy(addr, config.modbus_tag_override_addr, sizeof(addr));
-    k_mutex_unlock(&modbus_tag_override_lock);
-    rc = cfg_store_entry(CFG_KEY_OVERRIDE_VALID, "modbus_tag_override_valid",
-                         valid, sizeof(valid));
+    if (zplc_lock_take(&modbus_tag_override_lock, "modbus override lock") != 0) {
+      rc = -EIO;
+    } else {
+      memcpy(valid, config.modbus_tag_override_valid, sizeof(valid));
+      memcpy(addr, config.modbus_tag_override_addr, sizeof(addr));
+      k_mutex_unlock(&modbus_tag_override_lock);
+      rc = cfg_store_entry(CFG_KEY_OVERRIDE_VALID, "modbus_tag_override_valid",
+                           valid, sizeof(valid));
+    }
   }
   if (rc == 0) {
     rc = cfg_store_entry(CFG_KEY_OVERRIDE_ADDR, "modbus_tag_override_addr",
@@ -486,7 +498,9 @@ static int cfg_save_all(void) {
 static int cfg_load_all(void) {
   int first_error = 0;
 
-  k_mutex_lock(&cfg_store_lock, K_FOREVER);
+  if (zplc_lock_take(&cfg_store_lock, "config store lock") != 0) {
+    return -EIO; /* the defaults stay */
+  }
   zplc_modbus_override_load_reset();
   for (size_t i = 0U; i < ARRAY_SIZE(cfg_items); i++) {
     int rc = cfg_load_entry(i, cfg_items[i].name);
@@ -497,7 +511,9 @@ static int cfg_load_all(void) {
   }
   (void)cfg_load_entry(CFG_KEY_OVERRIDE_VALID, "modbus_tag_override_valid");
   (void)cfg_load_entry(CFG_KEY_OVERRIDE_ADDR, "modbus_tag_override_addr");
-  cfg_commit_overrides();
+  if (cfg_commit_overrides() != 0 && first_error == 0) {
+    first_error = -EIO;
+  }
 #if !defined(CONFIG_ZPLC_MQTT_ALLOW_INSECURE_TLS)
   /* COM-014: a no-verify setting stored by an image that allowed it is not
    * honoured by one that does not. The MQTT client refuses it as well; this
@@ -540,8 +556,7 @@ static int zplc_settings_set(const char *name, size_t len,
 }
 
 static int zplc_settings_commit(void) {
-  cfg_commit_overrides();
-  return 0;
+  return cfg_commit_overrides();
 }
 
 static struct settings_handler zplc_conf_handler = {
@@ -609,12 +624,13 @@ static void zplc_config_set_defaults(void) {
   strncpy(config.mqtt_lwt_payload, "offline", sizeof(config.mqtt_lwt_payload));
   config.mqtt_lwt_qos = ZPLC_MQTT_QOS0;
   config.mqtt_lwt_retain = false;
-  k_mutex_lock(&modbus_tag_override_lock, K_FOREVER);
-  memset(config.modbus_tag_override_valid, 0,
-         sizeof(config.modbus_tag_override_valid));
-  memset(config.modbus_tag_override_addr, 0,
-         sizeof(config.modbus_tag_override_addr));
-  k_mutex_unlock(&modbus_tag_override_lock);
+  if (zplc_lock_take(&modbus_tag_override_lock, "modbus override lock") == 0) {
+    memset(config.modbus_tag_override_valid, 0,
+           sizeof(config.modbus_tag_override_valid));
+    memset(config.modbus_tag_override_addr, 0,
+           sizeof(config.modbus_tag_override_addr));
+    k_mutex_unlock(&modbus_tag_override_lock);
+  }
   config.ntp_enabled = false;
   strncpy(config.ntp_server, "pool.ntp.org", sizeof(config.ntp_server));
   strncpy(config.mqtt_group_id, "ZPLC", sizeof(config.mqtt_group_id));
@@ -876,7 +892,8 @@ bool zplc_config_get_modbus_tag_override(uint16_t index,
 
   if (index >= ZPLC_MAX_TAGS || register_count == 0U)
     return false;
-  k_mutex_lock(&modbus_tag_override_lock, K_FOREVER);
+  if (zplc_lock_take(&modbus_tag_override_lock, "modbus override lock") != 0)
+    return false;
   if (!config.modbus_tag_override_valid[index]) {
     k_mutex_unlock(&modbus_tag_override_lock);
     return false;
@@ -900,7 +917,8 @@ int zplc_config_set_modbus_tag_override(uint16_t index, uint32_t address,
     return -EINVAL;
   if (address > UINT16_MAX || register_count - 1U > UINT16_MAX - address)
     return -ERANGE;
-  k_mutex_lock(&modbus_tag_override_lock, K_FOREVER);
+  if (zplc_lock_take(&modbus_tag_override_lock, "modbus override lock") != 0)
+    return -EIO;
   config.modbus_tag_override_addr[index] = address;
 #if defined(CONFIG_ZTEST)
   if (modbus_tag_override_publish_hook != NULL) {
@@ -915,7 +933,8 @@ int zplc_config_set_modbus_tag_override(uint16_t index, uint32_t address,
 int zplc_config_clear_modbus_tag_override(uint16_t index) {
   if (index >= ZPLC_MAX_TAGS)
     return -EINVAL;
-  k_mutex_lock(&modbus_tag_override_lock, K_FOREVER);
+  if (zplc_lock_take(&modbus_tag_override_lock, "modbus override lock") != 0)
+    return -EIO;
   config.modbus_tag_override_valid[index] = false;
   config.modbus_tag_override_addr[index] = 0;
   k_mutex_unlock(&modbus_tag_override_lock);

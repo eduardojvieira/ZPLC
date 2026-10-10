@@ -3,8 +3,9 @@
 
 Run: python3 tools/firmware-test/test_check_inbound_authority.py
 
-The check fails for an inbound object that references run control, forces or load, and it must not pass a tree
-in which it found nothing to look at.
+The check fails for an inbound object that references run control, forces or load, or that reaches PLC memory
+other than through the exchange; the exchange may not reference run control, forces or load either; and it must
+not pass a tree in which it found nothing to look at.
 """
 
 import subprocess
@@ -39,30 +40,61 @@ class InboundAuthority(unittest.TestCase):
             ["python3", "-B", str(CHECK), f"--nm={nm}", str(build)], capture_output=True, text=True, check=False
         )
 
-    def test_the_data_path_of_the_tags_passes(self):
+    EXCHANGE_OK = {"zplc_exchange.c.obj": ["zplc_force_write_bytes", "zplc_hal_log", "memcpy"]}
+
+    def test_the_exchange_interface_passes(self):
         result = self.run_check(
-            {"zplc_mqtt.c.obj": ["zplc_force_write_bytes", "zplc_mem_get_region", "zplc_pi_lock", "mqtt_publish"]}
+            {
+                "zplc_mqtt.c.obj": ["zplc_exchange_write", "zplc_exchange_read", "zplc_core_get_tag", "mqtt_publish"],
+                "zplc_modbus.c.obj": ["zplc_exchange_write_begin", "zplc_exchange_write_add", "zplc_exchange_read_lock"],
+                **self.EXCHANGE_OK,
+            }
         )
         self.assertEqual(result.returncode, 0, result.stdout)
         self.assertIn("PASS inbound-authority", result.stdout)
+        self.assertIn("through the exchange only", result.stdout)
 
     def test_every_entry_point_of_run_control_forces_and_load_fails(self):
         for symbol in (
             "zplc_sched_start", "zplc_sched_stop", "zplc_sched_pause", "zplc_sched_load",
             "zplc_force_set_bytes", "zplc_force_clear", "zplc_force_clear_all",
-            "zplc_core_load", "zplc_vm_resume", "zplc_program_store_commit", "sys_reboot",
+            "zplc_core_load", "zplc_core_cold_start", "zplc_vm_resume", "zplc_program_store_commit", "sys_reboot",
         ):
             with self.subTest(symbol=symbol):
-                result = self.run_check({"zplc_modbus.c.obj": ["zplc_mem_get_region", symbol]})
+                result = self.run_check({"zplc_modbus.c.obj": ["zplc_exchange_read", symbol], **self.EXCHANGE_OK})
                 self.assertNotEqual(result.returncode, 0)
                 self.assertIn(f"zplc_modbus.c.obj references {symbol}", result.stdout)
 
+    def test_a_handler_that_goes_round_the_exchange_fails(self):
+        for symbol in ("zplc_force_write_bytes", "zplc_mem_get_region", "zplc_pi_lock", "zplc_pi_unlock"):
+            with self.subTest(symbol=symbol):
+                result = self.run_check({"zplc_mqtt.c.obj": ["zplc_exchange_write", symbol], **self.EXCHANGE_OK})
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(f"zplc_mqtt.c.obj references {symbol}", result.stdout)
+
+    def test_the_exchange_may_not_reach_run_control_forces_or_load(self):
+        for symbol in ("zplc_sched_stop", "zplc_force_set_bytes", "zplc_force_clear_all", "zplc_core_load"):
+            with self.subTest(symbol=symbol):
+                result = self.run_check(
+                    {"zplc_mqtt.c.obj": ["zplc_exchange_write"], "zplc_exchange.c.obj": ["zplc_force_write_bytes", symbol]}
+                )
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(f"zplc_exchange.c.obj references {symbol}", result.stdout)
+
+    def test_a_build_without_the_exchange_does_not_pass(self):
+        result = self.run_check({"zplc_mqtt.c.obj": ["zplc_exchange_write"]})
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("the exchange is not in this build", result.stdout)
+
     def test_the_local_operator_shell_is_not_inbound(self):
-        result = self.run_check({"shell_cmds.c.obj": ["zplc_sched_start"], "zplc_mqtt.c.obj": ["zplc_pi_lock"]})
+        result = self.run_check(
+            {"shell_cmds.c.obj": ["zplc_sched_start", "zplc_force_set_bytes"], "zplc_mqtt.c.obj": ["zplc_exchange_write"],
+             **self.EXCHANGE_OK}
+        )
         self.assertEqual(result.returncode, 0, result.stdout)
 
     def test_a_tree_with_no_inbound_object_does_not_pass(self):
-        result = self.run_check({"shell_cmds.c.obj": ["zplc_pi_lock"]})
+        result = self.run_check({"shell_cmds.c.obj": ["zplc_exchange_write"]})
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("no inbound object file found", result.stdout)
 

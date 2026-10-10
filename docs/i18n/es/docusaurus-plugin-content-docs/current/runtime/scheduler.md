@@ -53,6 +53,39 @@ En simulación un solo hilo atiende las peticiones de control y ejecuta los batc
 
 `STOP`, la pausa externa, el unregister y los faults del scheduler cierran la admisión y drenan el trabajo en curso del coordinador antes de retornar. Estas garantías describen la implementación del scheduler y sus pruebas host/native-sim. No demuestran WCET, jitter, estado eléctrico ni cualificación de una placa.
 
+### Los locks alrededor de un scan (RT-010, RT-012)
+
+En el destino un batch son tres pasos. Las entradas se leen de la HAL sin ningún lock. Después, bajo el lock de la
+imagen de proceso, se aplican las escrituras que otros hilos dejaron en cola, las muestras se escriben en IPI, las
+tareas corren y la imagen se publica como snapshot. Por último, con el lock de la imagen liberado y bajo un lock
+aparte para la E/S de salida, se escriben las salidas físicas y se alimenta el watchdog de hardware. El lock de la
+imagen nunca se mantiene mientras se escribe un pin, se imprime una línea o corre una llamada que pueda bloquear:
+las líneas de registro de un scan se imprimen después de liberar el lock.
+
+Un hilo ajeno al scan lee el snapshot del último commit y deja sus escrituras en cola para el siguiente latch de
+entradas (ver [Acceso desde fuera del scan](memory-model.md#acceso-desde-fuera-del-scan-rt-010-rt-011)). Una parada,
+una pausa o una falla que llega entre el commit de la imagen y la escritura de los pines toma el lock de salida
+después o antes de ella, y los pines terminan en el estado que decidió la última de las dos.
+
+Un lock que no se puede crear o tomar es un error que ve quien llama (RT-030). Una llamada de control devuelve
+`ZPLC_SCHED_ERR_LOCK` y no cambia nada. Un scan que no puede tomar el lock de la imagen lleva los pines a su estado
+seguro y bloquea la falla, de modo que el estado es `ERROR`; un programa de reemplazo es la salida, como con
+cualquier falla.
+
+### Prioridades y orden de arranque (RT-013, RT-024)
+
+El coordinador del scan, la cola de trabajo de alta prioridad o la normal cuando no hay otra, tiene un número de
+prioridad menor que todos los hilos de comunicación de la aplicación, que corren en
+`CONFIG_ZPLC_COMM_THREAD_PRIORITY` (8 por defecto), y que los hilos del shell y del registro. La compilación lo
+comprueba y falla si no se cumple. Las placas con pila de red fijan `CONFIG_NET_TC_THREAD_PREEMPTIVE=y`, porque los
+hilos de red de Zephyr son cooperativos por defecto y superarían en prioridad al scan.
+
+El firmware arranca el runtime antes que cualquier servicio. Primero van la capa de hardware, el core, el scheduler
+con el program store y la restauración del programa almacenado, y el shell, que es el enlace de control, lo inicia
+Zephyr antes de `main()`. La red, el servicio de hora, los servidores de bus de campo y el aprovisionamiento MQTT o
+de nube arrancan después, y cada uno puede fallar: un servicio que no levanta se registra y se cuenta, y el runtime
+que ya está en marcha sigue funcionando. El registro de arranque nombra cada paso en el orden en que corrió.
+
 ## Plazos
 
 Un scan incumple su plazo cuando su tarea termina más de un intervalo después de la liberación del batch en que corrió: la tarea se liberó otra vez antes de terminar, o las tareas que la preceden en el batch consumieron su intervalo. Un incumplimiento tiene estos efectos, en este orden:

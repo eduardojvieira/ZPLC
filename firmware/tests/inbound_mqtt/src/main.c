@@ -6,9 +6,11 @@
  * files and the real configuration) receives hostile topics and payloads for
  * every profile, through the dispatch that a PUBLISH from the network goes
  * through. Behind it is a core that is not the real one: the entry points
- * that start, stop, force or load are traps that count a call, and the one
- * write that a message may cause, the force-aware write to a subscribed
- * variable, is a spy that records what it was asked to write.
+ * that start, stop, force or load are traps that count a call, the direct
+ * way into PLC memory (the live region, the image lock, the force-aware
+ * write) is a trap too, because a client reaches memory through the exchange
+ * only (RT-010), and the one write that a message may cause, the queued write
+ * to a subscribed variable, is a spy that records what it was asked to write.
  */
 #include <errno.h>
 #include <string.h>
@@ -20,6 +22,7 @@
 #include "proto/sparkplug_b.pb.h"
 
 #include <zplc_core.h>
+#include <zplc_exchange.h>
 #include <zplc_hal.h>
 #include <zplc_isa.h>
 
@@ -45,11 +48,9 @@ static int write_count;
 uint16_t zplc_core_get_tag_count(void) { return ARRAY_SIZE(tags); }
 const zplc_tag_entry_t *zplc_core_get_tag(uint16_t index)
 { return index < ARRAY_SIZE(tags) ? &tags[index] : NULL; }
-uint8_t *zplc_mem_get_region(uint16_t region)
-{ return region == ZPLC_MEM_WORK_BASE ? image : NULL; }
-int zplc_pi_lock(void) { lock_depth++; return 0; }
-void zplc_pi_unlock(void) { lock_depth--; }
-int zplc_force_write_bytes(uint16_t addr, const uint8_t *bytes, uint16_t size)
+
+/* The exchange: a write is recorded, a read is answered from the small image. */
+int zplc_exchange_write(uint16_t addr, const uint8_t *bytes, uint16_t size)
 {
 	if (write_count < (int)ARRAY_SIZE(writes)) {
 		writes[write_count].addr = addr;
@@ -59,6 +60,18 @@ int zplc_force_write_bytes(uint16_t addr, const uint8_t *bytes, uint16_t size)
 	write_count++;
 	return 0;
 }
+int zplc_exchange_read(uint16_t addr, uint8_t *out, uint16_t size)
+{
+	if (addr < ZPLC_MEM_WORK_BASE || (size_t)addr - ZPLC_MEM_WORK_BASE + size > sizeof(image)) {
+		return ZPLC_EXCHANGE_ERR_RANGE;
+	}
+	memcpy(out, &image[addr - ZPLC_MEM_WORK_BASE], size);
+	return 0;
+}
+int zplc_exchange_read_lock(void) { lock_depth++; return 0; }
+int zplc_exchange_read_locked(uint16_t addr, uint8_t *out, uint16_t size)
+{ return zplc_exchange_read(addr, out, size); }
+void zplc_exchange_read_unlock(void) { lock_depth--; }
 
 #define TRAP_INT(name, ...) int name(__VA_ARGS__) { authority_calls++; return -EPERM; }
 #define TRAP_VOID(name, ...) void name(__VA_ARGS__) { authority_calls++; }
@@ -73,6 +86,11 @@ TRAP_INT(zplc_force_set_bytes, uint16_t addr, const uint8_t *bytes, uint16_t siz
 TRAP_INT(zplc_force_clear, uint16_t addr)
 TRAP_VOID(zplc_force_clear_all, void)
 TRAP_INT(zplc_core_load, const uint8_t *binary, size_t size, uint8_t *workspace, size_t workspace_size)
+/* The direct way into PLC memory, round the exchange. */
+TRAP_INT(zplc_force_write_bytes, uint16_t addr, const uint8_t *bytes, uint16_t size)
+TRAP_INT(zplc_pi_lock, void)
+TRAP_VOID(zplc_pi_unlock, void)
+uint8_t *zplc_mem_get_region(uint16_t region) { authority_calls++; ARG_UNUSED(region); return NULL; }
 
 /* ---- the rest of what the client links against --------------------------- */
 int zplc_azure_sas_generate(const char *hub, const char *device, const char *key, uint32_t expiry_s,

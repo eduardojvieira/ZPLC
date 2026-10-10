@@ -588,7 +588,10 @@ static int zplc_aws_fleet_provision_locked(void)
         return -ENOMEM;
     }
 
-    k_sem_init(&s_aws_sem, 0, 1);
+    rc = k_sem_init(&s_aws_sem, 0, 1);
+    if (rc != 0) {
+        return rc;
+    }
     s_aws_connected = false;
     s_aws_subscribed = false;
     s_aws_done = false;

@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "motor-start-stop-safe",
+  "version": 1,
+  "order": 1,
+  "module": 2,
+  "level": "foundation",
+  "prerequisites": [
+    "blinky-ladder-timer-feedback"
+  ],
+  "languages": [
+    "ST"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "plant": null,
+  "estimatedMinutes": 20,
+  "starter": {
+    "project": "motor_start_stop_starter",
+    "program": "src/Motor.st"
+  },
+  "solution": {
+    "project": "motor_start_stop",
+    "program": "src/Motor.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "MotorStartStop",
+    "path": "tests/motor-start-stop.scenario.json",
+    "sha256": "b000cb58ba0d0908eaeb7136f4d9030fb331b7f530787dca4b3287a15ff761f4"
+  },
+  "regressionScenarios": []
+}

@@ -1,9 +1,4 @@
-export const NATIVE_SIMULATION_CHANNEL = {
-  START_SESSION: 'native-simulation:start-session',
-  STOP_SESSION: 'native-simulation:stop-session',
-  REQUEST: 'native-simulation:request',
-  EVENT: 'native-simulation:event',
-} as const;
+export { NATIVE_SIMULATION_CHANNEL } from './ipcContract.js';
 
 export interface NativeSimulationHelloResult {
   protocol_version: string;

@@ -31,7 +31,7 @@
     "file": "packages/zplc-ide/src/cli/toolApi.ts",
     "requirement": "IDE-014",
     "added": "2026-10-10",
-    "lines": 1138,
+    "lines": 1098,
     "reason": "Every tool operation (inspect, compile, check, safety, tests, scenarios, firmware) in one module. Split by operation family; the cancellable worker work (IDE-012) touches the same file. Recorded size raised from 1111 to 1138 once, by the merge of ws-integration (WS-20, WS-21, WS-22a added code here); from now on it can only shrink."
   },
   {
@@ -54,13 +54,6 @@
     "added": "2026-10-10",
     "lines": 1043,
     "reason": "Rung grid layout, drag and drop and cell rendering in one component; the visual-language work (WS-22a) edits it. Split after that lands."
-  },
-  {
-    "file": "packages/zplc-ide/electron/main.ts",
-    "requirement": "IDE-014",
-    "added": "2026-10-10",
-    "lines": 1001,
-    "reason": "Window, menus, IPC handlers and the native simulation host in one module; the IPC contract work (IDE-017, WS-24a) restructures it. Split into one module per handler family there."
   },
   {
     "file": "packages/zplc-ide/src/transpiler/ldToST.ts",

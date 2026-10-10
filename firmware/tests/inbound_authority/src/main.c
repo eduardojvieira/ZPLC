@@ -6,7 +6,11 @@
  * through the Modbus TCP framing and the write mapping of the product
  * (zplc_modbus_tcp.c, zplc_modbus.c) in front of a core whose authority
  * entries are traps. The framing, the mapping and the two address spaces are
- * the real ones; what answers is a process image of four bytes.
+ * the real ones. The server reaches PLC memory through the exchange only
+ * (RT-010): the exchange is a fake that keeps the bytes of a small image, and
+ * the direct entries of the core (the live region, the image lock, the
+ * force-aware write) are traps as well, so a server that went round the
+ * exchange would be counted.
  */
 #include <errno.h>
 #include <string.h>
@@ -14,26 +18,52 @@
 #include <zephyr/ztest.h>
 
 #include <zplc_core.h>
+#include <zplc_exchange.h>
 #include <zplc_isa.h>
 
 #include "zplc_config.h"
 #include "zplc_modbus_tcp.h"
 
-static uint8_t process_image[4096];
+static uint8_t process_image[4096]; /* WORK, based at 0x2000 */
 static zplc_tag_entry_t process_tags[2];
 static int authority_calls;
-static int pi_lock_depth;
+static int exchange_open; /* begin/read_lock calls not yet closed */
 
-/* ---- what the Modbus server may use of the core ---- */
+#define WORK_BASE 0x2000U
+
+/* ---- what the Modbus server may use: the exchange and the tag table ---- */
 int zplc_modbus_client_init(void) { return 0; }
 bool zplc_config_get_modbus_tag_override(uint16_t index, uint16_t width, uint32_t *address)
 { ARG_UNUSED(index); ARG_UNUSED(width); ARG_UNUSED(address); return false; }
 uint16_t zplc_config_get_modbus_id(void) { return 1U; }
 bool zplc_config_get_modbus_tcp_enabled(void) { return false; }
 bool zplc_config_get_modbus_rtu_enabled(void) { return false; }
-uint8_t *zplc_mem_get_region(uint16_t region) { return region == 0x2000U ? process_image : NULL; }
-int zplc_pi_lock(void) { pi_lock_depth++; return 0; }
-void zplc_pi_unlock(void) { pi_lock_depth--; }
+
+static bool inside_work(uint16_t addr, uint16_t size)
+{
+	return addr >= WORK_BASE && size != 0U && (size_t)addr + size <= WORK_BASE + sizeof(process_image);
+}
+int zplc_exchange_write_begin(size_t records, size_t bytes)
+{ ARG_UNUSED(records); ARG_UNUSED(bytes); exchange_open++; return 0; }
+int zplc_exchange_write_add(uint16_t addr, const uint8_t *bytes, uint16_t size)
+{
+	if (!inside_work(addr, size)) {
+		return ZPLC_EXCHANGE_ERR_RANGE;
+	}
+	memcpy(&process_image[addr - WORK_BASE], bytes, size);
+	return 0;
+}
+void zplc_exchange_write_end(void) { exchange_open--; }
+int zplc_exchange_read_lock(void) { exchange_open++; return 0; }
+int zplc_exchange_read_locked(uint16_t addr, uint8_t *out, uint16_t size)
+{
+	if (!inside_work(addr, size)) {
+		return ZPLC_EXCHANGE_ERR_RANGE;
+	}
+	memcpy(out, &process_image[addr - WORK_BASE], size);
+	return 0;
+}
+void zplc_exchange_read_unlock(void) { exchange_open--; }
 uint16_t zplc_core_get_tag_count(void) { return ARRAY_SIZE(process_tags); }
 const zplc_tag_entry_t *zplc_core_get_tag(uint16_t index)
 { return index < ARRAY_SIZE(process_tags) ? &process_tags[index] : NULL; }
@@ -53,6 +83,11 @@ TRAP_INT(zplc_force_set_bytes, uint16_t addr, const uint8_t *bytes, uint16_t siz
 TRAP_INT(zplc_force_clear, uint16_t addr)
 TRAP_VOID(zplc_force_clear_all, void)
 TRAP_INT(zplc_core_load, const uint8_t *binary, size_t size, uint8_t *workspace, size_t workspace_size)
+/* The direct way into PLC memory, round the exchange. */
+TRAP_INT(zplc_force_write_bytes, uint16_t addr, const uint8_t *bytes, uint16_t size)
+TRAP_INT(zplc_pi_lock, void)
+TRAP_VOID(zplc_pi_unlock, void)
+uint8_t *zplc_mem_get_region(uint16_t region) { authority_calls++; ARG_UNUSED(region); return NULL; }
 
 static int read_zero(uint16_t address, uint16_t count, uint8_t *out, size_t cap, bool bits,
 		     zplc_modbus_area_t area, void *context)
@@ -100,7 +135,7 @@ static void before(void *fixture)
 	process_tags[1] = (zplc_tag_entry_t){ .var_addr = 0x2002U, .var_type = ZPLC_TYPE_BOOL,
 					      .tag_id = ZPLC_TAG_MODBUS, .value = 5U };
 	authority_calls = 0;
-	pi_lock_depth = 0;
+	exchange_open = 0;
 }
 
 ZTEST(inbound_authority, test_no_function_code_reaches_run_stop_forces_or_download)
@@ -127,7 +162,7 @@ ZTEST(inbound_authority, test_no_function_code_reaches_run_stop_forces_or_downlo
 				zassert_equal(authority_calls, 0,
 					      "function code 0x%02X (%zu bytes) reached the runtime",
 					      fc, lengths[l]);
-				zassert_equal(pi_lock_depth, 0, "process image lock balanced");
+				zassert_equal(exchange_open, 0, "exchange begin/lock calls balanced");
 			}
 		}
 	}

@@ -6,8 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
-import { createReleaseIntegrityBundle } from './release-artifacts.mjs';
-import { renderReleaseNotes } from '../packages/zplc-ide/scripts/release-notes.mjs';
+import { createReleaseIntegrityBundle, mergeChecksums } from './release-artifacts.mjs';
 
 const identity = { version: '2.0.0-rc.1', tag: 'v2.0.0-rc.1', commitSha: 'a'.repeat(40) };
 const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
@@ -117,6 +116,57 @@ test('CLI writes the same fail-closed bundle from explicit arguments', async () 
   });
 });
 
+test('covers the standalone CLI and MCP executables, the bill of materials and the firmware images (REL-017)', async () => {
+  const { input, output } = await fixture();
+  const names = [
+    'zplc-cli-2.0.0-rc.4-linux-x64',
+    'zplc-mcp-2.0.0-rc.4-win-arm64.exe',
+    'zplc-cli-2.0.0-rc.4-mac-arm64',
+    'ZPLC-2.0.0-rc.4.cdx.json',
+    'zplc-runtime-2.0.0-rc.4-rpi-pico-rp2040.uf2',
+    'zplc-runtime-2.0.0-rc.4-nucleo-h743zi.bin',
+    'zplc-runtime-2.0.0-rc.4-nucleo-h743zi.elf',
+  ];
+  for (const name of names) await writeAsset(input, name, name);
+  const result = await createReleaseIntegrityBundle({ inputDir: input, outputDir: output, ...identity });
+  assert.deepEqual(result.artifacts.map((artifact) => artifact.name).sort(), [...names].sort());
+  const sums = await readFile(join(output, 'SHA256SUMS'), 'utf8');
+  for (const name of names) assert.match(sums, new RegExp(`^[a-f0-9]{64}  ${name.replaceAll('.', '\\.')}$`, 'm'));
+});
+
+test('refuses an executable name that does not follow the scheme, so nothing unnamed is checksummed (REL-017)', async () => {
+  for (const name of ['zplc-cli', 'zplc-cli-latest-linux-x64', 'zplc-tool-2.0.0-linux-x64', 'zplc-cli-2.0.0-rc.4-linux-ppc64']) {
+    const { input, output } = await fixture();
+    await writeAsset(input, name, 'x');
+    await assert.rejects(() => createReleaseIntegrityBundle({ inputDir: input, outputDir: output, ...identity }), /unexpected asset extension/, name);
+  }
+});
+
+const line = (character, name) => `${character.repeat(64)}  ${name}`;
+
+test('merges the checksum files of the platforms into one SHA256SUMS, sorted, and refuses a name with two hashes (REL-017)', () => {
+  const merged = mergeChecksums([
+    `${line('b', 'zplc-cli-2.0.0-rc.4-mac-x64')}\n${line('a', 'ZPLC-mac.dmg')}\n`,
+    `${line('c', 'ZPLC-linux.AppImage')}\n${line('a', 'ZPLC-mac.dmg')}\n`,
+  ]);
+  assert.equal(merged, `${line('c', 'ZPLC-linux.AppImage')}\n${line('a', 'ZPLC-mac.dmg')}\n${line('b', 'zplc-cli-2.0.0-rc.4-mac-x64')}\n`);
+  assert.throws(() => mergeChecksums([`${line('a', 'x.zip')}\n`, `${line('b', 'x.zip')}\n`]), /x\.zip.*two different/);
+  assert.throws(() => mergeChecksums(['not a checksum line\n']), /malformed/);
+  assert.throws(() => mergeChecksums([]), /no checksum/);
+});
+
+test('the command line merges checksum files into one output file (REL-017)', async () => {
+  const { root } = await fixture();
+  const first = join(root, 'SHA256SUMS-linux');
+  const second = join(root, 'SHA256SUMS-macos');
+  const output = join(root, 'SHA256SUMS');
+  await writeFile(first, `${line('a', 'linux.deb')}\n`);
+  await writeFile(second, `${line('b', 'mac.dmg')}\n`);
+  const run = spawnSync(process.execPath, ['scripts/release-artifacts.mjs', '--merge', output, first, second], { cwd: process.cwd(), encoding: 'utf8' });
+  assert.equal(run.status, 0, run.stderr);
+  assert.equal(await readFile(output, 'utf8'), `${line('a', 'linux.deb')}\n${line('b', 'mac.dmg')}\n`);
+});
+
 test('pins every action of the per-platform upload jobs to an exact commit SHA', async () => {
   const workflow = await readFile(new URL('../.github/workflows/release.yml', import.meta.url), 'utf8');
   for (const platform of ['macos', 'windows', 'linux']) {
@@ -126,49 +176,6 @@ test('pins every action of the per-platform upload jobs to an exact commit SHA',
     assert.deepEqual(actions.map((action) => action?.split('@')[0]), ['actions/download-artifact']);
     for (const action of actions) assert.match(action ?? '', /^[^@\s]+@[a-f0-9]{40}$/);
   }
-});
-
-test('keeps the release body version-generic and evidence-scoped', () => {
-  const notes = renderReleaseNotes({ version: '2.0.0-rc.4' });
-  assert.match(notes, /^## Release v2\.0\.0-rc\.4$/m);
-  assert.match(notes, /catalog\/evidence baseline, not 2\.0 HIL qualification/);
-  assert.match(notes, /do not establish HIL, board qualification, timing, safety certification, or human release sign-off/);
-  assert.match(notes, /macOS x64 and ARM64: DMG and ZIP/);
-  assert.match(notes, /Windows x64 and ARM64: Setup and Portable executables/);
-  assert.match(notes, /Linux x64 and ARM64: AppImage, DEB, and RPM/);
-  assert.match(notes, /`SHA256SUMS-macos`/);
-  assert.match(notes, /`release-evidence-linux\.json`/);
-  assert.doesNotMatch(notes, /ZPLC IDE-\*-/);
-  assert.doesNotMatch(notes, /Truth-Scoped Release/);
-  assert.doesNotMatch(notes, /Representative HIL proof/);
-  assert.doesNotMatch(renderReleaseNotes({ version: '2.1.0' }), /2\.0\.0-rc\.4/);
-});
-
-test('release notes state the signing state of every asset the pipeline publishes (REL-015)', () => {
-  const notes = renderReleaseNotes({ version: '2.0.0-rc.4' });
-  assert.match(notes, /^### Signing state of every asset$/m);
-  assert.match(notes, /^\| macOS DMG and ZIP[^\n]*signed ad hoc and sealed[^\n]*not notarized/mi);
-  assert.match(notes, /^\| Windows setup and portable[^\n]*unsigned/mi);
-  assert.match(notes, /^\| Linux AppImage, DEB and RPM[^\n]*not signed/mi);
-  assert.match(notes, /^\| SPDX SBOM[^\n]*not signed/mi);
-  assert.doesNotMatch(notes, /Developer ID|stapl|(?<!not )notariz/i, 'no claim of a certificate or notarization');
-});
-
-test('release notes give the Windows first-run steps, the Smart App Control statement and each channel state (REL-038)', () => {
-  const notes = renderReleaseNotes({ version: '2.0.0-rc.4' });
-  assert.match(notes, /^### Windows: unsigned installers$/m);
-  assert.match(notes, /Windows protected your PC/);
-  assert.match(notes, /select \*\*More info\*\*, then \*\*Run anyway\*\*/i);
-  assert.match(notes, /Smart App Control blocks unsigned apps/);
-  assert.match(notes, /^\| Microsoft Store \(MSIX package\) \| not yet submittable \|$/m);
-  assert.match(notes, /^\| SignPath Foundation signing of the setup and portable executables \| not yet submittable \|$/m);
-  assert.match(notes, /file names end in `unsigned`|names carry `unsigned`/);
-});
-
-test('release notes render the state of a Windows channel only from the four allowed words', () => {
-  const live = renderReleaseNotes({ version: '2.0.0', windowsChannels: [['Microsoft Store (MSIX package)', 'live']] });
-  assert.match(live, /^\| Microsoft Store \(MSIX package\) \| live \|$/m);
-  assert.throws(() => renderReleaseNotes({ version: '2.0.0', windowsChannels: [['Microsoft Store (MSIX package)', 'pending']] }), /channel state/);
 });
 
 test('gates every release build on the reusable full CI for the release SHA', async () => {

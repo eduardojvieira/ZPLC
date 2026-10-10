@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Temporal assertions and jam fault",
+  "summary": "Latch the jam fault and prove its timing with AT, WITHIN, FOR, UNTIL, RISING, and FALLING assertions.",
+  "scope": "Tests provide native POSIX host runtime and discrete-input evidence only; the scheduled jam is not a physical fault, physical clearance, target timing, HIL, or certification evidence.",
+  "objectives": [
+    "Latch the jam fault and prove its timing with temporal assertions.",
+    "Require a new Start before the belt moves again after the fault is released."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "Read tests/conveyor-jam-timing.scenario.json next to src/Conveyor.st. Start is pressed at {{t:0}} ms, a jam appears at {{t:30}} ms and clears at {{t:50}} ms, Reset is pressed at {{t:40}} ms (jam present) and at {{t:60}} ms (jam cleared), and Start is pressed again at {{t:80}} ms.",
+      "checkpoint": "The starter must latch the jam fault (building on lesson 4) before the scenario can pass."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, predict BeltCommand and FaultLamp at {{t:20}}, {{t:30}}, {{t:50}}, {{t:60}}, and {{t:80}} ms.",
+      "checkpoint": "Belt ON and FaultLamp OFF at {{t:20}}; Belt OFF and FaultLamp ON at {{t:30}} and still at {{t:50}} (Reset at {{t:40}} is ignored and the jam clearing does not release the fault); both OFF at {{t:60}}; Belt ON again at {{t:80}} only after the new Start."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then run: The starter misses the jam latch; latch the fault on JamDetected, ignore Reset while the jam is present, release it only with Reset after the jam clears, and require a new Start to run the belt again.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "In Tests, choose the saved zplc.json and run only ConveyorJamTiming; Conveyor01 is the lesson 4 scenario and stays a regression check.",
+      "checkpoint": "The required scenario is named ConveyorJamTiming and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Compare",
+      "body": "Match each assertion to the trace: AT at {{t:20}}, {{t:50}}, and {{t:60}} ms pins the exact states; WITHIN at {{t:30}} ms proves the fault appears in the same scan as the jam; FOR from {{t:30}} to {{t:50}} ms holds across the early Reset; FALLING at {{t:60}} ms shows Reset released the lamp; UNTIL keeps the belt OFF until the new Start; RISING at {{t:80}} ms finds the restart.",
+      "checkpoint": "The recorded trace shows the discrete sequence, not a physical measurement."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "NEVER forbids BeltCommand and FaultLamp ON together in this scenario. A Reset while the jam is present must not release the fault, and releasing it must not restart the belt.",
+      "checkpoint": "An injected jam does not establish a physical fault, physical clearance, target timing, HIL, or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Build on lesson 4: JamDetected latches Faulted, and a Reset only counts when the jam input is gone; read the scenario times to see which Reset must be ignored."
+    },
+    {
+      "level": 2,
+      "text": "Clear Requested and StartArmed when the jam appears, release Faulted only with Reset while JamDetected is FALSE, and let Requested come back only from a Start pressed after Start was seen released."
+    }
+  ],
+  "faultCases": [
+    "The starter misses the jam latch; latch the fault on JamDetected, ignore Reset while the jam is present, release it only with Reset after the jam clears, and require a new Start to run the belt again."
+  ]
+}

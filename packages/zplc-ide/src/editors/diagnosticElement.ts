@@ -7,7 +7,7 @@
  */
 
 import { transpileToST } from '../compiler';
-import { elementAtLine, type SourceElementId } from '../models/sourceElements';
+import { elementAtLine, isSourceElementId, type SourceElementId } from '../models/sourceElements';
 import type { ProjectBlock } from '../models/projectBlocks';
 import type { PLCLanguage } from '../types';
 
@@ -23,4 +23,18 @@ export function elementOfDiagnostic(
     return translated.diagnostics?.find((found) => found.element !== undefined && diagnostic.message.includes(found.message))?.element;
   }
   return diagnostic.line === undefined || diagnostic.line < 1 ? undefined : elementAtLine(translated.sourceMap, diagnostic.line);
+}
+
+/**
+ * The element a Problems entry selects when it is opened: the one the build carried with the diagnostic (it names the
+ * element the Tool API attached, whatever the file open in the window holds now), else the one the translation of the
+ * open file gives.
+ */
+export function elementToSelect(
+  diagnostic: { message: string; line?: number; element?: string },
+  file: { language: PLCLanguage; content: string } | undefined,
+  projectBlocks?: readonly ProjectBlock[],
+): SourceElementId | undefined {
+  if (isSourceElementId(diagnostic.element)) return diagnostic.element;
+  return file ? elementOfDiagnostic(file, diagnostic, projectBlocks) : undefined;
 }

@@ -33,10 +33,12 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DiffEditor, type Monaco } from './monacoRuntime';
+import { shownProjectBridge } from '../ipc/shownProjectBridge';
+import { trackTestRun } from './workspaceTestNotifications';
 import { useIDEStore } from '../store/useIDEStore';
 import type { ConsoleEntry, ConsoleTab } from '../types';
 import { TerminalTab } from './TerminalTab';
-import { DebugWatchPanel } from './DebugWatchPanel';
+import { WatchTab } from './WatchTab';
 import type { DebugController } from '../hooks/useDebugController';
 import { classifyWorkspaceTestBuildLink, isWorkspaceManifestRegistrationCurrent, isWorkspaceTestRunCurrent, presentCandidateChangeSetReview, presentRecordedConveyorPlant, presentRecordedMotorPlant, presentRecordedMotorOutput, presentRecordedPedestrianCrossing, presentRecordedTankLevel, presentWorkspaceTestResult, workspaceTestAvailability, workspaceTestRunFallbackState, type CandidateChangeSetReviewPresentation, type WorkspaceTestPresentation } from './workspaceTestPresentation';
 import { findFileInTree, readFileContent } from '../utils/fileSystem';
@@ -51,7 +53,7 @@ import { DevFaultProbe } from './DevFaultProbe';
 import { WorkbenchInspector } from './WorkbenchInspector';
 import { LearnPanel } from './LearnPanel';
 import { LabPanel } from './LabPanel';
-import { elementOfDiagnostic } from '../editors/diagnosticElement';
+import { elementToSelect } from '../editors/diagnosticElement';
 import { requestElementSelection } from '../editors/elementSelectionRequests';
 import { useProjectBlocks } from '../editors/useProjectBlocks';
 import { presentAiProviderConfig, presentAiProviderMutation, presentAiProviderResponse, presentAiProviderStatus, type AiProviderMode, type AiProviderResponsePresentation, type AiProviderStatusPresentation } from './aiProviderPresentation';
@@ -125,7 +127,7 @@ export function Console({ debugController }: ConsoleProps) {
   const [workspaceTestState, setWorkspaceTestState] = useState<'idle' | 'selected' | 'running' | 'cancelling' | 'desktop-unavailable' | WorkspaceTestResultState>('idle');
   const [workspaceSafetyState, setWorkspaceSafetyState] = useState<WorkspaceSafetyState>('idle');
   const workspaceManifestInputRef = useRef<HTMLInputElement>(null);
-  const workspaceTests = window.electronAPI?.workspaceTests;
+  const workspaceTests = shownProjectBridge(window.electronAPI?.workspaceTests);
   const candidateChangeSet = window.electronAPI?.candidateChangeSet;
   const aiProvider = window.electronAPI?.aiProvider;
   const candidateDesktopReady = Boolean(candidateChangeSet && workspaceTests);
@@ -185,12 +187,12 @@ export function Console({ debugController }: ConsoleProps) {
   const problemSummary = `${errorCount} ${errorCount === 1 ? 'error' : 'errors'} · ${warningCount} ${warningCount === 1 ? 'warning' : 'warnings'}`;
 
   // Opening a problem opens its file at its position, and in a diagram selects the element it is about (LNG-003)
-  const activateDiagnostic = async (msg: { file?: string; line?: number; column?: number; message: string }) => {
+  const activateDiagnostic = async (msg: { file?: string; line?: number; column?: number; message: string; element?: string }) => {
     if (!msg.file) return;
     const opened = await navigateToCompilerDiagnostic(msg.file, msg.line && msg.line >= 1 ? msg.line : 1, msg.column ?? 1);
     if (!opened) return;
     const file = [...useIDEStore.getState().loadedFiles.values()].find((candidate) => candidate.path === msg.file);
-    const element = file ? elementOfDiagnostic(file, msg, projectBlocks) : undefined;
+    const element = elementToSelect(msg, file, projectBlocks);
     if (element) requestElementSelection(msg.file, element);
   };
 
@@ -337,18 +339,21 @@ export function Console({ debugController }: ConsoleProps) {
     const expectedCompilerRunId = current.compilerRunId;
     setWorkspaceTestBusy(true);
     setWorkspaceTestState('running');
+    const notice = trackTestRun(scenarioId, () => { void workspaceTests.cancel().catch(() => undefined); });
     try {
       const request = { workspaceId, ...(scenarioId === undefined ? {} : { scenarioId }) };
       const result = await workspaceTests.run(request);
       const latest = useIDEStore.getState();
       if (isWorkspaceTestRunCurrent(latest, { projectSession: expectedProjectSession, compilerRunId: expectedCompilerRunId, workspaceId })) {
         setWorkspaceTestState({ presentation: presentWorkspaceTestResult(result), projectSession: expectedProjectSession, compilerRunId: expectedCompilerRunId, workspaceId });
-      }
+        notice.done(result);
+      } else notice.dismiss();
     } catch {
       const latest = useIDEStore.getState();
       if (isWorkspaceTestRunCurrent(latest, { projectSession: expectedProjectSession, compilerRunId: expectedCompilerRunId, workspaceId })) {
         setWorkspaceTestState('desktop-unavailable');
-      }
+        notice.unavailable();
+      } else notice.dismiss();
     } finally {
       setWorkspaceTestBusy(false);
       const latest = useIDEStore.getState();
@@ -951,12 +956,7 @@ export function Console({ debugController }: ConsoleProps) {
         )}
 
         {activeConsoleTab === 'watch' && (
-          <DebugWatchPanel
-            setValue={debugController?.setValue}
-            toggleForceValue={debugController?.toggleForceValue}
-            clearAllForcedValues={debugController?.clearAllForcedValues}
-            hasActiveSerialSession={debugController?.adapter?.type === 'serial' && debugController.adapter.connected}
-          />
+          <WatchTab controller={debugController} />
         )}
         </ErrorBoundary>
       </div>

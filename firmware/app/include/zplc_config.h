@@ -219,14 +219,12 @@ int zplc_config_set_modbus_tag_override(uint16_t index,
                                          uint16_t register_count);
 int zplc_config_clear_modbus_tag_override(uint16_t index);
 
-#if defined(CONFIG_ZTEST)
-void zplc_config_test_set_modbus_override_publish_hook(void (*hook)(void));
-/** Makes the settings store fail with `error` once `entries` entries are written (-1: never). */
-void zplc_config_test_fail_store_after(int entries, int error);
-/** Number of persisted settings. */
-size_t zplc_config_test_row_count(void);
-/** The name and current value of persisted setting `index`; NULL past the end. */
-const char *zplc_config_test_row(size_t index, uint8_t *value, size_t *length);
+/* Priority of the application threads that talk to the outside (RT-013): CONFIG_ZPLC_COMM_THREAD_PRIORITY
+ * when the module is configured, its default for a test build that compiles one source of the application. */
+#ifdef CONFIG_ZPLC_COMM_THREAD_PRIORITY
+#define ZPLC_COMM_THREAD_PRIORITY CONFIG_ZPLC_COMM_THREAD_PRIORITY
+#else
+#define ZPLC_COMM_THREAD_PRIORITY 8
 #endif
 
 int zplc_modbus_init(void);

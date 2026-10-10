@@ -49,6 +49,31 @@ class CrossBuildMatrixTests(unittest.TestCase):
         )
         self.assertEqual(["board/first", "board/second"], boards)
 
+    def test_tidy_board_key_is_accepted_after_board_and_not_counted_as_a_board(self) -> None:
+        boards = self.read(
+            workflow(
+                """          - id: first
+            board: board/first
+            tidy_board: first-board
+          - id: second
+            board: board/second
+            tidy_board: second-board
+"""
+            )
+        )
+        self.assertEqual(["board/first", "board/second"], boards)
+
+    def test_tidy_board_key_before_board_is_still_malformed(self) -> None:
+        with self.assertRaises(ValueError):
+            self.read(
+                workflow(
+                    """          - id: first
+            tidy_board: first-board
+            board: board/first
+"""
+                )
+            )
+
     def test_foreign_board_does_not_compensate_for_missing_include_board(self) -> None:
         boards = self.read(
             workflow(

@@ -11,6 +11,8 @@ tags: [operations, debugging, shell]
 
 ZPLC adds a `zplc` command set to the Zephyr shell on the board's interactive UART (usually 115200 baud).
 
+Every subcommand, with its arguments and the Kconfig symbol that enables it, is in the generated [shell command reference](../reference/shell-commands.md).
+
 From a terminal you can inspect memory, check the network, read execution errors and control the virtual machine without the desktop IDE.
 
 ## Accessing the Shell
@@ -28,8 +30,8 @@ Start every command with `zplc`.
 - `zplc start` - Starts the scheduler.
 - `zplc stop` - Stops the scheduler.
 - `zplc status` - Shows the runtime state. While MQTT is enabled over TLS with certificate verification off, it also shows `WARNING: MQTT tls-verify: OFF` (`"warnings":["mqtt_tls_verify_off"]` in `--json`).
-- `zplc reset` - Resets the virtual machine.
-- `zplc version` - Shows the version.
+- `zplc reset` - Reloads the loaded program from the program store and leaves the scheduler stopped. The store is the only resident copy of the program, so an upload in progress is cancelled. With no program loaded it only stops the scheduler and clears its tasks.
+- `zplc version` - Shows which build this is: the version, the commit the image was built from (and whether the working tree had uncommitted changes), the board, the bytecode ABI, the contract draft and the build options with their hash. It prints no build date, so two builds of one commit are the same image. The same text is `zplc sys build`.
 
 ---
 
@@ -64,6 +66,11 @@ The `dbg` commands give you direct access to the execution state, memory and bre
 - `zplc dbg watch <addr> [type]` - Reads one value from a PLC memory region and prints it in the type you name: `bool`, `i8`, `i16`, `i32`, `u8` (the default), `u16`, `u32` or `f32`. It is a snapshot, not a stream: Studio's Watch tab polls the same memory.
 
 Every command of the `zplc` set that takes an address works inside the four PLC regions (input image, output image, work and retain) and refuses an address outside them. Reading or writing any other address of the device is the `devmem` command of the Zephyr shell, which release firmware does not have: see [Raw memory](#raw-memory-diagnostic-firmware-only).
+
+Reads (`mpeek`, `mem`, `info`) come from the snapshot the scan published at its last commit, so a value is whole and
+from one scan, and a read never waits for a scan. A `poke` is queued and applied at the input latch of the next scan
+through the force-aware interface: a forced address keeps its forced value. While the runtime is stopped there is no
+scan and the write is applied at once.
 
 ### Ticks, Tasks and Timers
 - `zplc dbg ticks` - Prints the system tick count in milliseconds.
@@ -167,5 +174,6 @@ ZPLC can synchronize the clock over SNTP.
 
 These commands are available when the firmware is built with `CONFIG_ZPLC_SCHEDULER`.
 
-- `zplc sys info` - Shows the system information, including build and hardware details. `--json` also reports the `draft_counter` of the image; a program built for another draft is refused (see [Contributing](../contributing/index.md#draft-contract-counter)).
+- `zplc sys info` - Shows the system information, including build and hardware details. `--json` also reports the `draft_counter` of the image and, under `memory`, `code_size` and `max_artifact_size`, the largest program the board accepts (`CONFIG_ZPLC_CODE_SIZE_MAX`); a program built for another draft is refused (see [Contributing](../contributing/index.md#draft-contract-counter)).
+- `zplc sys build` - Shows the identity of the firmware image, as `zplc version` does. `--json` prints it as one object with `version`, `commit`, `dirty`, `board`, `abi_major`, `abi_minor`, `draft_counter`, `options_hash` and `options`. `commit` is `unknown` when the image was built from a source archive with no git history. It is a command of its own because Studio's handshake accepts exactly the keys of `zplc sys info --json`.
 - `zplc sys reboot` - Reboots the board with a software reset.

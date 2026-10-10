@@ -1,6 +1,7 @@
 #include "zplc_config.h"
 
 #include <zplc_core.h>
+#include <zplc_exchange.h>
 #include <zplc_isa.h>
 
 #include <zephyr/devicetree.h>
@@ -58,46 +59,40 @@ static uint16_t modbus_register_width(zplc_data_type_t type)
     }
 }
 
-static void mem_write_val(uint16_t addr, zplc_data_type_t type, uint32_t val)
+/* A value polled from a remote device is an external write like any other: it is queued whole and applied by the
+ * scan at its next input latch, through the force-aware interface of the core, so a forced variable keeps its
+ * forced value and the scan never sees a half-written one (RT-010, RT-011). */
+static int mem_write_val(uint16_t addr, zplc_data_type_t type, uint32_t val)
 {
-    uint16_t base = addr & 0xF000U;
-    uint16_t offset = addr & 0x0FFFU;
-    uint8_t *region;
-
-    if (base == 0x2000U || base == 0x3000U) {
-        base = 0x2000U;
-    }
-
-    region = zplc_mem_get_region(base);
-    if (region == NULL) {
-        return;
-    }
+    uint8_t bytes[4];
+    uint16_t size;
 
     switch (type) {
     case ZPLC_TYPE_BOOL:
     case ZPLC_TYPE_SINT:
     case ZPLC_TYPE_USINT:
     case ZPLC_TYPE_BYTE:
-        region[offset] = (uint8_t)(val & 0xFFU);
+        size = 1U;
         break;
     case ZPLC_TYPE_INT:
     case ZPLC_TYPE_UINT:
     case ZPLC_TYPE_WORD:
-        region[offset] = (uint8_t)(val & 0xFFU);
-        region[offset + 1U] = (uint8_t)((val >> 8) & 0xFFU);
+        size = 2U;
         break;
     case ZPLC_TYPE_REAL:
     case ZPLC_TYPE_DINT:
     case ZPLC_TYPE_UDINT:
     case ZPLC_TYPE_DWORD:
-        region[offset] = (uint8_t)(val & 0xFFU);
-        region[offset + 1U] = (uint8_t)((val >> 8) & 0xFFU);
-        region[offset + 2U] = (uint8_t)((val >> 16) & 0xFFU);
-        region[offset + 3U] = (uint8_t)((val >> 24) & 0xFFU);
+        size = 4U;
         break;
     default:
-        break;
+        return -EINVAL;
     }
+    bytes[0] = (uint8_t)(val & 0xFFU);
+    bytes[1] = (uint8_t)((val >> 8) & 0xFFU);
+    bytes[2] = (uint8_t)((val >> 16) & 0xFFU);
+    bytes[3] = (uint8_t)((val >> 24) & 0xFFU);
+    return zplc_exchange_write(addr, bytes, size) == 0 ? 0 : -EINVAL;
 }
 
 #if ZPLC_HAS_MODBUS_RTU
@@ -547,9 +542,10 @@ static int poll_modbus_tags(bool use_tcp)
 
         value = (width == 2U) ? (((uint32_t)regs[0] << 16) | regs[1]) : regs[0];
 
-        zplc_pi_lock();
-        mem_write_val(tag->var_addr, (zplc_data_type_t)tag->var_type, value);
-        zplc_pi_unlock();
+        rc = mem_write_val(tag->var_addr, (zplc_data_type_t)tag->var_type, value);
+        if (rc != 0) {
+            return rc;
+        }
     }
 
     return 0;
@@ -604,7 +600,7 @@ int zplc_modbus_client_init(void)
             k_thread_create(&s_rtu_client_thread, s_rtu_client_stack,
                             K_THREAD_STACK_SIZEOF(s_rtu_client_stack),
                             modbus_rtu_client_thread, NULL, NULL, NULL,
-                            K_PRIO_PREEMPT(8), 0, K_NO_WAIT);
+                            K_PRIO_PREEMPT(ZPLC_COMM_THREAD_PRIORITY), 0, K_NO_WAIT);
             k_thread_name_set(&s_rtu_client_thread, "modbus_rtu_client");
         } else {
             LOG_WRN("Modbus RTU client init skipped");
@@ -616,7 +612,7 @@ int zplc_modbus_client_init(void)
         k_thread_create(&s_tcp_client_thread, s_tcp_client_stack,
                         K_THREAD_STACK_SIZEOF(s_tcp_client_stack),
                         modbus_tcp_client_thread, NULL, NULL, NULL,
-                        K_PRIO_PREEMPT(8), 0, K_NO_WAIT);
+                        K_PRIO_PREEMPT(ZPLC_COMM_THREAD_PRIORITY), 0, K_NO_WAIT);
         k_thread_name_set(&s_tcp_client_thread, "modbus_tcp_client");
 #else
         LOG_WRN("Modbus TCP client disabled: NET_SOCKETS not enabled");

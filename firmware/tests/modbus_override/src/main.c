@@ -5,6 +5,7 @@
 #include <zephyr/ztest.h>
 
 #include "zplc_config.h"
+#include "zplc_app_test_hooks.h"
 
 K_THREAD_STACK_DEFINE(writer_stack, 2048);
 K_THREAD_STACK_DEFINE(reader_stack, 2048);

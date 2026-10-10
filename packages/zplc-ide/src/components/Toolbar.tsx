@@ -41,7 +41,6 @@ import { useIDEStore } from '../store/useIDEStore';
 import { useTheme } from '../hooks/useTheme';
 import { useDebugController } from '../hooks/useDebugController';
 import { ZPLC_CONSTANTS } from '@zplc/compiler';
-import { transpileToST } from '../compiler';
 import type { DebugMap } from '../compiler';
 import { GeneratedCodeDialog } from './GeneratedCodeDialog';
 import { ProjectExportItems } from './ProjectExportItems';
@@ -49,6 +48,7 @@ import {
   canRunCurrentProgram,
   HARDWARE_DEPLOY_UNCONFIRMED_MESSAGE,
   isCompileResultCurrent,
+  type LastCompileResult,
   nextProgramLoadStateAfterDeploy,
   nextProgramLoadStateAfterCompile,
   nextProgramLoadStateAfterConnect,
@@ -57,7 +57,12 @@ import {
 } from './debugSessionState';
 import { EXECUTION_MODE, selectRuntimeArtifact, type ExecutionMode } from './runtimeArtifactSelection';
 import { OperationalStatusBar } from './OperationalStatusBar';
+import { generateStructuredText } from './visualToStructuredText';
+import { downloadBlob } from '../utils/downloadBlob';
 import { isWorkspaceTestRunCurrent, presentWorkspaceCompileResult, resolveWorkspaceCompileRoute } from './workspaceTestPresentation';
+import { shownProjectBridge } from '../ipc/shownProjectBridge';
+import { useNotifications } from '../store/notifications';
+import { Notifications } from './Notifications';
 import { canLinkProjectWorkspace, linkProjectWorkspace } from '../utils/workspaceTestLink';
 import { createHardwareDeployConfirmation } from './hardwareDeployConfirmation';
 import { DeviceAdmissionError, DEVICE_ADMISSION_CODE } from '../runtime/deviceHandshake';
@@ -164,18 +169,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
   const [generatedCodeType, setGeneratedCodeType] = useState<'FBD' | 'LD' | 'SFC' | 'ASM'>('ASM');
 
   // State for last successful compilation result
-  const [lastCompileResult, setLastCompileResult] = useState<{
-    bytecode: Uint8Array;
-    zplcFile: Uint8Array;
-    assembly: string;
-    fileName: string;
-    codeSize: number;
-    hasTaskSegment: boolean;
-    taskCount: number;
-    debugMap: DebugMap;
-    revision: number;
-    compilerRunId: number;
-  } | null>(null);
+  const [lastCompileResult, setLastCompileResult] = useState<LastCompileResult | null>(null);
 
   // Get the active file
   const activeFile = getActiveFile();
@@ -238,41 +232,23 @@ export function Toolbar({ debugController }: ToolbarProps) {
       return;
     }
 
-    await saveFile(activeFileId);
-
+    const saved = await saveFile(activeFileId);
+    useNotifications.getState().report(saved ? { kind: 'save', status: 'success', title: `Saved ${activeFile.name}`, details: 'output' }
+      : { kind: 'save', status: 'error', title: `Could not save ${activeFile.name}`, detail: 'The file stays modified. The Output panel has the reason.', details: 'output' });
   };
 
   // ==========================================================================
   // Transpiler (Visual -> ST)
   // ==========================================================================
 
-  const generateSTFromVisual = (): { source: string; success: boolean } | null => {
-    if (!activeFile) return null;
-
-    try {
-      if (activeFile.language === 'FBD' || activeFile.language === 'LD' || activeFile.language === 'SFC') {
-        const result = transpileToST(activeFile.content, activeFile.language);
-        if (!result.success) {
-          result.errors.forEach(err => addConsoleEntry({ type: 'error', message: err, source: 'transpiler' }));
-          return null;
-        }
-        return { source: result.source, success: true };
-      }
-    } catch (e) {
-      addConsoleEntry({ type: 'error', message: `Transpiler error: ${e instanceof Error ? e.message : String(e)}`, source: 'transpiler' });
-      return null;
-    }
-    return null;
-  };
-
   const handleGenerateST = () => {
     if (!activeFile) return;
     addConsoleEntry({ type: 'info', message: `Transpiling ${activeFile.language} to Structured Text...`, source: 'transpiler' });
 
-    const result = generateSTFromVisual();
-    if (result?.success) {
-      addConsoleEntry({ type: 'success', message: `Generated ${result.source.split('\n').length} lines of Structured Text`, source: 'transpiler' });
-      setGeneratedCode(result.source);
+    const source = generateStructuredText(activeFile, addConsoleEntry);
+    if (source !== null) {
+      addConsoleEntry({ type: 'success', message: `Generated ${source.split('\n').length} lines of Structured Text`, source: 'transpiler' });
+      setGeneratedCode(source);
       setGeneratedCodeType(activeFile.language as 'FBD' | 'LD' | 'SFC');
       setShowGeneratedCode(true);
     }
@@ -294,7 +270,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     const isCurrentRun = () => useIDEStore.getState().compilerRunId === compilerRunId;
     setIsCompileMenuOpen(false);
 
-    const workspaceTests = window.electronAPI?.workspaceTests;
+    const workspaceTests = shownProjectBridge(window.electronAPI?.workspaceTests);
     const currentWorkspaceLink = workspaceScenarioLink?.projectSession === projectSession ? workspaceScenarioLink : null;
     const workspaceCompileRoute = resolveWorkspaceCompileRoute({
       isElectronHost: window.electronAPI !== undefined || navigator.userAgent.includes('Electron/'),
@@ -316,6 +292,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
           : 'Save changes before building the saved workspace.';
       addConsoleEntry({ type: 'error', message, source: 'compiler' });
       addCompilerMessage({ type: 'error', message });
+      useNotifications.getState().report({ kind: 'build', status: 'error', title: 'Build did not start', detail: message, details: 'tests' });
       return;
     }
 
@@ -329,24 +306,35 @@ export function Toolbar({ debugController }: ToolbarProps) {
         addConsoleEntry({ type: 'error', message, source: 'compiler' });
         addCompilerMessage({ type: 'error', message });
         markCompilerMessagesChecked();
+        useNotifications.getState().report({ kind: 'build', status: 'error', title: 'Build did not start', detail: message, details: 'problems' });
         return;
       }
       const workspaceId = link.workspaceId;
       const expected = { projectSession, compilerRunId, workspaceId };
       addConsoleEntry({ type: 'info', message: 'Building saved workspace locally...', source: 'compiler' });
+      let cancelRequested = false;
+      const notices = useNotifications.getState();
+      const operation = notices.begin({
+        kind: 'build', title: 'Building project', details: 'output',
+        cancel: () => { cancelRequested = true; void workspaceTests.cancel().catch(() => undefined); },
+      });
       try {
         const response = await workspaceTests.compile({ workspaceId });
         const latest = useIDEStore.getState();
-        if (!isWorkspaceTestRunCurrent(latest, expected)) return;
+        if (!isWorkspaceTestRunCurrent(latest, expected)) { notices.dismiss(operation); return; }
         const canonical = presentWorkspaceCompileResult(response);
         if (!canonical.ok) {
+          notices.finish(operation, {
+            kind: 'build', status: 'error', title: 'Build failed', details: 'problems',
+            detail: canonical.diagnostics[0] ? `${canonical.diagnostics[0].path ? `${canonical.diagnostics[0].path}: ` : ''}${canonical.diagnostics[0].message}` : undefined,
+          });
           revealCompileProblems();
           addConsoleEntry({ type: 'error', message: 'Canonical workspace build failed', source: 'compiler' });
           if (canonical.diagnostics.length === 0) {
             addCompilerMessage({ type: 'error', message: 'Canonical workspace build failed' });
           }
           for (const diagnostic of canonical.diagnostics) {
-            addCompilerMessage({ type: 'error', message: diagnostic.message, ...(diagnostic.path ? { file: diagnostic.path } : {}), ...(diagnostic.line ? { line: diagnostic.line } : {}), ...(diagnostic.column ? { column: diagnostic.column } : {}) });
+            addCompilerMessage({ type: 'error', message: diagnostic.message, ...(diagnostic.path ? { file: diagnostic.path } : {}), ...(diagnostic.line ? { line: diagnostic.line } : {}), ...(diagnostic.column ? { column: diagnostic.column } : {}), ...(diagnostic.element ? { element: diagnostic.element } : {}) });
           }
           markCompilerMessagesChecked();
           return;
@@ -373,13 +361,20 @@ export function Toolbar({ debugController }: ToolbarProps) {
         setProgramLoadState(nextProgramLoadStateAfterCompile());
         addConsoleEntry({ type: 'success', message: `Built saved workspace locally: ${canonical.artifact.zplcFile.length} bytes (${canonical.summary.codeSize} code, ${canonical.summary.taskCount} tasks, contract draft ${ZPLC_CONSTANTS.DRAFT_COUNTER})`, source: 'compiler' });
         markCompilerMessagesChecked();
+        notices.finish(operation, { kind: 'build', status: 'success', title: 'Build succeeded', detail: `${canonical.summary.name}: ${canonical.artifact.zplcFile.length} bytes, ${canonical.summary.taskCount} task${canonical.summary.taskCount === 1 ? '' : 's'}`, details: 'output' });
       } catch {
         const latest = useIDEStore.getState();
-        if (!isWorkspaceTestRunCurrent(latest, expected)) return;
+        if (!isWorkspaceTestRunCurrent(latest, expected)) { notices.dismiss(operation); return; }
+        if (cancelRequested) {
+          addConsoleEntry({ type: 'warning', message: 'Build cancelled', source: 'compiler' });
+          notices.finish(operation, { kind: 'build', status: 'cancelled', title: 'Build cancelled', detail: 'No artifact was kept.', details: 'output' });
+          return;
+        }
         revealCompileProblems();
         addConsoleEntry({ type: 'error', message: 'Canonical workspace build failed', source: 'compiler' });
         addCompilerMessage({ type: 'error', message: 'Canonical workspace build failed' });
         markCompilerMessagesChecked();
+        notices.finish(operation, { kind: 'build', status: 'error', title: 'Build failed', detail: 'The compiler could not finish. The Problems panel has what it reported.', details: 'problems' });
       }
       return;
     }
@@ -402,17 +397,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     setIsCompileMenuOpen(false);
 
     try {
-      const binaryData = new Uint8Array(result.zplcFile);
-      const blob = new Blob([binaryData.buffer], { type: 'application/octet-stream' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = result.fileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
+      downloadBlob(new Blob([new Uint8Array(result.zplcFile).buffer], { type: 'application/octet-stream' }), result.fileName);
       addConsoleEntry({ type: 'success', message: `Downloaded: ${result.fileName}`, source: 'system' });
     } catch (e) {
       addConsoleEntry({ type: 'error', message: `Failed to download: ${e instanceof Error ? e.message : String(e)}`, source: 'system' });
@@ -440,25 +425,33 @@ export function Toolbar({ debugController }: ToolbarProps) {
 
     pendingConnectionFocusRef.current = !isConnected;
     setIsConnecting(true);
+    const notices = useNotifications.getState();
+    const operation = notices.begin({ kind: 'connection', title: isConnected ? 'Disconnecting' : executionMode === 'simulate' ? 'Starting the simulator' : 'Connecting to the device', details: 'output' });
     try {
       if (isConnected) {
         await disconnect();
         setProgramLoadState(nextProgramLoadStateAfterConnect());
+        notices.finish(operation, { kind: 'connection', status: 'success', title: 'Disconnected', details: 'output' });
         return;
       }
       if (executionMode === 'simulate') {
         await startSimulation();
         setProgramLoadState(nextProgramLoadStateAfterConnect());
         addConsoleEntry({ type: 'success', message: 'Simulator ready', source: 'runtime' });
+        notices.finish(operation, { kind: 'connection', status: 'success', title: 'Simulator ready', details: 'output' });
       } else {
         await connectHardware();
         setProgramLoadState(nextProgramLoadStateAfterConnect());
         addConsoleEntry({ type: 'success', message: 'Hardware connected', source: 'runtime' });
+        notices.finish(operation, { kind: 'connection', status: 'success', title: 'Device connected', details: 'output' });
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       if (!msg.toLowerCase().includes('cancelled') && !msg.toLowerCase().includes('canceled') && msg !== 'No serial port selected') {
         addConsoleEntry({ type: 'error', message: `Connection failed: ${msg}`, source: 'runtime' });
+        notices.finish(operation, { kind: 'connection', status: 'error', title: 'Connection failed', detail: msg, details: 'output' });
+      } else {
+        notices.finish(operation, { kind: 'connection', status: 'cancelled', title: 'Connection cancelled', details: 'output' });
       }
     } finally {
       setIsConnecting(false);
@@ -502,6 +495,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     uploadInFlightRef.current = true;
     setIsUploading(true);
     let programSendStarted = false;
+    let deployOperation = '';
     try {
       const deployedRevision = result.revision;
       const deployedCompilerRunId = result.compilerRunId;
@@ -517,12 +511,14 @@ export function Toolbar({ debugController }: ToolbarProps) {
       });
       if (!window.confirm(confirmation.message)) {
         addConsoleEntry({ type: 'info', message: 'Hardware deploy cancelled; no program was sent.', source: 'runtime' });
+        useNotifications.getState().report({ kind: 'deploy', status: 'cancelled', title: 'Deploy cancelled', detail: 'No program was sent.', details: 'output' });
         return;
       }
       const current = currentCompileResult();
       const latest = useIDEStore.getState();
       if (current !== result || latest.projectSession !== deployProjectSession || latest.projectConfig?.target?.board !== deployTargetBoard) {
         addConsoleEntry({ type: 'warning', message: 'Project changed before deploy confirmation. Build the current source before deploying.', source: 'runtime' });
+        useNotifications.getState().report({ kind: 'deploy', status: 'warning', title: 'Deploy refused', detail: 'The project changed before you confirmed. Build the current source before deploying.', details: 'output' });
         return;
       }
 
@@ -530,10 +526,12 @@ export function Toolbar({ debugController }: ToolbarProps) {
 
       addConsoleEntry({ type: 'info', message: description, source: 'runtime' });
       programSendStarted = true;
+      deployOperation = useNotifications.getState().begin({ kind: 'deploy', title: 'Deploying program', detail: description, details: 'output' });
       await loadProgram(dataToUpload, result.debugMap, deployTargetBoard);
       if (nextProgramLoadStateAfterDeploy(deployedRevision, compileRevisionRef.current, deployedCompilerRunId, useIDEStore.getState().compilerRunId) === PROGRAM_LOAD_STATE.LOADED) {
         setProgramLoadState(PROGRAM_LOAD_STATE.LOADED);
         addConsoleEntry({ type: 'success', message: 'Program deployed and stopped.', source: 'runtime' });
+        useNotifications.getState().finish(deployOperation, { kind: 'deploy', status: 'success', title: 'Program deployed and stopped', details: 'output' });
       } else {
         setProgramLoadState(PROGRAM_LOAD_STATE.EMPTY);
         addConsoleEntry({
@@ -541,19 +539,20 @@ export function Toolbar({ debugController }: ToolbarProps) {
           message: 'Device received an earlier build. Deploy the current build before Run.',
           source: 'runtime',
         });
+        useNotifications.getState().finish(deployOperation, { kind: 'deploy', status: 'warning', title: 'Device received an earlier build', detail: 'Deploy the current build before Run.', details: 'output' });
       }
     } catch (error) {
       const preflightDenied = error instanceof DeviceAdmissionError && error.code !== DEVICE_ADMISSION_CODE.RESULT_UNKNOWN;
       setProgramLoadState(PROGRAM_LOAD_STATE.EMPTY);
-      addConsoleEntry({
-        type: 'error',
-        message: programSendStarted && !preflightDenied
+      const failure = programSendStarted && !preflightDenied
           ? HARDWARE_DEPLOY_UNCONFIRMED_MESSAGE
           : error instanceof DeviceAdmissionError && error.detail
             ? `Hardware deploy refused: ${error.detail}. Rebuild the program or reflash the board. No program was sent.`
-            : 'Hardware deploy preflight failed. No program was sent.',
-        source: 'runtime',
-      });
+            : 'Hardware deploy preflight failed. No program was sent.';
+      addConsoleEntry({ type: 'error', message: failure, source: 'runtime' });
+      const refusal = { kind: 'deploy' as const, status: 'error' as const, title: 'Deploy failed', detail: failure, details: 'output' as const };
+      if (deployOperation) useNotifications.getState().finish(deployOperation, refusal);
+      else useNotifications.getState().report(refusal);
     } finally {
       uploadInFlightRef.current = false;
       setIsUploading(false);
@@ -1190,6 +1189,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
         generatedCode={generatedCode}
       />
     </div>
+    <Notifications />
     <OperationalStatusBar
       mode={executionMode}
       adapterType={adapter?.type ?? null}

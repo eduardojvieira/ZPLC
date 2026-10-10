@@ -95,33 +95,63 @@ class ReleaseWorkflowEvidenceTests(unittest.TestCase):
                     self.errors(self.workflow().replace(*patch)),
                 )
 
-    def test_requires_unpublished_spdx_controls(self) -> None:
-        for field in ("upload-artifact: false", "upload-release-assets: false", "dependency-snapshot: false"):
-            with self.subTest(field=field):
-                self.assertIn(
-                    "prepare-release-evidence-windows must generate an unpublished SPDX SBOM from artifacts",
-                    self.errors(self.workflow().replace(field, field.replace("false", "true"))),
-                )
+    def test_bill_of_materials_comes_from_the_lockfile_and_not_from_the_installers(self) -> None:
+        contents = self.replace_in_job(
+            self.workflow(),
+            "prepare-release-evidence-windows",
+            "bun scripts/release/sbom.ts --out artifacts/",
+            "bun scripts/release/sbom.ts --check --out artifacts/other-",
+        )
+        self.assertIn(
+            "prepare-release-evidence-windows must generate the bill of materials from the lockfile with scripts/release/sbom.ts",
+            self.errors(contents),
+        )
+        contents = self.replace_in_job(
+            self.workflow(),
+            "prepare-release-evidence-macos",
+            "      - name: Generate the bill of materials\n",
+            "      - name: Scan the installers\n        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0\n        with:\n          path: artifacts\n\n      - name: Generate the bill of materials\n",
+        )
+        self.assertIn(
+            "prepare-release-evidence-macos must generate the bill of materials from the lockfile with scripts/release/sbom.ts",
+            self.errors(contents),
+        )
 
     def test_requires_both_installer_attestations(self) -> None:
         contents = self.replace_in_job(
             self.workflow(),
             "prepare-release-evidence-macos",
-            "          sbom-path: artifacts/ZPLC-${{ needs.validate-version.outputs.version }}-macos.spdx.json",
-            "          sbom-path: artifacts/other.spdx.json",
+            "          sbom-path: artifacts/ZPLC-${{ needs.validate-version.outputs.version }}-macos.cdx.json",
+            "          sbom-path: artifacts/other.cdx.json",
         )
         self.assertIn(
-            "prepare-release-evidence-macos must produce default provenance and SPDX SBOM attestations",
+            "prepare-release-evidence-macos must produce default provenance and SBOM attestations",
             self.errors(contents),
         )
         contents = self.replace_in_job(
             self.workflow(),
             "prepare-release-evidence-linux",
-            "            release/*.rpm\n\n      - name: Attest installer SBOM",
+            "            release/*.rpm\n            release/zplc-cli-*-linux-*\n            release/zplc-mcp-*-linux-*\n\n      - name: Attest installer SBOM",
             "\n\n      - name: Attest installer SBOM",
         )
         self.assertIn(
             "prepare-release-evidence-linux must attest only its installer paths twice",
+            self.errors(contents),
+        )
+
+    def test_a_rehearsal_makes_no_attestation(self) -> None:
+        contents = self.replace_in_job(
+            self.workflow(),
+            "prepare-release-evidence-windows",
+            "      - name: Attest installer provenance\n        if: ${{ needs.validate-version.outputs.publishing == 'true' }}\n",
+            "      - name: Attest installer provenance\n",
+        )
+        self.assertIn("prepare-release-evidence-windows must attest only when publishing", self.errors(contents))
+
+    def test_what_a_run_publishes_is_decided_by_the_resolve_release_script(self) -> None:
+        contents = self.replace_in_job(self.workflow(), "validate-version", "bun scripts/release/resolve-release.ts", "echo skip")
+        self.assertIn(
+            "validate-version job must resolve and compare canonical version: missing scripts/release/resolve-release.ts",
             self.errors(contents),
         )
 

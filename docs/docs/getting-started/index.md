@@ -49,6 +49,35 @@ macOS:    shasum -a 256 <file>
 Windows:  Get-FileHash .\<file> -Algorithm SHA256
 ```
 
+Each release also carries a build provenance attestation for every file, which
+says which run of the project's pipeline built it. With the GitHub CLI:
+
+```text
+gh attestation verify <file> --repo eduardojvieira/ZPLC
+```
+
+An attestation proves where a file was built, not that it is safe, and it does
+not change the warnings that Windows or macOS show when you open the file.
+
+### Command line and MCP server
+
+The releases after 2.0.0-rc.3 also publish the command-line tool and the MCP
+server as standalone executables, for Linux, macOS and Windows on x64 and arm64.
+They need no Node.js, Bun or checkout of the repository. The names follow the
+installers: `zplc-cli-<version>-<os>-<arch>` and `zplc-mcp-<version>-<os>-<arch>`,
+with `linux`, `mac` or `win` for the system, `x64` or `arm64`, and `.exe` on
+Windows. They are not signed; verify them as above.
+
+```text
+./zplc-cli-<version>-linux-x64 --version
+./zplc-cli-<version>-linux-x64 compile <project folder>
+./zplc-mcp-<version>-linux-x64 --workspace <absolute project folder>
+```
+
+The installers of those releases also hold `THIRD-PARTY-NOTICES.txt`, the
+licences of the packages and fonts they contain, in the application's
+`resources` folder.
+
 ## Open an unsigned installer
 
 The rc.3 installers are not code-signed, so each system asks you to confirm

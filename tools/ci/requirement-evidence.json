@@ -898,13 +898,16 @@
     {"kind":"conformance","ref":"conformance/lng/lng-003-fbd-compiler-error-names-the-block.expect.json","test":"LNG-003 an error the compiler finds in the code of an FBD block is reported against the block"},
     {"kind":"conformance","ref":"conformance/lng/lng-003-il-compiler-error-names-the-il-line.expect.json","test":"LNG-003 an error the compiler finds in the code of an IL line is reported on that IL line"},
     {"kind":"conformance","ref":"conformance/lng/lng-003-ld-undeclared-variable-names-the-cell.expect.json","test":"LNG-003 a Ladder contact on a variable that is not declared is reported against its rung and cell"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/workspaceCompileFailure.test.ts","test":"the element of a diagnostic (LNG-003)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/visualDiagnostics.test.ts","test":"LNG-003 a Ladder diagnostic names the rung and the cell"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/visualDiagnostics.test.ts","test":"LNG-003 an FBD diagnostic names the block or the wire"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/visualDiagnostics.test.ts","test":"LNG-003 an IL diagnostic names its line"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/visualDiagnostics.test.ts","test":"LNG-003 and LNG-026 an SFC diagnostic names the step, the transition or the action"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/workspaceTestPresentation.test.ts","test":"carries the element of a diagnostic, when it is an element id, and drops it otherwise (LNG-003)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/conformance/cases.test.ts","test":"LNG-003 asserts the element each diagnostic of a rejected diagram or IL program is about, one for each diagnostic"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/diagnosticElement.test.ts","test":"LNG-003 Problems selects the element that the build named"},
     {"kind":"unit","ref":"packages/zplc-ide/src/editors/diagnosticElement.test.ts","test":"LNG-003 a request to select an element waits for the editor of its file"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/diagnosticElement.test.ts","test":"LNG-003 the element that came with the diagnostic wins over the one the open file gives"},
     {"kind":"unit","ref":"packages/zplc-ide/src/mcp/server.test.ts","test":"LNG-003 carries the element a diagnostic is about, and only an element"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"25 Problems select the block of a diagram","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"26 Problems select the cell of a rung","partial":true},
@@ -1093,6 +1096,25 @@
   "RT-009": [
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-009: the tasks of a batch read one input image, and a simulation pulse lasts one batch.","partial":true,"note":"covers the POSIX host runtime only: the Zephyr coordinator is checked by its own suite and the WASM runtime has no scheduler test yet, so RT-009 stays open until the shared scheduler core (RT-008) runs one suite on every port"}
   ],
+  "RT-010": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_exchange.c","test":"The exchange between the scan and the threads outside it (RT-010, RT-011, RT-012)."},
+    {"kind":"c-test","ref":"firmware/tests/modbus_tcp/src/main.c","test":"RT-010: a write the scan's queue has no room for is a busy server (exception 6), not an invalid address."},
+    {"kind":"c-test","ref":"firmware/tests/modbus_tcp/src/main.c","test":"RT-010: the exchange the server reads and writes through is a fake that records how it was used."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_admission/src/main.c","test":"RT-010, RT-012: an outside write waits for the input latch and never for the scan, and a read sees the last commit."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_admission/src/main.c","test":"RT-010, RT-030: with no scan a write applies at once, and a lock that cannot be taken is reported."}
+  ],
+  "RT-011": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_exchange.c","test":"The exchange between the scan and the threads outside it (RT-010, RT-011, RT-012)."},
+    {"kind":"c-test","ref":"firmware/tests/modbus_force/src/main.c","test":"RT-011: a write from Modbus goes through the exchange and the force-aware memory interface of the core, so a"}
+  ],
+  "RT-012": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_exchange.c","test":"The exchange between the scan and the threads outside it (RT-010, RT-011, RT-012)."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_admission/src/main.c","test":"RT-010, RT-012: an outside write waits for the input latch and never for the scan, and a read sees the last commit."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_admission/src/main.c","test":"RT-012: the lock of the process image is not held while the physical outputs are written."}
+  ],
+  "RT-013": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/config_check_probe.c","test":"RT-013: a communication, shell or log priority that the scan coordinator does not outrank stops the build."}
+  ],
   "RT-014": [
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-014, RT-017: a debugger step is not checked for a deadline.","partial":true,"note":"covers the POSIX host runtime only: the Zephyr scheduler latches at the first miss and reports neither the warning flag, the last overrun nor the fault reason, so RT-014 stays open for the target until the shared scheduler core (RT-008)"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-014: a deadline miss raises the warning, is counted, and latches the fault after the configured number in a row.","partial":true,"note":"covers the POSIX host runtime only: the Zephyr scheduler latches at the first miss and reports neither the warning flag, the last overrun nor the fault reason, so RT-014 stays open for the target until the shared scheduler core (RT-008)"},
@@ -1116,6 +1138,10 @@
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-015: the output image keeps what a task that was not released in a batch wrote.","partial":true,"note":"covers the model in simulation and the documentation: the Zephyr scheduler still differs in how it reports a deadline miss (RT-014), and the differences that remain are listed in the scheduler page, so RT-015 stays open until the target is checked against the same suite"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-015: the poll timeout is the time to the nearest release of any task.","partial":true,"note":"covers the model in simulation and the documentation: the Zephyr scheduler still differs in how it reports a deadline miss (RT-014), and the differences that remain are listed in the scheduler page, so RT-015 stays open until the target is checked against the same suite"}
   ],
+  "RT-016": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_core_start.c","test":"Cold and warm start are defined in the core, and a program load is a cold start (RT-016)."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_admission/src/main.c","test":"RT-016: loading a program is a cold start on the Zephyr scheduler as it is on the host runtime."}
+  ],
   "RT-017": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"16 Debug details: stop, trace, resume mid-scan","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"18 Force an input while stopped at a breakpoint","partial":true},
@@ -1133,6 +1159,9 @@
     {"kind":"c-test","ref":"firmware/tests/scheduler_run_control/src/main.c","test":"RT-017: an interrupted scan keeps its task id and first-scan flag."},
     {"kind":"c-test","ref":"firmware/tests/scheduler_run_control/src/main.c","test":"RT-017: step from a breakpoint finishes the interrupted scan."},
     {"kind":"c-test","ref":"firmware/tests/scheduler_run_control/src/main.c","test":"RT-017: the pause command keeps the image and forces with the pins safe."}
+  ],
+  "RT-024": [
+    {"kind":"c-test","ref":"firmware/tests/runtime_boot/src/main.c","test":"RT-024: the start-up plan. The scheduler, the program store and the control link start before any network or"}
   ],
   "RT-025": [
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RETAIN persistence of the host runtime (RT-025, RT-026, RT-027)"},
@@ -1166,6 +1195,52 @@
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-025, RT-027: a counter in RETAIN continues in a new session, and another program starts from an initialised region.","partial":true,"note":"covers the POSIX host runtime only: the WASM runtime does not apply the retain rules yet (the module is not linked into the WASM build and the adapter does not call it), so RT-027 stays open for WASM"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-025, RT-027: reset is a cold restart, and a faulted session stores nothing.","partial":true,"note":"covers the POSIX host runtime only: the WASM runtime does not apply the retain rules yet (the module is not linked into the WASM build and the adapter does not call it), so RT-027 stays open for WASM"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-026, RT-027: periodic saves follow the interval of the environment, skip an unchanged region, and 0 turns them off.","partial":true,"note":"covers the POSIX host runtime only: the WASM runtime does not apply the retain rules yet (the module is not linked into the WASM build and the adapter does not call it), so RT-027 stays open for WASM"}
+  ],
+  "RT-028": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-028, RT-032: an artifact of exactly the configured code size is stored and restored by the shared store."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_program_store.c","test":"RT-028: artifacts of every size round-trip, up to the code size."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_program_store.c","test":"RT-028: the largest artifact the store accepts is the configured code size."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_program_store.c","test":"The durable program store (RT-028, RT-031, RT-032): the largest artifact and a power cut at every step."},
+    {"kind":"c-test","ref":"firmware/tests/program_boot_restore/src/main.c","test":"RT-028: the stored program is the only resident copy, so a reload takes everything from the store."},
+    {"kind":"c-test","ref":"firmware/tests/program_boot_restore/src/main.c","test":"The staging buffer is the one buffer of the code size: it receives the stored program and keeps it (RT-028)."},
+    {"kind":"c-test","ref":"firmware/tests/program_store_nvs/src/main.c","test":"One buffer does every job here, as in the firmware (RT-028): the artifact is staged in it, the commit verifies"},
+    {"kind":"c-test","ref":"firmware/tests/program_store_nvs/src/main.c","test":"RT-028, RT-031: the largest artifact, cut at the operations around the active record."},
+    {"kind":"c-test","ref":"firmware/tests/program_store_nvs/src/main.c","test":"The program store on the Zephyr HAL and NVS (RT-028, RT-031)."}
+  ],
+  "RT-029": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/config_check_probe.c","test":"RT-029: a translation unit that only evaluates the build-time rules of the configuration."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_hil_debug.c","test":"The HIL debug formatter is portable: it runs on the host with a line sink (RT-029)."}
+  ],
+  "RT-030": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_core_lock.c","test":"The process-image lock of the core: a failure to create or take it is reported (RT-030)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_retain.c","test":"RT-030: a lock that cannot be taken is handled, never ignored. The module touches the region only under the"},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_admission/src/main.c","test":"RT-010, RT-030: with no scan a write applies at once, and a lock that cannot be taken is reported."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_admission/src/main.c","test":"RT-030: a lock the scheduler cannot take is an error the caller sees, never a silent continuation."}
+  ],
+  "RT-031": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-031: a payload with none of the records that say a program was published beside it is not evidence."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_program_store.c","test":"RT-031: a power cut at every operation of a first deploy leaves nothing or the program."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_program_store.c","test":"RT-031: a power cut at every operation of a redeploy leaves the old program or the new."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_program_store.c","test":"RT-031: a slot half rewritten is never restored, even when it is all that is left."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_program_store.c","test":"RT-031: a write the power cut in the middle never leaves a mixture."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_program_store.c","test":"The durable program store (RT-028, RT-031, RT-032): the largest artifact and a power cut at every step."},
+    {"kind":"c-test","ref":"firmware/tests/program_store_nvs/src/main.c","test":"RT-028, RT-031: the largest artifact, cut at the operations around the active record."},
+    {"kind":"c-test","ref":"firmware/tests/program_store_nvs/src/main.c","test":"RT-031: a power cut at every operation of a first deploy leaves nothing or the program."},
+    {"kind":"c-test","ref":"firmware/tests/program_store_nvs/src/main.c","test":"RT-031: a power cut at every operation of a redeploy leaves the old program or the new."},
+    {"kind":"c-test","ref":"firmware/tests/program_store_nvs/src/main.c","test":"The program store on the Zephyr HAL and NVS (RT-028, RT-031)."}
+  ],
+  "RT-032": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_bytes_crc.c","test":"The one CRC-32 and the little-endian byte helpers of the runtime (RT-032)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-028, RT-032: an artifact of exactly the configured code size is stored and restored by the shared store."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_program_store.c","test":"The durable program store (RT-028, RT-031, RT-032): the largest artifact and a power cut at every step."},
+    {"kind":"c-test","ref":"firmware/tests/program_store_nvs/src/main.c","test":"The firmware's program store (firmware/app/src/program_store.c) is the core's shared store (RT-032) over"}
+  ],
+  "RT-033": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_public_headers.c","test":"RT-033: the public headers declare no test-only entry point."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sandbox.c","test":"Available because this target is built with ZPLC_CORE_TESTING (RT-033)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_core.c","test":"Private fixtures compiled only with the test-owned core copy (RT-033)."},
+    {"kind":"c-test","ref":"firmware/tests/modbus_override/src/public_header_check.c","test":"RT-033: zplc_config.h, a public header of the application, declares no test-only entry point."},
+    {"kind":"c-test","ref":"firmware/tests/program_boot_restore/src/private_header_check.c","test":"RT-033: program_boot_restore.h declares no test-only entry point."}
   ],
   "RT-034": [
     {"kind":"conformance","ref":"conformance/rt/rt-034-watchdog-reset-is-reported-and-changes-nothing.expect.json","test":"RT-034 a call to WATCHDOG_RESET builds with the warning WATCHDOG_RESET_NO_EFFECT and changes nothing the program does"},
@@ -1212,12 +1287,25 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/mcp/deviceLink.test.ts","test":"COM-030: the MCP server cannot open the device link","partial":true,"note":"covers the MCP tools and the AI path; the other half, that the hardware scenario and bench commands of HIL-003 and HIL-012 exit with an error without an interactive terminal, has a todo in the same file because the commands are not in the tree yet"}
   ],
   "IDE-001": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"project files over the IPC boundary (IDE-001, IDE-016)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"register the folder of the window by its id alone, as <folder>/zplc.json, and refuse any other id (IDE-001)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"workspace tests, candidate review and the AI provider (IDE-001, IDE-017)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/projectFiles.test.ts","test":"the root held for the main process (IDE-001)"},
-    {"kind":"unit","ref":"packages/zplc-ide/electron/workspaceTestsIpc.test.ts","test":"registers the project folder the main process owns from its id alone, with no linking step (IDE-001)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/workspaceTestPresentation.test.ts","test":"builds a project the host can link by itself without asking for a zplc.json first (IDE-001)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/workspaceTestLink.test.ts","test":"linking the open project to its workspace without choosing a file (IDE-001)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"1 Open an existing folder","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"34 A build and a test run act only on the project shown","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"38 The security properties hold in the running application","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"5b Tests need no zplc.json to be chosen","partial":true}
+  ],
+  "IDE-002": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"a build, a test run and a review act only on the project of the editor (IDE-002)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"the lesson check over the IPC boundary (LRN-022, LRN-026, IDE-002, IDE-012)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/security.test.ts","test":"accepts a build or a safety check only with the workspace token and the id of the folder of the window (IDE-002)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/security.test.ts","test":"admits an optional bounded ASCII scenario selector only for scenario runs, which name the folder of the window (IDE-002)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/workspaceTestGateway.test.ts","test":"registers and runs only the folder that the window shows (IDE-002)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ipc/shownProjectBridge.test.ts","test":"the workspace bridge of a window that shows one project (IDE-002)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"34 A build and a test run act only on the project shown"}
   ],
   "IDE-003": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"1 Open an existing folder","partial":true},
@@ -1249,6 +1337,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"22 Close Project asks before it closes","partial":true}
   ],
   "IDE-006": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"recovery and session over the IPC boundary (IDE-006, IDE-008)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/recoveryStore.test.ts","test":"recovery messages (IDE-006)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/recoveryStore.test.ts","test":"recovery store (IDE-006)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/recoveryStoreIpc.test.ts","test":"recovery IPC boundary (IDE-006)"},
@@ -1266,6 +1355,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"21 Preferences apply and persist per user"}
   ],
   "IDE-008": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"recovery and session over the IPC boundary (IDE-006, IDE-008)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/projectFiles.test.ts","test":"recent projects (IDE-008)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/projectFilesProtocol.test.ts","test":"recent project message schema (IDE-008)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/sessionStore.test.ts","test":"session store (IDE-008)"},
@@ -1306,6 +1396,14 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/components/ErrorBoundary.test.tsx","test":"a region that throws (IDE-011)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"20 A failing region does not blank the window"}
   ],
+  "IDE-012": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"compile, safety check and tests run outside the main process (IDE-012)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"the lesson check over the IPC boundary (LRN-022, LRN-026, IDE-002, IDE-012)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/toolWorkerHost.test.ts","test":"real worker processes (IDE-012)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/toolWorkerHost.test.ts","test":"the tool worker host (IDE-012)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/toolWorkerHost.test.ts","test":"the worker command schema (IDE-012, IDE-017)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"35 A long test run can be cancelled and leaves no process behind"}
+  ],
   "IDE-014": [
     {"kind":"unit","ref":"tools/ci/ide-structure.test.ts","test":"module size stopgap (IDE-014): listed modules may stay above the limit until they are split","partial":true}
   ],
@@ -1315,12 +1413,34 @@
     {"kind":"unit","ref":"packages/zplc-ide/scripts/welcomeBundle.test.ts","test":"the installer payload (IDE-015)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"29 The Welcome screen loads no editor","partial":true}
   ],
+  "IDE-016": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"project files over the IPC boundary (IDE-001, IDE-016)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/security.test.ts","test":"which navigation revokes the authority of a document (IDE-016)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"38 The security properties hold in the running application","partial":true}
+  ],
+  "IDE-017": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"every invoke channel (IDE-017)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"safety check over the IPC boundary (IDE-017)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"the contract and the handler table (IDE-017)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"toolchain inspection and firmware build (IDE-017, IDE-027)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"workspace tests, candidate review and the AI provider (IDE-001, IDE-017)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/preload.test.ts","test":"preload bridge (IDE-017)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/spawnAllowList.test.ts","test":"the spawn allow-list (IDE-017)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/toolWorkerHost.test.ts","test":"the worker command schema (IDE-012, IDE-017)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/firmwareBuildRunner.test.ts","test":"never starts a process for a board that is not a manifest board id (IDE-017)"}
+  ],
   "IDE-019": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"18 Force an input while stopped at a breakpoint","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"8 Force an input and release it","partial":true}
   ],
   "IDE-020": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"4 Build with an error, reach it from Problems","partial":true}
+  ],
+  "IDE-021": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/NotificationsList.test.tsx","test":"the notification list (IDE-021)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/notifications.test.ts","test":"the notification model (IDE-021)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/notifications.test.ts","test":"the notification store (IDE-021)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"36 Results appear as notifications that lead to their details"}
   ],
   "IDE-022": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/projectArchive.test.ts","test":"exporting a project (IDE-022)"},
@@ -1349,6 +1469,17 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/store/projectSources.test.ts","test":"readProjectSources (IDE-023)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/store/projectSources.test.ts","test":"trackProjectSources (IDE-023)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"32 Declarations in the tree, and a library folder offered to every editor","partial":true}
+  ],
+  "IDE-024": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"program inputs in the debug map (IDE-024)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/SimulationInputsList.test.tsx","test":"the simulation inputs list (IDE-024)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/declaredInputs.test.ts","test":"reading declared inputs back (IDE-024)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/declaredInputs.test.ts","test":"the declared inputs of a program (IDE-024)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/declaredInputs.test.ts","test":"writing a declared input (IDE-024)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"37 Any declared input of the running program can be set"}
+  ],
+  "IDE-027": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"toolchain inspection and firmware build (IDE-017, IDE-027)"}
   ],
   "IDE-029": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"18 Force an input while stopped at a breakpoint","partial":true},
@@ -1382,8 +1513,68 @@
   "LRN-003": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true}
   ],
+  "LRN-009": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"lesson packages (LRN-009, LRN-010, LRN-027)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"lesson package validators (LRN-009, LRN-010, LRN-027)"}
+  ],
+  "LRN-010": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"lesson packages (LRN-009, LRN-010, LRN-027)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"lesson package validators (LRN-009, LRN-010, LRN-027)"}
+  ],
+  "LRN-022": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"the lesson check over the IPC boundary (LRN-022, LRN-026, IDE-002, IDE-012)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/lessonCheckProtocol.test.ts","test":"the lesson check request and answer (LRN-022, LRN-026)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/learnLesson.test.ts","test":"Learn grading against the lesson package (LRN-022, LRN-026)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCheck.test.ts","test":"lesson check (LRN-022, LRN-023, LRN-026)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"39 Learn reports the failed assertion of a lesson","partial":true}
+  ],
+  "LRN-023": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/gradeRecord.test.ts","test":"grade record (LRN-023)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCheck.test.ts","test":"lesson check (LRN-022, LRN-023, LRN-026)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"39b Learn records the grade of a passed lesson","partial":true}
+  ],
+  "LRN-025": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"lesson text markup (LRN-025)"}
+  ],
+  "LRN-026": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"the lesson check over the IPC boundary (LRN-022, LRN-026, IDE-002, IDE-012)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/lessonCheckProtocol.test.ts","test":"the lesson check request and answer (LRN-022, LRN-026)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/learnLesson.test.ts","test":"Learn grading against the lesson package (LRN-022, LRN-026)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/gradeRecord.test.ts","test":"failed assertions of a lesson check (LRN-026)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCheck.test.ts","test":"lesson check (LRN-022, LRN-023, LRN-026)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"39 Learn reports the failed assertion of a lesson","partial":true}
+  ],
+  "LRN-027": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"lesson packages (LRN-009, LRN-010, LRN-027)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"lesson package validators (LRN-009, LRN-010, LRN-027)"},
+    {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"the generated lesson index (LRN-027, LRN-028)"}
+  ],
+  "LRN-028": [
+    {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"lesson ids have one source (LRN-028)"},
+    {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"the generated lesson index (LRN-027, LRN-028)"}
+  ],
+  "LRN-031": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"the Learn progress channels over the IPC boundary (LRN-031, LRN-032)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressModel.test.ts","test":"the Learn progress document (LRN-031, LRN-032)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressStore.test.ts","test":"Learn progress main-process store (LRN-031, LRN-032)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/progressClient.test.ts","test":"the Learn progress client validates what the main process answers (LRN-031, LRN-032)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"39 Learn reports the failed assertion of a lesson","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"39b Learn records the grade of a passed lesson","partial":true}
+  ],
+  "LRN-032": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"the Learn progress channels over the IPC boundary (LRN-031, LRN-032)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressModel.test.ts","test":"the Learn progress document (LRN-031, LRN-032)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressStore.test.ts","test":"Learn progress main-process store (LRN-031, LRN-032)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/progressClient.test.ts","test":"the Learn progress client validates what the main process answers (LRN-031, LRN-032)"}
+  ],
+  "LRN-034": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/server.test.ts","test":"cannot mark a lesson passed: no tool takes a lesson or progress, and no tool or resource read changes the progress files (LRN-034)"}
+  ],
   "LRN-036": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"13 Welcome helps a newcomer choose","partial":true}
+  ],
+  "LRN-038": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/learnLesson.test.ts","test":"Learn lesson text is never replaced at run time (LRN-038)"}
   ],
   "REL-001": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"electron-builder.yml macOS signing (REL-001)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"}
@@ -1398,19 +1589,117 @@
   "REL-038": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"Windows installers carry unsigned in their variant until a channel is live (REL-038)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"electron-builder.yml Windows signing (REL-003, REL-038)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
-    {"kind":"unit","ref":"scripts/release-artifacts.test.mjs","test":"release notes give the Windows first-run steps, the Smart App Control statement and each channel state (REL-038)"}
+    {"kind":"unit","ref":"scripts/release/release-notes.test.ts","test":"what a person is told about Windows, verification and evidence (REL-038, REL-017)"},
+    {"kind":"unit","ref":"scripts/release/release-records.test.ts","test":"what a version bump edits (REL-031, REL-038)"}
   ],
   "REL-011": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"Linux packages use electron-builder defaults and are installed in clean containers (REL-011)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"}
   ],
   "REL-015": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"release.yml publishes each platform independently and only as a draft (REL-015, REL-016)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
-    {"kind":"unit","ref":"scripts/release-artifacts.test.mjs","test":"release notes state the signing state of every asset the pipeline publishes (REL-015)"}
+    {"kind":"unit","ref":"scripts/release/release-notes.test.ts","test":"the signing state of every asset comes from the checks of the run (REL-027, REL-015)"}
   ],
   "REL-016": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"release.yml publishes each platform independently and only as a draft (REL-015, REL-016)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"}
   ],
+  "REL-017": [
+    {"kind":"unit","ref":"scripts/release-artifacts.test.mjs","test":"covers the standalone CLI and MCP executables, the bill of materials and the firmware images (REL-017)"},
+    {"kind":"unit","ref":"scripts/release-artifacts.test.mjs","test":"merges the checksum files of the platforms into one SHA256SUMS, sorted, and refuses a name with two hashes (REL-017)"},
+    {"kind":"unit","ref":"scripts/release-artifacts.test.mjs","test":"refuses an executable name that does not follow the scheme, so nothing unnamed is checksummed (REL-017)"},
+    {"kind":"unit","ref":"scripts/release-artifacts.test.mjs","test":"the command line merges checksum files into one output file (REL-017)"},
+    {"kind":"unit","ref":"scripts/release/release-notes.test.ts","test":"what a person is told about Windows, verification and evidence (REL-038, REL-017)"}
+  ],
+  "REL-018": [
+    {"kind":"unit","ref":"scripts/release/lockfile.test.ts","test":"lockfile keys and ids (REL-018, REL-019)"},
+    {"kind":"unit","ref":"scripts/release/lockfile.test.ts","test":"stripTrailingCommas (REL-018, REL-019)"},
+    {"kind":"unit","ref":"scripts/release/lockfile.test.ts","test":"the lockfile dependency graph (REL-018, REL-019)"},
+    {"kind":"unit","ref":"scripts/release/sbom.test.ts","test":"buildSbom (REL-018)"},
+    {"kind":"unit","ref":"scripts/release/sbom.test.ts","test":"checkSbom (REL-018)"},
+    {"kind":"unit","ref":"scripts/release/sbom.test.ts","test":"the repository bill of materials (REL-018)"},
+    {"kind":"unit","ref":"scripts/release/sbom.test.ts","test":"westProjects (REL-018)"}
+  ],
+  "REL-019": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"third-party notices are generated at packaging time and ship in every installer (REL-019)"},
+    {"kind":"unit","ref":"scripts/release/licenses.test.ts","test":"bundledDevDependencies (REL-019)"},
+    {"kind":"unit","ref":"scripts/release/licenses.test.ts","test":"collectNotices (REL-019)"},
+    {"kind":"unit","ref":"scripts/release/licenses.test.ts","test":"fonts (REL-019)"},
+    {"kind":"unit","ref":"scripts/release/licenses.test.ts","test":"renderNotices (REL-019)"},
+    {"kind":"unit","ref":"scripts/release/lockfile.test.ts","test":"lockfile keys and ids (REL-018, REL-019)"},
+    {"kind":"unit","ref":"scripts/release/lockfile.test.ts","test":"stripTrailingCommas (REL-018, REL-019)"},
+    {"kind":"unit","ref":"scripts/release/lockfile.test.ts","test":"the lockfile dependency graph (REL-018, REL-019)"}
+  ],
   "REL-020": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"names the installer and the portable executable by the REL-020 variants, with unsigned appended","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"}
+  ],
+  "REL-023": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_fw_identity.c","test":"REL-023: the identity a firmware image or host runtime reports (version, commit, board, ABI, options)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"REL-023: the runtime says which build it is, so Studio can compare it with its own version."}
+  ],
+  "REL-026": [
+    {"kind":"unit","ref":"scripts/release/binaries.test.ts","test":"the release binaries (REL-026)"},
+    {"kind":"unit","ref":"scripts/release/binaries.test.ts","test":"the standalone binaries of this machine run without a JavaScript runtime (REL-026)"}
+  ],
+  "REL-027": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the notes claim only checks that their job runs (REL-027)"},
+    {"kind":"unit","ref":"scripts/release/release-notes.test.ts","test":"tests, known failures and changes (REL-027)"},
+    {"kind":"unit","ref":"scripts/release/release-notes.test.ts","test":"the command line (REL-027)"},
+    {"kind":"unit","ref":"scripts/release/release-notes.test.ts","test":"the signing state of every asset comes from the checks of the run (REL-027, REL-015)"},
+    {"kind":"unit","ref":"scripts/release/run-results.test.ts","test":"classifyAsset (REL-027)"},
+    {"kind":"unit","ref":"scripts/release/run-results.test.ts","test":"collectRunResults (REL-027)"},
+    {"kind":"unit","ref":"scripts/release/run-results.test.ts","test":"countJunit (REL-027)"}
+  ],
+  "REL-029": [
+    {"kind":"unit","ref":"scripts/release/releasing-md.test.ts","test":"the checklist of a release (REL-029)"}
+  ],
+  "REL-030": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"a rehearsal publishes nothing (REL-030)"},
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"offers no input that selects what to upload, and a rehearsal that is on unless a person turns it off (REL-030)"},
+    {"kind":"unit","ref":"scripts/release/resolve-release.test.ts","test":"a rehearsal publishes nothing (REL-030)"},
+    {"kind":"unit","ref":"scripts/release/resolve-release.test.ts","test":"the command line (REL-030)"}
+  ],
+  "REL-031": [
+    {"kind":"unit","ref":"scripts/release/release-notes.test.ts","test":"the title of a release says how complete a prerelease is (REL-031)"},
+    {"kind":"unit","ref":"scripts/release/release-records.test.ts","test":"compareVersions (REL-031)"},
+    {"kind":"unit","ref":"scripts/release/release-records.test.ts","test":"the changelog holds only tagged versions (REL-031)"},
+    {"kind":"unit","ref":"scripts/release/release-records.test.ts","test":"the product identity is fixed (REL-031)"},
+    {"kind":"unit","ref":"scripts/release/release-records.test.ts","test":"what a version bump edits (REL-031, REL-038)"},
+    {"kind":"unit","ref":"scripts/release/resolve-release.test.ts","test":"prerelease tags continue the rc sequence (REL-031)"}
+  ],
+  "REL-034": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/packaged-content.test.ts","test":"packaged content (REL-034)"},
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/packaged-content.test.ts","test":"the asar reader (REL-034)"},
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/packaged-content.test.ts","test":"the encodings of a string in a minified bundle (REL-034)"}
+  ],
+  "REL-035": [
+    {"kind":"unit","ref":"scripts/release/releasing-md.test.ts","test":"the external services of the release (REL-035)"}
+  ],
+  "DOC-006": [
+    {"kind":"unit","ref":"tools/docs/generate_language_reference.test.ts","test":"language reference: every row of the matrix is on a page, in both languages (DOC-006, stopgap: no editor screenshot yet)","partial":true},
+    {"kind":"unit","ref":"tools/docs/generate_language_reference.test.ts","test":"language reference: markup and addressing (DOC-006, stopgap: no editor screenshot yet)","partial":true},
+    {"kind":"unit","ref":"tools/docs/generate_language_reference.test.ts","test":"language reference: the state of an element comes from the executed cases (DOC-006, stopgap: no editor screenshot yet)","partial":true}
+  ],
+  "DOC-007": [
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/stdlib/reference.test.ts","test":"standard library reference data: every registered name has an entry (DOC-007)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/stdlib/reference.test.ts","test":"standard library reference data: signatures and pin tables follow the registry (DOC-007)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/stdlib/reference.test.ts","test":"standard library reference data: the examples are programs (DOC-007)"},
+    {"kind":"unit","ref":"tools/docs/generate_function_reference.test.ts","test":"function reference: a registered name has an entry (DOC-007)"},
+    {"kind":"unit","ref":"tools/docs/generate_function_reference.test.ts","test":"function reference: the conversions are proven for every pair (DOC-007)"},
+    {"kind":"unit","ref":"tools/docs/generate_function_reference.test.ts","test":"function reference: the pages list every name, in both languages (DOC-007)"}
+  ],
+  "DOC-008": [
+    {"kind":"unit","ref":"tools/docs/generate_source_references.test.ts","test":"source references: every source is understood (DOC-008)"},
+    {"kind":"unit","ref":"tools/docs/generate_source_references.test.ts","test":"source references: the project file schema is flattened to its fields (DOC-008)"},
+    {"kind":"unit","ref":"tools/docs/generate_source_references.test.ts","test":"source references: the two languages say the same thing (DOC-008)"},
+    {"kind":"unit","ref":"tools/docs/reference-lib.test.ts","test":"generated reference pages: the markup is safe for the site (DOC-008)"},
+    {"kind":"unit","ref":"tools/docs/reference-lib.test.ts","test":"generated reference pages: the page as a whole (DOC-008)"},
+    {"kind":"unit","ref":"tools/docs/source-parsers.test.ts","test":"source readers: Kconfig (DOC-008)"},
+    {"kind":"unit","ref":"tools/docs/source-parsers.test.ts","test":"source readers: the command line, MCP and the protocol (DOC-008)"},
+    {"kind":"unit","ref":"tools/docs/source-parsers.test.ts","test":"source readers: the shell command tree (DOC-008)"}
+  ],
+  "DOC-014": [
+    {"kind":"unit","ref":"tools/docs/check_doc_claims.test.ts","test":"doc claims: a claim holds only when the source has the thing (DOC-014)"},
+    {"kind":"unit","ref":"tools/docs/check_doc_claims.test.ts","test":"doc claims: the allow-list can only shrink (DOC-014)"},
+    {"kind":"unit","ref":"tools/docs/check_doc_claims.test.ts","test":"doc claims: the documents of the repository (DOC-014)"},
+    {"kind":"unit","ref":"tools/docs/check_doc_claims.test.ts","test":"doc claims: what a page says is read from its code spans and shell blocks (DOC-014)"}
   ]
 }

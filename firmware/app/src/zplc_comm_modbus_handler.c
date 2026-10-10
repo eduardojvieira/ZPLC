@@ -430,7 +430,9 @@ int zplc_comm_modbus_handler_init(void) {
 
   k_thread_create(&s_handler_thread, s_handler_stack,
                   K_THREAD_STACK_SIZEOF(s_handler_stack), modbus_async_thread,
-                  NULL, NULL, NULL, K_PRIO_PREEMPT(8), 0, K_NO_WAIT);
+                  NULL, NULL, NULL,
+                  K_PRIO_PREEMPT(ZPLC_COMM_THREAD_PRIORITY), 0,
+                  K_NO_WAIT);
   k_thread_name_set(&s_handler_thread, "modbus_fb_worker");
 
   zplc_comm_register_handler(ZPLC_COMM_FB_MB_READ_HREG,

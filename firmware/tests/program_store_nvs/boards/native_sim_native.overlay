@@ -1,0 +1,5 @@
+/* Two program slots of the default code size, in chunks, and a spare sector: 128 KB (RT-028). The partition
+ * starts where the board's own storage partition does and ends before the end of the simulated flash. */
+&storage_partition {
+	reg = <0x000fc000 0x00020000>;
+};

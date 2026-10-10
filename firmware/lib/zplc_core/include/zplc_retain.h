@@ -139,8 +139,8 @@ typedef struct {
 typedef struct {
   uint8_t *region;        /**< the RETAIN bytes, valid for the life of the module */
   uint32_t region_size;   /**< 1 .. ZPLC_RETAIN_CAPACITY */
-  void (*lock)(void);     /**< optional: makes the region coherent with the scan */
-  void (*unlock)(void);   /**< optional, with lock */
+  int (*lock)(void);      /**< optional: makes the region coherent with the scan; 0 when taken (RT-030) */
+  void (*unlock)(void);   /**< optional, with lock; called only after a lock that returned 0 */
   uint32_t min_interval_ms; /**< periodic saves closer than this are skipped; 0 disables them */
 } zplc_retain_config_t;
 

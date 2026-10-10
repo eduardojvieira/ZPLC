@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Conveyor classification and safe jam",
+  "summary": "Walk through part classification and the safe jam lockout in the Conveyor 01 example.",
+  "scope": "Tests provide deterministic native POSIX host evidence only; they are not physical conveyor, jam clearance, hardware, HIL, or certification evidence.",
+  "objectives": [
+    "Stop the belt and light FaultLamp while the plant reports JamDetected.",
+    "Keep Reset from releasing the fault while the jam is still present."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/Conveyor.st, keep Requested and MetalLatched and add Faulted; the sensors belong to the plant.",
+      "checkpoint": "The logic commands outputs only from plant-recorded sensors."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, predict the belt, diverter, and fault lamp.",
+      "checkpoint": "Belt ON {{t:10}}–{{t:40}}; Diverter ON only {{t:30}}; FaultLamp ON and Belt OFF {{t:50}}–{{t:80}}. Reset at {{t:60}} does not release while JamDetected remains active."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then run: The starter misses the deterministic jam lockout; stop the belt and light FaultLamp while the plant reports JamDetected, and do not let Reset release it while the jam remains.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "In Tests, choose the saved zplc.json and run only Conveyor01; the starter also ships ConveyorJamTiming (lesson 9), so Tests-all would grade two scenarios.",
+      "checkpoint": "The required scenario is named Conveyor01 and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Review the matrix: classifier+metal {{t:20}}, diverter+count=1 at {{t:30}}, jam {{t:50}}.",
+      "checkpoint": "The jam turns FaultLamp on and stops Belt."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "The NEVER assertion covers DiverterCommand ON with BeltCommand OFF only in this scenario.",
+      "checkpoint": "It does not establish a physical conveyor, jam clearance, hardware timing, HIL, or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "A jam must win over everything else: when JamDetected is TRUE, latch a Faulted memory and drop the belt request, so the belt stays stopped even after the jam input goes away."
+    },
+    {
+      "level": 2,
+      "text": "Compute BeltCommand as Requested AND NOT Faulted, FaultLamp as Faulted OR JamDetected, and clear Faulted with Reset only when JamDetected is FALSE."
+    }
+  ],
+  "faultCases": [
+    "The starter misses the deterministic jam lockout; stop the belt and light FaultLamp while the plant reports JamDetected, and do not let Reset release it while the jam remains."
+  ]
+}

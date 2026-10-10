@@ -169,6 +169,53 @@ If the editor, the lower panel or the toolbar throws an exception while it draws
 
 Evidence level: host. Journey 20 (a failing region does not blank the window) of `bun run test:journeys` makes each of the three regions fail in the real application, checks that the other two keep working and that Retry brings the failed one back; `packages/zplc-ide/src/components/ErrorBoundary.test.tsx` covers the region logic.
 
+## Simulation inputs
+
+In native simulation, the **Watch** tab starts with **Simulation inputs**: every input
+that the running program declares, by its own name. That is each variable mapped to
+the input image (`AT %IX0.3`, `AT %IW2`, whatever you called it) and each `VAR_INPUT`
+of a program, with its type, its address and the value read from the runtime. A
+BOOL has a **Set TRUE / Set FALSE** switch that changes only its own bit, and every
+other numeric type has a number box with **Set**; a value that does not fit the type
+is refused with a message before anything is written. **Force** holds the input at
+its present value (and **Set** then changes the forced value), for the types up to 32
+bits that a force carries; releasing the force hands the input back.
+
+The runtime itself still accepts the three motor names of its `simulation.input.set`
+request; every other input is written with the typed memory write, at the address
+and width of the debug map. On hardware, inputs are forced from the Watch table.
+
+Evidence level: host. `packages/zplc-ide/src/runtime/declaredInputs.test.ts` covers
+the list, the encoding of every numeric type and the bit-safe write against a debug
+map from the real compiler, `src/cli/toolApi.test.ts` the marking of program inputs,
+and journey 37 of `bun run test:journeys` sets a bit, a word and a plain program
+input of a project with custom names in the real application and sees the program's
+output follow (requirement IDE-024). Native POSIX host evidence, not hardware.
+
+## Notifications
+
+The result of a build, a save, a deploy, a connection change and a test run appears
+at the bottom right of the window as a notification. Each one says what happened and
+has **Details**, which opens the panel that holds the evidence: **Output** for a
+save, a successful build, a deploy and a connection, **Problems** for a failed
+build, **Tests** for a test run. A long operation (a build, a run of scenarios, a
+deploy, a connection) shows a progress bar while it runs, and a build and a test run
+also show **Cancel**: a cancelled build keeps no artifact, and a cancelled run
+stops its native runtime.
+
+A success goes by itself after a few seconds. A failure, a warning (for example a
+device that received an earlier build) and a cancellation stay until you dismiss
+them. The notification is a summary: every message that Studio wrote to the Output
+panel before is still there.
+
+Evidence level: host. `packages/zplc-ide/src/store/notifications.test.ts` covers the
+model (progress, the cancel action, how long each result stays, the bound on the
+list) and `src/components/NotificationsList.test.tsx` the drawing; journey 36 of
+`bun run test:journeys` saves, builds, connects, runs and cancels a long test run
+and breaks the build in the real application, and follows **Details** of each
+notification to its panel (requirement IDE-021). A deploy notification needs a
+device and is not covered by a journey.
+
 ## What loads at start
 
 The Welcome screen is the first thing Studio shows, and it loads without the code editor, the visual editors or the
@@ -201,15 +248,16 @@ run/debug. A person starts each of them.
 
 Learn is a tab of the bottom panel. The **Learn** action on the Welcome screen copies the first lesson into a folder that you choose and opens that tab. This is what it offers today:
 
-- Ten lessons, in Spanish and in English (the toggle is in the panel, and Spanish is the default). Each lesson comes with its own example project: a source file in Structured Text and a scenario file.
-- Every lesson goes through the stages Objective, Predict, Edit, Run, Observe and Reflect, and the expected checkpoint of each stage stays hidden until you ask for it.
-- You edit the copied project and run only the scenario of that lesson from **Tests**. The panel grades the recorded run: a lesson counts as completed when its scenario passed with all its assertions saved. Studio remembers the completed lessons, and **Export progress** and **Import progress** move them as a small file.
+- Ten lessons, in Spanish and in English (the toggle is in the panel, and Spanish is the default). Each lesson is a data package, `packages/zplc-ide/lessons/<id>/`, with its text in both languages, learning objectives, two levels of hint, a reference scenario with its content hash, and the example project you start from: a Structured Text file, or a Ladder file in lesson 5.
+- Every lesson goes through the stages Objective, Predict, Edit, Run, Observe and Reflect, the expected checkpoint of each stage stays hidden until you ask for it, and the two hints open on request.
+- You edit the copied project, save it and press **Check**. Studio runs your saved program against the scenario of the lesson package, identified by its content hash, in a process of its own that **Cancel** stops; the scenario files of your folder are never read, so editing a scenario there does not produce a pass. A lesson counts as completed when every assertion of that scenario passed. A failed check lists each failed assertion with its instant, the values expected and observed, and the address of that sample in the recorded trace. The grade record holds the lesson id and version, the scenario hash, the program hash, the runtime version and the time. You can still run the scenario of your folder from **Tests**; that run is not the grade.
+- Studio keeps your progress in one versioned file in its user-data directory: passed lessons with their grade record, lessons in progress, the last lesson (the panel opens it again), and the hints and solutions used (the reference solution opens on request). The progress file of an earlier release is migrated, and left where it was. **Export progress** and **Import progress** move the whole document as a file; an import is validated, merged with the newest grade first, and keeps lessons this build does not know.
 - All the lessons are unlocked and can be taken in any order. Learn never starts a physical operation: it only copies a project and opens **Tests**.
 - A result is host evidence from the native simulation, not hardware evidence.
 
-A course with levels, prerequisites and a fixed order, a lesson surface that stays beside the editor, and a track for a learner board are future work (the LRN requirements). Nothing on this page promises them.
+A course with levels, prerequisites and a fixed order, a lesson surface that stays beside the editor, and a track for a learner board are future work (the LRN requirements). Nothing on this page promises them. To add a lesson, see [Contributing](../contributing/index.md#adding-a-lesson).
 
-Evidence level: host. `packages/zplc-ide/src/components/learnLesson.test.ts` and `LearnPanel.test.ts` cover the lessons and the grading, and `packages/zplc-ide/src/learn/starterGrading.test.ts` runs every starter against its scenario.
+Evidence level: host. `packages/zplc-ide/src/learn/lessonCi.test.ts` runs every lesson package in both languages (the starter fails its scenario, the solution passes it, every time and value the text quotes is in the scenario), `packages/zplc-ide/src/learn/lessonCheck.test.ts` grades programs on the native runtime, `packages/zplc-ide/electron/ipcRegistry.test.ts` covers the lesson check and the progress channels at the IPC boundary, and journeys 39 and 39b run the check in the real application.
 
 ## Debugging boundary
 

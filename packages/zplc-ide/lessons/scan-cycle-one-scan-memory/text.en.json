@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "title": "Scan cycle and one-scan memory",
+  "summary": "Follow how one input produces the current output and a copy delayed by one scan.",
+  "scope": "Tests provide native POSIX host runtime evidence with one 10 ms task; they do not establish target timing, snapshots under physical interrupts, electrical bounce, HIL, or certification.",
+  "objectives": [
+    "See that a variable keeps its value from one scan to the next.",
+    "Build a one-scan delay and a one-scan pulse from a single memory."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/ScanSnapshot.st, use Button, Current, Delayed, and RisingPulse and add the Previous memory.",
+      "checkpoint": "Previous updates at the end of the scan."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, predict the four recorded samples as Current, Delayed, RisingPulse.",
+      "checkpoint": "{{v:ScanSnapshot.Current=false,ScanSnapshot.Delayed=false,ScanSnapshot.RisingPulse=false@0|000@0}}, {{v:ScanSnapshot.Current=true,ScanSnapshot.Delayed=false,ScanSnapshot.RisingPulse=true@10|101@10}}, {{v:ScanSnapshot.Current=false,ScanSnapshot.Delayed=true,ScanSnapshot.RisingPulse=false@20|010@20}}, {{v:ScanSnapshot.Current=false,ScanSnapshot.Delayed=false,ScanSnapshot.RisingPulse=false@30|000@30}}."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then run: The starter has no one-scan memory; keep Previous, set Delayed from it, derive RisingPulse from Current and Delayed, and update Previous last.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "In Tests, choose the saved zplc.json and run only the ScanSnapshot scenario.",
+      "checkpoint": "The required scenario is named ScanSnapshot and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:10}}, {{t:20}}, and {{t:30}} ms: RisingPulse lasts one scan and Delayed keeps the delayed copy.",
+      "checkpoint": "The pulse appears at {{t:10}} ms; Delayed appears at {{t:20}} ms and returns OFF at {{t:30}} ms."
+    },
+    {
+      "key": "evidence",
+      "title": "Evidence",
+      "body": "AT/RISING/FALLING/NEVER cover the scenario; hashes and trace belong to the host.",
+      "checkpoint": "Recorded evidence belongs to the executed host scenario."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "Updating Previous first would break the edge detector.",
+      "checkpoint": "Memory must retain the prior value until the end of the scan."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Delayed has to be the Button of the previous scan, so it needs a variable that still holds the old value when the scan starts: Previous."
+    },
+    {
+      "level": 2,
+      "text": "Write the statements in this order: Current := Button; Delayed := Previous; RisingPulse := Current AND NOT Delayed; and only then Previous := Button."
+    }
+  ],
+  "faultCases": [
+    "The starter has no one-scan memory; keep Previous, set Delayed from it, derive RisingPulse from Current and Delayed, and update Previous last."
+  ]
+}

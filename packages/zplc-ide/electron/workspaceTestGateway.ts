@@ -83,6 +83,16 @@ async function inspectProjectManifest(candidatePath: unknown): Promise<Pick<Regi
   }
 }
 
+/** Whether `canonicalRoot` is the real path of the folder the window shows (null: the window shows none). */
+async function isShownRoot(canonicalRoot: string, shownRoot: string | null): Promise<boolean> {
+  if (shownRoot === null) return false;
+  try {
+    return canonicalRoot === await realpath(shownRoot);
+  } catch {
+    return false;
+  }
+}
+
 async function revalidateRoot(workspace: RegisteredWorkspace): Promise<boolean> {
   try {
     const currentCanonicalRoot = await realpath(workspace.canonicalRoot);
@@ -135,14 +145,29 @@ export function createWorkspaceTestGateway() {
       return register(ownerWebContentsId, () => inspectRoot(candidateRoot));
     },
 
-    registerProjectManifest(ownerWebContentsId: number, candidateManifest: string): Promise<WorkspaceTestToken> {
-      return register(ownerWebContentsId, () => inspectProjectManifest(candidateManifest));
+    /**
+     * Registers the manifest of a project folder. `expectedRoot` is the real path of the folder that the window shows
+     * (`projectFiles.currentRoot`): a manifest that lives anywhere else is refused, so a workspace is always the
+     * project of the window (IDE-002).
+     */
+    registerProjectManifest(ownerWebContentsId: number, candidateManifest: string, expectedRoot: string | null): Promise<WorkspaceTestToken> {
+      return register(ownerWebContentsId, async () => {
+        const inspected = await inspectProjectManifest(candidateManifest);
+        if (!(await isShownRoot(inspected.canonicalRoot, expectedRoot))) throw unavailable();
+        return inspected;
+      });
     },
 
+    /**
+     * Runs one operation on the registered workspace. `expectedRoot` is the real path of the folder that the window
+     * shows now: a workspace of any other folder (an earlier project, a manifest chosen elsewhere) is refused, so Build
+     * and Test can only act on the project of the editor (IDE-002).
+     */
     async run<T>(
       ownerWebContentsId: number,
       request: unknown,
       runner: (canonicalRoot: string, options: WorkspaceTestRunOptions) => Promise<T> | T,
+      expectedRoot: string | null,
     ): Promise<T> {
       if (!validOwner(ownerWebContentsId)
         || busy
@@ -151,7 +176,9 @@ export function createWorkspaceTestGateway() {
 
       const admittedWorkspace = workspace;
       if (admittedWorkspace.ownerWebContentsId !== ownerWebContentsId
-        || admittedWorkspace.workspaceId !== request.workspaceId) throw unavailable();
+        || admittedWorkspace.workspaceId !== request.workspaceId
+        || expectedRoot === null
+        || admittedWorkspace.canonicalRoot !== expectedRoot) throw unavailable();
 
       busy = true;
       const controller = new AbortController();

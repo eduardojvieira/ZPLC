@@ -1,13 +1,13 @@
 /**
  * The update check (IDE-010): the channel name and the answer, shared by the main process (`updateCheck.ts`,
  * `main.ts`) and the renderer. Pure TypeScript with no Electron or Node import, so both programs can import it. The
- * sandboxed preload repeats the channel name; `updateCheckIpc.test.ts` keeps its copy equal to this one.
+ * channel name is defined once, in `ipcContract.ts`.
  *
  * The check names no address and carries nothing from the renderer: the main process asks one fixed address and
  * answers with a version and a link into this project's releases, or says it could not tell.
  */
 
-export const UPDATE_CHECK_CHANNEL = { RUN: 'update-check:run' } as const;
+export { UPDATE_CHECK_CHANNEL } from './ipcContract.js';
 
 /** The only place a link in the answer may point to: the releases of this project. */
 export const RELEASE_URL_PREFIX = 'https://github.com/eduardojvieira/ZPLC/releases/';

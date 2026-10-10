@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [],
+  "wrong": [
+    {
+      "intent": "command never drops on Stop",
+      "files": {
+        "src/MotorPlant.st": "PROGRAM MotorPlant\nVAR_INPUT Start AT %I0.0 : BOOL; Stop AT %I0.1 : BOOL; AtSpeed AT %I0.2 : BOOL; END_VAR\nVAR_OUTPUT Command AT %Q0.0 : BOOL; Running AT %Q0.1 : BOOL; END_VAR\nIF Start THEN Command := TRUE; END_IF;\nRunning := Command AND AtSpeed;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "Running copies the command instead of waiting for AtSpeed",
+      "files": {
+        "src/MotorPlant.st": "PROGRAM MotorPlant\nVAR_INPUT Start AT %I0.0 : BOOL; Stop AT %I0.1 : BOOL; AtSpeed AT %I0.2 : BOOL; END_VAR\nVAR_OUTPUT Command AT %Q0.0 : BOOL; Running AT %Q0.1 : BOOL; END_VAR\nIF Stop THEN Command := FALSE; ELSIF Start THEN Command := TRUE; END_IF;\nRunning := Command;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "Running follows AtSpeed alone and ignores the command",
+      "files": {
+        "src/MotorPlant.st": "PROGRAM MotorPlant\nVAR_INPUT Start AT %I0.0 : BOOL; Stop AT %I0.1 : BOOL; AtSpeed AT %I0.2 : BOOL; END_VAR\nVAR_OUTPUT Command AT %Q0.0 : BOOL; Running AT %Q0.1 : BOOL; END_VAR\nIF Stop THEN Command := FALSE; ELSIF Start THEN Command := TRUE; END_IF;\nRunning := AtSpeed;\nEND_PROGRAM\n"
+      }
+    }
+  ]
+}

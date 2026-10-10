@@ -11,11 +11,10 @@
  * the user has looked at the summary, an empty folder to extract it into.
  */
 
-export const PROJECT_ARCHIVE_CHANNEL = {
-  exportArchive: 'project-files:export-archive',
-  inspectArchive: 'project-files:inspect-archive',
-  extractArchive: 'project-files:extract-archive',
-} as const;
+import { PROJECT_ARCHIVE_CHANNEL } from './ipcContract.js';
+
+/** The channel names are defined once, in `ipcContract.ts`, and re-exported here for the callers that already import them from this module. */
+export { PROJECT_ARCHIVE_CHANNEL };
 export const PROJECT_ARCHIVE_OPS = ['exportArchive', 'inspectArchive', 'extractArchive'] as const satisfies readonly (keyof typeof PROJECT_ARCHIVE_CHANNEL)[];
 
 /** Folders that are not part of a project: Studio's tree hides them and an archive leaves them out. */

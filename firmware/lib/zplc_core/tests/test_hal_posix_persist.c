@@ -15,8 +15,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-extern void zplc_hal_persist_test_parent_sync_fail(int enabled);
-extern unsigned long zplc_hal_persist_test_parent_sync_attempts(void);
+#include <zplc_test_hooks.h>
 
 static int test_count = 0;
 static int fail_count = 0;
