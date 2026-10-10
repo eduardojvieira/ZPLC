@@ -688,6 +688,29 @@ static int cmd_sched_tasks(const struct shell *sh, size_t argc, char **argv) {
   return 0;
 }
 
+/* CMP-052: a refused upload names both draft numbers; 0 is an artifact built
+ * before the counter. Studio shows this text with the upload failure. */
+static void print_program_refusal(const struct shell *sh, int code,
+                                  const uint8_t *binary, size_t size) {
+  if (code == ZPLC_LOADER_ERR_DRAFT) {
+    uint32_t built = zplc_loader_artifact_draft_counter(binary, size);
+
+    if (built == 0U) {
+      shell_error(sh,
+                  "ERROR: Program was built for contract draft none, this "
+                  "runtime is draft %u (%d)",
+                  (unsigned int)ZPLC_DRAFT_COUNTER, code);
+    } else {
+      shell_error(sh,
+                  "ERROR: Program was built for contract draft %u, this "
+                  "runtime is draft %u (%d)",
+                  (unsigned int)built, (unsigned int)ZPLC_DRAFT_COUNTER, code);
+    }
+    return;
+  }
+  shell_error(sh, "ERROR: Program validation failed (%d)", code);
+}
+
 static int cmd_sched_load(const struct shell *sh, size_t argc, char **argv) {
   if (argc != 2) {
     shell_error(sh, "Usage: zplc sched load <size>");
@@ -737,7 +760,8 @@ static int cmd_sched_data(const struct shell *sh, size_t argc, char **argv) {
     int validation = zplc_sched_validate_program(program_staging_buffer,
                                                  program_staging_received_size);
     if (validation != ZPLC_LOADER_OK) {
-      shell_error(sh, "ERROR: Program validation failed (%d)", validation);
+      print_program_refusal(sh, validation, program_staging_buffer,
+                            program_staging_received_size);
       program_expected_size = 0;
       program_staging_received_size = 0;
       memset(program_staging_buffer, 0, program_buffer_size);
@@ -902,6 +926,7 @@ static int cmd_sys_info(const struct shell *sh, size_t argc, char **argv) {
     JSON_UINT(sh, "device_protocol_version", 1U, true);
     JSON_UINT(sh, "bytecode_abi_major", ZPLC_VERSION_MAJOR, true);
     JSON_UINT(sh, "bytecode_abi_minor", ZPLC_VERSION_MINOR, true);
+    JSON_UINT(sh, "draft_counter", ZPLC_DRAFT_COUNTER, true);
 
     shell_fprintf(sh, SHELL_NORMAL, "\"capabilities\":");
     JSON_OBJ_START(sh);
@@ -928,6 +953,7 @@ static int cmd_sys_info(const struct shell *sh, size_t argc, char **argv) {
   shell_print(sh, "System Information:");
   shell_print(sh, "  Board:          %s", CONFIG_BOARD);
   shell_print(sh, "  ZPLC Version:   %s", zplc_core_version());
+  shell_print(sh, "  Contract Draft: %u", (unsigned int)ZPLC_DRAFT_COUNTER);
   shell_print(sh, "  Zephyr Version: %s", KERNEL_VERSION_STRING);
   shell_print(sh, "  Uptime:         %u ms", k_uptime_get_32());
   shell_print(sh, "  CPU Freq:       %u MHz", (unsigned int)CPU_FREQ_MHZ);
@@ -1666,7 +1692,8 @@ static int cmd_zplc_data(const struct shell *sh, size_t argc, char **argv) {
                                       program_staging_received_size,
                                       &new_scan_interval_ms);
     if (ret != 0) {
-      shell_error(sh, "ERROR: Program validation failed (%d)", ret);
+      print_program_refusal(sh, ret, program_staging_buffer,
+                            program_staging_received_size);
       program_expected_size = 0;
       program_staging_received_size = 0;
       memset(program_staging_buffer, 0, program_buffer_size);
