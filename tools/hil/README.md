@@ -10,6 +10,9 @@ a temporary directory that it removes (HIL-006).
 ## Run
 
 ```bash
+# one command per board; it prompts you at every physical step and writes a run record (HIL-012)
+python3 tools/hil/run_chain.py rpi_pico
+
 # the language suites, or one script
 python3 tools/hil/run_all_languages.py --port /dev/ttyACM0
 python3 tools/hil/test_loop.py
@@ -36,6 +39,7 @@ says so and is never hardware evidence.
 
 | Script | What it does |
 |--------|--------------|
+| `run_chain.py` | The whole chain for one board, prompting for each physical step; writes a run record (HIL-009, HIL-012). |
 | `run_all_languages.py` | The IL, LD, FBD, SFC and ST suites and the reference projects. |
 | `run_all_hil_tests.py` | The opcode-level scripts. They need a firmware image with the HIL trace. |
 | `test_il_suite.py`, `test_ld_suite.py`, `test_fbd_suite.py`, `test_sfc_suite.py`, `test_st_suite.py`, `test_examples_suite.py` | A language's fixtures, or the reference projects, on the device. |
@@ -73,3 +77,24 @@ The opcode scripts (`test_system.py` and the ones like it) read the HIL trace fr
 with `CONFIG_ZPLC_HIL_DEBUG=y` prints. The shipped profiles of the Pico and the ESP32-S3 set it today; release firmware
 must not (HIL-013), so on a release image those scripts exit 77.
 
+
+## Run records (HIL-009)
+
+Every hardware run writes a machine-readable record, `run-record.schema.json` in this directory, to
+`build/hil-records/` (or `--out`). It carries the board and what the device reported about itself, the firmware
+commit, version and ABI as the image reports them (fields that the image does not report yet are null, not guessed;
+REL-023 will add them), the SHA-256 of every program and of the image the person says was flashed, each step with its
+result and the time a person confirmed it by typing the identity the device reported, the tests with their results,
+the tool versions, the operator and the raw shell log. `evidence` says how it was made: `hardware` only for a serial
+link to a board, never for the host runtime or a fake. A record is bound to the image it tested and is committed
+afterwards, never in the commit the image was built from; the steps of HIL-010 that the chain cannot run yet are in it
+as `pending`, each with what it lacks.
+
+## What a person must do
+
+| Step | Who |
+|------|-----|
+| Flash the image | a person; no tool here flashes |
+| Name the port when more than one device matches | a person (`--port`) |
+| Type the identity the device reports at each physical step | a person; `run_chain.py` and `zplc-hil run` refuse without an interactive terminal and have no flag that skips it |
+| Wiring for the loopback, analog and fieldbus items of HIL-010 | a person; the bench guide (HIL-014) is TO BE FILLED by the one who does the bench run |

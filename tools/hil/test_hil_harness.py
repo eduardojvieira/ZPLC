@@ -4,10 +4,12 @@
 Nothing here opens a serial port. A device is a fake: NullDevice shows nothing, HostRuntimeDevice is the native POSIX
 runtime of this tree behind the shell grammar (ZPLC_NATIVE_SIM_BIN names its binary; those tests are skipped without it).
 """
+import io
 import os
 import shutil
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 
 from hil_devices import HostRuntimeDevice, NullDevice
@@ -29,7 +31,15 @@ END_PROGRAM
 """
 
 
-class ChecksTests(unittest.TestCase):
+class QuietCase(unittest.TestCase):
+    """A test case that swallows what the scripts under test print: their PASS and FAIL lines are not this run's output."""
+
+    def run(self, result=None):
+        with redirect_stdout(io.StringIO()):
+            return super().run(result)
+
+
+class ChecksTests(QuietCase):
     def tester(self):
         return ZPLCTester(transport=NullDevice())
 
@@ -54,7 +64,7 @@ class ChecksTests(unittest.TestCase):
         self.assertEqual(tester.finish(), 77)
 
 
-class NullDeviceTests(unittest.TestCase):
+class NullDeviceTests(QuietCase):
     def test_it_acknowledges_commands_and_shows_zero_memory_and_no_traces(self):
         tester = ZPLCTester(transport=NullDevice())
         self.assertIn("OK", tester.send("zplc stop"))
@@ -63,7 +73,7 @@ class NullDeviceTests(unittest.TestCase):
 
 
 @needs_runtime
-class HostRuntimeDeviceTests(unittest.TestCase):
+class HostRuntimeDeviceTests(QuietCase):
     def test_a_compiled_program_runs_and_its_outputs_are_peeked(self):
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory) / "add.st"
@@ -85,7 +95,7 @@ class HostRuntimeDeviceTests(unittest.TestCase):
 
 
 @needs_bun
-class CompiledFixturesAreNotKeptTests(unittest.TestCase):
+class CompiledFixturesAreNotKeptTests(QuietCase):
     def test_compiling_leaves_nothing_next_to_the_source_and_cleans_up_after_itself(self):
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory) / "add.st"

@@ -203,6 +203,11 @@ class HostRuntimeDevice(ShellDevice):
                 self._process.wait(timeout=5)
             except subprocess.TimeoutExpired:
                 self._process.kill()
+        for pipe in (self._process.stdin, self._process.stdout):
+            try:
+                pipe.close()
+            except OSError:
+                pass
         shutil.rmtree(self._persist, ignore_errors=True)
 
     # shell grammar ----------------------------------------------------------------------------------

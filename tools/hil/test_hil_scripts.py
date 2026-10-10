@@ -6,11 +6,13 @@ and makes no compiled file in the tree (HIL-006). No serial port is opened here:
     host-runtime  the native POSIX runtime of this tree (ZPLC_NATIVE_SIM_BIN names it); the passing paths need it
 """
 import importlib
+import io
 import json
 import os
 import subprocess
 import sys
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 
 os.environ["ZPLC_HIL_FORBID_SERIAL"] = "1"  # a tripwire: nothing in this test run may open a port
@@ -52,10 +54,11 @@ FIXTURE_SCRIPTS = {
 # scripts that take their own command line and open the serial port themselves
 SERIAL_SCRIPTS = ["test_modbus_rtu_serial", "test_modbus_tcp", "test_comm_security"]
 # what a script is when it is not a device script: libraries, host checks with their own exit status, and unit tests
-LIBRARIES = {"zplc_tester", "language_tester", "fixture_script", "opcode_cases", "hil_ports", "hil_devices"}
+LIBRARIES = {"zplc_tester", "language_tester", "fixture_script", "opcode_cases", "hil_ports", "hil_devices", "hil_record", "hil_guard"}
 HOST_CHECKS = {
     "audit_repo_hygiene", "audit_specs_scope", "validate_docs_parity", "validate_release_evidence", "validate_supported_boards",
     "run_board_matrix", "verify_compilation", "run_all_hil_tests", "run_all_languages",
+    "run_chain",  # the chain for a board: test_hil_chain.py runs it on fake devices
 }
 
 
@@ -80,7 +83,15 @@ class NoTraceDevice(NullDevice):
         return "ERROR: hil: command not found\r\n" if line.startswith("zplc hil") else super().handle(line)
 
 
-class DeviceScriptsFailTests(unittest.TestCase):
+class QuietCase(unittest.TestCase):
+    """A test case that swallows what the scripts under test print: their PASS and FAIL lines are not this run's output."""
+
+    def run(self, result=None):
+        with redirect_stdout(io.StringIO()):
+            return super().run(result)
+
+
+class DeviceScriptsFailTests(QuietCase):
     def test_every_opcode_script_fails_on_a_device_that_shows_nothing(self):
         for module, function in OPCODE_SCRIPTS.items():
             with self.subTest(script=module):
@@ -97,7 +108,7 @@ class DeviceScriptsFailTests(unittest.TestCase):
                 self.assertEqual(getattr(load(module), function)(QuickLanguageTester(transport=NullDevice())), 1)
 
 
-class ScriptsAreSafeToImportAndRunTests(unittest.TestCase):
+class ScriptsAreSafeToImportAndRunTests(QuietCase):
     def test_every_script_imports_without_a_port_or_pyserial(self):
         for module in [*OPCODE_SCRIPTS, *FIXTURE_SCRIPTS, *SERIAL_SCRIPTS, "check_alive", "check_hw", "debug_peek", "sniff", "rescue", "rescue_device", "inspect_zplc"]:
             with self.subTest(script=module):
@@ -131,7 +142,7 @@ class ScriptsAreSafeToImportAndRunTests(unittest.TestCase):
                 self.assertNotEqual(code, 0)
 
 
-class BenchUtilitiesTests(unittest.TestCase):
+class BenchUtilitiesTests(QuietCase):
     def test_every_non_gating_script_is_listed_with_its_purpose_in_the_readme(self):
         listed = json.loads((HERE / "non-gating.json").read_text())["scripts"]
         readme = (HERE / "README.md").read_text()
@@ -152,7 +163,7 @@ class BenchUtilitiesTests(unittest.TestCase):
 
 
 @needs_runtime
-class FixtureScriptsPassOnTheHostRuntimeTests(unittest.TestCase):
+class FixtureScriptsPassOnTheHostRuntimeTests(QuietCase):
     """The passing paths: the scripts run on the native runtime of this tree and exit 0, so that their expected values are right."""
 
     QUICK = ["test_il_suite", "test_ld_suite", "test_fbd_suite", "test_sfc_suite", "test_loop", "test_pointer", "test_vartemp",

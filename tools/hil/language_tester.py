@@ -114,12 +114,14 @@ class LanguageTester(ZPLCTester):
         shadow[address] = byte
         self.send(f"zplc dbg force set {hex(address)} {byte:02x}", wait_for="OK:")
 
-    def run_fixture(self, fixture: dict, scan_ms: int | None = None) -> list[str]:
-        """Compile the fixture, run its phases and return what differed from the expected values (empty is a pass)."""
+    def run_fixture(self, fixture: dict, scan_ms: int | None = None, bytecode: list[int] | None = None) -> list[str]:
+        """Compile the fixture (or take its artifact), run its phases and return what differed from the expected values (empty is a pass)."""
         scan_ms = scan_ms or load_manifest()["scanMs"]
         problems: list[str] = []
         source = HIL / fixture["source"]
-        self.upload_bytecode(self.compile_project(source) if source.is_dir() else self.compile_st(str(source)))
+        if bytecode is None:
+            bytecode = self.compile_project(source) if source.is_dir() else self.compile_st(str(source))
+        self.upload_bytecode(bytecode)
         self.send("zplc hil mode off")
         self.send("zplc start")
         shadow: dict[int, int] = {}
