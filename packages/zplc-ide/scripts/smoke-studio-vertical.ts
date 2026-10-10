@@ -694,6 +694,14 @@ async function main(): Promise<void> {
       const value = await page().evaluate('Number.isInteger(window.__zplcSmoke?.priorCompilerRunId) ? window.__zplcSmoke.priorCompilerRunId : undefined');
       return typeof value === 'number' ? value : undefined;
     });
+    // Closing a tab with unsaved changes asks first (IDE-005): Motor.st is seeded modified, so the question comes up and Cancel keeps the tab.
+    await page().evaluate(`document.querySelector('button[aria-label="Close Motor.st"]')?.click()`);
+    await waitFor('unsaved tab question', async () => await page().evaluate(`document.querySelector('[data-unsaved-changes-dialog]')?.closest('[role="dialog"]')?.textContent?.includes('Unsaved changes in this tab') && document.querySelector('[data-unsaved-changes-dialog]')?.textContent?.includes('Motor.st') ? true : undefined`) === true ? true : undefined);
+    await click('Cancel');
+    await waitFor('unsaved tab question closed', async () => await page().evaluate(`!document.querySelector('[data-unsaved-changes-dialog]') && window.__zplcSmoke.getState?.().activeFileId === 'motor-st' && window.__zplcSmoke.getState?.().openTabs.includes('motor-st') ? true : undefined`) === true ? true : undefined);
+    // With nothing unsaved the tab closes at once and focus moves to the next tab. The buffer is made clean the way a save does, and stays loaded.
+    await page().evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const files = new Map(useIDEStore.getState().loadedFiles); files.set('motor-st', { ...files.get('motor-st'), isModified: false }); useIDEStore.setState({ loadedFiles: files }); window.__zplcSmoke.cleanForClose = true; })`);
+    await waitFor('clean Motor.st before close', async () => await page().evaluate('window.__zplcSmoke.cleanForClose ? true : undefined') === true ? true : undefined);
     await page().evaluate(`document.querySelector('button[aria-label="Close Motor.st"]')?.click()`);
     await waitFor('editor close focus recovery', async () => await page().evaluate(`window.__zplcSmoke.getState?.().activeFileId === 'aux-st' && document.activeElement?.id === 'editor-tab-aux-st' ? true : undefined`) === true ? true : undefined);
     await setFile(validProgram, false);
@@ -1019,7 +1027,7 @@ async function main(): Promise<void> {
     await Bun.sleep(100);
     const closeDialog = await page().evaluate(`(() => { const dialog = document.querySelector('[role="dialog"]'); return { dialog: dialog?.textContent ?? null, project: document.querySelector('button[aria-label="Close Project"]') !== null }; })()`) as { dialog: string | null; project: boolean };
     assert(closeDialog.dialog?.includes('Discard unsaved changes?'), `Unsaved close confirmation did not open: ${JSON.stringify(closeDialog)}`);
-    assert(await page().evaluate(`(() => { const dialog = document.querySelector('[role="dialog"]'); return dialog?.textContent?.includes('Changes to this project will be lost when it closes.') && [...dialog.querySelectorAll('button')].some((button) => button.textContent?.trim() === 'Continue editing') && [...dialog.querySelectorAll('button')].some((button) => button.textContent?.trim() === 'Discard changes and close'); })()`) === true, 'Unsaved close confirmation must explain the loss and offer explicit choices');
+    assert(await page().evaluate(`(() => { const dialog = document.querySelector('[role="dialog"]'); return dialog?.textContent?.includes('Changes to this project will be lost when it closes.') && [...dialog.querySelectorAll('button')].some((button) => button.textContent?.trim() === 'Continue editing') && [...dialog.querySelectorAll('button')].some((button) => button.textContent?.trim() === 'Save all and close') && [...dialog.querySelectorAll('button')].some((button) => button.textContent?.trim() === 'Discard changes and close'); })()`) === true, 'Unsaved close confirmation must explain the loss and offer save, discard and cancel');
     assert(await page().evaluate(`(() => { const dialog = document.querySelector('[role="dialog"]'); return Boolean(dialog?.contains(document.activeElement)) && document.activeElement?.getAttribute('aria-label') === 'Close'; })()`) === true, 'Modal must initially focus a safe control inside the dialog');
     await page().command('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Tab', code: 'Tab', modifiers: 8 });
     await page().command('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Tab', code: 'Tab', modifiers: 8 });

@@ -4,6 +4,47 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- `smoke:studio-vertical` passes again to its end: it clicked the close button of a
+  tab that was seeded modified and expected it to close at once, which the unsaved
+  changes question (IDE-005) had stopped doing. It now answers the question with
+  Cancel, checks the tab stays, and closes the tab once nothing is unsaved; its
+  Close Project step also asks for Save all and close.
+- The project tree supports new folder, rename, move, duplicate and delete folder
+  (IDE-004), from the Explorer header, a context menu and F2. Open buffers, tabs
+  and breakpoints follow a renamed or moved entry, a task that runs a renamed
+  program follows it in `zplc.json`, and a name that the build reads as the same
+  as another program is refused. An empty folder is listed.
+- A change made outside Studio is picked up while a project is open (IDE-004): the
+  main process watches the folder behind a typed `project-files:watch` request and
+  pushes batches of relative paths on `project-files:changed`. An unmodified file
+  reloads, a deleted one closes, and a modified one asks to keep the user's
+  version or load the disk's. `zplc.json` is not watched yet.
+- Closing the project with modified files offers Save all and close next to
+  Discard and Continue editing (IDE-005); it offered only discard or cancel. The
+  main process also catches Ctrl+R, Ctrl+Shift+R and Cmd+R before the page and
+  the menu: a packaged build swallows them and a development host reloads only
+  through the unsaved-work question.
+- Studio has application preferences that persist per user (IDE-007, IDE-010):
+  editor font size (10 to 32 px) and tab size (2, 3, 4, 8), density (compact
+  scales the Tailwind spacing of the whole window), language (the Learn lessons
+  follow it), autosave (off by default; after 5, 15, 30 or 60 seconds without
+  typing, saved without a line in Output per save) and an opt-in update check
+  (`update-check:run`, one fixed GitHub releases address, no argument from the
+  renderer, answers a version and a link). They sit at the top of Project
+  Settings and on the Welcome screen. Only the theme existed before.
+- An exception while the toolbar, the editor area or the lower panel draws now
+  shows its error and a Retry button in that region only (IDE-011); before,
+  only the editor content and the lower-panel content had their own boundary,
+  so a failure in the toolbar or in a tab strip replaced the whole window. A
+  development-only probe (`DevFaultProbe`, absent from production builds) lets
+  journey 20 make each region fail in the real application.
+- Studio keeps a copy of every modified file in its user-data directory within a
+  second of the last keystroke (IDE-006), and offers each one back, with its name
+  and the time it was kept, when the project is opened after a crash. A normal exit
+  (save, discard, close with discard) leaves nothing. The store is owned by the main
+  process behind three typed channels (`recovery:write`, `recovery:list`,
+  `recovery:discard`) that name the project by the opaque folder id and a relative
+  path; a project keeps at most 64 files and about 64 MB.
 - The loader refuses a program whose calls nest deeper than the call stack of
   the VM (`ZPLC_CALL_STACK_MAX`, 32 by default, 16 on the ESP32-S3 profile)
   with `ZPLC_LOADER_ERR_STACK`, instead of accepting it and ending the scan
