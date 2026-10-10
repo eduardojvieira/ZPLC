@@ -193,7 +193,10 @@ All notable changes are documented here.
   the old series gave `ASIN(0.5)` = 0.5259, `ACOS(0.5)` = 1.0449, `ATAN(1.0)` =
   0.7238, `LN(10.0)` = 2.218, `LOG(1000.0)` = 1.449 and an `ATAN2` wrong in
   three quadrants. Their arguments may be integers. `SIN`, `COS` and `TAN` of
-  an angle of 100000 or more are a NaN, `LN(0.0)` is minus infinity, and
+  an angle of 100000 or more are reduced modulo 2 pi with 2 pi held to 36 bits
+  and a correction, so they are exact up to 2^40 (2e-6) and finite for every
+  finite REAL (an infinity or a NaN gives a NaN; no angle gives a fault or a
+  result outside -1 to 1); `LN(0.0)` is minus infinity, and
   `ASIN` or `ACOS` outside -1 to 1 are a NaN. `EXPT` is the operator `**`: it
   no longer underflows the evaluation stack for an exponent of 0 (the artifact
   was refused by the loader) and no longer takes the bits of a REAL exponent as

@@ -86,6 +86,37 @@ describe('mathlib accuracy against Math.*', () => {
         }
     });
 
+    test('SIN and COS of a large angle: absolute 2e-6 up to 2^40, as for a small one', () => {
+        // the exact sine of the REAL (Math.sin reduces a double exactly) is the reference
+        const grids = [
+            linear(100000, 1000000, 8000),
+            linear(1e6, 1e9, 8000),
+            logarithmic(1e5, 2 ** 40, 12000, 21),
+            logarithmic(1e5, 2 ** 40, 12000, 22).map((x) => -x),
+            [100000, 100001, 131072, 2 ** 24, 2 ** 30, 2 ** 31, 1e9, 1e10, 2 ** 36, 2 ** 40 - 2 ** 16].map(Math.fround),
+        ];
+        for (const grid of grids) {
+            expect(worst(grid, sine, Math.sin).absolute).toBeLessThan(2e-6);
+            expect(worst(grid, cosine, Math.cos).absolute).toBeLessThan(2e-6);
+        }
+    });
+
+    test('SIN and COS of an angle up to 2^48: absolute 1e-4 (the part of 2 pi the stages do not hold grows with x)', () => {
+        const grid = [...logarithmic(2 ** 40, 2 ** 48, 8000, 23), ...logarithmic(2 ** 40, 2 ** 48, 8000, 24).map((x) => -x)];
+        expect(worst(grid, sine, Math.sin).absolute).toBeLessThan(1e-4);
+        expect(worst(grid, cosine, Math.cos).absolute).toBeLessThan(1e-4);
+    });
+
+    test('TAN of a large angle: within the error of its angle, up to 2^40', () => {
+        // an angle error of 2e-6 moves tan by 2e-6 * (1 + tan^2); the result adds a rounding of 5e-7 of its size
+        const grid = [...linear(100000, 1e9, 12000), ...logarithmic(1e5, 2 ** 40, 12000, 25)].filter((x) => Math.abs(Math.cos(x)) > 0.01);
+        const excess = grid.map((x) => {
+            const want = Math.tan(x);
+            return Math.abs(call(TANF_LABEL, x) - want) - (2e-6 * (1 + want * want) + 5e-7 * Math.abs(want));
+        });
+        expect(Math.max(...excess)).toBeLessThanOrEqual(0);
+    });
+
     test('TAN: relative 3e-7 for |x| up to 1000', () => {
         expect(worst(linear(-1000, 1000, 30000), (x) => call(TANF_LABEL, x), Math.tan).relative).toBeLessThan(3e-7);
     });
@@ -144,14 +175,25 @@ describe('mathlib special values', () => {
         expect(call(LOG2G_LABEL, 8)).toBe(3);
     });
 
-    test('SIN and COS of 0, of NaN and beyond the reduction range', () => {
+    test('SIN and COS of 0, of NaN and of infinity', () => {
         expect(sine(0)).toBe(0);
         expect(cosine(0)).toBe(1);
         expect(Number.isNaN(sine(NaN))).toBe(true);
-        expect(Number.isNaN(cosine(Infinity))).toBe(true);
-        expect(Number.isNaN(sine(100000))).toBe(true);
-        expect(Number.isNaN(cosine(-100000))).toBe(true);
-        expect(Number.isNaN(call(TANF_LABEL, 1e6))).toBe(true);
+        expect(Number.isNaN(cosine(NaN))).toBe(true);
+        expect(Number.isNaN(sine(Infinity))).toBe(true);
+        expect(Number.isNaN(cosine(-Infinity))).toBe(true);
+        expect(Number.isNaN(call(TANF_LABEL, Infinity))).toBe(true);
+    });
+
+    test('SIN, COS and TAN of a finite angle are finite, whatever its size', () => {
+        const largest = 3.4028234663852886e38;
+        const angles = [100000, -100000, 1e6, 1e9, -1e9, 2 ** 31, 2 ** 40, 2 ** 48, 2 ** 60, 1e20, 1e30, largest, -largest];
+        for (const angle of angles) {
+            const x = Math.fround(angle);
+            expect(Math.abs(sine(x))).toBeLessThanOrEqual(1);
+            expect(Math.abs(cosine(x))).toBeLessThanOrEqual(1);
+            expect(Number.isFinite(call(TANF_LABEL, x))).toBe(true);
+        }
     });
 
     test('ASIN, ACOS and ATAN2 at the corners', () => {
@@ -197,8 +239,9 @@ describe('mathlib stack discipline', () => {
                 else run([bits, patterns[(bits >>> 7) % patterns.length]!]);
             }
             if (arity === 2) for (const a of edges) for (const b of edges) run(label === SINCOSF_LABEL ? [a, b & 1] : [a, b]);
-            // no loop depends on the argument: the longest run is a fixed number of instructions
-            expect(longest).toBeLessThan(250);
+            // no loop depends on the argument: the longest run is a fixed number of instructions (mathlib.ts states them)
+            const bound = label === SINCOSF_LABEL ? 430 : label === TANF_LABEL ? 520 : 250;
+            expect(longest).toBeLessThanOrEqual(bound);
         });
     }
 });

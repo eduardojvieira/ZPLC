@@ -152,7 +152,7 @@ Calculates the square root of a number.
 Standard trigonometric functions (evaluated in radians).
 - **Inputs:** `IN` (REAL).
 - **Outputs:** (REAL) Sine, Cosine, or Tangent of IN (`cmp-058-trigonometric-functions`).
-- **Domain:** `IN` below 100000 in magnitude. A NaN, or an angle of 100000 or more, gives a NaN: a REAL of that size no longer says where on the circle it is.
+- **Domain:** every finite `IN`. A NaN or an infinity gives a NaN (`cmp-058-sine-of-infinity-and-not-a-number`). An angle of 100000 or more is reduced modulo 2 pi before the sine is taken, with 2 pi held to 36 bits in three parts that multiply exactly and a correction applied once, so the result is the sine of the REAL itself: as accurate as for a small angle up to 2^40, and with an error that grows as `IN` times 1e-19 above it (1e-4 at 2^48). A REAL of 2 pi times 2^48 (1.8e15) or more has a spacing above 2^25 radians: the angle carries no information, the reduction does not hold it and the function gives the value for an angle of 0.0, finite, without an error (`cmp-058-trigonometric-functions-of-negative-and-large-angles`).
 
 ### EXP / LN / LOG
 The natural exponential, the natural logarithm and the logarithm to base 10.
@@ -182,13 +182,17 @@ The functions above are subroutines in single-precision arithmetic, measured aga
 | `EXP` | -87 to 88 | relative 1.3e-7 |
 | `LN`, `LOG` | all positive REAL, subnormals included | relative 3e-7 |
 | `SIN`, `COS` | magnitude up to 1000 | absolute 2e-7 |
-| `SIN`, `COS` | magnitude below 100000 | absolute 2e-6 |
+| `SIN`, `COS` | magnitude below 2^40 (1.1e12) | absolute 2e-6 |
+| `SIN`, `COS` | magnitude from 2^40 to 2^48 (2.8e14) | absolute 1e-4 |
 | `TAN` | magnitude up to 1000 | relative 3e-7 |
+| `TAN` | magnitude up to 2^40 | the error of the angle times `1 + TAN(x)^2`, plus 5e-7 of the result |
 | `ATAN` | all REAL | absolute 2e-7 |
 | `ASIN`, `ACOS` | -1.0 to 1.0 | absolute 4e-7 |
 | `ATAN2` | all REAL pairs | absolute 4e-7 |
 
 None of them faults the VM for any argument: a division by zero is replaced by the value the function defines, and a NaN argument gives a NaN.
+
+Cost: no loop depends on the argument, so the number of instructions executed has a fixed bound: at most 40 for `SQRT`, 90 for `EXP`, `LN` and `LOG`, 105 for `ASIN` and `ACOS`, 165 for `TAN` and 75 for `SIN` and `COS` up to 100000. An angle of 100000 or more is reduced first, in 190 to 355 more instructions by its size: `SIN` and `COS` at most 430, `TAN` at most 520.
 
 ---
 

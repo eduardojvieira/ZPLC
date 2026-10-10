@@ -149,7 +149,7 @@ Los anchos, el desbordamiento y el comportamiento en los límites están en los 
 ### SIN / COS / TAN
 - **Entradas:** `IN` (REAL).
 - **Salidas:** (REAL) Seno, Coseno o Tangente de IN (en radianes) (`cmp-058-trigonometric-functions`).
-- **Dominio:** `IN` menor que 100000 en magnitud. Un NaN, o un ángulo de 100000 o más, da NaN: un REAL de ese tamaño ya no dice dónde está en la circunferencia.
+- **Dominio:** todo `IN` finito. Un NaN o un infinito da NaN (`cmp-058-sine-of-infinity-and-not-a-number`). Un ángulo de 100000 o más se reduce módulo 2 pi antes de tomar el seno, con 2 pi en 36 bits repartidos en tres partes que se multiplican sin error y una corrección aplicada una vez, de modo que el resultado es el seno del REAL mismo: tan preciso como para un ángulo pequeño hasta 2^40, y con un error que crece como `IN` por 1e-19 por encima (1e-4 en 2^48). Un REAL de 2 pi por 2^48 (1.8e15) o más tiene una separación mayor que 2^25 radianes: el ángulo no lleva información, la reducción no lo contiene y la función da el valor de un ángulo de 0.0, finito y sin error (`cmp-058-trigonometric-functions-of-negative-and-large-angles`).
 
 ### EXP / LN / LOG
 El exponencial natural, el logaritmo natural y el logaritmo en base 10.
@@ -179,13 +179,17 @@ Las funciones anteriores son subrutinas en aritmética de precisión simple, med
 | `EXP` | -87 a 88 | relativo 1.3e-7 |
 | `LN`, `LOG` | todo REAL positivo, subnormales incluidos | relativo 3e-7 |
 | `SIN`, `COS` | magnitud hasta 1000 | absoluto 2e-7 |
-| `SIN`, `COS` | magnitud menor que 100000 | absoluto 2e-6 |
+| `SIN`, `COS` | magnitud menor que 2^40 (1.1e12) | absoluto 2e-6 |
+| `SIN`, `COS` | magnitud de 2^40 a 2^48 (2.8e14) | absoluto 1e-4 |
 | `TAN` | magnitud hasta 1000 | relativo 3e-7 |
+| `TAN` | magnitud hasta 2^40 | el error del ángulo por `1 + TAN(x)^2`, más 5e-7 del resultado |
 | `ATAN` | todo REAL | absoluto 2e-7 |
 | `ASIN`, `ACOS` | -1.0 a 1.0 | absoluto 4e-7 |
 | `ATAN2` | todo par de REAL | absoluto 4e-7 |
 
 Ninguna hace fallar la VM con ningún argumento: una división por cero se reemplaza por el valor que la función define, y un argumento NaN da NaN.
+
+Costo: ningún lazo depende del argumento, de modo que la cantidad de instrucciones ejecutadas tiene una cota fija: a lo sumo 40 para `SQRT`, 90 para `EXP`, `LN` y `LOG`, 105 para `ASIN` y `ACOS`, 165 para `TAN` y 75 para `SIN` y `COS` hasta 100000. Un ángulo de 100000 o más se reduce primero, con 190 a 355 instrucciones más según su tamaño: `SIN` y `COS` a lo sumo 430, `TAN` a lo sumo 520.
 
 ---
 

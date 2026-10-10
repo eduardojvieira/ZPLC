@@ -725,6 +725,7 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-sel-and-mux-with-negative-and-real-inputs.expect.json","test":"CMP-058 SEL and MUX return negative and REAL inputs, the last input, and IN0 for a selector out of range"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-selection-and-limit-functions.expect.json","test":"CMP-058 SQRT, ABS, MAX, LIMIT, SEL, MUX, MIN and MOD with positive operands"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-shift-and-rotate-at-the-ends-of-their-widths.expect.json","test":"CMP-058 SHL, SHR, ROL and ROR at the first and last bit and at a rotation of the whole width"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-sine-of-infinity-and-not-a-number.expect.json","test":"CMP-058 SIN, COS and TAN of infinity and of a NaN are not a number"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-sqrt-zero-negative-subnormal-and-large-arguments.expect.json","test":"CMP-058 SQRT of zero, of a negative number, of an integer, of a subnormal and of a large REAL"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-sr-and-rs-dominance.expect.json","test":"CMP-058 SR is set-dominant and RS is reset-dominant"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-string-comparison-functions.expect.json","test":"CMP-058 STRCMP, EQ_STRING and NE_STRING compare string variables, case and the empty string included"},

@@ -15,9 +15,10 @@
  *                                        0 below -103.28
  *   LN, LOG    x > 0                     ln x, log10 x; -inf for 0, NaN       absolute 2.0e-7 +
  *                                        below 0                              relative 2.0e-7
- *   SIN, COS   |x| < 100000              sine, cosine; NaN beyond             absolute 2e-7 to 1000,
- *                                                                             2e-6 to 100000
- *   TAN        |x| < 100000              sin x / cos x                        relative 4.0e-7
+ *   SIN, COS   any finite x              sine, cosine; NaN for NaN and       absolute 2e-7 to 1000, 2e-6
+ *                                        infinity                             to 2^40, 1e-4 to 2^48; finite
+ *                                                                             (meaningless) beyond
+ *   TAN        any finite x              sin x / cos x                        relative 3e-7 to 1000
  *   ATAN       any x                     (-pi/2, pi/2)                        absolute 1.5e-7
  *   ASIN       -1 <= x <= 1              [-pi/2, pi/2]; NaN outside           absolute 3.0e-7
  *   ACOS       -1 <= x <= 1              [0, pi]; NaN outside                 absolute 3.0e-7
@@ -25,6 +26,10 @@
  *
  * A NaN argument gives a NaN. The only instruction that can fault is DIVF with a divisor of 0.0, and
  * every division here is guarded, so no routine faults on any argument.
+ *
+ * Instructions executed (no loop depends on the argument): at most 40 for SQRT, 90 for EXP and
+ * LN, 75 for SIN and COS up to |x| = 100000 and 430 above it (the reduction of a large angle:
+ * 265, 345 or 430 by its size), 160 for TAN up to 100000 and 520 above it, 105 for ASIN and ACOS.
  *
  * All routines use the evaluation stack and nothing else, and have one stack effect on every path:
  * `[args] -> [result]`, which the loader verifies (RT-003).
@@ -39,6 +44,8 @@ const SQRTN_LABEL = '_zplc_sqrtn';
 export const LOG2G_LABEL = '_zplc_log2g';
 export const EXPF_LABEL = '_zplc_expf';
 export const SINCOSF_LABEL = '_zplc_sincosf';
+const REDUCEBIG_LABEL = '_zplc_reducebig';
+const PISTEP_LABEL = '_zplc_pistep';
 export const TANF_LABEL = '_zplc_tanf';
 export const ATANF_LABEL = '_zplc_atanf';
 export const ASINF_LABEL = '_zplc_asinf';
@@ -252,10 +259,175 @@ const EXPF: string[] = [
 ];
 
 /**
+ * 2 pi as the sum of three REAL constants of 12 significant bits each, largest first, and what is
+ * left of it over 2 pi. A product of one of the parts and an integer of 12 bits is a 24-bit number:
+ * exact in a REAL, which is what lets the reduction of a large angle subtract whole multiples of 2 pi
+ * without a rounding; the parts hold 2 pi to 1e-11, and the rest (TWO_PI_REST, 1.6e-12 of 2 pi) is
+ * applied once at the end as x * TWO_PI_REST, where its own relative error of 2^-24 is below 1e-19 x.
+ */
+const TWO_PI = (() => {
+    // the first digits of pi, as an integer; 2 pi is twice that over 10^(digits - 1)
+    const digits = '3141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825342117067';
+    const FRACTION_BITS = 400n;
+    let rest = ((2n * BigInt(digits)) << FRACTION_BITS) / 10n ** BigInt(digits.length - 1);
+    const whole = Number(rest) / 2 ** Number(FRACTION_BITS);
+    const parts: number[] = [];
+    for (let i = 0; i < 3; i += 1) {
+        const top = BigInt(rest.toString(2).length - 1);
+        const shift = top - 11n;
+        const chunk = (rest >> shift) << shift;
+        parts.push(Number(chunk >> shift) * 2 ** (Number(shift) - Number(FRACTION_BITS)));
+        rest -= chunk;
+    }
+    return { parts, restOverTwoPi: Number(rest) / 2 ** Number(FRACTION_BITS) / whole };
+})();
+export const TWO_PI_PARTS: number[] = TWO_PI.parts;
+export const TWO_PI_REST: number = TWO_PI.restOverTwoPi;
+
+/**
+ * One stage of the reduction of a large angle: [hi lo s] -> [hi' lo'] with s a power of two. The
+ * remainder is the sum hi + lo (a REAL and the rounding error that REAL could not hold); the stage
+ * folds lo into hi where hi has the room, then subtracts n * s * 2 pi, n = trunc(hi / (s * 2 pi))
+ * (at most 4096 when the remainder is below 4096 * s * 2 pi), one part of 2 pi at a time
+ * (TWO_PI_PARTS).
+ *
+ * Each product n * s * part is exact (12 bits by 12 bits), and each subtraction is done with
+ * Fast2Sum, which returns the rounded difference and its rounding error exactly (the subtracted
+ * product is never larger than the remainder: the divisor carries a margin of 2^-20, so n is never
+ * one too many). The error goes into lo, so the stage loses nothing: lo is a multiple of the
+ * last part times s, which its 24 bits can hold at every scale, and it is folded back into hi
+ * at the start of the next stage as soon as hi is small enough to take it.
+ */
+const PISTEP: string[] = [
+    `${PISTEP_LABEL}:         ; [hi lo s]`,
+    `    ROT`,
+    `    ROT                 ; [s hi lo]`,
+    `    OVER`,
+    `    OVER`,
+    `    ADDF                ; [s hi lo t]  t = hi + lo`,
+    `    DUP`,
+    `    PICK 3`,
+    `    SUBF                ; [s hi lo t z]  z = t - hi`,
+    `    ROT`,
+    `    SWAP`,
+    `    SUBF                ; [s hi t lo-z]`,
+    `    SWAP                ; [s hi lo' t]`,
+    `    ROT`,
+    `    DROP                ; [s lo' t]`,
+    `    SWAP                ; [s hi lo]  the remainder, folded`,
+    `    PICK 1`,
+    `    PICK 3`,
+    `    PUSH32 ${f(2 * Math.PI * (1 + 2 ** -20))}`,
+    `    MULF                ; [s hi lo hi s*2pi']`,
+    `    DIVF                ; [s hi lo q]`,
+    `    F2I`,
+    `    I2F                 ; [s hi lo n]`,
+    `    PICK 3`,
+    `    MULF                ; [s hi lo n*s]`,
+    `    ROT`,
+    `    ROT                 ; [s ns hi lo]`,
+    ...TWO_PI_PARTS.flatMap((part, index) => [
+        `    PICK 2`,
+        `    PUSH32 ${f(part)}`,
+        `    MULF                ; [s ns hi lo t]  part ${index + 1}`,
+        `    PICK 2`,
+        `    OVER`,
+        `    SUBF                ; [s ns hi lo t u]  u = hi - t`,
+        `    DUP`,
+        `    PICK 4`,
+        `    SUBF                ; [s ns hi lo t u z]  z = u - hi`,
+        `    ROT`,
+        `    ADDF`,
+        `    NEGF                ; [s ns hi lo u err]  err = -(t + z)`,
+        `    ROT`,
+        `    ADDF                ; [s ns hi u lo+err]`,
+        `    ROT`,
+        `    DROP                ; [s ns u lo']`,
+    ]),
+    `    ROT                 ; [s hi lo ns]`,
+    `    DROP                ; [s hi' lo']`,
+    `    ROT                 ; [hi' lo' s]`,
+    `    DROP                ; [hi' lo']`,
+    `    RET`,
+];
+
+/**
+ * An angle of 100000 or more, or a NaN or an infinity: [x] -> [r], r = x mod 2 pi (the sign of x kept,
+ * |r| < 2 pi + 1e-6) for every finite x below 2 pi * 2^48 (1.8e15), where the stages hold the whole
+ * of x. At most four stages (scales 2^36, 2^24, 2^12 and 1), entered by the size of x, no loop; the
+ * part of 2 pi beyond the three parts of the stages is x * TWO_PI_REST, taken from the original x
+ * and subtracted at the end. The error is a rounding of the result (3e-7) up to 2^40 and
+ * x * 1e-19 above it. A larger x is a REAL whose own spacing is above 2^25 and an angle that carries
+ * no information: the guard returns 0.0 when the result is outside the range the caller reduces, so
+ * the answer is finite. A NaN stays a NaN and an infinity becomes a NaN.
+ */
+const REDUCEBIG: string[] = [
+    `${REDUCEBIG_LABEL}:      ; [x]`,
+    `    DUP`,
+    `    PUSH32 ${ABS_MASK}`,
+    `    AND                 ; [x a]`,
+    `    DUP`,
+    `    PUSH32 0x7F800000`,
+    `    GE`,
+    `    JNZ ${REDUCEBIG_LABEL}_nonfinite`,
+    `    OVER                ; [x a x]`,
+    `    SWAP                ; [x x a]`,
+    `    DUP`,
+    `    PUSH32 ${f(2 * Math.PI * 2 ** 36)}`,
+    `    GE`,
+    `    JNZ ${REDUCEBIG_LABEL}_36`,
+    `    PUSH32 ${f(2 * Math.PI * 2 ** 24)}`,
+    `    GE                  ; [x x a>=2pi*2^24]`,
+    `    JNZ ${REDUCEBIG_LABEL}_24`,
+    `    PUSH8 0             ; [x x 0]`,
+    `    JMP ${REDUCEBIG_LABEL}_12`,
+    `${REDUCEBIG_LABEL}_36:  ; [x x a]`,
+    `    DROP`,
+    `    PUSH8 0`,
+    `    PUSH32 ${f(2 ** 36)}`,
+    `    CALL ${PISTEP_LABEL}   ; [x hi lo]`,
+    `    JMP ${REDUCEBIG_LABEL}_24b`,
+    `${REDUCEBIG_LABEL}_24:  ; [x x]`,
+    `    PUSH8 0`,
+    `${REDUCEBIG_LABEL}_24b: ; [x hi lo]`,
+    `    PUSH32 ${f(2 ** 24)}`,
+    `    CALL ${PISTEP_LABEL}`,
+    `${REDUCEBIG_LABEL}_12:  ; [x hi lo]`,
+    `    PUSH32 ${f(2 ** 12)}`,
+    `    CALL ${PISTEP_LABEL}`,
+    `    PUSH32 ${ONE}`,
+    `    CALL ${PISTEP_LABEL}`,
+    `    ADDF                ; [x R]`,
+    `    SWAP`,
+    `    PUSH32 ${f(TWO_PI_REST)}`,
+    `    MULF                ; [R x*rest]`,
+    `    SUBF                ; [r]`,
+    `    DUP`,
+    `    PUSH32 ${ABS_MASK}`,
+    `    AND`,
+    `    PUSH32 ${f(100000)}`,
+    `    LTU                 ; [r |r|<1e5]`,
+    `    JNZ ${REDUCEBIG_LABEL}_done`,
+    `    DROP`,
+    `    PUSH8 0`,
+    `${REDUCEBIG_LABEL}_done: ; [r]`,
+    `    RET`,
+    `${REDUCEBIG_LABEL}_nonfinite: ; [x a]`,
+    `    PUSH32 0x7F800000`,
+    `    GTU                 ; a NaN stays itself`,
+    `    JNZ ${REDUCEBIG_LABEL}_keep`,
+    `    DROP`,
+    `    PUSH32 ${NAN}`,
+    `${REDUCEBIG_LABEL}_keep: ; [x] or [NaN]`,
+    `    RET`,
+];
+
+/**
  * SIN and COS: [x phase] -> [sin(x + phase * pi / 2)]. The angle is reduced to r in [-pi/4, pi/4]
  * by x = n pi/2 + r (pi/2 in three parts, so n * part is exact up to |n| = 2^16 and the error stays
- * below 1e-6 up to |x| of about 10^5); the quadrant (n + phase) mod 4 picks sin r or cos r and the
- * sign. A magnitude of 100000 or more is not reduced (n * part is no longer exact): the result is NaN.
+ * below 2e-6 up to |x| = 100000); the quadrant (n + phase) mod 4 picks sin r or cos r and the sign.
+ * An angle of 100000 or more is first reduced modulo 2 pi by _zplc_reducebig, with the same error
+ * up to 2^48; an infinity or a NaN gives a NaN and every other REAL gives a finite result.
  */
 const SINCOSF: string[] = [
     `${SINCOSF_LABEL}:        ; [x phase]`,
@@ -264,8 +436,10 @@ const SINCOSF: string[] = [
     `    PUSH32 ${ABS_MASK}`,
     `    AND`,
     `    PUSH32 ${f(100000)}`,
-    `    LTU                 ; [phase x |x|<1e5]  (a NaN is not below it)`,
-    `    JZ ${SINCOSF_LABEL}_nan`,
+    `    LTU                 ; [phase x |x|<1e5]`,
+    `    JNZ ${SINCOSF_LABEL}_small`,
+    `    CALL ${REDUCEBIG_LABEL} ; [phase r]  |r| < 2 pi, or a NaN`,
+    `${SINCOSF_LABEL}_small: ; [phase x]`,
     `    DUP`,
     `    PUSH32 ${f(2 / Math.PI)}`,
     `    MULF                ; [phase x t]`,
@@ -338,16 +512,23 @@ const SINCOSF: string[] = [
     `    SHL                 ; [v sign of the quadrant]`,
     `    XOR`,
     `    RET`,
-    `${SINCOSF_LABEL}_nan:   ; [phase x]`,
-    `    DROP`,
-    `    DROP`,
-    `    PUSH32 ${NAN}`,
-    `    RET`,
 ];
 
-/** TAN = sin / cos; a cosine of exactly 0 gives the sine over 1e-30, a very large finite number. */
+/**
+ * TAN = sin / cos; a cosine of exactly 0 gives the sine over 1e-30, a very large finite number.
+ * An angle of 100000 or more is reduced once here, so the two calls of the sine routine do not
+ * reduce it again.
+ */
 const TANF: string[] = [
     `${TANF_LABEL}:           ; [x]`,
+    `    DUP`,
+    `    PUSH32 ${ABS_MASK}`,
+    `    AND`,
+    `    PUSH32 ${f(100000)}`,
+    `    LTU`,
+    `    JNZ ${TANF_LABEL}_small`,
+    `    CALL ${REDUCEBIG_LABEL} ; [r]`,
+    `${TANF_LABEL}_small:    ; [x]`,
     `    DUP`,
     `    PUSH8 0`,
     `    CALL ${SINCOSF_LABEL}  ; [x sin]`,
@@ -553,8 +734,10 @@ export const MATH_ROUTINES: Routine[] = [
     { label: SQRTN_LABEL, lines: SQRTN, needs: [] },
     { label: LOG2G_LABEL, lines: LOG2G, needs: [LOG2F_LABEL] },
     { label: EXPF_LABEL, lines: EXPF, needs: [] },
-    { label: SINCOSF_LABEL, lines: SINCOSF, needs: [] },
-    { label: TANF_LABEL, lines: TANF, needs: [SINCOSF_LABEL] },
+    { label: SINCOSF_LABEL, lines: SINCOSF, needs: [REDUCEBIG_LABEL] },
+    { label: REDUCEBIG_LABEL, lines: REDUCEBIG, needs: [PISTEP_LABEL] },
+    { label: PISTEP_LABEL, lines: PISTEP, needs: [] },
+    { label: TANF_LABEL, lines: TANF, needs: [SINCOSF_LABEL, REDUCEBIG_LABEL] },
     { label: ATANF_LABEL, lines: ATANF, needs: [] },
     { label: ASINF_LABEL, lines: ASINF, needs: [SQRTF_LABEL, ATANF_LABEL] },
     { label: ACOSF_LABEL, lines: ACOSF, needs: [SQRTF_LABEL, ATANF_LABEL] },
