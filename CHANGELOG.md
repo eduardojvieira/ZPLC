@@ -60,6 +60,12 @@ All notable changes are documented here.
   six fields. While writing it, `compiler_check` and `compiler_compile`
   turned out to answer `MCP_INTERNAL_ERROR` for every real project: the
   compiler summary gained `draftCounter` and the MCP result schema did not.
+- A Modbus function block that is reset while its request is in flight no
+  longer hands the slot to another block (COM-008): the worker owns a queued or
+  running slot until it is through, a full request queue writes the whole
+  `STATUS` word, and a test holds a request in the client while it resets one
+  block and starts another.
+
 - Three of the fifteen modules over the new size limit are split (IDE-014): the
   project settings are one module per section (2,181 lines to 213 and eleven
   files of at most 430), the Explorer's context menu and confirmations are
