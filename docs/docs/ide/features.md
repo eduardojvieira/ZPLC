@@ -66,6 +66,20 @@ A change made outside Studio is picked up while a project is open. A file withou
 
 Evidence level: host. `packages/zplc-ide/src/project/treeOperations.test.ts`, `src/store/useIDEStore.test.ts` (project tree operations, over the real project service on a temporary folder), `src/store/externalChanges.test.ts`, `electron/projectWatcher.test.ts` and `electron/projectFiles.test.ts` cover the rules, and journeys 23 (project tree operations) and 24 (changes made outside Studio) of `bun run test:journeys` drive the real application.
 
+## One result from Studio, the CLI and the MCP tools
+
+A scenario test gives the same result wherever you run it. Studio's **Tests** tab, `zplc-cli test` and
+`zplc-cli scenario-run`, and the MCP tools `tests_run` and `scenario_run` all call the same Tool API, on the same
+native POSIX runtime with the same virtual clock, so a temporal assertion (`AT`, `WITHIN`, `FOR`, `EVENTUALLY`,
+`ALWAYS`, `NEVER`, `UNTIL`, `RISING`, `FALLING`) is judged on the same samples. The verdict, the hash of the compiled
+program, the hash and length of the recorded trace of each scenario, and, where an entry point shows them, the
+assertions and the sampled outputs are equal. A failing assertion fails the same way from each, with the CLI exiting
+with code 1.
+
+Evidence level: host. `src/cli/scenarioParity.test.ts` runs every bundled project, each scenario by itself, and a
+project with a failing assertion through the Tool API, the CLI, the MCP dispatcher and the Studio presenter, and
+compares the results. It does not cover a board.
+
 ## Declarations and library folders
 
 Under the file tree, the Explorer lists the declarations of the project: the programs, function blocks, functions,

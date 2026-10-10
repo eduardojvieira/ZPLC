@@ -4,6 +4,13 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- Scenario tests with temporal assertions give the same result from Studio, the
+  CLI and the MCP tools, and a test says so (IDE-031):
+  `src/cli/scenarioParity.test.ts` runs every bundled project, each scenario by
+  itself, and a project with a failing assertion through the Tool API, the CLI,
+  the MCP dispatcher and the Studio presenter, and compares the verdict, the
+  program and trace hashes, and the assertions and sampled outputs. No
+  divergence was found: the three entry points share the Tool API.
 - The project tree lists the project's function blocks, functions and data
   types, and a library folder makes its blocks available to every editor
   (IDE-023). Under the file tree the Explorer shows the declarations that the

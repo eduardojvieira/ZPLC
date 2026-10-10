@@ -66,6 +66,20 @@ Un cambio hecho fuera de Studio se detecta mientras hay un proyecto abierto. Un 
 
 Nivel de evidencia: host. `packages/zplc-ide/src/project/treeOperations.test.ts`, `src/store/useIDEStore.test.ts` (operaciones del árbol, sobre el servicio de proyecto real en una carpeta temporal), `src/store/externalChanges.test.ts`, `electron/projectWatcher.test.ts` y `electron/projectFiles.test.ts` cubren las reglas, y los recorridos 23 (operaciones del árbol del proyecto) y 24 (cambios hechos fuera de Studio) de `bun run test:journeys` manejan la aplicación real.
 
+## Un resultado desde Studio, la CLI y las herramientas MCP
+
+Una prueba de escenario da el mismo resultado desde donde se ejecute. La pestaña **Tests** de Studio, `zplc-cli test` y
+`zplc-cli scenario-run`, y las herramientas MCP `tests_run` y `scenario_run` llaman a la misma Tool API, sobre el mismo
+runtime POSIX nativo con el mismo reloj virtual, de modo que una aserción temporal (`AT`, `WITHIN`, `FOR`,
+`EVENTUALLY`, `ALWAYS`, `NEVER`, `UNTIL`, `RISING`, `FALLING`) se juzga sobre las mismas muestras. El veredicto, el hash
+del programa compilado, el hash y la longitud de la traza grabada de cada escenario y, donde un punto de entrada las
+muestra, las aserciones y las salidas muestreadas son iguales. Una aserción que falla falla igual desde cada uno, y la
+CLI termina con código 1.
+
+Nivel de evidencia: host. `src/cli/scenarioParity.test.ts` ejecuta cada proyecto incluido, cada escenario por separado
+y un proyecto con una aserción que falla a través de la Tool API, la CLI, el despachador MCP y el presentador de
+Studio, y compara los resultados. No cubre una placa.
+
 ## Declaraciones y carpetas de biblioteca
 
 Bajo el árbol de archivos, el Explorer lista las declaraciones del proyecto: los programas, bloques de función,
