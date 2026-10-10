@@ -39,8 +39,11 @@ To change the contract (any opcode, layout, size, code or identifier)
      It writes every generated file and appends the new counter, the
      fingerprint of the contract and the reason to golden/draft-ledger.json.
   3. Move the changed numbers in golden/contract.golden.json (test_contract.py
-     names each one) and rebuild the artifacts committed to the repository
-     (examples/*.zplc and the .hex fixtures), then say why in the commit message.
+     names each one), then run `python3 tools/contract/restamp_artifacts.py`: it
+     rewrites the draft counter and the CRC of every committed artifact
+     (examples/*.zplc, the .hex and C-array fixtures, the fuzz findings) and
+     `--check` is part of `bun run contract:check`. Say why in the commit message.
+     A change that renumbers an opcode needs the artifacts rebuilt, not restamped.
   `--check` fails when the contract differs from the fingerprint recorded for
   its own counter, so a change cannot be committed under the old number.
   Prose (doc strings, group titles) is not part of the fingerprint.
