@@ -19,12 +19,20 @@
  *   _zplc_truncf   [x] -> [y]     REAL with its fractional part removed (the sign and a magnitude of 2^23
  *                                 or more are kept: such a REAL is already whole)
  *   _zplc_roundaf  [x] -> [y]     REAL rounded to the nearest whole number, an exact half away from zero
+ *
+ * LREAL (CMP-015; a value is two cells, the low word deeper):
+ *
+ *   _zplc_d2u32    [x lo hi] -> [n]   LREAL to the nearest UDINT, saturating at 0 and 4294967295, NaN is 0
+ *   _zplc_truncd   [x] -> [y]     LREAL with its fractional part removed (a magnitude of 2^63 or more,
+ *                                 an infinity and a NaN are returned as they are)
+ *   _zplc_roundad  [x] -> [y]     LREAL rounded to the nearest whole number, an exact half away from zero
  */
 
 import { f32hex as f32 } from '../numeric.ts';
 import { POWF_ROUTINES } from '../power.ts';
 import { MATH_ROUTINES } from './mathlib.ts';
 import type { Routine } from './types.ts';
+import type { AsmLine } from '../asm-line.ts';
 
 export type { Routine } from './types.ts';
 
@@ -33,6 +41,9 @@ export const CLAMPI_LABEL = '_zplc_clampi';
 export const F2U32_LABEL = '_zplc_f2u32';
 export const TRUNCF_LABEL = '_zplc_truncf';
 export const ROUNDAF_LABEL = '_zplc_roundaf';
+export const D2U32_LABEL = '_zplc_d2u32';
+export const TRUNCD_LABEL = '_zplc_truncd';
+export const ROUNDAD_LABEL = '_zplc_roundad';
 
 /**
  * REAL to DINT, to the nearest integer; exactly halfway goes to the even integer (IEC 60559
@@ -41,7 +52,7 @@ export const ROUNDAF_LABEL = '_zplc_roundaf';
  * away from zero when |r| > 0.5, or |r| = 0.5 and the integer is odd. A REAL of 2^23 or more has
  * no fraction (F2I alone, saturating at the limits of DINT); a NaN is not below 2^23 and F2I gives 0.
  */
-const ROUNDF: string[] = [
+const ROUNDF: AsmLine[] = [
     `${ROUNDF_LABEL}:         ; [x]`,
     `    DUP`,
     `    PUSH32 0x7FFFFFFF`,
@@ -84,7 +95,7 @@ const ROUNDF: string[] = [
 ];
 
 /** n limited to lo..hi (signed): [n lo hi] -> [m]. */
-const CLAMPI: string[] = [
+const CLAMPI: AsmLine[] = [
     `${CLAMPI_LABEL}:         ; [n lo hi]`,
     `    PICK 2`,
     `    OVER`,
@@ -114,7 +125,7 @@ const CLAMPI: string[] = [
  * is above +infinity like a NaN: both give 0. From 2^32 up (and +infinity) the result is 4294967295;
  * from 2^31 up the REAL is whole and 2^31 is taken off before F2I and added after.
  */
-const F2U32: string[] = [
+const F2U32: AsmLine[] = [
     `${F2U32_LABEL}:          ; [x]`,
     `    DUP`,
     `    PUSH32 0x7F800000`,
@@ -148,7 +159,7 @@ const F2U32: string[] = [
 ];
 
 /** TRUNC: [x] -> [y]. */
-const TRUNCF: string[] = [
+const TRUNCF: AsmLine[] = [
     `${TRUNCF_LABEL}:         ; [x]`,
     `    DUP`,
     `    PUSH32 0x7FFFFFFF`,
@@ -166,7 +177,7 @@ const TRUNCF: string[] = [
  * ROUND: the same exact split of x into trunc(x) and the fraction r as ROUNDF, then one step away
  * from zero when |r| >= 0.5. (Adding 0.5 and truncating would round 0.49999997 up to 1.)
  */
-const ROUNDAF: string[] = [
+const ROUNDAF: AsmLine[] = [
     `${ROUNDAF_LABEL}:        ; [x]`,
     `    DUP`,
     `    PUSH32 0x7FFFFFFF`,
@@ -200,12 +211,97 @@ const ROUNDAF: string[] = [
     `    RET`,
 ];
 
+/**
+ * LREAL to UDINT: RNDD takes the nearest integer (a tie to the even one), D2U truncates it to 64 bits
+ * (a negative number and a NaN are 0, 2^64 and more saturate); a high word that is not zero is a value
+ * above 4294967295, which saturates.
+ */
+const D2U32: AsmLine[] = [
+    `${D2U32_LABEL}:          ; [x lo hi]`,
+    `    RNDD`,
+    `    D2U                 ; [lo hi]`,
+    `    JNZ ${D2U32_LABEL}_max`,
+    `    RET`,
+    `${D2U32_LABEL}_max:     ; [lo]`,
+    `    DROP`,
+    `    PUSH8 -1`,
+    `    RET`,
+];
+
+/**
+ * TRUNC of an LREAL. Below 2^63 the value goes through a 64-bit integer, which truncates toward zero
+ * (the sign of a zero result is lost: TRUNC(-0.4) is +0.0); from 2^63 up every double is whole, and
+ * a NaN fails the comparison too, so those are returned as they are.
+ */
+const TRUNCD: AsmLine[] = [
+    `${TRUNCD_LABEL}:         ; [x lo hi]`,
+    `    PICK 1`,
+    `    PICK 1`,
+    `    ABSD                ; [x |x|]`,
+    `    PUSH32 0`,
+    `    PUSH32 0x43E00000   ; 2^63`,
+    `    LTD                 ; [x |x|<2^63]`,
+    `    JZ ${TRUNCD_LABEL}_whole`,
+    `    D2L`,
+    `    L2D                 ; [trunc(x)]`,
+    `${TRUNCD_LABEL}_whole:`,
+    `    RET`,
+];
+
+/**
+ * ROUND of an LREAL: the exact split of x into trunc(x) and the fraction f = x - trunc(x), then one step
+ * away from zero when |f| >= 0.5. (Adding 0.5 and truncating would round 0.49999999999999994 up to 1.)
+ * From 2^52 up every double is whole.
+ */
+const ROUNDAD: AsmLine[] = [
+    `${ROUNDAD_LABEL}:        ; [x lo hi]`,
+    `    PICK 1`,
+    `    PICK 1`,
+    `    ABSD                ; [x |x|]`,
+    `    PUSH32 0`,
+    `    PUSH32 0x43300000   ; 2^52`,
+    `    LTD                 ; [x |x|<2^52]`,
+    `    JZ ${ROUNDAD_LABEL}_whole`,
+    `    PICK 1`,
+    `    PICK 1              ; [x x]`,
+    `    D2L`,
+    `    L2D                 ; [x t]`,
+    `    PICK 3`,
+    `    PICK 3              ; [x t x]`,
+    `    PICK 3`,
+    `    PICK 3              ; [x t x t]`,
+    `    SUBD                ; [x t f]`,
+    `    ABSD`,
+    `    PUSH32 0`,
+    `    PUSH32 0x3FE00000   ; 0.5`,
+    `    GED                 ; [x t |f|>=0.5]`,
+    `    JZ ${ROUNDAD_LABEL}_down`,
+    `    PUSH8 0             ; low word of +-1.0`,
+    `    PICK 3              ; high word of x`,
+    `    PUSH32 0x80000000`,
+    `    AND`,
+    `    PUSH32 0x3FF00000`,
+    `    OR                  ; [x t +-1.0]`,
+    `    ADDD                ; [x t']`,
+    `${ROUNDAD_LABEL}_down:   ; [x t]`,
+    `    ROT`,
+    `    DROP`,
+    `    ROT`,
+    `    DROP                ; [t]`,
+    `    RET`,
+    `${ROUNDAD_LABEL}_whole:  ; [x]`,
+    `    RET`,
+];
+
 const TABLE: Routine[] = [
     { label: ROUNDF_LABEL, lines: ROUNDF, needs: [] },
     { label: CLAMPI_LABEL, lines: CLAMPI, needs: [] },
     { label: F2U32_LABEL, lines: F2U32, needs: [ROUNDF_LABEL] },
     { label: TRUNCF_LABEL, lines: TRUNCF, needs: [] },
     { label: ROUNDAF_LABEL, lines: ROUNDAF, needs: [] },
+    { label: D2U32_LABEL, lines: D2U32, needs: [] },
+    { label: TRUNCD_LABEL, lines: TRUNCD, needs: [] },
+    { label: ROUNDAD_LABEL, lines: ROUNDAD, needs: [] },
     // mathlib.ts: SQRT, EXP, LN, LOG and the trigonometric functions; power.ts: `**`
     ...MATH_ROUTINES,
     ...POWF_ROUTINES,

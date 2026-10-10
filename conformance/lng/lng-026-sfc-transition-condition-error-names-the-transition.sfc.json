@@ -1,0 +1,55 @@
+{
+  "name": "Chart",
+  "variables": {
+    "local": [],
+    "outputs": [
+      {
+        "name": "Lamp",
+        "type": "BOOL",
+        "address": "%QX0.0"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "id": "s_a",
+      "name": "A",
+      "isInitial": true,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "Mark"
+        }
+      ]
+    },
+    {
+      "id": "s_b",
+      "name": "B",
+      "isInitial": false,
+      "position": {
+        "x": 0,
+        "y": 100
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t_ab",
+      "fromStep": "s_a",
+      "toStep": "s_b",
+      "condition": "Undeclared"
+    }
+  ],
+  "actions": [
+    {
+      "id": "mark",
+      "name": "Mark",
+      "type": "ST",
+      "body": "Lamp := TRUE;"
+    }
+  ]
+}

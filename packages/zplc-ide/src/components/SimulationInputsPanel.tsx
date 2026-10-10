@@ -1,11 +1,12 @@
 /**
  * The inputs of the running program, settable from Studio (IDE-024). The list comes from the debug map of the program that
- * is loaded, not from a list of names; a value is written with the controller's typed write (`setDeclaredInput`), and a
+ * is loaded, not from a list of names; a value is written with the typed write of `useDeclaredInputs` (`setDeclaredInput`), and a
  * force goes through the same force operation as the Watch table, so "set" and "forced" mean here what they mean there.
  */
 import { useEffect, useMemo, useState } from 'react';
 
 import type { DebugController } from '../hooks/useDebugController';
+import { useDeclaredInputs } from '../hooks/useDeclaredInputs';
 import { inputWrite, listDeclaredInputs, type DeclaredInput } from '../runtime/declaredInputs';
 import type { WatchVariable } from '../runtime/debugAdapter';
 import { useIDEStore } from '../store/useIDEStore';
@@ -22,12 +23,12 @@ export function SimulationInputsPanel({ controller }: { controller: DebugControl
   const adapter = controller?.adapter ?? null;
   const connected = Boolean(adapter?.connected);
   const simulated = adapter !== null && adapter.type !== 'serial';
-  const readDeclaredInputs = controller?.readDeclaredInputs;
+  const { setDeclaredInput, readDeclaredInputs } = useDeclaredInputs(adapter);
   const [values, setValues] = useState<ReadonlyMap<string, boolean | number>>(new Map());
   const [message, setMessage] = useState<string | undefined>();
 
   useEffect(() => {
-    if (!connected || !simulated || !readDeclaredInputs || inputs.length === 0) return undefined;
+    if (!connected || !simulated || inputs.length === 0) return undefined;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const refresh = async () => {
@@ -75,7 +76,7 @@ export function SimulationInputsPanel({ controller }: { controller: DebugControl
       onSet={(input, value) => { void run(async () => {
         if (!controller) return;
         if (forcedValues.get(input.path)?.state === 'forced') await forceAt(input, value);
-        else await controller.setDeclaredInput(input, value);
+        else await setDeclaredInput(input, value);
       }); }}
       onForce={(input, force) => { void run(async () => {
         if (!controller) return;

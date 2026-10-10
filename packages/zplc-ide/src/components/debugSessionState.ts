@@ -1,3 +1,4 @@
+import type { DebugMap } from '../compiler';
 import type { VMState } from '../runtime/debugAdapter';
 import type { ExecutionMode } from './runtimeArtifactSelection';
 
@@ -10,6 +11,20 @@ export const PROGRAM_LOAD_STATE = {
 export const HARDWARE_DEPLOY_UNCONFIRMED_MESSAGE = 'Deploy was not confirmed. Device program state is unknown; reconnect and inspect before proceeding.';
 
 export type ProgramLoadState = (typeof PROGRAM_LOAD_STATE)[keyof typeof PROGRAM_LOAD_STATE];
+
+/** What the toolbar keeps of the last successful build: the artifacts, and the compiler run that made them. */
+export interface LastCompileResult {
+  bytecode: Uint8Array;
+  zplcFile: Uint8Array;
+  assembly: string;
+  fileName: string;
+  codeSize: number;
+  hasTaskSegment: boolean;
+  taskCount: number;
+  debugMap: DebugMap;
+  revision: number;
+  compilerRunId: number;
+}
 
 export function isCompileResultCurrent(
   compileResultRunId: number | null,

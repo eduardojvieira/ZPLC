@@ -41,14 +41,14 @@ import { useIDEStore } from '../store/useIDEStore';
 import { useTheme } from '../hooks/useTheme';
 import { useDebugController } from '../hooks/useDebugController';
 import { ZPLC_CONSTANTS } from '@zplc/compiler';
-import { transpileToST } from '../compiler';
 import type { DebugMap } from '../compiler';
 import { GeneratedCodeDialog } from './GeneratedCodeDialog';
-import { collectProjectFilesForExport, redactProjectConfigForExport } from '../utils/projectExport';
+import { ProjectExportItems } from './ProjectExportItems';
 import {
   canRunCurrentProgram,
   HARDWARE_DEPLOY_UNCONFIRMED_MESSAGE,
   isCompileResultCurrent,
+  type LastCompileResult,
   nextProgramLoadStateAfterDeploy,
   nextProgramLoadStateAfterCompile,
   nextProgramLoadStateAfterConnect,
@@ -57,6 +57,8 @@ import {
 } from './debugSessionState';
 import { EXECUTION_MODE, selectRuntimeArtifact, type ExecutionMode } from './runtimeArtifactSelection';
 import { OperationalStatusBar } from './OperationalStatusBar';
+import { generateStructuredText } from './visualToStructuredText';
+import { downloadBlob } from '../utils/downloadBlob';
 import { isWorkspaceTestRunCurrent, presentWorkspaceCompileResult, resolveWorkspaceCompileRoute } from './workspaceTestPresentation';
 import { shownProjectBridge } from '../ipc/shownProjectBridge';
 import { useNotifications } from '../store/notifications';
@@ -167,18 +169,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
   const [generatedCodeType, setGeneratedCodeType] = useState<'FBD' | 'LD' | 'SFC' | 'ASM'>('ASM');
 
   // State for last successful compilation result
-  const [lastCompileResult, setLastCompileResult] = useState<{
-    bytecode: Uint8Array;
-    zplcFile: Uint8Array;
-    assembly: string;
-    fileName: string;
-    codeSize: number;
-    hasTaskSegment: boolean;
-    taskCount: number;
-    debugMap: DebugMap;
-    revision: number;
-    compilerRunId: number;
-  } | null>(null);
+  const [lastCompileResult, setLastCompileResult] = useState<LastCompileResult | null>(null);
 
   // Get the active file
   const activeFile = getActiveFile();
@@ -242,84 +233,22 @@ export function Toolbar({ debugController }: ToolbarProps) {
     }
 
     const saved = await saveFile(activeFileId);
-    useNotifications.getState().report(saved
-      ? { kind: 'save', status: 'success', title: `Saved ${activeFile.name}`, details: 'output' }
+    useNotifications.getState().report(saved ? { kind: 'save', status: 'success', title: `Saved ${activeFile.name}`, details: 'output' }
       : { kind: 'save', status: 'error', title: `Could not save ${activeFile.name}`, detail: 'The file stays modified. The Output panel has the reason.', details: 'output' });
-  };
-
-  const handleExportProject = async () => {
-    const snapshot = useIDEStore.getState();
-    const { projectSession, fileTree: tree, projectConfig: config } = snapshot;
-    const files = new Map(snapshot.loadedFiles);
-
-    if (!config || !tree) {
-      addConsoleEntry({ type: 'error', message: 'No project open', source: 'system' });
-      return;
-    }
-
-    try {
-      const fileList = await collectProjectFilesForExport(tree, files);
-      const current = useIDEStore.getState();
-      if (current.projectSession !== projectSession || current.fileTree !== tree || current.projectConfig !== config) {
-        throw new Error('Project changed while preparing the export; no file was downloaded');
-      }
-
-      const { config: redactedConfig, redactedPaths } = redactProjectConfigForExport(config);
-      const exportData = {
-        version: '1.0.0',
-        config: redactedConfig,
-        files: fileList,
-        redactedPaths,
-        exportedAt: new Date().toISOString(),
-      };
-
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${config.name || 'zplc-project'}.zplc.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      addConsoleEntry({ type: 'success', message: `Project export download started: ${config.name} (${redactedPaths.length} sensitive fields omitted)`, source: 'system' });
-    } catch (e) {
-      addConsoleEntry({ type: 'error', message: `Failed to export: ${e instanceof Error ? e.message : String(e)}`, source: 'system' });
-    }
   };
 
   // ==========================================================================
   // Transpiler (Visual -> ST)
   // ==========================================================================
 
-  const generateSTFromVisual = (): { source: string; success: boolean } | null => {
-    if (!activeFile) return null;
-
-    try {
-      if (activeFile.language === 'FBD' || activeFile.language === 'LD' || activeFile.language === 'SFC') {
-        const result = transpileToST(activeFile.content, activeFile.language);
-        if (!result.success) {
-          result.errors.forEach(err => addConsoleEntry({ type: 'error', message: err, source: 'transpiler' }));
-          return null;
-        }
-        return { source: result.source, success: true };
-      }
-    } catch (e) {
-      addConsoleEntry({ type: 'error', message: `Transpiler error: ${e instanceof Error ? e.message : String(e)}`, source: 'transpiler' });
-      return null;
-    }
-    return null;
-  };
-
   const handleGenerateST = () => {
     if (!activeFile) return;
     addConsoleEntry({ type: 'info', message: `Transpiling ${activeFile.language} to Structured Text...`, source: 'transpiler' });
 
-    const result = generateSTFromVisual();
-    if (result?.success) {
-      addConsoleEntry({ type: 'success', message: `Generated ${result.source.split('\n').length} lines of Structured Text`, source: 'transpiler' });
-      setGeneratedCode(result.source);
+    const source = generateStructuredText(activeFile, addConsoleEntry);
+    if (source !== null) {
+      addConsoleEntry({ type: 'success', message: `Generated ${source.split('\n').length} lines of Structured Text`, source: 'transpiler' });
+      setGeneratedCode(source);
       setGeneratedCodeType(activeFile.language as 'FBD' | 'LD' | 'SFC');
       setShowGeneratedCode(true);
     }
@@ -383,7 +312,6 @@ export function Toolbar({ debugController }: ToolbarProps) {
       const workspaceId = link.workspaceId;
       const expected = { projectSession, compilerRunId, workspaceId };
       addConsoleEntry({ type: 'info', message: 'Building saved workspace locally...', source: 'compiler' });
-      // A build that can be stopped (IDE-012): the notification carries the cancel action of the worker that compiles it.
       let cancelRequested = false;
       const notices = useNotifications.getState();
       const operation = notices.begin({
@@ -406,7 +334,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
             addCompilerMessage({ type: 'error', message: 'Canonical workspace build failed' });
           }
           for (const diagnostic of canonical.diagnostics) {
-            addCompilerMessage({ type: 'error', message: diagnostic.message, ...(diagnostic.path ? { file: diagnostic.path } : {}), ...(diagnostic.line ? { line: diagnostic.line } : {}), ...(diagnostic.column ? { column: diagnostic.column } : {}) });
+            addCompilerMessage({ type: 'error', message: diagnostic.message, ...(diagnostic.path ? { file: diagnostic.path } : {}), ...(diagnostic.line ? { line: diagnostic.line } : {}), ...(diagnostic.column ? { column: diagnostic.column } : {}), ...(diagnostic.element ? { element: diagnostic.element } : {}) });
           }
           markCompilerMessagesChecked();
           return;
@@ -469,17 +397,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     setIsCompileMenuOpen(false);
 
     try {
-      const binaryData = new Uint8Array(result.zplcFile);
-      const blob = new Blob([binaryData.buffer], { type: 'application/octet-stream' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = result.fileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
+      downloadBlob(new Blob([new Uint8Array(result.zplcFile).buffer], { type: 'application/octet-stream' }), result.fileName);
       addConsoleEntry({ type: 'success', message: `Downloaded: ${result.fileName}`, source: 'system' });
     } catch (e) {
       addConsoleEntry({ type: 'error', message: `Failed to download: ${e instanceof Error ? e.message : String(e)}`, source: 'system' });
@@ -1001,16 +919,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
               <span>View Assembly</span>
             </button>
             <div className="h-px bg-[var(--color-surface-600)] my-1" />
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => { void handleExportProject(); }}
-              className="focus-ring w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-surface-100)] hover:bg-[var(--color-surface-600)] transition-colors"
-              aria-label="Export project"
-            >
-              <Download size={14} />
-              <span>Export Project</span>
-            </button>
+            <ProjectExportItems />
           </div>
         )}
       </div>

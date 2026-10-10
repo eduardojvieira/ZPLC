@@ -18,7 +18,7 @@ describe('project files IPC boundary', () => {
   });
 
   it('asks the native dialog from the main process, and only a host that is not packaged may answer it from a test file', () => {
-    expect(mainSource).toContain('const projectFiles = createProjectFiles(chooseProjectDirectory, () => recentProjects, projectWatcher);');
+    expect(mainSource).toContain('const projectFiles = createProjectFiles(chooseProjectDirectory, () => recentProjects, projectWatcher, { dialog, getWindow: () => mainWindow, isPackaged: app.isPackaged, env: process.env });');
     expect(mainSource).toContain("dialog.showOpenDialog(win, { title: 'Choose project folder', properties: ['openDirectory', 'createDirectory'] })");
     expect(mainSource).toContain('readFolderDialogHook(app.isPackaged, process.env)');
     expect(mainSource).not.toContain('ZPLC_SMOKE_FOLDER_ANSWER_FILE');

@@ -51,7 +51,7 @@ extern "C" {
  *
  * Increases by one with every change of an opcode, layout, size or code until the contract freeze. The compiler writes it in header word 28 of every artifact and the loader refuses an artifact whose counter differs from this value (ZPLC_LOADER_ERR_DRAFT). 0 is what an artifact built before the counter carries and is never accepted.
  */
-#define ZPLC_DRAFT_COUNTER 2U
+#define ZPLC_DRAFT_COUNTER 4U
 /* <<< END GENERATED: version <<< */
 
 /* ============================================================================
@@ -243,6 +243,18 @@ typedef enum {
   OP_BREAK = 0x02, /**< Debugger breakpoint */
   OP_GET_TICKS = 0x03, /**< Push system tick (ms) to stack */
 
+  /* ===== 64-bit integer arithmetic (two stack words per value) (0x04-0x0D) ===== */
+  OP_MUL64 = 0x04, /**< 64-bit integer multiplication (low 64 bits of the product, wraps) */
+  OP_DIVS64 = 0x05, /**< 64-bit signed division; zero divisor faults, INT64_MIN / -1 is INT64_MIN */
+  OP_DIVU64 = 0x06, /**< 64-bit unsigned division; zero divisor faults */
+  OP_MODS64 = 0x07, /**< 64-bit signed modulo, sign of the dividend; zero divisor faults, b = -1 gives 0 */
+  OP_MODU64 = 0x08, /**< 64-bit unsigned modulo; zero divisor faults */
+  OP_NEG64 = 0x09, /**< 64-bit integer negation (INT64_MIN stays INT64_MIN) */
+  OP_ABS64 = 0x0A, /**< 64-bit signed absolute value (INT64_MIN stays INT64_MIN) */
+  OP_SHL64 = 0x0B, /**< 64-bit shift left by a 32-bit unsigned count; 64 or more gives 0 */
+  OP_SHR64 = 0x0C, /**< 64-bit logical shift right; a count of 64 or more gives 0 */
+  OP_SAR64 = 0x0D, /**< 64-bit arithmetic shift right; a count of 64 or more gives 0 or -1 by the sign */
+
   /* ===== Stack operations (0x10-0x14) ===== */
   OP_DUP = 0x10, /**< Duplicate top of stack */
   OP_DROP = 0x11, /**< Discard top of stack */
@@ -330,7 +342,7 @@ typedef enum {
   OP_CALL = 0x93, /**< Call subroutine */
   OP_RET = 0x94, /**< Return from subroutine */
 
-  /* ===== Type conversion (0xA0-0xA6) ===== */
+  /* ===== Type conversion (0xA0-0xB0) ===== */
   OP_I2F = 0xA0, /**< Integer to float */
   OP_F2I = 0xA1, /**< Float to integer */
   OP_I2B = 0xA2, /**< Integer to boolean */
@@ -338,6 +350,34 @@ typedef enum {
   OP_EXT16 = 0xA4, /**< Sign-extend 16-bit to 32-bit */
   OP_ZEXT8 = 0xA5, /**< Zero-extend 8-bit to 32-bit */
   OP_ZEXT16 = 0xA6, /**< Zero-extend 16-bit to 32-bit */
+  OP_F2D = 0xA7, /**< REAL to LREAL (exact; every NaN becomes the quiet NaN) */
+  OP_D2F = 0xA8, /**< LREAL to REAL, round to nearest even (overflow gives infinity) */
+  OP_I2D = 0xA9, /**< Signed 32-bit integer to LREAL (exact) */
+  OP_D2I = 0xAA, /**< LREAL to signed 32-bit integer: truncates toward zero, saturates, NaN gives 0 */
+  OP_L2D = 0xAB, /**< Signed 64-bit integer to LREAL, round to nearest even */
+  OP_D2L = 0xAC, /**< LREAL to signed 64-bit integer: truncates toward zero, saturates, NaN gives 0 */
+  OP_U2D = 0xAD, /**< Unsigned 64-bit integer to LREAL, round to nearest even */
+  OP_D2U = 0xAE, /**< LREAL to unsigned 64-bit integer: truncates toward zero, below 1.0 and NaN give 0, saturates */
+  OP_L2F = 0xAF, /**< Signed 64-bit integer to REAL, one rounding to nearest even */
+  OP_U2F = 0xB0, /**< Unsigned 64-bit integer to REAL, one rounding to nearest even */
+
+  /* ===== Double-precision float arithmetic (two stack words per value) (0xB1-0xB8) ===== */
+  OP_ADDD = 0xB1, /**< LREAL addition (IEEE 754 binary64, round to nearest even) */
+  OP_SUBD = 0xB2, /**< LREAL subtraction */
+  OP_MULD = 0xB3, /**< LREAL multiplication */
+  OP_DIVD = 0xB4, /**< LREAL division; a divisor of 0.0 or -0.0 faults */
+  OP_NEGD = 0xB5, /**< LREAL negation (flips the sign bit) */
+  OP_ABSD = 0xB6, /**< LREAL absolute value (clears the sign bit) */
+  OP_SQRTD = 0xB7, /**< LREAL square root, correctly rounded; 0.0 for an argument at or below 0.0 */
+  OP_RNDD = 0xB8, /**< LREAL rounded to the nearest integral value, a tie to the even one */
+
+  /* ===== Double-precision comparison (0xB9-0xBE) ===== */
+  OP_EQD = 0xB9, /**< LREAL equal (false when either operand is a NaN) */
+  OP_NED = 0xBA, /**< LREAL not equal (true when either operand is a NaN) */
+  OP_LTD = 0xBB, /**< LREAL less than (false with a NaN) */
+  OP_LED = 0xBC, /**< LREAL less or equal (false with a NaN) */
+  OP_GTD = 0xBD, /**< LREAL greater than (false with a NaN) */
+  OP_GED = 0xBE, /**< LREAL greater or equal (false with a NaN) */
 
   /* ===== Push with 32-bit operand (0xC0) ===== */
   OP_PUSH32 = 0xC0, /**< Push 32-bit immediate */
@@ -361,6 +401,16 @@ typedef enum {
   X(HALT, 0x01, 0, 0, 0, 0) \
   X(BREAK, 0x02, 0, 0, 0, 0) \
   X(GET_TICKS, 0x03, 0, 0, 1, 0) \
+  X(MUL64, 0x04, 0, 4, 2, 4) \
+  X(DIVS64, 0x05, 0, 4, 2, 4) \
+  X(DIVU64, 0x06, 0, 4, 2, 4) \
+  X(MODS64, 0x07, 0, 4, 2, 4) \
+  X(MODU64, 0x08, 0, 4, 2, 4) \
+  X(NEG64, 0x09, 0, 2, 2, 2) \
+  X(ABS64, 0x0A, 0, 2, 2, 2) \
+  X(SHL64, 0x0B, 0, 3, 2, 3) \
+  X(SHR64, 0x0C, 0, 3, 2, 3) \
+  X(SAR64, 0x0D, 0, 3, 2, 3) \
   X(DUP, 0x10, 0, 0, 1, 1) \
   X(DROP, 0x11, 0, 1, 0, 1) \
   X(SWAP, 0x12, 0, 0, 0, 2) \
@@ -431,13 +481,37 @@ typedef enum {
   X(EXT16, 0xA4, 0, 1, 1, 1) \
   X(ZEXT8, 0xA5, 0, 1, 1, 1) \
   X(ZEXT16, 0xA6, 0, 1, 1, 1) \
+  X(F2D, 0xA7, 0, 1, 2, 1) \
+  X(D2F, 0xA8, 0, 2, 1, 2) \
+  X(I2D, 0xA9, 0, 1, 2, 1) \
+  X(D2I, 0xAA, 0, 2, 1, 2) \
+  X(L2D, 0xAB, 0, 2, 2, 2) \
+  X(D2L, 0xAC, 0, 2, 2, 2) \
+  X(U2D, 0xAD, 0, 2, 2, 2) \
+  X(D2U, 0xAE, 0, 2, 2, 2) \
+  X(L2F, 0xAF, 0, 2, 1, 2) \
+  X(U2F, 0xB0, 0, 2, 1, 2) \
+  X(ADDD, 0xB1, 0, 4, 2, 4) \
+  X(SUBD, 0xB2, 0, 4, 2, 4) \
+  X(MULD, 0xB3, 0, 4, 2, 4) \
+  X(DIVD, 0xB4, 0, 4, 2, 4) \
+  X(NEGD, 0xB5, 0, 2, 2, 2) \
+  X(ABSD, 0xB6, 0, 2, 2, 2) \
+  X(SQRTD, 0xB7, 0, 2, 2, 2) \
+  X(RNDD, 0xB8, 0, 2, 2, 2) \
+  X(EQD, 0xB9, 0, 4, 1, 4) \
+  X(NED, 0xBA, 0, 4, 1, 4) \
+  X(LTD, 0xBB, 0, 4, 1, 4) \
+  X(LED, 0xBC, 0, 4, 1, 4) \
+  X(GTD, 0xBD, 0, 4, 1, 4) \
+  X(GED, 0xBE, 0, 4, 1, 4) \
   X(PUSH32, 0xC0, 4, 0, 1, 0) \
   X(COMM_EXEC, 0xD0, 4, 1, 0, 1) \
   X(COMM_STATUS, 0xD1, 4, 1, 1, 1) \
   X(COMM_RESET, 0xD2, 4, 1, 0, 1)
 
 /** @brief Number of defined opcodes. */
-#define ZPLC_OPCODE_COUNT 78
+#define ZPLC_OPCODE_COUNT 112
 /* <<< END GENERATED: opcodes <<< */
 
 /* ============================================================================
@@ -531,7 +605,8 @@ typedef enum {
   ZPLC_SEG_SYMTAB = 0x10, /**< Symbol table */
   ZPLC_SEG_DEBUG = 0x11, /**< Debug information */
   ZPLC_SEG_TASK = 0x20, /**< Task definitions */
-  ZPLC_SEG_TAGS = 0x30 /**< Variable tags (networking metadata) */
+  ZPLC_SEG_TAGS = 0x30, /**< Variable tags (networking metadata) */
+  ZPLC_SEG_BUILD = 0x40 /**< Build identity of the artifact (CMP-056) */
 } zplc_segment_type_t;
 
 /** @brief Task definition (16 bytes). */
@@ -542,7 +617,8 @@ typedef struct ZPLC_PACKED {
   uint32_t interval_us; /**< Cycle time in microseconds */
   uint16_t entry_point; /**< Code offset */
   uint16_t stack_size; /**< Required stack depth */
-  uint32_t reserved; /**< Reserved (must be 0) */
+  uint16_t call_depth; /**< Call frames active at once, the task body included (1 for a task that calls nothing); 0 = not declared (CMP-050) */
+  uint16_t reserved; /**< Reserved (must be 0) */
 } zplc_task_def_t;
 
 /** @brief Expected size of task definition */
@@ -556,7 +632,8 @@ enum { zplc_assert_offsetof_task_priority = 1 / (offsetof(zplc_task_def_t, prior
 enum { zplc_assert_offsetof_task_interval_us = 1 / (offsetof(zplc_task_def_t, interval_us) == 4U) };
 enum { zplc_assert_offsetof_task_entry_point = 1 / (offsetof(zplc_task_def_t, entry_point) == 8U) };
 enum { zplc_assert_offsetof_task_stack_size = 1 / (offsetof(zplc_task_def_t, stack_size) == 10U) };
-enum { zplc_assert_offsetof_task_reserved = 1 / (offsetof(zplc_task_def_t, reserved) == 12U) };
+enum { zplc_assert_offsetof_task_call_depth = 1 / (offsetof(zplc_task_def_t, call_depth) == 12U) };
+enum { zplc_assert_offsetof_task_reserved = 1 / (offsetof(zplc_task_def_t, reserved) == 14U) };
 
 /** @brief Task types. */
 typedef enum {
@@ -564,6 +641,22 @@ typedef enum {
   ZPLC_TASK_EVENT = 1, /**< Event-triggered */
   ZPLC_TASK_INIT = 2 /**< Run once at startup */
 } zplc_task_type_t;
+
+/**
+ * @brief Build identity, the payload of the BUILD segment (4 bytes).
+ *
+ * A hash of the CODE segment followed by the TASK segment as written; the debug map of the build records the same value, so that a tool can tell a map that does not belong to the running program (CMP-056).
+ */
+typedef struct ZPLC_PACKED {
+  uint32_t build_id; /**< CRC-32 of CODE then TASK; never 0 (0 = not identified) */
+} zplc_build_info_t;
+
+/** @brief Expected size of the build identity */
+#define ZPLC_BUILD_ENTRY_SIZE 4
+
+/* Layout check generated from the contract: dividing by zero in an enumerator breaks the build. */
+enum { zplc_assert_sizeof_build = 1 / (sizeof(zplc_build_info_t) == 4U) };
+enum { zplc_assert_offsetof_build_build_id = 1 / (offsetof(zplc_build_info_t, build_id) == 0U) };
 
 /** @brief I/O map entry (8 bytes). */
 typedef struct ZPLC_PACKED {
@@ -695,7 +788,7 @@ typedef struct {
  * @return Operand size in bytes (0, 1, 2, or 4).
  */
 static inline uint8_t zplc_opcode_operand_size(uint8_t opcode) {
-  if (opcode == OP_RET || (opcode >= OP_I2F && opcode <= OP_ZEXT16)) {
+  if (opcode == OP_RET || (opcode >= OP_I2F && opcode <= OP_GED)) {
     return 0;
   }
   if (opcode <= 0x3F) {
@@ -732,6 +825,17 @@ static inline int zplc_opcode_is_valid(uint8_t opcode) {
   case OP_HALT:
   case OP_BREAK:
   case OP_GET_TICKS:
+  /* 64-bit integer arithmetic (two stack words per value) */
+  case OP_MUL64:
+  case OP_DIVS64:
+  case OP_DIVU64:
+  case OP_MODS64:
+  case OP_MODU64:
+  case OP_NEG64:
+  case OP_ABS64:
+  case OP_SHL64:
+  case OP_SHR64:
+  case OP_SAR64:
   /* Stack operations */
   case OP_DUP:
   case OP_DROP:
@@ -815,6 +919,32 @@ static inline int zplc_opcode_is_valid(uint8_t opcode) {
   case OP_EXT16:
   case OP_ZEXT8:
   case OP_ZEXT16:
+  case OP_F2D:
+  case OP_D2F:
+  case OP_I2D:
+  case OP_D2I:
+  case OP_L2D:
+  case OP_D2L:
+  case OP_U2D:
+  case OP_D2U:
+  case OP_L2F:
+  case OP_U2F:
+  /* Double-precision float arithmetic (two stack words per value) */
+  case OP_ADDD:
+  case OP_SUBD:
+  case OP_MULD:
+  case OP_DIVD:
+  case OP_NEGD:
+  case OP_ABSD:
+  case OP_SQRTD:
+  case OP_RNDD:
+  /* Double-precision comparison */
+  case OP_EQD:
+  case OP_NED:
+  case OP_LTD:
+  case OP_LED:
+  case OP_GTD:
+  case OP_GED:
   /* Push with 32-bit operand */
   case OP_PUSH32:
   /* Communication with 32-bit operand */

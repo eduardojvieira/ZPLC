@@ -1,0 +1,23 @@
+{
+  "requirement": "CMP-005",
+  "title": "the length and the position of a text are numbers and go to a number",
+  "matrix": [
+    "functions.string-functions"
+  ],
+  "note": "CMP-005: LEN and FIND take text and give an INT, which is a number; only the text itself does not convert",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 5
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 3
+    }
+  ],
+  "warnings": []
+}

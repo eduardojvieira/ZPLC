@@ -149,7 +149,8 @@ describe('check-expected-failures command (VF-027)', () => {
       const open = [file, ...describes].map((title) => `<testsuite name="${escape(title)}" file="${escape(file)}">`).join('');
       return `${open}<testcase name="${escape(name)}" file="${escape(file)}"><failure/></testcase>${'</testsuite>'.repeat(describes.length + 1)}`;
     });
-    const result = withReport(`<testsuites>${failing.join('')}<testsuite name="src/a.test.ts" file="src/a.test.ts"><testcase name="ok" file="src/a.test.ts"/></testsuite></testsuites>`, 1);
+    // the list is empty when no known defect is open: then the run passes with nothing failing and exit code 0
+    const result = withReport(`<testsuites>${failing.join('')}<testsuite name="src/a.test.ts" file="src/a.test.ts"><testcase name="ok" file="src/a.test.ts"/></testsuite></testsuites>`, failing.length > 0 ? 1 : 0);
     expect(result.stderr).toBe('');
     expect(result.code).toBe(0);
     expect(result.stdout).toMatch(/requirements: \d+ of 387 covered by an executed check, \d+ partial, \d+ uncovered/);

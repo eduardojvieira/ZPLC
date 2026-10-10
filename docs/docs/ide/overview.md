@@ -60,7 +60,7 @@ log; nothing of it is kept as a build.
 Evidence level: host. `electron/toolWorkerHost.test.ts` runs real child processes:
 a worker stuck in a busy loop is killed and is really gone while the caller keeps
 running, and the real worker compiles a project and cancels a run of scenarios on
-the native runtime. Journey 26 of `bun run test:journeys` cancels a long run in the
+the native runtime. Journey 35 of `bun run test:journeys` cancels a long run in the
 real application, sees the window answer throughout and finds no process of the
 run left (requirement IDE-012). The packaged probes below also build the project and
 run its scenarios in the packaged application, which starts the worker from its
@@ -83,7 +83,7 @@ what its source says:
   link to a file or to a folder that leaves the project, an over-size write, or the
   folder id of another window is refused, and nothing outside the project changes.
 
-Evidence level: host. Journey 29 of `bun run test:journeys` makes these probes on
+Evidence level: host. Journey 38 of `bun run test:journeys` makes these probes on
 the development host (which serves its own scripts inline for hot reload, so the
 inline-script probe is not made there). To make all of them on a packaged
 application on Linux, build an unpacked package and run the probes against it:
@@ -114,7 +114,7 @@ earlier workspace unusable, with no linking step in between.
 
 Evidence level: host. `electron/workspaceTestGateway.test.ts`,
 `electron/ipcRegistry.test.ts` and `electron/security.test.ts` cover the rule, and
-journey 25 of `bun run test:journeys` sends crafted build, safety-check and test
+journey 34 of `bun run test:journeys` sends crafted build, safety-check and test
 messages through the bridge of the real application after another folder was
 opened and sees each of them refused (requirement IDE-002).
 

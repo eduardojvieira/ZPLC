@@ -84,8 +84,12 @@ export interface WatchVariable {
   address: number;
   /** Bit offset for bit-addressed BOOL variables */
   bitOffset?: number;
-  /** Data type */
-  type: 'BOOL' | 'INT' | 'DINT' | 'REAL' | 'BYTE' | 'WORD' | 'DWORD' | 'TIME' | 'STRING';
+  /**
+   * Data type. LINT, ULINT and LWORD are 8 bytes and LREAL is an IEEE 754 double: a 64-bit integer is a
+   * number while it is exact as one (within 2^53) and its decimal text beyond (see bytesToValue).
+   */
+  type: 'BOOL' | 'INT' | 'DINT' | 'REAL' | 'BYTE' | 'WORD' | 'DWORD' | 'TIME' | 'STRING'
+    | 'LINT' | 'ULINT' | 'LWORD' | 'LREAL';
   /** Current value (updated by polling) */
   value?: number | boolean | string;
   /** Whether value can be forced */
@@ -455,6 +459,11 @@ export function getTypeSize(type: WatchVariable['type'], maxLength?: number): nu
     case 'REAL':
     case 'TIME':
       return 4;
+    case 'LINT':
+    case 'ULINT':
+    case 'LWORD':
+    case 'LREAL':
+      return 8;
     case 'STRING':
       // String: 2-byte length prefix + content + null terminator
       // Default max length is 255 if not specified
@@ -463,6 +472,9 @@ export function getTypeSize(type: WatchVariable['type'], maxLength?: number): nu
       return 1;
   }
 }
+
+/** The largest integer a JavaScript number holds exactly. */
+const MAX_SAFE_WIDE = BigInt(Number.MAX_SAFE_INTEGER);
 
 /**
  * Convert raw bytes to a typed value
@@ -493,6 +505,16 @@ export function bytesToValue(
       return view.getUint32(0, true);
     case 'REAL':
       return view.getFloat32(0, true);
+    case 'LREAL':
+      return view.getFloat64(0, true);
+    case 'LINT':
+    case 'ULINT':
+    case 'LWORD': {
+      // 64 bits are not all exact as a JavaScript number: within 2^53 the value is a number (it compares,
+      // sums and plots as one), beyond it its decimal text, which keeps every bit
+      const wide = type === 'LINT' ? view.getBigInt64(0, true) : view.getBigUint64(0, true);
+      return wide >= -MAX_SAFE_WIDE && wide <= MAX_SAFE_WIDE ? Number(wide) : wide.toString();
+    }
     case 'STRING': {
       // String format: 2-byte length + content
       if (bytes.length < 2) return '';
@@ -556,6 +578,17 @@ export function valueToBytes(
     case 'REAL':
       view.setFloat32(0, numValue, true);
       break;
+    case 'LREAL':
+      view.setFloat64(0, numValue, true);
+      break;
+    case 'LINT':
+    case 'ULINT':
+    case 'LWORD': {
+      // the value of a 64-bit integer may be its decimal text (beyond 2^53): read it as an integer, not through a double
+      const wide = typeof value === 'string' ? BigInt(value.trim() === '' ? 0 : value.trim()) : BigInt(Math.trunc(numValue));
+      view.setBigUint64(0, BigInt.asUintN(64, wide), true);
+      break;
+    }
   }
 
   return bytes;

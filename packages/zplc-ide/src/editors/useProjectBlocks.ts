@@ -6,13 +6,19 @@
 
 import { useMemo } from 'react';
 import { useIDEStore } from '../store/useIDEStore';
+import { useProjectSources } from '../store/projectSources';
 import { collectProjectBlocks, type ProjectBlock } from '../models/projectBlocks';
 
 /**
- * The blocks of every Structured Text file of the open project that the editor has loaded; they change when a
- * file does. The build reads all the files of the project from disk, so a file not loaded yet is still built.
+ * The blocks of the Structured Text files of the open project: the ones the editor has loaded, which change as they are
+ * typed, and the ones it has not (the files the build reads, and every file of a library folder, IDE-023).
  */
 export function useProjectBlocks(): ProjectBlock[] {
   const files = useIDEStore((state) => state.loadedFiles);
-  return useMemo(() => collectProjectBlocks(files.values()), [files]);
+  const sources = useProjectSources((state) => state.sources);
+  return useMemo(() => {
+    const loaded = [...files.values()];
+    const paths = new Set(loaded.map((file) => file.path ?? file.name));
+    return collectProjectBlocks([...loaded, ...sources.filter((source) => !paths.has(source.path))]);
+  }, [files, sources]);
 }

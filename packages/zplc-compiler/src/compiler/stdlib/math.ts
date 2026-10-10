@@ -8,16 +8,20 @@
  * - SQRT, EXP, LN, LOG, SIN, COS, TAN, ASIN, ACOS, ATAN, ATAN2: REAL routines of mathlib.ts, which
  *   states the domain and the measured error of each (the VM has no opcode for them)
  * - EXPT: the power routine of power.ts, the one of the operator `**`
- * - TRUNC, ROUND: rounding of a REAL that stays a REAL
+ * - TRUNC, ROUND: rounding of a REAL (or an LREAL) that keeps its type
+ *
+ * An LREAL argument (CMP-015): ABS, NEG, SQRT, TRUNC and ROUND are exact. The other functions
+ * compute in REAL: the argument is rounded to REAL, the result is widened back to LREAL, and the
+ * accuracy is that of a REAL (about 7 significant digits).
  *
  * The conversion functions `<FROM>_TO_<TO>` are in conversions.ts.
  */
 
 import type { FunctionDef, CodeGenContext } from './types.ts';
 import type { Expression } from '../ast.ts';
-import { f32hex, isFloatType, isUnsigned32 } from '../numeric.ts';
+import { f32hex, isFloatType, isUnsigned32, isWideInteger, numericInfo } from '../numeric.ts';
 import { POWF_LABEL } from '../power.ts';
-import { ROUNDAF_LABEL, TRUNCF_LABEL } from './routines.ts';
+import { ROUNDAD_LABEL, ROUNDAF_LABEL, TRUNCD_LABEL, TRUNCF_LABEL } from './routines.ts';
 import {
     ACOSF_LABEL, ASINF_LABEL, ATAN2F_LABEL, ATANF_LABEL, EXPF_LABEL, LOG2G_LABEL, SINCOSF_LABEL, SQRTF_LABEL, TANF_LABEL,
 } from './mathlib.ts';
@@ -47,7 +51,12 @@ export const ABS_FN: FunctionDef = {
         ctx.emit(`    ; ABS(IN)`);
         ctx.emitExpression(args[0]);
         const type = ctx.typeOf?.(args[0]);
-        if (isFloatType(type)) {
+        if (type === 'LREAL') {
+            ctx.emit(`    ABSD`);
+        } else if (isWideInteger(type)) {
+            // LINT and DT: the magnitude (INT64_MIN stays INT64_MIN); ULINT and LWORD are their own magnitude
+            if (numericInfo(type)?.signed) ctx.emit(`    ABS64`);
+        } else if (isFloatType(type)) {
             ctx.emit(`    ABSF`);
         } else if (!isUnsigned32(type)) {
             // an unsigned value is its own magnitude
@@ -80,7 +89,7 @@ export const ABSF_FN: FunctionDef = {
 
         ctx.emit(`    ; ABSF(IN)`);
         ctx.emitExpression(args[0]);
-        ctx.emit(`    ABSF`);
+        ctx.emit(ctx.typeOf?.(args[0]) === 'LREAL' ? `    ABSD` : `    ABSF`);
     },
 };
 
@@ -108,7 +117,8 @@ export const NEG_FN: FunctionDef = {
 
         ctx.emit(`    ; NEG(IN)`);
         ctx.emitExpression(args[0]);
-        ctx.emit(isFloatType(ctx.typeOf?.(args[0])) ? `    NEGF` : `    NEG`);
+        const type = ctx.typeOf?.(args[0]);
+        ctx.emit(type === 'LREAL' ? `    NEGD` : isWideInteger(type) ? `    NEG64` : isFloatType(type) ? `    NEGF` : `    NEG`);
     },
 };
 
@@ -136,7 +146,7 @@ export const NEGF_FN: FunctionDef = {
 
         ctx.emit(`    ; NEGF(IN)`);
         ctx.emitExpression(args[0]);
-        ctx.emit(`    NEGF`);
+        ctx.emit(ctx.typeOf?.(args[0]) === 'LREAL' ? `    NEGD` : `    NEGF`);
     },
 };
 
@@ -187,6 +197,19 @@ function emitRealCall(ctx: CodeGenContext, name: string, args: Expression[], cou
     ctx.callRoutine(label);
 }
 
+/**
+ * The transcendental functions compute in REAL. An LREAL argument is rounded to REAL (D2F), and the result is
+ * widened back (F2D) so that the function still gives an LREAL: its accuracy is that of a REAL (about 7
+ * significant digits), not that of the double that went in. SQRT, ABS, TRUNC and ROUND are exact.
+ */
+function hasDoubleArgument(ctx: CodeGenContext, args: Expression[]): boolean {
+    return args.some((arg) => ctx.typeOf?.(arg) === 'LREAL');
+}
+
+function widenResult(ctx: CodeGenContext, args: Expression[]): void {
+    if (hasDoubleArgument(ctx, args)) ctx.emit(`    F2D                 ; the REAL result as an LREAL`);
+}
+
 // ============================================================================
 // SQRT - Square Root
 // ============================================================================
@@ -205,6 +228,13 @@ export const SQRT_FN: FunctionDef = {
     variadic: false,
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
+        if (args.length === 1 && ctx.typeOf?.(args[0]!) === 'LREAL') {
+            // correctly rounded, and 0.0 for an argument of 0.0 or below, as for a REAL
+            ctx.emit(`    ; SQRT(IN) on an LREAL`);
+            ctx.emitExpression(args[0]!);
+            ctx.emit(`    SQRTD`);
+            return;
+        }
         emitRealCall(ctx, 'SQRT', args, 1, SQRTF_LABEL);
     },
 };
@@ -230,6 +260,7 @@ export const EXPT_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         emitRealCall(ctx, 'EXPT', args, 2, POWF_LABEL);
+        widenResult(ctx, args);
     },
 };
 
@@ -258,6 +289,11 @@ export const TRUNC_FN: FunctionDef = {
         if (!ctx.callRoutine) ctx.fail('TRUNC needs the routine linker');
 
         ctx.emit(`    ; TRUNC(IN)`);
+        if (ctx.typeOf?.(args[0]) === 'LREAL') {
+            ctx.emitExpression(args[0]);
+            ctx.callRoutine(TRUNCD_LABEL);
+            return;
+        }
         if (ctx.emitOperand) ctx.emitOperand(args[0], 'REAL');
         else ctx.emitExpression(args[0]);
         ctx.callRoutine(TRUNCF_LABEL);
@@ -289,6 +325,11 @@ export const ROUND_FN: FunctionDef = {
         if (!ctx.callRoutine) ctx.fail('ROUND needs the routine linker');
 
         ctx.emit(`    ; ROUND(IN)`);
+        if (ctx.typeOf?.(args[0]) === 'LREAL') {
+            ctx.emitExpression(args[0]);
+            ctx.callRoutine(ROUNDAD_LABEL);
+            return;
+        }
         if (ctx.emitOperand) ctx.emitOperand(args[0], 'REAL');
         else ctx.emitExpression(args[0]);
         ctx.callRoutine(ROUNDAF_LABEL);
@@ -319,6 +360,7 @@ export const SIN_FN: FunctionDef = {
         else ctx.emitExpression(args[0]!);
         ctx.emit(`    PUSH8 0             ; sin(x + 0 * pi/2)`);
         ctx.callRoutine(SINCOSF_LABEL);
+        widenResult(ctx, args);
     },
 };
 
@@ -335,6 +377,7 @@ export const COS_FN: FunctionDef = {
         else ctx.emitExpression(args[0]!);
         ctx.emit(`    PUSH8 1             ; sin(x + 1 * pi/2) = cos x`);
         ctx.callRoutine(SINCOSF_LABEL);
+        widenResult(ctx, args);
     },
 };
 
@@ -345,6 +388,7 @@ export const TAN_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         emitRealCall(ctx, 'TAN', args, 1, TANF_LABEL);
+        widenResult(ctx, args);
     },
 };
 
@@ -367,6 +411,7 @@ export const LN_FN: FunctionDef = {
         emitRealCall(ctx, 'LN', args, 1, LOG2G_LABEL);
         ctx.emit(`    PUSH32 ${f32hex(Math.LN2)}   ; ln 2`);
         ctx.emit(`    MULF`);
+        widenResult(ctx, args);
     },
 };
 
@@ -379,6 +424,7 @@ export const LOG_FN: FunctionDef = {
         emitRealCall(ctx, 'LOG', args, 1, LOG2G_LABEL);
         ctx.emit(`    PUSH32 ${f32hex(Math.LOG10E * Math.LN2)}   ; log10 2`);
         ctx.emit(`    MULF`);
+        widenResult(ctx, args);
     },
 };
 
@@ -394,6 +440,7 @@ export const EXP_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         emitRealCall(ctx, 'EXP', args, 1, EXPF_LABEL);
+        widenResult(ctx, args);
     },
 };
 
@@ -414,6 +461,7 @@ export const ASIN_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         emitRealCall(ctx, 'ASIN', args, 1, ASINF_LABEL);
+        widenResult(ctx, args);
     },
 };
 
@@ -424,6 +472,7 @@ export const ACOS_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         emitRealCall(ctx, 'ACOS', args, 1, ACOSF_LABEL);
+        widenResult(ctx, args);
     },
 };
 
@@ -434,6 +483,7 @@ export const ATAN_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         emitRealCall(ctx, 'ATAN', args, 1, ATANF_LABEL);
+        widenResult(ctx, args);
     },
 };
 
@@ -450,5 +500,6 @@ export const ATAN2_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         emitRealCall(ctx, 'ATAN2', args, 2, ATAN2F_LABEL);
+        widenResult(ctx, args);
     },
 };

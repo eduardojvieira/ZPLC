@@ -5,21 +5,15 @@
  * and visual editors for graphical languages (LD, FBD, SFC)
  */
 
-import { useMemo, useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { lazy, Suspense, useMemo, useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { X, FileCode, File, Settings, Undo2, Redo2 } from 'lucide-react';
 import { useIDEStore } from '../store/useIDEStore';
 import { PLC_LANGUAGES, type PLCLanguage } from '../types';
-import { FBDEditor } from '../editors/fbd';
-import { LDEditor } from '../editors/ld';
-import { SFCEditor } from '../editors/sfc';
 import { serializeFBDModel, type FBDModel } from '../models/fbd';
 import { serializeLDModel, type LDModel } from '../models/ld';
 import { serializeSFCModel, type SFCModel } from '../models/sfc';
-import { loadFBDFile, loadLDFile, loadSFCFile, type VisualFileLoad } from '../models/visualFileLoad';
-import { ProjectSettings } from './settings/ProjectSettings';
-import { CodeEditor } from './CodeEditor';
-import { editor as monacoEditor } from 'monaco-editor';
-import { disposeClosedEditorModels } from './editorModels';
+import { isUnchangedVisualDocument, loadFBDFile, loadLDFile, loadSFCFile, type VisualFileLoad } from '../models/visualFileLoad';
+import { disposeClosedModelsOfLoadedEditor } from './editorModels';
 import { canCommitVisualEditorChange } from '../editors/visualCommitGuard';
 import { displayEditorFileName } from './editorFilePresentation';
 import { UnsavedChangesDialog } from './UnsavedChangesDialog';
@@ -34,6 +28,22 @@ import {
   visualHistoryActions,
   type VisualHistories,
 } from '../editors/visualHistory';
+
+// Each view loads when it is first shown (IDE-015): a project of Structured Text files never fetches the visual editors,
+// one of diagrams never fetches Monaco, and the settings load when they are opened.
+const FBDEditor = lazy(() => import('../editors/fbd').then((module) => ({ default: module.FBDEditor })));
+const LDEditor = lazy(() => import('../editors/ld').then((module) => ({ default: module.LDEditor })));
+const SFCEditor = lazy(() => import('../editors/sfc').then((module) => ({ default: module.SFCEditor })));
+const ProjectSettings = lazy(() => import('./settings/ProjectSettings').then((module) => ({ default: module.ProjectSettings })));
+const CodeEditor = lazy(() => import('./CodeEditor').then((module) => ({ default: module.CodeEditor })));
+
+function ViewLoading() {
+  return (
+    <div role="status" className="flex h-full w-full items-center justify-center bg-[var(--color-surface-900)] text-sm text-[var(--color-surface-300)]">
+      Loading editor…
+    </div>
+  );
+}
 
 const TEXT_WORKFLOW_LANGUAGES = {
   ST: 'ST',
@@ -100,7 +110,7 @@ export function EditorArea() {
 
   // Text files keep their Monaco model while their tab is open; closing the tab or the project drops it.
   useEffect(() => {
-    disposeClosedEditorModels(monacoEditor, projectSession, openTabs);
+    disposeClosedModelsOfLoadedEditor(projectSession, openTabs);
   }, [openTabs, projectSession]);
 
   useEffect(() => useIDEStore.subscribe((state) => {
@@ -144,7 +154,9 @@ export function EditorArea() {
   const updateVisualContent = useCallback((expectedProjectSession: number, expectedFileId: string, expectedLanguage: PLCLanguage, content: string) => {
     const state = useIDEStore.getState();
     const file = state.getFile(expectedFileId);
-    if (!file || !canCommitVisualEditorChange(state.projectSession, expectedProjectSession, state.activeFileId, expectedFileId, expectedLanguage, file) || !isVisualWorkflow(file.language) || content === file.content) return;
+    if (!file || !canCommitVisualEditorChange(state.projectSession, expectedProjectSession, state.activeFileId, expectedFileId, expectedLanguage, file) || !isVisualWorkflow(file.language)) return;
+    // A commit that leaves the model as the file opened keeps the file's bytes (LNG-014)
+    if (isUnchangedVisualDocument(file.language as 'LD' | 'FBD' | 'SFC', file.content, content)) return;
     const key = `${state.projectSession}:${file.id}`;
     const current = visualHistoryRef.current;
     const histories = current.projectSession === state.projectSession ? current.histories : new Map<string, never>();
@@ -441,6 +453,7 @@ export function EditorArea() {
       >
         <ErrorBoundary region="Editor" resetKey={selectedViewId}>
         <DevFaultProbe region="Editor" />
+        <Suspense fallback={<ViewLoading />}>
         {showSettings ? (
           /* Project Settings Panel */
           <ProjectSettings />
@@ -488,6 +501,7 @@ export function EditorArea() {
             />
           )
         ) : null}
+        </Suspense>
         </ErrorBoundary>
       </div>
       {unsavedTabId && (

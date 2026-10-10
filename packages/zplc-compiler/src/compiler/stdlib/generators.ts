@@ -443,7 +443,7 @@ export const PULSE_FB: FunctionBlockDef = {
         ctx.emit(`    LOAD32 ${startAddr}`);
         ctx.emit(`    SUB`);              // elapsed
         ctx.emit(`    LOAD32 ${ptAddr}`);
-        ctx.emit(`    LTU`);              // elapsed < PT, unsigned milliseconds?
+        ctx.emit(`    LTU`);              // elapsed < PT, unsigned milliseconds
         ctx.emit(`    JNZ ${pulseEnd}`);  // Yes, keep pulse active
 
         // Pulse expired

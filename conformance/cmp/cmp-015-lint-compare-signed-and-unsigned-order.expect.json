@@ -1,0 +1,72 @@
+{
+  "requirement": "CMP-015",
+  "title": "The same 64 bits order differently as LINT and as ULINT",
+  "matrix": [
+    "data-types.lint-ulint-lword"
+  ],
+  "tags": [
+    "arch-sensitive",
+    "64-bit",
+    "float"
+  ],
+  "note": "LINT compares as two's complement, ULINT and LWORD as unsigned (CMP-012, CMP-015).",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QX512.0",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX512.1",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX512.2",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX512.3",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX512.4",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX512.5",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX512.6",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX512.7",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX513.0",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX513.1",
+      "type": "BOOL",
+      "value": false
+    },
+    {
+      "at": "%QX513.2",
+      "type": "BOOL",
+      "value": true
+    }
+  ]
+}

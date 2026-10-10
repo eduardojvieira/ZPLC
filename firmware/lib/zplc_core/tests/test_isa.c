@@ -189,7 +189,8 @@ static void test_opcode_validation(void)
     TEST_ASSERT(zplc_opcode_is_valid(OP_GET_TICKS), "OP_GET_TICKS is valid");
 
     /* Invalid opcodes (gaps in the encoding) */
-    TEST_ASSERT(!zplc_opcode_is_valid(0x04), "0x04 is invalid");
+    TEST_ASSERT(!zplc_opcode_is_valid(0x0E), "0x0E is invalid");
+    TEST_ASSERT(!zplc_opcode_is_valid(0xBF), "0xBF is invalid");
     TEST_ASSERT(!zplc_opcode_is_valid(0xFF), "0xFF is invalid");
     TEST_ASSERT(!zplc_opcode_is_valid(0x60), "0x60 is invalid");
 }

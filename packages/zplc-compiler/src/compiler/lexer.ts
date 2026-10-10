@@ -223,6 +223,7 @@ export class LexerError extends Error {
 
 /** A construct the lexer accepts that IEC 61131-3 does not define (CMP-031: the `0x` form). */
 export interface LexerWarning {
+    code: 'NON_IEC_HEX_LITERAL' | 'NON_IEC_REAL_LITERAL';
     message: string;
     line: number;
     column: number;
@@ -481,6 +482,7 @@ export function tokenizeWithErrors(source: string): LexResult {
                 throw error('A hexadecimal literal needs at least one digit after 0x', startLine, startColumn);
             }
             warnings.push({
+                code: 'NON_IEC_HEX_LITERAL',
                 message: `The hexadecimal literal 0x${digits} is not IEC 61131-3 syntax: write 16#${digits}`,
                 line: startLine, column: startColumn, endLine: line, endColumn: column,
             });
@@ -522,12 +524,22 @@ export function tokenizeWithErrors(source: string): LexResult {
         if (current() === 'e' || current() === 'E') {
             const next = peek();
             if (isDigit(next) || ((next === '+' || next === '-') && isDigit(peek(2)))) {
+                const withoutFraction = !isReal;
                 isReal = true;
                 result += advance(); // e or E
                 if (current() === '+' || current() === '-') {
                     result += advance(); // sign
                 }
                 result += readDigits(isDigit, startLine, startColumn);
+                if (withoutFraction) {
+                    // IEC 61131-3 writes a real literal as integer.integer with an optional exponent
+                    const [mantissa, exponent] = result.split(/e/i) as [string, string];
+                    warnings.push({
+                        code: 'NON_IEC_REAL_LITERAL',
+                        message: `The real literal ${result} is not IEC 61131-3 syntax (a fraction is required before the exponent): write ${mantissa}.0e${exponent}`,
+                        line: startLine, column: startColumn, endLine: line, endColumn: column,
+                    });
+                }
             }
         }
 

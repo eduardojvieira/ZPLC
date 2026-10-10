@@ -115,6 +115,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     markOpened: (request: unknown) => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.markOpened, request) as Promise<unknown>,
     // Changes made outside Studio (IDE-004): watch the window's folder, and hear batches of relative paths.
     watch: (request: unknown) => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.watch, request) as Promise<unknown>,
+    // Project archives (IDE-022): the dialogs are native and in the main process; the renderer sends the id of the open
+    // folder, or the id of an archive the main process has read, and never a path.
+    exportArchive: (request: unknown) => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.exportArchive, request) as Promise<unknown>,
+    inspectArchive: () => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.inspectArchive) as Promise<unknown>,
+    extractArchive: (request: unknown) => ipcRenderer.invoke(PROJECT_FILES_CHANNEL.extractArchive, request) as Promise<unknown>,
     onChanged: (callback: (change: unknown) => void) => {
       const listener = (_event: Electron.IpcRendererEvent, change: unknown) => { callback(change); };
       ipcRenderer.on(PROJECT_FILES_EVENT.changed, listener);

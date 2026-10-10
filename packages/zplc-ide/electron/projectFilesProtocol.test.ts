@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 
+import { PROJECT_ARCHIVE_OPS } from './projectArchiveProtocol';
+
 import {
   PROJECT_FILES_CHANNEL,
   PROJECT_FILES_LIMITS,
@@ -24,7 +26,7 @@ describe('project files message schema', () => {
     const channels = Object.values(PROJECT_FILES_CHANNEL);
     expect(new Set(channels).size).toBe(channels.length);
     expect(channels.every((channel) => channel.startsWith('project-files:'))).toBe(true);
-    expect(Object.keys(PROJECT_FILES_CHANNEL).sort()).toEqual(['chooseFolder', ...PROJECT_FILES_OPS, ...PROJECT_RECENT_OPS, ...PROJECT_WATCH_OPS].sort());
+    expect(Object.keys(PROJECT_FILES_CHANNEL).sort()).toEqual(['chooseFolder', ...PROJECT_FILES_OPS, ...PROJECT_RECENT_OPS, ...PROJECT_WATCH_OPS, ...PROJECT_ARCHIVE_OPS].sort());
   });
 
   it('accepts exactly one well-formed request object per operation', () => {

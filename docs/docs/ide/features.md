@@ -10,8 +10,8 @@ tags: [ide, user-guide]
 # Studio Workbench
 
 The workbench keeps editing central and puts Explorer, Inspector, Output,
-Problems, Tests, Lab, Learn, Changes, Agent, Trace, Watch, and Terminal in one
-bottom panel.
+Problems, Tests, Interlocks, Lab, Learn, Changes, Agent, Trace, Watch, and
+Terminal in one bottom panel.
 
 ## Daily workflow
 
@@ -66,6 +66,87 @@ A change made outside Studio is picked up while a project is open. A file withou
 
 Evidence level: host. `packages/zplc-ide/src/project/treeOperations.test.ts`, `src/store/useIDEStore.test.ts` (project tree operations, over the real project service on a temporary folder), `src/store/externalChanges.test.ts`, `electron/projectWatcher.test.ts` and `electron/projectFiles.test.ts` cover the rules, and journeys 23 (project tree operations) and 24 (changes made outside Studio) of `bun run test:journeys` drive the real application.
 
+## Declared interlock coverage
+
+A project can declare pairs of outputs that must never be on together, under `safety.incompatibleOutputs` in
+`zplc.json`. The **Interlocks** tab checks that the saved scenarios assert each pair with an exact `NEVER`, and lists
+every pair as **Covered** or **Missing exact NEVER coverage**. It is a view of its own, not part of Problems or Tests.
+It needs a saved project opened in the desktop app and the linked `zplc.json`, and it says what to do when it cannot
+run. It checks the scenarios, not the machine: it does not establish physical safety, timing or certification.
+`zplc-cli safety-check` and the MCP tool `safety_check` give the same answer.
+
+Evidence level: host. `src/components/InterlockCoverage.test.tsx` renders the view, `workspaceSafetyPresentation.test.ts`
+covers the answer, and journey 33 of `bun run test:journeys` runs the check in the real application.
+
+## One result from Studio, the CLI and the MCP tools
+
+A scenario test gives the same result wherever you run it. Studio's **Tests** tab, `zplc-cli test` and
+`zplc-cli scenario-run`, and the MCP tools `tests_run` and `scenario_run` all call the same Tool API, on the same
+native POSIX runtime with the same virtual clock, so a temporal assertion (`AT`, `WITHIN`, `FOR`, `EVENTUALLY`,
+`ALWAYS`, `NEVER`, `UNTIL`, `RISING`, `FALLING`) is judged on the same samples. The verdict, the hash of the compiled
+program, the hash and length of the recorded trace of each scenario, and, where an entry point shows them, the
+assertions and the sampled outputs are equal. A failing assertion fails the same way from each, with the CLI exiting
+with code 1.
+
+Evidence level: host. `src/cli/scenarioParity.test.ts` runs every bundled project, each scenario by itself, and a
+project with a failing assertion through the Tool API, the CLI, the MCP dispatcher and the Studio presenter, and
+compares the results. It does not cover a board.
+
+## Declarations and library folders
+
+Under the file tree, the Explorer has a **Declarations** section (closed until you open it with its heading, which
+shows how many there are and how many files are not compiled). It lists the declarations of the project: the programs,
+function blocks, functions, interfaces and data types that its Structured Text files declare, grouped under their
+file. Choosing one opens its file with the cursor on its name. The list covers the files the build reads and follows
+what you type.
+
+The build reads the Structured Text files directly in `src` and directly in each **library folder** that `zplc.json`
+lists under `libraries` (CMP-046), and everything they declare is visible to every program:
+
+```json
+{ "libraries": ["lib", "vendor/acme"] }
+```
+
+A library is a relative path of plain names with `/`, inside the project, listed once; `src` and `tests` are not
+libraries. **Library folder...** in the Declarations section adds one (and writes `zplc.json`), its **x** takes it away,
+and the file tree marks the folder `library`. The declarations of a library appear in the Declarations list, in the
+palettes of the FBD and LD editors (the **Project** group) and in the completion and hover of the ST editor.
+
+A Structured Text file that is neither in `src` nor directly in a library folder is read by no build, and Studio says
+so the way the build does: the file is marked `not compiled` in the tree, the section lists its folder with a **List as
+library** button, and **Build** reports `SOURCE_NOT_COMPILED`. A folder inside a library is not read either; list it as
+a library of its own. A library folder that is renamed or deleted stays in the list, marked "not in the project", until
+you remove it. A project that is waiting for its version 1 migration to be applied cannot change its libraries until it
+is.
+
+Evidence level: host. `src/project/libraries.test.ts`, `src/project/unlistedSources.test.ts`,
+`src/store/projectSources.test.ts` and `src/components/stLanguageService.project.test.ts` cover the rules, the sources
+and the editor services; journey 32 of `bun run test:journeys` lists a library in the real application, checks the
+tree, the Ladder palette and the cursor, and builds the project with it.
+
+## Project archives
+
+**Export Project Archive** (the Build options menu) writes the open project to one file, a zip, that you choose in the
+system save dialog. **Import a project archive** (the Welcome screen) reads one back into an equivalent project:
+
+1. Choosing the archive reads it and writes nothing. A dialog says what it holds (its files, folders and size), whose
+   project it is, and, for a version 1 project, the lines that migrating it changes in `zplc.json`.
+2. **Choose a folder and import** asks for an empty folder, writes the files there byte for byte, and opens the project.
+   A folder that is not empty is refused, and an import that fails leaves the folder empty again.
+
+The archive holds the files as they are on disk, so Studio asks you to save modified files first. It leaves out what
+the project tree hides (`node_modules`, `.git`, `build`, `dist` and `.vscode`) and links. An archive made on one
+machine is the same bytes as one made on another: entries sorted by path, stored without compression, dated
+1980-01-01, names in UTF-8. Studio reads archives that other tools wrote (stored or deflated), and refuses one that
+holds an absolute path, a `..`, a name two systems read differently, a link, an encrypted entry, two files that differ
+only by case, a file that does not match its checksum, more than 4096 files, a file over 16 MiB or more than 64 MiB in
+all. **Export Project** next to it keeps writing the JSON document of the files and the configuration (without its
+secrets); that document does not import.
+
+Evidence level: host. `electron/projectArchiveZip.test.ts` and `electron/projectArchive.test.ts` cover the format, the
+refusals and a round trip on real folders; journey 30 of `bun run test:journeys` exports and imports a project in the
+real application and compares the two folders.
+
 ## Closing with unsaved changes
 
 Studio never drops a modified file without asking. Closing a modified tab, closing the project, closing the window and quitting the application each ask to save, discard or cancel; **Cancel** (and Escape) keep everything as it was, and a save that fails keeps the file open and modified. Closing the project offers **Save all and close**, **Discard changes and close** and **Continue editing**. Reload shortcuts (Ctrl+R, Ctrl+Shift+R, Cmd+R) are absent from a packaged build: the menu has no reload entry and the keys are swallowed. A development host reloads only through the same question.
@@ -107,7 +188,7 @@ and width of the debug map. On hardware, inputs are forced from the Watch table.
 Evidence level: host. `packages/zplc-ide/src/runtime/declaredInputs.test.ts` covers
 the list, the encoding of every numeric type and the bit-safe write against a debug
 map from the real compiler, `src/cli/toolApi.test.ts` the marking of program inputs,
-and journey 28 of `bun run test:journeys` sets a bit, a word and a plain program
+and journey 37 of `bun run test:journeys` sets a bit, a word and a plain program
 input of a project with custom names in the real application and sees the program's
 output follow (requirement IDE-024). Native POSIX host evidence, not hardware.
 
@@ -129,11 +210,24 @@ panel before is still there.
 
 Evidence level: host. `packages/zplc-ide/src/store/notifications.test.ts` covers the
 model (progress, the cancel action, how long each result stays, the bound on the
-list) and `src/components/NotificationsList.test.tsx` the drawing; journey 27 of
+list) and `src/components/NotificationsList.test.tsx` the drawing; journey 36 of
 `bun run test:journeys` saves, builds, connects, runs and cancels a long test run
 and breaks the build in the real application, and follows **Details** of each
 notification to its panel (requirement IDE-021). A deploy notification needs a
 device and is not covered by a journey.
+
+## What loads at start
+
+The Welcome screen is the first thing Studio shows, and it loads without the code editor, the visual editors or the
+project settings. Each of them loads the first time you open a file of its kind or the settings, and the editor area
+says "Loading editor..." for that moment. Studio bundles the part of Monaco it uses (the editor, search, folding,
+suggestions, hover, go to definition and references, and the difference view), and not its CSS, HTML, JSON and
+TypeScript language services or its other languages. The installer holds no source maps.
+
+Evidence level: host. `packages/zplc-ide/scripts/welcomeBundle.test.ts` builds Studio, reads the chunks the Welcome page
+loads at start and the files the installer packages; journey 29 (the Welcome screen loads no editor) of
+`bun run test:journeys` checks the same in the development host of the real application. No packaged installer was
+inspected.
 
 ## Editors
 

@@ -1,0 +1,12 @@
+{
+  "requirement": "LNG-026",
+  "title": "an error in an SFC action body is reported against the action",
+  "build": "fails",
+  "elements": [
+    "action:mark"
+  ],
+  "messageIncludes": [
+    "SFC action 'mark' body",
+    "'Undeclared'"
+  ]
+}

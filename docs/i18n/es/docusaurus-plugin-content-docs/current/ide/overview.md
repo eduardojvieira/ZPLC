@@ -64,7 +64,7 @@ registro de ejecuciones; nada de ella se conserva como compilación.
 Nivel de evidencia: host. `electron/toolWorkerHost.test.ts` ejecuta procesos hijo
 reales: un proceso atascado en un bucle se mata y desaparece de verdad mientras el
 llamador sigue funcionando, y el proceso real compila un proyecto y cancela una
-ejecución de escenarios sobre el runtime nativo. El recorrido 26 de
+ejecución de escenarios sobre el runtime nativo. El recorrido 35 de
 `bun run test:journeys` cancela una ejecución larga en la aplicación real, ve que
 la ventana responde todo el tiempo y no encuentra ningún proceso de la ejecución
 (requisito IDE-012). Las pruebas empaquetadas de más abajo también compilan el
@@ -89,7 +89,7 @@ ejecución, no lo que dice su código fuente:
   tamaño excesivo o el identificador de carpeta de otra ventana se rechaza, y nada
   fuera del proyecto cambia.
 
-Nivel de evidencia: host. El recorrido 29 de `bun run test:journeys` hace estas
+Nivel de evidencia: host. El recorrido 38 de `bun run test:journeys` hace estas
 pruebas en el host de desarrollo (que sirve sus propios scripts en línea para la
 recarga en caliente, así que allí no se hace la prueba del script en línea). Para
 hacerlas todas sobre una aplicación empaquetada en Linux, construya un paquete
@@ -123,7 +123,7 @@ anterior, sin un paso de enlace de por medio.
 
 Nivel de evidencia: host. `electron/workspaceTestGateway.test.ts`,
 `electron/ipcRegistry.test.ts` y `electron/security.test.ts` cubren la regla, y el
-recorrido 25 de `bun run test:journeys` envía por el puente de la aplicación real
+recorrido 34 de `bun run test:journeys` envía por el puente de la aplicación real
 mensajes de compilación, de comprobación de seguridad y de pruebas fabricados,
 después de abrir otra carpeta, y comprueba que cada uno es rechazado (requisito
 IDE-002).

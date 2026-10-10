@@ -29,16 +29,16 @@ import {
   Send,
   CircleStop,
   Boxes,
+  ShieldCheck,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { DiffEditor, type Monaco } from '@monaco-editor/react';
-import { SimulationInputsPanel } from './SimulationInputsPanel';
+import { DiffEditor, type Monaco } from './monacoRuntime';
 import { shownProjectBridge } from '../ipc/shownProjectBridge';
-import { useNotifications, type NotificationResult } from '../store/notifications';
+import { trackTestRun } from './workspaceTestNotifications';
 import { useIDEStore } from '../store/useIDEStore';
 import type { ConsoleEntry, ConsoleTab } from '../types';
 import { TerminalTab } from './TerminalTab';
-import { DebugWatchPanel } from './DebugWatchPanel';
+import { WatchTab } from './WatchTab';
 import type { DebugController } from '../hooks/useDebugController';
 import { classifyWorkspaceTestBuildLink, isWorkspaceManifestRegistrationCurrent, isWorkspaceTestRunCurrent, presentCandidateChangeSetReview, presentRecordedConveyorPlant, presentRecordedMotorPlant, presentRecordedMotorOutput, presentRecordedPedestrianCrossing, presentRecordedTankLevel, presentWorkspaceTestResult, workspaceTestAvailability, workspaceTestRunFallbackState, type CandidateChangeSetReviewPresentation, type WorkspaceTestPresentation } from './workspaceTestPresentation';
 import { findFileInTree, readFileContent } from '../utils/fileSystem';
@@ -46,12 +46,16 @@ import { LIVE_NATIVE_OUTPUT_MAX_AGE_MS, describeVmError, presentLiveNativeMotorC
 import { NativeAdapter } from '../runtime/nativeAdapter';
 import { claimMotorInputCommand, shouldClearMotorInputFailure } from './liveNativeMotorPanel';
 import { presentWorkspaceSafetyCheck, type WorkspaceSafetyPresentation } from './workspaceSafetyPresentation';
-import { Sidebar } from './Sidebar';
+import { InterlockCoverage } from './InterlockCoverage';
+import { ProjectExplorer } from './ProjectExplorer';
 import { ErrorBoundary } from './ErrorBoundary';
 import { DevFaultProbe } from './DevFaultProbe';
 import { WorkbenchInspector } from './WorkbenchInspector';
 import { LearnPanel } from './LearnPanel';
 import { LabPanel } from './LabPanel';
+import { elementToSelect } from '../editors/diagnosticElement';
+import { requestElementSelection } from '../editors/elementSelectionRequests';
+import { useProjectBlocks } from '../editors/useProjectBlocks';
 import { presentAiProviderConfig, presentAiProviderMutation, presentAiProviderResponse, presentAiProviderStatus, type AiProviderMode, type AiProviderResponsePresentation, type AiProviderStatusPresentation } from './aiProviderPresentation';
 import { useTheme } from '../hooks/useTheme';
 import { ZPLC_DARK_THEME, ZPLC_DARK_THEME_ID, ZPLC_HIGH_CONTRAST_THEME, ZPLC_HIGH_CONTRAST_THEME_ID, ZPLC_LIGHT_THEME, ZPLC_LIGHT_THEME_ID } from '../utils/monaco-themes';
@@ -88,30 +92,6 @@ function consoleTabAfterKey(tabs: ConsoleTab[], activeTab: ConsoleTab, key: stri
   return null;
 }
 
-function SafetyCoverageReport({ presentation }: { presentation: WorkspaceSafetyPresentation }) {
-  if (presentation.kind === 'not-configured') return <p role="status" className="text-xs text-[var(--color-surface-400)]">No incompatible outputs are declared in this project.</p>;
-  if (presentation.kind === 'invalid') return <div className="space-y-1"><p role="status" className="text-xs text-[var(--color-accent-yellow)]">Declared interlock coverage result was invalid.</p><SafetyDiagnostics diagnostics={presentation.diagnostics} /></div>;
-  const missing = presentation.kind === 'uncovered' ? new Set(presentation.uncovered.map((pair) => [...pair.outputs].sort().join('\0'))) : new Set<string>();
-  return <div className="space-y-2 overflow-x-auto"><table className="w-full min-w-[420px] text-left text-xs"><caption className="sr-only">Declared output interlock coverage.</caption><thead className="border-b border-[var(--color-surface-700)] text-[var(--color-surface-400)]"><tr><th scope="col" className="px-2 py-1 font-medium">Output A</th><th scope="col" className="px-2 py-1 font-medium">Output B</th><th scope="col" className="px-2 py-1 font-medium">Status</th></tr></thead><tbody>{presentation.declared.map((pair) => { const isMissing = missing.has([...pair.outputs].sort().join('\0')); return <tr key={pair.outputs.join('\0')} className="border-b border-[var(--color-surface-700)]"><td className="px-2 py-1 font-mono text-[var(--color-surface-200)]">{pair.outputs[0]}</td><td className="px-2 py-1 font-mono text-[var(--color-surface-200)]">{pair.outputs[1]}</td><td className={`px-2 py-1 ${isMissing ? 'text-[var(--color-accent-yellow)]' : 'text-[var(--color-accent-green)]'}`}>{isMissing ? 'Missing exact NEVER coverage' : 'Covered'}</td></tr>; })}</tbody></table><SafetyDiagnostics diagnostics={presentation.diagnostics} /></div>;
-}
-
-function SafetyDiagnostics({ diagnostics }: { diagnostics: WorkspaceSafetyPresentation['diagnostics'] }) {
-  if (diagnostics.length === 0) return null;
-  return <ul aria-label="Safety diagnostics" className="space-y-1 border-t border-[var(--color-surface-700)] pt-2 text-xs text-[var(--color-surface-200)]">{diagnostics.map((diagnostic, index) => <li key={`${diagnostic.code}-${index}`}><span className="font-mono">{diagnostic.code}</span>{diagnostic.path && <span className="text-[var(--color-surface-400)]"> · {diagnostic.path}{diagnostic.line ? `:${diagnostic.line}` : ''}{diagnostic.column ? `:${diagnostic.column}` : ''}</span>}</li>)}</ul>;
-}
-
-/** What the Tests panel concluded, as the notification of that run. */
-function workspaceTestNotification(presentation: WorkspaceTestPresentation): NotificationResult {
-  const detail = presentation.scenarioCount !== undefined ? `${presentation.scenarioCount} ${presentation.scenarioCount === 1 ? 'scenario' : 'scenarios'}` : undefined;
-  switch (presentation.kind) {
-    case 'passed': return { kind: 'tests', status: 'success', title: 'Host scenarios passed', ...(detail ? { detail } : {}), details: 'tests' };
-    case 'assertion-failed': return { kind: 'tests', status: 'error', title: 'A host scenario failed an assertion', detail: presentation.message, details: 'tests' };
-    case 'cancelled': return { kind: 'tests', status: 'cancelled', title: 'Host scenarios cancelled', details: 'tests' };
-    case 'timeout': return { kind: 'tests', status: 'error', title: 'Host scenarios timed out', details: 'tests' };
-    default: return { kind: 'tests', status: 'error', title: 'Host scenarios could not run', detail: presentation.message, details: 'tests' };
-  }
-}
-
 export function Console({ debugController }: ConsoleProps) {
   const {
     consoleEntries,
@@ -142,6 +122,7 @@ export function Console({ debugController }: ConsoleProps) {
     updateFileContent,
   } = useIDEStore();
   const { effectiveTheme } = useTheme();
+  const projectBlocks = useProjectBlocks();
   const [workspaceTestBusy, setWorkspaceTestBusy] = useState(false);
   const [workspaceTestState, setWorkspaceTestState] = useState<'idle' | 'selected' | 'running' | 'cancelling' | 'desktop-unavailable' | WorkspaceTestResultState>('idle');
   const [workspaceSafetyState, setWorkspaceSafetyState] = useState<WorkspaceSafetyState>('idle');
@@ -205,6 +186,16 @@ export function Console({ debugController }: ConsoleProps) {
     + liveSTDiagnostics.filter((message) => message.type === 'warning').length;
   const problemSummary = `${errorCount} ${errorCount === 1 ? 'error' : 'errors'} · ${warningCount} ${warningCount === 1 ? 'warning' : 'warnings'}`;
 
+  // Opening a problem opens its file at its position, and in a diagram selects the element it is about (LNG-003)
+  const activateDiagnostic = async (msg: { file?: string; line?: number; column?: number; message: string; element?: string }) => {
+    if (!msg.file) return;
+    const opened = await navigateToCompilerDiagnostic(msg.file, msg.line && msg.line >= 1 ? msg.line : 1, msg.column ?? 1);
+    if (!opened) return;
+    const file = [...useIDEStore.getState().loadedFiles.values()].find((candidate) => candidate.path === msg.file);
+    const element = elementToSelect(msg, file, projectBlocks);
+    if (element) requestElementSelection(msg.file, element);
+  };
+
   const tabs: { id: ConsoleTab; label: string; icon: React.ReactNode; count?: React.ReactNode; ariaLabel?: string }[] = [
     { id: 'explorer', label: 'Explorer', icon: <FolderOpen size={14} />, ariaLabel: 'Explorer' },
     { id: 'inspector', label: 'Inspector', icon: <PanelRight size={14} />, ariaLabel: 'Inspector' },
@@ -226,6 +217,7 @@ export function Console({ debugController }: ConsoleProps) {
       icon: <FlaskConical size={14} />,
       ariaLabel: 'Tests, host POSIX scenarios',
     },
+    { id: 'interlocks', label: 'Interlocks', icon: <ShieldCheck size={14} />, ariaLabel: 'Interlocks, declared output interlock coverage' },
     { id: 'lab', label: 'Lab', icon: <Boxes size={14} />, ariaLabel: 'Lab, recorded host scenario playback' },
     { id: 'learn', label: 'Learn', icon: <BookOpen size={14} />, ariaLabel: 'Learn, safe motor start-stop lesson' },
     { id: 'changes', label: 'Changes', icon: <FileDiff size={14} />, ariaLabel: 'Changes, candidate review' },
@@ -347,27 +339,21 @@ export function Console({ debugController }: ConsoleProps) {
     const expectedCompilerRunId = current.compilerRunId;
     setWorkspaceTestBusy(true);
     setWorkspaceTestState('running');
-    // The run is a long operation (IDE-021): its notification shows progress and carries the same cancel as the Tests panel.
-    const notices = useNotifications.getState();
-    const operation = notices.begin({
-      kind: 'tests', title: scenarioId === undefined ? 'Running host scenarios' : `Running scenario ${scenarioId}`, details: 'tests',
-      cancel: () => { void workspaceTests.cancel().catch(() => undefined); },
-    });
+    const notice = trackTestRun(scenarioId, () => { void workspaceTests.cancel().catch(() => undefined); });
     try {
       const request = { workspaceId, ...(scenarioId === undefined ? {} : { scenarioId }) };
       const result = await workspaceTests.run(request);
       const latest = useIDEStore.getState();
       if (isWorkspaceTestRunCurrent(latest, { projectSession: expectedProjectSession, compilerRunId: expectedCompilerRunId, workspaceId })) {
-        const presentation = presentWorkspaceTestResult(result);
-        setWorkspaceTestState({ presentation, projectSession: expectedProjectSession, compilerRunId: expectedCompilerRunId, workspaceId });
-        notices.finish(operation, workspaceTestNotification(presentation));
-      } else notices.dismiss(operation);
+        setWorkspaceTestState({ presentation: presentWorkspaceTestResult(result), projectSession: expectedProjectSession, compilerRunId: expectedCompilerRunId, workspaceId });
+        notice.done(result);
+      } else notice.dismiss();
     } catch {
       const latest = useIDEStore.getState();
       if (isWorkspaceTestRunCurrent(latest, { projectSession: expectedProjectSession, compilerRunId: expectedCompilerRunId, workspaceId })) {
         setWorkspaceTestState('desktop-unavailable');
-        notices.finish(operation, { kind: 'tests', status: 'error', title: 'Host POSIX simulation is unavailable', details: 'tests' });
-      } else notices.dismiss(operation);
+        notice.unavailable();
+      } else notice.dismiss();
     } finally {
       setWorkspaceTestBusy(false);
       const latest = useIDEStore.getState();
@@ -707,25 +693,12 @@ export function Console({ debugController }: ConsoleProps) {
           </div>
         )}
 
-        {activeConsoleTab === 'explorer' && <Sidebar />}
+        {activeConsoleTab === 'explorer' && <ProjectExplorer />}
 
         {activeConsoleTab === 'inspector' && <WorkbenchInspector />}
 
         {activeConsoleTab === 'problems' && (
           <div className="p-2 space-y-1">
-            <section aria-label="Declared interlock coverage" className="space-y-2 border-b border-[var(--color-surface-700)] pb-2 font-sans text-sm">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-surface-200)]">Declared interlock coverage</h2>
-                <button type="button" onClick={() => { void runWorkspaceSafetyCheck(); }} disabled={workspaceTestBusy || workspaceTestAvailabilityState !== 'ready'} className="border border-[var(--color-surface-600)] bg-[var(--color-surface-800)] px-2 py-1 text-xs font-medium text-[var(--color-surface-100)] hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]">{workspaceSafetyStateForLink === 'running' ? 'Checking…' : 'Check declared interlocks'}</button>
-              </div>
-              {workspaceTestAvailabilityState === 'link-required' && <p role="status" className="text-xs text-[var(--color-surface-400)]">Save the project and choose zplc.json in Tests to check declared interlocks.</p>}
-              {workspaceTestAvailabilityState === 'unsaved' && <p role="status" className="text-xs text-[var(--color-surface-400)]">Save all changes before checking declared interlocks.</p>}
-              {workspaceTestAvailabilityState === 'desktop-unavailable' && <p role="status" className="text-xs text-[var(--color-surface-400)]">Declared interlock coverage requires the desktop app.</p>}
-              {workspaceTestAvailabilityState === 'project-required' && <p role="status" className="text-xs text-[var(--color-surface-400)]">Open a saved project folder to check declared interlocks.</p>}
-              {workspaceSafetyStateForLink === 'unavailable' && <p role="status" className="text-xs text-[var(--color-accent-yellow)]">Declared interlock coverage is unavailable.</p>}
-              {typeof workspaceSafetyStateForLink === 'object' && <SafetyCoverageReport presentation={workspaceSafetyStateForLink.presentation} />}
-              <p className="text-xs text-[var(--color-surface-400)]">Checks exact NEVER coverage in saved scenarios. It does not establish physical safety, timing, or certification.</p>
-            </section>
             <div className="pb-1 text-xs tabular-nums text-[var(--color-surface-300)] border-b border-[var(--color-surface-700)]">
               {problemSummary}
             </div>
@@ -753,7 +726,9 @@ export function Console({ debugController }: ConsoleProps) {
               ) : (
               compilerMessages.map((msg, idx) => {
                 const node = msg.file && fileTree ? findFileInTree(fileTree, msg.file) : null;
-                const navigable = Boolean(node?.type === 'file' && node.path === msg.file && msg.line && msg.line >= 1);
+                // a diagram has no lines: a finding of its translation has no position, and its element is found on activation
+                const inDiagram = node?.type === 'file' && (node.language === 'LD' || node.language === 'FBD' || node.language === 'SFC');
+                const navigable = Boolean(node?.type === 'file' && node.path === msg.file && ((msg.line && msg.line >= 1) || inDiagram));
                 const content = <>
                   {msg.type === 'error' && (
                     <XCircle size={14} className="text-[var(--color-accent-red)] mt-0.5 flex-shrink-0" />
@@ -776,7 +751,7 @@ export function Console({ debugController }: ConsoleProps) {
                     )}
                   </div>
                 </>;
-                return navigable ? <button key={idx} type="button" onClick={() => { void navigateToCompilerDiagnostic(msg.file!, msg.line!, msg.column ?? 1); }} className="flex w-full items-start gap-2 rounded px-2 py-1 text-left hover:bg-[var(--color-surface-700)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-accent-blue)]">{content}</button> : <div key={idx} className="flex items-start gap-2 rounded px-2 py-1">{content}</div>;
+                return navigable ? <button key={idx} type="button" onClick={() => { void activateDiagnostic(msg); }} className="flex w-full items-start gap-2 rounded px-2 py-1 text-left hover:bg-[var(--color-surface-700)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-accent-blue)]">{content}</button> : <div key={idx} className="flex items-start gap-2 rounded px-2 py-1">{content}</div>;
               })
               )}
             </section>
@@ -872,6 +847,8 @@ export function Console({ debugController }: ConsoleProps) {
             )}
           </div>
         )}
+
+        {activeConsoleTab === 'interlocks' && <InterlockCoverage availability={workspaceTestAvailabilityState} state={workspaceSafetyStateForLink} busy={workspaceTestBusy} onCheck={() => { void runWorkspaceSafetyCheck(); }} />}
 
         {activeConsoleTab === 'learn' && <LearnPanel workspaceTestPresentation={typeof workspaceTestStateForLink === 'object' ? workspaceTestStateForLink.presentation : undefined} />}
 
@@ -979,15 +956,7 @@ export function Console({ debugController }: ConsoleProps) {
         )}
 
         {activeConsoleTab === 'watch' && (
-          <>
-            <div className="px-2 pt-2"><SimulationInputsPanel controller={debugController} /></div>
-            <DebugWatchPanel
-              setValue={debugController?.setValue}
-              toggleForceValue={debugController?.toggleForceValue}
-              clearAllForcedValues={debugController?.clearAllForcedValues}
-              hasActiveSerialSession={debugController?.adapter?.type === 'serial' && debugController.adapter.connected}
-            />
-          </>
+          <WatchTab controller={debugController} />
         )}
         </ErrorBoundary>
       </div>

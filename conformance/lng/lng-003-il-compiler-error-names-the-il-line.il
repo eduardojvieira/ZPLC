@@ -1,0 +1,10 @@
+PROGRAM Wrong
+VAR
+  T : TON;
+  Lamp AT %QX0.0 : BOOL;
+END_VAR
+  LD TRUE
+  CAL T(IN := 5)
+  LD T.Q
+  ST Lamp
+END_PROGRAM

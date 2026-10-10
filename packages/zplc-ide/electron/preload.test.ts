@@ -6,7 +6,9 @@
 import { beforeAll, describe, expect, it, mock } from 'bun:test';
 import path from 'node:path';
 
-import { IPC_EVENT_CHANNELS, IPC_INVOKE_CHANNELS } from './ipcContract';
+import { IPC_EVENT_CHANNELS, IPC_INVOKE_CHANNELS, PROJECT_FILES_CHANNEL } from './ipcContract';
+import { PROJECT_ARCHIVE_OPS } from './projectArchiveProtocol';
+import { PROJECT_FILES_OPS, PROJECT_RECENT_OPS, PROJECT_WATCH_OPS } from './projectFilesProtocol';
 
 type Api = Record<string, unknown>;
 const invoked: Array<{ channel: string; args: unknown[] }> = [];
@@ -65,10 +67,12 @@ describe('preload bridge (IDE-017)', () => {
 
   it('exposes narrow objects: one method per operation of each group, nothing generic', () => {
     const methods = (name: string) => Object.keys(api[name] as Api);
+    // The project-files bridge: the folder dialog, the file operations, the recent projects, the watch (IDE-004), the
+    // archives (IDE-022) and the one event; each operation has its channel in PROJECT_FILES_CHANNEL under its own name.
     expect(methods('projectFiles')).toEqual([
-      'chooseFolder', 'list', 'stat', 'read', 'write', 'mkdir', 'remove', 'rename',
-      'listRecent', 'openRecent', 'forgetRecent', 'markOpened', 'watch', 'onChanged',
+      'chooseFolder', ...PROJECT_FILES_OPS, ...PROJECT_RECENT_OPS, ...PROJECT_WATCH_OPS, ...PROJECT_ARCHIVE_OPS, 'onChanged',
     ]);
+    expect(methods('projectFiles').filter((name) => name !== 'onChanged').sort()).toEqual(Object.keys(PROJECT_FILES_CHANNEL).sort());
     expect(methods('recovery')).toEqual(['write', 'list', 'discard']);
     expect(methods('session')).toEqual(['load', 'save']);
     expect(methods('updateCheck')).toEqual(['run']);

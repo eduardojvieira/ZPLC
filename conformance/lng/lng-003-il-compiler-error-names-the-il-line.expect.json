@@ -1,0 +1,14 @@
+{
+  "requirement": "LNG-003",
+  "title": "an error the compiler finds in the code of an IL line is reported on that IL line",
+  "build": "fails",
+  "lines": [
+    7
+  ],
+  "elements": [
+    "line:7"
+  ],
+  "messageIncludes": [
+    "INT"
+  ]
+}

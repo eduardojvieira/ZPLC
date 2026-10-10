@@ -32,6 +32,18 @@ export function disposeClosedEditorModels(host: EditorModelHost, projectSession:
   }
 }
 
+let loadedHost: EditorModelHost | null = null;
+
+/** Monaco registers itself when its first editor module loads; until then no model exists and there is nothing to drop. */
+export function setEditorModelHost(host: EditorModelHost): void {
+  loadedHost = host;
+}
+
+/** `disposeClosedEditorModels` for the Monaco that is loaded, if any. */
+export function disposeClosedModelsOfLoadedEditor(projectSession: number, openFileIds: readonly string[]): void {
+  if (loadedHost) disposeClosedEditorModels(loadedHost, projectSession, openFileIds);
+}
+
 /** Monaco rejects pending work with this error when a model is swapped; some of its promises are not handled. */
 export function isMonacoCancellation(reason: unknown): boolean {
   return reason instanceof Error && reason.name === 'Canceled' && reason.message === 'Canceled';

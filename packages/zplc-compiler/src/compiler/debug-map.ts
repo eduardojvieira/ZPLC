@@ -98,6 +98,12 @@ export interface SourceLineMapping {
     pc: number;
     /** Number of bytecode bytes for this line */
     length: number;
+    /**
+     * The element of the source the author edited that this range was generated for, when the source was translated
+     * to Structured Text by a front end (LNG-004): `rung:r1/cell:0,2`, `block:and_1`, `step:s1`, `transition:t1`,
+     * `action:a1`, or `line:12` of an IL source. A range of a plain Structured Text source has none.
+     */
+    element?: string;
 }
 
 /**
@@ -110,6 +116,8 @@ export interface BreakpointLocation {
     pc: number;
     /** True if this line is a valid breakpoint target */
     valid: boolean;
+    /** The element of the source the author edited that execution stops at, for a source translated by a front end (LNG-004). */
+    element?: string;
 }
 
 // ============================================================================
@@ -152,6 +160,12 @@ export interface DebugMap {
     programName: string;
     /** Version of the compiler package that generated this map */
     compilerVersion: string;
+    /**
+     * The build identity of the artifact this map describes: 8 hexadecimal digits, the one the artifact carries
+     * in its BUILD segment (CMP-056). A tool that has the map and the artifact, or the identity of the running
+     * program, can tell a map that does not belong to it. Absent from the maps of builds that predate it.
+     */
+    buildId?: string;
     /**
      * Not written by the compiler: a build is a function of its sources, so the same project gives the
      * same map byte for byte (CMP-053). Maps of older builds may carry the time of the build here.

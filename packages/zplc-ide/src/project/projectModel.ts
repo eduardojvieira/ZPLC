@@ -1,5 +1,6 @@
 import type { ZPLCProjectV2 } from '../types';
-import { findNonEmptySensitiveProjectConfigPaths } from '../utils/projectExport';
+import { findNonEmptySensitiveProjectConfigPaths } from './sensitiveConfig';
+import { buildOptionProblems } from './buildOptions';
 
 export interface ProjectModelDiagnostic {
   path: string;
@@ -126,6 +127,8 @@ export function parseAndMigrateProject(value: unknown): ProjectModelResult {
   }
   const safetyFailure = validateSafety(project.safety);
   if (safetyFailure) return safetyFailure;
+  const optionProblems = buildOptionProblems(project);
+  if (optionProblems.length > 0) return { ok: false, diagnostics: optionProblems };
   if (!Array.isArray(project.tasks) || project.tasks.length === 0) return invalid('tasks', 'Project must define at least one task');
   if (project.tasks.length > PROJECT_MAX_TASKS) return invalid('tasks', 'Project exceeds the maximum supported task count');
 

@@ -140,20 +140,20 @@ Los anchos, el desbordamiento y el comportamiento en los límites están en los 
 ### Matemáticas Avanzadas
 ### ABS
 - **Entradas:** `IN` (ANY_NUM).
-- **Salidas:** (ANY_NUM) Valor absoluto de IN.
+- **Salidas:** (ANY_NUM) Valor absoluto de IN. El `DINT` y el `LINT` más negativos quedan como están; un `LREAL` tiene su bit de signo borrado (`ABS(-0.0)` es 0.0).
 
 ### SQRT
-- **Entradas:** `IN` (REAL).
-- **Salidas:** (REAL) Raíz cuadrada de IN; 0.0 si `IN` es 0.0 o menor.
+- **Entradas:** `IN` (REAL o LREAL).
+- **Salidas:** (el tipo de IN) Raíz cuadrada de IN; 0.0 si `IN` es 0.0 o menor. Para un `LREAL` es el doble correctamente redondeado (`SQRTD`).
 
 ### SIN / COS / TAN
-- **Entradas:** `IN` (REAL).
+- **Entradas:** `IN` (REAL, o LREAL: el argumento se redondea a REAL, la función calcula en REAL y el resultado se amplía de nuevo, así que un resultado LREAL tiene la precisión de un REAL, unas siete cifras significativas).
 - **Salidas:** (REAL) Seno, Coseno o Tangente de IN (en radianes) (`cmp-058-trigonometric-functions`).
 - **Dominio:** todo `IN` finito. Un NaN o un infinito da NaN (`cmp-058-sine-of-infinity-and-not-a-number`). Un ángulo de 100000 o más se reduce módulo 2 pi antes de tomar el seno, con 2 pi en 36 bits repartidos en tres partes que se multiplican sin error y una corrección aplicada una vez, de modo que el resultado es el seno del REAL mismo: tan preciso como para un ángulo pequeño hasta 2^40, y con un error que crece como `IN` por 1e-19 por encima (1e-4 en 2^48). Un REAL de 2 pi por 2^48 (1.8e15) o más tiene una separación mayor que 2^25 radianes: el ángulo no lleva información, la reducción no lo contiene y la función da el valor de un ángulo de 0.0, finito y sin error (`cmp-058-trigonometric-functions-of-negative-and-large-angles`).
 
 ### EXP / LN / LOG
 El exponencial natural, el logaritmo natural y el logaritmo en base 10.
-- **Entradas:** `IN` (REAL; un entero se convierte).
+- **Entradas:** `IN` (REAL; un entero se convierte; un LREAL se redondea a REAL y el resultado se amplía de nuevo, con la precisión de un REAL).
 - **Salidas:** (REAL) `e ** IN`, `ln(IN)` o `log10(IN)`.
 - **Rango:** `EXP` da +infinito por encima de 88.72284 y 0.0 por debajo de -103.28. `LN` y `LOG` dan -infinito para 0.0 y NaN para un número negativo.
 
@@ -268,7 +268,7 @@ En `MID`, `DELETE` y `REPLACE` la posición va antes de la cantidad. IEC 61131-3
 
 ## 9. Conversiones de Tipos
 
-Las funciones de conversión mueven valores entre tipos. Existe una función `<ORIGEN>_TO_<DESTINO>` para cada par ordenado de tipos distintos entre `BOOL`, `SINT`, `USINT`, `BYTE`, `INT`, `UINT`, `WORD`, `DINT`, `UDINT`, `DWORD`, `REAL` y `TIME`: `INT_TO_DINT`, `DINT_TO_REAL`, `SINT_TO_INT`, `REAL_TO_USINT`, `TIME_TO_DINT`, etc. (132 funciones). Los tipos de 64 bits y `DATE`, `TOD` y `DT` todavía no tienen funciones de conversión.
+Las funciones de conversión mueven valores entre tipos. Existe una función `<ORIGEN>_TO_<DESTINO>` para cada par ordenado de tipos distintos entre `BOOL`, `SINT`, `USINT`, `BYTE`, `INT`, `UINT`, `WORD`, `DINT`, `UDINT`, `DWORD`, `LINT`, `ULINT`, `LWORD`, `REAL`, `LREAL` y `TIME`: `INT_TO_DINT`, `DINT_TO_REAL`, `SINT_TO_INT`, `REAL_TO_USINT`, `TIME_TO_DINT`, `LINT_TO_LREAL`, `LREAL_TO_ULINT`, etc. (240 funciones). `DATE`, `TOD` y `DT` todavía no tienen funciones de conversión.
 
 | Conversión | Resultado |
 |---|---|
@@ -276,13 +276,16 @@ Las funciones de conversión mueven valores entre tipos. Existe una función `<O
 | Entero a un entero más angosto, o al otro signo | Los bits bajos del valor en el ancho del destino (módulo, complemento a dos): `INT_TO_SINT(300)` es 44, `INT_TO_UINT(-1)` es 65535, `DINT_TO_UDINT(-1)` es 4294967295. |
 | Entero o `TIME` a `BOOL` | FALSE para 0, TRUE para cualquier otro valor. |
 | `BOOL` a un número | 0 o 1. |
-| Entero a `REAL` | El `REAL` más cercano; un valor de 32 bits mayor que 2^24 puede perder sus bits más bajos. |
+| Entero a `REAL` | El `REAL` más cercano, con un solo redondeo (también para un entero de 64 bits); un valor mayor que 2^24 puede perder sus bits más bajos. |
+| Entero a `LREAL` | El `LREAL` más cercano; exacto hasta 2^53, un solo redondeo por encima. |
+| `REAL` a `LREAL`, `LREAL` a `REAL` | Ampliación exacta; al reducir, el `REAL` más cercano (un desbordamiento es un infinito). |
 | `REAL` a un entero | El entero más cercano; una mitad exacta va al entero par (`REAL_TO_INT(2.5)` es 2, `REAL_TO_INT(3.5)` es 4, `REAL_TO_INT(-2.5)` es -2). Un valor fuera del rango del destino da su límite más cercano (`REAL_TO_INT(40000.0)` es 32767, `REAL_TO_USINT(-5.0)` es 0, el infinito da el límite de su signo) y un NaN da 0. |
-| `REAL` a `BOOL` | FALSE para 0.0 y -0.0, TRUE para cualquier otro valor. |
+| `LREAL` a un entero | Igual que `REAL`: el entero más cercano, una mitad exacta al entero par, el límite más cercano del destino fuera de su rango (`LREAL_TO_LINT(1.0E30)` es 9223372036854775807, `LREAL_TO_ULINT(-2.5)` es 0), 0 para un NaN. |
+| `REAL` o `LREAL` a `BOOL` | FALSE para 0.0 y -0.0, TRUE para cualquier otro valor, un NaN incluido. |
 | `TIME` | Su cantidad de milisegundos como entero sin signo de 32 bits: `TIME_TO_DINT(T#2s)` es 2000. |
 
-- **TRUNC(IN)**: Quita la parte fraccionaria de un `REAL` hacia cero y devuelve un `REAL` (`TRUNC(-3.7)` es -3.0). Una magnitud de 2^23 o más no tiene fracción y se devuelve igual. Para el entero, usá `REAL_TO_DINT(TRUNC(x))`.
-- **ROUND(IN)**: No es una función IEC. El número entero más cercano como `REAL`, una mitad exacta se aleja de cero (`ROUND(2.5)` es 3.0, `ROUND(-2.5)` es -3.0).
+- **TRUNC(IN)**: Quita la parte fraccionaria de un `REAL` hacia cero y devuelve un `REAL` (`TRUNC(-3.7)` es -3.0). Una magnitud de 2^23 o más no tiene fracción y se devuelve igual. Para el entero, use `REAL_TO_DINT(TRUNC(x))`. Para un `LREAL` el resultado es un `LREAL`, exacto, con el límite en 2^63 (`TRUNC(-0.4)` es +0.0).
+- **ROUND(IN)**: No es una función IEC. El número entero más cercano como `REAL`, una mitad exacta se aleja de cero (`ROUND(2.5)` es 3.0, `ROUND(-2.5)` es -3.0). Para un `LREAL` el resultado es un `LREAL` y es exacto donde sumar 0.5 no lo sería (`ROUND(0.49999999999999994)` es 0.0).
 
 ---
 
@@ -297,11 +300,11 @@ Las funciones de conversión mueven valores entre tipos. Existe una función `<O
 - **Salidas:** (UDINT / TIME) Último valor de ciclo informado. Su unidad, resolución, punto de actualización y relación con el tiempo físico dependen del runtime/perfil; no lo use como garantía de timing de hardware.
 
 ### WATCHDOG_RESET
-Stub de compatibilidad. Hoy compila a `NOP` y no alimenta, reinicia ni valida un watchdog de hardware o software.
+Stub de compatibilidad. Compila a `NOP` y no alimenta, reinicia ni valida un watchdog de hardware o software: ningún opcode lo hace, y el runtime alimenta el watchdog de hardware por sí mismo después de cada ciclo completado (`rt-034-watchdog-reset-is-reported-and-changes-nothing`).
 - **Entradas:** Ninguna.
 - **Salidas:** Ninguna.
 
-No debe usarse como control de seguridad.
+La compilación informa cada llamada con la advertencia `WATCHDOG_RESET_NO_EFFECT` en la llamada (`cmp-058-uptime-follows-the-clock`); `compiler.warnings` la selecciona como cualquier otra advertencia. Quite la llamada: el programa se ejecuta como si la línea no estuviera. No debe usarse como control de seguridad.
 
 ---
 

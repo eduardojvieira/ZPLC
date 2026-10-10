@@ -3,17 +3,13 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'bun:test';
 
 describe('Sidebar migration disclosure', () => {
-  it('keeps the migration preview accessible, read-only, and discoverable in the lower Explorer ledger tab', () => {
+  it('keeps the migration notice read-only and discoverable in the lower Explorer ledger tab, with the difference in a dialog of its own', () => {
     const source = readFileSync(join(import.meta.dir, 'Sidebar.tsx'), 'utf8');
 
-    expect(source).toContain('<details');
-    expect(source).toContain('<summary');
     expect(source).toContain('Migration preview');
     expect(source).toContain('No project files were changed.');
-    expect(source).toContain('Review {projectMigrationPreview.changes.length} change');
-    expect(source).toContain("Add");
-    expect(source).toContain("Remove");
-    expect(source).toContain("Replace");
+    expect(source).toContain('Review the difference (');
+    expect(source).toContain('<MigrationPreviewDialog onClose={() => setIsMigrationOpen(false)} />');
     expect(source).toContain('aria-label="Explorer actions"');
     expect(source).toContain('aria-label="New File"');
     expect(source).toContain('aria-label="Refresh"');

@@ -11,7 +11,7 @@
 export const ABI_VERSION = { major: 1, minor: 0 } as const;
 
 /** Draft contract counter (CMP-052): written in header word 28 of every artifact and compared by the loader. */
-export const DRAFT_COUNTER = 2 as const;
+export const DRAFT_COUNTER = 4 as const;
 
 /** Container (.zplc file) constants. */
 export const CONTAINER = {
@@ -22,6 +22,8 @@ export const CONTAINER = {
   iomapEntrySize: 8,
   tagEntrySize: 8,
   maxTasks: 16,
+  maxVerifiedDepth: 127,
+  buildEntrySize: 4,
   crcOffset: 12,
   crcSize: 4,
 } as const;
@@ -52,7 +54,11 @@ export const CONTAINER_LAYOUT = {
     interval_us: { offset: 4, size: 4 },
     entry_point: { offset: 8, size: 2 },
     stack_size: { offset: 10, size: 2 },
-    reserved: { offset: 12, size: 4 },
+    call_depth: { offset: 12, size: 2 },
+    reserved: { offset: 14, size: 2 },
+  },
+  build: {
+    build_id: { offset: 0, size: 4 },
   },
   iomap: {
     var_addr: { offset: 0, size: 2 },
@@ -80,6 +86,7 @@ export const SEGMENT_TYPE = {
   DEBUG: 0x11,
   TASK: 0x20,
   TAGS: 0x30,
+  BUILD: 0x40,
 } as const;
 
 /** Task trigger types. */
@@ -204,6 +211,16 @@ export const Opcode = {
   HALT: 0x01, // Stop execution
   BREAK: 0x02, // Debugger breakpoint
   GET_TICKS: 0x03, // Push system tick (ms) to stack
+  MUL64: 0x04, // 64-bit integer multiplication (low 64 bits of the product, wraps)
+  DIVS64: 0x05, // 64-bit signed division; zero divisor faults, INT64_MIN / -1 is INT64_MIN
+  DIVU64: 0x06, // 64-bit unsigned division; zero divisor faults
+  MODS64: 0x07, // 64-bit signed modulo, sign of the dividend; zero divisor faults, b = -1 gives 0
+  MODU64: 0x08, // 64-bit unsigned modulo; zero divisor faults
+  NEG64: 0x09, // 64-bit integer negation (INT64_MIN stays INT64_MIN)
+  ABS64: 0x0A, // 64-bit signed absolute value (INT64_MIN stays INT64_MIN)
+  SHL64: 0x0B, // 64-bit shift left by a 32-bit unsigned count; 64 or more gives 0
+  SHR64: 0x0C, // 64-bit logical shift right; a count of 64 or more gives 0
+  SAR64: 0x0D, // 64-bit arithmetic shift right; a count of 64 or more gives 0 or -1 by the sign
   DUP: 0x10, // Duplicate top of stack
   DROP: 0x11, // Discard top of stack
   SWAP: 0x12, // Swap top two elements
@@ -274,6 +291,30 @@ export const Opcode = {
   EXT16: 0xA4, // Sign-extend 16-bit to 32-bit
   ZEXT8: 0xA5, // Zero-extend 8-bit to 32-bit
   ZEXT16: 0xA6, // Zero-extend 16-bit to 32-bit
+  F2D: 0xA7, // REAL to LREAL (exact; every NaN becomes the quiet NaN)
+  D2F: 0xA8, // LREAL to REAL, round to nearest even (overflow gives infinity)
+  I2D: 0xA9, // Signed 32-bit integer to LREAL (exact)
+  D2I: 0xAA, // LREAL to signed 32-bit integer: truncates toward zero, saturates, NaN gives 0
+  L2D: 0xAB, // Signed 64-bit integer to LREAL, round to nearest even
+  D2L: 0xAC, // LREAL to signed 64-bit integer: truncates toward zero, saturates, NaN gives 0
+  U2D: 0xAD, // Unsigned 64-bit integer to LREAL, round to nearest even
+  D2U: 0xAE, // LREAL to unsigned 64-bit integer: truncates toward zero, below 1.0 and NaN give 0, saturates
+  L2F: 0xAF, // Signed 64-bit integer to REAL, one rounding to nearest even
+  U2F: 0xB0, // Unsigned 64-bit integer to REAL, one rounding to nearest even
+  ADDD: 0xB1, // LREAL addition (IEEE 754 binary64, round to nearest even)
+  SUBD: 0xB2, // LREAL subtraction
+  MULD: 0xB3, // LREAL multiplication
+  DIVD: 0xB4, // LREAL division; a divisor of 0.0 or -0.0 faults
+  NEGD: 0xB5, // LREAL negation (flips the sign bit)
+  ABSD: 0xB6, // LREAL absolute value (clears the sign bit)
+  SQRTD: 0xB7, // LREAL square root, correctly rounded; 0.0 for an argument at or below 0.0
+  RNDD: 0xB8, // LREAL rounded to the nearest integral value, a tie to the even one
+  EQD: 0xB9, // LREAL equal (false when either operand is a NaN)
+  NED: 0xBA, // LREAL not equal (true when either operand is a NaN)
+  LTD: 0xBB, // LREAL less than (false with a NaN)
+  LED: 0xBC, // LREAL less or equal (false with a NaN)
+  GTD: 0xBD, // LREAL greater than (false with a NaN)
+  GED: 0xBE, // LREAL greater or equal (false with a NaN)
   PUSH32: 0xC0, // Push 32-bit immediate
   COMM_EXEC: 0xD0, // Execute/update Comm FB; pop base addr from stack
   COMM_STATUS: 0xD1, // Push status word for a kind to stack
@@ -304,6 +345,16 @@ export const OPCODE_TABLE: readonly OpcodeInfo[] = [
   { name: "HALT", code: 0x01, operand: 0, group: "system", pops: 0, pushes: 0, minDepth: 0, effect: "[] -> []", flags: ["terminates"], doc: "Stop execution" },
   { name: "BREAK", code: 0x02, operand: 0, group: "system", pops: 0, pushes: 0, minDepth: 0, effect: "[] -> []", flags: [], doc: "Debugger breakpoint" },
   { name: "GET_TICKS", code: 0x03, operand: 0, group: "system", pops: 0, pushes: 1, minDepth: 0, effect: "[] -> [ticks]", flags: [], doc: "Push system tick (ms) to stack" },
+  { name: "MUL64", code: 0x04, operand: 0, group: "integer64", pops: 4, pushes: 2, minDepth: 4, effect: "[alo ahi blo bhi] -> [lo hi]", flags: [], doc: "64-bit integer multiplication (low 64 bits of the product, wraps)" },
+  { name: "DIVS64", code: 0x05, operand: 0, group: "integer64", pops: 4, pushes: 2, minDepth: 4, effect: "[alo ahi blo bhi] -> [lo hi]", flags: [], doc: "64-bit signed division; zero divisor faults, INT64_MIN / -1 is INT64_MIN" },
+  { name: "DIVU64", code: 0x06, operand: 0, group: "integer64", pops: 4, pushes: 2, minDepth: 4, effect: "[alo ahi blo bhi] -> [lo hi]", flags: [], doc: "64-bit unsigned division; zero divisor faults" },
+  { name: "MODS64", code: 0x07, operand: 0, group: "integer64", pops: 4, pushes: 2, minDepth: 4, effect: "[alo ahi blo bhi] -> [lo hi]", flags: [], doc: "64-bit signed modulo, sign of the dividend; zero divisor faults, b = -1 gives 0" },
+  { name: "MODU64", code: 0x08, operand: 0, group: "integer64", pops: 4, pushes: 2, minDepth: 4, effect: "[alo ahi blo bhi] -> [lo hi]", flags: [], doc: "64-bit unsigned modulo; zero divisor faults" },
+  { name: "NEG64", code: 0x09, operand: 0, group: "integer64", pops: 2, pushes: 2, minDepth: 2, effect: "[lo hi] -> [lo hi]", flags: [], doc: "64-bit integer negation (INT64_MIN stays INT64_MIN)" },
+  { name: "ABS64", code: 0x0A, operand: 0, group: "integer64", pops: 2, pushes: 2, minDepth: 2, effect: "[lo hi] -> [lo hi]", flags: [], doc: "64-bit signed absolute value (INT64_MIN stays INT64_MIN)" },
+  { name: "SHL64", code: 0x0B, operand: 0, group: "integer64", pops: 3, pushes: 2, minDepth: 3, effect: "[lo hi n] -> [lo hi]", flags: [], doc: "64-bit shift left by a 32-bit unsigned count; 64 or more gives 0" },
+  { name: "SHR64", code: 0x0C, operand: 0, group: "integer64", pops: 3, pushes: 2, minDepth: 3, effect: "[lo hi n] -> [lo hi]", flags: [], doc: "64-bit logical shift right; a count of 64 or more gives 0" },
+  { name: "SAR64", code: 0x0D, operand: 0, group: "integer64", pops: 3, pushes: 2, minDepth: 3, effect: "[lo hi n] -> [lo hi]", flags: [], doc: "64-bit arithmetic shift right; a count of 64 or more gives 0 or -1 by the sign" },
   { name: "DUP", code: 0x10, operand: 0, group: "stack", pops: 0, pushes: 1, minDepth: 1, effect: "[a] -> [a a]", flags: [], doc: "Duplicate top of stack" },
   { name: "DROP", code: 0x11, operand: 0, group: "stack", pops: 1, pushes: 0, minDepth: 1, effect: "[a] -> []", flags: [], doc: "Discard top of stack" },
   { name: "SWAP", code: 0x12, operand: 0, group: "stack", pops: 0, pushes: 0, minDepth: 2, effect: "[a b] -> [b a]", flags: [], doc: "Swap top two elements" },
@@ -374,6 +425,30 @@ export const OPCODE_TABLE: readonly OpcodeInfo[] = [
   { name: "EXT16", code: 0xA4, operand: 0, group: "conversion", pops: 1, pushes: 1, minDepth: 1, effect: "[a] -> [r]", flags: [], doc: "Sign-extend 16-bit to 32-bit" },
   { name: "ZEXT8", code: 0xA5, operand: 0, group: "conversion", pops: 1, pushes: 1, minDepth: 1, effect: "[a] -> [r]", flags: [], doc: "Zero-extend 8-bit to 32-bit" },
   { name: "ZEXT16", code: 0xA6, operand: 0, group: "conversion", pops: 1, pushes: 1, minDepth: 1, effect: "[a] -> [r]", flags: [], doc: "Zero-extend 16-bit to 32-bit" },
+  { name: "F2D", code: 0xA7, operand: 0, group: "conversion", pops: 1, pushes: 2, minDepth: 1, effect: "[f] -> [lo hi]", flags: [], doc: "REAL to LREAL (exact; every NaN becomes the quiet NaN)" },
+  { name: "D2F", code: 0xA8, operand: 0, group: "conversion", pops: 2, pushes: 1, minDepth: 2, effect: "[lo hi] -> [f]", flags: [], doc: "LREAL to REAL, round to nearest even (overflow gives infinity)" },
+  { name: "I2D", code: 0xA9, operand: 0, group: "conversion", pops: 1, pushes: 2, minDepth: 1, effect: "[a] -> [lo hi]", flags: [], doc: "Signed 32-bit integer to LREAL (exact)" },
+  { name: "D2I", code: 0xAA, operand: 0, group: "conversion", pops: 2, pushes: 1, minDepth: 2, effect: "[lo hi] -> [a]", flags: [], doc: "LREAL to signed 32-bit integer: truncates toward zero, saturates, NaN gives 0" },
+  { name: "L2D", code: 0xAB, operand: 0, group: "conversion", pops: 2, pushes: 2, minDepth: 2, effect: "[lo hi] -> [lo hi]", flags: [], doc: "Signed 64-bit integer to LREAL, round to nearest even" },
+  { name: "D2L", code: 0xAC, operand: 0, group: "conversion", pops: 2, pushes: 2, minDepth: 2, effect: "[lo hi] -> [lo hi]", flags: [], doc: "LREAL to signed 64-bit integer: truncates toward zero, saturates, NaN gives 0" },
+  { name: "U2D", code: 0xAD, operand: 0, group: "conversion", pops: 2, pushes: 2, minDepth: 2, effect: "[lo hi] -> [lo hi]", flags: [], doc: "Unsigned 64-bit integer to LREAL, round to nearest even" },
+  { name: "D2U", code: 0xAE, operand: 0, group: "conversion", pops: 2, pushes: 2, minDepth: 2, effect: "[lo hi] -> [lo hi]", flags: [], doc: "LREAL to unsigned 64-bit integer: truncates toward zero, below 1.0 and NaN give 0, saturates" },
+  { name: "L2F", code: 0xAF, operand: 0, group: "conversion", pops: 2, pushes: 1, minDepth: 2, effect: "[lo hi] -> [f]", flags: [], doc: "Signed 64-bit integer to REAL, one rounding to nearest even" },
+  { name: "U2F", code: 0xB0, operand: 0, group: "conversion", pops: 2, pushes: 1, minDepth: 2, effect: "[lo hi] -> [f]", flags: [], doc: "Unsigned 64-bit integer to REAL, one rounding to nearest even" },
+  { name: "ADDD", code: 0xB1, operand: 0, group: "double", pops: 4, pushes: 2, minDepth: 4, effect: "[alo ahi blo bhi] -> [lo hi]", flags: [], doc: "LREAL addition (IEEE 754 binary64, round to nearest even)" },
+  { name: "SUBD", code: 0xB2, operand: 0, group: "double", pops: 4, pushes: 2, minDepth: 4, effect: "[alo ahi blo bhi] -> [lo hi]", flags: [], doc: "LREAL subtraction" },
+  { name: "MULD", code: 0xB3, operand: 0, group: "double", pops: 4, pushes: 2, minDepth: 4, effect: "[alo ahi blo bhi] -> [lo hi]", flags: [], doc: "LREAL multiplication" },
+  { name: "DIVD", code: 0xB4, operand: 0, group: "double", pops: 4, pushes: 2, minDepth: 4, effect: "[alo ahi blo bhi] -> [lo hi]", flags: [], doc: "LREAL division; a divisor of 0.0 or -0.0 faults" },
+  { name: "NEGD", code: 0xB5, operand: 0, group: "double", pops: 2, pushes: 2, minDepth: 2, effect: "[lo hi] -> [lo hi]", flags: [], doc: "LREAL negation (flips the sign bit)" },
+  { name: "ABSD", code: 0xB6, operand: 0, group: "double", pops: 2, pushes: 2, minDepth: 2, effect: "[lo hi] -> [lo hi]", flags: [], doc: "LREAL absolute value (clears the sign bit)" },
+  { name: "SQRTD", code: 0xB7, operand: 0, group: "double", pops: 2, pushes: 2, minDepth: 2, effect: "[lo hi] -> [lo hi]", flags: [], doc: "LREAL square root, correctly rounded; 0.0 for an argument at or below 0.0" },
+  { name: "RNDD", code: 0xB8, operand: 0, group: "double", pops: 2, pushes: 2, minDepth: 2, effect: "[lo hi] -> [lo hi]", flags: [], doc: "LREAL rounded to the nearest integral value, a tie to the even one" },
+  { name: "EQD", code: 0xB9, operand: 0, group: "doublecmp", pops: 4, pushes: 1, minDepth: 4, effect: "[alo ahi blo bhi] -> [flag]", flags: [], doc: "LREAL equal (false when either operand is a NaN)" },
+  { name: "NED", code: 0xBA, operand: 0, group: "doublecmp", pops: 4, pushes: 1, minDepth: 4, effect: "[alo ahi blo bhi] -> [flag]", flags: [], doc: "LREAL not equal (true when either operand is a NaN)" },
+  { name: "LTD", code: 0xBB, operand: 0, group: "doublecmp", pops: 4, pushes: 1, minDepth: 4, effect: "[alo ahi blo bhi] -> [flag]", flags: [], doc: "LREAL less than (false with a NaN)" },
+  { name: "LED", code: 0xBC, operand: 0, group: "doublecmp", pops: 4, pushes: 1, minDepth: 4, effect: "[alo ahi blo bhi] -> [flag]", flags: [], doc: "LREAL less or equal (false with a NaN)" },
+  { name: "GTD", code: 0xBD, operand: 0, group: "doublecmp", pops: 4, pushes: 1, minDepth: 4, effect: "[alo ahi blo bhi] -> [flag]", flags: [], doc: "LREAL greater than (false with a NaN)" },
+  { name: "GED", code: 0xBE, operand: 0, group: "doublecmp", pops: 4, pushes: 1, minDepth: 4, effect: "[alo ahi blo bhi] -> [flag]", flags: [], doc: "LREAL greater or equal (false with a NaN)" },
   { name: "PUSH32", code: 0xC0, operand: 4, group: "push32", pops: 0, pushes: 1, minDepth: 0, effect: "[] -> [imm]", flags: [], doc: "Push 32-bit immediate" },
   { name: "COMM_EXEC", code: 0xD0, operand: 4, group: "comm", pops: 1, pushes: 0, minDepth: 1, effect: "[base] -> []", flags: ["comm"], doc: "Execute/update Comm FB; pop base addr from stack" },
   { name: "COMM_STATUS", code: 0xD1, operand: 4, group: "comm", pops: 1, pushes: 1, minDepth: 1, effect: "[base] -> [status]", flags: ["comm"], doc: "Push status word for a kind to stack" },
@@ -386,7 +461,7 @@ export const OPCODE_TABLE: readonly OpcodeInfo[] = [
  */
 export function getOperandSize(opcode: number): number {
   if (opcode === 0x94) return 0; // RET
-  if (opcode >= 0xA0 && opcode <= 0xA6) return 0; // I2F..ZEXT16
+  if (opcode >= 0xA0 && opcode <= 0xBE) return 0; // I2F..GED
   if (opcode <= 0x3F) return 0;
   if (opcode <= 0x7F) return 1;
   if (opcode <= 0xBF) return 2;

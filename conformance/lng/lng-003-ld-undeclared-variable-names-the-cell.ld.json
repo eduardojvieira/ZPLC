@@ -1,0 +1,51 @@
+{
+  "name": "Rungs",
+  "variables": {
+    "local": [],
+    "outputs": [
+      {
+        "name": "Lamp",
+        "type": "BOOL",
+        "address": "%QX0.0"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "r1",
+      "number": 1,
+      "gridConfig": {
+        "cols": 2,
+        "rows": 1,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "c1",
+              "type": "contact_no",
+              "variable": "Missing",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "k1",
+              "type": "coil",
+              "variable": "Lamp",
+              "row": 0,
+              "col": 1
+            },
+            "hasWire": true
+          }
+        ]
+      ],
+      "branches": [],
+      "verticalLinks": []
+    }
+  ]
+}

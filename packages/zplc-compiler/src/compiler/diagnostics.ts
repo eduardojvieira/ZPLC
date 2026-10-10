@@ -28,11 +28,69 @@ export interface SyntaxIssue extends SourceSpan {
 }
 
 /**
- * Something the code generator accepted and wants the author to see (CMP-008): the build succeeds. `code`
- * is the stable identifier of the kind of warning.
+ * The stable identifiers of the warnings a build can report (CMP-008). They are what the `compiler.warnings`
+ * option lists, and what a tool matches on.
+ *
+ *  - NON_IEC_HEX_LITERAL, NON_IEC_REAL_LITERAL: a spelling the compiler accepts and IEC 61131-3 does not define
+ *  - IMPLICIT_NARROWING: a value stored in a narrower type, keeping its low bits (an error under strictTypes)
+ *  - UNREACHABLE_STATEMENT: a statement that follows RETURN, EXIT or CONTINUE, or an IF or CASE that always
+ *    leaves, in the same list of statements
+ *  - UNUSED_VARIABLE: a variable that is never read nor written
+ *  - WRITE_ONLY_VARIABLE: a variable that is written and never read
+ *  - OPTION_IGNORED: a project option, or a value of one, that has no effect on this compiler
+ *  - SOURCE_NOT_COMPILED: a source file of the project folder that is in neither `src` nor a listed library
+ *  - WATCHDOG_RESET_NO_EFFECT: a call to WATCHDOG_RESET, which compiles to nothing: the runtime feeds the
+ *    hardware watchdog itself after each completed scan (RT-034)
+ */
+export const WARNING_CODES = [
+    'NON_IEC_HEX_LITERAL',
+    'NON_IEC_REAL_LITERAL',
+    'IMPLICIT_NARROWING',
+    'UNREACHABLE_STATEMENT',
+    'UNUSED_VARIABLE',
+    'WRITE_ONLY_VARIABLE',
+    'OPTION_IGNORED',
+    'SOURCE_NOT_COMPILED',
+    'WATCHDOG_RESET_NO_EFFECT',
+] as const;
+
+export type WarningCode = typeof WARNING_CODES[number];
+
+/**
+ * Which warnings a build reports: `none`; `default`, the ones that point at a defect or a portability problem;
+ * `all`, which adds the write-only variables; or the list of codes to report.
+ */
+export type WarningSelection = 'none' | 'default' | 'all' | readonly WarningCode[];
+
+/** The warnings of the level `default`: everything but the write-only variables. */
+const DEFAULT_WARNINGS: ReadonlySet<WarningCode> = new Set(WARNING_CODES.filter((code) => code !== 'WRITE_ONLY_VARIABLE'));
+
+/** `selection` read from a project file or a request, or the sentence that says what is accepted. */
+export function parseWarningSelection(value: unknown): { ok: true; selection: WarningSelection } | { ok: false; message: string } {
+    if (value === 'none' || value === 'default' || value === 'all') return { ok: true, selection: value };
+    const accepted = `'none', 'default' or 'all', or a list of the codes ${WARNING_CODES.join(', ')}`;
+    if (Array.isArray(value)) {
+        const unknown = value.filter((entry) => !(WARNING_CODES as readonly unknown[]).includes(entry));
+        if (unknown.length === 0) return { ok: true, selection: value as WarningCode[] };
+        return { ok: false, message: `Unknown warning code ${unknown.map((entry) => `'${String(entry)}'`).join(', ')}: use ${accepted}` };
+    }
+    return { ok: false, message: `The warnings option must be ${accepted}` };
+}
+
+/** The warnings of `warnings` that `selection` reports, in the order they have. */
+export function selectWarnings<T extends { code: WarningCode }>(warnings: readonly T[], selection: WarningSelection = 'default'): T[] {
+    if (selection === 'none') return [];
+    if (selection === 'all') return [...warnings];
+    const wanted: ReadonlySet<WarningCode> = selection === 'default' ? DEFAULT_WARNINGS : new Set(selection);
+    return warnings.filter((warning) => wanted.has(warning.code));
+}
+
+/**
+ * Something the code generator or the analysis of a unit accepted and wants the author to see (CMP-008): the
+ * build succeeds. `code` is the stable identifier of the kind of warning.
  */
 export interface CodegenWarning extends SourceSpan {
-    code: 'IMPLICIT_NARROWING';
+    code: WarningCode;
     message: string;
     /** The file of a project the position belongs to; absent for a unit of one file. */
     sourceRef?: string;
@@ -40,6 +98,7 @@ export interface CodegenWarning extends SourceSpan {
 
 /** What a compile accepted but the language reference does not define (CMP-031: the `0x` form). */
 export interface SourceWarning extends SourceSpan {
+    code: 'NON_IEC_HEX_LITERAL' | 'NON_IEC_REAL_LITERAL';
     message: string;
 }
 

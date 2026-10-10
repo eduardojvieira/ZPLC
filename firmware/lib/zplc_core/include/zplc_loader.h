@@ -4,7 +4,8 @@
  *
  * Verifies the structural and bytecode integrity of .zplc files without
  * changing runtime state. The current v1 subset accepts flags=0 and CODE,
- * TASK, and TAGS segments only. The returned view borrows the input buffer.
+ * TASK, TAGS and BUILD segments only. The returned view borrows the input
+ * buffer.
  */
 
 #ifndef ZPLC_LOADER_H
@@ -81,7 +82,10 @@
  * ZPLC_VERIFY_MAX_DEPTH values (a deeper stack is refused with
  * ZPLC_LOADER_ERR_STACK even where the runtime would allow it).
  * Task uniqueness is bounded by ZPLC_LOADER_MAX_TASKS and needs no bitmap. */
+/* >>> GENERATED (tools/contract/generate.py): loader-verified-depth. Do not edit. >>> */
+/* Deepest evaluation stack the loader proves for a task. A program that needs more is refused, whatever the target stack allows; the compiler fails the build above it (CMP-050). */
 #define ZPLC_VERIFY_MAX_DEPTH 127
+/* <<< END GENERATED: loader-verified-depth <<< */
 #define ZPLC_VERIFY_MAX_LEADERS ((ZPLC_MEM_CODE_SIZE) / 16U + 64U)
 #define ZPLC_VERIFY_MAX_FRAMES ((ZPLC_MEM_CODE_SIZE) / 128U + 32U)
 #define ZPLC_VERIFY_FRAME_BYTES 7U
@@ -111,7 +115,9 @@ typedef struct {
     uint16_t entry_point;
     uint32_t flags;
     uint16_t segment_count;
-    zplc_program_segment_t segments[3];
+    zplc_program_segment_t segments[4];
+    /** Build identity of the artifact (CMP-056); 0 when it carries none. */
+    uint32_t build_id;
 } zplc_program_view_t;
 
 /**

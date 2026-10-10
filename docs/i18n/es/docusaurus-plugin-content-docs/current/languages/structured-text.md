@@ -44,7 +44,7 @@ ZPLC soporta estos tipos elementales. [Structured Text (ST)](./st.md#tipos-numé
 *   `SINT`, `INT`, `DINT`, `LINT` (enteros con signo de 8, 16, 32 y 64 bits)
 *   `USINT`, `UINT`, `UDINT`, `ULINT` (enteros sin signo de 8, 16, 32 y 64 bits)
 *   `BYTE`, `WORD`, `DWORD`, `LWORD` (cadenas de bits de 8, 16, 32 y 64 bits)
-*   `REAL` (punto flotante de 32 bits). `LREAL` se puede declarar, pero hoy el cargador rechaza un programa que le asigne un valor o calcule con él (requisito CMP-015).
+*   `REAL` (punto flotante de 32 bits) y `LREAL` (punto flotante de 64 bits, doble precisión IEEE 754; requisito CMP-015)
 *   `TIME`, `DATE`, `TOD`, `DT`: ver [Tipos de tiempo y fecha](./st.md#tipos-de-tiempo-y-fecha).
 *   `STRING`, `WSTRING`
 

@@ -10,7 +10,7 @@ import {
   getBreakpointPCForLine,
   getEligibleBreakpointLines,
   isLineBreakpointEligible,
-} from './codeEditorBreakpoints';
+} from './breakpoints';
 
 const DEBUG_MAP: DebugMap = {
   version: '1.0.0',

@@ -10,8 +10,8 @@ tags: [ide, user-guide]
 # Entorno de trabajo de Studio
 
 El entorno de trabajo mantiene la edición en el centro y reúne Explorer,
-Inspector, Output, Problems, Tests, Lab, Learn, Changes, Agent, Trace, Watch y
-Terminal en un solo panel inferior.
+Inspector, Output, Problems, Tests, Interlocks, Lab, Learn, Changes, Agent,
+Trace, Watch y Terminal en un solo panel inferior.
 
 ## Flujo diario
 
@@ -66,6 +66,91 @@ Un cambio hecho fuera de Studio se detecta mientras hay un proyecto abierto. Un 
 
 Nivel de evidencia: host. `packages/zplc-ide/src/project/treeOperations.test.ts`, `src/store/useIDEStore.test.ts` (operaciones del árbol, sobre el servicio de proyecto real en una carpeta temporal), `src/store/externalChanges.test.ts`, `electron/projectWatcher.test.ts` y `electron/projectFiles.test.ts` cubren las reglas, y los recorridos 23 (operaciones del árbol del proyecto) y 24 (cambios hechos fuera de Studio) de `bun run test:journeys` manejan la aplicación real.
 
+## Cobertura de enclavamientos declarados
+
+Un proyecto puede declarar pares de salidas que nunca deben estar activas a la vez, en `safety.incompatibleOutputs` de
+`zplc.json`. La pestaña **Interlocks** comprueba que los escenarios guardados afirmen cada par con un `NEVER` exacto, y
+lista cada par como **Covered** o **Missing exact NEVER coverage**. Es una vista propia, no parte de Problems ni de
+Tests. Necesita un proyecto guardado abierto en la aplicación de escritorio y el `zplc.json` vinculado, y dice qué
+hacer cuando no puede ejecutarse. Comprueba los escenarios, no la máquina: no establece seguridad física, tiempos ni
+certificación. `zplc-cli safety-check` y la herramienta MCP `safety_check` dan la misma respuesta.
+
+Nivel de evidencia: host. `src/components/InterlockCoverage.test.tsx` dibuja la vista,
+`workspaceSafetyPresentation.test.ts` cubre la respuesta, y el recorrido 33 de `bun run test:journeys` ejecuta la
+comprobación en la aplicación real.
+
+## Un resultado desde Studio, la CLI y las herramientas MCP
+
+Una prueba de escenario da el mismo resultado desde donde se ejecute. La pestaña **Tests** de Studio, `zplc-cli test` y
+`zplc-cli scenario-run`, y las herramientas MCP `tests_run` y `scenario_run` llaman a la misma Tool API, sobre el mismo
+runtime POSIX nativo con el mismo reloj virtual, de modo que una aserción temporal (`AT`, `WITHIN`, `FOR`,
+`EVENTUALLY`, `ALWAYS`, `NEVER`, `UNTIL`, `RISING`, `FALLING`) se juzga sobre las mismas muestras. El veredicto, el hash
+del programa compilado, el hash y la longitud de la traza grabada de cada escenario y, donde un punto de entrada las
+muestra, las aserciones y las salidas muestreadas son iguales. Una aserción que falla falla igual desde cada uno, y la
+CLI termina con código 1.
+
+Nivel de evidencia: host. `src/cli/scenarioParity.test.ts` ejecuta cada proyecto incluido, cada escenario por separado
+y un proyecto con una aserción que falla a través de la Tool API, la CLI, el despachador MCP y el presentador de
+Studio, y compara los resultados. No cubre una placa.
+
+## Declaraciones y carpetas de biblioteca
+
+Bajo el árbol de archivos, el Explorer tiene una sección **Declarations** (cerrada hasta que usted la abre con su
+encabezado, que muestra cuántas hay y cuántos archivos no se compilan). Lista las declaraciones del proyecto: los
+programas, bloques de función, funciones, interfaces y tipos de datos que declaran sus archivos Structured Text,
+agrupados bajo su archivo. Elegir una abre su archivo con el cursor en su nombre. La lista cubre los archivos que lee la
+compilación y sigue lo que usted escribe.
+
+La compilación lee los archivos Structured Text directamente en `src` y directamente en cada **carpeta de biblioteca**
+que `zplc.json` lista en `libraries` (CMP-046), y todo lo que declaran es visible para cada programa:
+
+```json
+{ "libraries": ["lib", "vendor/acme"] }
+```
+
+Una biblioteca es una ruta relativa de nombres simples con `/`, dentro del proyecto, listada una vez; `src` y `tests`
+no son bibliotecas. **Library folder...** en la sección Declarations agrega una (y escribe `zplc.json`), su **x** la
+quita, y el árbol de archivos marca la carpeta como `library`. Las declaraciones de una biblioteca aparecen en la lista
+de Declarations, en las paletas de los editores FBD y LD (el grupo **Project**) y en el autocompletado y el hover del
+editor ST.
+
+Un archivo Structured Text que no está en `src` ni directamente en una carpeta de biblioteca no lo lee ninguna
+compilación, y Studio lo dice como la compilación: el archivo se marca `not compiled` en el árbol, la sección lista su
+carpeta con un botón **List as library**, y **Build** informa `SOURCE_NOT_COMPILED`. Tampoco se lee una carpeta dentro de
+una biblioteca; lístela como biblioteca propia. Una carpeta de biblioteca que se renombra o se elimina queda en la
+lista, marcada "not in the project", hasta que usted la quita. Un proyecto que espera que se aplique su migración de
+versión 1 no puede cambiar sus bibliotecas hasta que se aplique.
+
+Nivel de evidencia: host. `src/project/libraries.test.ts`, `src/project/unlistedSources.test.ts`,
+`src/store/projectSources.test.ts` y `src/components/stLanguageService.project.test.ts` cubren las reglas, las fuentes
+y los servicios del editor; el recorrido 32 de `bun run test:journeys` lista una biblioteca en la aplicación real,
+comprueba el árbol, la paleta de Ladder y el cursor, y compila el proyecto con ella.
+
+## Archivos de proyecto
+
+**Export Project Archive** (menú Build options) escribe el proyecto abierto en un solo archivo, un zip, que usted elige
+en el diálogo de guardado del sistema. **Import a project archive** (pantalla de bienvenida) lo vuelve a leer como un
+proyecto equivalente:
+
+1. Elegir el archivo lo lee y no escribe nada. Un diálogo dice qué contiene (sus archivos, carpetas y tamaño), de quién
+   es el proyecto y, para un proyecto de versión 1, las líneas que cambia la migración en `zplc.json`.
+2. **Choose a folder and import** pide una carpeta vacía, escribe allí los archivos byte por byte y abre el proyecto. Una
+   carpeta que no está vacía se rechaza, y una importación que falla deja la carpeta vacía otra vez.
+
+El archivo contiene los archivos tal como están en disco, por eso Studio le pide guardar antes los archivos
+modificados. Deja fuera lo que el árbol del proyecto oculta (`node_modules`, `.git`, `build`, `dist` y `.vscode`) y los
+enlaces. Un archivo hecho en una máquina tiene los mismos bytes que uno hecho en otra: entradas ordenadas por ruta,
+guardadas sin compresión, con fecha 1980-01-01 y nombres en UTF-8. Studio lee archivos que escribieron otras
+herramientas (guardados o comprimidos) y rechaza uno que contenga una ruta absoluta, un `..`, un nombre que dos
+sistemas leen distinto, un enlace, una entrada cifrada, dos archivos que solo difieren en mayúsculas, un archivo que no
+coincide con su suma de verificación, más de 4096 archivos, un archivo de más de 16 MiB o más de 64 MiB en total.
+**Export Project**, a su lado, sigue escribiendo el documento JSON de los archivos y la configuración (sin sus
+secretos); ese documento no se importa.
+
+Nivel de evidencia: host. `electron/projectArchiveZip.test.ts` y `electron/projectArchive.test.ts` cubren el formato,
+los rechazos y un viaje de ida y vuelta en carpetas reales; el recorrido 30 de `bun run test:journeys` exporta e importa
+un proyecto en la aplicación real y compara las dos carpetas.
+
 ## Cerrar con cambios sin guardar
 
 Studio nunca descarta un archivo modificado sin preguntar. Cerrar una pestaña modificada, cerrar el proyecto, cerrar la ventana y salir de la aplicación preguntan, cada uno, si guardar, descartar o cancelar; **Cancel** (y Escape) dejan todo como estaba, y un guardado que falla mantiene el archivo abierto y modificado. Cerrar el proyecto ofrece **Save all and close**, **Discard changes and close** y **Continue editing**. Los atajos de recarga (Ctrl+R, Ctrl+Shift+R, Cmd+R) no existen en una compilación empaquetada: el menú no tiene entrada de recarga y las teclas se descartan. Un entorno de desarrollo solo recarga pasando por la misma pregunta.
@@ -110,7 +195,7 @@ Nivel de evidencia: host. `packages/zplc-ide/src/runtime/declaredInputs.test.ts`
 cubre la lista, la codificación de cada tipo numérico y la escritura sin tocar los
 demás bits, contra un mapa de depuración del compilador real;
 `src/cli/toolApi.test.ts` cubre el marcado de las entradas de programa, y el
-recorrido 28 de `bun run test:journeys` fija un bit, una palabra y una entrada de
+recorrido 37 de `bun run test:journeys` fija un bit, una palabra y una entrada de
 programa de un proyecto con nombres propios en la aplicación real y ve que la salida
 del programa los sigue (requisito IDE-024). Evidencia de host con POSIX nativo, no
 de hardware.
@@ -136,10 +221,24 @@ Studio escribía antes en el panel Output siguen ahí.
 Nivel de evidencia: host. `packages/zplc-ide/src/store/notifications.test.ts` cubre
 el modelo (progreso, la acción de cancelar, cuánto permanece cada resultado, el
 límite de la lista) y `src/components/NotificationsList.test.tsx` el dibujo; el
-recorrido 27 de `bun run test:journeys` guarda, compila, conecta, ejecuta y cancela
+recorrido 36 de `bun run test:journeys` guarda, compila, conecta, ejecuta y cancela
 una ejecución larga de pruebas y rompe la compilación en la aplicación real, y
 sigue **Details** de cada notificación hasta su panel (requisito IDE-021). Una
 notificación de despliegue necesita un dispositivo y no la cubre ningún recorrido.
+
+## Qué se carga al iniciar
+
+La pantalla de bienvenida es lo primero que muestra Studio, y se carga sin el editor de código, los editores visuales
+ni la configuración del proyecto. Cada uno se carga la primera vez que abre un archivo de su tipo o la configuración, y
+el área del editor dice "Loading editor..." durante ese instante. Studio incluye la parte de Monaco que usa (el editor,
+la búsqueda, el plegado, las sugerencias, el hover, ir a la definición y a las referencias, y la vista de diferencias),
+y no sus servicios de lenguaje de CSS, HTML, JSON y TypeScript ni sus otros lenguajes. El instalador no contiene mapas
+de fuentes.
+
+Nivel de evidencia: host. `packages/zplc-ide/scripts/welcomeBundle.test.ts` compila Studio y lee los fragmentos que la
+página de bienvenida carga al iniciar y los archivos que empaqueta el instalador; el recorrido 29 (la pantalla de
+bienvenida no carga ningún editor) de `bun run test:journeys` comprueba lo mismo en el host de desarrollo de la
+aplicación real. No se inspeccionó ningún instalador empaquetado.
 
 ## Editores
 

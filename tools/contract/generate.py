@@ -39,8 +39,11 @@ To change the contract (any opcode, layout, size, code or identifier)
      It writes every generated file and appends the new counter, the
      fingerprint of the contract and the reason to golden/draft-ledger.json.
   3. Move the changed numbers in golden/contract.golden.json (test_contract.py
-     names each one) and rebuild the artifacts committed to the repository
-     (examples/*.zplc and the .hex fixtures), then say why in the commit message.
+     names each one), then run `python3 tools/contract/restamp_artifacts.py`: it
+     rewrites the draft counter and the CRC of every committed artifact
+     (examples/*.zplc, the .hex and C-array fixtures, the fuzz findings) and
+     `--check` is part of `bun run contract:check`. Say why in the commit message.
+     A change that renumbers an opcode needs the artifacts rebuilt, not restamped.
   `--check` fails when the contract differs from the fingerprint recorded for
   its own counter, so a change cannot be committed under the old number.
   Prose (doc strings, group titles) is not part of the fingerprint.
@@ -83,7 +86,7 @@ REGION_FILES: dict[Path, list[str]] = {
         "version", "memory", "system-registers", "data-types", "opcodes",
         "container", "vm-status", "opcode-helpers",
     ],
-    INCLUDE / "zplc_loader.h": ["loader-errors", "loader-max-tasks"],
+    INCLUDE / "zplc_loader.h": ["loader-errors", "loader-max-tasks", "loader-verified-depth"],
     INCLUDE / "zplc_comm_dispatch.h": ["comm-kinds", "comm-status", "comm-blocks"],
     ROOT / "firmware/lib/zplc_core/src/core/zplc_debug.c": ["opcode-names", "error-names"],
 }
@@ -209,9 +212,11 @@ def validate(c: dict) -> None:
             raise ContractError(f"opcode {o['name']}: minDepth is below pops")
         if o["operand"] and "memory" in o and o["operand"] != 2:
             raise ContractError(f"opcode {o['name']}: memory opcodes carry a 16-bit address")
-    for name in ("RET", "I2F", "ZEXT16"):
-        if name not in {o["name"] for o in ops}:
-            raise ContractError(f"operandRanges names opcode {name}, which is not defined")
+    defined = {o["name"] for o in ops}
+    for exc in c["operandRanges"]["exceptions"]:
+        for name in (exc["from"], exc["to"]):
+            if name not in defined:
+                raise ContractError(f"operandRanges names opcode {name}, which is not defined")
 
     for s in c["container"]["structs"]:
         total = sum(size for _, _, size in struct_layout(s))
@@ -637,6 +642,11 @@ def region_loader_max_tasks(c: dict) -> list[str]:
     return [f"#define ZPLC_LOADER_MAX_TASKS {c['container']['maxTasks']['value']}U"]
 
 
+def region_loader_verified_depth(c: dict) -> list[str]:
+    depth = c["container"]["maxVerifiedDepth"]
+    return [f"/* {depth['doc']} */", f"#define ZPLC_VERIFY_MAX_DEPTH {depth['value']}"]
+
+
 def comm_blocks(c: dict) -> list[dict]:
     comm = c["comm"]
     kinds = {k["name"]: num(k["value"]) for k in comm["kinds"]["members"]}
@@ -759,6 +769,7 @@ REGION_BUILDERS = {
     "data-types": region_data_types, "opcodes": region_opcodes, "container": region_container,
     "vm-status": region_vm_status, "opcode-helpers": region_opcode_helpers,
     "loader-errors": region_loader_errors, "loader-max-tasks": region_loader_max_tasks,
+    "loader-verified-depth": region_loader_verified_depth,
     "comm-kinds": region_comm_kinds, "comm-status": region_comm_status, "comm-blocks": region_comm_blocks,
     "opcode-names": region_opcode_names, "error-names": region_error_names,
 }
@@ -821,6 +832,8 @@ def render_ts(c: dict) -> str:
         f"  iomapEntrySize: {structs['iomap']['size']},",
         f"  tagEntrySize: {structs['tag']['size']},",
         f"  maxTasks: {cont['maxTasks']['value']},",
+        f"  maxVerifiedDepth: {cont['maxVerifiedDepth']['value']},",
+        f"  buildEntrySize: {structs['build']['size']},",
         f"  crcOffset: {cont['crc']['offset']},",
         f"  crcSize: {cont['crc']['size']},",
         "} as const;",
@@ -1071,6 +1084,8 @@ def render_py(c: dict) -> str:
         f"IOMAP_ENTRY_SIZE = {structs['iomap']['size']}",
         f"TAG_ENTRY_SIZE = {structs['tag']['size']}",
         f"MAX_TASKS = {cont['maxTasks']['value']}",
+        f"MAX_VERIFIED_DEPTH = {cont['maxVerifiedDepth']['value']}",
+        f"BUILD_ENTRY_SIZE = {structs['build']['size']}",
         f"CRC_OFFSET = {cont['crc']['offset']}",
         f"CRC_SIZE = {cont['crc']['size']}",
         "",
@@ -1206,6 +1221,8 @@ DOC_TEXT = {
         "headerSize": "File header size (bytes)",
         "segmentSize": "Segment entry size (bytes)", "taskSize": "Task definition size (bytes)",
         "iomapSize": "I/O map entry size (bytes)", "tagSize": "Tag entry size (bytes)", "maxTasks": "Maximum tasks in an artifact",
+        "buildSize": "Build identity size (bytes)", "maxDepth": "Deepest evaluation stack the loader proves",
+        "depthNote": "A task that needs more is refused, whatever the target stack allows; the compiler fails the build above it.",
         "crc": "CRC32", "crcNote": "IEEE 802.3 polynomial {poly}, over the whole file except the 4 bytes at offset {off}.",
         "layout": "Layout of {name}", "offset": "Offset", "field": "Field", "type": "Type", "bytes": "Bytes", "description": "Description",
         "segments": "Segment types", "taskTypes": "Task types", "flags": "File header flags", "ioDirections": "I/O directions", "tagIds": "Tag identifiers",
@@ -1214,7 +1231,7 @@ DOC_TEXT = {
         "limits": "Runtime limits", "limit": "Limit", "sysregs": "System registers (input image)", "address": "Address", "sysflags": "System flags",
         "types": "Data type identifiers", "id": "Identifier", "typeSize": "Bytes",
         "string": "STRING layout", "stringIntro": "A STRING is `[length:2][capacity:2][data:capacity+1]`, little-endian. The default capacity is {default} characters ({total} bytes) and the largest is {max}.",
-        "opcodes": "Opcodes", "opcodesIntro": "The operand size follows the opcode range (0x00-0x3F none, 0x40-0x7F 8-bit, 0x80-0xBF 16-bit, 0xC0-0xFF 32-bit), except `RET` and the conversions `I2F` to `ZEXT16`, which carry no operand. Stack effects list the top of the stack on the right.",
+        "opcodes": "Opcodes", "opcodesIntro": "The operand size follows the opcode range (0x00-0x3F none, 0x40-0x7F 8-bit, 0x80-0xBF 16-bit, 0xC0-0xFF 32-bit), except `RET` and the opcodes `I2F` to `GED` (conversions and double-precision arithmetic and comparison), which carry no operand. Stack effects list the top of the stack on the right.",
         "hex": "Code", "mnemonic": "Mnemonic", "operand": "Operand", "effect": "Stack effect", "flagsCol": "Flags", "none": "none",
         "vmErrors": "VM error codes", "loaderErrors": "Loader error codes", "code": "Code",
         "comm": "Communication function blocks", "commIntro": "Each function-block instance is a byte block in work or retentive memory. Every block starts with the same 8-byte handshake. The core takes the size of a block from this table.",
@@ -1232,6 +1249,8 @@ DOC_TEXT = {
         "headerSize": "Tamaño de la cabecera del archivo (bytes)",
         "segmentSize": "Tamaño de la entrada de segmento (bytes)", "taskSize": "Tamaño de la definición de tarea (bytes)",
         "iomapSize": "Tamaño de la entrada del mapa de E/S (bytes)", "tagSize": "Tamaño de la entrada de etiqueta (bytes)", "maxTasks": "Máximo de tareas en un artefacto",
+        "buildSize": "Tamaño de la identidad de compilación (bytes)", "maxDepth": "Pila de evaluación más profunda que el loader demuestra",
+        "depthNote": "Una tarea que necesita más es rechazada, aunque la pila del destino lo permita; el compilador falla la compilación por encima.",
         "crc": "CRC32", "crcNote": "Polinomio IEEE 802.3 {poly}, sobre todo el archivo salvo los 4 bytes en el offset {off}.",
         "layout": "Layout de {name}", "offset": "Offset", "field": "Campo", "type": "Tipo", "bytes": "Bytes", "description": "Descripción",
         "segments": "Tipos de segmento", "taskTypes": "Tipos de tarea", "flags": "Flags de la cabecera", "ioDirections": "Direcciones de E/S", "tagIds": "Identificadores de etiqueta",
@@ -1240,7 +1259,7 @@ DOC_TEXT = {
         "limits": "Límites de ejecución", "limit": "Límite", "sysregs": "Registros del sistema (imagen de entrada)", "address": "Dirección", "sysflags": "Flags del sistema",
         "types": "Identificadores de tipo de dato", "id": "Identificador", "typeSize": "Bytes",
         "string": "Layout de STRING", "stringIntro": "Un STRING es `[longitud:2][capacidad:2][datos:capacidad+1]`, little-endian. La capacidad por defecto es de {default} caracteres ({total} bytes) y la máxima de {max}.",
-        "opcodes": "Opcodes", "opcodesIntro": "El tamaño del operando sigue el rango del opcode (0x00-0x3F ninguno, 0x40-0x7F 8 bits, 0x80-0xBF 16 bits, 0xC0-0xFF 32 bits), salvo `RET` y las conversiones `I2F` a `ZEXT16`, que no llevan operando. Los efectos sobre la pila ponen el tope a la derecha.",
+        "opcodes": "Opcodes", "opcodesIntro": "El tamaño del operando sigue el rango del opcode (0x00-0x3F ninguno, 0x40-0x7F 8 bits, 0x80-0xBF 16 bits, 0xC0-0xFF 32 bits), salvo `RET` y los opcodes de `I2F` a `GED` (conversiones, aritmética y comparación de doble precisión), que no llevan operando. Los efectos sobre la pila ponen el tope a la derecha.",
         "hex": "Código", "mnemonic": "Mnemónico", "operand": "Operando", "effect": "Efecto en la pila", "flagsCol": "Flags", "none": "ninguno",
         "vmErrors": "Códigos de error de la VM", "loaderErrors": "Códigos de error del loader", "code": "Código",
         "comm": "Bloques de función de comunicación", "commIntro": "Cada instancia de bloque de función es un bloque de bytes en memoria de trabajo o retentiva. Todos los bloques empiezan con el mismo handshake de 8 bytes. El core toma el tamaño de un bloque de esta tabla.",
@@ -1285,6 +1304,8 @@ def render_docs(c: dict, lang: str) -> str:
         [t["iomapSize"], f"`{structs['iomap']['size']}`", ""],
         [t["tagSize"], f"`{structs['tag']['size']}`", ""],
         [t["maxTasks"], f"`{cont['maxTasks']['value']}`", ""],
+        [t["buildSize"], f"`{structs['build']['size']}`", ""],
+        [t["maxDepth"], f"`{cont['maxVerifiedDepth']['value']}`", t["depthNote"]],
         [t["crc"], f"`{cont['crc']['polynomial']}`",
          t["crcNote"].format(poly=cont["crc"]["polynomial"], off=cont["crc"]["offset"])],
     ]

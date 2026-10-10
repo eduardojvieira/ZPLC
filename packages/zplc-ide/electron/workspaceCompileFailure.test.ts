@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 
+import { isSourceElementId } from '../src/models/sourceElements';
 import { workspaceCompileFailure } from './workspaceCompileFailure';
 
 const failure = (...diagnostics: unknown[]) => ({ ok: false, evidence: { outcome: 'failed', diagnostics } });
@@ -64,5 +65,28 @@ describe('the compiler message of a diagnostic (CMP-010)', () => {
 
   it('is left out when it is not text or says nothing', () => {
     for (const text of [undefined, null, 7, {}, [], '', '   ', '\n\u0000']) expect(first(failure({ code: 'COMPILATION_FAILED', message: text }))).toEqual({ code: 'COMPILATION_FAILED' });
+  });
+});
+
+describe('the element of a diagnostic (LNG-003)', () => {
+  const ELEMENTS = ['line:12', 'rung:rung_1', 'rung:rung_1/cell:0,3', 'rung:r%3A1/element:c1', 'block:and_1', 'connection:w3', 'step:s1', 'step:s1/enter', 'transition:t1/fire', 'action:a1'];
+  const element = (value: unknown) => first(failure({ code: 'COMPILATION_FAILED', message: 'x', element: value })) as { element?: string };
+
+  it('crosses with the diagnostic it belongs to, whole', () => {
+    for (const id of ELEMENTS) expect(element(id).element).toBe(id);
+    expect(first(failure({ code: 'COMPILATION_FAILED', path: 'src/main.ld.json', element: 'rung:rung_1/cell:0,3' }))).toEqual({ code: 'COMPILATION_FAILED', path: 'src/main.ld.json', element: 'rung:rung_1/cell:0,3' });
+  });
+
+  it('is dropped, and only it, when it is not an element id: a path, spaces, a wrong part, an overlong or a non-text value', () => {
+    const wrong = ['/etc/passwd', 'C:\\x', '../x', 'rung:a b', 'rung:', 'line', 'rung:r/cell:a,b', 'rung:r/cell:1,2/extra', 'step:s1/extra', 'block:x\n', 'rung:r\u0000', `rung:${'a'.repeat(300)}`, 7, {}, [], null];
+    for (const value of wrong) expect(first(failure({ code: 'COMPILATION_FAILED', line: 3, element: value }))).toEqual({ code: 'COMPILATION_FAILED', line: 3 });
+    expect(element(`rung:${'a'.repeat(251)}`).element).toBe(`rung:${'a'.repeat(251)}`);
+    expect(element(`rung:${'a'.repeat(252)}`).element).toBeUndefined();
+  });
+
+  it('is judged as the renderer judges it: the two copies of the form agree', () => {
+    for (const value of [...ELEMENTS, '/x', 'rung:a b', 'rung:r/cell:1,x', `block:${'b'.repeat(251)}`, `block:${'b'.repeat(252)}`, '', 'line:']) {
+      expect(element(value).element !== undefined).toBe(isSourceElementId(value));
+    }
   });
 });

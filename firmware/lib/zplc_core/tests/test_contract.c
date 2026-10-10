@@ -48,7 +48,7 @@ static void test_opcode_table(void)
     CHECK(zplc_opcode_is_valid((uint8_t)(code)) == 1, #name " is valid"); \
     CHECK(zplc_opcode_operand_size((uint8_t)(code)) == (operand), #name " operand size matches the decoder"); \
     CHECK((depth) >= (pops), #name " needs at least the words it pops"); \
-    CHECK((pops) <= 2 && (pushes) <= 2, #name " moves at most two stack words");
+    CHECK((pops) <= 4 && (pushes) <= 4, #name " moves at most four stack words (two two-word values)");
     ZPLC_OPCODE_TABLE(ZPLC_TEST_ENTRY)
 #undef ZPLC_TEST_ENTRY
 

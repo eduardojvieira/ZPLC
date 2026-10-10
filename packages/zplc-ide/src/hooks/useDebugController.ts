@@ -26,11 +26,11 @@ import type {
 import { WATCH_FORCE_STATE, bytesToHex, valueToBytes } from '../runtime/debugAdapter';
 import { createSimulationAdapter } from '../runtime/simulationAdapterFactory';
 import { NativeAdapter } from '../runtime/nativeAdapter';
-import { decodeInput, inputReadPlan, inputWrite, type DeclaredInput } from '../runtime/declaredInputs';
 import { connectionManager } from '../runtime/connectionManager';
 import type { DebugMap } from '../compiler';
 import type { SystemInfo } from '../runtime/serialAdapter';
-import { findVariable } from '../compiler';
+import { findVariable, judgeDebugMapAttachment } from '../compiler';
+import { reconcileElementBreakpoints } from '../editors/elementBreakpoints';
 import type { UploadTraceEvent } from '../runtime/uploadTrace';
 import {
   resolveExecutionLocation,
@@ -134,10 +134,6 @@ export interface DebugControllerActions {
   getVirtualOutput: (channel: number) => Promise<number>;
   /** Stage a closed native-POSIX simulation input and publish its observed snapshot. */
   setSimulationInput: (inputId: 'motor.start' | 'motor.stop' | 'motor.estop', active: boolean) => Promise<void>;
-  /** Sets any declared input of the program in simulation, changing only its own bit or bytes (IDE-024). */
-  setDeclaredInput: (input: DeclaredInput, value: boolean | number) => Promise<void>;
-  /** Reads declared inputs back in a few memory reads; an input that could not be read is absent from the map. */
-  readDeclaredInputs: (inputs: readonly DeclaredInput[]) => Promise<Map<string, boolean | number>>;
   /** Current hardware handshake cache only; no serial transport is exposed. */
   getHardwareSystemInfo: () => Readonly<SystemInfo> | null;
 }
@@ -617,6 +613,16 @@ export function useDebugController(): DebugController {
     // (upload + breakpoint sync) to avoid serial conflicts
     const isHardware = debugMode === 'hardware';
     const loadedCompilerRunId = useIDEStore.getState().compilerRunId;
+    // a debug map of another build must not be attached to this program (CMP-056)
+    if (newDebugMap) {
+      const attachment = judgeDebugMapAttachment(newDebugMap, bytecode);
+      if (attachment.action === 'refuse') {
+        throw new Error(attachment.message);
+      }
+      if (attachment.action === 'warn') {
+        addConsoleEntry({ type: 'warning', message: attachment.message ?? 'The debug map cannot be tied to the program', source: 'debugger' });
+      }
+    }
     invalidateNativeTrace();
     if (isHardware) {
       connectionManager.pausePolling();
@@ -943,35 +949,6 @@ export function useDebugController(): DebugController {
     }
   }, []);
 
-  const setDeclaredInput = useCallback(async (input: DeclaredInput, value: boolean | number) => {
-    const currentAdapter = adapterRef.current;
-    if (!currentAdapter || !currentAdapter.connected) throw new Error('Connect the simulator before setting an input.');
-    if (currentAdapter.type === 'serial') throw new Error('Inputs can be set in simulation only. Use Force for hardware.');
-    if (forcesUnconfirmed) throw new Error('Force state unconfirmed. Reconnect and verify before operating.');
-    // A bit of a shared byte is set by writing the byte as it is now with that bit changed.
-    const current = input.bitOffset !== undefined ? (await currentAdapter.peek(input.address, 1))[0] : undefined;
-    const write = inputWrite(input, value, current);
-    if (adapterRef.current !== currentAdapter || !currentAdapter.connected) throw new Error('The simulator changed before the input was set.');
-    await currentAdapter.setValue(write.address, write.bytes);
-  }, [forcesUnconfirmed]);
-
-  const readDeclaredInputs = useCallback(async (inputs: readonly DeclaredInput[]) => {
-    const values = new Map<string, boolean | number>();
-    const currentAdapter = adapterRef.current;
-    if (!currentAdapter || !currentAdapter.connected || inputs.length === 0) return values;
-    const memory = new Map<number, number>();
-    for (const range of inputReadPlan(inputs)) {
-      const bytes = await currentAdapter.peek(range.address, range.length);
-      bytes.forEach((byte, offset) => memory.set(range.address + offset, byte));
-    }
-    for (const input of inputs) {
-      const width = Math.max(1, input.size);
-      if (!Array.from({ length: width }, (_, offset) => memory.has(input.address + offset)).every(Boolean)) continue;
-      values.set(input.path, decodeInput(input, (address, length) => Uint8Array.from({ length }, (_, offset) => memory.get(address + offset) ?? 0)));
-    }
-    return values;
-  }, []);
-
   // =========================================================================
   // Polling for Live Values
   // =========================================================================
@@ -1069,6 +1046,16 @@ export function useDebugController(): DebugController {
   ]);
 
   // =========================================================================
+  // Breakpoints on the elements of a diagram
+  // =========================================================================
+
+  // A build moves the generated lines that the rungs, blocks and steps stand on: the lines of their breakpoints are worked out
+  // again from the new debug map, and the sync below arms them (LNG-004).
+  useEffect(() => {
+    reconcileElementBreakpoints();
+  }, [debugMap]);
+
+  // =========================================================================
   // Sync Breakpoints to Adapter
   // =========================================================================
 
@@ -1134,8 +1121,6 @@ export function useDebugController(): DebugController {
     setVirtualInput,
     getVirtualOutput,
     setSimulationInput,
-    setDeclaredInput,
-    readDeclaredInputs,
     getHardwareSystemInfo: () => connectionManager.systemInfo,
   };
 }

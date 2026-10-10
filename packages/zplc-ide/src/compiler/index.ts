@@ -18,6 +18,7 @@ import {
     assertTaskProgramCardinality,
     compileToBinary,
     CompilerError,
+    debugMapMatchesArtifact,
     parse,
     ZPLC_CONSTANTS,
     type CompilationResult,
@@ -80,6 +81,19 @@ import type {
     CommunicationTagConfig,
 } from '../types/index.ts';
 import { getCompilerMemoryProfile } from '../config/boardProfiles.ts';
+import { annotateDebugMapElements } from './debugElements.ts';
+import {
+    ElementError,
+    describeElement,
+    elementAtLine,
+    ilLineElement,
+    parseElement,
+    type ElementDiagnostic,
+    type SourceMapRange,
+} from '../models/sourceElements.ts';
+import { buildOptionsOf } from '../project/buildOptions.ts';
+import type { BuildOptions } from '../project/buildOptions.ts';
+import { selectWarnings } from '@zplc/compiler';
 
 // =============================================================================
 // IDE-specific Types
@@ -99,6 +113,37 @@ export interface TranspileResult {
     errors: string[];
     /** Line in the source file of the first error, for languages whose sources have lines (IL). */
     line?: number;
+    /** Each error with the element of the source it is about: a rung and cell, a block, a step, a transition, an action, an IL line (LNG-003). */
+    diagnostics?: ElementDiagnostic[];
+    /** For each element, the lines of the generated Structured Text that were written for it (LNG-004). */
+    sourceMap?: SourceMapRange[];
+}
+
+function failure(error: unknown, line?: number): TranspileResult {
+    const message = error instanceof Error ? error.message : String(error);
+    const element = error instanceof ElementError ? error.element : line === undefined ? undefined : ilLineElement(line);
+    return {
+        success: false, source: '', errors: [message], ...(line === undefined ? {} : { line }),
+        diagnostics: [{ message, ...(element === undefined ? {} : { element }), ...(line === undefined ? {} : { line }) }],
+    };
+}
+
+/**
+ * The compiler error of a source that did not translate: one error for each thing the transpiler found, each with the
+ * element it is about, the first of them thrown with all of them in `errors` (CMP-007, LNG-003).
+ */
+export function transpileFailure(transpiled: TranspileResult, sourceRef?: string): CompilerError {
+    const found: ElementDiagnostic[] = transpiled.diagnostics?.length
+        ? transpiled.diagnostics
+        : transpiled.errors.map((message) => ({ message, ...(transpiled.line === undefined ? {} : { line: transpiled.line }) }));
+    const errors = found.map((each) => {
+        const error = new CompilerError(each.message, each.line ?? 0, 0, 'parser', sourceRef);
+        if (each.element !== undefined) error.element = each.element;
+        return error;
+    });
+    if (errors.length === 0) errors.push(new CompilerError('The source could not be translated', 0, 0, 'parser', sourceRef));
+    errors[0]!.errors = errors;
+    return errors[0]!;
 }
 
 /**
@@ -125,6 +170,8 @@ export interface ProgramSource {
     language: PLCLanguage;
     /** Exact project-relative source path for diagnostics and debug provenance. */
     sourceRef?: string;
+    /** The library folder of the project the file belongs to (`libraries` of zplc.json, CMP-046). */
+    library?: string;
 }
 
 /**
@@ -201,21 +248,21 @@ export function transpileToST(content: string, language: PLCLanguage, symbols?: 
             try {
                 return transpileLDToST(JSON.parse(content), blocks);
             } catch (error) {
-                return { success: false, source: '', errors: [error instanceof Error ? error.message : String(error)] };
+                return failure(error);
             }
         }
         case 'FBD': {
             try {
                 return transpileFBDToST(parseFBDModel(content, blocks), blocks);
             } catch (error) {
-                return { success: false, source: '', errors: [error instanceof Error ? error.message : String(error)] };
+                return failure(error);
             }
         }
         case 'SFC': {
             try {
                 return transpileSFCToST(parseSFCModel(content));
             } catch (error) {
-                return { success: false, source: '', errors: [error instanceof Error ? error.message : String(error)] };
+                return failure(error);
             }
         }
         case 'ST':
@@ -225,8 +272,7 @@ export function transpileToST(content: string, language: PLCLanguage, symbols?: 
                 const ilProgram = parseIL(content);
                 return transpileILToST(ilProgram, { symbols });
             } catch (error) {
-                const line = error instanceof ILParseError || error instanceof ILLexerError ? error.line : undefined;
-                return { success: false, source: '', errors: [error instanceof Error ? error.message : String(error)], line };
+                return failure(error, error instanceof ILParseError || error instanceof ILLexerError ? error.line : undefined);
             }
         }
         default:
@@ -254,12 +300,7 @@ export function compileProject(content: string, language: PLCLanguage, options?:
     if (language !== 'ST') {
         const transpileResult = transpileToST(content, language);
 
-        if (!transpileResult.success) {
-            throw new CompilerError(
-                `Transpilation failed: ${transpileResult.errors.join('; ')}`,
-                0, 0, 'parser'
-            );
-        }
+        if (!transpileResult.success) throw transpileFailure(transpileResult);
 
         stSource = transpileResult.source;
         intermediateSTSource = transpileResult.source;
@@ -275,6 +316,17 @@ export function compileProject(content: string, language: PLCLanguage, options?:
         intermediateSTSource,
         transpileErrors: transpileErrors.length > 0 ? transpileErrors : undefined,
     };
+}
+
+/**
+ * What to do with a debug map that is about to be attached to a program (CMP-056): `refuse` when it belongs to
+ * another build, `warn` when it or the program carries no identity so the pair cannot be told, nothing when it
+ * is the map of this program. The sentence is for the console.
+ */
+export function judgeDebugMapAttachment(map: DebugMap, program: Uint8Array): { action: 'attach' | 'warn' | 'refuse'; message?: string } {
+    const verdict = debugMapMatchesArtifact(map, program);
+    if (verdict.ok) return { action: 'attach' };
+    return { action: verdict.reason === 'different-build' ? 'refuse' : 'warn', message: verdict.message };
 }
 
 function escapeRegExp(input: string): string {
@@ -451,6 +503,48 @@ function collectProjectSymbols(sources: ProgramSource[]): ILProjectSymbols {
 }
 
 /**
+ * An error the compiler found in the Structured Text generated from a visual or IL source, put where the author can
+ * find it (LNG-003, LNG-026). An IL line is the line of the IL source. A diagram has no lines: the position stays that
+ * of the generated Structured Text, and the message says what it refers to and which element of the diagram the
+ * statement was generated for (a rung and cell, a block, a step, the condition of a transition, the body of an action).
+ */
+function relocateToSource(
+    each: CompilerError,
+    translated: ReadonlyMap<string, { language: PLCLanguage; map: readonly SourceMapRange[] }>,
+    visualSourceRefs: ReadonlySet<string>,
+): CompilerError {
+    if (!each.sourceRef || !visualSourceRefs.has(each.sourceRef) || each.line <= 0) return each;
+    const origin = translated.get(each.sourceRef);
+    const element = origin ? elementAtLine(origin.map, each.line) : undefined;
+    const parsed = element ? parseElement(element) : undefined;
+    if (origin?.language === 'IL' && element && parsed?.kind === 'line') {
+        const error = new CompilerError(each.detail, Number(parsed.id), 1, each.phase, each.sourceRef);
+        error.element = element;
+        return error;
+    }
+    const named = element === undefined || origin?.language === 'IL' ? '' : `${describeElement(element)}: `;
+    const error = new CompilerError(`${named}${each.detail} (position in the generated Structured Text)`, each.line, each.column, each.phase, each.sourceRef, each.endLine, each.endColumn);
+    if (element !== undefined && origin?.language !== 'IL') error.element = element;
+    return error;
+}
+
+/**
+ * What the options of the project file say that the build cannot do: `compiler.optimization` has one code
+ * generator behind it, so 'size' and 'speed' produce the code 'none' does (CMP-059). The warning is placed at
+ * the project file.
+ */
+function optionWarnings(options: BuildOptions): CompilerWarning[] {
+    if (options.optimization === 'none') return [];
+    return [{
+        code: 'OPTION_IGNORED',
+        message: `compiler.optimization '${options.optimization}' changes nothing: the compiler has one code generator and builds the same code at every level; use 'none'`,
+        line: 0,
+        column: 0,
+        sourceRef: 'zplc.json',
+    }];
+}
+
+/**
  * Compile a multi-task project to a single .zplc file.
  *
  * @param config - Project configuration (from zplc.json)
@@ -499,6 +593,8 @@ export function compileMultiTaskProject(
     const coreSources: CoreProgramSource[] = [];
     const compiledPrograms = new Set<string>();
     const visualSourceRefs = new Set<string>();
+    // what each visual or IL source was translated from: the language, and the element of every generated line
+    const translated = new Map<string, { language: PLCLanguage; map: readonly SourceMapRange[] }>();
     const programFiles = new Set<ProgramSource>();
 
     for (const task of config.tasks) {
@@ -516,10 +612,11 @@ export function compileMultiTaskProject(
                 ? { success: true, source: source.content, errors: [] }
                 : transpileToST(source.content, source.language, source.language === 'IL' ? projectSymbols() : undefined,
                     source.language === 'FBD' || source.language === 'LD' ? projectBlocks() : undefined);
-            if (!transpiled.success) {
-                throw new CompilerError(`Transpilation of '${progName}' failed: ${transpiled.errors.join('; ')}`, transpiled.line ?? 0, 0, 'parser', source.sourceRef);
+            if (!transpiled.success) throw transpileFailure(transpiled, source.sourceRef);
+            if (source.language !== 'ST') {
+                visualSourceRefs.add(source.sourceRef ?? progName);
+                if (transpiled.sourceMap) translated.set(source.sourceRef ?? progName, { language: source.language, map: transpiled.sourceMap });
             }
-            if (source.language !== 'ST') visualSourceRefs.add(source.sourceRef ?? progName);
 
             coreSources.push({
                 name: progName,
@@ -536,6 +633,7 @@ export function compileMultiTaskProject(
         coreSources.push({ name: source.sourceRef ?? source.name, content: source.content, sourceRef: source.sourceRef });
     }
 
+    const options = buildOptionsOf(config);
     const coreConfig: CoreProjectConfig = {
         name: config.name,
         version: config.version,
@@ -551,15 +649,18 @@ export function compileMultiTaskProject(
     try {
         const result = compileCoreMultiTaskProject(coreConfig, coreSources, {
             memoryProfile: getCompilerMemoryProfile(config.target?.board),
+            strictTypes: options.strictTypes,
+            debug: options.debug,
+            reportWarnings: options.reportWarnings,
         });
+        // the map names what the author edited, not the generated lines (LNG-004)
+        annotateDebugMapElements(result.debugMap, translated);
         // a graphical source has no lines: its warnings would point into the generated Structured Text
-        return { ...result, warnings: result.warnings.filter((warning) => !warning.sourceRef || !visualSourceRefs.has(warning.sourceRef)) };
+        const found = result.warnings.filter((warning) => !warning.sourceRef || !visualSourceRefs.has(warning.sourceRef));
+        return { ...result, warnings: selectWarnings([...optionWarnings(options), ...found], options.reportWarnings) };
     } catch (error) {
         if (error instanceof CompilerError) {
-            // The position is kept: the graphical models have no lines, so it names the generated Structured Text.
-            const relocated = error.errors.map((each) => each.sourceRef && visualSourceRefs.has(each.sourceRef) && each.line > 0
-                ? new CompilerError(`${each.detail} (position in the generated Structured Text)`, each.line, each.column, each.phase, each.sourceRef, each.endLine, each.endColumn)
-                : each);
+            const relocated = error.errors.map((each) => relocateToSource(each, translated, visualSourceRefs));
             if (relocated.some((each, index) => each !== error.errors[index])) {
                 relocated[0]!.errors = relocated;
                 throw relocated[0];

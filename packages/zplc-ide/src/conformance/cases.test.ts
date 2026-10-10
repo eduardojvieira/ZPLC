@@ -161,6 +161,20 @@ describe('parseExpectation: matrix rows, tags and located diagnostics (VF-003, V
     rejects(negative({ codes: ['compilation failed'] }), 'codes');
   });
 
+  it('LNG-003 asserts the element each diagnostic of a rejected diagram or IL program is about, one for each diagnostic', () => {
+    const elements = ['line:7', 'rung:rung1/cell:0,1', 'rung:rung1/element:c1', 'rung:#3', 'block:and1', 'connection:w2', 'step:s_a', 'step:s_b/enter', 'transition:t1', 'transition:t1/fire', 'action:mark'];
+    expect(parseExpectation(negative({ elements }), 'x')).toMatchObject({ build: 'fails', elements });
+    expect(parseExpectation(negative({ lines: [7, 9], elements: ['line:7', 'line:9'] }), 'x')).toMatchObject({ lines: [7, 9], elements: ['line:7', 'line:9'] });
+    expect(parseExpectation(negative({}), 'x')).toMatchObject({ elements: undefined });
+    rejects(negative({ lines: [7], elements: ['line:7', 'line:9'] }), 'same length');
+    rejects(negative({ elements: ['rung 1'] }), 'elements');
+    rejects(negative({ elements: ['/etc/passwd'] }), 'elements');
+    rejects(negative({ elements: ['line:'] }), 'elements');
+    rejects(negative({ elements: [7] }), 'elements');
+    rejects(negative({ elements: 'block:and1' }), 'elements must be a list');
+    rejects(runtime({ elements: ['line:7'] }), 'unknown key "elements"');
+  });
+
   it('refuses a matrix row that is not an id, a repeated row, an unknown tag and a tag without arch-sensitive', () => {
     rejects(runtime({ matrix: ['Data types'] }), 'matrix');
     rejects(runtime({ matrix: ['data-types.dint', 'data-types.dint'] }), 'twice');

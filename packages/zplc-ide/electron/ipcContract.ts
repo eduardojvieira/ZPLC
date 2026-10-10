@@ -68,7 +68,17 @@ export const RECOVERY_CHANNEL = { WRITE: 'recovery:write', LIST: 'recovery:list'
 /** The update check (IDE-010). */
 export const UPDATE_CHECK_CHANNEL = { RUN: 'update-check:run' } as const;
 
-/** Project files (IDE-001) and recent projects (IDE-008). */
+/**
+ * Project archives (IDE-022): three operations of the project-files bridge. They are part of `PROJECT_FILES_CHANNEL`,
+ * so the one registration of the project-files handlers, with its sender check, covers them.
+ */
+export const PROJECT_ARCHIVE_CHANNEL = {
+  exportArchive: 'project-files:export-archive',
+  inspectArchive: 'project-files:inspect-archive',
+  extractArchive: 'project-files:extract-archive',
+} as const;
+
+/** Project files (IDE-001), recent projects (IDE-008), the watch (IDE-004) and the project archives (IDE-022). */
 export const PROJECT_FILES_CHANNEL = {
   chooseFolder: 'project-files:choose-folder',
   list: 'project-files:list',
@@ -83,6 +93,7 @@ export const PROJECT_FILES_CHANNEL = {
   forgetRecent: 'project-files:forget-recent',
   markOpened: 'project-files:mark-opened',
   watch: 'project-files:watch',
+  ...PROJECT_ARCHIVE_CHANNEL,
 } as const;
 
 /** What the main process pushes to the window when files under its folder changed (IDE-004). */

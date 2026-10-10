@@ -76,7 +76,9 @@ function logicalPath(value: string): boolean {
   return value.split('/').every((part) => part.length > 0 && part !== '.' && part !== '..');
 }
 const logicalPathSchema = z.string().max(512).refine(logicalPath);
-const diagnosticSchema = z.object({ code: z.string().min(1).max(96).regex(/^[A-Z0-9_:-]+$/), message: z.string().min(1).max(512), path: logicalPathSchema.optional(), phase: z.enum(['lexer', 'parser', 'codegen', 'assembler']).optional(), line: z.number().int().optional(), column: z.number().int().optional() }).strict();
+/** The element of a visual or IL source a diagnostic is about (LNG-003): `rung:r1/cell:0,2`, `block:and_1`, `line:12`; ids are percent-encoded. */
+const elementSchema = z.string().max(256).regex(/^[a-z]+:[A-Za-z0-9_%.,!~*'()-]+(\/[a-z]+:[A-Za-z0-9_%.,!~*'()-]+)?$/);
+const diagnosticSchema = z.object({ code: z.string().min(1).max(96).regex(/^[A-Z0-9_:-]+$/), message: z.string().min(1).max(512), path: logicalPathSchema.optional(), phase: z.enum(['lexer', 'parser', 'codegen', 'assembler']).optional(), line: z.number().int().optional(), column: z.number().int().optional(), element: elementSchema.optional() }).strict();
 const artifactSchema = z.object({ kind: z.enum(['zplc', 'bytecode', 'trace', 'firmware-elf', 'project-manifest']), sha256: z.string().regex(/^[0-9a-f]{64}$/), byteLength: z.number().int().positive().max(Number.MAX_SAFE_INTEGER) }).strict();
 const evidenceSchema = z.object({ schemaVersion: z.literal(1), operation: z.string().min(1).max(64).regex(/^[a-z][a-z-]*$/), outcome: z.enum(['passed', 'failed']), diagnostics: z.array(diagnosticSchema).max(256), artifacts: z.array(artifactSchema).max(8) }).strict();
 const executionSchema = z.object({
@@ -112,7 +114,7 @@ const aggregateTraceSchema = z.object({ schemaVersion: z.literal(1), backend: z.
 
 function summarySchema(tool: McpToolName): z.ZodType {
   switch (tool) {
-    case 'project_inspect': return z.object({ schemaVersion: z.literal(2), sourceSchemaVersion: z.union([z.literal(1), z.literal(2)]), migrated: z.boolean(), name: shortText, version: z.string().min(1).max(64), taskCount: z.number().int().nonnegative(), sources: z.array(z.object({ name: z.string().min(1).max(128), language: z.enum(['ST', 'IL', 'LD', 'FBD', 'SFC']) }).strict()).max(256), target: z.object({ board: z.string().regex(/^[a-z0-9][a-z0-9_-]{0,63}$/i) }).strict().optional() }).strict();
+    case 'project_inspect': return z.object({ schemaVersion: z.literal(2), sourceSchemaVersion: z.union([z.literal(1), z.literal(2)]), migrated: z.boolean(), name: shortText, version: z.string().min(1).max(64), taskCount: z.number().int().nonnegative(), sources: z.array(z.object({ name: z.string().min(1).max(128), language: z.enum(['ST', 'IL', 'LD', 'FBD', 'SFC']), library: z.string().min(1).max(128).optional() }).strict()).max(256), target: z.object({ board: z.string().regex(/^[a-z0-9][a-z0-9_-]{0,63}$/i) }).strict().optional() }).strict();
     case 'project_validate': return z.object({ name: shortText, taskCount: z.number().int().nonnegative() }).strict();
     case 'compiler_check': case 'compiler_compile': return compilerSummarySchema;
     case 'symbols_list': return z.object({ symbols: z.array(z.object({ pou: identifier, name: identifier, type: z.string().min(1).max(64), region: z.enum(['IPI', 'OPI', 'WORK', 'RETAIN', 'CODE']), address: z.number().int().nonnegative(), size: z.number().int().nonnegative(), sourceRef: logicalPathSchema.refine((path) => path.startsWith('src/')).optional(), bitOffset: z.number().int().nonnegative().optional(), declarationLine: z.number().int().positive().optional() }).strict()).max(4096) }).strict();

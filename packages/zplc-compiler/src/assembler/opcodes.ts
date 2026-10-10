@@ -8,7 +8,7 @@
  * generated from, so the two cannot differ.
  */
 
-import { Opcode as GeneratedOpcode, getOperandSize as generatedOperandSize, opcodeHasFlag } from '../contract.generated';
+import { Opcode as GeneratedOpcode, OPCODE_TABLE, getOperandSize as generatedOperandSize, opcodeHasFlag } from '../contract.generated';
 
 /**
  * ZPLC VM Opcodes (generated from tools/contract/contract.json).
@@ -85,3 +85,52 @@ export const OPERAND_SIZES: Record<number, number> = Object.fromEntries(
     (Object.values(Opcode) as number[])
         .map((opcode) => [opcode, getOperandSize(opcode)])
 );
+
+/**
+ * What an operand field holds and the values it can hold (CMP-049). A value fits when it is an integer in
+ * [min, max]: an immediate may be written signed or unsigned (the VM sign-extends it), an address only unsigned,
+ * a relative offset only signed.
+ */
+export interface OperandField {
+    /** What the field holds, for the message: "8-bit immediate", "16-bit memory address". */
+    description: string;
+    min: number;
+    max: number;
+    /** The operand is a distance from the next instruction; it is stored as a two's complement byte. */
+    relative: boolean;
+    /** The operand is the address of an instruction of the code. */
+    codeAddress: boolean;
+}
+
+const TABLE_BY_CODE = new Map(OPCODE_TABLE.map((entry) => [entry.code, entry]));
+
+/**
+ * The operand field of an opcode, derived from the generated opcode table; undefined for an opcode that has no
+ * operand or is not in the table.
+ */
+export function operandField(opcode: number): OperandField | undefined {
+    const entry = TABLE_BY_CODE.get(opcode);
+    if (!entry || entry.operand === 0) return undefined;
+    const bits = entry.operand * 8;
+    if (opcodeHasFlag(opcode, 'relative')) {
+        return { description: `signed ${bits}-bit offset`, min: -(2 ** (bits - 1)), max: 2 ** (bits - 1) - 1, relative: true, codeAddress: false };
+    }
+    if (opcodeHasFlag(opcode, 'absolute')) {
+        return { description: `${bits}-bit code address`, min: 0, max: 2 ** bits - 1, relative: false, codeAddress: true };
+    }
+    if (entry.memory || entry.group === 'comm') {
+        const what = entry.memory ? 'memory address' : 'function-block kind';
+        return { description: `${bits}-bit ${what}`, min: 0, max: 2 ** bits - 1, relative: false, codeAddress: false };
+    }
+    return { description: `${bits}-bit immediate`, min: -(2 ** (bits - 1)), max: 2 ** bits - 1, relative: false, codeAddress: false };
+}
+
+/** True when `value` is an integer the field can hold. */
+export function fitsOperandField(field: OperandField, value: number): boolean {
+    return Number.isInteger(value) && value >= field.min && value <= field.max;
+}
+
+/** The sentence that says why `value` is refused by the operand of `mnemonic`. */
+export function operandRefusal(mnemonic: string, field: OperandField, value: number): string {
+    return `${mnemonic} operand ${value} does not fit its ${field.description} (${field.min} to ${field.max})`;
+}

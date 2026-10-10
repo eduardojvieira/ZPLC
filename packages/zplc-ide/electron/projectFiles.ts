@@ -34,6 +34,9 @@ import {
   type RecentProject,
   type RecentRequests,
 } from './projectFilesProtocol.js';
+import { createProjectArchive } from './projectArchive.js';
+import { createArchiveDialogs, type ArchiveDialogDeps } from './projectArchiveDialogs.js';
+import { PROJECT_ARCHIVE_CHANNEL } from './projectArchiveProtocol.js';
 import type { RecentEntry, RecentProjects } from './recentProjects.js';
 
 class Refusal extends Error {
@@ -228,9 +231,20 @@ export function createProjectFiles(
   recent: () => RecentProjects | null = () => null,
   /** Watches the window's folder for changes made outside Studio (IDE-004); absent in tests that do not need it. */
   watcher: { start(ownerId: number, rootId: string, root: string): void; stop(ownerId: number): void } | null = null,
+  /** The native dialogs of the project archives (IDE-022); absent in tests that do not need them. */
+  archiveDialogs: ArchiveDialogDeps | null = null,
 ) {
   const folders = new Map<number, Folder>();
   const choosing = new Map<number, Promise<ProjectFolder | null>>();
+  const archive = archiveDialogs
+    ? createProjectArchive({ rootOf: (ownerId, rootId) => rootOf(ownerId, rootId), dialogs: createArchiveDialogs(archiveDialogs) })
+    : null;
+  const archiveChannels = new Set<string>(Object.values(PROJECT_ARCHIVE_CHANNEL));
+
+  function rootOf(ownerId: number, rootId: string): string | null {
+    const folder = folders.get(ownerId);
+    return folder !== undefined && folder.id === rootId ? folder.real : null;
+  }
 
   /** Makes `real` the window's folder, replacing the previous one. */
   function adopt(ownerId: number, real: string): ProjectFolder {
@@ -241,7 +255,8 @@ export function createProjectFiles(
   }
 
   async function choose(ownerId: number): Promise<ProjectFolder | null> {
-    const chosen = await chooseDirectory(ownerId);
+    // A project that was just imported from an archive is the answer once, with no dialog (IDE-022).
+    const chosen = archive?.takeImportedFolder(ownerId) ?? await chooseDirectory(ownerId);
     if (chosen === null) return null;
     const real = await realpath(chosen);
     if (!(await stat(real)).isDirectory()) throw new Refusal('not-a-directory');
@@ -261,6 +276,7 @@ export function createProjectFiles(
   return {
     async handle(ownerId: number, channel: string, args: readonly unknown[]): Promise<ProjectFilesResult<unknown>> {
       try {
+        if (archive && archiveChannels.has(channel)) return await archive.handle(ownerId, channel, args);
         if (channel === PROJECT_FILES_CHANNEL.chooseFolder) {
           if (args.length !== 0) throw new Refusal('invalid-request');
           let flight = choosing.get(ownerId);
@@ -319,10 +335,7 @@ export function createProjectFiles(
      * The real path of the window's folder, for the main process only: Build, Tests and Simulate register it as their
      * workspace (IDE-001) without the renderer ever naming a path. Null unless `rootId` is the id of the window's current folder.
      */
-    rootOf(ownerId: number, rootId: string): string | null {
-      const folder = folders.get(ownerId);
-      return folder !== undefined && folder.id === rootId ? folder.real : null;
-    },
+    rootOf,
 
     /** The real path of the window's current folder, for the main process only (whatever id the renderer holds). Null when none. */
     currentRoot(ownerId: number): string | null {
@@ -331,6 +344,7 @@ export function createProjectFiles(
 
     /** Forgets the window's folder: the document changed or the window went away. */
     revokeOwner(ownerId: number): void {
+      archive?.revokeOwner(ownerId);
       watcher?.stop(ownerId);
       folders.delete(ownerId);
     },

@@ -1,0 +1,103 @@
+{
+  "requirement": "CMP-015",
+  "title": "LREAL and LINT globals, structure members and retained globals are initialised once, as two cells",
+  "matrix": [
+    "data-types.lreal",
+    "data-types.lint-ulint-lword"
+  ],
+  "tags": [
+    "arch-sensitive",
+    "64-bit",
+    "float"
+  ],
+  "note": "The initial value of a 64-bit global, of a structure member and of an element of an array is written as two cells; a retained global takes it only when the retentive memory holds no saved state (CMP-029), so it accumulates over the scans.",
+  "scans": 3,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "UDINT",
+      "value": 2576980378
+    },
+    {
+      "at": "%QD1",
+      "type": "UDINT",
+      "value": 1069128089
+    },
+    {
+      "at": "%QD2",
+      "type": "UDINT",
+      "value": 705032704
+    },
+    {
+      "at": "%QD3",
+      "type": "UDINT",
+      "value": 1
+    },
+    {
+      "at": "%QD4",
+      "type": "UDINT",
+      "value": 4294967295
+    },
+    {
+      "at": "%QD5",
+      "type": "UDINT",
+      "value": 4294967295
+    },
+    {
+      "at": "%QD6",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD7",
+      "type": "UDINT",
+      "value": 1074528256
+    },
+    {
+      "at": "%QD8",
+      "type": "UDINT",
+      "value": 2576980378
+    },
+    {
+      "at": "%QD9",
+      "type": "UDINT",
+      "value": 1069128089
+    },
+    {
+      "at": "%QD10",
+      "type": "UDINT",
+      "value": 3589934592
+    },
+    {
+      "at": "%QD11",
+      "type": "UDINT",
+      "value": 4294967294
+    },
+    {
+      "at": "%QW600",
+      "type": "INT",
+      "value": 7
+    },
+    {
+      "at": "%QD12",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD13",
+      "type": "UDINT",
+      "value": 1082724352
+    },
+    {
+      "at": "%QD14",
+      "type": "UDINT",
+      "value": 3
+    },
+    {
+      "at": "%QD15",
+      "type": "UDINT",
+      "value": 1
+    }
+  ]
+}

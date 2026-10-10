@@ -705,6 +705,15 @@ describe('saved workspace compilation presentation', () => {
     ] });
   });
 
+  it('carries the element of a diagnostic, when it is an element id, and drops it otherwise (LNG-003)', () => {
+    const diagnostic = (element: unknown) => ({ code: 'COMPILATION_FAILED', message: 'Unknown variable', path: 'src/main.ld.json', line: 4, column: 1, element });
+    const present = (element: unknown) => presentWorkspaceCompileResult({ ok: false, evidence: { outcome: 'failed', diagnostics: [diagnostic(element)] } });
+    expect(present('rung:rung_2/cell:0,1')).toEqual({ ok: false, diagnostics: [{ code: 'COMPILATION_FAILED', message: 'Unknown variable', path: 'src/main.ld.json', line: 4, column: 1, element: 'rung:rung_2/cell:0,1' }] });
+    for (const element of ['/etc/passwd', 'rung:a b', `rung:${'a'.repeat(300)}`, 12, null, undefined]) {
+      expect(present(element)).toEqual({ ok: false, diagnostics: [{ code: 'COMPILATION_FAILED', message: 'Unknown variable', path: 'src/main.ld.json', line: 4, column: 1 }] });
+    }
+  });
+
   it('accepts only a complete canonical artifact envelope', () => {
     const accepted = presentWorkspaceCompileResult({
       ok: true,

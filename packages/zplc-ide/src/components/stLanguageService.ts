@@ -14,12 +14,13 @@ import {
 import type * as MonacoEditor from 'monaco-editor';
 import type { STLiveDiagnostic } from '../types';
 import { ST_LANGUAGE_ID } from '../utils/monaco-languages';
+import { getProjectDeclarations, type Declaration, type DeclarationKind } from '../project/projectDeclarations';
 
 // ponytail: synchronous parsing is capped at 200 KiB; move this service to a worker/LSP if measured ST files exceed it.
 export const ST_LANGUAGE_SERVICE_SOURCE_LIMIT = 200_000;
 const MAX_COMPLETIONS = 256;
 
-type CompletionKind = 'variable' | 'function' | 'functionBlock';
+type CompletionKind = 'variable' | 'function' | 'functionBlock' | 'type';
 
 export interface STCompletion {
   label: string;
@@ -198,7 +199,18 @@ export function ensureSTLanguageService(monaco: typeof MonacoEditor): void {
   });
 }
 
-export function getSTCompletions(source: string, line: number): STCompletion[] {
+const PROJECT_KIND: Record<DeclarationKind, { completion: CompletionKind; label: string }> = {
+  PROGRAM: { completion: 'functionBlock', label: 'program' },
+  FUNCTION_BLOCK: { completion: 'functionBlock', label: 'function block' },
+  FUNCTION: { completion: 'function', label: 'function' },
+  INTERFACE: { completion: 'type', label: 'interface' },
+  STRUCT: { completion: 'type', label: 'structure' },
+  ENUM: { completion: 'type', label: 'enumeration' },
+  TYPE: { completion: 'type', label: 'type' },
+};
+
+/** The function blocks, functions and types that other files and library folders of the project declare (IDE-023). */
+export function getSTCompletions(source: string, line: number, project: readonly Declaration[] = getProjectDeclarations()): STCompletion[] {
   const completions = new Map<string, STCompletion>();
   if (isSupportedSource(source)) {
     for (const variable of sourceVariablesForAssistance(source, line)) {
@@ -209,6 +221,12 @@ export function getSTCompletions(source: string, line: number): STCompletion[] {
       });
     }
   }
+  for (const entry of project) {
+    if (entry.kind === 'PROGRAM') continue;
+    const { completion, label } = PROJECT_KIND[entry.kind];
+    const text = `Project ${label}`;
+    addCompletion(completions, { label: entry.name, kind: completion, detail: `${text}, ${entry.file}` });
+  }
   for (const name of getAllFnNames()) addCompletion(completions, { label: name, kind: 'function', detail: 'Standard function' });
   for (const name of getAllFBNames()) addCompletion(completions, { label: name, kind: 'functionBlock', detail: 'Standard function block' });
 
@@ -217,13 +235,16 @@ export function getSTCompletions(source: string, line: number): STCompletion[] {
     .slice(0, MAX_COMPLETIONS);
 }
 
-export function getSTHover(source: string, word: string, line = 1): STHover | null {
+export function getSTHover(source: string, word: string, line = 1, project: readonly Declaration[] = getProjectDeclarations()): STHover | null {
   if (!word) return null;
 
   const variable = isSupportedSource(source)
     ? sourceVariablesForAssistance(source, line).find((entry) => sameName(entry.name, word))
     : undefined;
   if (variable) return { value: formatVariableHover(variable) };
+
+  const declared = project.find((entry) => sameName(entry.name, word));
+  if (declared) return { value: `**${declared.name}** — project ${PROJECT_KIND[declared.kind].label}  \n${declared.file}:${declared.line}` };
 
   const fn = getFn(word);
   if (fn) return { value: `**${fn.name}** — standard function  \n${fn.variadic ? 'Variadic arguments' : `${fn.argCount} argument${fn.argCount === 1 ? '' : 's'}`}` };
@@ -507,6 +528,7 @@ function addCompletion(completions: Map<string, STCompletion>, completion: STCom
 
 function completionItemKind(monaco: typeof MonacoEditor, kind: CompletionKind): MonacoEditor.languages.CompletionItemKind {
   if (kind === 'variable') return monaco.languages.CompletionItemKind.Variable;
+  if (kind === 'type') return monaco.languages.CompletionItemKind.Struct;
   return kind === 'function' ? monaco.languages.CompletionItemKind.Function : monaco.languages.CompletionItemKind.Class;
 }
 

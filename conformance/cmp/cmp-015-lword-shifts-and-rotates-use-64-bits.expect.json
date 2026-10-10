@@ -1,0 +1,168 @@
+{
+  "requirement": "CMP-014",
+  "title": "SHL, SHR, ROL and ROR on an LWORD work on all 64 bits",
+  "matrix": [
+    "data-types.lint-ulint-lword",
+    "functions.shift-rotate-and-word-logic"
+  ],
+  "tags": [
+    "arch-sensitive",
+    "64-bit",
+    "shifts"
+  ],
+  "note": "A shift of 64 or more gives 0; a rotation takes its count modulo 64 and keeps every bit (CMP-014, CMP-015).",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "UDINT",
+      "value": 2
+    },
+    {
+      "at": "%QD1",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD2",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD3",
+      "type": "UDINT",
+      "value": 2309737967
+    },
+    {
+      "at": "%QD4",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD5",
+      "type": "UDINT",
+      "value": 2147483648
+    },
+    {
+      "at": "%QD6",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD7",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD8",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD9",
+      "type": "UDINT",
+      "value": 1073741824
+    },
+    {
+      "at": "%QD10",
+      "type": "UDINT",
+      "value": 1193046
+    },
+    {
+      "at": "%QD11",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD12",
+      "type": "UDINT",
+      "value": 1
+    },
+    {
+      "at": "%QD13",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD14",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD15",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD16",
+      "type": "UDINT",
+      "value": 3
+    },
+    {
+      "at": "%QD17",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD18",
+      "type": "UDINT",
+      "value": 591751049
+    },
+    {
+      "at": "%QD19",
+      "type": "UDINT",
+      "value": 2882400001
+    },
+    {
+      "at": "%QD20",
+      "type": "UDINT",
+      "value": 2309737967
+    },
+    {
+      "at": "%QD21",
+      "type": "UDINT",
+      "value": 19088743
+    },
+    {
+      "at": "%QD22",
+      "type": "UDINT",
+      "value": 2309737967
+    },
+    {
+      "at": "%QD23",
+      "type": "UDINT",
+      "value": 19088743
+    },
+    {
+      "at": "%QD24",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD25",
+      "type": "UDINT",
+      "value": 3221225472
+    },
+    {
+      "at": "%QD26",
+      "type": "UDINT",
+      "value": 1450744508
+    },
+    {
+      "at": "%QD27",
+      "type": "UDINT",
+      "value": 3740275252
+    },
+    {
+      "at": "%QD28",
+      "type": "UDINT",
+      "value": 3302352631
+    },
+    {
+      "at": "%QD29",
+      "type": "UDINT",
+      "value": 2157028019
+    }
+  ]
+}
