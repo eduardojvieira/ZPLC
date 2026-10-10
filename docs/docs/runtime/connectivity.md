@@ -71,16 +71,14 @@ No message that arrives from Modbus, MQTT or a cloud service changes RUN/STOP, s
 
 | Source | What it can change | What it cannot reach |
 | --- | --- | --- |
-| Modbus TCP and RTU server | The bytes of the variables you bound with `{modbus}`, through the server mapping | RUN/STOP, forces, program download |
+| Modbus TCP and RTU server | The bytes of the variables you bound with `{modbus}`, through the server mapping and the force-aware write of the exchange: an address with an active force keeps it | RUN/STOP, forces, program download |
 | MQTT topics of subscribed variables (`DCMD`, command topics) | The bytes of the variables you marked `{subscribe}`, through the force-aware write: an address with an active force keeps it | RUN/STOP, forces, program download |
 | Sparkplug B `NCMD`/`DCMD` Rebirth | Makes the node publish its birth certificates again | RUN/STOP, forces, program download |
 | Azure cloud-to-device message | The payload of the `AZURE_C2D_RECV` block that your program runs | RUN/STOP, forces, program download |
 | Azure direct methods and device twin, AWS shadow and jobs | Nothing: they are logged, and a direct method is answered `501` (not implemented) | RUN/STOP, forces, program download |
 | Provisioning reply (Azure DPS, AWS fleet) | Only after your program started the block: the assigned hub or the issued credentials | RUN/STOP, forces, program download |
 
-This is checked in two places. The object files of the handlers of every board image are read at link level (`tools/firmware-test/check_inbound_authority.py`, run by `run.sh size`): none of them references the scheduler's start, stop, pause, resume, step or load, the force set and clear calls, the program loader or store, or a reboot. And two tests put the inbound code in front of a core whose authority entries count their calls: one drives every Modbus function code and every write count through the server's framing and mapping (`firmware/tests/inbound_authority`), and one delivers hostile topics and payloads (stop, run, force, load commands in text and JSON, every byte value, the longest payload, node-control metrics of Sparkplug B) to the MQTT client of the product under each of its five profiles (`firmware/tests/inbound_mqtt`). The only write a message caused in them was a write to a subscribed variable inside the work or retain image.
-
-Known limit: Modbus server writes still go to the process image directly and do not honour an active force on the same address (COM-010).
+This is checked in two places. The object files of the handlers of every board image are read at link level (`tools/firmware-test/check_inbound_authority.py`, run by `run.sh size`): none of them references the scheduler's start, stop, pause, resume, step or load, the force set and clear calls, the program loader or store, or a reboot, and the exchange object they write through is held to the same list. And two tests put the inbound code in front of a core whose authority entries count their calls: one drives every Modbus function code and every write count through the server's framing and mapping (`firmware/tests/inbound_authority`), and one delivers hostile topics and payloads (stop, run, force, load commands in text and JSON, every byte value, the longest payload, node-control metrics of Sparkplug B) to the MQTT client of the product under each of its five profiles (`firmware/tests/inbound_mqtt`). The only write a message caused in them was a write to a bound variable, queued through the exchange (`zplc_exchange_write`), the one interface the inbound code may reach.
 
 ## Saved settings
 

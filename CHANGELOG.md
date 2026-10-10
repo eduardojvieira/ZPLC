@@ -24,7 +24,12 @@ All notable changes are documented here.
   cannot be mounted (the Nucleo-H743ZI) now reports the error instead of
   `OK`. The AWS fleet certificate and key were never mapped to a store entry,
   so their save always failed; they are mapped now. An Azure direct method is
-  answered `501` instead of `200`, since none is implemented.
+  answered `501` instead of `200`, since none is implemented. A new project
+  in the IDE (and `packages/zplc.json`) starts the same way, with MQTT off, no
+  broker, TLS on port 8883 and the certificate verified, and the settings page
+  always sends `mqtt_security` so the device never falls back to its own
+  default; `firmware/configure_zplc.py` has no default broker and asks for
+  `--broker`. The editor keeps the `warnings` list of `zplc status --json`.
 - Release firmware has no command that reads or writes memory outside the PLC
   regions (COM-022). The Zephyr shell's `devmem` was on by default in every
   board image; `firmware/app/prj.conf` turns it off, the diagnostic image
@@ -54,7 +59,11 @@ All notable changes are documented here.
   compiles the product's MQTT client with its Sparkplug B protobuf files and
   delivers hostile topics and payloads to it under each of the five profiles:
   nothing reached run control, the force table or the loader, and the only
-  write was to a subscribed variable inside the work or retain image.
+  write was to a subscribed variable, queued through the exchange
+  (`zplc_exchange_write`), the one interface the inbound sources may reach.
+  The link check lists the exchange symbols and refuses an inbound object that
+  reaches the scheduler, the force table or the loader directly, and refuses
+  the exchange object itself if it does.
 - No MCP tool and no AI path opens the device link (COM-030).
   `src/mcp/deviceLink.test.ts` enumerates the tools and resources of the live
   server, builds the module graph of the MCP entry point and of the AI
@@ -63,7 +72,9 @@ All notable changes are documented here.
   `electron/aiDeviceLink.test.ts` shows that an AI request carries only its
   six fields. While writing it, `compiler_check` and `compiler_compile`
   turned out to answer `MCP_INTERNAL_ERROR` for every real project: the
-  compiler summary gained `draftCounter` and the MCP result schema did not.
+  compiler summary gained `draftCounter` and the MCP result schema did not;
+  the schema knows it now, and a test runs the shipped operations (not stand-ins)
+  through the dispatcher over a bundled project.
 - A Modbus function block that is reset while its request is in flight no
   longer hands the slot to another block (COM-008): the worker owns a queued or
   running slot until it is through, a full request queue writes the whole
