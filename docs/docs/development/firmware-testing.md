@@ -172,10 +172,6 @@ the heap high-water mark.
 
 ## Known limits
 
-- `zplc.scheduler_admission` runs on both `native_sim` variants and not yet on
-  `qemu_cortex_m3`: 38 of 46 cases pass there and then a control thread never
-  runs while the scheduler holds a batch. The reproduction is in its
-  `testcase.yaml`.
 - `vm_core` and `loader_verify` do not run on `qemu_cortex_m0`. The VM keeps
   8 KB of fixed process images and about 5 KB of static state at the default
   stack depth, so the whole suite exceeds 16 KB with the sizes it needs, and

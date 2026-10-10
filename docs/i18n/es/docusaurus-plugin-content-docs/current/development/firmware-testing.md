@@ -186,10 +186,6 @@ ni la marca máxima del heap.
 
 ## Límites conocidos
 
-- `zplc.scheduler_admission` se ejecuta en ambas variantes de `native_sim` y
-  todavía no en `qemu_cortex_m3`: allí pasan 38 de 46 casos y luego un hilo de
-  control nunca se ejecuta mientras el planificador retiene un lote. La
-  reproducción está en su `testcase.yaml`.
 - `vm_core` y `loader_verify` no se ejecutan en `qemu_cortex_m0`. La VM
   mantiene 8 KB de imágenes de proceso fijas y unos 5 KB de estado estático
   con la profundidad de pila por defecto, así que la suite completa excede

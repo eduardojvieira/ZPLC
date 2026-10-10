@@ -122,14 +122,13 @@ run_host() { # mode extra-flags
   # LeakSanitizer does not exist for i386.
   [ "${mode}" = "host32" ] && asan_opts="detect_leaks=0"
   echo "==> ${mode}: cmake + ctest of firmware/lib/zplc_core"
-  (
-    set -e
+  {
     cmake -S "${ZPLC_FW_REPO}/firmware/lib/zplc_core" -B "${build}" -DCMAKE_BUILD_TYPE=Debug \
-      -DCMAKE_C_FLAGS="${flags} -fsanitize=address,undefined,float-cast-overflow -fno-sanitize-recover=undefined,float-cast-overflow -fno-omit-frame-pointer"
-    cmake --build "${build}" --parallel
-    ASAN_OPTIONS="${asan_opts}" UBSAN_OPTIONS=halt_on_error=1 \
-      ctest --test-dir "${build}" --output-on-failure
-  ) > "${OUT}/${mode}.log" 2>&1 || rc=$?
+      -DCMAKE_C_FLAGS="${flags} -fsanitize=address,undefined,float-cast-overflow -fno-sanitize-recover=undefined,float-cast-overflow -fno-omit-frame-pointer" &&
+      cmake --build "${build}" --parallel &&
+      ASAN_OPTIONS="${asan_opts}" UBSAN_OPTIONS=halt_on_error=1 \
+        ctest --test-dir "${build}" --output-on-failure
+  } > "${OUT}/${mode}.log" 2>&1 || rc=$?
   local summary
   summary="$(tail -n 12 "${OUT}/${mode}.log" | tr '\n' ' ')"
   if [ "${rc}" -eq 0 ]; then
@@ -198,13 +197,12 @@ run_app() {
     }
   fi
   echo "==> app: cmake + ctest of firmware/app/tests"
-  (
-    set -e
+  {
     cmake -S "${ZPLC_FW_REPO}/firmware/app/tests" -B "${build}" \
-      -DNANOPB_DIR="${ZPLC_FW_WS}/modules/lib/nanopb" -DPROTO_BUILD_DIR="${proto}"
-    cmake --build "${build}" --parallel
-    ctest --test-dir "${build}" --output-on-failure
-  ) > "${OUT}/app.log" 2>&1 || rc=$?
+      -DNANOPB_DIR="${ZPLC_FW_WS}/modules/lib/nanopb" -DPROTO_BUILD_DIR="${proto}" &&
+      cmake --build "${build}" --parallel &&
+      ctest --test-dir "${build}" --output-on-failure
+  } > "${OUT}/app.log" 2>&1 || rc=$?
   if [ "${rc}" -eq 0 ]; then
     record "PASS app  ctest test_encode_sparkplug_payload (host, against the ${id} nanopb output)"
   else
