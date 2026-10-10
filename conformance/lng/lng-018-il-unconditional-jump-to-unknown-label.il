@@ -1,0 +1,8 @@
+PROGRAM BadJump
+VAR
+  X : BOOL;
+END_VAR
+  LD TRUE
+  ST X
+  JMP missing
+END_PROGRAM

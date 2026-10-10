@@ -1,0 +1,5 @@
+PROGRAM Direct
+  LD %IX0.0
+  ANDN %IX0.1
+  ST %QX0.0
+END_PROGRAM

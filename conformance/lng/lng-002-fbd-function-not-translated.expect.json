@@ -1,0 +1,9 @@
+{
+  "requirement": "LNG-002",
+  "title": "an FBD block of a type the transpiler does not translate is rejected by name",
+  "build": "fails",
+  "messageIncludes": [
+    "'root'",
+    "SQRT"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "requirement": "LNG-019",
+  "title": "IL arithmetic and comparison in parentheses",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 50
+    },
+    {
+      "at": "%QX2.0",
+      "type": "BOOL",
+      "value": true
+    }
+  ]
+}

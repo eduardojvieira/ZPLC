@@ -1,0 +1,34 @@
+{
+  "requirement": "LNG-018",
+  "title": "an IL JMPCN skips the code between it and its label only while the condition holds",
+  "scans": 4,
+  "scanMs": 10,
+  "inputs": [
+    {
+      "at": "%IX0.0",
+      "type": "BOOL",
+      "value": true,
+      "beforeScan": 1
+    },
+    {
+      "at": "%IX0.0",
+      "type": "BOOL",
+      "value": false,
+      "beforeScan": 3
+    }
+  ],
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 2,
+      "afterScan": 4
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 4,
+      "afterScan": 4
+    }
+  ]
+}

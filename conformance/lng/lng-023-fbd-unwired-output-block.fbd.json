@@ -1,0 +1,26 @@
+{
+  "name": "Open",
+  "variables": {
+    "local": [],
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "Res",
+        "type": "BOOL",
+        "address": "%QX0.0"
+      }
+    ]
+  },
+  "blocks": [
+    {
+      "id": "out",
+      "type": "output",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "variableName": "Res"
+    }
+  ],
+  "connections": []
+}

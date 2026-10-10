@@ -1,0 +1,26 @@
+{
+  "requirement": "LNG-018",
+  "title": "an IL backward jump loops and restarts on every scan",
+  "scans": 3,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 3,
+      "afterScan": 1
+    },
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 3,
+      "afterScan": 2
+    },
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 3,
+      "afterScan": 3
+    }
+  ]
+}

@@ -3,12 +3,13 @@
  * 
  * Converts LD (Ladder Diagram) models to IEC 61131-3 Structured Text.
  * 
- * Strategy:
- * - Each rung becomes a boolean expression
- * - Contacts in series (same row) are AND logic
- * - Contacts in parallel (different rows with vertical links) are OR logic
- * - Coils are assignments to outputs
- * - Function blocks are called inline
+ * Strategy: the power flow of a rung is followed column by column, left to right.
+ * - Contacts in series AND the power that reaches them; a branch splits the power into its rows and
+ *   joins them again with OR (branches nest).
+ * - A coil or a function block takes the power that reaches its own position, so logic placed after a
+ *   block uses that block's output (its Q), and a coil on a parallel row follows its own row.
+ * - Edge contacts and edge coils keep their previous state in R_TRIG / F_TRIG instances.
+ * - An element or connection that cannot be translated is an error that names it (LNG-002).
  * 
  * Supports both grid-based and legacy linear models.
  */
@@ -17,8 +18,10 @@ import type {
   LDModel, 
   LDRung, 
   LDElement, 
+  LDBranch,
+  LDCell,
 } from '../models/ld';
-import { isGridBasedRung, convertToGridRung, isContact, isCoil, isFunctionBlock } from '../models/ld';
+import { isGridBasedRung, convertToGridRung } from '../models/ld';
 import { DataType, getFB, parseIOAddress, parseTimeLiteral, TokenType } from '@zplc/compiler';
 import { getFunctionBlockNamesForVisualEditors } from '../catalog/blockCatalog';
 import { getDefaultPorts } from '../models/fbd';
@@ -40,8 +43,13 @@ interface Writer { type: string; rung: number; }
 const IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
 const MEMBER_REFERENCE = /^([A-Za-z_][A-Za-z0-9_]*)\.([A-Za-z_][A-Za-z0-9_]*)$/;
 const CUSTOM_MODBUS_BLOCKS = new Set(['MB_COIL', 'MB_DISCRETE_INPUT', 'MB_INPUT_REGISTER', 'MB_HOLDING_REGISTER']);
-const SUPPORTED_CONTACTS = new Set(['contact_no', 'contact_nc']);
-const SUPPORTED_COILS = new Set(['coil', 'coil_negated', 'coil_set', 'coil_reset']);
+const SUPPORTED_CONTACTS = new Set(['contact_no', 'contact_nc', 'contact_p', 'contact_n']);
+const SUPPORTED_COILS = new Set(['coil', 'coil_negated', 'coil_set', 'coil_reset', 'coil_p', 'coil_n']);
+/** The output of a standard block that carries the power on to the elements after it. */
+const POWER_OUTPUT: Record<string, string> = {
+  TON: 'Q', TOF: 'Q', TP: 'Q', CTU: 'Q', CTD: 'Q', CTUD: 'QU', R_TRIG: 'Q', F_TRIG: 'Q', SR: 'Q1', RS: 'Q1',
+};
+const GENERATED_STATE = /^(_rung\d+_result(_\d+)?|_edge_r\d+_.*)$/i;
 const ST_KEYWORDS = new Set<string>(Object.values(TokenType));
 const SUPPORTED_DATA_TYPES = new Set(Object.values(DataType).map((type) => key(type)));
 
@@ -200,6 +208,7 @@ function validateModbusHelper(element: UnknownRecord, rung: UnknownRecord, symbo
     if (port !== 'IN' && port !== 'ADDR') errors.push(`Function block '${String(element.id)}' does not support input '${port}'`);
   }
   resolveDestination(parameters.IN, `Function block '${String(element.id)}' input 'IN'`, symbols, errors);
+  if (parameters.ADDR === undefined) errors.push(`Function block '${String(element.id)}' requires parameters.ADDR`);
   if (parameters.ADDR !== undefined && (typeof parameters.ADDR !== 'string' || !/^\d+$/.test(parameters.ADDR) || Number(parameters.ADDR) > 65535)) {
     errors.push(`Function block '${String(element.id)}' input 'ADDR' must be a decimal address from 0 to 65535`);
   }
@@ -237,7 +246,7 @@ function validateElement(value: unknown, rung: UnknownRecord, symbols: Map<strin
     return;
   }
   if (value.type === 'left_rail' || value.type === 'right_rail') return;
-  if (value.type !== 'function_block') { errors.push(`Unsupported LD element type '${value.type}'`); return; }
+  if (value.type !== 'function_block') { errors.push(`Unsupported LD element type '${value.type}' (element '${String(value.id)}' in rung ${String(rung.number)})`); return; }
   if (!isTypeName(value.fbType) || !isIdentifier(value.instance)) { errors.push(`Function block '${String(value.id)}' requires a known type and instance`); return; }
   const known = new Set(getFunctionBlockNamesForVisualEditors().map(key));
   if (!known.has(key(value.fbType))) { errors.push(`Function block '${value.fbType}' is not in the visual catalog`); return; }
@@ -290,8 +299,8 @@ function validateLDForTranspilation(input: unknown): string[] {
     if (values !== undefined && !Array.isArray(values)) errors.push(`LD variables.${section} must be an array`);
     if (Array.isArray(values)) values.forEach((value) => validateVariable(value, section, symbols, errors));
   }
-  for (let index = 1; index <= (input.rungs as unknown[]).length; index++) {
-    if (symbols.has(`_RUNG${index}_RESULT`)) errors.push(`Variable '_rung${index}_result' collides with generated rung state`);
+  for (const symbol of symbols.values()) {
+    if (GENERATED_STATE.test(String(symbol.variable.name))) errors.push(`Variable '${String(symbol.variable.name)}' collides with generated rung state`);
   }
   const rungIds = new Set<string>();
   const writers = new Map<string, Writer[]>();
@@ -348,56 +357,85 @@ function validateLDForTranspilation(input: unknown): string[] {
   return errors;
 }
 
+function branchRecords(rung: UnknownRecord): LDBranch[] {
+  return (Array.isArray(rung.branches) ? rung.branches : []).filter((branch): branch is LDBranch =>
+    isRecord(branch) && Array.isArray(branch.rows) && branch.rows.length >= 2 && branch.rows.every(isInteger)
+    && isInteger(branch.startCol) && isInteger(branch.endCol));
+}
+
 function validateGridPowerPath(rung: UnknownRecord, errors: string[]): void {
   if (!Array.isArray(rung.grid) || !isRecord(rung.gridConfig) || !isInteger(rung.gridConfig.rows) || !isInteger(rung.gridConfig.cols)) return;
-  const branches = Array.isArray(rung.branches) ? rung.branches.filter(isRecord) : [];
+  const grid = rung.grid as unknown[];
+  const cols = rung.gridConfig.cols as number;
+  const branches = branchRecords(rung);
   const branchAt = (row: number, col: number) => branches.some((branch) =>
-    Array.isArray(branch.rows) && branch.rows.includes(row) && isInteger(branch.startCol) && isInteger(branch.endCol) && col >= branch.startCol && col <= branch.endCol,
+    branch.rows.includes(row) && col >= branch.startCol && col <= branch.endCol,
   );
+  let structural = true;
   let requiredEnd = -1;
-  for (let rowIndex = 0; rowIndex < rung.grid.length; rowIndex++) {
-    const row = rung.grid[rowIndex];
-    if (!Array.isArray(row)) continue;
+  grid.forEach((row, rowIndex) => {
+    if (!Array.isArray(row)) { structural = false; return; }
     row.forEach((cell, colIndex) => {
       if (!isRecord(cell) || typeof cell.hasWire !== 'boolean') {
         errors.push(`Rung '${String(rung.id)}' cell ${rowIndex},${colIndex} hasWire must be boolean`);
+        structural = false;
         return;
       }
       if (!isRecord(cell.element)) return;
       if (cell.element.type === 'left_rail' || cell.element.type === 'right_rail') errors.push(`Rung '${String(rung.id)}' rails are not allowed in a grid`);
       if (!cell.hasWire) errors.push(`Rung '${String(rung.id)}' element '${String(cell.element.id)}' must be on a wire`);
       if (rowIndex === 0) requiredEnd = Math.max(requiredEnd, colIndex);
-      if (rowIndex > 0) {
-        if (!branchAt(rowIndex, colIndex)) errors.push(`Rung '${String(rung.id)}' row ${rowIndex} element '${String(cell.element.id)}' must be inside a flat branch`);
-        if (cell.element.type !== 'contact_no' && cell.element.type !== 'contact_nc') errors.push(`Rung '${String(rung.id)}' only contacts are supported outside row 0`);
+      if (rowIndex > 0 && !branchAt(rowIndex, colIndex)) {
+        errors.push(`Rung '${String(rung.id)}' row ${rowIndex} element '${String(cell.element.id)}' must be inside a branch`);
       }
     });
-  }
+  });
   for (const branch of branches) {
-    if (!isInteger(branch.startCol) || !isInteger(branch.endCol) || !Array.isArray(branch.rows) || !branch.rows.includes(0)) continue;
-    requiredEnd = Math.max(requiredEnd, branch.endCol);
-    for (const rowIndex of branch.rows) {
-      const row = rung.grid[rowIndex];
+    // The main line carries the power over every branch that starts on it
+    if (branch.rows[0] === 0) requiredEnd = Math.max(requiredEnd, branch.endCol);
+    // A row that a nested branch added is wired only where that branch is: it checks that row itself
+    const nestedRows = new Set(branches.filter((other) => other.parentBranchId !== undefined && key(other.parentBranchId) === key(branch.id))
+      .flatMap((other) => other.rows.slice(1)));
+    for (const rowIndex of branch.rows.filter((row) => !nestedRows.has(row))) {
+      const row = grid[rowIndex];
       if (!Array.isArray(row)) continue;
-      const contacts = row.slice(branch.startCol, branch.endCol + 1).filter((cell) => isRecord(cell) && isRecord(cell.element) && (cell.element.type === 'contact_no' || cell.element.type === 'contact_nc'));
-      if (contacts.length === 0) errors.push(`Rung '${String(rung.id)}' branch '${String(branch.id)}' row ${rowIndex} must contain a contact`);
-      const lastSemanticCell = row.reduce((last, cell, col) => isRecord(cell) && isRecord(cell.element) ? col : last, branch.startCol);
-      for (let col = branch.startCol; col <= lastSemanticCell; col++) {
-        if (!isRecord(row[col]) || row[col].hasWire !== true) errors.push(`Rung '${String(rung.id)}' branch '${String(branch.id)}' must be wired across row ${rowIndex}`);
+      const inside = row.slice(branch.startCol, branch.endCol + 1);
+      if (rowIndex !== branch.rows[0] && !inside.some((cell) => isRecord(cell) && isRecord(cell.element))) {
+        errors.push(`Rung '${String(rung.id)}' branch '${String(branch.id)}' row ${rowIndex} must contain an element`);
+      }
+      // The power of a parallel row reaches the join only over a wire the whole way across the branch
+      const lastCol = rowIndex === branch.rows[0]
+        ? row.reduce((last: number, cell, col) => isRecord(cell) && isRecord(cell.element) && col <= branch.endCol ? col : last, branch.startCol)
+        : branch.endCol;
+      for (let col = branch.startCol; col <= lastCol; col++) {
+        if (!isRecord(row[col]) || row[col].hasWire !== true) {
+          errors.push(`Rung '${String(rung.id)}' branch '${String(branch.id)}' must be wired across row ${rowIndex}`);
+          break;
+        }
       }
     }
   }
-  const primaryRow = rung.grid[0];
+  const primaryRow = grid[0];
   if (Array.isArray(primaryRow)) {
     for (let col = 0; col <= requiredEnd; col++) {
       if (!isRecord(primaryRow[col]) || primaryRow[col].hasWire !== true) errors.push(`Rung '${String(rung.id)}' row 0 must be wired continuously through column ${col}`);
     }
   }
-  for (let rowIndex = 1; rowIndex < rung.grid.length; rowIndex++) {
-    const row = rung.grid[rowIndex];
+  for (let rowIndex = 1; rowIndex < grid.length; rowIndex++) {
+    const row = grid[rowIndex];
     if (!Array.isArray(row)) continue;
     row.forEach((cell, colIndex) => {
       if (isRecord(cell) && (cell.hasWire === true || cell.element !== null) && !branchAt(rowIndex, colIndex)) errors.push(`Rung '${String(rung.id)}' row ${rowIndex} has orphaned wiring at column ${colIndex}`);
+    });
+  }
+  // The power must reach every element: a branch has to start on a row that has power, and an element on
+  // a row after its branch has ended is on no path at all
+  if (structural && errors.length === 0) {
+    walkRung(grid as LDCell[][], branches, cols, {
+      rail: true,
+      join: (values: boolean[]) => values.some(Boolean),
+      element: (_element, _row, _col, power) => power,
+      unpowered: (what) => errors.push(`Rung '${String(rung.id)}' ${what}`),
     });
   }
 }
@@ -408,207 +446,167 @@ function validateBranches(rung: UnknownRecord, errors: string[]): void {
   if (Array.isArray(rung.verticalLinks) && rung.verticalLinks.length > 0 && (!Array.isArray(branches) || branches.length === 0)) errors.push(`Rung '${String(rung.id)}' verticalLinks require branches`);
   if (branches === undefined) return;
   if (!Array.isArray(branches)) { errors.push(`Rung '${String(rung.id)}' branches must be an array`); return; }
-  const seen = new Set<string>();
-  const intervals: Array<[number, number]> = [];
   const config = isRecord(rung.gridConfig) ? rung.gridConfig : {};
+  const configCols = config.cols;
+  const configRows = config.rows;
+  const accepted: LDBranch[] = [];
+  const seen = new Set<string>();
   for (const branch of branches) {
     const startCol = isRecord(branch) ? branch.startCol : undefined;
     const endCol = isRecord(branch) ? branch.endCol : undefined;
     const rows = isRecord(branch) ? branch.rows : undefined;
-    const configCols = config.cols;
-    const configRows = config.rows;
-    if (!isRecord(branch) || !isIdentifier(branch.id) || !isInteger(startCol) || !isInteger(endCol) || !Array.isArray(rows) || !rows.includes(0) || new Set(rows).size !== rows.length || branch.parentBranchId !== undefined || startCol < 0 || endCol < startCol || !isInteger(configCols) || !isInteger(configRows) || endCol >= configCols || rows.length < 2 || rows.some((row) => !isInteger(row) || row < 0 || row >= configRows)) {
-      errors.push(`Rung '${String(rung.id)}' has an invalid or nested branch`);
+    if (!isRecord(branch) || !isIdentifier(branch.id) || !isInteger(startCol) || !isInteger(endCol) || !Array.isArray(rows) || new Set(rows).size !== rows.length
+      || (branch.parentBranchId !== undefined && typeof branch.parentBranchId !== 'string')
+      || startCol < 0 || endCol < startCol || !isInteger(configCols) || !isInteger(configRows) || endCol >= configCols || rows.length < 2
+      || rows.some((row) => !isInteger(row) || row < 0 || row >= configRows)) {
+      errors.push(`Rung '${String(rung.id)}' has an invalid branch${isRecord(branch) && typeof branch.id === 'string' ? ` '${branch.id}'` : ''}`);
       continue;
     }
     if (seen.has(key(branch.id))) errors.push(`Rung '${String(rung.id)}' has duplicate branch id '${branch.id}'`);
     seen.add(key(branch.id));
-    if (intervals.some(([start, end]) => startCol <= end && start <= endCol)) errors.push(`Rung '${String(rung.id)}' has overlapping branches`);
-    intervals.push([startCol, endCol]);
+    accepted.push(branch as unknown as LDBranch);
+  }
+  const contains = (outer: LDBranch, inner: LDBranch) => outer.startCol <= inner.startCol && inner.endCol <= outer.endCol;
+  for (const branch of accepted) {
+    if (branch.parentBranchId === undefined) continue;
+    const parent = accepted.find((candidate) => key(candidate.id) === key(branch.parentBranchId!));
+    if (!parent) errors.push(`Rung '${String(rung.id)}' branch '${branch.id}' names an unknown parent '${branch.parentBranchId}'`);
+    else if (!contains(parent, branch) || !parent.rows.includes(branch.rows[0])) {
+      errors.push(`Rung '${String(rung.id)}' branch '${branch.id}' does not fit inside its parent '${parent.id}'`);
+    }
+  }
+  // Branches nest (the inner one names the outer as its parent) or stand apart: any other overlap has no meaning
+  const ancestors = (branch: LDBranch): Set<string> => {
+    const found = new Set<string>();
+    for (let next = branch.parentBranchId; next !== undefined && !found.has(key(next));) {
+      found.add(key(next));
+      next = accepted.find((candidate) => key(candidate.id) === key(next!))?.parentBranchId;
+    }
+    return found;
+  };
+  for (let i = 0; i < accepted.length; i++) {
+    for (let j = i + 1; j < accepted.length; j++) {
+      const a = accepted[i];
+      const b = accepted[j];
+      const overlap = a.startCol <= b.endCol && b.startCol <= a.endCol;
+      if (overlap && !ancestors(a).has(key(b.id)) && !ancestors(b).has(key(a.id))) {
+        errors.push(`Rung '${String(rung.id)}' has overlapping branches '${a.id}' and '${b.id}'`);
+      }
+    }
   }
 }
 
 // =============================================================================
-// Grid Analysis Helpers
+// Power flow
 // =============================================================================
 
-import type { LDBranch } from '../models/ld';
-
-/**
- * Element with its position in the grid
- */
-interface PositionedElement {
-  element: LDElement;
-  row: number;
-  col: number;
+interface WalkHooks<T> {
+  /** The power at the left rail. */
+  rail: T;
+  /** The power that leaves a branch, from the power of each of its rows. */
+  join(values: T[]): T;
+  /** An element on a row that has power: returns the power that leaves it. */
+  element(element: LDElement, row: number, col: number, power: T): T;
+  /** Something that no power reaches (an element after its branch ended, a branch off a dead row). */
+  unpowered(what: string): void;
 }
 
 /**
- * Collect all contacts from the grid with their positions
+ * Follows the power through a rung column by column, left to right, top to bottom in a column.
+ * A branch splits the power of its source row (its first row) into all its rows at its first column
+ * and joins them back into the source row after its last column; the innermost branch joins first.
+ * Returns the power at the right end of the main line.
  */
-function collectContacts(rung: LDRung): PositionedElement[] {
-  const contacts: PositionedElement[] = [];
-  
-  if (!rung.grid) return contacts;
-  
-  rung.grid.forEach((row, rowIdx) => {
-    row.forEach((cell, colIdx) => {
-      if (cell.element && isContact(cell.element.type)) {
-        contacts.push({
-          element: cell.element,
-          row: rowIdx,
-          col: cell.element.col ?? colIdx,
-        });
-      }
-    });
-  });
-  
-  return contacts;
-}
-
-/**
- * Generate expression for a single element
- */
-function elementToExpression(element: LDElement): string {
-  switch (element.type) {
-    case 'contact_no':
-      return element.variable || 'FALSE';
-    case 'contact_nc':
-      return `NOT ${element.variable || 'FALSE'}`;
-    case 'contact_p':
-      // Rising edge - would need previous state tracking
-      return `(${element.variable || 'FALSE'} AND NOT _prev_${element.variable})`;
-    case 'contact_n':
-      // Falling edge
-      return `(NOT ${element.variable || 'FALSE'} AND _prev_${element.variable})`;
-    default:
-      return '';
-  }
-}
-
-/**
- * Generate expression for a rung by analyzing column regions
- * 
- * Strategy:
- * 1. Identify branch regions (startCol to endCol)
- * 2. For contacts OUTSIDE any branch: series (AND)
- * 3. For contacts INSIDE a branch: parallel by row (OR), then AND with rest
- * 
- * Example Rung 1 of motor control:
- *   Row 0: [StopPB_NC @ col0] [Overload_NC @ col1] [StartPB_NO @ col2] ... [Coil @ col7]
- *   Row 1:                                         [MotorRunning @ col2]
- *   Branch: { startCol: 2, endCol: 4, rows: [0, 1] }
- * 
- * Result: NOT StopPB AND NOT Overload AND (StartPB OR MotorRunning)
- */
-function generateRungExpression(rung: LDRung): string {
-  const contacts = collectContacts(rung);
-  
-  if (contacts.length === 0) {
-    return 'TRUE';
-  }
-  
-  const branches = rung.branches || [];
-  
-  // No branches: simple series (AND all contacts on row 0)
-  if (branches.length === 0) {
-    const row0Contacts = contacts.filter(c => c.row === 0);
-    row0Contacts.sort((a, b) => a.col - b.col);
-    const exprs = row0Contacts.map(c => elementToExpression(c.element)).filter(e => e !== '');
-    return exprs.length > 0 ? exprs.join(' AND ') : 'TRUE';
-  }
-  
-  // With branches: need to build expression respecting column regions
-  
-  // Group columns into regions: "series" (outside branches) or "parallel" (inside a branch)
-  interface Region {
-    type: 'series' | 'parallel';
-    startCol: number;
-    endCol: number;
-    branch?: LDBranch;
-  }
-  
-  const regions: Region[] = [];
-  let currentCol = 0;
-  const numCols = rung.gridConfig?.cols || 8;
-  
-  // Sort branches by startCol
-  const sortedBranches = [...branches].sort((a, b) => a.startCol - b.startCol);
-  
-  for (const branch of sortedBranches) {
-    // Add series region before this branch (if any)
-    if (branch.startCol > currentCol) {
-      regions.push({
-        type: 'series',
-        startCol: currentCol,
-        endCol: branch.startCol - 1,
-      });
+function walkRung<T>(grid: LDCell[][], branches: LDBranch[], cols: number, hooks: WalkHooks<T>): T | undefined {
+  const power: Array<T | undefined> = grid.map(() => undefined);
+  power[0] = hooks.rail;
+  // The innermost branch joins first: depth is the number of parents above a branch
+  const depth = (branch: LDBranch): number => {
+    let found = 0;
+    for (let next = branch.parentBranchId; next !== undefined && found <= branches.length;) {
+      found++;
+      next = branches.find((candidate) => candidate.id === next)?.parentBranchId;
     }
-    
-    // Add parallel region for this branch
-    regions.push({
-      type: 'parallel',
-      startCol: branch.startCol,
-      endCol: branch.endCol,
-      branch,
-    });
-    
-    currentCol = branch.endCol + 1;
-  }
-  
-  // Add trailing series region (if any)
-  if (currentCol < numCols) {
-    regions.push({
-      type: 'series',
-      startCol: currentCol,
-      endCol: numCols - 1,
-    });
-  }
-  
-  // Now generate expression for each region
-  const regionExprs: string[] = [];
-  
-  for (const region of regions) {
-    const regionContacts = contacts.filter(c => c.col >= region.startCol && c.col <= region.endCol);
-    
-    if (regionContacts.length === 0) continue;
-    
-    if (region.type === 'series') {
-      // All contacts in series (AND)
-      // Only use row 0 contacts for series regions
-      const row0Contacts = regionContacts.filter(c => c.row === 0);
-      row0Contacts.sort((a, b) => a.col - b.col);
-      
-      for (const c of row0Contacts) {
-        const expr = elementToExpression(c.element);
-        if (expr) regionExprs.push(expr);
+    return found;
+  };
+  const byDepth = (a: LDBranch, b: LDBranch) => depth(a) - depth(b);
+  for (let col = 0; col < cols; col++) {
+    const starting = branches.filter((branch) => branch.startCol === col).sort(byDepth);
+    for (const branch of starting) {
+      const source = power[branch.rows[0]];
+      if (source === undefined) hooks.unpowered(`branch '${branch.id}' starts on row ${branch.rows[0]}, which no power reaches at column ${col}`);
+      for (const row of branch.rows.slice(1)) power[row] = source;
+    }
+    for (let row = 0; row < grid.length; row++) {
+      const element = grid[row]?.[col]?.element;
+      if (!element) continue;
+      const incoming = power[row];
+      if (incoming === undefined) {
+        hooks.unpowered(`element '${element.id}' (row ${row}, column ${col}) is on a path that no power reaches`);
+        continue;
       }
-    } else {
-      // Parallel region: group by row, OR between rows
-      const branch = region.branch!;
-      const rowExprs: string[] = [];
-      
-      for (const rowIdx of branch.rows) {
-        const rowContacts = regionContacts.filter(c => c.row === rowIdx);
-        rowContacts.sort((a, b) => a.col - b.col);
-        
-        // AND contacts within the same row
-        const exprs = rowContacts.map(c => elementToExpression(c.element)).filter(e => e !== '');
-        if (exprs.length > 0) {
-          rowExprs.push(exprs.length === 1 ? exprs[0] : `(${exprs.join(' AND ')})`);
-        }
-      }
-      
-      // OR between rows
-      if (rowExprs.length > 1) {
-        regionExprs.push(`(${rowExprs.join(' OR ')})`);
-      } else if (rowExprs.length === 1) {
-        regionExprs.push(rowExprs[0]);
-      }
+      power[row] = hooks.element(element, row, col, incoming);
+    }
+    const ending = branches.filter((branch) => branch.endCol === col).sort((a, b) => byDepth(b, a));
+    for (const branch of ending) {
+      const values = branch.rows.map((row) => power[row]).filter((value): value is T => value !== undefined);
+      for (const row of branch.rows.slice(1)) power[row] = undefined;
+      power[branch.rows[0]] = values.length > 0 ? hooks.join(values) : undefined;
     }
   }
-  
-  return regionExprs.length > 0 ? regionExprs.join(' AND ') : 'TRUE';
+  return power[0];
+}
+
+// =============================================================================
+// Power expressions
+// =============================================================================
+
+/** A boolean power expression: AND of series elements, OR of parallel paths. */
+type Power =
+  | { kind: 'true' }
+  | { kind: 'atom'; text: string }
+  | { kind: 'and'; terms: Power[] }
+  | { kind: 'or'; terms: Power[] };
+
+const TRUE_POWER: Power = { kind: 'true' };
+const atom = (text: string): Power => ({ kind: 'atom', text });
+
+function and(...parts: Power[]): Power {
+  const terms: Power[] = [];
+  for (const part of parts) {
+    if (part.kind === 'true') continue;
+    if (part.kind === 'and') terms.push(...part.terms);
+    else terms.push(part);
+  }
+  if (terms.length === 0) return TRUE_POWER;
+  return terms.length === 1 ? terms[0] : { kind: 'and', terms };
+}
+
+function printPower(power: Power): string {
+  switch (power.kind) {
+    case 'true': return 'TRUE';
+    case 'atom': return power.text;
+    case 'and': return power.terms.map((term) => term.kind === 'or' ? `(${printPower(term)})` : printPower(term)).join(' AND ');
+    case 'or': return power.terms.map((term) => term.kind === 'and' ? `(${printPower(term)})` : printPower(term)).join(' OR ');
+  }
+}
+
+/** OR of parallel paths; the series elements that all of them share are taken out in front. */
+function or(values: Power[]): Power {
+  const terms: Power[] = [];
+  const printed = new Set<string>();
+  for (const value of values.flatMap((entry) => entry.kind === 'or' ? entry.terms : [entry])) {
+    const text = printPower(value);
+    if (!printed.has(text)) { printed.add(text); terms.push(value); }
+  }
+  if (terms.some((term) => term.kind === 'true')) return TRUE_POWER;
+  if (terms.length === 1) return terms[0];
+  const chains = terms.map((term) => term.kind === 'and' ? term.terms : [term]);
+  let shared = 0;
+  while (chains.every((chain) => shared < chain.length && printPower(chain[shared]) === printPower(chains[0][shared]))) shared++;
+  if (shared === 0) return { kind: 'or', terms };
+  const rests = chains.map((chain) => and(...chain.slice(shared)));
+  return and(...chains[0].slice(0, shared), or(rests));
 }
 
 // =============================================================================
@@ -623,6 +621,8 @@ export function transpileLDToST(input: unknown): TranspileResult {
     const preflightErrors = validateLDForTranspilation(input);
     if (preflightErrors.length > 0) return { success: false, source: '', errors: preflightErrors };
     const model = input as LDModel;
+    // The rungs are generated first: the state they need is declared with the program's variables
+    const rungCodes = model.rungs.map((rung) => generateRungCode(rung));
     // Generate program header
     lines.push(`PROGRAM ${model.name}`);
     lines.push('');
@@ -656,10 +656,12 @@ export function transpileLDToST(input: unknown): TranspileResult {
       }
     }
     
-    // Internal rung results
-    for (let i = 0; i < model.rungs.length; i++) {
-      lines.push(`    _rung${i + 1}_result : BOOL;`);
-    }
+    // Generated state: the power of each rung, and the edge detectors of its edge elements
+    rungCodes.forEach((code, index) => {
+      const result = `_rung${model.rungs[index].number}_result`;
+      for (const name of new Set([result, ...code.stages])) lines.push(`    ${name} : BOOL;`);
+      for (const { name, type } of code.edges) lines.push(`    ${name} : ${type};`);
+    });
     
     lines.push('END_VAR');
     lines.push('');
@@ -680,16 +682,15 @@ export function transpileLDToST(input: unknown): TranspileResult {
     lines.push('(* LD Execution - Auto-generated *)');
     lines.push('');
     
-    for (const rung of model.rungs) {
-      const rungCode = generateRungCode(rung);
+    model.rungs.forEach((rung, index) => {
       if (rung.comment) {
         lines.push(`(* Rung ${rung.number}: ${rung.comment} *)`);
       } else {
         lines.push(`(* Rung ${rung.number} *)`);
       }
-      lines.push(...rungCode);
+      lines.push(...rungCodes[index].lines);
       lines.push('');
-    }
+    });
     
     lines.push('END_PROGRAM');
     
@@ -712,130 +713,137 @@ export function transpileLDToST(input: unknown): TranspileResult {
 // Rung Code Generation
 // =============================================================================
 
-function generateRungCode(rung: LDRung): string[] {
+const MODBUS_HELPERS: Record<string, string> = {
+  MB_COIL: 'MODBUS_COIL',
+  MB_DISCRETE_INPUT: 'MODBUS_DISCRETE_INPUT',
+  MB_INPUT_REGISTER: 'MODBUS_INPUT_REGISTER',
+  MB_HOLDING_REGISTER: 'MODBUS_HOLDING_REGISTER',
+};
+
+interface RungCode {
+  lines: string[];
+  /** State variables this rung needs: BOOL stages of the power flow, and the edge detectors. */
+  stages: string[];
+  edges: Array<{ name: string; type: 'R_TRIG' | 'F_TRIG' }>;
+}
+
+function generateRungCode(rung: LDRung): RungCode {
   // Convert to grid-based if necessary
   const gridRung = isGridBasedRung(rung) ? rung : convertToGridRung(rung);
-  
-  const lines: string[] = [];
-  
-  // Collect all elements from the grid
-  const allElements: LDElement[] = [];
-  if (gridRung.grid) {
-    gridRung.grid.forEach(row => {
-      row.forEach(cell => {
-        if (cell.element) {
-          allElements.push(cell.element);
-        }
-      });
-    });
-  }
-  
-  const coils = allElements.filter(e => isCoil(e.type));
-  const fbs = allElements.filter(e => isFunctionBlock(e.type));
-  
-  // Generate rung expression (contacts only) using the new column-aware algorithm
-  const rungExpr = generateRungExpression(gridRung);
-  
-  // Store rung result
-  lines.push(`_rung${rung.number}_result := ${rungExpr};`);
-  
-  // Generate function block calls
-  for (const fb of fbs) {
-    if (fb.fbType && fb.instance) {
-      if (['MB_COIL', 'MB_DISCRETE_INPUT', 'MB_INPUT_REGISTER', 'MB_HOLDING_REGISTER'].includes(fb.fbType)) {
-        const helperMap: Record<string, string> = {
-          MB_COIL: 'MODBUS_COIL',
-          MB_DISCRETE_INPUT: 'MODBUS_DISCRETE_INPUT',
-          MB_INPUT_REGISTER: 'MODBUS_INPUT_REGISTER',
-          MB_HOLDING_REGISTER: 'MODBUS_HOLDING_REGISTER',
-        };
-        const inputVar = fb.parameters!.IN;
-        const addrVar = fb.parameters?.ADDR ?? '1';
-        lines.push(`IF _rung${rung.number}_result THEN ${inputVar} := ${inputVar}; END_IF;`);
-        lines.push(`${helperMap[fb.fbType]}(${inputVar}, ${addrVar});`);
-        if (fb.outputs) {
-          for (const [port, variable] of Object.entries(fb.outputs)) {
-            if (port === 'STATUS') {
-              lines.push(`${variable} := _rung${rung.number}_result;`);
-            } else {
-              lines.push(`${variable} := ${inputVar};`);
-            }
-          }
-        }
-        continue;
-      }
+  const grid = gridRung.grid ?? [];
+  const cols = gridRung.gridConfig?.cols ?? Math.max(0, ...grid.map((row) => row.length));
 
-      const params: string[] = [];
-      
-      // Input parameters
-      if (fb.parameters) {
-        for (const [key, value] of Object.entries(fb.parameters)) {
-          if (value === 'CONNECTED') {
-            params.push(`${key} := _rung${rung.number}_result`);
-          } else {
-            params.push(`${key} := ${value}`);
+  const lines: string[] = [];
+  const stages: string[] = [];
+  const edges: RungCode['edges'] = [];
+
+  /** The power as a BOOL variable of its own, so what follows it sees the value that flowed. */
+  const stage = (power: Power): string => {
+    if (power.kind === 'atom' && stages.includes(power.text)) return power.text;
+    const name = stages.length === 0 ? `_rung${rung.number}_result` : `_rung${rung.number}_result_${stages.length + 1}`;
+    stages.push(name);
+    lines.push(`${name} := ${printPower(power)};`);
+    return name;
+  };
+  const edge = (element: LDElement, type: 'R_TRIG' | 'F_TRIG', clock: string): string => {
+    const name = `_edge_r${rung.number}_${element.id}`;
+    edges.push({ name, type });
+    lines.push(`${name}(CLK := ${clock});`);
+    return `${name}.Q`;
+  };
+
+  const functionBlock = (fb: LDElement, power: Power): Power => {
+    if (!fb.fbType || !fb.instance) throw new Error(`Rung '${rung.id}' function block '${fb.id}' needs a type and an instance`);
+    const helper = MODBUS_HELPERS[fb.fbType];
+    if (helper) {
+      const flow = stage(power);
+      const inputVar = fb.parameters!.IN;
+      const addrVar = fb.parameters!.ADDR;
+      lines.push(`IF ${flow} THEN ${inputVar} := ${inputVar}; END_IF;`);
+      lines.push(`${helper}(${inputVar}, ${addrVar});`);
+      for (const [port, variable] of Object.entries(fb.outputs ?? {})) {
+        lines.push(port === 'STATUS' ? `${variable} := ${flow};` : `${variable} := ${inputVar};`);
+      }
+      return atom(flow);
+    }
+
+    // Power reaches the block through the input the model marks CONNECTED, or by default through the
+    // input that starts it (IN of timers and triggers, CU of counters, EN of the communication blocks)
+    const powerInput = fb.parameters !== undefined ? undefined : defaultPowerInput(fb.fbType);
+    const connected = fb.parameters !== undefined && Object.values(fb.parameters).includes('CONNECTED');
+    const flow = connected || powerInput ? stage(power) : undefined;
+    const params: string[] = [];
+    for (const [name, value] of Object.entries(fb.parameters ?? {})) {
+      params.push(`${name} := ${value === 'CONNECTED' ? flow : value}`);
+    }
+    if (powerInput) params.push(`${powerInput} := ${flow}`);
+    lines.push(`${fb.instance}(${params.join(', ')});`);
+    for (const [port, variable] of Object.entries(fb.outputs ?? {})) {
+      lines.push(`${variable} := ${fb.instance}.${port};`);
+    }
+    // What follows the block gets its output; a block with no such output passes the power through
+    const out = POWER_OUTPUT[fb.fbType.toUpperCase()];
+    return out ? atom(`${fb.instance}.${out}`) : flow ? atom(flow) : power;
+  };
+
+  const output = walkRung(grid, gridRung.branches ?? [], cols, {
+    rail: TRUE_POWER,
+    join: or,
+    unpowered: (what) => { throw new Error(`Rung '${rung.id}' ${what}`); },
+    element: (element, _row, _col, power) => {
+      switch (element.type) {
+        case 'contact_no':
+          return and(power, atom(element.variable!));
+        case 'contact_nc':
+          return and(power, atom(`NOT ${element.variable}`));
+        case 'contact_p':
+          return and(power, atom(edge(element, 'R_TRIG', element.variable!)));
+        case 'contact_n':
+          return and(power, atom(edge(element, 'F_TRIG', element.variable!)));
+        case 'coil':
+        case 'coil_negated':
+        case 'coil_set':
+        case 'coil_reset':
+        case 'coil_p':
+        case 'coil_n': {
+          const flow = stage(power);
+          switch (element.type) {
+            case 'coil': lines.push(`${element.variable} := ${flow};`); break;
+            case 'coil_negated': lines.push(`${element.variable} := NOT ${flow};`); break;
+            case 'coil_set': lines.push(`IF ${flow} THEN ${element.variable} := TRUE; END_IF;`); break;
+            case 'coil_reset': lines.push(`IF ${flow} THEN ${element.variable} := FALSE; END_IF;`); break;
+            case 'coil_p': lines.push(`${element.variable} := ${edge(element, 'R_TRIG', flow)};`); break;
+            case 'coil_n': lines.push(`${element.variable} := ${edge(element, 'F_TRIG', flow)};`); break;
           }
+          return atom(flow);
         }
-      } else {
-        // Default: connect IN to rung result for timers/triggers
-        if (['TON', 'TOF', 'TP', 'R_TRIG', 'F_TRIG'].includes(fb.fbType)) {
-          params.push(`IN := _rung${rung.number}_result`);
-        } else if (['CTU', 'CTD'].includes(fb.fbType)) {
-          params.push(`CU := _rung${rung.number}_result`);
-        } else if (fb.fbType === 'CTUD') {
-          params.push(`CU := _rung${rung.number}_result`);
-        } else if (['COMM_PUBLISH', 'COMM_SUBSCRIBE', 'COMM_MODBUS', 'COMM_CONNECT',
-                    'MB_COIL', 'MB_DISCRETE_INPUT', 'MB_INPUT_REGISTER', 'MB_HOLDING_REGISTER',
-                    'MB_READ_HREG', 'MB_WRITE_HREG', 'MB_READ_COIL', 'MB_WRITE_COIL',
-                    'MQTT_CONNECT', 'MQTT_PUBLISH', 'MQTT_SUBSCRIBE',
-                    'AZURE_C2D_RECV', 'AZURE_DPS_PROV', 'AZURE_EG_PUB',
-                    'AWS_FLEET_PROV', 'SPB_REBIRTH'].includes(fb.fbType)) {
-          params.push(`EN := _rung${rung.number}_result`);
-        }
+        case 'function_block':
+          return functionBlock(element, power);
+        default:
+          throw new Error(`Rung '${rung.id}' element '${element.id}' has the unsupported type '${element.type}'`);
       }
-      
-      lines.push(`${fb.instance}(${params.join(', ')});`);
-      
-      // Output bindings
-      if (fb.outputs) {
-        for (const [port, variable] of Object.entries(fb.outputs)) {
-          lines.push(`${variable} := ${fb.instance}.${port};`);
-        }
-      }
-    }
+    },
+  });
+
+  // A rung whose power no element consumed still has its result, for the rung's state variable
+  if (stages.length === 0) {
+    stages.push(`_rung${rung.number}_result`);
+    lines.push(`_rung${rung.number}_result := ${printPower(output ?? TRUE_POWER)};`);
   }
-  
-  // Generate coil assignments
-  for (const coil of coils) {
-    if (!coil.variable) continue;
-    
-    switch (coil.type) {
-      case 'coil':
-        lines.push(`${coil.variable} := _rung${rung.number}_result;`);
-        break;
-      case 'coil_negated':
-        lines.push(`${coil.variable} := NOT _rung${rung.number}_result;`);
-        break;
-      case 'coil_set':
-        lines.push(`IF _rung${rung.number}_result THEN ${coil.variable} := TRUE; END_IF;`);
-        break;
-      case 'coil_reset':
-        lines.push(`IF _rung${rung.number}_result THEN ${coil.variable} := FALSE; END_IF;`);
-        break;
-      case 'coil_p':
-        // One-shot on rising edge - would need previous state tracking
-        lines.push(`(* P-coil: ${coil.variable} - requires edge detection *)`);
-        lines.push(`${coil.variable} := _rung${rung.number}_result AND NOT _prev_rung${rung.number};`);
-        break;
-      case 'coil_n':
-        // One-shot on falling edge
-        lines.push(`(* N-coil: ${coil.variable} - requires edge detection *)`);
-        lines.push(`${coil.variable} := NOT _rung${rung.number}_result AND _prev_rung${rung.number};`);
-        break;
-    }
-  }
-  
-  return lines;
+  return { lines, stages, edges };
+}
+
+function defaultPowerInput(fbType: string): string | undefined {
+  if (['TON', 'TOF', 'TP'].includes(fbType)) return 'IN';
+  if (fbType === 'R_TRIG' || fbType === 'F_TRIG') return 'CLK';
+  if (fbType === 'CTU' || fbType === 'CTUD') return 'CU';
+  if (fbType === 'CTD') return 'CD';
+  if (['COMM_PUBLISH', 'COMM_SUBSCRIBE', 'COMM_MODBUS', 'COMM_CONNECT',
+    'MB_READ_HREG', 'MB_WRITE_HREG', 'MB_READ_COIL', 'MB_WRITE_COIL',
+    'MQTT_CONNECT', 'MQTT_PUBLISH', 'MQTT_SUBSCRIBE',
+    'AZURE_C2D_RECV', 'AZURE_DPS_PROV', 'AZURE_EG_PUB',
+    'AWS_FLEET_PROV', 'SPB_REBIRTH'].includes(fbType)) return 'EN';
+  return undefined;
 }
 
 // =============================================================================

@@ -1,0 +1,40 @@
+{
+  "name": "Stored",
+  "variables": {
+    "local": [],
+    "outputs": [
+      {
+        "name": "Lamp",
+        "type": "BOOL",
+        "address": "%QX0.0"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "id": "s_a",
+      "name": "A",
+      "isInitial": true,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "actions": [
+        {
+          "qualifier": "SD",
+          "actionName": "LampOn",
+          "time": "T#1s"
+        }
+      ]
+    }
+  ],
+  "transitions": [],
+  "actions": [
+    {
+      "id": "lamp_on",
+      "name": "LampOn",
+      "type": "ST",
+      "body": "Lamp := TRUE;"
+    }
+  ]
+}

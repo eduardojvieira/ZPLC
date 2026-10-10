@@ -1,0 +1,8 @@
+{
+  "requirement": "LNG-017",
+  "title": "an IL closing parenthesis without an opening one is an error on its line",
+  "build": "fails",
+  "lines": [
+    10
+  ]
+}

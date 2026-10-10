@@ -1,0 +1,202 @@
+{
+  "name": "Chain",
+  "variables": {
+    "local": [
+      {
+        "name": "R1",
+        "type": "REAL",
+        "initialValue": 1.5
+      },
+      {
+        "name": "R2",
+        "type": "REAL",
+        "initialValue": 2.25
+      }
+    ],
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "Scaled",
+        "type": "REAL",
+        "address": "%QD0"
+      },
+      {
+        "name": "High",
+        "type": "BOOL",
+        "address": "%QX4.0"
+      }
+    ]
+  },
+  "blocks": [
+    {
+      "id": "r1",
+      "type": "input",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "variableName": "R1"
+    },
+    {
+      "id": "r2",
+      "type": "input",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "variableName": "R2"
+    },
+    {
+      "id": "add1",
+      "type": "ADD",
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "two",
+      "type": "constant",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "dataType": "INT",
+      "value": 2
+    },
+    {
+      "id": "mul1",
+      "type": "MUL",
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "limit",
+      "type": "constant",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "dataType": "REAL",
+      "value": 7.0
+    },
+    {
+      "id": "gt1",
+      "type": "GT",
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "out1",
+      "type": "output",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "variableName": "Scaled"
+    },
+    {
+      "id": "out2",
+      "type": "output",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "variableName": "High"
+    }
+  ],
+  "connections": [
+    {
+      "id": "w1",
+      "from": {
+        "block": "r1",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "add1",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "w2",
+      "from": {
+        "block": "r2",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "add1",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "w3",
+      "from": {
+        "block": "add1",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "mul1",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "w4",
+      "from": {
+        "block": "two",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "mul1",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "w5",
+      "from": {
+        "block": "mul1",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "gt1",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "w6",
+      "from": {
+        "block": "limit",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "gt1",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "w7",
+      "from": {
+        "block": "mul1",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "out1",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "w8",
+      "from": {
+        "block": "gt1",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "out2",
+        "port": "IN"
+      }
+    }
+  ]
+}

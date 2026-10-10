@@ -1,0 +1,11 @@
+{
+  "requirement": "LNG-017",
+  "title": "an IL unknown mnemonic is an error on its line",
+  "build": "fails",
+  "lines": [
+    7
+  ],
+  "messageIncludes": [
+    "ANDD"
+  ]
+}

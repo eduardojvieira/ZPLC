@@ -65,7 +65,7 @@ describe('Blinky visual editor replay', () => {
     expect(await readFile(join(blinkyFbd, 'src/main.fbd.json'), 'utf8')).toBe(canonical);
   });
 
-  it('replays a pasted FBD node as one undoable canonical snapshot, then reopens and compiles it', async () => {
+  it('replays a pasted FBD node as one undoable canonical snapshot, then reopens it and refuses to build the unwired block', async () => {
     const canonical = await readFile(join(blinkyFbd, 'src/main.fbd.json'), 'utf8');
     const model = parseFBDModel(canonical);
     const fragment = copyFBDFragment(model.blocks.map((block) => ({ id: block.id, type: 'block', position: block.position, selected: block.id === 'not_led', data: block })), model.connections.map((connection) => ({ id: connection.id, source: connection.from.block, sourceHandle: connection.from.port, target: connection.to.block, targetHandle: connection.to.port })))!;
@@ -76,7 +76,13 @@ describe('Blinky visual editor replay', () => {
       const reopened = parseFBDModel(await readFile(join(root, 'src/main.fbd.json'), 'utf8'));
       expect(reopened.blocks).toHaveLength(model.blocks.length + 1);
       expect(reopened.connections).toEqual(model.connections);
-      await expectCompiles(root);
+      // The pasted NOT block has no wire yet: Build says which block and input (LNG-023), it does not write a 0
+      const built = await compilerCompile(root);
+      expect(built.ok).toBe(false);
+      expect(built.evidence.diagnostics).toEqual([expect.objectContaining({
+        code: 'COMPILATION_FAILED', path: 'src/main.fbd.json',
+        message: expect.stringContaining("FBD block 'not_led_copy' (NOT): input 'IN' is not wired"),
+      })]);
     } finally { await rm(root, { recursive: true, force: true }); }
   });
 

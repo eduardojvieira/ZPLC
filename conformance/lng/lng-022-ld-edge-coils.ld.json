@@ -1,0 +1,77 @@
+{
+  "name": "Rungs",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "Start",
+        "type": "BOOL",
+        "address": "%IX0.0"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Rise",
+        "type": "BOOL",
+        "address": "%QX0.0"
+      },
+      {
+        "name": "Fall",
+        "type": "BOOL",
+        "address": "%QX0.1"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung1",
+      "number": 1,
+      "elements": [
+        {
+          "id": "c1",
+          "type": "contact_no",
+          "position": {
+            "x": 50,
+            "y": 0
+          },
+          "variable": "Start"
+        },
+        {
+          "id": "k1",
+          "type": "coil_p",
+          "position": {
+            "x": 150,
+            "y": 0
+          },
+          "variable": "Rise"
+        }
+      ],
+      "connections": []
+    },
+    {
+      "id": "rung2",
+      "number": 2,
+      "elements": [
+        {
+          "id": "c2",
+          "type": "contact_no",
+          "position": {
+            "x": 50,
+            "y": 0
+          },
+          "variable": "Start"
+        },
+        {
+          "id": "k2",
+          "type": "coil_n",
+          "position": {
+            "x": 150,
+            "y": 0
+          },
+          "variable": "Fall"
+        }
+      ],
+      "connections": []
+    }
+  ]
+}

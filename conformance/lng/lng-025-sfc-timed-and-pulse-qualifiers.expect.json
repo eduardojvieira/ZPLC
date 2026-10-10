@@ -1,0 +1,23 @@
+{
+  "requirement": "LNG-025",
+  "title": "an SFC pulse runs once, a limited action for its time, a delayed one after it",
+  "scans": 6,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 1
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 3
+    },
+    {
+      "at": "%QW2",
+      "type": "INT",
+      "value": 3
+    }
+  ]
+}

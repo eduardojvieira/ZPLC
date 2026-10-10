@@ -7,17 +7,22 @@
  * SFC is a state machine language where:
  * - Steps represent states with associated actions
  * - Transitions define conditions to move between steps
- * - Actions are executed when a step is active
+ * - Actions are executed according to their qualifier while a step is active
  * 
- * Strategy:
- * 1. Generate step active flags (X_step_name : BOOL)
- * 2. Generate step timers (T_step_name : TIME for .T property)
- * 3. Generate transition logic
- * 4. Generate action execution based on active steps
+ * One scan runs in this order, so that every step that became active runs its actions for at least
+ * one scan and a sequence crosses at most one transition per scan (LNG-024):
+ * 1. Step timers (the time .T of each step) are updated.
+ * 2. Actions run on the state the scan started with: N while the step is active, S until an R,
+ *    L for a time, D after a time, P/P1 when the step was entered, P0 when it was left.
+ * 3. Transitions are evaluated against that same state, in priority order within a step (the first
+ *    that holds wins), and only then applied: all the steps they leave are cleared, then all the
+ *    steps they enter are set (simultaneous divergence and convergence).
+ * Anything the transpiler cannot translate (an unknown qualifier, a reference to a missing step...)
+ * is an error that names the step, transition or action.
  */
 
 import { parseIOAddress, parseTimeLiteral, tokenize, TokenType } from '@zplc/compiler';
-import { validateSFCModel, type SFCModel, type SFCStep, type SFCVariable } from '../models/sfc';
+import { validateSFCModel, type SFCAction, type SFCModel, type SFCStep, type SFCTransition, type SFCVariable } from '../models/sfc';
 
 // =============================================================================
 // Types
@@ -43,6 +48,38 @@ export function transpileSFCToST(input: SFCModel): TranspileResult {
     if (preflightErrors.length > 0) {
       return { success: false, source: '', errors: preflightErrors };
     }
+
+    const stepIds = model.steps.map((step) => step.id);
+    const stepById = new Map(model.steps.map((step) => [step.id, step]));
+    const actions = model.actions ?? [];
+
+    // The actions of the chart, in the order the steps first use them, with every association
+    interface Association { step: SFCStep; qualifier: string; time?: string }
+    const used = new Map<string, { action: SFCAction; associations: Association[] }>();
+    for (const step of model.steps) {
+      for (const ref of step.actions ?? []) {
+        const action = actions.find((a) => a.id === ref.actionName || a.name === ref.actionName)!;
+        const entry = used.get(action.id) ?? { action, associations: [] };
+        entry.associations.push({ step, qualifier: ref.qualifier, time: ref.time });
+        used.set(action.id, entry);
+      }
+    }
+    const edgeSteps = new Set<string>();
+    const storedActions = new Set<string>();
+    for (const { action, associations } of used.values()) {
+      for (const { step, qualifier } of associations) {
+        if (qualifier === 'P' || qualifier === 'P0' || qualifier === 'P1') edgeSteps.add(step.id);
+        if (qualifier === 'S' || qualifier === 'R') storedActions.add(action.id);
+      }
+    }
+
+    // Transitions in the order they are evaluated: priority first, then the order of the file
+    const evaluation = model.transitions
+      .map((transition, index) => ({ transition, index }))
+      .sort((a, b) => ((a.transition.priority ?? a.index) - (b.transition.priority ?? b.index)) || a.index - b.index)
+      .map((entry) => entry.transition);
+    const leaves = (transition: SFCTransition): string[] => transition.fromSteps ?? [transition.fromStep];
+    const enters = (transition: SFCTransition): string[] => transition.toSteps ?? [transition.toStep];
 
     // Generate program header
     lines.push(`PROGRAM ${model.name}`);
@@ -70,6 +107,24 @@ export function transpileSFCToST(input: SFCModel): TranspileResult {
       lines.push(`    T_${step.id} : TON; (* Timer for ${step.name} *)`);
     }
     lines.push('');
+
+    // What the scan has to remember: the previous state of a step (for edges), the transitions that
+    // fire in this scan, and the stored actions
+    if (edgeSteps.size > 0) {
+      lines.push('    (* Previous Step State (P, P0 and P1 pulses) *)');
+      for (const id of stepIds.filter((candidate) => edgeSteps.has(candidate))) lines.push(`    _XP_${id} : BOOL := FALSE;`);
+      lines.push('');
+    }
+    if (model.transitions.length > 0) {
+      lines.push('    (* Transitions That Fire In This Scan *)');
+      for (const transition of model.transitions) lines.push(`    _F_${transition.id} : BOOL;`);
+      lines.push('');
+    }
+    if (storedActions.size > 0) {
+      lines.push('    (* Stored Actions (S until R) *)');
+      for (const id of storedActions) lines.push(`    _S_${id} : BOOL := FALSE;`);
+      lines.push('');
+    }
     
     lines.push('END_VAR');
     lines.push('');
@@ -88,69 +143,97 @@ export function transpileSFCToST(input: SFCModel): TranspileResult {
     lines.push('');
     
     // =========================================================================
-    // Transition Logic
-    // =========================================================================
-    lines.push('(* === Transition Logic === *)');
-    
-    for (const transition of model.transitions) {
-      const fromStep = model.steps.find(s => s.id === transition.fromStep)!;
-      const toStep = model.steps.find(s => s.id === transition.toStep)!;
-      
-      // Transform condition to replace step.T with timer access
-      const condition = transformCondition(transition.condition, model.steps);
-      
-      // Build transition comment
-      const transComment = transition.comment 
-        ? `Transition: ${fromStep.name} -> ${toStep.name} (${transition.comment})`
-        : `Transition: ${fromStep.name} -> ${toStep.name}`;
-      
-      lines.push(`(* ${transComment} *)`);
-      lines.push(`IF X_${fromStep.id} AND (${condition}) THEN`);
-      lines.push(`    X_${fromStep.id} := FALSE;`);
-      lines.push(`    X_${toStep.id} := TRUE;`);
-      lines.push(`END_IF;`);
-      lines.push('');
-    }
-    
-    // =========================================================================
-    // Action Execution
+    // Action Execution - on the state the scan started with
     // =========================================================================
     lines.push('(* === Action Execution === *)');
-    
-    for (const step of model.steps) {
-      if (!step.actions || step.actions.length === 0) continue;
-      
-      // Build step comment
-      const stepComment = step.comment 
-        ? `Step: ${step.name} - ${step.comment}`
-        : `Step: ${step.name}`;
-      
-      lines.push(`(* ${stepComment} *)`);
-      lines.push(`IF X_${step.id} THEN`);
-      
-      for (const actionRef of step.actions) {
-        // Find the action definition
-        const action = model.actions!.find(a => a.id === actionRef.actionName || a.name === actionRef.actionName)!;
-        // Add action comment if present
-        if (action.comment) {
-          lines.push(`    (* Action: ${action.name} - ${action.comment} *)`);
-        } else {
-          lines.push(`    (* Action: ${action.name} *)`);
-        }
-        // Add action qualifier comment if applicable
-        if (actionRef.comment) {
-          lines.push(`    (* ${actionRef.comment} *)`);
-        }
-        // Embed the action body
-        const actionLines = action.body.split('\n');
-        for (const line of actionLines) {
-          lines.push(`    ${line.trim()}`);
-        }
+
+    // S sets and R resets the stored state; R is applied last so that it wins
+    for (const { action, associations } of used.values()) {
+      for (const { step, qualifier } of associations) {
+        if (qualifier === 'S') lines.push(`IF X_${step.id} THEN _S_${action.id} := TRUE; END_IF;`);
       }
-      
+    }
+    for (const { action, associations } of used.values()) {
+      for (const { step, qualifier } of associations) {
+        if (qualifier === 'R') lines.push(`IF X_${step.id} THEN _S_${action.id} := FALSE; END_IF;`);
+      }
+    }
+    
+    for (const { action, associations } of used.values()) {
+      const active: string[] = [];
+      for (const { step, qualifier, time } of associations) {
+        let term: string;
+        switch (qualifier) {
+          case 'N': term = `X_${step.id}`; break;
+          case 'S':
+          case 'R': term = `_S_${action.id}`; break;
+          case 'P':
+          case 'P1': term = `(X_${step.id} AND NOT _XP_${step.id})`; break;
+          case 'P0': term = `(NOT X_${step.id} AND _XP_${step.id})`; break;
+          case 'L': term = `(X_${step.id} AND T_${step.id}.ET < ${time})`; break;
+          default: term = `(X_${step.id} AND T_${step.id}.ET >= ${time})`; break; // D
+        }
+        if (!active.includes(term)) active.push(term);
+      }
+
+      // Add action comment if present
+      if (action.comment) {
+        lines.push(`(* Action: ${action.name} - ${action.comment} *)`);
+      } else {
+        lines.push(`(* Action: ${action.name} *)`);
+      }
+      lines.push(`IF ${active.join(' OR ')} THEN`);
+      // Embed the action body
+      for (const line of replaceStepReferences(action.body, model.steps).split('\n')) {
+        lines.push(`    ${line.trim()}`);
+      }
       lines.push('END_IF;');
       lines.push('');
     }
+
+    // The state this scan ran on becomes the previous state of the next one
+    for (const id of stepIds.filter((candidate) => edgeSteps.has(candidate))) lines.push(`_XP_${id} := X_${id};`);
+    if (edgeSteps.size > 0) lines.push('');
+    
+    // =========================================================================
+    // Transition Logic - evaluated first, applied after
+    // =========================================================================
+    lines.push('(* === Transition Logic === *)');
+    
+    evaluation.forEach((transition, position) => {
+      const from = leaves(transition).map((id) => stepById.get(id)!);
+      const to = enters(transition).map((id) => stepById.get(id)!);
+      
+      // Transform condition to replace step.X and step.T with the generated state
+      const condition = replaceStepReferences(transition.condition, model.steps);
+      
+      // A transition that shares a step with one evaluated before it fires only when that one did not
+      const blockers = evaluation.slice(0, position).filter((earlier) => leaves(earlier).some((id) => leaves(transition).includes(id)));
+      const guards = [...from.map((step) => `X_${step.id}`), `(${condition})`, ...blockers.map((earlier) => `NOT _F_${earlier.id}`)];
+
+      // Build transition comment
+      const names = (steps: SFCStep[]) => steps.map((step) => step.name).join(' & ');
+      const transComment = transition.comment 
+        ? `Transition: ${names(from)} -> ${names(to)} (${transition.comment})`
+        : `Transition: ${names(from)} -> ${names(to)}`;
+      
+      lines.push(`(* ${transComment} *)`);
+      lines.push(`_F_${transition.id} := ${guards.join(' AND ')};`);
+    });
+    if (evaluation.length > 0) lines.push('');
+
+    // Apply: every step a fired transition leaves is cleared before any step it enters is set
+    for (const transition of model.transitions) {
+      for (const step of leaves(transition).map((id) => stepById.get(id)!)) {
+        lines.push(`IF _F_${transition.id} THEN X_${step.id} := FALSE; END_IF;`);
+      }
+    }
+    for (const transition of model.transitions) {
+      for (const step of enters(transition).map((id) => stepById.get(id)!)) {
+        lines.push(`IF _F_${transition.id} THEN X_${step.id} := TRUE; END_IF;`);
+      }
+    }
+    lines.push('');
     
     lines.push('END_PROGRAM');
     
@@ -228,17 +311,31 @@ function validateSFCForTranspilation(model: SFCModel): string[] {
       if (!isNonEmptyString(actionRef.actionName)) {
         errors.push(`Step ${describeId(step.id)} action reference must be non-empty`);
       }
-      if (actionRef.qualifier !== 'N') {
-        errors.push(`Step ${describeId(step.id)} only N action qualifier is supported`);
-      }
-      if (actionRef.time !== undefined) {
-        errors.push(`Step ${describeId(step.id)} N action qualifier does not support time`);
+      const qualifier = String(actionRef.qualifier);
+      if (!SUPPORTED_QUALIFIERS.has(qualifier)) {
+        errors.push(`Step ${describeId(step.id)} action qualifier '${qualifier}' is not supported (supported: N, S, R, L, D, P, P0, P1)`);
+      } else if (TIMED_QUALIFIERS.has(qualifier)) {
+        if (!isNonEmptyString(actionRef.time)) {
+          errors.push(`Step ${describeId(step.id)} ${qualifier} action qualifier needs a time, such as T#2s`);
+        } else {
+          try { parseTimeLiteral(actionRef.time); } catch (error) {
+            errors.push(`Step ${describeId(step.id)} ${qualifier} action qualifier has an invalid time: ${error instanceof Error ? error.message : String(error)}`);
+          }
+        }
+      } else if (actionRef.time !== undefined) {
+        errors.push(`Step ${describeId(step.id)} ${qualifier} action qualifier does not support time`);
       }
       validateComment(actionRef.comment, `Step ${describeId(step.id)} action comment`, errors);
     }
   }
 
-  validateVariables(model.variables, steps.map((step) => step.id), errors);
+  const generated = [
+    ...steps.flatMap((step) => [`X_${step.id}`, `T_${step.id}`, `_XP_${step.id}`]),
+    ...transitions.map((transition) => `_F_${transition.id}`),
+    ...actions.filter(isRecord).map((action) => `_S_${String(action.id)}`),
+  ];
+  const stepReferences = new Set(steps.flatMap((step) => [step.id, step.name]).filter(isNonEmptyString).map((name) => name.toUpperCase()));
+  validateVariables(model.variables, generated, stepReferences, errors);
 
   const stepIds = new Set(steps.map((step) => step.id));
   for (const transition of transitions) {
@@ -249,6 +346,19 @@ function validateSFCForTranspilation(model: SFCModel): string[] {
     }
     if (!isNonEmptyString(transition.toStep) || !stepIds.has(transition.toStep)) {
       errors.push(`Transition ${describeId(transition.id)} references an unknown step '${String(transition.toStep)}'`);
+    }
+    for (const [label, list, first] of [['fromSteps', transition.fromSteps, transition.fromStep], ['toSteps', transition.toSteps, transition.toStep]] as const) {
+      if (list === undefined) continue;
+      if (!Array.isArray(list) || list.length === 0 || list.some((id) => !isNonEmptyString(id) || !stepIds.has(id))) {
+        errors.push(`Transition ${describeId(transition.id)} ${label} must list known steps`);
+      } else if (list[0] !== first) {
+        errors.push(`Transition ${describeId(transition.id)} ${label} must start with ${label === 'fromSteps' ? 'fromStep' : 'toStep'} '${first}'`);
+      } else if (new Set(list).size !== list.length) {
+        errors.push(`Transition ${describeId(transition.id)} ${label} lists a step twice`);
+      }
+    }
+    if (transition.priority !== undefined && (typeof transition.priority !== 'number' || !Number.isFinite(transition.priority))) {
+      errors.push(`Transition ${describeId(transition.id)} priority must be a number`);
     }
     if (!isNonEmptyString(transition.condition)) {
       errors.push(`Transition ${describeId(transition.id)} condition must be non-empty`);
@@ -275,6 +385,11 @@ function validateSFCForTranspilation(model: SFCModel): string[] {
       errors.push(`Action ${describeId(action.id)} body must be a non-empty string`);
     } else {
       validateActionBody(action.body, action.id, errors);
+      for (const match of action.body.matchAll(/(?<![A-Za-z0-9_.])([A-Za-z_][A-Za-z0-9_]*)\s*\.\s*(X|T)\s*:=/gi)) {
+        if (stepReferences.has(match[1].toUpperCase())) {
+          errors.push(`Action ${describeId(action.id)} assigns to the step ${match[2].toUpperCase() === 'X' ? 'flag' : 'time'} '${match[1]}.${match[2]}', which is read only`);
+        }
+      }
     }
   }
 
@@ -312,6 +427,10 @@ function validateUniqueIds(items: unknown[], label: string, errors: string[]): v
     ids.add(canonicalId);
   }
 }
+
+/** Action qualifiers the transpiler translates; L and D take a time. */
+const SUPPORTED_QUALIFIERS = new Set(['N', 'S', 'R', 'L', 'D', 'P', 'P0', 'P1']);
+const TIMED_QUALIFIERS = new Set(['L', 'D']);
 
 const IEC_IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
 const BLOCK_COMMENT_DELIMITERS = /\(\*|\*\)/;
@@ -355,7 +474,7 @@ function validateComment(value: unknown, label: string, errors: string[]): void 
   }
 }
 
-function validateVariables(variables: unknown, stepIds: string[], errors: string[]): void {
+function validateVariables(variables: unknown, generatedNames: string[], stepReferences: Set<string>, errors: string[]): void {
   if (variables === undefined) return;
   if (!variables || typeof variables !== 'object' || Array.isArray(variables)) {
     errors.push('Variables must be an object');
@@ -368,7 +487,7 @@ function validateVariables(variables: unknown, stepIds: string[], errors: string
     ['outputs', record.outputs, true],
   ];
   const names = new Set<string>();
-  const reserved = new Set(stepIds.flatMap((id) => [`X_${id}`, `T_${id}`]).map((name) => name.toUpperCase()));
+  const reserved = new Set(generatedNames.map((name) => name.toUpperCase()));
   for (const [section, value, required] of sections) {
     if (value === undefined && !required) continue;
     if (!Array.isArray(value)) {
@@ -388,6 +507,7 @@ function validateVariables(variables: unknown, stepIds: string[], errors: string
         const canonicalName = entry.name.toUpperCase();
         if (names.has(canonicalName)) errors.push(`Duplicate variable name '${entry.name}'`);
         if (reserved.has(canonicalName)) errors.push(`Variable name '${entry.name}' collides with generated step state`);
+        if (stepReferences.has(canonicalName)) errors.push(`Variable name '${entry.name}' collides with a step, so '${entry.name}.T' would be ambiguous`);
         names.add(canonicalName);
       }
       if (entry.address !== undefined) {
@@ -499,7 +619,7 @@ function emitVariableSection(lines: string[], section: 'VAR' | 'VAR_INPUT' | 'VA
   lines.push(section);
   for (const variable of variables) {
     const address = variable.address ? ` AT ${variable.address}` : '';
-    const initialValue = variable.initialValue !== undefined ? ` := ${formatValue(variable.initialValue, variable.type)}` : '';
+    const initialValue = variable.initialValue !== undefined && variable.initialValue !== null ? ` := ${formatValue(variable.initialValue, variable.type)}` : '';
     const comment = variable.comment ? ` (* ${variable.comment} *)` : '';
     lines.push(`    ${variable.name}${address} : ${variable.type}${initialValue};${comment}`);
   }
@@ -512,30 +632,24 @@ function emitVariableSection(lines: string[], section: 'VAR' | 'VAR_INPUT' | 'VA
 // =============================================================================
 
 /**
- * Transform SFC-specific condition syntax to standard ST.
- * Replaces step.T with timer elapsed time access.
+ * Replaces the step flag and the step time of SFC with the state the transpiler generates:
+ * `Step.X` becomes the active flag and `Step.T` the elapsed time of the step's timer. A step is
+ * named by its name or its id, in any case; string literals are left alone.
  */
-function transformCondition(condition: string, steps: SFCStep[]): string {
-  let result = condition;
-  
-  // Replace step_name.T with T_step_id.ET
+function replaceStepReferences(text: string, steps: SFCStep[]): string {
+  const byName = new Map<string, SFCStep>();
   for (const step of steps) {
-    // Match "step_name.T" or "step.T" patterns
-    const patterns = [
-      new RegExp(`\\b${escapeRegExp(step.name)}\\.T\\b`, 'g'),
-      new RegExp(`\\b${escapeRegExp(step.id)}\\.T\\b`, 'g'),
-    ];
-    
-    for (const pattern of patterns) {
-      result = result.replace(pattern, `T_${step.id}.ET`);
-    }
+    byName.set(step.name.toUpperCase(), step);
+    byName.set(step.id.toUpperCase(), step);
   }
-  
-  return result;
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return text.split(/('(?:[^']|'')*')/).map((part, index) => index % 2 === 1 ? part : part.replace(
+    /(?<![A-Za-z0-9_.])([A-Za-z_][A-Za-z0-9_]*)\s*\.\s*(X|T)(?![A-Za-z0-9_])/gi,
+    (whole: string, name: string, member: string) => {
+      const step = byName.get(name.toUpperCase());
+      if (!step) return whole;
+      return member.toUpperCase() === 'X' ? `X_${step.id}` : `T_${step.id}.ET`;
+    },
+  )).join('');
 }
 
 /**

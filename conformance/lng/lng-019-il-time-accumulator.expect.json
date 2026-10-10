@@ -1,0 +1,13 @@
+{
+  "requirement": "LNG-019",
+  "title": "IL TIME accumulator",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "DINT",
+      "value": 1500
+    }
+  ]
+}

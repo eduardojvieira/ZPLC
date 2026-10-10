@@ -1,0 +1,9 @@
+{
+  "requirement": "LNG-023",
+  "title": "an FBD feedback loop is rejected naming a block in the loop",
+  "build": "fails",
+  "messageIncludes": [
+    "Circular",
+    "first"
+  ]
+}

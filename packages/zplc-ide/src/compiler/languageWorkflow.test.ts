@@ -247,9 +247,10 @@ describe('v1.5 language workflow support', () => {
   });
 
   it('keeps the generated ST coordinates on a visual source and says what they refer to', () => {
+    // The block reads a variable the diagram never declared: the generated source is well formed, the compiler refuses it
     const invalidModel = {
       ...FBD_MODEL,
-      variables: { ...FBD_MODEL.variables, local: [{ name: 'Start@', type: 'BOOL' }] },
+      blocks: [{ ...FBD_MODEL.blocks[0], variableName: 'Undeclared' }, FBD_MODEL.blocks[1]],
     };
 
     try {
@@ -260,9 +261,8 @@ describe('v1.5 language workflow support', () => {
       throw new Error('expected a compiler diagnostic');
     } catch (error) {
       const diagnostic = error as CompilerError;
-      expect(diagnostic.phase).toBe('lexer');
+      expect(diagnostic.phase).toBe('codegen');
       expect(diagnostic.line).toBeGreaterThan(0);
-      expect(diagnostic.column).toBeGreaterThan(0);
       expect(diagnostic.sourceRef).toBe('src/main.fbd.json');
       expect(diagnostic.detail).toContain('(position in the generated Structured Text)');
     }
@@ -457,8 +457,8 @@ describe('v1.5 language workflow support', () => {
     const collisionModel = {
       name: 'Collision', variables: { local: [], outputs: [] },
       blocks: [
-        { id: 'a-b', type: 'variable', variableName: 'A', position: { x: 0, y: 0 }, outputs: [{ name: 'OUT', type: 'BOOL' }] },
-        { id: 'a_b', type: 'variable', variableName: 'B', position: { x: 0, y: 100 }, outputs: [{ name: 'OUT', type: 'BOOL' }] },
+        { id: 'a-b', type: 'NOT', position: { x: 0, y: 0 }, inputs: [], outputs: [{ name: 'OUT', type: 'BOOL' }] },
+        { id: 'a_b', type: 'NOT', position: { x: 0, y: 100 }, inputs: [], outputs: [{ name: 'OUT', type: 'BOOL' }] },
         { id: 'sink-one', type: 'output', variableName: 'One', position: { x: 100, y: 0 }, inputs: [{ name: 'IN', type: 'BOOL' }] },
         { id: 'sink-two', type: 'output', variableName: 'Two', position: { x: 100, y: 100 }, inputs: [{ name: 'IN', type: 'BOOL' }] },
       ],

@@ -1,0 +1,8 @@
+PROGRAM Times
+VAR
+  Total AT %QD0 : TIME;
+END_VAR
+  LD T#1s
+  ADD T#500ms
+  ST Total
+END_PROGRAM

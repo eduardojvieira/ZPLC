@@ -1,0 +1,9 @@
+{
+  "requirement": "LNG-023",
+  "title": "an FBD output block with nothing wired to it is rejected, not written as 0",
+  "build": "fails",
+  "messageIncludes": [
+    "'out'",
+    "not wired"
+  ]
+}

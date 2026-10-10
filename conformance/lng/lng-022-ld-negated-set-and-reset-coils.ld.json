@@ -1,0 +1,112 @@
+{
+  "name": "Rungs",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "A",
+        "type": "BOOL",
+        "address": "%IX0.0"
+      },
+      {
+        "name": "B",
+        "type": "BOOL",
+        "address": "%IX0.1"
+      },
+      {
+        "name": "C",
+        "type": "BOOL",
+        "address": "%IX0.2"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "NotA",
+        "type": "BOOL",
+        "address": "%QX0.0"
+      },
+      {
+        "name": "Latch",
+        "type": "BOOL",
+        "address": "%QX0.1"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung1",
+      "number": 1,
+      "elements": [
+        {
+          "id": "c1",
+          "type": "contact_no",
+          "position": {
+            "x": 50,
+            "y": 0
+          },
+          "variable": "A"
+        },
+        {
+          "id": "k1",
+          "type": "coil_negated",
+          "position": {
+            "x": 150,
+            "y": 0
+          },
+          "variable": "NotA"
+        }
+      ],
+      "connections": []
+    },
+    {
+      "id": "rung2",
+      "number": 2,
+      "elements": [
+        {
+          "id": "c2",
+          "type": "contact_no",
+          "position": {
+            "x": 50,
+            "y": 0
+          },
+          "variable": "B"
+        },
+        {
+          "id": "k2",
+          "type": "coil_set",
+          "position": {
+            "x": 150,
+            "y": 0
+          },
+          "variable": "Latch"
+        }
+      ],
+      "connections": []
+    },
+    {
+      "id": "rung3",
+      "number": 3,
+      "elements": [
+        {
+          "id": "c3",
+          "type": "contact_nc",
+          "position": {
+            "x": 50,
+            "y": 0
+          },
+          "variable": "C"
+        },
+        {
+          "id": "k3",
+          "type": "coil_reset",
+          "position": {
+            "x": 150,
+            "y": 0
+          },
+          "variable": "Latch"
+        }
+      ],
+      "connections": []
+    }
+  ]
+}

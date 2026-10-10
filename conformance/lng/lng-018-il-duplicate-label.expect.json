@@ -1,0 +1,11 @@
+{
+  "requirement": "LNG-018",
+  "title": "an IL label defined twice is rejected with the second line",
+  "build": "fails",
+  "lines": [
+    9
+  ],
+  "messageIncludes": [
+    "again"
+  ]
+}

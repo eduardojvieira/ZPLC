@@ -432,7 +432,7 @@ export function tokenizeIL(source: string): ILToken[] {
         // But NOT if it's a FB parameter assignment like PT :=
         if (peek() === ':' && peek(1) !== '=') {
             advance(); // consume :
-            addToken(ILTokenType.LABEL, upper, startColumn);
+            addToken(ILTokenType.LABEL, value, startColumn);
             return;
         }
 

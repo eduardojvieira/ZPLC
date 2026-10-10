@@ -1,0 +1,128 @@
+{
+  "name": "Fork",
+  "variables": {
+    "local": [],
+    "outputs": [
+      {
+        "name": "C1",
+        "type": "INT",
+        "address": "%QW0"
+      },
+      {
+        "name": "C2",
+        "type": "INT",
+        "address": "%QW1"
+      },
+      {
+        "name": "C3",
+        "type": "INT",
+        "address": "%QW2"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Join",
+        "type": "BOOL",
+        "address": "%IX0.0"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "id": "s_a",
+      "name": "A",
+      "isInitial": true,
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "s_b1",
+      "name": "B1",
+      "isInitial": false,
+      "position": {
+        "x": 0,
+        "y": 1
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "Count1"
+        }
+      ]
+    },
+    {
+      "id": "s_b2",
+      "name": "B2",
+      "isInitial": false,
+      "position": {
+        "x": 0,
+        "y": 1
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "Count2"
+        }
+      ]
+    },
+    {
+      "id": "s_d",
+      "name": "D",
+      "isInitial": false,
+      "position": {
+        "x": 0,
+        "y": 2
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "Count3"
+        }
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t_fork",
+      "fromStep": "s_a",
+      "toStep": "s_b1",
+      "condition": "TRUE",
+      "toSteps": [
+        "s_b1",
+        "s_b2"
+      ]
+    },
+    {
+      "id": "t_join",
+      "fromStep": "s_b1",
+      "toStep": "s_d",
+      "condition": "Join",
+      "fromSteps": [
+        "s_b1",
+        "s_b2"
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "id": "c1",
+      "name": "Count1",
+      "type": "ST",
+      "body": "C1 := C1 + 1;"
+    },
+    {
+      "id": "c2",
+      "name": "Count2",
+      "type": "ST",
+      "body": "C2 := C2 + 1;"
+    },
+    {
+      "id": "c3",
+      "name": "Count3",
+      "type": "ST",
+      "body": "C3 := C3 + 1;"
+    }
+  ]
+}

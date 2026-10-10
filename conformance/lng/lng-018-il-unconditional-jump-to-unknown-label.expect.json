@@ -1,0 +1,11 @@
+{
+  "requirement": "LNG-018",
+  "title": "an IL JMP to an unknown label is rejected with its line",
+  "build": "fails",
+  "lines": [
+    7
+  ],
+  "messageIncludes": [
+    "missing"
+  ]
+}

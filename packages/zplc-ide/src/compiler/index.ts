@@ -18,6 +18,7 @@ import {
     assertTaskProgramCardinality,
     compileToBinary,
     CompilerError,
+    parse,
     ZPLC_CONSTANTS,
     type CompilationResult,
     type CompileOptions,
@@ -69,7 +70,9 @@ import { transpileSFCToST } from './transpilers/sfc.ts';
 import { transpileILToST } from './transpilers/il.ts';
 import { parseFBDModel } from '../models/fbd.ts';
 import { parseSFCModel } from '../models/sfc.ts';
-import { parseIL } from './il/parser.ts';
+import { parseIL, ILParseError } from './il/parser.ts';
+import { ILLexerError } from './il/lexer.ts';
+import type { ILProjectSymbols } from './il/ilToST.ts';
 import type {
     ZPLCProjectConfig,
     CommunicationTagConfig,
@@ -92,6 +95,8 @@ export interface TranspileResult {
     success: boolean;
     source: string;
     errors: string[];
+    /** Line in the source file of the first error, for languages whose sources have lines (IL). */
+    line?: number;
 }
 
 /**
@@ -184,7 +189,7 @@ export interface SingleFileTaskResult extends ProjectCompilationResult {
  * @param language - Source language (LD, FBD, SFC, IL)
  * @returns TranspileResult with ST source code
  */
-export function transpileToST(content: string, language: PLCLanguage): TranspileResult {
+export function transpileToST(content: string, language: PLCLanguage, symbols?: ILProjectSymbols): TranspileResult {
     switch (language) {
         case 'LD': {
             try {
@@ -210,8 +215,13 @@ export function transpileToST(content: string, language: PLCLanguage): Transpile
         case 'ST':
             return { success: true, source: content, errors: [] };
         case 'IL': {
-            const ilProgram = parseIL(content);
-            return transpileILToST(ilProgram);
+            try {
+                const ilProgram = parseIL(content);
+                return transpileILToST(ilProgram, { symbols });
+            } catch (error) {
+                const line = error instanceof ILParseError || error instanceof ILLexerError ? error.line : undefined;
+                return { success: false, source: '', errors: [error instanceof Error ? error.message : String(error)], line };
+            }
         }
         default:
             return { success: false, source: '', errors: [`Unknown language: ${language}`] };
@@ -389,6 +399,38 @@ export function applyCommunicationTags(stSource: string, tags: CommunicationTagC
 }
 
 /**
+ * Declarations outside an IL program that its operands may refer to: VAR_GLOBAL variables and the
+ * members of user function blocks, taken from the project's ST sources. A source that does not parse
+ * contributes nothing here; its own diagnostics come from the compile step.
+ */
+function collectProjectSymbols(sources: ProgramSource[]): ILProjectSymbols {
+    const globals = new Map<string, string>();
+    const functionBlocks = new Map<string, Map<string, string>>();
+    for (const source of sources) {
+        if (source.language !== 'ST') continue;
+        let unit;
+        try {
+            unit = parse(source.content);
+        } catch {
+            continue;
+        }
+        for (const block of unit.globalVars) {
+            for (const variable of block.variables) {
+                if (typeof variable.dataType === 'string') globals.set(variable.name.toUpperCase(), variable.dataType.toUpperCase());
+            }
+        }
+        for (const block of unit.functionBlocks) {
+            const members = new Map<string, string>();
+            for (const variable of [...block.inputs, ...block.outputs]) {
+                if (typeof variable.dataType === 'string') members.set(variable.name.toUpperCase(), variable.dataType.toUpperCase());
+            }
+            functionBlocks.set(block.name.toUpperCase(), members);
+        }
+    }
+    return { globals, functionBlocks };
+}
+
+/**
  * Compile a multi-task project to a single .zplc file.
  *
  * @param config - Project configuration (from zplc.json)
@@ -426,6 +468,10 @@ export function compileMultiTaskProject(
             || sourceMap.get(baseName.toLowerCase());
     };
 
+    // Globals and user function blocks that an IL operand may name, read from the project's ST sources
+    let symbols: ILProjectSymbols | undefined;
+    const projectSymbols = (): ILProjectSymbols => symbols ??= collectProjectSymbols(programSources);
+
     const communicationTags = config.communication?.bindings || config.communication?.tags || [];
     const coreSources: CoreProgramSource[] = [];
     const compiledPrograms = new Set<string>();
@@ -441,11 +487,11 @@ export function compileMultiTaskProject(
                 throw new CompilerError(`Program '${progName}' referenced by task but not found in sources`, 0, 0, 'codegen');
             }
 
-            const transpiled = source.language === 'ST'
+            const transpiled: TranspileResult = source.language === 'ST'
                 ? { success: true, source: source.content, errors: [] }
-                : transpileToST(source.content, source.language);
+                : transpileToST(source.content, source.language, source.language === 'IL' ? projectSymbols() : undefined);
             if (!transpiled.success) {
-                throw new CompilerError(`Transpilation of '${progName}' failed: ${transpiled.errors.join('; ')}`, 0, 0, 'parser', source.sourceRef);
+                throw new CompilerError(`Transpilation of '${progName}' failed: ${transpiled.errors.join('; ')}`, transpiled.line ?? 0, 0, 'parser', source.sourceRef);
             }
             if (source.language !== 'ST') visualSourceRefs.add(source.sourceRef ?? progName);
 

@@ -1,0 +1,97 @@
+{
+  "name": "Mixed",
+  "variables": {
+    "local": [
+      {
+        "name": "Count",
+        "type": "INT",
+        "initialValue": 1
+      },
+      {
+        "name": "Level",
+        "type": "REAL",
+        "initialValue": 1.5
+      }
+    ],
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "Res",
+        "type": "REAL",
+        "address": "%QD0"
+      }
+    ]
+  },
+  "blocks": [
+    {
+      "id": "count",
+      "type": "input",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "variableName": "Count"
+    },
+    {
+      "id": "level",
+      "type": "input",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "variableName": "Level"
+    },
+    {
+      "id": "sum",
+      "type": "ADD",
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "out",
+      "type": "output",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "variableName": "Res"
+    }
+  ],
+  "connections": [
+    {
+      "id": "w1",
+      "from": {
+        "block": "count",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "sum",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "w2",
+      "from": {
+        "block": "level",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "sum",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "w3",
+      "from": {
+        "block": "sum",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "out",
+        "port": "IN"
+      }
+    }
+  ]
+}

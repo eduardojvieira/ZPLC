@@ -1,0 +1,108 @@
+{
+  "name": "Coils",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "A",
+        "type": "BOOL",
+        "address": "%IX0.0"
+      },
+      {
+        "name": "B",
+        "type": "BOOL",
+        "address": "%IX0.1"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Y",
+        "type": "BOOL",
+        "address": "%QX0.0"
+      },
+      {
+        "name": "Z",
+        "type": "BOOL",
+        "address": "%QX0.1"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung1",
+      "number": 1,
+      "gridConfig": {
+        "cols": 3,
+        "rows": 2,
+        "cellWidth": 80,
+        "cellHeight": 60
+      },
+      "grid": [
+        [
+          {
+            "element": {
+              "id": "a",
+              "type": "contact_no",
+              "variable": "A",
+              "row": 0,
+              "col": 0
+            },
+            "hasWire": true
+          },
+          {
+            "element": null,
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "y",
+              "type": "coil",
+              "variable": "Y",
+              "row": 0,
+              "col": 2
+            },
+            "hasWire": true
+          }
+        ],
+        [
+          {
+            "element": null,
+            "hasWire": false
+          },
+          {
+            "element": {
+              "id": "b",
+              "type": "contact_no",
+              "variable": "B",
+              "row": 1,
+              "col": 1
+            },
+            "hasWire": true
+          },
+          {
+            "element": {
+              "id": "z",
+              "type": "coil",
+              "variable": "Z",
+              "row": 1,
+              "col": 2
+            },
+            "hasWire": true
+          }
+        ]
+      ],
+      "branches": [
+        {
+          "id": "br",
+          "startCol": 1,
+          "endCol": 2,
+          "rows": [
+            0,
+            1
+          ]
+        }
+      ],
+      "verticalLinks": []
+    }
+  ]
+}

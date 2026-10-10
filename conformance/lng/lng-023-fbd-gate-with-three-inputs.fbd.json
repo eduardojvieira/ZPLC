@@ -1,0 +1,142 @@
+{
+  "name": "Gates",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "A",
+        "type": "BOOL",
+        "address": "%IX0.0"
+      },
+      {
+        "name": "B",
+        "type": "BOOL",
+        "address": "%IX0.1"
+      },
+      {
+        "name": "C",
+        "type": "BOOL",
+        "address": "%IX0.2"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Res",
+        "type": "BOOL",
+        "address": "%QX0.0"
+      }
+    ]
+  },
+  "blocks": [
+    {
+      "id": "a",
+      "type": "input",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "variableName": "A"
+    },
+    {
+      "id": "b",
+      "type": "input",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "variableName": "B"
+    },
+    {
+      "id": "c",
+      "type": "input",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "variableName": "C"
+    },
+    {
+      "id": "and3",
+      "type": "AND",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "inputs": [
+        {
+          "name": "IN1",
+          "type": "BOOL"
+        },
+        {
+          "name": "IN2",
+          "type": "BOOL"
+        },
+        {
+          "name": "IN3",
+          "type": "BOOL"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "OUT",
+          "type": "BOOL"
+        }
+      ]
+    },
+    {
+      "id": "out",
+      "type": "output",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "variableName": "Res"
+    }
+  ],
+  "connections": [
+    {
+      "id": "w1",
+      "from": {
+        "block": "a",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "and3",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "w2",
+      "from": {
+        "block": "b",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "and3",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "w3",
+      "from": {
+        "block": "c",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "and3",
+        "port": "IN3"
+      }
+    },
+    {
+      "id": "w4",
+      "from": {
+        "block": "and3",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "out",
+        "port": "IN"
+      }
+    }
+  ]
+}

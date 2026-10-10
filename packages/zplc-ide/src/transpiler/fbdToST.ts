@@ -1,16 +1,19 @@
 /**
  * FBD to Structured Text Transpiler
- * 
+ *
  * Converts FBD (Function Block Diagram) models to IEC 61131-3 Structured Text.
  * This enables the visual editor to leverage the existing ST compiler pipeline.
- * 
+ *
  * Strategy:
- * 1. Topological sort blocks by data dependencies
- * 2. Generate variable declarations
- * 3. Generate function block instances
- * 4. Generate execution statements in dependency order
+ * 1. Topological sort blocks by data dependencies (a feedback loop is an error naming a block)
+ * 2. Give every consumed output a temporary of the type its block computes: numeric blocks keep
+ *    the type of their inputs (LNG-023)
+ * 3. Generate function block instances and execution statements in dependency order
+ * 4. A block or connection that cannot be translated is an error that names the block (LNG-002):
+ *    nothing is replaced by a comment or by a constant
  */
 
+import { getFB, parseIOAddress } from '@zplc/compiler';
 import type { FBDModel, FBDBlock, FBDConnection } from '../models/fbd';
 import { isFunctionBlock, isLogicGate, isComparison, isMathOperator, validateFBDModel } from '../models/fbd';
 
@@ -35,9 +38,61 @@ interface BlockOutput {
   tempVar: string;
 }
 
+/** What feeds an input: an expression and what is known of its type. */
+interface Source {
+  /** Text of the expression; a constant is rendered when its target type is known. */
+  expr: string;
+  type?: string;
+  /** An integer constant, which can be used where a wider integer or a REAL is expected. */
+  adaptable?: boolean;
+  constant?: { value: unknown; dataType: string };
+  /** For messages: where the value comes from. */
+  origin: string;
+}
+
+type Kind = 'constant' | 'read' | 'variable' | 'output' | 'gate' | 'compare' | 'math' | 'function' | 'standard' | 'comm' | 'modbus' | 'registry';
+
 function endpointKey(block: string, port: string): string {
   return JSON.stringify([block, port]);
 }
+
+const VM_COMM_BLOCKS = new Set([
+  'MB_READ_HREG', 'MB_WRITE_HREG', 'MB_READ_COIL', 'MB_WRITE_COIL',
+  'MQTT_CONNECT', 'MQTT_PUBLISH', 'MQTT_SUBSCRIBE',
+  'AZURE_C2D_RECV', 'AZURE_DPS_PROV', 'AZURE_EG_PUB',
+  'AWS_FLEET_PROV', 'SPB_REBIRTH',
+]);
+
+/** Compile-time Modbus server tag-binding helpers (legacy, additive per FR-016): not function block instances. */
+const MODBUS_HELPERS: Record<string, string> = {
+  MB_COIL: 'MODBUS_COIL',
+  MB_DISCRETE_INPUT: 'MODBUS_DISCRETE_INPUT',
+  MB_INPUT_REGISTER: 'MODBUS_INPUT_REGISTER',
+  MB_HOLDING_REGISTER: 'MODBUS_HOLDING_REGISTER',
+};
+
+/** The call order of the standard blocks' inputs. */
+const FB_INPUT_ORDER: Record<string, string[]> = {
+  TON: ['IN', 'PT'],
+  TOF: ['IN', 'PT'],
+  TP: ['IN', 'PT'],
+  R_TRIG: ['CLK'],
+  F_TRIG: ['CLK'],
+  SR: ['S1', 'R'],
+  RS: ['S', 'R1'],
+  CTU: ['CU', 'R', 'PV'],
+  CTD: ['CD', 'LD', 'PV'],
+  CTUD: ['CU', 'CD', 'R', 'LD', 'PV'],
+};
+
+/** Functions of several inputs of one numeric type (ABS is a math operator of one input). */
+const FUNCTION_BLOCKS = new Set(['MAX', 'MIN', 'LIMIT', 'SEL']);
+const SIGNED = ['SINT', 'INT', 'DINT', 'LINT'];
+const UNSIGNED = ['USINT', 'UINT', 'UDINT', 'ULINT'];
+const BIT_STRING = ['BYTE', 'WORD', 'DWORD', 'LWORD'];
+const REALS = ['REAL', 'LREAL'];
+/** A logic gate does not take these. */
+const NOT_BOOLEAN = [...REALS, 'TIME', 'LTIME', 'STRING'];
 
 // =============================================================================
 // Transpiler
@@ -46,52 +101,329 @@ function endpointKey(block: string, port: string): string {
 export function transpileFBDToST(model: FBDModel): TranspileResult {
   const errors: string[] = [];
   const lines: string[] = [];
-  
+
   try {
     const validatedModel = validateFBDModel(model);
+    const blockMap = new Map(validatedModel.blocks.map((b) => [b.id, b]));
+    const fail = (block: FBDBlock, message: string): void => {
+      errors.push(`FBD block '${block.id}' (${block.type}): ${message}`);
+    };
+    const failed = (): TranspileResult => ({ success: false, source: '', errors: [...new Set(errors)] });
+
+    // Names, comments and values reach the Structured Text as text: they have to be what they say
+    for (const message of validateText(validatedModel)) errors.push(message);
+    if (errors.length > 0) return failed();
+
+    // Every block has to be one the transpiler translates
+    const kinds = new Map<string, Kind>();
+    for (const block of validatedModel.blocks) {
+      const kind = classify(block);
+      if (kind) kinds.set(block.id, kind);
+      else fail(block, 'this block type is not supported by the FBD transpiler');
+    }
+    if (errors.length > 0) return failed();
+
     // Build connection map
     const inputMap = buildInputMap(validatedModel.connections);
-    const outputMap = buildOutputMap(validatedModel.blocks, inputMap);
-    
+
+    // An input block is only read
+    for (const block of validatedModel.blocks) {
+      const wired = inputMap.get(block.id) ?? [];
+      if (kinds.get(block.id) === 'read' && wired.length > 0) {
+        fail(block, `its input '${wired[0].port}' is wired, but an input block is only read; use a variable block to write`);
+      }
+    }
+    if (errors.length > 0) return failed();
+
     // Topological sort blocks
     const sortedBlocks = topologicalSort(validatedModel.blocks, inputMap);
-    
+
+    // Types of the variables the diagram declares
+    const varTypes = new Map<string, string>();
+    for (const v of [...validatedModel.variables.local, ...(validatedModel.variables.inputs ?? []), ...validatedModel.variables.outputs]) {
+      varTypes.set(v.name.toUpperCase(), v.type.toUpperCase());
+    }
+
+    const outputMap = buildOutputMap(validatedModel.blocks, inputMap, kinds);
+    const outTypes = new Map<string, string | undefined>();
+
+    // What feeds input `port` of `block`: undefined when it is not wired
+    const sourceOf = (block: FBDBlock, port: string): Source | undefined => {
+      const input = (inputMap.get(block.id) ?? []).find((i) => i.port === port);
+      if (!input) return undefined;
+      const source = blockMap.get(input.sourceBlock)!;
+      const origin = `'${source.id}.${input.sourcePort}'`;
+      switch (kinds.get(source.id)) {
+        case 'constant': {
+          const dataType = String(source.dataType ?? inferConstantType(source.value)).toUpperCase();
+          return {
+            expr: '', origin, constant: { value: source.value, dataType }, type: dataType,
+            adaptable: [...SIGNED, ...UNSIGNED].includes(dataType) && Number.isInteger(source.value),
+          };
+        }
+        case 'read':
+        case 'variable': {
+          const name = source.variableName;
+          if (!name) { fail(source, 'it has no variable name'); return { expr: '0', origin }; }
+          return { expr: name, origin, type: varTypes.get(name.toUpperCase()) };
+        }
+        default: {
+          const temp = (outputMap.get(source.id) ?? []).find((o) => o.port === input.sourcePort);
+          return { expr: temp?.tempVar ?? `${source.instanceName}.${input.sourcePort}`, origin, type: outTypes.get(endpointKey(source.id, input.sourcePort)) };
+        }
+      }
+    };
+    const render = (source: Source, target?: string): string =>
+      source.constant ? formatValue(source.constant.value, target && source.adaptable ? target : source.constant.dataType) : source.expr;
+
+    /** A required input: not being wired is an error naming the block and the port. */
+    const required = (block: FBDBlock, port: string): Source | undefined => {
+      const source = sourceOf(block, port);
+      if (!source) fail(block, `input '${port}' is not wired`);
+      return source;
+    };
+
+    /** The one type of a numeric block: its inputs must agree, integer constants adapt. */
+    const unify = (block: FBDBlock, sources: Source[]): string | undefined => {
+      const concrete = [...new Set(sources.filter((s) => s.type && !s.adaptable).map((s) => s.type!))];
+      if (concrete.length === 0) {
+        const adaptable = sources.filter((s) => s.adaptable).map((s) => s.type!);
+        if (adaptable.length === 0) {
+          fail(block, `the type of its inputs cannot be determined (${sources.map((s) => s.origin).join(', ')} not declared)`);
+          return undefined;
+        }
+        return widest(adaptable) ?? 'INT';
+      }
+      for (const classOf of [SIGNED, UNSIGNED, BIT_STRING, REALS]) {
+        if (concrete.every((t) => classOf.includes(t))) return widest(concrete);
+      }
+      if (concrete.length === 1) return concrete[0];
+      fail(block, `its inputs have different types (${concrete.join(', ')}); the block keeps the type of its inputs, so convert one of them`);
+      return undefined;
+    };
+
+    /** The type a consumer that stores the output in a declared variable asks for. */
+    const consumerType = (block: FBDBlock, port: string): string | undefined => {
+      const types = new Set<string>();
+      for (const connection of validatedModel.connections) {
+        if (connection.from.block !== block.id || connection.from.port !== port) continue;
+        const target = blockMap.get(connection.to.block)!;
+        const kind = kinds.get(target.id);
+        const declared = (kind === 'output' || kind === 'variable') && target.variableName ? varTypes.get(target.variableName.toUpperCase()) : undefined;
+        if (!declared) return undefined;
+        types.add(declared);
+      }
+      return types.size === 1 ? [...types][0] : undefined;
+    };
+
+    // The generated statements of one block; the type of each of its outputs is recorded on the way
+    const generate = (block: FBDBlock): string => {
+      const kind = kinds.get(block.id)!;
+      const outputs = outputMap.get(block.id) ?? [];
+      const out = outputs.find((o) => o.port === 'OUT')?.tempVar ?? null;
+      const typed = (port: string, type: string | undefined): void => {
+        if (type !== undefined) outTypes.set(endpointKey(block.id, port), type);
+      };
+      const ports = (block.inputs ?? []).map((p) => p.name);
+
+      switch (kind) {
+        case 'constant':
+        case 'read':
+          return '';
+
+        case 'variable': {
+          // Variable write: the block is also a read of the variable for what is wired to its OUT
+          if (!block.variableName) { fail(block, 'it has no variable name'); return ''; }
+          const source = sourceOf(block, 'IN');
+          return source ? `${block.variableName} := ${render(source, varTypes.get(block.variableName.toUpperCase()))};` : '';
+        }
+
+        case 'output': {
+          if (!block.variableName) { fail(block, 'it has no variable name'); return ''; }
+          const source = required(block, 'IN');
+          return source ? `${block.variableName} := ${render(source, varTypes.get(block.variableName.toUpperCase()))};` : '';
+        }
+
+        case 'gate': {
+          if (ports.length === 0) { fail(block, 'it has no inputs'); return ''; }
+          const sources = ports.map((port) => required(block, port));
+          if (sources.some((s) => !s)) return '';
+          const operands = sources as Source[];
+          const known = operands.filter((s) => s.type).map((s) => s.type!);
+          const odd = known.find((t) => NOT_BOOLEAN.includes(t));
+          if (odd) fail(block, `a logic gate does not take ${odd} inputs`);
+          if (known.includes('BOOL') && known.some((t) => t !== 'BOOL')) fail(block, `its inputs mix BOOL with ${known.find((t) => t !== 'BOOL')}`);
+          typed('OUT', known.length > 0 && known.every((t) => t === known[0]) ? known[0] : 'BOOL');
+          if (!out) return '';
+          const texts = operands.map((s) => render(s));
+          switch (block.type) {
+            case 'NOT': return `${out} := NOT ${texts[0]};`;
+            case 'AND': return `${out} := ${texts.join(' AND ')};`;
+            case 'OR': return `${out} := ${texts.join(' OR ')};`;
+            case 'XOR': return `${out} := ${texts.join(' XOR ')};`;
+            case 'NAND': return `${out} := NOT (${texts.join(' AND ')});`;
+            default: return `${out} := NOT (${texts.join(' OR ')});`;
+          }
+        }
+
+        case 'compare': {
+          if (ports.length !== 2) { fail(block, `it has ${ports.length} inputs, a comparison takes two`); return ''; }
+          typed('OUT', 'BOOL');
+          const sources = ports.map((port) => required(block, port));
+          if (sources.some((s) => !s)) return '';
+          const operands = sources as Source[];
+          const type = operands.some((s) => s.type) ? unify(block, operands) : undefined;
+          if (!out) return '';
+          const symbol: Record<string, string> = { EQ: '=', NE: '<>', LT: '<', LE: '<=', GT: '>', GE: '>=' };
+          return `${out} := ${render(operands[0], type)} ${symbol[block.type]} ${render(operands[1], type)};`;
+        }
+
+        case 'math': {
+          const nary = block.type === 'ADD' || block.type === 'MUL';
+          const unary = block.type === 'ABS';
+          if ((unary && ports.length !== 1) || (!unary && !nary && ports.length !== 2) || (nary && ports.length < 2)) {
+            fail(block, `it has ${ports.length} inputs, which ${block.type} does not take`);
+            return '';
+          }
+          const sources = ports.map((port) => required(block, port));
+          if (sources.some((s) => !s)) return '';
+          const operands = sources as Source[];
+          const type = unify(block, operands);
+          if (type === undefined) return '';
+          if (type === 'BOOL' || type === 'STRING' || (type === 'TIME' && !['ADD', 'SUB', 'ABS'].includes(block.type))) {
+            fail(block, `${block.type} does not take ${type} inputs`);
+            return '';
+          }
+          typed('OUT', type);
+          if (!out) return '';
+          const texts = operands.map((s) => render(s, type));
+          if (unary) return `${out} := ABS(${texts[0]});`;
+          const symbol: Record<string, string> = { ADD: '+', SUB: '-', MUL: '*', DIV: '/', MOD: 'MOD' };
+          return `${out} := ${texts.join(` ${symbol[block.type]} `)};`;
+        }
+
+        case 'function': {
+          // MAX, MIN, LIMIT, SEL: one type for the data inputs; SEL's selector is a BOOL
+          const names = block.type === 'LIMIT' ? ['MN', 'IN', 'MX'] : block.type === 'SEL' ? ['G', 'IN0', 'IN1'] : ['IN1', 'IN2'];
+          const sources = names.map((port) => required(block, port));
+          if (sources.some((s) => !s)) return '';
+          const operands = sources as Source[];
+          const data = block.type === 'SEL' ? operands.slice(1) : operands;
+          const type = unify(block, data);
+          if (block.type === 'SEL' && operands[0].type && operands[0].type !== 'BOOL') {
+            fail(block, `its selector 'G' is ${operands[0].type}, not BOOL`);
+          }
+          typed('OUT', type);
+          if (!out) return '';
+          const texts = operands.map((s, index) => render(s, block.type === 'SEL' && index === 0 ? undefined : type));
+          return `${out} := ${block.type}(${texts.join(', ')});`;
+        }
+
+        case 'modbus': {
+          if (!block.variableName) { fail(block, 'it has no variable name to bind to the Modbus address'); return ''; }
+          const target = block.variableName;
+          const en = required(block, 'EN');
+          const inputSource = required(block, 'IN');
+          const addr = required(block, 'ADDR');
+          typed('STATUS', 'BOOL');
+          typed('OUT', varTypes.get(target.toUpperCase()) ?? inputSource?.type);
+          if (!en || !inputSource || !addr) return '';
+          const outputVar = outputs.find((o) => o.port === 'OUT')?.tempVar;
+          const statusVar = outputs.find((o) => o.port === 'STATUS')?.tempVar;
+          const tagLines: string[] = [];
+          tagLines.push(`IF ${render(en)} THEN ${target} := ${render(inputSource)}; END_IF;`);
+          tagLines.push(`${MODBUS_HELPERS[block.type]}(${target}, ${render(addr)});`);
+          if (outputVar) tagLines.push(`${outputVar} := ${target};`);
+          if (statusVar) tagLines.push(`${statusVar} := ${render(en)};`);
+          return tagLines.join('\n');
+        }
+
+        case 'comm':
+        case 'standard':
+        case 'registry': {
+          if (!block.instanceName) { fail(block, 'it has no instance name'); return ''; }
+          // Only the inputs that are wired are passed: an input left open keeps the block's default
+          const order = FB_INPUT_ORDER[block.type];
+          const wired = (inputMap.get(block.id) ?? []).map((i) => i.port);
+          const callPorts = order ? order.filter((port) => wired.includes(port)) : Array.from(new Set(wired));
+          const args = callPorts.map((port) => `${port} := ${render(sourceOf(block, port)!, portType(block, port))}`);
+          for (const output of outputs) {
+            typed(output.port, outputType(block, output.port) ?? consumerType(block, output.port));
+          }
+          const callLines: string[] = [];
+          callLines.push(`${block.instanceName}(${args.join(', ')});`);
+          // Consumers reference temp vars, not the instance's members, so the value is the one this call produced
+          for (const output of outputs) callLines.push(`${output.tempVar} := ${block.instanceName}.${output.port};`);
+          return callLines.join('\n');
+        }
+
+        default:
+          return '';
+      }
+    };
+
+    // Generate the statements first: they decide the type of every temporary
+    const statements = new Map<string, string>();
+    for (const block of sortedBlocks) statements.set(block.id, generate(block));
+    if (errors.length > 0) return failed();
+    // Whatever is still untyped here is an output nothing could type: say so rather than declare a guess
+    for (const block of sortedBlocks) {
+      for (const output of outputMap.get(block.id) ?? []) {
+        if (!outTypes.get(endpointKey(block.id, output.port))) {
+          fail(block, `the type of its output '${output.port}' cannot be determined; give the port a type`);
+        }
+      }
+    }
+    if (errors.length > 0) return failed();
+
     // Generate program header
     lines.push(`PROGRAM ${validatedModel.name}`);
     lines.push('');
-    
+
+    // Input variables (I/O mapped): declared, so the blocks that read them compile
+    const inputVariables = validatedModel.variables.inputs ?? [];
+    if (inputVariables.length > 0) {
+      lines.push('VAR_INPUT');
+      for (const v of inputVariables) {
+        const address = v.address ? ` AT ${v.address}` : '';
+        const comment = v.comment ? ` (* ${v.comment} *)` : '';
+        lines.push(`    ${v.name}${address} : ${v.type};${comment}`);
+      }
+      lines.push('END_VAR');
+      lines.push('');
+    }
+
     // Generate variable declarations
     lines.push('VAR');
-    
+
     // Local variables from model
     for (const v of validatedModel.variables.local) {
       const init = v.initialValue !== undefined ? ` := ${formatValue(v.initialValue, v.type)}` : '';
       const comment = v.comment ? ` (* ${v.comment} *)` : '';
       lines.push(`    ${v.name} : ${v.type}${init};${comment}`);
     }
-    
+
     // Function block instances
+    const declared = new Set(validatedModel.variables.local.map((v) => v.name.toUpperCase()));
     for (const block of validatedModel.blocks) {
-      if (isFunctionBlock(block.type) && block.instanceName) {
+      const kind = kinds.get(block.id);
+      if (block.instanceName && (kind === 'standard' || (kind === 'registry' && !declared.has(block.instanceName.toUpperCase())))) {
         const comment = block.comment ? ` (* ${block.comment} *)` : '';
         lines.push(`    ${block.instanceName} : ${block.type};${comment}`);
       }
     }
-    
+
     // Temporary variables for intermediate results
     for (const block of sortedBlocks) {
-      const outputs = outputMap.get(block.id);
-      if (outputs) {
-        for (const output of outputs) {
-          const dataType = getOutputType(block, output.port);
-          lines.push(`    ${output.tempVar} : ${dataType};`);
-        }
+      for (const output of outputMap.get(block.id) ?? []) {
+        const dataType = outTypes.get(endpointKey(block.id, output.port));
+        if (dataType) lines.push(`    ${output.tempVar} : ${dataType};`);
       }
     }
-    
+
     lines.push('END_VAR');
     lines.push('');
-    
+
     // Output variables (I/O mapped)
     if (validatedModel.variables.outputs.length > 0) {
       lines.push('VAR_OUTPUT');
@@ -103,13 +435,13 @@ export function transpileFBDToST(model: FBDModel): TranspileResult {
       lines.push('END_VAR');
       lines.push('');
     }
-    
+
     // Generate execution code
     lines.push('(* FBD Execution - Auto-generated *)');
     lines.push('');
-    
+
     for (const block of sortedBlocks) {
-      const code = generateBlockCode(block, inputMap, outputMap, validatedModel);
+      const code = statements.get(block.id);
       if (code) {
         // Add block comment if present
         if (block.comment) {
@@ -118,10 +450,10 @@ export function transpileFBDToST(model: FBDModel): TranspileResult {
         lines.push(code);
       }
     }
-    
+
     lines.push('');
     lines.push('END_PROGRAM');
-    
+
     return {
       success: true,
       source: lines.join('\n'),
@@ -138,6 +470,29 @@ export function transpileFBDToST(model: FBDModel): TranspileResult {
 }
 
 // =============================================================================
+// Block classification
+// =============================================================================
+
+function classify(block: FBDBlock): Kind | undefined {
+  const type = block.type;
+  switch (type) {
+    case 'constant': return 'constant';
+    case 'input': return 'read';
+    case 'variable': return 'variable';
+    case 'output': return 'output';
+  }
+  if (isLogicGate(type)) return 'gate';
+  if (isComparison(type)) return 'compare';
+  if (isMathOperator(type)) return 'math';
+  if (FUNCTION_BLOCKS.has(type)) return 'function';
+  if (type in MODBUS_HELPERS) return 'modbus';
+  if (VM_COMM_BLOCKS.has(type)) return 'comm';
+  if (isFunctionBlock(type)) return 'standard';
+  if (getFB(type)) return 'registry';
+  return undefined;
+}
+
+// =============================================================================
 // Connection Mapping
 // =============================================================================
 
@@ -146,7 +501,7 @@ export function transpileFBDToST(model: FBDModel): TranspileResult {
  */
 function buildInputMap(connections: FBDConnection[]): Map<string, BlockInput[]> {
   const map = new Map<string, BlockInput[]>();
-  
+
   for (const conn of connections) {
     const inputs = map.get(conn.to.block) || [];
     inputs.push({
@@ -156,7 +511,7 @@ function buildInputMap(connections: FBDConnection[]): Map<string, BlockInput[]> 
     });
     map.set(conn.to.block, inputs);
   }
-  
+
   return map;
 }
 
@@ -164,12 +519,13 @@ function buildInputMap(connections: FBDConnection[]): Map<string, BlockInput[]> 
  * Build a map of block outputs that need temp variables
  */
 function buildOutputMap(
-  blocks: FBDBlock[], 
-  inputMap: Map<string, BlockInput[]>
+  blocks: FBDBlock[],
+  inputMap: Map<string, BlockInput[]>,
+  kinds: Map<string, Kind>,
 ): Map<string, BlockOutput[]> {
   const map = new Map<string, BlockOutput[]>();
   const temporaryOwners = new Map<string, { key: string; label: string }>();
-  
+
   // Find all blocks that have connections FROM them
   const usedOutputs = new Set<string>();
   for (const inputs of inputMap.values()) {
@@ -177,14 +533,15 @@ function buildOutputMap(
       usedOutputs.add(endpointKey(input.sourceBlock, input.sourcePort));
     }
   }
-  
+
   for (const block of blocks) {
-    // Skip special blocks that don't need temp vars
-    if (block.type === 'constant' || block.type === 'output') continue;
-    
+    // Constants and variables are read by name, an output block has no output: no temporaries
+    const kind = kinds.get(block.id);
+    if (kind === 'constant' || kind === 'output' || kind === 'read' || kind === 'variable') continue;
+
     const outputs: BlockOutput[] = [];
     const blockOutputs = block.outputs || [];
-    
+
     for (const port of blockOutputs) {
       const key = endpointKey(block.id, port.name);
       if (usedOutputs.has(key)) {
@@ -200,12 +557,12 @@ function buildOutputMap(
         });
       }
     }
-    
+
     if (outputs.length > 0) {
       map.set(block.id, outputs);
     }
   }
-  
+
   return map;
 }
 
@@ -214,334 +571,126 @@ function buildOutputMap(
 // =============================================================================
 
 function topologicalSort(
-  blocks: FBDBlock[], 
+  blocks: FBDBlock[],
   inputMap: Map<string, BlockInput[]>
 ): FBDBlock[] {
   const result: FBDBlock[] = [];
   const visited = new Set<string>();
   const visiting = new Set<string>();
   const blockMap = new Map(blocks.map(b => [b.id, b]));
-  
+
   function visit(blockId: string) {
     if (visited.has(blockId)) return;
     if (visiting.has(blockId)) {
       throw new Error(`Circular dependency detected involving block: ${blockId}`);
     }
-    
+
     visiting.add(blockId);
-    
+
     // Visit all dependencies first
     const inputs = inputMap.get(blockId) || [];
     for (const input of inputs) {
       visit(input.sourceBlock);
     }
-    
+
     visiting.delete(blockId);
     visited.add(blockId);
-    
+
     const block = blockMap.get(blockId);
     if (block) {
       result.push(block);
     }
   }
-  
+
   for (const block of blocks) {
     visit(block.id);
   }
-  
+
   return result;
 }
 
 // =============================================================================
-// Code Generation
+// Types
 // =============================================================================
 
-function generateBlockCode(
-  block: FBDBlock,
-  inputMap: Map<string, BlockInput[]>,
-  outputMap: Map<string, BlockOutput[]>,
-  model: FBDModel
-): string {
-  const inputs = inputMap.get(block.id) || [];
-  const outputs = outputMap.get(block.id) || [];
-  
-  // Get input expression for a port
-  const getInput = (portName: string): string => {
-    const input = inputs.find(i => i.port === portName);
-    if (!input) {
-      // Check if it's a constant block with a value
-      return '0'; // Default
-    }
-    
-    // Find source block
-    const sourceBlock = model.blocks.find(b => b.id === input.sourceBlock);
-    if (!sourceBlock) return '0';
-    
-    // Constants
-    if (sourceBlock.type === 'constant') {
-      return formatValue(sourceBlock.value, sourceBlock.dataType || 'INT');
-    }
-    
-    // Variables (input type)
-    if (sourceBlock.type === 'variable' || sourceBlock.type === 'input') {
-      return sourceBlock.variableName || '0';
-    }
-    
-    // Other blocks - use temp variable
-    const sourceOutputs = outputMap.get(input.sourceBlock);
-    if (sourceOutputs) {
-      const srcOutput = sourceOutputs.find(o => o.port === input.sourcePort);
-      if (srcOutput) return srcOutput.tempVar;
-    }
-    
-    // Function block output - direct access
-    if (isFunctionBlock(sourceBlock.type) && sourceBlock.instanceName) {
-      return `${sourceBlock.instanceName}.${input.sourcePort}`;
-    }
-    
-    return '0';
-  };
-  
-  // Get output temp var
-  const getOutput = (portName: string): string | null => {
-    const output = outputs.find(o => o.port === portName);
-    return output?.tempVar || null;
-  };
-  
-  // Generate code based on block type
-  switch (block.type) {
-    case 'constant':
-    case 'input':
-      // No code needed - values are used directly
-      return '';
-    
-    case 'variable': {
-      // Variable write
-      const inputExpr = getInput('IN');
-      if (block.variableName && inputExpr !== '0') {
-        return `${block.variableName} := ${inputExpr};`;
-      }
-      return '';
-    }
-    
-    case 'output': {
-      // Output assignment
-      const inputExpr = getInput('IN');
-      if (block.variableName) {
-        return `${block.variableName} := ${inputExpr};`;
-      }
-      return '';
-    }
+function inferConstantType(value: unknown): string {
+  if (typeof value === 'boolean') return 'BOOL';
+  if (typeof value === 'string') return value.toUpperCase().startsWith('T#') ? 'TIME' : 'STRING';
+  if (typeof value === 'number' && !Number.isInteger(value)) return 'REAL';
+  return 'INT';
+}
 
-    // VM-backed Communication Function Blocks (Phase 3, 4, 5)
-    // These are proper IEC 61131-3 FB instances. The transpiler emits the
-    // standard ST FB call syntax: INSTANCE(PORT := VALUE, ...);\
-    case 'MB_READ_HREG':
-    case 'MB_WRITE_HREG':
-    case 'MB_READ_COIL':
-    case 'MB_WRITE_COIL':
-    case 'MQTT_CONNECT':
-    case 'MQTT_PUBLISH':
-    case 'MQTT_SUBSCRIBE':
-    case 'AZURE_C2D_RECV':
-    case 'AZURE_DPS_PROV':
-    case 'AZURE_EG_PUB':
-    case 'AWS_FLEET_PROV':
-    case 'SPB_REBIRTH': {
-      if (!block.instanceName) return `(* ${block.type}: no instance name *)`;
-      const callLines: string[] = [];
-      const portAssign = inputs.map(i => `${i.port} := ${getInput(i.port)}`).join(', ');
-      callLines.push(`${block.instanceName}(${portAssign});`);
-      // Expose any wired outputs through temp vars
-      for (const output of outputs) {
-        callLines.push(`${output.tempVar} := ${block.instanceName}.${output.port};`);
-      }
-      return callLines.join('\n');
+/** The widest of types of one class (SINT < INT < DINT < LINT, REAL < LREAL...). */
+function widest(types: string[]): string | undefined {
+  for (const order of [SIGNED, UNSIGNED, BIT_STRING, REALS]) {
+    const members = types.filter((t) => order.includes(t));
+    if (members.length === types.length && members.length > 0) {
+      return members.reduce((a, b) => (order.indexOf(b) > order.indexOf(a) ? b : a));
     }
-
-    // Compile-time Modbus server tag-binding helpers (legacy, additive per FR-016)
-    // These are NOT FB instances; they emit the MODBUS_COIL(var, addr) helper syntax.
-    case 'MB_COIL':
-    case 'MB_DISCRETE_INPUT':
-    case 'MB_INPUT_REGISTER':
-    case 'MB_HOLDING_REGISTER': {
-      const helperMap: Record<string, string> = {
-        MB_COIL:             'MODBUS_COIL',
-        MB_DISCRETE_INPUT:   'MODBUS_DISCRETE_INPUT',
-        MB_INPUT_REGISTER:   'MODBUS_INPUT_REGISTER',
-        MB_HOLDING_REGISTER: 'MODBUS_HOLDING_REGISTER',
-      };
-      const target = block.variableName || `${block.id}_mb`;
-      const en = getInput('EN');
-      const inputExpr = getInput('IN');
-      const addr = getInput('ADDR');
-      const outputVar = getOutput('OUT');
-      const statusVar = getOutput('STATUS');
-      const tagLines: string[] = [];
-      tagLines.push(`IF ${en} THEN ${target} := ${inputExpr}; END_IF;`);
-      tagLines.push(`${helperMap[block.type]}(${target}, ${addr});`);
-      if (outputVar) tagLines.push(`${outputVar} := ${target};`);
-      if (statusVar) tagLines.push(`${statusVar} := ${en};`);
-      return tagLines.join('\n');
-    }
-
-    
-    // Logic gates
-    case 'AND': {
-      const out = getOutput('OUT');
-      if (out) return `${out} := ${getInput('IN1')} AND ${getInput('IN2')};`;
-      return '';
-    }
-    case 'OR': {
-      const out = getOutput('OUT');
-      if (out) return `${out} := ${getInput('IN1')} OR ${getInput('IN2')};`;
-      return '';
-    }
-    case 'NOT': {
-      const out = getOutput('OUT');
-      if (out) return `${out} := NOT ${getInput('IN')};`;
-      return '';
-    }
-    case 'XOR': {
-      const out = getOutput('OUT');
-      if (out) return `${out} := ${getInput('IN1')} XOR ${getInput('IN2')};`;
-      return '';
-    }
-    case 'NAND': {
-      const out = getOutput('OUT');
-      if (out) return `${out} := NOT (${getInput('IN1')} AND ${getInput('IN2')});`;
-      return '';
-    }
-    case 'NOR': {
-      const out = getOutput('OUT');
-      if (out) return `${out} := NOT (${getInput('IN1')} OR ${getInput('IN2')});`;
-      return '';
-    }
-    
-    // Comparison operators
-    case 'EQ': {
-      const out = getOutput('OUT');
-      if (out) return `${out} := ${getInput('IN1')} = ${getInput('IN2')};`;
-      return '';
-    }
-    case 'NE': {
-      const out = getOutput('OUT');
-      if (out) return `${out} := ${getInput('IN1')} <> ${getInput('IN2')};`;
-      return '';
-    }
-    case 'LT': {
-      const out = getOutput('OUT');
-      if (out) return `${out} := ${getInput('IN1')} < ${getInput('IN2')};`;
-      return '';
-    }
-    case 'LE': {
-      const out = getOutput('OUT');
-      if (out) return `${out} := ${getInput('IN1')} <= ${getInput('IN2')};`;
-      return '';
-    }
-    case 'GT': {
-      const out = getOutput('OUT');
-      if (out) return `${out} := ${getInput('IN1')} > ${getInput('IN2')};`;
-      return '';
-    }
-    case 'GE': {
-      const out = getOutput('OUT');
-      if (out) return `${out} := ${getInput('IN1')} >= ${getInput('IN2')};`;
-      return '';
-    }
-    
-    // Math operators
-    case 'ADD': {
-      const out = getOutput('OUT');
-      if (out) return `${out} := ${getInput('IN1')} + ${getInput('IN2')};`;
-      return '';
-    }
-    case 'SUB': {
-      const out = getOutput('OUT');
-      if (out) return `${out} := ${getInput('IN1')} - ${getInput('IN2')};`;
-      return '';
-    }
-    case 'MUL': {
-      const out = getOutput('OUT');
-      if (out) return `${out} := ${getInput('IN1')} * ${getInput('IN2')};`;
-      return '';
-    }
-    case 'DIV': {
-      const out = getOutput('OUT');
-      if (out) return `${out} := ${getInput('IN1')} / ${getInput('IN2')};`;
-      return '';
-    }
-    case 'MOD': {
-      const out = getOutput('OUT');
-      if (out) return `${out} := ${getInput('IN1')} MOD ${getInput('IN2')};`;
-      return '';
-    }
-    case 'ABS': {
-      const out = getOutput('OUT');
-      if (out) return `${out} := ABS(${getInput('IN')});`;
-      return '';
-    }
-    case 'MAX': {
-      const out = getOutput('OUT');
-      if (out) return `${out} := MAX(${getInput('IN1')}, ${getInput('IN2')});`;
-      return '';
-    }
-    case 'MIN': {
-      const out = getOutput('OUT');
-      if (out) return `${out} := MIN(${getInput('IN1')}, ${getInput('IN2')});`;
-      return '';
-    }
-    case 'LIMIT': {
-      const out = getOutput('OUT');
-      if (out) return `${out} := LIMIT(${getInput('MN')}, ${getInput('IN')}, ${getInput('MX')});`;
-      return '';
-    }
-    case 'SEL': {
-      const out = getOutput('OUT');
-      if (out) return `${out} := SEL(${getInput('G')}, ${getInput('IN0')}, ${getInput('IN1')});`;
-      return '';
-    }
-    
-    // Function blocks (timers, counters, etc.)
-    default:
-      if (isFunctionBlock(block.type) && block.instanceName) {
-        // Generate FB call with inputs
-        const fbInputs: string[] = [];
-        
-        // Map inputs
-        const portMap: Record<string, string[]> = {
-          'TON': ['IN', 'PT'],
-          'TOF': ['IN', 'PT'],
-          'TP': ['IN', 'PT'],
-          'R_TRIG': ['CLK'],
-          'F_TRIG': ['CLK'],
-          'SR': ['S1', 'R'],
-          'RS': ['S', 'R1'],
-          'CTU': ['CU', 'R', 'PV'],
-          'CTD': ['CD', 'LD', 'PV'],
-          'CTUD': ['CU', 'CD', 'R', 'LD', 'PV'],
-        };
-        
-        const inputPorts = portMap[block.type] || Array.from(new Set(inputs.map(i => i.port)));
-        for (const port of inputPorts) {
-          fbInputs.push(`${port} := ${getInput(port)}`);
-        }
-        
-        // Generate FB call
-        const lines: string[] = [];
-        lines.push(`${block.instanceName}(${fbInputs.join(', ')});`);
-        
-        // Assign FB outputs to temp variables
-        // This is CRITICAL - consumers reference temp vars, not FB.output directly
-        for (const output of outputs) {
-          lines.push(`${output.tempVar} := ${block.instanceName}.${output.port};`);
-        }
-        
-        return lines.join('\n');
-      }
-      
-      return `(* Unknown block type: ${block.type} *)`;
   }
+  return undefined;
+}
+
+/** The declared type of an input port of a block, when the port has a definite type. */
+function portType(block: FBDBlock, portName: string): string | undefined {
+  const port = block.inputs?.find((p) => p.name === portName);
+  return port && port.type !== 'ANY' && port.type !== 'ANY_NUM' ? port.type.toUpperCase() : undefined;
+}
+
+/** The type of an output of a function block, or undefined when nothing but its consumers can say. */
+function outputType(block: FBDBlock, portName: string): string | undefined {
+  const port = block.outputs?.find((p) => p.name === portName);
+  if (port && port.type !== 'ANY' && port.type !== 'ANY_NUM') return port.type.toUpperCase();
+
+  // Communication blocks: their outputs are named by what they report
+  if (VM_COMM_BLOCKS.has(block.type) || ['COMM_PUBLISH', 'COMM_SUBSCRIBE', 'COMM_MODBUS', 'COMM_CONNECT'].includes(block.type)) {
+    if (['DONE', 'VALID', 'CONNECTED', 'ERROR', 'BUSY'].includes(portName)) return 'BOOL';
+    if (portName === 'STATUS') return 'DINT';
+    if (['PAYLOAD', 'TOPIC', 'ASSIGNED_HUB', 'DEVICE_ID', 'THING_NAME', 'TEMPLATE_NAME'].includes(portName)) return 'STRING';
+    if (portName === 'VALUE') return 'INT';
+  }
+
+  // Standard block outputs
+  if (portName === 'Q' || portName === 'Q1' || portName === 'QU' || portName === 'QD') return 'BOOL';
+  if (portName === 'ET') return 'TIME';
+  if (portName === 'CV') return 'INT';
+  return undefined;
+}
+
+// =============================================================================
+// Text that reaches the generated source
+// =============================================================================
+
+const IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
+const REFERENCE = /^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$/;
+const TYPE_TEXT = /^[A-Za-z_][A-Za-z0-9_\s[\].,()]*$/;
+const COMMENT_DELIMITER = /\(\*|\*\)/;
+
+/** The model's names, types, comments and constants, as the problems that would make the source wrong. */
+function validateText(model: FBDModel): string[] {
+  const problems: string[] = [];
+  const sections: Array<[string, FBDModel['variables']['local']]> = [
+    ['local', model.variables.local], ['input', model.variables.inputs ?? []], ['output', model.variables.outputs],
+  ];
+  for (const [section, variables] of sections) {
+    for (const v of variables) {
+      const label = `FBD ${section} variable '${String(v.name)}'`;
+      if (typeof v.name !== 'string' || !IDENTIFIER.test(v.name)) problems.push(`${label}: the name is not an identifier`);
+      if (typeof v.type !== 'string' || !TYPE_TEXT.test(v.type) || COMMENT_DELIMITER.test(v.type)) problems.push(`${label}: the type '${String(v.type)}' is not a type name`);
+      if (v.comment !== undefined && (typeof v.comment !== 'string' || COMMENT_DELIMITER.test(v.comment))) problems.push(`${label}: the comment must not contain ST comment delimiters`);
+      if (v.address !== undefined) {
+        try { parseIOAddress(String(v.address)); } catch (error) { problems.push(`${label}: ${error instanceof Error ? error.message : String(error)}`); }
+      }
+    }
+  }
+  for (const block of model.blocks) {
+    const label = `FBD block '${block.id}' (${block.type})`;
+    if (block.comment !== undefined && (typeof block.comment !== 'string' || COMMENT_DELIMITER.test(block.comment))) problems.push(`${label}: the comment must not contain ST comment delimiters`);
+    if (block.instanceName !== undefined && (typeof block.instanceName !== 'string' || !IDENTIFIER.test(block.instanceName))) problems.push(`${label}: the instance name '${String(block.instanceName)}' is not an identifier`);
+    if (block.variableName !== undefined && (typeof block.variableName !== 'string' || !REFERENCE.test(block.variableName))) problems.push(`${label}: the variable name '${String(block.variableName)}' is not a variable`);
+    if (block.type === 'constant' && (block.value === undefined || block.value === null || typeof block.value === 'object')) problems.push(`${label}: it has no value`);
+  }
+  return problems;
 }
 
 // =============================================================================
@@ -550,61 +699,24 @@ function generateBlockCode(
 
 function formatValue(value: unknown, dataType: string): string {
   if (value === undefined || value === null) return '0';
-  
+
   if (typeof value === 'boolean') {
     return value ? 'TRUE' : 'FALSE';
   }
-  
+
   if (typeof value === 'string') {
     // TIME literals
     if (value.startsWith('T#')) return value;
     // String literals
-    return `'${value}'`;
+    return `'${value.replaceAll("'", "''")}'`;
   }
-  
+
   if (typeof value === 'number') {
     if (dataType === 'REAL' || dataType === 'LREAL') {
       return value.toString().includes('.') ? value.toString() : `${value}.0`;
     }
     return value.toString();
   }
-  
-  return String(value);
-}
 
-function getOutputType(block: FBDBlock, portName: string): string {
-  // Find the port definition
-  const port = block.outputs?.find(p => p.name === portName);
-  if (port && port.type !== 'ANY' && port.type !== 'ANY_NUM') {
-    return port.type;
-  }
-  
-  // Default types by block category
-  if (isLogicGate(block.type)) return 'BOOL';
-  if (isComparison(block.type)) return 'BOOL';
-  if (isMathOperator(block.type)) return 'INT';
-  if (['MAX', 'MIN', 'LIMIT', 'SEL'].includes(block.type)) return 'INT';
-  if (block.type === 'COMM_PUBLISH' || block.type === 'COMM_SUBSCRIBE' ||
-      block.type === 'COMM_MODBUS' || block.type === 'COMM_CONNECT' ||
-      ['MB_READ_HREG','MB_WRITE_HREG','MB_READ_COIL','MB_WRITE_COIL',
-       'MQTT_CONNECT','MQTT_PUBLISH','MQTT_SUBSCRIBE',
-       'AZURE_C2D_RECV','AZURE_DPS_PROV','AZURE_EG_PUB',
-       'AWS_FLEET_PROV','SPB_REBIRTH'].includes(block.type)) {
-    if (portName === 'DONE' || portName === 'VALID') return 'BOOL';
-    if (portName === 'CONNECTED' || portName === 'ERROR' || portName === 'BUSY') return 'BOOL';
-    if (portName === 'STATUS') return 'DINT';
-    if (portName === 'PAYLOAD' || portName === 'TOPIC' || portName === 'ASSIGNED_HUB' ||
-        portName === 'DEVICE_ID' || portName === 'THING_NAME' || portName === 'TEMPLATE_NAME') return 'STRING';
-    if (portName === 'VALUE') return 'INT';
-    return 'INT';
-  }
-  
-  // FB outputs
-  if (isFunctionBlock(block.type)) {
-    if (portName === 'Q' || portName === 'Q1' || portName === 'QU' || portName === 'QD') return 'BOOL';
-    if (portName === 'ET') return 'TIME';
-    if (portName === 'CV') return 'INT';
-  }
-  
-  return 'INT';
+  return String(value);
 }

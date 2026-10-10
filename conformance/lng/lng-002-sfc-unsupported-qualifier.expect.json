@@ -1,0 +1,9 @@
+{
+  "requirement": "LNG-002",
+  "title": "an SFC action qualifier the transpiler does not translate is rejected naming the step",
+  "build": "fails",
+  "messageIncludes": [
+    "'s_a'",
+    "SD"
+  ]
+}

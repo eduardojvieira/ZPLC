@@ -195,6 +195,9 @@ describe('FBD to ST Transpiler', () => {
           outputs: [],
         },
         blocks: [
+          { id: 'enable', type: 'constant', dataType: 'BOOL', value: true, position: { x: 0, y: 0 }, outputs: [{ name: 'OUT', type: 'BOOL' }] },
+          { id: 'value', type: 'constant', dataType: 'BOOL', value: true, position: { x: 0, y: 50 }, outputs: [{ name: 'OUT', type: 'BOOL' }] },
+          { id: 'addr', type: 'constant', dataType: 'UINT', value: 1, position: { x: 0, y: 100 }, outputs: [{ name: 'OUT', type: 'UINT' }] },
           {
             id: 'mb1',
             type: 'MB_COIL',
@@ -208,7 +211,11 @@ describe('FBD to ST Transpiler', () => {
             outputs: [{ name: 'STATUS', type: 'BOOL' }],
           },
         ],
-        connections: [],
+        connections: [
+          { id: 'c1', from: { block: 'enable', port: 'OUT' }, to: { block: 'mb1', port: 'EN' } },
+          { id: 'c2', from: { block: 'value', port: 'OUT' }, to: { block: 'mb1', port: 'IN' } },
+          { id: 'c3', from: { block: 'addr', port: 'OUT' }, to: { block: 'mb1', port: 'ADDR' } },
+        ],
       };
 
       const result = transpileFBDToST(model);
@@ -966,7 +973,7 @@ describe('LD to ST Transpiler', () => {
     const invalidModels: Array<[string, unknown]> = [
       ['unknown element type', { ...base, rungs: [{ ...base.rungs[0], elements: [{ id: 'bad', type: 'NOT_A_REAL_TYPE' }] }] }],
       ['unknown contact type', { ...base, rungs: [{ ...base.rungs[0], elements: [{ id: 'bad', type: 'contact_UNKNOWN', variable: 'Start' }] }] }],
-      ['unsupported edge contact', { ...base, rungs: [{ ...base.rungs[0], elements: [{ id: 'bad', type: 'contact_p', variable: 'Start' }] }] }],
+      ['edge contact on an unknown variable', { ...base, rungs: [{ ...base.rungs[0], elements: [{ id: 'bad', type: 'contact_p', variable: 'Missing' }] }] }],
       ['contact without variable', { ...base, rungs: [{ ...base.rungs[0], elements: [{ id: 'bad', type: 'contact_no' }] }] }],
       ['coil without variable', { ...base, rungs: [{ ...base.rungs[0], elements: [{ id: 'bad', type: 'coil' }] }] }],
       ['FB without type or instance', { ...base, rungs: [{ ...base.rungs[0], elements: [{ id: 'bad', type: 'function_block' }] }] }],
@@ -1039,6 +1046,399 @@ describe('LD to ST Transpiler', () => {
       ], branches: [{ id: 'bad_branch', startCol: 0, endCol: 0, rows: [1, 2] }] }],
     };
     expect(transpileLDToST(disconnectedBranch as LDModel)).toMatchObject({ success: false, source: '' });
+  });
+});
+
+describe('SFC scan semantics (LNG-024, LNG-025, LNG-002)', () => {
+  const chart = (overrides: Partial<SFCModel> = {}): SFCModel => ({
+    name: 'Chart',
+    variables: { local: [], outputs: [{ name: 'Out', type: 'INT' }] },
+    steps: [
+      { id: 'a', name: 'A', isInitial: true, position: { x: 0, y: 0 } },
+      { id: 'b', name: 'B', isInitial: false, position: { x: 0, y: 1 }, actions: [{ qualifier: 'N', actionName: 'Bump' }] },
+      { id: 'c', name: 'C', isInitial: false, position: { x: 0, y: 2 } },
+    ],
+    transitions: [
+      { id: 'ab', fromStep: 'a', toStep: 'b', condition: 'TRUE' },
+      { id: 'bc', fromStep: 'b', toStep: 'c', condition: 'TRUE' },
+    ],
+    actions: [{ id: 'bump', name: 'Bump', type: 'ST', body: 'Out := Out + 1;' }],
+    ...overrides,
+  });
+  const rejected = (model: SFCModel) => {
+    const result = transpileSFCToST(model);
+    expect(result.success).toBe(false);
+    expect(result.source).toBe('');
+    return result.errors;
+  };
+
+  it('evaluates every transition before any is applied, so a chain crosses one per scan', () => {
+    const result = transpileSFCToST(chart());
+    expect(result.success).toBe(true);
+    const lines = result.source.split('\n');
+    const lastEvaluation = lines.map((line, index) => line.startsWith('_F_') ? index : -1).reduce((a, b) => Math.max(a, b));
+    const firstApply = lines.findIndex((line) => /^IF _F_\w+ THEN X_/.test(line));
+    expect(lastEvaluation).toBeGreaterThan(0);
+    expect(firstApply).toBeGreaterThan(lastEvaluation);
+    // Actions run on the state the scan started with, before transitions change it
+    expect(lines.findIndex((line) => line.includes('Out := Out + 1;'))).toBeLessThan(lines.findIndex((line) => line.startsWith('_F_')));
+    expect(assemble(compileST(result.source)).bytecode.length).toBeGreaterThan(0);
+  });
+
+  it('lets the lowest priority number win a selection, and the file order when there is none', () => {
+    const base = chart({
+      transitions: [
+        { id: 'late', fromStep: 'a', toStep: 'b', condition: 'TRUE', priority: 2 },
+        { id: 'early', fromStep: 'a', toStep: 'c', condition: 'TRUE', priority: 1 },
+      ],
+    });
+    const prioritised = transpileSFCToST(base).source;
+    expect(prioritised).toContain('_F_early := X_a AND (TRUE);');
+    expect(prioritised).toContain('_F_late := X_a AND (TRUE) AND NOT _F_early;');
+
+    const ordered = transpileSFCToST(chart({
+      transitions: [
+        { id: 'first', fromStep: 'a', toStep: 'b', condition: 'TRUE' },
+        { id: 'second', fromStep: 'a', toStep: 'c', condition: 'TRUE' },
+      ],
+    })).source;
+    expect(ordered).toContain('_F_second := X_a AND (TRUE) AND NOT _F_first;');
+  });
+
+  it('leaves all the steps of a convergence and enters all those of a divergence', () => {
+    const result = transpileSFCToST(chart({
+      steps: [
+        { id: 'a', name: 'A', isInitial: true, position: { x: 0, y: 0 } },
+        { id: 'b', name: 'B', isInitial: false, position: { x: 0, y: 1 } },
+        { id: 'c', name: 'C', isInitial: false, position: { x: 1, y: 1 } },
+        { id: 'd', name: 'D', isInitial: false, position: { x: 0, y: 2 } },
+      ],
+      transitions: [
+        { id: 'fork', fromStep: 'a', toStep: 'b', toSteps: ['b', 'c'], condition: 'TRUE' },
+        { id: 'join', fromStep: 'b', toStep: 'd', fromSteps: ['b', 'c'], condition: 'TRUE' },
+      ],
+      actions: [],
+    }));
+    expect(result.success).toBe(true);
+    expect(result.source).toContain('_F_join := X_b AND X_c AND (TRUE);');
+    expect(result.source).toContain('IF _F_fork THEN X_b := TRUE; END_IF;');
+    expect(result.source).toContain('IF _F_fork THEN X_c := TRUE; END_IF;');
+    expect(result.source).toContain('IF _F_join THEN X_c := FALSE; END_IF;');
+  });
+
+  it('rejects a transition whose list of steps is unknown, repeated or does not start with its step', () => {
+    const transition = (extra: Record<string, unknown>) => chart({ transitions: [{ id: 'ab', fromStep: 'a', toStep: 'b', condition: 'TRUE', ...extra } as SFCModel['transitions'][number]] });
+    expect(rejected(transition({ toSteps: ['b', 'ghost'] }))).toEqual([expect.stringContaining("Transition 'ab' toSteps must list known steps")]);
+    expect(rejected(transition({ toSteps: ['c', 'b'] }))).toEqual([expect.stringContaining("Transition 'ab' toSteps must start with toStep 'b'")]);
+    expect(rejected(transition({ fromSteps: ['a', 'a'] }))).toEqual([expect.stringContaining("Transition 'ab' fromSteps lists a step twice")]);
+    expect(rejected(transition({ priority: 'high' }))).toEqual([expect.stringContaining("Transition 'ab' priority must be a number")]);
+  });
+
+  it('translates the qualifiers N, S, R, L, D, P, P0 and P1 and compiles them', () => {
+    const qualifiers = ['N', 'S', 'R', 'L', 'D', 'P', 'P0', 'P1'] as const;
+    const model = chart({
+      steps: [
+        { id: 'a', name: 'A', isInitial: true, position: { x: 0, y: 0 }, actions: qualifiers.map((qualifier) => ({
+          qualifier, actionName: 'Bump', ...(qualifier === 'L' || qualifier === 'D' ? { time: 'T#2s' } : {}),
+        })) },
+      ],
+      transitions: [],
+    });
+    const result = transpileSFCToST(model);
+    expect(result.success).toBe(true);
+    expect(assemble(compileST(result.source)).bytecode.length).toBeGreaterThan(0);
+  });
+
+  it('names the step and the qualifier it cannot translate, and the times that are missing or wrong', () => {
+    const withAction = (action: Record<string, unknown>) => chart({ steps: [
+      { id: 'a', name: 'A', isInitial: true, position: { x: 0, y: 0 }, actions: [{ actionName: 'Bump', ...action } as never] },
+    ], transitions: [] });
+    for (const qualifier of ['SD', 'DS', 'SL', 'X']) {
+      expect(rejected(withAction({ qualifier }))).toEqual([`Step 'a' action qualifier '${qualifier}' is not supported (supported: N, S, R, L, D, P, P0, P1)`]);
+    }
+    expect(rejected(withAction({ qualifier: 'L' }))).toEqual(["Step 'a' L action qualifier needs a time, such as T#2s"]);
+    expect(rejected(withAction({ qualifier: 'D', time: 'soon' }))).toEqual([expect.stringContaining("Step 'a' D action qualifier has an invalid time")]);
+    expect(rejected(withAction({ qualifier: 'P', time: 'T#1s' }))).toEqual(["Step 'a' P action qualifier does not support time"]);
+  });
+
+  it('declares a variable whose initial value is null without an initializer', () => {
+    const result = transpileSFCToST(chart({ variables: { local: [{ name: 'Flag', type: 'BOOL', initialValue: null }], outputs: [{ name: 'Out', type: 'INT' }] } }));
+    expect(result.success).toBe(true);
+    expect(result.source).toContain('Flag : BOOL;');
+    expect(result.source).not.toMatch(/Flag : BOOL :=/);
+  });
+
+  it('reads .X and .T of a step in conditions and in action bodies, by name or id, and refuses to assign them', () => {
+    const result = transpileSFCToST(chart({
+      transitions: [{ id: 'bc', fromStep: 'b', toStep: 'c', condition: "b.X AND B.T >= T#1s AND Name = 'b.T'" }],
+      actions: [{ id: 'bump', name: 'Bump', type: 'ST', body: 'IF A.X THEN Out := Out + 1; END_IF;' }],
+    }));
+    expect(result.success).toBe(true);
+    expect(result.source).toContain("(X_b AND T_b.ET >= T#1s AND Name = 'b.T')");
+    expect(result.source).toContain('IF X_a THEN Out := Out + 1; END_IF;');
+
+    expect(rejected(chart({ actions: [{ id: 'bump', name: 'Bump', type: 'ST', body: 'A.X := FALSE;' }] })))
+      .toEqual([expect.stringContaining("assigns to the step flag 'A.X', which is read only")]);
+    expect(rejected(chart({ variables: { local: [{ name: 'a', type: 'BOOL' }], outputs: [] } })))
+      .toEqual([expect.stringContaining("Variable name 'a' collides with a step")]);
+  });
+});
+
+describe('FBD wiring and types (LNG-023, LNG-002)', () => {
+  const block = (id: string, type: string, extra: Record<string, unknown> = {}) => ({ id, type, position: { x: 0, y: 0 }, ...extra });
+  const wire = (id: string, from: string, fromPort: string, to: string, toPort: string) => ({ id, from: { block: from, port: fromPort }, to: { block: to, port: toPort } });
+  const model = (blocks: unknown[], connections: unknown[], variables: Record<string, unknown[]> = {}): FBDModel => ({
+    name: 'Wired',
+    variables: { local: [], outputs: [], ...variables },
+    blocks,
+    connections,
+  } as unknown as FBDModel);
+  const rejected = (input: FBDModel) => {
+    const result = transpileFBDToST(input);
+    expect(result.success).toBe(false);
+    expect(result.source).toBe('');
+    return result.errors;
+  };
+
+  it('keeps REAL through numeric blocks: temporaries are REAL, never INT', () => {
+    const result = transpileFBDToST(model(
+      [block('r1', 'input', { variableName: 'R1' }), block('two', 'constant', { dataType: 'INT', value: 2 }), block('mul', 'MUL'), block('out', 'output', { variableName: 'Out' })],
+      [wire('w1', 'r1', 'OUT', 'mul', 'IN1'), wire('w2', 'two', 'OUT', 'mul', 'IN2'), wire('w3', 'mul', 'OUT', 'out', 'IN')],
+      { local: [{ name: 'R1', type: 'REAL' }], outputs: [{ name: 'Out', type: 'REAL' }] },
+    ));
+    expect(result.success).toBe(true);
+    expect(result.source).toContain('_mul_OUT : REAL;');
+    // The integer constant meets a REAL: it is written as one
+    expect(result.source).toContain('_mul_OUT := R1 * 2.0;');
+    expect(assemble(compileST(result.source)).bytecode.length).toBeGreaterThan(0);
+  });
+
+  it('rejects inputs of different types and a type it cannot determine, naming the block', () => {
+    const mixed = model(
+      [block('a', 'input', { variableName: 'Count' }), block('b', 'input', { variableName: 'Level' }), block('sum', 'ADD'), block('out', 'output', { variableName: 'Out' })],
+      [wire('w1', 'a', 'OUT', 'sum', 'IN1'), wire('w2', 'b', 'OUT', 'sum', 'IN2'), wire('w3', 'sum', 'OUT', 'out', 'IN')],
+      { local: [{ name: 'Count', type: 'INT' }, { name: 'Level', type: 'REAL' }], outputs: [{ name: 'Out', type: 'REAL' }] },
+    );
+    expect(rejected(mixed)).toEqual([expect.stringMatching(/block 'sum' \(ADD\): its inputs have different types \(INT, REAL\)/)]);
+
+    const unknown = model(
+      [block('a', 'input', { variableName: 'Ghost' }), block('n', 'constant', { dataType: 'BOOL', value: true }), block('sum', 'ADD'), block('out', 'output', { variableName: 'Out' })],
+      [wire('w1', 'a', 'OUT', 'sum', 'IN1'), wire('w3', 'sum', 'OUT', 'out', 'IN')],
+    );
+    expect(rejected(unknown).join('\n')).toContain("block 'sum' (ADD)");
+  });
+
+  it('names the block and the port of an input that is not wired', () => {
+    const open = model(
+      [block('in1', 'input', { variableName: 'A' }), block('and1', 'AND'), block('out', 'output', { variableName: 'Res' })],
+      [wire('c1', 'in1', 'OUT', 'and1', 'IN1'), wire('c2', 'and1', 'OUT', 'out', 'IN')],
+      { local: [{ name: 'A', type: 'BOOL' }], outputs: [{ name: 'Res', type: 'BOOL' }] },
+    );
+    expect(rejected(open)).toEqual(["FBD block 'and1' (AND): input 'IN2' is not wired"]);
+    expect(rejected(model([block('out', 'output', { variableName: 'Res' })], []))).toEqual(["FBD block 'out' (output): input 'IN' is not wired"]);
+  });
+
+  it('leaves an open input of a function block at its default instead of passing 0', () => {
+    const result = transpileFBDToST(model(
+      [block('on', 'constant', { dataType: 'BOOL', value: true }), block('count', 'CTU', { instanceName: 'Parts' }), block('out', 'output', { variableName: 'Full' })],
+      [wire('c1', 'on', 'OUT', 'count', 'CU'), wire('c2', 'count', 'Q', 'out', 'IN')],
+      { outputs: [{ name: 'Full', type: 'BOOL' }] },
+    ));
+    expect(result.success).toBe(true);
+    expect(result.source).toContain('Parts(CU := TRUE);');
+  });
+
+  it('takes more than two inputs on a gate and the ports it was given', () => {
+    const ports = ['IN1', 'IN2', 'IN3'].map((name) => ({ name, type: 'BOOL' }));
+    const consts = ['a', 'b', 'c'].map((id, index) => block(id, 'constant', { dataType: 'BOOL', value: index !== 1 }));
+    const result = transpileFBDToST(model(
+      [...consts, block('or3', 'OR', { inputs: ports }), block('nor3', 'NOR', { inputs: ports }), block('o1', 'output', { variableName: 'X' }), block('o2', 'output', { variableName: 'Y' })],
+      [
+        wire('w1', 'a', 'OUT', 'or3', 'IN1'), wire('w2', 'b', 'OUT', 'or3', 'IN2'), wire('w3', 'c', 'OUT', 'or3', 'IN3'),
+        wire('w4', 'a', 'OUT', 'nor3', 'IN1'), wire('w5', 'b', 'OUT', 'nor3', 'IN2'), wire('w6', 'c', 'OUT', 'nor3', 'IN3'),
+        wire('w7', 'or3', 'OUT', 'o1', 'IN'), wire('w8', 'nor3', 'OUT', 'o2', 'IN'),
+      ],
+      { outputs: [{ name: 'X', type: 'BOOL' }, { name: 'Y', type: 'BOOL' }] },
+    ));
+    expect(result.success).toBe(true);
+    expect(result.source).toContain('TRUE OR FALSE OR TRUE');
+    expect(result.source).toContain('NOT (TRUE OR FALSE OR TRUE)');
+  });
+
+  it('rejects a block it does not translate and a feedback loop, naming the block', () => {
+    expect(rejected(model([block('mystery', 'MY_USER_FB', { instanceName: 'm' })], []))).toEqual([expect.stringContaining("block 'mystery' (MY_USER_FB)")]);
+    // A palette function that has no translation yet is refused as well, not turned into a comment
+    expect(rejected(model([block('root', 'SQRT')], []))).toEqual([expect.stringContaining("block 'root' (SQRT)")]);
+    const loop = model(
+      [block('first', 'OR'), block('second', 'AND')],
+      [wire('w1', 'first', 'OUT', 'second', 'IN1'), wire('w2', 'second', 'OUT', 'first', 'IN1')],
+    );
+    expect(rejected(loop)).toEqual([expect.stringMatching(/Circular dependency detected involving block: (first|second)/)]);
+  });
+
+  it('declares the input variables the blocks read', () => {
+    const result = transpileFBDToST(model(
+      [block('in1', 'input', { variableName: 'Start' }), block('out', 'output', { variableName: 'Run' })],
+      [wire('w', 'in1', 'OUT', 'out', 'IN')],
+      { inputs: [{ name: 'Start', type: 'BOOL', address: '%I0.0' }], outputs: [{ name: 'Run', type: 'BOOL' }] },
+    ));
+    expect(result.success).toBe(true);
+    expect(result.source).toMatch(/VAR_INPUT\s+Start AT %I0\.0 : BOOL;/);
+    expect(assemble(compileST(result.source)).bytecode.length).toBeGreaterThan(0);
+  });
+
+  it('refuses a constant with no value, and names or comments that would end the statement or the comment', () => {
+    const base = (blocks: unknown[], variables: Record<string, unknown[]> = {}) => model(blocks, [], variables);
+    expect(rejected(base([block('c', 'constant', { dataType: 'INT' })]))).toEqual(["FBD block 'c' (constant): it has no value"]);
+    expect(rejected(base([block('t', 'TON', { instanceName: 'T1; Out := TRUE' })]))).toEqual([expect.stringContaining("the instance name 'T1; Out := TRUE' is not an identifier")]);
+    expect(rejected(base([block('v', 'variable', { variableName: 'A := TRUE; B' })]))).toEqual([expect.stringContaining('is not a variable')]);
+    expect(rejected(base([block('n', 'NOT', { comment: 'x *) Out := TRUE; (*' })]))).toEqual([expect.stringContaining('the comment must not contain ST comment delimiters')]);
+    expect(rejected(base([], { local: [{ name: 'Bad Name', type: 'BOOL' }, { name: 'Ok', type: 'INT; END_VAR' }] })).length).toBe(2);
+    // A string constant keeps its quotes
+    const text = transpileFBDToST(model(
+      [block('s', 'constant', { dataType: 'STRING', value: "it's" }), block('out', 'output', { variableName: 'Label' })],
+      [wire('w', 's', 'OUT', 'out', 'IN')],
+      { outputs: [{ name: 'Label', type: 'STRING' }] },
+    ));
+    expect(text.success).toBe(true);
+    expect(text.source).toContain("Label := 'it''s';");
+  });
+
+  it('refuses to write to an input block and takes the type of a block output from its consumer', () => {
+    const wired = model(
+      [block('on', 'constant', { dataType: 'BOOL', value: true }), block('in1', 'input', { variableName: 'A' })],
+      [wire('w', 'on', 'OUT', 'in1', 'IN')],
+      { local: [{ name: 'A', type: 'BOOL' }] },
+    );
+    expect(rejected(wired)).toEqual([expect.stringContaining("block 'in1' (input): its input 'IN' is wired")]);
+
+    const subscribe = transpileFBDToST(model(
+      [block('on', 'constant', { dataType: 'BOOL', value: true }), block('sub', 'COMM_SUBSCRIBE', { instanceName: 'Sub' }), block('out', 'output', { variableName: 'Level' })],
+      [wire('c1', 'on', 'OUT', 'sub', 'EN'), wire('c2', 'sub', 'OUT', 'out', 'IN')],
+      { outputs: [{ name: 'Level', type: 'REAL' }] },
+    ));
+    expect(subscribe.success).toBe(true);
+    expect(subscribe.source).toContain('_sub_OUT : REAL;');
+  });
+});
+
+describe('LD power flow (LNG-021, LNG-022, LNG-002)', () => {
+  const model = (rungs: unknown[], extra: Record<string, unknown[]> = {}): LDModel => ({
+    name: 'Flow',
+    variables: {
+      local: [{ name: 'Timer', type: 'TON' }, { name: 'Count', type: 'CTU' }],
+      inputs: [
+        { name: 'A', type: 'BOOL', address: '%I0.0' }, { name: 'B', type: 'BOOL', address: '%I0.1' },
+        { name: 'C', type: 'BOOL', address: '%I0.2' },
+      ],
+      outputs: [{ name: 'X', type: 'BOOL' }, { name: 'Y', type: 'BOOL' }],
+      ...extra,
+    },
+    rungs,
+  } as unknown as LDModel);
+  const legacy = (id: string, number: number, elements: unknown[]) => ({ id, number, elements, connections: [] });
+  const contact = (id: string, variable: string, type = 'contact_no') => ({ id, type, variable });
+  const rejected = (input: LDModel) => {
+    const result = transpileLDToST(input);
+    expect(result.success).toBe(false);
+    expect(result.source).toBe('');
+    return result.errors;
+  };
+
+  it('takes power for a coil from the block before it, not from every contact in the rung', () => {
+    const result = transpileLDToST(model([legacy('r1', 1, [
+      contact('a', 'A'),
+      { id: 'tmr', type: 'function_block', fbType: 'TON', instance: 'Timer', parameters: { IN: 'CONNECTED', PT: 'T#1s' } },
+      contact('b', 'B'),
+      { id: 'k', type: 'coil', variable: 'X' },
+    ])]));
+    expect(result.success).toBe(true);
+    // The coil is driven by Timer.Q AND B: the timer's input is A alone
+    expect(result.source).toContain('Timer(IN := _rung1_result, PT := T#1s);');
+    expect(result.source).toMatch(/_rung1_result_2 := Timer\.Q AND B;\s+X := _rung1_result_2;/);
+    expect(assemble(compileST(result.source)).bytecode.length).toBeGreaterThan(0);
+  });
+
+  it('follows nested branches and coils on parallel rows', () => {
+    const cell = (id: string | null, variable: string | null, row: number, col: number, wire: boolean, type = 'contact_no') =>
+      ({ element: id ? { id, type, variable, row, col } : null, hasWire: wire });
+    const rung = {
+      id: 'r1', number: 1, gridConfig: { rows: 3, cols: 5, cellWidth: 80, cellHeight: 60 },
+      grid: [
+        [cell('a', 'A', 0, 0, true), cell('b', 'B', 0, 1, true), cell('c', 'C', 0, 2, true), cell(null, null, 0, 3, true), cell('x', 'X', 0, 4, true, 'coil')],
+        [cell(null, null, 1, 0, false), cell('b2', 'B', 1, 1, true, 'contact_nc'), cell(null, null, 1, 2, true), cell(null, null, 1, 3, false), cell(null, null, 1, 4, false)],
+        [cell(null, null, 2, 0, false), cell(null, null, 2, 1, false), cell('c2', 'C', 2, 2, true, 'contact_nc'), cell(null, null, 2, 3, false), cell(null, null, 2, 4, false)],
+      ],
+      branches: [
+        { id: 'outer', startCol: 1, endCol: 2, rows: [0, 1, 2] },
+        { id: 'inner', startCol: 2, endCol: 2, rows: [0, 2], parentBranchId: 'outer' },
+      ],
+    };
+    const result = transpileLDToST(model([rung]));
+    expect(result.success).toBe(true);
+    // A AND ((B AND (C OR NOT C)) OR NOT B): the inner pair joins before the outer one
+    expect(result.source).toContain('A AND ((B AND (C OR NOT C)) OR NOT B)');
+  });
+
+  it('rejects branches that nest without saying so, or that do not fit their parent', () => {
+    const row = (...cells: Array<[string | null, boolean]>) => cells.map(([id, wire], col) => ({ element: id ? { id, type: 'contact_no', variable: 'A', row: 0, col } : null, hasWire: wire }));
+    const base = {
+      id: 'r1', number: 1, gridConfig: { rows: 2, cols: 3, cellWidth: 80, cellHeight: 60 },
+      grid: [row(['a', true], [null, true], ['b', true]), [{ element: null, hasWire: false }, { element: { id: 'p', type: 'contact_no', variable: 'B', row: 1, col: 1 }, hasWire: true }, { element: null, hasWire: true }]],
+    };
+    const ok = { ...base, branches: [{ id: 'one', startCol: 1, endCol: 2, rows: [0, 1] }] };
+    expect(transpileLDToST(model([ok])).success).toBe(true);
+    const crossing = { ...base, branches: [{ id: 'one', startCol: 1, endCol: 2, rows: [0, 1] }, { id: 'two', startCol: 0, endCol: 1, rows: [0, 1] }] };
+    expect(rejected(model([crossing])).join('\n')).toContain("overlapping branches 'one' and 'two'");
+    const escaping = { ...base, branches: [{ id: 'one', startCol: 1, endCol: 1, rows: [0, 1] }, { id: 'two', startCol: 1, endCol: 2, rows: [0, 1], parentBranchId: 'one' }] };
+    expect(rejected(model([escaping])).join('\n')).toContain("branch 'two' does not fit inside its parent 'one'");
+  });
+
+  it('rejects an element that no power reaches, naming it', () => {
+    const rung = {
+      id: 'r1', number: 1, gridConfig: { rows: 2, cols: 3, cellWidth: 80, cellHeight: 60 },
+      grid: [
+        [{ element: { id: 'a', type: 'contact_no', variable: 'A', row: 0, col: 0 }, hasWire: true }, { element: { id: 'c', type: 'contact_no', variable: 'C', row: 0, col: 1 }, hasWire: true }, { element: { id: 'x', type: 'coil', variable: 'X', row: 0, col: 2 }, hasWire: true }],
+        [{ element: null, hasWire: false }, { element: { id: 'late', type: 'coil', variable: 'Y', row: 1, col: 1 }, hasWire: true }, { element: null, hasWire: false }],
+      ],
+      branches: [{ id: 'ghost', startCol: 1, endCol: 1, rows: [1, 0] }],
+    };
+    const errors = rejected(model([rung]));
+    expect(errors.join('\n')).toContain("Rung 'r1' branch 'ghost' starts on row 1, which no power reaches at column 1");
+  });
+
+  it('names the element and rung of one it does not know', () => {
+    const errors = rejected(model([legacy('r1', 1, [contact('a', 'A'), { id: 'mystery', type: 'one_shot_rising' }, { id: 'k', type: 'coil', variable: 'X' }])]));
+    expect(errors).toEqual([expect.stringContaining("element 'mystery' in rung 1")]);
+  });
+
+  it('keeps edge contacts and edge coils in R_TRIG and F_TRIG instances that compile', () => {
+    const result = transpileLDToST(model([
+      legacy('r1', 1, [contact('up', 'A', 'contact_p'), contact('down', 'B', 'contact_n'), { id: 'k', type: 'coil_p', variable: 'X' }]),
+      legacy('r2', 2, [contact('c', 'C'), { id: 'k2', type: 'coil_n', variable: 'Y' }]),
+    ]));
+    expect(result.success).toBe(true);
+    expect(result.source).toMatch(/_edge_r1_up : R_TRIG;/);
+    expect(result.source).toMatch(/_edge_r1_down : F_TRIG;/);
+    expect(result.source).toMatch(/_edge_r2_k2 : F_TRIG;/);
+    expect(assemble(compileST(result.source)).bytecode.length).toBeGreaterThan(0);
+  });
+
+  it('needs the address of a Modbus helper instead of using 1', () => {
+    const helper = (parameters: Record<string, string>) => model([legacy('r1', 1, [
+      { id: 'mb', type: 'function_block', fbType: 'MB_COIL', instance: 'Mb', parameters },
+    ])], { outputs: [{ name: 'X', type: 'BOOL' }] });
+    expect(rejected(helper({ IN: 'X' }))).toEqual([expect.stringContaining("Function block 'mb' requires parameters.ADDR")]);
+    const ok = transpileLDToST(helper({ IN: 'X', ADDR: '7' }));
+    expect(ok.success).toBe(true);
+    expect(ok.source).toContain('MODBUS_COIL(X, 7);');
+  });
+
+  it('refuses a variable that would collide with the state the transpiler generates', () => {
+    for (const name of ['_rung1_result_2', '_edge_r1_up']) {
+      const errors = rejected(model([legacy('r1', 1, [contact('a', 'A'), { id: 'k', type: 'coil', variable: 'X' }])], { local: [{ name, type: 'BOOL' }] }));
+      expect(errors.join('\n')).toContain('collides with generated rung state');
+    }
   });
 });
 
@@ -1151,7 +1551,7 @@ describe('FBD → ST → Assembly → Bytecode Pipeline', () => {
       connections: [
         { id: 'c1', from: { block: 'en', port: 'OUT' }, to: { block: 'timer', port: 'IN' } },
         { id: 'c2', from: { block: 'pt', port: 'OUT' }, to: { block: 'timer', port: 'PT' } },
-        // Note: Timer Q output needs to connect to 'out' - but our transpiler handles FB outputs differently
+        { id: 'c3', from: { block: 'timer', port: 'Q' }, to: { block: 'out', port: 'IN' } },
       ]
     };
     
@@ -1367,9 +1767,11 @@ describe('SFC to ST Transpiler', () => {
       const result = transpileSFCToST(model);
       
       expect(result.success).toBe(true);
-      expect(result.source).toContain('IF X_step1 AND (TRUE) THEN');
-      expect(result.source).toContain('X_step1 := FALSE');
-      expect(result.source).toContain('X_step2 := TRUE');
+      // The transition is evaluated into a flag first and applied after: the step is left, the next entered
+      expect(result.source).toContain('_F_t1 := X_step1 AND (TRUE);');
+      expect(result.source).toContain('IF _F_t1 THEN X_step1 := FALSE; END_IF;');
+      expect(result.source).toContain('IF _F_t1 THEN X_step2 := TRUE; END_IF;');
+      expect(assemble(compileST(result.source)).bytecode.length).toBeGreaterThan(0);
     });
   });
   
@@ -1418,7 +1820,7 @@ describe('SFC to ST Transpiler', () => {
       expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining(message)]));
     };
 
-    it('accepts the implemented N/ST subset', () => {
+    it('accepts the implemented qualifiers and ST actions', () => {
       expect(transpileSFCToST(validModel()).success).toBe(true);
     });
 
@@ -1492,8 +1894,8 @@ describe('SFC to ST Transpiler', () => {
       expectRejected(emptyBody, 'body must be a non-empty string');
 
       const unsupportedQualifier = validModel();
-      unsupportedQualifier.steps[0].actions![0].qualifier = 'S';
-      expectRejected(unsupportedQualifier, 'only N action qualifier is supported');
+      unsupportedQualifier.steps[0].actions![0].qualifier = 'SD';
+      expectRejected(unsupportedQualifier, "Step 'idle' action qualifier 'SD' is not supported");
     });
 
     it('rejects code and comment interpolation while accepting nested ST and inputs', () => {

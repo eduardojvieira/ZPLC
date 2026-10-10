@@ -27,4 +27,4 @@ export type {
 
 // Re-export transpiler
 export { transpileILToST } from './ilToST';
-export type { TranspileResult } from './ilToST';
+export type { TranspileResult, ILProjectSymbols, ILTranspileOptions } from './ilToST';

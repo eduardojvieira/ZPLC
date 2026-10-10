@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test';
-import type { Node } from '@xyflow/react';
+import type { Edge, Node } from '@xyflow/react';
 import { parseSFCModel, serializeSFCModel, type SFCModel } from '../../models/sfc';
 import { transpileSFCToST } from '../../transpiler/sfcToST';
-import { copySFCFragment, isCanonicalSFCConnection, pasteSFCFragment } from './graphModel';
+import { copySFCFragment, isCanonicalSFCConnection, nodesToTransitions, pasteSFCFragment } from './graphModel';
 
 const nodes: Node[] = [
   { id: 'step', type: 'step', position: { x: 0, y: 0 }, data: {} },
@@ -59,5 +59,23 @@ describe('SFC copy/paste graph model', () => {
     expect(copySFCFragment(graph.map((node) => node.id === 'next' ? { ...node, selected: false } : node), edges)).toBeUndefined();
     const fragment = copySFCFragment(graph, edges)!;
     expect(pasteSFCFragment({ ...model, actions: [] }, fragment)).toBeUndefined();
+  });
+});
+
+describe('SFC graph to transitions', () => {
+  const step = (id: string): Node => ({ id, type: 'step', position: { x: 0, y: 0 }, data: {} });
+  const edge = (source: string, target: string) => ({ id: `${source}_${target}`, source, sourceHandle: 'out', target, targetHandle: 'in', type: 'sfc' });
+
+  it('keeps every step wired to a transition and its priority, so saving does not drop a branch', () => {
+    const nodes: Node[] = [
+      step('a'), step('b'), step('c'), step('d'),
+      { id: 'fork', type: 'transition', position: { x: 0, y: 0 }, data: { condition: 'Go', priority: 3 } },
+      { id: 'join', type: 'transition', position: { x: 0, y: 0 }, data: { condition: 'TRUE' } },
+    ];
+    const edges = [edge('a', 'fork'), edge('fork', 'b'), edge('fork', 'c'), edge('b', 'join'), edge('c', 'join'), edge('join', 'd')] as Edge[];
+    expect(nodesToTransitions(nodes, edges)).toEqual([
+      { id: 'fork', fromStep: 'a', toStep: 'b', toSteps: ['b', 'c'], priority: 3, condition: 'Go', position: { x: 0, y: 0 }, comment: undefined },
+      { id: 'join', fromStep: 'b', toStep: 'd', fromSteps: ['b', 'c'], condition: 'TRUE', position: { x: 0, y: 0 }, comment: undefined },
+    ]);
   });
 });

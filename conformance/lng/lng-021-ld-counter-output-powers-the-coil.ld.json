@@ -1,0 +1,67 @@
+{
+  "name": "Count",
+  "variables": {
+    "local": [
+      {
+        "name": "Pulses",
+        "type": "CTU"
+      }
+    ],
+    "inputs": [
+      {
+        "name": "Sensor",
+        "type": "BOOL",
+        "address": "%IX0.0"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Done",
+        "type": "BOOL",
+        "address": "%QX0.0"
+      }
+    ]
+  },
+  "rungs": [
+    {
+      "id": "rung1",
+      "number": 1,
+      "elements": [
+        {
+          "id": "c1",
+          "type": "contact_no",
+          "position": {
+            "x": 50,
+            "y": 0
+          },
+          "variable": "Sensor"
+        },
+        {
+          "id": "fb1",
+          "type": "function_block",
+          "position": {
+            "x": 150,
+            "y": 0
+          },
+          "fbType": "CTU",
+          "instance": "Pulses",
+          "parameters": {
+            "CU": "CONNECTED",
+            "R": "FALSE",
+            "PV": "2"
+          }
+        },
+        {
+          "id": "k1",
+          "type": "coil",
+          "position": {
+            "x": 250,
+            "y": 0
+          },
+          "variable": "Done"
+        }
+      ],
+      "connections": []
+    }
+  ]
+}

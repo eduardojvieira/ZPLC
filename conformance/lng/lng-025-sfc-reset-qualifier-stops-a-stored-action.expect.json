@@ -1,0 +1,13 @@
+{
+  "requirement": "LNG-025",
+  "title": "an SFC R action stops the stored action it names",
+  "scans": 5,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 1
+    }
+  ]
+}

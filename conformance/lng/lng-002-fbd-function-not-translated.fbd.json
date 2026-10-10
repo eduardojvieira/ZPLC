@@ -1,0 +1,72 @@
+{
+  "name": "Root",
+  "variables": {
+    "local": [
+      {
+        "name": "Level",
+        "type": "REAL",
+        "initialValue": 2.0
+      }
+    ],
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "Res",
+        "type": "REAL",
+        "address": "%QD0"
+      }
+    ]
+  },
+  "blocks": [
+    {
+      "id": "level",
+      "type": "input",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "variableName": "Level"
+    },
+    {
+      "id": "root",
+      "type": "SQRT",
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "out",
+      "type": "output",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "variableName": "Res"
+    }
+  ],
+  "connections": [
+    {
+      "id": "w1",
+      "from": {
+        "block": "level",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "root",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "w2",
+      "from": {
+        "block": "root",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "out",
+        "port": "IN"
+      }
+    }
+  ]
+}
