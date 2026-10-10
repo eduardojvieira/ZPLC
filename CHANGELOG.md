@@ -4,6 +4,11 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- `smoke:studio-vertical` passes again to its end: it clicked the close button of a
+  tab that was seeded modified and expected it to close at once, which the unsaved
+  changes question (IDE-005) had stopped doing. It now answers the question with
+  Cancel, checks the tab stays, and closes the tab once nothing is unsaved; its
+  Close Project step also asks for Save all and close.
 - The project tree supports new folder, rename, move, duplicate and delete folder
   (IDE-004), from the Explorer header, a context menu and F2. Open buffers, tabs
   and breakpoints follow a renamed or moved entry, a task that runs a renamed

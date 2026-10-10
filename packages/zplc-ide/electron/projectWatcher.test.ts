@@ -22,35 +22,61 @@ describe('which changes are worth telling the window about (IDE-004)', () => {
 });
 
 describe('project watcher (IDE-004)', () => {
-  test('tells the window which paths changed under its folder, once for a burst of writes', async () => {
+  // Bun's recursive fs.watch on Linux reports only the first change of a burst (Node, which the app runs on, reports each),
+  // so what a real folder is asked for here is one change; batching and filtering are driven through a fake watch below.
+  test('tells the window which path changed under its folder', async () => {
     const root = await fixture();
     await mkdir(join(root, 'src'));
     const events: Array<{ ownerId: number; change: ProjectChange }> = [];
-    const watcher = createProjectWatcher({ send: (ownerId, change) => events.push({ ownerId, change }), debounceMs: 50 });
+    const watcher = createProjectWatcher({ send: (ownerId, change) => events.push({ ownerId, change }), debounceMs: 100 });
     watcher.start(7, 'root-1', root);
-    await wait(100);
+    await wait(150);
     await writeFile(join(root, 'src', 'Motor.st'), 'one');
-    await writeFile(join(root, 'src', 'Motor.st'), 'two');
-    await writeFile(join(root, 'src', 'Pump.st'), 'pump');
-    await wait(600);
+    await wait(1_000);
     watcher.stopAll();
-    const paths = new Set(events.flatMap((event) => event.change.paths));
-    expect(paths.has('src/Motor.st')).toBe(true);
-    expect(paths.has('src/Pump.st')).toBe(true);
+    expect(events.flatMap((event) => event.change.paths)).toContain('src/Motor.st');
     expect(events.every((event) => event.ownerId === 7 && event.change.rootId === 'root-1' && !event.change.overflow)).toBe(true);
-    expect(events.length).toBeLessThanOrEqual(3);
+  });
+
+  test('sends a burst as one batch of distinct paths and leaves out what the tools write for themselves', async () => {
+    let listener: ((event: string, filename: string | null) => void) | undefined;
+    const fake = { on: () => fake, close: () => undefined };
+    const events: ProjectChange[] = [];
+    const watcher = createProjectWatcher({
+      send: (_ownerId, change) => events.push(change),
+      debounceMs: 20,
+      watch: ((_path: string, _options: unknown, callback: (event: string, filename: string | null) => void) => { listener = callback; return fake; }) as never,
+    });
+    watcher.start(1, 'r', '/anywhere');
+    for (const name of ['src/Motor.st', 'src/Motor.st', 'src/Pump.st', 'src/.Motor.st.0a1b2c3d4e5f.tmp', '.git/index', 'node_modules/x.js']) listener!('change', name);
+    listener!('rename', null);
+    await wait(120);
+    expect(events).toEqual([{ rootId: 'r', paths: ['src/Motor.st', 'src/Pump.st'], overflow: false }]);
+    watcher.stopAll();
   });
 
   test('says there were too many to list instead of listing them', async () => {
-    const root = await fixture();
+    // A fake watch that the test drives, so that "a burst" does not depend on when the operating system delivers events.
+    let listener: ((event: string, filename: string | null) => void) | undefined;
+    let closed = false;
+    const fake = { on: () => fake, close: () => { closed = true; } };
     const events: ProjectChange[] = [];
-    const watcher = createProjectWatcher({ send: (_ownerId, change) => events.push(change), debounceMs: 80, maxPaths: 3 });
-    watcher.start(1, 'r', root);
-    await wait(100);
-    for (let index = 0; index < 10; index++) await writeFile(join(root, `F${index}.st`), 'x');
-    await wait(700);
+    const watcher = createProjectWatcher({
+      send: (_ownerId, change) => events.push(change),
+      debounceMs: 20,
+      maxPaths: 3,
+      watch: ((_path: string, _options: unknown, callback: (event: string, filename: string | null) => void) => { listener = callback; return fake; }) as never,
+    });
+    watcher.start(1, 'r', '/anywhere');
+    for (let index = 0; index < 10; index++) listener!('change', `F${index}.st`);
+    await wait(120);
+    expect(events).toEqual([{ rootId: 'r', paths: [], overflow: true }]);
+    // The next batch starts clean.
+    listener!('change', 'src/A.st');
+    await wait(120);
+    expect(events.at(-1)).toEqual({ rootId: 'r', paths: ['src/A.st'], overflow: false });
     watcher.stopAll();
-    expect(events.some((change) => change.overflow && change.paths.length === 0)).toBe(true);
+    expect(closed).toBe(true);
   });
 
   test('stops telling after stop, and a second start replaces the first watch', async () => {
