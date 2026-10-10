@@ -97,6 +97,7 @@ static size_t build_program(uint8_t *program, uint8_t task_count,
   memcpy(program, "ZPLC", 4U);
   write_u16_le(program + 4U, ZPLC_VERSION_MAJOR);
   write_u16_le(program + 6U, ZPLC_VERSION_MINOR);
+  write_u32_le(program + 28U, ZPLC_DRAFT_COUNTER);
   write_u32_le(program + 16U, sizeof(code));
   write_u32_le(program + 20U, (uint32_t)task_bytes);
   write_u16_le(program + 26U, 2U);

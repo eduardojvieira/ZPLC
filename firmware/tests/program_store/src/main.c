@@ -175,6 +175,7 @@ static size_t build_program_code(uint8_t *program, const uint8_t *code,
   memcpy(program, "ZPLC", 4U);
   put_u16(program + 4U, ZPLC_VERSION_MAJOR);
   put_u16(program + 6U, ZPLC_VERSION_MINOR);
+  put_u32(program + 28U, ZPLC_DRAFT_COUNTER);
   put_u32(program + 16U, (uint32_t)code_size);
   put_u16(program + 24U, 0U);
   put_u16(program + 26U, 1U);

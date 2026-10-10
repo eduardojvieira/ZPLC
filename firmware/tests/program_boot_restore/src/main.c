@@ -78,6 +78,7 @@ static size_t build_program(uint8_t *program, uint8_t output_value) {
   memcpy(program, "ZPLC", 4U);
   put_u16(program + 4U, ZPLC_VERSION_MAJOR);
   put_u16(program + 6U, ZPLC_VERSION_MINOR);
+  put_u32(program + 28U, ZPLC_DRAFT_COUNTER);
   put_u32(program + 16U, sizeof(code));
   put_u32(program + 20U, ZPLC_TASK_DEF_SIZE);
   put_u16(program + 26U, 2U);
