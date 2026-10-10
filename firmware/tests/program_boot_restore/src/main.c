@@ -3,10 +3,12 @@
 #include <zephyr/ztest.h>
 
 #include "program_boot_restore.h"
+#include "zplc_app_test_hooks.h"
 #include <zplc_core.h>
 #include <zplc_hal.h>
 #include <zplc_isa.h>
 #include <zplc_scheduler.h>
+#include <zplc_test_hooks.h>
 
 #define PROGRAM_CAPACITY 256U
 #define WORKSPACE_CAPACITY (PROGRAM_CAPACITY + ZPLC_PROGRAM_STORE_FOOTER_SIZE)

@@ -166,6 +166,9 @@ endif()
 
 enable_testing()
 
+# The test-only entry points (RT-033) are declared in tests/include/zplc_test_hooks.h, never in include/.
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/tests/include)
+
 # Test: ISA Header Verification
 add_executable(test_isa
     tests/test_isa.c
@@ -187,6 +190,18 @@ target_include_directories(test_contract PRIVATE
 )
 
 add_test(NAME test_contract COMMAND test_contract)
+
+# Test: no public header declares a test-only entry point (RT-033). It only has to compile.
+add_executable(test_public_headers
+    tests/test_public_headers.c
+)
+
+target_include_directories(test_public_headers PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/include
+)
+
+add_test(NAME test_public_headers COMMAND test_public_headers)
 
 # Test: VM Core Execution
 add_executable(test_vm_core

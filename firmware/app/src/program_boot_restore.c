@@ -13,6 +13,12 @@
 #include <zplc_loader.h>
 
 #ifdef CONFIG_ZTEST
+/* The seam is declared in tests/include/zplc_app_test_hooks.h, not in program_boot_restore.h (RT-033). */
+typedef zplc_program_store_restore_t (*zplc_boot_restore_test_restore_fn)(
+    uint8_t *workspace, size_t workspace_capacity, size_t *program_size);
+typedef int (*zplc_boot_restore_test_commit_fn)(uint8_t *workspace,
+                                                size_t program_size,
+                                                size_t workspace_capacity);
 static zplc_boot_restore_test_restore_fn test_restore;
 static zplc_boot_restore_test_commit_fn test_commit;
 

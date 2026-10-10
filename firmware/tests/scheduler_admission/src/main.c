@@ -5,6 +5,7 @@
 #include <zplc_hal.h>
 #include <zplc_isa.h>
 #include <zplc_scheduler.h>
+#include <zplc_test_hooks.h>
 
 #include "process_image_differential.h"
 

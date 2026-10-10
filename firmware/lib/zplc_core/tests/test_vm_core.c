@@ -14,9 +14,8 @@
 #include <stdio.h>
 #include <string.h>
 
-/* Private fixtures compiled only with the test-owned core copy. */
-int zplc_test_mem_load_code(const uint8_t *code, size_t size, uint16_t offset);
-int zplc_test_load_raw(const uint8_t *bytecode, size_t size);
+/* Private fixtures compiled only with the test-owned core copy (RT-033). */
+#include <zplc_test_hooks.h>
 
 /* ============================================================================
  * Test Infrastructure

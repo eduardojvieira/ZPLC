@@ -25,11 +25,7 @@
 #include "process_image_differential.h"
 
 /* Test-only hooks; production zplc_hal.h deliberately stays clean. */
-extern void zplc_hal_persist_test_fail_at(unsigned long operation);
-extern void zplc_hal_persist_test_fail_result(zplc_hal_result_t result);
-extern unsigned long zplc_hal_persist_test_operation_count(void);
-extern int zplc_hal_persist_test_failure_triggered(void);
-extern void zplc_hal_persist_test_parent_sync_fail_at(unsigned long attempt);
+#include <zplc_test_hooks.h>
 
 static int test_count = 0;
 static int fail_count = 0;

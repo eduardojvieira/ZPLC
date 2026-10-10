@@ -26,10 +26,7 @@
 #include <zplc_retain.h>
 
 /* Test-only hooks of the POSIX HAL (built with ZPLC_HAL_PERSIST_TESTING). */
-extern void zplc_hal_persist_test_fail_at(unsigned long operation);
-extern unsigned long zplc_hal_persist_test_operation_count(void);
-extern int zplc_hal_persist_test_failure_triggered(void);
-extern void zplc_hal_persist_test_parent_sync_fail(int enabled);
+#include <zplc_test_hooks.h>
 
 static int test_count = 0;
 static int fail_count = 0;

@@ -33,14 +33,4 @@ int zplc_boot_restore_legacy_prepare(uint8_t *staging, size_t staging_capacity,
                                      size_t *program_size,
                                      uint32_t *scan_interval_ms);
 
-#ifdef CONFIG_ZTEST
-typedef zplc_program_store_restore_t (*zplc_boot_restore_test_restore_fn)(
-    uint8_t *workspace, size_t workspace_capacity, size_t *program_size);
-typedef int (*zplc_boot_restore_test_commit_fn)(uint8_t *workspace,
-                                                size_t program_size,
-                                                size_t workspace_capacity);
-void zplc_boot_restore_test_set_store(zplc_boot_restore_test_restore_fn restore,
-                                      zplc_boot_restore_test_commit_fn commit);
-#endif
-
 #endif /* ZPLC_PROGRAM_BOOT_RESTORE_H */

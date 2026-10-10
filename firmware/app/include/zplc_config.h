@@ -211,10 +211,6 @@ int zplc_config_set_modbus_tag_override(uint16_t index,
                                          uint16_t register_count);
 int zplc_config_clear_modbus_tag_override(uint16_t index);
 
-#if defined(CONFIG_ZTEST)
-void zplc_config_test_set_modbus_override_publish_hook(void (*hook)(void));
-#endif
-
 int zplc_modbus_init(void);
 int zplc_mqtt_init(void);
 void zplc_mqtt_request_backoff_reset(void);
