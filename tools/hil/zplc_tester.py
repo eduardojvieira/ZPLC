@@ -1,15 +1,50 @@
-import serial
-import time
-import json
+"""The device-side tester of the HIL scripts: shell grammar over a transport, plus checks that decide the exit status.
+
+A script makes its judgements with `tester.check(...)` and ends with `sys.exit(tester.finish())`: a run that
+checked nothing, or whose checks did not all hold, exits non-zero (HIL-004). The transport is a serial port
+found from a parameter, ZPLC_SERIAL_PORT or the USB identifiers of the board (HIL-007), or a fake device
+(ZPLC_HIL_DEVICE=null|host, see hil_devices.py). Programs are compiled at run time into a directory that is
+removed on close; nothing compiled is kept in the tree (HIL-006). The opcode table is the generated contract
+(HIL-008).
+"""
+from __future__ import annotations
+
 import binascii
-import struct
+import json
 import os
 import re
+import shutil
+import subprocess
 import sys
+import tempfile
+import time
 from pathlib import Path
+from typing import NamedTuple
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "contract"))
 from zplc_contract import Opcode  # noqa: E402
+
+from hil_devices import SerialTransport, open_fake  # noqa: E402
+from hil_ports import resolve_port  # noqa: E402
+
+ROOT = Path(__file__).resolve().parents[2]
+CLI = ROOT / "packages/zplc-ide/src/cli/index.ts"
+EXIT_SKIPPED = 77
+PROMPT = "zplc:~$"
+
+
+class CompileError(Exception):
+    pass
+
+
+class UploadError(Exception):
+    pass
+
+
+class Check(NamedTuple):
+    name: str
+    ok: bool
+    detail: str
 
 
 class ZPLCTester:
@@ -17,218 +52,211 @@ class ZPLCTester:
     # so this table cannot fall behind the VM (HIL-008).
     OP = {op.name: int(op) for op in Opcode}
 
-    def __init__(self, port=None, baud=115200):
-        if port is None:
-            # Check environment variable first
-            port = os.environ.get("ZPLC_PORT")
+    def __init__(self, port=None, baud=115200, transport=None, board=None):
+        self.checks: list[Check] = []
+        self.skip_reason: str | None = None
+        self.log: list[tuple[str, str]] = []
+        self.workdir: str | None = None
+        self.board = board
+        if transport is None:
+            fake = os.environ.get("ZPLC_HIL_DEVICE")
+            if fake:
+                transport = open_fake(fake)
+            else:
+                transport = SerialTransport(resolve_port(port, board, os.environ), baud)
+                time.sleep(1)  # the board resets when the port opens
+        self.ser = transport
+        self.kind = getattr(transport, "kind", "fake")
+        self.pace = 0.0 if self.kind == "null" else 1.0
 
-        if port is None:
-            import glob
+    # judgement -------------------------------------------------------------------------------------
+    def sleep(self, seconds: float) -> None:
+        if self.pace:
+            time.sleep(seconds * self.pace)
 
-            ports = glob.glob("/dev/tty.usbmodem*")
-            if not ports:
-                # Try CU as fallback
-                ports = glob.glob("/dev/cu.usbmodem*")
+    def check(self, name: str, ok: bool, detail: str = "") -> bool:
+        self.checks.append(Check(name, bool(ok), detail))
+        print(f"{'PASS' if ok else 'FAIL'}  {name}" + (f"  ({detail})" if detail and not ok else ""))
+        return bool(ok)
 
-            if not ports:
-                raise Exception("No Pico found on serial port")
+    def check_eq(self, name: str, got, want) -> bool:
+        return self.check(name, got == want, f"got {got!r}, wanted {want!r}")
 
-            # Sort by modification time (most recent first) to get the active port
-            ports.sort(key=lambda p: os.path.getmtime(p), reverse=True)
-            port = ports[0]
+    def skip(self, reason: str) -> None:
+        self.skip_reason = reason
+        print(f"SKIP  {reason}")
 
-        print(f"DEBUG: Using port {port}")
+    def finish(self) -> int:
+        """0 when every check held, 77 when the run said it was skipped, 1 otherwise (including a run that checked nothing)."""
+        failed = [c for c in self.checks if not c.ok]
+        if self.skip_reason is not None and not self.checks:
+            print(f"RESULT: SKIPPED ({self.skip_reason})")
+            return EXIT_SKIPPED
+        if not self.checks:
+            print("RESULT: FAILED (the run made no check)")
+            return 1
+        print(f"RESULT: {'PASSED' if not failed else 'FAILED'} ({len(self.checks) - len(failed)} of {len(self.checks)} checks)")
+        return 0 if not failed else 1
 
-        self.ser = serial.Serial(port, baud, timeout=1)
-        time.sleep(1)
-
+    # lifecycle ---------------------------------------------------------------------------------------
     def close(self):
         self.ser.close()
+        if self.workdir:
+            shutil.rmtree(self.workdir, ignore_errors=True)
+            self.workdir = None
 
-    def send(self, cmd, wait_for="zplc:~$", timeout=5.0):
-        """Envia un comando y espera el prompt o una respuesta específica."""
+    # shell -------------------------------------------------------------------------------------------
+    def send(self, cmd, wait_for=PROMPT, timeout=5.0):
+        """Send a command and wait for the prompt or a given answer."""
         while self.ser.in_waiting:
             self.ser.read(self.ser.in_waiting)
-
         self.ser.write(f"{cmd}\r\n".encode())
-
-        start = time.time()
+        self.log.append(("tx", cmd))
+        deadline = time.time() + timeout
         response = ""
-        while time.time() - start < timeout:
+        while time.time() < deadline:
             if self.ser.in_waiting > 0:
-                char = self.ser.read().decode("utf-8", errors="ignore")
-                response += char
+                response += self.ser.read(self.ser.in_waiting).decode("utf-8", errors="ignore")
                 if wait_for in response:
                     break
             else:
                 time.sleep(0.01)
+        self.log.append(("rx", response))
         return response
+
+    def identity(self) -> dict:
+        """What the device says it is: the JSON of `zplc sys info --json` ({} when it answers nothing parseable)."""
+        match = re.search(r"\{.*\}", self.send("zplc sys info --json"), re.DOTALL)
+        try:
+            return json.loads(match.group(0)) if match else {}
+        except json.JSONDecodeError:
+            return {}
 
     def reset_state(self):
         self.send("zplc stop")
         self.send("zplc reset")
-        self.send("zplc persist clear")
-        time.sleep(0.5)
+        self.sleep(0.5)
 
     def upload_bytecode(self, bytecode):
         self.send("zplc stop")
         self.send("zplc reset")
 
-        # Retry load command
-        resp = ""
+        response = ""
         for attempt in range(3):
             while self.ser.in_waiting:
-                self.ser.read()
-            resp = self.send(f"zplc load {len(bytecode)}", wait_for="OK:", timeout=5.0)
-            if "OK:" in resp:
+                self.ser.read(self.ser.in_waiting)
+            response = self.send(f"zplc load {len(bytecode)}", wait_for="OK:", timeout=5.0)
+            if "OK:" in response:
                 break
             print(f"WARN: zplc load retry {attempt + 1}")
-            time.sleep(0.5)
+            self.sleep(0.5)
         else:
-            print(f"ERROR: zplc load failed. Resp: {resp}")
-            return
+            raise UploadError(f"zplc load failed: {response.strip()}")
 
         hex_data = binascii.hexlify(bytearray(bytecode)).decode()
-        chunk_size = 32  # Safe size (32 hex chars = 16 bytes)
-
-        for i in range(0, len(hex_data), chunk_size):
-            chunk = hex_data[i : i + chunk_size]
-
-            # Retry logic for chunks
+        chunk_size = 32  # 16 bytes a command, the size the shell line buffer takes
+        for at in range(0, len(hex_data), chunk_size):
+            chunk = hex_data[at : at + chunk_size]
             for attempt in range(3):
-                # Clear input buffer to avoid stale data
                 while self.ser.in_waiting:
                     self.ser.read(self.ser.in_waiting)
-
-                resp = self.send(f"zplc data {chunk}", wait_for="OK:", timeout=5.0)
-                if "OK:" in resp:
+                response = self.send(f"zplc data {chunk}", wait_for="OK:", timeout=5.0)
+                if "OK:" in response:
                     break
-                print(f"WARN: Chunk {i} retry {attempt + 1}. Resp: {resp}")
-                time.sleep(0.5)
+                print(f"WARN: chunk {at} retry {attempt + 1}")
+                self.sleep(0.5)
             else:
-                print(f"ERROR: zplc data chunk {i} failed after retries")
-                return
-
-            time.sleep(0.05)  # Small delay between chunks
-
+                raise UploadError(f"zplc data failed at byte {at // 2}: {response.strip()}")
+            self.sleep(0.05)
         self.send("")
 
+    # observation --------------------------------------------------------------------------------------
     def start_and_capture(self, duration=1.0):
-        """Manda zplc start y captura los traces en modo verbose."""
+        """Send `zplc start` in verbose HIL mode and collect the JSON trace frames for `duration` seconds."""
         self.send("zplc hil mode verbose")
         self.ser.reset_input_buffer()
         self.ser.write(b"zplc start\r\n")
-
         traces = []
-        start_time = time.time()
         buffer = ""
-
-        while time.time() - start_time < duration:
+        deadline = time.time() + duration * self.pace
+        while time.time() < deadline:
             if self.ser.in_waiting > 0:
-                char = self.ser.read().decode("utf-8", errors="ignore")
-                buffer += char
-
-                if "}" in buffer:
-                    start_idx = buffer.find("{")
-                    end_idx = buffer.find("}")
-
-                    if start_idx != -1 and end_idx > start_idx:
-                        json_str = buffer[start_idx : end_idx + 1]
-                        try:
-                            data = json.loads(json_str)
-                            if data.get("t") in [
-                                "opcode",
-                                "error",
-                                "task",
-                                "fb",
-                                "ack",
-                            ]:
-                                traces.append(data)
-                        except json.JSONDecodeError:
-                            pass
-                        buffer = buffer[end_idx + 1 :]
+                buffer += self.ser.read(self.ser.in_waiting).decode("utf-8", errors="ignore")
+                while "}" in buffer:
+                    start_idx, end_idx = buffer.find("{"), buffer.find("}")
+                    if start_idx == -1 or end_idx < start_idx:
+                        buffer = buffer[end_idx + 1 :] if end_idx != -1 else buffer
+                        break
+                    try:
+                        data = json.loads(buffer[start_idx : end_idx + 1])
+                        if data.get("t") in ("opcode", "error", "task", "fb", "ack"):
+                            traces.append(data)
+                    except json.JSONDecodeError:
+                        pass
+                    buffer = buffer[end_idx + 1 :]
             else:
                 time.sleep(0.01)
         return traces
 
     def start_and_wait(self, duration=1.0):
-        """Manda zplc start en modo off y espera."""
+        """Send `zplc start` with tracing off, let it run, and stop it."""
         self.send("zplc hil mode off")
         self.ser.reset_input_buffer()
-        resp = self.send("zplc start")
-        print(f"DEBUG: Start response: {resp.strip()}")
-        time.sleep(duration)
+        self.send("zplc start")
+        self.sleep(duration)
         self.send("zplc stop")
 
+    def observe(self, duration, regions):
+        """Start with tracing off, run for `duration` seconds, read each (address, length) while it is still running, then stop.
+
+        The outputs are read before the stop on purpose: STOP puts the outputs in their safe state, so a read after it
+        shows zeros whatever the program computed. Memory that is not an output survives the stop and can be read after.
+        """
+        self.send("zplc hil mode off")
+        self.ser.reset_input_buffer()
+        self.send("zplc start")
+        self.sleep(duration)
+        seen = [self.peek(address, length) for address, length in regions]
+        self.send("zplc stop")
+        return seen
+
     def peek(self, addr, length=1):
-        """
-        Reads memory from the device using zplc dbg peek.
-        Handles potentially noisy output (logs) and retries on empty reads.
-        """
-        cmd = f"zplc dbg peek {hex(addr)} {length}"
-        
-        for attempt in range(3):
-            # Clear any pending logs
+        """Read memory with `zplc dbg peek`, ignoring log lines and retrying an empty read. [] when it cannot be read."""
+        command = f"zplc dbg peek {hex(addr)} {length}"
+        for _ in range(3):
             self.ser.reset_input_buffer()
-            
-            resp = self.send(cmd, wait_for="zplc:~$")
-            
-            # Parse hex values only from lines that look like memory dumps:
-            # "0x20001004: 00 00 ..." or just raw hex data depending on formatting
-            # We look for lines containing ":" and hex bytes
-            
-            bytes_out = []
-            for line in resp.splitlines():
+            response = self.send(command, wait_for=PROMPT)
+            values = []
+            for line in response.splitlines():
                 line = line.strip()
-                # Ignore log lines starting with [HAL], [ERR], etc.
-                if line.startswith("[") or not line:
+                if line.startswith("[") or not line or ":" not in line:
                     continue
-                    
-                # Standard hexdump format: "0xaddr: byte byte ..."
-                if ":" in line:
-                    parts = line.split(":")
-                    if len(parts) > 1:
-                        data_part = parts[1]
-                        # Find all 2-digit hex sequences
-                        hex_matches = re.findall(r"\b([0-9A-Fa-f]{2})\b", data_part)
-                        for hv in hex_matches:
-                            bytes_out.append(int(hv, 16))
-            
-            if len(bytes_out) >= length:
-                return bytes_out[:length]
-            
-            # If we are here, we didn't get enough bytes. Wait a bit and retry.
-            time.sleep(0.2)
-            
-        return []  # Return empty if failed after retries
+                values += [int(h, 16) for h in re.findall(r"\b([0-9A-Fa-f]{2})\b", line.split(":", 1)[1])]
+            if len(values) >= length:
+                return values[:length]
+            self.sleep(0.2)
+        return []
 
+    def poke(self, addr, data):
+        """Write bytes one at a time: `zplc dbg poke` takes one value from 0 to 255 per command."""
+        for at, value in enumerate(bytes(data)):
+            self.send(f"zplc dbg poke {hex(addr + at)} {value}", wait_for="OK:")
 
-    def compile_st(self, st_file):
-        base, ext = os.path.splitext(st_file)
-        output_bin = base + ".zplc"
-
-        root_dir = os.path.join(os.path.dirname(__file__), "../..")
-        cli_path = os.path.join(root_dir, "packages/zplc-ide/src/cli/index.ts")
-
-        # Resolve relative paths from repo root (handles tools/hil/, packages/, etc.)
-        if not os.path.isabs(st_file):
-            st_abs = os.path.abspath(os.path.join(root_dir, st_file))
-            base_abs, _ = os.path.splitext(st_abs)
-            output_bin = base_abs + ".zplc"
-        else:
-            st_abs = st_file
-
-        bin_abs = (
-            os.path.abspath(output_bin) if not os.path.isabs(output_bin) else output_bin
-        )
-
-        cmd = f"bun {cli_path} compile {st_abs} -o {bin_abs}"
-        result = os.system(cmd)
-        if result != 0:
-            raise Exception(f"Compilation failed for {st_file}")
-
-        with open(bin_abs, "rb") as f:
-            return list(f.read())
+    # compile ---------------------------------------------------------------------------------------------
+    def compile_st(self, source):
+        """Compile a source file with the repository compiler into this tester's own directory; return the artifact bytes."""
+        bun = shutil.which("bun")
+        if bun is None:
+            raise CompileError("bun is not on PATH: the repository compiler runs on it")
+        path = Path(source)
+        path = path if path.is_absolute() else ROOT / path
+        if self.workdir is None:
+            self.workdir = tempfile.mkdtemp(prefix="zplc-hil-")
+        out = Path(self.workdir) / (path.name.split(".")[0] + ".zplc")
+        done = subprocess.run([bun, str(CLI), "compile", str(path), "-o", str(out)], capture_output=True, text=True, cwd=ROOT)
+        if done.returncode != 0:
+            raise CompileError(f"compilation of {path.name} failed: {(done.stderr or done.stdout).strip()}")
+        return list(out.read_bytes())
 
     def run_st(self, st_file, reset=True, duration=2.0):
         bytecode = self.compile_st(st_file)
@@ -238,32 +266,24 @@ class ZPLCTester:
         return self.start_and_capture(duration=duration)
 
     def run_bytecode(self, bytecode, reset=True, duration=0.5):
-        """
-        Upload raw bytecode (list of bytes) and run, capturing traces.
-        Returns list of trace dicts from verbose mode.
-        """
+        """Upload raw bytecode (a list of bytes) and run it, capturing the traces of verbose mode."""
         if reset:
             self.reset_state()
         self.upload_bytecode(bytecode)
         return self.start_and_capture(duration=duration)
 
-    def get_last_tos(self, traces):
-        """
-        Extract the last TOS (top-of-stack) value from opcode traces.
-        Returns None if no opcode traces found.
-        """
+    @staticmethod
+    def get_last_tos(traces):
+        """The top of stack of the last opcode trace, or None when there is none."""
         for trace in reversed(traces):
             if trace.get("t") == "opcode" and "tos" in trace:
                 return trace["tos"]
         return None
 
-    def get_last_sp(self, traces):
-        """
-        Extract the last SP (stack pointer) value from opcode traces.
-        Returns None if no opcode traces found.
-        """
+    @staticmethod
+    def get_last_sp(traces):
+        """The stack pointer of the last opcode trace, or None when there is none."""
         for trace in reversed(traces):
             if trace.get("t") == "opcode" and "sp" in trace:
                 return trace["sp"]
         return None
-

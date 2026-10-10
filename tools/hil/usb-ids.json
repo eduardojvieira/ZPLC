@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "note": "USB identifiers the HIL tools use to find a board's serial port (HIL-007). Keys are the ide_id of firmware/app/boards/supported-boards.v1.5.0.json. A board with no entry needs --port or ZPLC_SERIAL_PORT. Add an entry only from an identifier that a build or a bench run showed.",
+  "boards": {
+    "rpi_pico": {
+      "ids": [
+        { "vid": "2E8A", "pid": "000A", "source": "CONFIG_USB_DEVICE_VID and CONFIG_USB_DEVICE_PID in firmware/app/boards/rpi_pico_rp2040.conf (CDC ACM shell)" }
+      ]
+    },
+    "esp32s3_devkitc": {
+      "ids": [],
+      "note": "The shell is on a UART behind a USB bridge whose identifiers depend on the board revision: TO BE FILLED from the bench run (HIL-014)."
+    }
+  }
+}
