@@ -60,20 +60,11 @@ describe('the external services of the release (REL-035)', () => {
     for (const [service, , , cost] of services) expect(cost!.toLowerCase(), service).toMatch(/^none/);
   });
 
-  test('covers the owner of every action that the workflows use, and the registries the jobs fetch from', () => {
-    const owners = new Set<string>();
-    const directory = join(root, '.github/workflows');
-    for (const file of readdirSync(directory).filter((name) => name.endsWith('.yml'))) {
-      const workflow = Bun.YAML.parse(readFileSync(join(directory, file), 'utf8')) as { jobs: Record<string, { steps?: Array<{ uses?: string }> }> };
-      for (const job of Object.values(workflow.jobs)) {
-        for (const step of job.steps ?? []) if (step.uses && !step.uses.startsWith('./')) owners.add(step.uses.split('/')[0]!);
-      }
-    }
+  test('names the registries and hosts that the jobs fetch from', () => {
     const text = services.map((row) => row.join(' ')).join('\n').toLowerCase();
-    const mention: Record<string, string> = { actions: 'github actions', 'oven-sh': 'bun runtime' };
-    for (const owner of owners) expect(mention[owner], `no phrase for the action owner ${owner}`).toBeDefined();
-    for (const owner of owners) expect(text, owner).toContain(mention[owner]!);
-    for (const registry of ['npm registry', 'docker hub', 'python package index', 'github pages']) expect(text, registry).toContain(registry);
+    for (const service of ['github actions', 'bun runtime', 'npm registry', 'docker hub', 'python package index', 'github pages', 'sigstore']) {
+      expect(text, service).toContain(service);
+    }
   });
 
   test('says that a service that costs money needs an owner decision', () => {

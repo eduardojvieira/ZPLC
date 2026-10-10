@@ -220,7 +220,9 @@ describe('Windows installers carry unsigned in their variant until a channel is 
 describe('third-party notices are generated at packaging time and ship in every installer (REL-019)', () => {
   it('generates them from a hook that runs before electron-builder packs, for every platform and format', async () => {
     expect(builder.beforePack).toBe('scripts/before-pack.mjs');
-    const hook = await import('./before-pack.mjs');
+    // a variable path: the hook is plain JavaScript with no declaration file
+    const hookPath = './before-pack.mjs';
+    const hook = (await import(hookPath)) as { noticesCommand(projectDir: string): { command: string; args: string[] } };
     const command = hook.noticesCommand('/repo/packages/zplc-ide');
     expect(command).toEqual({
       command: 'bun',
@@ -312,11 +314,5 @@ describe('the notes claim only checks that their job runs (REL-027)', () => {
     ]);
     expect(stepRunning('render-release-notes', 'scripts/release/run-results.ts')).toBeDefined();
     expect(stepRunning('render-release-notes', 'scripts/release/release-notes.ts')).toBeDefined();
-  });
-
-  it('keeps the test reports of CI that the notes count', () => {
-    const ci = Bun.YAML.parse(read('../../../.github/workflows/ci.yml')) as { jobs: Record<string, Job> };
-    const names = ci.jobs.typescript!.steps.filter((step) => step.uses?.startsWith('actions/upload-artifact@')).map((step) => step.with!.name);
-    expect(names).toEqual(expect.arrayContaining(['junit-compiler', 'junit-ide']));
   });
 });

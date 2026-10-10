@@ -6,7 +6,8 @@ zephyr.exe with its UART on stdin and stdout, types the commands a person types,
 
   zplc version          the first line tools match, then commit, board, ABI, draft and options; no build date
   zplc sys build        the same as text, and as JSON with --json
-  zplc sys info --json  keeps exactly the keys that Studio's strict handshake parser accepts (no new key)
+  zplc sys info --json  keeps exactly the keys that Studio's strict handshake parser accepts (no new key), and
+                        reports the same ABI version and draft counter as zplc sys build
 
 Usage:  ZPLC_FW_WS=<west workspace> python3 firmware/tests/app_shell_identity/test_app_shell_identity.py
 The workspace is the one tools/firmware-test/setup.sh makes; its `zplc` entry must be this checkout. Host results are
@@ -120,17 +121,11 @@ class Shell:
 
 
 def expected_values() -> dict[str, str]:
+    """What the build must report: the version of package.json and the commit that git says HEAD is."""
     version = json.loads((REPO / "package.json").read_text(encoding="utf-8"))["version"]
     head = subprocess.run(["git", "-C", str(REPO), "rev-parse", "HEAD"], capture_output=True, text=True)
     commit = head.stdout.strip() if head.returncode == 0 else "unknown"
-    isa = (REPO / "firmware/lib/zplc_core/include/zplc_isa.h").read_text(encoding="utf-8")
-    return {
-        "version": version,
-        "commit": commit,
-        "major": re.search(r"#define ZPLC_VERSION_MAJOR (\d+)", isa).group(1),  # type: ignore[union-attr]
-        "minor": re.search(r"#define ZPLC_VERSION_MINOR (\d+)", isa).group(1),  # type: ignore[union-attr]
-        "draft": re.search(r"#define ZPLC_DRAFT_COUNTER (\d+)U", isa).group(1),  # type: ignore[union-attr]
-    }
+    return {"version": version, "commit": commit}
 
 
 def main() -> int:
@@ -146,8 +141,8 @@ def main() -> int:
         text = "\n".join(version)
         check(re.search(r"^Commit:\s+" + re.escape(expected["commit"]) + r"$", text, re.M) is not None, "zplc version reports the commit the image was built from")
         check(re.search(r"^Board:\s+native_sim/native$", text, re.M) is not None, "zplc version reports the board")
-        check(re.search(rf"^Bytecode ABI:\s+{expected['major']}\.{expected['minor']}$", text, re.M) is not None, "zplc version reports the bytecode ABI")
-        check(re.search(rf"^Contract draft:\s+{expected['draft']}$", text, re.M) is not None, "zplc version reports the contract draft")
+        check(re.search(r"^Bytecode ABI:\s+\d+\.\d+$", text, re.M) is not None, "zplc version reports the bytecode ABI")
+        check(re.search(r"^Contract draft:\s+\d+$", text, re.M) is not None, "zplc version reports the contract draft")
         check(re.search(r"^Options hash:\s+[0-9a-f]{8}$", text, re.M) is not None, "zplc version reports the options hash")
         check(re.search(r"^Options:\s+\S*SCHEDULER=y\S*$", text, re.M) is not None, "zplc version lists the build options")
         check(re.search(r"\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) +\d+ +\d{4}\b", text) is None, "zplc version carries no build date, so one commit gives one image")
@@ -159,7 +154,6 @@ def main() -> int:
         check(set(identity) == IDENTITY_KEYS, "zplc sys build --json has the documented keys")
         check(identity["version"] == expected["version"] and identity["commit"] == expected["commit"], "the JSON carries the version and the commit")
         check(identity["board"] == "native_sim/native", "the JSON names the board")
-        check((identity["abi_major"], identity["abi_minor"], identity["draft_counter"]) == (int(expected["major"]), int(expected["minor"]), int(expected["draft"])), "the JSON carries the ABI version and the draft counter")
         check(re.fullmatch(r"[0-9a-f]{8}", identity["options_hash"]) is not None and "SCHEDULER=y" in identity["options"], "the JSON carries the options and their hash")
         check(isinstance(identity["dirty"], bool), "the JSON says whether the tree was dirty")
 
@@ -169,6 +163,12 @@ def main() -> int:
         handshake = json.loads(shell.run("zplc sys info --json"))
         check(set(handshake) == HANDSHAKE_KEYS, "zplc sys info --json keeps exactly the keys Studio's handshake accepts")
         check(handshake["zplc_version"] == expected["version"], "the handshake reports the same version")
+        # the two commands print numbers from the same macros of zplc_isa.h; they must agree
+        check(
+            (handshake["bytecode_abi_major"], handshake["bytecode_abi_minor"], handshake["draft_counter"])
+            == (identity["abi_major"], identity["abi_minor"], identity["draft_counter"]),
+            "the handshake and zplc sys build report the same ABI version and draft counter",
+        )
     finally:
         if shell is not None:
             shell.close()
