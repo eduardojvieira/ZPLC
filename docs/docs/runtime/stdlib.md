@@ -131,12 +131,44 @@ Calculates the absolute value.
 ### SQRT
 Calculates the square root of a number.
 - **Inputs:** `IN` (REAL).
-- **Outputs:** (REAL) Square root of IN.
+- **Outputs:** (REAL) Square root of IN; 0.0 for an `IN` of 0.0 or below.
 
 ### SIN / COS / TAN
 Standard trigonometric functions (evaluated in radians).
 - **Inputs:** `IN` (REAL).
 - **Outputs:** (REAL) Sine, Cosine, or Tangent of IN.
+- **Domain:** `IN` below 100000 in magnitude. A NaN, or an angle of 100000 or more, gives a NaN: a REAL of that size no longer says where on the circle it is.
+
+### EXP / LN / LOG
+The natural exponential, the natural logarithm and the logarithm to base 10.
+- **Inputs:** `IN` (REAL; an integer is converted).
+- **Outputs:** (REAL) `e ** IN`, `ln(IN)` or `log10(IN)`.
+- **Range:** `EXP` gives +infinity above 88.72284 and 0.0 below -103.28. `LN` and `LOG` give -infinity for 0.0 and a NaN for a negative number.
+
+### ASIN / ACOS / ATAN / ATAN2
+Inverse trigonometric functions, in radians.
+- **Inputs:** `IN` (REAL) for `ASIN`, `ACOS` and `ATAN`; `ATAN2(Y, X)` takes two REAL values.
+- **Outputs:** (REAL) `ASIN` in [-pi/2, pi/2] and `ACOS` in [0, pi] for an `IN` from -1.0 to 1.0, a NaN outside it; `ATAN` in (-pi/2, pi/2) for any `IN`; `ATAN2` in (-pi, pi], the angle of the point (`X`, `Y`) measured from the positive X axis, and 0.0 for (0.0, 0.0).
+
+### EXPT
+`EXPT(BASE, EXP)` raises `BASE` to `EXP`; it is the operator `**` in function form. Both arguments are converted to REAL and the result is a REAL. An integer exponent, negative and 0 included, is computed by repeated squaring (`EXPT(2.0, -2.0)` is 0.25 and `EXPT(x, 0.0)` is 1.0); any other exponent as `2 ** (EXP * log2(BASE))`, a NaN for a negative base.
+
+### Accuracy of the REAL functions
+The functions above are subroutines in single-precision arithmetic, measured against `Math.*` over dense grids in the compiler test suite (`stdlib/mathlib.test.ts`). The error never exceeds:
+
+| Function | Range | Error |
+|---|---|---|
+| `SQRT` | all positive REAL, subnormals included | relative 1.3e-7 |
+| `EXP` | -87 to 88 | relative 1.3e-7 |
+| `LN`, `LOG` | all positive REAL, subnormals included | relative 3e-7 |
+| `SIN`, `COS` | magnitude up to 1000 | absolute 2e-7 |
+| `SIN`, `COS` | magnitude below 100000 | absolute 2e-6 |
+| `TAN` | magnitude up to 1000 | relative 3e-7 |
+| `ATAN` | all REAL | absolute 2e-7 |
+| `ASIN`, `ACOS` | -1.0 to 1.0 | absolute 4e-7 |
+| `ATAN2` | all REAL pairs | absolute 4e-7 |
+
+None of them faults the VM for any argument: a division by zero is replaced by the value the function defines, and a NaN argument gives a NaN.
 
 ---
 

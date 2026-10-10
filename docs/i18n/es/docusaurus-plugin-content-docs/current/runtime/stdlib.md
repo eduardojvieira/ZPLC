@@ -129,11 +129,43 @@ Combina características de CTU y CTD.
 
 ### SQRT
 - **Entradas:** `IN` (REAL).
-- **Salidas:** (REAL) Raíz cuadrada de IN.
+- **Salidas:** (REAL) Raíz cuadrada de IN; 0.0 si `IN` es 0.0 o menor.
 
 ### SIN / COS / TAN
 - **Entradas:** `IN` (REAL).
 - **Salidas:** (REAL) Seno, Coseno o Tangente de IN (en radianes).
+- **Dominio:** `IN` menor que 100000 en magnitud. Un NaN, o un ángulo de 100000 o más, da NaN: un REAL de ese tamaño ya no dice dónde está en la circunferencia.
+
+### EXP / LN / LOG
+El exponencial natural, el logaritmo natural y el logaritmo en base 10.
+- **Entradas:** `IN` (REAL; un entero se convierte).
+- **Salidas:** (REAL) `e ** IN`, `ln(IN)` o `log10(IN)`.
+- **Rango:** `EXP` da +infinito por encima de 88.72284 y 0.0 por debajo de -103.28. `LN` y `LOG` dan -infinito para 0.0 y NaN para un número negativo.
+
+### ASIN / ACOS / ATAN / ATAN2
+Funciones trigonométricas inversas, en radianes.
+- **Entradas:** `IN` (REAL) para `ASIN`, `ACOS` y `ATAN`; `ATAN2(Y, X)` toma dos valores REAL.
+- **Salidas:** (REAL) `ASIN` en [-pi/2, pi/2] y `ACOS` en [0, pi] para un `IN` de -1.0 a 1.0, NaN fuera de ese rango; `ATAN` en (-pi/2, pi/2) para cualquier `IN`; `ATAN2` en (-pi, pi], el ángulo del punto (`X`, `Y`) medido desde el eje X positivo, y 0.0 para (0.0, 0.0).
+
+### EXPT
+`EXPT(BASE, EXP)` eleva `BASE` a `EXP`; es el operador `**` en forma de función. Los dos argumentos se convierten a REAL y el resultado es REAL. Un exponente entero, negativo y 0 incluidos, se calcula por cuadrados sucesivos (`EXPT(2.0, -2.0)` es 0.25 y `EXPT(x, 0.0)` es 1.0); cualquier otro exponente como `2 ** (EXP * log2(BASE))`, NaN para una base negativa.
+
+### Precisión de las funciones REAL
+Las funciones anteriores son subrutinas en aritmética de precisión simple, medidas contra `Math.*` sobre grillas densas en la suite de tests del compilador (`stdlib/mathlib.test.ts`). El error nunca supera:
+
+| Función | Rango | Error |
+|---|---|---|
+| `SQRT` | todo REAL positivo, subnormales incluidos | relativo 1.3e-7 |
+| `EXP` | -87 a 88 | relativo 1.3e-7 |
+| `LN`, `LOG` | todo REAL positivo, subnormales incluidos | relativo 3e-7 |
+| `SIN`, `COS` | magnitud hasta 1000 | absoluto 2e-7 |
+| `SIN`, `COS` | magnitud menor que 100000 | absoluto 2e-6 |
+| `TAN` | magnitud hasta 1000 | relativo 3e-7 |
+| `ATAN` | todo REAL | absoluto 2e-7 |
+| `ASIN`, `ACOS` | -1.0 a 1.0 | absoluto 4e-7 |
+| `ATAN2` | todo par de REAL | absoluto 4e-7 |
+
+Ninguna hace fallar la VM con ningún argumento: una división por cero se reemplaza por el valor que la función define, y un argumento NaN da NaN.
 
 ---
 

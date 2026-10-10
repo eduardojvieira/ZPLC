@@ -68,6 +68,15 @@ All notable changes are documented here.
   buffer on the first call does nothing, and a call no longer leaves two
   values on the evaluation stack (a call inside a loop was refused by the
   loader).
+- `SQRT`, `EXP`, `LN`, `LOG`, `SIN`, `COS`, `TAN`, `ASIN`, `ACOS`, `ATAN` and
+  `ATAN2` are computed by REAL routines with argument reduction and a polynomial
+  of fixed degree, measured against `Math.*` in the compiler tests (errors from
+  1.3e-7 relative to 4e-7 absolute, bounds in the standard-library reference);
+  the old series gave `ASIN(0.5)` = 0.5259, `ACOS(0.5)` = 1.0449, `ATAN(1.0)` =
+  0.7238, `LN(10.0)` = 2.218, `LOG(1000.0)` = 1.449 and an `ATAN2` wrong in
+  three quadrants. Their arguments may be integers. `SIN`, `COS` and `TAN` of
+  an angle of 100000 or more are a NaN, `LN(0.0)` is minus infinity, and
+  `ASIN` or `ACOS` outside -1 to 1 are a NaN. `EXPT` is the operator `**`.
 
 ## 2.0.0-rc.3 - 2026-09-01
 

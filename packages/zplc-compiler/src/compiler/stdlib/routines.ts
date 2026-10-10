@@ -21,21 +21,12 @@
  *   _zplc_roundaf  [x] -> [y]     REAL rounded to the nearest whole number, an exact half away from zero
  */
 
-import { floatBits } from '../numeric.ts';
+import { f32hex as f32 } from '../numeric.ts';
+import { POWF_ROUTINES } from '../power.ts';
+import { MATH_ROUTINES } from './mathlib.ts';
+import type { Routine } from './types.ts';
 
-/** The IEEE 754 single-precision pattern of `value` as a PUSH32 operand. */
-export function f32(value: number): string {
-    return `0x${floatBits(value).toString(16).toUpperCase().padStart(8, '0')}`;
-}
-
-export interface Routine {
-    /** Label of the entry point. */
-    label: string;
-    /** The routine, label line first. */
-    lines: string[];
-    /** Labels of the routines this one calls; they are linked with it. */
-    needs: string[];
-}
+export type { Routine } from './types.ts';
 
 export const ROUNDF_LABEL = '_zplc_roundf';
 export const CLAMPI_LABEL = '_zplc_clampi';
@@ -215,15 +206,13 @@ const TABLE: Routine[] = [
     { label: F2U32_LABEL, lines: F2U32, needs: [ROUNDF_LABEL] },
     { label: TRUNCF_LABEL, lines: TRUNCF, needs: [] },
     { label: ROUNDAF_LABEL, lines: ROUNDAF, needs: [] },
+    // mathlib.ts: SQRT, EXP, LN, LOG and the trigonometric functions; power.ts: `**`
+    ...MATH_ROUTINES,
+    ...POWF_ROUTINES,
 ];
 
 const ROUTINES = new Map<string, Routine>(TABLE.map((routine) => [routine.label, routine]));
-
-/** Register routines defined elsewhere (power.ts); a label registered twice is a programming error. */
-export function registerRoutine(routine: Routine): void {
-    if (ROUTINES.has(routine.label)) throw new Error(`routine ${routine.label} is registered twice`);
-    ROUTINES.set(routine.label, routine);
-}
+if (ROUTINES.size !== TABLE.length) throw new Error('a stdlib routine label is defined twice');
 
 export function getRoutine(label: string): Routine | undefined {
     return ROUTINES.get(label);

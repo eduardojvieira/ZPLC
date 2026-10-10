@@ -96,6 +96,24 @@ export interface CodeGenContext {
 }
 
 // ============================================================================
+// Helper routines
+// ============================================================================
+
+/**
+ * A subroutine of the standard library (stdlib/routines.ts): `CALL label` with the arguments on the
+ * evaluation stack and the result left in their place. It is appended to a program the first time
+ * something calls it.
+ */
+export interface Routine {
+    /** Label of the entry point. */
+    label: string;
+    /** The routine, label line first. */
+    lines: string[];
+    /** Labels of the routines this one calls; they are linked with it. */
+    needs: string[];
+}
+
+// ============================================================================
 // Function Block Definition
 // ============================================================================
 

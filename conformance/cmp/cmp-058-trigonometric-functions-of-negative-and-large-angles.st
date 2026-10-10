@@ -1,0 +1,28 @@
+PROGRAM Angles
+VAR
+  q0 AT %QX0.0 : BOOL;
+  q1 AT %QX0.1 : BOOL;
+  q2 AT %QX0.2 : BOOL;
+  q3 AT %QX0.3 : BOOL;
+  q4 AT %QX0.4 : BOOL;
+  q5 AT %QX0.5 : BOOL;
+  q6 AT %QX0.6 : BOOL;
+  q7 AT %QX0.7 : BOOL;
+  q8 AT %QX1.0 : BOOL;
+  q9 AT %QX1.1 : BOOL;
+  q10 AT %QX1.2 : BOOL;
+  q11 AT %QX1.3 : BOOL;
+END_VAR
+  q0 := ABS((SIN(100.0)) - -0.5063656568527222) < 1.0E-5;
+  q1 := ABS((COS(1000.0)) - 0.5623790621757507) < 1.0E-5;
+  q2 := ABS((SIN(-10000.0)) - 0.3056143820285797) < 1.0E-5;
+  q3 := ABS((TAN(-0.5)) - -0.5463024973869324) < 1.0E-5;
+  q4 := ABS((SIN(-0.5)) - -0.4794255495071411) < 1.0E-6;
+  q5 := ABS((COS(-3.0)) - -0.9899924993515015) < 1.0E-6;
+  q6 := ABS((SIN(3.1415927)) - 0.0) < 1.0E-6;
+  q7 := ABS((COS(3.1415927)) - -1.0) < 1.0E-6;
+  q8 := ABS((COS(6.2831855)) - 1.0) < 1.0E-6;
+  q9 := ABS((SIN(0)) - 0.0) < 1.0E-6;
+  q10 := (SIN(1.0E6)) <> (SIN(1.0E6));
+  q11 := ABS((TAN(0.7853982)) - 1.0) < 1.0E-5;
+END_PROGRAM

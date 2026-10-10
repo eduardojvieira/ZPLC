@@ -101,7 +101,7 @@ import {
     type CompareOp,
     type HelperName,
 } from './numeric.ts';
-import { POWF_HELPER, POWF_LABEL } from './power.ts';
+import { POWF_LABEL } from './power.ts';
 import { getRoutine } from './stdlib/routines.ts';
 import { conversionResultType } from './stdlib/conversions.ts';
 
@@ -249,7 +249,7 @@ interface CodeGenState {
     memoryProfile: CompilerMemoryProfile;
     workMemorySize: number;
     /** The helper routines the program calls; they are appended after the main cycle. */
-    helpers: Set<HelperName | 'powf'>;
+    helpers: Set<HelperName>;
     /** The errors of statements that could not be generated, in the order found (CMP-007). */
     errors: CodegenError[];
     /** Check array indices at run time (CMP-023). */
@@ -503,7 +503,7 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
     validateStringLiteralPool(state, workMemoryBase, workMemorySize);
 
     // Routines the program called, reachable only through CALL
-    for (const helper of [...HELPERS, { name: 'powf' as const, title: 'REAL exponentiation (**)', lines: POWF_HELPER }]) {
+    for (const helper of HELPERS) {
         if (!state.helpers.has(helper.name)) continue;
         emit(state, ``);
         emit(state, `; --- Helper: ${helper.title} ---`);
@@ -2731,7 +2731,7 @@ function functionResultType(state: CodeGenState, expr: FunctionCall): string {
         case 'SHL': case 'SHR': case 'ROL': case 'ROR':
             return args.length > 0 ? staticType(state, args[0]) : UNKNOWN_TYPE;
         case 'ABSF': case 'NEGF': case 'SQRT': case 'SIN': case 'COS': case 'TAN': case 'LN': case 'LOG':
-        case 'EXP': case 'ASIN': case 'ACOS': case 'ATAN': case 'ATAN2': case 'TRUNC': case 'ROUND':
+        case 'EXP': case 'EXPT': case 'ASIN': case 'ACOS': case 'ATAN': case 'ATAN2': case 'TRUNC': case 'ROUND':
             return 'REAL';
         case 'NAND': case 'NOR':
             return 'BOOL';
@@ -2800,7 +2800,7 @@ function emitIntToReal(state: CodeGenState, fromType: string): void {
 }
 
 /** Link a helper routine into the program and call it. */
-function callHelper(state: CodeGenState, helper: HelperName | 'powf', label: string): void {
+function callHelper(state: CodeGenState, helper: HelperName, label: string): void {
     state.helpers.add(helper);
     emit(state, `    CALL ${label}`);
 }
@@ -4351,7 +4351,7 @@ function emitPower(state: CodeGenState, expr: BinaryExpr): void {
     }
     emitConverted(state, expr.left, 'REAL');
     emitConverted(state, expr.right, 'REAL');
-    callHelper(state, 'powf', POWF_LABEL);
+    linkRoutine(state, POWF_LABEL);
 }
 
 /**
