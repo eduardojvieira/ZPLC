@@ -13,6 +13,13 @@
   "VF-012": [
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_contract.c","test":"Checks on the generated binary contract tables (WP-11, VF-012)."}
   ],
+  "VF-013": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_opcode_coverage.c","test":"Every opcode of the generated table is executed, and checked, on the real VM (VF-013)."}
+  ],
+  "VF-014": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/fuzz_loader_verify.c","test":"libFuzzer target for zplc_loader_verify (VF-014)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/fuzz_run_program.c","test":"libFuzzer target that loads and RUNS artifacts the loader accepts (VF-014)."}
+  ],
   "VF-015": [
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_arith_edges.c","test":"(VF-005, VF-015)."}
   ],
@@ -475,10 +482,14 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"16 Debug details: stop, trace, resume mid-scan","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"7 Breakpoint stops execution","partial":true}
   ],
+  "RT-001": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/fuzz_run_program.c","test":"RT-001/COM-001 are open, so that a long run can look for other findings); ZPLC_FUZZ_DUMP=<path> writes the"}
+  ],
   "RT-004": [
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_dispatch.c","test":"RT-004: the STATUS field is written byte by byte, little endian, at any"}
   ],
   "RT-005": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_opcode_coverage.c","test":"table, the memory map and the defined edge-case results of RT-005); it"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_arith_edges.c","test":"Defined results for the integer and float edge cases of the VM (RT-005, CMP-016)"}
   ],
   "RT-006": [
@@ -492,6 +503,9 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"18 Force an input while stopped at a breakpoint","partial":true},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-017: resume and step continue the scan a breakpoint interrupted"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_core.c","test":"Resume continues the scan a breakpoint interrupted (RT-017)."}
+  ],
+  "COM-001": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/fuzz_run_program.c","test":"RT-001/COM-001 are open, so that a long run can look for other findings); ZPLC_FUZZ_DUMP=<path> writes the"}
   ],
   "IDE-001": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/projectFiles.test.ts","test":"the root held for the main process (IDE-001)"},
