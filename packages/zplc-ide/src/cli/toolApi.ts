@@ -8,6 +8,7 @@ import { ZPLC_CONSTANTS } from '@zplc/compiler';
 import { CompilerError, assertTaskProgramCardinality, compileMultiTaskProject, compilerErrorsOf, parse, transpileFailure, transpileToST, type CompilerWarning, type DebugMap, type DebugVarInfo, type Statement } from '../compiler';
 import type { ProjectMigrationChange } from '../project/projectModel';
 import { resolveProgramSource } from '../utils/programSourceResolution';
+import { elementAtLine } from '../models/sourceElements';
 import { compileScenario, findSignalVariable, runScenario, type CompiledScenario, type ScenarioKind, type ScenarioRunResult } from '../test-engine';
 import { createNativeScenarioSession } from './nativeScenarioRuntime';
 import { directoryIdentity, runFirmwareBuild, sameDirectoryIdentity } from './firmwareBuildRunner';
@@ -389,14 +390,14 @@ export function symbolsList(root: string): Promise<SymbolsListResult> { return c
 type SafetyOutput = { signal: string; address: number; bitOffset: number };
 function safetyLocation(output: Pick<SafetyOutput, 'address' | 'bitOffset'>): string { return `${output.address}:${output.bitOffset}`; }
 type SafetyDiagnosticCode = 'SAFETY_OUTPUT_INVALID' | 'SAFETY_OUTPUT_DUPLICATE' | 'SAFETY_INTERLOCK_UNCOVERED' | 'SAFETY_SCENARIO_INVALID' | 'SAFETY_SCENARIOS_UNAVAILABLE' | 'SAFETY_UNBOUNDED_WHILE' | 'SAFETY_UNBOUNDED_REPEAT';
-function safetyDiagnostic(code: SafetyDiagnosticCode, path?: string, line?: number): ToolDiagnostic {
+function safetyDiagnostic(code: SafetyDiagnosticCode, path?: string, line?: number, element?: string): ToolDiagnostic {
   const message = code === 'SAFETY_INTERLOCK_UNCOVERED' ? 'Declared incompatible outputs lack exact NEVER coverage'
     : code === 'SAFETY_SCENARIO_INVALID' ? 'Scenario cannot be used for safety coverage'
       : code === 'SAFETY_SCENARIOS_UNAVAILABLE' ? 'Scenarios are unavailable for safety coverage'
         : code === 'SAFETY_UNBOUNDED_WHILE' ? 'WHILE has no provable static iteration bound'
           : code === 'SAFETY_UNBOUNDED_REPEAT' ? 'REPEAT has no provable static iteration bound'
             : 'Declared safety output is invalid';
-  return { code, message, ...(path ? { path } : {}), ...(line === undefined ? {} : { line }) };
+  return { code, message, ...(path ? { path } : {}), ...(line === undefined ? {} : { line }), ...(element === undefined ? {} : { element }) };
 }
 function safetyOutput(debugMap: DebugMap, signal: string): SafetyOutput | undefined {
   // a global that another file declares is the variable of every program (CMP-042)
@@ -409,28 +410,36 @@ function safetyOutput(debugMap: DebugMap, signal: string): SafetyOutput | undefi
 }
 function safetyPairKey(left: SafetyOutput, right: SafetyOutput): string { return [safetyLocation(left), safetyLocation(right)].sort().join('\u0000'); }
 
-function collectUnboundedLoopDiagnostics(statements: Statement[], path: string, includeLine: boolean, diagnostics: ToolDiagnostic[]): void {
+/**
+ * `elementOf` gives, for a line of the generated Structured Text of a diagram, the element it was written for: the loop of
+ * an SFC action is reported against the action (LNG-026), and has no line of its own.
+ */
+function collectUnboundedLoopDiagnostics(
+  statements: Statement[], path: string, includeLine: boolean, diagnostics: ToolDiagnostic[],
+  elementOf?: (line: number) => string | undefined,
+): void {
+  const visit = (inner: Statement[]) => collectUnboundedLoopDiagnostics(inner, path, includeLine, diagnostics, elementOf);
   for (const statement of statements) {
     switch (statement.kind) {
       case 'WhileStatement':
-        diagnostics.push(safetyDiagnostic('SAFETY_UNBOUNDED_WHILE', path, includeLine ? statement.line : undefined));
-        collectUnboundedLoopDiagnostics(statement.body, path, includeLine, diagnostics);
+        diagnostics.push(safetyDiagnostic('SAFETY_UNBOUNDED_WHILE', path, includeLine ? statement.line : undefined, elementOf?.(statement.line)));
+        visit(statement.body);
         break;
       case 'RepeatStatement':
-        diagnostics.push(safetyDiagnostic('SAFETY_UNBOUNDED_REPEAT', path, includeLine ? statement.line : undefined));
-        collectUnboundedLoopDiagnostics(statement.body, path, includeLine, diagnostics);
+        diagnostics.push(safetyDiagnostic('SAFETY_UNBOUNDED_REPEAT', path, includeLine ? statement.line : undefined, elementOf?.(statement.line)));
+        visit(statement.body);
         break;
       case 'IfStatement':
-        collectUnboundedLoopDiagnostics(statement.thenBranch, path, includeLine, diagnostics);
-        for (const branch of statement.elsifBranches) collectUnboundedLoopDiagnostics(branch.statements, path, includeLine, diagnostics);
-        if (statement.elseBranch) collectUnboundedLoopDiagnostics(statement.elseBranch, path, includeLine, diagnostics);
+        visit(statement.thenBranch);
+        for (const branch of statement.elsifBranches) visit(branch.statements);
+        if (statement.elseBranch) visit(statement.elseBranch);
         break;
       case 'ForStatement':
-        collectUnboundedLoopDiagnostics(statement.body, path, includeLine, diagnostics);
+        visit(statement.body);
         break;
       case 'CaseStatement':
-        for (const branch of statement.branches) collectUnboundedLoopDiagnostics(branch.statements, path, includeLine, diagnostics);
-        if (statement.elseBranch) collectUnboundedLoopDiagnostics(statement.elseBranch, path, includeLine, diagnostics);
+        for (const branch of statement.branches) visit(branch.statements);
+        if (statement.elseBranch) visit(statement.elseBranch);
         break;
     }
   }
@@ -462,11 +471,13 @@ function safetyLoopDiagnostics(workspace: WorkspaceProject): ToolDiagnostic[] {
       throw errors[0];
     }
     const includeLine = source.language === 'ST';
-    for (const program of unit.programs) collectUnboundedLoopDiagnostics(program.statements, path, includeLine, diagnostics);
-    for (const fn of unit.functions) collectUnboundedLoopDiagnostics(fn.body, path, includeLine, diagnostics);
+    const map = 'sourceMap' in transpiled ? transpiled.sourceMap : undefined;
+    const elementOf = map ? (line: number) => elementAtLine(map, line) : undefined;
+    for (const program of unit.programs) collectUnboundedLoopDiagnostics(program.statements, path, includeLine, diagnostics, elementOf);
+    for (const fn of unit.functions) collectUnboundedLoopDiagnostics(fn.body, path, includeLine, diagnostics, elementOf);
     for (const block of unit.functionBlocks) {
-      collectUnboundedLoopDiagnostics(block.body, path, includeLine, diagnostics);
-      for (const method of block.methods) collectUnboundedLoopDiagnostics(method.body, path, includeLine, diagnostics);
+      collectUnboundedLoopDiagnostics(block.body, path, includeLine, diagnostics, elementOf);
+      for (const method of block.methods) collectUnboundedLoopDiagnostics(method.body, path, includeLine, diagnostics, elementOf);
     }
   }
   return diagnostics.sort((left, right) => left.path === right.path

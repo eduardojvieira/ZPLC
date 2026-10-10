@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { compilerCompile, safeCompilerDiagnostics } from './toolApi';
+import { compilerCompile, safeCompilerDiagnostics, safetyCheck } from './toolApi';
 
 const projects = fileURLToPath(new URL('../../projects', import.meta.url));
 const roots: string[] = [];
@@ -151,6 +151,25 @@ describe('LNG-003 and LNG-026 an SFC diagnostic names the step, the transition o
 
     const diagnostics = await diagnosticsOf('.sfc.json', JSON.stringify(model));
     expect(diagnostics).toEqual([expect.objectContaining({ element: `step:${step.id}`, message: expect.stringContaining('qualifier') })]);
+  });
+});
+
+describe('LNG-026 a finding of the safety check in an action body is reported against the action', () => {
+  it('names the action of an SFC chart that holds a loop with no bound', async () => {
+    const model = await read<SfcDocument>('blinky_sfc/src/main.sfc.json');
+    const action = model.actions[0]!;
+    action.body = `WHILE Lamp DO\n  Lamp := FALSE;\nEND_WHILE;`;
+    const root = await mkdtemp(join(tmpdir(), 'zplc-visual-safety-'));
+    roots.push(root);
+    await mkdir(join(root, 'src'));
+    await mkdir(join(root, 'tests'));
+    const manifest = JSON.parse(await readFile(join(projects, 'blinky_sfc', 'zplc.json'), 'utf8')) as { tasks: Array<{ programs: string[] }> };
+    await writeFile(join(root, 'zplc.json'), JSON.stringify(manifest));
+    await writeFile(join(root, 'src', 'main.sfc.json'), JSON.stringify(model));
+
+    const result = await safetyCheck(root);
+    expect(result.ok).toBe(false);
+    expect(result.evidence.diagnostics).toEqual([expect.objectContaining({ code: 'SAFETY_UNBOUNDED_WHILE', path: 'src/main.sfc.json', element: `action:${action.id}` })]);
   });
 });
 

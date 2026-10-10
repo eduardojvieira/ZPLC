@@ -20,7 +20,7 @@ flowchart LR
 
 This is a source-to-generated-ST workflow. Validate the generated result, diagnostics, and target capability profile; it does not establish an arbitrary IL/ST round trip or identical feature coverage with ST.
 
-A diagnostic of an IL file names the IL line it is about (`element: "line:12"`), also when the compiler finds it in the generated Structured Text, and each line that does not translate is its own diagnostic.
+A diagnostic of an IL file names the IL line it is about (`element: "line:12"`), also when the compiler finds it in the generated Structured Text, and each line that does not translate is its own diagnostic. The debug map of an IL file states IL lines, so a breakpoint is set on the IL line and the paused program is shown on it (LNG-004); lines of the generated code that no IL line stands behind are not places to stop.
 
 ## Runtime and debugging limits
 
