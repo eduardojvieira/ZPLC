@@ -471,6 +471,136 @@ static void test_comm_opcodes_raw(void) {
 }
 
 /* ----------------------------------------------------------------------------
+ * RT-001, RT-002: what the run fuzzer found in the communication opcodes
+ * (D1 write of the input image, D2 write past a region, D3 read past a
+ * region, D4 a handler given a block that does not fit)
+ * ------------------------------------------------------------------------- */
+
+/** One COMM_* on a block at `base`, as a program the loader sees (PUSH32, then
+ *  the opcode) and as bytes the VM runs unchecked. */
+static void comm_at(const char *name, uint8_t opcode, uint32_t kind,
+                    uint32_t base, int expect_ok) {
+  code_t c = {{0}, 0};
+  static const uint8_t zeros[ZPLC_MEM_IPI_SIZE];
+  const uint8_t *input_image;
+
+  op32(&c, OP_PUSH32, base);
+  op32(&c, opcode, kind);
+  if (opcode == OP_COMM_STATUS)
+    op(&c, OP_DROP);
+  op(&c, OP_HALT);
+  CHECK_EQ(verdict(&c), expect_ok ? ZPLC_LOADER_OK : ZPLC_LOADER_ERR_COMM, name);
+  CHECK_EQ(run_raw(&c), expect_ok ? OK : OOB, name);
+  input_image = zplc_mem_get_region(ZPLC_MEM_IPI_BASE);
+  CHECK(memcmp(input_image, zeros, sizeof zeros) == 0, name);
+}
+
+static void test_region_ends(void) {
+  /* the end of the input image, output image, work and retentive memory */
+  static const struct {
+    uint32_t end;
+    int writable;
+    const char *name;
+  } ends[] = {{0x1000U, 0, "input image"},
+              {0x2000U, 1, "output image"},
+              {0x4000U, 1, "work memory"},
+              {0x5000U, 1, "retentive memory"}};
+  static const uint32_t kinds[] = {ZPLC_COMM_FB_MB_READ_HREG,
+                                   ZPLC_COMM_FB_MQTT_CONNECT,
+                                   ZPLC_COMM_FB_SPB_REBIRTH,
+                                   ZPLC_COMM_FB_COMM_STATUS};
+  static const uint8_t opcodes[] = {OP_COMM_EXEC, OP_COMM_STATUS, OP_COMM_RESET};
+  size_t e, k, o;
+  unsigned back;
+  char name[96];
+  printf("=== RT-001, RT-002 the block against the end of each region ===\n");
+
+  for (e = 0U; e < sizeof ends / sizeof ends[0]; e++) {
+    for (k = 0U; k < sizeof kinds / sizeof kinds[0]; k++) {
+      uint32_t length = zplc_comm_fb_size(kinds[k]);
+      if (length == 0U)
+        length = ZPLC_COMM_FB_HANDSHAKE_SIZE;
+      for (o = 0U; o < sizeof opcodes / sizeof opcodes[0]; o++) {
+        for (back = 1U; back <= length + 2U; back++) {
+          const int fits = back >= length;
+          const int write = opcodes[o] != OP_COMM_STATUS;
+          /* sampling a long block: the first sixteen, and the three around its length */
+          if (back > 16U && (back + 1U < length || back > length + 1U))
+            continue;
+          snprintf(name, sizeof name, "op 0x%02X kind 0x%02X, %u bytes before the end of the %s",
+                   opcodes[o], (unsigned)kinds[k], back, ends[e].name);
+          comm_at(name, opcodes[o], kinds[k], ends[e].end - back,
+                  fits && (!write || ends[e].writable));
+        }
+      }
+    }
+  }
+
+  /* the reproducers of the fuzzer, literally */
+  comm_at("PUSH32 0; COMM_RESET 1 writes the input image", OP_COMM_RESET, 1U, 0x0000U, 0);
+  comm_at("COMM_EXEC on the input image", OP_COMM_EXEC, 1U, 0x0100U, 0);
+  comm_at("COMM_EXEC at the last 4 bytes of the output image", OP_COMM_EXEC, 1U, 0x1FFCU, 0);
+  comm_at("COMM_STATUS at the last 4 bytes of the input image", OP_COMM_STATUS, 1U, 0x0FFCU, 0);
+  comm_at("COMM_RESET at the last 4 bytes of retentive memory", OP_COMM_RESET, 1U, 0x4FFCU, 0);
+  comm_at("COMM_EXEC with the handshake at 0x4FFD", OP_COMM_EXEC, 1U, 0x4FFDU, 0);
+}
+
+static int handler_calls;
+static uint16_t handler_length;
+static uint8_t *handler_block;
+
+static int recording_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
+                             uint16_t fb_len, bool reset) {
+  (void)kind;
+  (void)reset;
+  handler_calls++;
+  handler_length = fb_len;
+  handler_block = fb_mem;
+  /* CONNECTED, the member that follows PROFILE: writes inside the 12 bytes */
+  fb_mem[ZPLC_COMM_MQTT_CONNECT_CONNECTED_OFFSET] = 1U;
+  return 0;
+}
+
+static void test_handler_gets_a_block_that_fits(void) {
+  code_t c;
+  uint8_t *work;
+  printf("=== RT-002 a handler is given a block that fits, and its length ===\n");
+
+  CHECK_EQ(zplc_comm_register_handler(ZPLC_COMM_FB_MQTT_CONNECT, recording_handler), 0,
+           "register a handler");
+
+  /* D4: the handshake of an MQTT_CONNECT (12 bytes) at 0x3FF8 fits the work
+   * memory, the block does not: the handler is not called, nothing is written */
+  c.n = 0;
+  op8(&c, OP_PUSH8, 1);
+  op16(&c, OP_STORE8, 0x3FF8U); /* EN */
+  op32(&c, OP_PUSH32, 0x3FF8U);
+  op32(&c, OP_COMM_EXEC, ZPLC_COMM_FB_MQTT_CONNECT);
+  op(&c, OP_HALT);
+  handler_calls = 0;
+  CHECK_EQ(run_raw(&c), OOB, "MQTT_CONNECT at 0x3FF8 does not fit work memory");
+  CHECK_EQ(handler_calls, 0, "the handler is not called for it");
+  CHECK_EQ(zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE)[0], 0, "nothing is written past work memory");
+
+  /* the same block 4 bytes lower ends exactly at the end of work memory */
+  c.n = 0;
+  op8(&c, OP_PUSH8, 1);
+  op16(&c, OP_STORE8, 0x3FF4U); /* EN */
+  op32(&c, OP_PUSH32, 0x3FF4U);
+  op32(&c, OP_COMM_EXEC, ZPLC_COMM_FB_MQTT_CONNECT);
+  op(&c, OP_HALT);
+  handler_calls = 0;
+  CHECK_EQ(run_raw(&c), OK, "MQTT_CONNECT at 0x3FF4 fits work memory");
+  CHECK_EQ(handler_calls, 1, "the handler is called once");
+  CHECK_EQ(handler_length, ZPLC_COMM_MQTT_CONNECT_SIZE, "with the length of its kind");
+  work = zplc_mem_get_region(ZPLC_MEM_WORK_BASE);
+  CHECK(handler_block == &work[0x3FF4U - ZPLC_MEM_WORK_BASE], "and a pointer to the block");
+  CHECK_EQ(work[0x3FF4U - ZPLC_MEM_WORK_BASE + ZPLC_COMM_MQTT_CONNECT_CONNECTED_OFFSET], 1,
+           "the handler wrote inside the block");
+  CHECK_EQ(zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE)[0], 0, "and nothing outside it");
+}
+
+/* ----------------------------------------------------------------------------
  * RT-002: the loader refuses a statically known block that does not fit
  * ------------------------------------------------------------------------- */
 
@@ -927,6 +1057,8 @@ int main(void) {
   test_string_operations();
   test_comm_opcodes();
   test_comm_opcodes_raw();
+  test_region_ends();
+  test_handler_gets_a_block_that_fits();
   test_loader_block_fit();
   test_stack_underflow();
   test_stack_paths();
