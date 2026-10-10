@@ -1,5 +1,6 @@
 {
   "requirement": "LNG-002",
   "title": "an FBD block the transpiler does not know is rejected",
+  "matrix": ["ld-fbd.fbd-blocks"],
   "build": "fails"
 }

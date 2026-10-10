@@ -1,6 +1,7 @@
 {
   "requirement": "LNG-021",
   "title": "LD power flows through nested parallel branches",
+  "matrix": ["ld-fbd.ld-parallel-branches"],
   "scans": 5,
   "scanMs": 10,
   "inputs": [

@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-023",
   "title": "a variable array index outside the bounds raises a VM fault",
+  "matrix": ["data-types.array-bounds-checking"],
   "scans": 1,
   "scanMs": 10,
   "fault": true

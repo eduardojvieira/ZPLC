@@ -1,6 +1,7 @@
 {
   "requirement": "LNG-022",
   "title": "LD negated, set and reset coils",
+  "matrix": ["ld-fbd.ld-contacts-and-coils"],
   "scans": 4,
   "scanMs": 10,
   "inputs": [

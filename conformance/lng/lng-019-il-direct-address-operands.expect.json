@@ -1,6 +1,7 @@
 {
   "requirement": "LNG-019",
   "title": "IL direct addresses as operands",
+  "matrix": ["il.implemented-operators"],
   "scans": 2,
   "scanMs": 10,
   "inputs": [

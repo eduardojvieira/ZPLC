@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-038",
   "title": "two instances of one function block keep their own state",
+  "matrix": ["pous.function-block-with-state-and-several-instances"],
   "scans": 3,
   "scanMs": 10,
   "expect": [

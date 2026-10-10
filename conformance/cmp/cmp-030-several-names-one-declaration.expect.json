@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-030",
   "title": "several names in one declaration",
+  "matrix": ["declarations.several-names-in-one-declaration"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QW0", "type": "INT", "value": 7 }]

@@ -1,6 +1,7 @@
 {
   "requirement": "LNG-024",
   "title": "an SFC selection follows the transition whose condition holds",
+  "matrix": ["sfc.steps-initial-step-transitions", "sfc.selection-branches"],
   "scans": 4,
   "scanMs": 10,
   "inputs": [

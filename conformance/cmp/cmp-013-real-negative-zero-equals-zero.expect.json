@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-013",
   "title": "REAL -0.0 equals 0.0 and is not below it",
+  "matrix": ["data-types.real"],
+  "tags": ["arch-sensitive", "float"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

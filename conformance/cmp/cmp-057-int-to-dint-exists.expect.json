@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-057",
   "title": "INT_TO_DINT exists",
+  "matrix": ["functions.other-conversions"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QD0", "type": "DINT", "value": 7 }]

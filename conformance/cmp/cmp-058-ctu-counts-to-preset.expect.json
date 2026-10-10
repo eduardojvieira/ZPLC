@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-058",
   "title": "CTU counts rising edges up to the preset",
+  "matrix": ["pous.function-block-call-with-named-inputs", "blocks.ctu-ctd-ctud"],
   "scans": 6,
   "scanMs": 10,
   "expect": [

@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-040",
   "title": "CASE with an enumeration label",
+  "matrix": ["data-types.enumerations", "statements.case"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QW0", "type": "INT", "value": 2 }]

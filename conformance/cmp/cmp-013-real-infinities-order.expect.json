@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-013",
   "title": "REAL infinities order below and above every finite value and equal themselves",
+  "matrix": ["data-types.real"],
+  "tags": ["arch-sensitive", "float"],
   "scans": 1,
   "scanMs": 10,
   "inputs": [

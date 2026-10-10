@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-015",
   "title": "ULINT 18446744073709551615 is above 1 and LWORD bit operations are 64 bits wide",
+  "matrix": ["data-types.lint-ulint-lword"],
+  "tags": ["arch-sensitive", "64-bit", "alignment"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

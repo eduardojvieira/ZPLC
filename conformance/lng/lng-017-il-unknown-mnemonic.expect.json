@@ -1,6 +1,7 @@
 {
   "requirement": "LNG-017",
   "title": "an IL unknown mnemonic is an error on its line",
+  "matrix": ["il.unknown-mnemonic"],
   "build": "fails",
   "lines": [
     7

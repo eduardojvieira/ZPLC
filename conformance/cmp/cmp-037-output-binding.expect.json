@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-037",
   "title": "function-block call with an output binding =>",
+  "matrix": ["pous.function-block-call-with-output-binding"],
   "scans": 3,
   "scanMs": 10,
   "expect": [{ "at": "%QX0.0", "type": "BOOL", "value": true }]

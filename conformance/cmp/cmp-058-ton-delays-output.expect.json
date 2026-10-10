@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-058",
   "title": "TON sets Q after the preset",
+  "matrix": ["pous.function-block-call-with-named-inputs", "blocks.ton", "configuration.cyclic-tasks"],
   "scans": 6,
   "scanMs": 10,
   "expect": [

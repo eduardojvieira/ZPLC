@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-057",
   "title": "TP is not retriggered while its input stays true",
+  "matrix": ["blocks.tp"],
   "scans": 8,
   "scanMs": 10,
   "expect": [

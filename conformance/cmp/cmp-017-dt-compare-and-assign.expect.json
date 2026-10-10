@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-017",
   "title": "DT is assigned from a literal and compares across the 32-bit word boundary",
+  "matrix": ["data-types.date-tod-dt", "literals.time-date-and-string-literals"],
+  "tags": ["arch-sensitive", "64-bit", "alignment"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

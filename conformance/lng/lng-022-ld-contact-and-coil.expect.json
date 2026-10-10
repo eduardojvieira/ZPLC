@@ -1,6 +1,7 @@
 {
   "requirement": "LNG-022",
   "title": "an LD contact drives a coil",
+  "matrix": ["ld-fbd.ld-contacts-and-coils"],
   "scans": 2,
   "scanMs": 10,
   "inputs": [{ "at": "%IX0.0", "type": "BOOL", "value": true, "beforeScan": 2 }],

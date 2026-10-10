@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-011",
   "title": "CASE selects on a negative INT and on a range of negatives",
+  "matrix": ["statements.case"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-017",
   "title": "a fraction on the last component of a TIME literal",
+  "matrix": ["literals.compound-and-fractional-time-literals"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

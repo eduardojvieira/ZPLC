@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-013",
   "title": "REAL arithmetic with positive operands",
+  "matrix": ["data-types.real", "statements.arithmetic-and-comparisons"],
+  "tags": ["arch-sensitive", "float"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QD0", "type": "REAL", "value": 3.25 }]

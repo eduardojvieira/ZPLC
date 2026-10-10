@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-014",
   "title": "NOT on a WORD",
+  "matrix": ["data-types.byte-word-dword", "statements.and-or-xor-not"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QW0", "type": "WORD", "value": 65280 }]

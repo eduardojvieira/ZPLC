@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-012",
   "title": "UDINT division and modulo above 2147483647, by small and by large divisors",
+  "matrix": ["data-types.udint", "statements.arithmetic-and-comparisons"],
+  "tags": ["arch-sensitive", "division"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

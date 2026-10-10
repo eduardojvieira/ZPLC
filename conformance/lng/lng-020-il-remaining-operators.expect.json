@@ -1,6 +1,7 @@
 {
   "requirement": "LNG-020",
   "title": "IL XOR, XORN, NOT, EQ, NE, GE, LE, MOD, NEG, CAL, JMP and RET",
+  "matrix": ["il.implemented-operators"],
   "scans": 3,
   "scanMs": 10,
   "inputs": [

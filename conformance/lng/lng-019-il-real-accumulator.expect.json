@@ -1,6 +1,7 @@
 {
   "requirement": "LNG-019",
   "title": "IL accumulator holds a REAL",
+  "matrix": ["il.typed-accumulator-function-calls-and-shifts"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QD0", "type": "REAL", "value": 3.75 }]

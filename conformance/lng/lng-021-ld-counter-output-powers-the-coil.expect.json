@@ -1,6 +1,7 @@
 {
   "requirement": "LNG-021",
   "title": "LD coil after a counter follows the counter output",
+  "matrix": ["ld-fbd.ld-blocks-in-a-rung"],
   "scans": 5,
   "scanMs": 10,
   "inputs": [

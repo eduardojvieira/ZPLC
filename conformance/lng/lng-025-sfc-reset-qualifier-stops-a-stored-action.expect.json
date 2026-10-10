@@ -1,6 +1,7 @@
 {
   "requirement": "LNG-025",
   "title": "an SFC R action stops the stored action it names",
+  "matrix": ["sfc.qualifiers-s-r-p"],
   "scans": 5,
   "scanMs": 10,
   "expect": [

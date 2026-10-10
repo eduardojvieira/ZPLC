@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-012",
   "title": "UDINT above 2147483647 converts to REAL as a positive number",
+  "matrix": ["data-types.udint", "functions.implicit-widening-conversion"],
+  "tags": ["arch-sensitive", "float-conversion"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

@@ -1,6 +1,7 @@
 {
   "requirement": "LNG-024",
   "title": "an SFC chain crosses one transition per scan",
+  "matrix": ["sfc.steps-initial-step-transitions"],
   "scans": 2,
   "scanMs": 10,
   "expect": [

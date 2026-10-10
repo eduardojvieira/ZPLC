@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-013",
   "title": "an INT given to a REAL parameter of a METHOD is converted",
+  "matrix": ["pous.methods-this"],
+  "tags": ["arch-sensitive", "float-conversion"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

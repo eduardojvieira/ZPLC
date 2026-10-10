@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-032",
   "title": "bit access w.0",
+  "matrix": ["statements.power-ampersand-and-bit-access"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QX0.0", "type": "BOOL", "value": true }]

@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-019",
   "title": "whole-structure assignment copies every byte",
+  "matrix": ["data-types.struct"],
+  "tags": ["arch-sensitive", "alignment"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QD0", "type": "DINT", "value": 7 }]

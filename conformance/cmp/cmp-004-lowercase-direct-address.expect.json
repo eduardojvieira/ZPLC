@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-004",
   "title": "direct address written in lower case",
+  "matrix": ["declarations.at-i-at-q-direct-addresses"],
   "scans": 1,
   "scanMs": 10,
   "inputs": [{ "at": "%IX0.0", "type": "BOOL", "value": true, "beforeScan": 1 }],

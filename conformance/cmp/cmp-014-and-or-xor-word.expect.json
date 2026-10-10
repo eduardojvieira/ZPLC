@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-014",
   "title": "AND, OR and XOR on WORD use the full 16 bits",
+  "matrix": ["data-types.byte-word-dword", "statements.and-or-xor-not"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

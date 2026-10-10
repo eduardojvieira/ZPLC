@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-020",
   "title": "storing an enumeration keeps the next variable",
+  "matrix": ["data-types.enumerations"],
+  "tags": ["arch-sensitive", "alignment"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QW0", "type": "INT", "value": 7 }]

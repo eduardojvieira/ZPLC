@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-054",
   "title": "the debug map lists a global variable",
+  "matrix": ["declarations.var-global"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "var": "G", "type": "INT", "value": 9 }]

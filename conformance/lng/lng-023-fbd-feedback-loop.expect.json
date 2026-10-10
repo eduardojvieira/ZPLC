@@ -1,6 +1,7 @@
 {
   "requirement": "LNG-023",
   "title": "an FBD feedback loop is rejected naming a block in the loop",
+  "matrix": ["ld-fbd.fbd-feedback-loops"],
   "build": "fails",
   "messageIncludes": [
     "Circular",

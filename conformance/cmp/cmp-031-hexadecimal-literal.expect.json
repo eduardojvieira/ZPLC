@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-031",
   "title": "hexadecimal literal 16#FF",
+  "matrix": ["literals.based-literals-and-digit-separators"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QW0", "type": "INT", "value": 255 }]

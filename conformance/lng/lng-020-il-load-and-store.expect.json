@@ -1,6 +1,7 @@
 {
   "requirement": "LNG-020",
   "title": "IL loads, combines and stores a BOOL",
+  "matrix": ["il.implemented-operators"],
   "scans": 2,
   "scanMs": 10,
   "inputs": [
