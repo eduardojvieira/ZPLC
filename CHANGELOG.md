@@ -33,6 +33,16 @@ All notable changes are documented here.
   two disagree. `zplc dbg watch` and `zplc dbg timer`, which only printed
   "not yet implemented" and succeeded, read a typed value and a timer
   instance now.
+- TLS cannot be built on a random generator that is not cryptographic
+  (COM-016). The build stops when TLS is enabled together with
+  `CONFIG_TEST_RANDOM_GENERATOR` or without a cryptographic random source
+  (`zplc_rule_tls_with_test_random_generator`). The Nucleo-H743ZI and Arduino
+  Opta images set that option; they use the STM32 hardware generator now, and
+  **TLS is off in them** until the generator is verified on the board
+  (HIL-011): MQTT there runs over plain TCP, and a TLS transport is refused
+  instead of downgraded. The firmware compiles with MQTT and TLS off for the
+  first time (unused buffers and the secure-websocket transport were not
+  guarded).
 - Three of the fifteen modules over the new size limit are split (IDE-014): the
   project settings are one module per section (2,181 lines to 213 and eleven
   files of at most 430), the Explorer's context menu and confirmations are

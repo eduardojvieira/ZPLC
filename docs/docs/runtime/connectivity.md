@@ -55,6 +55,10 @@ A controller that was never configured is safe on a plant network:
 
 The security setting only means something on a TLS transport. With plain TCP or WS the session has no TLS whatever `mqtt_security` says, and the status shows `tls-verify: n/a`.
 
+### TLS and the random number generator
+
+TLS needs random numbers that nobody can predict. A firmware build that enables TLS together with `CONFIG_TEST_RANDOM_GENERATOR`, or with no cryptographic random source, stops at configuration time (`zplc_rule_tls_with_test_random_generator`). The Nucleo-H743ZI and Arduino Opta images used to set that option; they now use the hardware random generator of the STM32 for the network stack, and **TLS is off in them** until the generator has been verified on the board (HIL-011): MQTT on those two boards runs over plain TCP only, and a TLS transport is refused instead of being downgraded. The ESP32-S3 image keeps TLS on, with its hardware generator.
+
 ## Credentials
 
 - No command prints a password, a key, a SAS key or a certificate, and no log line contains one: `zplc config get` shows `(set)` or `(not set)`, `zplc cert status` shows presence and size only, and the MQTT client logs error codes and paths, not values. The test of the firmware sets a known value for each credential and looks for it in the output of every reporting command and in the log.

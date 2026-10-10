@@ -24,6 +24,15 @@ project(zplc_zephyr_app)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/zplc_shell_rules.cmake)
 zplc_check_shell_rules("${CONFIG_DEVMEM_SHELL}" "${CONFIG_ZPLC_SHELL_RAW_MEMORY}")
 
+# COM-016: TLS never runs on a random generator that is not cryptographic.
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/zplc_tls_rng_rule.cmake)
+if(CONFIG_MQTT_LIB_TLS OR CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+  set(_zplc_tls ON)
+else()
+  set(_zplc_tls OFF)
+endif()
+zplc_check_tls_random("${_zplc_tls}" "${CONFIG_TEST_RANDOM_GENERATOR}" "${CONFIG_CSPRNG_ENABLED}")
+
 if(CONFIG_MQTT_LIB_WEBSOCKET)
   if(NOT TARGET subsys__net__lib__mqtt)
     message(FATAL_ERROR "Zephyr MQTT target subsys__net__lib__mqtt is required for the WebSocket net_log workaround")
