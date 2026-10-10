@@ -148,6 +148,17 @@ módulo no está enlazado en la compilación WASM y su adaptador no llama a un
 guardado en stop ni a un restore en la carga. Mientras eso no esté conectado, un
 programa en el simulador WASM parte de los valores declarados en cada carga.
 
+### Activarlo en una placa de firmware
+
+`CONFIG_ZPLC_RETAIN_PERSIST` está desactivado por defecto. La ruta de escritura está cubierta por la
+suite `retain_persist` en `native_sim` (ambos anchos de palabra) y por la aserción de desgaste en tiempo
+de compilación; ninguna placa fue medida: una escritura en flash puede detener la captura de instrucciones
+en partes que ejecutan desde la misma flash, y en varias placas la partición de almacenamiento también la
+usa otro sistema de archivos. Se establece `CONFIG_ZPLC_RETAIN_PERSIST=y` en el archivo de la placa, con
+los números de resistencia de la sección siguiente, cuando esa placa haya superado su registro de hardware
+(HIL-010). Hasta entonces la región `RETAIN` se inicializa en cada arranque en el firmware y el estado no
+incluye el campo `retain`.
+
 ### Presupuesto de desgaste de flash por placa
 
 Cada guardado de una región modificada cuesta borrados de flash. El peor caso es

@@ -165,9 +165,13 @@ config ZPLC_SCHED_HIGH_PRIO_PRIORITY
 
 config ZPLC_RETAIN_PERSIST
     bool "Persist the RETAIN region across power cycles"
-    default y if NVS
     depends on ZPLC_SCHED_HIGH_PRIO_WORKQ
     help
+      Off by default: the flash write path has been exercised on native_sim and
+      QEMU only, and on several boards the storage partition is also used by
+      another file system. Turn it on for a board once that board has passed its
+      hardware record (HIL-010).
+
       Restores the RETAIN region when a program is loaded or restored at boot,
       before the first scan, and stores it on STOP and periodically while the
       program runs. A record carries a checksum, a layout hash and the program

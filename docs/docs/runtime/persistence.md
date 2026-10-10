@@ -143,6 +143,16 @@ into the WASM build and its adapter does not call a save on stop or a restore on
 load. Until that is wired, a program on the WASM simulator starts from the
 declared values at every load.
 
+### Enabling it on a firmware board
+
+`CONFIG_ZPLC_RETAIN_PERSIST` is off by default. The write path is covered by the `retain_persist` suite
+on `native_sim` (both word sizes) and the build-time wear assertion, and no board has been measured: a
+flash write can stall instruction fetch on parts that execute from the same flash, and on several boards
+the storage partition is also used by another file system. Set `CONFIG_ZPLC_RETAIN_PERSIST=y` in the board
+file, with the endurance numbers of the next section, once that board has passed its hardware record
+(HIL-010). Until then the `RETAIN` region is initialised at every start on firmware and the status has no
+`retain` field.
+
 ### Flash wear budget per board
 
 Every save of a changed region costs flash erases. The worst case is a region
