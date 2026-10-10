@@ -205,6 +205,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Test the firmware test report tool
+        run: python3 zplc/tools/firmware-test/test_fwtest.py
+
       - name: Setup pinned Zephyr workspace
         shell: bash
         env:
@@ -228,6 +231,16 @@ jobs:
 
       - name: Run Twister
         run: west twister -T zplc/firmware/tests -p native_sim/native/64 --inline-logs --outdir "${RUNNER_TEMP}/zplc-twister"
+
+      - name: Install the 32-bit C runtime for native_sim/native
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends gcc-multilib
+
+      - name: Run Twister on 32-bit native_sim and QEMU (Cortex-M3, Cortex-M0)
+        env:
+          ZPLC_FW_WS: ${{ github.workspace }}
+        run: zplc/tools/firmware-test/run.sh native32 qemu-m3 qemu-m0
 
   zephyr-cross-build:
     name: Zephyr cross-build (${{ matrix.id }})
@@ -288,7 +301,27 @@ jobs:
         run: west blobs fetch hal_espressif
 
       - name: Cross-build firmware app
-        run: west build -p always -b "${{ matrix.board }}" zplc/firmware/app -d "${RUNNER_TEMP}/zplc-${{ matrix.id }}"
+        shell: bash
+        run: |
+          set -o pipefail
+          west build -p always -b "${{ matrix.board }}" zplc/firmware/app -d "${RUNNER_TEMP}/zplc-${{ matrix.id }}" 2>&1 | tee "${RUNNER_TEMP}/zplc-${{ matrix.id }}.build.log"
+
+      - name: Check flash and RAM against the size budget
+        shell: bash
+        run: |
+          status=0
+          python3 zplc/tools/firmware-test/fwtest.py size \
+            --budget zplc/tools/firmware-test/size-budget.json \
+            --log "${RUNNER_TEMP}/zplc-${{ matrix.id }}.build.log" \
+            --zephyr-board "${{ matrix.board }}" > "${RUNNER_TEMP}/size-${{ matrix.id }}.txt" || status=$?
+          cat "${RUNNER_TEMP}/size-${{ matrix.id }}.txt"
+          {
+            echo '### Flash and RAM: ${{ matrix.id }}'
+            echo '```text'
+            cat "${RUNNER_TEMP}/size-${{ matrix.id }}.txt"
+            echo '```'
+          } >> "${GITHUB_STEP_SUMMARY}"
+          exit "${status}"
 
       - name: Keep cross-build firmware
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
