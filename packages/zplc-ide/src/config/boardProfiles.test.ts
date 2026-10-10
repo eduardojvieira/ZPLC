@@ -167,6 +167,14 @@ describe('board I/O descriptions in the catalogue (IO-001, IO-003, IO-009)', () 
     expect(getBoardIo('arduino_opta_wifi')!.channels.filter((c) => c.pin.includes('relay'))).toHaveLength(4);
   });
 
+  test('every one of the seven profiles has its channels, the Opta its relays and the RP2040-Zero is listed (IO-010, IO-011)', () => {
+    expect(catalogue.map((entry) => entry.ide_id).sort()).toEqual([
+      'arduino_giga_r1', 'arduino_opta_wifi', 'esp32s3_devkitc', 'nucleo_h743zi', 'rpi_pico', 'stm32f746g_disco', 'waveshare_rp2040_zero',
+    ]);
+    for (const entry of catalogue) expect(getBoardIo(entry.ide_id)?.channels.length, entry.ide_id).toBeGreaterThan(0);
+    expect(getBoardIo('arduino_opta_wifi')!.channels.filter((c) => c.pin.includes('relay') && c.direction === 'output')).toHaveLength(4);
+  });
+
   test('a device board target resolves to its catalogue board', () => {
     expect(getBoardByZephyrTarget('rpi_pico/rp2040')).toBe('rpi_pico');
     expect(getBoardByZephyrTarget('rpi_pico')).toBeUndefined();

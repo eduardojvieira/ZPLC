@@ -15,7 +15,7 @@ const analog = (overrides: Record<string, unknown> = {}) => ({
 });
 const io = (channels: unknown[]) => readBoardIo({ schema_version: 1, channels, unmapped: [] })!;
 
-describe('direct addresses of the process image', () => {
+describe('direct addresses of the process image (IO-001)', () => {
   test('a bit address names its byte and bit', () => {
     expect(parseDirectAddress('%IX0.3')).toEqual({ region: 'I', byte: 0, bit: 3, width: 1, text: '%IX0.3' });
   });
@@ -27,7 +27,7 @@ describe('direct addresses of the process image', () => {
   });
 });
 
-describe('the board I/O description', () => {
+describe('the board I/O description (IO-001, IO-005)', () => {
   test('a valid description reads into typed channels', () => {
     const description = io([channel(), analog()]);
     expect(description.channels.map((entry) => entry.id)).toEqual(['DO0', 'AI0']);
@@ -54,7 +54,7 @@ describe('the board I/O description', () => {
   });
 });
 
-describe('the manifest read by Studio is the one the docs are generated from', () => {
+describe('the manifest read by Studio is the one the docs are generated from (IO-012)', () => {
   const docs = readFileSync(join(import.meta.dir, '../../../../docs/docs/reference/boards.md'), 'utf8');
 
   test('every board has a description and its hash is the one printed in the generated reference', () => {
@@ -65,6 +65,16 @@ describe('the manifest read by Studio is the one the docs are generated from', (
       expect(section, entry.board_id).toBeDefined();
       const printed = /I\/O description hash:\*\* `([0-9a-f]{8})`/.exec(section!)?.[1];
       expect(descriptionHash(entry.board_id, description!), entry.board_id).toBe(printed ?? '');
+    }
+  });
+
+  test('the generated reference prints the footprint of every board from the size budget (IO-014)', () => {
+    const budget = JSON.parse(readFileSync(join(import.meta.dir, '../../../../tools/firmware-test/size-budget.json'), 'utf8')).boards as Record<string, { measured: { flash: number; ram: number } }>;
+    for (const entry of manifest as Array<{ board_id: string }>) {
+      const row = docs.split('\n').find((line) => line.startsWith(`| \`${entry.board_id}\` | `) && line.includes(' | ') && /\| [0-9.]+ \| [0-9.]+ \|/.test(line));
+      expect(row, entry.board_id).toBeDefined();
+      const measured = budget[entry.board_id]!.measured;
+      expect(row!.startsWith(`| \`${entry.board_id}\` | ${(measured.flash / 1024).toFixed(1)} | `), entry.board_id).toBe(true);
     }
   });
 
