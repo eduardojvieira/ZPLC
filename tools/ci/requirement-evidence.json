@@ -634,6 +634,8 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-inverse-trigonometric-functions.expect.json","test":"CMP-058 ASIN, ACOS and ATAN return radians"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-lag-filter-approaches-the-input.expect.json","test":"CMP-058 LAG_FILTER moves its output by GAIN of the distance to the input"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-logarithmic-and-exponential-functions.expect.json","test":"CMP-058 LN, LOG, EXP and SQRT"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-nand-and-nor-result-is-a-bool.expect.json","test":"CMP-058 NAND and NOR give exactly 0 or 1"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-nand-and-nor-truth-tables.expect.json","test":"CMP-058 NAND and NOR give the truth table for every pair of inputs"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-r-trig-one-pulse-per-edge.expect.json","test":"CMP-058 R_TRIG gives one pulse per rising edge"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-selection-and-limit-functions.expect.json","test":"CMP-058 SQRT, ABS, MAX, LIMIT, SEL, MUX, MIN and MOD with positive operands"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-sqrt-zero-negative-subnormal-and-large-arguments.expect.json","test":"CMP-058 SQRT of zero, of a negative number, of an integer, of a subnormal and of a large REAL"},

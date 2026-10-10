@@ -200,6 +200,7 @@ Ninguna hace fallar la VM con ningún argumento: una división por cero se reemp
 - **OR(IN1, IN2)**: OR Bit a bit. 
 - **XOR(IN1, IN2)**: OR Exclusivo Bit a bit. 
 - **NOT(IN)**: Inversión.
+- **NAND(IN1, IN2)** / **NOR(IN1, IN2)**: La negación de AND y de OR de dos valores BOOL, 0 o 1.
 
 ### Rotación y Desplazamiento
 ### SHL

@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-058",
+  "title": "NAND and NOR give the truth table for every pair of inputs",
+  "matrix": ["functions.selection-limit-and-sqrt-functions"],
+  "note": "NAND is the negation of AND (FALSE only when both inputs are TRUE) and NOR the negation of OR (TRUE only when both are FALSE); each result is used as a condition, so a value that is not 0 or 1 reads wrong",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QX0.0", "type": "BOOL", "value": true},
+    {"at": "%QX0.1", "type": "BOOL", "value": true},
+    {"at": "%QX0.2", "type": "BOOL", "value": true},
+    {"at": "%QX0.3", "type": "BOOL", "value": false},
+    {"at": "%QX0.4", "type": "BOOL", "value": true},
+    {"at": "%QX0.5", "type": "BOOL", "value": false},
+    {"at": "%QX0.6", "type": "BOOL", "value": false},
+    {"at": "%QX0.7", "type": "BOOL", "value": false}
+  ]
+}

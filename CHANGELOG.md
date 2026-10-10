@@ -85,6 +85,8 @@ All notable changes are documented here.
   values on the evaluation stack (a call in a loop was refused by the loader),
   one that never assigned left none, and an inherited method called as a
   statement was not dropped. A method that never assigns returns 0.
+- `NAND` and `NOR` return a `BOOL` of 0 or 1: they returned the bitwise
+  complement (254 or 255), so `IF NAND(TRUE, TRUE) THEN` was true.
 - `BLINK` starts its cycle with the ON phase in the scan where `ENABLE` rises
   (it started with the OFF phase) and starts it again after `ENABLE` was
   FALSE; a phase ends at the first call at which its time has elapsed.

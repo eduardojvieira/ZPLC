@@ -208,6 +208,7 @@ Multiplexer. Selects one of N inputs based on an integer index.
 - **OR(IN1, IN2)**: Bitwise OR. Supports ANY_BIT.
 - **XOR(IN1, IN2)**: Bitwise Exclusive OR. Supports ANY_BIT.
 - **NOT(IN)**: Bitwise Inversion. Supports ANY_BIT.
+- **NAND(IN1, IN2)** / **NOR(IN1, IN2)**: The negation of AND and of OR of two BOOL values, 0 or 1.
 
 ### Shifting and Rotating
 ### SHL

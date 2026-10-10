@@ -1,0 +1,14 @@
+{
+  "requirement": "CMP-058",
+  "title": "NAND and NOR give exactly 0 or 1",
+  "matrix": ["functions.selection-limit-and-sqrt-functions"],
+  "note": "A BOOL is 0 or 1: NAND(FALSE, TRUE) = 1, NAND(TRUE, TRUE) = 0, NOR(FALSE, FALSE) = 1 and NOR(TRUE, FALSE) = 0, as numbers",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QB0", "type": "BYTE", "value": 1},
+    {"at": "%QB1", "type": "BYTE", "value": 0},
+    {"at": "%QB2", "type": "BYTE", "value": 1},
+    {"at": "%QB3", "type": "BYTE", "value": 0}
+  ]
+}
