@@ -41,7 +41,8 @@ static void remove_persist_root(const char *root)
         "program_v1_slot_a_payload", "program_v1_slot_a_meta",
         "program_v1_slot_b_payload", "program_v1_slot_b_meta",
         "program_v1_active", "code_len", "code",
-        "retain_a0", "retain_a1", "retain_b0", "retain_b1"
+        "retain_a0", "retain_a1", "retain_a2", "retain_a3", "retain_a4",
+        "retain_b0", "retain_b1", "retain_b2", "retain_b3", "retain_b4"
     };
     size_t index;
     char path[512];
