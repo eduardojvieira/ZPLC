@@ -1,6 +1,9 @@
 {
   "requirement": "CMP-035",
   "title": "a parameter that declares an initial value is optional in a call",
+  "matrix": [
+    "pous.function"
+  ],
   "note": "IEC 61131-3: a formal parameter that is not given holds its declared initial value",
   "scans": 1,
   "scanMs": 10,

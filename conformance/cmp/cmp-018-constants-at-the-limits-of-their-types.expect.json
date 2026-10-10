@@ -1,6 +1,9 @@
 {
   "requirement": "CMP-018",
   "title": "constants at the limits of their types are accepted",
+  "matrix": [
+    "data-types.sint-int"
+  ],
   "scans": 1,
   "scanMs": 10,
   "expect": [

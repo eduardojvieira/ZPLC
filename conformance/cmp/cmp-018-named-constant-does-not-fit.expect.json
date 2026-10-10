@@ -1,6 +1,9 @@
 {
   "requirement": "CMP-018",
   "title": "an expression of named constants that does not fit its type is rejected",
+  "matrix": [
+    "data-types.sint-int"
+  ],
   "build": "fails",
   "lines": [
     8

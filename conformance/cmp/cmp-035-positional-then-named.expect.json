@@ -1,6 +1,9 @@
 {
   "requirement": "CMP-035",
   "title": "positional arguments bind the first parameters, named ones the rest, in any order",
+  "matrix": [
+    "pous.function"
+  ],
   "scans": 1,
   "scanMs": 10,
   "expect": [

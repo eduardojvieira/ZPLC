@@ -1,6 +1,10 @@
 {
   "requirement": "CMP-012",
   "title": "a literal above 2147483647 goes to a UDINT parameter and to a DWORD function",
+  "matrix": [
+    "data-types.udint",
+    "data-types.byte-word-dword"
+  ],
   "tags": [
     "arch-sensitive"
   ],

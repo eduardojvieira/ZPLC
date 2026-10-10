@@ -1,6 +1,9 @@
 {
   "requirement": "CMP-005",
   "title": "a BOOL in an addition is rejected",
+  "matrix": [
+    "functions.implicit-widening-conversion"
+  ],
   "build": "fails",
   "lines": [
     6

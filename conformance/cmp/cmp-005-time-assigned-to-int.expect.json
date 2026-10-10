@@ -1,6 +1,9 @@
 {
   "requirement": "CMP-005",
   "title": "a TIME assigned to an INT is rejected",
+  "matrix": [
+    "functions.implicit-widening-conversion"
+  ],
   "build": "fails",
   "lines": [
     6

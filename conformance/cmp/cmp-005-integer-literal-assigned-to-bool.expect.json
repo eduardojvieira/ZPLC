@@ -1,6 +1,9 @@
 {
   "requirement": "CMP-005",
   "title": "an integer literal assigned to a BOOL is rejected",
+  "matrix": [
+    "functions.implicit-widening-conversion"
+  ],
   "build": "fails",
   "lines": [
     5

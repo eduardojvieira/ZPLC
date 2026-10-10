@@ -1,6 +1,9 @@
 {
   "requirement": "CMP-035",
   "title": "a parameter bound by position and by name is rejected",
+  "matrix": [
+    "pous.function"
+  ],
   "build": "fails",
   "lines": [
     10
