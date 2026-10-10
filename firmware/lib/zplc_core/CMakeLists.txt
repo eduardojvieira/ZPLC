@@ -348,6 +348,8 @@ add_test(NAME test_loader_verify COMMAND test_loader_verify)
 add_executable(test_sandbox
     tests/test_sandbox.c
     src/core/zplc_core.c
+    src/core/zplc_loader.c
+    src/core/zplc_comm_dispatch.c
     src/hal/posix/zplc_hal_posix.c
 )
 

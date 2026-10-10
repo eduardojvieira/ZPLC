@@ -110,13 +110,13 @@ static void put32(uint8_t *p, uint32_t v) {
   put16(p + 2, (uint16_t)(v >> 16));
 }
 
-/** One CODE segment and, when ntasks > 0, one TASK segment. */
-static size_t build(uint8_t *out, const code_t *code, uint16_t entry,
-                    const task_t *tasks, unsigned ntasks) {
+/** One CODE segment of `code_n` bytes and, when ntasks > 0, one TASK segment. */
+static size_t build_bytes(uint8_t *out, const uint8_t *code, size_t code_n,
+                          uint16_t entry, const task_t *tasks, unsigned ntasks) {
   size_t segments = ntasks != 0U ? 2U : 1U;
   size_t table = ZPLC_FILE_HEADER_SIZE + segments * ZPLC_SEGMENT_ENTRY_SIZE;
   size_t task_bytes = (size_t)ntasks * ZPLC_TASK_DEF_SIZE;
-  size_t length = table + code->n + task_bytes;
+  size_t length = table + code_n + task_bytes;
   uint32_t crc;
   unsigned i;
 
@@ -124,20 +124,20 @@ static size_t build(uint8_t *out, const code_t *code, uint16_t entry,
   memcpy(out, "ZPLC", 4U);
   put16(out + 4U, ZPLC_VERSION_MAJOR);
   put16(out + 6U, ZPLC_VERSION_MINOR);
-  put32(out + 16U, (uint32_t)code->n);
+  put32(out + 16U, (uint32_t)code_n);
   put32(out + 20U, (uint32_t)task_bytes);
   put16(out + 24U, entry);
   put16(out + 26U, (uint16_t)segments);
   put32(out + 28U, ZPLC_DRAFT_COUNTER);
   put16(out + 32U, ZPLC_SEG_CODE);
-  put32(out + 36U, (uint32_t)code->n);
+  put32(out + 36U, (uint32_t)code_n);
   if (ntasks != 0U) {
     put16(out + 40U, ZPLC_SEG_TASK);
     put32(out + 44U, (uint32_t)task_bytes);
   }
-  memcpy(out + table, code->b, code->n);
+  memcpy(out + table, code, code_n);
   for (i = 0U; i < ntasks; i++) {
-    uint8_t *task = out + table + code->n + (size_t)i * ZPLC_TASK_DEF_SIZE;
+    uint8_t *task = out + table + code_n + (size_t)i * ZPLC_TASK_DEF_SIZE;
     put16(task, (uint16_t)(i + 1U));
     put32(task + 4U, 10000U);
     put16(task + 8U, tasks[i].entry);
@@ -147,6 +147,11 @@ static size_t build(uint8_t *out, const code_t *code, uint16_t entry,
   crc = crc32_update(crc, out + 16U, length - 16U) ^ 0xFFFFFFFFU;
   put32(out + 12U, crc);
   return length;
+}
+
+static size_t build(uint8_t *out, const code_t *code, uint16_t entry,
+                    const task_t *tasks, unsigned ntasks) {
+  return build_bytes(out, code->b, code->n, entry, tasks, ntasks);
 }
 
 static uint8_t workspace[ZPLC_LOADER_VERIFY_WORKSPACE_SIZE];
@@ -954,6 +959,160 @@ static void test_calls(void) {
   op(&c, OP_DROP);                 /* 16 */
   op(&c, OP_HALT);                 /* 17 */
   CHECK_EQ(verdict(&c), ZPLC_LOADER_OK, "callees defined before the main code");
+
+  /* The verifier goes past a call whose callee it has not summarised yet, to
+   * find the rest of the subroutines the frame calls; what it concludes on the
+   * way is thrown away. These rows are what that must not change. */
+
+  /* a callee that never returns ends the path: what follows is not reached,
+   * and the subroutine it calls is accepted all the same */
+  c.n = 0;
+  op16(&c, OP_CALL, 7U);           /* 0: f never returns */
+  op16(&c, OP_CALL, 10U);          /* 3: not reached */
+  op(&c, OP_HALT);                 /* 6 */
+  op16(&c, OP_JMP, 7U);            /* 7: f loops on itself */
+  op(&c, OP_RET);                  /* 10: g */
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_OK, "code after a callee that never returns");
+
+  /* two subroutines that call each other */
+  c.n = 0;
+  op16(&c, OP_CALL, 4U);           /* 0 */
+  op(&c, OP_HALT);                 /* 3 */
+  op16(&c, OP_CALL, 8U);           /* 4: f calls g */
+  op(&c, OP_RET);                  /* 7 */
+  op16(&c, OP_CALL, 4U);           /* 8: g calls f */
+  op(&c, OP_RET);                  /* 11 */
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_ERR_STACK, "mutual recursion");
+
+  /* a loop that grows the stack after a call to a subroutine defined further
+   * on: found in the walk that is thrown away, reported by the one that counts */
+  c.n = 0;
+  op16(&c, OP_CALL, 8U);           /* 0 */
+  op8(&c, OP_PUSH8, 1);            /* 3 */
+  op16(&c, OP_JMP, 3U);            /* 5 */
+  op(&c, OP_RET);                  /* 8: f */
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_ERR_STACK, "growing loop after a call to a later subroutine");
+
+  /* a result that the caller drops, after a callee not summarised yet: the
+   * walk that is thrown away sees a drop of nothing and must not refuse it */
+  c.n = 0;
+  op16(&c, OP_CALL, 5U);           /* 0 */
+  op(&c, OP_DROP);                 /* 3 */
+  op(&c, OP_HALT);                 /* 4 */
+  op8(&c, OP_PUSH8, 9);            /* 5: f leaves a result */
+  op(&c, OP_RET);                  /* 7 */
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_OK, "a result dropped after a callee summarised later");
+}
+
+/* ----------------------------------------------------------------------------
+ * RT-003: the work of the verifier is bounded by the size of the CODE
+ * ------------------------------------------------------------------------- */
+
+/* Test hooks of the loader (this target is built with ZPLC_CORE_TESTING): what
+ * the last zplc_loader_verify() was charged, in the units of
+ * ZPLC_VERIFY_STEPS_PER_BYTE, and, counted apart from the charge, the
+ * iterations its loops made. */
+uint32_t zplc_test_verify_work(void);
+uint32_t zplc_test_verify_iterations(void);
+
+static uint32_t last_limit, last_work;
+static uint8_t big_code[ZPLC_MEM_CODE_SIZE];
+static uint8_t big_file[ZPLC_MEM_CODE_SIZE + 128U];
+
+static void big_jump(size_t at, uint8_t opcode, size_t target) {
+  big_code[at] = opcode;
+  big_code[at + 1U] = (uint8_t)target;
+  big_code[at + 2U] = (uint8_t)(target >> 8);
+}
+
+/** Verify big_code[0..size) and report what it cost; returns the loader code. */
+static int verify_big(const char *name, size_t size, size_t entry) {
+  zplc_program_view_t view;
+  size_t length = build_bytes(big_file, big_code, size, (uint16_t)entry, NULL, 0U);
+  const uint32_t limit = (uint32_t)ZPLC_VERIFY_STEPS_PER_BYTE * (uint32_t)size + 4096U;
+  int rc = zplc_loader_verify(big_file, length, workspace, sizeof workspace, &view);
+  const uint32_t work = zplc_test_verify_work();
+  const uint32_t iterations = zplc_test_verify_iterations();
+
+  printf("    %s: %lu units of %lu, %lu iterations\n", name, (unsigned long)work,
+         (unsigned long)limit, (unsigned long)iterations);
+  /* what the verifier is charged stays within the bound (it may finish the
+   * table pass it is in), and every iteration of every loop was charged */
+  CHECK(work < limit + 1024U, name);
+  CHECK((uint64_t)iterations <= 8U * (uint64_t)work, name);
+  last_limit = limit;
+  last_work = work;
+  return rc;
+}
+
+static void test_verifier_work_is_bounded(void) {
+  /* A chain of jumps to the block just below: every hop goes to a lower
+   * address. The lowest block pushes a value and jumps to the highest, so the
+   * stack grows by one per lap and the verifier would lap 127 times before it
+   * refuses. */
+  enum { BLOCKS = 2500, SPACING = 18 };
+  size_t i, size = (size_t)BLOCKS * SPACING + 1U;
+  int rc;
+  printf("=== RT-003 the work of the verifier is bounded ===\n");
+
+  memset(big_code, OP_NOP, sizeof big_code);
+  for (i = 1U; i < BLOCKS; i++)
+    big_jump(i * SPACING, OP_JMP, (i - 1U) * SPACING);
+  big_code[0] = OP_PUSH8;
+  big_code[1] = 0U;
+  big_jump(2U, OP_JMP, (size_t)(BLOCKS - 1U) * SPACING);
+  big_code[size - 1U] = OP_HALT;
+  rc = verify_big("2500 descending hops, 127 laps", size, (size_t)(BLOCKS - 1U) * SPACING);
+  CHECK_EQ(rc, ZPLC_LOADER_ERR_STACK, "a chain of descending jumps that grows the stack is refused");
+
+  /* The same chain reached from 150 subroutines (each jumps to its top and
+   * the bottom returns): 150 walks of 2400 hops. A pass over the code is made
+   * for every hop, which costs what it costs, and the work bound is reached. */
+  {
+    enum { CHAIN = 2400, CALLEES = 150, STEP = 16 };
+    const size_t callees = (size_t)CHAIN * STEP;
+    const size_t main_at = callees + (size_t)CALLEES * 3U;
+    size_t n = main_at;
+
+    memset(big_code, OP_NOP, sizeof big_code);
+    big_code[0] = OP_RET;
+    for (i = 1U; i < CHAIN; i++)
+      big_jump(i * STEP, OP_JMP, (i - 1U) * STEP);
+    for (i = 0U; i < CALLEES; i++) {
+      big_jump(callees + i * 3U, OP_JMP, (size_t)(CHAIN - 1U) * STEP);
+      big_jump(n, OP_CALL, callees + i * 3U);
+      n += 3U;
+    }
+    big_code[n++] = OP_HALT;
+    rc = verify_big("2400 hops from 150 subroutines", n, main_at);
+    CHECK_EQ(rc, ZPLC_LOADER_ERR_STACK, "a chain walked by 150 subroutines is refused within the bound");
+  }
+}
+
+static void test_verifier_work_of_wide_programs(void) {
+  /* 380 subroutines (almost all the verifier tracks), each called 36 times
+   * from the main code in turn: a program of the largest size with very many
+   * small functions. It is accepted, with room to spare in the work bound. */
+  enum { CALLEES = 380, ROUNDS = 36 };
+  size_t i, n = 0U, main_at = (size_t)CALLEES * 4U;
+  int rc;
+
+  memset(big_code, OP_NOP, sizeof big_code);
+  for (i = 0U; i < CALLEES; i++) {
+    big_code[i * 4U] = OP_PUSH8;
+    big_code[i * 4U + 1U] = 1U;
+    big_code[i * 4U + 2U] = OP_DROP;
+    big_code[i * 4U + 3U] = OP_RET;
+  }
+  n = main_at;
+  for (i = 0U; i < (size_t)CALLEES * ROUNDS; i++) {
+    big_jump(n, OP_CALL, (i % CALLEES) * 4U);
+    n += 3U;
+  }
+  big_code[n++] = OP_HALT;
+  rc = verify_big("380 subroutines called 36 times each", n, main_at);
+  CHECK_EQ(rc, ZPLC_LOADER_OK, "380 subroutines called many times are accepted");
+  CHECK(last_work <= last_limit / 2U, "with room to spare in the work bound");
 }
 
 /* ----------------------------------------------------------------------------
@@ -1065,6 +1224,8 @@ int main(void) {
   test_stack_paths();
   test_declared_depth();
   test_calls();
+  test_verifier_work_is_bounded();
+  test_verifier_work_of_wide_programs();
   test_stack_effect_table_is_what_the_vm_does();
   printf("\n%d checks, %d failed\n", checks, failures);
   return failures == 0 ? 0 : 1;

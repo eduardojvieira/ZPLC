@@ -2072,7 +2072,7 @@ int zplc_loader_verify(const uint8_t *data, size_t len, uint8_t *workspace, size
 
 **Source summary:** Verify the supported structural and semantic v1 ZPLC subset.
 
-Besides the structure of the file, the code is verified statically: every jump lands on an instruction, every direct memory access and every block of a communication opcode at a statically known address lies inside the regions of PLC memory (ZPLC_LOADER_ERR_MEMORY, ZPLC_LOADER_ERR_COMM), and no path from an entry point (the header's, and each task's) can underflow the evaluation stack or exceed the depth the task declares (ZPLC_LOADER_ERR_STACK). The stack check follows every path, joins the depths where paths meet, and treats a call by the effect of the callee on the stack; it refuses what it cannot prove, among it recursion. This does not load or authorize a runtime. Product load paths remain a separate integration gate.
+Besides the structure of the file, the code is verified statically: every jump lands on an instruction, every direct memory access and every block of a communication opcode at a statically known address lies inside the regions of PLC memory (ZPLC_LOADER_ERR_MEMORY, ZPLC_LOADER_ERR_COMM), and no path from an entry point (the header's, and each task's) can underflow the evaluation stack or exceed the depth the task declares (ZPLC_LOADER_ERR_STACK). The stack check follows every path, joins the depths where paths meet, and treats a call by the effect of the callee on the stack; it refuses what it cannot prove, among it recursion, and what takes more work to prove than its bound (see ZPLC_VERIFY_STEPS_PER_BYTE). This does not load or authorize a runtime. Product load paths remain a separate integration gate.
 
 **Parameters**
 

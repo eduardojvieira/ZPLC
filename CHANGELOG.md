@@ -4,6 +4,14 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- The loader's stack-effect verifier now keeps to its work bound: the budget of
+  `ZPLC_VERIFY_STEPS_PER_BYTE` units per CODE byte also pays for the bitmap
+  scans and the frame lookups, which it did not, so a crafted artifact can no
+  longer keep a load (or the boot-time check of a stored program) busy for
+  minutes. A walk of a subroutine scans only the span of code it reaches, and a
+  frame that calls many subroutines finds them all in one walk. Compiled
+  programs are unaffected (they use a few percent of the budget); an artifact
+  that needs more work than its bound is refused with `ZPLC_LOADER_ERR_STACK`.
 - The binary contract now carries a draft counter (CMP-052). Every artifact the
   compiler or assembler writes records it in header word 28, and the loader, the
   native runtime, the firmware shell and Studio refuse a program or a board on

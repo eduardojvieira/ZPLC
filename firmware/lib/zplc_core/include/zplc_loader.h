@@ -72,9 +72,14 @@
  * bytes, and a margin) and ZPLC_VERIFY_MAX_FRAMES subroutine entries (one per
  * 128 CODE bytes, and a margin); an artifact with more is refused with
  * ZPLC_LOADER_ERR_WORKSPACE. Compiled programs use a fraction of both.
- * Its work is bounded by ZPLC_VERIFY_STEPS_PER_BYTE per CODE byte, and the
- * stack depth it follows by ZPLC_VERIFY_MAX_DEPTH values (a deeper stack is
- * refused with ZPLC_LOADER_ERR_STACK even where the runtime would allow it).
+ * Its work is bounded: it is charged one unit for each instruction it decodes
+ * and control-flow edge it follows, and one for each eight bytes of a table
+ * it scans, probes or clears, and when the charge reaches
+ * ZPLC_VERIFY_STEPS_PER_BYTE units per CODE byte (and 4096) it stops and the
+ * artifact is refused with ZPLC_LOADER_ERR_STACK. A compiled program uses a
+ * few percent of that. The stack depth it follows is bounded by
+ * ZPLC_VERIFY_MAX_DEPTH values (a deeper stack is refused with
+ * ZPLC_LOADER_ERR_STACK even where the runtime would allow it).
  * Task uniqueness is bounded by ZPLC_LOADER_MAX_TASKS and needs no bitmap. */
 #define ZPLC_VERIFY_MAX_DEPTH 127
 #define ZPLC_VERIFY_MAX_LEADERS ((ZPLC_MEM_CODE_SIZE) / 16U + 64U)
@@ -120,7 +125,8 @@ typedef struct {
  * the evaluation stack or exceed the depth the task declares
  * (ZPLC_LOADER_ERR_STACK). The stack check follows every path, joins the
  * depths where paths meet, and treats a call by the effect of the callee on
- * the stack; it refuses what it cannot prove, among it recursion.
+ * the stack; it refuses what it cannot prove, among it recursion, and what
+ * takes more work to prove than its bound (see ZPLC_VERIFY_STEPS_PER_BYTE).
  *
  * This does not load or authorize a runtime. Product load paths remain a
  * separate integration gate.
