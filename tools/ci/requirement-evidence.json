@@ -71,7 +71,8 @@
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/compiler.test.ts","test":"positions a generation error that has no position of its own at its statement (CMP-006)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/semantic-errors.test.ts","test":"rejects an unknown member of a function block instance (position comes with CMP-006)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/syntax.test.ts","test":"compile: every independent error, each positioned (CMP-006, CMP-007)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"returns every independent error of a source, each with its position (CMP-006, CMP-007)"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"returns every independent error of a source, each with its position (CMP-006, CMP-007)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/communication-tags.test.ts","test":"keeps every line of the source where it was, so a diagnostic names the line the author sees (CMP-006)"}
   ],
   "CMP-007": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-007-declarations-and-statements.expect.json","test":"CMP-007 errors of declarations and of statements are reported together"},
