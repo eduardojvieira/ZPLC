@@ -55,7 +55,7 @@ import type {
     InitialValue,
     PointerType,
 } from './ast.ts';
-import { getArrayElementCount, isArrayType, VarSection } from './ast.ts';
+import { getArrayElementCount, isArrayType, NameMap, sameName, VarSection } from './ast.ts';
 import { CodegenError, codegenErrorFrom, orderedUniqueErrors } from './diagnostics.ts';
 import {
     getLoadStoreSuffix,
@@ -102,6 +102,7 @@ import {
     type HelperName,
 } from './numeric.ts';
 import { POWF_HELPER, POWF_LABEL } from './power.ts';
+import { checkDeclaredTypes } from './semantic.ts';
 
 // ============================================================================
 // Memory Layout Constants
@@ -286,7 +287,7 @@ function resolveSymbol(state: CodeGenState, name: string): Symbol | undefined {
         const method = state.currentMethod as any;
         
         // Helper to find var in lists
-        const findVar = (list: any[]) => list && list.find((v: any) => v.name === name);
+        const findVar = (list: any[]) => list && list.find((v: any) => sameName(v.name, name));
 
         const methodVar = findVar(method.inputs) ||
                           findVar(method.outputs) ||
@@ -329,9 +330,9 @@ function fbScopeSymbol(state: CodeGenState, name: string): Symbol | undefined {
 function memberOffsets(state: CodeGenState, typeName: unknown): Map<string, number> | null {
     if (typeof typeName !== 'string') return null;
     const user = state.symbols.getFBDefinition(typeName) ?? state.symbols.getStructDefinition(typeName);
-    if (user) return new Map([...user.members].map(([member, info]) => [member, info.offset]));
+    if (user) return new NameMap([...user.members].map(([member, info]) => [member, info.offset] as const));
     const library = getFB(typeName as DataTypeValue);
-    return library ? new Map(library.members.map((member) => [member.name, member.offset])) : null;
+    return library ? new NameMap(library.members.map((member) => [member.name, member.offset] as const)) : null;
 }
 
 /**
@@ -371,6 +372,13 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
 
     validateWorkRegionOptions(workMemoryBase, workMemorySize, initFlagAddr, memoryProfile);
 
+    // A name that is no type is an error of the declaration, not a variable of no size (CMP-003)
+    const typeErrors = checkDeclaredTypes(unit);
+    if (typeErrors.length > 0) {
+        typeErrors[0]!.errors = typeErrors;
+        throw typeErrors[0]!;
+    }
+
     const symbols = buildSymbolTable(unit, workMemoryBase);
     validateWorkSymbols(symbols, workMemoryBase, workMemorySize, initFlagAddr, memoryProfile.retainSize);
 
@@ -389,8 +397,8 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
         lastSourceKey: '',
         statementStack: [],
         emitSourceAnnotations: options?.emitSourceAnnotations ?? false,
-        functionTable: new Map(),
-        functionBlockTable: new Map(),
+        functionTable: new NameMap(),
+        functionBlockTable: new NameMap(),
         currentFunction: null,
         currentFBInstance: null,
         currentMethod: null,
@@ -1341,7 +1349,7 @@ function emitInitValue(state: CodeGenState, address: number, type: STDataType | 
             }
             if (options.everyCall) emitZeroBytes(state, address, state.symbols.sizeOf(t));
             for (const [memberName, member] of members) {
-                const given = fields.find((field) => field.name === memberName);
+                const given = fields.find((field) => sameName(field.name, memberName));
                 const memberInit = given ? given.value : member.initialValue ?? null;
                 const memberAt = given ?? at;
                 if (member.section === VarSection.VAR_IN_OUT) {
@@ -1698,7 +1706,7 @@ function emitAssignment(state: CodeGenState, stmt: Assignment): void {
                         const instanceSym = state.symbols.get(objName);
                         if (instanceSym) {
                             const fbDecl = state.functionBlockTable.get(instanceSym.dataType as string);
-                            const method = fbDecl?.methods.find(m => m.name === methodCall.methodName);
+                            const method = fbDecl?.methods.find(m => sameName(m.name, methodCall.methodName));
                             if (method?.returnType) {
                                 emit(state, `    DROP       ; discard unused return value`);
                             }
@@ -1714,7 +1722,7 @@ function emitAssignment(state: CodeGenState, stmt: Assignment): void {
         }
 
         // IEC return syntax: FunctionName := value (for FUNCTION)
-        if (state.currentFunction && stmt.target.name === state.currentFunction.name) {
+        if (state.currentFunction && sameName(stmt.target.name, state.currentFunction.name)) {
             emit(state, `    ; RETURN ${state.currentFunction.name} := ...`);
             const sym = state.symbols.get(stmt.target.name);
             if (sym && isStringType(storedType(state, sym.dataType))) {
@@ -1732,7 +1740,7 @@ function emitAssignment(state: CodeGenState, stmt: Assignment): void {
         // IEC return syntax: MethodName := value (for METHOD - inline context)
         // Bug 1 fix: When inside an inlined method, assignment to method name 
         // should leave the value on stack (not store it)
-        if (state.currentMethod && stmt.target.name === state.currentMethod.name) {
+        if (state.currentMethod && sameName(stmt.target.name, state.currentMethod.name)) {
             emit(state, `    ; METHOD RETURN: ${state.currentMethod.name} := ...`);
             emitValueFor(state, stmt.value, (state.currentMethod as any).returnType);
             // Value stays on stack - caller will use it or discard it
@@ -3234,7 +3242,7 @@ function emitFunctionCall(state: CodeGenState, expr: FunctionCall): void {
             const named = (arg as any).kind === 'NamedArgument';
             const value = (named ? (arg as any).value : arg) as Expression;
             const input = named
-                ? userFn.inputs.find((i) => i.name === (arg as any).name)
+                ? userFn.inputs.find((i) => sameName(i.name, (arg as any).name))
                 : userFn.inputs[index];
             // an argument for a parameter that is not a VAR_INPUT (a VAR_OUTPUT or VAR_IN_OUT of a function is
             // declared, but is not passed yet: CMP-035) would be pushed and never read, leaving the stack unbalanced
@@ -3443,7 +3451,7 @@ function identifierPlace(state: CodeGenState, expr: Identifier): Place {
     // 1. Inputs, outputs and locals of the method being inlined: statics with a mangled name
     if (state.currentMethod) {
         const method = state.currentMethod as any;
-        const findVar = (list: any[]) => list && list.find((v: any) => v.name === name);
+        const findVar = (list: any[]) => list && list.find((v: any) => sameName(v.name, name));
         const methodVar = findVar(method.inputs) || findVar(method.outputs) || findVar(method.locals);
         if (methodVar && methodVar.mangledName) {
             const sym = state.symbols.get(methodVar.mangledName);
@@ -3490,7 +3498,7 @@ function memberPlace(state: CodeGenState, owner: Place, expr: MemberAccess): Pla
 
     const standard = getFB(typeName as DataTypeValue);
     if (standard) {
-        const member = standard.members.find((m) => m.name === expr.member);
+        const member = standard.members.find((m) => sameName(m.name, expr.member));
         if (!member) fail(expr, `Unknown member '${expr.member}' on FB '${typeName}'`);
         return { addr: addOffset(owner.addr, member.offset), type: stdlibMemberType(typeName, member), size: member.size, name };
     }
@@ -4141,7 +4149,7 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
             if ((arg as any).kind === 'NamedArgument') {
                 inputName = (arg as any).name;
                 argExpr = (arg as any).value;
-                input = methodInfo.inputs.find((i: any) => i.name === inputName);
+                input = methodInfo.inputs.find((i: any) => sameName(i.name, inputName));
                 
                 if (!input) {
                     fail(expr, `Unknown named argument '${inputName}' for method '${expr.methodName}'`);

@@ -134,6 +134,7 @@ import type { DebugMap, TypeResolver } from './debug-map.ts';
 import { buildDebugMap, createDebugMap } from './debug-map.ts';
 import { buildSymbolTable, MemoryLayout, parseStringType, typeToString } from './symbol-table.ts';
 import { getFB } from './stdlib/index.ts';
+import { sameName } from './ast.ts';
 import type { DataTypeValue } from './ast.ts';
 import type { CompilationUnit, Program } from './ast.ts';
 
@@ -376,7 +377,7 @@ function createTypeResolver(symbols: import('./symbol-table.ts').SymbolTable): T
             // 3. Check stdlib FBs
             const stdFB = getFB(typeName as DataTypeValue);
             if (stdFB) {
-                const member = stdFB.members.find(m => m.name === memberName);
+                const member = stdFB.members.find(m => sameName(m.name, memberName));
                 if (member) {
                     const dt: string = typeof member.dataType === 'string'
                         ? member.dataType

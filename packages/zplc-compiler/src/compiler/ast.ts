@@ -8,6 +8,69 @@
  */
 
 import { STRING_LAYOUT } from '../contract.generated.ts';
+import type { SourceSpan } from './diagnostics.ts';
+
+// ============================================================================
+// Names
+// ============================================================================
+
+/**
+ * A map keyed by IEC 61131-3 names, which are not case sensitive (CMP-004): `MyVar`, `myvar` and `MYVAR`
+ * are one key. Iteration gives the spelling the name was first stored with, so a listing shows a variable
+ * as its declaration wrote it.
+ */
+export class NameMap<V> extends Map<string, V> {
+    private readonly spelling = new Map<string, string>();
+
+    constructor(entries?: Iterable<readonly [string, V]> | null) {
+        super();
+        if (entries) for (const [name, value] of entries) this.set(name, value);
+    }
+
+    // A type is looked up by whatever the declaration holds, an array or a reference type included:
+    // only a string is a name, anything else is never a key
+    private spelled(name: string): string {
+        return typeof name === 'string' ? this.spelling.get(name.toUpperCase()) ?? name : name;
+    }
+
+    override get(name: string): V | undefined {
+        return super.get(this.spelled(name));
+    }
+
+    override has(name: string): boolean {
+        return super.has(this.spelled(name));
+    }
+
+    override set(name: string, value: V): this {
+        if (typeof name !== 'string') return super.set(name, value);
+        const key = name.toUpperCase();
+        let spelling = this.spelling.get(key);
+        if (spelling === undefined) {
+            spelling = name;
+            this.spelling.set(key, name);
+        }
+        return super.set(spelling, value);
+    }
+
+    override delete(name: string): boolean {
+        if (typeof name !== 'string') return super.delete(name);
+        const key = name.toUpperCase();
+        const spelling = this.spelling.get(key);
+        if (spelling === undefined) return false;
+        this.spelling.delete(key);
+        return super.delete(spelling);
+    }
+
+    override clear(): void {
+        this.spelling.clear();
+        super.clear();
+    }
+}
+
+/** Do two names name the same thing? IEC 61131-3 names are matched without regard to case (CMP-004). */
+export function sameName(first: string, second: string): boolean {
+    return first === second || (typeof first === 'string' && typeof second === 'string' && first.toUpperCase() === second.toUpperCase());
+}
 
 // ============================================================================
 // Base Node Types
@@ -280,7 +343,8 @@ export function parseIOAddress(addr: string): IOAddress {
     // ([XBWD]?)    -> Size (optional)
     // (\d+)        -> Index
     // (?:\.(\d+))? -> Bit offset (optional)
-    const match = addr.match(/^%([IQM])([XBWD]?)(\d+)(?:\.(\d+))?$/);
+    // %ix0.0 is %IX0.0: direct addresses are matched without regard to case (CMP-004)
+    const match = addr.toUpperCase().match(/^%([IQM])([XBWD]?)(\d+)(?:\.(\d+))?$/);
 
     if (!match) {
         throw new Error(`Invalid I/O address: ${addr}`);
@@ -353,6 +417,8 @@ export interface VarDecl extends ASTNode {
     tags: Record<string, string | true>; // Optional attributes like {publish} or {modbus:40001}
     /** Declared in a `VAR RETAIN` block (`NON_RETAIN` and no qualifier are false/absent). */
     retain?: boolean;
+    /** Where the type name was written (the element type of an array), for the diagnostics about it (CMP-003). */
+    typeAt?: SourceSpan;
 }
 
 /**
@@ -1013,6 +1079,8 @@ export interface FunctionDecl extends ASTNode {
     /** The VAR_IN_OUT declarations, which are also in `locals`. */
     inouts?: VarDecl[];
     body: Statement[];
+    /** Where the return type name was written (CMP-003). */
+    returnTypeAt?: SourceSpan;
 }
 
 /**
@@ -1062,6 +1130,8 @@ export interface MethodDecl extends ASTNode {
     outputs: VarDecl[];      // VAR_OUTPUT parameters
     locals: VarDecl[];       // VAR variables
     body: Statement[];       // Empty if isAbstract
+    /** Where the return type name was written (CMP-003). */
+    returnTypeAt?: SourceSpan;
 }
 
 /**

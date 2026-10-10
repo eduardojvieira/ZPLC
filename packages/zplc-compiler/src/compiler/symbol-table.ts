@@ -11,7 +11,7 @@
  *   - RETAIN: 0x4000-0x4FFF (Retentive Memory)
  */
 
-import { getDataTypeSize, getArrayElementCount, isArrayType, DataType, VarSection } from './ast.ts';
+import { getDataTypeSize, getArrayElementCount, isArrayType, DataType, NameMap, sameName, VarSection } from './ast.ts';
 import type { STDataType, DataTypeValue, VarSectionValue, IOAddress, VarDecl, Program, ArrayType, PointerType, CompilationUnit, Expression, Statement, InitialValue } from './ast.ts';
 import { getFB } from './stdlib/index.ts';
 import { MEMORY_REGION } from '../contract.generated.ts';
@@ -188,11 +188,12 @@ export interface UserEnumDefinition {
  * Symbol table for a compilation unit.
  */
 export class SymbolTable {
-    private symbols = new Map<string, Symbol>();
-    private userFBs = new Map<string, UserFBDefinition>();
-    private userStructs = new Map<string, UserStructDefinition>();
-    private userEnums = new Map<string, UserEnumDefinition>();
-    private interfaces = new Map<string, InterfaceDefinition>();
+    // Names are matched without regard to case (CMP-004)
+    private symbols = new NameMap<Symbol>();
+    private userFBs = new NameMap<UserFBDefinition>();
+    private userStructs = new NameMap<UserStructDefinition>();
+    private userEnums = new NameMap<UserEnumDefinition>();
+    private interfaces = new NameMap<InterfaceDefinition>();
     private workOffset = 0;  // Current offset in work memory
     private retainOffset = 0;  // Current offset in the retentive region (VAR RETAIN)
     /**
@@ -301,7 +302,7 @@ export class SymbolTable {
             // 1. Check user-defined FBs
             const userFB = this.userFBs.get(typeName);
             if (userFB) {
-                members = new Map();
+                members = new NameMap<number>();
                 for (const [mName, mInfo] of userFB.members) {
                     members.set(mName, mInfo.offset);
                 }
@@ -309,7 +310,7 @@ export class SymbolTable {
                 // 2. Check user-defined Structs
                 const userStruct = this.userStructs.get(typeName);
                 if (userStruct) {
-                    members = new Map();
+                    members = new NameMap<number>();
                     for (const [mName, mInfo] of userStruct.members) {
                         members.set(mName, mInfo.offset);
                     }
@@ -317,7 +318,7 @@ export class SymbolTable {
                     // 3. Check stdlib FBs
                     const fbDef = getFB(typeName as DataTypeValue);
                     if (fbDef) {
-                        members = new Map();
+                        members = new NameMap<number>();
                         for (const member of fbDef.members) {
                             members.set(member.name, member.offset);
                         }
@@ -426,7 +427,7 @@ export class SymbolTable {
             // 3. Check stdlib FBs
             const stdFB = getFB(typeName as DataTypeValue);
             if (stdFB) {
-                const member = stdFB.members.find(m => m.name === expr.member);
+                const member = stdFB.members.find(m => sameName(m.name, expr.member));
                 if (!member) throw new Error(`Unknown member '${expr.member}' on FB '${typeName}'`);
                 return {
                     address: parent.address + member.offset,
@@ -668,7 +669,7 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
         if (unit.typeDefinitions) {
             for (const typeDef of unit.typeDefinitions) {
                 if (typeDef.kind === 'StructDecl') {
-                    const members = new Map<string, MemberInfo>();
+                    const members = new NameMap<MemberInfo>();
                     let currentOffset = 0;
                     for (const member of typeDef.members) {
                         const memberSize = table.sizeOf(member.dataType);
@@ -690,7 +691,7 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
                         members
                     });
                 } else if (typeDef.kind === 'EnumDecl') {
-                    const values = new Map<string, number>();
+                    const values = new NameMap<number>();
                     for (const v of typeDef.values) {
                         values.set(v.name, v.value);
                         try {
@@ -721,7 +722,7 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
         // 2. Second Pass: Process INTERFACE definitions
         if (unit.interfaces) {
             for (const iface of unit.interfaces) {
-                const methodSigs = new Map<string, MethodSignature>();
+                const methodSigs = new NameMap<MethodSignature>();
                 
                 for (const method of iface.methods) {
                     const inputs = method.inputs.map(v => ({
@@ -771,8 +772,8 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
             const fb = unprocessedFBs[fbIndex];
             unprocessedFBs.splice(fbIndex, 1);
 
-            const fbMembers = new Map<string, MemberInfo>();
-            const methods = new Map<string, MethodInfo>();
+            const fbMembers = new NameMap<MemberInfo>();
+            const methods = new NameMap<MethodInfo>();
             let currentOffset = 0;
 
             // Inheritance: Copy members and methods from base FB
@@ -903,7 +904,7 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
                                 throw new CodegenError(`Method '${methodName}' has different number of inputs than required by interface '${ifaceName}'`, fb.line, fb.column);
                             }
                             for (let i = 0; i < method.inputs.length; i++) {
-                                if (method.inputs[i].name !== sig.inputs[i].name || method.inputs[i].dataType !== sig.inputs[i].dataType) {
+                                if (!sameName(method.inputs[i].name, sig.inputs[i].name) || method.inputs[i].dataType !== sig.inputs[i].dataType) {
                                     throw new CodegenError(`Input ${i} of method '${methodName}' does not match interface '${ifaceName}' signature`, fb.line, fb.column);
                                 }
                             }
@@ -913,7 +914,7 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
                                 throw new CodegenError(`Method '${methodName}' has different number of outputs than required by interface '${ifaceName}'`, fb.line, fb.column);
                             }
                             for (let i = 0; i < method.outputs.length; i++) {
-                                if (method.outputs[i].name !== sig.outputs[i].name || method.outputs[i].dataType !== sig.outputs[i].dataType) {
+                                if (!sameName(method.outputs[i].name, sig.outputs[i].name) || method.outputs[i].dataType !== sig.outputs[i].dataType) {
                                     throw new CodegenError(`Output ${i} of method '${methodName}' does not match interface '${ifaceName}' signature`, fb.line, fb.column);
                                 }
                             }

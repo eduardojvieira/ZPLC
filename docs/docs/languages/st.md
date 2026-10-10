@@ -90,6 +90,14 @@ Each rule below is covered by a conformance case under `conformance/cmp` (CMP-01
 - A `VAR_IN_OUT` of a function block is passed by reference: what the body changes the caller sees. The variable must be of the same type and cannot be a constant. A block called without binding it ends the scan with a VM fault.
 - `REF_TO`, `REF()` and `^` are type-checked: `REF(x)` is a reference to the type of `x` and goes only into a `REF_TO` of that type. A `REF_TO` variable is `NULL` until it is assigned, and dereferencing `NULL` ends the scan with the VM fault `ZPLC_VM_OUT_OF_BOUNDS`.
 
+## Names and types
+
+Each rule below is covered by a conformance case under `conformance/cmp` (CMP-003, CMP-004, CMP-006).
+
+- Names are not case sensitive, as IEC 61131-3 says: variables, functions, function blocks, structure members, enumeration values, parameter names, type names and direct addresses. `MyVar`, `myvar` and `MYVAR` are one variable, `byte` is `BYTE` and `%ix0.0` is `%IX0.0`. Two declarations whose names differ only by case are a duplicate and a compile error.
+- A declaration whose type is not a type is a compile error that names the type and its position. That covers a misspelt name and the types that ZPLC 2.0 does not have: `LTIME`, `LDATE`, `LTOD`, `LDT`, `CHAR` and `WCHAR` (planned for 2.x).
+- `VAR PERSISTENT` is a compile error at the word `PERSISTENT`. Declare the variables `RETAIN` to keep their value across a restart.
+
 ## Standard library entry point
 
 See [Standard Library](./stdlib.md) for the built-in functions and function blocks grounded in

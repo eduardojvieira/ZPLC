@@ -57,6 +57,13 @@ All notable changes are documented here.
   has the full range of its instructions with its line and column, so any
   program counter inside a statement resolves to that statement; the end of a
   function and the helper routines after the cycle belong to none.
+- Names are matched without regard to case, as IEC 61131-3 says: variables,
+  functions, members, enumeration values, type names (`byte`) and direct
+  addresses (`%ix0.0`). A declaration whose type is not a type is a build
+  error that names it and its position; `LTIME`, `LDATE`, `LTOD`, `LDT`,
+  `CHAR` and `WCHAR` are rejected the same way (planned for 2.x, decision
+  D-04) instead of getting a variable of size 0, and `VAR PERSISTENT` is
+  rejected at the word (declare the variables `RETAIN`).
 
 ## 2.0.0-rc.3 - 2026-09-01
 

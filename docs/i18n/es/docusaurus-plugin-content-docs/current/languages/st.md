@@ -88,6 +88,14 @@ Cada regla de abajo está cubierta por un caso de conformidad en `conformance/cm
 - Un `VAR_IN_OUT` de un bloque de función se pasa por referencia: lo que el cuerpo cambia lo ve quien llama. La variable debe ser del mismo tipo y no puede ser una constante. Un bloque llamado sin enlazarlo termina el scan con una falla de VM.
 - `REF_TO`, `REF()` y `^` se controlan por tipo: `REF(x)` es una referencia al tipo de `x` y solo entra en un `REF_TO` de ese tipo. Una variable `REF_TO` es `NULL` hasta que se le asigna algo, y desreferenciar `NULL` termina el scan con la falla de VM `ZPLC_VM_OUT_OF_BOUNDS`.
 
+## Nombres y tipos
+
+Cada regla de abajo está cubierta por un caso de conformidad en `conformance/cmp` (CMP-003, CMP-004, CMP-006).
+
+- Los nombres no distinguen mayúsculas de minúsculas, como indica IEC 61131-3: variables, funciones, bloques de función, miembros de estructura, valores de enumeración, nombres de parámetros, nombres de tipo y direcciones directas. `MyVar`, `myvar` y `MYVAR` son la misma variable, `byte` es `BYTE` y `%ix0.0` es `%IX0.0`. Dos declaraciones cuyos nombres difieren solo en mayúsculas son un duplicado y un error de compilación.
+- Una declaración cuyo tipo no es un tipo es un error de compilación que nombra el tipo y su posición. Eso cubre un nombre mal escrito y los tipos que ZPLC 2.0 no tiene: `LTIME`, `LDATE`, `LTOD`, `LDT`, `CHAR` y `WCHAR` (previstos para 2.x).
+- `VAR PERSISTENT` es un error de compilación en la palabra `PERSISTENT`. Declare las variables `RETAIN` para conservar su valor entre reinicios.
+
 ## Entrada a la biblioteca estándar
 
 Ver [Biblioteca Estándar](./stdlib.md).
