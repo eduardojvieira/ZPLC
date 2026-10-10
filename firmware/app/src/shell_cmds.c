@@ -975,7 +975,7 @@ static int cmd_sys_info(const struct shell *sh, size_t argc, char **argv) {
     JSON_OBJ_START(sh);
     JSON_UINT(sh, "schema", 1U, true);
     JSON_STR(sh, "board_id", zplc_io_table()->board_id, true);
-    snprintf(io_hash, sizeof(io_hash), "%08x", (unsigned int)zplc_io_table()->description_hash);
+    (void)snprintf(io_hash, sizeof(io_hash), "%08x", (unsigned int)zplc_io_table()->description_hash); /* 8 digits always fit */
     JSON_STR(sh, "hash", io_hash, true);
     JSON_UINT(sh, "channels", zplc_io_table()->channel_count, true);
     JSON_UINT(sh, "input_bytes", zplc_io_table()->input_bytes, true);
