@@ -122,7 +122,7 @@ A real screenshot of this editor, captured by automation from the current versio
 | Trigonometric, logarithmic and exponential functions | Works | 9 | CMP-058 |
 | SHL, SHR, ROL, ROR and the word logic functions | Works | 7 | CMP-014, CMP-058 |
 | String functions (14) | Works | 5 | CMP-021 |
-| UPTIME, CYCLE\_TIME, WATCHDOG\_RESET | Works | 1 | CMP-058, RT-034 |
+| UPTIME, CYCLE\_TIME, WATCHDOG\_RESET | Works | 2 | CMP-058, RT-034 |
 | Function forms of operators (ADD, MUL, GT, EQ, MOVE) | Rejected with a message, decision open | 1 | CMP-006 |
 
 ### Function blocks

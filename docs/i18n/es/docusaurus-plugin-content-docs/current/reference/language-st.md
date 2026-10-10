@@ -122,7 +122,7 @@ Aquí se publica una captura de pantalla real de este editor, tomada de forma au
 | Funciones trigonométricas, logarítmicas y exponenciales | Funciona | 9 | CMP-058 |
 | SHL, SHR, ROL, ROR y las funciones lógicas de palabra | Funciona | 7 | CMP-014, CMP-058 |
 | Funciones de cadena (14) | Funciona | 5 | CMP-021 |
-| UPTIME, CYCLE\_TIME, WATCHDOG\_RESET | Funciona | 1 | CMP-058, RT-034 |
+| UPTIME, CYCLE\_TIME, WATCHDOG\_RESET | Funciona | 2 | CMP-058, RT-034 |
 | Formas de función de los operadores (ADD, MUL, GT, EQ, MOVE) | Se rechaza con un mensaje, decisión abierta | 1 | CMP-006 |
 
 ### Bloques de función
