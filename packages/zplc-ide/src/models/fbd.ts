@@ -5,6 +5,7 @@
  * Based on IEC 61131-3 FBD language specification.
  */
 
+import { serializeVisualDocument } from './visualFileFormat';
 import { findProjectBlock, type ProjectBlock } from './projectBlocks';
 
 // =============================================================================
@@ -293,7 +294,7 @@ export function validateFBDModel(value: unknown, projectBlocks?: readonly Projec
  * Serialize an FBDModel to JSON
  */
 export function serializeFBDModel(model: FBDModel): string {
-  return JSON.stringify(model, null, 2);
+  return serializeVisualDocument(model);
 }
 
 /**

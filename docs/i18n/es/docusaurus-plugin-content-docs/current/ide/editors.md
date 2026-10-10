@@ -31,6 +31,20 @@ llama al bloque con argumentos por nombre, de modo que el orden en que se conect
 - La paleta lista los archivos que están cargados en el editor; la compilación lee todos los archivos Structured Text
   del proyecto.
 
+## Archivos visuales en disco
+
+Un archivo Ladder, FBD o SFC es JSON. Studio lo comprueba contra la forma que lee su editor cuando usted lo abre
+(LNG-011): un archivo que no es JSON, o que es JSON de otra forma, muestra un panel de error que nombra el archivo y
+sus cinco primeras violaciones por ruta (`rungs[0].grid[1][2].element.type: ...`), cuenta las demás y deja la ventana y
+las otras pestañas como estaban. Corrija el archivo y ábralo de nuevo; la compilación rechaza el mismo archivo por el
+mismo motivo.
+
+Abrir un archivo visual y guardarlo sin cambios lo deja byte por byte como estaba (LNG-014), con el formato en que se
+haya escrito. Un cambio que termina donde empezó, como arrastrar un elemento y devolverlo, tampoco reescribe el archivo.
+La primera edición real escribe el archivo completo en la única forma que usa Studio: JSON con dos espacios y un salto
+de línea al final (un número escrito `2.0` se escribe `2`; un rung escrito como lista de elementos se escribe como
+cuadrícula).
+
 ## Ruta de compilación
 
 Los modelos visuales se validan y se transpilan antes de la compilación

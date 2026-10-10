@@ -4,6 +4,12 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- Opening a Ladder, FBD or SFC file and saving it without a change leaves it byte for byte
+  as it was (LNG-014): a commit of an editor that says what the file already said no longer
+  rewrites it, and the one form that Studio writes (`serializeLDModel`, `serializeFBDModel`,
+  `serializeSFCModel`) ends in a newline, as the files of the repository do. The checks made
+  when a visual file opens (LNG-011) now also cover the variables of FBD and SFC files, the
+  actions, positions and conditions of an SFC chart, and the variable of a Ladder element.
 - The function blocks and functions that the Structured Text files of a project
   declare are blocks of the FBD and LD palettes (LNG-008): a diagram places one
   with the ports of its declaration, and the generated Structured Text calls it

@@ -11,6 +11,7 @@
  * - Backward compatibility with legacy linear models
  */
 
+import { serializeVisualDocument } from './visualFileFormat';
 import { getFunctionBlockNamesForVisualEditors } from '../catalog/blockCatalog';
 import type { ProjectBlock } from './projectBlocks';
 
@@ -1025,7 +1026,7 @@ export function parseLDModel(json: string): LDModel {
  * Serialize an LDModel to JSON
  */
 export function serializeLDModel(model: LDModel): string {
-  return JSON.stringify(model, null, 2);
+  return serializeVisualDocument(model);
 }
 
 // =============================================================================

@@ -29,6 +29,18 @@ the block with named arguments, so the order in which you wire the inputs does n
   a standard block of the same name, as it does in the compiler.
 - The palette lists the files that are loaded in the editor; the build reads every Structured Text file of the project.
 
+## Visual files on disk
+
+A Ladder, FBD or SFC file is JSON. Studio checks it against the shape its editor reads when you open it (LNG-011):
+a file that is not JSON, or that is JSON of another shape, shows an error panel that names the file and its first five
+violations by path (`rungs[0].grid[1][2].element.type: ...`), counts the rest, and leaves the window and every other
+tab as they were. Correct the file and open it again; the build refuses the same file for the same reason.
+
+Opening a visual file and saving it without a change leaves it byte for byte as it was (LNG-014), whatever layout it was
+written in. A change that ends where it started, such as dragging an element away and back, does not rewrite the file
+either. The first real edit writes the whole file in the one form Studio uses: two-space JSON with a newline at the end
+(a number written `2.0` is written `2`; a Ladder rung written as a list of elements is written as a grid).
+
 ## Compile path
 
 Visual models are validated and transpiled before canonical compilation. Shared
