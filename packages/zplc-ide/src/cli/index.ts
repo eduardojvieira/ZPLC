@@ -4,7 +4,7 @@ import { lstat, readFile, realpath, rename, rm, writeFile } from 'node:fs/promis
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { parseArgs } from 'node:util';
 import productManifest from '../../../../package.json';
-import { ZPLC_CONSTANTS } from '@zplc/compiler';
+import { ZPLC_CONSTANTS, serializeDebugMap } from '@zplc/compiler';
 import { compileSingleFileWithTask, type PLCLanguage } from '../compiler';
 import { getLanguageFromFilename } from '../types';
 import { artifactEvidence, compilerCheck, compilerCompile, compilerWarningDiagnostics, executionPermission, finishToolExecution, firmwareBuild, projectInspect, projectMigrationExport, projectMigrationPreview, projectValidate, safeCompilerDiagnostics, safetyCheck, scenarioRun, startToolExecution, symbolsList, testsRun, toolchainInspect, withToolExecution, type FirmwareBuildSummary, type CompilerCompileResult, type ProjectMigrationExportResult, type SafetyCheckResult, type TestRunResult, type ToolEvidence, type ToolExecutionStart, type ToolResult } from './toolApi';
@@ -169,6 +169,13 @@ export async function main(args = Bun.argv.slice(2), output: Output = console, o
   const result = command === 'inspect' ? await projectInspect(input) : command === 'validate' ? await projectValidate(input) : command === 'migrate-preview' ? await projectMigrationPreview(input) : command === 'migrate' ? await projectMigrationExport(input) : command === 'check' ? await compilerCheck(input) : command === 'safety-check' ? await safetyCheck(input) : command === 'symbols' ? await symbolsList(input) : command === 'test' ? cliTestResult(await testsRun(input, { signal: options.signal })) : command === 'scenario-run' ? cliTestResult(await scenarioRun(input, ideId!, { signal: options.signal })) : command === 'toolchain-inspect' ? await toolchainInspect(input) : await compilerCompile(input);
   if (result.ok && command === 'migrate' && !await writeArtifact(values.output!, (result as ProjectMigrationExportResult).manifest!)) return emitFailure(output, values.json === true, operation, 'Unable to write output artifact');
   if (result.ok && command === 'compile' && values.output && !await writeArtifact(values.output, (result as CompilerCompileResult).bytes!)) return emitFailure(output, values.json === true, operation, 'Unable to write output artifact');
+  // build.generateDebugInfo: the debug map goes beside the artifact, as <output>.map.json (CMP-059)
+  const compiled = result as CompilerCompileResult;
+  if (result.ok && command === 'compile' && values.output && compiled.writeDebugMap && compiled.debugMap) {
+    const mapPath = `${values.output}.map.json`;
+    if (await isProtectedOutput(mapPath, input, true)) return emitFailure(output, values.json === true, operation, 'Output path is protected');
+    if (!await writeArtifact(mapPath, Buffer.from(serializeDebugMap(compiled.debugMap), 'utf8'))) return emitFailure(output, values.json === true, operation, 'Unable to write output artifact');
+  }
   if ((command === 'test' || command === 'scenario-run') && values.output && (result as TestRunResult).traceFile && !await writeArtifact(values.output, (result as TestRunResult).traceFile!)) return emitFailure(output, values.json === true, operation, 'Unable to write output artifact');
   if (values.json) emitJson(output, cliExecution(operation, result, executionStart));
   else if (result.ok && command === 'safety-check' && !(result as Extract<SafetyCheckResult, { ok: true }>).summary.configured) output.log('safety-check: no incompatible outputs declared');

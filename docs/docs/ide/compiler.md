@@ -39,6 +39,63 @@ and column, so any program counter inside a statement resolves to that
 statement. The end of a function and the helper routines after the cycle belong
 to no statement.
 
+## Warnings
+
+A build that succeeds can still tell the author what deserves a look. Every
+warning has a stable code, a position and, in a project, the file it belongs to;
+Studio, the CLI (`Warning:`) and the Tool API show the same warnings for the
+same project.
+
+| Code | Reported when | Level |
+|---|---|---|
+| `NON_IEC_HEX_LITERAL` | `0xFF` is written; IEC 61131-3 writes `16#FF` | `default` |
+| `NON_IEC_REAL_LITERAL` | a real literal has an exponent and no fraction, `1e3`; IEC writes `1.0E3` | `default` |
+| `IMPLICIT_NARROWING` | a value is stored in a narrower type and keeps its low bits (an error under `compiler.strictTypes`) | `default` |
+| `UNREACHABLE_STATEMENT` | a statement follows `RETURN`, `EXIT` or `CONTINUE`, or an `IF` or `CASE` with an `ELSE` whose every branch leaves, in the same list: one warning for the rest of the list | `default` |
+| `UNUSED_VARIABLE` | a `VAR` or `VAR_TEMP` variable is never read nor written | `default` |
+| `WRITE_ONLY_VARIABLE` | a `VAR` or `VAR_TEMP` variable is written and never read | `all` |
+| `OPTION_IGNORED` | an option of `zplc.json` has a value that changes nothing | `default` |
+| `SOURCE_NOT_COMPILED` | a Structured Text file of the project folder is in neither `src` nor a listed library | `default` |
+
+A branch that a constant condition disables (`IF FALSE THEN`) is not
+unreachable code: IEC 61131-3 defines no rule for it and the compiler evaluates
+no condition. The variables that are not checked are the inputs, outputs and
+in-out variables of a unit, the globals, the variables with a direct address
+(`AT %Q0.0`) and the ones with a communication tag; a function block member that
+another unit reads as `instance.member` counts as used.
+
+## Project options
+
+| Option | Values | Default | Effect |
+|---|---|---|---|
+| `compiler.warnings` | `none`, `default`, `all` | `default` | Which warnings the build reports. `none` reports none, `all` adds `WRITE_ONLY_VARIABLE`. |
+| `compiler.strictTypes` | `true`, `false` | `false` | An implicit narrowing is an error at the value, naming both types, instead of the warning `IMPLICIT_NARROWING`. |
+| `compiler.debug` | `true`, `false` | `true` | The debug map carries the statement ranges and line mappings that breakpoints and the current line need. With `false` it lists the variables and the memory only; the code is the same. |
+| `compiler.optimization` | `none`, `size`, `speed` | `none` | The compiler has one code generator: the code is the same at every value. `size` and `speed` are accepted so that old projects build, and the build warns with `OPTION_IGNORED`. |
+| `build.generateDebugInfo` | `true`, `false` | `false` | `zplc-cli compile <workspace> --output <file>` also writes the debug map beside the artifact, as `<file>.map.json`. |
+| `libraries` | list of folders | none | Folders of source files compiled with the project, see below. |
+
+A value that is not in the table is a project error that names the option.
+
+## Libraries
+
+`libraries` in `zplc.json` lists folders, relative to the project, whose
+source files are compiled with the project: the functions, function blocks,
+types and globals they declare are seen by every program, as the ones of `src`
+are, and a declaration made in a library and in `src` is an error that names
+both files.
+
+```json
+{ "libraries": ["lib/motors", "lib/valves"] }
+```
+
+A folder is read as `src` is: its files directly, no deeper, and no link is
+followed. A task runs programs of `src`; the files of a library declare blocks
+and types and run only where a program uses them. `src` itself keeps working as
+it did, and a folder that is not listed is not compiled: the build warns with
+`SOURCE_NOT_COMPILED` and names each Structured Text file it leaves out. The
+debug map names the file of each library block in its `sourceRef`.
+
 ## Assembler operands and directives
 
 The code generator writes assembly text and the assembler turns it into the

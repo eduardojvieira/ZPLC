@@ -42,6 +42,65 @@ contador de programa dentro de una sentencia se resuelve a esa sentencia. El
 final de una función y las rutinas auxiliares que siguen al ciclo no pertenecen
 a ninguna sentencia.
 
+## Advertencias
+
+Una compilación que termina bien puede aun así avisar al autor de lo que merece
+una revisión. Cada advertencia tiene un código estable, una posición y, en un
+proyecto, el archivo al que pertenece; Studio, la CLI (`Warning:`) y la API de
+herramientas muestran las mismas advertencias para el mismo proyecto.
+
+| Código | Se informa cuando | Nivel |
+|---|---|---|
+| `NON_IEC_HEX_LITERAL` | se escribe `0xFF`; IEC 61131-3 escribe `16#FF` | `default` |
+| `NON_IEC_REAL_LITERAL` | un literal real tiene exponente y no tiene parte fraccionaria, `1e3`; IEC escribe `1.0E3` | `default` |
+| `IMPLICIT_NARROWING` | un valor se guarda en un tipo más estrecho y conserva sus bits bajos (es un error con `compiler.strictTypes`) | `default` |
+| `UNREACHABLE_STATEMENT` | una sentencia sigue a `RETURN`, `EXIT` o `CONTINUE`, o a un `IF` o `CASE` con `ELSE` en el que toda rama sale, en la misma lista: una advertencia por el resto de la lista | `default` |
+| `UNUSED_VARIABLE` | una variable `VAR` o `VAR_TEMP` nunca se lee ni se escribe | `default` |
+| `WRITE_ONLY_VARIABLE` | una variable `VAR` o `VAR_TEMP` se escribe y nunca se lee | `all` |
+| `OPTION_IGNORED` | una opción de `zplc.json` tiene un valor que no cambia nada | `default` |
+| `SOURCE_NOT_COMPILED` | un archivo Structured Text de la carpeta del proyecto no está en `src` ni en una biblioteca declarada | `default` |
+
+Una rama que una condición constante desactiva (`IF FALSE THEN`) no es código
+inalcanzable: IEC 61131-3 no define una regla para ello y el compilador no
+evalúa condiciones. Las variables que no se comprueban son las entradas,
+salidas y variables de entrada y salida de una unidad, las globales, las que
+tienen una dirección directa (`AT %Q0.0`) y las que tienen una etiqueta de
+comunicación; un miembro de un bloque de función que otra unidad lee como
+`instancia.miembro` cuenta como usado.
+
+## Opciones del proyecto
+
+| Opción | Valores | Por defecto | Efecto |
+|---|---|---|---|
+| `compiler.warnings` | `none`, `default`, `all` | `default` | Qué advertencias informa la compilación. `none` no informa ninguna y `all` agrega `WRITE_ONLY_VARIABLE`. |
+| `compiler.strictTypes` | `true`, `false` | `false` | Un estrechamiento implícito es un error en el valor, que nombra ambos tipos, en lugar de la advertencia `IMPLICIT_NARROWING`. |
+| `compiler.debug` | `true`, `false` | `true` | El mapa de depuración lleva los rangos de sentencias y las correspondencias de línea que necesitan los puntos de interrupción y la línea actual. Con `false` solo lista las variables y la memoria; el código es el mismo. |
+| `compiler.optimization` | `none`, `size`, `speed` | `none` | El compilador tiene un solo generador de código: el código es el mismo con cualquier valor. `size` y `speed` se aceptan para que los proyectos antiguos compilen, y la compilación avisa con `OPTION_IGNORED`. |
+| `build.generateDebugInfo` | `true`, `false` | `false` | `zplc-cli compile <espacio> --output <archivo>` escribe además el mapa de depuración junto al artefacto, como `<archivo>.map.json`. |
+| `libraries` | lista de carpetas | ninguna | Carpetas de archivos fuente que se compilan con el proyecto, véase abajo. |
+
+Un valor que no está en la tabla es un error de proyecto que nombra la opción.
+
+## Bibliotecas
+
+`libraries` en `zplc.json` lista carpetas, relativas al proyecto, cuyos
+archivos fuente se compilan con el proyecto: las funciones, bloques de función,
+tipos y globales que declaran los ve todo programa, igual que los de `src`, y
+una declaración hecha en una biblioteca y en `src` es un error que nombra los
+dos archivos.
+
+```json
+{ "libraries": ["lib/motors", "lib/valves"] }
+```
+
+Una carpeta se lee como `src`: sus archivos directamente, sin bajar más, y sin
+seguir enlaces. Una tarea ejecuta programas de `src`; los archivos de una
+biblioteca declaran bloques y tipos y solo se ejecutan donde un programa los
+usa. `src` sigue funcionando como antes, y una carpeta que no está en la lista
+no se compila: la compilación avisa con `SOURCE_NOT_COMPILED` y nombra cada
+archivo Structured Text que deja fuera. El mapa de depuración nombra el archivo
+de cada bloque de biblioteca en su `sourceRef`.
+
 ## Operandos y directivas del ensamblador
 
 El generador de código escribe texto en ensamblador y el ensamblador lo convierte

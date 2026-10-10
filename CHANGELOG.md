@@ -425,6 +425,30 @@ All notable changes are documented here.
   comments that thought aloud or recorded a fix by number say what the code does.
   A test lints the sources of the compiler with `no-explicit-any` and a list of
   words that do not belong in a comment.
+- The compiler warns about unused variables, unreachable statements and the
+  non-IEC spellings it accepts (CMP-008): `UNUSED_VARIABLE`,
+  `WRITE_ONLY_VARIABLE`, `UNREACHABLE_STATEMENT` and `NON_IEC_REAL_LITERAL`
+  (`1e3`, next to the `0x` form), each with a stable code, a position and its
+  file. `compiler.warnings` in `zplc.json` selects them: `none`, `default`
+  (everything but the write-only variables) or `all`. A `FUNCTION_BLOCK` member
+  that another unit reads as `instance.member`, a variable with a direct address
+  and one with a communication tag are never reported. The bundled project
+  `kitchen_sink`, which declares FIFO and LIFO blocks it never calls, sets
+  `warnings: "none"`.
+- Every build option of `zplc.json` has an effect and a test (CMP-059):
+  `compiler.strictTypes` makes an implicit narrowing an error; `compiler.debug`
+  (default `true`, it used to read `false` and do nothing) decides whether the
+  debug map carries statement ranges and line mappings; `build.generateDebugInfo`
+  makes the CLI write `<output>.map.json` beside the artifact; and
+  `compiler.optimization` has one code generator behind it, so `size` and
+  `speed` build the code `none` does and the build warns with `OPTION_IGNORED`.
+  The bundled projects that said `size` or `speed` say `none`. A value that is
+  not valid for an option is a project error that names the option.
+- A project names folders of source files as libraries (CMP-046):
+  `"libraries": ["lib/motors"]` in `zplc.json`. Their functions, function
+  blocks, types and globals are part of the project; a declaration made twice
+  names both files; a folder that is not listed is reported with
+  `SOURCE_NOT_COMPILED`. The Tool API lists a library file with its `library`.
 
 ## 2.0.0-rc.3 - 2026-09-01
 
