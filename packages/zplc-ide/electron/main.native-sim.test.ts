@@ -564,15 +564,16 @@ describe('NativeSimulationSupervisor', () => {
     const firmwareBuildGatewaySource = readFileSync(path.join(ELECTRON_DIR, 'firmwareBuildGateway.ts'), 'utf8');
     const workspaceTestGatewaySource = readFileSync(path.join(ELECTRON_DIR, 'workspaceTestGateway.ts'), 'utf8');
 
-    expect(mainSource).toContain("import type { NativeSimulationRequest } from './nativeSimulationIpc.js'");
     expect(mainSource).toContain("from './nativeSimulationSupervisor.js'");
+    expect(mainSource).toContain("from './ipcContract.js'");
+    expect(mainSource).toContain("from './ipcHandlers.js'");
+    expect(mainSource).toContain("from './ipcRegistry.js'");
     expect(supervisorSource).toContain("from './nativeSimulationIpc.js'");
     expect(preloadSource).toContain("import type {");
     expect(preloadSource).toContain("} from './nativeSimulationIpc.js'");
     expect(firmwareBuildGatewaySource).toContain("from './security.js'");
     expect(workspaceTestGatewaySource).toContain("from './security.js'");
-    expect(mainSource).toContain("const NATIVE_SIMULATION_CHANNEL = {");
-    expect(preloadSource).toContain("const NATIVE_SIMULATION_CHANNEL = {");
+    expect(preloadSource).toContain("} from './ipcContract.js'");
   });
 
   it('keeps the Electron boundary deny-by-default', () => {
@@ -613,9 +614,7 @@ describe('NativeSimulationSupervisor', () => {
     expect(mainSource).toContain('details.preventDefault();');
     expect(mainSource).toContain("contents.on('will-attach-webview'");
     expect(mainSource).not.toContain('open-external');
-    expect(mainSource).toContain("ipcMain.handle('get-app-info', (event)");
     expect(mainSource).toContain('isTrustedRenderer(event, mainWindow, expectedRendererUrl())');
-    expect(mainSource).toContain('isAllowedNativeSimulationRequest(request)');
   });
 
   it('revokes renderer authority for every replaced document and fences native events by document epoch', () => {
@@ -633,7 +632,8 @@ describe('NativeSimulationSupervisor', () => {
     expect(mainSource).toContain("webContents.on('did-navigate', (_event, url) => {");
     expect(mainSource).toContain('if (!webContents.isDestroyed() && isExpectedRendererDocument(url, expectedRendererUrl())) {');
     expect(mainSource.slice(navigationCommit)).toContain('activateRendererDocument(ownerWebContentsId);');
-    expect(mainSource).toContain('const owner = currentRendererOwner(event);');
+    expect(mainSource).toContain('authorize: (event) => currentRendererOwner(event as IpcMainInvokeEvent),');
+    expect(mainSource).toContain('workspaceTestGateway.revokeOwner(ownerId);');
     expect(mainSource).toContain('nativeSimulationOwner = owner;');
     expect(mainSource).toContain('activeRendererOwner.epoch === owner.epoch');
     expect(mainSource).toContain('nativeSimulationOwner.epoch === owner.epoch');

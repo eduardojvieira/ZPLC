@@ -11,8 +11,7 @@
 import { PROJECT_FILES_LIMITS } from './projectFilesProtocol.js';
 import { isSessionPath } from './sessionStoreProtocol.js';
 
-/** The sandboxed preload repeats these names; `recoveryStoreIpc.test.ts` keeps its copy equal to this one. */
-export const RECOVERY_CHANNEL = { WRITE: 'recovery:write', LIST: 'recovery:list', DISCARD: 'recovery:discard' } as const;
+export { RECOVERY_CHANNEL } from './ipcContract.js';
 
 export const RECOVERY_LIMITS = {
   /** Modified files kept per project. */

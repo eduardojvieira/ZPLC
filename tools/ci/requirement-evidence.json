@@ -1014,8 +1014,9 @@
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_mqtt.c","test":"The MQTT function-block handler against crafted blocks (COM-001)."}
   ],
   "IDE-001": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"project files over the IPC boundary (IDE-001, IDE-016)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"workspace tests, candidate review and the AI provider (IDE-001, IDE-017)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/projectFiles.test.ts","test":"the root held for the main process (IDE-001)"},
-    {"kind":"unit","ref":"packages/zplc-ide/electron/workspaceTestsIpc.test.ts","test":"registers the project folder the main process owns from its id alone, with no linking step (IDE-001)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/workspaceTestPresentation.test.ts","test":"builds a project the host can link by itself without asking for a zplc.json first (IDE-001)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/workspaceTestLink.test.ts","test":"linking the open project to its workspace without choosing a file (IDE-001)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"1 Open an existing folder","partial":true},
@@ -1051,6 +1052,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"22 Close Project asks before it closes","partial":true}
   ],
   "IDE-006": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"recovery and session over the IPC boundary (IDE-006, IDE-008)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/recoveryStore.test.ts","test":"recovery messages (IDE-006)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/recoveryStore.test.ts","test":"recovery store (IDE-006)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/recoveryStoreIpc.test.ts","test":"recovery IPC boundary (IDE-006)"},
@@ -1068,6 +1070,7 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"21 Preferences apply and persist per user"}
   ],
   "IDE-008": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"recovery and session over the IPC boundary (IDE-006, IDE-008)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/projectFiles.test.ts","test":"recent projects (IDE-008)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/projectFilesProtocol.test.ts","test":"recent project message schema (IDE-008)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/sessionStore.test.ts","test":"session store (IDE-008)"},
@@ -1108,12 +1111,28 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/components/ErrorBoundary.test.tsx","test":"a region that throws (IDE-011)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"20 A failing region does not blank the window"}
   ],
+  "IDE-016": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"project files over the IPC boundary (IDE-001, IDE-016)"}
+  ],
+  "IDE-017": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"every invoke channel (IDE-017)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"safety check over the IPC boundary (IDE-017)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"the contract and the handler table (IDE-017)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"toolchain inspection and firmware build (IDE-017, IDE-027)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"workspace tests, candidate review and the AI provider (IDE-001, IDE-017)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/preload.test.ts","test":"preload bridge (IDE-017)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/spawnAllowList.test.ts","test":"the spawn allow-list (IDE-017)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/firmwareBuildRunner.test.ts","test":"never starts a process for a board that is not a manifest board id (IDE-017)"}
+  ],
   "IDE-019": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"18 Force an input while stopped at a breakpoint","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"8 Force an input and release it","partial":true}
   ],
   "IDE-020": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"4 Build with an error, reach it from Problems","partial":true}
+  ],
+  "IDE-027": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"toolchain inspection and firmware build (IDE-017, IDE-027)"}
   ],
   "IDE-029": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"18 Force an input while stopped at a breakpoint","partial":true},

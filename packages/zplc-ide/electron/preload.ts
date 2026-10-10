@@ -2,7 +2,9 @@
  * ZPLC IDE - Electron Preload Script
  *
  * This script runs in a special context with access to both Node.js and DOM APIs.
- * It exposes safe APIs to the renderer process via contextBridge.
+ * It exposes safe APIs to the renderer process via contextBridge. Every channel name comes from `ipcContract.ts`, the
+ * one definition shared with the main process and the renderer (IDE-017); `electron:compile` bundles this file with that
+ * module into the single script a sandboxed preload may load.
  */
 
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
@@ -13,71 +15,25 @@ import type {
   NativeSimulationRequest,
 } from './nativeSimulationIpc.js';
 
-const NATIVE_SIMULATION_CHANNEL = {
-  START_SESSION: 'native-simulation:start-session',
-  STOP_SESSION: 'native-simulation:stop-session',
-  REQUEST: 'native-simulation:request',
-  EVENT: 'native-simulation:event',
-} as const;
+import {
+  AI_PROVIDER_CHANNEL,
+  APP_INFO_CHANNEL,
+  CANDIDATE_CHANGE_SET_CHANNEL,
+  CLOSE_GUARD_CHANNEL,
+  FIRMWARE_BUILD_CHANNEL,
+  LEARN_PROGRESS_CHANNEL,
+  NATIVE_SIMULATION_CHANNEL,
+  PROJECT_FILES_CHANNEL,
+  PROJECT_FILES_EVENT,
+  RECOVERY_CHANNEL,
+  SESSION_CHANNEL,
+  TOOLCHAIN_CHANNEL,
+  TOOL_EXECUTION_AUDIT_CHANNEL,
+  UPDATE_CHECK_CHANNEL,
+  WORKSPACE_TESTS_CHANNEL,
+} from './ipcContract.js';
 
-const WORKSPACE_TESTS_CHANNEL = {
-  REGISTER_PROJECT_FILE: 'workspace-tests:register-project-file',
-  REGISTER_PROJECT_ROOT: 'workspace-tests:register-project-root',
-  RUN: 'workspace-tests:run',
-  CANCEL: 'workspace-tests:cancel',
-  COMPILE: 'workspace-tests:compile',
-  SAFETY_CHECK: 'workspace-tests:safety-check',
-} as const;
 
-const CANDIDATE_CHANGE_SET_CHANNEL = {
-  REVIEW: 'candidate-change-set:review',
-} as const;
-
-const TOOLCHAIN_CHANNEL = {
-  INSPECT: 'toolchain:inspect',
-} as const;
-
-const FIRMWARE_BUILD_CHANNEL = {
-  START: 'firmware-build:start',
-  CANCEL: 'firmware-build:cancel',
-} as const;
-
-const TOOL_EXECUTION_AUDIT_CHANNEL = {
-  LIST: 'tool-execution-audit:list',
-} as const;
-
-const AI_PROVIDER_CHANNEL = {
-  GET_STATUS: 'ai-provider:get-status', GET_CONFIG: 'ai-provider:get-config', SAVE_CONFIG: 'ai-provider:save-config',
-  STORE_KEY: 'ai-provider:store-key', CLEAR_KEY: 'ai-provider:clear-key', REQUEST: 'ai-provider:request', CANCEL: 'ai-provider:cancel',
-} as const;
-// Repeats projectFilesProtocol.ts: a sandboxed preload cannot require it, and even a type import would make
-// the preload compile re-emit that module as CommonJS over the ES module the main process loads.
-// projectFilesIpc.test.ts keeps this copy equal to the shared one.
-const PROJECT_FILES_CHANNEL = {
-  chooseFolder: 'project-files:choose-folder',
-  list: 'project-files:list',
-  stat: 'project-files:stat',
-  read: 'project-files:read',
-  write: 'project-files:write',
-  mkdir: 'project-files:mkdir',
-  remove: 'project-files:remove',
-  rename: 'project-files:rename',
-  listRecent: 'project-files:list-recent',
-  openRecent: 'project-files:open-recent',
-  forgetRecent: 'project-files:forget-recent',
-  markOpened: 'project-files:mark-opened',
-  watch: 'project-files:watch',
-} as const;
-// The one event the main process pushes for project files; projectFilesIpc.test.ts keeps it equal to PROJECT_FILES_EVENT.
-const PROJECT_FILES_EVENT = { changed: 'project-files:changed' } as const;
-const LEARN_PROGRESS_CHANNEL = { READ: 'learn-progress:read', MERGE: 'learn-progress:merge' } as const;
-const SESSION_CHANNEL = { LOAD: 'session:load', SAVE: 'session:save' } as const;
-// Repeats RECOVERY_CHANNEL of recoveryStoreProtocol.ts, for the same reason as the project files above.
-// recoveryStoreIpc.test.ts keeps this copy equal to the shared one.
-const RECOVERY_CHANNEL = { WRITE: 'recovery:write', LIST: 'recovery:list', DISCARD: 'recovery:discard' } as const;
-// Repeats UPDATE_CHECK_CHANNEL of updateCheckProtocol.ts; updateCheckIpc.test.ts keeps this copy equal to the shared one.
-const UPDATE_CHECK_CHANNEL = { RUN: 'update-check:run' } as const;
-const CLOSE_GUARD_CHANNEL = { SET_DIRTY: 'close-guard:set-dirty', CLOSE_NOW: 'close-guard:close-now', CLOSE_REQUESTED: 'close-guard:close-requested' } as const;
 type GuardedAction = 'close' | 'reload';
 
 // Expose protected APIs to the renderer process
@@ -85,7 +41,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   /**
    * Get application information
    */
-  getAppInfo: () => ipcRenderer.invoke('get-app-info'),
+  getAppInfo: () => ipcRenderer.invoke(APP_INFO_CHANNEL.GET),
 
   /**
    * Native simulation bridge

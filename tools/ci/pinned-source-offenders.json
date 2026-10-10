@@ -71,26 +71,14 @@
     "reason": "Four assertions that the assembly contains the comment lines of a struct member assignment. Replace by running a struct program and reading each member."
   },
   {
-    "file": "packages/zplc-ide/electron/aiProviderIpc.test.ts",
-    "requirement": "VF-006",
-    "added": "2026-10-10",
-    "reads": [
-      "packages/zplc-ide/electron/main.ts",
-      "packages/zplc-ide/electron/preload.ts"
-    ],
-    "replacement": "behaviour",
-    "reason": "Pins the exact preload surface and main-process routing of the AI provider as text of main.ts and preload.ts. Replace by running the registration against a stub electron module and comparing the registered channels and exposed keys."
-  },
-  {
     "file": "packages/zplc-ide/electron/closeGuardIpc.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
     "reads": [
-      "packages/zplc-ide/electron/main.ts",
-      "packages/zplc-ide/electron/preload.ts"
+      "packages/zplc-ide/electron/main.ts"
     ],
     "replacement": "behaviour",
-    "reason": "Pins the close-guard channels, the narrow preload namespace and the window close veto as text of main.ts and preload.ts. Replace by a main-process test against a stub electron module and by the VF-008 close-with-unsaved-changes journey."
+    "reason": "Pins the window close veto and the reload chords as text of main.ts: the window has no stand-in. The channels, the narrow preload namespace and the sender and message checks are proven by behaviour in ipcRegistry.test.ts and preload.test.ts. Replace by the VF-008 close-with-unsaved-changes journey."
   },
   {
     "file": "packages/zplc-ide/electron/main.native-sim.test.ts",
@@ -105,7 +93,7 @@
       "packages/zplc-ide/electron/workspaceTestGateway.ts"
     ],
     "replacement": "behaviour",
-    "reason": "The supervisor cases are behavioural; three cases pin import extensions, the deny-by-default webPreferences and the renderer-revocation wiring as text of main.ts. Replace by a main-process test against a stub electron module (webPreferences read from the created window) and by the VF-008 journeys."
+    "reason": "The supervisor cases are behavioural; three cases pin import extensions, the deny-by-default webPreferences and the renderer-revocation wiring as text of main.ts and preload.ts. Replace by a main-process test against a stub electron module (webPreferences read from the created window) and by the VF-008 journeys."
   },
   {
     "file": "packages/zplc-ide/electron/projectFilesIpc.test.ts",
@@ -113,13 +101,12 @@
     "added": "2026-10-10",
     "reads": [
       "packages/zplc-ide/electron/main.ts",
-      "packages/zplc-ide/electron/preload.ts",
       "packages/zplc-ide/electron/projectFiles.ts",
       "packages/zplc-ide/electron/projectFilesProtocol.ts",
       "packages/zplc-ide/electron/recentProjects.ts"
     ],
     "replacement": "behaviour",
-    "reason": "Pins the project-files channels, the narrow preload object and the sender checks as text of main.ts, preload.ts and the shared protocol modules. Replace by a main-process test against a stub electron module."
+    "reason": "The channels, the exposed methods and the sender and message checks are proven by behaviour (ipcRegistry.test.ts, preload.test.ts). What stays is the window folder revocation, the dialog hook import, the user-data location and the absence of file-system permissions, pinned as text of main.ts and the project modules. Replace by a main-process test against a stub electron module."
   },
   {
     "file": "packages/zplc-ide/electron/recoveryStoreIpc.test.ts",
@@ -127,12 +114,11 @@
     "added": "2026-10-10",
     "reads": [
       "packages/zplc-ide/electron/main.ts",
-      "packages/zplc-ide/electron/preload.ts",
       "packages/zplc-ide/electron/recoveryStore.ts",
       "packages/zplc-ide/electron/recoveryStoreProtocol.ts"
     ],
     "replacement": "behaviour",
-    "reason": "Pins the recovery channels, the narrow preload object, the sender and folder checks before the store is touched, the .js import suffixes and the absence of npm imports as text of main.ts, preload.ts and the store modules (written before the guard existed). Replace by a main-process test against a stub electron module once the registrations are a function that the test can call; the suffix and dependency cases need a compile of the electron project and a load of its output."
+    "reason": "The channels, the narrow preload object, the sender, message and folder checks and the discard on a confirmed close are proven by behaviour (ipcRegistry.test.ts, preload.test.ts). What stays is the user-data location and prune call (text of main.ts), the .js import suffixes and the absence of npm imports of the store modules; the suffix and dependency cases need a compile of the electron project and a load of its output."
   },
   {
     "file": "packages/zplc-ide/electron/security.test.ts",
@@ -150,23 +136,11 @@
     "added": "2026-10-10",
     "reads": [
       "packages/zplc-ide/electron/main.ts",
-      "packages/zplc-ide/electron/preload.ts",
       "packages/zplc-ide/electron/sessionStore.ts",
       "packages/zplc-ide/electron/sessionStoreProtocol.ts"
     ],
     "replacement": "behaviour",
-    "reason": "Pins the two session channels and their sender checks as text of main.ts and preload.ts. Replace by a main-process test against a stub electron module."
-  },
-  {
-    "file": "packages/zplc-ide/electron/toolchainIpc.test.ts",
-    "requirement": "VF-006",
-    "added": "2026-10-10",
-    "reads": [
-      "packages/zplc-ide/electron/main.ts",
-      "packages/zplc-ide/electron/preload.ts"
-    ],
-    "replacement": "behaviour",
-    "reason": "Pins the no-argument Toolchain Doctor and firmware-build IPC operations as text of main.ts and preload.ts. Replace by a main-process test against a stub electron module."
+    "reason": "The channels, the narrow preload object and the sender, message and folder checks are proven by behaviour (ipcRegistry.test.ts, preload.test.ts). What stays is the user-data location and prune call (text of main.ts) and the absence of npm imports of the store modules."
   },
   {
     "file": "packages/zplc-ide/electron/updateCheckIpc.test.ts",
@@ -174,23 +148,11 @@
     "added": "2026-10-10",
     "reads": [
       "packages/zplc-ide/electron/main.ts",
-      "packages/zplc-ide/electron/preload.ts",
       "packages/zplc-ide/electron/updateCheck.ts",
       "packages/zplc-ide/electron/updateCheckProtocol.ts"
     ],
     "replacement": "behaviour",
-    "reason": "Pins the update-check channel, the argument-free preload call, the sender check before the network is asked, and the single fixed address as text of main.ts, preload.ts and the update-check modules (written by WS-17 before the guard existed). Replace by a main-process test against a stub electron module with a fake network, which also proves that no other network connection is opened."
-  },
-  {
-    "file": "packages/zplc-ide/electron/workspaceTestsIpc.test.ts",
-    "requirement": "VF-006",
-    "added": "2026-10-10",
-    "reads": [
-      "packages/zplc-ide/electron/main.ts",
-      "packages/zplc-ide/electron/preload.ts"
-    ],
-    "replacement": "behaviour",
-    "reason": "Pins the workspace-test IPC channels, owner binding and the absence of a directory picker as text of main.ts and preload.ts. Replace by a main-process test against a stub electron module."
+    "reason": "The channel, the argument-free preload call and the sender check are proven by behaviour (ipcRegistry.test.ts, preload.test.ts). What stays is the single fixed address and the absence of another fetch in main.ts, and the module hygiene (.js suffixes, no npm import) of the update-check modules. Replace by a main-process test with a fake network, which also proves that no other connection is opened."
   },
   {
     "file": "packages/zplc-ide/scripts/packagingHygiene.test.ts",

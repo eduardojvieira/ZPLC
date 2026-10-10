@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { spawn } from 'node:child_process';
+import type { ChildProcessWithoutNullStreams } from 'node:child_process';
+import { spawnAllowed, type SpawnEntry, type ToolchainProbe } from '../../electron/spawnAllowList';
 import { lstat, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { isAbsolute, join, relative, resolve, sep, win32 } from 'node:path';
@@ -939,11 +940,11 @@ async function sdkToolchain(sdk: string | undefined, relativePath: string): Prom
   } catch { return false; }
 }
 function versionFrom(output: string): string | undefined { return output.match(/\b\d+(?:\.\d+){1,3}(?:[-+][0-9A-Za-z.-]+)?\b/)?.[0]; }
-type FixedCommand = { command: 'west' | 'python3' | 'cmake' | 'ninja' | 'git' | 'py' | 'python'; args: readonly string[] };
-async function inspectCommand({ command, args }: FixedCommand, cwd: string, revision = false): Promise<{ status: ToolchainCheckStatus; version?: string; observedRevision?: string }> {
+async function inspectCommand(entry: SpawnEntry, cwd: string, revision = false): Promise<{ status: ToolchainCheckStatus; version?: string; observedRevision?: string }> {
   return new Promise((resolve) => {
     let settled = false; let output = ''; let exceeded = false;
-    const child = spawn(command, args, { cwd, shell: false, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true });
+    // The command and its arguments come from the allow-list of spawnAllowList.ts, never from a value of this file (IDE-017).
+    const child = spawnAllowed(entry, { cwd, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true }) as ChildProcessWithoutNullStreams;
     const settle = (value: { status: ToolchainCheckStatus; version?: string; observedRevision?: string }) => { if (!settled) { settled = true; clearTimeout(timeout); resolve(value); } };
     const append = (chunk: Buffer) => {
       if (exceeded) return;
@@ -1082,18 +1083,19 @@ export async function toolchainInspect(repositoryRoot: string): Promise<Toolchai
     if (!parsedBoards) { replaceCheck(checks, { id: 'repository-manifest', status: 'malformed' }); diagnostics.push(toolchainDiagnostic('TOOLCHAIN_BOARDS_MALFORMED')); }
     else { boards = parsedBoards.map(({ ideId, zephyrBoard, validationLevel }) => ({ ideId, zephyrBoard, validationLevel })); replaceCheck(checks, { id: 'repository-manifest', status: 'ready' }); }
   }
-  for (const [id, probe] of [['west', { command: 'west', args: ['--version'] }], ['cmake', { command: 'cmake', args: ['--version'] }], ['ninja', { command: 'ninja', args: ['--version'] }]] as const) {
-    const observed = await inspectCommand(probe, root);
+  for (const probe of ['west', 'cmake', 'ninja'] as const) {
+    const id = probe;
+    const observed = await inspectCommand({ kind: 'toolchain-probe', probe }, root);
     replaceCheck(checks, { id, ...observed });
     if (observed.status !== 'ready') diagnostics.push(toolchainDiagnostic(`TOOLCHAIN_${id.toUpperCase()}_${observed.status.toUpperCase()}`));
   }
-  const pythonProbes: FixedCommand[] = process.platform === 'win32' ? [{ command: 'py', args: ['-3', '--version'] }, { command: 'python', args: ['--version'] }] : [{ command: 'python3', args: ['--version'] }];
-  let python = await inspectCommand(pythonProbes[0]!, root);
-  if (process.platform === 'win32' && python.status !== 'ready') python = await inspectCommand(pythonProbes[1]!, root);
+  const pythonProbes: ToolchainProbe[] = process.platform === 'win32' ? ['python-launcher', 'python'] : ['python3'];
+  let python = await inspectCommand({ kind: 'toolchain-probe', probe: pythonProbes[0]! }, root);
+  if (process.platform === 'win32' && python.status !== 'ready') python = await inspectCommand({ kind: 'toolchain-probe', probe: pythonProbes[1]! }, root);
   replaceCheck(checks, { id: 'python3', ...python });
   if (python.status !== 'ready') diagnostics.push(toolchainDiagnostic(`TOOLCHAIN_PYTHON3_${python.status.toUpperCase()}`));
   const zephyrBase = await realDirectory(process.env.ZEPHYR_BASE);
-  const revision = zephyrBase && requiredRevision ? await inspectCommand({ command: 'git', args: ['-C', zephyrBase, 'rev-parse', '--verify', 'HEAD'] }, root, true) : undefined;
+  const revision = zephyrBase && requiredRevision ? await inspectCommand({ kind: 'zephyr-revision', zephyrBase }, root, true) : undefined;
   const zephyrStatus: ToolchainCheckStatus = !zephyrBase ? process.env.ZEPHYR_BASE ? 'invalid' : 'missing' : !requiredRevision ? 'invalid' : revision?.status !== 'ready' ? revision?.status ?? 'unavailable' : revision.observedRevision === requiredRevision ? 'ready' : 'invalid';
   replaceCheck(checks, { id: 'zephyr-base', status: zephyrStatus, ...(requiredRevision ? { requiredRevision } : {}), ...(revision?.observedRevision ? { observedRevision: revision.observedRevision } : {}) });
   if (zephyrStatus !== 'ready') diagnostics.push(toolchainDiagnostic('TOOLCHAIN_ZEPHYR_BASE_INVALID'));

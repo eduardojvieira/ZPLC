@@ -13,7 +13,8 @@
     "resolveJsonModule": true,
     "declaration": false,
     "declarationMap": false,
-    "sourceMap": true,
+    "noEmit": true,
+    "sourceMap": false,
     "types": ["node"]
   },
   "include": ["electron/preload.ts"],

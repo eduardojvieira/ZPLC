@@ -3,34 +3,14 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+// The channels, the narrow preload namespace and the sender and message checks of the close guard are proven by
+// behaviour in ipcRegistry.test.ts and preload.test.ts. What stays here is the window wiring: Electron has no stand-in
+// for the BrowserWindow, so the veto and the reload chords are pinned as text of main.ts until the VF-008 journey
+// that closes a window with unsaved changes replaces them (journey 10).
 const electronDir = path.dirname(fileURLToPath(import.meta.url));
 const mainSource = readFileSync(path.join(electronDir, 'main.ts'), 'utf8');
-const preloadSource = readFileSync(path.join(electronDir, 'preload.ts'), 'utf8');
-const CHANNELS = ['close-guard:set-dirty', 'close-guard:close-now', 'close-guard:close-requested'];
 
-describe('close guard IPC boundary', () => {
-  it('keeps the three channels aligned between the main process and the preload', () => {
-    for (const channel of CHANNELS) {
-      expect(mainSource).toContain(channel);
-      expect(preloadSource).toContain(channel);
-    }
-  });
-
-  it('exposes one narrow closeGuard namespace and nothing generic', () => {
-    expect(preloadSource).toContain('closeGuard: {');
-    expect(preloadSource).toContain('setDirty: (dirty: boolean) =>');
-    expect(preloadSource).toContain('closeNow: () =>');
-    expect(preloadSource).toContain('onCloseRequested: (callback: (action: GuardedAction) => void) =>');
-    expect(preloadSource).not.toContain('ipcRenderer.send');
-  });
-
-  it('validates the sender and the message of every handler', () => {
-    expect(mainSource).toContain('ipcMain.handle(CLOSE_GUARD_CHANNEL.SET_DIRTY, (event, ...args: unknown[]) => {');
-    expect(mainSource).toContain('args.length !== 1 || !isAllowedCloseGuardDirty(args[0]) || !currentRendererOwner(event)');
-    expect(mainSource).toContain('ipcMain.handle(CLOSE_GUARD_CHANNEL.CLOSE_NOW, async (event, ...args: unknown[]) => {');
-    expect(mainSource).toContain('const owner = currentRendererOwner(event);\n    if (args.length !== 0 || !owner) throw new Error(\'Request denied\');');
-  });
-
+describe('close guard window wiring', () => {
   it('catches the reload chords before the page and the menu, and reloads a development host only through the guard', () => {
     const start = mainSource.indexOf("webContents.on('before-input-event'");
     expect(start).toBeGreaterThan(-1);

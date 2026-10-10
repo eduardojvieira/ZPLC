@@ -19,6 +19,35 @@ depender de una reescritura implícita del proyecto antiguo.
 | Compilador | Compilación canónica de fuentes y modelos visuales a `.zplc`. |
 | Adaptadores de runtime | Simulación POSIX nativa o un runtime compatible conectado. |
 
+## Cómo se comunican las capas
+
+El renderer llega al proceso principal solo a través del preload, y solo por los
+canales que nombra `packages/zplc-ide/electron/ipcContract.ts`. Ese módulo es la
+única definición: el proceso principal, el preload y el renderer toman de él los
+nombres de canal, de modo que no hay una segunda copia que se desalinee.
+
+- **Un manejador por canal.** El proceso principal responde a cada canal del
+  contrato con exactamente un manejador, y se niega a arrancar si a un canal le
+  falta o si un manejador no tiene canal.
+- **Primero el emisor y el mensaje.** Cada llamada se comprueba antes de que corra
+  su manejador: el emisor debe ser el documento de confianza de Studio de la
+  ventana y los argumentos deben ajustarse al esquema de ese canal. Cualquier otra
+  cosa se deniega con un mensaje fijo.
+- **Un preload estrecho.** El preload expone un método por operación y nada
+  genérico (ni `send`, ni acceso a un canal arbitrario, ni una ruta de la
+  máquina). Se construye como un solo script que no requiere nada salvo `electron`.
+- **Procesos fijos.** Los procesos que se lanzan para compilar, probar y construir
+  firmware (el runtime nativo, `west build`, las sondas de la cadena de
+  herramientas) salen de una lista cerrada de vectores de argumentos fijos, se
+  lanzan sin shell y nunca toman un comando ni un argumento del renderer.
+
+Nivel de evidencia: host. `electron/ipcRegistry.test.ts` ejecuta la tabla real de
+manejadores y el registro real contra sustitutos de Electron y de los almacenes,
+`electron/preload.test.ts` ejecuta el preload real contra un sustituto y compara lo
+que invoca con el contrato, y `electron/spawnAllowList.test.ts` muestra los
+vectores de argumentos (requisito IDE-017). No es evidencia de la aplicación
+empaquetada.
+
 ## Configuración del proyecto
 
 `zplc.json` define los metadatos del proyecto, el destino, las tareas y las

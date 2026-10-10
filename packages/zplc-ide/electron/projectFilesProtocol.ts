@@ -3,32 +3,14 @@
  * shared by the main process (`projectFiles.ts`, `main.ts`) and the renderer (`src/ipc`).
  * Pure TypeScript with no Electron or Node import, so both programs can import it.
  *
- * The sandboxed preload cannot `require` a local module, so `preload.ts` imports only the types
- * and repeats the channel names; `projectFilesIpc.test.ts` keeps that copy equal to this one.
+ * The channel names are defined once, in `ipcContract.ts`, and re-exported here for the callers that already import them from this module.
  *
  * Paths are always relative to the project root, separated by "/" ("" is the root). The renderer never
  * supplies a root: the main process takes it from the native folder dialog and hands back an opaque
  * `rootId` that every later request must repeat, so a handle from a closed project cannot act on the next one.
  */
 
-export const PROJECT_FILES_CHANNEL = {
-  chooseFolder: 'project-files:choose-folder',
-  list: 'project-files:list',
-  stat: 'project-files:stat',
-  read: 'project-files:read',
-  write: 'project-files:write',
-  mkdir: 'project-files:mkdir',
-  remove: 'project-files:remove',
-  rename: 'project-files:rename',
-  listRecent: 'project-files:list-recent',
-  openRecent: 'project-files:open-recent',
-  forgetRecent: 'project-files:forget-recent',
-  markOpened: 'project-files:mark-opened',
-  watch: 'project-files:watch',
-} as const;
-
-/** What the main process pushes to the window when files under its folder changed (IDE-004). */
-export const PROJECT_FILES_EVENT = { changed: 'project-files:changed' } as const;
+export { PROJECT_FILES_CHANNEL, PROJECT_FILES_EVENT } from './ipcContract.js';
 
 export const PROJECT_FILES_LIMITS = {
   /** Largest file the project operations will read or write: 16 MiB (a PLC source file is a few KiB). */
