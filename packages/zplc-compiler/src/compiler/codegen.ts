@@ -2405,9 +2405,9 @@ function failWide(at: { line: number; column: number }, what: string): never {
  * Emit `expr` and convert its value to `target`: REAL (an integer of 32 bits or less is
  * converted, the implicit conversion of IEC 61131-3 arithmetic) or a 64-bit integer type (a
  * narrower integer is widened to two cells, a 64-bit value assigned to a narrower target
- * loses its high word). `contextType` is the type a literal-only expression takes.
+ * loses its high word).
  */
-function emitConverted(state: CodeGenState, expr: Expression, target: string, contextType?: string): void {
+function emitConverted(state: CodeGenState, expr: Expression, target: string): void {
     const type = staticType(state, expr);
     const info = numericInfo(type);
     const sourceBits = info?.bits ?? 32;
@@ -2475,10 +2475,6 @@ function emitConverted(state: CodeGenState, expr: Expression, target: string, co
         return;
     }
 
-    if (contextType !== undefined && expr.kind === 'BinaryExpr' && type === LITERAL_INT) {
-        emitBinaryExpr(state, expr, contextType);
-        return;
-    }
     emitExpression(state, expr);
 }
 
