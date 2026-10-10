@@ -11,6 +11,10 @@ import type { SystemInfo } from './serialAdapter';
 
 const BASE_INFO: SystemInfo = {
   board: 'esp32s3_devkitc',
+  board_profile: 'esp32s3_devkitc/esp32s3/procpu',
+  device_protocol_version: 1,
+  bytecode_abi_major: 1,
+  bytecode_abi_minor: 0,
   zplc_version: '1.0.0',
   zephyr_version: '4.0.0',
   uptime_ms: 1000,

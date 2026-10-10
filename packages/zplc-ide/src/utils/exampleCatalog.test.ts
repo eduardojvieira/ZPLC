@@ -53,7 +53,7 @@ describe('example catalogue', () => {
   it('describes each existing project by what its manifest builds and targets', () => {
     for (const id of listedFolders.filter((folder) => folder in EXAMPLE_CATALOG)) {
       const entry = EXAMPLE_CATALOG[id]!;
-      expect([...entry.languages].sort(), `${id} languages`).toEqual(builtLanguages(id));
+      expect(([...entry.languages] as string[]).sort(), `${id} languages`).toEqual(builtLanguages(id));
       const board = manifest(id).target?.board;
       expect(entry.board, `${id} board`).toBe(board === 'posix' ? undefined : board);
     }

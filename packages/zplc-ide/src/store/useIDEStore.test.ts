@@ -16,7 +16,10 @@ import { currentViewStates, flushSession, recordViewState, resetViewStates, star
 import { DEFAULT_DEBUG_POLLING_INTERVAL_MS } from './debugDefaults';
 import { WATCH_FORCE_STATE, type WatchForceEntry } from '../runtime/debugAdapter';
 import type { NativeTraceSample } from '../runtime/nativeTrace';
-import { DEFAULT_ZPLC_CONFIG, type FileTreeNode, type ProjectFileWithHandle } from '../types';
+import { DEFAULT_ZPLC_CONFIG, type FileTreeNode, type ProjectFileWithHandle, type ZPLCProjectV2 } from '../types';
+
+/** A saved project is a v2 document; the store field is typed with the narrower config, so a typed value avoids the excess-property check. */
+const v2Project = (name: string): ZPLCProjectV2 => ({ name, version: '1.0.0', schemaVersion: 2, tasks: [] });
 
 function deferred<T>() {
   let resolve!: (value: T | PromiseLike<T>) => void;
@@ -84,7 +87,7 @@ describe('useIDEStore debug defaults', () => {
 describe('useIDEStore native trace', () => {
   const sample: NativeTraceSample = {
     source: 'native', uptimeMs: 1, cycles: 2, state: 'paused', pc: 3, error: 0, overruns: 0,
-    opi: [0, 0, 0, 0, 0, 0, 0, 0], forceCount: 0, compilerRunId: 0, receivedAtMs: 0,
+    opi: [0, 0, 0, 0, 0, 0, 0, 0], ipi: [0, 0, 0, 0, 0, 0, 0, 0], programGeneration: 1, forceCount: 0, compilerRunId: 0, receivedAtMs: 0,
   };
 
   it('appends bounded samples and clears them with the debug session', () => {
@@ -454,7 +457,7 @@ describe('useIDEStore folder opening', () => {
         writableCalls += 1;
         return { write: async () => { writeCalls += 1; }, close: async () => {} };
       },
-    } as FileSystemFileHandle;
+    } as unknown as FileSystemFileHandle;
     const handle = {
       name: 'ordinary-folder',
       getFileHandle: async (_name: string, options?: FileSystemGetFileOptions) => {
@@ -733,7 +736,7 @@ describe('useIDEStore workspace scenario links', () => {
   });
 
   it('treats unsaved configuration as unsaved work and clears it only on replacement or successful save', () => {
-    useIDEStore.setState({ projectConfig: { name: 'local', version: '1.0.0', schemaVersion: 2, tasks: [] }, projectConfigDirty: false, loadedFiles: new Map() });
+    useIDEStore.setState({ projectConfig: v2Project('local'), projectConfigDirty: false, loadedFiles: new Map() });
     const state = useIDEStore.getState();
     state.updateProjectConfig({ name: 'changed' });
 
@@ -757,7 +760,7 @@ describe('useIDEStore project close admission', () => {
     useIDEStore.setState({
       isProjectOpen: true,
       projectName: 'Unsaved project',
-      projectConfig: { name: 'Unsaved project', version: '1.0.0', schemaVersion: 2, tasks: [] },
+      projectConfig: v2Project('Unsaved project'),
       projectSession: 900,
       workspaceScenarioLink: { workspaceId: 'workspace-token', projectSession: 900 },
       projectConfigDirty: false,
@@ -1118,7 +1121,7 @@ describe('useIDEStore file deletion', () => {
     useIDEStore.setState({
       isProjectOpen: true, projectSession: 802, fileTree: root,
       loadedFiles: new Map([[source.id, sourceFile]]), openTabs: [source.id], activeFileId: source.id,
-      compilerMessages: [{ type: 'error', message: 'old', timestamp: Date.now() }],
+      compilerMessages: [{ type: 'error', message: 'old', timestamp: new Date() }],
       compilerNavigationTarget: { file: source.path, line: 1, column: 1 },
       debug: { ...useIDEStore.getState().debug, breakpoints },
     });
@@ -1145,7 +1148,7 @@ describe('useIDEStore file deletion', () => {
       isProjectOpen: true, projectSession: 803, fileTree: root,
       loadedFiles: new Map([[first.id, loaded(first.id)], [second.id, loaded(second.id)]]),
       openTabs: [first.id, second.id], activeFileId: second.id,
-      compilerMessages: [{ type: 'error', message: 'old', timestamp: Date.now() }],
+      compilerMessages: [{ type: 'error', message: 'old', timestamp: new Date() }],
       compilerNavigationTarget: { file: second.path, line: 1, column: 1 },
       debug: { ...useIDEStore.getState().debug, breakpoints },
     });

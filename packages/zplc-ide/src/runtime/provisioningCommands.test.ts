@@ -5,7 +5,7 @@ import { buildProvisioningCommands, quoteZephyrShellArg } from './provisioningCo
 
 function decodeZephyrShellArgument(encoded: string): string {
   return encoded.slice(1, -1).replace(/\\x([0-9a-f]{2})|\\(["\\])/gi, (_match, hex: string | undefined, escaped: string | undefined) => (
-    hex ? String.fromCharCode(Number.parseInt(hex, 16)) : escaped
+    hex ? String.fromCharCode(Number.parseInt(hex, 16)) : escaped ?? ''
   ));
 }
 

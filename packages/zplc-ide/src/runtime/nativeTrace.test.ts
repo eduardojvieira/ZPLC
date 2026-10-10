@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test';
 
 import type { IDebugAdapter, RuntimeSnapshot } from './debugAdapter';
 import {
+  type NativeTraceSample,
   NATIVE_TRACE_LIMIT,
   appendNativeTrace,
   canCaptureNativeTrace,
@@ -97,7 +98,7 @@ describe('native trace', () => {
 
   it('keeps exactly the newest 200 samples', () => {
     const owner = { type: 'native' } as IDebugAdapter;
-    let trace = [];
+    let trace: NativeTraceSample[] = [];
     for (let index = 0; index <= NATIVE_TRACE_LIMIT; index += 1) {
       trace = appendNativeTrace(trace, owner, owner, snapshot({ uptimeMs: index }), { compilerRunId: 0, receivedAtMs: index });
     }

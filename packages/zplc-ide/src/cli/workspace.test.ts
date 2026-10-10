@@ -128,10 +128,11 @@ describe('readWorkspaceScenarios', () => {
       await scenario(root, 'zeta.SCENARIO.JSON', '{"id":"zeta","extra":{"kept":true}}');
       await scenario(root, 'Alpha.scenario.json', '["raw", 1]');
       const result = await readWorkspaceScenarios(root);
+      // The `bytes` of each scenario are a non-enumerable property, so the plain objects below are what toEqual compares.
       expect(result).toEqual({ ok: true, scenarios: [
         { path: 'tests/Alpha.scenario.json', input: ['raw', 1] },
         { path: 'tests/zeta.SCENARIO.JSON', input: { id: 'zeta', extra: { kept: true } } },
-      ] });
+      ] } as typeof result);
     } finally { await rm(root, { recursive: true, force: true }); }
   });
 

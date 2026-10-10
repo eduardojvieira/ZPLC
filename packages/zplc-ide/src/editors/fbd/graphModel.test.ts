@@ -34,7 +34,7 @@ describe('FBD copy/paste graph model', () => {
       { id: 'output_copy', variableName: 'Output', address: '%Q0.0', position: { x: 140, y: 40 } },
     ]);
     expect(pasted?.connections[1]).toEqual({ id: 'internal_copy', from: { block: 'timer_copy', port: 'Q' }, to: { block: 'output_copy', port: 'IN' } });
-    expect(parseFBDModel(serializeFBDModel(pasted!))).toEqual(pasted);
+    expect(parseFBDModel(serializeFBDModel(pasted!))).toEqual(pasted!);
 
     const repeated = pasteFBDFragment(pasted!, fragment!);
     expect(repeated?.blocks.slice(-2).map((block) => [block.id, block.instanceName, block.position])).toEqual([
