@@ -60,15 +60,38 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-005-int-assigned-from-real.expect.json","test":"CMP-005 assigning a REAL to an INT is rejected"}
   ],
   "CMP-006": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-006-byte-order-mark.expect.json","test":"CMP-006 an error in a source that starts with a byte order mark is reported at its line"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-006-crlf-line-endings.expect.json","test":"CMP-006 an error in a source with CR LF line ends is reported at its line"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-006-duplicate-variable-position.expect.json","test":"CMP-006 a duplicate declaration is reported at its own line"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-006-missing-base-block.expect.json","test":"CMP-006 a block that extends a missing block is reported at its declaration"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-006-tab-indented-source.expect.json","test":"CMP-006 an error in a source indented with tabs is reported at its line"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-006-unknown-identifier-in-block-body.expect.json","test":"CMP-006 an error in the body of a function block is reported at its line, once"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-006-unknown-identifier-in-function.expect.json","test":"CMP-006 an error in the body of a function is reported at its line"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-006-unknown-member-position.expect.json","test":"CMP-006 an unknown member of a function block is reported at its own line"},
-    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/semantic-errors.test.ts","test":"rejects an unknown member of a function block instance (position comes with CMP-006)"}
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/compiler.test.ts","test":"positions a generation error that has no position of its own at its statement (CMP-006)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/semantic-errors.test.ts","test":"rejects an unknown member of a function block instance (position comes with CMP-006)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/syntax.test.ts","test":"compile: every independent error, each positioned (CMP-006, CMP-007)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"returns every independent error of a source, each with its position (CMP-006, CMP-007)"}
   ],
   "CMP-007": [
-    {"kind":"conformance","ref":"conformance/cmp/cmp-007-three-errors-three-diagnostics.expect.json","test":"CMP-007 a file with three unrelated errors yields three diagnostics"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-007-declarations-and-statements.expect.json","test":"CMP-007 errors of declarations and of statements are reported together"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-007-lexical-and-syntax-errors.expect.json","test":"CMP-007 lexical and syntax errors come in one list, in order"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-007-no-error-after-a-broken-if.expect.json","test":"CMP-007 the END_IF of a broken IF is not a second error"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-007-three-errors-three-diagnostics.expect.json","test":"CMP-007 a file with three unrelated errors yields three diagnostics"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-007-undeclared-names-in-every-statement.expect.json","test":"CMP-007 an undeclared name in each of several statements is reported once each"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/syntax.test.ts","test":"compile: every independent error, each positioned (CMP-006, CMP-007)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/syntax.test.ts","test":"parser: error recovery reports every independent error (CMP-007)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/index.test.ts","test":"prints every error of a single file, one line each, and the warnings of a file that builds (CMP-007, CMP-031)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"returns every independent error of a source, each with its position (CMP-006, CMP-007)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"returns the errors of every source of the project, each with its file (CMP-007)"}
   ],
   "CMP-009": [
-    {"kind":"conformance","ref":"conformance/cmp/cmp-009-unterminated-comment-position.expect.json","test":"CMP-009 an unterminated comment is reported where it opens"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-009-block-comment-never-closed.expect.json","test":"CMP-009 an unterminated /* comment is reported where it opens"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-009-comment-closed-with-the-wrong-delimiter.expect.json","test":"CMP-009 a (* comment closed with */ is reported where it opens"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-009-error-before-an-unterminated-comment.expect.json","test":"CMP-009 an error before an unterminated comment is reported too"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-009-unterminated-comment-position.expect.json","test":"CMP-009 an unterminated comment is reported where it opens"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/syntax.test.ts","test":"reports an unterminated comment alone, where it opens (CMP-009)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/syntax.test.ts","test":"reports an unterminated comment where it opens (CMP-009)"}
   ],
   "CMP-010": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-010-build-error-names-the-reason.expect.json","test":"CMP-010 a failed build reports why, not only where"},
@@ -242,31 +265,78 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-028-var-in-out-by-reference.expect.json","test":"CMP-028 VAR_IN_OUT is passed by reference"}
   ],
   "CMP-029": [
-    {"kind":"conformance","ref":"conformance/cmp/cmp-029-var-retain-accepted.expect.json","test":"CMP-029 VAR RETAIN is accepted"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-029-non-retain-accepted.expect.json","test":"CMP-029 VAR NON_RETAIN is accepted"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-029-retain-and-ordinary-variables-together.expect.json","test":"CMP-029 retained and ordinary variables of one program"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-029-var-global-retain.expect.json","test":"CMP-029 VAR_GLOBAL RETAIN is accepted and works"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-029-var-retain-accepted.expect.json","test":"CMP-029 VAR RETAIN is accepted"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/compiler.test.ts","test":"RETAIN declarations (CMP-029)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/syntax.test.ts","test":"parser: declarations (CMP-029, CMP-030)"}
   ],
   "CMP-030": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-030-alias-default-value.expect.json","test":"CMP-030 a variable takes the default value of its alias"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-030-alias-of-array-and-structure.expect.json","test":"CMP-030 an alias of a structure and an alias of an array"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-030-alias-refers-to-itself.expect.json","test":"CMP-030 type aliases that refer to each other are rejected"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-030-function-var-output.expect.json","test":"CMP-030 VAR_OUTPUT in a function"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-030-several-names-one-declaration.expect.json","test":"CMP-030 several names in one declaration"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-030-several-names-with-initial-value.expect.json","test":"CMP-030 several names in one declaration share the initial value"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-030-several-types-one-block.expect.json","test":"CMP-030 several types in one TYPE block"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-030-type-alias.expect.json","test":"CMP-030 type alias"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-030-var-external-in-function-block.expect.json","test":"CMP-030 VAR_EXTERNAL in a function block refers to the global"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-030-var-external-type-differs.expect.json","test":"CMP-030 VAR_EXTERNAL with another type than its global is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-030-var-external-without-global.expect.json","test":"CMP-030 VAR_EXTERNAL of a name that is not a global is rejected"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-030-var-external.expect.json","test":"CMP-030 VAR_EXTERNAL refers to a global"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-030-var-temp-in-program.expect.json","test":"CMP-030 VAR_TEMP in a program"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-030-var-temp-in-program.expect.json","test":"CMP-030 VAR_TEMP in a program"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/syntax.test.ts","test":"parser: declarations (CMP-029, CMP-030)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/syntax.test.ts","test":"parser: type aliases (CMP-030)"}
   ],
   "CMP-031": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-031-0x-form-still-works.expect.json","test":"CMP-031 the non-IEC 0x form keeps working"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-031-base-not-supported.expect.json","test":"CMP-031 a number base other than 2, 8 and 16 is rejected"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-031-binary-literal.expect.json","test":"CMP-031 binary literal 2#1010"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-031-digit-separator.expect.json","test":"CMP-031 digit separator in 1_000"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-031-hexadecimal-literal.expect.json","test":"CMP-031 hexadecimal literal 16#FF"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-031-typed-literal.expect.json","test":"CMP-031 typed literal INT#5"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-031-negative-based-literal.expect.json","test":"CMP-031 a based literal with a minus sign"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-031-octal-literal.expect.json","test":"CMP-031 octal literal 8#17"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-031-separator-in-based-literal.expect.json","test":"CMP-031 digit separator in a based literal"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-031-typed-literal-out-of-range.expect.json","test":"CMP-031 a typed literal outside the range of its type is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-031-typed-literal.expect.json","test":"CMP-031 typed literal INT#5"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-031-typed-literals-of-each-kind.expect.json","test":"CMP-031 typed literals of integer, bit string, BOOL and REAL types"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/syntax.test.ts","test":"lexer: numbers (CMP-031)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/syntax.test.ts","test":"parser: expressions (CMP-031, CMP-032)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/index.test.ts","test":"prints every error of a single file, one line each, and the warnings of a file that builds (CMP-007, CMP-031)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"reports a build that passed with what it accepted and the language reference does not define (CMP-031)"}
   ],
   "CMP-032": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-032-ampersand-binds-tighter-than-or.expect.json","test":"CMP-032 & has the precedence of AND"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-032-ampersand-operator.expect.json","test":"CMP-032 the & operator"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-032-bit-access-of-bool-rejected.expect.json","test":"CMP-032 a bit of a BOOL is rejected"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-032-bit-access.expect.json","test":"CMP-032 bit access w.0"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-032-bit-number-out-of-range.expect.json","test":"CMP-032 a bit number beyond the width of the type is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-032-bit-of-lword.expect.json","test":"CMP-032 bit 40 of an LWORD lives in the upper word"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-032-bit-of-member-and-element.expect.json","test":"CMP-032 bit access on a structure member and on an array element"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-032-bit-set-and-clear.expect.json","test":"CMP-032 a bit of a WORD is set and cleared without touching the others"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-032-bit-write-in-each-width.expect.json","test":"CMP-032 the top bit of a BYTE, an INT and a DWORD"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-032-block-comment.expect.json","test":"CMP-032 block comment written /* */"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-032-comment-delimiters-inside-comments.expect.json","test":"CMP-032 a comment delimiter of the other kind is text inside a comment"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-032-empty-statement.expect.json","test":"CMP-032 empty statement"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-032-exponent-operator.expect.json","test":"CMP-032 the ** operator"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-032-empty-statements-inside-blocks.expect.json","test":"CMP-032 empty statements inside IF and CASE"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-032-exponent-operator.expect.json","test":"CMP-032 the ** operator"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-032-power-fractional-exponent.expect.json","test":"CMP-032 ** with a fractional exponent is accurate to about one part in a hundred thousand"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-032-power-negative-and-zero-exponent.expect.json","test":"CMP-032 ** with a negative exponent and with the exponent 0"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-032-power-negative-base.expect.json","test":"CMP-032 ** with a negative base and a whole exponent"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-032-power-of-integers.expect.json","test":"CMP-032 ** converts integer operands to REAL"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-032-power-precedence.expect.json","test":"CMP-032 ** binds tighter than the minus sign and the multiplication"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-032-power-zero-base-negative-exponent-faults.expect.json","test":"CMP-032 0.0 ** -1.0 is a division by zero, as 1.0 / 0.0 is"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/syntax.test.ts","test":"lexer: operators, comments and positions (CMP-032)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/syntax.test.ts","test":"parser: expressions (CMP-031, CMP-032)"}
   ],
   "CMP-033": [
-    {"kind":"conformance","ref":"conformance/cmp/cmp-033-library-block-name-as-variable.expect.json","test":"CMP-033 a library block name as a variable name"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-033-library-block-in-lower-case.expect.json","test":"CMP-033 a library block named in lower case is still the library block"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-033-library-block-name-as-variable.expect.json","test":"CMP-033 a library block name as a variable name"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-033-library-names-as-names-of-everything.expect.json","test":"CMP-033 library block names as names of members, parameters, functions and variables"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-033-user-block-named-like-a-library-block.expect.json","test":"CMP-033 a block the program declares wins over the library block of the same name"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/syntax.test.ts","test":"lexer: library blocks are names (CMP-033)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/syntax.test.ts","test":"parser: library function block names (CMP-033)"}
   ],
   "CMP-034": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-034-parameter-shadows-program-variable.expect.json","test":"CMP-034 a function parameter named like a program variable"},
@@ -291,7 +361,11 @@
   ],
   "CMP-038": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-038-array-of-instances.expect.json","test":"CMP-038 array of function-block instances"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-038-array-of-user-blocks.expect.json","test":"CMP-038 an array of user function blocks, each element with its own state"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-038-array-run-time-index.expect.json","test":"CMP-038 an array element called through a run-time index, each element with its own state"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-038-constant-index-out-of-bounds.expect.json","test":"CMP-038 a call with a constant index outside the array is rejected"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-038-instance-inside-function-block.expect.json","test":"CMP-038 function-block instance declared inside a function block"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-038-timer-inside-two-instances.expect.json","test":"CMP-038 two instances of a block that holds a timer keep a timer each"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-038-two-instances-keep-own-state.expect.json","test":"CMP-038 two instances of one function block keep their own state"}
   ],
   "CMP-039": [
