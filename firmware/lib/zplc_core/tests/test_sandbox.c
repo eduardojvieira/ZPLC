@@ -443,6 +443,95 @@ static void test_string_operations(void) {
   CHECK_EQ(run_verified(&c), OOB, "STRCPY source at 0x12100 does not alias work memory");
 }
 
+/** A string of `text` and room for `capacity` characters, in work memory. */
+static void put_text(code_t *c, uint16_t address, const char *text, uint16_t capacity) {
+  size_t i, n = strlen(text);
+
+  set_string(c, address, (uint16_t)n, capacity);
+  for (i = 0U; i < n; i++) {
+    op8(c, OP_PUSH8, (uint8_t)text[i]);
+    op16(c, OP_STORE8, (uint16_t)(address + ZPLC_STRING_DATA_OFFSET + i));
+  }
+}
+
+/** STRCMP of two texts; the result of the instruction, or 100 on a fault. */
+static int compare_texts(const char *a, const char *b) {
+  code_t c = {{0}, 0};
+  const uint8_t *work;
+
+  put_text(&c, 0x2100U, a, 16U);
+  put_text(&c, 0x2200U, b, 16U);
+  push_runtime(&c, 0x2100U);
+  push_runtime(&c, 0x2200U);
+  op(&c, OP_STRCMP);
+  op16(&c, OP_STORE32, 0x2300U);
+  op(&c, OP_HALT);
+  if (run_verified(&c) != OK)
+    return 100;
+  work = zplc_mem_get_region(ZPLC_MEM_WORK_BASE);
+  return (int)(int32_t)((uint32_t)work[0x300] | ((uint32_t)work[0x301] << 8) |
+                        ((uint32_t)work[0x302] << 16) | ((uint32_t)work[0x303] << 24));
+}
+
+/** STRCMP of the string at `a` (header written by the program, or by the host
+ *  into the input image, which the program cannot write) and a string of the
+ *  same length in work memory. Returns the VM error. */
+static int compare_at(uint16_t a, uint16_t length, int header_from_host) {
+  code_t c = {{0}, 0};
+  static uint8_t file[2048];
+  size_t size;
+  int rc;
+
+  if (!header_from_host)
+    set_string(&c, a, length, length);
+  set_string(&c, 0x2200U, length, length);
+  push_runtime(&c, a);
+  push_runtime(&c, 0x2200U);
+  op(&c, OP_STRCMP);
+  op(&c, OP_DROP);
+  op(&c, OP_HALT);
+  size = build(file, &c, 0U, NULL, 0U);
+  zplc_core_init();
+  rc = zplc_core_load(file, size, workspace, sizeof workspace);
+  if (rc != ZPLC_LOADER_OK)
+    return rc;
+  if (header_from_host) {
+    CHECK_EQ(zplc_ipi_write16(a, length), 0, "header of a string in the input image");
+    CHECK_EQ(zplc_ipi_write16((uint16_t)(a + 2U), length), 0, "its capacity");
+  }
+  (void)zplc_core_run_cycle();
+  return zplc_core_get_error();
+}
+
+/* STRCMP reads the characters one at a time, and each is placed on its own: a
+ * string whose header claims more characters than its region holds would be
+ * read across the end of the region into the next. It is placed whole first,
+ * header and the characters compared, like STRCPY (RT-001). */
+static void test_strcmp_extents(void) {
+  printf("=== RT-001 STRCMP places the strings it compares ===\n");
+
+  CHECK_EQ(compare_texts("abc", "abc"), 0, "equal strings compare equal");
+  CHECK_EQ(compare_texts("abc", "abd"), -1, "the first different character decides, less");
+  CHECK_EQ(compare_texts("abd", "abc"), 1, "the first different character decides, greater");
+  CHECK_EQ(compare_texts("ab", "abc"), -1, "a prefix is less");
+  CHECK_EQ(compare_texts("abc", "ab"), 1, "and the longer is greater");
+  CHECK_EQ(compare_texts("", ""), 0, "empty strings are equal");
+
+  /* the characters end exactly at the last byte of a region: accepted; one
+   * more character crosses into the next region: a fault */
+  CHECK_EQ(compare_at(0x0FF8U, 4U, 1), OK, "4 characters end at the last input byte");
+  CHECK_EQ(compare_at(0x0FF8U, 5U, 1), OOB, "5 characters cross from the input image into the output image");
+  CHECK_EQ(compare_at(0x0FF8U, 0x20U, 1), OOB, "a length of 0x20 in the input image faults");
+  CHECK_EQ(compare_at(0x1FF8U, 4U, 0), OK, "4 characters end at the last output byte");
+  CHECK_EQ(compare_at(0x1FF8U, 5U, 0), OOB, "5 characters cross from the output image into work memory");
+  CHECK_EQ(compare_at(0x1FF8U, 0x20U, 0), OOB, "a length of 0x20 in the output image faults");
+  CHECK_EQ(compare_at(0x3FF8U, 4U, 0), OK, "4 characters end at the last work byte");
+  CHECK_EQ(compare_at(0x3FF8U, 5U, 0), OOB, "5 characters cross from work into retentive memory");
+  CHECK_EQ(compare_at(0x3FF8U, 0x20U, 0), OOB, "a length of 0x20 in work memory faults");
+  CHECK_EQ(compare_at(0x4FF8U, 4U, 0), OK, "4 characters end at the last retentive byte");
+  CHECK_EQ(compare_at(0x4FF8U, 5U, 0), OOB, "5 characters cross out of retentive memory");
+}
+
 /* ----------------------------------------------------------------------------
  * RT-001: communication opcodes (the PoC shapes, address built at run time)
  * ------------------------------------------------------------------------- */
@@ -1260,6 +1349,7 @@ int main(void) {
   test_direct_access_at_the_vm();
   test_region_windows();
   test_string_operations();
+  test_strcmp_extents();
   test_comm_opcodes();
   test_comm_opcodes_raw();
   test_region_ends();

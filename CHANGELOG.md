@@ -4,6 +4,12 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- `STRCMP` places the strings it compares, header and characters, before it
+  reads the first character, as `STRCPY` and `STRCAT` do, and ends the scan
+  with the VM fault `OUT_OF_BOUNDS` when a string's length reaches past the
+  end of its memory region; it used to read the characters one by one across
+  the boundary into the next region (input to output image, output image to
+  work memory, work to retentive memory). Strings that fit compare as before.
 - The memory regions of the VM are their windows of the address space
   (`0x2000` to `0x3FFF` work, `0x4000` to `0x4FFF` retentive), whatever
   `CONFIG_ZPLC_WORK_MEMORY_SIZE` and `CONFIG_ZPLC_RETAIN_MEMORY_SIZE` are. A
