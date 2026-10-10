@@ -74,12 +74,27 @@ add_library(zplc_core STATIC
     src/core/zplc_comm_dispatch.c
     src/core/zplc_loader.c
     src/core/zplc_retain.c
+    src/core/zplc_program_store.c
+    src/core/zplc_exchange.c
 )
 
 target_compile_definitions(zplc_core PUBLIC ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}")
 
 target_include_directories(zplc_core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+# RT-029: the core compiles without a Zephyr header. Every file of src/core is compiled here, in a build whose
+# include path is include/ and nothing else, with the one Kconfig symbol that adds code to the core switched on
+# (CONFIG_ZPLC_HIL_DEBUG). A Zephyr header or a Zephyr type in src/core stops this target, which is part of the
+# default build, so it stops every host build and every ctest run. The glob means a new core file is covered
+# without an edit here.
+file(GLOB ZPLC_CORE_PORTABLE_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/core/*.c)
+add_library(zplc_core_portable OBJECT ${ZPLC_CORE_PORTABLE_SOURCES})
+target_include_directories(zplc_core_portable PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_compile_definitions(zplc_core_portable PRIVATE
+    ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}"
+    CONFIG_ZPLC_HIL_DEBUG=1
 )
 
 # =============================================================================
@@ -166,6 +181,9 @@ endif()
 
 enable_testing()
 
+# The test-only entry points (RT-033) are declared in tests/include/zplc_test_hooks.h, never in include/.
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/tests/include)
+
 # Test: ISA Header Verification
 add_executable(test_isa
     tests/test_isa.c
@@ -187,6 +205,177 @@ target_include_directories(test_contract PRIVATE
 )
 
 add_test(NAME test_contract COMMAND test_contract)
+
+# Test: no public header declares a test-only entry point (RT-033). It only has to compile.
+add_executable(test_public_headers
+    tests/test_public_headers.c
+)
+
+target_include_directories(test_public_headers PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/include
+)
+
+add_test(NAME test_public_headers COMMAND test_public_headers)
+
+# Test: the one CRC-32 and the little-endian byte helpers of the runtime (RT-032)
+add_executable(test_bytes_crc
+    tests/test_bytes_crc.c
+)
+
+target_include_directories(test_bytes_crc PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+add_test(NAME test_bytes_crc COMMAND test_bytes_crc)
+
+# Test: the HIL debug formatter runs on the host with a line sink (RT-029)
+add_executable(test_hil_debug
+    tests/test_hil_debug.c
+    src/core/zplc_debug.c
+)
+
+target_include_directories(test_hil_debug PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_compile_definitions(test_hil_debug PRIVATE CONFIG_ZPLC_HIL_DEBUG=1)
+
+add_test(NAME test_hil_debug COMMAND test_hil_debug)
+
+# RT-029: the rules of src/core/zplc_config_check.h. Each rule is built once with a value that breaks it and the
+# build must stop with the name of the rule; the same rules built with every value at its limit must pass.
+function(zplc_config_rule_must_fail rule)
+    set(target zplc_cfg_${rule})
+    add_library(${target} OBJECT EXCLUDE_FROM_ALL tests/config_check_probe.c)
+    target_include_directories(${target} PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/core
+    )
+    target_compile_definitions(${target} PRIVATE ${ARGN})
+    add_test(NAME config_rule_${rule}
+             COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR} --target ${target})
+    set_tests_properties(config_rule_${rule} PROPERTIES
+        PASS_REGULAR_EXPRESSION "zplc_config_rule_${rule}")
+endfunction()
+
+set(ZPLC_SCHED_OK CONFIG_ZPLC_SCHEDULER=1 CONFIG_ZPLC_SCHED_HIGH_PRIO_WORKQ=1
+    CONFIG_ZPLC_SCHED_HIGH_PRIO_PRIORITY=2 CONFIG_ZPLC_SCHED_WORKQ_PRIORITY=5)
+
+zplc_config_rule_must_fail(code_region_ends_inside_the_16_bit_address_space CONFIG_ZPLC_CODE_SIZE_MAX=0xB001U)
+zplc_config_rule_must_fail(code_region_holds_a_container_header_and_a_program CONFIG_ZPLC_CODE_SIZE_MAX=32U)
+zplc_config_rule_must_fail(work_region_has_at_least_16_bytes CONFIG_ZPLC_WORK_MEMORY_SIZE=8U)
+zplc_config_rule_must_fail(retain_region_has_at_least_16_bytes CONFIG_ZPLC_RETAIN_MEMORY_SIZE=8U)
+zplc_config_rule_must_fail(evaluation_stack_depth_is_between_4_and_65535 CONFIG_ZPLC_STACK_DEPTH=65536)
+zplc_config_rule_must_fail(call_stack_depth_is_between_1_and_255 CONFIG_ZPLC_CALL_STACK_DEPTH=256)
+zplc_config_rule_must_fail(breakpoint_count_is_between_1_and_255 CONFIG_ZPLC_MAX_BREAKPOINTS=256)
+zplc_config_rule_must_fail(tag_count_is_between_1_and_65535 ZPLC_MAX_TAGS=0)
+zplc_config_rule_must_fail(task_slots_do_not_exceed_what_the_loader_admits CONFIG_ZPLC_MAX_TASKS=17)
+zplc_config_rule_must_fail(high_priority_queue_outranks_the_normal_queue
+    CONFIG_ZPLC_SCHEDULER=1 CONFIG_ZPLC_SCHED_HIGH_PRIO_WORKQ=1
+    CONFIG_ZPLC_SCHED_HIGH_PRIO_PRIORITY=6 CONFIG_ZPLC_SCHED_WORKQ_PRIORITY=5)
+zplc_config_rule_must_fail(scan_coordinator_outranks_every_communication_thread
+    ${ZPLC_SCHED_OK} CONFIG_ZPLC_COMM_THREAD_PRIORITY=2)
+zplc_config_rule_must_fail(scan_coordinator_outranks_the_shell_thread
+    ${ZPLC_SCHED_OK} CONFIG_SHELL_THREAD_PRIORITY_OVERRIDE=1 CONFIG_SHELL_THREAD_PRIORITY=1)
+zplc_config_rule_must_fail(scan_coordinator_outranks_the_log_thread
+    ${ZPLC_SCHED_OK} CONFIG_LOG_PROCESS_THREAD_CUSTOM_PRIORITY=1 CONFIG_LOG_PROCESS_THREAD_PRIORITY=0)
+
+# Every value at its limit, and a scheduler build with the priorities in order: part of the default build.
+add_library(zplc_cfg_limits OBJECT tests/config_check_probe.c)
+target_include_directories(zplc_cfg_limits PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/core
+)
+target_compile_definitions(zplc_cfg_limits PRIVATE
+    CONFIG_ZPLC_CODE_SIZE_MAX=0xB000U CONFIG_ZPLC_STACK_DEPTH=65535 CONFIG_ZPLC_CALL_STACK_DEPTH=255
+    CONFIG_ZPLC_MAX_BREAKPOINTS=255 ZPLC_MAX_TAGS=65535 CONFIG_ZPLC_MAX_TASKS=16
+    ${ZPLC_SCHED_OK} CONFIG_ZPLC_COMM_THREAD_PRIORITY=3
+    CONFIG_SHELL_THREAD_PRIORITY_OVERRIDE=1 CONFIG_SHELL_THREAD_PRIORITY=3
+    CONFIG_LOG_PROCESS_THREAD_CUSTOM_PRIORITY=1 CONFIG_LOG_PROCESS_THREAD_PRIORITY=14
+)
+
+# Test: a failure to create or take the process-image lock is reported (RT-030). The test supplies its own HAL.
+add_executable(test_core_lock
+    tests/test_core_lock.c
+    src/core/zplc_core.c
+    src/core/zplc_loader.c
+    src/core/zplc_comm_dispatch.c
+)
+
+target_include_directories(test_core_lock PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_compile_definitions(test_core_lock PRIVATE ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}")
+
+add_test(NAME test_core_lock COMMAND test_core_lock)
+
+# Test: the durable program store: the largest artifact, chunked payloads, a power cut at every operation and a
+# torn write at every save (RT-028, RT-031, RT-032). Also run under the sanitizers.
+add_executable(test_program_store
+    tests/test_program_store.c
+    src/core/zplc_program_store.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_program_store PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+target_compile_definitions(test_program_store PRIVATE ZPLC_HAL_PERSIST_TESTING)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_program_store PRIVATE rt)
+endif()
+
+add_test(NAME test_program_store COMMAND test_program_store)
+
+# Test: cold and warm start are defined in the core and a program load is a cold start (RT-016)
+add_executable(test_core_start
+    tests/test_core_start.c
+    src/core/zplc_core.c
+    src/core/zplc_loader.c
+    src/core/zplc_comm_dispatch.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_core_start PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_compile_definitions(test_core_start PRIVATE ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}")
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_core_start PRIVATE rt)
+endif()
+
+add_test(NAME test_core_start COMMAND test_core_start)
+
+# Test: the exchange between the scan and the threads outside it: write queue, force-aware latch, published
+# snapshot, and a scanner with readers and writers on threads (RT-010, RT-011, RT-012). Also run under the sanitizers.
+add_executable(test_exchange
+    tests/test_exchange.c
+    src/core/zplc_exchange.c
+    src/core/zplc_core.c
+    src/core/zplc_loader.c
+    src/core/zplc_comm_dispatch.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_exchange PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_compile_definitions(test_exchange PRIVATE ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}")
+
+find_package(Threads REQUIRED)
+target_link_libraries(test_exchange PRIVATE Threads::Threads)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_exchange PRIVATE rt)
+endif()
+
+add_test(NAME test_exchange COMMAND test_exchange)
 
 # Test: VM Core Execution
 add_executable(test_vm_core

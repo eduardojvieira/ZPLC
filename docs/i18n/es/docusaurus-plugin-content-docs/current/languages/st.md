@@ -6,6 +6,8 @@ sidebar_position: 1
 
 Structured Text (ST) es la base semántica canónica de ZPLC.
 
+Qué funciona hoy del lenguaje, elemento por elemento y leído de las pruebas de conformidad ejecutadas, está en la [referencia de Texto Estructurado](../reference/language-st.md) generada.
+
 ## Papel en ZPLC 2.0
 
 - `ST` es la entrada directa al backend compartido del compilador

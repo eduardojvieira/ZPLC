@@ -1096,6 +1096,25 @@
   "RT-009": [
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-009: the tasks of a batch read one input image, and a simulation pulse lasts one batch.","partial":true,"note":"covers the POSIX host runtime only: the Zephyr coordinator is checked by its own suite and the WASM runtime has no scheduler test yet, so RT-009 stays open until the shared scheduler core (RT-008) runs one suite on every port"}
   ],
+  "RT-010": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_exchange.c","test":"The exchange between the scan and the threads outside it (RT-010, RT-011, RT-012)."},
+    {"kind":"c-test","ref":"firmware/tests/modbus_tcp/src/main.c","test":"RT-010: a write the scan's queue has no room for is a busy server (exception 6), not an invalid address."},
+    {"kind":"c-test","ref":"firmware/tests/modbus_tcp/src/main.c","test":"RT-010: the exchange the server reads and writes through is a fake that records how it was used."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_admission/src/main.c","test":"RT-010, RT-012: an outside write waits for the input latch and never for the scan, and a read sees the last commit."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_admission/src/main.c","test":"RT-010, RT-030: with no scan a write applies at once, and a lock that cannot be taken is reported."}
+  ],
+  "RT-011": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_exchange.c","test":"The exchange between the scan and the threads outside it (RT-010, RT-011, RT-012)."},
+    {"kind":"c-test","ref":"firmware/tests/modbus_force/src/main.c","test":"RT-011: a write from Modbus goes through the exchange and the force-aware memory interface of the core, so a"}
+  ],
+  "RT-012": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_exchange.c","test":"The exchange between the scan and the threads outside it (RT-010, RT-011, RT-012)."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_admission/src/main.c","test":"RT-010, RT-012: an outside write waits for the input latch and never for the scan, and a read sees the last commit."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_admission/src/main.c","test":"RT-012: the lock of the process image is not held while the physical outputs are written."}
+  ],
+  "RT-013": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/config_check_probe.c","test":"RT-013: a communication, shell or log priority that the scan coordinator does not outrank stops the build."}
+  ],
   "RT-014": [
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-014, RT-017: a debugger step is not checked for a deadline.","partial":true,"note":"covers the POSIX host runtime only: the Zephyr scheduler latches at the first miss and reports neither the warning flag, the last overrun nor the fault reason, so RT-014 stays open for the target until the shared scheduler core (RT-008)"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-014: a deadline miss raises the warning, is counted, and latches the fault after the configured number in a row.","partial":true,"note":"covers the POSIX host runtime only: the Zephyr scheduler latches at the first miss and reports neither the warning flag, the last overrun nor the fault reason, so RT-014 stays open for the target until the shared scheduler core (RT-008)"},
@@ -1119,6 +1138,10 @@
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-015: the output image keeps what a task that was not released in a batch wrote.","partial":true,"note":"covers the model in simulation and the documentation: the Zephyr scheduler still differs in how it reports a deadline miss (RT-014), and the differences that remain are listed in the scheduler page, so RT-015 stays open until the target is checked against the same suite"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-015: the poll timeout is the time to the nearest release of any task.","partial":true,"note":"covers the model in simulation and the documentation: the Zephyr scheduler still differs in how it reports a deadline miss (RT-014), and the differences that remain are listed in the scheduler page, so RT-015 stays open until the target is checked against the same suite"}
   ],
+  "RT-016": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_core_start.c","test":"Cold and warm start are defined in the core, and a program load is a cold start (RT-016)."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_admission/src/main.c","test":"RT-016: loading a program is a cold start on the Zephyr scheduler as it is on the host runtime."}
+  ],
   "RT-017": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"16 Debug details: stop, trace, resume mid-scan","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"18 Force an input while stopped at a breakpoint","partial":true},
@@ -1136,6 +1159,9 @@
     {"kind":"c-test","ref":"firmware/tests/scheduler_run_control/src/main.c","test":"RT-017: an interrupted scan keeps its task id and first-scan flag."},
     {"kind":"c-test","ref":"firmware/tests/scheduler_run_control/src/main.c","test":"RT-017: step from a breakpoint finishes the interrupted scan."},
     {"kind":"c-test","ref":"firmware/tests/scheduler_run_control/src/main.c","test":"RT-017: the pause command keeps the image and forces with the pins safe."}
+  ],
+  "RT-024": [
+    {"kind":"c-test","ref":"firmware/tests/runtime_boot/src/main.c","test":"RT-024: the start-up plan. The scheduler, the program store and the control link start before any network or"}
   ],
   "RT-025": [
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RETAIN persistence of the host runtime (RT-025, RT-026, RT-027)"},
@@ -1169,6 +1195,52 @@
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-025, RT-027: a counter in RETAIN continues in a new session, and another program starts from an initialised region.","partial":true,"note":"covers the POSIX host runtime only: the WASM runtime does not apply the retain rules yet (the module is not linked into the WASM build and the adapter does not call it), so RT-027 stays open for WASM"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-025, RT-027: reset is a cold restart, and a faulted session stores nothing.","partial":true,"note":"covers the POSIX host runtime only: the WASM runtime does not apply the retain rules yet (the module is not linked into the WASM build and the adapter does not call it), so RT-027 stays open for WASM"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-026, RT-027: periodic saves follow the interval of the environment, skip an unchanged region, and 0 turns them off.","partial":true,"note":"covers the POSIX host runtime only: the WASM runtime does not apply the retain rules yet (the module is not linked into the WASM build and the adapter does not call it), so RT-027 stays open for WASM"}
+  ],
+  "RT-028": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-028, RT-032: an artifact of exactly the configured code size is stored and restored by the shared store."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_program_store.c","test":"RT-028: artifacts of every size round-trip, up to the code size."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_program_store.c","test":"RT-028: the largest artifact the store accepts is the configured code size."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_program_store.c","test":"The durable program store (RT-028, RT-031, RT-032): the largest artifact and a power cut at every step."},
+    {"kind":"c-test","ref":"firmware/tests/program_boot_restore/src/main.c","test":"RT-028: the stored program is the only resident copy, so a reload takes everything from the store."},
+    {"kind":"c-test","ref":"firmware/tests/program_boot_restore/src/main.c","test":"The staging buffer is the one buffer of the code size: it receives the stored program and keeps it (RT-028)."},
+    {"kind":"c-test","ref":"firmware/tests/program_store_nvs/src/main.c","test":"One buffer does every job here, as in the firmware (RT-028): the artifact is staged in it, the commit verifies"},
+    {"kind":"c-test","ref":"firmware/tests/program_store_nvs/src/main.c","test":"RT-028, RT-031: the largest artifact, cut at the operations around the active record."},
+    {"kind":"c-test","ref":"firmware/tests/program_store_nvs/src/main.c","test":"The program store on the Zephyr HAL and NVS (RT-028, RT-031)."}
+  ],
+  "RT-029": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/config_check_probe.c","test":"RT-029: a translation unit that only evaluates the build-time rules of the configuration."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_hil_debug.c","test":"The HIL debug formatter is portable: it runs on the host with a line sink (RT-029)."}
+  ],
+  "RT-030": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_core_lock.c","test":"The process-image lock of the core: a failure to create or take it is reported (RT-030)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_retain.c","test":"RT-030: a lock that cannot be taken is handled, never ignored. The module touches the region only under the"},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_admission/src/main.c","test":"RT-010, RT-030: with no scan a write applies at once, and a lock that cannot be taken is reported."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_admission/src/main.c","test":"RT-030: a lock the scheduler cannot take is an error the caller sees, never a silent continuation."}
+  ],
+  "RT-031": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-031: a payload with none of the records that say a program was published beside it is not evidence."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_program_store.c","test":"RT-031: a power cut at every operation of a first deploy leaves nothing or the program."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_program_store.c","test":"RT-031: a power cut at every operation of a redeploy leaves the old program or the new."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_program_store.c","test":"RT-031: a slot half rewritten is never restored, even when it is all that is left."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_program_store.c","test":"RT-031: a write the power cut in the middle never leaves a mixture."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_program_store.c","test":"The durable program store (RT-028, RT-031, RT-032): the largest artifact and a power cut at every step."},
+    {"kind":"c-test","ref":"firmware/tests/program_store_nvs/src/main.c","test":"RT-028, RT-031: the largest artifact, cut at the operations around the active record."},
+    {"kind":"c-test","ref":"firmware/tests/program_store_nvs/src/main.c","test":"RT-031: a power cut at every operation of a first deploy leaves nothing or the program."},
+    {"kind":"c-test","ref":"firmware/tests/program_store_nvs/src/main.c","test":"RT-031: a power cut at every operation of a redeploy leaves the old program or the new."},
+    {"kind":"c-test","ref":"firmware/tests/program_store_nvs/src/main.c","test":"The program store on the Zephyr HAL and NVS (RT-028, RT-031)."}
+  ],
+  "RT-032": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_bytes_crc.c","test":"The one CRC-32 and the little-endian byte helpers of the runtime (RT-032)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-028, RT-032: an artifact of exactly the configured code size is stored and restored by the shared store."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_program_store.c","test":"The durable program store (RT-028, RT-031, RT-032): the largest artifact and a power cut at every step."},
+    {"kind":"c-test","ref":"firmware/tests/program_store_nvs/src/main.c","test":"The firmware's program store (firmware/app/src/program_store.c) is the core's shared store (RT-032) over"}
+  ],
+  "RT-033": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_public_headers.c","test":"RT-033: the public headers declare no test-only entry point."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sandbox.c","test":"Available because this target is built with ZPLC_CORE_TESTING (RT-033)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_core.c","test":"Private fixtures compiled only with the test-owned core copy (RT-033)."},
+    {"kind":"c-test","ref":"firmware/tests/modbus_override/src/public_header_check.c","test":"RT-033: zplc_config.h, a public header of the application, declares no test-only entry point."},
+    {"kind":"c-test","ref":"firmware/tests/program_boot_restore/src/private_header_check.c","test":"RT-033: program_boot_restore.h declares no test-only entry point."}
   ],
   "RT-034": [
     {"kind":"conformance","ref":"conformance/rt/rt-034-watchdog-reset-is-reported-and-changes-nothing.expect.json","test":"RT-034 a call to WATCHDOG_RESET builds with the warning WATCHDOG_RESET_NO_EFFECT and changes nothing the program does"},
@@ -1436,5 +1508,34 @@
   ],
   "REL-020": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"names the installer and the portable executable by the REL-020 variants, with unsigned appended","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"}
+  ],
+  "DOC-006": [
+    {"kind":"unit","ref":"tools/docs/generate_language_reference.test.ts","test":"language reference: every row of the matrix is on a page, in both languages (DOC-006, stopgap: no editor screenshot yet)","partial":true},
+    {"kind":"unit","ref":"tools/docs/generate_language_reference.test.ts","test":"language reference: markup and addressing (DOC-006, stopgap: no editor screenshot yet)","partial":true},
+    {"kind":"unit","ref":"tools/docs/generate_language_reference.test.ts","test":"language reference: the state of an element comes from the executed cases (DOC-006, stopgap: no editor screenshot yet)","partial":true}
+  ],
+  "DOC-007": [
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/stdlib/reference.test.ts","test":"standard library reference data: every registered name has an entry (DOC-007)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/stdlib/reference.test.ts","test":"standard library reference data: signatures and pin tables follow the registry (DOC-007)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/stdlib/reference.test.ts","test":"standard library reference data: the examples are programs (DOC-007)"},
+    {"kind":"unit","ref":"tools/docs/generate_function_reference.test.ts","test":"function reference: a registered name has an entry (DOC-007)"},
+    {"kind":"unit","ref":"tools/docs/generate_function_reference.test.ts","test":"function reference: the conversions are proven for every pair (DOC-007)"},
+    {"kind":"unit","ref":"tools/docs/generate_function_reference.test.ts","test":"function reference: the pages list every name, in both languages (DOC-007)"}
+  ],
+  "DOC-008": [
+    {"kind":"unit","ref":"tools/docs/generate_source_references.test.ts","test":"source references: every source is understood (DOC-008)"},
+    {"kind":"unit","ref":"tools/docs/generate_source_references.test.ts","test":"source references: the project file schema is flattened to its fields (DOC-008)"},
+    {"kind":"unit","ref":"tools/docs/generate_source_references.test.ts","test":"source references: the two languages say the same thing (DOC-008)"},
+    {"kind":"unit","ref":"tools/docs/reference-lib.test.ts","test":"generated reference pages: the markup is safe for the site (DOC-008)"},
+    {"kind":"unit","ref":"tools/docs/reference-lib.test.ts","test":"generated reference pages: the page as a whole (DOC-008)"},
+    {"kind":"unit","ref":"tools/docs/source-parsers.test.ts","test":"source readers: Kconfig (DOC-008)"},
+    {"kind":"unit","ref":"tools/docs/source-parsers.test.ts","test":"source readers: the command line, MCP and the protocol (DOC-008)"},
+    {"kind":"unit","ref":"tools/docs/source-parsers.test.ts","test":"source readers: the shell command tree (DOC-008)"}
+  ],
+  "DOC-014": [
+    {"kind":"unit","ref":"tools/docs/check_doc_claims.test.ts","test":"doc claims: a claim holds only when the source has the thing (DOC-014)"},
+    {"kind":"unit","ref":"tools/docs/check_doc_claims.test.ts","test":"doc claims: the allow-list can only shrink (DOC-014)"},
+    {"kind":"unit","ref":"tools/docs/check_doc_claims.test.ts","test":"doc claims: the documents of the repository (DOC-014)"},
+    {"kind":"unit","ref":"tools/docs/check_doc_claims.test.ts","test":"doc claims: what a page says is read from its code spans and shell blocks (DOC-014)"}
   ]
 }

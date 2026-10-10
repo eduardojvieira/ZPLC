@@ -26,10 +26,7 @@
 #include <zplc_retain.h>
 
 /* Test-only hooks of the POSIX HAL (built with ZPLC_HAL_PERSIST_TESTING). */
-extern void zplc_hal_persist_test_fail_at(unsigned long operation);
-extern unsigned long zplc_hal_persist_test_operation_count(void);
-extern int zplc_hal_persist_test_failure_triggered(void);
-extern void zplc_hal_persist_test_parent_sync_fail(int enabled);
+#include <zplc_test_hooks.h>
 
 static int test_count = 0;
 static int fail_count = 0;
@@ -828,6 +825,86 @@ static void test_backend_errors(void)
     remove_root();
 }
 
+/* RT-030: a lock that cannot be taken is handled, never ignored. The module touches the region only under the
+ * lock, so a failed lock leaves the region as it was and the status says what happened. */
+static int g_lock_result;
+static int g_lock_calls;
+static int g_unlock_calls;
+
+static int test_lock(void)
+{
+    g_lock_calls++;
+    return g_lock_result;
+}
+
+static void test_unlock(void)
+{
+    g_unlock_calls++;
+}
+
+static int start_module_with_lock(uint32_t size)
+{
+    zplc_retain_config_t config;
+
+    memset(&config, 0, sizeof(config));
+    config.region = g_region;
+    config.region_size = size;
+    config.lock = test_lock;
+    config.unlock = test_unlock;
+    return zplc_retain_init(&config);
+}
+
+static void test_lock_failure_is_handled(void)
+{
+    zplc_retain_status_t status;
+    uint8_t saved[REGION_SMALL];
+
+    printf("\n=== Test: a lock that cannot be taken is handled (RT-030) ===\n");
+
+    /* A record exists; the lock fails at restore. */
+    TEST_ASSERT(fresh_root() == 0 && start_module(REGION_SMALL, 0U) == 0, "module over a clean directory");
+    (void)zplc_retain_restore(&ID1, 0U);
+    fill(g_region, REGION_SMALL, 9U);
+    memcpy(saved, g_region, REGION_SMALL);
+    TEST_ASSERT(zplc_retain_save(&ID1, 1U, ZPLC_RETAIN_SAVE_FORCED) == ZPLC_RETAIN_SAVE_WRITTEN, "record written");
+
+    g_lock_result = -16;
+    g_lock_calls = 0;
+    g_unlock_calls = 0;
+    TEST_ASSERT(start_module_with_lock(REGION_SMALL) == 0, "module with a lock hook");
+    memset(g_region, 0xEE, REGION_SMALL);
+    TEST_ASSERT(zplc_retain_restore(&ID1, 0U) == ZPLC_RETAIN_IO_ERROR,
+                "a restore that cannot take the lock is an io error");
+    memset(g_expect, 0xEE, REGION_SMALL);
+    TEST_ASSERT(memcmp(g_region, g_expect, REGION_SMALL) == 0, "the region was not touched without the lock");
+    TEST_ASSERT(g_lock_calls >= 1 && g_unlock_calls == 0, "a lock that was not taken is not released");
+    zplc_retain_last_status(&status);
+    TEST_ASSERT(status.last_error == -16, "the status keeps the lock result");
+    TEST_ASSERT(zplc_retain_save(&ID1, 2U, ZPLC_RETAIN_SAVE_FORCED) == ZPLC_RETAIN_SAVE_NOT_READY,
+                "and no save runs on a module that could not restore");
+
+    /* The lock works at restore and fails at save: the stored record stays the previous one. */
+    g_lock_result = 0;
+    TEST_ASSERT(start_module_with_lock(REGION_SMALL) == 0, "module with a lock hook again");
+    TEST_ASSERT(zplc_retain_restore(&ID1, 0U) == ZPLC_RETAIN_RESTORED && memcmp(g_region, saved, REGION_SMALL) == 0,
+                "restore works with the lock");
+    g_region[0] ^= 0xFFU;
+    g_lock_result = -16;
+    TEST_ASSERT(zplc_retain_save(&ID1, 3U, ZPLC_RETAIN_SAVE_FORCED) == ZPLC_RETAIN_SAVE_IO_ERROR,
+                "a save that cannot take the lock is an io error");
+    zplc_retain_last_status(&status);
+    TEST_ASSERT(status.save_errors == 1U && status.last_error == -16, "the failed save is counted");
+    TEST_ASSERT(zplc_retain_cold_reset(&ID1, 4U) == ZPLC_RETAIN_SAVE_IO_ERROR &&
+                    g_region[0] == (uint8_t)(saved[0] ^ 0xFFU),
+                "a cold reset that cannot take the lock does not clear the region");
+
+    g_lock_result = 0;
+    (void)start_module(REGION_SMALL, 0U);
+    TEST_ASSERT(zplc_retain_restore(&ID1, 0U) == ZPLC_RETAIN_RESTORED && memcmp(g_region, saved, REGION_SMALL) == 0,
+                "the stored record is still the one written before the failures");
+    remove_root();
+}
+
 /* RT-025: a cold reset initialises the region and the stored record, so the old values do not come back. */
 static void test_cold_reset(void)
 {
@@ -870,6 +947,7 @@ int main(void)
     test_unchanged_payload_is_not_written();
     test_periodic_interval();
     test_backend_errors();
+    test_lock_failure_is_handled();
     test_cold_reset();
 
     printf("\n%d checks, %d failed\n", test_count, fail_count);

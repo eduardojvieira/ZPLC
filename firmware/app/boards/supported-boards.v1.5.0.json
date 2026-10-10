@@ -5,7 +5,7 @@
     "ide_id": "rpi_pico",
     "zephyr_board": "rpi_pico/rp2040",
     "variant": "rp2040",
-    "memory": { "work_size": 8192, "retain_size": 4096, "code_size_max": 45056 },
+    "memory": { "work_size": 8192, "retain_size": 4096, "code_size_max": 24576 },
     "support_assets": [
       "firmware/app/boards/rpi_pico_rp2040.conf",
       "firmware/app/boards/rpi_pico_rp2040.overlay"
@@ -59,7 +59,7 @@
     "ide_id": "stm32f746g_disco",
     "zephyr_board": "stm32f746g_disco/stm32f746xx",
     "variant": "stm32f746xx",
-    "memory": { "work_size": 8192, "retain_size": 4096, "code_size_max": 45056 },
+    "memory": { "work_size": 8192, "retain_size": 4096, "code_size_max": 16384 },
     "support_assets": [
       "firmware/app/boards/stm32f746g_disco.conf",
       "firmware/app/boards/stm32f746g_disco.overlay"
@@ -95,7 +95,7 @@
     "ide_id": "arduino_opta_wifi",
     "zephyr_board": "arduino_opta/stm32h747xx/m7",
     "variant": "stm32h747xx/m7",
-    "memory": { "work_size": 8192, "retain_size": 4096, "code_size_max": 45056 },
+    "memory": { "work_size": 8192, "retain_size": 4096, "code_size_max": 32768 },
     "support_assets": [
       "firmware/app/boards/arduino_opta_stm32h747xx_m7.conf",
       "firmware/app/boards/arduino_opta_stm32h747xx_m7.overlay"

@@ -200,7 +200,9 @@ int zplc_modbus_tcp_process_adu(const uint8_t *request, size_t request_length,
     rc = ops->write(be16(&pdu[1]), 1U, &pdu[3], function == FC_WRITE_SINGLE_COIL,
                     false, area_for_fc(function), ops->context);
     if (rc < 0) {
-      return exception_response(request, response, response_capacity, response_length, 0x02U);
+      /* -EBUSY: the write queue of the scan is full (RT-010). The address is valid and the client may retry. */
+      return exception_response(request, response, response_capacity, response_length,
+                                rc == -EBUSY ? 0x06U : 0x02U);
     }
     memcpy(response, request, 12U);
     put_be16(&response[4], 6U);
@@ -232,7 +234,9 @@ int zplc_modbus_tcp_process_adu(const uint8_t *request, size_t request_length,
     }
     rc = ops->write(start, count, &pdu[6], bits, true, area_for_fc(function), ops->context);
     if (rc < 0) {
-      return exception_response(request, response, response_capacity, response_length, 0x02U);
+      /* -EBUSY: the write queue of the scan is full (RT-010). The address is valid and the client may retry. */
+      return exception_response(request, response, response_capacity, response_length,
+                                rc == -EBUSY ? 0x06U : 0x02U);
     }
     memcpy(response, request, 12U);
     put_be16(&response[4], 6U);

@@ -12,6 +12,8 @@
  */
 
 #include <zplc_hal.h>
+#include <zplc_isa.h>
+#include <zplc_program_store.h>
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
@@ -615,11 +617,131 @@ zplc_hal_result_t zplc_hal_dac_write(uint8_t channel, uint16_t value) {
  *         ("retain_a0".."retain_b7", see zplc_retain.h). */
 #define NVS_ID_RETAIN_CHUNKS 16
 
+/** @brief NVS IDs from 64: chunk 1, 2, ... of the payload of program slot a, then of slot b
+ *         ("program_v1_slot_a_payload_1", see zplc_program_store.h). Chunk 0 is NVS_ID_PROGRAM_SLOT_x_PAYLOAD.
+ *         Each slot has ZPLC_PROGRAM_STORE_MAX_CHUNKS identifiers, of which the first is not used. */
+#define NVS_ID_PROGRAM_CHUNKS 64
+
+/* RT-029: the two program slots of the largest artifact, the records and, when it is built in, the two RETAIN
+ * records have to fit the storage partition with one spare sector for garbage collection. A sector is taken as
+ * 4 KB, the smallest the boards of this repository have; a board with larger sectors keeps more spare. The figure
+ * is an estimate (entry overhead is ZPLC_PROGRAM_STORE_ENTRY_OVERHEAD per entry), so it fails the build early
+ * rather than promising that the last byte fits. The remedy is a smaller CONFIG_ZPLC_CODE_SIZE_MAX in the board
+ * profile, or a larger partition. */
+#define ZPLC_STORAGE_SPARE_SECTOR_BYTES 4096U
+#ifdef CONFIG_ZPLC_RETAIN_PERSIST
+#define ZPLC_STORAGE_RETAIN_BYTES                                              \
+  (2U * (((ZPLC_MEM_RETAIN_SIZE + 64U + ZPLC_PROGRAM_STORE_CHUNK_SIZE - 1U) /  \
+          ZPLC_PROGRAM_STORE_CHUNK_SIZE) *                                     \
+         (ZPLC_PROGRAM_STORE_CHUNK_SIZE + ZPLC_PROGRAM_STORE_ENTRY_OVERHEAD)))
+#else
+#define ZPLC_STORAGE_RETAIN_BYTES 0U
+#endif
+#define ZPLC_STORAGE_REQUIRED_BYTES                                            \
+  (ZPLC_PROGRAM_STORE_WORST_CASE_BYTES + ZPLC_STORAGE_RETAIN_BYTES +           \
+   ZPLC_STORAGE_SPARE_SECTOR_BYTES)
+BUILD_ASSERT(ZPLC_STORAGE_SIZE() >= ZPLC_STORAGE_REQUIRED_BYTES,
+             "the storage partition cannot hold two program slots of "
+             "CONFIG_ZPLC_CODE_SIZE_MAX (and the RETAIN records): lower the code size "
+             "of the board profile or enlarge storage_partition");
+
 /** @brief NVS filesystem handle */
 static struct nvs_fs nvs_handle;
 
 /** @brief NVS initialized flag */
 static bool nvs_initialized = false;
+
+#ifdef CONFIG_ZTEST
+/* RT-031: a test cuts the persistence operations off as a lost supply would. An entry of NVS is written whole or
+ * not at all, so a cut operation has no effect, and neither has any operation after it until the injection is
+ * reset by zplc_hal_persist_test_fail_at(). The names and the meaning are those of the POSIX HAL. */
+static unsigned long persist_operation_count;
+static unsigned long persist_fail_at;
+static unsigned long persist_power_cut_at;
+static bool persist_power_is_cut;
+static bool persist_failure_triggered;
+
+void zplc_hal_persist_test_fail_at(unsigned long operation) {
+  persist_operation_count = 0UL;
+  persist_fail_at = operation;
+  persist_power_cut_at = 0UL;
+  persist_power_is_cut = false;
+  persist_failure_triggered = false;
+}
+
+void zplc_hal_persist_test_power_cut_at(unsigned long operation) {
+  zplc_hal_persist_test_fail_at(0UL);
+  persist_power_cut_at = operation;
+}
+
+unsigned long zplc_hal_persist_test_operation_count(void) {
+  return persist_operation_count;
+}
+
+int zplc_hal_persist_test_failure_triggered(void) {
+  return persist_failure_triggered ? 1 : 0;
+}
+
+/* True when the operation about to run is the one that fails, or comes after the power cut. */
+static bool persist_operation_fails(void) {
+  persist_operation_count++;
+  if (persist_power_is_cut ||
+      (persist_power_cut_at != 0UL && persist_operation_count >= persist_power_cut_at)) {
+    persist_power_is_cut = true;
+    persist_failure_triggered = true;
+    return true;
+  }
+  if (persist_fail_at != 0UL && persist_operation_count == persist_fail_at) {
+    persist_failure_triggered = true;
+    return true;
+  }
+  return false;
+}
+#define ZPLC_PERSIST_INJECT()                                                  \
+  do {                                                                         \
+    if (persist_operation_fails()) {                                           \
+      return ZPLC_HAL_ERROR;                                                   \
+    }                                                                          \
+  } while (0)
+#else
+#define ZPLC_PERSIST_INJECT()                                                  \
+  do {                                                                         \
+  } while (0)
+#endif
+
+/**
+ * @brief NVS ID of "program_v1_slot_<a|b>_payload_<n>", n a decimal chunk number from 1, or 0.
+ */
+static uint16_t program_chunk_id(const char *key) {
+  static const char prefix[] = "program_v1_slot_";
+  static const char suffix[] = "_payload_";
+  const size_t prefix_length = sizeof(prefix) - 1U;
+  const size_t suffix_length = sizeof(suffix) - 1U;
+  const char *digits;
+  unsigned long chunk = 0UL;
+  unsigned slot;
+
+  if (strncmp(key, prefix, prefix_length) != 0 ||
+      (key[prefix_length] != 'a' && key[prefix_length] != 'b') ||
+      strncmp(key + prefix_length + 1U, suffix, suffix_length) != 0) {
+    return 0;
+  }
+  slot = key[prefix_length] == 'a' ? 0U : 1U;
+  digits = key + prefix_length + 1U + suffix_length;
+  if (*digits == '\0' || *digits == '0') {
+    return 0;
+  }
+  for (; *digits != '\0'; digits++) {
+    if (*digits < '0' || *digits > '9') {
+      return 0;
+    }
+    chunk = chunk * 10UL + (unsigned long)(*digits - '0');
+    if (chunk >= ZPLC_PROGRAM_STORE_MAX_CHUNKS) {
+      return 0;
+    }
+  }
+  return (uint16_t)(NVS_ID_PROGRAM_CHUNKS + slot * ZPLC_PROGRAM_STORE_MAX_CHUNKS + chunk);
+}
 
 /**
  * @brief Map string key to NVS ID.
@@ -644,7 +766,7 @@ static uint16_t key_to_nvs_id(const char *key) {
   if (strncmp(key, "retain_", 7) == 0 && (key[7] == 'a' || key[7] == 'b') &&
       key[8] >= '0' && key[8] <= '7' && key[9] == '\0')
     return NVS_ID_RETAIN_CHUNKS + (key[7] - 'a') * 8 + (key[8] - '0');
-  return 0; /* Invalid */
+  return program_chunk_id(key);
 }
 
 /**
@@ -710,6 +832,8 @@ zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data,
     return ZPLC_HAL_ERROR;
   }
 
+  ZPLC_PERSIST_INJECT();
+
   /* Initialize NVS if needed */
   if (ensure_nvs_init() != 0) {
     return ZPLC_HAL_ERROR;
@@ -752,6 +876,8 @@ zplc_hal_result_t zplc_hal_persist_load(const char *key, void *data,
     return ZPLC_HAL_ERROR;
   }
 
+  ZPLC_PERSIST_INJECT();
+
   /* Initialize NVS if needed */
   if (ensure_nvs_init() != 0) {
     return ZPLC_HAL_ERROR;
@@ -762,6 +888,22 @@ zplc_hal_result_t zplc_hal_persist_load(const char *key, void *data,
   if (id == 0) {
     zplc_hal_log("[HAL] Unknown persist key: %s\n", key);
     return ZPLC_HAL_ERROR;
+  }
+
+  /* NVS refuses a read request larger than the largest entry it can hold: a sector less two allocation entries.
+   * An entry is never larger, so asking for less than the caller's capacity truncates nothing. A caller that
+   * passes the capacity of a whole artifact (the program store reads the first chunk that way) is served. */
+  {
+    const size_t write_block = nvs_handle.flash_parameters != NULL
+                                   ? nvs_handle.flash_parameters->write_block_size
+                                   : 1U;
+    const size_t allocation_entry =
+        write_block <= 1U ? 8U : ((8U + write_block - 1U) / write_block) * write_block;
+    const size_t largest_entry = nvs_handle.sector_size - 2U * allocation_entry;
+
+    if (len > largest_entry) {
+      len = largest_entry;
+    }
   }
 
   /* Read from NVS */
@@ -792,6 +934,8 @@ zplc_hal_result_t zplc_hal_persist_delete(const char *key) {
   if (key == NULL) {
     return ZPLC_HAL_ERROR;
   }
+
+  ZPLC_PERSIST_INJECT();
 
   /* Initialize NVS if needed */
   if (ensure_nvs_init() != 0) {
@@ -862,12 +1006,52 @@ zplc_hal_result_t zplc_hal_persist_delete(const char *key) {
  * ============================================================================
  */
 
+/* The mutexes of the runtime come from a small static pool, not from the heap: a runtime that has no heap (the
+ * scheduler suites, and a board that sets the pool to zero) still has its process-image lock and the lock of the
+ * exchange, and creating one cannot fail for lack of memory at run time (RT-030). The core takes two. */
+#define ZPLC_HAL_MUTEX_POOL_SIZE 4U
+
+static struct k_mutex hal_mutex_pool[ZPLC_HAL_MUTEX_POOL_SIZE];
+static bool hal_mutex_used[ZPLC_HAL_MUTEX_POOL_SIZE];
+static struct k_spinlock hal_mutex_pool_lock;
+
 zplc_hal_mutex_t zplc_hal_mutex_create(void) {
-  struct k_mutex *mutex = k_malloc(sizeof(struct k_mutex));
-  if (mutex != NULL) {
-    k_mutex_init(mutex);
+  struct k_mutex *mutex = NULL;
+  k_spinlock_key_t key = k_spin_lock(&hal_mutex_pool_lock);
+  size_t index;
+
+  for (index = 0U; index < ZPLC_HAL_MUTEX_POOL_SIZE; index++) {
+    if (!hal_mutex_used[index]) {
+      hal_mutex_used[index] = true;
+      mutex = &hal_mutex_pool[index];
+      break;
+    }
+  }
+  k_spin_unlock(&hal_mutex_pool_lock, key);
+  if (mutex == NULL) {
+    return NULL;
+  }
+  if (k_mutex_init(mutex) != 0) {
+    /* RT-030: a mutex that did not initialise is not handed out. */
+    key = k_spin_lock(&hal_mutex_pool_lock);
+    hal_mutex_used[mutex - hal_mutex_pool] = false;
+    k_spin_unlock(&hal_mutex_pool_lock, key);
+    return NULL;
   }
   return (zplc_hal_mutex_t)mutex;
+}
+
+zplc_hal_result_t zplc_hal_mutex_destroy(zplc_hal_mutex_t mutex) {
+  struct k_mutex *handle = (struct k_mutex *)mutex;
+  k_spinlock_key_t key;
+
+  if (handle < hal_mutex_pool || handle >= hal_mutex_pool + ZPLC_HAL_MUTEX_POOL_SIZE) {
+    return ZPLC_HAL_ERROR;
+  }
+  key = k_spin_lock(&hal_mutex_pool_lock);
+  hal_mutex_used[handle - hal_mutex_pool] = false;
+  k_spin_unlock(&hal_mutex_pool_lock, key);
+  return ZPLC_HAL_OK;
 }
 
 zplc_hal_result_t zplc_hal_mutex_lock(zplc_hal_mutex_t mutex) {
@@ -884,7 +1068,9 @@ zplc_hal_result_t zplc_hal_mutex_unlock(zplc_hal_mutex_t mutex) {
   if (mutex == NULL) {
     return ZPLC_HAL_ERROR;
   }
-  k_mutex_unlock((struct k_mutex *)mutex);
+  if (k_mutex_unlock((struct k_mutex *)mutex) != 0) {
+    return ZPLC_HAL_ERROR;
+  }
   return ZPLC_HAL_OK;
 }
 

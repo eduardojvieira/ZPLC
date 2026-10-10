@@ -13,6 +13,8 @@
 
 #include <string.h>
 
+#include "zplc_bytes.h"
+#include "zplc_crc32.h"
 #include "zplc_hal.h"
 
 /* One whole record, and never less than one chunk (a chunk is read in one piece). */
@@ -50,7 +52,7 @@ static struct {
   int configured;
   uint8_t *region;
   uint32_t region_size;
-  void (*lock)(void);
+  int (*lock)(void);
   void (*unlock)(void);
   uint32_t min_interval_ms;
   int restored;            /* restore ran since init */
@@ -65,52 +67,19 @@ static struct {
 
 static uint8_t s_buf[BUF_SIZE];
 
-static void put_u16(uint8_t *p, uint16_t v)
-{
-  p[0] = (uint8_t)v;
-  p[1] = (uint8_t)(v >> 8);
-}
-
-static void put_u32(uint8_t *p, uint32_t v)
-{
-  p[0] = (uint8_t)v;
-  p[1] = (uint8_t)(v >> 8);
-  p[2] = (uint8_t)(v >> 16);
-  p[3] = (uint8_t)(v >> 24);
-}
-
-static uint32_t get_u32(const uint8_t *p)
-{
-  return (uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
-}
-
-static uint32_t crc_update(uint32_t crc, const uint8_t *data, size_t length)
-{
-  size_t index;
-
-  for (index = 0U; index < length; index++) {
-    unsigned bit;
-
-    crc ^= data[index];
-    for (bit = 0U; bit < 8U; bit++) {
-      crc = (crc & 1U) != 0U ? (crc >> 1) ^ 0xEDB88320U : crc >> 1;
-    }
-  }
-  return crc;
-}
 
 static uint32_t layout_hash(const zplc_retain_identity_t *identity, uint32_t region_size)
 {
   uint8_t bytes[24];
 
-  put_u32(bytes + 0, region_size);
-  put_u32(bytes + 4, (uint32_t)ZPLC_MEM_RETAIN_BASE);
-  put_u16(bytes + 8, (uint16_t)ZPLC_VERSION_MAJOR);
-  put_u16(bytes + 10, (uint16_t)ZPLC_VERSION_MINOR);
-  put_u32(bytes + 12, (uint32_t)ZPLC_DRAFT_COUNTER);
-  put_u32(bytes + 16, identity->crc32);
-  put_u32(bytes + 20, identity->code_size);
-  return crc_update(0xFFFFFFFFU, bytes, sizeof(bytes)) ^ 0xFFFFFFFFU;
+  zplc_put_u32_le(bytes + 0, region_size);
+  zplc_put_u32_le(bytes + 4, (uint32_t)ZPLC_MEM_RETAIN_BASE);
+  zplc_put_u16_le(bytes + 8, (uint16_t)ZPLC_VERSION_MAJOR);
+  zplc_put_u16_le(bytes + 10, (uint16_t)ZPLC_VERSION_MINOR);
+  zplc_put_u32_le(bytes + 12, (uint32_t)ZPLC_DRAFT_COUNTER);
+  zplc_put_u32_le(bytes + 16, identity->crc32);
+  zplc_put_u32_le(bytes + 20, identity->code_size);
+  return zplc_crc32_update(0xFFFFFFFFU, bytes, sizeof(bytes)) ^ 0xFFFFFFFFU;
 }
 
 /* a is newer than b, with the sequence read as a 32-bit serial number. */
@@ -136,11 +105,20 @@ static void chunk_key(unsigned slot, unsigned chunk, char *key)
   key[9] = '\0';
 }
 
-static void lock_region(void)
+/* Takes the lock; 0 when the region may be touched. A lock that could not be taken is never ignored: the caller
+ * leaves the region alone, and the result is kept in the status (RT-030). */
+static int lock_region(void)
 {
+  int result = 0;
+
   if (s.lock != NULL) {
-    s.lock();
+    result = s.lock();
   }
+  if (result != 0) {
+    s.status.last_error = (int32_t)result;
+    zplc_hal_log("[RETAIN] the region lock could not be taken: %d\n", result);
+  }
+  return result;
 }
 
 static void unlock_region(void)
@@ -174,11 +152,11 @@ static slot_state_t read_header(unsigned slot, header_t *header)
       s_buf[6] != 0U || s_buf[7] != 0U) {
     return SLOT_INVALID;
   }
-  header->sequence = get_u32(s_buf + 8);
-  header->id_crc32 = get_u32(s_buf + 12);
-  header->id_code_size = get_u32(s_buf + 16);
-  header->layout = get_u32(s_buf + 20);
-  header->length = get_u32(s_buf + 24);
+  header->sequence = zplc_get_u32_le(s_buf + 8);
+  header->id_crc32 = zplc_get_u32_le(s_buf + 12);
+  header->id_code_size = zplc_get_u32_le(s_buf + 16);
+  header->layout = zplc_get_u32_le(s_buf + 20);
+  header->length = zplc_get_u32_le(s_buf + 24);
   if (header->sequence == 0U || header->length == 0U ||
       header->length > KEY_RECORD_MAX - ZPLC_RETAIN_HEADER_SIZE - ZPLC_RETAIN_TRAILER_SIZE) {
     return SLOT_INVALID;
@@ -216,7 +194,7 @@ static int read_record(unsigned slot, const header_t *header)
       s.status.last_error = (int32_t)result;
       return -1;
     }
-    crc = crc_update(crc, destination, length);
+    crc = zplc_crc32_update(crc, destination, length);
   }
   return crc == CRC_RESIDUE ? 1 : 0;
 }
@@ -276,11 +254,11 @@ int zplc_retain_identity_from_artifact(const uint8_t *artifact, size_t size,
                                        zplc_retain_identity_t *out)
 {
   if (artifact == NULL || out == NULL || size < ZPLC_FILE_HEADER_SIZE ||
-      get_u32(artifact) != (uint32_t)ZPLC_MAGIC) {
+      zplc_get_u32_le(artifact) != (uint32_t)ZPLC_MAGIC) {
     return -1;
   }
-  out->crc32 = get_u32(artifact + 12);
-  out->code_size = get_u32(artifact + 16);
+  out->crc32 = zplc_get_u32_le(artifact + 12);
+  out->code_size = zplc_get_u32_le(artifact + 16);
   return 0;
 }
 
@@ -358,13 +336,18 @@ zplc_retain_reason_t zplc_retain_restore(const zplc_retain_identity_t *identity,
   invalid_seen |= (failed[0] | failed[1]) != 0;
 
   if (matched >= 0) {
-    lock_region();
-    memcpy(s.region, s_buf + ZPLC_RETAIN_HEADER_SIZE, s.region_size);
-    unlock_region();
-    s.image_valid = 1;
-    s.image_id = *identity;
-    s.status.sequence = header[matched].sequence;
-    reason = ZPLC_RETAIN_RESTORED;
+    if (lock_region() != 0) {
+      /* The record is intact, but the region cannot be written coherently: say so, and write nothing. */
+      backend_down = 1;
+      reason = ZPLC_RETAIN_IO_ERROR;
+    } else {
+      memcpy(s.region, s_buf + ZPLC_RETAIN_HEADER_SIZE, s.region_size);
+      unlock_region();
+      s.image_valid = 1;
+      s.image_id = *identity;
+      s.status.sequence = header[matched].sequence;
+      reason = ZPLC_RETAIN_RESTORED;
+    }
   } else {
     if (backend_down != 0) {
       reason = ZPLC_RETAIN_IO_ERROR;
@@ -375,9 +358,13 @@ zplc_retain_reason_t zplc_retain_restore(const zplc_retain_identity_t *identity,
     } else {
       reason = ZPLC_RETAIN_NONE;
     }
-    lock_region();
-    memset(s.region, 0, s.region_size);
-    unlock_region();
+    if (lock_region() != 0) {
+      backend_down = 1;
+      reason = ZPLC_RETAIN_IO_ERROR;
+    } else {
+      memset(s.region, 0, s.region_size);
+      unlock_region();
+    }
     s.status.sequence = s.newest_sequence;
   }
 
@@ -421,7 +408,10 @@ zplc_retain_save_result_t zplc_retain_save(const zplc_retain_identity_t *identit
   }
 
   /* One coherent copy of the region, under the hook, and no backend call under it. */
-  lock_region();
+  if (lock_region() != 0) {
+    s.status.save_errors++;
+    return ZPLC_RETAIN_SAVE_IO_ERROR;
+  }
   unchanged = s.image_valid != 0 && s.image_id.crc32 == identity->crc32 &&
               s.image_id.code_size == identity->code_size &&
               memcmp(s.region, s_buf + ZPLC_RETAIN_HEADER_SIZE, s.region_size) == 0;
@@ -435,15 +425,15 @@ zplc_retain_save_result_t zplc_retain_save(const zplc_retain_identity_t *identit
 
   sequence = next_sequence(s.newest_sequence);
   memcpy(s_buf, record_magic, sizeof(record_magic));
-  put_u16(s_buf + 4, (uint16_t)ZPLC_RETAIN_FORMAT_VERSION);
-  put_u16(s_buf + 6, 0U);
-  put_u32(s_buf + 8, sequence);
-  put_u32(s_buf + 12, identity->crc32);
-  put_u32(s_buf + 16, identity->code_size);
-  put_u32(s_buf + 20, layout_hash(identity, s.region_size));
-  put_u32(s_buf + 24, s.region_size);
-  crc = crc_update(0xFFFFFFFFU, s_buf, total - ZPLC_RETAIN_TRAILER_SIZE) ^ 0xFFFFFFFFU;
-  put_u32(s_buf + total - ZPLC_RETAIN_TRAILER_SIZE, crc);
+  zplc_put_u16_le(s_buf + 4, (uint16_t)ZPLC_RETAIN_FORMAT_VERSION);
+  zplc_put_u16_le(s_buf + 6, 0U);
+  zplc_put_u32_le(s_buf + 8, sequence);
+  zplc_put_u32_le(s_buf + 12, identity->crc32);
+  zplc_put_u32_le(s_buf + 16, identity->code_size);
+  zplc_put_u32_le(s_buf + 20, layout_hash(identity, s.region_size));
+  zplc_put_u32_le(s_buf + 24, s.region_size);
+  crc = zplc_crc32_update(0xFFFFFFFFU, s_buf, total - ZPLC_RETAIN_TRAILER_SIZE) ^ 0xFFFFFFFFU;
+  zplc_put_u32_le(s_buf + total - ZPLC_RETAIN_TRAILER_SIZE, crc);
 
   for (offset = 0U; offset < total; offset += ZPLC_RETAIN_CHUNK_SIZE) {
     const uint32_t remaining = total - offset;
@@ -483,7 +473,10 @@ zplc_retain_save_result_t zplc_retain_cold_reset(const zplc_retain_identity_t *i
   if (s.configured == 0 || identity == NULL) {
     return ZPLC_RETAIN_SAVE_NOT_READY;
   }
-  lock_region();
+  if (lock_region() != 0) {
+    s.status.save_errors++;
+    return ZPLC_RETAIN_SAVE_IO_ERROR;
+  }
   memset(s.region, 0, s.region_size);
   unlock_region();
   result = zplc_retain_save(identity, now_ms, ZPLC_RETAIN_SAVE_FORCED);

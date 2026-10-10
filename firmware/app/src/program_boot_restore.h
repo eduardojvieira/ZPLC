@@ -19,10 +19,23 @@ typedef enum {
 } zplc_boot_restore_result_t;
 
 #ifdef CONFIG_ZPLC_SCHEDULER
-/* Restores only to the scheduler's IDLE/READY state. It never starts tasks. */
+/* Restores only to the scheduler's IDLE/READY state. It never starts tasks.
+ *
+ * The stored program is the only resident copy of the artifact (RT-028): the runtime keeps no second buffer of
+ * the code size. @p staging receives the artifact (and keeps it on return); @p program_size is the artifact
+ * length, or 0 when nothing is loaded. Returns the task count (> 0), 0 for an empty store, or a negative error
+ * (the runtime is then latched safe and staging is cleared). */
 int zplc_boot_restore_scheduler(uint8_t *staging, size_t staging_capacity,
-                                uint8_t *resident, size_t resident_capacity,
-                                size_t *resident_size);
+                                size_t *program_size);
+
+/* Reloads the stored program into the scheduler: the shell's reset. Stops the scheduler, clears its tasks,
+ * restores the stored program into @p staging, verifies and loads it, and stops. An upload that was in
+ * progress in @p staging is gone: staging is the one buffer of the code size.
+ *
+ * Returns the task count (> 0), 0 when the store is empty, or a negative error. A failure latches nothing: the
+ * scheduler is left stopped with no program, and staging is cleared. */
+int zplc_program_reload_scheduler(uint8_t *staging, size_t staging_capacity,
+                                  size_t *program_size);
 #endif
 
 /* Restores, verifies, and confirms legacy migration before the caller loads
@@ -32,15 +45,5 @@ int zplc_boot_restore_legacy_prepare(uint8_t *staging, size_t staging_capacity,
                                      size_t workspace_capacity,
                                      size_t *program_size,
                                      uint32_t *scan_interval_ms);
-
-#ifdef CONFIG_ZTEST
-typedef zplc_program_store_restore_t (*zplc_boot_restore_test_restore_fn)(
-    uint8_t *workspace, size_t workspace_capacity, size_t *program_size);
-typedef int (*zplc_boot_restore_test_commit_fn)(uint8_t *workspace,
-                                                size_t program_size,
-                                                size_t workspace_capacity);
-void zplc_boot_restore_test_set_store(zplc_boot_restore_test_restore_fn restore,
-                                      zplc_boot_restore_test_commit_fn commit);
-#endif
 
 #endif /* ZPLC_PROGRAM_BOOT_RESTORE_H */
