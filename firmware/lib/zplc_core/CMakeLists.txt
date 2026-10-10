@@ -193,6 +193,29 @@ endif()
 
 add_test(NAME test_vm_arith_edges COMMAND test_vm_arith_edges)
 
+# Test: every opcode of the generated table is executed and checked against a
+# reference model (VF-013); a new opcode without a case fails this test. Also
+# run under the sanitizers.
+add_executable(test_opcode_coverage
+    tests/test_opcode_coverage.c
+    src/core/zplc_core.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_opcode_coverage PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_compile_definitions(test_opcode_coverage PRIVATE ZPLC_CORE_TESTING)
+
+target_link_libraries(test_opcode_coverage PRIVATE zplc_core)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_opcode_coverage PRIVATE rt)
+endif()
+
+add_test(NAME test_opcode_coverage COMMAND test_opcode_coverage)
+
 # Test: Native Runtime Session Protocol
 add_executable(test_native_runtime_session
     tests/test_native_runtime_session.c
@@ -292,7 +315,7 @@ add_test(NAME test_loader_verify COMMAND test_loader_verify)
 # Custom target to run all tests
 add_custom_target(check
     COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-    DEPENDS test_isa test_contract test_vm_core test_vm_arith_edges test_comm_dispatch test_loader_verify test_native_runtime_session test_host_stdio test_hal_posix_persist test_hal_posix_mutex
+    DEPENDS test_isa test_contract test_vm_core test_vm_arith_edges test_opcode_coverage test_comm_dispatch test_loader_verify test_native_runtime_session test_host_stdio test_hal_posix_persist test_hal_posix_mutex
     COMMENT "Running all tests..."
 )
 
