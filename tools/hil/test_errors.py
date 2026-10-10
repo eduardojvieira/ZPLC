@@ -1,17 +1,12 @@
 from zplc_tester import ZPLCTester
+from zplc_contract import VmError  # on sys.path through zplc_tester; the table is generated
 
 
 def test_errors():
     tester = ZPLCTester()
     OP = tester.OP
 
-    ERR = {
-        "OK": 0,
-        "STACK_OVERFLOW": 1,
-        "STACK_UNDERFLOW": 2,
-        "DIV_BY_ZERO": 3,
-        "INVALID_OPCODE": 4,
-    }
+    ERR = {error.name: int(error) for error in VmError}
 
     print("\n--- Running Error Condition Tests ---")
 

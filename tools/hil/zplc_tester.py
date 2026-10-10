@@ -5,98 +5,17 @@ import binascii
 import struct
 import os
 import re
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "contract"))
+from zplc_contract import Opcode  # noqa: E402
 
 
 class ZPLCTester:
-    OP = {
-        # System (0x00-0x0F)
-        "NOP": 0x00,
-        "HALT": 0x01,
-        "BREAK": 0x02,
-        "GET_TICKS": 0x03,
-        # Stack (0x10-0x1F)
-        "DUP": 0x10,
-        "DROP": 0x11,
-        "SWAP": 0x12,
-        "OVER": 0x13,
-        "ROT": 0x14,
-        # Indirect
-        "LOADI8": 0x15,
-        "LOADI32": 0x16,
-        "STOREI8": 0x17,
-        "STOREI32": 0x18,
-        "LOADI16": 0x19,
-        "STOREI16": 0x1A,
-        # String
-        "STRLEN": 0x1B,
-        "STRCPY": 0x1C,
-        "STRCAT": 0x1D,
-        "STRCMP": 0x1E,
-        "STRCLR": 0x1F,
-        # Int Arithmetic
-        "ADD": 0x20,
-        "SUB": 0x21,
-        "MUL": 0x22,
-        "DIV": 0x23,
-        "MOD": 0x24,
-        "NEG": 0x25,
-        "ABS": 0x26,
-        # Float Arithmetic
-        "ADDF": 0x28,
-        "SUBF": 0x29,
-        "MULF": 0x2A,
-        "DIVF": 0x2B,
-        "NEGF": 0x2C,
-        "ABSF": 0x2D,
-        # Logic
-        "AND": 0x30,
-        "OR": 0x31,
-        "XOR": 0x32,
-        "NOT": 0x33,
-        "SHL": 0x34,
-        "SHR": 0x35,
-        "SAR": 0x36,
-        # Comparison
-        "EQ": 0x38,
-        "NE": 0x39,
-        "LT": 0x3A,
-        "LE": 0x3B,
-        "GT": 0x3C,
-        "GE": 0x3D,
-        "LTU": 0x3E,
-        "GTU": 0x3F,
-        # 8-bit operands
-        "PUSH8": 0x40,
-        "PICK": 0x41,
-        "JR": 0x50,
-        "JRZ": 0x51,
-        "JRNZ": 0x52,
-        # 16-bit operands
-        "LOAD8": 0x80,
-        "LOAD16": 0x81,
-        "LOAD32": 0x82,
-        "LOAD64": 0x83,
-        "STORE8": 0x84,
-        "STORE16": 0x85,
-        "STORE32": 0x86,
-        "STORE64": 0x87,
-        "PUSH16": 0x88,
-        "JMP": 0x90,
-        "JZ": 0x91,
-        "JNZ": 0x92,
-        "CALL": 0x93,
-        "RET": 0x94,
-        # Conversion
-        "I2F": 0xA0,
-        "F2I": 0xA1,
-        "I2B": 0xA2,
-        "EXT8": 0xA3,
-        "EXT16": 0xA4,
-        "ZEXT8": 0xA5,
-        "ZEXT16": 0xA6,
-        # 32-bit operands
-        "PUSH32": 0xC0,
-    }
+    # Opcode name -> number, from the generated contract (tools/contract/contract.json),
+    # so this table cannot fall behind the VM (HIL-008).
+    OP = {op.name: int(op) for op in Opcode}
 
     def __init__(self, port=None, baud=115200):
         if port is None:

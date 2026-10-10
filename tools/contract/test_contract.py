@@ -243,6 +243,35 @@ class TypeScriptConsumersMatchGolden(unittest.TestCase):
             self.assertEqual(self.view["ide"][key], value, key)
 
 
+class PythonToolsMatchGolden(unittest.TestCase):
+    """The assembler and the HIL tester hold every opcode of the VM, under the number the VM decodes (HIL-008)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.view = snapshot.py_views()
+        cls.opcodes = {name.removeprefix("OP_"): value for name, value in golden_c_enum("zplc_opcode_t").items()}
+
+    def test_assembler_has_every_opcode_of_the_header(self):
+        missing = sorted(set(self.opcodes) - set(self.view["asm"]["opcodes"]))
+        self.assertEqual(missing, [], f"{len(missing)} opcodes missing from tools/zplc_asm.py")
+        self.assertEqual(self.view["asm"]["opcodes"], self.opcodes)
+
+    def test_assembler_decodes_every_byte_as_the_vm_does(self):
+        expected = {str(b): GOLDEN["c"]["operand"][str(b)]["operand"] for b in range(256)}
+        self.assertEqual(self.view["asm"]["operandSizes"], expected)
+
+    def test_assembler_writes_the_header_the_loader_reads(self):
+        macros = GOLDEN["c"]["macros"]
+        asm = self.view["asm"]
+        self.assertEqual((asm["magic"], asm["versionMajor"], asm["versionMinor"]),
+                         (macros["ZPLC_MAGIC"], macros["ZPLC_VERSION_MAJOR"], macros["ZPLC_VERSION_MINOR"]))
+
+    def test_hil_tester_has_every_opcode_of_the_header(self):
+        missing = sorted(set(self.opcodes) - set(self.view["tester"]["opcodes"]))
+        self.assertEqual(missing, [], f"{len(missing)} opcodes missing from tools/hil/zplc_tester.py")
+        self.assertEqual(self.view["tester"]["opcodes"], self.opcodes)
+
+
 class ValidationRejectsADriftedSource(unittest.TestCase):
     """The generator refuses a contract.json that contradicts itself."""
 

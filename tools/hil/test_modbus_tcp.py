@@ -53,7 +53,7 @@ Task definition (16 bytes):
 
 Tag entry (8 bytes):
   var_addr u16  = ZPLC WORK memory address
-  var_type u8   = data type (ZPLC_TYPE_UINT = 6)
+  var_type u8   = data type (ZPLC_TYPE_UINT = 5)
   tag_id   u8   = ZPLC_TAG_MODBUS = 2
   value    u32  = Modbus register address
 
@@ -74,9 +74,23 @@ import os
 import re
 import socket
 import struct
+import sys
 import time
+from pathlib import Path
 
 import serial
+
+# Magic, segment types, task type, tag id, type ids and memory bases come from the
+# generated contract (tools/contract/contract.json); this script keeps no copy (HIL-008).
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "contract"))
+from zplc_contract import (  # noqa: E402
+    DATA_TYPE_ID,
+    MEMORY_REGION,
+    SEGMENT_TYPE,
+    TAG_ID,
+    TASK_TYPE,
+    ZPLC_MAGIC,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -174,17 +188,16 @@ def shell_quote(arg: str) -> str:
 # ZPLC bytecode builder
 # ---------------------------------------------------------------------------
 
-ZPLC_MAGIC = 0x434C505A
-ZPLC_SEG_CODE = 0x01
-ZPLC_SEG_TASK = 0x20
-ZPLC_SEG_TAGS = 0x30
+ZPLC_SEG_CODE = SEGMENT_TYPE["CODE"]
+ZPLC_SEG_TASK = SEGMENT_TYPE["TASK"]
+ZPLC_SEG_TAGS = SEGMENT_TYPE["TAGS"]
 
-ZPLC_TASK_CYCLIC = 0
-ZPLC_TYPE_UINT = 6  # ZPLC_TYPE_UINT (16-bit unsigned)
-ZPLC_TAG_MODBUS = 2
+ZPLC_TASK_CYCLIC = TASK_TYPE["CYCLIC"]
+ZPLC_TYPE_UINT = DATA_TYPE_ID["UINT"]  # 16-bit unsigned; the script used 6, which is DINT
+ZPLC_TAG_MODBUS = TAG_ID["MODBUS"]
 
-# WORK memory base address (from zplc_isa.h: ZPLC_MEM_WORK_BASE = 0x2000)
-WORK_BASE = 0x2000
+# WORK memory base address (ZPLC_MEM_WORK_BASE)
+WORK_BASE = MEMORY_REGION["WORK"]["base"]
 
 # We place our two test variables at WORK+0 and WORK+2 (2 bytes each for UINT16)
 TAG_A_VAR_ADDR = WORK_BASE + 0  # 0x2000
