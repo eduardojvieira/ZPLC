@@ -1917,7 +1917,7 @@ function emitRepeatStatement(state: CodeGenState, stmt: RepeatStatement): void {
  *   EQ
  *   JNZ case_branch_1
  *   ...
- *   JMP case_else_N (or end_case if no else)
+ *   JMP case_else_N (or case_drop_N if no else)
  *   case_branch_0:
  *       DROP
  *       <statements>
@@ -1929,6 +1929,8 @@ function emitRepeatStatement(state: CodeGenState, stmt: RepeatStatement): void {
  *   case_else_N:
  *       DROP
  *       <statements>
+ *   (no else) case_drop_N:
+ *       DROP
  *   end_case_N:
  */
 function emitCaseStatement(state: CodeGenState, stmt: CaseStatement): void {
@@ -1937,6 +1939,8 @@ function emitCaseStatement(state: CodeGenState, stmt: CaseStatement): void {
     }
     const endLabel = newLabel(state, 'end_case');
     const elseLabel = stmt.elseBranch ? newLabel(state, 'case_else') : null;
+    // Without an ELSE the selector is still on the stack when no label matches: that path drops it itself.
+    const dropLabel = stmt.elseBranch ? null : newLabel(state, 'case_drop');
 
     // Generate labels for each branch
     const branchLabels: string[] = stmt.branches.map(() => newLabel(state, 'case_branch'));
@@ -1984,8 +1988,8 @@ function emitCaseStatement(state: CodeGenState, stmt: CaseStatement): void {
         }
     }
 
-    // Jump to else or end if no match
-    emit(state, `    JMP ${elseLabel ?? endLabel}`);
+    // Jump to else, or to the drop of the selector, if no match
+    emit(state, `    JMP ${elseLabel ?? dropLabel}`);
 
     // Emit each branch body
     for (let i = 0; i < stmt.branches.length; i++) {
@@ -2008,10 +2012,10 @@ function emitCaseStatement(state: CodeGenState, stmt: CaseStatement): void {
         for (const s of stmt.elseBranch) {
             emitStatement(state, s);
         }
-    } else if (!stmt.elseBranch) {
-        // No else - still need to drop the selector before end
-        // We need a small shim to drop before ending
-        emit(state, `${newLabel(state, 'case_drop')}:`);
+    } else if (dropLabel) {
+        // The branches jump over this drop: only the no-match path reaches it, with the selector on the
+        // stack. Without it the selector leaks once per execution and a loop around the CASE is unbounded.
+        emit(state, `${dropLabel}:`);
         emit(state, `    DROP        ; discard selector (no match)`);
     }
 
