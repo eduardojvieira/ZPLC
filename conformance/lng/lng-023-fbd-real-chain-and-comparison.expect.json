@@ -1,0 +1,18 @@
+{
+  "requirement": "LNG-023",
+  "title": "FBD REAL values keep their type through a chain of numeric blocks",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "REAL",
+      "value": 7.5
+    },
+    {
+      "at": "%QX4.0",
+      "type": "BOOL",
+      "value": true
+    }
+  ]
+}

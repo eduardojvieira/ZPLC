@@ -1,0 +1,28 @@
+{
+  "requirement": "LNG-023",
+  "title": "an FBD block output is used by the blocks after it",
+  "scans": 7,
+  "scanMs": 10,
+  "inputs": [
+    {
+      "at": "%IX0.0",
+      "type": "BOOL",
+      "value": true,
+      "beforeScan": 1
+    }
+  ],
+  "expect": [
+    {
+      "at": "%QX0.0",
+      "type": "BOOL",
+      "value": false,
+      "afterScan": 1
+    },
+    {
+      "at": "%QX0.0",
+      "type": "BOOL",
+      "value": true,
+      "afterScan": 7
+    }
+  ]
+}

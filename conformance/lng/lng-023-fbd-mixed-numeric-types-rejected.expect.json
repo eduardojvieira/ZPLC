@@ -1,0 +1,9 @@
+{
+  "requirement": "LNG-023",
+  "title": "an FBD numeric block whose inputs differ in type is rejected naming the block",
+  "build": "fails",
+  "messageIncludes": [
+    "'sum'",
+    "different types"
+  ]
+}

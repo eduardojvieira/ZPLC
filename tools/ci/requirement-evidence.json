@@ -314,9 +314,11 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"6 Simulate: connect, run, watch a value change","partial":true}
   ],
   "LNG-002": [
+    {"kind":"conformance","ref":"conformance/lng/lng-002-fbd-function-not-translated.expect.json","test":"LNG-002 an FBD block of a type the transpiler does not translate is rejected by name"},
     {"kind":"conformance","ref":"conformance/lng/lng-002-fbd-unknown-block.expect.json","test":"LNG-002 an FBD block the transpiler does not know is rejected"},
     {"kind":"conformance","ref":"conformance/lng/lng-002-ld-unknown-element.expect.json","test":"LNG-002 an LD element the transpiler does not know is rejected by name"},
     {"kind":"unit","ref":"packages/zplc-ide/src/compiler/il/il.test.ts","test":"IL transpiler errors (LNG-002, LNG-017, LNG-018)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"FBD wiring and types (LNG-023, LNG-002)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"LD power flow (LNG-021, LNG-022, LNG-002)"}
   ],
   "LNG-005": [
@@ -371,8 +373,15 @@
   ],
   "LNG-023": [
     {"kind":"conformance","ref":"conformance/lng/lng-023-fbd-and-gate.expect.json","test":"LNG-023 an FBD AND gate combines two inputs"},
+    {"kind":"conformance","ref":"conformance/lng/lng-023-fbd-feedback-loop.expect.json","test":"LNG-023 an FBD feedback loop is rejected naming a block in the loop"},
+    {"kind":"conformance","ref":"conformance/lng/lng-023-fbd-gate-with-three-inputs.expect.json","test":"LNG-023 an FBD gate takes more than two inputs"},
+    {"kind":"conformance","ref":"conformance/lng/lng-023-fbd-mixed-numeric-types-rejected.expect.json","test":"LNG-023 an FBD numeric block whose inputs differ in type is rejected naming the block"},
     {"kind":"conformance","ref":"conformance/lng/lng-023-fbd-real-addition.expect.json","test":"LNG-023 FBD numeric blocks keep the type of their inputs"},
-    {"kind":"conformance","ref":"conformance/lng/lng-023-fbd-unwired-input.expect.json","test":"LNG-023 an FBD block with an unwired required input is rejected"}
+    {"kind":"conformance","ref":"conformance/lng/lng-023-fbd-real-chain-and-comparison.expect.json","test":"LNG-023 FBD REAL values keep their type through a chain of numeric blocks"},
+    {"kind":"conformance","ref":"conformance/lng/lng-023-fbd-timer-output-feeds-the-next-block.expect.json","test":"LNG-023 an FBD block output is used by the blocks after it"},
+    {"kind":"conformance","ref":"conformance/lng/lng-023-fbd-unwired-input.expect.json","test":"LNG-023 an FBD block with an unwired required input is rejected"},
+    {"kind":"conformance","ref":"conformance/lng/lng-023-fbd-unwired-output-block.expect.json","test":"LNG-023 an FBD output block with nothing wired to it is rejected, not written as 0"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"FBD wiring and types (LNG-023, LNG-002)"}
   ],
   "LNG-024": [
     {"kind":"conformance","ref":"conformance/lng/lng-024-sfc-one-transition-per-scan.expect.json","test":"LNG-024 an SFC chain crosses one transition per scan"}

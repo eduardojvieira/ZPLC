@@ -1,0 +1,134 @@
+{
+  "name": "Delay",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "Permit",
+        "type": "BOOL",
+        "address": "%IX0.0"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Motor",
+        "type": "BOOL",
+        "address": "%QX0.0"
+      }
+    ]
+  },
+  "blocks": [
+    {
+      "id": "on",
+      "type": "constant",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "dataType": "BOOL",
+      "value": true
+    },
+    {
+      "id": "pt",
+      "type": "constant",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "dataType": "TIME",
+      "value": "T#50ms"
+    },
+    {
+      "id": "tmr",
+      "type": "TON",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "instanceName": "DelayTimer2"
+    },
+    {
+      "id": "permit",
+      "type": "input",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "variableName": "Permit"
+    },
+    {
+      "id": "and1",
+      "type": "AND",
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "out",
+      "type": "output",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "variableName": "Motor"
+    }
+  ],
+  "connections": [
+    {
+      "id": "w1",
+      "from": {
+        "block": "on",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "tmr",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "w2",
+      "from": {
+        "block": "pt",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "tmr",
+        "port": "PT"
+      }
+    },
+    {
+      "id": "w3",
+      "from": {
+        "block": "tmr",
+        "port": "Q"
+      },
+      "to": {
+        "block": "and1",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "w4",
+      "from": {
+        "block": "permit",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "and1",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "w5",
+      "from": {
+        "block": "and1",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "out",
+        "port": "IN"
+      }
+    }
+  ]
+}

@@ -195,6 +195,9 @@ describe('FBD to ST Transpiler', () => {
           outputs: [],
         },
         blocks: [
+          { id: 'enable', type: 'constant', dataType: 'BOOL', value: true, position: { x: 0, y: 0 }, outputs: [{ name: 'OUT', type: 'BOOL' }] },
+          { id: 'value', type: 'constant', dataType: 'BOOL', value: true, position: { x: 0, y: 50 }, outputs: [{ name: 'OUT', type: 'BOOL' }] },
+          { id: 'addr', type: 'constant', dataType: 'UINT', value: 1, position: { x: 0, y: 100 }, outputs: [{ name: 'OUT', type: 'UINT' }] },
           {
             id: 'mb1',
             type: 'MB_COIL',
@@ -208,7 +211,11 @@ describe('FBD to ST Transpiler', () => {
             outputs: [{ name: 'STATUS', type: 'BOOL' }],
           },
         ],
-        connections: [],
+        connections: [
+          { id: 'c1', from: { block: 'enable', port: 'OUT' }, to: { block: 'mb1', port: 'EN' } },
+          { id: 'c2', from: { block: 'value', port: 'OUT' }, to: { block: 'mb1', port: 'IN' } },
+          { id: 'c3', from: { block: 'addr', port: 'OUT' }, to: { block: 'mb1', port: 'ADDR' } },
+        ],
       };
 
       const result = transpileFBDToST(model);
@@ -1042,6 +1049,127 @@ describe('LD to ST Transpiler', () => {
   });
 });
 
+describe('FBD wiring and types (LNG-023, LNG-002)', () => {
+  const block = (id: string, type: string, extra: Record<string, unknown> = {}) => ({ id, type, position: { x: 0, y: 0 }, ...extra });
+  const wire = (id: string, from: string, fromPort: string, to: string, toPort: string) => ({ id, from: { block: from, port: fromPort }, to: { block: to, port: toPort } });
+  const model = (blocks: unknown[], connections: unknown[], variables: Record<string, unknown[]> = {}): FBDModel => ({
+    name: 'Wired',
+    variables: { local: [], outputs: [], ...variables },
+    blocks,
+    connections,
+  } as unknown as FBDModel);
+  const rejected = (input: FBDModel) => {
+    const result = transpileFBDToST(input);
+    expect(result.success).toBe(false);
+    expect(result.source).toBe('');
+    return result.errors;
+  };
+
+  it('keeps REAL through numeric blocks: temporaries are REAL, never INT', () => {
+    const result = transpileFBDToST(model(
+      [block('r1', 'input', { variableName: 'R1' }), block('two', 'constant', { dataType: 'INT', value: 2 }), block('mul', 'MUL'), block('out', 'output', { variableName: 'Out' })],
+      [wire('w1', 'r1', 'OUT', 'mul', 'IN1'), wire('w2', 'two', 'OUT', 'mul', 'IN2'), wire('w3', 'mul', 'OUT', 'out', 'IN')],
+      { local: [{ name: 'R1', type: 'REAL' }], outputs: [{ name: 'Out', type: 'REAL' }] },
+    ));
+    expect(result.success).toBe(true);
+    expect(result.source).toContain('_mul_OUT : REAL;');
+    // The integer constant meets a REAL: it is written as one
+    expect(result.source).toContain('_mul_OUT := R1 * 2.0;');
+    expect(assemble(compileST(result.source)).bytecode.length).toBeGreaterThan(0);
+  });
+
+  it('rejects inputs of different types and a type it cannot determine, naming the block', () => {
+    const mixed = model(
+      [block('a', 'input', { variableName: 'Count' }), block('b', 'input', { variableName: 'Level' }), block('sum', 'ADD'), block('out', 'output', { variableName: 'Out' })],
+      [wire('w1', 'a', 'OUT', 'sum', 'IN1'), wire('w2', 'b', 'OUT', 'sum', 'IN2'), wire('w3', 'sum', 'OUT', 'out', 'IN')],
+      { local: [{ name: 'Count', type: 'INT' }, { name: 'Level', type: 'REAL' }], outputs: [{ name: 'Out', type: 'REAL' }] },
+    );
+    expect(rejected(mixed)).toEqual([expect.stringMatching(/block 'sum' \(ADD\): its inputs have different types \(INT, REAL\)/)]);
+
+    const unknown = model(
+      [block('a', 'input', { variableName: 'Ghost' }), block('n', 'constant', { dataType: 'BOOL', value: true }), block('sum', 'ADD'), block('out', 'output', { variableName: 'Out' })],
+      [wire('w1', 'a', 'OUT', 'sum', 'IN1'), wire('w3', 'sum', 'OUT', 'out', 'IN')],
+    );
+    expect(rejected(unknown).join('\n')).toContain("block 'sum' (ADD)");
+  });
+
+  it('names the block and the port of an input that is not wired', () => {
+    const open = model(
+      [block('in1', 'input', { variableName: 'A' }), block('and1', 'AND'), block('out', 'output', { variableName: 'Res' })],
+      [wire('c1', 'in1', 'OUT', 'and1', 'IN1'), wire('c2', 'and1', 'OUT', 'out', 'IN')],
+      { local: [{ name: 'A', type: 'BOOL' }], outputs: [{ name: 'Res', type: 'BOOL' }] },
+    );
+    expect(rejected(open)).toEqual(["FBD block 'and1' (AND): input 'IN2' is not wired"]);
+    expect(rejected(model([block('out', 'output', { variableName: 'Res' })], []))).toEqual(["FBD block 'out' (output): input 'IN' is not wired"]);
+  });
+
+  it('leaves an open input of a function block at its default instead of passing 0', () => {
+    const result = transpileFBDToST(model(
+      [block('on', 'constant', { dataType: 'BOOL', value: true }), block('count', 'CTU', { instanceName: 'Parts' }), block('out', 'output', { variableName: 'Full' })],
+      [wire('c1', 'on', 'OUT', 'count', 'CU'), wire('c2', 'count', 'Q', 'out', 'IN')],
+      { outputs: [{ name: 'Full', type: 'BOOL' }] },
+    ));
+    expect(result.success).toBe(true);
+    expect(result.source).toContain('Parts(CU := TRUE);');
+  });
+
+  it('takes more than two inputs on a gate and the ports it was given', () => {
+    const ports = ['IN1', 'IN2', 'IN3'].map((name) => ({ name, type: 'BOOL' }));
+    const consts = ['a', 'b', 'c'].map((id, index) => block(id, 'constant', { dataType: 'BOOL', value: index !== 1 }));
+    const result = transpileFBDToST(model(
+      [...consts, block('or3', 'OR', { inputs: ports }), block('nor3', 'NOR', { inputs: ports }), block('o1', 'output', { variableName: 'X' }), block('o2', 'output', { variableName: 'Y' })],
+      [
+        wire('w1', 'a', 'OUT', 'or3', 'IN1'), wire('w2', 'b', 'OUT', 'or3', 'IN2'), wire('w3', 'c', 'OUT', 'or3', 'IN3'),
+        wire('w4', 'a', 'OUT', 'nor3', 'IN1'), wire('w5', 'b', 'OUT', 'nor3', 'IN2'), wire('w6', 'c', 'OUT', 'nor3', 'IN3'),
+        wire('w7', 'or3', 'OUT', 'o1', 'IN'), wire('w8', 'nor3', 'OUT', 'o2', 'IN'),
+      ],
+      { outputs: [{ name: 'X', type: 'BOOL' }, { name: 'Y', type: 'BOOL' }] },
+    ));
+    expect(result.success).toBe(true);
+    expect(result.source).toContain('TRUE OR FALSE OR TRUE');
+    expect(result.source).toContain('NOT (TRUE OR FALSE OR TRUE)');
+  });
+
+  it('rejects a block it does not translate and a feedback loop, naming the block', () => {
+    expect(rejected(model([block('mystery', 'MY_USER_FB', { instanceName: 'm' })], []))).toEqual([expect.stringContaining("block 'mystery' (MY_USER_FB)")]);
+    // A palette function that has no translation yet is refused as well, not turned into a comment
+    expect(rejected(model([block('root', 'SQRT')], []))).toEqual([expect.stringContaining("block 'root' (SQRT)")]);
+    const loop = model(
+      [block('first', 'OR'), block('second', 'AND')],
+      [wire('w1', 'first', 'OUT', 'second', 'IN1'), wire('w2', 'second', 'OUT', 'first', 'IN1')],
+    );
+    expect(rejected(loop)).toEqual([expect.stringMatching(/Circular dependency detected involving block: (first|second)/)]);
+  });
+
+  it('declares the input variables the blocks read', () => {
+    const result = transpileFBDToST(model(
+      [block('in1', 'input', { variableName: 'Start' }), block('out', 'output', { variableName: 'Run' })],
+      [wire('w', 'in1', 'OUT', 'out', 'IN')],
+      { inputs: [{ name: 'Start', type: 'BOOL', address: '%I0.0' }], outputs: [{ name: 'Run', type: 'BOOL' }] },
+    ));
+    expect(result.success).toBe(true);
+    expect(result.source).toMatch(/VAR_INPUT\s+Start AT %I0\.0 : BOOL;/);
+    expect(assemble(compileST(result.source)).bytecode.length).toBeGreaterThan(0);
+  });
+
+  it('refuses to write to an input block and takes the type of a block output from its consumer', () => {
+    const wired = model(
+      [block('on', 'constant', { dataType: 'BOOL', value: true }), block('in1', 'input', { variableName: 'A' })],
+      [wire('w', 'on', 'OUT', 'in1', 'IN')],
+      { local: [{ name: 'A', type: 'BOOL' }] },
+    );
+    expect(rejected(wired)).toEqual([expect.stringContaining("block 'in1' (input): its input 'IN' is wired")]);
+
+    const subscribe = transpileFBDToST(model(
+      [block('on', 'constant', { dataType: 'BOOL', value: true }), block('sub', 'COMM_SUBSCRIBE', { instanceName: 'Sub' }), block('out', 'output', { variableName: 'Level' })],
+      [wire('c1', 'on', 'OUT', 'sub', 'EN'), wire('c2', 'sub', 'OUT', 'out', 'IN')],
+      { outputs: [{ name: 'Level', type: 'REAL' }] },
+    ));
+    expect(subscribe.success).toBe(true);
+    expect(subscribe.source).toContain('_sub_OUT : REAL;');
+  });
+});
+
 describe('LD power flow (LNG-021, LNG-022, LNG-002)', () => {
   const model = (rungs: unknown[], extra: Record<string, unknown[]> = {}): LDModel => ({
     name: 'Flow',
@@ -1261,7 +1389,7 @@ describe('FBD → ST → Assembly → Bytecode Pipeline', () => {
       connections: [
         { id: 'c1', from: { block: 'en', port: 'OUT' }, to: { block: 'timer', port: 'IN' } },
         { id: 'c2', from: { block: 'pt', port: 'OUT' }, to: { block: 'timer', port: 'PT' } },
-        // Note: Timer Q output needs to connect to 'out' - but our transpiler handles FB outputs differently
+        { id: 'c3', from: { block: 'timer', port: 'Q' }, to: { block: 'out', port: 'IN' } },
       ]
     };
     

@@ -1,0 +1,113 @@
+{
+  "name": "Loop",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "A",
+        "type": "BOOL",
+        "address": "%IX0.0"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Res",
+        "type": "BOOL",
+        "address": "%QX0.0"
+      }
+    ]
+  },
+  "blocks": [
+    {
+      "id": "a",
+      "type": "input",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "variableName": "A"
+    },
+    {
+      "id": "first",
+      "type": "OR",
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "second",
+      "type": "AND",
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "out",
+      "type": "output",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "variableName": "Res"
+    }
+  ],
+  "connections": [
+    {
+      "id": "w1",
+      "from": {
+        "block": "a",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "first",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "w2",
+      "from": {
+        "block": "second",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "first",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "w3",
+      "from": {
+        "block": "first",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "second",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "w4",
+      "from": {
+        "block": "a",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "second",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "w5",
+      "from": {
+        "block": "second",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "out",
+        "port": "IN"
+      }
+    }
+  ]
+}
