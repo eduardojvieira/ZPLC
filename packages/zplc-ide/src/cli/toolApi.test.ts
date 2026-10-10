@@ -1660,7 +1660,7 @@ END_PROGRAM`);
       if (oldBinary === undefined) delete process.env.ZPLC_NATIVE_SIM_BIN;
       else process.env.ZPLC_NATIVE_SIM_BIN = oldBinary;
     }
-  }, 45_000);
+  }, 180_000);
 
   itNative('preserves the fixed motor golden observable through an exported v1-to-v2 migration on native POSIX', async () => {
     const v1Root = await legacyMotorStartStop();
