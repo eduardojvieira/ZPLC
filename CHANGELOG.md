@@ -96,6 +96,25 @@ All notable changes are documented here.
   position comes before the count in `MID`, `DELETE` and `REPLACE` (IEC 61131-3
   writes the length first); `WSTRING` supports declaration, initial values,
   assignment and `LEN`.
+- The counters `CTU`, `CTD` and `CTUD` keep their edge detector running while
+  Reset or Load is TRUE, so a pulse that rises during Reset or Load is no longer
+  counted when it is released; in `CTUD`, Reset beats Load and both beat the count
+  edges, an up edge and a down edge in one scan cancel, and `CV` stops at 32767
+  instead of wrapping to -32768 (CMP-058). Counting below zero and negative
+  presets still do not follow IEC 61131-3 (CMP-011): see the standard library
+  reference.
+- The compiler reports every independent error of a file, in order and at its own
+  line (a duplicate declaration and an unknown member no longer at line 0; an
+  unterminated comment where it opens), and accepts the forms it used to reject:
+  based literals (`2#`, `8#`, `16#`), digit separators and typed literals, `&`,
+  `**`, bit access `w.0`, `/* */` comments and the empty statement, `VAR RETAIN`
+  and `VAR NON_RETAIN`, several names in one declaration, `VAR_EXTERNAL`,
+  `VAR_TEMP` in a program, `VAR_OUTPUT` in a function, type aliases, several
+  types in one `TYPE` block, function-block instances inside function blocks and
+  arrays of instances. Library block names are no longer reserved words, and a
+  call that passes an argument no `VAR_INPUT` takes is refused (CMP-006,
+  CMP-007, CMP-009, CMP-029 to CMP-033, CMP-035, CMP-038). A `RETAIN` variable
+  takes its initial value only when the retentive region holds no saved state.
 
 ## 2.0.0-rc.3 - 2026-09-01
 

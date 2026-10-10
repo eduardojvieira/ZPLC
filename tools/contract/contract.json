@@ -218,7 +218,7 @@
       {"name": "ULINT", "value": "0x09", "size": 8, "doc": "Unsigned 64-bit integer"},
       {"name": "REAL", "value": "0x0A", "size": 4, "doc": "32-bit IEEE 754 float"},
       {"name": "LREAL", "value": "0x0B", "size": 8, "doc": "64-bit IEEE 754 double"},
-      {"name": "TIME", "value": "0x0C", "size": 4, "doc": "Time duration (ms as DINT)"},
+      {"name": "TIME", "value": "0x0C", "size": 4, "doc": "Time duration (unsigned 32-bit milliseconds)"},
       {"name": "BYTE", "value": "0x10", "size": 1, "doc": "8-bit bit string"},
       {"name": "WORD", "value": "0x11", "size": 2, "doc": "16-bit bit string"},
       {"name": "DWORD", "value": "0x12", "size": 4, "doc": "32-bit bit string"},
