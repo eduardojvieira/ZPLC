@@ -74,36 +74,74 @@
   ],
   "CMP-011": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-011-abs-negative-int.expect.json","test":"CMP-011 ABS of a negative INT"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-011-case-on-negative-int.expect.json","test":"CMP-011 CASE selects on a negative INT and on a range of negatives"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-011-dint-limits.expect.json","test":"CMP-011 DINT holds -2147483648 and 2147483647 through compare and add"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-011-for-loop-over-negative-int.expect.json","test":"CMP-011 a FOR loop counts an INT counter through negative values"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-011-function-returns-negative-int.expect.json","test":"CMP-011 a FUNCTION returning a negative INT"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-011-int-arithmetic-positive.expect.json","test":"CMP-011 INT arithmetic with positive operands"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-011-int-compare-negative.expect.json","test":"CMP-011 INT comparison with a negative operand"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-011-int-direct-input.expect.json","test":"CMP-011 a negative INT read from a direct input"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-011-int-divide-negative.expect.json","test":"CMP-011 INT division of a negative operand"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-011-int-limits.expect.json","test":"CMP-011 INT holds -32768 and 32767 through compare and widening"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-011-int-minus-one.expect.json","test":"CMP-011 INT -1 is negative, equal to -1 and widens to -1"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-011-int-to-real-negative.expect.json","test":"CMP-011 INT_TO_REAL of a negative INT"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-011-int-widens-to-dint.expect.json","test":"CMP-011 INT widens to DINT keeping its sign"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-011-max-negative-int.expect.json","test":"CMP-011 MAX of a negative INT and a positive one"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-011-mixed-int-dint-real.expect.json","test":"CMP-011 INT, DINT and REAL operands mix with their signs"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-011-sint-limits.expect.json","test":"CMP-011 SINT holds -128 and 127 through compare and widening"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-011-sint-negative-arithmetic.expect.json","test":"CMP-011 SINT arithmetic with a negative operand"}
   ],
   "CMP-012": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-012-udint-around-2-31.expect.json","test":"CMP-012 UDINT compares correctly on both sides of 2147483648"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-012-udint-compare-unsigned.expect.json","test":"CMP-012 UDINT comparison above 2147483647"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-012-udint-divide-and-modulo.expect.json","test":"CMP-012 UDINT division and modulo above 2147483647, by small and by large divisors"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-012-udint-divide-unsigned.expect.json","test":"CMP-012 UDINT division above 2147483647"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-012-udint-literal-above-int32.expect.json","test":"CMP-012 UDINT literal above 2147483647"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-012-uint-compare-above-int16.expect.json","test":"CMP-012 UINT comparison above 32767"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-012-udint-max.expect.json","test":"CMP-012 UDINT 4294967295 is the largest value in every comparison"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-012-udint-signed-range-unchanged.expect.json","test":"CMP-012 UDINT division and modulo below 2147483648 are plain"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-012-udint-to-real.expect.json","test":"CMP-012 UDINT above 2147483647 converts to REAL as a positive number"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-012-uint-65535.expect.json","test":"CMP-012 UINT 65535 compares and widens as a positive number"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-012-uint-compare-above-int16.expect.json","test":"CMP-012 UINT comparison above 32767"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_arith_edges.c","test":"The same pattern orders differently signed and unsigned: the compiler picks LT/GT or LTU/GTU by type (CMP-012)."}
   ],
   "CMP-013": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-013-int-plus-real.expect.json","test":"CMP-013 a negative INT plus a REAL"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-013-int-times-real.expect.json","test":"CMP-013 INT times REAL"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-013-int-to-real-in-function-argument.expect.json","test":"CMP-013 an INT given to a REAL parameter of a FUNCTION is converted"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-013-int-to-real-in-method-argument.expect.json","test":"CMP-013 an INT given to a REAL parameter of a METHOD is converted"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-013-real-arithmetic-positive.expect.json","test":"CMP-013 REAL arithmetic with positive operands"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-013-real-assigned-from-integer.expect.json","test":"CMP-013 a REAL variable takes an integer value and an integer initial value"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-013-real-compare-negative.expect.json","test":"CMP-013 REAL comparison of two negative values"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-013-real-infinities-order.expect.json","test":"CMP-013 REAL infinities order below and above every finite value and equal themselves"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-013-real-max-min-limit-abs.expect.json","test":"CMP-013 MAX, MIN, LIMIT and ABS on negative REAL values"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-013-real-nan-is-unordered.expect.json","test":"CMP-013 REAL NaN is not equal, less or greater than anything, and not equal to itself"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-013-real-negate-variable.expect.json","test":"CMP-013 REAL negation of a variable"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-013-real-negative-literal.expect.json","test":"CMP-013 REAL negative literal"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-013-real-negative-zero-equals-zero.expect.json","test":"CMP-013 REAL -0.0 equals 0.0 and is not below it"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-013-real-order-with-signs.expect.json","test":"CMP-013 REAL comparison orders negatives, zero and positives"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-013-real-plus-integer-literal.expect.json","test":"CMP-013 REAL plus an integer literal"}
   ],
   "CMP-014": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-014-and-or-xor-word.expect.json","test":"CMP-014 AND, OR and XOR on WORD use the full 16 bits"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-014-not-byte-in-expression.expect.json","test":"CMP-014 NOT on a BYTE stays within 8 bits inside an expression"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-014-not-byte.expect.json","test":"CMP-014 NOT on a BYTE"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-014-not-word.expect.json","test":"CMP-014 NOT on a WORD"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-014-not-dword.expect.json","test":"CMP-014 NOT on a DWORD operates on all 32 bits"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-014-not-word.expect.json","test":"CMP-014 NOT on a WORD"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-014-rol-byte-rotates-within-8-bits.expect.json","test":"CMP-014 ROL on a BYTE rotates within 8 bits"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-014-ror-word-rotates-within-16-bits.expect.json","test":"CMP-014 ROR on a WORD rotates within 16 bits"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-014-shl-byte-keeps-8-bits.expect.json","test":"CMP-014 SHL on a BYTE drops the bits shifted past bit 7"}
   ],
   "CMP-015": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-dt-plus-time-and-difference.expect.json","test":"CMP-015 DT compares and takes a TIME; the difference of two DT is a TIME"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lint-add-and-subtract-carry.expect.json","test":"CMP-015 LINT addition and subtraction carry across the 32-bit word boundary"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lint-extreme-values.expect.json","test":"CMP-015 LINT holds 9223372036854775807 and -9223372036854775808"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lint-function-parameter-and-result.expect.json","test":"CMP-015 a LINT passes through a FUNCTION parameter and result"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-015-lint-literal-above-int32.expect.json","test":"CMP-015 LINT holds a literal above 4294967295"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lint-multiplication-is-refused.expect.json","test":"CMP-015 a LINT multiplication is refused until the VM has the opcode"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-015-lint-small-value.expect.json","test":"CMP-015 LINT initialised and incremented"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lreal-double-precision.expect.json","test":"CMP-015 LREAL keeps double precision"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lint-widens-and-narrows.expect.json","test":"CMP-015 a LINT takes a DINT with its sign and a UDINT without one; a DINT takes the low word"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lreal-double-precision.expect.json","test":"CMP-015 LREAL keeps double precision"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-ulint-compares-unsigned.expect.json","test":"CMP-015 ULINT 18446744073709551615 is above 1 and LWORD bit operations are 64 bits wide"}
   ],
   "CMP-016": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-016-dint-abs-min.expect.json","test":"CMP-016 ABS of the most negative DINT is the most negative DINT"},
@@ -120,11 +158,24 @@
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_arith_edges.c","test":"Defined results for the integer and float edge cases of the VM (RT-005, CMP-016)"}
   ],
   "CMP-017": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-017-date-assign-and-compare.expect.json","test":"CMP-017 DATE is assigned from a literal and compares"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-017-dt-compare-and-assign.expect.json","test":"CMP-017 DT is assigned from a literal and compares across the 32-bit word boundary"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-017-time-arithmetic-above-24-days.expect.json","test":"CMP-017 TIME addition, division and comparison above 24.8 days"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-017-time-compare-short.expect.json","test":"CMP-017 TIME comparison of short durations"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-017-time-compound-literal.expect.json","test":"CMP-017 TIME compound literal T#1h30m"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-017-time-fraction-on-the-last-unit.expect.json","test":"CMP-017 a fraction on the last component of a TIME literal"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-017-time-fractional-literal.expect.json","test":"CMP-017 TIME fractional literal T#1.5s"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-017-time-literal-above-the-range.expect.json","test":"CMP-017 a TIME literal above 49d17h2m47s295ms is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-017-time-literal-below-a-millisecond.expect.json","test":"CMP-017 a TIME literal that is not a whole number of milliseconds is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-017-time-literal-negative.expect.json","test":"CMP-017 a negative TIME literal is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-017-time-literal-units-out-of-order.expect.json","test":"CMP-017 a TIME literal with its units out of order is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-017-time-maximum-literal.expect.json","test":"CMP-017 the largest TIME literal is 49d17h2m47s295ms"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-017-time-over-24-days.expect.json","test":"CMP-017 TIME comparison beyond 24.8 days"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-017-tod-plus-time.expect.json","test":"CMP-017 TOD plus TIME"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-017-time-subtraction-without-spaces.expect.json","test":"CMP-017 T#5s-T#3s is a subtraction of two TIME literals"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-017-time-underscores-and-all-units.expect.json","test":"CMP-017 a TIME literal with underscores between its components"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-017-tod-compare-and-subtract-time.expect.json","test":"CMP-017 TOD compares and subtracts a TIME"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-017-tod-plus-time.expect.json","test":"CMP-017 TOD plus TIME"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-017-ton-with-a-30-day-preset-is-not-done.expect.json","test":"CMP-017 a TON with a 30 day preset is not done after 20 ms"}
   ],
   "CMP-018": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-018-constant-does-not-fit.expect.json","test":"CMP-018 a constant that does not fit its type is rejected"}
