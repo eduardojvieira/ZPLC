@@ -73,7 +73,7 @@ simultáneas.
 
 ```bash
 tools/firmware-test/run.sh native
-tools/firmware-test/run.sh host host32 native32 qemu-m3 qemu-m0
+tools/firmware-test/run.sh host host32 native32 qemu-m3 qemu-m0 app
 tools/firmware-test/run.sh size rpi-pico-rp2040
 tools/firmware-test/run.sh all
 ```
@@ -91,6 +91,7 @@ línea de resumen por escenario o por placa. Toda la salida queda bajo
 | `native32` | Lo mismo en `native_sim/native`, la variante de 32 bits | Lo mismo, con un modelo de datos de 32 bits | Lo mismo |
 | `qemu-m3` | Las suites Zephyr en `qemu_cortex_m3`, más las suites del núcleo | Comportamiento sobre un conjunto de instrucciones Cortex-M real con 64 KB de RAM, enums cortos y una pila de hilo de 1 KB por defecto | Tiempos: QEMU no es exacto por ciclo. Las regiones de memoria de la VM se reducen para caber |
 | `qemu-m0` | El subconjunto Cortex-M0 en `qemu_cortex_m0` (16 KB de RAM) | División, desplazamientos, conversión de float y acceso no alineado en un núcleo ARMv6-M sin división por hardware ni acceso no alineado | La suite completa de la VM: no cabe, vea los límites más abajo |
+| `app` | La prueba de host del codificador Sparkplug en `firmware/app/tests`, contra los archivos nanopb generados por una compilación del Arduino Opta | El codificador produce las cargas esperadas en un host de 64 bits | El cliente MQTT, TLS ni ningún comportamiento de red |
 | `size` | `firmware/app` compilado para cada placa soportada | Flash y RAM de la imagen frente al presupuesto registrado | Uso de pila y de heap en ejecución, ni que la imagen corra |
 
 ## Cómo leer el resultado
@@ -196,8 +197,8 @@ ni la marca máxima del heap.
   programas más grandes que la región de código `.tiny`.
 - `hal_gpio_policy.partial_required` y `post_shutdown` necesitan el emulador
   de GPIO y el alias de LED de `native_sim`.
-- `firmware/app/tests` es una prueba de host que necesita un directorio de
-  compilación de Zephyr y estos scripts no la ejecutan.
+- El modo `app` todavía no forma parte de la integración continua: ningún
+  trabajo compila una placa y luego ejecuta la prueba de host.
 - Dos casos de integración de `test_vm_core.c` se omiten en todos los
   destinos, el host incluido, porque los binarios de ejemplo que cargan son
   anteriores al campo CRC. Las líneas `SKIP:` están en el registro de la

@@ -17,6 +17,6 @@
     { "pattern": "packages/zplc-hil/tests/**/*.test.ts", "requirement": "HIL-001", "reason": "case tables for a board runner; the package has no test script and the files contain no tests that run" },
     { "pattern": "tools/hil/test_*.py", "requirement": "HIL-004", "reason": "device scripts that need a connected board; each must exit with a failure status or be listed as a bench utility" },
     { "pattern": "tools/test_crc32_cross.py", "requirement": "HIL-017", "reason": "compares a library with itself; it must compare the C implementation with the TypeScript one" },
-    { "pattern": "firmware/app/tests/*.c", "requirement": "VF-022", "reason": "host test that needs nanopb and a Zephyr build directory, with fixed paths of one machine; no requirement names its fix yet, owner to assign" }
+    { "pattern": "firmware/app/tests/*.c", "requirement": "VF-022", "reason": "host test that needs nanopb and the protobuf files of a Zephyr board build; tools/firmware-test/run.sh app runs it on a developer machine, but no CI job builds a board and then runs it yet" }
   ]
 }

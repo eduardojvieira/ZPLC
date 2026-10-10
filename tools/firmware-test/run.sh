@@ -24,6 +24,8 @@ modes (what each one proves: docs/docs/development/firmware-testing.md):
   native32  Zephyr suites on native_sim/native, the 32-bit variant
   qemu-m3   Zephyr suites on qemu_cortex_m3 (Cortex-M3 under QEMU)
   qemu-m0   the Cortex-M0 subset on qemu_cortex_m0 (16 KB of RAM)
+  app       host test of firmware/app (Sparkplug encoder) against the nanopb
+            output of a board build
   size      build firmware/app for every supported board, print flash and RAM
             next to size-budget.json, fail when a size is over its budget
             (board ids after "size" restrict it: run.sh size rpi-pico-rp2040)
@@ -39,7 +41,7 @@ last_mode=""
 while [ $# -gt 0 ]; do
   case "$1" in
     -h | --help | help) usage; exit 0 ;;
-    host | host32 | native | native32 | qemu-m3 | qemu-m0 | size | all)
+    host | host32 | native | native32 | qemu-m3 | qemu-m0 | app | size | all)
       MODES+=("$1")
       last_mode="$1"
       ;;
@@ -141,15 +143,27 @@ run_host() { # mode extra-flags
 }
 
 # ---------------------------------------------------------------------- size
+BOARDS_JSON="${ZPLC_FW_REPO}/firmware/app/boards/supported-boards.v1.5.0.json"
+
+build_board() { # board-id zephyr-board; log in $OUT/size/<id>.log
+  local id="$1" board="$2" logs="${OUT}/size"
+  mkdir -p "${logs}"
+  echo "==> building firmware/app for ${id} (${board})"
+  if [ "${id}" = "esp32-s3-devkitc" ]; then
+    (cd "${ZPLC_FW_WS}" && west blobs fetch hal_espressif) > "${logs}/${id}.blobs.log" 2>&1 || true
+  fi
+  (cd "${ZPLC_FW_WS}" && west build -p always -b "${board}" zplc/firmware/app -d "${logs}/${id}") \
+    > "${logs}/${id}.log" 2>&1
+}
+
 run_size() {
-  local boards_json="${ZPLC_FW_REPO}/firmware/app/boards/supported-boards.v1.5.0.json"
   local logs="${OUT}/size" rc=0 listed id board wanted b
   mkdir -p "${logs}"
   listed="$(python3 -B -I -c '
 import json, sys
 for board in json.load(open(sys.argv[1])):
     print(board["board_id"], board["zephyr_board"])
-' "${boards_json}")"
+' "${BOARDS_JSON}")"
 
   while read -r id board; do
     if [ ${#SIZE_BOARDS[@]} -gt 0 ]; then
@@ -157,12 +171,7 @@ for board in json.load(open(sys.argv[1])):
       for b in "${SIZE_BOARDS[@]}"; do [ "${b}" = "${id}" ] && wanted=1; done
       [ "${wanted}" -eq 1 ] || continue
     fi
-    echo "==> size: building firmware/app for ${id} (${board})"
-    if [ "${id}" = "esp32-s3-devkitc" ]; then
-      (cd "${ZPLC_FW_WS}" && west blobs fetch hal_espressif) > "${logs}/${id}.blobs.log" 2>&1 || true
-    fi
-    (cd "${ZPLC_FW_WS}" && west build -p always -b "${board}" zplc/firmware/app -d "${logs}/${id}") \
-      > "${logs}/${id}.log" 2>&1 || {
+    build_board "${id}" "${board}" || {
       record "FAIL size ${id}: west build failed (see ${logs}/${id}.log)"
       rc=1
     }
@@ -175,12 +184,41 @@ for board in json.load(open(sys.argv[1])):
   return "${rc}"
 }
 
+# ----------------------------------------------------------------------- app
+# firmware/app/tests is a plain CMake project that needs the nanopb sources and
+# the protobuf files a Zephyr build generates. A board that enables MQTT has
+# them; the Arduino Opta build is the one used here.
+run_app() {
+  local id="arduino-opta-wifi-m7" board="arduino_opta/stm32h747xx/m7" rc=0
+  local proto="${OUT}/size/${id}/proto" build="${OUT}/app-build"
+  if [ ! -f "${proto}/sparkplug_b.pb.h" ]; then
+    build_board "${id}" "${board}" || {
+      record "FAIL app: the ${id} build that generates the protobuf files failed (see ${OUT}/size/${id}.log)"
+      return 1
+    }
+  fi
+  echo "==> app: cmake + ctest of firmware/app/tests"
+  (
+    set -e
+    cmake -S "${ZPLC_FW_REPO}/firmware/app/tests" -B "${build}" \
+      -DNANOPB_DIR="${ZPLC_FW_WS}/modules/lib/nanopb" -DPROTO_BUILD_DIR="${proto}"
+    cmake --build "${build}" --parallel
+    ctest --test-dir "${build}" --output-on-failure
+  ) > "${OUT}/app.log" 2>&1 || rc=$?
+  if [ "${rc}" -eq 0 ]; then
+    record "PASS app  ctest test_encode_sparkplug_payload (host, against the ${id} nanopb output)"
+  else
+    record "FAIL app  ctest failed (see ${OUT}/app.log)"
+  fi
+  return "${rc}"
+}
+
 # ---------------------------------------------------------------------- main
 expand_modes() {
   local m
   for m in "${MODES[@]}"; do
     if [ "${m}" = "all" ]; then
-      printf '%s\n' host host32 native native32 qemu-m3 qemu-m0 size
+      printf '%s\n' host host32 native native32 qemu-m3 qemu-m0 size app
     else
       printf '%s\n' "${m}"
     fi
@@ -198,6 +236,7 @@ while IFS= read -r mode; do
     native32) run_twister native32 native_sim/native || rc=$? ;;
     qemu-m3) run_twister qemu-m3 qemu_cortex_m3 || rc=$? ;;
     qemu-m0) run_twister qemu-m0 qemu_cortex_m0 || rc=$? ;;
+    app) run_app || rc=$? ;;
     size) run_size || rc=$? ;;
   esac
   [ "${rc}" -eq 0 ] || FAILED=1
