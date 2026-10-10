@@ -27,6 +27,7 @@ class HostUnits(unittest.TestCase):
             {"file": f"{ROOT}/firmware/lib/zplc_core/src/core/zplc_core.c"},  # compiled again with test defines
             {"file": f"{ROOT}/firmware/lib/zplc_core/src/hal/posix/zplc_hal_posix.c"},
             {"file": f"{ROOT}/firmware/apps/posix_host/src/main.c"},
+            {"file": f"{ROOT}/firmware/lib/zplc_core/tests/test_parse.c"},
         ]
         self.assertEqual(
             tidy.host_units(database),
@@ -34,6 +35,7 @@ class HostUnits(unittest.TestCase):
                 f"{ROOT}/firmware/apps/posix_host/src/main.c",
                 f"{ROOT}/firmware/lib/zplc_core/src/core/zplc_core.c",
                 f"{ROOT}/firmware/lib/zplc_core/src/hal/posix/zplc_hal_posix.c",
+                f"{ROOT}/firmware/lib/zplc_core/tests/test_parse.c",
             ],
         )
 

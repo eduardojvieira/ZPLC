@@ -3,6 +3,7 @@
 
     python3 tools/ci/run_clang_tidy.py                      host pass
     python3 tools/ci/run_clang_tidy.py --zephyr-build DIR   host pass, then the Zephyr pass
+    python3 tools/ci/run_clang_tidy.py --zephyr-build DIR --zephyr-only   the Zephyr pass alone (the Zephyr CI jobs)
     python3 tools/ci/run_clang_tidy.py --zephyr-build DIR --update-baseline
 
 Host pass (always): CMake configures firmware/lib/zplc_core out of tree into a temporary directory with
@@ -12,6 +13,7 @@ CMAKE_EXPORT_COMPILE_COMMANDS=ON (nothing is built), and clang-tidy runs, with t
     firmware/lib/zplc_core/src/core        the VM, loader, dispatcher and retain store
     firmware/lib/zplc_core/src/hal/posix   the POSIX HAL
     firmware/apps/posix_host/src           the host runtime application
+    firmware/lib/zplc_core/tests/test_parse.c   the test of firmware/app/src/zplc_parse.h, which analyses that header
 
 and, through HeaderFilterRegex, over the headers they include (firmware/lib/zplc_core/include among them).
 Any finding is an error.
@@ -51,7 +53,11 @@ REPO = Path(__file__).resolve().parents[2]
 CONFIG = REPO / ".clang-tidy"
 BASELINE = REPO / "tools/ci/clang-tidy-app-baseline.json"
 
-HOST_UNITS = re.compile(r"(?:^|/)firmware/(?:lib/zplc_core/src/(?:core|hal/posix)|apps/posix_host/src)/[^/]+\.c$")
+# test_parse.c includes firmware/app/src/zplc_parse.h, the portable header of the Zephyr shell and cloud clients, so
+# that the header is analysed on the host as well.
+HOST_UNITS = re.compile(
+    r"(?:^|/)firmware/(?:lib/zplc_core/src/(?:core|hal/posix)/[^/]+|apps/posix_host/src/[^/]+|lib/zplc_core/tests/test_parse)\.c$"
+)
 ZEPHYR_UNITS = re.compile(r"(?:^|/)(firmware/(?:app/src|lib/zplc_core/src)/.+\.c)$")
 APP_UNITS = re.compile(r"^firmware/app/")
 
@@ -262,6 +268,7 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--clang-tidy", default=os.environ.get("CLANG_TIDY", "clang-tidy"))
     parser.add_argument("--zephyr-build", default=os.environ.get("ZPLC_TIDY_ZEPHYR_BUILD"), help="west build directory of firmware/app")
     parser.add_argument("--build-dir", type=Path, help="keep the host CMake configuration here instead of a temporary directory")
+    parser.add_argument("--zephyr-only", action="store_true", help="skip the host pass (it runs in its own CI job)")
     parser.add_argument("--board", help="name of the board in the baseline (default: the name of the build directory)")
     parser.add_argument("--update-baseline", action="store_true", help="rewrite the firmware/app baseline of the board from this Zephyr pass")
     parser.add_argument("--jobs", type=int, default=os.cpu_count() or 2)
@@ -274,7 +281,10 @@ def main(argv: list[str]) -> int:
         print("clang-tidy: cmake not found", file=sys.stderr)
         return 2
 
-    status = host_pass(args.clang_tidy, args.build_dir, args.jobs)
+    if args.zephyr_only and not args.zephyr_build:
+        print("clang-tidy: --zephyr-only needs --zephyr-build", file=sys.stderr)
+        return 2
+    status = 0 if args.zephyr_only else host_pass(args.clang_tidy, args.build_dir, args.jobs)
     if not args.zephyr_build:
         print(
             "clang-tidy: Zephyr pass skipped, no west build tree. Pass --zephyr-build <dir of `west build -b <board> firmware/app`> "

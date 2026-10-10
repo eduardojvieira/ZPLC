@@ -428,6 +428,15 @@ add_executable(test_comm_fb_access
 target_include_directories(test_comm_fb_access PRIVATE ${ZPLC_APP_SRC})
 add_test(NAME test_comm_fb_access COMMAND test_comm_fb_access)
 
+# Strict parsing of operator and cloud input: the header the Zephyr shell and the cloud clients use
+add_executable(test_parse
+    tests/test_parse.c
+)
+target_include_directories(test_parse PRIVATE
+    ${ZPLC_APP_SRC}
+)
+add_test(NAME test_parse COMMAND test_parse)
+
 add_executable(test_comm_handler_modbus
     tests/test_comm_handler_modbus.c
 )
@@ -473,7 +482,7 @@ add_custom_target(check
 
 # The tests above join the check target without touching its list
 add_dependencies(check test_sandbox test_sandbox_regions test_comm_fb_access test_comm_handler_modbus
-                 test_comm_handler_mqtt test_comm_handler_cloud test_retain)
+                 test_comm_handler_mqtt test_comm_handler_cloud test_retain test_parse)
 
 # =============================================================================
 # Build Info

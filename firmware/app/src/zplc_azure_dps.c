@@ -1,4 +1,5 @@
 #include "zplc_config.h"
+#include "zplc_parse.h"
 #include "zplc_azure_sas.h"
 #include "zplc_platform_attrs.h"
 #include "zplc_tls_credentials.h"
@@ -385,6 +386,8 @@ static int json_extract_int(const char *json, const char *key, int *out)
 {
     char needle[64];
     const char *start;
+    int32_t value = 0;
+    int rc;
 
     if (json == NULL || key == NULL || out == NULL) {
         return -EINVAL;
@@ -401,7 +404,13 @@ static int json_extract_int(const char *json, const char *key, int *out)
         return -EINVAL;
     }
 
-    *out = atoi(start + 1);
+    /* The whole number, at a delimiter: "12abc", "1.5" and a quoted "8883" are errors, and atoi() answered
+     * 0 or the leading digits for them. *out is left as it was. */
+    rc = zplc_json_int(start + 1, INT32_MIN, INT32_MAX, &value);
+    if (rc != 0) {
+        return rc;
+    }
+    *out = (int)value;
     return 0;
 }
 
@@ -424,7 +433,18 @@ static int dps_parse_response_topic(const char *topic,
     }
 
     status_ptr += strlen("$dps/registrations/res/");
-    info->status_code = atoi(status_ptr);
+    {
+        /* The status is the path segment that follows: a topic that does not carry a number there is refused,
+         * where atoi() gave 0 and the response was then treated as no error. */
+        int32_t status = 0;
+        const char *status_end = NULL;
+
+        if (zplc_scan_int(status_ptr, 0, 999, &status, &status_end) != 0 ||
+            (*status_end != '/' && *status_end != '\0')) {
+            return -EINVAL;
+        }
+        info->status_code = (int)status;
+    }
 
     rid_ptr = strstr(topic, "$rid=");
     if (rid_ptr != NULL) {
@@ -439,7 +459,14 @@ static int dps_parse_response_topic(const char *topic,
 
     retry_ptr = strstr(topic, "retry-after=");
     if (retry_ptr != NULL) {
-        info->retry_after_s = (uint32_t)strtoul(retry_ptr + strlen("retry-after="), NULL, 10);
+        uint32_t retry_after = 0U;
+        const char *retry_end = NULL;
+
+        /* A value that is not a plain number leaves the delay at 0, which the caller turns into one second. */
+        if (zplc_scan_uint(retry_ptr + strlen("retry-after="), 10, 0U, UINT32_MAX, &retry_after, &retry_end) == 0 &&
+            (*retry_end == '&' || *retry_end == '\0')) {
+            info->retry_after_s = retry_after;
+        }
     }
 
     return 0;
