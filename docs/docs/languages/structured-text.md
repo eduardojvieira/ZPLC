@@ -9,7 +9,7 @@ unlisted: true
 
 # Structured Text (ST)
 
-Structured Text (ST) is a high-level, block-structured language with a syntax resembling Pascal or C. It is the primary language supported by the ZPLC Web IDE.
+Structured Text (ST) is a high-level, block-structured language with a syntax resembling Pascal. It is the central language of ZPLC Studio and of the compiler.
 
 ## Basic Syntax
 
@@ -34,12 +34,17 @@ END_PROGRAM
 
 ## Data Types
 
-ZPLC supports standard IEC data types mapped to strict C types internally:
-*   `BOOL` (Boolean)
-*   `SINT`, `INT`, `DINT`, `LINT` (Signed integers)
-*   `USINT`, `UINT`, `UDINT`, `ULINT` (Unsigned integers)
-*   `REAL`, `LREAL` (Floating point)
-*   `TIME`, `DATE`, `TOD`, `DT` (Time data types)
+ZPLC supports these elementary types. [Structured Text (ST)](./st.md) gives the width, the range and the behaviour at the limits of each one.
+
+*   `BOOL`
+*   `SINT`, `INT`, `DINT`, `LINT` (signed integers of 8, 16, 32 and 64 bits)
+*   `USINT`, `UINT`, `UDINT`, `ULINT` (unsigned integers of 8, 16, 32 and 64 bits)
+*   `BYTE`, `WORD`, `DWORD`, `LWORD` (bit strings of 8, 16, 32 and 64 bits)
+*   `REAL` (32-bit floating point). `LREAL` can be declared, but a program that assigns or computes with one is refused by the loader today (requirement CMP-015).
+*   `TIME`, `DATE`, `TOD`, `DT`: see [Time and date types](./st.md#time-and-date-types).
+*   `STRING`, `WSTRING`
+
+`LTIME`, `LDATE`, `LTOD`, `LDT`, `CHAR` and `WCHAR` are not supported. The compiler does not reject them yet and gives the variable size 0 (requirement CMP-003).
 
 ## Control Structures
 

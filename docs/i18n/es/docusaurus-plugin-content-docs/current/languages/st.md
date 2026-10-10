@@ -56,6 +56,38 @@ El compilador y la stdlib muestran uso de ST con:
 - funciones de string como `LEN`, `CONCAT`, `LEFT`, `RIGHT`, `MID`
 - llamadas a FBs de comunicación cuando el contrato compiler/runtime los respalda
 
+## Tipos de tiempo y fecha
+
+| Tipo | Ancho | Qué contiene | Literal |
+|---|---|---|---|
+| `TIME` | 32 bits, sin signo | Una duración en milisegundos, de 0 a 4294967295 (`T#49d17h2m47s295ms`) | `T#1h30m`, `T#1.5s`, `TIME#250ms` |
+| `DATE` | 32 bits, con signo | Segundos desde 1970-01-01; las fechas anteriores son negativas | `D#2024-01-01` |
+| `TOD` (`TIME_OF_DAY`) | 32 bits, sin signo | Milisegundos desde la medianoche | `TOD#12:30:00` |
+| `DT` (`DATE_AND_TIME`) | 64 bits, con signo | Milisegundos desde 1970-01-01 00:00:00 | `DT#2024-01-01-12:00:00` |
+
+### TIME
+
+Este es el comportamiento actual. El signo y el ancho de `TIME` son una decisión abierta del propietario del proyecto, descrita al final de esta lista.
+
+- Un literal tiene días, horas, minutos, segundos y milisegundos, cada uno a lo sumo una vez y en ese orden, con un `_` opcional entre ellos (`T#1d_2h_3m_4s_5ms`). `us` y `ns` se aceptan cuando el literal completo es un número entero de milisegundos (`T#1000us` es 1 ms), y el último componente puede llevar fracción (`T#1h30.5m`, `T#1.5s`).
+- Un literal que no es un número entero de milisegundos (`T#1.5ms`), que supera 4294967295 ms (`T#50d`) o que es negativo (`T#-5s`) es un error de compilación que nombra el literal.
+- La comparación, la suma, la resta y la división son de 32 bits sin signo: `T#30d > T#1d` es TRUE y `T#30d + T#10d` es 3456000000 ms. Un preset de temporizador de más de 24,8 días funciona: un `TON` con `PT := T#30d` no termina a los 20 ms.
+- Una duración negativa no se puede representar. Una resta por debajo de cero da la vuelta módulo 2^32: `T#0s - T#1s` es 4294966296 ms (`T#49d17h2m46s296ms`), y la compilación no advierte nada. Verifique que el minuendo no sea menor antes de restar.
+- El Watch de Studio muestra un `TIME` superior a 2147483647 ms (24d20h31m23s647ms) como un número negativo, porque los adaptadores de watch leen sus 32 bits con signo. El valor que guarda el programa es la cuenta sin signo.
+- Si `TIME` sigue siendo una cuenta de 32 bits sin signo o pasa a un valor de 64 bits con signo, que permitiría duraciones negativas y rangos de más de 49 días, es una decisión abierta del propietario que se sigue bajo el requisito CMP-017. Esta página no anuncia ningún cambio.
+
+### DATE, TOD y DT
+
+- `TOD` y `DT` guardan milisegundos, la unidad de `TIME`. `TOD#12:30:00 + T#1h` es 48600000 ms (13:30:00), `TOD#13:00:00 - T#30m` es 12:30:00, y la diferencia de dos valores `DT` es un `TIME`: `DT#2024-01-01-01:00:00 - DT#2024-01-01-00:00:00` es 3600000 ms. Los tres tipos se asignan y se comparan, y `DT` compara a través del límite de la palabra de 32 bits.
+- `DATE` cuenta segundos, no milisegundos. Se asigna y se compara (`D#2024-01-01 < D#2025-06-30`), pero `DATE + TIME` suma milisegundos a una cuenta de segundos: no sume un `TIME` a un `DATE`. Ningún caso de conformidad cubre la aritmética sobre `DATE`; su unidad es la que le da el código (`emitDateLiteral` en `packages/zplc-compiler/src/compiler/codegen.ts`). La unidad de `DATE` y el rango de estos tipos forman parte del requisito CMP-017, que no está cerrado.
+- Un literal `DT#` se lee en la zona horaria de la máquina que compila, mientras que `D#` y `TOD#` se leen como UTC. El mismo fuente compilado en dos zonas horarias da dos constantes `DT` distintas. Es un defecto, no un diseño, y todavía ningún caso de conformidad lo fija.
+
+### Tipos no soportados
+
+`LTIME`, `LDATE`, `LTOD`, `LDT`, `CHAR` y `WCHAR` no forman parte de ZPLC 2.0. Hoy el compilador no los informa: acepta la declaración sin ningún mensaje y le da a la variable tamaño 0, de modo que comparte su dirección con la siguiente. No los declare. El requisito CMP-003 pide que la compilación los rechace, igual que a cualquier nombre de tipo desconocido, con un mensaje que nombre el tipo y su posición. Sus casos de conformidad (`cmp-003-*` en `conformance/cmp/`) fallan hoy y figuran en `tools/ci/expected-failures.json`.
+
+Nivel de evidencia: host. Los casos `cmp-017-*` y `cmp-015-dt-plus-time-and-difference` se ejecutan en el runtime nativo, y `packages/zplc-compiler/src/compiler/time.test.ts` cubre la gramática de los literales y sus rechazos. La vuelta por debajo de cero, la zona horaria de `DT#` y la visualización en Studio se observaron o se leyeron en el código (`numeric.ts`, `codegen.ts`, `debugAdapter.ts`) y todavía ningún caso las fija.
+
 ## Datos, almacenamiento y valores iniciales
 
 Cada regla de abajo está cubierta por un caso de conformidad en `conformance/cmp` (CMP-019 a CMP-028).
