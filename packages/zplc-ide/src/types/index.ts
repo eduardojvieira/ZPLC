@@ -412,6 +412,7 @@ export interface CompilerConfig {
   optimization?: 'none' | 'speed' | 'size';
   debug?: boolean;
   warnings?: 'none' | 'default' | 'all';
+  strictTypes?: boolean;
 }
 
 /** I/O configuration */
@@ -543,6 +544,9 @@ export interface ZPLCProjectConfig {
   // Compiler settings
   compiler?: CompilerConfig;
 
+  /** Folders of source files compiled with the project in addition to src/. */
+  libraries?: string[];
+
   // I/O Mapping
   io?: IOConfig;
 
@@ -564,6 +568,7 @@ export interface ZPLCProjectConfig {
   build?: {
     outDir?: string;           // Output directory (default: "build")
     entryPoints?: string[];    // Override: explicit entry points
+    generateDebugInfo?: boolean; // The CLI writes the debug map beside the artifact
   };
 }
 

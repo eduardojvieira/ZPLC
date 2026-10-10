@@ -76,13 +76,13 @@
                         "size",
                         "speed"
                     ],
-                    "default": "size",
-                    "description": "Optimization level"
+                    "default": "none",
+                    "description": "Optimization level. The compiler has one code generator: every value produces the same artifact, and size or speed report an OPTION_IGNORED warning."
                 },
                 "debug": {
                     "type": "boolean",
-                    "default": false,
-                    "description": "Generate debug information"
+                    "default": true,
+                    "description": "Statement ranges and line mappings of the debug map. false keeps only variables and memory."
                 },
                 "warnings": {
                     "type": "string",
@@ -92,12 +92,12 @@
                         "all"
                     ],
                     "default": "default",
-                    "description": "Warning level"
+                    "description": "Which compiler warnings are reported: none, default (unused variables, unreachable statements, non-IEC spellings, implicit narrowing) or all (adds write-only variables)."
                 },
                 "strictTypes": {
                     "type": "boolean",
                     "default": false,
-                    "description": "Enable strict type checking (v1.4.3+)"
+                    "description": "An implicit narrowing between integer types is an error naming both types instead of the IMPLICIT_NARROWING warning."
                 }
             }
         },
@@ -200,6 +200,11 @@
                 }
             }
         },
+        "libraries": {
+            "type": "array",
+            "items": { "type": "string", "pattern": "^(?!/)(?!.*\\.\\.)[^\\\\:]+$" },
+            "description": "Folders of source files, relative to the project, compiled with the project in addition to src/. Their function blocks, functions and types are visible to every program."
+        },
         "tasks": {
             "type": "array",
             "description": "Task definitions",
@@ -279,7 +284,7 @@
                 "generateDebugInfo": {
                     "type": "boolean",
                     "default": false,
-                    "description": "Generate source maps for debugging"
+                    "description": "The command line writes the debug map beside the artifact as <output>.map.json."
                 }
             }
         }
