@@ -39,7 +39,7 @@ afterAll(() => {
   rmSync(workRoot, { recursive: true, force: true });
 });
 
-describe('lesson check', () => {
+describe('lesson check (LRN-022, LRN-023, LRN-026)', () => {
   itNative('fails the starter and shows which assertion failed, when, expected against observed, and where in the trace', async () => {
     const result = await lessonCheck(workspace(), lesson.id, { clock: clock('2026-10-10T12:00:00.000Z') });
     expect(result.ok).toBe(true);

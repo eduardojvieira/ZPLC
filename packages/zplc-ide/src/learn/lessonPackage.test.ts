@@ -11,7 +11,7 @@ const scenario: ScenarioFile = {
   ],
 };
 
-describe('lesson text markup', () => {
+describe('lesson text markup (LRN-025)', () => {
   it('expands the count of assertions and the times of the scenario into plain text', () => {
     expect(expandQuotes('At {{t:20}} ms of {{assertions}} assertions.', scenario)).toEqual({ text: 'At 20 ms of 3 assertions.', problems: [] });
   });
@@ -41,7 +41,7 @@ describe('lesson text markup', () => {
   });
 });
 
-describe('lesson package validators', () => {
+describe('lesson package validators (LRN-009, LRN-010, LRN-027)', () => {
   const manifest = {
     schemaVersion: 1, id: 'a-lesson', version: 1, order: 1, module: 1, level: 'foundation', prerequisites: [], languages: ['ST'], tracks: ['simulation'], plant: null, estimatedMinutes: 10,
     starter: { project: 'a_starter', program: 'src/A.st' }, solution: { project: 'a', program: 'src/A.st' },

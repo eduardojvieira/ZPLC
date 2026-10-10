@@ -1296,8 +1296,55 @@
   "LRN-003": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true}
   ],
+  "LRN-009": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"lesson packages (LRN-009, LRN-010, LRN-027)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"lesson package validators (LRN-009, LRN-010, LRN-027)"}
+  ],
+  "LRN-010": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"lesson packages (LRN-009, LRN-010, LRN-027)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"lesson package validators (LRN-009, LRN-010, LRN-027)"}
+  ],
+  "LRN-022": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/learnLesson.test.ts","test":"Learn grading against the lesson package (LRN-022, LRN-026)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCheck.test.ts","test":"lesson check (LRN-022, LRN-023, LRN-026)"}
+  ],
+  "LRN-023": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/gradeRecord.test.ts","test":"grade record (LRN-023)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCheck.test.ts","test":"lesson check (LRN-022, LRN-023, LRN-026)"}
+  ],
+  "LRN-025": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"lesson text markup (LRN-025)"}
+  ],
+  "LRN-026": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/learnLesson.test.ts","test":"Learn grading against the lesson package (LRN-022, LRN-026)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/gradeRecord.test.ts","test":"failed assertions of a lesson check (LRN-026)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCheck.test.ts","test":"lesson check (LRN-022, LRN-023, LRN-026)"}
+  ],
+  "LRN-027": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"lesson packages (LRN-009, LRN-010, LRN-027)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"lesson package validators (LRN-009, LRN-010, LRN-027)"},
+    {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"the generated lesson index (LRN-027, LRN-028)"}
+  ],
+  "LRN-028": [
+    {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"lesson ids have one source (LRN-028)"},
+    {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"the generated lesson index (LRN-027, LRN-028)"}
+  ],
+  "LRN-031": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressModel.test.ts","test":"the Learn progress document (LRN-031, LRN-032)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressStore.test.ts","test":"Learn progress main-process store (LRN-031, LRN-032)"}
+  ],
+  "LRN-032": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressModel.test.ts","test":"the Learn progress document (LRN-031, LRN-032)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressStore.test.ts","test":"Learn progress main-process store (LRN-031, LRN-032)"}
+  ],
+  "LRN-034": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/server.test.ts","test":"cannot mark a lesson passed: no tool takes a lesson or progress, and no tool or resource read changes the progress files (LRN-034)"}
+  ],
   "LRN-036": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"13 Welcome helps a newcomer choose","partial":true}
+  ],
+  "LRN-038": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/learnLesson.test.ts","test":"Learn lesson text is never replaced at run time (LRN-038)"}
   ],
   "REL-001": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"electron-builder.yml macOS signing (REL-001)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"}

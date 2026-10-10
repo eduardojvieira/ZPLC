@@ -20,7 +20,7 @@ function copyOfLessons(): string {
   return root;
 }
 
-describe('the generated lesson index', () => {
+describe('the generated lesson index (LRN-027, LRN-028)', () => {
   it('holds exactly what the lesson packages produce', () => {
     const { packages, problems } = loadLessonPackages();
     expect(problems).toEqual([]);

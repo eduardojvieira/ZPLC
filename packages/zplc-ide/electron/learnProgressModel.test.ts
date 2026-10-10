@@ -31,7 +31,7 @@ const failed = (): GradeRecord => grade({
   failedAssertions: [{ index: 3, kind: 'AT', atMs: 20, expected: { 'Motor.Forward': true }, observed: { 'Motor.Forward': false }, trace: { scenarioId: 'MotorStartStop', traceSha256: HASH_A, cursor: 2, atMs: 20, uri: `zplc://runtime/snapshot/MotorStartStop/2/${HASH_A}` } }],
 });
 
-describe('the Learn progress document', () => {
+describe('the Learn progress document (LRN-031, LRN-032)', () => {
   it('round-trips through its canonical text and rejects every inexact shape', () => {
     const progress = withGrade(withNote(emptyProgress(), { lessonId: 'edge-counter-pulses', hint: 2 }, '2026-10-10T11:00:00.000Z'), grade());
     const text = serializeProgress(progress);

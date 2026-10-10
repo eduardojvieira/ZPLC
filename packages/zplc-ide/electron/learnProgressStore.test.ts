@@ -15,7 +15,7 @@ function grade(lessonId: string, time: string, overrides: Partial<GradeRecord> =
 }
 const at = (iso: string) => () => new Date(iso);
 
-describe('Learn progress main-process store', () => {
+describe('Learn progress main-process store (LRN-031, LRN-032)', () => {
   test('keeps the first release operations: pass lessons by id and read them back', async () => {
     const directory = await fixture(); const store = createLearnProgressStore(directory);
     await expect(store.read()).resolves.toEqual(new Set());

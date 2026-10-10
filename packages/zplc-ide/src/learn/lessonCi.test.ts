@@ -56,7 +56,7 @@ afterAll(() => {
   rmSync(workRoot, { recursive: true, force: true });
 });
 
-describe('lesson packages', () => {
+describe('lesson packages (LRN-009, LRN-010, LRN-027)', () => {
   it('are all valid, and form one course', () => {
     expect(loaded.problems).toEqual([]);
     expect(validateCourse(packages)).toEqual([]);
@@ -68,7 +68,7 @@ for (const lesson of packages) {
   const { manifest, scenario, checks } = lesson;
   const starterRoot = join(PROJECTS_DIRECTORY, manifest.starter.project);
 
-  describe(`lesson ${manifest.id}`, () => {
+  describe(`lesson ${manifest.id} (LRN-025)`, () => {
     it('ships the reference scenario in its starter, byte for byte in content', () => {
       const shipped = JSON.parse(readFileSync(join(starterRoot, manifest.scenario.path), 'utf8')) as unknown;
       expect(canonicalJson(shipped)).toBe(lesson.scenarioBytes);
