@@ -9,11 +9,23 @@ export function nodesToSteps(nodes: Node[]): SFCStep[] {
 }
 
 export function nodesToTransitions(nodes: Node[], edges: Edge[]): SFCTransition[] {
+  const isStep = (id: string) => nodes.some((candidate) => candidate.id === id && candidate.type === 'step');
   return nodes.filter((node) => node.type === 'transition').map((node) => {
     const data = node.data as Record<string, unknown>;
-    const incoming = edges.find((edge) => edge.target === node.id && nodes.some((candidate) => candidate.id === edge.source && candidate.type === 'step'));
-    const outgoing = edges.find((edge) => edge.source === node.id && nodes.some((candidate) => candidate.id === edge.target && candidate.type === 'step'));
-    return { id: node.id, fromStep: incoming?.source || '', toStep: outgoing?.target || '', condition: data.condition as string || 'TRUE', position: node.position, comment: data.comment as string | undefined };
+    // Every step wired to the transition: several make a simultaneous convergence or divergence
+    const incoming = edges.filter((edge) => edge.target === node.id && isStep(edge.source)).map((edge) => edge.source);
+    const outgoing = edges.filter((edge) => edge.source === node.id && isStep(edge.target)).map((edge) => edge.target);
+    return {
+      id: node.id,
+      fromStep: incoming[0] || '',
+      toStep: outgoing[0] || '',
+      ...(incoming.length > 1 ? { fromSteps: incoming } : {}),
+      ...(outgoing.length > 1 ? { toSteps: outgoing } : {}),
+      ...(typeof data.priority === 'number' ? { priority: data.priority } : {}),
+      condition: data.condition as string || 'TRUE',
+      position: node.position,
+      comment: data.comment as string | undefined,
+    };
   });
 }
 

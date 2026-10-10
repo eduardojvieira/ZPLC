@@ -1,0 +1,89 @@
+{
+  "name": "Select",
+  "variables": {
+    "local": [],
+    "outputs": [
+      {
+        "name": "ToB",
+        "type": "BOOL",
+        "address": "%QX0.0"
+      },
+      {
+        "name": "ToC",
+        "type": "BOOL",
+        "address": "%QX0.1"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "id": "s_a",
+      "name": "A",
+      "isInitial": true,
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "s_b",
+      "name": "B",
+      "isInitial": false,
+      "position": {
+        "x": 0,
+        "y": 1
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "MarkB"
+        }
+      ]
+    },
+    {
+      "id": "s_c",
+      "name": "C",
+      "isInitial": false,
+      "position": {
+        "x": 0,
+        "y": 1
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "MarkC"
+        }
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t_a_b",
+      "fromStep": "s_a",
+      "toStep": "s_b",
+      "condition": "TRUE",
+      "priority": 2
+    },
+    {
+      "id": "t_a_c",
+      "fromStep": "s_a",
+      "toStep": "s_c",
+      "condition": "TRUE",
+      "priority": 1
+    }
+  ],
+  "actions": [
+    {
+      "id": "mark_b",
+      "name": "MarkB",
+      "type": "ST",
+      "body": "ToB := TRUE;"
+    },
+    {
+      "id": "mark_c",
+      "name": "MarkC",
+      "type": "ST",
+      "body": "ToC := TRUE;"
+    }
+  ]
+}

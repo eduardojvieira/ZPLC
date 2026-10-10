@@ -1049,6 +1049,134 @@ describe('LD to ST Transpiler', () => {
   });
 });
 
+describe('SFC scan semantics (LNG-024, LNG-025, LNG-002)', () => {
+  const chart = (overrides: Partial<SFCModel> = {}): SFCModel => ({
+    name: 'Chart',
+    variables: { local: [], outputs: [{ name: 'Out', type: 'INT' }] },
+    steps: [
+      { id: 'a', name: 'A', isInitial: true, position: { x: 0, y: 0 } },
+      { id: 'b', name: 'B', isInitial: false, position: { x: 0, y: 1 }, actions: [{ qualifier: 'N', actionName: 'Bump' }] },
+      { id: 'c', name: 'C', isInitial: false, position: { x: 0, y: 2 } },
+    ],
+    transitions: [
+      { id: 'ab', fromStep: 'a', toStep: 'b', condition: 'TRUE' },
+      { id: 'bc', fromStep: 'b', toStep: 'c', condition: 'TRUE' },
+    ],
+    actions: [{ id: 'bump', name: 'Bump', type: 'ST', body: 'Out := Out + 1;' }],
+    ...overrides,
+  });
+  const rejected = (model: SFCModel) => {
+    const result = transpileSFCToST(model);
+    expect(result.success).toBe(false);
+    expect(result.source).toBe('');
+    return result.errors;
+  };
+
+  it('evaluates every transition before any is applied, so a chain crosses one per scan', () => {
+    const result = transpileSFCToST(chart());
+    expect(result.success).toBe(true);
+    const lines = result.source.split('\n');
+    const lastEvaluation = lines.map((line, index) => line.startsWith('_F_') ? index : -1).reduce((a, b) => Math.max(a, b));
+    const firstApply = lines.findIndex((line) => /^IF _F_\w+ THEN X_/.test(line));
+    expect(lastEvaluation).toBeGreaterThan(0);
+    expect(firstApply).toBeGreaterThan(lastEvaluation);
+    // Actions run on the state the scan started with, before transitions change it
+    expect(lines.findIndex((line) => line.includes('Out := Out + 1;'))).toBeLessThan(lines.findIndex((line) => line.startsWith('_F_')));
+    expect(assemble(compileST(result.source)).bytecode.length).toBeGreaterThan(0);
+  });
+
+  it('lets the lowest priority number win a selection, and the file order when there is none', () => {
+    const base = chart({
+      transitions: [
+        { id: 'late', fromStep: 'a', toStep: 'b', condition: 'TRUE', priority: 2 },
+        { id: 'early', fromStep: 'a', toStep: 'c', condition: 'TRUE', priority: 1 },
+      ],
+    });
+    const prioritised = transpileSFCToST(base).source;
+    expect(prioritised).toContain('_F_early := X_a AND (TRUE);');
+    expect(prioritised).toContain('_F_late := X_a AND (TRUE) AND NOT _F_early;');
+
+    const ordered = transpileSFCToST(chart({
+      transitions: [
+        { id: 'first', fromStep: 'a', toStep: 'b', condition: 'TRUE' },
+        { id: 'second', fromStep: 'a', toStep: 'c', condition: 'TRUE' },
+      ],
+    })).source;
+    expect(ordered).toContain('_F_second := X_a AND (TRUE) AND NOT _F_first;');
+  });
+
+  it('leaves all the steps of a convergence and enters all those of a divergence', () => {
+    const result = transpileSFCToST(chart({
+      steps: [
+        { id: 'a', name: 'A', isInitial: true, position: { x: 0, y: 0 } },
+        { id: 'b', name: 'B', isInitial: false, position: { x: 0, y: 1 } },
+        { id: 'c', name: 'C', isInitial: false, position: { x: 1, y: 1 } },
+        { id: 'd', name: 'D', isInitial: false, position: { x: 0, y: 2 } },
+      ],
+      transitions: [
+        { id: 'fork', fromStep: 'a', toStep: 'b', toSteps: ['b', 'c'], condition: 'TRUE' },
+        { id: 'join', fromStep: 'b', toStep: 'd', fromSteps: ['b', 'c'], condition: 'TRUE' },
+      ],
+      actions: [],
+    }));
+    expect(result.success).toBe(true);
+    expect(result.source).toContain('_F_join := X_b AND X_c AND (TRUE);');
+    expect(result.source).toContain('IF _F_fork THEN X_b := TRUE; END_IF;');
+    expect(result.source).toContain('IF _F_fork THEN X_c := TRUE; END_IF;');
+    expect(result.source).toContain('IF _F_join THEN X_c := FALSE; END_IF;');
+  });
+
+  it('rejects a transition whose list of steps is unknown, repeated or does not start with its step', () => {
+    const transition = (extra: Record<string, unknown>) => chart({ transitions: [{ id: 'ab', fromStep: 'a', toStep: 'b', condition: 'TRUE', ...extra } as SFCModel['transitions'][number]] });
+    expect(rejected(transition({ toSteps: ['b', 'ghost'] }))).toEqual([expect.stringContaining("Transition 'ab' toSteps must list known steps")]);
+    expect(rejected(transition({ toSteps: ['c', 'b'] }))).toEqual([expect.stringContaining("Transition 'ab' toSteps must start with toStep 'b'")]);
+    expect(rejected(transition({ fromSteps: ['a', 'a'] }))).toEqual([expect.stringContaining("Transition 'ab' fromSteps lists a step twice")]);
+    expect(rejected(transition({ priority: 'high' }))).toEqual([expect.stringContaining("Transition 'ab' priority must be a number")]);
+  });
+
+  it('translates the qualifiers N, S, R, L, D, P, P0 and P1 and compiles them', () => {
+    const qualifiers = ['N', 'S', 'R', 'L', 'D', 'P', 'P0', 'P1'] as const;
+    const model = chart({
+      steps: [
+        { id: 'a', name: 'A', isInitial: true, position: { x: 0, y: 0 }, actions: qualifiers.map((qualifier) => ({
+          qualifier, actionName: 'Bump', ...(qualifier === 'L' || qualifier === 'D' ? { time: 'T#2s' } : {}),
+        })) },
+      ],
+      transitions: [],
+    });
+    const result = transpileSFCToST(model);
+    expect(result.success).toBe(true);
+    expect(assemble(compileST(result.source)).bytecode.length).toBeGreaterThan(0);
+  });
+
+  it('names the step and the qualifier it cannot translate, and the times that are missing or wrong', () => {
+    const withAction = (action: Record<string, unknown>) => chart({ steps: [
+      { id: 'a', name: 'A', isInitial: true, position: { x: 0, y: 0 }, actions: [{ actionName: 'Bump', ...action } as never] },
+    ], transitions: [] });
+    for (const qualifier of ['SD', 'DS', 'SL', 'X']) {
+      expect(rejected(withAction({ qualifier }))).toEqual([`Step 'a' action qualifier '${qualifier}' is not supported (supported: N, S, R, L, D, P, P0, P1)`]);
+    }
+    expect(rejected(withAction({ qualifier: 'L' }))).toEqual(["Step 'a' L action qualifier needs a time, such as T#2s"]);
+    expect(rejected(withAction({ qualifier: 'D', time: 'soon' }))).toEqual([expect.stringContaining("Step 'a' D action qualifier has an invalid time")]);
+    expect(rejected(withAction({ qualifier: 'P', time: 'T#1s' }))).toEqual(["Step 'a' P action qualifier does not support time"]);
+  });
+
+  it('reads .X and .T of a step in conditions and in action bodies, by name or id, and refuses to assign them', () => {
+    const result = transpileSFCToST(chart({
+      transitions: [{ id: 'bc', fromStep: 'b', toStep: 'c', condition: "b.X AND B.T >= T#1s AND Name = 'b.T'" }],
+      actions: [{ id: 'bump', name: 'Bump', type: 'ST', body: 'IF A.X THEN Out := Out + 1; END_IF;' }],
+    }));
+    expect(result.success).toBe(true);
+    expect(result.source).toContain("(X_b AND T_b.ET >= T#1s AND Name = 'b.T')");
+    expect(result.source).toContain('IF X_a THEN Out := Out + 1; END_IF;');
+
+    expect(rejected(chart({ actions: [{ id: 'bump', name: 'Bump', type: 'ST', body: 'A.X := FALSE;' }] })))
+      .toEqual([expect.stringContaining("assigns to the step flag 'A.X', which is read only")]);
+    expect(rejected(chart({ variables: { local: [{ name: 'a', type: 'BOOL' }], outputs: [] } })))
+      .toEqual([expect.stringContaining("Variable name 'a' collides with a step")]);
+  });
+});
+
 describe('FBD wiring and types (LNG-023, LNG-002)', () => {
   const block = (id: string, type: string, extra: Record<string, unknown> = {}) => ({ id, type, position: { x: 0, y: 0 }, ...extra });
   const wire = (id: string, from: string, fromPort: string, to: string, toPort: string) => ({ id, from: { block: from, port: fromPort }, to: { block: to, port: toPort } });
@@ -1605,9 +1733,11 @@ describe('SFC to ST Transpiler', () => {
       const result = transpileSFCToST(model);
       
       expect(result.success).toBe(true);
-      expect(result.source).toContain('IF X_step1 AND (TRUE) THEN');
-      expect(result.source).toContain('X_step1 := FALSE');
-      expect(result.source).toContain('X_step2 := TRUE');
+      // The transition is evaluated into a flag first and applied after: the step is left, the next entered
+      expect(result.source).toContain('_F_t1 := X_step1 AND (TRUE);');
+      expect(result.source).toContain('IF _F_t1 THEN X_step1 := FALSE; END_IF;');
+      expect(result.source).toContain('IF _F_t1 THEN X_step2 := TRUE; END_IF;');
+      expect(assemble(compileST(result.source)).bytecode.length).toBeGreaterThan(0);
     });
   });
   
@@ -1656,7 +1786,7 @@ describe('SFC to ST Transpiler', () => {
       expect(result.errors).toEqual(expect.arrayContaining([expect.stringContaining(message)]));
     };
 
-    it('accepts the implemented N/ST subset', () => {
+    it('accepts the implemented qualifiers and ST actions', () => {
       expect(transpileSFCToST(validModel()).success).toBe(true);
     });
 
@@ -1730,8 +1860,8 @@ describe('SFC to ST Transpiler', () => {
       expectRejected(emptyBody, 'body must be a non-empty string');
 
       const unsupportedQualifier = validModel();
-      unsupportedQualifier.steps[0].actions![0].qualifier = 'S';
-      expectRejected(unsupportedQualifier, 'only N action qualifier is supported');
+      unsupportedQualifier.steps[0].actions![0].qualifier = 'SD';
+      expectRejected(unsupportedQualifier, "Step 'idle' action qualifier 'SD' is not supported");
     });
 
     it('rejects code and comment interpolation while accepting nested ST and inputs', () => {

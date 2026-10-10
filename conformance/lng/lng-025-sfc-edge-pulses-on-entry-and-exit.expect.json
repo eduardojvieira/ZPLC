@@ -1,0 +1,23 @@
+{
+  "requirement": "LNG-025",
+  "title": "an SFC P1 pulse runs when its step is entered and P0 when it is left",
+  "scans": 5,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 1
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 1
+    },
+    {
+      "at": "%QW2",
+      "type": "INT",
+      "value": 1
+    }
+  ]
+}

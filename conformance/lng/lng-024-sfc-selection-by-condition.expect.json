@@ -1,0 +1,28 @@
+{
+  "requirement": "LNG-024",
+  "title": "an SFC selection follows the transition whose condition holds",
+  "scans": 4,
+  "scanMs": 10,
+  "inputs": [
+    {
+      "at": "%IX0.3",
+      "type": "BOOL",
+      "value": true,
+      "beforeScan": 3
+    }
+  ],
+  "expect": [
+    {
+      "at": "%QX0.0",
+      "type": "BOOL",
+      "value": false,
+      "afterScan": 4
+    },
+    {
+      "at": "%QX0.1",
+      "type": "BOOL",
+      "value": true,
+      "afterScan": 4
+    }
+  ]
+}

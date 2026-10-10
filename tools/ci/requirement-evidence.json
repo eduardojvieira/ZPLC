@@ -317,9 +317,11 @@
     {"kind":"conformance","ref":"conformance/lng/lng-002-fbd-function-not-translated.expect.json","test":"LNG-002 an FBD block of a type the transpiler does not translate is rejected by name"},
     {"kind":"conformance","ref":"conformance/lng/lng-002-fbd-unknown-block.expect.json","test":"LNG-002 an FBD block the transpiler does not know is rejected"},
     {"kind":"conformance","ref":"conformance/lng/lng-002-ld-unknown-element.expect.json","test":"LNG-002 an LD element the transpiler does not know is rejected by name"},
+    {"kind":"conformance","ref":"conformance/lng/lng-002-sfc-unsupported-qualifier.expect.json","test":"LNG-002 an SFC action qualifier the transpiler does not translate is rejected naming the step"},
     {"kind":"unit","ref":"packages/zplc-ide/src/compiler/il/il.test.ts","test":"IL transpiler errors (LNG-002, LNG-017, LNG-018)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"FBD wiring and types (LNG-023, LNG-002)"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"LD power flow (LNG-021, LNG-022, LNG-002)"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"LD power flow (LNG-021, LNG-022, LNG-002)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"SFC scan semantics (LNG-024, LNG-025, LNG-002)"}
   ],
   "LNG-005": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"7 Breakpoint stops execution","partial":true}
@@ -384,11 +386,20 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"FBD wiring and types (LNG-023, LNG-002)"}
   ],
   "LNG-024": [
-    {"kind":"conformance","ref":"conformance/lng/lng-024-sfc-one-transition-per-scan.expect.json","test":"LNG-024 an SFC chain crosses one transition per scan"}
+    {"kind":"conformance","ref":"conformance/lng/lng-024-sfc-one-transition-per-scan.expect.json","test":"LNG-024 an SFC chain crosses one transition per scan"},
+    {"kind":"conformance","ref":"conformance/lng/lng-024-sfc-selection-by-condition.expect.json","test":"LNG-024 an SFC selection follows the transition whose condition holds"},
+    {"kind":"conformance","ref":"conformance/lng/lng-024-sfc-selection-priority.expect.json","test":"LNG-024 an SFC selection takes the branch with the lowest priority number"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"SFC scan semantics (LNG-024, LNG-025, LNG-002)"}
   ],
   "LNG-025": [
+    {"kind":"conformance","ref":"conformance/lng/lng-025-sfc-edge-pulses-on-entry-and-exit.expect.json","test":"LNG-025 an SFC P1 pulse runs when its step is entered and P0 when it is left"},
     {"kind":"conformance","ref":"conformance/lng/lng-025-sfc-n-action-runs-in-its-step.expect.json","test":"LNG-025 an SFC step runs its N action"},
-    {"kind":"conformance","ref":"conformance/lng/lng-025-sfc-stored-action.expect.json","test":"LNG-025 an SFC stored (S) action keeps running after its step is left"}
+    {"kind":"conformance","ref":"conformance/lng/lng-025-sfc-reset-qualifier-stops-a-stored-action.expect.json","test":"LNG-025 an SFC R action stops the stored action it names"},
+    {"kind":"conformance","ref":"conformance/lng/lng-025-sfc-simultaneous-divergence-and-convergence.expect.json","test":"LNG-025 an SFC simultaneous divergence starts both branches and the convergence waits for both"},
+    {"kind":"conformance","ref":"conformance/lng/lng-025-sfc-step-flag-and-step-time.expect.json","test":"LNG-025 an SFC condition can read the flag .X and the time .T of a step"},
+    {"kind":"conformance","ref":"conformance/lng/lng-025-sfc-stored-action.expect.json","test":"LNG-025 an SFC stored (S) action keeps running after its step is left"},
+    {"kind":"conformance","ref":"conformance/lng/lng-025-sfc-timed-and-pulse-qualifiers.expect.json","test":"LNG-025 an SFC pulse runs once, a limited action for its time, a delayed one after it"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"SFC scan semantics (LNG-024, LNG-025, LNG-002)"}
   ],
   "LNG-027": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"16 Debug details: stop, trace, resume mid-scan","partial":true},

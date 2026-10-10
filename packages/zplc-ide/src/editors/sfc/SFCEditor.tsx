@@ -117,6 +117,7 @@ function transitionsToNodes(
         condition: trans.condition,
         fromStep: trans.fromStep,
         toStep: trans.toStep,
+        priority: trans.priority,
         comment: trans.comment,
         // Debug properties
         debugActive,
@@ -139,37 +140,43 @@ function transitionsToEdges(
   const edges: Edge[] = [];
   
   for (const trans of transitions) {
-    const fromStepActive = activeSteps.has(trans.fromStep);
+    // A simultaneous convergence leaves several steps, a simultaneous divergence enters several
+    for (const fromStep of trans.fromSteps ?? [trans.fromStep]) {
+      if (!fromStep) continue;
+      const fromStepActive = activeSteps.has(fromStep);
+      edges.push({
+        id: `${fromStep}_to_${trans.id}`,
+        source: fromStep,
+        sourceHandle: 'out',
+        target: trans.id,
+        targetHandle: 'in',
+        type: 'sfc',
+        style: {
+          stroke: debugActive && fromStepActive ? 'var(--color-accent-green)' : 'var(--visual-wire)',
+          strokeWidth: debugActive && fromStepActive ? 3 : 2,
+        },
+        animated: debugActive && fromStepActive,
+        markerEnd: { type: MarkerType.ArrowClosed, width: 10, height: 10 },
+      });
+    }
     
-    if (trans.fromStep) edges.push({
-      id: `${trans.fromStep}_to_${trans.id}`,
-      source: trans.fromStep,
-      sourceHandle: 'out',
-      target: trans.id,
-      targetHandle: 'in',
-      type: 'sfc',
-      style: {
-        stroke: debugActive && fromStepActive ? 'var(--color-accent-green)' : 'var(--visual-wire)',
-        strokeWidth: debugActive && fromStepActive ? 3 : 2,
-      },
-      animated: debugActive && fromStepActive,
-      markerEnd: { type: MarkerType.ArrowClosed, width: 10, height: 10 },
-    });
-    
-    // Edge from transition to target step
-    if (trans.toStep) edges.push({
-      id: `${trans.id}_to_${trans.toStep}`,
-      source: trans.id,
-      sourceHandle: 'out',
-      target: trans.toStep,
-      targetHandle: 'in',
-      type: 'sfc',
-      style: {
-        stroke: 'var(--visual-wire)',
-        strokeWidth: 2,
-      },
-      markerEnd: { type: MarkerType.ArrowClosed, width: 10, height: 10 },
-    });
+    // Edges from the transition to its target steps
+    for (const toStep of trans.toSteps ?? [trans.toStep]) {
+      if (!toStep) continue;
+      edges.push({
+        id: `${trans.id}_to_${toStep}`,
+        source: trans.id,
+        sourceHandle: 'out',
+        target: toStep,
+        targetHandle: 'in',
+        type: 'sfc',
+        style: {
+          stroke: 'var(--visual-wire)',
+          strokeWidth: 2,
+        },
+        markerEnd: { type: MarkerType.ArrowClosed, width: 10, height: 10 },
+      });
+    }
   }
   
   return edges;

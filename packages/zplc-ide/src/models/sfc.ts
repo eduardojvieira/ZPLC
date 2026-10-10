@@ -42,20 +42,22 @@ export interface Position {
 // =============================================================================
 
 /**
- * Action qualifier codes per IEC 61131-3
+ * Action qualifier codes per IEC 61131-3.
+ *
+ * The transpiler translates N, S, R, L, D, P, P0 and P1; SD, DS and SL are rejected with an error.
  */
 export type ActionQualifier = 
   | 'N'  // Non-stored (action runs while step is active)
-  | 'S'  // Set (action is set/latched on step entry)
-  | 'R'  // Reset (action is reset on step entry)
-  | 'L'  // Time Limited
-  | 'D'  // Time Delayed
-  | 'P'  // Pulse (single scan)
+  | 'S'  // Set (action is stored: it keeps running after the step is left, until an R)
+  | 'R'  // Reset (stops the stored action)
+  | 'L'  // Time Limited (runs while the step is active, for at most `time`)
+  | 'D'  // Time Delayed (runs while the step is active, once `time` has passed)
+  | 'P'  // Pulse (one scan, when the step becomes active; the same as P1)
   | 'SD' // Stored and time Delayed
   | 'DS' // Delayed and Stored
   | 'SL' // Stored and time Limited
-  | 'P0' // Pulse on rising edge
-  | 'P1' // Pulse on falling edge
+  | 'P0' // Pulse on the falling edge (one scan, when the step is left)
+  | 'P1' // Pulse on the rising edge (one scan, when the step becomes active)
 ;
 
 /**
@@ -64,7 +66,7 @@ export type ActionQualifier =
 export interface StepAction {
   qualifier: ActionQualifier;
   actionName: string;
-  time?: string;       // For timed qualifiers (L, D, SD, DS, SL)
+  time?: string;       // For timed qualifiers (L, D, SD, DS, SL): a TIME literal such as T#2s
   comment?: string;
 }
 
@@ -91,6 +93,22 @@ export interface SFCTransition {
   id: string;
   fromStep: string;    // Step ID
   toStep: string;      // Step ID
+  /**
+   * All the steps the transition leaves, when there are several (a simultaneous convergence: the
+   * transition fires when every one of them is active). The first is `fromStep`.
+   */
+  fromSteps?: string[];
+  /**
+   * All the steps the transition enters, when there are several (a simultaneous divergence: all of
+   * them become active). The first is `toStep`.
+   */
+  toSteps?: string[];
+  /**
+   * Order of the transitions that leave the same step (a selection divergence): the one with the
+   * lowest number is evaluated first and, when its condition holds, the others do not fire. Without
+   * a number the order of the transitions in the file decides.
+   */
+  priority?: number;
   condition: string;   // Boolean expression in ST syntax
   position?: Position;
   comment?: string;

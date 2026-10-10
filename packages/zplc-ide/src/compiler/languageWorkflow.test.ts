@@ -457,8 +457,8 @@ describe('v1.5 language workflow support', () => {
     const collisionModel = {
       name: 'Collision', variables: { local: [], outputs: [] },
       blocks: [
-        { id: 'a-b', type: 'variable', variableName: 'A', position: { x: 0, y: 0 }, outputs: [{ name: 'OUT', type: 'BOOL' }] },
-        { id: 'a_b', type: 'variable', variableName: 'B', position: { x: 0, y: 100 }, outputs: [{ name: 'OUT', type: 'BOOL' }] },
+        { id: 'a-b', type: 'NOT', position: { x: 0, y: 0 }, inputs: [], outputs: [{ name: 'OUT', type: 'BOOL' }] },
+        { id: 'a_b', type: 'NOT', position: { x: 0, y: 100 }, inputs: [], outputs: [{ name: 'OUT', type: 'BOOL' }] },
         { id: 'sink-one', type: 'output', variableName: 'One', position: { x: 100, y: 0 }, inputs: [{ name: 'IN', type: 'BOOL' }] },
         { id: 'sink-two', type: 'output', variableName: 'Two', position: { x: 100, y: 100 }, inputs: [{ name: 'IN', type: 'BOOL' }] },
       ],

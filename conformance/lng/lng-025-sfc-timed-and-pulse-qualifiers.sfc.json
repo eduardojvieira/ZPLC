@@ -1,0 +1,71 @@
+{
+  "name": "Timed",
+  "variables": {
+    "local": [],
+    "outputs": [
+      {
+        "name": "Pulses",
+        "type": "INT",
+        "address": "%QW0"
+      },
+      {
+        "name": "Limited",
+        "type": "INT",
+        "address": "%QW1"
+      },
+      {
+        "name": "Delayed",
+        "type": "INT",
+        "address": "%QW2"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "id": "s_run",
+      "name": "Run",
+      "isInitial": true,
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "actions": [
+        {
+          "qualifier": "P",
+          "actionName": "CountPulse"
+        },
+        {
+          "qualifier": "L",
+          "actionName": "CountLimited",
+          "time": "T#30ms"
+        },
+        {
+          "qualifier": "D",
+          "actionName": "CountDelayed",
+          "time": "T#30ms"
+        }
+      ]
+    }
+  ],
+  "transitions": [],
+  "actions": [
+    {
+      "id": "countpulse",
+      "name": "CountPulse",
+      "type": "ST",
+      "body": "Pulses := Pulses + 1;"
+    },
+    {
+      "id": "countlimited",
+      "name": "CountLimited",
+      "type": "ST",
+      "body": "Limited := Limited + 1;"
+    },
+    {
+      "id": "countdelayed",
+      "name": "CountDelayed",
+      "type": "ST",
+      "body": "Delayed := Delayed + 1;"
+    }
+  ]
+}

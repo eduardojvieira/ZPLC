@@ -1,0 +1,34 @@
+{
+  "requirement": "LNG-025",
+  "title": "an SFC simultaneous divergence starts both branches and the convergence waits for both",
+  "scans": 5,
+  "scanMs": 10,
+  "inputs": [
+    {
+      "at": "%IX0.0",
+      "type": "BOOL",
+      "value": true,
+      "beforeScan": 3
+    }
+  ],
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 2,
+      "afterScan": 5
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 2,
+      "afterScan": 5
+    },
+    {
+      "at": "%QW2",
+      "type": "INT",
+      "value": 2,
+      "afterScan": 5
+    }
+  ]
+}

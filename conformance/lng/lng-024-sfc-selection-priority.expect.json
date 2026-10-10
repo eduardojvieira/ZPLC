@@ -1,0 +1,20 @@
+{
+  "requirement": "LNG-024",
+  "title": "an SFC selection takes the branch with the lowest priority number",
+  "scans": 3,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QX0.1",
+      "type": "BOOL",
+      "value": true,
+      "afterScan": 3
+    },
+    {
+      "at": "%QX0.0",
+      "type": "BOOL",
+      "value": false,
+      "afterScan": 3
+    }
+  ]
+}
