@@ -1170,6 +1170,16 @@ static void test_get_ticks(void)
  * This reads the file from disk and loads it into the VM using the
  * proper zplc_core_load() function (with header validation).
  */
+#if defined(ZPLC_TEST_NO_FILE_IO)
+/* Targets without a file system (the Zephyr core suites) cannot read the file;
+ * the integration tests below then skip exactly as they do on the host when
+ * the file is absent. */
+static int load_zplc_file(const char *path)
+{
+    (void)path;
+    return -1;
+}
+#else
 static int load_zplc_file(const char *path)
 {
     FILE *fp;
@@ -1191,6 +1201,7 @@ static int load_zplc_file(const char *path)
     return zplc_core_load(buffer, size, loader_workspace,
                           sizeof(loader_workspace));
 }
+#endif
 
 static void test_integration_assembled_program(void)
 {
@@ -1291,7 +1302,7 @@ static void test_integration_float_math(void)
 
     /* Verify result: 25°C = 77°F */
     opi_value = (uint16_t)(zplc_core_get_opi(0) & 0xFFFF);
-    TEST_ASSERT_EQ(opi_value, 77, "Float math: 25°C = 77°F");
+    TEST_ASSERT_EQ(opi_value, 77, "Float math: 25 degC = 77 degF");
 
     /* Test another value: 0°C = 32°F */
     zplc_core_init();
@@ -1301,7 +1312,7 @@ static void test_integration_float_math(void)
     }
     zplc_core_run(0);
     opi_value = (uint16_t)(zplc_core_get_opi(0) & 0xFFFF);
-    TEST_ASSERT_EQ(opi_value, 32, "Float math: 0°C = 32°F");
+    TEST_ASSERT_EQ(opi_value, 32, "Float math: 0 degC = 32 degF");
 
     /* Test: 100°C = 212°F (boiling point) */
     zplc_core_init();
@@ -1311,7 +1322,7 @@ static void test_integration_float_math(void)
     }
     zplc_core_run(0);
     opi_value = (uint16_t)(zplc_core_get_opi(0) & 0xFFFF);
-    TEST_ASSERT_EQ(opi_value, 212, "Float math: 100°C = 212°F");
+    TEST_ASSERT_EQ(opi_value, 212, "Float math: 100 degC = 212 degF");
 }
 
 /* ============================================================================
@@ -1482,10 +1493,10 @@ static void test_multiple_entry_points(void)
     uint32_t counter2 = work[8] | (work[9] << 8) | (work[10] << 16) | (work[11] << 24);
     uint32_t counter3 = work[12] | (work[13] << 8) | (work[14] << 16) | (work[15] << 24);
 
-    TEST_ASSERT_EQ(counter0, 10, "Task 0: 10 cycles × 1 = 10");
-    TEST_ASSERT_EQ(counter1, 20, "Task 1: 10 cycles × 2 = 20");
-    TEST_ASSERT_EQ(counter2, 30, "Task 2: 10 cycles × 3 = 30");
-    TEST_ASSERT_EQ(counter3, 40, "Task 3: 10 cycles × 4 = 40");
+    TEST_ASSERT_EQ(counter0, 10, "Task 0: 10 cycles x 1 = 10");
+    TEST_ASSERT_EQ(counter1, 20, "Task 1: 10 cycles x 2 = 20");
+    TEST_ASSERT_EQ(counter2, 30, "Task 2: 10 cycles x 3 = 30");
+    TEST_ASSERT_EQ(counter3, 40, "Task 3: 10 cycles x 4 = 40");
 }
 
 static void test_vm_isolation(void)

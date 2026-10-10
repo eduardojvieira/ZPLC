@@ -10,6 +10,12 @@
  * result the table in zplc_core.c defines. Build with
  * -fsanitize=undefined,float-cast-overflow -fno-sanitize-recover=undefined so
  * that a regression is a failure of the test, not a silent wrong value.
+ *
+ * The last test stores and loads 16, 32 and 64-bit values at odd work memory
+ * addresses. A Cortex-M0 faults on an unaligned access and the undefined
+ * behaviour sanitizer reports one on the host, so this file is the part of
+ * the core suites that the 16 KB qemu_cortex_m0 target runs for alignment
+ * (VF-005, VF-015).
  */
 
 #include <zplc_core.h>
@@ -187,6 +193,73 @@ static void test_division_by_zero_still_faults(void)
     }
 }
 
+static size_t emit_mem_op(uint8_t *buf, size_t n, uint8_t opcode, uint16_t addr)
+{
+    buf[n++] = opcode;
+    buf[n++] = (uint8_t)addr;
+    buf[n++] = (uint8_t)(addr >> 8);
+    return n;
+}
+
+/** Store the pushed words at `addr`, load them back, and compare the stack. */
+static void check_round_trip(const char *name, uint8_t store, uint8_t load,
+                             uint16_t addr, const uint32_t *words, size_t word_count)
+{
+    uint8_t code[32];
+    size_t len = 0;
+    size_t i;
+    const zplc_vm_state_t *state;
+    int ok;
+
+    for (i = 0; i < word_count; i++) {
+        len = emit_push32(code, len, words[i]);
+    }
+    len = emit_mem_op(code, len, store, addr);
+    len = emit_mem_op(code, len, load, addr);
+    code[len++] = OP_HALT;
+
+    zplc_core_init();
+    ok = zplc_test_load_raw(code, len) == 0;
+    if (ok) {
+        (void)zplc_core_run(0);
+        state = zplc_core_get_state();
+        ok = state->error == ZPLC_VM_HALTED && state->sp == word_count;
+        for (i = 0; ok && i < word_count; i++) {
+            ok = state->stack[i] == words[i];
+        }
+    }
+
+    test_count++;
+    if (!ok) {
+        fprintf(stderr, "FAIL: %s at 0x%04X\n", name, (unsigned)addr);
+        fail_count++;
+    } else {
+        printf("PASS: %s at 0x%04X\n", name, (unsigned)addr);
+    }
+}
+
+static void test_unaligned_work_memory_round_trips(void)
+{
+    static const uint16_t odd_offsets[] = { 1U, 2U, 3U, 5U, 7U };
+    static const uint32_t one_word[] = { 0x5AA51234U };
+    static const uint32_t two_words[] = { 0xDEADBEEFU, 0xCAFEBABEU };
+    size_t i;
+
+    printf("\n=== Test: unaligned work memory access ===\n");
+    for (i = 0; i < sizeof(odd_offsets) / sizeof(odd_offsets[0]); i++) {
+        uint16_t addr = (uint16_t)(ZPLC_MEM_WORK_BASE + odd_offsets[i]);
+
+        /* PUSH32 keeps the whole word on the stack, LOAD16 returns the low half. */
+        {
+            static const uint32_t half[] = { 0x00001234U };
+
+            check_round_trip("STORE16/LOAD16", OP_STORE16, OP_LOAD16, addr, half, 1U);
+        }
+        check_round_trip("STORE32/LOAD32", OP_STORE32, OP_LOAD32, addr, one_word, 1U);
+        check_round_trip("STORE64/LOAD64", OP_STORE64, OP_LOAD64, addr, two_words, 2U);
+    }
+}
+
 int main(void)
 {
     printf("================================================\n");
@@ -195,6 +268,7 @@ int main(void)
 
     test_defined_results();
     test_division_by_zero_still_faults();
+    test_unaligned_work_memory_round_trips();
 
     printf("\n%d tests, %d failed\n", test_count, fail_count);
     return fail_count == 0 ? 0 : 1;

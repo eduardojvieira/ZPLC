@@ -1,0 +1,102 @@
+# Plain C suites of firmware/lib/zplc_core/tests, run on Zephyr targets.
+#
+# The suffix names the VM memory profile (see CMakeLists.txt): no suffix is the
+# ISA default sizes, .small is for 64 KB of RAM, .tiny for 16 KB. The profile
+# is part of the scenario so a result always says which sizes it was made with.
+common:
+  tags:
+    - zplc
+    - core
+  harness: ztest
+  timeout: 60
+tests:
+  # Suites that do not depend on the VM region sizes run with the ISA defaults
+  # everywhere they fit.
+  zplc.core.isa:
+    platform_allow:
+      - native_sim/native/64
+      - native_sim/native
+      - qemu_cortex_m3
+      - qemu_cortex_m0
+    integration_platforms:
+      - native_sim/native/64
+    extra_args:
+      - ZPLC_CORE_SUITE=isa
+  zplc.core.comm_dispatch:
+    platform_allow:
+      - native_sim/native/64
+      - native_sim/native
+      - qemu_cortex_m3
+      - qemu_cortex_m0
+    integration_platforms:
+      - native_sim/native/64
+    extra_args:
+      - ZPLC_CORE_SUITE=comm_dispatch
+  zplc.core.loader_verify:
+    platform_allow:
+      - native_sim/native/64
+      - native_sim/native
+      - qemu_cortex_m3
+    integration_platforms:
+      - native_sim/native/64
+    extra_args:
+      - ZPLC_CORE_SUITE=loader_verify
+
+  # The VM suites: ISA default sizes on the hosts, reduced sizes where RAM is
+  # small.
+  zplc.core.vm_core:
+    platform_allow:
+      - native_sim/native/64
+      - native_sim/native
+    integration_platforms:
+      - native_sim/native/64
+    extra_args:
+      - ZPLC_CORE_SUITE=vm_core
+  zplc.core.vm_arith_edges:
+    platform_allow:
+      - native_sim/native/64
+      - native_sim/native
+    integration_platforms:
+      - native_sim/native/64
+    extra_args:
+      - ZPLC_CORE_SUITE=vm_arith_edges
+  zplc.core.vm_core.small:
+    platform_allow:
+      - qemu_cortex_m3
+    integration_platforms:
+      - qemu_cortex_m3
+    # test_multiple_entry_points keeps four VM instances (about 5 KB) on the
+    # stack of the test thread.
+    extra_configs:
+      - CONFIG_ZTEST_STACK_SIZE=8192
+    extra_args:
+      - ZPLC_CORE_SUITE=vm_core
+      - ZPLC_SUITE_PROFILE=small
+  zplc.core.vm_arith_edges.small:
+    platform_allow:
+      - qemu_cortex_m3
+    integration_platforms:
+      - qemu_cortex_m3
+    extra_args:
+      - ZPLC_CORE_SUITE=vm_arith_edges
+      - ZPLC_SUITE_PROFILE=small
+  # qemu_cortex_m0 has 16 KB of RAM. The ztest thread does not fit next to the
+  # VM there, so these scenarios run the suite from main() (CONFIG_ZTEST=n).
+  zplc.core.vm_arith_edges.tiny:
+    platform_allow:
+      - qemu_cortex_m0
+    integration_platforms:
+      - qemu_cortex_m0
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "ZPLC_CORE_SUITE vm_arith_edges: PASS"
+    extra_configs:
+      - CONFIG_ZTEST=n
+      - CONFIG_MAIN_STACK_SIZE=2048
+      - CONFIG_ISR_STACK_SIZE=512
+      - CONFIG_IDLE_STACK_SIZE=128
+    extra_args:
+      - ZPLC_CORE_SUITE=vm_arith_edges
+      - ZPLC_SUITE_PROFILE=tiny
