@@ -1,10 +1,31 @@
 import type { Edge, EdgeChange, Node, NodeChange } from '@xyflow/react';
 import { findAction, type SFCModel, type SFCStep, type SFCTransition, validateSFCModel } from '../../models/sfc';
 
+const STEP_FIELDS = new Set(['id', 'name', 'isInitial', 'position', 'actions', 'comment']);
+const TRANSITION_FIELDS = new Set(['id', 'fromStep', 'toStep', 'fromSteps', 'toSteps', 'priority', 'condition', 'position', 'comment']);
+
+const extraOf = (value: object, known: ReadonlySet<string>): Record<string, unknown> =>
+  Object.fromEntries(Object.entries(value).filter(([field]) => !known.has(field)));
+
+/** What the canvas holds in a node for a step: the fields it edits, and the rest as it was in the file (LNG-014). */
+export function stepNodeData(step: SFCStep): Record<string, unknown> {
+  const extra = extraOf(step, STEP_FIELDS);
+  return { name: step.name, isInitial: step.isInitial, actions: step.actions, comment: step.comment, ...(Object.keys(extra).length > 0 ? { extra } : {}) };
+}
+
+/** What the canvas holds in a node for a transition (LNG-014). */
+export function transitionNodeData(transition: SFCTransition): Record<string, unknown> {
+  const extra = extraOf(transition, TRANSITION_FIELDS);
+  return {
+    condition: transition.condition, fromStep: transition.fromStep, toStep: transition.toStep, priority: transition.priority,
+    comment: transition.comment, ...(Object.keys(extra).length > 0 ? { extra } : {}),
+  };
+}
+
 export function nodesToSteps(nodes: Node[]): SFCStep[] {
   return nodes.filter((node) => node.type === 'step').map((node) => {
     const data = node.data as Record<string, unknown>;
-    return { id: node.id, name: data.name as string, isInitial: data.isInitial as boolean || false, position: node.position, actions: data.actions as SFCStep['actions'], comment: data.comment as string | undefined };
+    return { ...(data.extra as Record<string, unknown> | undefined), id: node.id, name: data.name as string, isInitial: data.isInitial as boolean || false, position: node.position, actions: data.actions as SFCStep['actions'], comment: data.comment as string | undefined };
   });
 }
 
@@ -16,6 +37,7 @@ export function nodesToTransitions(nodes: Node[], edges: Edge[]): SFCTransition[
     const incoming = edges.filter((edge) => edge.target === node.id && isStep(edge.source)).map((edge) => edge.source);
     const outgoing = edges.filter((edge) => edge.source === node.id && isStep(edge.target)).map((edge) => edge.target);
     return {
+      ...(data.extra as Record<string, unknown> | undefined),
       id: node.id,
       fromStep: incoming[0] || '',
       toStep: outgoing[0] || '',

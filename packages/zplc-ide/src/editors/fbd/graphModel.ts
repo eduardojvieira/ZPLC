@@ -3,10 +3,26 @@ import { isFunctionBlock, type FBDBlock, type FBDConnection, type FBDModel, vali
 import { judgeConnection } from '../../models/pinTypes';
 import type { ProjectBlock } from '../../models/projectBlocks';
 
+const BLOCK_FIELDS = new Set(['id', 'type', 'position', 'instanceName', 'variableName', 'address', 'dataType', 'value', 'comment', 'inputs', 'outputs']);
+
+/**
+ * What the canvas holds in a node for a block: the fields it edits, and the rest of the block as it was in the file, so
+ * that a commit that changed nothing writes the block back as it was (LNG-014).
+ */
+export function blockNodeData(block: FBDBlock): Record<string, unknown> {
+  const extra = Object.fromEntries(Object.entries(block).filter(([field]) => !BLOCK_FIELDS.has(field)));
+  return {
+    type: block.type, instanceName: block.instanceName, variableName: block.variableName, address: block.address,
+    dataType: block.dataType, value: block.value, comment: block.comment, inputs: block.inputs, outputs: block.outputs,
+    ...(Object.keys(extra).length > 0 ? { extra } : {}),
+  };
+}
+
 export function nodesToBlocks(nodes: Node[]): FBDBlock[] {
   return nodes.map((node) => {
     const data = node.data as Record<string, unknown>;
     return {
+      ...(data.extra as Record<string, unknown> | undefined),
       id: node.id, type: data.type as string, position: node.position,
       instanceName: data.instanceName as string | undefined,
       variableName: data.variableName as string | undefined,

@@ -854,6 +854,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/models/pinTypes.test.ts","test":"LNG-013 the reason a pin gives"}
   ],
   "LNG-014": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileRoundTrip.test.ts","test":"LNG-014 the commit of an editor that changed nothing says what the file says"},
     {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileRoundTrip.test.ts","test":"LNG-014 the committed visual files"},
     {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileRoundTrip.test.ts","test":"LNG-014 the one form of a visual file"},
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/fileSystem.visualRoundTrip.test.ts","test":"LNG-014 open and save without an edit"}

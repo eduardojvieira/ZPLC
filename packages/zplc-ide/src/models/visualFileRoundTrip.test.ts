@@ -2,7 +2,10 @@ import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
+import type { Edge, Node } from '@xyflow/react';
 import { createEmptyFileContent } from '../types';
+import { blockNodeData, edgesToConnections, nodesToBlocks } from '../editors/fbd/graphModel';
+import { nodesToSteps, nodesToTransitions, stepNodeData, transitionNodeData } from '../editors/sfc/graphModel';
 import { parseFBDModel, serializeFBDModel } from './fbd';
 import { parseLDModel, serializeLDModel } from './ld';
 import { parseSFCModel, serializeSFCModel } from './sfc';
@@ -95,5 +98,47 @@ describe('LNG-014 the one form of a visual file', () => {
     const changed = serializeLDModel({ ...parseLDModel(handWritten), description: 'edited' });
     expect(isUnchangedVisualDocument('LD', handWritten, changed)).toBe(false);
     expect(isUnchangedVisualDocument('LD', 'not json', same)).toBe(false);
+  });
+});
+
+describe('LNG-014 the commit of an editor that changed nothing says what the file says', () => {
+  const files = (suffix: string) => committed(suffix).map((path) => ({ path, text: readFileSync(join(repositoryRoot, path), 'utf8') }));
+
+  it('FBD: the blocks and wires an editor rebuilds from its canvas are the file', () => {
+    const rewritten: string[] = [];
+    for (const { path, text } of files('.fbd.json')) {
+      if (!loadFBDFile(path, text).ok) continue;
+      const model = parseFBDModel(text);
+      // what the canvas holds for a block (FBDEditor blocksToNodes), and for a wire
+      const nodes: Node[] = model.blocks.map((block) => ({ id: block.id, type: 'block', position: block.position, data: blockNodeData(block) }));
+      const edges: Edge[] = model.connections.map((wire) => ({ id: wire.id, source: wire.from.block, sourceHandle: wire.from.port, target: wire.to.block, targetHandle: wire.to.port }));
+      const next = serializeFBDModel({ ...model, blocks: nodesToBlocks(nodes), connections: edgesToConnections(edges) });
+      if (!isUnchangedVisualDocument('FBD', text, next)) rewritten.push(path);
+    }
+    expect(rewritten).toEqual([]);
+  });
+
+  it('SFC: the steps and transitions an editor rebuilds from its canvas are the file', () => {
+    const rewritten: string[] = [];
+    for (const { path, text } of files('.sfc.json')) {
+      if (!loadSFCFile(path, text).ok) continue;
+      const model = parseSFCModel(text);
+      const nodes: Node[] = [
+        ...model.steps.map((step) => ({ id: step.id, type: 'step', position: step.position, data: stepNodeData(step) })),
+        // the editor places a transition that has no position at a default one: the position is its layout, not an edit
+        ...model.transitions.map((transition) => ({ id: transition.id, type: 'transition', position: transition.position ?? { x: 200, y: 150 }, data: transitionNodeData(transition) })),
+      ];
+      const edges: Edge[] = model.transitions.flatMap((transition) => [
+        ...(transition.fromSteps ?? [transition.fromStep]).map((from) => ({ id: `${from}>${transition.id}`, source: from, target: transition.id })),
+        ...(transition.toSteps ?? [transition.toStep]).map((to) => ({ id: `${transition.id}>${to}`, source: transition.id, target: to })),
+      ]);
+      const rebuilt = nodesToTransitions(nodes, edges).map((transition, index) => {
+        if (model.transitions[index]!.position !== undefined) return transition;
+        return Object.fromEntries(Object.entries(transition).filter(([field]) => field !== 'position')) as typeof transition;
+      });
+      const next = serializeSFCModel({ ...model, steps: nodesToSteps(nodes), transitions: rebuilt });
+      if (!isUnchangedVisualDocument('SFC', text, next)) rewritten.push(path);
+    }
+    expect(rewritten).toEqual([]);
   });
 });

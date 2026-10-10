@@ -33,7 +33,7 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import { type FBDModel, type FBDBlock, type FBDConnection, getDefaultPorts } from '../../models/fbd';
-import { connectBlocks, copyFBDFragment, type WireEnds, edgesToConnections, hasCanonicalEdgeChanges, hasCanonicalNodeChanges, nodesToBlocks, pasteFBDFragment, uniqueNodeId, type FBDClipboardFragment } from './graphModel';
+import { blockNodeData, connectBlocks, copyFBDFragment, type WireEnds, edgesToConnections, hasCanonicalEdgeChanges, hasCanonicalNodeChanges, nodesToBlocks, pasteFBDFragment, uniqueNodeId, type FBDClipboardFragment } from './graphModel';
 import { nodeTypes, getNodeType } from './nodes';
 import { edgeTypes } from './edges';
 import FBDToolbox from './FBDToolbox';
@@ -84,15 +84,7 @@ function blocksToNodes(
     type: getNodeType(block.type),
     position: block.position,
     data: {
-      type: block.type,
-      instanceName: block.instanceName,
-      variableName: block.variableName,
-      address: block.address,
-      dataType: block.dataType,
-      value: block.value,
-      comment: block.comment,
-      inputs: block.inputs,
-      outputs: block.outputs,
+      ...blockNodeData(block),
       // Debug props
       debugActive,
       liveValues,

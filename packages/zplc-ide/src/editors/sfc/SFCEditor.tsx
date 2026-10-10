@@ -35,7 +35,7 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import { type SFCModel, type SFCStep, type SFCTransition } from '../../models/sfc';
-import { copySFCFragment, hasCanonicalEdgeChanges, hasCanonicalNodeChanges, isCanonicalSFCConnection, nodesToSteps, nodesToTransitions, pasteSFCFragment, uniqueNodeId, type SFCClipboardFragment } from './graphModel';
+import { copySFCFragment, stepNodeData, transitionNodeData, hasCanonicalEdgeChanges, hasCanonicalNodeChanges, isCanonicalSFCConnection, nodesToSteps, nodesToTransitions, pasteSFCFragment, uniqueNodeId, type SFCClipboardFragment } from './graphModel';
 import { nodeTypes } from './nodes';
 import { edgeTypes } from './edges';
 import SFCToolbox from './SFCToolbox';
@@ -88,10 +88,7 @@ function stepsToNodes(
       type: 'step',
       position: step.position,
       data: {
-        name: step.name,
-        isInitial: step.isInitial,
-        actions: step.actions,
-        comment: step.comment,
+        ...stepNodeData(step),
         // Debug properties
         debugActive,
         isActive: debugInfo?.isActive || false,
@@ -118,11 +115,7 @@ function transitionsToNodes(
       type: 'transition',
       position: trans.position || { x: 200, y: 150 },
       data: {
-        condition: trans.condition,
-        fromStep: trans.fromStep,
-        toStep: trans.toStep,
-        priority: trans.priority,
-        comment: trans.comment,
+        ...transitionNodeData(trans),
         // Debug properties
         debugActive,
         conditionResult: debugInfo?.conditionResult,

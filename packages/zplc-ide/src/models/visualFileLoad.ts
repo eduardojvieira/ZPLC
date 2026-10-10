@@ -111,8 +111,18 @@ export function isUnchangedVisualDocument(language: 'LD' | 'FBD' | 'SFC', curren
     const opened = language === 'LD' ? serializeLDModel(parseLDModel(current))
       : language === 'FBD' ? serializeFBDModel(parseFBDModel(current))
         : serializeSFCModel(parseSFCModel(current));
-    return opened === next;
+    // the same document in another order of keys is the same document: an editor writes the fields of a block in its own order
+    return opened === next || sortedKeys(JSON.parse(opened)) === sortedKeys(JSON.parse(next));
   } catch {
     return false; // a file that does not open is not a file an editor committed
   }
+}
+
+/** The JSON of a value with the keys of every object in order, so two documents compare as what they say. */
+function sortedKeys(value: unknown): string {
+  return JSON.stringify(value, (_key, inner: unknown) => (
+    inner && typeof inner === 'object' && !Array.isArray(inner)
+      ? Object.fromEntries(Object.entries(inner as Record<string, unknown>).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)))
+      : inner
+  ));
 }

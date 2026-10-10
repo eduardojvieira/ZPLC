@@ -38,7 +38,9 @@ All notable changes are documented here.
   test compiles every pair of elementary types and fails when the two disagree.
 - Opening a Ladder, FBD or SFC file and saving it without a change leaves it byte for byte
   as it was (LNG-014): a commit of an editor that says what the file already said no longer
-  rewrites it, and the one form that Studio writes (`serializeLDModel`, `serializeFBDModel`,
+  rewrites it (the order of the keys does not matter, and the fields of a block, a step or a
+  transition that the canvas does not edit are written back as they were), and the one form
+  that Studio writes (`serializeLDModel`, `serializeFBDModel`,
   `serializeSFCModel`) ends in a newline, as the files of the repository do. The checks made
   when a visual file opens (LNG-011) now also cover the variables of FBD and SFC files, the
   actions, positions and conditions of an SFC chart, and the variable of a Ladder element.
