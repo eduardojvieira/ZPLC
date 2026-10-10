@@ -300,11 +300,11 @@ Las funciones de conversión mueven valores entre tipos. Existe una función `<O
 - **Salidas:** (UDINT / TIME) Último valor de ciclo informado. Su unidad, resolución, punto de actualización y relación con el tiempo físico dependen del runtime/perfil; no lo use como garantía de timing de hardware.
 
 ### WATCHDOG_RESET
-Stub de compatibilidad. Hoy compila a `NOP` y no alimenta, reinicia ni valida un watchdog de hardware o software.
+Stub de compatibilidad. Compila a `NOP` y no alimenta, reinicia ni valida un watchdog de hardware o software: ningún opcode lo hace, y el runtime alimenta el watchdog de hardware por sí mismo después de cada ciclo completado (`rt-034-watchdog-reset-is-reported-and-changes-nothing`).
 - **Entradas:** Ninguna.
 - **Salidas:** Ninguna.
 
-No debe usarse como control de seguridad.
+La compilación informa cada llamada con la advertencia `WATCHDOG_RESET_NO_EFFECT` en la llamada (`cmp-058-uptime-follows-the-clock`); `compiler.warnings` la selecciona como cualquier otra advertencia. Quite la llamada: el programa se ejecuta como si la línea no estuviera. No debe usarse como control de seguridad.
 
 ---
 

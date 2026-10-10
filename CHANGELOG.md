@@ -4,6 +4,134 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- Three of the fifteen modules over the new size limit are split (IDE-014): the
+  project settings are one module per section (2,181 lines to 213 and eleven
+  files of at most 430), the Explorer's context menu and confirmations are
+  their own module, and the declaration of `window.electronAPI` is out of the
+  shared types. Twelve remain on `tools/ci/module-size-offenders.json`, each
+  with the work package that owns its split.
+- The declared-interlock coverage check is a view of its own (IDE-032): an
+  **Interlocks** tab in the lower panel, no longer a section of Problems. It
+  runs the same check on the saved project, lists each declared pair as
+  Covered or Missing exact NEVER coverage, and keeps its scope text: it checks
+  saved scenarios and establishes no physical safety, timing or certification.
+- Scenario tests with temporal assertions give the same result from Studio, the
+  CLI and the MCP tools, and a test says so (IDE-031):
+  `src/cli/scenarioParity.test.ts` runs every bundled project, each scenario by
+  itself, and a project with a failing assertion through the Tool API, the CLI,
+  the MCP dispatcher and the Studio presenter, and compares the verdict, the
+  program and trace hashes, and the assertions and sampled outputs. No
+  divergence was found: the three entry points share the Tool API.
+- The project tree lists the project's function blocks, functions and data
+  types, and a library folder makes its blocks available to every editor
+  (IDE-023). Under the file tree the Explorer has a Declarations section with
+  the declarations that the Structured Text files the build reads declare
+  (directly in `src` and directly in each folder of `libraries`), grouped under
+  their file; choosing one opens the file at its name. It uses the build's own
+  rules for `libraries` (`buildOptions.ts`, the workspace reader of the Tool
+  API) instead of a mechanism of its own: **Library folder...** lists a folder
+  in `zplc.json`, the tree marks it `library`, and the blocks of its files are
+  in the FBD and LD palettes and in the completion and hover of ST. A file the
+  build does not read (neither in `src` nor directly in a library folder) is
+  marked `not compiled` in the tree and its folder is offered with a **List as
+  library** button; the walk that finds such files is one module
+  (`project/unlistedSources.ts`) that the Tool API and Studio both use.
+- A project exports to one archive and imports back into an equivalent project
+  (IDE-022). **Export Project Archive** (Build options) writes a zip of the
+  project files that is the same bytes on every machine (entries sorted by
+  path, stored, dated 1980-01-01); **Import a project archive** (Welcome)
+  reads one, says what it holds, and extracts it byte for byte into an empty
+  folder the user chooses before opening it. Both go through typed operations
+  of the main process behind native dialogs, and the reader refuses paths that
+  leave the folder, links, encryption, colliding names, checksum mismatches
+  and archives over the limits. A version 1 project, opened or imported, shows
+  the lines its migration changes in `zplc.json` in a dialog of its own, and
+  **Apply migration** is the save.
+- The Welcome screen loads without the code editor, the visual editors or the
+  project settings (IDE-015): the workbench (toolbar, editor area and lower
+  panel) loads when a project opens, and each editor and the settings load the
+  first time a file of their kind or the settings are opened. The entry chunk
+  of the page went from 5.2 MB (1.34 MB gzipped) to 0.9 MB (0.23 MB gzipped).
+  Only the Monaco core Studio uses is bundled, so the CSS, HTML, JSON and
+  TypeScript language workers (about 9 MB) and the 80 basic languages are no
+  longer built, and the installer holds no source maps. `welcomeBundle.test.ts`
+  proves it on the build output, and journey 29 on the development host.
+- CI checks the structure of Studio's source (IDE-014, IDE-033):
+  `tools/ci/ide-structure.ts`, run by `bun run lint:ide` and by
+  `bun test ./tools/ci`, fails when a store module imports a component, when a
+  command-line or MCP module imports from `electron/`, when static imports form
+  a cycle (the path of each cycle is printed), and when a hand-written module
+  has more than 800 lines. The modules above the limit today are on
+  `tools/ci/module-size-offenders.json`, one entry each with its size and the
+  split it needs; the list can only shrink. The one command-line import of the
+  Electron folder that cannot move yet (the native simulation supervisor) is on
+  `tools/ci/layering-exceptions.json` with the reason. The store no longer
+  imports the breakpoint helpers or the build-evidence types from `components/`,
+  and the sensitive-configuration helpers no longer form an import cycle with
+  the file system and export modules.
+- The reference pages are generated, in English and Spanish, from the sources they describe, and CI
+  fails when one is stale (DOC-006, DOC-007, DOC-008, DOC-014). A page per language (ST, IL, LD, FBD,
+  SFC) is read off `conformance/matrix.json`, the executed cases and the expected-failures list, with
+  the I/O addressing and what is not supported; the 57 functions, the 240 type conversions and the 34
+  function blocks of the compiler registry each have a signature or pin table, a description and an
+  example that CI compiles and runs; the Kconfig options, shell commands, `zplc.json` fields, scenario
+  files, `zplc-cli` commands, MCP tools and resources, and runtime session requests are read off their
+  source files. A check reads every code span of the documentation and fails on a Kconfig symbol,
+  shell command, C name, IEC call or repository path that the source does not have; what is
+  deliberately absent is listed with its reason in `docs/doc-claims-allowlist.json`. No editor
+  screenshot is published yet: the language pages say so instead of showing a drawing.
+- Runtime hardening of the firmware and the host runtime (RT-010 to RT-034):
+  - Memory seen from outside the scan is whole and respects forces. The Modbus
+    server, MQTT and the shell debug commands read a snapshot that the scan
+    publishes at its commit, and they and the Modbus clients queue their
+    writes, which the scan applies at its next input latch through the
+    force-aware interface: a forced
+    variable keeps its forced value whatever a client writes, and a Modbus
+    write of the two registers of a 32-bit value sets only the half it
+    addresses. A write that does not fit the queue
+    (`CONFIG_ZPLC_EXCHANGE_QUEUE_BYTES`) is refused whole and a Modbus TCP
+    client gets exception 6.
+  - The process-image lock is no longer held while the physical outputs are
+    written, a line is printed or a call can block; the scan reads the inputs
+    before it takes the lock and writes the pins after it releases it. A lock
+    that cannot be created or taken is reported by every caller:
+    `zplc_core_init()` returns -1, a control call returns
+    `ZPLC_SCHED_ERR_LOCK`, and a scan that cannot take the lock drives the pins
+    safe and latches the fault.
+  - A program load is a cold start on every runtime: the variables and the
+    forces of the program it replaces never carry over
+    (`zplc_core_cold_start()` and `zplc_core_warm_start()`).
+  - The firmware starts the scheduler, the program store and the control link
+    before the network, time, fieldbus and cloud services, and a service that
+    fails to start no longer stops the runtime.
+  - The largest artifact is one number, `CONFIG_ZPLC_CODE_SIZE_MAX`: the program
+    store keeps and restores an artifact of that size (it is chunked under
+    `CONFIG_ZPLC_PROGRAM_STORE_CHUNK_SIZE`), the loader accepts it and the shell
+    and the IDE advertise it. **Behaviour change:** the Raspberry Pi Pico
+    profile now advertises 24576 bytes, the STM32F746G Discovery profile
+    16384 bytes and the Arduino Opta WiFi profile 32768 bytes, the largest
+    sizes their storage and RAM hold with three copies of the program in RAM;
+    the build fails when two slots of the configured size do not fit the
+    storage partition. The firmware keeps no resident copy of the program
+    beside the upload staging buffer: `zplc reset` reloads the loaded program
+    from the program store (and cancels an upload in progress), which saves
+    one program of RAM on every board.
+  - A power cut at any moment of a program deploy leaves the previous or the
+    complete new program; the store logic is one implementation shared by the
+    host runtime and the firmware, tested with a power cut and a torn write at
+    every operation.
+  - Every size, depth and priority has a Kconfig range and a build-time rule,
+    and the core compiles without Zephyr headers. The scan coordinator is
+    checked to outrank the communication, shell and log threads
+    (`CONFIG_ZPLC_COMM_THREAD_PRIORITY`), and the boards with a network stack
+    run its threads preemptible.
+  - One CRC-32 and one set of little-endian helpers (`zplc_crc32.h`,
+    `zplc_bytes.h`) replace the copies of the loader, the RETAIN records and
+    the program stores. The test-only entry points moved out of the public
+    headers into `firmware/lib/zplc_core/tests/include/zplc_test_hooks.h`.
+    `zplc_retain_config_t.lock` is now `int (*)(void)` so a lock failure can be
+    reported.
+
 - Learn lessons are data packages with one generated index of ids (LRN-009, LRN-027,
   LRN-028). Each of the ten lessons lives in `packages/zplc-ide/lessons/<id>/`: a manifest
   (id, version, module, level, prerequisites, languages, tracks, plant, estimated time,
@@ -561,6 +689,13 @@ All notable changes are documented here.
 - The assembly listing of a build is a tested output of the CLI (CMP-060):
   `zplc-cli compile <workspace|file> --emit asm` prints it, or writes it to
   `--output`, and assembling it gives the bytecode of the artifact.
+- A call to `WATCHDOG_RESET()` is reported by the build with the warning
+  `WATCHDOG_RESET_NO_EFFECT` at the call (RT-034): it compiles to nothing, no
+  opcode feeds the hardware watchdog, and the runtime feeds it itself after each
+  completed scan. It is a warning, not an error, so programs that call it still
+  build; `compiler.warnings` selects it (the level `default` reports it). The
+  bundled `kitchen_sink` fixture keeps its call, which exercises the function,
+  and already selects no warnings.
 
 ## 2.0.0-rc.3 - 2026-09-01
 

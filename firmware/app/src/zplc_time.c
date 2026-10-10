@@ -31,8 +31,8 @@ LOG_MODULE_REGISTER(zplc_time, LOG_LEVEL_INF);
  * Internal State
  * ============================================================================ */
 
-/** Mutex protecting sync state. */
-static struct k_mutex s_lock;
+/** Mutex protecting sync state; defined statically, so it exists before zplc_time_init() (RT-030). */
+K_MUTEX_DEFINE(s_lock);
 
 /**
  * Anchor point recorded at last successful SNTP sync.
@@ -78,7 +78,10 @@ static int do_sntp_sync(const char *server)
         return ret;
     }
 
-    k_mutex_lock(&s_lock, K_FOREVER);
+    if (k_mutex_lock(&s_lock, K_FOREVER) != 0) {
+        LOG_ERR("SNTP: the time lock could not be taken");
+        return -EBUSY;
+    }
     /* sntp_time.seconds is seconds since Unix epoch (NTP epoch offset applied
      * by Zephyr's SNTP driver — result is already in Unix time). */
     s_epoch_base_ms  = (int64_t)sntp_result.seconds * 1000LL
@@ -98,8 +101,6 @@ static int do_sntp_sync(const char *server)
 
 int zplc_time_init(void)
 {
-    k_mutex_init(&s_lock);
-
 #if defined(CONFIG_SNTP)
     /* Check if NTP is enabled in config */
     if (!zplc_config_get_ntp_enabled()) {
@@ -126,7 +127,9 @@ int zplc_time_init(void)
 
 bool zplc_time_is_synced(void)
 {
-    k_mutex_lock(&s_lock, K_FOREVER);
+    if (k_mutex_lock(&s_lock, K_FOREVER) != 0) {
+        return false;
+    }
     bool synced = s_synced;
     k_mutex_unlock(&s_lock);
     return synced;
@@ -134,7 +137,9 @@ bool zplc_time_is_synced(void)
 
 int64_t zplc_time_get_unix_ms(void)
 {
-    k_mutex_lock(&s_lock, K_FOREVER);
+    if (k_mutex_lock(&s_lock, K_FOREVER) != 0) {
+        return -1;
+    }
     if (!s_synced) {
         k_mutex_unlock(&s_lock);
         return -1;

@@ -56,6 +56,7 @@ same project.
 | `WRITE_ONLY_VARIABLE` | a `VAR` or `VAR_TEMP` variable is written and never read | `all` |
 | `OPTION_IGNORED` | an option of `zplc.json` has a value that changes nothing | `default` |
 | `SOURCE_NOT_COMPILED` | a Structured Text file of the project folder is in neither `src` nor a listed library | `default` |
+| `WATCHDOG_RESET_NO_EFFECT` | `WATCHDOG_RESET()` is called: it does nothing, the runtime feeds the hardware watchdog itself after each completed scan | `default` |
 
 A branch that a constant condition disables (`IF FALSE THEN`) is not
 unreachable code: IEC 61131-3 defines no rule for it and the compiler evaluates

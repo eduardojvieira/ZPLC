@@ -20,6 +20,7 @@
  */
 
 #include "zplc_comm_dispatch.h"
+#include "zplc_config_check.h"
 #include "zplc_mem_extent.h"
 #include <string.h>
 #include <zplc_core.h>
@@ -2852,7 +2853,8 @@ int zplc_core_init(void) {
   /* Initialize shared memory */
   zplc_mem_init();
 
-  /* Create PI Mutex */
+  /* Create PI Mutex. A runtime without it cannot synchronise its communication threads with the scan: the failure
+   * is reported (RT-030) and a later call creates it again. */
   if (pi_mutex == NULL) {
     pi_mutex = zplc_hal_mutex_create();
   }
@@ -2861,7 +2863,22 @@ int zplc_core_init(void) {
   zplc_vm_init(&default_vm);
   default_program_loaded = 0;
 
-  return 0;
+  return pi_mutex != NULL ? 0 : -1;
+}
+
+void zplc_core_cold_start(void) {
+  memset(mem_ipi, 0, sizeof(mem_ipi));
+  memset(mem_opi, 0, sizeof(mem_opi));
+  memset(mem_work, 0, sizeof(mem_work));
+  memset(mem_retain, 0, sizeof(mem_retain));
+  memset(force_entries, 0, sizeof(force_entries));
+}
+
+void zplc_core_warm_start(void) {
+  memset(mem_ipi, 0, sizeof(mem_ipi));
+  memset(mem_opi, 0, sizeof(mem_opi));
+  memset(mem_work, 0, sizeof(mem_work));
+  memset(force_entries, 0, sizeof(force_entries));
 }
 
 int zplc_core_shutdown(void) {
@@ -2873,6 +2890,8 @@ int zplc_core_shutdown(void) {
 static void zplc_core_commit_verified(const zplc_program_view_t *view) {
   uint32_t index;
 
+  /* Loading a program is a cold start on every runtime (RT-016). */
+  zplc_core_cold_start();
   memcpy(mem_code, view->code, view->code_size);
   code_size = view->code_size;
   memset(mem_tags, 0, sizeof(mem_tags));

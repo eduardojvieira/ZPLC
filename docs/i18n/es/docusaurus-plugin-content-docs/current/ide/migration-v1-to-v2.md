@@ -15,9 +15,12 @@ actualiza su `zplc.json` en el workspace seleccionado a schema v2.
 
 ## Camino rápido
 
-1. Abrí la carpeta del proyecto existente en Studio.
-2. Revisá el aviso de migración y su diff.
-3. Elegí **Guardar** para escribir la configuración v2 revisada en ese workspace.
+1. Abrí la carpeta del proyecto existente en Studio, o importá su archivo desde la pantalla de bienvenida: el
+   diálogo de importación muestra la misma diferencia antes de escribir nada.
+2. Elegí **Review the difference** en el aviso de migración del Explorer. El diálogo lista las líneas de `zplc.json` que
+   la migración quita y agrega; solo cambia `zplc.json`, y tus programas no se tocan.
+3. Elegí **Apply migration** (equivale a **Guardar**) para escribir la configuración v2 revisada en ese workspace, o
+   **Close** para dejar la carpeta como está.
 4. Volvé a compilar y ejecutar el escenario después de guardar.
 
 ## Qué cambia

@@ -1,0 +1,33 @@
+{
+  "requirement": "RT-034",
+  "title": "a call to WATCHDOG_RESET builds with the warning WATCHDOG_RESET_NO_EFFECT and changes nothing the program does",
+  "matrix": [
+    "functions.uptime-cycle-time-watchdog-reset"
+  ],
+  "note": "RT-034: the call is a documented no-op and the build reports it at the call; the runtime feeds the hardware watchdog itself after each completed scan, so the program runs as if the line were absent",
+  "scans": 3,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 7
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 8
+    },
+    {
+      "at": "%QW2",
+      "type": "INT",
+      "value": 3
+    }
+  ],
+  "warnings": [
+    {
+      "code": "WATCHDOG_RESET_NO_EFFECT",
+      "line": 8
+    }
+  ]
+}

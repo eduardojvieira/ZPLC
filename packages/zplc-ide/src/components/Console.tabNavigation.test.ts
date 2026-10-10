@@ -34,7 +34,7 @@ describe('Console tab boundary', () => {
     expect(source).toContain('<LearnPanel workspaceTestPresentation={typeof workspaceTestStateForLink === \'object\' ? workspaceTestStateForLink.presentation : undefined} />');
     expect(source).toContain("id: 'explorer'");
     expect(source).toContain("id: 'inspector'");
-    expect(source).toContain('<Sidebar />');
+    expect(source).toContain('<ProjectExplorer />');
     expect(source).toContain('<WorkbenchInspector />');
     expect(source).toContain('aria-label="Workbench panels"');
     expect(source).toContain('Native POSIX host trace. Not hardware or HIL evidence.');
@@ -119,16 +119,14 @@ describe('Console tab boundary', () => {
     expect(source).toContain('stBufferDiagnostics.compilerRunId === compilerRunId');
   });
 
-  it('keeps declared interlock coverage inside Problems with saved-session fences and no physical claim', () => {
+  // The copy of the view (its title, button, hints and the claim it does not make) is InterlockCoverage.test.tsx.
+  it('runs the declared interlock check from its own tab, with saved-session fences and no physical claim', () => {
     const source = readFileSync(join(import.meta.dir, 'Console.tsx'), 'utf8');
-    expect(source).toContain('Declared interlock coverage');
-    expect(source).toContain('Check declared interlocks');
-    expect(source).toContain('Missing exact NEVER coverage');
-    expect(source).toContain('Checks exact NEVER coverage in saved scenarios. It does not establish physical safety, timing, or certification.');
+    expect(source).toContain("id: 'interlocks'");
+    expect(source).toContain("activeConsoleTab === 'interlocks' && <InterlockCoverage");
     expect(source).toContain('workspaceTests.safetyCheck({ workspaceId })');
     expect(source).toContain('presentWorkspaceSafetyCheck(result)');
     expect(source).toContain('isWorkspaceTestRunCurrent(latest, { projectSession: expectedProjectSession, compilerRunId: expectedCompilerRunId, workspaceId })');
-    expect(source).toContain('Save the project and choose zplc.json in Tests to check declared interlocks.');
     expect(source).not.toContain('workspaceTests.safetyCheck({ workspaceId, path');
     expect(source).not.toMatch(/safetyCheck\.(flash|deploy|force|run|stop|shell)/);
     expect(source).toContain("let published = false;");

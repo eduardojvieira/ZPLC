@@ -584,7 +584,10 @@ static int zplc_azure_dps_provision_locked(void)
         return -EACCES;
     }
 
-    k_sem_init(&s_dps_sem, 0, 1);
+    rc = k_sem_init(&s_dps_sem, 0, 1);
+    if (rc != 0) {
+        return rc;
+    }
     s_dps_connected = false;
     s_dps_subscribed = false;
     s_dps_done = false;

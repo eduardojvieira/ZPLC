@@ -7,6 +7,7 @@
 #include "zplc_config.h"
 #include "zplc_modbus_tcp.h"
 #include <zplc_core.h>
+#include <zplc_exchange.h>
 #include <zplc_hal.h>
 #include <zplc_isa.h>
 #include <zephyr/devicetree.h>
@@ -151,69 +152,47 @@ static const zplc_tag_entry_t* find_modbus_tag(uint16_t modbus_addr,
     return NULL;
 }
 
-static uint32_t mem_read_val(uint16_t addr, zplc_data_type_t type) {
-    uint16_t base = addr & 0xF000;
-    uint16_t offset = addr & 0x0FFF;
-    if (base == 0x2000 || base == 0x3000) base = 0x2000; /* Work memory spans 8K */
-    
-    uint8_t *region = zplc_mem_get_region(base);
-    if (!region) return 0;
-    
+/* Bytes a variable of the given type occupies (zero: not a type the Modbus mapping carries). */
+static uint16_t modbus_value_size(zplc_data_type_t type) {
     switch (type) {
         case ZPLC_TYPE_BOOL:
         case ZPLC_TYPE_SINT:
         case ZPLC_TYPE_USINT:
         case ZPLC_TYPE_BYTE:
-            return region[offset];
+            return 1U;
         case ZPLC_TYPE_INT:
         case ZPLC_TYPE_UINT:
         case ZPLC_TYPE_WORD:
-            return region[offset] | (region[offset + 1] << 8);
+            return 2U;
         case ZPLC_TYPE_REAL:
         case ZPLC_TYPE_DINT:
         case ZPLC_TYPE_UDINT:
         case ZPLC_TYPE_DWORD:
-            return region[offset] | (region[offset + 1] << 8) | 
-                   (region[offset + 2] << 16) | (region[offset + 3] << 24);
+            return 4U;
         default:
-            return 0;
+            return 0U;
     }
 }
 
-static void mem_write_val(uint16_t addr, zplc_data_type_t type, uint32_t val) {
-    uint16_t base = addr & 0xF000;
-    uint16_t offset = addr & 0x0FFF;
-    if (base == 0x2000 || base == 0x3000) base = 0x2000;
-    
-    uint8_t *region = zplc_mem_get_region(base);
-    if (!region) return;
-    
-    switch (type) {
-        case ZPLC_TYPE_BOOL:
-        case ZPLC_TYPE_SINT:
-        case ZPLC_TYPE_USINT:
-        case ZPLC_TYPE_BYTE:
-            region[offset] = val & 0xFF;
-            break;
-        case ZPLC_TYPE_INT:
-        case ZPLC_TYPE_UINT:
-        case ZPLC_TYPE_WORD:
-            region[offset] = val & 0xFF;
-            region[offset + 1] = (val >> 8) & 0xFF;
-            break;
-        case ZPLC_TYPE_REAL:
-        case ZPLC_TYPE_DINT:
-        case ZPLC_TYPE_UDINT:
-        case ZPLC_TYPE_DWORD:
-            region[offset] = val & 0xFF;
-            region[offset + 1] = (val >> 8) & 0xFF;
-            region[offset + 2] = (val >> 16) & 0xFF;
-            region[offset + 3] = (val >> 24) & 0xFF;
-            break;
-        default:
-            break;
+#if ZPLC_HAS_MODBUS_RTU || defined(CONFIG_NET_SOCKETS)
+/**
+ * @brief Read a variable from the snapshot the scan published at its last commit (RT-010).
+ *
+ * The caller holds the exchange read lock, so every variable of one request is of the same scan and none is
+ * half written. Returns 0 on success.
+ */
+static int mem_read_val(uint16_t addr, zplc_data_type_t type, uint32_t *value) {
+    uint8_t bytes[4] = {0U, 0U, 0U, 0U};
+    uint16_t size = modbus_value_size(type);
+
+    if (size == 0U || zplc_exchange_read_locked(addr, bytes, size) != 0) {
+        return -1;
     }
+    *value = (uint32_t)bytes[0] | ((uint32_t)bytes[1] << 8) |
+             ((uint32_t)bytes[2] << 16) | ((uint32_t)bytes[3] << 24);
+    return 0;
 }
+#endif
 
 /**
  * @brief Map a memory read from ZPLC to Modbus format
@@ -224,19 +203,19 @@ static int handle_read(uint16_t addr, uint16_t count, uint8_t *resp_data, bool i
     if (count == 0U || (uint32_t)addr + (uint32_t)count > UINT16_MAX + 1U) {
         return -1;
     }
-    if (zplc_pi_lock() != 0) {
+    /* Every value of this request comes from one publication of the scan; nothing here waits for a scan. */
+    if (zplc_exchange_read_lock() != 0) {
         return -1;
     }
     
     for (uint16_t i = 0; i < count; i++) {
         uint16_t word_offset = 0U;
+        uint32_t val = 0U;
         const zplc_tag_entry_t* tag = find_modbus_tag(addr + i, area, NULL, &word_offset);
-        if (!tag) {
-            zplc_pi_unlock();
+        if (!tag || mem_read_val(tag->var_addr, (zplc_data_type_t)tag->var_type, &val) != 0) {
+            zplc_exchange_read_unlock();
             return -1;
         }
-        
-        uint32_t val = mem_read_val(tag->var_addr, (zplc_data_type_t)tag->var_type);
         
         if (is_bit) {
             uint8_t byte_idx = i / 8;
@@ -261,7 +240,7 @@ static int handle_read(uint16_t addr, uint16_t count, uint8_t *resp_data, bool i
         }
     }
     
-    zplc_pi_unlock();
+    zplc_exchange_read_unlock();
     
     if (is_bit) {
         return (count + 7) / 8;
@@ -272,62 +251,121 @@ static int handle_read(uint16_t addr, uint16_t count, uint8_t *resp_data, bool i
 #endif
 
 /**
+ * @brief The bytes a mapped Modbus write puts in PLC memory, and where.
+ *
+ * A bit write sets the whole variable to 0 or 1. A register write of a one-register variable sets its bytes. A
+ * register write of a 32-bit variable sets the half the register is: memory is little endian, so register 0 (the
+ * high word) is bytes 2 and 3 and register 1 is bytes 0 and 1. Only those bytes are written, so two clients that
+ * write the two halves never overwrite each other with a stale read of the other half (RT-010).
+ */
+static int modbus_write_bytes(const zplc_tag_entry_t *tag, bool is_bit, uint16_t word_offset,
+                              uint16_t register_word, uint8_t bit, uint16_t *addr, uint8_t bytes[4],
+                              uint16_t *size) {
+    const zplc_data_type_t type = (zplc_data_type_t)tag->var_type;
+    const uint16_t value_size = modbus_value_size(type);
+
+    if (value_size == 0U) {
+        return -1;
+    }
+    memset(bytes, 0, 4U);
+    if (is_bit) {
+        bytes[0] = bit;
+        *addr = tag->var_addr;
+        *size = value_size;
+        return 0;
+    }
+    if (modbus_register_width(type) == 2U) {
+        const uint16_t byte_offset = (word_offset == 0U) ? 2U : 0U;
+
+        bytes[0] = (uint8_t)(register_word & 0xFFU);
+        bytes[1] = (uint8_t)(register_word >> 8);
+        *addr = (uint16_t)(tag->var_addr + byte_offset);
+        *size = 2U;
+        return 0;
+    }
+    bytes[0] = (uint8_t)(register_word & 0xFFU);
+    bytes[1] = (uint8_t)(register_word >> 8);
+    *addr = tag->var_addr;
+    *size = value_size;
+    return 0;
+}
+
+/**
  * @brief Map a memory write from Modbus to ZPLC format
+ *
+ * Every write of the request is queued together, or none is, and applied by the scan at its next input latch,
+ * through the force-aware interface of the core (RT-010, RT-011).
  */
 int zplc_modbus_write_mapped(uint16_t addr, uint16_t count, const uint8_t *req_data,
                              bool is_bit, bool is_multiple, zplc_modbus_area_t area) {
+    size_t records = 0U;
+    size_t total_bytes = 0U;
+
     if (count == 0U || (uint32_t)addr + (uint32_t)count > UINT16_MAX + 1U) {
         return -1;
     }
-    if (zplc_pi_lock() != 0) {
-        return -1;
+
+    /* Preflight: every address of the range is mapped, and what the range needs from the queue. */
+    for (uint16_t i = 0; i < count; i++) {
+        const zplc_tag_entry_t *tag =
+            find_modbus_tag((uint16_t)((uint32_t)addr + i), area, NULL, NULL);
+        uint16_t target;
+        uint16_t size;
+        uint8_t bytes[4];
+
+        if (tag == NULL ||
+            modbus_write_bytes(tag, is_bit, 0U, 0U, 0U, &target, bytes, &size) != 0) {
+            return -1;
+        }
+        records++;
+        total_bytes += size;
     }
 
-    /* Preflight under the same process-image lock: no partial range writes. */
-    for (uint16_t i = 0; i < count; i++) {
-        if (find_modbus_tag((uint16_t)((uint32_t)addr + i), area, NULL, NULL) == NULL) {
-            zplc_pi_unlock();
-            return -1;
+    {
+        const int reserved = zplc_exchange_write_begin(records, total_bytes);
+
+        if (reserved != 0) {
+            /* A full queue is a busy server (the client may retry); anything else is a refusal. */
+            return reserved == ZPLC_EXCHANGE_ERR_FULL ? -EBUSY : -1;
         }
     }
 
     for (uint16_t i = 0; i < count; i++) {
         uint16_t word_offset = 0U;
         const zplc_tag_entry_t* tag = find_modbus_tag((uint16_t)((uint32_t)addr + i), area, NULL, &word_offset);
+        uint16_t register_word = 0U;
+        uint8_t bit = 0U;
+        uint16_t target;
+        uint16_t size;
+        uint8_t bytes[4];
+
         if (!tag) {
-            zplc_pi_unlock();
+            zplc_exchange_write_end();
             return -1; /* Address not mapped */
         }
-        
-        uint32_t val = 0;
-        
+
         if (is_bit) {
             if (is_multiple) {
                 uint8_t byte_idx = i / 8;
                 uint8_t bit_idx = i % 8;
-                val = (req_data[byte_idx] & (1 << bit_idx)) ? 1 : 0;
+                bit = (req_data[byte_idx] & (1 << bit_idx)) ? 1U : 0U;
             } else {
                 /* Single coil write uses 0xFF00 for ON, 0x0000 for OFF */
-                val = (req_data[0] == 0xFF) ? 1 : 0;
+                bit = (req_data[0] == 0xFF) ? 1U : 0U;
             }
         } else {
             /* Modbus is big-endian */
-            val = (req_data[i * 2] << 8) | req_data[i * 2 + 1];
+            register_word = (uint16_t)(((uint16_t)req_data[i * 2] << 8) | req_data[i * 2 + 1]);
         }
 
-        if (!is_bit && modbus_register_width((zplc_data_type_t)tag->var_type) == 2U) {
-            uint32_t current = mem_read_val(tag->var_addr, (zplc_data_type_t)tag->var_type);
-            if (word_offset == 0U) {
-                val = ((uint32_t)val << 16) | (current & 0xFFFFU);
-            } else {
-                val = (current & 0xFFFF0000U) | val;
-            }
+        if (modbus_write_bytes(tag, is_bit, word_offset, register_word, bit, &target, bytes, &size) != 0 ||
+            zplc_exchange_write_add(target, bytes, size) != 0) {
+            zplc_exchange_write_end();
+            return -1;
         }
-        
-        mem_write_val(tag->var_addr, (zplc_data_type_t)tag->var_type, val);
     }
     
-    zplc_pi_unlock();
+    zplc_exchange_write_end();
     return 0;
 }
 
@@ -647,7 +685,8 @@ int zplc_modbus_init(void) {
                         K_THREAD_STACK_SIZEOF(modbus_stack_area),
                         modbus_server_thread,
                         NULL, NULL, NULL,
-                        K_PRIO_COOP(7), 0, K_NO_WAIT);
+                        K_PRIO_PREEMPT(ZPLC_COMM_THREAD_PRIORITY), 0,
+                        K_NO_WAIT);
         k_thread_name_set(&modbus_thread_data, "modbus_tcp");
 #else
         LOG_WRN("Modbus TCP disabled: NET_SOCKETS not enabled");

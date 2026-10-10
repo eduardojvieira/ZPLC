@@ -33,6 +33,8 @@ if(CONFIG_ZPLC)
   zephyr_library_sources(
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_core.c
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_comm_dispatch.c
+    ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_program_store.c
+    ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_exchange.c
   )
 
   # Zephyr HAL implementation
@@ -48,6 +50,7 @@ if(CONFIG_ZPLC)
   # HIL Debug support (optional - enabled via CONFIG_ZPLC_HIL_DEBUG)
   zephyr_library_sources_ifdef(CONFIG_ZPLC_HIL_DEBUG
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_debug.c
+    ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/hal/zephyr/zplc_hil_debug_zephyr.c
   )
 
   # RETAIN persistence (optional - enabled via CONFIG_ZPLC_RETAIN_PERSIST)

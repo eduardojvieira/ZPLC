@@ -29,7 +29,7 @@
 #include <stdio.h>
 #include <string.h>
 
-int zplc_test_load_raw(const uint8_t *bytecode, size_t size);
+#include <zplc_test_hooks.h>
 
 static int test_count = 0;
 static int fail_count = 0;

@@ -27,7 +27,9 @@ the block with named arguments, so the order in which you wire the inputs does n
   parameters name the inputs of the declaration. A function is not placed in a rung; call it from an FBD or ST file.
 - A block that no file declares is refused by name when the diagram is built. A declaration in the project wins over
   a standard block of the same name, as it does in the compiler.
-- The palette lists the files that are loaded in the editor; the build reads every Structured Text file of the project.
+- The palette lists the blocks of the Structured Text files in `src`, of the files in a library folder (see
+  [Declarations and library folders](./features.md#declarations-and-library-folders)), and of any file open in the
+  editor. The build reads the files in `src` and directly in the library folders that `libraries` of `zplc.json` lists.
 
 ## Visual files on disk
 

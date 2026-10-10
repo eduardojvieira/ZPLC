@@ -35,6 +35,13 @@ const FAILURES: Record<ProjectFilesErrorCode, readonly [name: string, message: s
   'no-folder': ['ProjectFolderClosedError', 'The project folder is no longer open. Choose the folder again.'],
   'invalid-request': ['Error', 'The operation failed. Try again.'],
   failed: ['Error', 'The operation failed. Try again.'],
+  // Project archives (IDE-022): the archive itself, never a path.
+  'not-a-zip': ['TypeMismatchError', 'The file is not a project archive.'],
+  unsupported: ['NotSupportedError', 'The archive uses something Studio does not read (encryption, a link, or a very large archive).'],
+  'unsafe-path': ['OutsideProjectError', 'The archive holds a file whose path leaves the project folder.'],
+  duplicate: ['InvalidModificationError', 'The archive holds two files with the same name.'],
+  corrupt: ['DataError', 'The archive is damaged: a file does not match its checksum or size.'],
+  'too-many': ['QuotaExceededError', 'The archive holds more files than a project may.'],
 };
 
 /** The error a failed project operation raises: the browser's error name where one exists, and a message with no path. */

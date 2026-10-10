@@ -2,6 +2,7 @@ import { constants, type BigIntStats, type Dirent } from 'node:fs';
 import { lstat, open, readdir, realpath } from 'node:fs/promises';
 import { join } from 'node:path';
 import { buildOptionsOf } from '../project/buildOptions';
+import { scanUnlistedSources } from '../project/unlistedSources';
 import { parseAndMigrateProject, type ProjectMigrationChange } from '../project/projectModel';
 import { getLanguageFromFilename, type PLCLanguage, type ZPLCProjectV2 } from '../types';
 
@@ -22,10 +23,6 @@ const MANIFEST_MAX_BYTES = 128 * 1024;
 const SOURCE_MAX_BYTES = 256 * 1024;
 const SOURCES_MAX_COUNT = 128;
 const SOURCES_MAX_BYTES = 2 * 1024 * 1024;
-/** The scan for source files that are not compiled looks at this many folders and files, and no deeper than two levels. */
-const UNLISTED_SCAN_FOLDERS = 64;
-const UNLISTED_SCAN_FILES = 256;
-const UNLISTED_SCAN_SKIP = new Set(['src', 'tests', 'build', 'node_modules', 'dist', 'coverage']);
 // The short .ld, .fbd and .sfc are what earlier versions created with New File; keep in step with ZPLC_SOURCE_FILE in utils/fileSystem.ts.
 const SUPPORTED_SOURCE = /\.(st|il|(ld|fbd|sfc)(\.json)?)$/i;
 const SCENARIO_MAX_BYTES = 128 * 1024;
@@ -138,28 +135,15 @@ export async function readWorkspaceScenarios(root: string): Promise<WorkspaceSce
  * (a library folder that was not listed is the usual cause). Links are not followed; an unreadable folder is skipped.
  */
 async function findUnlistedSources(root: string, listed: readonly string[]): Promise<string[]> {
-  const found: string[] = [];
-  const known = new Set(listed.map((folder) => folder.toLowerCase()));
-  let folders = 0;
-  const scan = async (logical: string, depth: number): Promise<void> => {
-    if (found.length >= UNLISTED_SCAN_FILES || folders >= UNLISTED_SCAN_FOLDERS) return;
-    folders += 1;
-    let entries: Dirent[];
-    try { entries = await readdir(logical === '' ? root : join(root, ...logical.split('/')), { withFileTypes: true }); }
-    catch { return; }
-    entries.sort((left, right) => left.name < right.name ? -1 : left.name > right.name ? 1 : 0);
-    for (const entry of entries) {
-      const path = logical === '' ? entry.name : `${logical}/${entry.name}`;
-      if (entry.isSymbolicLink() || entry.name.startsWith('.')) continue;
-      if (entry.isFile() && /\.st$/i.test(entry.name) && !known.has(logical.toLowerCase())) {
-        if (found.length < UNLISTED_SCAN_FILES) found.push(path);
-      } else if (entry.isDirectory() && depth < 2 && !(depth === 0 && UNLISTED_SCAN_SKIP.has(entry.name.toLowerCase())) && !known.has(path.toLowerCase())) {
-        await scan(path, depth + 1);
-      }
+  // The walk is the rule of project/unlistedSources.ts, which Studio applies to its project tree.
+  return scanUnlistedSources(async (logical) => {
+    try {
+      const entries = await readdir(logical === '' ? root : join(root, ...logical.split('/')), { withFileTypes: true });
+      return entries.map((entry) => ({ name: entry.name, kind: entry.isSymbolicLink() ? 'link' as const : entry.isFile() ? 'file' as const : entry.isDirectory() ? 'directory' as const : 'other' as const }));
+    } catch {
+      return null;
     }
-  };
-  await scan('', 0);
-  return found;
+  }, listed);
 }
 
 /** Reads the deliberately small local project layout without following links. */

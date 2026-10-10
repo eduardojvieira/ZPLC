@@ -59,7 +59,7 @@
 #include <zplc_hal_posix.h>
 #include <zplc_isa.h>
 
-int zplc_test_load_raw(const uint8_t *bytecode, size_t size);
+#include <zplc_test_hooks.h>
 
 /* ============================================================================
  * Test bookkeeping

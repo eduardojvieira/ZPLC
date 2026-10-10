@@ -3,10 +3,7 @@
 #include <zephyr/drivers/gpio/gpio_emul.h>
 #include <zephyr/ztest.h>
 #include <zplc_hal.h>
-
-#ifdef CONFIG_ZTEST
-extern void zplc_hal_test_fail_next_safe_off(void);
-#endif
+#include <zplc_test_hooks.h>
 
 ZTEST(hal_gpio_policy, test_missing_output_alias_follows_profile)
 {

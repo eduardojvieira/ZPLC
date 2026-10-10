@@ -20,7 +20,7 @@ project(zplc_core_suites)
 set(ZPLC_CORE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/zplc_core)
 set(ZPLC_CORE_TESTS_DIR ${ZPLC_CORE_DIR}/tests)
 
-set(ZPLC_CORE_SUITES isa vm_core vm_arith_edges comm_dispatch loader_verify)
+set(ZPLC_CORE_SUITES isa vm_core vm_arith_edges comm_dispatch loader_verify bytes_crc)
 if(NOT ZPLC_CORE_SUITE IN_LIST ZPLC_CORE_SUITES)
   message(FATAL_ERROR
     "ZPLC_CORE_SUITE must be one of: ${ZPLC_CORE_SUITES} (got '${ZPLC_CORE_SUITE}')")
@@ -59,7 +59,7 @@ elseif(NOT ZPLC_SUITE_PROFILE STREQUAL "default")
 endif()
 
 target_sources(app PRIVATE src/main.c src/test_hal.c ${ZPLC_SUITE_SOURCE})
-target_include_directories(app PRIVATE ${ZPLC_CORE_DIR}/include)
+target_include_directories(app PRIVATE ${ZPLC_CORE_DIR}/include ${ZPLC_CORE_TESTS_DIR}/include)
 
 # The suite's own main() becomes the function src/main.c calls.
 set_source_files_properties(${ZPLC_SUITE_SOURCE} PROPERTIES

@@ -59,6 +59,7 @@ herramientas muestran las mismas advertencias para el mismo proyecto.
 | `WRITE_ONLY_VARIABLE` | una variable `VAR` o `VAR_TEMP` se escribe y nunca se lee | `all` |
 | `OPTION_IGNORED` | una opción de `zplc.json` tiene un valor que no cambia nada | `default` |
 | `SOURCE_NOT_COMPILED` | un archivo Structured Text de la carpeta del proyecto no está en `src` ni en una biblioteca declarada | `default` |
+| `WATCHDOG_RESET_NO_EFFECT` | se llama a `WATCHDOG_RESET()`: no hace nada, el runtime alimenta el watchdog de hardware por sí mismo después de cada ciclo completado | `default` |
 
 Una rama que una condición constante desactiva (`IF FALSE THEN`) no es código
 inalcanzable: IEC 61131-3 no define una regla para ello y el compilador no

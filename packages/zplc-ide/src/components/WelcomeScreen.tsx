@@ -10,6 +10,7 @@ import { LANGUAGE_NAMES, LEVEL_NAMES, boardName, buildExampleSections, type Exam
 import { isFileSystemAccessSupported } from '../types';
 import { ZPLC_REPO_VERSION } from '../version';
 import { learnLessonCatalog } from './learnLesson';
+import { ImportArchive } from './ImportArchive';
 import { ThemeControl } from './ThemeControl';
 import { AppPreferences } from './settings/AppPreferences';
 import { recentRows } from './welcomeRecent';
@@ -145,6 +146,7 @@ export function WelcomeScreen() {
               </span>
             </button>
           </div>
+          <ImportArchive disabled={unavailable || isCopyingExample} />
         </section>
 
         {projectOpenError && !recentError && (

@@ -3,13 +3,11 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 describe('CodeEditor local Monaco bootstrap', () => {
-  it('configures the installed Monaco module and Vite worker before mounting an editor', () => {
+  it('installs the bundled Monaco and its worker, through the runtime module, before mounting an editor', () => {
     const source = readFileSync(join(import.meta.dir, 'CodeEditor.tsx'), 'utf8');
 
-    expect(source).toContain("import * as monaco from 'monaco-editor';");
-    expect(source).toContain("import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';");
-    expect(source).toContain('MonacoEnvironment ??= { getWorker: () => new EditorWorker() }');
-    expect(source.indexOf('loader.config({ monaco });')).toBeLessThan(source.indexOf('export function CodeEditor'));
+    expect(source.indexOf("from './monacoRuntime';")).toBeGreaterThan(-1);
+    expect(source.indexOf("from './monacoRuntime';")).toBeLessThan(source.indexOf("from '@monaco-editor/react'"));
   });
 
   it('labels a non-paused debug editor as context rather than a running runtime', () => {

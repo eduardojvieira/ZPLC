@@ -5,10 +5,13 @@ project(zplc_program_boot_restore)
 
 target_sources(app PRIVATE
   src/main.c
+  src/private_header_check.c
   ${CMAKE_CURRENT_SOURCE_DIR}/../../app/src/program_boot_restore.c
   ${CMAKE_CURRENT_SOURCE_DIR}/../../app/src/program_admission.c
   ${CMAKE_CURRENT_SOURCE_DIR}/../../app/src/program_store.c
 )
 target_include_directories(app PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/../../app/src
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../app/tests/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../lib/zplc_core/tests/include
 )

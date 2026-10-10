@@ -6,10 +6,11 @@
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { readZip } from '../electron/projectArchiveZip';
 import { learnLessonCatalog } from '../src/components/learnLesson';
 import { compilerCompile } from '../src/cli/toolApi';
 import { NATIVE_PROGRAM_MAX_BYTES } from '../electron/security';
-import { assert, packageRoot } from './run-desktop-smoke';
+import { assert, MONACO_MODULE_URL, packageRoot } from './run-desktop-smoke';
 import { button, css, menuItem, tab, type App, type Target } from './journeyApp';
 
 export interface JourneyContext {
@@ -43,8 +44,8 @@ async function openFolder(app: App, folder: string): Promise<void> {
   await app.until('the project workbench to appear', async () => await app.visible(toolbar) || undefined);
 }
 
-/** The page's own Monaco instance and its active editor, for reading what the editor shows and where things are. */
-const monacoEval = <T>(app: App, body: string) => app.eval<T>(`(async () => { const url = performance.getEntriesByType('resource').map((entry) => entry.name).find((name) => /\\/monaco-editor\\.js/.test(name)); const monaco = await import(url); const editor = monaco.editor.getEditors()[0]; ${body} })()`);
+/** The page's own Monaco instance (the editor core Studio bundles, as the dev server pre-bundles it) and its active editor, for reading what the editor shows and where things are. */
+const monacoEval = <T>(app: App, body: string) => app.eval<T>(`(async () => { const monaco = await import(${MONACO_MODULE_URL}); const editor = monaco.editor.getEditors()[0]; ${body} })()`);
 const editorText = (app: App) => monacoEval<string>(app, 'return editor?.getModel()?.getValue() ?? "";');
 /** True when the text declares `PROGRAM <name>`: an example may open with a comment block, so its first characters say nothing. */
 const hasProgram = (text: string, name: string) => new RegExp(`^PROGRAM ${name}\\b`, 'm').test(text);
@@ -1214,6 +1215,7 @@ export const JOURNEYS: Journey[] = [
       await app.until('the deleted file gone from the tree and its tab closed', async () => !await app.visible(treeItem('file:src/Outside.st')) && !await app.visible(editorTab('file:src/Outside.st')) || undefined, 10_000);
     },
   },
+
   {
     name: '25 Problems select the block of a diagram', example: 'blinky_fbd', proves: [], partly: ['LNG-003'],
     run: async (app, { project }) => {
@@ -1283,10 +1285,206 @@ export const JOURNEYS: Journey[] = [
       await app.until('the rung where the program is stopped to be marked', async () => await app.eval<boolean>(`document.querySelector('[data-ld-rung-id="rung_3"]')?.className.includes('ring-2') === true`) || undefined);
     },
   },
+
+  {
+    name: '29 The Welcome screen loads no editor', example: 'motor_start_stop', proves: [], partly: ['IDE-015'],
+    run: async (app, { project }) => {
+      // What the page has fetched, as modules (the development host serves each one by its path). The page keeps the first
+      // 250 resources unless told otherwise, so it is told to keep every one and loaded again from a clean start.
+      await app.cdp.command('Page.addScriptToEvaluateOnNewDocument', { source: 'performance.setResourceTimingBufferSize(100000);' });
+      await app.cdp.command('Page.reload');
+      await app.until('the Welcome screen again', async () => (await app.text()).includes('ZPLC Studio 2.0') || undefined);
+      const fetched = () => app.eval<string[]>(`performance.getEntriesByType('resource').map((entry) => entry.name)`);
+      const has = async (pattern: RegExp) => (await fetched()).some((name) => pattern.test(name));
+      const MONACO = /monaco-editor_esm_vs_editor_edcore__main\.js/;
+      const CODE_EDITOR = /\/src\/components\/CodeEditor\.tsx/;
+      const VISUAL_EDITOR = /\/src\/editors\/(?:fbd|ld|sfc)\/(?:FBD|LD|SFC)Editor\.tsx/;
+      const SETTINGS = /\/src\/components\/settings\/ProjectSettings\.tsx/;
+
+      await app.until('the Welcome screen', async () => await app.visible(css('main')) || undefined);
+      for (const [what, pattern] of [['Monaco', MONACO], ['the code editor', CODE_EDITOR], ['a visual editor', VISUAL_EDITOR], ['the settings', SETTINGS]] as const) {
+        assert(!await has(pattern), `The Welcome screen loaded ${what}.`);
+      }
+
+      // A Structured Text file brings the code editor and Monaco, and neither the visual editors nor the settings.
+      await openFolder(app, project);
+      await openFile(app, 'src/Motor.st');
+      assert(await has(CODE_EDITOR) && await has(MONACO), 'Opening a Structured Text file did not load the code editor.');
+      assert(!await has(VISUAL_EDITOR) && !await has(SETTINGS), 'A Structured Text file loaded a visual editor or the settings.');
+
+      // The settings load when they are opened.
+      await app.click(button('Project Settings'), 'the Project Settings button');
+      await app.until('the settings', async () => await has(SETTINGS) && await app.visible(css('[data-app-preferences]')) || undefined);
+    },
+  },
+
+  {
+    name: '30 Export a project to one archive and import it back', example: 'motor_start_stop', proves: [], partly: ['IDE-022'],
+    run: async (app, { project, root }) => {
+      const archive = join(root, 'motor.zplc.zip');
+      const folder = join(root, 'imported');
+      mkdirSync(folder);
+      /** Every file under `directory`, relative, with its bytes as base64: two folders are equal when these are. */
+      const tree = (directory: string, prefix = ''): Record<string, string> => Object.fromEntries(readdirSync(directory, { withFileTypes: true }).flatMap((entry) =>
+        entry.isDirectory() ? Object.entries(tree(join(directory, entry.name), `${prefix}${entry.name}/`)) : [[`${prefix}${entry.name}`, readFileSync(join(directory, entry.name)).toString('base64')]]));
+
+      // Export: the save dialog is answered with a path, and one file appears there.
+      await openFolder(app, project);
+      app.answer(archive);
+      await app.click(button('Build options'));
+      await app.click(menuItem('Export Project Archive'));
+      await app.until('the archive on disk', () => existsSync(archive) || undefined);
+      await app.until('the export reported in Output', async () => /Exported motor\.zplc\.zip: \d+ files/.test(await outputText(app)) || undefined);
+      const entries = readZip(new Uint8Array(readFileSync(archive))).filter((entry) => entry.kind === 'file').map((entry) => entry.path);
+      assert(entries.includes('zplc.json') && entries.includes('src/Motor.st'), `The archive does not hold the project files: ${JSON.stringify(entries)}`);
+      assert(!entries.some((path) => path.startsWith('.git/') || path.startsWith('node_modules/')), 'The archive holds files that are not part of the project.');
+
+      // Import from the Welcome screen: choosing the archive writes nothing, the dialog says what is in it.
+      await app.click(tab('Explorer', 'exact'));
+      await app.click(button('Close Project'));
+      await app.until('the Welcome screen', async () => await app.visible(button('Import a project archive', 'contains')) || undefined);
+      app.answer(archive);
+      await app.click(button('Import a project archive', 'contains'), 'the Import a project archive button');
+      await app.until('the import dialog', async () => await app.visible(css('[data-import-archive-dialog]')) || undefined);
+      const summary = await app.eval<string>(`document.querySelector('[data-import-archive-dialog]').innerText`);
+      assert(summary.includes('motor.zplc.zip') && summary.includes('Motor Start Stop') && summary.includes('Nothing has been written'), `The import dialog does not say what the archive holds: ${summary}`);
+      assert(readdirSync(folder).length === 0, 'Choosing the archive wrote into the folder.');
+
+      // Import: an empty folder is chosen, the files are written and the project opens by itself.
+      app.answer(folder);
+      await app.click(button('Choose a folder and import'), 'the import button');
+      await app.until('the imported project open', async () => await app.visible(toolbar) || undefined);
+      assert(JSON.stringify(tree(folder)) === JSON.stringify(tree(project)), 'The imported folder is not equal to the project that was exported.');
+      assert(disk(join(folder, 'zplc.json')) === disk(join(project, 'zplc.json')), 'zplc.json is not byte-equal after the round trip.');
+      await openFile(app, 'src/Motor.st');
+      assert(hasProgram(await editorText(app), 'Motor'), 'The imported project does not open Motor.st.');
+    },
+  },
+
+  {
+    name: '31 A version 1 project shows its migration before it is applied', example: 'none', proves: [], partly: ['IDE-022'],
+    run: async (app, { project }) => {
+      mkdirSync(join(project, 'src'), { recursive: true });
+      const legacy = JSON.stringify({ name: 'Legacy', version: '1.0.0', tasks: [{ name: 'Main', type: 'CYCLIC', interval: 20, priority: 2, file: 'main.st' }] }, null, 2);
+      writeFileSync(join(project, 'zplc.json'), legacy);
+      writeFileSync(join(project, 'src', 'main.st'), 'PROGRAM Main\nEND_PROGRAM\n');
+
+      await openFolder(app, project);
+      await app.click(tab('Explorer', 'exact'));
+      await app.until('the migration notice', async () => (await app.text()).includes('Migration preview') || undefined);
+      assert(disk(join(project, 'zplc.json')) === legacy, 'Opening a version 1 project changed zplc.json.');
+
+      // The difference is a dialog of its own, and closing it changes nothing.
+      await app.click(button('Review the difference', 'prefix'), 'the Review the difference button');
+      await app.until('the difference', async () => await app.visible(css('[data-migration-difference]')) || undefined);
+      const shown = await app.eval<string>(`document.querySelector('[data-migration-difference]').innerText`);
+      assert(shown.includes('"schemaVersion": 2') && shown.includes('"trigger": "cyclic"') && shown.includes('"interval": 20'), `The difference does not show the migration: ${shown}`);
+      await app.click(button('Close'), 'Close');
+      await app.until('the dialog to close', async () => !await app.visible(css('[data-migration-preview]')) || undefined);
+      assert(disk(join(project, 'zplc.json')) === legacy, 'Closing the difference changed zplc.json.');
+
+      // Applying it is the save: zplc.json is then version 2, and the notice is gone.
+      await app.click(button('Review the difference', 'prefix'), 'the Review the difference button');
+      await app.until('the dialog', async () => await app.visible(button('Apply migration')) || undefined);
+      await app.click(button('Apply migration'), 'Apply migration');
+      await app.until('zplc.json at version 2', () => JSON.parse(disk(join(project, 'zplc.json'))).schemaVersion === 2 || undefined);
+      await app.until('the notice gone', async () => !(await app.text()).includes('Migration preview') || undefined);
+      assert(disk(join(project, 'src', 'main.st')) === 'PROGRAM Main\nEND_PROGRAM\n', 'The migration changed a program.');
+    },
+  },
+
+  {
+    name: '32 Declarations in the tree, and a library folder offered to every editor', example: 'motor_start_stop', proves: [], partly: ['IDE-023'],
+    run: async (app, { project }) => {
+      mkdirSync(join(project, 'lib'));
+      const library = ['(* A library file: the block of the project that the palettes and the completion offer. *)', 'FUNCTION_BLOCK Debounce', 'VAR_INPUT', '  Raw : BOOL;', 'END_VAR', 'VAR_OUTPUT', '  Clean : BOOL;', 'END_VAR', 'Clean := Raw;', 'END_FUNCTION_BLOCK', ''].join('\n');
+      writeFileSync(join(project, 'lib', 'Debounce.st'), library);
+      writeFileSync(join(project, 'src', 'boiler.ld'), JSON.stringify({ name: 'boiler', version: '1.0.0', variables: { local: [], inputs: [], outputs: [] }, rungs: [], metadata: {} }));
+      const declarations = css('[data-project-declarations]');
+      const declaration = (name: string): Target => css(`[data-declaration="${name}"]`);
+      const toolbox = `[...document.querySelectorAll('h2')].find((heading) => heading.textContent === 'Toolbox')?.parentElement`;
+
+      // The tree lists what the files of src declare, grouped under their file, before any library exists.
+      await openFolder(app, project);
+      await app.click(tab('Explorer', 'exact'));
+      await app.click(button('Declarations', 'prefix'), 'the Declarations heading');
+      await app.until('the declarations of the project', async () => await app.visible(declaration('Motor')) || undefined);
+      assert(await app.visible(declarations) && !await app.visible(declaration('Debounce')), 'A file outside src and the libraries was listed.');
+      const group = await app.eval<string>(`document.querySelector('[data-declaration-file="src/Motor.st"]')?.innerText ?? ''`);
+      assert(group.includes('src/Motor.st') && group.includes('Motor'), `The declarations are not grouped under their file: ${JSON.stringify(group)}`);
+      // The file of the folder that is not listed is one no build reads, and the tree and the section say so (CMP-046).
+      await app.until('the unlisted folder in the section', async () => await app.visible(css('[data-unlisted-folder="lib"]')) || undefined);
+      assert(!await app.eval<boolean>(`document.querySelector('[data-tree-node-id="dir:lib"]').innerText.includes('library')`), 'The folder is marked as a library before it is listed.');
+
+      // The block of the library is not in the palette of the Ladder editor yet.
+      await clickTreeFile(app, 'src/boiler.ld');
+      await app.until('the Ladder toolbox', async () => await app.eval<boolean>(`Boolean(${toolbox})`) || undefined);
+      assert(!await app.eval<boolean>(`${toolbox}.innerText.includes('Debounce')`), 'The palette offered a block that no library or src file declares.');
+
+      // Adding the folder as a library: zplc.json names it, the tree lists the block, and the palette offers it.
+      await app.click(tab('Explorer', 'exact'));
+      await app.click(button('Add library folder'), 'the Add library folder button');
+      await app.until('the library dialog', async () => await app.visible(css('[data-library-dialog]')) || undefined);
+      await app.eval(`document.getElementById('library-folder').focus()`);
+      const folders = await app.eval<string[]>(`[...document.getElementById('library-folder').options].map((option) => option.value)`);
+      const at = folders.indexOf('lib');
+      assert(at >= 0, `The dialog does not offer the folder: ${JSON.stringify(folders)}`);
+      const current = await app.eval<number>(`document.getElementById('library-folder').selectedIndex`);
+      for (let step = 0; step < Math.abs(at - current); step++) await app.press(at > current ? 'ArrowDown' : 'ArrowUp');
+      await app.click(button('Add library'), 'the Add library button');
+      await app.until('zplc.json to name the library', () => (JSON.parse(disk(join(project, 'zplc.json'))) as { libraries?: string[] }).libraries?.join() === 'lib' || undefined);
+      await app.until('the block of the library in the tree', async () => await app.visible(declaration('Debounce')) || undefined);
+      await app.until('the library marked in the file tree', async () => await app.eval<boolean>(`document.querySelector('[data-tree-node-id="dir:lib"]')?.innerText.includes('library') === true`) || undefined);
+      assert(!await app.visible(css('[data-unlisted-folder="lib"]')), 'The folder is still reported as not compiled after it is listed.');
+      await app.until('the block of the library in the Ladder palette', async () => await app.eval<boolean>(`${toolbox}?.innerText.includes('Debounce') === true`) || undefined);
+
+      // Activating a declaration opens its file with the cursor on it.
+      await app.click(declaration('Debounce'), 'the Debounce declaration');
+      await app.until('Debounce.st in the editor, the cursor on the block', async () => (await editorText(app)).includes('FUNCTION_BLOCK Debounce') && (await editorView(app)).line === 2 || undefined);
+
+      // The build reads the library with src: it builds, with the library file in the program.
+      const built = await compile(app);
+      assert(built.kind === 'built', `The project with its library did not build: ${built.message}`);
+
+      // Taking the library away takes the block away from the tree and the palette, and the file is not compiled again.
+      await app.click(tab('Explorer', 'exact'));
+      await app.click(button('Remove library lib'), 'Remove library lib');
+      await app.until('the block gone from the tree', async () => !await app.visible(declaration('Debounce')) || undefined);
+      assert((JSON.parse(disk(join(project, 'zplc.json'))) as { libraries?: string[] }).libraries?.length === 0, 'zplc.json still names the library.');
+      await app.until('the folder reported as not compiled again', async () => await app.visible(css('[data-unlisted-folder="lib"]')) || undefined);
+
+      // The section offers to list the folder, which is the same change as the dialog.
+      await app.click(button('List lib as a library'), 'List lib as a library');
+      await app.until('zplc.json to name the library again', () => (JSON.parse(disk(join(project, 'zplc.json'))) as { libraries?: string[] }).libraries?.join() === 'lib' || undefined);
+      await app.until('the block back in the tree', async () => await app.visible(declaration('Debounce')) || undefined);
+    },
+  },
+
+  {
+    name: '33 Declared interlock coverage has a tab of its own', example: 'motor_start_stop', proves: [], partly: ['IDE-032'],
+    run: async (app, { project }) => {
+      const view = css('[data-interlock-coverage]');
+      await openFolder(app, project);
+
+      // It is not part of Problems or of Tests any more.
+      await app.click(tab('Problems'));
+      assert(!await app.visible(view) && !(await app.text()).toLowerCase().includes('declared interlock coverage'), 'Declared interlock coverage is still shown inside Problems.');
+      await app.click(tab('Tests', 'prefix'));
+      assert(!await app.visible(view), 'Declared interlock coverage is shown inside Tests.');
+
+      // It is a tab: it says what it checks and what it does not, and runs the check on the saved project.
+      await app.click(tab('Interlocks'), 'the Interlocks tab');
+      await app.until('the view', async () => await app.visible(view) || undefined);
+      const before = await app.eval<string>(`document.querySelector('[data-interlock-coverage]').innerText`);
+      assert(before.toLowerCase().includes('declared interlock coverage') && before.includes('does not establish physical safety, timing, or certification'), `The view lacks its title or its scope: ${before}`);
+      await app.click(button('Check declared interlocks'), 'the Check declared interlocks button');
+      await app.until('the declared pair in the table', async () => await app.eval<boolean>(`document.querySelector('[data-interlock-coverage] table')?.innerText.includes('Motor.Forward') === true`) || undefined);
+      const report = await app.eval<string>(`document.querySelector('[data-interlock-coverage] table').innerText`);
+      assert(report.includes('Motor.Reverse') && /Covered|Missing exact NEVER coverage/.test(report), `The table does not say whether the pair is covered: ${report}`);
   {
     // The starter of lesson 1 fails its scenario. Learn must say which assertion failed, when, what was expected against what
     // was observed, and where in the trace (LRN-026), after the learner ran only that scenario from Tests.
-    name: '29 Learn says which assertion failed', example: 'motor_start_stop_starter', proves: [], partly: ['LRN-026'],
+    name: '39 Learn reports the failed assertion of a lesson', example: 'motor_start_stop_starter', proves: [], partly: ['LRN-026'],
     run: async (app, { project }) => {
       await openFolder(app, project);
       await app.click(tab('Tests'));

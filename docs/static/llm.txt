@@ -16,7 +16,7 @@ Do not infer hard real-time behavior, execution order, jitter, WCET, physical I/
 
 ## Safety rule
 
-Keep build, flash, program deploy, and RUN/STOP separate. Do not claim a physical action succeeded without corresponding device or HIL evidence. `WATCHDOG_RESET` currently compiles as a compatibility stub/NOP; it is not a watchdog feed or safety control.
+Keep build, flash, program deploy, and RUN/STOP separate. Do not claim a physical action succeeded without corresponding device or HIL evidence. `WATCHDOG_RESET` compiles as a compatibility stub/NOP and the build warns with `WATCHDOG_RESET_NO_EFFECT` at each call; it is not a watchdog feed or safety control.
 
 ## Sources
 

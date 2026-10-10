@@ -47,6 +47,49 @@ arranca la máquina. El arranque es una operación humana separada y explícita.
 La evidencia target, power-cut, HIL y eléctrica sigue siendo específica del
 perfil exacto y no se ejecutó aquí.
 
+### Cómo guarda el store un programa
+
+El store tiene dos slots, A y B, y un registro activo pequeño que nombra el slot que debe ejecutarse. Un slot es el
+artefacto, un pie de 8 bytes (`ZPE1` y la longitud del artefacto) y un registro de metadatos de 32 bytes; todos los
+registros llevan un CRC-32 y la versión de formato. El runtime host y el firmware ejecutan el mismo código
+(`zplc_program_store.c`) sobre las llamadas de persistencia de la HAL, de modo que el orden de las escrituras que
+sigue es el que ejercitan las pruebas del host.
+
+Un deploy escribe el slot que no está activo, lo relee y lo verifica, escribe los metadatos como preparados y los
+relee, y sólo entonces escribe el registro activo: esa escritura es el único punto en que el programa nuevo pasa a
+ser el que se restaura. Después los metadatos se reescriben como confirmados.
+
+| Un corte de energía ... | Qué encuentra el siguiente restore |
+|---|---|
+| antes de escribir el registro activo | El programa anterior. Un store que nunca tuvo uno está vacío. |
+| a mitad del payload nuevo | El programa anterior: un slot mitad viejo y mitad nuevo no pasa el CRC-32 de su artefacto y nunca se acepta. |
+| después del registro activo y antes de reescribir los metadatos | El programa nuevo: el slot se releyó antes de mover el puntero. |
+| que daña el registro activo | El slot confirmado completo más reciente. |
+
+Los registros que existen y no verifican nunca se toman por un store vacío: el restore los informa como no
+verificables y un deploy se niega a escribir encima. Un store escrito por el primer firmware (una clave, `code_len`
+y `code`) se restaura tal cual y se migra en el siguiente deploy.
+
+Un almacén clave-valor en flash guarda una entrada dentro de un sector de borrado, así que el payload se corta en
+trozos de `CONFIG_ZPLC_PROGRAM_STORE_CHUNK_SIZE` bytes (1024 por defecto), cada uno bajo su propia clave. El mayor
+artefacto es un único número, `CONFIG_ZPLC_CODE_SIZE_MAX`: es la región de código, el mayor artefacto que acepta el
+loader, el tamaño de los buffers de recepción y de restore, el tamaño que informa `zplc sys info`
+(`max_artifact_size`) y el tamaño que se comunica al IDE para la placa (RT-028). La compilación falla si dos slots
+de ese tamaño, en trozos, no caben en la partición de almacenamiento. Por eso el perfil Raspberry Pi Pico fija 24576
+bytes (su partición de 64 KB), el perfil STM32F746G Discovery 16384 y el perfil Arduino Opta WiFi 32768 (su RAM), y
+el perfil ESP32-S3 mantiene sus 8192; los demás perfiles mantienen 45056. El program store (como memoria de trabajo
+de su comprobación de rollback), el buffer de staging de carga y la VM guardan cada uno un programa en RAM, así que
+un perfil gasta tres veces su tamaño de código. No hay una cuarta copia residente: el buffer de staging conserva el
+artefacto cargado, y `zplc reset` recarga el programa desde el store, que guarda el mismo (un reset cancela una
+carga en curso).
+
+Lo que se ha demostrado: un corte de energía inyectado en cada operación de un deploy y una escritura truncada en
+cada registro, en el host (`test_program_store`), y un corte de energía en cada operación de un deploy del tamaño
+máximo sobre el simulador de flash de NVS en `native_sim` (`program_store_nvs`), restaurado en el mismo buffer que
+usó el deploy. Lo que no: un corte de energía en una placa. El driver de flash, el
+tiempo de borrado y el comportamiento de la alimentación de cada perfil necesitan el registro de hardware de ese
+perfil (HIL-010).
+
 ## Memoria Retentiva (`RETAIN`)
 
 El compilador acepta `VAR RETAIN` y `VAR_GLOBAL RETAIN`, coloca esas variables
