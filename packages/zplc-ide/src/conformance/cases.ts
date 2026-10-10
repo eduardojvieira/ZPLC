@@ -31,17 +31,46 @@ export interface Cell { at?: string; var?: string; type: CellType; value: number
 export interface Check extends Cell { afterScan: number }
 export interface Input { at: string; type: CellType; value: number | boolean; beforeScan: number }
 
-interface Named { requirement: string; title: string }
+/**
+ * The tags a case may carry (VF-005). "arch-sensitive" marks a case whose result could differ between a 64-bit host, a 32-bit
+ * host and a Cortex-M3 under QEMU; the other tags say why, and "alignment" also selects the case for the Cortex-M0, which
+ * faults on an unaligned access that the Cortex-M3 tolerates.
+ */
+export const CASE_TAGS = ['arch-sensitive', 'alignment', 'division', 'shifts', 'float', 'float-conversion', '64-bit'] as const;
+export type CaseTag = (typeof CASE_TAGS)[number];
+
+/** A task of the generated zplc.json (CMP-047); the program of the case is main.<extension> and `files` name the others. */
+export interface TaskSpec { name: string; trigger: 'cyclic' | 'event' | 'freewheeling'; interval_ms: number; priority: number; programs: string[] }
+
+interface Named {
+  requirement: string;
+  title: string;
+  /** Rows of conformance/matrix.json (VF-003) that this case is evidence for. */
+  matrix: string[];
+  tags: CaseTag[];
+  /** Why the expected value is right: the IEC rule it cites, or the contract of the requirement. */
+  note?: string;
+  /** Further source files in the same folder that the program needs (a function block or a global declared in another file). */
+  files: string[];
+  /** The tasks of the project; empty means one cyclic task, at the scan interval, that runs the program of the case. */
+  tasks: TaskSpec[];
+}
 /** A program that must build, load and run; `fault` says the last scan ends in a VM fault. */
 export interface RunExpectation extends Named {
-  build: 'succeeds'; scans: number; scanMs: number; inputs: Input[]; expect: Check[]; fault: boolean; files: string[];
+  build: 'succeeds'; scans: number; scanMs: number; inputs: Input[]; expect: Check[]; fault: boolean;
 }
-/** A program that must not build: no artifact, and where stated the lines and the words of the diagnostics. */
-export interface RejectExpectation extends Named { build: 'fails'; lines?: number[]; messageIncludes: string[] }
+/**
+ * A program that must not build: no artifact, and where stated the position of each diagnostic (`lines`, `columns`, one entry
+ * per diagnostic), its stable `codes` (CMP-006; none exists before it, so a case asserts them only once they do) and the
+ * words of the messages.
+ */
+export interface RejectExpectation extends Named { build: 'fails'; lines?: number[]; columns?: number[]; codes?: string[]; messageIncludes: string[] }
 export type Expectation = RunExpectation | RejectExpectation;
 
 export interface ConformanceCase {
   name: string;
+  /** Where the case lives under the conformance root, without the extension: cmp/cmp-011-int-limits. */
+  id: string;
   /** Absolute path of the program the case compiles. */
   source: string;
   /** Its extension, which names the language: .st, .il, .ld.json, .fbd.json or .sfc.json. */
@@ -110,24 +139,57 @@ function cell(value: unknown, where: string, allowed: string[]): Cell {
 export function parseExpectation(text: string, where: string): Expectation {
   let parsed: unknown;
   try { parsed = JSON.parse(text); } catch (error) { return fail(where, `not valid JSON (${(error as Error).message})`); }
-  const named = ['requirement', 'title', 'build'];
-  const head = object(parsed, where, [...named, 'lines', 'messageIncludes', 'scans', 'scanMs', 'inputs', 'expect', 'fault', 'files']);
+  const named = ['requirement', 'title', 'build', 'matrix', 'tags', 'note', 'files', 'tasks'];
+  const head = object(parsed, where, [...named, 'lines', 'columns', 'codes', 'messageIncludes', 'scans', 'scanMs', 'inputs', 'expect', 'fault']);
   if (typeof head.requirement !== 'string' || !/^[A-Z]+-[0-9]{3}$/.test(head.requirement)) fail(where, 'requirement must look like CMP-011');
   if (typeof head.title !== 'string' || head.title.trim() === '') fail(where, 'title must be a non-empty string');
-  const common = { requirement: head.requirement as string, title: head.title as string };
+  const matrix = list(head.matrix, where, 'matrix');
+  if (matrix.some((row) => typeof row !== 'string' || !/^[a-z0-9-]+\.[a-z0-9-]+$/.test(row))) fail(where, 'matrix must list row ids like data-types.bool');
+  if (new Set(matrix).size !== matrix.length) fail(where, 'matrix names a row twice');
+  const tags = list(head.tags, where, 'tags');
+  if (tags.some((tag) => !CASE_TAGS.includes(tag as CaseTag))) fail(where, `tags must be among ${CASE_TAGS.join(', ')}`);
+  if (tags.length > 0 && !tags.includes('arch-sensitive')) fail(where, 'a tag that says why a case is architecture-sensitive needs "arch-sensitive" as well');
+  if (head.note !== undefined && (typeof head.note !== 'string' || head.note.trim() === '')) fail(where, 'note must be a non-empty string');
+  const files = list(head.files, where, 'files').map((file) => {
+    if (typeof file !== 'string' || !/^[\w][\w.-]*$/.test(file) || !isSource(file)) fail(where, `files entry ${JSON.stringify(file)} must be the plain name of a source file`);
+    return file as string;
+  });
+  const interval = head.scanMs === undefined ? 10 : isInt(head.scanMs, 1, 3_600_000) ? head.scanMs : fail(where, 'scanMs must be a positive integer, in milliseconds');
+  const tasks = list(head.tasks, where, 'tasks').map((value, index): TaskSpec => {
+    const at = `${where}: tasks[${index}]`;
+    const task = object(value, at, ['name', 'trigger', 'interval_ms', 'priority', 'programs']);
+    if (typeof task.name !== 'string' || !/^[A-Za-z_]\w*$/.test(task.name)) fail(at, 'name must be an identifier');
+    const trigger = task.trigger ?? 'cyclic';
+    if (trigger !== 'cyclic' && trigger !== 'event' && trigger !== 'freewheeling') fail(at, 'trigger must be "cyclic", "event" or "freewheeling"');
+    if (task.interval_ms !== undefined && !isInt(task.interval_ms, 1, 3_600_000)) fail(at, 'interval_ms must be a positive integer');
+    if (task.priority !== undefined && !isInt(task.priority, 0, 255)) fail(at, 'priority must be an integer from 0 to 255');
+    const programs = list(task.programs, at, 'programs');
+    if (programs.length === 0 || programs.some((name) => typeof name !== 'string' || !isSource(name))) fail(at, 'programs must name source files: main.<extension> or an entry of "files"');
+    return { name: task.name as string, trigger: trigger as TaskSpec['trigger'], interval_ms: (task.interval_ms as number | undefined) ?? interval, priority: (task.priority as number | undefined) ?? index + 1, programs: programs as string[] };
+  });
+  const common = {
+    requirement: head.requirement as string, title: head.title as string, matrix: matrix as string[], tags: tags as CaseTag[],
+    ...(head.note === undefined ? {} : { note: head.note as string }), files, tasks,
+  };
   const build = head.build ?? 'succeeds';
   if (build !== 'succeeds' && build !== 'fails') fail(where, 'build must be "succeeds" or "fails"');
 
   if (build === 'fails') {
-    const reject = object(parsed, where, [...named, 'lines', 'messageIncludes']);
+    const reject = object(parsed, where, [...named, 'lines', 'columns', 'codes', 'messageIncludes']);
     const lines = reject.lines === undefined ? undefined : list(reject.lines, where, 'lines');
     if (lines?.some((line) => !isInt(line, 1, Number.MAX_SAFE_INTEGER))) fail(where, 'lines must be line numbers, 1 or more');
+    const columns = reject.columns === undefined ? undefined : list(reject.columns, where, 'columns');
+    if (columns?.some((column) => !isInt(column, 1, Number.MAX_SAFE_INTEGER))) fail(where, 'columns must be column numbers, 1 or more');
+    if (columns && (!lines || lines.length !== columns.length)) fail(where, 'columns needs "lines" and one column for each line');
+    const codes = reject.codes === undefined ? undefined : list(reject.codes, where, 'codes');
+    if (codes?.some((code) => typeof code !== 'string' || !/^[A-Z][A-Z0-9_]*$/.test(code))) fail(where, 'codes must be diagnostic codes such as COMPILATION_FAILED');
+    if (codes && lines && codes.length !== lines.length) fail(where, 'codes and lines name one entry for each diagnostic: they must have the same length');
     const messageIncludes = list(reject.messageIncludes, where, 'messageIncludes');
     if (messageIncludes.some((word) => typeof word !== 'string' || word === '')) fail(where, 'messageIncludes must be non-empty strings');
-    return { ...common, build, lines: lines as number[] | undefined, messageIncludes: messageIncludes as string[] };
+    return { ...common, build, lines: lines as number[] | undefined, columns: columns as number[] | undefined, codes: codes as string[] | undefined, messageIncludes: messageIncludes as string[] };
   }
 
-  const run = object(parsed, where, [...named, 'scans', 'scanMs', 'inputs', 'expect', 'fault', 'files']);
+  const run = object(parsed, where, [...named, 'scans', 'scanMs', 'inputs', 'expect', 'fault']);
   if (!isInt(run.scans, 1, 100_000)) fail(where, 'scans must be an integer from 1 to 100000');
   if (!isInt(run.scanMs, 1, 3_600_000)) fail(where, 'scanMs must be a positive integer, in milliseconds');
   const scans = run.scans as number;
@@ -149,11 +211,15 @@ export function parseExpectation(text: string, where: string): Expectation {
   });
   const fault = run.fault === true;
   if (expect.length === 0 && !fault) fail(where, 'asserts nothing: give "expect" at least one check, or "fault": true');
-  const files = list(run.files, where, 'files').map((file) => {
-    if (typeof file !== 'string' || !/^[\w][\w.-]*$/.test(file) || !isSource(file)) fail(where, `files entry ${JSON.stringify(file)} must be the plain name of a source file`);
-    return file as string;
-  });
-  return { ...common, build, scans, scanMs: run.scanMs as number, inputs, expect, fault, files };
+  return { ...common, build, scans, scanMs: run.scanMs as number, inputs, expect, fault };
+}
+
+/** The ids of the rows of the tracked matrix (VF-003) under `root`; absent when the root has no matrix.json. */
+function matrixRows(root: string): Set<string> | undefined {
+  const file = join(root, 'matrix.json');
+  if (!existsSync(file)) return undefined;
+  const { rows } = JSON.parse(readFileSync(file, 'utf8')) as { rows: Array<{ id: string }> };
+  return new Set(rows.map((row) => row.id));
 }
 
 /** Every case under `root`: each .expect.json with the source of the same name beside it. */
@@ -161,20 +227,25 @@ export function loadCases(root: string): ConformanceCase[] {
   const all = (readdirSync(root, { recursive: true }) as string[]).map((path) => join(root, path)).sort();
   const claimed = new Set<string>();
   const names = new Set<string>();
+  const rows = matrixRows(root);
   const cases = all.filter((path) => path.endsWith(EXPECT_SUFFIX)).map((file): ConformanceCase => {
     const shown = relative(root, file);
     const expectation = parseExpectation(readFileSync(file, 'utf8'), shown);
     const stem = file.slice(0, -EXPECT_SUFFIX.length);
+    for (const row of expectation.matrix) if (rows && !rows.has(row)) fail(shown, `matrix names the row "${row}", which conformance/matrix.json does not have`);
     const found = EXTENSIONS.filter((extension) => existsSync(stem + extension));
     if (found.length === 0) fail(shown, `no source file beside it (${EXTENSIONS.map((extension) => `name${extension}`).join(', ')})`);
     if (found.length > 1) fail(shown, `more than one source file beside it: ${found.map((extension) => `name${extension}`).join(', ')}`);
-    const extras = expectation.build === 'succeeds' ? expectation.files.map((name) => join(dirname(file), name)) : [];
+    const extras = expectation.files.map((name) => join(dirname(file), name));
     for (const extra of extras) if (!existsSync(extra)) fail(shown, `file ${relative(dirname(file), extra)} listed in "files" does not exist`);
+    for (const task of expectation.tasks) {
+      for (const program of task.programs) if (program !== `main${found[0]}` && !expectation.files.includes(program)) fail(shown, `task ${task.name} runs ${program}, which is neither main${found[0]} nor listed in "files"`);
+    }
     for (const path of [stem + found[0], ...extras]) claimed.add(path);
     const name = `${expectation.requirement} ${expectation.title}`;
     if (names.has(name)) fail(shown, `duplicate case name "${name}"; the name identifies the test`);
     names.add(name);
-    return { name, source: stem + found[0], extension: found[0]!, extras, expectation };
+    return { name, id: relative(root, stem), source: stem + found[0], extension: found[0]!, extras, expectation };
   });
   const orphans = all.filter((path) => isSource(path) && !claimed.has(path)).map((path) => relative(root, path));
   if (orphans.length > 0) fail(root, `source files with no .expect.json (an orphan asserts nothing): ${orphans.join(', ')}`);
