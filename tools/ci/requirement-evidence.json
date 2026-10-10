@@ -1377,6 +1377,25 @@
   "REL-016": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"release.yml publishes each platform independently and only as a draft (REL-015, REL-016)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"}
   ],
+  "REL-018": [
+    {"kind":"unit","ref":"scripts/release/lockfile.test.ts","test":"lockfile keys and ids (REL-018, REL-019)"},
+    {"kind":"unit","ref":"scripts/release/lockfile.test.ts","test":"stripTrailingCommas (REL-018, REL-019)"},
+    {"kind":"unit","ref":"scripts/release/lockfile.test.ts","test":"the lockfile dependency graph (REL-018, REL-019)"},
+    {"kind":"unit","ref":"scripts/release/sbom.test.ts","test":"buildSbom (REL-018)"},
+    {"kind":"unit","ref":"scripts/release/sbom.test.ts","test":"checkSbom (REL-018)"},
+    {"kind":"unit","ref":"scripts/release/sbom.test.ts","test":"the repository bill of materials (REL-018)"},
+    {"kind":"unit","ref":"scripts/release/sbom.test.ts","test":"westProjects (REL-018)"}
+  ],
+  "REL-019": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"third-party notices are generated at packaging time and ship in every installer (REL-019)"},
+    {"kind":"unit","ref":"scripts/release/licenses.test.ts","test":"bundledDevDependencies (REL-019)"},
+    {"kind":"unit","ref":"scripts/release/licenses.test.ts","test":"collectNotices (REL-019)"},
+    {"kind":"unit","ref":"scripts/release/licenses.test.ts","test":"fonts (REL-019)"},
+    {"kind":"unit","ref":"scripts/release/licenses.test.ts","test":"renderNotices (REL-019)"},
+    {"kind":"unit","ref":"scripts/release/lockfile.test.ts","test":"lockfile keys and ids (REL-018, REL-019)"},
+    {"kind":"unit","ref":"scripts/release/lockfile.test.ts","test":"stripTrailingCommas (REL-018, REL-019)"},
+    {"kind":"unit","ref":"scripts/release/lockfile.test.ts","test":"the lockfile dependency graph (REL-018, REL-019)"}
+  ],
   "REL-020": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"names the installer and the portable executable by the REL-020 variants, with unsigned appended","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"}
   ]

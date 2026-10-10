@@ -56,6 +56,14 @@ jobs:
       - name: Test release integrity bundle
         run: node --test scripts/release-artifacts.test.mjs
 
+      # The bill of materials and the licence notices are generated from the lockfile; the check fails when the
+      # document would hold fewer packages than the lockfile lists or than the recorded floor (REL-018).
+      - name: Test release tooling
+        run: bun test ./scripts/release
+
+      - name: Check the software bill of materials
+        run: bun scripts/release/sbom.ts --check
+
       - name: Verify workflow action pins
         run: node --test scripts/workflow-action-pins.test.mjs
 

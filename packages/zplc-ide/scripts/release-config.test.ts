@@ -8,6 +8,7 @@ import { EXPECTED_ARTIFACTS } from './smoke-desktop-builds';
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8');
 
 type Builder = {
+  beforePack?: string;
   extraResources: Array<{ from: string; to: string; filter?: string[] }>;
   mac: {
     identity?: string | null;
@@ -205,5 +206,21 @@ describe('Windows installers carry unsigned in their variant until a channel is 
     const upload = workflow.jobs['build-windows']!.steps!.find((step) => step.uses?.startsWith('actions/upload-artifact@'))!;
     const paths = upload.with!.path!.split('\n').map((line) => line.trim()).filter(Boolean);
     expect(paths).toEqual(['packages/zplc-ide/dist-electron/*-setup-unsigned.exe', 'packages/zplc-ide/dist-electron/*-portable-unsigned.exe']);
+  });
+});
+
+describe('third-party notices are generated at packaging time and ship in every installer (REL-019)', () => {
+  it('generates them from a hook that runs before electron-builder packs, for every platform and format', async () => {
+    expect(builder.beforePack).toBe('scripts/before-pack.mjs');
+    const hook = await import('./before-pack.mjs');
+    const command = hook.noticesCommand('/repo/packages/zplc-ide');
+    expect(command).toEqual({
+      command: 'bun',
+      args: ['/repo/scripts/release/licenses.ts', '--package', 'packages/zplc-ide', '--out', '/repo/packages/zplc-ide/build/THIRD-PARTY-NOTICES.txt'],
+    });
+  });
+
+  it('copies the generated file next to the application resources, beside the examples and the runtime', () => {
+    expect(builder.extraResources).toContainEqual({ from: 'build/THIRD-PARTY-NOTICES.txt', to: 'THIRD-PARTY-NOTICES.txt' });
   });
 });
