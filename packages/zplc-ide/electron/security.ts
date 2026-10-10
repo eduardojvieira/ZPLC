@@ -1,3 +1,4 @@
+import { parseRecoveryDiscard, parseRecoveryList, parseRecoveryWrite, type RecoveryRequests } from './recoveryStoreProtocol.js';
 import { parseSessionState } from './sessionStoreProtocol.js';
 
 const NATIVE_SIMULATION_METHODS = new Set([
@@ -306,6 +307,21 @@ export function isAllowedSessionSaveRequest(value: unknown): value is { rootId: 
     && value.rootId.length >= 1
     && value.rootId.length <= 64
     && parseSessionState(value.state) !== null;
+}
+
+/**
+ * The recovery operations (IDE-006) take the id of the window's project folder and, for a write, one relative path and
+ * the text of that file; `recoveryStoreProtocol.ts` holds the exact shapes and bounds. They name no path of the machine,
+ * and the main process keeps what they carry under the user-data directory.
+ */
+export function isAllowedRecoveryWriteRequest(value: unknown): value is RecoveryRequests['write'] {
+  return parseRecoveryWrite(value) !== null;
+}
+export function isAllowedRecoveryListRequest(value: unknown): value is RecoveryRequests['list'] {
+  return parseRecoveryList(value) !== null;
+}
+export function isAllowedRecoveryDiscardRequest(value: unknown): value is RecoveryRequests['discard'] {
+  return parseRecoveryDiscard(value) !== null;
 }
 
 /** Validates the narrow optional scenario selector without widening compile admission. */

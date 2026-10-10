@@ -42,7 +42,8 @@ async function runJourney(harness: Harness, journey: Journey, scratch: string): 
     launched = await launchApp(harness, root);
     const notes: string[] = [];
     const relaunch = async () => { notes.push(...launched!.notes); await launched!.stop(); launched = await launchApp(harness, root); return launched.app; };
-    await journey.run(launched.app, { root, project, relaunch });
+    const crash = async () => { notes.push(...launched!.notes); await launched!.crash(); launched = await launchApp(harness, root); return launched.app; };
+    await journey.run(launched.app, { root, project, relaunch, crash });
     notes.push(...launched.notes);
     return { status: 'pass', detail: '', notes };
   } catch (error) {

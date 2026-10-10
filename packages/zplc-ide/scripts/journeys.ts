@@ -18,6 +18,8 @@ export interface JourneyContext {
   project: string;
   /** Closes the app and starts it again on the same user-data directory, as a user restarting it would. */
   relaunch(): Promise<App>;
+  /** Kills the app process with SIGKILL, as a crash or a power loss would (no close prompt, no shutdown), and starts it again on the same user-data directory. */
+  crash(): Promise<App>;
 }
 /**
  * `example` names the folder of projects/ copied into a fresh temporary folder for the journey, or `none`.
@@ -169,6 +171,16 @@ function savedSessions(root: string): Array<{ tabs: Array<{ path: string; line: 
   const directory = join(root, 'profile', 'sessions');
   return existsSync(directory) ? readdirSync(directory).filter((name) => /^[0-9a-f]{64}\.json$/.test(name)).map((name) => JSON.parse(disk(join(directory, name)))) : [];
 }
+
+/** What the app keeps of modified files under its user-data directory (the journey's private profile): every entry of every project. */
+function recoveryEntries(root: string): Array<{ path: string; content: string; savedAt: number }> {
+  const base = join(root, 'profile', 'recovery');
+  if (!existsSync(base)) return [];
+  return readdirSync(base).flatMap((project) => existsSync(join(base, project)) && !project.includes('.')
+    ? readdirSync(join(base, project)).filter((name) => /^[0-9a-f]{64}\.json$/.test(name)).map((name) => JSON.parse(disk(join(base, project, name))))
+    : []);
+}
+const recoveryOffer = css('[data-recovery-offer]');
 
 const recentSection = css('[data-recent-projects]');
 const recentRow = css('[data-recent-project]');
@@ -857,6 +869,64 @@ export const JOURNEYS: Journey[] = [
       // The force stays until the user releases it, here with the same checkbox, while stopped.
       await app.click(forceBox, 'the Force checkbox of Start');
       await app.until('the force to be released', async () => !(await app.text()).includes('active force') && await app.eval(`${watchRow('Start')}?.querySelector('input[type="checkbox"]')?.checked === false`) === true || undefined);
+    },
+  },
+
+  {
+    name: '19 Recover modified files after a crash', example: 'motor_start_stop', proves: ['IDE-006'], partly: [],
+    run: async (app, { project, root, crash, relaunch }) => {
+      const file = join(project, 'src', 'Motor.st'); const original = disk(file);
+      const typeInto = async (target: App, text: string) => { await openFile(target, 'src/Motor.st'); await cursorAtEndOfLine(target, 1); await target.type(text); await target.until('the typed text', async () => (await editorText(target)).includes(text) || undefined); };
+      const kept = (text: string) => recoveryEntries(root).find((entry) => entry.path === 'src/Motor.st' && entry.content.includes(text));
+      const offered = async (target: App) => { await target.until('the offer to recover Motor.st', async () => await target.visible(recoveryOffer) || undefined); return target.eval<string>(`document.querySelector('[data-recovery-offer]')?.innerText ?? ''`); };
+
+      // Modified text reaches the recovery store without a save, and the project folder is not touched.
+      await openFolder(app, project);
+      assert(recoveryEntries(root).length === 0, 'A fresh profile already holds recovery entries.');
+      await typeInto(app, EDIT);
+      await app.until('the typed text kept in the recovery store', () => kept(EDIT), 6_000);
+      assert(disk(file) === original, 'The recovery store must not write into the project: the file on disk changed before any save.');
+
+      // The process is killed: no prompt, no shutdown. The next start offers the file back, and Restore puts the text in the editor unsaved.
+      let current = await crash();
+      assert(!await current.visible(toolbar), 'The project opened by itself after the crash.');
+      await openFolder(current, project);
+      const offer = await offered(current);
+      assert(offer.includes('Motor.st') && /kept at \d/.test(offer), `The offer should name the file and the time it was kept: ${JSON.stringify(offer)}`);
+      assert(!offer.includes(root), 'The offer shows a path of the machine.');
+      assert(!(await editorText(current)).includes(EDIT), 'The text came back before the user chose.');
+      await current.click(button('Restore Motor.st'));
+      await current.until('the recovered text in the editor', async () => (await editorText(current)).includes(EDIT) || undefined);
+      assert(disk(file) === original, 'Restore must leave the file on disk alone until the user saves.');
+      await current.click(saveButton);
+      await current.until('the saved file on disk', () => disk(file).includes(EDIT) || undefined);
+      await current.until('the recovery store to be empty after the save', () => recoveryEntries(root).length === 0 || undefined, 6_000);
+      const saved = disk(file);
+
+      // A second crash, and this time the user discards the kept text.
+      const SECOND = ' (* second edit *)';
+      await typeInto(current, SECOND);
+      await current.until('the second text kept', () => kept(SECOND), 6_000);
+      current = await crash();
+      await openFolder(current, project);
+      await offered(current);
+      await current.click(button('Discard Motor.st'));
+      await current.until('the offer to close', async () => !await current.visible(recoveryOffer) || undefined);
+      await current.until('the recovery store to be empty after the discard', () => recoveryEntries(root).length === 0 || undefined, 6_000);
+      assert(!(await editorText(current)).includes(SECOND) && disk(file) === saved, 'Discard must change neither the editor nor the file.');
+
+      // A clean exit leaves nothing: the user answers the close prompt with Discard, and the next start offers nothing.
+      await typeInto(current, ' (* third edit *)');
+      await current.until('the third text kept', () => kept(' (* third edit *)'), 6_000);
+      void current.cdp.command('Browser.close').catch(() => undefined);
+      await current.until('the prompt before the window closes', async () => await dialogTitle(current) === 'Unsaved changes before you close' || undefined);
+      await current.click(dialogChoice('Discard and close'));
+      await current.until('the recovery store to be empty after a clean exit', () => recoveryEntries(root).length === 0 || undefined, 6_000);
+      const last = await relaunch();
+      await openFolder(last, project);
+      await last.until('the editor', async () => (await editorText(last)).length > 0 || undefined).catch(() => undefined);
+      await Bun.sleep(1_500);
+      assert(!await last.visible(recoveryOffer), 'A clean exit left something to recover.');
     },
   },
 ];

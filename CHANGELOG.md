@@ -4,6 +4,13 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- Studio keeps a copy of every modified file in its user-data directory within a
+  second of the last keystroke (IDE-006), and offers each one back, with its name
+  and the time it was kept, when the project is opened after a crash. A normal exit
+  (save, discard, close with discard) leaves nothing. The store is owned by the main
+  process behind three typed channels (`recovery:write`, `recovery:list`,
+  `recovery:discard`) that name the project by the opaque folder id and a relative
+  path; a project keeps at most 64 files and about 64 MB.
 - The loader refuses a program whose calls nest deeper than the call stack of
   the VM (`ZPLC_CALL_STACK_MAX`, 32 by default, 16 on the ESP32-S3 profile)
   with `ZPLC_LOADER_ERR_STACK`, instead of accepting it and ending the scan

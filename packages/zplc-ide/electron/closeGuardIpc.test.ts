@@ -27,8 +27,8 @@ describe('close guard IPC boundary', () => {
   it('validates the sender and the message of every handler', () => {
     expect(mainSource).toContain('ipcMain.handle(CLOSE_GUARD_CHANNEL.SET_DIRTY, (event, ...args: unknown[]) => {');
     expect(mainSource).toContain('args.length !== 1 || !isAllowedCloseGuardDirty(args[0]) || !currentRendererOwner(event)');
-    expect(mainSource).toContain('ipcMain.handle(CLOSE_GUARD_CHANNEL.CLOSE_NOW, (event, ...args: unknown[]) => {');
-    expect(mainSource).toContain('args.length !== 0 || !currentRendererOwner(event)');
+    expect(mainSource).toContain('ipcMain.handle(CLOSE_GUARD_CHANNEL.CLOSE_NOW, async (event, ...args: unknown[]) => {');
+    expect(mainSource).toContain('const owner = currentRendererOwner(event);\n    if (args.length !== 0 || !owner) throw new Error(\'Request denied\');');
   });
 
   it('vetoes the window close while files are modified and never relaxes the permission handler', () => {

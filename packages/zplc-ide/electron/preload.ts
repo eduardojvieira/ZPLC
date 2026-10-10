@@ -69,6 +69,9 @@ const PROJECT_FILES_CHANNEL = {
 } as const;
 const LEARN_PROGRESS_CHANNEL = { READ: 'learn-progress:read', MERGE: 'learn-progress:merge' } as const;
 const SESSION_CHANNEL = { LOAD: 'session:load', SAVE: 'session:save' } as const;
+// Repeats RECOVERY_CHANNEL of recoveryStoreProtocol.ts, for the same reason as the project files above.
+// recoveryStoreIpc.test.ts keeps this copy equal to the shared one.
+const RECOVERY_CHANNEL = { WRITE: 'recovery:write', LIST: 'recovery:list', DISCARD: 'recovery:discard' } as const;
 const CLOSE_GUARD_CHANNEL = { SET_DIRTY: 'close-guard:set-dirty', CLOSE_NOW: 'close-guard:close-now', CLOSE_REQUESTED: 'close-guard:close-requested' } as const;
 type GuardedAction = 'close' | 'reload';
 
@@ -155,6 +158,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   session: {
     load: (request: unknown) => ipcRenderer.invoke(SESSION_CHANNEL.LOAD, request) as Promise<unknown>,
     save: (request: unknown) => ipcRenderer.invoke(SESSION_CHANNEL.SAVE, request) as Promise<unknown>,
+  },
+  // Recovery of modified files (IDE-006): the folder is named by the opaque id that projectFiles gave out; what crosses
+  // is a relative path and the text of one file. The main process validates it and keeps it under the user-data directory.
+  recovery: {
+    write: (request: unknown) => ipcRenderer.invoke(RECOVERY_CHANNEL.WRITE, request) as Promise<unknown>,
+    list: (request: unknown) => ipcRenderer.invoke(RECOVERY_CHANNEL.LIST, request) as Promise<unknown>,
+    discard: (request: unknown) => ipcRenderer.invoke(RECOVERY_CHANNEL.DISCARD, request) as Promise<unknown>,
   },
   learnProgress: {
     read: () => ipcRenderer.invoke(LEARN_PROGRESS_CHANNEL.READ) as Promise<string[]>,

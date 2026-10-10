@@ -309,6 +309,11 @@ export function createProjectFiles(chooseDirectory: (ownerId: number) => Promise
       return folder !== undefined && folder.id === rootId ? folder.real : null;
     },
 
+    /** The real path of the window's current folder, for the main process only (whatever id the renderer holds). Null when none. */
+    currentRoot(ownerId: number): string | null {
+      return folders.get(ownerId)?.real ?? null;
+    },
+
     /** Forgets the window's folder: the document changed or the window went away. */
     revokeOwner(ownerId: number): void {
       folders.delete(ownerId);

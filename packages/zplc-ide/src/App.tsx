@@ -22,12 +22,14 @@ import { EditorArea } from './components/EditorArea';
 import { Console } from './components/Console';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { CloseGuard } from './components/CloseGuard';
+import { RecoveryOffer } from './components/RecoveryOffer';
 import { useTheme } from './hooks/useTheme';
 import { initializeTheme, useIDEStore } from './store/useIDEStore';
 import { useDebugController } from './hooks/useDebugController';
 import { useWorkspaceLayout } from './utils/layoutStorage';
 import { workspaceLayoutFrom } from './utils/sessionState';
 import { startSessionPersistence } from './store/sessionPersistence';
+import { startRecoveryPersistence } from './store/recoveryPersistence';
 
 // Apply the stored theme while modules load, before React renders the first frame (UX-016).
 initializeTheme();
@@ -50,6 +52,9 @@ function App() {
 
   // The open project's tabs, cursors and panel split are saved as they change (IDE-008).
   useEffect(() => startSessionPersistence(useIDEStore), []);
+
+  // Modified files are kept in the main process a moment after the last keystroke, so that a crash loses nothing (IDE-006).
+  useEffect(() => startRecoveryPersistence(useIDEStore), []);
 
   // A project that opens while the workbench is already showing brings its own split; the first one is the group's default.
   useEffect(() => {
@@ -79,6 +84,7 @@ function App() {
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-surface-900)]">
       <CloseGuard />
+      <RecoveryOffer />
       {/* Unified Toolbar */}
       <Toolbar debugController={debugController} />
 

@@ -5,6 +5,7 @@
  */
 
 import type { ProjectFilesBridge } from '../../electron/projectFilesProtocol';
+import type { RecoveryBridge } from '../../electron/recoveryStoreProtocol';
 import type { SessionBridge } from '../../electron/sessionStoreProtocol';
 
 // =============================================================================
@@ -98,6 +99,8 @@ declare global {
       projectFiles?: ProjectFilesBridge;
       /** The per-project session (open tabs, cursors, panel sizes), kept by the main process (IDE-008). */
       session?: SessionBridge;
+      /** What the main process keeps of modified files, so that a crash loses nothing the user typed (IDE-006). */
+      recovery?: RecoveryBridge;
       isElectron: boolean;
       platform: string;
     };

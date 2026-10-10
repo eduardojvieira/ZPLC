@@ -3,7 +3,7 @@
  * only by input events over the DevTools protocol (mouse, wheel, keyboard, text insertion). The native folder dialog is
  * answered by the main-process hook that exists only when the app is not packaged. Native POSIX only, never HIL.
  */
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { trustedDevelopmentRendererUrl } from '../electron/security';
@@ -70,7 +70,19 @@ async function mouse(cdp: Cdp, x: number, y: number, clicks = 1): Promise<void> 
 
 export interface Harness { vitePort: number; rendererUrl: string; runtime: string; output: string[] }
 
-export async function launchApp(harness: Harness, root: string): Promise<{ app: App; notes: string[]; stop(): Promise<void> }> {
+/** Process ids whose command line carries this exact `--user-data-dir`: the Electron main process and the helpers it started. */
+function processesOfProfile(profile: string): number[] {
+  if (process.platform !== 'linux') return [];
+  const needle = `--user-data-dir=${profile}`;
+  const found: number[] = [];
+  for (const name of readdirSync('/proc')) {
+    if (!/^\d+$/.test(name)) continue;
+    try { if (readFileSync(`/proc/${name}/cmdline`, 'utf8').split('\0').includes(needle)) found.push(Number(name)); } catch { /* it exited meanwhile */ }
+  }
+  return found;
+}
+
+export async function launchApp(harness: Harness, root: string): Promise<{ app: App; notes: string[]; stop(): Promise<void>; crash(): Promise<void> }> {
   const notes: string[] = [];
   const answerFile = join(root, 'folder-answer.txt'); writeFileSync(answerFile, '');
   const cdpPort = await freePort();
@@ -84,6 +96,16 @@ export async function launchApp(harness: Harness, root: string): Promise<{ app: 
   let cdp: Cdp | undefined;
   // Browser.close is not awaited: with unsaved changes the app answers it with a prompt, not a reply.
   const dispose = async () => { if (cdp) void cdp.command('Browser.close').catch(() => undefined); await Promise.race([electron.exited, Bun.sleep(3_000)]); cdp?.close(); await stop(electron); };
+  // A crash: SIGKILL on the process this runner started, no shutdown of any kind. Its helpers follow it; any that stay are ours by profile.
+  const crash = async () => {
+    electron.kill('SIGKILL');
+    await electron.exited;
+    cdp?.close();
+    for (let attempt = 0; attempt < 50 && processesOfProfile(join(root, 'profile')).length > 0; attempt++) {
+      if (attempt >= 10) for (const pid of processesOfProfile(join(root, 'profile'))) { try { process.kill(pid, 'SIGKILL'); } catch { /* gone */ } }
+      await Bun.sleep(100);
+    }
+  };
   try {
     const target = await waitFor('real Electron renderer target', async () => {
       const targets = await fetch(`http://${HOST}:${cdpPort}/json/list`).then((response) => response.json()).catch(() => [] as Array<{ type?: string; url?: string; webSocketDebuggerUrl?: string }>);
@@ -135,7 +157,7 @@ export async function launchApp(harness: Harness, root: string): Promise<{ app: 
       text: () => evaluate<string>('document.body.innerText'),
       errors: page.errors,
     };
-    return { app, notes, stop: dispose };
+    return { app, notes, stop: dispose, crash };
   } catch (error) {
     await dispose();
     throw new Error(`${error instanceof Error ? error.message : String(error)}\n${output.join('').slice(-4_000)}`);

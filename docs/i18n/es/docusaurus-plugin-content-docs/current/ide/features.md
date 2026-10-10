@@ -28,6 +28,16 @@ Para cada proyecto, Studio recuerda además las pestañas abiertas, la pestaña 
 
 Nivel de evidencia: host. Las pruebas unitarias del requisito IDE-008 (`packages/zplc-ide/electron/recentProjects.test.ts`, `sessionStore.test.ts`, `packages/zplc-ide/src/utils/sessionState.test.ts` y `packages/zplc-ide/src/store/sessionPersistence.test.ts`) cubren la lista y el formato de la sesión, y el recorrido 12 (restaurar la sesión) y el recorrido 14 (un proyecto reciente que ya no está) de `bun run test:journeys` manejan la aplicación real en una pantalla.
 
+## Recuperar trabajo sin guardar
+
+Studio guarda una copia de cada archivo modificado en su directorio privado de datos de usuario un segundo después de que usted deja de escribir (y como mínimo cada pocos segundos mientras sigue escribiendo). Guardar un archivo, descartarlo, cerrarlo con **Discard**, o cerrar el proyecto o la ventana y responder **Save** o **Discard** elimina la copia, de modo que una salida normal no deja nada.
+
+Si Studio se cerró de golpe o falló, abra el proyecto otra vez: un diálogo **Recover unsaved changes** lista cada archivo que tenía texto modificado, con su nombre y la hora en que se guardó la copia. **Restore** devuelve el texto al editor, todavía sin guardar; **Discard** elimina la copia. Cerrar el diálogo no decide nada y las copias se ofrecen de nuevo la próxima vez. Una copia igual al archivo en disco, o cuyo archivo ya no existe, se elimina sin preguntar. Las copias de los proyectos que salen de la lista Recent se borran cuando arranca Studio.
+
+Límites: un proyecto conserva copias de a lo sumo 64 archivos y unos 64 MB de texto. Los cambios en la configuración del proyecto (`zplc.json`) todavía no se copian.
+
+Nivel de evidencia: host. Las pruebas unitarias del requisito IDE-006 (`packages/zplc-ide/electron/recoveryStore.test.ts`, `recoveryStoreIpc.test.ts`, `packages/zplc-ide/src/store/recoveryPersistence.test.ts`, `src/utils/recoveryOffer.test.ts` y `src/ipc/recoveryBridge.test.ts`) cubren el almacén, los mensajes y los tiempos, y el recorrido 19 (recuperar archivos modificados tras un fallo) de `bun run test:journeys` mata con SIGKILL el proceso de la aplicación real, la arranca de nuevo y restaura el archivo.
+
 ## Editores
 
 ST es la vía principal con servicio de lenguaje. LD, FBD y SFC abren, editan,
