@@ -53,6 +53,24 @@ In simulation one thread serves the control requests and runs the batches, one a
 
 `STOP`, external pause, unregister, and scheduler faults close admission and drain in-flight coordinator work before returning. These guarantees describe the scheduler implementation and its host/native-sim tests. They do not establish WCET, jitter, electrical state, or board qualification.
 
+### The locks around a scan (RT-010, RT-012)
+
+On the target a batch is three steps. The inputs are read from the HAL with no lock held. Then, under the
+process-image lock, the writes that other threads queued are applied, the samples are written to IPI, the tasks run
+and the image is published as a snapshot. Last, with the image lock released and under a separate lock for the
+output I/O, the physical outputs are written and the hardware watchdog is fed. The image lock is never held while a
+pin is written, a line is printed or any call that can block runs: the log lines of a scan are printed after the lock
+is released.
+
+A thread outside the scan reads the snapshot of the last commit and queues its writes for the next input latch (see
+[Access from outside the scan](memory-model.md#access-from-outside-the-scan-rt-010-rt-011)). A stop, a pause or a
+fault that arrives between the commit of the image and the write of the pins takes the output lock after or before
+it, and the pins end in the state the later of the two decided.
+
+A lock that cannot be created or taken is an error the caller sees (RT-030). A control call returns
+`ZPLC_SCHED_ERR_LOCK` and changes nothing. A scan that cannot take the image lock drives the pins to their safe state
+and latches the fault, so the state is `ERROR`; a replacement program is the way out, as for any fault.
+
 ### Priorities and start-up order (RT-013, RT-024)
 
 The scan coordinator, the high-priority work queue or the normal one when there is none, has a lower priority number

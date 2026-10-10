@@ -55,6 +55,7 @@ extern void zplc_mqtt_request_backoff_reset(void);
 
 #ifdef CONFIG_ZPLC_SCHEDULER
 #include <zplc_scheduler.h>
+#include <zplc_exchange.h>
 #endif
 
 #ifdef CONFIG_ZPLC_SCHEDULER
@@ -67,6 +68,34 @@ static void sched_unlock_reported(const struct shell *sh) {
   }
 }
 #endif
+
+/* A debug read of PLC memory (RT-010). With the scheduler it comes from the snapshot the scan published at its last
+ * commit: whole values, between two scans, and neither the image lock nor a wait for a scan is needed, so nothing
+ * is printed with a lock held. The single-task runtime has no scan to publish: its loop is the only other writer
+ * and the read is as it always was. Returns 0, or a negative errno when the extent is not inside PLC memory. */
+static int dbg_read(uint16_t addr, uint8_t *out, uint16_t size) {
+#ifdef CONFIG_ZPLC_SCHEDULER
+  return zplc_exchange_read(addr, out, size) == 0 ? 0 : -ERANGE;
+#else
+  static const uint16_t bases[4] = {ZPLC_MEM_IPI_BASE, ZPLC_MEM_OPI_BASE, ZPLC_MEM_WORK_BASE,
+                                    ZPLC_MEM_RETAIN_BASE};
+  static const uint32_t sizes[4] = {ZPLC_MEM_IPI_SIZE, ZPLC_MEM_OPI_SIZE, ZPLC_MEM_WORK_SIZE,
+                                    ZPLC_MEM_RETAIN_SIZE};
+
+  for (unsigned region = 0U; region < 4U; region++) {
+    if (addr >= bases[region] && (uint32_t)(addr - bases[region]) + size <= sizes[region]) {
+      const uint8_t *base = zplc_mem_get_region(bases[region]);
+
+      if (base == NULL) {
+        return -ERANGE;
+      }
+      memcpy(out, base + (addr - bases[region]), size);
+      return 0;
+    }
+  }
+  return -ERANGE;
+#endif
+}
 
 #include <zephyr/version.h>
 
@@ -287,43 +316,10 @@ static int hil_parse_watch_type(const char *type, hil_watch_type_t *out_type,
   return 0;
 }
 
-static int hil_resolve_mem_ptr(uint16_t addr, size_t width, uint8_t **ptr) {
-  uint16_t base;
-  uint16_t size;
-  uint8_t *region;
-
-  if (addr >= ZPLC_MEM_IPI_BASE &&
-      addr + width <= ZPLC_MEM_IPI_BASE + ZPLC_MEM_IPI_SIZE) {
-    base = ZPLC_MEM_IPI_BASE;
-    size = ZPLC_MEM_IPI_SIZE;
-  } else if (addr >= ZPLC_MEM_OPI_BASE &&
-             addr + width <= ZPLC_MEM_OPI_BASE + ZPLC_MEM_OPI_SIZE) {
-    base = ZPLC_MEM_OPI_BASE;
-    size = ZPLC_MEM_OPI_SIZE;
-  } else if (addr >= ZPLC_MEM_WORK_BASE &&
-             addr + width <= ZPLC_MEM_WORK_BASE + ZPLC_MEM_WORK_SIZE) {
-    base = ZPLC_MEM_WORK_BASE;
-    size = ZPLC_MEM_WORK_SIZE;
-  } else if (addr >= ZPLC_MEM_RETAIN_BASE &&
-             addr + width <= ZPLC_MEM_RETAIN_BASE + ZPLC_MEM_RETAIN_SIZE) {
-    base = ZPLC_MEM_RETAIN_BASE;
-    size = ZPLC_MEM_RETAIN_SIZE;
-  } else {
-    return -ERANGE;
-  }
-
-  region = zplc_mem_get_region(base);
-  if (region == NULL || (addr - base) + width > size) {
-    return -ERANGE;
-  }
-
-  *ptr = region + (addr - base);
-  return 0;
-}
-
 static int hil_read_watch_value(uint16_t addr, hil_watch_type_t type,
                                 hil_watch_value_t *value) {
-  uint8_t *ptr = NULL;
+  uint8_t raw_bytes[4] = {0U, 0U, 0U, 0U};
+  const uint8_t *ptr = raw_bytes;
   size_t width = 0;
   int rc;
 
@@ -346,7 +342,7 @@ static int hil_read_watch_value(uint16_t addr, hil_watch_type_t type,
     return -EINVAL;
   }
 
-  rc = hil_resolve_mem_ptr(addr, width, &ptr);
+  rc = dbg_read(addr, raw_bytes, (uint16_t)width);
   if (rc != 0) {
     return rc;
   }
@@ -450,12 +446,6 @@ static void hil_watch_poll_once(bool force_emit) {
     return;
   }
 
-#ifdef CONFIG_ZPLC_SCHEDULER
-  if (zplc_sched_lock(5) != 0) {
-    return;
-  }
-#endif
-
   for (int i = 0; i < HIL_MAX_WATCHES; i++) {
     hil_watch_value_t value;
     hil_watch_entry_t *watch = &s_hil_watches[i];
@@ -478,9 +468,6 @@ static void hil_watch_poll_once(bool force_emit) {
     }
   }
 
-#ifdef CONFIG_ZPLC_SCHEDULER
-  sched_unlock_reported(s_hil_shell);
-#endif
 }
 
 static void hil_watch_work_handler(struct k_work *work) {
@@ -1044,38 +1031,11 @@ static int cmd_dbg_peek(const struct shell *sh, size_t argc, char **argv) {
     }
   }
 
-  /* Get memory region pointer */
-  uint8_t *base = NULL;
-  uint16_t offset = 0;
-  uint16_t region_size = 0;
+  /* The bytes come from the snapshot of the last commit (RT-010), whole, read once. */
+  uint8_t data[256];
 
-  if (addr < ZPLC_MEM_OPI_BASE) {
-    base = zplc_mem_get_region(ZPLC_MEM_IPI_BASE);
-    offset = (uint16_t)addr;
-    region_size = ZPLC_MEM_IPI_SIZE;
-  } else if (addr < ZPLC_MEM_WORK_BASE) {
-    base = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
-    offset = (uint16_t)(addr - ZPLC_MEM_OPI_BASE);
-    region_size = ZPLC_MEM_OPI_SIZE;
-  } else if (addr < ZPLC_MEM_RETAIN_BASE) {
-    base = zplc_mem_get_region(ZPLC_MEM_WORK_BASE);
-    offset = (uint16_t)(addr - ZPLC_MEM_WORK_BASE);
-    region_size = ZPLC_MEM_WORK_SIZE;
-  } else {
-    base = zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE);
-    offset = (uint16_t)(addr - ZPLC_MEM_RETAIN_BASE);
-    region_size = ZPLC_MEM_RETAIN_SIZE;
-  }
-
-  if (base == NULL) {
-    shell_error(sh, "ERROR: Invalid memory region");
-    return -EINVAL;
-  }
-
-  if ((uint32_t)offset + (uint32_t)len > (uint32_t)region_size) {
-    shell_error(sh,
-                "ERROR: Access out of bounds (offset %u + len %lu > size %u)",
-                offset, len, region_size);
+  if (addr > 0xFFFFU || dbg_read((uint16_t)addr, data, (uint16_t)len) != 0) {
+    shell_error(sh, "ERROR: Access out of bounds (address 0x%lX, length %lu)", addr, len);
     return -EINVAL;
   }
 
@@ -1087,7 +1047,7 @@ static int cmd_dbg_peek(const struct shell *sh, size_t argc, char **argv) {
     int pos = 0;
     pos += snprintf(line + pos, sizeof(line) - pos, "%04lX: ", addr + i);
     for (unsigned long j = 0; j < 16 && (i + j) < len; j++) {
-      pos += snprintf(line + pos, sizeof(line) - pos, "%02X ", base[offset + i + j]);
+      pos += snprintf(line + pos, sizeof(line) - pos, "%02X ", data[i + j]);
     }
     shell_print(sh, "%s", line);
   }
@@ -1180,12 +1140,23 @@ static int cmd_dbg_mpeek(const struct shell *sh, size_t argc, char **argv) {
     return -EINVAL;
   }
 
-#ifdef CONFIG_ZPLC_SCHEDULER
-  if (zplc_sched_lock(5) != 0) {
-    shell_error(sh, "ERROR: Could not acquire scheduler lock");
-    return -EBUSY;
+  /* Every entry is read from one snapshot, then printed with no lock held (RT-010, RT-012). */
+  static uint8_t mpeek_data[MPEEK_MAX_BYTES];
+  size_t mpeek_used = 0U;
+  size_t mpeek_offset[MPEEK_MAX_ENTRIES];
+
+  for (int i = 0; i < entry_count; i++) {
+    unsigned long addr = entries[i].addr;
+    unsigned long len = entries[i].len;
+
+    if (addr > 0xFFFFU || mpeek_used + len > sizeof(mpeek_data) ||
+        dbg_read((uint16_t)addr, &mpeek_data[mpeek_used], (uint16_t)len) != 0) {
+      shell_error(sh, "ERROR: Invalid address or out-of-bounds at 0x%lX", addr);
+      return -EINVAL;
+    }
+    mpeek_offset[i] = mpeek_used;
+    mpeek_used += len;
   }
-#endif
 
   /* Emit JSON response */
   shell_print(sh, "{\"t\":\"mpeek\",\"results\":[");
@@ -1194,44 +1165,12 @@ static int cmd_dbg_mpeek(const struct shell *sh, size_t argc, char **argv) {
     unsigned long addr = entries[i].addr;
     unsigned long len  = entries[i].len;
 
-    /* Resolve memory region */
-    uint8_t *base = NULL;
-    uint16_t offset = 0;
-    uint16_t region_size = 0;
-
-    if (addr < ZPLC_MEM_OPI_BASE) {
-      base = zplc_mem_get_region(ZPLC_MEM_IPI_BASE);
-      offset = (uint16_t)addr;
-      region_size = ZPLC_MEM_IPI_SIZE;
-    } else if (addr < ZPLC_MEM_WORK_BASE) {
-      base = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
-      offset = (uint16_t)(addr - ZPLC_MEM_OPI_BASE);
-      region_size = ZPLC_MEM_OPI_SIZE;
-    } else if (addr < ZPLC_MEM_RETAIN_BASE) {
-      base = zplc_mem_get_region(ZPLC_MEM_WORK_BASE);
-      offset = (uint16_t)(addr - ZPLC_MEM_WORK_BASE);
-      region_size = ZPLC_MEM_WORK_SIZE;
-    } else {
-      base = zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE);
-      offset = (uint16_t)(addr - ZPLC_MEM_RETAIN_BASE);
-      region_size = ZPLC_MEM_RETAIN_SIZE;
-    }
-
-    /* Validate bounds */
-    if (base == NULL || (uint32_t)offset + (uint32_t)len > (uint32_t)region_size) {
-#ifdef CONFIG_ZPLC_SCHEDULER
-      sched_unlock_reported(sh);
-#endif
-      shell_error(sh, "ERROR: Invalid address or out-of-bounds at 0x%lX", addr);
-      return -EINVAL;
-    }
-
     /* Build hex string for the bytes */
     char hex[513]; /* max 256 bytes × 2 hex chars + NUL */
     unsigned int hex_pos = 0;
     for (unsigned long b = 0; b < len; b++) {
       hex_pos += (unsigned int)snprintf(hex + hex_pos, sizeof(hex) - hex_pos,
-                                        "%02X", base[offset + b]);
+                                        "%02X", mpeek_data[mpeek_offset[i] + b]);
     }
     hex[hex_pos] = '\0';
 
@@ -1241,10 +1180,6 @@ static int cmd_dbg_mpeek(const struct shell *sh, size_t argc, char **argv) {
   }
 
   shell_print(sh, "]}");
-
-#ifdef CONFIG_ZPLC_SCHEDULER
-  sched_unlock_reported(sh);
-#endif
 
   return 0;
 }
@@ -1271,17 +1206,16 @@ static int cmd_dbg_poke(const struct shell *sh, size_t argc, char **argv) {
   uint8_t byte = (uint8_t)value;
   int rc;
 
-#ifdef CONFIG_ZPLC_SCHEDULER
-  if (zplc_sched_lock(5) != 0) {
-    shell_error(sh, "ERROR: Could not acquire scheduler lock");
-    return -EBUSY;
+  if (addr > 0xFFFFU) {
+    shell_error(sh, "ERROR: Invalid memory address");
+    return -EINVAL;
   }
-#endif
-
-  rc = zplc_force_write_bytes((uint16_t)addr, &byte, 1U);
-
 #ifdef CONFIG_ZPLC_SCHEDULER
-  sched_unlock_reported(sh);
+  /* Like every other external write (RT-010): queued whole, applied by the scan at its next input latch through
+   * the force-aware interface, at once when no scan is running. */
+  rc = zplc_exchange_write((uint16_t)addr, &byte, 1U);
+#else
+  rc = zplc_force_write_bytes((uint16_t)addr, &byte, 1U);
 #endif
 
   if (rc != 0) {
@@ -1326,6 +1260,9 @@ static int cmd_dbg_force_set(const struct shell *sh, size_t argc, char **argv) {
 #endif
 
   rc = zplc_force_set_bytes((uint16_t)addr, bytes, (uint16_t)decoded);
+#ifdef CONFIG_ZPLC_SCHEDULER
+  zplc_exchange_publish(); /* a force changes the memory at once; the snapshot follows (RT-010) */
+#endif
 
 #ifdef CONFIG_ZPLC_SCHEDULER
   sched_unlock_reported(sh);
@@ -1376,6 +1313,9 @@ static int cmd_dbg_force_clear(const struct shell *sh, size_t argc, char **argv)
 #endif
 
   rc = zplc_force_clear((uint16_t)addr);
+#ifdef CONFIG_ZPLC_SCHEDULER
+  zplc_exchange_publish();
+#endif
 
 #ifdef CONFIG_ZPLC_SCHEDULER
   sched_unlock_reported(sh);
@@ -1403,6 +1343,9 @@ static int cmd_dbg_force_clear_all(const struct shell *sh, size_t argc,
 #endif
 
   zplc_force_clear_all();
+#ifdef CONFIG_ZPLC_SCHEDULER
+  zplc_exchange_publish();
+#endif
 
 #ifdef CONFIG_ZPLC_SCHEDULER
   sched_unlock_reported(sh);
@@ -1570,6 +1513,16 @@ static int cmd_dbg_mem(const struct shell *sh, size_t argc, char **argv) {
     return -EINVAL;
   }
 
+  /* The 64 bytes come from the snapshot of the last commit, read once (RT-010). */
+  uint8_t window[64];
+  size_t window_size = (size_t)(region_size - offset) < sizeof(window) ? (size_t)(region_size - offset)
+                                                                       : sizeof(window);
+
+  if (dbg_read((uint16_t)(region_base_addr + offset), window, (uint16_t)window_size) != 0) {
+    shell_error(sh, "ERROR: Offset out of bounds (0x%04lX)", offset);
+    return -EINVAL;
+  }
+
   shell_print(sh, "--- %s Memory Dump (offset 0x%04lX) ---", region_name,
               offset);
 
@@ -1587,7 +1540,7 @@ static int cmd_dbg_mem(const struct shell *sh, size_t argc, char **argv) {
       if (offset + i + j >= region_size)
         break;
       pos += snprintf(line + pos, sizeof(line) - pos, "%02X ",
-                      base[offset + i + j]);
+                      window[i + j]);
     }
 
     pos += snprintf(line + pos, sizeof(line) - pos, " | ");
@@ -1595,7 +1548,7 @@ static int cmd_dbg_mem(const struct shell *sh, size_t argc, char **argv) {
     for (int j = 0; j < 16; j++) {
       if (offset + i + j >= region_size)
         break;
-      uint8_t c = base[offset + i + j];
+      uint8_t c = window[i + j];
       pos += snprintf(line + pos, sizeof(line) - pos, "%c",
                       isprint(c) ? c : '.');
     }
@@ -1961,9 +1914,10 @@ static int cmd_zplc_status(const struct shell *sh, size_t argc, char **argv) {
       JSON_OBJ_END(sh);
     }
     shell_fprintf(sh, SHELL_NORMAL, ",\"opi\":[");
-    uint8_t *opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
+    uint8_t opi[8] = {0U, 0U, 0U, 0U, 0U, 0U, 0U, 0U};
+    (void)dbg_read(ZPLC_MEM_OPI_BASE, opi, (uint16_t)sizeof(opi)); /* RT-010: the last commit */
     for (int i = 0; i < 8; i++) {
-      shell_fprintf(sh, SHELL_NORMAL, "%u%s", opi ? opi[i] : 0, (i < 7) ? "," : "");
+      shell_fprintf(sh, SHELL_NORMAL, "%u%s", opi[i], (i < 7) ? "," : "");
     }
     shell_fprintf(sh, SHELL_NORMAL, "]");
     JSON_OBJ_END(sh);
@@ -2554,7 +2508,7 @@ static int cmd_hil_watch(const struct shell *sh, size_t argc, char **argv) {
     hil_watch_type_t type;
     size_t width = 0;
     int slot = -1;
-    uint8_t *mem_ptr = NULL;
+    uint8_t probe[8];
 
     if (argc < 4) {
       hil_send_ack("watch", "add", false,
@@ -2573,7 +2527,9 @@ static int cmd_hil_watch(const struct shell *sh, size_t argc, char **argv) {
       return -EINVAL;
     }
 
-    if (hil_resolve_mem_ptr((uint16_t)parsed_addr, width, &mem_ptr) != 0) {
+    /* The extent has to lie inside PLC memory; the watch itself reads the snapshot (RT-010). */
+    if (width > sizeof(probe) ||
+        dbg_read((uint16_t)parsed_addr, probe, (uint16_t)width) != 0) {
       hil_send_ack("watch", argv[2], false, "address out of range");
       return -ERANGE;
     }

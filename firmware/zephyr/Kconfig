@@ -92,6 +92,19 @@ config ZPLC_PROGRAM_STORE_CHUNK_SIZE
       1024 fits the 4 KB sector of every board of this repository. The build checks that the storage partition
       holds two slots of ZPLC_CODE_SIZE_MAX in chunks of this size.
 
+config ZPLC_EXCHANGE_QUEUE_BYTES
+    int "Bytes of the queue of writes from outside the scan"
+    default 1024
+    range 256 16384
+    help
+      A write from a thread outside the scan (Modbus, MQTT, the shell) is queued whole and applied at the input
+      latch of the next scan (RT-010). Each queued write takes its data and four bytes of header. A write that does
+      not fit is refused, with nothing queued, and the caller sees an error: a Modbus TCP client gets exception 6
+      (server device busy). The default holds a Modbus write of 100 mapped registers.
+
+      The exchange also keeps one copy of IPI, OPI, WORK and RETAIN, the snapshot a reader sees, so it costs the
+      sum of the four region sizes of RAM besides this queue.
+
 config ZPLC_VM_CYCLE_INSTRUCTION_BUDGET
     int "PLC scan instruction budget"
     default 100000

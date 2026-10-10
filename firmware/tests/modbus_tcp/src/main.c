@@ -4,12 +4,19 @@
 #include "zplc_modbus_tcp.h"
 #include "zplc_config.h"
 #include <zplc_core.h>
+#include <zplc_exchange.h>
 
 static uint8_t process_image[4096];
 static zplc_tag_entry_t process_tags[1];
-static int process_lock_result;
-static uint8_t process_lock_calls;
-static uint8_t process_unlock_calls;
+
+/* The exchange the server reads and writes through (RT-010): a fake that records how it was used and keeps the
+ * bytes of the one variable the tag maps (WORK base 0x2000). */
+static int exchange_begin_result;
+static uint8_t exchange_begin_calls;
+static uint8_t exchange_add_calls;
+static uint8_t exchange_end_calls;
+static size_t exchange_begin_records;
+static size_t exchange_begin_bytes;
 
 int zplc_modbus_client_init(void) { return 0; }
 bool zplc_config_get_modbus_tag_override(uint16_t index, uint16_t width, uint32_t *address)
@@ -17,9 +24,24 @@ bool zplc_config_get_modbus_tag_override(uint16_t index, uint16_t width, uint32_
 uint16_t zplc_config_get_modbus_id(void) { return 1U; }
 bool zplc_config_get_modbus_tcp_enabled(void) { return false; }
 bool zplc_config_get_modbus_rtu_enabled(void) { return false; }
-uint8_t *zplc_mem_get_region(uint16_t region) { return region == 0x2000U ? process_image : NULL; }
-int zplc_pi_lock(void) { process_lock_calls++; return process_lock_result; }
-void zplc_pi_unlock(void) { process_unlock_calls++; }
+int zplc_exchange_write_begin(size_t records, size_t bytes)
+{ exchange_begin_calls++; exchange_begin_records = records; exchange_begin_bytes = bytes; return exchange_begin_result; }
+int zplc_exchange_write_add(uint16_t addr, const uint8_t *bytes, uint16_t size)
+{
+  exchange_add_calls++;
+  if (addr < 0x2000U || (size_t)addr + size > 0x2000U + sizeof(process_image)) return -EINVAL;
+  memcpy(&process_image[addr - 0x2000U], bytes, size);
+  return 0;
+}
+void zplc_exchange_write_end(void) { exchange_end_calls++; }
+int zplc_exchange_read_lock(void) { return 0; }
+int zplc_exchange_read_locked(uint16_t addr, uint8_t *out, uint16_t size)
+{
+  if (addr < 0x2000U || (size_t)addr + size > 0x2000U + sizeof(process_image)) return -EINVAL;
+  memcpy(out, &process_image[addr - 0x2000U], size);
+  return 0;
+}
+void zplc_exchange_read_unlock(void) {}
 uint16_t zplc_core_get_tag_count(void) { return 1U; }
 const zplc_tag_entry_t *zplc_core_get_tag(uint16_t index) { return index == 0U ? process_tags : NULL; }
 
@@ -194,28 +216,57 @@ ZTEST(modbus_tcp, test_production_mapped_write_preflights_entire_range)
 
   memset(process_image, 0, sizeof(process_image));
   process_image[0] = 0x11U; process_image[1] = 0x22U;
-  process_lock_result = -EAGAIN; process_lock_calls = 0U; process_unlock_calls = 0U;
+  exchange_begin_result = ZPLC_EXCHANGE_ERR_FULL;
+  exchange_begin_calls = exchange_add_calls = exchange_end_calls = 0U;
   process_tags[0] = (zplc_tag_entry_t){ .var_addr = 0x2000U, .var_type = ZPLC_TYPE_WORD,
                                          .tag_id = ZPLC_TAG_MODBUS, .value = 0U };
-  zassert_true(zplc_modbus_write_mapped(0U, 1U, one, false, false,
-                                        ZPLC_MODBUS_AREA_HOLDING_REGISTER) < 0,
-               "lock failure rejects write");
-  zassert_equal(process_image[0], 0x11U, "lock failure low byte unchanged");
-  zassert_equal(process_image[1], 0x22U, "lock failure high byte unchanged");
-  zassert_equal(process_lock_calls, 1U, "lock attempted once");
-  zassert_equal(process_unlock_calls, 0U, "failed lock not unlocked");
-  process_lock_result = 0;
+  zassert_equal(zplc_modbus_write_mapped(0U, 1U, one, false, false,
+                                         ZPLC_MODBUS_AREA_HOLDING_REGISTER), -EBUSY,
+                "a full queue rejects the write as a busy server");
+  zassert_equal(process_image[0], 0x11U, "a refused write leaves the low byte");
+  zassert_equal(process_image[1], 0x22U, "and the high byte");
+  zassert_equal(exchange_begin_calls, 1U, "the reservation was asked for once");
+  zassert_equal(exchange_add_calls, 0U, "nothing was added to a reservation that was refused");
+  exchange_begin_result = 0;
+  exchange_begin_calls = 0U;
   zassert_true(zplc_modbus_write_mapped(0U, 2U, two, false, true,
                                         ZPLC_MODBUS_AREA_HOLDING_REGISTER) < 0,
                "second address unmapped");
+  zassert_equal(exchange_begin_calls, 0U, "an unmapped range is refused before anything is reserved");
   zassert_equal(process_image[0], 0x11U, "first low byte unchanged");
   zassert_equal(process_image[1], 0x22U, "first high byte unchanged");
   zassert_ok(zplc_modbus_write_mapped(0U, 1U, one, false, false,
                                       ZPLC_MODBUS_AREA_HOLDING_REGISTER), "mapped single write");
   zassert_equal(process_image[0], 0xBCU, "little endian low byte");
   zassert_equal(process_image[1], 0x9AU, "little endian high byte");
-  zassert_equal(process_lock_calls, 3U, "all attempts counted");
-  zassert_equal(process_unlock_calls, 2U, "successful locks balanced");
+  zassert_equal(exchange_begin_records, 1U, "one record");
+  zassert_equal(exchange_begin_bytes, 2U, "of two bytes were reserved");
+  zassert_equal(exchange_add_calls, 1U, "and added");
+  zassert_equal(exchange_end_calls, 1U, "and the reservation is closed");
+}
+
+/* RT-010: a write the scan's queue has no room for is a busy server (exception 6), not an invalid address. */
+static int busy_write(uint16_t address, uint16_t count, const uint8_t *data, bool bits,
+                      bool multiple, zplc_modbus_area_t area, void *arg)
+{
+  ARG_UNUSED(address); ARG_UNUSED(count); ARG_UNUSED(data); ARG_UNUSED(bits); ARG_UNUSED(multiple);
+  ARG_UNUSED(area); ARG_UNUSED(arg);
+  return -EBUSY;
+}
+
+ZTEST(modbus_tcp, test_a_full_write_queue_is_a_busy_server_exception)
+{
+  struct fake_image image = { .second_mapped = true };
+  zplc_modbus_tcp_ops_t ops = ops_for(&image);
+  uint8_t req[24], resp[ZPLC_MODBUS_TCP_ADU_MAX]; size_t len = 0U;
+  const uint8_t single[] = { 0U, 0U, 0x12U, 0x34U };
+  const uint8_t multiple[] = { 0U, 0U, 0U, 1U, 2U, 0x12U, 0x34U };
+
+  ops.write = busy_write;
+  zassert_ok(zplc_modbus_tcp_process_adu(req, adu(req, 6U, single, sizeof(single)), resp, sizeof(resp), &len, &ops), "FC06");
+  zassert_equal(resp[7], 0x86U, "an exception of FC06"); zassert_equal(resp[8], 6U, "server device busy");
+  zassert_ok(zplc_modbus_tcp_process_adu(req, adu(req, 0x10U, multiple, sizeof(multiple)), resp, sizeof(resp), &len, &ops), "FC10");
+  zassert_equal(resp[7], 0x90U, "an exception of FC16"); zassert_equal(resp[8], 6U, "server device busy");
 }
 
 ZTEST(modbus_tcp, test_valid_read_has_exact_mbap_length)

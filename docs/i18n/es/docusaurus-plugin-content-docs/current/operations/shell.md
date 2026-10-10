@@ -63,6 +63,11 @@ Los comandos `dbg` dan acceso directo al estado de ejecución, a la memoria y a 
 - `zplc dbg mem <ipi|opi|work|retain> [offset]` - Vuelca una región de memoria en la consola, a partir del offset opcional.
 - `zplc dbg watch <addr> [type]` - No implementado. El comando solo imprime un mensaje; use `mpeek` o la pestaña Watch de Studio.
 
+Las lecturas (`mpeek`, `mem`, `info`) salen del snapshot que el scan publicó en su último commit, de modo que un
+valor es entero y de un solo scan, y una lectura nunca espera a un scan. Un `poke` se encola y se aplica en el latch
+de entradas del siguiente scan por la interfaz que respeta los forces: una dirección forzada conserva su valor
+forzado. Mientras el runtime está detenido no hay scan y la escritura se aplica de inmediato.
+
 ### Ticks, tareas y temporizadores
 - `zplc dbg ticks` - Imprime el conteo de ticks del sistema, en milisegundos.
 - `zplc dbg task <task_id>` - Muestra la definición y los límites de una tarea.

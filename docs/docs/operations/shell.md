@@ -63,6 +63,11 @@ The `dbg` commands give you direct access to the execution state, memory and bre
 - `zplc dbg mem <ipi|opi|work|retain> [offset]` - Dumps one memory region to the console, starting at the optional offset.
 - `zplc dbg watch <addr> [type]` - Not implemented. The command only prints a message; use `mpeek`, or the Watch tab in Studio.
 
+Reads (`mpeek`, `mem`, `info`) come from the snapshot the scan published at its last commit, so a value is whole and
+from one scan, and a read never waits for a scan. A `poke` is queued and applied at the input latch of the next scan
+through the force-aware interface: a forced address keeps its forced value. While the runtime is stopped there is no
+scan and the write is applied at once.
+
 ### Ticks, Tasks and Timers
 - `zplc dbg ticks` - Prints the system tick count in milliseconds.
 - `zplc dbg task <task_id>` - Shows the definition and limits of one task.

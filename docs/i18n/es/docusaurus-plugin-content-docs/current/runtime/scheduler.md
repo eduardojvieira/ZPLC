@@ -53,6 +53,25 @@ En simulación un solo hilo atiende las peticiones de control y ejecuta los batc
 
 `STOP`, la pausa externa, el unregister y los faults del scheduler cierran la admisión y drenan el trabajo en curso del coordinador antes de retornar. Estas garantías describen la implementación del scheduler y sus pruebas host/native-sim. No demuestran WCET, jitter, estado eléctrico ni cualificación de una placa.
 
+### Los locks alrededor de un scan (RT-010, RT-012)
+
+En el destino un batch son tres pasos. Las entradas se leen de la HAL sin ningún lock. Después, bajo el lock de la
+imagen de proceso, se aplican las escrituras que otros hilos dejaron en cola, las muestras se escriben en IPI, las
+tareas corren y la imagen se publica como snapshot. Por último, con el lock de la imagen liberado y bajo un lock
+aparte para la E/S de salida, se escriben las salidas físicas y se alimenta el watchdog de hardware. El lock de la
+imagen nunca se mantiene mientras se escribe un pin, se imprime una línea o corre una llamada que pueda bloquear:
+las líneas de registro de un scan se imprimen después de liberar el lock.
+
+Un hilo ajeno al scan lee el snapshot del último commit y deja sus escrituras en cola para el siguiente latch de
+entradas (ver [Acceso desde fuera del scan](memory-model.md#acceso-desde-fuera-del-scan-rt-010-rt-011)). Una parada,
+una pausa o una falla que llega entre el commit de la imagen y la escritura de los pines toma el lock de salida
+después o antes de ella, y los pines terminan en el estado que decidió la última de las dos.
+
+Un lock que no se puede crear o tomar es un error que ve quien llama (RT-030). Una llamada de control devuelve
+`ZPLC_SCHED_ERR_LOCK` y no cambia nada. Un scan que no puede tomar el lock de la imagen lleva los pines a su estado
+seguro y bloquea la falla, de modo que el estado es `ERROR`; un programa de reemplazo es la salida, como con
+cualquier falla.
+
 ### Prioridades y orden de arranque (RT-013, RT-024)
 
 El coordinador del scan, la cola de trabajo de alta prioridad o la normal cuando no hay otra, tiene un número de

@@ -69,6 +69,26 @@ variables del que reemplazó; un runtime que tiene un registro `RETAIN` almacena
 reinicio que conserva los valores retentivos. La región de código y las etiquetas son el programa y ninguna de las
 dos las toca.
 
+## Acceso desde fuera del scan (RT-010, RT-011)
+
+Mientras los scans corren, el scan es el único que escribe la imagen de proceso. Un hilo ajeno (el servidor y los
+clientes Modbus, MQTT, los comandos de depuración del shell) pasa por el exchange (`zplc_exchange.h`):
+
+- una lectura sale del snapshot de IPI, OPI, WORK y RETAIN que el scan publica en su commit. Un valor es entero y de
+  un solo scan, y una lectura nunca espera a un scan;
+- una escritura se encola completa y el scan la aplica en el latch de entradas de su siguiente scan, por la interfaz
+  del core que respeta los forces: una variable forzada conserva su valor forzado escriba lo que escriba un cliente.
+  Mientras no corre ningún scan (detenido, en pausa o con falla) no hay latch que esperar y la escritura se aplica
+  de inmediato;
+- una escritura que no cabe en la cola (`CONFIG_ZPLC_EXCHANGE_QUEUE_BYTES`, 1024 bytes por defecto) se rechaza
+  completa y quien llama recibe un error; un cliente Modbus TCP recibe la excepción 6 (dispositivo servidor
+  ocupado) y puede reintentar;
+- la escritura de una etiqueta Modbus de dos registros fija la mitad que es el registro, de modo que dos clientes que
+  escriben las dos mitades nunca se pisan con un valor viejo de la otra mitad.
+
+El snapshot es una copia de las cuatro regiones, así que cuesta en RAM su tamaño total (20 KB con los tamaños por
+defecto).
+
 ## Cómo coloca el compilador las variables
 
 El compilador da a todo el proyecto una sola disposición en la memoria WORK, y el mapa de depuración la lista: cada variable, con su dirección y su tamaño, en el POU del archivo que la declara. El orden es: las globales, las variables de cada función, las variables de los métodos, las variables de cada programa en el orden de las tareas, los literales de cadena y los buffers de trabajo de las funciones de cadena; el último byte de la región del perfil del destino es la bandera de inicialización. La memoria que puede usar un programa es la que tiene el perfil del destino, compartida por todos los programas del proyecto, y un proyecto que no cabe es un error de compilación que indica los bytes requeridos, los bytes disponibles y los mayores consumidores. Las variables ubicadas con `AT %M` están en `0x2000` más su desplazamiento, y una variable que el compilador coloque encima de una es un error de compilación.

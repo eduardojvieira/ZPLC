@@ -2,6 +2,7 @@
 #include <string.h>
 #include <zephyr/ztest.h>
 #include <zplc_core.h>
+#include <zplc_exchange.h>
 #include <zplc_hal.h>
 #include <zplc_isa.h>
 #include <zplc_scheduler.h>
@@ -1669,6 +1670,100 @@ ZTEST(zplc_scheduler_admission, test_program_load_is_a_cold_start) {
   zassert_equal(retain[0], 0U, "RETAIN starts at zero when no record is restored");
   zassert_equal(zplc_force_get_count(), 0U, "and no force survives");
   clear_scheduler();
+}
+
+/* RT-010 and RT-012: a write from outside the scan is queued and applied at an input latch, a read sees what the
+ * last commit published, and neither waits for the scan. */
+ZTEST(zplc_scheduler_admission,
+      test_external_access_waits_for_the_latch_and_never_for_the_scan) {
+  uint8_t program[PROGRAM_CAPACITY];
+  const uint16_t address = ZPLC_MEM_WORK_BASE + 0x40U;
+  const uint8_t value = 0x5AU;
+  uint8_t seen = 0xEEU;
+  zplc_exchange_stats_t before;
+  zplc_exchange_stats_t after;
+  int64_t started;
+  size_t size;
+
+  clear_scheduler();
+  size = build_program(program, 1U, ZPLC_TASK_CYCLIC, 1000U, 0x11U);
+  zassert_equal(zplc_sched_load(program, size), 1, "load a program");
+  zplc_exchange_get_stats(&before);
+
+  zplc_sched_test_hold_before_commit();
+  zassert_ok(zplc_sched_start(), "start");
+  zassert_ok(zplc_sched_test_wait_before_commit(100),
+             "the scan reached the hold with its tasks done");
+  zassert_equal(zplc_opi_read8(0U), 0x11U, "the live image is ahead of the last commit");
+
+  started = k_uptime_get();
+  zassert_ok(zplc_exchange_write(address, &value, 1U),
+             "a write is accepted while a scan is in progress");
+  zassert_ok(zplc_exchange_read(ZPLC_MEM_OPI_BASE, &seen, 1U), "a read is served");
+  zassert_true(k_uptime_get() - started < 50,
+               "neither call waited for the scan (the hold lasts up to a second)");
+  zassert_equal(seen, 0U, "the reader sees the last commit, not the scan in progress");
+  zassert_equal(zplc_mem_get_region(ZPLC_MEM_WORK_BASE)[0x40U], 0U,
+                "the live memory is not written in the middle of a scan");
+
+  zplc_sched_test_release_before_commit();
+  k_sleep(K_MSEC(30));
+  zassert_ok(zplc_exchange_read(address, &seen, 1U), "read the written address");
+  zassert_equal(seen, value, "the write was applied at an input latch and published");
+  zassert_ok(zplc_exchange_read(ZPLC_MEM_OPI_BASE, &seen, 1U), "read the output");
+  zassert_equal(seen, 0x11U, "and the reader sees the committed output");
+  zplc_exchange_get_stats(&after);
+  zassert_equal(after.latched - before.latched, 1U, "exactly one write was latched");
+  zassert_ok(zplc_sched_stop(), "stop");
+}
+
+/* RT-012: the lock of the process image is not held while the physical outputs are written. */
+ZTEST(zplc_scheduler_admission, test_image_lock_is_free_while_the_pins_are_written) {
+  uint8_t program[PROGRAM_CAPACITY];
+  zplc_sched_vm_snapshot_t snapshot;
+  size_t size;
+
+  clear_scheduler();
+  size = build_program(program, 1U, ZPLC_TASK_CYCLIC, 1000U, 1U);
+  zassert_equal(zplc_sched_load(program, size), 1, "load a program");
+  zplc_sched_test_hold_output_write();
+  zassert_ok(zplc_sched_start(), "start");
+  zassert_ok(zplc_sched_test_wait_output_write(100),
+             "the scan reached the output write");
+
+  /* A debug operation needs the image lock; with the pins about to be written it must not wait for them. */
+  start_debug_thread(0, 0U);
+  zassert_ok(k_sem_take(&control_done, K_MSEC(100)),
+             "the image lock was held across the hardware write");
+  zplc_sched_test_release_output_write();
+  zassert_ok(k_thread_join(&control_thread, K_MSEC(100)), "debug thread ends");
+  zassert_ok(control_result, "the breakpoint was added");
+  zassert_ok(zplc_sched_debug_snapshot(0, &snapshot), "snapshot");
+  zassert_equal(snapshot.breakpoint_count, 1U, "and is there");
+  zassert_ok(zplc_sched_stop(), "stop");
+}
+
+/* RT-010 and RT-030: with no scan there is no latch to wait for, so a write applies at once; a lock that cannot
+ * be taken is an error the caller sees and the write is refused whole. */
+ZTEST(zplc_scheduler_admission,
+      test_external_write_without_a_scan_applies_at_once_and_reports_a_lock_failure) {
+  const uint16_t address = ZPLC_MEM_WORK_BASE + 0x44U;
+  uint8_t first = 0x77U;
+  uint8_t second = 0x88U;
+  uint8_t seen = 0U;
+
+  clear_scheduler();
+  zassert_ok(zplc_exchange_write(address, &first, 1U), "a write while no scan runs");
+  zassert_equal(zplc_mem_get_region(ZPLC_MEM_WORK_BASE)[0x44U], first,
+                "it is in the live memory at once");
+  zassert_ok(zplc_exchange_read(address, &seen, 1U), "and in what a reader sees");
+  zassert_equal(seen, first, "published");
+
+  zplc_sched_test_fail_next_lock(-EAGAIN, 0);
+  zassert_equal(zplc_exchange_write(address, &second, 1U), ZPLC_EXCHANGE_ERR_LOCK,
+                "a lock that cannot be taken is reported");
+  zassert_equal(zplc_mem_get_region(ZPLC_MEM_WORK_BASE)[0x44U], first,
+                "and nothing was written");
 }
 
 ZTEST_SUITE(zplc_scheduler_admission, NULL, scheduler_setup, NULL, NULL,

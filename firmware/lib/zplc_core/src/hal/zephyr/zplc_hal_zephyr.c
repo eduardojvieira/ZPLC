@@ -942,18 +942,52 @@ zplc_hal_result_t zplc_hal_persist_delete(const char *key) {
  * ============================================================================
  */
 
-zplc_hal_mutex_t zplc_hal_mutex_create(void) {
-  struct k_mutex *mutex = k_malloc(sizeof(struct k_mutex));
+/* The mutexes of the runtime come from a small static pool, not from the heap: a runtime that has no heap (the
+ * scheduler suites, and a board that sets the pool to zero) still has its process-image lock and the lock of the
+ * exchange, and creating one cannot fail for lack of memory at run time (RT-030). The core takes two. */
+#define ZPLC_HAL_MUTEX_POOL_SIZE 4U
 
+static struct k_mutex hal_mutex_pool[ZPLC_HAL_MUTEX_POOL_SIZE];
+static bool hal_mutex_used[ZPLC_HAL_MUTEX_POOL_SIZE];
+static struct k_spinlock hal_mutex_pool_lock;
+
+zplc_hal_mutex_t zplc_hal_mutex_create(void) {
+  struct k_mutex *mutex = NULL;
+  k_spinlock_key_t key = k_spin_lock(&hal_mutex_pool_lock);
+  size_t index;
+
+  for (index = 0U; index < ZPLC_HAL_MUTEX_POOL_SIZE; index++) {
+    if (!hal_mutex_used[index]) {
+      hal_mutex_used[index] = true;
+      mutex = &hal_mutex_pool[index];
+      break;
+    }
+  }
+  k_spin_unlock(&hal_mutex_pool_lock, key);
   if (mutex == NULL) {
     return NULL;
   }
   if (k_mutex_init(mutex) != 0) {
     /* RT-030: a mutex that did not initialise is not handed out. */
-    k_free(mutex);
+    key = k_spin_lock(&hal_mutex_pool_lock);
+    hal_mutex_used[mutex - hal_mutex_pool] = false;
+    k_spin_unlock(&hal_mutex_pool_lock, key);
     return NULL;
   }
   return (zplc_hal_mutex_t)mutex;
+}
+
+zplc_hal_result_t zplc_hal_mutex_destroy(zplc_hal_mutex_t mutex) {
+  struct k_mutex *handle = (struct k_mutex *)mutex;
+  k_spinlock_key_t key;
+
+  if (handle < hal_mutex_pool || handle >= hal_mutex_pool + ZPLC_HAL_MUTEX_POOL_SIZE) {
+    return ZPLC_HAL_ERROR;
+  }
+  key = k_spin_lock(&hal_mutex_pool_lock);
+  hal_mutex_used[handle - hal_mutex_pool] = false;
+  k_spin_unlock(&hal_mutex_pool_lock, key);
+  return ZPLC_HAL_OK;
 }
 
 zplc_hal_result_t zplc_hal_mutex_lock(zplc_hal_mutex_t mutex) {

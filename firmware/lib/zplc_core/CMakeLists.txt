@@ -75,6 +75,7 @@ add_library(zplc_core STATIC
     src/core/zplc_loader.c
     src/core/zplc_retain.c
     src/core/zplc_program_store.c
+    src/core/zplc_exchange.c
 )
 
 target_compile_definitions(zplc_core PUBLIC ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}")
@@ -349,6 +350,32 @@ if(UNIX AND NOT APPLE)
 endif()
 
 add_test(NAME test_core_start COMMAND test_core_start)
+
+# Test: the exchange between the scan and the threads outside it: write queue, force-aware latch, published
+# snapshot, and a scanner with readers and writers on threads (RT-010, RT-011, RT-012). Also run under the sanitizers.
+add_executable(test_exchange
+    tests/test_exchange.c
+    src/core/zplc_exchange.c
+    src/core/zplc_core.c
+    src/core/zplc_loader.c
+    src/core/zplc_comm_dispatch.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_exchange PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_compile_definitions(test_exchange PRIVATE ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}")
+
+find_package(Threads REQUIRED)
+target_link_libraries(test_exchange PRIVATE Threads::Threads)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_exchange PRIVATE rt)
+endif()
+
+add_test(NAME test_exchange COMMAND test_exchange)
 
 # Test: VM Core Execution
 add_executable(test_vm_core

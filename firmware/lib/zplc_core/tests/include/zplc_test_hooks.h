@@ -86,6 +86,10 @@ void zplc_hal_test_fail_next_safe_off(void);
 void zplc_sched_test_hold_before_commit(void);
 int zplc_sched_test_wait_before_commit(int timeout_ms);
 void zplc_sched_test_release_before_commit(void);
+/** @brief Hold the next scan with the image lock released and the physical outputs about to be written. */
+void zplc_sched_test_hold_output_write(void);
+int zplc_sched_test_wait_output_write(int timeout_ms);
+void zplc_sched_test_release_output_write(void);
 void zplc_sched_test_reset_debug_before_mem(void);
 int zplc_sched_test_wait_debug_before_mem(int timeout_ms);
 void zplc_sched_test_fail_next_output_commit(uint8_t channel,
@@ -102,8 +106,8 @@ uint32_t zplc_sched_test_watchdog_prepare_count(void);
 uint32_t zplc_sched_test_watchdog_feed_count(void);
 uint32_t zplc_sched_test_watchdog_disarm_count(void);
 void zplc_sched_test_force_next_deadline_miss(void);
-/** @brief Make the next take of the control (non-zero) or memory (zero) mutex fail with result (RT-030). */
-void zplc_sched_test_fail_next_lock(int result, int control_lock);
+/** @brief Make the next take of a mutex fail with result (RT-030): which is 0 memory, 1 control, 2 output I/O. */
+void zplc_sched_test_fail_next_lock(int result, int which);
 
 /* Seams for the portable release and duration arithmetic. */
 int zplc_sched_test_release_before(uint64_t left_uptime_ms,
