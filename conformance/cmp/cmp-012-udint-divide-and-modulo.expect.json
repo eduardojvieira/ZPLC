@@ -1,0 +1,33 @@
+{
+  "requirement": "CMP-012",
+  "title": "UDINT division and modulo above 2147483647, by small and by large divisors",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "UDINT",
+      "value": 4000000
+    },
+    {
+      "at": "%QD4",
+      "type": "UDINT",
+      "value": 1
+    },
+    {
+      "at": "%QD8",
+      "type": "UDINT",
+      "value": 1000000000
+    },
+    {
+      "at": "%QD12",
+      "type": "UDINT",
+      "value": 1
+    },
+    {
+      "at": "%QD16",
+      "type": "UDINT",
+      "value": 3
+    }
+  ]
+}

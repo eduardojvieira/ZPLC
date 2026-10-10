@@ -1,0 +1,23 @@
+{
+  "requirement": "CMP-012",
+  "title": "UINT 65535 compares and widens as a positive number",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QX0.0",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QD4",
+      "type": "UDINT",
+      "value": 65535
+    },
+    {
+      "at": "%QW2",
+      "type": "UINT",
+      "value": 0
+    }
+  ]
+}

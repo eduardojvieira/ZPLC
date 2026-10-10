@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-012",
+  "title": "UDINT division and modulo below 2147483648 are plain",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "UDINT",
+      "value": 142857
+    },
+    {
+      "at": "%QD4",
+      "type": "UDINT",
+      "value": 1
+    }
+  ]
+}

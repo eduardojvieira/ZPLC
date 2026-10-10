@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-014",
+  "title": "ROL on a BYTE rotates within 8 bits",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QB0",
+      "type": "BYTE",
+      "value": 3
+    },
+    {
+      "at": "%QW2",
+      "type": "WORD",
+      "value": 1
+    }
+  ]
+}

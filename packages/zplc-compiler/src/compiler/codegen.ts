@@ -63,6 +63,24 @@ import {
     type CodeGenContext,
     type MemberSize,
 } from './stdlib/index.ts';
+import {
+    LITERAL_INT,
+    UNKNOWN_TYPE,
+    FCMP_HELPER,
+    FCMP_LABEL,
+    UDIV32_HELPER,
+    UDIV32_LABEL,
+    UNSIGNED_TO_REAL,
+    commonType,
+    fcmpTest,
+    floatBits,
+    isFloatType,
+    isIntegerLike,
+    isUnsigned32,
+    numericInfo,
+    numericTypeName,
+    type CompareOp,
+} from './numeric.ts';
 
 // ============================================================================
 // Memory Layout Constants
@@ -201,6 +219,10 @@ interface CodeGenState {
     returnLabel: string | null;
     memoryProfile: CompilerMemoryProfile;
     workMemorySize: number;
+    /** The program divides unsigned 32-bit values: append the _zplc_udiv32 routine. */
+    needsUdiv32: boolean;
+    /** The program compares REAL values: append the _zplc_fcmp routine. */
+    needsFcmp: boolean;
 }
 
 /**
@@ -291,6 +313,8 @@ export function generate(unit: CompilationUnit | Program, options?: CodeGenOptio
         returnLabel: null,
         memoryProfile,
         workMemorySize,
+        needsUdiv32: false,
+        needsFcmp: false,
     };
 
     const isUnit = unit.kind === 'CompilationUnit';
@@ -387,6 +411,18 @@ export function generate(unit: CompilationUnit | Program, options?: CodeGenOptio
     emit(state, ``);
     emit(state, `    ; End of cycle`);
     emit(state, `    HALT`);
+
+    // Routines the program called, reachable only through CALL
+    if (state.needsUdiv32) {
+        emit(state, ``);
+        emit(state, `; --- Helper: unsigned 32-bit division ---`);
+        state.output.push(...UDIV32_HELPER);
+    }
+    if (state.needsFcmp) {
+        emit(state, ``);
+        emit(state, `; --- Helper: REAL three-way comparison ---`);
+        state.output.push(...FCMP_HELPER);
+    }
 
     return state.output.join('\n');
 }
@@ -1020,7 +1056,7 @@ function emitInitialization(state: CodeGenState, program: Program): void {
                 if (!sym) continue;
 
                 emit(state, `    ; ${decl.name} := ...`);
-                emitExpression(state, decl.initialValue as Expression);
+                emitValueFor(state, decl.initialValue as Expression, sym.dataType);
                 emitStore(state, sym);
             }
         }
@@ -1161,8 +1197,8 @@ function emitAssignment(state: CodeGenState, stmt: Assignment): void {
         // IEC return syntax: FunctionName := value (for FUNCTION)
         if (state.currentFunction && stmt.target.name === state.currentFunction.name) {
             emit(state, `    ; RETURN ${state.currentFunction.name} := ...`);
-            emitExpression(state, stmt.value);
             const sym = state.symbols.get(stmt.target.name);
+            emitValueFor(state, stmt.value, sym?.dataType);
             if (sym) {
                 emitStore(state, sym);
             }
@@ -1174,7 +1210,7 @@ function emitAssignment(state: CodeGenState, stmt: Assignment): void {
         // should leave the value on stack (not store it)
         if (state.currentMethod && stmt.target.name === state.currentMethod.name) {
             emit(state, `    ; METHOD RETURN: ${state.currentMethod.name} := ...`);
-            emitExpression(state, stmt.value);
+            emitValueFor(state, stmt.value, (state.currentMethod as any).returnType);
             // Value stays on stack - caller will use it or discard it
             return;
         }
@@ -1183,11 +1219,11 @@ function emitAssignment(state: CodeGenState, stmt: Assignment): void {
         if (!sym) fail(stmt.target, `Unknown identifier '${stmt.target.name}'`);
 
         emit(state, `    ; ${stmt.target.name} := ...`);
-        emitExpression(state, stmt.value);
+        emitValueFor(state, stmt.value, sym.dataType);
         emitStore(state, sym);
     } else if (stmt.target.kind === 'MemberAccess') {
         emit(state, `    ; ${stringifyExpression(stmt.target)} := ...`);
-        emitExpression(state, stmt.value);
+        emitValueFor(state, stmt.value, memberAccessType(state, stmt.target));
 
         // Handle THIS.member assignment
         if (stmt.target.object.kind === 'ThisExpr') {
@@ -1234,7 +1270,7 @@ function emitAssignment(state: CodeGenState, stmt: Assignment): void {
         emitArrayAddress(state, stmt.target, resolution);
 
         // Evaluate the value to store
-        emitExpression(state, stmt.value);
+        emitValueFor(state, stmt.value, arrayType.elementType);
 
         // Store using indirect addressing
         const elementSize = getDataTypeSize(arrayType.elementType as DataTypeValue);
@@ -1247,7 +1283,7 @@ function emitAssignment(state: CodeGenState, stmt: Assignment): void {
         emitExpression(state, stmt.target.operand);
         
         // 2. Evaluate value to store
-        emitExpression(state, stmt.value);
+        emitValueFor(state, stmt.value, resolveType(state, stmt.target));
         
         // 3. Determine size
         const type = resolveType(state, stmt.target);
@@ -1401,6 +1437,13 @@ function emitForStatement(state: CodeGenState, stmt: ForStatement): void {
 
     const counterAddr = formatAddress(counterSym.address);
     const suffix = getLoadStoreSuffix(counterSym.dataType as DataTypeValue);
+    const counterType = numericTypeName(counterSym.dataType);
+    const counterExtend = signExtension(counterType);
+    /** Load the counter in its canonical 32-bit form. */
+    const loadCounter = (): void => {
+        emit(state, `    LOAD${suffix} ${counterAddr}`);
+        if (counterExtend) emit(state, counterExtend);
+    };
 
     // Push loop context for EXIT/CONTINUE handling
     state.loopStack.push({
@@ -1417,6 +1460,8 @@ function emitForStatement(state: CodeGenState, stmt: ForStatement): void {
     emit(state, `    STORE${suffix} ${counterAddr}`);
 
     // Loop condition check: past the end is counter > end going up, counter < end going down
+    // (an unsigned counter or end compares unsigned)
+    const loopType = commonType(counterType, staticType(state, stmt.end));
     emit(state, `${loopLabel}:`);
     const direction = stepDirection(stmt.step);
     if (direction === 'runtime') {
@@ -1428,20 +1473,20 @@ function emitForStatement(state: CodeGenState, stmt: ForStatement): void {
         emit(state, `    PUSH8 0`);
         emit(state, `    LT`);
         emit(state, `    JNZ ${downLabel}`);
-        emit(state, `    LOAD${suffix} ${counterAddr}`);
+        loadCounter();
         emitExpression(state, stmt.end);
-        emit(state, `    GT`);
+        emitCompare(state, 'GT', loopType);
         emit(state, `    JMP ${testLabel}`);
         emit(state, `${downLabel}:`);
-        emit(state, `    LOAD${suffix} ${counterAddr}`);
+        loadCounter();
         emitExpression(state, stmt.end);
-        emit(state, `    LT`);
+        emitCompare(state, 'LT', loopType);
         emit(state, `${testLabel}:`);
     } else {
         emit(state, direction === 'down' ? `    ; check: counter < end?` : `    ; check: counter > end?`);
-        emit(state, `    LOAD${suffix} ${counterAddr}`);
+        loadCounter();
         emitExpression(state, stmt.end);
-        emit(state, direction === 'down' ? `    LT` : `    GT`);
+        emitCompare(state, direction === 'down' ? 'LT' : 'GT', loopType);
     }
     emit(state, `    JNZ ${endLabel}`);
 
@@ -1454,7 +1499,7 @@ function emitForStatement(state: CodeGenState, stmt: ForStatement): void {
     // Increment section (CONTINUE target)
     emit(state, `${continueLabel}:`);
     emit(state, `    ; counter := counter + step`);
-    emit(state, `    LOAD${suffix} ${counterAddr}`);
+    loadCounter();
     if (stmt.step) {
         emitExpression(state, stmt.step);
     } else {
@@ -1711,14 +1756,7 @@ function emitFBCallStatement(state: CodeGenState, stmt: FBCallStatement): void {
                 throw new Error('WATCHDOG_RESET is not available');
             }
 
-            watchdogReset.generateInline({
-                baseAddress: 0,
-                instanceName: stmt.fbName,
-                newLabel: (prefix: string) => newLabel(state, prefix),
-                emit: (line: string) => emit(state, line),
-                emitExpression: (expr: Expression) => emitExpression(state, expr),
-                fail: (message: string) => fail(stmt, message),
-            }, []);
+            watchdogReset.generateInline(makeCodeGenContext(state, 0, stmt.fbName, stmt), []);
             return;
         }
 
@@ -1765,16 +1803,7 @@ function emitFBCallStatement(state: CodeGenState, stmt: FBCallStatement): void {
     if (fbDef) {
         emit(state, `    ; ${stmt.fbName}(...)`);
 
-        const ctx: CodeGenContext = {
-            baseAddress: sym.address,
-            instanceName: stmt.fbName,
-            newLabel: (prefix: string) => newLabel(state, prefix),
-            emit: (line: string) => emit(state, line),
-            emitExpression: (expr: Expression) => emitExpression(state, expr),
-            fail: (message: string) => fail(stmt, message),
-        };
-
-        fbDef.generateCall(ctx, stmt.parameters);
+        fbDef.generateCall(makeCodeGenContext(state, sym.address, stmt.fbName, stmt), stmt.parameters);
         return;
     }
 
@@ -1786,6 +1815,18 @@ function emitFBCallStatement(state: CodeGenState, stmt: FBCallStatement): void {
 // ============================================================================
 
 function emitExpression(state: CodeGenState, expr: Expression): void {
+    emitExpressionNode(state, expr);
+
+    // The VM zero-extends an 8- or 16-bit load. A signed value comes back with its sign here, once,
+    // so every operator sees the canonical 32-bit form of a SINT or an INT (CMP-011).
+    if (expr.kind === 'Identifier' || expr.kind === 'MemberAccess' || expr.kind === 'ArrayAccess' ||
+        expr.kind === 'DereferenceExpr' || (expr.kind === 'FunctionCall' && state.functionTable.has(expr.name))) {
+        const extend = signExtension(staticType(state, expr));
+        if (extend) emit(state, extend);
+    }
+}
+
+function emitExpressionNode(state: CodeGenState, expr: Expression): void {
     switch (expr.kind) {
         case 'BoolLiteral':
             emitBoolLiteral(state, expr);
@@ -1861,11 +1902,11 @@ function emitIntLiteral(state: CodeGenState, expr: IntLiteral): void {
         emit(state, `    PUSH8 ${expr.value}`);
     } else if (expr.value >= -32768 && expr.value <= 32767) {
         emit(state, `    PUSH16 ${expr.value}`);
-    } else if (expr.value >= -2147483648 && expr.value <= 2147483647) {
+    } else if (expr.value >= -2147483648 && expr.value <= 4294967295) {
+        // Up to 2^32 - 1 the pattern is the value of a UDINT or a DWORD (CMP-012)
         emit(state, `    PUSH32 ${expr.value}`);
     } else {
-        // Assume 64-bit if it doesn't fit in 32-bit
-        emit(state, `    PUSH64 ${expr.value}`);
+        fail(expr, `Integer literal ${expr.value} does not fit in 32 bits`);
     }
 }
 
@@ -2030,15 +2071,24 @@ function emitMemberAccess(state: CodeGenState, expr: MemberAccess): void {
 
 function emitUnaryExpr(state: CodeGenState, expr: UnaryExpr): void {
     emitExpression(state, expr.operand);
+    const type = staticType(state, expr.operand);
+    const info = numericInfo(type);
     switch (expr.operator) {
         case 'NOT':
             emit(state, `    NOT`);
-            // For boolean NOT, we need to mask to get 0 or 1
-            emit(state, `    PUSH8 1`);
-            emit(state, `    AND`);
+            if (info && !info.float && type !== 'BOOL') {
+                // A bit string or an integer keeps its declared width (CMP-014): the complement of a
+                // signed or a 32-bit value is already canonical, a narrow unsigned one is cut back
+                if (info.bits === 8 && !info.signed) emit(state, `    ZEXT8`);
+                else if (info.bits === 16 && !info.signed) emit(state, `    ZEXT16`);
+            } else {
+                // For boolean NOT, we need to mask to get 0 or 1
+                emit(state, `    PUSH8 1`);
+                emit(state, `    AND`);
+            }
             break;
         case 'NEG':
-            emit(state, `    NEG`);
+            emit(state, isFloatType(type) ? `    NEGF` : `    NEG`);
             break;
     }
 }
@@ -2151,21 +2201,211 @@ function isStringExpression(state: CodeGenState, expr: Expression): boolean {
     return inferExpressionType(state, expr) === 'STRING';
 }
 
-/**
- * Check if an expression is of REAL (floating-point) type.
- * Returns true if the expression evaluates to a REAL value.
- */
-function isFloatExpression(state: CodeGenState, expr: Expression): boolean {
-    const exprType = inferExpressionType(state, expr);
-    return exprType === 'REAL' || exprType === 'LREAL';
+// ============================================================================
+// Numeric typing (CMP-011 to CMP-014, CMP-017)
+//
+// The rules and the helper routines live in numeric.ts. This part decides, for each
+// operator, which opcode sequence the static type of its operands needs.
+// ============================================================================
+
+/** Elementary type of a standard function block member that declares none. */
+function stdlibMemberType(fbType: string, member: { name: string; size: number; dataType?: unknown }): string {
+    const declared = numericTypeName(member.dataType);
+    if (declared !== UNKNOWN_TYPE) return declared;
+    if (member.size === 1) return 'BOOL';
+    // The counters' PV and CV are the only 2-byte members, and they are INT in IEC 61131-3.
+    if (member.size === 2) return 'INT';
+    if (member.size === 4 && ['TON', 'TOF', 'TP'].includes(fbType) && (member.name === 'PT' || member.name === 'ET')) {
+        return 'TIME';
+    }
+    return UNKNOWN_TYPE;
+}
+
+function memberAccessType(state: CodeGenState, expr: MemberAccess): string {
+    try {
+        if (expr.object.kind === 'ThisExpr') {
+            const fbType = state.currentFBInstance?.dataType;
+            const fbDef = typeof fbType === 'string' ? state.symbols.getFBDefinition(fbType) : undefined;
+            return numericTypeName(fbDef?.members.get(expr.member)?.dataType);
+        }
+        const owner = state.symbols.resolveMemberPath(expr.object);
+        const ownerType = typeof owner.dataType === 'string' ? owner.dataType : undefined;
+        const stdFB = ownerType ? getFB(ownerType as DataTypeValue) : undefined;
+        if (stdFB && !state.symbols.getFBDefinition(ownerType!) && !state.symbols.getStructDefinition(ownerType!)) {
+            const member = stdFB.members.find((m) => m.name === expr.member);
+            return member ? stdlibMemberType(ownerType!, member) : UNKNOWN_TYPE;
+        }
+        return numericTypeName(state.symbols.resolveMemberPath(expr).dataType);
+    } catch {
+        return UNKNOWN_TYPE;
+    }
+}
+
+/** Result type of a function call: the user function's declared type or the standard function's rule. */
+function functionResultType(state: CodeGenState, expr: FunctionCall): string {
+    const userFn = state.functionTable.get(expr.name);
+    if (userFn) return numericTypeName(userFn.returnType);
+
+    const args = expr.args.map((a) => ((a as any).kind === 'NamedArgument' ? (a as any).value : a) as Expression);
+    const common = (list: Expression[]): string =>
+        list.map((a) => staticType(state, a)).reduce((acc, t) => commonType(acc, t), LITERAL_INT);
+
+    switch (expr.name.toUpperCase()) {
+        case 'ABS': case 'NEG': case 'MOD': case 'MAX': case 'MIN': case 'LIMIT':
+            return args.length > 0 ? common(args) : UNKNOWN_TYPE;
+        case 'SEL':
+            return args.length === 3 ? common(args.slice(1)) : UNKNOWN_TYPE;
+        case 'MUX':
+            return args.length > 1 ? common(args.slice(1)) : UNKNOWN_TYPE;
+        case 'SHL': case 'SHR': case 'ROL': case 'ROR':
+            return args.length > 0 ? staticType(state, args[0]) : UNKNOWN_TYPE;
+        case 'ABSF': case 'NEGF': case 'SQRT': case 'SIN': case 'COS': case 'TAN': case 'LN': case 'LOG':
+        case 'EXP': case 'ASIN': case 'ACOS': case 'ATAN': case 'ATAN2': case 'TRUNC': case 'ROUND':
+        case 'INT_TO_REAL':
+            return 'REAL';
+        case 'REAL_TO_INT': case 'BOOL_TO_INT':
+            return 'INT';
+        case 'INT_TO_BOOL': case 'NAND': case 'NOR':
+            return 'BOOL';
+        case 'AND_WORD': case 'OR_WORD': case 'XOR_WORD': case 'NOT_WORD':
+            return 'WORD';
+        case 'AND_DWORD': case 'OR_DWORD': case 'XOR_DWORD': case 'NOT_DWORD':
+            return 'DWORD';
+        default:
+            return UNKNOWN_TYPE;
+    }
 }
 
 /**
- * Determine if a binary expression should use floating-point arithmetic.
- * Returns true if either operand is a float type (type promotion).
+ * Static numeric type of an expression: an elementary type name, LITERAL_INT for an integer
+ * literal (it adopts the other operand's type) or UNKNOWN_TYPE when the generator cannot name it.
  */
-function shouldUseFloatArithmetic(state: CodeGenState, left: Expression, right: Expression): boolean {
-    return isFloatExpression(state, left) || isFloatExpression(state, right);
+function staticType(state: CodeGenState, expr: Expression): string {
+    switch (expr.kind) {
+        case 'BoolLiteral': return 'BOOL';
+        case 'IntLiteral': return LITERAL_INT;
+        case 'RealLiteral': return 'REAL';
+        case 'TimeLiteral': return 'TIME';
+        case 'DateLiteral': return 'DATE';
+        case 'TODLiteral': return 'TOD';
+        case 'DTLiteral': return 'DT';
+        case 'Identifier': {
+            const sym = resolveSymbol(state, expr.name);
+            return sym ? numericTypeName(sym.dataType) : UNKNOWN_TYPE;
+        }
+        case 'MemberAccess':
+            return memberAccessType(state, expr);
+        case 'ArrayAccess': {
+            try {
+                const arrayType = state.symbols.resolveMemberPath(expr.array).dataType;
+                return isArrayType(arrayType) ? numericTypeName(arrayType.elementType) : UNKNOWN_TYPE;
+            } catch {
+                return UNKNOWN_TYPE;
+            }
+        }
+        case 'DereferenceExpr': {
+            const base = resolveType(state, expr);
+            return base ? numericTypeName(base) : UNKNOWN_TYPE;
+        }
+        case 'UnaryExpr':
+            return staticType(state, expr.operand);
+        case 'BinaryExpr':
+            if (['EQ', 'NE', 'LT', 'LE', 'GT', 'GE'].includes(expr.operator)) return 'BOOL';
+            return commonType(staticType(state, expr.left), staticType(state, expr.right));
+        case 'FunctionCall':
+            return functionResultType(state, expr);
+        default:
+            return UNKNOWN_TYPE;
+    }
+}
+
+/** The instruction that restores the sign of an 8- or 16-bit signed value the VM zero-extended on load. */
+function signExtension(typeName: string): string | null {
+    if (typeName === 'SINT') return '    EXT8';
+    if (typeName === 'INT') return '    EXT16';
+    return null;
+}
+
+/** Convert the integer on top of the stack to REAL; an unsigned 32-bit value above 2^31 needs its own sequence. */
+function emitIntToReal(state: CodeGenState, fromType: string): void {
+    if (isUnsigned32(fromType)) {
+        for (const line of UNSIGNED_TO_REAL) emit(state, line);
+    } else {
+        emit(state, `    I2F`);
+    }
+}
+
+/**
+ * Emit `expr`; when `toReal` and it is an integer of 32 bits or less, convert it to REAL
+ * (the implicit conversion of IEC 61131-3 arithmetic: INT * REAL, REAL := INT).
+ */
+function emitNumericOperand(state: CodeGenState, expr: Expression, toReal: boolean): void {
+    if (toReal) {
+        const type = staticType(state, expr);
+        const bits = numericInfo(type)?.bits ?? 32;
+        if (isIntegerLike(type) && bits <= 32) {
+            if (expr.kind === 'IntLiteral') {
+                emit(state, `    PUSH32 ${floatBits(expr.value)}       ; ${expr.value} (REAL)`);
+                return;
+            }
+            emitExpression(state, expr);
+            emitIntToReal(state, type);
+            return;
+        }
+    }
+    emitExpression(state, expr);
+}
+
+/** Emit `value` for storing into a target of `targetType`. */
+function emitValueFor(state: CodeGenState, value: Expression, targetType: unknown): void {
+    emitNumericOperand(state, value, numericTypeName(targetType) === 'REAL');
+}
+
+/** Emit the comparison `op` of the two values on the stack, read as `type`. */
+function emitCompare(state: CodeGenState, op: CompareOp, type: string): void {
+    if (type === 'REAL') {
+        // No float comparison opcode: the IEEE 754 order of two REAL values is a call to a helper
+        state.needsFcmp = true;
+        emit(state, `    CALL ${FCMP_LABEL}`);
+        for (const line of fcmpTest(op)) emit(state, line);
+        return;
+    }
+    if (isUnsigned32(type) && op !== 'EQ' && op !== 'NE') {
+        // Only LTU and GTU exist: a <= b is not (a > b), a >= b is not (a < b)
+        switch (op) {
+            case 'LT': emit(state, `    LTU`); return;
+            case 'GT': emit(state, `    GTU`); return;
+            case 'LE': emit(state, `    GTU`); break;
+            case 'GE': emit(state, `    LTU`); break;
+        }
+        emit(state, `    PUSH8 0`);
+        emit(state, `    EQ`);
+        return;
+    }
+    emit(state, `    ${op}`);
+}
+
+/** The stdlib code generators ask the compiler, not the opcode table, for typed operations. */
+function makeCodeGenContext(
+    state: CodeGenState,
+    baseAddress: number,
+    instanceName: string,
+    at: { line: number; column: number },
+): CodeGenContext {
+    return {
+        baseAddress,
+        instanceName,
+        newLabel: (prefix: string) => newLabel(state, prefix),
+        emit: (line: string) => emit(state, line),
+        emitExpression: (e: Expression) => emitExpression(state, e),
+        fail: (message: string) => fail(at, message),
+        typeOf: (e: Expression) => {
+            const type = staticType(state, e);
+            return type === UNKNOWN_TYPE ? undefined : type;
+        },
+        emitOperand: (e: Expression, asType: string) => emitNumericOperand(state, e, asType === 'REAL'),
+        emitCompare: (op: CompareOp, type?: string) => emitCompare(state, op, type ?? UNKNOWN_TYPE),
+    };
 }
 
 function emitBinaryExpr(state: CodeGenState, expr: BinaryExpr): void {
@@ -2198,36 +2438,58 @@ function emitBinaryExpr(state: CodeGenState, expr: BinaryExpr): void {
         emit(state, `    ; WARNING: Operator ${expr.operator} not supported for STRING type`);
     }
 
-    // Check if we should use floating-point arithmetic
-    const useFloat = shouldUseFloatArithmetic(state, expr.left, expr.right);
+    // Logical operators act on the bit pattern, whatever the type: AND, OR and XOR of two
+    // zero-extended values never leave the declared width
+    if (expr.operator === 'AND' || expr.operator === 'OR' || expr.operator === 'XOR') {
+        emitExpression(state, expr.left);
+        emitExpression(state, expr.right);
+        emit(state, `    ${expr.operator}`);
+        return;
+    }
 
-    // Standard numeric/boolean operations
-    emitExpression(state, expr.left);
-    emitExpression(state, expr.right);
+    // The type of the operation: REAL when either side is REAL (the integer side is converted),
+    // an unsigned 32-bit type when either side is one, otherwise the signed integer rules
+    const opType = commonType(staticType(state, expr.left), staticType(state, expr.right));
+    const useFloat = isFloatType(opType);
+    const convert = opType === 'REAL';
+
+    emitNumericOperand(state, expr.left, convert);
+    emitNumericOperand(state, expr.right, convert);
 
     switch (expr.operator) {
-        // Logical operators - always integer
-        case 'AND': emit(state, `    AND`); break;
-        case 'OR': emit(state, `    OR`); break;
-        case 'XOR': emit(state, `    XOR`); break;
-
         // Arithmetic operators - use float variants when operands are REAL
         case 'ADD': emit(state, useFloat ? `    ADDF` : `    ADD`); break;
         case 'SUB': emit(state, useFloat ? `    SUBF` : `    SUB`); break;
         case 'MUL': emit(state, useFloat ? `    MULF` : `    MUL`); break;
-        case 'DIV': emit(state, useFloat ? `    DIVF` : `    DIV`); break;
+        case 'DIV':
+            if (useFloat) {
+                emit(state, `    DIVF`);
+            } else if (isUnsigned32(opType)) {
+                state.needsUdiv32 = true;
+                emit(state, `    CALL ${UDIV32_LABEL}`);
+            } else {
+                emit(state, `    DIV`);
+            }
+            break;
 
         // MOD doesn't have a float variant (integer only)
-        case 'MOD': emit(state, `    MOD`); break;
+        case 'MOD':
+            if (isUnsigned32(opType)) {
+                // a MOD b = a - (a /u b) * b
+                state.needsUdiv32 = true;
+                emit(state, `    OVER`);
+                emit(state, `    OVER`);
+                emit(state, `    CALL ${UDIV32_LABEL}`);
+                emit(state, `    MUL`);
+                emit(state, `    SUB`);
+            } else {
+                emit(state, `    MOD`);
+            }
+            break;
 
-        // Comparison operators - same opcodes work for int and float
-        // (the VM compares 32-bit values on the stack bitwise)
-        case 'EQ': emit(state, `    EQ`); break;
-        case 'NE': emit(state, `    NE`); break;
-        case 'LT': emit(state, `    LT`); break;
-        case 'LE': emit(state, `    LE`); break;
-        case 'GT': emit(state, `    GT`); break;
-        case 'GE': emit(state, `    GE`); break;
+        case 'EQ': case 'NE': case 'LT': case 'LE': case 'GT': case 'GE':
+            emitCompare(state, expr.operator, opType);
+            break;
     }
 }
 
@@ -2237,14 +2499,15 @@ function emitFunctionCall(state: CodeGenState, expr: FunctionCall): void {
     if (userFn) {
         emit(state, `    ; CALL ${expr.name}(...)`);
 
-        // Push arguments onto stack
-        for (const arg of expr.args) {
-            if ((arg as any).kind === 'NamedArgument') {
-                emitExpression(state, (arg as any).value);
-            } else {
-                emitExpression(state, arg as Expression);
-            }
-        }
+        // Push arguments onto stack; an integer given to a REAL parameter is converted
+        expr.args.forEach((arg, index) => {
+            const named = (arg as any).kind === 'NamedArgument';
+            const value = (named ? (arg as any).value : arg) as Expression;
+            const input = named
+                ? userFn.inputs.find((i) => i.name === (arg as any).name)
+                : userFn.inputs[index];
+            emitValueFor(state, value, input?.dataType);
+        });
 
         emit(state, `    CALL ${userFn.label}`);
         return;
@@ -2263,14 +2526,8 @@ function emitFunctionCall(state: CodeGenState, expr: FunctionCall): void {
     emit(state, `    ; ${expr.name}(...)`);
 
     // Create code generation context for inline function
-    const ctx: CodeGenContext = {
-        baseAddress: 0, // Not used for stateless functions
-        instanceName: expr.name,
-        newLabel: (prefix: string) => newLabel(state, prefix),
-        emit: (line: string) => emit(state, line),
-        emitExpression: (e: Expression) => emitExpression(state, e),
-        fail: (message: string) => fail(expr, message),
-    };
+    // (baseAddress is not used for stateless functions)
+    const ctx = makeCodeGenContext(state, 0, expr.name, expr);
 
     // Let the function generate its inline code
     // Convert args to pure expressions (ignoring names for built-ins for now)

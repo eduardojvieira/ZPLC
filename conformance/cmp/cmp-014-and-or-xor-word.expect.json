@@ -1,0 +1,23 @@
+{
+  "requirement": "CMP-014",
+  "title": "AND, OR and XOR on WORD use the full 16 bits",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "WORD",
+      "value": 240
+    },
+    {
+      "at": "%QW2",
+      "type": "WORD",
+      "value": 65520
+    },
+    {
+      "at": "%QW4",
+      "type": "WORD",
+      "value": 65280
+    }
+  ]
+}

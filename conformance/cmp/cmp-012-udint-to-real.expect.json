@@ -1,0 +1,13 @@
+{
+  "requirement": "CMP-012",
+  "title": "UDINT above 2147483647 converts to REAL as a positive number",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "REAL",
+      "value": 3000000000.0
+    }
+  ]
+}

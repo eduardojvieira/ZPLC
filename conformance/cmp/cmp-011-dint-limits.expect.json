@@ -1,0 +1,23 @@
+{
+  "requirement": "CMP-011",
+  "title": "DINT holds -2147483648 and 2147483647 through compare and add",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QX0.0",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX0.1",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QD4",
+      "type": "DINT",
+      "value": -2147483647
+    }
+  ]
+}

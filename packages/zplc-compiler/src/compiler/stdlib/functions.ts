@@ -15,6 +15,34 @@
 
 import type { FunctionDef, CodeGenContext } from './types.ts';
 import type { Expression } from '../ast.ts';
+import { LITERAL_INT, UNKNOWN_TYPE, commonType, type CompareOp } from '../numeric.ts';
+
+/**
+ * Emit the arguments as one numeric type and return that type: a REAL among them converts the
+ * integer ones (MAX(count, 2.5)), an unsigned 32-bit type makes the comparison unsigned.
+ */
+function emitOperands(ctx: CodeGenContext, args: Expression[]): string {
+    const type = ctx.typeOf
+        ? args.map((a) => ctx.typeOf!(a) ?? UNKNOWN_TYPE).reduce(commonType, LITERAL_INT)
+        : UNKNOWN_TYPE;
+    for (const arg of args) {
+        if (type === 'REAL' && ctx.emitOperand) {
+            ctx.emitOperand(arg, 'REAL');
+        } else {
+            ctx.emitExpression(arg);
+        }
+    }
+    return type;
+}
+
+/** Emit the comparison of the two values on top of the stack. */
+function emitOrder(ctx: CodeGenContext, op: CompareOp, type: string): void {
+    if (ctx.emitCompare) {
+        ctx.emitCompare(op, type);
+    } else {
+        ctx.emit(`    ${op}`);
+    }
+}
 
 // ============================================================================
 // MAX - Maximum Value
@@ -39,14 +67,13 @@ export const MAX_FN: FunctionDef = {
         const skipLabel = ctx.newLabel('max_skip');
 
         // Emit both arguments
-        ctx.emitExpression(args[0]);  // IN1 on stack
-        ctx.emitExpression(args[1]);  // IN2 on stack
+        const type = emitOperands(ctx, args);  // IN1, IN2 on stack
 
         // Stack: [IN1, IN2]
         ctx.emit(`    ; MAX(IN1, IN2)`);
         ctx.emit(`    OVER`);         // [IN1, IN2, IN1]
         ctx.emit(`    OVER`);         // [IN1, IN2, IN1, IN2]
-        ctx.emit(`    GT`);           // [IN1, IN2, IN1>IN2?]
+        emitOrder(ctx, 'GT', type);   // [IN1, IN2, IN1>IN2?]
         ctx.emit(`    JNZ ${skipLabel}`);
         // IN2 >= IN1, swap so IN2 is on bottom
         ctx.emit(`    SWAP`);         // [IN2, IN1]
@@ -77,14 +104,13 @@ export const MIN_FN: FunctionDef = {
 
         const skipLabel = ctx.newLabel('min_skip');
 
-        ctx.emitExpression(args[0]);  // IN1 on stack
-        ctx.emitExpression(args[1]);  // IN2 on stack
+        const type = emitOperands(ctx, args);  // IN1, IN2 on stack
 
         // Stack: [IN1, IN2]
         ctx.emit(`    ; MIN(IN1, IN2)`);
         ctx.emit(`    OVER`);         // [IN1, IN2, IN1]
         ctx.emit(`    OVER`);         // [IN1, IN2, IN1, IN2]
-        ctx.emit(`    LT`);           // [IN1, IN2, IN1<IN2?]
+        emitOrder(ctx, 'LT', type);   // [IN1, IN2, IN1<IN2?]
         ctx.emit(`    JNZ ${skipLabel}`);
         // IN2 <= IN1, swap so IN2 is on bottom
         ctx.emit(`    SWAP`);         // [IN2, IN1]
@@ -123,9 +149,7 @@ export const LIMIT_FN: FunctionDef = {
         const limitEnd = ctx.newLabel('limit_end');
 
         // Stack layout: we need MN, IN, MX
-        ctx.emitExpression(args[0]);  // MN
-        ctx.emitExpression(args[1]);  // IN
-        ctx.emitExpression(args[2]);  // MX
+        const type = emitOperands(ctx, args);  // MN, IN, MX
 
         ctx.emit(`    ; LIMIT(MN, IN, MX)`);
         // Stack: [MN, IN, MX]
@@ -133,14 +157,14 @@ export const LIMIT_FN: FunctionDef = {
         // Check if IN > MX
         ctx.emit(`    OVER`);         // [MN, IN, MX, IN]
         ctx.emit(`    OVER`);         // [MN, IN, MX, IN, MX]
-        ctx.emit(`    GT`);           // [MN, IN, MX, IN>MX?]
+        emitOrder(ctx, 'GT', type);   // [MN, IN, MX, IN>MX?]
         ctx.emit(`    JNZ ${aboveMax}`);
 
         // Check if IN < MN
         ctx.emit(`    DROP`);         // [MN, IN]
         ctx.emit(`    OVER`);         // [MN, IN, MN]
         ctx.emit(`    OVER`);         // [MN, IN, MN, IN]
-        ctx.emit(`    GT`);           // [MN, IN, MN>IN?]
+        emitOrder(ctx, 'GT', type);   // [MN, IN, MN>IN?]
         ctx.emit(`    JNZ ${belowMin}`);
 
         // IN is within bounds
@@ -158,8 +182,7 @@ export const LIMIT_FN: FunctionDef = {
 
         // IN < MN: result is MN
         ctx.emit(`${belowMin}:`);
-        ctx.emit(`    DROP`);         // [MN, IN]
-        ctx.emit(`    DROP`);         // [MN]
+        ctx.emit(`    DROP`);         // [MN, IN] -> [MN]
 
         ctx.emit(`${limitEnd}:`);
     },

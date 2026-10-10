@@ -1,0 +1,7 @@
+PROGRAM Convert
+VAR
+  big : UDINT := 3000000000;
+  r AT %QD0 : REAL;
+END_VAR
+  r := big;
+END_PROGRAM

@@ -1,0 +1,28 @@
+{
+  "requirement": "CMP-017",
+  "title": "TIME addition, division and comparison above 24.8 days",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "UDINT",
+      "value": 3456000000
+    },
+    {
+      "at": "%QD4",
+      "type": "UDINT",
+      "value": 1296000000
+    },
+    {
+      "at": "%QX8.0",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX8.1",
+      "type": "BOOL",
+      "value": true
+    }
+  ]
+}

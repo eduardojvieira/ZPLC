@@ -1,0 +1,28 @@
+{
+  "requirement": "CMP-013",
+  "title": "MAX, MIN, LIMIT and ABS on negative REAL values",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "REAL",
+      "value": -1.5
+    },
+    {
+      "at": "%QD4",
+      "type": "REAL",
+      "value": -2.5
+    },
+    {
+      "at": "%QD8",
+      "type": "REAL",
+      "value": -1.0
+    },
+    {
+      "at": "%QD12",
+      "type": "REAL",
+      "value": 2.5
+    }
+  ]
+}

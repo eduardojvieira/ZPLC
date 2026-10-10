@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-014",
+  "title": "SHL on a BYTE drops the bits shifted past bit 7",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QX0.0",
+      "type": "BOOL",
+      "value": false
+    },
+    {
+      "at": "%QB1",
+      "type": "BYTE",
+      "value": 144
+    }
+  ]
+}

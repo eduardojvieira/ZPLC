@@ -1,0 +1,26 @@
+{
+  "requirement": "CMP-011",
+  "title": "a negative INT read from a direct input",
+  "scans": 1,
+  "scanMs": 10,
+  "inputs": [
+    {
+      "at": "%IW0",
+      "type": "INT",
+      "value": -3,
+      "beforeScan": 1
+    }
+  ],
+  "expect": [
+    {
+      "at": "%QW2",
+      "type": "INT",
+      "value": -6
+    },
+    {
+      "at": "%QX0.0",
+      "type": "BOOL",
+      "value": true
+    }
+  ]
+}
