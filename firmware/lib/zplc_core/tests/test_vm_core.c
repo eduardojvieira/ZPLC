@@ -698,6 +698,84 @@ static void test_error_handling(void)
 }
 
 /* ============================================================================
+ * Indirect access outside the data memory (the compiler's array-bounds and
+ * null-reference faults, CMP-023 and CMP-024)
+ * ============================================================================ */
+
+static void test_indirect_access_outside_memory(void)
+{
+    uint8_t code[32];
+    size_t len;
+    int result;
+
+    printf("\n=== Test: Indirect access outside the data memory ===\n");
+
+    /* The generated code raises its defined fault by reading an address of the CODE region ... */
+    len = 0;
+    len = emit_push16(code, len, 0x5000);
+    len = emit_op(code, len, OP_LOADI8);
+    len = emit_op(code, len, OP_HALT);
+    zplc_core_init();
+    zplc_test_load_raw(code, len);
+    result = zplc_core_run(0);
+    TEST_ASSERT(result < 0, "LOADI8 of a CODE address returns an error");
+    TEST_ASSERT_EQ(zplc_core_get_error(), ZPLC_VM_OUT_OF_BOUNDS, "LOADI8 of a CODE address: OUT_OF_BOUNDS");
+
+    /* ... and a null reference is 0xFFFF, which no region contains: 8, 16 and 32 bits, read and write */
+    len = 0;
+    len = emit_push16(code, len, 0xFFFF);
+    len = emit_op(code, len, OP_LOADI32);
+    len = emit_op(code, len, OP_HALT);
+    zplc_core_init();
+    zplc_test_load_raw(code, len);
+    result = zplc_core_run(0);
+    TEST_ASSERT(result < 0, "LOADI32 of the null reference returns an error");
+    TEST_ASSERT_EQ(zplc_core_get_error(), ZPLC_VM_OUT_OF_BOUNDS, "LOADI32 of 0xFFFF: OUT_OF_BOUNDS");
+
+    len = 0;
+    len = emit_push16(code, len, 0xFFFF);
+    len = emit_op(code, len, OP_LOADI16);
+    len = emit_op(code, len, OP_HALT);
+    zplc_core_init();
+    zplc_test_load_raw(code, len);
+    result = zplc_core_run(0);
+    TEST_ASSERT(result < 0, "LOADI16 of the null reference returns an error");
+    TEST_ASSERT_EQ(zplc_core_get_error(), ZPLC_VM_OUT_OF_BOUNDS, "LOADI16 of 0xFFFF: OUT_OF_BOUNDS");
+
+    len = 0;
+    len = emit_push16(code, len, 0xFFFF);
+    len = emit_push8(code, len, 1);
+    len = emit_op(code, len, OP_STOREI8);
+    len = emit_op(code, len, OP_HALT);
+    zplc_core_init();
+    zplc_test_load_raw(code, len);
+    result = zplc_core_run(0);
+    TEST_ASSERT(result < 0, "STOREI8 through the null reference returns an error");
+    TEST_ASSERT_EQ(zplc_core_get_error(), ZPLC_VM_OUT_OF_BOUNDS, "STOREI8 to 0xFFFF: OUT_OF_BOUNDS");
+
+    len = 0;
+    len = emit_push16(code, len, 0xFFFF);
+    len = emit_push8(code, len, 1);
+    len = emit_op(code, len, OP_STOREI32);
+    len = emit_op(code, len, OP_HALT);
+    zplc_core_init();
+    zplc_test_load_raw(code, len);
+    result = zplc_core_run(0);
+    TEST_ASSERT(result < 0, "STOREI32 through the null reference returns an error");
+    TEST_ASSERT_EQ(zplc_core_get_error(), ZPLC_VM_OUT_OF_BOUNDS, "STOREI32 to 0xFFFF: OUT_OF_BOUNDS");
+
+    /* A WORK address is not a fault */
+    len = 0;
+    len = emit_push16(code, len, 0x2000);
+    len = emit_op(code, len, OP_LOADI8);
+    len = emit_op(code, len, OP_HALT);
+    zplc_core_init();
+    zplc_test_load_raw(code, len);
+    result = zplc_core_run(0);
+    TEST_ASSERT(result >= 0, "LOADI8 of a WORK address runs");
+}
+
+/* ============================================================================
  * Complex Program Test
  * ============================================================================ */
 
@@ -2992,6 +3070,7 @@ int main(void)
     test_memory_access();
     test_control_flow();
     test_error_handling();
+    test_indirect_access_outside_memory();
     test_complex_program();
     test_push8_sign_extension();
     test_float_arithmetic();
