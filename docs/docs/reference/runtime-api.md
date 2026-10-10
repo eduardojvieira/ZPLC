@@ -2729,7 +2729,7 @@ These tables are generated from `tools/contract/contract.json`, the single sourc
 | `ULINT` | `0x09` | 8 | Unsigned 64-bit integer |
 | `REAL` | `0x0A` | 4 | 32-bit IEEE 754 float |
 | `LREAL` | `0x0B` | 8 | 64-bit IEEE 754 double |
-| `TIME` | `0x0C` | 4 | Time duration (ms as DINT) |
+| `TIME` | `0x0C` | 4 | Time duration (unsigned 32-bit milliseconds) |
 | `BYTE` | `0x10` | 1 | 8-bit bit string |
 | `WORD` | `0x11` | 2 | 16-bit bit string |
 | `DWORD` | `0x12` | 4 | 32-bit bit string |
