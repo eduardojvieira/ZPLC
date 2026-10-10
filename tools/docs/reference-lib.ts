@@ -47,12 +47,12 @@ export function code(text: string): string {
 
 /**
  * A sentence for the page: the characters that the site would read as markup or as a JSX expression (`<`, `{`, `}`),
- * and a pipe, are escaped outside code spans. A text that was written for the site's own syntax never goes through this.
+ * a pipe, and a colon that starts a directive (`addr:len`), are escaped outside code spans. A text that was written for the site's own syntax never goes through this.
  */
 export function prose(text: string): string {
   return text
     .split(/(`[^`]*`)/)
-    .map((part, index) => (index % 2 === 1 ? part.replace(/\|/g, '\\|') : part.replace(/</g, '&lt;').replace(/\{/g, '&#123;').replace(/\}/g, '&#125;').replace(/\|/g, '\\|')))
+    .map((part, index) => (index % 2 === 1 ? part.replace(/\|/g, '\\|') : part.replace(/</g, '&lt;').replace(/\{/g, '&#123;').replace(/\}/g, '&#125;').replace(/\|/g, '\\|').replace(/:(?=[A-Za-z])/g, '\\:')))
     .join('');
 }
 

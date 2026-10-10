@@ -81,6 +81,13 @@ const sidebars = {
       items: [
         'reference/functions',
         'reference/function-blocks',
+        'reference/kconfig',
+        'reference/shell-commands',
+        'reference/project-file',
+        'reference/scenario-file',
+        'reference/cli',
+        'reference/mcp',
+        'reference/runtime-protocol',
       ],
     },
     {

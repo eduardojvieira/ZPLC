@@ -394,6 +394,7 @@ jobs:
           python3 tools/docs/test_generate_known_limits.py
           python3 tools/docs/generate_known_limits.py --check
           bun tools/docs/generate_function_reference.ts --check
+          bun tools/docs/generate_source_references.ts --check
           bun tools/ci/test-inventory.ts
           bun tools/ci/test-source-guard.ts
 

@@ -17,6 +17,7 @@ describe('generated reference pages: the markup is safe for the site (DOC-008)',
   it('escapes what MDX would read as markup, outside code spans only', () => {
     expect(prose('a < b and {c} | d')).toBe('a &lt; b and &#123;c&#125; \\| d');
     expect(prose('write `a < b` here')).toBe('write `a < b` here');
+    expect(prose('Multi-read: mpeek addr:len[,addr:len...]')).toBe('Multi-read: mpeek addr\\:len[,addr\\:len...]');
   });
 
   it('keeps a pipe of a code span inside its table cell', () => {
