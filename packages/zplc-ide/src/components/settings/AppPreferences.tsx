@@ -42,7 +42,8 @@ function Choice<K extends keyof AppSettings>({ label, field, options, name }: {
   );
 }
 
-export function AppPreferences() {
+/** `includeTheme` is off where the page already has the one theme control (the Welcome screen header). */
+export function AppPreferences({ includeTheme = true }: { includeTheme?: boolean }) {
   const checkForUpdates = useAppSettings((state) => state.settings.checkForUpdates);
   const update = useAppSettings((state) => state.update);
   const [checking, setChecking] = useState(false);
@@ -58,7 +59,7 @@ export function AppPreferences() {
       <h2 id="app-preferences-heading" className="text-xs font-bold uppercase tracking-[0.08em] text-[var(--text-secondary)]">Preferences</h2>
       <p className="mt-1 text-xs text-[var(--text-tertiary)]">They apply to every project and are kept for your user account.</p>
       <div className="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <ThemeControl />
+        {includeTheme && <ThemeControl />}
         <Choice label="Editor font size" field="editorFontSize" options={FONT_SIZES} name={(size) => `${size} px`} />
         <Choice label="Tab size" field="editorTabSize" options={TAB_SIZE_CHOICES} name={(size) => `${size} spaces`} />
         <Choice label="Density" field="density" options={DENSITY_CHOICES} name={(density) => DENSITY_NAMES[density]} />

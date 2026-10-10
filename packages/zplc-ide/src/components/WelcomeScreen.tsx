@@ -227,7 +227,7 @@ export function WelcomeScreen() {
 
         <details data-welcome-preferences className="mt-6 border-t border-[var(--border-color)] pt-3">
           <summary className="cursor-pointer text-sm text-[var(--text-secondary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]">Preferences: editor, density, language, autosave and updates</summary>
-          <div className="mt-3"><AppPreferences /></div>
+          <div className="mt-3"><AppPreferences includeTheme={false} /></div>
         </details>
 
         <aside className="mt-6 border-t border-[var(--border-color)] pt-3 text-sm leading-5 text-[var(--text-secondary)]" aria-live="polite">
