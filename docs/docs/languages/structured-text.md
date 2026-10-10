@@ -44,7 +44,7 @@ ZPLC supports these elementary types. [Structured Text (ST)](./st.md#numeric-typ
 *   `TIME`, `DATE`, `TOD`, `DT`: see [Time and date types](./st.md#time-and-date-types).
 *   `STRING`, `WSTRING`
 
-`LTIME`, `LDATE`, `LTOD`, `LDT`, `CHAR` and `WCHAR` are not supported. The compiler does not reject them yet and gives the variable size 0 (requirement CMP-003).
+`LTIME`, `LDATE`, `LTOD`, `LDT`, `CHAR` and `WCHAR` are not supported: a declaration of one is a build error that names the type (requirement CMP-003).
 
 ## Control Structures
 

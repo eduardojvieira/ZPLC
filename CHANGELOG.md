@@ -161,6 +161,16 @@ All notable changes are documented here.
   The library blocks of the kitchen_sink project called their parameters
   `SETPOINT`, `CYCLE`, `SET`...; the names were ignored and are now fixed to
   the ones the blocks have.
+- An integer of a wider type stored in a narrower one (`DINT` to `INT`, `LINT`
+  to `DINT`) keeps its low bits as before and the build now reports the
+  warning `IMPLICIT_NARROWING` at the value, naming both types; Studio, the CLI
+  (`Warning:`) and the Tool API show it. A mask or a remainder that fits the
+  destination does not warn. The bundled `analog_test` project narrowed a
+  `DINT` into an `INT`; it now stores `TempDegC MOD 32768`, the same value
+  inside the plausible window.
+- Studio resolves a program counter to the statement that owns it, not only
+  the first instruction of the statement, and `release-version.ts` rewrites
+  and checks the compiler version that every debug map records.
 
 ## 2.0.0-rc.3 - 2026-09-01
 

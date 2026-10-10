@@ -44,7 +44,7 @@ ZPLC soporta estos tipos elementales. [Structured Text (ST)](./st.md#tipos-numé
 *   `TIME`, `DATE`, `TOD`, `DT`: ver [Tipos de tiempo y fecha](./st.md#tipos-de-tiempo-y-fecha).
 *   `STRING`, `WSTRING`
 
-`LTIME`, `LDATE`, `LTOD`, `LDT`, `CHAR` y `WCHAR` no están soportados. El compilador todavía no los rechaza y le da a la variable tamaño 0 (requisito CMP-003).
+`LTIME`, `LDATE`, `LTOD`, `LDT`, `CHAR` y `WCHAR` no están soportados: la declaración de uno de ellos es un error de compilación que nombra el tipo (requisito CMP-003).
 
 ## Estructuras de control
 
