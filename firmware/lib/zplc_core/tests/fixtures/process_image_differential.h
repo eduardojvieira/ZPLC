@@ -12,8 +12,9 @@
 #include <stdint.h>
 
 /* Source TASK order: 30/p2, 10/p1, 20/p1. Ordered execution ends at 30.
- * WORK[0] mirrors OPI[0] so Zephyr's safe single-step teardown does not hide
- * the value that was committed before it de-energized the process image. */
+ * WORK[0] mirrors OPI[0]. The mirror dates from when the Zephyr pause zeroed
+ * the output image (RT-017); it is harmless and kept so the program bytes do
+ * not change. */
 static const uint8_t zplc_process_image_ordered_program[] = {
     0x5a, 0x50, 0x4c, 0x43, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0xfc, 0xd2, 0x0a, 0xbb, 0x24, 0x00, 0x00, 0x00, 0x30, 0x00, 0x00, 0x00,

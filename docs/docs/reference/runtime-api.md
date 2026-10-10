@@ -2276,7 +2276,7 @@ int zplc_sched_stop(void);
 
 **Source summary:** Stop the scheduler.
 
-Stops all tasks but keeps them registered.
+Stops all tasks but keeps them registered. Unlike a pause, a stop ends the run: the physical outputs go to their safe state, the output process image is zeroed, the force table is cleared, every task is back at its entry point and a scan interrupted by a breakpoint is discarded (RT-017).
 
 **Parameters**
 
@@ -2312,6 +2312,8 @@ int zplc_sched_pause(void);
 
 **Source summary:** Pause the scheduler (for debugging).
 
+Pauses between scans: a batch in flight finishes first. The physical outputs are driven to their safe state before the call returns; the output process image and the force table are kept, so a later resume or step continues the program from where it stopped (RT-017).
+
 **Parameters**
 
 | Name | Type | Source description |
@@ -2328,6 +2330,8 @@ int zplc_sched_resume(void);
 
 **Source summary:** Resume the scheduler from pause.
 
+Does not drive the pins itself. A scan stopped at a breakpoint continues from its program counter at the next release; a pause between scans starts a new scan. The first normal commit copies the output image, with the force table applied, to the pins.
+
 **Parameters**
 
 | Name | Type | Source description |
@@ -2342,9 +2346,9 @@ int zplc_sched_resume(void);
 int zplc_sched_step(void);
 ```
 
-**Source summary:** Execute exactly one cycle for each paused/ready task.
+**Source summary:** Execute exactly one scan for each paused/ready task.
 
-Used by the debugger when the scheduler is paused. Tasks remain paused after the stepped cycle unless a task enters error state.
+Used by the debugger when the scheduler is paused. A scan stopped at a breakpoint is finished; otherwise one whole scan runs. The scan is committed to the pins once and the pins are then driven safe again. The output image and the force table are kept. Tasks remain paused after the stepped cycle unless a task enters error state.
 
 **Parameters**
 
