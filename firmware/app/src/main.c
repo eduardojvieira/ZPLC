@@ -47,9 +47,6 @@ LOG_MODULE_REGISTER(zplc_main, LOG_LEVEL_INF);
  * ============================================================================
  */
 
-/** @brief Number of GPIO output channels */
-#define ZPLC_GPIO_OUTPUT_COUNT 4
-
 /* ============================================================================
  * Program Upload Buffer (shared by legacy and scheduler modes via shell_cmds.c)
  * ============================================================================
@@ -95,11 +92,26 @@ uint32_t legacy_scan_interval_ms = 100U;
 
 void zplc_legacy_wake(void) { k_sem_give(&legacy_runtime_wake); }
 
+/* The physical outputs are the digital outputs of the board I/O table, each
+ * read from its bit of the output image (the same map as the scheduler). */
 static int sync_opi_to_gpio(void) {
   int first_error = 0;
-  for (int i = 0; i < ZPLC_GPIO_OUTPUT_COUNT; i++) {
-    uint8_t opi_value = (uint8_t)zplc_core_get_opi(i);
-    zplc_hal_result_t result = zplc_hal_gpio_write(i, opi_value & 0x01);
+  const uint8_t *opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
+  size_t index;
+
+  if (opi == NULL) {
+    return -1;
+  }
+  for (index = 0U; index < zplc_io_channel_count(); index++) {
+    const zplc_io_channel_t *channel = zplc_io_channel_at(index);
+    zplc_hal_result_t result;
+
+    if (channel == NULL || channel->direction != ZPLC_IO_DIR_OUTPUT ||
+        channel->kind != ZPLC_IO_KIND_DIGITAL) {
+      continue;
+    }
+    result = zplc_io_write_channel(
+        channel, zplc_io_image_get(opi, ZPLC_MEM_OPI_SIZE, channel));
     if (result != ZPLC_HAL_OK && result != ZPLC_HAL_NOT_IMPL &&
         first_error == 0) {
       first_error = (int)result;
@@ -120,8 +132,15 @@ int zplc_legacy_apply_safe_outputs_locked(void) {
   } else {
     memset(opi, 0, ZPLC_MEM_OPI_SIZE);
   }
-  for (int i = 0; i < ZPLC_GPIO_OUTPUT_COUNT; i++) {
-    zplc_hal_result_t result = zplc_hal_gpio_write(i, 0U);
+  for (size_t index = 0U; index < zplc_io_channel_count(); index++) {
+    const zplc_io_channel_t *channel = zplc_io_channel_at(index);
+    zplc_hal_result_t result;
+
+    if (channel == NULL || channel->direction != ZPLC_IO_DIR_OUTPUT ||
+        channel->kind != ZPLC_IO_KIND_DIGITAL) {
+      continue;
+    }
+    result = zplc_io_write_channel(channel, channel->safe);
     if (result != ZPLC_HAL_OK && result != ZPLC_HAL_NOT_IMPL &&
         first_error == 0) {
       first_error = (int)result;

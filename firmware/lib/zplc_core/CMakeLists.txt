@@ -341,6 +341,33 @@ target_include_directories(test_hal_posix_mutex PRIVATE
 
 add_test(NAME test_hal_posix_mutex COMMAND test_hal_posix_mutex)
 
+# Test: the I/O table accessors every port shares (IO-001, IO-002, IO-007)
+add_executable(test_io_table
+    tests/test_io_table.c
+)
+
+target_include_directories(test_io_table PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+add_test(NAME test_io_table COMMAND test_io_table)
+
+# Test: the POSIX port's I/O table is empty and reachable through them
+add_executable(test_hal_posix_io_table
+    tests/test_hal_posix_io_table.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_hal_posix_io_table PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_hal_posix_io_table PRIVATE rt)
+endif()
+
+add_test(NAME test_hal_posix_io_table COMMAND test_hal_posix_io_table)
+
 # Test: Communication Dispatch
 add_executable(test_comm_dispatch
     tests/test_comm_dispatch.c
@@ -489,7 +516,8 @@ add_custom_target(check
 
 # The tests above join the check target without touching its list
 add_dependencies(check test_sandbox test_sandbox_regions test_comm_fb_access test_comm_handler_modbus
-                 test_comm_handler_mqtt test_comm_handler_cloud test_retain test_parse)
+                 test_comm_handler_mqtt test_comm_handler_cloud test_retain test_parse
+                 test_io_table test_hal_posix_io_table)
 
 # =============================================================================
 # Build Info

@@ -1837,6 +1837,101 @@ Printf-style logging for runtime diagnostics.
 **Notas fuente:**
 - Platform implementations: - POSIX: fprintf(stderr, ...) - Zephyr: printk() or LOG_INF() - WASM: console.log() via JS bridge
 
+#### `zplc_io_table`
+
+```c
+const zplc_io_table_t *zplc_io_table(void);
+```
+
+**Resumen fuente:** The board's I/O table (never NULL; it may list no channel).
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| — | — | Ninguno. |
+
+**Notas fuente:**
+- Platform implementations: - Zephyr: generated at build time from the board description - POSIX, WASM: an empty table; the host runtime exchanges the image with Studio, not with pins
+
+#### `zplc_io_channel_count`
+
+```c
+size_t zplc_io_channel_count(void);
+```
+
+**Resumen fuente:** Number of channels of the board.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| — | — | Ninguno. |
+
+#### `zplc_io_channel_at`
+
+```c
+const zplc_io_channel_t *zplc_io_channel_at(size_t index);
+```
+
+**Resumen fuente:** Channel `index` of the table, or NULL past the end.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `index` | `size_t` | — |
+
+#### `zplc_io_read_channel`
+
+```c
+zplc_hal_result_t zplc_io_read_channel(const zplc_io_channel_t *channel, uint16_t *value);
+```
+
+**Resumen fuente:** Read one physical input channel through the HAL.
+
+A digital channel reads 0 or 1, an analog one the raw converter value.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `channel` | `const zplc_io_channel_t *` | — |
+| `value` | `uint16_t *` | — |
+
+**Retorno fuente:** ZPLC_HAL_OK, ZPLC_HAL_NOT_IMPL when the channel is not available on this build (an optional channel without its devicetree node), or an error.
+
+#### `zplc_io_write_channel`
+
+```c
+zplc_hal_result_t zplc_io_write_channel(const zplc_io_channel_t *channel, uint16_t value);
+```
+
+**Resumen fuente:** Write one physical digital output channel through the HAL.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `channel` | `const zplc_io_channel_t *` | — |
+| `value` | `uint16_t` | — |
+
+#### `zplc_io_image_get`
+
+```c
+uint16_t zplc_io_image_get(const uint8_t *image, size_t size, const zplc_io_channel_t *channel);
+```
+
+**Resumen fuente:** The value of a channel in an image buffer (a digital channel is 0 or 1).
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `image` | `const uint8_t *` | — |
+| `size` | `size_t` | — |
+| `channel` | `const zplc_io_channel_t *` | — |
+
 #### `zplc_hal_init`
 
 ```c
@@ -1880,10 +1975,16 @@ Clean shutdown - close sockets, flush persistence, release resources.
 | `zplc_hal_result_t` | Enumeración | HAL operation result codes |
 | `zplc_hal_socket_t` | Typedef | Opaque socket handle |
 | `zplc_hal_mutex_t` | Typedef | Opaque mutex handle |
+| `zplc_io_kind_t` | Enumeración | Kind of an I/O channel. |
+| `zplc_io_dir_t` | Enumeración | Direction of an I/O channel, seen from the program. |
+| `id` | Estructura | One channel of the board description. |
+| `board_id` | Estructura | The whole description of a board, as built. |
 
 ### Constantes y macros
 
-Ninguno.
+| Nombre | Valor | Resumen fuente |
+| --- | --- | --- |
+| `ZPLC_IO_MAX_CHANNELS` | `64U` | The most channels a board description may list. |
 
 ## `zplc_hal_posix.h`
 

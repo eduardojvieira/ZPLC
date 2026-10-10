@@ -129,6 +129,27 @@ which sizes it was made with:
 
 The process images are 4 KB each in every profile because the ISA fixes them.
 
+### The board I/O description
+
+`zplc.io_table.base` and `zplc.io_table.extended` build the firmware from two synthetic board descriptions
+(`firmware/tests/io_table/io_base.json` and `io_extended.json`) over the `native_sim` GPIO emulator and run the same
+test code on both. The test reads the generated table, drives every emulated input pin, runs one scan and checks that
+a described input lands in the input image at its address, that a described output reaches its pin, and that a pin
+the devicetree has but the description does not list is never configured or driven. The extended description lists
+three outputs and an input more than the base one, one of them in a second and one in a third image byte, and nothing
+in the firmware sources names them.
+
+The build also checks that the description and the devicetree agree. To see it fail, change a `dt.pin` or an
+`alias` in `io_base.json` and build the test:
+
+```bash
+west build -p -b native_sim/native/64 zplc/firmware/tests/io_table
+```
+
+The build stops with a message such as `I/O description: channel DO0 (P0) disagrees with the devicetree: alias led0
+is not on pin 7`. `python3 tools/hil/test_io_table_generator.py` pins the text the generator emits, and
+`python3 tools/ci/check_hal_contract.py` checks that every HAL function is implemented on every port.
+
 ## Static analysis
 
 `clang-tidy` reads `.clang-tidy` at the repository root. Every check it enables is an error, so the list in

@@ -256,108 +256,110 @@ static int scheduler_slots_empty(void) {
  * ============================================================================
  */
 
-/** @brief Number of digital I/O channels to sync */
-#define ZPLC_DIO_CHANNEL_COUNT 4
-
-/** @brief Number of ADC channels to sync (0-4) */
-#define ZPLC_ADC_CHANNEL_COUNT 5
+/*
+ * The channels that are synchronized are the I/O table of the board
+ * (zplc_io_table(), generated from the board description): every input channel
+ * is written to the input image at its address and every output channel is
+ * read from the output image, so a channel added to a board needs no change
+ * here.
+ */
 
 /**
- * @brief Synchronize inputs from GPIO to IPI (Input Process Image).
+ * @brief Synchronize inputs from the physical channels to IPI (Input Process Image).
  *
- * Reads physical GPIO inputs and writes them to the shared memory IPI region.
- * Called once at the beginning of an ordered scheduler batch.
+ * Reads the physical inputs of the board table and writes them to the shared
+ * memory IPI region. Called once at the beginning of an ordered scheduler batch.
  */
 static zplc_hal_result_t sync_inputs_to_ipi(void) {
-  uint8_t value;
-  uint16_t adc_val;
+  size_t index;
+  size_t count = zplc_io_channel_count();
+  uint8_t digital_ordinal = 0U; /* input channels counted in table order */
 
-  /* Read GPIO inputs (channels 4-7 are inputs) */
-  /* Maps to IPI[0] bits 0-3 -> %IX0.0..%IX0.3 (or %I0..%I3) */
-  for (int i = 0; i < ZPLC_DIO_CHANNEL_COUNT; i++) {
+  for (index = 0U; index < count; index++) {
+    const zplc_io_channel_t *channel = zplc_io_channel_at(index);
     zplc_hal_result_t result;
+    uint16_t value = 0U;
+
+    if (channel == NULL || channel->direction != ZPLC_IO_DIR_INPUT) {
+      continue;
+    }
 
 #ifdef CONFIG_ZTEST
-    {
+    if (channel->kind == ZPLC_IO_KIND_DIGITAL) {
       k_spinlock_key_t key = k_spin_lock(&admission_lock);
 
       result = ZPLC_HAL_OK;
       if (test_gpio_read_failure != ZPLC_HAL_OK &&
-          test_gpio_read_failure_channel == (uint8_t)i) {
+          test_gpio_read_failure_channel == digital_ordinal) {
         result = test_gpio_read_failure;
         test_gpio_read_failure = ZPLC_HAL_OK;
       }
       k_spin_unlock(&admission_lock, key);
-    }
-    if (result != ZPLC_HAL_OK && result != ZPLC_HAL_NOT_IMPL) {
-      return result;
-    }
-    if (result == ZPLC_HAL_NOT_IMPL) {
-      continue;
+      if (result != ZPLC_HAL_OK && result != ZPLC_HAL_NOT_IMPL) {
+        return result;
+      }
+      if (result == ZPLC_HAL_NOT_IMPL) {
+        digital_ordinal++;
+        continue;
+      }
     }
 #endif
-    result = zplc_hal_gpio_read(4 + i, &value);
+    result = zplc_io_read_channel(channel, &value);
     if (result != ZPLC_HAL_OK && result != ZPLC_HAL_NOT_IMPL) {
       return result;
     }
     if (result == ZPLC_HAL_OK) {
-      uint8_t current = zplc_ipi_read8(0);
-      if (value) {
-        current = (uint8_t)(current | (uint8_t)(1U << i));
-      } else {
-        current = (uint8_t)(current & (uint8_t)~(1U << i));
-      }
-      (void)zplc_ipi_write8(0, current);
-    }
-  }
+      if (channel->kind == ZPLC_IO_KIND_DIGITAL) {
+        uint8_t current = zplc_ipi_read8(channel->image_offset);
 
-  /* Read ADC inputs (channels 0-4) */
-  /* Maps to IPI[8..] -> %IW4 (Offset 8), %IW5 (Offset 10), etc. */
-  /* We start at offset 8 to avoid overlapping with digital inputs (Bytes 0-3)
-   */
-  /* and alignment padding. */
-  for (int ch = 0; ch < ZPLC_ADC_CHANNEL_COUNT; ch++) {
-    zplc_hal_result_t result = zplc_hal_adc_read(ch, &adc_val);
-
-    if (result != ZPLC_HAL_OK && result != ZPLC_HAL_NOT_IMPL) {
-      return result;
-    }
-    if (result == ZPLC_HAL_OK) {
-      /* 16-bit Little Endian store */
-      int offset = 8 + (ch * 2);
-      /* Check bounds */
-      if (offset + 1 < ZPLC_MEM_IPI_SIZE) {
-        (void)zplc_ipi_write16((uint16_t)offset, adc_val);
+        if (value != 0U) {
+          current = (uint8_t)(current | (uint8_t)(1U << channel->bit));
+        } else {
+          current = (uint8_t)(current & (uint8_t)~(1U << channel->bit));
+        }
+        (void)zplc_ipi_write8(channel->image_offset, current);
+      } else if ((size_t)channel->image_offset + 1U < ZPLC_MEM_IPI_SIZE) {
+        /* 16-bit Little Endian store */
+        (void)zplc_ipi_write16(channel->image_offset, value);
       }
+    }
+    if (channel->kind == ZPLC_IO_KIND_DIGITAL) {
+      digital_ordinal++;
     }
   }
   return ZPLC_HAL_OK;
 }
 
 /**
- * @brief Synchronize outputs from OPI (Output Process Image) to GPIO.
+ * @brief Synchronize outputs from OPI (Output Process Image) to the physical channels.
  *
- * Reads the OPI region and writes to physical GPIO outputs.
+ * Reads the OPI region and writes the digital outputs of the board table.
  * Called once at the end of an ordered scheduler batch.
  */
 static zplc_hal_result_t sync_opi_to_outputs(void) {
   uint8_t *opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
+  size_t index;
+  size_t count = zplc_io_channel_count();
+  uint8_t ordinal = 0U; /* output channels counted in table order */
 
   if (opi == NULL) {
     return ZPLC_HAL_ERROR;
   }
 
-  /* Write GPIO outputs (channels 0-3 are outputs) */
-  /* Maps %QX0.0..%QX0.3 to physical channels 0-3 */
-  for (int i = 0; i < ZPLC_DIO_CHANNEL_COUNT; i++) {
+  for (index = 0U; index < count; index++) {
+    const zplc_io_channel_t *channel = zplc_io_channel_at(index);
     zplc_hal_result_t result;
+
+    if (channel == NULL || channel->direction != ZPLC_IO_DIR_OUTPUT) {
+      continue;
+    }
 
 #ifdef CONFIG_ZTEST
     {
       k_spinlock_key_t key = k_spin_lock(&admission_lock);
       result = ZPLC_HAL_OK;
       if (test_output_commit_failure != ZPLC_HAL_OK &&
-          test_output_commit_failure_channel == (uint8_t)i) {
+          test_output_commit_failure_channel == ordinal) {
         result = test_output_commit_failure;
         test_output_commit_failure = ZPLC_HAL_OK;
       }
@@ -367,10 +369,12 @@ static zplc_hal_result_t sync_opi_to_outputs(void) {
       return result;
     }
     if (result == ZPLC_HAL_NOT_IMPL) {
+      ordinal++;
       continue;
     }
 #endif
-    result = zplc_hal_gpio_write(i, (opi[0] & (1 << i)) ? 1 : 0);
+    result = zplc_io_write_channel(
+        channel, zplc_io_image_get(opi, ZPLC_MEM_OPI_SIZE, channel));
 #ifdef CONFIG_ZTEST
     {
       k_spinlock_key_t key = k_spin_lock(&admission_lock);
@@ -380,6 +384,7 @@ static zplc_hal_result_t sync_opi_to_outputs(void) {
       k_spin_unlock(&admission_lock, key);
     }
 #endif
+    ordinal++;
     if (result != ZPLC_HAL_OK && result != ZPLC_HAL_NOT_IMPL) {
       return result;
     }
@@ -1337,14 +1342,21 @@ static int drive_safe_outputs_with_mem_locked(void) {
   int first_error = 0;
   int index;
 
-  for (index = 0; index < ZPLC_DIO_CHANNEL_COUNT; ++index) {
+  /* Every digital output of the board table goes to its safe level. */
+  for (index = 0; index < (int)zplc_io_channel_count(); ++index) {
+    const zplc_io_channel_t *channel = zplc_io_channel_at((size_t)index);
     zplc_hal_result_t result;
 
+    if (channel == NULL || channel->direction != ZPLC_IO_DIR_OUTPUT ||
+        channel->kind != ZPLC_IO_KIND_DIGITAL) {
+      continue;
+    }
 #ifdef CONFIG_ZTEST
-    result = test_safe_output_failure != 0 ? test_safe_output_failure
-                                           : zplc_hal_gpio_write(index, 0U);
+    result = test_safe_output_failure != 0
+                 ? test_safe_output_failure
+                 : zplc_io_write_channel(channel, channel->safe);
 #else
-    result = zplc_hal_gpio_write(index, 0U);
+    result = zplc_io_write_channel(channel, channel->safe);
 #endif
     if (result != ZPLC_HAL_OK && result != ZPLC_HAL_NOT_IMPL &&
         first_error == 0) {

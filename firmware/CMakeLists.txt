@@ -40,6 +40,43 @@ if(CONFIG_ZPLC)
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/hal/zephyr/zplc_hal_zephyr.c
   )
 
+  # The board I/O table (IO-001, IO-002): one C file generated at build time from the board's entry in
+  # firmware/app/boards/boards.json, or from the default alias profile for a target that has none. Adding a channel
+  # to a board edits the JSON and the devicetree overlay, not C. ZPLC_IO_DESCRIPTION names one board entry to use
+  # instead (a test, a board that is not in the manifest yet). The build fails when the description and the
+  # devicetree disagree.
+  if(NOT DEFINED ZPLC_IO_MANIFEST)
+    set(ZPLC_IO_MANIFEST ${CMAKE_CURRENT_LIST_DIR}/app/boards/boards.json)
+  endif()
+  set(ZPLC_IO_GENERATOR ${CMAKE_CURRENT_LIST_DIR}/zephyr/scripts/gen_io_table.py)
+  set(ZPLC_IO_LIBRARY ${CMAKE_CURRENT_LIST_DIR}/zephyr/scripts/zplc_boards.py)
+  set(ZPLC_IO_DEFAULT_PROFILE ${CMAKE_CURRENT_LIST_DIR}/zephyr/io-default.json)
+  set(ZPLC_IO_TABLE_C ${CMAKE_CURRENT_BINARY_DIR}/zplc_io_table.c)
+  if(NOT DEFINED PYTHON_EXECUTABLE)
+    set(PYTHON_EXECUTABLE ${Python3_EXECUTABLE})
+  endif()
+  if(DEFINED ZPLC_IO_DESCRIPTION)
+    set(ZPLC_IO_GENERATOR_ARGS --description ${ZPLC_IO_DESCRIPTION})
+    set(ZPLC_IO_INPUTS ${ZPLC_IO_DESCRIPTION})
+  else()
+    set(ZPLC_IO_GENERATOR_ARGS
+      --manifest ${ZPLC_IO_MANIFEST}
+      --zephyr-board "${BOARD}${BOARD_QUALIFIERS}"
+      --default-profile ${ZPLC_IO_DEFAULT_PROFILE})
+    set(ZPLC_IO_INPUTS ${ZPLC_IO_MANIFEST} ${ZPLC_IO_DEFAULT_PROFILE})
+  endif()
+  add_custom_command(
+    OUTPUT ${ZPLC_IO_TABLE_C}
+    COMMAND ${PYTHON_EXECUTABLE} -B ${ZPLC_IO_GENERATOR} ${ZPLC_IO_GENERATOR_ARGS} --output ${ZPLC_IO_TABLE_C}
+    DEPENDS ${ZPLC_IO_GENERATOR} ${ZPLC_IO_LIBRARY} ${ZPLC_IO_INPUTS}
+    COMMENT "ZPLC: I/O table of ${BOARD}${BOARD_QUALIFIERS}"
+    VERBATIM
+  )
+  zephyr_library_sources(${ZPLC_IO_TABLE_C})
+  zephyr_library_include_directories(
+    ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/hal/zephyr
+  )
+
   # Scheduler (optional - enabled via CONFIG_ZPLC_SCHEDULER)
   zephyr_library_sources_ifdef(CONFIG_ZPLC_SCHEDULER
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/hal/zephyr/zplc_scheduler_zephyr.c

@@ -52,10 +52,37 @@ config ZPLC_REQUIRED_GPIO_OUTPUT_MASK
     range 0x0 0xF
     default 0x0
     help
-      Bit mask of logical DO0-DO3 channels that must be configured from
-      DeviceTree for this profile to initialize the Zephyr HAL. A missing or
-      unconfigurable required channel fails HAL initialization; this setting
-      does not qualify the electrical behavior of any mapped pin.
+      Bit mask of digital outputs, counted from the first output of the I/O
+      table, that must be configured from DeviceTree for the Zephyr HAL to
+      initialize, in addition to the channels the board description marks as
+      required. The I/O description of a listed board already requires every
+      channel it lists; this mask is for a profile without a description (the
+      default alias profile). A missing or unconfigurable required channel
+      fails HAL initialization; this setting does not qualify the electrical
+      behavior of any mapped pin.
+
+config ZPLC_IO_INPUT_IMAGE_BYTES
+    int "Input image bytes the I/O table owns (0 = what the board needs)"
+    range 0 4080
+    default 0
+    help
+      Bytes of the input process image that the channels of the board use.
+      0 takes the size from the board I/O description in
+      firmware/app/boards/boards.json (the highest input channel plus its
+      width); a larger value reserves room for channels added later. The build
+      fails when the value is smaller than the channels need or reaches the
+      system registers at the end of the 4 KB input image. The memory the image
+      occupies is still the 4 KB of the instruction set: shrinking it is a
+      change of the binary contract.
+
+config ZPLC_IO_OUTPUT_IMAGE_BYTES
+    int "Output image bytes the I/O table owns (0 = what the board needs)"
+    range 0 4096
+    default 0
+    help
+      Bytes of the output process image that the channels of the board use,
+      derived from the board I/O description when 0. The build fails when the
+      value is smaller than the channels need.
 
 config ZPLC_VM_CYCLE_INSTRUCTION_BUDGET
     int "PLC scan instruction budget"

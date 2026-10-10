@@ -393,6 +393,9 @@ jobs:
           python3 tools/hil/validate_supported_boards.py
           python3 tools/hil/test_validate_supported_boards.py
           python3 tools/hil/test_board_io_description.py
+          python3 tools/hil/test_io_table_generator.py
+          python3 tools/ci/test_check_hal_contract.py
+          python3 tools/ci/check_hal_contract.py
           python3 tools/hil/test_validate_release_evidence.py
           python3 tools/docs/test_validate_docs_pages.py
           python3 tools/docs/validate_docs_pages.py

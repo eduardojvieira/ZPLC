@@ -936,6 +936,7 @@ static int cmd_zplc_status(const struct shell *sh, size_t argc, char **argv) {
 static int cmd_sys_info(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
   bool json = (argc > 1 && strcmp(argv[1], "--json") == 0);
+  char io_hash[9];
 
   if (json) {
     JSON_OBJ_START(sh);
@@ -966,6 +967,20 @@ static int cmd_sys_info(const struct shell *sh, size_t argc, char **argv) {
     JSON_INT(sh, "ipi_size", ZPLC_MEM_IPI_SIZE, true);
     JSON_INT(sh, "opi_size", ZPLC_MEM_OPI_SIZE, false);
     JSON_OBJ_END(sh);
+    shell_fprintf(sh, SHELL_NORMAL, ",");
+
+    /* The identity of the board I/O description this image was built from (IO-004): Studio compares it with the
+     * description it holds for the board before it deploys a program that uses I/O. */
+    shell_fprintf(sh, SHELL_NORMAL, "\"io\":");
+    JSON_OBJ_START(sh);
+    JSON_UINT(sh, "schema", 1U, true);
+    JSON_STR(sh, "board_id", zplc_io_table()->board_id, true);
+    snprintf(io_hash, sizeof(io_hash), "%08x", (unsigned int)zplc_io_table()->description_hash);
+    JSON_STR(sh, "hash", io_hash, true);
+    JSON_UINT(sh, "channels", zplc_io_table()->channel_count, true);
+    JSON_UINT(sh, "input_bytes", zplc_io_table()->input_bytes, true);
+    JSON_UINT(sh, "output_bytes", zplc_io_table()->output_bytes, false);
+    JSON_OBJ_END(sh);
 
     JSON_OBJ_END(sh);
     JSON_NEWLINE(sh);
@@ -982,6 +997,12 @@ static int cmd_sys_info(const struct shell *sh, size_t argc, char **argv) {
   shell_print(sh, "  Memory Sizes:   WORK=%d, RETAIN=%d, IPI=%d, OPI=%d",
               ZPLC_MEM_WORK_SIZE, ZPLC_MEM_RETAIN_SIZE, ZPLC_MEM_IPI_SIZE,
               ZPLC_MEM_OPI_SIZE);
+  shell_print(sh, "  I/O table:      %s, %u channels, hash %08x, %u B in, %u B out",
+              zplc_io_table()->board_id,
+              (unsigned int)zplc_io_table()->channel_count,
+              (unsigned int)zplc_io_table()->description_hash,
+              (unsigned int)zplc_io_table()->input_bytes,
+              (unsigned int)zplc_io_table()->output_bytes);
 
   return 0;
 }

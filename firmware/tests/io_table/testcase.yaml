@@ -1,0 +1,31 @@
+tests:
+  # IO-001, IO-002, IO-005, IO-018: the same test code over two board descriptions. The extended one lists three
+  # more outputs and one more input, one of them in a second image byte; nothing in the firmware names them.
+  zplc.io_table.base:
+    tags:
+      - zplc
+      - hal
+      - io
+    platform_allow:
+      - native_sim/native/64
+      - native_sim/native
+    integration_platforms:
+      - native_sim/native/64
+    harness: ztest
+    timeout: 30
+    extra_args:
+      - ZPLC_IO_VARIANT=base
+  zplc.io_table.extended:
+    tags:
+      - zplc
+      - hal
+      - io
+    platform_allow:
+      - native_sim/native/64
+      - native_sim/native
+    integration_platforms:
+      - native_sim/native/64
+    harness: ztest
+    timeout: 30
+    extra_args:
+      - ZPLC_IO_VARIANT=extended

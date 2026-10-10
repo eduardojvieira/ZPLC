@@ -1,0 +1,39 @@
+/* Devicetree of the I/O table test: seven candidate outputs (pins 0 to 6) and five inputs (pins 8 to 12) on the
+ * native_sim GPIO emulator. Which of them a board description uses is the test's variable: the others must stay
+ * untouched. */
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+    leds {
+        led1: led_1 { gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>; };
+        led2: led_2 { gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>; };
+        led3: led_3 { gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>; };
+        led4: led_4 { gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>; };
+        led5: led_5 { gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>; };
+        led6: led_6 { gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>; };
+    };
+
+    zplc_test_inputs {
+        compatible = "gpio-keys";
+        sw0: sw_0 { gpios = <&gpio0 8 0>; zephyr,code = <INPUT_KEY_0>; };
+        sw1: sw_1 { gpios = <&gpio0 9 0>; zephyr,code = <INPUT_KEY_1>; };
+        sw2: sw_2 { gpios = <&gpio0 10 0>; zephyr,code = <INPUT_KEY_2>; };
+        sw3: sw_3 { gpios = <&gpio0 11 0>; zephyr,code = <INPUT_KEY_3>; };
+        sw4: sw_4 { gpios = <&gpio0 12 0>; zephyr,code = <INPUT_KEY_4>; };
+    };
+
+    aliases {
+        led1 = &led1;
+        led2 = &led2;
+        led3 = &led3;
+        led4 = &led4;
+        led5 = &led5;
+        led6 = &led6;
+        sw0 = &sw0;
+        sw1 = &sw1;
+        sw2 = &sw2;
+        sw3 = &sw3;
+        sw4 = &sw4;
+    };
+};

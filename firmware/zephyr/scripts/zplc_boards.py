@@ -130,10 +130,13 @@ def _validate_channel(channel: Any, label: str, root: Path | None) -> list[str]:
     elif channel["kind"] == "digital":
         if not (isinstance(dt.get("alias"), str) and NODE_PATTERN.match(dt["alias"])):
             errors.append(f"{prefix}: dt must name the devicetree alias of the pin (dt.alias)")
-        if not (isinstance(dt.get("controller"), str) and NODE_PATTERN.match(dt["controller"])):
-            errors.append(f"{prefix}: dt must name the GPIO controller label (dt.controller)")
-        if not (_is_int(dt.get("pin")) and 0 <= dt["pin"] < 256):
-            errors.append(f"{prefix}: dt must carry the pin number on its controller (dt.pin)")
+        # An optional channel (the default alias profile) is bound when its alias exists and is not checked against
+        # a controller and a pin; every other channel names both so that the build can prove them (IO-001).
+        if not channel.get("optional"):
+            if not (isinstance(dt.get("controller"), str) and NODE_PATTERN.match(dt["controller"])):
+                errors.append(f"{prefix}: dt must name the GPIO controller label (dt.controller)")
+            if not (_is_int(dt.get("pin")) and 0 <= dt["pin"] < 256):
+                errors.append(f"{prefix}: dt must carry the pin number on its controller (dt.pin)")
         if channel["direction"] == "output" and not (_is_int(channel.get("safe")) and channel["safe"] in (0, 1)):
             errors.append(f"{prefix}: an output needs its safe value, 0 or 1 (safe)")
     elif channel["kind"] == "analog":

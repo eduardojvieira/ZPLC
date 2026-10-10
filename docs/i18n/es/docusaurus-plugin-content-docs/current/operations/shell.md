@@ -151,5 +151,5 @@ ZPLC puede sincronizar el reloj mediante SNTP.
 
 Estos comandos están disponibles cuando el firmware se compila con `CONFIG_ZPLC_SCHEDULER`.
 
-- `zplc sys info` - Muestra la información del sistema, incluidos datos de la compilación y del hardware. Con `--json` informa también el `draft_counter` de la imagen; un programa construido para otro borrador se rechaza (ver [Contribuir](../contributing/index.md#contador-de-borrador-del-contrato)).
+- `zplc sys info` - Muestra la información del sistema, incluidos datos de la compilación y del hardware. Con `--json` informa también el `draft_counter` de la imagen; un programa construido para otro borrador se rechaza (ver [Contribuir](../contributing/index.md#contador-de-borrador-del-contrato)). También informa `io`, la identidad de la descripción de E/S de la placa con la que se construyó la imagen (`board_id`, `hash`, `channels`, `input_bytes`, `output_bytes`): Studio compara el hash con la descripción que tiene para la placa y rechaza un programa que usa E/S en un firmware que informa otra o ninguna, o que toca una dirección para la que la placa no tiene canal (ver [Placas Soportadas](../reference/boards.md)).
 - `zplc sys reboot` - Reinicia la placa con un reinicio por software.

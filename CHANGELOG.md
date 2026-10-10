@@ -4,6 +4,28 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- Firmware I/O is driven by the board description, not by C source (IO-002,
+  IO-005, IO-007, IO-018). `firmware/zephyr/scripts/gen_io_table.py` turns the
+  board's entry of `boards.json` into the I/O table at build time and the
+  scheduler, the HAL and the single-task loop synchronize the process image
+  through it, so a channel is an edit of the JSON and of the overlay and no
+  C change; a board that is not in the manifest keeps the old `led0`-`led3`,
+  `sw0`-`sw3` and `adc` map as a default profile. The generated file asserts
+  that every described alias, pin and controller is the devicetree's and
+  stops the build with a message that names the channel when they differ. The
+  GPIO and the analog inputs are configured in `zplc_hal_init()`, before the
+  runtime can enter RUN, and a required channel that cannot be configured
+  fails it. The image sizes are what the channels need, with Kconfig
+  overrides and a build assertion; the memory behind the images stays the 4 KB
+  of the instruction set (shrinking it is a contract change). `sys info
+  --json` reports the identity of the description (`io`). The native_sim suite
+  `io_table` runs the same test over two descriptions, one with three outputs
+  and an input more, and a host test covers the accessors every port shares.
+  `tools/ci/check_hal_contract.py` fails when a HAL function lacks an
+  implementation on a port or a caller, and `zplc_hal_mutex_destroy()` is now
+  implemented on the Zephyr and WebAssembly ports. Six functions have no caller
+  yet and are listed in `tools/ci/hal-contract.json` with the decision they
+  wait for.
 - The board manifest is one unversioned file with an I/O description per board
   (IO-001, IO-009 to IO-012, IO-014, IO-015). `firmware/app/boards/boards.json`
   replaces `supported-boards.v1.5.0.json` and is the only source of the board
