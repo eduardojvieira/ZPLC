@@ -1,0 +1,3 @@
+VAR_GLOBAL
+  Counter : INT := 100;
+END_VAR

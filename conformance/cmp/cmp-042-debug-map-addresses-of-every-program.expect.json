@@ -1,0 +1,67 @@
+{
+  "requirement": "CMP-042",
+  "title": "the debug map names where each variable of each program and each global is in the one layout",
+  "matrix": [
+    "pous.shared-pous-and-libraries",
+    "declarations.var-global"
+  ],
+  "note": "CMP-042 and CMP-054: the map is built from the table the code was generated with, so a variable read where the map says it is holds what the program wrote, whichever program, file or type it belongs to",
+  "scans": 2,
+  "scanMs": 10,
+  "files": [
+    "cmp-042-debug-map-addresses-of-every-program-consumer.st",
+    "cmp-042-debug-map-addresses-of-every-program-lib.st"
+  ],
+  "tasks": [
+    {
+      "name": "ProducerTask",
+      "trigger": "cyclic",
+      "interval_ms": 10,
+      "priority": 0,
+      "programs": [
+        "main.st"
+      ]
+    },
+    {
+      "name": "ConsumerTask",
+      "trigger": "cyclic",
+      "interval_ms": 10,
+      "priority": 1,
+      "programs": [
+        "cmp-042-debug-map-addresses-of-every-program-consumer.st"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "var": "produced",
+      "type": "INT",
+      "value": 11
+    },
+    {
+      "var": "total",
+      "type": "DINT",
+      "value": 100000
+    },
+    {
+      "var": "ratio",
+      "type": "REAL",
+      "value": 2.5
+    },
+    {
+      "var": "Shared",
+      "type": "INT",
+      "value": 44
+    },
+    {
+      "var": "consumed",
+      "type": "INT",
+      "value": 45
+    },
+    {
+      "var": "small",
+      "type": "BYTE",
+      "value": 7
+    }
+  ]
+}

@@ -47,8 +47,8 @@ All notable changes are documented here.
   the three largest consumers. The variables of the second and later programs of
   a project move to the addresses that follow the first program's (the debug
   map says where); the initialization flag is the last byte of the profile's
-  WORK memory, and a project of several programs initialises in one routine,
-  four bytes of code more than one program's inline initialisation.
+  WORK memory, and a project of several programs initialises everything in one
+  routine that the entry of each program calls.
 - The loader refuses a program whose calls nest deeper than the call stack of
   the VM (`ZPLC_CALL_STACK_MAX`, 32 by default, 16 on the ESP32-S3 profile)
   with `ZPLC_LOADER_ERR_STACK`, instead of accepting it and ending the scan

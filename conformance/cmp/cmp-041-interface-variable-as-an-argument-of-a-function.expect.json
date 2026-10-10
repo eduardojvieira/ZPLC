@@ -1,0 +1,23 @@
+{
+  "requirement": "CMP-041",
+  "title": "an instance given to a function as an interface parameter answers the calls the function makes through it",
+  "matrix": [
+    "pous.interfaces-implements",
+    "pous.function"
+  ],
+  "note": "An argument of an interface type is a reference to the instance: Fixed answers 40 twice, and the state of Counted survives the two calls (1 then 2)",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 80
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 3
+    }
+  ]
+}

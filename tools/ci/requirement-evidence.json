@@ -602,6 +602,7 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-041-interface-dispatch-by-the-instance-assigned.expect.json","test":"CMP-041 a call through an interface variable runs the method of the instance assigned to it, whichever block that is"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-041-interface-dispatch.expect.json","test":"CMP-041 a variable of an interface type calls the method of its instance"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-041-interface-through-inheritance-and-array-elements.expect.json","test":"CMP-041 an interface variable holds an element of an array and an instance of a derived block"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-041-interface-variable-as-an-argument-of-a-function.expect.json","test":"CMP-041 an instance given to a function as an interface parameter answers the calls the function makes through it"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-041-interface-variable-as-an-input-of-a-block.expect.json","test":"CMP-041 an interface given to a function block as an input is called inside the block with its arguments"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-041-method-results-of-each-type-and-inherited-statement-call.expect.json","test":"CMP-041 a method returns a BOOL, a SINT, a REAL and a DINT through its result slot, and an inherited method called as a statement leaves nothing"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-041-method-with-several-assignments-called-in-a-loop.expect.json","test":"CMP-041 a method that assigns its name more than once returns one value, and a call in a loop leaves the stack as it found it"},
@@ -619,10 +620,12 @@
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/oop.test.ts","test":"OOP: interfaces, ABSTRACT and FINAL blocks in the symbol table (CMP-041)"}
   ],
   "CMP-042": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-042-debug-map-addresses-of-every-program.expect.json","test":"CMP-042 the debug map names where each variable of each program and each global is in the one layout"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-042-function-block-declared-in-two-files-is-rejected.expect.json","test":"CMP-042 a function block declared in two files is an error at both declarations"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-042-function-block-in-another-file.expect.json","test":"CMP-042 a function block declared in another file"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-042-function-from-another-file-in-two-programs.expect.json","test":"CMP-042 a function declared in another file is called from two programs of two tasks"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-042-global-in-another-file.expect.json","test":"CMP-042 a global declared in another file"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-042-global-initial-value-is-applied-once.expect.json","test":"CMP-042 the initial value of a global is applied once, before the first scan of whichever task runs first"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-042-two-tasks-share-a-global.expect.json","test":"CMP-042 a global has one storage location shared by the programs of two tasks"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-042-type-from-another-file-in-a-structure.expect.json","test":"CMP-042 a type declared in another file is the type of the members of a structure"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/unit.test.ts","test":"a declaration made twice is an error at every place it is made (CMP-042)"},
