@@ -396,6 +396,7 @@ jobs:
           bun tools/docs/generate_function_reference.ts --check
           bun tools/docs/generate_source_references.ts --check
           bun tools/docs/generate_language_reference.ts --check
+          bun tools/docs/check_doc_claims.ts
           bun tools/ci/test-inventory.ts
           bun tools/ci/test-source-guard.ts
 

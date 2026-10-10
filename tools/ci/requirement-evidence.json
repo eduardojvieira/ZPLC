@@ -1326,5 +1326,34 @@
   ],
   "REL-020": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"names the installer and the portable executable by the REL-020 variants, with unsigned appended","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"}
+  ],
+  "DOC-006": [
+    {"kind":"unit","ref":"tools/docs/generate_language_reference.test.ts","test":"language reference: every row of the matrix is on a page, in both languages (DOC-006, stopgap: no editor screenshot yet)","partial":true},
+    {"kind":"unit","ref":"tools/docs/generate_language_reference.test.ts","test":"language reference: markup and addressing (DOC-006, stopgap: no editor screenshot yet)","partial":true},
+    {"kind":"unit","ref":"tools/docs/generate_language_reference.test.ts","test":"language reference: the state of an element comes from the executed cases (DOC-006, stopgap: no editor screenshot yet)","partial":true}
+  ],
+  "DOC-007": [
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/stdlib/reference.test.ts","test":"standard library reference data: every registered name has an entry (DOC-007)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/stdlib/reference.test.ts","test":"standard library reference data: signatures and pin tables follow the registry (DOC-007)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/stdlib/reference.test.ts","test":"standard library reference data: the examples are programs (DOC-007)"},
+    {"kind":"unit","ref":"tools/docs/generate_function_reference.test.ts","test":"function reference: a registered name has an entry (DOC-007)"},
+    {"kind":"unit","ref":"tools/docs/generate_function_reference.test.ts","test":"function reference: the conversions are proven for every pair (DOC-007)"},
+    {"kind":"unit","ref":"tools/docs/generate_function_reference.test.ts","test":"function reference: the pages list every name, in both languages (DOC-007)"}
+  ],
+  "DOC-008": [
+    {"kind":"unit","ref":"tools/docs/generate_source_references.test.ts","test":"source references: every source is understood (DOC-008)"},
+    {"kind":"unit","ref":"tools/docs/generate_source_references.test.ts","test":"source references: the project file schema is flattened to its fields (DOC-008)"},
+    {"kind":"unit","ref":"tools/docs/generate_source_references.test.ts","test":"source references: the two languages say the same thing (DOC-008)"},
+    {"kind":"unit","ref":"tools/docs/reference-lib.test.ts","test":"generated reference pages: the markup is safe for the site (DOC-008)"},
+    {"kind":"unit","ref":"tools/docs/reference-lib.test.ts","test":"generated reference pages: the page as a whole (DOC-008)"},
+    {"kind":"unit","ref":"tools/docs/source-parsers.test.ts","test":"source readers: Kconfig (DOC-008)"},
+    {"kind":"unit","ref":"tools/docs/source-parsers.test.ts","test":"source readers: the command line, MCP and the protocol (DOC-008)"},
+    {"kind":"unit","ref":"tools/docs/source-parsers.test.ts","test":"source readers: the shell command tree (DOC-008)"}
+  ],
+  "DOC-014": [
+    {"kind":"unit","ref":"tools/docs/check_doc_claims.test.ts","test":"doc claims: a claim holds only when the source has the thing (DOC-014)"},
+    {"kind":"unit","ref":"tools/docs/check_doc_claims.test.ts","test":"doc claims: the allow-list can only shrink (DOC-014)"},
+    {"kind":"unit","ref":"tools/docs/check_doc_claims.test.ts","test":"doc claims: the documents of the repository (DOC-014)"},
+    {"kind":"unit","ref":"tools/docs/check_doc_claims.test.ts","test":"doc claims: what a page says is read from its code spans and shell blocks (DOC-014)"}
   ]
 }

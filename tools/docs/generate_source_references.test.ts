@@ -22,7 +22,7 @@ describe('source references: every source is understood (DOC-008)', () => {
   });
 });
 
-describe('source references: the two languages say the same thing (DOC-008, DOC-016)', () => {
+describe('source references: the two languages say the same thing (DOC-008)', () => {
   it('gives each page the same headings and the same table rows in English and in Spanish', () => {
     for (const page of PAGES) {
       const english = page.body('en');

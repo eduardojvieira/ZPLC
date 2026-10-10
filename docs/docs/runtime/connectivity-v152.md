@@ -260,7 +260,7 @@ config ZPLC_MODBUS_TCP_CLIENT
    zplc_mqtt_subscribe(s_c2d_topic, ZPLC_MQTT_QOS1);
    ```
 
-2. **Dispatch in `PUBLISH` handler** (add a new `else if` branch to `zplc_mqtt_evt_handler`):
+2. **Dispatch in `PUBLISH` handler** (add a new `else if` branch to `mqtt_evt_handler`):
    ```c
    } else if (azure_hub_enabled &&
               strncmp(topic, "devices/", 8) == 0 &&
@@ -326,15 +326,15 @@ The spec requires testing: *"Simulate Primary Application REBIRTH request, verif
            if (strcmp(metric.name, "Node Control/Rebirth") == 0 &&
                metric.boolean_value == true) {
                LOG_INF("Sparkplug Rebirth requested — republishing NBIRTH");
-               zplc_sparkplug_publish_birth();
+               publish_nbirth(client);
            }
        }
    }
    ```
 
-3. **Extract `zplc_sparkplug_publish_birth()`** as a standalone function (currently inlined in the CONNACK handler) so it can be called from the NCMD handler.
+3. **Publish the birth with `publish_nbirth()`**, the standalone function of `firmware/app/src/zplc_mqtt.c` that publishes the node birth certificate; the NCMD handler calls it.
 
-4. **DCMD support**: Same pattern, but subscribing to `spBv1.0/{group}/{DCMD}/{node}/{device}`. The `Device Control/Rebirth` metric triggers `zplc_sparkplug_publish_dbirth()`.
+4. **DCMD support**: Same pattern, but subscribing to `spBv1.0/{group}/{DCMD}/{node}/{device}`. The `Device Control/Rebirth` metric publishes the node birth with `publish_nbirth()` and the device data with `publish_ddata()`.
 
 ---
 
@@ -353,7 +353,7 @@ Azure DPS allows zero-touch device onboarding: the device doesn't need to know i
 **Current repo status:** The repo now has config/UI plumbing, SAS generation, DPS topic parsing, and a dedicated MQTT registration/polling flow in `firmware/app/src/zplc_azure_dps.c`. Remaining work is compile validation and real-broker validation.
 
 **New file:** `firmware/app/src/zplc_azure_dps.c`  
-**New header:** `firmware/app/include/zplc_azure_dps.h`
+**Entry point:** `zplc_azure_dps_provision()`, called by the cloud function-block handler. The module has no public header.
 
 #### Flow
 
@@ -421,7 +421,7 @@ AWS Fleet Provisioning allows devices to use a shared "claim certificate" at the
 **Current repo status:** The repo now has config/UI plumbing, topic parsing, persistence helpers, a mutual-TLS MQTT exchange skeleton, and persisted-cert handoff via `persist://...` paths consumed by `firmware/app/src/zplc_mqtt.c`. Remaining work is compile validation and real-broker validation.
 
 **New file:** `firmware/app/src/zplc_aws_fleet.c`  
-**New header:** `firmware/app/include/zplc_aws_fleet.h`
+**Entry point:** `zplc_aws_fleet_provision()`, called by the cloud function-block handler. The module has no public header.
 
 #### Flow
 

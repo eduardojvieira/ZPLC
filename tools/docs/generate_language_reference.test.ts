@@ -10,7 +10,7 @@ const row = (id: string, target: MatrixRow['target']): MatrixRow => ({ id, area:
 const found = (name: string, matrix: string[], build: 'succeeds' | 'fails' = 'succeeds'): CaseFacts => ({ id: `cmp/${name}`, name, build, matrix, tags: [] });
 const listed = (name: string) => `${RUNNER} > conformance > ${name}`;
 
-describe('language reference: the state of an element comes from the executed cases (DOC-006)', () => {
+describe('language reference: the state of an element comes from the executed cases (DOC-006, stopgap: no editor screenshot yet)', () => {
   it('is "works" only when a passing case names the row and none of its cases is a known failure', () => {
     expect(rowFacts(row('a.b', 'works'), [found('CMP-001 x', ['a.b'])], [], [])).toMatchObject({ state: 'works', passing: 1, failing: 0 });
   });
@@ -33,7 +33,7 @@ describe('language reference: the state of an element comes from the executed ca
   });
 });
 
-describe('language reference: every row of the matrix is on a page, in both languages (DOC-006)', () => {
+describe('language reference: every row of the matrix is on a page, in both languages (DOC-006, stopgap: no editor screenshot yet)', () => {
   const inputs = loadInputs();
 
   it('puts every row of conformance/matrix.json on at least one language page and gives it a Spanish title', () => {
@@ -67,7 +67,7 @@ describe('language reference: every row of the matrix is on a page, in both lang
   });
 });
 
-describe('language reference: markup and addressing (DOC-006)', () => {
+describe('language reference: markup and addressing (DOC-006, stopgap: no editor screenshot yet)', () => {
   it('escapes asterisks, angle brackets and underscores of an element title and drops file references', () => {
     expect(titleCell('**, &, bit access w.0')).toBe('\\*\\*, &, bit access w.0');
     expect(titleCell('Comments /* */')).toBe('Comments /\\* \\*/');
