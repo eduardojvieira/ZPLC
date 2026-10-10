@@ -1,0 +1,6 @@
+PROGRAM Mismatch
+VAR
+  i : INT;
+END_VAR
+  IF i THEN i := 0; END_IF;
+END_PROGRAM

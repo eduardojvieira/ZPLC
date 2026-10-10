@@ -35,6 +35,8 @@ import type {
     UnaryExpr,
     BinaryExpr,
     FunctionCall,
+    FBParameter,
+    NamedArgument,
     ArrayType,
     DataTypeValue,
     STDataType,
@@ -102,7 +104,7 @@ import {
     type HelperName,
 } from './numeric.ts';
 import { POWF_HELPER, POWF_LABEL } from './power.ts';
-import { checkDeclaredTypes } from './semantic.ts';
+import { checkDeclaredTypes, checkRecursion } from './semantic.ts';
 
 // ============================================================================
 // Memory Layout Constants
@@ -326,6 +328,20 @@ function fbScopeSymbol(state: CodeGenState, name: string): Symbol | undefined {
     };
 }
 
+/**
+ * A name inside the function being generated: its input, its local, its result (named like the function), or
+ * undefined for a name that is not the function's to resolve (a global, a constant, a function block of the
+ * library). null for a variable of a program: a function does not see those, as IEC 61131-3 says.
+ */
+function functionScopeSymbol(state: CodeGenState, name: string): Symbol | undefined | null {
+    const func = state.currentFunction;
+    if (!func || state.currentFBInstance) return undefined;
+    const own = state.symbols.getDeclared(`${func.name}.${name}`);
+    if (own) return own;
+    const outer = state.symbols.getDeclared(name);
+    return outer?.owner !== undefined ? null : undefined;
+}
+
 /** The offsets of the members of a function block or structure type (user-defined or library), or null for any other type. */
 function memberOffsets(state: CodeGenState, typeName: unknown): Map<string, number> | null {
     if (typeof typeName !== 'string') return null;
@@ -379,6 +395,10 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
         throw typeErrors[0]!;
     }
 
+    // A function that calls itself is an error at the call; the rest of the unit is still generated, so
+    // that its errors are reported in the same build (CMP-007)
+    if (unit.kind === 'CompilationUnit') errors.push(...checkRecursion(unit));
+
     const symbols = buildSymbolTable(unit, workMemoryBase);
     validateWorkSymbols(symbols, workMemoryBase, workMemorySize, initFlagAddr, memoryProfile.retainSize);
 
@@ -416,8 +436,12 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
         resultBuffer: null,
         resultCapacity: null,
     };
-    // inside an inlined function block, its members (and the instances declared in it) are in scope
-    symbols.scopeResolver = (name) => fbScopeSymbol(state, name);
+    // inside a function its own variables are in scope, and no variable of a program (CMP-034); inside an
+    // inlined function block, its members (and the instances declared in it)
+    symbols.scopeResolver = (name) => {
+        const inFunction = functionScopeSymbol(state, name);
+        return inFunction !== undefined ? inFunction : fbScopeSymbol(state, name);
+    };
 
     const isUnit = unit.kind === 'CompilationUnit';
     const mainProgram = isUnit ? (unit as CompilationUnit).programs[0] : (unit as Program);
@@ -461,6 +485,11 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
         // Register User Function Blocks (for inlining later)
         for (const fb of cu.functionBlocks) {
             state.functionBlockTable.set(fb.name, fb);
+        }
+
+        // A function may be called from the ones declared before it: they are all known first (CMP-035)
+        for (const func of cu.functions) {
+            state.functionTable.set(func.name, { label: `func_${func.name}`, returnType: func.returnType, inputs: func.inputs });
         }
 
         // Generate User Functions
@@ -1566,6 +1595,8 @@ function generateFunctionDecl(state: CodeGenState, func: FunctionDecl): void {
 
     // Locals and the result start from their declared value on every call: a function holds no state (CMP-027)
     for (const local of func.locals) {
+        // a VAR_EXTERNAL is a global: it keeps its value between calls
+        if (local.section === VarSection.VAR_EXTERNAL) continue;
         const sym = state.symbols.get(local.name);
         if (sym) emitInitValue(state, sym.address, sym.dataType, local.initialValue, local, local.name, { everyCall: true });
     }
@@ -1761,6 +1792,16 @@ function emitAssignment(state: CodeGenState, stmt: Assignment): void {
     }
 }
 
+/** The condition of IF, ELSIF, WHILE and UNTIL is a BOOL (CMP-005). */
+function emitCondition(state: CodeGenState, condition: Expression): void {
+    const type = meaningType(state, condition);
+    if (type !== UNKNOWN_TYPE && type !== 'BOOL') {
+        const named = type === LITERAL_INT ? 'INT' : type;
+        fail(condition, `Type mismatch: a condition is a BOOL and this is a ${named}; compare it, for example ${named === 'REAL' ? 'x > 0.0' : 'x <> 0'}`);
+    }
+    emitExpression(state, condition);
+}
+
 function emitIfStatement(state: CodeGenState, stmt: IfStatement): void {
     const endLabel = newLabel(state, 'end_if');
     const hasElsif = stmt.elsifBranches && stmt.elsifBranches.length > 0;
@@ -1780,7 +1821,7 @@ function emitIfStatement(state: CodeGenState, stmt: IfStatement): void {
 
     emit(state, ``);
     emit(state, `    ; IF condition`);
-    emitExpression(state, stmt.condition);
+    emitCondition(state, stmt.condition);
     emit(state, `    JZ ${firstFalseLabel}`);
 
     // THEN branch
@@ -1807,7 +1848,7 @@ function emitIfStatement(state: CodeGenState, stmt: IfStatement): void {
 
             emit(state, `${currentLabel}:`);
             emit(state, `    ; ELSIF condition`);
-            emitExpression(state, elsif.condition);
+            emitCondition(state, elsif.condition);
             emit(state, `    JZ ${nextFalseLabel}`);
 
             emit(state, `    ; ELSIF branch`);
@@ -1855,7 +1896,7 @@ function emitWhileStatement(state: CodeGenState, stmt: WhileStatement): void {
     emit(state, `    ; WHILE loop`);
     emit(state, `${loopLabel}:`);
     emit(state, `    ; condition`);
-    emitExpression(state, stmt.condition);
+    emitCondition(state, stmt.condition);
     emit(state, `    JZ ${endLabel}`);
 
     emit(state, `    ; loop body`);
@@ -2030,7 +2071,7 @@ function emitRepeatStatement(state: CodeGenState, stmt: RepeatStatement): void {
     // Condition check (CONTINUE target)
     emit(state, `${continueLabel}:`);
     emit(state, `    ; UNTIL condition`);
-    emitExpression(state, stmt.condition);
+    emitCondition(state, stmt.condition);
     emit(state, `    JZ ${loopLabel}   ; repeat while FALSE`);
 
     emit(state, `${endLabel}:`);
@@ -2231,8 +2272,15 @@ function emitFBCallStatement(state: CodeGenState, stmt: FBCallStatement): void {
     }
     const sym = state.symbols.get(stmt.fbName);
 
-    // ponytail: WATCHDOG_RESET is the sole built-in void-like statement; generalize only if another appears.
     if (!sym) {
+        // A function called for what it does, its result discarded (CMP-035)
+        if (state.functionTable.has(stmt.fbName)
+            || (getFn(stmt.fbName) !== undefined && stmt.fbName.toUpperCase() !== 'WATCHDOG_RESET')) {
+            emitFunctionCallStatement(state, stmt);
+            return;
+        }
+
+        // ponytail: WATCHDOG_RESET is the sole built-in void-like statement; generalize only if another appears.
         if (stmt.fbName.toUpperCase() === 'WATCHDOG_RESET') {
             if (stmt.parameters.length !== 0) {
                 throw new Error('WATCHDOG_RESET expects no parameters');
@@ -2247,15 +2295,55 @@ function emitFBCallStatement(state: CodeGenState, stmt: FBCallStatement): void {
             return;
         }
 
-        fail(stmt, `Unknown FB instance '${stmt.fbName}'`);
+        fail(stmt, `Unknown function block instance or function '${stmt.fbName}'`);
     }
 
     emitInstanceCall(state, stmt, sym);
 }
 
+/**
+ * `Name(args);` where Name is a function: the call is evaluated and its value dropped. The arguments
+ * are positional or named, as in a call inside an expression.
+ */
+function emitFunctionCallStatement(state: CodeGenState, stmt: FBCallStatement): void {
+    const call: FunctionCall = {
+        kind: 'FunctionCall',
+        name: stmt.fbName,
+        args: stmt.parameters.map((parameter) => {
+            if (parameter.output) {
+                fail(parameter as { line: number; column: number }, `'${parameter.name}' is bound with =>: only a function block call has output bindings`);
+            }
+            return parameter.name === ''
+                ? parameter.value
+                : { kind: 'NamedArgument' as const, name: parameter.name, value: parameter.value, line: parameter.line, column: parameter.column };
+        }),
+        line: stmt.line,
+        column: stmt.column,
+    };
+    emit(state, `    ; ${stmt.fbName}(...) as a statement: the result is discarded`);
+    emitExpression(state, call);
+    // the value is one cell, two for a 64-bit integer
+    const result = staticType(state, call);
+    emit(state, `    DROP       ; discard the result of ${stmt.fbName}`);
+    if (isWide(result) && !isFloatType(result)) emit(state, `    DROP`);
+}
+
+/** The error of a parameter that cannot be bound as written. */
+function parameterError(stmt: FBCallStatement, parameter: FBParameter, message: string): never {
+    return fail(parameter.line === undefined ? stmt : { line: parameter.line, column: parameter.column ?? stmt.column, endLine: parameter.endLine, endColumn: parameter.endColumn }, message);
+}
+
 /** The call of the function block instance `sym`: user-defined blocks are inlined, library blocks generate their own code. */
 function emitInstanceCall(state: CodeGenState, stmt: FBCallStatement, sym: Symbol): void {
     const typeName = sym.dataType as string;
+    const instanceName = stmt.fbName;
+
+    // A function block is called with named parameters (formal call); the positional form is left to 2.x (D-04)
+    const positional = stmt.parameters.find((parameter) => parameter.name === '');
+    if (positional && (state.symbols.isFBType(typeName))) {
+        fail({ line: positional.line ?? stmt.line, column: positional.column ?? stmt.column }, `'${instanceName}' is a function block: its parameters are written by name, as in ${instanceName}(IN := x) ` +
+            `(positional calls of function blocks are not supported in this release)`);
+    }
 
     // 1. Check if it's a user-defined FB
     const userFB = state.functionBlockTable.get(typeName);
@@ -2268,7 +2356,18 @@ function emitInstanceCall(state: CodeGenState, stmt: FBCallStatement, sym: Symbo
         // Assign inputs
         for (const param of stmt.parameters) {
             const member = fbDef?.members.get(param.name);
-            if (!member) fail(stmt, `Unknown member '${param.name}' on instance '${stmt.fbName}'`);
+            if (!member) parameterError(stmt, param, `'${param.name}' is not a parameter of '${typeName}' (instance '${instanceName}')`);
+            if (param.output) {
+                if (member.section !== VarSection.VAR_OUTPUT) {
+                    parameterError(stmt, param, `'${param.name}' is not an output of '${typeName}': bind it with :=`);
+                }
+                continue; // copied out after the call
+            }
+            if (member.section !== VarSection.VAR_INPUT && member.section !== VarSection.VAR_IN_OUT) {
+                parameterError(stmt, param, member.section === VarSection.VAR_OUTPUT
+                    ? `'${param.name}' is an output of '${typeName}': bind it with =>`
+                    : `'${param.name}' is not a parameter of '${typeName}'`);
+            }
             emit(state, `    ; ${stmt.fbName}.${param.name} := ...`);
             if (member.section === VarSection.VAR_IN_OUT) {
                 // by reference (CMP-028): the member keeps the address of the caller's variable
@@ -2307,6 +2406,14 @@ function emitInstanceCall(state: CodeGenState, stmt: FBCallStatement, sym: Symbo
         emit(state, `${state.returnLabel}:`);
         state.currentFBInstance = oldFBInstance;
         state.returnLabel = oldReturnLabel;
+
+        // Output bindings: the outputs the body left are copied into the caller's variables
+        for (const param of stmt.parameters) {
+            if (!param.output) continue;
+            const member = fbDef!.members.get(param.name)!;
+            emit(state, `    ; ${param.value.kind === 'Identifier' ? param.value.name : '...'} := ${stmt.fbName}.${param.name}`);
+            emitCopyOut(state, placeOfMember(state, instance, member, `${stmt.fbName}.${param.name}`), param);
+        }
         emit(state, `    ; --- END FB CALL: ${stmt.fbName} ---`);
         return;
     }
@@ -2316,11 +2423,67 @@ function emitInstanceCall(state: CodeGenState, stmt: FBCallStatement, sym: Symbo
     if (fbDef) {
         emit(state, `    ; ${stmt.fbName}(...)`);
 
-        fbDef.generateCall(makeCodeGenContext(state, sym.address, stmt.fbName, stmt), stmt.parameters);
+        // The parameters are matched with the block's own, without regard to case (CMP-004); one that the
+        // block does not have is an error (CMP-037), and so is an input bound with => or an output with :=
+        const inputs: FBParameter[] = [];
+        const outputs: FBParameter[] = [];
+        for (const param of stmt.parameters) {
+            const member = fbDef.members.find((candidate) => !candidate.isInternal && sameName(candidate.name, param.name));
+            if (!member) parameterError(stmt, param, `'${param.name}' is not a parameter of ${fbDef.name} (instance '${instanceName}')`);
+            if (param.output) {
+                if (!member.isOutput) parameterError(stmt, param, `'${member.name}' is an input of ${fbDef.name}: bind it with :=`);
+                outputs.push({ ...param, name: member.name });
+            } else {
+                if (!member.isInput) parameterError(stmt, param, `'${member.name}' is an output of ${fbDef.name}: bind it with =>`);
+                // the value goes to a parameter of the type the block declares (CMP-005)
+                const memberType = stdlibMemberType(typeName, member);
+                if (memberType !== UNKNOWN_TYPE) {
+                    checkConvertible(meaningType(state, param.value), memberType, param.value, foldConstant(state, param.value));
+                }
+                inputs.push({ ...param, name: member.name });
+            }
+        }
+
+        fbDef.generateCall(makeCodeGenContext(state, sym.address, stmt.fbName, stmt), inputs);
+
+        const instance: Place = { addr: { k: 'const', a: sym.address }, type: typeName, size: sym.size, sym, name: stmt.fbName };
+        for (const param of outputs) {
+            const member = fbDef.members.find((candidate) => candidate.name === param.name)!;
+            emit(state, `    ; ${param.value.kind === 'Identifier' ? param.value.name : '...'} := ${stmt.fbName}.${param.name}`);
+            const source: Place = { addr: addOffset(instance.addr, member.offset), type: stdlibMemberType(typeName, member), size: member.size, name: `${stmt.fbName}.${member.name}` };
+            emitCopyOut(state, source, param);
+        }
         return;
     }
 
     fail(stmt, `Unknown FB type '${typeName}' for instance '${stmt.fbName}'`);
+}
+
+/** `target := source` for the output binding `param` (`Q => target`): `source` is the output's place. */
+function emitCopyOut(state: CodeGenState, source: Place, param: FBParameter): void {
+    const target = resolvePlace(state, param.value);
+    if (target.readonly) fail(param.value, `Cannot assign to constant '${target.name}'`);
+    const type = storedType(state, target.type);
+    if (isStringType(type) || isAggregateType(state, type) || isPointerType(type)) {
+        const same = typeText(storedType(state, source.type)) === typeText(type);
+        if (!same) fail(param.value, `Cannot bind '${param.name}' (${typeText(source.type)}) to '${target.name}' of type ${typeText(type)}`);
+        if (isPointerType(type)) {
+            emitStorePlace(state, target, () => emitLoadPlace(state, source));
+        } else {
+            emitCopyBytes(state, target.size, target, source);
+        }
+        return;
+    }
+    // a scalar: converted and checked as an assignment of the output's value is
+    const from = numericTypeName(storedType(state, source.type));
+    const to = numericTypeName(type);
+    checkConvertible(from, to, param.value, undefined);
+    emitStorePlace(state, target, () => {
+        emitLoadPlace(state, source);
+        const extend = signExtension(from);
+        if (extend) emit(state, extend);
+        if (to === 'REAL' && from !== 'REAL' && isIntegerLike(from) && from !== UNKNOWN_TYPE) emitIntToReal(state, from);
+    });
 }
 
 // ============================================================================
@@ -2424,6 +2587,9 @@ function emitIntLiteral(state: CodeGenState, expr: IntLiteral): void {
     } else if (expr.value >= -32768 && expr.value <= 32767) {
         emit(state, `    PUSH16 ${expr.value}`);
     } else if (expr.value >= -2147483648 && expr.value <= 2147483647) {
+        emit(state, `    PUSH32 ${expr.value}`);
+    } else if (expr.literalType !== undefined && isUnsigned32(expr.literalType) && expr.value > 0 && expr.value <= 0xFFFFFFFF) {
+        // DWORD#16#FFFFFFFF, or a plain literal given to a DWORD parameter: the 32-bit pattern (CMP-012)
         emit(state, `    PUSH32 ${expr.value}`);
     } else {
         // An unsigned 32-bit or a 64-bit context takes such a literal through emitConverted
@@ -2539,6 +2705,14 @@ function emitUnaryExpr(state: CodeGenState, expr: UnaryExpr): void {
             emitIntLiteral(state, { kind: 'IntLiteral', value: Number(constant), line: expr.line, column: expr.column });
             return;
         }
+    }
+
+    const operandKind = typeKind(staticType(state, expr.operand));
+    if (expr.operator === 'NOT' && operandKind === 'real') {
+        fail(expr.operand, `Type mismatch: NOT takes a BOOL or a bit string and this is a ${staticType(state, expr.operand)}`);
+    }
+    if (expr.operator === 'NEG' && operandKind === 'bool') {
+        fail(expr.operand, `Type mismatch: the negation takes a number and this is a BOOL`);
     }
 
     emitExpression(state, expr.operand);
@@ -2936,9 +3110,146 @@ function emitConverted(state: CodeGenState, expr: Expression, target: string): v
     emitExpression(state, expr);
 }
 
-/** Emit `value` for storing into a target of `targetType`. */
+/**
+ * Emit `value` for storing into a target of `targetType`. The value must convert to the type as IEC 61131-3
+ * defines (CMP-005), and a constant must fit it (CMP-018).
+ */
 function emitValueFor(state: CodeGenState, value: Expression, targetType: unknown): void {
-    emitConverted(state, value, numericTypeName(targetType));
+    const target = numericTypeName(targetType);
+    if (target !== UNKNOWN_TYPE) {
+        checkConvertible(meaningType(state, value), target, value, foldConstant(state, value));
+    }
+    emitConverted(state, value, target);
+}
+
+/**
+ * The type a value has in the language, which is staticType except where the generator tracks the stack
+ * instead: the difference of two points in time (DT - DT, TOD - TOD, DATE - DATE) is a TIME, not a DT.
+ */
+function meaningType(state: CodeGenState, expr: Expression): string {
+    const type = staticType(state, expr);
+    if (expr.kind === 'BinaryExpr' && expr.operator === 'SUB' && (type === 'DT' || type === 'TOD' || type === 'DATE')
+        && staticType(state, expr.left) === staticType(state, expr.right)) {
+        return 'TIME';
+    }
+    return type;
+}
+
+/** What kind of value a numeric elementary type holds, for the implicit conversions of IEC 61131-3. */
+type TypeKind = 'bool' | 'signed' | 'unsigned' | 'bits' | 'real' | 'time' | 'date' | 'datetime';
+
+function typeKind(type: string): TypeKind | undefined {
+    switch (type) {
+        case 'BOOL': return 'bool';
+        case 'SINT': case 'INT': case 'DINT': case 'LINT': return 'signed';
+        case 'USINT': case 'UINT': case 'UDINT': case 'ULINT': return 'unsigned';
+        case 'BYTE': case 'WORD': case 'DWORD': case 'LWORD': return 'bits';
+        case 'REAL': case 'LREAL': return 'real';
+        case 'TIME': case 'TOD': return 'time';
+        case 'DATE': return 'date';
+        case 'DT': return 'datetime';
+        default: return undefined;
+    }
+}
+
+/**
+ * Whether a value of the static type `from` converts implicitly to `to` (CMP-005). Integers, bit strings and
+ * REAL form one family of numbers: integer types and bit strings convert among themselves, a value that does
+ * not fit the destination keeps its low bits as CMP-016 states (a constant that does not fit is an error:
+ * CMP-018), an integer converts to REAL and LREAL, and REAL to LREAL. Nothing else converts implicitly: REAL
+ * to an integer, BOOL to or from a number, and TIME, DATE, TOD and DT to or from a number are errors that ask
+ * for an explicit conversion function. A bare integer literal takes the integer, bit-string or real type it
+ * is given to. UNKNOWN_TYPE converts: it is a type the generator cannot name.
+ *
+ * ponytail: IEC 61131-3 itself widens only (SINT to INT, USINT to UINT, REAL to LREAL...); integer
+ * narrowing stays implicit until the explicit <FROM>_TO_<TO> functions exist for every pair (CMP-057,
+ * 64-bit types included), because the bundled projects and CMP-015 conformance cases narrow today.
+ */
+function convertsImplicitly(from: string, to: string): boolean {
+    if (from === UNKNOWN_TYPE || to === UNKNOWN_TYPE || from === to) return true;
+    const target = typeKind(to);
+    if (target === undefined) return true;
+    if (from === LITERAL_INT) return target === 'signed' || target === 'unsigned' || target === 'bits' || target === 'real';
+    const source = typeKind(from);
+    if (source === undefined) return true;
+    const integerLike = (kind: TypeKind) => kind === 'signed' || kind === 'unsigned' || kind === 'bits';
+    switch (target) {
+        case 'real':
+            if (source === 'real') return numericInfo(from)!.bits <= numericInfo(to)!.bits;
+            return integerLike(source);
+        case 'signed':
+        case 'unsigned':
+        case 'bits':
+            return integerLike(source);
+        default:
+            return false; // BOOL, TIME, DATE, TOD and DT take their own type only
+    }
+}
+
+/** The range an integer type holds, for the check of a constant (CMP-018). */
+function integerRange(type: string): { low: bigint; high: bigint } | undefined {
+    const info = numericInfo(type);
+    if (!info || info.float || type === 'BOOL' || typeKind(type) === undefined) return undefined;
+    const bits = BigInt(info.bits);
+    return info.signed ? { low: -(1n << (bits - 1n)), high: (1n << (bits - 1n)) - 1n } : { low: 0n, high: (1n << bits) - 1n };
+}
+
+/**
+ * The value of a constant integer expression: literals, a named constant, and the sums, differences,
+ * products and quotients of constants. undefined for anything else.
+ */
+function foldConstant(state: CodeGenState, expr: Expression, depth = 0): bigint | undefined {
+    if (depth > 16) return undefined;
+    switch (expr.kind) {
+        case 'IntLiteral':
+            return expr.big ?? BigInt(expr.value);
+        case 'UnaryExpr': {
+            if (expr.operator !== 'NEG') return undefined;
+            const operand = foldConstant(state, expr.operand, depth + 1);
+            return operand === undefined ? undefined : -operand;
+        }
+        case 'BinaryExpr': {
+            if (!['ADD', 'SUB', 'MUL', 'DIV', 'MOD'].includes(expr.operator)) return undefined;
+            const left = foldConstant(state, expr.left, depth + 1);
+            const right = foldConstant(state, expr.right, depth + 1);
+            if (left === undefined || right === undefined) return undefined;
+            switch (expr.operator) {
+                case 'ADD': return left + right;
+                case 'SUB': return left - right;
+                case 'MUL': return left * right;
+                case 'DIV': return right === 0n ? undefined : left / right;
+                default: return right === 0n ? undefined : left % right;
+            }
+        }
+        case 'Identifier': {
+            const symbol = state.symbols.get(expr.name);
+            if (!symbol || symbol.section !== VarSection.CONSTANT || !symbol.initialValue) return undefined;
+            const initial = symbol.initialValue as Expression;
+            return initial.kind === 'IntLiteral' || initial.kind === 'UnaryExpr' || initial.kind === 'BinaryExpr'
+                ? foldConstant(state, initial, depth + 1)
+                : undefined;
+        }
+        default:
+            return undefined;
+    }
+}
+
+/**
+ * The checks every value that goes into a typed place passes (CMP-005, CMP-018): its type converts
+ * implicitly to the place's, and a constant fits the place's range. `from` is the static type of the value,
+ * `constant` its value when it is one.
+ */
+function checkConvertible(from: string, to: string, at: { line: number; column: number; endLine?: number; endColumn?: number },
+                          constant: bigint | undefined): void {
+    if (!convertsImplicitly(from, to)) {
+        const named = from === LITERAL_INT ? 'INT' : from;
+        fail(at, `Type mismatch: a value of type ${named} cannot be used where ${to} is expected. `
+            + `IEC 61131-3 converts implicitly only to a wider type of the same kind; convert it explicitly, for example with ${named}_TO_${to}`);
+    }
+    const range = constant === undefined ? undefined : integerRange(to);
+    if (range && constant !== undefined && (constant < range.low || constant > range.high)) {
+        fail(at, `The constant ${constant} does not fit ${to} (${range.low} to ${range.high})`);
+    }
 }
 
 /** Emit the comparison `op` of the two values on the stack, read as `type`. */
@@ -3139,6 +3450,8 @@ function emitBinaryExpr(state: CodeGenState, expr: BinaryExpr, contextType?: str
         emit(state, `    ; WARNING: Operator ${expr.operator} not supported for STRING type`);
     }
 
+    checkOperands(state, expr);
+
     // The type of the operation: REAL when either side is REAL (the integer side is converted),
     // a 64-bit integer type when either side is one, an unsigned 32-bit type when either side is
     // one, otherwise the signed integer rules
@@ -3203,6 +3516,54 @@ function emitBinaryExpr(state: CodeGenState, expr: BinaryExpr, contextType?: str
     }
 }
 
+const OPERATOR_TEXT: Record<BinaryExpr['operator'], string> = {
+    AND: 'AND', OR: 'OR', XOR: 'XOR', ADD: '+', SUB: '-', MUL: '*', DIV: '/', MOD: 'MOD', POW: '**',
+    EQ: '=', NE: '<>', LT: '<', LE: '<=', GT: '>', GE: '>=',
+};
+
+/**
+ * The operands of an operator must be of types it is defined for (CMP-005): arithmetic takes numbers, not BOOL
+ * (and MOD takes integers); AND, OR and XOR take BOOL with BOOL, or bit strings and integers with each other,
+ * never REAL; a comparison does not mix BOOL with a number.
+ */
+function checkOperands(state: CodeGenState, expr: BinaryExpr): void {
+    const operands: Array<[Expression, string]> = [
+        [expr.left, meaningType(state, expr.left)],
+        [expr.right, meaningType(state, expr.right)],
+    ];
+    const kind = (type: string): TypeKind | 'integer' | undefined => (type === LITERAL_INT ? 'integer' : typeKind(type));
+    const [left, right] = [kind(operands[0]![1]), kind(operands[1]![1])];
+    const text = OPERATOR_TEXT[expr.operator];
+    const named = (type: string) => (type === LITERAL_INT ? 'INT' : type);
+
+    switch (expr.operator) {
+        case 'ADD': case 'SUB': case 'MUL': case 'DIV': case 'MOD':
+            for (const [operand, type] of operands) {
+                const k = kind(type);
+                if (k === 'bool') fail(operand, `Type mismatch: the operator ${text} takes numbers and this is a BOOL`);
+                if (expr.operator === 'MOD' && k === 'real') fail(operand, `Type mismatch: MOD takes integers and this is a ${named(type)}`);
+            }
+            return;
+        case 'AND': case 'OR': case 'XOR':
+            for (const [operand, type] of operands) {
+                if (kind(type) === 'real') fail(operand, `Type mismatch: the operator ${text} takes BOOL or bit strings and this is a ${named(type)}`);
+            }
+            if ((left === 'bool') !== (right === 'bool') && left !== undefined && right !== undefined) {
+                const [operand, type] = left === 'bool' ? operands[1]! : operands[0]!;
+                fail(operand, `Type mismatch: the operator ${text} takes two BOOL or two bit strings, not a BOOL with a ${named(type)}`);
+            }
+            return;
+        case 'EQ': case 'NE': case 'LT': case 'LE': case 'GT': case 'GE':
+            if ((left === 'bool') !== (right === 'bool') && left !== undefined && right !== undefined) {
+                const [operand, type] = left === 'bool' ? operands[1]! : operands[0]!;
+                fail(operand, `Type mismatch: a BOOL cannot be compared with a ${named(type)}`);
+            }
+            return;
+        default:
+            return;
+    }
+}
+
 /** A binary operation on 64-bit integers: each operand is two cells, low word below the high word. */
 function emitWideBinary(state: CodeGenState, expr: BinaryExpr, opType: string): void {
     switch (expr.operator) {
@@ -3231,26 +3592,69 @@ function emitWideBinary(state: CodeGenState, expr: BinaryExpr, opType: string): 
     }
 }
 
+/**
+ * The type of the parameters of the standard functions that name one: a constant argument must fit it, and
+ * a literal over 2147483647 is a DWORD, not an error (CMP-012).
+ */
+const STANDARD_PARAMETER_TYPE: Record<string, string> = {
+    AND_WORD: 'WORD', OR_WORD: 'WORD', XOR_WORD: 'WORD', NOT_WORD: 'WORD',
+    AND_DWORD: 'DWORD', OR_DWORD: 'DWORD', XOR_DWORD: 'DWORD', NOT_DWORD: 'DWORD',
+};
+
+/** `value` as the argument of a parameter of `type`: checked, and a constant carries the type it is given to. */
+function typedArgument(state: CodeGenState, value: Expression, type: string): Expression {
+    const constant = foldConstant(state, value);
+    checkConvertible(staticType(state, value), type, value, constant);
+    if (constant === undefined) return value;
+    return { kind: 'IntLiteral', value: Number(constant), literalType: type, line: value.line, column: value.column, endLine: value.endLine, endColumn: value.endColumn };
+}
+
+/**
+ * The argument of each parameter of a call, in the order of the parameters (CMP-035). An argument is written
+ * by position or `name := value`, in any order of the names. A parameter that is bound twice, a name the
+ * function does not have, a positional argument after a named one, one argument too many and a required
+ * parameter with no argument are errors. A parameter that declares an initial value may be left out: the
+ * entry is undefined and the caller uses the declared value.
+ */
+function bindArguments(state: CodeGenState, call: FunctionCall, inputs: VarDecl[]): Array<Expression | undefined> {
+    const bound: Array<Expression | undefined> = new Array(inputs.length).fill(undefined);
+    let positional = 0;
+    let named = false;
+    for (const arg of call.args) {
+        if ((arg as { kind: string }).kind === 'NamedArgument') {
+            const argument = arg as NamedArgument;
+            named = true;
+            const index = inputs.findIndex((input) => sameName(input.name, argument.name));
+            if (index < 0) fail(argument as { line: number; column: number }, `Function '${call.name}' has no input parameter '${argument.name}'`);
+            if (bound[index] !== undefined) fail(argument as { line: number; column: number }, `Parameter '${inputs[index]!.name}' of function '${call.name}' is given twice`);
+            bound[index] = argument.value;
+        } else {
+            if (named) fail(arg as Expression, `In a call of '${call.name}', an argument by position cannot follow one by name`);
+            if (positional >= inputs.length) {
+                fail(arg as Expression, `Function '${call.name}' takes ${inputs.length} argument(s)`);
+            }
+            bound[positional++] = arg as Expression;
+        }
+    }
+    inputs.forEach((input, index) => {
+        if (bound[index] === undefined && !input.initialValue) {
+            fail(call, `Function '${call.name}' is called without its parameter '${input.name}'`);
+        }
+    });
+    return bound;
+}
+
 function emitFunctionCall(state: CodeGenState, expr: FunctionCall): void {
     // 1. Check if it's a user-defined function
     const userFn = state.functionTable.get(expr.name);
     if (userFn) {
         emit(state, `    ; CALL ${expr.name}(...)`);
 
-        // Push arguments onto stack; an integer given to a REAL parameter is converted
-        expr.args.forEach((arg, index) => {
-            const named = (arg as any).kind === 'NamedArgument';
-            const value = (named ? (arg as any).value : arg) as Expression;
-            const input = named
-                ? userFn.inputs.find((i) => sameName(i.name, (arg as any).name))
-                : userFn.inputs[index];
-            // an argument for a parameter that is not a VAR_INPUT (a VAR_OUTPUT or VAR_IN_OUT of a function is
-            // declared, but is not passed yet: CMP-035) would be pushed and never read, leaving the stack unbalanced
-            if (input === undefined) {
-                fail(arg as { line: number; column: number }, named
-                    ? `Function '${expr.name}' has no input parameter '${(arg as any).name}'`
-                    : `Function '${expr.name}' takes ${userFn.inputs.length} argument(s)`);
-            }
+        // Push the arguments in the order of the parameters, bound by name or by position (CMP-035); an
+        // integer given to a REAL parameter is converted
+        const bound = bindArguments(state, expr, userFn.inputs);
+        userFn.inputs.forEach((input, index) => {
+            const value = bound[index] ?? input.initialValue as Expression;
             const type = storedType(state, input.dataType);
             if (isStringType(type)) {
                 // a string goes by address; the function copies it (it never changes the caller's)
@@ -3314,9 +3718,10 @@ function emitFunctionCall(state: CodeGenState, expr: FunctionCall): void {
 
     // Let the function generate its inline code
     // Convert args to pure expressions (ignoring names for built-ins for now)
+    const formal = STANDARD_PARAMETER_TYPE[expr.name.toUpperCase()];
     const simpleArgs = expr.args.map(a => 
         (a as any).kind === 'NamedArgument' ? (a as any).value : a
-    ) as Expression[];
+    ).map((value: Expression) => formal === undefined ? value : typedArgument(state, value, formal)) as Expression[];
 
     fnDef.generateInline(ctx, simpleArgs);
     state.resultCapacity = null;

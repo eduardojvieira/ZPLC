@@ -31,6 +31,17 @@ lenguajes no tienen las mismas funciones ni el mismo comportamiento al depurar.
 Revise la salida del compilador y el resultado de un escenario en su propio
 proyecto.
 
+## Mapa de depuración
+
+El compilador escribe un mapa de depuración junto al artefacto. Dos
+compilaciones del mismo proyecto dan el mismo bytecode y el mismo mapa, byte por
+byte: el mapa no lleva la hora de la compilación y `compilerVersion` es la
+versión del paquete del compilador. Cada sentencia tiene el rango de todas las
+instrucciones que genera, con su línea y su columna, de modo que cualquier
+contador de programa dentro de una sentencia se resuelve a esa sentencia. El
+final de una función y las rutinas auxiliares que siguen al ciclo no pertenecen
+a ninguna sentencia.
+
 ## Límite del artefacto
 
 El artefacto se verifica antes de que el runtime lo cargue. Una compilación

@@ -1,0 +1,12 @@
+FUNCTION_BLOCK Adder
+VAR_INPUT a : INT; END_VAR
+VAR_OUTPUT sum : INT; END_VAR
+  sum := a;
+END_FUNCTION_BLOCK
+
+PROGRAM Binding
+VAR
+  add : Adder;
+END_VAR
+  add(1);
+END_PROGRAM

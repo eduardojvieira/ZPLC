@@ -971,8 +971,20 @@ export interface FBCall extends ASTNode {
  * Function block parameter assignment.
  */
 export interface FBParameter {
+    /** The parameter's name; empty for an argument written without one (a positional argument). */
     name: string;
+    /**
+     * The value given to an input (`IN := x`), or, for an output binding (`Q => y`, CMP-037), the variable
+     * the call copies the output into.
+     */
     value: Expression;
+    /** An output binding written with `=>`. */
+    output?: boolean;
+    /** Where the argument was written: its name, or its value when it has none. */
+    line?: number;
+    column?: number;
+    endLine?: number;
+    endColumn?: number;
 }
 
 // ============================================================================

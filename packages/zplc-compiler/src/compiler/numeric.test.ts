@@ -345,8 +345,8 @@ describe('generated code', () => {
     });
 
     it('rejects an integer literal that does not fit its signed 32-bit type, as the assembler did', () => {
-        expect(() => assembly('x := 5000000000;', 'x : DINT;')).toThrow('does not fit a signed 32-bit integer');
-        expect(() => assembly('x := 3000000000;', 'x : DINT;')).toThrow('does not fit a signed 32-bit integer');
+        expect(() => assembly('x := 5000000000;', 'x : DINT;')).toThrow('does not fit DINT');
+        expect(() => assembly('x := 3000000000;', 'x : DINT;')).toThrow('does not fit DINT');
         expect(() => assembly('ok := x > 3000000000;', 'x : DINT; ok : BOOL;')).toThrow('does not fit a signed 32-bit integer');
     });
 

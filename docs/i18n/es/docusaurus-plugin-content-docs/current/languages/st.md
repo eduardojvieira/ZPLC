@@ -96,6 +96,26 @@ Cada regla de abajo está cubierta por un caso de conformidad en `conformance/cm
 - Una declaración cuyo tipo no es un tipo es un error de compilación que nombra el tipo y su posición. Eso cubre un nombre mal escrito y los tipos que ZPLC 2.0 no tiene: `LTIME`, `LDATE`, `LTOD`, `LDT`, `CHAR` y `WCHAR` (previstos para 2.x).
 - `VAR PERSISTENT` es un error de compilación en la palabra `PERSISTENT`. Declare las variables `RETAIN` para conservar su valor entre reinicios.
 
+## Tipos de los valores
+
+Cada regla de abajo está cubierta por un caso de conformidad en `conformance/cmp` (CMP-005, CMP-012, CMP-018).
+
+- Todo valor que entra en un lugar de un tipo se controla contra ese tipo: el lado derecho de una asignación, un valor inicial, un argumento de una función o de un bloque de función, el valor de una función y una salida enlazada con `=>`. Un valor de un tipo que no se convierte es un error de compilación que nombra los dos tipos.
+- Los enteros, las cadenas de bits y `REAL` forman una familia. Un tipo entero, `BYTE`, `WORD` y `DWORD` se convierten entre sí, y un valor que no cabe en el destino conserva sus bits bajos. Un entero se convierte a `REAL` y a `LREAL`, y `REAL` a `LREAL`. Un `REAL` no se convierte a un entero: escriba `REAL_TO_INT(x)`.
+- `BOOL` no se convierte a ni desde nada más, y tampoco `TIME`, `DATE`, `TOD` y `DT`: `i := b;`, `b := 1;` y `n := t;` son errores de compilación. La diferencia de dos valores `DT`, `TOD` o `DATE` es un `TIME`.
+- La condición de `IF`, `ELSIF`, `WHILE` y `UNTIL` es un `BOOL`: escriba `IF count <> 0 THEN`, no `IF count THEN`. La aritmética no toma un `BOOL`, `MOD` toma enteros, y `AND`, `OR`, `XOR` y `NOT` toman `BOOL` o cadenas de bits, no `REAL`; un `BOOL` no se compara con un número.
+- Una expresión constante (literales, constantes con nombre, `+ - * /` y `MOD` de ellos) debe caber en el tipo al que va: `small : SINT := 300;`, `level := -1;` para un `USINT` y `doubled := limit * 2;` con una constante `limit` de 20000 son errores de compilación. Una variable se controla por su tipo, no por su valor.
+- Un literal mayor que 2147483647 es un valor de 32 bits sin signo: va a una variable `UDINT` o `DWORD`, a un parámetro `UDINT` y a `AND_DWORD`, `OR_DWORD`, `XOR_DWORD` y `NOT_DWORD`; un literal fuera del rango de un parámetro `WORD` es un error.
+
+## Funciones y bloques de función
+
+Cada regla de abajo está cubierta por un caso de conformidad en `conformance/cmp` (CMP-034, CMP-035, CMP-037).
+
+- Cada función es un ámbito propio: dos funciones pueden declarar parámetros y locales con los mismos nombres, y un parámetro puede llamarse como una variable de un programa. Dentro de una función, un nombre es primero una variable propia y luego una `VAR_GLOBAL` (las variables de un programa no se ven allí). El nombre de la función es su variable de resultado.
+- Una función se llama con los argumentos por posición, `Sub(10, 2)`, o por nombre en cualquier orden, `Sub(b := 2, a := 10)`. Los argumentos posicionales van primero. Un parámetro dado dos veces, un nombre que la función no tiene, un argumento de más y un parámetro obligatorio sin argumento son errores de compilación; un parámetro que declara un valor inicial (`factor : INT := 10;`) puede omitirse y vale ese valor.
+- Una llamada puede ser una sentencia: `Bump(by := 2);` ejecuta la función y descarta su resultado. Una función puede declararse antes o después de las que la llaman, y ninguna puede llamarse a sí misma, directamente o a través de otras: es un error de compilación en la llamada que cierra el ciclo.
+- Un bloque de función se llama con parámetros con nombre. `IN := x` da una entrada y `Q => y` copia la salida `Q` en la variable `y` después de la llamada (`y` puede ser un miembro o un elemento). Los nombres se comparan sin distinguir mayúsculas de minúsculas. Un nombre que el bloque no tiene, una local del bloque, una salida con valor dado con `:=` y una entrada enlazada con `=>` son errores de compilación. La llamada posicional de un bloque de función queda para 2.x.
+
 ## Entrada a la biblioteca estándar
 
 Ver [Biblioteca Estándar](./stdlib.md).

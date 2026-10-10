@@ -1,0 +1,8 @@
+{
+  "requirement": "CMP-035",
+  "title": "a call with one argument too many is rejected",
+  "build": "fails",
+  "lines": [
+    10
+  ]
+}

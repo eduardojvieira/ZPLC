@@ -8,8 +8,19 @@
  * positioned diagnostics; the build stops when any exists (CMP-002).
  */
 
-import { isArrayType } from './ast.ts';
-import type { CompilationUnit, FunctionBlockDecl, MethodDecl, Program, STDataType, VarDecl } from './ast.ts';
+import { NameMap, isArrayType } from './ast.ts';
+import type {
+    CompilationUnit,
+    Expression,
+    FunctionBlockDecl,
+    FunctionDecl,
+    MethodDecl,
+    NamedArgument,
+    Program,
+    STDataType,
+    Statement,
+    VarDecl,
+} from './ast.ts';
 import { CodegenError } from './diagnostics.ts';
 import type { SourceSpan } from './diagnostics.ts';
 import { getAllFBNames } from './stdlib/index.ts';
@@ -83,5 +94,140 @@ export function checkDeclaredTypes(unit: CompilationUnit | Program): CodegenErro
         errors.push(new CodegenError(message, at.line, at.column, at.endLine, at.endColumn));
     };
     for (const { type, at, what } of declarations) check(type, at, what);
+    return errors;
+}
+
+// ============================================================================
+// Recursion (CMP-035)
+// ============================================================================
+
+interface CallSite {
+    callee: string;
+    at: SourceSpan;
+}
+
+/** Every expression of `statements`, outermost first, and the function-block call statements among them. */
+function visitStatements(statements: readonly Statement[], onExpression: (expr: Expression) => void,
+                         onCall: (name: string, at: SourceSpan) => void): void {
+    const expression = (expr: Expression | NamedArgument | null | undefined): void => {
+        if (!expr) return;
+        if ((expr as { kind: string }).kind === 'NamedArgument') {
+            expression((expr as NamedArgument).value);
+            return;
+        }
+        const node = expr as Expression;
+        onExpression(node);
+        switch (node.kind) {
+            case 'MemberAccess': expression(node.object); break;
+            case 'ArrayAccess': expression(node.array); node.indices.forEach(expression); break;
+            case 'UnaryExpr': expression(node.operand); break;
+            case 'BinaryExpr': expression(node.left); expression(node.right); break;
+            case 'FunctionCall': node.args.forEach(expression); break;
+            case 'MethodCall': expression(node.object); node.args.forEach(expression); break;
+            case 'FBCall': node.parameters.forEach((parameter) => expression(parameter.value)); break;
+            case 'ReferenceExpr': expression(node.operand); break;
+            case 'DereferenceExpr': expression(node.operand); break;
+            case 'BitAccess': expression(node.operand); break;
+            default: break;
+        }
+    };
+    for (const statement of statements) {
+        switch (statement.kind) {
+            case 'Assignment':
+                expression(statement.target);
+                expression(statement.value);
+                break;
+            case 'IfStatement':
+                expression(statement.condition);
+                visitStatements(statement.thenBranch, onExpression, onCall);
+                for (const branch of statement.elsifBranches ?? []) {
+                    expression(branch.condition);
+                    visitStatements(branch.statements, onExpression, onCall);
+                }
+                visitStatements(statement.elseBranch ?? [], onExpression, onCall);
+                break;
+            case 'WhileStatement':
+                expression(statement.condition);
+                visitStatements(statement.body, onExpression, onCall);
+                break;
+            case 'ForStatement':
+                expression(statement.start);
+                expression(statement.end);
+                expression(statement.step);
+                visitStatements(statement.body, onExpression, onCall);
+                break;
+            case 'RepeatStatement':
+                visitStatements(statement.body, onExpression, onCall);
+                expression(statement.condition);
+                break;
+            case 'CaseStatement':
+                expression(statement.selector);
+                for (const branch of statement.branches) {
+                    for (const label of branch.values) {
+                        expression(label.start);
+                        expression(label.end);
+                    }
+                    visitStatements(branch.statements, onExpression, onCall);
+                }
+                visitStatements(statement.elseBranch ?? [], onExpression, onCall);
+                break;
+            case 'FBCallStatement':
+                onCall(statement.fbName, statement);
+                statement.parameters.forEach((parameter) => expression(parameter.value));
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+/**
+ * A function that calls itself, directly or through other functions, is an error at the call that closes the
+ * cycle (CMP-035): a function has static storage, so a recursive call would overwrite the variables of the
+ * call it is made from. The check reads the calls of the declared functions only.
+ */
+export function checkRecursion(unit: CompilationUnit): CodegenError[] {
+    const functions = new NameMap<FunctionDecl>();
+    for (const declaration of unit.functions) functions.set(declaration.name, declaration);
+    if (functions.size === 0) return [];
+
+    const calls = new NameMap<CallSite[]>();
+    for (const declaration of unit.functions) {
+        // a variable of the function that is named like another function is that variable, not a call
+        const variables = new NameMap<true>();
+        for (const variable of [...declaration.inputs, ...declaration.locals]) variables.set(variable.name, true);
+        const sites: CallSite[] = [];
+        visitStatements(declaration.body, (expr) => {
+            if (expr.kind === 'FunctionCall' && functions.has(expr.name)) sites.push({ callee: expr.name, at: expr });
+        }, (name, at) => {
+            if (functions.has(name) && !variables.has(name)) sites.push({ callee: name, at });
+        });
+        calls.set(declaration.name, sites);
+    }
+
+    const errors: CodegenError[] = [];
+    const done = new Set<string>();
+    const path: string[] = [];
+    const walk = (name: string): void => {
+        const key = name.toUpperCase();
+        if (done.has(key)) return;
+        path.push(functions.get(name)!.name);
+        for (const site of calls.get(name) ?? []) {
+            const target = functions.get(site.callee)!;
+            const at = path.findIndex((entry) => entry.toUpperCase() === target.name.toUpperCase());
+            if (at >= 0) {
+                const cycle = [...path.slice(at), target.name];
+                const message = cycle.length === 2
+                    ? `Function '${target.name}' calls itself: a function cannot be recursive`
+                    : `Function '${target.name}' calls itself through ${cycle.slice(1, -1).map((each) => `'${each}'`).join(', ')}: a function cannot be recursive`;
+                errors.push(new CodegenError(message, site.at.line, site.at.column, site.at.endLine, site.at.endColumn));
+            } else {
+                walk(target.name);
+            }
+        }
+        path.pop();
+        done.add(key);
+    };
+    for (const declaration of unit.functions) walk(declaration.name);
     return errors;
 }

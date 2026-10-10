@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-037",
+  "title": "=> copies the outputs of a user function block into the variables named",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 130
+    },
+    {
+      "at": "%QX2.0",
+      "type": "BOOL",
+      "value": true
+    }
+  ]
+}

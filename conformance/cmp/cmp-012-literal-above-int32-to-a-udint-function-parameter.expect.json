@@ -1,0 +1,21 @@
+{
+  "requirement": "CMP-012",
+  "title": "a literal above 2147483647 goes to a UDINT parameter and to a DWORD function",
+  "tags": [
+    "arch-sensitive"
+  ],
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "UDINT",
+      "value": 2147483647
+    },
+    {
+      "at": "%QD1",
+      "type": "DWORD",
+      "value": 252645135
+    }
+  ]
+}

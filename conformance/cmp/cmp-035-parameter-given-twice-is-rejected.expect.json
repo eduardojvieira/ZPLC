@@ -1,0 +1,11 @@
+{
+  "requirement": "CMP-035",
+  "title": "a parameter bound by position and by name is rejected",
+  "build": "fails",
+  "lines": [
+    10
+  ],
+  "messageIncludes": [
+    "a"
+  ]
+}

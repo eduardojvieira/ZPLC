@@ -1,0 +1,11 @@
+{
+  "requirement": "CMP-005",
+  "title": "an IF on an INT is rejected",
+  "build": "fails",
+  "lines": [
+    5
+  ],
+  "messageIncludes": [
+    "BOOL"
+  ]
+}

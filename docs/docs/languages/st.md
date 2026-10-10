@@ -98,6 +98,26 @@ Each rule below is covered by a conformance case under `conformance/cmp` (CMP-00
 - A declaration whose type is not a type is a compile error that names the type and its position. That covers a misspelt name and the types that ZPLC 2.0 does not have: `LTIME`, `LDATE`, `LTOD`, `LDT`, `CHAR` and `WCHAR` (planned for 2.x).
 - `VAR PERSISTENT` is a compile error at the word `PERSISTENT`. Declare the variables `RETAIN` to keep their value across a restart.
 
+## Types of values
+
+Each rule below is covered by a conformance case under `conformance/cmp` (CMP-005, CMP-012, CMP-018).
+
+- Every value that goes into a place of a type is checked against that type: the right side of an assignment, an initial value, an argument of a function or of a function block, the value of a function, and an output bound with `=>`. A value of a type that does not convert is a compile error that names both types.
+- Integers, bit strings and `REAL` form one family. An integer type, `BYTE`, `WORD` and `DWORD` convert to each other, and a value that does not fit the destination keeps its low bits. An integer converts to `REAL` and `LREAL`, and `REAL` to `LREAL`. A `REAL` does not convert to an integer: write `REAL_TO_INT(x)`.
+- `BOOL` converts to and from nothing else, and neither do `TIME`, `DATE`, `TOD` and `DT`: `i := b;`, `b := 1;` and `n := t;` are compile errors. The difference of two `DT`, `TOD` or `DATE` values is a `TIME`.
+- The condition of `IF`, `ELSIF`, `WHILE` and `UNTIL` is a `BOOL`: write `IF count <> 0 THEN`, not `IF count THEN`. Arithmetic does not take a `BOOL`, `MOD` takes integers, and `AND`, `OR`, `XOR` and `NOT` take `BOOL` or bit strings, not `REAL`; a `BOOL` is not compared with a number.
+- A constant expression (literals, named constants, `+ - * /` and `MOD` of them) must fit the type it goes into: `small : SINT := 300;`, `level := -1;` for a `USINT` and `doubled := limit * 2;` with a constant `limit` of 20000 are compile errors. A variable is checked by its type, not by its value.
+- A literal above 2147483647 is an unsigned 32-bit value: it goes to a `UDINT` or `DWORD` variable, to a `UDINT` parameter and to `AND_DWORD`, `OR_DWORD`, `XOR_DWORD` and `NOT_DWORD`; a literal beyond the range of a `WORD` parameter is an error.
+
+## Functions and function blocks
+
+Each rule below is covered by a conformance case under `conformance/cmp` (CMP-034, CMP-035, CMP-037).
+
+- Each function is a scope of its own: two functions may declare parameters and locals with the same names, and a parameter may be named like a variable of a program. Inside a function, a name is its own variable first and then a `VAR_GLOBAL` one (a program's variables are not visible there). The name of the function is its result variable.
+- A function is called with the arguments by position, `Sub(10, 2)`, or by name in any order, `Sub(b := 2, a := 10)`. Positional arguments come first. A parameter given twice, a name the function does not have, one argument too many and a required parameter with no argument are compile errors; a parameter that declares an initial value (`factor : INT := 10;`) may be left out and holds that value.
+- A call may be a statement: `Bump(by := 2);` runs the function and discards its result. A function may be declared before or after the ones that call it, and none may call itself, directly or through other functions: that is a compile error at the call that closes the cycle.
+- A function block is called with named parameters. `IN := x` gives an input, and `Q => y` copies the output `Q` into the variable `y` after the call (`y` may be a member or an element). The names are matched without regard to case. A name the block does not have, a local of a block, an output given a value with `:=` and an input bound with `=>` are compile errors. The positional call of a function block is left to 2.x.
+
 ## Standard library entry point
 
 See [Standard Library](./stdlib.md) for the built-in functions and function blocks grounded in

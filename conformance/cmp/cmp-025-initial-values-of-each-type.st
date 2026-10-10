@@ -7,7 +7,7 @@ VAR
   oflag AT %QX0.0 : BOOL;
   oratio AT %QD1 : REAL;
   obig AT %QD2 : DINT;
-  owait AT %QD3 : DINT;
+  owait AT %QD3 : TIME;
 END_VAR
   oflag := flag;
   oratio := ratio;

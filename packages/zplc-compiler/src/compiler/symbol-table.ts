@@ -69,6 +69,11 @@ export interface Symbol {
     declarationLine?: number;
     /** Placed in the retentive region (VAR RETAIN, CMP-029). */
     retain?: boolean;
+    /**
+     * The program that declares the variable; absent for a global, a constant of the unit or the variable
+     * of a function (those are named `Function.name`). A function does not see a variable of a program (CMP-034).
+     */
+    owner?: string;
 }
 
 /**
@@ -197,10 +202,13 @@ export class SymbolTable {
     private workOffset = 0;  // Current offset in work memory
     private retainOffset = 0;  // Current offset in the retentive region (VAR RETAIN)
     /**
-     * Names that are in scope only while the code generator inlines a function block body: the members of the
-     * instance being inlined, instances declared inside it among them (CMP-038). They shadow the globals.
+     * Names that are in scope only while the code generator inlines a function block body or generates a
+     * function: the members of the instance being inlined, instances declared inside it among them
+     * (CMP-038), and the variables of the function (CMP-034). They shadow the globals. The resolver
+     * answers null for a name that is declared but not visible there, and undefined when the name is not
+     * its to decide.
      */
-    scopeResolver: ((name: string) => Symbol | undefined) | null = null;
+    scopeResolver: ((name: string) => Symbol | undefined | null) | null = null;
     private readonly workBase: number;  // Base address for work memory
 
     /**
@@ -229,14 +237,21 @@ export class SymbolTable {
      * Get a symbol by name.
      */
     get(name: string): Symbol | undefined {
-        return this.scopeResolver?.(name) ?? this.symbols.get(name);
+        const scoped = this.scopeResolver?.(name);
+        if (scoped !== undefined) return scoped ?? undefined;
+        return this.symbols.get(name);
+    }
+
+    /** A symbol by the name it was declared with, whatever the scope the generator is in. */
+    getDeclared(name: string): Symbol | undefined {
+        return this.symbols.get(name);
     }
 
     /**
      * Check if a symbol exists.
      */
     has(name: string): boolean {
-        return this.symbols.has(name) || this.scopeResolver?.(name) !== undefined;
+        return this.get(name) !== undefined;
     }
 
     /**
@@ -942,20 +957,23 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
             }
         }
 
-        // 4. Process functions (inputs and locals)
+        // 4. Process functions (inputs and locals). Each function is a scope of its own (CMP-034): its variables
+        // are declared as `Function.name`, so two functions may use the same names, and a parameter may be named
+        // like a variable of a program. The code generator resolves a name inside a function to these first.
         for (const func of unit.functions) {
+            const own = (name: string) => `${func.name}.${name}`;
             // Add inputs
             for (const input of func.inputs) {
-                table.add(input);
+                table.add({ ...input, name: own(input.name) });
             }
-            // Add locals
+            // Add locals; a VAR_EXTERNAL names a global and takes no storage in the function
             for (const local of func.locals) {
-                table.add(local);
+                table.add(local.section === VarSection.VAR_EXTERNAL ? local : { ...local, name: own(local.name) });
             }
             // Add function name as result variable
             table.add({
                 kind: 'VarDecl',
-                name: func.name,
+                name: own(func.name),
                 dataType: func.returnType,
                 section: VarSection.VAR,
                 initialValue: null, tags: {},
@@ -969,7 +987,8 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
         for (const program of unit.programs) {
             for (const block of program.varBlocks) {
                 for (const decl of block.variables) {
-                    table.add(decl);
+                    const symbol = table.add(decl);
+                    if (decl.section !== VarSection.VAR_EXTERNAL) symbol.owner = program.name;
                 }
             }
         }

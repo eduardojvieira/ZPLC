@@ -64,6 +64,25 @@ All notable changes are documented here.
   `CHAR` and `WCHAR` are rejected the same way (planned for 2.x, decision
   D-04) instead of getting a variable of size 0, and `VAR PERSISTENT` is
   rejected at the word (declare the variables `RETAIN`).
+- Every value is checked against the type it goes into. An assignment, an
+  initial value, a function argument, the value of a function and an output
+  bound with `=>` must convert as IEC 61131-3 allows: integers and bit strings
+  convert to each other (a value that does not fit keeps its low bits), an
+  integer to `REAL`; a `REAL` to an integer, a `BOOL` to or from a number and
+  `TIME` to or from a number are build errors that name both types. A
+  condition is a `BOOL`, and a constant that does not fit its type is an
+  error, so `small : SINT := 300;` no longer builds. A literal above
+  2147483647 goes to a `UDINT` parameter and to `XOR_DWORD`.
+- Each function is a scope of its own: two functions may use the same
+  parameter and local names, and a program's variables are not visible inside
+  a function. Arguments bind by name in any order (positional first); a
+  missing, repeated or unknown argument, and a recursive function, are build
+  errors. A function may be called as a statement and may be declared after
+  the functions that call it. A function block call checks its parameters
+  (a name the block does not have is an error) and `Q => y` copies an output.
+  The library blocks of the kitchen_sink project called their parameters
+  `SETPOINT`, `CYCLE`, `SET`...; the names were ignored and are now fixed to
+  the ones the blocks have.
 
 ## 2.0.0-rc.3 - 2026-09-01
 

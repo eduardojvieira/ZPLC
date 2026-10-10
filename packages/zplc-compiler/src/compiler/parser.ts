@@ -1565,17 +1565,31 @@ class Parser {
     }
 
     /**
-     * parameter := identifier ASSIGN expression
+     * parameter := identifier ASSIGN expression      an input: IN := x
+     *            | identifier OUTPUT_ASSIGN variable  an output: Q => y (CMP-037)
+     *            | expression                         a positional argument of a function call
      */
     private parseFBParameter(): FBParameter {
-        const nameToken = this.expect(TokenType.IDENTIFIER, 'Expected parameter name');
-        this.expect(TokenType.ASSIGN, 'Expected := after parameter name');
+        const first = this.current();
+        if (first.type === TokenType.IDENTIFIER && this.peek().type === TokenType.ASSIGN) {
+            this.advance();
+            this.advance();
+            const value = this.parseExpression();
+            return { name: first.value, value, line: first.line, column: first.column, endLine: first.endLine, endColumn: first.endColumn };
+        }
+        if (first.type === TokenType.IDENTIFIER && this.peek().type === TokenType.OUTPUT_ASSIGN) {
+            this.advance();
+            this.advance();
+            const target = this.current();
+            const value = this.parseExpression();
+            if (value.kind !== 'Identifier' && value.kind !== 'MemberAccess' && value.kind !== 'ArrayAccess' && value.kind !== 'DereferenceExpr') {
+                throw new ParseError(`An output binding names the variable that receives '${first.value}'`, target.line, target.column, target.endLine, target.endColumn);
+            }
+            return { name: first.value, value, output: true, line: first.line, column: first.column, endLine: first.endLine, endColumn: first.endColumn };
+        }
+        // A positional argument: a function takes it; a function block call is formal only (decision D-04)
         const value = this.parseExpression();
-
-        return {
-            name: nameToken.value,
-            value,
-        };
+        return { name: '', value, line: first.line, column: first.column };
     }
 
     // ========================================================================

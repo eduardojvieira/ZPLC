@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-035",
+  "title": "positional arguments bind the first parameters, named ones the rest, in any order",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 7
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 7
+    }
+  ]
+}

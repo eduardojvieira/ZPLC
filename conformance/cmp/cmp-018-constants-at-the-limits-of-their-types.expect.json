@@ -1,0 +1,33 @@
+{
+  "requirement": "CMP-018",
+  "title": "constants at the limits of their types are accepted",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QB0",
+      "type": "SINT",
+      "value": -128
+    },
+    {
+      "at": "%QB1",
+      "type": "SINT",
+      "value": 127
+    },
+    {
+      "at": "%QB2",
+      "type": "USINT",
+      "value": 255
+    },
+    {
+      "at": "%QW2",
+      "type": "INT",
+      "value": 32767
+    },
+    {
+      "at": "%QD2",
+      "type": "UDINT",
+      "value": 4294967295
+    }
+  ]
+}

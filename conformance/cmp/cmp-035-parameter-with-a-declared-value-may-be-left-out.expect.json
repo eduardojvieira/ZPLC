@@ -1,0 +1,19 @@
+{
+  "requirement": "CMP-035",
+  "title": "a parameter that declares an initial value is optional in a call",
+  "note": "IEC 61131-3: a formal parameter that is not given holds its declared initial value",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 30
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 6
+    }
+  ]
+}

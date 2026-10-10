@@ -1,0 +1,19 @@
+{
+  "requirement": "CMP-004",
+  "title": "user functions, structure members, block members and enumeration values are matched without regard to case",
+  "note": "6 + 8 + (5 + 6) = 25: every spelling of a name is the one declared",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 25
+    },
+    {
+      "at": "%QX2.0",
+      "type": "BOOL",
+      "value": true
+    }
+  ]
+}
