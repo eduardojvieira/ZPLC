@@ -264,6 +264,12 @@ interface CodeGenState {
     stringBuffers: Array<{ address: number; size: number; free: boolean }>;
     /** Depth of statements generated inside an expression (the body of an inlined method). */
     expressionDepth: number;
+    /** WORK address of the result of each inlined method that returns a number, by `Block.Method`. */
+    methodResultSlots: Map<string, number>;
+    /** The result place of the method being inlined, when it returns a number; its assignments write it. */
+    methodResult: Place | null;
+    /** The last method call expression left one value on the stack (a call used as a statement drops it). */
+    methodLeftResult: boolean;
     /** Routines that need work cells of their own, by label; appended after the main cycle. */
     cellHelpers: Map<string, string[]>;
     /** The work cells the string routines share (none calls another). */
@@ -399,6 +405,9 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
         scratchStrings: [],
         stringBuffers: [],
         expressionDepth: 0,
+        methodResultSlots: new Map(),
+        methodResult: null,
+        methodLeftResult: false,
         cellHelpers: new Map(),
         stringCells: null,
         resultBuffer: null,
@@ -1664,24 +1673,12 @@ function emitAssignment(state: CodeGenState, stmt: Assignment): void {
         if (stmt.target.name === '_') {
             if (stmt.value.kind === 'MethodCall') {
                 emit(state, `    ; (method call as statement, result discarded)`);
+                state.methodLeftResult = false;
                 emitExpression(state, stmt.value);
-                // The method was executed, but we don't store the result
-                // If method returned a value, drop it from stack
-                const methodCall = stmt.value;
-                if (state.functionBlockTable.has((methodCall.object as any)?.name ? 
-                    (state.symbols.get((methodCall.object as any).name)?.dataType as string) || '' : '')) {
-                    // Check if method has return type - if so, DROP the result
-                    const objName = (methodCall.object as any)?.name;
-                    if (objName) {
-                        const instanceSym = state.symbols.get(objName);
-                        if (instanceSym) {
-                            const fbDecl = state.functionBlockTable.get(instanceSym.dataType as string);
-                            const method = fbDecl?.methods.find(m => m.name === methodCall.methodName);
-                            if (method?.returnType) {
-                                emit(state, `    DROP       ; discard unused return value`);
-                            }
-                        }
-                    }
+                // The method was executed, but we don't store the result: drop the value it left, if any
+                if (state.methodLeftResult) {
+                    emit(state, `    DROP       ; discard unused return value`);
+                    state.methodLeftResult = false;
                 }
                 return;
             }
@@ -1712,8 +1709,13 @@ function emitAssignment(state: CodeGenState, stmt: Assignment): void {
         // should leave the value on stack (not store it)
         if (state.currentMethod && stmt.target.name === state.currentMethod.name) {
             emit(state, `    ; METHOD RETURN: ${state.currentMethod.name} := ...`);
+            if (state.methodResult) {
+                // the result slot holds the last value assigned; it is pushed once, where the method ends
+                emitAssignToPlace(state, state.methodResult, stmt.value, stmt.target);
+                return;
+            }
             emitValueFor(state, stmt.value, (state.currentMethod as any).returnType);
-            // Value stays on stack - caller will use it or discard it
+            // a method that returns a string or another value that does not fit a cell leaves it on the stack
             return;
         }
 
@@ -4109,9 +4111,28 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
         fail(expr, `Unknown method '${expr.methodName}' on FB '${fbTypeName}'`);
     }
     
+    // A method that returns a number writes a result slot that is pushed once where the method ends,
+    // so the caller sees one value however many times, or never, the method assigns its name
+    const methodReturnType = (methodInfo as { returnType?: DataTypeValue | null }).returnType ?? undefined;
+    let resultPlace: Place | null = null;
+    if (methodReturnType !== undefined) {
+        const stored = storedType(state, methodReturnType);
+        if (!isStringType(stored) && !isAggregateType(state, stored) && !isPointerType(stored)) {
+            const key = `${fbTypeName}.${expr.methodName}`;
+            const size = Math.max(state.symbols.sizeOf(methodReturnType), 1);
+            let address = state.methodResultSlots.get(key);
+            if (address === undefined) {
+                address = allocateWork(state, size, Math.min(size, 4));
+                state.methodResultSlots.set(key, address);
+            }
+            resultPlace = { addr: { k: 'const', a: address }, type: methodReturnType, size, name: expr.methodName };
+        }
+    }
+
     // Save current FB context and set up new one for method execution
     const prevFBInstance = state.currentFBInstance;
     const prevMethod = state.currentMethod;
+    const prevMethodResult = state.methodResult;
     const prevReturnLabel = state.returnLabel;
     state.returnLabel = newLabel(state, 'method_return');
     state.currentFBInstance = instanceSym;
@@ -4196,6 +4217,15 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
         }
     }
 
+    // The result starts as the default of its type
+    state.methodResult = resultPlace;
+    if (resultPlace) {
+        emit(state, `    ; ${expr.methodName} := 0`);
+        if (resultPlace.size === 8) emit(state, `    PUSH32 0`);
+        emit(state, `    PUSH32 0`);
+        emit(state, `    STORE${getLoadStoreSuffix(storedType(state, methodReturnType!) as DataTypeValue)} ${formatAddress((resultPlace.addr as { a: number }).a)}`);
+    }
+
     // Inline the method body
     state.expressionDepth++;
     for (const stmt of methodInfo.body) {
@@ -4203,15 +4233,17 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
     }
     state.expressionDepth--;
     emit(state, `${state.returnLabel}:`);
-    
-    // If method has a return type, the result should be on the stack
-    // (IEC convention: MethodName := value; leaves value as result)
-    
+
+    // The value of the method: the slot, once; a string result was left on the stack by its assignments
+    state.methodLeftResult = methodReturnType !== undefined;
+    if (resultPlace) emitLoadPlace(state, resultPlace);
+
     emit(state, `    ; --- End Method ${fbTypeName}.${expr.methodName} ---`);
-    
+
     // Restore previous FB context
     state.currentFBInstance = prevFBInstance;
     state.currentMethod = prevMethod;
+    state.methodResult = prevMethodResult;
     state.returnLabel = prevReturnLabel;
 }
 

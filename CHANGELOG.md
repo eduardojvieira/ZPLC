@@ -80,6 +80,11 @@ All notable changes are documented here.
   no longer underflows the evaluation stack for an exponent of 0 (the artifact
   was refused by the loader) and no longer takes the bits of a REAL exponent as
   a loop count.
+- An inlined method that returns a number writes a result slot that is pushed
+  once where the method ends: a method that assigned its name twice left two
+  values on the evaluation stack (a call in a loop was refused by the loader),
+  one that never assigned left none, and an inherited method called as a
+  statement was not dropped. A method that never assigns returns 0.
 - `BLINK` starts its cycle with the ON phase in the scan where `ENABLE` rises
   (it started with the OFF phase) and starts it again after `ENABLE` was
   FALSE; a phase ends at the first call at which its time has elapsed.

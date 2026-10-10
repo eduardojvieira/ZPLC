@@ -534,6 +534,8 @@
   "CMP-041": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-041-final-method-cannot-be-overridden.expect.json","test":"CMP-041 a FINAL method that a derived block overrides is rejected at the override"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-041-interface-dispatch.expect.json","test":"CMP-041 a variable of an interface type calls the method of its instance"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-041-method-results-of-each-type-and-inherited-statement-call.expect.json","test":"CMP-041 a method returns a BOOL, a SINT, a REAL and a DINT through its result slot, and an inherited method called as a statement leaves nothing"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-041-method-with-several-assignments-called-in-a-loop.expect.json","test":"CMP-041 a method that assigns its name more than once returns one value, and a call in a loop leaves the stack as it found it"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-041-override-and-inherited-method.expect.json","test":"CMP-041 an inherited method and an overriding one"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-041-private-method-is-not-callable-from-outside.expect.json","test":"CMP-041 a PRIVATE method called from outside its function block is rejected"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-041-protected-method-is-not-callable-from-outside.expect.json","test":"CMP-041 a PROTECTED method called from outside its function block is rejected"},

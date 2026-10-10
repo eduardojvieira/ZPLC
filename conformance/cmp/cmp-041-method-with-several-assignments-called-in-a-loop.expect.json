@@ -1,0 +1,13 @@
+{
+  "requirement": "CMP-041",
+  "title": "a method that assigns its name more than once returns one value, and a call in a loop leaves the stack as it found it",
+  "matrix": ["pous.methods-this"],
+  "note": "IEC 61131-3, methods: the value of the method is the last assignment to its name before it returns; the caller sees exactly one value, and a method that never assigns returns the default of its type (0); Pick(i) is i up to 5, 2 i for 6 to 8 and -i for 9 and 10: 15 + 42 - 19 = 38; the loop makes ten calls, the call as a statement an eleventh, Never() adds 100",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QW0", "type": "INT", "value": 38},
+    {"at": "%QW1", "type": "INT", "value": 111},
+    {"at": "%QW2", "type": "INT", "value": 0}
+  ]
+}
