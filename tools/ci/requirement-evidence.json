@@ -271,7 +271,8 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-029-var-global-retain.expect.json","test":"CMP-029 VAR_GLOBAL RETAIN is accepted and works"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-029-var-retain-accepted.expect.json","test":"CMP-029 VAR RETAIN is accepted"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/compiler.test.ts","test":"RETAIN declarations (CMP-029)"},
-    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/syntax.test.ts","test":"parser: declarations (CMP-029, CMP-030)"}
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/syntax.test.ts","test":"parser: declarations (CMP-029, CMP-030)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/retainedInitialValues.test.ts","test":"RETAIN initial values (CMP-029)"}
   ],
   "CMP-030": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-030-alias-default-value.expect.json","test":"CMP-030 a variable takes the default value of its alias"},
