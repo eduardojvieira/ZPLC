@@ -100,6 +100,18 @@ record_report() {
   return "${rc}"
 }
 
+# A build directory configured for another checkout (the workspace is reused across worktrees) makes cmake stop
+# with "source does not match the source"; drop it so the next configure starts clean.
+fresh_cmake_dir() { # build-dir source-dir
+  local build="$1" source="$2" home=""
+  if [ -f "${build}/CMakeCache.txt" ]; then
+    home="$(awk -F= '/^CMAKE_HOME_DIRECTORY:/ {print $2; exit}' "${build}/CMakeCache.txt")"
+    if [ -n "${home}" ] && [ "${home}" != "${source}" ]; then
+      rm -rf "${build}"
+    fi
+  fi
+}
+
 # ------------------------------------------------------------------- twister
 run_twister() { # mode platform
   local mode="$1" platform="$2" dir="${OUT}/twister-$1" rc=0
@@ -122,6 +134,7 @@ run_host() { # mode extra-flags
   # LeakSanitizer does not exist for i386.
   [ "${mode}" = "host32" ] && asan_opts="detect_leaks=0"
   echo "==> ${mode}: cmake + ctest of firmware/lib/zplc_core"
+  fresh_cmake_dir "${build}" "${ZPLC_FW_REPO}/firmware/lib/zplc_core"
   {
     cmake -S "${ZPLC_FW_REPO}/firmware/lib/zplc_core" -B "${build}" -DCMAKE_BUILD_TYPE=Debug \
       -DCMAKE_C_FLAGS="${flags} -fsanitize=address,undefined,float-cast-overflow -fno-sanitize-recover=undefined,float-cast-overflow -fno-omit-frame-pointer" &&
@@ -197,6 +210,7 @@ run_app() {
     }
   fi
   echo "==> app: cmake + ctest of firmware/app/tests"
+  fresh_cmake_dir "${build}" "${ZPLC_FW_REPO}/firmware/app/tests"
   {
     cmake -S "${ZPLC_FW_REPO}/firmware/app/tests" -B "${build}" \
       -DNANOPB_DIR="${ZPLC_FW_WS}/modules/lib/nanopb" -DPROTO_BUILD_DIR="${proto}" &&
