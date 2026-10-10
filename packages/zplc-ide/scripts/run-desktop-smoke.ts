@@ -62,6 +62,14 @@ class Cdp {
   close(): void { this.#socket.close(); }
 }
 
+/**
+ * A page expression for the URL of the page's own Monaco module, so that `import()` gives the instance the editors use.
+ * The development host serves the editor core that Studio imports (IDE-015) pre-bundled under `?v=<hash>`. The page loads
+ * hundreds of modules and its resource-timing buffer keeps the first 250, which no longer include a module that loads on
+ * use, so the hash is read from a pre-bundled dependency that is in it (React is the first).
+ */
+export const MONACO_MODULE_URL = `(() => { const version = performance.getEntriesByType('resource').map((entry) => /\\/node_modules\\/\\.vite\\/deps\\/[^?]+\\.js\\?v=(\\w+)/.exec(entry.name)?.[1]).find(Boolean); return '/node_modules/.vite/deps/monaco-editor_esm_vs_editor_edcore__main.js' + (version ? '?v=' + version : ''); })()`;
+
 function click(text: string): string { return `(() => { const button = [...document.querySelectorAll('button')].find((item) => item.textContent?.includes(${JSON.stringify(text)})); if (!button || button.disabled) return false; button.click(); return true; })()`; }
 async function press(cdp: Cdp, key: string, code = key): Promise<void> {
   const keyCode = { Enter: 13, Escape: 27, ArrowUp: 38, ArrowDown: 40 }[key] ?? 0;
@@ -72,7 +80,7 @@ async function press(cdp: Cdp, key: string, code = key): Promise<void> {
 const storeEval = (cdp: Cdp, body: string): Promise<unknown> => cdp.evaluate(`import('/src/store/useIDEStore.ts').then(async ({ useIDEStore }) => { const state = () => useIDEStore.getState(); ${body} })`);
 const fileContent = (cdp: Cdp, id: string) => storeEval(cdp, `return state().loadedFiles.get(${JSON.stringify(id)})?.content;`) as Promise<string | undefined>;
 /** Runs `body` with the page's own Monaco module instance, its first editor and its models in scope. */
-const monacoEval = (cdp: Cdp, body: string): Promise<unknown> => cdp.evaluate(`(async () => { const url = performance.getEntriesByType('resource').map((entry) => entry.name).find((name) => /\\/monaco-editor\\.js/.test(name)); const monaco = await import(url); const editor = monaco.editor.getEditors()[0]; ${body} })()`);
+const monacoEval = (cdp: Cdp, body: string): Promise<unknown> => cdp.evaluate(`(async () => { const monaco = await import(${MONACO_MODULE_URL}); const editor = monaco.editor.getEditors()[0]; ${body} })()`);
 async function showFile(cdp: Cdp, id: string): Promise<void> {
   assert(await cdp.evaluate(`(() => { const tab = document.getElementById(${JSON.stringify(`editor-tab-${id}`)}); if (!tab) return false; tab.click(); return true; })()`) === true, `Editor tab for ${id} is missing.`);
   await waitFor(`editor showing ${id}`, async () => {

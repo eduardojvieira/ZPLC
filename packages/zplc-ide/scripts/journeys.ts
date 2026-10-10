@@ -9,7 +9,7 @@ import { join } from 'node:path';
 import { learnLessonCatalog } from '../src/components/learnLesson';
 import { compilerCompile } from '../src/cli/toolApi';
 import { NATIVE_PROGRAM_MAX_BYTES } from '../electron/security';
-import { assert, packageRoot } from './run-desktop-smoke';
+import { assert, MONACO_MODULE_URL, packageRoot } from './run-desktop-smoke';
 import { button, css, menuItem, tab, type App, type Target } from './journeyApp';
 
 export interface JourneyContext {
@@ -43,8 +43,8 @@ async function openFolder(app: App, folder: string): Promise<void> {
   await app.until('the project workbench to appear', async () => await app.visible(toolbar) || undefined);
 }
 
-/** The page's own Monaco instance and its active editor, for reading what the editor shows and where things are. */
-const monacoEval = <T>(app: App, body: string) => app.eval<T>(`(async () => { const url = performance.getEntriesByType('resource').map((entry) => entry.name).find((name) => /\\/monaco-editor\\.js/.test(name)); const monaco = await import(url); const editor = monaco.editor.getEditors()[0]; ${body} })()`);
+/** The page's own Monaco instance (the editor core Studio bundles, as the dev server pre-bundles it) and its active editor, for reading what the editor shows and where things are. */
+const monacoEval = <T>(app: App, body: string) => app.eval<T>(`(async () => { const monaco = await import(${MONACO_MODULE_URL}); const editor = monaco.editor.getEditors()[0]; ${body} })()`);
 const editorText = (app: App) => monacoEval<string>(app, 'return editor?.getModel()?.getValue() ?? "";');
 /** True when the text declares `PROGRAM <name>`: an example may open with a comment block, so its first characters say nothing. */
 const hasProgram = (text: string, name: string) => new RegExp(`^PROGRAM ${name}\\b`, 'm').test(text);
@@ -1199,6 +1199,38 @@ export const JOURNEYS: Journey[] = [
       await openFile(app, 'src/Outside.st');
       rmSync(join(project, 'src', 'Outside.st'));
       await app.until('the deleted file gone from the tree and its tab closed', async () => !await app.visible(treeItem('file:src/Outside.st')) && !await app.visible(editorTab('file:src/Outside.st')) || undefined, 10_000);
+    },
+  },
+
+  {
+    name: '25 The Welcome screen loads no editor', example: 'motor_start_stop', proves: [], partly: ['IDE-015'],
+    run: async (app, { project }) => {
+      // What the page has fetched, as modules (the development host serves each one by its path). The page keeps the first
+      // 250 resources unless told otherwise, so it is told to keep every one and loaded again from a clean start.
+      await app.cdp.command('Page.addScriptToEvaluateOnNewDocument', { source: 'performance.setResourceTimingBufferSize(100000);' });
+      await app.cdp.command('Page.reload');
+      await app.until('the Welcome screen again', async () => (await app.text()).includes('ZPLC Studio 2.0') || undefined);
+      const fetched = () => app.eval<string[]>(`performance.getEntriesByType('resource').map((entry) => entry.name)`);
+      const has = async (pattern: RegExp) => (await fetched()).some((name) => pattern.test(name));
+      const MONACO = /monaco-editor_esm_vs_editor_edcore__main\.js/;
+      const CODE_EDITOR = /\/src\/components\/CodeEditor\.tsx/;
+      const VISUAL_EDITOR = /\/src\/editors\/(?:fbd|ld|sfc)\/(?:FBD|LD|SFC)Editor\.tsx/;
+      const SETTINGS = /\/src\/components\/settings\/ProjectSettings\.tsx/;
+
+      await app.until('the Welcome screen', async () => await app.visible(css('main')) || undefined);
+      for (const [what, pattern] of [['Monaco', MONACO], ['the code editor', CODE_EDITOR], ['a visual editor', VISUAL_EDITOR], ['the settings', SETTINGS]] as const) {
+        assert(!await has(pattern), `The Welcome screen loaded ${what}.`);
+      }
+
+      // A Structured Text file brings the code editor and Monaco, and neither the visual editors nor the settings.
+      await openFolder(app, project);
+      await openFile(app, 'src/Motor.st');
+      assert(await has(CODE_EDITOR) && await has(MONACO), 'Opening a Structured Text file did not load the code editor.');
+      assert(!await has(VISUAL_EDITOR) && !await has(SETTINGS), 'A Structured Text file loaded a visual editor or the settings.');
+
+      // The settings load when they are opened.
+      await app.click(button('Project Settings'), 'the Project Settings button');
+      await app.until('the settings', async () => await has(SETTINGS) && await app.visible(css('[data-app-preferences]')) || undefined);
     },
   },
 ];

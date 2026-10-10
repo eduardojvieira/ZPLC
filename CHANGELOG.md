@@ -4,6 +4,15 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- The Welcome screen loads without the code editor, the visual editors or the
+  project settings (IDE-015): the workbench (toolbar, editor area and lower
+  panel) loads when a project opens, and each editor and the settings load the
+  first time a file of their kind or the settings are opened. The entry chunk
+  of the page went from 5.2 MB (1.34 MB gzipped) to 0.9 MB (0.23 MB gzipped).
+  Only the Monaco core Studio uses is bundled, so the CSS, HTML, JSON and
+  TypeScript language workers (about 9 MB) and the 80 basic languages are no
+  longer built, and the installer holds no source maps. `welcomeBundle.test.ts`
+  proves it on the build output, and journey 25 on the development host.
 - CI checks the structure of Studio's source (IDE-014, IDE-033):
   `tools/ci/ide-structure.ts`, run by `bun run lint:ide` and by
   `bun test ./tools/ci`, fails when a store module imports a component, when a

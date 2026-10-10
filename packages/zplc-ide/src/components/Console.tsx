@@ -31,7 +31,7 @@ import {
   Boxes,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { DiffEditor, type Monaco } from '@monaco-editor/react';
+import { DiffEditor, type Monaco } from './monacoRuntime';
 import { useIDEStore } from '../store/useIDEStore';
 import type { ConsoleEntry, ConsoleTab } from '../types';
 import { TerminalTab } from './TerminalTab';

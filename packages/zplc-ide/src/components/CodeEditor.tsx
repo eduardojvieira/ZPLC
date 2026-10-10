@@ -11,10 +11,9 @@
  */
 
 import { useRef, useEffect, useCallback, useMemo, useState } from 'react';
-import Editor, { loader, type OnMount, type Monaco } from '@monaco-editor/react';
-import * as monaco from 'monaco-editor';
+import { monacoEditor } from './monacoRuntime';
+import Editor, { type OnMount, type Monaco } from '@monaco-editor/react';
 import type * as MonacoEditor from 'monaco-editor';
-import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
 import { useIDEStore } from '../store/useIDEStore';
 import { useAppSettings } from '../store/useAppSettings';
 import { useFileBreakpoints, useCurrentExecution, useDebugValues, formatDebugValue } from '../hooks/useDebugValue';
@@ -46,12 +45,6 @@ import { ensureSTLanguageService, getSTSyntaxDiagnostics } from './stLanguageSer
 const ST_LIVE_MARKER_OWNER = 'zplc.st-live';
 const ST_LIVE_ANALYSIS_DELAY_MS = 300;
 
-const monacoEnvironment = globalThis as typeof globalThis & {
-  MonacoEnvironment?: { getWorker: () => Worker };
-};
-
-monacoEnvironment.MonacoEnvironment ??= { getWorker: () => new EditorWorker() };
-loader.config({ monaco });
 window.addEventListener('unhandledrejection', (event) => {
   if (isMonacoCancellation(event.reason)) event.preventDefault();
 });
@@ -228,7 +221,7 @@ export function CodeEditor({
   // Handle editor mount
   // The tab size is the user's preference (IDE-010): every model takes it, and the indentation of a file does not override it.
   useEffect(() => {
-    for (const model of monaco.editor.getModels()) model.updateOptions({ tabSize: editorTabSize, insertSpaces: true });
+    for (const model of monacoEditor.getModels()) model.updateOptions({ tabSize: editorTabSize, insertSpaces: true });
   }, [editorTabSize, fileId]);
 
   const handleEditorDidMount: OnMount = useCallback((editor, monaco) => {

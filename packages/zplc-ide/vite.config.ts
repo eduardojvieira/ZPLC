@@ -39,10 +39,9 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          // Split vendor chunks for better caching
+          // React is shared by every window. Monaco and the diagram library are not named here on purpose: a manual
+          // chunk takes the dependencies it shares with the entry along, and the Welcome screen would then load it (IDE-015).
           'react-vendor': ['react', 'react-dom'],
-          'monaco': ['@monaco-editor/react'],
-          'xyflow': ['@xyflow/react'],
         },
       },
     },

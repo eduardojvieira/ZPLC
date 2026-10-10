@@ -88,6 +88,19 @@ If the editor, the lower panel or the toolbar throws an exception while it draws
 
 Evidence level: host. Journey 20 (a failing region does not blank the window) of `bun run test:journeys` makes each of the three regions fail in the real application, checks that the other two keep working and that Retry brings the failed one back; `packages/zplc-ide/src/components/ErrorBoundary.test.tsx` covers the region logic.
 
+## What loads at start
+
+The Welcome screen is the first thing Studio shows, and it loads without the code editor, the visual editors or the
+project settings. Each of them loads the first time you open a file of its kind or the settings, and the editor area
+says "Loading editor..." for that moment. Studio bundles the part of Monaco it uses (the editor, search, folding,
+suggestions, hover, go to definition and references, and the difference view), and not its CSS, HTML, JSON and
+TypeScript language services or its other languages. The installer holds no source maps.
+
+Evidence level: host. `packages/zplc-ide/scripts/welcomeBundle.test.ts` builds Studio, reads the chunks the Welcome page
+loads at start and the files the installer packages; journey 25 (the Welcome screen loads no editor) of
+`bun run test:journeys` checks the same in the development host of the real application. No packaged installer was
+inspected.
+
 ## Editors
 
 ST is the primary language-service path. LD, FBD, and SFC open, edit, save,
