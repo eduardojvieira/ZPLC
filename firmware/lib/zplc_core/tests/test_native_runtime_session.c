@@ -3934,7 +3934,8 @@ static void test_retain_reset_and_fault(void)
 }
 
 /* ===========================================================================
- * RT-015 and RT-014: tasks of different intervals, release order, deadlines.
+ * Tasks of different intervals, release order, the shared input image and deadlines.
+ * The requirement each test proves is in the comment above it.
  * ===========================================================================
  */
 
@@ -4082,6 +4083,7 @@ static size_t mr_counters_program(uint8_t *code, uint16_t *entries)
     return n;
 }
 
+/* RT-015: a task table of different intervals is admitted, and its step is the common divisor of the intervals. */
 static void test_multirate_artifact_is_described(void)
 {
     uint8_t artifact[256], code[96];
@@ -4121,6 +4123,7 @@ static void test_multirate_artifact_is_described(void)
                 "an interval below 1 ms is refused whatever the other tasks use");
 }
 
+/* RT-015: each task of one program runs at its own interval. */
 static void test_multirate_each_task_runs_at_its_own_interval(void)
 {
     zplc_native_runtime_session_t session;
@@ -4170,6 +4173,7 @@ static void test_multirate_each_task_runs_at_its_own_interval(void)
     zplc_native_runtime_session_shutdown(&session);
 }
 
+/* RT-015: the output image keeps what a task that was not released in a batch wrote. */
 static void test_multirate_output_image_keeps_the_task_that_did_not_run(void)
 {
     zplc_native_runtime_session_t session;
@@ -4202,6 +4206,7 @@ static void test_multirate_output_image_keeps_the_task_that_did_not_run(void)
     zplc_native_runtime_session_shutdown(&session);
 }
 
+/* RT-015: tasks released together run by priority, then by task id. */
 static void test_multirate_release_order(void)
 {
     zplc_native_runtime_session_t session;
@@ -4232,6 +4237,7 @@ static void test_multirate_release_order(void)
     zplc_native_runtime_session_shutdown(&session);
 }
 
+/* RT-015: a task released earlier runs first, whatever its priority. */
 static void test_multirate_earlier_release_runs_first(void)
 {
     zplc_native_runtime_session_t session;
@@ -4262,6 +4268,7 @@ static void test_multirate_earlier_release_runs_first(void)
     zplc_native_runtime_session_shutdown(&session);
 }
 
+/* RT-009: the tasks of a batch read one input image, and a simulation pulse lasts one batch. */
 static void test_multirate_batch_shares_one_input_image(void)
 {
     zplc_native_runtime_session_t session;
@@ -4310,6 +4317,7 @@ static void test_multirate_batch_shares_one_input_image(void)
     zplc_native_runtime_session_shutdown(&session);
 }
 
+/* RT-015: a scenario steps by the common divisor of the intervals and releases each task on its own interval. */
 static void test_multirate_scenario_steps_by_the_common_divisor(void)
 {
     zplc_native_runtime_session_t session;
@@ -4357,6 +4365,7 @@ static void test_multirate_scenario_steps_by_the_common_divisor(void)
     zplc_native_runtime_session_shutdown(&session);
 }
 
+/* RT-015: the poll timeout is the time to the nearest release of any task. */
 static void test_multirate_poll_timeout_is_the_nearest_release(void)
 {
     zplc_native_runtime_session_t session;
@@ -4386,6 +4395,7 @@ static void test_multirate_poll_timeout_is_the_nearest_release(void)
     zplc_native_runtime_session_shutdown(&session);
 }
 
+/* RT-015, RT-017: pause, resume, stop and reset keep the schedule of the tasks coherent. */
 static void test_multirate_pause_resume_stop_and_reset_keep_the_schedule(void)
 {
     zplc_native_runtime_session_t session;
@@ -4443,6 +4453,7 @@ static void test_multirate_pause_resume_stop_and_reset_keep_the_schedule(void)
     zplc_native_runtime_session_shutdown(&session);
 }
 
+/* RT-014: a deadline miss raises the warning, is counted, and latches the fault after the configured number in a row. */
 static void test_deadline_miss_warns_counts_and_latches(void)
 {
     zplc_native_runtime_session_t session;
@@ -4524,6 +4535,7 @@ static void test_deadline_miss_warns_counts_and_latches(void)
     zplc_native_runtime_session_shutdown(&session);
 }
 
+/* RT-014: with the default limit the first miss latches the fault, as the target scheduler does. */
 static void test_deadline_default_limit_latches_the_first_miss_of_a_single_task(void)
 {
     zplc_native_runtime_session_t session;
@@ -4552,6 +4564,7 @@ static void test_deadline_default_limit_latches_the_first_miss_of_a_single_task(
     zplc_native_runtime_session_shutdown(&session);
 }
 
+/* RT-014: the number of consecutive misses that latches the fault is configurable. */
 static void test_deadline_limit_comes_from_the_environment(void)
 {
     zplc_native_runtime_session_t session;
@@ -4578,6 +4591,7 @@ static void test_deadline_limit_comes_from_the_environment(void)
     if (old != NULL) setenv("ZPLC_DEADLINE_MISS_LIMIT", old, 1); else unsetenv("ZPLC_DEADLINE_MISS_LIMIT");
 }
 
+/* RT-014, RT-017: a debugger step is not checked for a deadline. */
 static void test_step_and_breakpoint_scans_are_not_deadline_checked(void)
 {
     zplc_native_runtime_session_t session;
@@ -4605,6 +4619,7 @@ static void test_step_and_breakpoint_scans_are_not_deadline_checked(void)
     zplc_native_runtime_session_shutdown(&session);
 }
 
+/* RT-014: the status of the largest session, with the deadline report, still fits the response line. */
 static void test_status_of_sixteen_multirate_tasks_and_eight_forces_fits_the_response(void)
 {
     zplc_native_runtime_session_t session;

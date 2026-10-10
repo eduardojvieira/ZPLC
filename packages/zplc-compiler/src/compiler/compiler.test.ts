@@ -798,7 +798,7 @@ describe('Canonical PROGRAM admission', () => {
     });
 
     // RT-015: only cyclic tasks exist in this release, so the build says so before it produces an artifact
-    it('rejects an event-triggered or interrupt-triggered task at the task definition', () => {
+    it('rejects an event-triggered or interrupt-triggered task at its definition in zplc.json (RT-015)', () => {
         const program: ProgramSource[] = [{ name: 'Main', content: 'PROGRAM Main END_PROGRAM' }];
         for (const trigger of ['event', 'interrupt']) {
             const config = {
