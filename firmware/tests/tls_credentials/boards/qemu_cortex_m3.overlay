@@ -1,0 +1,33 @@
+/*
+ * The lm3s6965 flash has no driver under QEMU, so the credential store runs
+ * on a flash simulator held in RAM (a few KB of the 64 KB the board has).
+ */
+#include <mem.h>
+
+/ {
+	flashcontroller_sim: flash-controller@30000000 {
+		compatible = "zephyr,sim-flash";
+		reg = <0x30000000 DT_SIZE_K(16)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		erase-value = <0xff>;
+
+		flash_sim0: flash@0 {
+			compatible = "soc-nv-flash";
+			erase-block-size = <1024>;
+			write-block-size = <4>;
+			reg = <0x00000000 DT_SIZE_K(16)>;
+
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				certs_partition: partition@0 {
+					label = "certs";
+					reg = <0x00000000 DT_SIZE_K(16)>;
+				};
+			};
+		};
+	};
+};
