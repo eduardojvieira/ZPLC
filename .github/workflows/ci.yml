@@ -182,9 +182,6 @@ jobs:
           UBSAN_OPTIONS: halt_on_error=1
           ZPLC_FUZZ_WORK: ${{ runner.temp }}/zplc-fuzz
           ZPLC_FUZZ_ARTIFACTS: ${{ runner.temp }}/zplc-fuzz-artifacts
-          # The communication opcodes still escape their region (RT-001, RT-002, COM-001; fuzz findings in
-          # tools/fuzz/findings). Remove this line when the sandbox closure lands: the run fuzzer then covers them.
-          ZPLC_FUZZ_SKIP_COMM: "1"
         run: tools/fuzz/run.sh 60 both
 
   zephyr-twister:

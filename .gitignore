@@ -53,6 +53,7 @@ venv/
 # Compiled ZPLC files
 *.zplc
 !examples/*.zplc
+!tools/fuzz/findings/*.zplc
 
 # Local artifacts
 Screenshots/
