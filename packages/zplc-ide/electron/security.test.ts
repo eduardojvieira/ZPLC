@@ -11,6 +11,7 @@ import {
   createContentSecurityPolicy,
   isAllowedNativeSimulationRequest,
   isAllowedWorkspaceOperationRequest,
+  navigationReplacesDocument,
   isAllowedWorkspaceTestRequest,
   isAllowedWorkspaceRootRequest,
   isAllowedSessionLoadRequest,
@@ -454,5 +455,26 @@ describe('Electron security boundary', () => {
     expect(isAllowedCloseGuardDirty(true)).toBe(true);
     expect(isAllowedCloseGuardDirty(false)).toBe(true);
     for (const value of [undefined, null, 0, 1, 'true', {}, [true]]) expect(isAllowedCloseGuardDirty(value)).toBe(false);
+  });
+});
+
+describe('which navigation revokes the authority of a document (IDE-016)', () => {
+  const expected = 'file:///opt/zplc/resources/app.asar/dist/index.html';
+  const navigation = (patch: Partial<{ isMainFrame: boolean; isSameDocument: boolean; url: string }>) => ({ isMainFrame: true, isSameDocument: false, url: expected, ...patch });
+
+  it('is a navigation of the main frame to the expected renderer document, which is the only one that can commit', () => {
+    expect(navigationReplacesDocument(navigation({}), expected)).toBe(true);
+    expect(navigationReplacesDocument(navigation({ url: `${expected}?reload=1#welcome` }), expected)).toBe(true);
+  });
+
+  it('is not a navigation that the window will refuse: another origin, a file, a script or a data URL leaves the document as it is', () => {
+    for (const url of ['https://example.invalid/zplc', 'http://localhost:3000/', 'file:///etc/passwd', 'javascript:alert(1)', 'data:text/html,<p>x</p>', 'about:blank', 'not a url']) {
+      expect(navigationReplacesDocument(navigation({ url }), expected)).toBe(false);
+    }
+  });
+
+  it('is not a navigation inside the same document, nor one of a subframe', () => {
+    expect(navigationReplacesDocument(navigation({ isSameDocument: true }), expected)).toBe(false);
+    expect(navigationReplacesDocument(navigation({ isMainFrame: false }), expected)).toBe(false);
   });
 });

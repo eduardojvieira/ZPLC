@@ -3,14 +3,14 @@
  * expects (assert), or reports that the journey cannot be performed at all (notPossible). Observation reads the screen
  * and the editor; every action is a real click, key or text insertion.
  */
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { learnLessonCatalog } from '../src/components/learnLesson';
 import { compilerCompile } from '../src/cli/toolApi';
 import { NATIVE_PROGRAM_MAX_BYTES } from '../electron/security';
 import { assert, packageRoot } from './run-desktop-smoke';
-import { button, css, menuItem, tab, type App, type Target } from './journeyApp';
+import { button, css, launchPackagedApp, menuItem, tab, type App, type Target } from './journeyApp';
 
 export interface JourneyContext {
   root: string;
@@ -261,6 +261,155 @@ async function writeProjectOfSize(folder: string, bytes: number): Promise<void> 
   writeBigProject(folder, [...Array<string>(steps).fill('  X := X + 1;'), ...Array<string>(a).fill('  Y := 0;'), ...Array<string>(b).fill('  Y := X;')]);
   const made = await compiledSize([...Array<string>(steps).fill('  X := X + 1;'), ...Array<string>(a).fill('  Y := 0;'), ...Array<string>(b).fill('  Y := X;')]);
   assert(made === bytes, `The generated program is ${made} bytes, not the ${bytes} the journey needs.`);
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Security probes (IDE-016): what a hostile page, or a person with DevTools, can and cannot make the application do
+// ---------------------------------------------------------------------------------------------------------------------
+
+/** The project of the path probes: a folder with a file, a file outside it, and two links that leave it. */
+export function writeSecurityFixture(base: string): { project: string; outside: string; secret: string } {
+  const outside = realpathSync(mkdtempSync(join(base, 'security-')));
+  const project = join(outside, 'project');
+  mkdirSync(join(project, 'src'), { recursive: true });
+  writeFileSync(join(project, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'Fixture', version: '1.0.0', target: { board: 'posix' }, tasks: [{ name: 'MainTask', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Main.st'] }] }));
+  writeFileSync(join(project, 'src', 'Main.st'), 'PROGRAM Main\nEND_PROGRAM\n');
+  const secret = join(outside, 'secret.txt');
+  writeFileSync(secret, 'outside the project');
+  symlinkSync(secret, join(project, 'leak.txt'));
+  symlinkSync(outside, join(project, 'linkdir'), 'dir');
+  return { project, outside, secret };
+}
+
+/**
+ * The five properties of IDE-016, each shown by what the running application does. The page injects a script, asks for
+ * permissions, navigates, opens windows and sends project operations with hostile paths, as a person with DevTools could.
+ * `packaged` says that the page runs the production policy (`script-src 'self'`): the development host serves its own
+ * scripts inline for hot reload, so the inline-script probe is made only on the packaged application.
+ */
+export async function probeSecurity(app: App, options: { packaged: boolean; fixture: { project: string; outside: string; secret: string }; open(): Promise<string> }): Promise<string[]> {
+  const evidence: string[] = [];
+  const probe = <T,>(body: string) => app.eval<T>(`(async () => { ${body} })()`);
+
+  // 1. An injected inline script is blocked.
+  if (options.packaged) {
+    const inline = await probe<{ ran: boolean; handlerRan: boolean; violations: string[] }>(`
+      const violations = [];
+      document.addEventListener('securitypolicyviolation', (event) => violations.push(event.violatedDirective));
+      window.__zplcInline = false; window.__zplcHandler = false;
+      const script = document.createElement('script'); script.textContent = 'window.__zplcInline = true;'; document.head.appendChild(script);
+      const image = document.createElement('img'); image.setAttribute('onerror', 'window.__zplcHandler = true'); image.src = 'zplc-probe-missing.png'; document.body.appendChild(image);
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      return { ran: window.__zplcInline === true, handlerRan: window.__zplcHandler === true, violations };`);
+    assert(!inline.ran, 'An inline script that the page injected ran.');
+    assert(!inline.handlerRan, 'An inline event handler that the page injected ran.');
+    assert(inline.violations.some((directive) => directive.startsWith('script-src')), `The policy reported no script violation: ${JSON.stringify(inline.violations)}`);
+    evidence.push(`inline script and inline event handler blocked (${[...new Set(inline.violations)].join(', ')})`);
+  }
+  // The policy is applied to the page in both builds: a request to another origin is refused by connect-src.
+  const connect = await probe<{ blocked: boolean; violated: string[] }>(`
+    const violated = [];
+    document.addEventListener('securitypolicyviolation', (event) => violated.push(event.violatedDirective));
+    const blocked = await fetch('https://example.invalid/zplc-probe').then(() => false, () => true);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    return { blocked, violated };`);
+  assert(connect.blocked && connect.violated.includes('connect-src'), `A request to another origin was not stopped by the policy: ${JSON.stringify(connect)}`);
+  evidence.push('a request to another origin is refused by connect-src');
+
+  // 2. A permission other than serial is refused; serial is the one that the trusted document has.
+  const permissions = await probe<Record<string, string>>(`
+    const outcome = (promise) => promise.then(() => 'granted', (error) => error && error.name ? error.name : 'refused');
+    return {
+      notifications: await Notification.requestPermission(),
+      geolocation: await new Promise((resolve) => navigator.geolocation.getCurrentPosition(() => resolve('granted'), (error) => resolve(error.code === 1 ? 'denied' : 'error:' + error.code))),
+      // What the permission check handler answers for a device permission: a machine with no camera or microphone cannot tell
+      // a refused request from a missing device, so the state that the page is given is read as well.
+      camera: await navigator.permissions.query({ name: 'camera' }).then((status) => status.state, (error) => error.name),
+      microphone: await navigator.permissions.query({ name: 'microphone' }).then((status) => status.state, (error) => error.name),
+      clipboardRead: await outcome(navigator.clipboard.readText()),
+      midi: await outcome(navigator.requestMIDIAccess()),
+      serialPorts: await navigator.serial.getPorts().then((ports) => Array.isArray(ports) ? 'available' : 'unexpected', (error) => error.name),
+    };`);
+  for (const name of ['notifications', 'geolocation', 'camera', 'microphone', 'clipboardRead', 'midi']) {
+    assert(permissions[name] !== 'granted' && ['denied', 'NotAllowedError', 'SecurityError', 'NotSupportedError', 'refused'].includes(permissions[name]!), `${name} was not refused: ${JSON.stringify(permissions)}`);
+  }
+  assert(permissions.serialPorts === 'available', `The trusted document cannot use serial: ${JSON.stringify(permissions)}`);
+  evidence.push(`permissions refused: ${['notifications', 'geolocation', 'camera', 'microphone', 'clipboardRead', 'midi'].map((name) => `${name}=${permissions[name]}`).join(', ')}; serial available`);
+
+  // 3. Navigation and new windows are refused.
+  const pagesBefore = await app.pages();
+  const navigation = await probe<{ sameDocument: boolean; opened: boolean; openedSame: boolean }>(`
+    const href = location.href;
+    const opened = window.open('https://example.invalid/zplc-probe');
+    const openedSame = window.open(location.href);
+    const link = document.createElement('a'); link.href = 'https://example.invalid/zplc-link'; link.target = '_blank'; document.body.appendChild(link); link.click(); link.remove();
+    location.assign('https://example.invalid/zplc-navigation');
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    return { sameDocument: location.href === href, opened: opened !== null, openedSame: openedSame !== null };`);
+  assert(navigation.sameDocument, 'The page navigated away from the application document.');
+  assert(!navigation.opened && !navigation.openedSame, 'window.open produced a window.');
+  assert(await app.pages() === pagesBefore, 'A window was opened.');
+  evidence.push('window.open, a _blank link and navigation to another origin refused; the document and the window count did not change');
+
+  // 4. A project operation with `..`, an absolute path or a link that leaves the project is refused.
+  const rootId = await options.open();
+  const operation = (name: string, request: string) => probe<{ ok: boolean; code?: string }>(`return await window.electronAPI.projectFiles.${name}(${request});`);
+  /** The request as page script: `bytes` is a Uint8Array of the text after `utf8:` (a typed array does not survive JSON). */
+  const literal = (request: Record<string, unknown>) => `{ ${Object.entries({ rootId, ...request }).map(([key, value]) => `${JSON.stringify(key)}: ${key === 'bytes' && typeof value === 'string' ? `new TextEncoder().encode(${JSON.stringify(value)})` : JSON.stringify(value)}`).join(', ')} }`;
+  const refused = async (name: string, request: Record<string, unknown>, code: string) => {
+    const answer = await operation(name, literal(request));
+    assert(!answer.ok && answer.code === code, `${name} ${JSON.stringify(request)} should be refused as ${code}: ${JSON.stringify(answer)}`);
+  };
+  const control = await operation('read', literal({ path: 'src/Main.st' }));
+  assert(control.ok, `A read inside the project should work: ${JSON.stringify(control)}`);
+  await refused('read', { path: '../secret.txt' }, 'invalid-path');
+  await refused('read', { path: 'src/../../secret.txt' }, 'invalid-path');
+  await refused('read', { path: options.fixture.secret }, 'invalid-path');
+  await refused('read', { path: 'C:\\Windows\\win.ini' }, 'invalid-path');
+  await refused('list', { path: '..' }, 'invalid-path');
+  await refused('remove', { path: '../secret.txt', recursive: false }, 'invalid-path');
+  await refused('rename', { from: 'src/Main.st', to: '../moved.st' }, 'invalid-path');
+  await refused('read', { path: 'leak.txt' }, 'outside-root');
+  await refused('write', { path: 'leak.txt', bytes: 'overwritten' }, 'outside-root');
+  await refused('list', { path: 'linkdir' }, 'outside-root');
+  await refused('write', { path: 'linkdir/pwned.txt', bytes: 'pwned' }, 'outside-root');
+  const huge = await operation('write', `{ rootId: ${JSON.stringify(rootId)}, path: 'src/Huge.st', bytes: new Uint8Array(16 * 1024 * 1024 + 1) }`);
+  assert(!huge.ok && huge.code === 'too-large', `An over-size write should be refused: ${JSON.stringify(huge)}`);
+  const foreign = await operation('read', JSON.stringify({ rootId: 'not-the-folder-of-this-window', path: 'src/Main.st' }));
+  assert(!foreign.ok && foreign.code === 'no-folder', `A folder id that is not the window's should be refused: ${JSON.stringify(foreign)}`);
+  assert(readFileSync(options.fixture.secret, 'utf8') === 'outside the project', 'A refused write changed the file outside the project.');
+  assert(!existsSync(join(options.fixture.outside, 'pwned.txt')) && !existsSync(join(options.fixture.project, 'src', 'Huge.st')), 'A refused write left a file behind.');
+  assert(existsSync(join(options.fixture.project, 'src', 'Main.st')), 'A refused operation removed a project file.');
+  evidence.push('project operations refused: "..", absolute and drive paths, a file link and a directory link that leave the project, an over-size write, and another window\'s folder id; nothing outside the project changed');
+  return evidence;
+}
+
+/**
+ * The same probes against a packaged application (`ZPLC_PACKAGED_DIST=<electron-builder output> bun run smoke:journeys`):
+ * the production policy and the file:// renderer, with the project reached through the recent projects of a seeded
+ * user-data directory because the packaged archive has no folder dialog hook (VF-008).
+ */
+export async function runPackagedSecurityProbes(executable: string, scratch: string): Promise<string[]> {
+  const fixture = writeSecurityFixture(scratch);
+  const profileRoot = mkdtempSync(join(scratch, 'packaged-'));
+  const launched = await launchPackagedApp(executable, profileRoot, [fixture.project]);
+  try {
+    const { app } = launched;
+    return await probeSecurity(app, {
+      packaged: true,
+      fixture,
+      open: async () => {
+        const listed = await app.eval<{ ok: boolean; value?: Array<{ recentId: string; displayName: string }> }>(`window.electronAPI.projectFiles.listRecent()`);
+        const entry = listed.value?.find((item) => item.displayName === 'project');
+        assert(listed.ok && entry, `The packaged application does not list the seeded project: ${JSON.stringify(listed)}`);
+        const opened = await app.eval<{ ok: boolean; value?: { rootId: string } }>(`window.electronAPI.projectFiles.openRecent({ recentId: ${JSON.stringify(entry.recentId)} })`);
+        assert(opened.ok && opened.value?.rootId, `The packaged application did not open the seeded project: ${JSON.stringify(opened)}`);
+        return opened.value.rootId;
+      },
+    });
+  } finally {
+    await launched.stop();
+  }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -1396,6 +1545,26 @@ export const JOURNEYS: Journey[] = [
       await app.click(menuItem('Compile'));
       await waitFor('the failed build notification', 'build', 'error');
       assert(await followDetails('build', 'Watch') === 'console-tab-problems', 'Details of a failed build should open Problems.');
+    },
+  },
+
+  {
+    // IDE-016 on the development host: the policy is applied, permissions other than serial are refused, navigation and new
+    // windows are refused, and a hostile project path is refused. The inline-script probe needs the production policy and
+    // is made on the packaged application (runPackagedSecurityProbes).
+    name: '29 The security properties hold in the running application', example: 'none', proves: [], partly: ['IDE-016', 'IDE-001'],
+    run: async (app, { root }) => {
+      const fixture = writeSecurityFixture(root);
+      await probeSecurity(app, {
+        packaged: false,
+        fixture,
+        open: async () => {
+          app.answer(fixture.project);
+          const chosen = await app.eval<{ ok: boolean; value: { rootId: string } | null }>(`window.electronAPI.projectFiles.chooseFolder()`);
+          assert(chosen.ok && chosen.value, `The development host did not hand back the folder: ${JSON.stringify(chosen)}`);
+          return chosen.value.rootId;
+        },
+      });
     },
   },
 ];

@@ -1022,6 +1022,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/workspaceTestLink.test.ts","test":"linking the open project to its workspace without choosing a file (IDE-001)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"1 Open an existing folder","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"25 A build and a test run act only on the project shown","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"29 The security properties hold in the running application","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"5b Tests need no zplc.json to be chosen","partial":true}
   ],
   "IDE-002": [
@@ -1129,7 +1130,9 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"26 A long test run can be cancelled and leaves no process behind"}
   ],
   "IDE-016": [
-    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"project files over the IPC boundary (IDE-001, IDE-016)"}
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"project files over the IPC boundary (IDE-001, IDE-016)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/security.test.ts","test":"which navigation revokes the authority of a document (IDE-016)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"29 The security properties hold in the running application","partial":true}
   ],
   "IDE-017": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"every invoke channel (IDE-017)"},
@@ -1154,6 +1157,9 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/store/notifications.test.ts","test":"the notification model (IDE-021)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/store/notifications.test.ts","test":"the notification store (IDE-021)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"27 Results appear as notifications that lead to their details"}
+  ],
+  "IDE-024": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"program inputs in the debug map (IDE-024)"}
   ],
   "IDE-027": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"toolchain inspection and firmware build (IDE-017, IDE-027)"}

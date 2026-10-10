@@ -64,6 +64,41 @@ the native runtime. Journey 26 of `bun run test:journeys` cancels a long run in 
 real application, sees the window answer throughout and finds no process of the
 run left (requirement IDE-012).
 
+## Security properties, shown by behaviour
+
+The renderer is unprivileged, and these are what the running application does, not
+what its source says:
+
+- an inline script, and an inline event handler, that a page injects are blocked by
+  the content security policy (`script-src 'self'` in a packaged build), and a
+  request to another origin is refused by `connect-src`;
+- a permission other than serial (notifications, location, camera, microphone,
+  clipboard read, MIDI) is refused, while serial stays available to the Studio
+  document;
+- `window.open`, a link that opens a new window and navigation to another origin are
+  refused, and the window keeps its document, its folder and its IPC afterwards;
+- a project operation given a path with `..`, an absolute path or a drive path, a
+  link to a file or to a folder that leaves the project, an over-size write, or the
+  folder id of another window is refused, and nothing outside the project changes.
+
+Evidence level: host. Journey 29 of `bun run test:journeys` makes these probes on
+the development host (which serves its own scripts inline for hot reload, so the
+inline-script probe is not made there). To make all of them on a packaged
+application on Linux, build an unpacked package and run the probes against it:
+
+```bash
+bun run --cwd packages/zplc-ide build:assets
+bun run --cwd packages/zplc-ide build
+bun run --cwd packages/zplc-ide electron:compile
+(cd packages/zplc-ide && bunx electron-builder --linux --dir)
+ZPLC_PACKAGED_DIST="$PWD/packages/zplc-ide/dist-electron" bun run test:journeys
+```
+
+The packaged archive has no folder dialog, so the probes reach the project through a
+recent-projects list written to the application's user-data directory first. They
+cover Linux only: the packaged application on macOS and Windows is not probed
+(requirement IDE-016 asks for all three).
+
 ## One project of record
 
 Build, Test, Simulate and the candidate review all act on the folder that the

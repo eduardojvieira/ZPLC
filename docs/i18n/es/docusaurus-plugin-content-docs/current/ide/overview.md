@@ -69,6 +69,43 @@ ejecución de escenarios sobre el runtime nativo. El recorrido 26 de
 la ventana responde todo el tiempo y no encuentra ningún proceso de la ejecución
 (requisito IDE-012).
 
+## Propiedades de seguridad, demostradas por comportamiento
+
+El renderer no tiene privilegios, y esto es lo que hace la aplicación en
+ejecución, no lo que dice su código fuente:
+
+- un script en línea, y un manejador de evento en línea, que inyecta una página se
+  bloquean por la política de seguridad de contenido (`script-src 'self'` en una
+  compilación empaquetada), y una petición a otro origen la rechaza `connect-src`;
+- un permiso distinto de serial (notificaciones, ubicación, cámara, micrófono,
+  lectura del portapapeles, MIDI) se rechaza, mientras que serial sigue disponible
+  para el documento de Studio;
+- `window.open`, un enlace que abre una ventana nueva y la navegación a otro origen
+  se rechazan, y la ventana conserva después su documento, su carpeta y su IPC;
+- una operación de proyecto con una ruta con `..`, una ruta absoluta o de unidad,
+  un enlace a un archivo o a una carpeta que sale del proyecto, una escritura de
+  tamaño excesivo o el identificador de carpeta de otra ventana se rechaza, y nada
+  fuera del proyecto cambia.
+
+Nivel de evidencia: host. El recorrido 29 de `bun run test:journeys` hace estas
+pruebas en el host de desarrollo (que sirve sus propios scripts en línea para la
+recarga en caliente, así que allí no se hace la prueba del script en línea). Para
+hacerlas todas sobre una aplicación empaquetada en Linux, construya un paquete
+desempaquetado y ejecute las pruebas contra él:
+
+```bash
+bun run --cwd packages/zplc-ide build:assets
+bun run --cwd packages/zplc-ide build
+bun run --cwd packages/zplc-ide electron:compile
+(cd packages/zplc-ide && bunx electron-builder --linux --dir)
+ZPLC_PACKAGED_DIST="$PWD/packages/zplc-ide/dist-electron" bun run test:journeys
+```
+
+El archivo empaquetado no tiene diálogo de carpetas, así que las pruebas llegan al
+proyecto mediante una lista de proyectos recientes escrita antes en el directorio
+de datos de usuario de la aplicación. Cubren solo Linux: la aplicación empaquetada
+en macOS y Windows no se prueba (el requisito IDE-016 pide las tres).
+
 ## Un solo proyecto de referencia
 
 Build, Test, Simulate y la revisión de candidatos actúan sobre la carpeta que

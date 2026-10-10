@@ -624,7 +624,7 @@ describe('NativeSimulationSupervisor', () => {
     expect(mainSource).toContain("webContents.on('render-process-gone', () => revokeRendererOwner(ownerWebContentsId));");
     expect(mainSource).toContain("webContents.on('destroyed', () => revokeRendererOwner(ownerWebContentsId));");
     expect(mainSource).toContain("webContents.on('did-start-navigation', (details) => {");
-    expect(mainSource).toContain('if (details.isMainFrame && !details.isSameDocument) {');
+    expect(mainSource).toContain('if (navigationReplacesDocument(details, expectedRendererUrl())) {');
     const navigationStart = mainSource.indexOf("webContents.on('did-start-navigation'");
     const navigationCommit = mainSource.indexOf("webContents.on('did-navigate'");
     expect(mainSource.slice(navigationStart, navigationCommit)).toContain('revokeRendererOwner(ownerWebContentsId);');

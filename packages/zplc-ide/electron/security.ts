@@ -241,6 +241,19 @@ export function isExpectedRendererDocument(candidateUrl: string, expectedRendere
   return candidate !== null && candidate === expected;
 }
 
+/**
+ * Whether a navigation that has just started replaces the document of the window, and so ends the authority of the one
+ * it replaces (IDE-016). Every navigation to anything but the expected renderer document is refused a moment later by
+ * `will-navigate` or `will-redirect` and never commits, so it must not revoke the authority of the document that stays:
+ * a link to another site that the window refused would otherwise cost the window its project folder and its IPC.
+ */
+export function navigationReplacesDocument(
+  details: { isMainFrame: boolean; isSameDocument: boolean; url: string },
+  expectedRendererUrl: string,
+): boolean {
+  return details.isMainFrame && !details.isSameDocument && isExpectedRendererDocument(details.url, expectedRendererUrl);
+}
+
 export function isTrustedRenderer(
   event: RendererEvent,
   mainWindow: MainWindowLike | null,

@@ -38,6 +38,7 @@ import {
   createContentSecurityPolicy,
   isExpectedRendererDocument,
   isTrustedRenderer,
+  navigationReplacesDocument,
   parseTrustedDevelopmentRendererPort,
   trustedDevelopmentRendererUrl,
 } from './security.js';
@@ -266,7 +267,8 @@ function createWindow(): void {
   mainWindow.on('responsive', () => closeGuard.resume());
   webContents.on('destroyed', () => revokeRendererOwner(ownerWebContentsId));
   webContents.on('did-start-navigation', (details) => {
-    if (details.isMainFrame && !details.isSameDocument) {
+    // Only a navigation that can commit replaces the document; one that the guards below refuse leaves the window as it was.
+    if (navigationReplacesDocument(details, expectedRendererUrl())) {
       revokeRendererOwner(ownerWebContentsId);
     }
   });

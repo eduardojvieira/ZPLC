@@ -4,6 +4,16 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- The security properties of Studio are proven by what the running application
+  does (IDE-016): an inline script and an inline event handler that a page injects
+  are blocked by the production policy, a permission other than serial is
+  refused, `window.open`, a `_blank` link and navigation to another origin are
+  refused, and a project operation given `..`, an absolute path, or a link that
+  leaves the project is refused. The probes run on the development host (journey
+  29) and, with `ZPLC_PACKAGED_DIST`, on the packaged application. They found that
+  a navigation the window refused still revoked its authority (its project folder
+  and its IPC) until a reload; only a navigation that can replace the document
+  revokes it now.
 - Studio shows the result of a build, a save, a deploy, a connection change and
   a test run as a notification that opens the panel with its details, and shows a
   long operation with progress and a **Cancel** action (IDE-021). A success goes by
