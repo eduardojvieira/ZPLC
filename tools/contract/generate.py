@@ -20,6 +20,25 @@ Usage:
   python3 tools/contract/generate.py --check    exit 1 when a generated file is stale
 
 Generated files are committed, so no build needs this script.
+
+To add an opcode
+  1. Add an entry to "opcodes" in contract.json: number, operand bytes (the
+     generator checks it against the encoding rule), group, pops, pushes,
+     minDepth, effect, flags and doc. Keep the list in number order.
+  2. Run this script, then implement the instruction in zplc_core.c and the
+     compiler code generator. The assembler, the loader, the HIL tools and the
+     reference tables already take it from the generated files.
+  3. A new opcode is a contract change: record it in golden/contract.golden.json
+     in the same commit, with the reason (WP-19 bumps the draft counter).
+
+To add a communication function block
+  1. Add a kind under comm.kinds when the kind is new, and a block under
+     comm.blocks with its instance size and members (offset, type, direction).
+  2. Run this script. zplc_comm_fb_size(), the ZPLC_COMM_<BLOCK>_* constants,
+     COMM_BLOCKS in TypeScript and Python, and the tables of the runtime
+     reference now know the block; the compiler registers it from COMM_BLOCKS.
+  3. Register the handler and extend KNOWN_FINDINGS in test_contract.py only
+     if the handler still disagrees with the table.
 """
 from __future__ import annotations
 
