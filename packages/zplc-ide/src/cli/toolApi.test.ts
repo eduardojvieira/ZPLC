@@ -807,6 +807,31 @@ END_PROGRAM`);
       }
     } finally { await rm(root, { recursive: true, force: true }); }
   });
+  it('rejects an event-triggered task at its definition in zplc.json (RT-015)', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-tool-api-event-task-'));
+    try {
+      await mkdir(join(root, 'src'));
+      await writeFile(join(root, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'test', version: '1.0.0', tasks: [
+        { name: 'Fast', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Main.st'] },
+        { name: 'OnEvent', trigger: 'event', interval_ms: 10, priority: 2, programs: ['Main.st'] },
+      ] }));
+      await writeFile(join(root, 'src', 'Main.st'), 'PROGRAM Main\nVAR\n  x AT %QW0 : INT;\nEND_VAR\n  x := x + 1;\nEND_PROGRAM\n');
+      for (const compile of [compilerCheck, compilerCompile]) {
+        const result = await compile(root);
+        expect(result.ok).toBe(false);
+        expect(result.evidence).toMatchObject({ outcome: 'failed', artifacts: [] });
+        expect(result.evidence.diagnostics).toHaveLength(1);
+        const [diagnostic] = result.evidence.diagnostics;
+        // the project file, not a source file; the task and its field in the message; the supported triggers named
+        expect(diagnostic).toMatchObject({ code: 'COMPILATION_FAILED', phase: 'codegen', path: 'zplc.json' });
+        expect(diagnostic!.message).toContain("Task 'OnEvent'");
+        expect(diagnostic!.message).toContain('tasks[1].trigger');
+        expect(diagnostic!.message).toContain('not supported in this release');
+        expect(diagnostic!.message).toContain("'cyclic'");
+        expect(JSON.stringify(result)).not.toContain(root);
+      }
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
   it('checks task cardinality before resolving source files', async () => {
     const root = await mkdtemp(join(tmpdir(), 'zplc-tool-api-task-cardinality-'));
     try {
