@@ -883,6 +883,258 @@ c.outb("b3", "LWORD_TO_BOOL(16#8000000000000000)", True)
 c.outd("r1", "LINT_TO_LREAL(-1)", -1.0)
 
 
+# ----------------------------------------------------------------------------- the one project unit
+c = case("lreal-and-lint-globals-members-and-retained-start-from-their-initial-values",
+         "LREAL and LINT globals, structure members and retained globals are initialised once, as two cells", "WideInitial",
+         requirement="CMP-015", matrix=("data-types.lreal", "data-types.lint-ulint-lword"), scans=3,
+         note="The initial value of a 64-bit global, of a structure member and of an element of an array is written as two cells; a retained global takes it only when the retentive memory holds no saved state (CMP-029), so it accumulates over the scans.")
+c.extra_top = """TYPE Reading :
+STRUCT
+  weight : LREAL := 0.1;
+  count : LINT := -5000000000;
+  tag : INT := 7;
+END_STRUCT
+END_TYPE
+
+VAR_GLOBAL
+  g_double : LREAL := 0.1;
+  g_wide : LINT := 5000000000;
+  g_top : ULINT := 18446744073709551615;
+  g_row : ARRAY[0..2] OF LREAL := [1.5, 2.5, 3.5];
+  g_reading : Reading;
+END_VAR
+
+VAR_GLOBAL RETAIN
+  g_kept : LREAL := 100.25;
+  g_hits : LINT := 4294967296;
+END_VAR"""
+c.do("g_kept := g_kept * 2.0;")
+c.do("g_hits := g_hits + 1;")
+c.outd("o_double", "g_double", 0.1)
+c.out64("o_wide", "LINT", "g_wide", 5000000000)
+c.out64("o_top", "ULINT", "g_top", M64)
+c.outd("o_row2", "g_row[2]", 3.5)
+c.outd("o_weight", "g_reading.weight", 0.1)
+c.out64("o_count", "LINT", "g_reading.count", -5000000000)
+c.outdint("o_tag", "INT", "g_reading.tag", 7)
+c.outd("o_kept", "g_kept", 100.25 * 8)
+c.out64("o_hits", "LINT", "g_hits", 4294967296 + 3)
+
+c = case("lreal-and-lint-results-of-methods-and-interface-calls",
+         "A method returns an LREAL or a LINT as two cells, called by name, through SUPER^ and through an interface", "WideMethods",
+         requirement="CMP-041", matrix=("data-types.lreal", "data-types.lint-ulint-lword", "pous.interfaces-implements"),
+         note="A method result of 64 bits is the two cells the call leaves, wherever the call is: on an instance, by the bare name inside the block, through SUPER^ and through a variable of an interface type (CMP-041, CMP-015).")
+c.extra_top = """INTERFACE IMeter
+METHOD Reading : LREAL
+END_METHOD
+METHOD Ticks : LINT
+END_METHOD
+END_INTERFACE
+
+FUNCTION_BLOCK Probe IMPLEMENTS IMeter
+VAR_INPUT
+  gain : LREAL;
+  offset : LINT;
+END_VAR
+METHOD Reading : LREAL
+  Reading := gain * 0.1 + 0.5;
+END_METHOD
+METHOD Ticks : LINT
+  Ticks := offset * 3;
+END_METHOD
+METHOD Twice : LREAL
+  Twice := Reading() * 2.0;
+END_METHOD
+END_FUNCTION_BLOCK
+
+FUNCTION_BLOCK FineProbe EXTENDS Probe
+METHOD OVERRIDE Reading : LREAL
+  Reading := SUPER^.Reading() + 0.25;
+END_METHOD
+METHOD OVERRIDE Ticks : LINT
+  Ticks := SUPER^.Ticks() + 4294967296;
+END_METHOD
+END_FUNCTION_BLOCK"""
+c.var("plain : Probe;")
+c.var("fine : FineProbe;")
+c.var("meter : IMeter;")
+c.do("plain.gain := 3.0;")
+c.do("plain.offset := -2000000000;")
+c.do("fine.gain := 3.0;")
+c.do("fine.offset := 1;")
+g = 3.0
+c.outd("o_reading", "plain.Reading()", g * 0.1 + 0.5)
+c.out64("o_ticks", "LINT", "plain.Ticks()", -6000000000)
+c.outd("o_twice", "plain.Twice()", (g * 0.1 + 0.5) * 2.0)
+c.outd("o_fine", "fine.Reading()", (g * 0.1 + 0.5) + 0.25)
+c.out64("o_fine_ticks", "LINT", "fine.Ticks()", 3 + 4294967296)
+c.outd("o_fine_twice", "fine.Twice()", ((g * 0.1 + 0.5) + 0.25) * 2.0)
+c.do("meter := fine;")
+c.outd("o_through", "meter.Reading() + 1.0", ((g * 0.1 + 0.5) + 0.25) + 1.0)
+c.out64("o_through_ticks", "LINT", "meter.Ticks() - 1", 3 + 4294967296 - 1)
+c.do("meter := plain;")
+c.outd("o_through_plain", "meter.Reading()", g * 0.1 + 0.5)
+c.outb("o_after", "meter.Ticks() < 0", True)
+
+c = case("lreal-and-lint-keep-their-place-between-narrow-neighbours",
+         "A 64-bit value between BOOL, BYTE and INT members does not overlap them, in a structure, an array of structures and a block",
+         "WideLayout", requirement="CMP-015", matrix=("data-types.lreal", "data-types.lint-ulint-lword", "data-types.arrays-bounds-and-element-types"),
+         note="Members of 8 bytes follow narrow members at an aligned offset and their neighbours keep their own values (CMP-015).")
+c.extra_top = """TYPE Cell :
+STRUCT
+  flag : BOOL;
+  value : LREAL;
+  tag : BYTE;
+  count : LINT;
+  small : INT;
+END_STRUCT
+END_TYPE
+
+FUNCTION_BLOCK Holder
+VAR_INPUT
+  on : BOOL;
+  level : LREAL;
+END_VAR
+VAR_OUTPUT
+  seen : LINT;
+  half : LREAL;
+END_VAR
+VAR
+  steps : BYTE;
+END_VAR
+  steps := steps + 1;
+  seen := seen + 4294967297;
+  half := level / 2.0;
+END_FUNCTION_BLOCK"""
+c.var("flag0 : BOOL;")
+c.var("lone : LREAL;")
+c.var("byte0 : BYTE;")
+c.var("wide0 : LINT;")
+c.var("int0 : INT;")
+c.var("cells : ARRAY[0..2] OF Cell;")
+c.var("holder : Holder;")
+c.var("unit : LINT := 4294967296;")
+c.var("i : DINT;")
+c.do("flag0 := TRUE;")
+c.do("lone := 0.1;")
+c.do("byte0 := 200;")
+c.do("wide0 := -4294967297;")
+c.do("int0 := -3;")
+c.do("FOR i := 0 TO 2 DO")
+c.do("  cells[i].flag := (i = 1);")
+c.do("  cells[i].value := 1.5 * (i + 1);")
+c.do("  cells[i].tag := 10 + i;")
+c.do("  cells[i].count := unit * (i + 1);")
+c.do("  cells[i].small := -100 * (i + 1);")
+c.do("END_FOR;")
+c.do("holder(on := TRUE, level := 0.5);")
+c.do("holder(on := FALSE, level := 0.1);")
+c.outb("o_flag0", "flag0", True)
+c.outd("o_lone", "lone", 0.1)
+c.outdint("o_byte0", "BYTE", "byte0", 200)
+c.out64("o_wide0", "LINT", "wide0", -4294967297)
+c.outdint("o_int0", "INT", "int0", -3)
+c.outb("o_flag1", "cells[1].flag", True)
+c.outb("o_flag2", "cells[2].flag", False)
+c.outd("o_value1", "cells[1].value", 3.0)
+c.outd("o_value2", "cells[2].value", 4.5)
+c.outdint("o_tag2", "BYTE", "cells[2].tag", 12)
+c.out64("o_count1", "LINT", "cells[1].count", 4294967296 * 2)
+c.out64("o_count2", "LINT", "cells[2].count", 4294967296 * 3)
+c.outdint("o_small1", "INT", "cells[1].small", -200)
+c.out64("o_seen", "LINT", "holder.seen", 2 * 4294967297)
+c.outd("o_half", "holder.half", 0.1 / 2.0)
+
+
+c = case("lreal-and-lint-through-references-and-in-out-parameters",
+         "A REF_TO LREAL or LINT and a VAR_IN_OUT of 64 bits read and write the whole value", "WideReferences",
+         requirement="CMP-015", matrix=("data-types.lreal", "data-types.lint-ulint-lword"),
+         note="A reference and a VAR_IN_OUT parameter hold the address of the variable: reading and writing through them moves two cells, and the variable is the one the caller named (CMP-024, CMP-028, CMP-015).")
+c.extra_top = """FUNCTION_BLOCK Accumulate
+VAR_IN_OUT
+  total : LREAL;
+  count : LINT;
+END_VAR
+VAR_INPUT
+  step : LREAL;
+END_VAR
+  total := total + step;
+  count := count + 1;
+END_FUNCTION_BLOCK"""
+c.var("sum : LREAL;")
+c.var("big : LINT := 5000000000;")
+c.var("pd : REF_TO LREAL;")
+c.var("pl : REF_TO LINT;")
+c.var("acc : Accumulate;")
+c.var("n : LINT;")
+c.do("pd := REF(sum);")
+c.do("pl := REF(big);")
+c.do("acc(total := sum, count := n, step := 0.5);")
+c.do("acc(total := sum, count := n, step := 0.25);")
+c.do("pd^ := pd^ + 1.0;")
+c.do("pl^ := pl^ * 2;")
+c.outd("o_sum", "sum", 1.75)
+c.out64("o_big", "LINT", "big", 10000000000)
+c.out64("o_count", "LINT", "n", 2)
+c.outd("o_through", "pd^ * 2.0", 3.5)
+
+c = case("interface-references-stay-one-cell-beside-64-bit-values",
+         "A variable of an interface type is one cell, in a block between 64-bit members, as an argument and in an array",
+         "WideAndInterface", requirement="CMP-041", matrix=("data-types.lreal", "data-types.lint-ulint-lword", "pous.interfaces-implements"),
+         note="An interface reference is 32 bits (the address and the type tag): the 64-bit members around it keep their place and a function with an interface parameter and an LREAL parameter receives both (CMP-041, CMP-015).")
+c.extra_top = """INTERFACE IMeter
+METHOD Reading : LREAL
+END_METHOD
+END_INTERFACE
+
+FUNCTION_BLOCK Probe IMPLEMENTS IMeter
+VAR_INPUT
+  gain : LREAL;
+END_VAR
+METHOD Reading : LREAL
+  Reading := gain + 0.5;
+END_METHOD
+END_FUNCTION_BLOCK
+
+FUNCTION_BLOCK Slot
+VAR_INPUT
+  before : LREAL;
+  meter : IMeter;
+  after : LINT;
+END_VAR
+END_FUNCTION_BLOCK
+
+FUNCTION Scaled : LREAL
+VAR_INPUT
+  source : IMeter;
+  factor : LREAL;
+  offset : LINT;
+END_VAR
+  Scaled := source.Reading() * factor + offset;
+END_FUNCTION"""
+c.var("a : Probe;")
+c.var("b : Probe;")
+c.var("slot : Slot;")
+c.var("meters : ARRAY[0..1] OF IMeter;")
+c.var("wide : ARRAY[0..1] OF LINT;")
+c.do("a.gain := 1.0;")
+c.do("b.gain := 2.0;")
+c.do("slot.before := 1.25;")
+c.do("slot.meter := b;")
+c.do("slot.after := -7000000000;")
+c.do("meters[0] := a;")
+c.do("meters[1] := b;")
+c.do("wide[0] := 4294967296;")
+c.do("wide[1] := -4294967296;")
+c.outd("o_before", "slot.before", 1.25)
+c.out64("o_after", "LINT", "slot.after", -7000000000)
+c.outd("o_slot", "slot.meter.Reading()", 2.5)
+c.outd("o_first", "meters[0].Reading()", 1.5)
+c.outd("o_second", "meters[1].Reading()", 2.5)
+c.outd("o_scaled", "Scaled(meters[1], 0.1, 3000000000)", 2.5 * 0.1 + 3000000000.0)
+c.out64("o_wide1", "LINT", "wide[1]", -4294967296)
+
+
 def main(argv: list[str]) -> int:
     check = "--check" in argv
     stale: list[str] = []

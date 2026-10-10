@@ -3379,8 +3379,11 @@ function staticType(state: CodeGenState, expr: Expression): string {
             if (['EQ', 'NE', 'LT', 'LE', 'GT', 'GE'].includes(expr.operator)) return 'BOOL';
             if (expr.operator === 'POW') return 'REAL';
             return commonType(staticType(state, expr.left), staticType(state, expr.right));
-        case 'FunctionCall':
-            return functionResultType(state, expr);
+        case 'FunctionCall': {
+            // a method of the block being generated, called by its name (CMP-041)
+            const implicit = implicitMethodCall(state, expr);
+            return implicit ? methodResultType(state, implicit) : functionResultType(state, expr);
+        }
         case 'MethodCall':
             return methodResultType(state, expr);
         default:
@@ -3388,15 +3391,29 @@ function staticType(state: CodeGenState, expr: Expression): string {
     }
 }
 
-/** Numeric type a method of a function block instance returns, or UNKNOWN_TYPE when it is not a number. */
+/**
+ * Numeric type a method call returns, or UNKNOWN_TYPE when it is not a number. It names the same method the call
+ * runs (emitMethodCall): the method of a THIS, of an instance, of a variable of an interface type (the signature
+ * of the interface) or of SUPER^, so that a 64-bit result is counted as the two cells the call leaves.
+ */
 function methodResultType(state: CodeGenState, expr: MethodCall): string {
     try {
-        let instance: Symbol | undefined;
-        if (expr.object.kind === 'ThisExpr') instance = state.currentFBInstance ?? undefined;
-        else if (expr.object.kind === 'Identifier') instance = state.symbols.get(expr.object.name);
-        if (!instance || typeof instance.dataType !== 'string') return UNKNOWN_TYPE;
-        const method = state.symbols.getFBDefinition(instance.dataType)?.methods.get(expr.methodName) as { returnType?: unknown } | undefined;
-        return method?.returnType === undefined || method.returnType === null ? UNKNOWN_TYPE : numericTypeName(storedType(state, method.returnType as STDataType));
+        let returned: unknown;
+        if (isSuperReference(expr.object)) {
+            const base = state.currentBlock ? state.symbols.getFBDefinition(state.currentBlock)?.extends : null;
+            returned = base ? state.symbols.getFBDefinition(base)?.methods.get(expr.methodName)?.returnType : undefined;
+        } else if (expr.object.kind === 'ThisExpr') {
+            const block = state.currentFBInstance?.dataType;
+            returned = typeof block === 'string' ? state.symbols.getFBDefinition(block)?.methods.get(expr.methodName)?.returnType : undefined;
+        } else if (expr.object.kind === 'Identifier' || expr.object.kind === 'MemberAccess' || expr.object.kind === 'ArrayAccess') {
+            const type = storedType(state, resolvePlace(state, expr.object).type);
+            if (typeof type === 'string' && isInterfaceType(state, type)) {
+                returned = state.symbols.findInterfaceMethod(type, expr.methodName)?.returnType;
+            } else if (typeof type === 'string') {
+                returned = state.symbols.getFBDefinition(type)?.methods.get(expr.methodName)?.returnType;
+            }
+        }
+        return returned === undefined || returned === null ? UNKNOWN_TYPE : numericTypeName(storedType(state, returned as STDataType));
     } catch (error) {
         if (error instanceof CodegenError) return UNKNOWN_TYPE;
         throw error;
