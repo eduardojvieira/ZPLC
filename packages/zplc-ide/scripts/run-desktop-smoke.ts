@@ -214,7 +214,8 @@ async function main(): Promise<void> {
     const documentRoot = await cdp.command('DOM.getDocument') as { root?: { nodeId?: number } };
     const manifestInputNode = await cdp.command('DOM.querySelector', { nodeId: documentRoot.root?.nodeId, selector: 'input[data-workspace-manifest-input]' }) as { nodeId?: number };
     assert(manifestInputNode.nodeId, 'The Tests tab does not expose its manifest file input.');
-    await cdp.command('DOM.setFileInputFiles', { files: [join(scenarioWorkspace, 'zplc.json')], nodeId: manifestInputNode.nodeId });
+    // The manifest of the folder that the window shows: the main process refuses the zplc.json of any other folder (IDE-002).
+    await cdp.command('DOM.setFileInputFiles', { files: [join(copiedFolder, 'zplc.json')], nodeId: manifestInputNode.nodeId });
     await cdp.evaluate('document.querySelector(\'input[data-workspace-manifest-input]\')?.dispatchEvent(new Event("change", { bubbles: true }))');
     await waitFor('ready host scenario action', async () => await cdp!.evaluate(`(() => { const run = [...document.querySelectorAll('button')].find((item) => item.textContent?.includes('Run host scenarios')); return run && !run.disabled && document.body.innerText.includes('Linked saved workspace ready for host scenarios.') ? true : undefined; })()`) === true ? true : undefined);
     assert(await cdp.evaluate(`(() => { const toolbar = document.querySelector('[role="toolbar"][aria-label="Project operations"]'); const build = document.querySelector('button[aria-label="Build options"]'); const mode = document.querySelector('[role="group"][aria-label="Execution mode"]'); return Boolean(toolbar && build?.getAttribute('aria-controls') && build.getAttribute('aria-expanded') === 'false' && mode?.querySelector('button[aria-pressed="true"]')); })()`), 'Toolbar accessibility semantics are missing.');
