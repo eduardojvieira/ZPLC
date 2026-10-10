@@ -160,8 +160,8 @@ static uint32_t count_and_stop(void) {
   return counted;
 }
 
-/* RT-025: STOP stores the region and the next load restores it. Fails without the
- * fix: the region is plain RAM, so the counter restarts from zero. */
+/* RT-025: STOP stores the region and the next load restores it. */
+/* Fails without the fix: the region is plain RAM, so the counter restarts from zero. */
 ZTEST(zplc_retain_persist, test_stop_stores_and_load_restores) {
   uint32_t counted;
   zplc_retain_status_t status;
@@ -186,7 +186,7 @@ ZTEST(zplc_retain_persist, test_stop_stores_and_load_restores) {
   zassert_equal(retain_counter(), counted, "the counter continues");
 }
 
-/* RT-025: a record of another program is not restored, and the status says so. */
+/* RT-025: a record of another program is not restored, and the status says why. */
 ZTEST(zplc_retain_persist, test_another_program_starts_from_an_initialised_region) {
   zplc_retain_status_t status;
 
@@ -223,8 +223,7 @@ ZTEST(zplc_retain_persist, test_a_corrupt_record_initialises_the_region_and_says
   zassert_equal(retain_counter(), 0U, "the region is initialised");
 }
 
-/* RT-026: a periodic save keeps the minimum interval (1 s in this suite), and
- * only a changed region is written. */
+/* RT-026: a periodic save keeps the minimum interval (1 s in this suite). */
 ZTEST(zplc_retain_persist, test_periodic_save_respects_the_minimum_interval) {
   zplc_retain_status_t status;
 

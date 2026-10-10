@@ -703,6 +703,39 @@
     {"kind":"c-test","ref":"firmware/tests/scheduler_run_control/src/main.c","test":"RT-017: step from a breakpoint finishes the interrupted scan."},
     {"kind":"c-test","ref":"firmware/tests/scheduler_run_control/src/main.c","test":"RT-017: the pause command keeps the image and forces with the pins safe."}
   ],
+  "RT-025": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RETAIN persistence of the host runtime (RT-025, RT-026, RT-027)"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-025, RT-027: a counter in RETAIN continues in a new session, and another program starts from an initialised region."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-025, RT-027: reset is a cold restart, and a faulted session stores nothing."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_retain.c","test":"RT-025: a backend failure is reported in the status and a record that could not be read is not overwritten."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_retain.c","test":"RT-025: a cold reset initialises the region and the stored record, so the old values do not come back."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_retain.c","test":"RT-025: a record carries a magic, a sequence, the program identity, the layout hash and a checksum."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_retain.c","test":"RT-025: a record is restored only when the layout matches; otherwise the region is initialised and the status says why."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_retain.c","test":"RT-025: a record is restored only when the program identity matches; otherwise the region is initialised and the status says why."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_retain.c","test":"RT-025: a save that fails at any step never destroys the last good record."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_retain.c","test":"RT-025: a saved region survives a power cycle: a fresh module restores the record."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_retain.c","test":"RT-025: damage to a record is detected by its checksum and the other record is restored."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_retain.c","test":"RT-025: two records alternate, and the sequence counts up across 1000 saves."},
+    {"kind":"c-test","ref":"firmware/tests/retain_persist/src/main.c","test":"RETAIN persistence of the Zephyr scheduler (RT-025, RT-026)."},
+    {"kind":"c-test","ref":"firmware/tests/retain_persist/src/main.c","test":"RT-025: STOP stores the region and the next load restores it."},
+    {"kind":"c-test","ref":"firmware/tests/retain_persist/src/main.c","test":"RT-025: a damaged record is detected by its checksum."},
+    {"kind":"c-test","ref":"firmware/tests/retain_persist/src/main.c","test":"RT-025: a record of another program is not restored, and the status says why."}
+  ],
+  "RT-026": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RETAIN persistence of the host runtime (RT-025, RT-026, RT-027)"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-026, RT-027: periodic saves follow the interval of the environment, skip an unchanged region, and 0 turns them off."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_retain.c","test":"RT-026: an unchanged region is not written, so the flash is not worn for nothing."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_retain.c","test":"RT-026: periodic saves keep a minimum interval, and the interval survives a wrap of the clock."},
+    {"kind":"c-test","ref":"firmware/tests/retain_persist/src/main.c","test":"RETAIN persistence of the Zephyr scheduler (RT-025, RT-026)."},
+    {"kind":"c-test","ref":"firmware/tests/retain_persist/src/main.c","test":"RT-026: STOP of a region that did not change writes nothing."},
+    {"kind":"c-test","ref":"firmware/tests/retain_persist/src/main.c","test":"RT-026: a periodic save keeps the minimum interval (1 s in this suite)."}
+  ],
+  "RT-027": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RETAIN persistence of the host runtime (RT-025, RT-026, RT-027)","partial":true,"note":"covers the POSIX host runtime only: the WASM runtime does not apply the retain rules yet (the module is not linked into the WASM build and the adapter does not call it), so RT-027 stays open for WASM"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-025, RT-027: a counter in RETAIN continues in a new session, and another program starts from an initialised region.","partial":true,"note":"covers the POSIX host runtime only: the WASM runtime does not apply the retain rules yet (the module is not linked into the WASM build and the adapter does not call it), so RT-027 stays open for WASM"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-025, RT-027: reset is a cold restart, and a faulted session stores nothing.","partial":true,"note":"covers the POSIX host runtime only: the WASM runtime does not apply the retain rules yet (the module is not linked into the WASM build and the adapter does not call it), so RT-027 stays open for WASM"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-026, RT-027: periodic saves follow the interval of the environment, skip an unchanged region, and 0 turns them off.","partial":true,"note":"covers the POSIX host runtime only: the WASM runtime does not apply the retain rules yet (the module is not linked into the WASM build and the adapter does not call it), so RT-027 stays open for WASM"}
+  ],
   "COM-001": [
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/fuzz_run_program.c","test":"RT-001/COM-001 are open, so that a long run can look for other findings); ZPLC_FUZZ_DUMP=<path> writes the"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_fb_access.c","test":"The bounded accessors of a function-block instance (COM-001)."},
