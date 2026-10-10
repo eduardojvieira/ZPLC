@@ -1,0 +1,12 @@
+{
+  "requirement": "LNG-026",
+  "title": "an error in an SFC transition condition is reported against the transition",
+  "build": "fails",
+  "elements": [
+    "transition:t_ab"
+  ],
+  "messageIncludes": [
+    "SFC transition 't_ab' condition",
+    "'Undeclared'"
+  ]
+}

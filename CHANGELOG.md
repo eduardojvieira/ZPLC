@@ -4,6 +4,46 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- The palettes of LD, FBD and SFC offer only what their transpiler translates, and every
+  element they offer is placed in a program and run in the virtual machine by a generated
+  test (LNG-007). The Ladder palette offers the edge coils that the transpiler has
+  translated since LNG-022 and no longer offers `COMM_CONNECT`, `COMM_PUBLISH`,
+  `COMM_SUBSCRIBE` and `COMM_MODBUS`, which no Ladder file can declare. The FBD palette no
+  longer offers the functions of the library (`SQRT`, `SIN`, `LEN`...) or the four
+  `COMM_*` blocks, which the build refused or could not declare; a block of the library has
+  the inputs and outputs it declares (a `BLINK` has `ENABLE`, `T_ON` and `T_OFF`, not `IN`
+  and `OUT`), typed as the compiler types them.
+- A breakpoint can be set on an IL line, a Ladder rung, an FBD block and an SFC step or
+  transition, and the runtime stops there (LNG-004). The debug map relates each instruction
+  range to the element of the source that was edited (`element` on a source range and on a
+  breakpoint location): the lines of an IL file are the IL lines, those of a diagram stay the
+  generated lines and carry the element, a step is entered and a transition fires at the
+  statement nested in the test of the chart. The breakpoints of a diagram are kept on the
+  elements and worked out again from the debug map of each build, so they follow their
+  rung, block or step when the diagram changes. Executed on the native runtime for IL, LD,
+  FBD and SFC; not checked on a board.
+- A diagnostic of an IL, LD, FBD or SFC file names the element it is about (LNG-003,
+  LNG-026): an IL line, a rung and its cell, a block or a wire, a step, the condition of
+  a transition, the body of an action. Each element that is wrong is its own diagnostic
+  (an IL file reported only its first line, and every other file one joined message),
+  the Tool API, the CLI and MCP carry it in an `element` field, and a finding of the
+  compiler in the generated Structured Text is put on the element it was generated
+  for (on the IL line, for IL). Activating the problem in Studio selects the element
+  in the editor. The transpilers return the map of the generated lines to elements
+  (`sourceMap`) that debugging uses (LNG-004).
+- The FBD canvas refuses a wire between pins whose types do not match and says why
+  (LNG-013): a `BOOL` output into a numeric input, a `REAL` into a `BOOL` or integer
+  input, a number into a `TIME` input, and a second wire into an input. The table of
+  rules (`models/pinTypes.ts`) is the one the compiler applies to an assignment, and a
+  test compiles every pair of elementary types and fails when the two disagree.
+- Opening a Ladder, FBD or SFC file and saving it without a change leaves it byte for byte
+  as it was (LNG-014): a commit of an editor that says what the file already said no longer
+  rewrites it (the order of the keys does not matter, and the fields of a block, a step or a
+  transition that the canvas does not edit are written back as they were), and the one form
+  that Studio writes (`serializeLDModel`, `serializeFBDModel`,
+  `serializeSFCModel`) ends in a newline, as the files of the repository do. The checks made
+  when a visual file opens (LNG-011) now also cover the variables of FBD and SFC files, the
+  actions, positions and conditions of an SFC chart, and the variable of a Ladder element.
 - The VM has 34 new opcodes for 64-bit integers and double precision (CMP-015),
   all in the C core, so every runtime has them at once: `MUL64`, `DIVS64`,
   `DIVU64`, `MODS64`, `MODU64`, `NEG64`, `ABS64`, `SHL64`, `SHR64` and `SAR64`

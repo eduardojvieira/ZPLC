@@ -6,7 +6,7 @@
 
 import { useState, type ReactElement } from 'react';
 import { ChevronDown, ChevronRight, Timer, Binary, Hash, GitBranch, Calculator, ToggleLeft, Zap, ArrowRightLeft, Repeat, Gauge, Database, Type, Radio } from 'lucide-react';
-import { getBlockCategories } from '../../catalog/blockCatalog';
+import { FBD_VALUE_BLOCKS, fbdPaletteCategories } from './palette';
 import { describeProjectBlock, projectPalette } from '../../models/projectBlocks';
 import { useProjectBlocks } from '../useProjectBlocks';
 
@@ -40,7 +40,8 @@ const CATEGORY_ICONS: Record<string, ReactElement> = {
   Other: <Database size={14} />,
 };
 
-const BLOCK_CATEGORIES: BlockCategory[] = getBlockCategories().map((category) => ({
+// Only the blocks that the transpiler translates are offered (LNG-007)
+const BLOCK_CATEGORIES: BlockCategory[] = fbdPaletteCategories().map((category) => ({
   ...category,
   icon: CATEGORY_ICONS[category.name] ?? <Database size={14} />,
 }));
@@ -138,7 +139,7 @@ export default function FBDToolbox() {
             I/O
           </span>
         </div>
-        {['constant', 'variable', 'input', 'output'].map((block) => (
+        {FBD_VALUE_BLOCKS.map((block) => (
           <div
             key={block}
             draggable

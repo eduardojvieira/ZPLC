@@ -24,6 +24,7 @@
 import { getFB, parseIOAddress } from '@zplc/compiler';
 import { getDefaultPorts } from '../../models/fbd';
 import type { ILProgram, ILInstruction, ILVarBlock, ILOperand, ILFBParam } from './parser';
+import { Listing, ilLineElement, type ElementDiagnostic, type SourceMapRange } from '../../models/sourceElements';
 
 // =============================================================================
 // Types
@@ -35,6 +36,10 @@ export interface TranspileResult {
     errors: string[];
     /** Line of the first error in the IL source, when the error has one. */
     line?: number;
+    /** Each error with the IL line it is about (LNG-003). */
+    diagnostics?: ElementDiagnostic[];
+    /** For each line of the IL source, the lines of `source` written for it (LNG-004). */
+    sourceMap?: SourceMapRange[];
 }
 
 /**
@@ -132,11 +137,13 @@ type DirectVars = Map<string, { name: string; type: string }>;
 
 export function transpileILToST(program: ILProgram, options: ILTranspileOptions = {}): TranspileResult {
     const errors: string[] = [];
+    const diagnostics: ElementDiagnostic[] = [];
     let firstErrorLine: number | undefined;
     let reporting = true;
     const fail = (line: number, message: string): void => {
         if (!reporting) return;
         errors.push(`IL line ${line}: ${message}`);
+        diagnostics.push({ message: `IL line ${line}: ${message}`, element: ilLineElement(line), line });
         if (firstErrorLine === undefined) firstErrorLine = line;
     };
 
@@ -454,7 +461,7 @@ export function transpileILToST(program: ILProgram, options: ILTranspileOptions 
     analyze();
 
     if (errors.length > 0) {
-        return { success: false, source: '', errors, line: firstErrorLine };
+        return { success: false, source: '', errors, line: firstErrorLine, diagnostics };
     }
 
     // =========================================================================
@@ -601,7 +608,8 @@ export function transpileILToST(program: ILProgram, options: ILTranspileOptions 
         return out;
     };
 
-    const body: string[] = [];
+    // the statements of the program, each with the IL line it was written for; the scaffolding of the jumps has none
+    const body = new Listing();
     if (hasJumps) {
         // Every scan starts at the first block: the state is not kept from the previous scan (LNG-018)
         body.push(`${STATE_VAR} := 0;`);
@@ -615,7 +623,7 @@ export function transpileILToST(program: ILProgram, options: ILTranspileOptions 
             const nextBlockId = blockId + 1 < blocks.length ? blockId + 1 : -1;
             body.push(`        ${blockId}:`);
             for (const index of block.indexes) {
-                for (const stmt of generate(index, nextBlockId)) body.push(`            ${stmt}`);
+                for (const stmt of generate(index, nextBlockId)) body.push(`            ${stmt}`, ilLineElement(instructions[index].line));
             }
             // A block that does not end with control flow falls through to the next one
             const last = instructions[block.indexes[block.indexes.length - 1]];
@@ -632,10 +640,12 @@ export function transpileILToST(program: ILProgram, options: ILTranspileOptions 
         body.push('END_WHILE;');
     } else {
         // Simple sequential execution (no jumps)
-        instructions.forEach((_, index) => body.push(...generate(index, -1)));
+        instructions.forEach((_, index) => {
+            for (const stmt of generate(index, -1)) body.push(stmt, ilLineElement(instructions[index].line));
+        });
     }
 
-    const lines: string[] = [];
+    const lines = new Listing();
     lines.push(`PROGRAM ${program.name}`);
     for (const varBlock of program.varBlocks) {
         lines.push(generateVarBlock(varBlock));
@@ -656,11 +666,11 @@ export function transpileILToST(program: ILProgram, options: ILTranspileOptions 
     }
     lines.push('END_VAR');
     lines.push('');
-    lines.push(...body);
+    lines.append(body);
     lines.push('');
     lines.push('END_PROGRAM');
 
-    return { success: true, source: lines.join('\n'), errors: [] };
+    return { success: true, source: lines.toString(), errors: [], sourceMap: lines.sourceMap() };
 }
 
 // =============================================================================

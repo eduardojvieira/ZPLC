@@ -1,10 +1,28 @@
-import type { Edge, EdgeChange, Node, NodeChange } from '@xyflow/react';
+import { addEdge, type Edge, type EdgeChange, type Node, type NodeChange } from '@xyflow/react';
 import { isFunctionBlock, type FBDBlock, type FBDConnection, type FBDModel, validateFBDModel } from '../../models/fbd';
+import { judgeConnection } from '../../models/pinTypes';
+import type { ProjectBlock } from '../../models/projectBlocks';
+
+const BLOCK_FIELDS = new Set(['id', 'type', 'position', 'instanceName', 'variableName', 'address', 'dataType', 'value', 'comment', 'inputs', 'outputs']);
+
+/**
+ * What the canvas holds in a node for a block: the fields it edits, and the rest of the block as it was in the file, so
+ * that a commit that changed nothing writes the block back as it was (LNG-014).
+ */
+export function blockNodeData(block: FBDBlock): Record<string, unknown> {
+  const extra = Object.fromEntries(Object.entries(block).filter(([field]) => !BLOCK_FIELDS.has(field)));
+  return {
+    type: block.type, instanceName: block.instanceName, variableName: block.variableName, address: block.address,
+    dataType: block.dataType, value: block.value, comment: block.comment, inputs: block.inputs, outputs: block.outputs,
+    ...(Object.keys(extra).length > 0 ? { extra } : {}),
+  };
+}
 
 export function nodesToBlocks(nodes: Node[]): FBDBlock[] {
   return nodes.map((node) => {
     const data = node.data as Record<string, unknown>;
     return {
+      ...(data.extra as Record<string, unknown> | undefined),
       id: node.id, type: data.type as string, position: node.position,
       instanceName: data.instanceName as string | undefined,
       variableName: data.variableName as string | undefined,
@@ -18,6 +36,36 @@ export function nodesToBlocks(nodes: Node[]): FBDBlock[] {
 
 export function edgesToConnections(edges: Edge[]): FBDConnection[] {
   return edges.map((edge) => ({ id: edge.id, from: { block: edge.source, port: edge.sourceHandle || 'OUT' }, to: { block: edge.target, port: edge.targetHandle || 'IN' } }));
+}
+
+/** The two ends of a wire as the canvas reports them: a pin of a block each. */
+export type WireEnds = { source: string; sourceHandle?: string | null; target: string; targetHandle?: string | null };
+
+/**
+ * The edges after the user draws a wire between two pins, or the reason the wire is refused (LNG-013): the canvas lets a
+ * wire start at an input, so the wire is written from the output end, and it is refused when the pin types do not match.
+ */
+export function connectBlocks(
+  model: FBDModel,
+  nodes: Node[],
+  edges: Edge[],
+  params: WireEnds,
+  projectBlocks?: readonly ProjectBlock[],
+): { edges: Edge[]; refusal?: string } {
+  const current: FBDModel = { ...model, blocks: nodesToBlocks(nodes), connections: edgesToConnections(edges) };
+  const verdict = judgeConnection(
+    current,
+    { block: params.source, port: params.sourceHandle || 'OUT' },
+    { block: params.target, port: params.targetHandle || 'IN' },
+    projectBlocks,
+  );
+  if (verdict.reason !== undefined || !verdict.from || !verdict.to) return { edges, refusal: verdict.reason ?? 'a wire joins an output to an input' };
+  return {
+    edges: addEdge({
+      source: verdict.from.block, sourceHandle: verdict.from.port, target: verdict.to.block, targetHandle: verdict.to.port,
+      type: 'smoothstep', style: { stroke: 'var(--visual-wire)', strokeWidth: 2 },
+    }, edges),
+  };
 }
 
 export function hasCanonicalNodeChanges(changes: NodeChange[]): boolean {

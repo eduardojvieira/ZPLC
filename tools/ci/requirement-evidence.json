@@ -894,8 +894,48 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"LD power flow (LNG-021, LNG-022, LNG-002)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"SFC scan semantics (LNG-024, LNG-025, LNG-002)"}
   ],
+  "LNG-003": [
+    {"kind":"conformance","ref":"conformance/lng/lng-003-fbd-compiler-error-names-the-block.expect.json","test":"LNG-003 an error the compiler finds in the code of an FBD block is reported against the block"},
+    {"kind":"conformance","ref":"conformance/lng/lng-003-il-compiler-error-names-the-il-line.expect.json","test":"LNG-003 an error the compiler finds in the code of an IL line is reported on that IL line"},
+    {"kind":"conformance","ref":"conformance/lng/lng-003-ld-undeclared-variable-names-the-cell.expect.json","test":"LNG-003 a Ladder contact on a variable that is not declared is reported against its rung and cell"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/visualDiagnostics.test.ts","test":"LNG-003 a Ladder diagnostic names the rung and the cell"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/visualDiagnostics.test.ts","test":"LNG-003 an FBD diagnostic names the block or the wire"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/visualDiagnostics.test.ts","test":"LNG-003 an IL diagnostic names its line"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/visualDiagnostics.test.ts","test":"LNG-003 and LNG-026 an SFC diagnostic names the step, the transition or the action"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/conformance/cases.test.ts","test":"LNG-003 asserts the element each diagnostic of a rejected diagram or IL program is about, one for each diagnostic"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/diagnosticElement.test.ts","test":"LNG-003 Problems selects the element that the build named"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/diagnosticElement.test.ts","test":"LNG-003 a request to select an element waits for the editor of its file"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/server.test.ts","test":"LNG-003 carries the element a diagnostic is about, and only an element"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"25 Problems select the block of a diagram","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"26 Problems select the cell of a rung","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"27 Problems select the step of an action","partial":true}
+  ],
+  "LNG-004": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/debugElements.test.ts","test":"LNG-004 the debug map of a Ladder diagram names rungs and cells"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/debugElements.test.ts","test":"LNG-004 the debug map of an FBD diagram names blocks"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/debugElements.test.ts","test":"LNG-004 the debug map of an IL program names IL lines"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/debugElements.test.ts","test":"LNG-004 the debug map of an SFC chart names steps and transitions"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/debugElements.test.ts","test":"LNG-004 the elements survive the debug map of a project built as one unit"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/debugElementsRuntime.test.ts","test":"LNG-004 a breakpoint on an element stops the VM at the element"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/elementBreakpoints.test.ts","test":"LNG-004 a breakpoint on an IL line is the line of the IL source"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/elementBreakpoints.test.ts","test":"LNG-004 a breakpoint on an element is armed at the element and follows it from build to build"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/sourceMap.test.ts","test":"LNG-004 and LNG-026 the SFC source map"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/sourceMap.test.ts","test":"LNG-004 the FBD source map"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/sourceMap.test.ts","test":"LNG-004 the IL source map"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/sourceMap.test.ts","test":"LNG-004 the Ladder source map"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28 A breakpoint on a rung stops execution","partial":true}
+  ],
   "LNG-005": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"7 Breakpoint stops execution","partial":true}
+  ],
+  "LNG-007": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every block of the FBD palette is placed, built and run"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every coil of the Ladder palette is run"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every contact of the Ladder palette is run"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every element of the SFC palette is run"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every function block of the Ladder palette is placed, built and run"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 the Ladder palette does not hide what the transpiler translates and offers nothing it refuses"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 the branch of the Ladder palette is run"}
   ],
   "LNG-008": [
     {"kind":"conformance","ref":"conformance/lng/lng-008-fbd-block-the-project-does-not-declare-is-rejected.expect.json","test":"LNG-008 an FBD block of a type that neither the library nor the project declares is rejected by name"},
@@ -905,6 +945,23 @@
   ],
   "LNG-009": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"9 Undo after switching tabs"}
+  ],
+  "LNG-011": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileLoad.schema.test.ts","test":"LNG-011 a variable is an object with a name and a type, in every language"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileLoad.schema.test.ts","test":"LNG-011 the parts of a Ladder file have the shape the editor reads"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileLoad.schema.test.ts","test":"LNG-011 the parts of an SFC chart have the shape the editor reads"}
+  ],
+  "LNG-013": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/graphModel.test.ts","test":"LNG-013 drawing a wire between two pins"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/models/pinTypes.test.ts","test":"LNG-013 a pin takes what the compiler would take"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/models/pinTypes.test.ts","test":"LNG-013 judging a wire of the diagram"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/models/pinTypes.test.ts","test":"LNG-013 the reason a pin gives"}
+  ],
+  "LNG-014": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileRoundTrip.test.ts","test":"LNG-014 the commit of an editor that changed nothing says what the file says"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileRoundTrip.test.ts","test":"LNG-014 the committed visual files"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileRoundTrip.test.ts","test":"LNG-014 the one form of a visual file"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/fileSystem.visualRoundTrip.test.ts","test":"LNG-014 open and save without an edit"}
   ],
   "LNG-017": [
     {"kind":"conformance","ref":"conformance/lng/lng-017-il-unbalanced-closing-parenthesis.expect.json","test":"LNG-017 an IL closing parenthesis without an opening one is an error on its line"},
@@ -980,8 +1037,17 @@
     {"kind":"conformance","ref":"conformance/lng/lng-025-sfc-timed-and-pulse-qualifiers.expect.json","test":"LNG-025 an SFC pulse runs once, a limited action for its time, a delayed one after it"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"SFC scan semantics (LNG-024, LNG-025, LNG-002)"}
   ],
+  "LNG-026": [
+    {"kind":"conformance","ref":"conformance/lng/lng-026-sfc-action-body-error-names-the-action.expect.json","test":"LNG-026 an error in an SFC action body is reported against the action"},
+    {"kind":"conformance","ref":"conformance/lng/lng-026-sfc-transition-condition-error-names-the-transition.expect.json","test":"LNG-026 an error in an SFC transition condition is reported against the transition"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/visualDiagnostics.test.ts","test":"LNG-003 and LNG-026 an SFC diagnostic names the step, the transition or the action"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/visualDiagnostics.test.ts","test":"LNG-026 a finding of the safety check in an action body is reported against the action"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/sourceMap.test.ts","test":"LNG-004 and LNG-026 the SFC source map"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"27 Problems select the step of an action","partial":true}
+  ],
   "LNG-027": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"16 Debug details: stop, trace, resume mid-scan","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28 A breakpoint on a rung stops execution","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"7 Breakpoint stops execution","partial":true}
   ],
   "RT-001": [

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import type { Edge, Node } from '@xyflow/react';
 import { parseFBDModel, serializeFBDModel, type FBDModel } from '../../models/fbd';
-import { copyFBDFragment, pasteFBDFragment } from './graphModel';
+import { connectBlocks, copyFBDFragment, pasteFBDFragment } from './graphModel';
 
 const model: FBDModel = {
   name: 'copy', variables: { local: [], outputs: [] },
@@ -47,5 +47,41 @@ describe('FBD copy/paste graph model', () => {
     expect(copyFBDFragment(nodes.map((node) => ({ ...node, selected: false })), edges)).toBeUndefined();
     expect(pasteFBDFragment(model, { blocks: [{ ...model.blocks[0]!, position: { x: Number.NaN, y: 0 } }], connections: [] })).toBeUndefined();
     expect(pasteFBDFragment({ ...model, blocks: [...model.blocks, { ...model.blocks[0]!, id: 'timer_two', instanceName: 'timer' }] }, copyFBDFragment(nodes, edges)!)).toBeUndefined();
+  });
+});
+
+describe('LNG-013 drawing a wire between two pins', () => {
+  const diagram: FBDModel = {
+    name: 'pins',
+    variables: { local: [{ name: 'Level', type: 'REAL' }], outputs: [{ name: 'Lamp', type: 'BOOL' }] },
+    blocks: [
+      { id: 'level', type: 'variable', variableName: 'Level', position: { x: 0, y: 0 }, inputs: [{ name: 'IN', type: 'ANY' }], outputs: [{ name: 'OUT', type: 'ANY' }] },
+      { id: 'gate', type: 'AND', position: { x: 100, y: 0 }, inputs: [{ name: 'IN1', type: 'BOOL' }, { name: 'IN2', type: 'BOOL' }], outputs: [{ name: 'OUT', type: 'BOOL' }] },
+      { id: 'lamp', type: 'output', variableName: 'Lamp', position: { x: 200, y: 0 }, inputs: [{ name: 'IN', type: 'ANY' }], outputs: [] },
+    ],
+    connections: [],
+  };
+  const flowNodes: Node[] = diagram.blocks.map((block) => ({ id: block.id, type: 'block', position: block.position, data: { ...block } }));
+
+  it('refuses a REAL variable into a BOOL input, keeps the edges, and says why', () => {
+    const edges: Edge[] = [];
+    const result = connectBlocks(diagram, flowNodes, edges, { source: 'level', sourceHandle: 'OUT', target: 'gate', targetHandle: 'IN1' });
+    expect(result.edges).toBe(edges);
+    expect(result.refusal).toContain("'level.OUT' cannot feed 'gate.IN1'");
+    expect(result.refusal).toContain('REAL is a real number (REAL) and BOOL is a BOOL');
+  });
+
+  it('adds the wire from the output end when it was drawn from the input end', () => {
+    const result = connectBlocks(diagram, flowNodes, [], { source: 'lamp', sourceHandle: 'IN', target: 'gate', targetHandle: 'OUT' });
+    expect(result.refusal).toBeUndefined();
+    expect(result.edges).toHaveLength(1);
+    expect(result.edges[0]).toMatchObject({ source: 'gate', sourceHandle: 'OUT', target: 'lamp', targetHandle: 'IN' });
+  });
+
+  it('refuses a second wire into an input that already has one', () => {
+    const first = connectBlocks(diagram, flowNodes, [], { source: 'gate', sourceHandle: 'OUT', target: 'lamp', targetHandle: 'IN' });
+    const second = connectBlocks(diagram, flowNodes, first.edges, { source: 'level', sourceHandle: 'OUT', target: 'lamp', targetHandle: 'IN' });
+    expect(second.refusal).toContain("input 'lamp.IN' already has a wire");
+    expect(second.edges).toBe(first.edges);
   });
 });

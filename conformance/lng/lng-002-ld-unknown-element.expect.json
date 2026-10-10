@@ -3,6 +3,7 @@
   "title": "an LD element the transpiler does not know is rejected by name",
   "matrix": ["ld-fbd.ld-jumps-and-labels"],
   "build": "fails",
+  "elements": ["rung:rung1/element:mystery"],
   "messageIncludes": [
     "mystery",
     "one_shot_rising"

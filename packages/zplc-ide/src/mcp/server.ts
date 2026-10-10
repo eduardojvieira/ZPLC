@@ -76,7 +76,9 @@ function logicalPath(value: string): boolean {
   return value.split('/').every((part) => part.length > 0 && part !== '.' && part !== '..');
 }
 const logicalPathSchema = z.string().max(512).refine(logicalPath);
-const diagnosticSchema = z.object({ code: z.string().min(1).max(96).regex(/^[A-Z0-9_:-]+$/), message: z.string().min(1).max(512), path: logicalPathSchema.optional(), phase: z.enum(['lexer', 'parser', 'codegen', 'assembler']).optional(), line: z.number().int().optional(), column: z.number().int().optional() }).strict();
+/** The element of a visual or IL source a diagnostic is about (LNG-003): `rung:r1/cell:0,2`, `block:and_1`, `line:12`; ids are percent-encoded. */
+const elementSchema = z.string().max(256).regex(/^[a-z]+:[A-Za-z0-9_%.,!~*'()-]+(\/[a-z]+:[A-Za-z0-9_%.,!~*'()-]+)?$/);
+const diagnosticSchema = z.object({ code: z.string().min(1).max(96).regex(/^[A-Z0-9_:-]+$/), message: z.string().min(1).max(512), path: logicalPathSchema.optional(), phase: z.enum(['lexer', 'parser', 'codegen', 'assembler']).optional(), line: z.number().int().optional(), column: z.number().int().optional(), element: elementSchema.optional() }).strict();
 const artifactSchema = z.object({ kind: z.enum(['zplc', 'bytecode', 'trace', 'firmware-elf', 'project-manifest']), sha256: z.string().regex(/^[0-9a-f]{64}$/), byteLength: z.number().int().positive().max(Number.MAX_SAFE_INTEGER) }).strict();
 const evidenceSchema = z.object({ schemaVersion: z.literal(1), operation: z.string().min(1).max(64).regex(/^[a-z][a-z-]*$/), outcome: z.enum(['passed', 'failed']), diagnostics: z.array(diagnosticSchema).max(256), artifacts: z.array(artifactSchema).max(8) }).strict();
 const executionSchema = z.object({

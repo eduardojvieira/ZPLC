@@ -5,7 +5,7 @@ import { buildOptionsOf } from '../project/buildOptions';
 import { parseAndMigrateProject, type ProjectMigrationChange } from '../project/projectModel';
 import { getLanguageFromFilename, type PLCLanguage, type ZPLCProjectV2 } from '../types';
 
-export interface ToolDiagnostic { code: string; message: string; path?: string; phase?: 'lexer' | 'parser' | 'codegen' | 'assembler'; line?: number; column?: number; }
+export interface ToolDiagnostic { code: string; message: string; path?: string; phase?: 'lexer' | 'parser' | 'codegen' | 'assembler'; line?: number; column?: number; /** The element of a visual or IL source the diagnostic is about (LNG-003). */ element?: string; }
 /** A source file of the project: `library` is the folder of `libraries` it was read from; absent for `src` (CMP-046). */
 export interface WorkspaceSource { name: string; path: string; content: string; language: PLCLanguage; bytes: Uint8Array; library?: string; }
 export interface WorkspaceProject {

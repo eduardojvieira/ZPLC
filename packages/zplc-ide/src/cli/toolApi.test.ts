@@ -211,7 +211,8 @@ END_PROGRAM`);
       await writeFile(join(root, 'src', 'main.sfc.json'), JSON.stringify(model));
       const result = await safetyCheck(root);
       expect(result).toMatchObject({ ok: false, evidence: { diagnostics: [{ code: 'SAFETY_UNBOUNDED_WHILE', path: 'src/main.sfc.json' }] } });
-      expect(result.evidence.diagnostics[0]).toEqual({ code: 'SAFETY_UNBOUNDED_WHILE', message: 'WHILE has no provable static iteration bound', path: 'src/main.sfc.json' });
+      // a diagram has no lines: the loop of the action is reported against the action (LNG-026)
+      expect(result.evidence.diagnostics[0]).toEqual({ code: 'SAFETY_UNBOUNDED_WHILE', message: 'WHILE has no provable static iteration bound', path: 'src/main.sfc.json', element: 'action:SET_LED_ON' });
     } finally { await rm(root, { recursive: true, force: true }); }
   });
 

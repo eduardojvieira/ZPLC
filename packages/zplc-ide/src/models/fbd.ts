@@ -5,6 +5,9 @@
  * Based on IEC 61131-3 FBD language specification.
  */
 
+import { getFB } from '@zplc/compiler';
+import { ElementError, blockElement, connectionElement } from './sourceElements';
+import { serializeVisualDocument } from './visualFileFormat';
 import { findProjectBlock, type ProjectBlock } from './projectBlocks';
 
 // =============================================================================
@@ -233,11 +236,11 @@ export function validateFBDModel(value: unknown, projectBlocks?: readonly Projec
     const block = record(value, `blocks[${index}]`);
     const id = nonEmptyString(block.id, `blocks[${index}].id`);
     const type = nonEmptyString(block.type, `blocks[${index}].type`);
-    if (blockIds.has(id)) throw new Error(`Invalid FBD: duplicate block id '${id}'`);
+    if (blockIds.has(id)) throw new ElementError(`Invalid FBD: duplicate block id '${id}'`, blockElement(id));
     blockIds.add(id);
     const position = record(block.position, `blocks[${index}].position`);
     if (!Number.isFinite(position.x) || !Number.isFinite(position.y)) {
-      throw new Error(`Invalid FBD blocks[${index}].position: coordinates must be finite`);
+      throw new ElementError(`Invalid FBD blocks[${index}].position: coordinates must be finite`, blockElement(id));
     }
     const defaults = getDefaultPorts(type, projectBlocks);
     return {
@@ -256,7 +259,7 @@ export function validateFBDModel(value: unknown, projectBlocks?: readonly Projec
   const connections = source.connections.map((value, index) => {
     const connection = record(value, `connections[${index}]`);
     const id = nonEmptyString(connection.id, `connections[${index}].id`);
-    if (connectionIds.has(id)) throw new Error(`Invalid FBD: duplicate connection id '${id}'`);
+    if (connectionIds.has(id)) throw new ElementError(`Invalid FBD: duplicate connection id '${id}'`, connectionElement(id));
     connectionIds.add(id);
     const from = record(connection.from, `connections[${index}].from`);
     const to = record(connection.to, `connections[${index}].to`);
@@ -266,16 +269,17 @@ export function validateFBDModel(value: unknown, projectBlocks?: readonly Projec
     const toPort = nonEmptyString(to.port, `connections[${index}].to.port`);
     const sourceBlock = blocksById.get(fromBlock);
     const destinationBlock = blocksById.get(toBlock);
-    if (!sourceBlock) throw new Error(`Invalid FBD connection '${id}': unknown source block '${fromBlock}'`);
-    if (!destinationBlock) throw new Error(`Invalid FBD connection '${id}': unknown destination block '${toBlock}'`);
+    const at = connectionElement(id);
+    if (!sourceBlock) throw new ElementError(`Invalid FBD connection '${id}': unknown source block '${fromBlock}'`, at);
+    if (!destinationBlock) throw new ElementError(`Invalid FBD connection '${id}': unknown destination block '${toBlock}'`, at);
     if (!sourceBlock.outputs!.some((port) => port.name === fromPort)) {
-      throw new Error(`Invalid FBD connection '${id}': unknown source output port '${fromBlock}.${fromPort}'`);
+      throw new ElementError(`Invalid FBD connection '${id}': unknown source output port '${fromBlock}.${fromPort}'`, at);
     }
     if (!destinationBlock.inputs!.some((port) => port.name === toPort)) {
-      throw new Error(`Invalid FBD connection '${id}': unknown destination input port '${toBlock}.${toPort}'`);
+      throw new ElementError(`Invalid FBD connection '${id}': unknown destination input port '${toBlock}.${toPort}'`, at);
     }
     const destination = endpointKey(toBlock, toPort);
-    if (writtenInputs.has(destination)) throw new Error(`Invalid FBD connection '${id}': multiple writers for '${toBlock}.${toPort}'`);
+    if (writtenInputs.has(destination)) throw new ElementError(`Invalid FBD connection '${id}': multiple writers for '${toBlock}.${toPort}'`, at);
     writtenInputs.add(destination);
     return { ...connection, id, from: { block: fromBlock, port: fromPort }, to: { block: toBlock, port: toPort } } as FBDConnection;
   });
@@ -293,7 +297,7 @@ export function validateFBDModel(value: unknown, projectBlocks?: readonly Projec
  * Serialize an FBDModel to JSON
  */
 export function serializeFBDModel(model: FBDModel): string {
-  return JSON.stringify(model, null, 2);
+  return serializeVisualDocument(model);
 }
 
 /**
@@ -565,10 +569,26 @@ export function getDefaultPorts(type: string, blocks?: readonly ProjectBlock[]):
           { name: 'STATUS', type: 'BOOL' }
         ]
       };
-    default:
+    default: {
+      // a block of the compiler's library has the inputs and outputs it declares (LNG-007): wiring `IN` to a BLINK would
+      // be a call with a parameter the block does not have
+      const library = getFB(type);
+      if (library) {
+        // the type a member declares, else the one the compiler gives it by its size: a byte is a BOOL, two bytes an INT;
+        // anything wider is not checked by the compiler, so it is not claimed here
+        const port = (member: (typeof library.members)[number]): FBDPort => ({
+          name: member.name,
+          type: typeof member.dataType === 'string' ? member.dataType.toUpperCase() : member.size === 1 ? 'BOOL' : member.size === 2 ? 'INT' : 'ANY',
+        });
+        return {
+          inputs: library.members.filter((member) => member.isInput && !member.isInternal).map(port),
+          outputs: library.members.filter((member) => member.isOutput && !member.isInternal).map(port),
+        };
+      }
       return {
         inputs: [{ name: 'IN', type: 'ANY' }],
         outputs: [{ name: 'OUT', type: 'ANY' }]
       };
+    }
   }
 }

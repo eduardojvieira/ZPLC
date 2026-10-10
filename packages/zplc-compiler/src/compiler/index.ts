@@ -167,6 +167,12 @@ export class CompilerError extends Error {
     /** Physical project-relative source identity, when the diagnostic belongs to one source. */
     sourceRef?: string;
     /**
+     * The element of the source the author edited that the error is about: a rung and cell, a block, a step, a
+     * transition, an action, or a line of an IL source (LNG-003). Set by a front end that translates a visual
+     * language to Structured Text; the compiler itself reports positions only.
+     */
+    element?: string;
+    /**
      * Every independent error of the compile, in source order (programs in task order); this error is
      * the first of them. A caller that shows one diagnostic shows this one; one that shows all uses this list (CMP-007).
      */
@@ -657,6 +663,8 @@ export interface CompilerWarning {
     endColumn?: number;
     /** Physical project-relative source identity, when the warning belongs to one source. */
     sourceRef?: string;
+    /** The element of a visual or IL source the warning is about, set by the front end that translated it (LNG-003). */
+    element?: string;
 }
 
 /**

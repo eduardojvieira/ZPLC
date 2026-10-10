@@ -98,6 +98,12 @@ export interface SourceLineMapping {
     pc: number;
     /** Number of bytecode bytes for this line */
     length: number;
+    /**
+     * The element of the source the author edited that this range was generated for, when the source was translated
+     * to Structured Text by a front end (LNG-004): `rung:r1/cell:0,2`, `block:and_1`, `step:s1`, `transition:t1`,
+     * `action:a1`, or `line:12` of an IL source. A range of a plain Structured Text source has none.
+     */
+    element?: string;
 }
 
 /**
@@ -110,6 +116,8 @@ export interface BreakpointLocation {
     pc: number;
     /** True if this line is a valid breakpoint target */
     valid: boolean;
+    /** The element of the source the author edited that execution stops at, for a source translated by a front end (LNG-004). */
+    element?: string;
 }
 
 // ============================================================================
