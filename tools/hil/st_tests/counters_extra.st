@@ -5,8 +5,8 @@ VAR
     cd : BOOL;
     ld : BOOL;
     pv : INT := 5;
-    q_ctd : BOOL;
-    cv_ctd : INT;
+    q_ctd AT %QX0.0 : BOOL;
+    cv_ctd AT %QW1 : INT;
     
     (* CTUD Test *)
     myCtud : CTUD;
@@ -15,9 +15,9 @@ VAR
     r : BOOL;
     ld_ud : BOOL;
     pv_ud : INT := 5;
-    qu : BOOL;
-    qd : BOOL;
-    cv_ud : INT;
+    qu AT %QX0.1 : BOOL;
+    qd AT %QX0.2 : BOOL;
+    cv_ud AT %QW2 : INT;
     
     step : INT := 0;
     cycles : INT := 0;

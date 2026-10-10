@@ -41,15 +41,15 @@ PROGRAM FullTest
         currentState : State := INIT;
         
         test_dt : DT;
-        calc_res1 : REAL;
-        calc_res2 : REAL;
+        calc_res1 AT %QD1 : REAL;
+        calc_res2 AT %QD2 : REAL;
         
-        cycle : INT := 0;
-        
-        flag_enum : BOOL;
-        flag_oop : BOOL;
-        flag_temp : BOOL;
-        flag_types : BOOL;
+        cycle AT %QW0 : INT := 0;
+
+        flag_enum AT %QX12.0 : BOOL;
+        flag_oop AT %QX12.1 : BOOL;
+        flag_temp AT %QX12.2 : BOOL;
+        flag_types AT %QX12.3 : BOOL;
     END_VAR
 
     cycle := cycle + 1;

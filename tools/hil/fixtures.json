@@ -1,0 +1,1512 @@
+{
+  "schema": 1,
+  "scanMs": 50,
+  "note": "Expected values of every language fixture of tools/hil. The host test (packages/zplc-ide/src/cli/hilFixtures.test.ts) runs each phase on the native runtime with a virtual clock; the language suites run the same phases on a board, and tools/hil/run_chain.py runs the ones with hardware=true. Addresses are IEC direct addresses: %I is the input image at 0x0000, %Q the output image at 0x1000, %M work memory at 0x2000. An input is forced for its phase. op: eq (default), ge, approx (value and tolerance), between (min and max), toggles (min changes between scans).",
+  "fixtures": [
+    {
+      "id": "st.complex_types",
+      "source": "st_tests/complex_types.st",
+      "language": "ST",
+      "title": "A 2x2 array: the sum of the diagonal",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 4,
+          "expect": [
+            {
+              "at": "%QW0",
+              "type": "INT",
+              "value": 50
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st.counters_extra",
+      "source": "st_tests/counters_extra.st",
+      "language": "ST",
+      "title": "CTD counts down three pulses from 5 to 2; CTUD counts up on each rising edge",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 40,
+          "expect": [
+            {
+              "at": "%QW1",
+              "type": "INT",
+              "value": 2
+            },
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": false
+            },
+            {
+              "at": "%QW2",
+              "type": "INT",
+              "value": 12
+            },
+            {
+              "at": "%QX0.1",
+              "type": "BOOL",
+              "value": true
+            },
+            {
+              "at": "%QX0.2",
+              "type": "BOOL",
+              "value": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st.full_language_test",
+      "source": "st_tests/full_language_test.st",
+      "language": "ST",
+      "title": "Enumerations, methods and inheritance, VAR_TEMP and date-time compare in one program",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 8,
+          "expect": [
+            {
+              "at": "%QD1",
+              "type": "REAL",
+              "value": 20.0
+            },
+            {
+              "at": "%QD2",
+              "type": "REAL",
+              "value": 40.0
+            },
+            {
+              "at": "%QX12.0",
+              "type": "BOOL",
+              "value": true
+            },
+            {
+              "at": "%QX12.1",
+              "type": "BOOL",
+              "value": true
+            },
+            {
+              "at": "%QX12.2",
+              "type": "BOOL",
+              "value": true
+            },
+            {
+              "at": "%QX12.3",
+              "type": "BOOL",
+              "value": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st.loop_control",
+      "source": "st_tests/loop_control.st",
+      "language": "ST",
+      "title": "EXIT leaves a FOR loop at 5; CONTINUE skips 3 (1+2+4+5)",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 4,
+          "expect": [
+            {
+              "at": "%QW0",
+              "type": "INT",
+              "value": 5
+            },
+            {
+              "at": "%QW1",
+              "type": "INT",
+              "value": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st.loop_test",
+      "source": "st_tests/loop_test.st",
+      "language": "ST",
+      "title": "WHILE counts to 10 and REPEAT to 20 in one scan",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 4,
+          "expect": [
+            {
+              "at": "%QW0",
+              "type": "INT",
+              "value": 10
+            },
+            {
+              "at": "%QW1",
+              "type": "INT",
+              "value": 20
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st.master_blinky",
+      "source": "st_tests/master_blinky.st",
+      "language": "ST",
+      "title": "Two TON blinkers: the 100 ms one toggles at least 8 times and the 500 ms one at least 4 in 5 s",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 100,
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": null,
+              "op": "toggles",
+              "min": 4
+            },
+            {
+              "at": "%QX0.1",
+              "type": "BOOL",
+              "value": null,
+              "op": "toggles",
+              "min": 8
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st.master_math_control",
+      "source": "st_tests/master_math_control.st",
+      "language": "ST",
+      "title": "SQRT, LN, SIN and EXPT, a FOR sum and a CASE",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 6,
+          "expect": [
+            {
+              "at": "%QD1",
+              "type": "REAL",
+              "value": 1.4142,
+              "op": "approx",
+              "tolerance": 0.01
+            },
+            {
+              "at": "%QD2",
+              "type": "REAL",
+              "value": 1.0,
+              "op": "approx",
+              "tolerance": 0.01
+            },
+            {
+              "at": "%QD3",
+              "type": "REAL",
+              "value": 1.0,
+              "op": "approx",
+              "tolerance": 0.01
+            },
+            {
+              "at": "%QW8",
+              "type": "INT",
+              "value": 256
+            },
+            {
+              "at": "%QW9",
+              "type": "INT",
+              "value": 55
+            },
+            {
+              "at": "%QW10",
+              "type": "INT",
+              "value": 20
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st.master_test",
+      "source": "st_tests/master_test.st",
+      "language": "ST",
+      "title": "RS, SR, R_TRIG latch and a CTU that reaches its preset",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 100,
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": true
+            },
+            {
+              "at": "%QX0.1",
+              "type": "BOOL",
+              "value": true
+            },
+            {
+              "at": "%QX0.2",
+              "type": "BOOL",
+              "value": true
+            },
+            {
+              "at": "%QX0.3",
+              "type": "BOOL",
+              "value": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st.master_test_2",
+      "source": "st_tests/master_test_2.st",
+      "language": "ST",
+      "title": "TOF and TP still on at cycle 10, a FOR sum of 1..5 and a CASE",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 100,
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": true
+            },
+            {
+              "at": "%QX0.1",
+              "type": "BOOL",
+              "value": true
+            },
+            {
+              "at": "%QW1",
+              "type": "INT",
+              "value": 15
+            },
+            {
+              "at": "%QW2",
+              "type": "INT",
+              "value": 200
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st.math_real",
+      "source": "st_tests/math_real.st",
+      "language": "ST",
+      "title": "SIN of an array of angles: sin(pi/2) is 1",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 4,
+          "expect": [
+            {
+              "at": "%QW0",
+              "type": "INT",
+              "value": 1
+            },
+            {
+              "at": "%QD1",
+              "type": "REAL",
+              "value": 1.0,
+              "op": "approx",
+              "tolerance": 0.01
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st.moving_avg",
+      "source": "st_tests/moving_avg.st",
+      "language": "ST",
+      "title": "A five-sample moving average of a ramp stays between 1 and 100",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 30,
+          "expect": [
+            {
+              "at": "%QW0",
+              "type": "INT",
+              "value": null,
+              "op": "between",
+              "min": 1,
+              "max": 100
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st.named_params_test",
+      "source": "st_tests/named_params_test.st",
+      "language": "ST",
+      "title": "A method called with named parameters",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 4,
+          "expect": [
+            {
+              "at": "%QD0",
+              "type": "REAL",
+              "value": 30.0,
+              "op": "approx",
+              "tolerance": 0.01
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st.oop_extends_simple",
+      "source": "st_tests/oop_extends_simple.st",
+      "language": "ST",
+      "title": "An overriding method answers 222, not the base 111",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 4,
+          "expect": [
+            {
+              "at": "%QW0",
+              "type": "INT",
+              "value": 222
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st.oop_extends",
+      "source": "st_tests/oop_extends.st",
+      "language": "ST",
+      "title": "Inherited members and methods, and an override, on a derived function block",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 6,
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": true
+            },
+            {
+              "at": "%QW1",
+              "type": "INT",
+              "value": 222
+            },
+            {
+              "at": "%QW2",
+              "type": "INT",
+              "value": 1,
+              "op": "ge"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st.oop_test",
+      "source": "st_tests/oop_test.st",
+      "language": "ST",
+      "title": "A function block with methods and THIS",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 6,
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": true
+            },
+            {
+              "at": "%QW1",
+              "type": "INT",
+              "value": 11,
+              "op": "ge"
+            },
+            {
+              "at": "%QW2",
+              "type": "INT",
+              "value": 11,
+              "op": "ge"
+            },
+            {
+              "at": "%QW3",
+              "type": "INT",
+              "value": 1,
+              "op": "ge"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st.pointer_test",
+      "source": "st_tests/pointer_test.st",
+      "language": "ST",
+      "title": "REF and dereference, read and write",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 4,
+          "expect": [
+            {
+              "at": "%QW0",
+              "type": "INT",
+              "value": 42
+            },
+            {
+              "at": "%QW1",
+              "type": "INT",
+              "value": 99
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st.process_test",
+      "source": "st_tests/process_test.st",
+      "language": "ST",
+      "title": "Process blocks: a P-only PID gives 20 and a lag filter approaches 100",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 60,
+          "expect": [
+            {
+              "at": "%QD2",
+              "type": "REAL",
+              "value": 20.0,
+              "op": "approx",
+              "tolerance": 0.1
+            },
+            {
+              "at": "%QD1",
+              "type": "REAL",
+              "value": 90.0,
+              "op": "ge"
+            },
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st.struct_revisited",
+      "source": "st_tests/struct_revisited.st",
+      "language": "ST",
+      "title": "A structure of two INT members",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 4,
+          "expect": [
+            {
+              "at": "%QW0",
+              "type": "INT",
+              "value": 30
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st.struct_test",
+      "source": "st_tests/struct_test.st",
+      "language": "ST",
+      "title": "A structure of two INT members (second form)",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 4,
+          "expect": [
+            {
+              "at": "%QW0",
+              "type": "INT",
+              "value": 30
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st.test_ctu",
+      "source": "st_tests/test_ctu.st",
+      "language": "ST",
+      "title": "A CTU counts the edges of a clock that toggles every scan up to its preset",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 30,
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": true
+            },
+            {
+              "at": "%QW1",
+              "type": "INT",
+              "value": 5,
+              "op": "ge"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st.test_rs",
+      "source": "st_tests/test_rs.st",
+      "language": "ST",
+      "title": "An RS latch: set, memory, reset, and reset dominance",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 4,
+          "inputs": [
+            {
+              "at": "%IX0.0",
+              "type": "BOOL",
+              "value": true
+            },
+            {
+              "at": "%IX0.1",
+              "type": "BOOL",
+              "value": false
+            }
+          ],
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": true
+            }
+          ]
+        },
+        {
+          "scans": 4,
+          "inputs": [
+            {
+              "at": "%IX0.0",
+              "type": "BOOL",
+              "value": false
+            },
+            {
+              "at": "%IX0.1",
+              "type": "BOOL",
+              "value": false
+            }
+          ],
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": true
+            }
+          ]
+        },
+        {
+          "scans": 4,
+          "inputs": [
+            {
+              "at": "%IX0.0",
+              "type": "BOOL",
+              "value": false
+            },
+            {
+              "at": "%IX0.1",
+              "type": "BOOL",
+              "value": true
+            }
+          ],
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": false
+            }
+          ]
+        },
+        {
+          "scans": 4,
+          "inputs": [
+            {
+              "at": "%IX0.0",
+              "type": "BOOL",
+              "value": true
+            },
+            {
+              "at": "%IX0.1",
+              "type": "BOOL",
+              "value": true
+            }
+          ],
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st.test_ton",
+      "source": "st_tests/test_ton.st",
+      "language": "ST",
+      "title": "A TON of 200 ms reaches Q with its elapsed time at the preset",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 2,
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": false
+            }
+          ]
+        },
+        {
+          "scans": 10,
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": true
+            },
+            {
+              "at": "%QD1",
+              "type": "UDINT",
+              "value": 200,
+              "op": "ge"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st.user_fb",
+      "source": "st_tests/user_fb.st",
+      "language": "ST",
+      "title": "A user function block counts the rising edges of a clock that rises every second scan",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 30,
+          "expect": [
+            {
+              "at": "%QW0",
+              "type": "INT",
+              "value": 5,
+              "op": "ge"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st.user_function",
+      "source": "st_tests/user_function.st",
+      "language": "ST",
+      "title": "A user function returns the hypotenuse of 3 and 4",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 4,
+          "expect": [
+            {
+              "at": "%QD0",
+              "type": "REAL",
+              "value": 5.0,
+              "op": "approx",
+              "tolerance": 0.01
+            },
+            {
+              "at": "%QW2",
+              "type": "INT",
+              "value": 1,
+              "op": "ge"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st.vartemp_hil",
+      "source": "st_tests/vartemp_hil.st",
+      "language": "ST",
+      "title": "VAR_TEMP starts from its initial value on every call",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 4,
+          "expect": [
+            {
+              "at": "%QW0",
+              "type": "INT",
+              "value": 10
+            },
+            {
+              "at": "%QW1",
+              "type": "INT",
+              "value": 20
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st.blinky_ld_gen",
+      "source": "blinky_ld_gen.st",
+      "language": "ST",
+      "title": "The structured text a ladder blinky generates toggles its output",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 100,
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": null,
+              "op": "toggles",
+              "min": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st.debug_bool",
+      "source": "il_tests/debug_bool.st",
+      "language": "ST",
+      "title": "A BOOL literal goes to an output",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 4,
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": true
+            },
+            {
+              "at": "%QX0.1",
+              "type": "BOOL",
+              "value": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "st.debug_manual",
+      "source": "il_tests/debug_manual.st",
+      "language": "ST",
+      "title": "The structured text of an IL program written by hand compiles and runs",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 4,
+          "expect": [
+            {
+              "at": "%QW0",
+              "type": "INT",
+              "value": 10
+            },
+            {
+              "at": "%QW1",
+              "type": "INT",
+              "value": 20
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "il.arithmetic",
+      "source": "il_tests/arithmetic.il",
+      "language": "IL",
+      "title": "ADD, SUB, MUL, DIV and MOD of 10 and 5",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 4,
+          "expect": [
+            {
+              "at": "%QW0",
+              "type": "INT",
+              "value": 10
+            },
+            {
+              "at": "%QW1",
+              "type": "INT",
+              "value": 5
+            },
+            {
+              "at": "%QW2",
+              "type": "INT",
+              "value": 15
+            },
+            {
+              "at": "%QW3",
+              "type": "INT",
+              "value": 5
+            },
+            {
+              "at": "%QW4",
+              "type": "INT",
+              "value": 50
+            },
+            {
+              "at": "%QW5",
+              "type": "INT",
+              "value": 2
+            },
+            {
+              "at": "%QW6",
+              "type": "INT",
+              "value": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "il.basic_il",
+      "source": "il_tests/basic_il.il",
+      "language": "IL",
+      "title": "LD, ADD, ST and GT",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 4,
+          "expect": [
+            {
+              "at": "%QW0",
+              "type": "INT",
+              "value": 10
+            },
+            {
+              "at": "%QW1",
+              "type": "INT",
+              "value": 20
+            },
+            {
+              "at": "%QW2",
+              "type": "INT",
+              "value": 30
+            },
+            {
+              "at": "%QX6.0",
+              "type": "BOOL",
+              "value": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "il.comparison",
+      "source": "il_tests/comparison.il",
+      "language": "IL",
+      "title": "GT, LT, EQ and NE",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 4,
+          "expect": [
+            {
+              "at": "%QW0",
+              "type": "INT",
+              "value": 50
+            },
+            {
+              "at": "%QX2.0",
+              "type": "BOOL",
+              "value": true
+            },
+            {
+              "at": "%QX3.0",
+              "type": "BOOL",
+              "value": true
+            },
+            {
+              "at": "%QX4.0",
+              "type": "BOOL",
+              "value": true
+            },
+            {
+              "at": "%QX5.0",
+              "type": "BOOL",
+              "value": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "il.debug_bool",
+      "source": "il_tests/debug_bool.il",
+      "language": "IL",
+      "title": "LD TRUE and LD FALSE",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 4,
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": true
+            },
+            {
+              "at": "%QX0.1",
+              "type": "BOOL",
+              "value": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "il.debug_gt",
+      "source": "il_tests/debug_gt.il",
+      "language": "IL",
+      "title": "GT of two literals",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 4,
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "il.debug_var",
+      "source": "il_tests/debug_var.il",
+      "language": "IL",
+      "title": "A variable compared with a literal",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 4,
+          "expect": [
+            {
+              "at": "%QW0",
+              "type": "INT",
+              "value": 50
+            },
+            {
+              "at": "%QX2.0",
+              "type": "BOOL",
+              "value": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "il.jumps",
+      "source": "il_tests/jumps.il",
+      "language": "IL",
+      "title": "JMPC and JMP skip the code they jump over",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 4,
+          "expect": [
+            {
+              "at": "%QW0",
+              "type": "INT",
+              "value": 0
+            },
+            {
+              "at": "%QW1",
+              "type": "INT",
+              "value": 0
+            },
+            {
+              "at": "%QW2",
+              "type": "INT",
+              "value": 42
+            },
+            {
+              "at": "%QW3",
+              "type": "INT",
+              "value": 77
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "il.logic",
+      "source": "il_tests/logic.il",
+      "language": "IL",
+      "title": "AND, OR, XOR and NOT of TRUE and FALSE",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 4,
+          "expect": [
+            {
+              "at": "%QX2.0",
+              "type": "BOOL",
+              "value": false
+            },
+            {
+              "at": "%QX3.0",
+              "type": "BOOL",
+              "value": true
+            },
+            {
+              "at": "%QX4.0",
+              "type": "BOOL",
+              "value": true
+            },
+            {
+              "at": "%QX5.0",
+              "type": "BOOL",
+              "value": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "il.minimal",
+      "source": "il_tests/minimal.il",
+      "language": "IL",
+      "title": "The smallest IL program: LD 123, ST",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 4,
+          "expect": [
+            {
+              "at": "%QW0",
+              "type": "INT",
+              "value": 123
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ld.basic_coil",
+      "source": "ld_tests/basic_coil.ld.json",
+      "language": "LD",
+      "title": "A contact drives a coil",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 3,
+          "inputs": [
+            {
+              "at": "%IX0.0",
+              "type": "BOOL",
+              "value": false
+            }
+          ],
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": false
+            }
+          ]
+        },
+        {
+          "scans": 3,
+          "inputs": [
+            {
+              "at": "%IX0.0",
+              "type": "BOOL",
+              "value": true
+            }
+          ],
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ld.series_contacts",
+      "source": "ld_tests/series_contacts.ld.json",
+      "language": "LD",
+      "title": "Two contacts in series are an AND",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 3,
+          "inputs": [
+            {
+              "at": "%IX0.0",
+              "type": "BOOL",
+              "value": false
+            },
+            {
+              "at": "%IX0.1",
+              "type": "BOOL",
+              "value": false
+            }
+          ],
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": false
+            }
+          ]
+        },
+        {
+          "scans": 3,
+          "inputs": [
+            {
+              "at": "%IX0.0",
+              "type": "BOOL",
+              "value": true
+            },
+            {
+              "at": "%IX0.1",
+              "type": "BOOL",
+              "value": false
+            }
+          ],
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": false
+            }
+          ]
+        },
+        {
+          "scans": 3,
+          "inputs": [
+            {
+              "at": "%IX0.0",
+              "type": "BOOL",
+              "value": true
+            },
+            {
+              "at": "%IX0.1",
+              "type": "BOOL",
+              "value": true
+            }
+          ],
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ld.parallel_contacts",
+      "source": "ld_tests/parallel_contacts.ld.json",
+      "language": "LD",
+      "title": "Two contacts in parallel are an OR",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 3,
+          "inputs": [
+            {
+              "at": "%IX0.0",
+              "type": "BOOL",
+              "value": false
+            },
+            {
+              "at": "%IX0.1",
+              "type": "BOOL",
+              "value": false
+            }
+          ],
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": false
+            }
+          ]
+        },
+        {
+          "scans": 3,
+          "inputs": [
+            {
+              "at": "%IX0.0",
+              "type": "BOOL",
+              "value": false
+            },
+            {
+              "at": "%IX0.1",
+              "type": "BOOL",
+              "value": true
+            }
+          ],
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ld.timer_ton",
+      "source": "ld_tests/timer_ton.ld.json",
+      "language": "LD",
+      "title": "A TON block of 200 ms between a contact and a coil",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 3,
+          "inputs": [
+            {
+              "at": "%IX0.0",
+              "type": "BOOL",
+              "value": false
+            }
+          ],
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": false
+            }
+          ]
+        },
+        {
+          "scans": 2,
+          "inputs": [
+            {
+              "at": "%IX0.0",
+              "type": "BOOL",
+              "value": true
+            }
+          ],
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": false
+            }
+          ]
+        },
+        {
+          "scans": 10,
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fbd.not_gate",
+      "source": "fbd_tests/not_gate.fbd.json",
+      "language": "FBD",
+      "title": "A NOT block",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 3,
+          "inputs": [
+            {
+              "at": "%IX0.0",
+              "type": "BOOL",
+              "value": false
+            }
+          ],
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": true
+            }
+          ]
+        },
+        {
+          "scans": 3,
+          "inputs": [
+            {
+              "at": "%IX0.0",
+              "type": "BOOL",
+              "value": true
+            }
+          ],
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fbd.and_gate",
+      "source": "fbd_tests/and_gate.fbd.json",
+      "language": "FBD",
+      "title": "An AND block",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 3,
+          "inputs": [
+            {
+              "at": "%IX0.0",
+              "type": "BOOL",
+              "value": true
+            },
+            {
+              "at": "%IX0.1",
+              "type": "BOOL",
+              "value": false
+            }
+          ],
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": false
+            }
+          ]
+        },
+        {
+          "scans": 3,
+          "inputs": [
+            {
+              "at": "%IX0.0",
+              "type": "BOOL",
+              "value": true
+            },
+            {
+              "at": "%IX0.1",
+              "type": "BOOL",
+              "value": true
+            }
+          ],
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fbd.math_ops",
+      "source": "fbd_tests/math_ops.fbd.json",
+      "language": "FBD",
+      "title": "An ADD block of two constants",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 3,
+          "expect": [
+            {
+              "at": "%QW0",
+              "type": "INT",
+              "value": 30
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sfc.single_step",
+      "source": "sfc_tests/single_step.sfc.json",
+      "language": "SFC",
+      "title": "The initial step runs its N action",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 3,
+          "expect": [
+            {
+              "at": "%QX0.0",
+              "type": "BOOL",
+              "value": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sfc.two_states",
+      "source": "sfc_tests/two_states.sfc.json",
+      "language": "SFC",
+      "title": "A timed transition moves from step 1 to step 2 after 200 ms",
+      "hardware": true,
+      "phases": [
+        {
+          "scans": 2,
+          "expect": [
+            {
+              "at": "%QW0",
+              "type": "INT",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "scans": 10,
+          "expect": [
+            {
+              "at": "%QW0",
+              "type": "INT",
+              "value": 2
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

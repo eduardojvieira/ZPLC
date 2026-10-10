@@ -1,10 +1,10 @@
 PROGRAM Comparison
 VAR
-  val AT %Q0.0 : INT;
-  is_gt AT %Q2.0 : BOOL;
-  is_lt AT %Q3.0 : BOOL;
-  is_eq AT %Q4.0 : BOOL;
-  is_ne AT %Q5.0 : BOOL;
+  val AT %QW0 : INT;
+  is_gt AT %QX2.0 : BOOL;
+  is_lt AT %QX3.0 : BOOL;
+  is_eq AT %QX4.0 : BOOL;
+  is_ne AT %QX5.0 : BOOL;
 END_VAR
 
 (* Explicit init *)

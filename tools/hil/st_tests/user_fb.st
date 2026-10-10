@@ -21,7 +21,7 @@ PROGRAM UserFBTest
 VAR
     c1 : MyCounter;
     clk : BOOL := FALSE;
-    res_count AT %Q0.0 : INT; (* 0x1000 *)
+    res_count AT %QW0 : INT; (* 0x1000 *)
     
     cycle : INT := 0;
 END_VAR

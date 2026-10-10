@@ -1,20 +1,87 @@
 {
   "name": "FBDMath",
   "variables": {
+    "local": [],
     "outputs": [
-      { "name": "OutAdd", "type": "INT", "address": "%Q4.0" }
-    ],
-    "local": []
+      {
+        "name": "OutAdd",
+        "type": "INT",
+        "address": "%QW0"
+      }
+    ]
   },
   "blocks": [
-    { "id": "1", "type": "constant", "value": 10, "dataType": "INT", "outputs": [{ "name": "OUT", "type": "INT" }] },
-    { "id": "2", "type": "constant", "value": 20, "dataType": "INT", "outputs": [{ "name": "OUT", "type": "INT" }] },
-    { "id": "3", "type": "ADD", "outputs": [{ "name": "OUT", "type": "INT" }] },
-    { "id": "4", "type": "output", "variableName": "OutAdd", "inputs": [{ "name": "IN", "type": "INT" }] }
+    {
+      "id": "ten",
+      "type": "constant",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "dataType": "INT",
+      "value": 10
+    },
+    {
+      "id": "twenty",
+      "type": "constant",
+      "position": {
+        "x": 0,
+        "y": 1
+      },
+      "dataType": "INT",
+      "value": 20
+    },
+    {
+      "id": "add1",
+      "type": "ADD",
+      "position": {
+        "x": 1,
+        "y": 0
+      }
+    },
+    {
+      "id": "q",
+      "type": "output",
+      "position": {
+        "x": 2,
+        "y": 0
+      },
+      "variableName": "OutAdd"
+    }
   ],
   "connections": [
-    { "from": { "block": "1", "port": "OUT" }, "to": { "block": "3", "port": "IN1" } },
-    { "from": { "block": "2", "port": "OUT" }, "to": { "block": "3", "port": "IN2" } },
-    { "from": { "block": "3", "port": "OUT" }, "to": { "block": "4", "port": "IN" } }
+    {
+      "id": "w_ten_add1",
+      "from": {
+        "block": "ten",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "add1",
+        "port": "IN1"
+      }
+    },
+    {
+      "id": "w_twenty_add1",
+      "from": {
+        "block": "twenty",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "add1",
+        "port": "IN2"
+      }
+    },
+    {
+      "id": "w_add1_q",
+      "from": {
+        "block": "add1",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "q",
+        "port": "IN"
+      }
+    }
   ]
 }
