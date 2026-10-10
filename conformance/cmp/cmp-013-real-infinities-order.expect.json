@@ -1,0 +1,42 @@
+{
+  "requirement": "CMP-013",
+  "title": "REAL infinities order below and above every finite value and equal themselves",
+  "scans": 1,
+  "scanMs": 10,
+  "inputs": [
+    {
+      "at": "%ID0",
+      "type": "DWORD",
+      "value": 2139095040,
+      "beforeScan": 1
+    },
+    {
+      "at": "%ID4",
+      "type": "DWORD",
+      "value": 4286578688,
+      "beforeScan": 1
+    }
+  ],
+  "expect": [
+    {
+      "at": "%QX0.0",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX0.1",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX0.2",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX0.3",
+      "type": "BOOL",
+      "value": true
+    }
+  ]
+}

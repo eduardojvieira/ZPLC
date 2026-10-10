@@ -470,6 +470,8 @@ export interface BoolLiteral extends ASTNode {
 export interface IntLiteral extends ASTNode {
     kind: 'IntLiteral';
     value: number;
+    /** The exact value, present only when it is beyond 2^53 and `value` is rounded (a LINT or ULINT literal). */
+    big?: bigint;
 }
 
 /**
@@ -517,27 +519,86 @@ export interface DTLiteral extends ASTNode {
     value: string;
 }
 
+/** Largest TIME value in milliseconds: TIME is an unsigned 32-bit millisecond count (49d17h2m47s295ms). */
+export const TIME_MAX_MS = 0xFFFFFFFF;
+
+const TIME_UNITS: ReadonlyArray<readonly [string, bigint]> = [
+    ['d', 86_400_000_000_000n],
+    ['h', 3_600_000_000_000n],
+    ['m', 60_000_000_000n],
+    ['s', 1_000_000_000n],
+    ['ms', 1_000_000n],
+    ['us', 1_000n],
+    ['ns', 1n],
+];
+
 /**
- * Parse a time literal string to milliseconds.
+ * Parse a time literal string to milliseconds (CMP-017).
+ *
+ * Accepts `T#` or `TIME#` followed by one or more `<number><unit>` components in descending
+ * order (`T#1d2h3m4s5ms`, `T#1h_30m`), the number of the last one may have a fraction
+ * (`T#1.5s`). The units are d, h, m, s, ms, us and ns. TIME is an unsigned 32-bit millisecond
+ * count, so a literal that is negative, above 4294967295 ms or not a whole number of
+ * milliseconds is refused with a message that names the range.
+ *
+ * @throws Error describing why the literal is not a TIME value
  */
 export function parseTimeLiteral(raw: string): number {
-    // Format: T#<value><unit> or just <value><unit> (from lexer)
-    const match = raw.match(/^(?:T#)?(\d+)(ms|s|m|h|d)$/i);
-    if (!match) {
+    // Format: T#<value><unit>... or just <value><unit>... (from lexer)
+    const body = raw.replace(/^(?:T|TIME)#/i, '');
+    const sign = body.startsWith('-') ? -1n : 1n;
+    const text = body.replace(/^[+-]/, '');
+
+    const component = /(\d+(?:_\d+)*)(?:\.(\d+))?(ms|us|ns|d|h|m|s)_?/iy;
+    let totalNs = 0n;
+    let consumed = 0;
+    let previousUnit = -1;
+    let fractionSeen = false;
+
+    while (consumed < text.length) {
+        component.lastIndex = consumed;
+        const match = component.exec(text);
+        if (!match || match.index !== consumed) {
+            throw new Error(`Invalid time literal: ${raw}`);
+        }
+        const unitName = match[3].toLowerCase();
+        const unitIndex = TIME_UNITS.findIndex(([name]) => name === unitName);
+        if (unitIndex <= previousUnit) {
+            throw new Error(`Invalid time literal: ${raw} (each unit at most once, in descending order from days to nanoseconds)`);
+        }
+        if (fractionSeen) {
+            throw new Error(`Invalid time literal: ${raw} (only the last component may have a fraction)`);
+        }
+        previousUnit = unitIndex;
+
+        const whole = BigInt(match[1].replace(/_/g, ''));
+        const fraction = match[2] ?? '';
+        fractionSeen = fraction !== '';
+        const unitNs = TIME_UNITS[unitIndex][1];
+        const scaled = (whole * 10n ** BigInt(fraction.length) + BigInt(fraction === '' ? '0' : fraction)) * unitNs;
+        const divisor = 10n ** BigInt(fraction.length);
+        if (scaled % divisor !== 0n) {
+            throw new Error(`Invalid time literal: ${raw} (finer than one nanosecond)`);
+        }
+        totalNs += scaled / divisor;
+        consumed += match[0].length;
+    }
+
+    if (consumed === 0) {
         throw new Error(`Invalid time literal: ${raw}`);
     }
-
-    const value = parseInt(match[1], 10);
-    const unit = match[2].toLowerCase();
-
-    switch (unit) {
-        case 'ms': return value;
-        case 's': return value * 1000;
-        case 'm': return value * 60 * 1000;
-        case 'h': return value * 60 * 60 * 1000;
-        case 'd': return value * 24 * 60 * 60 * 1000;
-        default: throw new Error(`Unknown time unit: ${unit}`);
+    if (totalNs % 1_000_000n !== 0n) {
+        throw new Error(`Time literal ${raw} is not a whole number of milliseconds: TIME has a resolution of 1 ms`);
     }
+
+    const ms = sign * (totalNs / 1_000_000n);
+    if (ms < 0n) {
+        throw new Error(`Time literal ${raw} is negative: TIME is an unsigned millisecond count, 0 to ${TIME_MAX_MS} ms (49d17h2m47s295ms)`);
+    }
+    if (ms > BigInt(TIME_MAX_MS)) {
+        throw new Error(`Time literal ${raw} is out of range: TIME holds 0 to ${TIME_MAX_MS} ms (49d17h2m47s295ms)`);
+    }
+    return Number(ms);
 }
 
 /**

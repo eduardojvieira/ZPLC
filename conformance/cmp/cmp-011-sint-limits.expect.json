@@ -1,0 +1,23 @@
+{
+  "requirement": "CMP-011",
+  "title": "SINT holds -128 and 127 through compare and widening",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QX0.0",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX0.1",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QW2",
+      "type": "INT",
+      "value": 255
+    }
+  ]
+}

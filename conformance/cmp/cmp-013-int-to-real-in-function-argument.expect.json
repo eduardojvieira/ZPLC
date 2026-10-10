@@ -1,0 +1,13 @@
+{
+  "requirement": "CMP-013",
+  "title": "an INT given to a REAL parameter of a FUNCTION is converted",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "REAL",
+      "value": -6.0
+    }
+  ]
+}

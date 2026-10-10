@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-011",
+  "title": "CASE selects on a negative INT and on a range of negatives",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 1
+    },
+    {
+      "at": "%QW2",
+      "type": "INT",
+      "value": 10
+    }
+  ]
+}

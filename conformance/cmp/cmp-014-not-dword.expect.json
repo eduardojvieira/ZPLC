@@ -1,0 +1,13 @@
+{
+  "requirement": "CMP-014",
+  "title": "NOT on a DWORD operates on all 32 bits",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "DWORD",
+      "value": 4294967040
+    }
+  ]
+}

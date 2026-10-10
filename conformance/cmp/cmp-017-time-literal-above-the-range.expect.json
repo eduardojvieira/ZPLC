@@ -1,0 +1,12 @@
+{
+  "requirement": "CMP-017",
+  "title": "a TIME literal above 49d17h2m47s295ms is rejected",
+  "build": "fails",
+  "lines": [
+    5
+  ],
+  "messageIncludes": [
+    "TIME",
+    "4294967295"
+  ]
+}

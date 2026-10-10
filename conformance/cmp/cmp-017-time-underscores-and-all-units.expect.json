@@ -1,0 +1,13 @@
+{
+  "requirement": "CMP-017",
+  "title": "a TIME literal with underscores between its components",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "UDINT",
+      "value": 93784005
+    }
+  ]
+}

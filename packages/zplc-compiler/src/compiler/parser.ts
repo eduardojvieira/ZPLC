@@ -1525,6 +1525,8 @@ class Parser {
             return {
                 kind: 'IntLiteral',
                 value,
+                // beyond 2^53 a number is rounded: keep the exact value for a 64-bit literal
+                ...(Number.isSafeInteger(value) ? {} : { big: BigInt(curr.value) }),
                 line: curr.line,
                 column: curr.column,
             } as IntLiteral;
@@ -1542,9 +1544,15 @@ class Parser {
 
         // Time literal
         if (this.match(TokenType.TIME_LITERAL)) {
+            let valueMs: number;
+            try {
+                valueMs = parseTimeLiteral(curr.value);
+            } catch (e) {
+                throw new ParseError((e as Error).message, curr.line, curr.column);
+            }
             return {
                 kind: 'TimeLiteral',
-                valueMs: parseTimeLiteral(curr.value),
+                valueMs,
                 rawValue: curr.value,
                 line: curr.line,
                 column: curr.column,

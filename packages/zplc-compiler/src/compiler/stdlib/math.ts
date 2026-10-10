@@ -16,6 +16,7 @@
 
 import type { FunctionDef, CodeGenContext } from './types.ts';
 import type { Expression } from '../ast.ts';
+import { UNSIGNED_TO_REAL, isFloatType, isUnsigned32 } from '../numeric.ts';
 
 // ============================================================================
 // ABS - Absolute Value (Integer)
@@ -41,7 +42,13 @@ export const ABS_FN: FunctionDef = {
 
         ctx.emit(`    ; ABS(IN)`);
         ctx.emitExpression(args[0]);
-        ctx.emit(`    ABS`);
+        const type = ctx.typeOf?.(args[0]);
+        if (isFloatType(type)) {
+            ctx.emit(`    ABSF`);
+        } else if (!isUnsigned32(type)) {
+            // an unsigned value is its own magnitude
+            ctx.emit(`    ABS`);
+        }
     },
 };
 
@@ -97,7 +104,7 @@ export const NEG_FN: FunctionDef = {
 
         ctx.emit(`    ; NEG(IN)`);
         ctx.emitExpression(args[0]);
-        ctx.emit(`    NEG`);
+        ctx.emit(isFloatType(ctx.typeOf?.(args[0])) ? `    NEGF` : `    NEG`);
     },
 };
 
@@ -326,7 +333,12 @@ export const INT_TO_REAL_FN: FunctionDef = {
 
         ctx.emit(`    ; INT_TO_REAL(IN)`);
         ctx.emitExpression(args[0]);
-        ctx.emit(`    I2F`);
+        if (isUnsigned32(ctx.typeOf?.(args[0]))) {
+            // 2^31 and above are positive: split into 16-bit halves, one rounding
+            for (const line of UNSIGNED_TO_REAL) ctx.emit(line);
+        } else {
+            ctx.emit(`    I2F`);
+        }
     },
 };
 

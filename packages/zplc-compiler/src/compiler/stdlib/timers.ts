@@ -130,7 +130,10 @@ export const TON_FB: FunctionBlockDef = {
 
         // Check if ET >= PT
         ctx.emit(`    LOAD32 ${ptAddr}`);
-        ctx.emit(`    GE`);
+        // ET >= PT as unsigned milliseconds: TIME runs to 49 days, past the sign bit
+        ctx.emit(`    LTU`);
+        ctx.emit(`    PUSH8 0`);
+        ctx.emit(`    EQ`);
         ctx.emit(`    JZ ${notExpired}`);
 
         // Timer expired - set Q
@@ -237,7 +240,10 @@ export const TOF_FB: FunctionBlockDef = {
         ctx.emit(`    DUP`);
         ctx.emit(`    STORE32 ${etAddr}`);
         ctx.emit(`    LOAD32 ${ptAddr}`);
-        ctx.emit(`    GE`);
+        // ET >= PT as unsigned milliseconds: TIME runs to 49 days, past the sign bit
+        ctx.emit(`    LTU`);
+        ctx.emit(`    PUSH8 0`);
+        ctx.emit(`    EQ`);
         ctx.emit(`    JZ ${notExpired}`);
 
         // Timer expired - set Q to FALSE
@@ -341,7 +347,10 @@ export const TP_FB: FunctionBlockDef = {
         ctx.emit(`    DUP`);
         ctx.emit(`    STORE32 ${etAddr}`);
         ctx.emit(`    LOAD32 ${ptAddr}`);
-        ctx.emit(`    GE`);
+        // ET >= PT as unsigned milliseconds: TIME runs to 49 days, past the sign bit
+        ctx.emit(`    LTU`);
+        ctx.emit(`    PUSH8 0`);
+        ctx.emit(`    EQ`);
         ctx.emit(`    JZ ${tpEnd}`);  // Not expired yet
 
         // Pulse complete

@@ -1,0 +1,13 @@
+{
+  "requirement": "CMP-017",
+  "title": "T#5s-T#3s is a subtraction of two TIME literals",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "UDINT",
+      "value": 2000
+    }
+  ]
+}

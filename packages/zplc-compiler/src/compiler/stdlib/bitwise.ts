@@ -19,6 +19,28 @@
 
 import type { FunctionDef, CodeGenContext } from './types.ts';
 import type { Expression } from '../ast.ts';
+import { numericInfo } from '../numeric.ts';
+
+/**
+ * Width in bits of the value a shift or rotate works on (CMP-014): the declared width of a
+ * BYTE or WORD (or of a SINT, USINT, INT, UINT), 32 for anything else.
+ */
+function operandWidth(ctx: CodeGenContext, arg: Expression): 8 | 16 | 32 {
+    const info = numericInfo(ctx.typeOf?.(arg));
+    return info && !info.float && (info.bits === 8 || info.bits === 16) ? info.bits : 32;
+}
+
+/** Cut a result back to `width` bits; a value of 32 bits is already whole. */
+function emitCut(ctx: CodeGenContext, width: 8 | 16 | 32): void {
+    if (width === 8) ctx.emit(`    ZEXT8`);
+    else if (width === 16) ctx.emit(`    ZEXT16`);
+}
+
+/** Emit the value to shift or rotate: a signed narrow value is read as its declared-width bit pattern. */
+function emitBitOperand(ctx: CodeGenContext, arg: Expression, width: 8 | 16 | 32): void {
+    ctx.emitExpression(arg);
+    if (width !== 32 && numericInfo(ctx.typeOf?.(arg))?.signed) emitCut(ctx, width);
+}
 
 // ============================================================================
 // ROL - Rotate Left
@@ -46,16 +68,17 @@ export const ROL_FN: FunctionDef = {
 
         ctx.emit(`    ; ROL(IN, N) - Rotate left`);
         
-        // Emit arguments
-        ctx.emitExpression(args[0]);  // IN
+        // Emit arguments; a BYTE or WORD rotates within its own width
+        const width = operandWidth(ctx, args[0]);
+        emitBitOperand(ctx, args[0], width);  // IN
         ctx.emitExpression(args[1]);  // N
         
         // Stack: [IN, N]
-        // We need: (IN << N) | (IN >> (32 - N))
+        // We need: (IN << N) | (IN >> (width - N))
         
-        // Mask N to 0-31 range
-        ctx.emit(`    PUSH8 31`);
-        ctx.emit(`    AND`);          // N = N & 31
+        // Mask N to 0..width-1
+        ctx.emit(`    PUSH8 ${width - 1}`);
+        ctx.emit(`    AND`);          // N = N & (width - 1)
         
         // Stack: [IN, N_masked]
         ctx.emit(`    DUP`);          // [IN, N, N]
@@ -68,18 +91,19 @@ export const ROL_FN: FunctionDef = {
         
         // Prepare for right shift
         ctx.emit(`    ROT`);          // [IN, IN<<N, N]
-        ctx.emit(`    PUSH8 32`);
+        ctx.emit(`    PUSH8 ${width}`);
         ctx.emit(`    SWAP`);
-        ctx.emit(`    SUB`);          // [IN, IN<<N, 32-N]
+        ctx.emit(`    SUB`);          // [IN, IN<<N, width-N]
         
-        ctx.emit(`    ROT`);          // [IN<<N, 32-N, IN]
-        ctx.emit(`    SWAP`);         // [IN<<N, IN, 32-N]
+        ctx.emit(`    ROT`);          // [IN<<N, width-N, IN]
+        ctx.emit(`    SWAP`);         // [IN<<N, IN, width-N]
         
-        // Right shift: IN >> (32 - N)
-        ctx.emit(`    SHR`);          // [IN<<N, IN>>(32-N)]
+        // Right shift: IN >> (width - N)
+        ctx.emit(`    SHR`);          // [IN<<N, IN>>(width-N)]
         
         // Combine with OR
         ctx.emit(`    OR`);           // [result]
+        emitCut(ctx, width);          // the bits shifted past the declared width are not part of it
     },
 };
 
@@ -109,16 +133,17 @@ export const ROR_FN: FunctionDef = {
 
         ctx.emit(`    ; ROR(IN, N) - Rotate right`);
         
-        // Emit arguments
-        ctx.emitExpression(args[0]);  // IN
+        // Emit arguments; a BYTE or WORD rotates within its own width
+        const width = operandWidth(ctx, args[0]);
+        emitBitOperand(ctx, args[0], width);  // IN
         ctx.emitExpression(args[1]);  // N
         
         // Stack: [IN, N]
-        // We need: (IN >> N) | (IN << (32 - N))
+        // We need: (IN >> N) | (IN << (width - N))
         
-        // Mask N to 0-31 range
-        ctx.emit(`    PUSH8 31`);
-        ctx.emit(`    AND`);          // N = N & 31
+        // Mask N to 0..width-1
+        ctx.emit(`    PUSH8 ${width - 1}`);
+        ctx.emit(`    AND`);          // N = N & (width - 1)
         
         // Stack: [IN, N_masked]
         ctx.emit(`    DUP`);          // [IN, N, N]
@@ -131,18 +156,19 @@ export const ROR_FN: FunctionDef = {
         
         // Prepare for left shift
         ctx.emit(`    ROT`);          // [IN, IN>>N, N]
-        ctx.emit(`    PUSH8 32`);
+        ctx.emit(`    PUSH8 ${width}`);
         ctx.emit(`    SWAP`);
-        ctx.emit(`    SUB`);          // [IN, IN>>N, 32-N]
+        ctx.emit(`    SUB`);          // [IN, IN>>N, width-N]
         
-        ctx.emit(`    ROT`);          // [IN>>N, 32-N, IN]
-        ctx.emit(`    SWAP`);         // [IN>>N, IN, 32-N]
+        ctx.emit(`    ROT`);          // [IN>>N, width-N, IN]
+        ctx.emit(`    SWAP`);         // [IN>>N, IN, width-N]
         
-        // Left shift: IN << (32 - N)
-        ctx.emit(`    SHL`);          // [IN>>N, IN<<(32-N)]
+        // Left shift: IN << (width - N)
+        ctx.emit(`    SHL`);          // [IN>>N, IN<<(width-N)]
         
         // Combine with OR
         ctx.emit(`    OR`);           // [result]
+        emitCut(ctx, width);          // the bits shifted past the declared width are not part of it
     },
 };
 
@@ -169,9 +195,11 @@ export const SHL_FN: FunctionDef = {
         }
 
         ctx.emit(`    ; SHL(IN, N)`);
-        ctx.emitExpression(args[0]);  // IN
+        const width = operandWidth(ctx, args[0]);
+        emitBitOperand(ctx, args[0], width);  // IN
         ctx.emitExpression(args[1]);  // N
         ctx.emit(`    SHL`);
+        emitCut(ctx, width);          // a BYTE or WORD drops the bits shifted past its width
     },
 };
 
@@ -198,7 +226,7 @@ export const SHR_FN: FunctionDef = {
         }
 
         ctx.emit(`    ; SHR(IN, N)`);
-        ctx.emitExpression(args[0]);  // IN
+        emitBitOperand(ctx, args[0], operandWidth(ctx, args[0]));  // IN
         ctx.emitExpression(args[1]);  // N
         ctx.emit(`    SHR`);
     },

@@ -69,6 +69,15 @@ export interface CodeGenContext {
     emitExpression: (expr: Expression) => void;
     /** Fail the build at the call being generated; nothing is emitted in place of the error */
     fail: (message: string) => never;
+    /**
+     * Static type of an expression: an elementary type name ('INT', 'REAL', ...) or '#INT' for an
+     * integer literal; undefined when it is not known. Absent in a context built by a test.
+     */
+    typeOf?: (expr: Expression) => string | undefined;
+    /** Emit an expression as the numeric type `asType`: an integer is converted when `asType` is 'REAL'. */
+    emitOperand?: (expr: Expression, asType: string) => void;
+    /** Emit the comparison of the two values on the stack, read as `type` (REAL, unsigned or signed). */
+    emitCompare?: (op: 'EQ' | 'NE' | 'LT' | 'LE' | 'GT' | 'GE', type?: string) => void;
 }
 
 // ============================================================================

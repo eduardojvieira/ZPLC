@@ -1,0 +1,23 @@
+{
+  "requirement": "CMP-017",
+  "title": "TOD compares and subtracts a TIME",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QX0.0",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX0.1",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QD1",
+      "type": "UDINT",
+      "value": 45000000
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-011",
+  "title": "INT, DINT and REAL operands mix with their signs",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "DINT",
+      "value": 99997
+    },
+    {
+      "at": "%QD4",
+      "type": "REAL",
+      "value": -1.5
+    }
+  ]
+}

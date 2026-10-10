@@ -1,0 +1,6 @@
+PROGRAM Elapsed
+VAR
+  d AT %QD0 : TIME;
+END_VAR
+  d := T#5s-T#3s;
+END_PROGRAM

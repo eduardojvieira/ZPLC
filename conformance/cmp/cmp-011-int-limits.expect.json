@@ -1,0 +1,28 @@
+{
+  "requirement": "CMP-011",
+  "title": "INT holds -32768 and 32767 through compare and widening",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QX0.0",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX0.1",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QD4",
+      "type": "DINT",
+      "value": 65535
+    },
+    {
+      "at": "%QD8",
+      "type": "DINT",
+      "value": -32768
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-015",
+  "title": "DT compares and takes a TIME; the difference of two DT is a TIME",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QX0.0",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QD1",
+      "type": "UDINT",
+      "value": 3600000
+    }
+  ]
+}

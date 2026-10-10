@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-017",
+  "title": "DT is assigned from a literal and compares across the 32-bit word boundary",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QX0.0",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX0.1",
+      "type": "BOOL",
+      "value": true
+    }
+  ]
+}

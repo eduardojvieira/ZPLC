@@ -1,0 +1,6 @@
+PROGRAM Largest
+VAR
+  t AT %QD0 : TIME;
+END_VAR
+  t := T#49d17h2m47s295ms;
+END_PROGRAM

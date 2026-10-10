@@ -1,0 +1,11 @@
+{
+  "requirement": "CMP-017",
+  "title": "a TIME literal with its units out of order is rejected",
+  "build": "fails",
+  "lines": [
+    5
+  ],
+  "messageIncludes": [
+    "Invalid time literal"
+  ]
+}

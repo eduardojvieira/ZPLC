@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-014",
+  "title": "ROR on a WORD rotates within 16 bits",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "WORD",
+      "value": 4096
+    },
+    {
+      "at": "%QB2",
+      "type": "BYTE",
+      "value": 128
+    }
+  ]
+}

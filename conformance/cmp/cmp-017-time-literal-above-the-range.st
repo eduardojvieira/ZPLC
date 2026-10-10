@@ -1,0 +1,6 @@
+PROGRAM Over
+VAR
+  t AT %QD0 : TIME;
+END_VAR
+  t := T#50d;
+END_PROGRAM

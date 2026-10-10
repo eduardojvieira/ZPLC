@@ -1,0 +1,13 @@
+{
+  "requirement": "CMP-015",
+  "title": "a LINT passes through a FUNCTION parameter and result",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QX0.0",
+      "type": "BOOL",
+      "value": true
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "requirement": "CMP-015",
+  "title": "LINT holds 9223372036854775807 and -9223372036854775808",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QX0.0",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX0.1",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX0.2",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX0.3",
+      "type": "BOOL",
+      "value": true
+    }
+  ]
+}

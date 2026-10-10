@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-013",
+  "title": "a REAL variable takes an integer value and an integer initial value",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "REAL",
+      "value": -4.0
+    },
+    {
+      "at": "%QD4",
+      "type": "REAL",
+      "value": 7.0
+    }
+  ]
+}

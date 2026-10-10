@@ -1,0 +1,6 @@
+PROGRAM Negative
+VAR
+  t AT %QD0 : TIME;
+END_VAR
+  t := T#-1s;
+END_PROGRAM
