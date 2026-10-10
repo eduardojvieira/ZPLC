@@ -72,6 +72,7 @@ const sidebars = {
         'operations/shell',
         'operations/recovery',
         'contributing/index',
+        'development/firmware-testing',
       ],
     },
   ],

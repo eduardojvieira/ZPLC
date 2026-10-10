@@ -46,6 +46,7 @@ Las siguientes páginas bloquean el release y deben existir en inglés y españo
 | operations/shell | docs/docs/operations/shell.md | docs/i18n/es/docusaurus-plugin-content-docs/current/operations/shell.md | operations | yes | docs | in-progress |
 | operations/recovery | docs/docs/operations/recovery.md | docs/i18n/es/docusaurus-plugin-content-docs/current/operations/recovery.md | operations | yes | docs | candidate |
 | release-notes/index | docs/docs/release-notes/index.md | docs/i18n/es/docusaurus-plugin-content-docs/current/release-notes/index.md | release-notes | yes | docs | release-ready |
+| development/firmware-testing | docs/docs/development/firmware-testing.md | docs/i18n/es/docusaurus-plugin-content-docs/current/development/firmware-testing.md | development | no | firmware | candidate |
 
 ## Compatibilidad del manifest de placas
 
