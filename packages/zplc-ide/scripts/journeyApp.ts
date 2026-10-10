@@ -27,7 +27,7 @@ const centre = (target: Target) => `(() => { const el = ${target}; if (!el || el
 
 const KEYS: Record<string, { key: string; code: string; keyCode: number }> = {
   ArrowUp: { key: 'ArrowUp', code: 'ArrowUp', keyCode: 38 }, ArrowDown: { key: 'ArrowDown', code: 'ArrowDown', keyCode: 40 }, Enter: { key: 'Enter', code: 'Enter', keyCode: 13 }, Escape: { key: 'Escape', code: 'Escape', keyCode: 27 },
-  F5: { key: 'F5', code: 'F5', keyCode: 116 }, F6: { key: 'F6', code: 'F6', keyCode: 117 },
+  F2: { key: 'F2', code: 'F2', keyCode: 113 }, F5: { key: 'F5', code: 'F5', keyCode: 116 }, F6: { key: 'F6', code: 'F6', keyCode: 117 },
   S: { key: 's', code: 'KeyS', keyCode: 83 }, B: { key: 'b', code: 'KeyB', keyCode: 66 }, Z: { key: 'z', code: 'KeyZ', keyCode: 90 },
   A: { key: 'a', code: 'KeyA', keyCode: 65 }, R: { key: 'r', code: 'KeyR', keyCode: 82 }, End: { key: 'End', code: 'End', keyCode: 35 }, Home: { key: 'Home', code: 'Home', keyCode: 36 },
 };
@@ -43,6 +43,8 @@ export interface App {
   until<T>(description: string, check: () => Promise<T | undefined | false> | T | undefined | false, timeoutMs?: number): Promise<T>;
   /** A real mouse click (or double click) at the centre of the target. */
   click(target: Target, description?: string, clicks?: number): Promise<void>;
+  /** A real right click at the centre of the target (the context menu of an item). */
+  rightClick(target: Target, description?: string): Promise<void>;
   /** A real key chord such as `Ctrl+S` or `F5`, sent to whatever has focus. */
   press(chord: string): Promise<void>;
   /** Text inserted as the user would type or paste it, into whatever has focus. */
@@ -60,11 +62,12 @@ export interface App {
   readonly errors: string[];
 }
 
-async function mouse(cdp: Cdp, x: number, y: number, clicks = 1): Promise<void> {
+async function mouse(cdp: Cdp, x: number, y: number, clicks = 1, button: 'left' | 'right' = 'left'): Promise<void> {
+  const buttons = button === 'left' ? 1 : 2;
   await cdp.command('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
   for (let clickCount = 1; clickCount <= clicks; clickCount++) {
-    await cdp.command('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button: 'left', buttons: 1, clickCount });
-    await cdp.command('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button: 'left', buttons: 0, clickCount });
+    await cdp.command('Input.dispatchMouseEvent', { type: 'mousePressed', x, y, button, buttons, clickCount });
+    await cdp.command('Input.dispatchMouseEvent', { type: 'mouseReleased', x, y, button, buttons: 0, clickCount });
   }
 }
 
@@ -139,6 +142,10 @@ export async function launchApp(harness: Harness, root: string): Promise<{ app: 
         const point = await until(`${description} to be clickable`, async () => await evaluate<{ x: number; y: number } | null>(centre(target)) ?? undefined);
         assert(Number.isFinite(point.x) && Number.isFinite(point.y), `${description} has no usable click point: ${JSON.stringify(point)}`);
         await mouse(page, point.x, point.y, clicks);
+      },
+      rightClick: async (target, description = target.slice(0, 120)) => {
+        const point = await until(`${description} to be clickable`, async () => await evaluate<{ x: number; y: number } | null>(centre(target)) ?? undefined);
+        await mouse(page, point.x, point.y, 1, 'right');
       },
       press: async (chord) => {
         const parts = chord.split('+'); const name = parts.pop()!; const definition = KEYS[name.length === 1 ? name.toUpperCase() : name];

@@ -1069,4 +1069,86 @@ export const JOURNEYS: Journey[] = [
       assert(disk(file) === saved, 'Discard must leave the file as it was on disk.');
     },
   },
+
+  {
+    name: '23 Project tree operations', example: 'motor_start_stop', proves: [], partly: ['IDE-004'],
+    run: async (app, { project }) => {
+      const motor = join(project, 'src', 'Motor.st'); const original = disk(motor);
+      const menuChoice = (label: string) => `[...document.querySelectorAll('[role="menuitem"]')].find((item) => item.textContent?.trim() === ${JSON.stringify(label)})`;
+      const entryDialog = css('[data-entry-dialog]');
+      const entryError = () => app.eval<string | null>(`document.querySelector('[data-entry-dialog] [role="alert"]')?.textContent ?? null`);
+      const node = (path: string, kind: 'file' | 'dir') => treeItem(`${kind}:${path}`);
+      const inTree = async (path: string, kind: 'file' | 'dir' = 'file') => await app.visible(node(path, kind));
+      const contextMenu = async (path: string, kind: 'file' | 'dir', label: string) => {
+        await app.rightClick(`${node(path, kind)}.firstElementChild`, `the ${path} row`);
+        await app.until('the actions menu', async () => await app.visible(menuChoice(label)) || undefined);
+        await app.click(menuChoice(label), label);
+      };
+      const typeName = async (name: string) => {
+        await app.until('the name dialog', async () => await app.visible(entryDialog) || undefined);
+        await app.eval(`document.getElementById('entry-name').focus()`);
+        await app.press('Ctrl+A');
+        await app.type(name);
+      };
+
+      await openFolder(app, project);
+      await openFile(app, 'src/Motor.st');
+      await cursorAtEndOfLine(app, 1);
+      await app.type(EDIT);
+      await app.until('the typed text', async () => (await editorText(app)).includes(EDIT) || undefined);
+
+      // New folder, in the folder the dialog starts on (src).
+      await app.click(tab('Explorer', 'exact'));
+      await app.click(button('New Folder'));
+      await typeName('drivers');
+      await app.click(button('Create'));
+      await app.until('the new empty folder in the tree', async () => await inTree('src/drivers', 'dir') || undefined);
+      assert(existsSync(join(project, 'src', 'drivers')), 'The folder was not created on disk.');
+
+      // Rename the open, modified file from its context menu: the buffer, the tab and the task follow it.
+      await contextMenu('src/Motor.st', 'file', 'Rename…');
+      await typeName('Drive.st');
+      await app.click(button('Rename'));
+      await app.until('Drive.st in the tree', async () => await inTree('src/Drive.st') && !await inTree('src/Motor.st') || undefined);
+      assert(!existsSync(motor) && disk(join(project, 'src', 'Drive.st')) === original, 'The file was not renamed on disk, or its content changed.');
+      assert((await editorText(app)).includes(EDIT), 'The unsaved text did not follow the renamed file.');
+      assert(await app.visible(editorTab('file:src/Drive.st')), 'The tab did not follow the renamed file.');
+      assert(JSON.parse(disk(join(project, 'zplc.json'))).tasks.every((task: { programs: string[] }) => !task.programs.includes('Motor.st')), 'A task still runs Motor.st after the rename.');
+      await app.click(saveButton);
+      await app.until('the buffer saved under the new name', () => disk(join(project, 'src', 'Drive.st')).includes(EDIT) || undefined);
+      assert(!existsSync(motor), 'Saving brought the old name back.');
+
+      // A refused name stays in the dialog, in words, and changes nothing.
+      await contextMenu('src/Drive.st', 'file', 'Rename…');
+      await typeName('Fault.st');
+      await app.click(button('Cancel'));
+      await app.until('the dialog to close', async () => !await app.visible(entryDialog) || undefined);
+
+      // Duplicate, then move the copy into the new folder, then delete the folder with it.
+      await contextMenu('src/Drive.st', 'file', 'Duplicate');
+      await app.until('the copy in the tree', async () => await inTree('src/Drive_copy.st') || undefined);
+      assert(disk(join(project, 'src', 'Drive_copy.st')).includes(EDIT), 'The copy does not hold the content of the file.');
+      await contextMenu('src/Drive.st', 'file', 'Rename…');
+      await typeName('drive_COPY.st');
+      await app.click(button('Rename'));
+      await app.until('the refusal', async () => (await entryError())?.includes('already exists') || undefined);
+      assert(existsSync(join(project, 'src', 'Drive.st')), 'A refused rename changed the disk.');
+      await app.click(button('Cancel'));
+      await contextMenu('src/Drive_copy.st', 'file', 'Move to…');
+      await app.until('the move dialog', async () => await app.visible(entryDialog) || undefined);
+      await app.eval(`document.getElementById('entry-folder').focus()`);
+      const folders = await app.eval<string[]>(`[...document.getElementById('entry-folder').options].map((option) => option.value)`);
+      assert(folders.includes('src/drivers'), `The move dialog does not offer the new folder: ${JSON.stringify(folders)}`);
+      const current = await app.eval<number>(`document.getElementById('entry-folder').selectedIndex`);
+      for (let step = 0; step < folders.indexOf('src/drivers') - current; step++) await app.press('ArrowDown');
+      await app.click(button('Move'));
+      await app.until('the copy in the folder', async () => await app.visible(node('src/drivers/Drive_copy.st', 'file')) || undefined);
+      assert(!existsSync(join(project, 'src', 'Drive_copy.st')) && existsSync(join(project, 'src', 'drivers', 'Drive_copy.st')), 'The copy was not moved on disk.');
+      await contextMenu('src/drivers', 'dir', 'Delete folder');
+      await app.until('the confirmation', async () => (await app.text()).includes('Delete folder') && await app.visible(entryDialog) || undefined);
+      await app.click(button('Delete folder', 'prefix'), 'the Delete folder button');
+      await app.until('the folder gone from the tree', async () => !await inTree('src/drivers', 'dir') || undefined);
+      assert(!existsSync(join(project, 'src', 'drivers')), 'The folder is still on disk.');
+    },
+  },
 ];

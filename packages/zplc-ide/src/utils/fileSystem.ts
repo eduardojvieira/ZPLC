@@ -152,9 +152,16 @@ export async function readDirectoryRecursive(
   dirHandle: FileSystemDirectoryHandle,
   path: string = ''
 ): Promise<FileTreeNode> {
+  return (await readTree(dirHandle, path)).node;
+}
+
+/** `entries` is how many entries the folder holds at all: a folder with none is a new one, and is listed. */
+async function readTree(dirHandle: FileSystemDirectoryHandle, path: string): Promise<{ node: FileTreeNode; entries: number }> {
   const children: FileTreeNode[] = [];
+  let entries = 0;
 
   for await (const entry of dirHandle.values()) {
+    entries += 1;
     const entryPath = path ? `${path}/${entry.name}` : entry.name;
 
     if (entry.kind === 'directory') {
@@ -164,11 +171,11 @@ export async function readDirectoryRecursive(
       }
 
       const subDirHandle = await dirHandle.getDirectoryHandle(entry.name);
-      const subtree = await readDirectoryRecursive(subDirHandle, entryPath);
-      
-      // Only include directories that have relevant files
-      if (subtree.children && subtree.children.length > 0) {
-        children.push(subtree);
+      const subtree = await readTree(subDirHandle, entryPath);
+
+      // Include directories that have relevant files, and those that hold nothing yet (a folder just created in Studio)
+      if ((subtree.node.children && subtree.node.children.length > 0) || subtree.entries === 0) {
+        children.push(subtree.node);
       }
     } else if (entry.kind === 'file') {
       // Skip config files - they're managed through ProjectSettings, not the tree
@@ -204,13 +211,16 @@ export async function readDirectoryRecursive(
   });
 
   return {
-    id: fileTreeDirectoryId(path),
-    name: dirHandle.name,
-    type: 'directory',
-    path: path || '/',
-    children,
-    dirHandle,
-    isExpanded: path === '', // Root is expanded by default
+    node: {
+      id: fileTreeDirectoryId(path),
+      name: dirHandle.name,
+      type: 'directory',
+      path: path || '/',
+      children,
+      dirHandle,
+      isExpanded: path === '', // Root is expanded by default
+    },
+    entries,
   };
 }
 

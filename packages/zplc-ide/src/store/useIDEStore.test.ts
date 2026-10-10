@@ -1607,6 +1607,92 @@ describe('useIDEStore project folders over the project-files bridge', () => {
     expect(useIDEStore.getState().consoleEntries.some((entry) => entry.message === 'Saved: main.st')).toBe(true);
   });
 
+  describe('project tree operations (IDE-004)', () => {
+    const open = async () => {
+      seedFolder();
+      writeFileSync(join(folder, 'src', 'Pump.st'), 'PROGRAM Pump\nEND_PROGRAM\n');
+      await useIDEStore.getState().openProjectFromFolder();
+      await useIDEStore.getState().openFile('file:src/main.st');
+    };
+    const consoleMessages = () => useIDEStore.getState().consoleEntries.map((entry) => entry.message);
+
+    it('creates a folder, lists it while it is empty, and refuses a name that is taken or not a name', async () => {
+      await open();
+      await useIDEStore.getState().createFolder('src', 'drivers');
+      expect(existsSync(join(folder, 'src', 'drivers'))).toBe(true);
+      const src = useIDEStore.getState().fileTree!.children!.find((child) => child.name === 'src')!;
+      expect(src.children!.map((child) => child.name)).toContain('drivers');
+      await expect(useIDEStore.getState().createFolder('src', 'DRIVERS')).rejects.toThrow('already exists');
+      await expect(useIDEStore.getState().createFolder('src', 'a/b')).rejects.toThrow('cannot contain');
+      await expect(useIDEStore.getState().createFolder('src', '')).rejects.toThrow('Enter a name');
+    });
+
+    it('renames an open modified file on disk and keeps its buffer, its tab and the task that runs it', async () => {
+      await open();
+      useIDEStore.getState().updateFileContent('file:src/main.st', 'PROGRAM Main\n  (* unsaved *)\nEND_PROGRAM\n');
+      await useIDEStore.getState().renameEntry('src/main.st', 'Drive.st');
+      expect(existsSync(join(folder, 'src', 'main.st'))).toBe(false);
+      expect(readFileSync(join(folder, 'src', 'Drive.st'), 'utf8')).toBe('PROGRAM Main\nEND_PROGRAM\n');
+      const state = useIDEStore.getState();
+      expect(state.loadedFiles.has('file:src/main.st')).toBe(false);
+      expect(state.loadedFiles.get('file:src/Drive.st')).toMatchObject({ content: 'PROGRAM Main\n  (* unsaved *)\nEND_PROGRAM\n', isModified: true, name: 'Drive.st' });
+      expect(state.openTabs).toEqual(['file:src/Drive.st']);
+      expect(state.activeFileId).toBe('file:src/Drive.st');
+      expect(state.projectConfig?.tasks[0]?.programs).toEqual(['Drive.st']);
+      expect(JSON.parse(readFileSync(join(folder, 'zplc.json'), 'utf8')).tasks[0].programs).toEqual(['Drive.st']);
+      // Saving the buffer goes to the new name, not back to the old one.
+      await expect(state.saveFile('file:src/Drive.st')).resolves.toBe(true);
+      expect(readFileSync(join(folder, 'src', 'Drive.st'), 'utf8')).toContain('(* unsaved *)');
+      expect(existsSync(join(folder, 'src', 'main.st'))).toBe(false);
+    });
+
+    it('refuses a rename onto a name that exists, or that the build reads as the same, and leaves everything as it was', async () => {
+      await open();
+      await expect(useIDEStore.getState().renameEntry('src/main.st', 'pump.ST')).rejects.toThrow('already exists');
+      await expect(useIDEStore.getState().renameEntry('src/main.st', 'a/b.st')).rejects.toThrow('cannot contain');
+      expect(existsSync(join(folder, 'src', 'main.st'))).toBe(true);
+      expect(useIDEStore.getState().loadedFiles.has('file:src/main.st')).toBe(true);
+    });
+
+    it('moves a file into a folder and a folder into another, keeping what is open, and refuses a folder into itself', async () => {
+      await open();
+      await useIDEStore.getState().createFolder('src', 'drivers');
+      await useIDEStore.getState().moveEntry('src/main.st', 'src/drivers');
+      expect(readFileSync(join(folder, 'src', 'drivers', 'main.st'), 'utf8')).toContain('PROGRAM Main');
+      expect(useIDEStore.getState().loadedFiles.has('file:src/drivers/main.st')).toBe(true);
+      expect(useIDEStore.getState().openTabs).toEqual(['file:src/drivers/main.st']);
+      await useIDEStore.getState().createFolder('', 'archive');
+      await useIDEStore.getState().moveEntry('src/drivers', 'archive');
+      expect(existsSync(join(folder, 'archive', 'drivers', 'main.st'))).toBe(true);
+      expect(useIDEStore.getState().openTabs).toEqual(['file:archive/drivers/main.st']);
+      await expect(useIDEStore.getState().moveEntry('archive', 'archive/drivers')).rejects.toThrow('into itself');
+      await expect(useIDEStore.getState().moveEntry('src/Pump.st', 'src')).rejects.toThrow('already there');
+    });
+
+    it('duplicates the content the user sees under a free name, and leaves the original as it was', async () => {
+      await open();
+      useIDEStore.getState().updateFileContent('file:src/main.st', 'PROGRAM Main\n  (* copy me *)\nEND_PROGRAM\n');
+      const copy = await useIDEStore.getState().duplicateEntry('src/main.st');
+      expect(copy).toBe('src/main_copy.st');
+      expect(readFileSync(join(folder, 'src', 'main_copy.st'), 'utf8')).toContain('(* copy me *)');
+      expect(readFileSync(join(folder, 'src', 'main.st'), 'utf8')).toBe('PROGRAM Main\nEND_PROGRAM\n');
+      expect(useIDEStore.getState().loadedFiles.get('file:src/main.st')?.isModified).toBe(true);
+      expect(await useIDEStore.getState().duplicateEntry('src/main.st')).toBe('src/main_copy2.st');
+    });
+
+    it('deletes a folder with what is in it, and closes the files that were open in it', async () => {
+      await open();
+      await useIDEStore.getState().createFolder('src', 'drivers');
+      await useIDEStore.getState().moveEntry('src/Pump.st', 'src/drivers');
+      await useIDEStore.getState().openFile('file:src/drivers/Pump.st');
+      await useIDEStore.getState().deleteFolder('src/drivers');
+      expect(existsSync(join(folder, 'src', 'drivers'))).toBe(false);
+      expect(useIDEStore.getState().loadedFiles.has('file:src/drivers/Pump.st')).toBe(false);
+      expect(useIDEStore.getState().openTabs).toEqual(['file:src/main.st']);
+      expect(consoleMessages().some((message) => message.includes('Deleted folder'))).toBe(true);
+    });
+  });
+
   it('creates a project in an empty folder', async () => {
     await expect(useIDEStore.getState().createNewProjectInFolder()).resolves.toBe(true);
     expect(useIDEStore.getState()).toMatchObject({ isProjectOpen: true, projectName: 'plant' });

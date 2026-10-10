@@ -37,7 +37,8 @@ const FAILURES: Record<ProjectFilesErrorCode, readonly [name: string, message: s
   failed: ['Error', 'The operation failed. Try again.'],
 };
 
-function failure(code: ProjectFilesErrorCode): Error {
+/** The error a failed project operation raises: the browser's error name where one exists, and a message with no path. */
+export function projectFilesFailure(code: ProjectFilesErrorCode): Error {
   const [name, message] = FAILURES[code];
   return Object.assign(new Error(message), { name });
 }
@@ -52,7 +53,7 @@ async function settle<T>(call: Promise<ProjectFilesResult<T>>): Promise<ProjectF
 }
 
 function unwrap<T>(answer: ProjectFilesResult<T>): T {
-  if (!answer.ok) throw failure(answer.code);
+  if (!answer.ok) throw projectFilesFailure(answer.code);
   return answer.value;
 }
 
@@ -162,9 +163,9 @@ class ProjectDirectoryHandle extends ProjectHandle {
     checkName(name);
     const path = childPath(this.path, name);
     const found = await this.#stat(path);
-    if (found && found.kind !== 'file') throw failure('not-a-file');
+    if (found && found.kind !== 'file') throw projectFilesFailure('not-a-file');
     if (!found) {
-      if (!options?.create) throw failure('not-found');
+      if (!options?.create) throw projectFilesFailure('not-found');
       await ask(this.context.bridge.write({ rootId: this.context.rootId, path, bytes: new Uint8Array(0) }));
     }
     return new ProjectFileHandle(this.context, path, name);
@@ -174,9 +175,9 @@ class ProjectDirectoryHandle extends ProjectHandle {
     checkName(name);
     const path = childPath(this.path, name);
     const found = await this.#stat(path);
-    if (found && found.kind !== 'directory') throw failure('not-a-directory');
+    if (found && found.kind !== 'directory') throw projectFilesFailure('not-a-directory');
     if (!found) {
-      if (!options?.create) throw failure('not-found');
+      if (!options?.create) throw projectFilesFailure('not-found');
       await ask(this.context.bridge.mkdir({ rootId: this.context.rootId, path }));
     }
     return new ProjectDirectoryHandle(this.context, path, name);

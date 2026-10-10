@@ -12,6 +12,7 @@
 import {
   FolderOpen,
   FolderClosed,
+  FolderPlus,
   File,
   FileCode,
   ChevronRight,
@@ -23,12 +24,14 @@ import {
   Database,
   TriangleAlert,
 } from 'lucide-react';
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
 import { useIDEStore } from '../store/useIDEStore';
 import { PLC_LANGUAGES, type PLCLanguage, type FileTreeNode } from '../types';
 import { Modal } from './Modal';
 import { FileNameTakenError } from '../utils/fileSystem';
 import { unsavedOutcome } from '../utils/unsavedChanges';
+import { collectFolders, parentPath } from '../project/treeOperations';
+import { DeleteFolderDialog, EntryNameDialog, MoveDialog } from './ExplorerDialogs';
 import { flattenVisibleTree, resolveTreeFocus, treeNavigation } from './sidebarTreeNavigation';
 
 // =============================================================================
@@ -165,11 +168,16 @@ function NewFileModal({
 interface ContextMenuProps {
   x: number;
   y: number;
+  node: FileTreeNode;
   onClose: () => void;
+  onNewFolder: () => void;
+  onRename: () => void;
+  onDuplicate: () => void;
+  onMove: () => void;
   onDelete: () => void;
 }
 
-function ContextMenu({ x, y, onClose, onDelete }: ContextMenuProps) {
+function ContextMenu({ x, y, node, onClose, onNewFolder, onRename, onDuplicate, onMove, onDelete }: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -189,18 +197,35 @@ function ContextMenu({ x, y, onClose, onDelete }: ContextMenuProps) {
     };
   }, [onClose]);
 
+  // The menu opens where the pointer is, moved back inside the window when it would run off the right or the bottom edge.
+  const [position, setPosition] = useState({ left: x, top: y });
+  useLayoutEffect(() => {
+    const box = menuRef.current?.getBoundingClientRect();
+    if (!box) return;
+    const next = { left: Math.max(4, Math.min(x, window.innerWidth - box.width - 4)), top: Math.max(4, Math.min(y, window.innerHeight - box.height - 4)) };
+    setPosition((previous) => (previous.left === next.left && previous.top === next.top ? previous : next));
+  }, [x, y]);
+
+  const item = 'w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left text-[var(--color-surface-100)] hover:bg-[var(--color-surface-600)] focus-visible:outline-none focus-visible:bg-[var(--color-surface-600)]';
   return (
     <div
       ref={menuRef}
-      className="fixed z-50 bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded shadow-xl py-1 min-w-[140px]"
-      style={{ left: x, top: y }}
+      role="menu"
+      aria-label={`Actions for ${node.name}`}
+      className="fixed z-50 bg-[var(--color-surface-700)] border border-[var(--color-surface-500)] rounded shadow-xl py-1 min-w-[160px]"
+      style={position}
     >
+      {node.type === 'directory' && <button role="menuitem" onClick={onNewFolder} className={item}>New folder…</button>}
+      <button role="menuitem" onClick={onRename} className={item}>Rename…</button>
+      {node.type === 'file' && <button role="menuitem" onClick={onDuplicate} className={item}>Duplicate</button>}
+      <button role="menuitem" onClick={onMove} className={item}>Move to…</button>
       <button
+        role="menuitem"
         onClick={onDelete}
-        className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-[var(--color-accent-red)] hover:bg-[var(--color-surface-600)]"
+        className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left text-[var(--color-accent-red)] hover:bg-[var(--color-surface-600)] focus-visible:outline-none focus-visible:bg-[var(--color-surface-600)]"
       >
         <Trash2 size={14} />
-        Delete
+        {node.type === 'directory' ? 'Delete folder' : 'Delete'}
       </button>
     </div>
   );
@@ -377,6 +402,7 @@ function TreeNode({ node, depth, activeFileId, focusedTreeId, onFileClick, onTog
         >
           <div
             onClick={() => { onTreeItemActivate(node.id); onToggleDir(node.path); }}
+            onContextMenu={(event) => { onTreeItemActivate(node.id); onContextMenu(event, node); }}
             className="w-full flex items-center gap-1 py-1 cursor-pointer text-sm hover:bg-[var(--color-surface-700)] group-focus-visible/treeitem:ring-2 group-focus-visible/treeitem:ring-inset group-focus-visible/treeitem:ring-[var(--color-accent-blue)] text-[var(--color-surface-100)]"
             style={{ paddingLeft }}
           >
@@ -472,6 +498,20 @@ export function Sidebar() {
   const [newFileName, setNewFileName] = useState('');
   const [newFileLanguage, setNewFileLanguage] = useState<PLCLanguage>('ST');
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; node: FileTreeNode; projectSession: number } | null>(null);
+  // The project tree operations (IDE-004): the question being asked, if any.
+  const [treeQuestion, setTreeQuestion] = useState<
+    | { kind: 'new-folder'; parent: string }
+    | { kind: 'rename'; node: FileTreeNode }
+    | { kind: 'move'; node: FileTreeNode }
+    | { kind: 'delete-folder'; node: FileTreeNode }
+    | null
+  >(null);
+  const fileTreeRoot = useIDEStore((s) => s.fileTree);
+  const createFolder = useIDEStore((s) => s.createFolder);
+  const renameEntry = useIDEStore((s) => s.renameEntry);
+  const moveEntry = useIDEStore((s) => s.moveEntry);
+  const duplicateEntry = useIDEStore((s) => s.duplicateEntry);
+  const deleteFolder = useIDEStore((s) => s.deleteFolder);
   const [deleteConfirm, setDeleteConfirm] = useState<{ fileId: string; fileName: string; projectSession: number } | null>(null);
   const [isDeletingFile, setIsDeletingFile] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -545,12 +585,10 @@ export function Sidebar() {
 
   // Context menu handlers
   const handleContextMenu = (e: React.MouseEvent, node: FileTreeNode) => {
-    if (node.type === 'file') {
-      e.preventDefault();
-      setTreeFocus(node.id);
-      const state = useIDEStore.getState();
-      setContextMenu({ x: e.clientX, y: e.clientY, node, projectSession: state.projectSession });
-    }
+    e.preventDefault();
+    setTreeFocus(node.id);
+    const state = useIDEStore.getState();
+    setContextMenu({ x: e.clientX, y: e.clientY, node, projectSession: state.projectSession });
   };
 
   // deleteFile reports a failure as `false`, so the confirm button only starts this with `void`.
@@ -616,6 +654,10 @@ export function Sidebar() {
         if (node.type === 'directory') onToggleDirectory(node.path);
         else handleFileClick(node.id);
         break;
+      case 'F2':
+        event.preventDefault();
+        setTreeQuestion({ kind: 'rename', node });
+        break;
       default:
         break;
     }
@@ -647,6 +689,14 @@ export function Sidebar() {
             aria-label="New File"
           >
             <Plus size={14} />
+          </button>
+          <button
+            onClick={() => setTreeQuestion({ kind: 'new-folder', parent: 'src' })}
+            className="p-1 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-300)]"
+            title="New Folder"
+            aria-label="New Folder"
+          >
+            <FolderPlus size={14} />
           </button>
           <button
             onClick={() => { void refreshFileTree(); }}
@@ -752,12 +802,66 @@ export function Sidebar() {
         <ContextMenu
           x={contextMenu.x}
           y={contextMenu.y}
+          node={contextMenu.node}
           onClose={() => setContextMenu(null)}
+          onNewFolder={() => { setTreeQuestion({ kind: 'new-folder', parent: contextMenu.node.path }); setContextMenu(null); }}
+          onRename={() => { setTreeQuestion({ kind: 'rename', node: contextMenu.node }); setContextMenu(null); }}
+          onDuplicate={() => {
+            const path = contextMenu.node.path;
+            setContextMenu(null);
+            void duplicateEntry(path).catch((error: unknown) => {
+              useIDEStore.getState().addConsoleEntry({ type: 'error', message: error instanceof Error ? error.message : 'Could not duplicate the file.', source: 'system' });
+            });
+          }}
+          onMove={() => { setTreeQuestion({ kind: 'move', node: contextMenu.node }); setContextMenu(null); }}
           onDelete={() => {
-            setDeleteConfirm({ fileId: contextMenu.node.id, fileName: contextMenu.node.name, projectSession: contextMenu.projectSession });
-            setDeleteError(null);
+            if (contextMenu.node.type === 'directory') {
+              setTreeQuestion({ kind: 'delete-folder', node: contextMenu.node });
+            } else {
+              setDeleteConfirm({ fileId: contextMenu.node.id, fileName: contextMenu.node.name, projectSession: contextMenu.projectSession });
+              setDeleteError(null);
+            }
             setContextMenu(null);
           }}
+        />
+      )}
+
+      {/* Project tree questions (IDE-004) */}
+      {treeQuestion?.kind === 'new-folder' && fileTreeRoot && (
+        <EntryNameDialog
+          title="New Folder"
+          initialName=""
+          submitLabel="Create"
+          folders={collectFolders(fileTreeRoot)}
+          initialFolder={treeQuestion.parent === '/' ? '' : treeQuestion.parent}
+          onSubmit={async (name, folder) => { await createFolder(folder, name); setTreeQuestion(null); }}
+          onCancel={() => setTreeQuestion(null)}
+        />
+      )}
+      {treeQuestion?.kind === 'rename' && (
+        <EntryNameDialog
+          title={`Rename ${treeQuestion.node.name}`}
+          initialName={treeQuestion.node.name}
+          submitLabel="Rename"
+          onSubmit={async (name) => { await renameEntry(treeQuestion.node.path, name); setTreeQuestion(null); }}
+          onCancel={() => setTreeQuestion(null)}
+        />
+      )}
+      {treeQuestion?.kind === 'move' && fileTreeRoot && (
+        <MoveDialog
+          name={treeQuestion.node.name}
+          folders={collectFolders(fileTreeRoot, treeQuestion.node.type === 'directory' ? treeQuestion.node.path : null)}
+          initialFolder={parentPath(treeQuestion.node.path)}
+          onMove={async (folder) => { await moveEntry(treeQuestion.node.path, folder); setTreeQuestion(null); }}
+          onCancel={() => setTreeQuestion(null)}
+        />
+      )}
+      {treeQuestion?.kind === 'delete-folder' && (
+        <DeleteFolderDialog
+          name={treeQuestion.node.name}
+          modifiedFiles={[...useIDEStore.getState().loadedFiles.values()].filter((file) => file.isModified && file.path.startsWith(`${treeQuestion.node.path}/`)).map((file) => file.path)}
+          onConfirm={async () => { await deleteFolder(treeQuestion.node.path); setTreeQuestion(null); }}
+          onCancel={() => setTreeQuestion(null)}
         />
       )}
 
