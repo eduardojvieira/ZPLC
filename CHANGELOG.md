@@ -26,7 +26,9 @@ All notable changes are documented here.
   The panel no longer grades a run whose recorded assertions are not those of the lesson
   scenario, and shows the failures, the objectives and the hints. The panel does not call
   `lessonCheck` yet, so a run of an edited scenario that keeps the kinds of the
-  assertions is still accepted by the panel.
+  assertions is still accepted by the panel. A run that failed was shown as "evidence is
+  incomplete" in the real application, because a failed run reports no scenario count;
+  it is now graded as failed and lists its failed assertions.
 - Lesson CI runs for every lesson and both languages (LRN-025): the starter fails the
   reference scenario because an assertion fails, the reference solution passes it, wrong
   programs stay red, other correct programs pass, every time and value the text quotes

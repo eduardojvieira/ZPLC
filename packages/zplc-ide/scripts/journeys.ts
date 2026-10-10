@@ -1283,4 +1283,25 @@ export const JOURNEYS: Journey[] = [
       await app.until('the rung where the program is stopped to be marked', async () => await app.eval<boolean>(`document.querySelector('[data-ld-rung-id="rung_3"]')?.className.includes('ring-2') === true`) || undefined);
     },
   },
+  {
+    // The starter of lesson 1 fails its scenario. Learn must say which assertion failed, when, what was expected against what
+    // was observed, and where in the trace (LRN-026), after the learner ran only that scenario from Tests.
+    name: '29 Learn says which assertion failed', example: 'motor_start_stop_starter', proves: [], partly: ['LRN-026'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await app.click(tab('Tests'));
+      await app.until('the Tests tab to report the linked workspace', async () => (await app.text()).includes('Linked saved workspace ready') || undefined);
+      await app.click(button('Run host scenarios', 'contains'), 'the Run host scenarios button');
+      await app.until('the run to show its scenario', async () => await app.visible(button('Run this scenario again', 'contains')) || undefined);
+      await app.click(button('Run this scenario again', 'contains'), 'the button that runs only that scenario');
+      await app.until('the single-scenario run to finish', async () => await app.visible(button('Run this scenario again', 'contains')) || undefined);
+      await app.click(css('#console-tab-learn'), 'the Learn tab');
+      await app.until('Learn to grade the run as failed', async () => await app.eval<boolean>(`document.querySelector('[data-learn-grade="failed"]') !== null`) || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the grade shown is ${await app.eval<string>(`document.querySelector('[data-learn-grade]')?.getAttribute('data-learn-grade') ?? 'none'`)}`); });
+      const failures = await app.eval<string[]>(`[...document.querySelectorAll('[data-learn-failures] li')].map((item) => item.textContent ?? '')`);
+      assert(failures.length > 0, 'Learn lists no failed assertion.');
+      assert(failures.every((line) => /Motor\./.test(line) && /(expected|se esperaba)/.test(line) && /(observed|se observó)/.test(line)), `A failed assertion does not say what was expected against what was observed: ${JSON.stringify(failures[0])}`);
+      assert(failures.every((line) => line.includes('zplc://runtime/snapshot/MotorStartStop/')), `A failed assertion does not give the address of its trace point: ${JSON.stringify(failures[0])}`);
+    },
+  },
 ];

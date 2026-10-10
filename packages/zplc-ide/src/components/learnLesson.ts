@@ -111,7 +111,8 @@ export function gradeRecordedScenarioLesson(lesson: VersionedLearnLesson, presen
   if (!lesson.rubric.requireSavedEvidence || lesson.rubric.requiredScenarioId !== lesson.requiredScenario) return { kind: 'unavailable' };
   if (!presentation) return { kind: 'not-run' };
   if (presentation.operation !== 'scenario-run') return presentation.operation ? { kind: 'unrelated' } : { kind: 'unavailable' };
-  if (!presentation.hasEvidence || presentation.scenarioCount !== 1 || !presentation.preview || !presentation.savedTestInputIdentity) return { kind: 'unavailable' };
+  // A passed run reports how many scenarios it ran; a failed one does not (it has no summary), so the preview's own count decides.
+  if (!presentation.hasEvidence || (presentation.scenarioCount !== undefined && presentation.scenarioCount !== 1) || !presentation.preview || !presentation.savedTestInputIdentity) return { kind: 'unavailable' };
 
   const { preview, savedTestInputIdentity } = presentation;
   if (preview.totalScenarioCount !== 1 || preview.scenarios.length !== 1) return { kind: 'unavailable' };

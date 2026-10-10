@@ -4,6 +4,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { parseGradeRecord } from '../../electron/learnProgressModel';
+import { gradeRecordedScenarioLesson, learnLessonCatalog } from '../components/learnLesson';
+import { presentWorkspaceTestResult } from '../components/workspaceTestPresentation';
 import { itNative, nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';
 import { lessonCheck, scenarioRun } from '../cli/toolApi';
 import { LESSON_INDEX } from '../generated/lessonIndex';
@@ -40,6 +42,19 @@ afterAll(() => {
 });
 
 describe('lesson check (LRN-022, LRN-023, LRN-026)', () => {
+  itNative('the panel grades the real recorded run of the starter as failed and lists its failed assertions', async () => {
+    const run = await scenarioRun(workspace(), lesson.scenario.id);
+    expect(run.ok).toBe(false);
+    // The run is what the main process returns and the renderer presents; a failed run has no summary and so no scenario count.
+    const presented = presentWorkspaceTestResult({ ...run, traceFile: undefined });
+    const grade = gradeRecordedScenarioLesson(learnLessonCatalog.en.find(({ id }) => id === lesson.id)!, presented);
+    expect(grade.kind).toBe('failed');
+    if (grade.kind !== 'failed') return;
+    expect(grade.assertions).toBe(lesson.scenario.assertions);
+    expect(grade.failures.length).toBeGreaterThan(0);
+    for (const failure of grade.failures) expect(failure.trace?.uri).toContain('zplc://runtime/snapshot/MotorStartStop/');
+  }, 60_000);
+
   itNative('fails the starter and shows which assertion failed, when, expected against observed, and where in the trace', async () => {
     const result = await lessonCheck(workspace(), lesson.id, { clock: clock('2026-10-10T12:00:00.000Z') });
     expect(result.ok).toBe(true);
