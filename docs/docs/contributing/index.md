@@ -40,7 +40,7 @@ Run every command from the repository root. The times were measured on a
 | Studio, CLI, conformance | `bun run test:ide:ci` | 30 to 60 s | The Studio suites and the conformance cases behave as listed |
 | Lint and types | `bun run lint`, `bun run typecheck` and `bun run build:ide` | about 10 s, 20 s and 40 s | ESLint is clean, including the rules that reject an unhandled promise; every TypeScript program, tests and scripts included, type-checks; and the Studio builds |
 | C static analysis | `bun run lint:c` | about 15 s | `clang-tidy` with `.clang-tidy`, every finding an error, is clean on the core, the POSIX HAL and the host application; the Zephyr HAL and `firmware/app` are analysed too when a board build exists |
-| Test sources | `bun run check:test-sources` | under 1 s | No test reads the text of product source, except the files listed for replacement in `tools/ci/pinned-source-offenders.json` |
+| Test sources | `bun run check:test-sources` | under 1 s | No test reads the text of product source or matches the assembly the compiler emitted, except the files listed for replacement in `tools/ci/pinned-source-offenders.json` |
 | Binary contract | `bun run contract:check` | about 1 s | Generated files match `contract.json` |
 | Simulation | `bun run simulate packages/zplc-ide/projects/motor_plant` | under 1 s | The project's scenario tests pass on the native runtime |
 | Studio journeys | `bun run test:journeys` | 70 to 90 s | The real application passes its end-to-end journeys (needs a display) |

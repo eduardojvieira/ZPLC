@@ -56,7 +56,7 @@ them.
 | `setup:firmware`, `test:firmware` | Firmware suites on Linux (Zephyr) |
 | `contract:check` | The generated binary contract is in step with its source |
 | `lint:c` | `clang-tidy` over the core, the POSIX HAL and the host application, every finding an error (needs `clang-tidy`) |
-| `check:test-sources` | No test reads the text of product source, except the files listed for replacement |
+| `check:test-sources` | No test reads the text of product source or matches generated assembly, except the files listed for replacement |
 | `simulate <project>` | Run a project's scenario tests on the native runtime |
 | `dev` | Run Studio in development mode against the native runtime |
 | `docs:start`, `check:docs` | Serve the site, or generate, validate and build it |

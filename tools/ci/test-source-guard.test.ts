@@ -119,6 +119,11 @@ describe('test source guard: a test that reads a product source file (VF-006)', 
     expect(reads('firmware/lib/zplc_core/tests/test_x.c', body)).toEqual(['firmware/lib/zplc_core/src/core/vm.c']);
   });
 
+  it('flags a test outside the assembler that asserts on generated assembly text', () => {
+    const body = ['const result = compileToBinary(source);', 'expect(result.' + 'assembly).toContain("STORE16 0x2000");', 'expect(' + 'asm).not.toMatch(/PUSH/);'].join('\n');
+    expect(reads('packages/zplc-compiler/src/compiler/numeric.test.ts', body)).toEqual(['generated assembly text']);
+  });
+
   it('flags a raw import of a product source file', () => {
     const body = "import css from '../index.css" + "?raw';";
     expect(reads('packages/zplc-ide/src/theme/raw.test.ts', body)).toEqual(['packages/zplc-ide/src/index.css']);
@@ -167,8 +172,13 @@ describe('test source guard: reads that are not product source (VF-006)', () => 
   });
 
   it('lets the assembler tests read what they like: assembly text may be asserted there', () => {
-    const body = read("join(import.meta.dir, '..', 'compiler', 'Console.tsx')");
+    const body = read("join(import.meta.dir, '..', 'compiler', 'Console.tsx')") + '\nexpect(output.' + 'assembly).toContain("NOP");';
     expect(reads('packages/zplc-compiler/src/assembler/assembler.test.ts', body)).toEqual([]);
+  });
+
+  it('does not take the bytes or the diagnostics of a build for assembly text', () => {
+    const body = ['expect(result.bytecode.length).toBeGreaterThan(0);', 'expect(result.diagnostics).toEqual([]);', 'expect(assembled).toBe(true);', 'expect(result.' + 'assembly).toEqual(expect.any(String));', "expect(label).toContain('assemble');"].join('\n');
+    expect(reads('packages/zplc-compiler/src/compiler/x.test.ts', body)).toEqual([]);
   });
 });
 

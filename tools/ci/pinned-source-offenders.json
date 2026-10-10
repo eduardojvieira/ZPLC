@@ -1,5 +1,55 @@
 [
   {
+    "file": "packages/zplc-compiler/src/compiler/codegen_functions.test.ts",
+    "requirement": "VF-006",
+    "added": "2026-10-10",
+    "reads": [
+      "generated assembly text"
+    ],
+    "replacement": "behaviour",
+    "reason": "22 assertions that the assembly the compiler emits for a function call contains an instruction or a label. Replace each by a conformance case that runs the program in the VM and reads the result (VF-001, VF-004); keep only what the assembler's own tests can state."
+  },
+  {
+    "file": "packages/zplc-compiler/src/compiler/compiler.test.ts",
+    "requirement": "VF-006",
+    "added": "2026-10-10",
+    "reads": [
+      "generated assembly text"
+    ],
+    "replacement": "behaviour",
+    "reason": "About 60 assertions on the instructions and comments the compiler emits (header, memory map, program body, task tags). Replace by conformance cases that load the artifact and read VM memory, and by assertions on the binary container and the debug map."
+  },
+  {
+    "file": "packages/zplc-compiler/src/compiler/control-flow.test.ts",
+    "requirement": "VF-006",
+    "added": "2026-10-10",
+    "reads": [
+      "generated assembly text"
+    ],
+    "replacement": "behaviour",
+    "reason": "Three assertions on emitted instructions of loops and EXIT (a PUSH8 and the count of HALT lines). Replace by conformance cases that run the loops and read the counters."
+  },
+  {
+    "file": "packages/zplc-compiler/src/compiler/names.test.ts",
+    "requirement": "VF-006",
+    "added": "2026-10-10",
+    "reads": [
+      "generated assembly text"
+    ],
+    "replacement": "behaviour",
+    "reason": "Two assertions that the assembly stores to the address the debug map gives a variable. Replace by running the program and reading that address, which the conformance runner does."
+  },
+  {
+    "file": "packages/zplc-compiler/src/compiler/numeric.test.ts",
+    "requirement": "VF-006",
+    "added": "2026-10-10",
+    "reads": [
+      "generated assembly text"
+    ],
+    "replacement": "behaviour",
+    "reason": "The shape of the assembly the numeric rules generate (which helper is linked, which extension follows a narrow load). The values are already proven by the conformance cases; the instruction-shape cases belong in the assembler tests or go."
+  },
+  {
     "file": "packages/zplc-compiler/src/compiler/semantic-errors.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
@@ -9,6 +59,16 @@
     ],
     "replacement": "behaviour",
     "reason": "One case scans codegen.ts and the stdlib modules for the text \"; ERROR\". The behavioural cases beside it (compileST throws, no assembly returned) already prove the property; replace the scan by a conformance case per construct that 2.0 rejects (VF-003)."
+  },
+  {
+    "file": "packages/zplc-compiler/src/compiler/structs.test.ts",
+    "requirement": "VF-006",
+    "added": "2026-10-10",
+    "reads": [
+      "generated assembly text"
+    ],
+    "replacement": "behaviour",
+    "reason": "Four assertions that the assembly contains the comment lines of a struct member assignment. Replace by running a struct program and reading each member."
   },
   {
     "file": "packages/zplc-ide/electron/aiProviderIpc.test.ts",
@@ -151,6 +211,16 @@
     ],
     "replacement": "artifact",
     "reason": "The packaged-layout cases are behavioural; one case matches release.yml as text for its runner and architecture matrix. Replace by the recorded outcome of the release run for each platform."
+  },
+  {
+    "file": "packages/zplc-ide/src/compiler/languageWorkflow.test.ts",
+    "requirement": "VF-006",
+    "added": "2026-10-10",
+    "reads": [
+      "generated assembly text"
+    ],
+    "replacement": "behaviour",
+    "reason": "Three assertions that the assembly of a multi-program build names a variable of one program and not of the other. Replace by the debug map of each program, which the same build returns."
   },
   {
     "file": "packages/zplc-ide/src/components/CodeEditor.monaco.test.ts",
@@ -433,6 +503,16 @@
     ],
     "replacement": "behaviour",
     "reason": "Matches index.html, index.css and the BrowserWindow options in electron/main.ts as text. Replace by a main-process test against a stub electron module and a page-load check (VF-008)."
+  },
+  {
+    "file": "packages/zplc-ide/src/transpiler/transpiler.test.ts",
+    "requirement": "VF-006",
+    "added": "2026-10-10",
+    "reads": [
+      "generated assembly text"
+    ],
+    "replacement": "behaviour",
+    "reason": "Six assertions that the assembly of a transpiled visual program contains an instruction or a comment. Replace by compiling and running the transpiled program, as the conformance cases for .ld.json, .fbd.json and .sfc.json do."
   },
   {
     "file": "packages/zplc-ide/src/utils/projectLoader.starters.test.ts",

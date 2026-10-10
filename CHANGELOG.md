@@ -4,9 +4,11 @@ All notable changes are documented here.
 
 ## Unreleased
 
-- CI fails when a test reads the text of a product source file (VF-006): a guard
-  (`tools/ci/test-source-guard.ts`) lists every test that reads Studio, Electron,
-  script, firmware or workflow source, and `tools/ci/pinned-source-offenders.json`
+- CI fails when a test reads the text of a product source file or asserts on the
+  assembly the compiler emitted (VF-006): a guard (`tools/ci/test-source-guard.ts`)
+  lists every test that reads Studio, Electron, script, firmware or workflow
+  source, or matches generated assembly text outside the assembler's own tests,
+  and `tools/ci/pinned-source-offenders.json`
   records the known ones with the requirement and the kind of replacement for
   each. The list can only shrink. Six source-text assertions are now behaviour
   tests (the compiler version, the store's state, the Learn lesson catalog, the VM

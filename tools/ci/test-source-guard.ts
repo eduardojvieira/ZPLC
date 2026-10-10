@@ -5,7 +5,10 @@
 // The guard lists every tracked test file that reads a product source file. A test that reads
 // packages/*/src, packages/*/electron, packages/*/scripts, scripts, firmware (C, headers, CMake, board
 // configuration) or .github/workflows is a source-text test: it freezes how the code is written, not what it
-// does. The files on tools/ci/pinned-source-offenders.json are known offenders being replaced; the guard fails on
+// does. So is a test outside the assembler's own that asserts on generated assembly text (`expect(...assembly)`
+// followed by a text matcher: toContain, toMatch, toStartWith, toEndWith, or toBe and toEqual with a string),
+// which is listed with the pseudo file "generated assembly text".
+// The files on tools/ci/pinned-source-offenders.json are known offenders being replaced; the guard fails on
 //
 //   - a test file that reads product source and is not on the list (a new offender),
 //   - a listed file that no longer reads product source, or reads fewer files than listed (a stale entry),
@@ -31,6 +34,10 @@
 //   6. A directory listing (readdirSync) anchored at the test, whose result a read depends on, reads every product
 //      source file of that directory; the entry is reported as the directory, with a trailing /.
 //   7. Comments are ignored. The assembler's own unit tests are exempt: assembly text may be asserted there.
+//   8. An assertion whose subject names `asm` or `assembly` (result.assembly, asm, generatedAssembly) and ends in a
+//      text matcher is an assertion on generated assembly text; `expect(result.assembly).toEqual(expect.any(String))`
+//      is not. Only a subject that names it is seen: a helper
+//      that returns the text under another name is missed.
 // ponytail: a string scan, not a type-aware analysis. A path assembled by a function, or a directory walked
 // recursively, is missed; such a test should name the file once as a literal.
 import { readFileSync } from 'node:fs';
@@ -40,6 +47,9 @@ import { TEST_FILE } from './test-inventory';
 
 export interface SourceFile { path: string; text: string }
 export interface Pinned { file: string; requirement: string; added: string; reads: string[]; replacement: string; reason: string }
+
+export const ASSEMBLY_TEXT = 'generated assembly text';
+const ASSEMBLY_ASSERTION = /\bexpect\(\s*(?:[\w$.!?[\]()]*?\.)?\w*(?:asm|Asm|assembly|Assembly)\w*\b[^)]*\)\s*\.(?:not\.)?(?:(?:toContain|toMatch|toStartWith|toEndWith)\b|(?:toBe|toEqual)\(\s*[`'"])/;
 
 export const REPLACEMENTS = ['behaviour', 'dom', 'artifact', 'contract', 'delete-with-layout'] as const;
 const EXEMPT = /^packages\/zplc-compiler\/src\/assembler\//;
@@ -327,6 +337,7 @@ export function productReads(file: SourceFile, tracked: string[], readModule?: (
     for (const directory of path.directories) if (product.some((candidate) => posix.dirname(candidate) === directory)) found.add(`${directory}/`);
   }
   if (unknown) for (const literal of literals(text)) for (const match of matches(literal)) found.add(match);
+  if (!python && ASSEMBLY_ASSERTION.test(text)) found.add(ASSEMBLY_TEXT);
   return [...found].sort();
 }
 
@@ -368,7 +379,7 @@ export function checkOffenders(offenders: Map<string, string[]>, entries: Pinned
   for (const [file, read] of offenders) {
     const entry = pinned.get(file);
     if (!entry) {
-      errors.push(`new offender: ${file} reads product source (${read.join(', ')}); test behaviour instead of source text, or pin it with its requirement in tools/ci/pinned-source-offenders.json`);
+      errors.push(`new offender: ${file} proves behaviour by product source text (${read.join(', ')}); test what the code does instead, or pin it with its requirement in tools/ci/pinned-source-offenders.json`);
       continue;
     }
     const extra = read.filter((path) => !entry.reads.includes(path));
@@ -400,5 +411,5 @@ if (import.meta.main) {
     console.error(errors.map((message) => `test-source-guard: ${message}`).join('\n'));
     process.exit(1);
   }
-  console.log(`test-source-guard: ${tests} test files, ${offenders} read product source and are all pinned (VF-006 wants the list empty at GA)`);
+  console.log(`test-source-guard: ${tests} test files, ${offenders} match product source text and are all pinned (VF-006 wants the list empty at GA)`);
 }
