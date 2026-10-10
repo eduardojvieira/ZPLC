@@ -181,8 +181,9 @@ export interface DebugMap {
 
 /**
  * Version of the compiler package, recorded in every debug map (CMP-053). It is the `version` of this
- * package's package.json; the compiler test `debug-map.test.ts` fails when the two differ, so a version
- * bump cannot ship a map that names the old compiler.
+ * package's package.json: `scripts/release-version.ts` rewrites it with the manifests and its --check
+ * fails when they differ, and the compiler test `debug-map.test.ts` fails the same way, so a version bump
+ * cannot ship a map that names the old compiler.
  */
 export const COMPILER_VERSION = '2.0.0-rc.3';
 
