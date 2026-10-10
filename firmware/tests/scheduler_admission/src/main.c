@@ -379,9 +379,12 @@ ZTEST(zplc_scheduler_admission,
   zassert_equal(zplc_mem_get_code_size(), code_size, "core code changed");
 }
 
-ZTEST(zplc_scheduler_admission, test_task_stack_limit_faults_safely) {
+/* A task that pushes more than its declared depth is refused when the
+ * artifact is loaded (RT-003), so the VM never reaches the overflow at run
+ * time. The scheduler fault path itself stays covered by the watchdog tests. */
+ZTEST(zplc_scheduler_admission, test_task_stack_limit_is_refused_at_load) {
   uint8_t program[PROGRAM_CAPACITY];
-  uint8_t force = 1U;
+  zplc_sched_stats_t stats;
   size_t size;
 
   clear_scheduler();
@@ -389,15 +392,12 @@ ZTEST(zplc_scheduler_admission, test_task_stack_limit_faults_safely) {
   set_task_two_pushes(program, 0U);
   set_task_stack_size(program, 0U, 1U);
   rewrite_program_crc(program, size);
-  zassert_equal(zplc_sched_load(program, size), 1, "load stack-limited task");
-  zassert_ok(zplc_force_set_bytes(ZPLC_MEM_OPI_BASE, &force, 1U),
-             "set force before stack fault");
-  zassert_equal(zplc_sched_step(), -ZPLC_VM_STACK_OVERFLOW,
-                "task stack limit faults on second push");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR,
-                "stack overflow latches scheduler error");
-  zassert_equal(zplc_opi_read8(0U), 0U, "stack fault leaves OPI safe");
-  zassert_equal(zplc_force_get_count(), 0U, "stack fault clears forces");
+  zassert_true(zplc_sched_load(program, size) < 0,
+               "a task above its declared stack depth must be refused");
+  zassert_ok(zplc_sched_get_stats(&stats), "read stats after the refusal");
+  zassert_equal(stats.active_tasks, 0U, "a refused artifact registers no task");
+  zassert_not_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_RUNNING,
+                    "a refused artifact never runs");
 }
 
 ZTEST(zplc_scheduler_admission, test_task_stack_limit_allows_configured_depth) {
