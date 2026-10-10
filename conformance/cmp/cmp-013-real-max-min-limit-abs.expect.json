@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-013",
   "title": "MAX, MIN, LIMIT and ABS on negative REAL values",
+  "matrix": ["data-types.real", "functions.selection-limit-and-sqrt-functions"],
+  "tags": ["arch-sensitive", "float"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

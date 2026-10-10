@@ -1,6 +1,7 @@
 {
   "requirement": "LNG-023",
   "title": "an FBD gate takes more than two inputs",
+  "matrix": ["ld-fbd.fbd-blocks"],
   "scans": 3,
   "scanMs": 10,
   "inputs": [

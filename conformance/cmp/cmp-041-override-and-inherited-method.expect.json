@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-041",
   "title": "an inherited method and an overriding one",
+  "matrix": ["pous.extends-override-final-super"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

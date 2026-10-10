@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-011",
   "title": "SINT holds -128 and 127 through compare and widening",
+  "matrix": ["data-types.sint-int"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

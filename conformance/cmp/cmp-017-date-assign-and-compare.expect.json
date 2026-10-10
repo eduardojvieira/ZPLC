@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-017",
   "title": "DATE is assigned from a literal and compares",
+  "matrix": ["data-types.date-tod-dt", "literals.time-date-and-string-literals"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

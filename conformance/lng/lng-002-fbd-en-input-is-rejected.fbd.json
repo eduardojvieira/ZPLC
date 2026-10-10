@@ -1,0 +1,97 @@
+{
+  "name": "Enable",
+  "variables": {
+    "local": [],
+    "inputs": [
+      {
+        "name": "A",
+        "type": "BOOL",
+        "address": "%IX0.0"
+      },
+      {
+        "name": "E",
+        "type": "BOOL",
+        "address": "%IX0.1"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "Res",
+        "type": "BOOL",
+        "address": "%QX0.0"
+      }
+    ]
+  },
+  "blocks": [
+    {
+      "id": "a",
+      "type": "input",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "variableName": "A"
+    },
+    {
+      "id": "e",
+      "type": "input",
+      "position": {
+        "x": 0,
+        "y": 1
+      },
+      "variableName": "E"
+    },
+    {
+      "id": "gate",
+      "type": "NOT",
+      "position": {
+        "x": 1,
+        "y": 0
+      }
+    },
+    {
+      "id": "out",
+      "type": "output",
+      "position": {
+        "x": 2,
+        "y": 0
+      },
+      "variableName": "Res"
+    }
+  ],
+  "connections": [
+    {
+      "id": "w1",
+      "from": {
+        "block": "a",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "gate",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "w2",
+      "from": {
+        "block": "e",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "gate",
+        "port": "EN"
+      }
+    },
+    {
+      "id": "w3",
+      "from": {
+        "block": "gate",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "out",
+        "port": "IN"
+      }
+    }
+  ]
+}

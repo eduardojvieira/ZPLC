@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-017",
   "title": "a TON with a 30 day preset is not done after 20 ms",
+  "matrix": ["data-types.time", "blocks.ton"],
   "scans": 3,
   "scanMs": 10,
   "expect": [

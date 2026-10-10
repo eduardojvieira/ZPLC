@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-042",
   "title": "a function block declared in another file",
+  "matrix": ["pous.shared-pous-and-libraries"],
   "scans": 1,
   "scanMs": 10,
   "files": ["cmp-042-function-block-in-another-file-echo.st"],

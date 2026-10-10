@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-014",
   "title": "NOT on a DWORD operates on all 32 bits",
+  "matrix": ["data-types.byte-word-dword", "statements.and-or-xor-not"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

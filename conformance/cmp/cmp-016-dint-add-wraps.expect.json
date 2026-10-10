@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-016",
   "title": "DINT addition wraps in two's complement",
+  "matrix": ["data-types.dint", "statements.arithmetic-and-comparisons"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QD0", "type": "DINT", "value": -2147483648 }]

@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-013",
   "title": "a REAL variable takes an integer value and an integer initial value",
+  "matrix": ["data-types.real", "functions.implicit-widening-conversion"],
+  "tags": ["arch-sensitive", "float-conversion"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

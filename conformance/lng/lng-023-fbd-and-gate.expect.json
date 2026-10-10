@@ -1,6 +1,7 @@
 {
   "requirement": "LNG-023",
   "title": "an FBD AND gate combines two inputs",
+  "matrix": ["ld-fbd.fbd-blocks"],
   "scans": 2,
   "scanMs": 10,
   "inputs": [

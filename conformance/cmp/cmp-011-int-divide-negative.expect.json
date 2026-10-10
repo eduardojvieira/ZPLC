@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-011",
   "title": "INT division of a negative operand",
+  "matrix": ["data-types.sint-int", "statements.arithmetic-and-comparisons"],
+  "tags": ["arch-sensitive", "division"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QW0", "type": "INT", "value": -4 }]

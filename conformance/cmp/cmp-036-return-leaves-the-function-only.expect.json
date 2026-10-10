@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-036",
   "title": "RETURN leaves the function and the scan continues",
+  "matrix": ["pous.function", "statements.return"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

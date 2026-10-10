@@ -1,0 +1,6 @@
+PROGRAM Octal
+VAR
+  n AT %QW0 : INT;
+END_VAR
+  n := 8#17;
+END_PROGRAM

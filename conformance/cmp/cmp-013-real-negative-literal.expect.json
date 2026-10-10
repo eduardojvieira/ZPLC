@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-013",
   "title": "REAL negative literal",
+  "matrix": ["data-types.real"],
+  "tags": ["arch-sensitive", "float"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QD0", "type": "REAL", "value": -1.5 }]

@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-013",
   "title": "INT times REAL",
+  "matrix": ["statements.arithmetic-and-comparisons"],
+  "tags": ["arch-sensitive", "float-conversion"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QD0", "type": "REAL", "value": 6.0 }]

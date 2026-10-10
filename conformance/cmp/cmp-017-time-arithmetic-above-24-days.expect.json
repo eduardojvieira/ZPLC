@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-017",
   "title": "TIME addition, division and comparison above 24.8 days",
+  "matrix": ["data-types.time"],
+  "tags": ["arch-sensitive", "division"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

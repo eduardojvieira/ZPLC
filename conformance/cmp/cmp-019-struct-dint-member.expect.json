@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-019",
   "title": "structure DINT member of 100000",
+  "matrix": ["data-types.struct"],
+  "tags": ["arch-sensitive", "alignment"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QD0", "type": "DINT", "value": 100000 }]

@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-014",
   "title": "SHL on a BYTE drops the bits shifted past bit 7",
+  "matrix": ["functions.shift-rotate-and-word-logic"],
+  "tags": ["arch-sensitive", "shifts"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

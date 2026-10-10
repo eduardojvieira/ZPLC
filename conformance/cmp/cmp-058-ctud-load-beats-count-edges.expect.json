@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-058",
   "title": "CTUD Load beats an up edge and a down edge in the same scan",
+  "matrix": ["blocks.ctu-ctd-ctud"],
   "scans": 8,
   "scanMs": 10,
   "inputs": [

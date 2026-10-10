@@ -1,0 +1,11 @@
+{
+  "requirement": "RT-015",
+  "title": "an event-triggered task is rejected by the build",
+  "matrix": ["configuration.event-triggered-tasks"],
+  "note": "Decision D-04 (2.x recommended): event-triggered tasks are left to 2.x; the scheduler rejects them today and the build says so (RT-015)",
+  "build": "fails",
+  "messageIncludes": [],
+  "tasks": [
+    {"name": "EventTask", "trigger": "event", "interval_ms": 10, "priority": 1, "programs": ["main.st"]}
+  ]
+}

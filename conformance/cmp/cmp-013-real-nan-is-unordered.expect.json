@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-013",
   "title": "REAL NaN is not equal, less or greater than anything, and not equal to itself",
+  "matrix": ["data-types.real"],
+  "tags": ["arch-sensitive", "float"],
   "scans": 1,
   "scanMs": 10,
   "inputs": [

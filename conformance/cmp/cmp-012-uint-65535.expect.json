@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-012",
   "title": "UINT 65535 compares and widens as a positive number",
+  "matrix": ["data-types.usint-uint"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

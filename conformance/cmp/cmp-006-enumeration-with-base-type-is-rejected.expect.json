@@ -1,0 +1,9 @@
+{
+  "requirement": "CMP-006",
+  "title": "an enumeration with an explicit base type is rejected",
+  "matrix": ["data-types.enumerations-with-a-base-type-subranges"],
+  "note": "Decision D-04 (2.x recommended): enumerations with an explicit base type are left to 2.x and rejected with a message",
+  "build": "fails",
+  "lines": [1],
+  "messageIncludes": []
+}

@@ -1,6 +1,7 @@
 {
   "requirement": "LNG-019",
   "title": "IL parenthesised operation",
+  "matrix": ["il.parenthesised-operations"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QX0.0", "type": "BOOL", "value": false }]

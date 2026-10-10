@@ -1,6 +1,7 @@
 {
   "requirement": "VF-001",
   "title": "an input set before a scan reaches the output on that scan",
+  "matrix": ["data-types.bool", "declarations.at-i-at-q-direct-addresses", "pous.program-one-per-file"],
   "scans": 3,
   "scanMs": 10,
   "inputs": [{ "at": "%IX0.0", "type": "BOOL", "value": true, "beforeScan": 2 }],

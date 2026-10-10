@@ -1,0 +1,9 @@
+{
+  "requirement": "CMP-041",
+  "title": "a PROTECTED method called from outside its function block is rejected",
+  "matrix": ["pous.public-private-protected-abstract"],
+  "note": "IEC 61131-3 ed. 3, access specifiers of methods: a PROTECTED method is accessible inside its function block and the blocks that extend it, not from outside",
+  "build": "fails",
+  "lines": [12],
+  "messageIncludes": []
+}

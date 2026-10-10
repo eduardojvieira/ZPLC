@@ -1,0 +1,6 @@
+PROGRAM Forms
+VAR
+  q AT %QW0 : INT;
+END_VAR
+  q := ADD(1, 2);
+END_PROGRAM

@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-035",
   "title": "a call with a missing required argument is rejected",
+  "matrix": ["pous.function"],
   "build": "fails",
   "lines": [11]
 }

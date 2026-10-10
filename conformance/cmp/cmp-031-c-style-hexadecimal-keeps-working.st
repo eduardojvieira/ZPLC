@@ -1,0 +1,6 @@
+PROGRAM CStyle
+VAR
+  n AT %QW0 : INT;
+END_VAR
+  n := 0xFF;
+END_PROGRAM

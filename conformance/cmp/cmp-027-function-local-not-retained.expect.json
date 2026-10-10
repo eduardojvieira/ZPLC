@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-027",
   "title": "a function holds no state between calls",
+  "matrix": ["pous.function"],
   "scans": 3,
   "scanMs": 10,
   "expect": [

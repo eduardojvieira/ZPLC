@@ -1,0 +1,13 @@
+{
+  "requirement": "CMP-058",
+  "title": "UPTIME returns the milliseconds since the start, and CYCLE_TIME and WATCHDOG_RESET can be called",
+  "matrix": ["functions.uptime-cycle-time-watchdog-reset"],
+  "note": "The first scan runs at 0 ms and each next one scanMs later, so UPTIME() in scan 6 of a 10 ms task is 50; CYCLE_TIME is the execution time of the last cycle and is never negative; WATCHDOG_RESET is a call that does nothing visible (RT-034)",
+  "scans": 6,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QD0", "type": "DINT", "value": 50},
+    {"at": "%QX4.0", "type": "BOOL", "value": true},
+    {"at": "%QX4.1", "type": "BOOL", "value": true}
+  ]
+}

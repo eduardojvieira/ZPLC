@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-058",
   "title": "CTUD Reset beats Load when both are TRUE",
+  "matrix": ["blocks.ctu-ctd-ctud"],
   "scans": 4,
   "scanMs": 10,
   "inputs": [

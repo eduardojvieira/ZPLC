@@ -1,6 +1,7 @@
 {
   "requirement": "LNG-019",
   "title": "IL arithmetic and comparison in parentheses",
+  "matrix": ["il.parenthesised-operations"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

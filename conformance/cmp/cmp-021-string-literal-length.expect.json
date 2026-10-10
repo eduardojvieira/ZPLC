@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-021",
   "title": "LEN of a string literal",
+  "matrix": ["data-types.string-string-n", "literals.time-date-and-string-literals", "functions.string-functions"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QW0", "type": "INT", "value": 5 }]

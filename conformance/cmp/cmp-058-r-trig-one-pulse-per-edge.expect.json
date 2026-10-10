@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-058",
   "title": "R_TRIG gives one pulse per rising edge",
+  "matrix": ["blocks.edge-detectors-and-bistables"],
   "scans": 6,
   "scanMs": 10,
   "expect": [{ "at": "%QW0", "type": "INT", "value": 3 }]

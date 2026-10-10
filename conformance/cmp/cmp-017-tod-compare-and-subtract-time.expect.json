@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-017",
   "title": "TOD compares and subtracts a TIME",
+  "matrix": ["data-types.date-tod-dt"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

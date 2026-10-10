@@ -1,6 +1,7 @@
 {
   "requirement": "LNG-023",
   "title": "FBD REAL values keep their type through a chain of numeric blocks",
+  "matrix": ["ld-fbd.fbd-blocks"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

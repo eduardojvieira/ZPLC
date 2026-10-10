@@ -1,6 +1,7 @@
 {
   "requirement": "LNG-022",
   "title": "LD rising- and falling-edge coils pulse for one scan",
+  "matrix": ["ld-fbd.ld-edge-contacts-and-edge-coils"],
   "scans": 5,
   "scanMs": 10,
   "inputs": [

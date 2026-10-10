@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-057",
   "title": "TRUNC truncates toward zero",
+  "matrix": ["functions.basic-conversions"],
+  "tags": ["arch-sensitive", "float-conversion"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QD0", "type": "REAL", "value": 3.0 }]

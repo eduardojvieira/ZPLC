@@ -1,6 +1,7 @@
 {
   "requirement": "LNG-018",
   "title": "an IL JMPCN skips the code between it and its label only while the condition holds",
+  "matrix": ["il.jmp-jmpc-jmpcn-labels"],
   "scans": 4,
   "scanMs": 10,
   "inputs": [

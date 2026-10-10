@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-011",
   "title": "INT_TO_REAL of a negative INT",
+  "matrix": ["data-types.sint-int", "functions.basic-conversions"],
+  "tags": ["arch-sensitive", "float-conversion"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QD0", "type": "REAL", "value": -7.0 }]

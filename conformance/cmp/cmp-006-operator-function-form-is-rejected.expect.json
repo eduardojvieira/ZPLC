@@ -1,0 +1,9 @@
+{
+  "requirement": "CMP-006",
+  "title": "the function form ADD of an operator is rejected naming the function",
+  "matrix": ["functions.function-forms-of-operators"],
+  "note": "Decision D-04 (2.x recommended): the function forms of operators (ADD, MUL, GT, EQ, MOVE) add no capability and are left to 2.x",
+  "build": "fails",
+  "lines": [5],
+  "messageIncludes": ["ADD"]
+}

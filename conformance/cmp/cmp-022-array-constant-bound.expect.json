@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-022",
   "title": "ARRAY bound written as a constant",
+  "matrix": ["data-types.arrays-bounds-and-element-types"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QW0", "type": "INT", "value": 9 }]

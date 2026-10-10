@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-014",
   "title": "ROR on a WORD rotates within 16 bits",
+  "matrix": ["functions.shift-rotate-and-word-logic"],
+  "tags": ["arch-sensitive", "shifts"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

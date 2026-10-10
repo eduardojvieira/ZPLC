@@ -1,0 +1,13 @@
+FUNCTION_BLOCK Gauge
+METHOD PROTECTED Reading : INT
+  Reading := 3;
+END_METHOD
+END_FUNCTION_BLOCK
+
+PROGRAM Access
+VAR
+  g : Gauge;
+  q AT %QW0 : INT;
+END_VAR
+  q := g.Reading();
+END_PROGRAM

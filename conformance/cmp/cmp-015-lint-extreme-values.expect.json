@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-015",
   "title": "LINT holds 9223372036854775807 and -9223372036854775808",
+  "matrix": ["data-types.lint-ulint-lword"],
+  "tags": ["arch-sensitive", "64-bit", "alignment"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

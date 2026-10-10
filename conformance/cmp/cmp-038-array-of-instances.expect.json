@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-038",
   "title": "array of function-block instances",
+  "matrix": ["data-types.arrays-bounds-and-element-types", "pous.function-block-instances-nested-and-arrays"],
   "scans": 3,
   "scanMs": 10,
   "expect": [{ "at": "%QX0.0", "type": "BOOL", "value": true }]

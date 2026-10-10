@@ -23,7 +23,7 @@ describe('parseExpectation', () => {
     expect(parseExpectation(runtime(), 'x')).toMatchObject({ build: 'succeeds', scans: 1, scanMs: 10, fault: false, inputs: [], files: [] });
     expect(parseExpectation(runtime(), 'x')).toMatchObject({ expect: [{ at: '%QW0', type: 'INT', value: -4, afterScan: 1 }] });
     expect(parseExpectation(JSON.stringify({ requirement: 'CMP-001', title: 'x', build: 'fails', lines: [6] }), 'x'))
-      .toEqual({ requirement: 'CMP-001', title: 'x', build: 'fails', lines: [6], messageIncludes: [] });
+      .toEqual({ requirement: 'CMP-001', title: 'x', build: 'fails', lines: [6], messageIncludes: [], matrix: [], tags: [], files: [], tasks: [] });
   });
 
   it('defaults a check to the last scan and an input to the first', () => {
@@ -132,6 +132,53 @@ describe('parseExpectation', () => {
   });
 });
 
+describe('parseExpectation: matrix rows, tags and located diagnostics (VF-003, VF-005)', () => {
+  const negative = (overrides: Record<string, unknown>) => JSON.stringify({ requirement: 'CMP-003', title: 'x', build: 'fails', ...overrides });
+
+  it('carries the matrix rows, the tags and the note of a case that runs and of one that must not build', () => {
+    expect(parseExpectation(runtime({ matrix: ['data-types.dint'], tags: ['arch-sensitive', 'division'], note: 'IEC 61131-3 table 33: DIV' }), 'x'))
+      .toMatchObject({ matrix: ['data-types.dint'], tags: ['arch-sensitive', 'division'], note: 'IEC 61131-3 table 33: DIV' });
+    expect(parseExpectation(negative({ matrix: ['data-types.char-wchar'] }), 'x')).toMatchObject({ build: 'fails', matrix: ['data-types.char-wchar'], tags: [] });
+  });
+
+  it('asserts diagnostic codes and columns of a rejected program, one for each line', () => {
+    expect(parseExpectation(negative({ lines: [4, 7], columns: [3, 9], codes: ['COMPILATION_FAILED', 'COMPILATION_FAILED'] }), 'x'))
+      .toMatchObject({ lines: [4, 7], columns: [3, 9], codes: ['COMPILATION_FAILED', 'COMPILATION_FAILED'] });
+    rejects(negative({ columns: [3] }), 'columns needs "lines"');
+    rejects(negative({ lines: [4], columns: [3, 9] }), 'one column for each line');
+    rejects(negative({ lines: [4], columns: [0] }), 'columns');
+    rejects(negative({ lines: [4, 7], codes: ['COMPILATION_FAILED'] }), 'same length');
+    rejects(negative({ codes: ['compilation failed'] }), 'codes');
+  });
+
+  it('refuses a matrix row that is not an id, a repeated row, an unknown tag and a tag without arch-sensitive', () => {
+    rejects(runtime({ matrix: ['Data types'] }), 'matrix');
+    rejects(runtime({ matrix: ['data-types.dint', 'data-types.dint'] }), 'twice');
+    rejects(runtime({ tags: ['arch-sensitive', 'fast'] }), 'tags');
+    rejects(runtime({ tags: ['alignment'] }), 'arch-sensitive');
+    rejects(runtime({ note: '' }), 'note');
+  });
+
+  it('describes the tasks of a project, with defaults, and refuses a task that is not well formed', () => {
+    const parsed = parseExpectation(runtime({ scanMs: 20, files: ['other.st'], tasks: [{ name: 'Fast', programs: ['main.st'] }, { name: 'Slow', trigger: 'cyclic', interval_ms: 100, priority: 7, programs: ['other.st'] }] }), 'x');
+    expect(parsed.tasks).toEqual([
+      { name: 'Fast', trigger: 'cyclic', interval_ms: 20, priority: 1, programs: ['main.st'] },
+      { name: 'Slow', trigger: 'cyclic', interval_ms: 100, priority: 7, programs: ['other.st'] },
+    ]);
+    expect(parseExpectation(negative({ files: ['other.st'], tasks: [{ name: 'Ev', trigger: 'event', programs: ['other.st'] }] }), 'x')).toMatchObject({ build: 'fails', files: ['other.st'], tasks: [{ trigger: 'event' }] });
+    rejects(runtime({ tasks: [{ name: 'Bad name', programs: ['main.st'] }] }), 'name');
+    rejects(runtime({ tasks: [{ name: 'T', trigger: 'sometimes', programs: ['main.st'] }] }), 'trigger');
+    rejects(runtime({ tasks: [{ name: 'T', programs: [] }] }), 'programs');
+    rejects(runtime({ tasks: [{ name: 'T', priority: 256, programs: ['main.st'] }] }), 'priority');
+    rejects(runtime({ tasks: [{ name: 'T', programs: ['main.st'], watchdog: 1 }] }), 'unknown key "watchdog"');
+  });
+
+  it('does not let a run-only key sit in a rejected case, nor a reject-only key in a case that runs', () => {
+    rejects(negative({ scans: 1 }), 'unknown key "scans"');
+    rejects(runtime({ codes: ['COMPILATION_FAILED'] }), 'unknown key "codes"');
+  });
+});
+
 describe('cellLocation', () => {
   it.each([
     ['%QW2', 'INT', { address: 0x1004, size: 2 }],
@@ -189,6 +236,29 @@ describe('loadCases', () => {
     const [found] = load({ 'p.st': 'x', 'lib.st': 'x', 'p.expect.json': runtime({ files: ['lib.st'] }) });
     expect(found!.extras.map((path) => path.split('/').pop())).toEqual(['lib.st']);
     expect(() => load({ 'p.st': 'x', 'p.expect.json': runtime({ files: ['lib.st'] }) })).toThrow('lib.st');
+  });
+
+  it('refuses a task that runs a program the case does not have', () => {
+    const tasks = [{ name: 'T', programs: ['ghost.st'] }];
+    expect(() => load({ 'p.st': 'x', 'p.expect.json': runtime({ tasks }) })).toThrow('ghost.st');
+    expect(load({ 'p.st': 'x', 'ghost.st': 'x', 'p.expect.json': runtime({ tasks, files: ['ghost.st'] }) })).toHaveLength(1);
+    expect(() => load({ 'p.st': 'x', 'p.expect.json': runtime({ tasks: [{ name: 'T', programs: ['main.il'] }] }) })).toThrow('main.il');
+  });
+
+  it('lets a case that must not build bring further files, as a case that runs does', () => {
+    const [found] = load({ 'p.st': 'x', 'lib.st': 'x', 'p.expect.json': JSON.stringify({ requirement: 'CMP-035', title: 'x', build: 'fails', files: ['lib.st'] }) });
+    expect(found!.extras.map((path) => path.split('/').pop())).toEqual(['lib.st']);
+  });
+
+  it('knows each case by its path under the root, without the extension', () => {
+    const [found] = load({ 'cmp/cmp-011-x.st': 'x', 'cmp/cmp-011-x.expect.json': runtime() });
+    expect(found!.id).toBe('cmp/cmp-011-x');
+  });
+
+  it('refuses a matrix row that the matrix of the same root does not have, and accepts one it has', () => {
+    const matrix = JSON.stringify({ schemaVersion: 1, rows: [{ id: 'data-types.dint' }] });
+    expect(load({ 'a.st': 'x', 'a.expect.json': runtime({ matrix: ['data-types.dint'] }), 'matrix.json': matrix })).toHaveLength(1);
+    expect(() => load({ 'a.st': 'x', 'a.expect.json': runtime({ matrix: ['data-types.dnit'] }), 'matrix.json': matrix })).toThrow('data-types.dnit');
   });
 
   it('reads a malformed expectation as a failure that names the file', () => {

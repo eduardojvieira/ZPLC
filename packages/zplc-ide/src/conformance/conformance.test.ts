@@ -10,7 +10,7 @@ import { nativeRuntimeBinary, itNative } from '../cli/nativeRuntimeGuard';
 import { compilerCompile } from '../cli/toolApi';
 import { NativeAdapter } from '../runtime/nativeAdapter';
 import compilerManifest from '../../../zplc-compiler/package.json';
-import { cellLocation, cellSize, loadCases, type Cell, type CellType, type ConformanceCase, type RunExpectation } from './cases';
+import { CASE_TAGS, cellLocation, cellSize, loadCases, type Cell, type CaseTag, type CellType, type ConformanceCase, type RunExpectation, type TaskSpec } from './cases';
 
 // Each conformance case runs end to end: the repository compiler (through the Tool API that Studio, the CLI
 // and MCP share), the loader and VM of the native POSIX runtime on its virtual clock, and a read of VM memory.
@@ -31,26 +31,28 @@ const ACCESS: Record<Exclude<CellType, 'BOOL'>, Access> = {
   REAL: [(v) => v.getFloat32(0, true), (v, x) => v.setFloat32(0, x, true)],
 };
 
+// CMP-051: what the loader said about each artifact the compiler produced for a case. The count is part of the check, so
+// a loader that refused everything, or a suite that stopped producing artifacts, cannot pass by having nothing to look at.
+const loader = { accepted: [] as string[], refused: [] as string[] };
+
 const label = (cell: Cell) => `${cell.at ?? cell.var} (${cell.type})`;
 
 function diagnosticText(diagnostics: Array<{ code: string; message: string; phase?: string; line?: number }>): string {
   return diagnostics.map(({ code, message, phase, line }) => `${code}${phase ? ` in ${phase}` : ''}${line === undefined ? '' : ` at line ${line}`}: ${message}`).join('; ');
 }
 
-async function workspace(found: Pick<ConformanceCase, 'source' | 'extension' | 'extras'>, scanMs: number): Promise<string> {
+async function workspace(found: Pick<ConformanceCase, 'source' | 'extension' | 'extras'> & { tasks: TaskSpec[] }, scanMs: number): Promise<string> {
   const root = await mkdtemp(join(tmpdir(), 'zplc-conformance-'));
   await mkdir(join(root, 'src'));
   const program = `main${found.extension}`;
   await copyFile(found.source, join(root, 'src', program));
   for (const extra of found.extras) await copyFile(extra, join(root, 'src', basename(extra)));
-  await writeFile(join(root, 'zplc.json'), JSON.stringify({
-    schemaVersion: 2, name: 'conformance', version: '1.0.0', target: { board: 'posix' },
-    tasks: [{ name: 'MainTask', trigger: 'cyclic', interval_ms: scanMs, priority: 1, programs: [program] }],
-  }));
+  const tasks = found.tasks.length > 0 ? found.tasks : [{ name: 'MainTask', trigger: 'cyclic', interval_ms: scanMs, priority: 1, programs: [program] }];
+  await writeFile(join(root, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'conformance', version: '1.0.0', target: { board: 'posix' }, tasks }));
   return root;
 }
 
-async function execute(expectation: RunExpectation, zplcFile: Uint8Array, address: (cell: Cell) => { address: number; bit?: number } | string): Promise<string[]> {
+async function execute(name: string, expectation: RunExpectation, zplcFile: Uint8Array, address: (cell: Cell) => { address: number; bit?: number } | string): Promise<string[]> {
   const failures: string[] = [];
   const persist = await mkdtemp(join(tmpdir(), 'zplc-conformance-run-'));
   // ponytail: one runtime process per case (tens of milliseconds each); share a session and reset between cases if the suite outgrows that.
@@ -64,7 +66,9 @@ async function execute(expectation: RunExpectation, zplcFile: Uint8Array, addres
     await adapter.connect();
     try {
       await adapter.loadProgram(zplcFile);
+      loader.accepted.push(name);
     } catch (error) {
+      loader.refused.push(name);
       return [`the loader refused the artifact the compiler produced: ${(error as Error).message}`];
     }
     let faulted = false;
@@ -108,7 +112,7 @@ async function execute(expectation: RunExpectation, zplcFile: Uint8Array, addres
 
 async function runCase(found: ConformanceCase): Promise<string[]> {
   const { expectation } = found;
-  const root = await workspace(found, expectation.build === 'succeeds' ? expectation.scanMs : 10);
+  const root = await workspace({ ...found, tasks: expectation.tasks }, expectation.build === 'succeeds' ? expectation.scanMs : 10);
   try {
     const compiled = await compilerCompile(root);
     const diagnostics = compiled.evidence.diagnostics;
@@ -119,6 +123,12 @@ async function runCase(found: ConformanceCase): Promise<string[]> {
       if (expectation.lines && JSON.stringify(diagnostics.map((diagnostic) => diagnostic.line)) !== JSON.stringify(expectation.lines)) {
         failures.push(`diagnostics at lines [${diagnostics.map((diagnostic) => diagnostic.line ?? 'none').join(', ')}], expected [${expectation.lines.join(', ')}] (${diagnosticText(diagnostics)})`);
       }
+      if (expectation.columns && JSON.stringify(diagnostics.map((diagnostic) => diagnostic.column)) !== JSON.stringify(expectation.columns)) {
+        failures.push(`diagnostics at columns [${diagnostics.map((diagnostic) => diagnostic.column ?? 'none').join(', ')}], expected [${expectation.columns.join(', ')}] (${diagnosticText(diagnostics)})`);
+      }
+      if (expectation.codes && JSON.stringify(diagnostics.map((diagnostic) => diagnostic.code)) !== JSON.stringify(expectation.codes)) {
+        failures.push(`diagnostic codes [${diagnostics.map((diagnostic) => diagnostic.code).join(', ')}], expected [${expectation.codes.join(', ')}]`);
+      }
       for (const word of expectation.messageIncludes) {
         if (!diagnostics.some((diagnostic) => diagnostic.message.includes(word))) failures.push(`no diagnostic message mentions "${word}" (${diagnosticText(diagnostics)})`);
       }
@@ -127,7 +137,7 @@ async function runCase(found: ConformanceCase): Promise<string[]> {
 
     if (!compiled.ok || !compiled.zplcFile) return [`the build failed: ${diagnosticText(diagnostics)}`];
     const debugMap = compiled.debugMap;
-    return await execute(expectation, compiled.zplcFile, (cell) => {
+    return await execute(found.name, expectation, compiled.zplcFile, (cell) => {
       if (cell.at !== undefined) return cellLocation(cell.at, cell.type);
       // The one place the debug map is trusted: a check that names a variable asks the map where it lives.
       const entry = Object.values(debugMap?.pou ?? {}).map((pou) => pou.vars[cell.var!]).find(Boolean);
@@ -140,10 +150,17 @@ async function runCase(found: ConformanceCase): Promise<string[]> {
 
 const conformanceRoot = fileURLToPath(new URL('../../../../conformance', import.meta.url));
 
+// ZPLC_CONFORMANCE_TAGS=arch-sensitive,alignment runs only the cases that carry one of those tags (VF-005): the firmware
+// test method selects the architecture-sensitive subset this way; an unset or empty variable runs every case.
+const selectedTags = (process.env.ZPLC_CONFORMANCE_TAGS ?? '').split(',').map((tag) => tag.trim()).filter(Boolean);
+const unknownTags = selectedTags.filter((tag) => !CASE_TAGS.includes(tag as CaseTag));
+if (unknownTags.length > 0) throw new Error(`ZPLC_CONFORMANCE_TAGS names ${unknownTags.join(', ')}; the tags are ${CASE_TAGS.join(', ')}`);
+const selected = loadCases(conformanceRoot).filter((found) => selectedTags.length === 0 || found.expectation.tags.some((tag) => selectedTags.includes(tag)));
+
 // One test per case in conformance/, named "<requirement> <title>": that name is what
 // tools/ci/expected-failures.json lists while a known defect keeps the case red.
 describe('conformance', () => {
-  for (const found of loadCases(conformanceRoot)) {
+  for (const found of selected) {
     // A case that must not build never reaches the VM, so it runs without the native runtime.
     const test = found.expectation.build === 'fails' ? it : itNative;
     test(found.name, async () => {
@@ -152,8 +169,17 @@ describe('conformance', () => {
   }
 });
 
+describe('conformance: the loader accepts what the compiler produces', () => {
+  // Runs after every case above (a file's tests run in the order they are declared), and reads what each one saw.
+  itNative('CMP-051 the loader accepts every artifact the compiler produced for a conformance case', () => {
+    console.log(`CMP-051: the loader accepted ${loader.accepted.length} of ${loader.accepted.length + loader.refused.length} artifacts the compiler produced`);
+    expect(loader.accepted.length + loader.refused.length).toBeGreaterThan(0);
+    expect(loader.refused).toEqual([]);
+  });
+});
+
 // Properties of a build that hold for every program, so no single case can state them. One committed program stands in for all.
-const sample = { source: join(conformanceRoot, 'cmp', 'cmp-058-selection-and-limit-functions.st'), extension: '.st', extras: [] };
+const sample = { source: join(conformanceRoot, 'cmp', 'cmp-058-selection-and-limit-functions.st'), extension: '.st', extras: [], tasks: [] };
 
 async function build() {
   const root = await workspace(sample, 10);

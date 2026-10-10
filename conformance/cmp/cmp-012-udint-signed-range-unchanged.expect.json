@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-012",
   "title": "UDINT division and modulo below 2147483648 are plain",
+  "matrix": ["data-types.udint"],
+  "tags": ["arch-sensitive", "division"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

@@ -1,6 +1,7 @@
 {
   "requirement": "LNG-024",
   "title": "an SFC selection takes the branch with the lowest priority number",
+  "matrix": ["sfc.selection-branches"],
   "scans": 3,
   "scanMs": 10,
   "expect": [

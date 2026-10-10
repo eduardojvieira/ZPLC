@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-058",
   "title": "TOF holds Q for the preset after IN falls",
+  "matrix": ["blocks.tof"],
   "scans": 8,
   "scanMs": 10,
   "expect": [

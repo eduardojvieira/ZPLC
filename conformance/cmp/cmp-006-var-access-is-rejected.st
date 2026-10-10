@@ -1,0 +1,10 @@
+VAR_ACCESS
+  Reading : Shared : INT READ_ONLY;
+END_VAR
+
+PROGRAM Access
+VAR
+  q AT %QW0 : INT;
+END_VAR
+  q := 1;
+END_PROGRAM

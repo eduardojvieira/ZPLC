@@ -1,6 +1,7 @@
 {
   "requirement": "LNG-025",
   "title": "an SFC P1 pulse runs when its step is entered and P0 when it is left",
+  "matrix": ["sfc.qualifiers-p0-p1-l-d"],
   "scans": 5,
   "scanMs": 10,
   "expect": [

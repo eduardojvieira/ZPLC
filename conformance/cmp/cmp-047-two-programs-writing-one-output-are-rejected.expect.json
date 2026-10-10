@@ -1,0 +1,14 @@
+{
+  "requirement": "CMP-047",
+  "title": "two programs that write the same physical output are rejected at the second declaration",
+  "matrix": ["configuration.ownership-and-memory-checks"],
+  "note": "CMP-047: two programs that write the same physical output MUST still be rejected; the diagnostic is at the declaration in the second program, line 3 of the second file",
+  "build": "fails",
+  "lines": [3],
+  "messageIncludes": ["motor", "overlaps"],
+  "files": ["cmp-047-two-programs-writing-one-output-are-rejected-second.st"],
+  "tasks": [
+    {"name": "FastTask", "trigger": "cyclic", "interval_ms": 10, "priority": 1, "programs": ["main.st"]},
+    {"name": "SlowTask", "trigger": "cyclic", "interval_ms": 20, "priority": 2, "programs": ["cmp-047-two-programs-writing-one-output-are-rejected-second.st"]}
+  ]
+}

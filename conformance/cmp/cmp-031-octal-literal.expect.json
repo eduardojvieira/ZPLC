@@ -1,0 +1,11 @@
+{
+  "requirement": "CMP-031",
+  "title": "octal literal 8#17",
+  "matrix": ["literals.based-literals-and-digit-separators"],
+  "note": "IEC 61131-3, numeric literals: a based number is written base#digits, and 8#17 is one eight plus seven, which is 15",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QW0", "type": "INT", "value": 15}
+  ]
+}

@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-058",
   "title": "SR is set-dominant and RS is reset-dominant",
+  "matrix": ["blocks.edge-detectors-and-bistables"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

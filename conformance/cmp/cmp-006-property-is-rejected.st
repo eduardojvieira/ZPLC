@@ -1,0 +1,17 @@
+FUNCTION_BLOCK Holder
+VAR
+  stored : INT;
+END_VAR
+PROPERTY Value : INT
+GET
+  Value := stored;
+END_GET
+END_PROPERTY
+END_FUNCTION_BLOCK
+
+PROGRAM Props
+VAR
+  q AT %QW0 : INT;
+END_VAR
+  q := 1;
+END_PROGRAM
