@@ -101,13 +101,13 @@ static int verify_tasks(const zplc_program_view_t *view) {
   if (view->task_count > ZPLC_LOADER_MAX_TASKS)
     return ZPLC_LOADER_ERR_TASK;
   for (index = 0U; index < view->task_count; index++) {
-    const uint8_t *task = view->tasks + index * ZPLC_TASK_DEF_SIZE;
+    const uint8_t *task = view->tasks + (size_t)index * ZPLC_TASK_DEF_SIZE;
     uint16_t id = read_u16_le(task);
     uint16_t stack_size = read_u16_le(task + 10U);
     uint32_t previous;
 
     for (previous = 0U; previous < index; previous++)
-      if (id == read_u16_le(view->tasks + previous * ZPLC_TASK_DEF_SIZE))
+      if (id == read_u16_le(view->tasks + (size_t)previous * ZPLC_TASK_DEF_SIZE))
         return ZPLC_LOADER_ERR_TASK;
     if (task[2U] > ZPLC_TASK_INIT || read_u32_le(task + 4U) == 0U ||
         stack_size == 0U || stack_size > ZPLC_STACK_MAX_DEPTH ||
@@ -169,7 +169,7 @@ static int verify_tags(const zplc_program_view_t *view) {
   uint32_t index;
 
   for (index = 0U; index < view->tag_count; index++) {
-    const uint8_t *tag = view->tags + index * ZPLC_TAG_ENTRY_SIZE;
+    const uint8_t *tag = view->tags + (size_t)index * ZPLC_TAG_ENTRY_SIZE;
     const uint16_t address = read_u16_le(tag);
     const uint8_t tag_id = tag[3U];
     const uint8_t width = tag_type_width(tag_id, tag[2U]);
@@ -315,7 +315,7 @@ static void spend(verifier_t *v, uint32_t units) { v->work += units; }
 
 /* index of the target at `pc` (which must be a target) among all targets */
 static uint32_t rank_of(const verifier_t *v, uint32_t pc) {
-  uint32_t rank = read_u16_le(v->prefix + 2U * (pc >> 7));
+  uint32_t rank = read_u16_le(v->prefix + 2U * (size_t)(pc >> 7));
   uint32_t index;
 
   ITERATIONS(1U);
@@ -326,7 +326,7 @@ static uint32_t rank_of(const verifier_t *v, uint32_t pc) {
 }
 /* record layout: pc(2) state(1) need(1) peak(1) dlo(1, biased) dhi(1, biased) */
 static uint8_t *frame_at(const verifier_t *v, uint32_t index) {
-  return v->frames + index * ZPLC_VERIFY_FRAME_BYTES;
+  return v->frames + (size_t)index * ZPLC_VERIFY_FRAME_BYTES;
 }
 static uint32_t frame_find(verifier_t *v, uint32_t pc) {
   uint32_t index;
@@ -354,7 +354,7 @@ static int frame_create(verifier_t *v, uint32_t pc, uint32_t *index) {
  * with what is known, and have the block followed again when that changed */
 static void arrive(verifier_t *v, uint32_t pc, int32_t lo, int32_t hi) {
   const uint32_t rank = rank_of(v, pc);
-  uint8_t *entry = v->depth + 2U * rank;
+  uint8_t *entry = v->depth + 2U * (size_t)rank;
   const uint8_t stored_lo = entry[0];
   uint8_t new_lo = (uint8_t)(lo + DEPTH_BIAS);
   uint8_t new_hi = (uint8_t)(hi + DEPTH_BIAS);
@@ -553,7 +553,7 @@ static int walk_frame(verifier_t *v, uint32_t frame, int *progress) {
           continue;
         bits = (uint8_t)(bits & ~(1U << bit));
         if ((v->pending[rank >> 3] & (1U << (rank & 7U))) != 0U) {
-          const uint8_t *entry_depth = v->depth + 2U * rank;
+          const uint8_t *entry_depth = v->depth + 2U * (size_t)rank;
           const int32_t lo = (int32_t)entry_depth[0] - DEPTH_BIAS;
           const int32_t hi = (int32_t)entry_depth[1] - DEPTH_BIAS;
           v->pending[rank >> 3] &= (uint8_t)~(1U << (rank & 7U));
@@ -569,7 +569,7 @@ static int walk_frame(verifier_t *v, uint32_t frame, int *progress) {
   /* clear the part of the depth table this walk used: no target is pending */
   first = rank_of(v, v->first << 3);
   end = v->last + 1U < bytes ? rank_of(v, (v->last + 1U) << 3) : v->leaders;
-  memset(v->depth + 2U * first, 0xFF, 2U * (end - first));
+  memset(v->depth + 2U * (size_t)first, 0xFF, 2U * (size_t)(end - first));
   ITERATIONS(2U * (end - first));
   spend(v, 1U + (end - first) / 4U);
   record = frame_at(v, frame);
@@ -596,7 +596,7 @@ static int verify_frames(const zplc_program_view_t *view, verifier_t *v) {
   for (root = 0U; root <= view->task_count; root++) {
     const uint32_t entry =
         root == 0U ? view->entry_point
-                   : read_u16_le(view->tasks + (root - 1U) * ZPLC_TASK_DEF_SIZE + 8U);
+                   : read_u16_le(view->tasks + (size_t)(root - 1U) * ZPLC_TASK_DEF_SIZE + 8U);
     if (frame_find(v, entry) == UINT32_MAX) {
       result = frame_create(v, entry, &index);
       if (result != ZPLC_LOADER_OK)
@@ -628,10 +628,10 @@ static int verify_frames(const zplc_program_view_t *view, verifier_t *v) {
   for (root = 0U; root <= view->task_count; root++) {
     const uint32_t entry =
         root == 0U ? view->entry_point
-                   : read_u16_le(view->tasks + (root - 1U) * ZPLC_TASK_DEF_SIZE + 8U);
+                   : read_u16_le(view->tasks + (size_t)(root - 1U) * ZPLC_TASK_DEF_SIZE + 8U);
     const uint32_t limit =
         root == 0U ? (uint32_t)ZPLC_STACK_MAX_DEPTH
-                   : read_u16_le(view->tasks + (root - 1U) * ZPLC_TASK_DEF_SIZE + 10U);
+                   : read_u16_le(view->tasks + (size_t)(root - 1U) * ZPLC_TASK_DEF_SIZE + 10U);
     const uint8_t *record = frame_at(v, frame_find(v, entry));
 
     if (record[3] != 0U || record[4] > limit)
@@ -661,8 +661,8 @@ static int verify_stack(const zplc_program_view_t *view, uint8_t *workspace) {
   v.code_size = view->code_size;
   v.targets = workspace;
   v.prefix = v.targets + bitmap;
-  v.depth = v.prefix + 2U * chunks;
-  v.pending = v.depth + 2U * ZPLC_VERIFY_MAX_LEADERS;
+  v.depth = v.prefix + 2U * (size_t)chunks;
+  v.pending = v.depth + (size_t)2U * ZPLC_VERIFY_MAX_LEADERS;
   v.frames = v.pending + (ZPLC_VERIFY_MAX_LEADERS + 7U) / 8U;
   v.frame_count = 0U;
   v.work = 0U;
@@ -674,13 +674,13 @@ static int verify_stack(const zplc_program_view_t *view, uint8_t *workspace) {
 
   for (byte = 0U; byte < bytes; byte++) {
     if ((byte & 15U) == 0U)
-      put_u16_le(v.prefix + 2U * (byte >> 4), (uint16_t)count);
+      put_u16_le(v.prefix + 2U * (size_t)(byte >> 4), (uint16_t)count);
     count += popcount8(v.targets[byte]);
   }
   if (count > ZPLC_VERIFY_MAX_LEADERS)
     return ZPLC_LOADER_ERR_WORKSPACE;
   v.leaders = count;
-  memset(v.depth, 0xFF, 2U * v.leaders);
+  memset(v.depth, 0xFF, 2U * (size_t)v.leaders);
   memset(v.pending, 0, (v.leaders + 7U) / 8U);
 
   result = verify_frames(view, &v);
@@ -712,7 +712,7 @@ static int verify_code(const zplc_program_view_t *view, uint8_t *workspace) {
   for (task_index = 0U; task_index < view->task_count; task_index++) {
     result = mark_target(
         workspace, view->code_size,
-        read_u16_le(view->tasks + task_index * ZPLC_TASK_DEF_SIZE + 8U));
+        read_u16_le(view->tasks + (size_t)task_index * ZPLC_TASK_DEF_SIZE + 8U));
     if (result != ZPLC_LOADER_OK)
       return result;
   }
@@ -724,22 +724,23 @@ static int verify_code(const zplc_program_view_t *view, uint8_t *workspace) {
     if (operand_size > view->code_size - pc - 1U)
       return ZPLC_LOADER_ERR_OPCODE;
     if (opcode == OP_JMP || opcode == OP_JZ || opcode == OP_JNZ ||
-        opcode == OP_CALL)
+        opcode == OP_CALL) {
       result =
           mark_target(workspace, view->code_size, read_u16_le(code + pc + 1U));
-    else if (opcode == OP_JR || opcode == OP_JRZ || opcode == OP_JRNZ)
+    } else if (opcode == OP_JR || opcode == OP_JRZ || opcode == OP_JRNZ) {
       result = mark_target(workspace, view->code_size,
                            (int32_t)pc + 2 + (int8_t)code[pc + 1U]);
-    else if (opcode >= OP_LOAD8 && opcode <= OP_STORE64)
+    } else if (opcode >= OP_LOAD8 && opcode <= OP_STORE64) {
       result = verify_direct_memory(opcode, read_u16_le(code + pc + 1U));
-    else if (opcode == OP_COMM_EXEC || opcode == OP_COMM_STATUS ||
-             opcode == OP_COMM_RESET) {
+    } else if (opcode == OP_COMM_EXEC || opcode == OP_COMM_STATUS ||
+               opcode == OP_COMM_RESET) {
       uint32_t kind = read_u32_le(code + pc + 1U);
       result = (kind == ZPLC_COMM_FB_NONE || kind >= ZPLC_COMM_FB_KIND_MAX)
                    ? ZPLC_LOADER_ERR_COMM
                    : ZPLC_LOADER_OK;
-    } else
+    } else {
       result = ZPLC_LOADER_OK;
+    }
     if (result != ZPLC_LOADER_OK)
       return result;
     last_opcode = opcode;
@@ -857,8 +858,9 @@ int zplc_loader_verify(const uint8_t *data, size_t length, uint8_t *workspace,
       candidate.tags = data + offset;
       candidate.tag_count = size / ZPLC_TAG_ENTRY_SIZE;
       segment = &candidate.segments[2];
-    } else
+    } else {
       return ZPLC_LOADER_ERR_SEGMENT;
+    }
     segment->type = type;
     segment->flags = flags;
     segment->data = data + offset;

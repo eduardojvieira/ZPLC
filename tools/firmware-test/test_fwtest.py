@@ -177,13 +177,6 @@ class StaleBuildDirectory(unittest.TestCase):
     """The workspace is reused across worktrees: a build dir of another checkout must not stop cmake (found on a
     second checkout where host, host32 and app all failed with "source does not match the source")."""
 
-    @staticmethod
-    def function_text() -> str:
-        script = (pathlib.Path(__file__).parent / "run.sh").read_text()
-        start = script.index("fresh_cmake_dir()")
-        end = script.index("\n}\n", start) + 3
-        return script[start:end]
-
     def run_helper(self, home_in_cache: str | None, source: str) -> bool:
         import subprocess, tempfile
         with tempfile.TemporaryDirectory() as tmp:
@@ -192,7 +185,12 @@ class StaleBuildDirectory(unittest.TestCase):
             if home_in_cache is not None:
                 (build / "CMakeCache.txt").write_text(f"CMAKE_HOME_DIRECTORY:INTERNAL={home_in_cache}\n")
             (build / "marker").write_text("x")
-            subprocess.run(["bash", "-c", f'{self.function_text()}\nfresh_cmake_dir "{build}" "{source}"'], check=True)
+            # run.sh in library mode defines its helpers and returns; the helper under test is called, not sliced out.
+            script = pathlib.Path(__file__).parent / "run.sh"
+            subprocess.run(
+                ["bash", "-c", 'ZPLC_FWTEST_LIBRARY=1 . "$0" && fresh_cmake_dir "$1" "$2"', str(script), str(build), source],
+                check=True,
+            )
             return (build / "marker").exists()
 
     def test_a_build_dir_of_another_checkout_is_dropped(self) -> None:
@@ -203,6 +201,27 @@ class StaleBuildDirectory(unittest.TestCase):
 
     def test_a_dir_without_a_cache_is_kept(self) -> None:
         self.assertTrue(self.run_helper(None, "/any"))
+
+
+class RunScriptModes(unittest.TestCase):
+    """The mode list of run.sh: a mode that is listed must be accepted, and an unknown one refused before any work."""
+
+    SCRIPT = pathlib.Path(__file__).parent / "run.sh"
+
+    def run_script(self, *args: str):
+        import subprocess
+        return subprocess.run(["bash", str(self.SCRIPT), *args], capture_output=True, text=True, check=False)
+
+    def test_help_lists_the_tidy_mode_and_says_it_is_not_part_of_all(self) -> None:
+        done = self.run_script("--help")
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertRegex(done.stdout, r"(?m)^  tidy +clang-tidy")
+        self.assertIn("every mode above except tidy", done.stdout)
+
+    def test_an_unknown_mode_is_refused(self) -> None:
+        done = self.run_script("lint")
+        self.assertEqual(done.returncode, 2)
+        self.assertIn("unknown mode 'lint'", done.stderr)
 
 
 if __name__ == "__main__":

@@ -15,6 +15,7 @@
     { "pattern": "firmware/lib/zplc_core/tests/fuzz_*.c", "job": "host-core-sanitized", "command": "tools/fuzz/run.sh" },
     { "pattern": "firmware/lib/zplc_core/tests/*.c", "job": "host-core", "command": "ctest --test-dir" },
     { "pattern": "firmware/tests/**/*.c", "job": "zephyr-twister", "command": "west twister -T zplc/firmware/tests" },
+    { "pattern": "tools/ci/test_run_clang_tidy.py", "job": "host-core-sanitized", "command": "python3 tools/ci/test_run_clang_tidy.py" },
     { "pattern": "tools/firmware-test/test_*.py", "job": "zephyr-twister", "command": "python3 zplc/tools/firmware-test/test_fwtest.py" }
   ],
   "notRunInCi": [

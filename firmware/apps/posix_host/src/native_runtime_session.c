@@ -26,9 +26,9 @@
 
 #define ZPLC_NATIVE_PROTOCOL_VERSION "1.0"
 #define ZPLC_NATIVE_RUNTIME_KIND "native-posix"
-#define ZPLC_NATIVE_RESPONSE_ERR_INVALID_REQUEST -10
-#define ZPLC_NATIVE_RESPONSE_ERR_PROGRAM_LOAD -11
-#define ZPLC_NATIVE_RESPONSE_ERR_INVALID_STATE -12
+#define ZPLC_NATIVE_RESPONSE_ERR_INVALID_REQUEST (-10)
+#define ZPLC_NATIVE_RESPONSE_ERR_PROGRAM_LOAD (-11)
+#define ZPLC_NATIVE_RESPONSE_ERR_INVALID_STATE (-12)
 #define ZPLC_NATIVE_FIELD_ABSENT 0U
 #define ZPLC_NATIVE_FIELD_VALID 1U
 #define ZPLC_NATIVE_FIELD_INVALID 2U
@@ -710,7 +710,9 @@ static int parse_canonical_request(const char *line, zplc_native_request_t *requ
             if (skip_json_value(&cursor) != 0) return -1;
             params_end = cursor;
             seen |= 0x08U;
-        } else return -1;
+        } else {
+            return -1;
+        }
         skip_json_space(&cursor);
         if (*cursor == '}') { cursor++; break; }
         if (*cursor++ != ',') return -1;
@@ -1342,7 +1344,8 @@ static int handle_simulation_input_set(zplc_native_runtime_session_t *session,
     if (zplc_pi_lock() != 0) {
         return format_error_response(request->id, "RUNTIME_FAILURE", "unable to lock process image", response, response_size);
     }
-    if (zplc_force_get_count() != 0U || (ipi = zplc_mem_get_region(ZPLC_MEM_IPI_BASE)) == NULL) {
+    ipi = zplc_force_get_count() != 0U ? NULL : zplc_mem_get_region(ZPLC_MEM_IPI_BASE);
+    if (ipi == NULL) {
         zplc_pi_unlock();
         return format_error_response(request->id, zplc_force_get_count() != 0U ? "FORCE_ACTIVE" : "RUNTIME_FAILURE",
                                      zplc_force_get_count() != 0U ? "simulation input rejected while forces are active" : "input process image is unavailable", response, response_size);

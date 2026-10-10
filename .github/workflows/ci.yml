@@ -173,6 +173,19 @@ jobs:
           UBSAN_OPTIONS: halt_on_error=1
         run: ctest --test-dir "${{ runner.temp }}/zplc-core-sanitized-build" --output-on-failure
 
+      # VF-018: clang-tidy with the repository's .clang-tidy, every finding an error, over the core, the POSIX HAL and
+      # the host application (a CMake compile database of firmware/lib/zplc_core, nothing is built for it). The Zephyr
+      # HAL and firmware/app are analysed where a west build tree exists: tools/firmware-test/run.sh tidy.
+      - name: Install clang-tidy
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends clang-tidy
+
+      - name: Static analysis (clang-tidy, warnings are errors)
+        run: |
+          python3 tools/ci/test_run_clang_tidy.py
+          python3 tools/ci/run_clang_tidy.py
+
       # VF-014: the loader fuzzer (mutations keep the CRC valid) and the run fuzzer (accepted artifacts are
       # executed under the sanitizers) for 60 seconds each, in parallel. A finding fails the job and its
       # reproducer is printed in the log (base64). The long run is proposed in tools/fuzz/nightly-fuzz.proposed.yml.

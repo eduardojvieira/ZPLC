@@ -1,0 +1,166 @@
+{
+  "boards": {
+    "arduino-giga-r1-m7": {
+      "firmware/app/src/program_store.c": {
+        "bugprone-not-null-terminated-result": 2,
+        "readability-redundant-casting": 1
+      },
+      "firmware/app/src/shell_cmds.c": {
+        "bugprone-reserved-identifier": 1,
+        "bugprone-unchecked-string-to-number-conversion": 18,
+        "misc-unused-parameters": 2,
+        "readability-redundant-declaration": 1,
+        "readability-uppercase-literal-suffix": 5
+      },
+      "firmware/app/src/zplc_comm_modbus_handler.c": {
+        "readability-redundant-declaration": 10
+      },
+      "firmware/app/src/zplc_config.c": {
+        "clang-analyzer-deadcode.DeadStores": 1,
+        "misc-unused-parameters": 1
+      },
+      "firmware/app/src/zplc_modbus.c": {
+        "readability-redundant-casting": 1
+      },
+      "firmware/app/src/zplc_modbus_client.c": {
+        "bugprone-narrowing-conversions": 1
+      }
+    },
+    "arduino-opta-wifi-m7": {
+      "firmware/app/include/zplc_mqtt.h": {
+        "readability-redundant-declaration": 1
+      },
+      "firmware/app/src/program_store.c": {
+        "bugprone-not-null-terminated-result": 2,
+        "readability-redundant-casting": 1
+      },
+      "firmware/app/src/shell_cmds.c": {
+        "bugprone-reserved-identifier": 1,
+        "bugprone-unchecked-string-to-number-conversion": 18,
+        "misc-unused-parameters": 2,
+        "readability-redundant-declaration": 1,
+        "readability-uppercase-literal-suffix": 5
+      },
+      "firmware/app/src/zplc_aws_fleet.c": {
+        "bugprone-unchecked-string-to-number-conversion": 1,
+        "cert-err33-c": 3
+      },
+      "firmware/app/src/zplc_azure_dps.c": {
+        "bugprone-unchecked-string-to-number-conversion": 2,
+        "cert-err33-c": 3
+      },
+      "firmware/app/src/zplc_comm_mqtt_handler.c": {
+        "readability-redundant-declaration": 1
+      },
+      "firmware/app/src/zplc_config.c": {
+        "clang-analyzer-deadcode.DeadStores": 1,
+        "misc-unused-parameters": 1
+      },
+      "firmware/app/src/zplc_mqtt.c": {
+        "cert-err33-c": 7,
+        "clang-analyzer-security.insecureAPI.strcpy": 1,
+        "readability-redundant-casting": 1,
+        "readability-uppercase-literal-suffix": 1
+      }
+    },
+    "nucleo-h743zi": {
+      "firmware/app/include/zplc_mqtt.h": {
+        "readability-redundant-declaration": 1
+      },
+      "firmware/app/src/program_store.c": {
+        "bugprone-not-null-terminated-result": 2,
+        "readability-redundant-casting": 1
+      },
+      "firmware/app/src/shell_cmds.c": {
+        "bugprone-reserved-identifier": 1,
+        "bugprone-unchecked-string-to-number-conversion": 18,
+        "misc-unused-parameters": 2,
+        "readability-redundant-declaration": 1,
+        "readability-uppercase-literal-suffix": 5
+      },
+      "firmware/app/src/zplc_aws_fleet.c": {
+        "bugprone-unchecked-string-to-number-conversion": 1,
+        "cert-err33-c": 3
+      },
+      "firmware/app/src/zplc_azure_dps.c": {
+        "bugprone-unchecked-string-to-number-conversion": 2,
+        "cert-err33-c": 3
+      },
+      "firmware/app/src/zplc_comm_modbus_handler.c": {
+        "readability-redundant-declaration": 10
+      },
+      "firmware/app/src/zplc_comm_mqtt_handler.c": {
+        "readability-redundant-declaration": 1
+      },
+      "firmware/app/src/zplc_config.c": {
+        "clang-analyzer-deadcode.DeadStores": 1,
+        "misc-unused-parameters": 1
+      },
+      "firmware/app/src/zplc_modbus.c": {
+        "readability-redundant-casting": 1
+      },
+      "firmware/app/src/zplc_modbus_client.c": {
+        "bugprone-narrowing-conversions": 3,
+        "cert-err33-c": 1
+      },
+      "firmware/app/src/zplc_mqtt.c": {
+        "cert-err33-c": 7,
+        "clang-analyzer-security.insecureAPI.strcpy": 1,
+        "readability-redundant-casting": 1,
+        "readability-uppercase-literal-suffix": 1
+      }
+    },
+    "rpi-pico-rp2040": {
+      "firmware/app/src/program_store.c": {
+        "bugprone-not-null-terminated-result": 2,
+        "readability-redundant-casting": 1
+      },
+      "firmware/app/src/shell_cmds.c": {
+        "bugprone-reserved-identifier": 1,
+        "bugprone-signed-char-misuse": 1,
+        "bugprone-unchecked-string-to-number-conversion": 18,
+        "clang-analyzer-core.uninitialized.Assign": 1,
+        "clang-analyzer-optin.performance.Padding": 1,
+        "misc-unused-parameters": 2,
+        "readability-redundant-declaration": 1,
+        "readability-uppercase-literal-suffix": 5
+      },
+      "firmware/app/src/zplc_comm_modbus_handler.c": {
+        "readability-redundant-declaration": 10
+      },
+      "firmware/app/src/zplc_modbus.c": {
+        "readability-redundant-casting": 1
+      },
+      "firmware/app/src/zplc_modbus_client.c": {
+        "bugprone-narrowing-conversions": 1
+      }
+    },
+    "stm32f746g-disco": {
+      "firmware/app/src/program_store.c": {
+        "bugprone-not-null-terminated-result": 2,
+        "readability-redundant-casting": 1
+      },
+      "firmware/app/src/shell_cmds.c": {
+        "bugprone-reserved-identifier": 1,
+        "bugprone-unchecked-string-to-number-conversion": 18,
+        "misc-unused-parameters": 2,
+        "readability-redundant-declaration": 1,
+        "readability-uppercase-literal-suffix": 5
+      },
+      "firmware/app/src/zplc_comm_modbus_handler.c": {
+        "readability-redundant-declaration": 10
+      },
+      "firmware/app/src/zplc_config.c": {
+        "clang-analyzer-deadcode.DeadStores": 1,
+        "misc-unused-parameters": 1
+      },
+      "firmware/app/src/zplc_modbus.c": {
+        "readability-redundant-casting": 1
+      },
+      "firmware/app/src/zplc_modbus_client.c": {
+        "bugprone-narrowing-conversions": 3,
+        "cert-err33-c": 1
+      }
+    }
+  }
+}
