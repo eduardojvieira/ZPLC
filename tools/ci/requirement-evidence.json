@@ -1167,6 +1167,10 @@
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-025, RT-027: reset is a cold restart, and a faulted session stores nothing.","partial":true,"note":"covers the POSIX host runtime only: the WASM runtime does not apply the retain rules yet (the module is not linked into the WASM build and the adapter does not call it), so RT-027 stays open for WASM"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-026, RT-027: periodic saves follow the interval of the environment, skip an unchanged region, and 0 turns them off.","partial":true,"note":"covers the POSIX host runtime only: the WASM runtime does not apply the retain rules yet (the module is not linked into the WASM build and the adapter does not call it), so RT-027 stays open for WASM"}
   ],
+  "RT-034": [
+    {"kind":"conformance","ref":"conformance/rt/rt-034-watchdog-reset-is-reported-and-changes-nothing.expect.json","test":"RT-034 a call to WATCHDOG_RESET builds with the warning WATCHDOG_RESET_NO_EFFECT and changes nothing the program does"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/warnings.test.ts","test":"a call to WATCHDOG_RESET does nothing, and the build says so (RT-034)"}
+  ],
   "COM-001": [
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/fuzz_run_program.c","test":"RT-001/COM-001 are open, so that a long run can look for other findings); ZPLC_FUZZ_DUMP=<path> writes the"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_fb_access.c","test":"The bounded accessors of a function-block instance (COM-001)."},

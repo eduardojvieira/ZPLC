@@ -540,8 +540,9 @@ export const CYCLE_TIME_FN: FunctionDef = {
 /**
  * WATCHDOG_RESET()
  *
- * Compatibility stub that emits one NOP.
- * It has no watchdog effect and must not be used as a safety control.
+ * Compatibility stub that emits one NOP. It has no watchdog effect: the runtime feeds the hardware watchdog
+ * itself after each completed scan, and no opcode does. The build reports every call with the warning
+ * WATCHDOG_RESET_NO_EFFECT (RT-034); it must not be used as a safety control.
  */
 export const WATCHDOG_RESET_FN: FunctionDef = {
     name: 'WATCHDOG_RESET',

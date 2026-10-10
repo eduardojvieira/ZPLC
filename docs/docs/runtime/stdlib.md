@@ -316,11 +316,11 @@ Reads the runtime `ZPLC_SYS_CYCLE_TIME` field for the previous cycle as exposed 
 - **Outputs:** (UDINT / TIME) Last reported cycle value. Its unit, resolution, update point, and relation to physical time are runtime/profile-specific; do not use it as a hardware timing guarantee.
 
 ### WATCHDOG_RESET
-Compatibility stub only. It compiles to `NOP` today and does not feed, reset, or validate a hardware or software watchdog.
+Compatibility stub only. It compiles to `NOP` and does not feed, reset, or validate a hardware or software watchdog: no opcode does, and the runtime feeds the hardware watchdog itself after each completed scan (`rt-034-watchdog-reset-is-reported-and-changes-nothing`).
 - **Inputs:** None.
 - **Outputs:** None.
 
-It must not be used as a safety control.
+Every call is reported by the build with the warning `WATCHDOG_RESET_NO_EFFECT` at the call (`cmp-058-uptime-follows-the-clock`); `compiler.warnings` selects it like any other warning. Remove the call: the program runs as if the line were absent. It must not be used as a safety control.
 
 ---
 

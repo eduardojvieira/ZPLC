@@ -2626,6 +2626,19 @@ function emitFBCallStatement(state: CodeGenState, stmt: FBCallStatement): void {
                 throw new Error('WATCHDOG_RESET is not available');
             }
 
+            // the call does nothing (RT-034): the build says so, once for each place the call is written
+            const warning: CodegenWarning = {
+                code: 'WATCHDOG_RESET_NO_EFFECT',
+                message: `WATCHDOG_RESET() does nothing: the runtime feeds the hardware watchdog itself after each completed scan, so a program neither needs nor can feed it; remove the call (it is not a safety control)`,
+                line: stmt.line,
+                column: stmt.column,
+                ...(stmt.endLine === undefined ? {} : { endLine: stmt.endLine, endColumn: stmt.endColumn }),
+                ...(state.sourceRef === undefined ? {} : { sourceRef: state.sourceRef }),
+            };
+            const seen = state.warnings.some((each) => each.code === warning.code && each.line === warning.line
+                && each.column === warning.column && each.sourceRef === warning.sourceRef);
+            if (!seen) state.warnings.push(warning);
+
             watchdogReset.generateInline(makeCodeGenContext(state, 0, stmt.fbName, stmt), []);
             return;
         }
