@@ -529,7 +529,7 @@ Resultado tras 3 scans de 10 ms: `Result` = `2`.
 
 ### PID_Compact
 
-Controlador PID con límites de salida y restricción del término integral (anti-windup).
+Controlador PID: OUT es KP * error + KI * integral del error + KD * variación del error por segundo, limitada a OUT_MIN y OUT_MAX. La integral no se restringe: sigue acumulándose mientras OUT está en un límite, por lo que no hay anti-windup.
 
 | Pin | Dirección | Tipo | Inicial | Descripción |
 | --- | --- | --- | --- | --- |
@@ -540,7 +540,7 @@ Controlador PID con límites de salida y restricción del término integral (ant
 | `KD` | Entrada | `REAL` | `0.0` | Ganancia derivativa. |
 | `DT` | Entrada | `REAL` | `0.0` | Tiempo de muestreo de una llamada, en segundos; con 0 no hay término derivativo. |
 | `OUT_MIN` | Entrada | `REAL` | `0.0` | Límite inferior de OUT. |
-| `OUT_MAX` | Entrada | `REAL` | `0.0` | Límite superior de OUT, también la restricción del término integral. |
+| `OUT_MAX` | Entrada | `REAL` | `0.0` | Límite superior de OUT. |
 | `OUT` | Salida | `REAL` | `0.0` | La salida del controlador. |
 
 ```pascal runnable expect="Result=20"

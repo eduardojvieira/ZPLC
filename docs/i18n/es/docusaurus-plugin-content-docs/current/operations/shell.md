@@ -11,6 +11,8 @@ tags: [operations, debugging, shell]
 
 ZPLC agrega un conjunto de comandos `zplc` a la shell de Zephyr, en la UART interactiva de la placa (normalmente a 115200 baudios).
 
+Cada subcomando, con sus argumentos y el símbolo de Kconfig que lo habilita, está en la [referencia de comandos de la consola](../reference/shell-commands.md) generada.
+
 Desde un terminal puede inspeccionar la memoria, revisar la red, leer los errores de ejecución y controlar la máquina virtual sin el IDE de escritorio.
 
 ## Acceso a la consola

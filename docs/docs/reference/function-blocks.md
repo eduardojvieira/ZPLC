@@ -529,7 +529,7 @@ Result after 3 scans of 10 ms: `Result` = `2`.
 
 ### PID_Compact
 
-PID controller with output limits and an integral clamp (anti-windup).
+PID controller: OUT is KP * error + KI * integral of error + KD * change of error per second, limited to OUT_MIN and OUT_MAX. The integral is not clamped: it keeps accumulating while OUT sits at a limit, so there is no anti-windup.
 
 | Pin | Direction | Type | Initial | Description |
 | --- | --- | --- | --- | --- |
@@ -540,7 +540,7 @@ PID controller with output limits and an integral clamp (anti-windup).
 | `KD` | Input | `REAL` | `0.0` | Derivative gain. |
 | `DT` | Input | `REAL` | `0.0` | Sample time of a call, in seconds; with 0 there is no derivative term. |
 | `OUT_MIN` | Input | `REAL` | `0.0` | Lower limit of OUT. |
-| `OUT_MAX` | Input | `REAL` | `0.0` | Upper limit of OUT, also the clamp of the integral term. |
+| `OUT_MAX` | Input | `REAL` | `0.0` | Upper limit of OUT. |
 | `OUT` | Output | `REAL` | `0.0` | The controller output. |
 
 ```pascal runnable expect="Result=20"

@@ -11,6 +11,8 @@ tags: [operations, debugging, shell]
 
 ZPLC adds a `zplc` command set to the Zephyr shell on the board's interactive UART (usually 115200 baud).
 
+Every subcommand, with its arguments and the Kconfig symbol that enables it, is in the generated [shell command reference](../reference/shell-commands.md).
+
 From a terminal you can inspect memory, check the network, read execution errors and control the virtual machine without the desktop IDE.
 
 ## Accessing the Shell
