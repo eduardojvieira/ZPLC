@@ -1907,11 +1907,12 @@ function emitIntLiteral(state: CodeGenState, expr: IntLiteral): void {
         emit(state, `    PUSH8 ${expr.value}`);
     } else if (expr.value >= -32768 && expr.value <= 32767) {
         emit(state, `    PUSH16 ${expr.value}`);
-    } else if (expr.value >= -2147483648 && expr.value <= 4294967295) {
-        // Up to 2^32 - 1 the pattern is the value of a UDINT or a DWORD (CMP-012)
+    } else if (expr.value >= -2147483648 && expr.value <= 2147483647) {
         emit(state, `    PUSH32 ${expr.value}`);
     } else {
-        fail(expr, `Integer literal ${expr.value} does not fit in 32 bits`);
+        // An unsigned 32-bit or a 64-bit context takes such a literal through emitConverted
+        fail(expr, `Integer literal ${expr.value} does not fit a signed 32-bit integer; ` +
+            `use an unsigned 32-bit (UDINT, DWORD) or a 64-bit (LINT, ULINT) variable`);
     }
 }
 
@@ -2075,6 +2076,15 @@ function emitMemberAccess(state: CodeGenState, expr: MemberAccess): void {
 
 
 function emitUnaryExpr(state: CodeGenState, expr: UnaryExpr): void {
+    // A negative literal is one constant: -2147483648 is not 2147483648 negated
+    if (expr.operator === 'NEG') {
+        const constant = constantInteger(expr);
+        if (constant !== undefined && constant >= -2147483648n && constant <= 2147483647n) {
+            emitIntLiteral(state, { kind: 'IntLiteral', value: Number(constant), line: expr.line, column: expr.column });
+            return;
+        }
+    }
+
     emitExpression(state, expr.operand);
     const type = staticType(state, expr.operand);
     const info = numericInfo(type);
@@ -2402,6 +2412,15 @@ function emitConverted(state: CodeGenState, expr: Expression, target: string, co
     const info = numericInfo(type);
     const sourceBits = info?.bits ?? 32;
 
+    if (isUnsigned32(target)) {
+        // 2^31 to 2^32 - 1 is a UDINT, DWORD or TIME value, not a signed one (CMP-012)
+        const constant = constantInteger(expr);
+        if (constant !== undefined && constant >= 0n && constant <= 0xFFFFFFFFn) {
+            emit(state, `    PUSH32 ${constant}`);
+            return;
+        }
+    }
+
     if (target === 'REAL') {
         if (isWide(type) && isIntegerLike(type)) failWide(expr, 'Conversion to REAL');
         if (isIntegerLike(type) && sourceBits <= 32) {
@@ -2576,7 +2595,7 @@ function emitBinaryExpr(state: CodeGenState, expr: BinaryExpr, contextType?: str
     }
 
     const useFloat = isFloatType(opType);
-    const target = opType === 'REAL' ? 'REAL' : UNKNOWN_TYPE;
+    const target = opType === 'REAL' || isUnsigned32(opType) ? opType : UNKNOWN_TYPE;
 
     emitConverted(state, expr.left, target);
     emitConverted(state, expr.right, target);
@@ -3009,7 +3028,7 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
             }
             
             emit(state, `    ; Arg ${inputName} := ...`);
-            emitExpression(state, argExpr);
+            emitValueFor(state, argExpr, input.dataType);
             
             if (input.mangledName) {
                 const sym = state.symbols.get(input.mangledName);
@@ -3033,12 +3052,12 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
                 if (sym) {
                     if (local.initialValue) {
                         emit(state, `    ; Init ${local.name} := ...`);
-                        emitExpression(state, local.initialValue);
+                        emitValueFor(state, local.initialValue, sym.dataType);
                     } else {
                         emit(state, `    ; Init ${local.name} := 0`);
-                        const size = sym.size;
-                        if (size === 8) emit(state, `    PUSH64 0`);
-                        else emit(state, `    PUSH32 0`);
+                        // a 64-bit local is two cells: low word, then high word
+                        if (sym.size === 8) emit(state, `    PUSH32 0`);
+                        emit(state, `    PUSH32 0`);
                     }
                     const suffix = getLoadStoreSuffix(sym.dataType as DataTypeValue);
                     emit(state, `    STORE${suffix} ${formatAddress(sym.address)}`);

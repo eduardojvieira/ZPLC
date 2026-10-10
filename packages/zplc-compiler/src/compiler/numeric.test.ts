@@ -300,8 +300,22 @@ describe('generated code', () => {
         expect(integer).not.toContain('NEGF');
     });
 
-    it('rejects an integer literal that does not fit in 32 bits with its position', () => {
-        expect(() => assembly('x := 5000000000;', 'x : DINT;')).toThrow('does not fit in 32 bits');
+    it('rejects an integer literal that does not fit its signed 32-bit type, as the assembler did', () => {
+        expect(() => assembly('x := 5000000000;', 'x : DINT;')).toThrow('does not fit a signed 32-bit integer');
+        expect(() => assembly('x := 3000000000;', 'x : DINT;')).toThrow('does not fit a signed 32-bit integer');
+        expect(() => assembly('ok := x > 3000000000;', 'x : DINT; ok : BOOL;')).toThrow('does not fit a signed 32-bit integer');
+    });
+
+    it('reads -2147483648 as one constant, not as 2147483648 negated', () => {
+        const asm = assembly('x := -2147483648;', 'x : DINT;');
+        expect(asm).toContain('PUSH32 -2147483648');
+        expect(asm).not.toMatch(/\n\s+NEG\n/);
+    });
+
+    it('accepts such a literal for an unsigned 32-bit type', () => {
+        expect(assembly('x := 3000000000;', 'x : UDINT;')).toContain('PUSH32 3000000000');
+        expect(assembly('ok := x > 3000000000;', 'x : UDINT; ok : BOOL;')).toContain('PUSH32 3000000000');
+        expect(assembly('x := 4294967295;', 'x : DWORD;')).toContain('PUSH32 4294967295');
     });
 
     it('links the 64-bit routines a program uses and no others', () => {
