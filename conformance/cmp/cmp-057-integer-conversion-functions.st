@@ -10,7 +10,7 @@ VAR
   b AT %QW1 : INT;
   c AT %QD1 : DINT;
   d AT %QD2 : DINT;
-  e AT %QW6 : INT;
+  e AT %QW8 : INT;
   f AT %QD3 : DINT;
 END_VAR
   a := SINT_TO_INT(small);

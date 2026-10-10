@@ -24,7 +24,11 @@ export const PROJECT_FILES_CHANNEL = {
   openRecent: 'project-files:open-recent',
   forgetRecent: 'project-files:forget-recent',
   markOpened: 'project-files:mark-opened',
+  watch: 'project-files:watch',
 } as const;
+
+/** What the main process pushes to the window when files under its folder changed (IDE-004). */
+export const PROJECT_FILES_EVENT = { changed: 'project-files:changed' } as const;
 
 export const PROJECT_FILES_LIMITS = {
   /** Largest file the project operations will read or write: 16 MiB (a PLC source file is a few KiB). */
@@ -96,6 +100,29 @@ export interface RecentRequests {
 export type RecentOp = 'listRecent' | keyof RecentRequests;
 export const PROJECT_RECENT_OPS = ['listRecent', 'openRecent', 'forgetRecent', 'markOpened'] as const satisfies readonly RecentOp[];
 
+/**
+ * Watching the window's folder for changes made outside Studio (IDE-004). One request names the folder by its opaque id;
+ * asking again replaces the watch. The main process answers with `ProjectChange` events, batched.
+ */
+export interface WatchRequests { watch: { rootId: string } }
+export const PROJECT_WATCH_OPS = ['watch'] as const;
+
+/** Paths (relative, "/"-separated) that changed under the folder; `overflow` says there were too many to list, so look at everything. */
+export interface ProjectChange { rootId: string; paths: string[]; overflow: boolean }
+
+export const PROJECT_CHANGE_LIMITS = { maxPaths: 256 } as const;
+
+/** A fresh, validated change event, or null for anything that is not exactly one. */
+export function parseProjectChange(value: unknown): ProjectChange | null {
+  if (!isPlainObject(value)) return null;
+  const keys = Object.keys(value).sort().join();
+  const { rootId, paths, overflow } = value;
+  if (keys !== 'overflow,paths,rootId' || typeof rootId !== 'string' || rootId.length < 1 || rootId.length > PROJECT_FILES_LIMITS.maxRootIdChars) return null;
+  if (typeof overflow !== 'boolean' || !Array.isArray(paths) || paths.length > PROJECT_CHANGE_LIMITS.maxPaths) return null;
+  if (!paths.every((path) => typeof path === 'string' && path.length >= 1 && path.length <= PROJECT_FILES_LIMITS.maxPathChars)) return null;
+  return { rootId, paths: [...paths] as string[], overflow };
+}
+
 /** The only object the preload exposes for project files: narrow calls, no generic file access. */
 export type ProjectFilesBridge = {
   chooseFolder(): Promise<ProjectFilesResult<ProjectFolder | null>>;
@@ -103,6 +130,10 @@ export type ProjectFilesBridge = {
   openRecent(request: RecentRequests['openRecent']): Promise<ProjectFilesResult<ProjectFolder>>;
   forgetRecent(request: RecentRequests['forgetRecent']): Promise<ProjectFilesResult<null>>;
   markOpened(request: RecentRequests['markOpened']): Promise<ProjectFilesResult<null>>;
+  /** Both are absent where nothing watches (a test host, an older preload): the renderer then simply never hears of a change. */
+  watch?(request: WatchRequests['watch']): Promise<ProjectFilesResult<null>>;
+  /** Subscribes to the batches of changes (IDE-004); returns the function that stops listening. */
+  onChanged?(callback: (change: unknown) => void): () => void;
 } & { [Op in ProjectFilesOp]: (request: ProjectFilesRequests[Op]) => Promise<ProjectFilesResult<ProjectFilesValues[Op]>> };
 
 type Field = 'id' | 'path' | 'bytes' | 'bool';
@@ -153,6 +184,11 @@ function parseShape(shape: Record<string, Field>, args: readonly unknown[]): Rec
 export function parseProjectFilesRequest(op: string, args: readonly unknown[]): ProjectFilesRequests[ProjectFilesOp] | null {
   if (!Object.hasOwn(SHAPES, op)) return null;
   return parseShape(SHAPES[op as ProjectFilesOp], args) as ProjectFilesRequests[ProjectFilesOp] | null;
+}
+
+/** The same for the watch request: exactly `{ rootId }`. */
+export function parseWatchRequest(args: readonly unknown[]): WatchRequests['watch'] | null {
+  return parseShape({ rootId: 'id' }, args) as WatchRequests['watch'] | null;
 }
 
 /** The same for the recent-project operations that take a request (`listRecent` takes none). */

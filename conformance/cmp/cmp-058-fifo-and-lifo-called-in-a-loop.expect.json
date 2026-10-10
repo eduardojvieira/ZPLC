@@ -1,0 +1,13 @@
+{
+  "requirement": "CMP-058",
+  "title": "a FIFO and a LIFO called in a loop leave the evaluation stack as they found it",
+  "matrix": ["blocks.library-blocks-not-in-the-standard"],
+  "note": "Not an IEC block, and a stack contract: a call of a block takes nothing from the evaluation stack and leaves nothing on it, so a loop of 40 calls loads (RT-003); every odd i is a rising edge of PUSH, so each block fills its eight items and ignores the rest, and the first item the FIFO pops is 1",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QD0", "type": "DINT", "value": 8},
+    {"at": "%QD1", "type": "DINT", "value": 8},
+    {"at": "%QD2", "type": "DINT", "value": 1}
+  ]
+}

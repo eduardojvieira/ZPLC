@@ -121,9 +121,11 @@ export const CTU_FB: FunctionBlockDef = {
         ctx.emit(`    LOAD8 ${cuAddr}`);
         ctx.emit(`    STORE8 ${prevCuAddr}`);
 
-        // Q := (CV >= PV)
+        // Q := (CV >= PV), as signed 16-bit values: LOAD16 zero-extends
         ctx.emit(`    LOAD16 ${cvAddr}`);
+        ctx.emit(`    EXT16`);
         ctx.emit(`    LOAD16 ${pvAddr}`);
+        ctx.emit(`    EXT16`);
         ctx.emit(`    GE`);
         ctx.emit(`    STORE8 ${qAddr}`);
 
@@ -159,14 +161,14 @@ const CTD_MEMBERS: MemberDef[] = [
  * CTD (Count Down):
  *
  * When LD is TRUE: CV := PV
- * Else on rising edge of CD: CV := CV - 1 (if CV > 0)
+ * Else on rising edge of CD: CV := CV - 1 (CV stops at -32768, IEC PVmin)
  * Q := (CV <= 0)
  *
  * The edge detector on CD runs on every call, also while LD is TRUE: a pulse that
  * rises during Load is not counted when Load is released.
  *
- * Known deviation: IEC counts below 0 down to PVmin (-32768); this stops at 0.
- * LOAD16 zero-extends, so a negative CV would compare as a large positive one (CMP-011).
+ * CV and PV are signed 16-bit values: LOAD16 zero-extends, so every comparison
+ * sign-extends them first (EXT16).
  */
 export const CTD_FB: FunctionBlockDef = {
     name: 'CTD',
@@ -224,10 +226,11 @@ export const CTD_FB: FunctionBlockDef = {
         ctx.emit(`    AND`);
         ctx.emit(`    JZ ${skipCount}`);
 
-        // Rising edge - decrement CV (if CV > 0)
+        // Rising edge - decrement CV unless it is at the INT minimum (IEC PVmin).
+        // NE against the zero-extended pattern 0x8000 of -32768.
         ctx.emit(`    LOAD16 ${cvAddr}`);
-        ctx.emit(`    PUSH16 0`);
-        ctx.emit(`    GT`);
+        ctx.emit(`    PUSH32 32768`);
+        ctx.emit(`    NE`);
         ctx.emit(`    JZ ${skipCount}`);
 
         ctx.emit(`    LOAD16 ${cvAddr}`);
@@ -241,9 +244,10 @@ export const CTD_FB: FunctionBlockDef = {
         ctx.emit(`    LOAD8 ${cdAddr}`);
         ctx.emit(`    STORE8 ${prevCdAddr}`);
 
-        // Q := (CV <= 0)
+        // Q := (CV <= 0), signed
         ctx.emit(`    LOAD16 ${cvAddr}`);
-        ctx.emit(`    PUSH16 0`);
+        ctx.emit(`    EXT16`);
+        ctx.emit(`    PUSH8 0`);
         ctx.emit(`    LE`);
         ctx.emit(`    STORE8 ${qAddr}`);
 
@@ -288,7 +292,7 @@ const CTUD_MEMBERS: MemberDef[] = [
  * When R is TRUE: CV := 0
  * Else when LD is TRUE: CV := PV
  * Else on rising edge of CU alone: CV := CV + 1 (CV stops at 32767)
- * Else on rising edge of CD alone: CV := CV - 1
+ * Else on rising edge of CD alone: CV := CV - 1 (CV stops at -32768, IEC PVmin)
  * QU := (CV >= PV)
  * QD := (CV <= 0)
  *
@@ -296,8 +300,8 @@ const CTUD_MEMBERS: MemberDef[] = [
  * every call, also while R or LD is TRUE: a pulse that rises during Reset or Load is
  * not counted when it is released. Rising edges on CU and CD in the same scan cancel.
  *
- * Known deviation: IEC stops CV at PVmin (-32768) when counting down; this does not.
- * LOAD16 zero-extends, so a negative CV compares as a large positive one (CMP-011).
+ * CV and PV are signed 16-bit values: LOAD16 zero-extends, so every comparison
+ * sign-extends them first (EXT16).
  */
 export const CTUD_FB: FunctionBlockDef = {
     name: 'CTUD',
@@ -400,8 +404,13 @@ export const CTUD_FB: FunctionBlockDef = {
 
         ctx.emit(`${checkDown}:`);
 
-        // Rising edge on CD (CU has none here): decrement
+        // Rising edge on CD (CU has none here): decrement unless CV is at the INT minimum (IEC PVmin)
         emitRisingEdge(cdAddr, prevCdAddr);
+        ctx.emit(`    JZ ${updatePrev}`);
+
+        ctx.emit(`    LOAD16 ${cvAddr}`);
+        ctx.emit(`    PUSH32 32768`);
+        ctx.emit(`    NE`);
         ctx.emit(`    JZ ${updatePrev}`);
 
         ctx.emit(`    LOAD16 ${cvAddr}`);
@@ -417,15 +426,18 @@ export const CTUD_FB: FunctionBlockDef = {
         ctx.emit(`    LOAD8 ${cdAddr}`);
         ctx.emit(`    STORE8 ${prevCdAddr}`);
 
-        // QU := (CV >= PV)
+        // QU := (CV >= PV), signed
         ctx.emit(`    LOAD16 ${cvAddr}`);
+        ctx.emit(`    EXT16`);
         ctx.emit(`    LOAD16 ${pvAddr}`);
+        ctx.emit(`    EXT16`);
         ctx.emit(`    GE`);
         ctx.emit(`    STORE8 ${quAddr}`);
 
-        // QD := (CV <= 0)
+        // QD := (CV <= 0), signed
         ctx.emit(`    LOAD16 ${cvAddr}`);
-        ctx.emit(`    PUSH16 0`);
+        ctx.emit(`    EXT16`);
+        ctx.emit(`    PUSH8 0`);
         ctx.emit(`    LE`);
         ctx.emit(`    STORE8 ${qdAddr}`);
 

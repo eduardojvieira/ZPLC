@@ -1,0 +1,30 @@
+{
+  "requirement": "CMP-058",
+  "title": "SIN, COS and TAN of negative angles, of large angles and of multiples of pi",
+  "matrix": ["functions.trigonometric-logarithmic-exponential"],
+  "tags": ["arch-sensitive", "float"],
+  "note": "SIN, COS and TAN take radians: values for negative and large angles to within 1.0E-5 (SIN(100.0) = -0.5063656, COS(1000.0) = 0.5623791, SIN(-10000.0) = -0.3056144, TAN(-0.5) = -0.5463025); the sine of pi is 0 to the precision of the REAL pi; an angle of 100000 or more is reduced modulo 2 pi without losing its low bits, so SIN(1.0E6) = -0.3499935, COS(1.0E9) = -0.9395, SIN(1.0E11) = 0.9262 and TAN(1.0E7) are the sine, cosine and tangent of the REAL; the largest REALs give a finite value, inside -1 to 1 for the sine",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QX0.0", "type": "BOOL", "value": true},
+    {"at": "%QX0.1", "type": "BOOL", "value": true},
+    {"at": "%QX0.2", "type": "BOOL", "value": true},
+    {"at": "%QX0.3", "type": "BOOL", "value": true},
+    {"at": "%QX0.4", "type": "BOOL", "value": true},
+    {"at": "%QX0.5", "type": "BOOL", "value": true},
+    {"at": "%QX0.6", "type": "BOOL", "value": true},
+    {"at": "%QX0.7", "type": "BOOL", "value": true},
+    {"at": "%QX1.0", "type": "BOOL", "value": true},
+    {"at": "%QX1.1", "type": "BOOL", "value": true},
+    {"at": "%QX1.2", "type": "BOOL", "value": true},
+    {"at": "%QX1.3", "type": "BOOL", "value": true},
+    {"at": "%QX1.4", "type": "BOOL", "value": true},
+    {"at": "%QX1.5", "type": "BOOL", "value": true},
+    {"at": "%QX1.6", "type": "BOOL", "value": true},
+    {"at": "%QX1.7", "type": "BOOL", "value": true},
+    {"at": "%QX2.0", "type": "BOOL", "value": true},
+    {"at": "%QX2.1", "type": "BOOL", "value": true},
+    {"at": "%QX2.2", "type": "BOOL", "value": true}
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "requirement": "CMP-058",
+  "title": "CTU compares CV with a negative PV as signed values",
+  "matrix": ["blocks.ctu-ctd-ctud"],
+  "note": "IEC 61131-3 CTU: Q := CV >= PV; with PV = -3 the counter, at 0, has reached its preset: Q is TRUE from the first call and stays TRUE",
+  "scans": 2,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QX0.0", "type": "BOOL", "value": true, "afterScan": 1},
+    {"at": "%QW1", "type": "INT", "value": 0, "afterScan": 1},
+    {"at": "%QX0.0", "type": "BOOL", "value": true, "afterScan": 2}
+  ]
+}

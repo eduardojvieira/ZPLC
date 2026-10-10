@@ -104,7 +104,9 @@ import {
     type CompareOp,
     type HelperName,
 } from './numeric.ts';
-import { POWF_HELPER, POWF_LABEL } from './power.ts';
+import { POWF_LABEL } from './power.ts';
+import { getRoutine } from './stdlib/routines.ts';
+import { conversionResultType } from './stdlib/conversions.ts';
 import { checkDeclaredTypes, checkRecursion } from './semantic.ts';
 
 // ============================================================================
@@ -262,7 +264,7 @@ interface CodeGenState {
     memoryProfile: CompilerMemoryProfile;
     workMemorySize: number;
     /** The helper routines the program calls; they are appended after the main cycle. */
-    helpers: Set<HelperName | 'powf'>;
+    helpers: Set<HelperName>;
     /** The errors of statements that could not be generated, in the order found (CMP-007). */
     errors: CodegenError[];
     /** Check array indices at run time (CMP-023). */
@@ -279,6 +281,12 @@ interface CodeGenState {
     stringBuffers: Array<{ address: number; size: number; free: boolean }>;
     /** Depth of statements generated inside an expression (the body of an inlined method). */
     expressionDepth: number;
+    /** WORK address of the result of each inlined method that returns a number, by `Block.Method`. */
+    methodResultSlots: Map<string, number>;
+    /** The result place of the method being inlined, when it returns a number; its assignments write it. */
+    methodResult: Place | null;
+    /** The last method call expression left one value on the stack (a call used as a statement drops it). */
+    methodLeftResult: boolean;
     /** Routines that need work cells of their own, by label; appended after the main cycle. */
     cellHelpers: Map<string, string[]>;
     /** The work cells the string routines share (none calls another). */
@@ -445,6 +453,9 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
         scratchStrings: [],
         stringBuffers: [],
         expressionDepth: 0,
+        methodResultSlots: new Map(),
+        methodResult: null,
+        methodLeftResult: false,
         cellHelpers: new Map(),
         stringCells: null,
         resultBuffer: null,
@@ -559,7 +570,7 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
     validateStringLiteralPool(state, workMemoryBase, workMemorySize);
 
     // Routines the program called, reachable only through CALL
-    for (const helper of [...HELPERS, { name: 'powf' as const, title: 'REAL exponentiation (**)', lines: POWF_HELPER }]) {
+    for (const helper of HELPERS) {
         if (!state.helpers.has(helper.name)) continue;
         emit(state, ``);
         emit(state, `; --- Helper: ${helper.title} ---`);
@@ -1739,24 +1750,12 @@ function emitAssignment(state: CodeGenState, stmt: Assignment): void {
         if (stmt.target.name === '_') {
             if (stmt.value.kind === 'MethodCall') {
                 emit(state, `    ; (method call as statement, result discarded)`);
+                state.methodLeftResult = false;
                 emitExpression(state, stmt.value);
-                // The method was executed, but we don't store the result
-                // If method returned a value, drop it from stack
-                const methodCall = stmt.value;
-                if (state.functionBlockTable.has((methodCall.object as any)?.name ? 
-                    (state.symbols.get((methodCall.object as any).name)?.dataType as string) || '' : '')) {
-                    // Check if method has return type - if so, DROP the result
-                    const objName = (methodCall.object as any)?.name;
-                    if (objName) {
-                        const instanceSym = state.symbols.get(objName);
-                        if (instanceSym) {
-                            const fbDecl = state.functionBlockTable.get(instanceSym.dataType as string);
-                            const method = fbDecl?.methods.find(m => sameName(m.name, methodCall.methodName));
-                            if (method?.returnType) {
-                                emit(state, `    DROP       ; discard unused return value`);
-                            }
-                        }
-                    }
+                // The method was executed, but we don't store the result: drop the value it left, if any
+                if (state.methodLeftResult) {
+                    emit(state, `    DROP       ; discard unused return value`);
+                    state.methodLeftResult = false;
                 }
                 return;
             }
@@ -1787,8 +1786,13 @@ function emitAssignment(state: CodeGenState, stmt: Assignment): void {
         // should leave the value on stack (not store it)
         if (state.currentMethod && sameName(stmt.target.name, state.currentMethod.name)) {
             emit(state, `    ; METHOD RETURN: ${state.currentMethod.name} := ...`);
+            if (state.methodResult) {
+                // the result slot holds the last value assigned; it is pushed once, where the method ends
+                emitAssignToPlace(state, state.methodResult, stmt.value, stmt.target);
+                return;
+            }
             emitValueFor(state, stmt.value, (state.currentMethod as any).returnType);
-            // Value stays on stack - caller will use it or discard it
+            // a method that returns a string or another value that does not fit a cell leaves it on the stack
             return;
         }
 
@@ -2953,19 +2957,17 @@ function functionResultType(state: CodeGenState, expr: FunctionCall): string {
         case 'SHL': case 'SHR': case 'ROL': case 'ROR':
             return args.length > 0 ? staticType(state, args[0]) : UNKNOWN_TYPE;
         case 'ABSF': case 'NEGF': case 'SQRT': case 'SIN': case 'COS': case 'TAN': case 'LN': case 'LOG':
-        case 'EXP': case 'ASIN': case 'ACOS': case 'ATAN': case 'ATAN2': case 'TRUNC': case 'ROUND':
-        case 'INT_TO_REAL':
+        case 'EXP': case 'EXPT': case 'ASIN': case 'ACOS': case 'ATAN': case 'ATAN2': case 'TRUNC': case 'ROUND':
             return 'REAL';
-        case 'REAL_TO_INT': case 'BOOL_TO_INT':
-            return 'INT';
-        case 'INT_TO_BOOL': case 'NAND': case 'NOR':
+        case 'NAND': case 'NOR':
             return 'BOOL';
         case 'AND_WORD': case 'OR_WORD': case 'XOR_WORD': case 'NOT_WORD':
             return 'WORD';
         case 'AND_DWORD': case 'OR_DWORD': case 'XOR_DWORD': case 'NOT_DWORD':
             return 'DWORD';
         default:
-            return UNKNOWN_TYPE;
+            // <FROM>_TO_<TO> (CMP-057)
+            return conversionResultType(expr.name) ?? UNKNOWN_TYPE;
     }
 }
 
@@ -3024,8 +3026,24 @@ function emitIntToReal(state: CodeGenState, fromType: string): void {
 }
 
 /** Link a helper routine into the program and call it. */
-function callHelper(state: CodeGenState, helper: HelperName | 'powf', label: string): void {
+function callHelper(state: CodeGenState, helper: HelperName, label: string): void {
     state.helpers.add(helper);
+    emit(state, `    CALL ${label}`);
+}
+
+/**
+ * Call a routine of the standard library (stdlib/routines.ts): it is appended to the program with the
+ * routines it calls the first time, in the order they were first needed.
+ */
+function linkRoutine(state: CodeGenState, label: string): void {
+    const link = (name: string): void => {
+        if (state.cellHelpers.has(name)) return;
+        const routine = getRoutine(name);
+        if (!routine) throw new Error(`stdlib routine ${name} is not registered`);
+        state.cellHelpers.set(name, routine.lines);
+        routine.needs.forEach(link);
+    };
+    link(label);
     emit(state, `    CALL ${label}`);
 }
 
@@ -3458,6 +3476,7 @@ function makeCodeGenContext(
         stringTemp: (capacity: number) => acquireStringBuffer(state, capacity),
         stringCapacity: (e: Expression) => stringCapacityOf(state, e),
         callHelper: (name) => callStringHelper(state, name),
+        callRoutine: (label) => linkRoutine(state, label),
     };
 }
 
@@ -4584,9 +4603,28 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
         fail(expr, `Unknown method '${expr.methodName}' on FB '${fbTypeName}'`);
     }
     
+    // A method that returns a number writes a result slot that is pushed once where the method ends,
+    // so the caller sees one value however many times, or never, the method assigns its name
+    const methodReturnType = (methodInfo as { returnType?: DataTypeValue | null }).returnType ?? undefined;
+    let resultPlace: Place | null = null;
+    if (methodReturnType !== undefined) {
+        const stored = storedType(state, methodReturnType);
+        if (!isStringType(stored) && !isAggregateType(state, stored) && !isPointerType(stored)) {
+            const key = `${fbTypeName}.${(methodInfo as { name: string }).name}`;
+            const size = Math.max(state.symbols.sizeOf(methodReturnType), 1);
+            let address = state.methodResultSlots.get(key);
+            if (address === undefined) {
+                address = allocateWork(state, size, Math.min(size, 4));
+                state.methodResultSlots.set(key, address);
+            }
+            resultPlace = { addr: { k: 'const', a: address }, type: methodReturnType, size, name: expr.methodName };
+        }
+    }
+
     // Save current FB context and set up new one for method execution
     const prevFBInstance = state.currentFBInstance;
     const prevMethod = state.currentMethod;
+    const prevMethodResult = state.methodResult;
     const prevReturnLabel = state.returnLabel;
     state.returnLabel = newLabel(state, 'method_return');
     state.currentFBInstance = instanceSym;
@@ -4671,6 +4709,15 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
         }
     }
 
+    // The result starts as the default of its type
+    state.methodResult = resultPlace;
+    if (resultPlace) {
+        emit(state, `    ; ${expr.methodName} := 0`);
+        if (resultPlace.size === 8) emit(state, `    PUSH32 0`);
+        emit(state, `    PUSH32 0`);
+        emit(state, `    STORE${getLoadStoreSuffix(storedType(state, methodReturnType!) as DataTypeValue)} ${formatAddress((resultPlace.addr as { a: number }).a)}`);
+    }
+
     // Inline the method body
     state.expressionDepth++;
     for (const stmt of methodInfo.body) {
@@ -4678,15 +4725,17 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
     }
     state.expressionDepth--;
     emit(state, `${state.returnLabel}:`);
-    
-    // If method has a return type, the result should be on the stack
-    // (IEC convention: MethodName := value; leaves value as result)
-    
+
+    // The value of the method: the slot, once; a string result was left on the stack by its assignments
+    state.methodLeftResult = methodReturnType !== undefined;
+    if (resultPlace) emitLoadPlace(state, resultPlace);
+
     emit(state, `    ; --- End Method ${fbTypeName}.${expr.methodName} ---`);
-    
+
     // Restore previous FB context
     state.currentFBInstance = prevFBInstance;
     state.currentMethod = prevMethod;
+    state.methodResult = prevMethodResult;
     state.returnLabel = prevReturnLabel;
 }
 
@@ -4826,7 +4875,7 @@ function emitPower(state: CodeGenState, expr: BinaryExpr): void {
     }
     emitConverted(state, expr.left, 'REAL');
     emitConverted(state, expr.right, 'REAL');
-    callHelper(state, 'powf', POWF_LABEL);
+    linkRoutine(state, POWF_LABEL);
 }
 
 /**

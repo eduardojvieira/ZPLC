@@ -20,11 +20,16 @@ import { createAiProvider } from './aiProvider.js';
 import { createLearnProgressStore } from './learnProgressStore.js';
 import { createRecentProjects } from './recentProjects.js';
 import { createSessionStore } from './sessionStore.js';
-import { buildApplicationMenu, describeApplicationMenu } from './appMenu.js';
+import { createRecoveryStore } from './recoveryStore.js';
+import { RECOVERY_CHANNEL } from './recoveryStoreProtocol.js';
+import { checkForUpdate } from './updateCheck.js';
+import { UPDATE_CHECK_CHANNEL } from './updateCheckProtocol.js';
+import { buildApplicationMenu, describeApplicationMenu, isReloadShortcut } from './appMenu.js';
 import { createCloseGuard } from './closeGuard.js';
 import { createProjectFiles } from './projectFiles.js';
 import { record, workspaceCompileFailure } from './workspaceCompileFailure.js';
-import { PROJECT_FILES_CHANNEL } from './projectFilesProtocol.js';
+import { PROJECT_FILES_CHANNEL, PROJECT_FILES_EVENT } from './projectFilesProtocol.js';
+import { createProjectWatcher } from './projectWatcher.js';
 import {
   DEFAULT_DEVELOPMENT_RENDERER_PORT,
   createContentSecurityPolicy,
@@ -33,6 +38,9 @@ import {
   isAllowedWorkspaceRootRequest,
   isAllowedSessionLoadRequest,
   isAllowedSessionSaveRequest,
+  isAllowedRecoveryWriteRequest,
+  isAllowedRecoveryListRequest,
+  isAllowedRecoveryDiscardRequest,
   isAllowedWorkspaceTestRunRequest,
   isAllowedFirmwareBuildRequest,
   isAllowedCandidateChangeSetReviewRequest,
@@ -107,7 +115,15 @@ const toolExecutionAudit = createToolExecutionAudit();
 const closeGuard = createCloseGuard();
 let recentProjects: ReturnType<typeof createRecentProjects> | null = null;
 let sessionStore: ReturnType<typeof createSessionStore> | null = null;
-const projectFiles = createProjectFiles(chooseProjectDirectory, () => recentProjects);
+let recoveryStore: ReturnType<typeof createRecoveryStore> | null = null;
+// Changes made outside Studio reach only the window that owns the folder, as relative paths (IDE-004).
+const projectWatcher = createProjectWatcher({
+  send: (ownerId, change) => {
+    const target = mainWindow?.webContents;
+    if (target && !target.isDestroyed() && target.id === ownerId) target.send(PROJECT_FILES_EVENT.changed, change);
+  },
+});
+const projectFiles = createProjectFiles(chooseProjectDirectory, () => recentProjects, projectWatcher);
 const toolApiUrl = pathToFileURL(path.join(__dirname, 'toolApi.js')).href;
 let aiProvider: ReturnType<typeof createAiProvider> | null = null;
 let learnProgress: ReturnType<typeof createLearnProgressStore> | null = null;
@@ -343,6 +359,14 @@ function createWindow(): void {
   webContents.once('did-fail-load', reveal);
   webContents.once('render-process-gone', reveal);
 
+  // Reload chords never reach the page or the menu: a packaged build cannot reload by keyboard, and a development host
+  // reloads only through the unsaved-work guard (IDE-005).
+  webContents.on('before-input-event', (event, input) => {
+    if (!isReloadShortcut(input)) return;
+    event.preventDefault();
+    if (!app.isPackaged) requestReload();
+  });
+
   webContents.on('render-process-gone', () => revokeRendererOwner(ownerWebContentsId));
   webContents.on('render-process-gone', () => closeGuard.release());
   mainWindow.on('unresponsive', () => closeGuard.release());
@@ -497,9 +521,13 @@ function setupIPC(): void {
     if (args.length !== 1 || !isAllowedCloseGuardDirty(args[0]) || !currentRendererOwner(event)) throw new Error('Request denied');
     closeGuard.setDirty(args[0]);
   });
-  ipcMain.handle(CLOSE_GUARD_CHANNEL.CLOSE_NOW, (event, ...args: unknown[]) => {
-    if (args.length !== 0 || !currentRendererOwner(event)) throw new Error('Request denied');
+  ipcMain.handle(CLOSE_GUARD_CHANNEL.CLOSE_NOW, async (event, ...args: unknown[]) => {
+    const owner = currentRendererOwner(event);
+    if (args.length !== 0 || !owner) throw new Error('Request denied');
     const action = closeGuard.confirm();
+    // The user answered save or discard: nothing is left to recover, so the next start offers nothing (IDE-006).
+    const root = action ? projectFiles.currentRoot(owner.ownerId) : null;
+    if (root !== null && recoveryStore) await recoveryStore.discard(root, null).catch(() => undefined);
     if (action === 'reload') mainWindow?.webContents.reload();
     // ponytail: on macOS a vetoed Cmd+Q is not resumed after Discard; a second Cmd+Q quits.
     else if (action === 'close') mainWindow?.destroy();
@@ -541,6 +569,45 @@ function setupIPC(): void {
     const root = projectFiles.rootOf(owner.ownerId, request.rootId);
     if (root === null) throw new Error('Request denied');
     await sessionStore.save(root, request.state);
+    if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied');
+    return null;
+  });
+
+  // Update check (IDE-010): one fixed address, no argument from the renderer; the answer is a version and a release link.
+  ipcMain.handle(UPDATE_CHECK_CHANNEL.RUN, async (event, ...args: unknown[]) => {
+    const owner = currentRendererOwner(event);
+    if (args.length !== 0 || !owner) throw new Error('Request denied');
+    const result = await checkForUpdate({ currentVersion: appVersion, fetch: (url, init) => fetch(url, init) });
+    if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied');
+    return result;
+  });
+
+  // Recovery of modified files (IDE-006): the renderer sends the content of a modified file a moment after the last
+  // keystroke; the main process keeps it under the user-data directory, named by the real path it holds for the window.
+  ipcMain.handle(RECOVERY_CHANNEL.WRITE, async (event, ...args: unknown[]) => {
+    const owner = currentRendererOwner(event); const request = args[0];
+    if (args.length !== 1 || !owner || !recoveryStore || !isAllowedRecoveryWriteRequest(request)) throw new Error('Request denied');
+    const root = projectFiles.rootOf(owner.ownerId, request.rootId);
+    if (root === null) throw new Error('Request denied');
+    await recoveryStore.write(root, request.path, request.content);
+    if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied');
+    return null;
+  });
+  ipcMain.handle(RECOVERY_CHANNEL.LIST, async (event, ...args: unknown[]) => {
+    const owner = currentRendererOwner(event); const request = args[0];
+    if (args.length !== 1 || !owner || !recoveryStore || !isAllowedRecoveryListRequest(request)) throw new Error('Request denied');
+    const root = projectFiles.rootOf(owner.ownerId, request.rootId);
+    if (root === null) throw new Error('Request denied');
+    const entries = await recoveryStore.list(root);
+    if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied');
+    return entries;
+  });
+  ipcMain.handle(RECOVERY_CHANNEL.DISCARD, async (event, ...args: unknown[]) => {
+    const owner = currentRendererOwner(event); const request = args[0];
+    if (args.length !== 1 || !owner || !recoveryStore || !isAllowedRecoveryDiscardRequest(request)) throw new Error('Request denied');
+    const root = projectFiles.rootOf(owner.ownerId, request.rootId);
+    if (root === null) throw new Error('Request denied');
+    await recoveryStore.discard(root, request.path);
     if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied');
     return null;
   });
@@ -885,8 +952,10 @@ app.whenReady().then(async () => {
   learnProgress = createLearnProgressStore(app.getPath('userData'));
   recentProjects = createRecentProjects(app.getPath('userData'));
   sessionStore = createSessionStore(app.getPath('userData'));
+  recoveryStore = createRecoveryStore(app.getPath('userData'));
   // Sessions of projects that dropped off the recent list would otherwise stay for ever.
   try { await sessionStore.prune(new Set((await recentProjects.list()).map((entry) => entry.id))); } catch { /* a leftover file is harmless */ }
+  try { await recoveryStore.prune(new Set((await recentProjects.list()).map((entry) => entry.id))); } catch { /* a leftover file is harmless */ }
   setupContentSecurityPolicy();
   setupWebSerial();
   setupSerialPortSelection();

@@ -1,0 +1,16 @@
+{
+  "requirement": "CMP-058",
+  "title": "MOD of negative operands takes the sign of the dividend",
+  "matrix": ["functions.selection-limit-and-sqrt-functions"],
+  "tags": ["arch-sensitive", "division"],
+  "note": "IEC 61131-3 IN1 MOD IN2 = IN1 - (IN1 / IN2) * IN2 with the division truncated toward zero: the remainder has the sign of IN1, so -7 MOD 3 = -1, 7 MOD -3 = 1, -7 MOD -3 = -1 and -2147483647 MOD 10 = -7 (the function form MOD(x, y) is not parsed yet: parser.ts)",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QW0", "type": "INT", "value": -1},
+    {"at": "%QW1", "type": "INT", "value": 1},
+    {"at": "%QW2", "type": "INT", "value": -1},
+    {"at": "%QW3", "type": "INT", "value": 1},
+    {"at": "%QD2", "type": "DINT", "value": -7}
+  ]
+}

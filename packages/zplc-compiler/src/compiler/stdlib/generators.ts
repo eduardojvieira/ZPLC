@@ -29,7 +29,7 @@ import { inputMember, outputMember, internalMember, formatAddr } from './types.t
  *   +6:  T_OFF      (TIME, 4 bytes) - OFF duration (ms)
  *   +10: _start     (TIME, 4 bytes) - Internal: phase start time
  *   +14: _phase     (BOOL, 1 byte)  - Internal: 0=OFF, 1=ON
- *   +15: _padding   (1 byte)
+ *   +15: _running   (BOOL, 1 byte)  - Internal: the generator has started since ENABLE rose
  * Total: 16 bytes (aligned)
  */
 const BLINK_MEMBERS: MemberDef[] = [
@@ -39,6 +39,7 @@ const BLINK_MEMBERS: MemberDef[] = [
     inputMember('T_OFF', 4, 6),
     internalMember('_start', 4, 10),
     internalMember('_phase', 1, 14),
+    internalMember('_running', 1, 15),
 ];
 
 const BLINK_SIZE = 16;
@@ -50,16 +51,19 @@ const BLINK_OFF_T_ON = 2;
 const BLINK_OFF_T_OFF = 6;
 const BLINK_OFF_START = 10;
 const BLINK_OFF_PHASE = 14;
+const BLINK_OFF_RUNNING = 15;
 
 /**
  * BLINK (Asymmetric Pulse Generator):
  *
  * When ENABLE is TRUE, generates a pulse train with:
- * - Q = TRUE for T_ON milliseconds
+ * - Q = TRUE for T_ON milliseconds, starting at the scan where ENABLE rises
  * - Q = FALSE for T_OFF milliseconds
  * - Repeats indefinitely
  *
- * When ENABLE is FALSE, Q is immediately FALSE.
+ * When ENABLE is FALSE, Q is immediately FALSE and the next ENABLE starts a new cycle with the
+ * ON phase. A phase ends at the first call at which its time has elapsed, so with a scan longer
+ * than T_ON or T_OFF the phases last one scan.
  *
  * Timing diagram (T_ON=300, T_OFF=700):
  *   ENABLE: __/¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\____
@@ -79,6 +83,7 @@ export const BLINK_FB: FunctionBlockDef = {
         const tOffAddr = formatAddr(base + BLINK_OFF_T_OFF);
         const startAddr = formatAddr(base + BLINK_OFF_START);
         const phaseAddr = formatAddr(base + BLINK_OFF_PHASE);
+        const runningAddr = formatAddr(base + BLINK_OFF_RUNNING);
 
         // Set input parameters
         for (const param of params) {
@@ -97,9 +102,7 @@ export const BLINK_FB: FunctionBlockDef = {
             }
         }
 
-        // Generate unique labels
         const disabled = ctx.newLabel('blink_disabled');
-        // checkPhase label reserved for future phase-based implementation
         const inOnPhase = ctx.newLabel('blink_in_on');
         const startOnPhase = ctx.newLabel('blink_start_on');
         const startOffPhase = ctx.newLabel('blink_start_off');
@@ -111,7 +114,11 @@ export const BLINK_FB: FunctionBlockDef = {
         ctx.emit(`    LOAD8 ${enableAddr}`);
         ctx.emit(`    JZ ${disabled}`);
 
-        // Enabled - check current phase
+        // The first call after ENABLE rose: the cycle starts with the ON phase
+        ctx.emit(`    LOAD8 ${runningAddr}`);
+        ctx.emit(`    JZ ${startOnPhase}`);
+
+        // Running - check the current phase
         ctx.emit(`    LOAD8 ${phaseAddr}`);
         ctx.emit(`    JNZ ${inOnPhase}`);
 
@@ -121,7 +128,9 @@ export const BLINK_FB: FunctionBlockDef = {
         ctx.emit(`    LOAD32 ${startAddr}`);
         ctx.emit(`    SUB`);              // elapsed = now - start
         ctx.emit(`    LOAD32 ${tOffAddr}`);
-        ctx.emit(`    GE`);               // elapsed >= T_OFF?
+        ctx.emit(`    LTU                 ; elapsed < T, unsigned milliseconds`);
+        ctx.emit(`    PUSH8 0`);
+        ctx.emit(`    EQ                  ; elapsed >= T`);
         ctx.emit(`    JZ ${blinkEnd}`);   // No, stay in OFF
 
         // Time to switch to ON phase
@@ -130,6 +139,8 @@ export const BLINK_FB: FunctionBlockDef = {
         ctx.emit(`    STORE32 ${startAddr}`);
         ctx.emit(`    PUSH8 1`);
         ctx.emit(`    STORE8 ${phaseAddr}`);
+        ctx.emit(`    PUSH8 1`);
+        ctx.emit(`    STORE8 ${runningAddr}`);
         ctx.emit(`    PUSH8 1`);
         ctx.emit(`    STORE8 ${qAddr}`);
         ctx.emit(`    JMP ${blinkEnd}`);
@@ -141,7 +152,9 @@ export const BLINK_FB: FunctionBlockDef = {
         ctx.emit(`    LOAD32 ${startAddr}`);
         ctx.emit(`    SUB`);              // elapsed = now - start
         ctx.emit(`    LOAD32 ${tOnAddr}`);
-        ctx.emit(`    GE`);               // elapsed >= T_ON?
+        ctx.emit(`    LTU                 ; elapsed < T, unsigned milliseconds`);
+        ctx.emit(`    PUSH8 0`);
+        ctx.emit(`    EQ                  ; elapsed >= T`);
         ctx.emit(`    JZ ${blinkEnd}`);   // No, stay in ON
 
         // Time to switch to OFF phase
@@ -161,8 +174,8 @@ export const BLINK_FB: FunctionBlockDef = {
         ctx.emit(`    STORE8 ${qAddr}`);
         ctx.emit(`    PUSH8 0`);
         ctx.emit(`    STORE8 ${phaseAddr}`);
-        ctx.emit(`    GET_TICKS`);
-        ctx.emit(`    STORE32 ${startAddr}`);
+        ctx.emit(`    PUSH8 0`);
+        ctx.emit(`    STORE8 ${runningAddr}`);
 
         ctx.emit(`${blinkEnd}:`);
         ctx.emit(`    ; --- End BLINK ---`);
@@ -240,7 +253,9 @@ export const PWM_FB: FunctionBlockDef = {
                 ctx.emit(`    STORE32 ${periodAddr}`);
             } else if (param.name === 'DUTY') {
                 ctx.emit(`    ; Set ${ctx.instanceName}.DUTY`);
-                ctx.emitExpression(param.value);
+                // DUTY := 1 is the REAL 1.0, not the bit pattern of the integer 1
+                if (ctx.emitOperand) ctx.emitOperand(param.value, 'REAL');
+                else ctx.emitExpression(param.value);
                 ctx.emit(`    STORE32 ${dutyAddr}`);
             }
         }
@@ -265,8 +280,8 @@ export const PWM_FB: FunctionBlockDef = {
         
         // Check if we've completed a full period
         ctx.emit(`    LOAD32 ${periodAddr}`);
-        ctx.emit(`    GE`);               // elapsed >= PERIOD?
-        ctx.emit(`    JZ ${checkOutput}`);
+        ctx.emit(`    LTU`);              // elapsed < PERIOD, unsigned milliseconds
+        ctx.emit(`    JNZ ${checkOutput}`);
         
         // Start new period
         ctx.emit(`    DROP`);             // discard old elapsed
@@ -276,29 +291,31 @@ export const PWM_FB: FunctionBlockDef = {
         
         ctx.emit(`${checkOutput}:`);
         // Stack: [elapsed]
-        // Calculate ON time: PERIOD * DUTY (as integers)
-        // We need: elapsed < (PERIOD * DUTY)
-        
-        ctx.emit(`    I2F`);              // Convert elapsed to float
+        // ON while elapsed / PERIOD < DUTY. The ratio is compared with DUTY itself, not with a product
+        // PERIOD * DUTY: 30 / 100 and 0.3 are the same REAL, so the pulse of a duty of 0.3 ends at 30 ms,
+        // where 100 * 0.3 is a little above 30. A PERIOD of 0 has no ON phase (and no division).
+        const zeroPeriod = ctx.newLabel('pwm_zero_period');
+        ctx.emit(`    I2F`);              // [elapsed_f]
         ctx.emit(`    LOAD32 ${periodAddr}`);
-        ctx.emit(`    I2F`);              // Convert PERIOD to float
-        ctx.emit(`    LOAD32 ${dutyAddr}`); // DUTY is already float
-        ctx.emit(`    MULF`);             // PERIOD * DUTY = on_time
-        
-        // Compare: elapsed < on_time?
-        // Stack: [elapsed_f, on_time_f]
-        ctx.emit(`    SWAP`);             // [on_time_f, elapsed_f]
-        ctx.emit(`    SUBF`);             // on_time - elapsed
-        ctx.emit(`    F2I`);              // Convert to integer for comparison
-        ctx.emit(`    PUSH8 0`);
-        ctx.emit(`    GT`);               // (on_time - elapsed) > 0?
+        ctx.emit(`    DUP`);
+        ctx.emit(`    JZ ${zeroPeriod}`); // [elapsed_f PERIOD]
+        ctx.emit(`    I2F`);
+        ctx.emit(`    DIVF`);             // [elapsed / PERIOD]
+        ctx.emit(`    LOAD32 ${dutyAddr}`); // DUTY is a REAL
+        if (ctx.emitCompare) ctx.emitCompare('LT', 'REAL');
+        else ctx.emit(`    LT`);
         ctx.emit(`    JZ ${setOff}`);
-        
+
         // ON phase
         ctx.emit(`    PUSH8 1`);
         ctx.emit(`    STORE8 ${qAddr}`);
         ctx.emit(`    JMP ${pwmEnd}`);
         
+        // A PERIOD of 0: nothing on the stack but the two values
+        ctx.emit(`${zeroPeriod}:`);
+        ctx.emit(`    DROP`);
+        ctx.emit(`    DROP`);
+
         // OFF phase
         ctx.emit(`${setOff}:`);
         ctx.emit(`    PUSH8 0`);
@@ -426,8 +443,8 @@ export const PULSE_FB: FunctionBlockDef = {
         ctx.emit(`    LOAD32 ${startAddr}`);
         ctx.emit(`    SUB`);              // elapsed
         ctx.emit(`    LOAD32 ${ptAddr}`);
-        ctx.emit(`    GE`);               // elapsed >= PT?
-        ctx.emit(`    JZ ${pulseEnd}`);   // No, keep pulse active
+        ctx.emit(`    LTU`);              // elapsed < PT, unsigned milliseconds?
+        ctx.emit(`    JNZ ${pulseEnd}`);  // Yes, keep pulse active
 
         // Pulse expired
         ctx.emit(`${endPulse}:`);

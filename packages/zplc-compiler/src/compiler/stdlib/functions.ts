@@ -330,7 +330,9 @@ export const NAND_FN: FunctionDef = {
         ctx.emitExpression(args[0]);  // IN1 on stack
         ctx.emitExpression(args[1]);  // IN2 on stack
         ctx.emit(`    AND`);          // [IN1 AND IN2]
-        ctx.emit(`    NOT`);          // [NOT(IN1 AND IN2)]
+        // logical, not bitwise: NOT of 0 or 1 is -1 or -2, which a BOOL cannot hold
+        ctx.emit(`    PUSH8 0`);
+        ctx.emit(`    EQ`);           // [NOT(IN1 AND IN2)]
     },
 };
 
@@ -361,6 +363,7 @@ export const NOR_FN: FunctionDef = {
         ctx.emitExpression(args[0]);  // IN1 on stack
         ctx.emitExpression(args[1]);  // IN2 on stack
         ctx.emit(`    OR`);           // [IN1 OR IN2]
-        ctx.emit(`    NOT`);          // [NOT(IN1 OR IN2)]
+        ctx.emit(`    PUSH8 0`);
+        ctx.emit(`    EQ`);           // [NOT(IN1 OR IN2)]
     },
 };

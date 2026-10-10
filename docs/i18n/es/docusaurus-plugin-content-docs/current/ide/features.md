@@ -24,9 +24,69 @@ Terminal en un solo panel inferior.
 
 La pantalla de bienvenida lista, en **Recent**, hasta diez carpetas que usted abrió antes, la más reciente primero, cada una con su nombre y la fecha de su última apertura. Al elegir una, se reabre sin diálogo de carpeta. Una carpeta que se movió, se borró o se reemplazó por un enlace aparece como no encontrada, con un botón **Forget** que la quita de la lista. Solo se recuerda una carpeta que usted eligió con el diálogo de carpetas del sistema.
 
-Para cada proyecto, Studio recuerda además las pestañas abiertas, la pestaña activa, la posición del cursor y del desplazamiento de cada archivo, y el tamaño de los paneles del editor y del panel inferior (y si el panel inferior estaba contraído). Los vuelve a poner la próxima vez que se abre esa carpeta, desde **Recent** o con **Open project**. Solo se guardan rutas y posiciones: las ediciones sin guardar no se restauran, y una pestaña cuyo archivo ya no existe se descarta sin avisar. La lista y las sesiones se guardan en el directorio privado de datos de usuario de Studio, nunca en la carpeta del proyecto, y la sesión de un proyecto que sale de la lista se borra la próxima vez que arranca Studio.
+Para cada proyecto, Studio recuerda además las pestañas abiertas, la pestaña activa, la posición del cursor y del desplazamiento de cada archivo, y el tamaño de los paneles del editor y del panel inferior (y si el panel inferior estaba contraído). Los vuelve a poner la próxima vez que se abre esa carpeta, desde **Recent** o con **Open project**. En la sesión solo se guardan rutas y posiciones: el texto sin guardar se conserva aparte y solo se ofrece de nuevo tras un fallo (véase Recuperar trabajo sin guardar), y una pestaña cuyo archivo ya no existe se descarta sin avisar. La lista y las sesiones se guardan en el directorio privado de datos de usuario de Studio, nunca en la carpeta del proyecto, y la sesión de un proyecto que sale de la lista se borra la próxima vez que arranca Studio.
 
 Nivel de evidencia: host. Las pruebas unitarias del requisito IDE-008 (`packages/zplc-ide/electron/recentProjects.test.ts`, `sessionStore.test.ts`, `packages/zplc-ide/src/utils/sessionState.test.ts` y `packages/zplc-ide/src/store/sessionPersistence.test.ts`) cubren la lista y el formato de la sesión, y el recorrido 12 (restaurar la sesión) y el recorrido 14 (un proyecto reciente que ya no está) de `bun run test:journeys` manejan la aplicación real en una pantalla.
+
+## Preferencias
+
+Las preferencias son suyas, no de un proyecto: se aplican a todos los proyectos y se guardan para su cuenta de usuario, de modo que sobreviven a un reinicio. Se abren desde el desplegable **Preferences** de la pantalla de bienvenida, o al principio de la pestaña Project Settings dentro de un proyecto.
+
+| Preferencia | Opciones | Valor inicial |
+|---|---|---|
+| Theme | Light, Dark, High contrast | Sistema |
+| Editor font size | De 10 a 32 px | 14 px |
+| Tab size | 2, 3, 4 u 8 espacios | 4; la sangría propia de un archivo no la reemplaza |
+| Density | Comfortable, Compact | Comfortable; compact reduce el espaciado de toda la ventana |
+| Language | English, Español | Español, como siempre han empezado las lecciones de Learn; hoy fija el de las lecciones de Learn y el resto de la interfaz está en inglés |
+| Autosave | Desactivado, o tras 5, 15, 30 o 60 segundos sin escribir | Desactivado |
+| Check for a newer release when Studio starts | Activada o desactivada, y un botón **Check now** | Desactivada |
+
+El autoguardado escribe los archivos modificados con el mismo guardado que **Save all**, sin una línea en Output por cada guardado; un archivo que no se puede escribir sigue modificado y se informa. Junto con las copias de recuperación, un fallo cuesta como máximo lo escrito en el último segundo.
+
+La comprobación de actualizaciones consulta las versiones publicadas de este proyecto en GitHub y dice si la última es más nueva que la compilación en ejecución. No envía nada sobre usted, no descarga nada ni instala nada; la respuesta es una versión y un enlace. No se ejecuta hasta que usted la activa o pulsa **Check now**.
+
+Nivel de evidencia: host. `packages/zplc-ide/src/utils/appSettings.test.ts`, `src/store/useAppSettings.test.ts`, `src/store/autosave.test.ts`, `electron/updateCheck.test.ts` y `electron/updateCheckIpc.test.ts` cubren las preferencias, el autoguardado y la comprobación de actualizaciones (requisitos IDE-007 e IDE-010), y el recorrido 21 (las preferencias se aplican y persisten por usuario) de `bun run test:journeys` las cambia en la aplicación real y la reinicia.
+
+## Archivos y carpetas en el árbol del proyecto
+
+El encabezado del Explorer tiene **New File** y **New Folder**. Un clic derecho sobre un archivo o una carpeta (o F2 para renombrar) abre sus acciones:
+
+| Acción | Qué hace |
+|---|---|
+| **Rename** | Renombra el archivo o la carpeta en disco. Su pestaña abierta, su texto sin guardar y sus puntos de parada lo siguen, y una tarea que ejecuta un programa renombrado se actualiza en `zplc.json` (cuando la configuración del proyecto no tiene ediciones sin guardar). |
+| **Duplicate** | Copia un archivo junto al original como `Nombre_copy.ext` (o `_copy2`, y así), a partir del texto que muestra el editor. |
+| **Move to...** | Mueve un archivo o una carpeta a otra carpeta del proyecto. Un programa que sale de `src` se avisa: la compilación lee solo los archivos que están directamente en `src`. |
+| **Delete** / **Delete folder** | Lo elimina del disco tras una confirmación que nombra los archivos con cambios sin guardar que contiene. |
+| **New folder...** | Sobre una carpeta: crea una carpeta dentro de ella. |
+
+Studio rechaza un nombre que ya existe, o que la compilación leería como igual al de otro programa (diferencias de mayúsculas, `main.ld` y `main.ld.json`, el mismo nombre en otra carpeta), y lo dice en el diálogo sin cambiar nada. Una carpeta vacía se muestra en el árbol.
+
+Un cambio hecho fuera de Studio se detecta mientras hay un proyecto abierto. Un archivo sin cambios sin guardar se recarga solo, y uno que se borró se cierra; un archivo con cambios sin guardar pregunta **Keep my version** o **Load from disk** (para un archivo borrado, **Keep my version** o **Close file**) y nada se sobrescribe antes de que usted responda. Un guardado hecho por Studio nunca se toma por un cambio externo. Los archivos nuevos y los eliminados aparecen en el árbol. Los cambios externos a `zplc.json` todavía no se vigilan.
+
+Nivel de evidencia: host. `packages/zplc-ide/src/project/treeOperations.test.ts`, `src/store/useIDEStore.test.ts` (operaciones del árbol, sobre el servicio de proyecto real en una carpeta temporal), `src/store/externalChanges.test.ts`, `electron/projectWatcher.test.ts` y `electron/projectFiles.test.ts` cubren las reglas, y los recorridos 23 (operaciones del árbol del proyecto) y 24 (cambios hechos fuera de Studio) de `bun run test:journeys` manejan la aplicación real.
+
+## Cerrar con cambios sin guardar
+
+Studio nunca descarta un archivo modificado sin preguntar. Cerrar una pestaña modificada, cerrar el proyecto, cerrar la ventana y salir de la aplicación preguntan, cada uno, si guardar, descartar o cancelar; **Cancel** (y Escape) dejan todo como estaba, y un guardado que falla mantiene el archivo abierto y modificado. Cerrar el proyecto ofrece **Save all and close**, **Discard changes and close** y **Continue editing**. Los atajos de recarga (Ctrl+R, Ctrl+Shift+R, Cmd+R) no existen en una compilación empaquetada: el menú no tiene entrada de recarga y las teclas se descartan. Un entorno de desarrollo solo recarga pasando por la misma pregunta.
+
+Nivel de evidencia: host. El recorrido 10 (cerrar con cambios sin guardar: pestaña y ventana) y el recorrido 22 (Close Project pregunta antes de cerrar) de `bun run test:journeys` manejan la aplicación real; `packages/zplc-ide/electron/appMenu.test.ts` y `closeGuardIpc.test.ts` fijan el menú y los atajos de recarga. El atajo de recarga no se puede inyectar en el proceso principal con el protocolo de DevTools que usan los recorridos, así que la pregunta de recarga está cubierta por pruebas unitarias y por la lectura del manejador registrado, no por un recorrido.
+
+## Recuperar trabajo sin guardar
+
+Studio guarda una copia de cada archivo modificado en su directorio privado de datos de usuario un segundo después de que usted deja de escribir (y como mínimo cada pocos segundos mientras sigue escribiendo). Guardar un archivo, descartarlo, cerrarlo con **Discard**, o cerrar el proyecto o la ventana y responder **Save** o **Discard** elimina la copia, de modo que una salida normal no deja nada.
+
+Si Studio se cerró de golpe o falló, abra el proyecto otra vez: un diálogo **Recover unsaved changes** lista cada archivo que tenía texto modificado, con su nombre y la hora en que se guardó la copia. **Restore** devuelve el texto al editor, todavía sin guardar; **Discard** elimina la copia. Cerrar el diálogo no decide nada y las copias se ofrecen de nuevo la próxima vez. Una copia igual al archivo en disco, o cuyo archivo ya no existe, se elimina sin preguntar. Las copias de los proyectos que salen de la lista Recent se borran cuando arranca Studio.
+
+Límites: un proyecto conserva copias de a lo sumo 64 archivos y unos 64 MB de texto. Los cambios en la configuración del proyecto (`zplc.json`) todavía no se copian.
+
+Nivel de evidencia: host. Las pruebas unitarias del requisito IDE-006 (`packages/zplc-ide/electron/recoveryStore.test.ts`, `recoveryStoreIpc.test.ts`, `packages/zplc-ide/src/store/recoveryPersistence.test.ts`, `src/utils/recoveryOffer.test.ts` y `src/ipc/recoveryBridge.test.ts`) cubren el almacén, los mensajes y los tiempos, y el recorrido 19 (recuperar archivos modificados tras un fallo) de `bun run test:journeys` mata con SIGKILL el proceso de la aplicación real, la arranca de nuevo y restaura el archivo.
+
+## Un fallo se queda en su región
+
+Si el editor, el panel inferior o la barra de herramientas lanzan una excepción al dibujarse, esa región muestra qué se detuvo y un botón **Retry**, y el resto de la ventana sigue funcionando, así que todavía puede guardar sus archivos. **Retry** vuelve a dibujar solo esa región. Si el fallo está fuera de toda región, toda la ventana muestra el mismo mensaje con **Retry** y una forma de cerrar el proyecto; la ventana nunca queda en blanco.
+
+Nivel de evidencia: host. El recorrido 20 (una región que falla no deja la ventana en blanco) de `bun run test:journeys` hace fallar cada una de las tres regiones en la aplicación real, comprueba que las otras dos siguen funcionando y que Retry devuelve la región caída; `packages/zplc-ide/src/components/ErrorBoundary.test.tsx` cubre la lógica de la región.
 
 ## Editores
 

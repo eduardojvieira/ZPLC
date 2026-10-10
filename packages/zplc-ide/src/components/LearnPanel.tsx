@@ -2,6 +2,7 @@ import { BookOpen, Copy, FlaskConical, Info } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { isFileSystemAccessSupported } from '../types';
 import { useIDEStore } from '../store/useIDEStore';
+import { useAppSettings } from '../store/useAppSettings';
 import type { WorkspaceTestPresentation } from './workspaceTestPresentation';
 import { gradeRecordedScenarioLesson, learnLessonCatalog, parseLearnMasteryImport, readLearnMastery, recordLearnMastery, replaceLearnMastery, serializeLearnMastery, type LearnLessonId, type LearnLocale } from './learnLesson';
 
@@ -10,7 +11,10 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
   const setActiveConsoleTab = useIDEStore((state) => state.setActiveConsoleTab);
   const projectOpenError = useIDEStore((state) => state.projectOpenError);
   const desktopProgress = window.electronAPI?.learnProgress;
-  const [locale, setLocale] = useState<LearnLocale>('es');
+  // The lesson language is the language preference: one choice for the application, changed here or in Preferences.
+  const locale: LearnLocale = useAppSettings((state) => state.settings.language);
+  const updateSettings = useAppSettings((state) => state.update);
+  const setLocale = (language: LearnLocale) => updateSettings({ language });
   const [lessonId, setLessonId] = useState<LearnLessonId>('motor-start-stop-safe');
   const [mastered, setMastered] = useState<ReadonlySet<LearnLessonId>>(() => desktopProgress ? new Set() : readLearnMastery());
   const [hydrated, setHydrated] = useState(!desktopProgress);

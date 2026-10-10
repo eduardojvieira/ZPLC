@@ -5,17 +5,17 @@
   "durationMs": 2100,
   "events": [],
   "expectations": [
-    { "kind": "AT", "atMs": 250, "condition": { "Main.LED_Output": false } },
-    { "kind": "AT", "atMs": 750, "condition": { "Main.LED_Output": true } },
-    { "kind": "AT", "atMs": 1250, "condition": { "Main.LED_Output": false } },
-    { "kind": "AT", "atMs": 1750, "condition": { "Main.LED_Output": true } },
-    { "kind": "FOR", "fromMs": 0, "forMs": 490, "condition": { "Main.LED_Output": false } },
-    { "kind": "RISING", "fromMs": 490, "withinMs": 20, "condition": { "Main.LED_Output": true } },
-    { "kind": "FOR", "fromMs": 500, "forMs": 490, "condition": { "Main.LED_Output": true } },
-    { "kind": "FALLING", "fromMs": 990, "withinMs": 20, "condition": { "Main.LED_Output": false } },
-    { "kind": "FOR", "fromMs": 1000, "forMs": 490, "condition": { "Main.LED_Output": false } },
-    { "kind": "RISING", "fromMs": 1490, "withinMs": 20, "condition": { "Main.LED_Output": true } },
-    { "kind": "FOR", "fromMs": 1500, "forMs": 490, "condition": { "Main.LED_Output": true } },
-    { "kind": "FALLING", "fromMs": 1990, "withinMs": 20, "condition": { "Main.LED_Output": false } }
+    { "kind": "AT", "atMs": 250, "condition": { "Main.LED_Output": true } },
+    { "kind": "AT", "atMs": 750, "condition": { "Main.LED_Output": false } },
+    { "kind": "AT", "atMs": 1250, "condition": { "Main.LED_Output": true } },
+    { "kind": "AT", "atMs": 1750, "condition": { "Main.LED_Output": false } },
+    { "kind": "FOR", "fromMs": 0, "forMs": 490, "condition": { "Main.LED_Output": true } },
+    { "kind": "FALLING", "fromMs": 490, "withinMs": 20, "condition": { "Main.LED_Output": false } },
+    { "kind": "FOR", "fromMs": 500, "forMs": 490, "condition": { "Main.LED_Output": false } },
+    { "kind": "RISING", "fromMs": 990, "withinMs": 20, "condition": { "Main.LED_Output": true } },
+    { "kind": "FOR", "fromMs": 1000, "forMs": 490, "condition": { "Main.LED_Output": true } },
+    { "kind": "FALLING", "fromMs": 1490, "withinMs": 20, "condition": { "Main.LED_Output": false } },
+    { "kind": "FOR", "fromMs": 1500, "forMs": 490, "condition": { "Main.LED_Output": false } },
+    { "kind": "RISING", "fromMs": 1990, "withinMs": 20, "condition": { "Main.LED_Output": true } }
   ]
 }

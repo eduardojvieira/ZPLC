@@ -25,7 +25,8 @@ import { inputMember, outputMember, internalMember, formatAddr } from './types.t
  *   +6:  ET       (TIME, 4 bytes) - Elapsed Time
  *   +10: _start   (TIME, 4 bytes) - Internal: start timestamp
  *   +14: _running (BOOL, 1 byte)  - Internal: timer running flag
- *   +15: _padding (1 byte)
+ *   +15: _prev    (BOOL, 1 byte)  - Internal: IN at the end of the previous call (TP edge detection);
+ *                                   not listed in TIMER_MEMBERS, it is not addressable from ST
  * Total: 16 bytes (aligned)
  */
 const TIMER_MEMBERS: MemberDef[] = [
@@ -46,6 +47,71 @@ const OFF_PT = 2;
 const OFF_ET = 6;
 const OFF_START = 10;
 const OFF_RUNNING = 14;
+const OFF_PREV = 15;
+
+interface TimerAddrs {
+    inAddr: string;
+    qAddr: string;
+    ptAddr: string;
+    etAddr: string;
+    startAddr: string;
+    runningAddr: string;
+    prevAddr: string;
+}
+
+function timerAddrs(ctx: CodeGenContext): TimerAddrs {
+    const base = ctx.baseAddress;
+    return {
+        inAddr: formatAddr(base + OFF_IN),
+        qAddr: formatAddr(base + OFF_Q),
+        ptAddr: formatAddr(base + OFF_PT),
+        etAddr: formatAddr(base + OFF_ET),
+        startAddr: formatAddr(base + OFF_START),
+        runningAddr: formatAddr(base + OFF_RUNNING),
+        prevAddr: formatAddr(base + OFF_PREV),
+    };
+}
+
+/** Store the IN and PT arguments of the call into the instance. */
+function storeTimerInputs(ctx: CodeGenContext, params: FBParameter[], a: TimerAddrs): void {
+    for (const param of params) {
+        if (param.name === 'IN') {
+            ctx.emit(`    ; Set ${ctx.instanceName}.IN`);
+            ctx.emitExpression(param.value);
+            ctx.emit(`    STORE8 ${a.inAddr}`);
+        } else if (param.name === 'PT') {
+            ctx.emit(`    ; Set ${ctx.instanceName}.PT`);
+            ctx.emitExpression(param.value);
+            ctx.emit(`    STORE32 ${a.ptAddr}`);
+        }
+    }
+}
+
+/**
+ * The part the three timers share: ET := now - _start, held at PT (the elapsed time never passes the
+ * preset, IEC 61131-3 timing diagrams). `emitExpired` emits what happens when ET has reached PT; it
+ * must leave the stack as it found it and falls through to `end`. The code that follows `end`
+ * is the caller's.
+ */
+function emitElapsedUpdate(ctx: CodeGenContext, a: TimerAddrs, end: string, emitExpired: () => void): void {
+    const below = ctx.newLabel('timer_below');
+    ctx.emit(`    GET_TICKS`);
+    ctx.emit(`    LOAD32 ${a.startAddr}`);
+    ctx.emit(`    SUB                 ; [elapsed]`);
+    ctx.emit(`    DUP`);
+    ctx.emit(`    LOAD32 ${a.ptAddr}`);
+    // elapsed < PT as unsigned milliseconds: TIME runs to 49 days, past the sign bit
+    ctx.emit(`    LTU                 ; [elapsed elapsed<PT]`);
+    ctx.emit(`    JNZ ${below}`);
+    ctx.emit(`    DROP`);
+    ctx.emit(`    LOAD32 ${a.ptAddr}`);
+    ctx.emit(`    STORE32 ${a.etAddr} ; ET stops at PT`);
+    emitExpired();
+    ctx.emit(`    JMP ${end}`);
+    ctx.emit(`${below}:             ; [elapsed]`);
+    ctx.emit(`    STORE32 ${a.etAddr}`);
+    ctx.emit(`    JMP ${end}`);
+}
 
 // ============================================================================
 // TON - On-Delay Timer
@@ -55,13 +121,13 @@ const OFF_RUNNING = 14;
  * TON (On-Delay Timer):
  *
  * When IN rises (FALSE -> TRUE), start timing.
- * When ET >= PT, set Q to TRUE.
- * When IN is FALSE, reset ET and Q.
+ * ET counts up to PT and stops there; when ET reaches PT, Q is TRUE.
+ * When IN is FALSE, ET and Q are reset.
  *
  * Timing diagram:
  *   IN:  __/¯¯¯¯¯¯¯¯¯¯¯¯¯¯\____
  *   Q:   _____/¯¯¯¯¯¯¯¯¯¯¯\____
- *   ET:  ___/¯¯¯¯¯¯¯¯¯¯¯¯¯\____
+ *   ET:  ___/¯¯¯¯¯¯¯¯¯¯¯¯¯\____    (a ramp, then held at PT)
  *           |<--- PT --->|
  */
 export const TON_FB: FunctionBlockDef = {
@@ -70,89 +136,41 @@ export const TON_FB: FunctionBlockDef = {
     members: TIMER_MEMBERS,
 
     generateCall(ctx: CodeGenContext, params: FBParameter[]): void {
-        const base = ctx.baseAddress;
-        const inAddr = formatAddr(base + OFF_IN);
-        const qAddr = formatAddr(base + OFF_Q);
-        const ptAddr = formatAddr(base + OFF_PT);
-        const etAddr = formatAddr(base + OFF_ET);
-        const startAddr = formatAddr(base + OFF_START);
-        const runningAddr = formatAddr(base + OFF_RUNNING);
+        const a = timerAddrs(ctx);
+        storeTimerInputs(ctx, params, a);
 
-        // Set input parameters
-        for (const param of params) {
-            if (param.name === 'IN') {
-                ctx.emit(`    ; Set ${ctx.instanceName}.IN`);
-                ctx.emitExpression(param.value);
-                ctx.emit(`    STORE8 ${inAddr}`);
-            } else if (param.name === 'PT') {
-                ctx.emit(`    ; Set ${ctx.instanceName}.PT`);
-                ctx.emitExpression(param.value);
-                ctx.emit(`    STORE32 ${ptAddr}`);
-            }
-        }
-
-        // Generate unique labels
         const inFalse = ctx.newLabel('ton_in_false');
-        const checkExpired = ctx.newLabel('ton_check_expired');
-        const notExpired = ctx.newLabel('ton_not_expired');
+        const update = ctx.newLabel('ton_update');
         const tonEnd = ctx.newLabel('ton_end');
 
         ctx.emit(`    ; --- TON Timer Logic (${ctx.instanceName}) ---`);
-
-        // Check if IN is TRUE
-        ctx.emit(`    LOAD8 ${inAddr}`);
+        ctx.emit(`    LOAD8 ${a.inAddr}`);
         ctx.emit(`    JZ ${inFalse}`);
 
-        // IN is TRUE - check if timer was already running
-        ctx.emit(`    LOAD8 ${runningAddr}`);
-        ctx.emit(`    JNZ ${checkExpired}`);
-
-        // Not running - start the timer
+        // IN is TRUE: start the timer on the first scan, then measure the elapsed time (a preset of 0 ends at once)
+        ctx.emit(`    LOAD8 ${a.runningAddr}`);
+        ctx.emit(`    JNZ ${update}`);
         ctx.emit(`    ; Start timer`);
         ctx.emit(`    GET_TICKS`);
-        ctx.emit(`    STORE32 ${startAddr}`);
+        ctx.emit(`    STORE32 ${a.startAddr}`);
         ctx.emit(`    PUSH8 1`);
-        ctx.emit(`    STORE8 ${runningAddr}`);
-        ctx.emit(`    PUSH32 0`);
-        ctx.emit(`    STORE32 ${etAddr}`);
-        ctx.emit(`    PUSH8 0`);
-        ctx.emit(`    STORE8 ${qAddr}`);
-        ctx.emit(`    JMP ${tonEnd}`);
+        ctx.emit(`    STORE8 ${a.runningAddr}`);
 
-        // Timer is running - check if expired
-        ctx.emit(`${checkExpired}:`);
-        ctx.emit(`    ; Calculate ET`);
-        ctx.emit(`    GET_TICKS`);
-        ctx.emit(`    LOAD32 ${startAddr}`);
-        ctx.emit(`    SUB`);
-        ctx.emit(`    DUP`);
-        ctx.emit(`    STORE32 ${etAddr}`);
+        ctx.emit(`${update}:`);
+        emitElapsedUpdate(ctx, a, tonEnd, () => {
+            ctx.emit(`    PUSH8 1`);
+            ctx.emit(`    STORE8 ${a.qAddr}`);
+        });
 
-        // Check if ET >= PT
-        ctx.emit(`    LOAD32 ${ptAddr}`);
-        // ET >= PT as unsigned milliseconds: TIME runs to 49 days, past the sign bit
-        ctx.emit(`    LTU`);
-        ctx.emit(`    PUSH8 0`);
-        ctx.emit(`    EQ`);
-        ctx.emit(`    JZ ${notExpired}`);
-
-        // Timer expired - set Q
-        ctx.emit(`    PUSH8 1`);
-        ctx.emit(`    STORE8 ${qAddr}`);
-        ctx.emit(`    JMP ${tonEnd}`);
-
-        ctx.emit(`${notExpired}:`);
-        ctx.emit(`    JMP ${tonEnd}`);
-
-        // IN is FALSE - reset timer
+        // IN is FALSE: reset
         ctx.emit(`${inFalse}:`);
         ctx.emit(`    ; Reset timer`);
         ctx.emit(`    PUSH8 0`);
-        ctx.emit(`    STORE8 ${runningAddr}`);
+        ctx.emit(`    STORE8 ${a.runningAddr}`);
         ctx.emit(`    PUSH8 0`);
-        ctx.emit(`    STORE8 ${qAddr}`);
+        ctx.emit(`    STORE8 ${a.qAddr}`);
         ctx.emit(`    PUSH32 0`);
-        ctx.emit(`    STORE32 ${etAddr}`);
+        ctx.emit(`    STORE32 ${a.etAddr}`);
 
         ctx.emit(`${tonEnd}:`);
         ctx.emit(`    ; --- End TON ---`);
@@ -166,14 +184,14 @@ export const TON_FB: FunctionBlockDef = {
 /**
  * TOF (Off-Delay Timer):
  *
- * When IN rises, Q immediately goes TRUE.
+ * When IN rises, Q immediately goes TRUE and ET is 0.
  * When IN falls (TRUE -> FALSE), start timing.
- * When ET >= PT, set Q to FALSE.
+ * ET counts up to PT and stops there; when ET reaches PT, Q goes FALSE.
  *
  * Timing diagram:
  *   IN:  __/¯¯¯¯¯¯\__________
  *   Q:   __/¯¯¯¯¯¯¯¯¯¯¯¯¯\___
- *   ET:  _________/¯¯¯¯¯¯\___
+ *   ET:  _________/¯¯¯¯¯¯\___    (a ramp, then held at PT until IN rises)
  *                 |<- PT ->|
  */
 export const TOF_FB: FunctionBlockDef = {
@@ -182,89 +200,44 @@ export const TOF_FB: FunctionBlockDef = {
     members: TIMER_MEMBERS,
 
     generateCall(ctx: CodeGenContext, params: FBParameter[]): void {
-        const base = ctx.baseAddress;
-        const inAddr = formatAddr(base + OFF_IN);
-        const qAddr = formatAddr(base + OFF_Q);
-        const ptAddr = formatAddr(base + OFF_PT);
-        const etAddr = formatAddr(base + OFF_ET);
-        const startAddr = formatAddr(base + OFF_START);
-        const runningAddr = formatAddr(base + OFF_RUNNING);
-
-        // Set input parameters
-        for (const param of params) {
-            if (param.name === 'IN') {
-                ctx.emit(`    ; Set ${ctx.instanceName}.IN`);
-                ctx.emitExpression(param.value);
-                ctx.emit(`    STORE8 ${inAddr}`);
-            } else if (param.name === 'PT') {
-                ctx.emit(`    ; Set ${ctx.instanceName}.PT`);
-                ctx.emitExpression(param.value);
-                ctx.emit(`    STORE32 ${ptAddr}`);
-            }
-        }
+        const a = timerAddrs(ctx);
+        storeTimerInputs(ctx, params, a);
 
         const inTrue = ctx.newLabel('tof_in_true');
-        const checkExpired = ctx.newLabel('tof_check_expired');
-        const notExpired = ctx.newLabel('tof_not_expired');
+        const update = ctx.newLabel('tof_update');
         const tofEnd = ctx.newLabel('tof_end');
 
         ctx.emit(`    ; --- TOF Timer Logic (${ctx.instanceName}) ---`);
-
-        // Check if IN is TRUE
-        ctx.emit(`    LOAD8 ${inAddr}`);
+        ctx.emit(`    LOAD8 ${a.inAddr}`);
         ctx.emit(`    JNZ ${inTrue}`);
 
-        // IN is FALSE - check if timer should start/continue
-        ctx.emit(`    LOAD8 ${runningAddr}`);
-        ctx.emit(`    JNZ ${checkExpired}`);
-
-        // Check if Q is currently TRUE (falling edge detection)
-        ctx.emit(`    LOAD8 ${qAddr}`);
-        ctx.emit(`    JZ ${tofEnd}`);  // Q already FALSE, nothing to do
-
-        // Start the off-delay timer
+        // IN is FALSE: measure when the delay is running, start it on the falling edge (Q still TRUE)
+        ctx.emit(`    LOAD8 ${a.runningAddr}`);
+        ctx.emit(`    JNZ ${update}`);
+        ctx.emit(`    LOAD8 ${a.qAddr}`);
+        ctx.emit(`    JZ ${tofEnd}      ; Q already FALSE: ET holds`);
         ctx.emit(`    ; Start off-delay`);
         ctx.emit(`    GET_TICKS`);
-        ctx.emit(`    STORE32 ${startAddr}`);
+        ctx.emit(`    STORE32 ${a.startAddr}`);
         ctx.emit(`    PUSH8 1`);
-        ctx.emit(`    STORE8 ${runningAddr}`);
-        ctx.emit(`    PUSH32 0`);
-        ctx.emit(`    STORE32 ${etAddr}`);
-        ctx.emit(`    JMP ${tofEnd}`);
+        ctx.emit(`    STORE8 ${a.runningAddr}`);
 
-        // Timer running - check if expired
-        ctx.emit(`${checkExpired}:`);
-        ctx.emit(`    GET_TICKS`);
-        ctx.emit(`    LOAD32 ${startAddr}`);
-        ctx.emit(`    SUB`);
-        ctx.emit(`    DUP`);
-        ctx.emit(`    STORE32 ${etAddr}`);
-        ctx.emit(`    LOAD32 ${ptAddr}`);
-        // ET >= PT as unsigned milliseconds: TIME runs to 49 days, past the sign bit
-        ctx.emit(`    LTU`);
-        ctx.emit(`    PUSH8 0`);
-        ctx.emit(`    EQ`);
-        ctx.emit(`    JZ ${notExpired}`);
+        ctx.emit(`${update}:`);
+        emitElapsedUpdate(ctx, a, tofEnd, () => {
+            ctx.emit(`    PUSH8 0`);
+            ctx.emit(`    STORE8 ${a.qAddr}`);
+            ctx.emit(`    PUSH8 0`);
+            ctx.emit(`    STORE8 ${a.runningAddr}`);
+        });
 
-        // Timer expired - set Q to FALSE
-        ctx.emit(`    PUSH8 0`);
-        ctx.emit(`    STORE8 ${qAddr}`);
-        ctx.emit(`    PUSH8 0`);
-        ctx.emit(`    STORE8 ${runningAddr}`);
-        ctx.emit(`    JMP ${tofEnd}`);
-
-        ctx.emit(`${notExpired}:`);
-        ctx.emit(`    JMP ${tofEnd}`);
-
-        // IN is TRUE - Q is TRUE, reset timer
+        // IN is TRUE: Q is TRUE, the delay restarts from 0
         ctx.emit(`${inTrue}:`);
-        ctx.emit(`    ; IN TRUE - Q := TRUE, reset timer`);
         ctx.emit(`    PUSH8 1`);
-        ctx.emit(`    STORE8 ${qAddr}`);
+        ctx.emit(`    STORE8 ${a.qAddr}`);
         ctx.emit(`    PUSH8 0`);
-        ctx.emit(`    STORE8 ${runningAddr}`);
+        ctx.emit(`    STORE8 ${a.runningAddr}`);
         ctx.emit(`    PUSH32 0`);
-        ctx.emit(`    STORE32 ${etAddr}`);
+        ctx.emit(`    STORE32 ${a.etAddr}`);
 
         ctx.emit(`${tofEnd}:`);
         ctx.emit(`    ; --- End TOF ---`);
@@ -278,8 +251,10 @@ export const TOF_FB: FunctionBlockDef = {
 /**
  * TP (Pulse Timer):
  *
- * When IN rises, Q goes TRUE for exactly PT time.
- * Once started, the pulse runs to completion regardless of IN.
+ * A rising edge of IN (FALSE -> TRUE) while no pulse is running starts a pulse: Q is TRUE for
+ * exactly PT. The pulse runs to completion whatever IN does, and IN cannot retrigger it: a new
+ * pulse needs a new rising edge after the pulse has ended. ET counts up to PT and stops there; it
+ * returns to 0 when the pulse is over and IN is FALSE.
  *
  * Timing diagram:
  *   IN:  __/¯\____/¯¯¯¯\______
@@ -293,74 +268,53 @@ export const TP_FB: FunctionBlockDef = {
     members: TIMER_MEMBERS,
 
     generateCall(ctx: CodeGenContext, params: FBParameter[]): void {
-        const base = ctx.baseAddress;
-        const inAddr = formatAddr(base + OFF_IN);
-        const qAddr = formatAddr(base + OFF_Q);
-        const ptAddr = formatAddr(base + OFF_PT);
-        const etAddr = formatAddr(base + OFF_ET);
-        const startAddr = formatAddr(base + OFF_START);
-        const runningAddr = formatAddr(base + OFF_RUNNING);
+        const a = timerAddrs(ctx);
+        storeTimerInputs(ctx, params, a);
 
-        // Set input parameters
-        for (const param of params) {
-            if (param.name === 'IN') {
-                ctx.emit(`    ; Set ${ctx.instanceName}.IN`);
-                ctx.emitExpression(param.value);
-                ctx.emit(`    STORE8 ${inAddr}`);
-            } else if (param.name === 'PT') {
-                ctx.emit(`    ; Set ${ctx.instanceName}.PT`);
-                ctx.emitExpression(param.value);
-                ctx.emit(`    STORE32 ${ptAddr}`);
-            }
-        }
-
-        const checkExpired = ctx.newLabel('tp_check_expired');
+        const update = ctx.newLabel('tp_update');
+        const idleLow = ctx.newLabel('tp_idle_low');
+        const keepEt = ctx.newLabel('tp_keep_et');
         const tpEnd = ctx.newLabel('tp_end');
 
         ctx.emit(`    ; --- TP Pulse Timer Logic (${ctx.instanceName}) ---`);
+        ctx.emit(`    LOAD8 ${a.runningAddr}`);
+        ctx.emit(`    JNZ ${update}`);
 
-        // Check if timer is currently running
-        ctx.emit(`    LOAD8 ${runningAddr}`);
-        ctx.emit(`    JNZ ${checkExpired}`);
-
-        // Not running - check for rising edge on IN
-        ctx.emit(`    LOAD8 ${inAddr}`);
-        ctx.emit(`    JZ ${tpEnd}`);  // IN is FALSE, nothing to do
-
-        // Rising edge detected - start pulse
+        // No pulse is running: only a rising edge of IN starts one
+        ctx.emit(`    LOAD8 ${a.inAddr}`);
+        ctx.emit(`    JZ ${idleLow}`);
+        ctx.emit(`    LOAD8 ${a.prevAddr}`);
+        ctx.emit(`    JNZ ${tpEnd}      ; IN was already TRUE: not an edge`);
         ctx.emit(`    ; Start pulse`);
         ctx.emit(`    GET_TICKS`);
-        ctx.emit(`    STORE32 ${startAddr}`);
+        ctx.emit(`    STORE32 ${a.startAddr}`);
         ctx.emit(`    PUSH8 1`);
-        ctx.emit(`    STORE8 ${runningAddr}`);
+        ctx.emit(`    STORE8 ${a.runningAddr}`);
         ctx.emit(`    PUSH8 1`);
-        ctx.emit(`    STORE8 ${qAddr}`);
+        ctx.emit(`    STORE8 ${a.qAddr}`);
+
+        ctx.emit(`${update}:`);
+        emitElapsedUpdate(ctx, a, tpEnd, () => {
+            ctx.emit(`    ; Pulse complete`);
+            ctx.emit(`    PUSH8 0`);
+            ctx.emit(`    STORE8 ${a.qAddr}`);
+            ctx.emit(`    PUSH8 0`);
+            ctx.emit(`    STORE8 ${a.runningAddr}`);
+            // ET holds PT only while IN stays TRUE
+            ctx.emit(`    LOAD8 ${a.inAddr}`);
+            ctx.emit(`    JNZ ${keepEt}`);
+            ctx.emit(`    PUSH32 0`);
+            ctx.emit(`    STORE32 ${a.etAddr}`);
+            ctx.emit(`${keepEt}:`);
+        });
+
+        ctx.emit(`${idleLow}:`);
         ctx.emit(`    PUSH32 0`);
-        ctx.emit(`    STORE32 ${etAddr}`);
-        ctx.emit(`    JMP ${tpEnd}`);
-
-        // Timer running - check if expired
-        ctx.emit(`${checkExpired}:`);
-        ctx.emit(`    GET_TICKS`);
-        ctx.emit(`    LOAD32 ${startAddr}`);
-        ctx.emit(`    SUB`);
-        ctx.emit(`    DUP`);
-        ctx.emit(`    STORE32 ${etAddr}`);
-        ctx.emit(`    LOAD32 ${ptAddr}`);
-        // ET >= PT as unsigned milliseconds: TIME runs to 49 days, past the sign bit
-        ctx.emit(`    LTU`);
-        ctx.emit(`    PUSH8 0`);
-        ctx.emit(`    EQ`);
-        ctx.emit(`    JZ ${tpEnd}`);  // Not expired yet
-
-        // Pulse complete
-        ctx.emit(`    ; Pulse complete`);
-        ctx.emit(`    PUSH8 0`);
-        ctx.emit(`    STORE8 ${qAddr}`);
-        ctx.emit(`    PUSH8 0`);
-        ctx.emit(`    STORE8 ${runningAddr}`);
+        ctx.emit(`    STORE32 ${a.etAddr}`);
 
         ctx.emit(`${tpEnd}:`);
+        ctx.emit(`    LOAD8 ${a.inAddr}`);
+        ctx.emit(`    STORE8 ${a.prevAddr}`);
         ctx.emit(`    ; --- End TP ---`);
     },
 };

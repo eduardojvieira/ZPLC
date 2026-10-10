@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { PROJECT_FILES_CHANNEL, PROJECT_FILES_OPS, PROJECT_RECENT_OPS } from './projectFilesProtocol';
+import { PROJECT_FILES_CHANNEL, PROJECT_FILES_EVENT, PROJECT_FILES_OPS, PROJECT_RECENT_OPS, PROJECT_WATCH_OPS } from './projectFilesProtocol';
 
 const electronDir = path.dirname(fileURLToPath(import.meta.url));
 const read = (name: string) => readFileSync(path.join(electronDir, name), 'utf8');
@@ -29,8 +29,12 @@ describe('project files IPC boundary', () => {
     const bridge = BRIDGE_BLOCK.exec(preloadSource)?.[1] ?? '';
     expect(bridge).not.toBe('');
     const methods = [...bridge.matchAll(/^ {4}(\w+): /gm)].map(([, name]) => name);
-    expect(methods).toEqual(['chooseFolder', ...PROJECT_FILES_OPS, ...PROJECT_RECENT_OPS]);
-    for (const name of methods) expect(bridge).toContain(`ipcRenderer.invoke(PROJECT_FILES_CHANNEL.${name}`);
+    expect(methods).toEqual(['chooseFolder', ...PROJECT_FILES_OPS, ...PROJECT_RECENT_OPS, ...PROJECT_WATCH_OPS, 'onChanged']);
+    for (const name of methods.filter((method) => method !== 'onChanged')) expect(bridge).toContain(`ipcRenderer.invoke(PROJECT_FILES_CHANNEL.${name}`);
+    // The one thing the renderer may hear is the batch of changed paths, on the one event channel of the shared module.
+    expect(bridge).toContain('ipcRenderer.on(PROJECT_FILES_EVENT.changed, listener)');
+    expect(preloadSource).toContain("const PROJECT_FILES_EVENT = { changed: 'project-files:changed' } as const;");
+    expect(PROJECT_FILES_EVENT).toEqual({ changed: 'project-files:changed' });
     expect(bridge).not.toMatch(/require\(|readFile|writeFile|webUtils|\bfs\b|process\./);
     expect(bridge).not.toContain('ipcRenderer.send');
     expect(preloadSource).not.toContain('ipcRenderer.send');
@@ -43,7 +47,7 @@ describe('project files IPC boundary', () => {
 
   it('registers every channel behind the sender check, then lets the shared handler validate the message', () => {
     expect(mainSource).toContain("import { createProjectFiles } from './projectFiles.js';");
-    expect(mainSource).toContain("import { PROJECT_FILES_CHANNEL } from './projectFilesProtocol.js';");
+    expect(mainSource).toContain("import { PROJECT_FILES_CHANNEL, PROJECT_FILES_EVENT } from './projectFilesProtocol.js';");
     expect(mainSource).toContain('for (const channel of Object.values(PROJECT_FILES_CHANNEL)) {');
     expect(mainSource).toContain('ipcMain.handle(channel, async (event, ...args: unknown[]) => {');
     const registration = mainSource.slice(mainSource.indexOf('for (const channel of Object.values(PROJECT_FILES_CHANNEL)) {'));
@@ -59,7 +63,7 @@ describe('project files IPC boundary', () => {
   });
 
   it('asks the native dialog from the main process, and only a host that is not packaged may answer it from a test file', () => {
-    expect(mainSource).toContain('const projectFiles = createProjectFiles(chooseProjectDirectory, () => recentProjects);');
+    expect(mainSource).toContain('const projectFiles = createProjectFiles(chooseProjectDirectory, () => recentProjects, projectWatcher);');
     expect(mainSource).toContain("dialog.showOpenDialog(win, { title: 'Choose project folder', properties: ['openDirectory', 'createDirectory'] })");
     expect(mainSource).toContain('readFolderDialogHook(app.isPackaged, process.env)');
     expect(mainSource).not.toContain('ZPLC_SMOKE_FOLDER_ANSWER_FILE');

@@ -6,6 +6,6 @@ VAR
   q_low AT %QD4 : DINT;
 END_VAR
   low := 0.0 - high;
-  q_high := REAL_TO_INT(high);
-  q_low := REAL_TO_INT(low);
+  q_high := REAL_TO_DINT(high);
+  q_low := REAL_TO_DINT(low);
 END_PROGRAM

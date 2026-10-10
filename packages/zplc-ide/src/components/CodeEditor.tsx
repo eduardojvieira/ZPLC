@@ -16,6 +16,7 @@ import * as monaco from 'monaco-editor';
 import type * as MonacoEditor from 'monaco-editor';
 import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
 import { useIDEStore } from '../store/useIDEStore';
+import { useAppSettings } from '../store/useAppSettings';
 import { useFileBreakpoints, useCurrentExecution, useDebugValues, formatDebugValue } from '../hooks/useDebugValue';
 import { useTheme } from '../hooks/useTheme';
 import { useEditorLiveValues } from '../hooks/useEditorLiveValues';
@@ -115,6 +116,8 @@ export function CodeEditor({
   const [editorReady, setEditorReady] = useState(false);
 
   // Debug state from store
+  const editorFontSize = useAppSettings((state) => state.settings.editorFontSize);
+  const editorTabSize = useAppSettings((state) => state.settings.editorTabSize);
   const debugMode = useIDEStore((state) => state.debug.mode);
   const livePreviewEnabled = useIDEStore((state) => state.debug.mpeekEnabled);
   const debugMap = useIDEStore((state) => state.debug.debugMap);
@@ -223,6 +226,11 @@ export function CodeEditor({
   }, [content, inlinePreviewEnabled, variableValueMap]);
 
   // Handle editor mount
+  // The tab size is the user's preference (IDE-010): every model takes it, and the indentation of a file does not override it.
+  useEffect(() => {
+    for (const model of monaco.editor.getModels()) model.updateOptions({ tabSize: editorTabSize, insertSpaces: true });
+  }, [editorTabSize, fileId]);
+
   const handleEditorDidMount: OnMount = useCallback((editor, monaco) => {
     editorRef.current = editor;
     monacoRef.current = monaco;
@@ -605,13 +613,14 @@ export function CodeEditor({
         theme={effectiveTheme === 'high-contrast' ? ZPLC_HIGH_CONTRAST_THEME_ID : effectiveTheme === 'dark' ? ZPLC_DARK_THEME_ID : ZPLC_LIGHT_THEME_ID}
         options={{
           fontFamily: 'var(--font-mono)',
-          fontSize: 14,
+          fontSize: editorFontSize,
           lineNumbers: 'on',
           glyphMargin: true,
           minimap: { enabled: true, scale: 1 },
           scrollBeyondLastLine: false,
           wordWrap: 'off',
-          tabSize: 4,
+          tabSize: editorTabSize,
+          detectIndentation: false,
           insertSpaces: true,
           automaticLayout: true,
           padding: { top: 8 },

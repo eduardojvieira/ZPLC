@@ -1,0 +1,19 @@
+{
+  "requirement": "CMP-058",
+  "title": "SQRT of zero, of a negative number, of an integer, of a subnormal and of a large REAL",
+  "matrix": ["functions.selection-limit-and-sqrt-functions"],
+  "tags": ["arch-sensitive", "float"],
+  "note": "SQRT of a REAL: the root for a positive number (to within a part in 10^7), 0.0 for 0.0 and for a negative number (a value IEC 61131-3 leaves undefined), an integer argument is converted to REAL; 1.0E-40 is a subnormal REAL and its root is 1.0E-20; a NaN has the root NaN",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QX0.0", "type": "BOOL", "value": true},
+    {"at": "%QX0.1", "type": "BOOL", "value": true},
+    {"at": "%QX0.2", "type": "BOOL", "value": true},
+    {"at": "%QX0.3", "type": "BOOL", "value": true},
+    {"at": "%QX0.4", "type": "BOOL", "value": true},
+    {"at": "%QX0.5", "type": "BOOL", "value": true},
+    {"at": "%QX0.6", "type": "BOOL", "value": true},
+    {"at": "%QX0.7", "type": "BOOL", "value": true}
+  ]
+}

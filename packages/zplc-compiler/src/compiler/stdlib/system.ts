@@ -40,6 +40,32 @@ export const UPTIME_FN: FunctionDef = {
 };
 
 // ============================================================================
+// Capacity of the FIFO and LIFO instances
+// ============================================================================
+
+/** Items an instance of FIFO or LIFO holds: its size (FIFO_MEMBERS, LIFO_MEMBERS) is fixed at 8 items. */
+const BUFFER_ITEMS = 8;
+
+/**
+ * SIZE is the capacity of the buffer. A call that leaves it out keeps its declared default, 8 (CMP-025):
+ * the member is 0 until it is written. A SIZE the instance has no room for (above 8) is limited to
+ * 8, so the buffer can never run past the memory of the instance; a SIZE below 1 is the default as well.
+ */
+function emitSizeLimit(ctx: CodeGenContext, sizeAddr: number): void {
+    const sizeOk = ctx.newLabel('buffer_size_ok');
+    ctx.emit(`    ; SIZE in 1..${BUFFER_ITEMS}, else ${BUFFER_ITEMS}`);
+    ctx.emit(`    LOAD32 ${formatAddr(sizeAddr)}`);
+    ctx.emit(`    PUSH8 1`);
+    ctx.emit(`    SUB`);
+    ctx.emit(`    PUSH8 ${BUFFER_ITEMS}`);
+    ctx.emit(`    LTU                 ; (SIZE - 1) < 8, unsigned`);
+    ctx.emit(`    JNZ ${sizeOk}`);
+    ctx.emit(`    PUSH8 ${BUFFER_ITEMS}`);
+    ctx.emit(`    STORE32 ${formatAddr(sizeAddr)}`);
+    ctx.emit(`${sizeOk}:`);
+}
+
+// ============================================================================
 // FIFO - First-In-First-Out Buffer
 // ============================================================================
 
@@ -66,8 +92,8 @@ export const UPTIME_FN: FunctionDef = {
  *  +28: SIZE (DINT, 4) - Buffer capacity (set once)
  *  +32: Buffer starts here...
  *
- * Total: 32 bytes + (SIZE * 4) bytes for buffer
- * Default SIZE = 8 -> 64 bytes total
+ * Total: 32 bytes + 8 * 4 bytes for the buffer = 64 bytes
+ * SIZE is the capacity, 1 to 8; left out (or outside 1 to 8) it is 8
  */
 
 const FIFO_MEMBERS: MemberDef[] = [
@@ -144,6 +170,8 @@ export const FIFO_FB: FunctionBlockDef = {
             }
         }
 
+        emitSizeLimit(ctx, SIZE);
+
         // Check RST
         ctx.emit(`    LOAD8 ${formatAddr(RST)}`);
         ctx.emit(`    JZ ${lblNoReset}`);
@@ -167,10 +195,10 @@ export const FIFO_FB: FunctionBlockDef = {
         // Check PUSH rising edge: PUSH AND NOT _push_prev
         ctx.emit(`${lblCheckPush}:`);
         ctx.emit(`    LOAD8 ${formatAddr(PUSH)}`);
-        ctx.emit(`    DUP`);
         ctx.emit(`    LOAD8 ${formatAddr(PUSH_PREV)}`);
-        ctx.emit(`    NOT`);
-        ctx.emit(`    AND`);
+        ctx.emit(`    PUSH8 0`);
+        ctx.emit(`    EQ                  ; the input was FALSE at the previous call`);
+        ctx.emit(`    AND                 ; rising edge`);
         ctx.emit(`    JZ ${lblNoPush}`);
 
         // Check if not FULL
@@ -213,15 +241,15 @@ export const FIFO_FB: FunctionBlockDef = {
         // Check POP rising edge
         ctx.emit(`${lblCheckPop}:`);
         ctx.emit(`    LOAD8 ${formatAddr(POP)}`);
-        ctx.emit(`    DUP`);
         ctx.emit(`    LOAD8 ${formatAddr(POP_PREV)}`);
-        ctx.emit(`    NOT`);
-        ctx.emit(`    AND`);
+        ctx.emit(`    PUSH8 0`);
+        ctx.emit(`    EQ                  ; the input was FALSE at the previous call`);
+        ctx.emit(`    AND                 ; rising edge`);
         ctx.emit(`    JZ ${lblNoPop}`);
 
-        // Check if not EMPTY
-        ctx.emit(`    LOAD8 ${formatAddr(EMPTY)}`);
-        ctx.emit(`    JNZ ${lblNoPop}`);
+        // Check if not empty: COUNT, not the EMPTY output, which is not computed yet on the first call
+        ctx.emit(`    LOAD32 ${formatAddr(COUNT)}`);
+        ctx.emit(`    JZ ${lblNoPop}`);
 
         // Pop: DATA_OUT = buffer[head], head = (head + 1) % SIZE, count--
         ctx.emit(`    ; Pop buffer[head] to DATA_OUT`);
@@ -299,8 +327,8 @@ export const FIFO_FB: FunctionBlockDef = {
  *  +20: SIZE (DINT, 4) - Buffer capacity
  *  +24: Buffer starts here...
  *
- * Total: 24 bytes + (SIZE * 4) bytes for buffer
- * Default SIZE = 8 -> 56 bytes total
+ * Total: 24 bytes + 8 * 4 bytes for the buffer = 56 bytes
+ * SIZE is the capacity, 1 to 8; left out (or outside 1 to 8) it is 8
  */
 
 const LIFO_MEMBERS: MemberDef[] = [
@@ -370,6 +398,8 @@ export const LIFO_FB: FunctionBlockDef = {
             }
         }
 
+        emitSizeLimit(ctx, SIZE);
+
         // Check RST
         ctx.emit(`    LOAD8 ${formatAddr(RST)}`);
         ctx.emit(`    JZ ${lblNoReset}`);
@@ -387,10 +417,10 @@ export const LIFO_FB: FunctionBlockDef = {
 
         // Check PUSH rising edge
         ctx.emit(`    LOAD8 ${formatAddr(PUSH)}`);
-        ctx.emit(`    DUP`);
         ctx.emit(`    LOAD8 ${formatAddr(PUSH_PREV)}`);
-        ctx.emit(`    NOT`);
-        ctx.emit(`    AND`);
+        ctx.emit(`    PUSH8 0`);
+        ctx.emit(`    EQ                  ; the input was FALSE at the previous call`);
+        ctx.emit(`    AND                 ; rising edge`);
         ctx.emit(`    JZ ${lblNoPush}`);
 
         // Check if not FULL
@@ -423,15 +453,15 @@ export const LIFO_FB: FunctionBlockDef = {
 
         // Check POP rising edge
         ctx.emit(`    LOAD8 ${formatAddr(POP)}`);
-        ctx.emit(`    DUP`);
         ctx.emit(`    LOAD8 ${formatAddr(POP_PREV)}`);
-        ctx.emit(`    NOT`);
-        ctx.emit(`    AND`);
+        ctx.emit(`    PUSH8 0`);
+        ctx.emit(`    EQ                  ; the input was FALSE at the previous call`);
+        ctx.emit(`    AND                 ; rising edge`);
         ctx.emit(`    JZ ${lblNoPop}`);
 
-        // Check if not EMPTY
-        ctx.emit(`    LOAD8 ${formatAddr(EMPTY)}`);
-        ctx.emit(`    JNZ ${lblNoPop}`);
+        // Check if not empty: COUNT, not the EMPTY output, which is not computed yet on the first call
+        ctx.emit(`    LOAD32 ${formatAddr(COUNT)}`);
+        ctx.emit(`    JZ ${lblNoPop}`);
 
         // Pop: count--, DATA_OUT = buffer[count]
         ctx.emit(`    LOAD32 ${formatAddr(COUNT)}`);

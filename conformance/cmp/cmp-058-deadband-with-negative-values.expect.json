@@ -1,0 +1,21 @@
+{
+  "requirement": "CMP-058",
+  "title": "DEADBAND follows a negative input only when it moves by more than WIDTH",
+  "matrix": ["blocks.library-blocks-not-in-the-standard"],
+  "tags": ["arch-sensitive", "float"],
+  "note": "Not an IEC block: the output follows IN only when IN differs from the last output by more than WIDTH; from 0 the input -5 moves it, -5.5 does not, -7 does and -6.5 does not",
+  "scans": 4,
+  "scanMs": 10,
+  "inputs": [
+    {"at": "%ID0", "type": "REAL", "value": -5.0, "beforeScan": 1},
+    {"at": "%ID0", "type": "REAL", "value": -5.5, "beforeScan": 2},
+    {"at": "%ID0", "type": "REAL", "value": -7.0, "beforeScan": 3},
+    {"at": "%ID0", "type": "REAL", "value": -6.5, "beforeScan": 4}
+  ],
+  "expect": [
+    {"at": "%QD0", "type": "REAL", "value": -5.0, "afterScan": 1},
+    {"at": "%QD0", "type": "REAL", "value": -5.0, "afterScan": 2},
+    {"at": "%QD0", "type": "REAL", "value": -7.0, "afterScan": 3},
+    {"at": "%QD0", "type": "REAL", "value": -7.0, "afterScan": 4}
+  ]
+}
