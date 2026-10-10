@@ -10,8 +10,8 @@ tags: [ide, user-guide]
 # Studio Workbench
 
 The workbench keeps editing central and puts Explorer, Inspector, Output,
-Problems, Tests, Lab, Learn, Changes, Agent, Trace, Watch, and Terminal in one
-bottom panel.
+Problems, Tests, Interlocks, Lab, Learn, Changes, Agent, Trace, Watch, and
+Terminal in one bottom panel.
 
 ## Daily workflow
 
@@ -65,6 +65,18 @@ Studio refuses a name that is taken, or that the build reads as the same as anot
 A change made outside Studio is picked up while a project is open. A file without unsaved changes reloads by itself, and one that was deleted closes; a file with unsaved changes asks **Keep my version** or **Load from disk** (for a deleted file, **Keep my version** or **Close file**) and nothing is overwritten before you answer. A save made by Studio is never taken for an outside change. New and removed files appear in the tree. Changes to `zplc.json` made outside Studio are not watched yet.
 
 Evidence level: host. `packages/zplc-ide/src/project/treeOperations.test.ts`, `src/store/useIDEStore.test.ts` (project tree operations, over the real project service on a temporary folder), `src/store/externalChanges.test.ts`, `electron/projectWatcher.test.ts` and `electron/projectFiles.test.ts` cover the rules, and journeys 23 (project tree operations) and 24 (changes made outside Studio) of `bun run test:journeys` drive the real application.
+
+## Declared interlock coverage
+
+A project can declare pairs of outputs that must never be on together, under `safety.incompatibleOutputs` in
+`zplc.json`. The **Interlocks** tab checks that the saved scenarios assert each pair with an exact `NEVER`, and lists
+every pair as **Covered** or **Missing exact NEVER coverage**. It is a view of its own, not part of Problems or Tests.
+It needs a saved project opened in the desktop app and the linked `zplc.json`, and it says what to do when it cannot
+run. It checks the scenarios, not the machine: it does not establish physical safety, timing or certification.
+`zplc-cli safety-check` and the MCP tool `safety_check` give the same answer.
+
+Evidence level: host. `src/components/InterlockCoverage.test.tsx` renders the view, `workspaceSafetyPresentation.test.ts`
+covers the answer, and journey 29 of `bun run test:journeys` runs the check in the real application.
 
 ## One result from Studio, the CLI and the MCP tools
 

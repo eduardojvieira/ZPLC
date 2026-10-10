@@ -267,7 +267,7 @@ export interface BuildResult {
 // Console / Output
 // =============================================================================
 
-export type ConsoleTab = 'explorer' | 'inspector' | 'output' | 'problems' | 'tests' | 'lab' | 'learn' | 'changes' | 'agent' | 'terminal' | 'watch' | 'trace';
+export type ConsoleTab = 'explorer' | 'inspector' | 'output' | 'problems' | 'tests' | 'lab' | 'learn' | 'changes' | 'agent' | 'terminal' | 'watch' | 'trace' | 'interlocks';
 
 export interface ConsoleEntry {
   id: string;

@@ -67,7 +67,7 @@ describe('a project run through the Tool API, the CLI, the MCP tools and Studio 
       // Studio: what the main process hands the renderer is the Tool API value, and the renderer presents it.
       const studio = presentWorkspaceTestResult(direct);
       expect(studio.kind).toBe(direct.ok ? 'passed' : 'assertion-failed');
-      expect(studio.artifacts.map(({ kind, sha256, byteLength }) => ({ kind, sha256, byteLength }))).toEqual(essence(direct).artifacts);
+      expect(studio.artifacts.map(({ kind, sha256, byteLength }) => ({ kind, sha256, byteLength })) as unknown).toEqual(essence(direct).artifacts);
       if (direct.ok) {
         expect(studio.scenarioCount).toBe(direct.summary.scenarios.length);
         // The values the renderer shows are the values the Tool API recorded, scenario by scenario.

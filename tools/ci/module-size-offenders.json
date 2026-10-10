@@ -24,7 +24,7 @@
     "file": "packages/zplc-ide/src/components/Console.tsx",
     "requirement": "IDE-014",
     "added": "2026-10-10",
-    "lines": 1335,
+    "lines": 1315,
     "reason": "One component holds the lower workbench and every tab body (output, problems, tests, changes, agent, trace, watch). Move each tab body to its own module (IDE-014: each panel in its own module)."
   },
   {

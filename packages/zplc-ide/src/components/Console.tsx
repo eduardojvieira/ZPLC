@@ -29,6 +29,7 @@ import {
   Send,
   CircleStop,
   Boxes,
+  ShieldCheck,
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DiffEditor, type Monaco } from './monacoRuntime';
@@ -43,6 +44,7 @@ import { LIVE_NATIVE_OUTPUT_MAX_AGE_MS, describeVmError, presentLiveNativeMotorC
 import { NativeAdapter } from '../runtime/nativeAdapter';
 import { claimMotorInputCommand, shouldClearMotorInputFailure } from './liveNativeMotorPanel';
 import { presentWorkspaceSafetyCheck, type WorkspaceSafetyPresentation } from './workspaceSafetyPresentation';
+import { InterlockCoverage } from './InterlockCoverage';
 import { ProjectExplorer } from './ProjectExplorer';
 import { ErrorBoundary } from './ErrorBoundary';
 import { DevFaultProbe } from './DevFaultProbe';
@@ -83,18 +85,6 @@ function consoleTabAfterKey(tabs: ConsoleTab[], activeTab: ConsoleTab, key: stri
   if (key === 'ArrowLeft') return tabs[(index - 1 + tabs.length) % tabs.length] ?? null;
   if (key === 'ArrowRight') return tabs[(index + 1) % tabs.length] ?? null;
   return null;
-}
-
-function SafetyCoverageReport({ presentation }: { presentation: WorkspaceSafetyPresentation }) {
-  if (presentation.kind === 'not-configured') return <p role="status" className="text-xs text-[var(--color-surface-400)]">No incompatible outputs are declared in this project.</p>;
-  if (presentation.kind === 'invalid') return <div className="space-y-1"><p role="status" className="text-xs text-[var(--color-accent-yellow)]">Declared interlock coverage result was invalid.</p><SafetyDiagnostics diagnostics={presentation.diagnostics} /></div>;
-  const missing = presentation.kind === 'uncovered' ? new Set(presentation.uncovered.map((pair) => [...pair.outputs].sort().join('\0'))) : new Set<string>();
-  return <div className="space-y-2 overflow-x-auto"><table className="w-full min-w-[420px] text-left text-xs"><caption className="sr-only">Declared output interlock coverage.</caption><thead className="border-b border-[var(--color-surface-700)] text-[var(--color-surface-400)]"><tr><th scope="col" className="px-2 py-1 font-medium">Output A</th><th scope="col" className="px-2 py-1 font-medium">Output B</th><th scope="col" className="px-2 py-1 font-medium">Status</th></tr></thead><tbody>{presentation.declared.map((pair) => { const isMissing = missing.has([...pair.outputs].sort().join('\0')); return <tr key={pair.outputs.join('\0')} className="border-b border-[var(--color-surface-700)]"><td className="px-2 py-1 font-mono text-[var(--color-surface-200)]">{pair.outputs[0]}</td><td className="px-2 py-1 font-mono text-[var(--color-surface-200)]">{pair.outputs[1]}</td><td className={`px-2 py-1 ${isMissing ? 'text-[var(--color-accent-yellow)]' : 'text-[var(--color-accent-green)]'}`}>{isMissing ? 'Missing exact NEVER coverage' : 'Covered'}</td></tr>; })}</tbody></table><SafetyDiagnostics diagnostics={presentation.diagnostics} /></div>;
-}
-
-function SafetyDiagnostics({ diagnostics }: { diagnostics: WorkspaceSafetyPresentation['diagnostics'] }) {
-  if (diagnostics.length === 0) return null;
-  return <ul aria-label="Safety diagnostics" className="space-y-1 border-t border-[var(--color-surface-700)] pt-2 text-xs text-[var(--color-surface-200)]">{diagnostics.map((diagnostic, index) => <li key={`${diagnostic.code}-${index}`}><span className="font-mono">{diagnostic.code}</span>{diagnostic.path && <span className="text-[var(--color-surface-400)]"> · {diagnostic.path}{diagnostic.line ? `:${diagnostic.line}` : ''}{diagnostic.column ? `:${diagnostic.column}` : ''}</span>}</li>)}</ul>;
 }
 
 export function Console({ debugController }: ConsoleProps) {
@@ -211,6 +201,7 @@ export function Console({ debugController }: ConsoleProps) {
       icon: <FlaskConical size={14} />,
       ariaLabel: 'Tests, host POSIX scenarios',
     },
+    { id: 'interlocks', label: 'Interlocks', icon: <ShieldCheck size={14} />, ariaLabel: 'Interlocks, declared output interlock coverage' },
     { id: 'lab', label: 'Lab', icon: <Boxes size={14} />, ariaLabel: 'Lab, recorded host scenario playback' },
     { id: 'learn', label: 'Learn', icon: <BookOpen size={14} />, ariaLabel: 'Learn, safe motor start-stop lesson' },
     { id: 'changes', label: 'Changes', icon: <FileDiff size={14} />, ariaLabel: 'Changes, candidate review' },
@@ -689,19 +680,6 @@ export function Console({ debugController }: ConsoleProps) {
 
         {activeConsoleTab === 'problems' && (
           <div className="p-2 space-y-1">
-            <section aria-label="Declared interlock coverage" className="space-y-2 border-b border-[var(--color-surface-700)] pb-2 font-sans text-sm">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--color-surface-200)]">Declared interlock coverage</h2>
-                <button type="button" onClick={() => { void runWorkspaceSafetyCheck(); }} disabled={workspaceTestBusy || workspaceTestAvailabilityState !== 'ready'} className="border border-[var(--color-surface-600)] bg-[var(--color-surface-800)] px-2 py-1 text-xs font-medium text-[var(--color-surface-100)] hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]">{workspaceSafetyStateForLink === 'running' ? 'Checking…' : 'Check declared interlocks'}</button>
-              </div>
-              {workspaceTestAvailabilityState === 'link-required' && <p role="status" className="text-xs text-[var(--color-surface-400)]">Save the project and choose zplc.json in Tests to check declared interlocks.</p>}
-              {workspaceTestAvailabilityState === 'unsaved' && <p role="status" className="text-xs text-[var(--color-surface-400)]">Save all changes before checking declared interlocks.</p>}
-              {workspaceTestAvailabilityState === 'desktop-unavailable' && <p role="status" className="text-xs text-[var(--color-surface-400)]">Declared interlock coverage requires the desktop app.</p>}
-              {workspaceTestAvailabilityState === 'project-required' && <p role="status" className="text-xs text-[var(--color-surface-400)]">Open a saved project folder to check declared interlocks.</p>}
-              {workspaceSafetyStateForLink === 'unavailable' && <p role="status" className="text-xs text-[var(--color-accent-yellow)]">Declared interlock coverage is unavailable.</p>}
-              {typeof workspaceSafetyStateForLink === 'object' && <SafetyCoverageReport presentation={workspaceSafetyStateForLink.presentation} />}
-              <p className="text-xs text-[var(--color-surface-400)]">Checks exact NEVER coverage in saved scenarios. It does not establish physical safety, timing, or certification.</p>
-            </section>
             <div className="pb-1 text-xs tabular-nums text-[var(--color-surface-300)] border-b border-[var(--color-surface-700)]">
               {problemSummary}
             </div>
@@ -848,6 +826,8 @@ export function Console({ debugController }: ConsoleProps) {
             )}
           </div>
         )}
+
+        {activeConsoleTab === 'interlocks' && <InterlockCoverage availability={workspaceTestAvailabilityState} state={workspaceSafetyStateForLink} busy={workspaceTestBusy} onCheck={() => { void runWorkspaceSafetyCheck(); }} />}
 
         {activeConsoleTab === 'learn' && <LearnPanel workspaceTestPresentation={typeof workspaceTestStateForLink === 'object' ? workspaceTestStateForLink.presentation : undefined} />}
 

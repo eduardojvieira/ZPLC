@@ -10,8 +10,8 @@ tags: [ide, user-guide]
 # Entorno de trabajo de Studio
 
 El entorno de trabajo mantiene la edición en el centro y reúne Explorer,
-Inspector, Output, Problems, Tests, Lab, Learn, Changes, Agent, Trace, Watch y
-Terminal en un solo panel inferior.
+Inspector, Output, Problems, Tests, Interlocks, Lab, Learn, Changes, Agent,
+Trace, Watch y Terminal en un solo panel inferior.
 
 ## Flujo diario
 
@@ -65,6 +65,19 @@ Studio rechaza un nombre que ya existe, o que la compilación leería como igual
 Un cambio hecho fuera de Studio se detecta mientras hay un proyecto abierto. Un archivo sin cambios sin guardar se recarga solo, y uno que se borró se cierra; un archivo con cambios sin guardar pregunta **Keep my version** o **Load from disk** (para un archivo borrado, **Keep my version** o **Close file**) y nada se sobrescribe antes de que usted responda. Un guardado hecho por Studio nunca se toma por un cambio externo. Los archivos nuevos y los eliminados aparecen en el árbol. Los cambios externos a `zplc.json` todavía no se vigilan.
 
 Nivel de evidencia: host. `packages/zplc-ide/src/project/treeOperations.test.ts`, `src/store/useIDEStore.test.ts` (operaciones del árbol, sobre el servicio de proyecto real en una carpeta temporal), `src/store/externalChanges.test.ts`, `electron/projectWatcher.test.ts` y `electron/projectFiles.test.ts` cubren las reglas, y los recorridos 23 (operaciones del árbol del proyecto) y 24 (cambios hechos fuera de Studio) de `bun run test:journeys` manejan la aplicación real.
+
+## Cobertura de enclavamientos declarados
+
+Un proyecto puede declarar pares de salidas que nunca deben estar activas a la vez, en `safety.incompatibleOutputs` de
+`zplc.json`. La pestaña **Interlocks** comprueba que los escenarios guardados afirmen cada par con un `NEVER` exacto, y
+lista cada par como **Covered** o **Missing exact NEVER coverage**. Es una vista propia, no parte de Problems ni de
+Tests. Necesita un proyecto guardado abierto en la aplicación de escritorio y el `zplc.json` vinculado, y dice qué
+hacer cuando no puede ejecutarse. Comprueba los escenarios, no la máquina: no establece seguridad física, tiempos ni
+certificación. `zplc-cli safety-check` y la herramienta MCP `safety_check` dan la misma respuesta.
+
+Nivel de evidencia: host. `src/components/InterlockCoverage.test.tsx` dibuja la vista,
+`workspaceSafetyPresentation.test.ts` cubre la respuesta, y el recorrido 29 de `bun run test:journeys` ejecuta la
+comprobación en la aplicación real.
 
 ## Un resultado desde Studio, la CLI y las herramientas MCP
 

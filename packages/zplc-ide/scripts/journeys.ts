@@ -1360,4 +1360,28 @@ export const JOURNEYS: Journey[] = [
       assert((JSON.parse(disk(join(project, 'zplc.json'))) as { libraries?: string[] }).libraries?.length === 0, 'zplc.json still names the library.');
     },
   },
+
+  {
+    name: '29 Declared interlock coverage has a tab of its own', example: 'motor_start_stop', proves: [], partly: ['IDE-032'],
+    run: async (app, { project }) => {
+      const view = css('[data-interlock-coverage]');
+      await openFolder(app, project);
+
+      // It is not part of Problems or of Tests any more.
+      await app.click(tab('Problems'));
+      assert(!await app.visible(view) && !(await app.text()).toLowerCase().includes('declared interlock coverage'), 'Declared interlock coverage is still shown inside Problems.');
+      await app.click(tab('Tests', 'prefix'));
+      assert(!await app.visible(view), 'Declared interlock coverage is shown inside Tests.');
+
+      // It is a tab: it says what it checks and what it does not, and runs the check on the saved project.
+      await app.click(tab('Interlocks'), 'the Interlocks tab');
+      await app.until('the view', async () => await app.visible(view) || undefined);
+      const before = await app.eval<string>(`document.querySelector('[data-interlock-coverage]').innerText`);
+      assert(before.toLowerCase().includes('declared interlock coverage') && before.includes('does not establish physical safety, timing, or certification'), `The view lacks its title or its scope: ${before}`);
+      await app.click(button('Check declared interlocks'), 'the Check declared interlocks button');
+      await app.until('the declared pair in the table', async () => await app.eval<boolean>(`document.querySelector('[data-interlock-coverage] table')?.innerText.includes('Motor.Forward') === true`) || undefined);
+      const report = await app.eval<string>(`document.querySelector('[data-interlock-coverage] table').innerText`);
+      assert(report.includes('Motor.Reverse') && /Covered|Missing exact NEVER coverage/.test(report), `The table does not say whether the pair is covered: ${report}`);
+    },
+  },
 ];

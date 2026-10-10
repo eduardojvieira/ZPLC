@@ -4,6 +4,11 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- The declared-interlock coverage check is a view of its own (IDE-032): an
+  **Interlocks** tab in the lower panel, no longer a section of Problems. It
+  runs the same check on the saved project, lists each declared pair as
+  Covered or Missing exact NEVER coverage, and keeps its scope text: it checks
+  saved scenarios and establishes no physical safety, timing or certification.
 - Scenario tests with temporal assertions give the same result from Studio, the
   CLI and the MCP tools, and a test says so (IDE-031):
   `src/cli/scenarioParity.test.ts` runs every bundled project, each scenario by
