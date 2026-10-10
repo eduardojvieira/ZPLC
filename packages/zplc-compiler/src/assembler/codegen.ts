@@ -7,7 +7,7 @@
  * All multi-byte values are little-endian.
  */
 
-import { getOperandSize, OPCODE_BY_VALUE, isRelativeJump } from './opcodes';
+import { fitsOperandField, getOperandSize, OPCODE_BY_VALUE, isRelativeJump, operandField, operandRefusal } from './opcodes';
 import { CONTAINER, OPCODE_TABLE } from '../contract.generated';
 import type { Instruction, TaskDef, TagDef } from './types';
 import { AssemblerError, TASK_TYPE, ZPLC_CONSTANTS } from './types';
@@ -43,6 +43,29 @@ export function crc32(data: Uint8Array): number {
     return (c ^ 0xFFFFFFFF) >>> 0;
 }
 
+/** Write the CRC-32 of the whole file except the crc32 field itself (bytes 12-15) into that field. */
+function sealCrc(output: Uint8Array): void {
+    const crcOffset = CONTAINER.crcOffset;
+    const crcSize = CONTAINER.crcSize;
+    const payload = new Uint8Array(output.length - crcSize);
+    payload.set(output.subarray(0, crcOffset), 0);
+    payload.set(output.subarray(crcOffset + crcSize), crcOffset);
+    new DataView(output.buffer, output.byteOffset, output.byteLength).setUint32(crcOffset, crc32(payload), true);
+}
+
+/**
+ * The build identity of a program (CMP-056): the CRC-32 of its CODE segment followed by its TASK segment as
+ * written, 1 in the one case the value would be 0, which is what an artifact without an identity reads as.
+ * It is a function of the program alone: two builds of the same project give the same identity (CMP-053), and
+ * the tags, which come from the communication configuration and not from the program, are not part of it.
+ */
+export function buildIdOf(code: Uint8Array, taskSegment: Uint8Array = new Uint8Array(0)): number {
+    const joined = new Uint8Array(code.length + taskSegment.length);
+    joined.set(code, 0);
+    joined.set(taskSegment, code.length);
+    return crc32(joined) || 1;
+}
+
 /**
  * Set of opcodes that use absolute 16-bit addresses and need relocation.
  * These are jumps and calls that target absolute code addresses.
@@ -61,10 +84,30 @@ function isIntegerInRange(value: unknown, minimum: number, maximum: number): val
         && value <= maximum;
 }
 
+/** A variable tag whose fields all fit the TAGS entry (CMP-049): nothing is masked when it is written. */
+function validateTags(tags: readonly TagDef[] | undefined): void {
+    for (const [index, tag] of (tags ?? []).entries()) {
+        const label = `Tag ${index}`;
+        if (!isIntegerInRange(tag.varAddr, 0, UINT16_MAX)) {
+            throw new AssemblerError(`${label} address ${String(tag.varAddr)} does not fit its 16-bit address field`);
+        }
+        if (!isIntegerInRange(tag.varType, 0, 0xFF)) {
+            throw new AssemblerError(`${label} data type ${String(tag.varType)} does not fit its 8-bit field`);
+        }
+        if (!isIntegerInRange(tag.tagId, 0, 0xFF)) {
+            throw new AssemblerError(`${label} id ${String(tag.tagId)} does not fit its 8-bit field`);
+        }
+        if (!isIntegerInRange(tag.value, 0, UINT32_MAX)) {
+            throw new AssemblerError(`${label} value ${String(tag.value)} does not fit its 32-bit field`);
+        }
+    }
+}
+
 function validateMultiTaskLayout(bytecode: Uint8Array, tasks: TaskDef[], tags?: TagDef[]): void {
     if (!(bytecode instanceof Uint8Array)) {
         throw new AssemblerError('Multi-task bytecode must be a Uint8Array');
     }
+    validateTags(tags);
     if (!Array.isArray(tasks) || tasks.length === 0) {
         throw new AssemblerError('Multi-task programs require at least one task');
     }
@@ -77,12 +120,13 @@ function validateMultiTaskLayout(bytecode: Uint8Array, tasks: TaskDef[], tags?: 
 
     const taskSegmentSize = tasks.length * ZPLC_CONSTANTS.TASK_DEF_SIZE;
     const tagSegmentSize = (tags?.length ?? 0) * ZPLC_CONSTANTS.TAG_ENTRY_SIZE;
-    const segmentCount = tags?.length ? 3 : 2;
+    const segmentCount = tags?.length ? 4 : 3;
     const totalSize = ZPLC_CONSTANTS.HEADER_SIZE
         + (ZPLC_CONSTANTS.SEGMENT_ENTRY_SIZE * segmentCount)
         + bytecode.length
         + taskSegmentSize
-        + tagSegmentSize;
+        + tagSegmentSize
+        + ZPLC_CONSTANTS.BUILD_ENTRY_SIZE;
     if (!Number.isSafeInteger(taskSegmentSize) || taskSegmentSize > UINT32_MAX
         || !Number.isSafeInteger(tagSegmentSize) || tagSegmentSize > UINT32_MAX
         || !Number.isSafeInteger(totalSize) || totalSize > UINT32_MAX) {
@@ -119,6 +163,9 @@ function validateMultiTaskLayout(bytecode: Uint8Array, tasks: TaskDef[], tags?: 
         if (!isIntegerInRange(task.stackSize, 1, ZPLC_CONSTANTS.TASK_STACK_MAX_DEPTH)) {
             throw new AssemblerError(`${label} stackSize must be an integer from 1 to ${ZPLC_CONSTANTS.TASK_STACK_MAX_DEPTH}`);
         }
+        if (task.callDepth !== undefined && !isIntegerInRange(task.callDepth, 0, UINT16_MAX)) {
+            throw new AssemblerError(`${label} call depth must be an integer from 0 to 65535 (0 is not declared)`);
+        }
     }
 }
 
@@ -132,7 +179,7 @@ export function emitBytecode(instructions: Instruction[]): Uint8Array {
     // Calculate total size
     let totalSize = 0;
     for (const instr of instructions) {
-        totalSize += 1 + getOperandSize(instr.opcode);
+        totalSize += instr.raw ? 1 : 1 + getOperandSize(instr.opcode);
     }
 
     // Create output buffer
@@ -141,18 +188,25 @@ export function emitBytecode(instructions: Instruction[]): Uint8Array {
     let offset = 0;
 
     for (const instr of instructions) {
-        // Emit opcode
+        // Emit opcode, or the byte of data
         output[offset++] = instr.opcode;
+        if (instr.raw) continue;
 
-        // Emit operand
+        // Emit operand: it is checked against its field, never masked to it (CMP-049)
         const operandSize = getOperandSize(instr.opcode);
         const operand = instr.operand ?? 0;
+        const field = operandField(instr.opcode);
+        if (field && !fitsOperandField(field, operand)) {
+            const mnemonic = OPCODE_BY_VALUE[instr.opcode] ?? `0x${instr.opcode.toString(16)}`;
+            throw new AssemblerError(operandRefusal(mnemonic, field, operand), instr.lineNum);
+        }
 
         if (operandSize === 1) {
-            // 8-bit operand (could be signed, already masked in parser)
-            output[offset++] = operand & 0xFF;
+            // 8-bit operand: an immediate, or a signed offset stored as its two's complement byte
+            view.setUint8(offset, operand & 0xFF);
+            offset += 1;
         } else if (operandSize === 2) {
-            // 16-bit little-endian
+            // 16-bit little-endian; an immediate may be written signed
             view.setUint16(offset, operand & 0xFFFF, true);
             offset += 2;
         } else if (operandSize === 4) {
@@ -187,31 +241,39 @@ export function emitBytecode(instructions: Instruction[]): Uint8Array {
  * @returns The same bytecode array (modified)
  */
 export function relocateBytecode(bytecode: Uint8Array, baseOffset: number): Uint8Array {
+    if (!isIntegerInRange(baseOffset, 0, UINT16_MAX)) {
+        throw new AssemblerError(`Relocation offset ${String(baseOffset)} does not fit the 16-bit code address`);
+    }
     if (baseOffset === 0) {
         return bytecode; // No relocation needed
     }
 
     const view = new DataView(bytecode.buffer, bytecode.byteOffset, bytecode.byteLength);
+    const relocated: Array<{ at: number; address: number }> = [];
     let pc = 0;
 
     while (pc < bytecode.length) {
-        const opcode = bytecode[pc];
+        const opcode = bytecode[pc]!;
         const operandSize = getOperandSize(opcode);
 
         // Check if this is a relocatable opcode
-        if (RELOCATABLE_OPCODES.has(opcode) && operandSize === 2) {
-            // Read the 16-bit address (little-endian)
-            const originalAddr = view.getUint16(pc + 1, true);
-            
-            // Add the base offset
-            const relocatedAddr = (originalAddr + baseOffset) & 0xFFFF;
-            
-            // Write back the relocated address
-            view.setUint16(pc + 1, relocatedAddr, true);
+        if (RELOCATABLE_OPCODES.has(opcode) && operandSize === 2 && pc + 2 < bytecode.length) {
+            const address = view.getUint16(pc + 1, true) + baseOffset;
+            if (address > UINT16_MAX) {
+                // nothing has been written: the bytecode is as it was given
+                throw new AssemblerError(
+                    `Relocating the ${OPCODE_BY_VALUE[opcode] ?? 'jump'} at ${pc} by ${baseOffset} gives address ${address}, which does not fit the 16-bit code address`,
+                );
+            }
+            relocated.push({ at: pc + 1, address });
         }
 
         // Move to next instruction
         pc += 1 + operandSize;
+    }
+
+    for (const { at, address } of relocated) {
+        view.setUint16(at, address, true);
     }
 
     return bytecode;
@@ -233,18 +295,26 @@ export function relocateBytecode(bytecode: Uint8Array, baseOffset: number): Uint
  */
 export function createZplcFile(bytecode: Uint8Array, entryPoint: number, tags?: TagDef[]): Uint8Array {
     const codeSize = bytecode.length;
+    if (!isIntegerInRange(entryPoint, 0, UINT16_MAX)) {
+        throw new AssemblerError(`Entry point ${String(entryPoint)} does not fit its 16-bit field`);
+    }
+    if (codeSize > 0 && entryPoint >= codeSize) {
+        throw new AssemblerError(`Entry point ${entryPoint} is outside the code (${codeSize} bytes)`);
+    }
+    validateTags(tags);
     const tagCount = tags?.length ?? 0;
     const tagSegmentSize = tagCount * ZPLC_CONSTANTS.TAG_ENTRY_SIZE;
     
-    let segmentCount = 1;  // CODE
-    if (tagCount > 0) segmentCount++;
+    // CODE, TAGS when there are tags, and the build identity (CMP-056)
+    const segmentCount = tagCount > 0 ? 3 : 2;
 
-    // Total file size: header (32) + segment table (8 * segmentCount) + code + tags
+    // Total file size: header (32) + segment table (8 * segmentCount) + code + tags + build identity
     const totalSize =
         ZPLC_CONSTANTS.HEADER_SIZE +
         (ZPLC_CONSTANTS.SEGMENT_ENTRY_SIZE * segmentCount) +
         codeSize +
-        tagSegmentSize;
+        tagSegmentSize +
+        ZPLC_CONSTANTS.BUILD_ENTRY_SIZE;
 
     const output = new Uint8Array(totalSize);
     const view = new DataView(output.buffer);
@@ -278,8 +348,8 @@ export function createZplcFile(bytecode: Uint8Array, entryPoint: number, tags?: 
     view.setUint32(offset, codeSize, true);
     offset += 4;
 
-    // data_size (4 bytes) - tag segment counts as data/metadata
-    view.setUint32(offset, tagSegmentSize, true);
+    // data_size (4 bytes) - tag segment and build identity count as data/metadata
+    view.setUint32(offset, tagSegmentSize + ZPLC_CONSTANTS.BUILD_ENTRY_SIZE, true);
     offset += 4;
 
     // entry_point (2 bytes)
@@ -317,6 +387,16 @@ export function createZplcFile(bytecode: Uint8Array, entryPoint: number, tags?: 
     }
 
     // =========================================================================
+    // Segment Table Entry: BUILD
+    // =========================================================================
+    view.setUint16(offset, ZPLC_CONSTANTS.SEGMENT_TYPE_BUILD, true);
+    offset += 2;
+    view.setUint16(offset, 0, true);
+    offset += 2;
+    view.setUint32(offset, ZPLC_CONSTANTS.BUILD_ENTRY_SIZE, true);
+    offset += 4;
+
+    // =========================================================================
     // Code Segment
     // =========================================================================
     output.set(bytecode, offset);
@@ -327,30 +407,24 @@ export function createZplcFile(bytecode: Uint8Array, entryPoint: number, tags?: 
     // =========================================================================
     if (tagCount > 0 && tags) {
         for (const tag of tags) {
-            view.setUint16(offset, tag.varAddr & 0xFFFF, true);
+            view.setUint16(offset, tag.varAddr, true);
             offset += 2;
-            view.setUint8(offset, tag.varType & 0xFF);
+            view.setUint8(offset, tag.varType);
             offset += 1;
-            view.setUint8(offset, tag.tagId & 0xFF);
+            view.setUint8(offset, tag.tagId);
             offset += 1;
-            view.setUint32(offset, tag.value >>> 0, true);
+            view.setUint32(offset, tag.value, true);
             offset += 4;
         }
     }
 
     // =========================================================================
-    // CRC32: checksum everything EXCEPT the crc32 field itself (bytes 12-15)
+    // Build identity (CMP-056)
     // =========================================================================
-    const crcOffset = CONTAINER.crcOffset; // crc32 field starts at byte 12
-    const crcSize = CONTAINER.crcSize;
-    const preCrc = output.subarray(0, crcOffset);
-    const postCrc = output.subarray(crcOffset + crcSize);
-    const payload = new Uint8Array(preCrc.length + postCrc.length);
-    payload.set(preCrc, 0);
-    payload.set(postCrc, preCrc.length);
-    const checksum = crc32(payload);
-    view.setUint32(crcOffset, checksum, true);
+    view.setUint32(offset, buildIdOf(bytecode), true);
+    offset += ZPLC_CONSTANTS.BUILD_ENTRY_SIZE;
 
+    sealCrc(output);
     return output;
 }
 
@@ -374,15 +448,16 @@ export function createMultiTaskZplcFile(bytecode: Uint8Array, tasks: TaskDef[], 
     const taskSegmentSize = taskCount * ZPLC_CONSTANTS.TASK_DEF_SIZE;
     const tagCount = tags?.length ?? 0;
     const tagSegmentSize = tagCount * ZPLC_CONSTANTS.TAG_ENTRY_SIZE;
-    const segmentCount = tagCount > 0 ? 3 : 2; // CODE + TASK (+ TAGS)
+    const segmentCount = tagCount > 0 ? 4 : 3; // CODE + TASK (+ TAGS) + BUILD
 
-    // Total file size: header + segment entries + code + task data + optional tags
+    // Total file size: header + segment entries + code + task data + optional tags + build identity
     const totalSize =
         ZPLC_CONSTANTS.HEADER_SIZE +
         (ZPLC_CONSTANTS.SEGMENT_ENTRY_SIZE * segmentCount) +
         codeSize +
         taskSegmentSize +
-        tagSegmentSize;
+        tagSegmentSize +
+        ZPLC_CONSTANTS.BUILD_ENTRY_SIZE;
 
     const output = new Uint8Array(totalSize);
     const view = new DataView(output.buffer);
@@ -415,8 +490,8 @@ export function createMultiTaskZplcFile(bytecode: Uint8Array, tasks: TaskDef[], 
     view.setUint32(offset, codeSize, true);
     offset += 4;
 
-    // data_size (task metadata + optional tag metadata)
-    view.setUint32(offset, taskSegmentSize + tagSegmentSize, true);
+    // data_size (task metadata + optional tag metadata + build identity)
+    view.setUint32(offset, taskSegmentSize + tagSegmentSize + ZPLC_CONSTANTS.BUILD_ENTRY_SIZE, true);
     offset += 4;
 
     // entry_point (first task's entry point for legacy compatibility)
@@ -465,6 +540,16 @@ export function createMultiTaskZplcFile(bytecode: Uint8Array, tasks: TaskDef[], 
     }
 
     // =========================================================================
+    // Segment Table Entry: BUILD
+    // =========================================================================
+    view.setUint16(offset, ZPLC_CONSTANTS.SEGMENT_TYPE_BUILD, true);
+    offset += 2;
+    view.setUint16(offset, 0, true); // flags
+    offset += 2;
+    view.setUint32(offset, ZPLC_CONSTANTS.BUILD_ENTRY_SIZE, true);
+    offset += 4;
+
+    // =========================================================================
     // Code Segment
     // =========================================================================
     output.set(bytecode, offset);
@@ -480,9 +565,11 @@ export function createMultiTaskZplcFile(bytecode: Uint8Array, tasks: TaskDef[], 
     //   interval_us (4 bytes, uint32_t)
     //   entry_point (2 bytes, uint16_t)
     //   stack_size  (2 bytes, uint16_t)
-    //   reserved    (4 bytes, uint32_t)
+    //   call_depth  (2 bytes, uint16_t)  call frames active at once, the body included; 0 = not declared
+    //   reserved    (2 bytes, uint16_t)  must be 0
     // Total: 16 bytes
 
+    const taskSegmentAt = offset;
     for (const task of tasks) {
         // id
         view.setUint16(offset, task.id, true);
@@ -508,38 +595,93 @@ export function createMultiTaskZplcFile(bytecode: Uint8Array, tasks: TaskDef[], 
         view.setUint16(offset, task.stackSize, true);
         offset += 2;
 
+        // call_depth
+        view.setUint16(offset, task.callDepth ?? 0, true);
+        offset += 2;
+
         // reserved
-        view.setUint32(offset, 0, true);
-        offset += 4;
+        view.setUint16(offset, 0, true);
+        offset += 2;
     }
+    const taskSegment = output.subarray(taskSegmentAt, offset);
 
     if (tagCount > 0 && tags) {
         for (const tag of tags) {
-            view.setUint16(offset, tag.varAddr & 0xFFFF, true);
+            view.setUint16(offset, tag.varAddr, true);
             offset += 2;
-            view.setUint8(offset, tag.varType & 0xFF);
+            view.setUint8(offset, tag.varType);
             offset += 1;
-            view.setUint8(offset, tag.tagId & 0xFF);
+            view.setUint8(offset, tag.tagId);
             offset += 1;
-            view.setUint32(offset, tag.value >>> 0, true);
+            view.setUint32(offset, tag.value, true);
             offset += 4;
         }
     }
 
-    // =========================================================================
-    // CRC32: checksum everything EXCEPT the crc32 field itself (bytes 12-15)
-    // =========================================================================
-    const crcOffset = CONTAINER.crcOffset; // crc32 field starts at byte 12
-    const crcSize = CONTAINER.crcSize;
-    const preCrc = output.subarray(0, crcOffset);
-    const postCrc = output.subarray(crcOffset + crcSize);
-    const payload = new Uint8Array(preCrc.length + postCrc.length);
-    payload.set(preCrc, 0);
-    payload.set(postCrc, preCrc.length);
-    const checksum = crc32(payload);
-    view.setUint32(crcOffset, checksum, true);
+    // Build identity (CMP-056)
+    view.setUint32(offset, buildIdOf(bytecode, taskSegment), true);
+    offset += ZPLC_CONSTANTS.BUILD_ENTRY_SIZE;
 
+    sealCrc(output);
     return output;
+}
+
+/** What the header, the segment table and the tasks of an artifact say; see {@link readArtifact}. */
+export interface ArtifactInfo {
+    /** The contract draft the artifact was built for. */
+    draftCounter: number;
+    codeSize: number;
+    entryPoint: number;
+    segments: Array<{ type: number; size: number; offset: number }>;
+    tasks: TaskDef[];
+    /** The build identity, or undefined when the artifact carries none (or is not an artifact). */
+    buildId?: number;
+}
+
+/**
+ * Read the structure of a .zplc file without verifying it: its segments, its task table and its build
+ * identity. A byte string that is not an artifact reads as one with no segments. Verification is the loader's.
+ */
+export function readArtifact(bytes: Uint8Array): ArtifactInfo {
+    const empty: ArtifactInfo = { draftCounter: 0, codeSize: 0, entryPoint: 0, segments: [], tasks: [] };
+    if (bytes.length < ZPLC_CONSTANTS.HEADER_SIZE) return empty;
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    if (view.getUint32(0, true) !== ZPLC_CONSTANTS.MAGIC) return empty;
+    const info: ArtifactInfo = {
+        draftCounter: view.getUint32(ZPLC_CONSTANTS.DRAFT_COUNTER_OFFSET, true),
+        codeSize: view.getUint32(16, true),
+        entryPoint: view.getUint16(24, true),
+        segments: [],
+        tasks: [],
+    };
+    const count = view.getUint16(26, true);
+    let offset = ZPLC_CONSTANTS.HEADER_SIZE + count * ZPLC_CONSTANTS.SEGMENT_ENTRY_SIZE;
+    if (offset > bytes.length) return info;
+    for (let index = 0; index < count; index += 1) {
+        const entry = ZPLC_CONSTANTS.HEADER_SIZE + index * ZPLC_CONSTANTS.SEGMENT_ENTRY_SIZE;
+        const type = view.getUint16(entry, true);
+        const size = view.getUint32(entry + 4, true);
+        if (offset + size > bytes.length) return info;
+        info.segments.push({ type, size, offset });
+        if (type === ZPLC_CONSTANTS.SEGMENT_TYPE_TASK && size % ZPLC_CONSTANTS.TASK_DEF_SIZE === 0) {
+            for (let at = offset; at < offset + size; at += ZPLC_CONSTANTS.TASK_DEF_SIZE) {
+                info.tasks.push({
+                    id: view.getUint16(at, true),
+                    type: view.getUint8(at + 2) as TaskDef['type'],
+                    priority: view.getUint8(at + 3),
+                    intervalUs: view.getUint32(at + 4, true),
+                    entryPoint: view.getUint16(at + 8, true),
+                    stackSize: view.getUint16(at + 10, true),
+                    callDepth: view.getUint16(at + 12, true),
+                });
+            }
+        }
+        if (type === ZPLC_CONSTANTS.SEGMENT_TYPE_BUILD && size === ZPLC_CONSTANTS.BUILD_ENTRY_SIZE) {
+            info.buildId = view.getUint32(offset, true);
+        }
+        offset += size;
+    }
+    return info;
 }
 
 /**

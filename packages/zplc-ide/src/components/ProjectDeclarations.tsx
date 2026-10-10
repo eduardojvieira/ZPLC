@@ -62,6 +62,7 @@ function AddLibraryDialog({ onClose }: { onClose: () => void }) {
 
 export function ProjectDeclarations() {
   const groups = useProjectSources((state) => state.declarations);
+  const unlisted = useProjectSources((state) => state.unlisted);
   const tree = useIDEStore((state) => state.fileTree);
   const config = useIDEStore((state) => state.projectConfig);
   const migrating = useIDEStore((state) => state.projectMigrationPreview !== null);
@@ -74,9 +75,16 @@ export function ProjectDeclarations() {
   const libraries = configuredLibraries(config);
   const total = groups.reduce((sum, group) => sum + group.declarations.length, 0);
   const rows = libraryRows(libraries, tree);
+  // The files no build reads, by folder: listing the folder as a library is what makes the build read them.
+  const unlistedFolders = [...new Set(unlisted.map((path) => (path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '')))];
 
   const remove = async (path: string) => {
     updateProjectConfig({ libraries: removeLibrary(libraries, path) });
+    await saveProjectConfig();
+  };
+
+  const list = async (path: string) => {
+    updateProjectConfig({ libraries: addLibrary(libraries, path) });
     await saveProjectConfig();
   };
 
@@ -95,6 +103,9 @@ export function ProjectDeclarations() {
             <BookMarked size={13} aria-hidden="true" />
             Declarations
             <span className="rounded-full bg-[var(--color-surface-600)] px-1.5 font-normal normal-case text-[var(--color-surface-300)]">{total}</span>
+            {unlisted.length > 0 && (
+              <span title="Structured Text files that no build reads" className="rounded-full border border-[var(--color-accent-yellow)] px-1.5 font-normal normal-case text-[var(--color-accent-yellow)]">{unlisted.length} not compiled</span>
+            )}
           </button>
         </h2>
         <button
@@ -146,6 +157,32 @@ export function ProjectDeclarations() {
             </li>
           ))}
         </ul>
+      )}
+      {unlisted.length > 0 && (
+        <div data-unlisted-sources className="border-t border-[var(--color-surface-700)] px-3 py-2">
+          <p className="text-[var(--color-accent-yellow)]">Not compiled: neither in src nor directly in a library folder.</p>
+          <ul aria-label="Files no build reads" className="mt-1">
+            {unlistedFolders.map((folder) => {
+              const files = unlisted.filter((path) => (path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '') === folder);
+              const problem = libraryProblem(folder, tree, libraries);
+              return (
+                <li key={folder} data-unlisted-folder={folder} className="flex items-center justify-between gap-2 py-0.5">
+                  <span className="min-w-0 truncate font-mono text-[var(--color-surface-100)]">{folder === '' ? 'project folder' : `${folder}/`} <span className="font-sans text-[var(--color-surface-400)]">{files.length} file{files.length === 1 ? '' : 's'}</span></span>
+                  <button
+                    type="button"
+                    onClick={() => { void list(folder); }}
+                    disabled={problem !== null || migrating}
+                    title={problem ?? (migrating ? 'Apply the migration of the project first' : `List ${folder} under libraries of zplc.json`)}
+                    aria-label={`List ${folder === '' ? 'the project folder' : folder} as a library`}
+                    className="shrink-0 rounded border border-[var(--color-surface-600)] px-1.5 py-0.5 text-[var(--color-accent-blue)] hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-[var(--color-accent-blue)]"
+                  >
+                    List as library
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       )}
       </div>}
       {adding && <AddLibraryDialog onClose={() => setAdding(false)} />}

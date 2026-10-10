@@ -179,9 +179,10 @@ describe('stdlib registry', () => {
         expect(fnNames).toContain('NAND');
         expect(fnNames).toContain('NOR');
         // the 61 functions of the inventory are 57 that are not conversions and the four conversions that existed;
-        // CMP-057 gives every ordered pair of the twelve conversion types a function: 12 x 11
+        // CMP-057 gives every ordered pair of the sixteen conversion types a function, the 64-bit integers
+        // and LREAL included (CMP-015): 16 x 15
         const conversions = fnNames.filter((name) => conversionResultType(name) !== undefined);
-        expect(conversions.length).toBe(132);
+        expect(conversions.length).toBe(240);
         expect(fnNames.length - conversions.length).toBe(57);
     });
 

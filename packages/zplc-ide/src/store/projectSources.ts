@@ -9,15 +9,20 @@
  */
 import { create } from 'zustand';
 import { projectDeclarations, setProjectDeclarations, type FileDeclarations } from '../project/projectDeclarations';
-import { configuredLibraries, projectSourceFiles } from '../project/libraries';
+import { configuredLibraries, projectSourceFiles, unlistedSourceFiles } from '../project/libraries';
 import { loadFileFromTree } from '../utils/fileSystem';
 import type { FileTreeNode, ProjectFileWithHandle } from '../types';
 
 export interface ProjectSource { path: string; name: string; content: string; language: string }
 
-interface ProjectSourcesState { sources: ProjectSource[]; declarations: FileDeclarations[] }
+interface ProjectSourcesState {
+  sources: ProjectSource[];
+  declarations: FileDeclarations[];
+  /** Structured Text files of the project that no build reads: not in `src`, not directly in a library folder. */
+  unlisted: string[];
+}
 
-export const useProjectSources = create<ProjectSourcesState>(() => ({ sources: [], declarations: [] }));
+export const useProjectSources = create<ProjectSourcesState>(() => ({ sources: [], declarations: [], unlisted: [] }));
 
 /** The most files read for the declarations of a project: far above a PLC project, and a bound on a folder of generated files. */
 const MAX_FILES = 400;
@@ -75,9 +80,9 @@ export function trackProjectSources(
   let timer: ReturnType<typeof setTimeout> | undefined;
   let stopped = false;
 
-  const publish = (sources: ProjectSource[]) => {
+  const publish = (sources: ProjectSource[], unlisted: string[] = []) => {
     const declarations = projectDeclarations(sources);
-    useProjectSources.setState({ sources, declarations });
+    useProjectSources.setState({ sources, declarations, unlisted });
     setProjectDeclarations(declarations.flatMap((group) => group.declarations));
   };
 
@@ -85,8 +90,12 @@ export function trackProjectSources(
     const mine = ++generation;
     const { isProjectOpen, fileTree, loadedFiles, projectConfig } = store.getState();
     if (!isProjectOpen || !fileTree) { publish([]); return; }
-    const sources = await readProjectSources({ tree: fileTree, libraries: configuredLibraries(projectConfig), loaded: loadedFiles, read });
-    if (!stopped && mine === generation) publish(sources);
+    const libraries = configuredLibraries(projectConfig);
+    const [sources, unlisted] = await Promise.all([
+      readProjectSources({ tree: fileTree, libraries, loaded: loadedFiles, read }),
+      unlistedSourceFiles(fileTree, libraries),
+    ]);
+    if (!stopped && mine === generation) publish(sources, unlisted);
   };
 
   const schedule = () => {

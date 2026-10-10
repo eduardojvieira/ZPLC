@@ -1,37 +1,22 @@
 /**
- * Library folders (IDE-023): folders of the project whose Structured Text files declare function blocks, functions and
- * data types that every editor offers (the palettes of FBD and LD, the completion and hover of ST).
- *
- * A folder is a library when `zplc.json` names it under `libraries`, as a path relative to the project root, with "/"
- * separators. That field is the interface the compiler work package of CMP-046 reads to build the folder into the
- * program; until it does, the editors know the library and the build reads only the files directly in `src`.
+ * Library folders (IDE-023): the folders `libraries` of zplc.json lists, whose Structured Text files declare function
+ * blocks, functions and data types that the build reads with `src` (CMP-046) and that every editor offers (the palettes
+ * of FBD and LD, the completion and hover of ST). The rules are the build's, from `buildOptions.ts` and the workspace
+ * reader of the Tool API: a library is a plain relative path, not `src` and not under `tests`; it is listed once,
+ * whatever its case; the files read are the ones directly in the folder, and a file anywhere else that no build reads is
+ * an unlisted source (`unlistedSources.ts`), which the tree marks and the build reports as not compiled.
  */
 import type { FileTreeNode } from '../types';
+import { buildOptionsOf, libraryFolderProblem } from './buildOptions';
+import { scanUnlistedSources, type ScanEntry } from './unlistedSources';
 
-declare module '../types' {
-  interface ZPLCProjectConfig {
-    /** Project-relative folders whose Structured Text files are libraries of the project. */
-    libraries?: string[];
-  }
-}
+const sameFolder = (left: string, right: string): boolean => left.toLowerCase() === right.toLowerCase();
 
-const normalize = (path: string): string => path.trim().replace(/^(\.\/)+/, '').replace(/\/+$/, '');
-
-/** A folder path that stays inside the project: relative, no `..`, no backslash, not empty. */
-const isProjectFolderPath = (path: string): boolean =>
-  path !== '' && !path.startsWith('/') && !path.includes('\\') && !path.split('/').some((segment) => segment === '' || segment === '.' || segment === '..');
-
-const inside = (path: string, folder: string): boolean => path === folder || path.startsWith(`${folder}/`);
-
-/** The library folders a configuration names, normalised and without repeats; anything that is not a project folder path is ignored. */
+/** The library folders a configuration lists, in order, as the build reads them: valid, and once each. */
 export function configuredLibraries(config: object | null | undefined): string[] {
-  const raw = (config as { libraries?: unknown } | null | undefined)?.libraries;
-  if (!Array.isArray(raw)) return [];
   const found: string[] = [];
-  for (const value of raw) {
-    if (typeof value !== 'string') continue;
-    const path = normalize(value);
-    if (isProjectFolderPath(path) && !found.includes(path)) found.push(path);
+  for (const folder of buildOptionsOf(config).libraries) {
+    if (libraryFolderProblem(folder) === undefined && !found.some((known) => sameFolder(known, folder))) found.push(folder);
   }
   return found;
 }
@@ -47,42 +32,51 @@ function findNode(tree: FileTreeNode, path: string): FileTreeNode | null {
 
 /** Why `path` cannot be added as a library, in words for the user; null when it can. */
 export function libraryProblem(path: string, tree: FileTreeNode | null, current: readonly string[]): string | null {
-  const folder = normalize(path);
-  if (folder === '') return 'The project root cannot be a library: choose a folder inside it.';
+  if (path === '') return 'The project root cannot be a library: choose a folder inside it.';
+  const rule = libraryFolderProblem(path);
+  if (rule) return rule;
+  if (current.some((library) => sameFolder(library, path))) return 'That folder is already a library.';
   if (!tree) return 'No project is open.';
-  const node = findNode(tree, folder);
+  const node = findNode(tree, path);
   if (!node) return 'That is not a folder of this project.';
-  if (node.type !== 'directory') return 'That is not a folder.';
-  if (current.includes(folder)) return 'That folder is already a library.';
-  const holder = current.find((library) => inside(folder, library));
-  return holder ? `That folder is inside the library ${holder}, which already includes it.` : null;
+  return node.type === 'directory' ? null : 'That is not a folder.';
 }
 
-/** The libraries with `path` added once; a library that holds folders already named replaces them. */
+/** The libraries with `path` added after the others, once. */
 export function addLibrary(current: readonly string[], path: string): string[] {
-  const folder = normalize(path);
-  return [...current.filter((library) => !inside(library, folder)), folder];
+  return current.some((library) => sameFolder(library, path)) ? [...current] : [...current, path];
 }
 
 export function removeLibrary(current: readonly string[], path: string): string[] {
-  const folder = normalize(path);
-  return current.filter((library) => library !== folder);
+  return current.filter((library) => !sameFolder(library, path));
 }
 
 /**
- * The Structured Text files that make up the project's sources for the editors: the ones the build reads (directly in
- * `src`) and every one under a library folder, at any depth, each once, in tree order.
+ * The Structured Text files the build reads, which the editors know the project by: the ones directly in `src` and
+ * directly in each library folder, in tree order. (A file in a folder inside a library is not read; it is unlisted.)
  */
 export function projectSourceFiles(tree: FileTreeNode | null, libraries: readonly string[]): FileTreeNode[] {
+  const folders = ['src', ...libraries].map((folder) => folder.toLowerCase());
   const found: FileTreeNode[] = [];
   const visit = (node: FileTreeNode): void => {
     if (node.type === 'file') {
-      const direct = node.path.startsWith('src/') && !node.path.slice('src/'.length).includes('/');
-      if (node.language === 'ST' && (direct || libraries.some((library) => inside(node.path, library)))) found.push(node);
+      const folder = node.path.includes('/') ? node.path.slice(0, node.path.lastIndexOf('/')) : '';
+      if (node.language === 'ST' && folders.includes(folder.toLowerCase())) found.push(node);
       return;
     }
     for (const child of node.children ?? []) visit(child);
   };
   if (tree) visit(tree);
   return found;
+}
+
+/** The Structured Text files of the project that no build reads, found with the walk of the Tool API over the tree. */
+export async function unlistedSourceFiles(tree: FileTreeNode | null, libraries: readonly string[]): Promise<string[]> {
+  if (!tree) return [];
+  const list = async (logical: string): Promise<ScanEntry[] | null> => {
+    const node = logical === '' ? tree : findNode(tree, logical);
+    if (!node || node.type !== 'directory') return null;
+    return (node.children ?? []).map((child) => ({ name: child.name, kind: child.type === 'directory' ? 'directory' as const : 'file' as const }));
+  };
+  return scanUnlistedSources(list, ['src', ...libraries]);
 }

@@ -40,7 +40,10 @@ export type {
 } from './types';
 export { parseNumber, parse } from './parser';
 export type { ParseResult } from './parser';
-export { emitBytecode, createZplcFile, createMultiTaskZplcFile, relocateBytecode, disassemble, hexDump, crc32 } from './codegen';
+export { emitBytecode, createZplcFile, createMultiTaskZplcFile, relocateBytecode, disassemble, hexDump, crc32, buildIdOf, readArtifact } from './codegen';
+export type { ArtifactInfo } from './codegen';
+export { analyzeDepths, DepthError } from './depth';
+export type { TaskDepth } from './depth';
 
 import { parse } from './parser';
 import { generate } from './codegen';
@@ -101,6 +104,7 @@ export function assemble(source: string, _options: AssemblerOptions = {}): Assem
         codeSize: parseResult.codeSize,
         tags: parseResult.tags,
         instructionMappings: parseResult.instructionMappings,
+        instructions: parseResult.instructions,
     };
 }
 

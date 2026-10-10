@@ -128,6 +128,19 @@ async function compile(app: App): Promise<{ kind: BuildKind; message: string }> 
   return { kind: buildKind(message), message };
 }
 
+/** Open a diagram file from the Explorer, and wait for its canvas (`ready` is a selector that exists once the editor has drawn it). */
+async function openDiagram(app: App, path: string, ready: string): Promise<void> {
+  await clickTreeFile(app, path);
+  await app.until(`${path.split('/').at(-1)} on its canvas`, async () => await app.visible(css(ready)) || undefined);
+}
+
+/** Open the Problems panel and activate its first entry with a real click. */
+async function activateFirstProblem(app: App): Promise<void> {
+  await app.click(tab('Problems'));
+  await app.until('a problem that can be activated', async () => await app.visible(css('[aria-label="Latest build diagnostics"] button')) || undefined);
+  await app.click(css('[aria-label="Latest build diagnostics"] button'), 'the first problem');
+}
+
 /** Edit Motor.st to use a variable that is not declared, save it, and build: the build must fail. */
 async function buildWithUndeclaredVariable(app: App, project: string): Promise<void> {
   await openFolder(app, project);
@@ -1204,7 +1217,77 @@ export const JOURNEYS: Journey[] = [
   },
 
   {
-    name: '25 The Welcome screen loads no editor', example: 'motor_start_stop', proves: [], partly: ['IDE-015'],
+    name: '25 Problems select the block of a diagram', example: 'blinky_fbd', proves: [], partly: ['LNG-003'],
+    run: async (app, { project }) => {
+      // the NOT block loses the wire into its input: the build says which block, and the problem has no line to go to
+      const file = join(project, 'src', 'main.fbd.json');
+      const model = JSON.parse(disk(file)) as { connections: Array<{ to: { block: string } }> };
+      model.connections = model.connections.filter((wire) => wire.to.block !== 'not_led');
+      writeFileSync(file, JSON.stringify(model, null, 2));
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.fbd.json', '.react-flow__node');
+      assert((await compile(app)).kind === 'failed', 'A diagram with an unwired input should not build.');
+      await activateFirstProblem(app);
+      await app.until('the block of the problem selected on the canvas', async () => await app.eval<boolean>(`document.querySelector('.react-flow__node.selected')?.getAttribute('data-id') === 'not_led'`) || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: selected nodes are ${JSON.stringify(await app.eval(`[...document.querySelectorAll('.react-flow__node.selected')].map((node) => node.getAttribute('data-id'))`))}`); });
+    },
+  },
+  {
+    name: '26 Problems select the cell of a rung', example: 'blinky', proves: [], partly: ['LNG-003'],
+    run: async (app, { project }) => {
+      // a contact reads a variable that the rung does not declare: the problem names the rung and the cell
+      const file = join(project, 'src', 'main.ld.json');
+      const model = JSON.parse(disk(file)) as { rungs: Array<{ id: string; grid: Array<Array<{ element: { id: string; variable?: string } | null }>> }> };
+      model.rungs[0]!.grid.flat().find((cell) => cell.element?.id === 'nc_led_off')!.element!.variable = 'Missing';
+      writeFileSync(file, JSON.stringify(model, null, 2));
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.ld.json', '[data-ld-rung-id]');
+      assert((await compile(app)).kind === 'failed', 'A rung with a contact on an undeclared variable should not build.');
+      await activateFirstProblem(app);
+      await app.until('the contact of the problem selected, with its properties', async () => await app.eval<boolean>(`document.querySelector('input[placeholder="Variable name"]')?.value === 'Missing'`) || undefined)
+        .catch((error: Error) => { throw new Error(`${error.message}: no element of the rung is selected after the problem was activated`); });
+    },
+  },
+  {
+    name: '27 Problems select the step of an action', example: 'blinky_sfc', proves: [], partly: ['LNG-003', 'LNG-026'],
+    run: async (app, { project }) => {
+      // the body of an action holds a statement that the compiler refuses: the problem is the action's, shown on its step
+      const file = join(project, 'src', 'main.sfc.json');
+      const model = JSON.parse(disk(file)) as { actions: Array<{ id: string; body: string }> };
+      const action = model.actions.find((candidate) => candidate.id === 'SET_LED_ON')!;
+      action.body = `Undeclared := TRUE;\n${action.body}`;
+      writeFileSync(file, JSON.stringify(model, null, 2));
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.sfc.json', '.react-flow__node');
+      assert((await compile(app)).kind === 'failed', 'A chart with an action that uses an undeclared variable should not build.');
+      await activateFirstProblem(app);
+      await app.until('the step that uses the action selected on the canvas', async () => await app.eval<boolean>(`document.querySelector('.react-flow__node.selected')?.getAttribute('data-id') === 'step_led_on'`) || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: selected nodes are ${JSON.stringify(await app.eval(`[...document.querySelectorAll('.react-flow__node.selected')].map((node) => node.getAttribute('data-id'))`))}`); });
+      const text = await app.eval<string>(`document.querySelector('[aria-label="Latest build diagnostics"]')?.innerText ?? ''`);
+      assert(text.includes("SFC action 'SET_LED_ON' body"), `The problem should say that it is in the body of the action: ${JSON.stringify(text)}`);
+    },
+  },
+  {
+    name: '28 A breakpoint on a rung stops execution', example: 'blinky', proves: [], partly: ['LNG-004', 'LNG-027'],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openDiagram(app, 'src/main.ld.json', '[data-ld-rung-id]');
+      const dot = css('[data-breakpoint-rung="rung_3"]');
+      const result = await compile(app);
+      assert(result.kind === 'built', `The Blinky Ladder example does not build: ${result.message}`);
+      await app.click(dot, 'the breakpoint dot of rung 3');
+      await app.until('the dot to say that the breakpoint is set', async () => await app.eval<boolean>(`${dot}?.getAttribute('aria-pressed') === 'true'`) || undefined);
+      await app.click(button('Connect'));
+      await app.until('the simulation to connect', async () => await app.visible(button('Disconnect')) || undefined);
+      await app.click(button('Run (F5)', 'prefix'));
+      await app.until('execution to stop at the rung', async () => await app.visible(button('Resume (F5)', 'prefix')) || undefined)
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the program keeps running past the breakpoint on rung 3`); });
+      await app.until('the rung where the program is stopped to be marked', async () => await app.eval<boolean>(`document.querySelector('[data-ld-rung-id="rung_3"]')?.className.includes('ring-2') === true`) || undefined);
+    },
+  },
+
+  {
+    name: '29 The Welcome screen loads no editor', example: 'motor_start_stop', proves: [], partly: ['IDE-015'],
     run: async (app, { project }) => {
       // What the page has fetched, as modules (the development host serves each one by its path). The page keeps the first
       // 250 resources unless told otherwise, so it is told to keep every one and loaded again from a clean start.
@@ -1236,7 +1319,7 @@ export const JOURNEYS: Journey[] = [
   },
 
   {
-    name: '26 Export a project to one archive and import it back', example: 'motor_start_stop', proves: [], partly: ['IDE-022'],
+    name: '30 Export a project to one archive and import it back', example: 'motor_start_stop', proves: [], partly: ['IDE-022'],
     run: async (app, { project, root }) => {
       const archive = join(root, 'motor.zplc.zip');
       const folder = join(root, 'imported');
@@ -1279,7 +1362,7 @@ export const JOURNEYS: Journey[] = [
   },
 
   {
-    name: '27 A version 1 project shows its migration before it is applied', example: 'none', proves: [], partly: ['IDE-022'],
+    name: '31 A version 1 project shows its migration before it is applied', example: 'none', proves: [], partly: ['IDE-022'],
     run: async (app, { project }) => {
       mkdirSync(join(project, 'src'), { recursive: true });
       const legacy = JSON.stringify({ name: 'Legacy', version: '1.0.0', tasks: [{ name: 'Main', type: 'CYCLIC', interval: 20, priority: 2, file: 'main.st' }] }, null, 2);
@@ -1311,7 +1394,7 @@ export const JOURNEYS: Journey[] = [
   },
 
   {
-    name: '28 Declarations in the tree, and a library folder offered to every editor', example: 'motor_start_stop', proves: [], partly: ['IDE-023'],
+    name: '32 Declarations in the tree, and a library folder offered to every editor', example: 'motor_start_stop', proves: [], partly: ['IDE-023'],
     run: async (app, { project }) => {
       mkdirSync(join(project, 'lib'));
       const library = ['(* A library file: the block of the project that the palettes and the completion offer. *)', 'FUNCTION_BLOCK Debounce', 'VAR_INPUT', '  Raw : BOOL;', 'END_VAR', 'VAR_OUTPUT', '  Clean : BOOL;', 'END_VAR', 'Clean := Raw;', 'END_FUNCTION_BLOCK', ''].join('\n');
@@ -1329,6 +1412,9 @@ export const JOURNEYS: Journey[] = [
       assert(await app.visible(declarations) && !await app.visible(declaration('Debounce')), 'A file outside src and the libraries was listed.');
       const group = await app.eval<string>(`document.querySelector('[data-declaration-file="src/Motor.st"]')?.innerText ?? ''`);
       assert(group.includes('src/Motor.st') && group.includes('Motor'), `The declarations are not grouped under their file: ${JSON.stringify(group)}`);
+      // The file of the folder that is not listed is one no build reads, and the tree and the section say so (CMP-046).
+      await app.until('the unlisted folder in the section', async () => await app.visible(css('[data-unlisted-folder="lib"]')) || undefined);
+      assert(!await app.eval<boolean>(`document.querySelector('[data-tree-node-id="dir:lib"]').innerText.includes('library')`), 'The folder is marked as a library before it is listed.');
 
       // The block of the library is not in the palette of the Ladder editor yet.
       await clickTreeFile(app, 'src/boiler.ld');
@@ -1348,22 +1434,34 @@ export const JOURNEYS: Journey[] = [
       await app.click(button('Add library'), 'the Add library button');
       await app.until('zplc.json to name the library', () => (JSON.parse(disk(join(project, 'zplc.json'))) as { libraries?: string[] }).libraries?.join() === 'lib' || undefined);
       await app.until('the block of the library in the tree', async () => await app.visible(declaration('Debounce')) || undefined);
+      await app.until('the library marked in the file tree', async () => await app.eval<boolean>(`document.querySelector('[data-tree-node-id="dir:lib"]')?.innerText.includes('library') === true`) || undefined);
+      assert(!await app.visible(css('[data-unlisted-folder="lib"]')), 'The folder is still reported as not compiled after it is listed.');
       await app.until('the block of the library in the Ladder palette', async () => await app.eval<boolean>(`${toolbox}?.innerText.includes('Debounce') === true`) || undefined);
 
       // Activating a declaration opens its file with the cursor on it.
       await app.click(declaration('Debounce'), 'the Debounce declaration');
       await app.until('Debounce.st in the editor, the cursor on the block', async () => (await editorText(app)).includes('FUNCTION_BLOCK Debounce') && (await editorView(app)).line === 2 || undefined);
 
-      // Taking the library away takes the block away from the tree and the palette.
+      // The build reads the library with src: it builds, with the library file in the program.
+      const built = await compile(app);
+      assert(built.kind === 'built', `The project with its library did not build: ${built.message}`);
+
+      // Taking the library away takes the block away from the tree and the palette, and the file is not compiled again.
       await app.click(tab('Explorer', 'exact'));
       await app.click(button('Remove library lib'), 'Remove library lib');
       await app.until('the block gone from the tree', async () => !await app.visible(declaration('Debounce')) || undefined);
       assert((JSON.parse(disk(join(project, 'zplc.json'))) as { libraries?: string[] }).libraries?.length === 0, 'zplc.json still names the library.');
+      await app.until('the folder reported as not compiled again', async () => await app.visible(css('[data-unlisted-folder="lib"]')) || undefined);
+
+      // The section offers to list the folder, which is the same change as the dialog.
+      await app.click(button('List lib as a library'), 'List lib as a library');
+      await app.until('zplc.json to name the library again', () => (JSON.parse(disk(join(project, 'zplc.json'))) as { libraries?: string[] }).libraries?.join() === 'lib' || undefined);
+      await app.until('the block back in the tree', async () => await app.visible(declaration('Debounce')) || undefined);
     },
   },
 
   {
-    name: '29 Declared interlock coverage has a tab of its own', example: 'motor_start_stop', proves: [], partly: ['IDE-032'],
+    name: '33 Declared interlock coverage has a tab of its own', example: 'motor_start_stop', proves: [], partly: ['IDE-032'],
     run: async (app, { project }) => {
       const view = css('[data-interlock-coverage]');
       await openFolder(app, project);

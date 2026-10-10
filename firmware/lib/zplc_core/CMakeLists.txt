@@ -40,6 +40,13 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
+# 32-bit x86: gcc defaults to x87 arithmetic, which rounds a double-precision result twice. The VM computes its
+# double-precision results in integer arithmetic and does not depend on this; the host `double` that the test
+# models take as the reference does. Zephyr's 32-bit native_sim sets the same flags.
+if(NOT MSVC AND CMAKE_SIZEOF_VOID_P EQUAL 4 AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64|i[3-6]86|x86)$")
+    add_compile_options(-msse2 -mfpmath=sse)
+endif()
+
 # Compiler flags: Warnings as errors
 if(MSVC)
     add_compile_definitions(

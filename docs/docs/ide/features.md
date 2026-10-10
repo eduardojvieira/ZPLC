@@ -76,7 +76,7 @@ run. It checks the scenarios, not the machine: it does not establish physical sa
 `zplc-cli safety-check` and the MCP tool `safety_check` give the same answer.
 
 Evidence level: host. `src/components/InterlockCoverage.test.tsx` renders the view, `workspaceSafetyPresentation.test.ts`
-covers the answer, and journey 29 of `bun run test:journeys` runs the check in the real application.
+covers the answer, and journey 33 of `bun run test:journeys` runs the check in the real application.
 
 ## One result from Studio, the CLI and the MCP tools
 
@@ -95,31 +95,34 @@ compares the results. It does not cover a board.
 ## Declarations and library folders
 
 Under the file tree, the Explorer has a **Declarations** section (closed until you open it with its heading, which
-shows how many there are). It lists the declarations of the project: the programs, function blocks, functions,
-interfaces and data types that its Structured Text files declare, grouped under their file. Choosing one opens its file
-with the cursor on its name. The list covers the files the build reads (directly in `src`) and the files of the
-library folders, open or not, and it follows what you type.
+shows how many there are and how many files are not compiled). It lists the declarations of the project: the programs,
+function blocks, functions, interfaces and data types that its Structured Text files declare, grouped under their
+file. Choosing one opens its file with the cursor on its name. The list covers the files the build reads and follows
+what you type.
 
-A **library folder** is a folder of the project whose Structured Text files every editor offers: **Library folder...**
-in the Declarations section adds one, and its **x** takes it away. The choice is written to `zplc.json`:
+The build reads the Structured Text files directly in `src` and directly in each **library folder** that `zplc.json`
+lists under `libraries` (CMP-046), and everything they declare is visible to every program:
 
 ```json
 { "libraries": ["lib", "vendor/acme"] }
 ```
 
-The paths are relative to the project folder, with `/`. The declarations of a library appear in the Declarations list,
-in the palettes of the FBD and LD editors (the **Project** group) and in the completion and hover of the ST editor.
-A library folder that is renamed or deleted stays in the list, marked "not in the project", until you remove it. A
-project that is waiting for its version 1 migration to be applied cannot change its libraries until it is.
+A library is a relative path of plain names with `/`, inside the project, listed once; `src` and `tests` are not
+libraries. **Library folder...** in the Declarations section adds one (and writes `zplc.json`), its **x** takes it away,
+and the file tree marks the folder `library`. The declarations of a library appear in the Declarations list, in the
+palettes of the FBD and LD editors (the **Project** group) and in the completion and hover of the ST editor.
 
-Limit: the build still reads only the files directly in `src`. Building a library folder into the program is the
-compiler work CMP-046 (the field above is the interface it reads), so a program that uses a block of a library compiles
-today only when the block's file is also in `src`.
+A Structured Text file that is neither in `src` nor directly in a library folder is read by no build, and Studio says
+so the way the build does: the file is marked `not compiled` in the tree, the section lists its folder with a **List as
+library** button, and **Build** reports `SOURCE_NOT_COMPILED`. A folder inside a library is not read either; list it as
+a library of its own. A library folder that is renamed or deleted stays in the list, marked "not in the project", until
+you remove it. A project that is waiting for its version 1 migration to be applied cannot change its libraries until it
+is.
 
-Evidence level: host. `src/project/projectDeclarations.test.ts`, `src/project/libraries.test.ts`,
-`src/store/projectSources.test.ts` and `src/components/stLanguageService.project.test.ts` cover the model, the sources
-and the editor services; journey 28 of `bun run test:journeys` adds a library in the real application and checks the
-tree, the Ladder palette and the cursor.
+Evidence level: host. `src/project/libraries.test.ts`, `src/project/unlistedSources.test.ts`,
+`src/store/projectSources.test.ts` and `src/components/stLanguageService.project.test.ts` cover the rules, the sources
+and the editor services; journey 32 of `bun run test:journeys` lists a library in the real application, checks the
+tree, the Ladder palette and the cursor, and builds the project with it.
 
 ## Project archives
 
@@ -141,7 +144,7 @@ all. **Export Project** next to it keeps writing the JSON document of the files 
 secrets); that document does not import.
 
 Evidence level: host. `electron/projectArchiveZip.test.ts` and `electron/projectArchive.test.ts` cover the format, the
-refusals and a round trip on real folders; journey 26 of `bun run test:journeys` exports and imports a project in the
+refusals and a round trip on real folders; journey 30 of `bun run test:journeys` exports and imports a project in the
 real application and compares the two folders.
 
 ## Closing with unsaved changes
@@ -175,7 +178,7 @@ suggestions, hover, go to definition and references, and the difference view), a
 TypeScript language services or its other languages. The installer holds no source maps.
 
 Evidence level: host. `packages/zplc-ide/scripts/welcomeBundle.test.ts` builds Studio, reads the chunks the Welcome page
-loads at start and the files the installer packages; journey 25 (the Welcome screen loads no editor) of
+loads at start and the files the installer packages; journey 29 (the Welcome screen loads no editor) of
 `bun run test:journeys` checks the same in the development host of the real application. No packaged installer was
 inspected.
 

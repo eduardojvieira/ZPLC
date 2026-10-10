@@ -112,9 +112,21 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-005-integer-narrowing-keeps-the-low-bits-and-warns.expect.json","test":"CMP-005 an integer stored in a narrower type keeps its low bits and the build warns"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-005-real-assigned-to-dint.expect.json","test":"CMP-005 a REAL expression assigned to a DINT is rejected"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-005-real-in-a-bit-operation.expect.json","test":"CMP-005 a REAL operand of AND is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-string-as-a-condition.expect.json","test":"CMP-005 a STRING is not a condition"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-string-as-initial-value-of-an-int.expect.json","test":"CMP-005 a string is not the initial value of an INT"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-string-assigned-to-bool.expect.json","test":"CMP-005 a STRING value is not assigned to a BOOL"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-string-assigned-to-int.expect.json","test":"CMP-005 a STRING value is not assigned to an INT"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-string-compared-with-a-number.expect.json","test":"CMP-005 a STRING is not compared with a number"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-string-length-goes-to-a-number.expect.json","test":"CMP-005 the length and the position of a text are numbers and go to a number"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-string-literal-assigned-to-time.expect.json","test":"CMP-005 a string literal is not assigned to a TIME"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-string-passed-to-a-numeric-parameter.expect.json","test":"CMP-005 a STRING argument is not passed to a numeric parameter"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-string-returned-from-a-numeric-function.expect.json","test":"CMP-005 a STRING value is not the return value of an INT function"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-005-time-assigned-to-int.expect.json","test":"CMP-005 a TIME assigned to an INT is rejected"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-005-widening-and-explicit-conversions.expect.json","test":"CMP-005 a value goes to a wider type of its kind, and an integer to a REAL, without a conversion function"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-005-widening-masks-and-constants-do-not-warn.expect.json","test":"CMP-005 a widening, a mask, a remainder and a constant that fit build without a warning"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-wstring-assigned-to-real.expect.json","test":"CMP-005 a WSTRING value is not assigned to a REAL"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lreal-narrowed-to-real-is-reported.expect.json","test":"CMP-005 An LREAL assigned to a REAL builds with the IMPLICIT_NARROWING warning and is rounded"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/typecheck.test.ts","test":"a STRING or WSTRING is not a number, a BOOL or a time (CMP-005)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/typecheck.test.ts","test":"an integer stored in a narrower type is a warning (CMP-005, CMP-016)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/typecheck.test.ts","test":"call arguments and return values are checked (CMP-005)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/typecheck.test.ts","test":"conditions and operators (CMP-005)"},
@@ -162,6 +174,18 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/index.test.ts","test":"prints every error of a single file, one line each, and the warnings of a file that builds (CMP-007, CMP-031)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"returns every independent error of a source, each with its position (CMP-006, CMP-007)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"returns the errors of every source of the project, each with its file (CMP-007)"}
+  ],
+  "CMP-008": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-008-constant-false-branch-is-not-unreachable.expect.json","test":"CMP-008 a branch that a constant condition disables is not unreachable code"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-008-real-literal-without-fraction-warns.expect.json","test":"CMP-008 a real literal with an exponent and no fraction builds and is reported as non-IEC"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-008-statement-after-return-is-unreachable.expect.json","test":"CMP-008 a statement after RETURN is reported as unreachable and never runs"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-008-unused-variable-is-reported.expect.json","test":"CMP-008 a variable that is never read nor written is reported at its declaration"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-008-write-only-variable-is-not-reported-by-default.expect.json","test":"CMP-008 a variable that is read is not reported, however often it is written"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/warnings.test.ts","test":"non-IEC spellings (CMP-008, CMP-031)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/warnings.test.ts","test":"the selection of warnings by the compiler.warnings option (CMP-008)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/warnings.test.ts","test":"unreachable statements (CMP-008)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/warnings.test.ts","test":"unused variables (CMP-008)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/libraries.test.ts","test":"compiler.warnings (CMP-008)"}
   ],
   "CMP-009": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-009-block-comment-never-closed.expect.json","test":"CMP-009 an unterminated /* comment is reported where it opens"},
@@ -214,6 +238,8 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-012-uint-65535.expect.json","test":"CMP-012 UINT 65535 compares and widens as a positive number"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-012-uint-compare-above-int16.expect.json","test":"CMP-012 UINT comparison above 32767"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-012-usint-holds-0-to-255.expect.json","test":"CMP-012 USINT holds 0 to 255 and compares as unsigned"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lint-literals-over-the-full-range.expect.json","test":"CMP-012 Literals of the full 64-bit range, in decimal, hexadecimal, octal and binary"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-ulint-division-above-2-63.expect.json","test":"CMP-012 ULINT division and MOD treat the dividend as unsigned"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_arith_edges.c","test":"The same pattern orders differently signed and unsigned: the compiler picks LT/GT or LTU/GTU by type (CMP-012)."}
   ],
   "CMP-013": [
@@ -232,7 +258,9 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-013-real-negative-literal.expect.json","test":"CMP-013 REAL negative literal"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-013-real-negative-zero-equals-zero.expect.json","test":"CMP-013 REAL -0.0 equals 0.0 and is not below it"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-013-real-order-with-signs.expect.json","test":"CMP-013 REAL comparison orders negatives, zero and positives"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-013-real-plus-integer-literal.expect.json","test":"CMP-013 REAL plus an integer literal"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-013-real-plus-integer-literal.expect.json","test":"CMP-013 REAL plus an integer literal"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lreal-comparisons-and-nan.expect.json","test":"CMP-013 LREAL comparison: ordering, signed zeros, infinities and NaN"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lreal-literals-with-exponent.expect.json","test":"CMP-013 LREAL literals in every notation the language reads"}
   ],
   "CMP-014": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-014-and-or-xor-word.expect.json","test":"CMP-014 AND, OR and XOR on WORD use the full 16 bits"},
@@ -243,22 +271,53 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-014-rol-byte-rotates-within-8-bits.expect.json","test":"CMP-014 ROL on a BYTE rotates within 8 bits"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-014-ror-word-rotates-within-16-bits.expect.json","test":"CMP-014 ROR on a WORD rotates within 16 bits"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-014-shl-byte-keeps-8-bits.expect.json","test":"CMP-014 SHL on a BYTE drops the bits shifted past bit 7"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-014-shr-and-word-logic-functions.expect.json","test":"CMP-014 SHR, AND_WORD, OR_WORD, XOR_WORD, NOT_WORD and their DWORD forms use the full width"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-014-shr-and-word-logic-functions.expect.json","test":"CMP-014 SHR, AND_WORD, OR_WORD, XOR_WORD, NOT_WORD and their DWORD forms use the full width"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lword-shifts-and-rotates-use-64-bits.expect.json","test":"CMP-014 SHL, SHR, ROL and ROR on an LWORD work on all 64 bits"}
   ],
   "CMP-015": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-015-dt-plus-time-and-difference.expect.json","test":"CMP-015 DT compares and takes a TIME; the difference of two DT is a TIME"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lint-abs-and-negate.expect.json","test":"CMP-015 ABS and unary minus on LINT"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-015-lint-add-and-subtract-carry.expect.json","test":"CMP-015 LINT addition and subtraction carry across the 32-bit word boundary"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lint-case-selector-and-labels.expect.json","test":"CMP-015 CASE selects on a LINT with labels beyond 32 bits, ranges and ELSE"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lint-compare-signed-and-unsigned-order.expect.json","test":"CMP-015 The same 64 bits order differently as LINT and as ULINT"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-015-lint-extreme-values.expect.json","test":"CMP-015 LINT holds 9223372036854775807 and -9223372036854775808"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lint-for-counter-crosses-32-bits.expect.json","test":"CMP-015 A FOR loop counts a LINT across 2^32"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-015-lint-function-parameter-and-result.expect.json","test":"CMP-015 a LINT passes through a FUNCTION parameter and result"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-015-lint-literal-above-int32.expect.json","test":"CMP-015 LINT holds a literal above 4294967295"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lint-multiplication-is-refused.expect.json","test":"CMP-015 a LINT multiplication is refused until the VM has the opcode"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lint-mixed-width-arithmetic.expect.json","test":"CMP-015 A DINT, a LINT and a literal in one expression are computed in 64 bits"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lint-multiplication-wraps-at-64-bits.expect.json","test":"CMP-015 LINT multiplication is the low 64 bits of the product"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-015-lint-small-value.expect.json","test":"CMP-015 LINT initialised and incremented"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-015-lint-widens-and-narrows.expect.json","test":"CMP-015 a LINT takes a DINT with its sign and a UDINT without one; a DINT takes the low word"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lreal-abs-sqrt-limit-select.expect.json","test":"CMP-015 ABS, SQRT, MAX, MIN, LIMIT, SEL and MUX on LREAL and LINT"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lreal-addition-subtraction-keep-52-bits.expect.json","test":"CMP-015 LREAL + and - give the IEEE 754 double result"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lreal-and-lint-globals-members-and-retained-start-from-their-initial-values.expect.json","test":"CMP-015 LREAL and LINT globals, structure members and retained globals are initialised once, as two cells"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lreal-and-lint-in-arrays-structures-and-calls.expect.json","test":"CMP-015 LREAL and LINT in an array, a structure and through function calls"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lreal-and-lint-keep-their-place-between-narrow-neighbours.expect.json","test":"CMP-015 A 64-bit value between BOOL, BYTE and INT members does not overlap them, in a structure, an array of structures and a block"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lreal-and-lint-through-references-and-in-out-parameters.expect.json","test":"CMP-015 A REF_TO LREAL or LINT and a VAR_IN_OUT of 64 bits read and write the whole value"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-015-lreal-double-precision.expect.json","test":"CMP-015 LREAL keeps double precision"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lreal-keeps-its-value-between-scans.expect.json","test":"CMP-015 An LREAL and a LINT accumulate over scans, and a retained LREAL is initialised once"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lreal-literal-takes-the-type-of-its-context.expect.json","test":"CMP-015 A real literal in an LREAL expression is a double"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lreal-mixed-with-integers-and-real.expect.json","test":"CMP-015 LREAL meets integers and REAL: the narrower side is converted"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lreal-multiplication-and-division.expect.json","test":"CMP-015 LREAL * and / give the IEEE 754 double result"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lreal-transcendental-functions-compute-in-real.expect.json","test":"CMP-015 SIN, COS, EXP, LN, ATAN of an LREAL are LREAL results of REAL accuracy"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-015-mixed-width-locals-keep-their-values.expect.json","test":"CMP-015 locals of every width declared in turn each keep their own value"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-015-ulint-compares-unsigned.expect.json","test":"CMP-015 ULINT 18446744073709551615 is above 1 and LWORD bit operations are 64 bits wide"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-ulint-case-label-above-2-63.expect.json","test":"CMP-015 CASE on a ULINT matches a label above 2^63"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-ulint-compares-unsigned.expect.json","test":"CMP-015 ULINT 18446744073709551615 is above 1 and LWORD bit operations are 64 bits wide"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-ulint-for-counter-up-to-the-top.expect.json","test":"CMP-015 A FOR loop with a ULINT counter and a constant step"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-ulint-multiplication-is-unsigned.expect.json","test":"CMP-015 ULINT multiplication gives the unsigned 64-bit product"},
+    {"kind":"unit","ref":"tools/ci/gen-cmp015-cases.test.ts","test":"the cases of CMP-015 generated by tools/ci/gen_cmp015_cases.py"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_opcode_coverage.c","test":"64-bit integer and double-precision opcodes (CMP-015)"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sandbox.c","test":"CMP-015: a two-word operand is two stack words, and the verifier proves it from the table."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_arith_edges.c","test":"The 64-bit integer and double-precision opcodes (CMP-015) have their own"}
   ],
   "CMP-016": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lint-division-by-zero-faults.expect.json","test":"CMP-016 LINT division by zero ends the scan in a VM fault, as DINT does"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lint-division-truncates-toward-zero.expect.json","test":"CMP-016 LINT division and MOD follow the sign of the dividend"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lint-modulo-by-zero-faults.expect.json","test":"CMP-016 LINT MOD by zero ends the scan in a VM fault"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lreal-division-by-zero-faults.expect.json","test":"CMP-016 LREAL division by zero ends the scan in a VM fault, as REAL does"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lreal-nan-and-infinity-propagate.expect.json","test":"CMP-016 NaN and infinity propagate through LREAL arithmetic"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-ulint-division-by-zero-faults.expect.json","test":"CMP-016 ULINT division by zero ends the scan in a VM fault"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-ulint-modulo-by-zero-faults.expect.json","test":"CMP-016 ULINT MOD by zero ends the scan in a VM fault"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-016-dint-abs-min.expect.json","test":"CMP-016 ABS of the most negative DINT is the most negative DINT"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-016-dint-add-wraps.expect.json","test":"CMP-016 DINT addition wraps in two's complement"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-016-dint-min-divided-by-minus-one.expect.json","test":"CMP-016 the most negative DINT divided by -1 is the most negative DINT"},
@@ -503,10 +562,12 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-031-typed-literals-of-each-kind.expect.json","test":"CMP-031 typed literals of integer, bit string, BOOL and REAL types"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/syntax.test.ts","test":"lexer: numbers (CMP-031)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/syntax.test.ts","test":"parser: expressions (CMP-031, CMP-032)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/warnings.test.ts","test":"non-IEC spellings (CMP-008, CMP-031)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/index.test.ts","test":"prints every error of a single file, one line each, and the warnings of a file that builds (CMP-007, CMP-031)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"reports a build that passed with what it accepted and the language reference does not define (CMP-031)"}
   ],
   "CMP-032": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lint-and-lword-bit-access.expect.json","test":"CMP-032 A bit of a LINT or an LWORD above bit 31 is read and written"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-032-ampersand-binds-tighter-than-or.expect.json","test":"CMP-032 & has the precedence of AND"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-032-ampersand-operator.expect.json","test":"CMP-032 the & operator"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-032-bit-access-of-bool-rejected.expect.json","test":"CMP-032 a bit of a BOOL is rejected"},
@@ -606,6 +667,8 @@
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/control-flow.test.ts","test":"CASE labels (CMP-040 stopgap)","partial":true}
   ],
   "CMP-041": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-interface-references-stay-one-cell-beside-64-bit-values.expect.json","test":"CMP-041 A variable of an interface type is one cell, in a block between 64-bit members, as an argument and in an array"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lreal-and-lint-results-of-methods-and-interface-calls.expect.json","test":"CMP-041 A method returns an LREAL or a LINT as two cells, called by name, through SUPER^ and through an interface"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-041-abstract-block-cannot-be-instantiated.expect.json","test":"CMP-041 a variable of an ABSTRACT function block is rejected"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-041-abstract-method-is-run-by-the-derived-block.expect.json","test":"CMP-041 a method of an ABSTRACT block calls the abstract method that the derived block implements"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-041-abstract-method-left-unimplemented-is-rejected.expect.json","test":"CMP-041 a block that extends an ABSTRACT one and leaves its abstract method unimplemented is rejected"},
@@ -661,10 +724,24 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-044-located-memory-overlap.expect.json","test":"CMP-044 a variable that overlaps an AT %M variable is rejected"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-044-located-memory-variable.expect.json","test":"CMP-044 a variable located in the work memory (%MW0) keeps its value between scans"}
   ],
+  "CMP-046": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/libraries.test.ts","test":"a library folder of the project (CMP-046)"}
+  ],
   "CMP-047": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-047-direct-addresses-of-every-width.expect.json","test":"CMP-047 a direct input of each width reaches a direct output of the same width"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-047-two-cyclic-tasks-of-one-interval.expect.json","test":"CMP-047 two cyclic tasks of one interval each run their program on every scan"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-047-two-programs-writing-one-output-are-rejected.expect.json","test":"CMP-047 two programs that write the same physical output are rejected at the second declaration"}
+  ],
+  "CMP-049": [
+    {"kind":"unit","ref":"packages/zplc-compiler/src/assembler/assembler.test.ts","test":"relocateBytecode refuses a relocation past 16 bits instead of wrapping it (CMP-049)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/assembler/fields.test.ts","test":"an operand that does not fit its field is an error, not a truncation (CMP-049)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/assembler/fields.test.ts","test":"the container fields are checked, not masked (CMP-049)"}
+  ],
+  "CMP-050": [
+    {"kind":"unit","ref":"packages/zplc-compiler/src/assembler/artifact.test.ts","test":"the call depth of a task is a field of its definition (CMP-050)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/depths.test.ts","test":"a depth over the limit of the target fails the build (CMP-050)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/depths.test.ts","test":"the depth of a task is measured and recorded in the artifact (CMP-050)"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_loader_verify.c","test":"CMP-050: the depth a task declares is proved, and 0 declares nothing. A"}
   ],
   "CMP-052": [
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/compiler.test.ts","test":"records the draft contract counter in the artifact of every entry point (CMP-052)"},
@@ -694,7 +771,15 @@
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/debug-map.test.ts","test":"statement ranges (CMP-055)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/conformance/conformance.test.ts","test":"CMP-055 every instruction of a statement resolves to that statement in the debug map"}
   ],
+  "CMP-056": [
+    {"kind":"unit","ref":"packages/zplc-compiler/src/assembler/artifact.test.ts","test":"the build identity of an artifact (CMP-056)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/depths.test.ts","test":"the build identity ties a debug map to its program (CMP-056)"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_loader_verify.c","test":"CMP-056: the build identity is one 32-bit value in a BUILD segment, once,"}
+  ],
   "CMP-057": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-integer-width-conversion-functions.expect.json","test":"CMP-057 The conversion functions between the 64-bit and the narrower integers"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lreal-conversion-functions.expect.json","test":"CMP-057 The conversion functions between LREAL, REAL and the integers"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-lreal-trunc-and-round.expect.json","test":"CMP-057 TRUNC and ROUND on LREAL are exact"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-057-bool-and-round-conversions.expect.json","test":"CMP-057 BOOL_TO_INT, INT_TO_BOOL and ROUND"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-057-conversions-to-bool-and-from-bool.expect.json","test":"CMP-057 a value converts to BOOL as not zero and BOOL converts to 0 or 1"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-057-dint-to-real-exists.expect.json","test":"CMP-057 DINT_TO_REAL exists"},
@@ -781,6 +866,16 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-trigonometric-functions.expect.json","test":"CMP-058 SIN, COS and TAN of positive and negative angles in radians"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-uptime-follows-the-clock.expect.json","test":"CMP-058 UPTIME returns the milliseconds since the start, and CYCLE_TIME and WATCHDOG_RESET can be called"}
   ],
+  "CMP-059": [
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/warnings.test.ts","test":"compiler.strictTypes (CMP-059)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/libraries.test.ts","test":"the options compiler.strictTypes, compiler.debug, compiler.optimization and build.generateDebugInfo (CMP-059)"}
+  ],
+  "CMP-060": [
+    {"kind":"unit","ref":"packages/zplc-compiler/src/assembler/fields.test.ts","test":"every directive has its documented effect (CMP-060)"}
+  ],
+  "CMP-061": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/compilerSourceLint.test.ts","test":"the sources of the compiler that are not tests (CMP-061)"}
+  ],
   "LNG-001": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"15 New file: create, edit, save, reopen","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"3 Edit Structured Text, save, reopen","partial":true},
@@ -799,8 +894,48 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"LD power flow (LNG-021, LNG-022, LNG-002)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"SFC scan semantics (LNG-024, LNG-025, LNG-002)"}
   ],
+  "LNG-003": [
+    {"kind":"conformance","ref":"conformance/lng/lng-003-fbd-compiler-error-names-the-block.expect.json","test":"LNG-003 an error the compiler finds in the code of an FBD block is reported against the block"},
+    {"kind":"conformance","ref":"conformance/lng/lng-003-il-compiler-error-names-the-il-line.expect.json","test":"LNG-003 an error the compiler finds in the code of an IL line is reported on that IL line"},
+    {"kind":"conformance","ref":"conformance/lng/lng-003-ld-undeclared-variable-names-the-cell.expect.json","test":"LNG-003 a Ladder contact on a variable that is not declared is reported against its rung and cell"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/visualDiagnostics.test.ts","test":"LNG-003 a Ladder diagnostic names the rung and the cell"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/visualDiagnostics.test.ts","test":"LNG-003 an FBD diagnostic names the block or the wire"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/visualDiagnostics.test.ts","test":"LNG-003 an IL diagnostic names its line"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/visualDiagnostics.test.ts","test":"LNG-003 and LNG-026 an SFC diagnostic names the step, the transition or the action"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/conformance/cases.test.ts","test":"LNG-003 asserts the element each diagnostic of a rejected diagram or IL program is about, one for each diagnostic"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/diagnosticElement.test.ts","test":"LNG-003 Problems selects the element that the build named"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/diagnosticElement.test.ts","test":"LNG-003 a request to select an element waits for the editor of its file"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/server.test.ts","test":"LNG-003 carries the element a diagnostic is about, and only an element"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"25 Problems select the block of a diagram","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"26 Problems select the cell of a rung","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"27 Problems select the step of an action","partial":true}
+  ],
+  "LNG-004": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/debugElements.test.ts","test":"LNG-004 the debug map of a Ladder diagram names rungs and cells"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/debugElements.test.ts","test":"LNG-004 the debug map of an FBD diagram names blocks"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/debugElements.test.ts","test":"LNG-004 the debug map of an IL program names IL lines"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/debugElements.test.ts","test":"LNG-004 the debug map of an SFC chart names steps and transitions"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/debugElements.test.ts","test":"LNG-004 the elements survive the debug map of a project built as one unit"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/debugElementsRuntime.test.ts","test":"LNG-004 a breakpoint on an element stops the VM at the element"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/elementBreakpoints.test.ts","test":"LNG-004 a breakpoint on an IL line is the line of the IL source"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/elementBreakpoints.test.ts","test":"LNG-004 a breakpoint on an element is armed at the element and follows it from build to build"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/sourceMap.test.ts","test":"LNG-004 and LNG-026 the SFC source map"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/sourceMap.test.ts","test":"LNG-004 the FBD source map"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/sourceMap.test.ts","test":"LNG-004 the IL source map"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/sourceMap.test.ts","test":"LNG-004 the Ladder source map"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28 A breakpoint on a rung stops execution","partial":true}
+  ],
   "LNG-005": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"7 Breakpoint stops execution","partial":true}
+  ],
+  "LNG-007": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every block of the FBD palette is placed, built and run"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every coil of the Ladder palette is run"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every contact of the Ladder palette is run"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every element of the SFC palette is run"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every function block of the Ladder palette is placed, built and run"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 the Ladder palette does not hide what the transpiler translates and offers nothing it refuses"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 the branch of the Ladder palette is run"}
   ],
   "LNG-008": [
     {"kind":"conformance","ref":"conformance/lng/lng-008-fbd-block-the-project-does-not-declare-is-rejected.expect.json","test":"LNG-008 an FBD block of a type that neither the library nor the project declares is rejected by name"},
@@ -810,6 +945,23 @@
   ],
   "LNG-009": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"9 Undo after switching tabs"}
+  ],
+  "LNG-011": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileLoad.schema.test.ts","test":"LNG-011 a variable is an object with a name and a type, in every language"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileLoad.schema.test.ts","test":"LNG-011 the parts of a Ladder file have the shape the editor reads"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileLoad.schema.test.ts","test":"LNG-011 the parts of an SFC chart have the shape the editor reads"}
+  ],
+  "LNG-013": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/graphModel.test.ts","test":"LNG-013 drawing a wire between two pins"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/models/pinTypes.test.ts","test":"LNG-013 a pin takes what the compiler would take"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/models/pinTypes.test.ts","test":"LNG-013 judging a wire of the diagram"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/models/pinTypes.test.ts","test":"LNG-013 the reason a pin gives"}
+  ],
+  "LNG-014": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileRoundTrip.test.ts","test":"LNG-014 the commit of an editor that changed nothing says what the file says"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileRoundTrip.test.ts","test":"LNG-014 the committed visual files"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileRoundTrip.test.ts","test":"LNG-014 the one form of a visual file"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/fileSystem.visualRoundTrip.test.ts","test":"LNG-014 open and save without an edit"}
   ],
   "LNG-017": [
     {"kind":"conformance","ref":"conformance/lng/lng-017-il-unbalanced-closing-parenthesis.expect.json","test":"LNG-017 an IL closing parenthesis without an opening one is an error on its line"},
@@ -885,8 +1037,17 @@
     {"kind":"conformance","ref":"conformance/lng/lng-025-sfc-timed-and-pulse-qualifiers.expect.json","test":"LNG-025 an SFC pulse runs once, a limited action for its time, a delayed one after it"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"SFC scan semantics (LNG-024, LNG-025, LNG-002)"}
   ],
+  "LNG-026": [
+    {"kind":"conformance","ref":"conformance/lng/lng-026-sfc-action-body-error-names-the-action.expect.json","test":"LNG-026 an error in an SFC action body is reported against the action"},
+    {"kind":"conformance","ref":"conformance/lng/lng-026-sfc-transition-condition-error-names-the-transition.expect.json","test":"LNG-026 an error in an SFC transition condition is reported against the transition"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/visualDiagnostics.test.ts","test":"LNG-003 and LNG-026 an SFC diagnostic names the step, the transition or the action"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/visualDiagnostics.test.ts","test":"LNG-026 a finding of the safety check in an action body is reported against the action"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/sourceMap.test.ts","test":"LNG-004 and LNG-026 the SFC source map"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"27 Problems select the step of an action","partial":true}
+  ],
   "LNG-027": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"16 Debug details: stop, trace, resume mid-scan","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28 A breakpoint on a rung stops execution","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"7 Breakpoint stops execution","partial":true}
   ],
   "RT-001": [

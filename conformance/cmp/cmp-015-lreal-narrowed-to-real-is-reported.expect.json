@@ -1,0 +1,38 @@
+{
+  "requirement": "CMP-005",
+  "title": "An LREAL assigned to a REAL builds with the IMPLICIT_NARROWING warning and is rounded",
+  "matrix": [
+    "data-types.lreal",
+    "functions.implicit-widening-conversion"
+  ],
+  "tags": [
+    "arch-sensitive",
+    "64-bit",
+    "float"
+  ],
+  "note": "IEC 61131-3 widens implicitly only; the narrowing is not refused (the bundled projects use it) but reported, as the integer narrowing is (CMP-005, CMP-016).",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "REAL",
+      "value": 0.10000000149011612
+    },
+    {
+      "at": "%QD1",
+      "type": "REAL",
+      "value": 0.20000000298023224
+    }
+  ],
+  "warnings": [
+    {
+      "code": "IMPLICIT_NARROWING",
+      "line": 7
+    },
+    {
+      "code": "IMPLICIT_NARROWING",
+      "line": 8
+    }
+  ]
+}

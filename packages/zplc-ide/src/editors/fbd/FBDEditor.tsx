@@ -15,7 +15,6 @@ import {
   Background,
   Controls,
   MiniMap,
-  addEdge,
   applyEdgeChanges,
   applyNodeChanges,
   useReactFlow,
@@ -27,11 +26,14 @@ import {
   type EdgeTypes,
   BackgroundVariant,
   ConnectionMode,
+  Panel,
+  type Connection,
+  type OnConnectEnd,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
 import { type FBDModel, type FBDBlock, type FBDConnection, getDefaultPorts } from '../../models/fbd';
-import { copyFBDFragment, edgesToConnections, hasCanonicalEdgeChanges, hasCanonicalNodeChanges, nodesToBlocks, pasteFBDFragment, uniqueNodeId, type FBDClipboardFragment } from './graphModel';
+import { blockNodeData, connectBlocks, copyFBDFragment, type WireEnds, edgesToConnections, hasCanonicalEdgeChanges, hasCanonicalNodeChanges, nodesToBlocks, pasteFBDFragment, uniqueNodeId, type FBDClipboardFragment } from './graphModel';
 import { nodeTypes, getNodeType } from './nodes';
 import { edgeTypes } from './edges';
 import FBDToolbox from './FBDToolbox';
@@ -40,6 +42,10 @@ import { useDebugValues } from '../../hooks/useDebugValue';
 import { useIDEStore } from '../../store/useIDEStore';
 import { findProjectBlock } from '../../models/projectBlocks';
 import { useProjectBlocks } from '../useProjectBlocks';
+import { useElementSelection } from '../elementSelection';
+import { useElementBreakpoints } from '../elementBreakpoints';
+import { markBreakpointNodes } from '../breakpointMarks';
+import { blockElement, parseElement, type SourceElementId } from '../../models/sourceElements';
 
 // =============================================================================
 // Props
@@ -78,15 +84,7 @@ function blocksToNodes(
     type: getNodeType(block.type),
     position: block.position,
     data: {
-      type: block.type,
-      instanceName: block.instanceName,
-      variableName: block.variableName,
-      address: block.address,
-      dataType: block.dataType,
-      value: block.value,
-      comment: block.comment,
-      inputs: block.inputs,
-      outputs: block.outputs,
+      ...blockNodeData(block),
       // Debug props
       debugActive,
       liveValues,
@@ -148,7 +146,7 @@ function FBDEditorInner({
   liveValues,
   onOpenMonitor,
 }: FBDEditorInnerProps) {
-  const { screenToFlowPosition } = useReactFlow();
+  const { screenToFlowPosition, fitView } = useReactFlow();
   const projectBlocks = useProjectBlocks();
 
   const updateNodeDataRef = useRef<((nodeId: string, data: Record<string, unknown>) => void) | undefined>(undefined);
@@ -222,17 +220,70 @@ function FBDEditorInner({
     replaceEdges(nextEdges);
   }, [debugActive, liveValues]);
 
+  // Breakpoints on blocks: execution stops at the first statement the block generates (LNG-004)
+  const breakpoints = useElementBreakpoints();
+  const markedNodes = useMemo(
+    () => markBreakpointNodes(nodes, (node) => blockElement(node.id), breakpoints),
+    [nodes, breakpoints],
+  );
+
+  // Activating a problem of this diagram selects the block or the wire it is about, and brings it into view (LNG-003)
+  const selectElement = useCallback((element: SourceElementId) => {
+    const parsed = parseElement(element);
+    if (parsed?.kind === 'block' && nodesRef.current.some((node) => node.id === parsed.id)) {
+      const nextNodes = nodesRef.current.map((node) => ({ ...node, selected: node.id === parsed.id }));
+      const nextEdges = edgesRef.current.map((edge) => edge.selected ? { ...edge, selected: false } : edge);
+      nodesRef.current = nextNodes;
+      edgesRef.current = nextEdges;
+      replaceNodes(nextNodes);
+      replaceEdges(nextEdges);
+      void fitView({ nodes: [{ id: parsed.id }], maxZoom: 1, duration: 200 });
+    } else if (parsed?.kind === 'connection' && edgesRef.current.some((edge) => edge.id === parsed.id)) {
+      const nextEdges = edgesRef.current.map((edge) => ({ ...edge, selected: edge.id === parsed.id }));
+      const nextNodes = nodesRef.current.map((node) => node.selected ? { ...node, selected: false } : node);
+      nodesRef.current = nextNodes;
+      edgesRef.current = nextEdges;
+      replaceNodes(nextNodes);
+      replaceEdges(nextEdges);
+    }
+  }, [fitView]);
+  useElementSelection(selectElement);
+
+  // A wire between pins of types that do not match is refused, and the reason is shown (LNG-013)
+  const [refusal, setRefusal] = useState<string | null>(null);
+  const modelRef = useRef(model);
+  useEffect(() => {
+    modelRef.current = model;
+  }, [model]);
+  const drawWire = useCallback(
+    (params: WireEnds) =>
+      connectBlocks(modelRef.current, nodesRef.current, edgesRef.current, params, projectBlocks),
+    [projectBlocks]
+  );
+
   // Handle new connections
   const onConnect: OnConnect = useCallback(
     (params) => {
       if (readOnly) return;
-      commitGraph(nodesRef.current, addEdge({
-        ...params,
-        type: 'smoothstep',
-        style: { stroke: 'var(--visual-wire)', strokeWidth: 2 },
-      }, edgesRef.current));
+      const wire = drawWire(params);
+      setRefusal(wire.refusal ?? null);
+      if (wire.refusal === undefined) commitGraph(nodesRef.current, wire.edges);
     },
-    [commitGraph, readOnly]
+    [commitGraph, drawWire, readOnly]
+  );
+
+  // The canvas does not call onConnect for a wire that isValidConnection refuses: the reason is read when the drag ends
+  const isValidConnection = useCallback(
+    (wire: Edge | Connection) => drawWire(wire).refusal === undefined,
+    [drawWire]
+  );
+  const onConnectEnd: OnConnectEnd = useCallback(
+    (_event, state) => {
+      if (state.isValid !== false || !state.fromNode || !state.toNode || !state.fromHandle?.id || !state.toHandle?.id) return;
+      const wire = drawWire({ source: state.fromNode.id, sourceHandle: state.fromHandle.id, target: state.toNode.id, targetHandle: state.toHandle.id });
+      if (wire.refusal !== undefined) setRefusal(wire.refusal);
+    },
+    [drawWire]
   );
 
   // Notify parent of changes
@@ -313,6 +364,13 @@ function FBDEditorInner({
   }, []);
 
   const onKeyDown = useCallback((event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'F9') {
+      const selected = nodesRef.current.filter((node) => node.selected);
+      if (selected.length === 0) return;
+      for (const node of selected) breakpoints.toggle(blockElement(node.id));
+      event.preventDefault();
+      return;
+    }
     if (readOnly || event.altKey || event.shiftKey || event.ctrlKey === event.metaKey) return;
     const target = event.target as HTMLElement;
     if (target.closest('input, textarea, select, [contenteditable="true"]')) return;
@@ -340,7 +398,7 @@ function FBDEditorInner({
     const nextEdges = [...edgesRef.current.map((edge) => ({ ...edge, selected: false })), ...connectionsToEdges(addedConnections, debugActive, liveValues)];
     event.preventDefault();
     commitGraph(nextNodes, nextEdges);
-  }, [commitGraph, debugActive, liveValues, model, onOpenMonitor, readOnly]);
+  }, [breakpoints, commitGraph, debugActive, liveValues, model, onOpenMonitor, readOnly]);
 
   return (
     <div
@@ -353,11 +411,13 @@ function FBDEditorInner({
       onKeyDown={onKeyDown}
     >
       <ReactFlow
-        nodes={nodes}
+        nodes={markedNodes}
         edges={edges}
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
         onConnect={onConnect}
+        onConnectEnd={onConnectEnd}
+        isValidConnection={isValidConnection}
         nodesDraggable={!readOnly}
         nodesConnectable={!readOnly}
         elementsSelectable={!readOnly}
@@ -380,6 +440,18 @@ function FBDEditorInner({
           size={1}
           color="var(--color-surface-500)"
         />
+        {refusal && (
+          <Panel position="top-center">
+            <div
+              role="alert"
+              data-wire-refused
+              className="max-w-xl rounded border border-[var(--color-accent-red)] bg-[var(--color-surface-800)] px-3 py-2 text-xs text-[var(--color-surface-100)] shadow"
+            >
+              <span className="font-semibold">Wire refused. </span>{refusal}
+              <button type="button" className="ml-2 underline" onClick={() => setRefusal(null)}>Dismiss</button>
+            </div>
+          </Panel>
+        )}
         <Controls
           className="!bg-[var(--color-surface-800)] !border-[var(--color-surface-600)] !rounded-lg"
           showZoom

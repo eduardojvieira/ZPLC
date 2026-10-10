@@ -2003,6 +2003,7 @@ static inline int zplc_opcode_is_valid(uint8_t opcode);
 | `zplc_segment_type_t` | Enum | Segment types. |
 | `id` | Struct | Task definition (16 bytes). |
 | `zplc_task_type_t` | Enum | Task types. |
+| `build_id` | Struct | Build identity, the payload of the BUILD segment (4 bytes). |
 | `var_addr` | Struct | I/O map entry (8 bytes). |
 | `zplc_io_direction_t` | Enum | I/O direction. |
 | `var_addr` | Struct | Variable tag entry (8 bytes). Used for mapping variables to communication protocols. |
@@ -2018,7 +2019,7 @@ static inline int zplc_opcode_is_valid(uint8_t opcode);
 | `ZPLC_MAGIC` | `0x434C505AU` | Magic number for .zplc files. |
 | `ZPLC_VERSION_MAJOR` | `1` | Current ISA major version |
 | `ZPLC_VERSION_MINOR` | `0` | Current ISA minor version |
-| `ZPLC_DRAFT_COUNTER` | `2U` | Draft contract counter (CMP-052). |
+| `ZPLC_DRAFT_COUNTER` | `4U` | Draft contract counter (CMP-052). |
 | `ZPLC_MEM_IPI_BASE` | `0x0000U` | Base address of Input Process Image |
 | `ZPLC_MEM_IPI_SIZE` | `0x1000U` | Size of Input Process Image (4 KB, fixed by spec) |
 | `ZPLC_MEM_OPI_BASE` | `0x1000U` | Base address of Output Process Image |
@@ -2048,10 +2049,11 @@ static inline int zplc_opcode_is_valid(uint8_t opcode);
 | `ZPLC_STRING_DATA_OFFSET` | `4` | — |
 | `ZPLC_STRING_DEFAULT_SIZE` | `80` | — |
 | `ZPLC_STRING_MAX_SIZE` | `255` | — |
-| `ZPLC_OPCODE_COUNT` | `78` | Number of defined opcodes. |
+| `ZPLC_OPCODE_COUNT` | `112` | Number of defined opcodes. |
 | `ZPLC_FILE_HEADER_SIZE` | `32` | Expected size of file header |
 | `ZPLC_SEGMENT_ENTRY_SIZE` | `8` | Expected size of segment entry |
 | `ZPLC_TASK_DEF_SIZE` | `16` | Expected size of task definition |
+| `ZPLC_BUILD_ENTRY_SIZE` | `4` | Expected size of the build identity |
 | `ZPLC_IOMAP_ENTRY_SIZE` | `8` | Expected size of I/O map entry |
 | `ZPLC_TAG_ENTRY_SIZE` | `8` | Expected size of tag entry |
 
@@ -2059,7 +2061,7 @@ static inline int zplc_opcode_is_valid(uint8_t opcode);
 
 ZPLC Binary File Loader
 
-Verifies the structural and bytecode integrity of .zplc files without changing runtime state. The current v1 subset accepts flags=0 and CODE, TASK, and TAGS segments only. The returned view borrows the input buffer.
+Verifies the structural and bytecode integrity of .zplc files without changing runtime state. The current v1 subset accepts flags=0 and CODE, TASK, TAGS and BUILD segments only. The returned view borrows the input buffer.
 
 Source: `firmware/lib/zplc_core/include/zplc_loader.h`
 
@@ -2713,13 +2715,15 @@ These tables are generated from `tools/contract/contract.json`, the single sourc
 | --- | --- | --- |
 | Magic number | `0x434C505A` | `5A 50 4C 43` = "ZPLC" |
 | ISA version (major.minor) | `1.0` |  |
-| Draft contract counter | `2` | Written in header word 28 of every artifact. The loader and Studio refuse an artifact, or a device image, whose counter differs from their own and show both numbers; 0 means an artifact built before the counter. It increases with every contract change until the freeze. |
+| Draft contract counter | `4` | Written in header word 28 of every artifact. The loader and Studio refuse an artifact, or a device image, whose counter differs from their own and show both numbers; 0 means an artifact built before the counter. It increases with every contract change until the freeze. |
 | File header size (bytes) | `32` |  |
 | Segment entry size (bytes) | `8` |  |
 | Task definition size (bytes) | `16` |  |
 | I/O map entry size (bytes) | `8` |  |
 | Tag entry size (bytes) | `8` |  |
 | Maximum tasks in an artifact | `16` |  |
+| Build identity size (bytes) | `4` |  |
+| Deepest evaluation stack the loader proves | `127` | A task that needs more is refused, whatever the target stack allows; the compiler fails the build above it. |
 | CRC32 | `0xEDB88320` | IEEE 802.3 polynomial 0xEDB88320, over the whole file except the 4 bytes at offset 12. |
 
 ### Layout of `zplc_file_header_t`
@@ -2755,7 +2759,14 @@ These tables are generated from `tools/contract/contract.json`, the single sourc
 | `4` | `interval_us` | `uint32_t` | 4 | Cycle time in microseconds |
 | `8` | `entry_point` | `uint16_t` | 2 | Code offset |
 | `10` | `stack_size` | `uint16_t` | 2 | Required stack depth |
-| `12` | `reserved` | `uint32_t` | 4 | Reserved (must be 0) |
+| `12` | `call_depth` | `uint16_t` | 2 | Call frames active at once, the task body included (1 for a task that calls nothing); 0 = not declared (CMP-050) |
+| `14` | `reserved` | `uint16_t` | 2 | Reserved (must be 0) |
+
+### Layout of `zplc_build_info_t`
+
+| Offset | Field | Type | Bytes | Description |
+| --- | --- | --- | --- | --- |
+| `0` | `build_id` | `uint32_t` | 4 | CRC-32 of CODE then TASK; never 0 (0 = not identified) |
 
 ### Layout of `zplc_iomap_entry_t`
 
@@ -2798,6 +2809,7 @@ These tables are generated from `tools/contract/contract.json`, the single sourc
 | `ZPLC_SEG_DEBUG` | `0x11` | Debug information |
 | `ZPLC_SEG_TASK` | `0x20` | Task definitions |
 | `ZPLC_SEG_TAGS` | `0x30` | Variable tags (networking metadata) |
+| `ZPLC_SEG_BUILD` | `0x40` | Build identity of the artifact (CMP-056) |
 
 ### Task types
 
@@ -2888,7 +2900,7 @@ A STRING is `[length:2][capacity:2][data:capacity+1]`, little-endian. The defaul
 
 ### Opcodes
 
-The operand size follows the opcode range (0x00-0x3F none, 0x40-0x7F 8-bit, 0x80-0xBF 16-bit, 0xC0-0xFF 32-bit), except `RET` and the conversions `I2F` to `ZEXT16`, which carry no operand. Stack effects list the top of the stack on the right.
+The operand size follows the opcode range (0x00-0x3F none, 0x40-0x7F 8-bit, 0x80-0xBF 16-bit, 0xC0-0xFF 32-bit), except `RET` and the opcodes `I2F` to `GED` (conversions and double-precision arithmetic and comparison), which carry no operand. Stack effects list the top of the stack on the right.
 
 | Code | Mnemonic | Operand | Stack effect | Flags | Description |
 | --- | --- | --- | --- | --- | --- |
@@ -2896,6 +2908,16 @@ The operand size follows the opcode range (0x00-0x3F none, 0x40-0x7F 8-bit, 0x80
 | `0x01` | `HALT` | 0 | `[] -> []` | `terminates` | Stop execution |
 | `0x02` | `BREAK` | 0 | `[] -> []` | — | Debugger breakpoint |
 | `0x03` | `GET_TICKS` | 0 | `[] -> [ticks]` | — | Push system tick (ms) to stack |
+| `0x04` | `MUL64` | 0 | `[alo ahi blo bhi] -> [lo hi]` | — | 64-bit integer multiplication (low 64 bits of the product, wraps) |
+| `0x05` | `DIVS64` | 0 | `[alo ahi blo bhi] -> [lo hi]` | — | 64-bit signed division; zero divisor faults, INT64_MIN / -1 is INT64_MIN |
+| `0x06` | `DIVU64` | 0 | `[alo ahi blo bhi] -> [lo hi]` | — | 64-bit unsigned division; zero divisor faults |
+| `0x07` | `MODS64` | 0 | `[alo ahi blo bhi] -> [lo hi]` | — | 64-bit signed modulo, sign of the dividend; zero divisor faults, b = -1 gives 0 |
+| `0x08` | `MODU64` | 0 | `[alo ahi blo bhi] -> [lo hi]` | — | 64-bit unsigned modulo; zero divisor faults |
+| `0x09` | `NEG64` | 0 | `[lo hi] -> [lo hi]` | — | 64-bit integer negation (INT64_MIN stays INT64_MIN) |
+| `0x0A` | `ABS64` | 0 | `[lo hi] -> [lo hi]` | — | 64-bit signed absolute value (INT64_MIN stays INT64_MIN) |
+| `0x0B` | `SHL64` | 0 | `[lo hi n] -> [lo hi]` | — | 64-bit shift left by a 32-bit unsigned count; 64 or more gives 0 |
+| `0x0C` | `SHR64` | 0 | `[lo hi n] -> [lo hi]` | — | 64-bit logical shift right; a count of 64 or more gives 0 |
+| `0x0D` | `SAR64` | 0 | `[lo hi n] -> [lo hi]` | — | 64-bit arithmetic shift right; a count of 64 or more gives 0 or -1 by the sign |
 | `0x10` | `DUP` | 0 | `[a] -> [a a]` | — | Duplicate top of stack |
 | `0x11` | `DROP` | 0 | `[a] -> []` | — | Discard top of stack |
 | `0x12` | `SWAP` | 0 | `[a b] -> [b a]` | — | Swap top two elements |
@@ -2966,6 +2988,30 @@ The operand size follows the opcode range (0x00-0x3F none, 0x40-0x7F 8-bit, 0x80
 | `0xA4` | `EXT16` | 0 | `[a] -> [r]` | — | Sign-extend 16-bit to 32-bit |
 | `0xA5` | `ZEXT8` | 0 | `[a] -> [r]` | — | Zero-extend 8-bit to 32-bit |
 | `0xA6` | `ZEXT16` | 0 | `[a] -> [r]` | — | Zero-extend 16-bit to 32-bit |
+| `0xA7` | `F2D` | 0 | `[f] -> [lo hi]` | — | REAL to LREAL (exact; every NaN becomes the quiet NaN) |
+| `0xA8` | `D2F` | 0 | `[lo hi] -> [f]` | — | LREAL to REAL, round to nearest even (overflow gives infinity) |
+| `0xA9` | `I2D` | 0 | `[a] -> [lo hi]` | — | Signed 32-bit integer to LREAL (exact) |
+| `0xAA` | `D2I` | 0 | `[lo hi] -> [a]` | — | LREAL to signed 32-bit integer: truncates toward zero, saturates, NaN gives 0 |
+| `0xAB` | `L2D` | 0 | `[lo hi] -> [lo hi]` | — | Signed 64-bit integer to LREAL, round to nearest even |
+| `0xAC` | `D2L` | 0 | `[lo hi] -> [lo hi]` | — | LREAL to signed 64-bit integer: truncates toward zero, saturates, NaN gives 0 |
+| `0xAD` | `U2D` | 0 | `[lo hi] -> [lo hi]` | — | Unsigned 64-bit integer to LREAL, round to nearest even |
+| `0xAE` | `D2U` | 0 | `[lo hi] -> [lo hi]` | — | LREAL to unsigned 64-bit integer: truncates toward zero, below 1.0 and NaN give 0, saturates |
+| `0xAF` | `L2F` | 0 | `[lo hi] -> [f]` | — | Signed 64-bit integer to REAL, one rounding to nearest even |
+| `0xB0` | `U2F` | 0 | `[lo hi] -> [f]` | — | Unsigned 64-bit integer to REAL, one rounding to nearest even |
+| `0xB1` | `ADDD` | 0 | `[alo ahi blo bhi] -> [lo hi]` | — | LREAL addition (IEEE 754 binary64, round to nearest even) |
+| `0xB2` | `SUBD` | 0 | `[alo ahi blo bhi] -> [lo hi]` | — | LREAL subtraction |
+| `0xB3` | `MULD` | 0 | `[alo ahi blo bhi] -> [lo hi]` | — | LREAL multiplication |
+| `0xB4` | `DIVD` | 0 | `[alo ahi blo bhi] -> [lo hi]` | — | LREAL division; a divisor of 0.0 or -0.0 faults |
+| `0xB5` | `NEGD` | 0 | `[lo hi] -> [lo hi]` | — | LREAL negation (flips the sign bit) |
+| `0xB6` | `ABSD` | 0 | `[lo hi] -> [lo hi]` | — | LREAL absolute value (clears the sign bit) |
+| `0xB7` | `SQRTD` | 0 | `[lo hi] -> [lo hi]` | — | LREAL square root, correctly rounded; 0.0 for an argument at or below 0.0 |
+| `0xB8` | `RNDD` | 0 | `[lo hi] -> [lo hi]` | — | LREAL rounded to the nearest integral value, a tie to the even one |
+| `0xB9` | `EQD` | 0 | `[alo ahi blo bhi] -> [flag]` | — | LREAL equal (false when either operand is a NaN) |
+| `0xBA` | `NED` | 0 | `[alo ahi blo bhi] -> [flag]` | — | LREAL not equal (true when either operand is a NaN) |
+| `0xBB` | `LTD` | 0 | `[alo ahi blo bhi] -> [flag]` | — | LREAL less than (false with a NaN) |
+| `0xBC` | `LED` | 0 | `[alo ahi blo bhi] -> [flag]` | — | LREAL less or equal (false with a NaN) |
+| `0xBD` | `GTD` | 0 | `[alo ahi blo bhi] -> [flag]` | — | LREAL greater than (false with a NaN) |
+| `0xBE` | `GED` | 0 | `[alo ahi blo bhi] -> [flag]` | — | LREAL greater or equal (false with a NaN) |
 | `0xC0` | `PUSH32` | 4 | `[] -> [imm]` | — | Push 32-bit immediate |
 | `0xD0` | `COMM_EXEC` | 4 | `[base] -> []` | `comm` | Execute/update Comm FB; pop base addr from stack |
 | `0xD1` | `COMM_STATUS` | 4 | `[base] -> [status]` | `comm` | Push status word for a kind to stack |

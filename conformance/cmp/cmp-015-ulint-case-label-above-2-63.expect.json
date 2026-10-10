@@ -1,0 +1,23 @@
+{
+  "requirement": "CMP-015",
+  "title": "CASE on a ULINT matches a label above 2^63",
+  "matrix": [
+    "data-types.lint-ulint-lword",
+    "statements.case"
+  ],
+  "tags": [
+    "arch-sensitive",
+    "64-bit",
+    "float"
+  ],
+  "note": "A ULINT label is unsigned.",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "DINT",
+      "value": 2
+    }
+  ]
+}

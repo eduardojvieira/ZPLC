@@ -11,7 +11,8 @@
  * - Backward compatibility with legacy linear models
  */
 
-import { getFunctionBlockNamesForVisualEditors } from '../catalog/blockCatalog';
+import { serializeVisualDocument } from './visualFileFormat';
+import { LD_COIL_TYPES, LD_CONTACT_TYPES, ldPaletteFunctionBlocks } from './ldSupport';
 import type { ProjectBlock } from './projectBlocks';
 
 // =============================================================================
@@ -1025,7 +1026,7 @@ export function parseLDModel(json: string): LDModel {
  * Serialize an LDModel to JSON
  */
 export function serializeLDModel(model: LDModel): string {
-  return JSON.stringify(model, null, 2);
+  return serializeVisualDocument(model);
 }
 
 // =============================================================================
@@ -1046,9 +1047,8 @@ export interface LDToolboxItem {
  * no value to pass to it.
  */
 export function getToolboxItems(blocks: readonly ProjectBlock[] = []): LDToolboxItem[] {
-  const names = new Set(getFunctionBlockNamesForVisualEditors());
-  for (const block of blocks) if (block.kind === 'FUNCTION_BLOCK') names.add(block.name);
-  const functionBlocks = [...names].sort().map((fbType) => ({
+  // the function blocks a rung can hold, from the table the transpiler reads (LNG-007)
+  const functionBlocks = ldPaletteFunctionBlocks(blocks).map((fbType) => ({
     type: 'function_block' as const,
     label: fbType,
     symbol: fbType.length > 6 ? fbType.slice(0, 6) : fbType,
@@ -1057,18 +1057,24 @@ export function getToolboxItems(blocks: readonly ProjectBlock[] = []): LDToolbox
   }));
 
   return [
-    // Contacts
-    { type: 'contact_no', label: 'NO Contact', symbol: '| |', category: 'contact' },
-    { type: 'contact_nc', label: 'NC Contact', symbol: '|/|', category: 'contact' },
-    { type: 'contact_p', label: 'P Contact', symbol: '|P|', category: 'contact' },
-    { type: 'contact_n', label: 'N Contact', symbol: '|N|', category: 'contact' },
-    // Coils
-    { type: 'coil', label: 'Coil', symbol: '( )', category: 'coil' },
-    { type: 'coil_negated', label: 'Neg Coil', symbol: '(/)', category: 'coil' },
-    { type: 'coil_set', label: 'Set Coil', symbol: '(S)', category: 'coil' },
-    { type: 'coil_reset', label: 'Reset Coil', symbol: '(R)', category: 'coil' },
+    ...LD_CONTACT_TYPES.map((type) => ({ type, ...PALETTE_FACE[type], category: 'contact' as const })),
+    ...LD_COIL_TYPES.map((type) => ({ type, ...PALETTE_FACE[type], category: 'coil' as const })),
     // Structure
     { type: 'branch', label: 'Branch', symbol: '├┤', category: 'structure' },
     ...functionBlocks,
   ];
 }
+
+/** What the palette shows for each contact and coil: a face for every type of the table, or it does not compile. */
+const PALETTE_FACE: Record<(typeof LD_CONTACT_TYPES)[number] | (typeof LD_COIL_TYPES)[number], { label: string; symbol: string }> = {
+  contact_no: { label: 'NO Contact', symbol: '| |' },
+  contact_nc: { label: 'NC Contact', symbol: '|/|' },
+  contact_p: { label: 'P Contact', symbol: '|P|' },
+  contact_n: { label: 'N Contact', symbol: '|N|' },
+  coil: { label: 'Coil', symbol: '( )' },
+  coil_negated: { label: 'Neg Coil', symbol: '(/)' },
+  coil_set: { label: 'Set Coil', symbol: '(S)' },
+  coil_reset: { label: 'Reset Coil', symbol: '(R)' },
+  coil_p: { label: 'P Coil', symbol: '(P)' },
+  coil_n: { label: 'N Coil', symbol: '(N)' },
+};

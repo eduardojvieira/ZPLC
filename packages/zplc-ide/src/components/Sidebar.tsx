@@ -28,6 +28,10 @@ import { useIDEStore } from '../store/useIDEStore';
 import { PLC_LANGUAGES, type PLCLanguage, type FileTreeNode } from '../types';
 import { Modal } from './Modal';
 import { MigrationPreviewDialog } from './MigrationPreviewDialog';
+import { TreeMarkBadge } from './treeMarks';
+import { TreeMarksContext, type TreeMark } from './treeMarksContext';
+import { configuredLibraries } from '../project/libraries';
+import { useProjectSources } from '../store/projectSources';
 import { FileNameTakenError } from '../utils/fileSystem';
 import { unsavedOutcome } from '../utils/unsavedChanges';
 import { collectFolders, parentPath } from '../project/treeOperations';
@@ -253,6 +257,7 @@ function TreeNode({ node, depth, activeFileId, focusedTreeId, onFileClick, onTog
             )}
             {getFileIcon()}
             <span className="truncate">{getDisplayName(node.name)}</span>
+            <TreeMarkBadge path={node.path} />
           </div>
 
           {node.isExpanded && node.children && (
@@ -312,6 +317,7 @@ function TreeNode({ node, depth, activeFileId, focusedTreeId, onFileClick, onTog
         <span className="w-3.5" />
         {getFileIcon()}
         <span className="truncate flex-1">{getDisplayName(node.name)}</span>
+        <TreeMarkBadge path={node.path} />
       </div>
     </div>
   );
@@ -332,6 +338,15 @@ export function Sidebar() {
     deleteFile,
     refreshFileTree,
   } = useIDEStore();
+
+  // The library folders and the files no build reads, marked in the tree (IDE-023).
+  const projectConfig = useIDEStore((state) => state.projectConfig);
+  const unlisted = useProjectSources((state) => state.unlisted);
+  const marks = useMemo(() => {
+    const found = new Map<string, TreeMark>(unlisted.map((path) => [path, 'not-compiled']));
+    for (const library of configuredLibraries(projectConfig)) found.set(library, 'library');
+    return found;
+  }, [projectConfig, unlisted]);
 
   const [isNewFileModalOpen, setIsNewFileModalOpen] = useState(false);
   const [isMigrationOpen, setIsMigrationOpen] = useState(false);
@@ -580,6 +595,7 @@ export function Sidebar() {
 
       {/* File Tree */}
       <div className="flex-1 overflow-y-auto py-1" role="tree" aria-label="Project files">
+        <TreeMarksContext.Provider value={marks}>
         {fileTree ? (
           fileTree.children && fileTree.children.length > 0 ? (
             fileTree.children.map((node) => (
@@ -608,6 +624,7 @@ export function Sidebar() {
             Loading...
           </div>
         )}
+        </TreeMarksContext.Provider>
       </div>
 
       {/* New File Modal */}

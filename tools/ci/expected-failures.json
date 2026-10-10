@@ -1,4 +1,1 @@
-[
-  { "test": "packages/zplc-ide/src/conformance/conformance.test.ts > conformance > CMP-015 LREAL keeps double precision", "requirement": "CMP-015", "added": "2026-10-09", "reason": "scan 1: the VM faulted: zplc_core_run_cycle failed; the VM faults on the first scan: an 8-byte LREAL is computed on a 32-bit stack" },
-  { "test": "packages/zplc-ide/src/conformance/conformance.test.ts > conformance: the loader accepts what the compiler produces > CMP-051 the loader accepts every artifact the compiler produced for a conformance case", "requirement": "CMP-051", "added": "2026-10-10", "reason": "one artifact is refused by the loader: CMP-015 LREAL keeps double precision (PROGRAM_LOAD_FAILED); this entry goes with that case" }
-]
+[]

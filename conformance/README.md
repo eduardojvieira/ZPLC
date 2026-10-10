@@ -55,7 +55,7 @@ The first scan runs at 0 ms and each next one `scanMs` later, so scan 6 of a 10 
 { "requirement": "CMP-001", "title": "an assignment to an undeclared variable is rejected", "build": "fails", "lines": [5] }
 ```
 
-The build must fail and produce no artifact. `lines` (optional) lists the line of each diagnostic, `columns` (optional, one for each line) their columns, `codes` (optional, one for each diagnostic) their codes, and `messageIncludes` (optional) the words a diagnostic message must contain. `files`, `tasks`, `matrix`, `tags` and `note` work as above.
+The build must fail and produce no artifact. `lines` (optional) lists the line of each diagnostic, `columns` (optional, one for each line) their columns, `codes` (optional, one for each diagnostic) their codes, and `messageIncludes` (optional) the words a diagnostic message must contain. `elements` (optional, one for each diagnostic) names the element of a diagram or IL source that each diagnostic is about (LNG-003): `rung:r1/cell:0,1`, `rung:r1/element:c1`, `block:and1`, `connection:w2`, `step:s_a`, `transition:t1`, `action:mark` or `line:7`; a case that lists it asserts that every diagnostic has one. `files`, `tasks`, `matrix`, `tags` and `note` work as above.
 
 VF-003 asks a negative case to assert the diagnostic code and its position. Every failed build reports the one code `COMPILATION_FAILED` until the compiler has stable codes (CMP-006), and a case that asserted it would pin the placeholder, so the cases assert the position (`lines`) and, where the requirement says the message names the construct (CMP-003), the words. A case adds `codes` the day a code exists, and WP-24 does that for all of them.
 

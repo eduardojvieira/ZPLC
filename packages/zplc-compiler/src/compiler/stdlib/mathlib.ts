@@ -38,6 +38,7 @@
 import { f32hex as f } from '../numeric.ts';
 import type { Routine } from './types.ts';
 import { LOG2F_LABEL } from '../power.ts';
+import type { AsmLine } from '../asm-line.ts';
 
 export const SQRTF_LABEL = '_zplc_sqrtf';
 const SQRTN_LABEL = '_zplc_sqrtn';
@@ -59,8 +60,8 @@ const ABS_MASK = '0x7FFFFFFF';
 const SIGN = '0x80000000';
 
 /** `acc = acc * z + c` for each coefficient, with `z` at depth 1 below the accumulator: [.. z acc] -> [.. z acc']. */
-function horner(coefficients: number[]): string[] {
-    return coefficients.flatMap((c) => [`    OVER`, `    MULF`, `    PUSH32 ${f(c)}`, `    ADDF`]);
+function horner(coefficients: number[]): AsmLine[] {
+    return coefficients.flatMap((c): AsmLine[] => [`    OVER`, `    MULF`, `    PUSH32 ${f(c)}`, `    ADDF`]);
 }
 
 /**
@@ -69,7 +70,7 @@ function horner(coefficients: number[]): string[] {
  * halves the exponent in the bit pattern (within 3.5%) and three Newton steps y = (y + x / y) / 2
  * follow, each squaring the error, so the result is within one unit of the last place.
  */
-const SQRTF: string[] = [
+const SQRTF: AsmLine[] = [
     `${SQRTF_LABEL}:          ; [x]`,
     `    DUP`,
     `    PUSH8 0`,
@@ -106,14 +107,14 @@ const SQRTF: string[] = [
 ];
 
 /** The square root of a finite REAL of 2^-126 or more: [x] -> [y]. */
-const SQRTN: string[] = [
+const SQRTN: AsmLine[] = [
     `${SQRTN_LABEL}:          ; [x]`,
     `    DUP`,
     `    PUSH8 1`,
     `    SHR`,
     `    PUSH32 0x1FBD1DF5`,
     `    ADD                 ; [x y]`,
-    ...[1, 2, 3].flatMap((step) => [
+    ...[1, 2, 3].flatMap((step): AsmLine[] => [
         `    OVER`,
         `    OVER`,
         `    DIVF                ; [x y x/y]  step ${step}`,
@@ -131,7 +132,7 @@ const SQRTN: string[] = [
  * power.ts (_zplc_log2f); a subnormal is scaled by 2^24 first; 0.0 gives -infinity, a negative
  * number or a NaN gives NaN and +infinity gives +infinity.
  */
-const LOG2G: string[] = [
+const LOG2G: AsmLine[] = [
     `${LOG2G_LABEL}:          ; [x]`,
     `    DUP`,
     `    PUSH8 0`,
@@ -172,7 +173,7 @@ const LOG2G: string[] = [
  * parts, so n * ln2_hi is exact), |r| <= 0.347; e ** r by its Taylor polynomial to r ** 7, and 2 ** n
  * applied as two powers of two so that no intermediate leaves the range of a REAL.
  */
-const EXPF: string[] = [
+const EXPF: AsmLine[] = [
     `${EXPF_LABEL}:           ; [x]`,
     `    DUP`,
     `    PUSH32 ${ABS_MASK}`,
@@ -298,7 +299,7 @@ export const TWO_PI_REST: number = TWO_PI.restOverTwoPi;
  * last part times s, which its 24 bits can hold at every scale, and it is folded back into hi
  * at the start of the next stage as soon as hi is small enough to take it.
  */
-const PISTEP: string[] = [
+const PISTEP: AsmLine[] = [
     `${PISTEP_LABEL}:         ; [hi lo s]`,
     `    ROT`,
     `    ROT                 ; [s hi lo]`,
@@ -326,7 +327,7 @@ const PISTEP: string[] = [
     `    MULF                ; [s hi lo n*s]`,
     `    ROT`,
     `    ROT                 ; [s ns hi lo]`,
-    ...TWO_PI_PARTS.flatMap((part, index) => [
+    ...TWO_PI_PARTS.flatMap((part, index): AsmLine[] => [
         `    PICK 2`,
         `    PUSH32 ${f(part)}`,
         `    MULF                ; [s ns hi lo t]  part ${index + 1}`,
@@ -361,7 +362,7 @@ const PISTEP: string[] = [
  * no information: the guard returns 0.0 when the result is outside the range the caller reduces, so
  * the answer is finite. A NaN stays a NaN and an infinity becomes a NaN.
  */
-const REDUCEBIG: string[] = [
+const REDUCEBIG: AsmLine[] = [
     `${REDUCEBIG_LABEL}:      ; [x]`,
     `    DUP`,
     `    PUSH32 ${ABS_MASK}`,
@@ -429,7 +430,7 @@ const REDUCEBIG: string[] = [
  * An angle of 100000 or more is first reduced modulo 2 pi by _zplc_reducebig, with the same error
  * up to 2^48; an infinity or a NaN gives a NaN and every other REAL gives a finite result.
  */
-const SINCOSF: string[] = [
+const SINCOSF: AsmLine[] = [
     `${SINCOSF_LABEL}:        ; [x phase]`,
     `    SWAP                ; [phase x]`,
     `    DUP`,
@@ -519,7 +520,7 @@ const SINCOSF: string[] = [
  * An angle of 100000 or more is reduced once here, so the two calls of the sine routine do not
  * reduce it again.
  */
-const TANF: string[] = [
+const TANF: AsmLine[] = [
     `${TANF_LABEL}:           ; [x]`,
     `    DUP`,
     `    PUSH32 ${ABS_MASK}`,
@@ -553,7 +554,7 @@ const TANF: string[] = [
  * tan(pi/8) it is pi/4 + atan((a-1)/(a+1)); the remaining argument is below tan(pi/8) and a
  * polynomial of degree 7 gives its arctangent. The sign of x is put back last.
  */
-const ATANF: string[] = [
+const ATANF: AsmLine[] = [
     `${ATANF_LABEL}:          ; [x]`,
     `    DUP`,
     `    PUSH32 ${ABS_MASK}`,
@@ -607,7 +608,7 @@ const ATANF: string[] = [
 ];
 
 /** ASIN = atan(x / sqrt((1 - x)(1 + x))); +-1 is +-pi/2 and a magnitude above 1 (or a NaN) is NaN. */
-const ASINF: string[] = [
+const ASINF: AsmLine[] = [
     `${ASINF_LABEL}:          ; [x]`,
     `    DUP`,
     `    PUSH32 ${ABS_MASK}`,
@@ -646,7 +647,7 @@ const ASINF: string[] = [
 ];
 
 /** ACOS = 2 atan(sqrt((1 - x) / (1 + x))), exact near x = 1; -1 is pi, a magnitude above 1 is NaN. */
-const ACOSF: string[] = [
+const ACOSF: AsmLine[] = [
     `${ACOSF_LABEL}:          ; [x]`,
     `    DUP`,
     `    PUSH32 ${ABS_MASK}`,
@@ -682,7 +683,7 @@ const ACOSF: string[] = [
 ];
 
 /** ATAN2(y, x): [y x] -> [angle in (-pi, pi]]; (0, 0) is 0. */
-const ATAN2F: string[] = [
+const ATAN2F: AsmLine[] = [
     `${ATAN2F_LABEL}:         ; [y x]`,
     `    DUP`,
     `    PUSH32 ${ABS_MASK}`,

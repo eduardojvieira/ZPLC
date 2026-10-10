@@ -66,10 +66,13 @@ export interface RunExpectation extends Named {
 }
 /**
  * A program that must not build: no artifact, and where stated the position of each diagnostic (`lines`, `columns`, one entry
- * per diagnostic), its stable `codes` (CMP-006; none exists before it, so a case asserts them only once they do) and the
- * words of the messages.
+ * per diagnostic), its stable `codes` (CMP-006; none exists before it, so a case asserts them only once they do), the
+ * element of the source each diagnostic is about (`elements`, one entry per diagnostic: `rung:r1/cell:0,1`, `block:and1`,
+ * `step:s1`, `line:7`; LNG-003) and the words of the messages.
  */
-export interface RejectExpectation extends Named { build: 'fails'; lines?: number[]; columns?: number[]; codes?: string[]; messageIncludes: string[] }
+export interface RejectExpectation extends Named {
+  build: 'fails'; lines?: number[]; columns?: number[]; codes?: string[]; elements?: string[]; messageIncludes: string[];
+}
 export type Expectation = RunExpectation | RejectExpectation;
 
 export interface ConformanceCase {
@@ -86,6 +89,8 @@ export interface ConformanceCase {
 }
 
 export const EXTENSIONS = ['.st', '.il', '.ld.json', '.fbd.json', '.sfc.json'];
+/** The id of an element of the source a diagnostic is about (LNG-003): see models/sourceElements.ts. */
+const ELEMENT_ID = /^(?:line|rung|block|connection|step|transition|action):[^\s/]+(?:\/(?:cell:\d+,\d+|element:[^\s/]+|enter|fire))?$/;
 const EXPECT_SUFFIX = '.expect.json';
 const isSource = (path: string) => EXTENSIONS.some((extension) => path.endsWith(extension));
 
@@ -145,7 +150,7 @@ export function parseExpectation(text: string, where: string): Expectation {
   let parsed: unknown;
   try { parsed = JSON.parse(text); } catch (error) { return fail(where, `not valid JSON (${(error as Error).message})`); }
   const named = ['requirement', 'title', 'build', 'matrix', 'tags', 'note', 'files', 'tasks'];
-  const head = object(parsed, where, [...named, 'lines', 'columns', 'codes', 'messageIncludes', 'scans', 'scanMs', 'inputs', 'expect', 'fault', 'warnings']);
+  const head = object(parsed, where, [...named, 'lines', 'columns', 'codes', 'elements', 'messageIncludes', 'scans', 'scanMs', 'inputs', 'expect', 'fault', 'warnings']);
   if (typeof head.requirement !== 'string' || !/^[A-Z]+-[0-9]{3}$/.test(head.requirement)) fail(where, 'requirement must look like CMP-011');
   if (typeof head.title !== 'string' || head.title.trim() === '') fail(where, 'title must be a non-empty string');
   const matrix = list(head.matrix, where, 'matrix');
@@ -180,7 +185,7 @@ export function parseExpectation(text: string, where: string): Expectation {
   if (build !== 'succeeds' && build !== 'fails') fail(where, 'build must be "succeeds" or "fails"');
 
   if (build === 'fails') {
-    const reject = object(parsed, where, [...named, 'lines', 'columns', 'codes', 'messageIncludes']);
+    const reject = object(parsed, where, [...named, 'lines', 'columns', 'codes', 'elements', 'messageIncludes']);
     const lines = reject.lines === undefined ? undefined : list(reject.lines, where, 'lines');
     if (lines?.some((line) => !isInt(line, 1, Number.MAX_SAFE_INTEGER))) fail(where, 'lines must be line numbers, 1 or more');
     const columns = reject.columns === undefined ? undefined : list(reject.columns, where, 'columns');
@@ -189,9 +194,12 @@ export function parseExpectation(text: string, where: string): Expectation {
     const codes = reject.codes === undefined ? undefined : list(reject.codes, where, 'codes');
     if (codes?.some((code) => typeof code !== 'string' || !/^[A-Z][A-Z0-9_]*$/.test(code))) fail(where, 'codes must be diagnostic codes such as COMPILATION_FAILED');
     if (codes && lines && codes.length !== lines.length) fail(where, 'codes and lines name one entry for each diagnostic: they must have the same length');
+    const elements = reject.elements === undefined ? undefined : list(reject.elements, where, 'elements');
+    if (elements?.some((element) => typeof element !== 'string' || !ELEMENT_ID.test(element))) fail(where, 'elements must be ids of the source such as rung:r1/cell:0,1, block:and1, step:s1, transition:t1, action:a1 or line:7');
+    if (elements && lines && elements.length !== lines.length) fail(where, 'elements and lines name one entry for each diagnostic: they must have the same length');
     const messageIncludes = list(reject.messageIncludes, where, 'messageIncludes');
     if (messageIncludes.some((word) => typeof word !== 'string' || word === '')) fail(where, 'messageIncludes must be non-empty strings');
-    return { ...common, build, lines: lines as number[] | undefined, columns: columns as number[] | undefined, codes: codes as string[] | undefined, messageIncludes: messageIncludes as string[] };
+    return { ...common, build, lines: lines as number[] | undefined, columns: columns as number[] | undefined, codes: codes as string[] | undefined, elements: elements as string[] | undefined, messageIncludes: messageIncludes as string[] };
   }
 
   const run = object(parsed, where, [...named, 'scans', 'scanMs', 'inputs', 'expect', 'fault', 'warnings']);

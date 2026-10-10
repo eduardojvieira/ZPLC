@@ -19,7 +19,52 @@
 
 import type { FunctionDef, CodeGenContext } from './types.ts';
 import type { Expression } from '../ast.ts';
-import { numericInfo } from '../numeric.ts';
+import { isWideInteger, numericInfo } from '../numeric.ts';
+
+/** A 64-bit integer or bit string (LINT, ULINT, LWORD): two stack cells (CMP-015). */
+function isWideOperand(ctx: CodeGenContext, arg: Expression): boolean {
+    return isWideInteger(ctx.typeOf?.(arg));
+}
+
+/** The shift count of a 64-bit shift or rotate: one 32-bit word, whatever the width of the argument. */
+function emitCount(ctx: CodeGenContext, count: Expression): void {
+    if (ctx.emitOperand) ctx.emitOperand(count, 'UDINT');
+    else ctx.emitExpression(count);
+}
+
+/**
+ * ROL or ROR of a 64-bit value: [in(2) n] -> [out(2)]. n is taken modulo 64; the other half is a
+ * shift by 64 - n, which is 0 for n = 0 (a shift of 64 gives 0), so (in << n) | (in >> (64 - n)) is
+ * in itself for n = 0 and no case is special.
+ */
+function emitRotate64(ctx: CodeGenContext, left: boolean): void {
+    ctx.emit(`    PUSH8 63`);
+    ctx.emit(`    AND                 ; [in n]`);
+    ctx.emit(`    DUP`);
+    ctx.emit(`    PUSH8 64`);
+    ctx.emit(`    SWAP`);
+    ctx.emit(`    SUB                 ; [in n m]  m = 64 - n`);
+    ctx.emit(`    PICK 3`);
+    ctx.emit(`    PICK 3              ; [in n m in]`);
+    ctx.emit(`    PICK 2              ; [in n m in m]`);
+    ctx.emit(left ? `    SHR64               ; [in n m (in >> m)]` : `    SHL64               ; [in n m (in << m)]`);
+    ctx.emit(`    PICK 5`);
+    ctx.emit(`    PICK 5              ; [in n m r in]`);
+    ctx.emit(`    PICK 5              ; [in n m r in n]`);
+    ctx.emit(left ? `    SHL64               ; [in n m r (in << n)]` : `    SHR64               ; [in n m r (in >> n)]`);
+    ctx.emit(`    ROT`);
+    ctx.emit(`    OR`);
+    ctx.emit(`    ROT`);
+    ctx.emit(`    ROT`);
+    ctx.emit(`    OR`);
+    ctx.emit(`    SWAP                ; [in n m (r | s)]`);
+    for (let pair = 0; pair < 2; pair++) {
+        ctx.emit(`    ROT`);
+        ctx.emit(`    DROP`);
+        ctx.emit(`    ROT`);
+        ctx.emit(`    DROP`);
+    }
+}
 
 /**
  * Width in bits of the value a shift or rotate works on (CMP-014): the declared width of a
@@ -64,6 +109,14 @@ export const ROL_FN: FunctionDef = {
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 2) {
             ctx.fail('ROL requires 2 arguments (IN, N)');
+        }
+
+        if (isWideOperand(ctx, args[0])) {
+            ctx.emit(`    ; ROL(IN, N) on 64 bits`);
+            ctx.emitExpression(args[0]);
+            emitCount(ctx, args[1]);
+            emitRotate64(ctx, true);
+            return;
         }
 
         ctx.emit(`    ; ROL(IN, N) - Rotate left`);
@@ -131,6 +184,14 @@ export const ROR_FN: FunctionDef = {
             ctx.fail('ROR requires 2 arguments (IN, N)');
         }
 
+        if (isWideOperand(ctx, args[0])) {
+            ctx.emit(`    ; ROR(IN, N) on 64 bits`);
+            ctx.emitExpression(args[0]);
+            emitCount(ctx, args[1]);
+            emitRotate64(ctx, false);
+            return;
+        }
+
         ctx.emit(`    ; ROR(IN, N) - Rotate right`);
         
         // Emit arguments; a BYTE or WORD rotates within its own width
@@ -194,6 +255,14 @@ export const SHL_FN: FunctionDef = {
             ctx.fail('SHL requires 2 arguments (IN, N)');
         }
 
+        if (isWideOperand(ctx, args[0])) {
+            ctx.emit(`    ; SHL(IN, N) on 64 bits`);
+            ctx.emitExpression(args[0]);
+            emitCount(ctx, args[1]);
+            ctx.emit(`    SHL64               ; a count of 64 or more gives 0`);
+            return;
+        }
+
         ctx.emit(`    ; SHL(IN, N)`);
         const width = operandWidth(ctx, args[0]);
         emitBitOperand(ctx, args[0], width);  // IN
@@ -223,6 +292,14 @@ export const SHR_FN: FunctionDef = {
     generateInline(ctx: CodeGenContext, args: Expression[]): void {
         if (args.length !== 2) {
             ctx.fail('SHR requires 2 arguments (IN, N)');
+        }
+
+        if (isWideOperand(ctx, args[0])) {
+            ctx.emit(`    ; SHR(IN, N) on 64 bits`);
+            ctx.emitExpression(args[0]);
+            emitCount(ctx, args[1]);
+            ctx.emit(`    SHR64               ; logical: zeros enter on the left; a count of 64 or more gives 0`);
+            return;
         }
 
         ctx.emit(`    ; SHR(IN, N)`);

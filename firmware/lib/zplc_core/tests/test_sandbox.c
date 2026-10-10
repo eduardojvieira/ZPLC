@@ -864,6 +864,68 @@ static void test_stack_underflow(void) {
   CHECK_EQ(verdict(&c), ZPLC_LOADER_OK, "STORE64 then LOAD64 balance");
 }
 
+/* CMP-015: a two-word operand is two stack words, and the verifier proves it from the table. */
+static void wide_program(code_t *c, unsigned pushes, uint8_t opcode, unsigned drops) {
+  unsigned i;
+  c->n = 0;
+  for (i = 0; i < pushes; i++)
+    op8(c, OP_PUSH8, 1);
+  op(c, opcode);
+  for (i = 0; i < drops; i++)
+    op(c, OP_DROP);
+  op(c, OP_HALT);
+}
+
+static void test_wide_stack_effects(void) {
+  code_t c;
+  printf("=== RT-003 two-word operands (CMP-015) ===\n");
+
+  wide_program(&c, 3U, OP_MUL64, 0U);
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_ERR_STACK, "MUL64 with three words is an underflow");
+  wide_program(&c, 4U, OP_MUL64, 2U);
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_OK, "MUL64 takes four words and leaves two");
+  wide_program(&c, 4U, OP_MUL64, 3U);
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_ERR_STACK, "MUL64 leaves two words, not three");
+
+  wide_program(&c, 2U, OP_SHL64, 0U);
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_ERR_STACK, "SHL64 needs the count word as well as the value");
+  wide_program(&c, 3U, OP_SAR64, 2U);
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_OK, "SAR64 takes a two-word value and a count");
+
+  wide_program(&c, 1U, OP_NEG64, 0U);
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_ERR_STACK, "NEG64 with one word is an underflow");
+  wide_program(&c, 2U, OP_ABS64, 2U);
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_OK, "ABS64 is two words in and two words out");
+
+  wide_program(&c, 2U, OP_ADDD, 0U);
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_ERR_STACK, "ADDD with one operand is an underflow");
+  wide_program(&c, 4U, OP_DIVD, 2U);
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_OK, "DIVD takes two doubles and leaves one");
+  wide_program(&c, 4U, OP_LTD, 1U);
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_OK, "LTD takes two doubles and leaves one word");
+  wide_program(&c, 3U, OP_GED, 0U);
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_ERR_STACK, "GED with three words is an underflow");
+
+  wide_program(&c, 1U, OP_F2D, 2U);
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_OK, "F2D turns one word into two");
+  wide_program(&c, 1U, OP_F2D, 3U);
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_ERR_STACK, "F2D leaves two words, not three");
+  wide_program(&c, 1U, OP_D2F, 0U);
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_ERR_STACK, "D2F with one word is an underflow");
+  wide_program(&c, 2U, OP_D2F, 1U);
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_OK, "D2F turns two words into one");
+  wide_program(&c, 2U, OP_D2I, 1U);
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_OK, "D2I turns two words into one");
+
+  /* the contract's own number of words: a store of a converted value */
+  c.n = 0;
+  op8(&c, OP_PUSH8, 3);
+  op(&c, OP_I2D);
+  op16(&c, OP_STORE64, 0x2000U);
+  op(&c, OP_HALT);
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_OK, "I2D then STORE64 balance");
+}
+
 static void test_stack_paths(void) {
   code_t c;
   printf("=== RT-003 paths ===\n");
@@ -1408,6 +1470,7 @@ int main(void) {
   test_handler_gets_a_block_that_fits();
   test_loader_block_fit();
   test_stack_underflow();
+  test_wide_stack_effects();
   test_stack_paths();
   test_declared_depth();
   test_calls();

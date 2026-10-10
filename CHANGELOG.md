@@ -24,14 +24,18 @@ All notable changes are documented here.
   divergence was found: the three entry points share the Tool API.
 - The project tree lists the project's function blocks, functions and data
   types, and a library folder makes its blocks available to every editor
-  (IDE-023). Under the file tree the Explorer shows the declarations that the
-  Structured Text files of `src` and of the library folders declare, grouped
-  under their file; choosing one opens the file at its name. **Library
-  folder...** names a folder in `zplc.json` under `libraries`, and the blocks
-  of its files appear in the Declarations list, in the FBD and LD palettes and
-  in the completion and hover of ST. The build still reads only `src`
-  (CMP-046 builds libraries; `libraries` is the interface it reads). The palettes
-  now list the blocks of the files of `src` whether or not they are open.
+  (IDE-023). Under the file tree the Explorer has a Declarations section with
+  the declarations that the Structured Text files the build reads declare
+  (directly in `src` and directly in each folder of `libraries`), grouped under
+  their file; choosing one opens the file at its name. It uses the build's own
+  rules for `libraries` (`buildOptions.ts`, the workspace reader of the Tool
+  API) instead of a mechanism of its own: **Library folder...** lists a folder
+  in `zplc.json`, the tree marks it `library`, and the blocks of its files are
+  in the FBD and LD palettes and in the completion and hover of ST. A file the
+  build does not read (neither in `src` nor directly in a library folder) is
+  marked `not compiled` in the tree and its folder is offered with a **List as
+  library** button; the walk that finds such files is one module
+  (`project/unlistedSources.ts`) that the Tool API and Studio both use.
 - A project exports to one archive and imports back into an equivalent project
   (IDE-022). **Export Project Archive** (Build options) writes a zip of the
   project files that is the same bytes on every machine (entries sorted by
@@ -51,7 +55,7 @@ All notable changes are documented here.
   Only the Monaco core Studio uses is bundled, so the CSS, HTML, JSON and
   TypeScript language workers (about 9 MB) and the 80 basic languages are no
   longer built, and the installer holds no source maps. `welcomeBundle.test.ts`
-  proves it on the build output, and journey 25 on the development host.
+  proves it on the build output, and journey 29 on the development host.
 - CI checks the structure of Studio's source (IDE-014, IDE-033):
   `tools/ci/ide-structure.ts`, run by `bun run lint:ide` and by
   `bun test ./tools/ci`, fails when a store module imports a component, when a
@@ -65,6 +69,84 @@ All notable changes are documented here.
   imports the breakpoint helpers or the build-evidence types from `components/`,
   and the sensitive-configuration helpers no longer form an import cycle with
   the file system and export modules.
+- The palettes of LD, FBD and SFC offer only what their transpiler translates, and every
+  element they offer is placed in a program and run in the virtual machine by a generated
+  test (LNG-007). The Ladder palette offers the edge coils that the transpiler has
+  translated since LNG-022 and no longer offers `COMM_CONNECT`, `COMM_PUBLISH`,
+  `COMM_SUBSCRIBE` and `COMM_MODBUS`, which no Ladder file can declare. The FBD palette no
+  longer offers the functions of the library (`SQRT`, `SIN`, `LEN`...) or the four
+  `COMM_*` blocks, which the build refused or could not declare; a block of the library has
+  the inputs and outputs it declares (a `BLINK` has `ENABLE`, `T_ON` and `T_OFF`, not `IN`
+  and `OUT`), typed as the compiler types them.
+- A breakpoint can be set on an IL line, a Ladder rung, an FBD block and an SFC step or
+  transition, and the runtime stops there (LNG-004). The debug map relates each instruction
+  range to the element of the source that was edited (`element` on a source range and on a
+  breakpoint location): the lines of an IL file are the IL lines, those of a diagram stay the
+  generated lines and carry the element, a step is entered and a transition fires at the
+  statement nested in the test of the chart. The breakpoints of a diagram are kept on the
+  elements and worked out again from the debug map of each build, so they follow their
+  rung, block or step when the diagram changes. Executed on the native runtime for IL, LD,
+  FBD and SFC; not checked on a board.
+- A diagnostic of an IL, LD, FBD or SFC file names the element it is about (LNG-003,
+  LNG-026): an IL line, a rung and its cell, a block or a wire, a step, the condition of
+  a transition, the body of an action. Each element that is wrong is its own diagnostic
+  (an IL file reported only its first line, and every other file one joined message),
+  the Tool API, the CLI and MCP carry it in an `element` field, and a finding of the
+  compiler in the generated Structured Text is put on the element it was generated
+  for (on the IL line, for IL). Activating the problem in Studio selects the element
+  in the editor. The transpilers return the map of the generated lines to elements
+  (`sourceMap`) that debugging uses (LNG-004).
+- The FBD canvas refuses a wire between pins whose types do not match and says why
+  (LNG-013): a `BOOL` output into a numeric input, a `REAL` into a `BOOL` or integer
+  input, a number into a `TIME` input, and a second wire into an input. The table of
+  rules (`models/pinTypes.ts`) is the one the compiler applies to an assignment, and a
+  test compiles every pair of elementary types and fails when the two disagree.
+- Opening a Ladder, FBD or SFC file and saving it without a change leaves it byte for byte
+  as it was (LNG-014): a commit of an editor that says what the file already said no longer
+  rewrites it (the order of the keys does not matter, and the fields of a block, a step or a
+  transition that the canvas does not edit are written back as they were), and the one form
+  that Studio writes (`serializeLDModel`, `serializeFBDModel`,
+  `serializeSFCModel`) ends in a newline, as the files of the repository do. The checks made
+  when a visual file opens (LNG-011) now also cover the variables of FBD and SFC files, the
+  actions, positions and conditions of an SFC chart, and the variable of a Ladder element.
+- The VM has 34 new opcodes for 64-bit integers and double precision (CMP-015),
+  all in the C core, so every runtime has them at once: `MUL64`, `DIVS64`,
+  `DIVU64`, `MODS64`, `MODU64`, `NEG64`, `ABS64`, `SHL64`, `SHR64` and `SAR64`
+  for `LINT`, `ULINT` and `LWORD`; `ADDD`, `SUBD`, `MULD`, `DIVD`, `NEGD`,
+  `ABSD`, `SQRTD`, `RNDD` and the comparisons `EQD` to `GED` for `LREAL`; and the
+  conversions `F2D`, `D2F`, `I2D`, `D2I`, `L2D`, `D2L`, `U2D`, `D2U`, `L2F` and
+  `U2F`. A two-word value has its low word deeper on the stack. The double
+  operations are computed in integer arithmetic, so a result is the same bit
+  pattern on the 64-bit host, on a 32-bit build and on every target, and every
+  NaN is `0x7FF8000000000000`. Division and modulo by zero fault like the 32-bit
+  ones, `INT64_MIN / -1` is `INT64_MIN`, a shift of 64 or more gives `0` (`-1` for
+  a negative `SAR64`) and a conversion to an integer truncates, saturates and
+  maps a NaN to `0`; the results are stated in the runtime ISA page. The opcodes
+  add about 4 KB of code on a Cortex-M3 at `-Os`.
+- `LREAL` and the 64-bit integers work (CMP-015). `LREAL` is declared,
+  initialised, computed (`+ - * /`, negation, comparison with IEEE 754 results,
+  a NaN is unordered), stored in arrays and structures, passed to and returned
+  from functions and retained; `LINT`, `ULINT` and `LWORD` have `*`, `/`, `MOD`
+  (unsigned for `ULINT` and `LWORD`), `ABS`, `SHL`, `SHR`, `ROL`, `ROR`, a `FOR`
+  counter, a `CASE` selector with 64-bit labels and literals of the whole range.
+  A real literal in an `LREAL` expression is the double it writes, an `LREAL`
+  assigned to a `REAL` builds with the `IMPLICIT_NARROWING` warning, and 240
+  conversion functions exist (16 types, ties to even, saturation). `SQRT`,
+  `ABS`, `TRUNC`, `ROUND`, `MAX`, `MIN`, `LIMIT`, `SEL` and `MUX` are exact on
+  an `LREAL`; the transcendental functions compute in `REAL` and widen the
+  result back, with the accuracy of a `REAL`. Division and `MOD` by zero fault
+  as the 32-bit ones do. The conformance cases give the same results on a 64-bit
+  and a 32-bit runtime.
+- Studio watches `LINT`, `ULINT`, `LWORD` and `LREAL` at their own width: a
+  64-bit integer shows every digit, an `LWORD` as 16 hexadecimal digits and an
+  `LREAL` as a double; they used to show the low 4 bytes as a `DINT`, a `DWORD`
+  or a `REAL`.
+- **ABI:** the draft counter is now 3. Artifacts built before this draft are
+  refused by the loader, the native runtime, the firmware shell and Studio, with
+  both numbers: rebuild programs and reflash boards together.
+  `tools/contract/restamp_artifacts.py` rewrites the counter and the CRC of the
+  artifacts committed to the repository (examples, fixtures, fuzz findings), and
+  `bun run contract:check` fails when one is stale.
 - The function blocks and functions that the Structured Text files of a project
   declare are blocks of the FBD and LD palettes (LNG-008): a diagram places one
   with the ports of its declaration, and the generated Structured Text calls it
@@ -241,8 +323,7 @@ All notable changes are documented here.
 - The compiler gives correct results for negative `SINT`/`INT`, unsigned
   comparison and division, `REAL` arithmetic with integer operands, `NOT` on
   `BYTE`/`WORD`, compound and fractional `TIME` literals and `TIME` over 24.8
-  days; 64-bit multiply, divide, modulo and shifts are now build errors
-  instead of wrong code.
+  days.
 - Pause, breakpoint and step on the Zephyr scheduler keep the output image and
   the force table and only drive the physical outputs to their safe state
   (RT-017); a paused or stepped target now shows the image of the scan that ran
@@ -430,6 +511,76 @@ All notable changes are documented here.
   fault is also a `runtime.error` event with the code `DEADLINE_MISS`. The
   target scheduler does not report the warning, the last overrun or the reason
   yet. The scheduler page lists what simulation does not match.
+- The assembler checks every operand against its field (CMP-049): a value that
+  does not fit the 8, 16 or 32 bits of its opcode, a jump to an address outside
+  the code or to a label after the last instruction, an entry point or a tag
+  field that does not fit, and a relocation past 65535 are errors that name the
+  line, where they used to be truncated. `.DB` and `.BYTE` now emit their bytes
+  (they used to move the addresses and emit nothing) and `.ORG` fills the gap with
+  `NOP` and refuses to move backwards (CMP-060); the directives are described in
+  the compiler page. `tools/zplc_asm.py` applies the same rules.
+- The code generator cannot emit an instruction that is not in the generated
+  opcode table (CMP-048): the type of its output lines is built from the table,
+  and every line is checked when it is written, so a line with an unknown
+  mnemonic is an internal compiler error that names it and never reaches the
+  assembler. The conformance programs are checked line by line.
+- The compiler sources are typed and quiet (CMP-061): the 35 `any` casts of the
+  code generator, the parser and the symbol table are gone (a method in progress
+  is a `MethodInfo`, a named argument is read with `argumentValue`), and the
+  comments that thought aloud or recorded a fix by number say what the code does.
+  A test lints the sources of the compiler with `no-explicit-any` and a list of
+  words that do not belong in a comment.
+- The compiler warns about unused variables, unreachable statements and the
+  non-IEC spellings it accepts (CMP-008): `UNUSED_VARIABLE`,
+  `WRITE_ONLY_VARIABLE`, `UNREACHABLE_STATEMENT` and `NON_IEC_REAL_LITERAL`
+  (`1e3`, next to the `0x` form), each with a stable code, a position and its
+  file. `compiler.warnings` in `zplc.json` selects them: `none`, `default`
+  (everything but the write-only variables) or `all`. A `FUNCTION_BLOCK` member
+  that another unit reads as `instance.member`, a variable with a direct address
+  and one with a communication tag are never reported. The bundled project
+  `kitchen_sink`, which declares FIFO and LIFO blocks it never calls, sets
+  `warnings: "none"`.
+- Every build option of `zplc.json` has an effect and a test (CMP-059):
+  `compiler.strictTypes` makes an implicit narrowing an error; `compiler.debug`
+  (default `true`, it used to read `false` and do nothing) decides whether the
+  debug map carries statement ranges and line mappings; `build.generateDebugInfo`
+  makes the CLI write `<output>.map.json` beside the artifact; and
+  `compiler.optimization` has one code generator behind it, so `size` and
+  `speed` build the code `none` does and the build warns with `OPTION_IGNORED`.
+  The bundled projects that said `size` or `speed` say `none`. A value that is
+  not valid for an option is a project error that names the option.
+- A project names folders of source files as libraries (CMP-046):
+  `"libraries": ["lib/motors"]` in `zplc.json`. Their functions, function
+  blocks, types and globals are part of the project; a declaration made twice
+  names both files; a folder that is not listed is reported with
+  `SOURCE_NOT_COMPILED`. The Tool API lists a library file with its `library`.
+- **ABI:** the draft counter is now 4 (CMP-050, CMP-056). A task definition has a
+  `call_depth` (the call frames it has active at once, its body included; 0 is
+  not declared) in the half of the word that was reserved, and an artifact has a
+  `BUILD` segment of 4 bytes, the build identity. The compiler measures the
+  evaluation-stack depth and the call depth of every task on the generated code,
+  with the stack effects of the opcode table, and records them in the task
+  definition where it used to write a fixed 64; the loader proves both, and a
+  task that needs more than it declares is refused. A task that needs a stack
+  deeper than 127 values (the loader's proof limit) or than the target holds, or
+  calls nested deeper than the call stack of the target, fails the build and the
+  message names the task, the depth and the limit. The conformance suite checks on
+  every artifact that lowering a declared depth by one makes the loader refuse
+  it. The identity is the CRC-32 of CODE and TASK, so two builds of a project
+  have the same one; the debug map records it as `buildId`, and Studio refuses to
+  attach a map to a program that has another. Programs built before are refused:
+  rebuild programs and reflash boards together. `restamp_artifacts.py` moved the
+  committed artifacts, and `fuzz:seed` rebuilt the seed corpus.
+- A `STRING` or `WSTRING` no longer converts to a number, a `BOOL` or a time
+  (CMP-005): `n := text;`, a text as the argument of a numeric parameter or an
+  input of a function block, as the return value of a numeric function or as the
+  initial value of a number, a text compared with a number and a text used as a
+  condition built and were stored or compared as an address. Each is now a build
+  error that names both types. `LEN` and `FIND`, which give an `INT`, still go
+  to a number. No bundled project, example or conformance program used it.
+- The assembly listing of a build is a tested output of the CLI (CMP-060):
+  `zplc-cli compile <workspace|file> --emit asm` prints it, or writes it to
+  `--output`, and assembling it gives the bytecode of the artifact.
 
 ## 2.0.0-rc.3 - 2026-09-01
 

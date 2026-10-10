@@ -51,6 +51,9 @@ import { DevFaultProbe } from './DevFaultProbe';
 import { WorkbenchInspector } from './WorkbenchInspector';
 import { LearnPanel } from './LearnPanel';
 import { LabPanel } from './LabPanel';
+import { elementOfDiagnostic } from '../editors/diagnosticElement';
+import { requestElementSelection } from '../editors/elementSelectionRequests';
+import { useProjectBlocks } from '../editors/useProjectBlocks';
 import { presentAiProviderConfig, presentAiProviderMutation, presentAiProviderResponse, presentAiProviderStatus, type AiProviderMode, type AiProviderResponsePresentation, type AiProviderStatusPresentation } from './aiProviderPresentation';
 import { useTheme } from '../hooks/useTheme';
 import { ZPLC_DARK_THEME, ZPLC_DARK_THEME_ID, ZPLC_HIGH_CONTRAST_THEME, ZPLC_HIGH_CONTRAST_THEME_ID, ZPLC_LIGHT_THEME, ZPLC_LIGHT_THEME_ID } from '../utils/monaco-themes';
@@ -117,6 +120,7 @@ export function Console({ debugController }: ConsoleProps) {
     updateFileContent,
   } = useIDEStore();
   const { effectiveTheme } = useTheme();
+  const projectBlocks = useProjectBlocks();
   const [workspaceTestBusy, setWorkspaceTestBusy] = useState(false);
   const [workspaceTestState, setWorkspaceTestState] = useState<'idle' | 'selected' | 'running' | 'cancelling' | 'desktop-unavailable' | WorkspaceTestResultState>('idle');
   const [workspaceSafetyState, setWorkspaceSafetyState] = useState<WorkspaceSafetyState>('idle');
@@ -179,6 +183,16 @@ export function Console({ debugController }: ConsoleProps) {
   const warningCount = compilerMessages.filter((message) => message.type === 'warning').length
     + liveSTDiagnostics.filter((message) => message.type === 'warning').length;
   const problemSummary = `${errorCount} ${errorCount === 1 ? 'error' : 'errors'} · ${warningCount} ${warningCount === 1 ? 'warning' : 'warnings'}`;
+
+  // Opening a problem opens its file at its position, and in a diagram selects the element it is about (LNG-003)
+  const activateDiagnostic = async (msg: { file?: string; line?: number; column?: number; message: string }) => {
+    if (!msg.file) return;
+    const opened = await navigateToCompilerDiagnostic(msg.file, msg.line && msg.line >= 1 ? msg.line : 1, msg.column ?? 1);
+    if (!opened) return;
+    const file = [...useIDEStore.getState().loadedFiles.values()].find((candidate) => candidate.path === msg.file);
+    const element = file ? elementOfDiagnostic(file, msg, projectBlocks) : undefined;
+    if (element) requestElementSelection(msg.file, element);
+  };
 
   const tabs: { id: ConsoleTab; label: string; icon: React.ReactNode; count?: React.ReactNode; ariaLabel?: string }[] = [
     { id: 'explorer', label: 'Explorer', icon: <FolderOpen size={14} />, ariaLabel: 'Explorer' },
@@ -707,7 +721,9 @@ export function Console({ debugController }: ConsoleProps) {
               ) : (
               compilerMessages.map((msg, idx) => {
                 const node = msg.file && fileTree ? findFileInTree(fileTree, msg.file) : null;
-                const navigable = Boolean(node?.type === 'file' && node.path === msg.file && msg.line && msg.line >= 1);
+                // a diagram has no lines: a finding of its translation has no position, and its element is found on activation
+                const inDiagram = node?.type === 'file' && (node.language === 'LD' || node.language === 'FBD' || node.language === 'SFC');
+                const navigable = Boolean(node?.type === 'file' && node.path === msg.file && ((msg.line && msg.line >= 1) || inDiagram));
                 const content = <>
                   {msg.type === 'error' && (
                     <XCircle size={14} className="text-[var(--color-accent-red)] mt-0.5 flex-shrink-0" />
@@ -730,7 +746,7 @@ export function Console({ debugController }: ConsoleProps) {
                     )}
                   </div>
                 </>;
-                return navigable ? <button key={idx} type="button" onClick={() => { void navigateToCompilerDiagnostic(msg.file!, msg.line!, msg.column ?? 1); }} className="flex w-full items-start gap-2 rounded px-2 py-1 text-left hover:bg-[var(--color-surface-700)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-accent-blue)]">{content}</button> : <div key={idx} className="flex items-start gap-2 rounded px-2 py-1">{content}</div>;
+                return navigable ? <button key={idx} type="button" onClick={() => { void activateDiagnostic(msg); }} className="flex w-full items-start gap-2 rounded px-2 py-1 text-left hover:bg-[var(--color-surface-700)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-accent-blue)]">{content}</button> : <div key={idx} className="flex items-start gap-2 rounded px-2 py-1">{content}</div>;
               })
               )}
             </section>

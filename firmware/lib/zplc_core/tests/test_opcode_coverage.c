@@ -294,6 +294,401 @@ static uint32_t ref_float_to_int(float f)
     return from_signed((int64_t)d);
 }
 
+/* ----------------------------------------------------------------------------
+ * 64-bit integer and double-precision opcodes (CMP-015)
+ *
+ * A two-word value has its low word deeper on the stack. The model uses the
+ * host's int64_t and double, written so that no operation here is undefined
+ * behaviour in C, and checks the VM, which computes the same results with
+ * integer arithmetic only. Every NaN a double operation produces is the quiet
+ * NaN 0x7FF8000000000000; NEGD and ABSD change the sign bit and keep the rest.
+ * ------------------------------------------------------------------------- */
+
+#define D_QNAN 0x7FF8000000000000ULL
+#define D_SIGN 0x8000000000000000ULL
+
+static uint64_t ref_pop64(ref_t *m)
+{
+    const uint32_t high = ref_pop(m);
+    const uint32_t low = ref_pop(m);
+
+    return ((uint64_t)high << 32) | low;
+}
+
+static void ref_push64(ref_t *m, uint64_t v)
+{
+    if (ref_push(m, (uint32_t)(v & 0xFFFFFFFFULL))) {
+        ref_push(m, (uint32_t)(v >> 32));
+    }
+}
+
+static double bits_d(uint64_t bits)
+{
+    double d;
+
+    memcpy(&d, &bits, sizeof d);
+    return d;
+}
+
+/* The bits of a double result: a NaN is always the quiet NaN. */
+static uint64_t d_bits(double d)
+{
+    uint64_t bits;
+
+    if (d != d) {
+        return D_QNAN;
+    }
+    memcpy(&bits, &d, sizeof bits);
+    return bits;
+}
+
+/* Truncation toward zero with saturation; a NaN is 0. The comparisons come before the cast. */
+static int64_t ref_double_to_i64(double d)
+{
+    if (d != d) {
+        return 0;
+    }
+    if (d >= 9223372036854775808.0) {
+        return INT64_MAX;
+    }
+    if (d <= -9223372036854775808.0) {
+        return INT64_MIN;
+    }
+    return (int64_t)d;
+}
+
+static uint64_t ref_double_to_u64(double d)
+{
+    if (d != d || d < 1.0) {
+        return 0U;
+    }
+    if (d >= 18446744073709551616.0) {
+        return UINT64_MAX;
+    }
+    return (uint64_t)d;
+}
+
+static uint32_t ref_double_to_i32(double d)
+{
+    if (d != d) {
+        return 0U;
+    }
+    if (d >= 2147483648.0) {
+        return 0x7FFFFFFFU;
+    }
+    if (d <= -2147483648.0) {
+        return 0x80000000U;
+    }
+    return from_signed((int64_t)d);
+}
+
+static uint32_t ref_double_to_float(double d)
+{
+    float f;
+
+    if (d != d) {
+        return 0x7FC00000U;
+    }
+    /* 0x1.ffffffp127 is FLT_MAX plus half an ulp: from there the nearest-even result is the infinity */
+    if (d >= 340282356779733661637539395458142568448.0) {
+        return 0x7F800000U;
+    }
+    if (d <= -340282356779733661637539395458142568448.0) {
+        return 0xFF800000U;
+    }
+    f = (float)d;
+    return f_bits(f);
+}
+
+/* Round to the nearest integral value, a tie to the even one, without the C library: |d| < 2^52 here. */
+static uint64_t ref_round_double(uint64_t bits)
+{
+    double d = bits_d(bits);
+    double whole;
+    double fraction;
+    const uint64_t sign = bits & D_SIGN;
+
+    if (d != d) {
+        return D_QNAN;
+    }
+    if (d >= 4503599627370496.0 || d <= -4503599627370496.0) {
+        return bits; /* every such value is integral, and so is an infinity */
+    }
+    whole = (double)(int64_t)d; /* truncated toward zero */
+    fraction = d - whole;       /* exact, sign of d */
+    if (fraction >= 0.5 || fraction <= -0.5) {
+        const int odd = (((int64_t)whole) & 1) != 0;
+
+        if (fraction == 0.5 || fraction == -0.5) {
+            if (odd) {
+                whole += d > 0.0 ? 1.0 : -1.0;
+            }
+        } else {
+            whole += d > 0.0 ? 1.0 : -1.0;
+        }
+    }
+    if (whole == 0.0) {
+        return sign; /* the zero keeps the sign of the argument */
+    }
+    return d_bits(whole);
+}
+
+typedef struct {
+    uint64_t high;
+    uint64_t low;
+} u128_t;
+
+/* floor(sqrt(n)) of a 128-bit number by the digit-by-digit method; *exact is set when n is a perfect square. */
+static uint64_t ref_isqrt128(u128_t n, int *exact)
+{
+    uint64_t root = 0;
+    u128_t rem = { 0U, 0U };
+    int step;
+
+    for (step = 63; step >= 0; step--) {
+        /* bring down the next two bits of n: rem = rem * 4 + bits */
+        const unsigned bits = (unsigned)(((step >= 32 ? n.high >> (2 * (step - 32)) : n.low >> (2 * step))) & 3U);
+        u128_t trial;
+
+        rem.high = (rem.high << 2) | (rem.low >> 62);
+        rem.low = (rem.low << 2) | bits;
+        /* trial = root * 4 + 1 */
+        trial.high = root >> 62;
+        trial.low = (root << 2) | 1U;
+        root <<= 1;
+        if (rem.high > trial.high || (rem.high == trial.high && rem.low >= trial.low)) {
+            rem.high -= trial.high + (rem.low < trial.low ? 1U : 0U);
+            rem.low -= trial.low;
+            root |= 1U;
+        }
+    }
+    *exact = rem.high == 0U && rem.low == 0U;
+    return root;
+}
+
+/* The correctly rounded square root of a positive finite double, by integer arithmetic. */
+static uint64_t ref_sqrt_bits(uint64_t bits)
+{
+    uint64_t fraction = bits & 0x000FFFFFFFFFFFFFULL;
+    int exponent = (int)((bits >> 52) & 0x7FFU);
+    u128_t n;
+    uint64_t root;
+    int exact;
+    int k;
+
+    if (exponent == 0) {
+        exponent = 1;
+    } else {
+        fraction |= 0x0010000000000000ULL;
+    }
+    k = exponent - 1075; /* value = fraction * 2^k */
+    while ((fraction & 0x0010000000000000ULL) == 0U) {
+        fraction <<= 1;
+        k--;
+    }
+    if ((k & 1) != 0) {
+        fraction <<= 1;
+        k--;
+    }
+    /* n = fraction * 2^72, so sqrt(value) = isqrt(n) * 2^((k - 72) / 2) */
+    n.high = fraction << 8;
+    n.low = 0U;
+    root = ref_isqrt128(n, &exact);
+    {
+        /* root has 63 bits: keep 53, round to nearest even on the 10 below */
+        const int shift = 10;
+        uint64_t mantissa = root >> shift;
+        const uint64_t rest = root & ((1ULL << shift) - 1U);
+        const uint64_t half = 1ULL << (shift - 1);
+        int exponent_out = (k - 72) / 2 + shift;
+
+        /* the true root lies above the integer root unless n is a perfect square */
+        if (rest > half || (rest == half && (!exact || (mantissa & 1U) != 0U))) {
+            mantissa++;
+        }
+        if (mantissa == 0x0020000000000000ULL) {
+            mantissa >>= 1;
+            exponent_out++;
+        }
+        return ((uint64_t)(exponent_out + 1075) << 52) + (mantissa & 0x000FFFFFFFFFFFFFULL);
+    }
+}
+
+static void ref_wide(ref_t *m, uint8_t op)
+{
+    uint64_t a;
+    uint64_t b;
+    uint32_t count;
+    uint32_t w;
+
+    switch (op) {
+    case OP_MUL64:
+    case OP_DIVS64:
+    case OP_DIVU64:
+    case OP_MODS64:
+    case OP_MODU64:
+        b = ref_pop64(m);
+        a = ref_pop64(m);
+        if ((op == OP_MUL64) || b != 0U) {
+            const int64_t sa = (int64_t)a;
+            const int64_t sb = (int64_t)b;
+
+            if (op == OP_MUL64) {
+                ref_push64(m, a * b);
+            } else if (op == OP_DIVU64) {
+                ref_push64(m, a / b);
+            } else if (op == OP_MODU64) {
+                ref_push64(m, a % b);
+            } else if (op == OP_DIVS64) {
+                /* INT64_MIN / -1 does not fit: it wraps to INT64_MIN */
+                ref_push64(m, sb == -1 ? 0U - a : (uint64_t)(sa / sb));
+            } else {
+                ref_push64(m, sb == -1 ? 0U : (uint64_t)(sa % sb));
+            }
+        } else {
+            ref_fault(m, ZPLC_VM_DIV_BY_ZERO);
+        }
+        break;
+    case OP_NEG64:
+        a = ref_pop64(m);
+        ref_push64(m, 0U - a);
+        break;
+    case OP_ABS64:
+        a = ref_pop64(m);
+        ref_push64(m, (a >> 63) != 0U ? 0U - a : a);
+        break;
+    case OP_SHL64:
+    case OP_SHR64:
+    case OP_SAR64:
+        count = ref_pop(m);
+        a = ref_pop64(m);
+        if (op == OP_SHL64) {
+            ref_push64(m, count >= 64U ? 0U : a << count);
+        } else if (op == OP_SHR64) {
+            ref_push64(m, count >= 64U ? 0U : a >> count);
+        } else if ((a >> 63) == 0U) {
+            ref_push64(m, count >= 64U ? 0U : a >> count);
+        } else {
+            ref_push64(m, count >= 64U ? UINT64_MAX : ~(~a >> count));
+        }
+        break;
+
+    case OP_ADDD:
+    case OP_SUBD:
+    case OP_MULD:
+    case OP_DIVD: {
+        double x;
+        double y;
+
+        b = ref_pop64(m);
+        a = ref_pop64(m);
+        x = bits_d(a);
+        y = bits_d(b);
+        if (op == OP_DIVD && y == 0.0) {
+            ref_fault(m, ZPLC_VM_DIV_BY_ZERO);
+            break;
+        }
+        ref_push64(m, d_bits(op == OP_ADDD ? x + y : (op == OP_SUBD ? x - y : (op == OP_MULD ? x * y : x / y))));
+        break;
+    }
+    case OP_NEGD:
+        a = ref_pop64(m);
+        ref_push64(m, a ^ D_SIGN);
+        break;
+    case OP_ABSD:
+        a = ref_pop64(m);
+        ref_push64(m, a & ~D_SIGN);
+        break;
+    case OP_SQRTD:
+        a = ref_pop64(m);
+        if (bits_d(a) != bits_d(a)) {
+            ref_push64(m, D_QNAN);
+        } else if (bits_d(a) <= 0.0) {
+            ref_push64(m, 0U);
+        } else if ((a & 0x7FFFFFFFFFFFFFFFULL) == 0x7FF0000000000000ULL) {
+            ref_push64(m, a);
+        } else {
+            ref_push64(m, ref_sqrt_bits(a));
+        }
+        break;
+    case OP_RNDD:
+        a = ref_pop64(m);
+        ref_push64(m, ref_round_double(a));
+        break;
+
+    case OP_EQD:
+    case OP_NED:
+    case OP_LTD:
+    case OP_LED:
+    case OP_GTD:
+    case OP_GED: {
+        double x;
+        double y;
+        int r;
+
+        b = ref_pop64(m);
+        a = ref_pop64(m);
+        x = bits_d(a);
+        y = bits_d(b);
+        switch (op) {
+        case OP_EQD: r = x == y; break;
+        case OP_NED: r = x != y; break;
+        case OP_LTD: r = x < y; break;
+        case OP_LED: r = x <= y; break;
+        case OP_GTD: r = x > y; break;
+        default:     r = x >= y; break;
+        }
+        ref_push(m, r ? 1U : 0U);
+        break;
+    }
+
+    case OP_F2D:
+        w = ref_pop(m);
+        ref_push64(m, d_bits((double)bits_f(w)));
+        break;
+    case OP_D2F:
+        a = ref_pop64(m);
+        ref_push(m, ref_double_to_float(bits_d(a)));
+        break;
+    case OP_I2D:
+        w = ref_pop(m);
+        ref_push64(m, d_bits((double)as_signed(w)));
+        break;
+    case OP_D2I:
+        a = ref_pop64(m);
+        ref_push(m, ref_double_to_i32(bits_d(a)));
+        break;
+    case OP_L2D:
+        a = ref_pop64(m);
+        ref_push64(m, d_bits((double)(int64_t)a));
+        break;
+    case OP_U2D:
+        a = ref_pop64(m);
+        ref_push64(m, d_bits((double)a));
+        break;
+    case OP_D2L:
+        a = ref_pop64(m);
+        ref_push64(m, (uint64_t)ref_double_to_i64(bits_d(a)));
+        break;
+    case OP_D2U:
+        a = ref_pop64(m);
+        ref_push64(m, ref_double_to_u64(bits_d(a)));
+        break;
+    case OP_L2F:
+        a = ref_pop64(m);
+        ref_push(m, f_bits((float)(int64_t)a));
+        break;
+    case OP_U2F:
+        a = ref_pop64(m);
+        ref_push(m, f_bits((float)a));
+        break;
+    default:
+        g_model_gap = op;
+        ref_fault(m, ZPLC_VM_INVALID_OPCODE);
+        break;
+    }
+}
+
 static uint16_t addr16(uint32_t base, uint32_t offset)
 {
     return (uint16_t)((base + offset) & 0xFFFFU);
@@ -780,6 +1175,43 @@ static int ref_step(ref_t *m, const uint8_t *code, uint32_t code_size, uint32_t 
     case OP_ZEXT16:
         a = ref_pop(m);
         ref_push(m, a & 0xFFFFU);
+        break;
+
+    case OP_MUL64:
+    case OP_DIVS64:
+    case OP_DIVU64:
+    case OP_MODS64:
+    case OP_MODU64:
+    case OP_NEG64:
+    case OP_ABS64:
+    case OP_SHL64:
+    case OP_SHR64:
+    case OP_SAR64:
+    case OP_F2D:
+    case OP_D2F:
+    case OP_I2D:
+    case OP_D2I:
+    case OP_L2D:
+    case OP_D2L:
+    case OP_U2D:
+    case OP_D2U:
+    case OP_L2F:
+    case OP_U2F:
+    case OP_ADDD:
+    case OP_SUBD:
+    case OP_MULD:
+    case OP_DIVD:
+    case OP_NEGD:
+    case OP_ABSD:
+    case OP_SQRTD:
+    case OP_RNDD:
+    case OP_EQD:
+    case OP_NED:
+    case OP_LTD:
+    case OP_LED:
+    case OP_GTD:
+    case OP_GED:
+        ref_wide(m, op);
         break;
 
     case OP_COMM_EXEC:
@@ -1282,6 +1714,177 @@ static void family_float(void)
         }
     }
     run_binary("float", OP_DIVF, 0x3F800000U, 0x80000000U, 1); /* 1.0 / -0.0 */
+}
+
+static void c_push64(code_t *c, uint64_t v)
+{
+    c_push(c, (uint32_t)(v & 0xFFFFFFFFULL));
+    c_push(c, (uint32_t)(v >> 32));
+}
+
+/* Two-word integers: the extremes, the carries between the words, and the values that tell signed from unsigned. */
+static const uint64_t I64_VALUES[] = {
+    0x0000000000000000ULL, 0x0000000000000001ULL, 0x0000000000000002ULL, 0x0000000000000007ULL,
+    0x000000000000000AULL, 0x00000000FFFFFFFFULL, 0x0000000100000000ULL, 0x7FFFFFFFFFFFFFFFULL,
+    0x8000000000000000ULL, 0x8000000000000001ULL, 0xFFFFFFFFFFFFFFFFULL, 0xFFFFFFFFFFFFFFF9ULL,
+    0xFFFFFFFF00000000ULL, 0xDEADBEEFCAFEBABEULL, 0x0123456789ABCDEFULL, 0x0020000000000001ULL,
+    0x0020000000000003ULL, 0x1000001000000001ULL, /* 2^60 + 2^36 + 1: one rounding to REAL and two do not agree */
+};
+#define N_I64 (sizeof(I64_VALUES) / sizeof(I64_VALUES[0]))
+
+static const uint32_t SHIFT_COUNTS[] = {
+    0U, 1U, 31U, 32U, 33U, 63U, 64U, 65U, 0x80000000U, 0xFFFFFFFFU,
+};
+#define N_COUNTS (sizeof(SHIFT_COUNTS) / sizeof(SHIFT_COUNTS[0]))
+
+static const uint64_t DOUBLE_VALUES[] = {
+    0x0000000000000000ULL, /* +0.0 */
+    0x8000000000000000ULL, /* -0.0 */
+    0x3FF0000000000000ULL, /* 1.0 */
+    0xBFF8000000000000ULL, /* -1.5 */
+    0x400C000000000000ULL, /* 3.5 */
+    0x3FE0000000000000ULL, /* 0.5 */
+    0x4004000000000000ULL, /* 2.5 */
+    0x41E0000000000000ULL, /* 2^31 */
+    0xC1E0000000000000ULL, /* -2^31 */
+    0x43E0000000000000ULL, /* 2^63 */
+    0xC3E0000000000000ULL, /* -2^63 */
+    0x43F0000000000000ULL, /* 2^64 */
+    0x7FEFFFFFFFFFFFFFULL, /* DBL_MAX */
+    0x0010000000000000ULL, /* DBL_MIN */
+    0x000FFFFFFFFFFFFFULL, /* the largest subnormal */
+    0x0000000000000001ULL, /* the smallest subnormal */
+    0x7FF0000000000000ULL, /* +Inf */
+    0xFFF0000000000000ULL, /* -Inf */
+    0x7FF8000000000000ULL, /* quiet NaN */
+    0xFFF8000000000001ULL, /* negative NaN with a payload */
+    0x7FF0000000000001ULL, /* signalling NaN */
+    0x3FD5555555555555ULL, /* 1/3 */
+    0x3FB999999999999AULL, /* 0.1 */
+    0x3FF0000000000001ULL, /* 1 + 2^-52 */
+    0x4330000000000001ULL, /* 2^52 + 1 */
+    0x47EFFFFFE0000000ULL, /* FLT_MAX */
+    0x47EFFFFFF0000000ULL, /* FLT_MAX plus half an ulp of REAL: rounds to infinity */
+    0x3690000000000000ULL, /* 2^-149, the smallest REAL subnormal */
+    0x36A0000000000000ULL, /* 2^-150: half of it, a tie that goes to the even zero */
+};
+#define N_DOUBLE (sizeof(DOUBLE_VALUES) / sizeof(DOUBLE_VALUES[0]))
+
+/* The pairs of the binary operations are drawn from a subset (indices into the tables above): the unary
+ * operations and the conversions take every value, and the cases stay a few thousand, which is what the
+ * Cortex-M3 under QEMU runs in a reasonable time. */
+static const uint8_t I64_PAIR[] = { 0, 1, 2, 3, 5, 6, 7, 8, 10, 11, 12, 13 };
+static const uint8_t I64_SHIFTED[] = { 1, 6, 7, 8, 10, 12, 13 };
+static const uint8_t DOUBLE_ARITH[] = { 0, 1, 2, 3, 4, 5, 7, 9, 11, 12, 13, 14, 15, 16, 17, 18, 21, 22, 23, 26 };
+static const uint8_t DOUBLE_ORDER[] = { 0, 1, 2, 3, 12, 15, 16, 17, 18, 23 };
+
+static void family_wide_integer(void)
+{
+    static const uint8_t binary[] = { OP_MUL64, OP_DIVS64, OP_DIVU64, OP_MODS64, OP_MODU64 };
+    static const uint8_t unary[] = { OP_NEG64, OP_ABS64 };
+    static const uint8_t shifts[] = { OP_SHL64, OP_SHR64, OP_SAR64 };
+    static const uint8_t from_integer[] = { OP_L2D, OP_U2D, OP_L2F, OP_U2F };
+    case_t k;
+    code_t c;
+    unsigned i;
+    unsigned x;
+    unsigned y;
+
+    for (i = 0; i < sizeof(binary); i++) {
+        for (x = 0; x < sizeof(I64_PAIR); x++) {
+            for (y = 0; y < sizeof(I64_PAIR); y++) {
+                case_init(&k, "wide-integer", g_info[binary[i]].name);
+                memset(&c, 0, sizeof(c));
+                c_push64(&c, I64_VALUES[I64_PAIR[x]]);
+                c_push64(&c, I64_VALUES[I64_PAIR[y]]);
+                c_op(&c, binary[i]);
+                finish(&k, &c);
+            }
+        }
+    }
+    for (i = 0; i < sizeof(unary); i++) {
+        for (x = 0; x < N_I64; x++) {
+            case_init(&k, "wide-integer", g_info[unary[i]].name);
+            memset(&c, 0, sizeof(c));
+            c_push64(&c, I64_VALUES[x]);
+            c_op(&c, unary[i]);
+            finish(&k, &c);
+        }
+    }
+    for (i = 0; i < sizeof(shifts); i++) {
+        for (x = 0; x < sizeof(I64_SHIFTED); x++) {
+            for (y = 0; y < N_COUNTS; y++) {
+                case_init(&k, "wide-integer", g_info[shifts[i]].name);
+                memset(&c, 0, sizeof(c));
+                c_push64(&c, I64_VALUES[I64_SHIFTED[x]]);
+                c_push(&c, SHIFT_COUNTS[y]);
+                c_op(&c, shifts[i]);
+                finish(&k, &c);
+            }
+        }
+    }
+    /* two-word integer to LREAL and to REAL; the other way is in family_double() */
+    for (i = 0; i < sizeof(from_integer); i++) {
+        for (x = 0; x < N_I64; x++) {
+            case_init(&k, "wide-integer", g_info[from_integer[i]].name);
+            memset(&c, 0, sizeof(c));
+            c_push64(&c, I64_VALUES[x]);
+            c_op(&c, from_integer[i]);
+            finish(&k, &c);
+        }
+    }
+}
+
+static void family_double(void)
+{
+    static const uint8_t arithmetic[] = { OP_ADDD, OP_SUBD, OP_MULD, OP_DIVD };
+    static const uint8_t order[] = { OP_EQD, OP_NED, OP_LTD, OP_LED, OP_GTD, OP_GED };
+    static const uint8_t unary[] = { OP_NEGD, OP_ABSD, OP_SQRTD, OP_RNDD, OP_D2I, OP_D2L, OP_D2U, OP_D2F };
+    case_t k;
+    code_t c;
+    unsigned i;
+    unsigned x;
+    unsigned y;
+
+    for (i = 0; i < sizeof(arithmetic); i++) {
+        for (x = 0; x < sizeof(DOUBLE_ARITH); x++) {
+            for (y = 0; y < sizeof(DOUBLE_ARITH); y++) {
+                case_init(&k, "double", g_info[arithmetic[i]].name);
+                memset(&c, 0, sizeof(c));
+                c_push64(&c, DOUBLE_VALUES[DOUBLE_ARITH[x]]);
+                c_push64(&c, DOUBLE_VALUES[DOUBLE_ARITH[y]]);
+                c_op(&c, arithmetic[i]);
+                finish(&k, &c);
+            }
+        }
+    }
+    for (i = 0; i < sizeof(order); i++) {
+        for (x = 0; x < sizeof(DOUBLE_ORDER); x++) {
+            for (y = 0; y < sizeof(DOUBLE_ORDER); y++) {
+                case_init(&k, "double", g_info[order[i]].name);
+                memset(&c, 0, sizeof(c));
+                c_push64(&c, DOUBLE_VALUES[DOUBLE_ORDER[x]]);
+                c_push64(&c, DOUBLE_VALUES[DOUBLE_ORDER[y]]);
+                c_op(&c, order[i]);
+                finish(&k, &c);
+            }
+        }
+    }
+    for (i = 0; i < sizeof(unary); i++) {
+        for (x = 0; x < N_DOUBLE; x++) {
+            case_init(&k, "double", g_info[unary[i]].name);
+            memset(&c, 0, sizeof(c));
+            c_push64(&c, DOUBLE_VALUES[x]);
+            c_op(&c, unary[i]);
+            finish(&k, &c);
+        }
+    }
+    for (x = 0; x < N_FLOAT; x++) {
+        run_unary("double", OP_F2D, FLOAT_VALUES[x], 0);
+    }
+    for (x = 0; x < N_INT; x++) {
+        run_unary("double", OP_I2D, INT_VALUES[x], 0);
+    }
 }
 
 static void family_push(void)
@@ -1955,6 +2558,11 @@ static void check_ledger(void)
     NEEDS_FAULT(OP_DIV, ZPLC_VM_DIV_BY_ZERO, "division by zero is observed");
     NEEDS_FAULT(OP_MOD, ZPLC_VM_DIV_BY_ZERO, "modulo by zero is observed");
     NEEDS_FAULT(OP_DIVF, ZPLC_VM_DIV_BY_ZERO, "division by zero is observed");
+    NEEDS_FAULT(OP_DIVS64, ZPLC_VM_DIV_BY_ZERO, "division by zero is observed");
+    NEEDS_FAULT(OP_DIVU64, ZPLC_VM_DIV_BY_ZERO, "division by zero is observed");
+    NEEDS_FAULT(OP_MODS64, ZPLC_VM_DIV_BY_ZERO, "modulo by zero is observed");
+    NEEDS_FAULT(OP_MODU64, ZPLC_VM_DIV_BY_ZERO, "modulo by zero is observed");
+    NEEDS_FAULT(OP_DIVD, ZPLC_VM_DIV_BY_ZERO, "division by zero is observed");
     NEEDS_FAULT(OP_LOADI8, ZPLC_VM_OUT_OF_BOUNDS, "out-of-bounds read is observed");
     NEEDS_FAULT(OP_LOADI16, ZPLC_VM_OUT_OF_BOUNDS, "out-of-bounds read is observed");
     NEEDS_FAULT(OP_LOADI32, ZPLC_VM_OUT_OF_BOUNDS, "out-of-bounds read is observed");
@@ -2064,6 +2672,8 @@ int main(int argc, char **argv)
     family_stack();
     family_integer_and_logic();
     family_float();
+    family_wide_integer();
+    family_double();
     family_push();
     family_memory();
     family_string();

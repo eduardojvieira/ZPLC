@@ -11,20 +11,22 @@ from enum import IntEnum
 ZPLC_MAGIC = 0x434C505A
 ZPLC_VERSION_MAJOR = 1
 ZPLC_VERSION_MINOR = 0
-ZPLC_DRAFT_COUNTER = 2
+ZPLC_DRAFT_COUNTER = 4
 HEADER_SIZE = 32
 SEGMENT_ENTRY_SIZE = 8
 TASK_DEF_SIZE = 16
 IOMAP_ENTRY_SIZE = 8
 TAG_ENTRY_SIZE = 8
 MAX_TASKS = 16
+MAX_VERIFIED_DEPTH = 127
+BUILD_ENTRY_SIZE = 4
 CRC_OFFSET = 12
 CRC_SIZE = 4
 
 # Header layout: struct format of the 32-byte file header and of a segment entry.
 HEADER_STRUCT = "<IHHIIIIHHI"
 SEGMENT_ENTRY_STRUCT = "<HHI"
-TASK_DEF_STRUCT = "<HBBIHHI"
+TASK_DEF_STRUCT = "<HBBIHHHH"
 TAG_ENTRY_STRUCT = "<HBBI"
 
 SEGMENT_TYPE = {
@@ -37,6 +39,7 @@ SEGMENT_TYPE = {
     "DEBUG": 0x11,
     "TASK": 0x20,
     "TAGS": 0x30,
+    "BUILD": 0x40,
 }
 
 TASK_TYPE = {
@@ -118,6 +121,16 @@ class Opcode(IntEnum):
     HALT = 0x01  # Stop execution
     BREAK = 0x02  # Debugger breakpoint
     GET_TICKS = 0x03  # Push system tick (ms) to stack
+    MUL64 = 0x04  # 64-bit integer multiplication (low 64 bits of the product, wraps)
+    DIVS64 = 0x05  # 64-bit signed division; zero divisor faults, INT64_MIN / -1 is INT64_MIN
+    DIVU64 = 0x06  # 64-bit unsigned division; zero divisor faults
+    MODS64 = 0x07  # 64-bit signed modulo, sign of the dividend; zero divisor faults, b = -1 gives 0
+    MODU64 = 0x08  # 64-bit unsigned modulo; zero divisor faults
+    NEG64 = 0x09  # 64-bit integer negation (INT64_MIN stays INT64_MIN)
+    ABS64 = 0x0A  # 64-bit signed absolute value (INT64_MIN stays INT64_MIN)
+    SHL64 = 0x0B  # 64-bit shift left by a 32-bit unsigned count; 64 or more gives 0
+    SHR64 = 0x0C  # 64-bit logical shift right; a count of 64 or more gives 0
+    SAR64 = 0x0D  # 64-bit arithmetic shift right; a count of 64 or more gives 0 or -1 by the sign
     DUP = 0x10  # Duplicate top of stack
     DROP = 0x11  # Discard top of stack
     SWAP = 0x12  # Swap top two elements
@@ -188,6 +201,30 @@ class Opcode(IntEnum):
     EXT16 = 0xA4  # Sign-extend 16-bit to 32-bit
     ZEXT8 = 0xA5  # Zero-extend 8-bit to 32-bit
     ZEXT16 = 0xA6  # Zero-extend 16-bit to 32-bit
+    F2D = 0xA7  # REAL to LREAL (exact; every NaN becomes the quiet NaN)
+    D2F = 0xA8  # LREAL to REAL, round to nearest even (overflow gives infinity)
+    I2D = 0xA9  # Signed 32-bit integer to LREAL (exact)
+    D2I = 0xAA  # LREAL to signed 32-bit integer: truncates toward zero, saturates, NaN gives 0
+    L2D = 0xAB  # Signed 64-bit integer to LREAL, round to nearest even
+    D2L = 0xAC  # LREAL to signed 64-bit integer: truncates toward zero, saturates, NaN gives 0
+    U2D = 0xAD  # Unsigned 64-bit integer to LREAL, round to nearest even
+    D2U = 0xAE  # LREAL to unsigned 64-bit integer: truncates toward zero, below 1.0 and NaN give 0, saturates
+    L2F = 0xAF  # Signed 64-bit integer to REAL, one rounding to nearest even
+    U2F = 0xB0  # Unsigned 64-bit integer to REAL, one rounding to nearest even
+    ADDD = 0xB1  # LREAL addition (IEEE 754 binary64, round to nearest even)
+    SUBD = 0xB2  # LREAL subtraction
+    MULD = 0xB3  # LREAL multiplication
+    DIVD = 0xB4  # LREAL division; a divisor of 0.0 or -0.0 faults
+    NEGD = 0xB5  # LREAL negation (flips the sign bit)
+    ABSD = 0xB6  # LREAL absolute value (clears the sign bit)
+    SQRTD = 0xB7  # LREAL square root, correctly rounded; 0.0 for an argument at or below 0.0
+    RNDD = 0xB8  # LREAL rounded to the nearest integral value, a tie to the even one
+    EQD = 0xB9  # LREAL equal (false when either operand is a NaN)
+    NED = 0xBA  # LREAL not equal (true when either operand is a NaN)
+    LTD = 0xBB  # LREAL less than (false with a NaN)
+    LED = 0xBC  # LREAL less or equal (false with a NaN)
+    GTD = 0xBD  # LREAL greater than (false with a NaN)
+    GED = 0xBE  # LREAL greater or equal (false with a NaN)
     PUSH32 = 0xC0  # Push 32-bit immediate
     COMM_EXEC = 0xD0  # Execute/update Comm FB; pop base addr from stack
     COMM_STATUS = 0xD1  # Push status word for a kind to stack
@@ -200,6 +237,16 @@ OPCODE_INFO = {
     Opcode.HALT: {"operand": 0, "pops": 0, "pushes": 0, "min_depth": 0, "flags": ('terminates',), "effect": "[] -> []"},
     Opcode.BREAK: {"operand": 0, "pops": 0, "pushes": 0, "min_depth": 0, "flags": (), "effect": "[] -> []"},
     Opcode.GET_TICKS: {"operand": 0, "pops": 0, "pushes": 1, "min_depth": 0, "flags": (), "effect": "[] -> [ticks]"},
+    Opcode.MUL64: {"operand": 0, "pops": 4, "pushes": 2, "min_depth": 4, "flags": (), "effect": "[alo ahi blo bhi] -> [lo hi]"},
+    Opcode.DIVS64: {"operand": 0, "pops": 4, "pushes": 2, "min_depth": 4, "flags": (), "effect": "[alo ahi blo bhi] -> [lo hi]"},
+    Opcode.DIVU64: {"operand": 0, "pops": 4, "pushes": 2, "min_depth": 4, "flags": (), "effect": "[alo ahi blo bhi] -> [lo hi]"},
+    Opcode.MODS64: {"operand": 0, "pops": 4, "pushes": 2, "min_depth": 4, "flags": (), "effect": "[alo ahi blo bhi] -> [lo hi]"},
+    Opcode.MODU64: {"operand": 0, "pops": 4, "pushes": 2, "min_depth": 4, "flags": (), "effect": "[alo ahi blo bhi] -> [lo hi]"},
+    Opcode.NEG64: {"operand": 0, "pops": 2, "pushes": 2, "min_depth": 2, "flags": (), "effect": "[lo hi] -> [lo hi]"},
+    Opcode.ABS64: {"operand": 0, "pops": 2, "pushes": 2, "min_depth": 2, "flags": (), "effect": "[lo hi] -> [lo hi]"},
+    Opcode.SHL64: {"operand": 0, "pops": 3, "pushes": 2, "min_depth": 3, "flags": (), "effect": "[lo hi n] -> [lo hi]"},
+    Opcode.SHR64: {"operand": 0, "pops": 3, "pushes": 2, "min_depth": 3, "flags": (), "effect": "[lo hi n] -> [lo hi]"},
+    Opcode.SAR64: {"operand": 0, "pops": 3, "pushes": 2, "min_depth": 3, "flags": (), "effect": "[lo hi n] -> [lo hi]"},
     Opcode.DUP: {"operand": 0, "pops": 0, "pushes": 1, "min_depth": 1, "flags": (), "effect": "[a] -> [a a]"},
     Opcode.DROP: {"operand": 0, "pops": 1, "pushes": 0, "min_depth": 1, "flags": (), "effect": "[a] -> []"},
     Opcode.SWAP: {"operand": 0, "pops": 0, "pushes": 0, "min_depth": 2, "flags": (), "effect": "[a b] -> [b a]"},
@@ -270,6 +317,30 @@ OPCODE_INFO = {
     Opcode.EXT16: {"operand": 0, "pops": 1, "pushes": 1, "min_depth": 1, "flags": (), "effect": "[a] -> [r]"},
     Opcode.ZEXT8: {"operand": 0, "pops": 1, "pushes": 1, "min_depth": 1, "flags": (), "effect": "[a] -> [r]"},
     Opcode.ZEXT16: {"operand": 0, "pops": 1, "pushes": 1, "min_depth": 1, "flags": (), "effect": "[a] -> [r]"},
+    Opcode.F2D: {"operand": 0, "pops": 1, "pushes": 2, "min_depth": 1, "flags": (), "effect": "[f] -> [lo hi]"},
+    Opcode.D2F: {"operand": 0, "pops": 2, "pushes": 1, "min_depth": 2, "flags": (), "effect": "[lo hi] -> [f]"},
+    Opcode.I2D: {"operand": 0, "pops": 1, "pushes": 2, "min_depth": 1, "flags": (), "effect": "[a] -> [lo hi]"},
+    Opcode.D2I: {"operand": 0, "pops": 2, "pushes": 1, "min_depth": 2, "flags": (), "effect": "[lo hi] -> [a]"},
+    Opcode.L2D: {"operand": 0, "pops": 2, "pushes": 2, "min_depth": 2, "flags": (), "effect": "[lo hi] -> [lo hi]"},
+    Opcode.D2L: {"operand": 0, "pops": 2, "pushes": 2, "min_depth": 2, "flags": (), "effect": "[lo hi] -> [lo hi]"},
+    Opcode.U2D: {"operand": 0, "pops": 2, "pushes": 2, "min_depth": 2, "flags": (), "effect": "[lo hi] -> [lo hi]"},
+    Opcode.D2U: {"operand": 0, "pops": 2, "pushes": 2, "min_depth": 2, "flags": (), "effect": "[lo hi] -> [lo hi]"},
+    Opcode.L2F: {"operand": 0, "pops": 2, "pushes": 1, "min_depth": 2, "flags": (), "effect": "[lo hi] -> [f]"},
+    Opcode.U2F: {"operand": 0, "pops": 2, "pushes": 1, "min_depth": 2, "flags": (), "effect": "[lo hi] -> [f]"},
+    Opcode.ADDD: {"operand": 0, "pops": 4, "pushes": 2, "min_depth": 4, "flags": (), "effect": "[alo ahi blo bhi] -> [lo hi]"},
+    Opcode.SUBD: {"operand": 0, "pops": 4, "pushes": 2, "min_depth": 4, "flags": (), "effect": "[alo ahi blo bhi] -> [lo hi]"},
+    Opcode.MULD: {"operand": 0, "pops": 4, "pushes": 2, "min_depth": 4, "flags": (), "effect": "[alo ahi blo bhi] -> [lo hi]"},
+    Opcode.DIVD: {"operand": 0, "pops": 4, "pushes": 2, "min_depth": 4, "flags": (), "effect": "[alo ahi blo bhi] -> [lo hi]"},
+    Opcode.NEGD: {"operand": 0, "pops": 2, "pushes": 2, "min_depth": 2, "flags": (), "effect": "[lo hi] -> [lo hi]"},
+    Opcode.ABSD: {"operand": 0, "pops": 2, "pushes": 2, "min_depth": 2, "flags": (), "effect": "[lo hi] -> [lo hi]"},
+    Opcode.SQRTD: {"operand": 0, "pops": 2, "pushes": 2, "min_depth": 2, "flags": (), "effect": "[lo hi] -> [lo hi]"},
+    Opcode.RNDD: {"operand": 0, "pops": 2, "pushes": 2, "min_depth": 2, "flags": (), "effect": "[lo hi] -> [lo hi]"},
+    Opcode.EQD: {"operand": 0, "pops": 4, "pushes": 1, "min_depth": 4, "flags": (), "effect": "[alo ahi blo bhi] -> [flag]"},
+    Opcode.NED: {"operand": 0, "pops": 4, "pushes": 1, "min_depth": 4, "flags": (), "effect": "[alo ahi blo bhi] -> [flag]"},
+    Opcode.LTD: {"operand": 0, "pops": 4, "pushes": 1, "min_depth": 4, "flags": (), "effect": "[alo ahi blo bhi] -> [flag]"},
+    Opcode.LED: {"operand": 0, "pops": 4, "pushes": 1, "min_depth": 4, "flags": (), "effect": "[alo ahi blo bhi] -> [flag]"},
+    Opcode.GTD: {"operand": 0, "pops": 4, "pushes": 1, "min_depth": 4, "flags": (), "effect": "[alo ahi blo bhi] -> [flag]"},
+    Opcode.GED: {"operand": 0, "pops": 4, "pushes": 1, "min_depth": 4, "flags": (), "effect": "[alo ahi blo bhi] -> [flag]"},
     Opcode.PUSH32: {"operand": 4, "pops": 0, "pushes": 1, "min_depth": 0, "flags": (), "effect": "[] -> [imm]"},
     Opcode.COMM_EXEC: {"operand": 4, "pops": 1, "pushes": 0, "min_depth": 1, "flags": ('comm',), "effect": "[base] -> []"},
     Opcode.COMM_STATUS: {"operand": 4, "pops": 1, "pushes": 1, "min_depth": 1, "flags": ('comm',), "effect": "[base] -> [status]"},
@@ -281,7 +352,7 @@ def get_operand_size(opcode: int) -> int:
     """Operand size in bytes for an opcode value (the C zplc_opcode_operand_size)."""
     if opcode == 0x94:  # RET
         return 0
-    if 0xA0 <= opcode <= 0xA6:  # I2F..ZEXT16
+    if 0xA0 <= opcode <= 0xBE:  # I2F..GED
         return 0
     if opcode <= 0x3F:
         return 0

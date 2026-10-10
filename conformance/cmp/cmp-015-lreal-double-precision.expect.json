@@ -2,7 +2,7 @@
   "requirement": "CMP-015",
   "title": "LREAL keeps double precision",
   "matrix": ["data-types.lreal"],
-  "tags": ["arch-sensitive", "64-bit", "alignment"],
+  "tags": ["arch-sensitive", "64-bit", "float", "alignment"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QX0.0", "type": "BOOL", "value": true }]

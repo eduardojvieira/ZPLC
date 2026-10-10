@@ -1,0 +1,16 @@
+{
+  "requirement": "CMP-005",
+  "title": "a STRING value is not assigned to an INT",
+  "matrix": [
+    "data-types.string-string-n"
+  ],
+  "note": "CMP-005: a text and a number are different kinds of value; IEC 61131-3 converts neither to the other implicitly, so the build is refused at the value and names both types",
+  "build": "fails",
+  "lines": [
+    6
+  ],
+  "messageIncludes": [
+    "STRING",
+    "INT"
+  ]
+}

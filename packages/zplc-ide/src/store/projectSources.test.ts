@@ -24,7 +24,7 @@ const DISK: Record<string, string> = {
 const loaded = (path: string, content: string): ProjectFileWithHandle => ({ id: `file:${path}`, name: path.split('/').at(-1)!, path, language: 'ST', content, isModified: true, diskContent: DISK[path] ?? '' } as ProjectFileWithHandle);
 const reader = (reads: string[] = []) => async (node: FileTreeNode) => { reads.push(node.path); return DISK[node.path]; };
 
-afterEach(() => { setProjectDeclarations([]); useProjectSources.setState({ sources: [], declarations: [] }); });
+afterEach(() => { setProjectDeclarations([]); useProjectSources.setState({ sources: [], declarations: [], unlisted: [] }); });
 
 describe('readProjectSources (IDE-023)', () => {
   it('reads the files of src and of the libraries from disk, and none of the others', async () => {
@@ -87,6 +87,17 @@ describe('trackProjectSources (IDE-023)', () => {
     store.set({ projectConfig: { name: 'P', version: '1.0.0' } });
     await settle();
     expect(getProjectDeclarations().map((entry) => entry.name)).not.toContain('Debounce');
+    stop();
+  });
+
+  it('publishes the files no build reads, and drops them when a library lists their folder', async () => {
+    const store = fakeStore({});
+    const stop = trackProjectSources(store, { read: reader(), delayMs: 1 });
+    await settle();
+    expect(useProjectSources.getState().unlisted).toEqual(['docs/Example.st', 'lib/Debounce.st']);
+    store.set({ projectConfig: { name: 'P', version: '1.0.0', libraries: ['lib'] } });
+    await settle();
+    expect(useProjectSources.getState().unlisted).toEqual(['docs/Example.st']);
     stop();
   });
 

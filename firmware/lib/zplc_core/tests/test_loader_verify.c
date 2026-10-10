@@ -215,7 +215,7 @@ static void test_valid_fixture_and_purity(void) {
   zplc_program_view_t sentinel;
   const size_t length = read_fixture(file, sizeof(file));
 
-  CHECK(length == 82U, "shared assembler fixture has expected length");
+  CHECK(length == 94U, "shared assembler fixture has expected length");
   memcpy(original, file, length);
   memset(&sentinel, 0xA5, sizeof(sentinel));
   view = sentinel;
@@ -227,8 +227,10 @@ static void test_valid_fixture_and_purity(void) {
         "view exposes code");
   CHECK(view.task_count == 1U && view.tag_count == 1U,
         "view exposes task and tag counts");
-  CHECK(view.segment_count == 3U && view.segments[2].type == 0x30U,
+  CHECK(view.segment_count == 4U && view.segments[2].type == 0x30U,
         "view exposes segments");
+  CHECK(view.segments[3].type == ZPLC_SEG_BUILD && view.build_id != 0U,
+        "view exposes the build identity");
 
   file[0] ^= 1U;
   view = sentinel;
@@ -303,7 +305,7 @@ static void test_structural_rejections(void) {
   expect_rejection(file, length + 1U, ZPLC_LOADER_ERR_SIZE,
                    "trailing bytes are rejected");
   (void)read_fixture(file, sizeof(file));
-  file[26] = 7U;
+  file[26] = (uint8_t)((length - ZPLC_FILE_HEADER_SIZE) / ZPLC_SEGMENT_ENTRY_SIZE + 1U);
   refresh_crc(file, length);
   expect_rejection(file, length, ZPLC_LOADER_ERR_SIZE,
                    "truncated segment table is rejected");
@@ -459,7 +461,7 @@ static void test_semantic_rejections_and_acceptance(void) {
                                   ZPLC_LOADER_ERR_WORKSPACE,
                                   "one byte below exact workspace is rejected");
 
-  code[0] = 0x04U;
+  code[0] = 0x0EU;
   length = make_program(file, code, sizeof(code));
   expect_rejection(file, length, ZPLC_LOADER_ERR_OPCODE,
                    "unknown opcode with valid CRC is rejected");
@@ -627,7 +629,7 @@ static void test_semantic_rejections_and_acceptance(void) {
   expect_rejection(file, length, ZPLC_LOADER_ERR_TASK,
                    "oversized task stack is rejected");
   length = make_program(file, code, 1U);
-  file[49U + 12U] = 1U;
+  file[49U + 14U] = 1U;
   refresh_crc(file, length);
   expect_rejection(file, length, ZPLC_LOADER_ERR_TASK,
                    "reserved task bytes are rejected");
@@ -760,6 +762,109 @@ static void test_tag_semantics(void) {
 /* CMP-052: the loader refuses an artifact built for another draft of the contract or without a counter.
  * The artifact records the draft in header word 28 and the loader reports both numbers: the artifact's
  * through zplc_loader_artifact_draft_counter, which trusts neither the magic nor the CRC, and its own. */
+/* CMP-050: the depth a task declares is proved, and 0 declares nothing. A
+ * task that calls one subroutine has two frames. */
+static void test_declared_call_depth(void) {
+  uint8_t file[256];
+  const uint8_t calls[] = {OP_CALL, 4U, 0U, OP_HALT, OP_RET};
+  const size_t task_offset = ZPLC_FILE_HEADER_SIZE + 2U * ZPLC_SEGMENT_ENTRY_SIZE + sizeof(calls);
+  zplc_program_view_t view;
+  size_t length = make_program(file, calls, sizeof(calls));
+
+  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) == ZPLC_LOADER_OK,
+        "a task that declares no call depth is accepted");
+  write_u16_le(file + task_offset + 12U, 2U);
+  refresh_crc(file, length);
+  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) == ZPLC_LOADER_OK,
+        "a declared call depth equal to the frames is accepted");
+  write_u16_le(file + task_offset + 12U, 5U);
+  refresh_crc(file, length);
+  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) == ZPLC_LOADER_OK,
+        "a declared call depth above the frames is accepted");
+  write_u16_le(file + task_offset + 12U, 1U);
+  refresh_crc(file, length);
+  expect_rejection(file, length, ZPLC_LOADER_ERR_STACK,
+                   "a declared call depth below the frames is rejected");
+  write_u16_le(file + task_offset + 12U, (uint16_t)(ZPLC_CALL_STACK_MAX + 1U));
+  refresh_crc(file, length);
+  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) == ZPLC_LOADER_OK,
+        "the call stack of the target and its body are the most a task may declare");
+  write_u16_le(file + task_offset + 12U, (uint16_t)(ZPLC_CALL_STACK_MAX + 2U));
+  refresh_crc(file, length);
+  expect_rejection(file, length, ZPLC_LOADER_ERR_TASK,
+                   "a declared call depth beyond the call stack of the target is rejected");
+
+  length = make_program(file, calls, sizeof(calls));
+  write_u16_le(file + task_offset + 14U, 1U);
+  refresh_crc(file, length);
+  expect_rejection(file, length, ZPLC_LOADER_ERR_TASK,
+                   "the reserved half of the call depth word must be zero");
+}
+
+/* CMP-056: the build identity is one 32-bit value in a BUILD segment, once,
+ * never 0. `segments` BUILD segments of `build_size` bytes are written. */
+static size_t make_identified_program(uint8_t *file, uint32_t build_id,
+                                      uint32_t build_size, uint32_t segments) {
+  const uint8_t code[] = {OP_HALT};
+  const size_t code_offset =
+      ZPLC_FILE_HEADER_SIZE + (2U + segments) * ZPLC_SEGMENT_ENTRY_SIZE;
+  const size_t task_offset = code_offset + sizeof(code);
+  const size_t build_offset = task_offset + ZPLC_TASK_DEF_SIZE;
+  const size_t length = build_offset + segments * build_size;
+  uint32_t index;
+
+  memset(file, 0, length);
+  memcpy(file, "ZPLC", 4U);
+  write_u16_le(file + 4U, ZPLC_VERSION_MAJOR);
+  write_u16_le(file + 6U, ZPLC_VERSION_MINOR);
+  write_u32_le(file + 28U, ZPLC_DRAFT_COUNTER);
+  write_u32_le(file + 16U, (uint32_t)sizeof(code));
+  write_u32_le(file + 20U, ZPLC_TASK_DEF_SIZE + segments * build_size);
+  write_u16_le(file + 26U, (uint16_t)(2U + segments));
+  file[32U] = ZPLC_SEG_CODE;
+  write_u32_le(file + 36U, (uint32_t)sizeof(code));
+  file[40U] = ZPLC_SEG_TASK;
+  write_u32_le(file + 44U, ZPLC_TASK_DEF_SIZE);
+  for (index = 0U; index < segments; index++) {
+    file[48U + index * ZPLC_SEGMENT_ENTRY_SIZE] = ZPLC_SEG_BUILD;
+    write_u32_le(file + 52U + index * ZPLC_SEGMENT_ENTRY_SIZE, build_size);
+    if (build_size >= 4U)
+      write_u32_le(file + build_offset + index * build_size, build_id + index);
+  }
+  file[code_offset] = code[0];
+  write_u32_le(file + task_offset + 4U, 10000U);
+  write_u16_le(file + task_offset + 10U, 1U);
+  refresh_crc(file, length);
+  return length;
+}
+
+static void test_build_identity(void) {
+  uint8_t file[256];
+  zplc_program_view_t view;
+  size_t length = make_identified_program(file, 0xC0FFEE11U, ZPLC_BUILD_ENTRY_SIZE, 1U);
+
+  memset(&view, 0, sizeof(view));
+  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) == ZPLC_LOADER_OK,
+        "an artifact with a build identity is accepted");
+  CHECK(view.build_id == 0xC0FFEE11U, "the view exposes the build identity");
+  CHECK(view.segment_count == 3U && view.segments[3].size == ZPLC_BUILD_ENTRY_SIZE &&
+            view.segments[3].type == ZPLC_SEG_BUILD,
+        "the view lists the BUILD segment");
+
+  length = make_program(file, (const uint8_t[]){OP_HALT}, 1U);
+  memset(&view, 0xA5, sizeof(view));
+  CHECK(zplc_loader_verify(file, length, workspace, sizeof(workspace), &view) == ZPLC_LOADER_OK &&
+            view.build_id == 0U,
+        "an artifact without one reads as 0, not identified");
+
+  length = make_identified_program(file, 0U, ZPLC_BUILD_ENTRY_SIZE, 1U);
+  expect_rejection(file, length, ZPLC_LOADER_ERR_SEGMENT, "a build identity of 0 is rejected");
+  length = make_identified_program(file, 7U, 8U, 1U);
+  expect_rejection(file, length, ZPLC_LOADER_ERR_SEGMENT, "a BUILD segment of another size is rejected");
+  length = make_identified_program(file, 7U, ZPLC_BUILD_ENTRY_SIZE, 2U);
+  expect_rejection(file, length, ZPLC_LOADER_ERR_SEGMENT, "a second BUILD segment is rejected");
+}
+
 static void test_draft_counter(void) {
   uint8_t file[128];
   uint8_t code[1] = {OP_RET};
@@ -819,6 +924,8 @@ int main(void) {
   test_semantic_rejections_and_acceptance();
   test_tag_semantics();
   test_draft_counter();
+  test_declared_call_depth();
+  test_build_identity();
   if (failures != 0)
     return 1;
   puts("All loader verifier tests passed.");

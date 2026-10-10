@@ -6,38 +6,23 @@
 
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, Circle, ArrowDown } from 'lucide-react';
+import { SFC_PALETTE, type SFCPaletteElement } from '../../models/sfcSupport';
 
 // =============================================================================
 // Element Categories
 // =============================================================================
 
 interface SFCElementCategory {
-  name: string;
+  name: SFCPaletteElement['category'];
   icon: React.ReactNode;
-  elements: Array<{
-    type: string;
-    label: string;
-    description: string;
-  }>;
+  elements: SFCPaletteElement[];
 }
 
+// The elements come from the table that the transpiler's coverage is stated in (LNG-007)
 const SFC_CATEGORIES: SFCElementCategory[] = [
-  {
-    name: 'Steps',
-    icon: <Circle size={14} />,
-    elements: [
-      { type: 'step', label: 'Step', description: 'Regular step state' },
-      { type: 'initial_step', label: 'Initial Step', description: 'Starting state (double border)' },
-    ],
-  },
-  {
-    name: 'Transitions',
-    icon: <ArrowDown size={14} />,
-    elements: [
-      { type: 'transition', label: 'Transition', description: 'Condition between steps' },
-    ],
-  },
-];
+  { name: 'Steps', icon: <Circle size={14} /> },
+  { name: 'Transitions', icon: <ArrowDown size={14} /> },
+].map((category) => ({ ...category, elements: SFC_PALETTE.filter((element) => element.category === category.name) } as SFCElementCategory));
 
 // =============================================================================
 // Component

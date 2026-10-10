@@ -35,12 +35,16 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import { type SFCModel, type SFCStep, type SFCTransition } from '../../models/sfc';
-import { copySFCFragment, hasCanonicalEdgeChanges, hasCanonicalNodeChanges, isCanonicalSFCConnection, nodesToSteps, nodesToTransitions, pasteSFCFragment, uniqueNodeId, type SFCClipboardFragment } from './graphModel';
+import { copySFCFragment, stepNodeData, transitionNodeData, hasCanonicalEdgeChanges, hasCanonicalNodeChanges, isCanonicalSFCConnection, nodesToSteps, nodesToTransitions, pasteSFCFragment, uniqueNodeId, type SFCClipboardFragment } from './graphModel';
 import { nodeTypes } from './nodes';
 import { edgeTypes } from './edges';
 import SFCToolbox from './SFCToolbox';
 import { useIDEStore } from '../../store/useIDEStore';
 import { useDebugValues } from '../../hooks/useDebugValue';
+import { useElementSelection } from '../elementSelection';
+import { useElementBreakpoints } from '../elementBreakpoints';
+import { markBreakpointNodes } from '../breakpointMarks';
+import { parseElement, stepElement, transitionElement, type SourceElementId } from '../../models/sourceElements';
 
 // =============================================================================
 // Props
@@ -84,10 +88,7 @@ function stepsToNodes(
       type: 'step',
       position: step.position,
       data: {
-        name: step.name,
-        isInitial: step.isInitial,
-        actions: step.actions,
-        comment: step.comment,
+        ...stepNodeData(step),
         // Debug properties
         debugActive,
         isActive: debugInfo?.isActive || false,
@@ -114,11 +115,7 @@ function transitionsToNodes(
       type: 'transition',
       position: trans.position || { x: 200, y: 150 },
       data: {
-        condition: trans.condition,
-        fromStep: trans.fromStep,
-        toStep: trans.toStep,
-        priority: trans.priority,
-        comment: trans.comment,
+        ...transitionNodeData(trans),
         // Debug properties
         debugActive,
         conditionResult: debugInfo?.conditionResult,
@@ -210,7 +207,7 @@ function SFCEditorInner({
   activeSteps,
 }: SFCEditorInnerProps) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
-  const { screenToFlowPosition } = useReactFlow();
+  const { screenToFlowPosition, fitView } = useReactFlow();
 
   const updateNodeDataRef = useRef<((nodeId: string, data: Record<string, unknown>) => void) | undefined>(undefined);
   const [nodes, replaceNodes] = useReducer((_current: Node[], next: Node[]) => next, initialNodes.map((node) => ({
@@ -316,6 +313,40 @@ function SFCEditorInner({
     edgesRef.current = nextEdges;
     replaceEdges(nextEdges);
   }, [debugActive, activeSteps]);
+
+  // Breakpoints on steps and transitions: a step stops where a transition enters it, a transition where it fires (LNG-004)
+  const breakpoints = useElementBreakpoints();
+  const elementOfNode = useCallback((node: Node): SourceElementId | undefined => (
+    node.type === 'step' ? stepElement(node.id) : node.type === 'transition' ? transitionElement(node.id) : undefined
+  ), []);
+  const markedNodes = useMemo(
+    () => markBreakpointNodes(nodes, elementOfNode, breakpoints),
+    [nodes, elementOfNode, breakpoints],
+  );
+
+  // Activating a problem of this chart selects the step or the transition it is about; an action is shown on the first
+  // step that uses it, because the editor draws the actions inside the steps (LNG-003, LNG-026)
+  const selectElement = useCallback((element: SourceElementId) => {
+    const parsed = parseElement(element);
+    if (!parsed) return;
+    let target: string | undefined;
+    if (parsed.kind === 'step' || parsed.kind === 'transition') {
+      target = parsed.id;
+    } else if (parsed.kind === 'action') {
+      const names = new Set([parsed.id, model.actions?.find((action) => action.id === parsed.id)?.name]);
+      target = nodesRef.current.find((node) => node.type === 'step'
+        && ((node.data as { actions?: Array<{ actionName: string }> }).actions ?? []).some((action) => names.has(action.actionName)))?.id;
+    }
+    if (!target || !nodesRef.current.some((node) => node.id === target)) return;
+    const nextNodes = nodesRef.current.map((node) => ({ ...node, selected: node.id === target }));
+    const nextEdges = edgesRef.current.map((edge) => edge.selected ? { ...edge, selected: false } : edge);
+    nodesRef.current = nextNodes;
+    edgesRef.current = nextEdges;
+    replaceNodes(nextNodes);
+    replaceEdges(nextEdges);
+    void fitView({ nodes: [{ id: target }], maxZoom: 1, duration: 200 });
+  }, [fitView, model.actions]);
+  useElementSelection(selectElement);
 
   // Handle new connections
   const onConnect: OnConnect = useCallback(
@@ -451,6 +482,14 @@ function SFCEditorInner({
   }, []);
 
   const onKeyDown = useCallback((event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'F9') {
+      const selected = nodesRef.current.filter((node) => node.selected);
+      const elements = selected.map(elementOfNode).filter((element): element is SourceElementId => element !== undefined);
+      if (elements.length === 0) return;
+      for (const element of elements) breakpoints.toggle(element);
+      event.preventDefault();
+      return;
+    }
     if (readOnly || event.altKey || event.shiftKey || event.ctrlKey === event.metaKey) return;
     const target = event.target as HTMLElement;
     if (target.closest('input, textarea, select, [contenteditable="true"]')) return;
@@ -475,7 +514,7 @@ function SFCEditorInner({
     const nextEdges = [...edgesRef.current.map((edge) => ({ ...edge, selected: false })), ...pasted.edges.map((edge) => ({ ...edge, selected: false, style: { stroke: 'var(--visual-wire)', strokeWidth: 2 }, markerEnd: { type: MarkerType.ArrowClosed, width: 10, height: 10 } }))];
     event.preventDefault();
     commitGraph(nextNodes, nextEdges);
-  }, [commitGraph, debugActive, model, readOnly, stepDebugInfo, transitionDebugInfo]);
+  }, [breakpoints, commitGraph, debugActive, elementOfNode, model, readOnly, stepDebugInfo, transitionDebugInfo]);
 
   return (
     <div 
@@ -487,7 +526,7 @@ function SFCEditorInner({
       onKeyDown={onKeyDown}
     >
       <ReactFlow
-        nodes={nodes}
+        nodes={markedNodes}
         edges={edges}
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}

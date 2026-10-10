@@ -1,0 +1,233 @@
+{
+  "requirement": "CMP-057",
+  "title": "The conversion functions between LREAL, REAL and the integers",
+  "matrix": [
+    "data-types.lreal",
+    "functions.other-conversions"
+  ],
+  "tags": [
+    "arch-sensitive",
+    "64-bit",
+    "float"
+  ],
+  "note": "A conversion to an integer rounds to nearest, an exact half to the even integer, and saturates at the limits of the destination; NaN gives 0 (CMP-057).",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "DINT",
+      "value": 2
+    },
+    {
+      "at": "%QD1",
+      "type": "DINT",
+      "value": 4
+    },
+    {
+      "at": "%QD2",
+      "type": "DINT",
+      "value": -2
+    },
+    {
+      "at": "%QD3",
+      "type": "DINT",
+      "value": 2147483647
+    },
+    {
+      "at": "%QD4",
+      "type": "DINT",
+      "value": -2147483648
+    },
+    {
+      "at": "%QD5",
+      "type": "DINT",
+      "value": 0
+    },
+    {
+      "at": "%QD6",
+      "type": "DINT",
+      "value": 4
+    },
+    {
+      "at": "%QD7",
+      "type": "UDINT",
+      "value": 4294967295
+    },
+    {
+      "at": "%QD8",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD9",
+      "type": "UDINT",
+      "value": 3000000000
+    },
+    {
+      "at": "%QB1024",
+      "type": "SINT",
+      "value": 127
+    },
+    {
+      "at": "%QD10",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD11",
+      "type": "UDINT",
+      "value": 2097152
+    },
+    {
+      "at": "%QD12",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD13",
+      "type": "UDINT",
+      "value": 2147483648
+    },
+    {
+      "at": "%QD14",
+      "type": "UDINT",
+      "value": 4294967295
+    },
+    {
+      "at": "%QD15",
+      "type": "UDINT",
+      "value": 2147483647
+    },
+    {
+      "at": "%QD16",
+      "type": "UDINT",
+      "value": 4294967294
+    },
+    {
+      "at": "%QD17",
+      "type": "UDINT",
+      "value": 4294967295
+    },
+    {
+      "at": "%QD18",
+      "type": "UDINT",
+      "value": 4294967295
+    },
+    {
+      "at": "%QD19",
+      "type": "UDINT",
+      "value": 4294967295
+    },
+    {
+      "at": "%QD20",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD21",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD22",
+      "type": "UDINT",
+      "value": 4294965248
+    },
+    {
+      "at": "%QD23",
+      "type": "UDINT",
+      "value": 4294967295
+    },
+    {
+      "at": "%QD24",
+      "type": "REAL",
+      "value": 0.10000000149011612
+    },
+    {
+      "at": "%QD25",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD26",
+      "type": "UDINT",
+      "value": 1097859072
+    },
+    {
+      "at": "%QD27",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD28",
+      "type": "UDINT",
+      "value": 3275751424
+    },
+    {
+      "at": "%QD29",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD30",
+      "type": "UDINT",
+      "value": 1139802112
+    },
+    {
+      "at": "%QD31",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD32",
+      "type": "UDINT",
+      "value": 3222536192
+    },
+    {
+      "at": "%QD33",
+      "type": "UDINT",
+      "value": 4292870144
+    },
+    {
+      "at": "%QD34",
+      "type": "UDINT",
+      "value": 1106247679
+    },
+    {
+      "at": "%QD35",
+      "type": "UDINT",
+      "value": 0
+    },
+    {
+      "at": "%QD36",
+      "type": "UDINT",
+      "value": 1138753536
+    },
+    {
+      "at": "%QX512.0",
+      "type": "BOOL",
+      "value": false
+    },
+    {
+      "at": "%QX512.1",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX512.2",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QD37",
+      "type": "REAL",
+      "value": 1.1529216420458004e+18
+    },
+    {
+      "at": "%QD38",
+      "type": "REAL",
+      "value": 1.8446744073709552e+19
+    }
+  ]
+}

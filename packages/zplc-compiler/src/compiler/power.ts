@@ -19,6 +19,7 @@
  */
 
 import type { Routine } from './stdlib/types.ts';
+import type { AsmLine } from './asm-line.ts';
 
 export const POWF_LABEL = '_zplc_powf';
 const POWI_LABEL = '_zplc_powi';
@@ -35,7 +36,7 @@ function f32(value: number): string {
 const ONE = f32(1);
 
 /** Integer power by repeated squaring: [x n] -> [x ** n] for n >= 0. */
-const POWI_HELPER: string[] = [
+const POWI_HELPER: AsmLine[] = [
     `${POWI_LABEL}:           ; [x n]`,
     `    PUSH32 ${ONE}`,
     `    ROT                 ; [n 1.0 x]`,
@@ -70,7 +71,7 @@ const POWI_HELPER: string[] = [
  * log2 of a positive normal REAL: [x] -> [log2 x].
  * x = m * 2^e with m in [0.71, 1.41]; ln m = 2 * atanh((m-1)/(m+1)) as the series s + s^3/3 + ... + s^9/9.
  */
-export const LOG2F_HELPER: string[] = [
+export const LOG2F_HELPER: AsmLine[] = [
     `${LOG2F_LABEL}:          ; [x]`,
     `    DUP`,
     `    PUSH8 23`,
@@ -135,7 +136,7 @@ export const LOG2F_HELPER: string[] = [
  * 2 ** z: [z] -> [2 ** z], 0.0 below 2 ** -126 and +infinity from 2 ** 128.
  * z = k + f with k whole and f in [0, 1); 2 ** f = e ** (f ln 2) by the Taylor series to g^8, scaled by 2 ** k.
  */
-export const EXP2F_HELPER: string[] = [
+export const EXP2F_HELPER: AsmLine[] = [
     `${EXP2F_LABEL}:          ; [z]`,
     `    DUP`,
     `    F2I                 ; [z k]  truncated toward zero`,
@@ -221,7 +222,7 @@ export const EXP2F_HELPER: string[] = [
     `    RET`,
 ];
 
-export const POWF_HELPER: string[] = [
+export const POWF_HELPER: AsmLine[] = [
     `${POWF_LABEL}:           ; [x y]`,
     `    DUP`,
     `    PUSH32 0x7FFFFFFF`,

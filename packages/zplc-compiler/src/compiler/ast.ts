@@ -361,40 +361,25 @@ export function parseIOAddress(addr: string): IOAddress {
     const index = parseInt(match[3], 10);
     const bitStr = match[4];
 
-    // Determine size
-    // If bit offset is present, size is 'X' (Bit)
-    // If no size char and no bit offset, usually implies specific size based on context or error, 
-    // but for compatibility we might default to 'X' for %I0.0 style, 
-    // or maybe 'B' if just %I0?
-    // In IEC 61131-3:
-    // %IX0.0 or %I0.0 -> Bit
-    // %IB0 -> Byte
-    // %IW0 -> Word
-
+    // The size of the access, as IEC 61131-3 writes it:
+    //   %IX0.0 and %I0.0  a bit (a bit offset implies the size X)
+    //   %IB0              a byte
+    //   %IW0              a word
+    // An address with neither a size letter nor a bit offset (%I0) has no size here: the symbol table
+    // takes the size of the variable it is declared on.
     let size: 'X' | 'B' | 'W' | 'D' | null = null;
     if (sizeStr) {
         size = sizeStr as 'X' | 'B' | 'W' | 'D';
     } else if (bitStr !== undefined) {
-        size = 'X'; // Implicit bit addressing
-    } else {
-        // Ambiguous like %I0? Treat as byte or error?
-        // Let's default to Byte if ambiguous, or null.
-        // Actually, without dot, it usually means full access. 
-        // But let's assume 'B' for single index legacy behavior if any? 
-        // Actually existing was %Q0.0. 
-        // If user writes %IW0, sizeStr='W'.
-        // If user writes %I0, sizeStr=''. bitStr=undefined.
-        // Keep as null and let SymbolTable decide or default?
+        size = 'X';
     }
 
     const bitOffset = bitStr ? parseInt(bitStr, 10) : 0;
 
-    // Calculate canonical byte offset for backward compatibility
-    // This logic will be refined in SymbolTable, but strictly speaking:
-    // This field was 'byteOffset' in legacy IOAddress.
-    // If %IW1 => Word 1 => Byte 2.
-    // If %IB1 => Byte 1.
-    // If %IX0.1 => Byte 0.
+    // The byte offset of the first byte the access covers:
+    //   %IW1 is word 1, byte 2
+    //   %IB1 is byte 1
+    //   %IX0.1 is bit 1 of byte 0
 
     let byteOffset = index;
     if (size === 'W') byteOffset = index * 2;
@@ -406,7 +391,7 @@ export function parseIOAddress(addr: string): IOAddress {
         size,
         index,
         bitOffset,
-        byteOffset // Legacy field populated with canonical byte address
+        byteOffset
     };
 }
 
@@ -763,6 +748,11 @@ export interface NamedArgument {
     value: Expression;
     line?: number;
     column?: number;
+}
+
+/** The value an argument stands for: a named argument is the expression after its `:=`. */
+export function argumentValue(argument: Expression | NamedArgument): Expression {
+    return argument.kind === 'NamedArgument' ? argument.value : argument;
 }
 
 /**

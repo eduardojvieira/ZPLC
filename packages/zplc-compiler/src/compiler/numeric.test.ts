@@ -377,14 +377,14 @@ describe('generated code', () => {
         expect(assembly('b := a + u;', 'a : LINT; b : LINT; u : UDINT;')).toMatch(/LOAD32 0x2010[^\n]*\n\s+PUSH8 0\n\s+CALL/);
     });
 
-    it('refuses what a 64-bit value cannot do yet, naming the requirement', () => {
-        const wide = 'a : LINT; b : LINT; c : DINT;';
-        expect(() => assembly('b := a * 2;', wide)).toThrow('CMP-015');
-        expect(() => assembly('b := a / 2;', wide)).toThrow('CMP-015');
-        expect(() => assembly('b := a MOD 2;', wide)).toThrow('CMP-015');
-        expect(() => assembly('b := ABS(a);', wide)).toThrow('64-bit argument');
-        expect(() => assembly('FOR a := 0 TO 3 DO c := 1; END_FOR;', wide)).toThrow('FOR counter');
-        expect(() => assembly('CASE a OF 1: c := 1; END_CASE;', wide)).toThrow('CASE');
+    it('refuses what a 64-bit or LREAL value cannot be used for, with the reason', () => {
+        const wide = 'a : LINT; b : LINT; c : DINT; arr : ARRAY[0..3] OF DINT; d : LREAL;';
+        expect(() => assembly('c := arr[a];', wide)).toThrow('array index must be a 32-bit integer');
+        expect(() => assembly('FOR d := 0 TO 3 DO c := 1; END_FOR;', wide)).toThrow('FOR counter must be an integer');
+        expect(() => assembly('CASE d OF 1: c := 1; END_CASE;', wide)).toThrow('CASE selector must be an integer');
+        expect(() => assembly('c := LEN(a);', wide)).toThrow('does not take a 64-bit or LREAL argument');
+        expect(() => assembly('d := d AND d;', wide)).toThrow('Type mismatch');
+        expect(() => assembly('d := d MOD d;', wide)).toThrow('MOD takes integers');
     });
 });
 

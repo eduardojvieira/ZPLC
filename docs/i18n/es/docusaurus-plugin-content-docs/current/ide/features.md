@@ -76,7 +76,7 @@ hacer cuando no puede ejecutarse. Comprueba los escenarios, no la máquina: no e
 certificación. `zplc-cli safety-check` y la herramienta MCP `safety_check` dan la misma respuesta.
 
 Nivel de evidencia: host. `src/components/InterlockCoverage.test.tsx` dibuja la vista,
-`workspaceSafetyPresentation.test.ts` cubre la respuesta, y el recorrido 29 de `bun run test:journeys` ejecuta la
+`workspaceSafetyPresentation.test.ts` cubre la respuesta, y el recorrido 33 de `bun run test:journeys` ejecuta la
 comprobación en la aplicación real.
 
 ## Un resultado desde Studio, la CLI y las herramientas MCP
@@ -96,33 +96,35 @@ Studio, y compara los resultados. No cubre una placa.
 ## Declaraciones y carpetas de biblioteca
 
 Bajo el árbol de archivos, el Explorer tiene una sección **Declarations** (cerrada hasta que usted la abre con su
-encabezado, que muestra cuántas hay). Lista las declaraciones del proyecto: los programas, bloques de función,
-funciones, interfaces y tipos de datos que declaran sus archivos Structured Text, agrupados bajo su archivo. Elegir una
-abre su archivo con el cursor en su nombre. La lista cubre los archivos que lee la compilación (directamente en `src`)
-y los archivos de las carpetas de biblioteca, estén abiertos o no, y sigue lo que usted escribe.
+encabezado, que muestra cuántas hay y cuántos archivos no se compilan). Lista las declaraciones del proyecto: los
+programas, bloques de función, funciones, interfaces y tipos de datos que declaran sus archivos Structured Text,
+agrupados bajo su archivo. Elegir una abre su archivo con el cursor en su nombre. La lista cubre los archivos que lee la
+compilación y sigue lo que usted escribe.
 
-Una **carpeta de biblioteca** es una carpeta del proyecto cuyos archivos Structured Text ofrece cada editor:
-**Library folder...** en la sección Declarations agrega una, y su **x** la quita. La elección se escribe en
-`zplc.json`:
+La compilación lee los archivos Structured Text directamente en `src` y directamente en cada **carpeta de biblioteca**
+que `zplc.json` lista en `libraries` (CMP-046), y todo lo que declaran es visible para cada programa:
 
 ```json
 { "libraries": ["lib", "vendor/acme"] }
 ```
 
-Las rutas son relativas a la carpeta del proyecto, con `/`. Las declaraciones de una biblioteca aparecen en la lista de
-Declarations, en las paletas de los editores FBD y LD (el grupo **Project**) y en el autocompletado y el hover del
-editor ST. Una carpeta de biblioteca que se renombra o se elimina queda en la lista, marcada "not in the project",
-hasta que usted la quita. Un proyecto que espera que se aplique su migración de versión 1 no puede cambiar sus
-bibliotecas hasta que se aplique.
+Una biblioteca es una ruta relativa de nombres simples con `/`, dentro del proyecto, listada una vez; `src` y `tests`
+no son bibliotecas. **Library folder...** en la sección Declarations agrega una (y escribe `zplc.json`), su **x** la
+quita, y el árbol de archivos marca la carpeta como `library`. Las declaraciones de una biblioteca aparecen en la lista
+de Declarations, en las paletas de los editores FBD y LD (el grupo **Project**) y en el autocompletado y el hover del
+editor ST.
 
-Límite: la compilación sigue leyendo solo los archivos directamente en `src`. Compilar una carpeta de biblioteca dentro
-del programa es el trabajo de compilador CMP-046 (el campo de arriba es la interfaz que lee), así que un programa que
-usa un bloque de una biblioteca compila hoy solo si el archivo del bloque también está en `src`.
+Un archivo Structured Text que no está en `src` ni directamente en una carpeta de biblioteca no lo lee ninguna
+compilación, y Studio lo dice como la compilación: el archivo se marca `not compiled` en el árbol, la sección lista su
+carpeta con un botón **List as library**, y **Build** informa `SOURCE_NOT_COMPILED`. Tampoco se lee una carpeta dentro de
+una biblioteca; lístela como biblioteca propia. Una carpeta de biblioteca que se renombra o se elimina queda en la
+lista, marcada "not in the project", hasta que usted la quita. Un proyecto que espera que se aplique su migración de
+versión 1 no puede cambiar sus bibliotecas hasta que se aplique.
 
-Nivel de evidencia: host. `src/project/projectDeclarations.test.ts`, `src/project/libraries.test.ts`,
-`src/store/projectSources.test.ts` y `src/components/stLanguageService.project.test.ts` cubren el modelo, las fuentes y
-los servicios del editor; el recorrido 28 de `bun run test:journeys` agrega una biblioteca en la aplicación real y
-comprueba el árbol, la paleta de Ladder y el cursor.
+Nivel de evidencia: host. `src/project/libraries.test.ts`, `src/project/unlistedSources.test.ts`,
+`src/store/projectSources.test.ts` y `src/components/stLanguageService.project.test.ts` cubren las reglas, las fuentes
+y los servicios del editor; el recorrido 32 de `bun run test:journeys` lista una biblioteca en la aplicación real,
+comprueba el árbol, la paleta de Ladder y el cursor, y compila el proyecto con ella.
 
 ## Archivos de proyecto
 
@@ -146,7 +148,7 @@ coincide con su suma de verificación, más de 4096 archivos, un archivo de más
 secretos); ese documento no se importa.
 
 Nivel de evidencia: host. `electron/projectArchiveZip.test.ts` y `electron/projectArchive.test.ts` cubren el formato,
-los rechazos y un viaje de ida y vuelta en carpetas reales; el recorrido 26 de `bun run test:journeys` exporta e importa
+los rechazos y un viaje de ida y vuelta en carpetas reales; el recorrido 30 de `bun run test:journeys` exporta e importa
 un proyecto en la aplicación real y compara las dos carpetas.
 
 ## Cerrar con cambios sin guardar
@@ -181,7 +183,7 @@ y no sus servicios de lenguaje de CSS, HTML, JSON y TypeScript ni sus otros leng
 de fuentes.
 
 Nivel de evidencia: host. `packages/zplc-ide/scripts/welcomeBundle.test.ts` compila Studio y lee los fragmentos que la
-página de bienvenida carga al iniciar y los archivos que empaqueta el instalador; el recorrido 25 (la pantalla de
+página de bienvenida carga al iniciar y los archivos que empaqueta el instalador; el recorrido 29 (la pantalla de
 bienvenida no carga ningún editor) de `bun run test:journeys` comprueba lo mismo en el host de desarrollo de la
 aplicación real. No se inspeccionó ningún instalador empaquetado.
 

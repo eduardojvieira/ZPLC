@@ -1480,8 +1480,8 @@ describe('Multi-Task Compiler', () => {
         expect(view.getUint16(4, true)).toBe(1);
         expect(view.getUint16(6, true)).toBe(0);
 
-        // Check segment count = 2 (CODE + TASK)
-        expect(view.getUint16(26, true)).toBe(2);
+        // Check segment count = 3 (CODE + TASK + BUILD)
+        expect(view.getUint16(26, true)).toBe(3);
 
         // Check segment table
         // Segment 1: CODE at offset 32
@@ -1600,7 +1600,9 @@ describe('Multi-Task Compiler', () => {
         // Should use defaults
         expect(result.tasks[0].priority).toBe(1); // Default
         expect(result.tasks[0].intervalUs).toBe(10000); // 10ms default
-        expect(result.tasks[0].stackSize).toBe(64); // Default
+        // the depth is the one measured on the code (CMP-050), not a fixed 64
+        expect(result.tasks[0].stackSize).toBeGreaterThanOrEqual(1);
+        expect(result.tasks[0].stackSize).toBeLessThan(64);
 
         const explicit = compileMultiTaskProject({
             ...config,
