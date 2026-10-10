@@ -1,9 +1,9 @@
 # Scan, memory, and persistence limits
 
 The current scheduler contract is in `docs/docs/runtime/scheduler.md`. A due
-batch takes one input snapshot, orders tasks by release time, priority, then
-task ID, executes due tasks, and has at most one normal output commit. Lower
-numeric priority runs first. These are logical/runtime semantics, not WCET,
+batch orders tasks by release time, priority, then task ID, takes one input
+snapshot, executes the due tasks, and has at most one normal output commit.
+Lower numeric priority runs first. These are logical/runtime semantics, not WCET,
 jitter, deadline, electrical, or target timing evidence.
 
 Use the five logical regions from `docs/docs/runtime/memory-model.md`: IPI,

@@ -50,6 +50,12 @@ venv/
 *.zplc
 !examples/*.zplc
 
+# Third-party agent skills installed for local use are not part of the repository;
+# the project skill zplc-plc-programmer is.
+/.agents/skills/*
+!/.agents/skills/zplc-plc-programmer/
+/.claude/skills/*
+
 # Local artifacts
 Screenshots/
 *.bak
