@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-024",
+  "title": "a reference variable is NULL until it is given a value",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QX0.0",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX0.1",
+      "type": "BOOL",
+      "value": false
+    }
+  ]
+}

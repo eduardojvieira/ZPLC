@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-021",
+  "title": "a count that reads the variable being assigned",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QX0.0",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX0.1",
+      "type": "BOOL",
+      "value": true
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "requirement": "CMP-022",
+  "title": "array elements of REAL and BOOL",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "REAL",
+      "value": 4.0
+    },
+    {
+      "at": "%QX4.0",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX4.1",
+      "type": "BOOL",
+      "value": false
+    }
+  ]
+}

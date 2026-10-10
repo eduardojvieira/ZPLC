@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-022",
+  "title": "an array that is a member of a structure, indexed by a variable",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "DINT",
+      "value": 200000
+    },
+    {
+      "at": "%QW2",
+      "type": "INT",
+      "value": 77
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-024",
+  "title": "a reference reads and writes the variable it points at",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 7
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 7
+    }
+  ]
+}

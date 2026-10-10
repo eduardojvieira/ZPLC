@@ -1,0 +1,23 @@
+{
+  "requirement": "CMP-021",
+  "title": "LEFT and RIGHT of more characters than the string has give the whole string",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 3
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 3
+    },
+    {
+      "at": "%QW2",
+      "type": "INT",
+      "value": 0
+    }
+  ]
+}

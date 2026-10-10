@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-023",
+  "title": "reading an element outside the bounds raises a VM fault",
+  "scans": 1,
+  "scanMs": 10,
+  "fault": true
+}

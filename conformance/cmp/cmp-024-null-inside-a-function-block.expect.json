@@ -1,0 +1,23 @@
+{
+  "requirement": "CMP-024",
+  "title": "NULL and a reference member inside a function block",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QX0.0",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX0.1",
+      "type": "BOOL",
+      "value": false
+    },
+    {
+      "at": "%QD1",
+      "type": "DINT",
+      "value": 123456
+    }
+  ]
+}

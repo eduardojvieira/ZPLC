@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-028",
+  "title": "two instances keep a reference each",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "DINT",
+      "value": 200001
+    },
+    {
+      "at": "%QD1",
+      "type": "DINT",
+      "value": 100002
+    }
+  ]
+}

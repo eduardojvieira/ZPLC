@@ -1,0 +1,23 @@
+{
+  "requirement": "CMP-025",
+  "title": "a global structure and a global array hold their declared values",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 3
+    },
+    {
+      "at": "%QD1",
+      "type": "DINT",
+      "value": 90000
+    },
+    {
+      "at": "%QW4",
+      "type": "INT",
+      "value": 6
+    }
+  ]
+}

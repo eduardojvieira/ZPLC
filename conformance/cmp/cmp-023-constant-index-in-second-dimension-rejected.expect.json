@@ -1,0 +1,8 @@
+{
+  "requirement": "CMP-023",
+  "title": "a constant index outside the bounds of the second dimension is rejected",
+  "build": "fails",
+  "lines": [
+    6
+  ]
+}

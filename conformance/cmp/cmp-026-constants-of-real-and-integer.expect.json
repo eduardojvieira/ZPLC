@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-026",
+  "title": "global constants of REAL and INT take part in expressions",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "REAL",
+      "value": 1.5
+    },
+    {
+      "at": "%QW2",
+      "type": "INT",
+      "value": 12
+    }
+  ]
+}

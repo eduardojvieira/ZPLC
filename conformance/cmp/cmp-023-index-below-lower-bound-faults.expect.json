@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-023",
+  "title": "an index below the lower bound raises a VM fault",
+  "scans": 1,
+  "scanMs": 10,
+  "fault": true
+}

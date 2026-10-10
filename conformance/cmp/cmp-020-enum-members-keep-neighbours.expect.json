@@ -1,0 +1,23 @@
+{
+  "requirement": "CMP-020",
+  "title": "an enumeration member of a structure does not touch the members around it",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 11
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 2
+    },
+    {
+      "at": "%QD1",
+      "type": "DINT",
+      "value": 222222
+    }
+  ]
+}

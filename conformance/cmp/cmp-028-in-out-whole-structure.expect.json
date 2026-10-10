@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-028",
+  "title": "a VAR_IN_OUT of a structure type changes the caller structure",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 6
+    },
+    {
+      "at": "%QD1",
+      "type": "DINT",
+      "value": 100001
+    }
+  ]
+}

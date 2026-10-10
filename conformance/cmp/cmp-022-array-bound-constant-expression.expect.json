@@ -1,0 +1,13 @@
+{
+  "requirement": "CMP-022",
+  "title": "array bounds written as an expression of constants",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 33
+    }
+  ]
+}

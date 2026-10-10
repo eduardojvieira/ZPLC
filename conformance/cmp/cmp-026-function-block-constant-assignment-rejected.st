@@ -1,0 +1,13 @@
+FUNCTION_BLOCK Limit
+VAR_OUTPUT clipped : INT; END_VAR
+VAR CONSTANT MAXV : INT := 100; END_VAR
+  MAXV := 5;
+  clipped := MAXV;
+END_FUNCTION_BLOCK
+
+PROGRAM Main
+VAR
+  l : Limit;
+END_VAR
+  l();
+END_PROGRAM

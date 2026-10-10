@@ -1,0 +1,28 @@
+{
+  "requirement": "CMP-021",
+  "title": "INSERT, DELETE and REPLACE edit a copy",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 5
+    },
+    {
+      "at": "%QX2.0",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX2.1",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX2.2",
+      "type": "BOOL",
+      "value": true
+    }
+  ]
+}

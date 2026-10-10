@@ -1,0 +1,13 @@
+{
+  "requirement": "CMP-022",
+  "title": "an array element used as the index of another array",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "DINT",
+      "value": 654321
+    }
+  ]
+}
