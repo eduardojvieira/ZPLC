@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import re
 import sys
 from dataclasses import dataclass, field
@@ -22,6 +23,7 @@ TYPE_LABELS_ES = {
     "struct": "Estructura",
     "typedef": "Typedef",
 }
+CONTRACT_GENERATOR = ROOT / "tools/contract/generate.py"
 EXCLUDED_MACROS = {
     "ZPLC_CORE_H",
     "ZPLC_SCHEDULER_H",
@@ -610,6 +612,14 @@ def render_function_block(function: FunctionDoc, spanish: bool) -> list[str]:
     return lines
 
 
+def render_contract_tables(spanish: bool) -> str:
+    """The binary contract tables, generated from tools/contract/contract.json (VF-012)."""
+    spec = importlib.util.spec_from_file_location("zplc_contract_generate", CONTRACT_GENERATOR)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.render_docs(module.load(), "es" if spanish else "en")
+
+
 def render_runtime_reference(headers: list[HeaderDoc], spanish: bool) -> str:
     title = "Runtime API" if not spanish else "API del Runtime"
     description = (
@@ -679,6 +689,8 @@ def render_runtime_reference(headers: list[HeaderDoc], spanish: bool) -> str:
         lines.extend(render_types_table(header.types, spanish))
         lines.extend(["", f"### {macros_title}", ""])
         lines.extend(render_macros_table(header.macros, spanish))
+
+    lines.extend(["", render_contract_tables(spanish).rstrip()])
 
     return "\n".join(line.rstrip() for line in lines).strip() + "\n"
 

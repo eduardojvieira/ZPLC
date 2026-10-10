@@ -29,136 +29,26 @@ import sys
 import re
 import zlib
 from dataclasses import dataclass
-from enum import IntEnum
 from pathlib import Path
 from typing import Optional
 
-
-# =============================================================================
-# Constants from zplc_isa.h
-# =============================================================================
-
-ZPLC_MAGIC = 0x434C505A  # "ZPLC" in little-endian
-ZPLC_VERSION_MAJOR = 1
-ZPLC_VERSION_MINOR = 0
-
-
-class Opcode(IntEnum):
-    """ZPLC VM opcodes - must match zplc_isa.h exactly."""
-    
-    # System Operations (0x00-0x0F) - no operand
-    NOP = 0x00
-    HALT = 0x01
-    BREAK = 0x02
-    GET_TICKS = 0x03
-    
-    # Stack Operations (0x10-0x1F) - no operand
-    DUP = 0x10
-    DROP = 0x11
-    SWAP = 0x12
-    OVER = 0x13
-    ROT = 0x14
-    
-    # Integer Arithmetic (0x20-0x27) - no operand
-    ADD = 0x20
-    SUB = 0x21
-    MUL = 0x22
-    DIV = 0x23
-    MOD = 0x24
-    NEG = 0x25
-    ABS = 0x26
-    
-    # Float Arithmetic (0x28-0x2F) - no operand
-    ADDF = 0x28
-    SUBF = 0x29
-    MULF = 0x2A
-    DIVF = 0x2B
-    NEGF = 0x2C
-    ABSF = 0x2D
-    
-    # Logical/Bitwise (0x30-0x37) - no operand
-    AND = 0x30
-    OR = 0x31
-    XOR = 0x32
-    NOT = 0x33
-    SHL = 0x34
-    SHR = 0x35
-    SAR = 0x36
-    
-    # Comparison (0x38-0x3F) - no operand
-    EQ = 0x38
-    NE = 0x39
-    LT = 0x3A
-    LE = 0x3B
-    GT = 0x3C
-    GE = 0x3D
-    LTU = 0x3E
-    GTU = 0x3F
-    
-    # 8-bit operand (0x40-0x7F)
-    PUSH8 = 0x40
-    JR = 0x50
-    JRZ = 0x51
-    JRNZ = 0x52
-    
-    # 16-bit operand (0x80-0xBF)
-    LOAD8 = 0x80
-    LOAD16 = 0x81
-    LOAD32 = 0x82
-    LOAD64 = 0x83
-    STORE8 = 0x84
-    STORE16 = 0x85
-    STORE32 = 0x86
-    STORE64 = 0x87
-    PUSH16 = 0x88
-    JMP = 0x90
-    JZ = 0x91
-    JNZ = 0x92
-    CALL = 0x93
-    RET = 0x94
-    
-    # Type Conversion (0xA0-0xAF) - no operand
-    I2F = 0xA0
-    F2I = 0xA1
-    I2B = 0xA2
-    EXT8 = 0xA3
-    EXT16 = 0xA4
-    ZEXT8 = 0xA5
-    ZEXT16 = 0xA6
-    
-    # 32-bit operand (0xC0-0xFF)
-    PUSH32 = 0xC0
-
-
-def get_operand_size(opcode: int) -> int:
-    """
-    Get operand size in bytes for an opcode.
-    
-    Most opcodes follow the range-based encoding:
-        0x00-0x3F: 0 bytes (no operand)
-        0x40-0x7F: 1 byte (8-bit operand)
-        0x80-0xBF: 2 bytes (16-bit operand)
-        0xC0-0xFF: 4 bytes (32-bit operand)
-    
-    Exceptions:
-        RET (0x94): No operand despite being in 0x80-0xBF range
-        Type conversion (0xA0-0xA6): No operand
-    """
-    # Special cases - no operand despite opcode range
-    if opcode == 0x94:  # RET
-        return 0
-    if 0xA0 <= opcode <= 0xA6:  # Type conversions
-        return 0
-    
-    # Standard range-based encoding
-    if opcode < 0x40:
-        return 0
-    elif opcode < 0x80:
-        return 1
-    elif opcode < 0xC0:
-        return 2
-    else:
-        return 4
+# The opcode table, the container layout and the operand-size rule are generated
+# from tools/contract/contract.json (VF-012, HIL-008); this tool keeps no copy.
+sys.path.insert(0, str(Path(__file__).resolve().parent / "contract"))
+from zplc_contract import (  # noqa: E402
+    CRC_OFFSET,
+    CRC_SIZE,
+    HEADER_SIZE,
+    HEADER_STRUCT,
+    SEGMENT_ENTRY_SIZE,
+    SEGMENT_ENTRY_STRUCT,
+    SEGMENT_TYPE,
+    ZPLC_MAGIC,
+    ZPLC_VERSION_MAJOR,
+    ZPLC_VERSION_MINOR,
+    Opcode,
+    get_operand_size,
+)
 
 
 # Build lookup tables
@@ -485,7 +375,7 @@ class ZPLCAssembler:
         # Total: 4+2+2+4+4+4+4+2+2+4 = 32 bytes
         # TODO: Calculate proper CRC32
         header = struct.pack(
-            '<IHHIIIIHHI',
+            HEADER_STRUCT,
             ZPLC_MAGIC,           # magic (4)
             ZPLC_VERSION_MAJOR,   # version_major (2)
             ZPLC_VERSION_MINOR,   # version_minor (2)
@@ -498,22 +388,22 @@ class ZPLCAssembler:
             0                     # reserved (4)
         )
         
-        assert len(header) == 32, f"Header size mismatch: {len(header)}"
+        assert len(header) == HEADER_SIZE, f"Header size mismatch: {len(header)}"
         
         # Segment table entry for code (8 bytes)
         # type=0x01 (CODE), flags=0, size=code_size
-        segment_entry = struct.pack('<HHI', 0x01, 0, code_size)
+        segment_entry = struct.pack(SEGMENT_ENTRY_STRUCT, SEGMENT_TYPE["CODE"], 0, code_size)
         
-        assert len(segment_entry) == 8, f"Segment entry size mismatch: {len(segment_entry)}"
+        assert len(segment_entry) == SEGMENT_ENTRY_SIZE, f"Segment entry size mismatch: {len(segment_entry)}"
         
         zplc_data = header + segment_entry + bytecode
         
         # Compute CRC32 over everything EXCEPT the crc32 field (bytes 12-15)
-        crc_payload = zplc_data[:12] + zplc_data[16:]
+        crc_payload = zplc_data[:CRC_OFFSET] + zplc_data[CRC_OFFSET + CRC_SIZE:]
         checksum = zlib.crc32(crc_payload) & 0xFFFFFFFF
         
         # Patch crc32 into header
-        zplc_data = zplc_data[:12] + struct.pack('<I', checksum) + zplc_data[16:]
+        zplc_data = zplc_data[:CRC_OFFSET] + struct.pack('<I', checksum) + zplc_data[CRC_OFFSET + CRC_SIZE:]
         
         return zplc_data
     

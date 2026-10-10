@@ -331,6 +331,9 @@ jobs:
           python3 tools/hil/test_validate_release_evidence.py
           bun tools/ci/test-inventory.ts
 
+      - name: Check the generated binary contract
+        run: bun run contract:check
+
       - name: Generate and validate documentation references
         run: |
           bun run docs:generate

@@ -23,6 +23,7 @@ import {
   bytesToHex,
   getTypeSize,
   bytesToValue,
+  MEMORY_MAP,
   RUNTIME_SESSION_SOURCE,
   WATCH_FORCE_STATE,
 } from './debugAdapter';
@@ -529,25 +530,26 @@ export class WASMAdapter implements IDebugAdapter {
     }
 
     const result = new Uint8Array(length);
+    const { opi, work, retain, code } = MEMORY_MAP;
 
     for (let i = 0; i < length; i++) {
       const addr = address + i;
       let byte = 0;
 
-      if (addr < 0x1000) {
-        // IPI region (0x0000-0x0FFF)
+      if (addr < opi.baseAddress) {
+        // IPI region
         byte = (this.ipiRead8?.(addr) ?? 0) & 0xff;
-      } else if (addr < 0x2000) {
-        // OPI region (0x1000-0x1FFF)
-        byte = (this.opiRead8?.(addr - 0x1000) ?? 0) & 0xff;
-      } else if (addr < 0x4000) {
-        // WORK region (0x2000-0x3FFF) — read via HEAPU8 + region pointer
-        byte = this.readRegionByte(0x2000, addr - 0x2000);
-      } else if (addr < 0x5000) {
-        // RETAIN region (0x4000-0x4FFF) — read via HEAPU8 + region pointer
-        byte = this.readRegionByte(0x4000, addr - 0x4000);
+      } else if (addr < work.baseAddress) {
+        // OPI region
+        byte = (this.opiRead8?.(addr - opi.baseAddress) ?? 0) & 0xff;
+      } else if (addr < retain.baseAddress) {
+        // WORK region — read via HEAPU8 + region pointer
+        byte = this.readRegionByte(work.baseAddress, addr - work.baseAddress);
+      } else if (addr < code.baseAddress) {
+        // RETAIN region — read via HEAPU8 + region pointer
+        byte = this.readRegionByte(retain.baseAddress, addr - retain.baseAddress);
       }
-      // addr >= 0x5000 is CODE region — read-only, could add later
+      // addr >= code.baseAddress is CODE region — read-only, could add later
 
       result[i] = byte;
     }
@@ -589,15 +591,16 @@ export class WASMAdapter implements IDebugAdapter {
       throw new Error('Not connected');
     }
 
-    if (address >= 0 && address < 0x1000) {
+    const { ipi, opi, work, retain, code } = MEMORY_MAP;
+    if (address >= ipi.baseAddress && address < opi.baseAddress) {
       // IPI — use typed 8-bit write
       this.ipiWrite8?.(address, value & 0xff);
-    } else if (address >= 0x2000 && address < 0x4000) {
+    } else if (address >= work.baseAddress && address < retain.baseAddress) {
       // WORK region — direct HEAPU8 write
-      this.writeRegionByte(0x2000, address - 0x2000, value);
-    } else if (address >= 0x4000 && address < 0x5000) {
+      this.writeRegionByte(work.baseAddress, address - work.baseAddress, value);
+    } else if (address >= retain.baseAddress && address < code.baseAddress) {
       // RETAIN region — direct HEAPU8 write
-      this.writeRegionByte(0x4000, address - 0x4000, value);
+      this.writeRegionByte(retain.baseAddress, address - retain.baseAddress, value);
     } else {
       throw new Error(
         `Cannot write to address 0x${address.toString(16)}: region not writable`
@@ -610,16 +613,17 @@ export class WASMAdapter implements IDebugAdapter {
       throw new Error('Not connected');
     }
 
+    const { ipi, opi, work, retain, code } = MEMORY_MAP;
     for (let i = 0; i < bytes.length; i++) {
       const addr = address + i;
       const val = bytes[i];
 
-      if (addr >= 0 && addr < 0x1000) {
+      if (addr >= ipi.baseAddress && addr < opi.baseAddress) {
         this.ipiWrite8?.(addr, val);
-      } else if (addr >= 0x2000 && addr < 0x4000) {
-        this.writeRegionByte(0x2000, addr - 0x2000, val);
-      } else if (addr >= 0x4000 && addr < 0x5000) {
-        this.writeRegionByte(0x4000, addr - 0x4000, val);
+      } else if (addr >= work.baseAddress && addr < retain.baseAddress) {
+        this.writeRegionByte(work.baseAddress, addr - work.baseAddress, val);
+      } else if (addr >= retain.baseAddress && addr < code.baseAddress) {
+        this.writeRegionByte(retain.baseAddress, addr - retain.baseAddress, val);
       }
     }
   }

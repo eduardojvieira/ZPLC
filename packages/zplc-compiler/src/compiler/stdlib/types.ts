@@ -8,13 +8,15 @@
  */
 
 import type { Expression, FBParameter, STDataType } from '../ast.ts';
+import { STRING_LAYOUT } from '../../contract.generated.ts';
 
 export const MEMBER_SIZE = {
     BYTE: 1,
     WORD: 2,
     DWORD: 4,
     LWORD: 8,
-    STRING: 85,
+    /** A default STRING: 4-byte header + 80 characters + terminator (the contract's string layout). */
+    STRING: STRING_LAYOUT.defaultTotalSize,
     WSTRING: 166,
 } as const;
 

@@ -6,6 +6,8 @@
     { "pattern": "scripts/release-artifacts.test.mjs", "job": "typescript", "command": "node --test scripts/release-artifacts.test.mjs" },
     { "pattern": "scripts/workflow-action-pins.test.mjs", "job": "typescript", "command": "node --test scripts/workflow-action-pins.test.mjs" },
     { "pattern": "scripts/release-version.test.ts", "job": "typescript", "command": "bun test scripts/release-version.test.ts" },
+    { "pattern": "tools/contract/test_contract.py", "job": "docs-and-truth", "command": "bun run contract:check" },
+    { "pattern": "tools/contract/*.test.ts", "job": "docs-and-truth", "command": "bun run contract:check" },
     { "pattern": "tools/hil/test_validate_release_evidence.py", "job": "docs-and-truth", "command": "python3 tools/hil/test_validate_release_evidence.py" },
     { "pattern": "tools/hil/test_validate_supported_boards.py", "job": "docs-and-truth", "command": "python3 tools/hil/test_validate_supported_boards.py" },
     { "pattern": "firmware/lib/zplc_core/tests/fuzz_loader_verify.c", "job": "host-core-sanitized", "command": "fuzz_loader_verify" },

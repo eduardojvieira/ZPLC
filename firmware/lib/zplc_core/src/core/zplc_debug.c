@@ -46,104 +46,87 @@ static const struct shell *hil_shell = NULL;
 const char *hil_opcode_name(uint8_t op)
 {
     switch (op) {
-    /* System Operations */
-    case OP_NOP:       return "NOP";
-    case OP_HALT:      return "HALT";
-    case OP_BREAK:     return "BREAK";
-    case OP_GET_TICKS: return "GET_TICKS";
+/* >>> GENERATED (tools/contract/generate.py): opcode-names. Do not edit. >>> */
+    case OP_NOP:          return "NOP";
+    case OP_HALT:         return "HALT";
+    case OP_BREAK:        return "BREAK";
+    case OP_GET_TICKS:    return "GET_TICKS";
+    case OP_DUP:          return "DUP";
+    case OP_DROP:         return "DROP";
+    case OP_SWAP:         return "SWAP";
+    case OP_OVER:         return "OVER";
+    case OP_ROT:          return "ROT";
+    case OP_LOADI8:       return "LOADI8";
+    case OP_LOADI32:      return "LOADI32";
+    case OP_STOREI8:      return "STOREI8";
+    case OP_STOREI32:     return "STOREI32";
+    case OP_LOADI16:      return "LOADI16";
+    case OP_STOREI16:     return "STOREI16";
+    case OP_STRLEN:       return "STRLEN";
+    case OP_STRCPY:       return "STRCPY";
+    case OP_STRCAT:       return "STRCAT";
+    case OP_STRCMP:       return "STRCMP";
+    case OP_STRCLR:       return "STRCLR";
+    case OP_ADD:          return "ADD";
+    case OP_SUB:          return "SUB";
+    case OP_MUL:          return "MUL";
+    case OP_DIV:          return "DIV";
+    case OP_MOD:          return "MOD";
+    case OP_NEG:          return "NEG";
+    case OP_ABS:          return "ABS";
+    case OP_ADDF:         return "ADDF";
+    case OP_SUBF:         return "SUBF";
+    case OP_MULF:         return "MULF";
+    case OP_DIVF:         return "DIVF";
+    case OP_NEGF:         return "NEGF";
+    case OP_ABSF:         return "ABSF";
+    case OP_AND:          return "AND";
+    case OP_OR:           return "OR";
+    case OP_XOR:          return "XOR";
+    case OP_NOT:          return "NOT";
+    case OP_SHL:          return "SHL";
+    case OP_SHR:          return "SHR";
+    case OP_SAR:          return "SAR";
+    case OP_EQ:           return "EQ";
+    case OP_NE:           return "NE";
+    case OP_LT:           return "LT";
+    case OP_LE:           return "LE";
+    case OP_GT:           return "GT";
+    case OP_GE:           return "GE";
+    case OP_LTU:          return "LTU";
+    case OP_GTU:          return "GTU";
+    case OP_PUSH8:        return "PUSH8";
+    case OP_PICK:         return "PICK";
+    case OP_JR:           return "JR";
+    case OP_JRZ:          return "JRZ";
+    case OP_JRNZ:         return "JRNZ";
+    case OP_LOAD8:        return "LOAD8";
+    case OP_LOAD16:       return "LOAD16";
+    case OP_LOAD32:       return "LOAD32";
+    case OP_LOAD64:       return "LOAD64";
+    case OP_STORE8:       return "STORE8";
+    case OP_STORE16:      return "STORE16";
+    case OP_STORE32:      return "STORE32";
+    case OP_STORE64:      return "STORE64";
+    case OP_PUSH16:       return "PUSH16";
+    case OP_JMP:          return "JMP";
+    case OP_JZ:           return "JZ";
+    case OP_JNZ:          return "JNZ";
+    case OP_CALL:         return "CALL";
+    case OP_RET:          return "RET";
+    case OP_I2F:          return "I2F";
+    case OP_F2I:          return "F2I";
+    case OP_I2B:          return "I2B";
+    case OP_EXT8:         return "EXT8";
+    case OP_EXT16:        return "EXT16";
+    case OP_ZEXT8:        return "ZEXT8";
+    case OP_ZEXT16:       return "ZEXT16";
+    case OP_PUSH32:       return "PUSH32";
+    case OP_COMM_EXEC:    return "COMM_EXEC";
+    case OP_COMM_STATUS:  return "COMM_STATUS";
+    case OP_COMM_RESET:   return "COMM_RESET";
+/* <<< END GENERATED: opcode-names <<< */
 
-    /* Stack Operations */
-    case OP_DUP:       return "DUP";
-    case OP_DROP:      return "DROP";
-    case OP_SWAP:      return "SWAP";
-    case OP_OVER:      return "OVER";
-    case OP_ROT:       return "ROT";
-
-    /* Indirect Memory Access */
-    case OP_LOADI8:    return "LOADI8";
-    case OP_LOADI16:   return "LOADI16";
-    case OP_LOADI32:   return "LOADI32";
-    case OP_STOREI8:   return "STOREI8";
-    case OP_STOREI16:  return "STOREI16";
-    case OP_STOREI32:  return "STOREI32";
-
-    /* String Operations */
-    case OP_STRLEN:    return "STRLEN";
-    case OP_STRCPY:    return "STRCPY";
-    case OP_STRCAT:    return "STRCAT";
-    case OP_STRCMP:    return "STRCMP";
-    case OP_STRCLR:    return "STRCLR";
-
-    /* Integer Arithmetic */
-    case OP_ADD:       return "ADD";
-    case OP_SUB:       return "SUB";
-    case OP_MUL:       return "MUL";
-    case OP_DIV:       return "DIV";
-    case OP_MOD:       return "MOD";
-    case OP_NEG:       return "NEG";
-    case OP_ABS:       return "ABS";
-
-    /* Float Arithmetic */
-    case OP_ADDF:      return "ADDF";
-    case OP_SUBF:      return "SUBF";
-    case OP_MULF:      return "MULF";
-    case OP_DIVF:      return "DIVF";
-    case OP_NEGF:      return "NEGF";
-    case OP_ABSF:      return "ABSF";
-
-    /* Logical/Bitwise */
-    case OP_AND:       return "AND";
-    case OP_OR:        return "OR";
-    case OP_XOR:       return "XOR";
-    case OP_NOT:       return "NOT";
-    case OP_SHL:       return "SHL";
-    case OP_SHR:       return "SHR";
-    case OP_SAR:       return "SAR";
-
-    /* Comparison */
-    case OP_EQ:        return "EQ";
-    case OP_NE:        return "NE";
-    case OP_LT:        return "LT";
-    case OP_LE:        return "LE";
-    case OP_GT:        return "GT";
-    case OP_GE:        return "GE";
-    case OP_LTU:       return "LTU";
-    case OP_GTU:       return "GTU";
-
-    /* 8-bit operand */
-    case OP_PUSH8:     return "PUSH8";
-    case OP_PICK:      return "PICK";
-    case OP_JR:        return "JR";
-    case OP_JRZ:       return "JRZ";
-    case OP_JRNZ:      return "JRNZ";
-
-    /* 16-bit operand */
-    case OP_LOAD8:     return "LOAD8";
-    case OP_LOAD16:    return "LOAD16";
-    case OP_LOAD32:    return "LOAD32";
-    case OP_LOAD64:    return "LOAD64";
-    case OP_STORE8:    return "STORE8";
-    case OP_STORE16:   return "STORE16";
-    case OP_STORE32:   return "STORE32";
-    case OP_STORE64:   return "STORE64";
-    case OP_PUSH16:    return "PUSH16";
-    case OP_JMP:       return "JMP";
-    case OP_JZ:        return "JZ";
-    case OP_JNZ:       return "JNZ";
-    case OP_CALL:      return "CALL";
-    case OP_RET:       return "RET";
-
-    /* Type Conversion */
-    case OP_I2F:       return "I2F";
-    case OP_F2I:       return "F2I";
-    case OP_I2B:       return "I2B";
-    case OP_EXT8:      return "EXT8";
-    case OP_EXT16:     return "EXT16";
-    case OP_ZEXT8:     return "ZEXT8";
-    case OP_ZEXT16:    return "ZEXT16";
-
-    /* 32-bit operand */
-    case OP_PUSH32:    return "PUSH32";
 
     default:           return "???";
     }
@@ -156,6 +139,7 @@ const char *hil_opcode_name(uint8_t op)
 const char *hil_error_name(uint8_t code)
 {
     switch (code) {
+/* >>> GENERATED (tools/contract/generate.py): error-names. Do not edit. >>> */
     case 0x00: return "OK";
     case 0x01: return "STACK_OVERFLOW";
     case 0x02: return "STACK_UNDERFLOW";
@@ -167,6 +151,7 @@ const char *hil_error_name(uint8_t code)
     case 0x08: return "WATCHDOG";
     case 0x09: return "HALTED";
     case 0x0A: return "PAUSED";
+/* <<< END GENERATED: error-names <<< */
     default:   return "UNKNOWN";
     }
 }

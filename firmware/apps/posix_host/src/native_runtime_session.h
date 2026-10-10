@@ -13,10 +13,6 @@
 #include <zplc_core.h>
 #include <zplc_loader.h>
 
-#ifndef ZPLC_MEM_CODE_SIZE
-#define ZPLC_MEM_CODE_SIZE 0xB000U
-#endif
-
 /*
  * Sizes of the lines the POSIX host reads and writes on stdio (see main.c).
  *

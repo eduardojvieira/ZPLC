@@ -1,0 +1,836 @@
+{
+  "$comment": "Single source of the ZPLC binary contract (VF-012, WP-11). Edit this file and run `python3 tools/contract/generate.py`; never edit a generated file. `generate.py --check` fails when a generated file differs from a fresh generation.",
+  "schema": 1,
+  "abi": {
+    "versionMajor": 1,
+    "versionMinor": 0,
+    "doc": "ISA and container version. The draft counter of CMP-052 is introduced by WP-19, not here."
+  },
+  "container": {
+    "magic": {
+      "value": "0x434C505A",
+      "doc": "Magic number for .zplc files.\n\nWhen stored in little-endian format and viewed in a hex dump,\nthe bytes read: 5A 50 4C 43 = \"ZPLC\" in ASCII.\n\nOn little-endian systems: uint32_t magic = 0x434C505A\nMemory layout: [0x5A][0x50][0x4C][0x43] = \"ZPLC\""
+    },
+    "crc": {"offset": 12, "size": 4, "polynomial": "0xEDB88320", "doc": "CRC32 (IEEE 802.3) over the whole file except the 4 bytes of the crc32 field."},
+    "maxTasks": {"value": 16, "doc": "Artifact-wide v1 admission limit for TASK segment entries (loader)."},
+    "structs": [
+      {
+        "name": "header",
+        "typedef": "zplc_file_header_t",
+        "enum": "fileFlags",
+        "sizeMacro": "ZPLC_FILE_HEADER_SIZE",
+        "size": 32,
+        "doc": ".zplc file header (32 bytes).\n\nThis is the first structure in every .zplc file.",
+        "sizeDoc": "Expected size of file header",
+        "fields": [
+          {"name": "magic", "type": "uint32_t", "doc": "Magic number: ZPLC_MAGIC"},
+          {"name": "version_major", "type": "uint16_t", "doc": "Major version"},
+          {"name": "version_minor", "type": "uint16_t", "doc": "Minor version"},
+          {"name": "flags", "type": "uint32_t", "doc": "Feature flags"},
+          {"name": "crc32", "type": "uint32_t", "doc": "CRC32 of file (excluding this field)"},
+          {"name": "code_size", "type": "uint32_t", "doc": "Size of code segment (bytes)"},
+          {"name": "data_size", "type": "uint32_t", "doc": "Size of data segment (bytes)"},
+          {"name": "entry_point", "type": "uint16_t", "doc": "Code offset of main entry"},
+          {"name": "segment_count", "type": "uint16_t", "doc": "Number of segments"},
+          {"name": "reserved", "type": "uint32_t", "doc": "Reserved (must be 0)"}
+        ]
+      },
+      {
+        "name": "segment",
+        "typedef": "zplc_segment_entry_t",
+        "enum": "segmentTypes",
+        "sizeMacro": "ZPLC_SEGMENT_ENTRY_SIZE",
+        "size": 8,
+        "doc": "Segment table entry (8 bytes).",
+        "sizeDoc": "Expected size of segment entry",
+        "fields": [
+          {"name": "type", "type": "uint16_t", "doc": "Segment type"},
+          {"name": "flags", "type": "uint16_t", "doc": "Segment-specific flags"},
+          {"name": "size", "type": "uint32_t", "doc": "Segment size (bytes)"}
+        ]
+      },
+      {
+        "name": "task",
+        "typedef": "zplc_task_def_t",
+        "enum": "taskTypes",
+        "sizeMacro": "ZPLC_TASK_DEF_SIZE",
+        "size": 16,
+        "doc": "Task definition (16 bytes).",
+        "sizeDoc": "Expected size of task definition",
+        "fields": [
+          {"name": "id", "type": "uint16_t", "doc": "Task ID"},
+          {"name": "type", "type": "uint8_t", "doc": "Task type (cyclic, event, init)"},
+          {"name": "priority", "type": "uint8_t", "doc": "Priority (0=highest)"},
+          {"name": "interval_us", "type": "uint32_t", "doc": "Cycle time in microseconds"},
+          {"name": "entry_point", "type": "uint16_t", "doc": "Code offset"},
+          {"name": "stack_size", "type": "uint16_t", "doc": "Required stack depth"},
+          {"name": "reserved", "type": "uint32_t", "doc": "Reserved (must be 0)"}
+        ]
+      },
+      {
+        "name": "iomap",
+        "typedef": "zplc_iomap_entry_t",
+        "enum": "ioDirections",
+        "sizeMacro": "ZPLC_IOMAP_ENTRY_SIZE",
+        "size": 8,
+        "doc": "I/O map entry (8 bytes).",
+        "sizeDoc": "Expected size of I/O map entry",
+        "fields": [
+          {"name": "var_addr", "type": "uint16_t", "doc": "Variable address in memory"},
+          {"name": "var_type", "type": "uint8_t", "doc": "Data type ID"},
+          {"name": "direction", "type": "uint8_t", "doc": "0=Input, 1=Output"},
+          {"name": "channel", "type": "uint16_t", "doc": "Physical channel number"},
+          {"name": "flags", "type": "uint16_t", "doc": "Bit offset, invert, etc."}
+        ]
+      },
+      {
+        "name": "tag",
+        "typedef": "zplc_tag_entry_t",
+        "enum": "tagIds",
+        "sizeMacro": "ZPLC_TAG_ENTRY_SIZE",
+        "size": 8,
+        "doc": "Variable tag entry (8 bytes).\nUsed for mapping variables to communication protocols.",
+        "sizeDoc": "Expected size of tag entry",
+        "fields": [
+          {"name": "var_addr", "type": "uint16_t", "doc": "Memory address of the variable"},
+          {"name": "var_type", "type": "uint8_t", "doc": "Data type ID (zplc_data_type_t)"},
+          {"name": "tag_id", "type": "uint8_t", "doc": "Protocol/Tag identifier (1=Publish, 2=Modbus, etc.)"},
+          {"name": "value", "type": "uint32_t", "doc": "Parameter (Modbus address, or offset to string table)"}
+        ]
+      }
+    ],
+    "enums": [
+      {
+        "name": "fileFlags",
+        "typedef": "zplc_file_flags_t",
+        "prefix": "ZPLC_FLAG_",
+        "doc": "File header flags.",
+        "bits": true,
+        "members": [
+          {"name": "HAS_DEBUG", "value": 0, "doc": "Debug segment present"},
+          {"name": "HAS_SYMBOLS", "value": 1, "doc": "Symbol table present"},
+          {"name": "HAS_RETAIN", "value": 2, "doc": "Uses retentive memory"},
+          {"name": "SIGNED", "value": 3, "doc": "Cryptographic signature"}
+        ]
+      },
+      {
+        "name": "segmentTypes",
+        "typedef": "zplc_segment_type_t",
+        "prefix": "ZPLC_SEG_",
+        "doc": "Segment types.",
+        "members": [
+          {"name": "CODE", "value": "0x01", "doc": "Executable bytecode"},
+          {"name": "DATA", "value": "0x02", "doc": "Initialized data"},
+          {"name": "BSS", "value": "0x03", "doc": "Uninitialized data"},
+          {"name": "RETAIN", "value": "0x04", "doc": "Retentive variables"},
+          {"name": "IOMAP", "value": "0x05", "doc": "I/O mapping table"},
+          {"name": "SYMTAB", "value": "0x10", "doc": "Symbol table"},
+          {"name": "DEBUG", "value": "0x11", "doc": "Debug information"},
+          {"name": "TASK", "value": "0x20", "doc": "Task definitions"},
+          {"name": "TAGS", "value": "0x30", "doc": "Variable tags (networking metadata)"}
+        ]
+      },
+      {
+        "name": "taskTypes",
+        "typedef": "zplc_task_type_t",
+        "prefix": "ZPLC_TASK_",
+        "doc": "Task types.",
+        "members": [
+          {"name": "CYCLIC", "value": 0, "doc": "Periodic execution"},
+          {"name": "EVENT", "value": 1, "doc": "Event-triggered"},
+          {"name": "INIT", "value": 2, "doc": "Run once at startup"}
+        ]
+      },
+      {
+        "name": "ioDirections",
+        "typedef": "zplc_io_direction_t",
+        "prefix": "ZPLC_IO_",
+        "doc": "I/O direction.",
+        "members": [
+          {"name": "INPUT", "value": 0, "doc": "Input (HAL -> VM)"},
+          {"name": "OUTPUT", "value": 1, "doc": "Output (VM -> HAL)"}
+        ]
+      },
+      {
+        "name": "tagIds",
+        "typedef": "zplc_tag_id_t",
+        "prefix": "ZPLC_TAG_",
+        "doc": "Tag identifiers.",
+        "members": [
+          {"name": "NONE", "value": 0, "doc": ""},
+          {"name": "PUBLISH", "value": 1, "doc": "{publish}"},
+          {"name": "MODBUS", "value": 2, "doc": "{modbus:N}"},
+          {"name": "SUBSCRIBE", "value": 3, "doc": "{subscribe}"}
+        ]
+      }
+    ]
+  },
+  "memory": {
+    "regions": [
+      {"name": "IPI", "base": "0x0000", "size": "0x1000", "doc": "Input Process Image", "sizeDoc": "Size of Input Process Image (4 KB, fixed by spec)"},
+      {"name": "OPI", "base": "0x1000", "size": "0x1000", "doc": "Output Process Image", "sizeDoc": "Size of Output Process Image (4 KB, fixed by spec)"},
+      {"name": "WORK", "base": "0x2000", "size": "0x2000", "kconfig": "CONFIG_ZPLC_WORK_MEMORY_SIZE", "doc": "Work Memory", "sizeDoc": "Size of Work Memory (default 8 KB, configurable via Kconfig)"},
+      {
+        "name": "RETAIN",
+        "base": "0x4000",
+        "size": "0x1000",
+        "kconfig": "CONFIG_ZPLC_RETAIN_MEMORY_SIZE",
+        "doc": "Retentive Memory",
+        "sizeDoc": "Size of Retentive Memory (default 4 KB, configurable via Kconfig)"
+      },
+      {"name": "CODE", "base": "0x5000", "size": "0xB000", "kconfig": "CONFIG_ZPLC_CODE_SIZE_MAX", "doc": "Code Segment", "sizeDoc": "Maximum code size (default 44 KB, configurable via Kconfig)"}
+    ],
+    "limits": [
+      {"macro": "ZPLC_MAX_TAGS", "value": 64, "guard": "ifndef", "doc": "Maximum number of variable tags supported"},
+      {"macro": "ZPLC_STACK_MAX_DEPTH", "value": 256, "kconfig": "CONFIG_ZPLC_STACK_DEPTH", "doc": "Maximum evaluation stack depth (configurable via Kconfig)"},
+      {"macro": "ZPLC_CALL_STACK_MAX", "value": 32, "kconfig": "CONFIG_ZPLC_CALL_STACK_DEPTH", "doc": "Maximum call stack depth (configurable via Kconfig)"},
+      {"macro": "ZPLC_MAX_BREAKPOINTS", "value": 16, "kconfig": "CONFIG_ZPLC_MAX_BREAKPOINTS", "doc": "Maximum number of breakpoints (configurable via Kconfig)"}
+    ],
+    "systemRegisterOffset": {"value": "0x0FF0", "doc": "Offset within IPI for system registers (last 16 bytes)"},
+    "systemRegisters": [
+      {"macro": "ZPLC_SYS_CYCLE_TIME", "offset": "0x0FF0", "type": "DINT", "size": 4, "doc": "System register: Last cycle execution time in microseconds (DINT, 4 bytes)"},
+      {"macro": "ZPLC_SYS_UPTIME", "offset": "0x0FF4", "type": "UDINT", "size": 4, "doc": "System register: System uptime in milliseconds (UDINT, 4 bytes)"},
+      {"macro": "ZPLC_SYS_TASK_ID", "offset": "0x0FF8", "type": "BYTE", "size": 1, "doc": "System register: Current task ID (BYTE, 1 byte)"},
+      {"macro": "ZPLC_SYS_FLAGS", "offset": "0x0FF9", "type": "BYTE", "size": 1, "doc": "System register: System flags (BYTE, 1 byte)"}
+    ],
+    "systemFlags": [
+      {"macro": "ZPLC_SYS_FLAG_FIRST_SCAN", "value": "0x01", "doc": "System flags: First scan bit (set on first cycle after start)"},
+      {"macro": "ZPLC_SYS_FLAG_WDG_WARN", "value": "0x02", "doc": "Reserved system flag; not produced by current runtimes."},
+      {"macro": "ZPLC_SYS_FLAG_RUNNING", "value": "0x04", "doc": "System flags: Scheduler is running"}
+    ]
+  },
+  "types": {
+    "typedef": "zplc_data_type_t",
+    "prefix": "ZPLC_TYPE_",
+    "doc": "IEC 61131-3 data type identifiers.\n\nThese match the type IDs used in the symbol table and I/O map.",
+    "members": [
+      {"name": "NONE", "value": "0x00", "size": 0, "doc": "Invalid/unspecified"},
+      {"name": "BOOL", "value": "0x01", "size": 1, "doc": "Boolean (1 byte)"},
+      {"name": "SINT", "value": "0x02", "size": 1, "doc": "Signed 8-bit integer"},
+      {"name": "INT", "value": "0x04", "size": 2, "doc": "Signed 16-bit integer"},
+      {"name": "DINT", "value": "0x06", "size": 4, "doc": "Signed 32-bit integer"},
+      {"name": "LINT", "value": "0x08", "size": 8, "doc": "Signed 64-bit integer"},
+      {"name": "USINT", "value": "0x03", "size": 1, "doc": "Unsigned 8-bit integer"},
+      {"name": "UINT", "value": "0x05", "size": 2, "doc": "Unsigned 16-bit integer"},
+      {"name": "UDINT", "value": "0x07", "size": 4, "doc": "Unsigned 32-bit integer"},
+      {"name": "ULINT", "value": "0x09", "size": 8, "doc": "Unsigned 64-bit integer"},
+      {"name": "REAL", "value": "0x0A", "size": 4, "doc": "32-bit IEEE 754 float"},
+      {"name": "LREAL", "value": "0x0B", "size": 8, "doc": "64-bit IEEE 754 double"},
+      {"name": "TIME", "value": "0x0C", "size": 4, "doc": "Time duration (ms as DINT)"},
+      {"name": "BYTE", "value": "0x10", "size": 1, "doc": "8-bit bit string"},
+      {"name": "WORD", "value": "0x11", "size": 2, "doc": "16-bit bit string"},
+      {"name": "DWORD", "value": "0x12", "size": 4, "doc": "32-bit bit string"},
+      {"name": "LWORD", "value": "0x13", "size": 8, "doc": "64-bit bit string"},
+      {"name": "STRING", "value": "0x20", "size": null, "doc": "Variable-length string (IEC 61131-3)"}
+    ]
+  },
+  "string": {
+    "lenOffset": 0,
+    "capOffset": 2,
+    "dataOffset": 4,
+    "defaultSize": 80,
+    "maxSize": 255,
+    "doc": "STRING memory layout.\n\nStrings in ZPLC use a safe, bounds-checked layout:\n  Offset 0: current_length (uint16_t) - actual string length\n  Offset 2: max_capacity (uint16_t) - maximum allowed length\n  Offset 4: data[max_capacity+1] - null-terminated character data\n\nTotal size = 4 + max_capacity + 1 bytes\n\nExample: STRING[80] uses 85 bytes (4 header + 80 chars + 1 null)"
+  },
+  "operandRanges": {
+    "doc": "Encoding: the operand size follows the opcode range (0x00-0x3F none, 0x40-0x7F 8-bit, 0x80-0xBF 16-bit, 0xC0-0xFF 32-bit), except for the opcodes listed in exceptions, which carry no operand.",
+    "ranges": [
+      {"from": "0x00", "to": "0x3F", "operand": 0},
+      {"from": "0x40", "to": "0x7F", "operand": 1},
+      {"from": "0x80", "to": "0xBF", "operand": 2},
+      {"from": "0xC0", "to": "0xFF", "operand": 4}
+    ],
+    "exceptions": [
+      {"from": "RET", "to": "RET", "operand": 0},
+      {"from": "I2F", "to": "ZEXT16", "operand": 0}
+    ]
+  },
+  "groups": [
+    {"id": "system", "title": "System operations"},
+    {"id": "stack", "title": "Stack operations"},
+    {"id": "indirect", "title": "Indirect memory access"},
+    {"id": "string", "title": "String operations"},
+    {"id": "integer", "title": "Integer arithmetic"},
+    {"id": "float", "title": "Float arithmetic"},
+    {"id": "logic", "title": "Logical/bitwise operations"},
+    {"id": "comparison", "title": "Comparison operations"},
+    {"id": "push8", "title": "Push and pick with 8-bit operand"},
+    {"id": "jump8", "title": "Relative jumps with 8-bit operand"},
+    {"id": "memory", "title": "Load/store with 16-bit address"},
+    {"id": "push16", "title": "Push with 16-bit operand"},
+    {"id": "jump16", "title": "Control flow with 16-bit address"},
+    {"id": "conversion", "title": "Type conversion"},
+    {"id": "push32", "title": "Push with 32-bit operand"},
+    {"id": "comm", "title": "Communication with 32-bit operand"}
+  ],
+  "flagDefs": {
+    "relative": "operand is a signed 8-bit offset from PC+2",
+    "absolute": "operand is an absolute 16-bit code address (relocatable)",
+    "terminates": "control never falls through to the next instruction",
+    "call": "pushes a return address on the call stack",
+    "comm": "operand is a communication function-block kind"
+  },
+  "opcodes": [
+    {"name": "NOP", "code": "0x00", "operand": 0, "group": "system", "pops": 0, "pushes": 0, "minDepth": 0, "effect": "[] -> []", "flags": [], "doc": "No operation"},
+    {"name": "HALT", "code": "0x01", "operand": 0, "group": "system", "pops": 0, "pushes": 0, "minDepth": 0, "effect": "[] -> []", "flags": ["terminates"], "doc": "Stop execution"},
+    {"name": "BREAK", "code": "0x02", "operand": 0, "group": "system", "pops": 0, "pushes": 0, "minDepth": 0, "effect": "[] -> []", "flags": [], "doc": "Debugger breakpoint"},
+    {"name": "GET_TICKS", "code": "0x03", "operand": 0, "group": "system", "pops": 0, "pushes": 1, "minDepth": 0, "effect": "[] -> [ticks]", "flags": [], "doc": "Push system tick (ms) to stack"},
+    {"name": "DUP", "code": "0x10", "operand": 0, "group": "stack", "pops": 0, "pushes": 1, "minDepth": 1, "effect": "[a] -> [a a]", "flags": [], "doc": "Duplicate top of stack"},
+    {"name": "DROP", "code": "0x11", "operand": 0, "group": "stack", "pops": 1, "pushes": 0, "minDepth": 1, "effect": "[a] -> []", "flags": [], "doc": "Discard top of stack"},
+    {"name": "SWAP", "code": "0x12", "operand": 0, "group": "stack", "pops": 0, "pushes": 0, "minDepth": 2, "effect": "[a b] -> [b a]", "flags": [], "doc": "Swap top two elements"},
+    {"name": "OVER", "code": "0x13", "operand": 0, "group": "stack", "pops": 0, "pushes": 1, "minDepth": 2, "effect": "[a b] -> [a b a]", "flags": [], "doc": "Copy second element to top"},
+    {"name": "ROT", "code": "0x14", "operand": 0, "group": "stack", "pops": 0, "pushes": 0, "minDepth": 3, "effect": "[a b c] -> [b c a]", "flags": [], "doc": "Rotate top three elements"},
+    {"name": "LOADI8", "code": "0x15", "operand": 0, "group": "indirect", "pops": 1, "pushes": 1, "minDepth": 1, "effect": "[addr] -> [value]", "flags": [], "doc": "Load 8-bit from address on stack"},
+    {"name": "LOADI32", "code": "0x16", "operand": 0, "group": "indirect", "pops": 1, "pushes": 1, "minDepth": 1, "effect": "[addr] -> [value]", "flags": [], "doc": "Load 32-bit from address on stack"},
+    {
+      "name": "STOREI8",
+      "code": "0x17",
+      "operand": 0,
+      "group": "indirect",
+      "pops": 2,
+      "pushes": 0,
+      "minDepth": 2,
+      "effect": "[addr value] -> []",
+      "flags": [],
+      "doc": "Store 8-bit to address on stack: [addr val] -> []"
+    },
+    {
+      "name": "STOREI32",
+      "code": "0x18",
+      "operand": 0,
+      "group": "indirect",
+      "pops": 2,
+      "pushes": 0,
+      "minDepth": 2,
+      "effect": "[addr value] -> []",
+      "flags": [],
+      "doc": "Store 32-bit to address on stack: [addr val] -> []"
+    },
+    {"name": "LOADI16", "code": "0x19", "operand": 0, "group": "indirect", "pops": 1, "pushes": 1, "minDepth": 1, "effect": "[addr] -> [value]", "flags": [], "doc": "Load 16-bit from address on stack"},
+    {
+      "name": "STOREI16",
+      "code": "0x1A",
+      "operand": 0,
+      "group": "indirect",
+      "pops": 2,
+      "pushes": 0,
+      "minDepth": 2,
+      "effect": "[addr value] -> []",
+      "flags": [],
+      "doc": "Store 16-bit to address on stack: [addr val] -> []"
+    },
+    {"name": "STRLEN", "code": "0x1B", "operand": 0, "group": "string", "pops": 1, "pushes": 1, "minDepth": 1, "effect": "[str] -> [len]", "flags": [], "doc": "Get string length: [str_addr] -> [length]"},
+    {
+      "name": "STRCPY",
+      "code": "0x1C",
+      "operand": 0,
+      "group": "string",
+      "pops": 2,
+      "pushes": 0,
+      "minDepth": 2,
+      "effect": "[src dst] -> []",
+      "flags": [],
+      "doc": "Copy string: [src_addr dst_addr] -> [] (safe, bounds-checked)"
+    },
+    {
+      "name": "STRCAT",
+      "code": "0x1D",
+      "operand": 0,
+      "group": "string",
+      "pops": 2,
+      "pushes": 0,
+      "minDepth": 2,
+      "effect": "[src dst] -> []",
+      "flags": [],
+      "doc": "Concatenate: [src_addr dst_addr] -> [] (safe, bounds-checked)"
+    },
+    {
+      "name": "STRCMP",
+      "code": "0x1E",
+      "operand": 0,
+      "group": "string",
+      "pops": 2,
+      "pushes": 1,
+      "minDepth": 2,
+      "effect": "[a b] -> [cmp]",
+      "flags": [],
+      "doc": "Compare strings: [addr1 addr2] -> [result] (-1, 0, 1)"
+    },
+    {"name": "STRCLR", "code": "0x1F", "operand": 0, "group": "string", "pops": 1, "pushes": 0, "minDepth": 1, "effect": "[str] -> []", "flags": [], "doc": "Clear string: [str_addr] -> []"},
+    {"name": "ADD", "code": "0x20", "operand": 0, "group": "integer", "pops": 2, "pushes": 1, "minDepth": 2, "effect": "[a b] -> [r]", "flags": [], "doc": "Integer addition"},
+    {"name": "SUB", "code": "0x21", "operand": 0, "group": "integer", "pops": 2, "pushes": 1, "minDepth": 2, "effect": "[a b] -> [r]", "flags": [], "doc": "Integer subtraction"},
+    {"name": "MUL", "code": "0x22", "operand": 0, "group": "integer", "pops": 2, "pushes": 1, "minDepth": 2, "effect": "[a b] -> [r]", "flags": [], "doc": "Integer multiplication"},
+    {"name": "DIV", "code": "0x23", "operand": 0, "group": "integer", "pops": 2, "pushes": 1, "minDepth": 2, "effect": "[a b] -> [r]", "flags": [], "doc": "Integer division"},
+    {"name": "MOD", "code": "0x24", "operand": 0, "group": "integer", "pops": 2, "pushes": 1, "minDepth": 2, "effect": "[a b] -> [r]", "flags": [], "doc": "Integer modulo"},
+    {"name": "NEG", "code": "0x25", "operand": 0, "group": "integer", "pops": 1, "pushes": 1, "minDepth": 1, "effect": "[a] -> [r]", "flags": [], "doc": "Integer negation"},
+    {"name": "ABS", "code": "0x26", "operand": 0, "group": "integer", "pops": 1, "pushes": 1, "minDepth": 1, "effect": "[a] -> [r]", "flags": [], "doc": "Absolute value"},
+    {"name": "ADDF", "code": "0x28", "operand": 0, "group": "float", "pops": 2, "pushes": 1, "minDepth": 2, "effect": "[a b] -> [r]", "flags": [], "doc": "Float addition"},
+    {"name": "SUBF", "code": "0x29", "operand": 0, "group": "float", "pops": 2, "pushes": 1, "minDepth": 2, "effect": "[a b] -> [r]", "flags": [], "doc": "Float subtraction"},
+    {"name": "MULF", "code": "0x2A", "operand": 0, "group": "float", "pops": 2, "pushes": 1, "minDepth": 2, "effect": "[a b] -> [r]", "flags": [], "doc": "Float multiplication"},
+    {"name": "DIVF", "code": "0x2B", "operand": 0, "group": "float", "pops": 2, "pushes": 1, "minDepth": 2, "effect": "[a b] -> [r]", "flags": [], "doc": "Float division"},
+    {"name": "NEGF", "code": "0x2C", "operand": 0, "group": "float", "pops": 1, "pushes": 1, "minDepth": 1, "effect": "[a] -> [r]", "flags": [], "doc": "Float negation"},
+    {"name": "ABSF", "code": "0x2D", "operand": 0, "group": "float", "pops": 1, "pushes": 1, "minDepth": 1, "effect": "[a] -> [r]", "flags": [], "doc": "Float absolute value"},
+    {"name": "AND", "code": "0x30", "operand": 0, "group": "logic", "pops": 2, "pushes": 1, "minDepth": 2, "effect": "[a b] -> [r]", "flags": [], "doc": "Bitwise AND"},
+    {"name": "OR", "code": "0x31", "operand": 0, "group": "logic", "pops": 2, "pushes": 1, "minDepth": 2, "effect": "[a b] -> [r]", "flags": [], "doc": "Bitwise OR"},
+    {"name": "XOR", "code": "0x32", "operand": 0, "group": "logic", "pops": 2, "pushes": 1, "minDepth": 2, "effect": "[a b] -> [r]", "flags": [], "doc": "Bitwise XOR"},
+    {"name": "NOT", "code": "0x33", "operand": 0, "group": "logic", "pops": 1, "pushes": 1, "minDepth": 1, "effect": "[a] -> [r]", "flags": [], "doc": "Bitwise NOT"},
+    {"name": "SHL", "code": "0x34", "operand": 0, "group": "logic", "pops": 2, "pushes": 1, "minDepth": 2, "effect": "[a b] -> [r]", "flags": [], "doc": "Shift left"},
+    {"name": "SHR", "code": "0x35", "operand": 0, "group": "logic", "pops": 2, "pushes": 1, "minDepth": 2, "effect": "[a b] -> [r]", "flags": [], "doc": "Shift right (logical)"},
+    {"name": "SAR", "code": "0x36", "operand": 0, "group": "logic", "pops": 2, "pushes": 1, "minDepth": 2, "effect": "[a b] -> [r]", "flags": [], "doc": "Shift right (arithmetic)"},
+    {"name": "EQ", "code": "0x38", "operand": 0, "group": "comparison", "pops": 2, "pushes": 1, "minDepth": 2, "effect": "[a b] -> [flag]", "flags": [], "doc": "Equal"},
+    {"name": "NE", "code": "0x39", "operand": 0, "group": "comparison", "pops": 2, "pushes": 1, "minDepth": 2, "effect": "[a b] -> [flag]", "flags": [], "doc": "Not equal"},
+    {"name": "LT", "code": "0x3A", "operand": 0, "group": "comparison", "pops": 2, "pushes": 1, "minDepth": 2, "effect": "[a b] -> [flag]", "flags": [], "doc": "Less than (signed)"},
+    {"name": "LE", "code": "0x3B", "operand": 0, "group": "comparison", "pops": 2, "pushes": 1, "minDepth": 2, "effect": "[a b] -> [flag]", "flags": [], "doc": "Less or equal (signed)"},
+    {"name": "GT", "code": "0x3C", "operand": 0, "group": "comparison", "pops": 2, "pushes": 1, "minDepth": 2, "effect": "[a b] -> [flag]", "flags": [], "doc": "Greater than (signed)"},
+    {"name": "GE", "code": "0x3D", "operand": 0, "group": "comparison", "pops": 2, "pushes": 1, "minDepth": 2, "effect": "[a b] -> [flag]", "flags": [], "doc": "Greater or equal (signed)"},
+    {"name": "LTU", "code": "0x3E", "operand": 0, "group": "comparison", "pops": 2, "pushes": 1, "minDepth": 2, "effect": "[a b] -> [flag]", "flags": [], "doc": "Less than (unsigned)"},
+    {"name": "GTU", "code": "0x3F", "operand": 0, "group": "comparison", "pops": 2, "pushes": 1, "minDepth": 2, "effect": "[a b] -> [flag]", "flags": [], "doc": "Greater than (unsigned)"},
+    {"name": "PUSH8", "code": "0x40", "operand": 1, "group": "push8", "pops": 0, "pushes": 1, "minDepth": 0, "effect": "[] -> [imm]", "flags": [], "doc": "Push 8-bit immediate (sign-extended)"},
+    {
+      "name": "PICK",
+      "code": "0x41",
+      "operand": 1,
+      "group": "push8",
+      "pops": 0,
+      "pushes": 1,
+      "minDepth": 1,
+      "effect": "[x_n .. x_0] -> [x_n .. x_0 x_n]",
+      "flags": [],
+      "doc": "Copy nth stack element to top: PICK n copies stack[sp-1-n]"
+    },
+    {
+      "name": "JR",
+      "code": "0x50",
+      "operand": 1,
+      "group": "jump8",
+      "pops": 0,
+      "pushes": 0,
+      "minDepth": 0,
+      "effect": "[] -> []",
+      "flags": ["relative", "terminates"],
+      "doc": "Relative jump (signed 8-bit offset)"
+    },
+    {"name": "JRZ", "code": "0x51", "operand": 1, "group": "jump8", "pops": 1, "pushes": 0, "minDepth": 1, "effect": "[cond] -> []", "flags": ["relative"], "doc": "Relative jump if zero"},
+    {"name": "JRNZ", "code": "0x52", "operand": 1, "group": "jump8", "pops": 1, "pushes": 0, "minDepth": 1, "effect": "[cond] -> []", "flags": ["relative"], "doc": "Relative jump if not zero"},
+    {
+      "name": "LOAD8",
+      "code": "0x80",
+      "operand": 2,
+      "group": "memory",
+      "pops": 0,
+      "pushes": 1,
+      "minDepth": 0,
+      "effect": "[] -> [value]",
+      "flags": [],
+      "memory": {"access": "read", "width": 1},
+      "doc": "Load 8-bit from address"
+    },
+    {
+      "name": "LOAD16",
+      "code": "0x81",
+      "operand": 2,
+      "group": "memory",
+      "pops": 0,
+      "pushes": 1,
+      "minDepth": 0,
+      "effect": "[] -> [value]",
+      "flags": [],
+      "memory": {"access": "read", "width": 2},
+      "doc": "Load 16-bit from address"
+    },
+    {
+      "name": "LOAD32",
+      "code": "0x82",
+      "operand": 2,
+      "group": "memory",
+      "pops": 0,
+      "pushes": 1,
+      "minDepth": 0,
+      "effect": "[] -> [value]",
+      "flags": [],
+      "memory": {"access": "read", "width": 4},
+      "doc": "Load 32-bit from address"
+    },
+    {
+      "name": "LOAD64",
+      "code": "0x83",
+      "operand": 2,
+      "group": "memory",
+      "pops": 0,
+      "pushes": 2,
+      "minDepth": 0,
+      "effect": "[] -> [low high]",
+      "flags": [],
+      "memory": {"access": "read", "width": 8},
+      "doc": "Load 64-bit from address"
+    },
+    {
+      "name": "STORE8",
+      "code": "0x84",
+      "operand": 2,
+      "group": "memory",
+      "pops": 1,
+      "pushes": 0,
+      "minDepth": 1,
+      "effect": "[value] -> []",
+      "flags": [],
+      "memory": {"access": "write", "width": 1},
+      "doc": "Store 8-bit to address"
+    },
+    {
+      "name": "STORE16",
+      "code": "0x85",
+      "operand": 2,
+      "group": "memory",
+      "pops": 1,
+      "pushes": 0,
+      "minDepth": 1,
+      "effect": "[value] -> []",
+      "flags": [],
+      "memory": {"access": "write", "width": 2},
+      "doc": "Store 16-bit to address"
+    },
+    {
+      "name": "STORE32",
+      "code": "0x86",
+      "operand": 2,
+      "group": "memory",
+      "pops": 1,
+      "pushes": 0,
+      "minDepth": 1,
+      "effect": "[value] -> []",
+      "flags": [],
+      "memory": {"access": "write", "width": 4},
+      "doc": "Store 32-bit to address"
+    },
+    {
+      "name": "STORE64",
+      "code": "0x87",
+      "operand": 2,
+      "group": "memory",
+      "pops": 2,
+      "pushes": 0,
+      "minDepth": 2,
+      "effect": "[low high] -> []",
+      "flags": [],
+      "memory": {"access": "write", "width": 8},
+      "doc": "Store 64-bit to address"
+    },
+    {"name": "PUSH16", "code": "0x88", "operand": 2, "group": "push16", "pops": 0, "pushes": 1, "minDepth": 0, "effect": "[] -> [imm]", "flags": [], "doc": "Push 16-bit immediate (sign-extended)"},
+    {"name": "JMP", "code": "0x90", "operand": 2, "group": "jump16", "pops": 0, "pushes": 0, "minDepth": 0, "effect": "[] -> []", "flags": ["absolute", "terminates"], "doc": "Unconditional jump"},
+    {"name": "JZ", "code": "0x91", "operand": 2, "group": "jump16", "pops": 1, "pushes": 0, "minDepth": 1, "effect": "[cond] -> []", "flags": ["absolute"], "doc": "Jump if zero (false)"},
+    {"name": "JNZ", "code": "0x92", "operand": 2, "group": "jump16", "pops": 1, "pushes": 0, "minDepth": 1, "effect": "[cond] -> []", "flags": ["absolute"], "doc": "Jump if not zero (true)"},
+    {"name": "CALL", "code": "0x93", "operand": 2, "group": "jump16", "pops": 0, "pushes": 0, "minDepth": 0, "effect": "[] -> []", "flags": ["absolute", "call"], "doc": "Call subroutine"},
+    {"name": "RET", "code": "0x94", "operand": 0, "group": "jump16", "pops": 0, "pushes": 0, "minDepth": 0, "effect": "[] -> []", "flags": ["terminates"], "doc": "Return from subroutine"},
+    {"name": "I2F", "code": "0xA0", "operand": 0, "group": "conversion", "pops": 1, "pushes": 1, "minDepth": 1, "effect": "[a] -> [r]", "flags": [], "doc": "Integer to float"},
+    {"name": "F2I", "code": "0xA1", "operand": 0, "group": "conversion", "pops": 1, "pushes": 1, "minDepth": 1, "effect": "[a] -> [r]", "flags": [], "doc": "Float to integer"},
+    {"name": "I2B", "code": "0xA2", "operand": 0, "group": "conversion", "pops": 1, "pushes": 1, "minDepth": 1, "effect": "[a] -> [r]", "flags": [], "doc": "Integer to boolean"},
+    {"name": "EXT8", "code": "0xA3", "operand": 0, "group": "conversion", "pops": 1, "pushes": 1, "minDepth": 1, "effect": "[a] -> [r]", "flags": [], "doc": "Sign-extend 8-bit to 32-bit"},
+    {"name": "EXT16", "code": "0xA4", "operand": 0, "group": "conversion", "pops": 1, "pushes": 1, "minDepth": 1, "effect": "[a] -> [r]", "flags": [], "doc": "Sign-extend 16-bit to 32-bit"},
+    {"name": "ZEXT8", "code": "0xA5", "operand": 0, "group": "conversion", "pops": 1, "pushes": 1, "minDepth": 1, "effect": "[a] -> [r]", "flags": [], "doc": "Zero-extend 8-bit to 32-bit"},
+    {"name": "ZEXT16", "code": "0xA6", "operand": 0, "group": "conversion", "pops": 1, "pushes": 1, "minDepth": 1, "effect": "[a] -> [r]", "flags": [], "doc": "Zero-extend 16-bit to 32-bit"},
+    {"name": "PUSH32", "code": "0xC0", "operand": 4, "group": "push32", "pops": 0, "pushes": 1, "minDepth": 0, "effect": "[] -> [imm]", "flags": [], "doc": "Push 32-bit immediate"},
+    {
+      "name": "COMM_EXEC",
+      "code": "0xD0",
+      "operand": 4,
+      "group": "comm",
+      "pops": 1,
+      "pushes": 0,
+      "minDepth": 1,
+      "effect": "[base] -> []",
+      "flags": ["comm"],
+      "doc": "Execute/update Comm FB; pop base addr from stack"
+    },
+    {
+      "name": "COMM_STATUS",
+      "code": "0xD1",
+      "operand": 4,
+      "group": "comm",
+      "pops": 1,
+      "pushes": 1,
+      "minDepth": 1,
+      "effect": "[base] -> [status]",
+      "flags": ["comm"],
+      "doc": "Push status word for a kind to stack"
+    },
+    {
+      "name": "COMM_RESET",
+      "code": "0xD2",
+      "operand": 4,
+      "group": "comm",
+      "pops": 1,
+      "pushes": 0,
+      "minDepth": 1,
+      "effect": "[base] -> []",
+      "flags": ["comm"],
+      "doc": "Reset FSM for Comm FB; pop base addr from stack"
+    }
+  ],
+  "vm": {
+    "errors": {
+      "typedef": "zplc_vm_error_t",
+      "prefix": "ZPLC_VM_",
+      "doc": "VM error codes.",
+      "members": [
+        {"name": "OK", "value": "0x00", "doc": "No error"},
+        {"name": "STACK_OVERFLOW", "value": "0x01", "doc": "Evaluation stack full"},
+        {"name": "STACK_UNDERFLOW", "value": "0x02", "doc": "Pop from empty stack"},
+        {"name": "DIV_BY_ZERO", "value": "0x03", "doc": "Division by zero"},
+        {"name": "INVALID_OPCODE", "value": "0x04", "doc": "Unknown instruction"},
+        {"name": "OUT_OF_BOUNDS", "value": "0x05", "doc": "Memory access violation"},
+        {"name": "CALL_OVERFLOW", "value": "0x06", "doc": "Call stack full"},
+        {"name": "INVALID_JUMP", "value": "0x07", "doc": "Jump to invalid address"},
+        {"name": "WATCHDOG", "value": "0x08", "doc": "Execution time exceeded"},
+        {"name": "HALTED", "value": "0x09", "doc": "Execution stopped normally"},
+        {"name": "PAUSED", "value": "0x0A", "doc": "Paused at breakpoint (debugger)"}
+      ]
+    },
+    "flags": {
+      "typedef": "zplc_vm_flags_t",
+      "prefix": "ZPLC_VM_FLAG_",
+      "doc": "VM status flags.",
+      "bits": true,
+      "members": [
+        {"name": "ZERO", "value": 0, "doc": "Last result was zero"},
+        {"name": "CARRY", "value": 1, "doc": "Arithmetic carry"},
+        {"name": "OVERFLOW", "value": 2, "doc": "Arithmetic overflow"},
+        {"name": "NEGATIVE", "value": 3, "doc": "Last result was negative"}
+      ]
+    }
+  },
+  "loader": {
+    "errors": [
+      {"macro": "ZPLC_LOADER_OK", "value": 0, "doc": "Verified"},
+      {"macro": "ZPLC_LOADER_ERR_MAGIC", "value": -1, "doc": "Wrong magic number"},
+      {"macro": "ZPLC_LOADER_ERR_VERSION", "value": -2, "doc": "ISA version differs from the loader version"},
+      {"macro": "ZPLC_LOADER_ERR_SIZE", "value": -3, "doc": "A size or count field is inconsistent with the file, or a reserved word is not zero"},
+      {"macro": "ZPLC_LOADER_ERR_NO_CODE", "value": -4, "doc": "No CODE segment"},
+      {"macro": "ZPLC_LOADER_ERR_CRC32", "value": -6, "doc": "CRC32 mismatch"},
+      {"macro": "ZPLC_LOADER_ERR_FLAGS", "value": -7, "doc": "Header flags are not supported"},
+      {"macro": "ZPLC_LOADER_ERR_SEGMENT", "value": -8, "doc": "Segment table entry is invalid, repeated or of an unsupported type"},
+      {"macro": "ZPLC_LOADER_ERR_ENTRY_POINT", "value": -9, "doc": "Entry point is not an instruction boundary"},
+      {"macro": "ZPLC_LOADER_ERR_WORKSPACE", "value": -10, "doc": "Verifier workspace is missing or too small"},
+      {"macro": "ZPLC_LOADER_ERR_OPCODE", "value": -11, "doc": "Unknown opcode or truncated instruction"},
+      {"macro": "ZPLC_LOADER_ERR_CONTROL_FLOW", "value": -12, "doc": "Jump target is not an instruction boundary, or the code falls through its end"},
+      {"macro": "ZPLC_LOADER_ERR_MEMORY", "value": -13, "doc": "Static memory access outside the writable regions"},
+      {"macro": "ZPLC_LOADER_ERR_TASK", "value": -14, "doc": "Task definition is invalid or there are too many tasks"},
+      {"macro": "ZPLC_LOADER_ERR_TAGS", "value": -15, "doc": "Tag entry is invalid"},
+      {"macro": "ZPLC_LOADER_ERR_COMM", "value": -16, "doc": "Communication function-block kind is NONE or at or above the kind limit"}
+    ]
+  },
+  "comm": {
+    "kindMax": {"value": "0x00FF", "doc": "Sentinel, must be last. All valid kinds are below this value; values at or above it are rejected by zplc_comm_register_handler() and by the loader."},
+    "kinds": {
+      "typedef": "zplc_comm_fb_kind_t",
+      "prefix": "ZPLC_COMM_FB_",
+      "doc": "Communication function block kind identifiers.\n\nEncoded as the lower 16 bits of the OP_COMM_EXEC operand.",
+      "members": [
+        {"name": "NONE", "value": "0x0000", "doc": "No kind; rejected"},
+        {"name": "MB_READ_HREG", "value": "0x0001", "doc": "Modbus read holding registers"},
+        {"name": "MB_WRITE_HREG", "value": "0x0002", "doc": "Modbus write holding registers"},
+        {"name": "MB_READ_COIL", "value": "0x0003", "doc": "Modbus read coils"},
+        {"name": "MB_WRITE_COIL", "value": "0x0004", "doc": "Modbus write coils"},
+        {"name": "MQTT_CONNECT", "value": "0x000A", "doc": "MQTT connect"},
+        {"name": "MQTT_PUBLISH", "value": "0x000B", "doc": "MQTT publish"},
+        {"name": "MQTT_SUBSCRIBE", "value": "0x000C", "doc": "MQTT subscribe"},
+        {"name": "COMM_STATUS", "value": "0x0014", "doc": "Status query; no function-block definition in the compiler"},
+        {"name": "AZURE_C2D_RECV", "value": "0x0020", "doc": "Azure cloud-to-device receive"},
+        {"name": "AZURE_DPS_PROV", "value": "0x0021", "doc": "Azure DPS provisioning"},
+        {"name": "AZURE_EG_PUB", "value": "0x0022", "doc": "Azure Event Grid publish"},
+        {"name": "AWS_FLEET_PROV", "value": "0x0030", "doc": "AWS fleet provisioning"},
+        {"name": "SPB_REBIRTH", "value": "0x0040", "doc": "Sparkplug B rebirth request"}
+      ]
+    },
+    "statuses": {
+      "typedef": "zplc_comm_status_t",
+      "prefix": "ZPLC_COMM_",
+      "doc": "Communication status codes written to FB.STATUS.",
+      "members": [
+        {"name": "OK", "value": 0, "doc": ""},
+        {"name": "BUSY", "value": 1, "doc": ""},
+        {"name": "TIMEOUT", "value": 2, "doc": ""},
+        {"name": "NO_HANDLER", "value": 3, "doc": ""},
+        {"name": "NOT_CONNECTED", "value": 4, "doc": ""},
+        {"name": "QUEUE_FULL", "value": 5, "doc": ""},
+        {"name": "INVALID_ADDR", "value": 6, "doc": ""},
+        {"name": "STRING_OVERFLOW", "value": 7, "doc": ""},
+        {"name": "PROTO_ERROR", "value": 8, "doc": ""},
+        {"name": "AUTH_FAILED", "value": 9, "doc": ""},
+        {"name": "UNKNOWN", "value": "0xFF", "doc": ""}
+      ]
+    },
+    "memberSizes": {
+      "doc": "Bytes the compiler reserves for a member of each type (stdlib MEMBER_SIZE). A STRING member is the default 80-character string: 4 header + 80 + 1 terminator.",
+      "BOOL": 1,
+      "SINT": 1,
+      "USINT": 1,
+      "BYTE": 1,
+      "INT": 2,
+      "UINT": 2,
+      "WORD": 2,
+      "DINT": 4,
+      "UDINT": 4,
+      "DWORD": 4,
+      "REAL": 4,
+      "TIME": 4,
+      "LINT": 8,
+      "ULINT": 8,
+      "LREAL": 8,
+      "LWORD": 8,
+      "STRING": 85
+    },
+    "memberGroups": {
+      "COMM_HEADER": [
+        {"name": "EN", "dir": "in", "type": "BOOL", "offset": 0},
+        {"name": "BUSY", "dir": "out", "type": "BOOL", "offset": 1},
+        {"name": "DONE", "dir": "out", "type": "BOOL", "offset": 2},
+        {"name": "ERROR", "dir": "out", "type": "BOOL", "offset": 3},
+        {"name": "STATUS", "dir": "out", "type": "DINT", "offset": 4}
+      ],
+      "MB_HEADER": [
+        "@COMM_HEADER",
+        {"name": "PROTO", "dir": "in", "type": "USINT", "offset": 8},
+        {"name": "SLAVE_ID", "dir": "in", "type": "UINT", "offset": 9},
+        {"name": "ADDR", "dir": "in", "type": "UINT", "offset": 11}
+      ],
+      "MB_TCP_FOOTER": [
+        {"name": "HOST", "dir": "in", "type": "STRING", "offset": 18},
+        {"name": "PORT", "dir": "in", "type": "UINT", "offset": 103}
+      ]
+    },
+    "blocks": [
+      {
+        "name": "MB_READ_HREG",
+        "kind": "MB_READ_HREG",
+        "size": 110,
+        "doc": "Modbus read holding registers; COUNT registers requested, VALUE is the first register slot",
+        "members": [
+          "@MB_HEADER",
+          {"name": "COUNT", "dir": "in", "type": "UINT", "offset": 13},
+          {"name": "VALUE", "dir": "out", "type": "UINT", "offset": 15},
+          "@MB_TCP_FOOTER"
+        ]
+      },
+      {
+        "name": "MB_WRITE_HREG",
+        "kind": "MB_WRITE_HREG",
+        "size": 110,
+        "doc": "Modbus write holding registers; VALUE is the first write slot",
+        "members": [
+          "@MB_HEADER",
+          {"name": "COUNT", "dir": "in", "type": "UINT", "offset": 13},
+          {"name": "VALUE", "dir": "in", "type": "UINT", "offset": 15},
+          "@MB_TCP_FOOTER"
+        ]
+      },
+      {
+        "name": "MB_READ_COIL",
+        "kind": "MB_READ_COIL",
+        "size": 110,
+        "doc": "Modbus read coils",
+        "members": [
+          "@MB_HEADER",
+          {"name": "COUNT", "dir": "in", "type": "UINT", "offset": 13},
+          {"name": "VALUE", "dir": "out", "type": "BOOL", "offset": 15},
+          "@MB_TCP_FOOTER"
+        ]
+      },
+      {
+        "name": "MB_WRITE_COIL",
+        "kind": "MB_WRITE_COIL",
+        "size": 110,
+        "doc": "Modbus write coils",
+        "members": [
+          "@MB_HEADER",
+          {"name": "COUNT", "dir": "in", "type": "UINT", "offset": 13},
+          {"name": "VALUE", "dir": "in", "type": "BOOL", "offset": 15},
+          "@MB_TCP_FOOTER"
+        ]
+      },
+      {
+        "name": "MQTT_CONNECT",
+        "kind": "MQTT_CONNECT",
+        "size": 12,
+        "doc": "MQTT connect",
+        "members": [
+          "@COMM_HEADER",
+          {"name": "PROFILE", "dir": "in", "type": "USINT", "offset": 8},
+          {"name": "CONNECTED", "dir": "out", "type": "BOOL", "offset": 9}
+        ]
+      },
+      {
+        "name": "MQTT_PUBLISH",
+        "kind": "MQTT_PUBLISH",
+        "size": 190,
+        "doc": "MQTT publish",
+        "members": [
+          "@COMM_HEADER",
+          {"name": "QOS", "dir": "in", "type": "USINT", "offset": 8},
+          {"name": "RETAIN", "dir": "in", "type": "BOOL", "offset": 9},
+          {"name": "TOPIC", "dir": "in", "type": "STRING", "offset": 12},
+          {"name": "PAYLOAD", "dir": "in", "type": "STRING", "offset": 97}
+        ]
+      },
+      {
+        "name": "MQTT_SUBSCRIBE",
+        "kind": "MQTT_SUBSCRIBE",
+        "size": 190,
+        "doc": "MQTT subscribe; PAYLOAD is an output",
+        "members": [
+          "@COMM_HEADER",
+          {"name": "QOS", "dir": "in", "type": "USINT", "offset": 8},
+          {"name": "VALID", "dir": "out", "type": "BOOL", "offset": 9},
+          {"name": "TOPIC", "dir": "in", "type": "STRING", "offset": 12},
+          {"name": "PAYLOAD", "dir": "out", "type": "STRING", "offset": 97}
+        ]
+      },
+      {
+        "name": "AZURE_C2D_RECV",
+        "kind": "AZURE_C2D_RECV",
+        "size": 94,
+        "doc": "Azure cloud-to-device receive",
+        "members": [
+          "@COMM_HEADER",
+          {"name": "PAYLOAD", "dir": "out", "type": "STRING", "offset": 8},
+          {"name": "VALID", "dir": "out", "type": "BOOL", "offset": 93}
+        ]
+      },
+      {
+        "name": "AZURE_DPS_PROV",
+        "kind": "AZURE_DPS_PROV",
+        "size": 201,
+        "doc": "Azure DPS provisioning",
+        "members": [
+          "@COMM_HEADER",
+          {"name": "DEVICE_ID", "dir": "in", "type": "STRING", "offset": 8},
+          {"name": "ASSIGNED_HUB", "dir": "out", "type": "STRING", "offset": 73}
+        ]
+      },
+      {
+        "name": "AZURE_EG_PUB",
+        "kind": "AZURE_EG_PUB",
+        "size": 266,
+        "doc": "Azure Event Grid publish",
+        "members": [
+          "@COMM_HEADER",
+          {"name": "TOPIC", "dir": "in", "type": "STRING", "offset": 8},
+          {"name": "EVENT_TYPE", "dir": "in", "type": "STRING", "offset": 73},
+          {"name": "PAYLOAD", "dir": "in", "type": "STRING", "offset": 138}
+        ]
+      },
+      {
+        "name": "AWS_FLEET_PROV",
+        "kind": "AWS_FLEET_PROV",
+        "size": 137,
+        "doc": "AWS fleet provisioning",
+        "members": [
+          "@COMM_HEADER",
+          {"name": "TEMPLATE_NAME", "dir": "in", "type": "STRING", "offset": 8},
+          {"name": "THING_NAME", "dir": "out", "type": "STRING", "offset": 73}
+        ]
+      },
+      {"name": "SPB_REBIRTH", "kind": "SPB_REBIRTH", "size": 8, "doc": "Sparkplug B rebirth; a rising EN triggers REBIRTH", "members": ["@COMM_HEADER"]}
+    ]
+  }
+}

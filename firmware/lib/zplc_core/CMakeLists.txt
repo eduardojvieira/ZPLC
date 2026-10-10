@@ -140,6 +140,17 @@ target_include_directories(test_isa PRIVATE
 
 add_test(NAME test_isa COMMAND test_isa)
 
+# Test: generated binary contract tables
+add_executable(test_contract
+    tests/test_contract.c
+)
+
+target_include_directories(test_contract PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+add_test(NAME test_contract COMMAND test_contract)
+
 # Test: VM Core Execution
 add_executable(test_vm_core
     tests/test_vm_core.c
@@ -281,7 +292,7 @@ add_test(NAME test_loader_verify COMMAND test_loader_verify)
 # Custom target to run all tests
 add_custom_target(check
     COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
-    DEPENDS test_isa test_vm_core test_vm_arith_edges test_comm_dispatch test_loader_verify test_native_runtime_session test_host_stdio test_hal_posix_persist test_hal_posix_mutex
+    DEPENDS test_isa test_contract test_vm_core test_vm_arith_edges test_comm_dispatch test_loader_verify test_native_runtime_session test_host_stdio test_hal_posix_persist test_hal_posix_mutex
     COMMENT "Running all tests..."
 )
 

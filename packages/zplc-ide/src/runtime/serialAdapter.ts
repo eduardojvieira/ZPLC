@@ -24,7 +24,9 @@ import type {
 import {
   bytesToHex,
   bytesToValue,
+  getForceRegionBounds,
   getTypeSize,
+  MEMORY_MAP,
   WATCH_FORCE_STATE,
 } from './debugAdapter';
 
@@ -137,9 +139,8 @@ function parseForcedValues(value: unknown): WatchForceEntry[] {
     const size = item.size as number;
     const bytes = item.bytes as string;
     const end = address + size;
-    const regionStart = address < 0x1000 ? 0 : address < 0x2000 ? 0x1000 : address < 0x4000 ? 0x2000 : 0x4000;
-    const regionEnd = regionStart === 0 ? 0x1000 : regionStart === 0x1000 ? 0x2000 : regionStart === 0x2000 ? 0x4000 : 0x5000;
-    if (end > 0x5000 || end > regionEnd || ranges.some((range) => address < range.end && range.start < end)) {
+    const regionEnd = getForceRegionBounds(address).end;
+    if (end > MEMORY_MAP.code.baseAddress || end > regionEnd || ranges.some((range) => address < range.end && range.start < end)) {
       throw new Error('Invalid force list response');
     }
     ranges.push({ start: address, end });
