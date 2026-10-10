@@ -108,8 +108,9 @@ function drain(process: OwnedProcess, output: string[]): void {
     output.push(new TextDecoder().decode(chunk));
     while (output.join('').length > 12_000) output.shift();
   };
-  void (async () => { for await (const chunk of process.stdout) append(chunk); })();
-  void (async () => { for await (const chunk of process.stderr) append(chunk); })();
+  for (const stream of [process.stdout, process.stderr]) {
+    if (stream && typeof stream === 'object') void (async () => { for await (const chunk of stream) append(chunk); })();
+  }
 }
 
 class Cdp {
@@ -193,7 +194,7 @@ async function main(): Promise<void> {
     electron = Bun.spawn([executable, '--headless', '--disable-gpu', `--remote-debugging-port=${cdpPort}`, `--user-data-dir=${join(tempRoot, 'profile')}`], { stdout: 'pipe', stderr: 'pipe' });
     drain(electron, output);
     const target = await waitFor('packaged file renderer target', async () => {
-      const targets = await fetch(`http://${HOST}:${cdpPort}/json/list`).then((response) => response.json()).catch(() => [] as Array<{ type?: string; url?: string; webSocketDebuggerUrl?: string }>);
+      const targets: Array<{ type?: string; url?: string; webSocketDebuggerUrl?: string }> = await fetch(`http://${HOST}:${cdpPort}/json/list`).then((response) => response.json() as Promise<Array<{ type?: string; url?: string; webSocketDebuggerUrl?: string }>>).catch(() => []);
       return targets.find((item) => item.type === 'page' && item.url?.startsWith('file:') && item.webSocketDebuggerUrl)?.webSocketDebuggerUrl;
     });
     cdp = await Cdp.connect(target);

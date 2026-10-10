@@ -492,6 +492,8 @@ async function main(): Promise<void> {
   let vite: OwnedProcess | undefined;
   let browser: OwnedProcess | undefined;
   let cdp: Cdp | undefined;
+  // `navigate` replaces the session from inside a closure, so the flow reads it through this accessor.
+  const page = (): Cdp => { if (!cdp) throw new Error('The Chromium DevTools session is not connected'); return cdp; };
   const browserErrors: string[] = [];
   try {
     const vitePort = await freePort();
@@ -514,7 +516,7 @@ async function main(): Promise<void> {
         return Number.isInteger(port) && port > 0 ? port : undefined;
       });
       const target = await waitFor(`${description} Chromium DevTools`, async () => {
-        const targets = await fetch(`http://${HOST}:${debugPort}/json/list`).then((response) => response.json()).catch(() => [] as Array<{ type?: string; url?: string; webSocketDebuggerUrl?: string }>);
+        const targets: Array<{ type?: string; url?: string; webSocketDebuggerUrl?: string }> = await fetch(`http://${HOST}:${debugPort}/json/list`).then((response) => response.json() as Promise<Array<{ type?: string; url?: string; webSocketDebuggerUrl?: string }>>).catch(() => []);
         return targets.find((item) => item.type === 'page' && item.url === url && item.webSocketDebuggerUrl)?.webSocketDebuggerUrl;
       });
       cdp = await Cdp.connect(target);
@@ -524,42 +526,42 @@ async function main(): Promise<void> {
       await waitFor(description, async () => await cdp!.evaluate(`location.href === ${JSON.stringify(url)} && performance.getEntriesByType('navigation').some((entry) => entry.name === ${JSON.stringify(url)}) && document.readyState === 'complete' ? true : undefined`) === true ? true : undefined);
     };
     await navigate('document load');
-    assert(await cdp.evaluate('window.innerWidth === 1366 && window.innerHeight === 768') === true, 'Viewport is not 1366x768');
+    assert(await page().evaluate('window.innerWidth === 1366 && window.innerHeight === 768') === true, 'Viewport is not 1366x768');
     const reviewDir = process.env.ZPLC_STUDIO_REVIEW_DIR?.trim();
-    if (reviewDir) await captureWelcomeReviewScreens(cdp, reviewDir);
-    await cdp.evaluate(pageSeed(golden, compileEnvelope));
-    await waitFor('renderer seed', async () => await cdp!.evaluate('window.__zplcSmoke?.ready ? true : undefined') === true ? true : undefined);
-    await waitFor('Studio toolbar', async () => await cdp!.evaluate("document.querySelectorAll('button').length > 0 ? true : undefined") === true ? true : undefined);
-    assert(await cdp.evaluate(`(() => { const bar = document.querySelector('[aria-label="Operational status"]'); const live = bar?.querySelectorAll('[role="status"][aria-live="polite"][aria-atomic="true"]') ?? []; return Boolean(bar) && bar?.textContent?.includes('SIMULATION') && bar?.textContent?.includes('No runtime session') && bar.getBoundingClientRect().width <= 1366 && !bar?.hasAttribute('aria-live') && live.length === 1 && !live[0]?.textContent?.includes('cycles') && !live[0]?.textContent?.includes('overruns'); })()`) === true, 'Operational status must isolate its polite live announcement at 1366x768');
+    if (reviewDir) await captureWelcomeReviewScreens(page(), reviewDir);
+    await page().evaluate(pageSeed(golden, compileEnvelope));
+    await waitFor('renderer seed', async () => await page().evaluate('window.__zplcSmoke?.ready ? true : undefined') === true ? true : undefined);
+    await waitFor('Studio toolbar', async () => await page().evaluate("document.querySelectorAll('button').length > 0 ? true : undefined") === true ? true : undefined);
+    assert(await page().evaluate(`(() => { const bar = document.querySelector('[aria-label="Operational status"]'); const live = bar?.querySelectorAll('[role="status"][aria-live="polite"][aria-atomic="true"]') ?? []; return Boolean(bar) && bar?.textContent?.includes('SIMULATION') && bar?.textContent?.includes('No runtime session') && bar.getBoundingClientRect().width <= 1366 && !bar?.hasAttribute('aria-live') && live.length === 1 && !live[0]?.textContent?.includes('cycles') && !live[0]?.textContent?.includes('overruns'); })()`) === true, 'Operational status must isolate its polite live announcement at 1366x768');
     if (reviewDir) {
-      await captureReviewScreens(cdp, reviewDir);
+      await captureReviewScreens(page(), reviewDir);
       await navigate('review reset document load');
-      await cdp.evaluate(pageSeed(golden, compileEnvelope));
-      await waitFor('review reset renderer seed', async () => await cdp!.evaluate('window.__zplcSmoke?.ready ? true : undefined') === true ? true : undefined);
-      await waitFor('review reset Studio toolbar', async () => await cdp!.evaluate("document.querySelectorAll('button').length > 0 ? true : undefined") === true ? true : undefined);
-      assert(await cdp.evaluate(`document.querySelector('[aria-label="Operational status"]')?.textContent?.includes('No runtime session')`) === true, 'Review capture reset did not restore the disconnected smoke workbench');
-      await captureLearnReviewScreens(cdp, reviewDir);
+      await page().evaluate(pageSeed(golden, compileEnvelope));
+      await waitFor('review reset renderer seed', async () => await page().evaluate('window.__zplcSmoke?.ready ? true : undefined') === true ? true : undefined);
+      await waitFor('review reset Studio toolbar', async () => await page().evaluate("document.querySelectorAll('button').length > 0 ? true : undefined") === true ? true : undefined);
+      assert(await page().evaluate(`document.querySelector('[aria-label="Operational status"]')?.textContent?.includes('No runtime session')`) === true, 'Review capture reset did not restore the disconnected smoke workbench');
+      await captureLearnReviewScreens(page(), reviewDir);
     }
-    await cdp.evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const state = useIDEStore.getState(); useIDEStore.setState({ debug: { ...state.debug, forcedValues: new Map([['Motor.Forward', { path: 'Motor.Forward', address: 0, type: 'BOOL', bytesHex: '01', state: 'forced' }]]) } }); window.__zplcSmoke.forced = true; })`);
-    await waitFor('unconfirmed force count status', async () => await cdp!.evaluate(`window.__zplcSmoke.forced && document.querySelector('[aria-label="Operational status"] [role="alert"]')?.textContent?.includes('verify and reconnect before operating') ? true : undefined`) === true ? true : undefined);
-    await cdp.evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const state = useIDEStore.getState(); useIDEStore.setState({ debug: { ...state.debug, forcesUnconfirmed: true } }); window.__zplcSmoke.forcesUnconfirmed = true; })`);
-    await waitFor('unconfirmed force alert', async () => await cdp!.evaluate(`window.__zplcSmoke.forcesUnconfirmed && document.querySelector('[aria-label="Operational status"] [role="alert"]')?.textContent?.includes('verify and reconnect before operating') ? true : undefined`) === true ? true : undefined);
-    assert(await cdp.evaluate(`(() => { const text = document.querySelector('[aria-label="Operational status"]')?.textContent ?? ''; return !text.includes('HIL') && !text.includes('token') && !text.includes('secret'); })()`) === true, 'Operational status must not claim qualification or expose secret-like data');
+    await page().evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const state = useIDEStore.getState(); useIDEStore.setState({ debug: { ...state.debug, forcedValues: new Map([['Motor.Forward', { path: 'Motor.Forward', address: 0, type: 'BOOL', bytesHex: '01', state: 'forced' }]]) } }); window.__zplcSmoke.forced = true; })`);
+    await waitFor('unconfirmed force count status', async () => await page().evaluate(`window.__zplcSmoke.forced && document.querySelector('[aria-label="Operational status"] [role="alert"]')?.textContent?.includes('verify and reconnect before operating') ? true : undefined`) === true ? true : undefined);
+    await page().evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const state = useIDEStore.getState(); useIDEStore.setState({ debug: { ...state.debug, forcesUnconfirmed: true } }); window.__zplcSmoke.forcesUnconfirmed = true; })`);
+    await waitFor('unconfirmed force alert', async () => await page().evaluate(`window.__zplcSmoke.forcesUnconfirmed && document.querySelector('[aria-label="Operational status"] [role="alert"]')?.textContent?.includes('verify and reconnect before operating') ? true : undefined`) === true ? true : undefined);
+    assert(await page().evaluate(`(() => { const text = document.querySelector('[aria-label="Operational status"]')?.textContent ?? ''; return !text.includes('HIL') && !text.includes('token') && !text.includes('secret'); })()`) === true, 'Operational status must not claim qualification or expose secret-like data');
     const press = async (key: string, modifiers = 0) => {
       const code = key === ' ' ? 'Space' : key.length === 1 && /[a-z]/i.test(key) ? `Key${key.toUpperCase()}` : key;
-      await cdp!.command('Input.dispatchKeyEvent', { type: 'keyDown', key, code, modifiers });
-      await cdp!.command('Input.dispatchKeyEvent', { type: 'keyUp', key, code, modifiers });
+      await page().command('Input.dispatchKeyEvent', { type: 'keyDown', key, code, modifiers });
+      await page().command('Input.dispatchKeyEvent', { type: 'keyUp', key, code, modifiers });
     };
     const clickNode = async (selector: string) => {
-      const point = await cdp!.evaluate(`(() => { const node = document.querySelector(${JSON.stringify(selector)}); const rect = node?.getBoundingClientRect(); return rect && rect.width > 0 && rect.height > 0 ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : undefined; })()`);
+      const point = await page().evaluate(`(() => { const node = document.querySelector(${JSON.stringify(selector)}); const rect = node?.getBoundingClientRect(); return rect && rect.width > 0 && rect.height > 0 ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : undefined; })()`);
       assert(typeof point === 'object' && point !== null && 'x' in point && 'y' in point, `Visual node is unavailable: ${selector}`);
-      await cdp!.command('Input.dispatchMouseEvent', { type: 'mousePressed', x: point.x, y: point.y, button: 'left', clickCount: 1 });
-      await cdp!.command('Input.dispatchMouseEvent', { type: 'mouseReleased', x: point.x, y: point.y, button: 'left', clickCount: 1 });
-      await cdp!.evaluate(`document.querySelector(${JSON.stringify(selector)})?.closest('.flex-1')?.focus()`);
+      await page().command('Input.dispatchMouseEvent', { type: 'mousePressed', x: point.x, y: point.y, button: 'left', clickCount: 1 });
+      await page().command('Input.dispatchMouseEvent', { type: 'mouseReleased', x: point.x, y: point.y, button: 'left', clickCount: 1 });
+      await page().evaluate(`document.querySelector(${JSON.stringify(selector)})?.closest('.flex-1')?.focus()`);
     };
-    await cdp.evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const state = useIDEStore.getState(); window.__zplcSmoke.visualState = { activeFileId: state.activeFileId, openTabs: [...state.openTabs], files: ['blinky-fbd', 'blinky-ld', 'blinky-sfc'].map((id) => { const file = state.loadedFiles.get(id); return file && { id, content: file.content, isModified: file.isModified }; }) }; })`);
+    await page().evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const state = useIDEStore.getState(); window.__zplcSmoke.visualState = { activeFileId: state.activeFileId, openTabs: [...state.openTabs], files: ['blinky-fbd', 'blinky-ld', 'blinky-sfc'].map((id) => { const file = state.loadedFiles.get(id); return file && { id, content: file.content, isModified: file.isModified }; }) }; })`);
     const visualState = await waitFor('visual smoke state', async () => {
-      const value = await cdp!.evaluate('window.__zplcSmoke?.visualState');
+      const value = await page().evaluate('window.__zplcSmoke?.visualState');
       return value && typeof value === 'object' ? value as { activeFileId: string; openTabs: string[]; files: Array<{ id: string; content: string; isModified: boolean } | undefined> } : undefined;
     });
     assert(visualState.files.every(Boolean), 'Visual smoke sources are unavailable');
@@ -567,109 +569,109 @@ async function main(): Promise<void> {
       for (const [kind, fileId, nodeId] of [['FBD', 'blinky-fbd', 'not_led'], ['SFC', 'blinky-sfc', 'step_led_on']] as const) {
         const original = visualState.files.find((file) => file?.id === fileId)?.content;
         assert(typeof original === 'string', `${kind} smoke source is unavailable`);
-      await cdp.evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => useIDEStore.getState().setActiveFile(${JSON.stringify(fileId)}))`);
-      await waitFor(`${kind} copy editor`, async () => await cdp!.evaluate(`window.__zplcSmoke.getState?.().activeFileId === ${JSON.stringify(fileId)} && document.querySelector('.zplc-visual-editor .react-flow__node[data-id="${nodeId}"]') ? true : undefined`) === true ? true : undefined);
+      await page().evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => useIDEStore.getState().setActiveFile(${JSON.stringify(fileId)}))`);
+      await waitFor(`${kind} copy editor`, async () => await page().evaluate(`window.__zplcSmoke.getState?.().activeFileId === ${JSON.stringify(fileId)} && document.querySelector('.zplc-visual-editor .react-flow__node[data-id="${nodeId}"]') ? true : undefined`) === true ? true : undefined);
       const selector = `.zplc-visual-editor .react-flow__node[data-id="${nodeId}"]`;
       await clickNode(selector);
-      await waitFor(`${kind} selected node`, async () => await cdp!.evaluate(`document.querySelector(${JSON.stringify(selector)})?.classList.contains('selected') ? true : undefined`) === true ? true : undefined);
+      await waitFor(`${kind} selected node`, async () => await page().evaluate(`document.querySelector(${JSON.stringify(selector)})?.classList.contains('selected') ? true : undefined`) === true ? true : undefined);
       await press('c', 2); await press('v', 2);
       const changed = await waitFor(`${kind} pasted content`, async () => {
-        const content = await cdp!.evaluate(`window.__zplcSmoke.getFileContent?.(${JSON.stringify(fileId)})`);
+        const content = await page().evaluate(`window.__zplcSmoke.getFileContent?.(${JSON.stringify(fileId)})`);
         return typeof content === 'string' && content !== original ? content : undefined;
       });
-      const valid = await cdp.evaluate(`(() => { const model = JSON.parse(${JSON.stringify(changed)}); const ids = model.blocks ? model.blocks.map((block) => block.id) : [...model.steps, ...model.transitions].map((item) => item.id); const unique = new Set(ids.map((id) => id.toLowerCase())).size === ids.length; return ${JSON.stringify(kind)} === 'FBD'
+      const valid = await page().evaluate(`(() => { const model = JSON.parse(${JSON.stringify(changed)}); const ids = model.blocks ? model.blocks.map((block) => block.id) : [...model.steps, ...model.transitions].map((item) => item.id); const unique = new Set(ids.map((id) => id.toLowerCase())).size === ids.length; return ${JSON.stringify(kind)} === 'FBD'
         ? model.blocks.length === 10 && model.connections.length === 11 && unique
         : model.steps.length === 3 && model.transitions.length === 2 && model.actions?.length > 0 && model.steps.filter((step) => step.isInitial).length === 1 && new Set(model.steps.map((step) => step.name.toLowerCase())).size === model.steps.length && unique; })()`);
       assert(valid === true, `${kind} paste did not preserve the canonical graph`);
       }
       const ldOriginal = visualState.files.find((file) => file?.id === 'blinky-ld')?.content;
       assert(typeof ldOriginal === 'string', 'LD smoke source is unavailable');
-      await cdp.evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => useIDEStore.getState().setActiveFile('blinky-ld'))`);
-      await waitFor('LD copy editor', async () => await cdp!.evaluate(`window.__zplcSmoke.getState?.().activeFileId === 'blinky-ld' && document.querySelector('[data-ld-element-id="ton_off"]') ? true : undefined`) === true ? true : undefined);
-      assert(await cdp.evaluate(`(() => { const element = document.querySelector(${JSON.stringify('[data-ld-element-id="ton_off"]')}); return element?.getAttribute('role') === 'button' && element.getAttribute('aria-label') === 'Select function block TON OffTimer' && element.getAttribute('aria-pressed') === 'false' && element.tabIndex === 0; })()`) === true, 'LD elements must expose an unselected keyboard button with a factual label');
-      await cdp.evaluate(`document.querySelector(${JSON.stringify('[data-ld-element-id="ton_off"]')})?.focus()`);
-      await waitFor('LD element keyboard focus', async () => await cdp!.evaluate(`document.activeElement === document.querySelector(${JSON.stringify('[data-ld-element-id="ton_off"]')}) ? true : undefined`) === true ? true : undefined);
-      const ldScroll = await cdp.evaluate(`(() => { const element = document.querySelector(${JSON.stringify('[data-ld-element-id="ton_off"]')}); return { window: window.scrollY, container: element?.parentElement?.parentElement?.parentElement?.scrollTop ?? 0 }; })()`);
+      await page().evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => useIDEStore.getState().setActiveFile('blinky-ld'))`);
+      await waitFor('LD copy editor', async () => await page().evaluate(`window.__zplcSmoke.getState?.().activeFileId === 'blinky-ld' && document.querySelector('[data-ld-element-id="ton_off"]') ? true : undefined`) === true ? true : undefined);
+      assert(await page().evaluate(`(() => { const element = document.querySelector(${JSON.stringify('[data-ld-element-id="ton_off"]')}); return element?.getAttribute('role') === 'button' && element.getAttribute('aria-label') === 'Select function block TON OffTimer' && element.getAttribute('aria-pressed') === 'false' && element.tabIndex === 0; })()`) === true, 'LD elements must expose an unselected keyboard button with a factual label');
+      await page().evaluate(`document.querySelector(${JSON.stringify('[data-ld-element-id="ton_off"]')})?.focus()`);
+      await waitFor('LD element keyboard focus', async () => await page().evaluate(`document.activeElement === document.querySelector(${JSON.stringify('[data-ld-element-id="ton_off"]')}) ? true : undefined`) === true ? true : undefined);
+      const ldScroll = await page().evaluate(`(() => { const element = document.querySelector(${JSON.stringify('[data-ld-element-id="ton_off"]')}); return { window: window.scrollY, container: element?.parentElement?.parentElement?.parentElement?.scrollTop ?? 0 }; })()`);
       await press(' ');
-      await waitFor('LD Space selected element', async () => await cdp!.evaluate(`document.querySelector(${JSON.stringify('[data-ld-element-id="ton_off"]')})?.getAttribute('aria-pressed') === 'true' ? true : undefined`) === true ? true : undefined);
-      assert(await cdp.evaluate(`JSON.stringify((() => { const element = document.querySelector(${JSON.stringify('[data-ld-element-id="ton_off"]')}); return { window: window.scrollY, container: element?.parentElement?.parentElement?.parentElement?.scrollTop ?? 0 }; })()) === JSON.stringify(${JSON.stringify(ldScroll)})`) === true, 'Space selection must not scroll the LD viewport');
+      await waitFor('LD Space selected element', async () => await page().evaluate(`document.querySelector(${JSON.stringify('[data-ld-element-id="ton_off"]')})?.getAttribute('aria-pressed') === 'true' ? true : undefined`) === true ? true : undefined);
+      assert(await page().evaluate(`JSON.stringify((() => { const element = document.querySelector(${JSON.stringify('[data-ld-element-id="ton_off"]')}); return { window: window.scrollY, container: element?.parentElement?.parentElement?.parentElement?.scrollTop ?? 0 }; })()) === JSON.stringify(${JSON.stringify(ldScroll)})`) === true, 'Space selection must not scroll the LD viewport');
       await press('Enter');
-      await waitFor('LD Enter selected element', async () => await cdp!.evaluate(`document.querySelector(${JSON.stringify('[data-ld-element-id="ton_off"]')})?.getAttribute('aria-pressed') === 'true' ? true : undefined`) === true ? true : undefined);
-      await waitFor('LD preset time control', async () => await cdp!.evaluate(`document.querySelector('[aria-label="Preset Time (PT)"]') instanceof HTMLInputElement ? true : undefined`) === true ? true : undefined);
-      assert(await cdp.evaluate(`document.querySelector('[aria-label="Preset Time (PT)"]')?.value === 'T#500ms'`) === true, 'LD timer PT must start from the selected element parameters');
-      await cdp.evaluate(`(() => { const input = document.querySelector('[aria-label="Preset Time (PT)"]'); if (!(input instanceof HTMLInputElement)) return; Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(input, 'T#2s'); input.dispatchEvent(new Event('input', { bubbles: true })); })()`);
-      assert(await cdp.evaluate(`document.querySelector('[aria-label="Preset Time (PT)"]')?.value === 'T#2s'`) === true, 'LD timer PT input did not accept the updated value');
-      await cdp.evaluate(`([...document.querySelectorAll('button')].find((button) => button.textContent?.trim() === 'Save'))?.click()`);
+      await waitFor('LD Enter selected element', async () => await page().evaluate(`document.querySelector(${JSON.stringify('[data-ld-element-id="ton_off"]')})?.getAttribute('aria-pressed') === 'true' ? true : undefined`) === true ? true : undefined);
+      await waitFor('LD preset time control', async () => await page().evaluate(`document.querySelector('[aria-label="Preset Time (PT)"]') instanceof HTMLInputElement ? true : undefined`) === true ? true : undefined);
+      assert(await page().evaluate(`document.querySelector('[aria-label="Preset Time (PT)"]')?.value === 'T#500ms'`) === true, 'LD timer PT must start from the selected element parameters');
+      await page().evaluate(`(() => { const input = document.querySelector('[aria-label="Preset Time (PT)"]'); if (!(input instanceof HTMLInputElement)) return; Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(input, 'T#2s'); input.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+      assert(await page().evaluate(`document.querySelector('[aria-label="Preset Time (PT)"]')?.value === 'T#2s'`) === true, 'LD timer PT input did not accept the updated value');
+      await page().evaluate(`([...document.querySelectorAll('button')].find((button) => button.textContent?.trim() === 'Save'))?.click()`);
       await waitFor('saved LD preset time', async () => {
-        const content = await cdp!.evaluate(`window.__zplcSmoke.getFileContent?.('blinky-ld')`);
-        return typeof content === 'string' && JSON.parse(content).rungs.flatMap((rung) => rung.grid.flatMap((row) => row.map((cell) => cell.element))).find((element) => element?.id === 'ton_off')?.parameters?.PT === 'T#2s' ? true : undefined;
+        const content = await page().evaluate(`window.__zplcSmoke.getFileContent?.('blinky-ld')`);
+        return typeof content === 'string' && (JSON.parse(content) as { rungs: Array<{ grid: Array<Array<{ element?: { id?: string; parameters?: { PT?: string } } }>> }> }).rungs.flatMap((rung) => rung.grid.flatMap((row) => row.map((cell) => cell.element))).find((element) => element?.id === 'ton_off')?.parameters?.PT === 'T#2s' ? true : undefined;
       });
-      await cdp.evaluate(`document.querySelector(${JSON.stringify('[data-ld-element-id="ton_off"]')})?.focus()`);
+      await page().evaluate(`document.querySelector(${JSON.stringify('[data-ld-element-id="ton_off"]')})?.focus()`);
       await press(' ');
-      await waitFor('reopened LD preset time', async () => await cdp!.evaluate(`document.querySelector('[aria-label="Preset Time (PT)"]')?.value === 'T#2s' ? true : undefined`) === true ? true : undefined);
+      await waitFor('reopened LD preset time', async () => await page().evaluate(`document.querySelector('[aria-label="Preset Time (PT)"]')?.value === 'T#2s' ? true : undefined`) === true ? true : undefined);
       await press('c', 2); await press('v', 2);
       const ldChanged = await waitFor('LD pasted content', async () => {
-        const content = await cdp!.evaluate(`window.__zplcSmoke.getFileContent?.('blinky-ld')`);
+        const content = await page().evaluate(`window.__zplcSmoke.getFileContent?.('blinky-ld')`);
         return typeof content === 'string' && content !== ldOriginal ? content : undefined;
       });
-      assert(await cdp.evaluate(`(() => { const model = JSON.parse(${JSON.stringify(ldChanged)}); const ids = model.rungs.flatMap((rung) => rung.grid.flatMap((row) => row.flatMap((cell) => cell.element ? [cell.element.id] : []))); return model.rungs.length === 5 && model.variables.local.some((variable) => variable.name === 'OffTimer_copy') && new Set(ids.map((id) => id.toLowerCase())).size === ids.length && model.rungs.every((rung, index) => rung.number === index + 1); })()`) === true, 'LD paste did not preserve a canonical independent rung');
+      assert(await page().evaluate(`(() => { const model = JSON.parse(${JSON.stringify(ldChanged)}); const ids = model.rungs.flatMap((rung) => rung.grid.flatMap((row) => row.flatMap((cell) => cell.element ? [cell.element.id] : []))); return model.rungs.length === 5 && model.variables.local.some((variable) => variable.name === 'OffTimer_copy') && new Set(ids.map((id) => id.toLowerCase())).size === ids.length && model.rungs.every((rung, index) => rung.number === index + 1); })()`) === true, 'LD paste did not preserve a canonical independent rung');
     } finally {
-      await cdp.evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const state = useIDEStore.getState(); const files = new Map(state.loadedFiles); for (const saved of ${JSON.stringify(visualState.files.filter(Boolean))}) { const file = files.get(saved.id); if (file) files.set(saved.id, { ...file, content: saved.content, isModified: saved.isModified }); } useIDEStore.setState({ loadedFiles: files, activeFileId: ${JSON.stringify(visualState.activeFileId)}, openTabs: ${JSON.stringify(visualState.openTabs)} }); const restored = useIDEStore.getState(); window.__zplcSmoke.visualStateRestored = { activeFileId: restored.activeFileId, openTabs: [...restored.openTabs], files: ['blinky-fbd', 'blinky-ld', 'blinky-sfc'].map((id) => { const file = restored.loadedFiles.get(id); return file && { id, content: file.content, isModified: file.isModified }; }) }; })`);
-      await waitFor('restored visual smoke state', async () => await cdp!.evaluate(`JSON.stringify(window.__zplcSmoke?.visualStateRestored) === JSON.stringify(${JSON.stringify(visualState)}) ? true : undefined`) === true ? true : undefined);
+      await page().evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const state = useIDEStore.getState(); const files = new Map(state.loadedFiles); for (const saved of ${JSON.stringify(visualState.files.filter(Boolean))}) { const file = files.get(saved.id); if (file) files.set(saved.id, { ...file, content: saved.content, isModified: saved.isModified }); } useIDEStore.setState({ loadedFiles: files, activeFileId: ${JSON.stringify(visualState.activeFileId)}, openTabs: ${JSON.stringify(visualState.openTabs)} }); const restored = useIDEStore.getState(); window.__zplcSmoke.visualStateRestored = { activeFileId: restored.activeFileId, openTabs: [...restored.openTabs], files: ['blinky-fbd', 'blinky-ld', 'blinky-sfc'].map((id) => { const file = restored.loadedFiles.get(id); return file && { id, content: file.content, isModified: file.isModified }; }) }; })`);
+      await waitFor('restored visual smoke state', async () => await page().evaluate(`JSON.stringify(window.__zplcSmoke?.visualStateRestored) === JSON.stringify(${JSON.stringify(visualState)}) ? true : undefined`) === true ? true : undefined);
     }
 
-    await cdp.evaluate(`document.querySelector('button[aria-label^="Explorer"]')?.click()`);
-    await waitFor('Explorer lower ledger', async () => await cdp!.evaluate(`Boolean(document.querySelector('#console-panel-explorer [role="tree"]')) ? true : undefined`) === true ? true : undefined);
-    assert(await cdp.evaluate(`(() => { const tree = document.querySelector('[role="tree"]'); const items = [...document.querySelectorAll('[role="treeitem"]')]; const group = tree?.querySelector('[role="group"]'); return tree?.getAttribute('aria-label') === 'Project files' && items.length === 3 && items.filter((item) => item.tabIndex === 0).length === 1 && items.every((item) => !item.firstElementChild?.classList.contains('ring-2')) && group?.closest('[role="treeitem"]')?.getAttribute('data-tree-node-id') === 'src'; })()`) === true, 'Explorer must own its group beneath src with one roving tab stop and no persistent focus ring');
-    await cdp.evaluate(`document.querySelector('[data-tree-node-id="src"]')?.focus()`);
+    await page().evaluate(`document.querySelector('button[aria-label^="Explorer"]')?.click()`);
+    await waitFor('Explorer lower ledger', async () => await page().evaluate(`Boolean(document.querySelector('#console-panel-explorer [role="tree"]')) ? true : undefined`) === true ? true : undefined);
+    assert(await page().evaluate(`(() => { const tree = document.querySelector('[role="tree"]'); const items = [...document.querySelectorAll('[role="treeitem"]')]; const group = tree?.querySelector('[role="group"]'); return tree?.getAttribute('aria-label') === 'Project files' && items.length === 3 && items.filter((item) => item.tabIndex === 0).length === 1 && items.every((item) => !item.firstElementChild?.classList.contains('ring-2')) && group?.closest('[role="treeitem"]')?.getAttribute('data-tree-node-id') === 'src'; })()`) === true, 'Explorer must own its group beneath src with one roving tab stop and no persistent focus ring');
+    await page().evaluate(`document.querySelector('[data-tree-node-id="src"]')?.focus()`);
     await press('ArrowLeft');
-    await waitFor('collapsed src treeitem', async () => await cdp!.evaluate(`document.querySelector('[data-tree-node-id="src"]')?.getAttribute('aria-expanded') === 'false' ? true : undefined`) === true ? true : undefined);
-    assert(await cdp.evaluate(`document.querySelectorAll('[data-tree-node-id="motor-st"], [data-tree-node-id="aux-st"]').length === 0`) === true, 'Collapsed descendants must not remain in the tree');
+    await waitFor('collapsed src treeitem', async () => await page().evaluate(`document.querySelector('[data-tree-node-id="src"]')?.getAttribute('aria-expanded') === 'false' ? true : undefined`) === true ? true : undefined);
+    assert(await page().evaluate(`document.querySelectorAll('[data-tree-node-id="motor-st"], [data-tree-node-id="aux-st"]').length === 0`) === true, 'Collapsed descendants must not remain in the tree');
     await press('ArrowRight');
-    await waitFor('expanded src treeitem', async () => await cdp!.evaluate(`document.querySelector('[data-tree-node-id="src"]')?.getAttribute('aria-expanded') === 'true' ? true : undefined`) === true ? true : undefined);
+    await waitFor('expanded src treeitem', async () => await page().evaluate(`document.querySelector('[data-tree-node-id="src"]')?.getAttribute('aria-expanded') === 'true' ? true : undefined`) === true ? true : undefined);
     await press('Enter');
-    await waitFor('Enter collapsed src treeitem', async () => await cdp!.evaluate(`document.querySelector('[data-tree-node-id="src"]')?.getAttribute('aria-expanded') === 'false' ? true : undefined`) === true ? true : undefined);
+    await waitFor('Enter collapsed src treeitem', async () => await page().evaluate(`document.querySelector('[data-tree-node-id="src"]')?.getAttribute('aria-expanded') === 'false' ? true : undefined`) === true ? true : undefined);
     await press(' ');
-    await waitFor('Space expanded src treeitem', async () => await cdp!.evaluate(`document.querySelector('[data-tree-node-id="src"]')?.getAttribute('aria-expanded') === 'true' ? true : undefined`) === true ? true : undefined);
+    await waitFor('Space expanded src treeitem', async () => await page().evaluate(`document.querySelector('[data-tree-node-id="src"]')?.getAttribute('aria-expanded') === 'true' ? true : undefined`) === true ? true : undefined);
     await press('End');
-    await waitFor('Aux tree focus', async () => await cdp!.evaluate(`document.activeElement?.getAttribute('data-tree-node-id') === 'aux-st' ? true : undefined`) === true ? true : undefined);
+    await waitFor('Aux tree focus', async () => await page().evaluate(`document.activeElement?.getAttribute('data-tree-node-id') === 'aux-st' ? true : undefined`) === true ? true : undefined);
     await press('Enter');
-    await waitFor('Aux file open', async () => await cdp!.evaluate(`window.__zplcSmoke.getState?.().activeFileId === 'aux-st' && window.__zplcSmoke.getState?.().openTabs.includes('aux-st') && document.querySelector('[data-tree-node-id="aux-st"]')?.getAttribute('aria-selected') === 'true' ? true : undefined`) === true ? true : undefined);
+    await waitFor('Aux file open', async () => await page().evaluate(`window.__zplcSmoke.getState?.().activeFileId === 'aux-st' && window.__zplcSmoke.getState?.().openTabs.includes('aux-st') && document.querySelector('[data-tree-node-id="aux-st"]')?.getAttribute('aria-selected') === 'true' ? true : undefined`) === true ? true : undefined);
     await press('ArrowUp');
-    await waitFor('Motor tree focus', async () => await cdp!.evaluate(`document.activeElement?.getAttribute('data-tree-node-id') === 'motor-st' ? true : undefined`) === true ? true : undefined);
+    await waitFor('Motor tree focus', async () => await page().evaluate(`document.activeElement?.getAttribute('data-tree-node-id') === 'motor-st' ? true : undefined`) === true ? true : undefined);
     await press(' ');
-    await waitFor('Motor file open', async () => await cdp!.evaluate(`window.__zplcSmoke.getState?.().activeFileId === 'motor-st' && window.__zplcSmoke.getState?.().openTabs.includes('motor-st') && document.querySelector('[data-tree-node-id="motor-st"]')?.getAttribute('aria-selected') === 'true' ? true : undefined`) === true ? true : undefined);
-    await cdp.evaluate(`document.querySelector('[data-tree-node-id="src"] > div')?.click()`);
-    await waitFor('mouse collapsed src focus', async () => await cdp!.evaluate(`(() => { const src = document.querySelector('[data-tree-node-id="src"]'); return src?.getAttribute('aria-expanded') === 'false' && document.activeElement === src && [...document.querySelectorAll('[role="treeitem"]')].filter((item) => item.tabIndex === 0).length === 1 ? true : undefined; })()`) === true ? true : undefined);
-    await cdp.evaluate(`document.querySelector('[data-tree-node-id="src"] > div')?.click()`);
-    await waitFor('mouse expanded src treeitem', async () => await cdp!.evaluate(`document.querySelector('[data-tree-node-id="src"]')?.getAttribute('aria-expanded') === 'true' ? true : undefined`) === true ? true : undefined);
-    await cdp.evaluate(`document.querySelector('button[aria-label="Inspector"]')?.click()`);
-    await waitFor('Inspector lower ledger', async () => await cdp!.evaluate(`Boolean(document.querySelector('#console-panel-inspector [aria-label="Workbench inspector"]')) ? true : undefined`) === true ? true : undefined);
+    await waitFor('Motor file open', async () => await page().evaluate(`window.__zplcSmoke.getState?.().activeFileId === 'motor-st' && window.__zplcSmoke.getState?.().openTabs.includes('motor-st') && document.querySelector('[data-tree-node-id="motor-st"]')?.getAttribute('aria-selected') === 'true' ? true : undefined`) === true ? true : undefined);
+    await page().evaluate(`document.querySelector('[data-tree-node-id="src"] > div')?.click()`);
+    await waitFor('mouse collapsed src focus', async () => await page().evaluate(`(() => { const src = document.querySelector('[data-tree-node-id="src"]'); return src?.getAttribute('aria-expanded') === 'false' && document.activeElement === src && [...document.querySelectorAll('[role="treeitem"]')].filter((item) => item.tabIndex === 0).length === 1 ? true : undefined; })()`) === true ? true : undefined);
+    await page().evaluate(`document.querySelector('[data-tree-node-id="src"] > div')?.click()`);
+    await waitFor('mouse expanded src treeitem', async () => await page().evaluate(`document.querySelector('[data-tree-node-id="src"]')?.getAttribute('aria-expanded') === 'true' ? true : undefined`) === true ? true : undefined);
+    await page().evaluate(`document.querySelector('button[aria-label="Inspector"]')?.click()`);
+    await waitFor('Inspector lower ledger', async () => await page().evaluate(`Boolean(document.querySelector('#console-panel-inspector [aria-label="Workbench inspector"]')) ? true : undefined`) === true ? true : undefined);
 
-    assert(await cdp.evaluate(`(() => { const list = [...document.querySelectorAll('[role="tablist"]')].find((item) => item.getAttribute('aria-label') === 'Editor views'); const tabs = [...list?.querySelectorAll('[role="tab"]') ?? []]; const selected = tabs.filter((tab) => tab.getAttribute('aria-selected') === 'true'); return tabs.length === 2 && selected.length === 1 && selected[0]?.id === 'editor-tab-motor-st' && tabs.filter((tab) => tab.tabIndex === 0).length === 1 && tabs.every((tab) => tab.getAttribute('aria-controls') === 'editor-panel') && document.getElementById('editor-panel')?.getAttribute('aria-labelledby') === 'editor-tab-motor-st' && [...list?.children ?? []].every((item) => item.getAttribute('role') === 'presentation'); })()`) === true, 'Editor tabs must expose one selected roving tab with a shared labelled panel');
-    await cdp.evaluate(`document.getElementById('editor-tab-motor-st')?.focus()`);
+    assert(await page().evaluate(`(() => { const list = [...document.querySelectorAll('[role="tablist"]')].find((item) => item.getAttribute('aria-label') === 'Editor views'); const tabs = [...list?.querySelectorAll('[role="tab"]') ?? []]; const selected = tabs.filter((tab) => tab.getAttribute('aria-selected') === 'true'); return tabs.length === 2 && selected.length === 1 && selected[0]?.id === 'editor-tab-motor-st' && tabs.filter((tab) => tab.tabIndex === 0).length === 1 && tabs.every((tab) => tab.getAttribute('aria-controls') === 'editor-panel') && document.getElementById('editor-panel')?.getAttribute('aria-labelledby') === 'editor-tab-motor-st' && [...list?.children ?? []].every((item) => item.getAttribute('role') === 'presentation'); })()`) === true, 'Editor tabs must expose one selected roving tab with a shared labelled panel');
+    await page().evaluate(`document.getElementById('editor-tab-motor-st')?.focus()`);
     await press('ArrowRight');
-    await waitFor('ArrowRight editor tab', async () => await cdp!.evaluate(`window.__zplcSmoke.getState?.().activeFileId === 'aux-st' && document.activeElement?.id === 'editor-tab-aux-st' ? true : undefined`) === true ? true : undefined);
+    await waitFor('ArrowRight editor tab', async () => await page().evaluate(`window.__zplcSmoke.getState?.().activeFileId === 'aux-st' && document.activeElement?.id === 'editor-tab-aux-st' ? true : undefined`) === true ? true : undefined);
     await press('ArrowLeft');
-    await waitFor('ArrowLeft editor tab', async () => await cdp!.evaluate(`window.__zplcSmoke.getState?.().activeFileId === 'motor-st' && document.activeElement?.id === 'editor-tab-motor-st' ? true : undefined`) === true ? true : undefined);
+    await waitFor('ArrowLeft editor tab', async () => await page().evaluate(`window.__zplcSmoke.getState?.().activeFileId === 'motor-st' && document.activeElement?.id === 'editor-tab-motor-st' ? true : undefined`) === true ? true : undefined);
     await press('ArrowRight');
-    await waitFor('second ArrowRight editor tab', async () => await cdp!.evaluate(`window.__zplcSmoke.getState?.().activeFileId === 'aux-st' && document.activeElement?.id === 'editor-tab-aux-st' ? true : undefined`) === true ? true : undefined);
+    await waitFor('second ArrowRight editor tab', async () => await page().evaluate(`window.__zplcSmoke.getState?.().activeFileId === 'aux-st' && document.activeElement?.id === 'editor-tab-aux-st' ? true : undefined`) === true ? true : undefined);
     await press('ArrowRight');
-    await waitFor('wrapped editor tab', async () => await cdp!.evaluate(`window.__zplcSmoke.getState?.().activeFileId === 'motor-st' && document.activeElement?.id === 'editor-tab-motor-st' ? true : undefined`) === true ? true : undefined);
+    await waitFor('wrapped editor tab', async () => await page().evaluate(`window.__zplcSmoke.getState?.().activeFileId === 'motor-st' && document.activeElement?.id === 'editor-tab-motor-st' ? true : undefined`) === true ? true : undefined);
     await press('End');
-    await waitFor('End editor tab', async () => await cdp!.evaluate(`window.__zplcSmoke.getState?.().activeFileId === 'aux-st' && document.activeElement?.id === 'editor-tab-aux-st' ? true : undefined`) === true ? true : undefined);
+    await waitFor('End editor tab', async () => await page().evaluate(`window.__zplcSmoke.getState?.().activeFileId === 'aux-st' && document.activeElement?.id === 'editor-tab-aux-st' ? true : undefined`) === true ? true : undefined);
     await press('Home');
-    await waitFor('Home editor tab', async () => await cdp!.evaluate(`window.__zplcSmoke.getState?.().activeFileId === 'motor-st' && document.activeElement?.id === 'editor-tab-motor-st' ? true : undefined`) === true ? true : undefined);
-    assert(await cdp.evaluate(`(() => { const close = document.querySelector('button[aria-label="Close Motor.st"]'); close?.focus(); return document.activeElement === close; })()`) === true, 'Editor close button must be separately focusable');
-    const text = async () => String(await cdp!.evaluate('document.body.innerText'));
+    await waitFor('Home editor tab', async () => await page().evaluate(`window.__zplcSmoke.getState?.().activeFileId === 'motor-st' && document.activeElement?.id === 'editor-tab-motor-st' ? true : undefined`) === true ? true : undefined);
+    assert(await page().evaluate(`(() => { const close = document.querySelector('button[aria-label="Close Motor.st"]'); close?.focus(); return document.activeElement === close; })()`) === true, 'Editor close button must be separately focusable');
+    const text = async () => String(await page().evaluate('document.body.innerText'));
     const click = async (label: string) => {
-      const clicked = await cdp!.evaluate(`(() => { const button = [...document.querySelectorAll('button')].find((item) => item.textContent?.trim() === ${JSON.stringify(label)} || [...item.querySelectorAll('span')].some((span) => span.textContent?.trim() === ${JSON.stringify(label)})); if (!button || button.disabled) return false; button.click(); return true; })()`);
-      if (clicked !== true) throw new Error(`Could not click enabled ${label}; visible controls: ${String(await cdp!.evaluate("[...document.querySelectorAll('button')].map((item) => item.textContent?.trim()).filter(Boolean).join(', ')"))}`);
+      const clicked = await page().evaluate(`(() => { const button = [...document.querySelectorAll('button')].find((item) => item.textContent?.trim() === ${JSON.stringify(label)} || [...item.querySelectorAll('span')].some((span) => span.textContent?.trim() === ${JSON.stringify(label)})); if (!button || button.disabled) return false; button.click(); return true; })()`);
+      if (clicked !== true) throw new Error(`Could not click enabled ${label}; visible controls: ${String(await page().evaluate("[...document.querySelectorAll('button')].map((item) => item.textContent?.trim()).filter(Boolean).join(', ')"))}`);
     };
     const setFile = async (content: string, clean: boolean) => {
-      await cdp!.evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const state = useIDEStore.getState(); state.updateFileContent('motor-st', ${JSON.stringify(content)}); if (${clean}) { const files = new Map(useIDEStore.getState().loadedFiles); files.set('motor-st', { ...files.get('motor-st'), isModified: false }); useIDEStore.setState({ loadedFiles: files }); } const updated = useIDEStore.getState(); window.__zplcSmoke.fileState = { content: updated.loadedFiles.get('motor-st')?.content, modified: updated.loadedFiles.get('motor-st')?.isModified, compilerRunId: updated.compilerRunId }; requestAnimationFrame(() => requestAnimationFrame(() => window.__zplcSmoke.changed = true)); })`);
-      await waitFor('file update', async () => await cdp!.evaluate('window.__zplcSmoke.changed ? true : undefined') === true ? true : undefined);
-      await cdp!.evaluate('window.__zplcSmoke.changed = false');
+      await page().evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const state = useIDEStore.getState(); state.updateFileContent('motor-st', ${JSON.stringify(content)}); if (${clean}) { const files = new Map(useIDEStore.getState().loadedFiles); files.set('motor-st', { ...files.get('motor-st'), isModified: false }); useIDEStore.setState({ loadedFiles: files }); } const updated = useIDEStore.getState(); window.__zplcSmoke.fileState = { content: updated.loadedFiles.get('motor-st')?.content, modified: updated.loadedFiles.get('motor-st')?.isModified, compilerRunId: updated.compilerRunId }; requestAnimationFrame(() => requestAnimationFrame(() => window.__zplcSmoke.changed = true)); })`);
+      await waitFor('file update', async () => await page().evaluate('window.__zplcSmoke.changed ? true : undefined') === true ? true : undefined);
+      await page().evaluate('window.__zplcSmoke.changed = false');
     };
     await click('Learn');
     await waitFor('Spanish Learn lesson', async () => (await text()).includes('Arranque y parada seguros') ? true : undefined);
@@ -678,28 +680,28 @@ async function main(): Promise<void> {
     await waitFor('English Learn lesson', async () => (await text()).includes('Safe motor start-stop') ? true : undefined);
     assert((await text()).includes('The starter fails this host scenario until the stated omission is corrected.') && (await text()).includes('native POSIX host evidence only') && (await text()).includes('not hardware or HIL evidence.'), 'Learn must preserve honest host-only evidence wording');
     await click('Open Tests');
-    await waitFor('Learn opens Tests', async () => await cdp!.evaluate(`Boolean(document.getElementById('console-panel-tests')) ? true : undefined`) === true ? true : undefined);
-    assert(await cdp.evaluate(`window.__zplcSmoke.runRequests.length === 0`) === true, 'Learn must not run a scenario');
+    await waitFor('Learn opens Tests', async () => await page().evaluate(`Boolean(document.getElementById('console-panel-tests')) ? true : undefined`) === true ? true : undefined);
+    assert(await page().evaluate(`window.__zplcSmoke.runRequests.length === 0`) === true, 'Learn must not run a scenario');
     await click('Problems');
     let diagnosticText = '';
     try {
       await waitFor('incremental compiler diagnostic', async () => { diagnosticText = await text(); return diagnosticText.includes('Live ST syntax') && diagnosticText.includes('Unexpected character') ? true : undefined; });
     } catch (error) { throw new Error(`${error instanceof Error ? error.message : String(error)}; panel: ${diagnosticText}`); }
     assert((await text()).includes('src/Motor.st'), 'Compiler diagnostic did not retain src/Motor.st provenance');
-    assert(await cdp.evaluate(`window.__zplcSmoke.compileCalls === 0 && !document.body.innerText.includes('Built saved workspace locally:')`) === true, 'An incremental ST diagnostic must not invoke or claim a canonical build');
-    await cdp.evaluate("import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => window.__zplcSmoke.priorCompilerRunId = useIDEStore.getState().compilerRunId)");
+    assert(await page().evaluate(`window.__zplcSmoke.compileCalls === 0 && !document.body.innerText.includes('Built saved workspace locally:')`) === true, 'An incremental ST diagnostic must not invoke or claim a canonical build');
+    await page().evaluate("import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => window.__zplcSmoke.priorCompilerRunId = useIDEStore.getState().compilerRunId)");
     const priorCompilerRunId = await waitFor('compiler revision', async () => {
-      const value = await cdp!.evaluate('Number.isInteger(window.__zplcSmoke?.priorCompilerRunId) ? window.__zplcSmoke.priorCompilerRunId : undefined');
+      const value = await page().evaluate('Number.isInteger(window.__zplcSmoke?.priorCompilerRunId) ? window.__zplcSmoke.priorCompilerRunId : undefined');
       return typeof value === 'number' ? value : undefined;
     });
-    await cdp.evaluate(`document.querySelector('button[aria-label="Close Motor.st"]')?.click()`);
-    await waitFor('editor close focus recovery', async () => await cdp!.evaluate(`window.__zplcSmoke.getState?.().activeFileId === 'aux-st' && document.activeElement?.id === 'editor-tab-aux-st' ? true : undefined`) === true ? true : undefined);
+    await page().evaluate(`document.querySelector('button[aria-label="Close Motor.st"]')?.click()`);
+    await waitFor('editor close focus recovery', async () => await page().evaluate(`window.__zplcSmoke.getState?.().activeFileId === 'aux-st' && document.activeElement?.id === 'editor-tab-aux-st' ? true : undefined`) === true ? true : undefined);
     await setFile(validProgram, false);
-    await waitFor('valid dirty source', async () => await cdp!.evaluate(`window.__zplcSmoke.fileState?.content === ${JSON.stringify(validProgram)} && window.__zplcSmoke.fileState?.modified === true && window.__zplcSmoke.fileState?.compilerRunId > ${priorCompilerRunId} ? true : undefined`) === true ? true : undefined);
-    await click('Build'); await waitFor('Compile menu', async () => await cdp!.evaluate("[...document.querySelectorAll('button')].some((button) => [...button.querySelectorAll('span')].some((span) => span.textContent?.trim() === 'Compile')) ? true : undefined") === true ? true : undefined); await click('Compile');
+    await waitFor('valid dirty source', async () => await page().evaluate(`window.__zplcSmoke.fileState?.content === ${JSON.stringify(validProgram)} && window.__zplcSmoke.fileState?.modified === true && window.__zplcSmoke.fileState?.compilerRunId > ${priorCompilerRunId} ? true : undefined`) === true ? true : undefined);
+    await click('Build'); await waitFor('Compile menu', async () => await page().evaluate("[...document.querySelectorAll('button')].some((button) => [...button.querySelectorAll('span')].some((span) => span.textContent?.trim() === 'Compile')) ? true : undefined") === true ? true : undefined); await click('Compile');
     await waitFor('saved-workspace link fence', async () => (await text()).includes('Choose zplc.json') ? true : undefined);
-    assert(await cdp.evaluate(`window.__zplcSmoke.compileCalls === 0 && window.__zplcSmoke.registerCalls === 0 && document.getElementById('console-panel-tests') && !document.body.innerText.includes('Built saved workspace locally:')`) === true, 'First Build without a saved-workspace link must select Tests without compiling or claiming success');
-    assert(await cdp.evaluate(`(() => {
+    assert(await page().evaluate(`window.__zplcSmoke.compileCalls === 0 && window.__zplcSmoke.registerCalls === 0 && document.getElementById('console-panel-tests') && !document.body.innerText.includes('Built saved workspace locally:')`) === true, 'First Build without a saved-workspace link must select Tests without compiling or claiming success');
+    assert(await page().evaluate(`(() => {
       const input = document.querySelector('input[data-workspace-manifest-input]');
       if (!(input instanceof HTMLInputElement)) return false;
       const transfer = new DataTransfer();
@@ -708,22 +710,22 @@ async function main(): Promise<void> {
       input.dispatchEvent(new Event('change', { bubbles: true }));
       return true;
     })()`) === true, 'Tests tab does not expose an actionable saved-workspace manifest input');
-    await waitFor('workspace link registration', async () => await cdp!.evaluate(`window.__zplcSmoke.registerCalls === 1`) === true ? true : undefined);
-    assert(await cdp.evaluate(`window.__zplcSmoke.registerCalls === 1 && window.__zplcSmoke.compileCalls === 0 && !document.body.innerText.includes('opaque-workspace-capability')`) === true, 'Manifest selection must create an opaque link without compiling or exposing its token');
+    await waitFor('workspace link registration', async () => await page().evaluate(`window.__zplcSmoke.registerCalls === 1`) === true ? true : undefined);
+    assert(await page().evaluate(`window.__zplcSmoke.registerCalls === 1 && window.__zplcSmoke.compileCalls === 0 && !document.body.innerText.includes('opaque-workspace-capability')`) === true, 'Manifest selection must create an opaque link without compiling or exposing its token');
     await setFile(validProgram, true);
-    await waitFor('saved workspace representation', async () => await cdp!.evaluate(`window.__zplcSmoke.fileState?.modified === false && document.body.innerText.includes('Linked saved workspace ready for host scenarios.') ? true : undefined`) === true ? true : undefined);
-    await click('Build'); await waitFor('second Compile menu', async () => await cdp!.evaluate("[...document.querySelectorAll('button')].some((button) => [...button.querySelectorAll('span')].some((span) => span.textContent?.trim() === 'Compile')) ? true : undefined") === true ? true : undefined); await click('Compile');
-    await waitFor('canonical saved workspace build', async () => await cdp!.evaluate(`window.__zplcSmoke.compileCalls === 1 && Boolean(window.__zplcSmoke.getBuildState?.().evidence) ? true : undefined`) === true ? true : undefined);
+    await waitFor('saved workspace representation', async () => await page().evaluate(`window.__zplcSmoke.fileState?.modified === false && document.body.innerText.includes('Linked saved workspace ready for host scenarios.') ? true : undefined`) === true ? true : undefined);
+    await click('Build'); await waitFor('second Compile menu', async () => await page().evaluate("[...document.querySelectorAll('button')].some((button) => [...button.querySelectorAll('span')].some((span) => span.textContent?.trim() === 'Compile')) ? true : undefined") === true ? true : undefined); await click('Compile');
+    await waitFor('canonical saved workspace build', async () => await page().evaluate(`window.__zplcSmoke.compileCalls === 1 && Boolean(window.__zplcSmoke.getBuildState?.().evidence) ? true : undefined`) === true ? true : undefined);
     await click('Output');
     await waitFor('canonical saved workspace build output', async () => (await text()).includes('Built saved workspace locally:') ? true : undefined);
-    const canonicalBuild = await cdp.evaluate(`(() => { const build = window.__zplcSmoke.getBuildState?.(); return { calls: window.__zplcSmoke.compileCalls, sha: build?.evidence?.zplc?.sha256, bytes: build?.evidence?.zplc?.byteLength, fallback: document.body.innerText.includes('No diagnostics from the latest build') }; })()`);
+    const canonicalBuild = await page().evaluate(`(() => { const build = window.__zplcSmoke.getBuildState?.(); return { calls: window.__zplcSmoke.compileCalls, sha: build?.evidence?.zplc?.sha256, bytes: build?.evidence?.zplc?.byteLength, fallback: document.body.innerText.includes('No diagnostics from the latest build') }; })()`);
     assert(JSON.stringify(canonicalBuild) === JSON.stringify({ calls: 1, sha: testedProgram.sha256, bytes: testedProgram.byteLength, fallback: false }), `Second Build must publish exactly one canonical artifact/evidence result without renderer fallback: ${JSON.stringify(canonicalBuild)}`);
 
     await click('Problems');
     await click('Check declared interlocks');
     await waitFor('covered declared interlock', async () => (await text()).includes('Covered') ? true : undefined);
     assert((await text()).includes('Checks exact NEVER coverage in saved scenarios. It does not establish physical safety, timing, or certification.'), 'Interlock coverage must keep its logical scope disclaimer');
-    await cdp.evaluate('window.__zplcSmoke.safetyMode = \'malformed\'');
+    await page().evaluate('window.__zplcSmoke.safetyMode = \'malformed\'');
     await click('Check declared interlocks');
     await waitFor('fail-closed malformed declared interlock', async () => (await text()).includes('Declared interlock coverage result was invalid.') ? true : undefined);
     assert(!(await text()).includes('do-not-render'), 'Malformed declared interlock payload leaked into Problems');
@@ -732,18 +734,18 @@ async function main(): Promise<void> {
     await click('Run host scenarios');
     await waitFor('passed host scenarios', async () => (await text()).includes('Host POSIX scenarios passed.') ? true : undefined);
     assert((await text()).includes('Canonical saved build linked · native POSIX run · .zplc match · trace recorded.'), 'Host scenarios must link to the exact canonical saved .zplc artifact');
-    assert(await cdp.evaluate(`(() => { const details = [...document.querySelectorAll('details')].find((item) => item.textContent?.includes('Scenario evidence')); return Boolean(details) && !details.open; })()`) === true, 'Passed preview must start collapsed');
-    assert(await cdp.evaluate(`(() => { const strip = document.querySelector('[data-recorded-motor-output]'); return Boolean(strip) && !strip.checkVisibility(); })()`) === true, 'Recorded motor output must remain hidden while passed evidence is collapsed');
-    assert(await cdp.evaluate(`(() => { const details = [...document.querySelectorAll('details')].find((item) => item.textContent?.includes('Scenario evidence')); details?.querySelector('summary')?.click(); const strip = details?.querySelector('[data-recorded-motor-output]'); const text = strip?.textContent ?? ''; const labels = [...strip?.querySelectorAll('[aria-label]') ?? []].map((item) => item.getAttribute('aria-label')); return Boolean(details?.open) && [...details.querySelectorAll('caption')].length >= 2 && [...details.querySelectorAll('th')].every((item) => item.getAttribute('scope') === 'col') && strip?.getClientRects().length !== 0 && text.includes('Recorded native POSIX scenario result — not live runtime, hardware, or HIL evidence.') && text.includes('Motor.Forward') && text.includes('Motor.Reverse') && text.includes('ON') && text.includes('OFF') && labels.includes('Motor.Forward ON at 20 ms') && labels.includes('Motor.Forward OFF at 0 ms') && labels.includes('Motor.Reverse OFF at 20 ms'); })()`) === true, 'Preview must open with accessible tables and an exact recorded motor state association');
+    assert(await page().evaluate(`(() => { const details = [...document.querySelectorAll('details')].find((item) => item.textContent?.includes('Scenario evidence')); return Boolean(details) && !details.open; })()`) === true, 'Passed preview must start collapsed');
+    assert(await page().evaluate(`(() => { const strip = document.querySelector('[data-recorded-motor-output]'); return Boolean(strip) && !strip.checkVisibility(); })()`) === true, 'Recorded motor output must remain hidden while passed evidence is collapsed');
+    assert(await page().evaluate(`(() => { const details = [...document.querySelectorAll('details')].find((item) => item.textContent?.includes('Scenario evidence')); details?.querySelector('summary')?.click(); const strip = details?.querySelector('[data-recorded-motor-output]'); const text = strip?.textContent ?? ''; const labels = [...strip?.querySelectorAll('[aria-label]') ?? []].map((item) => item.getAttribute('aria-label')); return Boolean(details?.open) && [...details.querySelectorAll('caption')].length >= 2 && [...details.querySelectorAll('th')].every((item) => item.getAttribute('scope') === 'col') && strip?.getClientRects().length !== 0 && text.includes('Recorded native POSIX scenario result — not live runtime, hardware, or HIL evidence.') && text.includes('Motor.Forward') && text.includes('Motor.Reverse') && text.includes('ON') && text.includes('OFF') && labels.includes('Motor.Forward ON at 20 ms') && labels.includes('Motor.Forward OFF at 0 ms') && labels.includes('Motor.Reverse OFF at 20 ms'); })()`) === true, 'Preview must open with accessible tables and an exact recorded motor state association');
     await click('Trace');
-    assert(!(await text()).includes('Scenario evidence (recorded test result)') && await cdp.evaluate("!document.querySelector('[data-recorded-motor-output]')") === true, 'Recorded scenario preview leaked into live Trace');
-    assert(await cdp.evaluate("!document.querySelector('[aria-label=\"Live native POSIX motor outputs\"]')") === true, 'Live motor output must remain hidden without a connected native session');
+    assert(!(await text()).includes('Scenario evidence (recorded test result)') && await page().evaluate("!document.querySelector('[data-recorded-motor-output]')") === true, 'Recorded scenario preview leaked into live Trace');
+    assert(await page().evaluate("!document.querySelector('[aria-label=\"Live native POSIX motor outputs\"]')") === true, 'Live motor output must remain hidden without a connected native session');
 
     await navigate('motor plant document load');
-    await cdp.evaluate(pageSeed(motorPlant, compileEnvelope, validProgram, false));
-    await waitFor('motor plant renderer seed', async () => await cdp!.evaluate('window.__zplcSmoke?.ready ? true : undefined') === true ? true : undefined);
+    await page().evaluate(pageSeed(motorPlant, compileEnvelope, validProgram, false));
+    await waitFor('motor plant renderer seed', async () => await page().evaluate('window.__zplcSmoke?.ready ? true : undefined') === true ? true : undefined);
     await click('Tests');
-    assert(await cdp.evaluate(`(() => {
+    assert(await page().evaluate(`(() => {
       const input = document.querySelector('input[data-workspace-manifest-input]');
       if (!(input instanceof HTMLInputElement)) return false;
       const transfer = new DataTransfer();
@@ -752,10 +754,10 @@ async function main(): Promise<void> {
       input.dispatchEvent(new Event('change', { bubbles: true }));
       return true;
     })()`) === true, 'Motor plant Tests tab does not expose an actionable saved-workspace manifest input');
-    await waitFor('motor plant workspace link registration', async () => await cdp!.evaluate(`window.__zplcSmoke.registerCalls === 1`) === true ? true : undefined);
+    await waitFor('motor plant workspace link registration', async () => await page().evaluate(`window.__zplcSmoke.registerCalls === 1`) === true ? true : undefined);
     await click('Run host scenarios');
-    await waitFor('recorded motor plant', async () => await cdp!.evaluate(`document.querySelector('[data-recorded-motor-plant]')?.checkVisibility() ? true : undefined`) === true ? true : undefined);
-    assert(await cdp.evaluate(`(() => {
+    await waitFor('recorded motor plant', async () => await page().evaluate(`document.querySelector('[data-recorded-motor-plant]')?.checkVisibility() ? true : undefined`) === true ? true : undefined);
+    assert(await page().evaluate(`(() => {
       const details = [...document.querySelectorAll('details')].find((item) => item.textContent?.includes('Scenario evidence'));
       const plants = [...document.querySelectorAll('[data-recorded-motor-plant]')];
       const region = plants[0]?.querySelector('[aria-label="Recorded motor plant matrix"]');
@@ -773,7 +775,7 @@ async function main(): Promise<void> {
     })()`) === true, 'Motor plant result must auto-open one accessible recorded matrix with golden sample associations and honest host-only copy');
     await click('Run this scenario again');
     await waitFor('single scenario rerun', async () => (await text()).includes('Host POSIX scenario passed.') ? true : undefined);
-    assert(await cdp.evaluate(`(() => {
+    assert(await page().evaluate(`(() => {
       const requests = window.__zplcSmoke.runRequests;
       const exact = JSON.stringify(requests) === JSON.stringify([
         { workspaceId: 'opaque-workspace-capability' },
@@ -781,15 +783,15 @@ async function main(): Promise<void> {
       ]);
       return exact && !document.body.innerText.includes('Host POSIX scenarios passed.') && Boolean(document.querySelector('[data-recorded-motor-plant]'));
     })()`) === true, 'Scenario rerun must replace Tests evidence through an exact opaque workspace and scenario request');
-    if (reviewDir) await captureRecordedPlantReviewScreens(cdp, reviewDir, 'motor', 'Recorded motor plant matrix');
+    if (reviewDir) await captureRecordedPlantReviewScreens(page(), reviewDir, 'motor', 'Recorded motor plant matrix');
     await click('Trace');
-    assert(await cdp.evaluate(`!document.querySelector('[data-recorded-motor-plant]')`) === true, 'Recorded motor plant must not leak into live Trace');
+    assert(await page().evaluate(`!document.querySelector('[data-recorded-motor-plant]')`) === true, 'Recorded motor plant must not leak into live Trace');
 
     await navigate('conveyor document load');
-    await cdp.evaluate(pageSeed(conveyor, compileEnvelope, validProgram, false));
-    await waitFor('conveyor renderer seed', async () => await cdp!.evaluate('window.__zplcSmoke?.ready ? true : undefined') === true ? true : undefined);
+    await page().evaluate(pageSeed(conveyor, compileEnvelope, validProgram, false));
+    await waitFor('conveyor renderer seed', async () => await page().evaluate('window.__zplcSmoke?.ready ? true : undefined') === true ? true : undefined);
     await click('Tests');
-    assert(await cdp.evaluate(`(() => {
+    assert(await page().evaluate(`(() => {
       const input = document.querySelector('input[data-workspace-manifest-input]');
       if (!(input instanceof HTMLInputElement)) return false;
       const transfer = new DataTransfer();
@@ -798,10 +800,10 @@ async function main(): Promise<void> {
       input.dispatchEvent(new Event('change', { bubbles: true }));
       return true;
     })()`) === true, 'Conveyor Tests tab does not expose an actionable saved-workspace manifest input');
-    await waitFor('conveyor workspace link registration', async () => await cdp!.evaluate(`window.__zplcSmoke.registerCalls === 1`) === true ? true : undefined);
+    await waitFor('conveyor workspace link registration', async () => await page().evaluate(`window.__zplcSmoke.registerCalls === 1`) === true ? true : undefined);
     await click('Run host scenarios');
-    await waitFor('recorded conveyor plant', async () => await cdp!.evaluate(`document.querySelector('[data-recorded-conveyor-plant]')?.checkVisibility() ? true : undefined`) === true ? true : undefined);
-    assert(await cdp.evaluate(`(() => {
+    await waitFor('recorded conveyor plant', async () => await page().evaluate(`document.querySelector('[data-recorded-conveyor-plant]')?.checkVisibility() ? true : undefined`) === true ? true : undefined);
+    assert(await page().evaluate(`(() => {
       const details = [...document.querySelectorAll('details')].find((item) => item.textContent?.includes('Scenario evidence'));
       const plants = [...document.querySelectorAll('[data-recorded-conveyor-plant]')];
       const region = plants[0]?.querySelector('[aria-label="Recorded conveyor plant matrix"]');
@@ -816,18 +818,18 @@ async function main(): Promise<void> {
         && associations.includes('Fault lamp ON at 50 ms')
         && copy.includes('Recorded native POSIX scenario result — not live runtime, hardware, or HIL evidence.');
     })()`) === true, 'Conveyor result must auto-open one accessible recorded matrix with golden sample associations and honest host-only copy');
-    await cdp.evaluate(`document.querySelector('button[aria-label="Run Conveyor01 again on native POSIX"]')?.click()`);
+    await page().evaluate(`document.querySelector('button[aria-label="Run Conveyor01 again on native POSIX"]')?.click()`);
     await waitFor('single conveyor scenario rerun', async () => (await text()).includes('Host POSIX scenario passed.') ? true : undefined);
-    assert(await cdp.evaluate(`JSON.stringify(window.__zplcSmoke.runRequests) === JSON.stringify([{ workspaceId: 'opaque-workspace-capability' }, { workspaceId: 'opaque-workspace-capability', scenarioId: 'Conveyor01' }])`) === true, 'Conveyor rerun must use only the exact scenario aria-label and opaque workspace request');
-    if (reviewDir) await captureRecordedPlantReviewScreens(cdp, reviewDir, 'conveyor', 'Recorded conveyor plant matrix');
+    assert(await page().evaluate(`JSON.stringify(window.__zplcSmoke.runRequests) === JSON.stringify([{ workspaceId: 'opaque-workspace-capability' }, { workspaceId: 'opaque-workspace-capability', scenarioId: 'Conveyor01' }])`) === true, 'Conveyor rerun must use only the exact scenario aria-label and opaque workspace request');
+    if (reviewDir) await captureRecordedPlantReviewScreens(page(), reviewDir, 'conveyor', 'Recorded conveyor plant matrix');
     await click('Trace');
-    assert(await cdp.evaluate(`!document.querySelector('[data-recorded-conveyor-plant]')`) === true, 'Recorded conveyor plant must not leak into live Trace');
+    assert(await page().evaluate(`!document.querySelector('[data-recorded-conveyor-plant]')`) === true, 'Recorded conveyor plant must not leak into live Trace');
 
     await navigate('pedestrian crossing document load');
-    await cdp.evaluate(pageSeed(pedestrian, compileEnvelope, validProgram, false));
-    await waitFor('pedestrian crossing renderer seed', async () => await cdp!.evaluate('window.__zplcSmoke?.ready ? true : undefined') === true ? true : undefined);
+    await page().evaluate(pageSeed(pedestrian, compileEnvelope, validProgram, false));
+    await waitFor('pedestrian crossing renderer seed', async () => await page().evaluate('window.__zplcSmoke?.ready ? true : undefined') === true ? true : undefined);
     await click('Tests');
-    assert(await cdp.evaluate(`(() => {
+    assert(await page().evaluate(`(() => {
       const input = document.querySelector('input[data-workspace-manifest-input]');
       if (!(input instanceof HTMLInputElement)) return false;
       const transfer = new DataTransfer();
@@ -836,10 +838,10 @@ async function main(): Promise<void> {
       input.dispatchEvent(new Event('change', { bubbles: true }));
       return true;
     })()`) === true, 'Pedestrian crossing Tests tab does not expose an actionable saved-workspace manifest input');
-    await waitFor('pedestrian crossing workspace link registration', async () => await cdp!.evaluate(`window.__zplcSmoke.registerCalls === 1`) === true ? true : undefined);
+    await waitFor('pedestrian crossing workspace link registration', async () => await page().evaluate(`window.__zplcSmoke.registerCalls === 1`) === true ? true : undefined);
     await click('Run host scenarios');
-    await waitFor('recorded pedestrian crossing', async () => await cdp!.evaluate(`document.querySelector('[data-recorded-pedestrian-crossing]')?.checkVisibility() ? true : undefined`) === true ? true : undefined);
-    assert(await cdp.evaluate(`(() => {
+    await waitFor('recorded pedestrian crossing', async () => await page().evaluate(`document.querySelector('[data-recorded-pedestrian-crossing]')?.checkVisibility() ? true : undefined`) === true ? true : undefined);
+    assert(await page().evaluate(`(() => {
       const details = [...document.querySelectorAll('details')].find((item) => item.textContent?.includes('Scenario evidence'));
       const crossings = [...document.querySelectorAll('[data-recorded-pedestrian-crossing]')];
       const region = crossings[0]?.querySelector('[aria-label="Recorded pedestrian crossing matrix"]');
@@ -856,18 +858,18 @@ async function main(): Promise<void> {
         && associations.includes('Pedestrian STOP at 110 ms')
         && copy.includes('Recorded native POSIX scenario result — not live runtime, hardware, or HIL evidence.');
     })()`) === true, 'Pedestrian crossing result must auto-open one accessible recorded matrix with golden states and honest host-only copy');
-    await cdp.evaluate(`document.querySelector('button[aria-label="Run PedestrianCrossing again on native POSIX"]')?.click()`);
+    await page().evaluate(`document.querySelector('button[aria-label="Run PedestrianCrossing again on native POSIX"]')?.click()`);
     await waitFor('single pedestrian crossing scenario rerun', async () => (await text()).includes('Host POSIX scenario passed.') ? true : undefined);
-    assert(await cdp.evaluate(`JSON.stringify(window.__zplcSmoke.runRequests) === JSON.stringify([{ workspaceId: 'opaque-workspace-capability' }, { workspaceId: 'opaque-workspace-capability', scenarioId: 'PedestrianCrossing' }])`) === true, 'Pedestrian crossing rerun must use only the exact scenario aria-label and opaque workspace request');
-    if (reviewDir) await captureRecordedPlantReviewScreens(cdp, reviewDir, 'pedestrian', 'Recorded pedestrian crossing matrix', '[data-recorded-pedestrian-crossing]');
+    assert(await page().evaluate(`JSON.stringify(window.__zplcSmoke.runRequests) === JSON.stringify([{ workspaceId: 'opaque-workspace-capability' }, { workspaceId: 'opaque-workspace-capability', scenarioId: 'PedestrianCrossing' }])`) === true, 'Pedestrian crossing rerun must use only the exact scenario aria-label and opaque workspace request');
+    if (reviewDir) await captureRecordedPlantReviewScreens(page(), reviewDir, 'pedestrian', 'Recorded pedestrian crossing matrix', '[data-recorded-pedestrian-crossing]');
     await click('Trace');
-    assert(await cdp.evaluate(`!document.querySelector('[data-recorded-pedestrian-crossing]')`) === true, 'Recorded pedestrian crossing must not leak into live Trace');
+    assert(await page().evaluate(`!document.querySelector('[data-recorded-pedestrian-crossing]')`) === true, 'Recorded pedestrian crossing must not leak into live Trace');
 
     await navigate('tank level document load');
-    await cdp.evaluate(pageSeed(tank, compileEnvelope, validProgram, false));
-    await waitFor('tank level renderer seed', async () => await cdp!.evaluate('window.__zplcSmoke?.ready ? true : undefined') === true ? true : undefined);
+    await page().evaluate(pageSeed(tank, compileEnvelope, validProgram, false));
+    await waitFor('tank level renderer seed', async () => await page().evaluate('window.__zplcSmoke?.ready ? true : undefined') === true ? true : undefined);
     await click('Tests');
-    assert(await cdp.evaluate(`(() => {
+    assert(await page().evaluate(`(() => {
       const input = document.querySelector('input[data-workspace-manifest-input]');
       if (!(input instanceof HTMLInputElement)) return false;
       const transfer = new DataTransfer();
@@ -876,10 +878,10 @@ async function main(): Promise<void> {
       input.dispatchEvent(new Event('change', { bubbles: true }));
       return true;
     })()`) === true, 'Tank level Tests tab does not expose an actionable saved-workspace manifest input');
-    await waitFor('tank level workspace link registration', async () => await cdp!.evaluate(`window.__zplcSmoke.registerCalls === 1`) === true ? true : undefined);
+    await waitFor('tank level workspace link registration', async () => await page().evaluate(`window.__zplcSmoke.registerCalls === 1`) === true ? true : undefined);
     await click('Run host scenarios');
-    await waitFor('recorded tank level', async () => await cdp!.evaluate(`document.querySelector('[data-recorded-tank-level]')?.checkVisibility() ? true : undefined`) === true ? true : undefined);
-    assert(await cdp.evaluate(`(() => {
+    await waitFor('recorded tank level', async () => await page().evaluate(`document.querySelector('[data-recorded-tank-level]')?.checkVisibility() ? true : undefined`) === true ? true : undefined);
+    assert(await page().evaluate(`(() => {
       const details = [...document.querySelectorAll('details')].find((item) => item.textContent?.includes('Scenario evidence'));
       const tanks = [...document.querySelectorAll('[data-recorded-tank-level]')];
       const region = tanks[0]?.querySelector('[aria-label="Recorded tank level matrix"]');
@@ -894,145 +896,145 @@ async function main(): Promise<void> {
         && associations.includes('Alarm ALARM at 80 ms')
         && copy.includes('Recorded native POSIX scenario result — not live runtime, hardware, or HIL evidence.');
     })()`) === true, 'Tank level result must auto-open one accessible recorded matrix with golden states and honest host-only copy');
-    await cdp.evaluate(`document.querySelector('button[aria-label="Run TankLevel again on native POSIX"]')?.click()`);
+    await page().evaluate(`document.querySelector('button[aria-label="Run TankLevel again on native POSIX"]')?.click()`);
     await waitFor('single tank level scenario rerun', async () => (await text()).includes('Host POSIX scenario passed.') ? true : undefined);
-    assert(await cdp.evaluate(`JSON.stringify(window.__zplcSmoke.runRequests) === JSON.stringify([{ workspaceId: 'opaque-workspace-capability' }, { workspaceId: 'opaque-workspace-capability', scenarioId: 'TankLevel' }])`) === true, 'Tank level rerun must use only the exact scenario aria-label and opaque workspace request');
-    if (reviewDir) await captureRecordedPlantReviewScreens(cdp, reviewDir, 'tank', 'Recorded tank level matrix', '[data-recorded-tank-level]');
+    assert(await page().evaluate(`JSON.stringify(window.__zplcSmoke.runRequests) === JSON.stringify([{ workspaceId: 'opaque-workspace-capability' }, { workspaceId: 'opaque-workspace-capability', scenarioId: 'TankLevel' }])`) === true, 'Tank level rerun must use only the exact scenario aria-label and opaque workspace request');
+    if (reviewDir) await captureRecordedPlantReviewScreens(page(), reviewDir, 'tank', 'Recorded tank level matrix', '[data-recorded-tank-level]');
     await click('Trace');
-    assert(await cdp.evaluate(`!document.querySelector('[data-recorded-tank-level]')`) === true, 'Recorded tank level must not leak into live Trace');
+    assert(await page().evaluate(`!document.querySelector('[data-recorded-tank-level]')`) === true, 'Recorded tank level must not leak into live Trace');
 
     // Restore the existing smoke fixture so subsequent editor-history checks retain their focused tab setup.
     await navigate('post motor plant document load');
-    await cdp.evaluate(pageSeed(golden, compileEnvelope));
-    await waitFor('post motor plant renderer seed', async () => await cdp!.evaluate('window.__zplcSmoke?.ready ? true : undefined') === true ? true : undefined);
-    await cdp.evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => useIDEStore.setState({ activeFileId: 'aux-st', openTabs: ['aux-st'], workspaceScenarioLink: { workspaceId: 'opaque-workspace-capability', projectSession: 7 } }))`);
+    await page().evaluate(pageSeed(golden, compileEnvelope));
+    await waitFor('post motor plant renderer seed', async () => await page().evaluate('window.__zplcSmoke?.ready ? true : undefined') === true ? true : undefined);
+    await page().evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => useIDEStore.setState({ activeFileId: 'aux-st', openTabs: ['aux-st'], workspaceScenarioLink: { workspaceId: 'opaque-workspace-capability', projectSession: 7 } }))`);
 
     await setFile(invalidProgram, false); await click('Tests');
     await waitFor('unsaved test fence', async () => (await text()).includes('do not include changes that are not saved') ? true : undefined);
-    assert(await cdp.evaluate(`(() => { const run = [...document.querySelectorAll('button')].find((item) => item.textContent?.includes('Run host scenarios')); return Boolean(run?.disabled) && !document.body.innerText.includes('Host POSIX scenarios passed.'); })()`) === true, 'Edit must hide evidence and disable tests');
+    assert(await page().evaluate(`(() => { const run = [...document.querySelectorAll('button')].find((item) => item.textContent?.includes('Run host scenarios')); return Boolean(run?.disabled) && !document.body.innerText.includes('Host POSIX scenarios passed.'); })()`) === true, 'Edit must hide evidence and disable tests');
     await setFile(validProgram, true);
     await waitFor('selected workspace after save', async () => (await text()).includes('Linked saved workspace ready for host scenarios.') ? true : undefined);
     assert(!(await text()).includes('Host POSIX scenarios passed.'), 'Saving must not revive stale evidence');
 
-    await cdp.evaluate(`window.__zplcSmoke.mode = 'malformed'`); await click('Run host scenarios');
+    await page().evaluate(`window.__zplcSmoke.mode = 'malformed'`); await click('Run host scenarios');
     await waitFor('base pass with redacted preview', async () => (await text()).includes('Host POSIX scenarios passed.') ? true : undefined);
     const malformedText = await text();
-    assert(!malformedText.includes('Scenario evidence') && !malformedText.includes('do-not-render') && await cdp.evaluate("!document.querySelector('[data-recorded-motor-output]')") === true, 'Malformed preview or secret reached DOM');
+    assert(!malformedText.includes('Scenario evidence') && !malformedText.includes('do-not-render') && await page().evaluate("!document.querySelector('[data-recorded-motor-output]')") === true, 'Malformed preview or secret reached DOM');
 
-    await cdp.evaluate(`window.__zplcSmoke.mode = 'failed'`); await click('Run host scenarios');
+    await page().evaluate(`window.__zplcSmoke.mode = 'failed'`); await click('Run host scenarios');
     await waitFor('failed scenario preview', async () => (await text()).includes('One or more scenario assertions failed.') ? true : undefined);
-    assert(await cdp.evaluate(`(() => { const details = [...document.querySelectorAll('details')].find((item) => item.textContent?.includes('Scenario evidence')); return Boolean(details?.open) && document.body.innerText.includes('Failed') && document.body.innerText.includes('10 ms'); })()`) === true, 'Failed preview must start open with failure time');
+    assert(await page().evaluate(`(() => { const details = [...document.querySelectorAll('details')].find((item) => item.textContent?.includes('Scenario evidence')); return Boolean(details?.open) && document.body.innerText.includes('Failed') && document.body.innerText.includes('10 ms'); })()`) === true, 'Failed preview must start open with failure time');
     const body = await text();
     assert(!body.includes('opaque-workspace-capability') && !body.includes('do-not-render'), 'Opaque token or secret reached DOM');
 
-    const settingsOpened = await cdp.evaluate(`(() => { const button = document.querySelector('button[title="Project Settings"]'); if (!button) return false; button.click(); return true; })()`);
+    const settingsOpened = await page().evaluate(`(() => { const button = document.querySelector('button[title="Project Settings"]'); if (!button) return false; button.click(); return true; })()`);
     assert(settingsOpened === true, 'Could not open Project Settings');
     await waitFor('Project Settings', async () => (await text()).includes('Project Settings') ? true : undefined);
-    await cdp.evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const state = useIDEStore.getState(); window.__zplcSmoke.taskLimitOriginalConfig = state.projectConfig; window.__zplcSmoke.taskLimitSeeded = Boolean(state.projectConfig); if (state.projectConfig) useIDEStore.setState({ projectConfig: { ...state.projectConfig, tasks: Array.from({ length: 16 }, (_, index) => ({ name: 'Task' + (index + 1), trigger: 'cyclic', interval: 100, priority: 5, programs: [] })) } }); })`);
-    await waitFor('task-limit smoke fixture', async () => await cdp.evaluate(`window.__zplcSmoke?.taskLimitSeeded && window.__zplcSmoke.taskLimitOriginalConfig ? true : undefined`) === true ? true : undefined);
+    await page().evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const state = useIDEStore.getState(); window.__zplcSmoke.taskLimitOriginalConfig = state.projectConfig; window.__zplcSmoke.taskLimitSeeded = Boolean(state.projectConfig); if (state.projectConfig) useIDEStore.setState({ projectConfig: { ...state.projectConfig, tasks: Array.from({ length: 16 }, (_, index) => ({ name: 'Task' + (index + 1), trigger: 'cyclic', interval: 100, priority: 5, programs: [] })) } }); })`);
+    await waitFor('task-limit smoke fixture', async () => await page().evaluate(`window.__zplcSmoke?.taskLimitSeeded && window.__zplcSmoke.taskLimitOriginalConfig ? true : undefined`) === true ? true : undefined);
     await waitFor('task limit UI', async () => (await text()).includes('Task limit reached: 16 of 16. Remove a task before adding another.') ? true : undefined);
-    await cdp.evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const button = [...document.querySelectorAll('button')].find((item) => item.textContent?.includes('Add Task')); const originallyDisabled = button?.disabled === true && button?.getAttribute('type') === 'button' && Boolean(button?.getAttribute('aria-describedby')); const before = useIDEStore.getState().projectConfig?.tasks.length; if (button) { button.disabled = false; button.click(); } window.__zplcSmoke.taskLimitUi = Boolean(originallyDisabled && before === 16 && useIDEStore.getState().projectConfig?.tasks.length === 16); })`);
-    await waitFor('task-limit functional guard', async () => await cdp.evaluate(`window.__zplcSmoke?.taskLimitUi === true ? true : undefined`) === true ? true : undefined);
-    await cdp.evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { useIDEStore.setState({ projectConfig: window.__zplcSmoke.taskLimitOriginalConfig }); window.__zplcSmoke.taskLimitRestored = useIDEStore.getState().projectConfig === window.__zplcSmoke.taskLimitOriginalConfig; })`);
-    await waitFor('restored task-limit smoke fixture', async () => await cdp.evaluate(`window.__zplcSmoke?.taskLimitRestored === true ? true : undefined`) === true ? true : undefined);
-    assert(await cdp.evaluate(`(() => { const list = [...document.querySelectorAll('[role="tablist"]')].find((item) => item.getAttribute('aria-label') === 'Editor views'); const tabs = [...list?.querySelectorAll('[role="tab"]') ?? []]; return tabs.filter((tab) => tab.getAttribute('aria-selected') === 'true').length === 1 && document.getElementById('editor-tab-settings')?.getAttribute('aria-selected') === 'true' && document.getElementById('editor-tab-settings')?.tabIndex === 0 && document.getElementById('editor-panel')?.getAttribute('aria-labelledby') === 'editor-tab-settings'; })()`) === true, 'Settings must remain the selected editor tab');
+    await page().evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const button = [...document.querySelectorAll('button')].find((item) => item.textContent?.includes('Add Task')); const originallyDisabled = button?.disabled === true && button?.getAttribute('type') === 'button' && Boolean(button?.getAttribute('aria-describedby')); const before = useIDEStore.getState().projectConfig?.tasks.length; if (button) { button.disabled = false; button.click(); } window.__zplcSmoke.taskLimitUi = Boolean(originallyDisabled && before === 16 && useIDEStore.getState().projectConfig?.tasks.length === 16); })`);
+    await waitFor('task-limit functional guard', async () => await page().evaluate(`window.__zplcSmoke?.taskLimitUi === true ? true : undefined`) === true ? true : undefined);
+    await page().evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { useIDEStore.setState({ projectConfig: window.__zplcSmoke.taskLimitOriginalConfig }); window.__zplcSmoke.taskLimitRestored = useIDEStore.getState().projectConfig === window.__zplcSmoke.taskLimitOriginalConfig; })`);
+    await waitFor('restored task-limit smoke fixture', async () => await page().evaluate(`window.__zplcSmoke?.taskLimitRestored === true ? true : undefined`) === true ? true : undefined);
+    assert(await page().evaluate(`(() => { const list = [...document.querySelectorAll('[role="tablist"]')].find((item) => item.getAttribute('aria-label') === 'Editor views'); const tabs = [...list?.querySelectorAll('[role="tab"]') ?? []]; return tabs.filter((tab) => tab.getAttribute('aria-selected') === 'true').length === 1 && document.getElementById('editor-tab-settings')?.getAttribute('aria-selected') === 'true' && document.getElementById('editor-tab-settings')?.tabIndex === 0 && document.getElementById('editor-panel')?.getAttribute('aria-labelledby') === 'editor-tab-settings'; })()`) === true, 'Settings must remain the selected editor tab');
     assert((await text()).includes('Firmware toolchain') && (await text()).includes('Not checked'), 'Toolchain card did not start in its honest idle state');
-    assert(await cdp.evaluate(`(() => { const card = [...document.querySelectorAll('details')].find((item) => item.textContent?.includes('Firmware toolchain')); card?.querySelector('summary')?.click(); const button = [...card?.querySelectorAll('button') ?? []].find((item) => item.textContent?.includes('Choose checkout & check')); return Boolean(card?.open && button?.getAttribute('type') === 'button' && button?.getAttribute('aria-describedby')); })()`) === true, 'Toolchain card must expose an accessible human check action');
-    await cdp.evaluate(`([...document.querySelectorAll('button')].find((item) => item.textContent?.includes('Choose checkout & check')))?.focus()`); await click('Choose checkout & check');
+    assert(await page().evaluate(`(() => { const card = [...document.querySelectorAll('details')].find((item) => item.textContent?.includes('Firmware toolchain')); card?.querySelector('summary')?.click(); const button = [...card?.querySelectorAll('button') ?? []].find((item) => item.textContent?.includes('Choose checkout & check')); return Boolean(card?.open && button?.getAttribute('type') === 'button' && button?.getAttribute('aria-describedby')); })()`) === true, 'Toolchain card must expose an accessible human check action');
+    await page().evaluate(`([...document.querySelectorAll('button')].find((item) => item.textContent?.includes('Choose checkout & check')))?.focus()`); await click('Choose checkout & check');
     await waitFor('toolchain attention result', async () => (await text()).includes('Needs attention') ? true : undefined);
-    await waitFor('toolchain action focus return', async () => await cdp!.evaluate(`document.activeElement?.textContent?.includes('Choose checkout & check') && window.__zplcSmoke.toolchainCalls === 1 ? true : undefined`) === true ? true : undefined);
-    const toolchainText = String(await cdp.evaluate(`(() => [...document.querySelectorAll('details')].find((item) => item.textContent?.includes('Firmware toolchain'))?.innerText ?? '')()`));
+    await waitFor('toolchain action focus return', async () => await page().evaluate(`document.activeElement?.textContent?.includes('Choose checkout & check') && window.__zplcSmoke.toolchainCalls === 1 ? true : undefined`) === true ? true : undefined);
+    const toolchainText = String(await page().evaluate(`(() => [...document.querySelectorAll('details')].find((item) => item.textContent?.includes('Firmware toolchain'))?.innerText ?? '')()`));
     assert(toolchainText.includes('Checks only local firmware build prerequisites.') && !toolchainText.includes('Build runtime locally') && !toolchainText.includes('rpi_pico') && !toolchainText.includes('opaque-workspace-capability'), 'Toolchain attention state leaked a board detail, opaque token, or build action');
-    await cdp.evaluate('window.__zplcSmoke.toolchainReady = true'); await click('Choose checkout & check');
+    await page().evaluate('window.__zplcSmoke.toolchainReady = true'); await click('Choose checkout & check');
     await waitFor('ready toolchain build action', async () => (await text()).includes('Build runtime locally') ? true : undefined);
     const readyToolchainText = await text();
     assert(readyToolchainText.includes('trusted checkout only') && readyToolchainText.includes('does not flash, deploy, connect a device, or qualify hardware') && !readyToolchainText.includes('do-not-render'), 'Ready toolchain build scope or trust copy is missing');
-    await cdp.evaluate(`document.querySelector('button[aria-label="Build runtime locally"]')?.focus()`); await click('Build runtime locally');
+    await page().evaluate(`document.querySelector('button[aria-label="Build runtime locally"]')?.focus()`); await click('Build runtime locally');
     await waitFor('local firmware success', async () => (await text()).includes('Local cross-build completed') ? true : undefined);
-    await waitFor('local firmware build focus return', async () => await cdp!.evaluate(`document.activeElement?.getAttribute('aria-label') === 'Build runtime locally' ? true : undefined`) === true ? true : undefined);
-    const buildEvidence = await cdp.evaluate(`(() => { const button = document.querySelector('button[aria-label="Build runtime locally"]'); const body = document.body.innerText; return { focus: document.activeElement === button, target: body.includes('Raspberry Pi Pico'), hash: body.includes('a'.repeat(64)), bytes: body.includes('52 bytes'), safe: !body.includes('do-not-render') && !body.includes('zephyrBoard') }; })()`) as Record<string, boolean>;
+    await waitFor('local firmware build focus return', async () => await page().evaluate(`document.activeElement?.getAttribute('aria-label') === 'Build runtime locally' ? true : undefined`) === true ? true : undefined);
+    const buildEvidence = await page().evaluate(`(() => { const button = document.querySelector('button[aria-label="Build runtime locally"]'); const body = document.body.innerText; return { focus: document.activeElement === button, target: body.includes('Raspberry Pi Pico'), hash: body.includes('a'.repeat(64)), bytes: body.includes('52 bytes'), safe: !body.includes('do-not-render') && !body.includes('zephyrBoard') }; })()`) as Record<string, boolean>;
     assert(Object.values(buildEvidence).every(Boolean), `Safe local build evidence or focus recovery is missing: ${JSON.stringify(buildEvidence)}`);
-    await cdp.evaluate(`window.__zplcSmoke.deferToolchain = true`); await click('Choose checkout & check');
+    await page().evaluate(`window.__zplcSmoke.deferToolchain = true`); await click('Choose checkout & check');
     await waitFor('reinspection start', async () => (await text()).includes('Checking…') ? true : undefined);
     const reinspectionText = await text();
     assert(!reinspectionText.includes('Local cross-build completed') && !reinspectionText.includes('a'.repeat(64)) && !reinspectionText.includes('Build runtime locally'), 'A new inspection must clear prior local-build evidence and capability before it settles');
-    await cdp.evaluate(`window.__zplcSmoke.deferToolchain = false; window.__zplcSmoke.resolveToolchain?.(window.__zplcSmoke.toolchainResult(false));`);
+    await page().evaluate(`window.__zplcSmoke.deferToolchain = false; window.__zplcSmoke.resolveToolchain?.(window.__zplcSmoke.toolchainResult(false));`);
     await waitFor('reinspection attention', async () => (await text()).includes('Needs attention') ? true : undefined);
-    await cdp.evaluate(`window.__zplcSmoke.toolchainReady = true`); await click('Choose checkout & check');
+    await page().evaluate(`window.__zplcSmoke.toolchainReady = true`); await click('Choose checkout & check');
     await waitFor('reinspection ready', async () => (await text()).includes('Build runtime locally') ? true : undefined);
     assert(!(await text()).includes('Local cross-build completed') && !(await text()).includes('a'.repeat(64)), 'A ready reinspection must not revive evidence from a prior checkout');
-    await cdp.evaluate(`window.__zplcSmoke.buildMode = 'active'; document.querySelector('button[aria-label="Build runtime locally"]')?.focus()`); await click('Build runtime locally');
+    await page().evaluate(`window.__zplcSmoke.buildMode = 'active'; document.querySelector('button[aria-label="Build runtime locally"]')?.focus()`); await click('Build runtime locally');
     await waitFor('active build cancel action', async () => (await text()).includes('Cancel build') ? true : undefined);
-    await cdp.evaluate(`([...document.querySelectorAll('button')].find((item) => item.textContent?.includes('Cancel build')))?.focus()`); await click('Cancel build');
+    await page().evaluate(`([...document.querySelectorAll('button')].find((item) => item.textContent?.includes('Cancel build')))?.focus()`); await click('Cancel build');
     await waitFor('cancelled local build', async () => (await text()).includes('Build cancelled after local cleanup.') ? true : undefined);
-    await waitFor('cancelled local build focus return', async () => await cdp!.evaluate(`document.activeElement?.getAttribute('aria-label') === 'Build runtime locally' ? true : undefined`) === true ? true : undefined);
-    assert(await cdp.evaluate(`window.__zplcSmoke.cancelCalls === 1 && document.activeElement?.getAttribute('aria-label') === 'Build runtime locally'`) === true, 'Cancel must reach the bridge and return focus after the settled result');
-    await cdp.evaluate(`window.__zplcSmoke.buildMode = 'malformed'; document.querySelector('button[aria-label="Build runtime locally"]')?.focus()`); await click('Build runtime locally');
+    await waitFor('cancelled local build focus return', async () => await page().evaluate(`document.activeElement?.getAttribute('aria-label') === 'Build runtime locally' ? true : undefined`) === true ? true : undefined);
+    assert(await page().evaluate(`window.__zplcSmoke.cancelCalls === 1 && document.activeElement?.getAttribute('aria-label') === 'Build runtime locally'`) === true, 'Cancel must reach the bridge and return focus after the settled result');
+    await page().evaluate(`window.__zplcSmoke.buildMode = 'malformed'; document.querySelector('button[aria-label="Build runtime locally"]')?.focus()`); await click('Build runtime locally');
     await waitFor('malformed local build failure', async () => (await text()).includes('Firmware build did not complete.') ? true : undefined);
     assert(!(await text()).includes('do-not-render'), 'Malformed firmware build result reached the DOM');
-    await cdp.evaluate(`document.getElementById('editor-tab-settings')?.focus()`);
+    await page().evaluate(`document.getElementById('editor-tab-settings')?.focus()`);
     await Bun.sleep(50);
-    assert(await cdp.evaluate(`document.activeElement?.id === 'editor-tab-settings'`) === true, 'Terminal build focus recovery must not override a later Settings focus');
+    assert(await page().evaluate(`document.activeElement?.id === 'editor-tab-settings'`) === true, 'Terminal build focus recovery must not override a later Settings focus');
     await press('ArrowRight');
-    await waitFor('settings keyboard file selection', async () => await cdp!.evaluate(`document.activeElement?.id === 'editor-tab-aux-st' && document.getElementById('editor-tab-aux-st')?.getAttribute('aria-selected') === 'true' && !document.getElementById('editor-tab-settings') ? true : undefined`) === true ? true : undefined);
-    await cdp.evaluate(`document.querySelector('button[title="Project Settings"]')?.click()`);
-    await waitFor('settings reopened', async () => await cdp!.evaluate(`document.getElementById('editor-tab-settings') ? true : undefined`) === true ? true : undefined);
-    await cdp.evaluate(`document.querySelector('button[aria-label="Close Settings"]')?.click()`);
-    await waitFor('settings close focus recovery', async () => await cdp!.evaluate(`document.activeElement?.id === 'editor-tab-aux-st' && document.getElementById('editor-tab-aux-st')?.getAttribute('aria-selected') === 'true' ? true : undefined`) === true ? true : undefined);
-    assert(await cdp.evaluate(`(() => { const tab = document.getElementById('editor-tab-aux-st'); const event = new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true }); tab?.dispatchEvent(event); return event.defaultPrevented && document.activeElement === tab && window.__zplcSmoke.getState?.().activeFileId === 'aux-st'; })()`) === true, 'Supported keys on a single editor tab must prevent browser scrolling');
+    await waitFor('settings keyboard file selection', async () => await page().evaluate(`document.activeElement?.id === 'editor-tab-aux-st' && document.getElementById('editor-tab-aux-st')?.getAttribute('aria-selected') === 'true' && !document.getElementById('editor-tab-settings') ? true : undefined`) === true ? true : undefined);
+    await page().evaluate(`document.querySelector('button[title="Project Settings"]')?.click()`);
+    await waitFor('settings reopened', async () => await page().evaluate(`document.getElementById('editor-tab-settings') ? true : undefined`) === true ? true : undefined);
+    await page().evaluate(`document.querySelector('button[aria-label="Close Settings"]')?.click()`);
+    await waitFor('settings close focus recovery', async () => await page().evaluate(`document.activeElement?.id === 'editor-tab-aux-st' && document.getElementById('editor-tab-aux-st')?.getAttribute('aria-selected') === 'true' ? true : undefined`) === true ? true : undefined);
+    assert(await page().evaluate(`(() => { const tab = document.getElementById('editor-tab-aux-st'); const event = new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true }); tab?.dispatchEvent(event); return event.defaultPrevented && document.activeElement === tab && window.__zplcSmoke.getState?.().activeFileId === 'aux-st'; })()`) === true, 'Supported keys on a single editor tab must prevent browser scrolling');
     const emptyLd = JSON.stringify({ name: 'Undo smoke', variables: { local: [], outputs: [] }, rungs: [] }, null, 2);
-    await cdp.evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const state = useIDEStore.getState(); const files = new Map(state.loadedFiles); files.set('motor-ld', { id: 'motor-ld', name: 'Motor.ld.json', path: 'src/Motor.ld.json', language: 'LD', content: ${JSON.stringify(emptyLd)}, isModified: false, parentPath: 'src' }); useIDEStore.setState({ loadedFiles: files }); useIDEStore.getState().setActiveFile('motor-ld'); })`);
-    await waitFor('LD visual editor', async () => await cdp!.evaluate(`window.__zplcSmoke.getState?.().activeFileId === 'motor-ld' && document.querySelector('[role="toolbar"][aria-label="Visual editor history"]') ? true : undefined`) === true ? true : undefined);
-    const visualHistoryControls = await cdp.evaluate(`(() => { const toolbar = document.querySelector('[role="toolbar"][aria-label="Visual editor history"]'); const undo = toolbar?.querySelector('button[aria-label="Undo visual edit"]'); const redo = toolbar?.querySelector('button[aria-label="Redo visual edit"]'); return Boolean(toolbar) && !toolbar?.closest('[role="tablist"]') && undo?.getAttribute('title')?.includes('Ctrl+Z') && redo?.getAttribute('title')?.includes('Ctrl+Shift+Z') && undo?.tabIndex === 0 && redo?.tabIndex === 0 && undo?.disabled && redo?.disabled; })()`);
+    await page().evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const state = useIDEStore.getState(); const files = new Map(state.loadedFiles); files.set('motor-ld', { id: 'motor-ld', name: 'Motor.ld.json', path: 'src/Motor.ld.json', language: 'LD', content: ${JSON.stringify(emptyLd)}, isModified: false, parentPath: 'src' }); useIDEStore.setState({ loadedFiles: files }); useIDEStore.getState().setActiveFile('motor-ld'); })`);
+    await waitFor('LD visual editor', async () => await page().evaluate(`window.__zplcSmoke.getState?.().activeFileId === 'motor-ld' && document.querySelector('[role="toolbar"][aria-label="Visual editor history"]') ? true : undefined`) === true ? true : undefined);
+    const visualHistoryControls = await page().evaluate(`(() => { const toolbar = document.querySelector('[role="toolbar"][aria-label="Visual editor history"]'); const undo = toolbar?.querySelector('button[aria-label="Undo visual edit"]'); const redo = toolbar?.querySelector('button[aria-label="Redo visual edit"]'); return Boolean(toolbar) && !toolbar?.closest('[role="tablist"]') && undo?.getAttribute('title')?.includes('Ctrl+Z') && redo?.getAttribute('title')?.includes('Ctrl+Shift+Z') && undo?.tabIndex === 0 && redo?.tabIndex === 0 && undo?.disabled && redo?.disabled; })()`);
     assert(visualHistoryControls === true, 'Visual history toolbar must expose initially disabled, labelled controls');
     await click('Add Rung');
     const rungOne = await waitFor('first LD visual change', async () => {
-      const content = await cdp!.evaluate(`window.__zplcSmoke.getFileContent?.('motor-ld')`);
+      const content = await page().evaluate(`window.__zplcSmoke.getFileContent?.('motor-ld')`);
       return typeof content === 'string' && content !== emptyLd ? content : undefined;
     });
     await click('Add Rung');
     const rungTwo = await waitFor('second LD visual change', async () => {
-      const content = await cdp!.evaluate(`window.__zplcSmoke.getFileContent?.('motor-ld')`);
+      const content = await page().evaluate(`window.__zplcSmoke.getFileContent?.('motor-ld')`);
       return typeof content === 'string' && content !== rungOne ? content : undefined;
     });
-    assert(await cdp.evaluate(`!document.querySelector('button[aria-label="Undo visual edit"]')?.disabled && document.querySelector('button[aria-label="Redo visual edit"]')?.disabled`) === true, 'Visual change must enable only undo');
-    const burstUndo = await cdp.evaluate(`(() => { const wrapper = document.querySelector('[role="toolbar"][aria-label="Visual editor history"]')?.parentElement; const first = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true, cancelable: true }); const second = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true, cancelable: true }); wrapper?.dispatchEvent(first); wrapper?.dispatchEvent(second); return first.defaultPrevented && second.defaultPrevented && window.__zplcSmoke.getFileContent?.('motor-ld') === ${JSON.stringify(emptyLd)}; })()`);
+    assert(await page().evaluate(`!document.querySelector('button[aria-label="Undo visual edit"]')?.disabled && document.querySelector('button[aria-label="Redo visual edit"]')?.disabled`) === true, 'Visual change must enable only undo');
+    const burstUndo = await page().evaluate(`(() => { const wrapper = document.querySelector('[role="toolbar"][aria-label="Visual editor history"]')?.parentElement; const first = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true, cancelable: true }); const second = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true, cancelable: true }); wrapper?.dispatchEvent(first); wrapper?.dispatchEvent(second); return first.defaultPrevented && second.defaultPrevented && window.__zplcSmoke.getFileContent?.('motor-ld') === ${JSON.stringify(emptyLd)}; })()`);
     assert(burstUndo === true, 'Two Ctrl+Z events in one task must traverse C → B → A');
-    const burstRedo = await cdp.evaluate(`(() => { const wrapper = document.querySelector('[role="toolbar"][aria-label="Visual editor history"]')?.parentElement; const first = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, shiftKey: true, bubbles: true, cancelable: true }); const second = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, shiftKey: true, bubbles: true, cancelable: true }); wrapper?.dispatchEvent(first); wrapper?.dispatchEvent(second); return first.defaultPrevented && second.defaultPrevented && window.__zplcSmoke.getFileContent?.('motor-ld') === ${JSON.stringify(rungTwo)}; })()`);
+    const burstRedo = await page().evaluate(`(() => { const wrapper = document.querySelector('[role="toolbar"][aria-label="Visual editor history"]')?.parentElement; const first = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, shiftKey: true, bubbles: true, cancelable: true }); const second = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, shiftKey: true, bubbles: true, cancelable: true }); wrapper?.dispatchEvent(first); wrapper?.dispatchEvent(second); return first.defaultPrevented && second.defaultPrevented && window.__zplcSmoke.getFileContent?.('motor-ld') === ${JSON.stringify(rungTwo)}; })()`);
     assert(burstRedo === true, 'Two Ctrl+Shift+Z events in one task must traverse A → B → C');
-    await cdp.evaluate(`document.querySelector('button[title="Project Settings"]')?.click()`);
-    await waitFor('settings over LD', async () => await cdp!.evaluate(`document.getElementById('editor-tab-settings') ? true : undefined`) === true ? true : undefined);
-    assert(await cdp.evaluate(`(() => { const event = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true, cancelable: true }); document.getElementById('editor-panel')?.dispatchEvent(event); return !event.defaultPrevented && window.__zplcSmoke.getFileContent?.('motor-ld') === ${JSON.stringify(rungTwo)}; })()`) === true, 'Settings must not receive visual undo shortcuts from an underlying LD tab');
-    await cdp.evaluate(`document.querySelector('button[aria-label="Close Settings"]')?.click()`);
-    await waitFor('LD after settings shortcut test', async () => await cdp!.evaluate(`window.__zplcSmoke.getState?.().activeFileId === 'motor-ld' && !document.getElementById('editor-tab-settings') ? true : undefined`) === true ? true : undefined);
-    assert(await cdp.evaluate(`(() => { const wrapper = document.querySelector('[role="toolbar"][aria-label="Visual editor history"]')?.parentElement; const input = document.createElement('textarea'); wrapper?.append(input); input.focus(); const event = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true, cancelable: true }); input.dispatchEvent(event); input.remove(); return !event.defaultPrevented && window.__zplcSmoke.getFileContent?.('motor-ld') === ${JSON.stringify(rungTwo)}; })()`) === true, 'Visual shortcuts must leave editable controls inside the visual panel alone');
-    await cdp.evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => useIDEStore.getState().setActiveFile('aux-st'))`);
-    await waitFor('Aux ST after visual history smoke', async () => await cdp!.evaluate(`window.__zplcSmoke.getState?.().activeFileId === 'aux-st' ? true : undefined`) === true ? true : undefined);
-    await cdp.evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const state = useIDEStore.getState(); useIDEStore.setState({ projectConfigDirty: true, debug: { ...state.debug, forcedValues: new Map(), forcesUnconfirmed: false } }); window.__zplcSmoke.closeDirty = useIDEStore.getState().hasUnsavedChanges(); })`);
-    await waitFor('dirty project before close', async () => await cdp!.evaluate('window.__zplcSmoke.closeDirty ? true : undefined') === true ? true : undefined);
-    await cdp.evaluate(`document.querySelector('button[aria-label="Explorer"]')?.click()`);
-    await waitFor('Explorer lower ledger before close project', async () => await cdp!.evaluate(`Boolean(document.querySelector('#console-panel-explorer [role="tree"]')) ? true : undefined`) === true ? true : undefined);
-    assert(await cdp.evaluate(`Boolean(document.querySelector('button[aria-label="Close Project"]'))`) === true, 'Close Project control is unavailable');
-    await cdp.evaluate(`document.querySelector('button[aria-label="Close Project"]')?.focus(); document.querySelector('button[aria-label="Close Project"]')?.click()`);
+    await page().evaluate(`document.querySelector('button[title="Project Settings"]')?.click()`);
+    await waitFor('settings over LD', async () => await page().evaluate(`document.getElementById('editor-tab-settings') ? true : undefined`) === true ? true : undefined);
+    assert(await page().evaluate(`(() => { const event = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true, cancelable: true }); document.getElementById('editor-panel')?.dispatchEvent(event); return !event.defaultPrevented && window.__zplcSmoke.getFileContent?.('motor-ld') === ${JSON.stringify(rungTwo)}; })()`) === true, 'Settings must not receive visual undo shortcuts from an underlying LD tab');
+    await page().evaluate(`document.querySelector('button[aria-label="Close Settings"]')?.click()`);
+    await waitFor('LD after settings shortcut test', async () => await page().evaluate(`window.__zplcSmoke.getState?.().activeFileId === 'motor-ld' && !document.getElementById('editor-tab-settings') ? true : undefined`) === true ? true : undefined);
+    assert(await page().evaluate(`(() => { const wrapper = document.querySelector('[role="toolbar"][aria-label="Visual editor history"]')?.parentElement; const input = document.createElement('textarea'); wrapper?.append(input); input.focus(); const event = new KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true, cancelable: true }); input.dispatchEvent(event); input.remove(); return !event.defaultPrevented && window.__zplcSmoke.getFileContent?.('motor-ld') === ${JSON.stringify(rungTwo)}; })()`) === true, 'Visual shortcuts must leave editable controls inside the visual panel alone');
+    await page().evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => useIDEStore.getState().setActiveFile('aux-st'))`);
+    await waitFor('Aux ST after visual history smoke', async () => await page().evaluate(`window.__zplcSmoke.getState?.().activeFileId === 'aux-st' ? true : undefined`) === true ? true : undefined);
+    await page().evaluate(`import('/src/store/useIDEStore.ts').then(({ useIDEStore }) => { const state = useIDEStore.getState(); useIDEStore.setState({ projectConfigDirty: true, debug: { ...state.debug, forcedValues: new Map(), forcesUnconfirmed: false } }); window.__zplcSmoke.closeDirty = useIDEStore.getState().hasUnsavedChanges(); })`);
+    await waitFor('dirty project before close', async () => await page().evaluate('window.__zplcSmoke.closeDirty ? true : undefined') === true ? true : undefined);
+    await page().evaluate(`document.querySelector('button[aria-label="Explorer"]')?.click()`);
+    await waitFor('Explorer lower ledger before close project', async () => await page().evaluate(`Boolean(document.querySelector('#console-panel-explorer [role="tree"]')) ? true : undefined`) === true ? true : undefined);
+    assert(await page().evaluate(`Boolean(document.querySelector('button[aria-label="Close Project"]'))`) === true, 'Close Project control is unavailable');
+    await page().evaluate(`document.querySelector('button[aria-label="Close Project"]')?.focus(); document.querySelector('button[aria-label="Close Project"]')?.click()`);
     await Bun.sleep(100);
-    const closeDialog = await cdp.evaluate(`(() => { const dialog = document.querySelector('[role="dialog"]'); return { dialog: dialog?.textContent ?? null, project: document.querySelector('button[aria-label="Close Project"]') !== null }; })()`) as { dialog: string | null; project: boolean };
+    const closeDialog = await page().evaluate(`(() => { const dialog = document.querySelector('[role="dialog"]'); return { dialog: dialog?.textContent ?? null, project: document.querySelector('button[aria-label="Close Project"]') !== null }; })()`) as { dialog: string | null; project: boolean };
     assert(closeDialog.dialog?.includes('Discard unsaved changes?'), `Unsaved close confirmation did not open: ${JSON.stringify(closeDialog)}`);
-    assert(await cdp.evaluate(`(() => { const dialog = document.querySelector('[role="dialog"]'); return dialog?.textContent?.includes('Changes to this project will be lost when it closes.') && [...dialog.querySelectorAll('button')].some((button) => button.textContent?.trim() === 'Continue editing') && [...dialog.querySelectorAll('button')].some((button) => button.textContent?.trim() === 'Discard changes and close'); })()`) === true, 'Unsaved close confirmation must explain the loss and offer explicit choices');
-    assert(await cdp.evaluate(`(() => { const dialog = document.querySelector('[role="dialog"]'); return Boolean(dialog?.contains(document.activeElement)) && document.activeElement?.getAttribute('aria-label') === 'Close'; })()`) === true, 'Modal must initially focus a safe control inside the dialog');
-    await cdp.command('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Tab', code: 'Tab', modifiers: 8 });
-    await cdp.command('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Tab', code: 'Tab', modifiers: 8 });
-    assert(await cdp.evaluate(`document.activeElement?.textContent?.trim() === 'Discard changes and close'`) === true, 'Shift+Tab must wrap inside the dialog');
+    assert(await page().evaluate(`(() => { const dialog = document.querySelector('[role="dialog"]'); return dialog?.textContent?.includes('Changes to this project will be lost when it closes.') && [...dialog.querySelectorAll('button')].some((button) => button.textContent?.trim() === 'Continue editing') && [...dialog.querySelectorAll('button')].some((button) => button.textContent?.trim() === 'Discard changes and close'); })()`) === true, 'Unsaved close confirmation must explain the loss and offer explicit choices');
+    assert(await page().evaluate(`(() => { const dialog = document.querySelector('[role="dialog"]'); return Boolean(dialog?.contains(document.activeElement)) && document.activeElement?.getAttribute('aria-label') === 'Close'; })()`) === true, 'Modal must initially focus a safe control inside the dialog');
+    await page().command('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Tab', code: 'Tab', modifiers: 8 });
+    await page().command('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Tab', code: 'Tab', modifiers: 8 });
+    assert(await page().evaluate(`document.activeElement?.textContent?.trim() === 'Discard changes and close'`) === true, 'Shift+Tab must wrap inside the dialog');
     await press('Tab');
-    assert(await cdp.evaluate(`document.activeElement?.getAttribute('aria-label') === 'Close'`) === true, 'Tab must wrap inside the dialog');
+    assert(await page().evaluate(`document.activeElement?.getAttribute('aria-label') === 'Close'`) === true, 'Tab must wrap inside the dialog');
     await press('Tab');
-    assert(await cdp.evaluate(`document.activeElement?.textContent?.trim() === 'Continue editing'`) === true, 'Tab must stay within the dialog controls');
+    assert(await page().evaluate(`document.activeElement?.textContent?.trim() === 'Continue editing'`) === true, 'Tab must stay within the dialog controls');
     await press('Escape');
-    await waitFor('unsaved close cancellation focus recovery', async () => await cdp!.evaluate(`!document.querySelector('[role="dialog"]') && document.activeElement?.getAttribute('aria-label') === 'Close Project' && window.__zplcSmoke.getState?.().activeFileId === 'aux-st' ? true : undefined`) === true ? true : undefined);
-    await cdp.evaluate(`document.querySelector('button[aria-label="Close Project"]')?.click()`);
-    await waitFor('unsaved close confirmation reopened', async () => await cdp!.evaluate(`document.querySelector('[role="dialog"]') ? true : undefined`) === true ? true : undefined);
+    await waitFor('unsaved close cancellation focus recovery', async () => await page().evaluate(`!document.querySelector('[role="dialog"]') && document.activeElement?.getAttribute('aria-label') === 'Close Project' && window.__zplcSmoke.getState?.().activeFileId === 'aux-st' ? true : undefined`) === true ? true : undefined);
+    await page().evaluate(`document.querySelector('button[aria-label="Close Project"]')?.click()`);
+    await waitFor('unsaved close confirmation reopened', async () => await page().evaluate(`document.querySelector('[role="dialog"]') ? true : undefined`) === true ? true : undefined);
     await click('Discard changes and close');
-    await waitFor('explicit unsaved project discard', async () => await cdp!.evaluate(`!document.querySelector('[role="dialog"]') && !document.querySelector('button[aria-label="Close Project"]') ? true : undefined`) === true ? true : undefined);
-    assert([...browserErrors, ...cdp.errors].length === 0, `Browser errors: ${[...browserErrors, ...cdp.errors].join(' | ')}`);
+    await waitFor('explicit unsaved project discard', async () => await page().evaluate(`!document.querySelector('[role="dialog"]') && !document.querySelector('button[aria-label="Close Project"]') ? true : undefined`) === true ? true : undefined);
+    assert([...browserErrors, ...page().errors].length === 0, `Browser errors: ${[...browserErrors, ...page().errors].join(' | ')}`);
     console.log('Studio renderer vertical smoke passed at 1366x768 (mock bridge backed by a real native POSIX Tool API result; not HIL).');
   } finally {
     if (cdp) browserErrors.push(...cdp.errors);
