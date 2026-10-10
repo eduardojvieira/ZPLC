@@ -4,6 +4,11 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- The CLI reports a rejected `symbols` command under the operation
+  `symbols-list`, as its successful result does, instead of the value `symbols`
+  that is not a Tool API operation. The saved-input identity of a host test run
+  now covers every source the tasks use and its path; it covered only the
+  last source of a project with several.
 - The binary contract now carries a draft counter (CMP-052). Every artifact the
   compiler or assembler writes records it in header word 28, and the loader, the
   native runtime, the firmware shell and Studio refuse a program or a board on

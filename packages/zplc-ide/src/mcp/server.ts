@@ -118,6 +118,8 @@ function summarySchema(tool: McpToolName): z.ZodType {
     case 'symbols_list': return z.object({ symbols: z.array(z.object({ pou: identifier, name: identifier, type: z.string().min(1).max(64), region: z.enum(['IPI', 'OPI', 'WORK', 'RETAIN', 'CODE']), address: z.number().int().nonnegative(), size: z.number().int().nonnegative(), sourceRef: logicalPathSchema.refine((path) => path.startsWith('src/')).optional(), bitOffset: z.number().int().nonnegative().optional(), declarationLine: z.number().int().positive().optional() }).strict()).max(4096) }).strict();
     case 'safety_check': return z.object({ configured: z.boolean(), declared: z.array(z.object({ outputs: z.tuple([identifier, identifier]) }).strict()).max(128), covered: z.array(z.object({ outputs: z.tuple([identifier, identifier]) }).strict()).max(128), uncovered: z.array(z.object({ outputs: z.tuple([identifier, identifier]) }).strict()).max(128) }).strict();
     case 'tests_run': case 'scenario_run': return testSummarySchema;
+    // The recorded-replay and repository tools build their own results and never reach the generic public result.
+    default: return z.never();
   }
 }
 
@@ -125,7 +127,10 @@ function expectedOperation(tool: McpToolName): string {
   return tool === 'project_inspect' ? 'inspect' : tool === 'project_validate' ? 'validate' : tool === 'compiler_check' ? 'check' : tool === 'compiler_compile' ? 'compile' : tool === 'symbols_list' ? 'symbols-list' : tool === 'safety_check' ? 'safety-check' : tool === 'tests_run' ? 'test' : tool === 'boards_list' ? 'boards-list' : tool === 'toolchain_inspect' ? 'toolchain-inspect' : tool === 'firmware_build' ? 'firmware-build' : 'scenario-run';
 }
 
-function auxToolResult(tool: 'boards_list' | 'toolchain_inspect' | 'firmware_build', value: unknown, execution: unknown): McpToolResult {
+type AuxToolName = 'boards_list' | 'toolchain_inspect' | 'firmware_build';
+function isAuxTool(tool: McpToolName): tool is AuxToolName { return tool === 'boards_list' || tool === 'toolchain_inspect' || tool === 'firmware_build'; }
+
+function auxToolResult(tool: AuxToolName, value: unknown, execution: unknown): McpToolResult {
   const safe = safeJson(value); const safeExecution = safeJson(execution); if (!safe || typeof safe !== 'object' || Array.isArray(safe) || !safeExecution) return errorResult('MCP_INTERNAL_ERROR');
   const parsed = (tool === 'boards_list' ? boardsResultSchema : tool === 'toolchain_inspect' ? toolchainResultSchema : firmwareResultSchema).safeParse(safe);
   const executionParsed = executionSchema.safeParse(safeExecution);
@@ -135,7 +140,7 @@ function auxToolResult(tool: 'boards_list' | 'toolchain_inspect' | 'firmware_bui
   if ((tool === 'boards_list' || tool === 'toolchain_inspect') && artifacts.length !== 0) return errorResult('MCP_INTERNAL_ERROR');
   if (tool === 'firmware_build') {
     if (!parsed.data.ok && (parsed.data.summary !== undefined || artifacts.length !== 0)) return errorResult('MCP_INTERNAL_ERROR');
-    if (parsed.data.ok && (artifacts.length !== 1 || artifacts[0]?.kind !== 'firmware-elf' || JSON.stringify(artifacts[0]) !== JSON.stringify(parsed.data.summary?.artifact))) return errorResult('MCP_INTERNAL_ERROR');
+    if (parsed.data.ok && (artifacts.length !== 1 || artifacts[0]?.kind !== 'firmware-elf' || JSON.stringify(artifacts[0]) !== JSON.stringify(parsed.data.summary && 'artifact' in parsed.data.summary ? parsed.data.summary.artifact : undefined))) return errorResult('MCP_INTERNAL_ERROR');
   }
   const structuredContent = { ok: parsed.data.ok, scope: tool === 'firmware_build' ? 'local-ephemeral-cross-build' : 'local-repository-inspection', ...(parsed.data.summary ? { summary: parsed.data.summary } : {}), evidence: parsed.data.evidence, execution: executionParsed.data, ...(tool === 'firmware_build' ? { note: 'Local ephemeral cross-build only; not flash, deploy, hardware, or HIL.' } : {}) };
   const text = JSON.stringify(structuredContent); return Buffer.byteLength(text, 'utf8') <= MAX_OUTPUT_BYTES ? { content: [{ type: 'text', text }], structuredContent, ...(structuredContent.ok === false ? { isError: true } : {}) } : errorResult('MCP_OUTPUT_LIMIT');
@@ -274,7 +279,7 @@ export function createMcpDispatcher(workspace: McpWorkspace, operations: McpOper
         const cursor = tool === 'simulation_start' ? 0 : ownValue(args, 'cursor') as number;
         return replayResult(replay, tool === 'simulation_step' ? cursor + 1 : cursor);
       }
-      if (['boards_list', 'toolchain_inspect', 'firmware_build'].includes(tool)) {
+      if (isAuxTool(tool)) {
         if (!workspace.repository || !await sameRepository(workspace.repository)) return errorResult('MCP_CAPABILITY_UNAVAILABLE');
         const operation = expectedOperation(tool) as toolApi.ToolOperation; const executionStart = toolApi.startToolExecution('mcp', toolApi.executionPermission(operation), operation);
         const value = tool === 'boards_list' ? await operations.boardsList(workspace.repository.root) : tool === 'toolchain_inspect' ? await operations.toolchainInspect(workspace.repository.root) : await operations.firmwareBuild(workspace.repository.root, ownValue(args, 'ideId') as string, { signal });
@@ -322,11 +327,11 @@ export function buildMcpServer(workspace: McpWorkspace): McpServer {
   resource('zplc://runtime/snapshot', async () => ({ ok: true, stateless: true, template: 'zplc://runtime/snapshot/{scenarioId}/{cursor}/{traceSha256}', scope: 'recorded-native-posix-host', note: 'Read one fenced deterministic recorded host snapshot; not a live runtime, hardware, or HIL.' }));
   resource('zplc://course/progress', async () => courseProgressResource(workspace));
   for (const topic of ['evidence', 'safety', 'testing'] as const) resource(`zplc://docs/${topic}`, async () => ({ topic, text: topic === 'evidence' ? 'Tool results are evidence; recorded host results are not HIL.' : topic === 'safety' ? 'MCP cannot flash, deploy, force, run, stop, recover, access serial, or run a shell.' : 'Use scenario_run or stateless simulation tools for deterministic native POSIX tests.' }));
-  const template = (name: string, pattern: string, read: (variables: Record<string, string>, signal: AbortSignal) => Promise<Record<string, unknown>>) => server.registerResource(name, new ResourceTemplate(pattern, { list: undefined }), { title: name, mimeType: 'application/json' }, async (uri, variables, ctx) => {
+  const template = (name: string, pattern: string, read: (variables: Record<string, string | string[]>, signal: AbortSignal) => Promise<Record<string, unknown>>) => server.registerResource(name, new ResourceTemplate(pattern, { list: undefined }), { title: name, mimeType: 'application/json' }, async (uri, variables, ctx) => {
     try { const body = await read(variables, ctx.mcpReq.signal); const text = JSON.stringify(body); return { contents: [{ uri: uri.href, text: Buffer.byteLength(text, 'utf8') <= MAX_OUTPUT_BYTES ? text : JSON.stringify({ ok: false, error: 'MCP_OUTPUT_LIMIT' }) }] }; }
     catch { return { contents: [{ uri: uri.href, text: JSON.stringify({ ok: false, error: 'MCP_INTERNAL_ERROR' }) }] }; }
   });
-  const replayResource = async (tool: 'trace_get' | 'runtime_snapshot', variables: Record<string, string>, signal: AbortSignal) => {
+  const replayResource = async (tool: 'trace_get' | 'runtime_snapshot', variables: Record<string, string | string[]>, signal: AbortSignal) => {
     const scenarioId = variables.scenarioId;
     if (!SCENARIO_INPUT.safeParse({ scenarioId }).success) return { ok: false, error: 'MCP_INVALID_ARGUMENTS' };
     const args = tool === 'trace_get' ? { scenarioId } : { scenarioId, cursor: Number(variables.cursor), traceSha256: variables.traceSha256 };

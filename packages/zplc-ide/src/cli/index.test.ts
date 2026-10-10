@@ -190,6 +190,12 @@ describe('CLI JSON boundary', () => {
       }
     } finally { await rm(root, { recursive: true, force: true }); }
   });
+  it('reports a rejected symbols command under the symbols-list operation, like its success result', async () => {
+    const missing = output(); expect(await main(['symbols', join(tmpdir(), 'zplc-cli-no-such-workspace'), '--json'], missing)).toBe(1);
+    expect(JSON.parse(missing.lines[0] ?? '{}')).toMatchObject({ ok: false, evidence: { operation: 'symbols-list' }, execution: { operation: 'symbols-list' } });
+    const option = output(); expect(await main(['symbols', motorStartStop, '--output', 'x', '--json'], option)).toBe(1);
+    expect(JSON.parse(option.lines[0] ?? '{}')).toMatchObject({ ok: false, evidence: { operation: 'symbols-list' }, execution: { operation: 'symbols-list' } });
+  });
   it('rejects migration preview files, symlinks, and compile-only options', async () => {
     const root = await mkdtemp(join(tmpdir(), 'zplc-cli-preview-'));
     const alias = join(root, 'workspace-alias');

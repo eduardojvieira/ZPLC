@@ -16,7 +16,9 @@ export function flattenVisibleTree(nodes: FileTreeNode[], depth = 1, parentId: s
   ]);
 }
 
-export function treeNavigation(visible: VisibleTreeNode[], id: string) {
+export interface TreeNavigation { previous: string | null; next: string | null; first: string | null; last: string | null; parent: string | null; firstChild: string | null }
+
+export function treeNavigation(visible: VisibleTreeNode[], id: string): TreeNavigation {
   const index = visible.findIndex((entry) => entry.id === id);
   const entry = visible[index];
   return {

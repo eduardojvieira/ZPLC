@@ -3,7 +3,6 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import productManifest from '../../../../package.json';
 import { NativeSimulationSupervisor } from '../../electron/nativeSimulationSupervisor';
-import type { NativeAdapter } from '../runtime/nativeAdapter';
 import { NativeAdapter } from '../runtime/nativeAdapter';
 import type { ScenarioRuntimePort } from '../test-engine';
 

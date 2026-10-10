@@ -156,6 +156,12 @@ function resolveDefaultSimulatorBinaryPath(options: SimulatorBinaryResolutionOpt
     : path.resolve(options.cwd, 'firmware/lib/zplc_core/build/zplc_runtime');
 }
 
+/** Electron adds `resourcesPath` to the process; Node and Bun (the CLI) do not, so it is read as an optional value. */
+function electronResourcesPath(): string | null {
+  const { resourcesPath } = process as NodeJS.Process & { resourcesPath?: unknown };
+  return typeof resourcesPath === 'string' ? resourcesPath : null;
+}
+
 function getDefaultSimulatorBinaryPath(environment: NodeJS.ProcessEnv = process.env): string {
   const currentFilePath = fileURLToPath(import.meta.url);
   const currentDir = path.dirname(currentFilePath);
@@ -165,7 +171,7 @@ function getDefaultSimulatorBinaryPath(environment: NodeJS.ProcessEnv = process.
     currentDir,
     envPath: environment.ZPLC_NATIVE_SIM_BIN,
     pathExists: existsSync,
-    resourcesPath: typeof process.resourcesPath === 'string' ? process.resourcesPath : null,
+    resourcesPath: electronResourcesPath(),
   });
 }
 
@@ -183,9 +189,7 @@ export function resolveDefaultSimulatorBinaryPathForTests(
     currentDir: overrides.currentDir ?? currentDir,
     envPath: overrides.envPath,
     pathExists: (candidate) => existingPaths.has(candidate),
-    resourcesPath:
-      overrides.resourcesPath ??
-      (typeof process.resourcesPath === 'string' ? process.resourcesPath : null),
+    resourcesPath: overrides.resourcesPath ?? electronResourcesPath(),
   });
 }
 
