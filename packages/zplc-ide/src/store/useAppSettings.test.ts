@@ -11,15 +11,15 @@ const memory = (initial: Record<string, string> = {}) => {
 describe('application settings store (IDE-010)', () => {
   it('starts from what the user saved and writes every change back, so it persists per user across a restart', () => {
     const storage = memory({ [SETTINGS_STORAGE_KEY]: JSON.stringify({ editorFontSize: 18, density: 'compact' }) });
-    const first = createAppSettingsStore(storage, 'en-US');
+    const first = createAppSettingsStore(storage);
     expect(first.getState().settings).toMatchObject({ editorFontSize: 18, density: 'compact', editorTabSize: 4 });
     first.getState().update({ editorTabSize: 2, autosaveSeconds: 15 });
-    const restarted = createAppSettingsStore(storage, 'en-US');
+    const restarted = createAppSettingsStore(storage);
     expect(restarted.getState().settings).toMatchObject({ editorFontSize: 18, density: 'compact', editorTabSize: 2, autosaveSeconds: 15 });
   });
 
   it('refuses a value outside the choices: the previous value stays', () => {
-    const store = createAppSettingsStore(memory(), 'en-US');
+    const store = createAppSettingsStore(memory());
     store.getState().update({ editorFontSize: 99 });
     store.getState().update({ editorTabSize: 7 as never });
     expect(store.getState().settings).toEqual(DEFAULT_SETTINGS);

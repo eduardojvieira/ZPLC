@@ -4,7 +4,6 @@ import {
   AUTOSAVE_CHOICES,
   DEFAULT_SETTINGS,
   SETTINGS_STORAGE_KEY,
-  defaultLanguage,
   loadSettings,
   parseSettings,
   saveSettings,
@@ -17,8 +16,8 @@ const memory = (initial: Record<string, string> = {}): SettingsStorage & { data:
 };
 
 describe('application settings (IDE-007, IDE-010)', () => {
-  it('start with autosave off, the update check off and a 14 px editor with 4-space tabs', () => {
-    expect(DEFAULT_SETTINGS).toEqual({ editorFontSize: 14, editorTabSize: 4, density: 'comfortable', language: 'en', autosaveSeconds: 0, checkForUpdates: false });
+  it('start with autosave off, the update check off, Spanish lessons as before and a 14 px editor with 4-space tabs', () => {
+    expect(DEFAULT_SETTINGS).toEqual({ editorFontSize: 14, editorTabSize: 4, density: 'comfortable', language: 'es', autosaveSeconds: 0, checkForUpdates: false });
     expect(AUTOSAVE_CHOICES[0]).toBe(0);
   });
 
@@ -46,12 +45,4 @@ describe('application settings (IDE-007, IDE-010)', () => {
     expect(() => saveSettings(broken, DEFAULT_SETTINGS)).not.toThrow();
   });
 
-  it('take the language of the system when the user never chose one: Spanish for es, English otherwise', () => {
-    expect(defaultLanguage('es-AR')).toBe('es');
-    expect(defaultLanguage('en-US')).toBe('en');
-    expect(defaultLanguage('fr-FR')).toBe('en');
-    expect(defaultLanguage(undefined)).toBe('en');
-    expect(loadSettings(memory(), 'es-ES').language).toBe('es');
-    expect(loadSettings(memory({ [SETTINGS_STORAGE_KEY]: JSON.stringify({ language: 'en' }) }), 'es-ES').language).toBe('en');
-  });
 });

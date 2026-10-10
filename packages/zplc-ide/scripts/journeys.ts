@@ -990,11 +990,11 @@ export const JOURNEYS: Journey[] = [
 
       // Choices made on the Welcome screen apply at once.
       await choose(app, '[data-setting="density"]', 'Compact');
-      await choose(app, '[data-setting="language"]', 'Español');
+      await choose(app, '[data-setting="language"]', 'English');
       await choose(app, 'select[data-theme-control]', 'Dark');
       const after = await root(app);
       assert(after.density === 'compact' && after.spacing === '0.1875rem' && after.padding < before.padding, `Compact density did not apply: ${JSON.stringify({ before, after })}`);
-      assert(after.lang === 'es' && after.theme === 'dark', `Language or theme did not apply: ${JSON.stringify(after)}`);
+      assert(after.lang === 'en' && after.theme === 'dark', `Language or theme did not apply: ${JSON.stringify(after)}`);
 
       // Editor choices made inside the project, where the settings tab is.
       await openFolder(app, project);
@@ -1020,10 +1020,10 @@ export const JOURNEYS: Journey[] = [
       // A restart, as the same user: every choice is back.
       const again = await relaunch();
       const restored = await root(again);
-      assert(restored.density === 'compact' && restored.lang === 'es' && restored.theme === 'dark', `The display preferences were not restored: ${JSON.stringify(restored)}`);
+      assert(restored.density === 'compact' && restored.lang === 'en' && restored.theme === 'dark', `The display preferences were not restored: ${JSON.stringify(restored)}`);
       await again.click(css('[data-welcome-preferences] summary'), 'the Preferences disclosure of the Welcome screen');
       await again.until('the preferences on the Welcome screen', async () => await again.visible(css('[data-app-preferences]')) || undefined);
-      for (const [selector, label] of [['[data-setting="density"]', 'Compact'], ['[data-setting="language"]', 'Español'], ['[data-setting="editorFontSize"]', '20 px'], ['[data-setting="editorTabSize"]', '2 spaces'], ['[data-setting="autosaveSeconds"]', 'After 5 seconds without typing']] as const) {
+      for (const [selector, label] of [['[data-setting="density"]', 'Compact'], ['[data-setting="language"]', 'English'], ['[data-setting="editorFontSize"]', '20 px'], ['[data-setting="editorTabSize"]', '2 spaces'], ['[data-setting="autosaveSeconds"]', 'After 5 seconds without typing']] as const) {
         assert(await chosen(again, selector) === label, `${selector} should show ${label} after a restart, shows ${await chosen(again, selector)}`);
       }
       await openFolder(again, project);

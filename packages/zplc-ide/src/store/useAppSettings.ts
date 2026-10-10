@@ -18,9 +18,9 @@ export interface AppSettingsState {
   update: (changes: Partial<AppSettings>) => void;
 }
 
-export function createAppSettingsStore(storage: SettingsStorage | undefined, systemLanguage?: string) {
+export function createAppSettingsStore(storage: SettingsStorage | undefined) {
   return create<AppSettingsState>()((set) => ({
-    settings: loadSettings(storage, systemLanguage),
+    settings: loadSettings(storage),
     update: (changes) => set((state) => {
       const settings = parseSettings({ ...state.settings, ...changes }, state.settings);
       saveSettings(storage, settings);
@@ -33,7 +33,7 @@ function browserStorage(): SettingsStorage | undefined {
   try { return typeof window === 'undefined' ? undefined : window.localStorage; } catch { return undefined; }
 }
 
-export const useAppSettings = createAppSettingsStore(browserStorage(), typeof navigator === 'undefined' ? undefined : navigator.language);
+export const useAppSettings = createAppSettingsStore(browserStorage());
 
 /** What the settings change outside React: the density (a CSS hook, UX-008) and the language of the document. */
 export function applyDisplaySettings(settings: AppSettings, root: { dataset: Record<string, string | undefined>; lang: string }): void {

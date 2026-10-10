@@ -38,7 +38,7 @@ Preferences belong to you, not to a project: they apply to every project and are
 | Editor font size | 10 to 32 px | 14 px |
 | Tab size | 2, 3, 4 or 8 spaces | 4; a file's own indentation does not override it |
 | Density | Comfortable, Compact | Comfortable; compact scales the spacing of the whole window |
-| Language | English, Español | The language of the system; it sets the Learn lessons today and the rest of the interface is English |
+| Language | English, Español | Español, as the Learn lessons have always begun; it sets the Learn lessons today and the rest of the interface is English |
 | Autosave | Off, or after 5, 15, 30 or 60 seconds without typing | Off |
 | Check for a newer release when Studio starts | On or off, and a **Check now** button | Off |
 

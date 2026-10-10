@@ -38,7 +38,7 @@ Las preferencias son suyas, no de un proyecto: se aplican a todos los proyectos 
 | Editor font size | De 10 a 32 px | 14 px |
 | Tab size | 2, 3, 4 u 8 espacios | 4; la sangría propia de un archivo no la reemplaza |
 | Density | Comfortable, Compact | Comfortable; compact reduce el espaciado de toda la ventana |
-| Language | English, Español | El idioma del sistema; hoy fija el de las lecciones de Learn y el resto de la interfaz está en inglés |
+| Language | English, Español | Español, como siempre han empezado las lecciones de Learn; hoy fija el de las lecciones de Learn y el resto de la interfaz está en inglés |
 | Autosave | Desactivado, o tras 5, 15, 30 o 60 segundos sin escribir | Desactivado |
 | Check for a newer release when Studio starts | Activada o desactivada, y un botón **Check now** | Desactivada |
 

@@ -33,7 +33,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   editorFontSize: 14,
   editorTabSize: 4,
   density: 'comfortable',
-  language: 'en',
+  // Spanish, as the Learn lessons have always begun (the rest of the interface is English until the UX package).
+  language: 'es',
   autosaveSeconds: 0,
   checkForUpdates: false,
 };
@@ -45,11 +46,6 @@ export interface SettingsStorage {
 }
 
 const oneOf = <T extends readonly unknown[]>(choices: T, value: unknown): value is T[number] => choices.includes(value);
-
-/** The language of the system, for a user who never chose one. */
-export function defaultLanguage(systemLanguage: string | undefined): Language {
-  return typeof systemLanguage === 'string' && systemLanguage.toLowerCase().startsWith('es') ? 'es' : 'en';
-}
 
 /** A fresh, valid settings object from anything: each field is kept when valid and otherwise takes its default. */
 export function parseSettings(raw: unknown, defaults: AppSettings = DEFAULT_SETTINGS): AppSettings {
@@ -66,14 +62,13 @@ export function parseSettings(raw: unknown, defaults: AppSettings = DEFAULT_SETT
   };
 }
 
-/** The saved settings; the defaults (with the language of the system) when there are none or the storage fails. */
-export function loadSettings(storage: SettingsStorage | undefined, systemLanguage?: string): AppSettings {
-  const defaults: AppSettings = { ...DEFAULT_SETTINGS, language: defaultLanguage(systemLanguage) };
+/** The saved settings; the defaults when there are none or the storage fails. */
+export function loadSettings(storage: SettingsStorage | undefined): AppSettings {
   try {
     const stored = storage?.getItem(SETTINGS_STORAGE_KEY);
-    return stored ? parseSettings(JSON.parse(stored), defaults) : defaults;
+    return stored ? parseSettings(JSON.parse(stored)) : DEFAULT_SETTINGS;
   } catch {
-    return defaults;
+    return DEFAULT_SETTINGS;
   }
 }
 
