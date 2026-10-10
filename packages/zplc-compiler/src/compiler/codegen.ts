@@ -3448,10 +3448,16 @@ function emitAddr(state: CodeGenState, addr: Addr): void {
     }
 }
 
-/** Raise the VM fault of a memory access violation: every address of the CODE region is refused by LOADI. */
+/**
+ * Raise the VM fault of a memory access violation: every address of the CODE region is refused by LOADI.
+ * The HALT after it is never reached; it ends the path for the loader's stack verifier (RT-003), which
+ * cannot know that the access faults and would otherwise join this path, one value deeper, with the
+ * path that passed the check.
+ */
 function emitFault(state: CodeGenState, why: string): void {
     emit(state, `    PUSH16 ${FAULT_ADDRESS}   ; fault: ${why}`);
     emit(state, `    LOADI8`);
+    emit(state, `    HALT   ; not reached`);
 }
 
 /** Width in bits of the load or store of a scalar place. */
