@@ -86,8 +86,11 @@ typedef struct {
      * divisor of the intervals (the step of a scenario).
      */
     uint8_t multirate;
-    /* The instant of each task's last release; indexed like tasks[]. */
-    uint32_t task_last_release_ms[ZPLC_LOADER_MAX_TASKS];
+    /*
+     * multirate only: the instant each task is next released, on a grid that starts at the common start and
+     * advances by the task's interval, whatever the instant the host dispatches. Indexed like tasks[].
+     */
+    uint32_t task_next_release_ms[ZPLC_LOADER_MAX_TASKS];
     uint32_t task_cycles[ZPLC_LOADER_MAX_TASKS];
     /* RT-014: deadline misses of each task, and the run of them that has not been broken by a scan in time. */
     uint32_t task_misses[ZPLC_LOADER_MAX_TASKS];

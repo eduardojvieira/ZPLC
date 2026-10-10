@@ -189,7 +189,7 @@ static void session_reset_counters(zplc_native_runtime_session_t *session)
     memset(session->task_cycles, 0, sizeof(session->task_cycles));
     memset(session->task_misses, 0, sizeof(session->task_misses));
     memset(session->task_consecutive_misses, 0, sizeof(session->task_consecutive_misses));
-    memset(session->task_last_release_ms, 0, sizeof(session->task_last_release_ms));
+    memset(session->task_next_release_ms, 0, sizeof(session->task_next_release_ms));
 }
 
 static void session_reset_program(zplc_native_runtime_session_t *session)
@@ -380,8 +380,14 @@ static uint32_t session_task_interval_ms(const zplc_native_runtime_session_t *se
     return session->tasks[index].interval_us / 1000U;
 }
 
-/* RT-015: the tasks whose interval has elapsed since their last release. The first scan after a start or a resume
- * releases every task: a common start. A set of tasks of one interval is released as a whole by the caller. */
+/* How long ago the next release of a task was due; negative while it is still ahead (32-bit milliseconds). */
+static int32_t session_overdue_ms(const zplc_native_runtime_session_t *session, uint8_t index, uint32_t now_ms)
+{
+    return (int32_t)(now_ms - session->task_next_release_ms[index]);
+}
+
+/* RT-015: the tasks whose release is due. The first scan after a start or a resume releases every task: a common
+ * start. After it each task keeps the grid of its own interval. */
 static uint32_t session_due_tasks(const zplc_native_runtime_session_t *session, uint32_t now_ms,
                                   int first_release)
 {
@@ -389,8 +395,7 @@ static uint32_t session_due_tasks(const zplc_native_runtime_session_t *session, 
     uint8_t index;
 
     for (index = 0U; index < session->task_count; ++index) {
-        if (first_release != 0 ||
-            (uint32_t)(now_ms - session->task_last_release_ms[index]) >= session_task_interval_ms(session, index)) {
+        if (first_release != 0 || session_overdue_ms(session, index, now_ms) >= 0) {
             due |= (uint32_t)1U << index;
         }
     }
@@ -414,7 +419,7 @@ static void session_plan_batch(const zplc_native_runtime_session_t *session, uin
             continue;
         }
         if (session->multirate != 0U && first_release == 0) {
-            waited = now_ms - (session->task_last_release_ms[index] + session_task_interval_ms(session, index));
+            waited = (uint32_t)session_overdue_ms(session, index, now_ms);
         }
         position = batch->count++;
         while (position > 0U && waited_ms[position - 1U] < waited) {
@@ -427,13 +432,24 @@ static void session_plan_batch(const zplc_native_runtime_session_t *session, uin
     }
 }
 
+/* The batch was dispatched at now_ms. A task's next release is its next grid point after now_ms: releases the host
+ * was too late for are skipped, not run in a burst. */
 static void session_mark_released(zplc_native_runtime_session_t *session, const session_batch_t *batch,
-                                  uint32_t now_ms)
+                                  uint32_t now_ms, int first_release)
 {
     uint8_t position;
 
     for (position = 0U; position < batch->count; ++position) {
-        session->task_last_release_ms[batch->index[position]] = now_ms;
+        const uint8_t index = batch->index[position];
+        const uint32_t interval_ms = session_task_interval_ms(session, index);
+
+        if (first_release != 0) {
+            session->task_next_release_ms[index] = now_ms + interval_ms;
+        } else {
+            const uint32_t late_ms = (uint32_t)session_overdue_ms(session, index, now_ms);
+
+            session->task_next_release_ms[index] += (late_ms / interval_ms + 1U) * interval_ms;
+        }
     }
 }
 
@@ -1951,7 +1967,9 @@ static int handle_scenario_step(zplc_native_runtime_session_t *session,
             return format_error_response(request->id, "RUNTIME_FAILURE",
                                          "failed to clear simulation input pulse", response, response_size);
         }
-        session_mark_released(session, &batch, request->at_ms);
+        if (session->multirate != 0U) {
+            session_mark_released(session, &batch, request->at_ms, first_release);
+        }
     }
 
     session->scenario_timestamp_started = 1U;
@@ -2400,7 +2418,8 @@ int zplc_native_runtime_session_handle_request(zplc_native_runtime_session_t *se
 }
 
 /* RT-015: how late the host dispatched this batch, over the tasks that are in it. Each task counts the releases it
- * skipped (no catch-up); the batch reports the largest, as a set of tasks of one interval always has. */
+ * skipped (no catch-up); the batch reports the largest, as a set of tasks of one interval always has. The first
+ * scan after a start has no release to be late for. */
 static void session_note_multirate_cadence(zplc_native_runtime_session_t *session, uint32_t now_ms, uint32_t due)
 {
     uint32_t lateness_ms = 0U;
@@ -2410,18 +2429,18 @@ static void session_note_multirate_cadence(zplc_native_runtime_session_t *sessio
     if (session->timed_scan_started != 0U) {
         for (index = 0U; index < session->task_count; ++index) {
             uint32_t interval_ms;
-            uint32_t elapsed_ms;
+            uint32_t late_ms;
 
             if ((due & ((uint32_t)1U << index)) == 0U) {
                 continue;
             }
             interval_ms = session_task_interval_ms(session, index);
-            elapsed_ms = now_ms - session->task_last_release_ms[index];
-            if (elapsed_ms - interval_ms > lateness_ms) {
-                lateness_ms = elapsed_ms - interval_ms;
+            late_ms = (uint32_t)session_overdue_ms(session, index, now_ms);
+            if (late_ms > lateness_ms) {
+                lateness_ms = late_ms;
             }
-            if (interval_ms != 0U && elapsed_ms / interval_ms - 1U > missed) {
-                missed = elapsed_ms / interval_ms - 1U;
+            if (late_ms / interval_ms > missed) {
+                missed = late_ms / interval_ms;
             }
         }
         if (missed > UINT32_MAX - session->missed_interval_count) {
@@ -2489,7 +2508,9 @@ int zplc_native_runtime_session_tick(zplc_native_runtime_session_t *session,
     session_plan_batch(session, due, now_ms, first_release, &batch);
     run_result = session_run_batch(session, &batch, 1);
     session->last_scan_tick_ms = now_ms;
-    session_mark_released(session, &batch, now_ms);
+    if (session->multirate != 0U) {
+        session_mark_released(session, &batch, now_ms, first_release);
+    }
     if (run_result < 0) {
         const int deadline = session->fault_reason == ZPLC_NATIVE_FAULT_DEADLINE_MISS;
 
@@ -2567,14 +2588,11 @@ uint32_t zplc_native_runtime_session_poll_timeout_ms(
         }
         remaining_ms = max_timeout_ms;
         for (index = 0U; index < session->task_count; ++index) {
-            const uint32_t interval_ms = session_task_interval_ms(session, index);
-
-            elapsed_ms = now_ms - session->task_last_release_ms[index];
-            if (elapsed_ms >= interval_ms) {
+            if (session_overdue_ms(session, index, now_ms) >= 0) {
                 return 0U;
             }
-            if (interval_ms - elapsed_ms < remaining_ms) {
-                remaining_ms = interval_ms - elapsed_ms;
+            if (session->task_next_release_ms[index] - now_ms < remaining_ms) {
+                remaining_ms = session->task_next_release_ms[index] - now_ms;
             }
         }
         return remaining_ms;

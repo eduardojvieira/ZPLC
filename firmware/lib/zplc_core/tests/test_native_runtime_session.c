@@ -4365,6 +4365,49 @@ static void test_multirate_scenario_steps_by_the_common_divisor(void)
     zplc_native_runtime_session_shutdown(&session);
 }
 
+/* RT-015: tasks of different intervals keep a fixed grid from the common start, so tasks that coincide share a batch. */
+static void test_multirate_releases_stay_on_a_grid_when_the_host_is_late(void)
+{
+    zplc_native_runtime_session_t session;
+    uint8_t artifact[256], code[96];
+    uint16_t entries[3];
+    size_t code_size = mr_counters_program(code, entries);
+    mr_task_t tasks[2] = {
+        { 1U, ZPLC_TASK_CYCLIC, 1U, 10U, entries[0] },
+        { 2U, ZPLC_TASK_CYCLIC, 2U, 50U, entries[1] },
+    };
+    char response[2048], event[2048];
+
+    printf("\n=== Test: releases stay on the grid of the common start when the host is late (RT-015) ===\n");
+    zplc_native_runtime_session_init(&session);
+    TEST_ASSERT(mr_load(&session, artifact, build_multirate_zplc(artifact, sizeof(artifact), code, code_size, tasks, 2U)),
+                "tasks of 10 and 50 ms load");
+    mr_request(&session, "execution.start", response, sizeof(response), event, sizeof(event));
+    (void)zplc_native_runtime_session_tick(&session, 0U, event, sizeof(event));
+    (void)zplc_native_runtime_session_tick(&session, 12U, event, sizeof(event));
+    TEST_ASSERT(mr_work32(0) == 2U && session.last_dispatch_lateness_ms == 2U && session.missed_interval_count == 0U,
+                "a dispatch 2 ms late runs the task once and reports the lateness");
+    (void)zplc_native_runtime_session_tick(&session, 15U, event, sizeof(event));
+    TEST_ASSERT(mr_work32(0) == 2U, "the late dispatch did not move the next release: 15 ms is not a release");
+    TEST_ASSERT(zplc_native_runtime_session_poll_timeout_ms(&session, 15U, 100U) == 5U,
+                "the next release is still at 20 ms");
+    (void)zplc_native_runtime_session_tick(&session, 20U, event, sizeof(event));
+    (void)zplc_native_runtime_session_tick(&session, 30U, event, sizeof(event));
+    (void)zplc_native_runtime_session_tick(&session, 40U, event, sizeof(event));
+    (void)zplc_native_runtime_session_tick(&session, 50U, event, sizeof(event));
+    TEST_ASSERT(mr_work32(0) == 6U && mr_work32(1) == 2U && session.cycle_count == 6U,
+                "the 50 ms task coincides with the 10 ms task at 50 ms and they are one batch");
+    /* the host stalls for 45 ms: the 10 ms task runs once and the four releases it missed are skipped */
+    (void)zplc_native_runtime_session_tick(&session, 95U, event, sizeof(event));
+    TEST_ASSERT(mr_work32(0) == 7U && mr_work32(1) == 2U && session.missed_interval_count == 3U &&
+                    session.last_dispatch_lateness_ms == 35U,
+                "a stall runs a task once; the releases it skipped are counted, not run in a burst");
+    (void)zplc_native_runtime_session_tick(&session, 100U, event, sizeof(event));
+    TEST_ASSERT(mr_work32(0) == 8U && mr_work32(1) == 3U,
+                "after the stall both tasks are back on the grid: 100 ms is a release of both");
+    zplc_native_runtime_session_shutdown(&session);
+}
+
 /* RT-015: the poll timeout is the time to the nearest release of any task. */
 static void test_multirate_poll_timeout_is_the_nearest_release(void)
 {
@@ -4737,6 +4780,7 @@ int main(void)
     test_multirate_earlier_release_runs_first();
     test_multirate_batch_shares_one_input_image();
     test_multirate_scenario_steps_by_the_common_divisor();
+    test_multirate_releases_stay_on_a_grid_when_the_host_is_late();
     test_multirate_poll_timeout_is_the_nearest_release();
     test_multirate_pause_resume_stop_and_reset_keep_the_schedule();
     test_deadline_miss_warns_counts_and_latches();
