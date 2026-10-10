@@ -69,6 +69,17 @@ All notable changes are documented here.
   imports the breakpoint helpers or the build-evidence types from `components/`,
   and the sensitive-configuration helpers no longer form an import cycle with
   the file system and export modules.
+- The reference pages are generated, in English and Spanish, from the sources they describe, and CI
+  fails when one is stale (DOC-006, DOC-007, DOC-008, DOC-014). A page per language (ST, IL, LD, FBD,
+  SFC) is read off `conformance/matrix.json`, the executed cases and the expected-failures list, with
+  the I/O addressing and what is not supported; the 57 functions, the 240 type conversions and the 34
+  function blocks of the compiler registry each have a signature or pin table, a description and an
+  example that CI compiles and runs; the Kconfig options, shell commands, `zplc.json` fields, scenario
+  files, `zplc-cli` commands, MCP tools and resources, and runtime session requests are read off their
+  source files. A check reads every code span of the documentation and fails on a Kconfig symbol,
+  shell command, C name, IEC call or repository path that the source does not have; what is
+  deliberately absent is listed with its reason in `docs/doc-claims-allowlist.json`. No editor
+  screenshot is published yet: the language pages say so instead of showing a drawing.
 - The palettes of LD, FBD and SFC offer only what their transpiler translates, and every
   element they offer is placed in a program and run in the virtual machine by a generated
   test (LNG-007). The Ladder palette offers the edge coils that the transpiler has

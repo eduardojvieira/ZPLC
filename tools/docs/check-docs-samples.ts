@@ -165,9 +165,9 @@ export function markdownPages(root: string, base: string): string[] {
   return out.sort();
 }
 
-interface Outcome { sample: Sample; compiled: boolean; executed: boolean; failures: string[] }
+export interface Outcome { sample: Sample; compiled: boolean; executed: boolean; failures: string[] }
 
-async function compileAndRun(sample: Sample, binary: string): Promise<Outcome> {
+export async function compileAndRun(sample: Sample, binary: string): Promise<Outcome> {
   const [{ compilerCompile }, { NativeSimulationSupervisor }, { NativeAdapter }] = await Promise.all([
     import('../../packages/zplc-ide/src/cli/toolApi'),
     import('../../packages/zplc-ide/electron/nativeSimulationSupervisor'),

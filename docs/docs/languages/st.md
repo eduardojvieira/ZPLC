@@ -6,6 +6,8 @@ sidebar_position: 1
 
 Structured Text (ST) is the canonical semantic baseline for ZPLC.
 
+What of the language works today, element by element and read off the executed conformance tests, is in the generated [Structured Text reference](../reference/language-st.md).
+
 ## Role in ZPLC 2.0
 
 For ZPLC 2.0:

@@ -9,6 +9,8 @@ de stdlib del compilador en `packages/zplc-compiler/src/compiler/stdlib/index.ts
 
 Ese registro es lo que usa el IDE/compilador para resolver funciones y bloques integrados.
 
+Cada función y bloque de función registrado, con su firma o tabla de pines y un ejemplo que CI ejecuta, está en la [referencia de funciones](../reference/functions.md) y en la [referencia de bloques de función](../reference/function-blocks.md) generadas.
+
 ## Categorías de alto valor
 
 | Categoría | Fuente | Ejemplos |
