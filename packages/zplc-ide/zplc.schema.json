@@ -119,6 +119,13 @@
                         "$ref": "#/definitions/digitalIOPoint"
                     }
                 },
+                "virtual": {
+                    "type": "array",
+                    "description": "Words or bits of the process image that no pin of the board drives, read in the debugger or by a test. A variable located where the selected board has no channel is a build error that names the board unless its address is listed here.",
+                    "items": {
+                        "$ref": "#/definitions/digitalIOPoint"
+                    }
+                },
                 "analog": {
                     "type": "object",
                     "description": "Analog I/O configuration",

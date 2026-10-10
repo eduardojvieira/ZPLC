@@ -100,7 +100,7 @@ function readChannel(value: unknown): BoardChannel | undefined {
   if ((kind === 'digital') !== (parsed.bit !== undefined)) return undefined;
   if (parsed.byte + parsed.width > (parsed.region === 'I' ? SYSTEM_REGISTER_OFFSET : IMAGE_SIZE)) return undefined;
   if (value.pin_status !== 'devicetree' && value.pin_status !== 'profile') return undefined;
-  const base = {
+  const base: Omit<BoardChannel, 'safe' | 'resolutionBits' | 'range'> = {
     id, direction, kind, address: address as string, pin, electrical, source, pinStatus: value.pin_status as 'devicetree' | 'profile',
     ...(isText(value.location) ? { location: value.location } : {}),
     ...(isText(value.scaling) ? { scaling: value.scaling } : {}),

@@ -6,7 +6,7 @@ import { isAbsolute, join, relative, resolve, sep, win32 } from 'node:path';
 import { load } from 'js-yaml';
 import { ZPLC_CONSTANTS } from '@zplc/compiler';
 import { CompilerError, assertTaskProgramCardinality, compileMultiTaskProject, compilerErrorsOf, parse, selectWarnings, transpileFailure, transpileToST, type CompilerWarning, type DebugMap, type DebugVarInfo, type Statement } from '../compiler';
-import { supportLevelFromRecords } from '../boards/supportLevel';
+import { supportLevelFromFiles } from '../boards/supportLevel';
 import { buildOptionsOf } from '../project/buildOptions';
 import type { ProjectMigrationChange } from '../project/projectModel';
 import { resolveProgramSource } from '../utils/programSourceResolution';
@@ -161,7 +161,6 @@ const WORKSPACE_TEST_TIMEOUT_MS = 30_000;
 const TOOLCHAIN_FILE_MAX_BYTES = 128 * 1024;
 const TOOLCHAIN_COMMAND_OUTPUT_MAX_BYTES = 4096;
 const TOOLCHAIN_COMMAND_TIMEOUT_MS = 3000;
-const MAX_BOARD_COUNT = 32;
 
 export type ToolchainCheckStatus = 'ready' | 'missing' | 'invalid' | 'malformed' | 'timeout' | 'unavailable';
 export interface ToolchainCheck {
@@ -1001,41 +1000,23 @@ function parseWestRevision(text: string): string | undefined {
     return zephyr.length === 1 && typeof zephyr[0]?.revision === 'string' && /^[a-f0-9]{40}$/i.test(zephyr[0].revision) ? zephyr[0].revision.toLowerCase() : undefined;
   } catch { return undefined; }
 }
-/**
- * The support level of a board is derived from the evidence records that the manifest references (IO-015): a record
- * that cannot be read, or that does not name the board, the firmware version, the commit and the image hash with a
- * passing result, leaves the board at cross-build.
- */
-async function derivedSupportLevel(root: string, boardId: string, refs: readonly string[]): Promise<'cross-build' | 'human-hil'> {
-  const records: Array<readonly [string, unknown]> = [];
-  for (const ref of refs) {
-    const file = await containedFile(root, ref, TOOLCHAIN_FILE_MAX_BYTES);
-    let value: unknown = null;
-    if (file.ok && file.text) { try { value = JSON.parse(file.text); } catch { value = null; } }
-    records.push([ref, value]);
-  }
-  return supportLevelFromRecords(boardId, records).level;
-}
 async function parseBoards(root: string, text: string): Promise<ParsedBoard[] | undefined> {
   let value: unknown;
   try { value = JSON.parse(text); } catch { return undefined; }
-  if (!Array.isArray(value) || value.length < 1 || value.length > MAX_BOARD_COUNT) return undefined;
-  const boards: ParsedBoard[] = [];
-  const boardIds = new Set<string>(); const ideIds = new Set<string>();
+  if (!Array.isArray(value) || value.length < 1 || value.length > 32) return undefined;
+  const boards: ParsedBoard[] = []; const boardIds = new Set<string>(); const ideIds = new Set<string>();
   for (const item of value) {
     if (typeof item !== 'object' || item === null) return undefined;
     const board = item as Record<string, unknown>;
     const required = ['board_id', 'display_name', 'ide_id', 'zephyr_board', 'variant', 'build_command', 'network_class', 'docs_ref'];
     const validString = (value: unknown, max = 256) => typeof value === 'string' && value.length > 0 && value.length <= max && [...value].every((character) => character >= ' ' && character !== '\x7f');
-    if (required.some((field) => !validString(board[field]))) return undefined;
-    // IO-015: the level is derived from the records, so a manifest that sets one by hand is malformed
-    if (Object.hasOwn(board, 'validation_level')) return undefined;
+    if (required.some((field) => !validString(board[field])) || Object.hasOwn(board, 'validation_level')) return undefined;
     const boardId = board.board_id as string; const ideId = board.ide_id as string; const zephyrBoard = board.zephyr_board as string;
     if (!/^[a-z0-9][a-z0-9-]{0,63}$/.test(boardId) || !/^[a-z0-9][a-z0-9_]{0,63}$/.test(ideId) || !/^[a-z0-9][a-z0-9_/-]{0,127}$/.test(zephyrBoard) || boardIds.has(boardId) || ideIds.has(ideId) || !['serial-focused', 'network-capable', 'other'].includes(board.network_class as string)) return undefined;
     if (!Array.isArray(board.support_assets) || board.support_assets.length === 0 || board.support_assets.length > 16 || !board.support_assets.every((asset): asset is string => validString(asset) && /^firmware\/app\/boards\/[a-z0-9][a-z0-9_-]{0,127}\.(conf|overlay)$/.test(asset))) return undefined;
     if (!Array.isArray(board.evidence_refs) || board.evidence_refs.length > 16 || !board.evidence_refs.every((ref): ref is string => validString(ref))) return undefined;
     for (const asset of board.support_assets) if (!(await containedFile(root, asset)).ok) return undefined;
-    const validationLevel = await derivedSupportLevel(root, boardId, board.evidence_refs);
+    const validationLevel = await supportLevelFromFiles(boardId, board.evidence_refs, async (ref) => { const file = await containedFile(root, ref, TOOLCHAIN_FILE_MAX_BYTES); return file.ok ? file.text : undefined; });
     boardIds.add(boardId); ideIds.add(ideId); boards.push({ boardId, ideId, zephyrBoard, validationLevel });
   }
   return boards.sort((left, right) => left.ideId.localeCompare(right.ideId));

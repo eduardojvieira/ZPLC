@@ -40,3 +40,21 @@ export function supportLevelFromRecords(boardId: string, records: ReadonlyArray<
   }
   return { level: applicable.some((entry) => entry.result === 'pass') ? 'human-hil' : 'cross-build', records: applicable };
 }
+
+/**
+ * The level of a board whose records are files: `readText` returns the text of the file a manifest reference names, or
+ * undefined when it cannot be read. A file that is missing, unreadable or not JSON leaves the board at cross-build.
+ */
+export async function supportLevelFromFiles(
+  boardId: string,
+  refs: readonly string[],
+  readText: (ref: string) => Promise<string | undefined>,
+): Promise<SupportLevel> {
+  const records: Array<readonly [string, unknown]> = [];
+  for (const ref of refs) {
+    let value: unknown = null;
+    try { value = JSON.parse((await readText(ref)) ?? 'null'); } catch { value = null; }
+    records.push([ref, value]);
+  }
+  return supportLevelFromRecords(boardId, records).level;
+}

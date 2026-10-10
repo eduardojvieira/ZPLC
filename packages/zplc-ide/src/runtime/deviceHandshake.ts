@@ -1,5 +1,7 @@
 import { ZPLC_CONSTANTS } from '@zplc/compiler';
 import { getZephyrBoardTarget, isKnownZephyrBoardTarget } from '../config/boardProfiles';
+import { checkProgramIo, type DeviceIoIdentity } from '../boards/ioAdmission';
+import { processImageAccesses } from '../boards/programIo';
 import { artifactDraftCounter, draftMismatchMessage } from './draftCounter';
 
 const MAX_TEXT_LENGTH = 128;
@@ -7,8 +9,13 @@ const REQUIRED_ROOT_KEYS = [
   'board', 'board_profile', 'zplc_version', 'zephyr_version', 'uptime_ms', 'cpu_freq_mhz',
   'device_protocol_version', 'bytecode_abi_major', 'bytecode_abi_minor', 'capabilities', 'memory',
 ] as const;
-/** Firmware images from before the draft counter (CMP-052) do not report it; Studio refuses to deploy to them. */
-const OPTIONAL_ROOT_KEYS = ['draft_counter'] as const;
+/**
+ * Firmware images from before the draft counter (CMP-052) do not report it; Studio refuses to deploy to them.
+ * `io` is the identity of the board I/O description the image was built from (IO-004); an image without it cannot
+ * be compared, so Studio refuses a program that uses I/O on it.
+ */
+const OPTIONAL_ROOT_KEYS = ['draft_counter', 'io'] as const;
+const REQUIRED_IO_KEYS = ['schema', 'board_id', 'hash', 'channels', 'input_bytes', 'output_bytes'] as const;
 const REQUIRED_CAPABILITY_KEYS = ['fpu', 'mpu', 'scheduler', 'max_tasks'] as const;
 const REQUIRED_MEMORY_KEYS = ['work_size', 'retain_size', 'ipi_size', 'opi_size'] as const;
 
@@ -17,6 +24,9 @@ export const DEVICE_ADMISSION_CODE = {
   PROTOCOL_UNSUPPORTED: 'ZPLC_DEVICE_PROTOCOL_UNSUPPORTED',
   PROJECT_TARGET_MISSING: 'ZPLC_DEVICE_PROJECT_TARGET_MISSING',
   PROJECT_TARGET_UNKNOWN: 'ZPLC_DEVICE_PROJECT_TARGET_UNKNOWN',
+  IO_DESCRIPTION_MISSING: 'ZPLC_DEVICE_IO_DESCRIPTION_MISSING',
+  IO_DESCRIPTION_MISMATCH: 'ZPLC_DEVICE_IO_DESCRIPTION_MISMATCH',
+  PROGRAM_IO_MISMATCH: 'ZPLC_DEVICE_PROGRAM_IO_MISMATCH',
   BOARD_PROFILE_UNKNOWN: 'ZPLC_DEVICE_BOARD_PROFILE_UNKNOWN',
   BOARD_PROFILE_MISMATCH: 'ZPLC_DEVICE_BOARD_PROFILE_MISMATCH',
   ARTIFACT_INVALID: 'ZPLC_DEVICE_ARTIFACT_INVALID',
@@ -48,6 +58,8 @@ export interface DeviceHandshake {
   readonly bytecodeAbiMinor: number;
   /** Draft contract counter of the firmware image (CMP-052); null when the image does not report one. */
   readonly draftCounter: number | null;
+  /** Identity of the board I/O description of the image (IO-004); null when the image does not report one. */
+  readonly io: DeviceIoIdentity | null;
 }
 
 export interface DeviceSystemInfo {
@@ -61,6 +73,7 @@ export interface DeviceSystemInfo {
   bytecode_abi_major: number;
   bytecode_abi_minor: number;
   draft_counter?: number;
+  io?: { schema: number; board_id: string; hash: string; channels: number; input_bytes: number; output_bytes: number };
   capabilities: { fpu: boolean; mpu: boolean; scheduler: boolean; max_tasks: number };
   memory: { work_size: number; retain_size: number; ipi_size: number; opi_size: number };
 }
@@ -100,12 +113,26 @@ function readInteger(value: unknown, max: number): number | null {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 && value <= max ? value : null;
 }
 
+function parseDeviceIo(value: unknown): DeviceSystemInfo['io'] | null {
+  const io = snapshotRecord(value);
+  if (!io || !exactKeys(io, REQUIRED_IO_KEYS)) return null;
+  const board = readText(io.board_id);
+  const channels = readInteger(io.channels, 64);
+  const inputBytes = readInteger(io.input_bytes, 0x1000);
+  const outputBytes = readInteger(io.output_bytes, 0x1000);
+  if (io.schema !== 1 || board === null || channels === null || inputBytes === null || outputBytes === null) return null;
+  if (typeof io.hash !== 'string' || !/^[0-9a-f]{8}$/.test(io.hash)) return null;
+  return { schema: 1, board_id: board, hash: io.hash, channels, input_bytes: inputBytes, output_bytes: outputBytes };
+}
+
 function parseDeviceSystemInfoSnapshot(value: unknown): DeviceSystemInfo | null {
   const root = snapshotRecord(value);
   if (!root || !exactKeys(root, REQUIRED_ROOT_KEYS, OPTIONAL_ROOT_KEYS)) return null;
   const capabilities = snapshotRecord(root.capabilities);
   const memory = snapshotRecord(root.memory);
   if (!capabilities || !memory || !exactKeys(capabilities, REQUIRED_CAPABILITY_KEYS) || !exactKeys(memory, REQUIRED_MEMORY_KEYS)) return null;
+  const io = Object.hasOwn(root, 'io') ? parseDeviceIo(root.io) : undefined;
+  if (io === null) return null;
   if (!(typeof capabilities.fpu === 'boolean' && typeof capabilities.mpu === 'boolean' && typeof capabilities.scheduler === 'boolean'
     && readInteger(capabilities.max_tasks, 1024) !== null
     && REQUIRED_MEMORY_KEYS.every((key) => readInteger(memory[key], 0xffffffff) !== null)
@@ -122,6 +149,7 @@ function parseDeviceSystemInfoSnapshot(value: unknown): DeviceSystemInfo | null 
     device_protocol_version: root.device_protocol_version as number,
     bytecode_abi_major: root.bytecode_abi_major as number, bytecode_abi_minor: root.bytecode_abi_minor as number,
     ...(Object.hasOwn(root, 'draft_counter') ? { draft_counter: root.draft_counter as number } : {}),
+    ...(io ? { io } : {}),
     capabilities: { fpu: capabilities.fpu, mpu: capabilities.mpu, scheduler: capabilities.scheduler, max_tasks: capabilities.max_tasks as number },
     memory: { work_size: memory.work_size as number, retain_size: memory.retain_size as number, ipi_size: memory.ipi_size as number, opi_size: memory.opi_size as number },
   };
@@ -137,6 +165,9 @@ export function parseDeviceHandshake(value: unknown): DeviceHandshake {
     bytecodeAbiMajor: info.bytecode_abi_major,
     bytecodeAbiMinor: info.bytecode_abi_minor,
     draftCounter: info.draft_counter ?? null,
+    io: info.io
+      ? { schema: info.io.schema, boardId: info.io.board_id, hash: info.io.hash, channels: info.io.channels, inputBytes: info.io.input_bytes, outputBytes: info.io.output_bytes }
+      : null,
   };
 }
 
@@ -182,5 +213,10 @@ export function validateHardwareDeployAdmission(
     || artifact.major !== handshake.bytecodeAbiMajor || artifact.minor !== handshake.bytecodeAbiMinor) {
     fail(DEVICE_ADMISSION_CODE.BYTECODE_ABI_MISMATCH);
   }
+  // IO-004: the I/O the program uses is compared with the description of the board the firmware was built for
+  const io = checkProgramIo({ accesses: processImageAccesses(bytes), board: projectBoard, device: handshake.io });
+  if (!io.ok) fail(io.code === 'ZPLC_DEVICE_IO_DESCRIPTION_MISSING' ? DEVICE_ADMISSION_CODE.IO_DESCRIPTION_MISSING
+    : io.code === 'ZPLC_DEVICE_IO_DESCRIPTION_MISMATCH' ? DEVICE_ADMISSION_CODE.IO_DESCRIPTION_MISMATCH
+      : DEVICE_ADMISSION_CODE.PROGRAM_IO_MISMATCH, io.detail);
   return handshake;
 }

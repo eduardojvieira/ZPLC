@@ -64,7 +64,7 @@ describe('the manifest read by Studio is the one the docs are generated from', (
       const section = docs.split(/^### /m).find((block) => block.startsWith(`${entry.display_name}\n`));
       expect(section, entry.board_id).toBeDefined();
       const printed = /I\/O description hash:\*\* `([0-9a-f]{8})`/.exec(section!)?.[1];
-      expect(descriptionHash(entry.board_id, description!), entry.board_id).toBe(printed);
+      expect(descriptionHash(entry.board_id, description!), entry.board_id).toBe(printed ?? '');
     }
   });
 
