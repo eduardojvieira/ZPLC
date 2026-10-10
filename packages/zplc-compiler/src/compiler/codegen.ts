@@ -1077,6 +1077,8 @@ function emitInitialization(state: CodeGenState, program: Program): void {
 
                 const sym = state.symbols.get(decl.name);
                 if (!sym) continue;
+                // a retained variable is initialised below, only when the retentive region holds no saved state
+                if (sym.retain) continue;
 
                 emit(state, `    ; ${decl.name} := ...`);
                 emitValueFor(state, decl.initialValue as Expression, sym.dataType);
@@ -1084,6 +1086,40 @@ function emitInitialization(state: CodeGenState, program: Program): void {
             }
         }
     }
+
+    emitRetainedInitialization(state, program);
+}
+
+/**
+ * The initial values of the VAR RETAIN variables of a program (CMP-029): applied when the first byte of the retentive
+ * region is zero, then that byte is set. The runtime saves the region with the byte, and restores both together
+ * (RT-025), so a restored region keeps its values and a region that was never saved, or whose layout changed,
+ * which the runtime clears, gets the declared ones.
+ */
+function emitRetainedInitialization(state: CodeGenState, program: Program): void {
+    const retained: VarDecl[] = [];
+    for (const block of program.varBlocks) {
+        for (const decl of block.variables) {
+            if (decl.initialValue && state.symbols.get(decl.name)?.retain) retained.push(decl);
+        }
+    }
+    if (retained.length === 0) return;
+
+    const marker = formatAddress(MemoryLayout.RETAIN_BASE);
+    const restored = newLabel(state, 'retain_restored');
+    emit(state, ``);
+    emit(state, `    ; --- RETAIN Initialization (skipped when the retentive region holds a saved state) ---`);
+    emit(state, `    LOAD8 ${marker}`);
+    emit(state, `    JNZ ${restored}`);
+    for (const decl of retained) {
+        const sym = state.symbols.get(decl.name)!;
+        emit(state, `    ; ${decl.name} := ...`);
+        emitValueFor(state, decl.initialValue as Expression, sym.dataType);
+        emitStore(state, sym);
+    }
+    emit(state, `    PUSH8 1`);
+    emit(state, `    STORE8 ${marker}`);
+    emit(state, `${restored}:`);
 }
 
 // ============================================================================

@@ -10,7 +10,7 @@ import { join } from 'path';
 
 import { tokenize, TokenType } from './lexer.ts';
 import { parse } from './parser.ts';
-import { buildSymbolTable, MemoryLayout } from './symbol-table.ts';
+import { buildSymbolTable, MemoryLayout, RETAIN_MARKER_SIZE } from './symbol-table.ts';
 import { generate } from './codegen.ts';
 import { compileST, compileToBinary, compileSingleFileWithTask, validate, CompilerError } from './index.ts';
 import { findPC, findSourceLine } from './debug-map.ts';
@@ -438,8 +438,26 @@ describe('RETAIN declarations (CMP-029)', () => {
         }]);
         const vars = result.debugMap.pou.Main!.vars;
         expect(vars.Kept!.region).toBe('RETAIN');
-        expect(vars.Kept!.addr).toBe(0x4000);
+        // the first bytes of the region hold the marker of the initial values
+        expect(vars.Kept!.addr).toBe(0x4000 + RETAIN_MARKER_SIZE);
         expect(vars.Lost!.region).toBe('WORK');
+    });
+
+    it('applies the initial value of a RETAIN variable only when the retentive region holds no saved state', () => {
+        const content = 'PROGRAM Main\nVAR RETAIN\nKept : INT := 5;\nOther : DINT;\nEND_VAR\nVAR\nPlain : INT := 7;\nEND_VAR\nKept := Kept + 1;\nEND_PROGRAM';
+        const assembly = compileMultiTaskProject(config, [{ name: 'Main', content }]).programDetails[0]!.assembly;
+        const lines = assembly.split('\n').map((line) => line.trim());
+        const guard = lines.indexOf('LOAD8 0x4000');
+        expect(guard).toBeGreaterThan(0);
+        // the marker is tested, the retained initial value is stored behind it, then the marker is set
+        expect(lines[guard + 1]).toMatch(/^JNZ retain_restored_\d+$/);
+        expect(lines.slice(guard, guard + 8).join('|')).toContain('PUSH8 5|STORE16 0x4004');
+        expect(lines).toContain('STORE8 0x4000');
+        // the ordinary variable is initialised as before, outside the guard
+        expect(lines.indexOf('STORE16 0x2000')).toBeLessThan(guard);
+        // a program whose RETAIN variables have no initial value has no guard
+        const bare = compileMultiTaskProject(config, [{ name: 'Main', content: 'PROGRAM Main\nVAR RETAIN\nKept : INT;\nEND_VAR\nKept := Kept + 1;\nEND_PROGRAM' }]);
+        expect(bare.programDetails[0]!.assembly).not.toContain('LOAD8 0x4000');
     });
 
     it('refuses more retentive data than the target holds', () => {

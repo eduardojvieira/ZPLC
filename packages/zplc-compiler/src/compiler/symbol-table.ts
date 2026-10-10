@@ -32,6 +32,13 @@ export const MemoryLayout = {
     RETAIN_BASE: MEMORY_REGION.RETAIN.base,
 } as const;
 
+/**
+ * Bytes the retentive region reserves at its start when a program has a RETAIN variable. The first byte is set
+ * once the initial values of the retained variables have been applied, and is saved with them: a region the
+ * runtime restored has it set, so the initial values do not overwrite what was saved (CMP-029).
+ */
+export const RETAIN_MARKER_SIZE = 4;
+
 // ============================================================================
 // Symbol Table Types
 // ============================================================================
@@ -223,6 +230,7 @@ export class SymbolTable {
             }
         } else if (decl.retain) {
             // VAR RETAIN: the retentive region, which the runtime saves and restores (CMP-029)
+            if (this.retainOffset === 0) this.retainOffset = RETAIN_MARKER_SIZE;
             const alignment = Math.min(varSize, 4);
             this.retainOffset = alignTo(this.retainOffset, alignment);
 
