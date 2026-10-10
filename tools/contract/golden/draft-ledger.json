@@ -1,0 +1,10 @@
+{
+  "doc": "Append-only. One entry per value of abi.draftCounter in tools/contract/contract.json: the fingerprint of the binary contract (opcodes, layouts, sizes, codes; no prose) at that value and why it exists. python3 tools/contract/generate.py --record-draft \"reason\" appends the entry of the current counter; never edit or remove an entry that was committed.",
+  "entries": [
+    {
+      "counter": 1,
+      "fingerprint": "db0fa11a18c49c47f52b9e771b79dd759a52d8d39d338be3c10e15da4b4d4a57",
+      "reason": "Counter introduced (CMP-052, WP-19): header word 28, until now reserved and zero, carries it and ZPLC_LOADER_ERR_DRAFT (-17) refuses a mismatch. The contract of this entry is the one the generated tables had at its introduction; artifacts built before it carry 0 and are refused."
+    }
+  ]
+}

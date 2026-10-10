@@ -1,5 +1,6 @@
 {
   "asm": {
+    "draftCounter": 1,
     "magic": 1129074778,
     "opcodes": {
       "ABS": 38,
@@ -513,11 +514,13 @@
     },
     "macros": {
       "ZPLC_CALL_STACK_MAX": 32,
+      "ZPLC_DRAFT_COUNTER": 1,
       "ZPLC_FILE_HEADER_SIZE": 32,
       "ZPLC_IOMAP_ENTRY_SIZE": 8,
       "ZPLC_LOADER_ERR_COMM": -16,
       "ZPLC_LOADER_ERR_CONTROL_FLOW": -12,
       "ZPLC_LOADER_ERR_CRC32": -6,
+      "ZPLC_LOADER_ERR_DRAFT": -17,
       "ZPLC_LOADER_ERR_ENTRY_POINT": -9,
       "ZPLC_LOADER_ERR_FLAGS": -7,
       "ZPLC_LOADER_ERR_MAGIC": -1,
@@ -1853,10 +1856,10 @@
           "code_size": 16,
           "crc32": 12,
           "data_size": 20,
+          "draft_counter": 28,
           "entry_point": 24,
           "flags": 8,
           "magic": 0,
-          "reserved": 28,
           "segment_count": 26,
           "version_major": 4,
           "version_minor": 6
@@ -2741,6 +2744,8 @@
     },
     "constants": {
       "CODE_SIZE_MAX": 45056,
+      "DRAFT_COUNTER": 1,
+      "DRAFT_COUNTER_OFFSET": 28,
       "HEADER_SIZE": 32,
       "MAGIC": 1129074778,
       "MAX_TASKS": 16,
@@ -3233,7 +3238,7 @@
   },
   "frozen": {
     "commit": "aaf7c2f",
-    "what": "Contract values read from the hand-written definitions before WP-11 generated them. Taken with tools/contract/snapshot.py; never regenerate this file to make a test pass. When the contract changes on purpose, record the change in tools/contract/contract.json and update this file in the same commit with the reason in the message."
+    "what": "Contract values read from the hand-written definitions before WP-11 generated them, moved by each contract change since (each one has an entry in draft-ledger.json). Taken with tools/contract/snapshot.py; never regenerate this file to make a test pass. When the contract changes on purpose, increase abi.draftCounter in tools/contract/contract.json, record it with `python3 tools/contract/generate.py --record-draft \"reason\"`, move the changed numbers here in the same commit and give the reason in the message (CMP-052)."
   },
   "ide": {
     "memoryMap": {

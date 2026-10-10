@@ -9,10 +9,11 @@ def inspect(filename):
     print(f"File size: {len(data)}")
 
     # Header
-    magic, vmaj, vmin, flags, crc, code_sz, data_sz, ep, seg_cnt, res = struct.unpack(
+    magic, vmaj, vmin, flags, crc, code_sz, data_sz, ep, seg_cnt, draft = struct.unpack(
         "<IHHIIIIHHI", data[:32]
     )
     print(f"Magic: {hex(magic)}")
+    print(f"Contract draft: {draft if draft else 'none (built before the draft counter)'}")
     print(f"Entry Point (Legacy): {ep}")
     print(f"Segment Count: {seg_cnt}")
 

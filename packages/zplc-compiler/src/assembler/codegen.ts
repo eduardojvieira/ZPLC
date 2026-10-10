@@ -290,8 +290,8 @@ export function createZplcFile(bytecode: Uint8Array, entryPoint: number, tags?: 
     view.setUint16(offset, segmentCount, true);
     offset += 2;
 
-    // reserved (4 bytes)
-    view.setUint32(offset, 0, true);
+    // draft_counter (4 bytes): the contract draft this artifact was built for (CMP-052)
+    view.setUint32(offset, ZPLC_CONSTANTS.DRAFT_COUNTER, true);
     offset += 4;
 
     // =========================================================================
@@ -428,8 +428,8 @@ export function createMultiTaskZplcFile(bytecode: Uint8Array, tasks: TaskDef[], 
     view.setUint16(offset, segmentCount, true);
     offset += 2;
 
-    // reserved
-    view.setUint32(offset, 0, true);
+    // draft_counter: the contract draft this artifact was built for (CMP-052)
+    view.setUint32(offset, ZPLC_CONSTANTS.DRAFT_COUNTER, true);
     offset += 4;
 
     // =========================================================================

@@ -43,6 +43,7 @@ from zplc_contract import (  # noqa: E402
     SEGMENT_ENTRY_SIZE,
     SEGMENT_ENTRY_STRUCT,
     SEGMENT_TYPE,
+    ZPLC_DRAFT_COUNTER,
     ZPLC_MAGIC,
     ZPLC_VERSION_MAJOR,
     ZPLC_VERSION_MINOR,
@@ -371,7 +372,7 @@ class ZPLCAssembler:
         #   data_size     (4 bytes, uint32_t)
         #   entry_point   (2 bytes, uint16_t)
         #   segment_count (2 bytes, uint16_t)
-        #   reserved      (4 bytes, uint32_t)
+        #   draft_counter (4 bytes, uint32_t) contract draft this file was built for (CMP-052)
         # Total: 4+2+2+4+4+4+4+2+2+4 = 32 bytes
         # TODO: Calculate proper CRC32
         header = struct.pack(
@@ -385,7 +386,7 @@ class ZPLCAssembler:
             0,                    # data_size (4)
             self.entry_point if isinstance(self.entry_point, int) else 0,  # entry_point (2)
             segment_count,        # segment_count (2)
-            0                     # reserved (4)
+            ZPLC_DRAFT_COUNTER    # draft_counter (4)
         )
         
         assert len(header) == HEADER_SIZE, f"Header size mismatch: {len(header)}"

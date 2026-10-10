@@ -187,6 +187,10 @@ static size_t build_task_zplc(uint8_t *buf,
     buf[0] = 'Z'; buf[1] = 'P'; buf[2] = 'L'; buf[3] = 'C';
     buf[4] = (uint8_t)ZPLC_VERSION_MAJOR;
     buf[6] = (uint8_t)ZPLC_VERSION_MINOR;
+    buf[28] = (uint8_t)ZPLC_DRAFT_COUNTER;
+    buf[29] = (uint8_t)(ZPLC_DRAFT_COUNTER >> 8);
+    buf[30] = (uint8_t)(ZPLC_DRAFT_COUNTER >> 16);
+    buf[31] = (uint8_t)(ZPLC_DRAFT_COUNTER >> 24);
     buf[16] = (uint8_t)code_seg_size;
     buf[17] = (uint8_t)(code_seg_size >> 8);
     buf[18] = (uint8_t)(code_seg_size >> 16);
@@ -337,6 +341,13 @@ static void test_handshake(void)
                              "Handshake returns the core product version");
     }
     TEST_ASSERT_CONTAINS(response, "\"breakpoints\"", "Handshake advertises breakpoint capability");
+    {
+        char expected_draft[64];
+        (void)snprintf(expected_draft, sizeof(expected_draft),
+                       "\"draft_counter\":%u", (unsigned)ZPLC_DRAFT_COUNTER);
+        TEST_ASSERT_CONTAINS(response, expected_draft,
+                             "Handshake reports the draft contract counter of the runtime (CMP-052)");
+    }
     TEST_ASSERT(event[0] == '\0', "Handshake does not emit async event");
 
     zplc_native_runtime_session_shutdown(&session);
@@ -3516,6 +3527,83 @@ static void test_program_load_size_boundary(void)
     zplc_native_runtime_session_shutdown(&session);
 }
 
+/*
+ * CMP-052: an artifact built for another draft of the contract is refused by program.load with
+ * both numbers, and the runtime keeps what it had. An artifact without a counter says "none".
+ */
+static void test_program_load_refuses_another_draft(void)
+{
+    uint8_t code[16];
+    size_t code_size = 0U;
+    uint8_t artifact[128];
+    char hex[sizeof(artifact) * 2U + 1U];
+    char request[sizeof(hex) + 128U];
+    char response[512];
+    char event[512];
+    char expected[160];
+    zplc_native_runtime_session_t session;
+    size_t artifact_size;
+    const uint32_t other = ZPLC_DRAFT_COUNTER + 6U;
+
+    printf("\n=== Test: program.load refuses another contract draft ===\n");
+    zplc_native_runtime_session_init(&session);
+    code_size = emit_push32(code, code_size, 7U);
+    code_size = emit_store32(code, code_size, ZPLC_MEM_OPI_BASE);
+    code_size = emit_halt(code, code_size);
+
+    artifact_size = build_task_zplc(artifact, sizeof(artifact), code, code_size, 100000U);
+    bytes_to_hex(artifact, artifact_size, hex, sizeof(hex));
+    snprintf(request, sizeof(request),
+             "{\"id\":\"ok\",\"type\":\"request\",\"method\":\"program.load\",\"params\":{\"bytecode_hex\":\"%s\"}}", hex);
+    (void)zplc_native_runtime_session_handle_request(&session, request, response, sizeof(response), event, sizeof(event));
+    snprintf(expected, sizeof(expected), "\"program_size\":%u", (unsigned)artifact_size);
+    TEST_ASSERT_CONTAINS(response, expected, "an artifact of this draft loads");
+    snapshot_native_runtime(&session);
+
+    artifact[28] = (uint8_t)other;
+    artifact[29] = (uint8_t)(other >> 8);
+    artifact[30] = (uint8_t)(other >> 16);
+    artifact[31] = (uint8_t)(other >> 24);
+    refresh_crc(artifact, artifact_size);
+    bytes_to_hex(artifact, artifact_size, hex, sizeof(hex));
+    snprintf(request, sizeof(request),
+             "{\"id\":\"other\",\"type\":\"request\",\"method\":\"program.load\",\"params\":{\"bytecode_hex\":\"%s\"}}", hex);
+    (void)zplc_native_runtime_session_handle_request(&session, request, response, sizeof(response), event, sizeof(event));
+    TEST_ASSERT_CONTAINS(response, "PROGRAM_LOAD_FAILED", "another draft is a program load failure");
+    snprintf(expected, sizeof(expected), "Program was built for contract draft %u, this runtime is draft %u",
+             (unsigned)other, (unsigned)ZPLC_DRAFT_COUNTER);
+    TEST_ASSERT_CONTAINS(response, expected, "the refusal shows both draft numbers");
+    TEST_ASSERT(native_runtime_matches_snapshot(&session), "the refusal leaves the active program untouched");
+
+    artifact[28] = artifact[29] = artifact[30] = artifact[31] = 0U;
+    refresh_crc(artifact, artifact_size);
+    bytes_to_hex(artifact, artifact_size, hex, sizeof(hex));
+    snprintf(request, sizeof(request),
+             "{\"id\":\"none\",\"type\":\"request\",\"method\":\"program.load\",\"params\":{\"bytecode_hex\":\"%s\"}}", hex);
+    (void)zplc_native_runtime_session_handle_request(&session, request, response, sizeof(response), event, sizeof(event));
+    snprintf(expected, sizeof(expected), "Program was built for contract draft none, this runtime is draft %u",
+             (unsigned)ZPLC_DRAFT_COUNTER);
+    TEST_ASSERT_CONTAINS(response, expected, "an artifact without a counter is refused as built for draft none");
+    TEST_ASSERT(native_runtime_matches_snapshot(&session), "the refusal of a counterless artifact leaves the program untouched");
+
+    /* The counter wins over a broken CRC: it is the one number that is always reported. */
+    artifact[28] = (uint8_t)other;
+    bytes_to_hex(artifact, artifact_size, hex, sizeof(hex));
+    snprintf(request, sizeof(request),
+             "{\"id\":\"stale\",\"type\":\"request\",\"method\":\"program.load\",\"params\":{\"bytecode_hex\":\"%s\"}}", hex);
+    (void)zplc_native_runtime_session_handle_request(&session, request, response, sizeof(response), event, sizeof(event));
+    snprintf(expected, sizeof(expected), "contract draft %u, this runtime", (unsigned)other);
+    TEST_ASSERT_CONTAINS(response, expected, "another draft is reported even when the CRC no longer matches");
+
+    /* Something that is not an artifact at all keeps the generic message. */
+    (void)zplc_native_runtime_session_handle_request(&session,
+        "{\"id\":\"raw\",\"type\":\"request\",\"method\":\"program.load\",\"params\":{\"bytecode_hex\":\"00FF\"}}",
+        response, sizeof(response), event, sizeof(event));
+    TEST_ASSERT(strstr(response, "contract draft") == NULL, "bytes without the ZPLC magic are not blamed on a draft");
+
+    zplc_native_runtime_session_shutdown(&session);
+}
+
 static void test_posix_hal_lifecycle_clears_tick_override(void)
 {
     printf("\n=== Test: POSIX HAL logical clock lifecycle ===\n");
@@ -3565,6 +3653,7 @@ int main(void)
     test_native_code_only_and_corrupt_restore();
     test_rejected_load_preserves_running_session();
     test_program_load_size_boundary();
+    test_program_load_refuses_another_draft();
     test_process_image_differential_artifacts();
     test_single_task_uses_task_metadata();
     test_persist_commit_fault_sweep();

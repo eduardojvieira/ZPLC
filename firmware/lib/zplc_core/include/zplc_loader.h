@@ -49,6 +49,8 @@
 #define ZPLC_LOADER_ERR_TAGS -15
 /** @brief Communication function-block kind is NONE or at or above the kind limit */
 #define ZPLC_LOADER_ERR_COMM -16
+/** @brief Draft contract counter of the artifact differs from the loader's, or the artifact has none */
+#define ZPLC_LOADER_ERR_DRAFT -17
 /* <<< END GENERATED: loader-errors <<< */
 
 /* Artifact-wide v1 admission limit. This intentionally does not depend on
@@ -104,5 +106,20 @@ typedef struct {
  */
 int zplc_loader_verify(const uint8_t *data, size_t len, uint8_t *workspace,
                        size_t workspace_size, zplc_program_view_t *out);
+
+/**
+ * @brief Draft contract counter recorded in an artifact header (CMP-052).
+ *
+ * Reads header word 28 and nothing else. The magic, the CRC and the rest of
+ * the artifact are not checked, so a caller can show the number of an artifact
+ * that zplc_loader_verify() refused with ZPLC_LOADER_ERR_DRAFT ("built for
+ * draft N, this runtime is draft ZPLC_DRAFT_COUNTER").
+ *
+ * @param data Pointer to the file data, may be NULL
+ * @param len Length of the data in bytes
+ * @return The counter, or 0 when @p data is NULL or shorter than a header.
+ *         0 is also what an artifact built before the counter carries.
+ */
+uint32_t zplc_loader_artifact_draft_counter(const uint8_t *data, size_t len);
 
 #endif /* ZPLC_LOADER_H */

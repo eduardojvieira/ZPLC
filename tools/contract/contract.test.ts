@@ -44,6 +44,9 @@ describe('generated TypeScript contract equals the frozen snapshot', () => {
   test('container constants and layouts', () => {
     expect(contract.CONTAINER.magic).toBe(macros.ZPLC_MAGIC);
     expect(contract.ABI_VERSION).toEqual({ major: macros.ZPLC_VERSION_MAJOR, minor: macros.ZPLC_VERSION_MINOR });
+    expect(contract.DRAFT_COUNTER).toBe(macros.ZPLC_DRAFT_COUNTER);
+    expect(contract.DRAFT_COUNTER).toBe(golden.compiler.constants.DRAFT_COUNTER);
+    expect(contract.CONTAINER_LAYOUT.header.draft_counter).toEqual({ offset: golden.compiler.constants.DRAFT_COUNTER_OFFSET, size: 4 });
     expect(contract.CONTAINER.headerSize).toBe(macros.ZPLC_FILE_HEADER_SIZE);
     expect(contract.CONTAINER.segmentEntrySize).toBe(macros.ZPLC_SEGMENT_ENTRY_SIZE);
     expect(contract.CONTAINER.taskDefSize).toBe(macros.ZPLC_TASK_DEF_SIZE);

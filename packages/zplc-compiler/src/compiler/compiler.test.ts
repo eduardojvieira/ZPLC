@@ -1420,6 +1420,23 @@ describe('Multi-Task Compiler', () => {
         expect(view.getUint16(40, true)).toBe(ZPLC_CONSTANTS.SEGMENT_TYPE_TASK);
     });
 
+    it('records the draft contract counter in the artifact of every entry point (CMP-052)', () => {
+        const st = 'PROGRAM Prog1 END_PROGRAM';
+        const config: ZPLCProjectConfig = {
+            name: 'Counter',
+            version: '1.0.0',
+            tasks: [{ name: 'Task1', trigger: 'cyclic', interval: 50, priority: 1, programs: ['Prog1'] }],
+        };
+        const artifacts = [
+            compileToBinary(st).zplcFile,
+            compileMultiTaskProject(config, [{ name: 'Prog1', content: st, language: 'ST' }]).zplcFile,
+            compileSingleFileWithTask(st, 'ST', { taskName: 'Main', intervalMs: 50, priority: 3, programName: 'Prog1' }).zplcFile,
+        ];
+        for (const zplcFile of artifacts) {
+            expect(new DataView(zplcFile.buffer, zplcFile.byteOffset).getUint32(28, true)).toBe(ZPLC_CONSTANTS.DRAFT_COUNTER);
+        }
+    });
+
     it('throws error for missing program source', () => {
         const config: ZPLCProjectConfig = {
             name: 'MissingSource',

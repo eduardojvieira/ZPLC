@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { ABI_VERSION, CONTAINER, MEMORY_LIMIT, MEMORY_REGION, SEGMENT_TYPE, TASK_TYPE_ID } from '../contract.generated';
+import { ABI_VERSION, CONTAINER, CONTAINER_LAYOUT, DRAFT_COUNTER, MEMORY_LIMIT, MEMORY_REGION, SEGMENT_TYPE, TASK_TYPE_ID } from '../contract.generated';
 
 /**
  * A parsed token from source code.
@@ -97,6 +97,10 @@ export const ZPLC_CONSTANTS = {
     VERSION_MAJOR: ABI_VERSION.major,
     /** Current ISA minor version */
     VERSION_MINOR: ABI_VERSION.minor,
+    /** Draft contract counter written in the header of every artifact (CMP-052) */
+    DRAFT_COUNTER,
+    /** Byte offset of the draft counter in the file header */
+    DRAFT_COUNTER_OFFSET: CONTAINER_LAYOUT.header.draft_counter.offset,
     /** File header size in bytes */
     HEADER_SIZE: CONTAINER.headerSize,
     /** Segment entry size in bytes */

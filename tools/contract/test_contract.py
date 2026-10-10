@@ -95,6 +95,7 @@ class SourceMatchesGolden(unittest.TestCase):
         self.assertEqual(NUM(CONTRACT["container"]["magic"]["value"]), macros["ZPLC_MAGIC"])
         self.assertEqual(CONTRACT["abi"]["versionMajor"], macros["ZPLC_VERSION_MAJOR"])
         self.assertEqual(CONTRACT["abi"]["versionMinor"], macros["ZPLC_VERSION_MINOR"])
+        self.assertEqual(CONTRACT["abi"]["draftCounter"], macros["ZPLC_DRAFT_COUNTER"])
         self.assertEqual(CONTRACT["container"]["maxTasks"]["value"], macros["ZPLC_LOADER_MAX_TASKS"])
         for s in CONTRACT["container"]["structs"]:
             self.assertEqual(s["size"], macros[s["sizeMacro"]], s["sizeMacro"])
@@ -148,6 +149,7 @@ class PythonModuleMatchesGolden(unittest.TestCase):
             tuple(macros[k] for k in ("ZPLC_MAGIC", "ZPLC_VERSION_MAJOR", "ZPLC_VERSION_MINOR", "ZPLC_FILE_HEADER_SIZE",
                                       "ZPLC_SEGMENT_ENTRY_SIZE", "ZPLC_TASK_DEF_SIZE", "ZPLC_IOMAP_ENTRY_SIZE",
                                       "ZPLC_TAG_ENTRY_SIZE", "ZPLC_LOADER_MAX_TASKS")))
+        self.assertEqual(zc.ZPLC_DRAFT_COUNTER, macros["ZPLC_DRAFT_COUNTER"])
         self.assertEqual(zc.SEGMENT_TYPE, {k.removeprefix("ZPLC_SEG_"): v for k, v in golden_c_enum("zplc_segment_type_t").items()})
         self.assertEqual(zc.TAG_ID, {k.removeprefix("ZPLC_TAG_"): v for k, v in golden_c_enum("zplc_tag_id_t").items()})
         self.assertEqual(zc.DATA_TYPE_ID, {k.removeprefix("ZPLC_TYPE_"): v for k, v in golden_c_enum("zplc_data_type_t").items()})
@@ -265,8 +267,8 @@ class PythonToolsMatchGolden(unittest.TestCase):
     def test_assembler_writes_the_header_the_loader_reads(self):
         macros = GOLDEN["c"]["macros"]
         asm = self.view["asm"]
-        self.assertEqual((asm["magic"], asm["versionMajor"], asm["versionMinor"]),
-                         (macros["ZPLC_MAGIC"], macros["ZPLC_VERSION_MAJOR"], macros["ZPLC_VERSION_MINOR"]))
+        self.assertEqual((asm["magic"], asm["versionMajor"], asm["versionMinor"], asm["draftCounter"]),
+                         (macros["ZPLC_MAGIC"], macros["ZPLC_VERSION_MAJOR"], macros["ZPLC_VERSION_MINOR"], macros["ZPLC_DRAFT_COUNTER"]))
 
     def test_hil_tester_has_every_opcode_of_the_header(self):
         missing = sorted(set(self.opcodes) - set(self.view["tester"]["opcodes"]))
@@ -419,6 +421,20 @@ class CrcAgreesBetweenCAndTypeScript(unittest.TestCase):
         self.assertEqual(verdicts["python_artifact"], 0)
         self.assertEqual(verdicts["tampered_artifact"], GOLDEN["c"]["macros"]["ZPLC_LOADER_ERR_CRC32"])
 
+    def test_the_c_loader_accepts_the_artifact_of_the_hil_script_and_every_committed_example(self):
+        verdicts = self.result["loader_verdicts"]
+        self.assertEqual(verdicts["hil_modbus_artifact"], 0)
+        examples = {name: verdict for name, verdict in verdicts.items() if name.startswith("examples/")}
+        self.assertEqual(sorted(examples), sorted(f"examples/{p.name}" for p in (ROOT / "examples").glob("*.zplc")))
+        self.assertTrue(examples)
+        self.assertEqual({name: verdict for name, verdict in examples.items() if verdict != 0}, {})
+
+    def test_the_c_loader_refuses_another_draft_and_an_artifact_without_a_counter_by_name(self):
+        verdicts = self.result["loader_verdicts"]
+        draft = GOLDEN["c"]["macros"]["ZPLC_LOADER_ERR_DRAFT"]
+        self.assertEqual(verdicts["other_draft_artifact"], draft)
+        self.assertEqual(verdicts["no_counter_artifact"], draft)
+
 
 class ValidationRejectsADriftedSource(unittest.TestCase):
     """The generator refuses a contract.json that contradicts itself."""
@@ -469,6 +485,106 @@ class ValidationRejectsADriftedSource(unittest.TestCase):
             c["comm"]["kinds"]["members"][1]["value"] = "0x0100"
         with self.assertRaisesRegex(generate.ContractError, "kindMax"):
             generate.validate(self.mutate(edit))
+
+
+class DraftCounterRule(unittest.TestCase):
+    """CMP-052: until the freeze, every contract change increments the draft counter.
+
+    golden/draft-ledger.json holds, for each counter value, the fingerprint of the binary
+    contract (opcodes, layouts, sizes, codes; no prose) and the reason that value exists.
+    The table fails here when the contract no longer matches the fingerprint of its own
+    counter, so a change cannot be made, snapshotted and committed under the old number.
+    """
+
+    LEDGER = generate.load_ledger()
+
+    def problems(self, contract=None, ledger=None):
+        return generate.draft_problems(contract or CONTRACT, ledger or self.LEDGER)
+
+    def test_the_committed_contract_follows_the_rule(self):
+        self.assertEqual(self.problems(), [])
+
+    def test_the_counter_is_a_positive_integer_and_the_golden_records_it(self):
+        counter = CONTRACT["abi"]["draftCounter"]
+        self.assertIsInstance(counter, int)
+        self.assertGreaterEqual(counter, 1)
+        self.assertEqual(GOLDEN["c"]["macros"]["ZPLC_DRAFT_COUNTER"], counter)
+        self.assertEqual(GOLDEN["compiler"]["constants"]["DRAFT_COUNTER"], counter)
+        self.assertEqual(GOLDEN["asm"]["draftCounter"], counter)
+
+    def test_a_changed_opcode_under_the_same_counter_is_refused(self):
+        changed = copy.deepcopy(CONTRACT)
+        changed["opcodes"].pop()
+        problems = self.problems(changed)
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("did not increase", problems[0])
+
+    def test_a_changed_layout_size_or_error_code_under_the_same_counter_is_refused(self):
+        def header_field(c):
+            c["container"]["structs"][0]["fields"][-1]["type"] = "uint16_t"
+
+        def string_offset(c):
+            c["string"]["dataOffset"] = 8
+
+        def loader_code(c):
+            next(e for e in c["loader"]["errors"] if e["macro"] == "ZPLC_LOADER_ERR_TAGS")["value"] = -99
+
+        def block_size(c):
+            c["comm"]["blocks"][0]["size"] += 1
+
+        for edit in (header_field, string_offset, loader_code, block_size):
+            changed = copy.deepcopy(CONTRACT)
+            edit(changed)
+            self.assertTrue(any("did not increase" in p for p in self.problems(changed)), edit.__name__)
+
+    def test_prose_does_not_need_a_new_counter(self):
+        reworded = copy.deepcopy(CONTRACT)
+        reworded["opcodes"][0]["doc"] = "No operation, reworded"
+        reworded["container"]["structs"][0]["doc"] = "Reworded"
+        reworded["groups"][0]["title"] = "Reworded"
+        self.assertEqual(self.problems(reworded), [])
+
+    def test_a_bump_without_a_ledger_entry_is_refused(self):
+        bumped = copy.deepcopy(CONTRACT)
+        bumped["abi"]["draftCounter"] += 1
+        self.assertTrue(any("no entry" in p for p in self.problems(bumped)))
+
+    def test_a_bump_with_a_new_ledger_entry_and_a_changed_contract_passes(self):
+        changed = copy.deepcopy(CONTRACT)
+        changed["abi"]["draftCounter"] += 1
+        changed["opcodes"].pop()
+        ledger = copy.deepcopy(self.LEDGER)
+        ledger["entries"].append({"counter": changed["abi"]["draftCounter"],
+                                  "fingerprint": generate.contract_fingerprint(changed), "reason": "test"})
+        self.assertEqual(self.problems(changed, ledger), [])
+
+    def test_a_bump_that_changes_nothing_is_refused(self):
+        bumped = copy.deepcopy(CONTRACT)
+        bumped["abi"]["draftCounter"] += 1
+        ledger = copy.deepcopy(self.LEDGER)
+        ledger["entries"].append({"counter": bumped["abi"]["draftCounter"],
+                                  "fingerprint": generate.contract_fingerprint(bumped), "reason": "nothing changed"})
+        self.assertTrue(any("same fingerprint" in p for p in self.problems(bumped, ledger)))
+
+    def test_an_entry_without_a_reason_or_out_of_order_is_refused(self):
+        ledger = copy.deepcopy(self.LEDGER)
+        ledger["entries"][0]["reason"] = ""
+        self.assertTrue(any("reason" in p for p in self.problems(ledger=ledger)))
+        ledger = copy.deepcopy(self.LEDGER)
+        ledger["entries"][0]["counter"] = 5
+        self.assertTrue(any("counters must be 1, 2, 3" in p for p in self.problems(ledger=ledger)))
+
+    def test_generate_check_runs_the_rule(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source = Path(tmp) / "contract.json"
+            changed = copy.deepcopy(CONTRACT)
+            changed["opcodes"].pop()
+            source.write_text(json.dumps(changed))
+            script = ("import sys; sys.path.insert(0, %r); import generate; from pathlib import Path; "
+                      "generate.SOURCE = Path(%r); sys.exit(generate.main(['--check']))" % (str(HERE), str(source)))
+            result = subprocess.run([sys.executable, "-B", "-c", script], capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("did not increase", result.stderr)
 
 
 class GeneratedFilesAreFresh(unittest.TestCase):

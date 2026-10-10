@@ -52,6 +52,7 @@ int zplc_native_program_describe(const uint8_t *program, size_t program_size,
     if (workspace == NULL) return -1;
     result = zplc_loader_verify(program, program_size, workspace,
                                 ZPLC_LOADER_VERIFY_WORKSPACE_SIZE, &view);
+    details->loader_result = result;
     if (result == ZPLC_LOADER_OK) {
         if (view.task_count == 0U) {
             details->task_count = 1U;

@@ -316,6 +316,33 @@ describe('ZPLC file format', () => {
         expect(view.getUint16(6, true)).toBe(0);  // minor
     });
 
+    // CMP-052: the draft contract counter sits in header word 28, under the CRC, in every artifact.
+    test('single-task artifact carries the draft counter at offset 28', () => {
+        const result = assemble('HALT');
+        const view = new DataView(result.zplcFile.buffer);
+        expect(ZPLC_CONSTANTS.DRAFT_COUNTER).toBeGreaterThanOrEqual(1);
+        expect(view.getUint32(28, true)).toBe(ZPLC_CONSTANTS.DRAFT_COUNTER);
+    });
+
+    test('multi-task artifact carries the draft counter at offset 28', () => {
+        const zplcFile = createMultiTaskZplcFile(
+            new Uint8Array([0x00, 0x01]),
+            [{ id: 1, type: TASK_TYPE.CYCLIC, priority: 0, intervalUs: 10000, entryPoint: 0, stackSize: 64 }],
+        );
+        expect(new DataView(zplcFile.buffer).getUint32(28, true)).toBe(ZPLC_CONSTANTS.DRAFT_COUNTER);
+    });
+
+    test('the draft counter is covered by the CRC32', () => {
+        const zplcFile = assemble('HALT').zplcFile;
+        const stored = new DataView(zplcFile.buffer).getUint32(12, true);
+        const altered = new Uint8Array(zplcFile);
+        altered[28] ^= 0x01;
+        const payload = new Uint8Array(altered.length - 4);
+        payload.set(altered.subarray(0, 12), 0);
+        payload.set(altered.subarray(16), 12);
+        expect(crc32(payload)).not.toBe(stored);
+    });
+
     test('code size is correct', () => {
         const result = assemble('NOP\nNOP\nHALT');
         const view = new DataView(result.zplcFile.buffer);

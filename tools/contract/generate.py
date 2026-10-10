@@ -28,8 +28,22 @@ To add an opcode
   2. Run this script, then implement the instruction in zplc_core.c and the
      compiler code generator. The assembler, the loader, the HIL tools and the
      reference tables already take it from the generated files.
-  3. A new opcode is a contract change: record it in golden/contract.golden.json
-     in the same commit, with the reason (WP-19 bumps the draft counter).
+  3. A new opcode is a contract change: follow "To change the contract" below.
+
+To change the contract (any opcode, layout, size, code or identifier)
+  Until the freeze every such change MUST increment the draft counter (CMP-052):
+  the compiler records it in each artifact (header word at offset 28), the
+  loader and Studio refuse an artifact whose counter differs from their own.
+  1. Edit contract.json and increase abi.draftCounter by one.
+  2. Run `python3 tools/contract/generate.py --record-draft "why it changed"`.
+     It writes every generated file and appends the new counter, the
+     fingerprint of the contract and the reason to golden/draft-ledger.json.
+  3. Move the changed numbers in golden/contract.golden.json (test_contract.py
+     names each one) and rebuild the artifacts committed to the repository
+     (examples/*.zplc and the .hex fixtures), then say why in the commit message.
+  `--check` fails when the contract differs from the fingerprint recorded for
+  its own counter, so a change cannot be committed under the old number.
+  Prose (doc strings, group titles) is not part of the fingerprint.
 
 To add a communication function block
   1. Add a kind under comm.kinds when the kind is new, and a block under
@@ -44,6 +58,7 @@ from __future__ import annotations
 
 import argparse
 import difflib
+import hashlib
 import json
 import re
 import sys
@@ -54,6 +69,7 @@ SOURCE = ROOT / "tools/contract/contract.json"
 SOURCE_REL = "tools/contract/contract.json"
 GENERATOR_REL = "tools/contract/generate.py"
 
+LEDGER = ROOT / "tools/contract/golden/draft-ledger.json"
 TS_OUT = ROOT / "packages/zplc-compiler/src/contract.generated.ts"
 PY_OUT = ROOT / "tools/contract/zplc_contract.py"
 INCLUDE = ROOT / "firmware/lib/zplc_core/include"
@@ -161,6 +177,9 @@ def flatten_members(comm: dict, entries: list, seen: tuple = ()) -> list[dict]:
 def validate(c: dict) -> None:
     if c.get("schema") != 1:
         raise ContractError("contract.json: schema must be 1")
+    counter = c["abi"].get("draftCounter")
+    if isinstance(counter, bool) or not isinstance(counter, int) or not 1 <= counter <= 0xFFFFFFFF:
+        raise ContractError("abi.draftCounter must be an integer from 1 to 4294967295 (0 is what an artifact without a counter carries)")
     ops = c["opcodes"]
     unique([o["name"] for o in ops], "opcode name")
     unique([num(o["code"]) for o in ops], "opcode number")
@@ -249,6 +268,68 @@ def validate(c: dict) -> None:
         unique([m["name"] for m in enum["members"]], f"member of {enum['typedef']}")
 
 
+# Keys that hold prose or presentation only: changing them is not a contract change.
+PROSE_KEYS = {"doc", "sizeDoc", "draftDoc", "$comment", "title", "groups", "group", "flagDefs"}
+
+
+def contract_fingerprint(c: dict) -> str:
+    """SHA-256 of the binary contract: everything in contract.json except prose and the counter itself."""
+    def strip(value):
+        if isinstance(value, dict):
+            return {k: strip(v) for k, v in value.items() if k not in PROSE_KEYS}
+        if isinstance(value, list):
+            return [strip(v) for v in value]
+        return value
+
+    body = strip(c)
+    body["abi"] = {k: v for k, v in body["abi"].items() if k != "draftCounter"}
+    return hashlib.sha256(json.dumps(body, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+
+
+def load_ledger() -> dict:
+    return json.loads(LEDGER.read_text(encoding="utf-8"))
+
+
+def draft_problems(c: dict, ledger: dict) -> list[str]:
+    """Why the contract and the draft ledger disagree (CMP-052); empty when the rule holds."""
+    problems: list[str] = []
+    entries = ledger["entries"]
+    if [e["counter"] for e in entries] != list(range(1, len(entries) + 1)):
+        problems.append(f"{shown(LEDGER)}: counters must be 1, 2, 3, ... in order, found {[e['counter'] for e in entries]}")
+    for entry in entries:
+        if not str(entry.get("reason", "")).strip():
+            problems.append(f"{shown(LEDGER)}: counter {entry['counter']} has no reason")
+    for before, after in zip(entries, entries[1:]):
+        if before["fingerprint"] == after["fingerprint"]:
+            problems.append(
+                f"{shown(LEDGER)}: counter {after['counter']} has the same fingerprint as counter {before['counter']}; a bump needs a contract change")
+    counter = c["abi"]["draftCounter"]
+    recorded = {e["counter"]: e["fingerprint"] for e in entries}
+    if counter not in recorded:
+        problems.append(
+            f"abi.draftCounter is {counter} and {shown(LEDGER)} has no entry for it; run python3 {GENERATOR_REL} --record-draft \"reason\"")
+    elif recorded[counter] != contract_fingerprint(c):
+        problems.append(
+            f"the contract changed but abi.draftCounter did not increase: it is still {counter}. "
+            f"Increase it in contract.json, then run python3 {GENERATOR_REL} --record-draft \"reason\" (CMP-052)")
+    elif counter != len(entries):
+        problems.append(f"abi.draftCounter is {counter} but {shown(LEDGER)} goes up to {len(entries)}")
+    return problems
+
+
+def record_draft(c: dict, reason: str) -> None:
+    """Append the entry of the current counter to the ledger."""
+    ledger = load_ledger()
+    counter = c["abi"]["draftCounter"]
+    if counter != len(ledger["entries"]) + 1:
+        raise ContractError(f"abi.draftCounter is {counter}; the next entry of the ledger is {len(ledger['entries']) + 1}")
+    if not reason.strip():
+        raise ContractError("--record-draft needs the reason the contract changed")
+    ledger["entries"].append({"counter": counter, "fingerprint": contract_fingerprint(c), "reason": reason.strip()})
+    LEDGER.write_text(json.dumps(ledger, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(f"recorded draft counter {counter} in {shown(LEDGER)}")
+
+
 def enums(c: dict) -> list[dict]:
     """Every C enum of the contract, in header order."""
     found = [dict(c["types"], name="dataTypes")]
@@ -322,6 +403,9 @@ def region_version(c: dict) -> list[str]:
     lines.append("")
     lines.append("/** @brief Current ISA minor version */")
     lines.append(f"#define ZPLC_VERSION_MINOR {c['abi']['versionMinor']}")
+    lines.append("")
+    lines += c_doc_block(c["abi"]["draftDoc"])
+    lines.append(f"#define ZPLC_DRAFT_COUNTER {c['abi']['draftCounter']}U")
     return lines
 
 
@@ -721,6 +805,9 @@ def render_ts(c: dict) -> str:
         "",
         "export const ABI_VERSION = { major: %d, minor: %d } as const;" % (c["abi"]["versionMajor"], c["abi"]["versionMinor"]),
         "",
+        "/** Draft contract counter (CMP-052): written in header word 28 of every artifact and compared by the loader. */",
+        "export const DRAFT_COUNTER = %d as const;" % c["abi"]["draftCounter"],
+        "",
     ]
     cont = c["container"]
     structs = {s["name"]: s for s in cont["structs"]}
@@ -977,6 +1064,7 @@ def render_py(c: dict) -> str:
         f"ZPLC_MAGIC = {hexw(num(cont['magic']['value']), 8)}",
         f"ZPLC_VERSION_MAJOR = {c['abi']['versionMajor']}",
         f"ZPLC_VERSION_MINOR = {c['abi']['versionMinor']}",
+        f"ZPLC_DRAFT_COUNTER = {c['abi']['draftCounter']}",
         f"HEADER_SIZE = {structs['header']['size']}",
         f"SEGMENT_ENTRY_SIZE = {structs['segment']['size']}",
         f"TASK_DEF_SIZE = {structs['task']['size']}",
@@ -1113,7 +1201,9 @@ DOC_TEXT = {
         "intro": "These tables are generated from `tools/contract/contract.json`, the single source of the opcodes, container constants, error codes, memory regions and communication function-block layouts. The C headers, the TypeScript compiler tables and the Python tools are generated from the same file, so they cannot drift.",
         "container": "Container constants",
         "constant": "Constant", "value": "Value", "notes": "Notes",
-        "magic": "Magic number", "abi": "ISA version (major.minor)", "headerSize": "File header size (bytes)",
+        "magic": "Magic number", "abi": "ISA version (major.minor)",
+        "draft": "Draft contract counter", "draftNote": "Written in header word 28 of every artifact. The loader and Studio refuse an artifact, or a device image, whose counter differs from their own and show both numbers; 0 means an artifact built before the counter. It increases with every contract change until the freeze.",
+        "headerSize": "File header size (bytes)",
         "segmentSize": "Segment entry size (bytes)", "taskSize": "Task definition size (bytes)",
         "iomapSize": "I/O map entry size (bytes)", "tagSize": "Tag entry size (bytes)", "maxTasks": "Maximum tasks in an artifact",
         "crc": "CRC32", "crcNote": "IEEE 802.3 polynomial {poly}, over the whole file except the 4 bytes at offset {off}.",
@@ -1137,7 +1227,9 @@ DOC_TEXT = {
         "intro": "Estas tablas se generan desde `tools/contract/contract.json`, la fuente única de los opcodes, las constantes del contenedor, los códigos de error, las regiones de memoria y los layouts de los bloques de función de comunicación. Las cabeceras C, las tablas TypeScript del compilador y las herramientas Python se generan del mismo archivo, así que no pueden divergir.",
         "container": "Constantes del contenedor",
         "constant": "Constante", "value": "Valor", "notes": "Notas",
-        "magic": "Número mágico", "abi": "Versión del ISA (mayor.menor)", "headerSize": "Tamaño de la cabecera del archivo (bytes)",
+        "magic": "Número mágico", "abi": "Versión del ISA (mayor.menor)",
+        "draft": "Contador de borrador del contrato", "draftNote": "Se escribe en la palabra 28 de la cabecera de cada artefacto. El loader y Studio rechazan un artefacto, o una imagen de dispositivo, cuyo contador difiere del propio y muestran ambos números; 0 significa un artefacto construido antes del contador. Aumenta con cada cambio del contrato hasta el congelamiento.",
+        "headerSize": "Tamaño de la cabecera del archivo (bytes)",
         "segmentSize": "Tamaño de la entrada de segmento (bytes)", "taskSize": "Tamaño de la definición de tarea (bytes)",
         "iomapSize": "Tamaño de la entrada del mapa de E/S (bytes)", "tagSize": "Tamaño de la entrada de etiqueta (bytes)", "maxTasks": "Máximo de tareas en un artefacto",
         "crc": "CRC32", "crcNote": "Polinomio IEEE 802.3 {poly}, sobre todo el archivo salvo los 4 bytes en el offset {off}.",
@@ -1186,6 +1278,7 @@ def render_docs(c: dict, lang: str) -> str:
     rows = [
         [t["magic"], f"`{hexw(num(cont['magic']['value']), 8)}`", "`5A 50 4C 43` = \"ZPLC\""],
         [t["abi"], f"`{c['abi']['versionMajor']}.{c['abi']['versionMinor']}`", ""],
+        [t["draft"], f"`{c['abi']['draftCounter']}`", t["draftNote"]],
         [t["headerSize"], f"`{structs['header']['size']}`", ""],
         [t["segmentSize"], f"`{structs['segment']['size']}`", ""],
         [t["taskSize"], f"`{structs['task']['size']}`", ""],
@@ -1272,10 +1365,15 @@ def expected_outputs(contract: dict) -> dict[Path, str]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--check", action="store_true", help="fail when a generated file is stale")
+    parser.add_argument("--record-draft", metavar="REASON",
+                        help="append the current abi.draftCounter, the contract fingerprint and the reason to the draft ledger")
     args = parser.parse_args(argv)
     try:
         contract = load()
+        if args.record_draft is not None:
+            record_draft(contract, args.record_draft)
         outputs = expected_outputs(contract)
+        draft = draft_problems(contract, load_ledger())
     except ContractError as error:
         print(f"contract: {error}", file=sys.stderr)
         return 2
@@ -1295,11 +1393,15 @@ def main(argv: list[str] | None = None) -> int:
                         print("  ...", file=sys.stderr)
                         break
                     print(f"  {line}", file=sys.stderr)
+    for problem in draft:
+        print(f"contract: {problem}", file=sys.stderr)
     if args.check and stale:
         print(f"contract: {len(stale)} generated file(s) differ from a fresh generation; run python3 {GENERATOR_REL}", file=sys.stderr)
         return 1
+    if draft:
+        return 1
     if args.check:
-        print(f"contract: {len(outputs)} generated files are up to date")
+        print(f"contract: {len(outputs)} generated files are up to date (draft counter {contract['abi']['draftCounter']})")
     return 0
 
 
