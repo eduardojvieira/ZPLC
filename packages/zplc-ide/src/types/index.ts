@@ -53,10 +53,10 @@ declare global {
       workspaceTests: {
         registerProjectFile: (file: File) => Promise<{ workspaceId: string } | null>;
         registerProjectRoot: (request: { rootId: string }) => Promise<{ workspaceId: string } | null>;
-        run: (request: { workspaceId: string; scenarioId?: string }) => Promise<unknown>;
+        run: (request: { workspaceId: string; rootId: string; scenarioId?: string }) => Promise<unknown>;
         cancel: () => Promise<{ requested: boolean }>;
-        compile: (request: { workspaceId: string }) => Promise<unknown>;
-        safetyCheck: (request: { workspaceId: string }) => Promise<unknown>;
+        compile: (request: { workspaceId: string; rootId: string }) => Promise<unknown>;
+        safetyCheck: (request: { workspaceId: string; rootId: string }) => Promise<unknown>;
       };
       closeGuard?: {
         setDirty: (dirty: boolean) => Promise<void>;

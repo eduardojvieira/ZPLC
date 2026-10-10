@@ -50,8 +50,8 @@ import {
   isAllowedRecoveryWriteRequest,
   isAllowedSessionLoadRequest,
   isAllowedSessionSaveRequest,
+  isAllowedWorkspaceOperationRequest,
   isAllowedWorkspaceRootRequest,
-  isAllowedWorkspaceTestRequest,
   isAllowedWorkspaceTestRunRequest,
   sanitizeCandidateChangeSetReview,
   sanitizeWorkspaceSafetyCheck,
@@ -261,19 +261,22 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
 
     [WORKSPACE_TESTS_CHANNEL.REGISTER_PROJECT_FILE]: handler(
       oneArgument((manifestPath) => typeof manifestPath === 'string'),
-      async (owner, [manifestPath]: [string]) => deps.workspaceGateway.registerProjectManifest(owner.ownerId, manifestPath),
+      async (owner, [manifestPath]: [string]) => deps.workspaceGateway.registerProjectManifest(owner.ownerId, manifestPath, deps.projectFiles.currentRoot(owner.ownerId)),
       WORKSPACE_FAILED,
     ),
     // The project folder the window chose is the workspace of Build, Tests and Simulate: the renderer sends the id of
     // that folder, never a path, and no zplc.json has to be chosen again (IDE-001).
     [WORKSPACE_TESTS_CHANNEL.REGISTER_PROJECT_ROOT]: handler(
       oneArgument(isAllowedWorkspaceRootRequest),
-      async (owner, [request]: [{ rootId: string }]) => deps.workspaceGateway.registerProjectManifest(owner.ownerId, path.join(folderOf(owner, request.rootId), 'zplc.json')),
+      async (owner, [request]: [{ rootId: string }]) => {
+        const root = folderOf(owner, request.rootId);
+        return deps.workspaceGateway.registerProjectManifest(owner.ownerId, path.join(root, 'zplc.json'), root);
+      },
       WORKSPACE_FAILED,
     ),
     [WORKSPACE_TESTS_CHANNEL.RUN]: handler(
       oneArgument(isAllowedWorkspaceTestRunRequest),
-      (owner, [request]: [{ workspaceId: string; scenarioId?: string }]) => deps.workspaceGateway.run(owner.ownerId, { workspaceId: request.workspaceId }, async (root, options) => {
+      (owner, [request]: [{ workspaceId: string; rootId: string; scenarioId?: string }]) => deps.workspaceGateway.run(owner.ownerId, { workspaceId: request.workspaceId }, async (root, options) => {
         const toolApi = await deps.loadToolApi();
         if (request.scenarioId !== undefined) {
           if (typeof toolApi.scenarioRun !== 'function') throw new Error(WORKSPACE_FAILED);
@@ -283,29 +286,29 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
         if (typeof toolApi.testsRun !== 'function') throw new Error(WORKSPACE_FAILED);
         const value = await toolApi.testsRun(root, options);
         return { ...(value as object), execution: await finishStudioExecution(toolApi, options, 'tests:run', 'test', value) };
-      }),
+      }, folderOf(owner, request.rootId)),
       WORKSPACE_FAILED,
     ),
     [WORKSPACE_TESTS_CHANNEL.CANCEL]: handler(noArguments, (owner) => deps.workspaceGateway.cancel(owner.ownerId)),
     [WORKSPACE_TESTS_CHANNEL.COMPILE]: handler(
-      oneArgument(isAllowedWorkspaceTestRequest),
-      (owner, [request]: [{ workspaceId: string }]) => deps.workspaceGateway.run(owner.ownerId, request, async (root, options) => {
+      oneArgument(isAllowedWorkspaceOperationRequest),
+      (owner, [request]: [{ workspaceId: string; rootId: string }]) => deps.workspaceGateway.run(owner.ownerId, { workspaceId: request.workspaceId }, async (root, options) => {
         const toolApi = await deps.loadToolApi();
         if (typeof toolApi.compilerCompile !== 'function') throw new Error(WORKSPACE_FAILED);
         const value = await toolApi.compilerCompile(root);
         return toWorkspaceCompileEnvelope(value, await finishStudioExecution(toolApi, options, 'compiler:check', 'compile', value));
-      }),
+      }, folderOf(owner, request.rootId)),
       WORKSPACE_FAILED,
     ),
     [WORKSPACE_TESTS_CHANNEL.SAFETY_CHECK]: handler(
-      oneArgument(isAllowedWorkspaceTestRequest),
-      async (owner, [request]: [{ workspaceId: string }]) => {
-        const result = await deps.workspaceGateway.run(owner.ownerId, request, async (root, options) => {
+      oneArgument(isAllowedWorkspaceOperationRequest),
+      async (owner, [request]: [{ workspaceId: string; rootId: string }]) => {
+        const result = await deps.workspaceGateway.run(owner.ownerId, { workspaceId: request.workspaceId }, async (root, options) => {
           const toolApi = await deps.loadToolApi();
           if (typeof toolApi.safetyCheck !== 'function') throw new Error(WORKSPACE_FAILED);
           const value = await toolApi.safetyCheck(root);
           return { ...(value as object), execution: await finishStudioExecution(toolApi, options, 'safety:check', 'safety-check', value) };
-        });
+        }, folderOf(owner, request.rootId));
         const safe = sanitizeWorkspaceSafetyCheck(result);
         if (!safe) throw new Error(WORKSPACE_FAILED);
         return safe;
@@ -328,7 +331,7 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
           }
           await finishAgentReviewExecution(toolApi, options, value);
           return value;
-        });
+        }, deps.projectFiles.currentRoot(owner.ownerId));
         const safe = sanitizeCandidateChangeSetReview(result, request.edit.path);
         if (!safe) throw new Error(WORKSPACE_FAILED);
         return safe;
@@ -343,7 +346,7 @@ export function createIpcHandlers(deps: IpcDeps): IpcHandlerTable<RendererOwner>
     [AI_PROVIDER_CHANNEL.CLEAR_KEY]: handler(noArguments, () => provider().clearKey()),
     [AI_PROVIDER_CHANNEL.REQUEST]: handler(oneArgument(isAllowedAiProviderRequest), (owner, [request]: [AiRequest]) => {
       const active = provider();
-      return deps.workspaceGateway.run(owner.ownerId, { workspaceId: request.workspaceId }, (root, options) => active.request(root, request, options.signal));
+      return deps.workspaceGateway.run(owner.ownerId, { workspaceId: request.workspaceId }, (root, options) => active.request(root, request, options.signal), deps.projectFiles.currentRoot(owner.ownerId));
     }),
     [AI_PROVIDER_CHANNEL.CANCEL]: handler(noArguments, (owner) => {
       const fromProvider = provider().cancel();

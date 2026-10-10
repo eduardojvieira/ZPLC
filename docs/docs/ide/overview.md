@@ -45,6 +45,23 @@ runs the real preload against a stand-in and compares what it invokes with the
 contract, and `electron/spawnAllowList.test.ts` shows the argument vectors
 (requirement IDE-017). It is not packaged-application evidence.
 
+## One project of record
+
+Build, Test, Simulate and the candidate review all act on the folder that the
+window shows, and on nothing else. The main process owns that folder: the native
+folder dialog gives the window one folder and one opaque id for it. A build, a
+safety check or a test run names the workspace and that id, and the main process
+refuses the call when the id is not the window's folder now, or when the workspace
+belongs to another folder (a workspace made for an earlier project, or a
+`zplc.json` chosen from elsewhere). Opening another folder therefore makes every
+earlier workspace unusable, with no linking step in between.
+
+Evidence level: host. `electron/workspaceTestGateway.test.ts`,
+`electron/ipcRegistry.test.ts` and `electron/security.test.ts` cover the rule, and
+journey 25 of `bun run test:journeys` sends crafted build, safety-check and test
+messages through the bridge of the real application after another folder was
+opened and sees each of them refused (requirement IDE-002).
+
 ## Project configuration
 
 `zplc.json` names project metadata, target, tasks, and sources. A board choice

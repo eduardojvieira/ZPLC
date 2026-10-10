@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DiffEditor, type Monaco } from '@monaco-editor/react';
+import { shownProjectBridge } from '../ipc/shownProjectBridge';
 import { useIDEStore } from '../store/useIDEStore';
 import type { ConsoleEntry, ConsoleTab } from '../types';
 import { TerminalTab } from './TerminalTab';
@@ -131,7 +132,7 @@ export function Console({ debugController }: ConsoleProps) {
   const [workspaceTestState, setWorkspaceTestState] = useState<'idle' | 'selected' | 'running' | 'cancelling' | 'desktop-unavailable' | WorkspaceTestResultState>('idle');
   const [workspaceSafetyState, setWorkspaceSafetyState] = useState<WorkspaceSafetyState>('idle');
   const workspaceManifestInputRef = useRef<HTMLInputElement>(null);
-  const workspaceTests = window.electronAPI?.workspaceTests;
+  const workspaceTests = shownProjectBridge(window.electronAPI?.workspaceTests);
   const candidateChangeSet = window.electronAPI?.candidateChangeSet;
   const aiProvider = window.electronAPI?.aiProvider;
   const candidateDesktopReady = Boolean(candidateChangeSet && workspaceTests);

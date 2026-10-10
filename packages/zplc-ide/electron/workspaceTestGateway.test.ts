@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'bun:test';
 import { mkdtemp, mkdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import { createWorkspaceTestGateway } from './workspaceTestGateway';
 
@@ -13,6 +13,21 @@ async function workspace(): Promise<string> {
   return root;
 }
 
+/**
+ * The gateway as the window uses it when it shows the folder `root`: every run and every manifest registration names
+ * that folder as the one on screen (IDE-002). The cases of IDE-002 itself use the gateway directly.
+ */
+function shown(root: string) {
+  const gateway = createWorkspaceTestGateway();
+  return {
+    register: gateway.register,
+    registerProjectManifest: (owner: number, manifest: string) => gateway.registerProjectManifest(owner, manifest, dirname(manifest)),
+    run: <T,>(owner: number, request: unknown, runner: Parameters<typeof gateway.run<T>>[2]) => gateway.run(owner, request, runner, root),
+    cancel: gateway.cancel,
+    revokeOwner: gateway.revokeOwner,
+  };
+}
+
 afterEach(async () => {
   await Promise.all(temporaryRoots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 });
@@ -20,7 +35,7 @@ afterEach(async () => {
 describe('Workspace test gateway', () => {
   it('registers one opaque workspace and passes only its canonical root to its owner runner', async () => {
     const root = await workspace();
-    const gateway = createWorkspaceTestGateway();
+    const gateway = shown(root);
 
     const token = await gateway.register(7, root);
     expect(Object.keys(token)).toEqual(['workspaceId']);
@@ -40,7 +55,7 @@ describe('Workspace test gateway', () => {
     const root = await workspace();
     const manifest = join(root, 'zplc.json');
     await writeFile(manifest, '{}');
-    const gateway = createWorkspaceTestGateway();
+    const gateway = shown(root);
 
     const token = await gateway.registerProjectManifest(7, manifest);
     await expect(gateway.run(7, token, async (receivedRoot) => receivedRoot)).resolves.toBe(root);
@@ -55,7 +70,7 @@ describe('Workspace test gateway', () => {
     const manifest = join(root, 'zplc.json');
     const target = join(root, 'manifest-target.json');
     await writeFile(target, '{}');
-    const gateway = createWorkspaceTestGateway();
+    const gateway = shown(root);
     try {
       await symlink(target, manifest, 'file');
     } catch (error) {
@@ -69,7 +84,7 @@ describe('Workspace test gateway', () => {
 
   it('fails closed for paths and token envelopes that do not match its current owner', async () => {
     const root = await workspace();
-    const gateway = createWorkspaceTestGateway();
+    const gateway = shown(root);
     const token = await gateway.register(7, root);
     const rejected = async (operation: () => Promise<unknown>) => {
       await expect(operation()).rejects.toThrow('Workspace is unavailable');
@@ -91,7 +106,7 @@ describe('Workspace test gateway', () => {
   it('rejects symbolic-link roots when the operating system permits creating them', async () => {
     const root = await workspace();
     const link = `${root}-link`;
-    const gateway = createWorkspaceTestGateway();
+    const gateway = shown(root);
     try {
       await symlink(root, link, 'junction');
     } catch (error) {
@@ -106,7 +121,7 @@ describe('Workspace test gateway', () => {
 
   it('rejects a removed or replaced root before it invokes the runner', async () => {
     const root = await workspace();
-    const gateway = createWorkspaceTestGateway();
+    const gateway = shown(root);
     const token = await gateway.register(7, root);
     let called = false;
     await rm(root, { recursive: true, force: true });
@@ -114,7 +129,7 @@ describe('Workspace test gateway', () => {
     expect(called).toBe(false);
 
     const replaced = await workspace();
-    const secondGateway = createWorkspaceTestGateway();
+    const secondGateway = shown(replaced);
     const secondToken = await secondGateway.register(7, replaced);
     await rm(replaced, { recursive: true, force: true });
     await mkdir(replaced);
@@ -125,7 +140,7 @@ describe('Workspace test gateway', () => {
 
   it('permits only one in-flight operation and recovers after runner rejection', async () => {
     const root = await workspace();
-    const gateway = createWorkspaceTestGateway();
+    const gateway = shown(root);
     const registering = gateway.register(7, root);
     await expect(gateway.register(7, root)).rejects.toThrow('Workspace is unavailable');
     const token = await registering;
@@ -149,7 +164,7 @@ describe('Workspace test gateway', () => {
 
   it('cancels only its active owner and releases the slot after the runner settles', async () => {
     const root = await workspace();
-    const gateway = createWorkspaceTestGateway();
+    const gateway = shown(root);
     const token = await gateway.register(7, root);
     let release: (() => void) | undefined;
     let signal: AbortSignal | undefined;
@@ -173,7 +188,7 @@ describe('Workspace test gateway', () => {
 
   it('aborts an active run when its owner is revoked without releasing it early', async () => {
     const root = await workspace();
-    const gateway = createWorkspaceTestGateway();
+    const gateway = shown(root);
     const token = await gateway.register(7, root);
     let release: (() => void) | undefined;
     let signal: AbortSignal | undefined;
@@ -195,7 +210,7 @@ describe('Workspace test gateway', () => {
 
   it('stales prior tokens and only lets the current owner revoke', async () => {
     const root = await workspace();
-    const gateway = createWorkspaceTestGateway();
+    const gateway = shown(root);
     const first = await gateway.register(7, root);
     const second = await gateway.register(7, root);
     expect(second.workspaceId).not.toBe(first.workspaceId);
@@ -207,7 +222,7 @@ describe('Workspace test gateway', () => {
 
   it('lets an admitted run finish when its owner revokes during root revalidation', async () => {
     const root = await workspace();
-    const gateway = createWorkspaceTestGateway();
+    const gateway = shown(root);
     const token = await gateway.register(7, root);
     let called = false;
     const running = gateway.run(7, token, async () => {
@@ -223,7 +238,7 @@ describe('Workspace test gateway', () => {
 
   it('invalidates a pending registration only for its owner', async () => {
     const root = await workspace();
-    const gateway = createWorkspaceTestGateway();
+    const gateway = shown(root);
     const foreignPending = gateway.register(7, root);
     expect(gateway.revokeOwner(8)).toBe(false);
     await expect(foreignPending).resolves.toEqual({ workspaceId: expect.any(String) });
@@ -234,5 +249,25 @@ describe('Workspace test gateway', () => {
 
     const token = await gateway.register(7, root);
     await expect(gateway.run(7, token, async () => 'registered again')).resolves.toBe('registered again');
+  });
+
+  it('registers and runs only the folder that the window shows (IDE-002)', async () => {
+    const shownRoot = await workspace();
+    const otherRoot = await workspace();
+    await writeFile(join(shownRoot, 'zplc.json'), '{}');
+    await writeFile(join(otherRoot, 'zplc.json'), '{}');
+    const gateway = createWorkspaceTestGateway();
+
+    // A manifest of another folder, and any manifest while the window shows none, are refused.
+    await expect(gateway.registerProjectManifest(7, join(otherRoot, 'zplc.json'), shownRoot)).rejects.toThrow('Workspace is unavailable');
+    await expect(gateway.registerProjectManifest(7, join(shownRoot, 'zplc.json'), null)).rejects.toThrow('Workspace is unavailable');
+
+    const token = await gateway.registerProjectManifest(7, join(shownRoot, 'zplc.json'), shownRoot);
+    let called = 0;
+    // The window now shows another folder, or none: the registered workspace is not the project of the editor.
+    await expect(gateway.run(7, token, async () => { called += 1; }, otherRoot)).rejects.toThrow('Workspace is unavailable');
+    await expect(gateway.run(7, token, async () => { called += 1; }, null)).rejects.toThrow('Workspace is unavailable');
+    expect(called).toBe(0);
+    await expect(gateway.run(7, token, async (root) => root, shownRoot)).resolves.toBe(shownRoot);
   });
 });

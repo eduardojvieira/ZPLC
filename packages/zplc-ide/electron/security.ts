@@ -271,6 +271,19 @@ export function isAllowedNativeSimulationRequest(value: unknown): boolean {
     && isAllowedNativeSimulationParams(value.method, value.params, value);
 }
 
+/**
+ * Build and safety-check name the workspace and the folder of the window that asks for them (IDE-002): the opaque
+ * workspace token and the id that `projectFiles` gave out when the folder was chosen. The main process refuses the
+ * request when that id is not the window's folder now, or when the workspace is not that folder's.
+ */
+export function isAllowedWorkspaceOperationRequest(value: unknown): value is { workspaceId: string; rootId: string } {
+  return isPlainObject(value)
+    && hasExactKeys(value, ['workspaceId', 'rootId'])
+    && typeof value.workspaceId === 'string'
+    && WORKSPACE_ID.test(value.workspaceId)
+    && isAllowedWorkspaceRootRequest({ rootId: value.rootId });
+}
+
 /** Validates the opaque workspace token envelope accepted by future desktop IPC. */
 export function isAllowedWorkspaceTestRequest(value: unknown): value is { workspaceId: string } {
   return isPlainObject(value)
@@ -324,14 +337,15 @@ export function isAllowedRecoveryDiscardRequest(value: unknown): value is Recove
   return parseRecoveryDiscard(value) !== null;
 }
 
-/** Validates the narrow optional scenario selector without widening compile admission. */
-export function isAllowedWorkspaceTestRunRequest(value: unknown): value is { workspaceId: string; scenarioId?: string } {
+/** Validates a test run: the workspace, the folder of the window, and the narrow optional scenario selector. */
+export function isAllowedWorkspaceTestRunRequest(value: unknown): value is { workspaceId: string; rootId: string; scenarioId?: string } {
   if (!isPlainObject(value)
     || !Object.hasOwn(value, 'workspaceId')
     || typeof value.workspaceId !== 'string'
-    || !WORKSPACE_ID.test(value.workspaceId)) return false;
-  if (hasExactKeys(value, ['workspaceId'])) return true;
-  return hasExactKeys(value, ['workspaceId', 'scenarioId'])
+    || !WORKSPACE_ID.test(value.workspaceId)
+    || !isAllowedWorkspaceRootRequest({ rootId: value.rootId })) return false;
+  if (hasExactKeys(value, ['workspaceId', 'rootId'])) return true;
+  return hasExactKeys(value, ['workspaceId', 'rootId', 'scenarioId'])
     && typeof value.scenarioId === 'string'
     && SCENARIO_ID.test(value.scenarioId);
 }

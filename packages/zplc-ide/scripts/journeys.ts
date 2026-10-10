@@ -3,7 +3,7 @@
  * expects (assert), or reports that the journey cannot be performed at all (notPossible). Observation reads the screen
  * and the editor; every action is a real click, key or text insertion.
  */
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { learnLessonCatalog } from '../src/components/learnLesson';
@@ -1199,6 +1199,66 @@ export const JOURNEYS: Journey[] = [
       await openFile(app, 'src/Outside.st');
       rmSync(join(project, 'src', 'Outside.st'));
       await app.until('the deleted file gone from the tree and its tab closed', async () => !await app.visible(treeItem('file:src/Outside.st')) && !await app.visible(editorTab('file:src/Outside.st')) || undefined, 10_000);
+    },
+  },
+
+  {
+    // IDE-002: a message crafted through the bridge cannot make Build or Test act on a folder other than the one the window
+    // shows. The bridge calls are the same ones the toolbar makes; only the ids they carry are the ones of another project.
+    name: '25 A build and a test run act only on the project shown', example: 'motor_start_stop', proves: ['IDE-002'], partly: ['IDE-001'],
+    run: async (app, { root, project }) => {
+      const other = join(root, 'other-project');
+      cpSync(join(packageRoot, 'projects', 'blinky_st'), other, { recursive: true });
+      const shownName = (JSON.parse(disk(join(project, 'zplc.json'))) as { name: string }).name;
+      const otherName = (JSON.parse(disk(join(other, 'zplc.json'))) as { name: string }).name;
+      assert(shownName !== otherName, 'The two example projects must have different names for this journey to tell them apart.');
+
+      await openFolder(app, project);
+      const built = await compile(app);
+      assert(built.kind === 'built', `The project shown should build from the toolbar: ${built.kind} ${built.message}`);
+
+      type Answer = { ok: boolean; value?: unknown; message?: string };
+      const call = (body: string) => app.eval<Answer>(`(async () => { const api = window.electronAPI; try { return { ok: true, value: await (async () => { ${body} })() }; } catch (error) { return { ok: false, message: String((error && error.message) || error) }; } })()`);
+      const folderId = async (folder: string) => {
+        app.answer(folder);
+        const answer = await call('return await api.projectFiles.chooseFolder();');
+        const typed = answer.value as { ok: boolean; value: { rootId: string } | null } | undefined;
+        assert(answer.ok && typed?.ok && typed.value, `The bridge did not hand back a folder id: ${JSON.stringify(answer)}`);
+        return typed.value!.rootId;
+      };
+      const workspaceOf = async (rootId: string) => {
+        const answer = await call(`return await api.workspaceTests.registerProjectRoot({ rootId: ${JSON.stringify(rootId)} });`);
+        return answer.ok ? (answer.value as { workspaceId: string } | null)?.workspaceId ?? null : null;
+      };
+      /** What the bridge answers to an operation, reduced to whether it was refused and which project it built. */
+      const operation = async (name: 'compile' | 'safetyCheck' | 'run', workspaceId: string, rootId: string) => {
+        const answer = await call(`const result = await api.workspaceTests.${name}({ workspaceId: ${JSON.stringify(workspaceId)}, rootId: ${JSON.stringify(rootId)} }); return { ok: result && result.ok === true, name: result && result.summary && result.summary.name };`);
+        return { refused: !answer.ok, built: answer.ok ? (answer.value as { ok: boolean; name?: string }) : undefined };
+      };
+
+      // The window shows the project: a build asked for that project is the project's build.
+      const shownId = await folderId(project);
+      const shownWorkspace = await workspaceOf(shownId);
+      assert(shownWorkspace, 'The folder of the window could not be registered as a workspace.');
+      const control = await operation('compile', shownWorkspace, shownId);
+      assert(!control.refused && control.built?.ok && control.built.name === shownName, `A build of the project shown must succeed and be that project's: ${JSON.stringify(control)}`);
+
+      // The window now holds another folder. Everything addressed to the project it showed is refused.
+      const otherId = await folderId(other);
+      for (const name of ['compile', 'safetyCheck', 'run'] as const) {
+        const stale = await operation(name, shownWorkspace, shownId);
+        assert(stale.refused, `${name} for the folder that the window no longer holds must be refused: ${JSON.stringify(stale)}`);
+        const crossed = await operation(name, shownWorkspace, otherId);
+        assert(crossed.refused, `${name} with the workspace of one project and the id of another must be refused: ${JSON.stringify(crossed)}`);
+      }
+      assert(await workspaceOf(shownId) === null, 'The folder that the window no longer holds must not be registered as a workspace.');
+
+      // The project the window holds now builds, and it is its own build, not the earlier project's.
+      const otherWorkspace = await workspaceOf(otherId);
+      assert(otherWorkspace, 'The folder of the window could not be registered as a workspace.');
+      const rebuilt = await operation('compile', otherWorkspace, otherId);
+      assert(!rebuilt.refused && rebuilt.built?.ok && rebuilt.built.name === otherName, `A build of the project now held must be that project's: ${JSON.stringify(rebuilt)}`);
+      assert((await operation('compile', shownWorkspace, otherId)).refused, 'The earlier workspace must stay refused after the new one is registered.');
     },
   },
 ];

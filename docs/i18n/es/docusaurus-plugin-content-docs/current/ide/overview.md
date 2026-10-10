@@ -48,6 +48,26 @@ que invoca con el contrato, y `electron/spawnAllowList.test.ts` muestra los
 vectores de argumentos (requisito IDE-017). No es evidencia de la aplicación
 empaquetada.
 
+## Un solo proyecto de referencia
+
+Build, Test, Simulate y la revisión de candidatos actúan sobre la carpeta que
+muestra la ventana, y sobre ninguna otra. El proceso principal es el dueño de esa
+carpeta: el diálogo nativo de carpetas le da a la ventana una carpeta y un
+identificador opaco para ella. Una compilación, una comprobación de seguridad o
+una ejecución de pruebas nombra el espacio de trabajo y ese identificador, y el
+proceso principal rechaza la llamada cuando el identificador no es la carpeta
+actual de la ventana, o cuando el espacio de trabajo pertenece a otra carpeta (un
+espacio de trabajo hecho para un proyecto anterior, o un `zplc.json` elegido en
+otro lugar). Abrir otra carpeta deja por tanto inservible todo espacio de trabajo
+anterior, sin un paso de enlace de por medio.
+
+Nivel de evidencia: host. `electron/workspaceTestGateway.test.ts`,
+`electron/ipcRegistry.test.ts` y `electron/security.test.ts` cubren la regla, y el
+recorrido 25 de `bun run test:journeys` envía por el puente de la aplicación real
+mensajes de compilación, de comprobación de seguridad y de pruebas fabricados,
+después de abrir otra carpeta, y comprueba que cada uno es rechazado (requisito
+IDE-002).
+
 ## Configuración del proyecto
 
 `zplc.json` define los metadatos del proyecto, el destino, las tareas y las

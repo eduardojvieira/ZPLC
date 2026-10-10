@@ -10,6 +10,7 @@ import {
   NATIVE_REQUEST_ENVELOPE_MAX,
   createContentSecurityPolicy,
   isAllowedNativeSimulationRequest,
+  isAllowedWorkspaceOperationRequest,
   isAllowedWorkspaceTestRequest,
   isAllowedWorkspaceRootRequest,
   isAllowedSessionLoadRequest,
@@ -144,27 +145,44 @@ describe('Electron security boundary', () => {
     ]) expect(isAllowedSessionSaveRequest(value)).toBe(false);
   });
 
-  it('admits an optional bounded ASCII scenario selector only for scenario runs', () => {
+  it('admits an optional bounded ASCII scenario selector only for scenario runs, which name the folder of the window (IDE-002)', () => {
     const workspaceId = '0f2ce877-e0d6-43ca-89a7-df17a4927f51';
-    expect(isAllowedWorkspaceTestRunRequest({ workspaceId })).toBe(true);
-    expect(isAllowedWorkspaceTestRunRequest({ workspaceId, scenarioId: 'MotorStartStop' })).toBe(true);
-    expect(isAllowedWorkspaceTestRunRequest({ workspaceId, scenarioId: 'motor-v1:restart_2' })).toBe(true);
+    const rootId = '7a7b7c7d-e0d6-43ca-89a7-df17a4927f51';
+    expect(isAllowedWorkspaceTestRunRequest({ workspaceId, rootId })).toBe(true);
+    expect(isAllowedWorkspaceTestRunRequest({ workspaceId, rootId, scenarioId: 'MotorStartStop' })).toBe(true);
+    expect(isAllowedWorkspaceTestRunRequest({ workspaceId, rootId, scenarioId: 'motor-v1:restart_2' })).toBe(true);
 
     for (const value of [
-      { workspaceId, scenarioId: '' },
-      { workspaceId, scenarioId: 'x'.repeat(129) },
-      { workspaceId, scenarioId: 'motor\nrestart' },
-      { workspaceId, scenarioId: 'motor\0restart' },
-      { workspaceId, scenarioId: 'motor-é' },
-      { workspaceId, scenarioId: 'motor restart' },
-      { workspaceId, scenarioId: '../motor' },
-      { workspaceId, extra: true },
-      { workspaceId, scenarioId: 'motor', extra: true },
-      { workspaceId: workspaceId.toUpperCase(), scenarioId: 'motor' },
+      { workspaceId },
+      { workspaceId, rootId: '' },
+      { workspaceId, rootId: 'x'.repeat(65) },
+      { workspaceId, rootId: 7 },
+      { rootId },
+      { workspaceId, rootId, scenarioId: '' },
+      { workspaceId, rootId, scenarioId: 'x'.repeat(129) },
+      { workspaceId, rootId, scenarioId: 'motor\nrestart' },
+      { workspaceId, rootId, scenarioId: 'motor\0restart' },
+      { workspaceId, rootId, scenarioId: 'motor-é' },
+      { workspaceId, rootId, scenarioId: 'motor restart' },
+      { workspaceId, rootId, scenarioId: '../motor' },
+      { workspaceId, rootId, extra: true },
+      { workspaceId, rootId, scenarioId: 'motor', extra: true },
+      { workspaceId: workspaceId.toUpperCase(), rootId, scenarioId: 'motor' },
       Object.create(null),
     ]) expect(isAllowedWorkspaceTestRunRequest(value)).toBe(false);
 
     expect(isAllowedWorkspaceTestRequest({ workspaceId, scenarioId: 'motor' })).toBe(false);
+  });
+
+  it('accepts a build or a safety check only with the workspace token and the id of the folder of the window (IDE-002)', () => {
+    const workspaceId = '0f2ce877-e0d6-43ca-89a7-df17a4927f51';
+    const rootId = '7a7b7c7d-e0d6-43ca-89a7-df17a4927f51';
+    expect(isAllowedWorkspaceOperationRequest({ workspaceId, rootId })).toBe(true);
+    for (const value of [
+      { workspaceId }, { rootId }, { workspaceId, rootId: '' }, { workspaceId, rootId: 5 }, { workspaceId, rootId: 'x'.repeat(65) },
+      { workspaceId, rootId, path: '/home/eduardo/other-project' }, { workspaceId: 'not-a-token', rootId },
+      { workspaceId: workspaceId.toUpperCase(), rootId }, [], null, undefined, Object.create(null),
+    ]) expect(isAllowedWorkspaceOperationRequest(value)).toBe(false);
   });
 
   it('projects only exact metadata-only execution envelopes', () => {

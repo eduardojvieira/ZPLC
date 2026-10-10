@@ -4,6 +4,21 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- Studio defines every IPC channel once and answers all of them through one
+  checked table (IDE-017). `electron/ipcContract.ts` names the channels for the
+  main process, the preload and the renderer (the preload is now bundled into one
+  script that requires only `electron`, so it keeps no copy); the main process
+  refuses to start when a channel has no handler or a handler has no channel, and
+  every call is checked for its sender, its message and the freshness of the
+  document before any handler runs. The processes that Studio starts for compile,
+  test and firmware build (the native runtime, `west build`, the toolchain
+  probes) come from a closed list of fixed argument vectors and never take a
+  command or an argument from the renderer.
+- Build and Test act only on the project that the editor shows (IDE-002). The
+  build, safety-check and test-run requests carry the id of the window's folder,
+  and the main process refuses a workspace that is not that folder's (a stale
+  workspace after another folder was opened, or a `zplc.json` of another
+  folder). A crafted message for another project is refused.
 - The function blocks and functions that the Structured Text files of a project
   declare are blocks of the FBD and LD palettes (LNG-008): a diagram places one
   with the ports of its declaration, and the generated Structured Text calls it

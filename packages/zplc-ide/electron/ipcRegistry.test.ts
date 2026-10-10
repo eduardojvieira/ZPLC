@@ -71,9 +71,9 @@ async function harness(options: { toolApi?: Partial<ToolApiModule>; failToolApi?
     ...options.toolApi,
   };
   const gateway = {
-    registerProjectManifest: async (owner: number, manifest: string) => { note(`gateway.register:${manifest.replace(folder, '<scratch>')}`); void owner; return { workspaceId: WORKSPACE_ID }; },
-    run: async <T,>(owner: number, request: unknown, runner: (root: string, options: { signal: AbortSignal; jobId: string; startedAt: string }) => Promise<T> | T): Promise<T> => {
-      note(`gateway.run:${JSON.stringify(request)}`); void owner;
+    registerProjectManifest: async (owner: number, manifest: string, expectedRoot: string | null) => { note(`gateway.register:${manifest.replace(folder, '<scratch>')}@${expectedRoot === projectRoot ? 'window-folder' : String(expectedRoot)}`); void owner; return { workspaceId: WORKSPACE_ID }; },
+    run: async <T,>(owner: number, request: unknown, runner: (root: string, options: { signal: AbortSignal; jobId: string; startedAt: string }) => Promise<T> | T, expectedRoot: string | null): Promise<T> => {
+      note(`gateway.run:${JSON.stringify(request)}@${expectedRoot === projectRoot ? 'window-folder' : String(expectedRoot)}`); void owner;
       return runner(projectRoot, { signal: new AbortController().signal, jobId: EXECUTION_ID, startedAt: '2026-10-10T00:00:00.000Z' });
     },
     cancel: (owner: number) => { note('gateway.cancel'); void owner; return { requested: true }; },
@@ -205,7 +205,7 @@ describe('every invoke channel (IDE-017)', () => {
 
   it('tells the renderer one fixed message when a handler fails, never the text of the internal error', async () => {
     const h = await harness({ toolApi: { compilerCompile: async () => { throw new Error('/home/secret/projects/x.st: token abc123'); } } });
-    const answer = await settle(h.invoke('workspace-tests:compile', TRUSTED, { workspaceId: WORKSPACE_ID }));
+    const answer = await settle(h.invoke('workspace-tests:compile', TRUSTED, { workspaceId: WORKSPACE_ID, rootId: h.rootId }));
     expect(answer).toEqual({ ok: false, message: 'Workspace operation failed' });
   });
 });
@@ -255,17 +255,17 @@ describe('recovery and session over the IPC boundary (IDE-006, IDE-008)', () => 
 });
 
 describe('workspace tests, candidate review and the AI provider (IDE-001, IDE-017)', () => {
-  it('register the folder of the window by its id alone, as <folder>/zplc.json, and refuse any other id', async () => {
+  it('register the folder of the window by its id alone, as <folder>/zplc.json, and refuse any other id (IDE-001)', async () => {
     const h = await harness();
     expect(await h.invoke('workspace-tests:register-project-root', TRUSTED, { rootId: h.rootId })).toEqual({ workspaceId: WORKSPACE_ID });
-    expect(h.touched).toEqual([`gateway.register:${h.folder.replace(path.dirname(h.folder), '<scratch>')}/zplc.json`]);
+    expect(h.touched).toEqual([`gateway.register:${h.folder.replace(path.dirname(h.folder), '<scratch>')}/zplc.json@window-folder`]);
     expect(await settle(h.invoke('workspace-tests:register-project-root', TRUSTED, { rootId: 'other' }))).toEqual({ ok: false, message: 'Workspace operation failed' });
     expect(await settle(h.invoke('workspace-tests:register-project-root', TRUSTED, { path: '/tmp' }))).toEqual({ ok: false, message: IPC_DENIED });
   });
 
   it('compile a workspace through the owner-bound gateway and record who did it, without leaking a path into the envelope', async () => {
     const h = await harness();
-    const answer = await h.invoke('workspace-tests:compile', TRUSTED, { workspaceId: WORKSPACE_ID }) as { ok: boolean; evidence: { diagnostics: Array<{ message?: string; path?: string }> }; execution: unknown };
+    const answer = await h.invoke('workspace-tests:compile', TRUSTED, { workspaceId: WORKSPACE_ID, rootId: h.rootId }) as { ok: boolean; evidence: { diagnostics: Array<{ message?: string; path?: string }> }; execution: unknown };
     expect(answer.ok).toBe(false);
     expect(JSON.stringify(answer)).not.toContain('/home/secret');
     expect(answer.evidence.diagnostics[0]).toMatchObject({ path: 'src/Main.st' });
@@ -276,9 +276,9 @@ describe('workspace tests, candidate review and the AI provider (IDE-001, IDE-01
 
   it('run a named scenario only for a well-formed scenario id', async () => {
     const h = await harness();
-    await h.invoke('workspace-tests:run', TRUSTED, { workspaceId: WORKSPACE_ID, scenarioId: 'start-stop' });
+    await h.invoke('workspace-tests:run', TRUSTED, { workspaceId: WORKSPACE_ID, rootId: h.rootId, scenarioId: 'start-stop' });
     expect(h.touched).toContain('toolApi.scenarioRun:start-stop');
-    expect(await settle(h.invoke('workspace-tests:run', TRUSTED, { workspaceId: WORKSPACE_ID, scenarioId: '../../etc' }))).toEqual({ ok: false, message: IPC_DENIED });
+    expect(await settle(h.invoke('workspace-tests:run', TRUSTED, { workspaceId: WORKSPACE_ID, rootId: h.rootId, scenarioId: '../../etc' }))).toEqual({ ok: false, message: IPC_DENIED });
   });
 
   it('records a candidate review as an agent test, even when the review itself failed, and never applies an edit', async () => {
@@ -293,7 +293,7 @@ describe('workspace tests, candidate review and the AI provider (IDE-001, IDE-01
   it('send an AI request through the workspace gateway and cancel both the provider and the workspace run', async () => {
     const h = await harness();
     await h.invoke('ai-provider:request', TRUSTED, { workspaceId: WORKSPACE_ID, mode: 'ask', prompt: 'why' });
-    expect(h.touched).toEqual([`gateway.run:${JSON.stringify({ workspaceId: WORKSPACE_ID })}`]);
+    expect(h.touched).toEqual([`gateway.run:${JSON.stringify({ workspaceId: WORKSPACE_ID })}@window-folder`]);
     expect(await h.invoke('ai-provider:cancel', TRUSTED)).toEqual({ requested: true });
     expect(await settle(h.invoke('ai-provider:request', TRUSTED, { workspaceId: WORKSPACE_ID, mode: 'ask', prompt: 'x', provider: 'https://evil.invalid' }))).toEqual({ ok: false, message: IPC_DENIED });
   });
@@ -339,11 +339,39 @@ describe('toolchain inspection and firmware build (IDE-017, IDE-027)', () => {
 describe('safety check over the IPC boundary (IDE-017)', () => {
   it('releases only the bounded interlock report: anything else is a failed operation', async () => {
     const h = await harness();
-    expect(await settle(h.invoke('workspace-tests:safety-check', TRUSTED, { workspaceId: WORKSPACE_ID }))).toEqual({ ok: false, message: 'Workspace operation failed' });
+    expect(await settle(h.invoke('workspace-tests:safety-check', TRUSTED, { workspaceId: WORKSPACE_ID, rootId: h.rootId }))).toEqual({ ok: false, message: 'Workspace operation failed' });
     const evidence = { schemaVersion: 1, operation: 'safety-check', outcome: 'passed', diagnostics: [], artifacts: [] };
     const good = await harness({ toolApi: { safetyCheck: async () => ({ ok: true, summary: { configured: false, declared: [], covered: [], uncovered: [] }, evidence }) } });
-    const answer = await good.invoke('workspace-tests:safety-check', TRUSTED, { workspaceId: WORKSPACE_ID }) as { ok: boolean; execution?: unknown };
+    const answer = await good.invoke('workspace-tests:safety-check', TRUSTED, { workspaceId: WORKSPACE_ID, rootId: good.rootId }) as { ok: boolean; execution?: unknown };
     expect(answer.ok).toBe(true);
     expect(answer.execution).toMatchObject({ actor: 'human-studio', operation: 'safety-check' });
+  });
+});
+
+describe('a build, a test run and a review act only on the project of the editor (IDE-002)', () => {
+  it('name the folder of the window, and are refused for a folder id that is not the window folder before the gateway is asked', async () => {
+    const h = await harness();
+    for (const channel of ['workspace-tests:compile', 'workspace-tests:safety-check', 'workspace-tests:run']) {
+      expect(await settle(h.invoke(channel, TRUSTED, { workspaceId: WORKSPACE_ID, rootId: 'a-folder-that-is-closed' }))).toEqual({ ok: false, message: 'Workspace operation failed' });
+      expect(await settle(h.invoke(channel, TRUSTED, { workspaceId: WORKSPACE_ID }))).toEqual({ ok: false, message: IPC_DENIED });
+    }
+    expect(h.touched.filter((entry) => entry.startsWith('gateway.'))).toEqual([]);
+  });
+
+  it('hand the gateway the folder that the window shows now, for the build, the run, the review and the AI request alike', async () => {
+    const h = await harness();
+    await h.invoke('workspace-tests:compile', TRUSTED, { workspaceId: WORKSPACE_ID, rootId: h.rootId });
+    await h.invoke('workspace-tests:run', TRUSTED, { workspaceId: WORKSPACE_ID, rootId: h.rootId });
+    await settle(h.invoke('candidate-change-set:review', TRUSTED, { workspaceId: WORKSPACE_ID, edit: { path: 'src/Main.st', content: 'x' } }));
+    await h.invoke('ai-provider:request', TRUSTED, { workspaceId: WORKSPACE_ID, mode: 'ask', prompt: 'why' });
+    const runs = h.touched.filter((entry) => entry.startsWith('gateway.run:'));
+    expect(runs).toHaveLength(4);
+    for (const run of runs) expect(run.endsWith('@window-folder')).toBe(true);
+  });
+
+  it('register a manifest only against the folder that the window shows', async () => {
+    const h = await harness();
+    await h.invoke('workspace-tests:register-project-file', TRUSTED, '/anywhere/zplc.json');
+    expect(h.touched).toEqual(['gateway.register:/anywhere/zplc.json@window-folder']);
   });
 });

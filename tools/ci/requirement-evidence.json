@@ -1015,12 +1015,22 @@
   ],
   "IDE-001": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"project files over the IPC boundary (IDE-001, IDE-016)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"register the folder of the window by its id alone, as <folder>/zplc.json, and refuse any other id (IDE-001)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"workspace tests, candidate review and the AI provider (IDE-001, IDE-017)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/projectFiles.test.ts","test":"the root held for the main process (IDE-001)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/components/workspaceTestPresentation.test.ts","test":"builds a project the host can link by itself without asking for a zplc.json first (IDE-001)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/utils/workspaceTestLink.test.ts","test":"linking the open project to its workspace without choosing a file (IDE-001)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"1 Open an existing folder","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"25 A build and a test run act only on the project shown","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"5b Tests need no zplc.json to be chosen","partial":true}
+  ],
+  "IDE-002": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"a build, a test run and a review act only on the project of the editor (IDE-002)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/security.test.ts","test":"accepts a build or a safety check only with the workspace token and the id of the folder of the window (IDE-002)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/security.test.ts","test":"admits an optional bounded ASCII scenario selector only for scenario runs, which name the folder of the window (IDE-002)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/workspaceTestGateway.test.ts","test":"registers and runs only the folder that the window shows (IDE-002)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ipc/shownProjectBridge.test.ts","test":"the workspace bridge of a window that shows one project (IDE-002)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"25 A build and a test run act only on the project shown"}
   ],
   "IDE-003": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"1 Open an existing folder","partial":true},

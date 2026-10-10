@@ -76,12 +76,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // The project folder is the one the main process owns (projectFiles); only its opaque id crosses, never a path.
     registerProjectRoot: (request: { rootId: string }) =>
       ipcRenderer.invoke(WORKSPACE_TESTS_CHANNEL.REGISTER_PROJECT_ROOT, request) as Promise<{ workspaceId: string } | null>,
-    run: (request: { workspaceId: string; scenarioId?: string }) =>
+    run: (request: { workspaceId: string; rootId: string; scenarioId?: string }) =>
       ipcRenderer.invoke(WORKSPACE_TESTS_CHANNEL.RUN, request) as Promise<unknown>,
     cancel: () => ipcRenderer.invoke(WORKSPACE_TESTS_CHANNEL.CANCEL) as Promise<{ requested: boolean }>,
-    compile: (request: { workspaceId: string }) =>
+    compile: (request: { workspaceId: string; rootId: string }) =>
       ipcRenderer.invoke(WORKSPACE_TESTS_CHANNEL.COMPILE, request) as Promise<unknown>,
-    safetyCheck: (request: { workspaceId: string }) =>
+    safetyCheck: (request: { workspaceId: string; rootId: string }) =>
       ipcRenderer.invoke(WORKSPACE_TESTS_CHANNEL.SAFETY_CHECK, request) as Promise<unknown>,
   },
   closeGuard: {
@@ -201,10 +201,10 @@ declare global {
       workspaceTests: {
         registerProjectFile: (file: File) => Promise<{ workspaceId: string } | null>;
         registerProjectRoot: (request: { rootId: string }) => Promise<{ workspaceId: string } | null>;
-        run: (request: { workspaceId: string; scenarioId?: string }) => Promise<unknown>;
+        run: (request: { workspaceId: string; rootId: string; scenarioId?: string }) => Promise<unknown>;
         cancel: () => Promise<{ requested: boolean }>;
-        compile: (request: { workspaceId: string }) => Promise<unknown>;
-        safetyCheck: (request: { workspaceId: string }) => Promise<unknown>;
+        compile: (request: { workspaceId: string; rootId: string }) => Promise<unknown>;
+        safetyCheck: (request: { workspaceId: string; rootId: string }) => Promise<unknown>;
       };
       closeGuard: {
         setDirty: (dirty: boolean) => Promise<void>;

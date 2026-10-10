@@ -58,6 +58,7 @@ import {
 import { EXECUTION_MODE, selectRuntimeArtifact, type ExecutionMode } from './runtimeArtifactSelection';
 import { OperationalStatusBar } from './OperationalStatusBar';
 import { isWorkspaceTestRunCurrent, presentWorkspaceCompileResult, resolveWorkspaceCompileRoute } from './workspaceTestPresentation';
+import { shownProjectBridge } from '../ipc/shownProjectBridge';
 import { canLinkProjectWorkspace, linkProjectWorkspace } from '../utils/workspaceTestLink';
 import { createHardwareDeployConfirmation } from './hardwareDeployConfirmation';
 import { DeviceAdmissionError, DEVICE_ADMISSION_CODE } from '../runtime/deviceHandshake';
@@ -336,7 +337,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
     const isCurrentRun = () => useIDEStore.getState().compilerRunId === compilerRunId;
     setIsCompileMenuOpen(false);
 
-    const workspaceTests = window.electronAPI?.workspaceTests;
+    const workspaceTests = shownProjectBridge(window.electronAPI?.workspaceTests);
     const currentWorkspaceLink = workspaceScenarioLink?.projectSession === projectSession ? workspaceScenarioLink : null;
     const workspaceCompileRoute = resolveWorkspaceCompileRoute({
       isElectronHost: window.electronAPI !== undefined || navigator.userAgent.includes('Electron/'),
