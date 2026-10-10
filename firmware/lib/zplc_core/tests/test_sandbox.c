@@ -288,10 +288,11 @@ static void test_direct_access_at_the_vm(void) {
   CHECK_EQ(run_raw(&c), OOB, "STORE32 into the input image");
 }
 
-/* A region is its window of the address space, from its base to the base of
- * the next region, and no larger, whatever the storage behind it is: with a
- * WORK memory above 0x2000 bytes, address 0x4000 is retentive memory, not the
- * rest of WORK (test_sandbox_regions runs this whole file on such a build). */
+/* RT-001: a region is its window of the address space, from its base to the
+ * base of the next region, and no larger, whatever the storage behind it is:
+ * with a WORK memory above 0x2000 bytes, address 0x4000 is retentive memory,
+ * not the rest of WORK (test_sandbox_regions runs this whole file on such a
+ * build). */
 static void test_region_windows(void) {
   code_t c;
   const uint8_t *retain;
@@ -503,10 +504,11 @@ static int compare_at(uint16_t a, uint16_t length, int header_from_host) {
   return zplc_core_get_error();
 }
 
-/* STRCMP reads the characters one at a time, and each is placed on its own: a
- * string whose header claims more characters than its region holds would be
- * read across the end of the region into the next. It is placed whole first,
- * header and the characters compared, like STRCPY (RT-001). */
+/* RT-001: STRCMP places both strings, header and the characters compared,
+ * before it reads one, like STRCPY. It used to read the characters one at a
+ * time and place each on its own, so a string whose header claims more
+ * characters than its region holds was read across the end of the region into
+ * the next. */
 static void test_strcmp_extents(void) {
   printf("=== RT-001 STRCMP places the strings it compares ===\n");
 
