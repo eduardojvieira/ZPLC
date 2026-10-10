@@ -406,6 +406,14 @@ All notable changes are documented here.
   fault is also a `runtime.error` event with the code `DEADLINE_MISS`. The
   target scheduler does not report the warning, the last overrun or the reason
   yet. The scheduler page lists what simulation does not match.
+- The assembler checks every operand against its field (CMP-049): a value that
+  does not fit the 8, 16 or 32 bits of its opcode, a jump to an address outside
+  the code or to a label after the last instruction, an entry point or a tag
+  field that does not fit, and a relocation past 65535 are errors that name the
+  line, where they used to be truncated. `.DB` and `.BYTE` now emit their bytes
+  (they used to move the addresses and emit nothing) and `.ORG` fills the gap with
+  `NOP` and refuses to move backwards (CMP-060); the directives are described in
+  the compiler page. `tools/zplc_asm.py` applies the same rules.
 
 ## 2.0.0-rc.3 - 2026-09-01
 

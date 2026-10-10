@@ -814,16 +814,15 @@ describe('Bytecode Relocation', () => {
         expect(view.getUint16(9, true)).toBe(0x0070);   // JMP 0x0020 + 0x50 = 0x0070
     });
 
-    test('relocateBytecode wraps on 16-bit overflow', () => {
-        // Address 0xFF00 + 0x200 = 0x10100, but should wrap to 0x0100
+    test('relocateBytecode refuses a relocation past 16 bits instead of wrapping it (CMP-049)', () => {
+        // Address 0xFF00 + 0x200 = 0x10100 does not fit the 16-bit field
         const bytecode = new Uint8Array([
             Opcode.JMP, 0x00, 0xFF,  // JMP 0xFF00
             Opcode.HALT,
         ]);
 
-        relocateBytecode(bytecode, 0x200);
-
-        const view = new DataView(bytecode.buffer);
-        expect(view.getUint16(1, true)).toBe(0x0100);  // Wrapped
+        expect(() => relocateBytecode(bytecode, 0x200)).toThrow(/16-bit/);
+        expect(bytecode[1]).toBe(0x00);
+        expect(bytecode[2]).toBe(0xFF);
     });
 });

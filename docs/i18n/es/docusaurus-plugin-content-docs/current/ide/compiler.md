@@ -42,6 +42,34 @@ contador de programa dentro de una sentencia se resuelve a esa sentencia. El
 final de una función y las rutinas auxiliares que siguen al ciclo no pertenecen
 a ninguna sentencia.
 
+## Operandos y directivas del ensamblador
+
+El generador de código escribe texto en ensamblador y el ensamblador lo convierte
+en el bytecode del artefacto. Un operando debe caber en su campo. Un valor que
+no cabe es un error que nombra la línea y el campo; el ensamblador nunca lo
+trunca.
+
+| Campo | Opcodes | Valores aceptados |
+|---|---|---|
+| Inmediato de 8, 16 o 32 bits | `PUSH8`, `PICK`, `PUSH16`, `PUSH32` | de -2^(n-1) a 2^n - 1: con o sin signo, la VM lo extiende con signo |
+| Dirección de memoria de 16 bits | `LOAD8` a `STORE64` | 0 a 65535 |
+| Dirección de código de 16 bits | `JMP`, `JZ`, `JNZ`, `CALL` | una instrucción del código, 0 a 65535 |
+| Desplazamiento de 8 bits con signo | `JR`, `JRZ`, `JRNZ` | -128 a 127 desde la instrucción siguiente |
+| Tipo de 32 bits | `COMM_EXEC`, `COMM_STATUS`, `COMM_RESET` | 0 a 4294967295 |
+
+Es un error un salto a una etiqueta posterior a la última instrucción, a un
+destino numérico fuera del código, o a una etiqueta a más de 127 bytes con un
+salto relativo. También lo es un punto de entrada, un campo de etiqueta o una
+dirección reubicada que no cabe en su campo: `relocateBytecode` deja el bytecode
+sin cambios cuando una dirección pasaría de 65535.
+
+| Directiva | Efecto en la salida |
+|---|---|
+| `.ORG addr` | El siguiente byte queda en `addr`; el hueco se rellena con bytes `NOP`. Retroceder es un error. |
+| `.ENTRY etiqueta` o `.ENTRY addr` | Fija el punto de entrada del archivo; debe ser una instrucción del código. |
+| `.DB v, v, ...` y `.BYTE` | Emite cada valor, de -128 a 255, como un byte en ese lugar. Una etiqueta posterior queda después de los bytes. El cargador verifica el segmento de código como instrucciones, así que los bytes deben decodificarse como tales. |
+| `.TAG addr tipo id valor` | Agrega una etiqueta de variable al segmento TAGS; los cuatro números deben caber en 16, 8, 8 y 32 bits. |
+
 ## Límite del artefacto
 
 El artefacto se verifica antes de que el runtime lo cargue. Una compilación

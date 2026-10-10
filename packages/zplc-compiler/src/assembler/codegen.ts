@@ -7,7 +7,7 @@
  * All multi-byte values are little-endian.
  */
 
-import { getOperandSize, OPCODE_BY_VALUE, isRelativeJump } from './opcodes';
+import { fitsOperandField, getOperandSize, OPCODE_BY_VALUE, isRelativeJump, operandField, operandRefusal } from './opcodes';
 import { CONTAINER, OPCODE_TABLE } from '../contract.generated';
 import type { Instruction, TaskDef, TagDef } from './types';
 import { AssemblerError, TASK_TYPE, ZPLC_CONSTANTS } from './types';
@@ -61,10 +61,30 @@ function isIntegerInRange(value: unknown, minimum: number, maximum: number): val
         && value <= maximum;
 }
 
+/** A variable tag whose fields all fit the TAGS entry (CMP-049): nothing is masked when it is written. */
+function validateTags(tags: readonly TagDef[] | undefined): void {
+    for (const [index, tag] of (tags ?? []).entries()) {
+        const label = `Tag ${index}`;
+        if (!isIntegerInRange(tag.varAddr, 0, UINT16_MAX)) {
+            throw new AssemblerError(`${label} address ${String(tag.varAddr)} does not fit its 16-bit address field`);
+        }
+        if (!isIntegerInRange(tag.varType, 0, 0xFF)) {
+            throw new AssemblerError(`${label} data type ${String(tag.varType)} does not fit its 8-bit field`);
+        }
+        if (!isIntegerInRange(tag.tagId, 0, 0xFF)) {
+            throw new AssemblerError(`${label} id ${String(tag.tagId)} does not fit its 8-bit field`);
+        }
+        if (!isIntegerInRange(tag.value, 0, UINT32_MAX)) {
+            throw new AssemblerError(`${label} value ${String(tag.value)} does not fit its 32-bit field`);
+        }
+    }
+}
+
 function validateMultiTaskLayout(bytecode: Uint8Array, tasks: TaskDef[], tags?: TagDef[]): void {
     if (!(bytecode instanceof Uint8Array)) {
         throw new AssemblerError('Multi-task bytecode must be a Uint8Array');
     }
+    validateTags(tags);
     if (!Array.isArray(tasks) || tasks.length === 0) {
         throw new AssemblerError('Multi-task programs require at least one task');
     }
@@ -132,7 +152,7 @@ export function emitBytecode(instructions: Instruction[]): Uint8Array {
     // Calculate total size
     let totalSize = 0;
     for (const instr of instructions) {
-        totalSize += 1 + getOperandSize(instr.opcode);
+        totalSize += instr.raw ? 1 : 1 + getOperandSize(instr.opcode);
     }
 
     // Create output buffer
@@ -141,18 +161,25 @@ export function emitBytecode(instructions: Instruction[]): Uint8Array {
     let offset = 0;
 
     for (const instr of instructions) {
-        // Emit opcode
+        // Emit opcode, or the byte of data
         output[offset++] = instr.opcode;
+        if (instr.raw) continue;
 
-        // Emit operand
+        // Emit operand: it is checked against its field, never masked to it (CMP-049)
         const operandSize = getOperandSize(instr.opcode);
         const operand = instr.operand ?? 0;
+        const field = operandField(instr.opcode);
+        if (field && !fitsOperandField(field, operand)) {
+            const mnemonic = OPCODE_BY_VALUE[instr.opcode] ?? `0x${instr.opcode.toString(16)}`;
+            throw new AssemblerError(operandRefusal(mnemonic, field, operand), instr.lineNum);
+        }
 
         if (operandSize === 1) {
-            // 8-bit operand (could be signed, already masked in parser)
-            output[offset++] = operand & 0xFF;
+            // 8-bit operand: an immediate, or a signed offset stored as its two's complement byte
+            view.setUint8(offset, operand & 0xFF);
+            offset += 1;
         } else if (operandSize === 2) {
-            // 16-bit little-endian
+            // 16-bit little-endian; an immediate may be written signed
             view.setUint16(offset, operand & 0xFFFF, true);
             offset += 2;
         } else if (operandSize === 4) {
@@ -187,31 +214,39 @@ export function emitBytecode(instructions: Instruction[]): Uint8Array {
  * @returns The same bytecode array (modified)
  */
 export function relocateBytecode(bytecode: Uint8Array, baseOffset: number): Uint8Array {
+    if (!isIntegerInRange(baseOffset, 0, UINT16_MAX)) {
+        throw new AssemblerError(`Relocation offset ${String(baseOffset)} does not fit the 16-bit code address`);
+    }
     if (baseOffset === 0) {
         return bytecode; // No relocation needed
     }
 
     const view = new DataView(bytecode.buffer, bytecode.byteOffset, bytecode.byteLength);
+    const relocated: Array<{ at: number; address: number }> = [];
     let pc = 0;
 
     while (pc < bytecode.length) {
-        const opcode = bytecode[pc];
+        const opcode = bytecode[pc]!;
         const operandSize = getOperandSize(opcode);
 
         // Check if this is a relocatable opcode
-        if (RELOCATABLE_OPCODES.has(opcode) && operandSize === 2) {
-            // Read the 16-bit address (little-endian)
-            const originalAddr = view.getUint16(pc + 1, true);
-            
-            // Add the base offset
-            const relocatedAddr = (originalAddr + baseOffset) & 0xFFFF;
-            
-            // Write back the relocated address
-            view.setUint16(pc + 1, relocatedAddr, true);
+        if (RELOCATABLE_OPCODES.has(opcode) && operandSize === 2 && pc + 2 < bytecode.length) {
+            const address = view.getUint16(pc + 1, true) + baseOffset;
+            if (address > UINT16_MAX) {
+                // nothing has been written: the bytecode is as it was given
+                throw new AssemblerError(
+                    `Relocating the ${OPCODE_BY_VALUE[opcode] ?? 'jump'} at ${pc} by ${baseOffset} gives address ${address}, which does not fit the 16-bit code address`,
+                );
+            }
+            relocated.push({ at: pc + 1, address });
         }
 
         // Move to next instruction
         pc += 1 + operandSize;
+    }
+
+    for (const { at, address } of relocated) {
+        view.setUint16(at, address, true);
     }
 
     return bytecode;
@@ -233,6 +268,13 @@ export function relocateBytecode(bytecode: Uint8Array, baseOffset: number): Uint
  */
 export function createZplcFile(bytecode: Uint8Array, entryPoint: number, tags?: TagDef[]): Uint8Array {
     const codeSize = bytecode.length;
+    if (!isIntegerInRange(entryPoint, 0, UINT16_MAX)) {
+        throw new AssemblerError(`Entry point ${String(entryPoint)} does not fit its 16-bit field`);
+    }
+    if (codeSize > 0 && entryPoint >= codeSize) {
+        throw new AssemblerError(`Entry point ${entryPoint} is outside the code (${codeSize} bytes)`);
+    }
+    validateTags(tags);
     const tagCount = tags?.length ?? 0;
     const tagSegmentSize = tagCount * ZPLC_CONSTANTS.TAG_ENTRY_SIZE;
     

@@ -28,6 +28,11 @@ export interface Instruction {
     lineNum: number;
     /** Byte offset in code segment */
     address: number;
+    /**
+     * A byte of data, not an instruction: `.DB` values and the NOP fill of `.ORG`. `opcode` holds the byte
+     * and nothing follows it; it is emitted as it stands.
+     */
+    raw?: boolean;
 }
 
 /**
