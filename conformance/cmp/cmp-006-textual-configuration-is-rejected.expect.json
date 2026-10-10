@@ -1,0 +1,9 @@
+{
+  "requirement": "CMP-006",
+  "title": "a textual CONFIGURATION with RESOURCE and TASK is rejected",
+  "matrix": ["configuration.textual-configuration"],
+  "note": "Decision D-04 (2.x recommended): textual CONFIGURATION, RESOURCE and TASK are left to 2.x; tasks stay in zplc.json",
+  "build": "fails",
+  "lines": [1],
+  "messageIncludes": []
+}

@@ -1,0 +1,9 @@
+{
+  "requirement": "CMP-006",
+  "title": "a PROPERTY of a function block is rejected",
+  "matrix": ["pous.properties-namespaces-action-blocks"],
+  "note": "Decision D-04 (2.x recommended): properties are a third-edition structure feature left to 2.x",
+  "build": "fails",
+  "lines": [5],
+  "messageIncludes": []
+}

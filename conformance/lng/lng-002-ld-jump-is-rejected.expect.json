@@ -1,0 +1,8 @@
+{
+  "requirement": "LNG-002",
+  "title": "an LD jump is rejected by name",
+  "matrix": ["ld-fbd.ld-jumps-and-labels"],
+  "note": "Decision D-04 (2.x recommended): jumps and labels in Ladder are left to 2.x; an element the transpiler does not translate is rejected naming it (LNG-002)",
+  "build": "fails",
+  "messageIncludes": ["j1", "jump"]
+}

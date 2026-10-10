@@ -1,0 +1,19 @@
+FUNCTION_BLOCK Base
+METHOD FINAL Reading : INT
+  Reading := 3;
+END_METHOD
+END_FUNCTION_BLOCK
+
+FUNCTION_BLOCK Derived EXTENDS Base
+METHOD OVERRIDE Reading : INT
+  Reading := 4;
+END_METHOD
+END_FUNCTION_BLOCK
+
+PROGRAM Derivation
+VAR
+  d : Derived;
+  q AT %QW0 : INT;
+END_VAR
+  q := d.Reading();
+END_PROGRAM

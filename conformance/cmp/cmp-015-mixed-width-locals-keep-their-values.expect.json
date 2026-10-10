@@ -1,0 +1,19 @@
+{
+  "requirement": "CMP-015",
+  "title": "locals of every width declared in turn each keep their own value",
+  "matrix": ["data-types.lint-ulint-lword", "data-types.bool"],
+  "tags": ["arch-sensitive", "alignment", "64-bit"],
+  "note": "IEC 61131-3 table 10 and 12: each variable holds the value assigned to it whatever its neighbours are; a 64-bit LINT placed after 8-, 16- and 32-bit variables sit at an address that a Cortex-M0 can only read if the compiler or the VM aligns it",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QW0", "type": "INT", "value": -1234},
+    {"at": "%QD1", "type": "DINT", "value": -70000},
+    {"at": "%QD2", "type": "REAL", "value": 2.5},
+    {"at": "%QB12", "type": "SINT", "value": -7},
+    {"at": "%QB13", "type": "BYTE", "value": 201},
+    {"at": "%QX14.0", "type": "BOOL", "value": true},
+    {"at": "%QX14.1", "type": "BOOL", "value": true},
+    {"at": "%QX14.2", "type": "BOOL", "value": true}
+  ]
+}

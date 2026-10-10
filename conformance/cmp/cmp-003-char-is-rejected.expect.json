@@ -1,0 +1,9 @@
+{
+  "requirement": "CMP-003",
+  "title": "a declaration of type CHAR is rejected naming the type",
+  "matrix": ["data-types.char-wchar"],
+  "note": "Decision D-04 (2.x recommended): CHAR and WCHAR are rejected with a message that names the type (CMP-003); today CHAR is accepted with size 0",
+  "build": "fails",
+  "lines": [3],
+  "messageIncludes": ["CHAR"]
+}

@@ -1,0 +1,11 @@
+{
+  "requirement": "CMP-021",
+  "title": "LEN of a WSTRING literal",
+  "matrix": ["data-types.wstring", "literals.time-date-and-string-literals"],
+  "note": "IEC 61131-3 table 8: a WSTRING literal is written between double quotes; LEN returns its number of characters",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QW0", "type": "INT", "value": 4}
+  ]
+}

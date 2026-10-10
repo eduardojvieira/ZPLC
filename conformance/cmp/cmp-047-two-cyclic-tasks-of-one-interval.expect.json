@@ -1,0 +1,17 @@
+{
+  "requirement": "CMP-047",
+  "title": "two cyclic tasks of one interval each run their program on every scan",
+  "matrix": ["configuration.cyclic-tasks", "configuration.ownership-and-memory-checks"],
+  "note": "CMP-047: several cyclic tasks of zplc.json keep working: each runs its programs once per interval, so after three scans of 10 ms both counters are 3",
+  "scans": 3,
+  "scanMs": 10,
+  "files": ["cmp-047-two-cyclic-tasks-of-one-interval-right.st"],
+  "tasks": [
+    {"name": "LeftTask", "trigger": "cyclic", "interval_ms": 10, "priority": 1, "programs": ["main.st"]},
+    {"name": "RightTask", "trigger": "cyclic", "interval_ms": 10, "priority": 2, "programs": ["cmp-047-two-cyclic-tasks-of-one-interval-right.st"]}
+  ],
+  "expect": [
+    {"at": "%QW0", "type": "INT", "value": 3},
+    {"at": "%QW1", "type": "INT", "value": 3}
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "requirement": "CMP-041",
+  "title": "a FINAL method that a derived block overrides is rejected at the override",
+  "matrix": ["pous.extends-override-final-super", "pous.public-private-protected-abstract"],
+  "note": "IEC 61131-3 ed. 3 table 48: a method declared FINAL cannot be overridden; the diagnostic is at the overriding method",
+  "build": "fails",
+  "lines": [8],
+  "messageIncludes": []
+}

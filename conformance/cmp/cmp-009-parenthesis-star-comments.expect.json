@@ -1,0 +1,11 @@
+{
+  "requirement": "CMP-009",
+  "title": "a (* *) comment between statements and inside an expression changes nothing",
+  "matrix": ["statements.comments-parenthesis-star"],
+  "note": "IEC 61131-3 table 4: a comment is any text between (* and *); it is not part of the program, so ((1 + 2) * 5) is 15",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QW0", "type": "INT", "value": 15}
+  ]
+}

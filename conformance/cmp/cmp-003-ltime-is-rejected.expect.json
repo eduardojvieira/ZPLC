@@ -1,0 +1,9 @@
+{
+  "requirement": "CMP-003",
+  "title": "a declaration of type LTIME is rejected naming the type",
+  "matrix": ["data-types.ltime-ldate-ltod-ldt"],
+  "note": "Decision D-04 (2.x recommended): in 2.0 the types LTIME, LDATE, LTOD and LDT are rejected with a message that names the type (CMP-003)",
+  "build": "fails",
+  "lines": [3],
+  "messageIncludes": ["LTIME"]
+}

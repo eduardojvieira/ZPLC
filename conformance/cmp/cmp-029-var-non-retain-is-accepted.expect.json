@@ -1,0 +1,11 @@
+{
+  "requirement": "CMP-029",
+  "title": "VAR NON_RETAIN is accepted and takes its initial value",
+  "matrix": ["declarations.retain-non-retain"],
+  "note": "IEC 61131-3 table 14: the NON_RETAIN qualifier marks variables that are initialised on a warm start; a first start gives the initial value",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QW0", "type": "INT", "value": 5}
+  ]
+}

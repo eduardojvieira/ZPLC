@@ -1,0 +1,9 @@
+{
+  "requirement": "CMP-003",
+  "title": "a declaration of type LTOD is rejected naming the type",
+  "matrix": ["data-types.ltime-ldate-ltod-ldt"],
+  "note": "Decision D-04 (2.x recommended): rejected with a message that names the type (CMP-003)",
+  "build": "fails",
+  "lines": [3],
+  "messageIncludes": ["LTOD"]
+}

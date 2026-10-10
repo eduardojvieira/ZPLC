@@ -1,0 +1,20 @@
+{
+  "requirement": "CMP-014",
+  "title": "SHR, AND_WORD, OR_WORD, XOR_WORD, NOT_WORD and their DWORD forms use the full width",
+  "matrix": ["functions.shift-rotate-and-word-logic"],
+  "tags": ["arch-sensitive", "shifts"],
+  "note": "IEC 61131-3 table 29 and CMP-014: with W = 16#F0F0 and D = 16#F0F0F0F0, SHR(W, 4) = 16#0F0F, W AND 16#00FF = 16#00F0, W OR 16#000F = 16#F0FF, W XOR 16#FFFF = 16#0F0F and NOT W = 16#0F0F; D AND 16#FFFF = 16#F0F0, D OR 16#FF = 16#F0F0F0FF, D XOR 16#FFFFFFFF = 16#0F0F0F0F and NOT D = 16#0F0F0F0F",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QW0", "type": "WORD", "value": 3855},
+    {"at": "%QW1", "type": "WORD", "value": 240},
+    {"at": "%QW2", "type": "WORD", "value": 61695},
+    {"at": "%QW3", "type": "WORD", "value": 3855},
+    {"at": "%QW4", "type": "WORD", "value": 3855},
+    {"at": "%QD3", "type": "DWORD", "value": 61680},
+    {"at": "%QD4", "type": "DWORD", "value": 4042322175},
+    {"at": "%QD5", "type": "DWORD", "value": 252645135},
+    {"at": "%QD6", "type": "DWORD", "value": 252645135}
+  ]
+}

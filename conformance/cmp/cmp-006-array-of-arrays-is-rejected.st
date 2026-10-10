@@ -1,0 +1,7 @@
+PROGRAM Nested
+VAR
+  a : ARRAY[1..3] OF ARRAY[1..3] OF INT;
+  q AT %QW0 : INT;
+END_VAR
+  q := 1;
+END_PROGRAM

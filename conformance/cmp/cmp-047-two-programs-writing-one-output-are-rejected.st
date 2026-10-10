@@ -1,0 +1,6 @@
+PROGRAM First
+VAR
+  motor AT %QX0.0 : BOOL;
+END_VAR
+  motor := TRUE;
+END_PROGRAM
