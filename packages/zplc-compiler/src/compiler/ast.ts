@@ -468,6 +468,8 @@ export interface BoolLiteral extends ASTNode {
 export interface IntLiteral extends ASTNode {
     kind: 'IntLiteral';
     value: number;
+    /** The exact value, present only when it is beyond 2^53 and `value` is rounded (a LINT or ULINT literal). */
+    big?: bigint;
 }
 
 /**

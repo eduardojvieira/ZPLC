@@ -13,13 +13,21 @@ import { describe, it, expect } from 'bun:test';
 import { assemble } from '../assembler/index.ts';
 import { generate } from './codegen.ts';
 import {
+    ADD64_HELPER,
+    ADD64_LABEL,
+    CMP64_HELPER,
+    CMP64S_LABEL,
+    CMP64U_LABEL,
     FCMP_HELPER,
     FCMP_LABEL,
     LITERAL_INT,
+    SUB64_HELPER,
+    SUB64_LABEL,
     UDIV32_HELPER,
     UDIV32_LABEL,
     UNKNOWN_TYPE,
     UNSIGNED_TO_REAL,
+    cmp64Test,
     commonType,
     floatBits,
     fcmpTest,
@@ -155,6 +163,44 @@ describe('REAL comparison helper', () => {
     }
 });
 
+describe('64-bit helpers', () => {
+    const operands: bigint[] = [0n, 1n, 2n, 0xFFFFFFFFn, 0x100000000n, 0x100000001n, 0x7FFFFFFFFFFFFFFFn,
+        0x8000000000000000n, 0x8000000000000001n, 0xFFFFFFFF00000000n, 0xFFFFFFFFFFFFFFFEn, 0xFFFFFFFFFFFFFFFFn,
+        0x00000000FFFFFFFFn + 1n, 0x123456789ABCDEF0n, 0xFEDCBA9876543210n];
+    const lo = (v: bigint): number => Number(v & 0xFFFFFFFFn);
+    const hi = (v: bigint): number => Number((v >> 32n) & 0xFFFFFFFFn);
+    const pair = (v: bigint): string => `${push(lo(v))}\n${push(hi(v))}`;
+    const signed = (v: bigint): bigint => BigInt.asIntN(64, v);
+    const join = (cells: number[]): bigint => (BigInt(cells[1]!) << 32n) | BigInt(cells[0]!);
+
+    it('ADD64 and SUB64 wrap modulo 2^64 for every pair of edge operands', () => {
+        for (const a of operands) {
+            for (const b of operands) {
+                const sum = run([pair(a), pair(b), `    CALL ${ADD64_LABEL}`, '    HALT', ...ADD64_HELPER].join('\n'));
+                expect(join(sum)).toBe(BigInt.asUintN(64, a + b));
+                const difference = run([pair(a), pair(b), `    CALL ${SUB64_LABEL}`, '    HALT', ...SUB64_HELPER].join('\n'));
+                expect(join(difference)).toBe(BigInt.asUintN(64, a - b));
+            }
+        }
+    });
+
+    for (const [name, label, view] of [['signed', CMP64S_LABEL, signed], ['unsigned', CMP64U_LABEL, (v: bigint) => v]] as const) {
+        it(`CMP64 orders ${name} values for every pair of edge operands and every operator`, () => {
+            const ops: Record<CompareOp, (x: bigint, y: bigint) => boolean> = {
+                EQ: (x, y) => x === y, NE: (x, y) => x !== y, LT: (x, y) => x < y, LE: (x, y) => x <= y, GT: (x, y) => x > y, GE: (x, y) => x >= y,
+            };
+            for (const a of operands) {
+                for (const b of operands) {
+                    for (const op of Object.keys(ops) as CompareOp[]) {
+                        const result = run([pair(a), pair(b), `    CALL ${label}`, ...cmp64Test(op), '    HALT', ...CMP64_HELPER].join('\n'));
+                        expect(result).toEqual([ops[op](view(a), view(b)) ? 1 : 0]);
+                    }
+                }
+            }
+        });
+    }
+});
+
 describe('unsigned 32-bit to REAL conversion', () => {
     it('rounds once, to nearest, for the whole range', () => {
         const values = [0, 1, 65535, 65536, 16777217, 0x7FFFFFFF, 0x80000000, 0x80000001, 3000000000, 0xFFFFFF7F, 0xFFFFFFFF];
@@ -256,5 +302,30 @@ describe('generated code', () => {
 
     it('rejects an integer literal that does not fit in 32 bits with its position', () => {
         expect(() => assembly('x := 5000000000;', 'x : DINT;')).toThrow('does not fit in 32 bits');
+    });
+
+    it('links the 64-bit routines a program uses and no others', () => {
+        const asm = assembly('b := a + 1; ok := b > a;', 'a : LINT; b : LINT; ok : BOOL;');
+        expect(asm).toContain(`CALL ${ADD64_LABEL}`);
+        expect(asm).toContain(`CALL ${CMP64S_LABEL}`);
+        expect(asm).not.toContain(SUB64_LABEL);
+        expect(asm).not.toContain(UDIV32_LABEL);
+        const unsigned = assembly('ok := a > b;', 'a : ULINT; b : ULINT; ok : BOOL;');
+        expect(unsigned).toContain(`CALL ${CMP64U_LABEL}`);
+    });
+
+    it('widens the 32-bit side of a 64-bit operation: sign word for a signed value, 0 for an unsigned one', () => {
+        expect(assembly('b := a + s;', 'a : LINT; b : LINT; s : DINT;')).toMatch(/LOAD32 0x2010[^\n]*\n\s+DUP\n\s+PUSH8 31\n\s+SAR/);
+        expect(assembly('b := a + u;', 'a : LINT; b : LINT; u : UDINT;')).toMatch(/LOAD32 0x2010[^\n]*\n\s+PUSH8 0\n\s+CALL/);
+    });
+
+    it('refuses what a 64-bit value cannot do yet, naming the requirement', () => {
+        const wide = 'a : LINT; b : LINT; c : DINT;';
+        expect(() => assembly('b := a * 2;', wide)).toThrow('CMP-015');
+        expect(() => assembly('b := a / 2;', wide)).toThrow('CMP-015');
+        expect(() => assembly('b := a MOD 2;', wide)).toThrow('CMP-015');
+        expect(() => assembly('b := ABS(a);', wide)).toThrow('64-bit argument');
+        expect(() => assembly('FOR a := 0 TO 3 DO c := 1; END_FOR;', wide)).toThrow('FOR counter');
+        expect(() => assembly('CASE a OF 1: c := 1; END_CASE;', wide)).toThrow('CASE');
     });
 });

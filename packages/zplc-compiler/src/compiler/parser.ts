@@ -1525,6 +1525,8 @@ class Parser {
             return {
                 kind: 'IntLiteral',
                 value,
+                // beyond 2^53 a number is rounded: keep the exact value for a 64-bit literal
+                ...(Number.isSafeInteger(value) ? {} : { big: BigInt(curr.value) }),
                 line: curr.line,
                 column: curr.column,
             } as IntLiteral;

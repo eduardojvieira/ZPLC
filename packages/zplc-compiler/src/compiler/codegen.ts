@@ -64,22 +64,28 @@ import {
     type MemberSize,
 } from './stdlib/index.ts';
 import {
-    LITERAL_INT,
-    UNKNOWN_TYPE,
-    FCMP_HELPER,
+    ADD64_LABEL,
+    CMP64S_LABEL,
+    CMP64U_LABEL,
     FCMP_LABEL,
-    UDIV32_HELPER,
+    HELPERS,
+    LITERAL_INT,
+    SUB64_LABEL,
     UDIV32_LABEL,
+    UNKNOWN_TYPE,
     UNSIGNED_TO_REAL,
+    cmp64Test,
     commonType,
     fcmpTest,
     floatBits,
     isFloatType,
     isIntegerLike,
     isUnsigned32,
+    isWide,
     numericInfo,
     numericTypeName,
     type CompareOp,
+    type HelperName,
 } from './numeric.ts';
 
 // ============================================================================
@@ -219,10 +225,8 @@ interface CodeGenState {
     returnLabel: string | null;
     memoryProfile: CompilerMemoryProfile;
     workMemorySize: number;
-    /** The program divides unsigned 32-bit values: append the _zplc_udiv32 routine. */
-    needsUdiv32: boolean;
-    /** The program compares REAL values: append the _zplc_fcmp routine. */
-    needsFcmp: boolean;
+    /** The helper routines the program calls; they are appended after the main cycle. */
+    helpers: Set<HelperName>;
 }
 
 /**
@@ -313,8 +317,7 @@ export function generate(unit: CompilationUnit | Program, options?: CodeGenOptio
         returnLabel: null,
         memoryProfile,
         workMemorySize,
-        needsUdiv32: false,
-        needsFcmp: false,
+        helpers: new Set(),
     };
 
     const isUnit = unit.kind === 'CompilationUnit';
@@ -413,15 +416,11 @@ export function generate(unit: CompilationUnit | Program, options?: CodeGenOptio
     emit(state, `    HALT`);
 
     // Routines the program called, reachable only through CALL
-    if (state.needsUdiv32) {
+    for (const helper of HELPERS) {
+        if (!state.helpers.has(helper.name)) continue;
         emit(state, ``);
-        emit(state, `; --- Helper: unsigned 32-bit division ---`);
-        state.output.push(...UDIV32_HELPER);
-    }
-    if (state.needsFcmp) {
-        emit(state, ``);
-        emit(state, `; --- Helper: REAL three-way comparison ---`);
-        state.output.push(...FCMP_HELPER);
+        emit(state, `; --- Helper: ${helper.title} ---`);
+        state.output.push(...helper.lines);
     }
 
     return state.output.join('\n');
@@ -1438,6 +1437,9 @@ function emitForStatement(state: CodeGenState, stmt: ForStatement): void {
     const counterAddr = formatAddress(counterSym.address);
     const suffix = getLoadStoreSuffix(counterSym.dataType as DataTypeValue);
     const counterType = numericTypeName(counterSym.dataType);
+    if (isWide(counterType)) {
+        fail(stmt, `A FOR counter of 64 bits is not supported yet (CMP-015)`);
+    }
     const counterExtend = signExtension(counterType);
     /** Load the counter in its canonical 32-bit form. */
     const loadCounter = (): void => {
@@ -1598,6 +1600,9 @@ function emitRepeatStatement(state: CodeGenState, stmt: RepeatStatement): void {
  *   end_case_N:
  */
 function emitCaseStatement(state: CodeGenState, stmt: CaseStatement): void {
+    if (isWide(staticType(state, stmt.selector))) {
+        fail(stmt.selector, `CASE on a 64-bit value is not supported yet (CMP-015)`);
+    }
     const endLabel = newLabel(state, 'end_case');
     const elseLabel = stmt.elseBranch ? newLabel(state, 'case_else') : null;
 
@@ -2073,6 +2078,29 @@ function emitUnaryExpr(state: CodeGenState, expr: UnaryExpr): void {
     emitExpression(state, expr.operand);
     const type = staticType(state, expr.operand);
     const info = numericInfo(type);
+
+    if (isWide(type) && !isFloatType(type)) {
+        // Two cells [lo hi]
+        if (expr.operator === 'NOT') {
+            emit(state, `    NOT`);
+            emit(state, `    SWAP`);
+            emit(state, `    NOT`);
+            emit(state, `    SWAP`);
+        } else {
+            // -x: lo' = -lo, hi' = ~hi + (lo == 0)
+            emit(state, `    PICK 1`);
+            emit(state, `    PUSH8 0`);
+            emit(state, `    EQ                  ; [lo hi lo==0]`);
+            emit(state, `    SWAP`);
+            emit(state, `    NOT`);
+            emit(state, `    ADD                 ; [lo hi']`);
+            emit(state, `    SWAP`);
+            emit(state, `    NEG                 ; [hi' lo']`);
+            emit(state, `    SWAP`);
+        }
+        return;
+    }
+
     switch (expr.operator) {
         case 'NOT':
             emit(state, `    NOT`);
@@ -2335,15 +2363,48 @@ function emitIntToReal(state: CodeGenState, fromType: string): void {
     }
 }
 
+/** Link a helper routine into the program and call it. */
+function callHelper(state: CodeGenState, helper: HelperName, label: string): void {
+    state.helpers.add(helper);
+    emit(state, `    CALL ${label}`);
+}
+
+/** Value of an integer literal or of its negation, exact beyond 2^53; undefined for any other expression. */
+function constantInteger(expr: Expression): bigint | undefined {
+    if (expr.kind === 'IntLiteral') return expr.big ?? BigInt(expr.value);
+    if (expr.kind === 'UnaryExpr' && expr.operator === 'NEG') {
+        const inner = constantInteger(expr.operand);
+        return inner === undefined ? undefined : -inner;
+    }
+    return undefined;
+}
+
+/** Push a 64-bit constant as two cells, low word first (the order LOAD64 leaves them in). */
+function emitWideConstant(state: CodeGenState, value: bigint): void {
+    const bits = BigInt.asUintN(64, value);
+    emit(state, `    PUSH32 ${Number(bits & 0xFFFFFFFFn)}       ; ${value} (low word)`);
+    emit(state, `    PUSH32 ${Number(bits >> 32n)}       ; (high word)`);
+}
+
+/** The error of a 64-bit operation that has no opcode and no helper routine yet. */
+function failWide(at: { line: number; column: number }, what: string): never {
+    return fail(at, `${what} on a 64-bit value is not supported yet (CMP-015): the VM has no 64-bit opcode for it`);
+}
+
 /**
- * Emit `expr`; when `toReal` and it is an integer of 32 bits or less, convert it to REAL
- * (the implicit conversion of IEC 61131-3 arithmetic: INT * REAL, REAL := INT).
+ * Emit `expr` and convert its value to `target`: REAL (an integer of 32 bits or less is
+ * converted, the implicit conversion of IEC 61131-3 arithmetic) or a 64-bit integer type (a
+ * narrower integer is widened to two cells, a 64-bit value assigned to a narrower target
+ * loses its high word). `contextType` is the type a literal-only expression takes.
  */
-function emitNumericOperand(state: CodeGenState, expr: Expression, toReal: boolean): void {
-    if (toReal) {
-        const type = staticType(state, expr);
-        const bits = numericInfo(type)?.bits ?? 32;
-        if (isIntegerLike(type) && bits <= 32) {
+function emitConverted(state: CodeGenState, expr: Expression, target: string, contextType?: string): void {
+    const type = staticType(state, expr);
+    const info = numericInfo(type);
+    const sourceBits = info?.bits ?? 32;
+
+    if (target === 'REAL') {
+        if (isWide(type) && isIntegerLike(type)) failWide(expr, 'Conversion to REAL');
+        if (isIntegerLike(type) && sourceBits <= 32) {
             if (expr.kind === 'IntLiteral') {
                 emit(state, `    PUSH32 ${floatBits(expr.value)}       ; ${expr.value} (REAL)`);
                 return;
@@ -2352,22 +2413,73 @@ function emitNumericOperand(state: CodeGenState, expr: Expression, toReal: boole
             emitIntToReal(state, type);
             return;
         }
+        emitExpression(state, expr);
+        return;
+    }
+
+    if (isWide(target) && !isFloatType(target)) {
+        if (isFloatType(type)) failWide(expr, 'Conversion from REAL');
+        if (isWide(type)) {
+            if (expr.kind === 'BinaryExpr') emitBinaryExpr(state, expr, target);
+            else emitExpression(state, expr);
+            return;
+        }
+        const constant = constantInteger(expr);
+        if (constant !== undefined) {
+            emitWideConstant(state, constant);
+            return;
+        }
+        if (expr.kind === 'BinaryExpr' && type === LITERAL_INT) {
+            // literals only: the operation takes the width of its context
+            emitBinaryExpr(state, expr, target);
+            return;
+        }
+        if (isIntegerLike(type) && sourceBits <= 32) {
+            emitExpression(state, expr);
+            if (info?.signed || type === LITERAL_INT) {
+                // the sign word: the value shifted right by 31
+                emit(state, `    DUP`);
+                emit(state, `    PUSH8 31`);
+                emit(state, `    SAR`);
+            } else {
+                emit(state, `    PUSH8 0`);
+            }
+            return;
+        }
+        emitExpression(state, expr);
+        return;
+    }
+
+    if (isWide(type) && isIntegerLike(type) && isIntegerLike(target) && (numericInfo(target)?.bits ?? 64) <= 32) {
+        emitExpression(state, expr);
+        emit(state, `    DROP                ; high word`);
+        return;
+    }
+
+    if (contextType !== undefined && expr.kind === 'BinaryExpr' && type === LITERAL_INT) {
+        emitBinaryExpr(state, expr, contextType);
+        return;
     }
     emitExpression(state, expr);
 }
 
 /** Emit `value` for storing into a target of `targetType`. */
 function emitValueFor(state: CodeGenState, value: Expression, targetType: unknown): void {
-    emitNumericOperand(state, value, numericTypeName(targetType) === 'REAL');
+    emitConverted(state, value, numericTypeName(targetType));
 }
 
 /** Emit the comparison `op` of the two values on the stack, read as `type`. */
 function emitCompare(state: CodeGenState, op: CompareOp, type: string): void {
     if (type === 'REAL') {
         // No float comparison opcode: the IEEE 754 order of two REAL values is a call to a helper
-        state.needsFcmp = true;
-        emit(state, `    CALL ${FCMP_LABEL}`);
+        callHelper(state, 'fcmp', FCMP_LABEL);
         for (const line of fcmpTest(op)) emit(state, line);
+        return;
+    }
+    if (isWide(type) && !isFloatType(type)) {
+        // Four cells in, one three-way result out; LINT and DT order signed, ULINT and LWORD unsigned
+        callHelper(state, 'cmp64', numericInfo(type)?.signed ? CMP64S_LABEL : CMP64U_LABEL);
+        for (const line of cmp64Test(op)) emit(state, line);
         return;
     }
     if (isUnsigned32(type) && op !== 'EQ' && op !== 'NE') {
@@ -2403,12 +2515,16 @@ function makeCodeGenContext(
             const type = staticType(state, e);
             return type === UNKNOWN_TYPE ? undefined : type;
         },
-        emitOperand: (e: Expression, asType: string) => emitNumericOperand(state, e, asType === 'REAL'),
+        emitOperand: (e: Expression, asType: string) => emitConverted(state, e, asType),
         emitCompare: (op: CompareOp, type?: string) => emitCompare(state, op, type ?? UNKNOWN_TYPE),
     };
 }
 
-function emitBinaryExpr(state: CodeGenState, expr: BinaryExpr): void {
+/**
+ * `contextType` is the type the operation takes when both operands are bare integer literals
+ * (a 64-bit assignment target makes `3000000000 + 3000000000` a 64-bit sum).
+ */
+function emitBinaryExpr(state: CodeGenState, expr: BinaryExpr, contextType?: string): void {
     // Check if this is a string operation
     const leftIsString = isStringExpression(state, expr.left);
     const rightIsString = isStringExpression(state, expr.right);
@@ -2438,6 +2554,18 @@ function emitBinaryExpr(state: CodeGenState, expr: BinaryExpr): void {
         emit(state, `    ; WARNING: Operator ${expr.operator} not supported for STRING type`);
     }
 
+    // The type of the operation: REAL when either side is REAL (the integer side is converted),
+    // a 64-bit integer type when either side is one, an unsigned 32-bit type when either side is
+    // one, otherwise the signed integer rules
+    let opType = commonType(staticType(state, expr.left), staticType(state, expr.right));
+    if (opType === LITERAL_INT && contextType !== undefined && isWide(contextType)) opType = contextType;
+    const wide = isWide(opType) && !isFloatType(opType);
+
+    if (wide) {
+        emitWideBinary(state, expr, opType);
+        return;
+    }
+
     // Logical operators act on the bit pattern, whatever the type: AND, OR and XOR of two
     // zero-extended values never leave the declared width
     if (expr.operator === 'AND' || expr.operator === 'OR' || expr.operator === 'XOR') {
@@ -2447,14 +2575,11 @@ function emitBinaryExpr(state: CodeGenState, expr: BinaryExpr): void {
         return;
     }
 
-    // The type of the operation: REAL when either side is REAL (the integer side is converted),
-    // an unsigned 32-bit type when either side is one, otherwise the signed integer rules
-    const opType = commonType(staticType(state, expr.left), staticType(state, expr.right));
     const useFloat = isFloatType(opType);
-    const convert = opType === 'REAL';
+    const target = opType === 'REAL' ? 'REAL' : UNKNOWN_TYPE;
 
-    emitNumericOperand(state, expr.left, convert);
-    emitNumericOperand(state, expr.right, convert);
+    emitConverted(state, expr.left, target);
+    emitConverted(state, expr.right, target);
 
     switch (expr.operator) {
         // Arithmetic operators - use float variants when operands are REAL
@@ -2465,8 +2590,7 @@ function emitBinaryExpr(state: CodeGenState, expr: BinaryExpr): void {
             if (useFloat) {
                 emit(state, `    DIVF`);
             } else if (isUnsigned32(opType)) {
-                state.needsUdiv32 = true;
-                emit(state, `    CALL ${UDIV32_LABEL}`);
+                callHelper(state, 'udiv32', UDIV32_LABEL);
             } else {
                 emit(state, `    DIV`);
             }
@@ -2476,10 +2600,9 @@ function emitBinaryExpr(state: CodeGenState, expr: BinaryExpr): void {
         case 'MOD':
             if (isUnsigned32(opType)) {
                 // a MOD b = a - (a /u b) * b
-                state.needsUdiv32 = true;
                 emit(state, `    OVER`);
                 emit(state, `    OVER`);
-                emit(state, `    CALL ${UDIV32_LABEL}`);
+                callHelper(state, 'udiv32', UDIV32_LABEL);
                 emit(state, `    MUL`);
                 emit(state, `    SUB`);
             } else {
@@ -2487,6 +2610,34 @@ function emitBinaryExpr(state: CodeGenState, expr: BinaryExpr): void {
             }
             break;
 
+        case 'EQ': case 'NE': case 'LT': case 'LE': case 'GT': case 'GE':
+            emitCompare(state, expr.operator, opType);
+            break;
+    }
+}
+
+/** A binary operation on 64-bit integers: each operand is two cells, low word below the high word. */
+function emitWideBinary(state: CodeGenState, expr: BinaryExpr, opType: string): void {
+    switch (expr.operator) {
+        case 'MUL': case 'DIV': case 'MOD':
+            failWide(expr, `The ${expr.operator === 'MUL' ? 'multiplication' : expr.operator === 'DIV' ? 'division' : 'modulo'}`);
+    }
+
+    emitConverted(state, expr.left, opType);
+    emitConverted(state, expr.right, opType);
+
+    switch (expr.operator) {
+        case 'ADD': callHelper(state, 'add64', ADD64_LABEL); break;
+        case 'SUB': callHelper(state, 'sub64', SUB64_LABEL); break;
+        case 'AND': case 'OR': case 'XOR':
+            // [alo ahi blo bhi]: the high words, then the low words
+            emit(state, `    ROT`);
+            emit(state, `    ${expr.operator}`);
+            emit(state, `    ROT`);
+            emit(state, `    ROT`);
+            emit(state, `    ${expr.operator}`);
+            emit(state, `    SWAP`);
+            break;
         case 'EQ': case 'NE': case 'LT': case 'LE': case 'GT': case 'GE':
             emitCompare(state, expr.operator, opType);
             break;
@@ -2521,6 +2672,15 @@ function emitFunctionCall(state: CodeGenState, expr: FunctionCall): void {
     const fnDef = getFn(expr.name);
     if (!fnDef) {
         fail(expr, `Unknown function '${expr.name}'`);
+    }
+
+    // The standard functions work on one cell per operand
+    for (const arg of expr.args) {
+        const value = ((arg as any).kind === 'NamedArgument' ? (arg as any).value : arg) as Expression;
+        const argType = staticType(state, value);
+        if (isWide(argType)) {
+            fail(expr, `${expr.name} does not take a 64-bit argument yet (CMP-015)`);
+        }
     }
 
     emit(state, `    ; ${expr.name}(...)`);

@@ -137,6 +137,10 @@ export function floatBits(value: number): number {
 
 export const UDIV32_LABEL = '_zplc_udiv32';
 export const FCMP_LABEL = '_zplc_fcmp';
+export const ADD64_LABEL = '_zplc_add64';
+export const SUB64_LABEL = '_zplc_sub64';
+export const CMP64S_LABEL = '_zplc_cmp64s';
+export const CMP64U_LABEL = '_zplc_cmp64u';
 const FKEY_LABEL = '_zplc_fkey';
 
 /**
@@ -279,4 +283,127 @@ export const UNSIGNED_TO_REAL: string[] = [
     '    AND',
     '    I2F',
     '    ADDF',
+];
+
+/**
+ * 64-bit integer addition: [alo ahi blo bhi] -> [lo hi]. The carry out of the low words is
+ * their sum compared unsigned with one of them.
+ */
+export const ADD64_HELPER: string[] = [
+    `${ADD64_LABEL}:`,
+    `    ROT`,
+    `    ADD                 ; [alo blo hi0]`,
+    `    ROT`,
+    `    ROT                 ; [hi0 alo blo]`,
+    `    OVER`,
+    `    OVER`,
+    `    ADD                 ; [hi0 alo blo lo]`,
+    `    SWAP`,
+    `    DROP                ; [hi0 alo lo]`,
+    `    DUP`,
+    `    ROT                 ; [hi0 lo lo alo]`,
+    `    LTU                 ; [hi0 lo carry]`,
+    `    ROT                 ; [lo carry hi0]`,
+    `    ADD                 ; [lo hi]`,
+    `    RET`,
+];
+
+/** 64-bit integer subtraction: [alo ahi blo bhi] -> [lo hi]; the borrow is alo < blo, unsigned. */
+export const SUB64_HELPER: string[] = [
+    `${SUB64_LABEL}:`,
+    `    ROT`,
+    `    SWAP`,
+    `    SUB                 ; [alo blo hi0]`,
+    `    ROT`,
+    `    ROT                 ; [hi0 alo blo]`,
+    `    OVER`,
+    `    OVER`,
+    `    LTU                 ; [hi0 alo blo borrow]`,
+    `    ROT`,
+    `    ROT                 ; [hi0 borrow alo blo]`,
+    `    SUB                 ; [hi0 borrow lo]`,
+    `    SWAP`,
+    `    ROT                 ; [lo borrow hi0]`,
+    `    SWAP`,
+    `    SUB                 ; [lo hi]`,
+    `    RET`,
+];
+
+/**
+ * 64-bit three-way comparison: [alo ahi blo bhi] -> [-1 | 0 | 1]. The high words decide when
+ * they differ (signed for CMP64S_LABEL, unsigned for CMP64U_LABEL), the low words, unsigned,
+ * otherwise.
+ */
+export const CMP64_HELPER: string[] = [
+    `${CMP64S_LABEL}:`,
+    `    PICK 2`,
+    `    PICK 1`,
+    `    LT`,
+    `    JNZ ${CMP64S_LABEL}_less`,
+    `    PICK 2`,
+    `    PICK 1`,
+    `    GT`,
+    `    JNZ ${CMP64S_LABEL}_greater`,
+    `    JMP ${CMP64S_LABEL}_low`,
+    `${CMP64U_LABEL}:`,
+    `    PICK 2`,
+    `    PICK 1`,
+    `    LTU`,
+    `    JNZ ${CMP64S_LABEL}_less`,
+    `    PICK 2`,
+    `    PICK 1`,
+    `    GTU`,
+    `    JNZ ${CMP64S_LABEL}_greater`,
+    `${CMP64S_LABEL}_low:    ; [alo ahi blo bhi], the high words are equal`,
+    `    DROP`,
+    `    SWAP`,
+    `    DROP                ; [alo blo]`,
+    `    OVER`,
+    `    OVER`,
+    `    LTU`,
+    `    JNZ ${CMP64S_LABEL}_low_less`,
+    `    GTU                 ; [alo>blo]`,
+    `    RET`,
+    `${CMP64S_LABEL}_low_less:`,
+    `    DROP`,
+    `    DROP`,
+    `    PUSH8 -1`,
+    `    RET`,
+    `${CMP64S_LABEL}_less:   ; [alo ahi blo bhi]`,
+    `    DROP`,
+    `    DROP`,
+    `    DROP`,
+    `    DROP`,
+    `    PUSH8 -1`,
+    `    RET`,
+    `${CMP64S_LABEL}_greater:`,
+    `    DROP`,
+    `    DROP`,
+    `    DROP`,
+    `    DROP`,
+    `    PUSH8 1`,
+    `    RET`,
+];
+
+/** Instructions that turn the result of CMP64S_LABEL or CMP64U_LABEL into the BOOL of one operator. */
+export function cmp64Test(op: CompareOp): string[] {
+    switch (op) {
+        case 'EQ': return ['    PUSH8 0', '    EQ'];
+        case 'NE': return ['    PUSH8 0', '    NE'];
+        case 'LT': return ['    PUSH8 0', '    LT'];
+        case 'LE': return ['    PUSH8 1', '    LT'];
+        case 'GT': return ['    PUSH8 0', '    GT'];
+        case 'GE': return ['    PUSH8 -1', '    GT'];
+    }
+}
+
+/** The helper routines a program may link, in the order they are appended. */
+export type HelperName = 'udiv32' | 'fcmp' | 'add64' | 'sub64' | 'cmp64';
+
+export const HELPERS: ReadonlyArray<{ name: HelperName; title: string; lines: string[] }> = [
+    { name: 'udiv32', title: 'unsigned 32-bit division', lines: UDIV32_HELPER },
+    { name: 'fcmp', title: 'REAL three-way comparison', lines: FCMP_HELPER },
+    { name: 'add64', title: '64-bit addition', lines: ADD64_HELPER },
+    { name: 'sub64', title: '64-bit subtraction', lines: SUB64_HELPER },
+    { name: 'cmp64', title: '64-bit three-way comparison', lines: CMP64_HELPER },
 ];

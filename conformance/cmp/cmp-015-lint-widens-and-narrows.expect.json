@@ -1,0 +1,23 @@
+{
+  "requirement": "CMP-015",
+  "title": "a LINT takes a DINT with its sign and a UDINT without one; a DINT takes the low word",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QX0.0",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX0.1",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QD1",
+      "type": "DINT",
+      "value": 705032704
+    }
+  ]
+}
