@@ -9,12 +9,12 @@ import { compileSingleFileWithTask, type PLCLanguage } from '../compiler';
 import { getLanguageFromFilename } from '../types';
 import { artifactEvidence, compilerCheck, compilerCompile, compilerWarningDiagnostics, executionPermission, finishToolExecution, firmwareBuild, projectInspect, projectMigrationExport, projectMigrationPreview, projectValidate, safeCompilerDiagnostics, safetyCheck, scenarioRun, startToolExecution, symbolsList, testsRun, toolchainInspect, withToolExecution, type FirmwareBuildSummary, type CompilerCompileResult, type ProjectMigrationExportResult, type SafetyCheckResult, type TestRunResult, type ToolEvidence, type ToolExecutionStart, type ToolResult } from './toolApi';
 
-type Values = { help?: boolean; version?: boolean; json?: boolean; output?: string; language?: string };
+type Values = { help?: boolean; version?: boolean; json?: boolean; output?: string; language?: string; emit?: string };
 type Output = Pick<typeof console, 'log' | 'error'>;
 type ParsedArgs = { values: Values; positionals: string[] };
 
 function parseCliArgs(args: string[]): ParsedArgs | undefined {
-  try { return parseArgs({ args, options: { help: { type: 'boolean', short: 'h' }, version: { type: 'boolean', short: 'v' }, json: { type: 'boolean', short: 'j' }, output: { type: 'string', short: 'o' }, language: { type: 'string', short: 'l' } }, allowPositionals: true }) as ParsedArgs; }
+  try { return parseArgs({ args, options: { help: { type: 'boolean', short: 'h' }, version: { type: 'boolean', short: 'v' }, json: { type: 'boolean', short: 'j' }, output: { type: 'string', short: 'o' }, language: { type: 'string', short: 'l' }, emit: { type: 'string' } }, allowPositionals: true }) as ParsedArgs; }
   catch { return undefined; }
 }
 
@@ -32,7 +32,7 @@ function operationForCommand(command: string): ToolEvidence['operation'] {
 }
 
 function printHelp(output: Output): void {
-  output.log(`ZPLC CLI\n\nUsage:\n  zplc-cli inspect <workspace> --json\n  zplc-cli validate <workspace> --json\n  zplc-cli check <workspace> --json\n  zplc-cli safety-check <workspace> [--json]\n  zplc-cli symbols <workspace> [--json]\n  zplc-cli migrate-preview <workspace> [--json]\n  zplc-cli migrate <workspace> --output <manifest-v2.json> [--json]\n  zplc-cli test <workspace> [--json] [--output <trace.json>]\n  zplc-cli scenario-run <workspace> <scenario-id> [--json] [--output <trace.json>]\n  zplc-cli toolchain-inspect <zplc-repository-root> [--json]\n  zplc-cli firmware-build <zplc-repository-root> <ide_id> [--json]\n  zplc-cli compile <workspace|source-file> [--json] [--output <file>] [--language ST|IL|LD|FBD|SFC]\n\nFirmware builds are local POSIX ephemeral cross-builds only: they do not flash, deploy, or qualify hardware.\n\nOptions:\n  -h, --help        Show this help\n  -v, --version     Show version\n  -j, --json        Output one JSON result line\n  -o, --output <f>  Write the requested artifact\n  -l, --language <l> Source language (ST, IL, LD, FBD, SFC)`);
+  output.log(`ZPLC CLI\n\nUsage:\n  zplc-cli inspect <workspace> --json\n  zplc-cli validate <workspace> --json\n  zplc-cli check <workspace> --json\n  zplc-cli safety-check <workspace> [--json]\n  zplc-cli symbols <workspace> [--json]\n  zplc-cli migrate-preview <workspace> [--json]\n  zplc-cli migrate <workspace> --output <manifest-v2.json> [--json]\n  zplc-cli test <workspace> [--json] [--output <trace.json>]\n  zplc-cli scenario-run <workspace> <scenario-id> [--json] [--output <trace.json>]\n  zplc-cli toolchain-inspect <zplc-repository-root> [--json]\n  zplc-cli firmware-build <zplc-repository-root> <ide_id> [--json]\n  zplc-cli compile <workspace|source-file> [--json] [--output <file>] [--language ST|IL|LD|FBD|SFC]\n  zplc-cli compile <workspace|source-file> --emit asm [--output <file>]\n\nFirmware builds are local POSIX ephemeral cross-builds only: they do not flash, deploy, or qualify hardware.\n\nOptions:\n  -h, --help        Show this help\n  -v, --version     Show version\n  -j, --json        Output one JSON result line\n  -o, --output <f>  Write the requested artifact\n  -l, --language <l> Source language (ST, IL, LD, FBD, SFC)\n      --emit asm    Print the assembly listing of the build, or write it to --output, instead of the artifact`);
 }
 function failure(operation: ToolEvidence['operation'], message: string): ToolEvidence { return { schemaVersion: 1, operation, outcome: 'failed', diagnostics: [{ code: 'CLI_INVALID', message }], artifacts: [] }; }
 function emitJson(output: Output, value: unknown): void { output.log(JSON.stringify(value)); }
@@ -116,6 +116,7 @@ async function singleFileCompile(file: string, values: Values, output: Output): 
   if (!language) return emitFailure(output, json, 'compile', 'Unsupported source language', start);
   try {
     const result = compileSingleFileWithTask(await readFile(file, 'utf8'), language, { taskName: 'Main', intervalMs: 50, priority: 3, programName: 'Main' });
+    if (values.emit === 'asm') return emitListing(output, result.assembly, values.output, result.warnings, file, start);
     const artifact = values.output?.toLowerCase().endsWith('.bin') ? result.bytecode : result.zplcFile;
     if (values.output && !await writeArtifact(values.output, artifact)) return emitFailure(output, json, 'compile', 'Unable to write output artifact', start);
     const warnings = compilerWarningDiagnostics(result.warnings);
@@ -127,6 +128,17 @@ async function singleFileCompile(file: string, values: Values, output: Output): 
     else output.log(result.assembly);
     return 0;
   } catch (error) { return emitCompilerFailure(output, json, 'compile', error, file, start); }
+}
+
+/** `--emit asm`: the assembly listing of a build, printed or written to the output file; warnings go to stderr as ever (CMP-060). */
+async function emitListing(output: Output, listing: string, target: string | undefined, warnings: Parameters<typeof compilerWarningDiagnostics>[0], file: string | undefined, start: ToolExecutionStart): Promise<number> {
+  for (const warning of compilerWarningDiagnostics(warnings)) {
+    if (file !== undefined) delete warning.path; // the compiler names the program here, not a file
+    output.error(`Warning: ${describeDiagnostic(warning, file)}`);
+  }
+  if (target === undefined) { output.log(listing); return 0; }
+  if (!await writeArtifact(target, Buffer.from(listing.endsWith('\n') ? listing : `${listing}\n`, 'utf8'))) return emitFailure(output, false, 'compile', 'Unable to write output artifact', start);
+  return 0;
 }
 
 export async function main(args = Bun.argv.slice(2), output: Output = console, options: { signal?: AbortSignal } = {}): Promise<number> {
@@ -141,6 +153,9 @@ export async function main(args = Bun.argv.slice(2), output: Output = console, o
   if (!command || !['inspect', 'validate', 'check', 'safety-check', 'compile', 'symbols', 'test', 'scenario-run', 'migrate-preview', 'migrate', 'toolchain-inspect', 'firmware-build'].includes(command)) return emitFailure(output, values.json === true, 'cli', 'Unknown command');
   const operation = operationForCommand(command);
   const executionStart = startToolExecution('cli', executionPermission(operation), operation);
+  if (values.emit !== undefined && (values.emit !== 'asm' || command !== 'compile' || values.json === true)) {
+    return emitFailure(output, values.json === true, operation, 'The --emit option takes asm, belongs to compile and cannot be combined with --json', executionStart);
+  }
   if (command === 'firmware-build') {
     if (!input || !ideId || !/^[a-z0-9][a-z0-9_]{0,63}$/.test(ideId) || positionals.length !== 3 || values.output !== undefined || values.language !== undefined) return emitFailure(output, values.json === true, 'firmware-build', 'Firmware build requires a repository root and exact ide_id without output or language options');
     let rootStatus;
@@ -168,6 +183,12 @@ export async function main(args = Bun.argv.slice(2), output: Output = console, o
   if ((command === 'compile' || command === 'test' || command === 'scenario-run' || command === 'migrate') && values.output && await isProtectedOutput(values.output, input, true)) return emitFailure(output, values.json === true, operation, 'Output path is protected');
   const result = command === 'inspect' ? await projectInspect(input) : command === 'validate' ? await projectValidate(input) : command === 'migrate-preview' ? await projectMigrationPreview(input) : command === 'migrate' ? await projectMigrationExport(input) : command === 'check' ? await compilerCheck(input) : command === 'safety-check' ? await safetyCheck(input) : command === 'symbols' ? await symbolsList(input) : command === 'test' ? cliTestResult(await testsRun(input, { signal: options.signal })) : command === 'scenario-run' ? cliTestResult(await scenarioRun(input, ideId!, { signal: options.signal })) : command === 'toolchain-inspect' ? await toolchainInspect(input) : await compilerCompile(input);
   if (result.ok && command === 'migrate' && !await writeArtifact(values.output!, (result as ProjectMigrationExportResult).manifest!)) return emitFailure(output, values.json === true, operation, 'Unable to write output artifact');
+  if (result.ok && command === 'compile' && values.emit === 'asm') {
+    // the listing of every program of the build, in the order of its code: assembling it gives the bytecode (CMP-060)
+    const status = await emitListing(output, (result as CompilerCompileResult).assembly ?? '', values.output, [], undefined, executionStart);
+    if (status === 0) result.evidence.diagnostics.forEach((warning) => output.error(`Warning: ${describeDiagnostic(warning)}`));
+    return status;
+  }
   if (result.ok && command === 'compile' && values.output && !await writeArtifact(values.output, (result as CompilerCompileResult).bytes!)) return emitFailure(output, values.json === true, operation, 'Unable to write output artifact');
   // build.generateDebugInfo: the debug map goes beside the artifact, as <output>.map.json (CMP-059)
   const compiled = result as CompilerCompileResult;

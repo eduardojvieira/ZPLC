@@ -96,6 +96,22 @@ it did, and a folder that is not listed is not compiled: the build warns with
 `SOURCE_NOT_COMPILED` and names each Structured Text file it leaves out. The
 debug map names the file of each library block in its `sourceRef`.
 
+## Assembly listing
+
+The compiler turns Structured Text into assembly text and the assembler turns it
+into the bytecode. The text stays available for inspection: Studio shows it in
+the generated-code dialog, and the CLI gives it with `--emit asm`, printed or
+written to `--output`:
+
+```bash
+zplc-cli compile <workspace|source-file> --emit asm --output build/main.asm
+```
+
+For a workspace the listing holds the code of every program, in the order of the
+bytecode, each under a comment that names it. It is a view of the build and not
+a source: assembling it gives the bytecode of the artifact, and nothing is proven
+by reading it.
+
 ## Assembler operands and directives
 
 The code generator writes assembly text and the assembler turns it into the

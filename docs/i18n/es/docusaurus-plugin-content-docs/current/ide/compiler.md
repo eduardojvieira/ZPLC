@@ -101,6 +101,22 @@ no se compila: la compilación avisa con `SOURCE_NOT_COMPILED` y nombra cada
 archivo Structured Text que deja fuera. El mapa de depuración nombra el archivo
 de cada bloque de biblioteca en su `sourceRef`.
 
+## Listado de ensamblador
+
+El compilador convierte Structured Text en texto ensamblador y el ensamblador lo
+convierte en bytecode. El texto sigue disponible para inspección: Studio lo muestra
+en el diálogo de código generado, y la CLI lo entrega con `--emit asm`, impreso o
+escrito en `--output`:
+
+```bash
+zplc-cli compile <espacio|archivo-fuente> --emit asm --output build/main.asm
+```
+
+Para un espacio de trabajo el listado contiene el código de cada programa, en el
+orden del bytecode, cada uno bajo un comentario que lo nombra. Es una vista de la
+compilación y no un fuente: ensamblarlo da el bytecode del artefacto, y nada se
+demuestra leyéndolo.
+
 ## Operandos y directivas del ensamblador
 
 El generador de código escribe texto en ensamblador y el ensamblador lo convierte

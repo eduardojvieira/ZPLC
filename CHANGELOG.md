@@ -473,6 +473,9 @@ All notable changes are documented here.
   condition built and were stored or compared as an address. Each is now a build
   error that names both types. `LEN` and `FIND`, which give an `INT`, still go
   to a number. No bundled project, example or conformance program used it.
+- The assembly listing of a build is a tested output of the CLI (CMP-060):
+  `zplc-cli compile <workspace|file> --emit asm` prints it, or writes it to
+  `--output`, and assembling it gives the bytecode of the artifact.
 
 ## 2.0.0-rc.3 - 2026-09-01
 
