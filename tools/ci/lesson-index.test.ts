@@ -27,7 +27,7 @@ describe('the generated lesson index (LRN-027, LRN-028)', () => {
     const built = buildIndex(packages);
     expect(built.problems).toEqual([]);
     expect(LESSON_INDEX).toEqual(built.index);
-    expect([...LESSON_IDS]).toEqual(built.index.lessons.map((lesson) => lesson.id));
+    expect<string[]>([...LESSON_IDS]).toEqual(built.index.lessons.map((lesson) => lesson.id));
   });
 
   it('is current as a file: `--check` of the generator exits 0', () => {

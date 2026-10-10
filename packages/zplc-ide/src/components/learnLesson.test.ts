@@ -319,7 +319,7 @@ describe('Learn lesson catalog', () => {
 describe('Learn lesson text is never replaced at run time (LRN-038)', () => {
   it('hands the panel exactly the strings of the generated index, in both languages, for every lesson', () => {
     for (const locale of ['en', 'es'] as const) {
-      expect(learnLessonCatalog[locale].map(({ id }) => id)).toEqual(LESSON_INDEX.lessons.map(({ id }) => id));
+      expect<string[]>(learnLessonCatalog[locale].map(({ id }) => id)).toEqual(LESSON_INDEX.lessons.map(({ id }) => id));
       learnLessonCatalog[locale].forEach((lesson, index) => {
         const source = LESSON_INDEX.lessons[index]!.text[locale];
         expect({ id: lesson.id, title: lesson.title, summary: lesson.summary, scope: lesson.scope, stages: lesson.stages, faultCases: lesson.faultCases, objectives: lesson.objectives, hints: lesson.hints })
