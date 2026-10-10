@@ -4,7 +4,7 @@ slug: /runtime/persistence
 id: persistence
 title: Persistence & Retain Memory
 sidebar_label: Persistence
-description: How ZPLC stores verified compiled logic and the current limits of RETAIN evidence.
+description: How ZPLC stores verified compiled logic and the RETAIN region, what a restart restores, the flash-wear budget per board and what has not been measured.
 ---
 
 # Persistence & Retain Memory
@@ -21,8 +21,9 @@ The ZPLC runtime core relies on an abstract Hardware Abstraction Layer (HAL) for
 
 | Platform | Storage Backend |
 |---|---|
-| **Zephyr profile** | Program-store backend when enabled and operational; NVS is one implementation, not a universal board guarantee. |
-| **Native Sim (Desktop)** | File-based program-store used by host tests. |
+| **Zephyr profile** | Program-store backend when enabled and operational; NVS is one implementation, not a universal board guarantee. The `RETAIN` records use the same HAL calls. |
+| **Native Sim (Desktop)** | Files in the persistence directory (`ZPLC_PERSIST_ROOT`, default `~/.zplc`): the program store and the `RETAIN` records. |
+| **WASM simulator** | `localStorage` of the browser, through the same HAL calls. The simulator does not use it for `RETAIN` yet. |
 
 ## Program Persistence on Hardware
 
@@ -47,13 +48,171 @@ evidence remain specific to the exact profile and have not been executed here.
 
 ## Retentive Memory (`RETAIN`)
 
-ZPLC defines a `RETAIN` memory region and HAL persistence primitives. The POSIX
-runtime has host-side persistence tests. Source-level `VAR RETAIN` and
-`VAR_GLOBAL RETAIN` declarations are deliberately rejected: there is no
-end-to-end allocation, restore, or qualified persistence contract for them yet.
+The compiler accepts `VAR RETAIN` and `VAR_GLOBAL RETAIN`, places those
+variables in the retentive region of the process memory (address `0x4000`, 4 KB
+by default) and applies their declared initial values only when the region holds
+no saved state. The runtime saves that region and restores it when the same
+program is loaded again. Everything on this page is host, simulator and
+build-level evidence: no board has been measured, and no board has been through
+a power cut under test.
 
-Do not rely on `RETAIN` for recovery-critical state. The region and HAL
-primitives are internal capabilities, not evidence of source-level or target
-retention. Target, power-cut, and HIL evidence remain required for the exact
-profile before a future supported retention workflow can make a commissioning
-claim.
+### What is saved, and when
+
+| Moment | What happens |
+|---|---|
+| Program load, and restore at boot | The region is restored from the stored records before the first scan, or initialised to zero when no record matches. The status says which. |
+| `STOP` (commanded) | The region is stored with the values of the last complete scan. A stop of a faulted runtime stores nothing. |
+| While running | The region is stored at most once per interval, at a scan boundary, and only when it changed since the last stored record. |
+| Clean shutdown of the host runtime | Stored like a `STOP`. |
+| Reset (`execution.reset`) | A cold restart: the region is initialised and that initialised region is stored, so the old values do not come back. |
+
+On the firmware a periodic save runs on its own work queue, outside the scan, and
+holds the memory lock only for the copy of the region, never during the write to
+storage. On the host it runs in the main loop between two scans. A power cut
+between two saves loses the changes since the last record; that is the reason
+for the interval, which the flash budget below bounds from the other side.
+
+### The record
+
+Two records alternate, so a power cut during a save never destroys the last good
+one. A save writes the older slot with a sequence number one above the newest.
+Every record is cut into chunks of at most `CONFIG_ZPLC_RETAIN_CHUNK_SIZE` bytes
+(1024 by default), stored under the keys `retain_a0`, `retain_a1`, ... and
+`retain_b0`, ..., because a storage entry can be smaller than the region (NVS on
+a 4 KB sector).
+
+| Offset | Size | Field |
+|---|---|---|
+| 0 | 4 | magic `ZRTN` |
+| 4 | 2 | format version, 1 |
+| 6 | 2 | reserved, zero |
+| 8 | 4 | sequence number, never 0 |
+| 12 | 4 | program identity: the CRC32 word of the artifact header |
+| 16 | 4 | program identity: the code-size word of the artifact header |
+| 20 | 4 | layout hash |
+| 24 | 4 | payload length, the size of the `RETAIN` region |
+| 28 | n | payload, the region bytes |
+| 28+n | 4 | CRC-32 of every byte before it |
+
+The layout hash is a CRC-32 over the region size, the region address, the ISA
+version, the contract draft counter and the program identity. A program that
+changes by one byte has another identity, so a rebuild discards the retained
+values; the runtime has no variable-level layout to carry them across a change.
+
+### What a restart does
+
+The restore takes the valid record with the highest sequence whose identity and
+layout match. If a record fails its checksum, the other one is tried. If none
+matches, the region is set to zero and the status says why:
+
+| `reason` | Meaning |
+|---|---|
+| `restored` | A valid record of this program and layout was restored. |
+| `none` | No record in either slot: first start, erased storage, or no storage backend. |
+| `identity_mismatch` | Valid records exist, written by another program. |
+| `layout_mismatch` | The same program, but another region size, address or runtime layout. |
+| `corrupt` | Records exist and none passes the format and checksum checks. |
+| `io_error` | The storage backend failed on both slots. Saves are refused until a restore reads the backend again. |
+| `reset` | A reset command initialised the region. |
+| `not_restored` | No program is loaded. |
+
+The status of the native runtime carries this next to the existing fields:
+
+```json
+"retain": {"reason": "restored", "restored": true, "sequence": 12, "saves": 3, "save_errors": 0, "saved_at_ms": 94000}
+```
+
+`saved_at_ms` is the runtime uptime of the last record written in this session,
+or `null` when none was. On the firmware the same values are in
+`zplc sched status` and `zplc sched status --json`.
+
+### Host and WASM runtimes
+
+The POSIX host applies the same module and the same rules. Its periodic save
+interval is 30 seconds by default and can be set with the environment variable
+`ZPLC_RETAIN_SAVE_INTERVAL_MS`: `0` turns periodic saves off (a `STOP` and a
+shutdown still store), a value from 100 to 86400000 sets the interval, and any
+other value is ignored with a message on standard error. Programs running on the
+host simulator therefore keep their `RETAIN` values from one session to the
+next, as a controller does; use `execution.reset`, or another persistence
+directory, to start from the declared values.
+
+The WASM simulator does not apply these rules yet. Its storage is `localStorage`
+and the portable module needs only the HAL calls, but the module is not linked
+into the WASM build and its adapter does not call a save on stop or a restore on
+load. Until that is wired, a program on the WASM simulator starts from the
+declared values at every load.
+
+### Enabling it on a firmware board
+
+`CONFIG_ZPLC_RETAIN_PERSIST` is off by default. The write path is covered by the `retain_persist` suite
+on `native_sim` (both word sizes) and the build-time wear assertion, and no board has been measured: a
+flash write can stall instruction fetch on parts that execute from the same flash, and on several boards
+the storage partition is also used by another file system. Set `CONFIG_ZPLC_RETAIN_PERSIST=y` in the board
+file, with the endurance numbers of the next section, once that board has passed its hardware record
+(HIL-010). Until then the `RETAIN` region is initialised at every start on firmware and the status has no
+`retain` field.
+
+### Flash wear budget per board
+
+Every save of a changed region costs flash erases. The worst case is a region
+that changes in every interval. For a board:
+
+- one save writes the record plus the entry overhead of each chunk (about 64
+  bytes each, an estimate that covers a 32-byte write block);
+- the storage partition takes in the wear bytes of the table per erase of every
+  sector: the sectors minus the one NVS keeps free, minus about 8300 bytes of the
+  two program slots that garbage collection copies at every rotation;
+- the flash is rated for a number of erase cycles per sector.
+
+Saves the flash takes = erase cycles x wear bytes / bytes per save. Life =
+saves x interval. The build fails when the interval makes that life shorter than
+`CONFIG_ZPLC_RETAIN_LIFE_YEARS` (10 by default), so a board cannot ship an
+interval its own numbers do not support.
+
+Every number below is an engineering estimate from the datasheet class of the
+part and from the partition layout of the board file. No board was measured.
+
+| Board | Storage partition | RETAIN | Rated cycles | Wear bytes | Interval | Estimated worst-case life |
+|---|---|---|---|---|---|---|
+| Raspberry Pi Pico (RP2040) | 64 KB of the on-board QSPI NOR, 16 sectors of 4 KB | 4 KB | 100,000 | 53,000 | 300 s | 11.3 years |
+| Arduino GIGA R1 (STM32H747 M7) | 7 MB of the external QSPI NOR, 4 KB sectors assumed | 4 KB | 100,000 | 7,300,000 | 60 s | more than 100 years |
+| Arduino Opta WiFi (STM32H747 M7) | 7 MB of the external QSPI NOR, 4 KB sectors assumed | 4 KB | 100,000 | 7,300,000 | 60 s | more than 100 years |
+| STM32F746G Discovery | 15 MB of the external QSPI NOR, 4 KB sub-sectors assumed | 4 KB | 100,000 | 15,700,000 | 60 s | more than 100 years |
+| ESP32-S3 DevKitC | 192 KB of the module SPI NOR, 48 sectors of 4 KB | 1 KB | 100,000 | 184,000 | 60 s | 29.5 years |
+| STM32 Nucleo-H743ZI | 128 KB, one sector of the internal flash: NVS cannot mount | 4 KB | none | none | none | not persisted |
+| A board with no numbers | any | any | 10,000 | 40,000 | 3600 s | 10.3 years for 4 KB |
+
+The Pico row is the one to read twice: at 30 seconds, the host default, the same
+board would wear its storage out in about 1.1 years. The interval is a minimum:
+a region that does not change is never written, so a program whose retained
+values change rarely wears the flash far less than this table says.
+
+A `STOP` of a changed region is one more save and is not part of the budget: it
+is a person's command. A script that stops and starts the controller every few
+seconds, with retained values that change in every run, spends the budget of a
+year in days.
+
+### Limits
+
+- Not measured: the endurance numbers above come from the datasheet class of the
+  parts, not from a measurement, and the partition layouts of the GIGA, Opta and
+  F746G are read from the board description, not from a board.
+- Not proven: that a save survives a power cut on any board. The record format
+  and the order of the writes are tested with failures injected at every step on
+  the host and on `native_sim`, and that is all.
+- Not measured: how long a flash write stalls the processor. On parts that run
+  code from the same flash a write can hold instruction fetch for the length of
+  an erase; the periodic save runs on its own work queue, but whether a scan is
+  delayed depends on the flash driver and has not been measured on any board.
+- The Nucleo-H743ZI cannot mount its storage backend (one 128 KB sector, above
+  the 64 KB limit of NVS), so its `RETAIN` region is initialised at every start
+  and its status says `io_error`. The settings file system of the STM32F746G,
+  GIGA and Opta boards uses the same partition as the NVS records: that both
+  coexist is not established.
+- A rebuild of the program, even one that only moves code, changes its identity
+  and discards the retained values.
+- The single-task firmware mode (scheduler disabled) does not persist `RETAIN`.
+- Do not rely on `RETAIN` for recovery-critical state until the hardware records
+  of the exact profile exist: a power cut at the wrong time loses the values
+  since the last save.

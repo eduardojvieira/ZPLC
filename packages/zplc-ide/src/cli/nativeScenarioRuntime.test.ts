@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'bun:test';
 
+import type { WatchForceEntry } from '../runtime/debugAdapter';
 import { itNative, nativeRuntimeBinary } from './nativeRuntimeGuard';
 import { createNativeScenarioRuntime, createNativeScenarioSession } from './nativeScenarioRuntime';
 
@@ -18,7 +19,8 @@ class FakeNativeAdapter {
   async loadProgram(bytes: Uint8Array): Promise<void> { this.calls.push(`load:${bytes.length}`); }
   async reset(): Promise<void> { this.calls.push('reset'); }
   async scenarioStep(atMs: number): Promise<void> { this.calls.push(`scenario-step:${atMs}`); }
-  async listForcedValues(): Promise<unknown[]> { this.calls.push('forces'); return this.forced ? [{}] : []; }
+  // Only the number of forced entries matters to the scenario runtime port, so one empty entry stands in for a real one.
+  async listForcedValues(): Promise<WatchForceEntry[]> { this.calls.push('forces'); return this.forced ? [{} as WatchForceEntry] : []; }
   async peek(address: number, length: number): Promise<Uint8Array> {
     this.calls.push(`peek:${address}:${length}`);
     return this.memory.get(address) ?? new Uint8Array([0]);

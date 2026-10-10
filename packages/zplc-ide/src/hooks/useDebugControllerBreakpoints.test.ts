@@ -7,6 +7,7 @@ import {
   type BreakpointSyncOutcome,
   type BreakpointSyncTarget,
 } from './useDebugControllerBreakpoints';
+import type { NewConsoleEntry } from '../store/consoleEntries';
 
 /** A runtime double: every call takes one macrotask, so two rounds started together really interleave. */
 function fakeTarget(options: { refuseAdd?: boolean; refuseClear?: boolean } = {}) {
@@ -235,13 +236,13 @@ describe('describeBreakpointSyncFailure', () => {
 
 describe('reportBreakpointSync', () => {
   function sinks() {
-    const entries: Array<{ type: string; message: string; source: string }> = [];
+    const entries: NewConsoleEntry[] = [];
     const reasons: Array<string | null> = [];
     return {
       entries,
       reasons,
       sinks: {
-        addConsoleEntry: (entry: { type: 'warning'; message: string; source: string }) => entries.push(entry),
+        addConsoleEntry: (entry: NewConsoleEntry) => { entries.push(entry); },
         setBreakpointsInactiveReason: (reason: string | null) => reasons.push(reason),
       },
     };

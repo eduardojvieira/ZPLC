@@ -159,6 +159,92 @@ config ZPLC_SCHED_HIGH_PRIO_PRIORITY
       Priority of the high-priority work queue thread.
       Should be lower (higher priority) than ZPLC_SCHED_WORKQ_PRIORITY.
 
+# -----------------------------------------------------------------------------
+# RETAIN persistence (RT-025, RT-026)
+# -----------------------------------------------------------------------------
+
+config ZPLC_RETAIN_PERSIST
+    bool "Persist the RETAIN region across power cycles"
+    depends on ZPLC_SCHED_HIGH_PRIO_WORKQ
+    help
+      Off by default: the flash write path has been exercised on native_sim and
+      QEMU only, and on several boards the storage partition is also used by
+      another file system. Turn it on for a board once that board has passed its
+      hardware record (HIL-010).
+
+      Restores the RETAIN region when a program is loaded or restored at boot,
+      before the first scan, and stores it on STOP and periodically while the
+      program runs. A record carries a checksum, a layout hash and the program
+      identity, two records alternate, and a record is restored only when both
+      the identity and the layout match; otherwise the region is initialised and
+      the status says why. The stores go through zplc_hal_persist_*, so this
+      needs a working persistence backend (CONFIG_NVS on the boards of this
+      repository).
+
+      Periodic saves run on the normal-priority scheduler work queue, never in
+      the scan batch and never with the memory lock held. Whether a flash write
+      stalls the scan depends on the flash driver and has not been measured on
+      any board: see docs/docs/runtime/persistence.md.
+
+if ZPLC_RETAIN_PERSIST
+
+config ZPLC_RETAIN_SAVE_INTERVAL_S
+    int "Minimum interval between periodic RETAIN saves (seconds)"
+    default 3600
+    range 0 86400
+    help
+      A running program stores its RETAIN region at most once per interval, and
+      only when the region changed. 0 turns periodic saves off: only STOP stores.
+
+      The build fails when this interval wears the storage flash out before
+      ZPLC_RETAIN_LIFE_YEARS, using ZPLC_RETAIN_FLASH_ENDURANCE_CYCLES and
+      ZPLC_RETAIN_FLASH_WEAR_BYTES. The default is deliberately long: a board
+      states its own numbers in its board file to earn a shorter interval.
+
+config ZPLC_RETAIN_FLASH_ENDURANCE_CYCLES
+    int "Erase cycles per sector the storage flash is rated for"
+    default 10000
+    range 100 1000000000
+    help
+      From the datasheet of the part that holds the storage partition. This is
+      an engineering input, not a measurement, and the default is the lowest
+      class of NOR flash.
+
+config ZPLC_RETAIN_FLASH_WEAR_BYTES
+    int "Bytes the storage partition absorbs per erase cycle of all its sectors"
+    default 40000
+    range 1024 1000000000
+    help
+      (sectors - 1) * sector size, minus the live data that garbage collection
+      copies at every rotation (the two program slots, about 8300 bytes). One
+      sector is always kept free for garbage collection.
+
+config ZPLC_RETAIN_ENTRY_OVERHEAD
+    int "Backend bytes per stored chunk beyond the data"
+    default 64
+    range 0 4096
+    help
+      Entry header and alignment of one chunk: 8 bytes for the NVS allocation
+      entry, a data CRC if enabled, and the padding to the flash write block.
+      The default covers a 32-byte write block.
+
+config ZPLC_RETAIN_LIFE_YEARS
+    int "Flash life the save interval must reach (years)"
+    default 10
+    range 1 50
+
+config ZPLC_RETAIN_CHUNK_SIZE
+    int "Largest RETAIN chunk stored under one key (bytes)"
+    default 1024
+    range 128 4096
+    help
+      The RETAIN record is cut into chunks of this size. A chunk plus the
+      backend overhead must fit one erase sector minus four allocation entries
+      (the NVS limit): 1024 fits a 4 KB sector. The region needs at most eight
+      chunks.
+
+endif # ZPLC_RETAIN_PERSIST
+
 endif # ZPLC_SCHEDULER
 
 # -----------------------------------------------------------------------------

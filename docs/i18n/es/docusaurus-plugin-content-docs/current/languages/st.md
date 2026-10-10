@@ -56,6 +56,110 @@ El compilador y la stdlib muestran uso de ST con:
 - funciones de string como `LEN`, `CONCAT`, `LEFT`, `RIGHT`, `MID`
 - llamadas a FBs de comunicación cuando el contrato compiler/runtime los respalda
 
+## Tipos numéricos
+
+El caso que figura junto a una fila o una regla es un programa de conformidad de `conformance/cmp/` que se ejecuta en el runtime nativo. Un caso marcado «falla hoy» está en la lista de fallos esperados de `tools/ci/expected-failures.json`.
+
+| Tipo | Bits | Rango | Se ordena como | Caso de conformidad |
+|---|---|---|---|---|
+| `BOOL` | 8 | `FALSE`, `TRUE` | sin orden | `harness/vf-001-bool-output-toggles` |
+| `SINT` | 8 | -128 a 127 | con signo | `cmp-011-sint-limits` |
+| `USINT` | 8 | 0 a 255 | sin signo | `cmp-012-usint-holds-0-to-255` |
+| `BYTE` | 8 | cadena de bits, 0 a 255 | sin signo | `cmp-014-not-byte` |
+| `INT` | 16 | -32768 a 32767 | con signo | `cmp-011-int-limits` |
+| `UINT` | 16 | 0 a 65535 | sin signo | `cmp-012-uint-65535` |
+| `WORD` | 16 | cadena de bits, 0 a 65535 | sin signo | `cmp-014-not-word` |
+| `DINT` | 32 | -2147483648 a 2147483647 | con signo | `cmp-011-dint-limits` |
+| `UDINT` | 32 | 0 a 4294967295 | sin signo | `cmp-012-udint-max` |
+| `DWORD` | 32 | cadena de bits, 0 a 4294967295 | sin signo | `cmp-014-not-dword` |
+| `LINT` | 64 | -9223372036854775808 a 9223372036854775807 | con signo | `cmp-015-lint-extreme-values` |
+| `ULINT` | 64 | 0 a 18446744073709551615 | sin signo | `cmp-015-ulint-compares-unsigned` |
+| `LWORD` | 64 | cadena de bits, 0 a 18446744073709551615 | sin signo | `cmp-015-ulint-compares-unsigned` |
+| `REAL` | 32 | IEEE 754 de precisión simple | orden IEEE, NaN sin orden | `cmp-013-real-nan-is-unordered` |
+| `LREAL` | 64 | IEEE 754 de precisión doble, solo declaración | no soportado | `cmp-015-lreal-double-precision` (falla hoy) |
+
+### Aritmética, desbordamiento y división
+
+- **Ancho de un cálculo.** Los operandos de 8 y 16 bits se amplían a 32 bits para la operación, y el resultado se recorta a su ancho solo cuando se guarda. Con `i : INT := 32767`, `i + 1` vale 32768 dentro de una expresión y -32768 una vez guardado en un `INT`; `UINT` 65535 más 1 guardado en un `UINT` es 0 (`cmp-012-uint-65535`), y `SINT`, `USINT` y `BYTE` se comportan igual.
+- **32 y 64 bits dan la vuelta en complemento a dos.** `DINT` 2147483647 más 1 es -2147483648, y la resta y la multiplicación dan la vuelta del mismo modo. El `DINT` más negativo, negado, pasado a `ABS` o dividido por -1, sigue siendo el `DINT` más negativo, y ese valor `MOD` -1 es 0 (`cmp-016-dint-add-wraps`, `cmp-016-dint-sub-wraps`, `cmp-016-dint-mul-wraps`, `cmp-016-dint-negate-min`, `cmp-016-dint-abs-min`, `cmp-016-dint-min-divided-by-minus-one`, `cmp-016-dint-min-modulo-minus-one`). La suma de `LINT` da la vuelta del mismo modo (`cmp-015-lint-extreme-values`).
+- **La división trunca hacia cero y `MOD` toma el signo del dividendo.** -8 / 2 es -4 (`cmp-011-int-divide-negative`) y -7 / 2 es -3, con -7 `MOD` 2 igual a -1, como en C. La división y el `MOD` de `UDINT` son sin signo en todo el rango (`cmp-012-udint-divide-and-modulo`).
+- **Una división o un `MOD` por cero termina el scan con la falla de VM `ZPLC_VM_DIV_BY_ZERO` (código 0x03).** Lo mismo ocurre con una división de `REAL` por cero. Las pruebas de la VM son `test_vm_arith_edges.c` y `test_vm_core.c` en `firmware/lib/zplc_core/tests/`; para saber qué hace una falla con las salidas, vea [Pausa, reanudación, paso y parada](../runtime/scheduler.md#pausa-reanudación-paso-y-parada).
+
+### Desplazamientos, rotaciones y lógica de bits
+
+- `SHL(IN, N)`, `SHR(IN, N)`, `ROL(IN, N)` y `ROR(IN, N)` son funciones. Un desplazamiento de 32 o más, o con una cuenta negativa, da 0 (`cmp-016-shift-by-the-width-or-more`). `SHR` es lógico: entran ceros por la izquierda.
+- Un `BYTE`, un `WORD` y los tipos enteros de 8 y 16 bits se desplazan y rotan dentro de su propio ancho: `SHL` descarta los bits desplazados más allá del bit 7 o del bit 15 (`cmp-014-shl-byte-keeps-8-bits`), y `ROL` y `ROR` dan la vuelta dentro de 8 o 16 bits (`cmp-014-rol-byte-rotates-within-8-bits`, `cmp-014-ror-word-rotates-within-16-bits`).
+- `AND`, `OR`, `XOR` y `NOT` trabajan con todo el ancho declarado (`cmp-014-not-byte`, `cmp-014-not-word`, `cmp-014-not-dword`, `cmp-014-and-or-xor-word`), y con 64 bits en `LWORD` (`cmp-015-ulint-compares-unsigned`).
+
+### Conversiones
+
+- **Ampliar conserva el valor.** Un tipo con signo se extiende con signo y un tipo sin signo o una cadena de bits se extiende con ceros: `INT` -5 pasa a `DINT` -5 (`cmp-011-int-widens-to-dint`), `UINT` 65535 pasa a `UDINT` 65535 (`cmp-012-uint-65535`), y un `LINT` toma un `DINT` con su signo y un `UDINT` sin él (`cmp-015-lint-widens-and-narrows`).
+- **Reducir al asignar conserva los bits bajos y no avisa.** Un `LINT` 5000000000 guardado en un `DINT` es 705032704 (`cmp-015-lint-widens-and-narrows`), y un `DINT` 70000 guardado en un `INT` es 4464.
+- **Un entero se convierte a `REAL`** cuando se asigna a uno o se mezcla con uno: `INT` por `REAL` es un `REAL` (`cmp-013-int-times-real`, `cmp-013-real-assigned-from-integer`).
+- **Lo inverso todavía no es una conversión.** `i := r` se acepta y guarda los bits bajos del patrón de bits del `REAL`, no su valor, y una expresión entera asignada a un `BOOL` no se reduce a `FALSE` o `TRUE`: es el requisito CMP-005, y los dos casos `cmp-005-int-assigned-from-real` y `cmp-005-bool-assigned-from-int` fallan hoy. Escriba `REAL_TO_INT(r)` e `i <> 0` en su lugar.
+- **`REAL_TO_INT` trunca hacia cero**, satura en los límites de `DINT` y da 0 para un NaN (`cmp-016-real-to-dint-truncates-toward-zero`, `cmp-016-real-out-of-range-to-dint`, `cmp-016-real-nan-to-dint`). Redondear al entero más cercano, como lo define IEC 61131-3, es el requisito CMP-057 y todavía no se cumple (`cmp-057-real-to-int-rounds` falla hoy). `TRUNC` y `ROUND` devuelven un `REAL` (`cmp-057-trunc-truncates`, `cmp-057-bool-and-round-conversions`).
+- Solo existen como funciones de conversión `INT_TO_REAL`, `REAL_TO_INT`, `BOOL_TO_INT`, `INT_TO_BOOL`, `TRUNC` y `ROUND`. Los demás pares `X_TO_Y` son hoy un error de compilación (CMP-057; `cmp-057-integer-conversion-functions` falla hoy).
+
+### Operandos mixtos y comparación
+
+- **El tipo de una operación es el del operando más ancho, `REAL` gana sobre todo entero, y entre dos tipos del mismo ancho gana el que no tiene signo** (la regla de C). Por eso `DINT` -1 comparado con `UDINT` 5 es una comparación sin signo y `-1 < 5` es FALSE, mientras que `INT` -1 comparado con `UINT` 5 es TRUE porque ambos se amplían primero a 32 bits. La regla es `commonType` en `packages/zplc-compiler/src/compiler/numeric.ts`, cubierta por `numeric.test.ts`.
+- **Los tipos sin signo se comparan sin signo en todo su rango**: `UDINT` 4294967295 es el valor mayor en toda comparación (`cmp-012-udint-max`, `cmp-012-udint-around-2-31`, `cmp-012-udint-compare-unsigned`), y lo mismo `ULINT` (`cmp-015-ulint-compares-unsigned`).
+- **`REAL` se compara con el orden de IEEE 754.** -0.0 es igual a 0.0, los infinitos se ordenan más allá de todo valor finito, y un NaN no es igual, menor ni mayor que nada, ni siquiera que sí mismo (`cmp-013-real-negative-zero-equals-zero`, `cmp-013-real-infinities-order`, `cmp-013-real-nan-is-unordered`).
+
+### Tipos de 64 bits
+
+| Sobre `LINT`, `ULINT` o `LWORD` | Hoy | Caso de conformidad |
+|---|---|---|
+| `+`, `-`, comparación, `AND`, `OR`, `XOR`, `NOT`, negación | Funciona | `cmp-015-lint-add-and-subtract-carry`, `cmp-015-lint-extreme-values`, `cmp-015-ulint-compares-unsigned` |
+| `*`, `/`, `MOD`, `SHL`, `SHR`, `ROL`, `ROR`, `ABS` y las demás funciones estándar, conversión desde o hacia `REAL`, un selector de `CASE`, un contador de `FOR` | Error de compilación que nombra CMP-015 | `cmp-015-lint-multiplication-is-refused`; `numeric.test.ts` para el resto |
+| Asignación o aritmética de `LREAL` | La compilación termina bien y el cargador rechaza el programa | `cmp-015-lreal-double-precision` (falla hoy) |
+
+El requisito CMP-015 pide todo esto. Hasta entonces, un rechazo en la compilación es el comportamiento previsto; el rechazo del cargador para `LREAL` no lo es.
+
+## Tipos de tiempo y fecha
+
+| Tipo | Ancho | Qué contiene | Literal |
+|---|---|---|---|
+| `TIME` | 32 bits, sin signo | Una duración en milisegundos, de 0 a 4294967295 (`T#49d17h2m47s295ms`) | `T#1h30m`, `T#1.5s`, `TIME#250ms` |
+| `DATE` | 32 bits, con signo | Segundos desde 1970-01-01; las fechas anteriores son negativas | `D#2024-01-01` |
+| `TOD` (`TIME_OF_DAY`) | 32 bits, sin signo | Milisegundos desde la medianoche | `TOD#12:30:00` |
+| `DT` (`DATE_AND_TIME`) | 64 bits, con signo | Milisegundos desde 1970-01-01 00:00:00 | `DT#2024-01-01-12:00:00` |
+
+### TIME
+
+Este es el comportamiento actual. El signo y el ancho de `TIME` son una decisión abierta del propietario del proyecto, descrita al final de esta lista.
+
+- Un literal tiene días, horas, minutos, segundos y milisegundos, cada uno a lo sumo una vez y en ese orden, con un `_` opcional entre ellos (`T#1d_2h_3m_4s_5ms`). `us` y `ns` se aceptan cuando el literal completo es un número entero de milisegundos (`T#1000us` es 1 ms), y el último componente puede llevar fracción (`T#1h30.5m`, `T#1.5s`).
+- Un literal que no es un número entero de milisegundos (`T#1.5ms`), que supera 4294967295 ms (`T#50d`) o que es negativo (`T#-5s`) es un error de compilación que nombra el literal (`cmp-017-time-literal-below-a-millisecond`, `cmp-017-time-literal-above-the-range`, `cmp-017-time-literal-negative`). Las unidades fuera de orden (`T#30m1h`) también se rechazan (`cmp-017-time-literal-units-out-of-order`).
+- La comparación, la suma, la resta y la división son de 32 bits sin signo: `T#30d > T#1d` es TRUE y `T#30d + T#10d` es 3456000000 ms. Un preset de temporizador de más de 24,8 días funciona: un `TON` con `PT := T#30d` no termina a los 20 ms.
+- Una duración negativa no se puede representar. Una resta por debajo de cero da la vuelta módulo 2^32: `T#0s - T#1s` es 4294966296 ms (`T#49d17h2m46s296ms`), y la compilación no advierte nada. Verifique que el minuendo no sea menor antes de restar.
+- El Watch de Studio muestra un `TIME` superior a 2147483647 ms (24d20h31m23s647ms) como un número negativo, porque los adaptadores de watch leen sus 32 bits con signo. El valor que guarda el programa es la cuenta sin signo.
+- Si `TIME` sigue siendo una cuenta de 32 bits sin signo o pasa a un valor de 64 bits con signo, que permitiría duraciones negativas y rangos de más de 49 días, es una decisión abierta del propietario que se sigue bajo el requisito CMP-017. Esta página no anuncia ningún cambio.
+
+### DATE, TOD y DT
+
+- `TOD` y `DT` guardan milisegundos, la unidad de `TIME`. `TOD#12:30:00 + T#1h` es 48600000 ms (13:30:00), `TOD#13:00:00 - T#30m` es 12:30:00, y la diferencia de dos valores `DT` es un `TIME`: `DT#2024-01-01-01:00:00 - DT#2024-01-01-00:00:00` es 3600000 ms. Los tres tipos se asignan y se comparan, y `DT` compara a través del límite de la palabra de 32 bits.
+- `DATE` cuenta segundos, no milisegundos. Se asigna y se compara (`D#2024-01-01 < D#2025-06-30`), pero `DATE + TIME` suma milisegundos a una cuenta de segundos: no sume un `TIME` a un `DATE`. Ningún caso de conformidad cubre la aritmética sobre `DATE`; su unidad es la que le da el código (`emitDateLiteral` en `packages/zplc-compiler/src/compiler/codegen.ts`). La unidad de `DATE` y el rango de estos tipos forman parte del requisito CMP-017, que no está cerrado.
+- Un literal `DT#` se lee en la zona horaria de la máquina que compila, mientras que `D#` y `TOD#` se leen como UTC. El mismo fuente compilado en dos zonas horarias da dos constantes `DT` distintas. Es un defecto, no un diseño, y todavía ningún caso de conformidad lo fija.
+
+### Tipos no soportados
+
+`LTIME`, `LDATE`, `LTOD`, `LDT`, `CHAR` y `WCHAR` no forman parte de ZPLC 2.0. Hoy el compilador no los informa: acepta la declaración sin ningún mensaje y le da a la variable tamaño 0, de modo que comparte su dirección con la siguiente. No los declare. El requisito CMP-003 pide que la compilación los rechace, igual que a cualquier nombre de tipo desconocido, con un mensaje que nombre el tipo y su posición. Sus casos de conformidad (`cmp-003-*` en `conformance/cmp/`) fallan hoy y figuran en `tools/ci/expected-failures.json`.
+
+Nivel de evidencia: host. Los casos `cmp-017-*` y `cmp-015-dt-plus-time-and-difference` compilan con el compilador del repositorio y ejecutan el programa en el runtime nativo, y `packages/zplc-compiler/src/compiler/time.test.ts` cubre la gramática de los literales y sus rechazos. La vuelta por debajo de cero, la zona horaria de `DT#` y la visualización en Studio se observaron o se leyeron en el código (`numeric.ts`, `codegen.ts`, `debugAdapter.ts`) y todavía ningún caso las fija.
+
+## Literales, operadores y declaraciones
+
+Estas formas compilan y se ejecutan. Cada punto nombra los casos de conformidad de `conformance/cmp/` que lo fijan, y todos pasan.
+
+- **Literales numéricos.** Literales con base `2#1010`, `8#17` y `16#FF` (`cmp-031-binary-literal`, `cmp-031-octal-literal`, `cmp-031-hexadecimal-literal`), también con signo menos y con separadores de dígitos (`cmp-031-negative-based-literal`, `cmp-031-separator-in-based-literal`); `1_000` (`cmp-031-digit-separator`); y literales con tipo como `INT#5` de los tipos enteros, de cadena de bits, `BOOL` y `REAL` (`cmp-031-typed-literal`, `cmp-031-typed-literals-of-each-kind`). Una base numérica distinta de 2, 8 y 16, y un literal con tipo fuera del rango de su tipo, son errores de compilación (`cmp-031-base-not-supported`, `cmp-031-typed-literal-out-of-range`). La forma anterior `0xFF` sigue compilando y la compilación la informa como la advertencia `NON_IEC_HEX_LITERAL` (`cmp-031-0x-form-still-works`).
+- **Operadores.** `&` tiene la precedencia de `AND` (`cmp-032-ampersand-operator`, `cmp-032-ampersand-binds-tighter-than-or`). `**` es la potencia: los operandos enteros se convierten a `REAL`, liga más fuerte que el signo menos y la multiplicación, y un exponente fraccionario tiene una exactitud de alrededor de una parte en cien mil (`cmp-032-exponent-operator`, `cmp-032-power-of-integers`, `cmp-032-power-precedence`, `cmp-032-power-fractional-exponent`). `0.0 ** -1.0` provoca una falla como una división por cero (`cmp-032-power-zero-base-negative-exponent-faults`).
+- **Acceso a bits.** `w.0` lee y escribe un bit de un `BYTE`, `WORD`, `INT`, `DWORD` o `LWORD`, de un miembro de estructura y de un elemento de arreglo, y una escritura deja los demás bits como están (`cmp-032-bit-access`, `cmp-032-bit-set-and-clear`, `cmp-032-bit-write-in-each-width`, `cmp-032-bit-of-lword`, `cmp-032-bit-of-member-and-element`). Un número de bit mayor que el ancho del tipo y un bit de un `BOOL` son errores de compilación (`cmp-032-bit-number-out-of-range`, `cmp-032-bit-access-of-bool-rejected`).
+- **Comentarios y sentencia vacía.** Comentarios `(* *)` y `/* */`, y un `;` solo, también dentro de `IF` y `CASE` (`cmp-032-block-comment`, `cmp-032-empty-statement`, `cmp-032-empty-statements-inside-blocks`). Un comentario sin cerrar se informa donde se abre (`cmp-009-unterminated-comment-position`).
+- **Declaraciones.** `VAR RETAIN`, `VAR NON_RETAIN` y `VAR_GLOBAL RETAIN` (`cmp-029-var-retain-accepted`, `cmp-029-var-non-retain-is-accepted`, `cmp-029-var-global-retain`). Una variable retentiva toma su valor inicial declarado solo cuando la región retentiva no contiene un estado guardado, de modo que una región restaurada conserva sus valores (`packages/zplc-ide/src/cli/retainedInitialValues.test.ts`). Varios nombres en una declaración comparten su valor inicial (`cmp-030-several-names-one-declaration`, `cmp-030-several-names-with-initial-value`). `VAR_EXTERNAL` debe nombrar una global del mismo tipo (`cmp-030-var-external`, `cmp-030-var-external-type-differs`, `cmp-030-var-external-without-global`). `VAR_TEMP` se acepta en un programa y `VAR_OUTPUT` en una función (`cmp-030-var-temp-in-program`, `cmp-030-function-var-output`). Se aceptan un alias de tipo, también de una estructura o de un arreglo, y varios tipos en un bloque `TYPE`, y se rechazan los alias que se refieren entre sí (`cmp-030-type-alias`, `cmp-030-alias-of-array-and-structure`, `cmp-030-several-types-one-block`, `cmp-030-alias-refers-to-itself`).
+- **Bloques de función.** Una instancia se puede declarar dentro de un bloque de función, y los arreglos de instancias se llaman con un índice constante o en tiempo de ejecución, cada elemento con su propio estado (`cmp-038-instance-inside-function-block`, `cmp-038-array-of-instances`, `cmp-038-array-of-user-blocks`, `cmp-038-array-run-time-index`). Un índice constante fuera del arreglo es un error de compilación (`cmp-038-constant-index-out-of-bounds`). Los nombres de los bloques de biblioteca no son palabras reservadas: un bloque que declara el programa gana sobre el bloque de biblioteca del mismo nombre (`cmp-033-library-block-name-as-variable`, `cmp-033-user-block-named-like-a-library-block`).
+- **Diagnósticos.** Un archivo con varios errores independientes informa cada uno, en orden, sin los falsos errores que dejaba un `IF` roto (`cmp-007-three-errors-three-diagnostics`, `cmp-007-no-error-after-a-broken-if`). Una declaración duplicada y un miembro desconocido se informan en su propia línea (`cmp-006-duplicate-variable-position`, `cmp-006-unknown-member-position`), y se rechaza una llamada que pasa un argumento que ningún `VAR_INPUT` recibe (`cmp-035-unknown-argument-name`).
+
 ## Datos, almacenamiento y valores iniciales
 
 Cada regla de abajo está cubierta por un caso de conformidad en `conformance/cmp` (CMP-019 a CMP-028).
@@ -119,3 +223,32 @@ Cada regla de abajo está cubierta por un caso de conformidad en `conformance/cm
 ## Entrada a la biblioteca estándar
 
 Ver [Biblioteca Estándar](./stdlib.md).
+
+## Límites conocidos
+
+Esta sección lista lo que el compilador, el cargador y el mapa de depuración no hacen como pide IEC 61131-3. La tabla se genera a partir de los casos de conformidad que se espera que fallen (`tools/ci/expected-failures.json`) y de la descripción de cada requisito en `docs/known-limits.json`: una fila existe mientras falle al menos un caso de su requisito, y desaparece cuando pasa el último. Los bloques y funciones estándar tienen su propia tabla en la [sección 11 de la referencia de la biblioteca estándar](../runtime/stdlib.md#11-diferencias-conocidas-con-iec-61131-3).
+
+{/* >>> GENERATED (tools/docs/generate_known_limits.py): known-limits-language. Do not edit. >>> */}
+| Requisito | Qué ocurre hoy | Casos que fallan hoy |
+|---|---|---|
+| CMP-003 | `LTIME`, `LDATE`, `LTOD`, `LDT`, `CHAR`, `WCHAR` y cualquier nombre de tipo desconocido se compilan sin mensaje y toman tamaño 0, de modo que la variable comparte su dirección con la siguiente. | `a declaration of type CHAR is rejected naming the type`<br />`a declaration of type LDATE is rejected naming the type`<br />`a declaration of type LDT is rejected naming the type`<br />`a declaration of type LTIME is rejected naming the type`<br />`a declaration of type LTOD is rejected naming the type`<br />`a declaration of type WCHAR is rejected naming the type`<br />`a declaration with an unknown type name is rejected` |
+| CMP-004 | Los nombres se comparan con su mayúscula y minúscula exactas. Un identificador escrito con otra capitalización es un error de compilación (`Unknown identifier`), y también lo es una dirección directa como `%ix0.0`. Los nombres de parámetro `in :=` y `pt :=` en un bloque estándar se aceptan y se ignoran, de modo que el temporizador nunca arranca. Los nombres de tipo `byte`, `word`, `dword`, `lword`, `date`, `tod`, `dt`, `time_of_day` y `date_and_time` en minúscula toman tamaño 0. Las palabras clave no se ven afectadas. | `direct address written in lower case`<br />`identifiers are matched without regard to case`<br />`standard block parameters are matched without regard to case`<br />`type names are matched without regard to case` |
+| CMP-005 | Un `REAL` asignado a una variable entera se acepta y guarda los bits bajos de su patrón de bits, no su valor, y una expresión entera asignada a un `BOOL` se acepta y no se reduce a `FALSE` o `TRUE`. | `assigning a REAL to an INT is rejected`<br />`assigning an INT expression to a BOOL is rejected` |
+| CMP-006 | Un bloque de variables `PERSISTENT` se rechaza, y el diagnóstico señala la declaración que sigue a `PERSISTENT`, una línea después de la construcción. | `a PERSISTENT variable block is rejected` |
+| CMP-012 | Un literal mayor que 2147483647 se rechaza como argumento de una función cuyo parámetro es un `DWORD` (`XOR_DWORD(d, 4294967295)` falla con `Integer literal 4294967295 does not fit a signed 32-bit integer`). Asignado a una variable `UDINT` o `DWORD` funciona. | `a literal above 2147483647 is accepted as the argument of a DWORD parameter` |
+| CMP-015 | `LINT`, `ULINT` y `LWORD` no tienen `*`, `/`, `MOD`, `SHL`, `SHR`, `ROL`, `ROR`, `ABS`, conversión desde o hacia `REAL`, selector de `CASE` ni contador de `FOR`: cada uno es un error de compilación que nombra CMP-015. Un programa que asigna o calcula con un `LREAL` se compila y luego es rechazado por el cargador. | `LREAL keeps double precision` |
+| CMP-018 | Una constante que no cabe en su tipo (`small : SINT := 300`) se acepta sin mensaje y se guarda truncada (300 se guarda como 44). | `a constant that does not fit its type is rejected` |
+| CMP-034 | Un parámetro de función con el nombre de una variable del programa, o de un parámetro de otra función, es un error de compilación (`Symbol 'a' already defined`): los símbolos de un programa comparten una sola tabla. | `a function parameter named like a program variable`<br />`two functions with a parameter of the same name` |
+| CMP-035 | Las llamadas a función difieren de IEC 61131-3. Una llamada con un argumento obligatorio faltante se acepta. Una llamada a función usada como sentencia es un error de compilación. Una función recursiva se acepta. Los argumentos con nombre se asocian por posición, no por nombre: `Sub(b := 1, a := 10)` calcula `Sub(1, 10)`. | `a call with a missing required argument is rejected`<br />`a function call used as a statement`<br />`a recursive function is rejected`<br />`named arguments bind by name` |
+| CMP-037 | Las llamadas a bloques de función difieren de IEC 61131-3. Un nombre de parámetro desconocido en un bloque estándar (`BOGUS := 5`) se acepta y se ignora. Una llamada a bloque de función con un enlace de salida (`Q => variable`) es un error de compilación. | `an unknown parameter of a standard block is rejected`<br />`function-block call with an output binding =>` |
+| CMP-041 | Los métodos y la herencia difieren de IEC 61131-3. Una llamada `SUPER^` es un error de compilación (`Complex method call targets not supported yet`). Una llamada a un método `PRIVATE` desde fuera de su bloque se acepta: los especificadores de acceso se analizan y no se hacen cumplir. Una llamada a un método `PROTECTED` desde fuera de su bloque se acepta: los especificadores de acceso se analizan y no se hacen cumplir. Una variable de tipo interfaz es un error de compilación (`Unknown FB type`). | `SUPER^ calls the method of the base block`<br />`a PRIVATE method called from outside its function block is rejected`<br />`a PROTECTED method called from outside its function block is rejected`<br />`a variable of an interface type calls the method of its instance` |
+| CMP-042 | Un bloque de función o una global declarados en otro archivo no se encuentran (`Unknown FB type`, `Unknown identifier`). | `a function block declared in another file`<br />`a global declared in another file` |
+| CMP-043 | Con el perfil del destino `posix`, un programa puede usar 256 bytes de memoria WORK (variables, literales de cadena y buffers de trabajo, uno de ellos para la bandera de inicialización). Un arreglo de 400 bytes, tres variables `STRING` o un gráfico SFC de veinte pasos es un error de compilación. | `a program with a 400-byte array`<br />`a program with three STRING variables`<br />`an SFC chart of twenty steps runs every step once, one per scan` |
+| CMP-051 | El cargador rechaza el artefacto que el compilador genera para un programa con un `LREAL` y para dos tareas cíclicas con intervalos distintos. | `the loader accepts every artifact the compiler produced for a conformance case` |
+| CMP-053 | El mapa de depuración registra la versión literal `1.2.0` en lugar de la versión del paquete del compilador y lleva la hora de la compilación, de modo que dos compilaciones de un mismo proyecto dan dos mapas distintos. El bytecode de las dos compilaciones es idéntico. | `the debug map records the version of the compiler package`<br />`two builds of one project produce the same debug map` |
+| CMP-055 | Las sentencias del mapa de depuración no cubren todas sus instrucciones: una sentencia termina antes de que empiece la siguiente, de modo que algunos contadores de programa no se resuelven a ninguna sentencia. | `every instruction of a statement resolves to that statement in the debug map` |
+| LNG-008 | Un bloque FBD que es un bloque de función de usuario de otro archivo se rechaza (`Invalid FBD connection … unknown destination input port`): el transpilador FBD no conoce sus puertos. | `an FBD block that is a user function block from another file runs` |
+| RT-015 | Una tarea con `trigger: event` es aceptada por el compilador y rechazada después, y un programa con dos tareas cíclicas de intervalos distintos es rechazado por la simulación nativa. | `an event-triggered task is rejected by the build`<br />`two cyclic tasks with different intervals load in simulation and each runs at its own interval` |
+{/* <<< END GENERATED: known-limits-language <<< */}
+
+No soportado en esta versión y rechazado con un mensaje, por la decisión D-04: arreglos de arreglos, enumeraciones con tipo base, subrangos, `POINTER TO` y `ADR` (use `REF_TO` y `REF()`), `VAR_ACCESS`, una `CONFIGURATION` textual, `NAMESPACE`, `PROPERTY`, bloques `ACTION` en un programa, llamadas posicionales a bloques de función y las formas de función de los operadores como `ADD(a, b)`. Los casos `cmp-006-*-is-rejected` pasan: fijan el rechazo, de modo que un programa que usa uno de ellos no compila.

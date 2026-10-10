@@ -72,8 +72,8 @@ jobs:
           actual=$(cd "${RUNNER_TEMP}" && ./zplc-cli --version)
           test "${actual}" = "zplc-cli ${expected}"
 
-      - name: Typecheck HIL package
-        run: bun run typecheck:hil
+      - name: Typecheck every TypeScript program
+        run: bun run typecheck
 
       - name: Build native POSIX simulator for IDE scenarios
         run: |
@@ -355,6 +355,8 @@ jobs:
           python3 tools/hil/test_validate_release_evidence.py
           python3 tools/docs/test_validate_docs_pages.py
           python3 tools/docs/validate_docs_pages.py
+          python3 tools/docs/test_generate_known_limits.py
+          python3 tools/docs/generate_known_limits.py --check
           bun tools/ci/test-inventory.ts
 
       - name: Check the generated binary contract
@@ -367,6 +369,10 @@ jobs:
           git diff --exit-code -- \
             docs/docs/reference/runtime-api.md \
             docs/docs/reference/boards.md \
+            docs/docs/languages/st.md \
+            docs/docs/runtime/stdlib.md \
             docs/i18n/es/docusaurus-plugin-content-docs/current/reference/runtime-api.md \
-            docs/i18n/es/docusaurus-plugin-content-docs/current/reference/boards.md
+            docs/i18n/es/docusaurus-plugin-content-docs/current/reference/boards.md \
+            docs/i18n/es/docusaurus-plugin-content-docs/current/languages/st.md \
+            docs/i18n/es/docusaurus-plugin-content-docs/current/runtime/stdlib.md
           bun run docs:build

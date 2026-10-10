@@ -205,12 +205,17 @@ function compilationSources(workspace: WorkspaceProject) {
     if (!sourceByProgram.has(program)) sourceByProgram.set(program, resolveProgramSource(program, workspace.sources));
   }
   const bytesByPath = new Map(workspace.sources.map((source) => [source.path, source.bytes]));
-  return [...sourceByProgram].flatMap(([name, source]) => source ? [{ ...source, name, bytes: bytesByPath.get(source.sourceRef)! }] : []);
+  // A resolved source always comes from workspace.sources, so its sourceRef is a workspace path that has bytes.
+  return [...sourceByProgram].flatMap(([name, source]) => {
+    const sourceRef = source?.sourceRef;
+    const bytes = sourceRef === undefined ? undefined : bytesByPath.get(sourceRef);
+    return source && sourceRef !== undefined && bytes ? [{ ...source, name, sourceRef, bytes }] : [];
+  });
 }
-function createSavedTestInputIdentity(workspace: WorkspaceProject, sources: Array<{ path: string; bytes: Uint8Array }>, scenarios: WorkspaceScenario[]): SavedTestInputIdentity {
+function createSavedTestInputIdentity(workspace: WorkspaceProject, sources: Array<{ sourceRef: string; bytes: Uint8Array }>, scenarios: WorkspaceScenario[]): SavedTestInputIdentity {
   const inputs = [
     { path: 'zplc.json', bytes: workspace.manifestBytes },
-    ...[...new Map(sources.map((source) => [source.path, source])).values()],
+    ...[...new Map(sources.map((source) => [source.sourceRef, { path: source.sourceRef, bytes: source.bytes }])).values()],
     ...scenarios,
   ].map(({ path, bytes }) => ({ path, sha256: createHash('sha256').update(bytes).digest('hex'), byteLength: bytes.byteLength }))
     .sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0);
@@ -223,7 +228,6 @@ function createSavedTestInputIdentity(workspace: WorkspaceProject, sources: Arra
 function failed<T>(operation: ToolOperation, diagnostics: ToolDiagnostic[], artifacts: ToolArtifact[] = []): ToolResult<T> { return { ok: false, evidence: evidence(operation, 'failed', diagnostics, artifacts) }; }
 type TestOperation = 'test' | 'scenario-run';
 function testFailed(operation: TestOperation, diagnostics: ToolDiagnostic[], artifacts: ToolArtifact[] = []): TestRunResult { return { ok: false, evidence: evidence(operation, 'failed', diagnostics, artifacts) }; }
-function loadFailure<T>(operation: ToolOperation, loaded: Awaited<ReturnType<typeof readWorkspace>>): ToolResult<T> | null { return loaded.ok ? null : failed(operation, loaded.diagnostics); }
 function compilerErrorDiagnostic(error: CompilerError): ToolDiagnostic {
   return {
     code: 'COMPILATION_FAILED',
@@ -295,20 +299,19 @@ function testPreview(completed: Array<{ id: string; path: string; passed: boolea
 }
 
 export async function projectInspect(root: string): Promise<ToolResult<{ schemaVersion: 2; sourceSchemaVersion: 1 | 2; migrated: boolean; name: string; version: string; taskCount: number; sources: Array<{ name: string; language: string }>; target?: { board: string } }>> {
-  const loaded = await readWorkspace(root); const failure = loadFailure('inspect', loaded); if (failure) return failure;
+  const loaded = await readWorkspace(root); if (!loaded.ok) return failed('inspect', loaded.diagnostics);
   const { workspace } = loaded;
   const board = workspace.project.target?.board;
   return { ok: true, summary: { schemaVersion: 2, sourceSchemaVersion: workspace.sourceSchemaVersion, migrated: workspace.migrated, name: workspace.project.name, version: workspace.project.version, taskCount: workspace.project.tasks.length, sources: workspace.sources.map(({ name, language }) => ({ name, language })), ...(typeof board === 'string' && /^[a-z0-9][a-z0-9_-]{0,63}$/i.test(board) ? { target: { board } } : {}) }, evidence: evidence('inspect', 'passed') };
 }
 export async function projectMigrationPreview(root: string): Promise<ToolResult<{ sourceSchemaVersion: 1 | 2; targetSchemaVersion: 2; changed: boolean; changes: ProjectMigrationChange[] }>> {
-  const loaded = await readWorkspace(root); const failure = loadFailure<{ sourceSchemaVersion: 1 | 2; targetSchemaVersion: 2; changed: boolean; changes: ProjectMigrationChange[] }>('migrate-preview', loaded); if (failure) return failure;
+  const loaded = await readWorkspace(root); if (!loaded.ok) return failed('migrate-preview', loaded.diagnostics);
   const { workspace } = loaded;
   return { ok: true, summary: { sourceSchemaVersion: workspace.sourceSchemaVersion, targetSchemaVersion: 2, changed: workspace.migrated, changes: workspace.migrationChanges }, evidence: evidence('migrate-preview', 'passed') };
 }
 export async function projectMigrationExport(root: string): Promise<ProjectMigrationExportResult> {
   const loaded = await readWorkspace(root);
-  const failure = loadFailure<{ sourceSchemaVersion: 1 | 2; targetSchemaVersion: 2; changed: boolean; changes: ProjectMigrationChange[] }>('migrate', loaded);
-  if (failure) return failure;
+  if (!loaded.ok) return failed('migrate', loaded.diagnostics);
   const { workspace } = loaded;
   const manifest = Buffer.from(`${JSON.stringify(workspace.project, null, 2)}\n`, 'utf8');
   const result: ProjectMigrationExportResult = {
@@ -320,7 +323,7 @@ export async function projectMigrationExport(root: string): Promise<ProjectMigra
   return result;
 }
 export async function projectValidate(root: string): Promise<ToolResult<{ name: string; taskCount: number }>> {
-  const loaded = await readWorkspace(root); const failure = loadFailure<{ name: string; taskCount: number }>('validate', loaded); if (failure) return failure;
+  const loaded = await readWorkspace(root); if (!loaded.ok) return failed('validate', loaded.diagnostics);
   try { assertTaskProgramCardinality(loaded.workspace.project); }
   catch (error) { return failed('validate', safeCompilerDiagnostics(error)); }
   const diagnostics = unresolvedPrograms(loaded.workspace); if (diagnostics.length) return failed('validate', diagnostics);
@@ -347,7 +350,7 @@ function symbolSummary(debugMap: DebugMap, workspace: WorkspaceProject): SymbolS
 }
 
 async function compile<Operation extends CompileOperation>(root: string, operation: Operation): Promise<CompileResult<Operation>> {
-  const loaded = await readWorkspace(root); const loadingFailure = loadFailure<CompilerSummary | SymbolSummary>(operation, loaded); if (loadingFailure) return loadingFailure as CompileResult<Operation>;
+  const loaded = await readWorkspace(root); if (!loaded.ok) return failed(operation, loaded.diagnostics) as CompileResult<Operation>;
   try { assertTaskProgramCardinality(loaded.workspace.project); }
   catch (error) { return failed(operation, safeCompilerDiagnostics(error)) as CompileResult<Operation>; }
   const diagnostics = unresolvedPrograms(loaded.workspace); if (diagnostics.length) return failed(operation, diagnostics) as CompileResult<Operation>;
@@ -390,10 +393,11 @@ function safetyDiagnostic(code: SafetyDiagnosticCode, path?: string, line?: numb
 function safetyOutput(debugMap: DebugMap, signal: string): SafetyOutput | undefined {
   const [pou, name] = signal.split('.');
   const variable: DebugVarInfo | undefined = pou === undefined || name === undefined ? undefined : debugMap.pou[pou]?.vars[name];
-  if (!variable || variable.type !== 'BOOL' || variable.region !== 'OPI' || !Number.isInteger(variable.addr) || !Number.isInteger(variable.bitOffset) || variable.bitOffset < 0 || variable.bitOffset > 7 || !Number.isInteger(variable.size) || variable.size < 1) return undefined;
+  const bitOffset = variable?.bitOffset;
+  if (!variable || variable.type !== 'BOOL' || variable.region !== 'OPI' || !Number.isInteger(variable.addr) || bitOffset === undefined || !Number.isInteger(bitOffset) || bitOffset < 0 || bitOffset > 7 || !Number.isInteger(variable.size) || variable.size < 1) return undefined;
   const { opiBase, opiSize } = debugMap.memoryLayout;
   if (!Number.isInteger(opiBase) || !Number.isInteger(opiSize) || opiSize < 1 || variable.addr < opiBase || variable.addr + variable.size > opiBase + opiSize) return undefined;
-  return { signal, address: variable.addr, bitOffset: variable.bitOffset };
+  return { signal, address: variable.addr, bitOffset };
 }
 function safetyPairKey(left: SafetyOutput, right: SafetyOutput): string { return [safetyLocation(left), safetyLocation(right)].sort().join('\u0000'); }
 
@@ -464,7 +468,7 @@ function safetyLoopDiagnostics(workspace: WorkspaceProject): ToolDiagnostic[] {
 
 /** Checks declared logical output interlocks against compiled scenario assertions; it never starts a runtime. */
 export async function safetyCheck(root: string): Promise<SafetyCheckResult> {
-  const loaded = await readWorkspace(root); const loadingFailure = loadFailure<SafetyCheckSummary>('safety-check', loaded); if (loadingFailure) return loadingFailure;
+  const loaded = await readWorkspace(root); if (!loaded.ok) return failed('safety-check', loaded.diagnostics);
   try {
     const loopDiagnostics = safetyLoopDiagnostics(loaded.workspace);
     if (loopDiagnostics.length) return failed('safety-check', loopDiagnostics);
@@ -627,8 +631,10 @@ async function runWorkspaceScenarios(root: string, operation: TestOperation, sce
     const beforeLoad = interrupted(); if (beforeLoad) return beforeLoad;
     const loaded = await readWorkspace(root);
     const afterLoad = interrupted(); if (afterLoad) return afterLoad;
-    const loadingFailure = loadFailure<TestSummary>(operation, loaded);
-    if (loadingFailure) return testFailed(operation, loadingFailure.evidence.diagnostics, loadingFailure.evidence.artifacts);
+    if (!loaded.ok) {
+      const loadingFailure = failed<TestSummary>(operation, loaded.diagnostics);
+      return testFailed(operation, loadingFailure.evidence.diagnostics, loadingFailure.evidence.artifacts);
+    }
     const { workspace } = loaded;
     try {
       assertTaskProgramCardinality(workspace.project);
@@ -915,7 +921,7 @@ async function sdkToolchain(sdk: string | undefined, relativePath: string): Prom
   } catch { return false; }
 }
 function versionFrom(output: string): string | undefined { return output.match(/\b\d+(?:\.\d+){1,3}(?:[-+][0-9A-Za-z.-]+)?\b/)?.[0]; }
-type FixedCommand = { command: 'west' | 'python3' | 'cmake' | 'ninja' | 'git' | 'py' | 'python'; args: string[] };
+type FixedCommand = { command: 'west' | 'python3' | 'cmake' | 'ninja' | 'git' | 'py' | 'python'; args: readonly string[] };
 async function inspectCommand({ command, args }: FixedCommand, cwd: string, revision = false): Promise<{ status: ToolchainCheckStatus; version?: string; observedRevision?: string }> {
   return new Promise((resolve) => {
     let settled = false; let output = ''; let exceeded = false;

@@ -294,7 +294,8 @@ describe('Learn lesson catalog', () => {
     expect(gradeRecordedScenarioLesson(lesson, { ...passed, preview: { ...passed.preview!, scenarios: [{ ...passed.preview!.scenarios[0]!, truncated: true }] } })).toEqual({ kind: 'unavailable' });
     expect(gradeRecordedScenarioLesson(lesson, { ...passed, preview: { ...passed.preview!, scenarios: [{ ...passed.preview!.scenarios[0]!, passed: false, assertions: [{ kind: 'NEVER', passed: false }] }] } })).toEqual({ kind: 'unavailable' });
     expect(gradeRecordedScenarioLesson(lesson, { ...passed, kind: 'assertion-failed' })).toEqual({ kind: 'unavailable' });
-    expect(gradeRecordedScenarioLesson({ ...lesson, rubric: { ...lesson.rubric, requireSavedEvidence: false } }, passed)).toEqual({ kind: 'unavailable' });
+    // A rubric that does not require saved evidence is outside the declared lesson contract, so the grader must refuse it.
+    expect(gradeRecordedScenarioLesson({ ...lesson, rubric: { ...lesson.rubric, requireSavedEvidence: false } } as unknown as typeof lesson, passed)).toEqual({ kind: 'unavailable' });
   });
 });
 

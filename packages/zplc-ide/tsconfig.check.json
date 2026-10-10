@@ -1,0 +1,32 @@
+{
+  // One program over everything the other configs leave out: tests, src/cli, src/mcp, the scripts and
+  // the Electron tests. It is also the project the type-aware lint rules read (eslint.config.js).
+  // noEmit only: the app, node, electron and preload configs stay what builds and ships.
+  "compilerOptions": {
+    "target": "ES2023",
+    "useDefineForClassFields": true,
+    "lib": ["ES2023", "DOM", "DOM.Iterable", "DOM.AsyncIterable"],
+    "module": "ESNext",
+    "types": ["vite/client", "bun", "node"],
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true
+  },
+  "include": ["src", "electron", "scripts", "vite.config.ts"],
+  // preload.ts declares window.electronAPI for the preload bundle, and the renderer declares it again in
+  // src/types/index.ts with another shape: they are two programs by design, so tsconfig.preload.json checks it.
+  "exclude": ["electron/preload.ts"]
+}

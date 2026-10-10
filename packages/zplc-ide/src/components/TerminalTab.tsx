@@ -121,6 +121,7 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
   /**
    * Connect to serial port via connection manager
    */
+  // Catches its own errors and prints them in the terminal; the button starts it with `void`.
   const handleConnect = async () => {
     if (isConnected) {
       // Disconnect
@@ -211,7 +212,7 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
     }
     
     // Send to device
-    sendCommand(cmd);
+    void sendCommand(cmd);
   };
 
   /**
@@ -323,7 +324,7 @@ export function TerminalTab({ isActive }: TerminalTabProps) {
         
         {/* Connect/Disconnect Button */}
         <button
-          onClick={handleConnect}
+          onClick={() => { void handleConnect(); }}
           disabled={isConnecting}
           className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs transition-colors ${
             isConnected

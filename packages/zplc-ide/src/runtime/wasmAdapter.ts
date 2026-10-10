@@ -531,6 +531,8 @@ export class WASMAdapter implements IDebugAdapter {
     // Emit info update
     this.getInfo().then((info) => {
       this.events.onInfoUpdate?.(info);
+    }, () => {
+      // Disconnected between the scan and the read: there is no info to report.
     });
   }
 

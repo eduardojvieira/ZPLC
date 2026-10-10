@@ -34,6 +34,16 @@ Examples:
 - timers: `TON`, `TOF`, `TP`
 - counters: `CTU`, `CTD`, `CTUD`
 
+The counters count rising edges and keep `CV` and `PV` as `INT`. What each block does today:
+
+| Block | Count | Priority | `CV` limit | Outputs |
+|---|---|---|---|---|
+| `CTU` | +1 on a rising edge of `CU` | `R` sets `CV` to 0 | stops at 32767 | `Q` is `CV >= PV` |
+| `CTD` | -1 on a rising edge of `CD` | `LD` sets `CV` to `PV` | stops at 0 | `Q` is `CV <= 0` |
+| `CTUD` | +1 on `CU`, -1 on `CD`; both edges in one call cancel | `R`, then `LD`, then the edges | stops at 32767 | `QU` is `CV >= PV`, `QD` is `CV <= 0` |
+
+The edge detector runs on every call, also while `R` or `LD` is TRUE. Counting below zero and negative presets do not follow IEC 61131-3 yet (requirement CMP-011). The full rules and the evidence are in [section 2 of the runtime reference](../runtime/stdlib.md#2-counters).
+
 ## String functions
 
 The current string surface in `stdlib/strings.ts` includes:
@@ -66,10 +76,12 @@ Additional utility string functions in the same file include:
 
 Examples directly registered in the stdlib include:
 
-- arithmetic and conversion: `ABS`, `ABSF`, `NEG`, `NEGF`, `MOD`, `SQRT`, `EXPT`, `INT_TO_REAL`, `REAL_TO_INT`
+- arithmetic and conversion: `ABS`, `ABSF`, `NEG`, `NEGF`, `SQRT`, `INT_TO_REAL`, `REAL_TO_INT`, `TRUNC`, `ROUND`
 - trigonometry and logs: `SIN`, `COS`, `TAN`, `ASIN`, `ACOS`, `ATAN`, `ATAN2`, `LN`, `LOG`, `EXP`
 - selection helpers: `MAX`, `MIN`, `LIMIT`, `SEL`, `MUX`
 - bitwise helpers: `ROL`, `ROR`, `SHL`, `SHR`, `AND_WORD`, `OR_WORD`, `XOR_WORD`, `NOT_WORD`
+
+Three things in the registry cannot be used as the list suggests today. `MOD` and the logic operators are operators (`a MOD b`, `a AND b`), and the forms `MOD(a, b)` and `AND(a, b)` do not parse. A program that calls `EXPT` is refused by the loader. Only six conversion functions exist: `INT_TO_REAL`, `REAL_TO_INT`, `BOOL_TO_INT`, `INT_TO_BOOL`, `TRUNC` and `ROUND`; any other `X_TO_Y` name is a build error. The table of [known differences](../runtime/stdlib.md#11-known-differences-from-iec-61131-3) lists the cases that fail today, with their requirement ids.
 
 ## Communication function blocks
 

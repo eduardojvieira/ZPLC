@@ -33,8 +33,9 @@ are evidence-gated; source presence alone is not a product qualification.
 6. **No new dependency** (npm or bun packages, Zephyr modules) without a
    concrete need and a recorded decision.
 7. **Style**: follow the surrounding code. C is ANSI C99 and builds with
-   `-Wall -Wextra -Werror -pedantic`; TypeScript passes `bun run lint:ide` and
-   strict `tsc`. A warning is a failure.
+   `-Wall -Wextra -Werror -pedantic`; TypeScript passes `bun run lint:ide` (with
+   the type-aware promise rules) and `bun run typecheck` (strict `tsc` over every
+   program: sources, tests, scripts and CI tooling). A warning is a failure.
 8. **Physical operations**: building firmware, flashing, deploying a program,
    forcing I/O, RUN/STOP, raw serial and shell access are separate operations
    that a person starts. An AI assistant or MCP never initiates them.

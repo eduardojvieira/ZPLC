@@ -45,6 +45,11 @@ if(CONFIG_ZPLC)
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_debug.c
   )
 
+  # RETAIN persistence (optional - enabled via CONFIG_ZPLC_RETAIN_PERSIST)
+  zephyr_library_sources_ifdef(CONFIG_ZPLC_RETAIN_PERSIST
+    ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_retain.c
+  )
+
   # ZPLC Loader (always included if ZPLC is enabled)
   zephyr_library_sources(
     ${CMAKE_CURRENT_LIST_DIR}/lib/zplc_core/src/core/zplc_loader.c

@@ -1,4 +1,4 @@
-import { run, HILTestCase } from '../src/index';
+import { run, HILTestCase } from '../../src/index';
 
 const test: HILTestCase = {
   id: 'examples.hello',

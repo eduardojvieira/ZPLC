@@ -30,9 +30,9 @@ describe('SFC copy/paste graph model', () => {
     transitions: [{ id: 'go', fromStep: 'start', toStep: 'next', condition: 'TRUE', position: { x: 0, y: 50 } }],
   };
   const graph: Node[] = [
-    { id: 'start', type: 'step', position: { x: 0, y: 0 }, selected: true, data: model.steps[0]! },
-    { id: 'go', type: 'transition', position: { x: 0, y: 50 }, selected: true, data: model.transitions[0]! },
-    { id: 'next', type: 'step', position: { x: 0, y: 100 }, selected: true, data: model.steps[1]! },
+    { id: 'start', type: 'step', position: { x: 0, y: 0 }, selected: true, data: { ...model.steps[0]! } },
+    { id: 'go', type: 'transition', position: { x: 0, y: 50 }, selected: true, data: { ...model.transitions[0]! } },
+    { id: 'next', type: 'step', position: { x: 0, y: 100 }, selected: true, data: { ...model.steps[1]! } },
   ];
   const edges: Edge[] = [
     { id: 'start-go', source: 'start', sourceHandle: 'out', target: 'go', targetHandle: 'in', type: 'sfc' },

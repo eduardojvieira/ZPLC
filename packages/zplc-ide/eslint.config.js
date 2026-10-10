@@ -20,4 +20,19 @@ export default defineConfig([
       globals: globals.browser,
     },
   },
+  {
+    // Rules that need type information: an unawaited or mis-passed promise is a CI failure, not a warning.
+    // tsconfig.check.json covers src, electron, scripts and vite.config.ts; preload.ts is a program of its own.
+    files: ['**/*.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.check.json', './tsconfig.preload.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-misused-promises': 'error',
+    },
+  },
 ])

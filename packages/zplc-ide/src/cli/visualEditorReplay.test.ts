@@ -68,7 +68,7 @@ describe('Blinky visual editor replay', () => {
   it('replays a pasted FBD node as one undoable canonical snapshot, then reopens it and refuses to build the unwired block', async () => {
     const canonical = await readFile(join(blinkyFbd, 'src/main.fbd.json'), 'utf8');
     const model = parseFBDModel(canonical);
-    const fragment = copyFBDFragment(model.blocks.map((block) => ({ id: block.id, type: 'block', position: block.position, selected: block.id === 'not_led', data: block })), model.connections.map((connection) => ({ id: connection.id, source: connection.from.block, sourceHandle: connection.from.port, target: connection.to.block, targetHandle: connection.to.port })))!;
+    const fragment = copyFBDFragment(model.blocks.map((block) => ({ id: block.id, type: 'block', position: block.position, selected: block.id === 'not_led', data: { ...block } })), model.connections.map((connection) => ({ id: connection.id, source: connection.from.block, sourceHandle: connection.from.port, target: connection.to.block, targetHandle: connection.to.port })))!;
     const edited = serializeFBDModel(pasteFBDFragment(model, fragment)!);
     replaySnapshot('blinky:fbd-paste', serializeFBDModel(model), edited);
     const root = await temporaryVisualWorkspace('main.fbd.json', edited);
@@ -148,7 +148,7 @@ describe('Blinky visual editor replay', () => {
   it('replays a pasted SFC step as one undoable canonical snapshot, then reopens and compiles it', async () => {
     const canonical = await readFile(join(blinkySfc, 'src/main.sfc.json'), 'utf8');
     const model = parseSFCModel(canonical);
-    const fragment = copySFCFragment(model.steps.map((step) => ({ id: step.id, type: 'step', position: step.position, selected: step.id === 'step_led_on', data: step })), [])!;
+    const fragment = copySFCFragment(model.steps.map((step) => ({ id: step.id, type: 'step', position: step.position, selected: step.id === 'step_led_on', data: { ...step } })), [])!;
     const pasted = pasteSFCFragment(model, fragment)!;
     const edited = serializeSFCModel(pasted.model);
     replaySnapshot('blinky:sfc-paste', serializeSFCModel(model), edited);

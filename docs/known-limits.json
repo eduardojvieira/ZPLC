@@ -1,0 +1,193 @@
+{
+  "CMP-003": {
+    "page": "language",
+    "en": "`LTIME`, `LDATE`, `LTOD`, `LDT`, `CHAR`, `WCHAR` and any unknown type name build without a message and take size 0, so the variable shares its address with the next one.",
+    "es": "`LTIME`, `LDATE`, `LTOD`, `LDT`, `CHAR`, `WCHAR` y cualquier nombre de tipo desconocido se compilan sin mensaje y toman tamaño 0, de modo que la variable comparte su dirección con la siguiente."
+  },
+  "CMP-004": {
+    "page": "language",
+    "en": "Names are matched with their exact case. An identifier written in another case is a build error (`Unknown identifier`), and so is a direct address such as `%ix0.0`. The parameter names `in :=` and `pt :=` on a standard block are accepted and ignored, so the timer never starts. The type names `byte`, `word`, `dword`, `lword`, `date`, `tod`, `dt`, `time_of_day` and `date_and_time` in lower case take size 0. Keywords are not affected.",
+    "es": "Los nombres se comparan con su mayúscula y minúscula exactas. Un identificador escrito con otra capitalización es un error de compilación (`Unknown identifier`), y también lo es una dirección directa como `%ix0.0`. Los nombres de parámetro `in :=` y `pt :=` en un bloque estándar se aceptan y se ignoran, de modo que el temporizador nunca arranca. Los nombres de tipo `byte`, `word`, `dword`, `lword`, `date`, `tod`, `dt`, `time_of_day` y `date_and_time` en minúscula toman tamaño 0. Las palabras clave no se ven afectadas."
+  },
+  "CMP-005": {
+    "page": "language",
+    "en": "A `REAL` assigned to an integer variable is accepted and stores the low bits of its bit pattern, not its value, and an integer expression assigned to a `BOOL` is accepted and is not reduced to `FALSE` or `TRUE`.",
+    "es": "Un `REAL` asignado a una variable entera se acepta y guarda los bits bajos de su patrón de bits, no su valor, y una expresión entera asignada a un `BOOL` se acepta y no se reduce a `FALSE` o `TRUE`."
+  },
+  "CMP-006": {
+    "page": "language",
+    "en": "A `PERSISTENT` variable block is rejected, and the diagnostic points at the declaration that follows `PERSISTENT`, one line after the construct.",
+    "es": "Un bloque de variables `PERSISTENT` se rechaza, y el diagnóstico señala la declaración que sigue a `PERSISTENT`, una línea después de la construcción."
+  },
+  "CMP-012": {
+    "page": "language",
+    "en": "A literal above 2147483647 is refused as the argument of a function whose parameter is a `DWORD` (`XOR_DWORD(d, 4294967295)` fails with `Integer literal 4294967295 does not fit a signed 32-bit integer`). Assigned to a `UDINT` or a `DWORD` variable it works.",
+    "es": "Un literal mayor que 2147483647 se rechaza como argumento de una función cuyo parámetro es un `DWORD` (`XOR_DWORD(d, 4294967295)` falla con `Integer literal 4294967295 does not fit a signed 32-bit integer`). Asignado a una variable `UDINT` o `DWORD` funciona."
+  },
+  "CMP-015": {
+    "page": "language",
+    "en": "`LINT`, `ULINT` and `LWORD` have no `*`, `/`, `MOD`, `SHL`, `SHR`, `ROL`, `ROR`, `ABS`, conversion to or from `REAL`, `CASE` selector or `FOR` counter: each is a build error that names CMP-015. A program that assigns or computes with an `LREAL` builds and is then refused by the loader.",
+    "es": "`LINT`, `ULINT` y `LWORD` no tienen `*`, `/`, `MOD`, `SHL`, `SHR`, `ROL`, `ROR`, `ABS`, conversión desde o hacia `REAL`, selector de `CASE` ni contador de `FOR`: cada uno es un error de compilación que nombra CMP-015. Un programa que asigna o calcula con un `LREAL` se compila y luego es rechazado por el cargador."
+  },
+  "CMP-018": {
+    "page": "language",
+    "en": "A constant that does not fit its type (`small : SINT := 300`) is accepted without a message and stored truncated (300 is stored as 44).",
+    "es": "Una constante que no cabe en su tipo (`small : SINT := 300`) se acepta sin mensaje y se guarda truncada (300 se guarda como 44)."
+  },
+  "CMP-034": {
+    "page": "language",
+    "en": "A function parameter named like a program variable, or like a parameter of another function, is a build error (`Symbol 'a' already defined`): the symbols of a program share one table.",
+    "es": "Un parámetro de función con el nombre de una variable del programa, o de un parámetro de otra función, es un error de compilación (`Symbol 'a' already defined`): los símbolos de un programa comparten una sola tabla."
+  },
+  "CMP-035": {
+    "page": "language",
+    "en": "Function calls differ from IEC 61131-3.",
+    "es": "Las llamadas a función difieren de IEC 61131-3.",
+    "cases": {
+      "a function call used as a statement": {
+        "en": "A function call used as a statement is a build error.",
+        "es": "Una llamada a función usada como sentencia es un error de compilación."
+      },
+      "named arguments bind by name": {
+        "en": "Named arguments bind by position, not by name: `Sub(b := 1, a := 10)` computes `Sub(1, 10)`.",
+        "es": "Los argumentos con nombre se asocian por posición, no por nombre: `Sub(b := 1, a := 10)` calcula `Sub(1, 10)`."
+      },
+      "a call with a missing required argument is rejected": {
+        "en": "A call with a missing required argument is accepted.",
+        "es": "Una llamada con un argumento obligatorio faltante se acepta."
+      },
+      "a recursive function is rejected": {
+        "en": "A recursive function is accepted.",
+        "es": "Una función recursiva se acepta."
+      }
+    }
+  },
+  "CMP-037": {
+    "page": "language",
+    "en": "Function-block calls differ from IEC 61131-3.",
+    "es": "Las llamadas a bloques de función difieren de IEC 61131-3.",
+    "cases": {
+      "function-block call with an output binding =>": {
+        "en": "A function-block call with an output binding (`Q => variable`) is a build error.",
+        "es": "Una llamada a bloque de función con un enlace de salida (`Q => variable`) es un error de compilación."
+      },
+      "an unknown parameter of a standard block is rejected": {
+        "en": "An unknown parameter name on a standard block (`BOGUS := 5`) is accepted and ignored.",
+        "es": "Un nombre de parámetro desconocido en un bloque estándar (`BOGUS := 5`) se acepta y se ignora."
+      }
+    }
+  },
+  "CMP-041": {
+    "page": "language",
+    "en": "Methods and inheritance differ from IEC 61131-3.",
+    "es": "Los métodos y la herencia difieren de IEC 61131-3.",
+    "cases": {
+      "SUPER^ calls the method of the base block": {
+        "en": "A `SUPER^` call is a build error (`Complex method call targets not supported yet`).",
+        "es": "Una llamada `SUPER^` es un error de compilación (`Complex method call targets not supported yet`)."
+      },
+      "a variable of an interface type calls the method of its instance": {
+        "en": "A variable of an interface type is a build error (`Unknown FB type`).",
+        "es": "Una variable de tipo interfaz es un error de compilación (`Unknown FB type`)."
+      },
+      "a PRIVATE method called from outside its function block is rejected": {
+        "en": "A call of a `PRIVATE` method from outside its block is accepted: access specifiers are parsed and not enforced.",
+        "es": "Una llamada a un método `PRIVATE` desde fuera de su bloque se acepta: los especificadores de acceso se analizan y no se hacen cumplir."
+      },
+      "a PROTECTED method called from outside its function block is rejected": {
+        "en": "A call of a `PROTECTED` method from outside its block is accepted: access specifiers are parsed and not enforced.",
+        "es": "Una llamada a un método `PROTECTED` desde fuera de su bloque se acepta: los especificadores de acceso se analizan y no se hacen cumplir."
+      }
+    }
+  },
+  "CMP-042": {
+    "page": "language",
+    "en": "A function block or a global declared in another file is not found (`Unknown FB type`, `Unknown identifier`).",
+    "es": "Un bloque de función o una global declarados en otro archivo no se encuentran (`Unknown FB type`, `Unknown identifier`)."
+  },
+  "CMP-043": {
+    "page": "language",
+    "en": "With the profile of the `posix` target a program may use 256 bytes of WORK memory (variables, string literals and work buffers, one byte of it for the initialization flag). A 400-byte array, three `STRING` variables or an SFC chart of twenty steps is a build error.",
+    "es": "Con el perfil del destino `posix`, un programa puede usar 256 bytes de memoria WORK (variables, literales de cadena y buffers de trabajo, uno de ellos para la bandera de inicialización). Un arreglo de 400 bytes, tres variables `STRING` o un gráfico SFC de veinte pasos es un error de compilación."
+  },
+  "CMP-051": {
+    "page": "language",
+    "en": "The loader refuses the artifact that the compiler builds for a program with an `LREAL` and for two cyclic tasks with different intervals.",
+    "es": "El cargador rechaza el artefacto que el compilador genera para un programa con un `LREAL` y para dos tareas cíclicas con intervalos distintos."
+  },
+  "CMP-053": {
+    "page": "language",
+    "en": "The debug map records the literal version `1.2.0` instead of the version of the compiler package and carries the time of the build, so two builds of one project give two different maps. The bytecode of the two builds is identical.",
+    "es": "El mapa de depuración registra la versión literal `1.2.0` en lugar de la versión del paquete del compilador y lleva la hora de la compilación, de modo que dos compilaciones de un mismo proyecto dan dos mapas distintos. El bytecode de las dos compilaciones es idéntico."
+  },
+  "CMP-055": {
+    "page": "language",
+    "en": "The statements of the debug map do not cover all their instructions: a statement ends before the next one starts, so some program counters resolve to no statement.",
+    "es": "Las sentencias del mapa de depuración no cubren todas sus instrucciones: una sentencia termina antes de que empiece la siguiente, de modo que algunos contadores de programa no se resuelven a ninguna sentencia."
+  },
+  "LNG-008": {
+    "page": "language",
+    "en": "An FBD block that is a user function block from another file is refused (`Invalid FBD connection … unknown destination input port`): the FBD transpiler does not know its ports.",
+    "es": "Un bloque FBD que es un bloque de función de usuario de otro archivo se rechaza (`Invalid FBD connection … unknown destination input port`): el transpilador FBD no conoce sus puertos."
+  },
+  "RT-015": {
+    "page": "language",
+    "en": "A task with `trigger: event` is accepted by the compiler and refused later, and a program with two cyclic tasks of different intervals is refused by the native simulation.",
+    "es": "Una tarea con `trigger: event` es aceptada por el compilador y rechazada después, y un programa con dos tareas cíclicas de intervalos distintos es rechazado por la simulación nativa."
+  },
+  "CMP-025": {
+    "page": "library",
+    "en": "A `FIFO` called without `SIZE` faults the VM: the documented default of eight items is not applied.",
+    "es": "Un `FIFO` llamado sin `SIZE` provoca una falla de la VM: no se aplica el valor por defecto documentado de ocho elementos."
+  },
+  "CMP-057": {
+    "page": "library",
+    "en": "Some standard blocks and conversion functions differ from IEC 61131-3.",
+    "es": "Algunos bloques estándar y funciones de conversión difieren de IEC 61131-3.",
+    "cases": {
+      "TON elapsed time stops at the preset": {
+        "en": "`TON.ET` keeps counting after it reaches `PT`.",
+        "es": "`TON.ET` sigue contando después de llegar a `PT`."
+      },
+      "TP is not retriggered while its input stays true": {
+        "en": "`TP` starts its pulse again after `PT` while `IN` stays TRUE.",
+        "es": "`TP` vuelve a iniciar su pulso después de `PT` mientras `IN` permanece en TRUE."
+      },
+      "REAL_TO_INT rounds to the nearest integer": {
+        "en": "`REAL_TO_INT` truncates toward zero, where IEC 61131-3 rounds to the nearest integer.",
+        "es": "`REAL_TO_INT` trunca hacia cero, donde IEC 61131-3 redondea al entero más cercano."
+      },
+      "conversion functions between integer types keep an in-range value": {
+        "en": "Only six conversion functions exist (`INT_TO_REAL`, `REAL_TO_INT`, `BOOL_TO_INT`, `INT_TO_BOOL`, `TRUNC`, `ROUND`); any other `X_TO_Y` name is a build error (`Unknown function`).",
+        "es": "Solo existen seis funciones de conversión (`INT_TO_REAL`, `REAL_TO_INT`, `BOOL_TO_INT`, `INT_TO_BOOL`, `TRUNC`, `ROUND`); cualquier otro nombre `X_TO_Y` es un error de compilación (`Unknown function`)."
+      },
+      "DINT_TO_REAL exists": {
+        "en": "Only six conversion functions exist (`INT_TO_REAL`, `REAL_TO_INT`, `BOOL_TO_INT`, `INT_TO_BOOL`, `TRUNC`, `ROUND`); any other `X_TO_Y` name is a build error (`Unknown function`).",
+        "es": "Solo existen seis funciones de conversión (`INT_TO_REAL`, `REAL_TO_INT`, `BOOL_TO_INT`, `INT_TO_BOOL`, `TRUNC`, `ROUND`); cualquier otro nombre `X_TO_Y` es un error de compilación (`Unknown function`)."
+      },
+      "INT_TO_DINT exists": {
+        "en": "Only six conversion functions exist (`INT_TO_REAL`, `REAL_TO_INT`, `BOOL_TO_INT`, `INT_TO_BOOL`, `TRUNC`, `ROUND`); any other `X_TO_Y` name is a build error (`Unknown function`).",
+        "es": "Solo existen seis funciones de conversión (`INT_TO_REAL`, `REAL_TO_INT`, `BOOL_TO_INT`, `INT_TO_BOOL`, `TRUNC`, `ROUND`); cualquier otro nombre `X_TO_Y` es un error de compilación (`Unknown function`)."
+      }
+    }
+  },
+  "CMP-058": {
+    "page": "library",
+    "en": "Some standard functions and blocks differ from IEC 61131-3.",
+    "es": "Algunas funciones y bloques estándar difieren de IEC 61131-3.",
+    "cases": {
+      "ASIN, ACOS and ATAN return radians": {
+        "en": "`ASIN`, `ACOS`, `ATAN` and `ATAN2` are approximations: `ASIN(0.5)` gives 0.5259 (exact 0.5236) and `ATAN(1.0)` gives 0.7238 (exact 0.7854).",
+        "es": "`ASIN`, `ACOS`, `ATAN` y `ATAN2` son aproximaciones: `ASIN(0.5)` da 0.5259 (exacto 0.5236) y `ATAN(1.0)` da 0.7238 (exacto 0.7854)."
+      },
+      "LN, LOG, EXP and SQRT": {
+        "en": "`LN`, `LOG` and `EXP` are approximations: `LN(10.0)` gives 2.2183 (exact 2.3026), `EXP(1.0)` gives 2.7167 (exact 2.7183) and `LOG(1000.0)` gives 1.449 where the answer is 3.0. `SQRT` is within 0.001 on the checked values.",
+        "es": "`LN`, `LOG` y `EXP` son aproximaciones: `LN(10.0)` da 2.2183 (exacto 2.3026), `EXP(1.0)` da 2.7167 (exacto 2.7183) y `LOG(1000.0)` da 1.449 donde la respuesta es 3.0. `SQRT` está dentro de 0.001 en los valores comprobados."
+      },
+      "BLINK is on for T_ON and off for T_OFF while ENABLE holds": {
+        "en": "`BLINK` (not an IEC block) starts in its OFF phase, so `Q` rises one `T_OFF` after `ENABLE`.",
+        "es": "`BLINK` (no es un bloque IEC) empieza en su fase apagada, de modo que `Q` sube un `T_OFF` después de `ENABLE`."
+      }
+    }
+  }
+}

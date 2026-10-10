@@ -28,7 +28,7 @@ describe('isolated candidate change sets', () => {
       const second = await createCandidateChangeSet(motorStartStop, [{ path: 'src/Motor.st', content: `${original}\n(* candidate whitespace only *)\n` }]);
       expect(first).toMatchObject({ accepted: true, evidenceScope: 'native-posix-host', evidence: { operation: 'test', outcome: 'passed', artifacts: [{ kind: 'zplc' }, { kind: 'trace' }] }, savedTestInputIdentity: { schemaVersion: 1 } });
       expect(first.changeSet).toEqual(second.changeSet);
-      expect(first.changeSet.changes).toEqual([{ path: 'src/Motor.st', kind: 'modify', before: expect.objectContaining({ byteLength: Buffer.byteLength(original) }), after: expect.objectContaining({ byteLength: Buffer.byteLength(`${original}\n(* candidate whitespace only *)\n`) }) }]);
+      expect(first.changeSet?.changes).toEqual([{ path: 'src/Motor.st', kind: 'modify', before: expect.objectContaining({ byteLength: Buffer.byteLength(original) }), after: expect.objectContaining({ byteLength: Buffer.byteLength(`${original}\n(* candidate whitespace only *)\n`) }) }]);
       expect(await readFile(join(motorStartStop, 'src/Motor.st'), 'utf8')).toBe(original);
       expect(candidateRoots).toHaveLength(2);
       expect(new Set(candidateRoots).size).toBe(2);

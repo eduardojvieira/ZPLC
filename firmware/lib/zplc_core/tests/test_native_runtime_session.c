@@ -40,7 +40,9 @@ static void remove_persist_root(const char *root)
     static const char *const keys[] = {
         "program_v1_slot_a_payload", "program_v1_slot_a_meta",
         "program_v1_slot_b_payload", "program_v1_slot_b_meta",
-        "program_v1_active", "code_len", "code"
+        "program_v1_active", "code_len", "code",
+        "retain_a0", "retain_a1", "retain_a2", "retain_a3", "retain_a4",
+        "retain_b0", "retain_b1", "retain_b2", "retain_b3", "retain_b4"
     };
     size_t index;
     char path[512];
@@ -2229,6 +2231,9 @@ static void test_rejected_load_preserves_running_session(void)
     TEST_ASSERT(session.state == ZPLC_NATIVE_SESSION_IDLE,
                 "stop returns runtime to idle before artifact validation cases");
     snapshot_native_runtime(&session);
+    /* STOP stores the RETAIN region, which is a persistence operation of its own:
+     * count again from here, so the rejections below are measured alone. */
+    zplc_hal_persist_test_fail_at(0UL);
 
     artifact[artifact_size - 1U] ^= 1U;
     bytes_to_hex(artifact, artifact_size, hex, sizeof(hex));
@@ -3604,6 +3609,328 @@ static void test_program_load_refuses_another_draft(void)
     zplc_native_runtime_session_shutdown(&session);
 }
 
+/* ------------------------------------------------------------------------- */
+/* RETAIN persistence of the host runtime (RT-025, RT-026, RT-027)            */
+/* ------------------------------------------------------------------------- */
+
+#define RETAIN_SCAN_MS 100U /* the scan interval bytecode_to_task_hex() gives a program */
+
+/* RETAIN[0..3] += 1 once per scan. */
+static size_t emit_retain_counter(uint8_t *code, size_t length)
+{
+    code[length++] = OP_LOAD32;
+    code[length++] = (uint8_t)ZPLC_MEM_RETAIN_BASE;
+    code[length++] = (uint8_t)(ZPLC_MEM_RETAIN_BASE >> 8);
+    length = emit_push32(code, length, 1U);
+    code[length++] = OP_ADD;
+    length = emit_store32(code, length, ZPLC_MEM_RETAIN_BASE);
+    return emit_halt(code, length);
+}
+
+static uint32_t retain_counter(void)
+{
+    const uint8_t *retain = zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE);
+
+    return (uint32_t)retain[0] | ((uint32_t)retain[1] << 8) | ((uint32_t)retain[2] << 16) |
+           ((uint32_t)retain[3] << 24);
+}
+
+static void retain_send(zplc_native_runtime_session_t *session, const char *method, char *response,
+                        size_t response_size)
+{
+    char request[160];
+    char event[8192];
+
+    (void)snprintf(request, sizeof(request),
+                   "{\"id\":\"r\",\"type\":\"request\",\"method\":\"%s\",\"params\":{}}", method);
+    (void)zplc_native_runtime_session_handle_request(session, request, response, response_size,
+                                                     event, sizeof(event));
+}
+
+static void retain_load(zplc_native_runtime_session_t *session, const uint8_t *code, size_t length,
+                        char *response, size_t response_size)
+{
+    char hex[512];
+    char request[1024];
+    char event[8192];
+
+    bytecode_to_task_hex(code, length, hex, sizeof(hex));
+    (void)snprintf(request, sizeof(request),
+                   "{\"id\":\"load\",\"type\":\"request\",\"method\":\"program.load\","
+                   "\"params\":{\"bytecode_hex\":\"%s\"}}", hex);
+    (void)zplc_native_runtime_session_handle_request(session, request, response, response_size,
+                                                     event, sizeof(event));
+}
+
+static void retain_ticks(zplc_native_runtime_session_t *session, uint32_t from_ms, uint32_t to_ms)
+{
+    char event[8192];
+    uint32_t now;
+
+    for (now = from_ms; now <= to_ms; now += RETAIN_SCAN_MS) {
+        (void)zplc_native_runtime_session_tick(session, now, event, sizeof(event));
+    }
+}
+
+/* RT-025, RT-027: a counter in RETAIN continues in a new session, and another program starts from an initialised region. */
+static void test_retain_survives_a_new_session(void)
+{
+    zplc_native_runtime_session_t session;
+    char response[8192];
+    uint8_t code[64];
+    uint8_t other[32];
+    size_t length;
+    size_t other_length = 0U;
+    char temp_dir[] = "/tmp/zplc_retain_sess_XXXXXX";
+    char root_copy[512];
+    char *old_root = copy_env("ZPLC_PERSIST_ROOT", root_copy, sizeof(root_copy));
+
+    printf("\n=== Test: RETAIN survives a new session (RT-025, RT-027) ===\n");
+    if (mkdtemp(temp_dir) == NULL) {
+        TEST_ASSERT(0, "mkdtemp succeeded for the RETAIN session test");
+        return;
+    }
+    setenv("ZPLC_PERSIST_ROOT", temp_dir, 1);
+    setenv("ZPLC_RETAIN_SAVE_INTERVAL_MS", "0", 1); /* only STOP and shutdown store */
+    length = emit_retain_counter(code, 0U);
+
+    zplc_native_runtime_session_init(&session);
+    zplc_hal_posix_set_tick_override(0U);
+    retain_load(&session, code, length, response, sizeof(response));
+    retain_send(&session, "status.get", response, sizeof(response));
+    TEST_ASSERT_CONTAINS(response,
+        "\"retain\":{\"reason\":\"none\",\"restored\":false,\"sequence\":0,\"saves\":0,"
+        "\"save_errors\":0,\"saved_at_ms\":null}",
+        "first start: the status says no record, no save");
+    retain_send(&session, "execution.start", response, sizeof(response));
+    retain_ticks(&session, RETAIN_SCAN_MS, 3U * RETAIN_SCAN_MS);
+    TEST_ASSERT(retain_counter() == 3U, "the program counted three scans in RETAIN");
+    zplc_hal_posix_set_tick_override(3U * RETAIN_SCAN_MS);
+    retain_send(&session, "execution.stop", response, sizeof(response));
+    retain_send(&session, "status.get", response, sizeof(response));
+    TEST_ASSERT_CONTAINS(response, "\"sequence\":1,\"saves\":1,\"save_errors\":0,\"saved_at_ms\":300}",
+                         "STOP stores the region: sequence 1, one save, the time of the save");
+    zplc_native_runtime_session_shutdown(&session);
+
+    zplc_native_runtime_session_init(&session);
+    zplc_hal_posix_set_tick_override(0U);
+    retain_send(&session, "status.get", response, sizeof(response));
+    TEST_ASSERT_CONTAINS(response, "\"retain\":{\"reason\":\"restored\",\"restored\":true,\"sequence\":1,",
+                         "a new session over the same persistence root restores the record");
+    TEST_ASSERT(retain_counter() == 3U, "the counter continues from 3");
+    retain_send(&session, "execution.start", response, sizeof(response));
+    retain_ticks(&session, RETAIN_SCAN_MS, RETAIN_SCAN_MS);
+    TEST_ASSERT(retain_counter() == 4U, "and counts on");
+    retain_send(&session, "execution.stop", response, sizeof(response));
+    retain_send(&session, "status.get", response, sizeof(response));
+    TEST_ASSERT_CONTAINS(response, "\"sequence\":2,\"saves\":1,", "the second STOP writes the next sequence");
+    zplc_native_runtime_session_shutdown(&session);
+
+    /* A different program does not inherit the values. */
+    other_length = emit_push32(other, other_length, 5U);
+    other_length = emit_store32(other, other_length, ZPLC_MEM_OPI_BASE);
+    other_length = emit_halt(other, other_length);
+    zplc_native_runtime_session_init(&session);
+    zplc_hal_posix_set_tick_override(0U);
+    retain_load(&session, other, other_length, response, sizeof(response));
+    TEST_ASSERT_CONTAINS(response, "\"result\"", "the other program loads");
+    TEST_ASSERT(retain_counter() == 0U, "its RETAIN region is initialised");
+    retain_send(&session, "status.get", response, sizeof(response));
+    TEST_ASSERT_CONTAINS(response, "\"retain\":{\"reason\":\"identity_mismatch\",\"restored\":false,",
+                         "the status says the identity did not match");
+    zplc_native_runtime_session_shutdown(&session);
+
+    /* Loading the first program again finds its record, as long as no newer record replaced it. */
+    zplc_native_runtime_session_init(&session);
+    zplc_hal_posix_set_tick_override(0U);
+    retain_load(&session, code, length, response, sizeof(response));
+    TEST_ASSERT_CONTAINS(response, "\"result\"", "the first program loads again");
+    retain_send(&session, "status.get", response, sizeof(response));
+    TEST_ASSERT(retain_counter() == 4U &&
+                strstr(response, "\"reason\":\"restored\"") != NULL,
+                "its record is still there");
+    zplc_native_runtime_session_shutdown(&session);
+
+    unsetenv("ZPLC_RETAIN_SAVE_INTERVAL_MS");
+    zplc_hal_posix_clear_tick_override();
+    remove_persist_root(temp_dir);
+    if (old_root != NULL) setenv("ZPLC_PERSIST_ROOT", old_root, 1);
+    else unsetenv("ZPLC_PERSIST_ROOT");
+}
+
+/* RT-026, RT-027: periodic saves follow the interval of the environment, skip an unchanged region, and 0 turns them off. */
+static void test_retain_periodic_save_follows_the_interval(void)
+{
+    zplc_native_runtime_session_t session;
+    char response[8192];
+    uint8_t code[64];
+    size_t length;
+    char temp_dir[] = "/tmp/zplc_retain_per_XXXXXX";
+    char root_copy[512];
+    char *old_root = copy_env("ZPLC_PERSIST_ROOT", root_copy, sizeof(root_copy));
+
+    printf("\n=== Test: periodic RETAIN save follows the interval (RT-026, RT-027) ===\n");
+    if (mkdtemp(temp_dir) == NULL) {
+        TEST_ASSERT(0, "mkdtemp succeeded for the periodic RETAIN test");
+        return;
+    }
+    setenv("ZPLC_PERSIST_ROOT", temp_dir, 1);
+    length = emit_retain_counter(code, 0U);
+
+    setenv("ZPLC_RETAIN_SAVE_INTERVAL_MS", "1000", 1);
+    zplc_native_runtime_session_init(&session);
+    zplc_hal_posix_set_tick_override(0U);
+    retain_load(&session, code, length, response, sizeof(response));
+    retain_send(&session, "execution.start", response, sizeof(response));
+    retain_ticks(&session, RETAIN_SCAN_MS, 900U);
+    retain_send(&session, "status.get", response, sizeof(response));
+    TEST_ASSERT_CONTAINS(response, "\"saves\":0,", "no periodic save inside the interval");
+    retain_ticks(&session, 1000U, 1900U);
+    retain_send(&session, "status.get", response, sizeof(response));
+    TEST_ASSERT_CONTAINS(response, "\"sequence\":1,\"saves\":1,\"save_errors\":0,\"saved_at_ms\":1000}",
+                         "one periodic save at the interval");
+    retain_ticks(&session, 2000U, 2000U);
+    retain_send(&session, "status.get", response, sizeof(response));
+    TEST_ASSERT_CONTAINS(response, "\"sequence\":2,\"saves\":2,\"save_errors\":0,\"saved_at_ms\":2000}",
+                         "the next one a whole interval later");
+    zplc_native_runtime_session_shutdown(&session);
+
+    /* An invalid value is ignored: the default of 30 s applies. */
+    setenv("ZPLC_RETAIN_SAVE_INTERVAL_MS", "50", 1);
+    zplc_native_runtime_session_init(&session);
+    zplc_hal_posix_set_tick_override(0U);
+    retain_load(&session, code, length, response, sizeof(response)); /* restores under the test clock */
+    retain_send(&session, "execution.start", response, sizeof(response));
+    retain_ticks(&session, RETAIN_SCAN_MS, 5000U);
+    retain_send(&session, "status.get", response, sizeof(response));
+    TEST_ASSERT_CONTAINS(response, "\"saves\":0,", "an interval below the minimum is ignored");
+    zplc_native_runtime_session_shutdown(&session);
+
+    /* 0 turns periodic saves off; STOP still stores. */
+    setenv("ZPLC_RETAIN_SAVE_INTERVAL_MS", "0", 1);
+    zplc_native_runtime_session_init(&session);
+    zplc_hal_posix_set_tick_override(0U);
+    retain_load(&session, code, length, response, sizeof(response));
+    retain_send(&session, "execution.start", response, sizeof(response));
+    retain_ticks(&session, RETAIN_SCAN_MS, 5000U);
+    retain_send(&session, "status.get", response, sizeof(response));
+    TEST_ASSERT_CONTAINS(response, "\"saves\":0,", "an interval of 0 turns periodic saves off");
+    retain_send(&session, "execution.stop", response, sizeof(response));
+    retain_send(&session, "status.get", response, sizeof(response));
+    TEST_ASSERT_CONTAINS(response, "\"saves\":1,", "and STOP still stores the region");
+    zplc_native_runtime_session_shutdown(&session);
+
+    /* A program that does not write RETAIN is never stored again after its first record. */
+    setenv("ZPLC_RETAIN_SAVE_INTERVAL_MS", "1000", 1);
+    length = emit_halt(code, 0U);
+    zplc_native_runtime_session_init(&session);
+    zplc_hal_posix_set_tick_override(0U);
+    retain_load(&session, code, length, response, sizeof(response));
+    retain_send(&session, "execution.start", response, sizeof(response));
+    retain_ticks(&session, RETAIN_SCAN_MS, 1000U);
+    retain_send(&session, "status.get", response, sizeof(response));
+    TEST_ASSERT_CONTAINS(response, "\"saves\":1,", "the initialised region is stored once");
+    retain_ticks(&session, 1100U, 5000U);
+    retain_send(&session, "status.get", response, sizeof(response));
+    TEST_ASSERT_CONTAINS(response, "\"saves\":1,", "and an unchanged region is not stored again");
+    zplc_native_runtime_session_shutdown(&session);
+
+    unsetenv("ZPLC_RETAIN_SAVE_INTERVAL_MS");
+    zplc_hal_posix_clear_tick_override();
+    remove_persist_root(temp_dir);
+    if (old_root != NULL) setenv("ZPLC_PERSIST_ROOT", old_root, 1);
+    else unsetenv("ZPLC_PERSIST_ROOT");
+}
+
+/* RT-025, RT-027: reset is a cold restart, and a faulted session stores nothing. */
+static void test_retain_reset_and_fault(void)
+{
+    zplc_native_runtime_session_t session;
+    char response[8192];
+    uint8_t code[64];
+    size_t length;
+    char temp_dir[] = "/tmp/zplc_retain_rst_XXXXXX";
+    char root_copy[512];
+    char *old_root = copy_env("ZPLC_PERSIST_ROOT", root_copy, sizeof(root_copy));
+
+    printf("\n=== Test: RETAIN reset and fault (RT-025, RT-027) ===\n");
+    if (mkdtemp(temp_dir) == NULL) {
+        TEST_ASSERT(0, "mkdtemp succeeded for the RETAIN reset test");
+        return;
+    }
+    setenv("ZPLC_PERSIST_ROOT", temp_dir, 1);
+    unsetenv("ZPLC_RETAIN_SAVE_INTERVAL_MS");
+    length = emit_retain_counter(code, 0U);
+
+    zplc_native_runtime_session_init(&session);
+    zplc_hal_posix_set_tick_override(0U);
+    retain_load(&session, code, length, response, sizeof(response));
+    retain_send(&session, "execution.start", response, sizeof(response));
+    retain_ticks(&session, RETAIN_SCAN_MS, 2U * RETAIN_SCAN_MS);
+    retain_send(&session, "execution.stop", response, sizeof(response));
+    TEST_ASSERT(retain_counter() == 2U, "the counter is 2 before the reset");
+    retain_send(&session, "execution.reset", response, sizeof(response));
+    TEST_ASSERT(retain_counter() == 0U, "reset initialises the RETAIN region");
+    retain_send(&session, "status.get", response, sizeof(response));
+    TEST_ASSERT_CONTAINS(response, "\"retain\":{\"reason\":\"reset\",\"restored\":false,\"sequence\":2,",
+                         "the status says reset and carries the new record");
+    zplc_native_runtime_session_shutdown(&session);
+
+    zplc_native_runtime_session_init(&session);
+    TEST_ASSERT(retain_counter() == 0U, "a restart does not bring the old values back");
+    zplc_native_runtime_session_shutdown(&session);
+
+    /* One program, two behaviours: with input byte 0 clear it counts in RETAIN; with it set it
+     * writes 99 and then loops until the scan budget faults. The fault leaves 99 in RAM. */
+    length = 0U;
+    code[length++] = OP_LOAD8;
+    code[length++] = (uint8_t)ZPLC_MEM_IPI_BASE;
+    code[length++] = (uint8_t)(ZPLC_MEM_IPI_BASE >> 8);
+    code[length++] = OP_JNZ;
+    code[length++] = 19U; /* the fault block, after the counting block */
+    code[length++] = 0U;
+    length = emit_retain_counter(code, length);
+    TEST_ASSERT(length == 19U, "the counting block is 13 bytes");
+    length = emit_push32(code, length, 99U);
+    length = emit_store32(code, length, ZPLC_MEM_RETAIN_BASE);
+    {
+        const uint16_t loop_at = (uint16_t)length;
+
+        code[length++] = OP_JMP;
+        code[length++] = (uint8_t)loop_at; /* a jump to itself */
+        code[length++] = (uint8_t)(loop_at >> 8);
+    }
+
+    zplc_native_runtime_session_init(&session);
+    zplc_hal_posix_set_tick_override(0U);
+    retain_load(&session, code, length, response, sizeof(response));
+    TEST_ASSERT_CONTAINS(response, "\"result\"", "the two-behaviour program loads");
+    retain_send(&session, "execution.start", response, sizeof(response));
+    retain_ticks(&session, RETAIN_SCAN_MS, 2U * RETAIN_SCAN_MS);
+    TEST_ASSERT(retain_counter() == 2U, "it counted two scans");
+    retain_send(&session, "execution.stop", response, sizeof(response));
+    retain_send(&session, "execution.start", response, sizeof(response));
+    zplc_mem_get_region(ZPLC_MEM_IPI_BASE)[0] = 1U;
+    retain_ticks(&session, 3U * RETAIN_SCAN_MS, 3U * RETAIN_SCAN_MS);
+    TEST_ASSERT(session.state == ZPLC_NATIVE_SESSION_ERROR, "the scan faults");
+    TEST_ASSERT(retain_counter() == 99U, "the fault left a half-finished value in RETAIN");
+    retain_send(&session, "status.get", response, sizeof(response));
+    TEST_ASSERT_CONTAINS(response, "\"sequence\":3,\"saves\":1,", "one record was stored before the fault");
+    retain_send(&session, "execution.stop", response, sizeof(response));
+    retain_send(&session, "status.get", response, sizeof(response));
+    TEST_ASSERT_CONTAINS(response, "\"sequence\":3,\"saves\":1,", "STOP in a faulted session stores nothing");
+    zplc_native_runtime_session_shutdown(&session);
+    zplc_native_runtime_session_init(&session);
+    TEST_ASSERT(retain_counter() == 2U,
+                "a faulted session stores nothing: the next start sees the last good record");
+    zplc_native_runtime_session_shutdown(&session);
+
+    zplc_hal_posix_clear_tick_override();
+    remove_persist_root(temp_dir);
+    if (old_root != NULL) setenv("ZPLC_PERSIST_ROOT", old_root, 1);
+    else unsetenv("ZPLC_PERSIST_ROOT");
+}
+
 static void test_posix_hal_lifecycle_clears_tick_override(void)
 {
     printf("\n=== Test: POSIX HAL logical clock lifecycle ===\n");
@@ -3671,6 +3998,9 @@ int main(void)
     test_simulation_input_protocol();
     test_canonical_request_envelope();
     test_scenario_virtual_clock();
+    test_retain_survives_a_new_session();
+    test_retain_periodic_save_follows_the_interval();
+    test_retain_reset_and_fault();
     test_posix_hal_lifecycle_clears_tick_override();
     test_session_ready_event_from_runtime_main();
 

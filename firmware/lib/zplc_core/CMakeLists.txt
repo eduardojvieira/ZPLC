@@ -66,6 +66,7 @@ add_library(zplc_core STATIC
     src/core/zplc_core.c
     src/core/zplc_comm_dispatch.c
     src/core/zplc_loader.c
+    src/core/zplc_retain.c
 )
 
 target_compile_definitions(zplc_core PUBLIC ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}")
@@ -301,6 +302,26 @@ target_compile_definitions(test_hal_posix_persist PRIVATE ZPLC_HAL_PERSIST_TESTI
 
 add_test(NAME test_hal_posix_persist COMMAND test_hal_posix_persist)
 
+# Test: RETAIN persistence module (RT-025, RT-026, RT-027): record format, two
+# alternating slots, identity and layout checks, power cut sweep. Also run under
+# the sanitizers.
+add_executable(test_retain
+    tests/test_retain.c
+    src/core/zplc_retain.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_retain PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+target_compile_definitions(test_retain PRIVATE ZPLC_HAL_PERSIST_TESTING)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_retain PRIVATE rt)
+endif()
+
+add_test(NAME test_retain COMMAND test_retain)
+
 # Test: POSIX HAL mutex behavior
 add_executable(test_hal_posix_mutex
     tests/test_hal_posix_mutex.c
@@ -348,6 +369,8 @@ add_test(NAME test_loader_verify COMMAND test_loader_verify)
 add_executable(test_sandbox
     tests/test_sandbox.c
     src/core/zplc_core.c
+    src/core/zplc_loader.c
+    src/core/zplc_comm_dispatch.c
     src/hal/posix/zplc_hal_posix.c
 )
 
@@ -364,6 +387,35 @@ if(UNIX AND NOT APPLE)
 endif()
 
 add_test(NAME test_sandbox COMMAND test_sandbox)
+
+# The same suite on a build whose WORK and RETAIN memory are larger than their
+# windows of the address space (a legal Kconfig value: nothing bounds it). A
+# region ends where the next one begins, however large its storage is
+# (RT-001), so every row of the suite must come out as on the default build.
+add_executable(test_sandbox_regions
+    tests/test_sandbox.c
+    src/core/zplc_core.c
+    src/core/zplc_loader.c
+    src/core/zplc_comm_dispatch.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_sandbox_regions PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_compile_definitions(test_sandbox_regions PRIVATE
+    ZPLC_CORE_TESTING
+    ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}"
+    CONFIG_ZPLC_WORK_MEMORY_SIZE=0x3000U
+    CONFIG_ZPLC_RETAIN_MEMORY_SIZE=0x2000U
+)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_sandbox_regions PRIVATE rt)
+endif()
+
+add_test(NAME test_sandbox_regions COMMAND test_sandbox_regions)
 
 # Test: the communication handlers of firmware/app against crafted blocks
 # (COM-001). The handler sources are compiled on the host against a stand-in
@@ -420,8 +472,8 @@ add_custom_target(check
 )
 
 # The tests above join the check target without touching its list
-add_dependencies(check test_sandbox test_comm_fb_access test_comm_handler_modbus
-                 test_comm_handler_mqtt test_comm_handler_cloud)
+add_dependencies(check test_sandbox test_sandbox_regions test_comm_fb_access test_comm_handler_modbus
+                 test_comm_handler_mqtt test_comm_handler_cloud test_retain)
 
 # =============================================================================
 # Build Info

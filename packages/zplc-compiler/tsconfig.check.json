@@ -1,0 +1,17 @@
+{
+  // Type-checks everything under src and build.ts, tests included, which tsconfig.json leaves out. noEmit only.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false,
+    "rootDir": ".",
+    "lib": ["ES2022"],
+    // The package has no @types of its own (the test runner is Bun); the IDE package carries them.
+    "typeRoots": ["../zplc-ide/node_modules/@types"],
+    "types": ["bun", "node"]
+  },
+  "include": ["src/**/*.ts", "build.ts"],
+  "exclude": ["node_modules", "dist"]
+}

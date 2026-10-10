@@ -1,4 +1,4 @@
-import { constants, type BigIntStats } from 'node:fs';
+import { constants, type BigIntStats, type Dirent } from 'node:fs';
 import { lstat, open, readdir, realpath } from 'node:fs/promises';
 import { join } from 'node:path';
 import { parseAndMigrateProject, type ProjectMigrationChange } from '../project/projectModel';
@@ -84,7 +84,7 @@ async function readStableFile(path: string, logicalPath: string, maxBytes: numbe
 /** Reads direct JSON scenario files without interpreting their test schema. */
 export async function readWorkspaceScenarios(root: string): Promise<WorkspaceScenarioResult> {
   const directory = join(root, 'tests');
-  let entries: Awaited<ReturnType<typeof readdir>>;
+  let entries: Dirent[];
   let testsStatus: Awaited<ReturnType<typeof lstat>>;
   try { testsStatus = await lstat(directory); }
   catch { return failed('WORKSPACE_MISSING', 'Tests directory is unavailable', 'tests'); }
@@ -141,7 +141,7 @@ export async function readWorkspace(rootInput: string): Promise<WorkspaceResult>
   if (!parsed.ok) return { ok: false, diagnostics: parsed.diagnostics.map((diagnostic) => ({ code: 'PROJECT_INVALID', message: diagnostic.message, path: diagnostic.path })) };
 
   const sourceDirectory = join(root, 'src');
-  let entries: Awaited<ReturnType<typeof readdir>>;
+  let entries: Dirent[];
   let sourceStatus: Awaited<ReturnType<typeof lstat>>;
   try { sourceStatus = await lstat(sourceDirectory); }
   catch { return failed('WORKSPACE_MISSING', 'Source directory is unavailable', 'src'); }
