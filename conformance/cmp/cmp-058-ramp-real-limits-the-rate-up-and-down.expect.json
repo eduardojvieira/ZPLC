@@ -1,0 +1,23 @@
+{
+  "requirement": "CMP-058",
+  "title": "RAMP_REAL moves toward its input by at most RATE for each scan, up and down through zero",
+  "matrix": ["blocks.library-blocks-not-in-the-standard"],
+  "tags": ["arch-sensitive", "float"],
+  "note": "Not an IEC block: OUT moves toward IN by at most RATE for each call and reaches IN when it is within RATE; from 0 towards 10 with RATE 2.0 the output is 2, 4, 6, 8, 10, then towards -5 it is 8, 6, 4, 2, 0, -2, -4 and -5",
+  "scans": 13,
+  "scanMs": 10,
+  "inputs": [
+    {"at": "%ID0", "type": "REAL", "value": 10.0, "beforeScan": 1},
+    {"at": "%ID0", "type": "REAL", "value": -5.0, "beforeScan": 6}
+  ],
+  "expect": [
+    {"at": "%QD0", "type": "REAL", "value": 2.0, "afterScan": 1},
+    {"at": "%QD0", "type": "REAL", "value": 6.0, "afterScan": 3},
+    {"at": "%QD0", "type": "REAL", "value": 10.0, "afterScan": 5},
+    {"at": "%QD0", "type": "REAL", "value": 10.0, "afterScan": 5},
+    {"at": "%QD0", "type": "REAL", "value": 8.0, "afterScan": 6},
+    {"at": "%QD0", "type": "REAL", "value": 0.0, "afterScan": 10},
+    {"at": "%QD0", "type": "REAL", "value": -4.0, "afterScan": 12},
+    {"at": "%QD0", "type": "REAL", "value": -5.0, "afterScan": 13}
+  ]
+}

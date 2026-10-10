@@ -87,6 +87,13 @@ All notable changes are documented here.
   statement was not dropped. A method that never assigns returns 0.
 - `NAND` and `NOR` return a `BOOL` of 0 or 1: they returned the bitwise
   complement (254 or 255), so `IF NAND(TRUE, TRUE) THEN` was true.
+- `HYSTERESIS`, `RAMP_REAL` and `PID_Compact` compare REAL values as REAL: with
+  a negative threshold, a negative error or a negative `OUT_MIN` they compared
+  bit patterns as signed integers (a `RAMP_REAL` falling through zero did not
+  ramp, a `PID_Compact` output of -10 was limited to `OUT_MIN` -100). An integer
+  argument of any of these blocks and of `NORM_X` and `SCALE_X` is converted to
+  REAL, and `PID_Compact` called without `DT` no longer faults on its
+  derivative term.
 - `BLINK` starts its cycle with the ON phase in the scan where `ENABLE` rises
   (it started with the OFF phase) and starts it again after `ENABLE` was
   FALSE; a phase ends at the first call at which its time has elapsed.

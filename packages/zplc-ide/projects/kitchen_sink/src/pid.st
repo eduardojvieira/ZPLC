@@ -17,14 +17,12 @@ END_VAR
 
 (* PID_Compact - PID Controller *)
 PidController(
-    SETPOINT := 50.0,
-    ACTUAL := SensorInput,
+    SP := 50.0,
+    PV := SensorInput,
     KP := 1.0,
-    TI := T#1000ms,
-    TD := T#100ms,
-    CYCLE := T#10ms,
-    MANUAL := FALSE,
-    MAN_VALUE := 0.0,
+    KI := 0.1,
+    KD := 0.0,
+    DT := 0.1,
     OUT_MIN := 0.0,
     OUT_MAX := 100.0
 );

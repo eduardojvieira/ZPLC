@@ -15,6 +15,27 @@ import type { FunctionDef, FunctionBlockDef, CodeGenContext, MemberDef as _Membe
 import { formatAddr, inputMember, outputMember, internalMember } from './types.ts';
 import type { Expression } from '../ast.ts';
 
+/** Emit an argument for a REAL member: an integer argument is converted, as it is in an arithmetic operand. */
+function emitRealOperand(ctx: CodeGenContext, expr: Expression): void {
+    if (ctx.emitOperand) ctx.emitOperand(expr, 'REAL');
+    else ctx.emitExpression(expr);
+}
+
+/**
+ * Compare the two REAL values on the stack. The VM's LT and GT compare the bit patterns as signed
+ * integers, which orders negative REALs backwards; emitCompare calls the REAL comparison.
+ */
+function compareReal(ctx: CodeGenContext, op: 'LT' | 'GT'): void {
+    if (ctx.emitCompare) ctx.emitCompare(op, 'REAL');
+    else ctx.emit(`    ${op}`);
+}
+
+/** The pattern of 0.0 and -0.0 is a zero once the sign is cleared: [x] -> [x with the sign cleared]. */
+function emitMagnitude(ctx: CodeGenContext): void {
+    ctx.emit(`    PUSH32 0x7FFFFFFF`);
+    ctx.emit(`    AND`);
+}
+
 // ============================================================================
 // Scaling Functions
 // ============================================================================
@@ -40,19 +61,18 @@ export const NORM_X_FN: FunctionDef = {
         ctx.emit(`    ; NORM_X(MIN, X, MAX) -> (X - MIN) / (MAX - MIN)`);
 
         // Calculate (MAX - MIN) first to check for division by zero
-        ctx.emitExpression(max);      // stack: [MAX]
-        ctx.emitExpression(min);      // stack: [MAX, MIN]
+        emitRealOperand(ctx, max);    // stack: [MAX]
+        emitRealOperand(ctx, min);    // stack: [MAX, MIN]
         ctx.emit(`    SUBF`);         // stack: [MAX - MIN]
         ctx.emit(`    DUP`);          // stack: [range, range]
 
-        // Check if range is zero (avoid division by zero)
-        ctx.emit(`    PUSH32 0`);     // stack: [range, range, 0]
-        ctx.emit(`    EQ`);           // stack: [range, is_zero]
-        ctx.emit(`    JNZ ${skipLabel}`);
+        // Check if range is zero (0.0 and -0.0), to avoid a division by zero
+        emitMagnitude(ctx);           // stack: [range, |range| pattern]
+        ctx.emit(`    JZ ${skipLabel}`);
 
         // Range is valid, calculate (X - MIN) / range
-        ctx.emitExpression(x);        // stack: [range, X]
-        ctx.emitExpression(min);      // stack: [range, X, MIN]
+        emitRealOperand(ctx, x);      // stack: [range, X]
+        emitRealOperand(ctx, min);    // stack: [range, X, MIN]
         ctx.emit(`    SUBF`);         // stack: [range, X - MIN]
         ctx.emit(`    SWAP`);         // stack: [X - MIN, range]
         ctx.emit(`    DIVF`);         // stack: [normalized]
@@ -86,16 +106,16 @@ export const SCALE_X_FN: FunctionDef = {
         ctx.emit(`    ; SCALE_X(MIN, X, MAX) -> MIN + X * (MAX - MIN)`);
 
         // Calculate range (MAX - MIN)
-        ctx.emitExpression(max);      // stack: [MAX]
-        ctx.emitExpression(min);      // stack: [MAX, MIN]
+        emitRealOperand(ctx, max);    // stack: [MAX]
+        emitRealOperand(ctx, min);    // stack: [MAX, MIN]
         ctx.emit(`    SUBF`);         // stack: [range]
 
         // Multiply by X
-        ctx.emitExpression(x);        // stack: [range, X]
+        emitRealOperand(ctx, x);      // stack: [range, X]
         ctx.emit(`    MULF`);         // stack: [X * range]
 
         // Add MIN
-        ctx.emitExpression(min);      // stack: [X * range, MIN]
+        emitRealOperand(ctx, min);    // stack: [X * range, MIN]
         ctx.emit(`    ADDF`);         // stack: [MIN + X * range]
     }
 };
@@ -141,7 +161,7 @@ export const HYSTERESIS_FB: FunctionBlockDef = {
         for (const p of params) {
             const member = this.members.find(m => m.name === p.name);
             if (member && member.isInput) {
-                ctx.emitExpression(p.value);
+                emitRealOperand(ctx, p.value);
                 ctx.emit(`    STORE32 ${formatAddr(base + member.offset)}`);
             }
         }
@@ -153,7 +173,7 @@ export const HYSTERESIS_FB: FunctionBlockDef = {
         // Currently OFF - check if IN > HIGH
         ctx.emit(`    LOAD32 ${formatAddr(base + 0)}   ; IN`);
         ctx.emit(`    LOAD32 ${formatAddr(base + 4)}   ; HIGH`);
-        ctx.emit(`    GT`);
+        compareReal(ctx, 'GT');
         ctx.emit(`    JZ ${endLabel}`);
         ctx.emit(`    PUSH8 1`);
         ctx.emit(`    STORE8 ${formatAddr(base + 12)}`);
@@ -163,7 +183,7 @@ export const HYSTERESIS_FB: FunctionBlockDef = {
         ctx.emit(`${onLabel}:`);
         ctx.emit(`    LOAD32 ${formatAddr(base + 0)}   ; IN`);
         ctx.emit(`    LOAD32 ${formatAddr(base + 8)}   ; LOW`);
-        ctx.emit(`    LT`);
+        compareReal(ctx, 'LT');
         ctx.emit(`    JZ ${endLabel}`);
         ctx.emit(`    PUSH8 0`);
         ctx.emit(`    STORE8 ${formatAddr(base + 12)}`);
@@ -207,7 +227,7 @@ export const DEADBAND_FB: FunctionBlockDef = {
         for (const p of params) {
             const member = this.members.find(m => m.name === p.name);
             if (member && member.isInput) {
-                ctx.emitExpression(p.value);
+                emitRealOperand(ctx, p.value);
                 ctx.emit(`    STORE32 ${formatAddr(base + member.offset)}`);
             }
         }
@@ -220,7 +240,7 @@ export const DEADBAND_FB: FunctionBlockDef = {
 
         // Compare with WIDTH
         ctx.emit(`    LOAD32 ${formatAddr(base + 4)}   ; WIDTH`);
-        ctx.emit(`    GT`);
+        compareReal(ctx, 'GT');
         ctx.emit(`    JZ ${endLabel}`);
 
         // Difference exceeds deadband, update output
@@ -270,7 +290,7 @@ export const LAG_FILTER_FB: FunctionBlockDef = {
         for (const p of params) {
             const member = this.members.find(m => m.name === p.name);
             if (member && member.isInput) {
-                ctx.emitExpression(p.value);
+                emitRealOperand(ctx, p.value);
                 ctx.emit(`    STORE32 ${formatAddr(base + member.offset)}`);
             }
         }
@@ -323,7 +343,7 @@ export const RAMP_REAL_FB: FunctionBlockDef = {
         for (const p of params) {
             const member = this.members.find(m => m.name === p.name);
             if (member && member.isInput) {
-                ctx.emitExpression(p.value);
+                emitRealOperand(ctx, p.value);
                 ctx.emit(`    STORE32 ${formatAddr(base + member.offset)}`);
             }
         }
@@ -336,14 +356,14 @@ export const RAMP_REAL_FB: FunctionBlockDef = {
 
         // Check if delta > RATE
         ctx.emit(`    LOAD32 ${formatAddr(base + 4)}   ; RATE`);
-        ctx.emit(`    GT`);
+        compareReal(ctx, 'GT');
         ctx.emit(`    JNZ ${incLabel}`);
 
         // Check if delta < -RATE
         ctx.emit(`    DUP`);
         ctx.emit(`    LOAD32 ${formatAddr(base + 4)}   ; RATE`);
         ctx.emit(`    NEGF`);
-        ctx.emit(`    LT`);
+        compareReal(ctx, 'LT');
         ctx.emit(`    JNZ ${decLabel}`);
 
         // Within rate limit, set OUT = IN
@@ -409,10 +429,11 @@ export const INTEGRAL_FB: FunctionBlockDef = {
         for (const p of params) {
             const member = this.members.find(m => m.name === p.name);
             if (member && member.isInput) {
-                ctx.emitExpression(p.value);
                 if (member.size === 1) {
+                    ctx.emitExpression(p.value);
                     ctx.emit(`    STORE8 ${formatAddr(base + member.offset)}`);
                 } else {
+                    emitRealOperand(ctx, p.value);
                     ctx.emit(`    STORE32 ${formatAddr(base + member.offset)}`);
                 }
             }
@@ -474,16 +495,15 @@ export const DERIVATIVE_FB: FunctionBlockDef = {
         for (const p of params) {
             const member = this.members.find(m => m.name === p.name);
             if (member && member.isInput) {
-                ctx.emitExpression(p.value);
+                emitRealOperand(ctx, p.value);
                 ctx.emit(`    STORE32 ${formatAddr(base + member.offset)}`);
             }
         }
 
         // Check DT != 0
         ctx.emit(`    LOAD32 ${formatAddr(base + 4)}   ; DT`);
-        ctx.emit(`    PUSH32 0`);
-        ctx.emit(`    EQ`);
-        ctx.emit(`    JNZ ${skipLabel}`);
+        emitMagnitude(ctx);
+        ctx.emit(`    JZ ${skipLabel}`);
 
         // OUT = (IN - _prev) / DT
         ctx.emit(`    LOAD32 ${formatAddr(base + 0)}   ; IN`);
@@ -559,6 +579,8 @@ export const PID_COMPACT_FB: FunctionBlockDef = {
         const calcLabel = ctx.newLabel('pid_calc');
         const clampLowLabel = ctx.newLabel('pid_clamp_low');
         const clampHighLabel = ctx.newLabel('pid_clamp_high');
+        const noSampleLabel = ctx.newLabel('pid_no_sample');
+        const sampledLabel = ctx.newLabel('pid_sampled');
         const endLabel = ctx.newLabel('pid_end');
 
         ctx.emit(`    ; --- PID_Compact Logic (${ctx.instanceName}) ---`);
@@ -567,7 +589,7 @@ export const PID_COMPACT_FB: FunctionBlockDef = {
         for (const p of params) {
             const member = this.members.find(m => m.name === p.name);
             if (member && member.isInput) {
-                ctx.emitExpression(p.value);
+                emitRealOperand(ctx, p.value);
                 ctx.emit(`    STORE32 ${formatAddr(base + member.offset)}`);
             }
         }
@@ -617,8 +639,18 @@ export const PID_COMPACT_FB: FunctionBlockDef = {
         ctx.emit(`    DUP`);                           // [P_term, I_term, error, error]
         ctx.emit(`    LOAD32 ${formatAddr(base + 40)}  ; _prev_err`);
         ctx.emit(`    SUBF`);                          // [P_term, I_term, error, d_error]
+        // a DT of 0 (not given) has no derivative: the term is 0 instead of a division by zero
         ctx.emit(`    LOAD32 ${formatAddr(base + 20)}  ; DT`);
+        ctx.emit(`    DUP`);
+        emitMagnitude(ctx);
+        ctx.emit(`    JZ ${noSampleLabel}`);
         ctx.emit(`    DIVF`);                          // [P_term, I_term, error, d_error/DT]
+        ctx.emit(`    JMP ${sampledLabel}`);
+        ctx.emit(`${noSampleLabel}:`);                 // [P_term, I_term, error, d_error, DT]
+        ctx.emit(`    DROP`);
+        ctx.emit(`    DROP`);
+        ctx.emit(`    PUSH32 0`);                      // [P_term, I_term, error, 0.0]
+        ctx.emit(`${sampledLabel}:`);
         ctx.emit(`    LOAD32 ${formatAddr(base + 16)}  ; KD`);
         ctx.emit(`    MULF`);                          // [P_term, I_term, error, D_term]
 
@@ -633,12 +665,12 @@ export const PID_COMPACT_FB: FunctionBlockDef = {
         // Clamp output to [OUT_MIN, OUT_MAX]
         ctx.emit(`    DUP`);
         ctx.emit(`    LOAD32 ${formatAddr(base + 24)}  ; OUT_MIN`);
-        ctx.emit(`    LT`);
+        compareReal(ctx, 'LT');
         ctx.emit(`    JNZ ${clampLowLabel}`);
 
         ctx.emit(`    DUP`);
         ctx.emit(`    LOAD32 ${formatAddr(base + 28)}  ; OUT_MAX`);
-        ctx.emit(`    GT`);
+        compareReal(ctx, 'GT');
         ctx.emit(`    JNZ ${clampHighLabel}`);
 
         // Output is within limits

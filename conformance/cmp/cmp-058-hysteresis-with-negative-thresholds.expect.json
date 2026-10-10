@@ -1,0 +1,23 @@
+{
+  "requirement": "CMP-058",
+  "title": "HYSTERESIS switches at negative thresholds",
+  "matrix": ["blocks.library-blocks-not-in-the-standard"],
+  "tags": ["arch-sensitive", "float"],
+  "note": "Not an IEC block: the output switches ON when IN exceeds HIGH and OFF when IN goes below LOW, and holds in between; with HIGH -2.0 and LOW -6.0 the input -10 is off, -3 holds off, -1 switches on, -4 holds on and -8 switches off",
+  "scans": 5,
+  "scanMs": 10,
+  "inputs": [
+    {"at": "%ID0", "type": "REAL", "value": -10.0, "beforeScan": 1},
+    {"at": "%ID0", "type": "REAL", "value": -3.0, "beforeScan": 2},
+    {"at": "%ID0", "type": "REAL", "value": -1.0, "beforeScan": 3},
+    {"at": "%ID0", "type": "REAL", "value": -4.0, "beforeScan": 4},
+    {"at": "%ID0", "type": "REAL", "value": -8.0, "beforeScan": 5}
+  ],
+  "expect": [
+    {"at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 1},
+    {"at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 2},
+    {"at": "%QX0.0", "type": "BOOL", "value": true, "afterScan": 3},
+    {"at": "%QX0.0", "type": "BOOL", "value": true, "afterScan": 4},
+    {"at": "%QX0.0", "type": "BOOL", "value": false, "afterScan": 5}
+  ]
+}

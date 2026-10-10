@@ -147,6 +147,11 @@ Funciones trigonométricas inversas, en radianes.
 - **Entradas:** `IN` (REAL) para `ASIN`, `ACOS` y `ATAN`; `ATAN2(Y, X)` toma dos valores REAL.
 - **Salidas:** (REAL) `ASIN` en [-pi/2, pi/2] y `ACOS` en [0, pi] para un `IN` de -1.0 a 1.0, NaN fuera de ese rango; `ATAN` en (-pi/2, pi/2) para cualquier `IN`; `ATAN2` en (-pi, pi], el ángulo del punto (`X`, `Y`) medido desde el eje X positivo, y 0.0 para (0.0, 0.0).
 
+### NORM_X / SCALE_X
+Convierten un valor entre un rango y 0.0 a 1.0.
+- **NORM_X(MIN, X, MAX)**: `(X - MIN) / (MAX - MIN)`, un REAL; 0.0 cuando `MAX` es igual a `MIN`. Un valor fuera del rango no se limita (`NORM_X(0.0, 30.0, 20.0)` es 1.5).
+- **SCALE_X(MIN, X, MAX)**: `MIN + X * (MAX - MIN)`, un REAL. Los límites pueden ser negativos; los argumentos enteros se convierten.
+
 ### EXPT
 `EXPT(BASE, EXP)` eleva `BASE` a `EXP`; es el operador `**` en forma de función. Los dos argumentos se convierten a REAL y el resultado es REAL. Un exponente entero, negativo y 0 incluidos, se calcula por cuadrados sucesivos (`EXPT(2.0, -2.0)` es 0.25 y `EXPT(x, 0.0)` es 1.0); cualquier otro exponente como `2 ** (EXP * log2(BASE))`, NaN para una base negativa.
 
@@ -302,6 +307,42 @@ ENABLE: __/¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\____
 Q:      __/¯¯¯\______/¯¯¯\______/¯¯¯\___
           |300|  700 |300|  700 |        (T_ON = 300 ms, T_OFF = 700 ms)
 ```
+
+### HYSTERESIS
+- **Entradas:** `IN`, `HIGH`, `LOW` (REAL).
+- **Salidas:** `Q` (BOOL).
+- **Comportamiento:** `Q` pasa a TRUE cuando `IN` está por encima de `HIGH` y a FALSE cuando está por debajo de `LOW`; entre ambos conserva su valor. Los umbrales negativos funcionan como cualquier otro.
+
+### DEADBAND
+- **Entradas:** `IN`, `WIDTH` (REAL).
+- **Salidas:** `OUT` (REAL).
+- **Comportamiento:** `OUT` toma el valor de `IN` cuando `IN` difiere del último valor de `OUT` en más de `WIDTH`, y en caso contrario conserva su valor.
+
+### LAG_FILTER
+- **Entradas:** `IN` (REAL), `GAIN` (REAL, 0.0 a 1.0).
+- **Salidas:** `OUT` (REAL).
+- **Comportamiento:** `OUT := OUT + GAIN * (IN - OUT)` en cada llamada: `GAIN` 1.0 sigue a `IN`, 0.0 nunca se mueve.
+
+### RAMP_REAL
+- **Entradas:** `IN` (REAL), `RATE` (REAL, el mayor cambio por llamada).
+- **Salidas:** `OUT` (REAL).
+- **Comportamiento:** `OUT` se mueve hacia `IN` como máximo `RATE` en cada llamada, hacia arriba o hacia abajo, y vale `IN` cuando está a menos de `RATE` de él.
+
+### INTEGRAL
+- **Entradas:** `IN` (REAL), `DT` (REAL, segundos), `RESET` (BOOL).
+- **Salidas:** `OUT` (REAL).
+- **Comportamiento:** `OUT := OUT + IN * DT` en cada llamada; `RESET` en TRUE pone `OUT` en 0.0. Un `IN` negativo resta.
+
+### DERIVATIVE
+- **Entradas:** `IN` (REAL), `DT` (REAL, segundos).
+- **Salidas:** `OUT` (REAL).
+- **Comportamiento:** `OUT := (IN - IN anterior) / DT`; 0.0 cuando `DT` es 0.0. La primera llamada compara con un `IN` de 0.0.
+
+### PID_Compact
+Un controlador PID discreto.
+- **Entradas:** `SP` (consigna), `PV` (valor de proceso), `KP`, `KI`, `KD` (ganancias), `DT` (tiempo de muestreo en segundos), `OUT_MIN`, `OUT_MAX` (REAL).
+- **Salidas:** `OUT` (REAL).
+- **Comportamiento:** Con `e = SP - PV`, `OUT = KP * e + KI * suma(e * DT) + KD * (e - e anterior) / DT`, limitado a `OUT_MIN` hasta `OUT_MAX`. Un `DT` de 0.0 (omitido) deja en 0.0 los términos integral y derivativo. El acumulador integral no se limita mientras la salida está limitada. La primera llamada toma el error anterior como el actual, así que no tiene salto derivativo.
 
 ### FIFO (Buffer Primero en Entrar, Primero en Salir)
 Guarda hasta 8 valores `DINT`; salen en el orden en que entraron.

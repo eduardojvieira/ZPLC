@@ -1,0 +1,20 @@
+{
+  "requirement": "CMP-058",
+  "title": "NORM_X and SCALE_X with negative bounds, outside the range and with an empty range",
+  "matrix": ["functions.selection-limit-and-sqrt-functions"],
+  "tags": ["arch-sensitive", "float"],
+  "note": "NORM_X(MIN, X, MAX) = (X - MIN) / (MAX - MIN) and SCALE_X(MIN, X, MAX) = MIN + X * (MAX - MIN): NORM_X(-10, 0, 10) = 0.5, NORM_X(0, 30, 20) = 1.5 (no clamping), NORM_X(-20, -15, -10) = 0.5, an empty range gives 0.0 instead of a division by zero; SCALE_X(-10, 0.5, 10) = 0, SCALE_X(-5, 1, -1) = -1",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QD0", "type": "REAL", "value": 0.5},
+    {"at": "%QD1", "type": "REAL", "value": 0.25},
+    {"at": "%QD2", "type": "REAL", "value": 0.0},
+    {"at": "%QD3", "type": "REAL", "value": 1.5},
+    {"at": "%QD4", "type": "REAL", "value": 0.5},
+    {"at": "%QD5", "type": "REAL", "value": 0.0},
+    {"at": "%QD6", "type": "REAL", "value": 5.0},
+    {"at": "%QD7", "type": "REAL", "value": -1.0},
+    {"at": "%QD8", "type": "REAL", "value": 100.0}
+  ]
+}
