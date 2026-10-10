@@ -656,3 +656,104 @@ END_PROGRAM`;
         expect(code).toContain('Arg B := ...');
     });
 });
+
+describe('OOP: interfaces, ABSTRACT and FINAL blocks in the symbol table (CMP-041)', () => {
+    const tableOf = (source: string) => buildSymbolTable(parse(source));
+
+    it('sizes a variable of an interface type as a reference and tells the interfaces apart', () => {
+        const table = tableOf(`
+INTERFACE IBase
+METHOD Go : INT
+END_METHOD
+END_INTERFACE
+INTERFACE IChild EXTENDS IBase
+METHOD Stop : INT
+END_METHOD
+END_INTERFACE
+PROGRAM P
+VAR r : IChild; END_VAR
+END_PROGRAM`);
+        expect(table.sizeOf('IChild')).toBe(4);
+        expect(table.isInterface('ichild')).toBe(true);
+        expect(table.isInterface('INT')).toBe(false);
+        expect(table.interfaceDerivesFrom('IChild', 'IBase')).toBe(true);
+        expect(table.interfaceDerivesFrom('IBase', 'IChild')).toBe(false);
+        // a method of a base interface is found through the interface that extends it
+        expect(table.findInterfaceMethod('IChild', 'Go')?.name).toBe('Go');
+        expect(table.findInterfaceMethod('IBase', 'Stop')).toBeUndefined();
+    });
+
+    it('a block implements the interfaces of the blocks it extends, and the ones that extend its own', () => {
+        const table = tableOf(`
+INTERFACE IBase
+METHOD Go : INT
+END_METHOD
+END_INTERFACE
+INTERFACE IChild EXTENDS IBase
+END_INTERFACE
+FUNCTION_BLOCK A IMPLEMENTS IChild
+METHOD Go : INT
+  Go := 1;
+END_METHOD
+END_FUNCTION_BLOCK
+FUNCTION_BLOCK B EXTENDS A
+END_FUNCTION_BLOCK
+FUNCTION_BLOCK C
+END_FUNCTION_BLOCK
+PROGRAM P
+END_PROGRAM`);
+        expect(table.blockImplements('A', 'IChild')).toBe(true);
+        expect(table.blockImplements('A', 'IBase')).toBe(true);
+        expect(table.blockImplements('B', 'IBase')).toBe(true);
+        expect(table.blockImplements('C', 'IBase')).toBe(false);
+    });
+
+    it('rejects an abstract method in a block that is not ABSTRACT', () => {
+        expect(() => tableOf('FUNCTION_BLOCK A\nMETHOD ABSTRACT M : INT\nEND_METHOD\nEND_FUNCTION_BLOCK\nPROGRAM P\nEND_PROGRAM'))
+            .toThrow(/must be declared FUNCTION_BLOCK ABSTRACT/);
+    });
+
+    it('rejects a block that leaves an inherited abstract method unimplemented, and one that implements it', () => {
+        const base = 'FUNCTION_BLOCK ABSTRACT A\nMETHOD ABSTRACT M : INT\nEND_METHOD\nEND_FUNCTION_BLOCK\n';
+        expect(() => tableOf(`${base}FUNCTION_BLOCK B EXTENDS A\nEND_FUNCTION_BLOCK\nPROGRAM P\nEND_PROGRAM`))
+            .toThrow(/does not implement the ABSTRACT method 'M' of 'A'/);
+        expect(() => tableOf(`${base}FUNCTION_BLOCK B EXTENDS A\nMETHOD OVERRIDE M : INT\n  M := 1;\nEND_METHOD\nEND_FUNCTION_BLOCK\nPROGRAM P\nEND_PROGRAM`))
+            .not.toThrow();
+        // a block may stay abstract
+        expect(() => tableOf(`${base}FUNCTION_BLOCK ABSTRACT B EXTENDS A\nEND_FUNCTION_BLOCK\nPROGRAM P\nEND_PROGRAM`)).not.toThrow();
+    });
+
+    it('rejects an instance of an ABSTRACT block, as a variable, a member and an array element', () => {
+        const base = 'FUNCTION_BLOCK ABSTRACT A\nEND_FUNCTION_BLOCK\n';
+        expect(() => tableOf(`${base}PROGRAM P\nVAR a : A; END_VAR\nEND_PROGRAM`)).toThrow(/instance of the ABSTRACT function block 'A'/);
+        expect(() => tableOf(`${base}PROGRAM P\nVAR a : ARRAY[0..1] OF A; END_VAR\nEND_PROGRAM`)).toThrow(/ABSTRACT/);
+        expect(() => tableOf(`${base}FUNCTION_BLOCK B\nVAR a : A; END_VAR\nEND_FUNCTION_BLOCK\nPROGRAM P\nEND_PROGRAM`)).toThrow(/ABSTRACT/);
+    });
+
+    it('rejects extending a FINAL block', () => {
+        expect(() => tableOf('FUNCTION_BLOCK FINAL A\nEND_FUNCTION_BLOCK\nFUNCTION_BLOCK B EXTENDS A\nEND_FUNCTION_BLOCK\nPROGRAM P\nEND_PROGRAM'))
+            .toThrow(/extends 'A', which is FINAL/);
+    });
+
+    it('records the access specifier and the declaring block of each method, also an inherited one', () => {
+        const table = tableOf(`
+FUNCTION_BLOCK A
+METHOD PRIVATE Hidden : INT
+  Hidden := 1;
+END_METHOD
+METHOD PROTECTED Shared : INT
+  Shared := 2;
+END_METHOD
+END_FUNCTION_BLOCK
+FUNCTION_BLOCK B EXTENDS A
+METHOD OVERRIDE Shared : INT
+  Shared := 3;
+END_METHOD
+END_FUNCTION_BLOCK
+PROGRAM P
+END_PROGRAM`);
+        expect(table.getMethodInfo('B', 'Hidden')).toMatchObject({ access: 'PRIVATE', owner: 'A' });
+        expect(table.getMethodInfo('B', 'Shared')).toMatchObject({ access: 'PUBLIC', owner: 'B' });
+        expect(table.getMethodInfo('A', 'Shared')).toMatchObject({ access: 'PROTECTED', owner: 'A' });
+    });
+});

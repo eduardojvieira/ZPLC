@@ -1,0 +1,19 @@
+FUNCTION_BLOCK Sensor
+METHOD PRIVATE Offset : INT
+  Offset := 2;
+END_METHOD
+END_FUNCTION_BLOCK
+
+FUNCTION_BLOCK Scaled EXTENDS Sensor
+METHOD Shifted : INT
+  Shifted := Offset();
+END_METHOD
+END_FUNCTION_BLOCK
+
+PROGRAM Access
+VAR
+  s : Scaled;
+  a AT %QW0 : INT;
+END_VAR
+  a := s.Shifted();
+END_PROGRAM

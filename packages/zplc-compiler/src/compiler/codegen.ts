@@ -68,7 +68,7 @@ import {
     parseStringType,
     typeToString as typeText,
 } from './symbol-table.ts';
-import type { SymbolTable, Symbol, MemberInfo } from './symbol-table.ts';
+import type { SymbolTable, Symbol, MemberInfo, MethodInfo } from './symbol-table.ts';
 import {
     getFn,
     getFB,
@@ -114,9 +114,9 @@ import { checkDeclaredTypes, checkRecursion } from './semantic.ts';
 // ============================================================================
 
 /**
- * Size of work memory region allocated per program in multi-task mode.
- * Each program gets this many bytes of isolated work memory.
- * Must be a power of 2 for efficient alignment.
+ * Size of the WORK region a caller gets when it gives a `workMemoryBase` and no `workMemorySize`: a window of
+ * its own inside the WORK memory. A project is not built with it: all its programs share the whole WORK
+ * memory of the target profile (CMP-043).
  */
 export const WORK_MEMORY_REGION_SIZE = 256;
 
@@ -159,7 +159,7 @@ export function validateCompilerMemoryProfile(profile: CompilerMemoryProfile): C
 export interface CodeGenOptions {
     /** Effective target memory limits; omitted preserves the host defaults. */
     memoryProfile?: CompilerMemoryProfile;
-    /** Internal multi-task bucket size; defaults to the target WORK capacity. */
+    /** Bytes of the WORK region the unit is allocated in; defaults to the target WORK capacity. */
     workMemorySize?: number;
     /**
      * Base address for work memory allocation.
@@ -246,7 +246,7 @@ interface CodeGenState {
      * The statements being generated, outermost first. A statement that holds others (IF, FOR...) has
      * instructions of its own after the nested ones; its position is annotated again there (CMP-055).
      */
-    statementStack: Array<{ line: number; column: number }>;
+    statementStack: Array<{ line: number; column: number; sourceRef?: string }>;
     /** Enable source annotations in assembly output */
     emitSourceAnnotations: boolean;
     /** User-defined functions registry */
@@ -259,6 +259,11 @@ interface CodeGenState {
     currentFBInstance: Symbol | null;
     /** Current method being inlined (for return value handling) */
     currentMethod: MethodDecl | null;
+    /**
+     * The function block whose body or method is being inlined: the block that declares the code that runs, which
+     * is not always the type of the instance. SUPER^ and the access specifiers are relative to it (CMP-041).
+     */
+    currentBlock: string | null;
     /** Where RETURN jumps: the end of the function, inlined function block or inlined method; null in a program */
     returnLabel: string | null;
     memoryProfile: CompilerMemoryProfile;
@@ -285,6 +290,10 @@ interface CodeGenState {
     methodResultSlots: Map<string, number>;
     /** The result place of the method being inlined, when it returns a number; its assignments write it. */
     methodResult: Place | null;
+    /** The source file of the declaration being generated: errors, warnings and source ranges are placed in it (CMP-042). */
+    sourceRef: string | undefined;
+    /** The files of the unit, in the order their statements are annotated; empty for a unit of one file. */
+    sourceFiles: string[];
     /** The last method call expression left one value on the stack (a call used as a statement drops it). */
     methodLeftResult: boolean;
     /** Routines that need work cells of their own, by label; appended after the main cycle. */
@@ -376,22 +385,43 @@ function memberOffsets(state: CodeGenState, typeName: unknown): Map<string, numb
  * @returns Assembly source code
  */
 export function generate(unit: CompilationUnit | Program, options?: CodeGenOptions): string {
+    return generateProject(unit, options).assembly;
+}
+
+/**
+ * What the generation of a unit gives: the assembly, and what the debug map needs from the same layout the
+ * code was generated with (CMP-054): the symbol table, and where the code of each program starts.
+ */
+export interface GeneratedProject {
+    assembly: string;
+    symbols: SymbolTable;
+    /** The programs of the unit in the order their code is generated, with their lines of the assembly. */
+    programs: Array<{ name: string; sourceRef?: string; entryLabel: string; assembly: string }>;
+}
+
+/**
+ * Generate ZPLC assembly for a unit of one file or of a whole project (CMP-042): one program per task entry,
+ * the functions, the function blocks and the memory shared by all of them.
+ */
+export function generateProject(unit: CompilationUnit | Program, options?: CodeGenOptions): GeneratedProject {
     // Statements that cannot be generated are recorded and generation goes on, so one build reports every
     // independent error (CMP-007); the first is thrown with all of them in `errors`.
     const found: CodegenError[] = [];
-    let assembly: string | undefined;
+    let project: GeneratedProject | undefined;
     try {
-        assembly = generateUnit(unit, options, found);
+        project = generateUnit(unit, options, found);
     } catch (caught) {
         const where = unit.kind === 'CompilationUnit' ? (unit.programs[0] ?? unit) : unit;
         const error = codegenErrorFrom(caught, where);
         if (error === null) throw caught;
+        // an error that names no file is the one of the first program's
+        for (const each of error.errors) if (each.sourceRef === undefined && where.sourceRef !== undefined) each.sourceRef = where.sourceRef;
         found.push(...error.errors);
     }
     if (found.length === 0) {
         // source order, whatever the order the program organisation units were generated in
         options?.warnings?.sort((first, second) => first.line - second.line || first.column - second.column);
-        return assembly!;
+        return project!;
     }
     const errors = orderedUniqueErrors(found);
     const first = errors[0]!;
@@ -399,7 +429,7 @@ export function generate(unit: CompilationUnit | Program, options?: CodeGenOptio
     throw first;
 }
 
-function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions | undefined, errors: CodegenError[]): string {
+function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions | undefined, errors: CodegenError[]): GeneratedProject {
     const workMemoryBase = options?.workMemoryBase ?? MemoryLayout.WORK_BASE;
     const memoryProfile = validateCompilerMemoryProfile(options?.memoryProfile ?? DEFAULT_COMPILER_MEMORY_PROFILE);
     const workMemorySize = options?.workMemorySize
@@ -443,6 +473,7 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
         currentFunction: null,
         currentFBInstance: null,
         currentMethod: null,
+        currentBlock: null,
         returnLabel: null,
         memoryProfile,
         workMemorySize,
@@ -455,6 +486,8 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
         expressionDepth: 0,
         methodResultSlots: new Map(),
         methodResult: null,
+        sourceRef: undefined,
+        sourceFiles: unit.kind === 'CompilationUnit' && (unit.sourceFiles?.length ?? 0) > 1 ? [...unit.sourceFiles!] : [],
         methodLeftResult: false,
         cellHelpers: new Map(),
         stringCells: null,
@@ -465,7 +498,11 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
     // inlined function block, its members (and the instances declared in it)
     symbols.scopeResolver = (name) => {
         const inFunction = functionScopeSymbol(state, name);
-        return inFunction !== undefined ? inFunction : fbScopeSymbol(state, name);
+        if (inFunction !== undefined) return inFunction;
+        const member = fbScopeSymbol(state, name);
+        if (member !== undefined) return member;
+        // a function block sees its members and the globals, never the variables of the program that calls it
+        return state.currentFBInstance ? state.symbols.getGlobal(name) ?? null : undefined;
     };
 
     const isUnit = unit.kind === 'CompilationUnit';
@@ -487,7 +524,7 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
     // Emit header
     emit(state, `; ============================================================================`);
     emit(state, `; ZPLC Generated Assembly`);
-    emit(state, `; Program: ${mainProgram.name}`);
+    emit(state, `; Program: ${(isUnit ? (unit as CompilationUnit).programs : [mainProgram]).map((program) => program.name).join(', ')}`);
     if (options?.workMemoryBase !== undefined) {
         emit(state, `; Work Memory Base: ${formatAddress(workMemoryBase)}`);
         emit(state, `; Init Flag: ${formatAddress(initFlagAddr)}`);
@@ -496,7 +533,7 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
     emit(state, ``);
 
     // Memory map
-    emitMemoryMap(state);
+    emitMemoryMap(state, isUnit ? (unit as CompilationUnit).programs.length : 1);
 
     // Emit bootstrap jump to ensure entry point is always 0
     emit(state, `; === Bootstrap ===`);
@@ -517,54 +554,98 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
             state.functionTable.set(func.name, { label: `func_${func.name}`, returnType: func.returnType, inputs: func.inputs });
         }
 
-        // Generate User Functions
+        // Generate User Functions: once for the whole unit, whichever programs call them (CMP-042)
         for (const func of cu.functions) {
-            generateFunctionDecl(state, func);
+            inFile(state, func.sourceRef, () => generateFunctionDecl(state, func));
         }
     }
 
-    // Emit program entry
-    emit(state, `; === Program Entry ===`);
-    emit(state, `_start:`);
-
-    // Initialization check
-    emit(state, `    ; Check if already initialized`);
-    emit(state, `    LOAD8 ${formatAddress(state.initFlagAddr)}    ; _initialized flag`);
-    emit(state, `    JNZ _cycle                  ; Skip init if already done`);
-
-    // Initialization: the literal pool first, the variable initialisers copy from it
+    // The first-scan initialisation of the unit: the literal pool first, the variable initialisers copy from it.
+    // A unit of one program carries it in its entry; a unit of several has it once, as a routine every entry
+    // calls, so that whichever task runs first initialises everything and nothing is initialised twice.
+    const programs = isUnit ? (unit as CompilationUnit).programs : [mainProgram];
+    const shared = programs.length > 1;
+    const code = state.output;
+    state.output = [];
     emitStringLiteralInit(state);
 
     // the initial values of the RETAIN variables of the globals and of the programs share one guard
     const retained: VarDecl[] = [];
     if (isUnit) {
         emitGlobalInitialization(state, unit as CompilationUnit, retained);
-        for (const prog of (unit as CompilationUnit).programs) {
-            emitInitialization(state, prog, retained);
+        for (const prog of programs) {
+            symbols.programScope = prog.name;
+            inFile(state, prog.sourceRef, () => emitInitialization(state, prog, retained));
         }
+        symbols.programScope = null;
     } else {
         emitInitialization(state, mainProgram, retained);
     }
     emitRetainedInitialization(state, retained);
+    const initialization = state.output;
+    state.output = code;
 
-    emit(state, ``);
-    emit(state, `    ; Mark as initialized`);
-    emit(state, `    PUSH8 1`);
-    emit(state, `    STORE8 ${formatAddress(state.initFlagAddr)}`);
+    const entries: GeneratedProject['programs'] = [];
+    const starts: number[] = [];
+    programs.forEach((program, index) => {
+        const entryLabel = index === 0 ? '_start' : `_start_${program.name}`;
+        const cycleLabel = index === 0 ? '_cycle' : `_cycle_${program.name}`;
+        starts.push(state.output.length);
+        entries.push({ name: program.name, sourceRef: program.sourceRef, entryLabel, assembly: '' });
 
-    emit(state, ``);
-    emit(state, `; === Main Cycle ===`);
-    emit(state, `_cycle:`);
+        // Emit program entry
+        if (shared) {
+            emit(state, ``);
+            emit(state, `; === Memory Map: ${program.name} ===`);
+            for (const sym of symbols.all()) {
+                if (sym.owner === program.name) emitMemoryMapEntry(state, sym);
+            }
+        }
+        emit(state, `; === Program Entry${shared ? `: ${program.name}` : ''} ===`);
+        emit(state, `${entryLabel}:`);
 
-    // Emit statements for the main program
-    for (const stmt of mainProgram.statements) {
-        emitStatement(state, stmt);
+        // Initialization check
+        emit(state, `    ; Check if already initialized`);
+        emit(state, `    LOAD8 ${formatAddress(state.initFlagAddr)}    ; _initialized flag`);
+        emit(state, `    JNZ ${cycleLabel}                  ; Skip init if already done`);
+
+        if (shared) {
+            emit(state, `    CALL _zplc_init`);
+        } else {
+            state.output.push(...initialization);
+        }
+
+        emit(state, ``);
+        emit(state, `    ; Mark as initialized`);
+        emit(state, `    PUSH8 1`);
+        emit(state, `    STORE8 ${formatAddress(state.initFlagAddr)}`);
+
+        emit(state, ``);
+        emit(state, `; === Main Cycle${shared ? `: ${program.name}` : ''} ===`);
+        emit(state, `${cycleLabel}:`);
+
+        // Emit statements for the program; its variables are the ones its name stands for
+        state.symbols.programScope = program.name;
+        state.sourceRef = program.sourceRef;
+        for (const stmt of program.statements) {
+            emitStatement(state, stmt);
+        }
+        state.symbols.programScope = null;
+        state.sourceRef = undefined;
+
+        emitSourceEnd(state);
+        emit(state, ``);
+        emit(state, `    ; End of cycle`);
+        emit(state, `    HALT`);
+    });
+
+    if (shared) {
+        emit(state, ``);
+        emit(state, `; --- Initialization of the unit (called by the entry of every program) ---`);
+        emit(state, `_zplc_init:`);
+        state.output.push(...initialization);
+        emit(state, `    RET`);
     }
-
-    emitSourceEnd(state);
-    emit(state, ``);
-    emit(state, `    ; End of cycle`);
-    emit(state, `    HALT`);
 
     // The work buffers the string functions took came after the literal pool was checked
     validateStringLiteralPool(state, workMemoryBase, workMemorySize);
@@ -582,7 +663,15 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
         state.output.push(...lines);
     }
 
-    return state.output.join('\n');
+    // the code of each program: from its entry to the next one; the first also holds what comes before it
+    // (the header, the functions) and the last what comes after (the routines)
+    entries.forEach((entry, index) => {
+        const from = index === 0 ? 0 : starts[index]!;
+        const to = index + 1 < entries.length ? starts[index + 1]! : state.output.length;
+        entry.assembly = state.output.slice(from, to).join('\n');
+    });
+
+    return { assembly: state.output.join('\n'), symbols, programs: entries };
 }
 
 // ============================================================================
@@ -599,16 +688,38 @@ function fail(at: { line: number; column: number; endLine?: number; endColumn?: 
 }
 
 /**
+ * Run `action` with `file` as the file of the declaration being generated (CMP-042). An error that leaves it
+ * without a file is placed in that one; the file of the caller is back when it ends.
+ */
+function inFile<T>(state: CodeGenState, file: string | undefined, action: () => T): T {
+    const previous = state.sourceRef;
+    if (file !== undefined) state.sourceRef = file;
+    try {
+        return action();
+    } catch (caught) {
+        if (caught instanceof CodegenError) {
+            for (const each of caught.errors) if (each.sourceRef === undefined && state.sourceRef !== undefined) each.sourceRef = state.sourceRef;
+        }
+        throw caught;
+    } finally {
+        state.sourceRef = previous;
+    }
+}
+
+/**
  * Emit a source annotation comment: the statement at `at` starts here, and owns every instruction up to the
  * next annotation (CMP-055). The assembler attaches it to the next instruction, so one `; @source`
  * line becomes one range of the debug map. The same position is not annotated twice in a row.
  */
-function emitSourceAnnotation(state: CodeGenState, at: { line: number; column: number } | undefined): void {
+function emitSourceAnnotation(state: CodeGenState, at: { line: number; column: number; sourceRef?: string } | undefined): void {
     if (!state.emitSourceAnnotations || !at || !at.line) return;
-    const key = `${at.line}:${at.column}`;
+    // in a project of several files the annotation names the file, so that a range of an inlined block
+    // is placed in the file of the block and not in the one of the program that calls it (CMP-042)
+    const file = state.sourceFiles.length > 0 ? state.sourceFiles.indexOf(at.sourceRef ?? state.sourceRef ?? '') : -1;
+    const key = `${at.line}:${at.column}:${file}`;
     if (key === state.lastSourceKey) return;
     state.lastSourceKey = key;
-    emit(state, `    ; @source ${at.line}${at.column > 0 ? `:${at.column}` : ''}`);
+    emit(state, `    ; @source ${at.line}${at.column > 0 ? `:${at.column}` : ''}${file >= 0 ? ` @${file}` : ''}`);
 }
 
 /**
@@ -633,23 +744,16 @@ function formatAddress(addr: number): string {
 // Memory Map Comment
 // ============================================================================
 
-function emitMemoryMap(state: CodeGenState): void {
+function emitMemoryMap(state: CodeGenState, programs: number): void {
     emit(state, `; === Memory Map ===`);
 
     // Document the reserved init flag
     emit(state, `; ${formatAddress(state.initFlagAddr)}: _initialized (BOOL, 1 byte) [RESERVED]`);
 
+    // a unit of several programs lists here what is shared; the variables of each program come with its entry
     for (const sym of state.symbols.all()) {
-        const addrHex = formatAddress(sym.address);
-        emit(state, `; ${addrHex}: ${sym.name} (${sym.dataType}, ${sym.size} bytes)`);
-
-        // Emit member offsets for function blocks
-        if (sym.members) {
-            for (const [member, offset] of sym.members) {
-                const memberAddr = formatAddress(sym.address + offset);
-                emit(state, `;   ${memberAddr}: .${member}`);
-            }
-        }
+        if (programs > 1 && sym.owner !== undefined) continue;
+        emitMemoryMapEntry(state, sym);
     }
 
     // Document string literals
@@ -665,6 +769,19 @@ function emitMemoryMap(state: CodeGenState): void {
     emitVariableTags(state);
 
     emit(state, ``);
+}
+
+function emitMemoryMapEntry(state: CodeGenState, sym: Symbol): void {
+    const addrHex = formatAddress(sym.address);
+    emit(state, `; ${addrHex}: ${sym.name} (${sym.dataType}, ${sym.size} bytes)`);
+
+    // Emit member offsets for function blocks
+    if (sym.members) {
+        for (const [member, offset] of sym.members) {
+            const memberAddr = formatAddress(sym.address + offset);
+            emit(state, `;   ${memberAddr}: .${member}`);
+        }
+    }
 }
 
 /**
@@ -722,13 +839,40 @@ function validateWorkRegionOptions(
     }
 }
 
-/** Names the budget that was exceeded: each program owns WORK_MEMORY_REGION_SIZE bytes, init flag included. */
-function workBudgetMessage(workMemorySize: number): string {
-    return `WORK allocation exceeds the target memory profile (limit: ${workMemorySize} bytes of WORK memory per program, including the initialization flag)`;
+/** One thing that takes WORK memory: a variable or instance (named as the program sees it), a pool, a set of buffers. */
+interface WorkConsumer {
+    name: string;
+    size: number;
+}
+
+/**
+ * The failure of an allocation (CMP-043): the bytes the unit needs, the bytes the target profile has, and the
+ * three largest consumers, so the author knows what to shrink. The WORK memory is the one of the target
+ * profile, shared by every program of the project; one byte of it is the initialization flag.
+ */
+function workBudgetError(required: number, available: number, consumers: WorkConsumer[], at: { line: number; column: number; sourceRef?: string }): TagAdmissionError {
+    const largest = [...consumers].sort((first, second) => second.size - first.size || (first.name < second.name ? -1 : 1)).slice(0, 3);
+    const names = largest.map((consumer) => `${consumer.name} (${consumer.size} bytes)`).join(', ');
+    const error = new TagAdmissionError(
+        `WORK allocation exceeds the target memory profile: ${required} bytes required, ${available} bytes available `
+        + `(the WORK memory of the target profile, one byte of it the initialization flag). Largest consumers: ${names || 'none'}`,
+        at.line, at.column,
+    );
+    if (at.sourceRef !== undefined) error.sourceRef = at.sourceRef;
+    return error;
+}
+
+/** The variables and instances that take automatic WORK memory, named as the author wrote them. */
+function workConsumers(symbols: SymbolTable): WorkConsumer[] {
+    return symbols.all()
+        .filter((symbol) => symbol.ioAddress === null && !symbol.retain && symbol.size > 0)
+        .map((symbol) => ({ name: symbol.owner === undefined ? symbol.name : `${symbol.owner}.${symbol.name}`, size: symbol.size }));
 }
 
 function validateWorkSymbols(symbols: SymbolTable, workMemoryBase: number, workMemorySize: number, initFlagAddr: number, retainSize: number = MEMORY_REGION.RETAIN.size): void {
     const workEnd = workMemoryBase + workMemorySize;
+    // the last byte of the region is the initialization flag: variables end before it (CMP-043)
+    const limit = initFlagAddr === workEnd - 1 ? initFlagAddr : workEnd;
     const automaticWorkSymbols: Symbol[] = [];
     const directlyLocatedWorkSymbols: Symbol[] = [];
     for (const symbol of symbols.all()) {
@@ -762,8 +906,11 @@ function validateWorkSymbols(symbols: SymbolTable, workMemoryBase: number, workM
                 throw new TagAdmissionError(`RETAIN allocation exceeds the target memory profile (limit: ${retainSize} bytes of retentive memory)`, symbol.declarationLine ?? 0, 0);
             }
             continue;
-        } else if (symbol.address < workMemoryBase || symbolEnd > workEnd) {
-            throw new TagAdmissionError(workBudgetMessage(workMemorySize), symbol.declarationLine ?? 0, 0);
+        } else if (symbol.address < workMemoryBase || symbolEnd > limit) {
+            // the variables of the whole unit, in the order they were allocated, from the start of the region
+            const required = symbols.getWorkBase() + symbols.getWorkOffset() - workMemoryBase + 1;
+            throw workBudgetError(required, workMemorySize, workConsumers(symbols),
+                { line: symbol.declarationLine ?? 0, column: 0, sourceRef: symbol.sourceRef });
         }
 
         if ((!symbol.ioAddress || symbol.ioAddress.type === 'M')
@@ -786,17 +933,27 @@ function validateWorkSymbols(symbols: SymbolTable, workMemoryBase: number, workM
 
 function validateStringLiteralPool(state: CodeGenState, workMemoryBase: number, workMemorySize: number): void {
     const workEnd = workMemoryBase + workMemorySize;
+    const limit = state.initFlagAddr === workEnd - 1 ? state.initFlagAddr : workEnd;
     const directlyLocatedSymbols = state.symbols.all().filter(symbol => symbol.ioAddress?.type === 'M');
     const pooled = [
         ...state.stringLiterals,
         ...state.scratchStrings,
     ];
+    // the literals and the buffers of the string functions come after the variables, in the same region
+    if (!Number.isSafeInteger(state.stringLiteralNextAddr) || state.stringLiteralNextAddr > limit) {
+        const consumers = workConsumers(state.symbols);
+        const literals = state.stringLiterals.reduce((total, literal) => total + literal.size, 0);
+        const buffers = state.scratchStrings.reduce((total, buffer) => total + buffer.size, 0);
+        if (literals > 0) consumers.push({ name: 'string literals', size: literals });
+        if (buffers > 0) consumers.push({ name: 'work buffers of the string functions', size: buffers });
+        throw workBudgetError(state.stringLiteralNextAddr - workMemoryBase + 1, workMemorySize, consumers, { line: 0, column: 0 });
+    }
     for (const literal of pooled) {
         const literalEnd = literal.address + literal.size;
         if (!Number.isSafeInteger(literalEnd)
             || literal.address < workMemoryBase
             || literalEnd > workEnd) {
-            throw new TagAdmissionError(workBudgetMessage(workMemorySize), 0, 0);
+            throw workBudgetError(literalEnd - workMemoryBase + 1, workMemorySize, workConsumers(state.symbols), { line: 0, column: 0 });
         }
         if (rangesOverlap(literal.address, literal.size, state.initFlagAddr, 1)) {
             throw new TagAdmissionError('WORK allocation collides with the initialization flag', 0, 0);
@@ -1264,7 +1421,7 @@ interface InitOptions {
 /** Whether a value of this type holds something other than zero before the program writes to it. */
 function hasNonZeroDefault(state: CodeGenState, type: STDataType | ArrayType): boolean {
     const t = storedType(state, type);
-    if (isStringType(t) || isPointerType(t)) return true;
+    if (isStringType(t) || isPointerType(t) || isInterfaceType(state, t)) return true;
     if (isArrayType(t as STDataType)) return hasNonZeroDefault(state, (t as ArrayType).elementType);
     if (typeof t !== 'string') return false;
     const members = state.symbols.getStructDefinition(t)?.members ?? state.symbols.getFBDefinition(t)?.members;
@@ -1370,6 +1527,15 @@ function emitInitValue(state: CodeGenState, address: number, type: STDataType | 
             emit(state, text.wide ? `    PUSH16 0` : `    PUSH8 0`);
             emit(state, `    STORE${text.wide ? 16 : 8} ${formatAddress(address + 4)}`);
         }
+        return;
+    }
+
+    // a variable of an interface type refers to no instance until one is assigned
+    if (isInterfaceType(state, t)) {
+        if (init) fail(at, `'${name}' of the interface type ${typeText(t)} is given an instance by assignment, not by an initial value`);
+        emit(state, `    ; ${name} := NULL`);
+        emit(state, `    PUSH16 ${NULL_REFERENCE}   ; NULL: no instance`);
+        emit(state, `    STORE32 ${formatAddress(address)}`);
         return;
     }
 
@@ -1499,6 +1665,9 @@ function emitArrayInit(state: CodeGenState, address: number, type: ArrayType,
 
 }
 
+/** The variable of a retained declaration: found when its program is in scope, used when the guard is emitted. */
+const retainedSymbol = new WeakMap<VarDecl, Symbol>();
+
 /** First-scan initialisation of a list of declarations (a program's variables, a block of globals). */
 function emitDeclarationInitialization(state: CodeGenState, declarations: VarDecl[], retained: VarDecl[]): void {
     let hasInit = false;
@@ -1510,6 +1679,7 @@ function emitDeclarationInitialization(state: CodeGenState, declarations: VarDec
         // a retained variable is initialised apart, only when the retentive region holds no saved state (CMP-029)
         if (sym.retain) {
             retained.push(decl);
+            retainedSymbol.set(decl, sym);
             continue;
         }
 
@@ -1539,7 +1709,9 @@ function emitInitialization(state: CodeGenState, program: Program, retained: Var
 
 /** The VAR_GLOBAL blocks hold their declared values at the first scan too (CMP-025). */
 function emitGlobalInitialization(state: CodeGenState, unit: CompilationUnit, retained: VarDecl[]): void {
-    emitDeclarationInitialization(state, unit.globalVars.flatMap((block) => block.variables), retained);
+    for (const block of unit.globalVars) {
+        inFile(state, block.sourceRef, () => emitDeclarationInitialization(state, block.variables, retained));
+    }
 }
 
 /**
@@ -1558,8 +1730,8 @@ function emitRetainedInitialization(state: CodeGenState, retained: VarDecl[]): v
     emit(state, `    LOAD8 ${marker}`);
     emit(state, `    JNZ ${restored}`);
     for (const decl of retained) {
-        const sym = state.symbols.get(decl.name)!;
-        emitInitValue(state, sym.address, sym.dataType, decl.initialValue, decl, decl.name, { everyCall: false });
+        const sym = retainedSymbol.get(decl)!;
+        inFile(state, decl.sourceRef, () => emitInitValue(state, sym.address, sym.dataType, decl.initialValue, decl, decl.name, { everyCall: false }));
     }
     emit(state, `    PUSH8 1`);
     emit(state, `    STORE8 ${marker}`);
@@ -1666,22 +1838,26 @@ function generateFunctionDecl(state: CodeGenState, func: FunctionDecl): void {
  */
 function emitStatement(state: CodeGenState, stmt: Statement): void {
     const loops = state.loopStack.length;
-    const { currentFBInstance, currentMethod, currentFunction, returnLabel, expressionDepth, resultBuffer, resultCapacity } = state;
+    const { currentFBInstance, currentMethod, currentBlock, currentFunction, returnLabel, expressionDepth, resultBuffer, resultCapacity, sourceRef } = state;
     const depth = state.statementStack.length;
-    state.statementStack.push({ line: stmt.line, column: stmt.column });
+    state.statementStack.push({ line: stmt.line, column: stmt.column, sourceRef: state.sourceRef });
     try {
         emitStatementNode(state, stmt);
     } catch (caught) {
         const error = codegenErrorFrom(caught, stmt);
         if (error === null) throw caught;
+        // the error is in the file of the declaration the statement belongs to (CMP-042)
+        for (const each of error.errors) if (each.sourceRef === undefined && state.sourceRef !== undefined) each.sourceRef = state.sourceRef;
         state.loopStack.length = loops;
         state.currentFBInstance = currentFBInstance;
         state.currentMethod = currentMethod;
+        state.currentBlock = currentBlock;
         state.currentFunction = currentFunction;
         state.returnLabel = returnLabel;
         state.expressionDepth = expressionDepth;
         state.resultBuffer = resultBuffer;
         state.resultCapacity = resultCapacity;
+        state.sourceRef = sourceRef;
         state.errors.push(...error.errors);
     } finally {
         state.statementStack.length = depth;
@@ -2288,9 +2464,26 @@ function emitFBCallStatement(state: CodeGenState, stmt: FBCallStatement): void {
         emitIndexedInstanceCall(state, stmt, stmt.instance);
         return;
     }
+    if (stmt.fbName === 'SUPER^') {
+        emitSuperBodyCall(state, stmt);
+        return;
+    }
     const sym = state.symbols.get(stmt.fbName);
 
     if (!sym) {
+        // a method of the block being generated, called by its name, as a statement (CMP-041)
+        const implicit = implicitMethodCall(state, statementAsCall(stmt));
+        if (implicit) {
+            state.methodLeftResult = false;
+            emitMethodCall(state, implicit);
+            // the value the method left is discarded
+            if (state.methodLeftResult) {
+                emit(state, `    DROP       ; discard unused return value`);
+                state.methodLeftResult = false;
+            }
+            return;
+        }
+
         // A function called for what it does, its result discarded (CMP-035)
         if (state.functionTable.has(stmt.fbName)
             || (getFn(stmt.fbName) !== undefined && stmt.fbName.toUpperCase() !== 'WATCHDOG_RESET')) {
@@ -2324,7 +2517,18 @@ function emitFBCallStatement(state: CodeGenState, stmt: FBCallStatement): void {
  * are positional or named, as in a call inside an expression.
  */
 function emitFunctionCallStatement(state: CodeGenState, stmt: FBCallStatement): void {
-    const call: FunctionCall = {
+    const call = statementAsCall(stmt);
+    emit(state, `    ; ${stmt.fbName}(...) as a statement: the result is discarded`);
+    emitExpression(state, call);
+    // the value is one cell, two for a 64-bit integer
+    const result = staticType(state, call);
+    emit(state, `    DROP       ; discard the result of ${stmt.fbName}`);
+    if (isWide(result) && !isFloatType(result)) emit(state, `    DROP`);
+}
+
+/** A call written as a statement, as the call expression it is: the arguments are positional or named. */
+function statementAsCall(stmt: FBCallStatement): FunctionCall {
+    return {
         kind: 'FunctionCall',
         name: stmt.fbName,
         args: stmt.parameters.map((parameter) => {
@@ -2338,12 +2542,54 @@ function emitFunctionCallStatement(state: CodeGenState, stmt: FBCallStatement): 
         line: stmt.line,
         column: stmt.column,
     };
-    emit(state, `    ; ${stmt.fbName}(...) as a statement: the result is discarded`);
-    emitExpression(state, call);
-    // the value is one cell, two for a 64-bit integer
-    const result = staticType(state, call);
-    emit(state, `    DROP       ; discard the result of ${stmt.fbName}`);
-    if (isWide(result) && !isFloatType(result)) emit(state, `    DROP`);
+}
+
+/**
+ * A call `Name(...)` inside a function block, where `Name` is a method of the block: it is a call of the
+ * method on the instance that runs (THIS), as in IEC 61131-3 ed. 3 (CMP-041).
+ */
+function implicitMethodCall(state: CodeGenState, call: FunctionCall): MethodCall | null {
+    const instance = state.currentFBInstance;
+    if (!instance || typeof instance.dataType !== 'string' || state.currentFunction) return null;
+    if (!state.symbols.getFBDefinition(instance.dataType)?.methods.has(call.name)) return null;
+    return {
+        kind: 'MethodCall',
+        object: { kind: 'ThisExpr', line: call.line, column: call.column },
+        methodName: call.name,
+        args: call.args,
+        line: call.line,
+        column: call.column,
+    };
+}
+
+/**
+ * `SUPER^();` runs the body of the base block of the block that declares the code that runs, on the same
+ * instance: the base block's own statements, with RETURN leaving only them (CMP-041).
+ */
+function emitSuperBodyCall(state: CodeGenState, stmt: FBCallStatement): void {
+    const block = state.currentBlock;
+    if (!block || !state.currentFBInstance) fail(stmt, `SUPER^ is used outside of a function block`);
+    const baseName = state.symbols.getFBDefinition(block)?.extends;
+    if (!baseName) fail(stmt, `'${block}' extends no function block: SUPER^() has no base block to call`);
+    const base = state.functionBlockTable.get(baseName);
+    if (!base) fail(stmt, `The base block '${baseName}' of '${block}' is not declared`);
+    if (stmt.parameters.length > 0) fail(stmt.parameters[0]! as { line: number; column: number }, `SUPER^() takes no parameters: give the inputs a value before the call`);
+
+    emit(state, `    ; --- SUPER^(): the body of ${base.name} ---`);
+    const oldBlock = state.currentBlock;
+    const oldReturnLabel = state.returnLabel;
+    const oldSourceRef = state.sourceRef;
+    state.currentBlock = base.name;
+    state.returnLabel = newLabel(state, 'fb_return');
+    if (base.sourceRef !== undefined) state.sourceRef = base.sourceRef;
+    for (const bodyStmt of base.body) {
+        emitStatement(state, bodyStmt);
+    }
+    state.sourceRef = oldSourceRef;
+    emit(state, `${state.returnLabel}:`);
+    state.currentBlock = oldBlock;
+    state.returnLabel = oldReturnLabel;
+    emit(state, `    ; --- END SUPER^(): ${base.name} ---`);
 }
 
 /** The error of a parameter that cannot be bound as written. */
@@ -2412,17 +2658,23 @@ function emitInstanceCall(state: CodeGenState, stmt: FBCallStatement, sym: Symbo
         // Set context for inlining
         const oldFBInstance = state.currentFBInstance;
         const oldReturnLabel = state.returnLabel;
+        const oldBlock = state.currentBlock;
         state.currentFBInstance = sym;
+        state.currentBlock = userFB.name;
         state.returnLabel = newLabel(state, 'fb_return');
 
-        // Inline FB Body
+        // Inline FB Body: its statements are the ones of the file the block is declared in
+        const oldSourceRef = state.sourceRef;
+        if (userFB.sourceRef !== undefined) state.sourceRef = userFB.sourceRef;
         for (const bodyStmt of userFB.body) {
             emitStatement(state, bodyStmt);
         }
+        state.sourceRef = oldSourceRef;
 
         // Restore context
         emit(state, `${state.returnLabel}:`);
         state.currentFBInstance = oldFBInstance;
+        state.currentBlock = oldBlock;
         state.returnLabel = oldReturnLabel;
 
         // Output bindings: the outputs the body left are copied into the caller's variables
@@ -3151,6 +3403,10 @@ function emitConverted(state: CodeGenState, expr: Expression, target: string): v
  * defines (CMP-005), and a constant must fit it (CMP-018).
  */
 function emitValueFor(state: CodeGenState, value: Expression, targetType: unknown): void {
+    if (isInterfaceType(state, targetType)) {
+        emitInterfaceValue(state, value, targetType as string);
+        return;
+    }
     const target = numericTypeName(targetType);
     if (target !== UNKNOWN_TYPE) {
         const constant = foldConstant(state, value);
@@ -3188,8 +3444,9 @@ function warnNarrowing(state: CodeGenState, value: Expression, from: string, to:
         line: value.line,
         column: value.column,
         ...(value.endLine === undefined ? {} : { endLine: value.endLine, endColumn: value.endColumn }),
+        ...(state.sourceRef === undefined ? {} : { sourceRef: state.sourceRef }),
     };
-    const seen = state.warnings.some((each) => each.line === warning.line && each.column === warning.column && each.message === warning.message);
+    const seen = state.warnings.some((each) => each.line === warning.line && each.column === warning.column && each.message === warning.message && each.sourceRef === warning.sourceRef);
     if (!seen) state.warnings.push(warning);
 }
 
@@ -3719,6 +3976,13 @@ function bindArguments(state: CodeGenState, call: FunctionCall, inputs: VarDecl[
 }
 
 function emitFunctionCall(state: CodeGenState, expr: FunctionCall): void {
+    // a method of the block being generated, called by its name (CMP-041)
+    const implicit = implicitMethodCall(state, expr);
+    if (implicit) {
+        emitMethodCall(state, implicit);
+        return;
+    }
+
     // 1. Check if it's a user-defined function
     const userFn = state.functionTable.get(expr.name);
     if (userFn) {
@@ -4564,9 +4828,21 @@ function emitDereference(state: CodeGenState, expr: DereferenceExpr): void {
  */
 function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
     emit(state, `    ; Method call: ${stringifyExpression(expr.object)}.${expr.methodName}()`);
-    
+
+    // SUPER^.Method(): the method of the base of the block that declares the code that runs (CMP-041)
+    const isSuper = isSuperReference(expr.object);
+
+    // A variable of an interface type: the method of the instance it holds is the one that runs (CMP-041)
+    if (expr.object.kind === 'Identifier' || expr.object.kind === 'MemberAccess' || expr.object.kind === 'ArrayAccess') {
+        const target = interfaceTarget(state, expr.object);
+        if (target) {
+            emitInterfaceCall(state, expr, target.place, target.name);
+            return;
+        }
+    }
+
     // Get the object (FB instance)
-    if (expr.object.kind !== 'Identifier' && expr.object.kind !== 'ThisExpr') {
+    if (expr.object.kind !== 'Identifier' && expr.object.kind !== 'ThisExpr' && !isSuper) {
         fail(expr, `Complex method call targets not supported yet`);
     }
     
@@ -4574,7 +4850,15 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
     let fbTypeName: string;
     let instanceSym: Symbol | undefined;
     
-    if (expr.object.kind === 'ThisExpr') {
+    if (isSuper) {
+        const block = state.currentBlock;
+        if (!block || !state.currentFBInstance) fail(expr, `SUPER^ is used outside of a function block`);
+        const base = state.symbols.getFBDefinition(block)?.extends;
+        if (!base) fail(expr, `'${block}' extends no function block: SUPER^ has no base block to call`);
+        instanceSym = state.currentFBInstance;
+        instanceName = instanceSym.name;
+        fbTypeName = base;
+    } else if (expr.object.kind === 'ThisExpr') {
         // Method called on THIS - we're inside an FB context
         if (!state.currentFBInstance) {
             fail(expr, `THIS used outside of FB context`);
@@ -4591,6 +4875,14 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
         fbTypeName = instanceSym.dataType as string;
     }
     
+    emitMethodInline(state, expr, instanceSym, fbTypeName);
+}
+
+/**
+ * Inline the method `expr.methodName` of the function block `fbTypeName`, on the instance `instanceSym`: its
+ * arguments, its locals, its body and its result (CMP-041).
+ */
+function emitMethodInline(state: CodeGenState, expr: MethodCall, instanceSym: Symbol, fbTypeName: string): void {
     // Get the FB definition from SymbolTable (which handles inheritance)
     const fbDef = state.symbols.getFBDefinition(fbTypeName);
     if (!fbDef) {
@@ -4602,6 +4894,10 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
     if (!methodInfo) {
         fail(expr, `Unknown method '${expr.methodName}' on FB '${fbTypeName}'`);
     }
+    checkMethodAccess(state, methodInfo, fbTypeName, expr);
+    if (methodInfo.isAbstract) {
+        fail(expr, `The method '${methodInfo.name}' of '${methodInfo.owner}' is ABSTRACT: it has no body to run, a derived block implements it`);
+    }
     
     // A method that returns a number writes a result slot that is pushed once where the method ends,
     // so the caller sees one value however many times, or never, the method assigns its name
@@ -4610,7 +4906,9 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
     if (methodReturnType !== undefined) {
         const stored = storedType(state, methodReturnType);
         if (!isStringType(stored) && !isAggregateType(state, stored) && !isPointerType(stored)) {
-            const key = `${fbTypeName}.${(methodInfo as { name: string }).name}`;
+            // by the block that declares the method: an override and the method it overrides have a slot each,
+            // so SUPER^.Method() cannot write the result its caller has not read yet
+            const key = `${methodInfo.owner}.${methodInfo.name}`;
             const size = Math.max(state.symbols.sizeOf(methodReturnType), 1);
             let address = state.methodResultSlots.get(key);
             if (address === undefined) {
@@ -4621,16 +4919,14 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
         }
     }
 
-    // Save current FB context and set up new one for method execution
+    // Save current FB context; the one of the method is set up after the arguments: they are values of the
+    // caller, and a name in them is the caller's whatever the callee has of that name
     const prevFBInstance = state.currentFBInstance;
+    const prevBlock = state.currentBlock;
     const prevMethod = state.currentMethod;
     const prevMethodResult = state.methodResult;
     const prevReturnLabel = state.returnLabel;
-    state.returnLabel = newLabel(state, 'method_return');
-    state.currentFBInstance = instanceSym;
-    // Cast MethodInfo to MethodDecl for compatibility (they share name/body which is what matters)
-    state.currentMethod = methodInfo as any;
-    
+
     emit(state, `    ; --- Begin Method ${fbTypeName}.${expr.methodName} ---`);
     
     // Handle method inputs from args (Positional and Named)
@@ -4682,6 +4978,13 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
         }
     }
     
+    // From here on the code is the method's: its instance, its inputs and locals, its return
+    state.returnLabel = newLabel(state, 'method_return');
+    state.currentFBInstance = instanceSym;
+    state.currentBlock = methodInfo.owner;
+    // Cast MethodInfo to MethodDecl for compatibility (they share name/body which is what matters)
+    state.currentMethod = methodInfo as any;
+
     // Initialize method locals (including VAR_TEMP)
     if (methodInfo.locals) {
         for (const local of methodInfo.locals as any[]) {
@@ -4718,12 +5021,15 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
         emit(state, `    STORE${getLoadStoreSuffix(storedType(state, methodReturnType!) as DataTypeValue)} ${formatAddress((resultPlace.addr as { a: number }).a)}`);
     }
 
-    // Inline the method body
+    // Inline the method body: its statements are the ones of the file of the block that declares it
+    const prevSourceRef = state.sourceRef;
+    if ((methodInfo as { sourceRef?: string }).sourceRef !== undefined) state.sourceRef = (methodInfo as { sourceRef?: string }).sourceRef;
     state.expressionDepth++;
     for (const stmt of methodInfo.body) {
         emitStatement(state, stmt);
     }
     state.expressionDepth--;
+    state.sourceRef = prevSourceRef;
     emit(state, `${state.returnLabel}:`);
 
     // The value of the method: the slot, once; a string result was left on the stack by its assignments
@@ -4734,9 +5040,205 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
 
     // Restore previous FB context
     state.currentFBInstance = prevFBInstance;
+    state.currentBlock = prevBlock;
     state.currentMethod = prevMethod;
     state.methodResult = prevMethodResult;
     state.returnLabel = prevReturnLabel;
+}
+
+// ============================================================================
+// Interfaces (CMP-041)
+//
+// A variable of an interface type is a 32-bit reference: the address of an instance in the low 16 bits and the tag
+// of its function-block type in the high 16 bits (NULL, 0xFFFF, has tag 0). Function blocks are inlined at each
+// call site with the addresses of their instance, so a call through an interface is a switch the compiler writes
+// out: for each instance in the unit of a block that implements the interface, compare the reference with the
+// one of that instance and run the method inlined on it; a reference that matches none is a VM fault.
+// ============================================================================
+
+function isInterfaceType(state: CodeGenState, type: unknown): boolean {
+    return typeof type === 'string' && state.symbols.isInterface(type);
+}
+
+/** The tag of a function-block type in an interface reference: its position among the blocks of the unit, from 1. */
+function blockTag(state: CodeGenState, fbType: string): number {
+    let tag = 1;
+    for (const name of state.functionBlockTable.keys()) {
+        if (sameName(name, fbType)) return tag;
+        tag++;
+    }
+    return fail({ line: 0, column: 0 }, `Function block '${fbType}' is not declared`);
+}
+
+/** The reference to the instance at `address` of the block `fbType`, as a variable of an interface type holds it. */
+function interfaceReference(state: CodeGenState, fbType: string, address: number): number {
+    return blockTag(state, fbType) * 0x10000 + address;
+}
+
+/**
+ * Leave on the stack the value a variable of the interface `iface` takes from `value`: NULL, another variable of
+ * that interface (or of one that extends it), or an instance of a block that implements it.
+ */
+function emitInterfaceValue(state: CodeGenState, value: Expression, iface: string): void {
+    if ((value.kind === 'IntLiteral' && value.value === 0) || isNullLiteral(state, value)) {
+        emit(state, `    PUSH16 ${NULL_REFERENCE}   ; NULL`);
+        return;
+    }
+    let place: Place | undefined;
+    try {
+        place = resolvePlace(state, value);
+    } catch (error) {
+        if (!(error instanceof CodegenError)) throw error;
+    }
+    const given = place === undefined ? undefined : storedType(state, place.type);
+    if (place && typeof given === 'string' && isInterfaceType(state, given)) {
+        if (!state.symbols.interfaceDerivesFrom(given, iface)) {
+            fail(value, `Cannot assign the interface '${given}' of '${place.name}' to a variable of the interface '${iface}'`);
+        }
+        emitLoadPlace(state, place);
+        return;
+    }
+    if (place && typeof given === 'string' && state.symbols.getFBDefinition(given)) {
+        if (!state.symbols.blockImplements(given, iface)) {
+            fail(value, `'${place.name}' is a ${given}, which does not implement the interface '${iface}'`);
+        }
+        emitAddr(state, place.addr);
+        emit(state, `    PUSH32 ${blockTag(state, given) * 0x10000}   ; tag of ${given}`);
+        emit(state, `    OR`);
+        return;
+    }
+    fail(value, `A variable of the interface '${iface}' takes an instance of a block that implements it, a variable of that interface or NULL, not ${stringifyExpression(value)}`);
+}
+
+/** The place an expression names, when it is a variable of an interface type. */
+function interfaceTarget(state: CodeGenState, object: Expression): { place: Place; name: string } | null {
+    let place: Place;
+    try {
+        place = resolvePlace(state, object);
+    } catch (error) {
+        if (error instanceof CodegenError) return null; // the call reports what is wrong with it
+        throw error;
+    }
+    const type = storedType(state, place.type);
+    return typeof type === 'string' && isInterfaceType(state, type) ? { place, name: type } : null;
+}
+
+/**
+ * Every instance in the unit of a block that implements `iface`, with the type it was declared as: the program
+ * and global variables, function and method variables, array elements, and the instances inside other blocks and
+ * structures. An address that more than one instance has (a block and its first member) has one entry for each
+ * type; the tag of the reference tells them apart.
+ */
+function interfaceCandidates(state: CodeGenState, iface: string): Array<{ symbol: Symbol; type: string; reference: number }> {
+    const candidates: Array<{ symbol: Symbol; type: string; reference: number }> = [];
+    const seen = new Set<number>();
+    const visit = (name: string, type: STDataType | ArrayType, address: number, depth: number): void => {
+        if (depth > 8) return;
+        if (isArrayType(type as STDataType)) {
+            const array = type as ArrayType;
+            const element = array.elementType;
+            if (typeof element !== 'string' || !(state.symbols.getFBDefinition(element) || state.symbols.getStructDefinition(element))) return;
+            const stride = state.symbols.sizeOf(element);
+            for (let index = 0; index < getArrayElementCount(array); index++) visit(`${name}[${index}]`, element, address + index * stride, depth + 1);
+            return;
+        }
+        if (typeof type !== 'string') return;
+        const block = state.symbols.getFBDefinition(type);
+        if (block) {
+            if (state.symbols.blockImplements(block.name, iface)) {
+                const reference = interfaceReference(state, block.name, address);
+                if (!seen.has(reference)) {
+                    seen.add(reference);
+                    candidates.push({
+                        symbol: {
+                            name, dataType: block.name, address, size: block.size, section: VarSection.VAR, ioAddress: null,
+                            members: memberOffsets(state, block.name), initialValue: null, tags: {},
+                        },
+                        type: block.name,
+                        reference,
+                    });
+                }
+            }
+            for (const [member, info] of block.members) {
+                if (info.section === VarSection.VAR_IN_OUT) continue; // a reference, not storage
+                visit(`${name}.${member}`, info.dataType, address + info.offset, depth + 1);
+            }
+            return;
+        }
+        const struct = state.symbols.getStructDefinition(type);
+        if (struct) {
+            for (const [member, info] of struct.members) visit(`${name}.${member}`, info.dataType, address + info.offset, depth + 1);
+        }
+    };
+    for (const symbol of state.symbols.all()) {
+        if (symbol.ioAddress !== null) continue;
+        visit(symbol.owner === undefined ? symbol.name : `${symbol.owner}.${symbol.name}`, symbol.dataType, symbol.address, 0);
+    }
+    return candidates;
+}
+
+/**
+ * `reference.Method(args)` where `reference` is a variable of an interface type: the method of the instance the
+ * variable holds. The stack is the same on every path: the reference is consumed by the comparison that matches
+ * it, and what a method leaves (its result, or nothing) is what the call leaves.
+ */
+function emitInterfaceCall(state: CodeGenState, expr: MethodCall, place: Place, iface: string): void {
+    const signature = state.symbols.findInterfaceMethod(iface, expr.methodName);
+    if (!signature) fail(expr, `The interface '${iface}' has no method '${expr.methodName}'`);
+
+    const candidates = interfaceCandidates(state, iface);
+    emit(state, `    ; --- interface call: ${place.name}.${expr.methodName}() through ${iface}, ${candidates.length} instance${candidates.length === 1 ? '' : 's'} ---`);
+    const end = newLabel(state, 'iface_end');
+    emitLoadPlace(state, place);
+    for (const candidate of candidates) {
+        const next = newLabel(state, 'iface_next');
+        emit(state, `    DUP`);
+        emit(state, `    PUSH32 ${candidate.reference}   ; ${candidate.symbol.name} (${candidate.type})`);
+        emit(state, `    EQ`);
+        emit(state, `    JZ ${next}`);
+        emit(state, `    DROP`);
+        emitMethodInline(state, expr, candidate.symbol, candidate.type);
+        emit(state, `    JMP ${end}`);
+        emit(state, `${next}:`);
+    }
+    // NULL, or a reference that names no instance of a block that implements the interface
+    emit(state, `    DROP`);
+    emitFault(state, `${place.name} refers to no instance`);
+    emit(state, `${end}:`);
+    // what the inlined methods left: one value for a method with a result, none for the others
+    state.methodLeftResult = signature.returnType !== null;
+}
+
+/** `SUPER^`: the base block of the block that declares the code that runs (CMP-041). */
+function isSuperReference(expr: Expression): boolean {
+    return expr.kind === 'DereferenceExpr' && expr.operand.kind === 'Identifier' && expr.operand.name.toUpperCase() === 'SUPER';
+}
+
+/** Whether `block` is `ancestor` or extends it, directly or through other blocks. */
+function derivesFrom(state: CodeGenState, block: string, ancestor: string): boolean {
+    const seen = new Set<string>();
+    for (let name: string | null = block; name !== null && !seen.has(name.toUpperCase()); name = state.symbols.getFBDefinition(name)?.extends ?? null) {
+        if (sameName(name, ancestor)) return true;
+        seen.add(name.toUpperCase());
+    }
+    return false;
+}
+
+/**
+ * The access specifiers of a method are enforced where it is called (CMP-041): a PRIVATE method is called only
+ * from the block that declares it, and a PROTECTED one from that block and the blocks that extend it. The code
+ * that runs is the block's own, so a call from a program, a function or another block is outside.
+ */
+function checkMethodAccess(state: CodeGenState, method: MethodInfo, typeName: string, at: { line: number; column: number; endLine?: number; endColumn?: number }): void {
+    if (method.access !== 'PRIVATE' && method.access !== 'PROTECTED') return;
+    const here = state.currentBlock;
+    const inside = here !== null
+        && (method.access === 'PRIVATE' ? sameName(here, method.owner) : derivesFrom(state, here, method.owner));
+    if (inside) return;
+    const where = method.access === 'PRIVATE'
+        ? `inside '${method.owner}'`
+        : `inside '${method.owner}' and the function blocks that extend it`;
+    fail(at, `The method '${method.name}' of '${typeName}' is ${method.access}: it can be called only ${where}`);
 }
 
 /**

@@ -12,6 +12,7 @@
  */
 
 import { getFunctionBlockNamesForVisualEditors } from '../catalog/blockCatalog';
+import type { ProjectBlock } from './projectBlocks';
 
 // =============================================================================
 // Variable Definitions (shared structure with FBD)
@@ -1040,10 +1041,14 @@ export interface LDToolboxItem {
 }
 
 /**
- * Get all available toolbox items
+ * Get all available toolbox items. `blocks` are the function blocks and functions the project declares: the
+ * function blocks among them are placeable like the standard ones (LNG-008); a function is not, a rung has
+ * no value to pass to it.
  */
-export function getToolboxItems(): LDToolboxItem[] {
-  const functionBlocks = getFunctionBlockNamesForVisualEditors().map((fbType) => ({
+export function getToolboxItems(blocks: readonly ProjectBlock[] = []): LDToolboxItem[] {
+  const names = new Set(getFunctionBlockNamesForVisualEditors());
+  for (const block of blocks) if (block.kind === 'FUNCTION_BLOCK') names.add(block.name);
+  const functionBlocks = [...names].sort().map((fbType) => ({
     type: 'function_block' as const,
     label: fbType,
     symbol: fbType.length > 6 ? fbType.slice(0, 6) : fbType,

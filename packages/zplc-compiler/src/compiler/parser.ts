@@ -371,6 +371,13 @@ class Parser {
      */
     private parseFunctionBlockDecl(): FunctionBlockDecl {
         const start = this.expect(TokenType.FUNCTION_BLOCK, 'Expected FUNCTION_BLOCK');
+        // FUNCTION_BLOCK [ABSTRACT] [FINAL] name (CMP-041)
+        let isAbstract = false;
+        let isFinal = false;
+        while (this.check(TokenType.ABSTRACT) || this.check(TokenType.FINAL)) {
+            if (this.match(TokenType.ABSTRACT)) isAbstract = true;
+            else if (this.match(TokenType.FINAL)) isFinal = true;
+        }
         const nameToken = this.expect(TokenType.IDENTIFIER, 'Expected function block name');
 
         // Parse optional EXTENDS clause
@@ -447,6 +454,8 @@ class Parser {
             locals,
             methods,
             body,
+            ...(isAbstract ? { isAbstract } : {}),
+            ...(isFinal ? { isFinal } : {}),
             line: start.line,
             column: start.column,
         };
@@ -1224,6 +1233,14 @@ class Parser {
         if (this.check(TokenType.IDENTIFIER) && this.peek().type === TokenType.LPAREN) {
             const ident = this.advance();
             return this.parseFBCallStatement(ident, startToken);
+        }
+
+        // SUPER^( ): the body of the base function block runs here (CMP-041)
+        if (this.check(TokenType.IDENTIFIER) && this.current().value.toUpperCase() === 'SUPER'
+            && this.peek().type === TokenType.CARET && this.peek(2).type === TokenType.LPAREN) {
+            const ident = this.advance();
+            this.advance(); // ^
+            return this.parseFBCallStatement({ ...ident, value: 'SUPER^' }, startToken);
         }
 
         // Must be an assignment (possibly with nested access) or a method call statement
@@ -2126,8 +2143,11 @@ class Parser {
                 column: curr.column,
             } as ThisExpr;
             
-            // THIS can have suffixes: THIS.member, THIS.Method()
+            // THIS can have suffixes: THIS.member, THIS.Method(); THIS^ is the instance itself
             while (true) {
+                if (this.match(TokenType.CARET)) {
+                    continue;
+                }
                 if (this.match(TokenType.DOT)) {
                     const memberToken = this.expect(TokenType.IDENTIFIER, 'Expected member name after THIS.');
                     

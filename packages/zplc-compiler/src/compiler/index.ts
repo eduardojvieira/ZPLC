@@ -125,14 +125,19 @@ export type {
 import { parse, parseWithDiagnostics } from './parser.ts';
 import { ParseError } from './parser.ts';
 import { LexerError } from './lexer.ts';
-import { generate, CodegenError, WORK_MEMORY_REGION_SIZE, DEFAULT_COMPILER_MEMORY_PROFILE, validateCompilerMemoryProfile } from './codegen.ts';
+import { generate, generateProject, CodegenError, DEFAULT_COMPILER_MEMORY_PROFILE, validateCompilerMemoryProfile } from './codegen.ts';
 import type { CodegenWarning, SyntaxIssue } from './diagnostics.ts';
+import type { GeneratedProject } from './codegen.ts';
 import type { CodeGenOptions, CompilerMemoryProfile } from './codegen.ts';
-import { assemble, createMultiTaskZplcFile, relocateBytecode, TASK_TYPE, ZPLC_CONSTANTS } from '../assembler/index.ts';
-import type { AssemblyResult, TagDef, TaskDef, TaskType } from '../assembler/index.ts';
+import { assemble, createMultiTaskZplcFile, TASK_TYPE, ZPLC_CONSTANTS } from '../assembler/index.ts';
+import type { AssemblyResult, TaskDef, TaskType } from '../assembler/index.ts';
 import type { DebugMap, TypeResolver } from './debug-map.ts';
-import { buildDebugMap, createDebugMap } from './debug-map.ts';
-import { buildSymbolTable, MemoryLayout, parseStringType, typeToString } from './symbol-table.ts';
+import { buildUnitDebugMap } from './debug-map.ts';
+import type { UnitDebugFile } from './debug-map.ts';
+import { mergeUnits } from './unit.ts';
+import type { UnitSource } from './unit.ts';
+import { parseStringType, typeToString } from './symbol-table.ts';
+import type { Symbol as TableSymbol } from './symbol-table.ts';
 import { getFB } from './stdlib/index.ts';
 import { sameName } from './ast.ts';
 import type { DataTypeValue } from './ast.ts';
@@ -197,7 +202,7 @@ export function compilerErrorsOf(
         return error.errors.map((each) => (sourceRef ? attachSourceRef(each, sourceRef) : each));
     }
     if (error instanceof CodegenError) {
-        return error.errors.map((each) => new CompilerError(each.message, each.line, each.column, 'codegen', sourceRef, each.endLine, each.endColumn));
+        return error.errors.map((each) => new CompilerError(each.message, each.line, each.column, 'codegen', each.sourceRef ?? sourceRef, each.endLine, each.endColumn));
     }
     if (error instanceof LexerError || error instanceof ParseError) {
         return (error.errors as SyntaxIssue[]).map((each) => new CompilerError(
@@ -440,8 +445,11 @@ export function compileToBinary(source: string, options?: CompileOptions): Compi
 
     // Generate assembly using full AST
     let assembly: string;
+    let symbols: import('./symbol-table.ts').SymbolTable;
     try {
-        assembly = generate(ast, codegenOptions);
+        const project = generateProject(ast, codegenOptions);
+        assembly = project.assembly;
+        symbols = project.symbols;
         warnings.push(...generated);
         warnings.sort((first, second) => first.line - second.line || first.column - second.column);
     } catch (e) {
@@ -474,17 +482,17 @@ export function compileToBinary(source: string, options?: CompileOptions): Compi
 
     // Build debug map if requested
     if (generateDebugMap) {
-        const workMemoryBase = options?.workMemoryBase;
-        // The same unit the code was generated from, so the map and the code share one layout.
-        const symbols = buildSymbolTable(ast, workMemoryBase);
-
-        result.debugMap = buildDebugMap({
-            programName: program.name,
+        // The table the code was generated with, so the map and the code share one layout (CMP-054).
+        const bare: UnitDebugFile = { ref: '', key: program.name, type: 'PROGRAM' };
+        result.debugMap = buildUnitDebugMap({
+            projectName: program.name,
+            files: [bare],
             symbols,
-            instructionMappings: asmResult.instructionMappings,
-            codeSize: asmResult.codeSize,
+            instructionMappings: asmResult.instructionMappings ?? [],
+            assembly,
             typeResolver: createTypeResolver(symbols),
             memoryProfile: options?.memoryProfile,
+            codeSize: asmResult.codeSize,
         });
     }
 
@@ -668,26 +676,30 @@ interface PhysicalOutputOwner {
     endBit: number;
 }
 
+/**
+ * Two programs may not write the same physical output (CMP-047): the located output variables of `programName`
+ * must not overlap the ones of a program admitted before it. A global belongs to no program.
+ */
 function admitPhysicalOutputOwners(
     owners: PhysicalOutputOwner[],
     programName: string,
     sourceRef: string,
-    debugMap: DebugMap,
+    symbols: readonly TableSymbol[],
 ): void {
-    const variables = debugMap.pou[programName]?.vars ?? {};
-    for (const [variableName, variable] of Object.entries(variables)) {
-        if (variable.region !== 'OPI') continue;
+    for (const symbol of symbols) {
+        if (symbol.owner !== programName || symbol.ioAddress?.type !== 'Q') continue;
 
-        const startBit = variable.addr * 8 + (variable.bitOffset ?? 0);
-        const endBit = variable.type === 'BOOL' && variable.bitOffset !== undefined
+        const bit = symbol.ioAddress.size === 'X' ? symbol.ioAddress.bitOffset : undefined;
+        const startBit = symbol.address * 8 + (bit ?? 0);
+        const endBit = symbol.dataType === 'BOOL' && bit !== undefined
             ? startBit + 1
-            : (variable.addr + variable.size) * 8;
+            : (symbol.address + symbol.size) * 8;
         const previous = owners.find((owner) => owner.programName !== programName
             && startBit < owner.endBit && owner.startBit < endBit);
         if (previous) {
             throw new CompilerError(
-                `Physical output '${programName}.${variableName}' (${sourceRef}) overlaps '${previous.programName}.${previous.variableName}' (${previous.sourceRef})`,
-                variable.declarationLine ?? 0,
+                `Physical output '${programName}.${symbol.name}' (${sourceRef}) overlaps '${previous.programName}.${previous.variableName}' (${previous.sourceRef})`,
+                symbol.declarationLine ?? 0,
                 0,
                 'codegen',
                 sourceRef,
@@ -695,7 +707,7 @@ function admitPhysicalOutputOwners(
         }
         owners.push({
             programName,
-            variableName,
+            variableName: symbol.name,
             sourceRef,
             startBit,
             endBit,
@@ -766,26 +778,9 @@ export function compileMultiTaskProject(
         }
     }
 
-    // Compile each program
-    const compiledPrograms: {
-        name: string;
-        baseOffset: number;
-        bytecode: Uint8Array;
-        assembly: string;
-        entryPoint: number;
-        size: number;
-        tags: TagDef[];
-        debugMap: DebugMap;
-    }[] = [];
-
-    let currentOffset = 0;
-    let programIndex = 0;
-    const declaredProgramSources = new Map<string, string>();
-    const physicalOutputOwners: PhysicalOutputOwner[] = [];
-    // The errors of every program that failed: one compile reports them all (CMP-007)
-    const failures: CompilerError[] = [];
-    const warnings: CompilerWarning[] = [];
-
+    // The files of the project, in the order of the unit: the programs a task runs, in task order, then every
+    // other source, in the order given. All of them are one compilation unit (CMP-042).
+    const files: Array<{ label: string; source: ProgramSource; ref: string; runs: boolean }> = [];
     for (const progName of referencedPrograms) {
         const source = sourceMap.get(progName) || sourceMap.get(progName.toLowerCase());
         if (!source) {
@@ -794,23 +789,21 @@ export function compileMultiTaskProject(
                 0, 0, 'codegen'
             );
         }
-        const sourceRef = source.sourceRef ?? progName;
+        files.push({ label: progName, source, ref: source.sourceRef ?? progName, runs: true });
+    }
+    const run = new Set(files.map((file) => file.source));
+    for (const source of programSources) {
+        if (!run.has(source)) files.push({ label: source.name, source, ref: source.sourceRef ?? source.name, runs: false });
+    }
 
-        if ((programIndex + 1) * WORK_MEMORY_REGION_SIZE > memoryProfile.workSize) {
-            throw new CompilerError('WORK task buckets exceed the target memory profile', 0, 0, 'codegen', sourceRef);
-        }
-
-        // Calculate work memory base for this program
-        const workMemoryBase = MemoryLayout.WORK_BASE + (programIndex * WORK_MEMORY_REGION_SIZE);
-
-        // Compile to assembly — enable source annotations for debug map
-        let assembly: string;
-        let programAst: ReturnType<typeof parse>;
+    // Every file is read; the errors of all of them are reported by one build (CMP-007)
+    const failures: CompilerError[] = [];
+    const warnings: CompilerWarning[] = [];
+    const parsedFiles: UnitSource[] = [];
+    const declaredProgramSources = new Map<string, string>();
+    for (const file of files) {
+        const { label, source, ref } = file;
         let unitStart = { line: 1, column: 1 };
-        // what this program is accepted with, in source order: the non-IEC forms the parser saw and the
-        // conversions the generator made
-        const programWarnings: CompilerWarning[] = [];
-        const generated: CodegenWarning[] = [];
         try {
             const parsed = parseWithDiagnostics(source.content);
             if (parsed.errors.length > 0) {
@@ -819,124 +812,130 @@ export function compileMultiTaskProject(
                 first.errors = parsed.errors;
                 throw first;
             }
-            programAst = parsed.unit;
-            unitStart = programAst.programs[0] ?? unitStart;
+            const ast = parsed.unit;
+            unitStart = ast.programs[0] ?? unitStart;
+            // what this file is accepted with: the non-IEC forms the parser saw
             for (const warning of parsed.warnings) {
-                programWarnings.push({
+                warnings.push({
                     code: 'NON_IEC_HEX_LITERAL',
                     message: warning.message,
                     line: warning.line,
                     column: warning.column,
                     endLine: warning.endLine,
                     endColumn: warning.endColumn,
-                    sourceRef,
+                    sourceRef: ref,
                 });
             }
-            if (programAst.programs.length === 0) {
-                throw new CompilerError('No program found in source', 1, 1, 'parser', sourceRef);
+            if (!file.runs) {
+                // a file no task runs holds declarations; a program in it is not built
+                parsedFiles.push({ ref, unit: ast });
+                continue;
             }
-            const program = requireSingleProgram(programAst, sourceRef);
+            if (ast.programs.length === 0) {
+                throw new CompilerError('No program found in source', 1, 1, 'parser', ref);
+            }
+            const program = requireSingleProgram(ast, ref);
 
             const normalizedProgramName = program.name.toLowerCase();
             const previousSourceRef = declaredProgramSources.get(normalizedProgramName);
             if (previousSourceRef) {
                 throw new CompilerError(
-                    `Duplicate PROGRAM name '${program.name}' in '${progName}' (already declared by '${previousSourceRef}')`,
+                    `Duplicate PROGRAM name '${program.name}' in '${label}' (already declared by '${previousSourceRef}')`,
                     program.line,
                     program.column,
                     'codegen',
-                    sourceRef,
+                    ref,
                 );
             }
-            declaredProgramSources.set(normalizedProgramName, progName);
-            assembly = generate(programAst, {
-                workMemoryBase,
-                workMemorySize: WORK_MEMORY_REGION_SIZE,
-                memoryProfile,
-                emitSourceAnnotations: true,
-                warnings: generated,
-            });
-            for (const warning of generated) programWarnings.push({ ...warning, sourceRef });
-            programWarnings.sort((first, second) => first.line - second.line || first.column - second.column);
-            warnings.push(...programWarnings);
+            declaredProgramSources.set(normalizedProgramName, label);
+            parsedFiles.push({ ref, unit: ast, program });
         } catch (e) {
-            // The other programs are still compiled, so that their errors are reported too
-            failures.push(...compilerErrorsOf(e, progName, sourceRef, unitStart));
-            continue;
+            failures.push(...compilerErrorsOf(e, label, ref, unitStart));
         }
-        if (failures.length > 0) continue;
+    }
+    const rank = new Map(files.map((file, index) => [file.ref, index] as const));
+    const fileOrder = (sourceRef: string | undefined): number => rank.get(sourceRef ?? '') ?? 0;
+    /** Throw the errors found so far: in the order of the files, and in each one in the order of its lines. */
+    const throwFound = (): never => throwAll(failures.sort((first, second) => fileOrder(first.sourceRef) - fileOrder(second.sourceRef)
+        || first.line - second.line || first.column - second.column));
 
-        // Assemble to bytecode
-        let asmResult: AssemblyResult;
-        try {
-            asmResult = assemble(assembly);
-        } catch (e) {
-            const err = e as Error;
-            throw new CompilerError(
-                `Assembly of '${progName}' failed: ${err.message}`,
-                0, 0, 'assembler', sourceRef
-            );
-        }
-
-        // Build debug map for this program
-        const program = programAst.programs[0]!;
-        const symbols = buildSymbolTable(programAst, workMemoryBase);
-        const progDebugMap = buildDebugMap({
-            programName: program.name,
-            sourceRef,
-            symbols,
-            instructionMappings: asmResult.instructionMappings,
-            codeSize: asmResult.bytecode.length,
-            typeResolver: createTypeResolver(symbols),
-            memoryProfile,
-        });
-        admitPhysicalOutputOwners(physicalOutputOwners, program.name, sourceRef, progDebugMap);
-
-        compiledPrograms.push({
-            name: progName,
-            baseOffset: currentOffset,
-            bytecode: asmResult.bytecode,
-            assembly,
-            // The entry point for the task is the global offset + the program's local entry point (_start)
-            entryPoint: currentOffset + asmResult.entryPoint,
-            size: asmResult.bytecode.length,
-            tags: asmResult.tags ?? [],
-            debugMap: progDebugMap,
-        });
-
-        currentOffset += asmResult.bytecode.length;
-        programIndex++;
+    // One unit: what a file declares is seen by every program, and declared once (CMP-042)
+    const merged = mergeUnits(parsedFiles);
+    if (merged.errors.length > 0) {
+        failures.push(...merged.errors.map((error) => new CompilerError(error.message, error.line, error.column, 'codegen', error.sourceRef, error.endLine, error.endColumn)));
+        throwFound();
     }
 
-    if (failures.length > 0) throwAll(failures);
+    // Compile the unit to one assembly: one entry for each program, one copy of each function, one layout.
+    // A file that did not parse is left out, and the errors of the others are still reported (CMP-007).
+    const generated: CodegenWarning[] = [];
+    let project: GeneratedProject | undefined;
+    if (merged.unit.programs.length > 0) {
+        try {
+            project = generateProject(merged.unit, { memoryProfile, emitSourceAnnotations: true, warnings: generated });
+        } catch (e) {
+            failures.push(...compilerErrorsOf(e, files[0]!.label, files[0]!.ref, merged.unit.programs[0]!));
+        }
+    }
+    if (failures.length > 0 || project === undefined) throwFound();
+    const built = project!;
+    for (const warning of generated) warnings.push({ ...warning });
+    warnings.sort((first, second) => fileOrder(first.sourceRef) - fileOrder(second.sourceRef)
+        || first.line - second.line || first.column - second.column);
 
-    // Concatenate all bytecode with relocation
-    const totalCodeSize = compiledPrograms.reduce((sum, p) => sum + p.size, 0);
+    // Assemble to bytecode
+    let asmResult: AssemblyResult;
+    try {
+        asmResult = assemble(built.assembly);
+    } catch (e) {
+        const err = e as Error;
+        throw new CompilerError(
+            `Assembly of the project failed: ${err.message}`,
+            0, 0, 'assembler', files[0]!.ref
+        );
+    }
+
+    const totalCodeSize = asmResult.bytecode.length;
     if (totalCodeSize > memoryProfile.codeSizeMax) {
         throw new CompilerError('CODE exceeds the target memory profile', 0, 0, 'codegen');
     }
-    const concatenatedBytecode = new Uint8Array(totalCodeSize);
-    let offset = 0;
-    for (const prog of compiledPrograms) {
-        const relocatedBytecode = new Uint8Array(prog.bytecode);
-        // Relocate relative to the start of this program in the global buffer
-        // Note: prog.entryPoint includes the local _start offset, so we need to subtract it 
-        // to get the base address, OR just use our tracking offset variable.
-        relocateBytecode(relocatedBytecode, offset);
-        concatenatedBytecode.set(relocatedBytecode, offset);
-        offset += prog.size;
+
+    // Where each program starts: the entry label of its code
+    const programs = built.programs.map((entry, index) => {
+        const label = asmResult.labels.get(entry.entryLabel.toUpperCase());
+        const entryPoint = index === 0 ? asmResult.entryPoint : label?.address;
+        if (entryPoint === undefined) {
+            throw new CompilerError(`Program '${entry.name}' was not compiled`, 0, 0, 'codegen', entry.sourceRef);
+        }
+        return { ...entry, entryPoint };
+    });
+    const sections = programs.map((program, index) => ({
+        ...program,
+        // the code of a program runs from its entry to the next one; the first also holds the functions,
+        // and the last the routines the programs share
+        size: (index + 1 < programs.length ? programs[index + 1]!.entryPoint : totalCodeSize) - (index === 0 ? 0 : program.entryPoint),
+    }));
+
+    // Two programs may not write one physical output (CMP-047)
+    const physicalOutputOwners: PhysicalOutputOwner[] = [];
+    const allSymbols = built.symbols.all();
+    for (const program of programs) {
+        admitPhysicalOutputOwners(physicalOutputOwners, program.name, program.sourceRef ?? program.name, allSymbols);
     }
 
-    // Build entry point map
+    // Build entry point map: by the name the task gives the program
+    const entryPointByRef = new Map(programs.map((program) => [program.sourceRef, program.entryPoint] as const));
     const entryPointMap = new Map<string, number>();
-    for (const prog of compiledPrograms) {
-        entryPointMap.set(prog.name, prog.entryPoint);
-        entryPointMap.set(prog.name.toLowerCase(), prog.entryPoint);
+    for (const file of files) {
+        if (!file.runs) continue;
+        const entryPoint = entryPointByRef.get(file.ref);
+        if (entryPoint === undefined) continue;
+        entryPointMap.set(file.label, entryPoint);
+        entryPointMap.set(file.label.toLowerCase(), entryPoint);
     }
 
     // Build task definitions
     const taskDefs: TaskDef[] = [];
-    const allTags = compiledPrograms.flatMap((prog) => prog.tags);
     let taskId = 0;
 
     for (const taskConfig of config.tasks) {
@@ -961,36 +960,50 @@ export function compileMultiTaskProject(
     }
 
     // Generate .zplc file with TASK segment
-    const zplcFile = createMultiTaskZplcFile(concatenatedBytecode, taskDefs, allTags);
+    const zplcFile = createMultiTaskZplcFile(asmResult.bytecode, taskDefs, asmResult.tags ?? []);
 
-    // Merge all per-program debug maps into one (multi-POU debug map)
-    const mergedDebugMap = createDebugMap(config.name ?? 'Project', memoryProfile);
-    for (const prog of compiledPrograms) {
-        // Publish global bytecode coordinates without mutating per-program maps.
-        for (const [pouName, pouInfo] of Object.entries(prog.debugMap.pou)) {
-            mergedDebugMap.pou[pouName] = {
-                ...pouInfo,
-                entryPoint: prog.entryPoint,
-                vars: { ...pouInfo.vars },
-                sourceMap: pouInfo.sourceMap.map((mapping) => ({ ...mapping, pc: mapping.pc + prog.baseOffset })),
-                breakpoints: pouInfo.breakpoints.map((breakpoint) => ({ ...breakpoint, pc: breakpoint.pc + prog.baseOffset })),
-            };
-        }
-    }
+    // The map of the unit: one POU for each file, from the table the code was generated with (CMP-054)
+    const entryByRef = new Map(programs.map((program) => [program.sourceRef, program.entryPoint] as const));
+    // a file with no program is a POU named by its file name, as a program is by its own name; two files of one
+    // name in different folders keep their whole path
+    const taken = new Set<string>(parsedFiles.flatMap(({ program }) => (program ? [program.name] : [])));
+    const libraryKey = (ref: string): string => {
+        const name = ref.split(/[\\/]/).pop() || ref;
+        const key = taken.has(name) ? ref : name;
+        taken.add(key);
+        return key;
+    };
+    const debugFiles: UnitDebugFile[] = parsedFiles.map(({ ref, unit, program }) => program
+        ? { ref, sourceRef: ref, key: program.name, type: 'PROGRAM', entryPoint: entryByRef.get(ref) }
+        : {
+            ref,
+            sourceRef: ref,
+            key: libraryKey(ref),
+            type: unit.functionBlocks.length > 0 ? 'FUNCTION_BLOCK' : unit.functions.length > 0 ? 'FUNCTION' : 'LIBRARY',
+        });
+    const debugMap = buildUnitDebugMap({
+        projectName: config.name ?? 'Project',
+        files: debugFiles,
+        symbols: built.symbols,
+        instructionMappings: asmResult.instructionMappings ?? [],
+        assembly: built.assembly,
+        typeResolver: createTypeResolver(built.symbols),
+        memoryProfile,
+    });
 
     return {
         warnings,
         zplcFile,
-        bytecode: concatenatedBytecode,
+        bytecode: asmResult.bytecode,
         tasks: taskDefs,
         codeSize: totalCodeSize,
-        programDetails: compiledPrograms.map(p => ({
-            name: p.name,
-            entryPoint: p.entryPoint,
-            size: p.size,
-            assembly: p.assembly,
+        programDetails: sections.map((program) => ({
+            name: files.find((file) => file.runs && file.ref === program.sourceRef)?.label ?? program.name,
+            entryPoint: program.entryPoint,
+            size: program.size,
+            assembly: program.assembly,
         })),
-        debugMap: mergedDebugMap,
+        debugMap,
     };
 }
 

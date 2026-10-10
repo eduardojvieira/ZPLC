@@ -1,0 +1,22 @@
+{
+  "requirement": "CMP-041",
+  "title": "an interface given to a function block as an input is called inside the block with its arguments",
+  "matrix": [
+    "pous.interfaces-implements"
+  ],
+  "note": "An input of an interface type takes the instance given in the call; the block calls its method with an argument, and each call runs the method of the instance it was given",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 42
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 121
+    }
+  ]
+}

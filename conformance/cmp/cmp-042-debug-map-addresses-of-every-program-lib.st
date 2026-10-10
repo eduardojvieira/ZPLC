@@ -1,0 +1,9 @@
+VAR_GLOBAL
+  Shared : INT;
+END_VAR
+
+FUNCTION_BLOCK Gate
+VAR_INPUT open : BOOL; END_VAR
+VAR_OUTPUT passed : BOOL; END_VAR
+  passed := open;
+END_FUNCTION_BLOCK

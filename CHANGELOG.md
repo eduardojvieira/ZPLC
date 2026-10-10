@@ -4,6 +4,51 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- The function blocks and functions that the Structured Text files of a project
+  declare are blocks of the FBD and LD palettes (LNG-008): a diagram places one
+  with the ports of its declaration, and the generated Structured Text calls it
+  with named arguments (an FBD also places functions, with their result as
+  `OUT`; an LD rung places function blocks). A block that no file declares is
+  still refused, by name. `transpileToST`, `parseFBDModel`, `validateFBDModel`,
+  `getDefaultPorts`, `transpileFBDToST`, `transpileLDToST` and `getToolboxItems`
+  take the blocks of the project as an optional last argument.
+- Methods and inheritance work as IEC 61131-3 defines them (CMP-041).
+  `SUPER^.Method()` calls the method of the base of the block that declares the
+  code that runs, and `SUPER^();` runs the body of that base block; a block
+  calls the methods of its own by their name; `PRIVATE` and `PROTECTED`
+  methods are enforced where they are called; `FUNCTION_BLOCK ABSTRACT` and
+  `FUNCTION_BLOCK FINAL` are accepted and enforced (an abstract block has no
+  instances, a block that is not abstract implements the abstract methods it
+  inherits, a final block is not extended). A variable of an interface type
+  holds a reference to an instance and calls the method of the instance
+  assigned to it: the compiler writes a comparison with every instance of a
+  block that implements the interface and the method inlined behind each, and
+  a call through a variable that holds no instance ends the scan with a VM
+  fault. The code of an interface call is as large as those methods together.
+  Nothing in the binary contract changes: there is no indirect call.
+- The Structured Text files of a project are one compilation unit (CMP-042): a
+  type, a function, a function block, an interface or a `VAR_GLOBAL` declared
+  in any file is visible to every program, whether or not a task runs a program
+  of that file. A global has one address shared by every program and task and
+  is initialised once, by the entry of whichever task runs first; a function is
+  built once. A declaration made twice is reported at each place, naming both
+  files and lines, and an error is reported in the file it belongs to. Two
+  programs may declare variables of the same name. A function block no longer
+  sees the variables of the program that calls it, and the arguments of a
+  method call are evaluated in the caller's scope (a name that the callee also
+  declared used to resolve to the callee's). The debug map has one POU for each
+  file that declares a program, a variable or code, so a global is listed once
+  and the statements of a function block are ranges of its own file.
+- The memory of a program is the WORK memory of the target profile, shared by
+  all the programs of the project (CMP-043): the 256-byte bucket of each
+  program, and the limit of 14 steps of an SFC chart that came from it, are
+  gone. An allocation failure is a build error at the declaration that crosses
+  the end of the region and states the bytes required, the bytes available and
+  the three largest consumers. The variables of the second and later programs of
+  a project move to the addresses that follow the first program's (the debug
+  map says where); the initialization flag is the last byte of the profile's
+  WORK memory, and a project of several programs initialises everything in one
+  routine that the entry of each program calls.
 - CI fails when a test reads the text of a product source file or asserts on the
   assembly the compiler emitted (VF-006): a guard (`tools/ci/test-source-guard.ts`)
   lists every test that reads Studio, Electron, script, firmware or workflow

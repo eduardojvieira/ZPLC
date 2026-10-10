@@ -3,7 +3,7 @@
   "schemaVersion": 2,
   "name": "Kitchen Sink Test",
   "version": "1.0.0",
-  "description": "Standard-library conformance fixture: every block and function, split into ten programs that each fit the 256-byte per-program WORK budget",
+  "description": "Standard-library conformance fixture: every block and function, one program for each family of blocks, ten in all; they share the WORK memory of the target",
   "target": {
     "board": "posix"
   },

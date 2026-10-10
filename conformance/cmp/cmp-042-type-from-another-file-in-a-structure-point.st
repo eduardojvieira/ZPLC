@@ -1,0 +1,4 @@
+TYPE Point : STRUCT
+  x : INT;
+  y : INT;
+END_STRUCT END_TYPE

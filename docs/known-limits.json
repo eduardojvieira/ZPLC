@@ -77,39 +77,6 @@
       }
     }
   },
-  "CMP-041": {
-    "page": "language",
-    "en": "Methods and inheritance differ from IEC 61131-3.",
-    "es": "Los métodos y la herencia difieren de IEC 61131-3.",
-    "cases": {
-      "SUPER^ calls the method of the base block": {
-        "en": "A `SUPER^` call is a build error (`Complex method call targets not supported yet`).",
-        "es": "Una llamada `SUPER^` es un error de compilación (`Complex method call targets not supported yet`)."
-      },
-      "a variable of an interface type calls the method of its instance": {
-        "en": "A variable of an interface type is a build error (`Unknown FB type`).",
-        "es": "Una variable de tipo interfaz es un error de compilación (`Unknown FB type`)."
-      },
-      "a PRIVATE method called from outside its function block is rejected": {
-        "en": "A call of a `PRIVATE` method from outside its block is accepted: access specifiers are parsed and not enforced.",
-        "es": "Una llamada a un método `PRIVATE` desde fuera de su bloque se acepta: los especificadores de acceso se analizan y no se hacen cumplir."
-      },
-      "a PROTECTED method called from outside its function block is rejected": {
-        "en": "A call of a `PROTECTED` method from outside its block is accepted: access specifiers are parsed and not enforced.",
-        "es": "Una llamada a un método `PROTECTED` desde fuera de su bloque se acepta: los especificadores de acceso se analizan y no se hacen cumplir."
-      }
-    }
-  },
-  "CMP-042": {
-    "page": "language",
-    "en": "A function block or a global declared in another file is not found (`Unknown type`, `Unknown identifier`).",
-    "es": "Un bloque de función o una global declarados en otro archivo no se encuentran (`Unknown type`, `Unknown identifier`)."
-  },
-  "CMP-043": {
-    "page": "language",
-    "en": "With the profile of the `posix` target a program may use 256 bytes of WORK memory (variables, string literals and work buffers, one byte of it for the initialization flag). A 400-byte array, three `STRING` variables or an SFC chart of twenty steps is a build error.",
-    "es": "Con el perfil del destino `posix`, un programa puede usar 256 bytes de memoria WORK (variables, literales de cadena y buffers de trabajo, uno de ellos para la bandera de inicialización). Un arreglo de 400 bytes, tres variables `STRING` o un gráfico SFC de veinte pasos es un error de compilación."
-  },
   "CMP-051": {
     "page": "language",
     "en": "The loader refuses the artifact that the compiler builds for a program with an `LREAL`.",
@@ -124,10 +91,5 @@
     "page": "language",
     "en": "The statements of the debug map do not cover all their instructions: a statement ends before the next one starts, so some program counters resolve to no statement.",
     "es": "Las sentencias del mapa de depuración no cubren todas sus instrucciones: una sentencia termina antes de que empiece la siguiente, de modo que algunos contadores de programa no se resuelven a ninguna sentencia."
-  },
-  "LNG-008": {
-    "page": "language",
-    "en": "An FBD block that is a user function block from another file is refused (`Invalid FBD connection … unknown destination input port`): the FBD transpiler does not know its ports.",
-    "es": "Un bloque FBD que es un bloque de función de usuario de otro archivo se rechaza (`Invalid FBD connection … unknown destination input port`): el transpilador FBD no conoce sus puertos."
   }
 }

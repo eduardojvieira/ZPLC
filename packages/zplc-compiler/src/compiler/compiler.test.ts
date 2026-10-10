@@ -210,15 +210,16 @@ describe('target memory profiles', () => {
         })).toThrow(/CODE exceeds/);
     });
 
-    it('accepts exactly the target WORK bucket count and rejects one additional task with its source', () => {
-        const profile = { workSize: 2048, retainSize: 1024, codeSizeMax: 8192 };
-        const sources = Array.from({ length: 9 }, (_, index) => ({
+    it('takes as many programs as the profile has bytes for, and rejects the one that does not fit, with its source', () => {
+        // every program of the project draws on one WORK memory (CMP-043): there is no count of programs, only bytes
+        const profile = { workSize: 64, retainSize: 1024, codeSizeMax: 8192 };
+        const sources = Array.from({ length: 5 }, (_, index) => ({
             name: `Program${index}`,
             sourceRef: `src/Program${index}.st`,
-            content: `PROGRAM Program${index} END_PROGRAM`,
+            content: `PROGRAM Program${index}\nVAR\nBuffer : ARRAY[0..19] OF BYTE;\nEND_VAR\nEND_PROGRAM`,
         }));
         const config = (count: number) => ({
-            name: 'Buckets',
+            name: 'Programs',
             version: '1.0.0',
             tasks: sources.slice(0, count).map((source, index) => ({
                 name: `Task${index}`,
@@ -229,25 +230,28 @@ describe('target memory profiles', () => {
             })),
         });
 
-        expect(compileMultiTaskProject(config(8), sources.slice(0, 8), { memoryProfile: profile }).debugMap.memoryLayout)
-            .toMatchObject({ workSize: 2048, retainSize: 1024 });
+        // three of twenty bytes and the initialization flag are 61 of the 64 bytes
+        expect(compileMultiTaskProject(config(3), sources.slice(0, 3), { memoryProfile: profile }).debugMap.memoryLayout)
+            .toMatchObject({ workSize: 64, retainSize: 1024 });
         try {
-            compileMultiTaskProject(config(9), sources, { memoryProfile: profile });
-            throw new Error('expected WORK bucket admission failure');
+            compileMultiTaskProject(config(4), sources.slice(0, 4), { memoryProfile: profile });
+            throw new Error('expected a WORK allocation failure');
         } catch (error) {
-            expect(error).toMatchObject({ phase: 'codegen', sourceRef: 'src/Program8.st' });
-            expect(error).toHaveProperty('detail', 'WORK task buckets exceed the target memory profile');
+            expect(error).toMatchObject({ phase: 'codegen', sourceRef: 'src/Program3.st', line: 3 });
+            expect(error).toHaveProperty('detail', expect.stringContaining('81 bytes required, 64 bytes available'));
         }
     });
 
-    it('names the per-program WORK limit when a program does not fit its region', () => {
-        // 250 BOOLs, then a STRING that straddles the end of the 256-byte region.
+    it('names the bytes required, the bytes available and the largest consumers when the unit does not fit', () => {
+        // 250 BOOLs, then a STRING that straddles the end of a 256-byte profile.
         const overBudget = programWithBytes(250).replace('END_VAR', 'Big : STRING;\nEND_VAR');
         const build = () => compileMultiTaskProject(
             { name: 'Big', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval: 10, programs: ['Main'] }] },
             [{ name: 'Main', sourceRef: 'src/Big.st', content: overBudget }],
+            { memoryProfile: { workSize: 256, retainSize: 1, codeSizeMax: 0xB000 } },
         );
-        expect(build).toThrow(/WORK allocation exceeds the target memory profile \(limit: 256 bytes of WORK memory per program/);
+        expect(build).toThrow(/WORK allocation exceeds the target memory profile: 338 bytes required, 256 bytes available/);
+        expect(build).toThrow(/Largest consumers: Limits\.Big \(85 bytes\), Limits\.Value\d+ \(1 bytes\), Limits\.Value\d+ \(1 bytes\)/);
         try {
             build();
         } catch (error) {
@@ -387,29 +391,22 @@ describe('target memory profiles', () => {
         expect(() => compileToBinary(`PROGRAM Collision\nVAR\nSink : STRING;\nLocated AT %MB86 : BOOL;\nEND_VAR\nSink := 'abc';\nEND_PROGRAM`, { memoryProfile: profile })).toThrow(/string literal pool collides with WORK symbol/);
     });
 
-    it('keeps sub-bucket WORK profiles deterministic and preserves the first overflowing source', () => {
+    it('keeps profiles smaller than 256 bytes deterministic and preserves the first source that overflows', () => {
         const config = (programs: string[]) => ({
-            name: 'SmallBuckets', version: '1.0.0', tasks: programs.map((name) => ({ name, trigger: 'cyclic' as const, interval: 10, programs: [name] })),
+            name: 'SmallProfile', version: '1.0.0', tasks: programs.map((name) => ({ name, trigger: 'cyclic' as const, interval: 10, programs: [name] })),
         });
-        const sources = ['First', 'Second'].map((name) => ({ name, sourceRef: `src/${name}.st`, content: `PROGRAM ${name} END_PROGRAM` }));
-        const subBucket = () => compileMultiTaskProject(config(['First']), sources.slice(0, 1), {
-            memoryProfile: { workSize: 255, retainSize: 1, codeSizeMax: 0xB000 },
-        });
-        expect(subBucket).toThrow(/WORK task buckets/);
+        const sources = ['First', 'Second'].map((name) => ({
+            name, sourceRef: `src/${name}.st`, content: `PROGRAM ${name}\nVAR\nBuffer : ARRAY[0..59] OF BYTE;\nEND_VAR\nEND_PROGRAM`,
+        }));
+        // a profile of 100 bytes holds the first program, which a bucket of 256 bytes could not have been placed in
+        const profile = { workSize: 100, retainSize: 1, codeSizeMax: 0xB000 };
+        expect(() => compileMultiTaskProject(config(['First']), sources.slice(0, 1), { memoryProfile: profile })).not.toThrow();
+        const both = () => compileMultiTaskProject(config(['First', 'Second']), sources, { memoryProfile: profile });
+        expect(both).toThrow(/121 bytes required, 100 bytes available/);
         try {
-            subBucket();
+            both();
         } catch (error) {
-            expect(error).toMatchObject({ sourceRef: 'src/First.st' });
-        }
-        expect(() => compileMultiTaskProject(config(['First', 'Second']), sources, {
-            memoryProfile: { workSize: 511, retainSize: 1, codeSizeMax: 0xB000 },
-        })).toThrow(/WORK task buckets/);
-        try {
-            compileMultiTaskProject(config(['First', 'Second']), sources, {
-                memoryProfile: { workSize: 511, retainSize: 1, codeSizeMax: 0xB000 },
-            });
-        } catch (error) {
-            expect(error).toMatchObject({ sourceRef: 'src/Second.st' });
+            expect(error).toMatchObject({ sourceRef: 'src/Second.st', line: 3 });
         }
     });
 });
@@ -1232,26 +1229,32 @@ describe('Multi-Task Compiler', () => {
         );
         const fast = result.debugMap.pou.Fast!;
         const slow = result.debugMap.pou.Slow!;
-        const slowBase = result.programDetails[0]!.size;
+        // the unit is one piece of code: each program owns the range from its entry to the entry of the next
+        const slowBase = result.programDetails[1]!.entryPoint;
+        const slowEnd = slowBase + result.programDetails[1]!.size;
         const slowLine = slow.sourceMap[0]!.line;
         const slowPc = slow.sourceMap[0]!.pc;
-        const localSlowPc = slowOnly.debugMap.pou.Slow!.sourceMap[0]!.pc;
 
-        expect(slowPc).toBe(slowBase + localSlowPc);
+        // the first program's range starts at the start of the code and holds what comes before its entry
+        expect(slowBase).toBe(result.programDetails[0]!.size);
+        expect(slowEnd).toBe(result.codeSize);
         expect(slowPc).toBeGreaterThanOrEqual(slowBase);
-        expect(slowPc).toBeLessThan(slowBase + result.programDetails[1]!.size);
+        expect(slowPc).toBeLessThan(slowEnd);
         expect(slow.breakpoints).not.toHaveLength(0);
         for (const breakpoint of slow.breakpoints) {
             expect(breakpoint.pc).toBeGreaterThanOrEqual(slowBase);
-            expect(breakpoint.pc).toBeLessThan(slowBase + result.programDetails[1]!.size);
+            expect(breakpoint.pc).toBeLessThan(slowEnd);
         }
-        expect(fast.sourceMap).toEqual(fastOnly.debugMap.pou.Fast!.sourceMap);
+        for (const range of fast.sourceMap) expect(range.pc + range.length).toBeLessThanOrEqual(slowBase);
         expect(findSourceLine(result.debugMap, slowPc)).toEqual({ pou: 'Slow', line: slowLine });
         expect(findPC(result.debugMap, 'Slow', slowLine)).toBe(slowPc);
         expect(slow.entryPoint).toBe(result.tasks[1]!.entryPoint);
         expect(slow.entryPoint).toBe(result.programDetails[1]!.entryPoint);
+        expect(fast.entryPoint).toBe(result.tasks[0]!.entryPoint);
+        // a project of one program has its entry where its code starts
         expect(slowOnly.debugMap.pou.Slow!.entryPoint).toBe(slowOnly.tasks[0]!.entryPoint);
         expect(slowOnly.debugMap.pou.Slow!.entryPoint).toBe(slowOnly.programDetails[0]!.entryPoint);
+        expect(fastOnly.debugMap.pou.Fast!.sourceMap.map((range) => range.line)).toEqual(fast.sourceMap.map((range) => range.line));
         expect(fast).not.toBe(slow);
         expect(fast.sourceMap).not.toBe(slow.sourceMap);
         expect(fast.breakpoints).not.toBe(slow.breakpoints);

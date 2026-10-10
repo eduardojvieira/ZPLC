@@ -34,6 +34,8 @@ export interface SyntaxIssue extends SourceSpan {
 export interface CodegenWarning extends SourceSpan {
     code: 'IMPLICIT_NARROWING';
     message: string;
+    /** The file of a project the position belongs to; absent for a unit of one file. */
+    sourceRef?: string;
 }
 
 /** What a compile accepted but the language reference does not define (CMP-031: the `0x` form). */
@@ -50,11 +52,11 @@ export function compareSpans(a: SourceSpan, b: SourceSpan): number {
  * The errors of one phase in source order, without the same message reported twice at the same place
  * (an inlined function block body is visited once per call).
  */
-export function orderedUniqueErrors<T extends SourceSpan & { message: string }>(errors: readonly T[]): T[] {
+export function orderedUniqueErrors<T extends SourceSpan & { message: string; sourceRef?: string }>(errors: readonly T[]): T[] {
     const seen = new Set<string>();
     const unique: T[] = [];
     for (const error of [...errors].sort(compareSpans)) {
-        const key = `${error.line}:${error.column}:${error.message}`;
+        const key = `${error.sourceRef ?? ''}:${error.line}:${error.column}:${error.message}`;
         if (seen.has(key)) continue;
         seen.add(key);
         unique.push(error);
@@ -72,6 +74,8 @@ export function orderedUniqueErrors<T extends SourceSpan & { message: string }>(
 export class CodegenError extends Error {
     /** Every error of the generation, in source order; the thrown error is the first of them. */
     errors: CodegenError[] = [this];
+    /** The file of a project the position belongs to; absent for a unit of one file (CMP-042). */
+    sourceRef?: string;
 
     constructor(
         message: string,
