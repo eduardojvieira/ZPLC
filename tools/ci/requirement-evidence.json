@@ -314,7 +314,8 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"6 Simulate: connect, run, watch a value change","partial":true}
   ],
   "LNG-002": [
-    {"kind":"conformance","ref":"conformance/lng/lng-002-fbd-unknown-block.expect.json","test":"LNG-002 an FBD block the transpiler does not know is rejected"}
+    {"kind":"conformance","ref":"conformance/lng/lng-002-fbd-unknown-block.expect.json","test":"LNG-002 an FBD block the transpiler does not know is rejected"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/il/il.test.ts","test":"IL transpiler errors (LNG-002, LNG-017, LNG-018)"}
   ],
   "LNG-005": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"7 Breakpoint stops execution","partial":true}
@@ -322,13 +323,31 @@
   "LNG-009": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"9 Undo after switching tabs"}
   ],
+  "LNG-017": [
+    {"kind":"conformance","ref":"conformance/lng/lng-017-il-unbalanced-closing-parenthesis.expect.json","test":"LNG-017 an IL closing parenthesis without an opening one is an error on its line"},
+    {"kind":"conformance","ref":"conformance/lng/lng-017-il-unknown-mnemonic.expect.json","test":"LNG-017 an IL unknown mnemonic is an error on its line"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/il/il.test.ts","test":"IL transpiler errors (LNG-002, LNG-017, LNG-018)"}
+  ],
   "LNG-018": [
+    {"kind":"conformance","ref":"conformance/lng/lng-018-il-backward-jump-loop.expect.json","test":"LNG-018 an IL backward jump loops and restarts on every scan"},
+    {"kind":"conformance","ref":"conformance/lng/lng-018-il-conditional-jump-follows-input.expect.json","test":"LNG-018 an IL JMPCN skips the code between it and its label only while the condition holds"},
+    {"kind":"conformance","ref":"conformance/lng/lng-018-il-duplicate-label.expect.json","test":"LNG-018 an IL label defined twice is rejected with the second line"},
     {"kind":"conformance","ref":"conformance/lng/lng-018-il-jump-runs-every-scan.expect.json","test":"LNG-018 an IL program with a jump runs completely on every scan"},
-    {"kind":"conformance","ref":"conformance/lng/lng-018-il-jump-to-unknown-label.expect.json","test":"LNG-018 an IL jump to an unknown label is rejected"}
+    {"kind":"conformance","ref":"conformance/lng/lng-018-il-jump-to-unknown-label.expect.json","test":"LNG-018 an IL jump to an unknown label is rejected"},
+    {"kind":"conformance","ref":"conformance/lng/lng-018-il-unconditional-jump-to-unknown-label.expect.json","test":"LNG-018 an IL JMP to an unknown label is rejected with its line"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/il/il.test.ts","test":"IL transpiler errors (LNG-002, LNG-017, LNG-018)"}
   ],
   "LNG-019": [
+    {"kind":"conformance","ref":"conformance/lng/lng-019-il-arithmetic-in-parentheses.expect.json","test":"LNG-019 IL arithmetic and comparison in parentheses"},
+    {"kind":"conformance","ref":"conformance/lng/lng-019-il-conditional-call-and-return.expect.json","test":"LNG-019 IL CALC, CALCN and RETC"},
+    {"kind":"conformance","ref":"conformance/lng/lng-019-il-direct-address-operands.expect.json","test":"LNG-019 IL direct addresses as operands"},
+    {"kind":"conformance","ref":"conformance/lng/lng-019-il-negated-operators-set-and-reset.expect.json","test":"LNG-019 IL N modifiers, S and R"},
+    {"kind":"conformance","ref":"conformance/lng/lng-019-il-nested-parentheses.expect.json","test":"LNG-019 IL nested parenthesised operations"},
     {"kind":"conformance","ref":"conformance/lng/lng-019-il-parenthesised-operation.expect.json","test":"LNG-019 IL parenthesised operation"},
-    {"kind":"conformance","ref":"conformance/lng/lng-019-il-real-accumulator.expect.json","test":"LNG-019 IL accumulator holds a REAL"}
+    {"kind":"conformance","ref":"conformance/lng/lng-019-il-real-accumulator.expect.json","test":"LNG-019 IL accumulator holds a REAL"},
+    {"kind":"conformance","ref":"conformance/lng/lng-019-il-real-arithmetic-and-comparison.expect.json","test":"LNG-019 IL REAL arithmetic and comparison keep the REAL accumulator"},
+    {"kind":"conformance","ref":"conformance/lng/lng-019-il-time-accumulator.expect.json","test":"LNG-019 IL TIME accumulator"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/il/il.test.ts","test":"IL accumulator types (LNG-019)"}
   ],
   "LNG-020": [
     {"kind":"conformance","ref":"conformance/lng/lng-020-il-load-and-store.expect.json","test":"LNG-020 IL loads, combines and stores a BOOL"}
@@ -462,8 +481,8 @@
     {"kind":"unit","ref":"scripts/release-artifacts.test.mjs","test":"contains no paid credential, Developer ID, notarization or Windows certificate path (REL-003)","partial":true,"note":"asserts the text of the release workflow and packaging script by regular expression (VF-006, VF-021); the produced artifact is not inspected"}
   ],
   "REL-038": [
-    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"electron-builder.yml Windows signing (REL-003, REL-038)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"Windows installers carry unsigned in their variant until a channel is live (REL-038)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"electron-builder.yml Windows signing (REL-003, REL-038)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
     {"kind":"unit","ref":"scripts/release-artifacts.test.mjs","test":"release notes give the Windows first-run steps, the Smart App Control statement and each channel state (REL-038)"}
   ],
   "REL-011": [

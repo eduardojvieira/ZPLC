@@ -37,7 +37,11 @@ export type ILOperator =
     | 'GT' | 'GE' | 'EQ' | 'NE' | 'LT' | 'LE'
     | 'JMP' | 'JMPC' | 'JMPCN'
     | 'CAL' | 'CALC' | 'CALCN'
-    | 'RET' | 'RETC' | 'RETCN';
+    | 'RET' | 'RETC' | 'RETCN'
+    /** A label on a line of its own (no operation). */
+    | 'NOP'
+    /** The `)` that closes a parenthesised operation. */
+    | ')';
 
 /**
  * Operand types in IL
@@ -67,14 +71,14 @@ export interface ILFBParam {
 export interface ILInstruction {
     /** Optional label before this instruction */
     label?: string;
+    /** Line of the label, which can be above the line of the operator */
+    labelLine?: number;
     /** The operator (LD, ST, AND, etc.) */
     operator: ILOperator;
     /** The operand (variable, literal, address) */
     operand?: ILOperand;
-    /** Modifier: opening parenthesis for deferred evaluation */
+    /** Modifier: opening parenthesis for deferred evaluation (`AND(`); the matching `)` is its own `')'` instruction */
     hasOpenParen?: boolean;
-    /** Modifier: closing parenthesis for deferred evaluation */
-    hasCloseParen?: boolean;
     /** For CAL: function block parameters */
     fbParams?: ILFBParam[];
     /** Source line number */
@@ -272,6 +276,20 @@ export function parseIL(source: string): ILProgram {
         return { section, variables };
     };
 
+    // A name where the grammar wants one. The parameters and members of standard blocks are called
+    // S, R, LD, ...: the lexer makes them operator keywords, which are still valid names here.
+    const NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
+    const NOT_NAMES = new Set<ILTokenTypeValue>([
+        ILTokenType.STRING_LITERAL, ILTokenType.BOOL_TRUE, ILTokenType.BOOL_FALSE, ILTokenType.LABEL, ILTokenType.EOF,
+    ]);
+    const isNameToken = (tok: ILToken): boolean =>
+        tok.type === ILTokenType.IDENTIFIER || (!NOT_NAMES.has(tok.type) && NAME.test(tok.value));
+    const expectName = (message: string): ILToken => {
+        if (isNameToken(current())) return advance();
+        const tok = current();
+        throw new ILParseError(`${message}, got ${tok.type} '${tok.value}'`, tok.line, tok.column);
+    };
+
     // Parse operand (variable, literal, address, member access)
     const parseOperand = (): ILOperand => {
         const tok = current();
@@ -315,7 +333,7 @@ export function parseIL(source: string): ILProgram {
             // Check for member access (e.g., Timer.Q)
             if (check(ILTokenType.DOT)) {
                 advance(); // consume .
-                const memberTok = expect(ILTokenType.IDENTIFIER, 'Expected member name after .');
+                const memberTok = expectName('Expected member name after .');
                 return {
                     type: 'member_access',
                     value: `${base}.${memberTok.value}`,
@@ -340,7 +358,7 @@ export function parseIL(source: string): ILProgram {
         advance(); // consume (
 
         while (!check(ILTokenType.RPAREN) && !isAtEnd()) {
-            const nameTok = expect(ILTokenType.IDENTIFIER, 'Expected parameter name');
+            const nameTok = expectName('Expected parameter name');
             expect(ILTokenType.ASSIGN, 'Expected := after parameter name');
             const value = parseOperand();
 
@@ -356,27 +374,52 @@ export function parseIL(source: string): ILProgram {
         return params;
     };
 
-    // Parse a single instruction
-    const parseInstruction = (): ILInstruction | null => {
+    // Operators that may carry a parenthesised operand: `AND( B ... )`
+    const PAREN_OPERATORS = new Set<string>([
+        'AND', 'ANDN', 'OR', 'ORN', 'XOR', 'XORN',
+        'ADD', 'SUB', 'MUL', 'DIV', 'MOD',
+        'GT', 'GE', 'EQ', 'NE', 'LT', 'LE',
+    ]);
+
+    const startsOperand = (token: ILToken): boolean =>
+        token.type === ILTokenType.IDENTIFIER || token.type === ILTokenType.IO_ADDRESS ||
+        token.type === ILTokenType.INTEGER || token.type === ILTokenType.FLOAT ||
+        token.type === ILTokenType.TIME_LITERAL || token.type === ILTokenType.STRING_LITERAL ||
+        token.type === ILTokenType.BOOL_TRUE || token.type === ILTokenType.BOOL_FALSE;
+
+    // Parse a single instruction. Every path either consumes at least one token or throws, so the
+    // parser terminates on any input (LNG-017).
+    const parseInstruction = (): ILInstruction => {
         let label: string | undefined;
+        let labelLine: number | undefined;
 
         // Check for label
         if (current().type === ILTokenType.LABEL) {
-            label = advance().value;
+            const labelTok = advance();
+            label = labelTok.value;
+            labelLine = labelTok.line;
+        }
+
+        // `)` closes a parenthesised operation
+        if (check(ILTokenType.RPAREN)) {
+            const closing = advance();
+            return { label, labelLine, operator: ')', line: closing.line };
         }
 
         // Check for operator
         if (!isILOperator(current())) {
-            // If we have a label but no operator, that's valid (label-only line)
-            if (label) {
-                // Return a NOP-like instruction with just a label
-                return {
-                    label,
-                    operator: 'LD' as ILOperator, // Placeholder, will be handled specially
-                    line: peek(-1).line,
-                };
+            // A label with no operation after it is valid: it marks the next instruction.
+            if (label && (check(ILTokenType.LABEL) || check(ILTokenType.END_PROGRAM))) {
+                return { label, labelLine, operator: 'NOP', line: peek(-1).line };
             }
-            return null;
+            const tok = current();
+            const what = tok.type === ILTokenType.EOF ? 'end of file' : `'${tok.value}'`;
+            throw new ILParseError(
+                tok.type === ILTokenType.IDENTIFIER
+                    ? `Unknown mnemonic ${what}`
+                    : `Expected an IL operator, got ${what}`,
+                tok.line, tok.column,
+            );
         }
 
         const opTok = advance();
@@ -387,6 +430,10 @@ export function parseIL(source: string): ILProgram {
         let hasOpenParen = false;
         if (check(ILTokenType.LPAREN) &&
             !['CAL', 'CALC', 'CALCN'].includes(operator)) {
+            if (!PAREN_OPERATORS.has(operator)) {
+                const tok = current();
+                throw new ILParseError(`${operator} cannot take a parenthesised operation`, tok.line, tok.column);
+            }
             advance();
             hasOpenParen = true;
         }
@@ -404,7 +451,7 @@ export function parseIL(source: string): ILProgram {
                 // Check for member access (shouldn't happen for CAL, but handle it)
                 if (check(ILTokenType.DOT)) {
                     advance();
-                    const memberTok = expect(ILTokenType.IDENTIFIER, 'Expected member name');
+                    const memberTok = expectName('Expected member name');
                     operand = {
                         type: 'member_access',
                         value: `${fbNameTok.value}.${memberTok.value}`,
@@ -418,25 +465,21 @@ export function parseIL(source: string): ILProgram {
                 // Jump to label
                 const labelTok = expect(ILTokenType.IDENTIFIER, 'Expected label name');
                 operand = { type: 'label_ref', value: labelTok.value };
+            } else if (hasOpenParen && !startsOperand(current())) {
+                // `AND(` with the first inner instruction on the next line: no operand here
+                operand = undefined;
             } else {
                 // Normal operand
                 operand = parseOperand();
             }
         }
 
-        // Check for closing parenthesis modifier
-        let hasCloseParen = false;
-        if (check(ILTokenType.RPAREN)) {
-            advance();
-            hasCloseParen = true;
-        }
-
         return {
             label,
+            labelLine,
             operator,
             operand,
             hasOpenParen,
-            hasCloseParen,
             fbParams,
             line,
         };
@@ -466,11 +509,13 @@ export function parseIL(source: string): ILProgram {
         // Parse instructions until END_PROGRAM
         while (!check(ILTokenType.END_PROGRAM) && !isAtEnd()) {
             const instr = parseInstruction();
-            if (instr) {
-                if (instr.label) {
-                    labels.add(instr.label);
-                }
-                instructions.push(instr);
+            if (instr.label) {
+                labels.add(instr.label);
+            }
+            instructions.push(instr);
+            // `OR C )` : each closing parenthesis is an instruction of its own
+            while (check(ILTokenType.RPAREN)) {
+                instructions.push({ operator: ')', line: advance().line });
             }
         }
 

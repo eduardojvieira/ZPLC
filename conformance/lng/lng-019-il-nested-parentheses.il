@@ -1,0 +1,15 @@
+PROGRAM Nested
+VAR
+  A AT %IX0.0 : BOOL;
+  B AT %IX0.1 : BOOL;
+  C AT %IX0.2 : BOOL;
+  D AT %IX0.3 : BOOL;
+  X AT %QX0.0 : BOOL;
+END_VAR
+  LD A
+  OR( B
+  AND( C
+  ORN D )
+  )
+  ST X
+END_PROGRAM

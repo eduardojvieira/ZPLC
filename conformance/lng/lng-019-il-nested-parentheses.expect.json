@@ -1,0 +1,46 @@
+{
+  "requirement": "LNG-019",
+  "title": "IL nested parenthesised operations",
+  "scans": 3,
+  "scanMs": 10,
+  "inputs": [
+    {
+      "at": "%IX0.1",
+      "type": "BOOL",
+      "value": true,
+      "beforeScan": 1
+    },
+    {
+      "at": "%IX0.3",
+      "type": "BOOL",
+      "value": true,
+      "beforeScan": 2
+    },
+    {
+      "at": "%IX0.0",
+      "type": "BOOL",
+      "value": true,
+      "beforeScan": 3
+    }
+  ],
+  "expect": [
+    {
+      "at": "%QX0.0",
+      "type": "BOOL",
+      "value": true,
+      "afterScan": 1
+    },
+    {
+      "at": "%QX0.0",
+      "type": "BOOL",
+      "value": false,
+      "afterScan": 2
+    },
+    {
+      "at": "%QX0.0",
+      "type": "BOOL",
+      "value": true,
+      "afterScan": 3
+    }
+  ]
+}

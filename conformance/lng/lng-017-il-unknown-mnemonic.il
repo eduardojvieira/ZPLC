@@ -1,0 +1,9 @@
+PROGRAM Typo
+VAR
+  A : BOOL;
+  X : BOOL;
+END_VAR
+  LD A
+  ANDD A
+  ST X
+END_PROGRAM
