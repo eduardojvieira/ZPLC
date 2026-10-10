@@ -1,0 +1,11 @@
+FUNCTION_BLOCK Inc
+VAR_IN_OUT x : INT; END_VAR
+  x := x + 1;
+END_FUNCTION_BLOCK
+
+PROGRAM Main
+VAR
+  f : Inc;
+END_VAR
+  f();
+END_PROGRAM

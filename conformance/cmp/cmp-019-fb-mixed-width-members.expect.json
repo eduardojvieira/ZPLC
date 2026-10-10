@@ -1,0 +1,33 @@
+{
+  "requirement": "CMP-019",
+  "title": "function-block members of 8, 16 and 32 bits keep their own width",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": -1000
+    },
+    {
+      "at": "%QD1",
+      "type": "DINT",
+      "value": -100000
+    },
+    {
+      "at": "%QD2",
+      "type": "REAL",
+      "value": 2.5
+    },
+    {
+      "at": "%QB12",
+      "type": "SINT",
+      "value": -3
+    },
+    {
+      "at": "%QB13",
+      "type": "BYTE",
+      "value": 200
+    }
+  ]
+}

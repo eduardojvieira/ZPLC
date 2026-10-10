@@ -1,0 +1,8 @@
+{
+  "requirement": "CMP-019",
+  "title": "a function that returns a structure is rejected with a message, not built wrongly",
+  "build": "fails",
+  "messageIncludes": [
+    "returns Pt"
+  ]
+}

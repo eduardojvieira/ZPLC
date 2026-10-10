@@ -1,0 +1,10 @@
+PROGRAM Main
+VAR CONSTANT
+  K : INT := 5;
+END_VAR
+VAR
+  x : INT;
+END_VAR
+  K := 6;
+  x := K;
+END_PROGRAM

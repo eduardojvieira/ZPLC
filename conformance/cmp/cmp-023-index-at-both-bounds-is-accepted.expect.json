@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-023",
+  "title": "the first and the last element are reachable with a variable index",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 12
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 14
+    }
+  ]
+}

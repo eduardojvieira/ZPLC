@@ -714,6 +714,14 @@ export function tokenize(source: string): Token[] {
                     }
                 }
                 
+                // Type#Value: the value of an enumeration written with its type (CMP-020); the
+                // symbol table declares each value under that qualified name too.
+                if (isAlpha(current()) || current() === '_') {
+                    const value = readIdentifier();
+                    addToken(TokenType.IDENTIFIER, `${ident}#${value}`, startLine, startColumn);
+                    continue;
+                }
+
                 throw new LexerError(`Unknown typed literal prefix '${ident}'`, line, column);
             }
 

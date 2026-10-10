@@ -1,0 +1,13 @@
+{
+  "requirement": "CMP-024",
+  "title": "a reference given to a function parameter of the same type",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 42
+    }
+  ]
+}

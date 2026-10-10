@@ -1,0 +1,28 @@
+{
+  "requirement": "CMP-025",
+  "title": "BOOL, REAL, DINT and TIME variables hold their declared values",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QX0.0",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QD1",
+      "type": "REAL",
+      "value": 1.5
+    },
+    {
+      "at": "%QD2",
+      "type": "DINT",
+      "value": -70000
+    },
+    {
+      "at": "%QD3",
+      "type": "DINT",
+      "value": 2000
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "requirement": "CMP-021",
+  "title": "a string argument built before a call that builds strings itself is not overwritten",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 208
+    }
+  ]
+}

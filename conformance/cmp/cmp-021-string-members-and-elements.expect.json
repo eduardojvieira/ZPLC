@@ -1,0 +1,28 @@
+{
+  "requirement": "CMP-021",
+  "title": "strings in a structure and in an array hold their texts",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 7
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 4
+    },
+    {
+      "at": "%QW2",
+      "type": "INT",
+      "value": 42
+    },
+    {
+      "at": "%QX6.0",
+      "type": "BOOL",
+      "value": true
+    }
+  ]
+}

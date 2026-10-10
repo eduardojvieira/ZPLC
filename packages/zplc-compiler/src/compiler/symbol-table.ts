@@ -11,8 +11,8 @@
  *   - RETAIN: 0x4000-0x4FFF (Retentive Memory)
  */
 
-import { getDataTypeSize, getArrayTotalSize, isArrayType, DataType, VarSection } from './ast.ts';
-import type { STDataType, DataTypeValue, VarSectionValue, IOAddress, VarDecl, Program, ArrayType, CompilationUnit, Expression, Statement, ArrayLiteral } from './ast.ts';
+import { getDataTypeSize, getArrayElementCount, isArrayType, DataType, VarSection } from './ast.ts';
+import type { STDataType, DataTypeValue, VarSectionValue, IOAddress, VarDecl, Program, ArrayType, PointerType, CompilationUnit, Expression, Statement, InitialValue } from './ast.ts';
 import { getFB } from './stdlib/index.ts';
 import { MEMORY_REGION } from '../contract.generated.ts';
 
@@ -54,7 +54,7 @@ export interface Symbol {
     /** For function blocks and structs: member offsets */
     members: Map<string, number> | null;
     /** Initial value expression (for constants) */
-    initialValue: Expression | ArrayLiteral | null;
+    initialValue: InitialValue | null;
     /** Tags (like {publish}, {modbus:40001}) */
     tags?: Record<string, string | true>;
     /** Source line where this variable was declared (1-based) */
@@ -69,8 +69,22 @@ export interface UserFBDefinition {
     size: number;
     extends: string | null;  // Base FB name
     implements: string[];    // Interface names
-    members: Map<string, { offset: number; size: number; dataType: STDataType | ArrayType }>;
+    members: Map<string, MemberInfo>;
     methods: Map<string, MethodInfo>;  // Methods defined in this FB
+}
+
+/**
+ * One member of a user function block or structure.
+ */
+export interface MemberInfo {
+    offset: number;
+    size: number;
+    /** The declared type. For a VAR_IN_OUT member the slot holds the address of a variable of this type. */
+    dataType: STDataType | ArrayType;
+    /** Declaration section of the member (VAR_INPUT, VAR_IN_OUT, VAR_TEMP, ...), when it comes from a function block. */
+    section?: VarSectionValue;
+    /** The initial value the declaration gives, if any (CMP-025). */
+    initialValue?: InitialValue | null;
 }
 
 /**
@@ -79,9 +93,9 @@ export interface UserFBDefinition {
 export interface MethodInfo {
     name: string;
     returnType: STDataType | null;
-    inputs: { name: string; dataType: STDataType; size: number; mangledName?: string; initialValue?: Expression | null }[];
-    outputs: { name: string; dataType: STDataType; size: number; mangledName?: string; initialValue?: Expression | null }[];
-    locals: { name: string; dataType: STDataType; size: number; mangledName?: string; initialValue?: Expression | null }[];
+    inputs: { name: string; dataType: STDataType; size: number; mangledName?: string; initialValue?: InitialValue | null }[];
+    outputs: { name: string; dataType: STDataType; size: number; mangledName?: string; initialValue?: InitialValue | null }[];
+    locals: { name: string; dataType: STDataType; size: number; mangledName?: string; initialValue?: InitialValue | null }[];
     label: string;  // Code label for the method
     isAbstract: boolean;
     isFinal: boolean;
@@ -114,7 +128,41 @@ export interface MethodSignature {
 export interface UserStructDefinition {
     name: string;
     size: number;
-    members: Map<string, { offset: number; size: number; dataType: STDataType | ArrayType }>;
+    members: Map<string, MemberInfo>;
+}
+
+/** Bytes of the slot a VAR_IN_OUT member (and a REF_TO variable) keeps: the address of the referenced variable. */
+export const REFERENCE_SIZE = 4;
+
+/**
+ * Capacity and character width of a STRING or WSTRING type name: `STRING`, `STRING[20]`,
+ * `WSTRING`, `WSTRING[10]`. Null for any other type.
+ */
+export function parseStringType(type: unknown): { wide: boolean; capacity: number } | null {
+    if (typeof type !== 'string') return null;
+    const match = /^(W?STRING)(?:\[(\d+)\])?$/i.exec(type);
+    if (!match) return null;
+    const wide = match[1].toUpperCase() === 'WSTRING';
+    return { wide, capacity: match[2] === undefined ? 80 : parseInt(match[2], 10) };
+}
+
+/** A type as the language writes it: `INT`, `STRING[20]`, `REF_TO INT`, `ARRAY[0..3] OF DINT`. */
+export function typeToString(type: unknown): string {
+    if (typeof type === 'string') return type;
+    if (typeof type === 'object' && type !== null) {
+        const kind = (type as { kind?: string }).kind;
+        if (kind === 'PointerType') return `REF_TO ${typeToString((type as PointerType).baseType)}`;
+        if (kind === 'ArrayType') {
+            const array = type as ArrayType;
+            return `ARRAY[${array.dimensions.map((d) => `${d.lowerBound}..${d.upperBound}`).join(', ')}] OF ${typeToString(array.elementType)}`;
+        }
+    }
+    return '?';
+}
+
+/** Bytes a string of this capacity takes: the header, the characters and the terminator. */
+export function stringTotalSize(wide: boolean, capacity: number): number {
+    return 4 + capacity * (wide ? 2 : 1) + (wide ? 2 : 1);
 }
 
 /**
@@ -190,9 +238,7 @@ export class SymbolTable {
             throw new Error(`Symbol '${decl.name}' already defined`);
         }
 
-        const varSize = isArrayType(decl.dataType as any)
-            ? getArrayTotalSize(decl.dataType as any)
-            : this.getTypeSizeByName(decl.dataType as any);
+        const varSize = this.sizeOf(decl.dataType);
 
         let address: number;
 
@@ -344,12 +390,20 @@ export class SymbolTable {
         }
 
         if (expr.kind === 'ArrayAccess') {
-            // NOTE: For now we only support constant array indexing in resolveMemberPath 
-            // if it's used for target address calculation in simple ways.
-            // But usually ArrayAccess address is calculated at runtime with MUL/ADD instructions.
-            // However, nested member access AFTER an array access (e.g., arr[1].Member) 
-            // would need this.
-            throw new Error(`Array access in member path not fully implemented for codegen yet`);
+            // Only a path whose indices are all constants has one address; the code generator
+            // computes the others at run time (it does not use this method for them).
+            const array = this.resolveMemberPath(expr.array);
+            if (!isArrayType(array.dataType as STDataType)) throw new Error('Indexed value is not an array');
+            const type = array.dataType as unknown as ArrayType;
+            const stride = this.sizeOf(type.elementType);
+            let element = 0;
+            type.dimensions.forEach((dimension, d) => {
+                const index = expr.indices[d];
+                if (!index || index.kind !== 'IntLiteral') throw new Error('Array index is not a constant');
+                const inner = type.dimensions.slice(d + 1).reduce((n, dim) => n * (dim.upperBound - dim.lowerBound + 1), 1);
+                element += (index.value - dimension.lowerBound) * inner;
+            });
+            return { address: array.address + element * stride, dataType: type.elementType };
         }
 
         throw new Error(`Invalid expression kind in member path: ${expr.kind}`);
@@ -447,21 +501,49 @@ export class SymbolTable {
      * Get size of a data type (including user FBs, Structs, and Enums).
      */
     getTypeSizeByName(typeName: STDataType): number {
-        if (typeof typeName === 'string') {
-            const userFB = this.userFBs.get(typeName);
+        return this.sizeOf(typeName);
+    }
+
+    /**
+     * Bytes a variable of this type takes, whatever the type is: an elementary type, a string with its
+     * capacity, a structure, a function block, an enumeration, a pointer or an array of any of them.
+     */
+    sizeOf(type: STDataType | ArrayType): number {
+        if (isArrayType(type as STDataType)) {
+            const array = type as ArrayType;
+            return getArrayElementCount(array) * this.sizeOf(array.elementType);
+        }
+
+        if (typeof type === 'string') {
+            const userFB = this.userFBs.get(type);
             if (userFB) return userFB.size;
 
-            const structDef = this.userStructs.get(typeName);
+            const structDef = this.userStructs.get(type);
             if (structDef) return structDef.size;
 
-            const enumDef = this.userEnums.get(typeName);
+            const enumDef = this.userEnums.get(type);
             if (enumDef) return getDataTypeSize(enumDef.baseType);
 
-            const fbDef = getFB(typeName as DataTypeValue);
+            const text = parseStringType(type);
+            if (text) return stringTotalSize(text.wide, text.capacity);
+
+            const fbDef = getFB(type as DataTypeValue);
             if (fbDef) return fbDef.size;
         }
 
-        return getDataTypeSize(typeName);
+        return getDataTypeSize(type as STDataType);
+    }
+
+    /**
+     * The type a value of `type` is stored and computed as: an enumeration is its base type
+     * (INT), everything else is itself.
+     */
+    effectiveType(type: STDataType | ArrayType): STDataType | ArrayType {
+        if (typeof type === 'string') {
+            const enumDef = this.userEnums.get(type);
+            if (enumDef) return enumDef.baseType;
+        }
+        return type;
     }
 
     /**
@@ -535,17 +617,20 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
         if (unit.typeDefinitions) {
             for (const typeDef of unit.typeDefinitions) {
                 if (typeDef.kind === 'StructDecl') {
-                    const members = new Map<string, { offset: number; size: number; dataType: STDataType | ArrayType }>();
+                    const members = new Map<string, MemberInfo>();
                     let currentOffset = 0;
                     for (const member of typeDef.members) {
-                        const memberSize = isArrayType(member.dataType as any)
-                            ? getArrayTotalSize(member.dataType as any)
-                            : table.getTypeSizeByName(member.dataType as any);
+                        const memberSize = table.sizeOf(member.dataType);
 
                         const alignment = Math.min(memberSize, 4); // Align struct members
                         currentOffset = alignTo(currentOffset, alignment);
 
-                        members.set(member.name, { offset: currentOffset, size: memberSize, dataType: member.dataType as any });
+                        members.set(member.name, {
+                            offset: currentOffset,
+                            size: memberSize,
+                            dataType: member.dataType as any,
+                            initialValue: member.initialValue,
+                        });
                         currentOffset += memberSize;
                     }
                     table.addStructDefinition({
@@ -591,17 +676,13 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
                     const inputs = method.inputs.map(v => ({
                         name: v.name,
                         dataType: v.dataType as DataTypeValue,
-                        size: isArrayType(v.dataType) 
-                            ? getArrayTotalSize(v.dataType) 
-                            : table.getTypeSizeByName(v.dataType)
+                        size: table.sizeOf(v.dataType)
                     }));
                     
                     const outputs = method.outputs.map(v => ({
                         name: v.name,
                         dataType: v.dataType as DataTypeValue,
-                        size: isArrayType(v.dataType)
-                            ? getArrayTotalSize(v.dataType)
-                            : table.getTypeSizeByName(v.dataType)
+                        size: table.sizeOf(v.dataType)
                     }));
                     
                     methodSigs.set(method.name, {
@@ -638,7 +719,7 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
             const fb = unprocessedFBs[fbIndex];
             unprocessedFBs.splice(fbIndex, 1);
 
-            const fbMembers = new Map<string, { offset: number; size: number; dataType: STDataType | ArrayType }>();
+            const fbMembers = new Map<string, MemberInfo>();
             const methods = new Map<string, MethodInfo>();
             let currentOffset = 0;
 
@@ -666,14 +747,19 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
                 // For now, allow shadowing but it effectively hides the base member in symbol lookup
                 // (though memory addresses are distinct if offsets are different, but here we append)
                 
-                const size = isArrayType(v.dataType as any)
-                    ? getArrayTotalSize(v.dataType as any)
-                    : table.getTypeSizeByName(v.dataType as any);
+                // A VAR_IN_OUT member keeps the address of the caller's variable, not a copy of its value (CMP-028)
+                const size = v.section === VarSection.VAR_IN_OUT ? REFERENCE_SIZE : table.sizeOf(v.dataType);
 
                 const alignment = Math.min(size, 4);
                 currentOffset = alignTo(currentOffset, alignment);
 
-                fbMembers.set(v.name, { offset: currentOffset, size, dataType: v.dataType as any });
+                fbMembers.set(v.name, {
+                    offset: currentOffset,
+                    size,
+                    dataType: v.dataType as any,
+                    section: v.section,
+                    initialValue: v.initialValue,
+                });
                 currentOffset += size;
             }
 
@@ -694,9 +780,7 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
                     return {
                         name: v.name,
                         dataType: v.dataType as DataTypeValue,
-                        size: isArrayType(v.dataType)
-                            ? getArrayTotalSize(v.dataType)
-                            : table.getTypeSizeByName(v.dataType),
+                        size: table.sizeOf(v.dataType),
                         mangledName,
                         initialValue: v.initialValue,
                     };
@@ -889,7 +973,8 @@ export function getLoadStoreSuffix(dataType: DataTypeValue | string): '8' | '16'
 
 /**
  * Get the appropriate load/store size for a member access.
- * Uses either the user FB definitions or the stdlib registry.
+ * Uses the user function block and structure definitions, then the stdlib registry.
+ * The type name is looked up as written: a user type is case-sensitive here, as in the table.
  */
 export function getMemberLoadStoreSuffix(
     table: SymbolTable,
@@ -898,21 +983,27 @@ export function getMemberLoadStoreSuffix(
 ): '8' | '16' | '32' | '64' {
     const typeName = fbType.toUpperCase();
     let name = memberName.toUpperCase();
-    
+
     // If name starts with dot (from some parser outputs), strip it
     if (name.startsWith('.')) name = name.substring(1);
 
-    // 1. Check User-Defined FB
-    const userFB = table.getFBDefinition(typeName);
-    if (userFB) {
-        const member = userFB.members.get(memberName) || userFB.members.get(name);
+    const bySize = (size: number): '8' | '16' | '32' | '64' | undefined => {
+        switch (size) {
+            case 1: return '8';
+            case 2: return '16';
+            case 4: return '32';
+            case 8: return '64';
+        }
+        return undefined;
+    };
+
+    // 1. User-defined function blocks and structures
+    const userMembers = table.getFBDefinition(fbType)?.members ?? table.getStructDefinition(fbType)?.members;
+    if (userMembers) {
+        const member = userMembers.get(memberName) || userMembers.get(name);
         if (member) {
-            switch (member.size) {
-                case 1: return '8';
-                case 2: return '16';
-                case 4: return '32';
-                case 8: return '64';
-            }
+            const suffix = bySize(member.size);
+            if (suffix) return suffix;
         }
     }
 
@@ -926,22 +1017,16 @@ export function getMemberLoadStoreSuffix(
         );
         
         if (member) {
-            switch (member.size) {
-                case 1: return '8';
-                case 2: return '16';
-                case 4: return '32';
-                case 8: return '64';
-            }
+            const suffix = bySize(member.size);
+            if (suffix) return suffix;
         }
     }
 
     // 3. Last resort: check if it's a known elementary type (though rare in MemberAccess)
     const size = getDataTypeSize(name as DataTypeValue);
     if (size > 0) {
-        if (size === 1) return '8';
-        if (size === 2) return '16';
-        if (size === 4) return '32';
-        if (size === 8) return '64';
+        const suffix = bySize(size);
+        if (suffix) return suffix;
     }
 
     return '8'; // Default to 8-bit (safer for BOOLs)

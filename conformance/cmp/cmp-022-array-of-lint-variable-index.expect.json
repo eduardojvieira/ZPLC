@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-022",
+  "title": "a LINT array element written and read with a variable index keeps both words",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QX0.0",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX0.1",
+      "type": "BOOL",
+      "value": true
+    }
+  ]
+}

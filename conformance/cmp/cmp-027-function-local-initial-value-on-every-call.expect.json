@@ -1,0 +1,20 @@
+{
+  "requirement": "CMP-027",
+  "title": "a function local starts from its declared value on every call",
+  "scans": 3,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 11,
+      "afterScan": 3
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 12,
+      "afterScan": 3
+    }
+  ]
+}

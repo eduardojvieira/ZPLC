@@ -1,0 +1,5 @@
+PROGRAM Main
+VAR
+  s : STRING[3] := 'abcd';
+END_VAR
+END_PROGRAM

@@ -56,6 +56,38 @@ El compilador y la stdlib muestran uso de ST con:
 - funciones de string como `LEN`, `CONCAT`, `LEFT`, `RIGHT`, `MID`
 - llamadas a FBs de comunicación cuando el contrato compiler/runtime los respalda
 
+## Datos, almacenamiento y valores iniciales
+
+Cada regla de abajo está cubierta por un caso de conformidad en `conformance/cmp` (CMP-019 a CMP-028).
+
+### Estructuras, enumeraciones y arreglos
+
+- Un miembro de una estructura o de un bloque de función se lee y se escribe con su ancho declarado (`BYTE` 1 byte, `INT` 2, `DINT` y `REAL` 4, `LINT` 8). Los miembros se anidan a cualquier profundidad: `a.b.c`.
+- Una estructura o un arreglo completo se asigna, y se pasa a una función, por valor: se copian todos los bytes, y los dos lados deben ser del mismo tipo.
+- Una estructura toma un valor inicial de la forma `(x := 1, y := 2)`. Un campo omitido conserva el valor por defecto de su declaración (`x : INT := 7;` dentro del `TYPE`).
+- Una enumeración se guarda como `INT`. Un valor se puede escribir `Tipo#Valor`, que además distingue un nombre de valor que dos enumeraciones comparten.
+- Un arreglo tiene de una a tres dimensiones, límites inferiores negativos y límites que son expresiones constantes (`ARRAY[-N .. N * 2] OF INT`). Sus elementos pueden ser de cualquier tipo: una estructura, una cadena, `LINT`. Un valor inicial es una lista `[1, 2, 3]`, listas anidadas para más dimensiones y cuentas de repetición `[100(0)]`.
+- Un índice constante fuera de los límites es un error de compilación. Un índice variable fuera de los límites termina el scan con la falla de VM `ZPLC_VM_OUT_OF_BOUNDS` (violación de acceso a memoria). El control está activo por defecto; la opción del compilador `arrayBoundsCheck: false` lo quita.
+
+### Cadenas
+
+- `STRING` tiene 80 caracteres, `STRING[n]` tiene `n`, `WSTRING[n]` tiene `n` caracteres de 16 bits.
+- Una asignación copia los caracteres, hasta la capacidad del destino. Un literal más largo que la capacidad de su variable es un error de compilación.
+- Una función de cadena nunca modifica sus argumentos: `LEFT`, `RIGHT`, `MID`, `CONCAT`, `INSERT`, `DELETE` y `REPLACE` devuelven una cadena nueva. `COPY(src, dst)` y `CLEAR(s)` escriben en su argumento, como dicen sus nombres.
+- `s := LEFT(s, n)` (y `RIGHT`, `MID`, `DELETE`, `CONCAT` de la propia variable) trabaja sobre la variable. Cualquier otra función que arma una cadena usa un buffer de la memoria WORK del programa, que cuenta contra los bytes del programa.
+- `WSTRING` se puede declarar, inicializar, asignar y medir con `LEN`. Las demás funciones de cadena y la comparación la rechazan con un mensaje.
+
+### Valores iniciales y constantes
+
+- En el primer scan toda variable tiene su valor inicial declarado, o el valor por defecto de su tipo: cero, `FALSE`, la cadena vacía, `NULL`. Eso cubre las variables de un programa, `VAR_GLOBAL`, cada miembro de cada instancia de bloque de función, los campos de estructura y los elementos de arreglo.
+- Un local de función y un `VAR_TEMP` de un bloque de función vuelven a tener su valor declarado en cada llamada, de modo que una función no guarda estado. Un `VAR` de un bloque de función conserva su valor de una llamada a otra.
+- `VAR CONSTANT` y `VAR_GLOBAL CONSTANT` conservan su valor, y asignar a una constante es un error de compilación.
+
+### VAR_IN_OUT y referencias
+
+- Un `VAR_IN_OUT` de un bloque de función se pasa por referencia: lo que el cuerpo cambia lo ve quien llama. La variable debe ser del mismo tipo y no puede ser una constante. Un bloque llamado sin enlazarlo termina el scan con una falla de VM.
+- `REF_TO`, `REF()` y `^` se controlan por tipo: `REF(x)` es una referencia al tipo de `x` y solo entra en un `REF_TO` de ese tipo. Una variable `REF_TO` es `NULL` hasta que se le asigna algo, y desreferenciar `NULL` termina el scan con la falla de VM `ZPLC_VM_OUT_OF_BOUNDS`.
+
 ## Entrada a la biblioteca estándar
 
 Ver [Biblioteca Estándar](./stdlib.md).

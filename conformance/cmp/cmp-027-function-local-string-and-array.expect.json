@@ -1,0 +1,20 @@
+{
+  "requirement": "CMP-027",
+  "title": "a function local string and array are empty again on every call",
+  "scans": 3,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 23,
+      "afterScan": 1
+    },
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 23,
+      "afterScan": 3
+    }
+  ]
+}

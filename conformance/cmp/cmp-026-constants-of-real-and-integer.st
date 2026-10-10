@@ -1,0 +1,13 @@
+VAR_GLOBAL CONSTANT
+  HALF : REAL := 0.5;
+  STEP : INT := 4;
+END_VAR
+
+PROGRAM Main
+VAR
+  r AT %QD0 : REAL;
+  n AT %QW2 : INT;
+END_VAR
+  r := HALF * 3.0;
+  n := STEP * 3;
+END_PROGRAM

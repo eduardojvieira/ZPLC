@@ -1,0 +1,13 @@
+{
+  "requirement": "CMP-026",
+  "title": "a CONSTANT of a function block holds its value in the body",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 100
+    }
+  ]
+}

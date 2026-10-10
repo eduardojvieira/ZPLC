@@ -1,0 +1,23 @@
+{
+  "requirement": "CMP-022",
+  "title": "an array of structures initialised with structure values",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 2
+    },
+    {
+      "at": "%QD1",
+      "type": "DINT",
+      "value": 100000
+    },
+    {
+      "at": "%QD2",
+      "type": "DINT",
+      "value": 200000
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+PROGRAM Main
+VAR
+  a : ARRAY[0..3] OF INT;
+END_VAR
+  a[-1] := 1;
+END_PROGRAM

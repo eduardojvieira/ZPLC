@@ -33,6 +33,364 @@ import type { Expression } from '../ast.ts';
 // String memory layout: [len:2][cap:2][data:cap+1]
 // Constants defined in zplc_isa.h for consistency
 
+/** "To the end of the string" for the length argument of the append routine. */
+const REST = 0x7FFF;
+
+/**
+ * A function that returns a string returns a work buffer, never one of its arguments: a string
+ * function MUST NOT modify its arguments (CMP-021). The buffer holds as many characters as the
+ * first argument can plus `extra`, and it is empty.
+ */
+function newString(ctx: CodeGenContext, first: Expression, extra = 0): number {
+    if (!ctx.stringTemp) ctx.fail('This string function needs the code generator of a program');
+    const capacity = Math.min(0xFFFF, (ctx.stringCapacity?.(first) ?? 80) + extra);
+    const address = ctx.stringTemp(capacity);
+    ctx.emit(`    PUSH16 ${address}`);
+    ctx.emit('    STRCLR');
+    return address;
+}
+
+/** Copy the string `source` into the buffer at `address`. */
+function copyInto(ctx: CodeGenContext, address: number, source: Expression): void {
+    ctx.emitExpression(source);
+    ctx.emit(`    PUSH16 ${address}`);
+    ctx.emit('    STRCPY');
+}
+
+/** Append characters of `source` to the buffer at `address`: [dst src start n] for the append routine. */
+function append(ctx: CodeGenContext, address: number, source: Expression, start: () => void, count: () => void): void {
+    ctx.emit(`    PUSH16 ${address}`);
+    ctx.emitExpression(source);
+    start();
+    count();
+    callHelper(ctx, 'strappend');
+}
+
+function callHelper(ctx: CodeGenContext, name: 'strappend' | 'strfind'): void {
+    if (!ctx.callHelper) ctx.fail('This string function needs the code generator of a program');
+    ctx.callHelper(name);
+}
+
+/** Six 32-bit work cells that the string routines share: none of them calls another of them. */
+export interface StringCells { c0: number; c1: number; c2: number; c3: number; c4: number; c5: number }
+
+const at = (n: number) => `0x${n.toString(16).padStart(4, '0')}`;
+
+/**
+ * Routine: append up to n characters of src, from the 0-based position start, to dst.
+ * [dst src start n] -> []. A negative start or n is 0; what does not exist in src or does not fit
+ * the capacity of dst is left out.
+ */
+export function strappendHelper(label: string, cells: StringCells, memcpyLabel: string): string[] {
+    const dst = at(cells.c0), src = at(cells.c1), start = at(cells.c2), n = at(cells.c3);
+    return [
+        `${label}:`,
+        `    STORE32 ${n}`,
+        `    STORE32 ${start}`,
+        `    STORE32 ${src}`,
+        `    STORE32 ${dst}`,
+        `    LOAD32 ${n}`,
+        `    PUSH8 0`,
+        `    LT`,
+        `    JZ ${label}_n_ok`,
+        `    PUSH8 0`,
+        `    STORE32 ${n}`,
+        `${label}_n_ok:`,
+        `    LOAD32 ${start}`,
+        `    PUSH8 0`,
+        `    LT`,
+        `    JZ ${label}_s_ok`,
+        `    PUSH8 0`,
+        `    STORE32 ${start}`,
+        `${label}_s_ok:             ; n and start are not negative`,
+        `    LOAD32 ${src}`,
+        `    STRLEN`,
+        `    LOAD32 ${start}`,
+        `    SUB                 ; [avail] characters of src from start`,
+        `    DUP`,
+        `    LOAD32 ${n}`,
+        `    LT                  ; [avail avail<n]`,
+        `    JZ ${label}_keep_n`,
+        `    STORE32 ${n}         ; n := avail`,
+        `    JMP ${label}_clamped`,
+        `${label}_keep_n:`,
+        `    DROP`,
+        `${label}_clamped:`,
+        `    LOAD32 ${n}`,
+        `    PUSH8 0`,
+        `    LT`,
+        `    JZ ${label}_a_ok`,
+        `    PUSH8 0`,
+        `    STORE32 ${n}`,
+        `${label}_a_ok:             ; room: capacity of dst minus its length`,
+        `    LOAD32 ${dst}`,
+        `    PUSH8 2`,
+        `    ADD`,
+        `    LOADI16`,
+        `    LOAD32 ${dst}`,
+        `    LOADI16`,
+        `    SUB                 ; [room]`,
+        `    DUP`,
+        `    LOAD32 ${n}`,
+        `    LT                  ; [room room<n]`,
+        `    JZ ${label}_fits`,
+        `    DUP`,
+        `    PUSH8 0`,
+        `    LT`,
+        `    JZ ${label}_room_ok`,
+        `    DROP`,
+        `    PUSH8 0`,
+        `${label}_room_ok:`,
+        `    STORE32 ${n}         ; n := room`,
+        `    JMP ${label}_copy`,
+        `${label}_fits:`,
+        `    DROP`,
+        `${label}_copy:`,
+        `    LOAD32 ${dst}`,
+        `    LOADI16`,
+        `    LOAD32 ${dst}`,
+        `    ADD`,
+        `    PUSH8 4`,
+        `    ADD                 ; [dst + 4 + length]`,
+        `    LOAD32 ${src}`,
+        `    PUSH8 4`,
+        `    ADD`,
+        `    LOAD32 ${start}`,
+        `    ADD                 ; [.. src + 4 + start]`,
+        `    LOAD32 ${n}`,
+        `    CALL ${memcpyLabel}`,
+        `    LOAD32 ${dst}`,
+        `    LOADI16`,
+        `    LOAD32 ${n}`,
+        `    ADD                 ; [new length]`,
+        `    LOAD32 ${dst}`,
+        `    OVER`,
+        `    STOREI16            ; dst.length := new length`,
+        `    LOAD32 ${dst}`,
+        `    ADD`,
+        `    PUSH8 4`,
+        `    ADD`,
+        `    PUSH8 0`,
+        `    STOREI8             ; terminator`,
+        `    RET`,
+    ];
+}
+
+/**
+ * Routine: keep, in place, up to n characters of s from the 0-based position start.
+ * [s start n] -> []. LEFT, RIGHT and MID of a variable assigned to that same variable.
+ */
+export function strsubHelper(label: string, cells: StringCells, memcpyLabel: string): string[] {
+    const s = at(cells.c0), start = at(cells.c1), n = at(cells.c2);
+    return [
+        `${label}:`,
+        `    STORE32 ${n}`,
+        `    STORE32 ${start}`,
+        `    STORE32 ${s}`,
+        `    LOAD32 ${n}`,
+        `    PUSH8 0`,
+        `    LT`,
+        `    JZ ${label}_n_ok`,
+        `    PUSH8 0`,
+        `    STORE32 ${n}`,
+        `${label}_n_ok:`,
+        `    LOAD32 ${start}`,
+        `    PUSH8 0`,
+        `    LT`,
+        `    JZ ${label}_s_ok`,
+        `    PUSH8 0`,
+        `    STORE32 ${start}`,
+        `${label}_s_ok:`,
+        `    LOAD32 ${s}`,
+        `    STRLEN`,
+        `    LOAD32 ${start}`,
+        `    SUB                 ; [avail]`,
+        `    DUP`,
+        `    LOAD32 ${n}`,
+        `    LT`,
+        `    JZ ${label}_keep_n`,
+        `    STORE32 ${n}`,
+        `    JMP ${label}_clamped`,
+        `${label}_keep_n:`,
+        `    DROP`,
+        `${label}_clamped:`,
+        `    LOAD32 ${n}`,
+        `    PUSH8 0`,
+        `    LT`,
+        `    JZ ${label}_a_ok`,
+        `    PUSH8 0`,
+        `    STORE32 ${n}`,
+        `${label}_a_ok:`,
+        `    LOAD32 ${s}`,
+        `    PUSH8 4`,
+        `    ADD                 ; [s + 4]`,
+        `    DUP`,
+        `    LOAD32 ${start}`,
+        `    ADD                 ; [dst src] the characters move towards the start`,
+        `    LOAD32 ${n}`,
+        `    CALL ${memcpyLabel}`,
+        `    LOAD32 ${n}`,
+        `    LOAD32 ${s}`,
+        `    OVER`,
+        `    STOREI16            ; s.length := n`,
+        `    LOAD32 ${s}`,
+        `    ADD`,
+        `    PUSH8 4`,
+        `    ADD`,
+        `    PUSH8 0`,
+        `    STOREI8             ; terminator`,
+        `    RET`,
+    ];
+}
+
+/**
+ * Routine: remove, in place, up to n characters of s from the 0-based position pos.
+ * [s pos n] -> []. DELETE of a variable assigned to that same variable.
+ */
+export function strdelHelper(label: string, cells: StringCells, memcpyLabel: string): string[] {
+    const s = at(cells.c0), pos = at(cells.c1), n = at(cells.c2), len = at(cells.c3);
+    return [
+        `${label}:`,
+        `    STORE32 ${n}`,
+        `    STORE32 ${pos}`,
+        `    STORE32 ${s}`,
+        `    LOAD32 ${s}`,
+        `    STRLEN`,
+        `    STORE32 ${len}`,
+        `    LOAD32 ${n}`,
+        `    PUSH8 0`,
+        `    LT`,
+        `    JZ ${label}_n_ok`,
+        `    PUSH8 0`,
+        `    STORE32 ${n}`,
+        `${label}_n_ok:`,
+        `    LOAD32 ${pos}`,
+        `    PUSH8 0`,
+        `    LT`,
+        `    JZ ${label}_p_ok`,
+        `    PUSH8 0`,
+        `    STORE32 ${pos}`,
+        `${label}_p_ok:`,
+        `    LOAD32 ${pos}`,
+        `    LOAD32 ${len}`,
+        `    LT`,
+        `    JNZ ${label}_inside`,
+        `    RET                 ; nothing at or after pos`,
+        `${label}_inside:`,
+        `    LOAD32 ${len}`,
+        `    LOAD32 ${pos}`,
+        `    SUB                 ; [avail]`,
+        `    DUP`,
+        `    LOAD32 ${n}`,
+        `    LT`,
+        `    JZ ${label}_keep_n`,
+        `    STORE32 ${n}`,
+        `    JMP ${label}_move`,
+        `${label}_keep_n:`,
+        `    DROP`,
+        `${label}_move:`,
+        `    LOAD32 ${s}`,
+        `    PUSH8 4`,
+        `    ADD`,
+        `    LOAD32 ${pos}`,
+        `    ADD                 ; [dst = s + 4 + pos]`,
+        `    DUP`,
+        `    LOAD32 ${n}`,
+        `    ADD                 ; [dst src = dst + n]`,
+        `    LOAD32 ${len}`,
+        `    LOAD32 ${pos}`,
+        `    SUB`,
+        `    LOAD32 ${n}`,
+        `    SUB                 ; [dst src tail]`,
+        `    CALL ${memcpyLabel}`,
+        `    LOAD32 ${len}`,
+        `    LOAD32 ${n}`,
+        `    SUB                 ; [new length]`,
+        `    LOAD32 ${s}`,
+        `    OVER`,
+        `    STOREI16`,
+        `    LOAD32 ${s}`,
+        `    ADD`,
+        `    PUSH8 4`,
+        `    ADD`,
+        `    PUSH8 0`,
+        `    STOREI8`,
+        `    RET`,
+    ];
+}
+
+/**
+ * Routine: 1-based position of the first occurrence of s2 in s1, 0 when there is none (and for an
+ * empty s2). [s1 s2] -> [pos].
+ */
+export function strfindHelper(label: string, cells: StringCells): string[] {
+    const s1 = at(cells.c0), s2 = at(cells.c1), l1 = at(cells.c2), l2 = at(cells.c3), i = at(cells.c4), j = at(cells.c5);
+    return [
+        `${label}:`,
+        `    STORE32 ${s2}`,
+        `    STORE32 ${s1}`,
+        `    LOAD32 ${s1}`,
+        `    STRLEN`,
+        `    STORE32 ${l1}`,
+        `    LOAD32 ${s2}`,
+        `    STRLEN`,
+        `    STORE32 ${l2}`,
+        `    LOAD32 ${l2}`,
+        `    JZ ${label}_none`,
+        `    PUSH8 0`,
+        `    STORE32 ${i}`,
+        `${label}_outer:`,
+        `    LOAD32 ${i}`,
+        `    LOAD32 ${l2}`,
+        `    ADD`,
+        `    LOAD32 ${l1}`,
+        `    GT`,
+        `    JNZ ${label}_none`,
+        `    PUSH8 0`,
+        `    STORE32 ${j}`,
+        `${label}_inner:`,
+        `    LOAD32 ${j}`,
+        `    LOAD32 ${l2}`,
+        `    LT`,
+        `    JZ ${label}_found`,
+        `    LOAD32 ${s1}`,
+        `    PUSH8 4`,
+        `    ADD`,
+        `    LOAD32 ${i}`,
+        `    ADD`,
+        `    LOAD32 ${j}`,
+        `    ADD`,
+        `    LOADI8`,
+        `    LOAD32 ${s2}`,
+        `    PUSH8 4`,
+        `    ADD`,
+        `    LOAD32 ${j}`,
+        `    ADD`,
+        `    LOADI8`,
+        `    NE`,
+        `    JNZ ${label}_next`,
+        `    LOAD32 ${j}`,
+        `    PUSH8 1`,
+        `    ADD`,
+        `    STORE32 ${j}`,
+        `    JMP ${label}_inner`,
+        `${label}_next:`,
+        `    LOAD32 ${i}`,
+        `    PUSH8 1`,
+        `    ADD`,
+        `    STORE32 ${i}`,
+        `    JMP ${label}_outer`,
+        `${label}_found:`,
+        `    LOAD32 ${i}`,
+        `    PUSH8 1`,
+        `    ADD`,
+        `    RET`,
+        `${label}_none:`,
+        `    PUSH8 0`,
+        `    RET`,
+    ];
+}
+
 // ============================================================================
 // LEN - Get String Length
 // ============================================================================
@@ -70,13 +428,15 @@ export const CONCAT_FN: FunctionDef = {
     argCount: 2,
     variadic: false,
     generateInline: (ctx: CodeGenContext, args: Expression[]) => {
-        ctx.emit('    ; CONCAT(s1, s2) -> s1 := s1 + s2');
+        ctx.emit('    ; CONCAT(s1, s2) -> a new string s1 + s2');
+        // The result is a work buffer: s1 and s2 are left as they were
+        const result = newString(ctx, args[0], ctx.stringCapacity?.(args[1]) ?? 0);
+        copyInto(ctx, result, args[0]);
         // STRCAT expects: [src_addr dst_addr]
-        ctx.emitExpression(args[1]);  // s2 (source to append)
-        ctx.emitExpression(args[0]);  // s1 (destination)
+        ctx.emitExpression(args[1]);
+        ctx.emit(`    PUSH16 ${result}`);
         ctx.emit('    STRCAT');
-        // Return s1 address
-        ctx.emitExpression(args[0]);
+        ctx.emit(`    PUSH16 ${result}   ; result`);
     }
 };
 
@@ -142,37 +502,10 @@ export const LEFT_FN: FunctionDef = {
     argCount: 2,
     variadic: false,
     generateInline: (ctx: CodeGenContext, args: Expression[]) => {
-        const lblSkip = ctx.newLabel('left_skip');
-        const lblEnd = ctx.newLabel('left_end');
-
-        ctx.emit('    ; LEFT(s, n) - truncate to n chars');
-
-        // Get current length
-        ctx.emitExpression(args[0]);
-        ctx.emit('    STRLEN');        // [len]
-
-        // Get n
-        ctx.emitExpression(args[1]);   // [len, n]
-
-        // If n >= len, skip (no truncation needed)
-        ctx.emit('    OVER');          // [len, n, len]
-        ctx.emit('    OVER');          // [len, n, len, n]
-        ctx.emit('    LE');            // [len, n, len<=n]
-        ctx.emit(`    JNZ ${lblSkip}`);
-
-        // n < len: truncate to n
-        ctx.emit('    SWAP');          // [n, len]
-        ctx.emit('    DROP');          // [n]
-        ctx.emitExpression(args[0]);   // [n, addr]
-        ctx.emit('    STOREI16');      // Store n as new length
-        ctx.emit(`    JMP ${lblEnd}`);
-
-        ctx.emit(`${lblSkip}:`);
-        ctx.emit('    DROP');          // [len]
-        ctx.emit('    DROP');          // []
-
-        ctx.emit(`${lblEnd}:`);
-        ctx.emitExpression(args[0]);   // Return string address
+        ctx.emit('    ; LEFT(s, n) - the n leftmost characters, a new string');
+        const result = newString(ctx, args[0]);
+        append(ctx, result, args[0], () => ctx.emit('    PUSH8 0'), () => ctx.emitExpression(args[1]));
+        ctx.emit(`    PUSH16 ${result}   ; result`);
     }
 };
 
@@ -199,95 +532,18 @@ export const RIGHT_FN: FunctionDef = {
     argCount: 2,
     variadic: false,
     generateInline: (ctx: CodeGenContext, args: Expression[]) => {
-        const lblSkip = ctx.newLabel('right_skip');
-        const lblLoop = ctx.newLabel('right_loop');
-        const lblLoopEnd = ctx.newLabel('right_loopend');
-        const lblEnd = ctx.newLabel('right_end');
-
-        ctx.emit('    ; RIGHT(s, n) - keep n rightmost chars');
-
-        // Get string address and store for later use
-        ctx.emitExpression(args[0]);    // [addr]
-        ctx.emit('    DUP');            // [addr, addr]
-        
-        // Get current length
-        ctx.emit('    STRLEN');         // [addr, len]
-
-        // Get n
-        ctx.emitExpression(args[1]);    // [addr, len, n]
-
-        // If n >= len, skip (no change needed)
-        ctx.emit('    OVER');           // [addr, len, n, len]
-        ctx.emit('    OVER');           // [addr, len, n, len, n]
-        ctx.emit('    LE');             // [addr, len, n, len<=n]
-        ctx.emit(`    JNZ ${lblSkip}`);
-
-        // Calculate offset = len - n
-        ctx.emit('    SWAP');           // [addr, n, len]
-        ctx.emit('    OVER');           // [addr, n, len, n]
-        ctx.emit('    SUB');            // [addr, n, offset]
-        
-        // Stack: [addr, n, offset]
-        // We need to copy n bytes from data[offset] to data[0]
-        // data starts at addr + 4 (after header)
-        
-        // Set up loop counter (i = 0)
-        ctx.emit('    PUSH8 0');        // [addr, n, offset, i=0]
-        
-        ctx.emit(`${lblLoop}:`);
-        // Stack: [addr, n, offset, i]
-        
-        // Check if i < n
-        ctx.emit('    DUP');            // [addr, n, offset, i, i]
-        ctx.emit('    PICK 4');         // [addr, n, offset, i, i, n]
-        ctx.emit('    LT');             // [addr, n, offset, i, i<n]
-        ctx.emit(`    JZ ${lblLoopEnd}`);
-        
-        // Calculate source address: addr + 4 + offset + i
-        ctx.emit('    PICK 5');         // [addr, n, offset, i, addr]
-        ctx.emit('    PUSH8 4');
-        ctx.emit('    ADD');            // [addr, n, offset, i, addr+4]
-        ctx.emit('    PICK 3');         // [addr, n, offset, i, addr+4, offset]
-        ctx.emit('    ADD');            // [addr, n, offset, i, addr+4+offset]
-        ctx.emit('    OVER');           // [addr, n, offset, i, addr+4+offset, i]
-        ctx.emit('    ADD');            // [addr, n, offset, i, src_addr]
-        
-        // Load byte from source
-        ctx.emit('    LOADI8');         // [addr, n, offset, i, byte]
-        
-        // Calculate destination address: addr + 4 + i
-        ctx.emit('    PICK 5');         // [addr, n, offset, i, byte, addr]
-        ctx.emit('    PUSH8 4');
-        ctx.emit('    ADD');            // [addr, n, offset, i, byte, addr+4]
-        ctx.emit('    PICK 3');         // [addr, n, offset, i, byte, addr+4, i]
-        ctx.emit('    ADD');            // [addr, n, offset, i, byte, dst_addr]
-        
-        // Store byte to destination
-        ctx.emit('    STOREI8');        // [addr, n, offset, i]
-        
-        // Increment i
-        ctx.emit('    PUSH8 1');
-        ctx.emit('    ADD');            // [addr, n, offset, i+1]
-        ctx.emit(`    JMP ${lblLoop}`);
-        
-        ctx.emit(`${lblLoopEnd}:`);
-        // Stack: [addr, n, offset, i]
-        ctx.emit('    DROP');           // [addr, n, offset]
-        ctx.emit('    DROP');           // [addr, n]
-        
-        // Update length to n
-        ctx.emit('    SWAP');           // [n, addr]
-        ctx.emit('    STOREI16');       // [] - stores n at addr (length field)
-        ctx.emit(`    JMP ${lblEnd}`);
-
-        ctx.emit(`${lblSkip}:`);
-        // Stack: [addr, len, n]
-        ctx.emit('    DROP');           // [addr, len]
-        ctx.emit('    DROP');           // [addr]
-        ctx.emit('    DROP');           // []
-
-        ctx.emit(`${lblEnd}:`);
-        ctx.emitExpression(args[0]);    // Return string address
+        ctx.emit('    ; RIGHT(s, n) - the n rightmost characters, a new string');
+        const result = newString(ctx, args[0]);
+        append(ctx, result, args[0],
+            () => {
+                // start = LEN(s) - n; a negative start is taken as 0 (the whole string)
+                ctx.emitExpression(args[0]);
+                ctx.emit('    STRLEN');
+                ctx.emitExpression(args[1]);
+                ctx.emit('    SUB');
+            },
+            () => ctx.emitExpression(args[1]));
+        ctx.emit(`    PUSH16 ${result}   ; result`);
     }
 };
 
@@ -314,95 +570,16 @@ export const MID_FN: FunctionDef = {
     argCount: 3,
     variadic: false,
     generateInline: (ctx: CodeGenContext, args: Expression[]) => {
-        const lblLoop = ctx.newLabel('mid_loop');
-        const lblLoopEnd = ctx.newLabel('mid_loopend');
-        const lblEnd = ctx.newLabel('mid_end');
-
-        ctx.emit('    ; MID(s, pos, n) - extract substring');
-
-        // Get string address
-        ctx.emitExpression(args[0]);    // [addr]
-        ctx.emit('    DUP');            // [addr, addr]
-        
-        // Get current length
-        ctx.emit('    STRLEN');         // [addr, len]
-
-        // Get pos (1-based) and convert to 0-based offset
-        ctx.emitExpression(args[1]);    // [addr, len, pos]
-        ctx.emit('    PUSH8 1');
-        ctx.emit('    SUB');            // [addr, len, offset]
-        
-        // Get n
-        ctx.emitExpression(args[2]);    // [addr, len, offset, n]
-        
-        // Calculate available = len - offset
-        ctx.emit('    PICK 3');         // [addr, len, offset, n, len]
-        ctx.emit('    OVER');           
-        ctx.emit('    OVER');           // [addr, len, offset, n, len, offset, n] - need to fix
-        // Actually we need: available = len - offset
-        // Stack cleanup - let's simplify
-        ctx.emit('    DROP');
-        ctx.emit('    DROP');           // [addr, len, offset, n]
-        
-        // For simplicity, just use n (assume valid input)
-        // A production version would clamp n to available chars
-        
-        // Stack: [addr, len, offset, n]
-        // Reorder for copy loop: need [addr, n, offset]
-        ctx.emit('    SWAP');           // [addr, len, n, offset]
-        ctx.emit('    ROT');            // [addr, n, offset, len]
-        ctx.emit('    DROP');           // [addr, n, offset]
-        
-        // Set up loop counter (i = 0)
-        ctx.emit('    PUSH8 0');        // [addr, n, offset, i=0]
-        
-        ctx.emit(`${lblLoop}:`);
-        // Stack: [addr, n, offset, i]
-        
-        // Check if i < n
-        ctx.emit('    DUP');            // [addr, n, offset, i, i]
-        ctx.emit('    PICK 4');         // [addr, n, offset, i, i, n]
-        ctx.emit('    LT');             // [addr, n, offset, i, i<n]
-        ctx.emit(`    JZ ${lblLoopEnd}`);
-        
-        // Calculate source address: addr + 4 + offset + i
-        ctx.emit('    PICK 5');         // [addr, n, offset, i, addr]
-        ctx.emit('    PUSH8 4');
-        ctx.emit('    ADD');            // [addr, n, offset, i, addr+4]
-        ctx.emit('    PICK 3');         // [addr, n, offset, i, addr+4, offset]
-        ctx.emit('    ADD');            // [addr, n, offset, i, addr+4+offset]
-        ctx.emit('    OVER');           // [addr, n, offset, i, addr+4+offset, i]
-        ctx.emit('    ADD');            // [addr, n, offset, i, src_addr]
-        
-        // Load byte from source
-        ctx.emit('    LOADI8');         // [addr, n, offset, i, byte]
-        
-        // Calculate destination address: addr + 4 + i
-        ctx.emit('    PICK 5');         // [addr, n, offset, i, byte, addr]
-        ctx.emit('    PUSH8 4');
-        ctx.emit('    ADD');            // [addr, n, offset, i, byte, addr+4]
-        ctx.emit('    PICK 3');         // [addr, n, offset, i, byte, addr+4, i]
-        ctx.emit('    ADD');            // [addr, n, offset, i, byte, dst_addr]
-        
-        // Store byte to destination
-        ctx.emit('    STOREI8');        // [addr, n, offset, i]
-        
-        // Increment i
-        ctx.emit('    PUSH8 1');
-        ctx.emit('    ADD');            // [addr, n, offset, i+1]
-        ctx.emit(`    JMP ${lblLoop}`);
-        
-        ctx.emit(`${lblLoopEnd}:`);
-        // Stack: [addr, n, offset, i]
-        ctx.emit('    DROP');           // [addr, n, offset]
-        ctx.emit('    DROP');           // [addr, n]
-        
-        // Update length to n
-        ctx.emit('    SWAP');           // [n, addr]
-        ctx.emit('    STOREI16');       // [] - stores n at addr (length field)
-
-        ctx.emit(`${lblEnd}:`);
-        ctx.emitExpression(args[0]);    // Return string address
+        ctx.emit('    ; MID(s, pos, n) - n characters from the 1-based position pos, a new string');
+        const result = newString(ctx, args[0]);
+        append(ctx, result, args[0],
+            () => {
+                ctx.emitExpression(args[1]);
+                ctx.emit('    PUSH8 1');
+                ctx.emit('    SUB');
+            },
+            () => ctx.emitExpression(args[2]));
+        ctx.emit(`    PUSH16 ${result}   ; result`);
     }
 };
 
@@ -423,50 +600,10 @@ export const FIND_FN: FunctionDef = {
     argCount: 2,
     variadic: false,
     generateInline: (ctx: CodeGenContext, args: Expression[]) => {
-        const lblNotFound = ctx.newLabel('find_notfound');
-        // Outer/inner loop and noMatch labels reserved for full character-by-character implementation
-        const lblMatch = ctx.newLabel('find_match');
-        const lblEnd = ctx.newLabel('find_end');
-
-        ctx.emit('    ; FIND(s1, s2) - find s2 in s1');
-
-        // Get lengths
+        ctx.emit('    ; FIND(s1, s2) - 1-based position of s2 in s1, 0 when it is not there');
         ctx.emitExpression(args[0]);
-        ctx.emit('    STRLEN');        // [len1]
         ctx.emitExpression(args[1]);
-        ctx.emit('    STRLEN');        // [len1, len2]
-
-        // If len2 > len1, not found
-        ctx.emit('    OVER');          // [len1, len2, len1]
-        ctx.emit('    OVER');          // [len1, len2, len1, len2]
-        ctx.emit('    LT');            // [len1, len2, len1<len2]
-        ctx.emit(`    JNZ ${lblNotFound}`);
-
-        // If len2 == 0, return 1 (empty string found at start)
-        ctx.emit('    DUP');           // [len1, len2, len2]
-        ctx.emit('    PUSH8 0');
-        ctx.emit('    EQ');            // [len1, len2, len2==0]
-        ctx.emit(`    JNZ ${lblMatch}`); // Return 1 for empty needle
-
-        // For now, simplified: return 0 (not found)
-        // Full implementation needs nested char comparison loops
-        ctx.emit('    DROP');
-        ctx.emit('    DROP');
-        ctx.emit('    PUSH8 0');       // Return 0 (not found)
-        ctx.emit(`    JMP ${lblEnd}`);
-
-        ctx.emit(`${lblNotFound}:`);
-        ctx.emit('    DROP');
-        ctx.emit('    DROP');
-        ctx.emit('    PUSH8 0');
-        ctx.emit(`    JMP ${lblEnd}`);
-
-        ctx.emit(`${lblMatch}:`);
-        ctx.emit('    DROP');
-        ctx.emit('    DROP');
-        ctx.emit('    PUSH8 1');       // Found at position 1
-
-        ctx.emit(`${lblEnd}:`);
+        callHelper(ctx, 'strfind');
     }
 };
 
@@ -487,14 +624,15 @@ export const INSERT_FN: FunctionDef = {
     argCount: 3,
     variadic: false,
     generateInline: (ctx: CodeGenContext, args: Expression[]) => {
-        ctx.emit('    ; INSERT(s1, s2, pos) - simplified: append s2 to s1');
-        
-        // Use STRCAT to append (ignoring pos for simplified impl)
-        ctx.emitExpression(args[1]);   // s2
-        ctx.emitExpression(args[0]);   // s1
+        ctx.emit('    ; INSERT(s1, s2, pos) - s2 inserted into s1 after the pos-th character, a new string');
+        const result = newString(ctx, args[0], ctx.stringCapacity?.(args[1]) ?? 0);
+        // the first pos characters of s1, then s2, then the rest of s1
+        append(ctx, result, args[0], () => ctx.emit('    PUSH8 0'), () => ctx.emitExpression(args[2]));
+        ctx.emitExpression(args[1]);
+        ctx.emit(`    PUSH16 ${result}`);
         ctx.emit('    STRCAT');
-        
-        ctx.emitExpression(args[0]);   // Return s1
+        append(ctx, result, args[0], () => ctx.emitExpression(args[2]), () => ctx.emit(`    PUSH32 ${REST}`));
+        ctx.emit(`    PUSH16 ${result}   ; result`);
     }
 };
 
@@ -515,29 +653,22 @@ export const DELETE_FN: FunctionDef = {
     argCount: 3,
     variadic: false,
     generateInline: (ctx: CodeGenContext, args: Expression[]) => {
-        const lblNonNeg = ctx.newLabel('del_nonneg');
-
-        ctx.emit('    ; DELETE(s, pos, n)');
-
-        // new_len = max(0, len - n)
-        ctx.emitExpression(args[0]);
-        ctx.emit('    STRLEN');        // [len]
-        ctx.emitExpression(args[2]);   // [len, n]
-        ctx.emit('    SUB');           // [len-n]
-
-        // Ensure non-negative
-        ctx.emit('    DUP');
-        ctx.emit('    PUSH8 0');
-        ctx.emit('    LT');            // [len-n, (len-n)<0]
-        ctx.emit(`    JZ ${lblNonNeg}`);
-        ctx.emit('    DROP');
-        ctx.emit('    PUSH8 0');
-
-        ctx.emit(`${lblNonNeg}:`);     // [new_len]
-        ctx.emitExpression(args[0]);   // [new_len, addr]
-        ctx.emit('    STOREI16');
-
-        ctx.emitExpression(args[0]);
+        ctx.emit('    ; DELETE(s, pos, n) - s without n characters from the 1-based position pos, a new string');
+        const result = newString(ctx, args[0]);
+        // the characters before pos, then the ones after pos + n - 1
+        append(ctx, result, args[0], () => ctx.emit('    PUSH8 0'), () => {
+            ctx.emitExpression(args[1]);
+            ctx.emit('    PUSH8 1');
+            ctx.emit('    SUB');
+        });
+        append(ctx, result, args[0], () => {
+            ctx.emitExpression(args[1]);
+            ctx.emitExpression(args[2]);
+            ctx.emit('    ADD');
+            ctx.emit('    PUSH8 1');
+            ctx.emit('    SUB');
+        }, () => ctx.emit(`    PUSH32 ${REST}`));
+        ctx.emit(`    PUSH16 ${result}   ; result`);
     }
 };
 
@@ -558,14 +689,24 @@ export const REPLACE_FN: FunctionDef = {
     argCount: 4,
     variadic: false,
     generateInline: (ctx: CodeGenContext, args: Expression[]) => {
-        ctx.emit('    ; REPLACE(s1, s2, pos, n) - simplified: s1 := s2');
-        
-        // Copy s2 to s1
-        ctx.emitExpression(args[1]);   // s2 (source)
-        ctx.emitExpression(args[0]);   // s1 (dest)
-        ctx.emit('    STRCPY');
-        
-        ctx.emitExpression(args[0]);
+        ctx.emit('    ; REPLACE(s1, s2, pos, n) - n characters of s1 from pos replaced by s2, a new string');
+        const result = newString(ctx, args[0], ctx.stringCapacity?.(args[1]) ?? 0);
+        append(ctx, result, args[0], () => ctx.emit('    PUSH8 0'), () => {
+            ctx.emitExpression(args[2]);
+            ctx.emit('    PUSH8 1');
+            ctx.emit('    SUB');
+        });
+        ctx.emitExpression(args[1]);
+        ctx.emit(`    PUSH16 ${result}`);
+        ctx.emit('    STRCAT');
+        append(ctx, result, args[0], () => {
+            ctx.emitExpression(args[2]);
+            ctx.emitExpression(args[3]);
+            ctx.emit('    ADD');
+            ctx.emit('    PUSH8 1');
+            ctx.emit('    SUB');
+        }, () => ctx.emit(`    PUSH32 ${REST}`));
+        ctx.emit(`    PUSH16 ${result}   ; result`);
     }
 };
 

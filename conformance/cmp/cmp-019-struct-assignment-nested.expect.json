@@ -1,0 +1,23 @@
+{
+  "requirement": "CMP-019",
+  "title": "a whole structure with a nested structure is copied and then independent",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "DINT",
+      "value": 70000
+    },
+    {
+      "at": "%QD1",
+      "type": "DINT",
+      "value": 80000
+    },
+    {
+      "at": "%QW4",
+      "type": "INT",
+      "value": 5
+    }
+  ]
+}

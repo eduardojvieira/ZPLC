@@ -129,7 +129,7 @@ import { assemble, createMultiTaskZplcFile, relocateBytecode, TASK_TYPE, ZPLC_CO
 import type { AssemblyResult, TagDef, TaskDef, TaskType } from '../assembler/index.ts';
 import type { DebugMap, TypeResolver } from './debug-map.ts';
 import { buildDebugMap, createDebugMap } from './debug-map.ts';
-import { buildSymbolTable, MemoryLayout } from './symbol-table.ts';
+import { buildSymbolTable, MemoryLayout, parseStringType, typeToString } from './symbol-table.ts';
 import { getFB } from './stdlib/index.ts';
 import type { DataTypeValue } from './ast.ts';
 import type { CompilationUnit, Program } from './ast.ts';
@@ -284,6 +284,14 @@ export function compileST(source: string, options?: CodeGenOptions): string {
 function createTypeResolver(symbols: import('./symbol-table.ts').SymbolTable): TypeResolver {
     return {
         getMemberInfo(typeName: string, memberName: string): { offset: number; size: number; dataType: string } | undefined {
+            // A string is STRING or WSTRING with its size beside it; a VAR_IN_OUT is the address of a variable
+            const describe = (member: { size: number; dataType: unknown; section?: string }): string => {
+                if (member.section === 'VAR_IN_OUT') return `REF_TO ${typeToString(member.dataType)}`;
+                const text = parseStringType(member.dataType);
+                if (text) return text.wide ? 'WSTRING' : 'STRING';
+                return typeof member.dataType === 'string' ? member.dataType : typeToString(member.dataType);
+            };
+
             // 1. Check user-defined FBs
             const fbDef = symbols.getFBDefinition(typeName);
             if (fbDef) {
@@ -292,7 +300,7 @@ function createTypeResolver(symbols: import('./symbol-table.ts').SymbolTable): T
                     return {
                         offset: member.offset,
                         size: member.size,
-                        dataType: typeof member.dataType === 'string' ? member.dataType : 'DINT',
+                        dataType: describe(member),
                     };
                 }
             }
@@ -305,7 +313,7 @@ function createTypeResolver(symbols: import('./symbol-table.ts').SymbolTable): T
                     return {
                         offset: member.offset,
                         size: member.size,
-                        dataType: typeof member.dataType === 'string' ? member.dataType : 'DINT',
+                        dataType: describe(member),
                     };
                 }
             }

@@ -1,0 +1,23 @@
+{
+  "requirement": "CMP-019",
+  "title": "negative SINT, INT and DINT structure members read back with their sign",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QB0",
+      "type": "SINT",
+      "value": -5
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": -1000
+    },
+    {
+      "at": "%QD1",
+      "type": "DINT",
+      "value": -100000
+    }
+  ]
+}

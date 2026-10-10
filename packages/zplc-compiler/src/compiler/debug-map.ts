@@ -334,6 +334,7 @@ export function getBreakpointLocations(map: DebugMap, pouName: string): Breakpoi
 // ============================================================================
 
 import type { Symbol } from './symbol-table.ts';
+import { parseStringType, typeToString } from './symbol-table.ts';
 import type { InstructionMapping } from '../assembler/types.ts';
 
 /**
@@ -364,14 +365,21 @@ export interface TypeResolver {
  * Uses optional TypeResolver to get real member types instead of defaulting to DINT.
  */
 function buildVarInfoFromSymbol(sym: Symbol, typeResolver?: TypeResolver): DebugVarInfo {
+    const text = parseStringType(sym.dataType);
     const varInfo: DebugVarInfo = {
         addr: sym.address,
-        type: sym.dataType as DebugDataType,
+        // a string is STRING or WSTRING with its capacity beside it; a reference is written REF_TO <type>
+        type: (text ? (text.wide ? 'WSTRING' : 'STRING')
+            : typeof sym.dataType === 'object' && (sym.dataType as { kind?: string }).kind === 'PointerType' ? typeToString(sym.dataType)
+                : sym.dataType) as DebugDataType,
         region: getRegionFromAddress(sym.address),
         size: sym.size,
         tags: sym.tags,
         declarationLine: sym.declarationLine,
     };
+    if (text) {
+        varInfo.capacity = text.capacity;
+    }
 
     if (sym.ioAddress?.size === 'X') {
         varInfo.bitOffset = sym.ioAddress.bitOffset;

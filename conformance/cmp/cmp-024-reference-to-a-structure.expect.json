@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-024",
+  "title": "a reference to a structure reads and writes its members",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": -7
+    },
+    {
+      "at": "%QD1",
+      "type": "DINT",
+      "value": 123456
+    }
+  ]
+}

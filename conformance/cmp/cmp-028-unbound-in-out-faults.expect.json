@@ -1,0 +1,7 @@
+{
+  "requirement": "CMP-028",
+  "title": "a VAR_IN_OUT that was never bound raises a VM fault",
+  "scans": 1,
+  "scanMs": 10,
+  "fault": true
+}

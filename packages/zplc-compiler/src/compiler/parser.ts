@@ -59,6 +59,9 @@ import type {
     DereferenceExpr,
     ReferenceExpr,
     ArrayLiteral,
+    ArrayRepeat,
+    StructInitializer,
+    InitialValue,
     // Extended types
     GlobalVarBlock,
     FunctionDecl,
@@ -104,6 +107,8 @@ export function parse(source: string): CompilationUnit {
 class Parser {
     private tokens: Token[];
     private pos = 0;
+    /** Integer constants declared so far: the bounds of an array may name them (CMP-022). */
+    private constants = new Map<string, number>();
 
     constructor(tokens: Token[]) {
         this.tokens = tokens;
@@ -294,6 +299,7 @@ class Parser {
                         break;
                     case VarSection.VAR:
                     case VarSection.VAR_TEMP:
+                    case VarSection.CONSTANT:
                         locals.push(...block.variables);
                         break;
                 }
@@ -349,9 +355,9 @@ class Parser {
                 this.expect(TokenType.COLON, "Expected ':' after member name");
                 const dataType = this.parseTypeName();
 
-                let initialValue: Expression | ArrayLiteral | null = null;
+                let initialValue: InitialValue | null = null;
                 if (this.match(TokenType.ASSIGN)) {
-                    initialValue = this.parseExpression() as any; 
+                    initialValue = this.parseInitialValue();
                 }
 
                 this.expect(TokenType.SEMICOLON, "Expected ';' after member declaration");
@@ -527,6 +533,7 @@ class Parser {
                     break;
                 case VarSection.VAR:
                 case VarSection.VAR_TEMP:
+                case VarSection.CONSTANT:
                     locals.push(...block.variables);
                     break;
             }
@@ -566,7 +573,7 @@ class Parser {
 
         const variables: VarDecl[] = [];
         while (!this.check(TokenType.END_VAR) && !this.isAtEnd()) {
-            variables.push(this.parseVarDecl(isConstant ? VarSection.VAR : VarSection.VAR_GLOBAL));
+            variables.push(this.parseVarDecl(isConstant ? VarSection.CONSTANT : VarSection.VAR_GLOBAL));
         }
 
         this.expect(TokenType.END_VAR, 'Expected END_VAR');
@@ -635,7 +642,8 @@ class Parser {
         let section: VarSectionValue;
 
         if (this.match(TokenType.VAR)) {
-            section = VarSection.VAR;
+            // VAR CONSTANT holds a value that no statement may assign (CMP-026)
+            section = this.match(TokenType.CONSTANT) ? VarSection.CONSTANT : VarSection.VAR;
         } else if (this.match(TokenType.VAR_OUTPUT)) {
             section = VarSection.VAR_OUTPUT;
         } else if (this.match(TokenType.VAR_INPUT)) {
@@ -694,14 +702,14 @@ class Parser {
         const dataType = this.parseTypeName();
 
         // Optional initial value
-        let initialValue: Expression | ArrayLiteral | null = null;
+        let initialValue: InitialValue | null = null;
         if (this.match(TokenType.ASSIGN)) {
-            // Check if it's an array literal initializer
-            if (this.check(TokenType.LBRACKET)) {
-                initialValue = this.parseArrayLiteral();
-            } else {
-                initialValue = this.parseExpression();
-            }
+            initialValue = this.parseInitialValue();
+        }
+
+        if (section === VarSection.CONSTANT && initialValue) {
+            const value = this.foldInteger(initialValue as Expression);
+            if (value !== undefined) this.constants.set(nameToken.value, value);
         }
 
         // Optional tags: {publish}, {modbus:40001}
@@ -763,7 +771,7 @@ class Parser {
         if (this.match(TokenType.REAL)) return DataType.REAL;
         if (this.match(TokenType.LREAL)) return DataType.LREAL;
         if (this.match(TokenType.TIME)) return DataType.TIME;
-        if (this.match(TokenType.STRING)) return DataType.STRING;
+        if (this.match(TokenType.STRING)) return this.parseStringCapacity('STRING');
         // Timers
         if (this.match(TokenType.TON)) return DataType.TON;
         if (this.match(TokenType.TOF)) return DataType.TOF;
@@ -796,7 +804,7 @@ class Parser {
         // User defined type (Struct or FB)
         if (this.check(TokenType.IDENTIFIER)) {
             const token = this.advance();
-            return token.value;
+            return token.value.toUpperCase() === 'WSTRING' ? this.parseStringCapacity(token.value) : token.value;
         }
 
         this.error(`Expected type name, got ${this.current().type}`);
@@ -844,13 +852,11 @@ class Parser {
      * dimension := INTEGER '..' INTEGER
      */
     private parseArrayDimension(): ArrayDimension {
-        const lowerToken = this.expect(TokenType.INTEGER, 'Expected lower bound integer');
-        const lower = parseInt(lowerToken.value, 10);
+        const lower = this.parseBound('lower');
 
         this.expect(TokenType.DOTDOT, 'Expected .. between array bounds');
 
-        const upperToken = this.expect(TokenType.INTEGER, 'Expected upper bound integer');
-        const upper = parseInt(upperToken.value, 10);
+        const upper = this.parseBound('upper');
 
         if (upper < lower) {
             this.error(`Invalid array bounds: ${lower}..${upper} (upper must be >= lower)`);
@@ -859,27 +865,98 @@ class Parser {
         return { lowerBound: lower, upperBound: upper };
     }
 
+    /** A bound of an array: an integer constant expression (a literal, a declared constant, `-`, `+`, `*`). */
+    private parseBound(which: 'lower' | 'upper'): number {
+        const at = this.current();
+        const expr = this.parseAdditiveExpr();
+        const value = this.foldInteger(expr);
+        if (value === undefined) {
+            throw new ParseError(`The ${which} bound of an array must be an integer constant expression`, at.line, at.column);
+        }
+        return value;
+    }
+
+    /** The value of an integer constant expression, or undefined when it is not one. */
+    private foldInteger(expr: Expression): number | undefined {
+        switch (expr.kind) {
+            case 'IntLiteral':
+                return expr.value;
+            case 'Identifier':
+                return this.constants.get(expr.name);
+            case 'UnaryExpr': {
+                const operand = this.foldInteger(expr.operand);
+                return operand === undefined || expr.operator !== 'NEG' ? undefined : -operand;
+            }
+            case 'BinaryExpr': {
+                const left = this.foldInteger(expr.left);
+                const right = this.foldInteger(expr.right);
+                if (left === undefined || right === undefined) return undefined;
+                switch (expr.operator) {
+                    case 'ADD': return left + right;
+                    case 'SUB': return left - right;
+                    case 'MUL': return left * right;
+                    case 'DIV': return right === 0 ? undefined : Math.trunc(left / right);
+                    case 'MOD': return right === 0 ? undefined : left % right;
+                    default: return undefined;
+                }
+            }
+            default:
+                return undefined;
+        }
+    }
+
+    /** STRING, STRING[n] or STRING(n); the capacity is part of the type name: `STRING[20]` (CMP-021). */
+    private parseStringCapacity(base: string): string {
+        const open = this.check(TokenType.LBRACKET) ? TokenType.LBRACKET : this.check(TokenType.LPAREN) ? TokenType.LPAREN : null;
+        if (open === null) return base;
+        this.advance();
+        const at = this.current();
+        const capacity = this.foldInteger(this.parseAdditiveExpr());
+        if (capacity === undefined || capacity < 1 || capacity > 0xFFFF) {
+            throw new ParseError(`The capacity of ${base} must be an integer constant of 1 or more`, at.line, at.column);
+        }
+        this.expect(open === TokenType.LBRACKET ? TokenType.RBRACKET : TokenType.RPAREN, `Expected ${open === TokenType.LBRACKET ? ']' : ')'} after the string capacity`);
+        return `${base.toUpperCase()}[${capacity}]`;
+    }
+
     /**
-     * array_literal := '[' expression (',' expression)* ']'
+     * initial_value := array_literal | struct_initialiser | expression
+     * struct_initialiser := '(' identifier ':=' value (',' identifier ':=' value)* ')'
+     */
+    private parseInitialValue(): InitialValue {
+        if (this.check(TokenType.LBRACKET)) {
+            return this.parseArrayLiteral();
+        }
+        if (this.check(TokenType.LPAREN) && this.peek().type === TokenType.IDENTIFIER && this.peek(2).type === TokenType.ASSIGN) {
+            return this.parseStructInitializer();
+        }
+        return this.parseExpression();
+    }
+
+    private parseStructInitializer(): StructInitializer {
+        const start = this.expect(TokenType.LPAREN, 'Expected (');
+        const fields: StructInitializer['fields'] = [];
+        do {
+            const name = this.expect(TokenType.IDENTIFIER, 'Expected field name');
+            this.expect(TokenType.ASSIGN, "Expected := after the field name");
+            fields.push({ name: name.value, value: this.parseInitialValue(), line: name.line, column: name.column });
+        } while (this.match(TokenType.COMMA));
+        this.expect(TokenType.RPAREN, 'Expected ) after the initialiser');
+        return { kind: 'StructInitializer', fields, line: start.line, column: start.column };
+    }
+
+    /**
+     * array_literal := '[' element (',' element)* ']'
+     * element := initial_value | INTEGER '(' initial_value ')'
      */
     private parseArrayLiteral(): ArrayLiteral {
         const start = this.expect(TokenType.LBRACKET, 'Expected [');
-        const elements: (Expression | ArrayLiteral)[] = [];
+        const elements: ArrayLiteral['elements'] = [];
 
         if (!this.check(TokenType.RBRACKET)) {
-            // Check if first element is also a bracket (nested array)
-            if (this.check(TokenType.LBRACKET)) {
-                elements.push(this.parseArrayLiteral());
-            } else {
-                elements.push(this.parseExpression());
-            }
-
+            elements.push(this.parseArrayElement());
             while (this.match(TokenType.COMMA)) {
-                if (this.check(TokenType.LBRACKET)) {
-                    elements.push(this.parseArrayLiteral());
-                } else {
-                    elements.push(this.parseExpression());
-                }
+                elements.push(this.parseArrayElement());
             }
         }
 
@@ -891,6 +968,18 @@ class Parser {
             line: start.line,
             column: start.column,
         };
+    }
+
+    private parseArrayElement(): ArrayLiteral['elements'][number] {
+        // 4(7): a repeat count, written before a parenthesised value
+        if (this.check(TokenType.INTEGER) && this.peek().type === TokenType.LPAREN) {
+            const count = this.advance();
+            this.advance(); // (
+            const value = this.parseInitialValue() as ArrayRepeat['value'];
+            this.expect(TokenType.RPAREN, 'Expected ) after the repeated value');
+            return { kind: 'ArrayRepeat', count: parseInt(count.value, 10), value, line: count.line, column: count.column };
+        }
+        return this.parseInitialValue() as ArrayLiteral['elements'][number];
     }
 
     /**
