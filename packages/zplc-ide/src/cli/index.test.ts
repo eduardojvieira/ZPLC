@@ -271,6 +271,18 @@ describe('CLI JSON boundary', () => {
       expect(JSON.parse(passedJson.lines[0] ?? '{}')).toMatchObject({ ok: true, evidence: { outcome: 'passed', diagnostics: [{ code: 'NON_IEC_HEX_LITERAL', line: 5, column: 8 }] } });
     } finally { await rm(root, { recursive: true, force: true }); }
   });
+  it('prints the warning of an integer stored in a narrower type and still builds (CMP-005)', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-cli-narrowing-')); const narrow = join(root, 'narrow.st');
+    try {
+      await writeFile(narrow, 'PROGRAM Narrow\nVAR\n  big : DINT := 70000;\n  small AT %QW0 : INT;\nEND_VAR\n  small := big;\nEND_PROGRAM\n');
+      const passed = output(); expect(await main(['compile', narrow], passed)).toBe(0);
+      expect(passed.errors).toHaveLength(1);
+      expect(passed.errors[0]).toMatch(new RegExp(`^Warning: ${narrow.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}:6:12: Implicit narrowing from DINT to INT`));
+      expect(passed.errors[0]).toContain('low 16 bits');
+      const json = output(); expect(await main(['compile', narrow, '--json'], json)).toBe(0);
+      expect(JSON.parse(json.lines[0] ?? '{}')).toMatchObject({ ok: true, evidence: { outcome: 'passed', diagnostics: [{ code: 'IMPLICIT_NARROWING', line: 6, column: 12 }] } });
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
   it('says the position refers to the generated Structured Text for a graphical single file', async () => {
     const root = await mkdtemp(join(tmpdir(), 'zplc-cli-message-sfc-')); const source = join(root, 'chart.sfc.json');
     try {

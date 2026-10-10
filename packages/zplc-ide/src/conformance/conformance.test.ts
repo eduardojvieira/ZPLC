@@ -136,13 +136,20 @@ async function runCase(found: ConformanceCase): Promise<string[]> {
     }
 
     if (!compiled.ok || !compiled.zplcFile) return [`the build failed: ${diagnosticText(diagnostics)}`];
+    // the warnings of a build that passed are its diagnostics (CMP-008): the case lists them all, or none
+    const warningFailures: string[] = [];
+    if (expectation.warnings) {
+      const observed = diagnostics.map((diagnostic) => `${diagnostic.code} at line ${diagnostic.line ?? 'none'}`);
+      const wanted = expectation.warnings.map((warning) => `${warning.code} at line ${warning.line}`);
+      if (JSON.stringify(observed) !== JSON.stringify(wanted)) warningFailures.push(`warnings [${observed.join(', ')}], expected [${wanted.join(', ')}] (${diagnosticText(diagnostics)})`);
+    }
     const debugMap = compiled.debugMap;
-    return await execute(found.name, expectation, compiled.zplcFile, (cell) => {
+    return [...warningFailures, ...await execute(found.name, expectation, compiled.zplcFile, (cell) => {
       if (cell.at !== undefined) return cellLocation(cell.at, cell.type);
       // The one place the debug map is trusted: a check that names a variable asks the map where it lives.
       const entry = Object.values(debugMap?.pou ?? {}).map((pou) => pou.vars[cell.var!]).find(Boolean);
       return entry ? { address: entry.addr, bit: entry.bitOffset } : `the debug map has no variable "${cell.var}"`;
-    });
+    })];
   } finally {
     await rm(root, { recursive: true, force: true });
   }

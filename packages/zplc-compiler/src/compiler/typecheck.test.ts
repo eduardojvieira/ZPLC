@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 
-import { CompilerError, compileToBinary } from './index.ts';
+import { CompilerError, compileMultiTaskProject, compileToBinary } from './index.ts';
 
 // CMP-005: every value that goes into a typed place converts to its type as IEC 61131-3 allows. CMP-018: a constant fits
 // the type it goes into. The conformance cases under conformance/cmp run the accepted forms on the VM; this file covers
@@ -182,5 +182,82 @@ describe('conditions and operators (CMP-005)', () => {
 
   test('MOD takes integers', () => {
     expect(errors('PROGRAM P\nVAR\n  r : REAL;\nEND_VAR\n  r := r MOD 2.0;\nEND_PROGRAM\n')).toHaveLength(1);
+  });
+});
+
+describe('an integer stored in a narrower type is a warning (CMP-005, CMP-016)', () => {
+  const warnings = (declarations: string, statements: string, extra = '') =>
+    compileToBinary(`${extra}PROGRAM P\nVAR\n${declarations}\nEND_VAR\n${statements}\nEND_PROGRAM\n`).warnings;
+
+  test('the build succeeds and the warning names both types and says the low bits are kept', () => {
+    const result = compileToBinary('PROGRAM P\nVAR\n  d : DINT;\n  i : INT;\nEND_VAR\n  i := d;\nEND_PROGRAM\n');
+    expect(result.zplcFile.length).toBeGreaterThan(0);
+    expect(result.warnings).toHaveLength(1);
+    const [warning] = result.warnings;
+    expect([warning!.code, warning!.line, warning!.column]).toEqual(['IMPLICIT_NARROWING', 6, 8]);
+    expect(warning!.message).toContain('DINT');
+    expect(warning!.message).toContain('INT');
+    expect(warning!.message).toContain('low 16 bits');
+  });
+
+  test.each([
+    ['DINT', 'INT'], ['DINT', 'SINT'], ['INT', 'SINT'], ['UDINT', 'UINT'], ['DWORD', 'WORD'], ['WORD', 'BYTE'],
+    ['LINT', 'DINT'], ['DINT', 'USINT'], ['UINT', 'BYTE'],
+  ])('%s stored in a %s warns', (from, to) => {
+    const found = warnings(`  src : ${from};\n  dst : ${to};`, '  dst := src;');
+    expect(found.map((warning) => warning.code)).toEqual(['IMPLICIT_NARROWING']);
+    expect(found[0]!.message).toContain(from);
+    expect(found[0]!.message).toContain(to);
+  });
+
+  test.each([
+    ['INT', 'DINT'], ['SINT', 'INT'], ['USINT', 'UINT'], ['BYTE', 'WORD'], ['INT', 'UINT'], ['DINT', 'DINT'], ['INT', 'REAL'],
+  ])('%s stored in a %s does not', (from, to) => {
+    expect(warnings(`  src : ${from};\n  dst : ${to};`, '  dst := src;')).toEqual([]);
+  });
+
+  test('a constant, a mask and a remainder that fit are not narrowed', () => {
+    const found = warnings(
+      '  w : WORD;\n  d : DINT;\n  b : BYTE;\n  u : USINT;\n  s : SINT;',
+      '  b := w AND 16#FF;\n  u := d MOD 256;\n  s := 100 + 27;\n  b := 255;',
+    );
+    expect(found).toEqual([]);
+  });
+
+  test('a mask that is wider than the destination still warns', () => {
+    expect(warnings('  w : WORD;\n  b : BYTE;', '  b := w AND 16#FFF;').map((warning) => warning.code)).toEqual(['IMPLICIT_NARROWING']);
+  });
+
+  test('the value of a function, an argument and an input of a block warn where they are written', () => {
+    const source = `FUNCTION Narrow : INT
+VAR_INPUT n : INT; END_VAR
+VAR big : DINT; END_VAR
+  big := 100000;
+  Narrow := big;
+END_FUNCTION
+PROGRAM P
+VAR
+  d : DINT;
+  i : INT;
+  c : CTU;
+END_VAR
+  i := Narrow(d);
+  c(CU := TRUE, PV := d);
+END_PROGRAM
+`;
+    const found = compileToBinary(source).warnings;
+    expect(found.map((warning) => [warning.line, warning.column])).toEqual([[5, 13], [13, 15], [14, 23]]);
+  });
+
+  test('every program of a project reports its warnings with its source, in source order', () => {
+    const narrow = (name: string) => `PROGRAM ${name}\nVAR\n  d : DINT;\n  i : INT;\n  j : INT;\nEND_VAR\n  j := d;\n  i := d;\nEND_PROGRAM\n`;
+    const result = compileMultiTaskProject(
+      { name: 'p', version: '1.0.0', tasks: [{ name: 'A', trigger: 'cyclic', interval: 10, priority: 1, programs: ['A'] }, { name: 'B', trigger: 'cyclic', interval: 10, priority: 2, programs: ['B'] }] },
+      [{ name: 'A', content: narrow('A'), sourceRef: 'src/A.st' }, { name: 'B', content: narrow('B'), sourceRef: 'src/B.st' }],
+    );
+    expect(result.warnings.map((warning) => [warning.sourceRef, warning.code, warning.line])).toEqual([
+      ['src/A.st', 'IMPLICIT_NARROWING', 7], ['src/A.st', 'IMPLICIT_NARROWING', 8],
+      ['src/B.st', 'IMPLICIT_NARROWING', 7], ['src/B.st', 'IMPLICIT_NARROWING', 8],
+    ]);
   });
 });

@@ -52,6 +52,9 @@ Millivolts := (TempRaw * VrefMv) / AdcCounts;
 TempDegC := 27 - (((Millivolts - V27Mv) * 1000) / SlopeUvPerC);
 
 SensorFault := (TempDegC < MinPlausibleC) OR (TempDegC > MaxPlausibleC);
-TempC := TempDegC;
+
+(* TempC is an INT and the calculation is a DINT. MOD 32768 keeps the value inside the range of an INT, so storing it
+   is not a narrowing: inside the plausible window it is the temperature itself, outside it TempC is meaningless anyway. *)
+TempC := TempDegC MOD 32768;
 
 END_PROGRAM

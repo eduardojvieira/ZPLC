@@ -14,5 +14,11 @@
       "type": "BOOL",
       "value": true
     }
+  ],
+  "warnings": [
+    {
+      "code": "IMPLICIT_NARROWING",
+      "line": 16
+    }
   ]
 }

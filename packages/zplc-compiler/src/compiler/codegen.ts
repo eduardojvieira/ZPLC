@@ -59,6 +59,7 @@ import type {
 } from './ast.ts';
 import { getArrayElementCount, isArrayType, NameMap, sameName, VarSection } from './ast.ts';
 import { CodegenError, codegenErrorFrom, orderedUniqueErrors } from './diagnostics.ts';
+import type { CodegenWarning } from './diagnostics.ts';
 import {
     getLoadStoreSuffix,
     buildSymbolTable,
@@ -182,6 +183,12 @@ export interface CodeGenOptions {
      * bounds (CMP-023). On by default: a build that turns it off writes over the next variable instead.
      */
     arrayBoundsCheck?: boolean;
+
+    /**
+     * Receives what the generator accepted and wants the author to see, in source order (an integer value
+     * stored in a narrower type: IMPLICIT_NARROWING). The build is not affected.
+     */
+    warnings?: CodegenWarning[];
 }
 
 // ============================================================================
@@ -260,6 +267,8 @@ interface CodeGenState {
     errors: CodegenError[];
     /** Check array indices at run time (CMP-023). */
     arrayBoundsCheck: boolean;
+    /** The warnings of the generation (see CodeGenOptions.warnings). */
+    warnings: CodegenWarning[];
     /** Work memory the code generator took after the symbols: string buffers and the cells of the string routines. */
     scratchStrings: Array<{ address: number; size: number }>;
     /**
@@ -371,7 +380,11 @@ export function generate(unit: CompilationUnit | Program, options?: CodeGenOptio
         if (error === null) throw caught;
         found.push(...error.errors);
     }
-    if (found.length === 0) return assembly!;
+    if (found.length === 0) {
+        // source order, whatever the order the program organisation units were generated in
+        options?.warnings?.sort((first, second) => first.line - second.line || first.column - second.column);
+        return assembly!;
+    }
     const errors = orderedUniqueErrors(found);
     const first = errors[0]!;
     first.errors = errors;
@@ -428,6 +441,7 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
         helpers: new Set(),
         errors,
         arrayBoundsCheck: options?.arrayBoundsCheck ?? true,
+        warnings: options?.warnings ?? [],
         scratchStrings: [],
         stringBuffers: [],
         expressionDepth: 0,
@@ -2438,7 +2452,10 @@ function emitInstanceCall(state: CodeGenState, stmt: FBCallStatement, sym: Symbo
                 // the value goes to a parameter of the type the block declares (CMP-005)
                 const memberType = stdlibMemberType(typeName, member);
                 if (memberType !== UNKNOWN_TYPE) {
-                    checkConvertible(meaningType(state, param.value), memberType, param.value, foldConstant(state, param.value));
+                    const constant = foldConstant(state, param.value);
+                    const from = meaningType(state, param.value);
+                    checkConvertible(from, memberType, param.value, constant);
+                    warnNarrowing(state, param.value, from, memberType, constant);
                 }
                 inputs.push({ ...param, name: member.name });
             }
@@ -2478,6 +2495,7 @@ function emitCopyOut(state: CodeGenState, source: Place, param: FBParameter): vo
     const from = numericTypeName(storedType(state, source.type));
     const to = numericTypeName(type);
     checkConvertible(from, to, param.value, undefined);
+    warnNarrowing(state, param.value, from, to, undefined);
     emitStorePlace(state, target, () => {
         emitLoadPlace(state, source);
         const extend = signExtension(from);
@@ -3117,9 +3135,44 @@ function emitConverted(state: CodeGenState, expr: Expression, target: string): v
 function emitValueFor(state: CodeGenState, value: Expression, targetType: unknown): void {
     const target = numericTypeName(targetType);
     if (target !== UNKNOWN_TYPE) {
-        checkConvertible(meaningType(state, value), target, value, foldConstant(state, value));
+        const constant = foldConstant(state, value);
+        const from = meaningType(state, value);
+        checkConvertible(from, target, value, constant);
+        warnNarrowing(state, value, from, target, constant);
     }
     emitConverted(state, value, target);
+}
+
+/**
+ * A value of a wider integer type stored in a narrower one keeps its low bits (CMP-016): the build goes on and
+ * the author is told (IMPLICIT_NARROWING). A constant is not narrowed (it fits, or it is an error), and
+ * neither is `x AND mask` or `x MOD n` when the mask or the remainder fits the destination.
+ */
+function warnNarrowing(state: CodeGenState, value: Expression, from: string, to: string, constant: bigint | undefined): void {
+    if (constant !== undefined) return;
+    const source = typeKind(from);
+    const target = typeKind(to);
+    const integerLike = (kind: TypeKind | undefined) => kind === 'signed' || kind === 'unsigned' || kind === 'bits';
+    if (!integerLike(source) || !integerLike(target)) return;
+    const range = integerRange(to);
+    if (!range || numericInfo(from)!.bits <= numericInfo(to)!.bits) return;
+    if (value.kind === 'BinaryExpr' && (value.operator === 'AND' || value.operator === 'MOD')) {
+        for (const operand of [value.left, value.right]) {
+            const limit = foldConstant(state, operand);
+            if (limit === undefined || limit < 0n) continue;
+            if (value.operator === 'AND' ? limit <= range.high : limit > 0n && limit - 1n <= range.high && (range.low === 0n || -(limit - 1n) >= range.low)) return;
+        }
+    }
+    const bits = numericInfo(to)!.bits;
+    const warning: CodegenWarning = {
+        code: 'IMPLICIT_NARROWING',
+        message: `Implicit narrowing from ${from} to ${to}: a value that does not fit keeps only its low ${bits} bits; use an explicit conversion if that is intended`,
+        line: value.line,
+        column: value.column,
+        ...(value.endLine === undefined ? {} : { endLine: value.endLine, endColumn: value.endColumn }),
+    };
+    const seen = state.warnings.some((each) => each.line === warning.line && each.column === warning.column && each.message === warning.message);
+    if (!seen) state.warnings.push(warning);
 }
 
 /**
@@ -3604,7 +3657,9 @@ const STANDARD_PARAMETER_TYPE: Record<string, string> = {
 /** `value` as the argument of a parameter of `type`: checked, and a constant carries the type it is given to. */
 function typedArgument(state: CodeGenState, value: Expression, type: string): Expression {
     const constant = foldConstant(state, value);
-    checkConvertible(staticType(state, value), type, value, constant);
+    const from = meaningType(state, value);
+    checkConvertible(from, type, value, constant);
+    warnNarrowing(state, value, from, type, constant);
     if (constant === undefined) return value;
     return { kind: 'IntLiteral', value: Number(constant), literalType: type, line: value.line, column: value.column, endLine: value.endLine, endColumn: value.endColumn };
 }
