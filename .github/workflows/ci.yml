@@ -39,6 +39,11 @@ jobs:
       - name: Test CI tooling
         run: bun test ./tools/ci
 
+      - name: Check the requirement index and its evidence record
+        run: |
+          bun tools/ci/generate-requirement-index.ts --check
+          bun tools/ci/requirement-coverage.ts --check
+
       - name: Validate canonical product version
         run: bun run check:versions
 

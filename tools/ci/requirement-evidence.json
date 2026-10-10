@@ -14,6 +14,9 @@
     {"kind":"unit","ref":"tools/ci/test-inventory.test.ts","test":"checkInventory (VF-022)"}
   ],
   "VF-027": [
+    {"kind":"unit","ref":"tools/ci/check-expected-failures.test.ts","test":"check-expected-failures command (VF-027)"},
+    {"kind":"unit","ref":"tools/ci/check-expected-failures.test.ts","test":"checkRun (VF-027)"},
+    {"kind":"unit","ref":"tools/ci/check-expected-failures.test.ts","test":"validateEntries (VF-027)"},
     {"kind":"unit","ref":"tools/ci/ci-workflow.test.ts","test":"ci.yml expected-failure check (VF-027)"},
     {"kind":"unit","ref":"tools/ci/requirement-coverage.test.ts","test":"the committed evidence (VF-027)"},
     {"kind":"unit","ref":"tools/ci/requirements.test.ts","test":"checkAgainstSpec (VF-027)"},

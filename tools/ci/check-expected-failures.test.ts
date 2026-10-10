@@ -44,7 +44,7 @@ describe('parseJunit', () => {
   });
 });
 
-describe('validateEntries', () => {
+describe('validateEntries (VF-027)', () => {
   it('accepts a well-formed list, including the empty one', () => {
     expect(validateEntries([])).toEqual([]);
     expect(validateEntries([entry(), entry({ test: 'packages/zplc-compiler/src/b.test.ts > x' })])).toEqual([]);
@@ -64,6 +64,13 @@ describe('validateEntries', () => {
     expect(validateEntries([entry({ test: 'scripts/x.test.ts > y' })]).join('\n')).toContain('suite');
   });
 
+  it('rejects a requirement that the tracked requirement index does not have', () => {
+    const known = new Set(['CMP-012']);
+    expect(validateEntries([entry()], known)).toEqual([]);
+    expect(validateEntries([entry({ requirement: 'CMP-999' })], known).join('\n')).toContain('CMP-999 is not in tools/ci/requirements-index.json');
+    expect(validateEntries([entry({ requirement: 'CMP-999' })]).join('\n')).not.toContain('requirements-index');
+  });
+
   it('rejects a duplicated test and anything that is not a list of objects', () => {
     expect(validateEntries([entry(), entry({ requirement: 'CMP-013' })]).join('\n')).toContain('duplicate');
     expect(validateEntries({}).join('\n')).toContain('array');
@@ -71,7 +78,7 @@ describe('validateEntries', () => {
   });
 });
 
-describe('checkRun', () => {
+describe('checkRun (VF-027)', () => {
   const listed = entry();
 
   it('is quiet when every failure is listed and still fails', () => {
@@ -114,7 +121,7 @@ describe('checkRun', () => {
   });
 });
 
-describe('check-expected-failures command', () => {
+describe('check-expected-failures command (VF-027)', () => {
   const script = join(import.meta.dir, 'check-expected-failures.ts');
   const withReport = (xml: string, exitCode: number) => {
     const dir = mkdtempSync(join(tmpdir(), 'zplc-expected-failures-'));
@@ -145,6 +152,7 @@ describe('check-expected-failures command', () => {
     const result = withReport(`<testsuites>${failing.join('')}<testsuite name="src/a.test.ts" file="src/a.test.ts"><testcase name="ok" file="src/a.test.ts"/></testsuite></testsuites>`, 1);
     expect(result.stderr).toBe('');
     expect(result.code).toBe(0);
+    expect(result.stdout).toMatch(/requirements: \d+ of 387 covered by an executed check, \d+ partial, \d+ uncovered/);
   });
 
   it('fails when the report cannot be read', () => {

@@ -8,9 +8,12 @@
 // so does a listed test that no longer fails: the list can only shrink.
 //
 // Entry: { "test": "<id>", "requirement": "CMP-012", "added": "2026-10-09", "reason": "<why it fails>" }
-// The id is printed by the "unlisted failure" message, so copy it from a red run.
+// The id is printed by the "unlisted failure" message, so copy it from a red run. The requirement must be in
+// tools/ci/requirements-index.json; a green run ends with the requirement progress counts (VF-027).
 import { readFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
+
+import { progress } from './requirement-coverage';
 
 export type Status = 'pass' | 'fail' | 'skip';
 export interface Entry { test: string; requirement: string; added: string; reason: string }
@@ -57,7 +60,8 @@ const isDate = (text: unknown) => {
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === text;
 };
 
-export function validateEntries(entries: unknown): string[] {
+/** `known` is the set of identifiers of tools/ci/requirements-index.json; without it only the shape of the identifier is checked. */
+export function validateEntries(entries: unknown, known?: Set<string>): string[] {
   if (!Array.isArray(entries)) return ['expected-failures.json must be an array'];
   const errors: string[] = [];
   const seen = new Set<unknown>();
@@ -67,6 +71,7 @@ export function validateEntries(entries: unknown): string[] {
     if (typeof entry.test !== 'string' || entry.test === '') errors.push(`${where}: test must be a non-empty identifier`);
     else if (!SUITES.some((suite) => (entry.test as string).startsWith(`${suite}/`))) errors.push(`${where}: test is in no suite that CI checks (${SUITES.join(', ')})`);
     if (typeof entry.requirement !== 'string' || !/^[A-Z]+-[0-9]{3}$/.test(entry.requirement)) errors.push(`${where}: requirement must look like CMP-012`);
+    else if (known && !known.has(entry.requirement)) errors.push(`${where}: requirement ${entry.requirement} is not in tools/ci/requirements-index.json`);
     if (!isDate(entry.added)) errors.push(`${where}: added must be a valid YYYY-MM-DD date`);
     if (typeof entry.reason !== 'string' || entry.reason.trim() === '') errors.push(`${where}: reason must say why the test fails`);
     if (seen.has(entry.test)) errors.push(`${where}: duplicate entry`);
@@ -96,7 +101,8 @@ if (import.meta.main) {
   const { values, positionals } = parseArgs({ args: Bun.argv.slice(2), options: { 'exit-code': { type: 'string', default: '0' } }, allowPositionals: true });
   const exitCode = Number(values['exit-code']);
   const entries: unknown = JSON.parse(readFileSync(LIST, 'utf8'));
-  const errors = validateEntries(entries);
+  const known = new Set((JSON.parse(readFileSync(new URL('./requirements-index.json', import.meta.url), 'utf8')) as Array<{ id: string }>).map((requirement) => requirement.id));
+  const errors = validateEntries(entries, known);
   const listIsValid = errors.length === 0;
   if (positionals.length === 0 || !Number.isInteger(exitCode)) errors.push('usage: check-expected-failures.ts --exit-code <status> <suite>=<junit.xml>...');
   for (const argument of positionals) {
@@ -115,4 +121,14 @@ if (import.meta.main) {
     process.exit(1);
   }
   console.log(`expected-failures: ${(entries as Entry[]).length} listed, no unlisted failure`);
+  try {
+    const { errors: unknownIds, line } = progress();
+    if (unknownIds.length > 0) {
+      console.error(unknownIds.map((message) => `expected-failures: ${message}`).join('\n'));
+      process.exit(1);
+    }
+    console.log(line);
+  } catch (error) {
+    console.error(`expected-failures: the requirement counts could not be computed: ${(error as Error).message}`);
+  }
 }
