@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { compilerCompile } from './toolApi';
+import { compilerCompile, safeCompilerDiagnostics } from './toolApi';
 
 const projects = fileURLToPath(new URL('../../projects', import.meta.url));
 const roots: string[] = [];
@@ -167,5 +167,12 @@ describe('LNG-003 an IL diagnostic names its line', () => {
     expect(diagnostics.length).toBeGreaterThanOrEqual(1);
     expect(diagnostics[0]!.element).toMatch(/^line:\d+$/);
     expect(diagnostics[0]!.line).toBe(Number(diagnostics[0]!.element!.slice(5)));
+  });
+});
+
+describe('a failure that is not a compiler error', () => {
+  // Without the fix this call never returned: the function called itself with the same argument.
+  it('is one diagnostic that says only that the build failed', () => {
+    expect(safeCompilerDiagnostics(new Error('internal detail that is not for the report'))).toEqual([{ code: 'COMPILATION_FAILED', message: 'Compilation failed' }]);
   });
 });

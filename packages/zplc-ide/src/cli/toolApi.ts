@@ -265,7 +265,7 @@ export function safeCompilerDiagnostic(error: unknown): ToolDiagnostic {
 /** Every independent error of a failed compile, in source order (CMP-007); the same message, line and column as the first alone. */
 export function safeCompilerDiagnostics(error: unknown): ToolDiagnostic[] {
   if (error instanceof CompilerError) return error.errors.slice(0, 128).map(compilerErrorDiagnostic);
-  return safeCompilerDiagnostics(error);
+  return [safeCompilerDiagnostic(error)];
 }
 
 function selectIndexes(length: number, cap: number, required: number[] = []): number[] {
