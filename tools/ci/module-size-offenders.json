@@ -1,12 +1,5 @@
 [
   {
-    "file": "packages/zplc-ide/src/components/settings/ProjectSettings.tsx",
-    "requirement": "IDE-014",
-    "added": "2026-10-10",
-    "lines": 2181,
-    "reason": "One 2,100-line component holds every section of the project settings (board, tasks, communication, network, safety). Split by section, one module each (IDE-014: each panel in its own module)."
-  },
-  {
     "file": "packages/zplc-ide/src/store/useIDEStore.ts",
     "requirement": "IDE-014",
     "added": "2026-10-10",

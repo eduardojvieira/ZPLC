@@ -1,7 +1,7 @@
 // Structural rules of Studio's TypeScript (IDE-014, IDE-033), checked without a new dependency:
 //
 //   bun tools/ci/ide-structure.ts            check the repository (also run by `bun run lint:ide`)
-//   bun tools/ci/ide-structure.ts --write    lower the recorded size of the listed offenders that shrank
+//   bun tools/ci/ide-structure.ts --write    lower the listed offenders that shrank, drop the ones that are within the limit
 //
 // The rules, each one a failure:
 //   - layering (IDE-033): a module of src/store/ must not import from src/components/, and a module of src/cli/
@@ -178,6 +178,18 @@ export function checkIdeStructure(modules: readonly SourceModule[], options: Str
   return problems;
 }
 
+/**
+ * The list as it should be after work on the modules: an entry lowered to the lines its module has now, and an entry
+ * dropped when its module is within the limit or no longer exists. An entry is never raised: growth is a failure.
+ */
+export function ratchetOffenders(offenders: readonly Offender[], sizes: ReadonlyMap<string, number>, limit: number): Offender[] {
+  return offenders.flatMap((offender) => {
+    const lines = sizes.get(offender.file);
+    if (lines === undefined || lines <= limit) return [];
+    return [lines < offender.lines ? { ...offender, lines } : offender];
+  });
+}
+
 /** Reads the product modules of the checked-out repository. */
 export function readIdeModules(root: string): SourceModule[] {
   const modules: SourceModule[] = [];
@@ -209,11 +221,7 @@ if (import.meta.main) {
   const root = resolve(dirname(new URL(import.meta.url).pathname), '../..');
   if (process.argv.includes('--write')) {
     const sizes = new Map(readIdeModules(root).map((module) => [module.path, lineCount(module.text)] as const));
-    const lowered = readOffenders().map((offender) => {
-      const lines = sizes.get(offender.file);
-      return lines !== undefined && lines > MODULE_LINE_LIMIT && lines < offender.lines ? { ...offender, lines } : offender;
-    });
-    writeFileSync(OFFENDERS_PATH, `${JSON.stringify(lowered, null, 2)}\n`);
+    writeFileSync(OFFENDERS_PATH, `${JSON.stringify(ratchetOffenders(readOffenders(), sizes, MODULE_LINE_LIMIT), null, 2)}\n`);
   }
   const problems = checkRepository(root);
   if (problems.length > 0) {

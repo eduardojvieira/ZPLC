@@ -59,7 +59,7 @@ describe('the chunks the Welcome screen loads at start (IDE-015)', () => {
       /node_modules\/(monaco-editor|@monaco-editor|@xyflow)\//.test(source)
       || /src\/components\/CodeEditor\.tsx$/.test(source)
       || /src\/editors\/(fbd|ld|sfc)\/[A-Za-z]+Editor\.tsx$/.test(source)
-      || /src\/components\/settings\/ProjectSettings\.tsx$/.test(source));
+      || /src\/components\/settings\/(?!AppPreferences\.tsx$)/.test(source));
     expect(forbidden).toEqual([]);
   });
 

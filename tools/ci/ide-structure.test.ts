@@ -2,7 +2,7 @@
 // The fixtures are small in-memory projects; the last block runs the rules over the repository itself.
 import { describe, expect, it } from 'bun:test';
 
-import { checkIdeStructure, checkRepository, type LayeringException, type Offender, type SourceModule } from './ide-structure';
+import { checkIdeStructure, checkRepository, ratchetOffenders, type LayeringException, type Offender, type SourceModule } from './ide-structure';
 
 const IDE = 'packages/zplc-ide/';
 const mod = (path: string, text = ''): SourceModule => ({ path: `${IDE}${path}`, text });
@@ -47,6 +47,15 @@ describe('layering (IDE-033)', () => {
       mod('src/cli/run.ts', "import { shared } from '../project/shared';\n"),
       mod('src/project/shared.ts', 'export const shared = 1;\n'),
     ])).toEqual([]);
+  });
+});
+
+describe('ratchetOffenders', () => {
+  const sizes = new Map([[`${IDE}src/shrunk.ts`, 120], [`${IDE}src/grown.ts`, 200], [`${IDE}src/split.ts`, 40], [`${IDE}src/same.ts`, 150]]);
+
+  it('lowers an entry that shrank, drops one that is within the limit or gone, and never raises one', () => {
+    const entries = [offender('src/shrunk.ts', 150), offender('src/grown.ts', 150), offender('src/split.ts', 150), offender('src/gone.ts', 150), offender('src/same.ts', 150)];
+    expect(ratchetOffenders(entries, sizes, 100).map((entry) => `${entry.file.slice(IDE.length)}:${entry.lines}`)).toEqual(['src/shrunk.ts:120', 'src/grown.ts:150', 'src/same.ts:150']);
   });
 });
 
