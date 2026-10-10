@@ -72,6 +72,15 @@ typedef struct {
     uint8_t has_task_segment;
     zplc_task_def_t tasks[ZPLC_LOADER_MAX_TASKS];
     zplc_vm_t task_vms[ZPLC_LOADER_MAX_TASKS];
+    /*
+     * RT-015: 1 when the tasks do not all share one interval. Each task is then
+     * released at its own interval, and scan_interval_ms is the greatest common
+     * divisor of the intervals (the step of a scenario).
+     */
+    uint8_t multirate;
+    /* The instant of each task's last release; indexed like tasks[]. */
+    uint32_t task_last_release_ms[ZPLC_LOADER_MAX_TASKS];
+    uint32_t task_cycles[ZPLC_LOADER_MAX_TASKS];
     uint8_t program[ZPLC_MEM_CODE_SIZE];
 } zplc_native_runtime_session_t;
 

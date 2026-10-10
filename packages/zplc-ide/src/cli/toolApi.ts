@@ -600,14 +600,25 @@ export function createTestDeadline(options: TestsRunOptions): {
   };
 }
 
-function homogeneousCyclicInterval(workspace: WorkspaceProject): number | undefined {
+function greatestCommonDivisor(a: number, b: number): number {
+  return b === 0 ? a : greatestCommonDivisor(b, a % b);
+}
+
+/**
+ * The step of a scenario: the greatest common divisor of the intervals of the cyclic tasks (RT-015). Each task is
+ * released on its own interval, and a step of the common divisor reaches every one of those instants. A project
+ * that has a task that is not cyclic has no step.
+ */
+function cyclicTaskStepMs(workspace: WorkspaceProject): number | undefined {
   const tasks = workspace.project.tasks;
   if (tasks.length < 1 || tasks.length > 16) return undefined;
-  const interval = tasks[0]?.interval_ms;
-  if (!Number.isInteger(interval) || interval! < 1 || interval! > 3_600_000) return undefined;
-  return tasks.every((task) => task.trigger === 'cyclic'
-    && task.programs.length === 1
-    && task.interval_ms === interval) ? interval : undefined;
+  let step = 0;
+  for (const task of tasks) {
+    const interval = task.interval_ms;
+    if (task.trigger !== 'cyclic' || task.programs.length !== 1 || !Number.isInteger(interval) || interval! < 1 || interval! > 3_600_000) return undefined;
+    step = greatestCommonDivisor(step, interval!);
+  }
+  return step;
 }
 
 function traceBytes(trace: ScenarioRunResult['trace']): Uint8Array {
@@ -641,7 +652,7 @@ async function runWorkspaceScenarios(root: string, operation: TestOperation, sce
     } catch (error) {
       return testFailed(operation, safeCompilerDiagnostics(error));
     }
-    const intervalMs = homogeneousCyclicInterval(workspace);
+    const intervalMs = cyclicTaskStepMs(workspace);
     if (intervalMs === undefined) return testFailed(operation, [testDiagnostic('SIMULATION_UNSUPPORTED_PROJECT', 'tasks')]);
     const unresolved = unresolvedPrograms(workspace);
     if (unresolved.length) return testFailed(operation, unresolved);

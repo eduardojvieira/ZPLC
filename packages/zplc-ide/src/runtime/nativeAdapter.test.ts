@@ -1058,12 +1058,26 @@ describe('NativeAdapter', () => {
     await validAdapter.connect();
     await expect(validAdapter.getRuntimeSnapshot()).resolves.toMatchObject({ stats: { activeTasks: 2 } });
 
+    // RT-015: tasks of different intervals are one valid task set; the interval of each is kept
+    const multirate = nativeSnapshot({
+      stats: { cycles: 8, active_tasks: 2, overruns: 1, program_size: 5 },
+      tasks: [task(1, 1), task(2, 2, 50_000)],
+    });
+    const multirateAdapter = new NativeAdapter({
+      startSession,
+      stopSession,
+      request: async <TResult = unknown>(message: NativeRequest): Promise<TResult> =>
+        (message.method === 'status.get' ? multirate : requestMock(message)) as TResult,
+    });
+    await multirateAdapter.connect();
+    const multirateSnapshot = await multirateAdapter.getRuntimeSnapshot();
+    expect(multirateSnapshot.tasks.map((entry) => entry.intervalUs)).toEqual([10_000, 50_000]);
+
     const invalidSnapshots = [
       nativeSnapshot({ uptime_ms: 0x1_0000_0000 }),
       nativeSnapshot({ opi: [0, 0, 0, 0, 0, 0, 0] }),
       nativeSnapshot({ stats: { cycles: 8, active_tasks: 2, overruns: 1, program_size: 5 } }),
       nativeSnapshot({ stats: { cycles: 8, active_tasks: 2, overruns: 1, program_size: 5 }, tasks: [task(1, 1), task(1, 2)] }),
-      nativeSnapshot({ stats: { cycles: 8, active_tasks: 2, overruns: 1, program_size: 5 }, tasks: [task(1, 1), task(2, 2, 20_000)] }),
       nativeSnapshot({ stats: { cycles: 8, active_tasks: 2, overruns: 1, program_size: 5 }, tasks: [task(2, 2), task(1, 1)] }),
       nativeSnapshot({ tasks: [{ ...task(0x1_0000, 1) }] }),
       nativeSnapshot({ tasks: [{ ...task(1, 0x100) }] }),

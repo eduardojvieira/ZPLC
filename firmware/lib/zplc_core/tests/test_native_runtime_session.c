@@ -2310,12 +2310,14 @@ static void test_rejected_load_preserves_running_session(void)
              hex);
     (void)zplc_native_runtime_session_handle_request(&session, request, response, sizeof(response),
                                                      event, sizeof(event));
-    TEST_ASSERT_CONTAINS(response, "PROGRAM_LOAD_FAILED",
-                         "mixed task periods are rejected before activation");
-    TEST_ASSERT(native_runtime_matches_snapshot(&session),
-                "mixed-period rejection preserves runnable session, core, and process image");
-    TEST_ASSERT(zplc_hal_persist_test_operation_count() == 0UL,
-                "mixed-period rejection performs no persistence operation");
+    /* RT-015: tasks of different intervals are admitted; each is released at its own interval. */
+    TEST_ASSERT_CONTAINS(response, "\"result\"", "mixed task periods are accepted");
+    TEST_ASSERT(session.program_loaded == 1U && session.task_count == 2U && session.multirate == 1U &&
+                    session.scan_interval_ms == 1U,
+                "mixed periods keep both tasks and step by their common divisor (13 and 14 ms: 1 ms)");
+    /* the table is kept in priority order: id 2 (priority 1, 14 ms) then id 9 (priority 3, 13 ms) */
+    TEST_ASSERT(session.tasks[0].interval_us == 14000U && session.tasks[1].interval_us == 13000U,
+                "each task keeps its own interval");
     artifact[artifact_size - ZPLC_TASK_DEF_SIZE + 4U] = (uint8_t)13000U;
     artifact[artifact_size - ZPLC_TASK_DEF_SIZE + 5U] = (uint8_t)(13000U >> 8);
     refresh_crc(artifact, artifact_size);
@@ -2323,7 +2325,7 @@ static void test_rejected_load_preserves_running_session(void)
     snprintf(request, sizeof(request), "{\"id\":\"multi\",\"type\":\"request\",\"method\":\"program.load\",\"params\":{\"bytecode_hex\":\"%s\"}}", hex);
     (void)zplc_native_runtime_session_handle_request(&session, request, response, sizeof(response), event, sizeof(event));
     TEST_ASSERT_CONTAINS(response, "\"result\"", "homogeneous multiple tasks are accepted");
-    TEST_ASSERT(session.task_count == 2U && session.scan_interval_ms == 13U,
+    TEST_ASSERT(session.task_count == 2U && session.scan_interval_ms == 13U && session.multirate == 0U,
                 "homogeneous task set retains cardinality and common interval");
     (void)zplc_native_runtime_session_handle_request(&session,
         "{\"id\":\"multi-step\",\"type\":\"request\",\"method\":\"execution.step\",\"params\":{}}",
@@ -3931,6 +3933,542 @@ static void test_retain_reset_and_fault(void)
     else unsetenv("ZPLC_PERSIST_ROOT");
 }
 
+/* ===========================================================================
+ * RT-015: tasks of different intervals, release order, the shared input image.
+ * ===========================================================================
+ */
+
+typedef struct {
+    uint16_t id;
+    uint8_t type;
+    uint8_t priority;
+    uint32_t interval_ms;
+    uint16_t entry;
+} mr_task_t;
+
+static void mr_put16(uint8_t *at, uint32_t value)
+{
+    at[0] = (uint8_t)value;
+    at[1] = (uint8_t)(value >> 8);
+}
+
+static void mr_put32(uint8_t *at, uint32_t value)
+{
+    mr_put16(at, value);
+    mr_put16(at + 2U, value >> 16);
+}
+
+/* One code segment, one task segment with `count` tasks; returns the artifact size. */
+static size_t build_multirate_zplc(uint8_t *buf, size_t capacity, const uint8_t *code,
+                                   size_t code_size, const mr_task_t *tasks, unsigned count)
+{
+    const size_t task_bytes = (size_t)count * ZPLC_TASK_DEF_SIZE;
+    const size_t table = ZPLC_FILE_HEADER_SIZE + 2U * ZPLC_SEGMENT_ENTRY_SIZE;
+    const size_t total = table + code_size + task_bytes;
+    size_t offset;
+    unsigned index;
+
+    if (total > capacity) return 0U;
+    memset(buf, 0, total);
+    buf[0] = 'Z'; buf[1] = 'P'; buf[2] = 'L'; buf[3] = 'C';
+    buf[4] = (uint8_t)ZPLC_VERSION_MAJOR;
+    buf[6] = (uint8_t)ZPLC_VERSION_MINOR;
+    mr_put32(buf + 28U, ZPLC_DRAFT_COUNTER);
+    mr_put32(buf + 16U, (uint32_t)code_size);
+    mr_put32(buf + 20U, (uint32_t)task_bytes);
+    buf[26] = 2U;
+    buf[ZPLC_FILE_HEADER_SIZE] = ZPLC_SEG_CODE;
+    mr_put32(buf + ZPLC_FILE_HEADER_SIZE + 4U, (uint32_t)code_size);
+    buf[ZPLC_FILE_HEADER_SIZE + ZPLC_SEGMENT_ENTRY_SIZE] = ZPLC_SEG_TASK;
+    mr_put32(buf + ZPLC_FILE_HEADER_SIZE + ZPLC_SEGMENT_ENTRY_SIZE + 4U, (uint32_t)task_bytes);
+    memcpy(buf + table, code, code_size);
+    offset = table + code_size;
+    for (index = 0U; index < count; ++index) {
+        mr_put16(buf + offset, tasks[index].id);
+        buf[offset + 2U] = tasks[index].type;
+        buf[offset + 3U] = tasks[index].priority;
+        mr_put32(buf + offset + 4U, tasks[index].interval_ms * 1000U);
+        mr_put16(buf + offset + 8U, tasks[index].entry);
+        mr_put16(buf + offset + 10U, 64U);
+        offset += ZPLC_TASK_DEF_SIZE;
+    }
+    refresh_crc(buf, total);
+    return total;
+}
+
+/* counter := counter + 1 (a 32-bit cell in WORK at `cell`); returns the new code length. */
+static size_t mr_emit_counter(uint8_t *code, size_t n, uint16_t cell)
+{
+    code[n++] = OP_LOAD32; code[n++] = (uint8_t)cell; code[n++] = (uint8_t)(cell >> 8);
+    n = emit_push32(code, n, 1U);
+    code[n++] = OP_ADD;
+    n = emit_store32(code, n, cell);
+    return emit_halt(code, n);
+}
+
+/* seq := seq + 1; slot := seq: the value of a slot is the place its task took in the order of the run. */
+static size_t mr_emit_order(uint8_t *code, size_t n, uint16_t seq, uint16_t slot)
+{
+    code[n++] = OP_LOAD32; code[n++] = (uint8_t)seq; code[n++] = (uint8_t)(seq >> 8);
+    n = emit_push32(code, n, 1U);
+    code[n++] = OP_ADD;
+    n = emit_store32(code, n, seq);
+    code[n++] = OP_LOAD32; code[n++] = (uint8_t)seq; code[n++] = (uint8_t)(seq >> 8);
+    n = emit_store32(code, n, slot);
+    return emit_halt(code, n);
+}
+
+static uint32_t mr_work32(unsigned cell)
+{
+    const uint8_t *work = zplc_mem_get_region(ZPLC_MEM_WORK_BASE) + cell * 4U;
+    return (uint32_t)work[0] | ((uint32_t)work[1] << 8) | ((uint32_t)work[2] << 16) | ((uint32_t)work[3] << 24);
+}
+
+static uint32_t mr_opi32(unsigned cell)
+{
+    const uint8_t *opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE) + cell * 4U;
+    return (uint32_t)opi[0] | ((uint32_t)opi[1] << 8) | ((uint32_t)opi[2] << 16) | ((uint32_t)opi[3] << 24);
+}
+
+#define MR_CELL(n) ((uint16_t)(ZPLC_MEM_WORK_BASE + 4U * (n)))
+
+static void mr_request(zplc_native_runtime_session_t *session, const char *method, char *response,
+                       size_t response_size, char *event, size_t event_size)
+{
+    char line[256];
+    snprintf(line, sizeof(line),
+             "{\"id\":\"mr\",\"type\":\"request\",\"method\":\"%s\",\"params\":{}}", method);
+    (void)zplc_native_runtime_session_handle_request(session, line, response, response_size, event, event_size);
+}
+
+/* Loads the artifact; 1 when the runtime accepted it. */
+static int mr_load(zplc_native_runtime_session_t *session, const uint8_t *artifact, size_t size)
+{
+    static char hex[4096];
+    static char request[4400];
+    char response[2048], event[512];
+
+    bytes_to_hex(artifact, size, hex, sizeof(hex));
+    snprintf(request, sizeof(request),
+             "{\"id\":\"mr-load\",\"type\":\"request\",\"method\":\"program.load\",\"params\":{\"bytecode_hex\":\"%s\"}}",
+             hex);
+    (void)zplc_native_runtime_session_handle_request(session, request, response, sizeof(response),
+                                                     event, sizeof(event));
+    return session->program_loaded != 0U && strstr(response, "\"error\":{") == NULL;
+}
+
+/* Two counters: the 10 ms task counts in cell 0 and the 50 ms task in cell 1, the 20 ms one in cell 2. */
+static size_t mr_counters_program(uint8_t *code, uint16_t *entries)
+{
+    size_t n = 0U;
+    unsigned task;
+
+    for (task = 0U; task < 3U; ++task) {
+        entries[task] = (uint16_t)n;
+        n = mr_emit_counter(code, n, MR_CELL(task));
+    }
+    return n;
+}
+
+static void test_multirate_artifact_is_described(void)
+{
+    uint8_t artifact[256], code[96];
+    uint16_t entries[3];
+    size_t code_size = mr_counters_program(code, entries);
+    zplc_native_program_details_t details;
+    mr_task_t tasks[3] = {
+        { 1U, ZPLC_TASK_CYCLIC, 1U, 10U, entries[0] },
+        { 2U, ZPLC_TASK_CYCLIC, 2U, 50U, entries[1] },
+        { 3U, ZPLC_TASK_CYCLIC, 3U, 20U, entries[2] },
+    };
+    size_t size;
+
+    printf("\n=== Test: a task table of different intervals is described (RT-015) ===\n");
+    size = build_multirate_zplc(artifact, sizeof(artifact), code, code_size, tasks, 3U);
+    TEST_ASSERT(zplc_native_program_describe(artifact, size, &details) == 0 &&
+                    details.task_count == 3U && details.multirate == 1U && details.scan_interval_ms == 10U,
+                "tasks of 10, 50 and 20 ms are accepted and their step is 10 ms");
+    tasks[0].interval_ms = 15U; tasks[1].interval_ms = 25U; tasks[2].interval_ms = 40U;
+    size = build_multirate_zplc(artifact, sizeof(artifact), code, code_size, tasks, 3U);
+    TEST_ASSERT(zplc_native_program_describe(artifact, size, &details) == 0 &&
+                    details.multirate == 1U && details.scan_interval_ms == 5U,
+                "the step of 15, 25 and 40 ms is their greatest common divisor, 5 ms");
+    tasks[0].interval_ms = tasks[1].interval_ms = tasks[2].interval_ms = 20U;
+    size = build_multirate_zplc(artifact, sizeof(artifact), code, code_size, tasks, 3U);
+    TEST_ASSERT(zplc_native_program_describe(artifact, size, &details) == 0 &&
+                    details.multirate == 0U && details.scan_interval_ms == 20U,
+                "tasks of one interval are not multirate");
+    tasks[0].interval_ms = 10U; tasks[1].interval_ms = 50U; tasks[2].type = ZPLC_TASK_EVENT;
+    size = build_multirate_zplc(artifact, sizeof(artifact), code, code_size, tasks, 3U);
+    TEST_ASSERT(zplc_native_program_describe(artifact, size, &details) != 0,
+                "an event-triggered task is still refused by the runtime");
+    tasks[2].type = ZPLC_TASK_CYCLIC; tasks[2].interval_ms = 20U;
+    tasks[1].interval_ms = 0U;
+    size = build_multirate_zplc(artifact, sizeof(artifact), code, code_size, tasks, 3U);
+    TEST_ASSERT(zplc_native_program_describe(artifact, size, &details) != 0,
+                "an interval below 1 ms is refused whatever the other tasks use");
+}
+
+static void test_multirate_each_task_runs_at_its_own_interval(void)
+{
+    zplc_native_runtime_session_t session;
+    uint8_t artifact[256], code[96];
+    uint16_t entries[3];
+    size_t code_size = mr_counters_program(code, entries);
+    mr_task_t tasks[2] = {
+        { 1U, ZPLC_TASK_CYCLIC, 1U, 10U, entries[0] },
+        { 2U, ZPLC_TASK_CYCLIC, 2U, 50U, entries[1] },
+    };
+    char response[4096], event[4096];
+    uint32_t now;
+
+    printf("\n=== Test: each task runs at its own interval (RT-015) ===\n");
+    zplc_native_runtime_session_init(&session);
+    TEST_ASSERT(mr_load(&session, artifact, build_multirate_zplc(artifact, sizeof(artifact), code, code_size, tasks, 2U)),
+                "tasks of 10 and 50 ms load");
+    TEST_ASSERT(session.multirate == 1U && session.task_count == 2U && session.scan_interval_ms == 10U,
+                "the session is multirate with a 10 ms step");
+    mr_request(&session, "execution.start", response, sizeof(response), event, sizeof(event));
+    for (now = 0U; now < 1000U; now += 10U) {
+        (void)zplc_native_runtime_session_tick(&session, now, event, sizeof(event));
+        if (now == 40U) {
+            TEST_ASSERT(mr_work32(0) == 5U && mr_work32(1) == 1U,
+                        "at 40 ms the 10 ms task ran five times and the 50 ms task once");
+        }
+        if (now == 50U) {
+            TEST_ASSERT(mr_work32(0) == 6U && mr_work32(1) == 2U,
+                        "at 50 ms the 50 ms task runs a second time, in the same batch as the 10 ms task");
+        }
+    }
+    TEST_ASSERT(mr_work32(0) == 100U && mr_work32(1) == 20U,
+                "over one second the 10 ms task ran 100 times and the 50 ms task 20 times");
+    TEST_ASSERT(session.task_cycles[0] == 100U && session.task_cycles[1] == 20U && session.cycle_count == 100U,
+                "each task counts its own scans and the session counts batches");
+    mr_request(&session, "status.get", response, sizeof(response), event, sizeof(event));
+    TEST_ASSERT_CONTAINS(response, "\"task_id\":1,\"state\":\"running\",\"cycles\":100,",
+                         "the status gives the 10 ms task its own scan count");
+    TEST_ASSERT_CONTAINS(response, "\"task_id\":2,\"state\":\"running\",\"cycles\":20,",
+                         "the status gives the 50 ms task its own scan count");
+    TEST_ASSERT_CONTAINS(response, "\"interval_us\":10000,\"priority\":1", "the status keeps the interval of the 10 ms task");
+    TEST_ASSERT_CONTAINS(response, "\"interval_us\":50000,\"priority\":2", "the status keeps the interval of the 50 ms task");
+
+    /* a tick between two releases runs nothing */
+    (void)zplc_native_runtime_session_tick(&session, 995U, event, sizeof(event));
+    TEST_ASSERT(mr_work32(0) == 100U && event[0] == '\0', "a tick that is not a release of any task runs nothing");
+    zplc_native_runtime_session_shutdown(&session);
+}
+
+static void test_multirate_output_image_keeps_the_task_that_did_not_run(void)
+{
+    zplc_native_runtime_session_t session;
+    uint8_t artifact[256], code[96];
+    uint16_t entries[2];
+    size_t n = 0U;
+    mr_task_t tasks[2];
+    char response[2048], event[2048];
+
+    printf("\n=== Test: the output image keeps what a task that did not run wrote (RT-015) ===\n");
+    /* each task adds one to its own output cell of OPI */
+    entries[0] = (uint16_t)n;
+    n = mr_emit_counter(code, n, ZPLC_MEM_OPI_BASE);
+    entries[1] = (uint16_t)n;
+    n = mr_emit_counter(code, n, ZPLC_MEM_OPI_BASE + 4U);
+    tasks[0] = (mr_task_t){ 1U, ZPLC_TASK_CYCLIC, 1U, 10U, entries[0] };
+    tasks[1] = (mr_task_t){ 2U, ZPLC_TASK_CYCLIC, 2U, 30U, entries[1] };
+    zplc_native_runtime_session_init(&session);
+    TEST_ASSERT(mr_load(&session, artifact, build_multirate_zplc(artifact, sizeof(artifact), code, n, tasks, 2U)),
+                "tasks that write the output image load");
+    mr_request(&session, "execution.start", response, sizeof(response), event, sizeof(event));
+    (void)zplc_native_runtime_session_tick(&session, 0U, event, sizeof(event));
+    (void)zplc_native_runtime_session_tick(&session, 10U, event, sizeof(event));
+    (void)zplc_native_runtime_session_tick(&session, 20U, event, sizeof(event));
+    TEST_ASSERT(mr_opi32(0) == 3U && mr_opi32(1) == 1U,
+                "the 30 ms task keeps its output while the 10 ms task runs three times");
+    TEST_ASSERT_CONTAINS(event, "\"opi\":[3,0,0,0,1,0,0,0]", "the event reports the image of both tasks");
+    (void)zplc_native_runtime_session_tick(&session, 30U, event, sizeof(event));
+    TEST_ASSERT(mr_opi32(0) == 4U && mr_opi32(1) == 2U, "at 30 ms both tasks wrote in one batch");
+    zplc_native_runtime_session_shutdown(&session);
+}
+
+static void test_multirate_release_order(void)
+{
+    zplc_native_runtime_session_t session;
+    uint8_t artifact[320], code[160];
+    uint16_t entries[4];
+    size_t n = 0U;
+    mr_task_t tasks[4];
+    char response[2048], event[2048];
+    uint32_t id7, id3, id5;
+
+    printf("\n=== Test: tasks released together run by priority, then by id (RT-015) ===\n");
+    for (id7 = 0U; id7 < 3U; ++id7) {
+        entries[id7] = (uint16_t)n;
+        n = mr_emit_order(code, n, MR_CELL(8), MR_CELL(id7));
+    }
+    /* the table lists id 7 (priority 2), id 3 (priority 1), id 5 (priority 1): not the order they must run in */
+    tasks[0] = (mr_task_t){ 7U, ZPLC_TASK_CYCLIC, 2U, 10U, entries[0] };
+    tasks[1] = (mr_task_t){ 3U, ZPLC_TASK_CYCLIC, 1U, 20U, entries[1] };
+    tasks[2] = (mr_task_t){ 5U, ZPLC_TASK_CYCLIC, 1U, 10U, entries[2] };
+    zplc_native_runtime_session_init(&session);
+    TEST_ASSERT(mr_load(&session, artifact, build_multirate_zplc(artifact, sizeof(artifact), code, n, tasks, 3U)),
+                "three tasks with a tie in priority load");
+    mr_request(&session, "execution.start", response, sizeof(response), event, sizeof(event));
+    (void)zplc_native_runtime_session_tick(&session, 0U, event, sizeof(event));
+    id7 = mr_work32(0); id3 = mr_work32(1); id5 = mr_work32(2);
+    TEST_ASSERT(id3 == 1U && id5 == 2U && id7 == 3U,
+                "a common release runs priority 1 (id 3, then id 5), then priority 2 (id 7)");
+    zplc_native_runtime_session_shutdown(&session);
+}
+
+static void test_multirate_earlier_release_runs_first(void)
+{
+    zplc_native_runtime_session_t session;
+    uint8_t artifact[256], code[128];
+    uint16_t entries[2];
+    size_t n = 0U;
+    mr_task_t tasks[2];
+    char response[2048], event[2048];
+
+    printf("\n=== Test: a task released earlier runs first, whatever its priority (RT-015) ===\n");
+    entries[0] = (uint16_t)n;
+    n = mr_emit_order(code, n, MR_CELL(8), MR_CELL(0));
+    entries[1] = (uint16_t)n;
+    n = mr_emit_order(code, n, MR_CELL(8), MR_CELL(1));
+    /* A has the better priority and a 20 ms interval; B has a 10 ms interval */
+    tasks[0] = (mr_task_t){ 1U, ZPLC_TASK_CYCLIC, 1U, 20U, entries[0] };
+    tasks[1] = (mr_task_t){ 2U, ZPLC_TASK_CYCLIC, 2U, 10U, entries[1] };
+    zplc_native_runtime_session_init(&session);
+    TEST_ASSERT(mr_load(&session, artifact, build_multirate_zplc(artifact, sizeof(artifact), code, n, tasks, 2U)),
+                "tasks of 20 and 10 ms load");
+    mr_request(&session, "execution.start", response, sizeof(response), event, sizeof(event));
+    (void)zplc_native_runtime_session_tick(&session, 0U, event, sizeof(event));
+    TEST_ASSERT(mr_work32(0) == 1U && mr_work32(1) == 2U, "at the common start priority orders the batch");
+    /* the host comes back at 25 ms: B was due at 10, A at 20 */
+    (void)zplc_native_runtime_session_tick(&session, 25U, event, sizeof(event));
+    TEST_ASSERT(mr_work32(1) == 3U && mr_work32(0) == 4U,
+                "B, released at 10 ms, runs before A, released at 20 ms, though A has the better priority");
+    zplc_native_runtime_session_shutdown(&session);
+}
+
+static void test_multirate_batch_shares_one_input_image(void)
+{
+    zplc_native_runtime_session_t session;
+    uint8_t artifact[256], code[96];
+    uint16_t entries[2];
+    size_t n = 0U;
+    mr_task_t tasks[2];
+    char response[2048], event[2048];
+    char pulse[256];
+    uint8_t *ipi;
+
+    printf("\n=== Test: a batch reads one input image and a pulse lasts one batch (RT-009) ===\n");
+    /* each task copies the first input byte into its own cell of WORK */
+    for (unsigned task = 0U; task < 2U; ++task) {
+        entries[task] = (uint16_t)n;
+        code[n++] = OP_LOAD8; code[n++] = (uint8_t)ZPLC_MEM_IPI_BASE; code[n++] = (uint8_t)(ZPLC_MEM_IPI_BASE >> 8);
+        code[n++] = OP_STORE8; code[n++] = (uint8_t)MR_CELL(task); code[n++] = (uint8_t)(MR_CELL(task) >> 8);
+        code[n++] = OP_HALT;
+    }
+    tasks[0] = (mr_task_t){ 1U, ZPLC_TASK_CYCLIC, 1U, 10U, entries[0] };
+    tasks[1] = (mr_task_t){ 2U, ZPLC_TASK_CYCLIC, 2U, 40U, entries[1] };
+    zplc_native_runtime_session_init(&session);
+    TEST_ASSERT(mr_load(&session, artifact, build_multirate_zplc(artifact, sizeof(artifact), code, n, tasks, 2U)),
+                "tasks that read the input image load");
+    mr_request(&session, "execution.start", response, sizeof(response), event, sizeof(event));
+    ipi = zplc_mem_get_region(ZPLC_MEM_IPI_BASE);
+    snprintf(pulse, sizeof(pulse),
+             "{\"id\":\"pulse\",\"type\":\"request\",\"method\":\"simulation.input.set\",\"params\":"
+             "{\"input_id\":\"motor.start\",\"active\":true,\"program_generation\":%u}}",
+             (unsigned)session.program_generation);
+
+    (void)zplc_native_runtime_session_handle_request(&session, pulse, response, sizeof(response), event, sizeof(event));
+    (void)zplc_native_runtime_session_tick(&session, 0U, event, sizeof(event));
+    TEST_ASSERT(zplc_mem_get_region(ZPLC_MEM_WORK_BASE)[0] == 1U && zplc_mem_get_region(ZPLC_MEM_WORK_BASE)[4] == 1U,
+                "both tasks of the first batch saw the staged input");
+    TEST_ASSERT((ipi[0] & 1U) == 0U && session.simulation_pulse_mask == 0U,
+                "the pulse ends with the batch that read it");
+    (void)zplc_native_runtime_session_handle_request(&session, pulse, response, sizeof(response), event, sizeof(event));
+    (void)zplc_native_runtime_session_tick(&session, 10U, event, sizeof(event));
+    TEST_ASSERT(zplc_mem_get_region(ZPLC_MEM_WORK_BASE)[0] == 1U && zplc_mem_get_region(ZPLC_MEM_WORK_BASE)[4] == 1U,
+                "the 10 ms task saw the pulse staged before its batch");
+    (void)zplc_native_runtime_session_tick(&session, 20U, event, sizeof(event));
+    (void)zplc_native_runtime_session_tick(&session, 30U, event, sizeof(event));
+    TEST_ASSERT(zplc_mem_get_region(ZPLC_MEM_WORK_BASE)[0] == 0U,
+                "the next batch reads the image without the pulse");
+    zplc_native_runtime_session_shutdown(&session);
+}
+
+static void test_multirate_scenario_steps_by_the_common_divisor(void)
+{
+    zplc_native_runtime_session_t session;
+    uint8_t artifact[256], code[96];
+    uint16_t entries[3];
+    size_t code_size = mr_counters_program(code, entries);
+    mr_task_t tasks[2] = {
+        { 1U, ZPLC_TASK_CYCLIC, 1U, 20U, entries[0] },
+        { 2U, ZPLC_TASK_CYCLIC, 2U, 30U, entries[1] },
+    };
+    char response[4096], event[1024];
+    uint32_t at;
+    /* the counts after the steps at 0, 10, ..., 60 ms: the 20 ms task is due at 0, 20, 40, 60; the 30 ms task at 0, 30, 60 */
+    static const uint32_t first_a[] = { 1U, 1U, 2U, 2U, 3U, 3U, 4U };
+    static const uint32_t first_b[] = { 1U, 1U, 1U, 2U, 2U, 2U, 3U };
+
+    printf("\n=== Test: a scenario steps by the common divisor and releases each task on its own interval (RT-015) ===\n");
+    zplc_native_runtime_session_init(&session);
+    zplc_native_runtime_session_set_scenario_clock_enabled(&session, 1);
+    TEST_ASSERT(mr_load(&session, artifact, build_multirate_zplc(artifact, sizeof(artifact), code, code_size, tasks, 2U)),
+                "tasks of 20 and 30 ms load in a scenario session");
+    TEST_ASSERT(session.scan_interval_ms == 10U, "a scenario of 20 and 30 ms steps by 10 ms");
+    for (at = 0U; at <= 60U; at += 10U) {
+        char request[160];
+        snprintf(request, sizeof(request),
+                 "{\"id\":\"s\",\"type\":\"request\",\"method\":\"scenario.step\",\"params\":{\"at_ms\":%u}}",
+                 (unsigned)at);
+        (void)zplc_native_runtime_session_handle_request(&session, request, response, sizeof(response),
+                                                         event, sizeof(event));
+        if (mr_work32(0) != first_a[at / 10U] || mr_work32(1) != first_b[at / 10U]) {
+            TEST_ASSERT(0, "a scenario step released a task off its interval");
+        }
+        if (at == 10U) {
+            TEST_ASSERT(session.cycle_count == 1U && strstr(response, "\"error\":{") == NULL,
+                        "a step at which no task is due is accepted and runs no batch");
+        }
+    }
+    TEST_ASSERT(mr_work32(0) == 4U && mr_work32(1) == 3U && session.cycle_count == 5U,
+                "at 60 ms the 20 ms task ran four times and the 30 ms task three times, in five batches");
+    (void)zplc_native_runtime_session_handle_request(
+        &session,
+        "{\"id\":\"s75\",\"type\":\"request\",\"method\":\"scenario.step\",\"params\":{\"at_ms\":75}}",
+        response, sizeof(response), event, sizeof(event));
+    TEST_ASSERT_CONTAINS(response, "must advance by the task interval", "a step off the common divisor is refused");
+    zplc_native_runtime_session_shutdown(&session);
+}
+
+static void test_multirate_poll_timeout_is_the_nearest_release(void)
+{
+    zplc_native_runtime_session_t session;
+    uint8_t artifact[256], code[96];
+    uint16_t entries[3];
+    size_t code_size = mr_counters_program(code, entries);
+    mr_task_t tasks[2] = {
+        { 1U, ZPLC_TASK_CYCLIC, 1U, 10U, entries[0] },
+        { 2U, ZPLC_TASK_CYCLIC, 2U, 50U, entries[1] },
+    };
+    char response[2048], event[2048];
+
+    printf("\n=== Test: the poll timeout is the time to the nearest release (RT-015) ===\n");
+    zplc_native_runtime_session_init(&session);
+    TEST_ASSERT(mr_load(&session, artifact, build_multirate_zplc(artifact, sizeof(artifact), code, code_size, tasks, 2U)),
+                "tasks of 10 and 50 ms load");
+    mr_request(&session, "execution.start", response, sizeof(response), event, sizeof(event));
+    TEST_ASSERT(zplc_native_runtime_session_poll_timeout_ms(&session, 7U, 100U) == 0U,
+                "before the first batch every task is due");
+    (void)zplc_native_runtime_session_tick(&session, 100U, event, sizeof(event));
+    TEST_ASSERT(zplc_native_runtime_session_poll_timeout_ms(&session, 103U, 100U) == 7U,
+                "the 10 ms task is the nearest release");
+    TEST_ASSERT(zplc_native_runtime_session_poll_timeout_ms(&session, 110U, 100U) == 0U, "a due task needs no wait");
+    (void)zplc_native_runtime_session_tick(&session, 110U, event, sizeof(event));
+    TEST_ASSERT(zplc_native_runtime_session_poll_timeout_ms(&session, 112U, 5U) == 5U,
+                "the wait never exceeds the maximum timeout");
+    zplc_native_runtime_session_shutdown(&session);
+}
+
+static void test_multirate_pause_resume_stop_and_reset_keep_the_schedule(void)
+{
+    zplc_native_runtime_session_t session;
+    uint8_t artifact[256], code[96];
+    uint16_t entries[3];
+    size_t code_size = mr_counters_program(code, entries);
+    mr_task_t tasks[2] = {
+        { 1U, ZPLC_TASK_CYCLIC, 1U, 10U, entries[0] },
+        { 2U, ZPLC_TASK_CYCLIC, 2U, 50U, entries[1] },
+    };
+    char response[2048], event[2048];
+
+    printf("\n=== Test: pause, resume, stop and reset keep the schedule coherent (RT-015, RT-017) ===\n");
+    zplc_native_runtime_session_init(&session);
+    TEST_ASSERT(mr_load(&session, artifact, build_multirate_zplc(artifact, sizeof(artifact), code, code_size, tasks, 2U)),
+                "tasks of 10 and 50 ms load");
+    mr_request(&session, "execution.start", response, sizeof(response), event, sizeof(event));
+    (void)zplc_native_runtime_session_tick(&session, 0U, event, sizeof(event));
+    (void)zplc_native_runtime_session_tick(&session, 10U, event, sizeof(event));
+    (void)zplc_native_runtime_session_tick(&session, 20U, event, sizeof(event));
+    TEST_ASSERT(mr_work32(0) == 3U && mr_work32(1) == 1U, "three scans of the fast task and one of the slow task");
+
+    mr_request(&session, "execution.pause", response, sizeof(response), event, sizeof(event));
+    (void)zplc_native_runtime_session_tick(&session, 30U, event, sizeof(event));
+    (void)zplc_native_runtime_session_tick(&session, 60U, event, sizeof(event));
+    TEST_ASSERT(session.state == ZPLC_NATIVE_SESSION_PAUSED && mr_work32(0) == 3U && mr_work32(1) == 1U,
+                "a paused session runs no task and keeps the values of its tasks");
+
+    mr_request(&session, "execution.resume", response, sizeof(response), event, sizeof(event));
+    (void)zplc_native_runtime_session_tick(&session, 65U, event, sizeof(event));
+    TEST_ASSERT(mr_work32(0) == 4U && mr_work32(1) == 2U,
+                "a resume restarts the schedule: every task is released at the first scan after it");
+    (void)zplc_native_runtime_session_tick(&session, 70U, event, sizeof(event));
+    TEST_ASSERT(mr_work32(0) == 4U, "the 10 ms task is not due 5 ms after the restart");
+    (void)zplc_native_runtime_session_tick(&session, 75U, event, sizeof(event));
+    TEST_ASSERT(mr_work32(0) == 5U && mr_work32(1) == 2U,
+                "the 10 ms task is released one interval after the restart, the 50 ms task is not");
+
+    mr_request(&session, "execution.stop", response, sizeof(response), event, sizeof(event));
+    TEST_ASSERT(session.state == ZPLC_NATIVE_SESSION_IDLE, "stop returns to idle");
+    (void)zplc_native_runtime_session_tick(&session, 200U, event, sizeof(event));
+    TEST_ASSERT(mr_work32(0) == 5U, "an idle session runs no task");
+    mr_request(&session, "execution.start", response, sizeof(response), event, sizeof(event));
+    (void)zplc_native_runtime_session_tick(&session, 205U, event, sizeof(event));
+    TEST_ASSERT(mr_work32(0) == 6U && mr_work32(1) == 3U,
+                "a start releases every task at the first scan after it");
+
+    mr_request(&session, "execution.reset", response, sizeof(response), event, sizeof(event));
+    TEST_ASSERT(session.cycle_count == 0U && session.task_cycles[0] == 0U && session.task_cycles[1] == 0U &&
+                    session.overrun_count == 0U && session.multirate == 1U && session.scan_interval_ms == 10U,
+                "reset clears the counts of every task and keeps the task table");
+    mr_request(&session, "execution.start", response, sizeof(response), event, sizeof(event));
+    (void)zplc_native_runtime_session_tick(&session, 300U, event, sizeof(event));
+    TEST_ASSERT(mr_work32(0) == 1U && mr_work32(1) == 1U, "after a reset both tasks start again from their entry points");
+    zplc_native_runtime_session_shutdown(&session);
+}
+
+static void test_status_of_sixteen_multirate_tasks_and_eight_forces_fits_the_response(void)
+{
+    zplc_native_runtime_session_t session;
+    uint8_t artifact[512], code[64];
+    uint8_t forced[ZPLC_FORCE_MAX_BYTES];
+    mr_task_t tasks[16];
+    static char response[ZPLC_NATIVE_RESPONSE_MAX], event[ZPLC_NATIVE_EVENT_MAX];
+    static char forced_hex[(ZPLC_FORCE_MAX_BYTES * 2U) + 1U], request[1200];
+    size_t n = mr_emit_counter(code, 0U, MR_CELL(0));
+    unsigned index;
+
+    printf("\n=== Test: the largest status still fits the response line (RT-014, RT-015) ===\n");
+    for (index = 0U; index < 16U; ++index) {
+        tasks[index] = (mr_task_t){ (uint16_t)(1000U + index), ZPLC_TASK_CYCLIC, (uint8_t)index,
+                                    10U + 10U * index, 0U };
+    }
+    zplc_native_runtime_session_init(&session);
+    TEST_ASSERT(mr_load(&session, artifact, build_multirate_zplc(artifact, sizeof(artifact), code, n, tasks, 16U)),
+                "sixteen tasks of sixteen intervals load");
+    mr_request(&session, "execution.start", response, sizeof(response), event, sizeof(event));
+    memset(forced, 0xA5, sizeof(forced));
+    bytes_to_hex(forced, sizeof(forced), forced_hex, sizeof(forced_hex));
+    for (index = 0U; index < 8U; ++index) {
+        snprintf(request, sizeof(request),
+                 "{\"id\":\"f\",\"type\":\"request\",\"method\":\"force.set\",\"params\":"
+                 "{\"address\":%u,\"bytes_hex\":\"%s\"}}",
+                 8192U + 260U * index, forced_hex);
+        (void)zplc_native_runtime_session_handle_request(&session, request, response, sizeof(response),
+                                                         event, sizeof(event));
+    }
+    TEST_ASSERT(zplc_force_get_count() == 8U, "eight maximum-size forces are active");
+    mr_request(&session, "status.get", response, sizeof(response), event, sizeof(event));
+    TEST_ASSERT_CONTAINS(response, "\"type\":\"response\",\"result\":{\"state\":",
+                         "the status of sixteen tasks and eight maximum forces is a response, not a refusal");
+    printf("status.get of the largest session: %zu of %u bytes\n", strlen(response), (unsigned)ZPLC_NATIVE_RESPONSE_MAX);
+    zplc_native_runtime_session_shutdown(&session);
+}
+
 static void test_posix_hal_lifecycle_clears_tick_override(void)
 {
     printf("\n=== Test: POSIX HAL logical clock lifecycle ===\n");
@@ -4001,6 +4539,16 @@ int main(void)
     test_retain_survives_a_new_session();
     test_retain_periodic_save_follows_the_interval();
     test_retain_reset_and_fault();
+    test_multirate_artifact_is_described();
+    test_multirate_each_task_runs_at_its_own_interval();
+    test_multirate_output_image_keeps_the_task_that_did_not_run();
+    test_multirate_release_order();
+    test_multirate_earlier_release_runs_first();
+    test_multirate_batch_shares_one_input_image();
+    test_multirate_scenario_steps_by_the_common_divisor();
+    test_multirate_poll_timeout_is_the_nearest_release();
+    test_multirate_pause_resume_stop_and_reset_keep_the_schedule();
+    test_status_of_sixteen_multirate_tasks_and_eight_forces_fits_the_response();
     test_posix_hal_lifecycle_clears_tick_override();
     test_session_ready_event_from_runtime_main();
 

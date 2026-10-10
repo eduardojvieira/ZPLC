@@ -992,7 +992,7 @@ describe('testsRun', () => {
     } finally { await rm(root, { recursive: true, force: true }); }
   });
 
-  it('admits only homogeneous cyclic task sets before native spawning', async () => {
+  it('admits only cyclic task sets before native spawning', async () => {
     const root = await workspace();
     const tasks = [
       { name: 'Alpha', trigger: 'cyclic', interval_ms: 10, priority: 2, programs: ['Motor.st'] },
@@ -1001,7 +1001,6 @@ describe('testsRun', () => {
     try {
       await writeFile(join(root, 'src', 'Other.st'), 'PROGRAM Other END_PROGRAM');
       for (const unsupported of [
-        [{ ...tasks[0]!, interval_ms: 20 }, tasks[1]!],
         [{ ...tasks[0]!, trigger: 'event' }, tasks[1]!],
         [{ ...tasks[0]!, trigger: 'freewheeling' }, tasks[1]!],
       ]) {
@@ -1027,6 +1026,35 @@ describe('testsRun', () => {
       const first = await testsRun(root); const second = await testsRun(root);
       expect(first).toMatchObject({ ok: true, summary: { backend: 'native-posix', mode: 'logical-cyclic-task-set-scan', scenarios: [{ id: 'TaskSet', passed: true }] }, preview: { mode: 'logical-cyclic-task-set-scan', scenarios: [{ samples: expect.arrayContaining([expect.objectContaining({ outputs: { 'First.Output': true, 'Second.Output': true } })]) }] } });
       expect(second).toEqual(first);
+    } finally {
+      if (oldBinary === undefined) delete process.env.ZPLC_NATIVE_SIM_BIN; else process.env.ZPLC_NATIVE_SIM_BIN = oldBinary;
+      await rm(root, { recursive: true, force: true });
+    }
+  }, 30_000);
+
+  itNative('runs cyclic tasks of different intervals, each on its own interval, in a POSIX scenario (RT-015)', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-multirate-posix-'));
+    const oldBinary = process.env.ZPLC_NATIVE_SIM_BIN;
+    try {
+      await mkdir(join(root, 'src')); await mkdir(join(root, 'tests'));
+      await writeFile(join(root, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'multirate', version: '1.0.0', tasks: [
+        { name: 'Slow', trigger: 'cyclic', interval_ms: 20, priority: 2, programs: ['Slow.st'] },
+        { name: 'Fast', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Fast.st'] },
+      ] }));
+      // each task flips its own output every time it runs: the 10 ms task on every tick, the 20 ms task on every other
+      await writeFile(join(root, 'src', 'Fast.st'), 'PROGRAM Fast\nVAR_OUTPUT Output AT %Q0.0 : BOOL; END_VAR\nOutput := NOT Output;\nEND_PROGRAM');
+      await writeFile(join(root, 'src', 'Slow.st'), 'PROGRAM Slow\nVAR_OUTPUT Output AT %Q0.1 : BOOL; END_VAR\nOutput := NOT Output;\nEND_PROGRAM');
+      const at = (atMs: number, fast: boolean, slow: boolean) => ({ kind: 'AT', atMs, condition: { 'Fast.Output': fast, 'Slow.Output': slow } });
+      await writeFile(join(root, 'tests', 'rates.scenario.json'), JSON.stringify({
+        schemaVersion: 1, id: 'Rates', tickMs: 10, durationMs: 40, events: [],
+        expectations: [at(0, true, true), at(10, false, true), at(20, true, false), at(30, false, false), at(40, true, true)],
+      }));
+      process.env.ZPLC_NATIVE_SIM_BIN = nativeRuntimeBinary;
+      const result = await testsRun(root);
+      expect(result).toMatchObject({ ok: true, summary: { backend: 'native-posix', scenarios: [{ id: 'Rates', passed: true }] } });
+      // a scenario that steps by another interval than the common divisor of the tasks is refused
+      await writeFile(join(root, 'tests', 'rates.scenario.json'), JSON.stringify({ schemaVersion: 1, id: 'Rates', tickMs: 20, durationMs: 40, events: [], expectations: [at(0, true, true)] }));
+      await expect(testsRun(root)).resolves.toMatchObject({ ok: false, evidence: { diagnostics: [{ code: 'SCENARIO_TICK_MISMATCH' }] } });
     } finally {
       if (oldBinary === undefined) delete process.env.ZPLC_NATIVE_SIM_BIN; else process.env.ZPLC_NATIVE_SIM_BIN = oldBinary;
       await rm(root, { recursive: true, force: true });

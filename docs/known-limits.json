@@ -112,8 +112,8 @@
   },
   "CMP-051": {
     "page": "language",
-    "en": "The loader refuses the artifact that the compiler builds for a program with an `LREAL` and for two cyclic tasks with different intervals.",
-    "es": "El cargador rechaza el artefacto que el compilador genera para un programa con un `LREAL` y para dos tareas cíclicas con intervalos distintos."
+    "en": "The loader refuses the artifact that the compiler builds for a program with an `LREAL`.",
+    "es": "El cargador rechaza el artefacto que el compilador genera para un programa con un `LREAL`."
   },
   "CMP-053": {
     "page": "language",
@@ -129,10 +129,5 @@
     "page": "language",
     "en": "An FBD block that is a user function block from another file is refused (`Invalid FBD connection … unknown destination input port`): the FBD transpiler does not know its ports.",
     "es": "Un bloque FBD que es un bloque de función de usuario de otro archivo se rechaza (`Invalid FBD connection … unknown destination input port`): el transpilador FBD no conoce sus puertos."
-  },
-  "RT-015": {
-    "page": "language",
-    "en": "A task with `trigger: event` is accepted by the compiler and refused later, and a program with two cyclic tasks of different intervals is refused by the native simulation.",
-    "es": "Una tarea con `trigger: event` es aceptada por el compilador y rechazada después, y un programa con dos tareas cíclicas de intervalos distintos es rechazado por la simulación nativa."
   }
 }

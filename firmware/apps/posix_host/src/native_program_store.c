@@ -40,6 +40,16 @@ static uint32_t crc32(const uint8_t *data, size_t len)
     return crc ^ 0xFFFFFFFFU;
 }
 
+static uint32_t gcd_u32(uint32_t a, uint32_t b)
+{
+    while (b != 0U) {
+        uint32_t rest = a % b;
+        a = b;
+        b = rest;
+    }
+    return a;
+}
+
 int zplc_native_program_describe(const uint8_t *program, size_t program_size,
                                  zplc_native_program_details_t *details)
 {
@@ -66,6 +76,7 @@ int zplc_native_program_describe(const uint8_t *program, size_t program_size,
         } else if (view.task_count <= ZPLC_LOADER_MAX_TASKS) {
             uint32_t index;
             uint32_t interval_us = 0U;
+            uint32_t common_ms = 0U;
             for (index = 0U; index < view.task_count; ++index) {
                 const uint8_t *task = view.tasks + index * ZPLC_TASK_DEF_SIZE;
                 zplc_task_def_t *definition = &details->tasks[index];
@@ -79,17 +90,19 @@ int zplc_native_program_describe(const uint8_t *program, size_t program_size,
                     definition->interval_us < 1000U ||
                     definition->interval_us > 3600000000U ||
                     definition->interval_us % 1000U != 0U ||
-                    definition->entry_point >= view.code_size ||
-                    (index != 0U && definition->interval_us != interval_us)) {
+                    definition->entry_point >= view.code_size) {
                     result = -1;
                     break;
                 }
+                /* RT-015: every task keeps its own interval; the greatest common divisor is the step that hits every release. */
+                if (index != 0U && definition->interval_us != interval_us) details->multirate = 1U;
                 interval_us = definition->interval_us;
+                common_ms = gcd_u32(common_ms, interval_us / 1000U);
             }
             if (result == ZPLC_LOADER_OK) {
                 details->task_count = (uint8_t)view.task_count;
                 details->has_task_segment = 1U;
-                details->scan_interval_ms = interval_us / 1000U;
+                details->scan_interval_ms = common_ms;
             }
         } else result = -1;
     }
