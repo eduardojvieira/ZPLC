@@ -94,6 +94,7 @@ END_PROGRAM`;
     const tags: CommunicationTagConfig[] = [
       { name: 'Pressure', symbol: 'Pressure', type: 'REAL', publish: true },
       { name: 'Missing', symbol: 'Missing', type: 'INT', mode: 'publish', description: 'declared by the project, not by the file' },
+      { name: 'Missing2', symbol: 'Missing2', type: 'BOOL', mode: 'subscribe' },
     ];
     const transformed = applyCommunicationTags(source, tags);
     const lines = transformed.split('\n');
