@@ -406,6 +406,8 @@
   "CMP-029": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-029-non-retain-accepted.expect.json","test":"CMP-029 VAR NON_RETAIN is accepted"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-029-retain-and-ordinary-variables-together.expect.json","test":"CMP-029 retained and ordinary variables of one program"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-029-retain-global-with-initial-value.expect.json","test":"CMP-029 a retained global takes its initial value on the first scan"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-029-retain-structure-and-string.expect.json","test":"CMP-029 retained structures and strings take their initial values"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-029-var-global-retain.expect.json","test":"CMP-029 VAR_GLOBAL RETAIN is accepted and works"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-029-var-non-retain-is-accepted.expect.json","test":"CMP-029 VAR NON_RETAIN is accepted and takes its initial value"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-029-var-retain-accepted.expect.json","test":"CMP-029 VAR RETAIN is accepted"},

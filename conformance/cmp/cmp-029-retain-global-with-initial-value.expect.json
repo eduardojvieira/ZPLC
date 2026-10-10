@@ -1,0 +1,13 @@
+{
+  "requirement": "CMP-029",
+  "title": "a retained global takes its initial value on the first scan",
+  "scans": 3,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 13
+    }
+  ]
+}
