@@ -67,7 +67,9 @@ llamador sigue funcionando, y el proceso real compila un proyecto y cancela una
 ejecución de escenarios sobre el runtime nativo. El recorrido 26 de
 `bun run test:journeys` cancela una ejecución larga en la aplicación real, ve que
 la ventana responde todo el tiempo y no encuentra ningún proceso de la ejecución
-(requisito IDE-012).
+(requisito IDE-012). Las pruebas empaquetadas de más abajo también compilan el
+proyecto y ejecutan sus escenarios en la aplicación empaquetada, que arranca el
+proceso desde su archivo y el runtime nativo desde sus recursos.
 
 ## Propiedades de seguridad, demostradas por comportamiento
 

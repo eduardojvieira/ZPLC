@@ -270,10 +270,9 @@ async function writeProjectOfSize(folder: string, bytes: number): Promise<void> 
 /** The project of the path probes: a folder with a file, a file outside it, and two links that leave it. */
 export function writeSecurityFixture(base: string): { project: string; outside: string; secret: string } {
   const outside = realpathSync(mkdtempSync(join(base, 'security-')));
+  // A real example, so that the project that the probes work in can also be built and tested afterwards.
   const project = join(outside, 'project');
-  mkdirSync(join(project, 'src'), { recursive: true });
-  writeFileSync(join(project, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'Fixture', version: '1.0.0', target: { board: 'posix' }, tasks: [{ name: 'MainTask', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Main.st'] }] }));
-  writeFileSync(join(project, 'src', 'Main.st'), 'PROGRAM Main\nEND_PROGRAM\n');
+  cpSync(join(packageRoot, 'projects', 'motor_start_stop'), project, { recursive: true });
   const secret = join(outside, 'secret.txt');
   writeFileSync(secret, 'outside the project');
   symlinkSync(secret, join(project, 'leak.txt'));
@@ -360,7 +359,7 @@ export async function probeSecurity(app: App, options: { packaged: boolean; fixt
     const answer = await operation(name, literal(request));
     assert(!answer.ok && answer.code === code, `${name} ${JSON.stringify(request)} should be refused as ${code}: ${JSON.stringify(answer)}`);
   };
-  const control = await operation('read', literal({ path: 'src/Main.st' }));
+  const control = await operation('read', literal({ path: 'src/Motor.st' }));
   assert(control.ok, `A read inside the project should work: ${JSON.stringify(control)}`);
   await refused('read', { path: '../secret.txt' }, 'invalid-path');
   await refused('read', { path: 'src/../../secret.txt' }, 'invalid-path');
@@ -368,19 +367,29 @@ export async function probeSecurity(app: App, options: { packaged: boolean; fixt
   await refused('read', { path: 'C:\\Windows\\win.ini' }, 'invalid-path');
   await refused('list', { path: '..' }, 'invalid-path');
   await refused('remove', { path: '../secret.txt', recursive: false }, 'invalid-path');
-  await refused('rename', { from: 'src/Main.st', to: '../moved.st' }, 'invalid-path');
+  await refused('rename', { from: 'src/Motor.st', to: '../moved.st' }, 'invalid-path');
   await refused('read', { path: 'leak.txt' }, 'outside-root');
   await refused('write', { path: 'leak.txt', bytes: 'overwritten' }, 'outside-root');
   await refused('list', { path: 'linkdir' }, 'outside-root');
   await refused('write', { path: 'linkdir/pwned.txt', bytes: 'pwned' }, 'outside-root');
   const huge = await operation('write', `{ rootId: ${JSON.stringify(rootId)}, path: 'src/Huge.st', bytes: new Uint8Array(16 * 1024 * 1024 + 1) }`);
   assert(!huge.ok && huge.code === 'too-large', `An over-size write should be refused: ${JSON.stringify(huge)}`);
-  const foreign = await operation('read', JSON.stringify({ rootId: 'not-the-folder-of-this-window', path: 'src/Main.st' }));
+  const foreign = await operation('read', JSON.stringify({ rootId: 'not-the-folder-of-this-window', path: 'src/Motor.st' }));
   assert(!foreign.ok && foreign.code === 'no-folder', `A folder id that is not the window's should be refused: ${JSON.stringify(foreign)}`);
   assert(readFileSync(options.fixture.secret, 'utf8') === 'outside the project', 'A refused write changed the file outside the project.');
   assert(!existsSync(join(options.fixture.outside, 'pwned.txt')) && !existsSync(join(options.fixture.project, 'src', 'Huge.st')), 'A refused write left a file behind.');
-  assert(existsSync(join(options.fixture.project, 'src', 'Main.st')), 'A refused operation removed a project file.');
+  assert(existsSync(join(options.fixture.project, 'src', 'Motor.st')), 'A refused operation removed a project file.');
   evidence.push('project operations refused: "..", absolute and drive paths, a file link and a directory link that leave the project, an over-size write, and another window\'s folder id; nothing outside the project changed');
+
+  // 5. After all of that the window still works: its folder builds and its scenarios run, in the worker process (IDE-012).
+  const registered = await probe<{ workspaceId: string } | null>(`return await window.electronAPI.workspaceTests.registerProjectRoot({ rootId: ${JSON.stringify(rootId)} });`);
+  assert(registered?.workspaceId, `The folder of the window could not be registered after the probes: ${JSON.stringify(registered)}`);
+  const request = `{ workspaceId: ${JSON.stringify(registered.workspaceId)}, rootId: ${JSON.stringify(rootId)} }`;
+  const built = await probe<{ ok: boolean; name?: string }>(`const result = await window.electronAPI.workspaceTests.compile(${request}); return { ok: result.ok === true, name: result.summary && result.summary.name };`);
+  assert(built.ok && built.name === 'Motor Start Stop', `The window cannot build its project after the probes: ${JSON.stringify(built)}`);
+  const tested = await probe<{ ok: boolean }>(`const result = await window.electronAPI.workspaceTests.run(${request}); return { ok: result.ok === true };`);
+  assert(tested.ok, `The window cannot run its scenarios after the probes: ${JSON.stringify(tested)}`);
+  evidence.push('after the probes the window still builds its project and runs its scenarios on the native runtime');
   return evidence;
 }
 

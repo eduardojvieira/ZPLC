@@ -62,7 +62,9 @@ a worker stuck in a busy loop is killed and is really gone while the caller keep
 running, and the real worker compiles a project and cancels a run of scenarios on
 the native runtime. Journey 26 of `bun run test:journeys` cancels a long run in the
 real application, sees the window answer throughout and finds no process of the
-run left (requirement IDE-012).
+run left (requirement IDE-012). The packaged probes below also build the project and
+run its scenarios in the packaged application, which starts the worker from its
+archive and the native runtime from its resources.
 
 ## Security properties, shown by behaviour
 
