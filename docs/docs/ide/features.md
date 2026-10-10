@@ -42,3 +42,16 @@ can report. A host trace is not hardware/HIL evidence; a force or RUN/STOP
 action on a physical system requires explicit human authority and a site safety
 procedure. AI and MCP tools cannot force values or change RUN/STOP; see
 [AI and privacy](./ai-privacy.md).
+
+## Pause, resume, step and Stop
+
+Pause, resume and step keep the logical state of the program where it is, and Stop discards it. The table holds for the native simulation and for the Zephyr scheduler of a connected board.
+
+| Action | Output image | Forces | The scan |
+|---|---|---|---|
+| Pause | Kept | Kept | Pauses between scans. |
+| Step | Kept, and shows the stepped scan | Kept | Runs one whole scan, or finishes the scan stopped at a breakpoint. |
+| Resume | Kept | Kept | A scan stopped at a breakpoint continues from there. |
+| Stop | Zeroed | Cleared | Every task is back at its entry point, and a scan that a breakpoint interrupted is discarded. |
+
+A fault clears the image and the forces as Stop does. On a board, Pause, Step and Stop also drive the physical outputs to their safe state, off. [Pause, resume, step and stop](../runtime/scheduler.md#pause-resume-step-and-stop) has the full table and the Zephyr tests behind it, run on `native_sim` and QEMU with no board measured. For the native simulation the checks are in `firmware/lib/zplc_core/tests/test_native_runtime_session.c`, where Stop also zeroes the input image.

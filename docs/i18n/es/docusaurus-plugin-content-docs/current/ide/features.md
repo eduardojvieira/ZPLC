@@ -43,3 +43,16 @@ ni de HIL; forzar un valor o cambiar RUN/STOP en un sistema físico exige la
 autorización expresa de una persona y un procedimiento de seguridad del sitio.
 Las herramientas de IA y MCP no pueden forzar valores ni cambiar RUN/STOP;
 consulte [IA y privacidad](./ai-privacy.md).
+
+## Pausa, reanudación, paso y Stop
+
+La pausa, la reanudación y el paso conservan donde está el estado lógico del programa, y Stop lo descarta. La tabla vale para la simulación nativa y para el scheduler de Zephyr de una placa conectada.
+
+| Acción | Imagen de salidas | Forzados | El scan |
+|---|---|---|---|
+| Pausa | Se conserva | Se conservan | Pausa entre scans. |
+| Paso | Se conserva y muestra el scan ejecutado | Se conservan | Ejecuta un scan completo, o termina el scan detenido en un breakpoint. |
+| Reanudación | Se conserva | Se conservan | Un scan detenido en un breakpoint continúa desde ahí. |
+| Stop | Se pone a cero | Se borran | Cada tarea vuelve a su punto de entrada, y se descarta un scan que un breakpoint interrumpió. |
+
+Una falla borra la imagen y los forzados igual que Stop. En una placa, la pausa, el paso y Stop además llevan las salidas físicas a su estado seguro, apagadas. [Pausa, reanudación, paso y parada](../runtime/scheduler.md#pausa-reanudación-paso-y-parada) tiene la tabla completa y las pruebas de Zephyr que la respaldan, ejecutadas en `native_sim` y QEMU sin medición en una placa. Para la simulación nativa, las verificaciones están en `firmware/lib/zplc_core/tests/test_native_runtime_session.c`, donde Stop además pone a cero la imagen de entradas.
