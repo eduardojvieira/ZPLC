@@ -118,7 +118,12 @@ const keyOf = (id: string, check: Check) => `${id}|${check.kind}|${check.ref}|${
 export function mergeEvidence(scanned: Array<[string, Check]>, hand: Evidence): Evidence {
   const written = new Set(Object.entries(hand).flatMap(([id, checks]) => checks.map((check) => keyOf(id, check))));
   const merged: Evidence = {};
-  const add = (id: string, check: Check) => ((merged[id] ??= []).push(check));
+  const seen = new Set<string>();
+  const add = (id: string, check: Check) => {
+    if (seen.has(keyOf(id, check))) return;
+    seen.add(keyOf(id, check));
+    (merged[id] ??= []).push(check);
+  };
   for (const [id, check] of scanned) if (!written.has(keyOf(id, check))) add(id, check);
   for (const [id, checks] of Object.entries(hand)) for (const check of checks) add(id, check);
   return merged;
@@ -134,11 +139,14 @@ export function handWritten(evidence: Evidence): Evidence {
   return kept;
 }
 
+/** Code-point order, so that the committed file does not depend on the locale of the machine that writes it. */
+const compare = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+
 /** One check per line, requirements in the order of the index, so that a new check shows as one added line. */
 export function serializeEvidence(evidence: Evidence, order: string[]): string {
   const rank = new Map(order.map((id, position) => [id, position]));
-  const ids = Object.keys(evidence).sort((a, b) => (rank.get(a) ?? Infinity) - (rank.get(b) ?? Infinity) || a.localeCompare(b));
-  const byKind = (a: Check, b: Check) => KINDS.indexOf(a.kind) - KINDS.indexOf(b.kind) || a.ref.localeCompare(b.ref) || (a.test ?? '').localeCompare(b.test ?? '');
+  const ids = Object.keys(evidence).sort((a, b) => (rank.get(a) ?? Infinity) - (rank.get(b) ?? Infinity) || compare(a, b));
+  const byKind = (a: Check, b: Check) => KINDS.indexOf(a.kind) - KINDS.indexOf(b.kind) || compare(a.ref, b.ref) || compare(a.test ?? '', b.test ?? '');
   const entries = ids.map((id) => `  ${JSON.stringify(id)}: [\n${[...evidence[id]!].sort(byKind).map((check) => `    ${JSON.stringify(check)}`).join(',\n')}\n  ]`);
   return `{\n${entries.join(',\n')}\n}\n`;
 }

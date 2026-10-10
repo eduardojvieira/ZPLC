@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'bun:test';
 import { existsSync, readFileSync } from 'node:fs';
 
-import { cChecks, conformanceChecks, coverage, isFailing, journeyChecks, mergeEvidence, unitChecks, type Check } from './requirement-coverage';
+import { cChecks, conformanceChecks, coverage, isFailing, journeyChecks, mergeEvidence, serializeEvidence, unitChecks, type Check } from './requirement-coverage';
 
 const REF = 'packages/zplc-ide/src/a.test.ts';
 
@@ -133,9 +133,26 @@ describe('mergeEvidence', () => {
     expect(merged['VF-001']).toHaveLength(1);
   });
 
+  it('keeps one record for a title that appears twice in a file', () => {
+    const twice: Array<[string, Check]> = [['VF-001', { kind: 'unit', ref: REF, test: 'same (VF-001)' }], ['VF-001', { kind: 'unit', ref: REF, test: 'same (VF-001)' }]];
+    expect(mergeEvidence(twice, {})['VF-001']).toHaveLength(1);
+  });
+
   it('keeps hand-written records of kinds that no scan produces', () => {
     const merged = mergeEvidence(scanned, { 'HIL-010': [{ kind: 'hardware', ref: 'specs/records/pico.md', note: 'bench run of 2026-10-10' }] });
     expect(merged['HIL-010']).toHaveLength(1);
+  });
+});
+
+describe('serializeEvidence', () => {
+  it('orders requirements as the index does and checks by kind then file name in code-point order, whatever the locale', () => {
+    const evidence = {
+      'CMP-002': [{ kind: 'unit' as const, ref: 'b.test.ts', test: 't' }, { kind: 'unit' as const, ref: 'B.test.ts', test: 't' }, { kind: 'conformance' as const, ref: 'c.expect.json', test: 'CMP-002 x' }],
+      'VF-001': [{ kind: 'unit' as const, ref: 'a.test.ts', test: 't' }],
+    };
+    const lines = serializeEvidence(evidence, ['VF-001', 'CMP-002']).split('\n');
+    expect(lines.filter((line) => line.startsWith('  "'))).toEqual(['  "VF-001": [', '  "CMP-002": [']);
+    expect(lines.filter((line) => line.startsWith('    {')).map((line) => JSON.parse(line.replace(/,$/, '')).ref)).toEqual(['a.test.ts', 'c.expect.json', 'B.test.ts', 'b.test.ts']);
   });
 });
 
