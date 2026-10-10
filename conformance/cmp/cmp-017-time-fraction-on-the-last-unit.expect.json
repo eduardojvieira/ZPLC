@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-017",
+  "title": "a fraction on the last component of a TIME literal",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "UDINT",
+      "value": 5430000
+    },
+    {
+      "at": "%QD4",
+      "type": "UDINT",
+      "value": 250
+    }
+  ]
+}

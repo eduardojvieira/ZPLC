@@ -1542,9 +1542,15 @@ class Parser {
 
         // Time literal
         if (this.match(TokenType.TIME_LITERAL)) {
+            let valueMs: number;
+            try {
+                valueMs = parseTimeLiteral(curr.value);
+            } catch (e) {
+                throw new ParseError((e as Error).message, curr.line, curr.column);
+            }
             return {
                 kind: 'TimeLiteral',
-                valueMs: parseTimeLiteral(curr.value),
+                valueMs,
                 rawValue: curr.value,
                 line: curr.line,
                 column: curr.column,

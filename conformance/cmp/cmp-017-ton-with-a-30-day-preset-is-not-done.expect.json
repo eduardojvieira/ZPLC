@@ -1,0 +1,13 @@
+{
+  "requirement": "CMP-017",
+  "title": "a TON with a 30 day preset is not done after 20 ms",
+  "scans": 3,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QX0.0",
+      "type": "BOOL",
+      "value": false
+    }
+  ]
+}

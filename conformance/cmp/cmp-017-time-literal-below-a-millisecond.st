@@ -1,0 +1,6 @@
+PROGRAM Fine
+VAR
+  t AT %QD0 : TIME;
+END_VAR
+  t := T#1.5ms;
+END_PROGRAM

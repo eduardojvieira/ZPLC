@@ -1,0 +1,13 @@
+{
+  "requirement": "CMP-017",
+  "title": "the largest TIME literal is 49d17h2m47s295ms",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "UDINT",
+      "value": 4294967295
+    }
+  ]
+}

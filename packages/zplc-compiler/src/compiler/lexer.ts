@@ -493,6 +493,28 @@ export function tokenize(source: string): Token[] {
         return result;
     };
 
+    /**
+     * The value of a TIME literal after `T#`: an optional sign, then components such as
+     * `1h30m`, `1.5s` or `1h_30m`. A `-` anywhere else ends the literal, so `T#5s-T#3s` is a subtraction.
+     */
+    const readTimeLiteralValue = (): string => {
+        let result = '';
+        if (current() === '-' || current() === '+') {
+            result += advance();
+        }
+        while (!isAtEnd()) {
+            const ch = current();
+            if (isAlphaNumeric(ch) || ch === '_') {
+                result += advance();
+            } else if (ch === '.' && isDigit(peek())) {
+                result += advance();
+            } else {
+                break;
+            }
+        }
+        return result;
+    };
+
     const readTypedLiteralValue = (): string => {
         let result = '';
         while (!isAtEnd() && (isAlphaNumeric(current()) || current() === '_' || current() === '-' || current() === ':' || current() === '.')) {
@@ -653,7 +675,7 @@ export function tokenize(source: string): Token[] {
                 advance(); // Consume #
                 
                 if (upper === 'T' || upper === 'TIME') {
-                    const val = readTypedLiteralValue();
+                    const val = readTimeLiteralValue();
                     addToken(TokenType.TIME_LITERAL, val, startLine, startColumn);
                     continue;
                 }

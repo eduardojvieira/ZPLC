@@ -1,0 +1,6 @@
+PROGRAM Order
+VAR
+  t AT %QD0 : TIME;
+END_VAR
+  t := T#30m1h;
+END_PROGRAM
