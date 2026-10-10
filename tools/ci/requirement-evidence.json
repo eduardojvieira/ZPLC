@@ -1365,17 +1365,25 @@
   "REL-038": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"Windows installers carry unsigned in their variant until a channel is live (REL-038)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"electron-builder.yml Windows signing (REL-003, REL-038)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
-    {"kind":"unit","ref":"scripts/release-artifacts.test.mjs","test":"release notes give the Windows first-run steps, the Smart App Control statement and each channel state (REL-038)"}
+    {"kind":"unit","ref":"scripts/release/release-notes.test.ts","test":"what a person is told about Windows, verification and evidence (REL-038, REL-017)"},
+    {"kind":"unit","ref":"scripts/release/release-records.test.ts","test":"what a version bump edits (REL-031, REL-038)"}
   ],
   "REL-011": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"Linux packages use electron-builder defaults and are installed in clean containers (REL-011)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"}
   ],
   "REL-015": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"release.yml publishes each platform independently and only as a draft (REL-015, REL-016)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
-    {"kind":"unit","ref":"scripts/release-artifacts.test.mjs","test":"release notes state the signing state of every asset the pipeline publishes (REL-015)"}
+    {"kind":"unit","ref":"scripts/release/release-notes.test.ts","test":"the signing state of every asset comes from the checks of the run (REL-027, REL-015)"}
   ],
   "REL-016": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"release.yml publishes each platform independently and only as a draft (REL-015, REL-016)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"}
+  ],
+  "REL-017": [
+    {"kind":"unit","ref":"scripts/release-artifacts.test.mjs","test":"covers the standalone CLI and MCP executables, the bill of materials and the firmware images (REL-017)"},
+    {"kind":"unit","ref":"scripts/release-artifacts.test.mjs","test":"merges the checksum files of the platforms into one SHA256SUMS, sorted, and refuses a name with two hashes (REL-017)"},
+    {"kind":"unit","ref":"scripts/release-artifacts.test.mjs","test":"refuses an executable name that does not follow the scheme, so nothing unnamed is checksummed (REL-017)"},
+    {"kind":"unit","ref":"scripts/release-artifacts.test.mjs","test":"the command line merges checksum files into one output file (REL-017)"},
+    {"kind":"unit","ref":"scripts/release/release-notes.test.ts","test":"what a person is told about Windows, verification and evidence (REL-038, REL-017)"}
   ],
   "REL-018": [
     {"kind":"unit","ref":"scripts/release/lockfile.test.ts","test":"lockfile keys and ids (REL-018, REL-019)"},
@@ -1398,5 +1406,47 @@
   ],
   "REL-020": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"names the installer and the portable executable by the REL-020 variants, with unsigned appended","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"}
+  ],
+  "REL-023": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_fw_identity.c","test":"REL-023: the identity a firmware image or host runtime reports (version, commit, board, ABI, options)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"REL-023: the runtime says which build it is, so Studio can compare it with its own version."}
+  ],
+  "REL-026": [
+    {"kind":"unit","ref":"scripts/release/binaries.test.ts","test":"the release binaries (REL-026)"},
+    {"kind":"unit","ref":"scripts/release/binaries.test.ts","test":"the standalone binaries of this machine run without a JavaScript runtime (REL-026)"}
+  ],
+  "REL-027": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"the notes claim only checks that their job runs (REL-027)"},
+    {"kind":"unit","ref":"scripts/release/release-notes.test.ts","test":"tests, known failures and changes (REL-027)"},
+    {"kind":"unit","ref":"scripts/release/release-notes.test.ts","test":"the command line (REL-027)"},
+    {"kind":"unit","ref":"scripts/release/release-notes.test.ts","test":"the signing state of every asset comes from the checks of the run (REL-027, REL-015)"},
+    {"kind":"unit","ref":"scripts/release/run-results.test.ts","test":"classifyAsset (REL-027)"},
+    {"kind":"unit","ref":"scripts/release/run-results.test.ts","test":"collectRunResults (REL-027)"},
+    {"kind":"unit","ref":"scripts/release/run-results.test.ts","test":"countJunit (REL-027)"}
+  ],
+  "REL-029": [
+    {"kind":"unit","ref":"scripts/release/releasing-md.test.ts","test":"the checklist of a release (REL-029)"}
+  ],
+  "REL-030": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"a rehearsal publishes nothing (REL-030)"},
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"offers no input that selects what to upload, and a rehearsal that is on unless a person turns it off (REL-030)"},
+    {"kind":"unit","ref":"scripts/release/resolve-release.test.ts","test":"a rehearsal publishes nothing (REL-030)"},
+    {"kind":"unit","ref":"scripts/release/resolve-release.test.ts","test":"the command line (REL-030)"}
+  ],
+  "REL-031": [
+    {"kind":"unit","ref":"scripts/release/release-notes.test.ts","test":"the title of a release says how complete a prerelease is (REL-031)"},
+    {"kind":"unit","ref":"scripts/release/release-records.test.ts","test":"compareVersions (REL-031)"},
+    {"kind":"unit","ref":"scripts/release/release-records.test.ts","test":"the changelog holds only tagged versions (REL-031)"},
+    {"kind":"unit","ref":"scripts/release/release-records.test.ts","test":"the product identity is fixed (REL-031)"},
+    {"kind":"unit","ref":"scripts/release/release-records.test.ts","test":"what a version bump edits (REL-031, REL-038)"},
+    {"kind":"unit","ref":"scripts/release/resolve-release.test.ts","test":"prerelease tags continue the rc sequence (REL-031)"}
+  ],
+  "REL-034": [
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/packaged-content.test.ts","test":"packaged content (REL-034)"},
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/packaged-content.test.ts","test":"the asar reader (REL-034)"},
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/packaged-content.test.ts","test":"the encodings of a string in a minified bundle (REL-034)"}
+  ],
+  "REL-035": [
+    {"kind":"unit","ref":"scripts/release/releasing-md.test.ts","test":"the external services of the release (REL-035)"}
   ]
 }

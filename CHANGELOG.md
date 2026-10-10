@@ -4,6 +4,51 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- The release pipeline can be rehearsed and says what it did (REL-030, REL-027,
+  REL-017). **Release Build** has a *Rehearsal* input that is on by default: it
+  runs every job, renders the notes and one `SHA256SUMS` as an artifact, and
+  makes no draft, upload or attestation. A run publishes only for the push of
+  the exact version tag, or a manual run on that tag with the rehearsal
+  unticked (`scripts/release/resolve-release.ts`, tested with the events of the
+  workflow). The notes and the title are rendered from the job results, the
+  platform bundles and the JUnit reports of the run: a file is called signed
+  only when the signature check of that run passed, a platform whose job failed
+  is listed as having no files, and a prerelease title says how complete it is.
+  Prerelease tags continue the `rc` sequence (`alpha`, `beta` and `preview`
+  names, which sort below `rc.3`, are refused), and `CHANGELOG.md` is checked to
+  hold only tagged versions (`2.0.0-rc.2` has no tag and is listed as the
+  exception). `RELEASING.md` is the one checklist, with every external service
+  and its cost (none).
+- The bill of materials is written from the lockfile (REL-018, REL-019).
+  `scripts/release/sbom.ts` produces CycloneDX 1.5 from `bun.lock`, the
+  workspace manifests and `west.yml` (1,670 components) instead of a scan of the
+  installers, and fails when the document holds fewer packages than the
+  lockfile lists or than the recorded floor. The third-party notices of the
+  packages and fonts that ship are generated while packaging and are
+  `THIRD-PARTY-NOTICES.txt` in the resources of every installer; a package with
+  no licence or a font with no entry in `scripts/release/font-licences.json`
+  stops the build.
+- The firmware says which build it is (REL-023). A generated header carries the
+  version, the commit (and whether tracked files differed from it), the board,
+  the bytecode ABI and draft counter and the `CONFIG_ZPLC_*` options with their
+  hash. `zplc version` prints it and no longer prints the compile date, so one
+  commit is one image; `zplc sys build [--json]` reports it as a command of its
+  own, because Studio's handshake accepts exactly the keys of
+  `zplc sys info --json`; the native runtime reports it as `build` in
+  `session.hello`. On the Pico the image grows by 1,472 bytes of flash and none
+  of RAM. A test drives the real shell of `firmware/app` on `native_sim`.
+- The CLI and the MCP server are released as standalone executables (REL-026,
+  IDE-026). `scripts/release/binaries.ts` compiles both with `bun build
+  --compile` for Linux, macOS and Windows on x64 and arm64 and names them
+  `<tool>-<version>-<os>-<arch>[.exe]`; each platform job builds and smokes them
+  on its own architecture (`--version`, a compile of a bundled project, the list
+  of MCP tools). Each is about 98 MB, the size of the embedded runtime.
+- The unpacked application is checked for what it must hold (REL-034):
+  `bun run smoke:packaged-content` looks for the text of every example project
+  file in the renderer bundle inside `app.asar`, the id of every lesson (found
+  by pattern, so a lesson package that is added is covered), every bytecode
+  example, and a licence notice for every package and font of the archive.
+
 - Three of the fifteen modules over the new size limit are split (IDE-014): the
   project settings are one module per section (2,181 lines to 213 and eleven
   files of at most 430), the Explorer's context menu and confirmations are
