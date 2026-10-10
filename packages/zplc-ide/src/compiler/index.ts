@@ -313,16 +313,19 @@ function applyModbusBindingHelpers(stSource: string): string {
         }
 
         bindings.set(match[2], parseInt(match[3], 10));
+        // the line stays, empty: every diagnostic is reported at the line the author sees (CMP-006)
+        keptLines.push('');
     }
 
     if (bindings.size === 0) {
         return stSource;
     }
 
-    for (let i = 0; i < keptLines.length; i++) {
-        for (const [symbol, address] of bindings.entries()) {
-            const symbolExpr = escapeRegExp(symbol);
-            const declRegex = new RegExp(`^(\\s*${symbolExpr}\\s*:[^;]*)(;.*)$`, 'i');
+    for (const [symbol, address] of bindings.entries()) {
+        const symbolExpr = escapeRegExp(symbol);
+        const declRegex = new RegExp(`^(\\s*${symbolExpr}\\s*:[^;]*)(;.*)$`, 'i');
+        // the declaration is the first line that looks like one: `Symbol := 1;` further down is a statement
+        for (let i = 0; i < keptLines.length; i++) {
             const match = keptLines[i].match(declRegex);
             if (!match) {
                 continue;
@@ -332,6 +335,7 @@ function applyModbusBindingHelpers(stSource: string): string {
             if (!keptLines[i].includes(annotation)) {
                 keptLines[i] = `${match[1]} ${annotation}${match[2]}`;
             }
+            break;
         }
     }
 
@@ -379,13 +383,20 @@ export function applyCommunicationTags(stSource: string, tags: CommunicationTagC
         return lines.join('\n');
     }
 
+    // The declarations go on the line of VAR (or PROGRAM) when it ends there, so that no line of the author's
+    // source moves and every diagnostic is reported at the line they see (CMP-006).
+    const sameLine = (line: string): boolean => !/\/\/|\(\*|\/\*/.test(line);
     const varIndex = lines.findIndex((line) => /^\s*VAR\b/i.test(line));
     if (varIndex >= 0) {
         const declarations = missing.map((tag) => {
             const note = tag.description ? ` (* ${tag.description} *)` : '';
             return `    ${tag.symbol} : ${tag.type} ${getTagAnnotations(tag).join(' ')};${note}`;
         });
-        lines.splice(varIndex + 1, 0, ...declarations);
+        if (sameLine(lines[varIndex])) {
+            lines[varIndex] = `${lines[varIndex]}${declarations.join('')}`;
+        } else {
+            lines.splice(varIndex + 1, 0, ...declarations);
+        }
         return lines.join('\n');
     }
 
@@ -395,8 +406,11 @@ export function applyCommunicationTags(stSource: string, tags: CommunicationTagC
             const note = tag.description ? ` (* ${tag.description} *)` : '';
             return `    ${tag.symbol} : ${tag.type} ${getTagAnnotations(tag).join(' ')};${note}`;
         });
-        const block = ['VAR', ...declarations, 'END_VAR', ''];
-        lines.splice(programIndex + 1, 0, ...block);
+        if (sameLine(lines[programIndex])) {
+            lines[programIndex] = `${lines[programIndex]} VAR${declarations.join('')} END_VAR`;
+        } else {
+            lines.splice(programIndex + 1, 0, ...['VAR', ...declarations, 'END_VAR', '']);
+        }
         return lines.join('\n');
     }
 
