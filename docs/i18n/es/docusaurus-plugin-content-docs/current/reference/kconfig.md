@@ -9,7 +9,7 @@ tags: [reference, generated]
 
 {/* >>> GENERATED (tools/docs/generate_source_references.ts): reference/kconfig. Do not edit. >>> */}
 
-El módulo del runtime ZPLC define 29 símbolos de Kconfig. Se fija uno en el `prj.conf` de una aplicación o en un overlay de placa como `CONFIG_<SÍMBOLO>=valor`; un símbolo que depende de otro solo está disponible mientras ese otro esté habilitado.
+El módulo del runtime ZPLC define 31 símbolos de Kconfig. Se fija uno en el `prj.conf` de una aplicación o en un overlay de placa como `CONFIG_<SÍMBOLO>=valor`; un símbolo que depende de otro solo está disponible mientras ese otro esté habilitado.
 
 Esta tabla se lee del archivo fuente `firmware/zephyr/Kconfig`; su texto es el de la propia fuente, por eso es igual en inglés y en español.
 
@@ -43,6 +43,8 @@ Esta tabla se lee del archivo fuente `firmware/zephyr/Kconfig`; su texto es el d
 | `CONFIG_ZPLC_RETAIN_ENTRY_OVERHEAD` | `int` | `64` | `0` to `4096` | `CONFIG_ZPLC`, `CONFIG_ZPLC_SCHEDULER`, `CONFIG_ZPLC_RETAIN_PERSIST` | Entry header and alignment of one chunk: 8 bytes for the NVS allocation entry, a data CRC if enabled, and the padding to the flash write block. The default covers a 32-byte write block. |
 | `CONFIG_ZPLC_RETAIN_LIFE_YEARS` | `int` | `10` | `1` to `50` | `CONFIG_ZPLC`, `CONFIG_ZPLC_SCHEDULER`, `CONFIG_ZPLC_RETAIN_PERSIST` | Flash life the save interval must reach (years) |
 | `CONFIG_ZPLC_RETAIN_CHUNK_SIZE` | `int` | `1024` | `128` to `4096` | `CONFIG_ZPLC`, `CONFIG_ZPLC_SCHEDULER`, `CONFIG_ZPLC_RETAIN_PERSIST` | The RETAIN record is cut into chunks of this size. A chunk plus the backend overhead must fit one erase sector minus four allocation entries (the NVS limit): 1024 fits a 4 KB sector. The region needs at most eight chunks. |
+| `CONFIG_ZPLC_MQTT_ALLOW_INSECURE_TLS` | `bool` | `n` |   | `CONFIG_ZPLC` | Off by default (COM-014). With it off, `zplc config set mqtt_security 1` is refused and a stored value of 1 stops the client from connecting, so a release image can never run a TLS session that does not authenticate the broker. With it on, setting `mqtt_security 1` is the explicit opt-in, and `zplc mqtt status` and `zplc status` show tls-verify OFF for as long as the session is configured that way. Use it for a bench against a broker with a self-signed certificate that you cannot install a CA for. |
+| `CONFIG_ZPLC_SHELL_RAW_MEMORY` | `bool` | `n` |   | `CONFIG_ZPLC`, `CONFIG_SHELL` | Off by default (COM-022). Raw memory access reads and writes any address of the device, not only the PLC regions, so a release image has none: `devmem` of the Zephyr shell is not built. The diagnostic image sets this and CONFIG_DEVMEM_SHELL=y together (firmware/app/diagnostic.conf). The application build stops with an error when CONFIG_DEVMEM_SHELL is on and this is off, so the one cannot be switched on by accident behind the other. |
 | `CONFIG_ZPLC_HIL_DEBUG` | `bool` | `n` |   | `CONFIG_ZPLC` | Enables Hardware-in-the-Loop debugging features. Adds JSON trace output for VM introspection and testing. When enabled, the runtime emits structured JSON debug frames over serial for automated testing and validation. |
 
 {/* <<< END GENERATED: reference/kconfig <<< */}

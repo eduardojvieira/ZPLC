@@ -485,13 +485,15 @@ export const DEFAULT_ZPLC_CONFIG: ZPLCProjectV2 = {
   name: 'New Project',
   version: '1.0.0',
   communication: {
+    // COM-014: a new project has no broker, and MQTT is off until one is named. The transport is TLS with the
+    // broker's certificate verified; plain TCP and an unverified TLS session are choices the person makes.
     mqtt: {
-      enabled: true,
+      enabled: false,
       profile: 'sparkplug-b',
       protocolVersion: '5.0',
-      transport: 'tcp',
-      broker: 'test.mosquitto.org',
-      port: 1883,
+      transport: 'tls',
+      broker: '',
+      port: 8883,
       clientId: 'zplc-device',
       keepAliveSec: 60,
       cleanSession: true,
@@ -502,7 +504,7 @@ export const DEFAULT_ZPLC_CONFIG: ZPLCProjectV2 = {
       publishQos: 0,
       subscribeQos: 0,
       publishRetain: false,
-      securityLevel: 'none',
+      securityLevel: 'tls-server-verify',
       websocketPath: '/mqtt',
       lwtEnabled: false,
       lwtPayload: 'offline',

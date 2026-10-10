@@ -313,6 +313,38 @@ endif # ZPLC_RETAIN_PERSIST
 endif # ZPLC_SCHEDULER
 
 # -----------------------------------------------------------------------------
+# Communication safety (COM-014, COM-022)
+# -----------------------------------------------------------------------------
+
+config ZPLC_MQTT_ALLOW_INSECURE_TLS
+    bool "Allow MQTT over TLS without verifying the broker certificate"
+    default n
+    help
+      Off by default (COM-014). With it off, `zplc config set mqtt_security 1`
+      is refused and a stored value of 1 stops the client from connecting, so
+      a release image can never run a TLS session that does not authenticate
+      the broker.
+
+      With it on, setting `mqtt_security 1` is the explicit opt-in, and
+      `zplc mqtt status` and `zplc status` show tls-verify OFF for as long as
+      the session is configured that way. Use it for a bench against a broker
+      with a self-signed certificate that you cannot install a CA for.
+
+config ZPLC_SHELL_RAW_MEMORY
+    bool "Raw memory shell commands (diagnostic firmware only)"
+    default n
+    depends on SHELL
+    help
+      Off by default (COM-022). Raw memory access reads and writes any
+      address of the device, not only the PLC regions, so a release image
+      has none: `devmem` of the Zephyr shell is not built.
+
+      The diagnostic image sets this and CONFIG_DEVMEM_SHELL=y together
+      (firmware/app/diagnostic.conf). The application build stops with an
+      error when CONFIG_DEVMEM_SHELL is on and this is off, so the one
+      cannot be switched on by accident behind the other.
+
+# -----------------------------------------------------------------------------
 # HIL Debug Configuration
 # -----------------------------------------------------------------------------
 

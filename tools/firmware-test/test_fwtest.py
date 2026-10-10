@@ -252,5 +252,10 @@ class RunScriptModes(unittest.TestCase):
         self.assertIn("unknown mode 'lint'", done.stderr)
 
 
+# The build rules of the communication safety requirements (COM-016, COM-017, COM-022) are in their own file; they are
+# imported here so that the one command CI runs for this directory runs them too.
+from test_check_inbound_authority import InboundAuthority  # noqa: E402,F401
+from test_comm_rules import ShellRule, TlsRandomRule  # noqa: E402,F401
+
 if __name__ == "__main__":
     unittest.main()

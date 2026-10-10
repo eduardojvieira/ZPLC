@@ -19,6 +19,20 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 project(zplc_zephyr_app)
 
+# COM-022: the raw memory command of the Zephyr shell is built only into the
+# diagnostic image (firmware/app/diagnostic.conf).
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/zplc_shell_rules.cmake)
+zplc_check_shell_rules("${CONFIG_DEVMEM_SHELL}" "${CONFIG_ZPLC_SHELL_RAW_MEMORY}")
+
+# COM-016: TLS never runs on a random generator that is not cryptographic.
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/zplc_tls_rng_rule.cmake)
+if(CONFIG_MQTT_LIB_TLS OR CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+  set(_zplc_tls ON)
+else()
+  set(_zplc_tls OFF)
+endif()
+zplc_check_tls_random("${_zplc_tls}" "${CONFIG_TEST_RANDOM_GENERATOR}" "${CONFIG_CSPRNG_ENABLED}")
+
 # RT-028, RT-029: the sizes a board profile advertises to the IDE (supported-boards.v1.5.0.json) are the sizes the
 # build was configured with. The largest artifact the program store accepts is CONFIG_ZPLC_CODE_SIZE_MAX, and a
 # manifest that says another number would make the IDE offer a program the board refuses, or refuse one it holds.

@@ -1253,6 +1253,42 @@
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_modbus.c","test":"The Modbus function-block handler against crafted blocks (COM-001)."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_mqtt.c","test":"The MQTT function-block handler against crafted blocks (COM-001)."}
   ],
+  "COM-008": [
+    {"kind":"c-test","ref":"firmware/tests/comm_modbus_fb/src/main.c","test":"COM-008: resetting a Modbus block while its request is in flight releases"}
+  ],
+  "COM-014": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/provisioningCommands.test.ts","test":"MQTT security (COM-014)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/serialAdapter.test.ts","test":"keeps the standing warnings of the status and rejects nothing for them (COM-014)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/types/index.test.ts","test":"names no broker and starts with MQTT off, over TLS with the certificate verified (COM-014)"},
+    {"kind":"c-test","ref":"firmware/tests/comm_safety/src/main.c","test":"COM-014"},
+    {"kind":"c-test","ref":"firmware/tests/comm_safety/src/main.c","test":"COM-014, COM-015, COM-022 and COM-027 on the shell of the product."}
+  ],
+  "COM-015": [
+    {"kind":"c-test","ref":"firmware/tests/comm_safety/src/main.c","test":"COM-014, COM-015, COM-022 and COM-027 on the shell of the product."},
+    {"kind":"c-test","ref":"firmware/tests/comm_safety/src/main.c","test":"COM-015"}
+  ],
+  "COM-016": [
+    {"kind":"unit","ref":"tools/firmware-test/test_comm_rules.py","test":"TlsRandomRule","partial":true,"note":"the build rule is proven for every combination (cmake -P) and fires in the application build (a build of the Opta with TLS on a test generator stops with zplc_rule_tls_with_test_random_generator); the two boards that set the test generator now use the hardware generator with TLS off, and the requirement's second half, a verified hardware source and TLS on again before GA, needs the board record of HIL-011"}
+  ],
+  "COM-017": [
+    {"kind":"unit","ref":"tools/firmware-test/test_check_inbound_authority.py","test":"InboundAuthority","note":"the link-level check of the inbound objects of every board image (run.sh size); the behavioural checks are the c-tests of firmware/tests/inbound_authority (Modbus) and firmware/tests/inbound_mqtt (MQTT, all five profiles). The cloud provisioning clients (Azure DPS, AWS fleet) are covered at link level only"},
+    {"kind":"c-test","ref":"firmware/tests/inbound_authority/src/main.c","test":"COM-017: no message that arrives from Modbus changes RUN/STOP, sets or"},
+    {"kind":"c-test","ref":"firmware/tests/inbound_mqtt/src/main.c","test":"COM-017: no message that arrives over MQTT changes RUN/STOP, sets or clears"}
+  ],
+  "COM-022": [
+    {"kind":"unit","ref":"tools/firmware-test/test_comm_rules.py","test":"ShellRule","partial":true,"note":"the raw memory command is off in release images and built only with the diagnostic switch, and the documented commands are implemented; the part of the requirement that makes the state-changing commands of the diagnostic shell obey the session rule needs the session of COM-020, which does not exist yet"},
+    {"kind":"c-test","ref":"firmware/tests/comm_safety/src/main.c","test":"COM-014, COM-015, COM-022 and COM-027 on the shell of the product."},
+    {"kind":"c-test","ref":"firmware/tests/comm_safety/src/main.c","test":"COM-022"},
+    {"kind":"c-test","ref":"firmware/tests/comm_safety/src/main.c","test":"The documented commands are implemented (COM-022): none answers that it"}
+  ],
+  "COM-027": [
+    {"kind":"c-test","ref":"firmware/tests/comm_safety/src/main.c","test":"COM-014, COM-015, COM-022 and COM-027 on the shell of the product."},
+    {"kind":"c-test","ref":"firmware/tests/comm_safety/src/main.c","test":"COM-027","partial":true,"note":"every setting is stored and read back after a reboot of the configuration on native_sim (HAL NVS on the simulated flash); a board record that a setting survives a power cycle is not made, and the Nucleo-H743ZI cannot mount its store (IO-008)"}
+  ],
+  "COM-030": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/aiDeviceLink.test.ts","test":"COM-030: no AI request can carry a device link"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/deviceLink.test.ts","test":"COM-030: the MCP server cannot open the device link","partial":true,"note":"covers the MCP tools and the AI path; the other half, that the hardware scenario and bench commands of HIL-003 and HIL-012 exit with an error without an interactive terminal, has a todo in the same file because the commands are not in the tree yet"}
+  ],
   "IDE-001": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"project files over the IPC boundary (IDE-001, IDE-016)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"register the folder of the window by its id alone, as <folder>/zplc.json, and refuse any other id (IDE-001)"},

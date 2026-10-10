@@ -44,6 +44,18 @@ bounded trace/evidence. They cannot flash firmware, deploy a program to
 hardware, force values, change RUN/STOP, perform recovery, open raw serial, or
 run a shell. Those actions remain explicit human UI flows.
 
+### No path to the device link
+
+The tools of the local MCP server are fixed: `project_inspect`, `project_validate`, `compiler_check`,
+`compiler_compile`, `symbols_list`, `safety_check`, `tests_run`, `scenario_run`, `simulation_start`,
+`simulation_step`, `runtime_snapshot`, `trace_get`, `boards_list`, `toolchain_inspect` and `firmware_build`. None takes a
+port, a device or a session, none opens a serial port or a socket, and the program that serves them is built
+without the modules that do. A request to the AI provider carries six fields (workspace, mode, prompt, the active
+file, diagnostics and trace samples) and anything else is refused before it reaches the provider. A test
+enumerates the registered tools and resources from the live server, checks the module graph of the server and of
+the provider, and runs the tools with a trap on every socket and serial entry point
+(`packages/zplc-ide/src/mcp/deviceLink.test.ts`, `packages/zplc-ide/electron/aiDeviceLink.test.ts`).
+
 ## Evidence before acceptance
 
 A useful candidate includes its diagnostics, compile result, scenario result,

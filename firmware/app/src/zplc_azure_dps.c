@@ -32,7 +32,9 @@ static struct sockaddr_storage s_dps_broker;
 static uint8_t s_dps_rx_buf[DPS_RX_BUF_SIZE];
 static uint8_t s_dps_tx_buf[DPS_TX_BUF_SIZE];
 static uint8_t s_dps_payload_buf[DPS_PAYLOAD_MAX];
+#if defined(CONFIG_MQTT_LIB_TLS)
 static EXT_RAM_BSS_ATTR uint8_t s_dps_ca_buf[4096];
+#endif
 static struct zsock_pollfd s_dps_fds[1];
 static struct k_sem s_dps_sem;
 static volatile bool s_dps_connected;
@@ -297,14 +299,42 @@ static void dps_evt_handler(struct mqtt_client *const client,
     }
 }
 
+/* A stack copy of a secret is cleared before its frame goes: a plain memset
+ * of a buffer that is not read again may be removed by the compiler. */
+static void dps_wipe(void *buffer, size_t size)
+{
+    volatile uint8_t *bytes = buffer;
+
+    while (size-- > 0U) {
+        *bytes++ = 0U;
+    }
+}
+
+static struct mqtt_utf8 s_dps_username_utf8;
+static struct mqtt_utf8 s_dps_password_utf8;
+
+/* The client keeps pointers to the credentials of the provisioning call (its
+ * stack frame). They are dropped before the call returns, so that nothing
+ * static refers to a frame that is gone and a later use of the client cannot
+ * read a stale secret (COM-015). */
+static void dps_client_forget_credentials(void)
+{
+    s_dps_client.user_name = NULL;
+    s_dps_client.password = NULL;
+    s_dps_client.client_id.utf8 = NULL;
+    s_dps_client.client_id.size = 0U;
+    s_dps_username_utf8.utf8 = NULL;
+    s_dps_username_utf8.size = 0U;
+    s_dps_password_utf8.utf8 = NULL;
+    s_dps_password_utf8.size = 0U;
+}
+
 static int dps_client_init(const char *endpoint,
                            const char *registration_id,
                            const char *username,
                            const char *password)
 {
     int rc;
-    static struct mqtt_utf8 username_utf8;
-    static struct mqtt_utf8 password_utf8;
 
     mqtt_client_init(&s_dps_client);
     rc = dps_resolve_broker(endpoint, 8883U, &s_dps_broker);
@@ -316,12 +346,12 @@ static int dps_client_init(const char *endpoint,
     s_dps_client.evt_cb = dps_evt_handler;
     s_dps_client.client_id.utf8 = (const uint8_t *)registration_id;
     s_dps_client.client_id.size = strlen(registration_id);
-    username_utf8.utf8 = (const uint8_t *)username;
-    username_utf8.size = strlen(username);
-    password_utf8.utf8 = (const uint8_t *)password;
-    password_utf8.size = strlen(password);
-    s_dps_client.user_name = &username_utf8;
-    s_dps_client.password = &password_utf8;
+    s_dps_username_utf8.utf8 = (const uint8_t *)username;
+    s_dps_username_utf8.size = strlen(username);
+    s_dps_password_utf8.utf8 = (const uint8_t *)password;
+    s_dps_password_utf8.size = strlen(password);
+    s_dps_client.user_name = &s_dps_username_utf8;
+    s_dps_client.password = &s_dps_password_utf8;
     s_dps_client.keepalive = 60U;
     s_dps_client.protocol_version = MQTT_VERSION_3_1_1;
     s_dps_client.clean_session = 1U;
@@ -563,7 +593,8 @@ static int zplc_azure_dps_provision_locked(void)
     int64_t deadline;
 
     if (!zplc_config_get_azure_dps_enabled()) {
-        return -ENOTSUP;
+        rc = -ENOTSUP;
+        goto out;
     }
 
     zplc_config_get_azure_dps_endpoint(s_dps_endpoint, sizeof(s_dps_endpoint));
@@ -572,16 +603,19 @@ static int zplc_azure_dps_provision_locked(void)
     zplc_config_get_azure_sas_key(sas_key, sizeof(sas_key));
     if (s_dps_endpoint[0] == '\0' || scope[0] == '\0' || registration_id[0] == '\0' ||
         sas_key[0] == '\0') {
-        return -EINVAL;
+        rc = -EINVAL;
+        goto out;
     }
 
     if (dps_build_username(username, sizeof(username), scope, registration_id) < 0) {
-        return -ENOMEM;
+        rc = -ENOMEM;
+        goto out;
     }
 
     if (dps_build_password(password, sizeof(password), scope, registration_id,
                            sas_key, zplc_config_get_azure_sas_expiry_s()) < 0) {
-        return -EACCES;
+        rc = -EACCES;
+        goto out;
     }
 
     rc = k_sem_init(&s_dps_sem, 0, 1);
@@ -599,18 +633,18 @@ static int zplc_azure_dps_provision_locked(void)
 
     rc = dps_client_init(s_dps_endpoint, registration_id, username, password);
     if (rc != 0) {
-        return rc;
+        goto out;
     }
 
     rc = mqtt_connect(&s_dps_client);
     if (rc != 0) {
-        return rc;
+        goto out;
     }
 
     rc = dps_prepare_fds(&s_dps_client);
     if (rc != 0) {
         mqtt_abort(&s_dps_client);
-        return rc;
+        goto out;
     }
     deadline = k_uptime_get() + DPS_TIMEOUT_MS;
     while (!s_dps_connected && k_uptime_get() < deadline) {
@@ -620,7 +654,8 @@ static int zplc_azure_dps_provision_locked(void)
     }
     if (!s_dps_connected) {
         mqtt_abort(&s_dps_client);
-        return -ETIMEDOUT;
+        rc = -ETIMEDOUT;
+        goto out;
     }
 
     sub_topic.topic.utf8 = (const uint8_t *)"$dps/registrations/res/#";
@@ -633,7 +668,7 @@ static int zplc_azure_dps_provision_locked(void)
     rc = mqtt_subscribe(&s_dps_client, &sub_list);
     if (rc != 0) {
         mqtt_abort(&s_dps_client);
-        return rc;
+        goto out;
     }
 
     while (!s_dps_subscribed && k_uptime_get() < deadline) {
@@ -643,18 +678,20 @@ static int zplc_azure_dps_provision_locked(void)
     }
     if (!s_dps_subscribed) {
         mqtt_abort(&s_dps_client);
-        return -ETIMEDOUT;
+        rc = -ETIMEDOUT;
+        goto out;
     }
 
     rc = dps_send_register_request(&s_dps_client);
     if (rc != 0) {
         mqtt_abort(&s_dps_client);
-        return rc;
+        goto out;
     }
 
     if (dps_build_register_topic(register_topic, sizeof(register_topic), 1U) < 0) {
         mqtt_abort(&s_dps_client);
-        return -ENOMEM;
+        rc = -ENOMEM;
+        goto out;
     }
 
     dps_parse_response_topic("$dps/registrations/res/202/?$rid=1&retry-after=3",
@@ -697,7 +734,13 @@ static int zplc_azure_dps_provision_locked(void)
     }
 
     mqtt_abort(&s_dps_client);
-    return s_dps_done ? s_dps_result : -ETIMEDOUT;
+    rc = s_dps_done ? s_dps_result : -ETIMEDOUT;
+
+out:
+    dps_client_forget_credentials();
+    dps_wipe(password, sizeof(password));
+    dps_wipe(sas_key, sizeof(sas_key));
+    return rc;
 }
 
 int zplc_azure_dps_provision(void)

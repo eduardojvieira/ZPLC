@@ -4,6 +4,82 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- A controller that was never configured is safe on a plant network, and the
+  settings that `zplc config save` reports are the ones it stores (COM-014,
+  COM-015, COM-027). The default broker (`test.mosquitto.org`) is gone: MQTT is
+  off and has no broker until an operator names one. The default transport is
+  TLS on port 8883 with the broker's certificate verified; turning
+  verification off (`mqtt_security 1`) is refused by a release image and, in an
+  image built with `CONFIG_ZPLC_MQTT_ALLOW_INSECURE_TLS`, shows
+  `tls-verify: OFF` in `zplc mqtt status` and a warning in `zplc status`. A
+  password, key, SAS key or user name is shown as `(set)` or `(not set)`: a
+  test sets a known value for each and finds none in the output of any
+  reporting command or in the log. **`zplc config save` used to write nothing
+  and print `OK: Config saved`**: the settings handler had no export, so the
+  save was a no-op on every board. It now writes the 70 settings and the
+  Modbus overrides to the same store as the program (HAL NVS, keys `cfg_NN`),
+  stops and reports at the first entry that fails, and a test sets each
+  setting through the shell, saves, reboots the configuration and compares
+  them. `zplc config reset` reports a failed save too. A board whose store
+  cannot be mounted (the Nucleo-H743ZI) now reports the error instead of
+  `OK`. The AWS fleet certificate and key were never mapped to a store entry,
+  so their save always failed; they are mapped now. An Azure direct method is
+  answered `501` instead of `200`, since none is implemented. A new project
+  in the IDE (and `packages/zplc.json`) starts the same way, with MQTT off, no
+  broker, TLS on port 8883 and the certificate verified, and the settings page
+  always sends `mqtt_security` so the device never falls back to its own
+  default; `firmware/configure_zplc.py` has no default broker and asks for
+  `--broker`. The editor keeps the `warnings` list of `zplc status --json`.
+- Release firmware has no command that reads or writes memory outside the PLC
+  regions (COM-022). The Zephyr shell's `devmem` was on by default in every
+  board image; `firmware/app/prj.conf` turns it off, the diagnostic image
+  (`firmware/app/diagnostic.conf`) turns it on with
+  `CONFIG_ZPLC_SHELL_RAW_MEMORY`, and the application build stops when the
+  two disagree. `zplc dbg watch` and `zplc dbg timer`, which only printed
+  "not yet implemented" and succeeded, read a typed value and a timer
+  instance now.
+- TLS cannot be built on a random generator that is not cryptographic
+  (COM-016). The build stops when TLS is enabled together with
+  `CONFIG_TEST_RANDOM_GENERATOR` or without a cryptographic random source
+  (`zplc_rule_tls_with_test_random_generator`). The Nucleo-H743ZI and Arduino
+  Opta images set that option; they use the STM32 hardware generator now, and
+  **TLS is off in them** until the generator is verified on the board
+  (HIL-011): MQTT there runs over plain TCP, and a TLS transport is refused
+  instead of downgraded. The firmware compiles with MQTT and TLS off for the
+  first time (unused buffers and the secure-websocket transport were not
+  guarded).
+- No message from Modbus, MQTT or a cloud service changes RUN/STOP, sets or
+  clears a force, or downloads a program, and two checks say so (COM-017):
+  `tools/firmware-test/check_inbound_authority.py` reads the compiled objects
+  of the inbound handlers of every board image and fails on a reference to
+  run control, the force table, the program loader or store, or a reboot; and
+  `firmware/tests/inbound_authority` drives every Modbus function code and
+  every write count through the product's framing and mapping in front of a
+  core whose authority entries count their calls. `firmware/tests/inbound_mqtt`
+  compiles the product's MQTT client with its Sparkplug B protobuf files and
+  delivers hostile topics and payloads to it under each of the five profiles:
+  nothing reached run control, the force table or the loader, and the only
+  write was to a subscribed variable, queued through the exchange
+  (`zplc_exchange_write`), the one interface the inbound sources may reach.
+  The link check lists the exchange symbols and refuses an inbound object that
+  reaches the scheduler, the force table or the loader directly, and refuses
+  the exchange object itself if it does.
+- No MCP tool and no AI path opens the device link (COM-030).
+  `src/mcp/deviceLink.test.ts` enumerates the tools and resources of the live
+  server, builds the module graph of the MCP entry point and of the AI
+  provider and finds no serial, upload or socket module in them, and runs the
+  tools with a trap on every socket and serial entry point;
+  `electron/aiDeviceLink.test.ts` shows that an AI request carries only its
+  six fields. While writing it, `compiler_check` and `compiler_compile`
+  turned out to answer `MCP_INTERNAL_ERROR` for every real project: the
+  compiler summary gained `draftCounter` and the MCP result schema did not;
+  the schema knows it now, and a test runs the shipped operations (not stand-ins)
+  through the dispatcher over a bundled project.
+- A Modbus function block that is reset while its request is in flight no
+  longer hands the slot to another block (COM-008): the worker owns a queued or
+  running slot until it is through, a full request queue writes the whole
+  `STATUS` word, and a test holds a request in the client while it resets one
+  block and starts another.
 - The release pipeline can be rehearsed and says what it did (REL-030, REL-027,
   REL-017). **Release Build** has a *Rehearsal* input that is on by default: it
   runs every job, renders the notes and one `SHA256SUMS` as an artifact, and

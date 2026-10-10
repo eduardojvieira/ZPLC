@@ -44,8 +44,8 @@ Esta tabla se lee del archivo fuente `firmware/app/src/shell_cmds.c`; su texto e
 | `zplc dbg mem` | comando | 1 obligatorio, 1 opcional | Dump memory | `CONFIG_ZPLC_SCHEDULER` |
 | `zplc dbg info` | comando | 1 opcional | VM state |   |
 | `zplc dbg task` | comando | 1 obligatorio, 1 opcional | Task info |   |
-| `zplc dbg watch` | comando | 1 obligatorio, 1 opcional | Watch memory |   |
-| `zplc dbg timer` | comando | 1 obligatorio | Timer state |   |
+| `zplc dbg watch` | comando | 1 obligatorio, 1 opcional | Read a typed value: dbg watch &lt;addr> [type] |   |
+| `zplc dbg timer` | comando | 1 obligatorio | Timer instance state: dbg timer &lt;addr> |   |
 | `zplc config` | grupo |   | Configuration commands |   |
 | `zplc config get` | comando | ninguno | Show current configuration |   |
 | `zplc config set` | comando | 2 obligatorio | Set configuration value |   |

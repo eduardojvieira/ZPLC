@@ -573,6 +573,9 @@ zplc_hal_result_t zplc_hal_dac_write(uint8_t channel, uint16_t value) {
  *   ID 2: "code"     - Program bytecode (up to 4KB)
  *   ID 3: "retain"   - unused (the RETAIN records use IDs 16..31)
  *   IDs 4-8: transactional .zplc program store v1
+ *   IDs 64 and up: the chunks of the program slots (see NVS_ID_PROGRAM_CHUNKS)
+ *   IDs 512..611: device settings, keys "cfg_00".."cfg_99" (COM-027)
+ *   IDs 640, 641: the AWS fleet certificate and private key PEM
  *
  * The storage_partition must be defined in the board's DeviceTree overlay.
  */
@@ -644,6 +647,18 @@ BUILD_ASSERT(ZPLC_STORAGE_SIZE() >= ZPLC_STORAGE_REQUIRED_BYTES,
              "the storage partition cannot hold two program slots of "
              "CONFIG_ZPLC_CODE_SIZE_MAX (and the RETAIN records): lower the code size "
              "of the board profile or enlarge storage_partition");
+
+/** @brief NVS IDs 512..611: one device setting per entry, "cfg_NN" (COM-027). Above the program chunk range
+ *         (NVS_ID_PROGRAM_CHUNKS + 2 * ZPLC_PROGRAM_STORE_MAX_CHUNKS, at most 418 with the smallest chunk and the
+ *         largest code region), which the assertion below keeps true. */
+#define NVS_ID_CONFIG_BASE 512
+BUILD_ASSERT(NVS_ID_PROGRAM_CHUNKS + 2U * ZPLC_PROGRAM_STORE_MAX_CHUNKS <= NVS_ID_CONFIG_BASE,
+             "the program chunk identifiers run into those of the device settings");
+
+/** @brief The AWS IoT fleet-provisioned device certificate and key (PEM).
+ *         The keys were never mapped, so the save always failed on a board. */
+#define NVS_ID_AWS_CERT_PEM 640
+#define NVS_ID_AWS_KEY_PEM 641
 
 /** @brief NVS filesystem handle */
 static struct nvs_fs nvs_handle;
@@ -766,6 +781,13 @@ static uint16_t key_to_nvs_id(const char *key) {
   if (strncmp(key, "retain_", 7) == 0 && (key[7] == 'a' || key[7] == 'b') &&
       key[8] >= '0' && key[8] <= '7' && key[9] == '\0')
     return NVS_ID_RETAIN_CHUNKS + (key[7] - 'a') * 8 + (key[8] - '0');
+  if (strncmp(key, "cfg_", 4) == 0 && key[4] >= '0' && key[4] <= '9' &&
+      key[5] >= '0' && key[5] <= '9' && key[6] == '\0')
+    return NVS_ID_CONFIG_BASE + (key[4] - '0') * 10 + (key[5] - '0');
+  if (strcmp(key, "aws_cert_pem") == 0)
+    return NVS_ID_AWS_CERT_PEM;
+  if (strcmp(key, "aws_key_pem") == 0)
+    return NVS_ID_AWS_KEY_PEM;
   return program_chunk_id(key);
 }
 

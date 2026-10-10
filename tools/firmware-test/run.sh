@@ -201,6 +201,24 @@ for board in json.load(open(sys.argv[1])):
   for b in ${SIZE_BOARDS[@]+"${SIZE_BOARDS[@]}"}; do board_args+=(--board "${b}"); done
   record_report size --budget "${ZPLC_FW_TOOLS}/size-budget.json" --logs "${logs}" \
     ${board_args[@]+"${board_args[@]}"} || rc=1
+
+  # COM-017: the inbound handlers of every image that was built do not
+  # reference the entry points that start, stop, force or load.
+  local built=() text line
+  while read -r id board; do
+    if [ ${#SIZE_BOARDS[@]} -gt 0 ]; then
+      wanted=0
+      for b in "${SIZE_BOARDS[@]}"; do [ "${b}" = "${id}" ] && wanted=1; done
+      [ "${wanted}" -eq 1 ] || continue
+    fi
+    [ -d "${logs}/${id}" ] && built+=("${logs}/${id}")
+  done <<< "${listed}"
+  if [ ${#built[@]} -gt 0 ]; then
+    text="$(python3 -B -I "${ZPLC_FW_TOOLS}/check_inbound_authority.py" "${built[@]}")" || rc=1
+    while IFS= read -r line; do
+      [ -n "${line}" ] && record "${line}"
+    done <<< "${text}"
+  fi
   return "${rc}"
 }
 

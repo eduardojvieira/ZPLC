@@ -2,6 +2,8 @@ import { createHash } from 'node:crypto';
 import { mkdtemp, mkdir, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { ZPLC_CONSTANTS } from '@zplc/compiler';
 import { afterEach, describe, expect, test } from 'bun:test';
 import { parseMcpWorkspaceArgument } from './index';
 import { MCP_RESOURCE_URIS, MCP_SERVER_VERSION, MCP_TOOL_NAMES, courseProgressResource, createMcpDispatcher, openMcpRepository, openMcpUserData, openMcpWorkspace, projectResource, toMcpToolResult, type McpOperations } from './server';
@@ -173,6 +175,21 @@ describe('local MCP adapter', () => {
     // an element is a short id of the source: a path, a command or free text is not one, and the result is refused whole
     for (const element of ['/etc/passwd', '../x', 'rung 1', 'block:a b', '', 'x'.repeat(300), 'block:']) {
       expect(failed({ element }).structuredContent).toEqual({ ok: false, error: 'MCP_INTERNAL_ERROR' });
+    }
+  });
+
+  test('the real project and compiler operations answer through the dispatcher over a bundled project', async () => {
+    // Fakes cannot catch a summary the strict result schema does not know (the compiler gained draftCounter and
+    // compiler_check answered MCP_INTERNAL_ERROR): run the shipped operations, not stand-ins.
+    const bound = await openMcpWorkspace(fileURLToPath(new URL('../../projects/multitask_demo', import.meta.url)));
+    expect(bound).toBeDefined(); if (!bound) return;
+    const dispatcher = createMcpDispatcher(bound); const signal = new AbortController().signal;
+    for (const tool of ['project_inspect', 'project_validate', 'compiler_check', 'compiler_compile', 'symbols_list', 'safety_check'] as const) {
+      const result = await dispatcher(tool, {}, signal);
+      expect({ tool, error: (result.structuredContent as { error?: string } | undefined)?.error, isError: result.isError }).toEqual({ tool, error: undefined, isError: undefined });
+    }
+    for (const tool of ['compiler_check', 'compiler_compile'] as const) {
+      expect((await dispatcher(tool, {}, signal)).structuredContent).toMatchObject({ ok: true, summary: { draftCounter: ZPLC_CONSTANTS.DRAFT_COUNTER, codeSize: expect.any(Number) } });
     }
   });
 

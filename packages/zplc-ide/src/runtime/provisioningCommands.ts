@@ -28,11 +28,13 @@ export function quoteZephyrShellArg(value: string): string {
   return `"${value.replace(/\\/g, '\\x5c').replace(/"/g, '\\"')}"`;
 }
 
+/** `mqtt_security` is always sent (COM-014). A level that is missing or unknown is the safe one, server
+ * verification, and never "none": a value nobody chose must not turn the check off. */
 function mqttSecurityToRuntimeLevel(level: string | undefined): number {
+  if (level === 'none') return 0;
   if (level === 'tls-no-verify') return 1;
-  if (level === 'tls-server-verify') return 2;
   if (level === 'tls-mutual') return 3;
-  return 0;
+  return 2;
 }
 
 function mqttProfileToRuntimeLevel(profile: string | undefined): number {
