@@ -110,13 +110,13 @@ static void put32(uint8_t *p, uint32_t v) {
   put16(p + 2, (uint16_t)(v >> 16));
 }
 
-/** One CODE segment and, when ntasks > 0, one TASK segment. */
-static size_t build(uint8_t *out, const code_t *code, uint16_t entry,
-                    const task_t *tasks, unsigned ntasks) {
+/** One CODE segment of `code_n` bytes and, when ntasks > 0, one TASK segment. */
+static size_t build_bytes(uint8_t *out, const uint8_t *code, size_t code_n,
+                          uint16_t entry, const task_t *tasks, unsigned ntasks) {
   size_t segments = ntasks != 0U ? 2U : 1U;
   size_t table = ZPLC_FILE_HEADER_SIZE + segments * ZPLC_SEGMENT_ENTRY_SIZE;
   size_t task_bytes = (size_t)ntasks * ZPLC_TASK_DEF_SIZE;
-  size_t length = table + code->n + task_bytes;
+  size_t length = table + code_n + task_bytes;
   uint32_t crc;
   unsigned i;
 
@@ -124,20 +124,20 @@ static size_t build(uint8_t *out, const code_t *code, uint16_t entry,
   memcpy(out, "ZPLC", 4U);
   put16(out + 4U, ZPLC_VERSION_MAJOR);
   put16(out + 6U, ZPLC_VERSION_MINOR);
-  put32(out + 16U, (uint32_t)code->n);
+  put32(out + 16U, (uint32_t)code_n);
   put32(out + 20U, (uint32_t)task_bytes);
   put16(out + 24U, entry);
   put16(out + 26U, (uint16_t)segments);
   put32(out + 28U, ZPLC_DRAFT_COUNTER);
   put16(out + 32U, ZPLC_SEG_CODE);
-  put32(out + 36U, (uint32_t)code->n);
+  put32(out + 36U, (uint32_t)code_n);
   if (ntasks != 0U) {
     put16(out + 40U, ZPLC_SEG_TASK);
     put32(out + 44U, (uint32_t)task_bytes);
   }
-  memcpy(out + table, code->b, code->n);
+  memcpy(out + table, code, code_n);
   for (i = 0U; i < ntasks; i++) {
-    uint8_t *task = out + table + code->n + (size_t)i * ZPLC_TASK_DEF_SIZE;
+    uint8_t *task = out + table + code_n + (size_t)i * ZPLC_TASK_DEF_SIZE;
     put16(task, (uint16_t)(i + 1U));
     put32(task + 4U, 10000U);
     put16(task + 8U, tasks[i].entry);
@@ -147,6 +147,11 @@ static size_t build(uint8_t *out, const code_t *code, uint16_t entry,
   crc = crc32_update(crc, out + 16U, length - 16U) ^ 0xFFFFFFFFU;
   put32(out + 12U, crc);
   return length;
+}
+
+static size_t build(uint8_t *out, const code_t *code, uint16_t entry,
+                    const task_t *tasks, unsigned ntasks) {
+  return build_bytes(out, code->b, code->n, entry, tasks, ntasks);
 }
 
 static uint8_t workspace[ZPLC_LOADER_VERIFY_WORKSPACE_SIZE];
@@ -283,6 +288,51 @@ static void test_direct_access_at_the_vm(void) {
   CHECK_EQ(run_raw(&c), OOB, "STORE32 into the input image");
 }
 
+/* RT-001: a region is its window of the address space, from its base to the
+ * base of the next region, and no larger, whatever the storage behind it is:
+ * with a WORK memory above 0x2000 bytes, address 0x4000 is retentive memory,
+ * not the rest of WORK (test_sandbox_regions runs this whole file on such a
+ * build). */
+static void test_region_windows(void) {
+  code_t c;
+  const uint8_t *retain;
+  printf("=== RT-001 a region is its window of the address space ===\n");
+
+  c.n = 0;
+  op8(&c, OP_PUSH8, 0x5A);
+  op16(&c, OP_STORE8, 0x4000U);
+  op(&c, OP_HALT);
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_OK, "STORE8 at the first retentive byte is accepted");
+  CHECK_EQ(run_verified(&c), OK, "STORE8 at the first retentive byte runs");
+  retain = zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE);
+  CHECK_EQ(retain[0], 0x5A, "and it is retentive memory that it writes");
+#if ZPLC_MEM_WORK_SIZE > 0x2000U
+  CHECK_EQ(zplc_mem_get_region(ZPLC_MEM_WORK_BASE)[0x2000U], 0,
+           "and not the work memory behind the end of its window");
+#endif
+
+  c.n = 0;
+  push_runtime(&c, 0x4000U);
+  op(&c, OP_LOADI8);
+  op(&c, OP_DROP);
+  op(&c, OP_HALT);
+  CHECK_EQ(run_verified(&c), OK, "LOADI8 at the first retentive byte");
+
+  c.n = 0;
+  op16(&c, OP_LOAD8, 0x5000U);
+  op(&c, OP_DROP);
+  op(&c, OP_HALT);
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_ERR_MEMORY, "LOAD8 at the first byte after retentive memory is refused");
+  CHECK_EQ(run_raw(&c), OOB, "and the VM faults on it");
+
+  c.n = 0;
+  op16(&c, OP_LOAD16, 0x4FFFU);
+  op(&c, OP_DROP);
+  op(&c, OP_HALT);
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_ERR_MEMORY, "LOAD16 across the end of retentive memory is refused");
+  CHECK_EQ(run_raw(&c), OOB, "and the VM faults on it");
+}
+
 /* ----------------------------------------------------------------------------
  * RT-001: string operations
  * ------------------------------------------------------------------------- */
@@ -392,6 +442,96 @@ static void test_string_operations(void) {
   op(&c, OP_STRCPY);
   op(&c, OP_HALT);
   CHECK_EQ(run_verified(&c), OOB, "STRCPY source at 0x12100 does not alias work memory");
+}
+
+/** A string of `text` and room for `capacity` characters, in work memory. */
+static void put_text(code_t *c, uint16_t address, const char *text, uint16_t capacity) {
+  size_t i, n = strlen(text);
+
+  set_string(c, address, (uint16_t)n, capacity);
+  for (i = 0U; i < n; i++) {
+    op8(c, OP_PUSH8, (uint8_t)text[i]);
+    op16(c, OP_STORE8, (uint16_t)(address + ZPLC_STRING_DATA_OFFSET + i));
+  }
+}
+
+/** STRCMP of two texts; the result of the instruction, or 100 on a fault. */
+static int compare_texts(const char *a, const char *b) {
+  code_t c = {{0}, 0};
+  const uint8_t *work;
+
+  put_text(&c, 0x2100U, a, 16U);
+  put_text(&c, 0x2200U, b, 16U);
+  push_runtime(&c, 0x2100U);
+  push_runtime(&c, 0x2200U);
+  op(&c, OP_STRCMP);
+  op16(&c, OP_STORE32, 0x2300U);
+  op(&c, OP_HALT);
+  if (run_verified(&c) != OK)
+    return 100;
+  work = zplc_mem_get_region(ZPLC_MEM_WORK_BASE);
+  return (int)(int32_t)((uint32_t)work[0x300] | ((uint32_t)work[0x301] << 8) |
+                        ((uint32_t)work[0x302] << 16) | ((uint32_t)work[0x303] << 24));
+}
+
+/** STRCMP of the string at `a` (header written by the program, or by the host
+ *  into the input image, which the program cannot write) and a string of the
+ *  same length in work memory. Returns the VM error. */
+static int compare_at(uint16_t a, uint16_t length, int header_from_host) {
+  code_t c = {{0}, 0};
+  static uint8_t file[2048];
+  size_t size;
+  int rc;
+
+  if (!header_from_host)
+    set_string(&c, a, length, length);
+  set_string(&c, 0x2200U, length, length);
+  push_runtime(&c, a);
+  push_runtime(&c, 0x2200U);
+  op(&c, OP_STRCMP);
+  op(&c, OP_DROP);
+  op(&c, OP_HALT);
+  size = build(file, &c, 0U, NULL, 0U);
+  zplc_core_init();
+  rc = zplc_core_load(file, size, workspace, sizeof workspace);
+  if (rc != ZPLC_LOADER_OK)
+    return rc;
+  if (header_from_host) {
+    CHECK_EQ(zplc_ipi_write16(a, length), 0, "header of a string in the input image");
+    CHECK_EQ(zplc_ipi_write16((uint16_t)(a + 2U), length), 0, "its capacity");
+  }
+  (void)zplc_core_run_cycle();
+  return zplc_core_get_error();
+}
+
+/* RT-001: STRCMP places both strings, header and the characters compared,
+ * before it reads one, like STRCPY. It used to read the characters one at a
+ * time and place each on its own, so a string whose header claims more
+ * characters than its region holds was read across the end of the region into
+ * the next. */
+static void test_strcmp_extents(void) {
+  printf("=== RT-001 STRCMP places the strings it compares ===\n");
+
+  CHECK_EQ(compare_texts("abc", "abc"), 0, "equal strings compare equal");
+  CHECK_EQ(compare_texts("abc", "abd"), -1, "the first different character decides, less");
+  CHECK_EQ(compare_texts("abd", "abc"), 1, "the first different character decides, greater");
+  CHECK_EQ(compare_texts("ab", "abc"), -1, "a prefix is less");
+  CHECK_EQ(compare_texts("abc", "ab"), 1, "and the longer is greater");
+  CHECK_EQ(compare_texts("", ""), 0, "empty strings are equal");
+
+  /* the characters end exactly at the last byte of a region: accepted; one
+   * more character crosses into the next region: a fault */
+  CHECK_EQ(compare_at(0x0FF8U, 4U, 1), OK, "4 characters end at the last input byte");
+  CHECK_EQ(compare_at(0x0FF8U, 5U, 1), OOB, "5 characters cross from the input image into the output image");
+  CHECK_EQ(compare_at(0x0FF8U, 0x20U, 1), OOB, "a length of 0x20 in the input image faults");
+  CHECK_EQ(compare_at(0x1FF8U, 4U, 0), OK, "4 characters end at the last output byte");
+  CHECK_EQ(compare_at(0x1FF8U, 5U, 0), OOB, "5 characters cross from the output image into work memory");
+  CHECK_EQ(compare_at(0x1FF8U, 0x20U, 0), OOB, "a length of 0x20 in the output image faults");
+  CHECK_EQ(compare_at(0x3FF8U, 4U, 0), OK, "4 characters end at the last work byte");
+  CHECK_EQ(compare_at(0x3FF8U, 5U, 0), OOB, "5 characters cross from work into retentive memory");
+  CHECK_EQ(compare_at(0x3FF8U, 0x20U, 0), OOB, "a length of 0x20 in work memory faults");
+  CHECK_EQ(compare_at(0x4FF8U, 4U, 0), OK, "4 characters end at the last retentive byte");
+  CHECK_EQ(compare_at(0x4FF8U, 5U, 0), OOB, "5 characters cross out of retentive memory");
 }
 
 /* ----------------------------------------------------------------------------
@@ -954,6 +1094,210 @@ static void test_calls(void) {
   op(&c, OP_DROP);                 /* 16 */
   op(&c, OP_HALT);                 /* 17 */
   CHECK_EQ(verdict(&c), ZPLC_LOADER_OK, "callees defined before the main code");
+
+  /* The verifier goes past a call whose callee it has not summarised yet, to
+   * find the rest of the subroutines the frame calls; what it concludes on the
+   * way is thrown away. These rows are what that must not change. */
+
+  /* a callee that never returns ends the path: what follows is not reached,
+   * and the subroutine it calls is accepted all the same */
+  c.n = 0;
+  op16(&c, OP_CALL, 7U);           /* 0: f never returns */
+  op16(&c, OP_CALL, 10U);          /* 3: not reached */
+  op(&c, OP_HALT);                 /* 6 */
+  op16(&c, OP_JMP, 7U);            /* 7: f loops on itself */
+  op(&c, OP_RET);                  /* 10: g */
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_OK, "code after a callee that never returns");
+
+  /* two subroutines that call each other */
+  c.n = 0;
+  op16(&c, OP_CALL, 4U);           /* 0 */
+  op(&c, OP_HALT);                 /* 3 */
+  op16(&c, OP_CALL, 8U);           /* 4: f calls g */
+  op(&c, OP_RET);                  /* 7 */
+  op16(&c, OP_CALL, 4U);           /* 8: g calls f */
+  op(&c, OP_RET);                  /* 11 */
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_ERR_STACK, "mutual recursion");
+
+  /* a loop that grows the stack after a call to a subroutine defined further
+   * on: found in the walk that is thrown away, reported by the one that counts */
+  c.n = 0;
+  op16(&c, OP_CALL, 8U);           /* 0 */
+  op8(&c, OP_PUSH8, 1);            /* 3 */
+  op16(&c, OP_JMP, 3U);            /* 5 */
+  op(&c, OP_RET);                  /* 8: f */
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_ERR_STACK, "growing loop after a call to a later subroutine");
+
+  /* a result that the caller drops, after a callee not summarised yet: the
+   * walk that is thrown away sees a drop of nothing and must not refuse it */
+  c.n = 0;
+  op16(&c, OP_CALL, 5U);           /* 0 */
+  op(&c, OP_DROP);                 /* 3 */
+  op(&c, OP_HALT);                 /* 4 */
+  op8(&c, OP_PUSH8, 9);            /* 5: f leaves a result */
+  op(&c, OP_RET);                  /* 7 */
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_OK, "a result dropped after a callee summarised later");
+}
+
+/* ----------------------------------------------------------------------------
+ * RT-003: the nesting of calls is verified
+ * ------------------------------------------------------------------------- */
+
+/** main calls f1 (`from_main` times), f1 calls f2 ... and f(depth) returns:
+ *  `depth` calls are nested at the deepest point. */
+static void nested_calls(code_t *c, unsigned depth, unsigned from_main) {
+  const uint16_t first = (uint16_t)(3U * from_main + 1U);
+  unsigned i;
+
+  c->n = 0;
+  for (i = 0U; i < from_main; i++)
+    op16(c, OP_CALL, first);
+  op(c, OP_HALT);
+  for (i = 1U; i < depth; i++) {
+    op16(c, OP_CALL, (uint16_t)(first + 4U * i)); /* f(i) calls f(i+1) */
+    op(c, OP_RET);
+  }
+  op(c, OP_RET); /* f(depth) */
+}
+
+static void test_call_nesting(void) {
+  code_t c;
+  task_t task;
+  printf("=== RT-003 the nesting of calls ===\n");
+
+  /* the call stack of the VM takes ZPLC_CALL_STACK_MAX calls: the next one
+   * faults at run time, which is what the verifier must have said before */
+  nested_calls(&c, ZPLC_CALL_STACK_MAX, 1U);
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_OK, "calls nested to the depth of the call stack are accepted");
+  CHECK_EQ(run_raw(&c), OK, "and run to the end");
+  nested_calls(&c, ZPLC_CALL_STACK_MAX + 1U, 1U);
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_ERR_STACK, "one call more than the call stack takes is refused");
+  CHECK_EQ(run_raw(&c), ZPLC_VM_CALL_OVERFLOW,
+           "and the VM would fault with CALL_OVERFLOW (the premise of the check)");
+
+  /* the same for the code of a task, which starts with an empty call stack */
+  task.entry = 0U;
+  task.stack = 8U;
+  nested_calls(&c, ZPLC_CALL_STACK_MAX, 1U);
+  CHECK_EQ(verdict_tasks(&c, &task, 1U), ZPLC_LOADER_OK, "a task may nest calls to the same depth");
+  nested_calls(&c, ZPLC_CALL_STACK_MAX + 1U, 1U);
+  CHECK_EQ(verdict_tasks(&c, &task, 1U), ZPLC_LOADER_ERR_STACK, "and not one more");
+
+  /* it is the longest path that counts, not the number of calls */
+  nested_calls(&c, ZPLC_CALL_STACK_MAX, 3U);
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_OK, "the same chain called three times is as deep as once");
+  CHECK_EQ(run_raw(&c), OK, "and runs");
+}
+
+/* ----------------------------------------------------------------------------
+ * RT-003: the work of the verifier is bounded by the size of the CODE
+ * ------------------------------------------------------------------------- */
+
+/* Test hooks of the loader (this target is built with ZPLC_CORE_TESTING): what
+ * the last zplc_loader_verify() was charged, in the units of
+ * ZPLC_VERIFY_STEPS_PER_BYTE, and, counted apart from the charge, the
+ * iterations its loops made. */
+uint32_t zplc_test_verify_work(void);
+uint32_t zplc_test_verify_iterations(void);
+
+static uint32_t last_limit, last_work;
+static uint8_t big_code[ZPLC_MEM_CODE_SIZE];
+static uint8_t big_file[ZPLC_MEM_CODE_SIZE + 128U];
+
+static void big_jump(size_t at, uint8_t opcode, size_t target) {
+  big_code[at] = opcode;
+  big_code[at + 1U] = (uint8_t)target;
+  big_code[at + 2U] = (uint8_t)(target >> 8);
+}
+
+/** Verify big_code[0..size) and report what it cost; returns the loader code. */
+static int verify_big(const char *name, size_t size, size_t entry) {
+  zplc_program_view_t view;
+  size_t length = build_bytes(big_file, big_code, size, (uint16_t)entry, NULL, 0U);
+  const uint32_t limit = (uint32_t)ZPLC_VERIFY_STEPS_PER_BYTE * (uint32_t)size + 4096U;
+  int rc = zplc_loader_verify(big_file, length, workspace, sizeof workspace, &view);
+  const uint32_t work = zplc_test_verify_work();
+  const uint32_t iterations = zplc_test_verify_iterations();
+
+  printf("    %s: %lu units of %lu, %lu iterations\n", name, (unsigned long)work,
+         (unsigned long)limit, (unsigned long)iterations);
+  /* what the verifier is charged stays within the bound (it may finish the
+   * table pass it is in), and every iteration of every loop was charged */
+  CHECK(work < limit + 1024U, name);
+  CHECK((uint64_t)iterations <= 8U * (uint64_t)work, name);
+  last_limit = limit;
+  last_work = work;
+  return rc;
+}
+
+static void test_verifier_work_is_bounded(void) {
+  /* A chain of jumps to the block just below: every hop goes to a lower
+   * address. The lowest block pushes a value and jumps to the highest, so the
+   * stack grows by one per lap and the verifier would lap 127 times before it
+   * refuses. */
+  enum { BLOCKS = 2500, SPACING = 18 };
+  size_t i, size = (size_t)BLOCKS * SPACING + 1U;
+  int rc;
+  printf("=== RT-003 the work of the verifier is bounded ===\n");
+
+  memset(big_code, OP_NOP, sizeof big_code);
+  for (i = 1U; i < BLOCKS; i++)
+    big_jump(i * SPACING, OP_JMP, (i - 1U) * SPACING);
+  big_code[0] = OP_PUSH8;
+  big_code[1] = 0U;
+  big_jump(2U, OP_JMP, (size_t)(BLOCKS - 1U) * SPACING);
+  big_code[size - 1U] = OP_HALT;
+  rc = verify_big("2500 descending hops, 127 laps", size, (size_t)(BLOCKS - 1U) * SPACING);
+  CHECK_EQ(rc, ZPLC_LOADER_ERR_STACK, "a chain of descending jumps that grows the stack is refused");
+
+  /* The same chain reached from 150 subroutines (each jumps to its top and
+   * the bottom returns): 150 walks of 2400 hops. A pass over the code is made
+   * for every hop, which costs what it costs, and the work bound is reached. */
+  {
+    enum { CHAIN = 2400, CALLEES = 150, STEP = 16 };
+    const size_t callees = (size_t)CHAIN * STEP;
+    const size_t main_at = callees + (size_t)CALLEES * 3U;
+    size_t n = main_at;
+
+    memset(big_code, OP_NOP, sizeof big_code);
+    big_code[0] = OP_RET;
+    for (i = 1U; i < CHAIN; i++)
+      big_jump(i * STEP, OP_JMP, (i - 1U) * STEP);
+    for (i = 0U; i < CALLEES; i++) {
+      big_jump(callees + i * 3U, OP_JMP, (size_t)(CHAIN - 1U) * STEP);
+      big_jump(n, OP_CALL, callees + i * 3U);
+      n += 3U;
+    }
+    big_code[n++] = OP_HALT;
+    rc = verify_big("2400 hops from 150 subroutines", n, main_at);
+    CHECK_EQ(rc, ZPLC_LOADER_ERR_STACK, "a chain walked by 150 subroutines is refused within the bound");
+  }
+}
+
+static void test_verifier_work_of_wide_programs(void) {
+  /* 380 subroutines (almost all the verifier tracks), each called 36 times
+   * from the main code in turn: a program of the largest size with very many
+   * small functions. It is accepted, with room to spare in the work bound. */
+  enum { CALLEES = 380, ROUNDS = 36 };
+  size_t i, n = 0U, main_at = (size_t)CALLEES * 4U;
+  int rc;
+
+  memset(big_code, OP_NOP, sizeof big_code);
+  for (i = 0U; i < CALLEES; i++) {
+    big_code[i * 4U] = OP_PUSH8;
+    big_code[i * 4U + 1U] = 1U;
+    big_code[i * 4U + 2U] = OP_DROP;
+    big_code[i * 4U + 3U] = OP_RET;
+  }
+  n = main_at;
+  for (i = 0U; i < (size_t)CALLEES * ROUNDS; i++) {
+    big_jump(n, OP_CALL, (i % CALLEES) * 4U);
+    n += 3U;
+  }
+  big_code[n++] = OP_HALT;
+  rc = verify_big("380 subroutines called 36 times each", n, main_at);
+  CHECK_EQ(rc, ZPLC_LOADER_OK, "380 subroutines called many times are accepted");
+  CHECK(last_work <= last_limit / 2U, "with room to spare in the work bound");
 }
 
 /* ----------------------------------------------------------------------------
@@ -1055,7 +1399,9 @@ int main(void) {
   printf("=== ZPLC sandbox closure tests ===\n");
   test_indirect_access();
   test_direct_access_at_the_vm();
+  test_region_windows();
   test_string_operations();
+  test_strcmp_extents();
   test_comm_opcodes();
   test_comm_opcodes_raw();
   test_region_ends();
@@ -1065,6 +1411,9 @@ int main(void) {
   test_stack_paths();
   test_declared_depth();
   test_calls();
+  test_call_nesting();
+  test_verifier_work_is_bounded();
+  test_verifier_work_of_wide_programs();
   test_stack_effect_table_is_what_the_vm_does();
   printf("\n%d checks, %d failed\n", checks, failures);
   return failures == 0 ? 0 : 1;
