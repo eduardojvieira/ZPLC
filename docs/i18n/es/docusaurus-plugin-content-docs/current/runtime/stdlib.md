@@ -17,6 +17,8 @@ Esta página describe las funciones cubiertas hoy por la referencia. Valide el p
 
 ## 1. Timers (Temporizadores)
 
+`PT` y `ET` son valores `TIME`: una cuenta de 32 bits sin signo en milisegundos, de 0 a 4294967295 (unos 49,7 días). Ver [Tipos de tiempo y fecha](../languages/st.md#tipos-de-tiempo-y-fecha).
+
 ### TON (Temporizador On-Delay)
 Retrasa un flanco de subida. La salida `Q` se vuelve TRUE solo después de que `IN` haya sido TRUE durante la duración de `PT`.
 - **Entradas:**

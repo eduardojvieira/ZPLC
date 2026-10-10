@@ -17,6 +17,8 @@ This page describes the functions currently covered by this reference. Validate 
 
 ## 1. Timers
 
+`PT` and `ET` are `TIME` values: an unsigned 32-bit count of milliseconds, from 0 to 4294967295 (about 49.7 days). See [Time and date types](../languages/st.md#time-and-date-types).
+
 ### TON (On-Delay Timer)
 Delays a rising edge. The output `Q` goes TRUE only after `IN` has been TRUE for the duration of `PT`.
 - **Inputs:**
