@@ -40,7 +40,15 @@
 #define ZPLC_NATIVE_RETAIN_MIN_INTERVAL_MS 100UL
 #define ZPLC_NATIVE_RETAIN_MAX_INTERVAL_MS 86400000UL
 
-/* A due mask that names every task. */
+/* RT-014: consecutive deadline misses of one task that latch the fault. One matches the target scheduler, which
+ * latches at the first miss; a higher value lets a program run on with the warning raised. */
+#define ZPLC_NATIVE_DEADLINE_LIMIT_ENV "ZPLC_DEADLINE_MISS_LIMIT"
+#define ZPLC_NATIVE_DEADLINE_DEFAULT_LIMIT 1UL
+#define ZPLC_NATIVE_DEADLINE_MAX_LIMIT 1000000UL
+
+/* What a dispatch returns when a deadline miss reached the limit: below zero like a VM failure, so that every
+ * caller drives the outputs safe, and told apart from it by session->fault_reason. */
+#define ZPLC_NATIVE_DISPATCH_DEADLINE_FAULT (-1000)
 #define ZPLC_NATIVE_ALL_TASKS 0xFFFFFFFFU
 
 
@@ -107,6 +115,24 @@ static uint32_t retain_interval_ms(void)
     return (uint32_t)value;
 }
 
+static uint32_t deadline_miss_limit(void)
+{
+    const char *text = getenv(ZPLC_NATIVE_DEADLINE_LIMIT_ENV);
+    char *end = NULL;
+    unsigned long value;
+
+    if (text == NULL || text[0] == '\0') {
+        return (uint32_t)ZPLC_NATIVE_DEADLINE_DEFAULT_LIMIT;
+    }
+    value = strtoul(text, &end, 10);
+    if (end == text || *end != '\0' || value < 1UL || value > ZPLC_NATIVE_DEADLINE_MAX_LIMIT) {
+        (void)fprintf(stderr, "[native-sim] ignoring %s=%s: use 1..%lu consecutive misses\n",
+                      ZPLC_NATIVE_DEADLINE_LIMIT_ENV, text, ZPLC_NATIVE_DEADLINE_MAX_LIMIT);
+        return (uint32_t)ZPLC_NATIVE_DEADLINE_DEFAULT_LIMIT;
+    }
+    return (uint32_t)value;
+}
+
 static void session_retain_configure(void)
 {
     zplc_retain_config_t config;
@@ -152,12 +178,17 @@ static void session_retain_cold_reset(const zplc_native_runtime_session_t *sessi
     }
 }
 
-/* The counts of a run: scans of the session and of each task, and where each task's schedule stands. */
+/* The counts of a run: scans of the session and of each task, deadline misses and a latched fault. */
 static void session_reset_counters(zplc_native_runtime_session_t *session)
 {
     session->cycle_count = 0U;
     session->overrun_count = 0U;
+    session->last_overrun_us = 0U;
+    session->fault_reason = ZPLC_NATIVE_FAULT_NONE;
+    session->fault_task_id = 0U;
     memset(session->task_cycles, 0, sizeof(session->task_cycles));
+    memset(session->task_misses, 0, sizeof(session->task_misses));
+    memset(session->task_consecutive_misses, 0, sizeof(session->task_consecutive_misses));
     memset(session->task_last_release_ms, 0, sizeof(session->task_last_release_ms));
 }
 
@@ -235,6 +266,9 @@ static void session_apply_safe_state(zplc_native_runtime_session_t *session)
     if (session != NULL) {
         session->simulation_pulse_mask = 0U;
         session->state = ZPLC_NATIVE_SESSION_ERROR;
+        if (session->fault_reason == ZPLC_NATIVE_FAULT_NONE) {
+            session->fault_reason = ZPLC_NATIVE_FAULT_RUNTIME;
+        }
     }
 }
 
@@ -336,6 +370,11 @@ typedef struct {
     uint8_t count;
 } session_batch_t;
 
+static uint32_t session_clock_ms(const zplc_native_runtime_session_t *session)
+{
+    return session->clock_ms != NULL ? session->clock_ms() : zplc_hal_tick();
+}
+
 static uint32_t session_task_interval_ms(const zplc_native_runtime_session_t *session, uint8_t index)
 {
     return session->tasks[index].interval_us / 1000U;
@@ -398,22 +437,76 @@ static void session_mark_released(zplc_native_runtime_session_t *session, const 
     }
 }
 
+static void session_count_saturating(uint32_t *counter)
+{
+    if (*counter != UINT32_MAX) {
+        *counter += 1U;
+    }
+}
+
+/* RT-014. A task misses its deadline when it ends more than its interval after the batch started: it was released
+ * again before it was done, or the tasks ahead of it in the batch ate its interval. A miss raises the warning and
+ * is counted; the limit's consecutive misses of one task latch the fault. Returns nonzero when the fault latched. */
+static int session_account_deadline(zplc_native_runtime_session_t *session, uint8_t index, uint32_t elapsed_ms)
+{
+    const uint32_t interval_ms = session_task_interval_ms(session, index);
+
+    if (interval_ms == 0U || elapsed_ms <= interval_ms) {
+        session->task_consecutive_misses[index] = 0U;
+        return 0;
+    }
+    session_count_saturating(&session->overrun_count);
+    session_count_saturating(&session->task_misses[index]);
+    session_count_saturating(&session->task_consecutive_misses[index]);
+    {
+        const uint32_t over_ms = elapsed_ms - interval_ms;
+        session->last_overrun_us = over_ms > UINT32_MAX / 1000U ? UINT32_MAX : over_ms * 1000U;
+    }
+    if (session->task_consecutive_misses[index] < session->deadline_miss_limit) {
+        return 0;
+    }
+    session->fault_reason = ZPLC_NATIVE_FAULT_DEADLINE_MISS;
+    session->fault_task_id = session->tasks[index].id;
+    return 1;
+}
+
 /* Runs the tasks of a batch one after the other, to completion: no task preempts another. The input image does not
  * change while they run (requests and ticks share one thread), which is the latch of RT-009, and the output image
- * is the process image itself, so a task that is not in the batch keeps what it wrote. Returns below zero when a
- * task failed. */
-static int session_run_batch(zplc_native_runtime_session_t *session, const session_batch_t *batch)
+ * is the process image itself, so a task that is not in the batch keeps what it wrote. Returns below zero when a task
+ * failed or a deadline miss latched the fault. */
+static int session_run_batch(zplc_native_runtime_session_t *session, const session_batch_t *batch,
+                             int account_deadlines)
 {
+    const uint32_t started_ms = account_deadlines != 0 ? session_clock_ms(session) : 0U;
     uint8_t position;
     int result;
 
     if (session->task_count <= 1U) {
-        return zplc_core_run_cycle();
+        result = zplc_core_run_cycle();
+        if (result < 0) {
+            session->fault_reason = ZPLC_NATIVE_FAULT_VM;
+            session->fault_task_id = session->tasks[0].id;
+            return result;
+        }
+        if (account_deadlines != 0 && zplc_core_get_default_vm()->paused == 0U &&
+            session_account_deadline(session, 0U, session_clock_ms(session) - started_ms) != 0) {
+            return ZPLC_NATIVE_DISPATCH_DEADLINE_FAULT;
+        }
+        return result;
     }
     for (position = 0U; position < batch->count; ++position) {
-        result = zplc_vm_run_cycle(&session->task_vms[batch->index[position]]);
+        const uint8_t index = batch->index[position];
+
+        result = zplc_vm_run_cycle(&session->task_vms[index]);
         if (result < 0) {
+            session->fault_reason = ZPLC_NATIVE_FAULT_VM;
+            session->fault_task_id = session->tasks[index].id;
             return result;
+        }
+        /* A scan that stopped at a breakpoint is not finished: it has no deadline to meet yet. */
+        if (account_deadlines != 0 && session->task_vms[index].paused == 0U &&
+            session_account_deadline(session, index, session_clock_ms(session) - started_ms) != 0) {
+            return ZPLC_NATIVE_DISPATCH_DEADLINE_FAULT;
         }
     }
     return 1;
@@ -435,11 +528,13 @@ static int session_complete_scan(zplc_native_runtime_session_t *session, const s
     return 0;
 }
 
-/* A start and a resume begin a new run of the schedule: the next scan releases every task. */
+/* A start and a resume begin a new run of the schedule: the next scan releases every task, and a run of
+ * deadline misses does not carry over. */
 static void session_restart_schedule(zplc_native_runtime_session_t *session)
 {
     session->timed_scan_started = 0U;
     session->last_dispatch_lateness_ms = 0U;
+    memset(session->task_consecutive_misses, 0, sizeof(session->task_consecutive_misses));
 }
 
 /* Stop and reset begin from a cycle boundary: drop a scan that a breakpoint
@@ -1060,6 +1155,21 @@ static int decode_hex_bytes(const char *hex,
     return 0;
 }
 
+static const char *fault_reason_string(zplc_native_fault_reason_t reason)
+{
+    switch (reason) {
+        case ZPLC_NATIVE_FAULT_NONE:
+            return "none";
+        case ZPLC_NATIVE_FAULT_DEADLINE_MISS:
+            return "deadline_miss";
+        case ZPLC_NATIVE_FAULT_VM:
+            return "vm_fault";
+        case ZPLC_NATIVE_FAULT_RUNTIME:
+        default:
+            return "runtime_failure";
+    }
+}
+
 static int append_status_payload(const zplc_native_runtime_session_t *session,
                                  char *response,
                                  size_t response_size,
@@ -1071,10 +1181,22 @@ static int append_status_payload(const zplc_native_runtime_session_t *session,
     const zplc_vm_t *focused_vm;
     zplc_retain_status_t retain;
     char saved_at[16];
+    char fault_task[8];
+    uint32_t consecutive_misses = 0U;
     uint8_t index;
 
     if (session == NULL || response == NULL || used == NULL) {
         return format_failed(response, response_size);
+    }
+    for (index = 0U; index < session->task_count; ++index) {
+        if (session->task_consecutive_misses[index] > consecutive_misses) {
+            consecutive_misses = session->task_consecutive_misses[index];
+        }
+    }
+    if (session->fault_reason == ZPLC_NATIVE_FAULT_NONE) {
+        (void)snprintf(fault_task, sizeof(fault_task), "null");
+    } else {
+        (void)snprintf(fault_task, sizeof(fault_task), "%u", (unsigned)session->fault_task_id);
     }
     zplc_retain_last_status(&retain);
     if (retain.saves == 0U) {
@@ -1110,6 +1232,9 @@ static int append_status_payload(const zplc_native_runtime_session_t *session,
         "\"program_size\":%u},"
         "\"host_cadence\":{\"kind\":\"observed_poll_cadence\",\"missed_intervals\":%u,"
         "\"last_dispatch_lateness_ms\":%u},"
+        "\"deadline\":{\"warning\":%s,\"misses\":%u,\"consecutive_misses\":%u,\"miss_limit\":%u,"
+        "\"last_overrun_us\":%u},"
+        "\"fault\":{\"reason\":\"%s\",\"task_id\":%s},"
         "\"retain\":{\"reason\":\"%s\",\"restored\":%s,\"sequence\":%u,\"saves\":%u,"
         "\"save_errors\":%u,\"saved_at_ms\":%s},"
         "\"focused_vm\":{\"pc\":%u,\"sp\":%u,\"halted\":%s,\"error\":%u},\"tasks\":[",
@@ -1122,6 +1247,10 @@ static int append_status_payload(const zplc_native_runtime_session_t *session,
         session->program_size,
         session->missed_interval_count,
         session->last_dispatch_lateness_ms,
+        consecutive_misses != 0U ? "true" : "false",
+        (unsigned)session->overrun_count, (unsigned)consecutive_misses,
+        (unsigned)session->deadline_miss_limit, (unsigned)session->last_overrun_us,
+        fault_reason_string(session->fault_reason), fault_task,
         zplc_retain_reason_string(retain.reason),
         retain.reason == ZPLC_RETAIN_RESTORED ? "true" : "false",
         (unsigned)retain.sequence, (unsigned)retain.saves, (unsigned)retain.save_errors, saved_at,
@@ -1134,7 +1263,7 @@ static int append_status_payload(const zplc_native_runtime_session_t *session,
         if (append_jsonf(response, response_size, used,
                          "%s{\"task_id\":%u,\"state\":\"%s\",\"cycles\":%u,\"overruns\":%u,\"interval_us\":%u,\"priority\":%u,\"pc\":%u,\"sp\":%u,\"halted\":%s,\"error\":%u}",
                          index == 0U ? "" : ",", (unsigned)session->tasks[index].id, state,
-                         session->task_cycles[index], session->overrun_count,
+                         session->task_cycles[index], session->task_misses[index],
                          session->tasks[index].interval_us, session->tasks[index].priority,
                          (unsigned)vm->pc, (unsigned)vm->sp, vm->halted != 0U ? "true" : "false",
                          (unsigned)vm->error) != 0) return format_failed(response, response_size);
@@ -1633,6 +1762,8 @@ static int handle_stop_or_reset(zplc_native_runtime_session_t *session,
     }
     if (reset_program != 0 || session->state != ZPLC_NATIVE_SESSION_ERROR) {
         session->state = ZPLC_NATIVE_SESSION_IDLE;
+        session->fault_reason = ZPLC_NATIVE_FAULT_NONE;
+        session->fault_task_id = 0U;
     }
     if (reset_program != 0) {
         /* Reset is a cold restart: the stored values must not come back. */
@@ -1705,9 +1836,9 @@ static int handle_step(zplc_native_runtime_session_t *session,
                                      response_size);
     }
 
-    /* A step is one batch of every task, whatever its interval. */
+    /* A step is one batch of every task, whatever its interval, and no deadline applies to it (RT-017). */
     session_plan_batch(session, ZPLC_NATIVE_ALL_TASKS, 0U, 1, &batch);
-    run_result = session_run_batch(session, &batch);
+    run_result = session_run_batch(session, &batch, 0);
     if (run_result < 0) {
         session_apply_safe_state(session);
         return format_error_response(request->id,
@@ -1803,12 +1934,17 @@ static int handle_scenario_step(zplc_native_runtime_session_t *session,
     session_plan_batch(session, due, request->at_ms, first_release, &batch);
     if (due != 0U) {
         zplc_hal_posix_set_tick_override(request->at_ms);
-        run_result = session_run_batch(session, &batch);
+        run_result = session_run_batch(session, &batch, 1);
         zplc_hal_posix_clear_tick_override();
         if (run_result < 0) {
             session_apply_safe_state(session);
-            return format_error_response(request->id, "RUNTIME_FAILURE",
-                                         "zplc_core_run_cycle failed", response, response_size);
+            return format_error_response(request->id,
+                                         session->fault_reason == ZPLC_NATIVE_FAULT_DEADLINE_MISS
+                                             ? "DEADLINE_MISS" : "RUNTIME_FAILURE",
+                                         session->fault_reason == ZPLC_NATIVE_FAULT_DEADLINE_MISS
+                                             ? "a task reached the limit of consecutive deadline misses"
+                                             : "zplc_core_run_cycle failed",
+                                         response, response_size);
         }
         if (session_complete_scan(session, &batch) != 0) {
             session_apply_safe_state(session);
@@ -2066,6 +2202,7 @@ void zplc_native_runtime_session_init(zplc_native_runtime_session_t *session)
     zplc_hal_posix_clear_tick_override();
     session->state = ZPLC_NATIVE_SESSION_IDLE;
     session->scan_interval_ms = 100U;
+    session->deadline_miss_limit = deadline_miss_limit();
     zplc_core_init();
     session_retain_configure();
 
@@ -2350,17 +2487,28 @@ int zplc_native_runtime_session_tick(zplc_native_runtime_session_t *session,
     session->timed_scan_started = 1U;
 
     session_plan_batch(session, due, now_ms, first_release, &batch);
-    run_result = session_run_batch(session, &batch);
+    run_result = session_run_batch(session, &batch, 1);
     session->last_scan_tick_ms = now_ms;
     session_mark_released(session, &batch, now_ms);
     if (run_result < 0) {
+        const int deadline = session->fault_reason == ZPLC_NATIVE_FAULT_DEADLINE_MISS;
+
         session_apply_safe_state(session);
         if (event != NULL && event_size > 0U) {
-            (void)format_jsonf(event,
-                           event_size,
-                           "{\"type\":\"event\",\"method\":\"runtime.error\",\"params\":{"
-                           "\"code\":\"RUNTIME_FAILURE\","
-                           "\"message\":\"zplc_core_run_cycle failed\"}}");
+            if (deadline != 0) {
+                (void)format_jsonf(event,
+                               event_size,
+                               "{\"type\":\"event\",\"method\":\"runtime.error\",\"params\":{"
+                               "\"code\":\"DEADLINE_MISS\","
+                               "\"message\":\"task %u reached the limit of %u consecutive deadline misses\"}}",
+                               (unsigned)session->fault_task_id, (unsigned)session->deadline_miss_limit);
+            } else {
+                (void)format_jsonf(event,
+                               event_size,
+                               "{\"type\":\"event\",\"method\":\"runtime.error\",\"params\":{"
+                               "\"code\":\"RUNTIME_FAILURE\","
+                               "\"message\":\"zplc_core_run_cycle failed\"}}");
+            }
         }
         return ZPLC_NATIVE_RESPONSE_ERR_INVALID_STATE;
     }
