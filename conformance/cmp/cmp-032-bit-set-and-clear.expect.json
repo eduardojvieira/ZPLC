@@ -1,0 +1,13 @@
+{
+  "requirement": "CMP-032",
+  "title": "a bit of a WORD is set and cleared without touching the others",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "WORD",
+      "value": 32769
+    }
+  ]
+}

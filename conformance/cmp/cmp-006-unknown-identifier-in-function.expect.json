@@ -1,0 +1,11 @@
+{
+  "requirement": "CMP-006",
+  "title": "an error in the body of a function is reported at its line",
+  "build": "fails",
+  "lines": [
+    4
+  ],
+  "messageIncludes": [
+    "missing"
+  ]
+}

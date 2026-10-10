@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-029",
+  "title": "retained structures and strings take their initial values",
+  "scans": 2,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 11
+    },
+    {
+      "at": "%QW2",
+      "type": "INT",
+      "value": 3
+    }
+  ]
+}

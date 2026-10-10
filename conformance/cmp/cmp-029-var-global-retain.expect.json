@@ -1,0 +1,13 @@
+{
+  "requirement": "CMP-029",
+  "title": "VAR_GLOBAL RETAIN is accepted and works",
+  "scans": 3,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 6
+    }
+  ]
+}

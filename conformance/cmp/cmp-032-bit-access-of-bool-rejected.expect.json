@@ -1,0 +1,11 @@
+{
+  "requirement": "CMP-032",
+  "title": "a bit of a BOOL is rejected",
+  "build": "fails",
+  "lines": [
+    6
+  ],
+  "messageIncludes": [
+    "Bit access"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "requirement": "CMP-033",
+  "title": "a library block named in lower case is still the library block",
+  "scans": 4,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QX0.0",
+      "type": "BOOL",
+      "value": true
+    }
+  ]
+}

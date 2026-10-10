@@ -26,6 +26,7 @@ import type {
     Identifier,
     MemberAccess,
     ArrayAccess,
+    BitAccess,
     BoolLiteral,
     IntLiteral,
     RealLiteral,
@@ -55,6 +56,7 @@ import type {
     PointerType,
 } from './ast.ts';
 import { getArrayElementCount, isArrayType, VarSection } from './ast.ts';
+import { CodegenError, codegenErrorFrom, orderedUniqueErrors } from './diagnostics.ts';
 import {
     getLoadStoreSuffix,
     buildSymbolTable,
@@ -99,6 +101,7 @@ import {
     type CompareOp,
     type HelperName,
 } from './numeric.ts';
+import { POWF_HELPER, POWF_LABEL } from './power.ts';
 
 // ============================================================================
 // Memory Layout Constants
@@ -244,7 +247,9 @@ interface CodeGenState {
     memoryProfile: CompilerMemoryProfile;
     workMemorySize: number;
     /** The helper routines the program calls; they are appended after the main cycle. */
-    helpers: Set<HelperName>;
+    helpers: Set<HelperName | 'powf'>;
+    /** The errors of statements that could not be generated, in the order found (CMP-007). */
+    errors: CodegenError[];
     /** Check array indices at run time (CMP-023). */
     arrayBoundsCheck: boolean;
     /** Work memory the code generator took after the symbols: string buffers and the cells of the string routines. */
@@ -287,30 +292,41 @@ function resolveSymbol(state: CodeGenState, name: string): Symbol | undefined {
         }
     }
 
-    // 2. Check FB Scope (Implicit THIS)
-    if (state.currentFBInstance && state.currentFBInstance.members) {
-        const offset = state.currentFBInstance.members.get(name);
-        if (offset !== undefined) {
-            const fbTypeName = state.currentFBInstance.dataType as string;
-            const fbDef = state.symbols.getFBDefinition(fbTypeName);
-            const memberInfo = fbDef?.members.get(name);
-            
-            return {
-                name: name,
-                dataType: memberInfo?.dataType || 'UNKNOWN',
-                address: state.currentFBInstance.address + offset,
-                size: memberInfo?.size || 0,
-                section: VarSection.VAR,
-                ioAddress: null,
-                members: null,
-                initialValue: null,
-                tags: {}
-            };
-        }
-    }
+    // 2. Check FB Scope (Implicit THIS), then the global scope
+    return fbScopeSymbol(state, name) ?? state.symbols.get(name);
+}
 
-    // 3. Check Global Scope
-    return state.symbols.get(name);
+/**
+ * A member of the function block instance being inlined, as a symbol: a variable, or an instance declared
+ * inside the function block, which has members of its own (CMP-038). undefined outside a function block.
+ */
+function fbScopeSymbol(state: CodeGenState, name: string): Symbol | undefined {
+    const instance = state.currentFBInstance;
+    if (!instance || !instance.members) return undefined;
+    const offset = instance.members.get(name);
+    if (offset === undefined) return undefined;
+    const fbDef = state.symbols.getFBDefinition(instance.dataType as string);
+    const memberInfo = fbDef?.members.get(name);
+    return {
+        name: name,
+        dataType: memberInfo?.dataType || 'UNKNOWN',
+        address: instance.address + offset,
+        size: memberInfo?.size || 0,
+        section: VarSection.VAR,
+        ioAddress: null,
+        members: memberOffsets(state, memberInfo?.dataType),
+        initialValue: null,
+        tags: {}
+    };
+}
+
+/** The offsets of the members of a function block or structure type (user-defined or library), or null for any other type. */
+function memberOffsets(state: CodeGenState, typeName: unknown): Map<string, number> | null {
+    if (typeof typeName !== 'string') return null;
+    const user = state.symbols.getFBDefinition(typeName) ?? state.symbols.getStructDefinition(typeName);
+    if (user) return new Map([...user.members].map(([member, info]) => [member, info.offset]));
+    const library = getFB(typeName as DataTypeValue);
+    return library ? new Map(library.members.map((member) => [member.name, member.offset])) : null;
 }
 
 /**
@@ -321,6 +337,26 @@ function resolveSymbol(state: CodeGenState, name: string): Symbol | undefined {
  * @returns Assembly source code
  */
 export function generate(unit: CompilationUnit | Program, options?: CodeGenOptions): string {
+    // Statements that cannot be generated are recorded and generation goes on, so one build reports every
+    // independent error (CMP-007); the first is thrown with all of them in `errors`.
+    const found: CodegenError[] = [];
+    let assembly: string | undefined;
+    try {
+        assembly = generateUnit(unit, options, found);
+    } catch (caught) {
+        const where = unit.kind === 'CompilationUnit' ? (unit.programs[0] ?? unit) : unit;
+        const error = codegenErrorFrom(caught, where);
+        if (error === null) throw caught;
+        found.push(...error.errors);
+    }
+    if (found.length === 0) return assembly!;
+    const errors = orderedUniqueErrors(found);
+    const first = errors[0]!;
+    first.errors = errors;
+    throw first;
+}
+
+function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions | undefined, errors: CodegenError[]): string {
     const workMemoryBase = options?.workMemoryBase ?? MemoryLayout.WORK_BASE;
     const memoryProfile = validateCompilerMemoryProfile(options?.memoryProfile ?? DEFAULT_COMPILER_MEMORY_PROFILE);
     const workMemorySize = options?.workMemorySize
@@ -331,7 +367,7 @@ export function generate(unit: CompilationUnit | Program, options?: CodeGenOptio
     validateWorkRegionOptions(workMemoryBase, workMemorySize, initFlagAddr, memoryProfile);
 
     const symbols = buildSymbolTable(unit, workMemoryBase);
-    validateWorkSymbols(symbols, workMemoryBase, workMemorySize, initFlagAddr);
+    validateWorkSymbols(symbols, workMemoryBase, workMemorySize, initFlagAddr, memoryProfile.retainSize);
 
     // Calculate string literal pool base address
     const workOffset = symbols.getWorkOffset();
@@ -356,6 +392,7 @@ export function generate(unit: CompilationUnit | Program, options?: CodeGenOptio
         memoryProfile,
         workMemorySize,
         helpers: new Set(),
+        errors,
         arrayBoundsCheck: options?.arrayBoundsCheck ?? true,
         scratchStrings: [],
         stringBuffers: [],
@@ -365,6 +402,8 @@ export function generate(unit: CompilationUnit | Program, options?: CodeGenOptio
         resultBuffer: null,
         resultCapacity: null,
     };
+    // inside an inlined function block, its members (and the instances declared in it) are in scope
+    symbols.scopeResolver = (name) => fbScopeSymbol(state, name);
 
     const isUnit = unit.kind === 'CompilationUnit';
     const mainProgram = isUnit ? (unit as CompilationUnit).programs[0] : (unit as Program);
@@ -428,14 +467,17 @@ export function generate(unit: CompilationUnit | Program, options?: CodeGenOptio
     // Initialization: the literal pool first, the variable initialisers copy from it
     emitStringLiteralInit(state);
 
+    // the initial values of the RETAIN variables of the globals and of the programs share one guard
+    const retained: VarDecl[] = [];
     if (isUnit) {
-        emitGlobalInitialization(state, unit as CompilationUnit);
+        emitGlobalInitialization(state, unit as CompilationUnit, retained);
         for (const prog of (unit as CompilationUnit).programs) {
-            emitInitialization(state, prog);
+            emitInitialization(state, prog, retained);
         }
     } else {
-        emitInitialization(state, mainProgram);
+        emitInitialization(state, mainProgram, retained);
     }
+    emitRetainedInitialization(state, retained);
 
     emit(state, ``);
     emit(state, `    ; Mark as initialized`);
@@ -459,7 +501,7 @@ export function generate(unit: CompilationUnit | Program, options?: CodeGenOptio
     validateStringLiteralPool(state, workMemoryBase, workMemorySize);
 
     // Routines the program called, reachable only through CALL
-    for (const helper of HELPERS) {
+    for (const helper of [...HELPERS, { name: 'powf' as const, title: 'REAL exponentiation (**)', lines: POWF_HELPER }]) {
         if (!state.helpers.has(helper.name)) continue;
         emit(state, ``);
         emit(state, `; --- Helper: ${helper.title} ---`);
@@ -483,8 +525,8 @@ function emit(state: CodeGenState, line: string): void {
 }
 
 /** The one error path of the generator: stop the build at `at`. */
-function fail(at: { line: number; column: number }, message: string): never {
-    throw new CodegenError(message, at.line, at.column);
+function fail(at: { line: number; column: number; endLine?: number; endColumn?: number }, message: string): never {
+    throw new CodegenError(message, at.line, at.column, at.endLine, at.endColumn);
 }
 
 /**
@@ -556,17 +598,14 @@ export const TAG_MAP: Record<string, number> = {
 };
 
 /**
- * A construct the generator cannot translate (undeclared name, unknown function, wrong arity...).
- * The build fails with this message and position and produces no artifact; code generation never
- * writes a placeholder into the output in place of an error.
- * ponytail: the first error stops the build; collecting several diagnostics belongs to the semantic phase (WP-24).
+ * A construct the generator cannot translate (undeclared name, unknown function, wrong arity...): see
+ * diagnostics.ts. The build fails with this message and position and produces no artifact; code generation
+ * never writes a placeholder into the output in place of an error. Each statement is generated on its own, so
+ * one generation reports the error of every statement that has one (CMP-007).
+ * ponytail: an error inside a declaration or an expression stops that statement only; a declaration error
+ * (a duplicate, an unknown type) stops the generation before any statement is read.
  */
-export class CodegenError extends Error {
-    constructor(message: string, readonly line: number, readonly column: number) {
-        super(message);
-        this.name = 'CodegenError';
-    }
-}
+export { CodegenError };
 
 export class TagAdmissionError extends CodegenError {
     constructor(message: string, line: number, column: number) {
@@ -609,7 +648,7 @@ function workBudgetMessage(workMemorySize: number): string {
     return `WORK allocation exceeds the target memory profile (limit: ${workMemorySize} bytes of WORK memory per program, including the initialization flag)`;
 }
 
-function validateWorkSymbols(symbols: SymbolTable, workMemoryBase: number, workMemorySize: number, initFlagAddr: number): void {
+function validateWorkSymbols(symbols: SymbolTable, workMemoryBase: number, workMemorySize: number, initFlagAddr: number, retainSize: number = MEMORY_REGION.RETAIN.size): void {
     const workEnd = workMemoryBase + workMemorySize;
     const automaticWorkSymbols: Symbol[] = [];
     const directlyLocatedWorkSymbols: Symbol[] = [];
@@ -638,6 +677,12 @@ function validateWorkSymbols(symbols: SymbolTable, workMemoryBase: number, workM
             if (symbol.address < regionBase || symbolEnd > regionEnd) {
                 throw new TagAdmissionError(`${regionName} allocation exceeds its memory region`, symbol.declarationLine ?? 0, 0);
             }
+        } else if (symbol.retain) {
+            // VAR RETAIN lives in the retentive region, which has its own budget (CMP-029)
+            if (symbol.address < MemoryLayout.RETAIN_BASE || symbolEnd > MemoryLayout.RETAIN_BASE + retainSize) {
+                throw new TagAdmissionError(`RETAIN allocation exceeds the target memory profile (limit: ${retainSize} bytes of retentive memory)`, symbol.declarationLine ?? 0, 0);
+            }
+            continue;
         } else if (symbol.address < workMemoryBase || symbolEnd > workEnd) {
             throw new TagAdmissionError(workBudgetMessage(workMemorySize), symbol.declarationLine ?? 0, 0);
         }
@@ -1372,16 +1417,22 @@ function emitArrayInit(state: CodeGenState, address: number, type: ArrayType,
             }
         }
     }
+
 }
 
 /** First-scan initialisation of a list of declarations (a program's variables, a block of globals). */
-function emitDeclarationInitialization(state: CodeGenState, declarations: VarDecl[]): void {
+function emitDeclarationInitialization(state: CodeGenState, declarations: VarDecl[], retained: VarDecl[]): void {
     let hasInit = false;
 
     for (const decl of declarations) {
         const sym = state.symbols.get(decl.name);
         if (!sym) continue;
         if (!decl.initialValue && !hasNonZeroDefault(state, sym.dataType)) continue;
+        // a retained variable is initialised apart, only when the retentive region holds no saved state (CMP-029)
+        if (sym.retain) {
+            retained.push(decl);
+            continue;
+        }
 
         if (!hasInit) {
             emit(state, ``);
@@ -1403,13 +1454,37 @@ function emitDeclarationInitialization(state: CodeGenState, declarations: VarDec
     }
 }
 
-function emitInitialization(state: CodeGenState, program: Program): void {
-    emitDeclarationInitialization(state, program.varBlocks.flatMap((block) => block.variables));
+function emitInitialization(state: CodeGenState, program: Program, retained: VarDecl[]): void {
+    emitDeclarationInitialization(state, program.varBlocks.flatMap((block) => block.variables), retained);
 }
 
 /** The VAR_GLOBAL blocks hold their declared values at the first scan too (CMP-025). */
-function emitGlobalInitialization(state: CodeGenState, unit: CompilationUnit): void {
-    emitDeclarationInitialization(state, unit.globalVars.flatMap((block) => block.variables));
+function emitGlobalInitialization(state: CodeGenState, unit: CompilationUnit, retained: VarDecl[]): void {
+    emitDeclarationInitialization(state, unit.globalVars.flatMap((block) => block.variables), retained);
+}
+
+/**
+ * The initial values of the VAR RETAIN variables (CMP-029): applied when the first byte of the retentive region
+ * is zero, then that byte is set. The runtime saves the region with the byte, and restores both together
+ * (RT-025), so a restored region keeps its values and a region that was never saved, or whose layout changed,
+ * which the runtime clears, gets the declared ones.
+ */
+function emitRetainedInitialization(state: CodeGenState, retained: VarDecl[]): void {
+    if (retained.length === 0) return;
+
+    const marker = formatAddress(MemoryLayout.RETAIN_BASE);
+    const restored = newLabel(state, 'retain_restored');
+    emit(state, ``);
+    emit(state, `    ; --- RETAIN Initialization (skipped when the retentive region holds a saved state) ---`);
+    emit(state, `    LOAD8 ${marker}`);
+    emit(state, `    JNZ ${restored}`);
+    for (const decl of retained) {
+        const sym = state.symbols.get(decl.name)!;
+        emitInitValue(state, sym.address, sym.dataType, decl.initialValue, decl, decl.name, { everyCall: false });
+    }
+    emit(state, `    PUSH8 1`);
+    emit(state, `    STORE8 ${marker}`);
+    emit(state, `${restored}:`);
 }
 
 // ============================================================================
@@ -1502,7 +1577,32 @@ function generateFunctionDecl(state: CodeGenState, func: FunctionDecl): void {
 // Statement Visitors
 // ============================================================================
 
+/**
+ * Generate one statement. An error in it is recorded with the position of the statement (or the narrower
+ * one it carries) and generation goes on with the next statement, so that one build reports every
+ * independent error (CMP-007). The generator state the failed statement left behind is put back.
+ */
 function emitStatement(state: CodeGenState, stmt: Statement): void {
+    const loops = state.loopStack.length;
+    const { currentFBInstance, currentMethod, currentFunction, returnLabel, expressionDepth, resultBuffer, resultCapacity } = state;
+    try {
+        emitStatementNode(state, stmt);
+    } catch (caught) {
+        const error = codegenErrorFrom(caught, stmt);
+        if (error === null) throw caught;
+        state.loopStack.length = loops;
+        state.currentFBInstance = currentFBInstance;
+        state.currentMethod = currentMethod;
+        state.currentFunction = currentFunction;
+        state.returnLabel = returnLabel;
+        state.expressionDepth = expressionDepth;
+        state.resultBuffer = resultBuffer;
+        state.resultCapacity = resultCapacity;
+        state.errors.push(...error.errors);
+    }
+}
+
+function emitStatementNode(state: CodeGenState, stmt: Statement): void {
     // Emit source annotation before the first instruction of this statement
     emitSourceAnnotation(state, stmt.line);
 
@@ -1550,6 +1650,11 @@ function emitStatement(state: CodeGenState, stmt: Statement): void {
 
 function emitAssignment(state: CodeGenState, stmt: Assignment): void {
     emit(state, ``);
+
+    if (stmt.target.kind === 'BitAccess') {
+        emitBitAssignment(state, stmt, stmt.target);
+        return;
+    }
 
     if (stmt.target.kind === 'Identifier') {
         // Bug 2 fix: Standalone method call as statement uses '_' as dummy target
@@ -2088,6 +2193,10 @@ function emitReturnStatement(state: CodeGenState): void {
 }
 
 function emitFBCallStatement(state: CodeGenState, stmt: FBCallStatement): void {
+    if (stmt.instance) {
+        emitIndexedInstanceCall(state, stmt, stmt.instance);
+        return;
+    }
     const sym = state.symbols.get(stmt.fbName);
 
     // ponytail: WATCHDOG_RESET is the sole built-in void-like statement; generalize only if another appears.
@@ -2109,6 +2218,11 @@ function emitFBCallStatement(state: CodeGenState, stmt: FBCallStatement): void {
         fail(stmt, `Unknown FB instance '${stmt.fbName}'`);
     }
 
+    emitInstanceCall(state, stmt, sym);
+}
+
+/** The call of the function block instance `sym`: user-defined blocks are inlined, library blocks generate their own code. */
+function emitInstanceCall(state: CodeGenState, stmt: FBCallStatement, sym: Symbol): void {
     const typeName = sym.dataType as string;
 
     // 1. Check if it's a user-defined FB
@@ -2182,7 +2296,12 @@ function emitFBCallStatement(state: CodeGenState, stmt: FBCallStatement): void {
 // ============================================================================
 
 function emitExpression(state: CodeGenState, expr: Expression): void {
-    emitExpressionNode(state, expr);
+    try {
+        emitExpressionNode(state, expr);
+    } catch (caught) {
+        // an error found without a position gets the one of the expression that failed (CMP-006)
+        throw codegenErrorFrom(caught, expr) ?? caught;
+    }
 
     // The VM zero-extends an 8- or 16-bit load. A signed value comes back with its sign here, once,
     // so every operator sees the canonical 32-bit form of a SINT or an INT (CMP-011).
@@ -2242,6 +2361,9 @@ function emitExpressionNode(state: CodeGenState, expr: Expression): void {
             break;
         case 'ThisExpr':
             emitThisExpr(state, expr);
+            break;
+        case 'BitAccess':
+            emitBitAccess(state, expr);
             break;
         case 'WStringLiteral':
             emitWStringLiteral(state, expr);
@@ -2630,7 +2752,8 @@ function functionResultType(state: CodeGenState, expr: FunctionCall): string {
 function staticType(state: CodeGenState, expr: Expression): string {
     switch (expr.kind) {
         case 'BoolLiteral': return 'BOOL';
-        case 'IntLiteral': return LITERAL_INT;
+        // INT#5 is an INT; a plain 5 adopts the type of the operand it meets (CMP-031)
+        case 'IntLiteral': return expr.literalType ?? LITERAL_INT;
         case 'RealLiteral': return 'REAL';
         case 'TimeLiteral': return 'TIME';
         case 'DateLiteral': return 'DATE';
@@ -2647,8 +2770,11 @@ function staticType(state: CodeGenState, expr: Expression): string {
             return placeType(state, expr);
         case 'UnaryExpr':
             return staticType(state, expr.operand);
+        case 'BitAccess':
+            return 'BOOL';
         case 'BinaryExpr':
             if (['EQ', 'NE', 'LT', 'LE', 'GT', 'GE'].includes(expr.operator)) return 'BOOL';
+            if (expr.operator === 'POW') return 'REAL';
             return commonType(staticType(state, expr.left), staticType(state, expr.right));
         case 'FunctionCall':
             return functionResultType(state, expr);
@@ -2674,7 +2800,7 @@ function emitIntToReal(state: CodeGenState, fromType: string): void {
 }
 
 /** Link a helper routine into the program and call it. */
-function callHelper(state: CodeGenState, helper: HelperName, label: string): void {
+function callHelper(state: CodeGenState, helper: HelperName | 'powf', label: string): void {
     state.helpers.add(helper);
     emit(state, `    CALL ${label}`);
 }
@@ -2944,6 +3070,11 @@ function makeCodeGenContext(
  * (a 64-bit assignment target makes `3000000000 + 3000000000` a 64-bit sum).
  */
 function emitBinaryExpr(state: CodeGenState, expr: BinaryExpr, contextType?: string): void {
+    if (expr.operator === 'POW') {
+        emitPower(state, expr);
+        return;
+    }
+
     // Check if this is a string operation
     const leftIsString = isStringExpression(state, expr.left);
     const rightIsString = isStringExpression(state, expr.right);
@@ -2991,8 +3122,10 @@ function emitBinaryExpr(state: CodeGenState, expr: BinaryExpr, contextType?: str
     // Logical operators act on the bit pattern, whatever the type: AND, OR and XOR of two
     // zero-extended values never leave the declared width
     if (expr.operator === 'AND' || expr.operator === 'OR' || expr.operator === 'XOR') {
-        emitExpression(state, expr.left);
-        emitExpression(state, expr.right);
+        // a literal above 2^31 - 1 is a valid operand of a 32-bit unsigned bit string (CMP-012)
+        const logicalTarget = isUnsigned32(opType) ? opType : UNKNOWN_TYPE;
+        emitConverted(state, expr.left, logicalTarget);
+        emitConverted(state, expr.right, logicalTarget);
         emit(state, `    ${expr.operator}`);
         return;
     }
@@ -3079,19 +3212,26 @@ function emitFunctionCall(state: CodeGenState, expr: FunctionCall): void {
             const input = named
                 ? userFn.inputs.find((i) => i.name === (arg as any).name)
                 : userFn.inputs[index];
-            const type = input ? storedType(state, input.dataType) : undefined;
-            if (type && isStringType(type)) {
+            // an argument for a parameter that is not a VAR_INPUT (a VAR_OUTPUT or VAR_IN_OUT of a function is
+            // declared, but is not passed yet: CMP-035) would be pushed and never read, leaving the stack unbalanced
+            if (input === undefined) {
+                fail(arg as { line: number; column: number }, named
+                    ? `Function '${expr.name}' has no input parameter '${(arg as any).name}'`
+                    : `Function '${expr.name}' takes ${userFn.inputs.length} argument(s)`);
+            }
+            const type = storedType(state, input.dataType);
+            if (isStringType(type)) {
                 // a string goes by address; the function copies it (it never changes the caller's)
-                if (value.kind === 'StringLiteral') checkStringFits(value, type, input!.name);
+                if (value.kind === 'StringLiteral') checkStringFits(value, type, input.name);
                 emitExpression(state, value);
-            } else if (type && isAggregateType(state, type)) {
+            } else if (isAggregateType(state, type)) {
                 // a structure or an array goes by address; the function copies it
-                emitAddr(state, aggregateSource(state, value, type, value, input!.name).addr);
-            } else if (type && isPointerType(type)) {
-                checkReferenceValue(state, type, value, input!.name);
+                emitAddr(state, aggregateSource(state, value, type, value, input.name).addr);
+            } else if (isPointerType(type)) {
+                checkReferenceValue(state, type, value, input.name);
                 emitReferenceValue(state, type, value);
             } else {
-                emitValueFor(state, value, input?.dataType);
+                emitValueFor(state, value, input.dataType);
             }
         });
 
@@ -4116,3 +4256,176 @@ function emitWStringLiteral(state: CodeGenState, expr: WStringLiteral): void {
 }
 
 import { DATA_TYPE_ID, MEMORY_REGION, STRING_LAYOUT, TAG_ID } from '../contract.generated.ts';
+
+// ============================================================================
+// Bit access and exponentiation (CMP-032)
+// ============================================================================
+
+/** The types a bit of which can be read or written: the integers and the bit strings. */
+const BIT_ACCESS_TYPES = new Set(['SINT', 'INT', 'DINT', 'LINT', 'USINT', 'UINT', 'UDINT', 'ULINT', 'BYTE', 'WORD', 'DWORD', 'LWORD']);
+
+/** The mask of the bit of `access` and the width and signedness of its operand, once both are checked. */
+function bitMask(state: CodeGenState, access: BitAccess): { mask: bigint; bits: number; signed: boolean } {
+    const type = staticType(state, access.operand);
+    if (!BIT_ACCESS_TYPES.has(type)) {
+        fail(access, type === 'BOOL' || type === UNKNOWN_TYPE || type === LITERAL_INT
+            ? `Bit access .${access.bit} needs an integer or bit-string variable (SINT to LINT, BYTE to LWORD)`
+            : `Bit access .${access.bit} is not defined for ${type}: it applies to the integers and the bit strings`);
+    }
+    const bits = numericInfo(type)!.bits;
+    if (access.bit >= bits) {
+        fail(access, `Bit ${access.bit} is out of range for ${type}: it has bits 0 to ${bits - 1}`);
+    }
+    return { mask: 1n << BigInt(access.bit), bits, signed: numericInfo(type)!.signed };
+}
+
+function integerLiteral(value: bigint, at: { line: number; column: number }): IntLiteral {
+    const number = Number(value);
+    return {
+        kind: 'IntLiteral',
+        value: number,
+        ...(Number.isSafeInteger(number) ? {} : { big: value }),
+        line: at.line,
+        column: at.column,
+    };
+}
+
+/** `w.3` as a BOOL: the operand masked with the bit and compared with zero. */
+function emitBitAccess(state: CodeGenState, access: BitAccess): void {
+    const { mask } = bitMask(state, access);
+    const at = { line: access.line, column: access.column };
+    emitExpression(state, {
+        kind: 'BinaryExpr',
+        operator: 'NE',
+        left: { kind: 'BinaryExpr', operator: 'AND', left: access.operand, right: integerLiteral(mask, at), ...at },
+        right: integerLiteral(0n, at),
+        ...at,
+    });
+}
+
+/** `w.3 := value`: the bit is set when the value is true and cleared when it is false; the other bits stay. */
+function emitBitAssignment(state: CodeGenState, stmt: Assignment, target: BitAccess): void {
+    const { mask, bits, signed } = bitMask(state, target);
+    const at = { line: stmt.line, column: stmt.column };
+    const operand = target.operand as Assignment['target'];
+    const update = (operator: 'OR' | 'AND', constant: bigint): Assignment => ({
+        kind: 'Assignment',
+        target: operand,
+        value: { kind: 'BinaryExpr', operator, left: target.operand, right: integerLiteral(constant, at), ...at },
+        ...at,
+    });
+    emitStatement(state, {
+        kind: 'IfStatement',
+        condition: stmt.value,
+        thenBranch: [update('OR', mask)],
+        elsifBranches: [],
+        // every bit of the width but the cleared one, as a number the type holds
+        elseBranch: [update('AND', signed ? BigInt.asIntN(bits, ~mask) : BigInt.asUintN(bits, ~mask))],
+        ...at,
+    });
+}
+
+/**
+ * `a ** b`: both operands are converted to REAL and the helper routine computes the power (power.ts).
+ */
+function emitPower(state: CodeGenState, expr: BinaryExpr): void {
+    for (const operand of [expr.left, expr.right]) {
+        if (isWide(staticType(state, operand))) failWide(expr, 'Exponentiation (**)');
+    }
+    emitConverted(state, expr.left, 'REAL');
+    emitConverted(state, expr.right, 'REAL');
+    callHelper(state, 'powf', POWF_LABEL);
+}
+
+/**
+ * A call of an instance that is an array element: `timers[2](IN := x)` (CMP-038).
+ *
+ * A constant index is one address. A run-time index is a chain of comparisons, one branch for each element
+ * of a one-dimensional array, each branch the call of that element: the code of a call has its instance
+ * address fixed, so the array is unrolled (at most 64 elements). An index outside the bounds calls nothing.
+ */
+function emitIndexedInstanceCall(state: CodeGenState, stmt: FBCallStatement, access: Expression): void {
+    if (access.kind !== 'ArrayAccess') {
+        fail(access, 'Only an array element can be called through an expression');
+    }
+    const array = state.symbols.resolveMemberPath(access.array);
+    const arrayType = array.dataType as STDataType;
+    if (!isArrayType(arrayType)) {
+        fail(access, `'${stmt.fbName}' is not an array`);
+    }
+    const elementType = arrayType.elementType as string;
+    if (!state.symbols.isFBType(elementType)) {
+        fail(access, `'${elementType}' is not a function block: only an array of function block instances can be called`);
+    }
+    if (access.indices.length !== arrayType.dimensions.length) {
+        fail(access, `The array has ${arrayType.dimensions.length} dimension(s) and is indexed with ${access.indices.length}`);
+    }
+    const elementSize = state.symbols.getTypeSizeByName(elementType);
+    const members = memberOffsets(state, elementType);
+    const label = describeCallee(access);
+    const instanceAt = (linear: number): Symbol => ({
+        name: label,
+        dataType: elementType,
+        address: array.address + linear * elementSize,
+        size: elementSize,
+        section: VarSection.VAR,
+        ioAddress: null,
+        members,
+        initialValue: null,
+        tags: {},
+    });
+
+    const indices = access.indices.map((index) => {
+        try {
+            return constantInt(state, index);
+        } catch {
+            return undefined;
+        }
+    });
+
+    if (indices.every((index) => index !== undefined)) {
+        // one address: row-major, the last index varies fastest
+        let linear = 0;
+        arrayType.dimensions.forEach((dimension, d) => {
+            const index = indices[d]!;
+            if (index < dimension.lowerBound || index > dimension.upperBound) {
+                fail(access.indices[d]!, `Index ${index} is outside the array bounds ${dimension.lowerBound}..${dimension.upperBound}`);
+            }
+            linear = linear * (dimension.upperBound - dimension.lowerBound + 1) + (index - dimension.lowerBound);
+        });
+        emitInstanceCall(state, stmt, instanceAt(linear));
+        return;
+    }
+
+    if (arrayType.dimensions.length !== 1) {
+        fail(access, 'A function block in a multi-dimensional array is called with constant indices');
+    }
+    const { lowerBound, upperBound } = arrayType.dimensions[0]!;
+    const count = upperBound - lowerBound + 1;
+    if (count > 64) {
+        fail(access, `A call with a run-time index is generated for at most 64 elements; this array has ${count}`);
+    }
+    const end = newLabel(state, 'fbarr_end');
+    emit(state, `    ; ${label}[...](...): one call for each element of the array`);
+    for (let k = 0; k < count; k++) {
+        const next = newLabel(state, 'fbarr_next');
+        emitExpression(state, access.indices[0]!);
+        emitIntLiteral(state, { kind: 'IntLiteral', value: lowerBound + k, line: access.line, column: access.column });
+        emit(state, `    EQ`);
+        emit(state, `    JZ ${next}`);
+        emitInstanceCall(state, stmt, instanceAt(k));
+        emit(state, `    JMP ${end}`);
+        emit(state, `${next}:`);
+    }
+    emit(state, `${end}:`);
+}
+
+/** Text for the instance of a call, for messages and comments. */
+function describeCallee(expr: Expression): string {
+    switch (expr.kind) {
+        case 'Identifier': return expr.name;
+        case 'MemberAccess': return `${describeCallee(expr.object)}.${expr.member}`;
+        case 'ArrayAccess': return `${describeCallee(expr.array)}[]`;
+        default: return 'instance';
+    }
+}

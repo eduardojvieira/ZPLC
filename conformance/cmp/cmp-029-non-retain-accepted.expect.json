@@ -1,0 +1,13 @@
+{
+  "requirement": "CMP-029",
+  "title": "VAR NON_RETAIN is accepted",
+  "scans": 3,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 3
+    }
+  ]
+}

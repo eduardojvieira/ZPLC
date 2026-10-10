@@ -4,6 +4,32 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- The loader refuses a program whose calls nest deeper than the call stack of
+  the VM (`ZPLC_CALL_STACK_MAX`, 32 by default, 16 on the ESP32-S3 profile)
+  with `ZPLC_LOADER_ERR_STACK`, instead of accepting it and ending the scan
+  with the VM fault `CALL_OVERFLOW`. Programs of the conformance suite nest at
+  most two calls deep.
+- `STRCMP` places the strings it compares, header and characters, before it
+  reads the first character, as `STRCPY` and `STRCAT` do, and ends the scan
+  with the VM fault `OUT_OF_BOUNDS` when a string's length reaches past the
+  end of its memory region; it used to read the characters one by one across
+  the boundary into the next region (input to output image, output image to
+  work memory, work to retentive memory). Strings that fit compare as before.
+- The memory regions of the VM are their windows of the address space
+  (`0x2000` to `0x3FFF` work, `0x4000` to `0x4FFF` retentive), whatever
+  `CONFIG_ZPLC_WORK_MEMORY_SIZE` and `CONFIG_ZPLC_RETAIN_MEMORY_SIZE` are. A
+  work memory above 8 KB used to take over the addresses of retentive memory
+  (a retentive variable was silently not retentive) and a retentive memory
+  above 4 KB made the code window readable; the bytes beyond a window are now
+  unreachable, and the loader and the VM agree on it.
+- The loader's stack-effect verifier now keeps to its work bound: the budget of
+  `ZPLC_VERIFY_STEPS_PER_BYTE` units per CODE byte also pays for the bitmap
+  scans and the frame lookups, which it did not, so a crafted artifact can no
+  longer keep a load (or the boot-time check of a stored program) busy for
+  minutes. A walk of a subroutine scans only the span of code it reaches, and a
+  frame that calls many subroutines finds them all in one walk. Compiled
+  programs are unaffected (they use a few percent of the budget); an artifact
+  that needs more work than its bound is refused with `ZPLC_LOADER_ERR_STACK`.
 - `bun run typecheck` type-checks every TypeScript program of the repository with
   strict flags, and CI runs it (VF-010): the Studio CLI and MCP server, the
   Electron host, the scripts, the tests of every package and the CI, contract

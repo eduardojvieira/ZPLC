@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { isAbsolute, join, relative, resolve, sep, win32 } from 'node:path';
 import { load } from 'js-yaml';
 import { ZPLC_CONSTANTS } from '@zplc/compiler';
-import { CompilerError, assertTaskProgramCardinality, compileMultiTaskProject, parse, transpileToST, type DebugMap, type DebugVarInfo, type Statement } from '../compiler';
+import { CompilerError, assertTaskProgramCardinality, compileMultiTaskProject, compilerErrorsOf, parse, transpileToST, type CompilerWarning, type DebugMap, type DebugVarInfo, type Statement } from '../compiler';
 import type { ProjectMigrationChange } from '../project/projectModel';
 import { resolveProgramSource } from '../utils/programSourceResolution';
 import { compileScenario, runScenario, type CompiledScenario, type ScenarioKind, type ScenarioRunResult } from '../test-engine';
@@ -228,11 +228,36 @@ function createSavedTestInputIdentity(workspace: WorkspaceProject, sources: Arra
 function failed<T>(operation: ToolOperation, diagnostics: ToolDiagnostic[], artifacts: ToolArtifact[] = []): ToolResult<T> { return { ok: false, evidence: evidence(operation, 'failed', diagnostics, artifacts) }; }
 type TestOperation = 'test' | 'scenario-run';
 function testFailed(operation: TestOperation, diagnostics: ToolDiagnostic[], artifacts: ToolArtifact[] = []): TestRunResult { return { ok: false, evidence: evidence(operation, 'failed', diagnostics, artifacts) }; }
+function compilerErrorDiagnostic(error: CompilerError): ToolDiagnostic {
+  return {
+    code: 'COMPILATION_FAILED',
+    message: error.detail.slice(0, 512) || 'Compilation failed',
+    phase: error.phase,
+    line: error.line,
+    column: error.column,
+    // ponytail: error.endLine and error.endColumn hold where the error ends; the MCP schema (src/mcp/server.ts) is strict, so they are not sent yet
+    ...(error.sourceRef ? { path: error.sourceRef } : {}),
+  };
+}
+/** What a build accepted that the language reference does not define, as diagnostics of a build that passed (CMP-031). */
+export function compilerWarningDiagnostics(warnings: CompilerWarning[]): ToolDiagnostic[] {
+  return warnings.map((warning) => ({
+    code: warning.code,
+    message: warning.message,
+    line: warning.line,
+    column: warning.column,
+    ...(warning.sourceRef ? { path: warning.sourceRef } : {}),
+  }));
+}
+/** The first error of a failed compile as one diagnostic. */
 export function safeCompilerDiagnostic(error: unknown): ToolDiagnostic {
-  if (error instanceof CompilerError) {
-    return { code: 'COMPILATION_FAILED', message: error.detail.slice(0, 512) || 'Compilation failed', phase: error.phase, line: error.line, column: error.column, ...(error.sourceRef ? { path: error.sourceRef } : {}) };
-  }
+  if (error instanceof CompilerError) return compilerErrorDiagnostic(error);
   return { code: 'COMPILATION_FAILED', message: 'Compilation failed' };
+}
+/** Every independent error of a failed compile, in source order (CMP-007); the same message, line and column as the first alone. */
+export function safeCompilerDiagnostics(error: unknown): ToolDiagnostic[] {
+  if (error instanceof CompilerError) return error.errors.slice(0, 128).map(compilerErrorDiagnostic);
+  return safeCompilerDiagnostics(error);
 }
 
 function selectIndexes(length: number, cap: number, required: number[] = []): number[] {
@@ -300,7 +325,7 @@ export async function projectMigrationExport(root: string): Promise<ProjectMigra
 export async function projectValidate(root: string): Promise<ToolResult<{ name: string; taskCount: number }>> {
   const loaded = await readWorkspace(root); if (!loaded.ok) return failed('validate', loaded.diagnostics);
   try { assertTaskProgramCardinality(loaded.workspace.project); }
-  catch (error) { return failed('validate', [safeCompilerDiagnostic(error)]); }
+  catch (error) { return failed('validate', safeCompilerDiagnostics(error)); }
   const diagnostics = unresolvedPrograms(loaded.workspace); if (diagnostics.length) return failed('validate', diagnostics);
   return { ok: true, summary: { name: loaded.workspace.project.name, taskCount: loaded.workspace.project.tasks.length }, evidence: evidence('validate', 'passed') };
 }
@@ -327,14 +352,16 @@ function symbolSummary(debugMap: DebugMap, workspace: WorkspaceProject): SymbolS
 async function compile<Operation extends CompileOperation>(root: string, operation: Operation): Promise<CompileResult<Operation>> {
   const loaded = await readWorkspace(root); if (!loaded.ok) return failed(operation, loaded.diagnostics) as CompileResult<Operation>;
   try { assertTaskProgramCardinality(loaded.workspace.project); }
-  catch (error) { return failed(operation, [safeCompilerDiagnostic(error)]) as CompileResult<Operation>; }
+  catch (error) { return failed(operation, safeCompilerDiagnostics(error)) as CompileResult<Operation>; }
   const diagnostics = unresolvedPrograms(loaded.workspace); if (diagnostics.length) return failed(operation, diagnostics) as CompileResult<Operation>;
   try {
     const result = compileMultiTaskProject(loaded.workspace.project, compilationSources(loaded.workspace));
     if (operation === 'symbols-list') return { ok: true, summary: symbolSummary(result.debugMap, loaded.workspace), evidence: evidence('symbols-list', 'passed') } as CompileResult<Operation>;
     const bytes = result.zplcFile;
     const artifact = artifactEvidence('zplc', bytes);
-    const response: CompilerCompileResult = { ok: true, summary: { name: loaded.workspace.project.name, version: loaded.workspace.project.version, taskCount: loaded.workspace.project.tasks.length, codeSize: result.codeSize, draftCounter: ZPLC_CONSTANTS.DRAFT_COUNTER }, evidence: evidence(operation, 'passed', [], operation === 'symbols-list' ? [] : [artifact]) };
+    // What the build accepted that the language reference does not define: it passed, and says so (CMP-031)
+    const warnings = compilerWarningDiagnostics(result.warnings);
+    const response: CompilerCompileResult = { ok: true, summary: { name: loaded.workspace.project.name, version: loaded.workspace.project.version, taskCount: loaded.workspace.project.tasks.length, codeSize: result.codeSize, draftCounter: ZPLC_CONSTANTS.DRAFT_COUNTER }, evidence: evidence(operation, 'passed', warnings, operation === 'symbols-list' ? [] : [artifact]) };
     if (operation === 'compile') {
       Object.defineProperties(response, {
         bytes: { value: bytes, enumerable: false },
@@ -345,7 +372,7 @@ async function compile<Operation extends CompileOperation>(root: string, operati
       });
     }
     return response as CompileResult<Operation>;
-  } catch (error) { return failed(operation, [safeCompilerDiagnostic(error)]) as CompileResult<Operation>; }
+  } catch (error) { return failed(operation, safeCompilerDiagnostics(error)) as CompileResult<Operation>; }
 }
 export async function compilerCheck(root: string): Promise<CompilerCheckResult> { return compile(root, 'check'); }
 export function compilerCompile(root: string): Promise<CompilerCompileResult> { return compile(root, 'compile'); }
@@ -417,7 +444,15 @@ function safetyLoopDiagnostics(workspace: WorkspaceProject): ToolDiagnostic[] {
     const transpiled = source.language === 'ST' ? { success: true, source: source.content, errors: [] as string[], line: undefined } : transpileToST(source.content, source.language);
     // The same message as Build gives for the same source (CMP-010): it names the element that cannot be translated
     if (!transpiled.success) throw new CompilerError(`Transpilation of '${source.name}' failed: ${transpiled.errors.join('; ')}`, transpiled.line ?? 0, 0, 'parser', path);
-    const unit = parse(transpiled.source);
+    let unit: ReturnType<typeof parse>;
+    try {
+      unit = parse(transpiled.source);
+    } catch (error) {
+      // the errors Build reports for the same source (CMP-010), with their positions
+      const errors = compilerErrorsOf(error, source.name, path, { line: 1, column: 1 });
+      errors[0]!.errors = errors;
+      throw errors[0];
+    }
     const includeLine = source.language === 'ST';
     for (const program of unit.programs) collectUnboundedLoopDiagnostics(program.statements, path, includeLine, diagnostics);
     for (const fn of unit.functions) collectUnboundedLoopDiagnostics(fn.body, path, includeLine, diagnostics);
@@ -437,18 +472,18 @@ export async function safetyCheck(root: string): Promise<SafetyCheckResult> {
   try {
     const loopDiagnostics = safetyLoopDiagnostics(loaded.workspace);
     if (loopDiagnostics.length) return failed('safety-check', loopDiagnostics);
-  } catch (error) { return failed('safety-check', [safeCompilerDiagnostic(error)]); }
+  } catch (error) { return failed('safety-check', safeCompilerDiagnostics(error)); }
   const declarations = loaded.workspace.project.safety?.incompatibleOutputs;
   if (!declarations) {
     const summary: SafetyCheckSummary = { configured: false, declared: [], covered: [], uncovered: [] };
     return { ok: true, summary, evidence: evidence('safety-check', 'passed') };
   }
   try { assertTaskProgramCardinality(loaded.workspace.project); }
-  catch (error) { return failed('safety-check', [safeCompilerDiagnostic(error)]); }
+  catch (error) { return failed('safety-check', safeCompilerDiagnostics(error)); }
   const unresolved = unresolvedPrograms(loaded.workspace); if (unresolved.length) return failed('safety-check', unresolved);
   let debugMap: DebugMap;
   try { debugMap = compileMultiTaskProject(loaded.workspace.project, compilationSources(loaded.workspace)).debugMap; }
-  catch (error) { return failed('safety-check', [safeCompilerDiagnostic(error)]); }
+  catch (error) { return failed('safety-check', safeCompilerDiagnostics(error)); }
   const declared: Array<{ outputs: [string, string]; left: SafetyOutput; right: SafetyOutput }> = [];
   const pairs = new Set<string>();
   for (const outputs of declarations) {
@@ -604,7 +639,7 @@ async function runWorkspaceScenarios(root: string, operation: TestOperation, sce
     try {
       assertTaskProgramCardinality(workspace.project);
     } catch (error) {
-      return testFailed(operation, [safeCompilerDiagnostic(error)]);
+      return testFailed(operation, safeCompilerDiagnostics(error));
     }
     const intervalMs = homogeneousCyclicInterval(workspace);
     if (intervalMs === undefined) return testFailed(operation, [testDiagnostic('SIMULATION_UNSUPPORTED_PROJECT', 'tasks')]);
@@ -621,7 +656,7 @@ async function runWorkspaceScenarios(root: string, operation: TestOperation, sce
     compiled = compileMultiTaskProject(workspace.project, sources);
   } catch (error) {
     const afterCompile = interrupted(); if (afterCompile) return afterCompile;
-    return testFailed(operation, [safeCompilerDiagnostic(error)]);
+    return testFailed(operation, safeCompilerDiagnostics(error));
   }
   const zplcArtifact = artifactEvidence('zplc', compiled.zplcFile);
   if (interrupted([zplcArtifact])) return interrupted([zplcArtifact])!;

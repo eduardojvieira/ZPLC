@@ -668,6 +668,79 @@ END_PROGRAM`);
       }
     } finally { await rm(root, { recursive: true, force: true }); }
   });
+  it('returns every independent error of a source, each with its position (CMP-006, CMP-007)', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-tool-api-many-'));
+    try {
+      await mkdir(join(root, 'src'));
+      await writeFile(join(root, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'test', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Main.st'] }] }));
+      await writeFile(join(root, 'src', 'Main.st'), 'PROGRAM Broken\nVAR\n  x : INT;\nEND_VAR\n  x := ;\n  x := 1 +;\n  x := * 2;\nEND_PROGRAM\n');
+      for (const compile of [compilerCheck, compilerCompile]) {
+        const result = await compile(root);
+        expect(result.ok).toBe(false);
+        expect(result.evidence.artifacts).toEqual([]);
+        expect(result.evidence.diagnostics.map(({ line, column, phase, path }) => ({ line, column, phase, path }))).toEqual([
+          { line: 5, column: 8, phase: 'parser', path: 'src/Main.st' },
+          { line: 6, column: 11, phase: 'parser', path: 'src/Main.st' },
+          { line: 7, column: 8, phase: 'parser', path: 'src/Main.st' },
+        ]);
+        expect(result.evidence.diagnostics.every(({ code, message }) => code === 'COMPILATION_FAILED' && message.includes('Expected expression'))).toBe(true);
+        expect(JSON.stringify(result)).not.toContain(root);
+      }
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
+  it('returns the errors of every source of the project, each with its file (CMP-007)', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-tool-api-project-'));
+    try {
+      await mkdir(join(root, 'src'));
+      await writeFile(join(root, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'test', version: '1.0.0', tasks: [
+        { name: 'A', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['A.st'] },
+        { name: 'B', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['B.st'] },
+        { name: 'C', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['C.st'] },
+      ] }));
+      await writeFile(join(root, 'src', 'A.st'), 'PROGRAM A\nVAR\n  x : INT;\nEND_VAR\n  x := ;\nEND_PROGRAM\n');
+      await writeFile(join(root, 'src', 'B.st'), 'PROGRAM B\nVAR\n  y : INT;\nEND_VAR\n  y := 1;\nEND_PROGRAM\n');
+      await writeFile(join(root, 'src', 'C.st'), 'PROGRAM C\nVAR\n  z : INT;\nEND_VAR\n  z := first;\n  second := 1;\nEND_PROGRAM\n');
+      const result = await compilerCheck(root);
+      expect(result.ok).toBe(false);
+      expect(result.evidence.diagnostics.map(({ path, line, column, phase }) => [path, line, column, phase])).toEqual([
+        ['src/A.st', 5, 8, 'parser'], ['src/C.st', 5, 8, 'codegen'], ['src/C.st', 6, 3, 'codegen'],
+      ]);
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
+  it('reports a build that passed with what it accepted and the language reference does not define (CMP-031)', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-tool-api-warning-'));
+    try {
+      await mkdir(join(root, 'src'));
+      await writeFile(join(root, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'test', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Main.st'] }] }));
+      await writeFile(join(root, 'src', 'Main.st'), 'PROGRAM Hex\nVAR\n  x AT %QW0 : INT;\nEND_VAR\n  x := 0xFF + 16#10;\nEND_PROGRAM\n');
+      for (const compile of [compilerCheck, compilerCompile]) {
+        const result = await compile(root);
+        expect(result.ok).toBe(true);
+        expect(result.evidence.outcome).toBe('passed');
+        expect(result.evidence.artifacts).toHaveLength(1);
+        expect(result.evidence.diagnostics).toEqual([{
+          code: 'NON_IEC_HEX_LITERAL',
+          message: 'The hexadecimal literal 0xFF is not IEC 61131-3 syntax: write 16#FF',
+          line: 5, column: 8, path: 'src/Main.st',
+        }]);
+      }
+      await writeFile(join(root, 'src', 'Main.st'), 'PROGRAM Hex\nVAR\n  x AT %QW0 : INT;\nEND_VAR\n  x := 16#FF;\nEND_PROGRAM\n');
+      expect((await compilerCheck(root)).evidence.diagnostics).toEqual([]);
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
+  it('gives the safety check the position of a syntax error, as Build does', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-tool-api-safety-syntax-'));
+    try {
+      await mkdir(join(root, 'src'));
+      await writeFile(join(root, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'test', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Main.st'] }] }));
+      await writeFile(join(root, 'src', 'Main.st'), 'PROGRAM Broken\nVAR\n  x : INT;\nEND_VAR\n  x := ;\n  x := * 2;\nEND_PROGRAM\n');
+      const result = await safetyCheck(root);
+      expect(result.ok).toBe(false);
+      expect(result.evidence.diagnostics.map(({ code, line, column, path }) => [code, line, column, path])).toEqual([
+        ['COMPILATION_FAILED', 5, 8, 'src/Main.st'], ['COMPILATION_FAILED', 6, 8, 'src/Main.st'],
+      ]);
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
   it('keeps the compiler position and message when a graphical source fails to build', async () => {
     const root = await mkdtemp(join(tmpdir(), 'zplc-tool-api-visual-message-'));
     try {
