@@ -343,12 +343,85 @@ target_link_libraries(test_loader_verify PRIVATE zplc_core)
 
 add_test(NAME test_loader_verify COMMAND test_loader_verify)
 
+# Test: sandbox closure of the VM and the loader (RT-001, RT-002, RT-003);
+# also run under the sanitizers: they are the oracle for "never outside PLC memory"
+add_executable(test_sandbox
+    tests/test_sandbox.c
+    src/core/zplc_core.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_sandbox PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_compile_definitions(test_sandbox PRIVATE ZPLC_CORE_TESTING)
+
+target_link_libraries(test_sandbox PRIVATE zplc_core)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_sandbox PRIVATE rt)
+endif()
+
+add_test(NAME test_sandbox COMMAND test_sandbox)
+
+# Test: the communication handlers of firmware/app against crafted blocks
+# (COM-001). The handler sources are compiled on the host against a stand-in
+# for the few Zephyr calls they make; no Zephyr, no target.
+set(ZPLC_APP_SRC ${CMAKE_CURRENT_SOURCE_DIR}/../../app/src)
+
+add_executable(test_comm_fb_access
+    tests/test_comm_fb_access.c
+)
+target_include_directories(test_comm_fb_access PRIVATE ${ZPLC_APP_SRC})
+add_test(NAME test_comm_fb_access COMMAND test_comm_fb_access)
+
+add_executable(test_comm_handler_modbus
+    tests/test_comm_handler_modbus.c
+)
+target_include_directories(test_comm_handler_modbus PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/stubs
+    ${ZPLC_APP_SRC}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../app/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+target_link_libraries(test_comm_handler_modbus PRIVATE zplc_core)
+add_test(NAME test_comm_handler_modbus COMMAND test_comm_handler_modbus)
+
+add_executable(test_comm_handler_mqtt
+    tests/test_comm_handler_mqtt.c
+)
+target_include_directories(test_comm_handler_mqtt PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/stubs
+    ${ZPLC_APP_SRC}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../app/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+target_link_libraries(test_comm_handler_mqtt PRIVATE zplc_core)
+add_test(NAME test_comm_handler_mqtt COMMAND test_comm_handler_mqtt)
+
+add_executable(test_comm_handler_cloud
+    tests/test_comm_handler_cloud.c
+)
+target_include_directories(test_comm_handler_cloud PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/stubs
+    ${ZPLC_APP_SRC}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../app/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+target_link_libraries(test_comm_handler_cloud PRIVATE zplc_core)
+add_test(NAME test_comm_handler_cloud COMMAND test_comm_handler_cloud)
+
 # Custom target to run all tests
 add_custom_target(check
     COMMAND ${CMAKE_CTEST_COMMAND} --output-on-failure
     DEPENDS test_isa test_contract test_vm_core test_vm_arith_edges test_opcode_coverage test_comm_dispatch test_loader_verify test_native_runtime_session test_host_stdio test_hal_posix_persist test_hal_posix_mutex
     COMMENT "Running all tests..."
 )
+
+# The tests above join the check target without touching its list
+add_dependencies(check test_sandbox test_comm_fb_access test_comm_handler_modbus
+                 test_comm_handler_mqtt test_comm_handler_cloud)
 
 # =============================================================================
 # Build Info

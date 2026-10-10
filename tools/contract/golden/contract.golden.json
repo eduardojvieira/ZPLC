@@ -1,6 +1,6 @@
 {
   "asm": {
-    "draftCounter": 1,
+    "draftCounter": 2,
     "magic": 1129074778,
     "opcodes": {
       "ABS": 38,
@@ -514,7 +514,7 @@
     },
     "macros": {
       "ZPLC_CALL_STACK_MAX": 32,
-      "ZPLC_DRAFT_COUNTER": 1,
+      "ZPLC_DRAFT_COUNTER": 2,
       "ZPLC_FILE_HEADER_SIZE": 32,
       "ZPLC_IOMAP_ENTRY_SIZE": 8,
       "ZPLC_LOADER_ERR_COMM": -16,
@@ -529,6 +529,7 @@
       "ZPLC_LOADER_ERR_OPCODE": -11,
       "ZPLC_LOADER_ERR_SEGMENT": -8,
       "ZPLC_LOADER_ERR_SIZE": -3,
+      "ZPLC_LOADER_ERR_STACK": -18,
       "ZPLC_LOADER_ERR_TAGS": -15,
       "ZPLC_LOADER_ERR_TASK": -14,
       "ZPLC_LOADER_ERR_VERSION": -2,
@@ -2744,7 +2745,7 @@
     },
     "constants": {
       "CODE_SIZE_MAX": 45056,
-      "DRAFT_COUNTER": 1,
+      "DRAFT_COUNTER": 2,
       "DRAFT_COUNTER_OFFSET": 28,
       "HEADER_SIZE": 32,
       "MAGIC": 1129074778,

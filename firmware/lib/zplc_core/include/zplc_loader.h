@@ -47,10 +47,12 @@
 #define ZPLC_LOADER_ERR_TASK -14
 /** @brief Tag entry is invalid */
 #define ZPLC_LOADER_ERR_TAGS -15
-/** @brief Communication function-block kind is NONE or at or above the kind limit */
+/** @brief Communication function-block kind is NONE or at or above the kind limit, or a block at a statically known address does not fit one memory region */
 #define ZPLC_LOADER_ERR_COMM -16
 /** @brief Draft contract counter of the artifact differs from the loader's, or the artifact has none */
 #define ZPLC_LOADER_ERR_DRAFT -17
+/** @brief The evaluation stack can underflow, or exceed the depth the task declares, on some path, or the verifier cannot prove that it cannot */
+#define ZPLC_LOADER_ERR_STACK -18
 /* <<< END GENERATED: loader-errors <<< */
 
 /* Artifact-wide v1 admission limit. This intentionally does not depend on
@@ -60,10 +62,30 @@
 #define ZPLC_LOADER_MAX_TASKS 16U
 /* <<< END GENERATED: loader-max-tasks <<< */
 
-/* One bit per CODE byte records instruction boundaries and control-flow
- * targets. Callers provide this transient storage; task uniqueness is bounded
- * by ZPLC_LOADER_MAX_TASKS and needs no bitmap. */
-#define ZPLC_LOADER_VERIFY_WORKSPACE_SIZE ((ZPLC_MEM_CODE_SIZE + 7U) / 8U)
+/* Transient storage of the verifier, provided by the caller. It holds, for
+ * the largest CODE the runtime accepts (ZPLC_MEM_CODE_SIZE):
+ *   - one bit per CODE byte: the control-flow targets and entry points;
+ *   - a rank index over those bits (16 bits per 128 CODE bytes);
+ *   - the stack depth interval at each target (2 bytes), and a pending bit;
+ *   - one record per subroutine entry for the stack-effect summaries (RT-003).
+ * The verifier tracks at most ZPLC_VERIFY_MAX_LEADERS targets (one per 16 CODE
+ * bytes, and a margin) and ZPLC_VERIFY_MAX_FRAMES subroutine entries (one per
+ * 128 CODE bytes, and a margin); an artifact with more is refused with
+ * ZPLC_LOADER_ERR_WORKSPACE. Compiled programs use a fraction of both.
+ * Its work is bounded by ZPLC_VERIFY_STEPS_PER_BYTE per CODE byte, and the
+ * stack depth it follows by ZPLC_VERIFY_MAX_DEPTH values (a deeper stack is
+ * refused with ZPLC_LOADER_ERR_STACK even where the runtime would allow it).
+ * Task uniqueness is bounded by ZPLC_LOADER_MAX_TASKS and needs no bitmap. */
+#define ZPLC_VERIFY_MAX_DEPTH 127
+#define ZPLC_VERIFY_MAX_LEADERS ((ZPLC_MEM_CODE_SIZE) / 16U + 64U)
+#define ZPLC_VERIFY_MAX_FRAMES ((ZPLC_MEM_CODE_SIZE) / 128U + 32U)
+#define ZPLC_VERIFY_FRAME_BYTES 7U
+#define ZPLC_VERIFY_STEPS_PER_BYTE 64U
+#define ZPLC_LOADER_VERIFY_WORKSPACE_SIZE                                      \
+  (((ZPLC_MEM_CODE_SIZE + 7U) / 8U) +                                          \
+   2U * ((ZPLC_MEM_CODE_SIZE + 127U) / 128U) +                                 \
+   2U * ZPLC_VERIFY_MAX_LEADERS + (ZPLC_VERIFY_MAX_LEADERS + 7U) / 8U +        \
+   ZPLC_VERIFY_MAX_FRAMES * ZPLC_VERIFY_FRAME_BYTES)
 
 typedef struct {
     uint16_t type;
@@ -89,6 +111,16 @@ typedef struct {
 
 /**
  * @brief Verify the supported structural and semantic v1 ZPLC subset.
+ *
+ * Besides the structure of the file, the code is verified statically: every
+ * jump lands on an instruction, every direct memory access and every block of
+ * a communication opcode at a statically known address lies inside the
+ * regions of PLC memory (ZPLC_LOADER_ERR_MEMORY, ZPLC_LOADER_ERR_COMM), and
+ * no path from an entry point (the header's, and each task's) can underflow
+ * the evaluation stack or exceed the depth the task declares
+ * (ZPLC_LOADER_ERR_STACK). The stack check follows every path, joins the
+ * depths where paths meet, and treats a call by the effect of the callee on
+ * the stack; it refuses what it cannot prove, among it recursion.
  *
  * This does not load or authorize a runtime. Product load paths remain a
  * separate integration gate.

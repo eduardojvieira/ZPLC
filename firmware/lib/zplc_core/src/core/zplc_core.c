@@ -20,6 +20,7 @@
  */
 
 #include "zplc_comm_dispatch.h"
+#include "zplc_mem_extent.h"
 #include <string.h>
 #include <zplc_core.h>
 #include <zplc_debug.h>
@@ -133,6 +134,21 @@ static zplc_force_entry_t force_entries[ZPLC_FORCE_MAX_ENTRIES];
 #define VM_PEEK(vm) ((vm)->stack[(vm)->sp - 1])
 
 /**
+ * @brief Check that an instruction of n bytes (opcode and operand) lies inside
+ *        the code of the task, before its operand is read.
+ *
+ * The sum cannot wrap: pc is 16 bits and n is at most 5.
+ */
+#define VM_CHECK_FETCH(vm, n)                                                  \
+  do {                                                                         \
+    if ((uint32_t)(vm)->pc + (n) > (vm)->code_size) {                          \
+      (vm)->error = ZPLC_VM_INVALID_JUMP;                                      \
+      (vm)->halted = 1;                                                        \
+      return ZPLC_VM_INVALID_JUMP;                                             \
+    }                                                                          \
+  } while (0)
+
+/**
  * @brief Read a 16-bit little-endian value from code.
  */
 #define READ_U16(code, offset)                                                 \
@@ -156,87 +172,61 @@ static zplc_force_entry_t force_entries[ZPLC_FORCE_MAX_ENTRIES];
 /**
  * @brief Get a pointer to memory at the given logical address.
  *
- * @param addr Logical address (0x0000-0x4FFF)
- * @param size Size of access in bytes
+ * Every access of the VM, the string operations and the communication opcodes
+ * goes through this function (RT-001): the whole extent [addr, addr + size)
+ * must lie inside one region. The arguments are full 32-bit values, so an
+ * address or a length that does not fit 16 bits is refused instead of
+ * wrapping into another region.
+ *
+ * @param addr Logical address (any 32-bit value)
+ * @param size Extent of the access in bytes (any 32-bit value)
  * @param writable 1 if write access required, 0 for read
- * @return Pointer to memory, or NULL if out of bounds
+ * @return Pointer to memory, or NULL if the extent is not inside one region
+ *         (or the region is the read-only input image and a write is asked)
  */
-static uint8_t *mem_ptr(uint16_t addr, uint8_t size, int writable) {
-  /* Input Process Image: 0x0000 - 0x0FFF (read-only for VM) */
-  if (addr < ZPLC_MEM_OPI_BASE) {
-    if (writable) {
-      return NULL; /* Can't write to inputs */
-    }
-    if (addr + size > ZPLC_MEM_IPI_SIZE) {
-      return NULL;
-    }
-    return &mem_ipi[addr];
-  }
+static uint8_t *mem_ptr(uint32_t addr, uint32_t size, int writable) {
+  uint32_t offset;
 
-  /* Output Process Image: 0x1000 - 0x1FFF */
-  if (addr < ZPLC_MEM_WORK_BASE) {
-    uint16_t offset = addr - ZPLC_MEM_OPI_BASE;
-    if (offset + size > ZPLC_MEM_OPI_SIZE) {
-      return NULL;
-    }
+  switch (zplc_mem_extent_locate(addr, size, &offset)) {
+  case ZPLC_MEM_REGION_IPI:
+    return writable ? NULL : &mem_ipi[offset]; /* inputs: read-only for the VM */
+  case ZPLC_MEM_REGION_OPI:
     return &mem_opi[offset];
-  }
-
-  /* Work Memory: 0x2000 - 0x3FFF */
-  if (addr < ZPLC_MEM_RETAIN_BASE) {
-    uint16_t offset = addr - ZPLC_MEM_WORK_BASE;
-    if (offset + size > ZPLC_MEM_WORK_SIZE) {
-      return NULL;
-    }
+  case ZPLC_MEM_REGION_WORK:
     return &mem_work[offset];
-  }
-
-  /* Retentive Memory: 0x4000 - 0x4FFF */
-  if (addr < ZPLC_MEM_CODE_BASE) {
-    uint16_t offset = addr - ZPLC_MEM_RETAIN_BASE;
-    if (offset + size > ZPLC_MEM_RETAIN_SIZE) {
-      return NULL;
-    }
+  case ZPLC_MEM_REGION_RETAIN:
     return &mem_retain[offset];
+  default:
+    return NULL; /* code segment and everything else: not load/store memory */
   }
-
-  /* Code segment not accessible via load/store */
-  return NULL;
 }
 
+/** Same placement for the host side (HAL, debugger), which may write inputs. */
 static uint8_t *mem_ptr_raw(uint16_t addr, uint16_t size) {
-  if (addr < ZPLC_MEM_OPI_BASE) {
-    if ((uint32_t)addr + (uint32_t)size > (uint32_t)ZPLC_MEM_IPI_SIZE) {
-      return NULL;
-    }
-    return &mem_ipi[addr];
-  }
+  uint32_t offset;
 
-  if (addr < ZPLC_MEM_WORK_BASE) {
-    uint16_t offset = addr - ZPLC_MEM_OPI_BASE;
-    if ((uint32_t)offset + (uint32_t)size > (uint32_t)ZPLC_MEM_OPI_SIZE) {
-      return NULL;
-    }
+  switch (zplc_mem_extent_locate(addr, size, &offset)) {
+  case ZPLC_MEM_REGION_IPI:
+    return &mem_ipi[offset];
+  case ZPLC_MEM_REGION_OPI:
     return &mem_opi[offset];
-  }
-
-  if (addr < ZPLC_MEM_RETAIN_BASE) {
-    uint16_t offset = addr - ZPLC_MEM_WORK_BASE;
-    if ((uint32_t)offset + (uint32_t)size > (uint32_t)ZPLC_MEM_WORK_SIZE) {
-      return NULL;
-    }
+  case ZPLC_MEM_REGION_WORK:
     return &mem_work[offset];
-  }
-
-  if (addr < ZPLC_MEM_CODE_BASE) {
-    uint16_t offset = addr - ZPLC_MEM_RETAIN_BASE;
-    if ((uint32_t)offset + (uint32_t)size > (uint32_t)ZPLC_MEM_RETAIN_SIZE) {
-      return NULL;
-    }
+  case ZPLC_MEM_REGION_RETAIN:
     return &mem_retain[offset];
+  default:
+    return NULL;
   }
+}
 
-  return NULL;
+/**
+ * @brief Check that a STRING of @p count characters at @p addr lies in one
+ *        region: the 4-byte header, the characters and, for a write, the
+ *        terminator (RT-001).
+ */
+static int string_extent_ok(uint32_t addr, uint32_t count, int writable) {
+  return mem_ptr(addr, ZPLC_STRING_DATA_OFFSET + count + (writable ? 1U : 0U),
+                 writable) != NULL;
 }
 
 static int force_entry_overlaps(const zplc_force_entry_t *entry, uint16_t addr,
@@ -301,14 +291,14 @@ static void reapply_overlapping_forces(uint16_t addr, uint16_t size) {
   }
 }
 
-static int mem_write_bytes(uint16_t addr, const uint8_t *bytes, uint8_t size) {
+static int mem_write_bytes(uint32_t addr, const uint8_t *bytes, uint8_t size) {
   uint8_t *ptr = mem_ptr(addr, size, 1);
   if (ptr == NULL) {
     return ZPLC_VM_OUT_OF_BOUNDS;
   }
 
   for (uint8_t i = 0; i < size; i++) {
-    if (force_get_byte((uint16_t)(addr + i), NULL)) {
+    if (force_get_byte((uint16_t)(addr + i), NULL)) { /* addr + i < 0x5000 */
       continue;
     }
     ptr[i] = bytes[i];
@@ -320,7 +310,7 @@ static int mem_write_bytes(uint16_t addr, const uint8_t *bytes, uint8_t size) {
 /**
  * @brief Read an 8-bit value from memory.
  */
-static int mem_read8(uint16_t addr, uint8_t *value) {
+static int mem_read8(uint32_t addr, uint8_t *value) {
   uint8_t *ptr = mem_ptr(addr, 1, 0);
   if (ptr == NULL) {
     return ZPLC_VM_OUT_OF_BOUNDS;
@@ -332,7 +322,7 @@ static int mem_read8(uint16_t addr, uint8_t *value) {
 /**
  * @brief Read a 16-bit little-endian value from memory.
  */
-static int mem_read16(uint16_t addr, uint16_t *value) {
+static int mem_read16(uint32_t addr, uint16_t *value) {
   uint8_t *ptr = mem_ptr(addr, 2, 0);
   if (ptr == NULL) {
     return ZPLC_VM_OUT_OF_BOUNDS;
@@ -344,7 +334,7 @@ static int mem_read16(uint16_t addr, uint16_t *value) {
 /**
  * @brief Read a 32-bit little-endian value from memory.
  */
-static int mem_read32(uint16_t addr, uint32_t *value) {
+static int mem_read32(uint32_t addr, uint32_t *value) {
   uint8_t *ptr = mem_ptr(addr, 4, 0);
   if (ptr == NULL) {
     return ZPLC_VM_OUT_OF_BOUNDS;
@@ -357,14 +347,14 @@ static int mem_read32(uint16_t addr, uint32_t *value) {
 /**
  * @brief Write an 8-bit value to memory.
  */
-static int mem_write8(uint16_t addr, uint8_t value) {
+static int mem_write8(uint32_t addr, uint8_t value) {
   return mem_write_bytes(addr, &value, 1);
 }
 
 /**
  * @brief Write a 16-bit little-endian value to memory.
  */
-static int mem_write16(uint16_t addr, uint16_t value) {
+static int mem_write16(uint32_t addr, uint16_t value) {
   uint8_t bytes[2];
   bytes[0] = (uint8_t)(value & 0xFF);
   bytes[1] = (uint8_t)((value >> 8) & 0xFF);
@@ -374,7 +364,7 @@ static int mem_write16(uint16_t addr, uint16_t value) {
 /**
  * @brief Write a 32-bit little-endian value to memory.
  */
-static int mem_write32(uint16_t addr, uint32_t value) {
+static int mem_write32(uint32_t addr, uint32_t value) {
   uint8_t bytes[4];
   bytes[0] = (uint8_t)(value & 0xFF);
   bytes[1] = (uint8_t)((value >> 8) & 0xFF);
@@ -386,7 +376,7 @@ static int mem_write32(uint16_t addr, uint32_t value) {
 /**
  * @brief Read a 64-bit little-endian value from memory.
  */
-static int mem_read64(uint16_t addr, uint32_t *low, uint32_t *high) {
+static int mem_read64(uint32_t addr, uint32_t *low, uint32_t *high) {
   uint8_t *ptr = mem_ptr(addr, 8, 0);
   if (ptr == NULL) {
     return ZPLC_VM_OUT_OF_BOUNDS;
@@ -401,7 +391,7 @@ static int mem_read64(uint16_t addr, uint32_t *low, uint32_t *high) {
 /**
  * @brief Write a 64-bit little-endian value to memory.
  */
-static int mem_write64(uint16_t addr, uint32_t low, uint32_t high) {
+static int mem_write64(uint32_t addr, uint32_t low, uint32_t high) {
   uint8_t bytes[8];
   bytes[0] = (uint8_t)(low & 0xFF);
   bytes[1] = (uint8_t)((low >> 8) & 0xFF);
@@ -466,7 +456,7 @@ int zplc_test_mem_load_code(const uint8_t *code, size_t size,
 #endif
 
 const uint8_t *zplc_mem_get_code(uint16_t offset, size_t size) {
-  if (offset + size > code_size) {
+  if (size > code_size || offset > code_size - size) {
     return NULL;
   }
   return &mem_code[offset];
@@ -703,7 +693,8 @@ int zplc_vm_set_entry(zplc_vm_t *vm, uint16_t entry_point,
   if (vm == NULL) {
     return -1;
   }
-  if (entry_point + task_code_size > code_size) {
+  /* entry_point + task_code_size may exceed 32 bits: compare without adding */
+  if (task_code_size > code_size || entry_point > code_size - task_code_size) {
     return -2;
   }
 
@@ -925,7 +916,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
     a = VM_POP(vm); /* address */
     {
       uint8_t val8;
-      mem_result = mem_read8((uint16_t)a, &val8);
+      mem_result = mem_read8(a, &val8);
       if (mem_result != ZPLC_VM_OK) {
         vm->error = (uint8_t)mem_result;
         vm->halted = 1;
@@ -942,7 +933,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
     a = VM_POP(vm); /* address */
     {
       uint32_t val32;
-      mem_result = mem_read32((uint16_t)a, &val32);
+      mem_result = mem_read32(a, &val32);
       if (mem_result != ZPLC_VM_OK) {
         vm->error = (uint8_t)mem_result;
         vm->halted = 1;
@@ -958,7 +949,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
     VM_CHECK_STACK_UNDERFLOW(vm, 2);
     a = VM_POP(vm); /* value */
     b = VM_POP(vm); /* address */
-    mem_result = mem_write8((uint16_t)b, (uint8_t)a);
+    mem_result = mem_write8(b, (uint8_t)a);
     if (mem_result != ZPLC_VM_OK) {
       vm->error = (uint8_t)mem_result;
       vm->halted = 1;
@@ -972,7 +963,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
     VM_CHECK_STACK_UNDERFLOW(vm, 2);
     a = VM_POP(vm); /* value */
     b = VM_POP(vm); /* address */
-    mem_result = mem_write32((uint16_t)b, a);
+    mem_result = mem_write32(b, a);
     if (mem_result != ZPLC_VM_OK) {
       vm->error = (uint8_t)mem_result;
       vm->halted = 1;
@@ -987,7 +978,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
     a = VM_POP(vm); /* address */
     {
       uint16_t val16;
-      mem_result = mem_read16((uint16_t)a, &val16);
+      mem_result = mem_read16(a, &val16);
       if (mem_result != ZPLC_VM_OK) {
         vm->error = (uint8_t)mem_result;
         vm->halted = 1;
@@ -1003,7 +994,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
     VM_CHECK_STACK_UNDERFLOW(vm, 2);
     a = VM_POP(vm); /* value */
     b = VM_POP(vm); /* address */
-    mem_result = mem_write16((uint16_t)b, (uint16_t)a);
+    mem_result = mem_write16(b, (uint16_t)a);
     if (mem_result != ZPLC_VM_OK) {
       vm->error = (uint8_t)mem_result;
       vm->halted = 1;
@@ -1026,7 +1017,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
     a = VM_POP(vm); /* string address */
     {
       uint16_t str_len;
-      mem_result = mem_read16((uint16_t)a, &str_len);
+      mem_result = mem_read16(a, &str_len);
       if (mem_result != ZPLC_VM_OK) {
         vm->error = (uint8_t)mem_result;
         vm->halted = 1;
@@ -1048,16 +1039,17 @@ int zplc_vm_step(zplc_vm_t *vm) {
       uint16_t i;
       uint8_t ch;
 
-      /* Read source length */
-      mem_result = mem_read16((uint16_t)a, &src_len);
-      if (mem_result != ZPLC_VM_OK) {
-        vm->error = (uint8_t)mem_result;
+      /* Headers first. Both strings are then placed in full before the first
+       * byte is written, so a fault leaves memory as it was (RT-001). */
+      if (!string_extent_ok(a, 0U, 0) || !string_extent_ok(b, 0U, 1)) {
+        vm->error = ZPLC_VM_OUT_OF_BOUNDS;
         vm->halted = 1;
-        return mem_result;
+        return ZPLC_VM_OUT_OF_BOUNDS;
       }
-
-      /* Read destination capacity */
-      mem_result = mem_read16((uint16_t)b + 2, &dst_cap);
+      mem_result = mem_read16(a, &src_len);
+      if (mem_result == ZPLC_VM_OK) {
+        mem_result = mem_read16(b + ZPLC_STRING_CAP_OFFSET, &dst_cap);
+      }
       if (mem_result != ZPLC_VM_OK) {
         vm->error = (uint8_t)mem_result;
         vm->halted = 1;
@@ -1066,33 +1058,31 @@ int zplc_vm_step(zplc_vm_t *vm) {
 
       /* Calculate safe copy length (bounds check) */
       copy_len = (src_len < dst_cap) ? src_len : dst_cap;
-
-      /* Copy character by character */
-      for (i = 0; i < copy_len; i++) {
-        mem_result = mem_read8((uint16_t)a + 4 + i, &ch);
-        if (mem_result != ZPLC_VM_OK) {
-          vm->error = (uint8_t)mem_result;
-          vm->halted = 1;
-          return mem_result;
-        }
-        mem_result = mem_write8((uint16_t)b + 4 + i, ch);
-        if (mem_result != ZPLC_VM_OK) {
-          vm->error = (uint8_t)mem_result;
-          vm->halted = 1;
-          return mem_result;
-        }
-      }
-
-      /* Null-terminate */
-      mem_result = mem_write8((uint16_t)b + 4 + copy_len, 0);
-      if (mem_result != ZPLC_VM_OK) {
-        vm->error = (uint8_t)mem_result;
+      if (!string_extent_ok(a, copy_len, 0) ||
+          !string_extent_ok(b, copy_len, 1)) {
+        vm->error = ZPLC_VM_OUT_OF_BOUNDS;
         vm->halted = 1;
-        return mem_result;
+        return ZPLC_VM_OUT_OF_BOUNDS;
       }
 
-      /* Update destination length */
-      mem_result = mem_write16((uint16_t)b, copy_len);
+      /* Copy character by character (a and b are below 0x5000 here) */
+      for (i = 0; i < copy_len; i++) {
+        mem_result = mem_read8(a + ZPLC_STRING_DATA_OFFSET + i, &ch);
+        if (mem_result == ZPLC_VM_OK) {
+          mem_result = mem_write8(b + ZPLC_STRING_DATA_OFFSET + i, ch);
+        }
+        if (mem_result != ZPLC_VM_OK) {
+          vm->error = (uint8_t)mem_result;
+          vm->halted = 1;
+          return mem_result;
+        }
+      }
+
+      /* Null-terminate, then update the destination length */
+      mem_result = mem_write8(b + ZPLC_STRING_DATA_OFFSET + copy_len, 0);
+      if (mem_result == ZPLC_VM_OK) {
+        mem_result = mem_write16(b, copy_len);
+      }
       if (mem_result != ZPLC_VM_OK) {
         vm->error = (uint8_t)mem_result;
         vm->halted = 1;
@@ -1113,22 +1103,18 @@ int zplc_vm_step(zplc_vm_t *vm) {
       uint16_t i;
       uint8_t ch;
 
-      /* Read source length */
-      mem_result = mem_read16((uint16_t)a, &src_len);
-      if (mem_result != ZPLC_VM_OK) {
-        vm->error = (uint8_t)mem_result;
+      if (!string_extent_ok(a, 0U, 0) || !string_extent_ok(b, 0U, 1)) {
+        vm->error = ZPLC_VM_OUT_OF_BOUNDS;
         vm->halted = 1;
-        return mem_result;
+        return ZPLC_VM_OUT_OF_BOUNDS;
       }
-
-      /* Read destination length and capacity */
-      mem_result = mem_read16((uint16_t)b, &dst_len);
-      if (mem_result != ZPLC_VM_OK) {
-        vm->error = (uint8_t)mem_result;
-        vm->halted = 1;
-        return mem_result;
+      mem_result = mem_read16(a, &src_len);
+      if (mem_result == ZPLC_VM_OK) {
+        mem_result = mem_read16(b, &dst_len);
       }
-      mem_result = mem_read16((uint16_t)b + 2, &dst_cap);
+      if (mem_result == ZPLC_VM_OK) {
+        mem_result = mem_read16(b + ZPLC_STRING_CAP_OFFSET, &dst_cap);
+      }
       if (mem_result != ZPLC_VM_OK) {
         vm->error = (uint8_t)mem_result;
         vm->halted = 1;
@@ -1138,33 +1124,33 @@ int zplc_vm_step(zplc_vm_t *vm) {
       /* Calculate safe append length (bounds check) */
       space_left = (dst_cap > dst_len) ? (dst_cap - dst_len) : 0;
       copy_len = (src_len < space_left) ? src_len : space_left;
-
-      /* Append character by character */
-      for (i = 0; i < copy_len; i++) {
-        mem_result = mem_read8((uint16_t)a + 4 + i, &ch);
-        if (mem_result != ZPLC_VM_OK) {
-          vm->error = (uint8_t)mem_result;
-          vm->halted = 1;
-          return mem_result;
-        }
-        mem_result = mem_write8((uint16_t)b + 4 + dst_len + i, ch);
-        if (mem_result != ZPLC_VM_OK) {
-          vm->error = (uint8_t)mem_result;
-          vm->halted = 1;
-          return mem_result;
-        }
-      }
-
-      /* Null-terminate */
-      mem_result = mem_write8((uint16_t)b + 4 + dst_len + copy_len, 0);
-      if (mem_result != ZPLC_VM_OK) {
-        vm->error = (uint8_t)mem_result;
+      if (!string_extent_ok(a, copy_len, 0) ||
+          !string_extent_ok(b, (uint32_t)dst_len + copy_len, 1)) {
+        vm->error = ZPLC_VM_OUT_OF_BOUNDS;
         vm->halted = 1;
-        return mem_result;
+        return ZPLC_VM_OUT_OF_BOUNDS;
       }
 
-      /* Update destination length */
-      mem_result = mem_write16((uint16_t)b, dst_len + copy_len);
+      /* Append character by character (a and b are below 0x5000 here) */
+      for (i = 0; i < copy_len; i++) {
+        mem_result = mem_read8(a + ZPLC_STRING_DATA_OFFSET + i, &ch);
+        if (mem_result == ZPLC_VM_OK) {
+          mem_result =
+              mem_write8(b + ZPLC_STRING_DATA_OFFSET + dst_len + i, ch);
+        }
+        if (mem_result != ZPLC_VM_OK) {
+          vm->error = (uint8_t)mem_result;
+          vm->halted = 1;
+          return mem_result;
+        }
+      }
+
+      /* Null-terminate, then update the destination length */
+      mem_result =
+          mem_write8(b + ZPLC_STRING_DATA_OFFSET + dst_len + copy_len, 0);
+      if (mem_result == ZPLC_VM_OK) {
+        mem_result = mem_write16(b, (uint16_t)(dst_len + copy_len));
+      }
       if (mem_result != ZPLC_VM_OK) {
         vm->error = (uint8_t)mem_result;
         vm->halted = 1;
@@ -1185,14 +1171,12 @@ int zplc_vm_step(zplc_vm_t *vm) {
       uint8_t ch1, ch2;
       int32_t strcmp_result = 0;
 
-      /* Read lengths */
-      mem_result = mem_read16((uint16_t)a, &len1);
-      if (mem_result != ZPLC_VM_OK) {
-        vm->error = (uint8_t)mem_result;
-        vm->halted = 1;
-        return mem_result;
+      /* Read lengths; an address that is not in PLC memory faults here, so
+       * the data offsets below stay under 0x5000 (they cannot wrap) */
+      mem_result = mem_read16(a, &len1);
+      if (mem_result == ZPLC_VM_OK) {
+        mem_result = mem_read16(b, &len2);
       }
-      mem_result = mem_read16((uint16_t)b, &len2);
       if (mem_result != ZPLC_VM_OK) {
         vm->error = (uint8_t)mem_result;
         vm->halted = 1;
@@ -1202,13 +1186,10 @@ int zplc_vm_step(zplc_vm_t *vm) {
       /* Compare character by character */
       min_len = (len1 < len2) ? len1 : len2;
       for (i = 0; i < min_len; i++) {
-        mem_result = mem_read8((uint16_t)a + 4 + i, &ch1);
-        if (mem_result != ZPLC_VM_OK) {
-          vm->error = (uint8_t)mem_result;
-          vm->halted = 1;
-          return mem_result;
+        mem_result = mem_read8(a + ZPLC_STRING_DATA_OFFSET + i, &ch1);
+        if (mem_result == ZPLC_VM_OK) {
+          mem_result = mem_read8(b + ZPLC_STRING_DATA_OFFSET + i, &ch2);
         }
-        mem_result = mem_read8((uint16_t)b + 4 + i, &ch2);
         if (mem_result != ZPLC_VM_OK) {
           vm->error = (uint8_t)mem_result;
           vm->halted = 1;
@@ -1242,15 +1223,17 @@ int zplc_vm_step(zplc_vm_t *vm) {
     VM_CHECK_STACK_UNDERFLOW(vm, 1);
     a = VM_POP(vm); /* string address */
     {
-      /* Set length to 0 */
-      mem_result = mem_write16((uint16_t)a, 0);
-      if (mem_result != ZPLC_VM_OK) {
-        vm->error = (uint8_t)mem_result;
+      /* Header and terminator are placed before either is written */
+      if (!string_extent_ok(a, 0U, 1)) {
+        vm->error = ZPLC_VM_OUT_OF_BOUNDS;
         vm->halted = 1;
-        return mem_result;
+        return ZPLC_VM_OUT_OF_BOUNDS;
       }
-      /* Null-terminate at start */
-      mem_result = mem_write8((uint16_t)a + 4, 0);
+      /* Set length to 0, then null-terminate at start */
+      mem_result = mem_write16(a, 0);
+      if (mem_result == ZPLC_VM_OK) {
+        mem_result = mem_write8(a + ZPLC_STRING_DATA_OFFSET, 0);
+      }
       if (mem_result != ZPLC_VM_OK) {
         vm->error = (uint8_t)mem_result;
         vm->halted = 1;
@@ -1440,14 +1423,9 @@ int zplc_vm_step(zplc_vm_t *vm) {
   case OP_ABSF:
     VM_CHECK_STACK_UNDERFLOW(vm, 1);
     a = VM_POP(vm);
-    {
-      float fa;
-      memcpy(&fa, &a, sizeof(float));
-      if (fa < 0.0f)
-        fa = -fa;
-      memcpy(&result, &fa, sizeof(uint32_t));
-      VM_PUSH(vm, result);
-    }
+    /* IEEE-754 absolute value clears the sign bit: -0.0 gives +0.0 and a
+     * negative NaN a positive one (a comparison with 0.0 would keep both). */
+    VM_PUSH(vm, a & 0x7FFFFFFFU);
     vm->pc++;
     break;
 
@@ -1590,11 +1568,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
     /* ===== Push with 8-bit operand ===== */
 
   case OP_PUSH8:
-    if ((uint32_t)vm->pc > (vm->code_size - 2U)) {
-      vm->error = ZPLC_VM_INVALID_JUMP;
-      vm->halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
+    VM_CHECK_FETCH(vm, 2U);
     operand8 = code[vm->pc + 1];
     VM_PUSH(vm, (uint32_t)(int32_t)(int8_t)operand8);
     vm->pc += 2;
@@ -1605,11 +1579,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
      * etc.) Stack before: [..., a, b, c, d] (d on top) PICK 2 -> Stack after:
      * [..., a, b, c, d, b] This is a standard Forth/stack-machine operation for
      * accessing deep stack values. */
-    if ((uint32_t)vm->pc > (vm->code_size - 2U)) {
-      vm->error = ZPLC_VM_INVALID_JUMP;
-      vm->halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
+    VM_CHECK_FETCH(vm, 2U);
     operand8 = code[vm->pc + 1];
     /* Check that we have enough elements: need at least (n+1) elements */
     VM_CHECK_STACK_UNDERFLOW(vm, operand8 + 1);
@@ -1620,22 +1590,14 @@ int zplc_vm_step(zplc_vm_t *vm) {
     break;
 
   case OP_JR:
-    if ((uint32_t)vm->pc > (vm->code_size - 2U)) {
-      vm->error = ZPLC_VM_INVALID_JUMP;
-      vm->halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
+    VM_CHECK_FETCH(vm, 2U);
     operand8 = code[vm->pc + 1];
     vm->pc = (uint16_t)(vm->pc + 2 + (int8_t)operand8);
     break;
 
   case OP_JRZ:
     VM_CHECK_STACK_UNDERFLOW(vm, 1);
-    if ((uint32_t)vm->pc > (vm->code_size - 2U)) {
-      vm->error = ZPLC_VM_INVALID_JUMP;
-      vm->halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
+    VM_CHECK_FETCH(vm, 2U);
     operand8 = code[vm->pc + 1];
     a = VM_POP(vm);
     if (a == 0) {
@@ -1647,11 +1609,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
 
   case OP_JRNZ:
     VM_CHECK_STACK_UNDERFLOW(vm, 1);
-    if ((uint32_t)vm->pc > (vm->code_size - 2U)) {
-      vm->error = ZPLC_VM_INVALID_JUMP;
-      vm->halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
+    VM_CHECK_FETCH(vm, 2U);
     operand8 = code[vm->pc + 1];
     a = VM_POP(vm);
     if (a != 0) {
@@ -1664,11 +1622,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
     /* ===== Load/Store with 16-bit address ===== */
 
   case OP_LOAD8:
-    if ((uint32_t)vm->pc > (vm->code_size - 3U)) {
-      vm->error = ZPLC_VM_INVALID_JUMP;
-      vm->halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
+    VM_CHECK_FETCH(vm, 3U);
     operand16 = READ_U16(code, vm->pc + 1);
     {
       uint8_t val8;
@@ -1684,11 +1638,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
     break;
 
   case OP_LOAD16:
-    if ((uint32_t)vm->pc > (vm->code_size - 3U)) {
-      vm->error = ZPLC_VM_INVALID_JUMP;
-      vm->halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
+    VM_CHECK_FETCH(vm, 3U);
     operand16 = READ_U16(code, vm->pc + 1);
     {
       uint16_t val16;
@@ -1704,11 +1654,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
     break;
 
   case OP_LOAD32:
-    if ((uint32_t)vm->pc > (vm->code_size - 3U)) {
-      vm->error = ZPLC_VM_INVALID_JUMP;
-      vm->halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
+    VM_CHECK_FETCH(vm, 3U);
     operand16 = READ_U16(code, vm->pc + 1);
     {
       uint32_t val32;
@@ -1724,11 +1670,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
     break;
 
   case OP_LOAD64:
-    if ((uint32_t)vm->pc > (vm->code_size - 3U)) {
-      vm->error = ZPLC_VM_INVALID_JUMP;
-      vm->halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
+    VM_CHECK_FETCH(vm, 3U);
     operand16 = READ_U16(code, vm->pc + 1);
     {
       uint32_t low, high;
@@ -1746,11 +1688,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
 
   case OP_STORE8:
     VM_CHECK_STACK_UNDERFLOW(vm, 1);
-    if ((uint32_t)vm->pc > (vm->code_size - 3U)) {
-      vm->error = ZPLC_VM_INVALID_JUMP;
-      vm->halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
+    VM_CHECK_FETCH(vm, 3U);
     operand16 = READ_U16(code, vm->pc + 1);
     a = VM_POP(vm);
     mem_result = mem_write8(operand16, (uint8_t)a);
@@ -1764,11 +1702,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
 
   case OP_STORE16:
     VM_CHECK_STACK_UNDERFLOW(vm, 1);
-    if ((uint32_t)vm->pc > (vm->code_size - 3U)) {
-      vm->error = ZPLC_VM_INVALID_JUMP;
-      vm->halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
+    VM_CHECK_FETCH(vm, 3U);
     operand16 = READ_U16(code, vm->pc + 1);
     a = VM_POP(vm);
     mem_result = mem_write16(operand16, (uint16_t)a);
@@ -1782,11 +1716,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
 
   case OP_STORE32:
     VM_CHECK_STACK_UNDERFLOW(vm, 1);
-    if ((uint32_t)vm->pc > (vm->code_size - 3U)) {
-      vm->error = ZPLC_VM_INVALID_JUMP;
-      vm->halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
+    VM_CHECK_FETCH(vm, 3U);
     operand16 = READ_U16(code, vm->pc + 1);
     a = VM_POP(vm);
     mem_result = mem_write32(operand16, a);
@@ -1800,11 +1730,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
 
   case OP_STORE64:
     VM_CHECK_STACK_UNDERFLOW(vm, 2);
-    if ((uint32_t)vm->pc > (vm->code_size - 3U)) {
-      vm->error = ZPLC_VM_INVALID_JUMP;
-      vm->halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
+    VM_CHECK_FETCH(vm, 3U);
     operand16 = READ_U16(code, vm->pc + 1);
     {
       uint32_t high = VM_POP(vm);
@@ -1820,11 +1746,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
     break;
 
   case OP_PUSH16:
-    if ((uint32_t)vm->pc > (vm->code_size - 3U)) {
-      vm->error = ZPLC_VM_INVALID_JUMP;
-      vm->halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
+    VM_CHECK_FETCH(vm, 3U);
     operand16 = READ_U16(code, vm->pc + 1);
     VM_PUSH(vm, (uint32_t)(int32_t)(int16_t)operand16);
     vm->pc += 3;
@@ -1833,22 +1755,14 @@ int zplc_vm_step(zplc_vm_t *vm) {
     /* ===== Control Flow with 16-bit address ===== */
 
   case OP_JMP:
-    if ((uint32_t)vm->pc > (vm->code_size - 3U)) {
-      vm->error = ZPLC_VM_INVALID_JUMP;
-      vm->halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
+    VM_CHECK_FETCH(vm, 3U);
     operand16 = READ_U16(code, vm->pc + 1);
     vm->pc = operand16;
     break;
 
   case OP_JZ:
     VM_CHECK_STACK_UNDERFLOW(vm, 1);
-    if ((uint32_t)vm->pc > (vm->code_size - 3U)) {
-      vm->error = ZPLC_VM_INVALID_JUMP;
-      vm->halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
+    VM_CHECK_FETCH(vm, 3U);
     operand16 = READ_U16(code, vm->pc + 1);
     a = VM_POP(vm);
     if (a == 0) {
@@ -1860,11 +1774,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
 
   case OP_JNZ:
     VM_CHECK_STACK_UNDERFLOW(vm, 1);
-    if ((uint32_t)vm->pc > (vm->code_size - 3U)) {
-      vm->error = ZPLC_VM_INVALID_JUMP;
-      vm->halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
+    VM_CHECK_FETCH(vm, 3U);
     operand16 = READ_U16(code, vm->pc + 1);
     a = VM_POP(vm);
     if (a != 0) {
@@ -1875,11 +1785,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
     break;
 
   case OP_CALL:
-    if ((uint32_t)vm->pc > (vm->code_size - 3U)) {
-      vm->error = ZPLC_VM_INVALID_JUMP;
-      vm->halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
+    VM_CHECK_FETCH(vm, 3U);
     if (vm->call_depth >= ZPLC_CALL_STACK_MAX) {
       vm->error = ZPLC_VM_CALL_OVERFLOW;
       vm->halted = 1;
@@ -1902,11 +1808,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
     /* ===== Push with 32-bit operand ===== */
 
   case OP_PUSH32:
-    if ((uint32_t)vm->pc > (vm->code_size - 5U)) {
-      vm->error = ZPLC_VM_INVALID_JUMP;
-      vm->halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
+    VM_CHECK_FETCH(vm, 5U);
     operand32 = READ_U32(code, vm->pc + 1);
     VM_PUSH(vm, operand32);
     vm->pc += 5;
@@ -1917,17 +1819,14 @@ int zplc_vm_step(zplc_vm_t *vm) {
   case OP_COMM_EXEC:
   case OP_COMM_STATUS:
   case OP_COMM_RESET:
-    if ((uint32_t)vm->pc > (vm->code_size - 5U)) {
-      vm->error = ZPLC_VM_INVALID_JUMP;
-      vm->halted = 1;
-      return ZPLC_VM_INVALID_JUMP;
-    }
+    VM_CHECK_FETCH(vm, 5U);
     operand32 = READ_U32(code, vm->pc + 1);
     VM_CHECK_STACK_UNDERFLOW(vm, 1);
     a = VM_POP(vm); /* FB base address inside memory regions */
     {
       zplc_comm_fb_kind_t kind;
-      uint16_t fb_base = (uint16_t)a;
+      uint16_t fb_len;
+      uint8_t *fb_mem;
 
       /* Validate the 32-bit operand before it is narrowed to the kind type.
        * The enum is one byte on targets built with -fshort-enums, so casting
@@ -1940,19 +1839,15 @@ int zplc_vm_step(zplc_vm_t *vm) {
       }
       kind = (zplc_comm_fb_kind_t)operand32;
 
-      /* First, determine the physical pointer to FB memory. Comm FBs are mostly
-       * in WORK or RETAIN memory */
-      uint8_t *fb_mem = zplc_mem_get_region(fb_base & 0xF000);
-      if (!fb_mem) {
-        /* Fallback generic lookup via mem_ptr macro abstraction */
-        fb_mem =
-            mem_ptr(fb_base, 8, 1); // request at least 8 bytes for comm header
-      } else {
-        /* Offset it */
-        uint16_t region_base = fb_base & 0xF000;
-        fb_mem = &fb_mem[fb_base - region_base];
+      /* The block is as long as its kind says (RT-002); a kind without a
+       * layout is the 8-byte handshake the dispatcher itself touches. The
+       * whole block must lie in one region, and EXEC and RESET write it, so
+       * it cannot be in the input image (RT-001). */
+      fb_len = zplc_comm_fb_size(operand32);
+      if (fb_len == 0U) {
+        fb_len = ZPLC_COMM_FB_HANDSHAKE_SIZE;
       }
-
+      fb_mem = mem_ptr(a, fb_len, opcode != OP_COMM_STATUS);
       if (fb_mem == NULL) {
         vm->error = ZPLC_VM_OUT_OF_BOUNDS;
         vm->halted = 1;
@@ -1963,13 +1858,13 @@ int zplc_vm_step(zplc_vm_t *vm) {
 
       switch (opcode) {
       case OP_COMM_EXEC:
-        mem_result = zplc_comm_fb_exec(kind, fb_mem);
+        mem_result = zplc_comm_fb_exec(kind, fb_mem, fb_len);
         break;
       case OP_COMM_RESET:
-        mem_result = zplc_comm_fb_reset(kind, fb_mem);
+        mem_result = zplc_comm_fb_reset(kind, fb_mem, fb_len);
         break;
       case OP_COMM_STATUS: {
-        /* Push STATUS (bytes 4..7) */
+        /* Push STATUS (bytes 4..7 of the 8-byte handshake) */
         uint32_t status_val = (uint32_t)fb_mem[4] | ((uint32_t)fb_mem[5] << 8) |
                               ((uint32_t)fb_mem[6] << 16) |
                               ((uint32_t)fb_mem[7] << 24);

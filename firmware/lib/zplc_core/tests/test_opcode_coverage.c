@@ -155,18 +155,20 @@ static ref_t g_model;
 #define KIND_FAIL ZPLC_COMM_FB_SPB_REBIRTH  /* handler returns -3 and writes nothing */
 #define KIND_NONE ZPLC_COMM_FB_MB_READ_HREG /* a valid kind with no handler registered */
 
-static int handler_ok(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, bool reset)
+static int handler_ok(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, uint16_t fb_len, bool reset)
 {
     (void)kind;
+    (void)fb_len;
     fb_mem[ZPLC_COMM_MQTT_CONNECT_PROFILE_OFFSET] = (uint8_t)(fb_mem[ZPLC_COMM_MQTT_CONNECT_PROFILE_OFFSET] + 1U);
     fb_mem[ZPLC_COMM_MQTT_CONNECT_CONNECTED_OFFSET] = reset ? 2U : 1U;
     return 0;
 }
 
-static int handler_fail(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, bool reset)
+static int handler_fail(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, uint16_t fb_len, bool reset)
 {
     (void)kind;
     (void)fb_mem;
+    (void)fb_len;
     (void)reset;
     return -3;
 }
@@ -207,7 +209,7 @@ static uint8_t *ref_region(ref_t *m, uint32_t addr, uint32_t size, int write)
 
 static int ref_read(ref_t *m, uint32_t addr, unsigned size, uint64_t *value)
 {
-    const uint8_t *p = ref_region(m, addr & 0xFFFFU, size, 0);
+    const uint8_t *p = ref_region(m, addr, size, 0);
     unsigned i;
 
     if (p == NULL) {
@@ -223,7 +225,7 @@ static int ref_read(ref_t *m, uint32_t addr, unsigned size, uint64_t *value)
 
 static int ref_write(ref_t *m, uint32_t addr, unsigned size, uint64_t value)
 {
-    uint8_t *p = ref_region(m, addr & 0xFFFFU, size, 1);
+    uint8_t *p = ref_region(m, addr, size, 1);
     unsigned i;
 
     if (p == NULL) {
@@ -396,6 +398,7 @@ static void ref_comm(ref_t *m, uint8_t op, uint32_t kind)
 {
     uint32_t base = ref_pop(m);
     uint8_t *fb;
+    uint32_t fb_len;
     int has_handler;
     int handler_fails;
 
@@ -403,8 +406,13 @@ static void ref_comm(ref_t *m, uint8_t op, uint32_t kind)
         ref_fault(m, ZPLC_VM_INVALID_OPCODE);
         return;
     }
-    /* The 8-byte handshake of the block must lie inside one region, writable unless the opcode only reads. */
-    fb = ref_region(m, base & 0xFFFFU, 8U, op != OP_COMM_STATUS);
+    /* The whole block, as long as its kind says (the 8-byte handshake for a kind with no layout), must lie
+     * inside one region, writable unless the opcode only reads (RT-001, RT-002). */
+    fb_len = zplc_comm_fb_size(kind);
+    if (fb_len == 0U) {
+        fb_len = ZPLC_COMM_FB_HANDSHAKE_SIZE;
+    }
+    fb = ref_region(m, base, fb_len, op != OP_COMM_STATUS);
     if (fb == NULL) {
         ref_fault(m, ZPLC_VM_OUT_OF_BOUNDS);
         return;

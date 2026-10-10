@@ -5,7 +5,7 @@
     "versionMajor": 1,
     "versionMinor": 0,
     "doc": "ISA and container version. The one final version integer of CMP-052 is assigned and frozen when the conformance matrix is closed; until then the draft counter below is what the loader and Studio compare.",
-    "draftCounter": 1,
+    "draftCounter": 2,
     "draftDoc": "Draft contract counter (CMP-052).\n\nIncreases by one with every change of an opcode, layout, size or code until the contract freeze. The compiler writes it in header word 28 of every artifact and the loader refuses an artifact whose counter differs from this value (ZPLC_LOADER_ERR_DRAFT). 0 is what an artifact built before the counter carries and is never accepted."
   },
   "container": {
@@ -618,8 +618,9 @@
       {"macro": "ZPLC_LOADER_ERR_MEMORY", "value": -13, "doc": "Static memory access outside the writable regions"},
       {"macro": "ZPLC_LOADER_ERR_TASK", "value": -14, "doc": "Task definition is invalid or there are too many tasks"},
       {"macro": "ZPLC_LOADER_ERR_TAGS", "value": -15, "doc": "Tag entry is invalid"},
-      {"macro": "ZPLC_LOADER_ERR_COMM", "value": -16, "doc": "Communication function-block kind is NONE or at or above the kind limit"},
-      {"macro": "ZPLC_LOADER_ERR_DRAFT", "value": -17, "doc": "Draft contract counter of the artifact differs from the loader's, or the artifact has none"}
+      {"macro": "ZPLC_LOADER_ERR_COMM", "value": -16, "doc": "Communication function-block kind is NONE or at or above the kind limit, or a block at a statically known address does not fit one memory region"},
+      {"macro": "ZPLC_LOADER_ERR_DRAFT", "value": -17, "doc": "Draft contract counter of the artifact differs from the loader's, or the artifact has none"},
+      {"macro": "ZPLC_LOADER_ERR_STACK", "value": -18, "doc": "The evaluation stack can underflow, or exceed the depth the task declares, on some path, or the verifier cannot prove that it cannot"}
     ]
   },
   "comm": {

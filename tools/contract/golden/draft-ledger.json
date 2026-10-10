@@ -5,6 +5,11 @@
       "counter": 1,
       "fingerprint": "db0fa11a18c49c47f52b9e771b79dd759a52d8d39d338be3c10e15da4b4d4a57",
       "reason": "Counter introduced (CMP-052, WP-19): header word 28, until now reserved and zero, carries it and ZPLC_LOADER_ERR_DRAFT (-17) refuses a mismatch. The contract of this entry is the one the generated tables had at its introduction; artifacts built before it carry 0 and are refused."
+    },
+    {
+      "counter": 2,
+      "fingerprint": "f51f167827cda58f6c14d9968e11a958e2a44b07a1452dc45c86f655bd871a0e",
+      "reason": "ZPLC_LOADER_ERR_STACK (-18) is new: the loader now verifies the stack effect of every entry and refuses code that can underflow or exceed its declared depth (RT-003), and ZPLC_LOADER_ERR_COMM also refuses a communication block that does not fit one memory region (RT-001, RT-002). Indirect addresses are no longer cut to 16 bits."
     }
   ]
 }

@@ -1,4 +1,6 @@
+#include "zplc_comm_fb_access.h"
 #include "zplc_config.h"
+#include <errno.h>
 #include <string.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -13,8 +15,20 @@ LOG_MODULE_REGISTER(zplc_comm_modbus, LOG_LEVEL_INF);
  */
 
 #define MAX_ASYNC_TX 8
-#define MAX_MODBUS_REG_COUNT 123
-#define MAX_MODBUS_COIL_BYTES 250
+/*
+ * The result of a read goes to VALUE, the only member of the block that holds
+ * one: a UINT for registers, a BOOL for coils (COM-001). A count above what
+ * VALUE holds would run the result over HOST and PORT, and with a large count
+ * past the end of the block, so it is refused. Reading several registers
+ * needs a result member the block layout does not have yet.
+ */
+#define MAX_MODBUS_REG_COUNT 1U
+#define MAX_MODBUS_COIL_COUNT 1U
+#define MAX_MODBUS_COIL_BYTES ((MAX_MODBUS_COIL_COUNT + 7U) / 8U)
+
+/* HOST is the STRING member between ADDR/COUNT/VALUE and PORT */
+#define MODBUS_HOST_BYTES                                                      \
+  (ZPLC_COMM_MB_READ_HREG_PORT_OFFSET - ZPLC_COMM_MB_READ_HREG_HOST_OFFSET)
 
 typedef enum {
   TX_STATE_FREE = 0,
@@ -164,17 +178,6 @@ static void modbus_async_thread(void *p1, void *p2, void *p3) {
   }
 }
 
-// Extract string utility
-static void extract_string(uint8_t *fb_mem, uint16_t offset, char *dest,
-                           size_t max_len) {
-  uint16_t len = fb_mem[offset] | (fb_mem[offset + 1] << 8);
-  // uint16_t cap = fb_mem[offset + 2] | (fb_mem[offset + 3] << 8);
-  uint16_t copy_len = len < (max_len - 1) ? len : (max_len - 1);
-
-  memcpy(dest, &fb_mem[offset + 4], copy_len);
-  dest[copy_len] = '\0';
-}
-
 static bool validate_modbus_count(zplc_comm_fb_kind_t kind, uint16_t count) {
   if (count == 0U) {
     return false;
@@ -186,17 +189,20 @@ static bool validate_modbus_count(zplc_comm_fb_kind_t kind, uint16_t count) {
     return count <= MAX_MODBUS_REG_COUNT;
   case ZPLC_COMM_FB_MB_READ_COIL:
   case ZPLC_COMM_FB_MB_WRITE_COIL:
-    return count <= 2000U;
+    return count <= MAX_MODBUS_COIL_COUNT;
   default:
     return false;
   }
 }
 
+/* The count has been validated against what VALUE holds; the words are read
+ * through the bounded accessor all the same. */
 static void copy_modbus_write_words(struct modbus_async_tx *tx,
-                                    const uint8_t *fb_mem) {
-  for (uint16_t i = 0U; i < tx->count; i++) {
-    uint16_t offset = (uint16_t)(15U + (i * 2U));
-    tx->read_regs[i] = (uint16_t)(fb_mem[offset] | (fb_mem[offset + 1U] << 8));
+                                    const uint8_t *fb_mem, uint16_t fb_len) {
+  for (uint16_t i = 0U; i < tx->count && i < MAX_MODBUS_REG_COUNT; i++) {
+    tx->read_regs[i] = zplc_fb_get_u16(
+        fb_mem, fb_len,
+        (uint16_t)(ZPLC_COMM_MB_READ_HREG_VALUE_OFFSET + (i * 2U)));
   }
 
   tx->write_val_word = tx->read_regs[0];
@@ -207,7 +213,22 @@ static void copy_modbus_write_words(struct modbus_async_tx *tx,
 // This runs in the VM scan loop thread. Zero blocking allowed.
 //
 int zplc_comm_modbus_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
-                             bool is_reset) {
+                             uint16_t fb_len, bool is_reset) {
+  // The block is the instance of one of the four Modbus kinds; every offset
+  // below is inside the layout the table gives that kind (COM-001).
+  switch (kind) {
+  case ZPLC_COMM_FB_MB_READ_HREG:
+  case ZPLC_COMM_FB_MB_WRITE_HREG:
+  case ZPLC_COMM_FB_MB_READ_COIL:
+  case ZPLC_COMM_FB_MB_WRITE_COIL:
+    break;
+  default:
+    return -EINVAL;
+  }
+  if (fb_mem == NULL || fb_len < zplc_comm_fb_size((uint32_t)kind)) {
+    return -EINVAL;
+  }
+
   // Memory layout offsets:
   // +0: EN, +1: BUSY, +2: DONE, +3: ERROR, +4..7: STATUS
   // +8: PROTO, +9: SLAVE_ID(UINT), +11: ADDR(UINT), +13: COUNT(UINT)
@@ -261,15 +282,23 @@ int zplc_comm_modbus_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
       } else {
         // Map outputs based on kind
         if (kind == ZPLC_COMM_FB_MB_READ_HREG) {
-          for (uint16_t i = 0U; i < tx->count; i++) {
+          for (uint16_t i = 0U; i < tx->count && i < MAX_MODBUS_REG_COUNT;
+               i++) {
             uint16_t offset = (uint16_t)(15U + (i * 2U));
+            if (!zplc_fb_fits(fb_len, offset, 2U)) {
+              break;
+            }
             fb_mem[offset] = (uint8_t)(tx->read_regs[i] & 0xFFU);
             fb_mem[offset + 1U] = (uint8_t)((tx->read_regs[i] >> 8) & 0xFFU);
           }
         } else if (kind == ZPLC_COMM_FB_MB_READ_COIL) {
-          for (uint16_t i = 0U; i < tx->count; i++) {
+          for (uint16_t i = 0U; i < tx->count && i < MAX_MODBUS_COIL_COUNT;
+               i++) {
             uint16_t byte_index = (uint16_t)(i / 8U);
             uint8_t bit_index = (uint8_t)(i % 8U);
+            if (!zplc_fb_fits(fb_len, 15U + i, 1U)) {
+              break;
+            }
             fb_mem[15U + i] =
                 (uint8_t)((tx->read_coils[byte_index] >> bit_index) & 0x01U);
           }
@@ -326,13 +355,16 @@ int zplc_comm_modbus_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
     }
 
     if (kind == ZPLC_COMM_FB_MB_WRITE_HREG) {
-      copy_modbus_write_words(tx, fb_mem);
+      copy_modbus_write_words(tx, fb_mem, fb_len);
     } else if (kind == ZPLC_COMM_FB_MB_WRITE_COIL) {
       tx->write_val_bool = fb_mem[15] != 0;
     }
 
-    extract_string(fb_mem, 18, tx->host, sizeof(tx->host));
-    tx->port = fb_mem[103] | (fb_mem[104] << 8);
+    (void)zplc_fb_string_copy(tx->host, sizeof(tx->host), fb_mem, fb_len,
+                              ZPLC_COMM_MB_READ_HREG_HOST_OFFSET,
+                              MODBUS_HOST_BYTES);
+    tx->port = zplc_fb_get_u16(fb_mem, fb_len,
+                               ZPLC_COMM_MB_READ_HREG_PORT_OFFSET);
 
     tx->state = TX_STATE_QUEUED;
 
