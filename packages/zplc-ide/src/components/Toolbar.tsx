@@ -231,6 +231,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
   // File Operations
   // ==========================================================================
 
+  // The handlers below report their own failure in the console, so buttons and shortcuts start them with `void` and do not wait.
   const handleSaveFile = async () => {
     if (!activeFile || !activeFileId) {
       addConsoleEntry({ type: 'error', message: 'No file selected to save', source: 'system' });
@@ -739,14 +740,14 @@ export function Toolbar({ debugController }: ToolbarProps) {
       // Ctrl+S - Save
       if (ctrl && key === 's') {
         event.preventDefault();
-        handleSaveFile();
+        void handleSaveFile();
         return;
       }
 
       // Ctrl+B - Compile
       if (ctrl && key === 'b') {
         event.preventDefault();
-        handleCompile();
+        void handleCompile();
         return;
       }
 
@@ -756,9 +757,9 @@ export function Toolbar({ debugController }: ToolbarProps) {
         if (isRunning) {
           // Already running, do nothing
         } else if (isPaused) {
-          handleResume(true);
+          void handleResume(true);
         } else {
-          handleStart(true);
+          void handleStart(true);
         }
         return;
       }
@@ -767,7 +768,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
       if (key === 'F5' && shift) {
         event.preventDefault();
         if (isRunning || isPaused) {
-          handleStop();
+          void handleStop();
         }
         return;
       }
@@ -776,7 +777,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
       if (key === 'F6') {
         event.preventDefault();
         if (isRunning) {
-          handlePause(true);
+          void handlePause(true);
         }
         return;
       }
@@ -785,7 +786,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
       if (key === 'F10') {
         event.preventDefault();
         if (isPaused || isIdle) {
-          handleStep();
+          void handleStep();
         }
         return;
       }
@@ -794,7 +795,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
       if (key === 'F8') {
         event.preventDefault();
         if (isConnected) {
-          handleReset();
+          void handleReset();
         }
         return;
       }
@@ -879,7 +880,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
       {/* Save Button */}
       <button
         type="button"
-        onClick={handleSaveFile}
+        onClick={() => { void handleSaveFile(); }}
         disabled={!activeFile}
         className="focus-ring p-2 rounded hover:bg-[var(--color-surface-700)] text-[var(--color-surface-200)] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         aria-label="Save active file (Ctrl+S)"
@@ -929,7 +930,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
               ref={compileMenuFirstItemRef}
               type="button"
               role="menuitem"
-              onClick={handleCompile}
+              onClick={() => { void handleCompile(); }}
               className="focus-ring w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-surface-100)] hover:bg-[var(--color-surface-600)] transition-colors"
               aria-label="Compile current project (Ctrl+B)"
             >
@@ -964,7 +965,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
             <button
               type="button"
               role="menuitem"
-              onClick={handleExportProject}
+              onClick={() => { void handleExportProject(); }}
               className="focus-ring w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-surface-100)] hover:bg-[var(--color-surface-600)] transition-colors"
               aria-label="Export project"
             >
@@ -1021,7 +1022,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
         <button
           ref={connectionButtonRef}
           type="button"
-          onClick={handleConnect}
+          onClick={() => { void handleConnect(); }}
           disabled={controlsBusy}
           className={`focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs font-medium transition-colors ${isConnected
             ? 'bg-[var(--color-surface-700)] text-[var(--color-surface-200)] hover:bg-red-600 hover:text-white'
@@ -1048,7 +1049,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
         {executionMode === 'hardware' && isConnected && (
           <button
             type="button"
-            onClick={handleUpload}
+            onClick={() => { void handleUpload(); }}
             disabled={!hasCurrentCompileResult || controlsBusy}
             className="focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-200)] text-xs font-medium transition-colors disabled:opacity-40"
             aria-label="Deploy current .zplc program to connected device; execution remains stopped"
@@ -1132,7 +1133,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
             {(isPaused || isIdle) && (
               <button
                 type="button"
-                onClick={handleStep}
+                onClick={() => { void handleStep(); }}
                 disabled={!canRunCurrentProgram(executionMode, hasCurrentCompileResult, programLoadState) || controlsBusy}
                 className="focus-ring flex items-center gap-1.5 px-2 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-200)] text-xs font-medium transition-colors"
                 aria-label="Step one cycle (F10)"
@@ -1146,7 +1147,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
             {(isRunning || isPaused) && (
               <button
                 type="button"
-                onClick={handleStop}
+                onClick={() => { void handleStop(); }}
                 disabled={controlsBusy}
                 className="focus-ring flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-red-600 hover:bg-red-500 text-white text-xs font-medium transition-colors"
                 aria-label="Stop (Shift+F5)"
@@ -1159,7 +1160,7 @@ export function Toolbar({ debugController }: ToolbarProps) {
             {/* Reset */}
             <button
               type="button"
-              onClick={handleReset}
+              onClick={() => { void handleReset(); }}
               disabled={controlsBusy}
               className="focus-ring flex items-center gap-1.5 px-2 py-1.5 rounded bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] text-[var(--color-surface-200)] text-xs font-medium transition-colors"
               aria-label="Reset runtime (F8)"

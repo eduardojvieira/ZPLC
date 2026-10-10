@@ -77,6 +77,7 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
     } catch { setMasteryStatus('error'); }
   };
 
+  // Catches its own errors and shows them as the import status; the input starts it with `void`.
   const importMastery = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (desktopProgress && !hydrated) return;
     const input = event.currentTarget; const file = input.files?.[0]; input.value = '';
@@ -155,7 +156,7 @@ export function LearnPanel({ workspaceTestPresentation }: { workspaceTestPresent
             <button type="button" onClick={() => setActiveConsoleTab('tests')} className="inline-flex items-center gap-1.5 bg-[var(--color-accent-blue)] px-2.5 py-1.5 text-xs font-medium text-[var(--color-surface-900)] hover:bg-[var(--color-accent-blue)]/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]"><FlaskConical size={14} aria-hidden="true" />{testsLabel}</button>
             <button type="button" disabled={Boolean(desktopProgress && !hydrated)} onClick={exportMastery} className="border border-[var(--color-surface-600)] px-2.5 py-1.5 text-xs font-medium text-[var(--color-surface-100)] hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]">{locale === 'es' ? 'Exportar progreso' : 'Export progress'}</button>
             <button type="button" disabled={Boolean(desktopProgress && !hydrated)} onClick={() => importRef.current?.click()} className="border border-[var(--color-surface-600)] px-2.5 py-1.5 text-xs font-medium text-[var(--color-surface-100)] hover:bg-[var(--color-surface-700)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent-blue)]">{locale === 'es' ? 'Importar progreso' : 'Import progress'}</button>
-            <input ref={importRef} type="file" accept="application/json,.json" className="sr-only" aria-label={locale === 'es' ? 'Seleccionar progreso para importar' : 'Select progress to import'} onChange={importMastery} />
+            <input ref={importRef} type="file" accept="application/json,.json" className="sr-only" aria-label={locale === 'es' ? 'Seleccionar progreso para importar' : 'Select progress to import'} onChange={(event) => { void importMastery(event); }} />
           </div>
           <p role="status" className="mt-2 text-xs text-[var(--color-surface-400)]">{!folderAccess ? (locale === 'es' ? 'El acceso a carpetas no está disponible en este entorno.' : 'Folder access is unavailable in this environment.') : copyStatus === 'copying' ? (locale === 'es' ? 'Copiando el ejemplo en la carpeta elegida…' : 'Copying the example into the chosen folder…') : copyStatus === 'copied' ? (locale === 'es' ? 'Ejemplo copiado.' : 'Example copied.') : (locale === 'es' ? `Elegí zplc.json guardado en Tests y ejecutá solamente ${lesson.requiredScenario}.` : `Choose the saved zplc.json in Tests and run only ${lesson.requiredScenario}.`)}</p>
           {copyStatus === 'failed' && projectOpenError && <p role="alert" data-learn-copy-error className="mt-2 break-words text-xs text-[var(--color-accent-red)]">{projectOpenError}</p>}

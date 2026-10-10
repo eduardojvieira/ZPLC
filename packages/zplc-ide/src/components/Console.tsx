@@ -322,6 +322,7 @@ export function Console({ debugController }: ConsoleProps) {
     }
   };
 
+  // The workspace test handlers below catch their own errors and show them in the panel; the buttons start them with `void`.
   const runWorkspaceTests = async (scenarioId?: string) => {
     const current = useIDEStore.getState();
     const link = current.workspaceScenarioLink;
@@ -796,7 +797,7 @@ export function Console({ debugController }: ConsoleProps) {
                   {workspaceTestStateForLink === 'running' || workspaceTestStateForLink === 'cancelling' ? (
                     <button
                       type="button"
-                      onClick={cancelWorkspaceTests}
+                      onClick={() => { void cancelWorkspaceTests(); }}
                       disabled={workspaceTestStateForLink === 'cancelling'}
                       className="inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 bg-[var(--color-surface-700)] text-[var(--color-surface-100)] hover:bg-[var(--color-surface-600)] disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-blue)]"
                     >
@@ -832,7 +833,7 @@ export function Console({ debugController }: ConsoleProps) {
                 {typeof workspaceTestStateForLink === 'object' && (
                   <WorkspaceTestResult
                     presentation={workspaceTestStateForLink.presentation}
-                    onRunScenario={runWorkspaceTests}
+                    onRunScenario={(scenarioId) => { void runWorkspaceTests(scenarioId); }}
                     scenarioRunDisabled={workspaceTestBusy || workspaceTestAvailabilityState !== 'ready'}
                     buildLink={classifyWorkspaceTestBuildLink(
                       { projectSession, compilerRunId, workspaceScenarioLink },
@@ -875,7 +876,7 @@ export function Console({ debugController }: ConsoleProps) {
               {candidateReviewStateForCurrent.kind === 'error' && <p>Candidate review could not be completed. Review again.</p>}
               {candidateReviewStateForCurrent.kind === 'saved' && <p>Reviewed change saved. Review is no longer current.</p>}
             </div>
-            {candidateReviewStateForCurrent.kind === 'result' && <CandidateReviewResult state={candidateReviewStateForCurrent} effectiveTheme={effectiveTheme} beforeMount={beforeMountDiff} onSave={saveReviewedChange} busy={workspaceTestBusy} />}
+            {candidateReviewStateForCurrent.kind === 'result' && <CandidateReviewResult state={candidateReviewStateForCurrent} effectiveTheme={effectiveTheme} beforeMount={beforeMountDiff} onSave={() => { void saveReviewedChange(); }} busy={workspaceTestBusy} />}
           </div>
         )}
 

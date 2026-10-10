@@ -4,7 +4,7 @@ import type { ProjectFilesBridge } from '../../electron/projectFilesProtocol';
 import { chooseProjectFolder } from '../ipc/projectFilesHandles';
 
 // The store reads the example projects with a Vite-only glob; the example list does not matter here.
-mock.module('./projectLoader', () => ({ getAvailableProjects: () => [], loadProject: () => null, loadProjectAssets: () => null }));
+await mock.module('./projectLoader', () => ({ getAvailableProjects: () => [], loadProject: () => null, loadProjectAssets: () => null }));
 const { useIDEStore } = await import('../store/useIDEStore');
 const { canLinkProjectWorkspace, linkProjectWorkspace } = await import('./workspaceTestLink');
 

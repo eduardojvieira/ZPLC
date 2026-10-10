@@ -165,7 +165,7 @@ describe('Console tab boundary', () => {
     expect(source).toContain('onClick={() => { void runWorkspaceTests(); }}');
     expect(source).toContain('Run this scenario again');
     expect(source).toContain('aria-label={`Run ${scenario.id} again on native POSIX`}');
-    expect(source).toContain('onRunScenario={runWorkspaceTests}');
+    expect(source).toContain('onRunScenario={(scenarioId) => { void runWorkspaceTests(scenarioId); }}');
     expect(source).toContain("workspaceTestState !== 'running'");
     expect(source).not.toContain('It may differ from the project open in the editor.');
   });

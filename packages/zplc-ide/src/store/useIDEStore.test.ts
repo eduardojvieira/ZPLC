@@ -35,7 +35,7 @@ const migrationPreview = {
 };
 let loadedExample: { zplcConfig: typeof DEFAULT_ZPLC_CONFIG; migrationPreview: null } | null = null;
 let loadedExampleAssets: Array<{ path: string; content: string }> | null = null;
-mock.module('../utils/projectLoader', () => ({
+await mock.module('../utils/projectLoader', () => ({
   getAvailableProjects: () => [],
   loadProject: () => loadedExample,
   loadProjectAssets: () => loadedExampleAssets,

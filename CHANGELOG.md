@@ -11,6 +11,13 @@ All notable changes are documented here.
   or a tsconfig is left out of that list. `noUncheckedIndexedAccess` stays off:
   it would add about 800 errors (468 in Studio, 335 in the compiler) that each
   need a real narrowing.
+- ESLint runs the type-aware rules `no-floating-promises` and
+  `no-misused-promises` over the Studio, the Electron host, the CLI and the MCP
+  server (VF-011), so an unhandled promise fails `bun run lint`. The 42
+  findings are fixed: the Electron host now logs and exits when its start-up
+  fails, and logs a renderer load that is refused, instead of idling or
+  rejecting unobserved; every button and shortcut handler states with `void`
+  that the handler reports its own failure.
 - The CLI reports a rejected `symbols` command under the operation
   `symbols-list`, as its successful result does, instead of the value `symbols`
   that is not a Tool API operation. The saved-input identity of a host test run
