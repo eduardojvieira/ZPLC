@@ -286,16 +286,14 @@ def c_defines(path: Path) -> dict[str, int]:
 class HandlersAgreeWithTheBlockTable(unittest.TestCase):
     """What the Zephyr handlers assume of a function-block layout against the generated table (RT-002).
 
-    The handlers are not edited by WP-11. Every disagreement is a finding; KNOWN_FINDINGS lists them,
-    so a new one fails here and a fixed one has to be removed from the list (WP-18, WP-86).
+    The handlers were not edited by WP-11. Every disagreement is a finding; the KNOWN lists hold them,
+    so a new one fails here and a fixed one has to be removed from the list (WP-18, WP-86). WP-18 fixed
+    the Modbus counts (a result no longer runs over HOST, PORT and the block), the cloud STRING layout
+    and the MQTT CONNECTED offset; what is left is the nominal STRING sizes of the layout table, which
+    are a layout (contract) change.
     """
 
-    KNOWN_FINDINGS = [
-        "cloud handler STRING layout is [len u8][cap u8][data at 2]; the contract and the MQTT and Modbus handlers use [len u16][cap u16][data at 4]",
-        "MB_READ_COIL: handler writes up to offset 2015 (15 + 2000 coils), instance size is 110",
-        "MB_READ_HREG: handler writes up to offset 261 (15 + 2 * 123 registers), instance size is 110",
-        "MB_WRITE_HREG: handler reads up to offset 261 (15 + 2 * 123 registers), instance size is 110",
-    ]
+    KNOWN_FINDINGS: list[str] = []
 
     KNOWN_LAYOUT_FINDINGS = [
         "AWS_FLEET_PROV.TEMPLATE_NAME: 85 reserved bytes at 8 reach 93, past THING_NAME at 73",
@@ -312,9 +310,7 @@ class HandlersAgreeWithTheBlockTable(unittest.TestCase):
     def offset(self, block: str, member: str) -> int:
         return next(m["offset"] for m in self.blocks[block]["members"] if m["name"] == member)
 
-    KNOWN_OFFSET_FINDINGS = [
-        "zplc_comm_mqtt_handler.c: FB_CONNECT_OFF_CONNECTED is 8, MQTT_CONNECT.CONNECTED is at 9 (PROFILE is at 8)",
-    ]
+    KNOWN_OFFSET_FINDINGS: list[str] = []
 
     def test_members_the_handlers_name_sit_where_the_table_puts_them(self):
         header = {"FB_OFF_EN": "EN", "FB_OFF_BUSY": "BUSY", "FB_OFF_DONE": "DONE", "FB_OFF_ERROR": "ERROR", "FB_OFF_STATUS": "STATUS"}
@@ -371,7 +367,7 @@ class HandlersAgreeWithTheBlockTable(unittest.TestCase):
             findings.append("cloud handler STRING layout is [len u8][cap u8][data at 2]; the contract and the MQTT and Modbus handlers use [len u16][cap u16][data at 4]")
         modbus = (HANDLERS / "zplc_comm_modbus_handler.c").read_text()
         reg_limit = int(re.search(r"#define MAX_MODBUS_REG_COUNT (\d+)", modbus).group(1))
-        coil_limit = int(re.findall(r"return count <= (\d+)U;", modbus)[0])
+        coil_limit = int(re.search(r"#define MAX_MODBUS_COIL_COUNT (\d+)", modbus).group(1))
         value = self.offset("MB_READ_HREG", "VALUE")
         for block, extent, verb, unit in (
             ("MB_READ_HREG", value + 2 * reg_limit, "writes", f"{value} + 2 * {reg_limit} registers"),
@@ -379,8 +375,12 @@ class HandlersAgreeWithTheBlockTable(unittest.TestCase):
             ("MB_READ_COIL", value + coil_limit, "writes", f"{value} + {coil_limit} coils"),
         ):
             size = self.blocks[block]["size"]
+            # COM-001: inside the block, and a result buffer does not overlap the block's own parameters
+            following = min((m["offset"] for m in self.blocks[block]["members"] if m["offset"] > value), default=size)
             if extent > size:
                 findings.append(f"{block}: handler {verb} up to offset {extent} ({unit}), instance size is {size}")
+            elif extent > following:
+                findings.append(f"{block}: handler {verb} up to offset {extent} ({unit}), over the member at {following}")
         self.assertEqual(sorted(findings), sorted(self.KNOWN_FINDINGS))
 
     def test_nominal_string_members_against_the_layout_offsets(self):

@@ -11,7 +11,7 @@ extern "C" {
 #endif
 
 int zplc_comm_modbus_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
-                             bool is_reset);
+                             uint16_t fb_len, bool is_reset);
 int zplc_comm_modbus_handler_init(void);
 
 #ifdef __cplusplus

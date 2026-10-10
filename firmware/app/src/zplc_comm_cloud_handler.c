@@ -14,6 +14,7 @@
 
 #include "zplc_comm_cloud_handler.h"
 
+#include "zplc_comm_fb_access.h"
 #include "zplc_config.h"
 #include "zplc_mqtt.h"
 #include <errno.h>
@@ -38,10 +39,15 @@ LOG_MODULE_REGISTER(zplc_comm_cloud, LOG_LEVEL_INF);
 #define FB_OFF_ERROR 3
 #define FB_OFF_STATUS 4
 
-/* String layout: [LEN USINT][CAP USINT][DATA…] */
+/* String layout of the contract: [LEN UINT][CAP UINT][DATA...][terminator].
+ * The compiler and the other handlers use it; strings are read and written
+ * through zplc_comm_fb_access.h, bounded by the block (COM-001). */
 #define STR_OFF_LEN 0
-#define STR_OFF_CAP 1
-#define STR_OFF_DATA 2
+#define STR_OFF_CAP 2
+#define STR_OFF_DATA 4
+
+/* Bytes the layout table reserves for each STRING member */
+#define FB_STRING_BYTES 85U
 
 /* ============================================================================
  * AZURE_C2D_RECV (0x0020)
@@ -101,15 +107,12 @@ static void fb_reset_common(uint8_t *fb_mem) {
 }
 
 /**
- * Read a ZPLC STRING field into a C string buffer.
+ * Read a ZPLC STRING field into a C string buffer, bounded by the block.
  */
-static void read_fb_str(const uint8_t *fb_str, char *dest, size_t dest_size) {
-  uint8_t len = fb_str[STR_OFF_LEN];
-  if (len >= (uint8_t)dest_size) {
-    len = (uint8_t)(dest_size - 1);
-  }
-  memcpy(dest, &fb_str[STR_OFF_DATA], len);
-  dest[len] = '\0';
+static void read_fb_str(const uint8_t *fb_mem, uint16_t fb_len,
+                        uint16_t offset, char *dest, size_t dest_size) {
+  (void)zplc_fb_string_copy(dest, dest_size, fb_mem, fb_len, offset,
+                            FB_STRING_BYTES);
 }
 
 /* ============================================================================
@@ -117,14 +120,15 @@ static void read_fb_str(const uint8_t *fb_str, char *dest, size_t dest_size) {
  * ============================================================================
  */
 
-static int exec_azure_c2d_recv(uint8_t *fb_mem) {
+static int exec_azure_c2d_recv(uint8_t *fb_mem, uint16_t fb_len) {
   /* Read-only FB: the MQTT receive callback populates PAYLOAD and VALID.
    * On each scan with EN=1 we just report the current state. */
   bool en = fb_mem[FB_OFF_EN] != 0;
 
   if (!en) {
     fb_reset_common(fb_mem);
-    fb_mem[C2D_OFF_PAYLOAD + STR_OFF_LEN] = 0;
+    (void)zplc_fb_string_set(fb_mem, fb_len, C2D_OFF_PAYLOAD, FB_STRING_BYTES,
+                             (const uint8_t *)"", 0U);
     fb_mem[C2D_OFF_VALID] = 0;
     return 0;
   }
@@ -138,7 +142,7 @@ static int exec_azure_c2d_recv(uint8_t *fb_mem) {
   return 0;
 }
 
-static int exec_azure_dps_prov(uint8_t *fb_mem) {
+static int exec_azure_dps_prov(uint8_t *fb_mem, uint16_t fb_len) {
   bool en = fb_mem[FB_OFF_EN] != 0;
   bool busy = fb_mem[FB_OFF_BUSY] != 0;
   bool done = fb_mem[FB_OFF_DONE] != 0;
@@ -152,7 +156,8 @@ static int exec_azure_dps_prov(uint8_t *fb_mem) {
 
   if (!busy) {
     char device_id[64];
-    read_fb_str(&fb_mem[DPS_OFF_DEVICE_ID], device_id, sizeof(device_id));
+    read_fb_str(fb_mem, fb_len, DPS_OFF_DEVICE_ID, device_id,
+                sizeof(device_id));
 
     /* Trigger provisioning — non-blocking; result comes via callback */
     int rc = zplc_azure_dps_provision();
@@ -170,7 +175,7 @@ static int exec_azure_dps_prov(uint8_t *fb_mem) {
   return 0;
 }
 
-static int exec_azure_eg_pub(uint8_t *fb_mem) {
+static int exec_azure_eg_pub(uint8_t *fb_mem, uint16_t fb_len) {
   bool en = fb_mem[FB_OFF_EN] != 0;
   bool done = fb_mem[FB_OFF_DONE] != 0;
 
@@ -182,9 +187,10 @@ static int exec_azure_eg_pub(uint8_t *fb_mem) {
     return 0;
 
   char topic[64], event_type[64], payload[128];
-  read_fb_str(&fb_mem[EG_OFF_TOPIC], topic, sizeof(topic));
-  read_fb_str(&fb_mem[EG_OFF_EVENT_TYPE], event_type, sizeof(event_type));
-  read_fb_str(&fb_mem[EG_OFF_PAYLOAD], payload, sizeof(payload));
+  read_fb_str(fb_mem, fb_len, EG_OFF_TOPIC, topic, sizeof(topic));
+  read_fb_str(fb_mem, fb_len, EG_OFF_EVENT_TYPE, event_type,
+              sizeof(event_type));
+  read_fb_str(fb_mem, fb_len, EG_OFF_PAYLOAD, payload, sizeof(payload));
 
   int rc = zplc_azure_event_grid_publish(event_type, NULL, topic, payload);
   fb_mem[FB_OFF_BUSY] = 0;
@@ -243,7 +249,14 @@ static int exec_spb_rebirth(uint8_t *fb_mem) {
  */
 
 static int zplc_comm_cloud_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
-                                   bool reset) {
+                                   uint16_t fb_len, bool reset) {
+  /* A block of this kind is at least its table size; every offset used by
+   * the exec handlers is inside it (COM-001). */
+  if (fb_mem == NULL || zplc_comm_fb_size((uint32_t)kind) == 0U ||
+      fb_len < zplc_comm_fb_size((uint32_t)kind)) {
+    return -EINVAL;
+  }
+
   if (reset) {
     fb_reset_common(fb_mem);
     return 0;
@@ -251,11 +264,11 @@ static int zplc_comm_cloud_handler(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
 
   switch (kind) {
   case ZPLC_COMM_FB_AZURE_C2D_RECV:
-    return exec_azure_c2d_recv(fb_mem);
+    return exec_azure_c2d_recv(fb_mem, fb_len);
   case ZPLC_COMM_FB_AZURE_DPS_PROV:
-    return exec_azure_dps_prov(fb_mem);
+    return exec_azure_dps_prov(fb_mem, fb_len);
   case ZPLC_COMM_FB_AZURE_EG_PUB:
-    return exec_azure_eg_pub(fb_mem);
+    return exec_azure_eg_pub(fb_mem, fb_len);
   case ZPLC_COMM_FB_AWS_FLEET_PROV:
     return exec_aws_fleet_prov(fb_mem);
   case ZPLC_COMM_FB_SPB_REBIRTH:
