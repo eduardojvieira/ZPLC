@@ -12,13 +12,11 @@ import { PROGRAMS, parseProgram } from './typecheck';
 
 const root = resolve(import.meta.dir, '../..');
 
-/** Tracked files that no project checks, and why. */
-const UNCHECKED: Record<string, string> = {
-  'packages/zplc-compiler/src/compiler/arrays.test.ts': 'reads `.name` of an Expression that may be a BoolLiteral (2 errors); owned by the compiler work',
-  'packages/zplc-compiler/src/compiler/compiler.test.ts': 'imports ../types/index.ts, which does not exist, and passes `language` to ProgramSource, which has none (15 errors); owned by the compiler work',
-  'packages/zplc-compiler/src/compiler/stdlib/communication.test.ts': 'passes a string where an Expression is expected (2 errors); owned by the compiler work',
-  'packages/zplc-hil/tests/examples/hello.ts': 'imports ../src/index, which does not exist (it is ../../src/index); the HIL package is outside the type-check work',
-};
+/**
+ * Tracked files that no project checks, and why. Empty today: add a file here only with the reason and the owner
+ * of the fix, and remove it with the exclusion that keeps it out of its project.
+ */
+const UNCHECKED: Record<string, string> = {};
 
 /** Projects that only point at other projects (`tsc -b`) and select no file themselves. */
 const SOLUTIONS = ['packages/zplc-ide/tsconfig.json'];

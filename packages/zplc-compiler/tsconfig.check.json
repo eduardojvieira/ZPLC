@@ -13,14 +13,5 @@
     "types": ["bun", "node"]
   },
   "include": ["src/**/*.ts", "build.ts"],
-  "exclude": [
-    "node_modules",
-    "dist",
-    // Known type errors in the compiler tests (ProgramSource has no `language`, a missing '../types/index.ts',
-    // a string where an Expression is expected). They are listed in tools/ci/typecheck-coverage.test.ts and
-    // must be fixed together with the removal of these three lines.
-    "src/compiler/arrays.test.ts",
-    "src/compiler/compiler.test.ts",
-    "src/compiler/stdlib/communication.test.ts"
-  ]
+  "exclude": ["node_modules", "dist"]
 }

@@ -7,7 +7,7 @@
 import { describe, it, expect } from 'bun:test';
 import { tokenize, TokenType } from './lexer.ts';
 import { parse } from './parser.ts';
-import type { VarDecl, ArrayType, ArrayAccess, Assignment } from './ast.ts';
+import type { VarDecl, ArrayType, ArrayAccess, Assignment, Identifier } from './ast.ts';
 import { isArrayType, getArrayTotalSize, getArrayElementCount } from './ast.ts';
 
 describe('Array Lexer', () => {
@@ -108,7 +108,8 @@ END_PROGRAM`;
 
         expect(stmt.value.kind).toBe('ArrayAccess');
         const access = stmt.value as ArrayAccess;
-        expect(access.array.name).toBe('Arr');
+        expect(access.array.kind).toBe('Identifier');
+        expect((access.array as Identifier).name).toBe('Arr');
         expect(access.indices.length).toBe(1);
     });
 
@@ -141,7 +142,8 @@ END_PROGRAM`;
 
         expect(stmt.target.kind).toBe('ArrayAccess');
         const access = stmt.target as ArrayAccess;
-        expect(access.array.name).toBe('Arr');
+        expect(access.array.kind).toBe('Identifier');
+        expect((access.array as Identifier).name).toBe('Arr');
     });
 
     it('should parse array with variable index', () => {

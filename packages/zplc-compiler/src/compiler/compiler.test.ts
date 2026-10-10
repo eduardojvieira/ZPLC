@@ -1091,8 +1091,7 @@ describe('Blinky Golden Test', () => {
 // ============================================================================
 
 import { compileMultiTaskProject } from './index.ts';
-import type { ProgramSource, MultiTaskCompilationResult } from './index.ts';
-import type { ZPLCProjectConfig } from '../types/index.ts';
+import type { ProgramSource, MultiTaskCompilationResult, ProjectConfig as ZPLCProjectConfig } from './index.ts';
 import { ZPLC_CONSTANTS, TASK_TYPE } from '../assembler/index.ts';
 
 describe('Multi-Task Compiler', () => {
@@ -1168,8 +1167,8 @@ describe('Multi-Task Compiler', () => {
     });
 
     it('publishes absolute, independent debug PCs for every multi-task POU', () => {
-        const fastSource = { name: 'Fast.st', language: 'ST' as const, content: 'PROGRAM Fast\nVAR x : BOOL; END_VAR\nx := TRUE;\nEND_PROGRAM' };
-        const slowSource = { name: 'Slow.st', language: 'ST' as const, content: 'PROGRAM Slow\nVAR y : BOOL; END_VAR\ny := FALSE;\nEND_PROGRAM' };
+        const fastSource = { name: 'Fast.st', content: 'PROGRAM Fast\nVAR x : BOOL; END_VAR\nx := TRUE;\nEND_PROGRAM' };
+        const slowSource = { name: 'Slow.st', content: 'PROGRAM Slow\nVAR y : BOOL; END_VAR\ny := FALSE;\nEND_PROGRAM' };
         const result = compileMultiTaskProject(
             {
                 name: 'DebugOffsets', version: '1.0.0', tasks: [
@@ -1223,10 +1222,10 @@ describe('Multi-Task Compiler', () => {
         };
         const source = 'PROGRAM Motor VAR_INPUT Start AT %I0.0 : BOOL; END_VAR VAR_OUTPUT Forward AT %Q0.0 : BOOL; END_VAR Forward := Start; END_PROGRAM';
 
-        const physicalRef = compileMultiTaskProject(config, [{ name: 'Motor.st', content: source, language: 'ST' }]);
+        const physicalRef = compileMultiTaskProject(config, [{ name: 'Motor.st', content: source }]);
         const semanticRef = compileMultiTaskProject(
             { ...config, tasks: [{ ...config.tasks[0], programs: ['Motor'] }] },
-            [{ name: 'Motor', content: source, language: 'ST' }],
+            [{ name: 'Motor', content: source }],
         );
 
         expect(physicalRef.programDetails[0]?.name).toBe('Motor.st');
@@ -1247,8 +1246,8 @@ describe('Multi-Task Compiler', () => {
         };
 
         expect(() => compileMultiTaskProject(config, [
-            { name: 'Motor.st', content: 'PROGRAM Motor END_PROGRAM', language: 'ST' },
-            { name: 'Backup.st', content: 'PROGRAM motor END_PROGRAM', language: 'ST' },
+            { name: 'Motor.st', content: 'PROGRAM Motor END_PROGRAM' },
+            { name: 'Backup.st', content: 'PROGRAM motor END_PROGRAM' },
         ])).toThrow(/Duplicate PROGRAM name 'motor'/);
     });
 
@@ -1265,7 +1264,6 @@ describe('Multi-Task Compiler', () => {
             { 
                 name: 'Main', 
                 content: 'PROGRAM Main VAR x : BOOL; END_VAR x := TRUE; END_PROGRAM', 
-                language: 'ST' 
             },
         ];
 
@@ -1300,12 +1298,10 @@ describe('Multi-Task Compiler', () => {
             { 
                 name: 'Fast', 
                 content: 'PROGRAM Fast VAR x : BOOL; END_VAR x := TRUE; END_PROGRAM', 
-                language: 'ST' 
             },
             { 
                 name: 'Slow', 
                 content: 'PROGRAM Slow VAR y : INT; END_VAR y := 42; END_PROGRAM', 
-                language: 'ST' 
             },
         ];
 
@@ -1424,7 +1420,6 @@ describe('Multi-Task Compiler', () => {
             { 
                 name: 'Prog1', 
                 content: 'PROGRAM Prog1 END_PROGRAM', 
-                language: 'ST' 
             },
         ];
 
@@ -1458,8 +1453,8 @@ describe('Multi-Task Compiler', () => {
         };
         const artifacts = [
             compileToBinary(st).zplcFile,
-            compileMultiTaskProject(config, [{ name: 'Prog1', content: st, language: 'ST' }]).zplcFile,
-            compileSingleFileWithTask(st, 'ST', { taskName: 'Main', intervalMs: 50, priority: 3, programName: 'Prog1' }).zplcFile,
+            compileMultiTaskProject(config, [{ name: 'Prog1', content: st }]).zplcFile,
+            compileSingleFileWithTask(st, { taskName: 'Main', intervalMs: 50, priority: 3, programName: 'Prog1' }).zplcFile,
         ];
         for (const zplcFile of artifacts) {
             expect(new DataView(zplcFile.buffer, zplcFile.byteOffset).getUint32(28, true)).toBe(ZPLC_CONSTANTS.DRAFT_COUNTER);
@@ -1503,7 +1498,7 @@ describe('Multi-Task Compiler', () => {
                 programs: ['Main'],
             })),
         };
-        const source: ProgramSource[] = [{ name: 'Main', content: 'not valid ST', language: 'ST' }];
+        const source: ProgramSource[] = [{ name: 'Main', content: 'not valid ST' }];
 
         const compile = () => compileMultiTaskProject(config, source);
 
@@ -1532,7 +1527,7 @@ describe('Multi-Task Compiler', () => {
                 programs: ['Main'],
             })),
         };
-        const source: ProgramSource[] = [{ name: 'Main', content: 'PROGRAM Main END_PROGRAM', language: 'ST' }];
+        const source: ProgramSource[] = [{ name: 'Main', content: 'PROGRAM Main END_PROGRAM' }];
 
         expect(compileMultiTaskProject(config, source).tasks).toHaveLength(16);
     });
@@ -1550,7 +1545,6 @@ describe('Multi-Task Compiler', () => {
             { 
                 name: 'Handler', 
                 content: 'PROGRAM Handler END_PROGRAM', 
-                language: 'ST' 
             },
         ];
 
@@ -1572,7 +1566,6 @@ describe('Multi-Task Compiler', () => {
             { 
                 name: 'Prog1', 
                 content: 'PROGRAM Prog1 END_PROGRAM', 
-                language: 'ST' 
             },
         ];
 

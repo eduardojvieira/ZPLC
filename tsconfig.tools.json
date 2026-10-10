@@ -31,7 +31,5 @@
     "packages/zplc-hil/tests/**/*.ts",
     // Ambient declarations of the Studio that the sources above rely on without importing.
     "packages/zplc-ide/src/**/*.d.ts"
-  ],
-  // The example imports ../src/index, which does not exist; listed in tools/ci/typecheck-coverage.test.ts.
-  "exclude": ["packages/zplc-hil/tests/examples/hello.ts"]
+  ]
 }
