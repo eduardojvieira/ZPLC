@@ -7,6 +7,9 @@
   "VF-008": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"1 Open an existing folder","partial":true}
   ],
+  "VF-012": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_contract.c","test":"Checks on the generated binary contract tables (WP-11, VF-012)."}
+  ],
   "VF-016": [
     {"kind":"unit","ref":"tools/ci/ci-workflow.test.ts","test":"ci.yml triggers (VF-016)","partial":true,"note":"asserts the parsed workflow triggers; its own header says that a hosted run on the 2.0 branch is the only proof that GitHub honours them, and a green default branch and a recorded scheduled run are not shown by it"}
   ],
@@ -462,8 +465,8 @@
     {"kind":"unit","ref":"scripts/release-artifacts.test.mjs","test":"contains no paid credential, Developer ID, notarization or Windows certificate path (REL-003)","partial":true,"note":"asserts the text of the release workflow and packaging script by regular expression (VF-006, VF-021); the produced artifact is not inspected"}
   ],
   "REL-038": [
-    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"electron-builder.yml Windows signing (REL-003, REL-038)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"Windows installers carry unsigned in their variant until a channel is live (REL-038)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
+    {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"electron-builder.yml Windows signing (REL-003, REL-038)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"},
     {"kind":"unit","ref":"scripts/release-artifacts.test.mjs","test":"release notes give the Windows first-run steps, the Smart App Control statement and each channel state (REL-038)"}
   ],
   "REL-011": [
