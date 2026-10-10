@@ -128,6 +128,18 @@ error that names it; it never reaches the assembler.
 | `.DB v, v, ...` and `.BYTE` | Emits each value, from -128 to 255, as one byte at this place. A label after it is past the bytes. The loader verifies the code segment as instructions, so the bytes must decode as such. |
 | `.TAG addr type id value` | Adds a variable tag to the TAGS segment; the four numbers have to fit 16, 8, 8 and 32 bits. |
 
+## Build identity
+
+An artifact carries a build identity, and the debug map of the same build records
+it as `buildId`: the same 8 hexadecimal digits. Studio and the CLI use it when a
+map is attached to a program: a map whose identity is not the one of the program
+is refused, with both identities, and a program or a map without one is said to
+have none rather than matched. The identity is a function of the code and the
+task table, so two builds of the same project have the same one. The task table
+also records the evaluation-stack depth and the call depth of each task, which the
+build checks against the target; see the
+[instruction set](../runtime/isa.md#task-depth-and-build-identity).
+
 ## Artifact boundary
 
 The artifact is verified before runtime loading. A successful host compile does

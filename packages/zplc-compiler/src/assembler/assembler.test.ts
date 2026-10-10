@@ -294,8 +294,8 @@ describe('Error handling', () => {
 describe('ZPLC file format', () => {
     test('header is 32 bytes', () => {
         const result = assemble('HALT');
-        // Header (32) + Segment entry (8) + Code (1)
-        expect(result.zplcFile.length).toBe(32 + 8 + 1);
+        // Header (32) + segment entries for CODE and BUILD (16) + Code (1) + build identity (4)
+        expect(result.zplcFile.length).toBe(32 + 2 * 8 + 1 + 4);
     });
 
     test('magic number is correct', () => {
@@ -349,10 +349,10 @@ describe('ZPLC file format', () => {
         expect(view.getUint32(16, true)).toBe(3);  // code_size
     });
 
-    test('segment count is 1', () => {
+    test('segment count is 2: the code and the build identity', () => {
         const result = assemble('HALT');
         const view = new DataView(result.zplcFile.buffer);
-        expect(view.getUint16(26, true)).toBe(1);  // segment_count
+        expect(view.getUint16(26, true)).toBe(2);  // segment_count
     });
 
     test('crc32 is non-zero and verifiable', () => {
@@ -537,14 +537,14 @@ describe('Multi-Task Support', () => {
         // Check code_size (at offset 16)
         expect(view.getUint32(16, true)).toBe(2);  // bytecode length
 
-        // Check data_size (task segment size = 1 task * 16 bytes)
-        expect(view.getUint32(20, true)).toBe(16);
+        // Check data_size (task segment 1 task * 16 bytes + build identity 4 bytes)
+        expect(view.getUint32(20, true)).toBe(16 + 4);
 
         // Check entry_point (first task's entry)
         expect(view.getUint16(24, true)).toBe(0);
 
-        // Check segment_count = 2 (CODE + TASK)
-        expect(view.getUint16(26, true)).toBe(2);
+        // Check segment_count = 3 (CODE + TASK + BUILD)
+        expect(view.getUint16(26, true)).toBe(3);
     });
 
     test('createMultiTaskZplcFile generates correct segment table', () => {
@@ -566,6 +566,11 @@ describe('Multi-Task Support', () => {
         expect(view.getUint16(40, true)).toBe(ZPLC_CONSTANTS.SEGMENT_TYPE_TASK);
         expect(view.getUint16(42, true)).toBe(0);  // flags
         expect(view.getUint32(44, true)).toBe(16); // size = 1 task * 16 bytes
+
+        // Segment 3: BUILD
+        expect(view.getUint16(48, true)).toBe(ZPLC_CONSTANTS.SEGMENT_TYPE_BUILD);
+        expect(view.getUint16(50, true)).toBe(0);  // flags
+        expect(view.getUint32(52, true)).toBe(ZPLC_CONSTANTS.BUILD_ENTRY_SIZE);
     });
 
     test('createMultiTaskZplcFile generates correct task definitions', () => {
@@ -579,8 +584,8 @@ describe('Multi-Task Support', () => {
         const zplcFile = createMultiTaskZplcFile(bytecode, tasks);
         const view = new DataView(zplcFile.buffer);
 
-        // Task segment starts after: header (32) + 2 segment entries (16) + code (64)
-        const taskSegmentStart = 32 + 16 + 64;
+        // Task segment starts after: header (32) + 3 segment entries (24) + code (64)
+        const taskSegmentStart = 32 + 24 + 64;
 
         // Task 1 (16 bytes)
         expect(view.getUint16(taskSegmentStart + 0, true)).toBe(1);      // id
@@ -589,7 +594,8 @@ describe('Multi-Task Support', () => {
         expect(view.getUint32(taskSegmentStart + 4, true)).toBe(10000);  // interval_us
         expect(view.getUint16(taskSegmentStart + 8, true)).toBe(0);      // entry_point
         expect(view.getUint16(taskSegmentStart + 10, true)).toBe(64);    // stack_size
-        expect(view.getUint32(taskSegmentStart + 12, true)).toBe(0);     // reserved
+        expect(view.getUint16(taskSegmentStart + 12, true)).toBe(0);     // call_depth: not declared
+        expect(view.getUint16(taskSegmentStart + 14, true)).toBe(0);     // reserved
 
         // Task 2 (16 bytes, starts at taskSegmentStart + 16)
         const task2Offset = taskSegmentStart + 16;
@@ -610,8 +616,8 @@ describe('Multi-Task Support', () => {
 
         const zplcFile = createMultiTaskZplcFile(bytecode, tasks);
 
-        // Expected size: header (32) + 2 segments (16) + code (3) + 2 tasks (32) = 83
-        expect(zplcFile.length).toBe(32 + 16 + 3 + 32);
+        // Expected size: header (32) + 3 segments (24) + code (3) + 2 tasks (32) + build identity (4) = 95
+        expect(zplcFile.length).toBe(32 + 24 + 3 + 32 + 4);
     });
 
     test('createMultiTaskZplcFile includes TAGS segment when tags are provided', () => {
@@ -626,9 +632,11 @@ describe('Multi-Task Support', () => {
         const zplcFile = createMultiTaskZplcFile(bytecode, tasks, tags);
         const view = new DataView(zplcFile.buffer);
 
-        expect(view.getUint16(26, true)).toBe(3);
+        // CODE, TASK, TAGS and BUILD
+        expect(view.getUint16(26, true)).toBe(4);
         expect(view.getUint16(48, true)).toBe(ZPLC_CONSTANTS.SEGMENT_TYPE_TAGS);
         expect(view.getUint32(52, true)).toBe(ZPLC_CONSTANTS.TAG_ENTRY_SIZE);
+        expect(view.getUint16(56, true)).toBe(ZPLC_CONSTANTS.SEGMENT_TYPE_BUILD);
     });
 
     test('rejects task metadata that the task ABI cannot represent', () => {

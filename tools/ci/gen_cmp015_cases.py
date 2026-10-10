@@ -834,18 +834,13 @@ c = case("lreal-narrowed-to-real-is-reported", "An LREAL assigned to a REAL buil
          requirement="CMP-005", matrix=("data-types.lreal", "functions.implicit-widening-conversion"),
          note="IEC 61131-3 widens implicitly only; the narrowing is not refused (the bundled projects use it) but reported, as the integer narrowing is (CMP-005, CMP-016).")
 c.var("d : LREAL := 0.1;")
-c.var("big : LREAL := 1.0E300;")
 c.var("r AT %QD0 : REAL;")
 c.var("s AT %QD1 : REAL;")
 c.do("r := d;")
-c.do("s := big;")
+# 1.0E300 would round to an infinity as a REAL and the runner reads finite REAL cells only: the second value is d * 2.0
+c.do("s := d * 2.0;")
 c.dword = 2
 c.expect.append({"at": "%QD0", "type": "REAL", "value": f32(0.1)})
-# 1.0E300 rounds to an infinity as a REAL; the runner reads finite REAL cells only: read the bit pattern as UDINT
-c.stmts.pop()
-c.decls.pop()
-c.do("s := d * 2.0;")
-c.decls.append("s AT %QD1 : REAL;")
 c.expect.append({"at": "%QD1", "type": "REAL", "value": f32(0.2)})
 c.warn_on = ["r := d;", "s := d * 2.0;"]
 

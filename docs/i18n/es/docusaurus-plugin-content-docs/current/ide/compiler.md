@@ -134,6 +134,18 @@ error interno del compilador que la nombra; nunca llega al ensamblador.
 | `.DB v, v, ...` y `.BYTE` | Emite cada valor, de -128 a 255, como un byte en ese lugar. Una etiqueta posterior queda después de los bytes. El cargador verifica el segmento de código como instrucciones, así que los bytes deben decodificarse como tales. |
 | `.TAG addr tipo id valor` | Agrega una etiqueta de variable al segmento TAGS; los cuatro números deben caber en 16, 8, 8 y 32 bits. |
 
+## Identidad de compilación
+
+Un artefacto lleva una identidad de compilación, y el mapa de depuración de la misma
+compilación la registra como `buildId`: los mismos 8 dígitos hexadecimales. Studio y la CLI
+la usan cuando un mapa se asocia a un programa: se rechaza un mapa cuya identidad no es la del
+programa, mostrando ambas identidades, y un programa o un mapa sin identidad se dice que no
+la tiene en lugar de darlos por coincidentes. La identidad es una función del código y de la
+tabla de tareas, así que dos compilaciones del mismo proyecto tienen la misma. La tabla de
+tareas registra además la profundidad de la pila de evaluación y la de llamadas de cada
+tarea, que la compilación comprueba contra el destino; véase el
+[conjunto de instrucciones](../runtime/isa.md#profundidad-de-las-tareas-e-identidad-de-compilación).
+
 ## Límite del artefacto
 
 El artefacto se verifica antes de que el runtime lo cargue. Una compilación

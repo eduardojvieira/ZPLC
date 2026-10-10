@@ -86,7 +86,7 @@ REGION_FILES: dict[Path, list[str]] = {
         "version", "memory", "system-registers", "data-types", "opcodes",
         "container", "vm-status", "opcode-helpers",
     ],
-    INCLUDE / "zplc_loader.h": ["loader-errors", "loader-max-tasks"],
+    INCLUDE / "zplc_loader.h": ["loader-errors", "loader-max-tasks", "loader-verified-depth"],
     INCLUDE / "zplc_comm_dispatch.h": ["comm-kinds", "comm-status", "comm-blocks"],
     ROOT / "firmware/lib/zplc_core/src/core/zplc_debug.c": ["opcode-names", "error-names"],
 }
@@ -642,6 +642,11 @@ def region_loader_max_tasks(c: dict) -> list[str]:
     return [f"#define ZPLC_LOADER_MAX_TASKS {c['container']['maxTasks']['value']}U"]
 
 
+def region_loader_verified_depth(c: dict) -> list[str]:
+    depth = c["container"]["maxVerifiedDepth"]
+    return [f"/* {depth['doc']} */", f"#define ZPLC_VERIFY_MAX_DEPTH {depth['value']}"]
+
+
 def comm_blocks(c: dict) -> list[dict]:
     comm = c["comm"]
     kinds = {k["name"]: num(k["value"]) for k in comm["kinds"]["members"]}
@@ -764,6 +769,7 @@ REGION_BUILDERS = {
     "data-types": region_data_types, "opcodes": region_opcodes, "container": region_container,
     "vm-status": region_vm_status, "opcode-helpers": region_opcode_helpers,
     "loader-errors": region_loader_errors, "loader-max-tasks": region_loader_max_tasks,
+    "loader-verified-depth": region_loader_verified_depth,
     "comm-kinds": region_comm_kinds, "comm-status": region_comm_status, "comm-blocks": region_comm_blocks,
     "opcode-names": region_opcode_names, "error-names": region_error_names,
 }
@@ -826,6 +832,8 @@ def render_ts(c: dict) -> str:
         f"  iomapEntrySize: {structs['iomap']['size']},",
         f"  tagEntrySize: {structs['tag']['size']},",
         f"  maxTasks: {cont['maxTasks']['value']},",
+        f"  maxVerifiedDepth: {cont['maxVerifiedDepth']['value']},",
+        f"  buildEntrySize: {structs['build']['size']},",
         f"  crcOffset: {cont['crc']['offset']},",
         f"  crcSize: {cont['crc']['size']},",
         "} as const;",
@@ -1076,6 +1084,8 @@ def render_py(c: dict) -> str:
         f"IOMAP_ENTRY_SIZE = {structs['iomap']['size']}",
         f"TAG_ENTRY_SIZE = {structs['tag']['size']}",
         f"MAX_TASKS = {cont['maxTasks']['value']}",
+        f"MAX_VERIFIED_DEPTH = {cont['maxVerifiedDepth']['value']}",
+        f"BUILD_ENTRY_SIZE = {structs['build']['size']}",
         f"CRC_OFFSET = {cont['crc']['offset']}",
         f"CRC_SIZE = {cont['crc']['size']}",
         "",
@@ -1211,6 +1221,8 @@ DOC_TEXT = {
         "headerSize": "File header size (bytes)",
         "segmentSize": "Segment entry size (bytes)", "taskSize": "Task definition size (bytes)",
         "iomapSize": "I/O map entry size (bytes)", "tagSize": "Tag entry size (bytes)", "maxTasks": "Maximum tasks in an artifact",
+        "buildSize": "Build identity size (bytes)", "maxDepth": "Deepest evaluation stack the loader proves",
+        "depthNote": "A task that needs more is refused, whatever the target stack allows; the compiler fails the build above it.",
         "crc": "CRC32", "crcNote": "IEEE 802.3 polynomial {poly}, over the whole file except the 4 bytes at offset {off}.",
         "layout": "Layout of {name}", "offset": "Offset", "field": "Field", "type": "Type", "bytes": "Bytes", "description": "Description",
         "segments": "Segment types", "taskTypes": "Task types", "flags": "File header flags", "ioDirections": "I/O directions", "tagIds": "Tag identifiers",
@@ -1237,6 +1249,8 @@ DOC_TEXT = {
         "headerSize": "Tamaño de la cabecera del archivo (bytes)",
         "segmentSize": "Tamaño de la entrada de segmento (bytes)", "taskSize": "Tamaño de la definición de tarea (bytes)",
         "iomapSize": "Tamaño de la entrada del mapa de E/S (bytes)", "tagSize": "Tamaño de la entrada de etiqueta (bytes)", "maxTasks": "Máximo de tareas en un artefacto",
+        "buildSize": "Tamaño de la identidad de compilación (bytes)", "maxDepth": "Pila de evaluación más profunda que el loader demuestra",
+        "depthNote": "Una tarea que necesita más es rechazada, aunque la pila del destino lo permita; el compilador falla la compilación por encima.",
         "crc": "CRC32", "crcNote": "Polinomio IEEE 802.3 {poly}, sobre todo el archivo salvo los 4 bytes en el offset {off}.",
         "layout": "Layout de {name}", "offset": "Offset", "field": "Campo", "type": "Tipo", "bytes": "Bytes", "description": "Descripción",
         "segments": "Tipos de segmento", "taskTypes": "Tipos de tarea", "flags": "Flags de la cabecera", "ioDirections": "Direcciones de E/S", "tagIds": "Identificadores de etiqueta",
@@ -1290,6 +1304,8 @@ def render_docs(c: dict, lang: str) -> str:
         [t["iomapSize"], f"`{structs['iomap']['size']}`", ""],
         [t["tagSize"], f"`{structs['tag']['size']}`", ""],
         [t["maxTasks"], f"`{cont['maxTasks']['value']}`", ""],
+        [t["buildSize"], f"`{structs['build']['size']}`", ""],
+        [t["maxDepth"], f"`{cont['maxVerifiedDepth']['value']}`", t["depthNote"]],
         [t["crc"], f"`{cont['crc']['polynomial']}`",
          t["crcNote"].format(poly=cont["crc"]["polynomial"], off=cont["crc"]["offset"])],
     ]

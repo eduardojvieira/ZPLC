@@ -18,6 +18,7 @@ import {
     assertTaskProgramCardinality,
     compileToBinary,
     CompilerError,
+    debugMapMatchesArtifact,
     parse,
     ZPLC_CONSTANTS,
     type CompilationResult,
@@ -280,6 +281,17 @@ export function compileProject(content: string, language: PLCLanguage, options?:
         intermediateSTSource,
         transpileErrors: transpileErrors.length > 0 ? transpileErrors : undefined,
     };
+}
+
+/**
+ * What to do with a debug map that is about to be attached to a program (CMP-056): `refuse` when it belongs to
+ * another build, `warn` when it or the program carries no identity so the pair cannot be told, nothing when it
+ * is the map of this program. The sentence is for the console.
+ */
+export function judgeDebugMapAttachment(map: DebugMap, program: Uint8Array): { action: 'attach' | 'warn' | 'refuse'; message?: string } {
+    const verdict = debugMapMatchesArtifact(map, program);
+    if (verdict.ok) return { action: 'attach' };
+    return { action: verdict.reason === 'different-build' ? 'refuse' : 'warn', message: verdict.message };
 }
 
 function escapeRegExp(input: string): string {

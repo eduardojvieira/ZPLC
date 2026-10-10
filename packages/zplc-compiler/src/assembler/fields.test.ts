@@ -210,7 +210,7 @@ describe('every directive has its documented effect (CMP-060)', () => {
     test('.TAG records a variable tag in the TAGS segment, and takes exactly four numbers that fit', () => {
         const result = assemble('HALT\n.TAG 0x2000 4 2 100');
         expect(result.tags).toEqual([{ varAddr: 0x2000, varType: 4, tagId: 2, value: 100 }]);
-        expect(result.zplcFile.length).toBe(32 + 2 * 8 + 1 + 8);
+        expect(result.zplcFile.length).toBe(32 + 3 * 8 + 1 + 8 + 4);
         expect(failure('.TAG 1 2 3').message).toContain('.TAG');
         expect(failure('.TAG 1 2 3 4 5').message).toContain('.TAG');
         expect(failure('.TAG 0x10000 4 2 0').message).toContain('16-bit');

@@ -449,6 +449,23 @@ All notable changes are documented here.
   blocks, types and globals are part of the project; a declaration made twice
   names both files; a folder that is not listed is reported with
   `SOURCE_NOT_COMPILED`. The Tool API lists a library file with its `library`.
+- **ABI:** the draft counter is now 4 (CMP-050, CMP-056). A task definition has a
+  `call_depth` (the call frames it has active at once, its body included; 0 is
+  not declared) in the half of the word that was reserved, and an artifact has a
+  `BUILD` segment of 4 bytes, the build identity. The compiler measures the
+  evaluation-stack depth and the call depth of every task on the generated code,
+  with the stack effects of the opcode table, and records them in the task
+  definition where it used to write a fixed 64; the loader proves both, and a
+  task that needs more than it declares is refused. A task that needs a stack
+  deeper than 127 values (the loader's proof limit) or than the target holds, or
+  calls nested deeper than the call stack of the target, fails the build and the
+  message names the task, the depth and the limit. The conformance suite checks on
+  every artifact that lowering a declared depth by one makes the loader refuse
+  it. The identity is the CRC-32 of CODE and TASK, so two builds of a project
+  have the same one; the debug map records it as `buildId`, and Studio refuses to
+  attach a map to a program that has another. Programs built before are refused:
+  rebuild programs and reflash boards together. `restamp_artifacts.py` moved the
+  committed artifacts, and `fuzz:seed` rebuilt the seed corpus.
 
 ## 2.0.0-rc.3 - 2026-09-01
 

@@ -127,6 +127,10 @@ export interface CompilerMemoryProfile {
     workSize: number;
     retainSize: number;
     codeSizeMax: number;
+    /** Deepest evaluation stack the target holds; omitted is the default of the contract (CMP-050). */
+    stackMaxDepth?: number;
+    /** Deepest call stack the target holds; omitted is the default of the contract (CMP-050). */
+    callStackMax?: number;
 }
 
 export const DEFAULT_COMPILER_MEMORY_PROFILE: CompilerMemoryProfile = {
@@ -148,6 +152,13 @@ export function validateCompilerMemoryProfile(profile: CompilerMemoryProfile): C
     ];
     if (capacities.some(([value, maximum]) => !Number.isSafeInteger(value) || value <= 0 || value > maximum)) {
         throw new TagAdmissionError('Invalid target memory profile', 0, 0);
+    }
+    const depths: Array<[number | undefined, number]> = [
+        [profile.stackMaxDepth, MEMORY_LIMIT.stackMaxDepth],
+        [profile.callStackMax, MEMORY_LIMIT.callStackMax],
+    ];
+    if (depths.some(([value, maximum]) => value !== undefined && (!Number.isSafeInteger(value) || value <= 0 || value > maximum))) {
+        throw new TagAdmissionError('Invalid target stack depth in the memory profile', 0, 0);
     }
     return profile;
 }
@@ -5638,7 +5649,7 @@ function emitWStringLiteral(state: CodeGenState, expr: WStringLiteral): void {
     }
 }
 
-import { DATA_TYPE_ID, MEMORY_REGION, STRING_LAYOUT, TAG_ID } from '../contract.generated.ts';
+import { DATA_TYPE_ID, MEMORY_LIMIT, MEMORY_REGION, STRING_LAYOUT, TAG_ID } from '../contract.generated.ts';
 
 // ============================================================================
 // Bit access and exponentiation (CMP-032)

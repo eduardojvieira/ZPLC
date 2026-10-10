@@ -27,16 +27,12 @@
   ],
   "warnings": [
     {
-      "code": "UNUSED_VARIABLE",
-      "line": 4
+      "code": "IMPLICIT_NARROWING",
+      "line": 7
     },
     {
       "code": "IMPLICIT_NARROWING",
       "line": 8
-    },
-    {
-      "code": "IMPLICIT_NARROWING",
-      "line": 9
     }
   ]
 }
