@@ -796,6 +796,50 @@ describe('Canonical PROGRAM admission', () => {
             }
         }
     });
+
+    // RT-015: only cyclic tasks exist in this release, so the build says so before it produces an artifact
+    it('rejects an event-triggered or interrupt-triggered task at its definition in zplc.json (RT-015)', () => {
+        const program: ProgramSource[] = [{ name: 'Main', content: 'PROGRAM Main END_PROGRAM' }];
+        for (const trigger of ['event', 'interrupt']) {
+            const config = {
+                name: 'Events',
+                version: '1.0.0',
+                tasks: [
+                    { name: 'Fast', trigger: 'cyclic', interval: 10, programs: ['Main'] },
+                    { name: 'OnEvent', trigger, interval: 10, programs: ['Main'] },
+                ],
+            } as unknown as ZPLCProjectConfig;
+            let thrown: unknown;
+            try {
+                compileMultiTaskProject(config, program);
+            } catch (error) {
+                thrown = error;
+            }
+            expect(thrown).toBeInstanceOf(CompilerError);
+            const diagnostic = thrown as CompilerError;
+            // the project file and the field of the task, not a source file at line 0
+            expect(diagnostic.sourceRef).toBe('zplc.json');
+            expect(diagnostic.phase).toBe('codegen');
+            expect(diagnostic.detail).toContain("Task 'OnEvent'");
+            expect(diagnostic.detail).toContain('tasks[1].trigger');
+            expect(diagnostic.detail).toContain(`'${trigger}'`);
+            expect(diagnostic.detail).toContain('not supported in this release');
+            expect(diagnostic.detail).toContain("'cyclic'");
+            expect(diagnostic.detail).toContain("'freewheeling'");
+        }
+    });
+
+    it('keeps an unknown task trigger an invalid trigger, and names the supported ones', () => {
+        const config = {
+            name: 'Odd',
+            version: '1.0.0',
+            tasks: [{ name: 'Odd', trigger: 'sometimes', programs: ['Main'] }],
+        } as unknown as ZPLCProjectConfig;
+        const compile = () => compileMultiTaskProject(config, [{ name: 'Main', content: 'PROGRAM Main END_PROGRAM' }]);
+        expect(compile).toThrow(CompilerError);
+        expect(compile).toThrow(/Task 'Odd' has invalid trigger 'sometimes'/);
+        expect(compile).toThrow(/'cyclic'/);
+    });
 });
 
 // ============================================================================
@@ -1530,27 +1574,6 @@ describe('Multi-Task Compiler', () => {
         const source: ProgramSource[] = [{ name: 'Main', content: 'PROGRAM Main END_PROGRAM' }];
 
         expect(compileMultiTaskProject(config, source).tasks).toHaveLength(16);
-    });
-
-    it('handles event trigger type', () => {
-        const config: ZPLCProjectConfig = {
-            name: 'EventTask',
-            version: '1.0.0',
-            tasks: [
-                { name: 'EventHandler', trigger: 'event', priority: 0, programs: ['Handler'] },
-            ],
-        };
-
-        const sources: ProgramSource[] = [
-            { 
-                name: 'Handler', 
-                content: 'PROGRAM Handler END_PROGRAM', 
-            },
-        ];
-
-        const result = compileMultiTaskProject(config, sources);
-
-        expect(result.tasks[0].type).toBe(TASK_TYPE.EVENT);
     });
 
     it('uses default values for optional fields', () => {
