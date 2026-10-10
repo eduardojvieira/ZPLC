@@ -448,6 +448,7 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-040-case-integer-list.expect.json","test":"CMP-040 CASE with a list of integer labels"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-040-case-negative-label.expect.json","test":"CMP-040 CASE with a negative label"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-040-case-range.expect.json","test":"CMP-040 CASE with a range label"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-040-case-without-else-in-a-loop.expect.json","test":"CMP-040 CASE without ELSE inside a loop leaves nothing on the stack"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-040-overlapping-case-labels.expect.json","test":"CMP-040 overlapping CASE labels are rejected"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/control-flow.test.ts","test":"CASE labels (CMP-040 stopgap)","partial":true}
   ],
