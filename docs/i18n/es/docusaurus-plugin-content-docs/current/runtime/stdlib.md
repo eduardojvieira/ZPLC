@@ -188,18 +188,24 @@ Combina características de CTU y CTD.
 
 ## 8. Funciones de Cadenas (Strings)
 
+Las cadenas son buffers acotados: `STRING` tiene 80 caracteres, `STRING[n]` tiene `n`. Una asignación copia los caracteres que entran.
+
+Una función que arma una cadena (`CONCAT`, `LEFT`, `RIGHT`, `MID`, `INSERT`, `DELETE`, `REPLACE`) devuelve una cadena nueva y nunca modifica sus argumentos. Las posiciones empiezan en 1.
+
 - **LEN(s)**: Retorna la longitud actual (INT).
-- **CONCAT(s1, s2)**: Adjunta `s2` a `s1`.
-- **COPY(src, dst)**: Copia `src` a `dst`.
-- **CLEAR(s)**: Vacía la cadena a longitud 0.
-- **LEFT(s, n)**: Mantiene solo los `n` caracteres izquierdos de `s`.
-- **RIGHT(s, n)**: Mantiene solo los `n` caracteres derechos de `s`.
-- **MID(s, pos, n)**: Extrae `n` caracteres iniciando en la posición (1-based) `pos`.
+- **CONCAT(s1, s2)**: Retorna `s1` seguida de `s2`.
+- **COPY(src, dst)**: Copia `src` a `dst` (escribe en `dst`, como dice su nombre).
+- **CLEAR(s)**: Vacía la cadena a longitud 0 (escribe en `s`).
+- **LEFT(s, n)**: Retorna los `n` caracteres izquierdos de `s`.
+- **RIGHT(s, n)**: Retorna los `n` caracteres derechos de `s`.
+- **MID(s, pos, n)**: Retorna `n` caracteres de `s` desde la posición (1-based) `pos`.
 - **FIND(s1, s2)**: Retorna la posición de `s2` en `s1`, o 0 si no se encuentra.
-- **INSERT(s1, s2, pos)**: Inserta `s2` en `s1` en `pos`.
-- **DELETE(s, pos, n)**: Elimina `n` caracteres de `s` en `pos`.
-- **REPLACE(s1, s2, pos, n)**: Sobrescribe con `s2` los `n` caracteres en `s1` en la posición `pos`.
+- **INSERT(s1, s2, pos)**: Retorna `s1` con `s2` insertada después de su carácter número `pos` (`pos` 0 inserta al frente).
+- **DELETE(s, pos, n)**: Retorna `s` sin los `n` caracteres que empiezan en `pos`.
+- **REPLACE(s1, s2, pos, n)**: Retorna `s1` con los `n` caracteres que empiezan en `pos` reemplazados por `s2`.
 - **STRCMP(s1, s2)**: Comparación léxica (-1, 0, 1).
+
+En `MID`, `DELETE` y `REPLACE` la posición va antes de la cantidad. IEC 61131-3 escribe primero el largo (`MID(IN, L, P)`): un programa escrito con ese orden debe intercambiar los dos argumentos.
 
 ---
 

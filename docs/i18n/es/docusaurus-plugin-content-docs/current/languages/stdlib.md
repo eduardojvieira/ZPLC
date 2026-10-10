@@ -40,12 +40,16 @@ La superficie actual de strings en `stdlib/strings.ts` incluye:
 | `LEN(STR)` | devuelve la longitud | `LEN('ABC')` -> 3 |
 | `LEFT(STR, N)` | primeros N caracteres | `LEFT('HELLO', 2)` -> 'HE' |
 | `RIGHT(STR, N)` | últimos N caracteres | `RIGHT('HELLO', 2)` -> 'LO' |
-| `MID(STR, L, P)` | L caracteres desde P | `MID('HELLO', 2, 2)` -> 'EL' |
+| `MID(STR, P, N)` | N caracteres desde P | `MID('HELLO', 2, 3)` -> 'ELL' |
 | `CONCAT(S1, S2)` | concatena dos strings | `CONCAT('A', 'B')` -> 'AB' |
-| `INSERT(S1, S2, P)` | inserta S2 en S1 | `INSERT('AB', 'X', 1)` -> 'AXB' |
-| `DELETE(S1, L, P)` | elimina L caracteres desde P | `DELETE('HELLO', 2, 2)` -> 'HLO' |
-| `REPLACE(S1, S2, L, P)` | reemplaza caracteres | |
+| `INSERT(S1, S2, P)` | inserta S2 en S1 después del carácter P | `INSERT('AB', 'X', 1)` -> 'AXB' |
+| `DELETE(S1, P, N)` | elimina N caracteres desde P | `DELETE('HELLO', 2, 2)` -> 'HLO' |
+| `REPLACE(S1, S2, P, N)` | reemplaza N caracteres desde P por S2 | `REPLACE('HELLO', 'AB', 2, 3)` -> 'HABO' |
 | `FIND(S1, S2)` | busca S2 dentro de S1 | `FIND('HELLO', 'L')` -> 3 |
+
+Ninguna de estas modifica sus argumentos: cada una devuelve una cadena nueva. En `MID`,
+`DELETE` y `REPLACE` la posición va antes de la cantidad; IEC 61131-3 escribe primero el
+largo, así que un programa escrito con ese orden debe intercambiar los dos argumentos.
 
 Funciones utilitarias adicionales del mismo archivo:
 

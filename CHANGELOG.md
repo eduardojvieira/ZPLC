@@ -16,6 +16,33 @@ All notable changes are documented here.
   `BYTE`/`WORD`, compound and fractional `TIME` literals and `TIME` over 24.8
   days; 64-bit multiply, divide, modulo and shifts are now build errors
   instead of wrong code.
+- The compiler stores and reads structure members, function-block members,
+  enumerations and array elements at their declared width (a `DINT` member was
+  read as one byte), copies whole structures and arrays, passes them to
+  functions by value, and accepts structure initialisers `(x := 1)`, array
+  initialisers with lists and repeat counts, negative and constant array
+  bounds, arrays of structures and of `LINT`, `STRING[n]` and `Type#Value`.
+- Every variable holds its declared initial value at the first scan, including
+  `VAR_GLOBAL`, function-block members, structure fields and array elements.
+  Function locals and `VAR_TEMP` are written again on every call, so a function
+  holds no state. `VAR CONSTANT` and `VAR_GLOBAL CONSTANT` hold their value and
+  an assignment to a constant is a build error.
+- A `VAR_IN_OUT` of a function block is now passed by reference: the member
+  holds the address of the caller's variable (4 bytes), and a block called
+  without binding it faults. Rebuild programs that declare one.
+- A constant array index outside the bounds is a build error and a variable
+  index outside them ends the scan with the VM fault `OUT_OF_BOUNDS` (on by
+  default; the option `arrayBoundsCheck: false` removes the check). `REF_TO`,
+  `REF()` and `^` are type-checked, a `REF_TO` variable is `NULL` (`0xFFFF`)
+  until it is assigned, and dereferencing it faults.
+- String functions no longer modify their arguments: `LEFT`, `RIGHT`, `MID`,
+  `CONCAT`, `INSERT`, `DELETE` and `REPLACE` return a new string, and `INSERT`,
+  `DELETE`, `REPLACE`, `MID` and `FIND` now do what their names say. A string
+  assignment copies the characters instead of storing the address of the
+  literal, and a literal longer than the capacity is a build error. The
+  position comes before the count in `MID`, `DELETE` and `REPLACE` (IEC 61131-3
+  writes the length first); `WSTRING` supports declaration, initial values,
+  assignment and `LEN`.
 
 ## 2.0.0-rc.3 - 2026-09-01
 

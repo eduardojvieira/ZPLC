@@ -43,12 +43,16 @@ The current string surface in `stdlib/strings.ts` includes:
 | `LEN(STR)` | Returns length of string | `LEN('ABC')` -> 3 |
 | `LEFT(STR, N)` | First N characters | `LEFT('HELLO', 2)` -> 'HE' |
 | `RIGHT(STR, N)` | Last N characters | `RIGHT('HELLO', 2)` -> 'LO' |
-| `MID(STR, L, P)` | L chars starting at P | `MID('HELLO', 2, 2)` -> 'EL' |
+| `MID(STR, P, N)` | N chars starting at P | `MID('HELLO', 2, 3)` -> 'ELL' |
 | `CONCAT(S1, S2)` | Join two strings | `CONCAT('A', 'B')` -> 'AB' |
-| `INSERT(S1, S2, P)` | Insert S2 into S1 at P | `INSERT('AB', 'X', 1)` -> 'AXB' |
-| `DELETE(S1, L, P)` | Delete L chars at P | `DELETE('HELLO', 2, 2)` -> 'HLO' |
-| `REPLACE(S1, S2, L, P)` | Replace L chars at P with S2 | |
+| `INSERT(S1, S2, P)` | Insert S2 into S1 after the P-th char | `INSERT('AB', 'X', 1)` -> 'AXB' |
+| `DELETE(S1, P, N)` | Delete N chars starting at P | `DELETE('HELLO', 2, 2)` -> 'HLO' |
+| `REPLACE(S1, S2, P, N)` | Replace N chars starting at P with S2 | `REPLACE('HELLO', 'AB', 2, 3)` -> 'HABO' |
 | `FIND(S1, S2)` | Find position of S2 in S1 | `FIND('HELLO', 'L')` -> 3 |
+
+None of these changes its arguments: each returns a new string. In `MID`, `DELETE` and
+`REPLACE` the position comes before the count; IEC 61131-3 writes the length first, so a
+program written to that order must swap the two arguments.
 
 Additional utility string functions in the same file include:
 
