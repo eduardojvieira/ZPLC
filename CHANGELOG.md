@@ -4,6 +4,16 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- The project tree lists the project's function blocks, functions and data
+  types, and a library folder makes its blocks available to every editor
+  (IDE-023). Under the file tree the Explorer shows the declarations that the
+  Structured Text files of `src` and of the library folders declare, grouped
+  under their file; choosing one opens the file at its name. **Library
+  folder...** names a folder in `zplc.json` under `libraries`, and the blocks
+  of its files appear in the Declarations list, in the FBD and LD palettes and
+  in the completion and hover of ST. The build still reads only `src`
+  (CMP-046 builds libraries; `libraries` is the interface it reads). The palettes
+  now list the blocks of the files of `src` whether or not they are open.
 - A project exports to one archive and imports back into an equivalent project
   (IDE-022). **Export Project Archive** (Build options) writes a zip of the
   project files that is the same bytes on every machine (entries sorted by

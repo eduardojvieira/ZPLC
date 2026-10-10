@@ -28,8 +28,10 @@ llama al bloque con argumentos por nombre, de modo que el orden en que se conect
   FBD o ST.
 - Un bloque que ningún archivo declara se rechaza por su nombre al compilar el diagrama. Una declaración del proyecto
   tiene prioridad sobre un bloque estándar del mismo nombre, como en el compilador.
-- La paleta lista los archivos que están cargados en el editor; la compilación lee todos los archivos Structured Text
-  del proyecto.
+- La paleta lista los bloques de los archivos Structured Text de `src`, de los archivos de una carpeta de biblioteca
+  (vea [Declaraciones y carpetas de biblioteca](./features.md#declaraciones-y-carpetas-de-biblioteca)) y de cualquier
+  archivo abierto en el editor. La compilación lee los archivos de `src`; que lea una carpeta de biblioteca es trabajo
+  del compilador, CMP-046.
 
 ## Ruta de compilación
 

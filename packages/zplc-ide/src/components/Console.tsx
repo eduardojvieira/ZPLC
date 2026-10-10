@@ -43,7 +43,7 @@ import { LIVE_NATIVE_OUTPUT_MAX_AGE_MS, describeVmError, presentLiveNativeMotorC
 import { NativeAdapter } from '../runtime/nativeAdapter';
 import { claimMotorInputCommand, shouldClearMotorInputFailure } from './liveNativeMotorPanel';
 import { presentWorkspaceSafetyCheck, type WorkspaceSafetyPresentation } from './workspaceSafetyPresentation';
-import { Sidebar } from './Sidebar';
+import { ProjectExplorer } from './ProjectExplorer';
 import { ErrorBoundary } from './ErrorBoundary';
 import { DevFaultProbe } from './DevFaultProbe';
 import { WorkbenchInspector } from './WorkbenchInspector';
@@ -683,7 +683,7 @@ export function Console({ debugController }: ConsoleProps) {
           </div>
         )}
 
-        {activeConsoleTab === 'explorer' && <Sidebar />}
+        {activeConsoleTab === 'explorer' && <ProjectExplorer />}
 
         {activeConsoleTab === 'inspector' && <WorkbenchInspector />}
 

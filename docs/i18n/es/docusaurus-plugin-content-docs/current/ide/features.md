@@ -66,6 +66,36 @@ Un cambio hecho fuera de Studio se detecta mientras hay un proyecto abierto. Un 
 
 Nivel de evidencia: host. `packages/zplc-ide/src/project/treeOperations.test.ts`, `src/store/useIDEStore.test.ts` (operaciones del árbol, sobre el servicio de proyecto real en una carpeta temporal), `src/store/externalChanges.test.ts`, `electron/projectWatcher.test.ts` y `electron/projectFiles.test.ts` cubren las reglas, y los recorridos 23 (operaciones del árbol del proyecto) y 24 (cambios hechos fuera de Studio) de `bun run test:journeys` manejan la aplicación real.
 
+## Declaraciones y carpetas de biblioteca
+
+Bajo el árbol de archivos, el Explorer lista las declaraciones del proyecto: los programas, bloques de función,
+funciones, interfaces y tipos de datos que declaran sus archivos Structured Text, agrupados bajo su archivo. Elegir una
+abre su archivo con el cursor en su nombre. La lista cubre los archivos que lee la compilación (directamente en `src`)
+y los archivos de las carpetas de biblioteca, estén abiertos o no, y sigue lo que usted escribe.
+
+Una **carpeta de biblioteca** es una carpeta del proyecto cuyos archivos Structured Text ofrece cada editor:
+**Library folder...** en la sección Declarations agrega una, y su **x** la quita. La elección se escribe en
+`zplc.json`:
+
+```json
+{ "libraries": ["lib", "vendor/acme"] }
+```
+
+Las rutas son relativas a la carpeta del proyecto, con `/`. Las declaraciones de una biblioteca aparecen en la lista de
+Declarations, en las paletas de los editores FBD y LD (el grupo **Project**) y en el autocompletado y el hover del
+editor ST. Una carpeta de biblioteca que se renombra o se elimina queda en la lista, marcada "not in the project",
+hasta que usted la quita. Un proyecto que espera que se aplique su migración de versión 1 no puede cambiar sus
+bibliotecas hasta que se aplique.
+
+Límite: la compilación sigue leyendo solo los archivos directamente en `src`. Compilar una carpeta de biblioteca dentro
+del programa es el trabajo de compilador CMP-046 (el campo de arriba es la interfaz que lee), así que un programa que
+usa un bloque de una biblioteca compila hoy solo si el archivo del bloque también está en `src`.
+
+Nivel de evidencia: host. `src/project/projectDeclarations.test.ts`, `src/project/libraries.test.ts`,
+`src/store/projectSources.test.ts` y `src/components/stLanguageService.project.test.ts` cubren el modelo, las fuentes y
+los servicios del editor; el recorrido 28 de `bun run test:journeys` agrega una biblioteca en la aplicación real y
+comprueba el árbol, la paleta de Ladder y el cursor.
+
 ## Archivos de proyecto
 
 **Export Project Archive** (menú Build options) escribe el proyecto abierto en un solo archivo, un zip, que usted elige

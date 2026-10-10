@@ -66,6 +66,34 @@ A change made outside Studio is picked up while a project is open. A file withou
 
 Evidence level: host. `packages/zplc-ide/src/project/treeOperations.test.ts`, `src/store/useIDEStore.test.ts` (project tree operations, over the real project service on a temporary folder), `src/store/externalChanges.test.ts`, `electron/projectWatcher.test.ts` and `electron/projectFiles.test.ts` cover the rules, and journeys 23 (project tree operations) and 24 (changes made outside Studio) of `bun run test:journeys` drive the real application.
 
+## Declarations and library folders
+
+Under the file tree, the Explorer lists the declarations of the project: the programs, function blocks, functions,
+interfaces and data types that its Structured Text files declare, grouped under their file. Choosing one opens its file
+with the cursor on its name. The list covers the files the build reads (directly in `src`) and the files of the
+library folders, open or not, and it follows what you type.
+
+A **library folder** is a folder of the project whose Structured Text files every editor offers: **Library folder...**
+in the Declarations section adds one, and its **x** takes it away. The choice is written to `zplc.json`:
+
+```json
+{ "libraries": ["lib", "vendor/acme"] }
+```
+
+The paths are relative to the project folder, with `/`. The declarations of a library appear in the Declarations list,
+in the palettes of the FBD and LD editors (the **Project** group) and in the completion and hover of the ST editor.
+A library folder that is renamed or deleted stays in the list, marked "not in the project", until you remove it. A
+project that is waiting for its version 1 migration to be applied cannot change its libraries until it is.
+
+Limit: the build still reads only the files directly in `src`. Building a library folder into the program is the
+compiler work CMP-046 (the field above is the interface it reads), so a program that uses a block of a library compiles
+today only when the block's file is also in `src`.
+
+Evidence level: host. `src/project/projectDeclarations.test.ts`, `src/project/libraries.test.ts`,
+`src/store/projectSources.test.ts` and `src/components/stLanguageService.project.test.ts` cover the model, the sources
+and the editor services; journey 28 of `bun run test:journeys` adds a library in the real application and checks the
+tree, the Ladder palette and the cursor.
+
 ## Project archives
 
 **Export Project Archive** (the Build options menu) writes the open project to one file, a zip, that you choose in the

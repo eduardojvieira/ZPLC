@@ -31,6 +31,7 @@ import { workspaceLayoutFrom } from './utils/sessionState';
 import { startSessionPersistence } from './store/sessionPersistence';
 import { startRecoveryPersistence } from './store/recoveryPersistence';
 import { startAutosave } from './store/autosave';
+import { trackProjectSources } from './store/projectSources';
 import { startExternalChangeWatch } from './store/externalChangeWatch';
 import { initializeSettings, useAppSettings } from './store/useAppSettings';
 import { describeUpdateCheck, runUpdateCheck } from './ipc/updateCheckBridge';
@@ -82,6 +83,9 @@ function App() {
 
   // The open project's tabs, cursors and panel split are saved as they change (IDE-008).
   useEffect(() => startSessionPersistence(useIDEStore), []);
+
+  // The declarations of the project's files and library folders, for the tree and the editors (IDE-023).
+  useEffect(() => trackProjectSources(useIDEStore), []);
 
   // A change made outside Studio reloads an unmodified file and asks about a modified one (IDE-004).
   useEffect(() => startExternalChangeWatch(), []);

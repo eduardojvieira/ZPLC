@@ -1309,4 +1309,55 @@ export const JOURNEYS: Journey[] = [
       assert(disk(join(project, 'src', 'main.st')) === 'PROGRAM Main\nEND_PROGRAM\n', 'The migration changed a program.');
     },
   },
+
+  {
+    name: '28 Declarations in the tree, and a library folder offered to every editor', example: 'motor_start_stop', proves: [], partly: ['IDE-023'],
+    run: async (app, { project }) => {
+      mkdirSync(join(project, 'lib'));
+      const library = ['(* A library file: the block of the project that the palettes and the completion offer. *)', 'FUNCTION_BLOCK Debounce', 'VAR_INPUT', '  Raw : BOOL;', 'END_VAR', 'VAR_OUTPUT', '  Clean : BOOL;', 'END_VAR', 'Clean := Raw;', 'END_FUNCTION_BLOCK', ''].join('\n');
+      writeFileSync(join(project, 'lib', 'Debounce.st'), library);
+      writeFileSync(join(project, 'src', 'boiler.ld'), JSON.stringify({ name: 'boiler', version: '1.0.0', variables: { local: [], inputs: [], outputs: [] }, rungs: [], metadata: {} }));
+      const declarations = css('[data-project-declarations]');
+      const declaration = (name: string): Target => css(`[data-declaration="${name}"]`);
+      const toolbox = `[...document.querySelectorAll('h2')].find((heading) => heading.textContent === 'Toolbox')?.parentElement`;
+
+      // The tree lists what the files of src declare, grouped under their file, before any library exists.
+      await openFolder(app, project);
+      await app.click(tab('Explorer', 'exact'));
+      await app.until('the declarations of the project', async () => await app.visible(declaration('Motor')) || undefined);
+      assert(await app.visible(declarations) && !await app.visible(declaration('Debounce')), 'A file outside src and the libraries was listed.');
+      const group = await app.eval<string>(`document.querySelector('[data-declaration-file="src/Motor.st"]')?.innerText ?? ''`);
+      assert(group.includes('src/Motor.st') && group.includes('Motor'), `The declarations are not grouped under their file: ${JSON.stringify(group)}`);
+
+      // The block of the library is not in the palette of the Ladder editor yet.
+      await clickTreeFile(app, 'src/boiler.ld');
+      await app.until('the Ladder toolbox', async () => await app.eval<boolean>(`Boolean(${toolbox})`) || undefined);
+      assert(!await app.eval<boolean>(`${toolbox}.innerText.includes('Debounce')`), 'The palette offered a block that no library or src file declares.');
+
+      // Adding the folder as a library: zplc.json names it, the tree lists the block, and the palette offers it.
+      await app.click(tab('Explorer', 'exact'));
+      await app.click(button('Add library folder'), 'the Add library folder button');
+      await app.until('the library dialog', async () => await app.visible(css('[data-library-dialog]')) || undefined);
+      await app.eval(`document.getElementById('library-folder').focus()`);
+      const folders = await app.eval<string[]>(`[...document.getElementById('library-folder').options].map((option) => option.value)`);
+      const at = folders.indexOf('lib');
+      assert(at >= 0, `The dialog does not offer the folder: ${JSON.stringify(folders)}`);
+      const current = await app.eval<number>(`document.getElementById('library-folder').selectedIndex`);
+      for (let step = 0; step < Math.abs(at - current); step++) await app.press(at > current ? 'ArrowDown' : 'ArrowUp');
+      await app.click(button('Add library'), 'the Add library button');
+      await app.until('zplc.json to name the library', () => (JSON.parse(disk(join(project, 'zplc.json'))) as { libraries?: string[] }).libraries?.join() === 'lib' || undefined);
+      await app.until('the block of the library in the tree', async () => await app.visible(declaration('Debounce')) || undefined);
+      await app.until('the block of the library in the Ladder palette', async () => await app.eval<boolean>(`${toolbox}?.innerText.includes('Debounce') === true`) || undefined);
+
+      // Activating a declaration opens its file with the cursor on it.
+      await app.click(declaration('Debounce'), 'the Debounce declaration');
+      await app.until('Debounce.st in the editor, the cursor on the block', async () => (await editorText(app)).includes('FUNCTION_BLOCK Debounce') && (await editorView(app)).line === 2 || undefined);
+
+      // Taking the library away takes the block away from the tree and the palette.
+      await app.click(tab('Explorer', 'exact'));
+      await app.click(button('Remove library lib'), 'Remove library lib');
+      await app.until('the block gone from the tree', async () => !await app.visible(declaration('Debounce')) || undefined);
+      assert((JSON.parse(disk(join(project, 'zplc.json'))) as { libraries?: string[] }).libraries?.length === 0, 'zplc.json still names the library.');
+    },
+  },
 ];
