@@ -619,7 +619,7 @@ function emitVariableSection(lines: string[], section: 'VAR' | 'VAR_INPUT' | 'VA
   lines.push(section);
   for (const variable of variables) {
     const address = variable.address ? ` AT ${variable.address}` : '';
-    const initialValue = variable.initialValue !== undefined ? ` := ${formatValue(variable.initialValue, variable.type)}` : '';
+    const initialValue = variable.initialValue !== undefined && variable.initialValue !== null ? ` := ${formatValue(variable.initialValue, variable.type)}` : '';
     const comment = variable.comment ? ` (* ${variable.comment} *)` : '';
     lines.push(`    ${variable.name}${address} : ${variable.type}${initialValue};${comment}`);
   }

@@ -356,7 +356,8 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/compiler/il/il.test.ts","test":"IL accumulator types (LNG-019)"}
   ],
   "LNG-020": [
-    {"kind":"conformance","ref":"conformance/lng/lng-020-il-load-and-store.expect.json","test":"LNG-020 IL loads, combines and stores a BOOL"}
+    {"kind":"conformance","ref":"conformance/lng/lng-020-il-load-and-store.expect.json","test":"LNG-020 IL loads, combines and stores a BOOL"},
+    {"kind":"conformance","ref":"conformance/lng/lng-020-il-remaining-operators.expect.json","test":"LNG-020 IL XOR, XORN, NOT, EQ, NE, GE, LE, MOD, NEG, CAL, JMP and RET"}
   ],
   "LNG-021": [
     {"kind":"conformance","ref":"conformance/lng/lng-021-ld-counter-output-powers-the-coil.expect.json","test":"LNG-021 LD coil after a counter follows the counter output"},

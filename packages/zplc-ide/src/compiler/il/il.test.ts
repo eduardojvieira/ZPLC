@@ -281,7 +281,7 @@ describe('IL transpiler errors (LNG-002, LNG-017, LNG-018)', () => {
 
     it('rejects a call of something that is not a function block, and a parameter the block does not have', () => {
         const notBlock = il('    CAL N');
-        expect(rejected(notBlock).errors).toEqual([`IL line ${lineOf(notBlock, 'CAL N')}: 'N' is a INT, not a function block instance`]);
+        expect(rejected(notBlock).errors).toEqual([`IL line ${lineOf(notBlock, 'CAL N')}: 'N' is of type INT, not a function block instance`]);
         const noParam = il('    CAL T1(Nope := TRUE)', 'T1 : TON;');
         expect(rejected(noParam).errors).toEqual([`IL line ${lineOf(noParam, 'CAL T1')}: 'Nope' is not an input of TON 'T1'`]);
     });

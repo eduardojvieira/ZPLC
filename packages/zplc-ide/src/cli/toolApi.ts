@@ -409,8 +409,9 @@ function safetyLoopDiagnostics(workspace: WorkspaceProject): ToolDiagnostic[] {
     const path = source.sourceRef;
     if (!path || seenSourcePaths.has(path) || source.language === 'IL') continue;
     seenSourcePaths.add(path);
-    const transpiled = source.language === 'ST' ? { success: true, source: source.content } : transpileToST(source.content, source.language);
-    if (!transpiled.success) throw new CompilerError('Transpilation failed', 0, 0, 'parser', path);
+    const transpiled = source.language === 'ST' ? { success: true, source: source.content, errors: [] as string[], line: undefined } : transpileToST(source.content, source.language);
+    // The same message as Build gives for the same source (CMP-010): it names the element that cannot be translated
+    if (!transpiled.success) throw new CompilerError(`Transpilation of '${source.name}' failed: ${transpiled.errors.join('; ')}`, transpiled.line ?? 0, 0, 'parser', path);
     const unit = parse(transpiled.source);
     const includeLine = source.language === 'ST';
     for (const program of unit.programs) collectUnboundedLoopDiagnostics(program.statements, path, includeLine, diagnostics);

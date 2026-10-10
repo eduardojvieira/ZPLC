@@ -13,7 +13,7 @@
  *    nothing is replaced by a comment or by a constant
  */
 
-import { getFB } from '@zplc/compiler';
+import { getFB, parseIOAddress } from '@zplc/compiler';
 import type { FBDModel, FBDBlock, FBDConnection } from '../models/fbd';
 import { isFunctionBlock, isLogicGate, isComparison, isMathOperator, validateFBDModel } from '../models/fbd';
 
@@ -109,6 +109,10 @@ export function transpileFBDToST(model: FBDModel): TranspileResult {
       errors.push(`FBD block '${block.id}' (${block.type}): ${message}`);
     };
     const failed = (): TranspileResult => ({ success: false, source: '', errors: [...new Set(errors)] });
+
+    // Names, comments and values reach the Structured Text as text: they have to be what they say
+    for (const message of validateText(validatedModel)) errors.push(message);
+    if (errors.length > 0) return failed();
 
     // Every block has to be one the transpiler translates
     const kinds = new Map<string, Kind>();
@@ -316,7 +320,8 @@ export function transpileFBDToST(model: FBDModel): TranspileResult {
         }
 
         case 'modbus': {
-          const target = block.variableName || `${block.id}_mb`;
+          if (!block.variableName) { fail(block, 'it has no variable name to bind to the Modbus address'); return ''; }
+          const target = block.variableName;
           const en = required(block, 'EN');
           const inputSource = required(block, 'IN');
           const addr = required(block, 'ADDR');
@@ -653,6 +658,42 @@ function outputType(block: FBDBlock, portName: string): string | undefined {
 }
 
 // =============================================================================
+// Text that reaches the generated source
+// =============================================================================
+
+const IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/;
+const REFERENCE = /^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$/;
+const TYPE_TEXT = /^[A-Za-z_][A-Za-z0-9_\s[\].,()]*$/;
+const COMMENT_DELIMITER = /\(\*|\*\)/;
+
+/** The model's names, types, comments and constants, as the problems that would make the source wrong. */
+function validateText(model: FBDModel): string[] {
+  const problems: string[] = [];
+  const sections: Array<[string, FBDModel['variables']['local']]> = [
+    ['local', model.variables.local], ['input', model.variables.inputs ?? []], ['output', model.variables.outputs],
+  ];
+  for (const [section, variables] of sections) {
+    for (const v of variables) {
+      const label = `FBD ${section} variable '${String(v.name)}'`;
+      if (typeof v.name !== 'string' || !IDENTIFIER.test(v.name)) problems.push(`${label}: the name is not an identifier`);
+      if (typeof v.type !== 'string' || !TYPE_TEXT.test(v.type) || COMMENT_DELIMITER.test(v.type)) problems.push(`${label}: the type '${String(v.type)}' is not a type name`);
+      if (v.comment !== undefined && (typeof v.comment !== 'string' || COMMENT_DELIMITER.test(v.comment))) problems.push(`${label}: the comment must not contain ST comment delimiters`);
+      if (v.address !== undefined) {
+        try { parseIOAddress(String(v.address)); } catch (error) { problems.push(`${label}: ${error instanceof Error ? error.message : String(error)}`); }
+      }
+    }
+  }
+  for (const block of model.blocks) {
+    const label = `FBD block '${block.id}' (${block.type})`;
+    if (block.comment !== undefined && (typeof block.comment !== 'string' || COMMENT_DELIMITER.test(block.comment))) problems.push(`${label}: the comment must not contain ST comment delimiters`);
+    if (block.instanceName !== undefined && (typeof block.instanceName !== 'string' || !IDENTIFIER.test(block.instanceName))) problems.push(`${label}: the instance name '${String(block.instanceName)}' is not an identifier`);
+    if (block.variableName !== undefined && (typeof block.variableName !== 'string' || !REFERENCE.test(block.variableName))) problems.push(`${label}: the variable name '${String(block.variableName)}' is not a variable`);
+    if (block.type === 'constant' && (block.value === undefined || block.value === null || typeof block.value === 'object')) problems.push(`${label}: it has no value`);
+  }
+  return problems;
+}
+
+// =============================================================================
 // Helpers
 // =============================================================================
 
@@ -667,7 +708,7 @@ function formatValue(value: unknown, dataType: string): string {
     // TIME literals
     if (value.startsWith('T#')) return value;
     // String literals
-    return `'${value}'`;
+    return `'${value.replaceAll("'", "''")}'`;
   }
 
   if (typeof value === 'number') {

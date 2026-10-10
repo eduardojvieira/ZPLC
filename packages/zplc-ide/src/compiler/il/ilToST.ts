@@ -404,7 +404,9 @@ export function transpileILToST(program: ILProgram, options: ILTranspileOptions 
                     const callee = operandType(instr.operand, instr.line, true);
                     if (callee === undefined) break;
                     if (!isFunctionBlockType(callee, symbols)) {
-                        fail(instr.line, `'${instr.operand.value}' is a ${callee}, not a function block instance`);
+                        fail(instr.line, ELEMENTARY_TYPES.has(callee)
+                            ? `'${instr.operand.value}' is of type ${callee}, not a function block instance`
+                            : `'${instr.operand.value}' is of type ${callee}, which is not a function block the transpiler knows (a user function block has to be declared in a file of the project)`);
                         break;
                     }
                     for (const param of instr.fbParams ?? []) {

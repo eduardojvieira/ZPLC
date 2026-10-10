@@ -1161,6 +1161,13 @@ describe('SFC scan semantics (LNG-024, LNG-025, LNG-002)', () => {
     expect(rejected(withAction({ qualifier: 'P', time: 'T#1s' }))).toEqual(["Step 'a' P action qualifier does not support time"]);
   });
 
+  it('declares a variable whose initial value is null without an initializer', () => {
+    const result = transpileSFCToST(chart({ variables: { local: [{ name: 'Flag', type: 'BOOL', initialValue: null }], outputs: [{ name: 'Out', type: 'INT' }] } }));
+    expect(result.success).toBe(true);
+    expect(result.source).toContain('Flag : BOOL;');
+    expect(result.source).not.toMatch(/Flag : BOOL :=/);
+  });
+
   it('reads .X and .T of a step in conditions and in action bodies, by name or id, and refuses to assign them', () => {
     const result = transpileSFCToST(chart({
       transitions: [{ id: 'bc', fromStep: 'b', toStep: 'c', condition: "b.X AND B.T >= T#1s AND Name = 'b.T'" }],
@@ -1278,6 +1285,23 @@ describe('FBD wiring and types (LNG-023, LNG-002)', () => {
     expect(result.success).toBe(true);
     expect(result.source).toMatch(/VAR_INPUT\s+Start AT %I0\.0 : BOOL;/);
     expect(assemble(compileST(result.source)).bytecode.length).toBeGreaterThan(0);
+  });
+
+  it('refuses a constant with no value, and names or comments that would end the statement or the comment', () => {
+    const base = (blocks: unknown[], variables: Record<string, unknown[]> = {}) => model(blocks, [], variables);
+    expect(rejected(base([block('c', 'constant', { dataType: 'INT' })]))).toEqual(["FBD block 'c' (constant): it has no value"]);
+    expect(rejected(base([block('t', 'TON', { instanceName: 'T1; Out := TRUE' })]))).toEqual([expect.stringContaining("the instance name 'T1; Out := TRUE' is not an identifier")]);
+    expect(rejected(base([block('v', 'variable', { variableName: 'A := TRUE; B' })]))).toEqual([expect.stringContaining('is not a variable')]);
+    expect(rejected(base([block('n', 'NOT', { comment: 'x *) Out := TRUE; (*' })]))).toEqual([expect.stringContaining('the comment must not contain ST comment delimiters')]);
+    expect(rejected(base([], { local: [{ name: 'Bad Name', type: 'BOOL' }, { name: 'Ok', type: 'INT; END_VAR' }] })).length).toBe(2);
+    // A string constant keeps its quotes
+    const text = transpileFBDToST(model(
+      [block('s', 'constant', { dataType: 'STRING', value: "it's" }), block('out', 'output', { variableName: 'Label' })],
+      [wire('w', 's', 'OUT', 'out', 'IN')],
+      { outputs: [{ name: 'Label', type: 'STRING' }] },
+    ));
+    expect(text.success).toBe(true);
+    expect(text.source).toContain("Label := 'it''s';");
   });
 
   it('refuses to write to an input block and takes the type of a block output from its consumer', () => {
@@ -1398,6 +1422,16 @@ describe('LD power flow (LNG-021, LNG-022, LNG-002)', () => {
     expect(result.source).toMatch(/_edge_r1_down : F_TRIG;/);
     expect(result.source).toMatch(/_edge_r2_k2 : F_TRIG;/);
     expect(assemble(compileST(result.source)).bytecode.length).toBeGreaterThan(0);
+  });
+
+  it('needs the address of a Modbus helper instead of using 1', () => {
+    const helper = (parameters: Record<string, string>) => model([legacy('r1', 1, [
+      { id: 'mb', type: 'function_block', fbType: 'MB_COIL', instance: 'Mb', parameters },
+    ])], { outputs: [{ name: 'X', type: 'BOOL' }] });
+    expect(rejected(helper({ IN: 'X' }))).toEqual([expect.stringContaining("Function block 'mb' requires parameters.ADDR")]);
+    const ok = transpileLDToST(helper({ IN: 'X', ADDR: '7' }));
+    expect(ok.success).toBe(true);
+    expect(ok.source).toContain('MODBUS_COIL(X, 7);');
   });
 
   it('refuses a variable that would collide with the state the transpiler generates', () => {

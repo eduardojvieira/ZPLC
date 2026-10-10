@@ -208,6 +208,7 @@ function validateModbusHelper(element: UnknownRecord, rung: UnknownRecord, symbo
     if (port !== 'IN' && port !== 'ADDR') errors.push(`Function block '${String(element.id)}' does not support input '${port}'`);
   }
   resolveDestination(parameters.IN, `Function block '${String(element.id)}' input 'IN'`, symbols, errors);
+  if (parameters.ADDR === undefined) errors.push(`Function block '${String(element.id)}' requires parameters.ADDR`);
   if (parameters.ADDR !== undefined && (typeof parameters.ADDR !== 'string' || !/^\d+$/.test(parameters.ADDR) || Number(parameters.ADDR) > 65535)) {
     errors.push(`Function block '${String(element.id)}' input 'ADDR' must be a decimal address from 0 to 65535`);
   }
@@ -757,7 +758,7 @@ function generateRungCode(rung: LDRung): RungCode {
     if (helper) {
       const flow = stage(power);
       const inputVar = fb.parameters!.IN;
-      const addrVar = fb.parameters?.ADDR ?? '1';
+      const addrVar = fb.parameters!.ADDR;
       lines.push(`IF ${flow} THEN ${inputVar} := ${inputVar}; END_IF;`);
       lines.push(`${helper}(${inputVar}, ${addrVar});`);
       for (const [port, variable] of Object.entries(fb.outputs ?? {})) {
