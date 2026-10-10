@@ -1,0 +1,5 @@
+PROGRAM Overflow
+VAR
+  small : SINT := 100 + 100;
+END_VAR
+END_PROGRAM

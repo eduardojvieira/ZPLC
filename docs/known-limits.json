@@ -102,8 +102,8 @@
   },
   "CMP-042": {
     "page": "language",
-    "en": "A function block or a global declared in another file is not found (`Unknown FB type`, `Unknown identifier`).",
-    "es": "Un bloque de función o una global declarados en otro archivo no se encuentran (`Unknown FB type`, `Unknown identifier`)."
+    "en": "A function block or a global declared in another file is not found (`Unknown type`, `Unknown identifier`).",
+    "es": "Un bloque de función o una global declarados en otro archivo no se encuentran (`Unknown type`, `Unknown identifier`)."
   },
   "CMP-043": {
     "page": "language",

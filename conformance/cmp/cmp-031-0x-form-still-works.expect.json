@@ -9,5 +9,11 @@
       "type": "INT",
       "value": 255
     }
+  ],
+  "warnings": [
+    {
+      "code": "NON_IEC_HEX_LITERAL",
+      "line": 5
+    }
   ]
 }

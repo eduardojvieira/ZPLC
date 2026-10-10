@@ -1,0 +1,14 @@
+{
+  "requirement": "CMP-037",
+  "title": "an output is bound with =>, not given a value with :=",
+  "matrix": [
+    "pous.function-block-call-with-named-inputs"
+  ],
+  "build": "fails",
+  "lines": [
+    11
+  ],
+  "messageIncludes": [
+    "sum"
+  ]
+}

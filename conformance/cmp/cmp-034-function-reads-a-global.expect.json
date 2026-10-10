@@ -1,0 +1,21 @@
+{
+  "requirement": "CMP-034",
+  "title": "a function reads a VAR_GLOBAL through VAR_EXTERNAL",
+  "matrix": [
+    "pous.function"
+  ],
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 105
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 106
+    }
+  ]
+}

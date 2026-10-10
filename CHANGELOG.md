@@ -129,6 +129,48 @@ All notable changes are documented here.
   Nucleo-H743ZI cannot mount NVS, so it does not persist `RETAIN`, and the WASM
   simulator does not apply the rules yet. No board was measured: see
   `docs/runtime/persistence`.
+- The debug map is a function of the sources: two builds of the same project
+  give the same bytes (the `generatedAt` timestamp is gone), and
+  `compilerVersion` is the version of the compiler package. Each statement
+  has the full range of its instructions with its line and column, so any
+  program counter inside a statement resolves to that statement; the end of a
+  function and the helper routines after the cycle belong to none.
+- Names are matched without regard to case, as IEC 61131-3 says: variables,
+  functions, members, enumeration values, type names (`byte`) and direct
+  addresses (`%ix0.0`). A declaration whose type is not a type is a build
+  error that names it and its position; `LTIME`, `LDATE`, `LTOD`, `LDT`,
+  `CHAR` and `WCHAR` are rejected the same way (planned for 2.x, decision
+  D-04) instead of getting a variable of size 0, and `VAR PERSISTENT` is
+  rejected at the word (declare the variables `RETAIN`).
+- Every value is checked against the type it goes into. An assignment, an
+  initial value, a function argument, the value of a function and an output
+  bound with `=>` must convert as IEC 61131-3 allows: integers and bit strings
+  convert to each other (a value that does not fit keeps its low bits), an
+  integer to `REAL`; a `REAL` to an integer, a `BOOL` to or from a number and
+  `TIME` to or from a number are build errors that name both types. A
+  condition is a `BOOL`, and a constant that does not fit its type is an
+  error, so `small : SINT := 300;` no longer builds. A literal above
+  2147483647 goes to a `UDINT` parameter and to `XOR_DWORD`.
+- Each function is a scope of its own: two functions may use the same
+  parameter and local names, and a program's variables are not visible inside
+  a function. Arguments bind by name in any order (positional first); a
+  missing, repeated or unknown argument, and a recursive function, are build
+  errors. A function may be called as a statement and may be declared after
+  the functions that call it. A function block call checks its parameters
+  (a name the block does not have is an error) and `Q => y` copies an output.
+  The library blocks of the kitchen_sink project called their parameters
+  `SETPOINT`, `CYCLE`, `SET`...; the names were ignored and are now fixed to
+  the ones the blocks have.
+- An integer of a wider type stored in a narrower one (`DINT` to `INT`, `LINT`
+  to `DINT`) keeps its low bits as before and the build now reports the
+  warning `IMPLICIT_NARROWING` at the value, naming both types; Studio, the CLI
+  (`Warning:`) and the Tool API show it. A mask or a remainder that fits the
+  destination does not warn. The bundled `analog_test` project narrowed a
+  `DINT` into an `INT`; it now stores `TempDegC MOD 32768`, the same value
+  inside the plausible window.
+- Studio resolves a program counter to the statement that owns it, not only
+  the first instruction of the statement, and `release-version.ts` rewrites
+  and checks the compiler version that every debug map records.
 
 ## 2.0.0-rc.3 - 2026-09-01
 

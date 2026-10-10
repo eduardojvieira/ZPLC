@@ -73,17 +73,40 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-003-ltime-is-rejected.expect.json","test":"CMP-003 a declaration of type LTIME is rejected naming the type"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-003-ltod-is-rejected.expect.json","test":"CMP-003 a declaration of type LTOD is rejected naming the type"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-003-unknown-type-name.expect.json","test":"CMP-003 a declaration with an unknown type name is rejected"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-003-wchar-is-rejected.expect.json","test":"CMP-003 a declaration of type WCHAR is rejected naming the type"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-003-wchar-is-rejected.expect.json","test":"CMP-003 a declaration of type WCHAR is rejected naming the type"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/names.test.ts","test":"a declaration that names no type is an error (CMP-003)"}
   ],
   "CMP-004": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-004-identifier-case-insensitive.expect.json","test":"CMP-004 identifiers are matched without regard to case"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-004-lowercase-direct-address.expect.json","test":"CMP-004 direct address written in lower case"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-004-std-block-parameter-case-insensitive.expect.json","test":"CMP-004 standard block parameters are matched without regard to case"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-004-type-name-case-insensitive.expect.json","test":"CMP-004 type names are matched without regard to case"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-004-type-name-case-insensitive.expect.json","test":"CMP-004 type names are matched without regard to case"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-004-user-names-case-insensitive.expect.json","test":"CMP-004 user functions, structure members, block members and enumeration values are matched without regard to case"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/names.test.ts","test":"direct addresses are matched without regard to case (CMP-004)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/names.test.ts","test":"identifiers are matched without regard to case (CMP-004)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/names.test.ts","test":"the spelling of a name never changes the program (CMP-004)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/names.test.ts","test":"type names are matched without regard to case (CMP-004)"}
   ],
   "CMP-005": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-005-bool-assigned-from-int.expect.json","test":"CMP-005 assigning an INT expression to a BOOL is rejected"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-005-int-assigned-from-real.expect.json","test":"CMP-005 assigning a REAL to an INT is rejected"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-bool-assigned-to-int.expect.json","test":"CMP-005 a BOOL assigned to an INT is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-bool-compared-with-a-number.expect.json","test":"CMP-005 a BOOL compared with an INT is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-bool-in-arithmetic.expect.json","test":"CMP-005 a BOOL in an addition is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-condition-is-not-a-bool.expect.json","test":"CMP-005 an IF on an INT is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-int-assigned-from-real.expect.json","test":"CMP-005 assigning a REAL to an INT is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-integer-literal-assigned-to-bool.expect.json","test":"CMP-005 an integer literal assigned to a BOOL is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-integer-narrowing-keeps-the-low-bits-and-warns.expect.json","test":"CMP-005 an integer stored in a narrower type keeps its low bits and the build warns"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-real-assigned-to-dint.expect.json","test":"CMP-005 a REAL expression assigned to a DINT is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-real-in-a-bit-operation.expect.json","test":"CMP-005 a REAL operand of AND is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-time-assigned-to-int.expect.json","test":"CMP-005 a TIME assigned to an INT is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-widening-and-explicit-conversions.expect.json","test":"CMP-005 a value goes to a wider type of its kind, and an integer to a REAL, without a conversion function"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-widening-masks-and-constants-do-not-warn.expect.json","test":"CMP-005 a widening, a mask, a remainder and a constant that fit build without a warning"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/typecheck.test.ts","test":"an integer stored in a narrower type is a warning (CMP-005, CMP-016)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/typecheck.test.ts","test":"call arguments and return values are checked (CMP-005)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/typecheck.test.ts","test":"conditions and operators (CMP-005)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/typecheck.test.ts","test":"the conversions of a value to a place (CMP-005)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/index.test.ts","test":"prints the warning of an integer stored in a narrower type and still builds (CMP-005)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"reports an integer stored in a narrower type as a warning of a build that passed (CMP-005)"}
   ],
   "CMP-006": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-006-action-block-in-a-program-is-rejected.expect.json","test":"CMP-006 an ACTION block of a textual program is rejected"},
@@ -108,6 +131,7 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-006-unknown-member-position.expect.json","test":"CMP-006 an unknown member of a function block is reported at its own line"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-006-var-access-is-rejected.expect.json","test":"CMP-006 a VAR_ACCESS block is rejected"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/compiler.test.ts","test":"positions a generation error that has no position of its own at its statement (CMP-006)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/names.test.ts","test":"PERSISTENT is rejected where it is written (CMP-006)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/semantic-errors.test.ts","test":"rejects an unknown member of a function block instance (position comes with CMP-006)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/syntax.test.ts","test":"compile: every independent error, each positioned (CMP-006, CMP-007)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"returns every independent error of a source, each with its position (CMP-006, CMP-007)"},
@@ -163,6 +187,8 @@
   ],
   "CMP-012": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-012-literal-above-int32-as-a-dword-argument.expect.json","test":"CMP-012 a literal above 2147483647 is accepted as the argument of a DWORD parameter"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-012-literal-above-int32-to-a-udint-function-parameter.expect.json","test":"CMP-012 a literal above 2147483647 goes to a UDINT parameter and to a DWORD function"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-012-literal-above-the-range-of-a-word-parameter.expect.json","test":"CMP-012 a literal beyond the range of a WORD parameter is rejected"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-012-udint-around-2-31.expect.json","test":"CMP-012 UDINT compares correctly on both sides of 2147483648"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-012-udint-compare-unsigned.expect.json","test":"CMP-012 UDINT comparison above 2147483647"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-012-udint-divide-and-modulo.expect.json","test":"CMP-012 UDINT division and modulo above 2147483647, by small and by large divisors"},
@@ -230,6 +256,7 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-016-real-out-of-range-to-dint.expect.json","test":"CMP-016 an out-of-range REAL saturates to the DINT limits"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-016-real-to-dint-truncates-toward-zero.expect.json","test":"CMP-016 an in-range REAL converts to the DINT truncated toward zero"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-016-shift-by-the-width-or-more.expect.json","test":"CMP-016 a shift by 32 or more, or by a negative count, gives 0"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/typecheck.test.ts","test":"an integer stored in a narrower type is a warning (CMP-005, CMP-016)"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_arith_edges.c","test":"Defined results for the integer and float edge cases of the VM (RT-005, CMP-016)"}
   ],
   "CMP-017": [
@@ -253,7 +280,12 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-017-ton-with-a-30-day-preset-is-not-done.expect.json","test":"CMP-017 a TON with a 30 day preset is not done after 20 ms"}
   ],
   "CMP-018": [
-    {"kind":"conformance","ref":"conformance/cmp/cmp-018-constant-does-not-fit.expect.json","test":"CMP-018 a constant that does not fit its type is rejected"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-018-assigned-constant-does-not-fit.expect.json","test":"CMP-018 a negative constant assigned to an unsigned variable is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-018-constant-does-not-fit.expect.json","test":"CMP-018 a constant that does not fit its type is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-018-constant-expression-does-not-fit.expect.json","test":"CMP-018 a constant expression whose value does not fit its type is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-018-constants-at-the-limits-of-their-types.expect.json","test":"CMP-018 constants at the limits of their types are accepted"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-018-named-constant-does-not-fit.expect.json","test":"CMP-018 an expression of named constants that does not fit its type is rejected"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/typecheck.test.ts","test":"a constant fits the type it goes into (CMP-018)"}
   ],
   "CMP-019": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-019-assignment-between-different-structures-rejected.expect.json","test":"CMP-019 a structure assigned to a structure of another type is rejected"},
@@ -491,15 +523,29 @@
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/syntax.test.ts","test":"parser: library function block names (CMP-033)"}
   ],
   "CMP-034": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-034-function-does-not-see-a-program-variable.expect.json","test":"CMP-034 a function does not see the variables of a program"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-034-function-locals-do-not-clash.expect.json","test":"CMP-034 locals and parameters of two functions have the same names, and none is the program variable of that name"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-034-function-reads-a-global.expect.json","test":"CMP-034 a function reads a VAR_GLOBAL through VAR_EXTERNAL"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-034-function-with-loops-and-locals-of-the-same-name.expect.json","test":"CMP-034 two functions with a loop counter and a total of the same names, and a program with the same names, keep their own"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-034-parameter-shadows-program-variable.expect.json","test":"CMP-034 a function parameter named like a program variable"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-034-same-parameter-name-two-functions.expect.json","test":"CMP-034 two functions with a parameter of the same name"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-034-same-parameter-name-two-functions.expect.json","test":"CMP-034 two functions with a parameter of the same name"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/calls.test.ts","test":"scopes (CMP-034)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/debug-map.test.ts","test":"the variables of a function (CMP-034, CMP-054)"}
   ],
   "CMP-035": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-035-call-statement-runs-the-function.expect.json","test":"CMP-035 a function called as a statement runs, and its result is discarded"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-035-function-call-as-statement.expect.json","test":"CMP-035 a function call used as a statement"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-035-missing-argument.expect.json","test":"CMP-035 a call with a missing required argument is rejected"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-035-named-arguments-any-order.expect.json","test":"CMP-035 named arguments bind by name"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-035-parameter-given-twice-is-rejected.expect.json","test":"CMP-035 a parameter bound by position and by name is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-035-parameter-with-a-declared-value-may-be-left-out.expect.json","test":"CMP-035 a parameter that declares an initial value is optional in a call"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-035-positional-after-named-is-rejected.expect.json","test":"CMP-035 an argument by position cannot follow one by name"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-035-positional-then-named.expect.json","test":"CMP-035 positional arguments bind the first parameters, named ones the rest, in any order"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-035-recursion-through-two-functions.expect.json","test":"CMP-035 two functions that call each other are rejected at the call that closes the cycle"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-035-recursive-call.expect.json","test":"CMP-035 a recursive function is rejected"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-035-unknown-argument-name.expect.json","test":"CMP-035 a call with an unknown argument name is rejected"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-035-too-many-arguments-is-rejected.expect.json","test":"CMP-035 a call with one argument too many is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-035-unknown-argument-name.expect.json","test":"CMP-035 a call with an unknown argument name is rejected"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/calls.test.ts","test":"function calls (CMP-035)"}
   ],
   "CMP-036": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-036-return-in-a-program-ends-its-scan.expect.json","test":"CMP-036 RETURN in a program ends the scan of that program"},
@@ -508,8 +554,14 @@
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/control-flow.test.ts","test":"RETURN (CMP-036 stopgap)","partial":true}
   ],
   "CMP-037": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-037-input-bound-with-arrow-is-rejected.expect.json","test":"CMP-037 an input of a standard block is given with :=, not bound with =>"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-037-output-assigned-with-colon-equals-is-rejected.expect.json","test":"CMP-037 an output is bound with =>, not given a value with :="},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-037-output-binding-of-a-user-block.expect.json","test":"CMP-037 => copies the outputs of a user function block into the variables named"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-037-output-binding.expect.json","test":"CMP-037 function-block call with an output binding =>"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-037-unknown-parameter-standard-block.expect.json","test":"CMP-037 an unknown parameter of a standard block is rejected"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-037-positional-call-of-a-user-block-is-rejected.expect.json","test":"CMP-037 a positional call of a user function block is left to 2.x"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-037-unknown-parameter-of-a-user-block.expect.json","test":"CMP-037 an unknown parameter of a user function block is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-037-unknown-parameter-standard-block.expect.json","test":"CMP-037 an unknown parameter of a standard block is rejected"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/calls.test.ts","test":"function block calls (CMP-037)"}
   ],
   "CMP-038": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-038-array-of-instances.expect.json","test":"CMP-038 array of function-block instances"},
@@ -575,16 +627,21 @@
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"CMP-052: program.load refuses an artifact built for another draft of the contract and shows both numbers."}
   ],
   "CMP-053": [
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/debug-map.test.ts","test":"the compiler version in the debug map (CMP-053)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/debug-map.test.ts","test":"two builds of the same source (CMP-053)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/conformance/conformance.test.ts","test":"CMP-053 the debug map records the version of the compiler package"},
     {"kind":"unit","ref":"packages/zplc-ide/src/conformance/conformance.test.ts","test":"CMP-053 two builds of one project produce the same bytecode"},
-    {"kind":"unit","ref":"packages/zplc-ide/src/conformance/conformance.test.ts","test":"CMP-053 two builds of one project produce the same debug map"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/conformance/conformance.test.ts","test":"CMP-053 two builds of one project produce the same debug map"},
+    {"kind":"unit","ref":"scripts/release-version.test.ts","test":"the compiler version of the debug map (CMP-053)"}
   ],
   "CMP-054": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-054-debug-map-address-with-a-type.expect.json","test":"CMP-054 the debug map gives the address of a variable in a file with a TYPE"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-054-debug-map-lists-a-global.expect.json","test":"CMP-054 the debug map lists a global variable"},
-    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/control-flow.test.ts","test":"debug map (CMP-054 stopgap)","partial":true}
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/control-flow.test.ts","test":"debug map (CMP-054 stopgap)","partial":true},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/debug-map.test.ts","test":"the variables of a function (CMP-034, CMP-054)"}
   ],
   "CMP-055": [
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/debug-map.test.ts","test":"statement ranges (CMP-055)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/conformance/conformance.test.ts","test":"CMP-055 every instruction of a statement resolves to that statement in the debug map"}
   ],
   "CMP-057": [

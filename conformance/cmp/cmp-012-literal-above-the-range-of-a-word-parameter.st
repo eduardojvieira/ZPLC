@@ -1,0 +1,6 @@
+PROGRAM BigArgument
+VAR
+  w : WORD;
+END_VAR
+  w := AND_WORD(w, 65536);
+END_PROGRAM

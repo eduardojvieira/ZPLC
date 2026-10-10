@@ -75,10 +75,10 @@ FallingEdge(CLK := StopButton);
  * ============================================================================ *)
 
 (* RS - Reset-dominant latch *)
-Latch_RS(SET := RisingEdge.Q, RESET1 := FallingEdge.Q);
+Latch_RS(S := RisingEdge.Q, R1 := FallingEdge.Q);
 
 (* SR - Set-dominant latch *)
-Latch_SR(SET1 := RisingEdge.Q, RESET := FallingEdge.Q);
+Latch_SR(S1 := RisingEdge.Q, R := FallingEdge.Q);
 
 (* ============================================================================
  * SECTION 4: Counters
@@ -98,13 +98,13 @@ CountUpDown(CU := RisingEdge.Q, CD := FallingEdge.Q, R := StopButton, LD := FALS
  * ============================================================================ *)
 
 (* BLINK - Oscillator *)
-Blinker(ENABLE := Latch_RS.Q1, CYCLE := T#500ms);
+Blinker(ENABLE := Latch_RS.Q1, T_ON := T#500ms, T_OFF := T#500ms);
 
 (* PWM - Pulse Width Modulation *)
 PwmGen(ENABLE := TRUE, PERIOD := T#1000ms, DUTY := 75);
 
 (* PULSE - Single pulse generator *)
-PulseGen(TRIGGER := RisingEdge.Q, DURATION := T#100ms);
+PulseGen(TRIG := RisingEdge.Q, PT := T#100ms);
 
 (* ============================================================================
  * SECTION 6: Outputs

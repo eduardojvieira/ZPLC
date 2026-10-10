@@ -41,6 +41,16 @@ describe('parseExpectation', () => {
     expect(parseExpectation(runtime({ fault: true, expect: [] }), 'x')).toMatchObject({ fault: true, expect: [] });
   });
 
+  it('accepts the exact list of the warnings of a build that passes, and rejects one that is not a warning', () => {
+    expect(parseExpectation(runtime({ warnings: [{ code: 'IMPLICIT_NARROWING', line: 7 }] }), 'x')).toMatchObject({ warnings: [{ code: 'IMPLICIT_NARROWING', line: 7 }] });
+    expect(parseExpectation(runtime({ warnings: [] }), 'x')).toMatchObject({ warnings: [] });
+    expect(parseExpectation(runtime(), 'x')).not.toHaveProperty('warnings');
+    rejects(runtime({ warnings: [{ code: 'narrowing', line: 7 }] }), 'code must be a diagnostic code');
+    rejects(runtime({ warnings: [{ code: 'IMPLICIT_NARROWING' }] }), 'line must be a line number');
+    rejects(runtime({ warnings: [{ code: 'IMPLICIT_NARROWING', line: 1, column: 2 }] }), 'unknown key "column"');
+    rejects(JSON.stringify({ requirement: 'CMP-001', title: 'x', build: 'fails', lines: [6], warnings: [] }), 'unknown key "warnings"');
+  });
+
   it('names the file in every rejection', () => {
     expect(() => parseExpectation('{', 'a/b.expect.json')).toThrow('a/b.expect.json');
     expect(() => parseExpectation(runtime({ scans: 0 }), 'a/b.expect.json')).toThrow('a/b.expect.json');

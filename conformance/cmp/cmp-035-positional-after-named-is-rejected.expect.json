@@ -1,0 +1,11 @@
+{
+  "requirement": "CMP-035",
+  "title": "an argument by position cannot follow one by name",
+  "matrix": [
+    "pous.function"
+  ],
+  "build": "fails",
+  "lines": [
+    10
+  ]
+}
