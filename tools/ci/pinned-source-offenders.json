@@ -122,6 +122,19 @@
     "reason": "Pins the project-files channels, the narrow preload object and the sender checks as text of main.ts, preload.ts and the shared protocol modules. Replace by a main-process test against a stub electron module."
   },
   {
+    "file": "packages/zplc-ide/electron/recoveryStoreIpc.test.ts",
+    "requirement": "VF-006",
+    "added": "2026-10-10",
+    "reads": [
+      "packages/zplc-ide/electron/main.ts",
+      "packages/zplc-ide/electron/preload.ts",
+      "packages/zplc-ide/electron/recoveryStore.ts",
+      "packages/zplc-ide/electron/recoveryStoreProtocol.ts"
+    ],
+    "replacement": "behaviour",
+    "reason": "Pins the recovery channels, the narrow preload object, the sender and folder checks before the store is touched, the .js import suffixes and the absence of npm imports as text of main.ts, preload.ts and the store modules (written before the guard existed). Replace by a main-process test against a stub electron module once the registrations are a function that the test can call; the suffix and dependency cases need a compile of the electron project and a load of its output."
+  },
+  {
     "file": "packages/zplc-ide/electron/security.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
@@ -154,6 +167,19 @@
     ],
     "replacement": "behaviour",
     "reason": "Pins the no-argument Toolchain Doctor and firmware-build IPC operations as text of main.ts and preload.ts. Replace by a main-process test against a stub electron module."
+  },
+  {
+    "file": "packages/zplc-ide/electron/updateCheckIpc.test.ts",
+    "requirement": "VF-006",
+    "added": "2026-10-10",
+    "reads": [
+      "packages/zplc-ide/electron/main.ts",
+      "packages/zplc-ide/electron/preload.ts",
+      "packages/zplc-ide/electron/updateCheck.ts",
+      "packages/zplc-ide/electron/updateCheckProtocol.ts"
+    ],
+    "replacement": "behaviour",
+    "reason": "Pins the update-check channel, the argument-free preload call, the sender check before the network is asked, and the single fixed address as text of main.ts, preload.ts and the update-check modules (written by WS-17 before the guard existed). Replace by a main-process test against a stub electron module with a fake network, which also proves that no other network connection is opened."
   },
   {
     "file": "packages/zplc-ide/electron/workspaceTestsIpc.test.ts",
