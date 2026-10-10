@@ -1,8 +1,8 @@
 // Runnable documentation samples (VF-020): a code sample that the docs mark runnable is compiled in CI, and
 // executed when its fence states an expected result. A sample that stops compiling is a docs defect.
 //
-//   bun tools/ci/check-docs-samples.ts            check every page, English and Spanish
-//   bun tools/ci/check-docs-samples.ts --list     print the inventory only, without compiling
+//   bun tools/docs/check-docs-samples.ts            check every page, English and Spanish
+//   bun tools/docs/check-docs-samples.ts --list     print the inventory only, without compiling
 //
 // The fence marks the sample (the convention is in docs/docs/contributing/index.md):
 //

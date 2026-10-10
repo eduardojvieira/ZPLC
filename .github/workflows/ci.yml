@@ -39,6 +39,9 @@ jobs:
       - name: Test CI tooling
         run: bun test ./tools/ci
 
+      - name: Test documentation tooling
+        run: bun test ./tools/docs
+
       - name: Check the requirement index and its evidence record
         run: |
           bun tools/ci/generate-requirement-index.ts --check
@@ -387,7 +390,7 @@ jobs:
       - name: Check the runnable documentation samples
         env:
           ZPLC_NATIVE_SIM_BIN: ${{ runner.temp }}/zplc-docs-runtime/zplc_runtime
-        run: bun tools/ci/check-docs-samples.ts
+        run: bun tools/docs/check-docs-samples.ts
 
       - name: Generate and validate documentation references
         run: |

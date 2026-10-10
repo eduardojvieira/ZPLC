@@ -3,6 +3,7 @@
     { "pattern": "packages/zplc-compiler/**/*.test.ts", "job": "typescript", "command": "bun run test:compiler" },
     { "pattern": "packages/zplc-ide/**/*.test.{ts,tsx}", "job": "typescript", "command": "bun run test:ide" },
     { "pattern": "tools/ci/**/*.test.ts", "job": "typescript", "command": "bun test ./tools/ci" },
+    { "pattern": "tools/docs/**/*.test.ts", "job": "typescript", "command": "bun test ./tools/docs" },
     { "pattern": "scripts/release-artifacts.test.mjs", "job": "typescript", "command": "node --test scripts/release-artifacts.test.mjs" },
     { "pattern": "scripts/workflow-action-pins.test.mjs", "job": "typescript", "command": "node --test scripts/workflow-action-pins.test.mjs" },
     { "pattern": "scripts/release-version.test.ts", "job": "typescript", "command": "bun test scripts/release-version.test.ts" },
