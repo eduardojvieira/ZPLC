@@ -43,7 +43,15 @@ INCLUDE = ROOT / "firmware/lib/zplc_core/include"
 # A region is the text between
 #   /* >>> GENERATED (tools/contract/generate.py): <name>. Do not edit. >>> */
 #   /* <<< END GENERATED: <name> <<< */
-REGION_FILES: dict[Path, list[str]] = {}
+REGION_FILES: dict[Path, list[str]] = {
+    INCLUDE / "zplc_isa.h": [
+        "version", "memory", "system-registers", "data-types", "opcodes",
+        "container", "vm-status", "opcode-helpers",
+    ],
+    INCLUDE / "zplc_loader.h": ["loader-errors", "loader-max-tasks"],
+    INCLUDE / "zplc_comm_dispatch.h": ["comm-kinds", "comm-status", "comm-blocks"],
+    ROOT / "firmware/lib/zplc_core/src/core/zplc_debug.c": ["opcode-names", "error-names"],
+}
 
 BEGIN_RE = re.compile(r"^[ \t]*/\* >>> GENERATED \(tools/contract/generate\.py\): ([a-z-]+)\. Do not edit\. >>> \*/[ \t]*$", re.M)
 
@@ -326,8 +334,6 @@ def region_system_registers(c: dict) -> list[str]:
         lines.append(f"/** @brief {reg['doc']} */")
         lines.append(f"#define {reg['macro']} (ZPLC_MEM_IPI_BASE + {hexw(num(reg['offset']), 4)}U)")
         lines.append("")
-    lines.append("/* Bytes 0x0FFA-0x0FFF reserved for future use */")
-    lines.append("")
     for flag in mem["systemFlags"]:
         lines.append(f"/** @brief {flag['doc']} */")
         lines.append(f"#define {flag['macro']} {hexw(num(flag['value']))}")
@@ -414,12 +420,12 @@ def region_container(c: dict) -> list[str]:
         lines.append(f"/** @brief {s['sizeDoc']} */")
         lines.append(f"#define {s['sizeMacro']} {s['size']}")
         lines.append("")
-        lines.append(f"/* Layout check generated from the contract: a negative array size breaks the build. */")
-        checks = [f"typedef char zplc_layout_check_{s['name']}_size[(sizeof({s['typedef']}) == {s['size']}U) ? 1 : -1];"]
+        lines.append("/* Layout check generated from the contract: dividing by zero in an enumerator breaks the build. */")
+        checks = [f"enum {{ zplc_assert_sizeof_{s['name']} = 1 / (sizeof({s['typedef']}) == {s['size']}U) }};"]
         for field, offset, _ in struct_layout(s):
             checks.append(
-                f"typedef char zplc_layout_check_{s['name']}_{field['name']}"
-                f"[(offsetof({s['typedef']}, {field['name']}) == {offset}U) ? 1 : -1];")
+                f"enum {{ zplc_assert_offsetof_{s['name']}_{field['name']} = "
+                f"1 / (offsetof({s['typedef']}, {field['name']}) == {offset}U) }};")
         lines += checks
         lines.append("")
         enum = enum_by_name.get(s.get("enum", ""))
@@ -583,6 +589,20 @@ def region_comm_blocks(c: dict) -> list[str]:
     for i, b in enumerate(blocks):
         tail = " \\" if i < len(blocks) - 1 else ""
         lines.append(f"  X({b['name']}, {hexw(b['kind'], 4)}, {b['size']}){tail}")
+    lines.append("")
+    lines += [
+        "/**",
+        " * @brief Members of every function block, as an X-macro.",
+        " *",
+        " * Each entry is X(BLOCK, MEMBER, offset, bytes): the byte offset from the",
+        " * instance base address and the bytes the compiler reserves for the member.",
+        " */",
+        "#define ZPLC_COMM_MEMBER_TABLE(X) \\",
+    ]
+    member_rows = [(b["name"], m) for b in blocks for m in b["members"]]
+    for i, (block_name, m) in enumerate(member_rows):
+        tail = " \\" if i < len(member_rows) - 1 else ""
+        lines.append(f"  X({block_name}, {m['name']}, {m['offset']}, {m['size']}){tail}")
     lines.append("")
     lines += c_doc_block("Instance size in bytes of a function block of the given kind.\n\n"
                          "@param kind A zplc_comm_fb_kind_t value (any width, so that an operand read from\n"
@@ -1114,8 +1134,16 @@ DOC_TEXT = {
 }
 
 
+def md_escape(text: str) -> str:
+    """Escape what MDX would read as JSX or an expression, outside code spans."""
+    parts = text.split("`")
+    for i in range(0, len(parts), 2):
+        parts[i] = parts[i].replace("\\", "\\\\").replace("{", "\\{").replace("}", "\\}").replace("<", "\\<")
+    return "`".join(parts)
+
+
 def md_cell(text: str) -> str:
-    return text.replace("|", "\\|").replace("\n", " ")
+    return md_escape(text).replace("|", "\\|").replace("\n", " ")
 
 
 def md_table(headers: list[str], rows: list[list[str]]) -> list[str]:

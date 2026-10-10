@@ -33,6 +33,22 @@ Fuente: `firmware/lib/zplc_core/include/zplc_comm_dispatch.h`
 
 ### Funciones
 
+#### `zplc_comm_fb_size`
+
+```c
+static inline uint16_t zplc_comm_fb_size(uint32_t kind);
+```
+
+**Resumen fuente:** Instance size in bytes of a function block of the given kind.
+
+**Parámetros**
+
+| Nombre | Tipo | Descripción fuente |
+| --- | --- | --- |
+| `kind` | `uint32_t` | A zplc_comm_fb_kind_t value (any width, so that an operand read from the code segment can be passed unchecked). |
+
+**Retorno fuente:** The size from the generated table, or 0 for a kind with no layout.
+
 #### `zplc_comm_register_handler`
 
 ```c
@@ -2022,6 +2038,7 @@ static inline int zplc_opcode_is_valid(uint8_t opcode);
 | `ZPLC_STRING_DATA_OFFSET` | `4` | — |
 | `ZPLC_STRING_DEFAULT_SIZE` | `80` | — |
 | `ZPLC_STRING_MAX_SIZE` | `255` | — |
+| `ZPLC_OPCODE_COUNT` | `78` | Number of defined opcodes. |
 | `ZPLC_FILE_HEADER_SIZE` | `32` | Expected size of file header |
 | `ZPLC_SEGMENT_ENTRY_SIZE` | `8` | Expected size of segment entry |
 | `ZPLC_TASK_DEF_SIZE` | `16` | Expected size of task definition |
@@ -2071,22 +2088,22 @@ This does not load or authorize a runtime. Product load paths remain a separate 
 
 | Nombre | Valor | Resumen fuente |
 | --- | --- | --- |
-| `ZPLC_LOADER_OK` | `0` | — |
-| `ZPLC_LOADER_ERR_MAGIC` | `-1` | — |
-| `ZPLC_LOADER_ERR_VERSION` | `-2` | — |
-| `ZPLC_LOADER_ERR_SIZE` | `-3` | — |
-| `ZPLC_LOADER_ERR_NO_CODE` | `-4` | — |
-| `ZPLC_LOADER_ERR_CRC32` | `-6` | — |
-| `ZPLC_LOADER_ERR_FLAGS` | `-7` | — |
-| `ZPLC_LOADER_ERR_SEGMENT` | `-8` | — |
-| `ZPLC_LOADER_ERR_ENTRY_POINT` | `-9` | — |
-| `ZPLC_LOADER_ERR_WORKSPACE` | `-10` | — |
-| `ZPLC_LOADER_ERR_OPCODE` | `-11` | — |
-| `ZPLC_LOADER_ERR_CONTROL_FLOW` | `-12` | — |
-| `ZPLC_LOADER_ERR_MEMORY` | `-13` | — |
-| `ZPLC_LOADER_ERR_TASK` | `-14` | — |
-| `ZPLC_LOADER_ERR_TAGS` | `-15` | — |
-| `ZPLC_LOADER_ERR_COMM` | `-16` | — |
+| `ZPLC_LOADER_OK` | `0` | Verified |
+| `ZPLC_LOADER_ERR_MAGIC` | `-1` | Wrong magic number |
+| `ZPLC_LOADER_ERR_VERSION` | `-2` | ISA version differs from the loader version |
+| `ZPLC_LOADER_ERR_SIZE` | `-3` | A size or count field is inconsistent with the file, or a reserved word is not zero |
+| `ZPLC_LOADER_ERR_NO_CODE` | `-4` | No CODE segment |
+| `ZPLC_LOADER_ERR_CRC32` | `-6` | CRC32 mismatch |
+| `ZPLC_LOADER_ERR_FLAGS` | `-7` | Header flags are not supported |
+| `ZPLC_LOADER_ERR_SEGMENT` | `-8` | Segment table entry is invalid, repeated or of an unsupported type |
+| `ZPLC_LOADER_ERR_ENTRY_POINT` | `-9` | Entry point is not an instruction boundary |
+| `ZPLC_LOADER_ERR_WORKSPACE` | `-10` | Verifier workspace is missing or too small |
+| `ZPLC_LOADER_ERR_OPCODE` | `-11` | Unknown opcode or truncated instruction |
+| `ZPLC_LOADER_ERR_CONTROL_FLOW` | `-12` | Jump target is not an instruction boundary, or the code falls through its end |
+| `ZPLC_LOADER_ERR_MEMORY` | `-13` | Static memory access outside the writable regions |
+| `ZPLC_LOADER_ERR_TASK` | `-14` | Task definition is invalid or there are too many tasks |
+| `ZPLC_LOADER_ERR_TAGS` | `-15` | Tag entry is invalid |
+| `ZPLC_LOADER_ERR_COMM` | `-16` | Communication function-block kind is NONE or at or above the kind limit |
 | `ZPLC_LOADER_MAX_TASKS` | `16U` | — |
 
 ## `zplc_scheduler.h`

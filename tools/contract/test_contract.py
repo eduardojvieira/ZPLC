@@ -25,6 +25,7 @@ ROOT = HERE.parents[1]
 sys.path.insert(0, str(HERE))
 
 import generate  # noqa: E402
+import snapshot  # noqa: E402
 import zplc_contract as zc  # noqa: E402
 
 GOLDEN = json.loads((HERE / "golden/contract.golden.json").read_text())
@@ -170,6 +171,32 @@ class PythonModuleMatchesGolden(unittest.TestCase):
         self.assertEqual(zc.COMM_KIND_MAX, GOLDEN["c"]["enums"]["zplc_comm_fb_kind_t"]["ZPLC_COMM_FB_KIND_MAX"])
         self.assertEqual({k.name: int(k) for k in zc.CommKind},
                          {k.removeprefix("ZPLC_COMM_FB_"): v for k, v in golden_c_enum("zplc_comm_fb_kind_t").items() if not k.endswith("KIND_MAX")})
+
+
+class CHeadersMatchGolden(unittest.TestCase):
+    """The C headers, compiled, give the numbers the hand-written ones gave."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.view = snapshot.c_view()
+
+    def test_every_macro_of_the_contract_keeps_its_value(self):
+        for name, value in GOLDEN["c"]["macros"].items():
+            self.assertIn(name, self.view["macros"], name)
+            self.assertEqual(self.view["macros"][name], value, name)
+
+    def test_every_enum_member_keeps_its_value(self):
+        for typedef, members in GOLDEN["c"]["enums"].items():
+            self.assertIn(typedef, self.view["enums"], typedef)
+            for name, value in members.items():
+                self.assertEqual(self.view["enums"][typedef].get(name), value, f"{typedef}.{name}")
+
+    def test_packed_structs_keep_their_size_and_field_offsets(self):
+        for typedef, golden in GOLDEN["c"]["structs"].items():
+            self.assertEqual(self.view["structs"][typedef], golden, typedef)
+
+    def test_operand_size_instruction_size_and_validity_of_every_byte(self):
+        self.assertEqual(self.view["operand"], GOLDEN["c"]["operand"])
 
 
 class ValidationRejectsADriftedSource(unittest.TestCase):

@@ -86,35 +86,13 @@ static void test_opcode_uniqueness(void)
     memset(used, 0, sizeof(used));
 
     /*
-     * List of all defined opcodes.
-     * If we accidentally define two opcodes with the same value,
-     * this test will catch it.
+     * Every opcode of the generated table (ZPLC_OPCODE_TABLE).
+     * If two opcodes ever get the same value, this test will catch it.
      */
     static const uint8_t opcodes[] = {
-        /* System */
-        OP_NOP, OP_HALT, OP_BREAK, OP_GET_TICKS,
-        /* Stack */
-        OP_DUP, OP_DROP, OP_SWAP, OP_OVER, OP_ROT,
-        /* Integer math */
-        OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_MOD, OP_NEG, OP_ABS,
-        /* Float math */
-        OP_ADDF, OP_SUBF, OP_MULF, OP_DIVF, OP_NEGF, OP_ABSF,
-        /* Logic */
-        OP_AND, OP_OR, OP_XOR, OP_NOT, OP_SHL, OP_SHR, OP_SAR,
-        /* Comparison */
-        OP_EQ, OP_NE, OP_LT, OP_LE, OP_GT, OP_GE, OP_LTU, OP_GTU,
-        /* 8-bit operand */
-        OP_PUSH8, OP_JR, OP_JRZ, OP_JRNZ,
-        /* 16-bit operand */
-        OP_LOAD8, OP_LOAD16, OP_LOAD32, OP_LOAD64,
-        OP_STORE8, OP_STORE16, OP_STORE32, OP_STORE64,
-        OP_PUSH16, OP_JMP, OP_JZ, OP_JNZ, OP_CALL, OP_RET,
-        /* Communication */
-        OP_COMM_EXEC, OP_COMM_STATUS, OP_COMM_RESET,
-        /* Conversion */
-        OP_I2F, OP_F2I, OP_I2B, OP_EXT8, OP_EXT16, OP_ZEXT8, OP_ZEXT16,
-        /* 32-bit operand */
-        OP_PUSH32
+#define ZPLC_TEST_OPCODE(name, code, operand, pops, pushes, depth) code,
+        ZPLC_OPCODE_TABLE(ZPLC_TEST_OPCODE)
+#undef ZPLC_TEST_OPCODE
     };
 
     size_t count = sizeof(opcodes) / sizeof(opcodes[0]);
