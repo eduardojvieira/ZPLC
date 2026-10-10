@@ -79,6 +79,11 @@ const sidebars = {
       className: 'sidebar-category-reference',
       collapsed: true,
       items: [
+        'reference/language-st',
+        'reference/language-il',
+        'reference/language-ld',
+        'reference/language-fbd',
+        'reference/language-sfc',
         'reference/functions',
         'reference/function-blocks',
         'reference/kconfig',

@@ -45,6 +45,11 @@ agregue una página.
 | reference/runtime-api | docs/docs/reference/runtime-api.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/runtime-api.md | reference | yes | docs | generated |
 | reference/boards | docs/docs/reference/boards.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/boards.md | boards | yes | docs | generated |
 | reference/capabilities-evidence | docs/docs/reference/capabilities-evidence.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/capabilities-evidence.md | reference | yes | docs | candidate |
+| reference/language-st | docs/docs/reference/language-st.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/language-st.md | languages | yes | docs | generated |
+| reference/language-il | docs/docs/reference/language-il.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/language-il.md | languages | yes | docs | generated |
+| reference/language-ld | docs/docs/reference/language-ld.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/language-ld.md | languages | yes | docs | generated |
+| reference/language-fbd | docs/docs/reference/language-fbd.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/language-fbd.md | languages | yes | docs | generated |
+| reference/language-sfc | docs/docs/reference/language-sfc.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/language-sfc.md | languages | yes | docs | generated |
 | reference/functions | docs/docs/reference/functions.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/functions.md | reference | yes | docs | generated |
 | reference/function-blocks | docs/docs/reference/function-blocks.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/function-blocks.md | reference | yes | docs | generated |
 | reference/kconfig | docs/docs/reference/kconfig.md | docs/i18n/es/docusaurus-plugin-content-docs/current/reference/kconfig.md | reference | yes | docs | generated |
