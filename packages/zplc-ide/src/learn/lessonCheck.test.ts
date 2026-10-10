@@ -7,7 +7,8 @@ import { parseGradeRecord } from '../../electron/learnProgressModel';
 import { gradeRecordedScenarioLesson, learnLessonCatalog } from '../components/learnLesson';
 import { presentWorkspaceTestResult } from '../components/workspaceTestPresentation';
 import { itNative, nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';
-import { lessonCheck, scenarioRun } from '../cli/toolApi';
+import { scenarioRun } from '../cli/toolApi';
+import { lessonCheck } from './lessonCheck';
 import { LESSON_INDEX } from '../generated/lessonIndex';
 
 /**

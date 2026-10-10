@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { itNative, nativeRuntimeBinary } from '../cli/nativeRuntimeGuard';
-import { lessonCheck } from '../cli/toolApi';
+import { lessonCheck } from './lessonCheck';
 import { citedFiles, canonicalJson, expandText, textShape, type LessonProgramCheck } from './lessonPackage';
 import { PROJECTS_DIRECTORY, loadLessonPackages, validateCourse, type LessonPackage } from './lessonPackageFiles';
 

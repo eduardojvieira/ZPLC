@@ -1,7 +1,7 @@
 // Generates the one index of lessons (LRN-028) from the lesson packages (LRN-027).
 //
-//   bun tools/ci/generate-lesson-index.ts                  write packages/zplc-ide/src/generated/lessonIndex.ts
-//   bun tools/ci/generate-lesson-index.ts --check          fail when that file is not what the packages produce
+//   bun tools/ci/generate-lesson-index.ts                  write packages/zplc-ide/src/generated/lessonIndex.ts and lessonIndex.json
+//   bun tools/ci/generate-lesson-index.ts --check          fail when those files are not what the packages produce
 //   bun tools/ci/generate-lesson-index.ts --update-hashes  after editing a scenario.json: pin its new hash in the
 //                                                          manifest and raise the lesson version by one
 //
@@ -15,6 +15,7 @@ import {
   LESSONS_DIRECTORY,
   buildIndex,
   loadLessonPackages,
+  renderIndexData,
   renderIndexModule,
   scenarioHash,
   validateCourse,
@@ -22,6 +23,7 @@ import {
 
 const ROOT = resolve(import.meta.dir, '../..');
 export const INDEX_FILE = join(ROOT, 'packages/zplc-ide/src/generated/lessonIndex.ts');
+export const INDEX_DATA_FILE = join(ROOT, 'packages/zplc-ide/src/generated/lessonIndex.json');
 
 /** Pins the hash of every changed scenario and raises its lesson version. Returns the ids it changed. */
 export function updateHashes(lessonsDirectory = LESSONS_DIRECTORY): string[] {
@@ -40,31 +42,32 @@ export function updateHashes(lessonsDirectory = LESSONS_DIRECTORY): string[] {
   return changed;
 }
 
-/** The problems of the packages and the text the index file must hold. */
-export function generate(lessonsDirectory = LESSONS_DIRECTORY): { problems: string[]; source: string } {
+/** The problems of the packages and the text the two index files must hold. */
+export function generate(lessonsDirectory = LESSONS_DIRECTORY): { problems: string[]; source: string; data: string } {
   const loaded = loadLessonPackages(lessonsDirectory);
   const problems = [...loaded.problems, ...validateCourse(loaded.packages)];
   const built = buildIndex(loaded.packages);
   problems.push(...built.problems);
-  return { problems, source: renderIndexModule(built.index) };
+  return { problems, source: renderIndexModule(built.index), data: renderIndexData(built.index) };
 }
 
 function main(): number {
   const { values } = parseArgs({ options: { check: { type: 'boolean' }, 'update-hashes': { type: 'boolean' } }, strict: true });
   if (values['update-hashes']) for (const id of updateHashes()) console.log(`pinned the new scenario hash of ${id} and raised its version`);
-  const { problems, source } = generate();
+  const { problems, source, data } = generate();
   if (problems.length > 0) {
     for (const problem of problems) console.error(`lesson packages: ${problem}`);
     return 1;
   }
-  const current = existsSync(INDEX_FILE) ? readFileSync(INDEX_FILE, 'utf8') : undefined;
+  const files = [[INDEX_FILE, source], [INDEX_DATA_FILE, data]] as const;
+  const stale = files.filter(([path, text]) => !existsSync(path) || readFileSync(path, 'utf8') !== text);
   if (values.check) {
-    if (current === source) { console.log('lesson index is current'); return 0; }
-    console.error(`${relative(ROOT, INDEX_FILE)} is out of date with the lesson packages: run \`bun tools/ci/generate-lesson-index.ts\``);
+    if (stale.length === 0) { console.log('lesson index is current'); return 0; }
+    console.error(`${stale.map(([path]) => relative(ROOT, path)).join(' and ')} out of date with the lesson packages: run \`bun tools/ci/generate-lesson-index.ts\``);
     return 1;
   }
-  if (current !== source) writeFileSync(INDEX_FILE, source);
-  console.log(`${relative(ROOT, INDEX_FILE)}: ${current === source ? 'already current' : 'written'}`);
+  for (const [path, text] of stale) writeFileSync(path, text);
+  console.log(stale.length === 0 ? 'lesson index already current' : `written: ${stale.map(([path]) => relative(ROOT, path)).join(', ')}`);
   return 0;
 }
 

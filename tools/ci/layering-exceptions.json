@@ -5,5 +5,12 @@
     "requirement": "IDE-033",
     "added": "2026-10-10",
     "reason": "The supervisor is plain Node (it spawns the native runtime and speaks its framed stdio) and the command line needs the same one. It still lives under electron/ because tsconfig.electron.json compiles with rootDir electron, so electron/main.ts cannot import a module of src/. Moving it needs the shared Node modules (this one, nativeSimulationIpc, the protocol files) in a folder both programs compile, which is the layout decision of the IPC contract work (IDE-017); do it there and delete this entry."
+  },
+  {
+    "file": "packages/zplc-ide/src/mcp/server.ts",
+    "imports": "packages/zplc-ide/electron/learnProgressModel.ts",
+    "requirement": "LRN-034",
+    "added": "2026-10-10",
+    "reason": "The module is plain TypeScript with no Electron or Node API: the document the Learn progress store keeps and the parser of it. It lives under electron/ only because the main process compiles with rootDir electron and must share it with the renderer, so the course resource of the MCP server (read-only, LRN-034) cannot import it from src/. It moves with the shared modules of the IPC contract work (IDE-017); delete this entry then."
   }
 ]

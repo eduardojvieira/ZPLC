@@ -1481,6 +1481,8 @@ export const JOURNEYS: Journey[] = [
       await app.until('the declared pair in the table', async () => await app.eval<boolean>(`document.querySelector('[data-interlock-coverage] table')?.innerText.includes('Motor.Forward') === true`) || undefined);
       const report = await app.eval<string>(`document.querySelector('[data-interlock-coverage] table').innerText`);
       assert(report.includes('Motor.Reverse') && /Covered|Missing exact NEVER coverage/.test(report), `The table does not say whether the pair is covered: ${report}`);
+    },
+  },
   {
     // The starter of lesson 1 fails its scenario. Learn must say which assertion failed, when, what was expected against what
     // was observed, and where in the trace (LRN-026), after the learner ran only that scenario from Tests.
