@@ -69,6 +69,8 @@ function counter(name: 'CTU' | 'CTD' | 'CTUD', pv: number) {
                 case 'STORE16': { const v = stack.pop()!; mem[addr] = v & 0xff; mem[addr + 1] = (v >> 8) & 0xff; break; }
                 case 'PUSH8': stack.push((n << 24) >> 24); break;
                 case 'PUSH16': stack.push((n << 16) >> 16); break;
+                case 'PUSH32': stack.push(n | 0); break;
+                case 'EXT16': stack.push((stack.pop()! << 16) >> 16); break;
                 case 'NOT': stack.push(~stack.pop()!); break;
                 case 'AND': stack.push(stack.pop()! & stack.pop()!); break;
                 case 'ADD': stack.push((stack.pop()! + stack.pop()!) | 0); break;
@@ -146,6 +148,13 @@ describe('CTU scan by scan', () => {
         ]);
     });
 
+    test('Q compares CV with a negative PV as signed values', () => {
+        replay('CTU', -3, [
+            [{ CU: 0, R: 0 }, { CV: 0, Q: 1 }],
+            [{ CU: 1, R: 0 }, { CV: 1, Q: 1 }],
+        ]);
+    });
+
     test('CV stops at 32767 and R still clears it', () => {
         replay('CTU', 5, [
             [{ CU: 0, R: 0 }, { CV: 32766, Q: 1 }],
@@ -174,11 +183,30 @@ describe('CTD scan by scan', () => {
 
     test('a pulse that rises on the scan LD is released is counted when CD was FALSE on the scan before', () => {
         replay('CTD', 3, [
-            [{ CD: 1, LD: 0 }, { CV: 0, Q: 1 }],
+            [{ CD: 1, LD: 0 }, { CV: -1, Q: 1 }], // never loaded: 0 counts down to -1
             [{ CD: 1, LD: 1 }, { CV: 3, Q: 0 }],
             [{ CD: 0, LD: 1 }, { CV: 3, Q: 0 }], // CD falls while LD is held
             [{ CD: 1, LD: 0 }, { CV: 2, Q: 0 }],
         ]);
+    });
+
+    test('CV counts below 0 and Q stays TRUE', () => {
+        replay('CTD', 1, [
+            [{ CD: 0, LD: 1 }, { CV: 1, Q: 0 }],
+            [{ CD: 1, LD: 0 }, { CV: 0, Q: 1 }],
+            [{ CD: 0, LD: 0 }, { CV: 0, Q: 1 }],
+            [{ CD: 1, LD: 0 }, { CV: -1, Q: 1 }],
+            [{ CD: 0, LD: 0 }, { CV: -1, Q: 1 }],
+            [{ CD: 1, LD: 0 }, { CV: -2, Q: 1 }],
+        ]);
+    });
+
+    test('CV stops at -32768 and does not wrap to 32767', () => {
+        replay('CTD', 0, [
+            [{ CD: 1, LD: 0 }, { CV: -32768, Q: 1 }],
+            [{ CD: 0, LD: 0 }, { CV: -32768, Q: 1 }],
+            [{ CD: 1, LD: 0 }, { CV: -32768, Q: 1 }],
+        ], { CV: -32767 });
     });
 });
 
@@ -224,6 +252,24 @@ describe('CTUD scan by scan', () => {
             [{ CU: 1, CD: 0, R: 0, LD: 0 }, { CV: 6 }],
             [{ CU: 0, CD: 1, R: 0, LD: 0 }, { CV: 5 }],
         ]);
+    });
+
+    test('QU and QD compare CV with PV and with 0 as signed values', () => {
+        replay('CTUD', -1, [
+            [{ CU: 0, CD: 1, R: 0, LD: 0 }, { CV: -1, QU: 1, QD: 1 }],
+            [{ CU: 0, CD: 0, R: 0, LD: 0 }, { CV: -1, QU: 1, QD: 1 }],
+            [{ CU: 0, CD: 1, R: 0, LD: 0 }, { CV: -2, QU: 0, QD: 1 }],
+            [{ CU: 0, CD: 0, R: 0, LD: 0 }, { CV: -2, QU: 0, QD: 1 }],
+            [{ CU: 1, CD: 0, R: 0, LD: 0 }, { CV: -1, QU: 1, QD: 1 }],
+        ]);
+    });
+
+    test('CV stops at -32768 when counting down', () => {
+        replay('CTUD', 0, [
+            [{ CU: 0, CD: 1, R: 0, LD: 0 }, { CV: -32768 }],
+            [{ CU: 0, CD: 0, R: 0, LD: 0 }, { CV: -32768 }],
+            [{ CU: 0, CD: 1, R: 0, LD: 0 }, { CV: -32768 }],
+        ], { CV: -32767 });
     });
 
     test('CV stops at 32767, also when both edges arrive there', () => {

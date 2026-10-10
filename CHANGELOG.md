@@ -94,6 +94,11 @@ All notable changes are documented here.
   argument of any of these blocks and of `NORM_X` and `SCALE_X` is converted to
   REAL, and `PID_Compact` called without `DT` no longer faults on its
   derivative term.
+- `CTD` and `CTUD` count below 0 and stop at -32768 as IEC 61131-3 defines
+  (`CTD` stopped at 0), and the three counters compare `CV` with `PV` and 0 as
+  signed values: a negative `PV` made `Q` and `QU` wrong because the 16-bit
+  members were loaded without their sign. A `CTD` that was never loaded counts
+  from 0 to -1 on its first edge.
 - `BLINK` starts its cycle with the ON phase in the scan where `ENABLE` rises
   (it started with the OFF phase) and starts it again after `ENABLE` was
   FALSE; a phase ends at the first call at which its time has elapsed.

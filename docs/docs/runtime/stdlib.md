@@ -68,7 +68,7 @@ Decrements a value on every rising edge of the input.
   - `PV` (INT): Preset Value (initial value).
 - **Outputs:**
   - `Q` (BOOL): TRUE if `CV <= 0`.
-  - `CV` (INT): Current counter value.
+  - `CV` (INT): Current counter value. It counts below 0 and stops at -32768.
 
 ### CTUD (Count Up/Down)
 Combines the features of CTU and CTD.
@@ -81,7 +81,7 @@ Combines the features of CTU and CTD.
 - **Outputs:**
   - `QU` (BOOL): TRUE if `CV >= PV`.
   - `QD` (BOOL): TRUE if `CV <= 0`.
-  - `CV` (INT): Current counter value.
+  - `CV` (INT): Current counter value. It counts from -32768 to 32767 and stops at both ends. `QU` and `QD` compare `CV` with `PV` and 0 as signed values.
 
 ---
 

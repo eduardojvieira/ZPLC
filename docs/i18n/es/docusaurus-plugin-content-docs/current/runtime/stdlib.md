@@ -68,7 +68,7 @@ Decrementa un valor con cada flanco de subida de la entrada.
   - `PV` (INT): Valor inicial.
 - **Salidas:**
   - `Q` (BOOL): TRUE si `CV <= 0`.
-  - `CV` (INT): Valor actual del contador.
+  - `CV` (INT): Valor actual del contador. Cuenta por debajo de 0 y se detiene en -32768.
 
 ### CTUD (Contador Ascendente/Descendente)
 Combina características de CTU y CTD.
@@ -81,7 +81,7 @@ Combina características de CTU y CTD.
 - **Salidas:**
   - `QU` (BOOL): TRUE si `CV >= PV`.
   - `QD` (BOOL): TRUE si `CV <= 0`.
-  - `CV` (INT): Valor actual del contador.
+  - `CV` (INT): Valor actual del contador. Cuenta de -32768 a 32767 y se detiene en ambos extremos. `QU` y `QD` comparan `CV` con `PV` y con 0 con signo.
 
 ---
 
