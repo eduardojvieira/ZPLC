@@ -49,6 +49,7 @@ them.
 | `setup` | Install dependencies, build the compiler, build the native runtime |
 | `build:runtime` | Build the native runtime into `firmware/lib/zplc_core/build/zplc_runtime` |
 | `build:compiler`, `build:ide` | Build the compiler package, or typecheck and bundle Studio |
+| `lint`, `typecheck` | ESLint with the type-aware promise rules, and the strict type-check of every TypeScript program (needs `build:compiler` first) |
 | `test:core` | C suites under the address and undefined-behaviour sanitizers |
 | `test:compiler:ci`, `test:ide:ci`, `test:ci` | TypeScript suites, judged against the list of expected failures |
 | `test:journeys` | Studio end-to-end journeys on the real application |
@@ -88,7 +89,7 @@ times were measured on a 12-thread Linux x86-64 desktop with warm caches.
 | C core, loader, host runtime | `bun run test:core` | about 5 s | The C suites pass with the address and undefined-behaviour sanitizers on a 64-bit host | Behaviour on a 32-bit target or a board |
 | Compiler and assembler | `bun run test:compiler:ci` | about 2 s | The compiler tests pass and every failure is a listed one | Behaviour of the generated code in the VM |
 | Studio, CLI, MCP, conformance | `bun run test:ide:ci` | 30 to 60 s | Compiled programs run in the real VM and give the expected memory; Studio logic and the Tool API behave | A rendered screen in the real application |
-| Lint and types | `bun run lint` and `bun run build:ide` | about 10 s and 40 s | ESLint is clean and the TypeScript projects build | Behaviour |
+| Lint and types | `bun run lint`, `bun run typecheck` and `bun run build:ide` | about 10 s, 20 s and 40 s | ESLint is clean, including the rules that reject an unhandled promise; every TypeScript program, tests and scripts included, type-checks with the strict flags; and Studio builds | Behaviour |
 | Binary contract | `bun run contract:check` | about 1 s | Generated C, TypeScript, Python and docs files match `contract.json`, and the golden numbers hold | Anything outside the contract |
 | Studio on the real application | `bun run test:journeys` | 70 to 90 s | The end-to-end journeys pass in Electron: open, edit, build, simulate, watch, break, force, save | A physical board |
 | Firmware on Linux | `bun run test:firmware` (after `bun run setup:firmware`) | about 4 min; set-up about 6 min once | The Zephyr suites pass on `native_sim` (64 and 32 bit) and QEMU Cortex-M3 and M0, and every image is inside its flash and RAM budget | Timing, interrupts and drivers of a real board |

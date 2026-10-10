@@ -35,7 +35,7 @@ All notable changes are documented here.
   Electron host, the scripts, the tests of every package and the CI, contract
   and fuzz tooling were not checked before. A test fails when a TypeScript file
   or a tsconfig is left out of that list. `noUncheckedIndexedAccess` stays off:
-  it would add about 800 errors (468 in Studio, 335 in the compiler) that each
+  it would add about 1,000 errors (470 in Studio, 542 in the compiler) that each
   need a real narrowing.
 - ESLint runs the type-aware rules `no-floating-promises` and
   `no-misused-promises` over the Studio, the Electron host, the CLI and the MCP
