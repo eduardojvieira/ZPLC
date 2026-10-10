@@ -286,6 +286,22 @@ No debe usarse como control de seguridad.
 
 Estos bloques pertenecen a la biblioteca de ZPLC y no son bloques de IEC 61131-3.
 
+### BLINK (Generador de Pulsos Asimétrico)
+Genera un tren de pulsos con tiempos de ON y OFF separados.
+- **Entradas:**
+  - `ENABLE` (BOOL): Hace correr el generador mientras es TRUE.
+  - `T_ON` (TIME): Tiempo en que `Q` es TRUE en cada ciclo.
+  - `T_OFF` (TIME): Tiempo en que `Q` es FALSE en cada ciclo.
+- **Salidas:**
+  - `Q` (BOOL): El tren de pulsos.
+- **Comportamiento:** El ciclo empieza con la fase ON en el scan en que `ENABLE` sube: `Q` es TRUE de inmediato, durante `T_ON`, luego FALSE durante `T_OFF`, y así sucesivamente. `ENABLE` en FALSE pone `Q` en FALSE de inmediato, y el próximo `ENABLE` inicia un ciclo nuevo con la fase ON. Una fase termina en el primer scan en que su tiempo transcurrió, así que con un período de scan mayor que `T_ON` o `T_OFF` la fase dura un scan.
+
+```text
+ENABLE: __/¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\____
+Q:      __/¯¯¯\______/¯¯¯\______/¯¯¯\___
+          |300|  700 |300|  700 |        (T_ON = 300 ms, T_OFF = 700 ms)
+```
+
 ### FIFO (Buffer Primero en Entrar, Primero en Salir)
 Guarda hasta 8 valores `DINT`; salen en el orden en que entraron.
 - **Entradas:**

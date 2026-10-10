@@ -302,6 +302,22 @@ It must not be used as a safety control.
 
 These blocks belong to the ZPLC library and are not IEC 61131-3 blocks.
 
+### BLINK (Asymmetric Pulse Generator)
+Generates a pulse train with separate ON and OFF times.
+- **Inputs:**
+  - `ENABLE` (BOOL): Runs the generator while TRUE.
+  - `T_ON` (TIME): Time `Q` is TRUE in each cycle.
+  - `T_OFF` (TIME): Time `Q` is FALSE in each cycle.
+- **Outputs:**
+  - `Q` (BOOL): The pulse train.
+- **Behavior:** The cycle starts with the ON phase in the scan where `ENABLE` rises: `Q` is TRUE at once, for `T_ON`, then FALSE for `T_OFF`, and so on. `ENABLE` FALSE makes `Q` FALSE at once, and the next `ENABLE` starts a new cycle with the ON phase. A phase ends at the first scan at which its time has elapsed, so with a scan period longer than `T_ON` or `T_OFF` the phase lasts one scan.
+
+```text
+ENABLE: __/¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯\____
+Q:      __/¯¯¯\______/¯¯¯\______/¯¯¯\___
+          |300|  700 |300|  700 |        (T_ON = 300 ms, T_OFF = 700 ms)
+```
+
 ### FIFO (First-In, First-Out Buffer)
 Holds up to 8 `DINT` values; they leave in the order they entered.
 - **Inputs:**

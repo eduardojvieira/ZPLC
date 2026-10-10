@@ -77,6 +77,9 @@ All notable changes are documented here.
   three quadrants. Their arguments may be integers. `SIN`, `COS` and `TAN` of
   an angle of 100000 or more are a NaN, `LN(0.0)` is minus infinity, and
   `ASIN` or `ACOS` outside -1 to 1 are a NaN. `EXPT` is the operator `**`.
+- `BLINK` starts its cycle with the ON phase in the scan where `ENABLE` rises
+  (it started with the OFF phase) and starts it again after `ENABLE` was
+  FALSE; a phase ends at the first call at which its time has elapsed.
 
 ## 2.0.0-rc.3 - 2026-09-01
 
