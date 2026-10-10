@@ -38,6 +38,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/watchdog.h>
 #endif
+#include <zplc_bytes.h>
 #include <zplc_core.h>
 #include <zplc_debug.h>
 #include <zplc_hal.h>
@@ -227,15 +228,6 @@ static struct k_work_q high_workq;
 
 /** @brief The work queue threads exist; they are started once per boot. */
 static bool workqueues_started;
-
-static uint16_t read_u16_le(const uint8_t *data) {
-  return (uint16_t)data[0] | ((uint16_t)data[1] << 8);
-}
-
-static uint32_t read_u32_le(const uint8_t *data) {
-  return (uint32_t)data[0] | ((uint32_t)data[1] << 8) |
-         ((uint32_t)data[2] << 16) | ((uint32_t)data[3] << 24);
-}
 
 static int scheduler_slots_empty(void) {
   int index;
@@ -1314,11 +1306,11 @@ static int validate_program_locked(const uint8_t *binary, size_t size) {
   for (index = 0U; index < view.task_count; index++) {
     const uint8_t *task = view.tasks + index * ZPLC_TASK_DEF_SIZE;
     uint8_t type = task[2];
-    uint32_t interval_us = read_u32_le(task + 4U);
+    uint32_t interval_us = zplc_get_u32_le(task + 4U);
 
     if (type != ZPLC_TASK_CYCLIC || interval_us < ZPLC_MIN_INTERVAL_US ||
         interval_us > ZPLC_MAX_INTERVAL_US || interval_us % 1000U != 0U ||
-        read_u16_le(task + 8U) >= view.code_size) {
+        zplc_get_u16_le(task + 8U) >= view.code_size) {
       return ZPLC_LOADER_ERR_TASK;
     }
   }

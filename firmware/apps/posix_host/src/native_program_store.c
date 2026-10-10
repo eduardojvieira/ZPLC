@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <zplc_bytes.h>
+#include <zplc_crc32.h>
 #include <zplc_hal.h>
 #include <zplc_isa.h>
 #include <zplc_loader.h>
@@ -20,25 +22,6 @@
 
 static const char *const payload_keys[] = { STORE_SLOT_PAYLOAD_A, STORE_SLOT_PAYLOAD_B };
 static const char *const meta_keys[] = { STORE_SLOT_META_A, STORE_SLOT_META_B };
-
-static uint16_t get_u16(const uint8_t *p) { return (uint16_t)p[0] | ((uint16_t)p[1] << 8); }
-static uint32_t get_u32(const uint8_t *p) { return (uint32_t)p[0] | ((uint32_t)p[1] << 8) | ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24); }
-static void put_u16(uint8_t *p, uint16_t value) { p[0] = (uint8_t)value; p[1] = (uint8_t)(value >> 8); }
-static void put_u32(uint8_t *p, uint32_t value) { p[0] = (uint8_t)value; p[1] = (uint8_t)(value >> 8); p[2] = (uint8_t)(value >> 16); p[3] = (uint8_t)(value >> 24); }
-
-static uint32_t crc32(const uint8_t *data, size_t len)
-{
-    uint32_t crc = 0xFFFFFFFFU;
-    size_t index;
-    for (index = 0U; index < len; index++) {
-        uint32_t bit;
-        crc ^= data[index];
-        for (bit = 0U; bit < 8U; bit++) {
-            crc = (crc & 1U) != 0U ? (crc >> 1) ^ 0xEDB88320U : crc >> 1;
-        }
-    }
-    return crc ^ 0xFFFFFFFFU;
-}
 
 static uint32_t gcd_u32(uint32_t a, uint32_t b)
 {
@@ -80,12 +63,12 @@ int zplc_native_program_describe(const uint8_t *program, size_t program_size,
             for (index = 0U; index < view.task_count; ++index) {
                 const uint8_t *task = view.tasks + (size_t)index * ZPLC_TASK_DEF_SIZE;
                 zplc_task_def_t *definition = &details->tasks[index];
-                definition->id = get_u16(task);
+                definition->id = zplc_get_u16_le(task);
                 definition->type = task[2U];
                 definition->priority = task[3U];
-                definition->interval_us = get_u32(task + 4U);
-                definition->entry_point = get_u16(task + 8U);
-                definition->stack_size = get_u16(task + 10U);
+                definition->interval_us = zplc_get_u32_le(task + 4U);
+                definition->entry_point = zplc_get_u16_le(task + 8U);
+                definition->stack_size = zplc_get_u16_le(task + 10U);
                 if (definition->type != ZPLC_TASK_CYCLIC ||
                     definition->interval_us < 1000U ||
                     definition->interval_us > 3600000000U ||
@@ -125,14 +108,14 @@ int zplc_native_program_validate(const uint8_t *program, size_t program_size,
 static int valid_meta(const uint8_t meta[STORE_META_SIZE], unsigned slot,
                       int allow_prepared, uint32_t *generation, uint32_t *length)
 {
-    if (memcmp(meta, "ZPS1", 4U) != 0 || get_u16(meta + 4U) != 1U ||
+    if (memcmp(meta, "ZPS1", 4U) != 0 || zplc_get_u16_le(meta + 4U) != 1U ||
         meta[6] != slot || (meta[7] != 2U && (allow_prepared == 0 || meta[7] != 1U)) ||
-        get_u32(meta + 8U) == 0U || get_u32(meta + 12U) == 0U ||
-        get_u32(meta + 12U) > ZPLC_MEM_CODE_SIZE ||
-        get_u16(meta + 20U) != ZPLC_VERSION_MAJOR || get_u16(meta + 22U) != ZPLC_VERSION_MINOR ||
-        get_u32(meta + 24U) != 0U || get_u32(meta + 28U) != crc32(meta, 28U)) return 0;
-    *generation = get_u32(meta + 8U);
-    *length = get_u32(meta + 12U);
+        zplc_get_u32_le(meta + 8U) == 0U || zplc_get_u32_le(meta + 12U) == 0U ||
+        zplc_get_u32_le(meta + 12U) > ZPLC_MEM_CODE_SIZE ||
+        zplc_get_u16_le(meta + 20U) != ZPLC_VERSION_MAJOR || zplc_get_u16_le(meta + 22U) != ZPLC_VERSION_MINOR ||
+        zplc_get_u32_le(meta + 24U) != 0U || zplc_get_u32_le(meta + 28U) != zplc_crc32(meta, 28U)) return 0;
+    *generation = zplc_get_u32_le(meta + 8U);
+    *length = zplc_get_u32_le(meta + 12U);
     return 1;
 }
 
@@ -154,7 +137,7 @@ static int read_meta(unsigned slot, int allow_prepared, uint32_t *generation,
     if (absent_or_corrupt(result)) return 1;
     if (result != ZPLC_HAL_OK) return -1;
     if (valid_meta(meta, slot, allow_prepared, generation, length) == 0) return 1;
-    if (header_crc != NULL) *header_crc = get_u32(meta + 16U);
+    if (header_crc != NULL) *header_crc = zplc_get_u32_le(meta + 16U);
     return 0;
 }
 
@@ -174,8 +157,8 @@ static int read_slot(unsigned slot, int allow_prepared, uint8_t *program,
     result = zplc_hal_persist_load(payload_keys[slot], envelope, (size_t)length + STORE_FOOTER_SIZE);
     if (absent_or_corrupt(result)) { free(envelope); return 1; }
     if (result != ZPLC_HAL_OK || memcmp(envelope + length, "ZPE1", 4U) != 0 ||
-        get_u32(envelope + length + 4U) != length ||
-        header_crc != get_u32(envelope + 12U) ||
+        zplc_get_u32_le(envelope + length + 4U) != length ||
+        header_crc != zplc_get_u32_le(envelope + 12U) ||
         zplc_native_program_validate(envelope, length, &(uint32_t){0U}) != 0) {
         free(envelope); return result == ZPLC_HAL_OK ? 1 : -1;
     }
@@ -190,18 +173,18 @@ static void make_meta(uint8_t meta[STORE_META_SIZE], unsigned slot, uint8_t stat
 {
     memset(meta, 0, STORE_META_SIZE);
     memcpy(meta, "ZPS1", 4U); /* NOLINT(bugprone-not-null-terminated-result): a four-byte magic, not a string */
-    put_u16(meta + 4U, 1U); meta[6] = (uint8_t)slot; meta[7] = state;
-    put_u32(meta + 8U, generation); put_u32(meta + 12U, (uint32_t)length);
-    put_u32(meta + 16U, get_u32(program + 12U)); put_u16(meta + 20U, ZPLC_VERSION_MAJOR);
-    put_u16(meta + 22U, ZPLC_VERSION_MINOR); put_u32(meta + 28U, crc32(meta, 28U));
+    zplc_put_u16_le(meta + 4U, 1U); meta[6] = (uint8_t)slot; meta[7] = state;
+    zplc_put_u32_le(meta + 8U, generation); zplc_put_u32_le(meta + 12U, (uint32_t)length);
+    zplc_put_u32_le(meta + 16U, zplc_get_u32_le(program + 12U)); zplc_put_u16_le(meta + 20U, ZPLC_VERSION_MAJOR);
+    zplc_put_u16_le(meta + 22U, ZPLC_VERSION_MINOR); zplc_put_u32_le(meta + 28U, zplc_crc32(meta, 28U));
 }
 
 static void make_active(uint8_t active[STORE_ACTIVE_SIZE], unsigned slot, uint32_t generation)
 {
     memset(active, 0, STORE_ACTIVE_SIZE);
     memcpy(active, "ZPA1", 4U); /* NOLINT(bugprone-not-null-terminated-result): a four-byte magic, not a string */
-    put_u16(active + 4U, 1U);
-    active[6] = (uint8_t)slot; put_u32(active + 8U, generation); put_u32(active + 12U, crc32(active, 12U));
+    zplc_put_u16_le(active + 4U, 1U);
+    active[6] = (uint8_t)slot; zplc_put_u32_le(active + 8U, generation); zplc_put_u32_le(active + 12U, zplc_crc32(active, 12U));
 }
 
 static int read_active(unsigned *slot, uint32_t *generation)
@@ -212,10 +195,10 @@ static int read_active(unsigned *slot, uint32_t *generation)
     result = zplc_hal_persist_load(STORE_ACTIVE, active, sizeof(active));
     if (absent_or_corrupt(result)) return 1;
     if (result != ZPLC_HAL_OK) return -1;
-    if (memcmp(active, "ZPA1", 4U) != 0 || get_u16(active + 4U) != 1U ||
-        active[6] > 1U || active[7] != 0U || get_u32(active + 8U) == 0U ||
-        get_u32(active + 12U) != crc32(active, 12U)) return 1;
-    *slot = active[6]; *generation = get_u32(active + 8U); return 0;
+    if (memcmp(active, "ZPA1", 4U) != 0 || zplc_get_u16_le(active + 4U) != 1U ||
+        active[6] > 1U || active[7] != 0U || zplc_get_u32_le(active + 8U) == 0U ||
+        zplc_get_u32_le(active + 12U) != zplc_crc32(active, 12U)) return 1;
+    *slot = active[6]; *generation = zplc_get_u32_le(active + 8U); return 0;
 }
 
 static uint32_t next_generation(uint32_t current) { return current == UINT32_MAX ? 1U : current + 1U; }
@@ -390,7 +373,7 @@ int zplc_native_program_store_commit(const uint8_t *program, size_t program_size
     envelope = (uint8_t *)malloc(program_size + STORE_FOOTER_SIZE);
     check = (uint8_t *)calloc(1U, program_size + STORE_FOOTER_SIZE);
     if (envelope == NULL || check == NULL) { free(envelope); free(check); return -1; }
-    memcpy(envelope, program, program_size); memcpy(envelope + program_size, "ZPE1", 4U); put_u32(envelope + program_size + 4U, (uint32_t)program_size);
+    memcpy(envelope, program, program_size); memcpy(envelope + program_size, "ZPE1", 4U); zplc_put_u32_le(envelope + program_size + 4U, (uint32_t)program_size);
     persist_result = zplc_hal_persist_save(payload_keys[slot], envelope, program_size + STORE_FOOTER_SIZE);
     if (persist_result != ZPLC_HAL_OK ||
         zplc_hal_persist_load(payload_keys[slot], check, program_size + STORE_FOOTER_SIZE) != ZPLC_HAL_OK ||

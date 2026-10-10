@@ -203,6 +203,17 @@ target_include_directories(test_public_headers PRIVATE
 
 add_test(NAME test_public_headers COMMAND test_public_headers)
 
+# Test: the one CRC-32 and the little-endian byte helpers of the runtime (RT-032)
+add_executable(test_bytes_crc
+    tests/test_bytes_crc.c
+)
+
+target_include_directories(test_bytes_crc PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+add_test(NAME test_bytes_crc COMMAND test_bytes_crc)
+
 # Test: VM Core Execution
 add_executable(test_vm_core
     tests/test_vm_core.c
