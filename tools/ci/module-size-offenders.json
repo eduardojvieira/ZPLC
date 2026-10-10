@@ -1,0 +1,107 @@
+[
+  {
+    "file": "packages/zplc-ide/src/components/settings/ProjectSettings.tsx",
+    "requirement": "IDE-014",
+    "added": "2026-10-10",
+    "lines": 2181,
+    "reason": "One 2,100-line component holds every section of the project settings (board, tasks, communication, network, safety). Split by section, one module each (IDE-014: each panel in its own module)."
+  },
+  {
+    "file": "packages/zplc-ide/src/store/useIDEStore.ts",
+    "requirement": "IDE-014",
+    "added": "2026-10-10",
+    "lines": 1710,
+    "reason": "The single store holds project, files, tabs, debug, console and settings slices. Split by slice into stores or slice creators with the same public hook (WP-40); the store split is the IDE state work of WS-24a."
+  },
+  {
+    "file": "packages/zplc-ide/src/runtime/serialAdapter.ts",
+    "requirement": "IDE-014",
+    "added": "2026-10-10",
+    "lines": 1440,
+    "reason": "Serial transport, protocol framing, upload and debug commands in one class. Split transport, framing and debug into modules behind the same adapter interface."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/Console.tsx",
+    "requirement": "IDE-014",
+    "added": "2026-10-10",
+    "lines": 1335,
+    "reason": "One component holds the lower workbench and every tab body (output, problems, tests, changes, agent, trace, watch). Move each tab body to its own module (IDE-014: each panel in its own module)."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/Toolbar.tsx",
+    "requirement": "IDE-014",
+    "added": "2026-10-10",
+    "lines": 1256,
+    "reason": "Build, run, deploy, export and connection controls and their handlers in one component. Split by control group and move the handlers to hooks."
+  },
+  {
+    "file": "packages/zplc-ide/src/cli/toolApi.ts",
+    "requirement": "IDE-014",
+    "added": "2026-10-10",
+    "lines": 1111,
+    "reason": "Every tool operation (inspect, compile, check, safety, tests, scenarios, firmware) in one module. Split by operation family; the cancellable worker work (IDE-012) touches the same file."
+  },
+  {
+    "file": "packages/zplc-ide/src/hooks/useDebugController.ts",
+    "requirement": "IDE-014",
+    "added": "2026-10-10",
+    "lines": 1107,
+    "reason": "Connection, polling, forces, breakpoints and trace in one hook. Split by concern; the worker and notification work (WS-24a) edits it first."
+  },
+  {
+    "file": "packages/zplc-ide/src/models/ld.ts",
+    "requirement": "IDE-014",
+    "added": "2026-10-10",
+    "lines": 1074,
+    "reason": "Ladder model types, validation and edit operations in one module; the visual-language work (WS-22a) is changing it. Split model, validation and operations after that lands."
+  },
+  {
+    "file": "packages/zplc-ide/src/editors/ld/LDRungGrid.tsx",
+    "requirement": "IDE-014",
+    "added": "2026-10-10",
+    "lines": 1043,
+    "reason": "Rung grid layout, drag and drop and cell rendering in one component; the visual-language work (WS-22a) edits it. Split after that lands."
+  },
+  {
+    "file": "packages/zplc-ide/electron/main.ts",
+    "requirement": "IDE-014",
+    "added": "2026-10-10",
+    "lines": 1001,
+    "reason": "Window, menus, IPC handlers and the native simulation host in one module; the IPC contract work (IDE-017, WS-24a) restructures it. Split into one module per handler family there."
+  },
+  {
+    "file": "packages/zplc-ide/src/transpiler/ldToST.ts",
+    "requirement": "IDE-014",
+    "added": "2026-10-10",
+    "lines": 895,
+    "reason": "Ladder to ST transpilation in one module; the visual-language work (WS-22a) edits it. Split by pass after that lands."
+  },
+  {
+    "file": "packages/zplc-ide/src/components/Sidebar.tsx",
+    "requirement": "IDE-014",
+    "added": "2026-10-10",
+    "lines": 881,
+    "reason": "Project tree, its dialogs, context menu and the migration notice in one component. Split the tree, the dialogs and the notice (IDE-014)."
+  },
+  {
+    "file": "packages/zplc-ide/src/runtime/wasmAdapter.ts",
+    "requirement": "IDE-014",
+    "added": "2026-10-10",
+    "lines": 873,
+    "reason": "WASM loading, memory access and the adapter methods in one module. Split loading and memory access; the WASM runtime work (IDE-025) rewrites it."
+  },
+  {
+    "file": "packages/zplc-ide/src/types/index.ts",
+    "requirement": "IDE-014",
+    "added": "2026-10-10",
+    "lines": 861,
+    "reason": "Every shared type of Studio in one file. Split by domain (project, editor, debug, console) behind a re-exporting index."
+  },
+  {
+    "file": "packages/zplc-ide/src/editors/ld/LDElement.tsx",
+    "requirement": "IDE-014",
+    "added": "2026-10-10",
+    "lines": 837,
+    "reason": "Ladder element rendering for every element kind in one component; the visual-language work (WS-22a) edits it. Split per element kind after that lands."
+  }
+]

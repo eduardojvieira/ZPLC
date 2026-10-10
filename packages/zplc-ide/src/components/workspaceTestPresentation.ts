@@ -1,4 +1,5 @@
 import type { ScenarioKind } from '../test-engine';
+import type { CanonicalWorkspaceBuildEvidence, WorkspaceTestArtifact } from '../store/buildEvidence';
 
 export type WorkspaceTestResultKind = 'passed' | 'assertion-failed' | 'cancelled' | 'timeout' | 'infrastructure-unavailable' | 'invalid';
 
@@ -6,19 +7,6 @@ export interface WorkspaceTestDiagnostic {
   code: string;
   message: string;
   path?: string;
-}
-
-export interface WorkspaceTestArtifact {
-  kind: 'zplc' | 'trace';
-  sha256: string;
-  byteLength: number;
-}
-
-export interface CanonicalWorkspaceBuildEvidence {
-  projectSession: number;
-  compilerRunId: number;
-  workspaceId: string;
-  zplc: WorkspaceTestArtifact;
 }
 
 export interface WorkspaceTestBuildLink {

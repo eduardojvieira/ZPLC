@@ -1,0 +1,9 @@
+[
+  {
+    "file": "packages/zplc-ide/src/cli/nativeScenarioRuntime.ts",
+    "imports": "packages/zplc-ide/electron/nativeSimulationSupervisor.ts",
+    "requirement": "IDE-033",
+    "added": "2026-10-10",
+    "reason": "The supervisor is plain Node (it spawns the native runtime and speaks its framed stdio) and the command line needs the same one. It still lives under electron/ because tsconfig.electron.json compiles with rootDir electron, so electron/main.ts cannot import a module of src/. Moving it needs the shared Node modules (this one, nativeSimulationIpc, the protocol files) in a folder both programs compile, which is the layout decision of the IPC contract work (IDE-017); do it there and delete this entry."
+  }
+]

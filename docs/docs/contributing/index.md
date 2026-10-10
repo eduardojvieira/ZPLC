@@ -39,6 +39,7 @@ Run every command from the repository root. The times were measured on a
 | Compiler | `bun run test:compiler:ci` | about 2 s | Compiler and assembler tests pass, and every failure is a listed one |
 | Studio, CLI, conformance | `bun run test:ide:ci` | 30 to 60 s | The Studio suites and the conformance cases behave as listed |
 | Lint and types | `bun run lint`, `bun run typecheck` and `bun run build:ide` | about 10 s, 20 s and 40 s | ESLint is clean, including the rules that reject an unhandled promise; every TypeScript program, tests and scripts included, type-checks; and the Studio builds |
+| Studio structure | `bun run lint:ide` (the rules run after ESLint), or `bun tools/ci/ide-structure.ts` | under 1 s | No store module imports a component, no command-line module imports from `electron/`, no static import cycle exists, and no hand-written module has more than 800 lines, except those on `tools/ci/module-size-offenders.json`, which can only shrink |
 | C static analysis | `bun run lint:c` | about 15 s | `clang-tidy` with `.clang-tidy`, every finding an error, is clean on the core, the POSIX HAL and the host application; the Zephyr HAL and `firmware/app` are analysed too when a board build exists |
 | Test sources | `bun run check:test-sources` | under 1 s | No test reads the text of product source or matches the assembly the compiler emitted, except the files listed for replacement in `tools/ci/pinned-source-offenders.json` |
 | Binary contract | `bun run contract:check` | about 1 s | Generated files match `contract.json` |

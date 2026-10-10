@@ -44,7 +44,8 @@ import { ZPLC_CONSTANTS } from '@zplc/compiler';
 import { transpileToST } from '../compiler';
 import type { DebugMap } from '../compiler';
 import { GeneratedCodeDialog } from './GeneratedCodeDialog';
-import { collectProjectFilesForExport, redactProjectConfigForExport } from '../utils/projectExport';
+import { collectProjectFilesForExport } from '../utils/projectExport';
+import { redactProjectConfigForExport } from '../project/sensitiveConfig';
 import {
   canRunCurrentProgram,
   HARDWARE_DEPLOY_UNCONFIRMED_MESSAGE,

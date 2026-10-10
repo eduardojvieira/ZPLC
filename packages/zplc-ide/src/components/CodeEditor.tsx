@@ -21,7 +21,7 @@ import { useFileBreakpoints, useCurrentExecution, useDebugValues, formatDebugVal
 import { useTheme } from '../hooks/useTheme';
 import { useEditorLiveValues } from '../hooks/useEditorLiveValues';
 import type { PLCLanguage } from '../types';
-import { breakpointDecorationClasses, breakpointFileKey, breakpointHoverMessage, doesCurrentPOUMatchFile, filterEligibleBreakpointLines, isLineBreakpointEligible } from './codeEditorBreakpoints';
+import { breakpointDecorationClasses, breakpointFileKey, breakpointHoverMessage, doesCurrentPOUMatchFile, filterEligibleBreakpointLines, isLineBreakpointEligible } from '../utils/breakpoints';
 import {
   buildInlineWidgets,
   extractVariablesFromCode,

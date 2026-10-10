@@ -4,6 +4,19 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- CI checks the structure of Studio's source (IDE-014, IDE-033):
+  `tools/ci/ide-structure.ts`, run by `bun run lint:ide` and by
+  `bun test ./tools/ci`, fails when a store module imports a component, when a
+  command-line or MCP module imports from `electron/`, when static imports form
+  a cycle (the path of each cycle is printed), and when a hand-written module
+  has more than 800 lines. The modules above the limit today are on
+  `tools/ci/module-size-offenders.json`, one entry each with its size and the
+  split it needs; the list can only shrink. The one command-line import of the
+  Electron folder that cannot move yet (the native simulation supervisor) is on
+  `tools/ci/layering-exceptions.json` with the reason. The store no longer
+  imports the breakpoint helpers or the build-evidence types from `components/`,
+  and the sensitive-configuration helpers no longer form an import cycle with
+  the file system and export modules.
 - The function blocks and functions that the Structured Text files of a project
   declare are blocks of the FBD and LD palettes (LNG-008): a diagram places one
   with the ports of its declaration, and the generated Structured Text calls it

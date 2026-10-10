@@ -331,7 +331,7 @@
     "reason": "Asserts the current layout as text of App.tsx (for example that no activity rail exists), which the spec says must be deleted with the layout it freezes. Remove when the new shell lands (UX workstream) and cover the new shell with render tests."
   },
   {
-    "file": "packages/zplc-ide/src/components/codeEditorBreakpoints.inactive.test.ts",
+    "file": "packages/zplc-ide/src/utils/breakpoints.inactive.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
     "reads": [
