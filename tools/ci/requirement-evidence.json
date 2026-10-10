@@ -502,7 +502,17 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"16 Debug details: stop, trace, resume mid-scan","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"18 Force an input while stopped at a breakpoint","partial":true},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-017: resume and step continue the scan a breakpoint interrupted"},
-    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_core.c","test":"Resume continues the scan a breakpoint interrupted (RT-017)."}
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_core.c","test":"Resume continues the scan a breakpoint interrupted (RT-017)."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_admission/src/main.c","test":"RT-017: a step keeps the committed image and leaves the pins safe."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_admission/src/main.c","test":"RT-017: the physical outputs are safe; the image is not the safe state."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_run_control/src/main.c","test":"RT-017: STOP drops a scan that a resume armed and no task has consumed."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_run_control/src/main.c","test":"RT-017: a breakpoint pause keeps the image and forces; resume continues."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_run_control/src/main.c","test":"RT-017: a force is kept while paused and reaches the pins after resume."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_run_control/src/main.c","test":"RT-017: a pause keeps the program's image and forces and makes the pins safe."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_run_control/src/main.c","test":"RT-017: a step keeps the image and forces and leaves the pins safe."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_run_control/src/main.c","test":"RT-017: an interrupted scan keeps its task id and first-scan flag."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_run_control/src/main.c","test":"RT-017: step from a breakpoint finishes the interrupted scan."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_run_control/src/main.c","test":"RT-017: the pause command keeps the image and forces with the pins safe."}
   ],
   "COM-001": [
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/fuzz_run_program.c","test":"RT-001/COM-001 are open, so that a long run can look for other findings); ZPLC_FUZZ_DUMP=<path> writes the"}
