@@ -1159,7 +1159,12 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"27 Results appear as notifications that lead to their details"}
   ],
   "IDE-024": [
-    {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"program inputs in the debug map (IDE-024)"}
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"program inputs in the debug map (IDE-024)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/SimulationInputsList.test.tsx","test":"the simulation inputs list (IDE-024)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/declaredInputs.test.ts","test":"reading declared inputs back (IDE-024)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/declaredInputs.test.ts","test":"the declared inputs of a program (IDE-024)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/runtime/declaredInputs.test.ts","test":"writing a declared input (IDE-024)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28 Any declared input of the running program can be set"}
   ],
   "IDE-027": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"toolchain inspection and firmware build (IDE-017, IDE-027)"}

@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { isAbsolute, join, relative, resolve, sep, win32 } from 'node:path';
 import { load } from 'js-yaml';
 import { ZPLC_CONSTANTS } from '@zplc/compiler';
+import { INPUT_TAG } from '../runtime/declaredInputs';
 import { CompilerError, assertTaskProgramCardinality, compileMultiTaskProject, compilerErrorsOf, parse, transpileToST, type CompilerWarning, type DebugMap, type DebugVarInfo, type Statement } from '../compiler';
 import type { ProjectMigrationChange } from '../project/projectModel';
 import { resolveProgramSource } from '../utils/programSourceResolution';
@@ -357,6 +358,34 @@ function symbolSummary(debugMap: DebugMap, workspace: WorkspaceProject): SymbolS
   };
 }
 
+/**
+ * Marks, in the debug map, the VAR_INPUT variables of every program that have no direct address (IDE-024): the map has no
+ * section, and Studio lists the declared inputs of the running program from it. A program that cannot be read again is
+ * left unmarked (the build has already accepted it).
+ */
+function markProgramInputs(debugMap: DebugMap, sources: ReturnType<typeof compilationSources>): void {
+  const namesByFile = new Map<string, Set<string>>();
+  for (const source of sources) {
+    const text = source.language === 'ST' ? source.content : (() => { const transpiled = transpileToST(source.content, source.language); return transpiled.success ? transpiled.source : undefined; })();
+    if (text === undefined) continue;
+    try {
+      const names = namesByFile.get(source.sourceRef) ?? new Set<string>();
+      for (const program of parse(text).programs) {
+        for (const block of program.varBlocks) if (block.section === 'VAR_INPUT') for (const variable of block.variables) names.add(variable.name);
+      }
+      namesByFile.set(source.sourceRef, names);
+    } catch { /* the build accepted it; an unreadable source simply has no marked inputs */ }
+  }
+  for (const info of Object.values(debugMap.pou)) {
+    const names = info.sourceRef === undefined ? undefined : namesByFile.get(info.sourceRef);
+    if (!names) continue;
+    for (const name of names) {
+      const variable = info.vars[name];
+      if (variable && variable.region === 'WORK' && variable.children === undefined) variable.tags = { ...(variable.tags ?? {}), [INPUT_TAG]: true };
+    }
+  }
+}
+
 async function compile<Operation extends CompileOperation>(root: string, operation: Operation): Promise<CompileResult<Operation>> {
   const loaded = await readWorkspace(root); if (!loaded.ok) return failed(operation, loaded.diagnostics) as CompileResult<Operation>;
   try { assertTaskProgramCardinality(loaded.workspace.project); }
@@ -371,6 +400,7 @@ async function compile<Operation extends CompileOperation>(root: string, operati
     const warnings = compilerWarningDiagnostics(result.warnings);
     const response: CompilerCompileResult = { ok: true, summary: { name: loaded.workspace.project.name, version: loaded.workspace.project.version, taskCount: loaded.workspace.project.tasks.length, codeSize: result.codeSize, draftCounter: ZPLC_CONSTANTS.DRAFT_COUNTER }, evidence: evidence(operation, 'passed', warnings, operation === 'symbols-list' ? [] : [artifact]) };
     if (operation === 'compile') {
+      markProgramInputs(result.debugMap, compilationSources(loaded.workspace));
       Object.defineProperties(response, {
         bytes: { value: bytes, enumerable: false },
         zplcFile: { value: result.zplcFile, enumerable: false },

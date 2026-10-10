@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DiffEditor, type Monaco } from '@monaco-editor/react';
+import { SimulationInputsPanel } from './SimulationInputsPanel';
 import { shownProjectBridge } from '../ipc/shownProjectBridge';
 import { useNotifications, type NotificationResult } from '../store/notifications';
 import { useIDEStore } from '../store/useIDEStore';
@@ -978,12 +979,15 @@ export function Console({ debugController }: ConsoleProps) {
         )}
 
         {activeConsoleTab === 'watch' && (
-          <DebugWatchPanel
-            setValue={debugController?.setValue}
-            toggleForceValue={debugController?.toggleForceValue}
-            clearAllForcedValues={debugController?.clearAllForcedValues}
-            hasActiveSerialSession={debugController?.adapter?.type === 'serial' && debugController.adapter.connected}
-          />
+          <>
+            <div className="px-2 pt-2"><SimulationInputsPanel controller={debugController} /></div>
+            <DebugWatchPanel
+              setValue={debugController?.setValue}
+              toggleForceValue={debugController?.toggleForceValue}
+              clearAllForcedValues={debugController?.clearAllForcedValues}
+              hasActiveSerialSession={debugController?.adapter?.type === 'serial' && debugController.adapter.connected}
+            />
+          </>
         )}
         </ErrorBoundary>
       </div>

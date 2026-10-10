@@ -4,6 +4,14 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- Any input that the running program declares can be set from Studio in native
+  simulation, not only three motor signals (IDE-024). The **Simulation inputs**
+  section of the Watch tab lists the variables mapped to the input image (whatever
+  their name) and the inputs of the programs, with their address and live value,
+  and sets each one: a TRUE/FALSE switch for a BOOL (only its own bit changes) and
+  a number box for the other numeric types, with **Force** for the types a force
+  carries. The build marks the program inputs that have no direct address in the
+  debug map (`zplc:input` tag).
 - The security properties of Studio are proven by what the running application
   does (IDE-016): an inline script and an inline event handler that a page injects
   are blocked by the production policy, a permission other than serial is

@@ -1749,3 +1749,24 @@ describe('tool execution envelope', () => {
     expect(executionPermission('validate')).toBe('project:read');
   });
 });
+
+describe('program inputs in the debug map (IDE-024)', () => {
+  it('marks the VAR_INPUT variables of a program that have no address, and nothing else', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-inputs-'));
+    try {
+      await mkdir(join(root, 'src'));
+      await writeFile(join(root, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'Inputs', version: '1.0.0', target: { board: 'posix' }, tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Plant.st'] }] }));
+      await writeFile(join(root, 'src', 'Plant.st'), 'PROGRAM Plant\nVAR_INPUT\n  SensorWest AT %IX0.3 : BOOL;\n  Enable : BOOL;\n  Gain : REAL;\nEND_VAR\nVAR_OUTPUT\n  Lamp AT %QX0.0 : BOOL;\nEND_VAR\nVAR\n  Counter : DINT;\nEND_VAR\nLamp := SensorWest AND Enable;\nCounter := Counter + 1;\nEND_PROGRAM\n');
+      const result = await compilerCompile(root) as unknown as { ok: boolean; debugMap: { pou: Record<string, { vars: Record<string, { region: string; tags?: Record<string, unknown> }> }> } };
+      expect(result.ok).toBe(true);
+      const vars = result.debugMap.pou.Plant!.vars;
+      const marked = Object.entries(vars).filter(([, variable]) => variable.tags?.['zplc:input'] === true).map(([name]) => name).sort();
+      expect(marked).toEqual(['Enable', 'Gain']);
+      expect(vars.SensorWest!.region).toBe('IPI');
+      expect(vars.SensorWest!.tags?.['zplc:input']).toBeUndefined();
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
+  });
+});
+

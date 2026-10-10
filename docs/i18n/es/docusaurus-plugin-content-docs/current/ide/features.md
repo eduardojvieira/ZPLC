@@ -88,6 +88,33 @@ Si el editor, el panel inferior o la barra de herramientas lanzan una excepción
 
 Nivel de evidencia: host. El recorrido 20 (una región que falla no deja la ventana en blanco) de `bun run test:journeys` hace fallar cada una de las tres regiones en la aplicación real, comprueba que las otras dos siguen funcionando y que Retry devuelve la región caída; `packages/zplc-ide/src/components/ErrorBoundary.test.tsx` cubre la lógica de la región.
 
+## Entradas de la simulación
+
+En la simulación nativa, la pestaña **Watch** empieza con **Simulation inputs**:
+todas las entradas que declara el programa en ejecución, con su propio nombre. Es
+decir, cada variable mapeada a la imagen de entrada (`AT %IX0.3`, `AT %IW2`, como
+la haya llamado) y cada `VAR_INPUT` de un programa, con su tipo, su dirección y el
+valor leído del runtime. Un BOOL tiene un interruptor **Set TRUE / Set FALSE** que
+cambia solo su propio bit, y cada otro tipo numérico tiene una casilla numérica con
+**Set**; un valor que no cabe en el tipo se rechaza con un mensaje antes de
+escribir nada. **Force** mantiene la entrada en su valor actual (y **Set** cambia
+entonces el valor forzado), para los tipos de hasta 32 bits que transporta un
+force; al liberarlo la entrada vuelve a quedar libre.
+
+El propio runtime sigue aceptando solo los tres nombres de motor de su petición
+`simulation.input.set`; cualquier otra entrada se escribe con la escritura de
+memoria tipada, en la dirección y con el ancho del mapa de depuración. En hardware,
+las entradas se fuerzan desde la tabla Watch.
+
+Nivel de evidencia: host. `packages/zplc-ide/src/runtime/declaredInputs.test.ts`
+cubre la lista, la codificación de cada tipo numérico y la escritura sin tocar los
+demás bits, contra un mapa de depuración del compilador real;
+`src/cli/toolApi.test.ts` cubre el marcado de las entradas de programa, y el
+recorrido 28 de `bun run test:journeys` fija un bit, una palabra y una entrada de
+programa de un proyecto con nombres propios en la aplicación real y ve que la salida
+del programa los sigue (requisito IDE-024). Evidencia de host con POSIX nativo, no
+de hardware.
+
 ## Notificaciones
 
 El resultado de una compilación, un guardado, un despliegue, un cambio de conexión

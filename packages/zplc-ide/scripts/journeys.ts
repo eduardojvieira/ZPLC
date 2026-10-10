@@ -1549,6 +1549,69 @@ export const JOURNEYS: Journey[] = [
   },
 
   {
+    // IDE-024: any input the program declares can be set from Studio, whatever its name: none of these names is one the
+    // runtime or Studio knows. Each set is seen by the program on its next scan.
+    name: '28 Any declared input of the running program can be set', example: 'none', proves: ['IDE-024'], partly: [],
+    run: async (app, { root }) => {
+      const folder = join(root, 'plant-inputs');
+      mkdirSync(join(folder, 'src'), { recursive: true });
+      writeFileSync(join(folder, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'Plant Inputs', version: '1.0.0', target: { board: 'posix' }, tasks: [{ name: 'MainTask', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Plant.st'] }] }));
+      // Result follows Setpoint only while both gates are set, so that one watched value proves all three inputs reached the program.
+      writeFileSync(join(folder, 'src', 'Plant.st'), [
+        'PROGRAM Plant',
+        'VAR_INPUT',
+        '  SensorWest AT %IX0.3 : BOOL;',
+        '  Setpoint AT %IW2 : INT;',
+        '  Enable : BOOL;',
+        'END_VAR',
+        'VAR_OUTPUT',
+        '  Result AT %QW2 : INT;',
+        'END_VAR',
+        'IF SensorWest AND Enable THEN',
+        '  Result := Setpoint;',
+        'ELSE',
+        '  Result := 0;',
+        'END_IF;',
+        'END_PROGRAM',
+        '',
+      ].join('\n'));
+      // The steps wait on a runtime and a Watch table that share the machine with other work: a generous bound, not a slow product.
+      const patiently = <T,>(description: string, check: () => Promise<T | undefined | false> | T | undefined | false) => app.until(description, check, 45_000);
+      const switchFor = (name: string, state: 'TRUE' | 'FALSE') => button(`${name}: ${state}`);
+
+      await openFolder(app, folder);
+      const built = await compile(app);
+      assert(built.kind === 'built', `The program with custom-named inputs does not build: ${built.message}`);
+      await connectAndRun(app);
+      await watch(app, 'Result');
+
+      // Every declared input is listed, by its own name: a mapped bit, a mapped word and a plain program input.
+      for (const name of ['Plant.SensorWest', 'Plant.Setpoint', 'Plant.Enable']) {
+        await patiently(`${name} in the simulation inputs`, async () => await app.visible(css(`[data-input="${name}"]`)) || undefined);
+      }
+
+      await app.click(switchFor('SensorWest', 'FALSE'));
+      await patiently('SensorWest to read TRUE', async () => await app.visible(switchFor('SensorWest', 'TRUE')) || undefined);
+      await app.click(switchFor('Enable', 'FALSE'));
+      await patiently('Enable to read TRUE', async () => await app.visible(switchFor('Enable', 'TRUE')) || undefined);
+      await app.click(css('input[aria-label="Value of Setpoint"]'));
+      await app.type('1234');
+      await app.click(button('Set Setpoint'));
+      await patiently('Setpoint to read 1234', async () => (await app.eval<string>(`document.querySelector('[data-input="Plant.Setpoint"] [data-input-value]')?.textContent ?? ''`)) === '1234' || undefined);
+
+      // The program saw all three on its next scans.
+      await patiently('Result to be 1234: the three inputs reached the program', async () => await watchValue(app, 'Result') === '1234' || undefined);
+
+      // Setting one input leaves the others alone: clearing the bit of SensorWest does not clear Enable or Setpoint.
+      await app.click(switchFor('SensorWest', 'TRUE'));
+      await patiently('SensorWest to read FALSE', async () => await app.visible(switchFor('SensorWest', 'FALSE')) || undefined);
+      assert(await app.visible(switchFor('Enable', 'TRUE')), 'Clearing SensorWest changed Enable.');
+      assert((await app.eval<string>(`document.querySelector('[data-input="Plant.Setpoint"] [data-input-value]')?.textContent ?? ''`)) === '1234', 'Clearing SensorWest changed Setpoint.');
+      await patiently('Result to go 0: the gate closed', async () => await watchValue(app, 'Result') === '0' || undefined);
+    },
+  },
+
+  {
     // IDE-016 on the development host: the policy is applied, permissions other than serial are refused, navigation and new
     // windows are refused, and a hostile project path is refused. The inline-script probe needs the production policy and
     // is made on the packaged application (runPackagedSecurityProbes).
