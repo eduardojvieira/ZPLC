@@ -1,0 +1,14 @@
+{
+  "requirement": "CMP-037",
+  "title": "an input of a standard block is given with :=, not bound with =>",
+  "matrix": [
+    "pous.function-block-call-with-named-inputs"
+  ],
+  "build": "fails",
+  "lines": [
+    6
+  ],
+  "messageIncludes": [
+    "IN"
+  ]
+}

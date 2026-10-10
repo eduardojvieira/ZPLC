@@ -11,11 +11,13 @@ tags: [reference, stdlib, iec61131-3]
 
 ZPLC documenta las funciones y bloques de la biblioteca estándar implementados por sus rutas de compilador/runtime. La disponibilidad depende del flujo de lenguaje y del perfil de capacidades del destino; ST es el frontend central.
 
-Esta página describe las funciones cubiertas hoy por la referencia. Validá el proyecto contra el flujo y perfil seleccionados.
+Esta página describe las funciones cubiertas hoy por la referencia. Valide el proyecto contra el flujo y el perfil seleccionados.
 
 ---
 
 ## 1. Timers (Temporizadores)
+
+`PT` y `ET` son valores `TIME`: una cuenta de 32 bits sin signo en milisegundos, de 0 a 4294967295 (unos 49,7 días). Ver [Tipos de tiempo y fecha](../languages/st.md#tipos-de-tiempo-y-fecha).
 
 ### TON (Temporizador On-Delay)
 Retrasa un flanco de subida. La salida `Q` se vuelve TRUE solo después de que `IN` haya sido TRUE durante la duración de `PT`.
@@ -23,9 +25,9 @@ Retrasa un flanco de subida. La salida `Q` se vuelve TRUE solo después de que `
   - `IN` (BOOL): Condición de disparo.
   - `PT` (TIME): Tiempo preestablecido (duración a esperar).
 - **Salidas:**
-  - `Q` (BOOL): High si `IN` ha sido alto continuamente durante `PT`.
-  - `ET` (TIME): Tiempo transcurrido desde que `IN` se puso en alto. Cuenta hasta `PT` y se detiene ahí; vale 0 mientras `IN` está en bajo.
-- **Comportamiento:** `IN` en bajo reinicia `Q` y `ET` de inmediato. Un preset de `T#0ms` hace que `Q` siga a `IN` en el mismo scan.
+  - `Q` (BOOL): High si `IN` ha sido alto continuamente durante `PT` (`cmp-058-ton-delays-output`).
+  - `ET` (TIME): Tiempo transcurrido desde que `IN` se puso en alto. Cuenta hasta `PT` y se detiene ahí; vale 0 mientras `IN` está en bajo (`cmp-057-ton-elapsed-stops-at-preset`).
+- **Comportamiento:** `IN` en bajo reinicia `Q` y `ET` de inmediato. Un preset de `T#0ms` hace que `Q` siga a `IN` en el mismo scan (`cmp-057-ton-zero-preset-follows-the-input`).
 
 ### TOF (Temporizador Off-Delay)
 Conserva un estado alto durante un tiempo después de un flanco de bajada. `Q` sigue a `IN` a TRUE inmediatamente, pero retrasa su paso a FALSE hasta que haya transcurrido `PT`.
@@ -33,8 +35,8 @@ Conserva un estado alto durante un tiempo después de un flanco de bajada. `Q` s
   - `IN` (BOOL): Condición de disparo.
   - `PT` (TIME): Tiempo preestablecido (duración a mantener en alto).
 - **Salidas:**
-  - `Q` (BOOL): Verdadero mientras `IN` sea verdadero, más el tiempo `PT` después de que `IN` se vuelva falso.
-  - `ET` (TIME): Tiempo transcurrido desde que `IN` se puso en bajo. Cuenta hasta `PT` y se queda en `PT` hasta que `IN` vuelve a subir; vale 0 mientras `IN` está en alto.
+  - `Q` (BOOL): Verdadero mientras `IN` sea verdadero, más el tiempo `PT` después de que `IN` se vuelva falso (`cmp-058-tof-holds-output`).
+  - `ET` (TIME): Tiempo transcurrido desde que `IN` se puso en bajo. Cuenta hasta `PT` y se queda en `PT` hasta que `IN` vuelve a subir; vale 0 mientras `IN` está en alto (`cmp-057-tof-elapsed-stops-at-preset`).
 
 ### TP (Temporizador de Pulso)
 Genera un pulso de duración fija, sin importar cuánto tiempo permanezca alta la entrada.
@@ -42,46 +44,59 @@ Genera un pulso de duración fija, sin importar cuánto tiempo permanezca alta l
   - `IN` (BOOL): Condición de disparo (el flanco de subida inicia el pulso).
   - `PT` (TIME): Tiempo de pulso.
 - **Salidas:**
-  - `Q` (BOOL): Lanza un pulso verdadero durante el tiempo `PT` en el flanco de subida de `IN`.
-  - `ET` (TIME): Tiempo transcurrido desde que inició el pulso. Cuenta hasta `PT` y se detiene ahí; conserva `PT` mientras `IN` sigue en alto después del pulso y vale 0 cuando el pulso terminó y `IN` está en bajo.
-- **Comportamiento:** El pulso corre hasta el final haga lo que haga `IN` y no se puede redisparar: un nivel que se mantiene en alto no inicia un segundo pulso, un pulso nuevo necesita un flanco de subida nuevo después de que el anterior terminó. Un preset de `T#0ms` no da pulso.
+  - `Q` (BOOL): Verdadero durante `PT` después de un flanco de subida de `IN`, haga lo que haga `IN` mientras tanto (`cmp-057-tp-pulse-ignores-the-input-falling`).
+  - `ET` (TIME): Tiempo transcurrido desde que inició el pulso. Cuenta hasta `PT` y se detiene ahí; conserva `PT` mientras `IN` sigue en alto después del pulso y vale 0 cuando el pulso terminó y `IN` está en bajo (`cmp-057-tp-elapsed-resets-when-the-pulse-ends-with-input-low`).
+- **Comportamiento:** El pulso corre hasta el final haga lo que haga `IN` y no se puede redisparar: un nivel que se mantiene en alto no inicia un segundo pulso, un pulso nuevo necesita un flanco de subida nuevo después de que el anterior terminó (`cmp-057-tp-not-retriggered`, `cmp-057-tp-new-edge-starts-a-new-pulse`). Un preset de `T#0ms` no da pulso.
 
 ---
 
 ## 2. Contadores
 
+`CTU`, `CTD` y `CTUD` guardan su cuenta en `CV` y toman el valor de preselección de `PV`. Ambos son `INT`: 16 bits, de -32768 a 32767. Las reglas de esta lista valen para los tres bloques, y cada bloque agrega las suyas más abajo.
+
+- **La cuenta es por flanco.** Se cuenta cuando la entrada es TRUE en esta llamada y era FALSE en la llamada anterior de la misma instancia. Una entrada que permanece en TRUE cuenta una sola vez, y una entrada que ya es TRUE en la primera llamada cuenta una vez. El flanco se ve entre dos llamadas, no entre dos scans, de modo que una llamada que un `IF` omite no ve un flanco que subió y bajó entre medio.
+- **Reset y load son niveles y tienen prioridad.** Mientras `R` (`CTU`, `CTUD`) o `LD` (`CTD`, `CTUD`) es TRUE, no se cuenta nada. En `CTUD`, `R` gana sobre `LD`.
+- **El detector de flancos sigue funcionando durante el reset y el load.** Un pulso que sube mientras `R` o `LD` es TRUE no se cuenta cuando `R` o `LD` se suelta. Un pulso que sube en la llamada en que `R` o `LD` se suelta sí se cuenta, siempre que la entrada fuera FALSE en la llamada anterior.
+- **Las salidas se recalculan en cada llamada** a partir de `CV` y `PV`, después del reset, el load o la cuenta de esa llamada.
+
 ### CTU (Contador Ascendente)
-Incrementa un valor con cada flanco de subida de la entrada.
+Suma 1 en cada flanco de subida de `CU`.
 - **Entradas:**
-  - `CU` (BOOL): Disparo de conteo ascendente (flanco de subida).
-  - `R` (BOOL): Entrada de Reset; cuando es TRUE, `CV` se reinicia a 0.
-  - `PV` (INT): Valor de Preselección (Preset).
+  - `CU` (BOOL): Entrada de cuenta ascendente.
+  - `R` (BOOL): Reset; mientras es TRUE, `CV` vale 0.
+  - `PV` (INT): Valor de preselección.
 - **Salidas:**
-  - `Q` (BOOL): TRUE si `CV >= PV`.
-  - `CV` (INT): Valor actual del contador.
+  - `Q` (BOOL): TRUE cuando `CV >= PV`.
+  - `CV` (INT): Valor actual. Se detiene en 32767: un flanco ahí no se cuenta y `CV` no pasa a -32768.
 
 ### CTD (Contador Descendente)
-Decrementa un valor con cada flanco de subida de la entrada.
+Resta 1 en cada flanco de subida de `CD`.
 - **Entradas:**
-  - `CD` (BOOL): Disparo de conteo descendente (flanco de subida).
-  - `LD` (BOOL): Load; cuando es TRUE, `CV` se establece en `PV`.
-  - `PV` (INT): Valor inicial.
+  - `CD` (BOOL): Entrada de cuenta descendente.
+  - `LD` (BOOL): Load; mientras es TRUE, `CV` vale `PV`.
+  - `PV` (INT): Valor de preselección.
 - **Salidas:**
-  - `Q` (BOOL): TRUE si `CV <= 0`.
-  - `CV` (INT): Valor actual del contador. Cuenta por debajo de 0 y se detiene en -32768.
+  - `Q` (BOOL): TRUE cuando `CV <= 0`. Una instancia nueva empieza con `CV` en 0, de modo que `Q` es TRUE hasta el primer load.
+  - `CV` (INT): Valor actual. Cuenta por debajo de 0 y se detiene en -32768: un flanco ahí no se cuenta y `CV` no pasa a 32767 (`cmp-058-ctd-counts-below-zero`, `cmp-058-ctd-stops-at-the-int-minimum`).
 
 ### CTUD (Contador Ascendente/Descendente)
-Combina características de CTU y CTD.
+Suma 1 en un flanco de subida de `CU` y resta 1 en un flanco de subida de `CD`.
 - **Entradas:**
-  - `CU` (BOOL): Disparo ascendente.
-  - `CD` (BOOL): Disparo descendente.
-  - `R` (BOOL): Reset a 0.
-  - `LD` (BOOL): Cargar `PV` en `CV`.
-  - `PV` (INT): Valor preestablecido.
+  - `CU` (BOOL): Entrada de cuenta ascendente.
+  - `CD` (BOOL): Entrada de cuenta descendente.
+  - `R` (BOOL): Reset; mientras es TRUE, `CV` vale 0.
+  - `LD` (BOOL): Load; mientras es TRUE y `R` es FALSE, `CV` vale `PV`.
+  - `PV` (INT): Valor de preselección.
 - **Salidas:**
-  - `QU` (BOOL): TRUE si `CV >= PV`.
-  - `QD` (BOOL): TRUE si `CV <= 0`.
-  - `CV` (INT): Valor actual del contador. Cuenta de -32768 a 32767 y se detiene en ambos extremos. `QU` y `QD` comparan `CV` con `PV` y con 0 con signo.
+  - `QU` (BOOL): TRUE cuando `CV >= PV`.
+  - `QD` (BOOL): TRUE cuando `CV <= 0`.
+  - `CV` (INT): Valor actual. Se detiene en 32767 igual que `CTU` y en -32768 al contar hacia abajo. Un flanco de subida de `CU` y otro de `CD` en la misma llamada se anulan entre sí.
+
+### Valores con signo
+
+`CV` y `PV` son valores de 16 bits con signo y toda comparación es con signo: un `PV` negativo es un preset negativo (un `CTU` con `PV := -3` tiene `Q` en TRUE desde la primera llamada, `cmp-058-ctu-with-a-negative-preset`), y `QU` y `QD` de `CTUD` comparan `CV` con `PV` y con 0 como números con signo por debajo de cero (`cmp-058-ctud-counts-down-through-zero-and-back`).
+
+Nivel de evidencia: host. Los casos `cmp-058-ctu-*`, `cmp-058-ctd-*` y `cmp-058-ctud-*` de `conformance/cmp/` se ejecutan en el runtime nativo, y `packages/zplc-compiler/src/compiler/stdlib/counters.test.ts` reproduce el código generado scan por scan, incluidas las detenciones en 32767 y en -32768.
 
 ---
 
@@ -116,11 +131,11 @@ Combina características de CTU y CTD.
 ## 5. Funciones Matemáticas
 
 ### Operadores Aritméticos
-- **ADD(IN1, IN2)**: Retorna `IN1 + IN2`. Soporta ANY_NUM (INT, REAL).
-- **SUB(IN1, IN2)**: Retorna `IN1 - IN2`. Soporta ANY_NUM.
-- **MUL(IN1, IN2)**: Retorna `IN1 * IN2`. Soporta ANY_NUM.
-- **DIV(IN1, IN2)**: Retorna `IN1 / IN2`. Soporta ANY_NUM.
-- **MOD(IN1, IN2)**: Retorna el residuo entero de `IN1 / IN2`. Soporta ANY_INT.
+- **`+`, `-`, `*`, `/`**: suma, resta, multiplicación y división de los tipos numéricos. La división entera trunca hacia cero.
+- **`a MOD b`**: el residuo entero, con el signo de `a`. Es un operador: la forma `MOD(a, b)` no se analiza.
+- Las formas de función `ADD(a, b)`, `SUB`, `MUL` y `DIV` no existen; la compilación las rechaza y nombra la función (`cmp-006-operator-function-form-is-rejected`).
+
+Los anchos, el desbordamiento y el comportamiento en los límites están en los [tipos numéricos](../languages/st.md#tipos-numéricos) de Structured Text.
 
 ### Matemáticas Avanzadas
 ### ABS
@@ -133,7 +148,7 @@ Combina características de CTU y CTD.
 
 ### SIN / COS / TAN
 - **Entradas:** `IN` (REAL).
-- **Salidas:** (REAL) Seno, Coseno o Tangente de IN (en radianes).
+- **Salidas:** (REAL) Seno, Coseno o Tangente de IN (en radianes) (`cmp-058-trigonometric-functions`).
 - **Dominio:** `IN` menor que 100000 en magnitud. Un NaN, o un ángulo de 100000 o más, da NaN: un REAL de ese tamaño ya no dice dónde está en la circunferencia.
 
 ### EXP / LN / LOG
@@ -201,20 +216,18 @@ Ninguna hace fallar la VM con ningún argumento: una división por cero se reemp
 ## 7. Funciones de Bits
 
 ### Operadores Lógicos
-- **AND(IN1, IN2)**: AND Bit a bit. Soporta ANY_BIT (BYTE, WORD, DWORD).
-- **OR(IN1, IN2)**: OR Bit a bit. 
-- **XOR(IN1, IN2)**: OR Exclusivo Bit a bit. 
-- **NOT(IN)**: Inversión.
-- **NAND(IN1, IN2)** / **NOR(IN1, IN2)**: La negación de AND y de OR de dos valores BOOL, 0 o 1.
+- **`a AND b`, `a OR b`, `a XOR b`, `NOT a`**: operadores sobre `BOOL`, `BYTE`, `WORD`, `DWORD` y `LWORD`, con todo el ancho declarado. Las formas de función `AND(a, b)`, `OR(a, b)` y `XOR(a, b)` no se analizan.
+- **NAND(IN1, IN2)** / **NOR(IN1, IN2)**: La negación de AND y de OR de dos valores `BOOL`, 0 o 1 (`cmp-058-nand-and-nor-truth-tables`).
+- **AND_WORD, OR_WORD, XOR_WORD, NOT_WORD** y **AND_DWORD, OR_DWORD, XOR_DWORD, NOT_DWORD**: las mismas operaciones como funciones sobre `WORD` y `DWORD` (`cmp-014-shr-and-word-logic-functions`).
 
 ### Rotación y Desplazamiento
 ### SHL
 - **Entradas:** `IN` (ANY_BIT), `N` (INT, número de bits).
-- **Salidas:** (ANY_BIT) `IN` desplazado a la izquierda.
+- **Salidas:** (ANY_BIT) `IN` desplazado a la izquierda. Un desplazamiento de 32 o más, o con una cuenta negativa, da 0 (`cmp-016-shift-by-the-width-or-more`), y un `BYTE` o un `WORD` descarta los bits desplazados más allá de su ancho (`cmp-014-shl-byte-keeps-8-bits`).
 
 ### SHR
 - **Entradas:** `IN` (ANY_BIT), `N` (INT).
-- **Salidas:** (ANY_BIT) `IN` desplazado a la derecha.
+- **Salidas:** (ANY_BIT) `IN` desplazado a la derecha. Un desplazamiento de 32 o más, o con una cuenta negativa, da 0.
 
 ### ROL
 - **Entradas:** `IN` (ANY_BIT), `N` (INT).
@@ -273,11 +286,11 @@ Las funciones de conversión mueven valores entre tipos. Existe una función `<O
 
 ### UPTIME
 - **Entradas:** Ninguna.
-- **Salidas:** (UDINT / TIME) Campo de uptime del runtime en milisegundos.
+- **Salidas:** (UDINT / TIME) Campo de uptime del runtime en milisegundos (`cmp-058-uptime-follows-the-clock`).
 
 ### CYCLE_TIME
 - **Entradas:** Ninguna.
-- **Salidas:** (UDINT / TIME) Último valor de ciclo informado. Su unidad, resolución, punto de actualización y relación con el tiempo físico dependen del runtime/perfil; no lo uses como garantía de timing de hardware.
+- **Salidas:** (UDINT / TIME) Último valor de ciclo informado. Su unidad, resolución, punto de actualización y relación con el tiempo físico dependen del runtime/perfil; no lo use como garantía de timing de hardware.
 
 ### WATCHDOG_RESET
 Stub de compatibilidad. Hoy compila a `NOP` y no alimenta, reinicia ni valida un watchdog de hardware o software.
@@ -288,7 +301,19 @@ No debe usarse como control de seguridad.
 
 ---
 
-## 11. Bloques de Biblioteca Fuera del Estándar
+## 11. Diferencias conocidas con IEC 61131-3
+
+La tabla se genera a partir de los casos de conformidad que esperan el comportamiento de IEC 61131-3 y fallan hoy (`tools/ci/expected-failures.json`) y de la descripción de cada requisito en `docs/known-limits.json`. Una fila desaparece cuando pasa el último caso de su requisito.
+
+{/* >>> GENERATED (tools/docs/generate_known_limits.py): known-limits-library. Do not edit. >>> */}
+Ningún caso de conformidad de esta área figura en la lista de fallos esperados: no hay un límite registrado.
+{/* <<< END GENERATED: known-limits-library <<< */}
+
+Un bloque o una función que no está en la tabla no se sabe que difiera. Cada función estándar y cada bloque de biblioteca fuera de los de comunicación tiene un caso ejecutado en `conformance/cmp/` (requisito CMP-058).
+
+---
+
+## 12. Bloques de Biblioteca Fuera del Estándar
 
 Estos bloques pertenecen a la biblioteca de ZPLC y no son bloques de IEC 61131-3.
 

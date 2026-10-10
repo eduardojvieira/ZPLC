@@ -963,7 +963,8 @@ export function useDebugController(): DebugController {
       setPolling(true);
 
       let isPollingWatch = false;
-      pollingIntervalRef.current = setInterval(async () => {
+      // The poll handles its own errors, so the timer only starts it and does not wait for it.
+      const pollWatch = async (): Promise<void> => {
         if (!adapterRef.current?.connected) return;
         if (isPollingWatch) return;
 
@@ -1008,7 +1009,8 @@ export function useDebugController(): DebugController {
         } finally {
           isPollingWatch = false;
         }
-      }, pollingInterval);
+      };
+      pollingIntervalRef.current = setInterval(() => { void pollWatch(); }, pollingInterval);
     } else if (!shouldPoll && pollingIntervalRef.current) {
       clearInterval(pollingIntervalRef.current);
       pollingIntervalRef.current = null;

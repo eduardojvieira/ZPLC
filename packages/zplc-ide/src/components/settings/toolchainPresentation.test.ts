@@ -43,7 +43,7 @@ function result() {
       checks: checks.map((id) => ({ id, status: 'ready' })),
       boards: structuredClone(boards),
     },
-    evidence: { schemaVersion: 1, operation: 'toolchain-inspect', outcome: 'passed', diagnostics: [], artifacts: [] },
+    evidence: { schemaVersion: 1, operation: 'toolchain-inspect', outcome: 'passed', diagnostics: [] as Array<{ code: string; message: string }>, artifacts: [] as Array<{ kind: string }> },
   };
 }
 

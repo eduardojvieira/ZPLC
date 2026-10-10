@@ -38,7 +38,7 @@ Run every command from the repository root. The times were measured on a
 | C core and host runtime | `bun run test:core` | about 5 s | The C suites pass under the address and undefined-behaviour sanitizers |
 | Compiler | `bun run test:compiler:ci` | about 2 s | Compiler and assembler tests pass, and every failure is a listed one |
 | Studio, CLI, conformance | `bun run test:ide:ci` | 30 to 60 s | The Studio suites and the conformance cases behave as listed |
-| Lint and types | `bun run lint` and `bun run build:ide` | about 10 s and 40 s | ESLint is clean and the TypeScript projects build |
+| Lint and types | `bun run lint`, `bun run typecheck` and `bun run build:ide` | about 10 s, 20 s and 40 s | ESLint is clean, including the rules that reject an unhandled promise; every TypeScript program, tests and scripts included, type-checks; and the Studio builds |
 | Binary contract | `bun run contract:check` | about 1 s | Generated files match `contract.json` |
 | Simulation | `bun run simulate packages/zplc-ide/projects/motor_plant` | under 1 s | The project's scenario tests pass on the native runtime |
 | Studio journeys | `bun run test:journeys` | 70 to 90 s | The real application passes its end-to-end journeys (needs a display) |

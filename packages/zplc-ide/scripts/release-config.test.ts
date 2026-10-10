@@ -8,7 +8,7 @@ import { EXPECTED_ARTIFACTS } from './smoke-desktop-builds';
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8');
 
 type Builder = {
-  extraResources: Array<{ from: string; to: string }>;
+  extraResources: Array<{ from: string; to: string; filter?: string[] }>;
   mac: {
     identity?: string | null;
     binaries?: string[];
@@ -33,7 +33,7 @@ type Job = {
   if?: string;
   environment?: unknown;
   permissions?: Record<string, string>;
-  steps?: Step[];
+  steps: Step[];
   strategy?: { matrix: { include: Array<{ arch: string; runner: string }> } };
 };
 type Workflow = { on: { workflow_dispatch: { inputs: Record<string, unknown> } }; jobs: Record<string, Job> };

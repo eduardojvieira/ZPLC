@@ -35,7 +35,7 @@ describe('analog_test conversion on the native runtime', () => {
       for (const raw of readings) {
         const session = await createNativeScenarioSession(process.env);
         try {
-          await session.runtime.loadProgram(built.zplcFile);
+          await session.runtime.loadProgram(built.zplcFile!);
           await session.runtime.reset();
           for (let bit = 0; bit < 16; bit++) await session.runtime.setInput(ADC_CH4_BYTE + (bit >> 3), bit & 7, ((raw >> bit) & 1) === 1);
           await session.runtime.step(0);

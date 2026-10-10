@@ -17,15 +17,17 @@ This page describes the functions currently covered by this reference. Validate 
 
 ## 1. Timers
 
+`PT` and `ET` are `TIME` values: an unsigned 32-bit count of milliseconds, from 0 to 4294967295 (about 49.7 days). See [Time and date types](../languages/st.md#time-and-date-types).
+
 ### TON (On-Delay Timer)
 Delays a rising edge. The output `Q` goes TRUE only after `IN` has been TRUE for the duration of `PT`.
 - **Inputs:**
   - `IN` (BOOL): Trigger condition.
   - `PT` (TIME): Preset Time (duration to wait).
 - **Outputs:**
-  - `Q` (BOOL): High if `IN` has been continuously high for `PT`.
-  - `ET` (TIME): Elapsed Time since `IN` went high. It counts up to `PT` and stops there; it is 0 while `IN` is low.
-- **Behavior:** `IN` low resets `Q` and `ET` at once. A preset of `T#0ms` makes `Q` follow `IN` in the same scan.
+  - `Q` (BOOL): High if `IN` has been continuously high for `PT` (`cmp-058-ton-delays-output`).
+  - `ET` (TIME): Elapsed Time since `IN` went high. It counts up to `PT` and stops there; it is 0 while `IN` is low (`cmp-057-ton-elapsed-stops-at-preset`).
+- **Behavior:** `IN` low resets `Q` and `ET` at once. A preset of `T#0ms` makes `Q` follow `IN` in the same scan (`cmp-057-ton-zero-preset-follows-the-input`).
 
 ### TOF (Off-Delay Timer)
 Preserves a high state for a duration after a falling edge. `Q` follows `IN` to TRUE immediately, but delays going FALSE until `PT` has elapsed.
@@ -33,8 +35,8 @@ Preserves a high state for a duration after a falling edge. `Q` follows `IN` to 
   - `IN` (BOOL): Trigger condition.
   - `PT` (TIME): Preset Time (duration to keep high).
 - **Outputs:**
-  - `Q` (BOOL): True while `IN` is true, plus `PT` duration after `IN` goes false.
-  - `ET` (TIME): Elapsed Time since `IN` went low. It counts up to `PT` and stays at `PT` until `IN` goes high again; it is 0 while `IN` is high.
+  - `Q` (BOOL): True while `IN` is true, plus `PT` duration after `IN` goes false (`cmp-058-tof-holds-output`).
+  - `ET` (TIME): Elapsed Time since `IN` went low. It counts up to `PT` and stays at `PT` until `IN` goes high again; it is 0 while `IN` is high (`cmp-057-tof-elapsed-stops-at-preset`).
 
 ### TP (Pulse Timer)
 Generates a pulse of fixed duration regardless of how long the input stays high.
@@ -42,46 +44,59 @@ Generates a pulse of fixed duration regardless of how long the input stays high.
   - `IN` (BOOL): Trigger condition (rising edge starts the pulse).
   - `PT` (TIME): Preset Time (pulse width).
 - **Outputs:**
-  - `Q` (BOOL): Pulses true for exactly `PT` duration upon `IN` rising edge.
-  - `ET` (TIME): Elapsed Time since pulse started. It counts up to `PT` and stops there; it holds `PT` while `IN` stays high after the pulse and is 0 once the pulse is over and `IN` is low.
-- **Behavior:** The pulse runs to its end whatever `IN` does and cannot be retriggered: a level that stays high does not start a second pulse, a new pulse needs a new rising edge after the pulse has ended. A preset of `T#0ms` gives no pulse.
+  - `Q` (BOOL): True for `PT` after a rising edge of `IN`, whatever `IN` does meanwhile (`cmp-057-tp-pulse-ignores-the-input-falling`).
+  - `ET` (TIME): Elapsed Time since pulse started. It counts up to `PT` and stops there; it holds `PT` while `IN` stays high after the pulse and is 0 once the pulse is over and `IN` is low (`cmp-057-tp-elapsed-resets-when-the-pulse-ends-with-input-low`).
+- **Behavior:** The pulse runs to its end whatever `IN` does and cannot be retriggered: a level that stays high does not start a second pulse, a new pulse needs a new rising edge after the pulse has ended (`cmp-057-tp-not-retriggered`, `cmp-057-tp-new-edge-starts-a-new-pulse`). A preset of `T#0ms` gives no pulse.
 
 ---
 
 ## 2. Counters
 
+`CTU`, `CTD` and `CTUD` keep their count in `CV` and take their preset from `PV`. Both are `INT`: 16 bits, from -32768 to 32767. The rules in this list apply to all three blocks, and each block below adds its own.
+
+- **Counting is edge-triggered.** A count happens when the input is TRUE in this call and was FALSE in the previous call of the same instance. An input that stays TRUE counts once, and an input that is already TRUE in the first call counts once. The edge is seen between two calls, not between two scans, so a call that an `IF` skips does not see an edge that rose and fell in between.
+- **Reset and load are levels and come first.** While `R` (`CTU`, `CTUD`) or `LD` (`CTD`, `CTUD`) is TRUE, nothing is counted. In `CTUD`, `R` wins over `LD`.
+- **The edge detector keeps running during reset and load.** A pulse that rises while `R` or `LD` is TRUE is not counted when `R` or `LD` is released. A pulse that rises on the call in which `R` or `LD` is released is counted, provided the input was FALSE in the call before.
+- **The outputs are recomputed on every call** from `CV` and `PV`, after the reset, load or count of that call.
+
 ### CTU (Count Up)
-Increments a value on every rising edge of the input.
+Adds 1 on every rising edge of `CU`.
 - **Inputs:**
-  - `CU` (BOOL): Count up trigger (rising edge).
-  - `R` (BOOL): Reset input; when TRUE, `CV` resets to 0.
-  - `PV` (INT): Preset Value (target).
-- **Outputs:**
-  - `Q` (BOOL): TRUE if `CV >= PV`.
-  - `CV` (INT): Current counter value.
-
-### CTD (Count Down)
-Decrements a value on every rising edge of the input.
-- **Inputs:**
-  - `CD` (BOOL): Count down trigger (rising edge).
-  - `LD` (BOOL): Load input; when TRUE, `CV` is set to `PV`.
-  - `PV` (INT): Preset Value (initial value).
-- **Outputs:**
-  - `Q` (BOOL): TRUE if `CV <= 0`.
-  - `CV` (INT): Current counter value. It counts below 0 and stops at -32768.
-
-### CTUD (Count Up/Down)
-Combines the features of CTU and CTD.
-- **Inputs:**
-  - `CU` (BOOL): Count up trigger.
-  - `CD` (BOOL): Count down trigger.
-  - `R` (BOOL): Reset to 0.
-  - `LD` (BOOL): Load `PV` to `CV`.
+  - `CU` (BOOL): Count-up input.
+  - `R` (BOOL): Reset; while TRUE, `CV` is 0.
   - `PV` (INT): Preset value.
 - **Outputs:**
-  - `QU` (BOOL): TRUE if `CV >= PV`.
-  - `QD` (BOOL): TRUE if `CV <= 0`.
-  - `CV` (INT): Current counter value. It counts from -32768 to 32767 and stops at both ends. `QU` and `QD` compare `CV` with `PV` and 0 as signed values.
+  - `Q` (BOOL): TRUE when `CV >= PV`.
+  - `CV` (INT): Current value. It stops at 32767: an edge there is not counted, and `CV` does not wrap to -32768.
+
+### CTD (Count Down)
+Subtracts 1 on every rising edge of `CD`.
+- **Inputs:**
+  - `CD` (BOOL): Count-down input.
+  - `LD` (BOOL): Load; while TRUE, `CV` is `PV`.
+  - `PV` (INT): Preset value.
+- **Outputs:**
+  - `Q` (BOOL): TRUE when `CV <= 0`. A new instance starts with `CV` at 0, so `Q` is TRUE until the first load.
+  - `CV` (INT): Current value. It counts below 0 and stops at -32768: an edge there is not counted, and `CV` does not wrap to 32767 (`cmp-058-ctd-counts-below-zero`, `cmp-058-ctd-stops-at-the-int-minimum`).
+
+### CTUD (Count Up/Down)
+Adds 1 on a rising edge of `CU` and subtracts 1 on a rising edge of `CD`.
+- **Inputs:**
+  - `CU` (BOOL): Count-up input.
+  - `CD` (BOOL): Count-down input.
+  - `R` (BOOL): Reset; while TRUE, `CV` is 0.
+  - `LD` (BOOL): Load; while TRUE and `R` is FALSE, `CV` is `PV`.
+  - `PV` (INT): Preset value.
+- **Outputs:**
+  - `QU` (BOOL): TRUE when `CV >= PV`.
+  - `QD` (BOOL): TRUE when `CV <= 0`.
+  - `CV` (INT): Current value. It stops at 32767 as `CTU` does and at -32768 counting down. A rising edge of `CU` and one of `CD` in the same call cancel each other.
+
+### Signed values
+
+`CV` and `PV` are signed 16-bit values and every comparison is signed: a negative `PV` is a negative preset (a `CTU` with `PV := -3` has `Q` TRUE from the first call, `cmp-058-ctu-with-a-negative-preset`), and `QU` and `QD` of `CTUD` compare `CV` with `PV` and with 0 as signed numbers below zero (`cmp-058-ctud-counts-down-through-zero-and-back`).
+
+Evidence level: host. The cases `cmp-058-ctu-*`, `cmp-058-ctd-*` and `cmp-058-ctud-*` under `conformance/cmp/` run on the native runtime, and `packages/zplc-compiler/src/compiler/stdlib/counters.test.ts` replays the generated code scan by scan, including the stops at 32767 and at -32768.
 
 ---
 
@@ -116,11 +131,11 @@ Combines the features of CTU and CTD.
 ## 5. Math Functions
 
 ### Arithmetic Operators
-- **ADD(IN1, IN2)**: Returns `IN1 + IN2`. Supports ANY_NUM (INT, REAL).
-- **SUB(IN1, IN2)**: Returns `IN1 - IN2`. Supports ANY_NUM.
-- **MUL(IN1, IN2)**: Returns `IN1 * IN2`. Supports ANY_NUM.
-- **DIV(IN1, IN2)**: Returns `IN1 / IN2`. Supports ANY_NUM.
-- **MOD(IN1, IN2)**: Returns the integer remainder of `IN1 / IN2`. Supports ANY_INT.
+- **`+`, `-`, `*`, `/`**: addition, subtraction, multiplication and division of the numeric types. Integer division truncates toward zero.
+- **`a MOD b`**: the integer remainder, with the sign of `a`. It is an operator: the form `MOD(a, b)` does not parse.
+- The function forms `ADD(a, b)`, `SUB`, `MUL` and `DIV` do not exist; the build rejects them and names the function (`cmp-006-operator-function-form-is-rejected`).
+
+The widths, the wrap and the behaviour at the limits are in the [numeric types](../languages/st.md#numeric-types) of Structured Text.
 
 ### Advanced Math
 ### ABS
@@ -136,7 +151,7 @@ Calculates the square root of a number.
 ### SIN / COS / TAN
 Standard trigonometric functions (evaluated in radians).
 - **Inputs:** `IN` (REAL).
-- **Outputs:** (REAL) Sine, Cosine, or Tangent of IN.
+- **Outputs:** (REAL) Sine, Cosine, or Tangent of IN (`cmp-058-trigonometric-functions`).
 - **Domain:** `IN` below 100000 in magnitude. A NaN, or an angle of 100000 or more, gives a NaN: a REAL of that size no longer says where on the circle it is.
 
 ### EXP / LN / LOG
@@ -209,22 +224,20 @@ Multiplexer. Selects one of N inputs based on an integer index.
 ## 7. Bitwise Functions
 
 ### Logical Operators
-- **AND(IN1, IN2)**: Bitwise AND. Supports ANY_BIT (BYTE, WORD, DWORD).
-- **OR(IN1, IN2)**: Bitwise OR. Supports ANY_BIT.
-- **XOR(IN1, IN2)**: Bitwise Exclusive OR. Supports ANY_BIT.
-- **NOT(IN)**: Bitwise Inversion. Supports ANY_BIT.
-- **NAND(IN1, IN2)** / **NOR(IN1, IN2)**: The negation of AND and of OR of two BOOL values, 0 or 1.
+- **`a AND b`, `a OR b`, `a XOR b`, `NOT a`**: operators on `BOOL`, `BYTE`, `WORD`, `DWORD` and `LWORD`, on the full declared width. The function forms `AND(a, b)`, `OR(a, b)` and `XOR(a, b)` do not parse.
+- **NAND(IN1, IN2)** / **NOR(IN1, IN2)**: The negation of AND and of OR of two `BOOL` values, 0 or 1 (`cmp-058-nand-and-nor-truth-tables`).
+- **AND_WORD, OR_WORD, XOR_WORD, NOT_WORD** and **AND_DWORD, OR_DWORD, XOR_DWORD, NOT_DWORD**: the same operations as functions on `WORD` and `DWORD` (`cmp-014-shr-and-word-logic-functions`).
 
 ### Shifting and Rotating
 ### SHL
 Shift Left mathematically multiplies by 2 for each shifted bit.
 - **Inputs:** `IN` (ANY_BIT), `N` (INT, number of bits to shift).
-- **Outputs:** (ANY_BIT) `IN` shifted left. Rightmost bits filled with 0.
+- **Outputs:** (ANY_BIT) `IN` shifted left. Rightmost bits filled with 0. A shift by 32 or more, or by a negative count, gives 0 (`cmp-016-shift-by-the-width-or-more`), and a `BYTE` or `WORD` drops the bits shifted past its width (`cmp-014-shl-byte-keeps-8-bits`).
 
 ### SHR
 Shift Right mathematically divides by 2 for each shifted bit.
 - **Inputs:** `IN` (ANY_BIT), `N` (INT, number of bits to shift).
-- **Outputs:** (ANY_BIT) `IN` shifted right. Leftmost bits filled with 0.
+- **Outputs:** (ANY_BIT) `IN` shifted right. Leftmost bits filled with 0. A shift by 32 or more, or by a negative count, gives 0.
 
 ### ROL
 Rotate Left. Shift bits out of the left side re-enter on the right side.
@@ -286,7 +299,7 @@ Use type conversion functions to move values between types. A function `<FROM>_T
 ## 10. System Functions
 
 ### UPTIME
-Returns the runtime uptime field in milliseconds.
+Returns the runtime uptime field in milliseconds (`cmp-058-uptime-follows-the-clock`).
 - **Inputs:** None.
 - **Outputs:** (UDINT / TIME) Uptime in milliseconds.
 
@@ -304,7 +317,19 @@ It must not be used as a safety control.
 
 ---
 
-## 11. Library Blocks Outside the Standard
+## 11. Known differences from IEC 61131-3
+
+The table is generated from the conformance cases that expect IEC 61131-3 behaviour and fail today (`tools/ci/expected-failures.json`) and from the description of each requirement in `docs/known-limits.json`. A row disappears when the last case of its requirement passes.
+
+{/* >>> GENERATED (tools/docs/generate_known_limits.py): known-limits-library. Do not edit. >>> */}
+No conformance case of this area is on the expected-failures list: no limit is recorded.
+{/* <<< END GENERATED: known-limits-library <<< */}
+
+A block or function that is not in the table is not known to differ. Every standard function and every library block outside the communication blocks has an executed case under `conformance/cmp/` (requirement CMP-058).
+
+---
+
+## 12. Library Blocks Outside the Standard
 
 These blocks belong to the ZPLC library and are not IEC 61131-3 blocks.
 

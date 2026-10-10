@@ -53,6 +53,25 @@ describe('resolveExecutionLocation', () => {
     });
   });
 
+  it('resolves any program counter inside a statement to that statement, and none past its end', () => {
+    // the statement of line 8 owns the instructions at 32, 33, 34 and 35
+    for (const pc of [32, 33, 34, 35]) {
+      expect(resolveExecutionLocation(DEBUG_MAP, pc)).toEqual({ line: 8, pc, pouName: 'Main' });
+    }
+    expect(resolveExecutionLocation(DEBUG_MAP, 19)).toEqual({ line: 4, pc: 19, pouName: 'Main' });
+    expect(resolveExecutionLocation(DEBUG_MAP, 20).pouName).toBeNull();
+    expect(resolveExecutionLocation(DEBUG_MAP, 36, 9)).toEqual({ line: 9, pc: 36, pouName: null });
+  });
+
+  it('prefers the range that starts at the program counter', () => {
+    const map: DebugMap = {
+      ...DEBUG_MAP,
+      pou: { Main: { ...DEBUG_MAP.pou.Main!, sourceMap: [{ pc: 16, line: 4, length: 8 }, { pc: 20, line: 5, length: 2 }] } },
+    };
+    expect(resolveExecutionLocation(map, 20).line).toBe(5);
+    expect(resolveExecutionLocation(map, 21).line).toBe(4);
+  });
+
   it('falls back to the provided line when the pc is not mapped', () => {
     expect(resolveExecutionLocation(DEBUG_MAP, 48, 11)).toEqual({
       line: 11,

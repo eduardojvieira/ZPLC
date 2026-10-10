@@ -1,0 +1,26 @@
+{
+  "requirement": "CMP-005",
+  "title": "a value goes to a wider type of its kind, and an integer to a REAL, without a conversion function",
+  "matrix": [
+    "functions.implicit-widening-conversion"
+  ],
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "DINT",
+      "value": 997
+    },
+    {
+      "at": "%QD1",
+      "type": "REAL",
+      "value": 1000.5
+    },
+    {
+      "at": "%QW4",
+      "type": "INT",
+      "value": 200
+    }
+  ]
+}

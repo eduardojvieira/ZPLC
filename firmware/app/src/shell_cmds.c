@@ -40,6 +40,9 @@
 #include <zplc_hal.h>
 #include <zplc_isa.h>
 #include <zplc_debug.h>
+#ifdef CONFIG_ZPLC_RETAIN_PERSIST
+#include <zplc_retain.h>
+#endif
 #include "zplc_config.h"
 #include "zplc_time.h"
 #include "program_admission.h"
@@ -674,6 +677,21 @@ static int cmd_sched_status(const struct shell *sh, size_t argc, char **argv) {
     }
 #endif
 
+#ifdef CONFIG_ZPLC_RETAIN_PERSIST
+    {
+      zplc_retain_status_t retain;
+
+      zplc_retain_last_status(&retain);
+      shell_fprintf(sh, SHELL_NORMAL, ",\"retain\":");
+      JSON_OBJ_START(sh);
+      JSON_STR(sh, "reason", zplc_retain_reason_string(retain.reason), true);
+      JSON_UINT(sh, "sequence", retain.sequence, true);
+      JSON_UINT(sh, "saves", retain.saves, true);
+      JSON_UINT(sh, "save_errors", retain.save_errors, false);
+      JSON_OBJ_END(sh);
+    }
+#endif
+
     JSON_OBJ_END(sh);
     JSON_NEWLINE(sh);
     return 0;
@@ -685,6 +703,17 @@ static int cmd_sched_status(const struct shell *sh, size_t argc, char **argv) {
   shell_print(sh, "  Tasks:      %u active", stats.active_tasks);
   shell_print(sh, "  Tot Cycles: %u", stats.total_cycles);
   shell_print(sh, "  Tot Ovr:    %u", stats.total_overruns);
+#ifdef CONFIG_ZPLC_RETAIN_PERSIST
+  {
+    zplc_retain_status_t retain;
+
+    zplc_retain_last_status(&retain);
+    shell_print(sh, "  Retain:     %s (sequence %u, %u saves, %u errors)",
+                zplc_retain_reason_string(retain.reason),
+                (unsigned int)retain.sequence, (unsigned int)retain.saves,
+                (unsigned int)retain.save_errors);
+  }
+#endif
 
   return 0;
 }

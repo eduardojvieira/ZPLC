@@ -613,7 +613,7 @@ describe('compile: every independent error, each positioned (CMP-006, CMP-007)',
 
     it('reports an unknown member of a block at its call, not at line 0', () => {
         const source = 'FUNCTION_BLOCK C\nVAR_INPUT inc : INT; END_VAR\nEND_FUNCTION_BLOCK\nPROGRAM P\nVAR c : C; END_VAR\n  c(nope := 2);\nEND_PROGRAM';
-        expect(compile(source)).toEqual(["src/P0.st codegen 6:3 Unknown member 'nope' on instance 'c'"]);
+        expect(compile(source)).toEqual(["src/P0.st codegen 6:5 'nope' is not a parameter of 'C' (instance 'c')"]);
     });
 
     it('reports an unknown member of a structure in an expression at that expression', () => {

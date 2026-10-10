@@ -89,6 +89,7 @@ export function ProjectSettings() {
   };
 
   // Save to disk
+  // Catches its own errors; the button starts it with `void`.
   const handleSave = async () => {
     try {
       await saveProjectConfig();
@@ -116,7 +117,7 @@ export function ProjectSettings() {
             </div>
           </div>
           <button
-            onClick={handleSave}
+            onClick={() => { void handleSave(); }}
             className="px-4 py-2 text-sm rounded font-medium transition-colors bg-[var(--color-accent-blue)] hover:bg-[var(--color-accent-blue)]/80 text-white"
             title="Save changes to zplc.json"
           >
@@ -577,7 +578,7 @@ function ToolchainCard({ ideId }: { ideId: string | undefined }) {
         <button
           ref={buttonRef}
           type="button"
-          onClick={inspect}
+          onClick={() => { void inspect(); }}
           disabled={checking || !bridgeAvailable || buildInFlight}
           aria-describedby={`${descriptionId} ${statusId}`}
           className="inline-flex items-center gap-2 rounded bg-[var(--color-surface-600)] px-3 py-2 text-xs font-medium text-[var(--color-surface-100)] transition-colors hover:bg-[var(--color-surface-500)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-blue)] disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none"
@@ -612,7 +613,7 @@ function ToolchainCard({ ideId }: { ideId: string | undefined }) {
                 <button
                   ref={buildButtonRef}
                   type="button"
-                  onClick={build}
+                  onClick={() => { void build(); }}
                   aria-disabled={buildInFlight}
                   aria-label="Build runtime locally"
                   aria-describedby={`${descriptionId} ${statusId}`}
@@ -622,7 +623,7 @@ function ToolchainCard({ ideId }: { ideId: string | undefined }) {
                   {buildState === 'building' || buildState === 'cancelling' ? 'Building locally…' : 'Build runtime locally'}
                 </button>
                 {(buildState === 'building' || buildState === 'cancelling') ? (
-                  <button type="button" onClick={cancel} disabled={buildState === 'cancelling'} className="inline-flex items-center gap-2 rounded bg-[var(--color-surface-600)] px-3 py-2 text-xs font-medium text-[var(--color-surface-100)] transition-colors hover:bg-[var(--color-surface-500)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-blue)] disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none">
+                  <button type="button" onClick={() => { void cancel(); }} disabled={buildState === 'cancelling'} className="inline-flex items-center gap-2 rounded bg-[var(--color-surface-600)] px-3 py-2 text-xs font-medium text-[var(--color-surface-100)] transition-colors hover:bg-[var(--color-surface-500)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent-blue)] disabled:cursor-not-allowed disabled:opacity-50 motion-reduce:transition-none">
                     {buildState === 'cancelling' ? 'Cancelling safely…' : 'Cancel build'}
                   </button>
                 ) : null}

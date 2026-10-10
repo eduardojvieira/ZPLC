@@ -1,0 +1,13 @@
+FUNCTION Halve : UDINT
+VAR_INPUT n : UDINT; END_VAR
+  Halve := n / 2;
+END_FUNCTION
+
+PROGRAM BigArgument
+VAR
+  out AT %QD0 : UDINT;
+  typed AT %QD1 : DWORD;
+END_VAR
+  out := Halve(4294967294);
+  typed := XOR_DWORD(DWORD#16#F0F0F0F0, 16#FFFFFFFF);
+END_PROGRAM

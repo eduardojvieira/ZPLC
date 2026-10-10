@@ -18,7 +18,7 @@ import { FileNameTakenError, listTaskPrograms, loadFileFromTree, openDirectoryPi
 import { resolveProgramSource } from './programSourceResolution';
 
 // The store imports the bundled-example loader, which only exists under Vite (import.meta.glob); New File never touches it.
-mock.module('./projectLoader', () => ({ getAvailableProjects: () => [], loadProject: () => null, loadProjectAssets: () => null }));
+await mock.module('./projectLoader', () => ({ getAvailableProjects: () => [], loadProject: () => null, loadProjectAssets: () => null }));
 const { useIDEStore } = await import('../store/useIDEStore');
 
 /**

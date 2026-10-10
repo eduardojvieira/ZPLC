@@ -11,7 +11,7 @@ const packageRoot = join(import.meta.dir, '../..');
 const fixtures = (suffix: string): string[] => [...new Bun.Glob(`projects/**/*.${suffix}.json`).scanSync({ cwd: packageRoot })].sort();
 const read = (path: string): string => readFileSync(join(packageRoot, path), 'utf8');
 
-function failure(result: ReturnType<typeof loadLDFile>) {
+function failure(result: ReturnType<typeof loadLDFile> | ReturnType<typeof loadFBDFile> | ReturnType<typeof loadSFCFile>) {
   if (result.ok) throw new Error('expected the file to be rejected');
   return result.error;
 }

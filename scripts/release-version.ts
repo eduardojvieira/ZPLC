@@ -10,6 +10,13 @@ export const PACKAGE_JSON_PATHS = [
   'packages/zplc-ide/package.json',
 ] as const;
 
+/**
+ * The source that carries the version of the compiler package into every debug map (CMP-053). A release
+ * bump rewrites it with the manifests, and --check fails when it differs from them.
+ */
+export const COMPILER_VERSION_SOURCE = 'packages/zplc-compiler/src/compiler/debug-map.ts';
+const COMPILER_VERSION_DECLARATION = /(export const COMPILER_VERSION = ')([^']*)(';)/;
+
 const SEMVER_WITH_PRERELEASE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:0|[1-9]\d*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*))?$/;
 
 export function isValidReleaseVersion(version: string): boolean {
@@ -24,6 +31,20 @@ export function updatePackageJsonVersion(packageJsonContent: string, version: st
   const parsed = JSON.parse(packageJsonContent) as { version?: string } & Record<string, unknown>;
   parsed.version = version;
   return `${JSON.stringify(parsed, null, 2)}\n`;
+}
+
+export function updateCompilerVersionSource(sourceContent: string, version: string): string {
+  if (!COMPILER_VERSION_DECLARATION.test(sourceContent)) {
+    throw new Error(`${COMPILER_VERSION_SOURCE} has no COMPILER_VERSION declaration to update`);
+  }
+  return sourceContent.replace(COMPILER_VERSION_DECLARATION, `$1${version}$3`);
+}
+
+export function findCompilerVersionDrift(canonicalVersion: string, sourceContent: string): string[] {
+  const found = COMPILER_VERSION_DECLARATION.exec(sourceContent)?.[2];
+  return found === canonicalVersion
+    ? []
+    : [`${COMPILER_VERSION_SOURCE}: expected ${canonicalVersion}, found ${found ?? 'missing'}`];
 }
 
 export function findPackageVersionDrift(
@@ -50,12 +71,15 @@ function checkVersions(repoRoot: string): void {
   const manifests = Object.fromEntries(
     PACKAGE_JSON_PATHS.map((relativePath) => [relativePath, readFileSync(join(repoRoot, relativePath), 'utf8')]),
   );
-  const drift = findPackageVersionDrift(rootVersion, manifests);
+  const drift = [
+    ...findPackageVersionDrift(rootVersion, manifests),
+    ...findCompilerVersionDrift(rootVersion, readFileSync(join(repoRoot, COMPILER_VERSION_SOURCE), 'utf8')),
+  ];
   if (drift.length > 0) {
     throw new Error(`Product version drift detected:\n${drift.join('\n')}`);
   }
 
-  console.log(`Validated canonical product version ${rootVersion} in ${PACKAGE_JSON_PATHS.length} package manifests`);
+  console.log(`Validated canonical product version ${rootVersion} in ${PACKAGE_JSON_PATHS.length} package manifests and the compiler version of the debug map`);
 }
 
 function main(): void {
@@ -81,7 +105,10 @@ function main(): void {
     writeFileSync(absolutePath, updated);
   }
 
-  console.log(`Applied release version ${version} to ${PACKAGE_JSON_PATHS.length} package manifests`);
+  const sourcePath = join(repoRoot, COMPILER_VERSION_SOURCE);
+  writeFileSync(sourcePath, updateCompilerVersionSource(readFileSync(sourcePath, 'utf8'), version));
+
+  console.log(`Applied release version ${version} to ${PACKAGE_JSON_PATHS.length} package manifests and the compiler version of the debug map`);
 }
 
 if (import.meta.main) {

@@ -1,0 +1,15 @@
+{
+  "requirement": "CMP-005",
+  "title": "a REAL expression assigned to a DINT is rejected",
+  "matrix": [
+    "functions.implicit-widening-conversion"
+  ],
+  "build": "fails",
+  "lines": [
+    6
+  ],
+  "messageIncludes": [
+    "REAL",
+    "DINT"
+  ]
+}

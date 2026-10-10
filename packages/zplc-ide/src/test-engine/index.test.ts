@@ -100,20 +100,6 @@ const pedestrianDebugMap = (): DebugMap => ({
 });
 const pedestrianScenario = (overrides: Record<string, unknown> = {}) => ({ schemaVersion: 1, id: 'PedestrianCrossing', plant: 'pedestrian-v1', tickMs: 10, durationMs: 100, events: [], expectations: [{ kind: 'AT', atMs: 60, condition: { 'PedestrianCrossing.PedWalk': true } }], ...overrides });
 
-class ConveyorPort extends FakePort {
-  requested = false; faulted = false; metal = false;
-  async step(atMs: number): Promise<void> {
-    this.calls.push(`step:${atMs}`);
-    if (this.inputs.get('0.6')) this.faulted = true;
-    if (this.inputs.get('0.1')) this.requested = false;
-    else if (this.inputs.get('0.0') && !this.faulted) this.requested = true;
-    if (this.inputs.get('0.2') && !this.inputs.get('0.6')) this.faulted = false;
-    if (this.inputs.get('0.3') && this.inputs.get('0.4')) this.metal = true;
-    const belt = this.requested && !this.faulted;
-    this.outputs.set('4096.0', belt); this.outputs.set('4096.1', belt && this.inputs.get('0.5') === true && this.metal); this.outputs.set('4096.2', this.faulted || this.inputs.get('0.6') === true);
-  }
-}
-
 const scenario = (overrides: Record<string, unknown> = {}) => ({
   schemaVersion: 1, id: 'motor-start', tickMs: 10, durationMs: 20,
   events: [{ atMs: 0, set: { 'Motor.Start': true } }],
@@ -132,6 +118,20 @@ class FakePort implements ScenarioRuntimePort {
   async setInput(address: number, bitOffset: number, value: boolean): Promise<void> { this.calls.push(`set:${address}.${bitOffset}=${value}`); this.inputs.set(`${address}.${bitOffset}`, value); }
   async step(atMs: number): Promise<void> { this.calls.push(`step:${atMs}`); this.outputs.set('4096.0', this.inputs.get('0.0') === true); }
   async readOutput(address: number, bitOffset: number): Promise<boolean> { this.calls.push(`read:${address}.${bitOffset}`); return this.outputs.get(`${address}.${bitOffset}`) ?? false; }
+}
+
+class ConveyorPort extends FakePort {
+  requested = false; faulted = false; metal = false;
+  async step(atMs: number): Promise<void> {
+    this.calls.push(`step:${atMs}`);
+    if (this.inputs.get('0.6')) this.faulted = true;
+    if (this.inputs.get('0.1')) this.requested = false;
+    else if (this.inputs.get('0.0') && !this.faulted) this.requested = true;
+    if (this.inputs.get('0.2') && !this.inputs.get('0.6')) this.faulted = false;
+    if (this.inputs.get('0.3') && this.inputs.get('0.4')) this.metal = true;
+    const belt = this.requested && !this.faulted;
+    this.outputs.set('4096.0', belt); this.outputs.set('4096.1', belt && this.inputs.get('0.5') === true && this.metal); this.outputs.set('4096.2', this.faulted || this.inputs.get('0.6') === true);
+  }
 }
 
 class MotorPlantPort extends FakePort {

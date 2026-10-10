@@ -1,0 +1,14 @@
+{
+  "requirement": "CMP-005",
+  "title": "a BOOL compared with an INT is rejected",
+  "matrix": [
+    "functions.implicit-widening-conversion"
+  ],
+  "build": "fails",
+  "lines": [
+    7
+  ],
+  "messageIncludes": [
+    "BOOL"
+  ]
+}

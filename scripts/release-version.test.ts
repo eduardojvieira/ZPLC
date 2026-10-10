@@ -2,10 +2,16 @@
 
 import { describe, expect, it } from 'bun:test';
 
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import {
+  COMPILER_VERSION_SOURCE,
+  findCompilerVersionDrift,
   findPackageVersionDrift,
   isPrereleaseVersion,
   isValidReleaseVersion,
+  updateCompilerVersionSource,
   updatePackageJsonVersion,
 } from './release-version';
 
@@ -67,5 +73,29 @@ describe('release version helpers', () => {
     ].map((path) => [path, updatePackageJsonVersion('{"name":"zplc","version":"1.5.0"}', version)] as const);
 
     expect(findPackageVersionDrift(version, Object.fromEntries(manifests))).toEqual([]);
+  });
+});
+
+describe('the compiler version of the debug map (CMP-053)', () => {
+  const source = "export const COMPILER_VERSION = '2.0.0-rc.3';\nexport const OTHER = '1.0.0';\n";
+
+  it('is rewritten with the release version and nothing else', () => {
+    expect(updateCompilerVersionSource(source, '2.0.0')).toBe("export const COMPILER_VERSION = '2.0.0';\nexport const OTHER = '1.0.0';\n");
+  });
+
+  it('refuses a source that no longer declares it', () => {
+    expect(() => updateCompilerVersionSource('export const OTHER = 1;', '2.0.0')).toThrow('COMPILER_VERSION');
+  });
+
+  it('reports a release bump that left it behind', () => {
+    expect(findCompilerVersionDrift('2.0.0-rc.3', source)).toEqual([]);
+    expect(findCompilerVersionDrift('2.0.0', source)).toEqual([`${COMPILER_VERSION_SOURCE}: expected 2.0.0, found 2.0.0-rc.3`]);
+    expect(findCompilerVersionDrift('2.0.0', 'nothing')).toEqual([`${COMPILER_VERSION_SOURCE}: expected 2.0.0, found missing`]);
+  });
+
+  it('is the root version in this checkout', () => {
+    const root = join(import.meta.dir, '..');
+    const { version } = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as { version: string };
+    expect(findCompilerVersionDrift(version, readFileSync(join(root, COMPILER_VERSION_SOURCE), 'utf8'))).toEqual([]);
   });
 });

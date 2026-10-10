@@ -55,9 +55,14 @@ interface Named {
   /** The tasks of the project; empty means one cyclic task, at the scan interval, that runs the program of the case. */
   tasks: TaskSpec[];
 }
-/** A program that must build, load and run; `fault` says the last scan ends in a VM fault. */
+/** A warning a build that passes must report: its stable code and the line it points at (CMP-008). */
+export interface ExpectedWarning { code: string; line: number }
+/**
+ * A program that must build, load and run; `fault` says the last scan ends in a VM fault. `warnings`, when
+ * present, is the exact list of the warnings of the build, in order: an empty list asserts there is none.
+ */
 export interface RunExpectation extends Named {
-  build: 'succeeds'; scans: number; scanMs: number; inputs: Input[]; expect: Check[]; fault: boolean;
+  build: 'succeeds'; scans: number; scanMs: number; inputs: Input[]; expect: Check[]; fault: boolean; warnings?: ExpectedWarning[];
 }
 /**
  * A program that must not build: no artifact, and where stated the position of each diagnostic (`lines`, `columns`, one entry
@@ -140,7 +145,7 @@ export function parseExpectation(text: string, where: string): Expectation {
   let parsed: unknown;
   try { parsed = JSON.parse(text); } catch (error) { return fail(where, `not valid JSON (${(error as Error).message})`); }
   const named = ['requirement', 'title', 'build', 'matrix', 'tags', 'note', 'files', 'tasks'];
-  const head = object(parsed, where, [...named, 'lines', 'columns', 'codes', 'messageIncludes', 'scans', 'scanMs', 'inputs', 'expect', 'fault']);
+  const head = object(parsed, where, [...named, 'lines', 'columns', 'codes', 'messageIncludes', 'scans', 'scanMs', 'inputs', 'expect', 'fault', 'warnings']);
   if (typeof head.requirement !== 'string' || !/^[A-Z]+-[0-9]{3}$/.test(head.requirement)) fail(where, 'requirement must look like CMP-011');
   if (typeof head.title !== 'string' || head.title.trim() === '') fail(where, 'title must be a non-empty string');
   const matrix = list(head.matrix, where, 'matrix');
@@ -189,7 +194,7 @@ export function parseExpectation(text: string, where: string): Expectation {
     return { ...common, build, lines: lines as number[] | undefined, columns: columns as number[] | undefined, codes: codes as string[] | undefined, messageIncludes: messageIncludes as string[] };
   }
 
-  const run = object(parsed, where, [...named, 'scans', 'scanMs', 'inputs', 'expect', 'fault']);
+  const run = object(parsed, where, [...named, 'scans', 'scanMs', 'inputs', 'expect', 'fault', 'warnings']);
   if (!isInt(run.scans, 1, 100_000)) fail(where, 'scans must be an integer from 1 to 100000');
   if (!isInt(run.scanMs, 1, 3_600_000)) fail(where, 'scanMs must be a positive integer, in milliseconds');
   const scans = run.scans as number;
@@ -210,8 +215,15 @@ export function parseExpectation(text: string, where: string): Expectation {
     return { ...cell(value, at, ['at', 'var', 'type', 'value', 'afterScan']), afterScan: inScans((value as Json).afterScan, 'afterScan', at, scans) };
   });
   const fault = run.fault === true;
+  const warnings = run.warnings === undefined ? undefined : list(run.warnings, where, 'warnings').map((value, index): ExpectedWarning => {
+    const at = `${where}: warnings[${index}]`;
+    const entry = object(value, at, ['code', 'line']);
+    if (typeof entry.code !== 'string' || !/^[A-Z][A-Z0-9_]*$/.test(entry.code)) fail(at, 'code must be a diagnostic code such as IMPLICIT_NARROWING');
+    if (!isInt(entry.line, 1, Number.MAX_SAFE_INTEGER)) fail(at, 'line must be a line number, 1 or more');
+    return { code: entry.code as string, line: entry.line as number };
+  });
   if (expect.length === 0 && !fault) fail(where, 'asserts nothing: give "expect" at least one check, or "fault": true');
-  return { ...common, build, scans, scanMs: run.scanMs as number, inputs, expect, fault };
+  return { ...common, build, scans, scanMs: run.scanMs as number, inputs, expect, fault, ...(warnings === undefined ? {} : { warnings }) };
 }
 
 /** The ids of the rows of the tracked matrix (VF-003) under `root`; absent when the root has no matrix.json. */

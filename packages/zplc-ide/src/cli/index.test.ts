@@ -190,6 +190,12 @@ describe('CLI JSON boundary', () => {
       }
     } finally { await rm(root, { recursive: true, force: true }); }
   });
+  it('reports a rejected symbols command under the symbols-list operation, like its success result', async () => {
+    const missing = output(); expect(await main(['symbols', join(tmpdir(), 'zplc-cli-no-such-workspace'), '--json'], missing)).toBe(1);
+    expect(JSON.parse(missing.lines[0] ?? '{}')).toMatchObject({ ok: false, evidence: { operation: 'symbols-list' }, execution: { operation: 'symbols-list' } });
+    const option = output(); expect(await main(['symbols', motorStartStop, '--output', 'x', '--json'], option)).toBe(1);
+    expect(JSON.parse(option.lines[0] ?? '{}')).toMatchObject({ ok: false, evidence: { operation: 'symbols-list' }, execution: { operation: 'symbols-list' } });
+  });
   it('rejects migration preview files, symlinks, and compile-only options', async () => {
     const root = await mkdtemp(join(tmpdir(), 'zplc-cli-preview-'));
     const alias = join(root, 'workspace-alias');
@@ -263,6 +269,18 @@ describe('CLI JSON boundary', () => {
       expect(passed.errors).toEqual([`Warning: ${hex}:5:8: The hexadecimal literal 0xFF is not IEC 61131-3 syntax: write 16#FF`]);
       const passedJson = output(); expect(await main(['compile', hex, '--json'], passedJson)).toBe(0);
       expect(JSON.parse(passedJson.lines[0] ?? '{}')).toMatchObject({ ok: true, evidence: { outcome: 'passed', diagnostics: [{ code: 'NON_IEC_HEX_LITERAL', line: 5, column: 8 }] } });
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
+  it('prints the warning of an integer stored in a narrower type and still builds (CMP-005)', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-cli-narrowing-')); const narrow = join(root, 'narrow.st');
+    try {
+      await writeFile(narrow, 'PROGRAM Narrow\nVAR\n  big : DINT := 70000;\n  small AT %QW0 : INT;\nEND_VAR\n  small := big;\nEND_PROGRAM\n');
+      const passed = output(); expect(await main(['compile', narrow], passed)).toBe(0);
+      expect(passed.errors).toHaveLength(1);
+      expect(passed.errors[0]).toMatch(new RegExp(`^Warning: ${narrow.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}:6:12: Implicit narrowing from DINT to INT`));
+      expect(passed.errors[0]).toContain('low 16 bits');
+      const json = output(); expect(await main(['compile', narrow, '--json'], json)).toBe(0);
+      expect(JSON.parse(json.lines[0] ?? '{}')).toMatchObject({ ok: true, evidence: { outcome: 'passed', diagnostics: [{ code: 'IMPLICIT_NARROWING', line: 6, column: 12 }] } });
     } finally { await rm(root, { recursive: true, force: true }); }
   });
   it('says the position refers to the generated Structured Text for a graphical single file', async () => {

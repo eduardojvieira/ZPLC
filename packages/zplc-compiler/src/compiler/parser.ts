@@ -10,9 +10,9 @@
 import { tokenizeWithErrors, TokenType } from './lexer.ts';
 import type { Token, TokenTypeValue, LexerError } from './lexer.ts';
 import { orderedUniqueErrors } from './diagnostics.ts';
-import type { SourceWarning, SyntaxIssue } from './diagnostics.ts';
+import type { SourceSpan, SourceWarning, SyntaxIssue } from './diagnostics.ts';
 import { resolveTypeNames } from './type-names.ts';
-import { DataType, VarSection, parseTimeLiteral, parseIOAddress } from './ast.ts';
+import { DataType, NameMap, VarSection, parseTimeLiteral, parseIOAddress } from './ast.ts';
 import type {
     CompilationUnit,
     Program,
@@ -193,7 +193,9 @@ class Parser {
     errors: ParseError[] = [];
     private lastErrorIndex = -2;
     /** Integer constants declared so far: the bounds of an array may name them (CMP-022). */
-    private constants = new Map<string, number>();
+    private constants = new NameMap<number>();
+    /** The token of the type name parseTypeName read last (the element type of an array): where a diagnostic about it points. */
+    private lastTypeToken: Token | null = null;
 
     constructor(tokens: Token[]) {
         this.tokens = tokens;
@@ -258,6 +260,12 @@ class Parser {
         const error = new ParseError(message, curr.line, curr.column, curr.endLine, curr.endColumn);
         error.tokenIndex = this.pos;
         return error;
+    }
+
+    /** Where the type name that parseTypeName read last was written. */
+    private typeSpan(): SourceSpan | undefined {
+        const token = this.lastTypeToken;
+        return token ? { line: token.line, column: token.column, endLine: token.endLine, endColumn: token.endColumn } : undefined;
     }
 
     // ========================================================================
@@ -482,6 +490,7 @@ class Parser {
 
                 this.expect(TokenType.COLON, "Expected ':' after member name");
                 const dataType = this.parseTypeName();
+                const typeAt = this.typeSpan();
 
                 let initialValue: InitialValue | null = null;
                 if (this.match(TokenType.ASSIGN)) {
@@ -499,6 +508,7 @@ class Parser {
                         ioAddress: null,
                         section: 'VAR', 
                         tags: {},
+                        ...(typeAt ? { typeAt } : {}),
                         line: start.line,
                         column: start.column,
                     });
@@ -646,8 +656,10 @@ class Parser {
 
         // Parse optional return type
         let returnType: STDataType | null = null;
+        let returnTypeAt: SourceSpan | undefined;
         if (this.match(TokenType.COLON)) {
             returnType = this.parseTypeName();
+            returnTypeAt = this.typeSpan();
         }
 
         const inputs: VarDecl[] = [];
@@ -692,6 +704,7 @@ class Parser {
             kind: 'MethodDecl',
             name: nameToken.value,
             returnType,
+            ...(returnTypeAt ? { returnTypeAt } : {}),
             accessSpecifier,
             isFinal,
             isAbstract,
@@ -735,6 +748,7 @@ class Parser {
         const nameToken = this.expect(TokenType.IDENTIFIER, 'Expected function name');
         this.expect(TokenType.COLON, 'Expected : after function name');
         const returnType = this.parseTypeName();
+        const returnTypeAt = this.typeSpan();
 
         // Return type must be elementary, not array
         if (typeof returnType !== 'string') {
@@ -771,6 +785,7 @@ class Parser {
             kind: 'FunctionDecl',
             name: nameToken.value,
             returnType: returnType as any,
+            ...(returnTypeAt ? { returnTypeAt } : {}),
             inputs,
             locals,
             outputs,
@@ -829,15 +844,28 @@ class Parser {
 
     /** `RETAIN` (true) or `NON_RETAIN` (false) after the VAR keyword; undefined when neither is written (CMP-029). */
     private parseRetainQualifier(): boolean | undefined {
-        const token = this.current();
-        if (token.type !== TokenType.IDENTIFIER) return undefined;
-        // `retain : BOOL;` declares a variable named retain
-        const next = this.peek().type;
-        if (next === TokenType.COLON || next === TokenType.COMMA || next === TokenType.AT) return undefined;
-        const word = token.value.toUpperCase();
-        if (word !== 'RETAIN' && word !== 'NON_RETAIN') return undefined;
-        this.advance();
-        return word === 'RETAIN';
+        let retain: boolean | undefined;
+        // `VAR RETAIN PERSISTENT` and `VAR PERSISTENT RETAIN` are both read to their end, so one error says it all
+        for (let qualifiers = 0; qualifiers < 2; qualifiers += 1) {
+            const token = this.current();
+            if (token.type !== TokenType.IDENTIFIER) break;
+            // `retain : BOOL;` declares a variable named retain
+            const next = this.peek().type;
+            if (next === TokenType.COLON || next === TokenType.COMMA || next === TokenType.AT) break;
+            const word = token.value.toUpperCase();
+            if (word === 'PERSISTENT') {
+                // VAR PERSISTENT is left to 2.x (decision D-04); RETAIN keeps a value across a restart.
+                // The block is read as an ordinary one, so the errors after it are found too.
+                this.record(new ParseError(`'PERSISTENT' is not supported in this release: declare the variables RETAIN`, token.line, token.column, token.endLine, token.endColumn));
+                this.advance();
+            } else if ((word === 'RETAIN' || word === 'NON_RETAIN') && retain === undefined) {
+                this.advance();
+                retain = word === 'RETAIN';
+            } else {
+                break;
+            }
+        }
+        return retain;
     }
 
     private startsVarBlock(): boolean {
@@ -865,6 +893,7 @@ class Parser {
         this.expect(TokenType.COLON, 'Expected : after variable name');
 
         const dataType = this.parseTypeName();
+        const typeAt = this.typeSpan();
 
         // Optional initial value
         let initialValue: InitialValue | null = null;
@@ -900,6 +929,7 @@ class Parser {
             ioAddress,
             section,
             tags,
+            ...(typeAt ? { typeAt } : {}),
             line: start.line,
             column: start.column,
         };
@@ -922,6 +952,8 @@ class Parser {
                 baseType
             };
         }
+
+        this.lastTypeToken = this.current();
 
         // Elementary types
         if (this.match(TokenType.BOOL)) return DataType.BOOL;
@@ -1533,17 +1565,31 @@ class Parser {
     }
 
     /**
-     * parameter := identifier ASSIGN expression
+     * parameter := identifier ASSIGN expression      an input: IN := x
+     *            | identifier OUTPUT_ASSIGN variable  an output: Q => y (CMP-037)
+     *            | expression                         a positional argument of a function call
      */
     private parseFBParameter(): FBParameter {
-        const nameToken = this.expect(TokenType.IDENTIFIER, 'Expected parameter name');
-        this.expect(TokenType.ASSIGN, 'Expected := after parameter name');
+        const first = this.current();
+        if (first.type === TokenType.IDENTIFIER && this.peek().type === TokenType.ASSIGN) {
+            this.advance();
+            this.advance();
+            const value = this.parseExpression();
+            return { name: first.value, value, line: first.line, column: first.column, endLine: first.endLine, endColumn: first.endColumn };
+        }
+        if (first.type === TokenType.IDENTIFIER && this.peek().type === TokenType.OUTPUT_ASSIGN) {
+            this.advance();
+            this.advance();
+            const target = this.current();
+            const value = this.parseExpression();
+            if (value.kind !== 'Identifier' && value.kind !== 'MemberAccess' && value.kind !== 'ArrayAccess' && value.kind !== 'DereferenceExpr') {
+                throw new ParseError(`An output binding names the variable that receives '${first.value}'`, target.line, target.column, target.endLine, target.endColumn);
+            }
+            return { name: first.value, value, output: true, line: first.line, column: first.column, endLine: first.endLine, endColumn: first.endColumn };
+        }
+        // A positional argument: a function takes it; a function block call is formal only (decision D-04)
         const value = this.parseExpression();
-
-        return {
-            name: nameToken.value,
-            value,
-        };
+        return { name: '', value, line: first.line, column: first.column };
     }
 
     // ========================================================================

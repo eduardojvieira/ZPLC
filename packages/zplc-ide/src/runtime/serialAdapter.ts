@@ -508,8 +508,8 @@ export class SerialAdapter implements IDebugAdapter {
       return;
     }
 
-    // Poll every 200ms for state updates
-    this.pollingInterval = setInterval(async () => {
+    // Poll every 200ms for state updates. The poll swallows its own errors, so the timer only starts it.
+    const poll = async (): Promise<void> => {
       if (!this._connected || this._passthroughMode) {
         this.stopPolling();
         return;
@@ -537,7 +537,8 @@ export class SerialAdapter implements IDebugAdapter {
       } catch {
         // Ignore polling errors
       }
-    }, 200);
+    };
+    this.pollingInterval = setInterval(() => { void poll(); }, 200);
   }
 
   private stopPolling(): void {

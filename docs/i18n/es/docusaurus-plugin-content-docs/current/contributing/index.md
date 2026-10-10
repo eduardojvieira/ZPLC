@@ -38,7 +38,7 @@ equipo de escritorio Linux x86-64 de 12 hilos con cachés calientes.
 | Núcleo C y runtime de host | `bun run test:core` | unos 5 s | Las suites de C pasan con los sanitizers de direcciones y de comportamiento indefinido |
 | Compilador | `bun run test:compiler:ci` | unos 2 s | Pasan las pruebas del compilador y del ensamblador, y todo fallo es uno de los listados |
 | Studio, CLI, conformidad | `bun run test:ide:ci` | de 30 a 60 s | Las suites de Studio y los casos de conformidad se comportan como está listado |
-| Lint y tipos | `bun run lint` y `bun run build:ide` | unos 10 s y 40 s | ESLint no marca nada y los proyectos TypeScript compilan |
+| Lint y tipos | `bun run lint`, `bun run typecheck` y `bun run build:ide` | unos 10 s, 20 s y 40 s | ESLint no marca nada, incluidas las reglas que rechazan una promesa sin manejar; todo programa TypeScript, con sus pruebas y scripts, pasa el comprobador de tipos; y Studio compila |
 | Contrato binario | `bun run contract:check` | unos 1 s | Los archivos generados coinciden con `contract.json` |
 | Simulación | `bun run simulate packages/zplc-ide/projects/motor_plant` | menos de 1 s | Las pruebas de escenario del proyecto pasan en el runtime nativo |
 | Recorridos de Studio | `bun run test:journeys` | de 70 a 90 s | La aplicación real pasa sus recorridos de extremo a extremo (requiere pantalla) |

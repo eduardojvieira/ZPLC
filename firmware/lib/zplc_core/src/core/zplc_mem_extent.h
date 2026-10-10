@@ -9,6 +9,12 @@
  * arithmetic cannot wrap, so a huge length or an address near 2^32 is simply
  * outside every region.
  *
+ * A region is its window of the address space, from its base to the base of
+ * the next region, or its configured size where that is smaller. A WORK or
+ * RETAIN memory larger than its window (Kconfig does not bound it) does not
+ * shift the regions after it: address 0x4000 is retentive memory, whatever the
+ * size of WORK, and the bytes of a region beyond its window are not reachable.
+ *
  * Internal header: not part of the public API.
  *
  * SPDX-License-Identifier: MIT
@@ -44,14 +50,21 @@ static inline int zplc_mem_extent_locate(uint32_t addr, uint32_t len,
                                     ZPLC_MEM_WORK_BASE, ZPLC_MEM_RETAIN_BASE};
   static const uint32_t sizes[4] = {ZPLC_MEM_IPI_SIZE, ZPLC_MEM_OPI_SIZE,
                                     ZPLC_MEM_WORK_SIZE, ZPLC_MEM_RETAIN_SIZE};
+  static const uint32_t ends[4] = {ZPLC_MEM_OPI_BASE, ZPLC_MEM_WORK_BASE,
+                                   ZPLC_MEM_RETAIN_BASE, ZPLC_MEM_CODE_BASE};
   uint32_t region;
 
   if (len == 0U) {
     return -1;
   }
   for (region = 0U; region < 4U; region++) {
-    if (addr >= bases[region] && addr - bases[region] < sizes[region] &&
-        len <= sizes[region] - (addr - bases[region])) {
+    uint32_t size = sizes[region];
+
+    if (size > ends[region] - bases[region]) {
+      size = ends[region] - bases[region];
+    }
+    if (addr >= bases[region] && addr - bases[region] < size &&
+        len <= size - (addr - bases[region])) {
       if (offset != NULL) {
         *offset = addr - bases[region];
       }

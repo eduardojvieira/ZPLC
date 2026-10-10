@@ -29,6 +29,16 @@ transpiler, and compiler support. The languages do not have identical features
 or identical debugging behavior. Check the compiler output and a scenario result
 for your own project.
 
+## Debug map
+
+The compiler writes a debug map beside the artifact. Two builds of the same
+project give the same bytecode and the same map, byte for byte: the map carries
+no build time, and `compilerVersion` is the version of the compiler package.
+Each statement has the range of all the instructions it generates, with its line
+and column, so any program counter inside a statement resolves to that
+statement. The end of a function and the helper routines after the cycle belong
+to no statement.
+
 ## Artifact boundary
 
 The artifact is verified before runtime loading. A successful host compile does

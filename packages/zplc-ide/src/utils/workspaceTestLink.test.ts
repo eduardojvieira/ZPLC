@@ -4,7 +4,7 @@ import type { ProjectFilesBridge } from '../../electron/projectFilesProtocol';
 import { chooseProjectFolder } from '../ipc/projectFilesHandles';
 
 // The store reads the example projects with a Vite-only glob; the example list does not matter here.
-mock.module('./projectLoader', () => ({ getAvailableProjects: () => [], loadProject: () => null, loadProjectAssets: () => null }));
+await mock.module('./projectLoader', () => ({ getAvailableProjects: () => [], loadProject: () => null, loadProjectAssets: () => null }));
 const { useIDEStore } = await import('../store/useIDEStore');
 const { canLinkProjectWorkspace, linkProjectWorkspace } = await import('./workspaceTestLink');
 
@@ -12,6 +12,7 @@ const NOT_REACHED = async () => { throw new Error('the bridge must not be called
 const bridge: ProjectFilesBridge = {
   chooseFolder: async () => ({ ok: true, value: { rootId: 'root-1', name: 'plant' } }),
   list: NOT_REACHED, stat: NOT_REACHED, read: NOT_REACHED, write: NOT_REACHED, mkdir: NOT_REACHED, remove: NOT_REACHED, rename: NOT_REACHED,
+  listRecent: NOT_REACHED, openRecent: NOT_REACHED, forgetRecent: NOT_REACHED, markOpened: NOT_REACHED,
 };
 
 let requests: unknown[];

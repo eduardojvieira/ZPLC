@@ -1,0 +1,32 @@
+{
+  "requirement": "CMP-005",
+  "title": "an integer stored in a narrower type keeps its low bits and the build warns",
+  "matrix": [
+    "functions.implicit-widening-conversion"
+  ],
+  "note": "the build succeeds: IMPLICIT_NARROWING is a warning at the assignment; 70000 is 4464 in 16 bits and 5000000000 is 705032704 in 32",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 4464
+    },
+    {
+      "at": "%QD1",
+      "type": "DINT",
+      "value": 705032704
+    }
+  ],
+  "warnings": [
+    {
+      "code": "IMPLICIT_NARROWING",
+      "line": 8
+    },
+    {
+      "code": "IMPLICIT_NARROWING",
+      "line": 9
+    }
+  ]
+}

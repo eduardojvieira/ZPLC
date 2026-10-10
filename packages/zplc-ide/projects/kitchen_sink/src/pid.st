@@ -16,13 +16,14 @@ VAR
 END_VAR
 
 (* PID_Compact - PID Controller *)
+(* KI is KP / TI and KD is KP * TD in the units of the block; DT is the sample time in seconds *)
 PidController(
     SP := 50.0,
     PV := SensorInput,
     KP := 1.0,
-    KI := 0.1,
-    KD := 0.0,
-    DT := 0.1,
+    KI := 1.0,
+    KD := 0.1,
+    DT := 0.01,
     OUT_MIN := 0.0,
     OUT_MAX := 100.0
 );

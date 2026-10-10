@@ -195,7 +195,7 @@ typedef enum {
   ZPLC_TYPE_ULINT = 0x09, /**< Unsigned 64-bit integer */
   ZPLC_TYPE_REAL = 0x0A, /**< 32-bit IEEE 754 float */
   ZPLC_TYPE_LREAL = 0x0B, /**< 64-bit IEEE 754 double */
-  ZPLC_TYPE_TIME = 0x0C, /**< Time duration (ms as DINT) */
+  ZPLC_TYPE_TIME = 0x0C, /**< Time duration (unsigned 32-bit milliseconds) */
   ZPLC_TYPE_BYTE = 0x10, /**< 8-bit bit string */
   ZPLC_TYPE_WORD = 0x11, /**< 16-bit bit string */
   ZPLC_TYPE_DWORD = 0x12, /**< 32-bit bit string */

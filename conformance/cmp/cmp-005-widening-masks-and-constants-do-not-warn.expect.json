@@ -1,0 +1,32 @@
+{
+  "requirement": "CMP-005",
+  "title": "a widening, a mask, a remainder and a constant that fit build without a warning",
+  "matrix": [
+    "functions.implicit-widening-conversion"
+  ],
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QB0",
+      "type": "BYTE",
+      "value": 52
+    },
+    {
+      "at": "%QB1",
+      "type": "USINT",
+      "value": 44
+    },
+    {
+      "at": "%QD1",
+      "type": "DINT",
+      "value": 7
+    },
+    {
+      "at": "%QB8",
+      "type": "SINT",
+      "value": 127
+    }
+  ],
+  "warnings": []
+}

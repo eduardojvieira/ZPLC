@@ -362,14 +362,17 @@ function createWindow(): void {
   // Load the app
   if (isDev) {
     // In development, load from Vite dev server
-    mainWindow.loadURL(expectedRendererUrl());
+    const rendererLoad = mainWindow.loadURL(expectedRendererUrl());
+    // A failed load is also reported as did-fail-load; the rejection only has to be handled.
+    rendererLoad.catch((error: unknown) => { console.error('Unable to load the renderer', error); });
     // Open DevTools in development
     if (!app.commandLine.hasSwitch('headless')) {
       mainWindow.webContents.openDevTools();
     }
   } else {
     // In production, load the built index.html
-    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    const rendererFile = mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    rendererFile.catch((error: unknown) => { console.error('Unable to load the renderer', error); });
   }
 
   // Closing with modified files asks first: save, discard or cancel (cancel keeps the window).
@@ -901,6 +904,10 @@ app.whenReady().then(async () => {
       createWindow();
     }
   });
+}).catch((error: unknown) => {
+  // Without the audit log, the stores and the IPC handlers there is nothing safe to show: leave instead of idling without a window.
+  console.error('ZPLC IDE failed to start', error);
+  app.exit(1);
 });
 
 // Quit when all windows are closed (except on macOS)

@@ -1183,8 +1183,19 @@ int zplc_vm_step(zplc_vm_t *vm) {
         return mem_result;
       }
 
-      /* Compare character by character */
+      /* The characters compared are the shorter length of the two. Each
+       * string is placed whole (header and those characters) before the first
+       * is read, as STRCPY does, so a length that reaches past the end of its
+       * region faults instead of reading on into the next one (RT-001). */
       min_len = (len1 < len2) ? len1 : len2;
+      if (!string_extent_ok(a, min_len, 0) ||
+          !string_extent_ok(b, min_len, 0)) {
+        vm->error = ZPLC_VM_OUT_OF_BOUNDS;
+        vm->halted = 1;
+        return ZPLC_VM_OUT_OF_BOUNDS;
+      }
+
+      /* Compare character by character */
       for (i = 0; i < min_len; i++) {
         mem_result = mem_read8(a + ZPLC_STRING_DATA_OFFSET + i, &ch1);
         if (mem_result == ZPLC_VM_OK) {

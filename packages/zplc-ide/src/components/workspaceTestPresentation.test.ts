@@ -10,8 +10,8 @@ const validEvidence = {
   outcome: 'passed',
   diagnostics: [],
   artifacts: [
-    { kind: 'zplc', sha256: sha, byteLength: 12 },
-    { kind: 'trace', sha256: 'b'.repeat(64), byteLength: 34 },
+    { kind: 'zplc' as const, sha256: sha, byteLength: 12 },
+    { kind: 'trace' as const, sha256: 'b'.repeat(64), byteLength: 34 },
   ],
 };
 
@@ -102,7 +102,7 @@ describe('presentWorkspaceTestResult', () => {
   });
 
   it('accepts only a bounded aggregate identity attached to recorded trace evidence', () => {
-    const identity = { schemaVersion: 1, sha256: 'c'.repeat(64), fileCount: 3 };
+    const identity = { schemaVersion: 1 as const, sha256: 'c'.repeat(64), fileCount: 3 };
     const presentation = presentWorkspaceTestResult({
       ok: true,
       summary: { backend: 'native-posix', mode: 'logical-cyclic-task-set-scan', scenarios: [{ id: 'motor', path: 'tests/motor.scenario.json', passed: true, traceSha256: sha, traceByteLength: 1 }] },
@@ -610,7 +610,8 @@ describe('presentRecordedPedestrianCrossing', () => {
     ['incompatible pedestrian signals', { ...completePedestrianScenario, samples: completePedestrianScenario.samples.map(({ atMs, outputs }) => ({ atMs, outputs: { ...outputs, 'PedestrianCrossing.PedWalk': true, 'PedestrianCrossing.PedStop': true } })) }],
     ['inactive pedestrian signals', { ...completePedestrianScenario, samples: completePedestrianScenario.samples.map(({ atMs, outputs }) => ({ atMs, outputs: { ...outputs, 'PedestrianCrossing.PedWalk': false, 'PedestrianCrossing.PedStop': false } })) }],
   ])('hides %s pedestrian evidence', (_name, scenario) => {
-    expect(presentRecordedPedestrianCrossing(scenario)).toBeUndefined();
+    // The rows deliberately malform the recorded evidence, so they are wider than the declared preview shape.
+    expect(presentRecordedPedestrianCrossing(scenario as Parameters<typeof presentRecordedPedestrianCrossing>[0])).toBeUndefined();
   });
 });
 

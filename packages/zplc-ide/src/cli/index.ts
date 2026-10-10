@@ -7,7 +7,7 @@ import productManifest from '../../../../package.json';
 import { ZPLC_CONSTANTS } from '@zplc/compiler';
 import { compileSingleFileWithTask, type PLCLanguage } from '../compiler';
 import { getLanguageFromFilename } from '../types';
-import { artifactEvidence, compilerCheck, compilerCompile, compilerWarningDiagnostics, executionPermission, finishToolExecution, firmwareBuild, projectInspect, projectMigrationExport, projectMigrationPreview, projectValidate, safeCompilerDiagnostics, safetyCheck, scenarioRun, startToolExecution, symbolsList, testsRun, toolchainInspect, withToolExecution, type FirmwareBuildSummary, type ProjectMigrationExportResult, type TestRunResult, type ToolEvidence, type ToolExecutionStart, type ToolResult } from './toolApi';
+import { artifactEvidence, compilerCheck, compilerCompile, compilerWarningDiagnostics, executionPermission, finishToolExecution, firmwareBuild, projectInspect, projectMigrationExport, projectMigrationPreview, projectValidate, safeCompilerDiagnostics, safetyCheck, scenarioRun, startToolExecution, symbolsList, testsRun, toolchainInspect, withToolExecution, type FirmwareBuildSummary, type CompilerCompileResult, type ProjectMigrationExportResult, type SafetyCheckResult, type TestRunResult, type ToolEvidence, type ToolExecutionStart, type ToolResult } from './toolApi';
 
 type Values = { help?: boolean; version?: boolean; json?: boolean; output?: string; language?: string };
 type Output = Pick<typeof console, 'log' | 'error'>;
@@ -139,7 +139,8 @@ export async function main(args = Bun.argv.slice(2), output: Output = console, o
   if (values.version) { output.log(`zplc-cli ${productManifest.version}`); return 0; }
   const [command, input, ideId] = positionals;
   if (!command || !['inspect', 'validate', 'check', 'safety-check', 'compile', 'symbols', 'test', 'scenario-run', 'migrate-preview', 'migrate', 'toolchain-inspect', 'firmware-build'].includes(command)) return emitFailure(output, values.json === true, 'cli', 'Unknown command');
-  const executionStart = startToolExecution('cli', executionPermission(operationForCommand(command)), operationForCommand(command));
+  const operation = operationForCommand(command);
+  const executionStart = startToolExecution('cli', executionPermission(operation), operation);
   if (command === 'firmware-build') {
     if (!input || !ideId || !/^[a-z0-9][a-z0-9_]{0,63}$/.test(ideId) || positionals.length !== 3 || values.output !== undefined || values.language !== undefined) return emitFailure(output, values.json === true, 'firmware-build', 'Firmware build requires a repository root and exact ide_id without output or language options');
     let rootStatus;
@@ -153,24 +154,24 @@ export async function main(args = Bun.argv.slice(2), output: Output = console, o
   }
   if (command === 'scenario-run' && (!input || !ideId || ideId.length > 128 || ideId.includes('\0') || positionals.length !== 3 || values.language !== undefined || values.output === '')) return emitFailure(output, values.json === true, 'scenario-run', 'Scenario run requires a workspace and valid scenario id without a language option');
   if (command !== 'scenario-run' && (!input || positionals.length !== 2)) return emitFailure(output, values.json === true, 'cli', 'Expected one command and one input');
-  if ((command === 'inspect' || command === 'validate' || command === 'check' || command === 'safety-check' || command === 'symbols' || command === 'migrate-preview' || command === 'toolchain-inspect') && (values.output !== undefined || values.language !== undefined)) return emitFailure(output, values.json === true, command, 'This command does not accept output or language options');
-  if (command === 'migrate' && (values.output === undefined || values.output === '' || values.language !== undefined)) return emitFailure(output, values.json === true, command, 'Migration requires a non-empty output path without a language option');
-  if (command === 'test' && values.language !== undefined) return emitFailure(output, values.json === true, command, 'Test does not accept a language option');
+  if ((command === 'inspect' || command === 'validate' || command === 'check' || command === 'safety-check' || command === 'symbols' || command === 'migrate-preview' || command === 'toolchain-inspect') && (values.output !== undefined || values.language !== undefined)) return emitFailure(output, values.json === true, operation, 'This command does not accept output or language options');
+  if (command === 'migrate' && (values.output === undefined || values.output === '' || values.language !== undefined)) return emitFailure(output, values.json === true, operation, 'Migration requires a non-empty output path without a language option');
+  if (command === 'test' && values.language !== undefined) return emitFailure(output, values.json === true, operation, 'Test does not accept a language option');
   let status;
-  try { status = await lstat(input); } catch { return emitFailure(output, values.json === true, command, 'Input is unavailable'); }
-  if (command === 'toolchain-inspect' && (status.isSymbolicLink() || !status.isDirectory())) return emitFailure(output, values.json === true, command, 'This command requires a real repository directory');
-  if ((command === 'compile' || command === 'test' || command === 'scenario-run') && values.output === '') return emitFailure(output, values.json === true, command, `${command === 'compile' ? 'Compile' : 'Test'} output must not be empty`);
-  if (command === 'compile' && values.language !== undefined && status.isDirectory()) return emitFailure(output, values.json === true, command, 'Workspace compilation does not accept a language option');
-  if (command !== 'compile' && !status.isDirectory()) return emitFailure(output, values.json === true, command, 'This command requires a workspace directory');
+  try { status = await lstat(input); } catch { return emitFailure(output, values.json === true, operation, 'Input is unavailable'); }
+  if (command === 'toolchain-inspect' && (status.isSymbolicLink() || !status.isDirectory())) return emitFailure(output, values.json === true, operation, 'This command requires a real repository directory');
+  if ((command === 'compile' || command === 'test' || command === 'scenario-run') && values.output === '') return emitFailure(output, values.json === true, operation, `${command === 'compile' ? 'Compile' : 'Test'} output must not be empty`);
+  if (command === 'compile' && values.language !== undefined && status.isDirectory()) return emitFailure(output, values.json === true, operation, 'Workspace compilation does not accept a language option');
+  if (command !== 'compile' && !status.isDirectory()) return emitFailure(output, values.json === true, operation, 'This command requires a workspace directory');
   if (command === 'compile' && status.isFile()) return singleFileCompile(input, values, output);
-  if (command === 'compile' && !status.isDirectory()) return emitFailure(output, values.json === true, command, 'Input must be a workspace directory or regular source file');
-  if ((command === 'compile' || command === 'test' || command === 'scenario-run' || command === 'migrate') && values.output && await isProtectedOutput(values.output, input, true)) return emitFailure(output, values.json === true, command, 'Output path is protected');
+  if (command === 'compile' && !status.isDirectory()) return emitFailure(output, values.json === true, operation, 'Input must be a workspace directory or regular source file');
+  if ((command === 'compile' || command === 'test' || command === 'scenario-run' || command === 'migrate') && values.output && await isProtectedOutput(values.output, input, true)) return emitFailure(output, values.json === true, operation, 'Output path is protected');
   const result = command === 'inspect' ? await projectInspect(input) : command === 'validate' ? await projectValidate(input) : command === 'migrate-preview' ? await projectMigrationPreview(input) : command === 'migrate' ? await projectMigrationExport(input) : command === 'check' ? await compilerCheck(input) : command === 'safety-check' ? await safetyCheck(input) : command === 'symbols' ? await symbolsList(input) : command === 'test' ? cliTestResult(await testsRun(input, { signal: options.signal })) : command === 'scenario-run' ? cliTestResult(await scenarioRun(input, ideId!, { signal: options.signal })) : command === 'toolchain-inspect' ? await toolchainInspect(input) : await compilerCompile(input);
-  if (result.ok && command === 'migrate' && !await writeArtifact(values.output!, (result as ProjectMigrationExportResult).manifest!)) return emitFailure(output, values.json === true, command, 'Unable to write output artifact');
-  if (result.ok && command === 'compile' && values.output && !await writeArtifact(values.output, result.bytes!)) return emitFailure(output, values.json === true, command, 'Unable to write output artifact');
-  if ((command === 'test' || command === 'scenario-run') && values.output && (result as TestRunResult).traceFile && !await writeArtifact(values.output, (result as TestRunResult).traceFile!)) return emitFailure(output, values.json === true, command, 'Unable to write output artifact');
-  if (values.json) emitJson(output, cliExecution(operationForCommand(command), result, executionStart));
-  else if (result.ok && command === 'safety-check' && !result.summary.configured) output.log('safety-check: no incompatible outputs declared');
+  if (result.ok && command === 'migrate' && !await writeArtifact(values.output!, (result as ProjectMigrationExportResult).manifest!)) return emitFailure(output, values.json === true, operation, 'Unable to write output artifact');
+  if (result.ok && command === 'compile' && values.output && !await writeArtifact(values.output, (result as CompilerCompileResult).bytes!)) return emitFailure(output, values.json === true, operation, 'Unable to write output artifact');
+  if ((command === 'test' || command === 'scenario-run') && values.output && (result as TestRunResult).traceFile && !await writeArtifact(values.output, (result as TestRunResult).traceFile!)) return emitFailure(output, values.json === true, operation, 'Unable to write output artifact');
+  if (values.json) emitJson(output, cliExecution(operation, result, executionStart));
+  else if (result.ok && command === 'safety-check' && !(result as Extract<SafetyCheckResult, { ok: true }>).summary.configured) output.log('safety-check: no incompatible outputs declared');
   else if (result.ok && command === 'safety-check') output.log('safety-check coverage checked');
   else if (result.ok && command === 'compile') output.log(`compile passed (contract draft ${ZPLC_CONSTANTS.DRAFT_COUNTER})`);
   else if (result.ok) output.log(`${command} passed`); else result.evidence.diagnostics.forEach((diagnostic) => output.error(`Error: ${describeDiagnostic(diagnostic)}`));

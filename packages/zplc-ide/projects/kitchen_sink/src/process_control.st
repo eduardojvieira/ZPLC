@@ -29,19 +29,21 @@ END_VAR
 HystCtrl(IN := SensorInput, HIGH := 60.0, LOW := 40.0);
 
 (* DEADBAND - Filter small changes *)
-DeadCtrl(IN := SensorInput, DB := 2.0);
+DeadCtrl(IN := SensorInput, WIDTH := 2.0);
 
 (* LAG_FILTER - First-order lag filter *)
-LagFilt(IN := SensorInput, T := T#100ms, CYCLE := T#10ms);
+(* GAIN is the share of the difference taken each scan: 10 ms / (100 ms + 10 ms) *)
+LagFilt(IN := SensorInput, GAIN := 0.09);
 
 (* RAMP_REAL - Rate limiter *)
-RampCtrl(IN := SensorInput, RATE := 10.0, CYCLE := T#10ms);
+RampCtrl(IN := SensorInput, RATE := 10.0);
 
 (* INTEGRAL - Integration *)
-Integrator(IN := 1.0, CYCLE := T#10ms, RESET := StopButton);
+(* DT is the sample time in seconds *)
+Integrator(IN := 1.0, DT := 0.01, RESET := StopButton);
 
 (* DERIVATIVE - Differentiation *)
-Differentiator(IN := SensorInput, CYCLE := T#10ms);
+Differentiator(IN := SensorInput, DT := 0.01);
 
 (* Final output: the motor is allowed only while the sensor is not above HIGH *)
 MotorPermit := NOT HystCtrl.Q;

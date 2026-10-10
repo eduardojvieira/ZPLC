@@ -35,8 +35,8 @@ const trustedEvent = { sender: trustedSender, senderFrame: trustedSender.mainFra
 describe('Electron security boundary', () => {
   it('accepts only the exact main renderer frame and document URL', () => {
     expect(isTrustedRenderer(trustedEvent, trustedWindow, 'http://localhost:3000/')).toBe(true);
-    expect(isTrustedRenderer({ ...trustedEvent, senderFrame: {} }, trustedWindow, 'http://localhost:3000/')).toBe(false);
-    expect(isTrustedRenderer({ ...trustedEvent, sender: {} }, trustedWindow, 'http://localhost:3000/')).toBe(false);
+    expect(isTrustedRenderer({ ...trustedEvent, senderFrame: {} as never }, trustedWindow, 'http://localhost:3000/')).toBe(false);
+    expect(isTrustedRenderer({ ...trustedEvent, sender: {} as never }, trustedWindow, 'http://localhost:3000/')).toBe(false);
     expect(isTrustedRenderer(trustedEvent, null, 'http://localhost:3000/')).toBe(false);
     expect(isTrustedRenderer(trustedEvent, trustedWindow, 'http://localhost:3000/other')).toBe(false);
     expect(isTrustedRenderer(trustedEvent, trustedWindow, 'http://localhost:3000/?query=ignored#hash')).toBe(true);
@@ -166,7 +166,7 @@ describe('Electron security boundary', () => {
   });
 
   it('projects only exact metadata-only execution envelopes', () => {
-    const execution = { schemaVersion: 1, jobId: '0f2ce877-e0d6-43ca-89a7-df17a4927f51', actor: 'human-studio', permission: 'compiler:check', operation: 'compile', outcome: 'passed', startedAt: '2026-08-31T00:00:00.000Z', finishedAt: '2026-08-31T00:00:01.000Z' };
+    const execution = { schemaVersion: 1, jobId: '0f2ce877-e0d6-43ca-89a7-df17a4927f51', actor: 'human-studio', permission: 'compiler:check', operation: 'compile', outcome: 'passed', startedAt: '2026-08-31T00:00:00.000Z', finishedAt: '2026-08-31T00:00:01.000Z' } as const;
     expect(sanitizeToolExecution(execution)).toEqual(execution);
     expect(sanitizeToolExecution({ ...execution, root: '/private' })).toBeNull();
     expect(sanitizeToolExecution({ ...execution, finishedAt: execution.startedAt })).toEqual({ ...execution, finishedAt: execution.startedAt });
@@ -175,7 +175,7 @@ describe('Electron security boundary', () => {
     expect(sanitizeToolExecution({ ...execution, permission: 'firmware:flash' })).toBeNull();
     expect(sanitizeToolExecution({ ...execution, operation: 'firmware-flash' })).toBeNull();
     expect(sanitizeToolExecution({ ...execution, permission: 'tests:run' })).toBeNull();
-    const review = { ...execution, actor: 'agent', permission: 'tests:run', operation: 'change-set-review' };
+    const review = { ...execution, actor: 'agent', permission: 'tests:run', operation: 'change-set-review' } as const;
     expect(sanitizeToolExecution(review)).toEqual(review);
     Object.defineProperty(review, 'operation', { value: 'change-set-review', enumerable: false });
     expect(sanitizeToolExecution(review)).toBeNull();

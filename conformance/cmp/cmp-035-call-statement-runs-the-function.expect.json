@@ -1,0 +1,16 @@
+{
+  "requirement": "CMP-035",
+  "title": "a function called as a statement runs, and its result is discarded",
+  "matrix": [
+    "statements.call-statement-and-empty-statement"
+  ],
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 5
+    }
+  ]
+}

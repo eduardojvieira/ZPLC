@@ -1,0 +1,35 @@
+{
+  "requirement": "CMP-034",
+  "title": "two functions with a loop counter and a total of the same names, and a program with the same names, keep their own",
+  "matrix": [
+    "pous.function"
+  ],
+  "scans": 2,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "DINT",
+      "value": 10,
+      "afterScan": 2
+    },
+    {
+      "at": "%QD1",
+      "type": "DINT",
+      "value": 14,
+      "afterScan": 2
+    },
+    {
+      "at": "%QD2",
+      "type": "DINT",
+      "value": 10,
+      "afterScan": 2
+    },
+    {
+      "at": "%QW6",
+      "type": "INT",
+      "value": 100,
+      "afterScan": 2
+    }
+  ]
+}

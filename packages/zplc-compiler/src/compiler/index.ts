@@ -126,7 +126,7 @@ import { parse, parseWithDiagnostics } from './parser.ts';
 import { ParseError } from './parser.ts';
 import { LexerError } from './lexer.ts';
 import { generate, CodegenError, WORK_MEMORY_REGION_SIZE, DEFAULT_COMPILER_MEMORY_PROFILE, validateCompilerMemoryProfile } from './codegen.ts';
-import type { SyntaxIssue } from './diagnostics.ts';
+import type { CodegenWarning, SyntaxIssue } from './diagnostics.ts';
 import type { CodeGenOptions, CompilerMemoryProfile } from './codegen.ts';
 import { assemble, createMultiTaskZplcFile, relocateBytecode, TASK_TYPE, ZPLC_CONSTANTS } from '../assembler/index.ts';
 import type { AssemblyResult, TagDef, TaskDef, TaskType } from '../assembler/index.ts';
@@ -134,6 +134,7 @@ import type { DebugMap, TypeResolver } from './debug-map.ts';
 import { buildDebugMap, createDebugMap } from './debug-map.ts';
 import { buildSymbolTable, MemoryLayout, parseStringType, typeToString } from './symbol-table.ts';
 import { getFB } from './stdlib/index.ts';
+import { sameName } from './ast.ts';
 import type { DataTypeValue } from './ast.ts';
 import type { CompilationUnit, Program } from './ast.ts';
 
@@ -236,6 +237,8 @@ export interface CompilationResult {
     codeSize: number;
     /** Debug map for source-level debugging (optional) */
     debugMap?: DebugMap;
+    /** What the build accepted and wants the author to see, in source order (CMP-008, CMP-031). */
+    warnings: CompilerWarning[];
 }
 
 /**
@@ -376,7 +379,7 @@ function createTypeResolver(symbols: import('./symbol-table.ts').SymbolTable): T
             // 3. Check stdlib FBs
             const stdFB = getFB(typeName as DataTypeValue);
             if (stdFB) {
-                const member = stdFB.members.find(m => m.name === memberName);
+                const member = stdFB.members.find(m => sameName(m.name, memberName));
                 if (member) {
                     const dt: string = typeof member.dataType === 'string'
                         ? member.dataType
@@ -410,7 +413,15 @@ export function compileToBinary(source: string, options?: CompileOptions): Compi
         }
         throw e;
     }
-    const ast = parse(source);
+    const parsed = parseWithDiagnostics(source);
+    if (parsed.errors.length > 0) {
+        // the first error carries all of them, as parse() throws it
+        const first = parsed.errors[0]!;
+        first.errors = parsed.errors;
+        throw first;
+    }
+    const ast = parsed.unit;
+    const warnings: CompilerWarning[] = parsed.warnings.map((warning) => ({ ...warning, code: 'NON_IEC_HEX_LITERAL' as const }));
 
     if (ast.programs.length === 0) {
         throw new CompilerError('No program found in source', 1, 1, 'parser');
@@ -420,15 +431,19 @@ export function compileToBinary(source: string, options?: CompileOptions): Compi
     const generateDebugMap = options?.generateDebugMap ?? false;
 
     // Build codegen options - enable source annotations if debug map is requested
+    const generated: CodegenWarning[] = [];
     const codegenOptions: CodeGenOptions = {
         ...options,
         emitSourceAnnotations: generateDebugMap,
+        warnings: generated,
     };
 
     // Generate assembly using full AST
     let assembly: string;
     try {
         assembly = generate(ast, codegenOptions);
+        warnings.push(...generated);
+        warnings.sort((first, second) => first.line - second.line || first.column - second.column);
     } catch (e) {
         if (e instanceof CodegenError) {
             throwAll(compilerErrorsOf(e, 'source', undefined, e));
@@ -454,6 +469,7 @@ export function compileToBinary(source: string, options?: CompileOptions): Compi
         zplcFile: asmResult.zplcFile,
         entryPoint: asmResult.entryPoint,
         codeSize: asmResult.codeSize,
+        warnings,
     };
 
     // Build debug map if requested
@@ -555,7 +571,7 @@ function attachSourceRef(error: CompilerError, sourceRef: string): CompilerError
  */
 export interface CompilerWarning {
     /** Stable identifier of the kind of warning. */
-    code: 'NON_IEC_HEX_LITERAL';
+    code: 'NON_IEC_HEX_LITERAL' | 'IMPLICIT_NARROWING';
     message: string;
     line: number;
     column: number;
@@ -776,6 +792,10 @@ export function compileMultiTaskProject(
         let assembly: string;
         let programAst: ReturnType<typeof parse>;
         let unitStart = { line: 1, column: 1 };
+        // what this program is accepted with, in source order: the non-IEC forms the parser saw and the
+        // conversions the generator made
+        const programWarnings: CompilerWarning[] = [];
+        const generated: CodegenWarning[] = [];
         try {
             const parsed = parseWithDiagnostics(source.content);
             if (parsed.errors.length > 0) {
@@ -787,7 +807,7 @@ export function compileMultiTaskProject(
             programAst = parsed.unit;
             unitStart = programAst.programs[0] ?? unitStart;
             for (const warning of parsed.warnings) {
-                warnings.push({
+                programWarnings.push({
                     code: 'NON_IEC_HEX_LITERAL',
                     message: warning.message,
                     line: warning.line,
@@ -819,7 +839,11 @@ export function compileMultiTaskProject(
                 workMemorySize: WORK_MEMORY_REGION_SIZE,
                 memoryProfile,
                 emitSourceAnnotations: true,
+                warnings: generated,
             });
+            for (const warning of generated) programWarnings.push({ ...warning, sourceRef });
+            programWarnings.sort((first, second) => first.line - second.line || first.column - second.column);
+            warnings.push(...programWarnings);
         } catch (e) {
             // The other programs are still compiled, so that their errors are reported too
             failures.push(...compilerErrorsOf(e, progName, sourceRef, unitStart));
@@ -1022,5 +1046,6 @@ export function compileSingleFileWithTask(
         codeSize: multiResult.codeSize,
         tasks: multiResult.tasks,
         debugMap: multiResult.debugMap,
+        warnings: multiResult.warnings,
     };
 }
