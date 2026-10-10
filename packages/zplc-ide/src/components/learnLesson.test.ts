@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import type { WorkspaceTestPresentation } from './workspaceTestPresentation';
 import { gradeRecordedScenarioLesson, LEARN_MASTERY_STORAGE_KEY, learnLessonCatalog, parseLearnMasteryImport, readLearnMastery, recordLearnMastery, replaceLearnMastery, serializeLearnMastery, type LearnLesson } from './learnLesson';
 import { LEARN_CONTENT_SCHEMA_VERSION, validateLearnContentV1, type VersionedLearnLesson } from './learnContent.v1';
+import { LESSON_INDEX } from '../generated/lessonIndex';
 
 const sha = 'a'.repeat(64);
 
@@ -78,25 +79,33 @@ describe('Learn lesson catalog', () => {
     expect(en[3]?.stages[4]?.body).toContain('classifier+metal 20, diverter+count=1 at 30, jam 50');
     expect(es[3]?.stages[5]?.body).toBe('La assertion NEVER cubre DiverterCommand ON con BeltCommand OFF sólo en este escenario.');
     expect(en[3]?.stages[5]?.body).toBe('The NEVER assertion covers DiverterCommand ON with BeltCommand OFF only in this scenario.');
-    expect(es[4]).toMatchObject({ exampleId: 'blinky_st', requiredScenario: 'BlinkyVisual', sourcePath: 'src/Blinky.st', scenarioPath: 'tests/blinky-visual.scenario.json', title: 'Oscilador TON y realimentación de salida', scope: 'La evidencia de Tests es del host nativo POSIX; no es evidencia de LED físico, timing de hardware, HIL ni certificación.' });
+    expect(es[4]).toMatchObject({ exampleId: 'blinky', requiredScenario: 'BlinkyVisual', sourcePath: 'src/Blinky.ld.json', scenarioPath: 'tests/blinky-visual.scenario.json', title: 'Oscilador TON y realimentación de salida', scope: 'La evidencia de Tests es del host nativo POSIX; no es evidencia de LED físico, timing de hardware, HIL ni certificación.' });
     expect(en[4]).toMatchObject({ title: 'TON oscillator and output feedback', scope: 'Tests provide native POSIX host evidence only; they are not physical LED, hardware timing, HIL, or certification evidence.' });
     expect(es[4]?.stages.map(({ title }) => title)).toEqual(['Objetivo', 'Predecí', 'Editá', 'Ejecutá', 'Observá', 'Reflexioná']);
     expect(en[4]?.stages.map(({ title }) => title)).toEqual(['Objective', 'Predict', 'Edit', 'Run', 'Observe', 'Reflect']);
     expect(es[4]?.stages[1]?.checkpoint).toBe('OFF a 250 ms, ON a 750, OFF a 1250, ON a 1750; el primer flanco ascendente cae entre 400 y 600 ms.');
     expect(en[4]?.stages[1]?.checkpoint).toBe('OFF at 250 ms, ON at 750, OFF at 1250, ON at 1750; the first rising edge lands between 400 and 600 ms.');
-    // The lesson teaches the Structured Text oscillator the starter really contains, not a Ladder file it does not ship.
+    // LRN-038: lesson 5 has the learner edit a Ladder program. The starter is a Ladder file with the two timer rungs drawn and
+    // the lesson names the rungs and the file the learner really gets.
     for (const lesson of [es[4]!, en[4]!]) {
       const text = lesson.stages.map(({ body, checkpoint }) => `${body} ${checkpoint}`).join(' ');
-      for (const value of ['src/Blinky.st', 'LED_Output', 'BlinkTimer', 'LedState', 'IN := FALSE', 'T#500ms', '250', '750', '1250', '1750']) expect(`${lesson.sourcePath} ${text}`).toContain(value);
-      // Neither the Ladder file nor the two-timer construction of the Ladder, IL and FBD projects is taught: the reference is blinky_st.
-      expect(text).not.toMatch(/main\.ld|Ladder|contacto NC|NC contact|coil|OffTimer|OnTimer|two TON|dos temporizadores/);
+      for (const value of ['src/Blinky.ld.json', 'LED_Output', 'OffTimer.Q', 'OnTimer.Q', 'SET', 'RESET']) expect(`${lesson.sourcePath} ${text}`).toContain(value);
+      expect(lesson.sourcePath).toBe('src/Blinky.ld.json');
+      expect(lesson.languages).toEqual(['LD']);
+      // The Structured Text names of the old lesson are gone.
+      expect(text).not.toMatch(/Blinky\.st|BlinkTimer|LedState|IN := FALSE/);
     }
-    // The reference of lesson 5 is the Structured Text project, and the names the lesson gives are the ones its source uses.
-    expect(es[4]).toMatchObject({ exampleId: 'blinky_st' });
-    expect(en[4]).toMatchObject({ exampleId: 'blinky_st' });
-    const reference = readFileSync(join(import.meta.dir, '..', '..', 'projects', 'blinky_st', 'src', 'main.st'), 'utf8');
-    expect(reference.match(/:\s*TON\b/g)).toHaveLength(1);
-    for (const name of ['BlinkTimer', 'LedState', 'IN := FALSE']) expect(reference).toContain(name);
+    // The reference of lesson 5 is the Ladder project, and the rungs and instances the lesson names are the ones it has.
+    expect(es[4]).toMatchObject({ exampleId: 'blinky', starterExampleId: 'blinky_starter', referenceExampleId: 'blinky' });
+    expect(en[4]).toMatchObject({ exampleId: 'blinky', starterExampleId: 'blinky_starter', referenceExampleId: 'blinky' });
+    const reference = JSON.parse(readFileSync(join(import.meta.dir, '..', '..', 'projects', 'blinky', 'src', 'main.ld.json'), 'utf8')) as { rungs: Array<{ grid: Array<Array<{ element: { type: string; variable?: string; instance?: string } | null }>> }> };
+    const elements = reference.rungs.flatMap((rung) => rung.grid.flat().flatMap((cell) => cell.element ? [cell.element] : []));
+    expect(elements.filter((element) => element.type === 'coil_set').map((element) => element.variable)).toEqual(['LED_Output']);
+    expect(elements.filter((element) => element.type === 'coil_reset').map((element) => element.variable)).toEqual(['LED_Output']);
+    expect(elements.filter((element) => element.instance).map((element) => element.instance)).toEqual(['OffTimer', 'OnTimer']);
+    // The starter ships the two timer rungs and no coil: a learner edits it by adding the two rungs.
+    const starter = JSON.parse(readFileSync(join(import.meta.dir, '..', '..', 'projects', 'blinky_starter', 'src', 'Blinky.ld.json'), 'utf8')) as { rungs: unknown[] };
+    expect(starter.rungs).toHaveLength(2);
     for (const lesson of [es[4]!, en[4]!]) expect(lesson.faultCases.join(' ')).not.toMatch(/OFF y ON|OFF and ON half/);
     expect(es[5]).toMatchObject({ exampleId: 'motor_plant', requiredScenario: 'MotorPlant', sourcePath: 'src/MotorPlant.st', scenarioPath: 'tests/motor-plant.scenario.json', title: 'Comando, realimentación y velocidad', summary: 'Separá la orden del motor de la confirmación de marcha usando la planta Motor Plant.', scope: 'La evidencia de Tests es determinística del host nativo POSIX y de la planta discreta; no es evidencia de motor físico, hardware, HIL ni certificación.' });
     expect(en[5]).toMatchObject({ title: 'Command, feedback, and speed', summary: 'Separate a motor command from the run confirmation using the Motor Plant.', scope: 'Tests provide deterministic native POSIX host and discrete-plant evidence only; they are not physical-motor, hardware, HIL, or certification evidence.' });
@@ -187,12 +196,15 @@ describe('Learn lesson catalog', () => {
       const reference = join(projects, lesson.referenceExampleId);
       expect(existsSync(join(starter, 'zplc.json'))).toBe(true);
       expect(declaredPrograms(starter)).not.toHaveLength(0);
-      for (const program of declaredPrograms(starter)) expect(existsSync(join(starter, 'src', program))).toBe(true);
+      // A visual program (`Blinky.ld`) is the file `Blinky.ld.json`.
+      for (const program of declaredPrograms(starter)) expect(existsSync(join(starter, 'src', program)) || existsSync(join(starter, 'src', `${program}.json`))).toBe(true);
       expect(existsSync(join(projects, lesson.starterExampleId, lesson.scenarioPath))).toBe(true);
       expect(existsSync(join(reference, 'zplc.json'))).toBe(true);
       expect(declaredPrograms(reference)).not.toHaveLength(0);
       // A reference in another language than the starter would send the learner to a file they cannot compare (lesson 5 once pointed a Structured Text starter at the Ladder Blinky).
-      expect({ lesson: lesson.id, sameLanguage: declaredPrograms(reference).some((program) => program.endsWith(lesson.sourcePath.slice(lesson.sourcePath.lastIndexOf('.')))) }).toEqual({ lesson: lesson.id, sameLanguage: true });
+      // (a visual program `Blinky.ld.json` is a program of the language `.ld`).
+      const sourceLanguage = lesson.sourcePath.replace(/\.json$/, '');
+      expect({ lesson: lesson.id, sameLanguage: declaredPrograms(reference).some((program) => program.endsWith(sourceLanguage.slice(sourceLanguage.lastIndexOf('.')))) }).toEqual({ lesson: lesson.id, sameLanguage: true });
       for (const program of declaredPrograms(reference)) {
         const direct = join(reference, 'src', program);
         const visual = join(reference, 'src', `${program}.json`);
@@ -301,6 +313,26 @@ describe('Learn lesson catalog', () => {
     expect(gradeRecordedScenarioLesson(lesson, { ...passed, kind: 'assertion-failed' })).toEqual({ kind: 'unavailable' });
     // A rubric that does not require saved evidence is outside the declared lesson contract, so the grader must refuse it.
     expect(gradeRecordedScenarioLesson({ ...lesson, rubric: { ...lesson.rubric, requireSavedEvidence: false } } as unknown as typeof lesson, passed)).toEqual({ kind: 'unavailable' });
+  });
+});
+
+describe('Learn lesson text is never replaced at run time (LRN-038)', () => {
+  it('hands the panel exactly the strings of the generated index, in both languages, for every lesson', () => {
+    for (const locale of ['en', 'es'] as const) {
+      expect(learnLessonCatalog[locale].map(({ id }) => id)).toEqual(LESSON_INDEX.lessons.map(({ id }) => id));
+      learnLessonCatalog[locale].forEach((lesson, index) => {
+        const source = LESSON_INDEX.lessons[index]!.text[locale];
+        expect({ id: lesson.id, title: lesson.title, summary: lesson.summary, scope: lesson.scope, stages: lesson.stages, faultCases: lesson.faultCases, objectives: lesson.objectives, hints: lesson.hints })
+          .toEqual({ id: lesson.id, title: source.title, summary: source.summary, scope: source.scope, stages: source.stages.map(({ title, body, checkpoint }) => ({ title, body, checkpoint })), faultCases: source.faultCases, objectives: source.objectives, hints: source.hints.map(({ text }) => text) });
+      });
+    }
+  });
+
+  it('gives every lesson an Edit stage that says what to edit, lesson 5 and lesson 10 included', () => {
+    for (const lesson of [...learnLessonCatalog.en, ...learnLessonCatalog.es]) {
+      const edit = lesson.stages[lesson.stageKeys.indexOf('edit')];
+      expect({ id: lesson.id, hasEdit: edit !== undefined, mentionsFault: edit?.body.includes(lesson.faultCases[0] ?? '\0') }).toEqual({ id: lesson.id, hasEdit: true, mentionsFault: true });
+    }
   });
 });
 

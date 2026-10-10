@@ -1,18 +1,18 @@
 {
   "schemaVersion": 1,
   "title": "Oscilador TON y realimentación de salida",
-  "summary": "Construí un parpadeo TON de 500 ms en Structured Text y verificá sus tiempos de encendido y apagado con assertions FOR y AT.",
+  "summary": "Completá un parpadeo Ladder de {{t:500}} ms hecho con dos temporizadores TON y bobinas SET y RESET, y verificá sus tiempos de encendido y apagado con assertions FOR y AT.",
   "scope": "La evidencia de Tests es del host nativo POSIX; no es evidencia de LED físico, timing de hardware, HIL ni certificación.",
   "objectives": [
-    "Armá un oscilador de {{t:500}} ms con un temporizador TON y realimentación de salida.",
-    "Verificá sus tiempos de encendido y apagado con assertions FOR y AT."
+    "Leé un oscilador Ladder de dos temporizadores: cada uno corre en un semiperíodo y arranca al siguiente.",
+    "Completalo con una bobina SET y una bobina RESET manejadas por las salidas Q de los temporizadores."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objetivo",
-      "body": "En src/Blinky.st, armá el oscilador alrededor de un TON con PT T#500ms, por ejemplo BlinkTimer: dejalo corriendo con IN := TRUE, y cuando su Q sea TRUE invertí una variable de estado como LedState y reiniciá el temporizador con una llamada con IN := FALSE; LED_Output sigue al estado.",
-      "checkpoint": "La salida del temporizador se realimenta para invertir el estado y reiniciarlo, y el LED arranca en OFF."
+      "body": "En src/Blinky.ld.json ya están dibujados los dos peldaños de temporizador: OffTimer corre mientras LED_Output está OFF y OnTimer corre mientras está ON. Agregá los dos peldaños de bobina: un contacto sobre OffTimer.Q que haga SET de LED_Output y un contacto sobre OnTimer.Q que le haga RESET.",
+      "checkpoint": "Las salidas de los temporizadores se realimentan para activar y desactivar el LED, y el LED arranca en OFF."
     },
     {
       "key": "predict",
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Editá",
-      "body": "Corregí esta omisión del starter y guardá antes de ejecutar: El starter mantiene LED_Output en OFF para siempre; agregá un temporizador TON (T#500ms) que invierta un estado cada vez que vence, de modo que el LED esté OFF unos {{t:500}} ms, luego ON unos {{t:500}} ms, y repita.",
+      "body": "Corregí esta omisión del starter y guardá antes de ejecutar: El starter tiene los dos temporizadores pero ninguna bobina, así que LED_Output queda en OFF para siempre; agregá una bobina SET manejada por OffTimer.Q y una bobina RESET manejada por OnTimer.Q, de modo que el LED esté OFF unos {{t:500}} ms, luego ON unos {{t:500}} ms, y repita.",
       "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
     },
     {
@@ -48,14 +48,14 @@
   "hints": [
     {
       "level": 1,
-      "text": "Un TON sólo termina cuando su entrada estuvo en TRUE durante todo el preset, así que el oscilador necesita un temporizador cuya salida invierta un estado y luego lo reinicie."
+      "text": "Mirá los dos primeros peldaños: OffTimer sólo corre mientras LED_Output está OFF y OnTimer sólo mientras está ON, así que algo tiene que invertir LED_Output cuando cada uno termina."
     },
     {
       "level": 2,
-      "text": "Declará un TON con PT T#500ms y una variable de estado; cuando la Q del temporizador sea TRUE, invertí el estado y volvé a llamar al temporizador con IN := FALSE para reiniciarlo, y dejá que LED_Output siga al estado."
+      "text": "Agregá un peldaño con un contacto normalmente abierto sobre OffTimer.Q y una bobina SET sobre LED_Output, y otro con un contacto sobre OnTimer.Q y una bobina RESET sobre LED_Output."
     }
   ],
   "faultCases": [
-    "El starter mantiene LED_Output en OFF para siempre; agregá un temporizador TON (T#500ms) que invierta un estado cada vez que vence, de modo que el LED esté OFF unos 500 ms, luego ON unos 500 ms, y repita."
+    "El starter tiene los dos temporizadores pero ninguna bobina, así que LED_Output queda en OFF para siempre; agregá una bobina SET manejada por OffTimer.Q y una bobina RESET manejada por OnTimer.Q, de modo que el LED esté OFF unos 500 ms, luego ON unos 500 ms, y repita."
   ]
 }

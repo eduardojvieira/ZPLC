@@ -1,18 +1,18 @@
 {
   "schemaVersion": 1,
   "title": "TON oscillator and output feedback",
-  "summary": "Build a 500 ms TON blinker in Structured Text and check its on and off times with FOR and AT assertions.",
+  "summary": "Complete a {{t:500}} ms Ladder blinker made of two TON timers and SET and RESET coils, and check its on and off times with FOR and AT assertions.",
   "scope": "Tests provide native POSIX host evidence only; they are not physical LED, hardware timing, HIL, or certification evidence.",
   "objectives": [
-    "Build a {{t:500}} ms oscillator from a TON timer and output feedback.",
-    "Check its on and off times with FOR and AT assertions."
+    "Read a two-timer Ladder oscillator: each timer runs in one half period and starts the next.",
+    "Complete it with a SET coil and a RESET coil driven by the timers' Q outputs."
   ],
   "stages": [
     {
       "key": "objective",
       "title": "Objective",
-      "body": "In src/Blinky.st, build the oscillator around one TON with PT T#500ms, for example BlinkTimer: keep it running with IN := TRUE, and when its Q is TRUE flip a state variable such as LedState and restart the timer with one call using IN := FALSE; LED_Output follows the state.",
-      "checkpoint": "The timer's output feeds back to flip the state and restart the timer, and the LED starts OFF."
+      "body": "In src/Blinky.ld.json the two timer rungs are already drawn: OffTimer runs while LED_Output is OFF and OnTimer runs while it is ON. Add the two coil rungs: a contact on OffTimer.Q that SETs LED_Output, and a contact on OnTimer.Q that RESETs it.",
+      "checkpoint": "The timers' outputs feed back to set and reset the LED, and the LED starts OFF."
     },
     {
       "key": "predict",
@@ -23,7 +23,7 @@
     {
       "key": "edit",
       "title": "Edit",
-      "body": "Correct this starter omission, save it, then run: The starter holds LED_Output OFF forever; add a TON timer (T#500ms) that flips a state each time it expires, so the LED is OFF for about {{t:500}} ms, then ON for about {{t:500}} ms, repeating.",
+      "body": "Correct this starter omission, save it, then run: The starter has the two timers but no coils, so LED_Output stays OFF forever; add a SET coil driven by OffTimer.Q and a RESET coil driven by OnTimer.Q, so the LED is OFF for about {{t:500}} ms, then ON for about {{t:500}} ms, and repeats.",
       "checkpoint": "The visible scenario must pass with saved host evidence."
     },
     {
@@ -48,14 +48,14 @@
   "hints": [
     {
       "level": 1,
-      "text": "A TON only finishes after its input has been TRUE for the whole preset, so the oscillator needs a timer whose output flips a state and then restarts the timer."
+      "text": "Look at the first two rungs: OffTimer only runs while LED_Output is OFF and OnTimer only while it is ON, so something has to flip LED_Output when each one finishes."
     },
     {
       "level": 2,
-      "text": "Declare a TON with PT T#500ms and a state variable; when the timer's Q is TRUE, invert the state and call the timer again with IN := FALSE so it restarts, and let LED_Output follow the state."
+      "text": "Add a rung with a normally open contact on OffTimer.Q and a SET coil on LED_Output, and another with a contact on OnTimer.Q and a RESET coil on LED_Output."
     }
   ],
   "faultCases": [
-    "The starter holds LED_Output OFF forever; add a TON timer (T#500ms) that flips a state each time it expires, so the LED is OFF for about 500 ms, then ON for about 500 ms, repeating."
+    "The starter has the two timers but no coils, so LED_Output stays OFF forever; add a SET coil driven by OffTimer.Q and a RESET coil driven by OnTimer.Q, so the LED is OFF for about 500 ms, then ON for about 500 ms, and repeats."
   ]
 }

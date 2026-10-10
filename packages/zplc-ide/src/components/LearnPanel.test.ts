@@ -51,6 +51,8 @@ describe('Learn panel contract', () => {
     expect(source).toContain("'Falla a corregir:'");
     expect(source).toContain("'Regresiones incluidas:'");
     expect(source).not.toMatch(/localStorage|workspaceTests\.|runWorkspaceTests|flash|deploy|force|RUN\/STOP|local-first|LLM|mark complete|reset mastery/i);
+    // LRN-038: the panel shows the package text as it is; no lesson string goes through a replacement.
+    expect(source).not.toMatch(/\.replace(?:All)?\(/);
   });
 });
 
@@ -60,7 +62,7 @@ describe('Learn lesson content modules', () => {
     'pedestrian-crossing-states': 'pedestrian_crossing',
     'tank-level-fault-reset': 'tank_level',
     'conveyor-classification-jam': 'conveyor_01',
-    'blinky-ladder-timer-feedback': 'blinky_st',
+    'blinky-ladder-timer-feedback': 'blinky',
     'motor-plant-feedback': 'motor_plant',
     'edge-counter-pulses': 'edge_counter',
     'scan-cycle-one-scan-memory': 'scan_snapshot',

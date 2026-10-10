@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "blinky-ladder-timer-feedback",
-  "version": 1,
+  "version": 2,
   "order": 5,
   "module": 1,
   "level": "foundation",
@@ -9,7 +9,7 @@
     "scan-cycle-one-scan-memory"
   ],
   "languages": [
-    "ST"
+    "LD"
   ],
   "tracks": [
     "simulation"
@@ -18,11 +18,11 @@
   "estimatedMinutes": 20,
   "starter": {
     "project": "blinky_starter",
-    "program": "src/Blinky.st"
+    "program": "src/Blinky.ld.json"
   },
   "solution": {
-    "project": "blinky_st",
-    "program": "src/main.st"
+    "project": "blinky",
+    "program": "src/main.ld.json"
   },
   "scenario": {
     "file": "scenario.json",
