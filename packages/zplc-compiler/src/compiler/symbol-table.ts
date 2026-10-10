@@ -825,7 +825,7 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
                         members.set(member.name, {
                             offset: currentOffset,
                             size: memberSize,
-                            dataType: member.dataType as any,
+                            dataType: member.dataType,
                             initialValue: member.initialValue,
                         });
                         currentOffset += memberSize;
@@ -845,14 +845,14 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
                                 name: v.name,
                                 dataType: typeDef.baseType,
                                 section: VarSection.CONSTANT,
-                                initialValue: { kind: 'IntLiteral', value: v.value } as any,
+                                initialValue: { kind: 'IntLiteral', value: v.value, line: typeDef.line, column: typeDef.column },
                                 ioAddress: null,
                                 tags: {},
                                 line: typeDef.line,
                                 column: typeDef.column,
                             }, { sourceRef: typeDef.sourceRef });
                         } catch (e) {
-                            // Ignore duplicates for now
+                            // an enumeration value whose name is already declared keeps the first declaration
                         }
                     }
                     table.addEnumDefinition({
@@ -961,9 +961,8 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
                 if (typeof memberType === 'string' && v.section !== VarSection.VAR_IN_OUT && table.getFBDefinition(memberType)?.isAbstract) {
                     throw new CodegenError(`'${v.name}' is an instance of the ABSTRACT function block '${memberType}'`, v.line, v.column);
                 }
-                // Shadowing check: warn or error if member exists in base?
-                // For now, allow shadowing but it effectively hides the base member in symbol lookup
-                // (though memory addresses are distinct if offsets are different, but here we append)
+                // A member with the name of an inherited one hides it in lookups; both keep their own storage,
+                // the members of the base coming first.
                 
                 // A VAR_IN_OUT member keeps the address of the caller's variable, not a copy of its value (CMP-028)
                 const size = v.section === VarSection.VAR_IN_OUT ? REFERENCE_SIZE : table.sizeOf(v.dataType);
@@ -974,7 +973,7 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
                 fbMembers.set(v.name, {
                     offset: currentOffset,
                     size,
-                    dataType: v.dataType as any,
+                    dataType: v.dataType,
                     section: v.section,
                     initialValue: v.initialValue,
                 });

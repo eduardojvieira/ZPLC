@@ -28,11 +28,11 @@
   "warnings": [
     {
       "code": "IMPLICIT_NARROWING",
-      "line": 8
+      "line": 7
     },
     {
       "code": "IMPLICIT_NARROWING",
-      "line": 9
+      "line": 8
     }
   ]
 }

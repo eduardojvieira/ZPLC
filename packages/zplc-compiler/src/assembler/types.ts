@@ -28,6 +28,11 @@ export interface Instruction {
     lineNum: number;
     /** Byte offset in code segment */
     address: number;
+    /**
+     * A byte of data, not an instruction: `.DB` values and the NOP fill of `.ORG`. `opcode` holds the byte
+     * and nothing follows it; it is emitted as it stands.
+     */
+    raw?: boolean;
 }
 
 /**
@@ -74,6 +79,8 @@ export interface AssemblyResult {
     tags?: TagDef[];
     /** Instruction-level mappings for source-level debugging */
     instructionMappings?: InstructionMapping[];
+    /** The assembled instructions with their addresses, for the analyses that read the code (CMP-050) */
+    instructions?: Instruction[];
 }
 
 /**
@@ -110,6 +117,13 @@ export const ZPLC_CONSTANTS = {
     SEGMENT_TYPE_DATA: SEGMENT_TYPE.DATA,
     SEGMENT_TYPE_TASK: SEGMENT_TYPE.TASK,
     SEGMENT_TYPE_TAGS: SEGMENT_TYPE.TAGS,
+    SEGMENT_TYPE_BUILD: SEGMENT_TYPE.BUILD,
+    /** Size of the build identity, the payload of the BUILD segment, in bytes. */
+    BUILD_ENTRY_SIZE: CONTAINER.buildEntrySize,
+    /** Deepest evaluation stack the loader proves for a task; the compiler fails the build above it. */
+    MAX_VERIFIED_DEPTH: CONTAINER.maxVerifiedDepth,
+    /** Default maximum depth of the call stack of the VM (per zplc_isa.h). */
+    CALL_STACK_MAX: MEMORY_LIMIT.callStackMax,
     /** Task definition size in bytes (per zplc_isa.h) */
     TASK_DEF_SIZE: CONTAINER.taskDefSize,
     /** Portable ABI v1 task limit accepted by the shared loader. */
@@ -148,8 +162,13 @@ export interface TaskDef {
     intervalUs: number;
     /** Entry point offset in code segment */
     entryPoint: number;
-    /** Required stack depth (default: 64) */
+    /** Required evaluation stack depth: the most values the task holds at once (CMP-050) */
     stackSize: number;
+    /**
+     * Call frames the task has active at once, its body included: 1 for a task that calls nothing. 0 or absent
+     * is not declared (CMP-050).
+     */
+    callDepth?: number;
 }
 
 /**

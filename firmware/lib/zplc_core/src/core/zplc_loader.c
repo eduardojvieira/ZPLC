@@ -97,9 +97,12 @@ static int verify_tasks(const zplc_program_view_t *view) {
     for (previous = 0U; previous < index; previous++)
       if (id == zplc_get_u16_le(view->tasks + (size_t)previous * ZPLC_TASK_DEF_SIZE))
         return ZPLC_LOADER_ERR_TASK;
+    /* call_depth counts the frames of the task, its body included: the call
+     * stack of the VM holds one fewer. 0 is "not declared". */
     if (task[2U] > ZPLC_TASK_INIT || zplc_get_u32_le(task + 4U) == 0U ||
         stack_size == 0U || stack_size > ZPLC_STACK_MAX_DEPTH ||
-        zplc_get_u32_le(task + 12U) != 0U)
+        zplc_get_u16_le(task + 12U) > (uint32_t)ZPLC_CALL_STACK_MAX + 1U ||
+        zplc_get_u16_le(task + 14U) != 0U)
       return ZPLC_LOADER_ERR_TASK;
   }
   return ZPLC_LOADER_OK;
@@ -616,14 +619,24 @@ static int verify_frames(const zplc_program_view_t *view, verifier_t *v) {
     const uint32_t limit =
         root == 0U ? (uint32_t)ZPLC_STACK_MAX_DEPTH
                    : zplc_get_u16_le(view->tasks + (size_t)(root - 1U) * ZPLC_TASK_DEF_SIZE + 10U);
-    const uint32_t slot = frame_find(v, entry);
+    const uint32_t found = frame_find(v, entry);
     const uint8_t *record;
 
-    if (slot == UINT32_MAX) /* every root has a frame: created above */
-      return ZPLC_LOADER_ERR_STACK;
-    record = frame_at(v, slot);
+    if (found == UINT32_MAX)
+      return ZPLC_LOADER_ERR_STACK; /* every root has a frame: refuse if not */
+    record = frame_at(v, found);
     if (record[3] != 0U || record[4] > limit)
       return ZPLC_LOADER_ERR_STACK;
+    if (root != 0U) {
+      /* what the task declares of its call depth must hold (CMP-050): the
+       * frames of the deepest chain of calls, the task body included */
+      const uint32_t declared =
+          zplc_get_u16_le(view->tasks + (size_t)(root - 1U) * ZPLC_TASK_DEF_SIZE + 12U);
+      const uint32_t frames = (record[2] >> FRAME_NEST_SHIFT) + 1U;
+
+      if (declared != 0U && frames > declared)
+        return ZPLC_LOADER_ERR_STACK;
+    }
   }
   return ZPLC_LOADER_OK;
 }
@@ -846,6 +859,13 @@ int zplc_loader_verify(const uint8_t *data, size_t length, uint8_t *workspace,
       candidate.tags = data + offset;
       candidate.tag_count = size / ZPLC_TAG_ENTRY_SIZE;
       segment = &candidate.segments[2];
+    } else if (type == ZPLC_SEG_BUILD) {
+      /* the build identity (CMP-056): one 32-bit value, once, never 0 */
+      if (candidate.build_id != 0U || size != ZPLC_BUILD_ENTRY_SIZE ||
+          zplc_get_u32_le(data + offset) == 0U)
+        return ZPLC_LOADER_ERR_SEGMENT;
+      candidate.build_id = zplc_get_u32_le(data + offset);
+      segment = &candidate.segments[3];
     } else {
       return ZPLC_LOADER_ERR_SEGMENT;
     }

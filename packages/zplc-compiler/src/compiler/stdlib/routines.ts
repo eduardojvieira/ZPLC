@@ -32,6 +32,7 @@ import { f32hex as f32 } from '../numeric.ts';
 import { POWF_ROUTINES } from '../power.ts';
 import { MATH_ROUTINES } from './mathlib.ts';
 import type { Routine } from './types.ts';
+import type { AsmLine } from '../asm-line.ts';
 
 export type { Routine } from './types.ts';
 
@@ -51,7 +52,7 @@ export const ROUNDAD_LABEL = '_zplc_roundad';
  * away from zero when |r| > 0.5, or |r| = 0.5 and the integer is odd. A REAL of 2^23 or more has
  * no fraction (F2I alone, saturating at the limits of DINT); a NaN is not below 2^23 and F2I gives 0.
  */
-const ROUNDF: string[] = [
+const ROUNDF: AsmLine[] = [
     `${ROUNDF_LABEL}:         ; [x]`,
     `    DUP`,
     `    PUSH32 0x7FFFFFFF`,
@@ -94,7 +95,7 @@ const ROUNDF: string[] = [
 ];
 
 /** n limited to lo..hi (signed): [n lo hi] -> [m]. */
-const CLAMPI: string[] = [
+const CLAMPI: AsmLine[] = [
     `${CLAMPI_LABEL}:         ; [n lo hi]`,
     `    PICK 2`,
     `    OVER`,
@@ -124,7 +125,7 @@ const CLAMPI: string[] = [
  * is above +infinity like a NaN: both give 0. From 2^32 up (and +infinity) the result is 4294967295;
  * from 2^31 up the REAL is whole and 2^31 is taken off before F2I and added after.
  */
-const F2U32: string[] = [
+const F2U32: AsmLine[] = [
     `${F2U32_LABEL}:          ; [x]`,
     `    DUP`,
     `    PUSH32 0x7F800000`,
@@ -158,7 +159,7 @@ const F2U32: string[] = [
 ];
 
 /** TRUNC: [x] -> [y]. */
-const TRUNCF: string[] = [
+const TRUNCF: AsmLine[] = [
     `${TRUNCF_LABEL}:         ; [x]`,
     `    DUP`,
     `    PUSH32 0x7FFFFFFF`,
@@ -176,7 +177,7 @@ const TRUNCF: string[] = [
  * ROUND: the same exact split of x into trunc(x) and the fraction r as ROUNDF, then one step away
  * from zero when |r| >= 0.5. (Adding 0.5 and truncating would round 0.49999997 up to 1.)
  */
-const ROUNDAF: string[] = [
+const ROUNDAF: AsmLine[] = [
     `${ROUNDAF_LABEL}:        ; [x]`,
     `    DUP`,
     `    PUSH32 0x7FFFFFFF`,
@@ -215,7 +216,7 @@ const ROUNDAF: string[] = [
  * (a negative number and a NaN are 0, 2^64 and more saturate); a high word that is not zero is a value
  * above 4294967295, which saturates.
  */
-const D2U32: string[] = [
+const D2U32: AsmLine[] = [
     `${D2U32_LABEL}:          ; [x lo hi]`,
     `    RNDD`,
     `    D2U                 ; [lo hi]`,
@@ -232,7 +233,7 @@ const D2U32: string[] = [
  * (the sign of a zero result is lost: TRUNC(-0.4) is +0.0); from 2^63 up every double is whole, and
  * a NaN fails the comparison too, so those are returned as they are.
  */
-const TRUNCD: string[] = [
+const TRUNCD: AsmLine[] = [
     `${TRUNCD_LABEL}:         ; [x lo hi]`,
     `    PICK 1`,
     `    PICK 1`,
@@ -252,7 +253,7 @@ const TRUNCD: string[] = [
  * away from zero when |f| >= 0.5. (Adding 0.5 and truncating would round 0.49999999999999994 up to 1.)
  * From 2^52 up every double is whole.
  */
-const ROUNDAD: string[] = [
+const ROUNDAD: AsmLine[] = [
     `${ROUNDAD_LABEL}:        ; [x lo hi]`,
     `    PICK 1`,
     `    PICK 1`,

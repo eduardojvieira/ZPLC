@@ -24,6 +24,7 @@
 
 /** Static type of an integer literal: it adopts the type of the other operand. */
 export const LITERAL_INT = '#INT';
+import type { AsmLine } from './asm-line.ts';
 
 /** Static type of an expression the generator cannot name. */
 export const UNKNOWN_TYPE = '?';
@@ -172,7 +173,7 @@ const FKEY_LABEL = '_zplc_fkey';
  * 1 or 0. A dividend of 2^31 or more is halved, divided, doubled and corrected by one
  * (Hacker's Delight, section 9-3), which needs only the signed DIV.
  */
-export const UDIV32_HELPER: string[] = [
+export const UDIV32_HELPER: AsmLine[] = [
     `${UDIV32_LABEL}:`,
     `    DUP`,
     `    PUSH8 0`,
@@ -222,7 +223,7 @@ export const UDIV32_HELPER: string[] = [
  * order is the numeric order of the REAL x. Negative values are mapped to the negated
  * magnitude, so -0.0 and +0.0 share the key 0.
  */
-const FKEY_HELPER: string[] = [
+const FKEY_HELPER: AsmLine[] = [
     `${FKEY_LABEL}:`,
     `    DUP`,
     `    PUSH8 31`,
@@ -243,7 +244,7 @@ const FKEY_HELPER: string[] = [
  * -1 when a < b, 0 when a = b, 1 when a > b and 2 when either operand is a NaN (unordered).
  * The six operators are then one compare against a constant each (see fcmpTest).
  */
-export const FCMP_HELPER: string[] = [
+export const FCMP_HELPER: AsmLine[] = [
     `${FCMP_LABEL}:`,
     `    DUP`,
     `    PUSH32 0x7FFFFFFF`,
@@ -281,7 +282,7 @@ export const FCMP_HELPER: string[] = [
 export type CompareOp = 'EQ' | 'NE' | 'LT' | 'LE' | 'GT' | 'GE';
 
 /** Instructions that turn the result of FCMP_LABEL into the BOOL of one comparison operator. */
-export function fcmpTest(op: CompareOp): string[] {
+export function fcmpTest(op: CompareOp): AsmLine[] {
     switch (op) {
         case 'EQ': return ['    PUSH8 0', '    EQ'];
         case 'NE': return ['    PUSH8 0', '    NE'];
@@ -293,7 +294,7 @@ export function fcmpTest(op: CompareOp): string[] {
 }
 
 /** Instructions that convert the unsigned 32-bit integer on the stack to REAL with one rounding. */
-export const UNSIGNED_TO_REAL: string[] = [
+export const UNSIGNED_TO_REAL: AsmLine[] = [
     '    DUP',
     '    PUSH8 16',
     '    SHR',
@@ -311,7 +312,7 @@ export const UNSIGNED_TO_REAL: string[] = [
  * 64-bit integer addition: [alo ahi blo bhi] -> [lo hi]. The carry out of the low words is
  * their sum compared unsigned with one of them.
  */
-export const ADD64_HELPER: string[] = [
+export const ADD64_HELPER: AsmLine[] = [
     `${ADD64_LABEL}:`,
     `    ROT`,
     `    ADD                 ; [alo blo hi0]`,
@@ -331,7 +332,7 @@ export const ADD64_HELPER: string[] = [
 ];
 
 /** 64-bit integer subtraction: [alo ahi blo bhi] -> [lo hi]; the borrow is alo < blo, unsigned. */
-export const SUB64_HELPER: string[] = [
+export const SUB64_HELPER: AsmLine[] = [
     `${SUB64_LABEL}:`,
     `    ROT`,
     `    SWAP`,
@@ -356,7 +357,7 @@ export const SUB64_HELPER: string[] = [
  * they differ (signed for CMP64S_LABEL, unsigned for CMP64U_LABEL), the low words, unsigned,
  * otherwise.
  */
-export const CMP64_HELPER: string[] = [
+export const CMP64_HELPER: AsmLine[] = [
     `${CMP64S_LABEL}:`,
     `    PICK 2`,
     `    PICK 1`,
@@ -408,7 +409,7 @@ export const CMP64_HELPER: string[] = [
 ];
 
 /** Instructions that turn the result of CMP64S_LABEL or CMP64U_LABEL into the BOOL of one operator. */
-export function cmp64Test(op: CompareOp): string[] {
+export function cmp64Test(op: CompareOp): AsmLine[] {
     switch (op) {
         case 'EQ': return ['    PUSH8 0', '    EQ'];
         case 'NE': return ['    PUSH8 0', '    NE'];
@@ -423,7 +424,7 @@ export const MEMCPY_LABEL = '_zplc_memcpy';
 export const MEMZERO_LABEL = '_zplc_memzero';
 
 /** Byte copy of a structure or an array: [dst src n] -> []. The regions must not overlap. */
-export const MEMCPY_HELPER: string[] = [
+export const MEMCPY_HELPER: AsmLine[] = [
     `${MEMCPY_LABEL}:`,
     `${MEMCPY_LABEL}_loop:     ; [dst src n]`,
     `    DUP`,
@@ -450,7 +451,7 @@ export const MEMCPY_HELPER: string[] = [
 ];
 
 /** Clear n bytes: [dst n] -> []. */
-export const MEMZERO_HELPER: string[] = [
+export const MEMZERO_HELPER: AsmLine[] = [
     `${MEMZERO_LABEL}:`,
     `${MEMZERO_LABEL}_loop:    ; [dst n]`,
     `    DUP`,
@@ -477,7 +478,7 @@ export const WSTRCPY_LABEL = '_zplc_wstrcpy';
  * WSTRING assignment: [src dst] -> []. Keeps the capacity of dst, truncates to it, copies the
  * characters and writes the terminator. Needs the byte-copy routine.
  */
-export const WSTRCPY_HELPER: string[] = [
+export const WSTRCPY_HELPER: AsmLine[] = [
     `${WSTRCPY_LABEL}:             ; [src dst]`,
     `    OVER`,
     `    LOADI16             ; [src dst len]`,
@@ -524,7 +525,7 @@ export const WSTRCPY_HELPER: string[] = [
 /** The helper routines a program may link, in the order they are appended. */
 export type HelperName = 'udiv32' | 'fcmp' | 'add64' | 'sub64' | 'cmp64' | 'memcpy' | 'memzero' | 'wstrcpy';
 
-export const HELPERS: ReadonlyArray<{ name: HelperName; title: string; lines: string[] }> = [
+export const HELPERS: ReadonlyArray<{ name: HelperName; title: string; lines: AsmLine[] }> = [
     { name: 'udiv32', title: 'unsigned 32-bit division', lines: UDIV32_HELPER },
     { name: 'fcmp', title: 'REAL three-way comparison', lines: FCMP_HELPER },
     { name: 'add64', title: '64-bit addition', lines: ADD64_HELPER },

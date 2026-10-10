@@ -23,6 +23,10 @@
 
 import { parseIOAddress, parseTimeLiteral, tokenize, TokenType } from '@zplc/compiler';
 import { validateSFCModel, type SFCAction, type SFCModel, type SFCStep, type SFCTransition, type SFCVariable } from '../models/sfc';
+import {
+  ElementError, Listing, Problems, actionElement, stepElement, transitionElement,
+  type ElementDiagnostic, type SourceElementId, type SourceMapRange,
+} from '../models/sourceElements';
 
 // =============================================================================
 // Types
@@ -32,6 +36,10 @@ interface TranspileResult {
   success: boolean;
   source: string;
   errors: string[];
+  /** The errors with the element each is about (LNG-003, LNG-026). */
+  diagnostics?: ElementDiagnostic[];
+  /** For each element, the lines of `source` written for it (LNG-004). */
+  sourceMap?: SourceMapRange[];
 }
 
 // =============================================================================
@@ -40,13 +48,13 @@ interface TranspileResult {
 
 export function transpileSFCToST(input: SFCModel): TranspileResult {
   const errors: string[] = [];
-  const lines: string[] = [];
+  const lines = new Listing();
   
   try {
     const model = validateSFCModel(input);
-    const preflightErrors = validateSFCForTranspilation(model);
-    if (preflightErrors.length > 0) {
-      return { success: false, source: '', errors: preflightErrors };
+    const preflight = validateSFCForTranspilation(model);
+    if (preflight.length > 0) {
+      return { success: false, source: '', errors: preflight.messages, diagnostics: preflight.diagnostics };
     }
 
     const stepIds = model.steps.map((step) => step.id);
@@ -97,14 +105,14 @@ export function transpileSFCToST(input: SFCModel): TranspileResult {
       const comment = step.comment 
         ? ` (* Step: ${step.name} - ${step.comment} *)` 
         : ` (* Step: ${step.name} *)`;
-      lines.push(`    X_${step.id} : BOOL${initial};${comment}`);
+      lines.push(`    X_${step.id} : BOOL${initial};${comment}`, stepElement(step.id));
     }
     lines.push('');
     
     // Step timers (for .T property)
     lines.push('    (* Step Elapsed Timers *)');
     for (const step of model.steps) {
-      lines.push(`    T_${step.id} : TON; (* Timer for ${step.name} *)`);
+      lines.push(`    T_${step.id} : TON; (* Timer for ${step.name} *)`, stepElement(step.id));
     }
     lines.push('');
 
@@ -112,17 +120,17 @@ export function transpileSFCToST(input: SFCModel): TranspileResult {
     // fire in this scan, and the stored actions
     if (edgeSteps.size > 0) {
       lines.push('    (* Previous Step State (P, P0 and P1 pulses) *)');
-      for (const id of stepIds.filter((candidate) => edgeSteps.has(candidate))) lines.push(`    _XP_${id} : BOOL := FALSE;`);
+      for (const id of stepIds.filter((candidate) => edgeSteps.has(candidate))) lines.push(`    _XP_${id} : BOOL := FALSE;`, stepElement(id));
       lines.push('');
     }
     if (model.transitions.length > 0) {
       lines.push('    (* Transitions That Fire In This Scan *)');
-      for (const transition of model.transitions) lines.push(`    _F_${transition.id} : BOOL;`);
+      for (const transition of model.transitions) lines.push(`    _F_${transition.id} : BOOL;`, transitionElement(transition.id));
       lines.push('');
     }
     if (storedActions.size > 0) {
       lines.push('    (* Stored Actions (S until R) *)');
-      for (const id of storedActions) lines.push(`    _S_${id} : BOOL := FALSE;`);
+      for (const id of storedActions) lines.push(`    _S_${id} : BOOL := FALSE;`, actionElement(id));
       lines.push('');
     }
     
@@ -138,7 +146,7 @@ export function transpileSFCToST(input: SFCModel): TranspileResult {
     // =========================================================================
     lines.push('(* === Step Timers === *)');
     for (const step of model.steps) {
-      lines.push(`T_${step.id}(IN := X_${step.id}, PT := T#24h);`);
+      lines.push(`T_${step.id}(IN := X_${step.id}, PT := T#24h);`, stepElement(step.id));
     }
     lines.push('');
     
@@ -150,12 +158,12 @@ export function transpileSFCToST(input: SFCModel): TranspileResult {
     // S sets and R resets the stored state; R is applied last so that it wins
     for (const { action, associations } of used.values()) {
       for (const { step, qualifier } of associations) {
-        if (qualifier === 'S') lines.push(`IF X_${step.id} THEN _S_${action.id} := TRUE; END_IF;`);
+        if (qualifier === 'S') lines.push(`IF X_${step.id} THEN _S_${action.id} := TRUE; END_IF;`, actionElement(action.id));
       }
     }
     for (const { action, associations } of used.values()) {
       for (const { step, qualifier } of associations) {
-        if (qualifier === 'R') lines.push(`IF X_${step.id} THEN _S_${action.id} := FALSE; END_IF;`);
+        if (qualifier === 'R') lines.push(`IF X_${step.id} THEN _S_${action.id} := FALSE; END_IF;`, actionElement(action.id));
       }
     }
     
@@ -176,23 +184,20 @@ export function transpileSFCToST(input: SFCModel): TranspileResult {
         if (!active.includes(term)) active.push(term);
       }
 
-      // Add action comment if present
-      if (action.comment) {
-        lines.push(`(* Action: ${action.name} - ${action.comment} *)`);
-      } else {
-        lines.push(`(* Action: ${action.name} *)`);
-      }
-      lines.push(`IF ${active.join(' OR ')} THEN`);
+      // Add action comment if present; the statements of the action are its own, and so is an error in them (LNG-026)
+      const at = actionElement(action.id);
+      lines.push(action.comment ? `(* Action: ${action.name} - ${action.comment} *)` : `(* Action: ${action.name} *)`, at);
+      lines.push(`IF ${active.join(' OR ')} THEN`, at);
       // Embed the action body
       for (const line of replaceStepReferences(action.body, model.steps).split('\n')) {
-        lines.push(`    ${line.trim()}`);
+        lines.push(`    ${line.trim()}`, at);
       }
-      lines.push('END_IF;');
+      lines.push('END_IF;', at);
       lines.push('');
     }
 
     // The state this scan ran on becomes the previous state of the next one
-    for (const id of stepIds.filter((candidate) => edgeSteps.has(candidate))) lines.push(`_XP_${id} := X_${id};`);
+    for (const id of stepIds.filter((candidate) => edgeSteps.has(candidate))) lines.push(`_XP_${id} := X_${id};`, stepElement(id));
     if (edgeSteps.size > 0) lines.push('');
     
     // =========================================================================
@@ -217,20 +222,21 @@ export function transpileSFCToST(input: SFCModel): TranspileResult {
         ? `Transition: ${names(from)} -> ${names(to)} (${transition.comment})`
         : `Transition: ${names(from)} -> ${names(to)}`;
       
-      lines.push(`(* ${transComment} *)`);
-      lines.push(`_F_${transition.id} := ${guards.join(' AND ')};`);
+      lines.push(`(* ${transComment} *)`, transitionElement(transition.id));
+      lines.push(`_F_${transition.id} := ${guards.join(' AND ')};`, transitionElement(transition.id));
     });
     if (evaluation.length > 0) lines.push('');
 
     // Apply: every step a fired transition leaves is cleared before any step it enters is set
     for (const transition of model.transitions) {
       for (const step of leaves(transition).map((id) => stepById.get(id)!)) {
-        lines.push(`IF _F_${transition.id} THEN X_${step.id} := FALSE; END_IF;`);
+        lines.push(`IF _F_${transition.id} THEN X_${step.id} := FALSE; END_IF;`, transitionElement(transition.id));
       }
     }
     for (const transition of model.transitions) {
       for (const step of enters(transition).map((id) => stepById.get(id)!)) {
-        lines.push(`IF _F_${transition.id} THEN X_${step.id} := TRUE; END_IF;`);
+        // entering a step is the step's: a breakpoint on the step stops when a transition enters it (LNG-004)
+        lines.push(`IF _F_${transition.id} THEN X_${step.id} := TRUE; END_IF;`, stepElement(step.id));
       }
     }
     lines.push('');
@@ -247,34 +253,38 @@ export function transpileSFCToST(input: SFCModel): TranspileResult {
     
     return {
       success: true,
-      source: lines.join('\n'),
+      source: lines.toString(),
       errors: [],
+      sourceMap: lines.sourceMap(),
     };
   } catch (e) {
-    errors.push(`Transpiler error: ${e instanceof Error ? e.message : String(e)}`);
+    const message = `Transpiler error: ${e instanceof Error ? e.message : String(e)}`;
+    errors.push(message);
     return {
       success: false,
       source: '',
       errors,
+      diagnostics: [e instanceof ElementError && e.element !== undefined ? { message, element: e.element } : { message }],
     };
   }
 }
 
-function validateSFCForTranspilation(model: SFCModel): string[] {
-  const errors: string[] = [];
+function validateSFCForTranspilation(model: SFCModel): Problems {
+  const errors = new Problems();
   const steps = Array.isArray(model.steps) ? model.steps : [];
   const transitions = Array.isArray(model.transitions) ? model.transitions : [];
   const actions = Array.isArray(model.actions) ? model.actions : [];
 
   validateIdentifier(model.name, 'SFC name', errors);
 
-  validateUniqueIds(steps, 'step', errors);
-  validateUniqueIds(transitions, 'transition', errors);
-  validateUniqueIds(actions, 'action', errors);
+  validateUniqueIds(steps, 'step', stepElement, errors);
+  validateUniqueIds(transitions, 'transition', transitionElement, errors);
+  validateUniqueIds(actions, 'action', actionElement, errors);
 
   const stepNames = new Set<string>();
   const stepAliases = new Map<string, string>();
   for (const step of steps) {
+    errors.focus(stepElement(String(step.id)));
     if (typeof step.isInitial !== 'boolean') {
       errors.push(`Step ${describeId(step.id)} isInitial must be a boolean`);
     }
@@ -328,6 +338,7 @@ function validateSFCForTranspilation(model: SFCModel): string[] {
       validateComment(actionRef.comment, `Step ${describeId(step.id)} action comment`, errors);
     }
   }
+  errors.focus(undefined);
 
   const generated = [
     ...steps.flatMap((step) => [`X_${step.id}`, `T_${step.id}`, `_XP_${step.id}`]),
@@ -339,6 +350,7 @@ function validateSFCForTranspilation(model: SFCModel): string[] {
 
   const stepIds = new Set(steps.map((step) => step.id));
   for (const transition of transitions) {
+    errors.focus(transitionElement(String(transition.id)));
     validateIdentifier(transition.id, 'Transition id', errors);
     validateComment(transition.comment, `Transition ${describeId(transition.id)} comment`, errors);
     if (!isNonEmptyString(transition.fromStep) || !stepIds.has(transition.fromStep)) {
@@ -366,12 +378,14 @@ function validateSFCForTranspilation(model: SFCModel): string[] {
       validateTransitionCondition(transition.condition, transition.id, errors);
     }
   }
+  errors.focus(undefined);
 
   for (const action of actions) {
     if (!isRecord(action)) {
       errors.push('Action entries must be objects');
       continue;
     }
+    errors.focus(actionElement(String(action.id)));
     validateIdentifier(action.id, 'Action id', errors);
     if (!isNonEmptyString(action.name)) {
       errors.push(`Action ${describeId(action.id)} name must be non-empty`);
@@ -393,7 +407,9 @@ function validateSFCForTranspilation(model: SFCModel): string[] {
     }
   }
 
+  errors.focus(undefined);
   for (const step of steps) {
+    errors.focus(stepElement(String(step.id)));
     for (const actionRef of Array.isArray(step.actions) ? step.actions : []) {
       if (!isRecord(actionRef)) continue;
       if (!isNonEmptyString(actionRef.actionName)) continue;
@@ -405,11 +421,12 @@ function validateSFCForTranspilation(model: SFCModel): string[] {
       }
     }
   }
+  errors.focus(undefined);
 
   return errors;
 }
 
-function validateUniqueIds(items: unknown[], label: string, errors: string[]): void {
+function validateUniqueIds(items: unknown[], label: string, elementOf: (id: string) => SourceElementId, errors: Problems): void {
   const ids = new Set<string>();
   for (const item of items) {
     if (!isRecord(item)) {
@@ -422,7 +439,7 @@ function validateUniqueIds(items: unknown[], label: string, errors: string[]): v
     }
     const canonicalId = item.id.toUpperCase();
     if (ids.has(canonicalId)) {
-      errors.push(`Duplicate ${label} id '${item.id}'`);
+      errors.push(`Duplicate ${label} id '${item.id}'`, elementOf(item.id));
     }
     ids.add(canonicalId);
   }
@@ -454,7 +471,7 @@ const BLOCK_START_TOKENS: Set<string> = new Set([
   TokenType.IF, TokenType.CASE, TokenType.FOR, TokenType.WHILE, TokenType.REPEAT,
 ]);
 
-function validateIdentifier(value: unknown, label: string, errors: string[]): void {
+function validateIdentifier(value: unknown, label: string, errors: Problems): void {
   if (!isNonEmptyString(value) || !IEC_IDENTIFIER.test(value)) {
     errors.push(`${label} must be an IEC identifier`);
     return;
@@ -462,11 +479,11 @@ function validateIdentifier(value: unknown, label: string, errors: string[]): vo
   if (tokenize(value)[0]?.type !== TokenType.IDENTIFIER) errors.push(`${label} may not be an IEC keyword`);
 }
 
-function validateType(value: unknown, label: string, errors: string[]): void {
+function validateType(value: unknown, label: string, errors: Problems): void {
   if (!isNonEmptyString(value) || !IEC_IDENTIFIER.test(value)) errors.push(`${label} must be an IEC identifier`);
 }
 
-function validateComment(value: unknown, label: string, errors: string[]): void {
+function validateComment(value: unknown, label: string, errors: Problems): void {
   if (value !== undefined && typeof value !== 'string') {
     errors.push(`${label} must be a string`);
   } else if (typeof value === 'string' && BLOCK_COMMENT_DELIMITERS.test(value)) {
@@ -474,7 +491,7 @@ function validateComment(value: unknown, label: string, errors: string[]): void 
   }
 }
 
-function validateVariables(variables: unknown, generatedNames: string[], stepReferences: Set<string>, errors: string[]): void {
+function validateVariables(variables: unknown, generatedNames: string[], stepReferences: Set<string>, errors: Problems): void {
   if (variables === undefined) return;
   if (!variables || typeof variables !== 'object' || Array.isArray(variables)) {
     errors.push('Variables must be an object');
@@ -522,7 +539,7 @@ function validateVariables(variables: unknown, generatedNames: string[], stepRef
   }
 }
 
-function validateInitialValue(value: unknown, type: unknown, name: unknown, errors: string[]): void {
+function validateInitialValue(value: unknown, type: unknown, name: unknown, errors: Problems): void {
   if (value === undefined || value === null || typeof value === 'boolean') return;
   if (typeof value === 'number') {
     if (!Number.isFinite(value)) errors.push(`Variable ${String(name)} initialValue must be finite`);
@@ -537,7 +554,7 @@ function validateInitialValue(value: unknown, type: unknown, name: unknown, erro
   }
 }
 
-function validateActionBody(body: string, id: string, errors: string[]): void {
+function validateActionBody(body: string, id: string, errors: Problems): void {
   if (BLOCK_COMMENT_DELIMITERS.test(body)) {
     errors.push(`Action ${describeId(id)} body may not contain ST block-comment delimiters`);
     return;
@@ -580,7 +597,7 @@ function validateActionBody(body: string, id: string, errors: string[]): void {
   if (stack.length > 0) errors.push(`Action ${describeId(id)} body has unclosed ${stack.at(-1)!.start}`);
 }
 
-function validateTransitionCondition(condition: string, id: string, errors: string[]): void {
+function validateTransitionCondition(condition: string, id: string, errors: Problems): void {
   if (BLOCK_COMMENT_DELIMITERS.test(condition) || condition.includes('//')) {
     errors.push(`Transition ${describeId(id)} condition may not contain comments`);
     return;
@@ -614,7 +631,7 @@ function describeId(value: unknown): string {
   return isNonEmptyString(value) ? `'${value}'` : '<unknown>';
 }
 
-function emitVariableSection(lines: string[], section: 'VAR' | 'VAR_INPUT' | 'VAR_OUTPUT', variables: SFCVariable[] | undefined): void {
+function emitVariableSection(lines: Listing, section: 'VAR' | 'VAR_INPUT' | 'VAR_OUTPUT', variables: SFCVariable[] | undefined): void {
   if (!variables?.length) return;
   lines.push(section);
   for (const variable of variables) {

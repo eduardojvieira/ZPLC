@@ -112,10 +112,21 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-005-integer-narrowing-keeps-the-low-bits-and-warns.expect.json","test":"CMP-005 an integer stored in a narrower type keeps its low bits and the build warns"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-005-real-assigned-to-dint.expect.json","test":"CMP-005 a REAL expression assigned to a DINT is rejected"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-005-real-in-a-bit-operation.expect.json","test":"CMP-005 a REAL operand of AND is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-string-as-a-condition.expect.json","test":"CMP-005 a STRING is not a condition"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-string-as-initial-value-of-an-int.expect.json","test":"CMP-005 a string is not the initial value of an INT"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-string-assigned-to-bool.expect.json","test":"CMP-005 a STRING value is not assigned to a BOOL"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-string-assigned-to-int.expect.json","test":"CMP-005 a STRING value is not assigned to an INT"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-string-compared-with-a-number.expect.json","test":"CMP-005 a STRING is not compared with a number"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-string-length-goes-to-a-number.expect.json","test":"CMP-005 the length and the position of a text are numbers and go to a number"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-string-literal-assigned-to-time.expect.json","test":"CMP-005 a string literal is not assigned to a TIME"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-string-passed-to-a-numeric-parameter.expect.json","test":"CMP-005 a STRING argument is not passed to a numeric parameter"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-string-returned-from-a-numeric-function.expect.json","test":"CMP-005 a STRING value is not the return value of an INT function"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-005-time-assigned-to-int.expect.json","test":"CMP-005 a TIME assigned to an INT is rejected"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-005-widening-and-explicit-conversions.expect.json","test":"CMP-005 a value goes to a wider type of its kind, and an integer to a REAL, without a conversion function"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-005-widening-masks-and-constants-do-not-warn.expect.json","test":"CMP-005 a widening, a mask, a remainder and a constant that fit build without a warning"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-005-wstring-assigned-to-real.expect.json","test":"CMP-005 a WSTRING value is not assigned to a REAL"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-015-lreal-narrowed-to-real-is-reported.expect.json","test":"CMP-005 An LREAL assigned to a REAL builds with the IMPLICIT_NARROWING warning and is rounded"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/typecheck.test.ts","test":"a STRING or WSTRING is not a number, a BOOL or a time (CMP-005)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/typecheck.test.ts","test":"an integer stored in a narrower type is a warning (CMP-005, CMP-016)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/typecheck.test.ts","test":"call arguments and return values are checked (CMP-005)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/typecheck.test.ts","test":"conditions and operators (CMP-005)"},
@@ -163,6 +174,18 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/index.test.ts","test":"prints every error of a single file, one line each, and the warnings of a file that builds (CMP-007, CMP-031)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"returns every independent error of a source, each with its position (CMP-006, CMP-007)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"returns the errors of every source of the project, each with its file (CMP-007)"}
+  ],
+  "CMP-008": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-008-constant-false-branch-is-not-unreachable.expect.json","test":"CMP-008 a branch that a constant condition disables is not unreachable code"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-008-real-literal-without-fraction-warns.expect.json","test":"CMP-008 a real literal with an exponent and no fraction builds and is reported as non-IEC"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-008-statement-after-return-is-unreachable.expect.json","test":"CMP-008 a statement after RETURN is reported as unreachable and never runs"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-008-unused-variable-is-reported.expect.json","test":"CMP-008 a variable that is never read nor written is reported at its declaration"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-008-write-only-variable-is-not-reported-by-default.expect.json","test":"CMP-008 a variable that is read is not reported, however often it is written"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/warnings.test.ts","test":"non-IEC spellings (CMP-008, CMP-031)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/warnings.test.ts","test":"the selection of warnings by the compiler.warnings option (CMP-008)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/warnings.test.ts","test":"unreachable statements (CMP-008)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/warnings.test.ts","test":"unused variables (CMP-008)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/libraries.test.ts","test":"compiler.warnings (CMP-008)"}
   ],
   "CMP-009": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-009-block-comment-never-closed.expect.json","test":"CMP-009 an unterminated /* comment is reported where it opens"},
@@ -539,6 +562,7 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-031-typed-literals-of-each-kind.expect.json","test":"CMP-031 typed literals of integer, bit string, BOOL and REAL types"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/syntax.test.ts","test":"lexer: numbers (CMP-031)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/syntax.test.ts","test":"parser: expressions (CMP-031, CMP-032)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/warnings.test.ts","test":"non-IEC spellings (CMP-008, CMP-031)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/index.test.ts","test":"prints every error of a single file, one line each, and the warnings of a file that builds (CMP-007, CMP-031)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"reports a build that passed with what it accepted and the language reference does not define (CMP-031)"}
   ],
@@ -700,10 +724,24 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-044-located-memory-overlap.expect.json","test":"CMP-044 a variable that overlaps an AT %M variable is rejected"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-044-located-memory-variable.expect.json","test":"CMP-044 a variable located in the work memory (%MW0) keeps its value between scans"}
   ],
+  "CMP-046": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/libraries.test.ts","test":"a library folder of the project (CMP-046)"}
+  ],
   "CMP-047": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-047-direct-addresses-of-every-width.expect.json","test":"CMP-047 a direct input of each width reaches a direct output of the same width"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-047-two-cyclic-tasks-of-one-interval.expect.json","test":"CMP-047 two cyclic tasks of one interval each run their program on every scan"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-047-two-programs-writing-one-output-are-rejected.expect.json","test":"CMP-047 two programs that write the same physical output are rejected at the second declaration"}
+  ],
+  "CMP-049": [
+    {"kind":"unit","ref":"packages/zplc-compiler/src/assembler/assembler.test.ts","test":"relocateBytecode refuses a relocation past 16 bits instead of wrapping it (CMP-049)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/assembler/fields.test.ts","test":"an operand that does not fit its field is an error, not a truncation (CMP-049)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/assembler/fields.test.ts","test":"the container fields are checked, not masked (CMP-049)"}
+  ],
+  "CMP-050": [
+    {"kind":"unit","ref":"packages/zplc-compiler/src/assembler/artifact.test.ts","test":"the call depth of a task is a field of its definition (CMP-050)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/depths.test.ts","test":"a depth over the limit of the target fails the build (CMP-050)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/depths.test.ts","test":"the depth of a task is measured and recorded in the artifact (CMP-050)"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_loader_verify.c","test":"CMP-050: the depth a task declares is proved, and 0 declares nothing. A"}
   ],
   "CMP-052": [
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/compiler.test.ts","test":"records the draft contract counter in the artifact of every entry point (CMP-052)"},
@@ -732,6 +770,11 @@
   "CMP-055": [
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/debug-map.test.ts","test":"statement ranges (CMP-055)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/conformance/conformance.test.ts","test":"CMP-055 every instruction of a statement resolves to that statement in the debug map"}
+  ],
+  "CMP-056": [
+    {"kind":"unit","ref":"packages/zplc-compiler/src/assembler/artifact.test.ts","test":"the build identity of an artifact (CMP-056)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/depths.test.ts","test":"the build identity ties a debug map to its program (CMP-056)"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_loader_verify.c","test":"CMP-056: the build identity is one 32-bit value in a BUILD segment, once,"}
   ],
   "CMP-057": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-015-integer-width-conversion-functions.expect.json","test":"CMP-057 The conversion functions between the 64-bit and the narrower integers"},
@@ -823,6 +866,16 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-trigonometric-functions.expect.json","test":"CMP-058 SIN, COS and TAN of positive and negative angles in radians"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-uptime-follows-the-clock.expect.json","test":"CMP-058 UPTIME returns the milliseconds since the start, and CYCLE_TIME and WATCHDOG_RESET can be called"}
   ],
+  "CMP-059": [
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/warnings.test.ts","test":"compiler.strictTypes (CMP-059)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/libraries.test.ts","test":"the options compiler.strictTypes, compiler.debug, compiler.optimization and build.generateDebugInfo (CMP-059)"}
+  ],
+  "CMP-060": [
+    {"kind":"unit","ref":"packages/zplc-compiler/src/assembler/fields.test.ts","test":"every directive has its documented effect (CMP-060)"}
+  ],
+  "CMP-061": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/compilerSourceLint.test.ts","test":"the sources of the compiler that are not tests (CMP-061)"}
+  ],
   "LNG-001": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"15 New file: create, edit, save, reopen","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"3 Edit Structured Text, save, reopen","partial":true},
@@ -841,8 +894,48 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"LD power flow (LNG-021, LNG-022, LNG-002)"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"SFC scan semantics (LNG-024, LNG-025, LNG-002)"}
   ],
+  "LNG-003": [
+    {"kind":"conformance","ref":"conformance/lng/lng-003-fbd-compiler-error-names-the-block.expect.json","test":"LNG-003 an error the compiler finds in the code of an FBD block is reported against the block"},
+    {"kind":"conformance","ref":"conformance/lng/lng-003-il-compiler-error-names-the-il-line.expect.json","test":"LNG-003 an error the compiler finds in the code of an IL line is reported on that IL line"},
+    {"kind":"conformance","ref":"conformance/lng/lng-003-ld-undeclared-variable-names-the-cell.expect.json","test":"LNG-003 a Ladder contact on a variable that is not declared is reported against its rung and cell"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/visualDiagnostics.test.ts","test":"LNG-003 a Ladder diagnostic names the rung and the cell"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/visualDiagnostics.test.ts","test":"LNG-003 an FBD diagnostic names the block or the wire"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/visualDiagnostics.test.ts","test":"LNG-003 an IL diagnostic names its line"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/visualDiagnostics.test.ts","test":"LNG-003 and LNG-026 an SFC diagnostic names the step, the transition or the action"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/conformance/cases.test.ts","test":"LNG-003 asserts the element each diagnostic of a rejected diagram or IL program is about, one for each diagnostic"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/diagnosticElement.test.ts","test":"LNG-003 Problems selects the element that the build named"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/diagnosticElement.test.ts","test":"LNG-003 a request to select an element waits for the editor of its file"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/server.test.ts","test":"LNG-003 carries the element a diagnostic is about, and only an element"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"25 Problems select the block of a diagram","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"26 Problems select the cell of a rung","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"27 Problems select the step of an action","partial":true}
+  ],
+  "LNG-004": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/debugElements.test.ts","test":"LNG-004 the debug map of a Ladder diagram names rungs and cells"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/debugElements.test.ts","test":"LNG-004 the debug map of an FBD diagram names blocks"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/debugElements.test.ts","test":"LNG-004 the debug map of an IL program names IL lines"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/debugElements.test.ts","test":"LNG-004 the debug map of an SFC chart names steps and transitions"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/debugElements.test.ts","test":"LNG-004 the elements survive the debug map of a project built as one unit"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/compiler/debugElementsRuntime.test.ts","test":"LNG-004 a breakpoint on an element stops the VM at the element"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/elementBreakpoints.test.ts","test":"LNG-004 a breakpoint on an IL line is the line of the IL source"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/elementBreakpoints.test.ts","test":"LNG-004 a breakpoint on an element is armed at the element and follows it from build to build"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/sourceMap.test.ts","test":"LNG-004 and LNG-026 the SFC source map"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/sourceMap.test.ts","test":"LNG-004 the FBD source map"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/sourceMap.test.ts","test":"LNG-004 the IL source map"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/sourceMap.test.ts","test":"LNG-004 the Ladder source map"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28 A breakpoint on a rung stops execution","partial":true}
+  ],
   "LNG-005": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"7 Breakpoint stops execution","partial":true}
+  ],
+  "LNG-007": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every block of the FBD palette is placed, built and run"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every coil of the Ladder palette is run"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every contact of the Ladder palette is run"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every element of the SFC palette is run"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 every function block of the Ladder palette is placed, built and run"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 the Ladder palette does not hide what the transpiler translates and offers nothing it refuses"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/paletteExecution.test.ts","test":"LNG-007 the branch of the Ladder palette is run"}
   ],
   "LNG-008": [
     {"kind":"conformance","ref":"conformance/lng/lng-008-fbd-block-the-project-does-not-declare-is-rejected.expect.json","test":"LNG-008 an FBD block of a type that neither the library nor the project declares is rejected by name"},
@@ -852,6 +945,23 @@
   ],
   "LNG-009": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"9 Undo after switching tabs"}
+  ],
+  "LNG-011": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileLoad.schema.test.ts","test":"LNG-011 a variable is an object with a name and a type, in every language"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileLoad.schema.test.ts","test":"LNG-011 the parts of a Ladder file have the shape the editor reads"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileLoad.schema.test.ts","test":"LNG-011 the parts of an SFC chart have the shape the editor reads"}
+  ],
+  "LNG-013": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/editors/fbd/graphModel.test.ts","test":"LNG-013 drawing a wire between two pins"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/models/pinTypes.test.ts","test":"LNG-013 a pin takes what the compiler would take"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/models/pinTypes.test.ts","test":"LNG-013 judging a wire of the diagram"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/models/pinTypes.test.ts","test":"LNG-013 the reason a pin gives"}
+  ],
+  "LNG-014": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileRoundTrip.test.ts","test":"LNG-014 the commit of an editor that changed nothing says what the file says"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileRoundTrip.test.ts","test":"LNG-014 the committed visual files"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/models/visualFileRoundTrip.test.ts","test":"LNG-014 the one form of a visual file"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/fileSystem.visualRoundTrip.test.ts","test":"LNG-014 open and save without an edit"}
   ],
   "LNG-017": [
     {"kind":"conformance","ref":"conformance/lng/lng-017-il-unbalanced-closing-parenthesis.expect.json","test":"LNG-017 an IL closing parenthesis without an opening one is an error on its line"},
@@ -927,8 +1037,17 @@
     {"kind":"conformance","ref":"conformance/lng/lng-025-sfc-timed-and-pulse-qualifiers.expect.json","test":"LNG-025 an SFC pulse runs once, a limited action for its time, a delayed one after it"},
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"SFC scan semantics (LNG-024, LNG-025, LNG-002)"}
   ],
+  "LNG-026": [
+    {"kind":"conformance","ref":"conformance/lng/lng-026-sfc-action-body-error-names-the-action.expect.json","test":"LNG-026 an error in an SFC action body is reported against the action"},
+    {"kind":"conformance","ref":"conformance/lng/lng-026-sfc-transition-condition-error-names-the-transition.expect.json","test":"LNG-026 an error in an SFC transition condition is reported against the transition"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/visualDiagnostics.test.ts","test":"LNG-003 and LNG-026 an SFC diagnostic names the step, the transition or the action"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/visualDiagnostics.test.ts","test":"LNG-026 a finding of the safety check in an action body is reported against the action"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/sourceMap.test.ts","test":"LNG-004 and LNG-026 the SFC source map"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"27 Problems select the step of an action","partial":true}
+  ],
   "LNG-027": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"16 Debug details: stop, trace, resume mid-scan","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"28 A breakpoint on a rung stops execution","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"7 Breakpoint stops execution","partial":true}
   ],
   "RT-001": [

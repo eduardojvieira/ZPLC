@@ -30,8 +30,9 @@ const tooLarge = (bytes: number) =>
 
 /** A .zplc file of exactly `totalSize` bytes whose first scan stores 7 in the first output byte, then idles to HALT. */
 function programOfSize(totalSize: number): Uint8Array {
-  const headerAndSegmentTable = 32 + 8;
-  const code = new Uint8Array(totalSize - headerAndSegmentTable).fill(OP_NOP);
+  // the header, the segment entries of CODE and BUILD, and the 4 bytes of the build identity (CMP-056)
+  const headerSegmentTableAndBuild = 32 + 2 * 8 + 4;
+  const code = new Uint8Array(totalSize - headerSegmentTableAndBuild).fill(OP_NOP);
   code.set([OP_PUSH32, 7, 0, 0, 0, OP_STORE32, OPI_BASE & 0xff, OPI_BASE >> 8]);
   code[code.length - 1] = OP_HALT;
   const file = createZplcFile(code, 0);

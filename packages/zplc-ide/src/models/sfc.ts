@@ -10,6 +10,8 @@
  * - Actions: Code blocks executed when steps are active
  */
 
+import { serializeVisualDocument } from './visualFileFormat';
+
 // =============================================================================
 // Variable Definitions
 // =============================================================================
@@ -275,7 +277,7 @@ export function findAction(model: SFCModel, actionName: string): SFCAction | und
  * Serialize an SFC model to JSON string.
  */
 export function serializeSFCModel(model: SFCModel): string {
-  return JSON.stringify(model, null, 2);
+  return serializeVisualDocument(model);
 }
 
 /**

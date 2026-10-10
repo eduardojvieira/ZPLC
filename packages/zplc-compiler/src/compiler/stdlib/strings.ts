@@ -29,6 +29,7 @@
 
 import type { FunctionDef, CodeGenContext } from './types.ts';
 import type { Expression } from '../ast.ts';
+import type { AsmLine } from '../asm-line.ts';
 
 // String memory layout: [len:2][cap:2][data:cap+1]
 // Constants defined in zplc_isa.h for consistency
@@ -81,7 +82,7 @@ const at = (n: number) => `0x${n.toString(16).padStart(4, '0')}`;
  * [dst src start n] -> []. A negative start or n is 0; what does not exist in src or does not fit
  * the capacity of dst is left out.
  */
-export function strappendHelper(label: string, cells: StringCells, memcpyLabel: string): string[] {
+export function strappendHelper(label: string, cells: StringCells, memcpyLabel: string): AsmLine[] {
     const dst = at(cells.c0), src = at(cells.c1), start = at(cells.c2), n = at(cells.c3);
     return [
         `${label}:`,
@@ -180,7 +181,7 @@ export function strappendHelper(label: string, cells: StringCells, memcpyLabel: 
  * Routine: keep, in place, up to n characters of s from the 0-based position start.
  * [s start n] -> []. LEFT, RIGHT and MID of a variable assigned to that same variable.
  */
-export function strsubHelper(label: string, cells: StringCells, memcpyLabel: string): string[] {
+export function strsubHelper(label: string, cells: StringCells, memcpyLabel: string): AsmLine[] {
     const s = at(cells.c0), start = at(cells.c1), n = at(cells.c2);
     return [
         `${label}:`,
@@ -247,7 +248,7 @@ export function strsubHelper(label: string, cells: StringCells, memcpyLabel: str
  * Routine: remove, in place, up to n characters of s from the 0-based position pos.
  * [s pos n] -> []. DELETE of a variable assigned to that same variable.
  */
-export function strdelHelper(label: string, cells: StringCells, memcpyLabel: string): string[] {
+export function strdelHelper(label: string, cells: StringCells, memcpyLabel: string): AsmLine[] {
     const s = at(cells.c0), pos = at(cells.c1), n = at(cells.c2), len = at(cells.c3);
     return [
         `${label}:`,
@@ -323,7 +324,7 @@ export function strdelHelper(label: string, cells: StringCells, memcpyLabel: str
  * Routine: 1-based position of the first occurrence of s2 in s1, 0 when there is none (and for an
  * empty s2). [s1 s2] -> [pos].
  */
-export function strfindHelper(label: string, cells: StringCells): string[] {
+export function strfindHelper(label: string, cells: StringCells): AsmLine[] {
     const s1 = at(cells.c0), s2 = at(cells.c1), l1 = at(cells.c2), l2 = at(cells.c3), i = at(cells.c4), j = at(cells.c5);
     return [
         `${label}:`,
@@ -614,10 +615,8 @@ export const FIND_FN: FunctionDef = {
 /**
  * INSERT(s1: STRING, s2: STRING, pos: INT) : STRING
  *
- * Inserts s2 into s1 at position pos (1-based).
- * Returns modified s1.
- *
- * Simplified: appends s2 to s1 (ignores pos for now).
+ * Inserts s2 into s1 after the pos-th character (1-based) and returns the result as a new string; s1
+ * is not modified (CMP-021).
  */
 export const INSERT_FN: FunctionDef = {
     name: 'INSERT',

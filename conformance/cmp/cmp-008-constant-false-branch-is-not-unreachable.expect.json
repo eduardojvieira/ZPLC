@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-008",
+  "title": "a branch that a constant condition disables is not unreachable code",
+  "matrix": [
+    "statements.if-while-repeat-exit-continue"
+  ],
+  "note": "CMP-008: IEC 61131-3 defines no rule for a constant condition and the compiler evaluates none, so no warning is given",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 2
+    }
+  ],
+  "warnings": []
+}

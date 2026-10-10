@@ -793,7 +793,7 @@ class Parser {
         return {
             kind: 'FunctionDecl',
             name: nameToken.value,
-            returnType: returnType as any,
+            returnType: returnType as DataTypeValue,
             ...(returnTypeAt ? { returnTypeAt } : {}),
             inputs,
             locals,
@@ -1256,9 +1256,8 @@ class Parser {
         // Check if this is a standalone method call (no assignment needed)
         if (target.kind === 'MethodCall') {
             this.expect(TokenType.SEMICOLON, 'Expected ; after method call');
-            // Wrap the method call in an assignment to a dummy variable
-            // Actually, we need a proper statement type for this
-            // For now, treat it as an assignment to itself (result discarded)
+            // A method call used as a statement is an assignment to the dummy target `_`: the code
+            // generator emits the call and discards its result.
             return {
                 kind: 'Assignment',
                 target: { kind: 'Identifier', name: '_', line: startToken.line, column: startToken.column } as Identifier,
@@ -1275,7 +1274,8 @@ class Parser {
 
             return {
                 kind: 'Assignment',
-                target: target as any,
+                // whether the target is a place is decided by the semantic pass, which names it
+                target: target as Assignment['target'],
                 value,
                 line: startToken.line,
                 column: startToken.column,
@@ -2205,7 +2205,8 @@ class Parser {
             
             return {
                 kind: 'ReferenceExpr',
-                operand: operand as any, // Cast for type safety, semantic check later
+                // whether the operand is a variable is decided by the semantic pass, which names it
+                operand: operand as ReferenceExpr['operand'],
                 line: startToken.line,
                 column: startToken.column
             } as ReferenceExpr;

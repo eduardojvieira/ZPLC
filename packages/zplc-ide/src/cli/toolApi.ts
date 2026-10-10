@@ -5,9 +5,11 @@ import { tmpdir } from 'node:os';
 import { isAbsolute, join, relative, resolve, sep, win32 } from 'node:path';
 import { load } from 'js-yaml';
 import { ZPLC_CONSTANTS } from '@zplc/compiler';
-import { CompilerError, assertTaskProgramCardinality, compileMultiTaskProject, compilerErrorsOf, parse, transpileToST, type CompilerWarning, type DebugMap, type DebugVarInfo, type Statement } from '../compiler';
+import { CompilerError, assertTaskProgramCardinality, compileMultiTaskProject, compilerErrorsOf, parse, selectWarnings, transpileFailure, transpileToST, type CompilerWarning, type DebugMap, type DebugVarInfo, type Statement } from '../compiler';
+import { buildOptionsOf } from '../project/buildOptions';
 import type { ProjectMigrationChange } from '../project/projectModel';
 import { resolveProgramSource } from '../utils/programSourceResolution';
+import { elementAtLine } from '../models/sourceElements';
 import { compileScenario, findSignalVariable, runScenario, type CompiledScenario, type ScenarioKind, type ScenarioRunResult } from '../test-engine';
 import { createNativeScenarioSession } from './nativeScenarioRuntime';
 import { directoryIdentity, runFirmwareBuild, sameDirectoryIdentity } from './firmwareBuildRunner';
@@ -128,6 +130,8 @@ export type CompilerCompileResult = CompilerCheckResult & {
   bytecode?: Uint8Array;
   assembly?: string;
   debugMap?: DebugMap;
+  /** `build.generateDebugInfo`: the CLI writes the debug map beside the artifact (CMP-059). */
+  writeDebugMap?: boolean;
 };
 export interface TestSummary {
   backend: 'native-posix';
@@ -192,17 +196,21 @@ export interface FirmwareBuildSummary {
 
 export function artifactEvidence(kind: ToolArtifact['kind'], bytes: Uint8Array): ToolArtifact { return { kind, sha256: createHash('sha256').update(bytes).digest('hex'), byteLength: bytes.byteLength }; }
 function evidence(operation: ToolOperation, outcome: 'passed' | 'failed', diagnostics: ToolDiagnostic[] = [], artifacts: ToolEvidence['artifacts'] = []): ToolEvidence { return { schemaVersion: 1, operation, outcome, diagnostics, artifacts }; }
+/** A task runs a program of `src`: the files of a library folder declare blocks and types, they are not programs. */
+function programSources(workspace: WorkspaceProject): WorkspaceProject['sources'] {
+  return workspace.sources.filter((source) => source.library === undefined);
+}
 function unresolvedPrograms(workspace: WorkspaceProject): ToolDiagnostic[] {
   const diagnostics: ToolDiagnostic[] = [];
   workspace.project.tasks.forEach((task, taskIndex) => task.programs.forEach((program, programIndex) => {
-    if (!resolveProgramSource(program, workspace.sources)) diagnostics.push({ code: 'PROGRAM_NOT_FOUND', message: 'Task program could not be resolved from src', path: `tasks[${taskIndex}].programs[${programIndex}]` });
+    if (!resolveProgramSource(program, programSources(workspace))) diagnostics.push({ code: 'PROGRAM_NOT_FOUND', message: 'Task program could not be resolved from src', path: `tasks[${taskIndex}].programs[${programIndex}]` });
   }));
   return diagnostics;
 }
 function compilationSources(workspace: WorkspaceProject) {
   const sourceByProgram = new Map<string, ReturnType<typeof resolveProgramSource>>();
   for (const task of workspace.project.tasks) for (const program of task.programs) {
-    if (!sourceByProgram.has(program)) sourceByProgram.set(program, resolveProgramSource(program, workspace.sources));
+    if (!sourceByProgram.has(program)) sourceByProgram.set(program, resolveProgramSource(program, programSources(workspace)));
   }
   const bytesByPath = new Map(workspace.sources.map((source) => [source.path, source.bytes]));
   // A resolved source always comes from workspace.sources, so its sourceRef is a workspace path that has bytes.
@@ -216,7 +224,7 @@ function compilationSources(workspace: WorkspaceProject) {
   const run = new Set(programs.map((source) => source.sourceRef));
   const libraries = workspace.sources
     .filter((source) => source.language === 'ST' && !run.has(source.path))
-    .map((source) => ({ name: source.path, content: source.content, language: source.language, sourceRef: source.path, bytes: source.bytes }));
+    .map((source) => ({ name: source.path, content: source.content, language: source.language, sourceRef: source.path, bytes: source.bytes, ...(source.library === undefined ? {} : { library: source.library }) }));
   return [...programs, ...libraries];
 }
 function createSavedTestInputIdentity(workspace: WorkspaceProject, sources: Array<{ sourceRef: string; bytes: Uint8Array }>, scenarios: WorkspaceScenario[]): SavedTestInputIdentity {
@@ -244,6 +252,7 @@ function compilerErrorDiagnostic(error: CompilerError): ToolDiagnostic {
     column: error.column,
     // ponytail: error.endLine and error.endColumn hold where the error ends; the MCP schema (src/mcp/server.ts) is strict, so they are not sent yet
     ...(error.sourceRef ? { path: error.sourceRef } : {}),
+    ...(error.element ? { element: error.element } : {}),
   };
 }
 /** What a build accepted that the language reference does not define, as diagnostics of a build that passed (CMP-031). */
@@ -264,7 +273,7 @@ export function safeCompilerDiagnostic(error: unknown): ToolDiagnostic {
 /** Every independent error of a failed compile, in source order (CMP-007); the same message, line and column as the first alone. */
 export function safeCompilerDiagnostics(error: unknown): ToolDiagnostic[] {
   if (error instanceof CompilerError) return error.errors.slice(0, 128).map(compilerErrorDiagnostic);
-  return safeCompilerDiagnostics(error);
+  return [safeCompilerDiagnostic(error)];
 }
 
 function selectIndexes(length: number, cap: number, required: number[] = []): number[] {
@@ -305,11 +314,11 @@ function testPreview(completed: Array<{ id: string; path: string; passed: boolea
   return { schemaVersion: 1, backend: 'native-posix', mode: 'logical-cyclic-task-set-scan', traceEvidenceSha256, totalScenarioCount: completed.length, scenarios };
 }
 
-export async function projectInspect(root: string): Promise<ToolResult<{ schemaVersion: 2; sourceSchemaVersion: 1 | 2; migrated: boolean; name: string; version: string; taskCount: number; sources: Array<{ name: string; language: string }>; target?: { board: string } }>> {
+export async function projectInspect(root: string): Promise<ToolResult<{ schemaVersion: 2; sourceSchemaVersion: 1 | 2; migrated: boolean; name: string; version: string; taskCount: number; sources: Array<{ name: string; language: string; library?: string }>; target?: { board: string } }>> {
   const loaded = await readWorkspace(root); if (!loaded.ok) return failed('inspect', loaded.diagnostics);
   const { workspace } = loaded;
   const board = workspace.project.target?.board;
-  return { ok: true, summary: { schemaVersion: 2, sourceSchemaVersion: workspace.sourceSchemaVersion, migrated: workspace.migrated, name: workspace.project.name, version: workspace.project.version, taskCount: workspace.project.tasks.length, sources: workspace.sources.map(({ name, language }) => ({ name, language })), ...(typeof board === 'string' && /^[a-z0-9][a-z0-9_-]{0,63}$/i.test(board) ? { target: { board } } : {}) }, evidence: evidence('inspect', 'passed') };
+  return { ok: true, summary: { schemaVersion: 2, sourceSchemaVersion: workspace.sourceSchemaVersion, migrated: workspace.migrated, name: workspace.project.name, version: workspace.project.version, taskCount: workspace.project.tasks.length, sources: workspace.sources.map(({ name, language, library }) => ({ name, language, ...(library === undefined ? {} : { library }) })), ...(typeof board === 'string' && /^[a-z0-9][a-z0-9_-]{0,63}$/i.test(board) ? { target: { board } } : {}) }, evidence: evidence('inspect', 'passed') };
 }
 export async function projectMigrationPreview(root: string): Promise<ToolResult<{ sourceSchemaVersion: 1 | 2; targetSchemaVersion: 2; changed: boolean; changes: ProjectMigrationChange[] }>> {
   const loaded = await readWorkspace(root); if (!loaded.ok) return failed('migrate-preview', loaded.diagnostics);
@@ -366,8 +375,15 @@ async function compile<Operation extends CompileOperation>(root: string, operati
     if (operation === 'symbols-list') return { ok: true, summary: symbolSummary(result.debugMap, loaded.workspace), evidence: evidence('symbols-list', 'passed') } as CompileResult<Operation>;
     const bytes = result.zplcFile;
     const artifact = artifactEvidence('zplc', bytes);
-    // What the build accepted that the language reference does not define: it passed, and says so (CMP-031)
-    const warnings = compilerWarningDiagnostics(result.warnings);
+    // What the build accepted that the language reference does not define: it passed, and says so (CMP-031).
+    // The files of the project folder that no build reads are reported with the rest (CMP-046).
+    const options = buildOptionsOf(loaded.workspace.project);
+    const notCompiled = selectWarnings(loaded.workspace.unlistedSources.map((path): CompilerWarning => ({
+      code: 'SOURCE_NOT_COMPILED',
+      message: `'${path}' is not compiled: it is neither in src nor in a folder listed in libraries of zplc.json`,
+      line: 0, column: 0, sourceRef: path,
+    })), options.reportWarnings);
+    const warnings = [...notCompiled, ...result.warnings].map((warning) => compilerWarningDiagnostics([warning])[0]!);
     const response: CompilerCompileResult = { ok: true, summary: { name: loaded.workspace.project.name, version: loaded.workspace.project.version, taskCount: loaded.workspace.project.tasks.length, codeSize: result.codeSize, draftCounter: ZPLC_CONSTANTS.DRAFT_COUNTER }, evidence: evidence(operation, 'passed', warnings, operation === 'symbols-list' ? [] : [artifact]) };
     if (operation === 'compile') {
       Object.defineProperties(response, {
@@ -376,6 +392,7 @@ async function compile<Operation extends CompileOperation>(root: string, operati
         bytecode: { value: result.bytecode, enumerable: false },
         assembly: { value: result.programDetails.map((program) => `; === ${program.name} ===\n${program.assembly}`).join('\n\n'), enumerable: false },
         debugMap: { value: result.debugMap, enumerable: false },
+        writeDebugMap: { value: options.generateDebugInfo, enumerable: false },
       });
     }
     return response as CompileResult<Operation>;
@@ -388,14 +405,14 @@ export function symbolsList(root: string): Promise<SymbolsListResult> { return c
 type SafetyOutput = { signal: string; address: number; bitOffset: number };
 function safetyLocation(output: Pick<SafetyOutput, 'address' | 'bitOffset'>): string { return `${output.address}:${output.bitOffset}`; }
 type SafetyDiagnosticCode = 'SAFETY_OUTPUT_INVALID' | 'SAFETY_OUTPUT_DUPLICATE' | 'SAFETY_INTERLOCK_UNCOVERED' | 'SAFETY_SCENARIO_INVALID' | 'SAFETY_SCENARIOS_UNAVAILABLE' | 'SAFETY_UNBOUNDED_WHILE' | 'SAFETY_UNBOUNDED_REPEAT';
-function safetyDiagnostic(code: SafetyDiagnosticCode, path?: string, line?: number): ToolDiagnostic {
+function safetyDiagnostic(code: SafetyDiagnosticCode, path?: string, line?: number, element?: string): ToolDiagnostic {
   const message = code === 'SAFETY_INTERLOCK_UNCOVERED' ? 'Declared incompatible outputs lack exact NEVER coverage'
     : code === 'SAFETY_SCENARIO_INVALID' ? 'Scenario cannot be used for safety coverage'
       : code === 'SAFETY_SCENARIOS_UNAVAILABLE' ? 'Scenarios are unavailable for safety coverage'
         : code === 'SAFETY_UNBOUNDED_WHILE' ? 'WHILE has no provable static iteration bound'
           : code === 'SAFETY_UNBOUNDED_REPEAT' ? 'REPEAT has no provable static iteration bound'
             : 'Declared safety output is invalid';
-  return { code, message, ...(path ? { path } : {}), ...(line === undefined ? {} : { line }) };
+  return { code, message, ...(path ? { path } : {}), ...(line === undefined ? {} : { line }), ...(element === undefined ? {} : { element }) };
 }
 function safetyOutput(debugMap: DebugMap, signal: string): SafetyOutput | undefined {
   // a global that another file declares is the variable of every program (CMP-042)
@@ -408,28 +425,36 @@ function safetyOutput(debugMap: DebugMap, signal: string): SafetyOutput | undefi
 }
 function safetyPairKey(left: SafetyOutput, right: SafetyOutput): string { return [safetyLocation(left), safetyLocation(right)].sort().join('\u0000'); }
 
-function collectUnboundedLoopDiagnostics(statements: Statement[], path: string, includeLine: boolean, diagnostics: ToolDiagnostic[]): void {
+/**
+ * `elementOf` gives, for a line of the generated Structured Text of a diagram, the element it was written for: the loop of
+ * an SFC action is reported against the action (LNG-026), and has no line of its own.
+ */
+function collectUnboundedLoopDiagnostics(
+  statements: Statement[], path: string, includeLine: boolean, diagnostics: ToolDiagnostic[],
+  elementOf?: (line: number) => string | undefined,
+): void {
+  const visit = (inner: Statement[]) => collectUnboundedLoopDiagnostics(inner, path, includeLine, diagnostics, elementOf);
   for (const statement of statements) {
     switch (statement.kind) {
       case 'WhileStatement':
-        diagnostics.push(safetyDiagnostic('SAFETY_UNBOUNDED_WHILE', path, includeLine ? statement.line : undefined));
-        collectUnboundedLoopDiagnostics(statement.body, path, includeLine, diagnostics);
+        diagnostics.push(safetyDiagnostic('SAFETY_UNBOUNDED_WHILE', path, includeLine ? statement.line : undefined, elementOf?.(statement.line)));
+        visit(statement.body);
         break;
       case 'RepeatStatement':
-        diagnostics.push(safetyDiagnostic('SAFETY_UNBOUNDED_REPEAT', path, includeLine ? statement.line : undefined));
-        collectUnboundedLoopDiagnostics(statement.body, path, includeLine, diagnostics);
+        diagnostics.push(safetyDiagnostic('SAFETY_UNBOUNDED_REPEAT', path, includeLine ? statement.line : undefined, elementOf?.(statement.line)));
+        visit(statement.body);
         break;
       case 'IfStatement':
-        collectUnboundedLoopDiagnostics(statement.thenBranch, path, includeLine, diagnostics);
-        for (const branch of statement.elsifBranches) collectUnboundedLoopDiagnostics(branch.statements, path, includeLine, diagnostics);
-        if (statement.elseBranch) collectUnboundedLoopDiagnostics(statement.elseBranch, path, includeLine, diagnostics);
+        visit(statement.thenBranch);
+        for (const branch of statement.elsifBranches) visit(branch.statements);
+        if (statement.elseBranch) visit(statement.elseBranch);
         break;
       case 'ForStatement':
-        collectUnboundedLoopDiagnostics(statement.body, path, includeLine, diagnostics);
+        visit(statement.body);
         break;
       case 'CaseStatement':
-        for (const branch of statement.branches) collectUnboundedLoopDiagnostics(branch.statements, path, includeLine, diagnostics);
-        if (statement.elseBranch) collectUnboundedLoopDiagnostics(statement.elseBranch, path, includeLine, diagnostics);
+        for (const branch of statement.branches) visit(branch.statements);
+        if (statement.elseBranch) visit(statement.elseBranch);
         break;
     }
   }
@@ -450,7 +475,7 @@ function safetyLoopDiagnostics(workspace: WorkspaceProject): ToolDiagnostic[] {
     seenSourcePaths.add(path);
     const transpiled = source.language === 'ST' ? { success: true, source: source.content, errors: [] as string[], line: undefined } : transpileToST(source.content, source.language);
     // The same message as Build gives for the same source (CMP-010): it names the element that cannot be translated
-    if (!transpiled.success) throw new CompilerError(`Transpilation of '${source.name}' failed: ${transpiled.errors.join('; ')}`, transpiled.line ?? 0, 0, 'parser', path);
+    if (!transpiled.success) throw transpileFailure(transpiled, path);
     let unit: ReturnType<typeof parse>;
     try {
       unit = parse(transpiled.source);
@@ -461,11 +486,13 @@ function safetyLoopDiagnostics(workspace: WorkspaceProject): ToolDiagnostic[] {
       throw errors[0];
     }
     const includeLine = source.language === 'ST';
-    for (const program of unit.programs) collectUnboundedLoopDiagnostics(program.statements, path, includeLine, diagnostics);
-    for (const fn of unit.functions) collectUnboundedLoopDiagnostics(fn.body, path, includeLine, diagnostics);
+    const map = 'sourceMap' in transpiled ? transpiled.sourceMap : undefined;
+    const elementOf = map ? (line: number) => elementAtLine(map, line) : undefined;
+    for (const program of unit.programs) collectUnboundedLoopDiagnostics(program.statements, path, includeLine, diagnostics, elementOf);
+    for (const fn of unit.functions) collectUnboundedLoopDiagnostics(fn.body, path, includeLine, diagnostics, elementOf);
     for (const block of unit.functionBlocks) {
-      collectUnboundedLoopDiagnostics(block.body, path, includeLine, diagnostics);
-      for (const method of block.methods) collectUnboundedLoopDiagnostics(method.body, path, includeLine, diagnostics);
+      collectUnboundedLoopDiagnostics(block.body, path, includeLine, diagnostics, elementOf);
+      for (const method of block.methods) collectUnboundedLoopDiagnostics(method.body, path, includeLine, diagnostics, elementOf);
     }
   }
   return diagnostics.sort((left, right) => left.path === right.path

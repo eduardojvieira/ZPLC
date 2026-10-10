@@ -11,7 +11,7 @@
     "clock_mhz": 240
   },
   "compiler": {
-    "optimization": "speed",
+    "optimization": "none",
     "debug": true
   },
   "io": {

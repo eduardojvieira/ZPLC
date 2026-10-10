@@ -47,6 +47,7 @@ from zplc_contract import (  # noqa: E402
     ZPLC_MAGIC,
     ZPLC_VERSION_MAJOR,
     ZPLC_VERSION_MINOR,
+    OPCODE_INFO,
     Opcode,
     get_operand_size,
 )
@@ -55,6 +56,47 @@ from zplc_contract import (  # noqa: E402
 # Build lookup tables
 OPCODE_BY_NAME = {op.name: op for op in Opcode}
 OPERAND_SIZE = {op: get_operand_size(op.value) for op in Opcode}
+
+ADDRESS_MAX = 0xFFFF
+
+
+def split_values(text: str) -> list[str]:
+    """Split the operand of .DB at its commas; a comma inside a character literal ('x') does not split."""
+    values: list[str] = []
+    current = ''
+    quoted = False
+    for index, character in enumerate(text):
+        if character == "'" and (index == 0 or text[index - 1] != '\\'):
+            quoted = not quoted
+        if character == ',' and not quoted:
+            values.append(current.strip())
+            current = ''
+        else:
+            current += character
+    values.append(current.strip())
+    return values
+
+
+def operand_field(opcode: Opcode):
+    """
+    The field an operand has to fit (CMP-049), as (min, max, description, relative, code_address),
+    or None for an opcode without operand. An immediate may be written signed or unsigned (the VM
+    sign-extends it), an address only unsigned, a relative offset only signed.
+    """
+    size = OPERAND_SIZE[opcode]
+    if size == 0:
+        return None
+    bits = size * 8
+    flags = OPCODE_INFO[opcode]["flags"]
+    if "relative" in flags:
+        return (-(2 ** (bits - 1)), 2 ** (bits - 1) - 1, f"signed {bits}-bit offset", True, False)
+    if "absolute" in flags:
+        return (0, 2 ** bits - 1, f"{bits}-bit code address", False, True)
+    if "comm" in flags:
+        return (0, 2 ** bits - 1, f"{bits}-bit function-block kind", False, False)
+    if size == 2 and opcode != Opcode.PUSH16:
+        return (0, 2 ** bits - 1, f"{bits}-bit memory address", False, False)
+    return (-(2 ** (bits - 1)), 2 ** bits - 1, f"{bits}-bit immediate", False, False)
 
 
 # =============================================================================
@@ -78,6 +120,7 @@ class Instruction:
     operand_label: Optional[str]  # For unresolved label references
     line_num: int
     address: int  # Byte offset in code segment
+    raw: bool = False  # A byte of data (.DB, the NOP fill of .ORG): `opcode` holds the byte
 
 
 @dataclass
@@ -113,7 +156,9 @@ class ZPLCAssembler:
         self.instructions: list[Instruction] = []
         self.labels: dict[str, Label] = {}
         self.entry_point = 0
+        self.entry_line = 0
         self.current_address = 0
+        self.source_text: dict[int, str] = {}
     
     def log(self, msg: str):
         """Print verbose output."""
@@ -241,6 +286,15 @@ class ZPLCAssembler:
                 raise AssemblerError(f"Instruction '{mnemonic}' takes no operand", line_num, line)
             operand_val, operand_label = None, None
         
+        # A value that does not fit the field is an error here, at its line (CMP-049)
+        field = operand_field(opcode)
+        if field is not None and operand_val is not None and not (field[0] <= operand_val <= field[1]):
+            raise AssemblerError(
+                f"{mnemonic} operand {operand_val} does not fit its {field[2]} ({field[0]} to {field[1]})",
+                line_num,
+                line,
+            )
+
         # Create instruction
         instr = Instruction(
             opcode=opcode,
@@ -250,95 +304,178 @@ class ZPLCAssembler:
             address=self.current_address
         )
         self.instructions.append(instr)
+        self.source_text[line_num] = line
         
         # Advance address
         instr_size = 1 + operand_size
         self.log(f"0x{self.current_address:04X}: {mnemonic} {operand_str} ({instr_size} bytes)")
         self.current_address += instr_size
     
+    def push_raw(self, byte: int, line_num: int):
+        """A byte of data: the values of .DB and the NOP fill of .ORG."""
+        self.instructions.append(Instruction(
+            opcode=byte & 0xFF, operand=None, operand_label=None,
+            line_num=line_num, address=self.current_address, raw=True,
+        ))
+        self.current_address += 1
+
+    def directive_number(self, directive: str, text: str, low: int, high: int, what: str,
+                         line_num: int, line: str) -> int:
+        """One value of a directive: a number that fits [low, high], or an error at the line."""
+        try:
+            value = self.parse_number(text)
+        except ValueError as e:
+            raise AssemblerError(f"Invalid value '{text}' for {directive}: {e}", line_num, line)
+        if not (low <= value <= high):
+            raise AssemblerError(
+                f"{directive} value {value} does not fit its {what} ({low} to {high})", line_num, line)
+        return value
+
     def handle_directive(self, directive: str, operand: str, line_num: int):
-        """Handle assembler directives."""
+        """
+        Handle assembler directives.
+
+        .ORG addr   the next byte is at addr: the gap is filled with NOP; moving backwards is an error
+        .ENTRY x    the entry point of the file: a label, or an address inside the code
+        .DB v, ...  emits each value (-128 to 255) as one byte, here (.BYTE is the same)
+        """
+        line = f"{directive} {operand}".strip()
+        self.source_text[line_num] = line
         if directive == '.ORG':
-            # Set origin address
-            try:
-                self.current_address = self.parse_number(operand)
-                self.log(f"Origin set to 0x{self.current_address:04X}")
-            except ValueError:
-                raise AssemblerError(f"Invalid address for .ORG: {operand}", line_num, "")
-        
+            if not operand.strip():
+                raise AssemblerError(".ORG requires an address", line_num, line)
+            address = self.directive_number('.ORG', operand.strip(), 0, ADDRESS_MAX, '16-bit address', line_num, line)
+            if address < self.current_address:
+                raise AssemblerError(f".ORG {address} moves backwards from {self.current_address}", line_num, line)
+            while self.current_address < address:
+                self.push_raw(Opcode.NOP, line_num)
+            self.log(f"Origin set to 0x{self.current_address:04X}")
+
         elif directive == '.ENTRY':
-            # Set entry point
             operand = operand.strip()
+            if not operand:
+                raise AssemblerError(".ENTRY requires a label or an address", line_num, line)
+            self.entry_line = line_num
             if re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', operand):
                 # It's a label - will be resolved later
                 self.entry_point = operand.upper()
             else:
-                try:
-                    self.entry_point = self.parse_number(operand)
-                except ValueError:
-                    raise AssemblerError(f"Invalid entry point: {operand}", line_num, "")
-        
+                self.entry_point = self.directive_number(
+                    '.ENTRY', operand, 0, ADDRESS_MAX, '16-bit entry point', line_num, line)
+
         elif directive == '.DB' or directive == '.BYTE':
-            # Define byte(s)
-            for val_str in operand.split(','):
-                val = self.parse_number(val_str.strip())
-                # Store as raw byte - we'll handle this in pass 2
-                # For now, just advance address
-                self.current_address += 1
-        
+            if not operand.strip():
+                raise AssemblerError(f"{directive} requires a list of byte values", line_num, line)
+            for text in split_values(operand):
+                text = text.strip()
+                if not text:
+                    raise AssemblerError(f"{directive} has an empty value in its list", line_num, line)
+                self.push_raw(self.directive_number(directive, text, -128, 255, '8-bit byte', line_num, line), line_num)
+
         else:
-            raise AssemblerError(f"Unknown directive '{directive}'", line_num, "")
-    
+            raise AssemblerError(f"Unknown directive '{directive}'", line_num, line)
+
     def resolve_labels(self):
-        """Pass 2: Resolve label references."""
+        """Pass 2: resolve label references and check that every jump lands inside the code."""
+        code_size = self.current_address
+
+        def text(line_num: int) -> str:
+            return self.source_text.get(line_num, "")
+
         for instr in self.instructions:
+            if instr.raw:
+                continue
+            relative = instr.opcode in (Opcode.JR, Opcode.JRZ, Opcode.JRNZ)
+            field = operand_field(instr.opcode)
+            absolute = field is not None and field[4]
             if instr.operand_label:
                 label_name = instr.operand_label.upper()
                 if label_name not in self.labels:
                     raise AssemblerError(
                         f"Undefined label '{label_name}'",
                         instr.line_num,
-                        ""
+                        text(instr.line_num),
                     )
                 label = self.labels[label_name]
-                
+
                 # For relative jumps (JR, JRZ, JRNZ), calculate offset
-                if instr.opcode in (Opcode.JR, Opcode.JRZ, Opcode.JRNZ):
+                if relative:
                     # Offset is from PC after instruction (PC + 2)
                     offset = label.address - (instr.address + 2)
                     if offset < -128 or offset > 127:
                         raise AssemblerError(
                             f"Relative jump to '{label_name}' out of range ({offset})",
                             instr.line_num,
-                            ""
+                            text(instr.line_num),
                         )
-                    instr.operand = offset & 0xFF  # Signed to unsigned
+                    instr.operand = offset
                 else:
                     # Absolute address
+                    if label.address > ADDRESS_MAX:
+                        raise AssemblerError(
+                            f"{instr.opcode.name} to '{label_name}' at {label.address} does not fit the 16-bit code address",
+                            instr.line_num,
+                            text(instr.line_num),
+                        )
                     instr.operand = label.address
-                
-                self.log(f"Resolved '{label_name}' -> 0x{instr.operand:04X}")
-        
+                if label.address >= code_size:
+                    raise AssemblerError(
+                        f"{instr.opcode.name} to '{label_name}': the label is after the last instruction "
+                        f"(at {label.address}, the code is {code_size} bytes)",
+                        instr.line_num,
+                        text(instr.line_num),
+                    )
+                self.log(f"Resolved '{label_name}' -> 0x{instr.operand & 0xFFFF:04X}")
+            elif instr.operand is not None and (relative or absolute):
+                # a numeric target is an instruction of the code, as a labelled one is
+                target = instr.address + 2 + instr.operand if relative else instr.operand
+                if target < 0 or target >= code_size:
+                    raise AssemblerError(
+                        f"{instr.opcode.name} target {target} is outside the code ({code_size} bytes)",
+                        instr.line_num,
+                        text(instr.line_num),
+                    )
+
         # Resolve entry point if it's a label
         if isinstance(self.entry_point, str):
             if self.entry_point not in self.labels:
-                raise AssemblerError(f"Undefined entry point label '{self.entry_point}'", 0, "")
-            self.entry_point = self.labels[self.entry_point].address
-    
+                raise AssemblerError(
+                    f"Undefined entry point label '{self.entry_point}'", self.entry_line, text(self.entry_line))
+            address = self.labels[self.entry_point].address
+            if address > ADDRESS_MAX:
+                raise AssemblerError(
+                    f"Entry point '{self.entry_point}' at {address} does not fit the 16-bit entry point",
+                    self.entry_line, text(self.entry_line))
+            self.entry_point = address
+        if self.entry_point != 0 and self.entry_point >= code_size:
+            raise AssemblerError(
+                f"Entry point {self.entry_point} is outside the code ({code_size} bytes)",
+                self.entry_line, text(self.entry_line))
+
     def emit_bytecode(self) -> bytes:
-        """Generate bytecode from parsed instructions."""
+        """Generate bytecode from parsed instructions; an operand is checked against its field, never masked."""
         output = bytearray()
-        
+
         for instr in self.instructions:
-            # Emit opcode
+            # Emit opcode, or the byte of data
+            if instr.raw:
+                output.append(instr.opcode & 0xFF)
+                continue
             output.append(instr.opcode.value)
-            
+
             # Emit operand
             operand_size = OPERAND_SIZE[instr.opcode]
             operand = instr.operand if instr.operand is not None else 0
-            
+            field = operand_field(instr.opcode)
+            if field is not None and not (field[0] <= operand <= field[1]):
+                raise AssemblerError(
+                    f"{instr.opcode.name} operand {operand} does not fit its {field[2]} ({field[0]} to {field[1]})",
+                    instr.line_num,
+                    self.source_text.get(instr.line_num, ""),
+                )
+
             if operand_size == 1:
-                # 8-bit operand (could be signed)
+                # 8-bit operand: an immediate, or a signed offset as its two's complement byte
                 output.append(operand & 0xFF)
             elif operand_size == 2:
                 # 16-bit little-endian
@@ -346,9 +483,9 @@ class ZPLCAssembler:
             elif operand_size == 4:
                 # 32-bit little-endian
                 output.extend(struct.pack('<I', operand & 0xFFFFFFFF))
-        
+
         return bytes(output)
-    
+
     def create_zplc_file(self, bytecode: bytes) -> bytes:
         """
         Create a complete .zplc file with header.
@@ -418,6 +555,8 @@ class ZPLCAssembler:
         self.labels = {}
         self.current_address = 0
         self.entry_point = 0
+        self.entry_line = 0
+        self.source_text = {}
         
         # Pass 1: Parse
         self.log("=== Pass 1: Parse ===")

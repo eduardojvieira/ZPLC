@@ -3,6 +3,7 @@
   "title": "an IL label defined twice is rejected with the second line",
   "matrix": ["il.jmp-jmpc-jmpcn-labels"],
   "build": "fails",
+  "elements": ["line:9"],
   "lines": [
     9
   ],

@@ -2406,6 +2406,7 @@ static inline int zplc_opcode_is_valid(uint8_t opcode);
 | `zplc_segment_type_t` | Enum | Segment types. |
 | `id` | Struct | Task definition (16 bytes). |
 | `zplc_task_type_t` | Enum | Task types. |
+| `build_id` | Struct | Build identity, the payload of the BUILD segment (4 bytes). |
 | `var_addr` | Struct | I/O map entry (8 bytes). |
 | `zplc_io_direction_t` | Enum | I/O direction. |
 | `var_addr` | Struct | Variable tag entry (8 bytes). Used for mapping variables to communication protocols. |
@@ -2421,7 +2422,7 @@ static inline int zplc_opcode_is_valid(uint8_t opcode);
 | `ZPLC_MAGIC` | `0x434C505AU` | Magic number for .zplc files. |
 | `ZPLC_VERSION_MAJOR` | `1` | Current ISA major version |
 | `ZPLC_VERSION_MINOR` | `0` | Current ISA minor version |
-| `ZPLC_DRAFT_COUNTER` | `3U` | Draft contract counter (CMP-052). |
+| `ZPLC_DRAFT_COUNTER` | `4U` | Draft contract counter (CMP-052). |
 | `ZPLC_MEM_IPI_BASE` | `0x0000U` | Base address of Input Process Image |
 | `ZPLC_MEM_IPI_SIZE` | `0x1000U` | Size of Input Process Image (4 KB, fixed by spec) |
 | `ZPLC_MEM_OPI_BASE` | `0x1000U` | Base address of Output Process Image |
@@ -2455,6 +2456,7 @@ static inline int zplc_opcode_is_valid(uint8_t opcode);
 | `ZPLC_FILE_HEADER_SIZE` | `32` | Expected size of file header |
 | `ZPLC_SEGMENT_ENTRY_SIZE` | `8` | Expected size of segment entry |
 | `ZPLC_TASK_DEF_SIZE` | `16` | Expected size of task definition |
+| `ZPLC_BUILD_ENTRY_SIZE` | `4` | Expected size of the build identity |
 | `ZPLC_IOMAP_ENTRY_SIZE` | `8` | Expected size of I/O map entry |
 | `ZPLC_TAG_ENTRY_SIZE` | `8` | Expected size of tag entry |
 
@@ -2462,7 +2464,7 @@ static inline int zplc_opcode_is_valid(uint8_t opcode);
 
 ZPLC Binary File Loader
 
-Verifies the structural and bytecode integrity of .zplc files without changing runtime state. The current v1 subset accepts flags=0 and CODE, TASK, and TAGS segments only. The returned view borrows the input buffer.
+Verifies the structural and bytecode integrity of .zplc files without changing runtime state. The current v1 subset accepts flags=0 and CODE, TASK, TAGS and BUILD segments only. The returned view borrows the input buffer.
 
 Source: `firmware/lib/zplc_core/include/zplc_loader.h`
 
@@ -3184,13 +3186,15 @@ These tables are generated from `tools/contract/contract.json`, the single sourc
 | --- | --- | --- |
 | Magic number | `0x434C505A` | `5A 50 4C 43` = "ZPLC" |
 | ISA version (major.minor) | `1.0` |  |
-| Draft contract counter | `3` | Written in header word 28 of every artifact. The loader and Studio refuse an artifact, or a device image, whose counter differs from their own and show both numbers; 0 means an artifact built before the counter. It increases with every contract change until the freeze. |
+| Draft contract counter | `4` | Written in header word 28 of every artifact. The loader and Studio refuse an artifact, or a device image, whose counter differs from their own and show both numbers; 0 means an artifact built before the counter. It increases with every contract change until the freeze. |
 | File header size (bytes) | `32` |  |
 | Segment entry size (bytes) | `8` |  |
 | Task definition size (bytes) | `16` |  |
 | I/O map entry size (bytes) | `8` |  |
 | Tag entry size (bytes) | `8` |  |
 | Maximum tasks in an artifact | `16` |  |
+| Build identity size (bytes) | `4` |  |
+| Deepest evaluation stack the loader proves | `127` | A task that needs more is refused, whatever the target stack allows; the compiler fails the build above it. |
 | CRC32 | `0xEDB88320` | IEEE 802.3 polynomial 0xEDB88320, over the whole file except the 4 bytes at offset 12. |
 
 ### Layout of `zplc_file_header_t`
@@ -3226,7 +3230,14 @@ These tables are generated from `tools/contract/contract.json`, the single sourc
 | `4` | `interval_us` | `uint32_t` | 4 | Cycle time in microseconds |
 | `8` | `entry_point` | `uint16_t` | 2 | Code offset |
 | `10` | `stack_size` | `uint16_t` | 2 | Required stack depth |
-| `12` | `reserved` | `uint32_t` | 4 | Reserved (must be 0) |
+| `12` | `call_depth` | `uint16_t` | 2 | Call frames active at once, the task body included (1 for a task that calls nothing); 0 = not declared (CMP-050) |
+| `14` | `reserved` | `uint16_t` | 2 | Reserved (must be 0) |
+
+### Layout of `zplc_build_info_t`
+
+| Offset | Field | Type | Bytes | Description |
+| --- | --- | --- | --- | --- |
+| `0` | `build_id` | `uint32_t` | 4 | CRC-32 of CODE then TASK; never 0 (0 = not identified) |
 
 ### Layout of `zplc_iomap_entry_t`
 
@@ -3269,6 +3280,7 @@ These tables are generated from `tools/contract/contract.json`, the single sourc
 | `ZPLC_SEG_DEBUG` | `0x11` | Debug information |
 | `ZPLC_SEG_TASK` | `0x20` | Task definitions |
 | `ZPLC_SEG_TAGS` | `0x30` | Variable tags (networking metadata) |
+| `ZPLC_SEG_BUILD` | `0x40` | Build identity of the artifact (CMP-056) |
 
 ### Task types
 

@@ -15,7 +15,7 @@ import { SFCEditor } from '../editors/sfc';
 import { serializeFBDModel, type FBDModel } from '../models/fbd';
 import { serializeLDModel, type LDModel } from '../models/ld';
 import { serializeSFCModel, type SFCModel } from '../models/sfc';
-import { loadFBDFile, loadLDFile, loadSFCFile, type VisualFileLoad } from '../models/visualFileLoad';
+import { isUnchangedVisualDocument, loadFBDFile, loadLDFile, loadSFCFile, type VisualFileLoad } from '../models/visualFileLoad';
 import { ProjectSettings } from './settings/ProjectSettings';
 import { CodeEditor } from './CodeEditor';
 import { editor as monacoEditor } from 'monaco-editor';
@@ -144,7 +144,9 @@ export function EditorArea() {
   const updateVisualContent = useCallback((expectedProjectSession: number, expectedFileId: string, expectedLanguage: PLCLanguage, content: string) => {
     const state = useIDEStore.getState();
     const file = state.getFile(expectedFileId);
-    if (!file || !canCommitVisualEditorChange(state.projectSession, expectedProjectSession, state.activeFileId, expectedFileId, expectedLanguage, file) || !isVisualWorkflow(file.language) || content === file.content) return;
+    if (!file || !canCommitVisualEditorChange(state.projectSession, expectedProjectSession, state.activeFileId, expectedFileId, expectedLanguage, file) || !isVisualWorkflow(file.language)) return;
+    // A commit that leaves the model as the file opened keeps the file's bytes (LNG-014)
+    if (isUnchangedVisualDocument(file.language as 'LD' | 'FBD' | 'SFC', file.content, content)) return;
     const key = `${state.projectSession}:${file.id}`;
     const current = visualHistoryRef.current;
     const histories = current.projectSession === state.projectSession ? current.histories : new Map<string, never>();
