@@ -288,6 +288,50 @@ static void test_direct_access_at_the_vm(void) {
   CHECK_EQ(run_raw(&c), OOB, "STORE32 into the input image");
 }
 
+/* A region is its window of the address space, from its base to the base of
+ * the next region, and no larger, whatever the storage behind it is: with a
+ * WORK memory above 0x2000 bytes, address 0x4000 is retentive memory, not the
+ * rest of WORK (test_sandbox_regions runs this whole file on such a build). */
+static void test_region_windows(void) {
+  code_t c;
+  const uint8_t *retain;
+  printf("=== RT-001 a region is its window of the address space ===\n");
+
+  c.n = 0;
+  op8(&c, OP_PUSH8, 0x5A);
+  op16(&c, OP_STORE8, 0x4000U);
+  op(&c, OP_HALT);
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_OK, "STORE8 at the first retentive byte is accepted");
+  CHECK_EQ(run_verified(&c), OK, "STORE8 at the first retentive byte runs");
+  retain = zplc_mem_get_region(ZPLC_MEM_RETAIN_BASE);
+  CHECK_EQ(retain[0], 0x5A, "and it is retentive memory that it writes");
+#if ZPLC_MEM_WORK_SIZE > 0x2000U
+  CHECK_EQ(zplc_mem_get_region(ZPLC_MEM_WORK_BASE)[0x2000U], 0,
+           "and not the work memory behind the end of its window");
+#endif
+
+  c.n = 0;
+  push_runtime(&c, 0x4000U);
+  op(&c, OP_LOADI8);
+  op(&c, OP_DROP);
+  op(&c, OP_HALT);
+  CHECK_EQ(run_verified(&c), OK, "LOADI8 at the first retentive byte");
+
+  c.n = 0;
+  op16(&c, OP_LOAD8, 0x5000U);
+  op(&c, OP_DROP);
+  op(&c, OP_HALT);
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_ERR_MEMORY, "LOAD8 at the first byte after retentive memory is refused");
+  CHECK_EQ(run_raw(&c), OOB, "and the VM faults on it");
+
+  c.n = 0;
+  op16(&c, OP_LOAD16, 0x4FFFU);
+  op(&c, OP_DROP);
+  op(&c, OP_HALT);
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_ERR_MEMORY, "LOAD16 across the end of retentive memory is refused");
+  CHECK_EQ(run_raw(&c), OOB, "and the VM faults on it");
+}
+
 /* ----------------------------------------------------------------------------
  * RT-001: string operations
  * ------------------------------------------------------------------------- */
@@ -1214,6 +1258,7 @@ int main(void) {
   printf("=== ZPLC sandbox closure tests ===\n");
   test_indirect_access();
   test_direct_access_at_the_vm();
+  test_region_windows();
   test_string_operations();
   test_comm_opcodes();
   test_comm_opcodes_raw();

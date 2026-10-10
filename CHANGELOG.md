@@ -4,6 +4,13 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- The memory regions of the VM are their windows of the address space
+  (`0x2000` to `0x3FFF` work, `0x4000` to `0x4FFF` retentive), whatever
+  `CONFIG_ZPLC_WORK_MEMORY_SIZE` and `CONFIG_ZPLC_RETAIN_MEMORY_SIZE` are. A
+  work memory above 8 KB used to take over the addresses of retentive memory
+  (a retentive variable was silently not retentive) and a retentive memory
+  above 4 KB made the code window readable; the bytes beyond a window are now
+  unreachable, and the loader and the VM agree on it.
 - The loader's stack-effect verifier now keeps to its work bound: the budget of
   `ZPLC_VERIFY_STEPS_PER_BYTE` units per CODE byte also pays for the bitmap
   scans and the frame lookups, which it did not, so a crafted artifact can no

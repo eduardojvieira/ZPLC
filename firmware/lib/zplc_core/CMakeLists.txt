@@ -367,6 +367,35 @@ endif()
 
 add_test(NAME test_sandbox COMMAND test_sandbox)
 
+# The same suite on a build whose WORK and RETAIN memory are larger than their
+# windows of the address space (a legal Kconfig value: nothing bounds it). A
+# region ends where the next one begins, however large its storage is
+# (RT-001), so every row of the suite must come out as on the default build.
+add_executable(test_sandbox_regions
+    tests/test_sandbox.c
+    src/core/zplc_core.c
+    src/core/zplc_loader.c
+    src/core/zplc_comm_dispatch.c
+    src/hal/posix/zplc_hal_posix.c
+)
+
+target_include_directories(test_sandbox_regions PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_compile_definitions(test_sandbox_regions PRIVATE
+    ZPLC_CORE_TESTING
+    ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}"
+    CONFIG_ZPLC_WORK_MEMORY_SIZE=0x3000U
+    CONFIG_ZPLC_RETAIN_MEMORY_SIZE=0x2000U
+)
+
+if(UNIX AND NOT APPLE)
+    target_link_libraries(test_sandbox_regions PRIVATE rt)
+endif()
+
+add_test(NAME test_sandbox_regions COMMAND test_sandbox_regions)
+
 # Test: the communication handlers of firmware/app against crafted blocks
 # (COM-001). The handler sources are compiled on the host against a stand-in
 # for the few Zephyr calls they make; no Zephyr, no target.
@@ -422,7 +451,7 @@ add_custom_target(check
 )
 
 # The tests above join the check target without touching its list
-add_dependencies(check test_sandbox test_comm_fb_access test_comm_handler_modbus
+add_dependencies(check test_sandbox test_sandbox_regions test_comm_fb_access test_comm_handler_modbus
                  test_comm_handler_mqtt test_comm_handler_cloud)
 
 # =============================================================================
