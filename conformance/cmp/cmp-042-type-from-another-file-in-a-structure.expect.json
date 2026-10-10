@@ -1,0 +1,20 @@
+{
+  "requirement": "CMP-042",
+  "title": "a type declared in another file is the type of the members of a structure",
+  "matrix": [
+    "pous.shared-pous-and-libraries"
+  ],
+  "note": "CMP-042: a type declared in any file is visible to every program and to the other types; the file that uses it may come first",
+  "scans": 1,
+  "scanMs": 10,
+  "files": [
+    "cmp-042-type-from-another-file-in-a-structure-point.st"
+  ],
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 37
+    }
+  ]
+}

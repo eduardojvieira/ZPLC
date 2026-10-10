@@ -42,17 +42,20 @@ export function checkDeclaredTypes(unit: CompilationUnit | Program): CodegenErro
     const known = new Set<string>(ELEMENTARY_TYPES);
     for (const name of getAllFBNames()) known.add(name.toUpperCase());
 
-    const declarations: Array<{ type: STDataType; at: SourceSpan; what: string }> = [];
+    // the file of the declarations being read: a diagnostic is placed in it (CMP-042)
+    let file: string | undefined;
+    const declarations: Array<{ type: STDataType; at: SourceSpan; what: string; file?: string }> = [];
     const variable = (declaration: VarDecl): void => {
-        declarations.push({ type: declaration.dataType, at: declaration.typeAt ?? declaration, what: `the declaration of '${declaration.name}'` });
+        declarations.push({ type: declaration.dataType, at: declaration.typeAt ?? declaration, what: `the declaration of '${declaration.name}'`, file });
     };
     const method = (owner: string, declaration: MethodDecl): void => {
         for (const each of [...declaration.inputs, ...declaration.outputs, ...declaration.locals]) variable(each);
         if (declaration.returnType !== null) {
-            declarations.push({ type: declaration.returnType, at: declaration.returnTypeAt ?? declaration, what: `the return type of '${owner}.${declaration.name}'` });
+            declarations.push({ type: declaration.returnType, at: declaration.returnTypeAt ?? declaration, what: `the return type of '${owner}.${declaration.name}'`, file });
         }
     };
     const block = (declaration: FunctionBlockDecl): void => {
+        file = declaration.sourceRef;
         known.add(declaration.name.toUpperCase());
         for (const each of [...declaration.inputs, ...declaration.outputs, ...declaration.inouts, ...declaration.locals]) variable(each);
         for (const each of declaration.methods) method(declaration.name, each);
@@ -66,34 +69,45 @@ export function checkDeclaredTypes(unit: CompilationUnit | Program): CodegenErro
         for (const iface of unit.interfaces) known.add(iface.name.toUpperCase());
         for (const declaration of unit.functionBlocks) known.add(declaration.name.toUpperCase());
 
-        for (const globals of unit.globalVars) globals.variables.forEach(variable);
+        for (const globals of unit.globalVars) {
+            file = globals.sourceRef;
+            globals.variables.forEach(variable);
+        }
         for (const declaration of unit.functions) {
+            file = declaration.sourceRef;
             [...declaration.inputs, ...declaration.locals].forEach(variable);
-            declarations.push({ type: declaration.returnType, at: declaration.returnTypeAt ?? declaration, what: `the return type of '${declaration.name}'` });
+            declarations.push({ type: declaration.returnType, at: declaration.returnTypeAt ?? declaration, what: `the return type of '${declaration.name}'`, file });
         }
         unit.functionBlocks.forEach(block);
-        for (const iface of unit.interfaces) iface.methods.forEach((each) => method(iface.name, each));
+        for (const iface of unit.interfaces) {
+            file = iface.sourceRef;
+            iface.methods.forEach((each) => method(iface.name, each));
+        }
         for (const type of unit.typeDefinitions) {
+            file = type.sourceRef;
             if (type.kind === 'StructDecl') type.members.forEach(variable);
         }
         for (const program of unit.programs) {
+            file = program.sourceRef;
             for (const section of program.varBlocks) section.variables.forEach(variable);
         }
     }
 
     const errors: CodegenError[] = [];
-    const check = (type: STDataType, at: SourceSpan, what: string): void => {
-        if (isArrayType(type)) return check(type.elementType, at, what);
-        if (typeof type === 'object' && type !== null) return check(type.baseType, at, what);
+    const check = (type: STDataType, at: SourceSpan, what: string, where?: string): void => {
+        if (isArrayType(type)) return check(type.elementType, at, what, where);
+        if (typeof type === 'object' && type !== null) return check(type.baseType, at, what, where);
         if (typeof type !== 'string') return;
         const key = type.toUpperCase();
         if (known.has(key) || STRING_TYPE.test(type)) return;
         const message = DEFERRED_TYPES.has(key)
             ? `The type '${type}' is not supported in this release (it is planned for 2.x); it is used in ${what}`
             : `Unknown type '${type}' in ${what}`;
-        errors.push(new CodegenError(message, at.line, at.column, at.endLine, at.endColumn));
+        const error = new CodegenError(message, at.line, at.column, at.endLine, at.endColumn);
+        if (where !== undefined) error.sourceRef = where;
+        errors.push(error);
     };
-    for (const { type, at, what } of declarations) check(type, at, what);
+    for (const { type, at, what, file: where } of declarations) check(type, at, what, where);
     return errors;
 }
 
@@ -104,6 +118,8 @@ export function checkDeclaredTypes(unit: CompilationUnit | Program): CodegenErro
 interface CallSite {
     callee: string;
     at: SourceSpan;
+    /** The file of the function the call is in (CMP-042). */
+    file?: string;
 }
 
 /** Every expression of `statements`, outermost first, and the function-block call statements among them. */
@@ -198,9 +214,9 @@ export function checkRecursion(unit: CompilationUnit): CodegenError[] {
         for (const variable of [...declaration.inputs, ...declaration.locals]) variables.set(variable.name, true);
         const sites: CallSite[] = [];
         visitStatements(declaration.body, (expr) => {
-            if (expr.kind === 'FunctionCall' && functions.has(expr.name)) sites.push({ callee: expr.name, at: expr });
+            if (expr.kind === 'FunctionCall' && functions.has(expr.name)) sites.push({ callee: expr.name, at: expr, file: declaration.sourceRef });
         }, (name, at) => {
-            if (functions.has(name) && !variables.has(name)) sites.push({ callee: name, at });
+            if (functions.has(name) && !variables.has(name)) sites.push({ callee: name, at, file: declaration.sourceRef });
         });
         calls.set(declaration.name, sites);
     }
@@ -220,7 +236,9 @@ export function checkRecursion(unit: CompilationUnit): CodegenError[] {
                 const message = cycle.length === 2
                     ? `Function '${target.name}' calls itself: a function cannot be recursive`
                     : `Function '${target.name}' calls itself through ${cycle.slice(1, -1).map((each) => `'${each}'`).join(', ')}: a function cannot be recursive`;
-                errors.push(new CodegenError(message, site.at.line, site.at.column, site.at.endLine, site.at.endColumn));
+                const error = new CodegenError(message, site.at.line, site.at.column, site.at.endLine, site.at.endColumn);
+                if (site.file !== undefined) error.sourceRef = site.file;
+                errors.push(error);
             } else {
                 walk(target.name);
             }

@@ -13,6 +13,22 @@ retains its own semantic model.
 | FBD | Typed ports, blocks, connections, undo, and visual validation. | Generated ST is read-only output. |
 | SFC | Steps, transitions, actions, undo, and visual validation. | Generated ST is read-only output. |
 
+## Blocks of the project
+
+The blocks palette of FBD and LD shows, besides the standard blocks, a **Project** group with the function blocks
+and functions that the Structured Text files of the project declare (LNG-008). A block of the group has the ports of
+its declaration: for a function block its `VAR_INPUT` and `VAR_IN_OUT` are inputs and its `VAR_OUTPUT` are outputs,
+and for a function its inputs are the inputs and its result is the output `OUT`. The generated Structured Text calls
+the block with named arguments, so the order in which you wire the inputs does not matter.
+
+- **FBD** places both function blocks (with an instance name) and functions. A function whose result nothing uses is
+  still called.
+- **LD** places function blocks in a rung, like a timer: the element names the type and the instance, and the
+  parameters name the inputs of the declaration. A function is not placed in a rung; call it from an FBD or ST file.
+- A block that no file declares is refused by name when the diagram is built. A declaration in the project wins over
+  a standard block of the same name, as it does in the compiler.
+- The palette lists the files that are loaded in the editor; the build reads every Structured Text file of the project.
+
 ## Compile path
 
 Visual models are validated and transpiled before canonical compilation. Shared

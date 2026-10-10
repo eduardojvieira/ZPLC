@@ -49,6 +49,14 @@ typedef enum {
     ZPLC_NATIVE_PROGRAM_ZPLC = 1,
 } zplc_native_program_format_t;
 
+/* Why the session is in ERROR (RT-014); the status reports it as a string. */
+typedef enum {
+    ZPLC_NATIVE_FAULT_NONE = 0,
+    ZPLC_NATIVE_FAULT_DEADLINE_MISS, /* one task missed its deadline deadline_miss_limit times in a row */
+    ZPLC_NATIVE_FAULT_VM,            /* a task faulted: VM error or instruction budget */
+    ZPLC_NATIVE_FAULT_RUNTIME        /* any other failure of the host runtime */
+} zplc_native_fault_reason_t;
+
 typedef struct {
     uint8_t program_loaded;
     uint8_t should_exit;
@@ -72,6 +80,29 @@ typedef struct {
     uint8_t has_task_segment;
     zplc_task_def_t tasks[ZPLC_LOADER_MAX_TASKS];
     zplc_vm_t task_vms[ZPLC_LOADER_MAX_TASKS];
+    /*
+     * RT-015: 1 when the tasks do not all share one interval. Each task is then
+     * released at its own interval, and scan_interval_ms is the greatest common
+     * divisor of the intervals (the step of a scenario).
+     */
+    uint8_t multirate;
+    /*
+     * multirate only: the instant each task is next released, on a grid that starts at the common start and
+     * advances by the task's interval, whatever the instant the host dispatches. Indexed like tasks[].
+     */
+    uint32_t task_next_release_ms[ZPLC_LOADER_MAX_TASKS];
+    uint32_t task_cycles[ZPLC_LOADER_MAX_TASKS];
+    /* RT-014: deadline misses of each task, and the run of them that has not been broken by a scan in time. */
+    uint32_t task_misses[ZPLC_LOADER_MAX_TASKS];
+    uint32_t task_consecutive_misses[ZPLC_LOADER_MAX_TASKS];
+    /* Consecutive misses of one task that latch the fault; 1 or more (ZPLC_DEADLINE_MISS_LIMIT). */
+    uint32_t deadline_miss_limit;
+    /* How far past its deadline the last late task ended, in microseconds (a multiple of 1000: the host clock is in ms). */
+    uint32_t last_overrun_us;
+    zplc_native_fault_reason_t fault_reason;
+    uint16_t fault_task_id;
+    /* Milliseconds clock that times a scan; NULL means zplc_hal_tick(). A test sets it to let time pass inside a scan. */
+    uint32_t (*clock_ms)(void);
     uint8_t program[ZPLC_MEM_CODE_SIZE];
 } zplc_native_runtime_session_t;
 

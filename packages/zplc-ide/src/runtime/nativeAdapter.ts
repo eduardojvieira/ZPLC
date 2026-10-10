@@ -173,8 +173,8 @@ function isNativeRuntimeSnapshot(value: unknown): value is NativeRuntimeSnapshot
     && tasks.every(validTask)
     && candidate.stats?.active_tasks === tasks.length
     && new Set(tasks.map((task) => task.task_id)).size === tasks.length
+    // RT-015: each task has its own interval; the runtime lists them by priority, then task id
     && tasks.every((task) => task.interval_us >= 1_000 && task.interval_us <= 3_600_000_000 && task.interval_us % 1_000 === 0)
-    && tasks.every((task) => task.interval_us === tasks[0]!.interval_us)
     && tasks.every((task, index) => index === 0
       || tasks[index - 1]!.priority < task.priority
       || (tasks[index - 1]!.priority === task.priority && tasks[index - 1]!.task_id < task.task_id));

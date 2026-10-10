@@ -18,6 +18,8 @@ export interface JourneyContext {
   project: string;
   /** Closes the app and starts it again on the same user-data directory, as a user restarting it would. */
   relaunch(): Promise<App>;
+  /** Kills the app process with SIGKILL, as a crash or a power loss would (no close prompt, no shutdown), and starts it again on the same user-data directory. */
+  crash(): Promise<App>;
 }
 /**
  * `example` names the folder of projects/ copied into a fresh temporary folder for the journey, or `none`.
@@ -169,6 +171,16 @@ function savedSessions(root: string): Array<{ tabs: Array<{ path: string; line: 
   const directory = join(root, 'profile', 'sessions');
   return existsSync(directory) ? readdirSync(directory).filter((name) => /^[0-9a-f]{64}\.json$/.test(name)).map((name) => JSON.parse(disk(join(directory, name)))) : [];
 }
+
+/** What the app keeps of modified files under its user-data directory (the journey's private profile): every entry of every project. */
+function recoveryEntries(root: string): Array<{ path: string; content: string; savedAt: number }> {
+  const base = join(root, 'profile', 'recovery');
+  if (!existsSync(base)) return [];
+  return readdirSync(base).flatMap((project) => existsSync(join(base, project)) && !project.includes('.')
+    ? readdirSync(join(base, project)).filter((name) => /^[0-9a-f]{64}\.json$/.test(name)).map((name) => JSON.parse(disk(join(base, project, name))))
+    : []);
+}
+const recoveryOffer = css('[data-recovery-offer]');
 
 const recentSection = css('[data-recent-projects]');
 const recentRow = css('[data-recent-project]');
@@ -857,6 +869,336 @@ export const JOURNEYS: Journey[] = [
       // The force stays until the user releases it, here with the same checkbox, while stopped.
       await app.click(forceBox, 'the Force checkbox of Start');
       await app.until('the force to be released', async () => !(await app.text()).includes('active force') && await app.eval(`${watchRow('Start')}?.querySelector('input[type="checkbox"]')?.checked === false`) === true || undefined);
+    },
+  },
+
+  {
+    name: '19 Recover modified files after a crash', example: 'motor_start_stop', proves: ['IDE-006'], partly: [],
+    run: async (app, { project, root, crash, relaunch }) => {
+      const file = join(project, 'src', 'Motor.st'); const original = disk(file);
+      const typeInto = async (target: App, text: string) => { await openFile(target, 'src/Motor.st'); await cursorAtEndOfLine(target, 1); await target.type(text); await target.until('the typed text', async () => (await editorText(target)).includes(text) || undefined); };
+      const kept = (text: string) => recoveryEntries(root).find((entry) => entry.path === 'src/Motor.st' && entry.content.includes(text));
+      const offered = async (target: App) => { await target.until('the offer to recover Motor.st', async () => await target.visible(recoveryOffer) || undefined); return target.eval<string>(`document.querySelector('[data-recovery-offer]')?.innerText ?? ''`); };
+
+      // Modified text reaches the recovery store without a save, and the project folder is not touched.
+      await openFolder(app, project);
+      assert(recoveryEntries(root).length === 0, 'A fresh profile already holds recovery entries.');
+      await typeInto(app, EDIT);
+      await app.until('the typed text kept in the recovery store', () => kept(EDIT), 6_000);
+      assert(disk(file) === original, 'The recovery store must not write into the project: the file on disk changed before any save.');
+
+      // The process is killed: no prompt, no shutdown. The next start offers the file back, and Restore puts the text in the editor unsaved.
+      let current = await crash();
+      assert(!await current.visible(toolbar), 'The project opened by itself after the crash.');
+      await openFolder(current, project);
+      const offer = await offered(current);
+      assert(offer.includes('Motor.st') && /kept at \d/.test(offer), `The offer should name the file and the time it was kept: ${JSON.stringify(offer)}`);
+      assert(!offer.includes(root), 'The offer shows a path of the machine.');
+      assert(!(await editorText(current)).includes(EDIT), 'The text came back before the user chose.');
+      await current.click(button('Restore Motor.st'));
+      await current.until('the recovered text in the editor', async () => (await editorText(current)).includes(EDIT) || undefined);
+      assert(disk(file) === original, 'Restore must leave the file on disk alone until the user saves.');
+      await current.click(saveButton);
+      await current.until('the saved file on disk', () => disk(file).includes(EDIT) || undefined);
+      await current.until('the recovery store to be empty after the save', () => recoveryEntries(root).length === 0 || undefined, 6_000);
+      const saved = disk(file);
+
+      // A second crash, and this time the user discards the kept text.
+      const SECOND = ' (* second edit *)';
+      await typeInto(current, SECOND);
+      await current.until('the second text kept', () => kept(SECOND), 6_000);
+      current = await crash();
+      await openFolder(current, project);
+      await offered(current);
+      await current.click(button('Discard Motor.st'));
+      await current.until('the offer to close', async () => !await current.visible(recoveryOffer) || undefined);
+      await current.until('the recovery store to be empty after the discard', () => recoveryEntries(root).length === 0 || undefined, 6_000);
+      assert(!(await editorText(current)).includes(SECOND) && disk(file) === saved, 'Discard must change neither the editor nor the file.');
+
+      // A clean exit leaves nothing: the user answers the close prompt with Discard, and the next start offers nothing.
+      await typeInto(current, ' (* third edit *)');
+      await current.until('the third text kept', () => kept(' (* third edit *)'), 6_000);
+      void current.cdp.command('Browser.close').catch(() => undefined);
+      await current.until('the prompt before the window closes', async () => await dialogTitle(current) === 'Unsaved changes before you close' || undefined);
+      await current.click(dialogChoice('Discard and close'));
+      await current.until('the recovery store to be empty after a clean exit', () => recoveryEntries(root).length === 0 || undefined, 6_000);
+      const last = await relaunch();
+      await openFolder(last, project);
+      await last.until('the editor', async () => (await editorText(last)).length > 0 || undefined).catch(() => undefined);
+      await Bun.sleep(1_500);
+      assert(!await last.visible(recoveryOffer), 'A clean exit left something to recover.');
+    },
+  },
+
+  {
+    name: '20 A failing region does not blank the window', example: 'motor_start_stop', proves: ['IDE-011'], partly: [],
+    run: async (app, { project }) => {
+      await openFolder(app, project);
+      await openFile(app, 'src/Motor.st');
+      const fail = (region: string) => app.eval(`window.dispatchEvent(new CustomEvent('zplc:inject-render-fault', { detail: ${JSON.stringify(region)} }))`);
+      const regionError = (region: string) => css(`[data-region-error="${region}"]`);
+      const retry = (region: string) => css(`[data-region-error="${region}"] button`);
+      const regions = {
+        Editor: async () => hasProgram(await editorText(app), 'Motor'),
+        Panel: async () => await app.visible(tab('Explorer', 'exact')) && await app.visible(treeItem('dir:src')),
+        Toolbar: async () => await app.visible(toolbar),
+      } as const;
+      // The other two regions keep working while one shows its error, and Retry brings that one back without reopening anything.
+      for (const failing of ['Editor', 'Panel', 'Toolbar'] as const) {
+        await fail(failing);
+        await app.until(`the error of the ${failing} region`, async () => await app.visible(regionError(failing)) || undefined);
+        const message = await app.eval<string>(`document.querySelector('[data-region-error="${failing}"]')?.innerText ?? ''`);
+        assert(message.includes(`${failing} stopped working`) && message.includes('Retry'), `The ${failing} error should say what stopped and offer Retry: ${JSON.stringify(message)}`);
+        assert((await app.text()).trim().length > 40, `The window is blank while the ${failing} region shows its error.`);
+        for (const [other, works] of Object.entries(regions)) {
+          if (other === failing) continue;
+          assert(!await app.visible(regionError(other)), `The ${other} region shows an error although only ${failing} failed.`);
+          assert(await works(), `The ${other} region stopped working when the ${failing} region failed.`);
+        }
+        await app.click(retry(failing), `Retry in the ${failing} region`);
+        await app.until(`the ${failing} region to come back`, async () => !await app.visible(regionError(failing)) && await regions[failing]() || undefined);
+      }
+      assert(app.errors.filter((error) => !error.includes('Injected render fault')).length === 0, `Unexpected renderer errors: ${app.errors.join(' | ')}`);
+    },
+  },
+
+  {
+    name: '21 Preferences apply and persist per user', example: 'motor_start_stop', proves: ['IDE-007'], partly: ['IDE-010'],
+    run: async (app, { project, relaunch }) => {
+      const file = join(project, 'src', 'Motor.st');
+      /** Walks a native select to the option with this text with the arrow keys, as a keyboard user would. */
+      const choose = async (target: App, selector: string, label: string) => {
+        const state = () => target.eval<{ labels: string[]; index: number }>(`(() => { const select = document.querySelector(${JSON.stringify(selector)}); return { labels: [...select.options].map((option) => option.textContent), index: select.selectedIndex }; })()`);
+        const { labels, index } = await state();
+        const wanted = labels.indexOf(label);
+        assert(wanted >= 0, `${selector} offers ${JSON.stringify(labels)}, not ${label}`);
+        await target.eval(`document.querySelector(${JSON.stringify(selector)}).focus()`);
+        for (let step = 0; step < Math.abs(wanted - index); step++) await target.press(wanted > index ? 'ArrowDown' : 'ArrowUp');
+        await target.until(`${selector} to show ${label}`, async () => (await state()).index === wanted || undefined);
+      };
+      const chosen = (target: App, selector: string) => target.eval<string>(`(() => { const select = document.querySelector(${JSON.stringify(selector)}); return select.options[select.selectedIndex].textContent; })()`);
+      const root = (target: App) => target.eval<{ density: string | undefined; lang: string; theme: string | null; spacing: string; padding: number }>(`({ density: document.documentElement.dataset.density, lang: document.documentElement.lang, theme: document.documentElement.getAttribute('data-theme'), spacing: getComputedStyle(document.documentElement).getPropertyValue('--spacing').trim(), padding: parseFloat(getComputedStyle(document.querySelector('main') ?? document.body).paddingTop) })`);
+      const editorOptions = (target: App) => monacoEval<{ fontSize: number; tabSize: number }>(target, 'return { fontSize: editor.getOption(monaco.editor.EditorOption.fontSize), tabSize: editor.getModel().getOptions().tabSize };');
+
+      // Before anything is chosen: the defaults, and the update check is off.
+      const before = await root(app);
+      assert(before.density === 'comfortable', `The density starts as ${before.density}.`);
+      await app.click(css('[data-welcome-preferences] summary'), 'the Preferences disclosure of the Welcome screen');
+      await app.until('the preferences on the Welcome screen', async () => await app.visible(css('[data-app-preferences]')) || undefined);
+      assert(await app.eval(`document.querySelector('[data-setting="checkForUpdates"]').checked === false`), 'The update check must be off until the user turns it on.');
+      assert(await chosen(app, '[data-setting="autosaveSeconds"]') === 'Off', 'Autosave must be off until the user turns it on.');
+
+      // Choices made on the Welcome screen apply at once.
+      await choose(app, '[data-setting="density"]', 'Compact');
+      await choose(app, '[data-setting="language"]', 'English');
+      await choose(app, 'select[data-theme-control]', 'Dark');
+      const after = await root(app);
+      assert(after.density === 'compact' && after.spacing === '0.1875rem' && after.padding < before.padding, `Compact density did not apply: ${JSON.stringify({ before, after })}`);
+      assert(after.lang === 'en' && after.theme === 'dark', `Language or theme did not apply: ${JSON.stringify(after)}`);
+
+      // Editor choices made inside the project, where the settings tab is.
+      await openFolder(app, project);
+      await openFile(app, 'src/Motor.st');
+      assert(JSON.stringify(await editorOptions(app)) === JSON.stringify({ fontSize: 14, tabSize: 4 }), `The editor should start at 14 px and 4 spaces: ${JSON.stringify(await editorOptions(app))}`);
+      await app.click(button('Project Settings'), 'the Project Settings button');
+      await app.until('the preferences in the settings tab', async () => await app.visible(css('[data-app-preferences]')) || undefined);
+      await choose(app, '[data-setting="editorFontSize"]', '20 px');
+      await choose(app, '[data-setting="editorTabSize"]', '2 spaces');
+      await choose(app, '[data-setting="autosaveSeconds"]', 'After 5 seconds without typing');
+      await app.click(editorTab('file:src/Motor.st'));
+      await app.until('Motor.st in the editor with the chosen font and tabs', async () => { const options = await editorOptions(app); return options.fontSize === 20 && options.tabSize === 2 || undefined; })
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the editor shows ${JSON.stringify(await editorOptions(app))}`); });
+
+      // Autosave writes the file by itself, without a "Saved" line in Output.
+      const original = disk(file);
+      await cursorAtEndOfLine(app, 1);
+      await app.type(EDIT);
+      assert(disk(file) === original, 'The file was written at once: it should wait for the typing to stop.');
+      await app.until('autosave to write the file', () => disk(file).includes(EDIT) || undefined, 20_000);
+      assert(!(await outputText(app)).includes('Saved: Motor.st'), 'Autosave reported a "Saved" line in Output.');
+
+      // A restart, as the same user: every choice is back.
+      const again = await relaunch();
+      const restored = await root(again);
+      assert(restored.density === 'compact' && restored.lang === 'en' && restored.theme === 'dark', `The display preferences were not restored: ${JSON.stringify(restored)}`);
+      await again.click(css('[data-welcome-preferences] summary'), 'the Preferences disclosure of the Welcome screen');
+      await again.until('the preferences on the Welcome screen', async () => await again.visible(css('[data-app-preferences]')) || undefined);
+      for (const [selector, label] of [['[data-setting="density"]', 'Compact'], ['[data-setting="language"]', 'English'], ['[data-setting="editorFontSize"]', '20 px'], ['[data-setting="editorTabSize"]', '2 spaces'], ['[data-setting="autosaveSeconds"]', 'After 5 seconds without typing']] as const) {
+        assert(await chosen(again, selector) === label, `${selector} should show ${label} after a restart, shows ${await chosen(again, selector)}`);
+      }
+      await openFolder(again, project);
+      await openFile(again, 'src/Motor.st');
+      assert(JSON.stringify(await editorOptions(again)) === JSON.stringify({ fontSize: 20, tabSize: 2 }), `The editor options were not restored: ${JSON.stringify(await editorOptions(again))}`);
+    },
+  },
+
+  {
+    name: '22 Close Project asks before it closes', example: 'motor_start_stop', proves: [], partly: ['IDE-005'],
+    run: async (app, { project }) => {
+      const file = join(project, 'src', 'Motor.st'); const original = disk(file);
+      const edit = async () => { await openFile(app, 'src/Motor.st'); await cursorAtEndOfLine(app, 1); await app.type(EDIT); await app.until('the typed text', async () => (await editorText(app)).includes(EDIT) || undefined); };
+      const welcome = async () => await app.until('the Welcome screen', async () => (await app.text()).includes('ZPLC Studio 2.0') && !await app.visible(toolbar) || undefined);
+      const questionTitle = () => app.eval<string | null>(`document.querySelector('[role="dialog"] h2')?.textContent ?? null`);
+      const choice = (label: string) => `[...document.querySelectorAll('[role="dialog"] button')].find((item) => item.textContent?.trim() === ${JSON.stringify(label)})`;
+      const askToClose = async () => { await app.click(tab('Explorer', 'exact')); await app.click(button('Close Project')); await app.until('the question before the project closes', async () => await questionTitle() === 'Discard unsaved changes?' || undefined); };
+
+      // Cancel keeps the project and its changes.
+      await openFolder(app, project);
+      await edit();
+      await askToClose();
+      await app.click(choice('Continue editing'), 'Continue editing');
+      await app.until('the question to close', async () => await questionTitle() === null || undefined);
+      assert(await app.visible(toolbar) && (await editorText(app)).includes(EDIT), 'Continue editing must keep the project and its changes.');
+      assert(disk(file) === original, 'Cancelling must not write the file.');
+
+      // Save all and close writes the file, then closes: the user is offered save, discard or cancel.
+      await askToClose();
+      await app.click(choice('Save all and close'), 'Save all and close');
+      await app.until('the saved file on disk', () => disk(file).includes(EDIT) || undefined);
+      await welcome();
+
+      // Discard closes without writing.
+      await openFolder(app, project);
+      const saved = disk(file);
+      await openFile(app, 'src/Motor.st');
+      await cursorAtEndOfLine(app, 1);
+      await app.type(' (* discard me *)');
+      await askToClose();
+      await app.click(choice('Discard changes and close'), 'Discard changes and close');
+      await welcome();
+      assert(disk(file) === saved, 'Discard must leave the file as it was on disk.');
+    },
+  },
+
+  {
+    name: '23 Project tree operations', example: 'motor_start_stop', proves: [], partly: ['IDE-004'],
+    run: async (app, { project }) => {
+      const motor = join(project, 'src', 'Motor.st'); const original = disk(motor);
+      const menuChoice = (label: string) => `[...document.querySelectorAll('[role="menuitem"]')].find((item) => item.textContent?.trim() === ${JSON.stringify(label)})`;
+      const entryDialog = css('[data-entry-dialog]');
+      const entryError = () => app.eval<string | null>(`document.querySelector('[data-entry-dialog] [role="alert"]')?.textContent ?? null`);
+      const node = (path: string, kind: 'file' | 'dir') => treeItem(`${kind}:${path}`);
+      const inTree = async (path: string, kind: 'file' | 'dir' = 'file') => await app.visible(node(path, kind));
+      const contextMenu = async (path: string, kind: 'file' | 'dir', label: string) => {
+        await app.rightClick(`${node(path, kind)}.firstElementChild`, `the ${path} row`);
+        await app.until('the actions menu', async () => await app.visible(menuChoice(label)) || undefined);
+        await app.click(menuChoice(label), label);
+      };
+      const typeName = async (name: string) => {
+        await app.until('the name dialog', async () => await app.visible(entryDialog) || undefined);
+        await app.eval(`document.getElementById('entry-name').focus()`);
+        await app.press('Ctrl+A');
+        await app.type(name);
+      };
+
+      await openFolder(app, project);
+      await openFile(app, 'src/Motor.st');
+      await cursorAtEndOfLine(app, 1);
+      await app.type(EDIT);
+      await app.until('the typed text', async () => (await editorText(app)).includes(EDIT) || undefined);
+
+      // New folder, in the folder the dialog starts on (src).
+      await app.click(tab('Explorer', 'exact'));
+      await app.click(button('New Folder'));
+      await typeName('drivers');
+      await app.click(button('Create'));
+      await app.until('the new empty folder in the tree', async () => await inTree('src/drivers', 'dir') || undefined);
+      assert(existsSync(join(project, 'src', 'drivers')), 'The folder was not created on disk.');
+
+      // Rename the open, modified file from its context menu: the buffer, the tab and the task follow it.
+      await contextMenu('src/Motor.st', 'file', 'Rename…');
+      await typeName('Drive.st');
+      await app.click(button('Rename'));
+      await app.until('Drive.st in the tree', async () => await inTree('src/Drive.st') && !await inTree('src/Motor.st') || undefined);
+      assert(!existsSync(motor) && disk(join(project, 'src', 'Drive.st')) === original, 'The file was not renamed on disk, or its content changed.');
+      assert((await editorText(app)).includes(EDIT), 'The unsaved text did not follow the renamed file.');
+      assert(await app.visible(editorTab('file:src/Drive.st')), 'The tab did not follow the renamed file.');
+      assert(JSON.parse(disk(join(project, 'zplc.json'))).tasks.every((task: { programs: string[] }) => !task.programs.includes('Motor.st')), 'A task still runs Motor.st after the rename.');
+      await app.click(saveButton);
+      await app.until('the buffer saved under the new name', () => disk(join(project, 'src', 'Drive.st')).includes(EDIT) || undefined);
+      assert(!existsSync(motor), 'Saving brought the old name back.');
+
+      // A refused name stays in the dialog, in words, and changes nothing.
+      await contextMenu('src/Drive.st', 'file', 'Rename…');
+      await typeName('Fault.st');
+      await app.click(button('Cancel'));
+      await app.until('the dialog to close', async () => !await app.visible(entryDialog) || undefined);
+
+      // Duplicate, then move the copy into the new folder, then delete the folder with it.
+      await contextMenu('src/Drive.st', 'file', 'Duplicate');
+      await app.until('the copy in the tree', async () => await inTree('src/Drive_copy.st') || undefined);
+      assert(disk(join(project, 'src', 'Drive_copy.st')).includes(EDIT), 'The copy does not hold the content of the file.');
+      await contextMenu('src/Drive.st', 'file', 'Rename…');
+      await typeName('drive_COPY.st');
+      await app.click(button('Rename'));
+      await app.until('the refusal', async () => (await entryError())?.includes('already exists') || undefined);
+      assert(existsSync(join(project, 'src', 'Drive.st')), 'A refused rename changed the disk.');
+      await app.click(button('Cancel'));
+      await contextMenu('src/Drive_copy.st', 'file', 'Move to…');
+      await app.until('the move dialog', async () => await app.visible(entryDialog) || undefined);
+      await app.eval(`document.getElementById('entry-folder').focus()`);
+      const folders = await app.eval<string[]>(`[...document.getElementById('entry-folder').options].map((option) => option.value)`);
+      assert(folders.includes('src/drivers'), `The move dialog does not offer the new folder: ${JSON.stringify(folders)}`);
+      const current = await app.eval<number>(`document.getElementById('entry-folder').selectedIndex`);
+      for (let step = 0; step < folders.indexOf('src/drivers') - current; step++) await app.press('ArrowDown');
+      await app.click(button('Move'));
+      await app.until('the copy in the folder', async () => await app.visible(node('src/drivers/Drive_copy.st', 'file')) || undefined);
+      assert(!existsSync(join(project, 'src', 'Drive_copy.st')) && existsSync(join(project, 'src', 'drivers', 'Drive_copy.st')), 'The copy was not moved on disk.');
+      await contextMenu('src/drivers', 'dir', 'Delete folder');
+      await app.until('the confirmation', async () => (await app.text()).includes('Delete folder') && await app.visible(entryDialog) || undefined);
+      await app.click(button('Delete folder', 'prefix'), 'the Delete folder button');
+      await app.until('the folder gone from the tree', async () => !await inTree('src/drivers', 'dir') || undefined);
+      assert(!existsSync(join(project, 'src', 'drivers')), 'The folder is still on disk.');
+    },
+  },
+
+  {
+    name: '24 Changes made outside Studio', example: 'motor_start_stop', proves: [], partly: ['IDE-004'],
+    run: async (app, { project }) => {
+      const motor = join(project, 'src', 'Motor.st');
+      const outside = (text: string) => writeFileSync(motor, text);
+      const original = disk(motor);
+      const prompt = css('[data-external-change-prompt]');
+      const tabModified = () => app.eval<boolean>(`document.getElementById('editor-tab-file:src/Motor.st')?.textContent?.includes('*') === true`);
+
+      // An unmodified file reloads by itself, with no question.
+      await openFolder(app, project);
+      await openFile(app, 'src/Motor.st');
+      const first = `${original}\n(* edited by another program *)\n`;
+      outside(first);
+      await app.until('the editor to show the new content', async () => (await editorText(app)).includes('edited by another program') || undefined, 10_000);
+      assert(!await app.visible(prompt) && !await tabModified(), 'An unmodified file that changed outside Studio must reload without a question and without being marked modified.');
+
+      // A modified file asks; Keep my version keeps the buffer and saves over the disk.
+      await cursorAtEndOfLine(app, 1);
+      await app.type(EDIT);
+      await app.until('the typed text', async () => (await editorText(app)).includes(EDIT) || undefined);
+      outside(`${first}(* second outside edit *)\n`);
+      await app.until('the question about Motor.st', async () => await app.visible(prompt) || undefined, 10_000);
+      assert((await app.eval<string>(`document.querySelector('[data-external-change-prompt]').innerText`)).includes('Motor.st'), 'The question should name the file.');
+      await app.click(button('Keep my version of Motor.st'));
+      await app.until('the question to close', async () => !await app.visible(prompt) || undefined);
+      assert((await editorText(app)).includes(EDIT) && !(await editorText(app)).includes('second outside edit'), 'Keep my version must keep the buffer as it was.');
+      await app.click(saveButton);
+      await app.until('the buffer on disk', () => disk(motor).includes(EDIT) && !disk(motor).includes('second outside edit') || undefined);
+
+      // Load from disk replaces the buffer and clears the modified mark.
+      await cursorAtEndOfLine(app, 1);
+      await app.type(' (* local again *)');
+      await app.until('the typed text', async () => (await editorText(app)).includes('local again') || undefined);
+      outside(`${original}\n(* third outside edit *)\n`);
+      await app.until('the question about Motor.st', async () => await app.visible(prompt) || undefined, 10_000);
+      await app.click(button('Load from disk Motor.st'));
+      await app.until('the disk text in the editor', async () => (await editorText(app)).includes('third outside edit') && !(await editorText(app)).includes('local again') || undefined);
+      assert(!await tabModified(), 'Loading from disk must clear the modified mark.');
+
+      // A new file made outside shows up in the tree, and a deleted unmodified file closes.
+      writeFileSync(join(project, 'src', 'Outside.st'), 'PROGRAM Outside\nEND_PROGRAM\n');
+      await app.click(tab('Explorer', 'exact'));
+      await app.until('the new file in the tree', async () => await app.visible(treeItem('file:src/Outside.st')) || undefined, 10_000);
+      await openFile(app, 'src/Outside.st');
+      rmSync(join(project, 'src', 'Outside.st'));
+      await app.until('the deleted file gone from the tree and its tab closed', async () => !await app.visible(treeItem('file:src/Outside.st')) && !await app.visible(editorTab('file:src/Outside.st')) || undefined, 10_000);
     },
   },
 ];

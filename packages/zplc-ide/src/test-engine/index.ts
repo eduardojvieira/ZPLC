@@ -5,7 +5,8 @@ const MAX_EXPECTATIONS = 256;
 const MAX_SIGNALS = 64;
 const MAX_SAMPLES = 10_000;
 const MAX_TRACE_VALUES = 1_000_000;
-const SIGNAL = /^[A-Za-z_][A-Za-z0-9_]*\.[A-Za-z_][A-Za-z0-9_]*$/;
+// `Program.variable`, or the name of a VAR_GLOBAL alone: a global is seen by every program, whichever file declares it
+const SIGNAL = /^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)?$/;
 export type ScenarioKind = 'AT' | 'WITHIN' | 'FOR' | 'EVENTUALLY' | 'ALWAYS' | 'NEVER' | 'UNTIL' | 'RISING' | 'FALLING';
 const compiledScenarios = new WeakSet<CompiledScenario>();
 
@@ -126,7 +127,7 @@ function aligned(value: unknown, path: string, tickMs: number, durationMs: numbe
   return result;
 }
 function namedSignal(signal: unknown, path: string): string {
-  if (typeof signal !== 'string' || !SIGNAL.test(signal)) fail(`${path} must be an explicit POU.variable signal`);
+  if (typeof signal !== 'string' || !SIGNAL.test(signal)) fail(`${path} must be a POU.variable signal, or the name of a global`);
   return signal;
 }
 function signalSet(value: unknown, path: string): Array<{ signal: string; value: boolean }> {
@@ -139,12 +140,40 @@ function signalSet(value: unknown, path: string): Array<{ signal: string; value:
   }).sort((left, right) => left.signal < right.signal ? -1 : left.signal > right.signal ? 1 : 0);
 }
 
+/**
+ * The variable a signal names, and the signal in its canonical `Program.variable` form. `Program.variable` is a
+ * variable of that program, or a VAR_GLOBAL, which every program sees: the map lists a global once, in the POU
+ * of the file that declares it, so it is looked for there. A global alone, `Shared`, is read as seen from the
+ * first program (CMP-042).
+ */
+export function findSignalVariable(debugMap: DebugMap, signal: string): { signal: string; variable: DebugVarInfo } | undefined {
+  const [first, second, ...rest] = signal.split('.');
+  if (first === undefined || rest.length > 0) return undefined;
+  const pous = new Map(Object.entries(debugMap.pou));
+  const declared = (name: string): DebugVarInfo | undefined => {
+    for (const pou of pous.values()) {
+      const variable = Object.hasOwn(pou.vars, name) ? pou.vars[name] : undefined;
+      if (variable?.scope === 'global') return variable;
+    }
+    return undefined;
+  };
+  if (second === undefined) {
+    const program = [...pous].find(([, pou]) => pou.type === 'PROGRAM')?.[0];
+    const variable = declared(first);
+    return variable && program !== undefined ? { signal: `${program}.${first}`, variable } : undefined;
+  }
+  const pou = pous.get(first);
+  const own = pou && Object.hasOwn(pou.vars, second) ? pou.vars[second] : undefined;
+  if (own) return { signal, variable: own };
+  const global = pou?.type === 'PROGRAM' ? declared(second) : undefined;
+  return global ? { signal, variable: global } : undefined;
+}
+
 function resolve(debugMap: DebugMap, signal: string, expectedRegion: 'IPI' | 'OPI', value: boolean): ResolvedSignal {
-  const [pouName, variableName] = signal.split('.');
-  const variable = pouName === undefined || variableName === undefined ? undefined : debugMap.pou[pouName]?.vars[variableName];
-  if (!variable) fail(`unknown signal ${signal}`);
-  validateAddress(variable, debugMap, expectedRegion, signal);
-  return { signal, address: variable.addr, bitOffset: variable.bitOffset!, value };
+  const found = findSignalVariable(debugMap, signal);
+  if (!found) fail(`unknown signal ${signal}`);
+  validateAddress(found.variable, debugMap, expectedRegion, found.signal);
+  return { signal: found.signal, address: found.variable.addr, bitOffset: found.variable.bitOffset!, value };
 }
 
 function validateAddress(variable: DebugVarInfo, debugMap: DebugMap, expectedRegion: 'IPI' | 'OPI', signal: string): void {

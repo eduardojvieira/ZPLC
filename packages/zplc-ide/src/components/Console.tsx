@@ -45,6 +45,7 @@ import { claimMotorInputCommand, shouldClearMotorInputFailure } from './liveNati
 import { presentWorkspaceSafetyCheck, type WorkspaceSafetyPresentation } from './workspaceSafetyPresentation';
 import { Sidebar } from './Sidebar';
 import { ErrorBoundary } from './ErrorBoundary';
+import { DevFaultProbe } from './DevFaultProbe';
 import { WorkbenchInspector } from './WorkbenchInspector';
 import { LearnPanel } from './LearnPanel';
 import { LabPanel } from './LabPanel';
@@ -641,6 +642,7 @@ export function Console({ debugController }: ConsoleProps) {
         className="flex-1 overflow-y-auto font-mono text-sm"
       >
         <ErrorBoundary region="Panel" resetKey={activeConsoleTab}>
+        <DevFaultProbe region="Panel" />
         <input
           ref={workspaceManifestInputRef}
           type="file"

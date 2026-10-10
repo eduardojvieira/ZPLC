@@ -1,0 +1,28 @@
+{
+  "requirement": "LNG-008",
+  "title": "an FBD block that is a user function from another file is called with its inputs by name",
+  "matrix": [
+    "ld-fbd.user-blocks-and-functions"
+  ],
+  "note": "LNG-008: a function declared in a Structured Text file of the project is a block of the FBD palette: its inputs are the ports of its declaration, its result is OUT",
+  "scans": 1,
+  "scanMs": 10,
+  "inputs": [
+    {
+      "at": "%IW0",
+      "type": "INT",
+      "value": 7,
+      "beforeScan": 1
+    }
+  ],
+  "files": [
+    "lng-008-fbd-calls-a-user-function-scale.st"
+  ],
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 21
+    }
+  ]
+}

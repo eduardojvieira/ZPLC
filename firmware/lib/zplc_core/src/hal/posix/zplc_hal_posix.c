@@ -10,7 +10,7 @@
  */
 
 /* Required for clock_gettime, snprintf, fsync, fileno, pthread_mutex_t on some systems */
-#define _POSIX_C_SOURCE 200809L
+#define _POSIX_C_SOURCE 200809L /* NOLINT(bugprone-reserved-identifier,cert-dcl37-c,cert-dcl51-cpp): feature-test macro */
 
 #include <zplc_hal.h>
 #include <zplc_hal_posix.h>
@@ -372,7 +372,7 @@ static int persist_sync_parent_dir(const char *path)
     errno = EINVAL;
     return -1;
   }
-  (void)strcpy(dir_path, path);
+  memcpy(dir_path, path, strlen(path) + 1U);
   separator = strrchr(dir_path, ZPLC_PATH_SEP);
   if (separator == NULL) {
     errno = EINVAL;
@@ -450,7 +450,7 @@ zplc_hal_result_t zplc_hal_persist_save(const char *key, const void *data,
   if (written != len) {
     zplc_hal_log("[HAL] Failed to write data: wrote %zu of %zu bytes\n",
                  written, len);
-    fclose(fp);
+    (void)fclose(fp); /* the write already failed; its error is the one reported */
     zplc_unlink(tmp_path); /* Clean up failed write */
     return ZPLC_HAL_ERROR;
   }
@@ -777,7 +777,7 @@ void zplc_hal_log(const char *fmt, ...) {
   va_list args;
 
   va_start(args, fmt);
-  vfprintf(stderr, fmt, args);
+  (void)vfprintf(stderr, fmt, args); /* a log line that cannot be written has nowhere else to go */
   va_end(args);
 
   /*
@@ -785,7 +785,7 @@ void zplc_hal_log(const char *fmt, ...) {
    * visible NOW, not buffered for later. If it crashes, you need
    * to know what the last message was.
    */
-  fflush(stderr);
+  (void)fflush(stderr);
 }
 
 /* ============================================================================

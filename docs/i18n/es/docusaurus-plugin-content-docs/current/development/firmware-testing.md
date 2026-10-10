@@ -75,6 +75,7 @@ simultáneas.
 tools/firmware-test/run.sh native
 tools/firmware-test/run.sh host host32 native32 qemu-m3 qemu-m0 app
 tools/firmware-test/run.sh size rpi-pico-rp2040
+tools/firmware-test/run.sh tidy
 tools/firmware-test/run.sh all
 ```
 
@@ -93,6 +94,7 @@ línea de resumen por escenario o por placa. Toda la salida queda bajo
 | `qemu-m0` | El subconjunto Cortex-M0 en `qemu_cortex_m0` (16 KB de RAM) | División, desplazamientos, conversión de float y acceso no alineado en un núcleo ARMv6-M sin división por hardware ni acceso no alineado | La suite completa de la VM: no cabe, vea los límites más abajo |
 | `app` | La prueba de host del codificador Sparkplug en `firmware/app/tests`, contra los archivos nanopb generados por una compilación del Arduino Opta | El codificador produce las cargas esperadas en un host de 64 bits | El cliente MQTT, TLS ni ningún comportamiento de red |
 | `size` | `firmware/app` compilado para cada placa soportada | Flash y RAM de la imagen frente al presupuesto registrado | Uso de pila y de heap en ejecución, ni que la imagen corra |
+| `tidy` | `clang-tidy` con el `.clang-tidy` del repositorio, cada hallazgo es un error, sobre el núcleo, el HAL POSIX y la aplicación de host; también el HAL de Zephyr y `firmware/app` cuando existe la compilación del Arduino Opta de `size` o `app` | Los archivos analizados no tienen ninguno de los defectos que buscan los chequeos habilitados | Que el código sea correcto, ni nada sobre compilaciones Xtensa, que clang no puede apuntar. `tidy` no forma parte de `all` porque necesita `clang-tidy` |
 
 ## Cómo leer el resultado
 
@@ -138,9 +140,36 @@ un resultado siempre dice con qué tamaños se obtuvo:
 Las imágenes de proceso son de 4 KB cada una en todos los perfiles porque el
 ISA las fija.
 
+## Análisis estático
+
+`clang-tidy` lee `.clang-tidy` en la raíz del repositorio. Todo chequeo que habilita es un error, así que la
+lista de ese archivo es el conjunto que el código cumple. Cada chequeo desactivado figura con su motivo, y una
+línea que debe quedar como está lleva un comentario `NOLINT` con su motivo. `run.sh tidy` ejecuta
+`tools/ci/run_clang_tidy.py`, que hace dos pasadas:
+
+- La pasada de host siempre se ejecuta. CMake escribe una base de datos de compilación de
+  `firmware/lib/zplc_core` en un directorio temporal (no se compila nada) y clang-tidy analiza el núcleo en
+  `src/core`, el HAL POSIX en `src/hal/posix`, la aplicación de host en `firmware/apps/posix_host/src` y las
+  cabeceras que incluyen. No debe informar nada.
+- La pasada de Zephyr analiza lo que solo compila una build de Zephyr: el HAL y el planificador de Zephyr y
+  `firmware/app`. Necesita la base de datos de compilación de un `west build`, así que se ejecuta cuando existe
+  `$ZPLC_FW_WS/out/size/arduino-opta-wifi-m7` (`run.sh size arduino-opta-wifi-m7` la crea) o cuando se pasa
+  `--zephyr-build <directorio>` al script. En otro caso se omite y la ejecución lo dice. El núcleo y el HAL de
+  Zephyr no deben informar nada. Los hallazgos que `firmware/app` ya tenía cuando se agregó el chequeo se
+  cuentan por placa, archivo y chequeo en `tools/ci/clang-tidy-app-baseline.json`: un hallazgo nuevo hace
+  fallar la pasada, y uno corregido pide bajar el conteo con `--update-baseline`.
+
+`-Werror` se aplica a todo destino que el repositorio compila: los destinos de host del núcleo mediante un
+único `add_compile_options` en `firmware/lib/zplc_core/CMakeLists.txt` (con `-Wall -Wextra -pedantic`), la
+biblioteca Zephyr `zplc` mediante `firmware/CMakeLists.txt` y `app`. Las suites de prueba de Zephyr también
+compilan las fuentes del núcleo con él.
+
 ## Integración continua
 
-El trabajo `zephyr-twister` ejecuta `native` con su propio paso de Twister y
+El trabajo `host-core-sanitized` ejecuta la pasada de host después de su compilación con sanitizadores, con
+`clang-tidy` instalado desde la distribución. Cada trabajo `zephyr-cross-build` ejecuta la pasada de Zephyr
+sobre la compilación que acaba de hacer, contra la línea base de su placa (la placa Xtensa no tiene destino
+clang y se omite). El trabajo `zephyr-twister` ejecuta `native` con su propio paso de Twister y
 luego `native32`, `qemu-m3` y `qemu-m0` con `run.sh`, en el mismo espacio de
 trabajo. Cada trabajo `zephyr-cross-build` comprueba la flash y la RAM de su
 placa frente a `size-budget.json` y escribe la tabla en el resumen del
@@ -201,6 +230,12 @@ ni la marca máxima del heap.
   `native_sim`.
 - El modo `app` todavía no forma parte de la integración continua: ningún
   trabajo compila una placa y luego ejecuta la prueba de host.
+- La línea base de `firmware/app` de la pasada de Zephyr es la lista de
+  hallazgos que faltan por corregir allí; `tools/ci/clang-tidy-app-baseline.json`
+  guarda un conteo por placa, archivo y chequeo. La pasada se probó contra
+  compilaciones locales de placa con una versión de `clang-tidy`; la primera
+  ejecución en integración continua mostrará si las líneas base también valen
+  con la del runner.
 - Dos casos de integración de `test_vm_core.c` se omiten en todos los
   destinos, el host incluido, porque los binarios de ejemplo que cargan son
   anteriores al campo CRC. Las líneas `SKIP:` están en el registro de la

@@ -237,7 +237,7 @@ void hil_trace_opcode(uint8_t op, uint16_t pc, uint8_t sp, int32_t tos)
         return;
     }
 
-    snprintf(hil_buf, sizeof(hil_buf),
+    (void)snprintf(hil_buf, sizeof(hil_buf),
              "{\"t\":\"opcode\",\"op\":\"%s\",\"pc\":%u,\"sp\":%u,\"tos\":%d}",
              hil_opcode_name(op), pc, sp, tos);
     hil_output();
@@ -250,11 +250,11 @@ void hil_trace_fb(const char *name, uint8_t id, bool q, int32_t et_or_cv)
     }
 
     if (et_or_cv >= 0) {
-        snprintf(hil_buf, sizeof(hil_buf),
+        (void)snprintf(hil_buf, sizeof(hil_buf),
                  "{\"t\":\"fb\",\"name\":\"%s\",\"id\":%u,\"q\":%s,\"et\":%d}",
                  name, id, q ? "true" : "false", et_or_cv);
     } else {
-        snprintf(hil_buf, sizeof(hil_buf),
+        (void)snprintf(hil_buf, sizeof(hil_buf),
                  "{\"t\":\"fb\",\"name\":\"%s\",\"id\":%u,\"q\":%s}",
                  name, id, q ? "true" : "false");
     }
@@ -268,7 +268,7 @@ void hil_trace_task(uint8_t id, uint32_t start_ms, uint32_t end_ms,
         return;
     }
 
-    snprintf(hil_buf, sizeof(hil_buf),
+    (void)snprintf(hil_buf, sizeof(hil_buf),
              "{\"t\":\"task\",\"id\":%u,\"start\":%u,\"end\":%u,\"us\":%u,\"ovr\":%s}",
              id, start_ms, end_ms, us, overrun ? "true" : "false");
     hil_output();
@@ -280,7 +280,7 @@ void hil_trace_cycle(uint32_t n, uint32_t us, uint8_t tasks)
         return;
     }
 
-    snprintf(hil_buf, sizeof(hil_buf),
+    (void)snprintf(hil_buf, sizeof(hil_buf),
              "{\"t\":\"cycle\",\"n\":%u,\"us\":%u,\"tasks\":%u}",
              n, us, tasks);
     hil_output();
@@ -293,7 +293,7 @@ void hil_trace_error(uint8_t code, const char *msg, uint16_t pc)
         return;
     }
 
-    snprintf(hil_buf, sizeof(hil_buf),
+    (void)snprintf(hil_buf, sizeof(hil_buf),
              "{\"t\":\"error\",\"code\":%u,\"msg\":\"%s\",\"pc\":%u}",
              code, msg ? msg : hil_error_name(code), pc);
     hil_output();
@@ -306,7 +306,7 @@ void hil_trace_break(uint16_t pc)
         return;
     }
 
-    snprintf(hil_buf, sizeof(hil_buf),
+    (void)snprintf(hil_buf, sizeof(hil_buf),
              "{\"t\":\"break\",\"pc\":%u}", pc);
     hil_output();
 }
@@ -317,7 +317,7 @@ void hil_trace_watch(uint16_t addr, const char *type, int32_t val)
         return;
     }
 
-    snprintf(hil_buf, sizeof(hil_buf),
+    (void)snprintf(hil_buf, sizeof(hil_buf),
              "{\"t\":\"watch\",\"addr\":%u,\"type\":\"%s\",\"val\":%d}",
              addr, type, val);
     hil_output();
@@ -362,7 +362,7 @@ void hil_send_ready(const char *fw_version, const char *caps)
     }
     strncat(caps_json, "]", sizeof(caps_json) - strlen(caps_json) - 1);
 
-    snprintf(hil_buf, sizeof(hil_buf),
+    (void)snprintf(hil_buf, sizeof(hil_buf),
              "{\"t\":\"ready\",\"fw\":\"%s\",\"caps\":%s}",
              fw_version ? fw_version : "0.0.0", caps_json);
     hil_output();
@@ -375,11 +375,11 @@ void hil_send_ack(const char *cmd, const char *val, bool ok, const char *err)
     }
 
     if (ok) {
-        snprintf(hil_buf, sizeof(hil_buf),
+        (void)snprintf(hil_buf, sizeof(hil_buf),
                  "{\"t\":\"ack\",\"cmd\":\"%s\",\"val\":\"%s\",\"ok\":true}",
                  cmd ? cmd : "", val ? val : "");
     } else {
-        snprintf(hil_buf, sizeof(hil_buf),
+        (void)snprintf(hil_buf, sizeof(hil_buf),
                  "{\"t\":\"ack\",\"cmd\":\"%s\",\"val\":\"%s\",\"ok\":false,\"err\":\"%s\"}",
                  cmd ? cmd : "", val ? val : "", err ? err : "unknown");
     }

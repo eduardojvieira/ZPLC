@@ -1,0 +1,47 @@
+{
+  "requirement": "CMP-042",
+  "title": "a function declared in another file is called from two programs of two tasks",
+  "matrix": [
+    "pous.shared-pous-and-libraries",
+    "pous.function"
+  ],
+  "note": "CMP-042: a function declared in any file is visible to every program; it is built once and both tasks call it",
+  "scans": 1,
+  "scanMs": 10,
+  "files": [
+    "cmp-042-function-from-another-file-in-two-programs-right.st",
+    "cmp-042-function-from-another-file-in-two-programs-lib.st"
+  ],
+  "tasks": [
+    {
+      "name": "LeftTask",
+      "trigger": "cyclic",
+      "interval_ms": 10,
+      "priority": 1,
+      "programs": [
+        "main.st"
+      ]
+    },
+    {
+      "name": "RightTask",
+      "trigger": "cyclic",
+      "interval_ms": 10,
+      "priority": 2,
+      "programs": [
+        "cmp-042-function-from-another-file-in-two-programs-right.st"
+      ]
+    }
+  ],
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 8
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 11
+    }
+  ]
+}

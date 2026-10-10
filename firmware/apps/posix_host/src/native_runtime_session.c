@@ -26,9 +26,9 @@
 
 #define ZPLC_NATIVE_PROTOCOL_VERSION "1.0"
 #define ZPLC_NATIVE_RUNTIME_KIND "native-posix"
-#define ZPLC_NATIVE_RESPONSE_ERR_INVALID_REQUEST -10
-#define ZPLC_NATIVE_RESPONSE_ERR_PROGRAM_LOAD -11
-#define ZPLC_NATIVE_RESPONSE_ERR_INVALID_STATE -12
+#define ZPLC_NATIVE_RESPONSE_ERR_INVALID_REQUEST (-10)
+#define ZPLC_NATIVE_RESPONSE_ERR_PROGRAM_LOAD (-11)
+#define ZPLC_NATIVE_RESPONSE_ERR_INVALID_STATE (-12)
 #define ZPLC_NATIVE_FIELD_ABSENT 0U
 #define ZPLC_NATIVE_FIELD_VALID 1U
 #define ZPLC_NATIVE_FIELD_INVALID 2U
@@ -39,6 +39,17 @@
 #define ZPLC_NATIVE_RETAIN_DEFAULT_INTERVAL_MS 30000UL
 #define ZPLC_NATIVE_RETAIN_MIN_INTERVAL_MS 100UL
 #define ZPLC_NATIVE_RETAIN_MAX_INTERVAL_MS 86400000UL
+
+/* RT-014: consecutive deadline misses of one task that latch the fault. One matches the target scheduler, which
+ * latches at the first miss; a higher value lets a program run on with the warning raised. */
+#define ZPLC_NATIVE_DEADLINE_LIMIT_ENV "ZPLC_DEADLINE_MISS_LIMIT"
+#define ZPLC_NATIVE_DEADLINE_DEFAULT_LIMIT 1UL
+#define ZPLC_NATIVE_DEADLINE_MAX_LIMIT 1000000UL
+
+/* What a dispatch returns when a deadline miss reached the limit: below zero like a VM failure, so that every
+ * caller drives the outputs safe, and told apart from it by session->fault_reason. */
+#define ZPLC_NATIVE_DISPATCH_DEADLINE_FAULT (-1000)
+#define ZPLC_NATIVE_ALL_TASKS 0xFFFFFFFFU
 
 
 typedef struct {
@@ -104,6 +115,24 @@ static uint32_t retain_interval_ms(void)
     return (uint32_t)value;
 }
 
+static uint32_t deadline_miss_limit(void)
+{
+    const char *text = getenv(ZPLC_NATIVE_DEADLINE_LIMIT_ENV);
+    char *end = NULL;
+    unsigned long value;
+
+    if (text == NULL || text[0] == '\0') {
+        return (uint32_t)ZPLC_NATIVE_DEADLINE_DEFAULT_LIMIT;
+    }
+    value = strtoul(text, &end, 10);
+    if (end == text || *end != '\0' || value < 1UL || value > ZPLC_NATIVE_DEADLINE_MAX_LIMIT) {
+        (void)fprintf(stderr, "[native-sim] ignoring %s=%s: use 1..%lu consecutive misses\n",
+                      ZPLC_NATIVE_DEADLINE_LIMIT_ENV, text, ZPLC_NATIVE_DEADLINE_MAX_LIMIT);
+        return (uint32_t)ZPLC_NATIVE_DEADLINE_DEFAULT_LIMIT;
+    }
+    return (uint32_t)value;
+}
+
 static void session_retain_configure(void)
 {
     zplc_retain_config_t config;
@@ -149,11 +178,25 @@ static void session_retain_cold_reset(const zplc_native_runtime_session_t *sessi
     }
 }
 
+/* The counts of a run: scans of the session and of each task, deadline misses and a latched fault. */
+static void session_reset_counters(zplc_native_runtime_session_t *session)
+{
+    session->cycle_count = 0U;
+    session->overrun_count = 0U;
+    session->last_overrun_us = 0U;
+    session->fault_reason = ZPLC_NATIVE_FAULT_NONE;
+    session->fault_task_id = 0U;
+    memset(session->task_cycles, 0, sizeof(session->task_cycles));
+    memset(session->task_misses, 0, sizeof(session->task_misses));
+    memset(session->task_consecutive_misses, 0, sizeof(session->task_consecutive_misses));
+    memset(session->task_next_release_ms, 0, sizeof(session->task_next_release_ms));
+}
+
 static void session_reset_program(zplc_native_runtime_session_t *session)
 {
     session->program_loaded = 0U;
-    session->cycle_count = 0U;
-    session->overrun_count = 0U;
+    session_reset_counters(session);
+    session->multirate = 0U;
     session->program_size = 0U;
     session->program_format = ZPLC_NATIVE_PROGRAM_NONE;
     session->program_generation = 0U;
@@ -223,6 +266,9 @@ static void session_apply_safe_state(zplc_native_runtime_session_t *session)
     if (session != NULL) {
         session->simulation_pulse_mask = 0U;
         session->state = ZPLC_NATIVE_SESSION_ERROR;
+        if (session->fault_reason == ZPLC_NATIVE_FAULT_NONE) {
+            session->fault_reason = ZPLC_NATIVE_FAULT_RUNTIME;
+        }
     }
 }
 
@@ -260,6 +306,7 @@ static int load_program_artifact(zplc_native_runtime_session_t *session,
 
     if (session == NULL || details == NULL || workspace == NULL ||
         workspace_size < ZPLC_LOADER_VERIFY_WORKSPACE_SIZE) return -1;
+    session->multirate = details->multirate;
     if (details->task_count == 1U) {
         zplc_vm_t *vm;
         if (zplc_core_load(program, program_size, workspace, workspace_size) != 0) return -1;
@@ -317,14 +364,166 @@ static int session_resume_tasks(zplc_native_runtime_session_t *session)
     return 0;
 }
 
-static int session_dispatch_tasks(zplc_native_runtime_session_t *session)
+/* The tasks of one batch, in the order they run. */
+typedef struct {
+    uint8_t index[ZPLC_LOADER_MAX_TASKS];
+    uint8_t count;
+} session_batch_t;
+
+static uint32_t session_clock_ms(const zplc_native_runtime_session_t *session)
 {
+    return session->clock_ms != NULL ? session->clock_ms() : zplc_hal_tick();
+}
+
+static uint32_t session_task_interval_ms(const zplc_native_runtime_session_t *session, uint8_t index)
+{
+    return session->tasks[index].interval_us / 1000U;
+}
+
+/* How long ago the next release of a task was due; negative while it is still ahead (32-bit milliseconds). */
+static int32_t session_overdue_ms(const zplc_native_runtime_session_t *session, uint8_t index, uint32_t now_ms)
+{
+    return (int32_t)(now_ms - session->task_next_release_ms[index]);
+}
+
+/* RT-015: the tasks whose release is due. The first scan after a start or a resume releases every task: a common
+ * start. After it each task keeps the grid of its own interval. */
+static uint32_t session_due_tasks(const zplc_native_runtime_session_t *session, uint32_t now_ms,
+                                  int first_release)
+{
+    uint32_t due = 0U;
     uint8_t index;
-    int result;
-    if (session->task_count <= 1U) return zplc_core_run_cycle();
+
     for (index = 0U; index < session->task_count; ++index) {
+        if (first_release != 0 || session_overdue_ms(session, index, now_ms) >= 0) {
+            due |= (uint32_t)1U << index;
+        }
+    }
+    return due;
+}
+
+/* The order of a batch is the one of the target scheduler: the task released earlier first, then the lower priority
+ * number, then the lower task id. tasks[] is kept in priority and id order, so a stable insertion by release does it. */
+static void session_plan_batch(const zplc_native_runtime_session_t *session, uint32_t due, uint32_t now_ms,
+                               int first_release, session_batch_t *batch)
+{
+    uint32_t waited_ms[ZPLC_LOADER_MAX_TASKS];
+    uint8_t index;
+
+    batch->count = 0U;
+    for (index = 0U; index < session->task_count; ++index) {
+        uint32_t waited = 0U;
+        uint8_t position;
+
+        if ((due & ((uint32_t)1U << index)) == 0U) {
+            continue;
+        }
+        if (session->multirate != 0U && first_release == 0) {
+            waited = (uint32_t)session_overdue_ms(session, index, now_ms);
+        }
+        position = batch->count++;
+        while (position > 0U && waited_ms[position - 1U] < waited) {
+            waited_ms[position] = waited_ms[position - 1U];
+            batch->index[position] = batch->index[position - 1U];
+            --position;
+        }
+        waited_ms[position] = waited;
+        batch->index[position] = index;
+    }
+}
+
+/* The batch was dispatched at now_ms. A task's next release is its next grid point after now_ms: releases the host
+ * was too late for are skipped, not run in a burst. */
+static void session_mark_released(zplc_native_runtime_session_t *session, const session_batch_t *batch,
+                                  uint32_t now_ms, int first_release)
+{
+    uint8_t position;
+
+    for (position = 0U; position < batch->count; ++position) {
+        const uint8_t index = batch->index[position];
+        const uint32_t interval_ms = session_task_interval_ms(session, index);
+
+        if (first_release != 0) {
+            session->task_next_release_ms[index] = now_ms + interval_ms;
+        } else {
+            const uint32_t late_ms = (uint32_t)session_overdue_ms(session, index, now_ms);
+
+            session->task_next_release_ms[index] += (late_ms / interval_ms + 1U) * interval_ms;
+        }
+    }
+}
+
+static void session_count_saturating(uint32_t *counter)
+{
+    if (*counter != UINT32_MAX) {
+        *counter += 1U;
+    }
+}
+
+/* RT-014. A task misses its deadline when it ends more than its interval after the batch started: it was released
+ * again before it was done, or the tasks ahead of it in the batch ate its interval. A miss raises the warning and
+ * is counted; the limit's consecutive misses of one task latch the fault. Returns nonzero when the fault latched. */
+static int session_account_deadline(zplc_native_runtime_session_t *session, uint8_t index, uint32_t elapsed_ms)
+{
+    const uint32_t interval_ms = session_task_interval_ms(session, index);
+
+    if (interval_ms == 0U || elapsed_ms <= interval_ms) {
+        session->task_consecutive_misses[index] = 0U;
+        return 0;
+    }
+    session_count_saturating(&session->overrun_count);
+    session_count_saturating(&session->task_misses[index]);
+    session_count_saturating(&session->task_consecutive_misses[index]);
+    {
+        const uint32_t over_ms = elapsed_ms - interval_ms;
+        session->last_overrun_us = over_ms > UINT32_MAX / 1000U ? UINT32_MAX : over_ms * 1000U;
+    }
+    if (session->task_consecutive_misses[index] < session->deadline_miss_limit) {
+        return 0;
+    }
+    session->fault_reason = ZPLC_NATIVE_FAULT_DEADLINE_MISS;
+    session->fault_task_id = session->tasks[index].id;
+    return 1;
+}
+
+/* Runs the tasks of a batch one after the other, to completion: no task preempts another. The input image does not
+ * change while they run (requests and ticks share one thread), which is the latch of RT-009, and the output image
+ * is the process image itself, so a task that is not in the batch keeps what it wrote. Returns below zero when a task
+ * failed or a deadline miss latched the fault. */
+static int session_run_batch(zplc_native_runtime_session_t *session, const session_batch_t *batch,
+                             int account_deadlines)
+{
+    const uint32_t started_ms = account_deadlines != 0 ? session_clock_ms(session) : 0U;
+    uint8_t position;
+    int result;
+
+    if (session->task_count <= 1U) {
+        result = zplc_core_run_cycle();
+        if (result < 0) {
+            session->fault_reason = ZPLC_NATIVE_FAULT_VM;
+            session->fault_task_id = session->tasks[0].id;
+            return result;
+        }
+        if (account_deadlines != 0 && zplc_core_get_default_vm()->paused == 0U &&
+            session_account_deadline(session, 0U, session_clock_ms(session) - started_ms) != 0) {
+            return ZPLC_NATIVE_DISPATCH_DEADLINE_FAULT;
+        }
+        return result;
+    }
+    for (position = 0U; position < batch->count; ++position) {
+        const uint8_t index = batch->index[position];
+
         result = zplc_vm_run_cycle(&session->task_vms[index]);
-        if (result < 0) return result;
+        if (result < 0) {
+            session->fault_reason = ZPLC_NATIVE_FAULT_VM;
+            session->fault_task_id = session->tasks[index].id;
+            return result;
+        }
+        /* A scan that stopped at a breakpoint is not finished: it has no deadline to meet yet. */
+        if (account_deadlines != 0 && session->task_vms[index].paused == 0U &&
+            session_account_deadline(session, index, session_clock_ms(session) - started_ms) != 0) {
+            return ZPLC_NATIVE_DISPATCH_DEADLINE_FAULT;
+        }
     }
     return 1;
 }
@@ -332,12 +531,26 @@ static int session_dispatch_tasks(zplc_native_runtime_session_t *session)
 /* A dispatch that stopped at a breakpoint did not finish its scan. Such a scan
  * is neither counted nor allowed to consume the staged input pulses: the rest
  * of it runs on resume or step, and the pulse must last until that scan ends. */
-static int session_complete_scan(zplc_native_runtime_session_t *session)
+static int session_complete_scan(zplc_native_runtime_session_t *session, const session_batch_t *batch)
 {
+    uint8_t position;
+
     if (session_focused_vm(session)->paused != 0U) return 0;
     if (session_clear_simulation_pulses(session) != 0) return -1;
     session->cycle_count += 1U;
+    for (position = 0U; position < batch->count; ++position) {
+        session->task_cycles[batch->index[position]] += 1U;
+    }
     return 0;
+}
+
+/* A start and a resume begin a new run of the schedule: the next scan releases every task, and a run of
+ * deadline misses does not carry over. */
+static void session_restart_schedule(zplc_native_runtime_session_t *session)
+{
+    session->timed_scan_started = 0U;
+    session->last_dispatch_lateness_ms = 0U;
+    memset(session->task_consecutive_misses, 0, sizeof(session->task_consecutive_misses));
 }
 
 /* Stop and reset begin from a cycle boundary: drop a scan that a breakpoint
@@ -710,7 +923,9 @@ static int parse_canonical_request(const char *line, zplc_native_request_t *requ
             if (skip_json_value(&cursor) != 0) return -1;
             params_end = cursor;
             seen |= 0x08U;
-        } else return -1;
+        } else {
+            return -1;
+        }
         skip_json_space(&cursor);
         if (*cursor == '}') { cursor++; break; }
         if (*cursor++ != ',') return -1;
@@ -958,6 +1173,21 @@ static int decode_hex_bytes(const char *hex,
     return 0;
 }
 
+static const char *fault_reason_string(zplc_native_fault_reason_t reason)
+{
+    switch (reason) {
+        case ZPLC_NATIVE_FAULT_NONE:
+            return "none";
+        case ZPLC_NATIVE_FAULT_DEADLINE_MISS:
+            return "deadline_miss";
+        case ZPLC_NATIVE_FAULT_VM:
+            return "vm_fault";
+        case ZPLC_NATIVE_FAULT_RUNTIME:
+        default:
+            return "runtime_failure";
+    }
+}
+
 static int append_status_payload(const zplc_native_runtime_session_t *session,
                                  char *response,
                                  size_t response_size,
@@ -969,10 +1199,22 @@ static int append_status_payload(const zplc_native_runtime_session_t *session,
     const zplc_vm_t *focused_vm;
     zplc_retain_status_t retain;
     char saved_at[16];
+    char fault_task[8];
+    uint32_t consecutive_misses = 0U;
     uint8_t index;
 
     if (session == NULL || response == NULL || used == NULL) {
         return format_failed(response, response_size);
+    }
+    for (index = 0U; index < session->task_count; ++index) {
+        if (session->task_consecutive_misses[index] > consecutive_misses) {
+            consecutive_misses = session->task_consecutive_misses[index];
+        }
+    }
+    if (session->fault_reason == ZPLC_NATIVE_FAULT_NONE) {
+        (void)snprintf(fault_task, sizeof(fault_task), "null");
+    } else {
+        (void)snprintf(fault_task, sizeof(fault_task), "%u", (unsigned)session->fault_task_id);
     }
     zplc_retain_last_status(&retain);
     if (retain.saves == 0U) {
@@ -1008,6 +1250,9 @@ static int append_status_payload(const zplc_native_runtime_session_t *session,
         "\"program_size\":%u},"
         "\"host_cadence\":{\"kind\":\"observed_poll_cadence\",\"missed_intervals\":%u,"
         "\"last_dispatch_lateness_ms\":%u},"
+        "\"deadline\":{\"warning\":%s,\"misses\":%u,\"consecutive_misses\":%u,\"miss_limit\":%u,"
+        "\"last_overrun_us\":%u},"
+        "\"fault\":{\"reason\":\"%s\",\"task_id\":%s},"
         "\"retain\":{\"reason\":\"%s\",\"restored\":%s,\"sequence\":%u,\"saves\":%u,"
         "\"save_errors\":%u,\"saved_at_ms\":%s},"
         "\"focused_vm\":{\"pc\":%u,\"sp\":%u,\"halted\":%s,\"error\":%u},\"tasks\":[",
@@ -1020,6 +1265,10 @@ static int append_status_payload(const zplc_native_runtime_session_t *session,
         session->program_size,
         session->missed_interval_count,
         session->last_dispatch_lateness_ms,
+        consecutive_misses != 0U ? "true" : "false",
+        (unsigned)session->overrun_count, (unsigned)consecutive_misses,
+        (unsigned)session->deadline_miss_limit, (unsigned)session->last_overrun_us,
+        fault_reason_string(session->fault_reason), fault_task,
         zplc_retain_reason_string(retain.reason),
         retain.reason == ZPLC_RETAIN_RESTORED ? "true" : "false",
         (unsigned)retain.sequence, (unsigned)retain.saves, (unsigned)retain.save_errors, saved_at,
@@ -1032,7 +1281,7 @@ static int append_status_payload(const zplc_native_runtime_session_t *session,
         if (append_jsonf(response, response_size, used,
                          "%s{\"task_id\":%u,\"state\":\"%s\",\"cycles\":%u,\"overruns\":%u,\"interval_us\":%u,\"priority\":%u,\"pc\":%u,\"sp\":%u,\"halted\":%s,\"error\":%u}",
                          index == 0U ? "" : ",", (unsigned)session->tasks[index].id, state,
-                         session->cycle_count, session->overrun_count,
+                         session->task_cycles[index], session->task_misses[index],
                          session->tasks[index].interval_us, session->tasks[index].priority,
                          (unsigned)vm->pc, (unsigned)vm->sp, vm->halted != 0U ? "true" : "false",
                          (unsigned)vm->error) != 0) return format_failed(response, response_size);
@@ -1287,8 +1536,7 @@ static int handle_program_load(zplc_native_runtime_session_t *session,
     session->program_generation += 1U;
     session->scan_interval_ms = details.scan_interval_ms;
     session->state = ZPLC_NATIVE_SESSION_IDLE;
-    session->cycle_count = 0U;
-    session->overrun_count = 0U;
+    session_reset_counters(session);
     session->simulation_pulse_mask = 0U;
     session_reset_observed_cadence(session);
     session_reset_scenario_clock(session);
@@ -1342,7 +1590,8 @@ static int handle_simulation_input_set(zplc_native_runtime_session_t *session,
     if (zplc_pi_lock() != 0) {
         return format_error_response(request->id, "RUNTIME_FAILURE", "unable to lock process image", response, response_size);
     }
-    if (zplc_force_get_count() != 0U || (ipi = zplc_mem_get_region(ZPLC_MEM_IPI_BASE)) == NULL) {
+    ipi = zplc_force_get_count() != 0U ? NULL : zplc_mem_get_region(ZPLC_MEM_IPI_BASE);
+    if (ipi == NULL) {
         zplc_pi_unlock();
         return format_error_response(request->id, zplc_force_get_count() != 0U ? "FORCE_ACTIVE" : "RUNTIME_FAILURE",
                                      zplc_force_get_count() != 0U ? "simulation input rejected while forces are active" : "input process image is unavailable", response, response_size);
@@ -1399,8 +1648,7 @@ static int handle_start(zplc_native_runtime_session_t *session,
 
     if (session_resume_tasks(session) != 0) return format_error_response(request->id, "RUNTIME_FAILURE", "failed to resume task before start", response, response_size);
 
-    session->timed_scan_started = 0U;
-    session->last_dispatch_lateness_ms = 0U;
+    session_restart_schedule(session);
     session->state = ZPLC_NATIVE_SESSION_RUNNING;
     return format_jsonf(response,
                     response_size,
@@ -1460,8 +1708,7 @@ static int handle_resume(zplc_native_runtime_session_t *session,
     }
 
     if (session_resume_tasks(session) != 0) return format_error_response(request->id, "RUNTIME_FAILURE", "failed to resume task before resume", response, response_size);
-    session->timed_scan_started = 0U;
-    session->last_dispatch_lateness_ms = 0U;
+    session_restart_schedule(session);
     session->state = ZPLC_NATIVE_SESSION_RUNNING;
     return format_jsonf(response, response_size,
                     "{\"id\":\"%s\",\"type\":\"response\",\"result\":{}}",
@@ -1509,8 +1756,7 @@ static int handle_stop_or_reset(zplc_native_runtime_session_t *session,
         }
         free(workspace);
         session->scan_interval_ms = details.scan_interval_ms;
-        session->cycle_count = 0U;
-        session->overrun_count = 0U;
+        session_reset_counters(session);
         session->program_generation += 1U;
         session_reset_scenario_clock(session);
     }
@@ -1535,6 +1781,8 @@ static int handle_stop_or_reset(zplc_native_runtime_session_t *session,
     }
     if (reset_program != 0 || session->state != ZPLC_NATIVE_SESSION_ERROR) {
         session->state = ZPLC_NATIVE_SESSION_IDLE;
+        session->fault_reason = ZPLC_NATIVE_FAULT_NONE;
+        session->fault_task_id = 0U;
     }
     if (reset_program != 0) {
         /* Reset is a cold restart: the stored values must not come back. */
@@ -1557,6 +1805,7 @@ static int handle_step(zplc_native_runtime_session_t *session,
                        char *event,
                        size_t event_size)
 {
+    session_batch_t batch;
     int run_result;
 
     if (session->scenario_clock_enabled != 0U) {
@@ -1606,7 +1855,9 @@ static int handle_step(zplc_native_runtime_session_t *session,
                                      response_size);
     }
 
-    run_result = session_dispatch_tasks(session);
+    /* A step is one batch of every task, whatever its interval, and no deadline applies to it (RT-017). */
+    session_plan_batch(session, ZPLC_NATIVE_ALL_TASKS, 0U, 1, &batch);
+    run_result = session_run_batch(session, &batch, 0);
     if (run_result < 0) {
         session_apply_safe_state(session);
         return format_error_response(request->id,
@@ -1616,7 +1867,7 @@ static int handle_step(zplc_native_runtime_session_t *session,
                                      response_size);
     }
 
-    if (session_complete_scan(session) != 0) {
+    if (session_complete_scan(session, &batch) != 0) {
         session_apply_safe_state(session);
         return format_error_response(request->id, "RUNTIME_FAILURE",
                                      "failed to clear simulation input pulse",
@@ -1643,6 +1894,9 @@ static int handle_scenario_step(zplc_native_runtime_session_t *session,
                                 char *event,
                                 size_t event_size)
 {
+    session_batch_t batch;
+    uint32_t due;
+    int first_release;
     int run_result;
     uint32_t expected_at_ms;
 
@@ -1691,18 +1945,34 @@ static int handle_scenario_step(zplc_native_runtime_session_t *session,
                                      "failed to resume paused vm before step", response, response_size);
     }
 
-    zplc_hal_posix_set_tick_override(request->at_ms);
-    run_result = session_dispatch_tasks(session);
-    zplc_hal_posix_clear_tick_override();
-    if (run_result < 0) {
-        session_apply_safe_state(session);
-        return format_error_response(request->id, "RUNTIME_FAILURE",
-                                     "zplc_core_run_cycle failed", response, response_size);
-    }
-    if (session_complete_scan(session) != 0) {
-        session_apply_safe_state(session);
-        return format_error_response(request->id, "RUNTIME_FAILURE",
-                                     "failed to clear simulation input pulse", response, response_size);
+    /* The first step releases every task; after it each task is released at its own interval (RT-015). A step at
+     * which no task is due runs no batch: the images and the scan counts stay as they are. */
+    first_release = session->scenario_timestamp_started == 0U;
+    due = session->multirate != 0U ? session_due_tasks(session, request->at_ms, first_release)
+                                    : ZPLC_NATIVE_ALL_TASKS;
+    session_plan_batch(session, due, request->at_ms, first_release, &batch);
+    if (due != 0U) {
+        zplc_hal_posix_set_tick_override(request->at_ms);
+        run_result = session_run_batch(session, &batch, 1);
+        zplc_hal_posix_clear_tick_override();
+        if (run_result < 0) {
+            session_apply_safe_state(session);
+            return format_error_response(request->id,
+                                         session->fault_reason == ZPLC_NATIVE_FAULT_DEADLINE_MISS
+                                             ? "DEADLINE_MISS" : "RUNTIME_FAILURE",
+                                         session->fault_reason == ZPLC_NATIVE_FAULT_DEADLINE_MISS
+                                             ? "a task reached the limit of consecutive deadline misses"
+                                             : "zplc_core_run_cycle failed",
+                                         response, response_size);
+        }
+        if (session_complete_scan(session, &batch) != 0) {
+            session_apply_safe_state(session);
+            return format_error_response(request->id, "RUNTIME_FAILURE",
+                                         "failed to clear simulation input pulse", response, response_size);
+        }
+        if (session->multirate != 0U) {
+            session_mark_released(session, &batch, request->at_ms, first_release);
+        }
     }
 
     session->scenario_timestamp_started = 1U;
@@ -1953,6 +2223,7 @@ void zplc_native_runtime_session_init(zplc_native_runtime_session_t *session)
     zplc_hal_posix_clear_tick_override();
     session->state = ZPLC_NATIVE_SESSION_IDLE;
     session->scan_interval_ms = 100U;
+    session->deadline_miss_limit = deadline_miss_limit();
     zplc_core_init();
     session_retain_configure();
 
@@ -2149,12 +2420,50 @@ int zplc_native_runtime_session_handle_request(zplc_native_runtime_session_t *se
                                  response_size);
 }
 
+/* RT-015: how late the host dispatched this batch, over the tasks that are in it. Each task counts the releases it
+ * skipped (no catch-up); the batch reports the largest, as a set of tasks of one interval always has. The first
+ * scan after a start has no release to be late for. */
+static void session_note_multirate_cadence(zplc_native_runtime_session_t *session, uint32_t now_ms, uint32_t due)
+{
+    uint32_t lateness_ms = 0U;
+    uint32_t missed = 0U;
+    uint8_t index;
+
+    if (session->timed_scan_started != 0U) {
+        for (index = 0U; index < session->task_count; ++index) {
+            uint32_t interval_ms;
+            uint32_t late_ms;
+
+            if ((due & ((uint32_t)1U << index)) == 0U) {
+                continue;
+            }
+            interval_ms = session_task_interval_ms(session, index);
+            late_ms = (uint32_t)session_overdue_ms(session, index, now_ms);
+            if (late_ms > lateness_ms) {
+                lateness_ms = late_ms;
+            }
+            if (late_ms / interval_ms > missed) {
+                missed = late_ms / interval_ms;
+            }
+        }
+        if (missed > UINT32_MAX - session->missed_interval_count) {
+            session->missed_interval_count = UINT32_MAX;
+        } else {
+            session->missed_interval_count += missed;
+        }
+    }
+    session->last_dispatch_lateness_ms = lateness_ms;
+}
+
 int zplc_native_runtime_session_tick(zplc_native_runtime_session_t *session,
                                      uint32_t now_ms,
                                      char *event,
                                      size_t event_size)
 {
+    session_batch_t batch;
     int run_result;
+    int first_release;
+    uint32_t due;
     uint32_t elapsed_ms;
     uint32_t missed_intervals;
 
@@ -2170,39 +2479,65 @@ int zplc_native_runtime_session_tick(zplc_native_runtime_session_t *session,
         return 0;
     }
 
-    elapsed_ms = now_ms - session->last_scan_tick_ms;
-    if (elapsed_ms < session->scan_interval_ms) {
-        return 0;
-    }
-
-    if (session->timed_scan_started != 0U && session->scan_interval_ms != 0U) {
-        missed_intervals = (elapsed_ms / session->scan_interval_ms) - 1U;
-        if (missed_intervals > UINT32_MAX - session->missed_interval_count) {
-            session->missed_interval_count = UINT32_MAX;
-        } else {
-            session->missed_interval_count += missed_intervals;
+    first_release = session->timed_scan_started == 0U;
+    if (session->multirate != 0U) {
+        /* Each task is released at its own interval; the tasks due now are one batch. */
+        due = session_due_tasks(session, now_ms, first_release);
+        if (due == 0U) {
+            return 0;
         }
-        session->last_dispatch_lateness_ms = elapsed_ms - session->scan_interval_ms;
+        session_note_multirate_cadence(session, now_ms, due);
     } else {
-        session->last_dispatch_lateness_ms = 0U;
+        due = ZPLC_NATIVE_ALL_TASKS;
+        elapsed_ms = now_ms - session->last_scan_tick_ms;
+        if (elapsed_ms < session->scan_interval_ms) {
+            return 0;
+        }
+
+        if (session->timed_scan_started != 0U && session->scan_interval_ms != 0U) {
+            missed_intervals = (elapsed_ms / session->scan_interval_ms) - 1U;
+            if (missed_intervals > UINT32_MAX - session->missed_interval_count) {
+                session->missed_interval_count = UINT32_MAX;
+            } else {
+                session->missed_interval_count += missed_intervals;
+            }
+            session->last_dispatch_lateness_ms = elapsed_ms - session->scan_interval_ms;
+        } else {
+            session->last_dispatch_lateness_ms = 0U;
+        }
     }
     session->timed_scan_started = 1U;
 
-    run_result = session_dispatch_tasks(session);
+    session_plan_batch(session, due, now_ms, first_release, &batch);
+    run_result = session_run_batch(session, &batch, 1);
     session->last_scan_tick_ms = now_ms;
+    if (session->multirate != 0U) {
+        session_mark_released(session, &batch, now_ms, first_release);
+    }
     if (run_result < 0) {
+        const int deadline = session->fault_reason == ZPLC_NATIVE_FAULT_DEADLINE_MISS;
+
         session_apply_safe_state(session);
         if (event != NULL && event_size > 0U) {
-            (void)format_jsonf(event,
-                           event_size,
-                           "{\"type\":\"event\",\"method\":\"runtime.error\",\"params\":{"
-                           "\"code\":\"RUNTIME_FAILURE\","
-                           "\"message\":\"zplc_core_run_cycle failed\"}}");
+            if (deadline != 0) {
+                (void)format_jsonf(event,
+                               event_size,
+                               "{\"type\":\"event\",\"method\":\"runtime.error\",\"params\":{"
+                               "\"code\":\"DEADLINE_MISS\","
+                               "\"message\":\"task %u reached the limit of %u consecutive deadline misses\"}}",
+                               (unsigned)session->fault_task_id, (unsigned)session->deadline_miss_limit);
+            } else {
+                (void)format_jsonf(event,
+                               event_size,
+                               "{\"type\":\"event\",\"method\":\"runtime.error\",\"params\":{"
+                               "\"code\":\"RUNTIME_FAILURE\","
+                               "\"message\":\"zplc_core_run_cycle failed\"}}");
+            }
         }
         return ZPLC_NATIVE_RESPONSE_ERR_INVALID_STATE;
     }
 
-    if (session_complete_scan(session) != 0) {
+    if (session_complete_scan(session, &batch) != 0) {
         session_apply_safe_state(session);
         if (event != NULL && event_size > 0U) {
             (void)format_jsonf(event, event_size,
@@ -2245,6 +2580,25 @@ uint32_t zplc_native_runtime_session_poll_timeout_ms(
         session->program_loaded == 0U ||
         session->scan_interval_ms == 0U) {
         return max_timeout_ms;
+    }
+
+    if (session->multirate != 0U) {
+        /* The wait is the time to the nearest release of any task; before the first scan every task is due. */
+        uint8_t index;
+
+        if (session->timed_scan_started == 0U) {
+            return 0U;
+        }
+        remaining_ms = max_timeout_ms;
+        for (index = 0U; index < session->task_count; ++index) {
+            if (session_overdue_ms(session, index, now_ms) >= 0) {
+                return 0U;
+            }
+            if (session->task_next_release_ms[index] - now_ms < remaining_ms) {
+                remaining_ms = session->task_next_release_ms[index] - now_ms;
+            }
+        }
+        return remaining_ms;
     }
 
     elapsed_ms = now_ms - session->last_scan_tick_ms;

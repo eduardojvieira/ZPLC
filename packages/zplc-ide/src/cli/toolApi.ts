@@ -8,7 +8,7 @@ import { ZPLC_CONSTANTS } from '@zplc/compiler';
 import { CompilerError, assertTaskProgramCardinality, compileMultiTaskProject, compilerErrorsOf, parse, transpileToST, type CompilerWarning, type DebugMap, type DebugVarInfo, type Statement } from '../compiler';
 import type { ProjectMigrationChange } from '../project/projectModel';
 import { resolveProgramSource } from '../utils/programSourceResolution';
-import { compileScenario, runScenario, type CompiledScenario, type ScenarioKind, type ScenarioRunResult } from '../test-engine';
+import { compileScenario, findSignalVariable, runScenario, type CompiledScenario, type ScenarioKind, type ScenarioRunResult } from '../test-engine';
 import { createNativeScenarioSession } from './nativeScenarioRuntime';
 import { directoryIdentity, runFirmwareBuild, sameDirectoryIdentity } from './firmwareBuildRunner';
 import { readWorkspace, readWorkspaceScenarios, type ToolDiagnostic, type WorkspaceProject, type WorkspaceScenario } from './workspace';
@@ -206,11 +206,18 @@ function compilationSources(workspace: WorkspaceProject) {
   }
   const bytesByPath = new Map(workspace.sources.map((source) => [source.path, source.bytes]));
   // A resolved source always comes from workspace.sources, so its sourceRef is a workspace path that has bytes.
-  return [...sourceByProgram].flatMap(([name, source]) => {
+  const programs = [...sourceByProgram].flatMap(([name, source]) => {
     const sourceRef = source?.sourceRef;
     const bytes = sourceRef === undefined ? undefined : bytesByPath.get(sourceRef);
     return source && sourceRef !== undefined && bytes ? [{ ...source, name, sourceRef, bytes }] : [];
   });
+  // The project is one compilation unit (CMP-042): the Structured Text files that no task runs are built with the
+  // programs, and what they declare is seen by every program. They are named by their path, which no task uses.
+  const run = new Set(programs.map((source) => source.sourceRef));
+  const libraries = workspace.sources
+    .filter((source) => source.language === 'ST' && !run.has(source.path))
+    .map((source) => ({ name: source.path, content: source.content, language: source.language, sourceRef: source.path, bytes: source.bytes }));
+  return [...programs, ...libraries];
 }
 function createSavedTestInputIdentity(workspace: WorkspaceProject, sources: Array<{ sourceRef: string; bytes: Uint8Array }>, scenarios: WorkspaceScenario[]): SavedTestInputIdentity {
   const inputs = [
@@ -391,8 +398,8 @@ function safetyDiagnostic(code: SafetyDiagnosticCode, path?: string, line?: numb
   return { code, message, ...(path ? { path } : {}), ...(line === undefined ? {} : { line }) };
 }
 function safetyOutput(debugMap: DebugMap, signal: string): SafetyOutput | undefined {
-  const [pou, name] = signal.split('.');
-  const variable: DebugVarInfo | undefined = pou === undefined || name === undefined ? undefined : debugMap.pou[pou]?.vars[name];
+  // a global that another file declares is the variable of every program (CMP-042)
+  const variable: DebugVarInfo | undefined = findSignalVariable(debugMap, signal)?.variable;
   const bitOffset = variable?.bitOffset;
   if (!variable || variable.type !== 'BOOL' || variable.region !== 'OPI' || !Number.isInteger(variable.addr) || bitOffset === undefined || !Number.isInteger(bitOffset) || bitOffset < 0 || bitOffset > 7 || !Number.isInteger(variable.size) || variable.size < 1) return undefined;
   const { opiBase, opiSize } = debugMap.memoryLayout;
@@ -600,14 +607,25 @@ export function createTestDeadline(options: TestsRunOptions): {
   };
 }
 
-function homogeneousCyclicInterval(workspace: WorkspaceProject): number | undefined {
+function greatestCommonDivisor(a: number, b: number): number {
+  return b === 0 ? a : greatestCommonDivisor(b, a % b);
+}
+
+/**
+ * The step of a scenario: the greatest common divisor of the intervals of the cyclic tasks (RT-015). Each task is
+ * released on its own interval, and a step of the common divisor reaches every one of those instants. A project
+ * that has a task that is not cyclic has no step.
+ */
+function cyclicTaskStepMs(workspace: WorkspaceProject): number | undefined {
   const tasks = workspace.project.tasks;
   if (tasks.length < 1 || tasks.length > 16) return undefined;
-  const interval = tasks[0]?.interval_ms;
-  if (!Number.isInteger(interval) || interval! < 1 || interval! > 3_600_000) return undefined;
-  return tasks.every((task) => task.trigger === 'cyclic'
-    && task.programs.length === 1
-    && task.interval_ms === interval) ? interval : undefined;
+  let step = 0;
+  for (const task of tasks) {
+    const interval = task.interval_ms;
+    if (task.trigger !== 'cyclic' || task.programs.length !== 1 || !Number.isInteger(interval) || interval! < 1 || interval! > 3_600_000) return undefined;
+    step = greatestCommonDivisor(step, interval!);
+  }
+  return step;
 }
 
 function traceBytes(trace: ScenarioRunResult['trace']): Uint8Array {
@@ -641,7 +659,7 @@ async function runWorkspaceScenarios(root: string, operation: TestOperation, sce
     } catch (error) {
       return testFailed(operation, safeCompilerDiagnostics(error));
     }
-    const intervalMs = homogeneousCyclicInterval(workspace);
+    const intervalMs = cyclicTaskStepMs(workspace);
     if (intervalMs === undefined) return testFailed(operation, [testDiagnostic('SIMULATION_UNSUPPORTED_PROJECT', 'tasks')]);
     const unresolved = unresolvedPrograms(workspace);
     if (unresolved.length) return testFailed(operation, unresolved);

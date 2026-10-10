@@ -12,6 +12,12 @@
     {"kind":"unit","ref":"tools/ci/conformance-matrix.test.ts","test":"tags every row that is architecture-sensitive with a case that carries the tag (VF-005)"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_arith_edges.c","test":"(VF-005, VF-015)."}
   ],
+  "VF-006": [
+    {"kind":"unit","ref":"tools/ci/test-source-guard.test.ts","test":"test source guard: a test that reads a product source file (VF-006)"},
+    {"kind":"unit","ref":"tools/ci/test-source-guard.test.ts","test":"test source guard: reads that are not product source (VF-006)"},
+    {"kind":"unit","ref":"tools/ci/test-source-guard.test.ts","test":"test source guard: the list of known offenders (VF-006)"},
+    {"kind":"unit","ref":"tools/ci/test-source-guard.test.ts","test":"test source guard: this repository (VF-006)"}
+  ],
   "VF-008": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"1 Open an existing folder","partial":true}
   ],
@@ -38,6 +44,14 @@
   ],
   "VF-016": [
     {"kind":"unit","ref":"tools/ci/ci-workflow.test.ts","test":"ci.yml triggers (VF-016)","partial":true,"note":"asserts the parsed workflow triggers; its own header says that a hosted run on the 2.0 branch is the only proof that GitHub honours them, and a green default branch and a recorded scheduled run are not shown by it"}
+  ],
+  "VF-018": [
+    {"kind":"unit","ref":"tools/ci/test_run_clang_tidy.py","test":"HostUnits","partial":true,"note":"the host pass of clang-tidy runs in CI over the core, the POSIX HAL and the host application with warnings as errors; the Zephyr HAL and firmware/app are analysed only where a west build tree exists (run.sh tidy) and firmware/app carries a per-board baseline of findings; -Werror on the Zephyr library was applied without a Zephyr build"}
+  ],
+  "VF-020": [
+    {"kind":"unit","ref":"tools/docs/check-docs-samples.test.ts","test":"docs samples: expected results (VF-020)"},
+    {"kind":"unit","ref":"tools/docs/check-docs-samples.test.ts","test":"docs samples: the English page and its Spanish twin (VF-020)"},
+    {"kind":"unit","ref":"tools/docs/check-docs-samples.test.ts","test":"docs samples: the fence convention (VF-020)"}
   ],
   "VF-022": [
     {"kind":"unit","ref":"tools/ci/test-inventory.test.ts","test":"checkInventory (VF-022)"}
@@ -628,24 +642,55 @@
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/control-flow.test.ts","test":"CASE labels (CMP-040 stopgap)","partial":true}
   ],
   "CMP-041": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-041-abstract-block-cannot-be-instantiated.expect.json","test":"CMP-041 a variable of an ABSTRACT function block is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-041-abstract-method-is-run-by-the-derived-block.expect.json","test":"CMP-041 a method of an ABSTRACT block calls the abstract method that the derived block implements"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-041-abstract-method-left-unimplemented-is-rejected.expect.json","test":"CMP-041 a block that extends an ABSTRACT one and leaves its abstract method unimplemented is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-041-final-block-cannot-be-extended.expect.json","test":"CMP-041 a block that extends a FINAL function block is rejected"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-041-final-method-cannot-be-overridden.expect.json","test":"CMP-041 a FINAL method that a derived block overrides is rejected at the override"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-041-instance-that-does-not-implement-the-interface-is-rejected.expect.json","test":"CMP-041 an instance of a block that does not implement the interface cannot be assigned to a variable of it"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-041-interface-call-of-a-null-reference-faults.expect.json","test":"CMP-041 a call through an interface variable that holds no instance ends the scan with a VM fault"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-041-interface-dispatch-by-the-instance-assigned.expect.json","test":"CMP-041 a call through an interface variable runs the method of the instance assigned to it, whichever block that is"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-041-interface-dispatch.expect.json","test":"CMP-041 a variable of an interface type calls the method of its instance"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-041-interface-through-inheritance-and-array-elements.expect.json","test":"CMP-041 an interface variable holds an element of an array and an instance of a derived block"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-041-interface-variable-as-an-argument-of-a-function.expect.json","test":"CMP-041 an instance given to a function as an interface parameter answers the calls the function makes through it"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-041-interface-variable-as-an-input-of-a-block.expect.json","test":"CMP-041 an interface given to a function block as an input is called inside the block with its arguments"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-041-method-results-of-each-type-and-inherited-statement-call.expect.json","test":"CMP-041 a method returns a BOOL, a SINT, a REAL and a DINT through its result slot, and an inherited method called as a statement leaves nothing"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-041-method-with-several-assignments-called-in-a-loop.expect.json","test":"CMP-041 a method that assigns its name more than once returns one value, and a call in a loop leaves the stack as it found it"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-041-override-and-inherited-method.expect.json","test":"CMP-041 an inherited method and an overriding one"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-041-private-method-is-not-callable-from-a-derived-block.expect.json","test":"CMP-041 a PRIVATE method called from a block that extends its own is rejected"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-041-private-method-is-not-callable-from-outside.expect.json","test":"CMP-041 a PRIVATE method called from outside its function block is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-041-protected-method-is-callable-from-a-derived-block.expect.json","test":"CMP-041 a PROTECTED method is callable inside the blocks that extend it, and a PRIVATE one inside its own block"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-041-protected-method-is-not-callable-from-outside.expect.json","test":"CMP-041 a PROTECTED method called from outside its function block is rejected"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-041-public-method-is-callable.expect.json","test":"CMP-041 a PUBLIC method is callable from outside its function block"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-041-super-call-of-a-private-method-is-rejected.expect.json","test":"CMP-041 SUPER^ does not reach a PRIVATE method of the base block"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-041-super-call-runs-the-base-body.expect.json","test":"CMP-041 SUPER^() runs the body of the base block inside the body of the derived one"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-041-super-call-through-three-levels.expect.json","test":"CMP-041 SUPER^ in a method of each of three levels calls the level above it"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-041-super-call.expect.json","test":"CMP-041 SUPER^ calls the method of the base block"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-041-this-member-in-method.expect.json","test":"CMP-041 THIS.member inside a method"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-041-this-member-in-method.expect.json","test":"CMP-041 THIS.member inside a method"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/oop.test.ts","test":"OOP: interfaces, ABSTRACT and FINAL blocks in the symbol table (CMP-041)"}
   ],
   "CMP-042": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-042-debug-map-addresses-of-every-program.expect.json","test":"CMP-042 the debug map names where each variable of each program and each global is in the one layout"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-042-function-block-declared-in-two-files-is-rejected.expect.json","test":"CMP-042 a function block declared in two files is an error at both declarations"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-042-function-block-in-another-file.expect.json","test":"CMP-042 a function block declared in another file"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-042-global-in-another-file.expect.json","test":"CMP-042 a global declared in another file"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-042-function-from-another-file-in-two-programs.expect.json","test":"CMP-042 a function declared in another file is called from two programs of two tasks"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-042-global-in-another-file.expect.json","test":"CMP-042 a global declared in another file"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-042-global-initial-value-is-applied-once.expect.json","test":"CMP-042 the initial value of a global is applied once, before the first scan of whichever task runs first"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-042-two-tasks-share-a-global.expect.json","test":"CMP-042 a global has one storage location shared by the programs of two tasks"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-042-type-from-another-file-in-a-structure.expect.json","test":"CMP-042 a type declared in another file is the type of the members of a structure"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/unit.test.ts","test":"a declaration made twice is an error at every place it is made (CMP-042)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/unit.test.ts","test":"the debug map of a unit (CMP-042, CMP-054)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/unit.test.ts","test":"what every file of a project sees of the others (CMP-042)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"lists a global of a library file once, under a POU name the MCP symbol schema accepts (CMP-042)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/test-engine/globals.test.ts","test":"scenario signals that name a global (CMP-042)"}
   ],
   "CMP-043": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-043-allocation-failure-states-bytes-and-consumers.expect.json","test":"CMP-043 an allocation failure states the bytes required, the bytes available and the largest consumers"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-043-array-beyond-256-bytes.expect.json","test":"CMP-043 a program with a 400-byte array"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-043-program-that-fills-the-region.expect.json","test":"CMP-043 a program that fills the WORK memory of the target exactly builds and runs"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-043-programs-share-the-region.expect.json","test":"CMP-043 two programs of 300 bytes each have their own storage in the one region"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-043-three-strings.expect.json","test":"CMP-043 a program with three STRING variables"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/unit.test.ts","test":"memory is limited by the target profile only (CMP-043)"},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"17 Large program, and one over the limit","partial":true}
   ],
   "CMP-044": [
@@ -678,7 +723,8 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-054-debug-map-address-with-a-type.expect.json","test":"CMP-054 the debug map gives the address of a variable in a file with a TYPE"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-054-debug-map-lists-a-global.expect.json","test":"CMP-054 the debug map lists a global variable"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/control-flow.test.ts","test":"debug map (CMP-054 stopgap)","partial":true},
-    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/debug-map.test.ts","test":"the variables of a function (CMP-034, CMP-054)"}
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/debug-map.test.ts","test":"the variables of a function (CMP-034, CMP-054)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/unit.test.ts","test":"the debug map of a unit (CMP-042, CMP-054)"}
   ],
   "CMP-055": [
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/debug-map.test.ts","test":"statement ranges (CMP-055)"},
@@ -796,7 +842,10 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"7 Breakpoint stops execution","partial":true}
   ],
   "LNG-008": [
-    {"kind":"conformance","ref":"conformance/lng/lng-008-fbd-calls-a-user-function-block.expect.json","test":"LNG-008 an FBD block that is a user function block from another file runs"}
+    {"kind":"conformance","ref":"conformance/lng/lng-008-fbd-block-the-project-does-not-declare-is-rejected.expect.json","test":"LNG-008 an FBD block of a type that neither the library nor the project declares is rejected by name"},
+    {"kind":"conformance","ref":"conformance/lng/lng-008-fbd-calls-a-user-function-block.expect.json","test":"LNG-008 an FBD block that is a user function block from another file runs"},
+    {"kind":"conformance","ref":"conformance/lng/lng-008-fbd-calls-a-user-function.expect.json","test":"LNG-008 an FBD block that is a user function from another file is called with its inputs by name"},
+    {"kind":"conformance","ref":"conformance/lng/lng-008-ld-places-a-user-function-block.expect.json","test":"LNG-008 an LD rung places a function block of the project and takes its output"}
   ],
   "LNG-009": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"9 Undo after switching tabs"}
@@ -919,13 +968,37 @@
   "RT-007": [
     {"kind":"conformance","ref":"conformance/rt/rt-007-vm-fault-drives-outputs-safe.expect.json","test":"RT-007 a VM fault drives the outputs to their safe state"}
   ],
+  "RT-009": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-009: the tasks of a batch read one input image, and a simulation pulse lasts one batch.","partial":true,"note":"covers the POSIX host runtime only: the Zephyr coordinator is checked by its own suite and the WASM runtime has no scheduler test yet, so RT-009 stays open until the shared scheduler core (RT-008) runs one suite on every port"}
+  ],
+  "RT-014": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-014, RT-017: a debugger step is not checked for a deadline.","partial":true,"note":"covers the POSIX host runtime only: the Zephyr scheduler latches at the first miss and reports neither the warning flag, the last overrun nor the fault reason, so RT-014 stays open for the target until the shared scheduler core (RT-008)"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-014: a deadline miss raises the warning, is counted, and latches the fault after the configured number in a row.","partial":true,"note":"covers the POSIX host runtime only: the Zephyr scheduler latches at the first miss and reports neither the warning flag, the last overrun nor the fault reason, so RT-014 stays open for the target until the shared scheduler core (RT-008)"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-014: the number of consecutive misses that latches the fault is configurable.","partial":true,"note":"covers the POSIX host runtime only: the Zephyr scheduler latches at the first miss and reports neither the warning flag, the last overrun nor the fault reason, so RT-014 stays open for the target until the shared scheduler core (RT-008)"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-014: the status of the largest session, with the deadline report, still fits the response line.","partial":true,"note":"covers the POSIX host runtime only: the Zephyr scheduler latches at the first miss and reports neither the warning flag, the last overrun nor the fault reason, so RT-014 stays open for the target until the shared scheduler core (RT-008)"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-014: with the default limit the first miss latches the fault, as the target scheduler does.","partial":true,"note":"covers the POSIX host runtime only: the Zephyr scheduler latches at the first miss and reports neither the warning flag, the last overrun nor the fault reason, so RT-014 stays open for the target until the shared scheduler core (RT-008)"}
+  ],
   "RT-015": [
-    {"kind":"conformance","ref":"conformance/rt/rt-015-event-triggered-task-is-rejected.expect.json","test":"RT-015 an event-triggered task is rejected by the build"},
-    {"kind":"conformance","ref":"conformance/rt/rt-015-two-cyclic-tasks-with-different-intervals.expect.json","test":"RT-015 two cyclic tasks with different intervals load in simulation and each runs at its own interval"}
+    {"kind":"conformance","ref":"conformance/rt/rt-015-event-triggered-task-is-rejected.expect.json","test":"RT-015 an event-triggered task is rejected by the build","partial":true,"note":"covers the model in simulation and the documentation: the Zephyr scheduler still differs in how it reports a deadline miss (RT-014), and the differences that remain are listed in the scheduler page, so RT-015 stays open until the target is checked against the same suite"},
+    {"kind":"conformance","ref":"conformance/rt/rt-015-two-cyclic-tasks-with-different-intervals.expect.json","test":"RT-015 two cyclic tasks with different intervals load in simulation and each runs at its own interval","partial":true,"note":"covers the model in simulation and the documentation: the Zephyr scheduler still differs in how it reports a deadline miss (RT-014), and the differences that remain are listed in the scheduler page, so RT-015 stays open until the target is checked against the same suite"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/compiler.test.ts","test":"rejects an event-triggered or interrupt-triggered task at its definition in zplc.json (RT-015)","partial":true,"note":"covers the model in simulation and the documentation: the Zephyr scheduler still differs in how it reports a deadline miss (RT-014), and the differences that remain are listed in the scheduler page, so RT-015 stays open until the target is checked against the same suite"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/cli/toolApi.test.ts","test":"rejects an event-triggered task at its definition in zplc.json (RT-015)","partial":true,"note":"covers the model in simulation and the documentation: the Zephyr scheduler still differs in how it reports a deadline miss (RT-014), and the differences that remain are listed in the scheduler page, so RT-015 stays open until the target is checked against the same suite"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-015, RT-017: pause, resume, stop and reset keep the schedule of the tasks coherent.","partial":true,"note":"covers the model in simulation and the documentation: the Zephyr scheduler still differs in how it reports a deadline miss (RT-014), and the differences that remain are listed in the scheduler page, so RT-015 stays open until the target is checked against the same suite"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-015: a scenario steps by the common divisor of the intervals and releases each task on its own interval.","partial":true,"note":"covers the model in simulation and the documentation: the Zephyr scheduler still differs in how it reports a deadline miss (RT-014), and the differences that remain are listed in the scheduler page, so RT-015 stays open until the target is checked against the same suite"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-015: a task released earlier runs first, whatever its priority.","partial":true,"note":"covers the model in simulation and the documentation: the Zephyr scheduler still differs in how it reports a deadline miss (RT-014), and the differences that remain are listed in the scheduler page, so RT-015 stays open until the target is checked against the same suite"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-015: a task table of different intervals is admitted, and its step is the common divisor of the intervals.","partial":true,"note":"covers the model in simulation and the documentation: the Zephyr scheduler still differs in how it reports a deadline miss (RT-014), and the differences that remain are listed in the scheduler page, so RT-015 stays open until the target is checked against the same suite"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-015: each task of one program runs at its own interval.","partial":true,"note":"covers the model in simulation and the documentation: the Zephyr scheduler still differs in how it reports a deadline miss (RT-014), and the differences that remain are listed in the scheduler page, so RT-015 stays open until the target is checked against the same suite"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-015: tasks of different intervals are admitted; each is released at its own interval.","partial":true,"note":"covers the model in simulation and the documentation: the Zephyr scheduler still differs in how it reports a deadline miss (RT-014), and the differences that remain are listed in the scheduler page, so RT-015 stays open until the target is checked against the same suite"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-015: tasks of different intervals keep a fixed grid from the common start, so tasks that coincide share a batch."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-015: tasks released together run by priority, then by task id.","partial":true,"note":"covers the model in simulation and the documentation: the Zephyr scheduler still differs in how it reports a deadline miss (RT-014), and the differences that remain are listed in the scheduler page, so RT-015 stays open until the target is checked against the same suite"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-015: the output image keeps what a task that was not released in a batch wrote.","partial":true,"note":"covers the model in simulation and the documentation: the Zephyr scheduler still differs in how it reports a deadline miss (RT-014), and the differences that remain are listed in the scheduler page, so RT-015 stays open until the target is checked against the same suite"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-015: the poll timeout is the time to the nearest release of any task.","partial":true,"note":"covers the model in simulation and the documentation: the Zephyr scheduler still differs in how it reports a deadline miss (RT-014), and the differences that remain are listed in the scheduler page, so RT-015 stays open until the target is checked against the same suite"}
   ],
   "RT-017": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"16 Debug details: stop, trace, resume mid-scan","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"18 Force an input while stopped at a breakpoint","partial":true},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-014, RT-017: a debugger step is not checked for a deadline."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-015, RT-017: pause, resume, stop and reset keep the schedule of the tasks coherent."},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-017: resume and step continue the scan a breakpoint interrupted"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_core.c","test":"Resume continues the scan a breakpoint interrupted (RT-017)."},
     {"kind":"c-test","ref":"firmware/tests/scheduler_admission/src/main.c","test":"RT-017: a step keeps the committed image and leaves the pins safe."},
@@ -994,10 +1067,44 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"3b Save with Ctrl+S in the editor","partial":true}
   ],
   "IDE-004": [
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"15 New file: create, edit, save, reopen","partial":true}
+    {"kind":"unit","ref":"packages/zplc-ide/electron/projectFiles.test.ts","test":"watching the window folder (IDE-004)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/projectFilesProtocol.test.ts","test":"watching the folder for changes made outside Studio (IDE-004)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/projectWatcher.test.ts","test":"project watcher (IDE-004)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/projectWatcher.test.ts","test":"which changes are worth telling the window about (IDE-004)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/project/treeOperations.test.ts","test":"a copy of a file (IDE-004)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/project/treeOperations.test.ts","test":"folders to choose from (IDE-004)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/project/treeOperations.test.ts","test":"names in the project tree (IDE-004)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/project/treeOperations.test.ts","test":"names that the build reads as one (IDE-004)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/project/treeOperations.test.ts","test":"open files when their path changes (IDE-004)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/project/treeOperations.test.ts","test":"the programs a task names (IDE-004)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/project/treeOperations.test.ts","test":"which folders are open in the Explorer (IDE-004)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/externalChanges.test.ts","test":"what a change made outside Studio does to an open file (IDE-004)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/useIDEStore.test.ts","test":"project tree operations (IDE-004)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"15 New file: create, edit, save, reopen","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"23 Project tree operations","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"24 Changes made outside Studio","partial":true}
   ],
   "IDE-005": [
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"10 Close with unsaved changes","partial":true}
+    {"kind":"unit","ref":"packages/zplc-ide/electron/appMenu.test.ts","test":"reload shortcuts (IDE-005, stopgap: the chord only)","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"10 Close with unsaved changes","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"22 Close Project asks before it closes","partial":true}
+  ],
+  "IDE-006": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/recoveryStore.test.ts","test":"recovery messages (IDE-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/recoveryStore.test.ts","test":"recovery store (IDE-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/recoveryStoreIpc.test.ts","test":"recovery IPC boundary (IDE-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ipc/recoveryBridge.test.ts","test":"recovery bridge adapter (IDE-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/recoveryPersistence.test.ts","test":"recovery plan (IDE-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/recoveryPersistence.test.ts","test":"recovery saver (IDE-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/recoveryPersistence.test.ts","test":"recovery wiring to the store (IDE-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/recoveryOffer.test.ts","test":"the offer to restore modified files after a crash (IDE-006)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"19 Recover modified files after a crash"}
+  ],
+  "IDE-007": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/autosave.test.ts","test":"autosave (IDE-007)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/autosave.test.ts","test":"autosave wiring to the store (IDE-007)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/appSettings.test.ts","test":"application settings (IDE-007, IDE-010)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"21 Preferences apply and persist per user"}
   ],
   "IDE-008": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/projectFiles.test.ts","test":"recent projects (IDE-008)"},
@@ -1025,6 +1132,20 @@
   "IDE-009": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"2 Create a project from an example","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"2b Create a new project","partial":true}
+  ],
+  "IDE-010": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/updateCheck.test.ts","test":"latest release (IDE-010)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/updateCheck.test.ts","test":"update check (IDE-010)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/updateCheck.test.ts","test":"version order (IDE-010)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/updateCheckIpc.test.ts","test":"update check IPC boundary (IDE-010)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ipc/updateCheckBridge.test.ts","test":"update check bridge adapter (IDE-010)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/useAppSettings.test.ts","test":"application settings store (IDE-010)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/appSettings.test.ts","test":"application settings (IDE-007, IDE-010)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"21 Preferences apply and persist per user","partial":true}
+  ],
+  "IDE-011": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/ErrorBoundary.test.tsx","test":"a region that throws (IDE-011)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"20 A failing region does not blank the window"}
   ],
   "IDE-019": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"18 Force an input while stopped at a breakpoint","partial":true},

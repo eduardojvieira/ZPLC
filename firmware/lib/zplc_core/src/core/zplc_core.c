@@ -1730,7 +1730,8 @@ int zplc_vm_step(zplc_vm_t *vm) {
         if (ch1 < ch2) {
           strcmp_result = -1;
           break;
-        } else if (ch1 > ch2) {
+        }
+        if (ch1 > ch2) {
           strcmp_result = 1;
           break;
         }
@@ -1927,7 +1928,7 @@ int zplc_vm_step(zplc_vm_t *vm) {
       float fa, fb, fr;
       memcpy(&fa, &a, sizeof(float));
       memcpy(&fb, &b, sizeof(float));
-      if (fb == 0.0f) {
+      if (fb == 0.0F) {
         vm->error = ZPLC_VM_DIV_BY_ZERO;
         vm->halted = 1;
         return ZPLC_VM_DIV_BY_ZERO;
@@ -2386,8 +2387,6 @@ int zplc_vm_step(zplc_vm_t *vm) {
         return ZPLC_VM_OUT_OF_BOUNDS;
       }
 
-      mem_result = ZPLC_VM_OK;
-
       switch (opcode) {
       case OP_COMM_EXEC:
         mem_result = zplc_comm_fb_exec(kind, fb_mem, fb_len);
@@ -2441,9 +2440,9 @@ int zplc_vm_step(zplc_vm_t *vm) {
       memcpy(&f, &a, sizeof(float));
       if (f != f) {
         result = 0U; /* NaN */
-      } else if (f >= 2147483648.0f) {
+      } else if (f >= 2147483648.0F) {
         result = (uint32_t)INT32_MAX;
-      } else if (f <= -2147483648.0f) {
+      } else if (f <= -2147483648.0F) {
         result = (uint32_t)INT32_MIN;
       } else {
         result = (uint32_t)(int32_t)f;
@@ -2879,7 +2878,7 @@ static void zplc_core_commit_verified(const zplc_program_view_t *view) {
   memset(mem_tags, 0, sizeof(mem_tags));
   tag_count = (uint16_t)view->tag_count;
   for (index = 0U; index < view->tag_count; index++) {
-    const uint8_t *tag = view->tags + index * ZPLC_TAG_ENTRY_SIZE;
+    const uint8_t *tag = view->tags + (size_t)index * ZPLC_TAG_ENTRY_SIZE;
     mem_tags[index].var_addr = (uint16_t)tag[0] | ((uint16_t)tag[1] << 8);
     mem_tags[index].var_type = tag[2];
     mem_tags[index].tag_id = tag[3];
@@ -3042,7 +3041,7 @@ int zplc_core_load_tasks(const uint8_t *binary, size_t size,
     return ZPLC_LOADER_ERR_WORKSPACE;
   }
   for (index = 0U; index < task_count; index++) {
-    const uint8_t *source = view.tasks + index * ZPLC_TASK_DEF_SIZE;
+    const uint8_t *source = view.tasks + (size_t)index * ZPLC_TASK_DEF_SIZE;
     zplc_task_def_t parsed;
     parsed.id = (uint16_t)source[0] | ((uint16_t)source[1] << 8);
     parsed.type = source[2];

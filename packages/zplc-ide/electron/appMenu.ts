@@ -46,6 +46,18 @@ export function buildApplicationMenu({ platform, isPackaged, appName, requestRel
   ];
 }
 
+/** The part of an Electron `Input` that decides whether it is a reload chord. */
+export interface InputLike { type: string; key: string; control: boolean; meta: boolean; alt: boolean }
+
+/**
+ * Ctrl+R and Ctrl+Shift+R (Cmd on macOS): the chords that reload a page. The main process catches them before the page
+ * and the menu see them, so that a packaged build cannot reload by keyboard and a development host reloads only
+ * through the unsaved-work guard, whatever the menu holds (IDE-005). F5 is not one: Studio uses it for Resume.
+ */
+export function isReloadShortcut(input: InputLike): boolean {
+  return input.type === 'keyDown' && input.key.toLowerCase() === 'r' && (input.control || input.meta) && !input.alt;
+}
+
 interface MenuLike {
   items: ReadonlyArray<{ role?: string; accelerator?: unknown; submenu?: MenuLike | null }>;
 }

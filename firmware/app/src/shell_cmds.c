@@ -44,6 +44,7 @@
 #include <zplc_retain.h>
 #endif
 #include "zplc_config.h"
+#include "zplc_parse.h"
 #include "zplc_time.h"
 #include "program_admission.h"
 #include "program_store.h"
@@ -154,17 +155,9 @@ static K_WORK_DELAYABLE_DEFINE(s_hil_watch_work, hil_watch_work_handler);
  * @brief Convert hex string to byte array.
  */
 static int hex_decode(const char *hex, uint8_t *out, size_t out_len) {
-  size_t len = strlen(hex);
-  if (len % 2 != 0 || len / 2 > out_len) {
-    return -1;
-  }
-
-  for (size_t i = 0; i < len / 2; i++) {
-    char buf[3] = {hex[i * 2], hex[i * 2 + 1], '\0'};
-    out[i] = (uint8_t)strtoul(buf, NULL, 16);
-  }
-
-  return (int)(len / 2);
+  /* A character that is not a hex digit is an error: it used to decode as 0x00 and be written. */
+  int decoded = zplc_hex_decode(hex, out, out_len);
+  return decoded < 0 ? -1 : decoded;
 }
 
 /**
@@ -1535,7 +1528,12 @@ static int cmd_dbg_mem(const struct shell *sh, size_t argc, char **argv) {
 
   unsigned long offset = 0;
   if (argc >= 3) {
-    offset = strtoul(argv[2], NULL, 0);
+    uint32_t parsed_offset = 0U;
+    if (zplc_parse_uint(argv[2], 0, 0U, UINT32_MAX, &parsed_offset) != 0) {
+      shell_error(sh, "ERROR: Offset must be a whole number, got '%s'", argv[2]);
+      return -EINVAL;
+    }
+    offset = parsed_offset;
   }
 
   if (offset >= region_size) {
@@ -2010,7 +2008,12 @@ static int cmd_dbg_bp_add(const struct shell *sh, size_t argc, char **argv) {
     shell_error(sh, "Usage: zplc dbg bp add <pc>");
     return -EINVAL;
   }
-  uint16_t pc = (uint16_t)strtoul(argv[1], NULL, 0);
+  uint32_t parsed_pc = 0U;
+  if (zplc_parse_uint(argv[1], 0, 0U, UINT16_MAX, &parsed_pc) != 0) {
+    shell_error(sh, "ERROR: <pc> must be a whole number from 0 to %u, got '%s'", (unsigned)UINT16_MAX, argv[1]);
+    return -EINVAL;
+  }
+  uint16_t pc = (uint16_t)parsed_pc;
   int last_err = 0;
   bool found = false;
 
@@ -2048,7 +2051,12 @@ static int cmd_dbg_bp_remove(const struct shell *sh, size_t argc, char **argv) {
     shell_error(sh, "Usage: zplc dbg bp remove <pc>");
     return -EINVAL;
   }
-  uint16_t pc = (uint16_t)strtoul(argv[1], NULL, 0);
+  uint32_t parsed_pc = 0U;
+  if (zplc_parse_uint(argv[1], 0, 0U, UINT16_MAX, &parsed_pc) != 0) {
+    shell_error(sh, "ERROR: <pc> must be a whole number from 0 to %u, got '%s'", (unsigned)UINT16_MAX, argv[1]);
+    return -EINVAL;
+  }
+  uint16_t pc = (uint16_t)parsed_pc;
   int last_err = 0;
   bool found = false;
 
@@ -2258,7 +2266,12 @@ static int cmd_dbg_task(const struct shell *sh, size_t argc, char **argv) {
     shell_error(sh, "Usage: dbg task <id> [--json]");
     return -EINVAL;
   }
-  int id = atoi(argv[1]);
+  uint32_t parsed_id = 0U;
+  if (zplc_parse_uint(argv[1], 10, 0U, 65535U, &parsed_id) != 0) {
+    shell_error(sh, "ERROR: <id> must be a whole number, got '%s'", argv[1]);
+    return -EINVAL;
+  }
+  int id = (int)parsed_id;
   bool json = (argc > 2 && strcmp(argv[2], "--json") == 0);
 #ifdef CONFIG_ZPLC_SCHEDULER
   zplc_task_t task;
@@ -2338,7 +2351,12 @@ static int cmd_adc_read(const struct shell *sh, size_t argc, char **argv) {
     shell_error(sh, "Usage: adc read <channel>");
     return -EINVAL;
   }
-  int ch = atoi(argv[1]);
+  uint32_t parsed_channel = 0U;
+  if (zplc_parse_uint(argv[1], 10, 0U, 65535U, &parsed_channel) != 0) {
+    shell_error(sh, "ERROR: <channel> must be a whole number, got '%s'", argv[1]);
+    return -EINVAL;
+  }
+  int ch = (int)parsed_channel;
   uint16_t val;
   if (zplc_hal_adc_read(ch, &val) != ZPLC_HAL_OK) {
     shell_error(sh, "ERROR: Failed to read ADC channel %d", ch);
@@ -2800,6 +2818,21 @@ static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
 
   const char *key = argv[1];
   const char *val = argv[2];
+  uint32_t number = 0U;
+
+  /* A key that takes a number is parsed and range-checked before anything is stored: port 70000 used to become
+   * 4464 through atoi() and a uint16_t cast, and "abc" became 0. */
+  int number_rc = zplc_config_parse_number(key, val, &number);
+  if (number_rc == -ERANGE || number_rc == -EINVAL) {
+    uint32_t max = 0U;
+    (void)zplc_config_number_max(key, &max);
+    if (number_rc == -ERANGE) {
+      shell_error(sh, "ERROR: %s must be a whole number from 0 to %u, got '%s'", key, (unsigned)max, val);
+    } else {
+      shell_error(sh, "ERROR: %s must be a whole decimal number, got '%s'", key, val);
+    }
+    return -EINVAL;
+  }
 
   if (strcmp(key, "hostname") == 0) {
     zplc_config_set_hostname(val);
@@ -2812,41 +2845,41 @@ static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
   } else if (strcmp(key, "wifi_pass") == 0) {
     zplc_config_set_wifi_pass(val);
   } else if (strcmp(key, "wifi_security") == 0) {
-    zplc_config_set_wifi_security((uint8_t)atoi(val));
+    zplc_config_set_wifi_security((uint8_t)number);
   } else if (strcmp(key, "ntp_enabled") == 0) {
     zplc_config_set_ntp_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
   } else if (strcmp(key, "ntp_server") == 0) {
     zplc_config_set_ntp_server(val);
   } else if (strcmp(key, "modbus_id") == 0) {
-    zplc_config_set_modbus_id((uint16_t)atoi(val));
+    zplc_config_set_modbus_id((uint16_t)number);
   } else if (strcmp(key, "modbus_tcp_enabled") == 0) {
     zplc_config_set_modbus_tcp_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
   } else if (strcmp(key, "modbus_tcp_port") == 0) {
-    zplc_config_set_modbus_tcp_port((uint16_t)atoi(val));
+    zplc_config_set_modbus_tcp_port((uint16_t)number);
   } else if (strcmp(key, "modbus_rtu_enabled") == 0) {
     zplc_config_set_modbus_rtu_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
   } else if (strcmp(key, "modbus_rtu_baud") == 0) {
-    zplc_config_set_modbus_rtu_baud((uint32_t)strtoul(val, NULL, 10));
+    zplc_config_set_modbus_rtu_baud(number);
   } else if (strcmp(key, "modbus_rtu_parity") == 0) {
-    zplc_config_set_modbus_rtu_parity((zplc_modbus_parity_t)atoi(val));
+    zplc_config_set_modbus_rtu_parity((zplc_modbus_parity_t)number);
   } else if (strcmp(key, "modbus_rtu_client_enabled") == 0) {
     zplc_config_set_modbus_rtu_client_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
   } else if (strcmp(key, "modbus_rtu_client_slave_id") == 0) {
-    zplc_config_set_modbus_rtu_client_slave_id((uint8_t)atoi(val));
+    zplc_config_set_modbus_rtu_client_slave_id((uint8_t)number);
   } else if (strcmp(key, "modbus_rtu_client_poll_ms") == 0) {
-    zplc_config_set_modbus_rtu_client_poll_ms((uint32_t)strtoul(val, NULL, 10));
+    zplc_config_set_modbus_rtu_client_poll_ms(number);
   } else if (strcmp(key, "modbus_tcp_client_enabled") == 0) {
     zplc_config_set_modbus_tcp_client_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
   } else if (strcmp(key, "modbus_tcp_client_host") == 0) {
     zplc_config_set_modbus_tcp_client_host(val);
   } else if (strcmp(key, "modbus_tcp_client_port") == 0) {
-    zplc_config_set_modbus_tcp_client_port((uint16_t)atoi(val));
+    zplc_config_set_modbus_tcp_client_port((uint16_t)number);
   } else if (strcmp(key, "modbus_tcp_client_unit_id") == 0) {
-    zplc_config_set_modbus_tcp_client_unit_id((uint8_t)atoi(val));
+    zplc_config_set_modbus_tcp_client_unit_id((uint8_t)number);
   } else if (strcmp(key, "modbus_tcp_client_poll_ms") == 0) {
-    zplc_config_set_modbus_tcp_client_poll_ms((uint32_t)strtoul(val, NULL, 10));
+    zplc_config_set_modbus_tcp_client_poll_ms(number);
   } else if (strcmp(key, "modbus_tcp_client_timeout_ms") == 0) {
-    zplc_config_set_modbus_tcp_client_timeout_ms((uint32_t)strtoul(val, NULL, 10));
+    zplc_config_set_modbus_tcp_client_timeout_ms(number);
   } else if (strcmp(key, "mqtt_broker") == 0) {
     zplc_config_set_mqtt_broker(val);
   } else if (strcmp(key, "mqtt_client_id") == 0) {
@@ -2856,13 +2889,13 @@ static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
   } else if (strcmp(key, "mqtt_topic_namespace") == 0) {
     zplc_config_set_mqtt_topic_namespace(val);
   } else if (strcmp(key, "mqtt_profile") == 0) {
-    zplc_config_set_mqtt_profile((zplc_mqtt_profile_t)atoi(val));
+    zplc_config_set_mqtt_profile((zplc_mqtt_profile_t)number);
   } else if (strcmp(key, "mqtt_protocol") == 0) {
-    zplc_config_set_mqtt_protocol((zplc_mqtt_protocol_t)atoi(val));
+    zplc_config_set_mqtt_protocol((zplc_mqtt_protocol_t)number);
   } else if (strcmp(key, "mqtt_transport") == 0) {
-    zplc_config_set_mqtt_transport((zplc_mqtt_transport_t)atoi(val));
+    zplc_config_set_mqtt_transport((zplc_mqtt_transport_t)number);
   } else if (strcmp(key, "mqtt_port") == 0) {
-    zplc_config_set_mqtt_port((uint16_t)atoi(val));
+    zplc_config_set_mqtt_port((uint16_t)number);
   } else if (strcmp(key, "mqtt_enabled") == 0) {
     zplc_config_set_mqtt_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
   } else if (strcmp(key, "mqtt_username") == 0) {
@@ -2870,21 +2903,21 @@ static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
   } else if (strcmp(key, "mqtt_password") == 0) {
     zplc_config_set_mqtt_password(val);
   } else if (strcmp(key, "mqtt_keepalive") == 0) {
-    zplc_config_set_mqtt_keepalive_sec((uint16_t)atoi(val));
+    zplc_config_set_mqtt_keepalive_sec((uint16_t)number);
   } else if (strcmp(key, "mqtt_publish_interval") == 0) {
-    zplc_config_set_mqtt_publish_interval_ms((uint32_t)strtoul(val, NULL, 10));
+    zplc_config_set_mqtt_publish_interval_ms(number);
   } else if (strcmp(key, "mqtt_publish_qos") == 0) {
-    zplc_config_set_mqtt_publish_qos((zplc_mqtt_qos_t)atoi(val));
+    zplc_config_set_mqtt_publish_qos((zplc_mqtt_qos_t)number);
   } else if (strcmp(key, "mqtt_subscribe_qos") == 0) {
-    zplc_config_set_mqtt_subscribe_qos((zplc_mqtt_qos_t)atoi(val));
+    zplc_config_set_mqtt_subscribe_qos((zplc_mqtt_qos_t)number);
   } else if (strcmp(key, "mqtt_publish_retain") == 0) {
     zplc_config_set_mqtt_publish_retain(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
   } else if (strcmp(key, "mqtt_clean_session") == 0) {
     zplc_config_set_mqtt_clean_session(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
   } else if (strcmp(key, "mqtt_session_expiry") == 0) {
-    zplc_config_set_mqtt_session_expiry_sec((uint32_t)strtoul(val, NULL, 10));
+    zplc_config_set_mqtt_session_expiry_sec(number);
   } else if (strcmp(key, "mqtt_security") == 0) {
-    zplc_config_set_mqtt_security((zplc_mqtt_security_t)atoi(val));
+    zplc_config_set_mqtt_security((zplc_mqtt_security_t)number);
   } else if (strcmp(key, "mqtt_websocket_path") == 0) {
     zplc_config_set_mqtt_websocket_path(val);
   } else if (strcmp(key, "mqtt_alpn") == 0) {
@@ -2896,7 +2929,7 @@ static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
   } else if (strcmp(key, "mqtt_lwt_payload") == 0) {
     zplc_config_set_mqtt_lwt_payload(val);
   } else if (strcmp(key, "mqtt_lwt_qos") == 0) {
-    zplc_config_set_mqtt_lwt_qos((zplc_mqtt_qos_t)atoi(val));
+    zplc_config_set_mqtt_lwt_qos((zplc_mqtt_qos_t)number);
   } else if (strcmp(key, "mqtt_lwt_retain") == 0) {
     zplc_config_set_mqtt_lwt_retain(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
   } else if (strcmp(key, "mqtt_ca_cert_path") == 0) {
@@ -2908,7 +2941,7 @@ static int cmd_config_set(const struct shell *sh, size_t argc, char **argv) {
   } else if (strcmp(key, "azure_sas_key") == 0) {
     zplc_config_set_azure_sas_key(val);
   } else if (strcmp(key, "azure_sas_expiry_s") == 0) {
-    zplc_config_set_azure_sas_expiry_s((uint32_t)strtoul(val, NULL, 10));
+    zplc_config_set_azure_sas_expiry_s(number);
   } else if (strcmp(key, "azure_twin_enabled") == 0) {
     zplc_config_set_azure_twin_enabled(strcmp(val, "true") == 0 || strcmp(val, "1") == 0 || strcmp(val, "on") == 0);
   } else if (strcmp(key, "azure_direct_methods_enabled") == 0) {
@@ -3054,11 +3087,12 @@ static int cmd_cert_begin(const struct shell *sh, size_t argc, char **argv) {
     return -EINVAL;
   }
 
-  unsigned long size = strtoul(argv[2], NULL, 10);
-  if (size == 0U || size > CERT_STAGING_MAX_BYTES) {
-    shell_error(sh, "ERROR: Invalid size (1..%u)", CERT_STAGING_MAX_BYTES);
+  uint32_t parsed_size = 0U;
+  if (zplc_parse_uint(argv[2], 10, 1U, CERT_STAGING_MAX_BYTES, &parsed_size) != 0) {
+    shell_error(sh, "ERROR: Invalid size '%s' (1..%u)", argv[2], CERT_STAGING_MAX_BYTES);
     return -EINVAL;
   }
+  unsigned long size = parsed_size;
 
   cert_staging.active = true;
   cert_staging.expected = (size_t)size;

@@ -1,0 +1,23 @@
+{
+  "requirement": "CMP-041",
+  "title": "an interface variable holds an element of an array and an instance of a derived block",
+  "matrix": [
+    "pous.interfaces-implements",
+    "pous.extends-override-final-super"
+  ],
+  "note": "A block implements the interfaces of the blocks it extends; the reference names the element of the array chosen at run time, and an overriding method that calls SUPER^ is the one that runs for the derived block",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 321
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 1005
+    }
+  ]
+}

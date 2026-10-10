@@ -839,6 +839,7 @@ static int execute_task_cycle_locked(zplc_task_internal_t *t,
     k_spin_unlock(&admission_lock, key);
     hil_trace_task(t->task.config.id, (uint32_t)start_stamp.uptime_ms,
                    (uint32_t)end_stamp.uptime_ms, exec_time, overrun);
+    (void)overrun; /* hil_trace_task() is empty unless HIL tracing is built in */
   }
 
   if (result >= 0 && t->vm.error == ZPLC_VM_HALTED && !single_step_mode) {

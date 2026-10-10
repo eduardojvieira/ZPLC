@@ -25,6 +25,7 @@ import { isGridBasedRung, convertToGridRung } from '../models/ld';
 import { DataType, getFB, parseIOAddress, parseTimeLiteral, TokenType } from '@zplc/compiler';
 import { getFunctionBlockNamesForVisualEditors } from '../catalog/blockCatalog';
 import { getDefaultPorts } from '../models/fbd';
+import { findProjectBlock, type ProjectBlock } from '../models/projectBlocks';
 
 // =============================================================================
 // Types
@@ -50,6 +51,16 @@ const POWER_OUTPUT: Record<string, string> = {
   TON: 'Q', TOF: 'Q', TP: 'Q', CTU: 'Q', CTD: 'Q', CTUD: 'QU', R_TRIG: 'Q', F_TRIG: 'Q', SR: 'Q1', RS: 'Q1',
 };
 const GENERATED_STATE = /^(_rung\d+_result(_\d+)?|_edge_r\d+_.*)$/i;
+/**
+ * The function blocks the project declares, for the transpilation in progress (LNG-008). The transpiler is
+ * synchronous, so the blocks of one call are set at its start and cleared at its end.
+ */
+let projectBlocks: readonly ProjectBlock[] = [];
+/** A function block of the project of this name; a function is not placeable in a ladder rung. */
+function projectBlock(name: unknown): ProjectBlock | undefined {
+  const found = typeof name === 'string' ? findProjectBlock(projectBlocks, name) : undefined;
+  return found?.kind === 'FUNCTION_BLOCK' ? found : undefined;
+}
 const ST_KEYWORDS = new Set<string>(Object.values(TokenType));
 const SUPPORTED_DATA_TYPES = new Set(Object.values(DataType).map((type) => key(type)));
 
@@ -78,7 +89,7 @@ function key(value: string): string {
 }
 
 function isSupportedLDType(value: unknown): value is string {
-  return isTypeName(value) && (SUPPORTED_DATA_TYPES.has(key(value)) || Boolean(getFB(value)));
+  return isTypeName(value) && (SUPPORTED_DATA_TYPES.has(key(value)) || Boolean(getFB(value)) || Boolean(projectBlock(value)));
 }
 
 function validateComment(value: unknown, subject: string, errors: string[]): void {
@@ -120,7 +131,7 @@ function validateVariable(value: unknown, section: SymbolInfo['section'], symbol
     if (section !== 'local') errors.push(`${section} variable '${String(value.name)}' initialValue is not supported`);
     validateInitialValue(value.initialValue, String(value.type), `${section} variable '${String(value.name)}'`, errors);
   }
-  if (section === 'local' && typeof value.type === 'string' && getFB(value.type)) {
+  if (section === 'local' && typeof value.type === 'string' && (getFB(value.type) || projectBlock(value.type))) {
     if (value.initialValue !== undefined) errors.push(`Local FB '${String(value.name)}' initialValue is not supported`);
     if (value.address !== undefined) errors.push(`Local FB '${String(value.name)}' address is not supported`);
   }
@@ -156,6 +167,13 @@ function resolveBoolReference(value: unknown, subject: string, symbols: Map<stri
     const fb = variable && typeof variable.variable.type === 'string' ? getFB(variable.variable.type) : undefined;
     const output = fb?.members.find((entry) => entry.name.toUpperCase() === member[2].toUpperCase() && entry.isOutput);
     const isBoolOutput = output?.dataType === 'BOOL' || (output?.name.toUpperCase() === 'Q' && output.size === 1);
+    // an output of a function block the project declares
+    const declared = variable ? projectBlock(variable.variable.type) : undefined;
+    const declaredOutput = declared?.outputs.find((entry) => entry.name.toUpperCase() === member[2].toUpperCase());
+    if (declaredOutput) {
+      if (declaredOutput.type.toUpperCase() !== 'BOOL') errors.push(`${subject} '${value}' must reference a BOOL FB output`);
+      return;
+    }
     if (!variable || !fb || !output || !isBoolOutput) errors.push(`${subject} '${value}' must reference a BOOL FB output`);
     return;
   }
@@ -248,11 +266,12 @@ function validateElement(value: unknown, rung: UnknownRecord, symbols: Map<strin
   if (value.type === 'left_rail' || value.type === 'right_rail') return;
   if (value.type !== 'function_block') { errors.push(`Unsupported LD element type '${value.type}' (element '${String(value.id)}' in rung ${String(rung.number)})`); return; }
   if (!isTypeName(value.fbType) || !isIdentifier(value.instance)) { errors.push(`Function block '${String(value.id)}' requires a known type and instance`); return; }
-  const known = new Set(getFunctionBlockNamesForVisualEditors().map(key));
+  const declaredBlock = projectBlock(value.fbType);
+  const known = new Set([...getFunctionBlockNamesForVisualEditors(), ...(declaredBlock ? [declaredBlock.name] : [])].map(key));
   if (!known.has(key(value.fbType))) { errors.push(`Function block '${value.fbType}' is not in the visual catalog`); return; }
   const fb = getFB(value.fbType);
   const instance = symbols.get(key(value.instance));
-  if (!CUSTOM_MODBUS_BLOCKS.has(value.fbType) && (!fb || !instance || instance.section !== 'local' || String(instance.variable.type).toUpperCase() !== key(value.fbType))) {
+  if (!CUSTOM_MODBUS_BLOCKS.has(value.fbType) && ((!fb && !declaredBlock) || !instance || instance.section !== 'local' || String(instance.variable.type).toUpperCase() !== key(value.fbType))) {
     errors.push(`Function block '${value.id}' instance '${value.instance}' must be declared as ${value.fbType}`);
   }
   if (CUSTOM_MODBUS_BLOCKS.has(value.fbType)) {
@@ -261,7 +280,7 @@ function validateElement(value: unknown, rung: UnknownRecord, symbols: Map<strin
   }
   if (value.parameters !== undefined && !isRecord(value.parameters)) errors.push(`Function block '${value.id}' parameters must be an object`);
   if (value.outputs !== undefined && !isRecord(value.outputs)) errors.push(`Function block '${value.id}' outputs must be an object`);
-  const ports = getDefaultPorts(value.fbType);
+  const ports = getDefaultPorts(value.fbType, declaredBlock ? [declaredBlock] : undefined);
   for (const [port, expression] of Object.entries(isRecord(value.parameters) ? value.parameters : {})) {
     if (!isIdentifier(port)) errors.push(`Function block '${value.id}' has unsafe input port '${port}'`);
     const portDef = ports.inputs.find((entry) => entry.name.toUpperCase() === port.toUpperCase());
@@ -613,9 +632,10 @@ function or(values: Power[]): Power {
 // Transpiler
 // =============================================================================
 
-export function transpileLDToST(input: unknown): TranspileResult {
+export function transpileLDToST(input: unknown, blocks: readonly ProjectBlock[] = []): TranspileResult {
   const errors: string[] = [];
   const lines: string[] = [];
+  projectBlocks = blocks;
   
   try {
     const preflightErrors = validateLDForTranspilation(input);
@@ -706,6 +726,8 @@ export function transpileLDToST(input: unknown): TranspileResult {
       source: '',
       errors,
     };
+  } finally {
+    projectBlocks = [];
   }
 }
 

@@ -1,0 +1,22 @@
+{
+  "requirement": "CMP-041",
+  "title": "a method of an ABSTRACT block calls the abstract method that the derived block implements",
+  "matrix": [
+    "pous.public-private-protected-abstract"
+  ],
+  "note": "IEC 61131-3 ed. 3, ABSTRACT: the abstract method has no body; the method of the base that calls it runs the one of the derived block of the instance, 7 * 2 + 1 and 9 * 2 + 1",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 15
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 19
+    }
+  ]
+}

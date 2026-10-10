@@ -1,0 +1,17 @@
+{
+  "requirement": "CMP-043",
+  "title": "an allocation failure states the bytes required, the bytes available and the largest consumers",
+  "matrix": [
+    "configuration.ownership-and-memory-checks"
+  ],
+  "note": "CMP-043: the memory of a program is limited by the target profile (8192 bytes of WORK on posix, one of them the initialization flag); the failure names what the program needs, what the target has, and which variables take the most",
+  "build": "fails",
+  "lines": [
+    3
+  ],
+  "messageIncludes": [
+    "9005 bytes required",
+    "8192 bytes available",
+    "Largest consumers: Overflow.Table (9000 bytes), Overflow.Gain (4 bytes)"
+  ]
+}

@@ -27,8 +27,18 @@ describe('close guard IPC boundary', () => {
   it('validates the sender and the message of every handler', () => {
     expect(mainSource).toContain('ipcMain.handle(CLOSE_GUARD_CHANNEL.SET_DIRTY, (event, ...args: unknown[]) => {');
     expect(mainSource).toContain('args.length !== 1 || !isAllowedCloseGuardDirty(args[0]) || !currentRendererOwner(event)');
-    expect(mainSource).toContain('ipcMain.handle(CLOSE_GUARD_CHANNEL.CLOSE_NOW, (event, ...args: unknown[]) => {');
-    expect(mainSource).toContain('args.length !== 0 || !currentRendererOwner(event)');
+    expect(mainSource).toContain('ipcMain.handle(CLOSE_GUARD_CHANNEL.CLOSE_NOW, async (event, ...args: unknown[]) => {');
+    expect(mainSource).toContain('const owner = currentRendererOwner(event);\n    if (args.length !== 0 || !owner) throw new Error(\'Request denied\');');
+  });
+
+  it('catches the reload chords before the page and the menu, and reloads a development host only through the guard', () => {
+    const start = mainSource.indexOf("webContents.on('before-input-event'");
+    expect(start).toBeGreaterThan(-1);
+    const body = mainSource.slice(start, mainSource.indexOf('\n  });', start) + 6);
+    expect(body).toContain('isReloadShortcut(input)');
+    expect(body.indexOf('event.preventDefault();')).toBeLessThan(body.indexOf('requestReload()'));
+    expect(body).toContain('if (!app.isPackaged) requestReload();');
+    expect(body).not.toContain('.reload(');
   });
 
   it('vetoes the window close while files are modified and never relaxes the permission handler', () => {

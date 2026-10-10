@@ -7,6 +7,8 @@
 import { useState, type ReactElement } from 'react';
 import { ChevronDown, ChevronRight, Timer, Binary, Hash, GitBranch, Calculator, ToggleLeft, Zap, ArrowRightLeft, Repeat, Gauge, Database, Type, Radio } from 'lucide-react';
 import { getBlockCategories } from '../../catalog/blockCatalog';
+import { describeProjectBlock, projectPalette } from '../../models/projectBlocks';
+import { useProjectBlocks } from '../useProjectBlocks';
 
 // =============================================================================
 // Block Categories
@@ -49,8 +51,15 @@ const BLOCK_CATEGORIES: BlockCategory[] = getBlockCategories().map((category) =>
 
 export default function FBDToolbox() {
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-    new Set(['Timers', 'Logic Gates']) // Default expanded
+    new Set(['Project', 'Timers', 'Logic Gates']) // Default expanded
   );
+  // The function blocks and functions the project declares come first: they are the ones the author wrote (LNG-008)
+  const projectBlocks = useProjectBlocks();
+  const project = projectPalette(projectBlocks);
+  const categories: BlockCategory[] = project
+    ? [{ ...project, icon: <Database size={14} /> }, ...BLOCK_CATEGORIES]
+    : BLOCK_CATEGORIES;
+  const descriptions = new Map(projectBlocks.map((block) => [block.name, describeProjectBlock(block)] as const));
 
   const toggleCategory = (name: string) => {
     setExpandedCategories((prev) => {
@@ -80,7 +89,7 @@ export default function FBDToolbox() {
 
       {/* Categories */}
       <div className="py-1">
-        {BLOCK_CATEGORIES.map((category) => {
+        {categories.map((category) => {
           const isExpanded = expandedCategories.has(category.name);
           
           return (
@@ -107,6 +116,7 @@ export default function FBDToolbox() {
                       key={block}
                       draggable
                       onDragStart={(e) => onDragStart(e, block)}
+                      title={category.name === 'Project' ? descriptions.get(block) : undefined}
                       className="mx-2 my-0.5 px-2 py-1 rounded text-xs font-mono text-[var(--text-primary)]
                                  bg-[var(--color-surface-700)] hover:bg-[var(--color-surface-600)] cursor-grab active:cursor-grabbing
                                  border border-transparent hover:border-[var(--color-accent-blue)] transition-colors"

@@ -12,7 +12,7 @@
  */
 
 import { getDataTypeSize, getArrayElementCount, isArrayType, DataType, NameMap, sameName, VarSection } from './ast.ts';
-import type { STDataType, DataTypeValue, VarSectionValue, IOAddress, VarDecl, Program, ArrayType, PointerType, CompilationUnit, Expression, Statement, InitialValue } from './ast.ts';
+import type { STDataType, DataTypeValue, VarSectionValue, IOAddress, VarDecl, Program, ArrayType, PointerType, CompilationUnit, Expression, Statement, InitialValue, TypeDefinition, FunctionBlockDecl } from './ast.ts';
 import { getFB } from './stdlib/index.ts';
 import { MEMORY_REGION } from '../contract.generated.ts';
 import { CodegenError } from './diagnostics.ts';
@@ -74,6 +74,8 @@ export interface Symbol {
      * of a function (those are named `Function.name`). A function does not see a variable of a program (CMP-034).
      */
     owner?: string;
+    /** The source file of the project the variable is declared in (CMP-042); absent for a unit of one file. */
+    sourceRef?: string;
 }
 
 /**
@@ -82,6 +84,8 @@ export interface Symbol {
 export interface UserFBDefinition {
     name: string;
     size: number;
+    /** Declared ABSTRACT: no variable is of this type (CMP-041). */
+    isAbstract?: boolean;
     extends: string | null;  // Base FB name
     implements: string[];    // Interface names
     members: Map<string, MemberInfo>;
@@ -116,6 +120,12 @@ export interface MethodInfo {
     isFinal: boolean;
     isOverride: boolean;
     body: Statement[]; // Method body for inlining
+    /** The access specifier the method is declared with. */
+    access: 'PUBLIC' | 'PRIVATE' | 'PROTECTED' | 'INTERNAL';
+    /** The function block that declares the method (the base block for an inherited one); access is checked against it. */
+    owner: string;
+    /** The source file of the declaring block, for the diagnostics and the source ranges of the body (CMP-042). */
+    sourceRef?: string;
 }
 
 /**
@@ -199,6 +209,8 @@ export class SymbolTable {
     private userStructs = new NameMap<UserStructDefinition>();
     private userEnums = new NameMap<UserEnumDefinition>();
     private interfaces = new NameMap<InterfaceDefinition>();
+    /** The names of the interfaces of the unit, known before their definitions are: a member may be of one (CMP-041). */
+    private interfaceNames = new NameMap<true>();
     private workOffset = 0;  // Current offset in work memory
     private retainOffset = 0;  // Current offset in the retentive region (VAR RETAIN)
     /**
@@ -209,6 +221,13 @@ export class SymbolTable {
      * its to decide.
      */
     scopeResolver: ((name: string) => Symbol | undefined | null) | null = null;
+    /**
+     * The program whose variables a plain name finds first: the one being generated. The variables of a
+     * program are stored as `Program.name`, so that two programs of one unit may use the same names (CMP-042).
+     */
+    programScope: string | null = null;
+    /** The only program of the unit, when it has one: a table of one program answers plain names without a scope. */
+    private soleProgram: string | null = null;
     private readonly workBase: number;  // Base address for work memory
 
     /**
@@ -239,12 +258,32 @@ export class SymbolTable {
     get(name: string): Symbol | undefined {
         const scoped = this.scopeResolver?.(name);
         if (scoped !== undefined) return scoped ?? undefined;
+        const program = this.programScope ?? this.soleProgram;
+        return (program === null ? undefined : this.symbols.get(`${program}.${name}`)) ?? this.symbols.get(name);
+    }
+
+    /**
+     * A symbol by the name it was declared with, whatever the scope the generator is in: a global, a
+     * constant, a variable of a function (`Function.name`), or the variable of any program (which is how a
+     * function is told that the name is not its to see, CMP-034).
+     */
+    getDeclared(name: string): Symbol | undefined {
+        const plain = this.symbols.get(name);
+        if (plain) return plain;
+        for (const symbol of this.symbols.values()) {
+            if (symbol.owner !== undefined && sameName(symbol.name, name)) return symbol;
+        }
+        return undefined;
+    }
+
+    /** A global, a constant or an enumeration value by name: what a function block sees besides its own members. */
+    getGlobal(name: string): Symbol | undefined {
         return this.symbols.get(name);
     }
 
-    /** A symbol by the name it was declared with, whatever the scope the generator is in. */
-    getDeclared(name: string): Symbol | undefined {
-        return this.symbols.get(name);
+    /** Declare that `program` is the only program of the unit (see soleProgram). */
+    setSoleProgram(program: string | null): void {
+        this.soleProgram = program;
     }
 
     /**
@@ -265,12 +304,19 @@ export class SymbolTable {
      * Add a variable to the symbol table.
      * Automatically assigns memory address.
      */
-    add(decl: VarDecl): Symbol {
+    add(decl: VarDecl, scope: { program?: string; sourceRef?: string } = {}): Symbol {
         if (decl.section === VarSection.VAR_EXTERNAL) {
             return this.linkExternal(decl);
         }
-        if (this.symbols.has(decl.name)) {
+        // a variable of a program is stored under the name of the program; it may not share a name with a global
+        const key = scope.program === undefined ? decl.name : `${scope.program}.${decl.name}`;
+        if (this.symbols.has(key) || (scope.program !== undefined && this.symbols.has(decl.name))) {
             throw new CodegenError(`Symbol '${decl.name}' already defined`, decl.line, decl.column, decl.line, decl.column + decl.name.length);
+        }
+
+        const instanceType = isArrayType(decl.dataType) ? (decl.dataType as ArrayType).elementType : decl.dataType;
+        if (typeof instanceType === 'string' && this.userFBs.get(instanceType)?.isAbstract) {
+            throw new CodegenError(`'${decl.name}' is an instance of the ABSTRACT function block '${instanceType}'`, decl.line, decl.column, decl.line, decl.column + decl.name.length);
         }
 
         const varSize = this.sizeOf(decl.dataType);
@@ -354,9 +400,10 @@ export class SymbolTable {
             tags: decl.tags,
             declarationLine: decl.line,
             ...(decl.retain && !decl.ioAddress ? { retain: true } : {}),
+            ...(scope.sourceRef === undefined ? {} : { sourceRef: scope.sourceRef }),
         };
 
-        this.symbols.set(decl.name, symbol);
+        this.symbols.set(key, symbol);
         return symbol;
     }
 
@@ -497,6 +544,49 @@ export class SymbolTable {
         return this.interfaces.get(name);
     }
 
+    /** Declare the name of an interface; its definition follows (see interfaceNames). */
+    declareInterface(name: string): void {
+        this.interfaceNames.set(name, true);
+    }
+
+    /** Whether `name` is an interface of the unit: a variable of it holds a reference to an instance (CMP-041). */
+    isInterface(name: string): boolean {
+        return this.interfaceNames.has(name) || this.interfaces.has(name);
+    }
+
+    /** Whether `iface` is `ancestor` or extends it, directly or through other interfaces. */
+    interfaceDerivesFrom(iface: string, ancestor: string, seen: Set<string> = new Set()): boolean {
+        if (sameName(iface, ancestor)) return true;
+        if (seen.has(iface.toUpperCase())) return false;
+        seen.add(iface.toUpperCase());
+        return (this.interfaces.get(iface)?.extends ?? []).some((base) => this.interfaceDerivesFrom(base, ancestor, seen));
+    }
+
+    /** The signature of `method` in `iface` or in an interface it extends. */
+    findInterfaceMethod(iface: string, method: string, seen: Set<string> = new Set()): MethodSignature | undefined {
+        if (seen.has(iface.toUpperCase())) return undefined;
+        seen.add(iface.toUpperCase());
+        const definition = this.interfaces.get(iface);
+        if (!definition) return undefined;
+        const own = definition.methods.get(method);
+        if (own) return own;
+        for (const base of definition.extends) {
+            const found = this.findInterfaceMethod(base, method, seen);
+            if (found) return found;
+        }
+        return undefined;
+    }
+
+    /** Whether the block `fbType`, or a block it extends, implements `iface` or an interface that extends it. */
+    blockImplements(fbType: string, iface: string): boolean {
+        const seen = new Set<string>();
+        for (let name: string | null = fbType; name !== null && !seen.has(name.toUpperCase()); name = this.userFBs.get(name)?.extends ?? null) {
+            seen.add(name.toUpperCase());
+            if ((this.userFBs.get(name)?.implements ?? []).some((implemented) => this.interfaceDerivesFrom(implemented, iface))) return true;
+        }
+        return false;
+    }
+
     /**
      * Get method info for a specific FB and method.
      */
@@ -582,6 +672,9 @@ export class SymbolTable {
         }
 
         if (typeof type === 'string') {
+            // a variable of an interface type holds a reference to an instance of a block that implements it
+            if (this.isInterface(type)) return REFERENCE_SIZE;
+
             const userFB = this.userFBs.get(type);
             if (userFB) return userFB.size;
 
@@ -670,6 +763,36 @@ export function alignTo(value: number, alignment: number): number {
 }
 
 /**
+ * The type definitions of a unit, each one after the definitions its members are of: the files of a project
+ * are merged in an order that has nothing to do with which type uses which (CMP-042).
+ */
+function dependenciesFirst(definitions: TypeDefinition[]): TypeDefinition[] {
+    const byName = new NameMap<TypeDefinition>();
+    for (const definition of definitions) byName.set(definition.name, definition);
+    const done = new Set<TypeDefinition>();
+    const ordered: TypeDefinition[] = [];
+    const nameOf = (type: unknown): string | undefined => {
+        if (typeof type === 'string') return type;
+        if (isArrayType(type as STDataType)) return nameOf((type as ArrayType).elementType);
+        return undefined;
+    };
+    const visit = (definition: TypeDefinition): void => {
+        if (done.has(definition)) return;
+        done.add(definition);
+        if (definition.kind === 'StructDecl') {
+            for (const member of definition.members) {
+                const name = nameOf(member.dataType);
+                const used = name === undefined ? undefined : byName.get(name);
+                if (used) visit(used);
+            }
+        }
+        ordered.push(definition);
+    };
+    definitions.forEach(visit);
+    return ordered;
+}
+
+/**
  * Build a symbol table from a parsed compilation unit or program.
  *
  * @param unit - Parsed compilation unit or program AST
@@ -678,11 +801,18 @@ export function alignTo(value: number, alignment: number): number {
  */
 export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase?: number): SymbolTable {
     const table = new SymbolTable(workMemoryBase);
+    // the file of the declaration being processed: an error found here is placed in it (CMP-042)
+    let currentFile: string | undefined;
 
+    try {
     if (unit.kind === 'CompilationUnit') {
+        // the interfaces are known by name first: a member of a structure or a block may be of one
+        for (const iface of unit.interfaces ?? []) table.declareInterface(iface.name);
+
         // 1. First Pass: Process Type Definitions (STRUCTs and ENUMs)
         if (unit.typeDefinitions) {
-            for (const typeDef of unit.typeDefinitions) {
+            for (const typeDef of dependenciesFirst(unit.typeDefinitions)) {
+                currentFile = typeDef.sourceRef;
                 if (typeDef.kind === 'StructDecl') {
                     const members = new NameMap<MemberInfo>();
                     let currentOffset = 0;
@@ -720,7 +850,7 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
                                 tags: {},
                                 line: typeDef.line,
                                 column: typeDef.column,
-                            });
+                            }, { sourceRef: typeDef.sourceRef });
                         } catch (e) {
                             // Ignore duplicates for now
                         }
@@ -737,6 +867,7 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
         // 2. Second Pass: Process INTERFACE definitions
         if (unit.interfaces) {
             for (const iface of unit.interfaces) {
+                currentFile = iface.sourceRef;
                 const methodSigs = new NameMap<MethodSignature>();
                 
                 for (const method of iface.methods) {
@@ -773,10 +904,15 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
         const unprocessedFBs = [...unit.functionBlocks];
         
         while (unprocessedFBs.length > 0) {
-            // Find an FB that can be processed (no extends or base already processed)
-            const fbIndex = unprocessedFBs.findIndex(fb => {
-                return !fb.extends || table.getFBDefinition(fb.extends) !== undefined;
+            // Find an FB that can be processed (no extends or base already processed), and whose members of a
+            // function block type are of blocks already processed: their size is known (CMP-042)
+            const baseReady = (fb: FunctionBlockDecl) => !fb.extends || table.getFBDefinition(fb.extends) !== undefined;
+            const membersReady = (fb: FunctionBlockDecl) => [...fb.inputs, ...fb.outputs, ...fb.locals].every((member) => {
+                const name = isArrayType(member.dataType) ? (member.dataType as ArrayType).elementType : member.dataType;
+                return typeof name !== 'string' || !unprocessedFBs.some((other) => other !== fb && sameName(other.name, name));
             });
+            let fbIndex = unprocessedFBs.findIndex((fb) => baseReady(fb) && membersReady(fb));
+            if (fbIndex === -1) fbIndex = unprocessedFBs.findIndex(baseReady);
 
             if (fbIndex === -1) {
                 const missing = unprocessedFBs.map(fb => `${fb.name} (extends ${fb.extends})`).join(', ');
@@ -786,6 +922,15 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
 
             const fb = unprocessedFBs[fbIndex];
             unprocessedFBs.splice(fbIndex, 1);
+            currentFile = fb.sourceRef;
+
+            // FINAL blocks are not extended (CMP-041)
+            if (fb.extends) {
+                const base = unit.functionBlocks.find((candidate) => sameName(candidate.name, fb.extends!));
+                if (base?.isFinal) {
+                    throw new CodegenError(`Function block '${fb.name}' extends '${base.name}', which is FINAL`, fb.line, fb.column);
+                }
+            }
 
             const fbMembers = new NameMap<MemberInfo>();
             const methods = new NameMap<MethodInfo>();
@@ -811,6 +956,11 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
 
             const allVars = [...fb.inputs, ...fb.outputs, ...fb.inouts, ...fb.locals];
             for (const v of allVars) {
+                // a member that is an instance of an ABSTRACT block has no code to run
+                const memberType = isArrayType(v.dataType as STDataType) ? (v.dataType as ArrayType).elementType : v.dataType;
+                if (typeof memberType === 'string' && v.section !== VarSection.VAR_IN_OUT && table.getFBDefinition(memberType)?.isAbstract) {
+                    throw new CodegenError(`'${v.name}' is an instance of the ABSTRACT function block '${memberType}'`, v.line, v.column);
+                }
                 // Shadowing check: warn or error if member exists in base?
                 // For now, allow shadowing but it effectively hides the base member in symbol lookup
                 // (though memory addresses are distinct if offsets are different, but here we append)
@@ -842,7 +992,7 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
                             ...v,
                             name: mangledName,
                             section: VarSection.VAR // Allocate in WORK memory
-                        });
+                        }, { sourceRef: fb.sourceRef });
                     }
                     
                     return {
@@ -887,6 +1037,9 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
                     isFinal: method.isFinal,
                     isOverride: method.isOverride || !!baseMethod, // Mark as override if it shadows base
                     body: method.body,
+                    access: method.accessSpecifier,
+                    owner: fb.name,
+                    ...(fb.sourceRef === undefined ? {} : { sourceRef: fb.sourceRef }),
                 });
             }
 
@@ -940,9 +1093,23 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
                 }
             }
 
+            // a block that is not ABSTRACT implements every method it declares or inherits
+            if (!fb.isAbstract) {
+                for (const [methodName, info] of methods) {
+                    if (info.isAbstract) {
+                        throw new CodegenError(
+                            info.owner === fb.name
+                                ? `Method '${methodName}' of '${fb.name}' is ABSTRACT, so the function block must be declared FUNCTION_BLOCK ABSTRACT`
+                                : `Function block '${fb.name}' does not implement the ABSTRACT method '${methodName}' of '${info.owner}'`,
+                            fb.line, fb.column);
+                    }
+                }
+            }
+
             table.addFBDefinition({
                 name: fb.name,
                 size: currentOffset,
+                ...(fb.isAbstract ? { isAbstract: true } : {}),
                 extends: fb.extends,
                 implements: fb.implements,
                 members: fbMembers,
@@ -952,8 +1119,9 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
 
         // 3. Process VAR_GLOBAL blocks
         for (const globalBlock of unit.globalVars) {
+            currentFile = globalBlock.sourceRef;
             for (const decl of globalBlock.variables) {
-                table.add(decl);
+                table.add(decl, { sourceRef: globalBlock.sourceRef });
             }
         }
 
@@ -961,14 +1129,16 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
         // are declared as `Function.name`, so two functions may use the same names, and a parameter may be named
         // like a variable of a program. The code generator resolves a name inside a function to these first.
         for (const func of unit.functions) {
+            currentFile = func.sourceRef;
+            const scope = { sourceRef: func.sourceRef };
             const own = (name: string) => `${func.name}.${name}`;
             // Add inputs
             for (const input of func.inputs) {
-                table.add({ ...input, name: own(input.name) });
+                table.add({ ...input, name: own(input.name) }, scope);
             }
             // Add locals; a VAR_EXTERNAL names a global and takes no storage in the function
             for (const local of func.locals) {
-                table.add(local.section === VarSection.VAR_EXTERNAL ? local : { ...local, name: own(local.name) });
+                table.add(local.section === VarSection.VAR_EXTERNAL ? local : { ...local, name: own(local.name) }, scope);
             }
             // Add function name as result variable
             table.add({
@@ -980,18 +1150,20 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
                 ioAddress: null,
                 line: func.line,
                 column: func.column,
-            });
+            }, scope);
         }
 
-        // 5. Process programs
+        // 5. Process programs: each keeps its variables under its own name (CMP-042)
         for (const program of unit.programs) {
+            currentFile = program.sourceRef;
             for (const block of program.varBlocks) {
                 for (const decl of block.variables) {
-                    const symbol = table.add(decl);
+                    const symbol = table.add(decl, { program: program.name, sourceRef: program.sourceRef });
                     if (decl.section !== VarSection.VAR_EXTERNAL) symbol.owner = program.name;
                 }
             }
         }
+        if (unit.programs.length === 1) table.setSoleProgram(unit.programs[0]!.name);
     } else {
         // Legacy support for single Program
         for (const block of (unit as Program).varBlocks) {
@@ -999,6 +1171,10 @@ export function buildSymbolTable(unit: CompilationUnit | Program, workMemoryBase
                 table.add(decl);
             }
         }
+    }
+    } catch (error) {
+        if (error instanceof CodegenError && error.sourceRef === undefined && currentFile !== undefined) error.sourceRef = currentFile;
+        throw error;
     }
 
     return table;

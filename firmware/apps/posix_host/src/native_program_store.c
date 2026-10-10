@@ -40,6 +40,16 @@ static uint32_t crc32(const uint8_t *data, size_t len)
     return crc ^ 0xFFFFFFFFU;
 }
 
+static uint32_t gcd_u32(uint32_t a, uint32_t b)
+{
+    while (b != 0U) {
+        uint32_t rest = a % b;
+        a = b;
+        b = rest;
+    }
+    return a;
+}
+
 int zplc_native_program_describe(const uint8_t *program, size_t program_size,
                                  zplc_native_program_details_t *details)
 {
@@ -66,8 +76,9 @@ int zplc_native_program_describe(const uint8_t *program, size_t program_size,
         } else if (view.task_count <= ZPLC_LOADER_MAX_TASKS) {
             uint32_t index;
             uint32_t interval_us = 0U;
+            uint32_t common_ms = 0U;
             for (index = 0U; index < view.task_count; ++index) {
-                const uint8_t *task = view.tasks + index * ZPLC_TASK_DEF_SIZE;
+                const uint8_t *task = view.tasks + (size_t)index * ZPLC_TASK_DEF_SIZE;
                 zplc_task_def_t *definition = &details->tasks[index];
                 definition->id = get_u16(task);
                 definition->type = task[2U];
@@ -79,19 +90,23 @@ int zplc_native_program_describe(const uint8_t *program, size_t program_size,
                     definition->interval_us < 1000U ||
                     definition->interval_us > 3600000000U ||
                     definition->interval_us % 1000U != 0U ||
-                    definition->entry_point >= view.code_size ||
-                    (index != 0U && definition->interval_us != interval_us)) {
+                    definition->entry_point >= view.code_size) {
                     result = -1;
                     break;
                 }
+                /* RT-015: every task keeps its own interval; the greatest common divisor is the step that hits every release. */
+                if (index != 0U && definition->interval_us != interval_us) details->multirate = 1U;
                 interval_us = definition->interval_us;
+                common_ms = gcd_u32(common_ms, interval_us / 1000U);
             }
             if (result == ZPLC_LOADER_OK) {
                 details->task_count = (uint8_t)view.task_count;
                 details->has_task_segment = 1U;
-                details->scan_interval_ms = interval_us / 1000U;
+                details->scan_interval_ms = common_ms;
             }
-        } else result = -1;
+        } else {
+            result = -1;
+        }
     }
     free(workspace);
     return result == ZPLC_LOADER_OK ? 0 : -1;
@@ -174,7 +189,8 @@ static void make_meta(uint8_t meta[STORE_META_SIZE], unsigned slot, uint8_t stat
                       uint32_t generation, const uint8_t *program, size_t length)
 {
     memset(meta, 0, STORE_META_SIZE);
-    memcpy(meta, "ZPS1", 4U); put_u16(meta + 4U, 1U); meta[6] = (uint8_t)slot; meta[7] = state;
+    memcpy(meta, "ZPS1", 4U); /* NOLINT(bugprone-not-null-terminated-result): a four-byte magic, not a string */
+    put_u16(meta + 4U, 1U); meta[6] = (uint8_t)slot; meta[7] = state;
     put_u32(meta + 8U, generation); put_u32(meta + 12U, (uint32_t)length);
     put_u32(meta + 16U, get_u32(program + 12U)); put_u16(meta + 20U, ZPLC_VERSION_MAJOR);
     put_u16(meta + 22U, ZPLC_VERSION_MINOR); put_u32(meta + 28U, crc32(meta, 28U));
@@ -182,7 +198,9 @@ static void make_meta(uint8_t meta[STORE_META_SIZE], unsigned slot, uint8_t stat
 
 static void make_active(uint8_t active[STORE_ACTIVE_SIZE], unsigned slot, uint32_t generation)
 {
-    memset(active, 0, STORE_ACTIVE_SIZE); memcpy(active, "ZPA1", 4U); put_u16(active + 4U, 1U);
+    memset(active, 0, STORE_ACTIVE_SIZE);
+    memcpy(active, "ZPA1", 4U); /* NOLINT(bugprone-not-null-terminated-result): a four-byte magic, not a string */
+    put_u16(active + 4U, 1U);
     active[6] = (uint8_t)slot; put_u32(active + 8U, generation); put_u32(active + 12U, crc32(active, 12U));
 }
 
@@ -203,7 +221,7 @@ static int read_active(unsigned *slot, uint32_t *generation)
 static uint32_t next_generation(uint32_t current) { return current == UINT32_MAX ? 1U : current + 1U; }
 static int generation_is_newer(uint32_t candidate, uint32_t current)
 {
-    return candidate != current && (uint32_t)(candidate - current) < 0x80000000U;
+    return candidate != current && (candidate - current) < 0x80000000U;
 }
 
 /* Returns 0 for a valid legacy rollback, 1 for unavailable/corrupt data,

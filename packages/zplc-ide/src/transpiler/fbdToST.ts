@@ -16,6 +16,7 @@
 import { getFB, parseIOAddress } from '@zplc/compiler';
 import type { FBDModel, FBDBlock, FBDConnection } from '../models/fbd';
 import { isFunctionBlock, isLogicGate, isComparison, isMathOperator, validateFBDModel } from '../models/fbd';
+import { findProjectBlock, type ProjectBlock } from '../models/projectBlocks';
 
 // =============================================================================
 // Types
@@ -50,7 +51,8 @@ interface Source {
   origin: string;
 }
 
-type Kind = 'constant' | 'read' | 'variable' | 'output' | 'gate' | 'compare' | 'math' | 'function' | 'standard' | 'comm' | 'modbus' | 'registry';
+type Kind = 'constant' | 'read' | 'variable' | 'output' | 'gate' | 'compare' | 'math' | 'function' | 'standard' | 'comm' | 'modbus' | 'registry'
+  | 'userblock' | 'userfunction';
 
 function endpointKey(block: string, port: string): string {
   return JSON.stringify([block, port]);
@@ -98,12 +100,16 @@ const NOT_BOOLEAN = [...REALS, 'TIME', 'LTIME', 'STRING'];
 // Transpiler
 // =============================================================================
 
-export function transpileFBDToST(model: FBDModel): TranspileResult {
+/**
+ * `blocks` are the function blocks and functions that the project declares (LNG-008): a diagram places them
+ * like the standard ones, and the call names the ports of the declaration.
+ */
+export function transpileFBDToST(model: FBDModel, blocks?: readonly ProjectBlock[]): TranspileResult {
   const errors: string[] = [];
   const lines: string[] = [];
 
   try {
-    const validatedModel = validateFBDModel(model);
+    const validatedModel = validateFBDModel(model, blocks);
     const blockMap = new Map(validatedModel.blocks.map((b) => [b.id, b]));
     const fail = (block: FBDBlock, message: string): void => {
       errors.push(`FBD block '${block.id}' (${block.type}): ${message}`);
@@ -117,7 +123,7 @@ export function transpileFBDToST(model: FBDModel): TranspileResult {
     // Every block has to be one the transpiler translates
     const kinds = new Map<string, Kind>();
     for (const block of validatedModel.blocks) {
-      const kind = classify(block);
+      const kind = classify(block, blocks);
       if (kind) kinds.set(block.id, kind);
       else fail(block, 'this block type is not supported by the FBD transpiler');
     }
@@ -338,8 +344,19 @@ export function transpileFBDToST(model: FBDModel): TranspileResult {
           return tagLines.join('\n');
         }
 
+        case 'userfunction': {
+          // A function of the project: its result is the one output, OUT. The inputs that are wired are the
+          // arguments, by name; one left open is for the compiler to say (a function has no state to keep).
+          const wired = [...new Set((inputMap.get(block.id) ?? []).map((i) => i.port))];
+          const args = wired.map((port) => `${port} := ${render(sourceOf(block, port)!, portType(block, port))}`);
+          typed('OUT', outputType(block, 'OUT') ?? consumerType(block, 'OUT'));
+          // a result nobody uses is still a call: the function may do something
+          return out ? `${out} := ${block.type}(${args.join(', ')});` : `${block.type}(${args.join(', ')});`;
+        }
+
         case 'comm':
         case 'standard':
+        case 'userblock':
         case 'registry': {
           if (!block.instanceName) { fail(block, 'it has no instance name'); return ''; }
           // Only the inputs that are wired are passed: an input left open keeps the block's default
@@ -407,7 +424,7 @@ export function transpileFBDToST(model: FBDModel): TranspileResult {
     const declared = new Set(validatedModel.variables.local.map((v) => v.name.toUpperCase()));
     for (const block of validatedModel.blocks) {
       const kind = kinds.get(block.id);
-      if (block.instanceName && (kind === 'standard' || (kind === 'registry' && !declared.has(block.instanceName.toUpperCase())))) {
+      if (block.instanceName && (kind === 'standard' || ((kind === 'registry' || kind === 'userblock') && !declared.has(block.instanceName.toUpperCase())))) {
         const comment = block.comment ? ` (* ${block.comment} *)` : '';
         lines.push(`    ${block.instanceName} : ${block.type};${comment}`);
       }
@@ -473,7 +490,7 @@ export function transpileFBDToST(model: FBDModel): TranspileResult {
 // Block classification
 // =============================================================================
 
-function classify(block: FBDBlock): Kind | undefined {
+function classify(block: FBDBlock, blocks?: readonly ProjectBlock[]): Kind | undefined {
   const type = block.type;
   switch (type) {
     case 'constant': return 'constant';
@@ -481,6 +498,9 @@ function classify(block: FBDBlock): Kind | undefined {
     case 'variable': return 'variable';
     case 'output': return 'output';
   }
+  // what the project declares is what the name means, as it is in the compiler (LNG-008)
+  const declared = findProjectBlock(blocks, type);
+  if (declared) return declared.kind === 'FUNCTION' ? 'userfunction' : 'userblock';
   if (isLogicGate(type)) return 'gate';
   if (isComparison(type)) return 'compare';
   if (isMathOperator(type)) return 'math';
