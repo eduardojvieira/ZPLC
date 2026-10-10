@@ -12,6 +12,12 @@
     {"kind":"unit","ref":"tools/ci/conformance-matrix.test.ts","test":"tags every row that is architecture-sensitive with a case that carries the tag (VF-005)"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_arith_edges.c","test":"(VF-005, VF-015)."}
   ],
+  "VF-006": [
+    {"kind":"unit","ref":"tools/ci/test-source-guard.test.ts","test":"test source guard: a test that reads a product source file (VF-006)"},
+    {"kind":"unit","ref":"tools/ci/test-source-guard.test.ts","test":"test source guard: reads that are not product source (VF-006)"},
+    {"kind":"unit","ref":"tools/ci/test-source-guard.test.ts","test":"test source guard: the list of known offenders (VF-006)"},
+    {"kind":"unit","ref":"tools/ci/test-source-guard.test.ts","test":"test source guard: this repository (VF-006)"}
+  ],
   "VF-008": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"1 Open an existing folder","partial":true}
   ],
