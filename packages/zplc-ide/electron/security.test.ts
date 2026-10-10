@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 
+import { ZPLC_CONTRACT } from '@zplc/compiler';
+
 import {
   DEFAULT_DEVELOPMENT_RENDERER_PORT,
   NATIVE_PROGRAM_MAX_BYTES,
@@ -402,10 +404,10 @@ describe('Electron security boundary', () => {
       if (!match) throw new Error(`${name} is not defined as a plain number`);
       return Number(match[1]);
     };
-    const isa = header('firmware/lib/zplc_core/include/zplc_isa.h');
     const session = header('firmware/apps/posix_host/src/native_runtime_session.h');
 
-    expect(define(isa, 'ZPLC_MEM_CODE_SIZE', '0x[0-9A-Fa-f]+')).toBe(NATIVE_PROGRAM_MAX_BYTES);
+    // The code region is part of the generated contract, which `bun run contract:check` keeps equal to zplc_isa.h.
+    expect(ZPLC_CONTRACT.MEMORY_REGION.CODE.size).toBe(NATIVE_PROGRAM_MAX_BYTES);
     expect(define(session, 'ZPLC_NATIVE_REQUEST_ENVELOPE_MAX', '[0-9]+')).toBe(NATIVE_REQUEST_ENVELOPE_MAX);
     // ZPLC_NATIVE_REQUEST_MAX is built from those two in C, exactly as NATIVE_REQUEST_BUFFER_SIZE is here.
     expect(session).toContain('#define ZPLC_NATIVE_REQUEST_MAX ((ZPLC_MEM_CODE_SIZE * 2U) + ZPLC_NATIVE_REQUEST_ENVELOPE_MAX)');

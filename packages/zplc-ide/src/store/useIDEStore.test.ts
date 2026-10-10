@@ -45,10 +45,10 @@ const { useIDEStore } = await import('./useIDEStore');
 
 describe('useIDEStore workspace-test boundary', () => {
   it('does not promise automatic workspace-test registration from browser folder handles', () => {
-    const source = readFileSync(join(import.meta.dir, 'useIDEStore.ts'), 'utf8');
+    const members = Object.keys(useIDEStore.getState());
 
-    expect(source).not.toContain('autoLinkWorkspaceTests');
-    expect(source).not.toContain('registerProjectFile');
+    expect(members).not.toContain('autoLinkWorkspaceTests');
+    expect(members).not.toContain('registerProjectFile');
   });
 });
 

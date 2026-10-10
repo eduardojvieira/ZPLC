@@ -66,11 +66,10 @@
     "requirement": "VF-006",
     "added": "2026-10-10",
     "reads": [
-      "firmware/apps/posix_host/src/native_runtime_session.h",
-      "firmware/lib/zplc_core/include/zplc_isa.h"
+      "firmware/apps/posix_host/src/native_runtime_session.h"
     ],
     "replacement": "contract",
-    "reason": "Reads zplc_isa.h and native_runtime_session.h to keep the program and request limits equal to the C constants. The code size is in the generated contract; the request envelope needs a C constant exported through the session protocol (hello) so the test compares a reported value."
+    "reason": "The program limit is now compared with the generated contract. One case still reads native_runtime_session.h for the request envelope and the buffer formula. Replace by exporting those constants through the session protocol (hello) so the test compares a reported value."
   },
   {
     "file": "packages/zplc-ide/electron/sessionStoreIpc.test.ts",
@@ -154,16 +153,6 @@
     "reason": "The packaged-layout cases are behavioural; one case matches release.yml as text for its runner and architecture matrix. Replace by the recorded outcome of the release run for each platform."
   },
   {
-    "file": "packages/zplc-ide/src/cli/workspace.test.ts",
-    "requirement": "VF-006",
-    "added": "2026-10-10",
-    "reads": [
-      "packages/zplc-ide/src/cli/workspace.ts"
-    ],
-    "replacement": "behaviour",
-    "reason": "One case matches the open flags in workspace.ts as text. Replace by opening a named pipe at the manifest path and asserting that the read refuses without blocking."
-  },
-  {
     "file": "packages/zplc-ide/src/components/CodeEditor.monaco.test.ts",
     "requirement": "VF-006",
     "added": "2026-10-10",
@@ -188,13 +177,10 @@
     "requirement": "VF-006",
     "added": "2026-10-10",
     "reads": [
-      "packages/zplc-ide/src/components/LearnPanel.tsx",
-      "packages/zplc-ide/src/components/learnContent.en.v1.ts",
-      "packages/zplc-ide/src/components/learnContent.es.v1.ts",
-      "packages/zplc-ide/src/components/learnLesson.ts"
+      "packages/zplc-ide/src/components/LearnPanel.tsx"
     ],
     "replacement": "dom",
-    "reason": "Pins the Learn panel wiring, labels and the lesson catalog contents as text of LearnPanel.tsx, learnLesson.ts and the two content modules. The catalog assertions can become data tests on the exported catalog; the panel needs a render test (VF-007)."
+    "reason": "The lesson catalog and content are now tested as data. Two cases still pin the Learn panel wiring, labels and failure message as text of LearnPanel.tsx. Replace by render tests of the panel once VF-007 provides the DOM environment."
   },
   {
     "file": "packages/zplc-ide/src/components/Sidebar.migrationDisclosure.test.ts",
@@ -360,11 +346,10 @@
     "requirement": "VF-006",
     "added": "2026-10-10",
     "reads": [
-      "firmware/lib/zplc_core/include/zplc_isa.h",
       "packages/zplc-ide/src/components/Console.tsx"
     ],
-    "replacement": "contract",
-    "reason": "Parses zplc_vm_error_t out of zplc_isa.h to prove the Console labels every code, and reads Console.tsx for the Error column call. Replace by the VM error table of the generated contract (VF-012) and a render test of the trace table (VF-007)."
+    "replacement": "dom",
+    "reason": "The VM error table is now compared with the generated contract. One case still reads Console.tsx to prove the Error column calls describeVmError. Replace by a render test of the trace table (VF-007)."
   },
   {
     "file": "packages/zplc-ide/src/runtime/wasmAdapter.test.ts",
@@ -386,16 +371,6 @@
     ],
     "replacement": "dom",
     "reason": "Pins how App.tsx and CodeEditor.tsx report and apply the editor session as text. Replace by render tests that restore a session into the editor and the layout (VF-007, VF-008 restore-session journey)."
-  },
-  {
-    "file": "packages/zplc-ide/src/store/useIDEStore.test.ts",
-    "requirement": "VF-006",
-    "added": "2026-10-10",
-    "reads": [
-      "packages/zplc-ide/src/store/useIDEStore.ts"
-    ],
-    "replacement": "behaviour",
-    "reason": "The store cases are behavioural; one case asserts that useIDEStore.ts contains no automatic workspace-test registration as text. Replace by asserting that the store exposes no such action."
   },
   {
     "file": "packages/zplc-ide/src/theme/contrast.test.ts",
@@ -480,16 +455,6 @@
     ],
     "replacement": "artifact",
     "reason": "VF-021 names this file: it matches release.yml, ci.yml, the packaging scripts and electron-builder.yml with regular expressions. Replace by tests of the produced installers, checksums and bill of materials."
-  },
-  {
-    "file": "scripts/release-version.test.ts",
-    "requirement": "VF-006",
-    "added": "2026-10-10",
-    "reads": [
-      "packages/zplc-compiler/src/compiler/debug-map.ts"
-    ],
-    "replacement": "contract",
-    "reason": "Reads the compiler version declaration in debug-map.ts as text to prove it equals the package version. Replace by importing COMPILER_VERSION from the compiler package and comparing it with package.json."
   },
   {
     "file": "scripts/workflow-action-pins.test.mjs",
