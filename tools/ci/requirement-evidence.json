@@ -15,6 +15,14 @@
   "VF-008": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"1 Open an existing folder","partial":true}
   ],
+  "VF-010": [
+    {"kind":"unit","ref":"tools/ci/ci-workflow.test.ts","test":"ci.yml type-check (VF-010, VF-011)"},
+    {"kind":"unit","ref":"tools/ci/typecheck-coverage.test.ts","test":"type-check coverage (VF-010)"}
+  ],
+  "VF-011": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/lint/typeAwareLint.test.ts","test":"type-aware promise rules (VF-011)"},
+    {"kind":"unit","ref":"tools/ci/ci-workflow.test.ts","test":"ci.yml type-check (VF-010, VF-011)"}
+  ],
   "VF-012": [
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_contract.c","test":"Checks on the generated binary contract tables (WP-11, VF-012)."}
   ],
