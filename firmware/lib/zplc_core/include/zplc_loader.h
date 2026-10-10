@@ -127,6 +127,9 @@ typedef struct {
  * depths where paths meet, and treats a call by the effect of the callee on
  * the stack; it refuses what it cannot prove, among it recursion, and what
  * takes more work to prove than its bound (see ZPLC_VERIFY_STEPS_PER_BYTE).
+ * Calls nested deeper than the call stack of the VM (ZPLC_CALL_STACK_MAX, 32
+ * by default) are refused with ZPLC_LOADER_ERR_STACK as well: the run would
+ * end in the VM fault CALL_OVERFLOW.
  *
  * This does not load or authorize a runtime. Product load paths remain a
  * separate integration gate.

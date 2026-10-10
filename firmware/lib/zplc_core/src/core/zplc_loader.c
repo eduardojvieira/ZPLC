@@ -212,6 +212,14 @@ static int instruction_has_no_fallthrough(uint8_t opcode) {
  * walked again once it is; a callee that can never be summarised (it calls
  * itself, directly or not) is refused.
  *
+ * The summary also holds how deep calls nest below the frame: none for a
+ * frame that calls nothing, else one more than the deepest callee. The call
+ * graph is acyclic by now, so this is a longest path, and where it goes past
+ * the call stack of the VM (ZPLC_CALL_STACK_MAX) the program is refused,
+ * instead of faulting with CALL_OVERFLOW at run time. A task, and the entry
+ * point, start with an empty call stack. The nesting is followed up to 63
+ * calls; a build with a call stack deeper than that keeps the run-time fault.
+ *
  * The frame of a task is checked in absolute terms: the task must need
  * nothing, and its peak must not exceed the depth the task declares.
  *
@@ -235,7 +243,8 @@ static int instruction_has_no_fallthrough(uint8_t opcode) {
  *   prefix   rank index: targets before each 128 CODE bytes
  *   depth    per target: lo and hi, biased; lo is 0xFF while unknown
  *   pending  per target: interval changed, block to be followed again
- *   frames   per subroutine entry: pc, state, need, peak, dlo, dhi
+ *   frames   per subroutine entry: pc, state, need, peak, dlo, dhi (and the
+ *            nesting of calls, in the bits of the state byte left over)
  */
 
 #ifdef ZPLC_CORE_TESTING
@@ -252,11 +261,11 @@ static uint32_t ops_count;
 #define DEPTH_BIAS ZPLC_VERIFY_MAX_DEPTH /* a depth in [-127, 127] is a byte below 0xFF */
 #define DEPTH_UNSET 0xFFU
 
-#define FRAME_UNEXPLORED 0U
-#define FRAME_BLOCKED 1U
-#define FRAME_DONE 2U
-#define FRAME_STATE_MASK 3U
-#define FRAME_RETURNS 4U /* a return is reachable: [dlo, dhi] is valid */
+/* the state byte of a frame record: */
+#define FRAME_DONE 1U    /* summarised: need, peak and the rest are valid */
+#define FRAME_RETURNS 2U /* a return is reachable: [dlo, dhi] is valid */
+#define FRAME_NEST_SHIFT 2U
+#define FRAME_NEST_MAX 63U /* nesting of calls below the frame, saturating */
 
 typedef struct {
   const uint8_t *code;
@@ -280,6 +289,7 @@ typedef struct {
   int32_t peak;
   int32_t dlo;
   int32_t dhi;
+  int32_t nest; /* deepest nesting of calls below the frame */
   int returns;
   int blocked;
   int created; /* the walk created a frame */
@@ -314,7 +324,7 @@ static uint32_t rank_of(const verifier_t *v, uint32_t pc) {
   return rank + popcount8((uint8_t)(v->targets[pc >> 3] &
                                     ((1U << (pc & 7U)) - 1U)));
 }
-/* record layout: pc(2) flags(1) need(1) peak(1) dlo(1, biased) dhi(1, biased) */
+/* record layout: pc(2) state(1) need(1) peak(1) dlo(1, biased) dhi(1, biased) */
 static uint8_t *frame_at(const verifier_t *v, uint32_t index) {
   return v->frames + index * ZPLC_VERIFY_FRAME_BYTES;
 }
@@ -374,7 +384,7 @@ static int walk_call(verifier_t *v, walk_t *w, uint32_t target, int32_t *lo,
                      int32_t *hi, int *continues) {
   uint32_t index = frame_find(v, target);
   const uint8_t *callee;
-  int32_t need, peak;
+  int32_t need, peak, nest;
 
   *continues = 0;
   if (index == UINT32_MAX) {
@@ -384,7 +394,7 @@ static int walk_call(verifier_t *v, walk_t *w, uint32_t target, int32_t *lo,
     w->created = 1;
   }
   callee = frame_at(v, index);
-  if ((callee[2] & FRAME_STATE_MASK) != FRAME_DONE) {
+  if ((callee[2] & FRAME_DONE) == 0U) {
     /* The summary is not known yet: this walk is discarded and the frame
      * walked again once it is. The path goes on as if the call did nothing,
      * only to find the subroutines the rest of the frame calls (a path that
@@ -395,6 +405,12 @@ static int walk_call(verifier_t *v, walk_t *w, uint32_t target, int32_t *lo,
     *continues = 1;
     return ZPLC_LOADER_OK;
   }
+  /* the call itself is one more nested call than any in the callee */
+  nest = (int32_t)(callee[2] >> FRAME_NEST_SHIFT) + 1;
+  if (nest > (int32_t)ZPLC_CALL_STACK_MAX)
+    return ZPLC_LOADER_ERR_STACK; /* the VM faults with CALL_OVERFLOW here */
+  if (nest > w->nest)
+    w->nest = nest;
   need = (int32_t)callee[3];
   peak = (int32_t)callee[4];
   if (need > *lo && need - *lo > w->need)
@@ -561,8 +577,11 @@ static int walk_frame(verifier_t *v, uint32_t frame, int *progress) {
   record[4] = (uint8_t)w.peak;
   record[5] = (uint8_t)(w.dlo + DEPTH_BIAS);
   record[6] = (uint8_t)(w.dhi + DEPTH_BIAS);
-  record[2] = (uint8_t)((w.returns ? FRAME_RETURNS : 0U) |
-                        (w.blocked ? FRAME_BLOCKED : FRAME_DONE));
+  record[2] = (uint8_t)((w.blocked ? 0U : FRAME_DONE) |
+                        (w.returns ? FRAME_RETURNS : 0U) |
+                        ((w.nest < (int32_t)FRAME_NEST_MAX ? (uint32_t)w.nest
+                                                           : FRAME_NEST_MAX)
+                         << FRAME_NEST_SHIFT));
   if (w.created || !w.blocked)
     *progress = 1;
   return ZPLC_LOADER_OK;
@@ -593,7 +612,7 @@ static int verify_frames(const zplc_program_view_t *view, verifier_t *v) {
     for (index = 0U; index < v->frame_count; index++) {
       const uint32_t frame = ascending ? index : v->frame_count - 1U - index;
 
-      if ((frame_at(v, frame)[2] & FRAME_STATE_MASK) == FRAME_DONE)
+      if ((frame_at(v, frame)[2] & FRAME_DONE) != 0U)
         continue;
       result = walk_frame(v, frame, &progress);
       if (result != ZPLC_LOADER_OK)
@@ -603,7 +622,7 @@ static int verify_frames(const zplc_program_view_t *view, verifier_t *v) {
   } while (progress);
 
   for (index = 0U; index < v->frame_count; index++)
-    if ((frame_at(v, index)[2] & FRAME_STATE_MASK) != FRAME_DONE)
+    if ((frame_at(v, index)[2] & FRAME_DONE) == 0U)
       return ZPLC_LOADER_ERR_STACK; /* a call cycle: nothing can be proved */
 
   for (root = 0U; root <= view->task_count; root++) {

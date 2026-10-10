@@ -4,6 +4,11 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- The loader refuses a program whose calls nest deeper than the call stack of
+  the VM (`ZPLC_CALL_STACK_MAX`, 32 by default, 16 on the ESP32-S3 profile)
+  with `ZPLC_LOADER_ERR_STACK`, instead of accepting it and ending the scan
+  with the VM fault `CALL_OVERFLOW`. Programs of the conformance suite nest at
+  most two calls deep.
 - `STRCMP` places the strings it compares, header and characters, before it
   reads the first character, as `STRCPY` and `STRCAT` do, and ends the scan
   with the VM fault `OUT_OF_BOUNDS` when a string's length reaches past the

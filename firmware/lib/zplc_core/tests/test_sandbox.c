@@ -1138,6 +1138,56 @@ static void test_calls(void) {
 }
 
 /* ----------------------------------------------------------------------------
+ * RT-003: the nesting of calls is verified
+ * ------------------------------------------------------------------------- */
+
+/** main calls f1 (`from_main` times), f1 calls f2 ... and f(depth) returns:
+ *  `depth` calls are nested at the deepest point. */
+static void nested_calls(code_t *c, unsigned depth, unsigned from_main) {
+  const uint16_t first = (uint16_t)(3U * from_main + 1U);
+  unsigned i;
+
+  c->n = 0;
+  for (i = 0U; i < from_main; i++)
+    op16(c, OP_CALL, first);
+  op(c, OP_HALT);
+  for (i = 1U; i < depth; i++) {
+    op16(c, OP_CALL, (uint16_t)(first + 4U * i)); /* f(i) calls f(i+1) */
+    op(c, OP_RET);
+  }
+  op(c, OP_RET); /* f(depth) */
+}
+
+static void test_call_nesting(void) {
+  code_t c;
+  task_t task;
+  printf("=== RT-003 the nesting of calls ===\n");
+
+  /* the call stack of the VM takes ZPLC_CALL_STACK_MAX calls: the next one
+   * faults at run time, which is what the verifier must have said before */
+  nested_calls(&c, ZPLC_CALL_STACK_MAX, 1U);
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_OK, "calls nested to the depth of the call stack are accepted");
+  CHECK_EQ(run_raw(&c), OK, "and run to the end");
+  nested_calls(&c, ZPLC_CALL_STACK_MAX + 1U, 1U);
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_ERR_STACK, "one call more than the call stack takes is refused");
+  CHECK_EQ(run_raw(&c), ZPLC_VM_CALL_OVERFLOW,
+           "and the VM would fault with CALL_OVERFLOW (the premise of the check)");
+
+  /* the same for the code of a task, which starts with an empty call stack */
+  task.entry = 0U;
+  task.stack = 8U;
+  nested_calls(&c, ZPLC_CALL_STACK_MAX, 1U);
+  CHECK_EQ(verdict_tasks(&c, &task, 1U), ZPLC_LOADER_OK, "a task may nest calls to the same depth");
+  nested_calls(&c, ZPLC_CALL_STACK_MAX + 1U, 1U);
+  CHECK_EQ(verdict_tasks(&c, &task, 1U), ZPLC_LOADER_ERR_STACK, "and not one more");
+
+  /* it is the longest path that counts, not the number of calls */
+  nested_calls(&c, ZPLC_CALL_STACK_MAX, 3U);
+  CHECK_EQ(verdict(&c), ZPLC_LOADER_OK, "the same chain called three times is as deep as once");
+  CHECK_EQ(run_raw(&c), OK, "and runs");
+}
+
+/* ----------------------------------------------------------------------------
  * RT-003: the work of the verifier is bounded by the size of the CODE
  * ------------------------------------------------------------------------- */
 
@@ -1359,6 +1409,7 @@ int main(void) {
   test_stack_paths();
   test_declared_depth();
   test_calls();
+  test_call_nesting();
   test_verifier_work_is_bounded();
   test_verifier_work_of_wide_programs();
   test_stack_effect_table_is_what_the_vm_does();
