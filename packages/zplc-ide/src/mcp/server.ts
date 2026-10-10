@@ -7,6 +7,7 @@ import * as z from 'zod/v4';
 import idePackage from '../../package.json';
 import { directoryIdentity, sameDirectoryIdentity, type DirectoryIdentity } from '../cli/firmwareBuildRunner';
 import * as toolApi from '../cli/toolApi';
+import { LEARN_PROGRESS_FILENAME, LEARN_PROGRESS_LEGACY_FILENAME, LEARN_PROGRESS_MAX_BYTES, emptyProgress, migrateLegacyMastery, parseProgress, type LearnProgress } from '../../electron/learnProgressModel';
 
 const MAX_OUTPUT_BYTES = 512 * 1024;
 const LEARN_LESSON_IDS = ['motor-start-stop-safe', 'pedestrian-crossing-states', 'tank-level-fault-reset', 'conveyor-classification-jam', 'blinky-ladder-timer-feedback', 'motor-plant-feedback', 'edge-counter-pulses', 'scan-cycle-one-scan-memory', 'temporal-assertions-jam-fault', 'conveyor-two-parts-diagnosis'] as const;
@@ -345,7 +346,12 @@ export function buildMcpServer(workspace: McpWorkspace): McpServer {
   return server;
 }
 
-/** @internal Small test seam; never returns paths or raw user-data. */
+/**
+ * @internal Small test seam; never returns paths or raw user-data.
+ *
+ * Read-only (LRN-034): this reads the progress file the Studio keeps and answers which lessons are passed. It has no
+ * operation that writes progress, and a file of the first release is migrated in memory only, never written back.
+ */
 export async function courseProgressResource(workspace: McpWorkspace): Promise<Record<string, unknown>> {
   if (!workspace.userData) return { ok: false, error: 'MCP_CAPABILITY_UNAVAILABLE', reason: 'requires-explicit-user-data' };
   // This directory is user-managed progress storage, so its entry generation changes when the progress file is created.
@@ -354,21 +360,32 @@ export async function courseProgressResource(workspace: McpWorkspace): Promise<R
     return !!current && workspace.userData!.identity.path === current.path && workspace.userData!.identity.dev === current.dev && workspace.userData!.identity.ino === current.ino;
   };
   if (!await sameUserData()) return { ok: false, error: 'MCP_WORKSPACE_CHANGED' };
-  const file = join(workspace.userData.root, 'zplc-learn-mastery.v1.json');
-  try {
-    const status = await lstat(file); if (status.isSymbolicLink() || !status.isFile() || status.size > 4096) return { ok: false, error: 'MCP_INTERNAL_ERROR' };
-    const text = await readFile(file, 'utf8');
-    if (Buffer.byteLength(text, 'utf8') > 4096 || !await sameUserData()) return { ok: false, error: 'MCP_WORKSPACE_CHANGED' };
-    const parsed = JSON.parse(text) as unknown;
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || Object.getPrototypeOf(parsed) !== Object.prototype || Object.getOwnPropertyNames(parsed).sort().join(',') !== 'mastered,schemaVersion') return { ok: false, error: 'MCP_INTERNAL_ERROR' };
-    const mastered = (parsed as { schemaVersion?: unknown; mastered?: unknown }).mastered;
-    if ((parsed as { schemaVersion?: unknown }).schemaVersion !== 1 || !Array.isArray(mastered) || mastered.length > LEARN_LESSON_IDS.length || Object.getOwnPropertyNames(mastered).length !== mastered.length + 1) return { ok: false, error: 'MCP_INTERNAL_ERROR' };
-    let previous = -1; for (const id of mastered) { const index = LEARN_LESSON_IDS.indexOf(id as typeof LEARN_LESSON_IDS[number]); if (typeof id !== 'string' || index <= previous) return { ok: false, error: 'MCP_INTERNAL_ERROR' }; previous = index; }
-    return { ok: true, schemaVersion: 1, mastered, completed: mastered.length, total: LEARN_LESSON_IDS.length };
-  } catch (error) {
-    if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT') return await sameUserData() ? { ok: true, schemaVersion: 1, mastered: [], completed: 0, total: LEARN_LESSON_IDS.length } : { ok: false, error: 'MCP_WORKSPACE_CHANGED' };
-    return { ok: false, error: 'MCP_INTERNAL_ERROR' };
+  /** The text of a regular, bounded, unlinked file; undefined when absent; null when it cannot be trusted. */
+  const readBounded = async (name: string, limit: number): Promise<string | undefined | null> => {
+    const file = join(workspace.userData!.root, name);
+    try {
+      const status = await lstat(file); if (status.isSymbolicLink() || !status.isFile() || status.size > limit) return null;
+      const text = await readFile(file, 'utf8');
+      return Buffer.byteLength(text, 'utf8') > limit ? null : text;
+    } catch (error) {
+      if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'ENOENT') return undefined;
+      return null;
+    }
+  };
+  let progress: LearnProgress | undefined;
+  const current = await readBounded(LEARN_PROGRESS_FILENAME, LEARN_PROGRESS_MAX_BYTES);
+  if (current === null) return { ok: false, error: 'MCP_INTERNAL_ERROR' };
+  if (current !== undefined) progress = parseProgress(current);
+  else {
+    const legacy = await readBounded(LEARN_PROGRESS_LEGACY_FILENAME, 4096);
+    if (legacy === null) return { ok: false, error: 'MCP_INTERNAL_ERROR' };
+    progress = legacy === undefined ? emptyProgress() : migrateLegacyMastery(legacy);
   }
+  if (!await sameUserData()) return { ok: false, error: 'MCP_WORKSPACE_CHANGED' };
+  if (!progress) return { ok: false, error: 'MCP_INTERNAL_ERROR' };
+  // Only lessons this build knows are reported; progress for any other lesson is kept inert in the file.
+  const mastered = LEARN_LESSON_IDS.filter((id) => progress!.lessons[id]?.state === 'passed');
+  return { ok: true, schemaVersion: 1, mastered, completed: mastered.length, total: LEARN_LESSON_IDS.length };
 }
 
 async function resourceProject(workspace: McpWorkspace, kind: 'manifest' | 'symbols' | 'io-map' | 'diagnostics' | 'capabilities'): Promise<Record<string, unknown>> {

@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { mkdtemp, mkdir, rm, symlink, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, test } from 'bun:test';
@@ -75,12 +75,24 @@ describe('local MCP adapter', () => {
   test('projects explicit current Learn progress and fails closed for malformed or linked data', async () => {
     const root = await workspace(); const userData = await mkdtemp(join(tmpdir(), 'zplc-mcp-user-data-')); temporary.push(userData);
     const bound = await openMcpWorkspace(root); const user = await openMcpUserData(userData); expect(bound).toBeDefined(); expect(user).toBeDefined(); if (!bound || !user) return;
-    await expect(courseProgressResource({ ...bound, userData: user })).resolves.toEqual({ ok: true, schemaVersion: 1, mastered: [], completed: 0, total: 10 });
+    const progress = (extra: Record<string, unknown> = {}) => ({ ok: true, schemaVersion: 1, mastered: [], completed: 0, total: 10, ...extra });
+    await expect(courseProgressResource({ ...bound, userData: user })).resolves.toEqual(progress());
+    // The file of the first release is read as it is: migrated in memory, never written back.
     await writeFile(join(userData, 'zplc-learn-mastery.v1.json'), '{"schemaVersion":1,"mastered":["motor-start-stop-safe"]}');
-    await expect(courseProgressResource({ ...bound, userData: user })).resolves.toEqual({ ok: true, schemaVersion: 1, mastered: ['motor-start-stop-safe'], completed: 1, total: 10 });
-    await writeFile(join(userData, 'zplc-learn-mastery.v1.json'), '{"schemaVersion":1,"mastered":["unknown"]}');
+    await expect(courseProgressResource({ ...bound, userData: user })).resolves.toEqual(progress({ mastered: ['motor-start-stop-safe'], completed: 1 }));
+    expect(await readdir(userData)).toEqual(['zplc-learn-mastery.v1.json']);
+    // A lesson this build does not know is kept inert: it is not reported and it is not an error.
+    await writeFile(join(userData, 'zplc-learn-mastery.v1.json'), '{"schemaVersion":1,"mastered":["a-lesson-of-a-newer-build"]}');
+    await expect(courseProgressResource({ ...bound, userData: user })).resolves.toEqual(progress());
+    await writeFile(join(userData, 'zplc-learn-mastery.v1.json'), '{"schemaVersion":1,"mastered":["Not A Lesson Id"]}');
     await expect(courseProgressResource({ ...bound, userData: user })).resolves.toEqual({ ok: false, error: 'MCP_INTERNAL_ERROR' });
-    await rm(join(userData, 'zplc-learn-mastery.v1.json')); await symlink('/etc/passwd', join(userData, 'zplc-learn-mastery.v1.json'));
+    // The current file wins over the file of the first release.
+    const lesson = { state: 'passed', grade: null, passedAt: null, startedAt: null, hintsUsed: 0, solutionShown: false };
+    await writeFile(join(userData, 'zplc-learn-progress.v2.json'), JSON.stringify({ schemaVersion: 2, last: null, lessons: { 'edge-counter-pulses': lesson, 'scan-cycle-one-scan-memory': lesson } }));
+    await expect(courseProgressResource({ ...bound, userData: user })).resolves.toEqual(progress({ mastered: ['edge-counter-pulses', 'scan-cycle-one-scan-memory'], completed: 2 }));
+    await writeFile(join(userData, 'zplc-learn-progress.v2.json'), '{"schemaVersion":2,"last":null,"lessons":{"x":{}}}');
+    await expect(courseProgressResource({ ...bound, userData: user })).resolves.toEqual({ ok: false, error: 'MCP_INTERNAL_ERROR' });
+    await rm(join(userData, 'zplc-learn-progress.v2.json')); await rm(join(userData, 'zplc-learn-mastery.v1.json')); await symlink('/etc/passwd', join(userData, 'zplc-learn-mastery.v1.json'));
     await expect(courseProgressResource({ ...bound, userData: user })).resolves.toEqual({ ok: false, error: 'MCP_INTERNAL_ERROR' });
   });
 
