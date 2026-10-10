@@ -29,7 +29,7 @@ Start every command with `zplc`.
 - `zplc stop` - Stops the scheduler.
 - `zplc status` - Shows the runtime state.
 - `zplc reset` - Resets the virtual machine.
-- `zplc version` - Shows the version.
+- `zplc version` - Shows which build this is: the version, the commit the image was built from (and whether the working tree had uncommitted changes), the board, the bytecode ABI, the contract draft and the build options with their hash. It prints no build date, so two builds of one commit are the same image. The same text is `zplc sys build`.
 
 ---
 
@@ -152,4 +152,5 @@ ZPLC can synchronize the clock over SNTP.
 These commands are available when the firmware is built with `CONFIG_ZPLC_SCHEDULER`.
 
 - `zplc sys info` - Shows the system information, including build and hardware details. `--json` also reports the `draft_counter` of the image; a program built for another draft is refused (see [Contributing](../contributing/index.md#draft-contract-counter)).
+- `zplc sys build` - Shows the identity of the firmware image, as `zplc version` does. `--json` prints it as one object with `version`, `commit`, `dirty`, `board`, `abi_major`, `abi_minor`, `draft_counter`, `options_hash` and `options`. `commit` is `unknown` when the image was built from a source archive with no git history. It is a command of its own because Studio's handshake accepts exactly the keys of `zplc sys info --json`.
 - `zplc sys reboot` - Reboots the board with a software reset.

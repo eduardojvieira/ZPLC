@@ -262,6 +262,13 @@ jobs:
           ZPLC_FW_WS: ${{ github.workspace }}
         run: zplc/tools/firmware-test/run.sh native32 qemu-m3 qemu-m0
 
+      # REL-023: the application is built for native_sim and its shell is driven over stdin and stdout, so the
+      # commit, board, ABI and options that `zplc version` and `zplc sys build` report are read from a real shell.
+      - name: Check the firmware identity reported by the application shell
+        env:
+          ZPLC_FW_WS: ${{ github.workspace }}
+        run: python3 zplc/firmware/tests/app_shell_identity/test_app_shell_identity.py
+
   zephyr-cross-build:
     name: Zephyr cross-build (${{ matrix.id }})
     runs-on: ubuntu-latest

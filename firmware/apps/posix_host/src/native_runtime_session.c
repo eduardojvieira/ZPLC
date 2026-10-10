@@ -18,6 +18,7 @@
 #include <stdarg.h>
 
 #include <zplc_core.h>
+#include <zplc_fw_identity.h>
 #include <zplc_hal.h>
 #include <zplc_hal_posix.h>
 #include <zplc_isa.h>
@@ -1368,12 +1369,19 @@ static int handle_session_hello(const zplc_native_request_t *request,
                                 char *response,
                                 size_t response_size)
 {
+    /* REL-023: which build this is. A formatter that cannot fit reports null rather than half an identity. */
+    const zplc_fw_identity_t identity = zplc_fw_identity();
+    char build[512];
+
+    if (zplc_fw_identity_json(&identity, build, sizeof(build)) < 0) {
+        (void)snprintf(build, sizeof(build), "null");
+    }
     return format_jsonf(
         response,
         response_size,
         "{\"id\":\"%s\",\"type\":\"response\",\"result\":{"
         "\"protocol_version\":\"%s\",\"runtime_kind\":\"%s\","
-        "\"runtime_version\":\"%s\",\"draft_counter\":%u,\"capability_profile\":{"
+        "\"runtime_version\":\"%s\",\"draft_counter\":%u,\"build\":%s,\"capability_profile\":{"
         "\"profile_id\":\"native-posix-mvp\",\"features\":["
         "{\"name\":\"pause\",\"status\":\"supported\"},"
         "{\"name\":\"resume\",\"status\":\"supported\"},"
@@ -1387,7 +1395,8 @@ static int handle_session_hello(const zplc_native_request_t *request,
         ZPLC_NATIVE_PROTOCOL_VERSION,
         ZPLC_NATIVE_RUNTIME_KIND,
         zplc_core_version(),
-        (unsigned)ZPLC_DRAFT_COUNTER);
+        (unsigned)ZPLC_DRAFT_COUNTER,
+        build);
 }
 
 static int handle_program_load(zplc_native_runtime_session_t *session,
