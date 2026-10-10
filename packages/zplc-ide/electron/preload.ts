@@ -72,6 +72,8 @@ const SESSION_CHANNEL = { LOAD: 'session:load', SAVE: 'session:save' } as const;
 // Repeats RECOVERY_CHANNEL of recoveryStoreProtocol.ts, for the same reason as the project files above.
 // recoveryStoreIpc.test.ts keeps this copy equal to the shared one.
 const RECOVERY_CHANNEL = { WRITE: 'recovery:write', LIST: 'recovery:list', DISCARD: 'recovery:discard' } as const;
+// Repeats UPDATE_CHECK_CHANNEL of updateCheckProtocol.ts; updateCheckIpc.test.ts keeps this copy equal to the shared one.
+const UPDATE_CHECK_CHANNEL = { RUN: 'update-check:run' } as const;
 const CLOSE_GUARD_CHANNEL = { SET_DIRTY: 'close-guard:set-dirty', CLOSE_NOW: 'close-guard:close-now', CLOSE_REQUESTED: 'close-guard:close-requested' } as const;
 type GuardedAction = 'close' | 'reload';
 
@@ -165,6 +167,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     write: (request: unknown) => ipcRenderer.invoke(RECOVERY_CHANNEL.WRITE, request) as Promise<unknown>,
     list: (request: unknown) => ipcRenderer.invoke(RECOVERY_CHANNEL.LIST, request) as Promise<unknown>,
     discard: (request: unknown) => ipcRenderer.invoke(RECOVERY_CHANNEL.DISCARD, request) as Promise<unknown>,
+  },
+  // Update check (IDE-010): one call with no argument; the main process asks one fixed address and answers a version and a link.
+  updateCheck: {
+    run: () => ipcRenderer.invoke(UPDATE_CHECK_CHANNEL.RUN) as Promise<unknown>,
   },
   learnProgress: {
     read: () => ipcRenderer.invoke(LEARN_PROGRESS_CHANNEL.READ) as Promise<string[]>,

@@ -323,8 +323,9 @@ interface IDEState {
 
   // Actions - Files
   openFile: (fileId: string) => Promise<void>;
-  saveFile: (fileId: string) => Promise<boolean>;
-  saveAllFiles: () => Promise<void>;
+  /** `quiet` (autosave) writes the file without the "Saved" line in Output; a failure is always reported. */
+  saveFile: (fileId: string, options?: { quiet?: boolean }) => Promise<boolean>;
+  saveAllFiles: (options?: { quiet?: boolean }) => Promise<void>;
   createFile: (name: string, language: PLCLanguage, parentPath?: string) => Promise<string>;
   deleteFile: (fileId: string, expectedProjectSession?: number) => Promise<boolean>;
   setActiveFile: (fileId: string | null) => void;
@@ -1046,7 +1047,7 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     }
   },
 
-  saveFile: async (fileId: string) => {
+  saveFile: async (fileId: string, options = {}) => {
     const { loadedFiles } = get();
     const file = loadedFiles.get(fileId);
     const expectedProjectSession = get().projectSession;
@@ -1071,11 +1072,13 @@ export const useIDEStore = create<IDEState>((set, get) => ({
       newLoadedFiles.set(fileId, { ...latestFile, isModified: false });
       set({ loadedFiles: newLoadedFiles });
 
-      get().addConsoleEntry({
-        type: 'success',
-        message: `Saved: ${file.name}`,
-        source: 'system',
-      });
+      if (!options.quiet) {
+        get().addConsoleEntry({
+          type: 'success',
+          message: `Saved: ${file.name}`,
+          source: 'system',
+        });
+      }
 
       return true;
     } catch (err) {
@@ -1091,13 +1094,13 @@ export const useIDEStore = create<IDEState>((set, get) => ({
     }
   },
 
-  saveAllFiles: async () => {
+  saveAllFiles: async (options = {}) => {
     const { loadedFiles, projectSession } = get();
     
     for (const [fileId, file] of loadedFiles) {
       if (get().projectSession !== projectSession) return;
       if (file.isModified) {
-        await get().saveFile(fileId);
+        await get().saveFile(fileId, options);
       }
     }
   },

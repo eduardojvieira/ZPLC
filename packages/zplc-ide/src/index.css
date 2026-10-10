@@ -518,3 +518,12 @@ button, [role="button"], [role="tab"] { transition: background-color .12s ease, 
   [data-separator="hover"], [data-separator="active"], [data-separator="focus"] { background-color: Highlight; }
   :root { --focus-ring-color: Highlight; }
 }
+
+/* =============================================================================
+   Density (IDE-010, UX-008)
+   Every Tailwind spacing utility (padding, margin, gap, and the sizes written as numbers) is a multiple of --spacing, so
+   one value makes the whole application compact. The attribute is set from the saved preference before the first frame.
+   ============================================================================= */
+html[data-density="compact"] {
+  --spacing: 0.1875rem;
+}

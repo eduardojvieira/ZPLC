@@ -32,9 +32,15 @@ import { useWorkspaceLayout } from './utils/layoutStorage';
 import { workspaceLayoutFrom } from './utils/sessionState';
 import { startSessionPersistence } from './store/sessionPersistence';
 import { startRecoveryPersistence } from './store/recoveryPersistence';
+import { startAutosave } from './store/autosave';
+import { initializeSettings, useAppSettings } from './store/useAppSettings';
+import { describeUpdateCheck, runUpdateCheck } from './ipc/updateCheckBridge';
+import { ZPLC_REPO_VERSION } from './version';
 
 // Apply the stored theme while modules load, before React renders the first frame (UX-016).
 initializeTheme();
+// The density and the language of the saved preferences, before the first frame.
+initializeSettings();
 
 function App() {
   useTheme();
@@ -54,6 +60,29 @@ function App() {
 
   // The open project's tabs, cursors and panel split are saved as they change (IDE-008).
   useEffect(() => startSessionPersistence(useIDEStore), []);
+
+  // Autosave (IDE-007): off unless the user chose an interval; it saves modified files after the typing stops.
+  useEffect(() => {
+    const autosave = startAutosave(useIDEStore, {
+      seconds: () => useAppSettings.getState().settings.autosaveSeconds,
+      save: () => useIDEStore.getState().saveAllFiles({ quiet: true }),
+    });
+    const unsubscribe = useAppSettings.subscribe((state, previous) => {
+      if (state.settings.autosaveSeconds !== previous.settings.autosaveSeconds) autosave.settingsChanged();
+    });
+    return () => { unsubscribe(); autosave.stop(); };
+  }, []);
+
+  // The update check (IDE-010) runs only while the user has it turned on: at start, and when it is turned on.
+  const checkForUpdates = useAppSettings((s) => s.settings.checkForUpdates);
+  useEffect(() => {
+    if (!checkForUpdates) return undefined;
+    let current = true;
+    void runUpdateCheck(window.electronAPI?.updateCheck, ZPLC_REPO_VERSION).then((result) => {
+      if (current && result.status === 'available') useIDEStore.getState().addConsoleEntry({ type: 'info', message: describeUpdateCheck(result), source: 'system' });
+    });
+    return () => { current = false; };
+  }, [checkForUpdates]);
 
   // Modified files are kept in the main process a moment after the last keystroke, so that a crash loses nothing (IDE-006).
   useEffect(() => startRecoveryPersistence(useIDEStore), []);

@@ -28,6 +28,26 @@ For each project, Studio also remembers the open tabs, the active tab, the curso
 
 Evidence level: host. The unit tests of requirement IDE-008 (`packages/zplc-ide/electron/recentProjects.test.ts`, `sessionStore.test.ts`, `packages/zplc-ide/src/utils/sessionState.test.ts` and `packages/zplc-ide/src/store/sessionPersistence.test.ts`) cover the list and the session format, and journey 12 (restore the session) and journey 14 (a recent project that is gone) of `bun run test:journeys` drive the real application on a display.
 
+## Preferences
+
+Preferences belong to you, not to a project: they apply to every project and are kept for your user account, so they survive a restart. Open them from the **Preferences** disclosure of the Welcome screen, or at the top of the Project Settings tab inside a project.
+
+| Preference | Choices | Default |
+|---|---|---|
+| Theme | Light, Dark, High contrast | System |
+| Editor font size | 10 to 32 px | 14 px |
+| Tab size | 2, 3, 4 or 8 spaces | 4; a file's own indentation does not override it |
+| Density | Comfortable, Compact | Comfortable; compact scales the spacing of the whole window |
+| Language | English, Español | The language of the system; it sets the Learn lessons today and the rest of the interface is English |
+| Autosave | Off, or after 5, 15, 30 or 60 seconds without typing | Off |
+| Check for a newer release when Studio starts | On or off, and a **Check now** button | Off |
+
+Autosave writes the modified files with the same save as **Save all**, without a line in Output for each save; a file that cannot be written stays modified and is reported. Together with the recovery copies, a crash costs at most the typing of the last second.
+
+The update check asks the GitHub releases of this project for the latest published release and says whether it is newer than the running build. It sends nothing about you, downloads nothing and installs nothing; the answer is a version and a link. It never runs until you turn it on or press **Check now**.
+
+Evidence level: host. `packages/zplc-ide/src/utils/appSettings.test.ts`, `src/store/useAppSettings.test.ts`, `src/store/autosave.test.ts`, `electron/updateCheck.test.ts` and `electron/updateCheckIpc.test.ts` cover the settings, autosave and the update check (requirements IDE-007 and IDE-010), and journey 21 (preferences apply and persist per user) of `bun run test:journeys` changes them in the real application and restarts it.
+
 ## Recovering unsaved work
 
 Studio keeps a copy of every modified file in its private user-data directory a second after you stop typing (and at least every few seconds while you keep typing). Saving a file, discarding it, closing it with **Discard**, or closing the project or the window and answering **Save** or **Discard** removes the copy, so a normal exit leaves nothing behind.

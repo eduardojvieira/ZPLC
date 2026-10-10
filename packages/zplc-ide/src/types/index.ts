@@ -7,6 +7,7 @@
 import type { ProjectFilesBridge } from '../../electron/projectFilesProtocol';
 import type { RecoveryBridge } from '../../electron/recoveryStoreProtocol';
 import type { SessionBridge } from '../../electron/sessionStoreProtocol';
+import type { UpdateCheckBridge } from '../../electron/updateCheckProtocol';
 
 // =============================================================================
 // Electron API (exposed via preload script)
@@ -101,6 +102,8 @@ declare global {
       session?: SessionBridge;
       /** What the main process keeps of modified files, so that a crash loses nothing the user typed (IDE-006). */
       recovery?: RecoveryBridge;
+      /** Asks the main process whether a newer release exists, when the user turned the update check on or pressed Check now (IDE-010). */
+      updateCheck?: UpdateCheckBridge;
       isElectron: boolean;
       platform: string;
     };

@@ -1592,6 +1592,21 @@ describe('useIDEStore project folders over the project-files bridge', () => {
     expect(pickerCalls).toBe(0);
   });
 
+  it('saves quietly for autosave: the file is written and no "Saved" line is added, while a manual save still reports', async () => {
+    seedFolder();
+    await useIDEStore.getState().openProjectFromFolder();
+    await useIDEStore.getState().openFile('file:src/main.st');
+    useIDEStore.getState().updateFileContent('file:src/main.st', 'PROGRAM Main\n  (* auto *)\nEND_PROGRAM\n');
+    useIDEStore.getState().clearConsole();
+    await useIDEStore.getState().saveAllFiles({ quiet: true });
+    expect(readFileSync(join(folder, 'src', 'main.st'), 'utf8')).toContain('(* auto *)');
+    expect(useIDEStore.getState().loadedFiles.get('file:src/main.st')?.isModified).toBe(false);
+    expect(useIDEStore.getState().consoleEntries.some((entry) => entry.message.startsWith('Saved:'))).toBe(false);
+    useIDEStore.getState().updateFileContent('file:src/main.st', 'PROGRAM Main\n  (* manual *)\nEND_PROGRAM\n');
+    await useIDEStore.getState().saveFile('file:src/main.st');
+    expect(useIDEStore.getState().consoleEntries.some((entry) => entry.message === 'Saved: main.st')).toBe(true);
+  });
+
   it('creates a project in an empty folder', async () => {
     await expect(useIDEStore.getState().createNewProjectInFolder()).resolves.toBe(true);
     expect(useIDEStore.getState()).toMatchObject({ isProjectOpen: true, projectName: 'plant' });

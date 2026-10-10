@@ -22,6 +22,8 @@ import { createRecentProjects } from './recentProjects.js';
 import { createSessionStore } from './sessionStore.js';
 import { createRecoveryStore } from './recoveryStore.js';
 import { RECOVERY_CHANNEL } from './recoveryStoreProtocol.js';
+import { checkForUpdate } from './updateCheck.js';
+import { UPDATE_CHECK_CHANNEL } from './updateCheckProtocol.js';
 import { buildApplicationMenu, describeApplicationMenu } from './appMenu.js';
 import { createCloseGuard } from './closeGuard.js';
 import { createProjectFiles } from './projectFiles.js';
@@ -553,6 +555,15 @@ function setupIPC(): void {
     await sessionStore.save(root, request.state);
     if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied');
     return null;
+  });
+
+  // Update check (IDE-010): one fixed address, no argument from the renderer; the answer is a version and a release link.
+  ipcMain.handle(UPDATE_CHECK_CHANNEL.RUN, async (event, ...args: unknown[]) => {
+    const owner = currentRendererOwner(event);
+    if (args.length !== 0 || !owner) throw new Error('Request denied');
+    const result = await checkForUpdate({ currentVersion: appVersion, fetch: (url, init) => fetch(url, init) });
+    if (!rendererOwnerIsCurrent(owner)) throw new Error('Request denied');
+    return result;
   });
 
   // Recovery of modified files (IDE-006): the renderer sends the content of a modified file a moment after the last

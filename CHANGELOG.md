@@ -4,6 +4,14 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- Studio has application preferences that persist per user (IDE-007, IDE-010):
+  editor font size (10 to 32 px) and tab size (2, 3, 4, 8), density (compact
+  scales the Tailwind spacing of the whole window), language (the Learn lessons
+  follow it), autosave (off by default; after 5, 15, 30 or 60 seconds without
+  typing, saved without a line in Output per save) and an opt-in update check
+  (`update-check:run`, one fixed GitHub releases address, no argument from the
+  renderer, answers a version and a link). They sit at the top of Project
+  Settings and on the Welcome screen. Only the theme existed before.
 - An exception while the toolbar, the editor area or the lower panel draws now
   shows its error and a Retry button in that region only (IDE-011); before,
   only the editor content and the lower-panel content had their own boundary,

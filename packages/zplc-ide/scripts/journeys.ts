@@ -961,4 +961,74 @@ export const JOURNEYS: Journey[] = [
       assert(app.errors.filter((error) => !error.includes('Injected render fault')).length === 0, `Unexpected renderer errors: ${app.errors.join(' | ')}`);
     },
   },
+
+  {
+    name: '21 Preferences apply and persist per user', example: 'motor_start_stop', proves: ['IDE-007', 'IDE-010'], partly: [],
+    run: async (app, { project, relaunch }) => {
+      const file = join(project, 'src', 'Motor.st');
+      /** Walks a native select to the option with this text with the arrow keys, as a keyboard user would. */
+      const choose = async (target: App, selector: string, label: string) => {
+        const state = () => target.eval<{ labels: string[]; index: number }>(`(() => { const select = document.querySelector(${JSON.stringify(selector)}); return { labels: [...select.options].map((option) => option.textContent), index: select.selectedIndex }; })()`);
+        const { labels, index } = await state();
+        const wanted = labels.indexOf(label);
+        assert(wanted >= 0, `${selector} offers ${JSON.stringify(labels)}, not ${label}`);
+        await target.eval(`document.querySelector(${JSON.stringify(selector)}).focus()`);
+        for (let step = 0; step < Math.abs(wanted - index); step++) await target.press(wanted > index ? 'ArrowDown' : 'ArrowUp');
+        await target.until(`${selector} to show ${label}`, async () => (await state()).index === wanted || undefined);
+      };
+      const chosen = (target: App, selector: string) => target.eval<string>(`(() => { const select = document.querySelector(${JSON.stringify(selector)}); return select.options[select.selectedIndex].textContent; })()`);
+      const root = (target: App) => target.eval<{ density: string | undefined; lang: string; theme: string | null; spacing: string; padding: number }>(`({ density: document.documentElement.dataset.density, lang: document.documentElement.lang, theme: document.documentElement.getAttribute('data-theme'), spacing: getComputedStyle(document.documentElement).getPropertyValue('--spacing').trim(), padding: parseFloat(getComputedStyle(document.querySelector('main') ?? document.body).paddingTop) })`);
+      const editorOptions = (target: App) => monacoEval<{ fontSize: number; tabSize: number }>(target, 'return { fontSize: editor.getOption(monaco.editor.EditorOption.fontSize), tabSize: editor.getModel().getOptions().tabSize };');
+
+      // Before anything is chosen: the defaults, and the update check is off.
+      const before = await root(app);
+      assert(before.density === 'comfortable', `The density starts as ${before.density}.`);
+      await app.click(css('[data-welcome-preferences] summary'), 'the Preferences disclosure of the Welcome screen');
+      await app.until('the preferences on the Welcome screen', async () => await app.visible(css('[data-app-preferences]')) || undefined);
+      assert(await app.eval(`document.querySelector('[data-setting="checkForUpdates"]').checked === false`), 'The update check must be off until the user turns it on.');
+      assert(await chosen(app, '[data-setting="autosaveSeconds"]') === 'Off', 'Autosave must be off until the user turns it on.');
+
+      // Choices made on the Welcome screen apply at once.
+      await choose(app, '[data-setting="density"]', 'Compact');
+      await choose(app, '[data-setting="language"]', 'Español');
+      await choose(app, 'select[data-theme-control]', 'Dark');
+      const after = await root(app);
+      assert(after.density === 'compact' && after.spacing === '0.1875rem' && after.padding < before.padding, `Compact density did not apply: ${JSON.stringify({ before, after })}`);
+      assert(after.lang === 'es' && after.theme === 'dark', `Language or theme did not apply: ${JSON.stringify(after)}`);
+
+      // Editor choices made inside the project, where the settings tab is.
+      await openFolder(app, project);
+      await openFile(app, 'src/Motor.st');
+      assert(JSON.stringify(await editorOptions(app)) === JSON.stringify({ fontSize: 14, tabSize: 4 }), `The editor should start at 14 px and 4 spaces: ${JSON.stringify(await editorOptions(app))}`);
+      await app.click(button('Project Settings'), 'the Project Settings button');
+      await app.until('the preferences in the settings tab', async () => await app.visible(css('[data-app-preferences]')) || undefined);
+      await choose(app, '[data-setting="editorFontSize"]', '20 px');
+      await choose(app, '[data-setting="editorTabSize"]', '2 spaces');
+      await choose(app, '[data-setting="autosaveSeconds"]', 'After 5 seconds without typing');
+      await app.click(editorTab('file:src/Motor.st'));
+      await app.until('Motor.st in the editor with the chosen font and tabs', async () => { const options = await editorOptions(app); return options.fontSize === 20 && options.tabSize === 2 || undefined; })
+        .catch(async (error: Error) => { throw new Error(`${error.message}: the editor shows ${JSON.stringify(await editorOptions(app))}`); });
+
+      // Autosave writes the file by itself, without a "Saved" line in Output.
+      const original = disk(file);
+      await cursorAtEndOfLine(app, 1);
+      await app.type(EDIT);
+      assert(disk(file) === original, 'The file was written at once: it should wait for the typing to stop.');
+      await app.until('autosave to write the file', () => disk(file).includes(EDIT) || undefined, 20_000);
+      assert(!(await outputText(app)).includes('Saved: Motor.st'), 'Autosave reported a "Saved" line in Output.');
+
+      // A restart, as the same user: every choice is back.
+      const again = await relaunch();
+      const restored = await root(again);
+      assert(restored.density === 'compact' && restored.lang === 'es' && restored.theme === 'dark', `The display preferences were not restored: ${JSON.stringify(restored)}`);
+      await again.click(css('[data-welcome-preferences] summary'), 'the Preferences disclosure of the Welcome screen');
+      await again.until('the preferences on the Welcome screen', async () => await again.visible(css('[data-app-preferences]')) || undefined);
+      for (const [selector, label] of [['[data-setting="density"]', 'Compact'], ['[data-setting="language"]', 'Español'], ['[data-setting="editorFontSize"]', '20 px'], ['[data-setting="editorTabSize"]', '2 spaces'], ['[data-setting="autosaveSeconds"]', 'After 5 seconds without typing']] as const) {
+        assert(await chosen(again, selector) === label, `${selector} should show ${label} after a restart, shows ${await chosen(again, selector)}`);
+      }
+      await openFolder(again, project);
+      await openFile(again, 'src/Motor.st');
+      assert(JSON.stringify(await editorOptions(again)) === JSON.stringify({ fontSize: 20, tabSize: 2 }), `The editor options were not restored: ${JSON.stringify(await editorOptions(again))}`);
+    },
+  },
 ];

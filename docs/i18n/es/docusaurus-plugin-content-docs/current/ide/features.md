@@ -28,6 +28,26 @@ Para cada proyecto, Studio recuerda además las pestañas abiertas, la pestaña 
 
 Nivel de evidencia: host. Las pruebas unitarias del requisito IDE-008 (`packages/zplc-ide/electron/recentProjects.test.ts`, `sessionStore.test.ts`, `packages/zplc-ide/src/utils/sessionState.test.ts` y `packages/zplc-ide/src/store/sessionPersistence.test.ts`) cubren la lista y el formato de la sesión, y el recorrido 12 (restaurar la sesión) y el recorrido 14 (un proyecto reciente que ya no está) de `bun run test:journeys` manejan la aplicación real en una pantalla.
 
+## Preferencias
+
+Las preferencias son suyas, no de un proyecto: se aplican a todos los proyectos y se guardan para su cuenta de usuario, de modo que sobreviven a un reinicio. Se abren desde el desplegable **Preferences** de la pantalla de bienvenida, o al principio de la pestaña Project Settings dentro de un proyecto.
+
+| Preferencia | Opciones | Valor inicial |
+|---|---|---|
+| Theme | Light, Dark, High contrast | Sistema |
+| Editor font size | De 10 a 32 px | 14 px |
+| Tab size | 2, 3, 4 u 8 espacios | 4; la sangría propia de un archivo no la reemplaza |
+| Density | Comfortable, Compact | Comfortable; compact reduce el espaciado de toda la ventana |
+| Language | English, Español | El idioma del sistema; hoy fija el de las lecciones de Learn y el resto de la interfaz está en inglés |
+| Autosave | Desactivado, o tras 5, 15, 30 o 60 segundos sin escribir | Desactivado |
+| Check for a newer release when Studio starts | Activada o desactivada, y un botón **Check now** | Desactivada |
+
+El autoguardado escribe los archivos modificados con el mismo guardado que **Save all**, sin una línea en Output por cada guardado; un archivo que no se puede escribir sigue modificado y se informa. Junto con las copias de recuperación, un fallo cuesta como máximo lo escrito en el último segundo.
+
+La comprobación de actualizaciones consulta las versiones publicadas de este proyecto en GitHub y dice si la última es más nueva que la compilación en ejecución. No envía nada sobre usted, no descarga nada ni instala nada; la respuesta es una versión y un enlace. No se ejecuta hasta que usted la activa o pulsa **Check now**.
+
+Nivel de evidencia: host. `packages/zplc-ide/src/utils/appSettings.test.ts`, `src/store/useAppSettings.test.ts`, `src/store/autosave.test.ts`, `electron/updateCheck.test.ts` y `electron/updateCheckIpc.test.ts` cubren las preferencias, el autoguardado y la comprobación de actualizaciones (requisitos IDE-007 e IDE-010), y el recorrido 21 (las preferencias se aplican y persisten por usuario) de `bun run test:journeys` las cambia en la aplicación real y la reinicia.
+
 ## Recuperar trabajo sin guardar
 
 Studio guarda una copia de cada archivo modificado en su directorio privado de datos de usuario un segundo después de que usted deja de escribir (y como mínimo cada pocos segundos mientras sigue escribiendo). Guardar un archivo, descartarlo, cerrarlo con **Discard**, o cerrar el proyecto o la ventana y responder **Save** o **Discard** elimina la copia, de modo que una salida normal no deja nada.
