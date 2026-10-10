@@ -8,6 +8,7 @@ import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { builderFilePatterns, packagedByPatterns } from './electronBuilderFiles';
 import {
   DEV_ONLY_VARIABLE,
   assertAsarHasNoDevOnlyCode,
@@ -71,18 +72,9 @@ describe('app.asar scan of the packaged smoke', () => {
   });
 });
 
-/** electron-builder keeps a file when the last pattern that decides it includes it: a later include undoes an earlier exclusion. */
-function packaged(patterns: string[], file: string): boolean {
-  let included = false;
-  for (const pattern of patterns) {
-    const negated = pattern.startsWith('!');
-    if (new Bun.Glob(negated ? pattern.slice(1) : pattern).match(file)) included = !negated;
-  }
-  return included;
-}
-
 describe('electron-builder.yml packaging of the dev-only module', () => {
-  const patterns = (Bun.YAML.parse(read('../electron-builder.yml')) as { files: string[] }).files;
+  const patterns = builderFilePatterns();
+  const packaged = packagedByPatterns;
 
   it('still packages the compiled main process', () => {
     for (const compiled of ['electron-dist/main.js', 'electron-dist/preload.cjs', 'electron-dist/projectFiles.js', 'dist/index.html']) {

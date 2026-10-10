@@ -1,5 +1,5 @@
 import type { ZPLCProjectV2 } from '../types';
-import { findNonEmptySensitiveProjectConfigPaths } from '../utils/projectExport';
+import { findNonEmptySensitiveProjectConfigPaths } from './sensitiveConfig';
 import { buildOptionProblems } from './buildOptions';
 
 export interface ProjectModelDiagnostic {

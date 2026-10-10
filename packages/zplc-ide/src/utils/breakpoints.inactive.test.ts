@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'bun:test';
 
 import { contrastRatio, resolveThemeTokens, type ThemeName } from '../theme/themeTokens';
-import { breakpointDecorationClasses, breakpointHoverMessage } from './codeEditorBreakpoints';
+import { breakpointDecorationClasses, breakpointHoverMessage } from './breakpoints';
 
 const raw = readFileSync(new URL('../index.css', import.meta.url), 'utf8');
 const css = raw.replace(/\/\*[\s\S]*?\*\//g, '');
@@ -13,7 +13,7 @@ const REASON = 'the runtime cannot stop at a breakpoint right now';
 
 /** LX-2b: a breakpoint the runtime will not stop at has to look inactive, not only say so in its hover text. */
 describe('breakpoint dots the runtime will not stop at', () => {
-  // Fails while the editor gives every dot the plain breakpoint-glyph class (components/codeEditorBreakpoints.ts).
+  // Fails while the editor gives every dot the plain breakpoint-glyph class (utils/breakpoints.ts).
   it('get the inactive classes only while the store holds a reason, next to the hover text that gives it', () => {
     expect(breakpointDecorationClasses(null)).toEqual({ glyph: 'breakpoint-glyph', line: 'breakpoint-line-decoration' });
     expect(breakpointDecorationClasses(REASON)).toEqual({

@@ -3,12 +3,12 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'bun:test';
 
 import type { FileTreeNode, ProjectFileWithHandle, ZPLCProjectConfig } from '../types';
+import { collectProjectFilesForExport } from './projectExport';
 import {
-  collectProjectFilesForExport,
   findNonEmptySensitiveProjectConfigPaths,
   redactProjectConfigForExport,
   SENSITIVE_PROJECT_CONFIG_PATHS,
-} from './projectExport';
+} from '../project/sensitiveConfig';
 
 function file(path: string, content?: string): FileTreeNode {
   const name = path.slice(path.lastIndexOf('/') + 1);

@@ -48,7 +48,7 @@ import type { SystemInfo, StatusInfo } from '../runtime/serialAdapter';
 import type { DebugMap } from '../compiler';
 import { WATCH_FORCE_STATE, type WatchForceEntry } from '../runtime/debugAdapter';
 import type { ProjectMigrationChange } from '../project/projectModel';
-import { breakpointFileKey, getBreakpointPCForLine } from '../components/codeEditorBreakpoints';
+import { breakpointFileKey, getBreakpointPCForLine } from '../utils/breakpoints';
 import { appendConsoleEntries, type NewConsoleEntry } from './consoleEntries';
 import { folderErrorReason } from '../utils/errorMessages';
 import type { RecentProject } from '../../electron/projectFilesProtocol';
@@ -60,7 +60,7 @@ import { createFolder, deleteFolder, duplicateEntry, moveEntry, renameEntry } fr
 import { preserveExpansion } from '../project/treeOperations';
 import { DEFAULT_DEBUG_POLLING_INTERVAL_MS } from './debugDefaults';
 import { NATIVE_TRACE_LIMIT, type NativeTraceSample } from '../runtime/nativeTrace';
-import type { CanonicalWorkspaceBuildEvidence } from '../components/workspaceTestPresentation';
+import type { CanonicalWorkspaceBuildEvidence } from './buildEvidence';
 
 let openFileIntent = 0;
 let fileTreeRefreshIntent = 0;

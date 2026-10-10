@@ -4,6 +4,71 @@ All notable changes are documented here.
 
 ## Unreleased
 
+- Three of the fifteen modules over the new size limit are split (IDE-014): the
+  project settings are one module per section (2,181 lines to 213 and eleven
+  files of at most 430), the Explorer's context menu and confirmations are
+  their own module, and the declaration of `window.electronAPI` is out of the
+  shared types. Twelve remain on `tools/ci/module-size-offenders.json`, each
+  with the work package that owns its split.
+- The declared-interlock coverage check is a view of its own (IDE-032): an
+  **Interlocks** tab in the lower panel, no longer a section of Problems. It
+  runs the same check on the saved project, lists each declared pair as
+  Covered or Missing exact NEVER coverage, and keeps its scope text: it checks
+  saved scenarios and establishes no physical safety, timing or certification.
+- Scenario tests with temporal assertions give the same result from Studio, the
+  CLI and the MCP tools, and a test says so (IDE-031):
+  `src/cli/scenarioParity.test.ts` runs every bundled project, each scenario by
+  itself, and a project with a failing assertion through the Tool API, the CLI,
+  the MCP dispatcher and the Studio presenter, and compares the verdict, the
+  program and trace hashes, and the assertions and sampled outputs. No
+  divergence was found: the three entry points share the Tool API.
+- The project tree lists the project's function blocks, functions and data
+  types, and a library folder makes its blocks available to every editor
+  (IDE-023). Under the file tree the Explorer has a Declarations section with
+  the declarations that the Structured Text files the build reads declare
+  (directly in `src` and directly in each folder of `libraries`), grouped under
+  their file; choosing one opens the file at its name. It uses the build's own
+  rules for `libraries` (`buildOptions.ts`, the workspace reader of the Tool
+  API) instead of a mechanism of its own: **Library folder...** lists a folder
+  in `zplc.json`, the tree marks it `library`, and the blocks of its files are
+  in the FBD and LD palettes and in the completion and hover of ST. A file the
+  build does not read (neither in `src` nor directly in a library folder) is
+  marked `not compiled` in the tree and its folder is offered with a **List as
+  library** button; the walk that finds such files is one module
+  (`project/unlistedSources.ts`) that the Tool API and Studio both use.
+- A project exports to one archive and imports back into an equivalent project
+  (IDE-022). **Export Project Archive** (Build options) writes a zip of the
+  project files that is the same bytes on every machine (entries sorted by
+  path, stored, dated 1980-01-01); **Import a project archive** (Welcome)
+  reads one, says what it holds, and extracts it byte for byte into an empty
+  folder the user chooses before opening it. Both go through typed operations
+  of the main process behind native dialogs, and the reader refuses paths that
+  leave the folder, links, encryption, colliding names, checksum mismatches
+  and archives over the limits. A version 1 project, opened or imported, shows
+  the lines its migration changes in `zplc.json` in a dialog of its own, and
+  **Apply migration** is the save.
+- The Welcome screen loads without the code editor, the visual editors or the
+  project settings (IDE-015): the workbench (toolbar, editor area and lower
+  panel) loads when a project opens, and each editor and the settings load the
+  first time a file of their kind or the settings are opened. The entry chunk
+  of the page went from 5.2 MB (1.34 MB gzipped) to 0.9 MB (0.23 MB gzipped).
+  Only the Monaco core Studio uses is bundled, so the CSS, HTML, JSON and
+  TypeScript language workers (about 9 MB) and the 80 basic languages are no
+  longer built, and the installer holds no source maps. `welcomeBundle.test.ts`
+  proves it on the build output, and journey 29 on the development host.
+- CI checks the structure of Studio's source (IDE-014, IDE-033):
+  `tools/ci/ide-structure.ts`, run by `bun run lint:ide` and by
+  `bun test ./tools/ci`, fails when a store module imports a component, when a
+  command-line or MCP module imports from `electron/`, when static imports form
+  a cycle (the path of each cycle is printed), and when a hand-written module
+  has more than 800 lines. The modules above the limit today are on
+  `tools/ci/module-size-offenders.json`, one entry each with its size and the
+  split it needs; the list can only shrink. The one command-line import of the
+  Electron folder that cannot move yet (the native simulation supervisor) is on
+  `tools/ci/layering-exceptions.json` with the reason. The store no longer
+  imports the breakpoint helpers or the build-evidence types from `components/`,
+  and the sensitive-configuration helpers no longer form an import cycle with
+  the file system and export modules.
 - The palettes of LD, FBD and SFC offer only what their transpiler translates, and every
   element they offer is placed in a program and run in the virtual machine by a generated
   test (LNG-007). The Ladder palette offers the edge coils that the transpiler has

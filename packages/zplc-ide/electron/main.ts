@@ -123,7 +123,7 @@ const projectWatcher = createProjectWatcher({
     if (target && !target.isDestroyed() && target.id === ownerId) target.send(PROJECT_FILES_EVENT.changed, change);
   },
 });
-const projectFiles = createProjectFiles(chooseProjectDirectory, () => recentProjects, projectWatcher);
+const projectFiles = createProjectFiles(chooseProjectDirectory, () => recentProjects, projectWatcher, { dialog, getWindow: () => mainWindow, isPackaged: app.isPackaged, env: process.env });
 const toolApiUrl = pathToFileURL(path.join(__dirname, 'toolApi.js')).href;
 let aiProvider: ReturnType<typeof createAiProvider> | null = null;
 let learnProgress: ReturnType<typeof createLearnProgressStore> | null = null;

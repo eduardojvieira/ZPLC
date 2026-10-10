@@ -15,11 +15,8 @@
  * When no project is open, shows WelcomeScreen.
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState, type ComponentType } from 'react';
 import { Group, Panel, Separator, useGroupCallbackRef, usePanelCallbackRef } from 'react-resizable-panels';
-import { Toolbar } from './components/Toolbar';
-import { EditorArea } from './components/EditorArea';
-import { Console } from './components/Console';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { CloseGuard } from './components/CloseGuard';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -28,16 +25,37 @@ import { RecoveryOffer } from './components/RecoveryOffer';
 import { ExternalChangePrompt } from './components/ExternalChangePrompt';
 import { useTheme } from './hooks/useTheme';
 import { initializeTheme, useIDEStore } from './store/useIDEStore';
-import { useDebugController } from './hooks/useDebugController';
+import { useDebugController, type DebugController } from './hooks/useDebugController';
 import { useWorkspaceLayout } from './utils/layoutStorage';
 import { workspaceLayoutFrom } from './utils/sessionState';
 import { startSessionPersistence } from './store/sessionPersistence';
 import { startRecoveryPersistence } from './store/recoveryPersistence';
 import { startAutosave } from './store/autosave';
+import { trackProjectSources } from './store/projectSources';
 import { startExternalChangeWatch } from './store/externalChangeWatch';
 import { initializeSettings, useAppSettings } from './store/useAppSettings';
 import { describeUpdateCheck, runUpdateCheck } from './ipc/updateCheckBridge';
 import { ZPLC_REPO_VERSION } from './version';
+
+interface WorkbenchParts {
+  Toolbar: ComponentType<{ debugController: DebugController }>;
+  EditorArea: ComponentType;
+  Console: ComponentType<{ debugController: DebugController }>;
+}
+
+let workbenchParts: Promise<WorkbenchParts> | null = null;
+
+/**
+ * The toolbar, the editor area and the lower panel are code of their own (IDE-015): they load once, when the first project
+ * opens, so the Welcome screen is the window, the store and the debug controller, with no Monaco, no visual editors and no
+ * settings. The three come together so that the resizable group mounts with all of its panels, as it always did.
+ */
+function loadWorkbench(): Promise<WorkbenchParts> {
+  workbenchParts ??= Promise.all([import('./components/Toolbar'), import('./components/EditorArea'), import('./components/Console')])
+    .then(([toolbar, editor, panels]) => ({ Toolbar: toolbar.Toolbar, EditorArea: editor.EditorArea, Console: panels.Console }))
+    .catch((error: unknown) => { workbenchParts = null; throw error; });
+  return workbenchParts;
+}
 
 // Apply the stored theme while modules load, before React renders the first frame (UX-016).
 initializeTheme();
@@ -54,6 +72,9 @@ function App() {
   const projectSession = useIDEStore((s) => s.projectSession);
 
   const debugController = useDebugController();
+  const [workbench, setWorkbench] = useState<WorkbenchParts | null>(null);
+  const [workbenchFailure, setWorkbenchFailure] = useState<{ message: string; attempt: number } | null>(null);
+  const [workbenchAttempt, setWorkbenchAttempt] = useState(0);
   const { defaultLayout, onLayoutChanged } = useWorkspaceLayout();
 
   // usePanelCallbackRef returns [handle | null, setterFn] — destructure accordingly
@@ -62,6 +83,9 @@ function App() {
 
   // The open project's tabs, cursors and panel split are saved as they change (IDE-008).
   useEffect(() => startSessionPersistence(useIDEStore), []);
+
+  // The declarations of the project's files and library folders, for the tree and the editors (IDE-023).
+  useEffect(() => trackProjectSources(useIDEStore), []);
 
   // A change made outside Studio reloads an unmodified file and asks about a modified one (IDE-004).
   useEffect(() => startExternalChangeWatch(), []);
@@ -98,6 +122,17 @@ function App() {
     if (groupPanel && layout) groupPanel.setLayout(layout);
   }, [groupPanel, projectSession]);
 
+  // The workbench code is fetched when a project opens; a failure to fetch it is shown with a way to try again.
+  useEffect(() => {
+    if (!isProjectOpen || workbench) return undefined;
+    let current = true;
+    loadWorkbench().then(
+      (parts) => { if (current) setWorkbench(parts); },
+      (error: unknown) => { if (current) setWorkbenchFailure({ message: error instanceof Error ? error.message : String(error), attempt: workbenchAttempt }); },
+    );
+    return () => { current = false; };
+  }, [isProjectOpen, workbench, workbenchAttempt]);
+
   // Sync console panel collapse state → panel imperative API
   useEffect(() => {
     if (!consolePanel) return;
@@ -116,6 +151,24 @@ function App() {
       </div>
     );
   }
+
+  if (!workbench) {
+    const failed = workbenchFailure !== null && workbenchFailure.attempt === workbenchAttempt;
+    return (
+      <div className="h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-surface-900)]">
+        <CloseGuard />
+        <div role={failed ? 'alert' : 'status'} className="flex flex-1 flex-col items-center justify-center gap-3 text-sm text-[var(--text-secondary)]">
+          <p>{failed ? `Studio could not load the workbench: ${workbenchFailure.message}` : 'Loading the workbench…'}</p>
+          {failed && (
+            <button type="button" onClick={() => setWorkbenchAttempt((attempt) => attempt + 1)} className="h-8 border border-[var(--border-color)] px-3 text-[var(--text-primary)] hover:bg-[var(--color-surface-700)]">
+              Retry
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+  const { Toolbar, EditorArea, Console } = workbench;
 
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden bg-[var(--color-surface-900)]">
