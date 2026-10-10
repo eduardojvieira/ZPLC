@@ -592,6 +592,29 @@ static int cmd_sys_reboot(const struct shell *sh, size_t argc, char **argv);
  * ============================================================================
  */
 
+/* CMP-052: a refused upload names both draft numbers; 0 is an artifact built
+ * before the counter. Studio shows this text with the upload failure. */
+static void print_program_refusal(const struct shell *sh, int code,
+                                  const uint8_t *binary, size_t size) {
+  if (code == ZPLC_LOADER_ERR_DRAFT) {
+    uint32_t built = zplc_loader_artifact_draft_counter(binary, size);
+
+    if (built == 0U) {
+      shell_error(sh,
+                  "ERROR: Program was built for contract draft none, this "
+                  "runtime is draft %u (%d)",
+                  (unsigned int)ZPLC_DRAFT_COUNTER, code);
+    } else {
+      shell_error(sh,
+                  "ERROR: Program was built for contract draft %u, this "
+                  "runtime is draft %u (%d)",
+                  (unsigned int)built, (unsigned int)ZPLC_DRAFT_COUNTER, code);
+    }
+    return;
+  }
+  shell_error(sh, "ERROR: Program validation failed (%d)", code);
+}
+
 #ifdef CONFIG_ZPLC_SCHEDULER
 
 /* ============================================================================
@@ -686,29 +709,6 @@ static int cmd_sched_tasks(const struct shell *sh, size_t argc, char **argv) {
   }
 
   return 0;
-}
-
-/* CMP-052: a refused upload names both draft numbers; 0 is an artifact built
- * before the counter. Studio shows this text with the upload failure. */
-static void print_program_refusal(const struct shell *sh, int code,
-                                  const uint8_t *binary, size_t size) {
-  if (code == ZPLC_LOADER_ERR_DRAFT) {
-    uint32_t built = zplc_loader_artifact_draft_counter(binary, size);
-
-    if (built == 0U) {
-      shell_error(sh,
-                  "ERROR: Program was built for contract draft none, this "
-                  "runtime is draft %u (%d)",
-                  (unsigned int)ZPLC_DRAFT_COUNTER, code);
-    } else {
-      shell_error(sh,
-                  "ERROR: Program was built for contract draft %u, this "
-                  "runtime is draft %u (%d)",
-                  (unsigned int)built, (unsigned int)ZPLC_DRAFT_COUNTER, code);
-    }
-    return;
-  }
-  shell_error(sh, "ERROR: Program validation failed (%d)", code);
 }
 
 static int cmd_sched_load(const struct shell *sh, size_t argc, char **argv) {
