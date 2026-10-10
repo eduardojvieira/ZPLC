@@ -1,0 +1,28 @@
+{
+  "requirement": "CMP-019",
+  "title": "a DINT inside a structure inside a structure",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "DINT",
+      "value": 70000
+    },
+    {
+      "at": "%QW2",
+      "type": "INT",
+      "value": -300
+    },
+    {
+      "at": "%QD2",
+      "type": "DINT",
+      "value": 80000
+    },
+    {
+      "at": "%QW6",
+      "type": "INT",
+      "value": -2
+    }
+  ]
+}

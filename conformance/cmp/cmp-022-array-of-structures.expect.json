@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-022",
   "title": "array of structures",
+  "matrix": ["data-types.arrays-bounds-and-element-types"],
+  "tags": ["arch-sensitive", "alignment"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QW0", "type": "INT", "value": 5 }]

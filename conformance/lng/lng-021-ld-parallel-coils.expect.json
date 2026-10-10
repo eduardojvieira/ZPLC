@@ -1,6 +1,7 @@
 {
   "requirement": "LNG-021",
   "title": "LD coils on parallel rows follow the power that reaches each",
+  "matrix": ["ld-fbd.ld-parallel-branches"],
   "scans": 3,
   "scanMs": 10,
   "inputs": [

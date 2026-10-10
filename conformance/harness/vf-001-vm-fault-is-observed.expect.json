@@ -1,6 +1,7 @@
 {
   "requirement": "VF-001",
   "title": "a division by zero ends the scan in a VM fault and stores nothing",
+  "tags": ["arch-sensitive", "division"],
   "scans": 1,
   "scanMs": 10,
   "fault": true,

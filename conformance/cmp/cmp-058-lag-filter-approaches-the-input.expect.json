@@ -1,0 +1,17 @@
+{
+  "requirement": "CMP-058",
+  "title": "LAG_FILTER moves its output by GAIN of the distance to the input",
+  "matrix": ["blocks.library-blocks-not-in-the-standard"],
+  "tags": ["arch-sensitive", "float"],
+  "note": "Not an IEC block: the contract is the documented one of stdlib/process.ts: OUT = OUT + GAIN * (IN - OUT), so from 0 towards 8 with GAIN 0.5 the output is 4, 6, 7",
+  "scans": 3,
+  "scanMs": 10,
+  "inputs": [
+    {"at": "%ID0", "type": "REAL", "value": 8.0, "beforeScan": 1}
+  ],
+  "expect": [
+    {"at": "%QD0", "type": "REAL", "value": 4.0, "afterScan": 1},
+    {"at": "%QD0", "type": "REAL", "value": 6.0, "afterScan": 2},
+    {"at": "%QD0", "type": "REAL", "value": 7.0, "afterScan": 3}
+  ]
+}

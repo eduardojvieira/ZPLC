@@ -1,0 +1,9 @@
+{
+  "requirement": "CMP-006",
+  "title": "an ACTION block of a textual program is rejected",
+  "matrix": ["pous.properties-namespaces-action-blocks"],
+  "note": "Decision D-04 (2.x recommended): ACTION blocks in textual POUs are left to 2.x",
+  "build": "fails",
+  "lines": [7],
+  "messageIncludes": []
+}

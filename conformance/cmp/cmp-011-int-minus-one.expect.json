@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-011",
   "title": "INT -1 is negative, equal to -1 and widens to -1",
+  "matrix": ["data-types.sint-int"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

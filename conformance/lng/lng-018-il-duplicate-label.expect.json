@@ -1,6 +1,7 @@
 {
   "requirement": "LNG-018",
   "title": "an IL label defined twice is rejected with the second line",
+  "matrix": ["il.jmp-jmpc-jmpcn-labels"],
   "build": "fails",
   "lines": [
     9

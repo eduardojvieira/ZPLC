@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-024",
   "title": "dereferencing a null reference raises a VM fault",
+  "matrix": ["data-types.ref-to-ref-deref"],
   "scans": 1,
   "scanMs": 10,
   "fault": true

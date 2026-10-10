@@ -1,0 +1,8 @@
+{
+  "requirement": "CMP-026",
+  "title": "an assignment to the CONSTANT of a function block is rejected",
+  "build": "fails",
+  "lines": [
+    4
+  ]
+}

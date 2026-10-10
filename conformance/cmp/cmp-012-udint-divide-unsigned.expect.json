@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-012",
   "title": "UDINT division above 2147483647",
+  "matrix": ["data-types.udint"],
+  "tags": ["arch-sensitive", "division"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QD0", "type": "UDINT", "value": 1382494549 }]

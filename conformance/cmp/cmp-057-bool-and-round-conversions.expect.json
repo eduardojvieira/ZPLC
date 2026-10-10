@@ -1,0 +1,17 @@
+{
+  "requirement": "CMP-057",
+  "title": "BOOL_TO_INT, INT_TO_BOOL and ROUND",
+  "matrix": ["functions.basic-conversions"],
+  "tags": ["arch-sensitive", "float-conversion"],
+  "note": "IEC 61131-3, data type conversion functions: TRUE converts to 1 and a non-zero integer to TRUE; ROUND (not an IEC function) returns a REAL holding the nearest integer: 2.4 gives 2.0, 2.6 gives 3.0 and -2.6 gives -3.0; midpoints are left out because their rounding is not defined by the standard",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QW0", "type": "INT", "value": 1},
+    {"at": "%QX2.0", "type": "BOOL", "value": false},
+    {"at": "%QX2.1", "type": "BOOL", "value": true},
+    {"at": "%QD2", "type": "REAL", "value": 2.0},
+    {"at": "%QD3", "type": "REAL", "value": 3.0},
+    {"at": "%QD4", "type": "REAL", "value": -3.0}
+  ]
+}

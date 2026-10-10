@@ -1,10 +1,10 @@
 ---
 name: zplc-plc-programmer
 description: "Trigger: ZPLC PLC program, Structured Text, Ladder, FBD, SFC, scenario, PLC test. Safely inspect, edit, validate, compile, and test a ZPLC workspace."
-license: Apache-2.0
+license: MIT
 metadata:
   author: "eduardojvieira"
-  version: "1.0"
+  version: "1.1"
 ---
 
 ## Activation Contract
@@ -21,7 +21,7 @@ Stay inside the approved workspace/change set; never read or disclose secrets. N
 | --- | --- |
 | Project is pre-v2 | Run migration preview; show the diff before edits. |
 | Language is LD/FBD/SFC/IL | Preserve its semantic source; validate its generated-ST compiler result, never promise round-trip. |
-| Test/simulation evidence | Require exactly one cyclic task and one program; use `test` or `scenario-run` on native POSIX. |
+| Test/simulation evidence | Require 1 to 16 cyclic tasks with the same `interval_ms`, each running exactly one program; use `test` or `scenario-run` on native POSIX. |
 | Firmware artifact requested by a human | Use authorized typed `firmware-build` only; it is a local cross-build, not flash or qualification. |
 
 ## Execution Steps

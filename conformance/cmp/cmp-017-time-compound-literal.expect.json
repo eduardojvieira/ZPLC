@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-017",
   "title": "TIME compound literal T#1h30m",
+  "matrix": ["literals.compound-and-fractional-time-literals"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QD0", "type": "DINT", "value": 5400000 }]

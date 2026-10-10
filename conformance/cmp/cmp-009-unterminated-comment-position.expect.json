@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-009",
   "title": "an unterminated comment is reported where it opens",
+  "matrix": ["statements.comments-parenthesis-star"],
   "build": "fails",
   "lines": [6]
 }

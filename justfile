@@ -1,6 +1,14 @@
-set shell := ["zsh", "-cu"]
+# The task runner of this repository is `bun run <recipe>` (package.json); CONTRIBUTING.md
+# lists every recipe. These are thin aliases for people who prefer `just`.
+
+setup:
+    bun run setup
+
+test:
+    bun run test:ci
+
+docs:
+    bun run check:docs
 
 release-validate:
-	python3 tools/hil/validate_supported_boards.py
-	python3 tools/hil/validate_docs_parity.py
-	python3 tools/hil/validate_release_evidence.py
+    bun run release:rehearsal

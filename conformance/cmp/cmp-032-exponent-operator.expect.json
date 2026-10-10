@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-032",
   "title": "the ** operator",
+  "matrix": ["statements.power-ampersand-and-bit-access"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QD0", "type": "REAL", "value": 8.0 }]

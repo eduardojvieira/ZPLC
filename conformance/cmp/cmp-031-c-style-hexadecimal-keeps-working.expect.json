@@ -1,0 +1,11 @@
+{
+  "requirement": "CMP-031",
+  "title": "the non-IEC 0xFF form keeps working",
+  "matrix": ["literals.based-literals-and-digit-separators"],
+  "note": "CMP-031: the non-IEC 0x form MUST keep working; the warning it must also produce has no channel a case can read (CMP-008)",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QW0", "type": "INT", "value": 255}
+  ]
+}

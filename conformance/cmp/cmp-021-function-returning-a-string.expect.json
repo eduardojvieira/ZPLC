@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-021",
+  "title": "a function returns a string and two calls in one expression do not share the result",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 8
+    },
+    {
+      "at": "%QX2.0",
+      "type": "BOOL",
+      "value": true
+    }
+  ]
+}

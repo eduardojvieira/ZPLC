@@ -1,6 +1,7 @@
 {
   "requirement": "LNG-025",
   "title": "an SFC condition can read the flag .X and the time .T of a step",
+  "matrix": ["sfc.step-time-t-action-qualifier-n", "sfc.step-flag-x"],
   "scans": 6,
   "scanMs": 10,
   "expect": [

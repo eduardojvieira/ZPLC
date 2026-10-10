@@ -27,9 +27,28 @@ import {
   RUNTIME_SESSION_SOURCE,
   WATCH_FORCE_STATE,
 } from './debugAdapter';
+import { ZPLC_CONTRACT } from '@zplc/compiler';
 import { describeLoadFailure } from './draftCounter';
 import { loadZPLCModule, type EmscriptenModule } from './wasmLoader';
 import { debugLog } from '../utils/debugLog';
+
+/**
+ * Bytes of verifier workspace zplc_core_load needs for a CODE region of codeSize bytes.
+ * Mirrors ZPLC_LOADER_VERIFY_WORKSPACE_SIZE in zplc_loader.h (RT-003): a boundary bit per CODE
+ * byte, a rank index, two bytes of stack interval and a pending bit per control-flow target
+ * (one per 16 CODE bytes and a margin) and seven bytes per subroutine entry (one per 128 and a margin).
+ */
+export function verifierWorkspaceBytes(codeSize: number): number {
+  const leaders = Math.floor(codeSize / 16) + 64;
+  const frames = Math.floor(codeSize / 128) + 32;
+  return (
+    Math.floor((codeSize + 7) / 8) +
+    2 * Math.floor((codeSize + 127) / 128) +
+    2 * leaders +
+    Math.floor((leaders + 7) / 8) +
+    frames * 7
+  );
+}
 
 export const WASM_SIMULATION_ENABLED = false;
 export const WASM_SIMULATION_DISABLED_ERROR =
@@ -274,8 +293,7 @@ export class WASMAdapter implements IDebugAdapter {
       throw new Error('Failed to allocate memory for bytecode');
     }
 
-    // ABI v1 caps CODE at uint16_t, so its boundary bitmap needs at most 8192 bytes.
-    const verifierWorkspaceSize = 8192;
+    const verifierWorkspaceSize = verifierWorkspaceBytes(ZPLC_CONTRACT.MEMORY_REGION.CODE.size);
     const verifierWorkspacePtr = this.module._malloc(verifierWorkspaceSize);
     if (verifierWorkspacePtr === 0) {
       this.module._free(programPtr);

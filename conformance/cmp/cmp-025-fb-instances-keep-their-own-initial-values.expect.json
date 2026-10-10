@@ -1,0 +1,32 @@
+{
+  "requirement": "CMP-025",
+  "title": "two instances of one function block start from their own initial values",
+  "scans": 2,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 11,
+      "afterScan": 1
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 6,
+      "afterScan": 1
+    },
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 12,
+      "afterScan": 2
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 7,
+      "afterScan": 2
+    }
+  ]
+}

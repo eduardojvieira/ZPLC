@@ -1,0 +1,9 @@
+{
+  "requirement": "CMP-006",
+  "title": "a call of ADR is rejected",
+  "matrix": ["data-types.pointer-to-adr"],
+  "note": "Decision D-04 (2.x recommended): ADR is a vendor extension left to 2.x; REF() is the standard form",
+  "build": "fails",
+  "lines": [7],
+  "messageIncludes": []
+}

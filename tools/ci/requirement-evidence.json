@@ -4,7 +4,12 @@
     {"kind":"conformance","ref":"conformance/harness/vf-001-input-reaches-output.expect.json","test":"VF-001 an input set before a scan reaches the output on that scan"},
     {"kind":"conformance","ref":"conformance/harness/vf-001-vm-fault-is-observed.expect.json","test":"VF-001 a division by zero ends the scan in a VM fault and stores nothing"}
   ],
+  "VF-003": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/conformance/cases.test.ts","test":"parseExpectation: matrix rows, tags and located diagnostics (VF-003, VF-005)"}
+  ],
   "VF-005": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/conformance/cases.test.ts","test":"parseExpectation: matrix rows, tags and located diagnostics (VF-003, VF-005)"},
+    {"kind":"unit","ref":"tools/ci/conformance-matrix.test.ts","test":"tags every row that is architecture-sensitive with a case that carries the tag (VF-005)"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_arith_edges.c","test":"(VF-005, VF-015)."}
   ],
   "VF-008": [
@@ -12,6 +17,13 @@
   ],
   "VF-012": [
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_contract.c","test":"Checks on the generated binary contract tables (WP-11, VF-012)."}
+  ],
+  "VF-013": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_opcode_coverage.c","test":"Every opcode of the generated table is executed, and checked, on the real VM (VF-013)."}
+  ],
+  "VF-014": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/fuzz_loader_verify.c","test":"libFuzzer target for zplc_loader_verify (VF-014)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/fuzz_run_program.c","test":"libFuzzer target that loads and RUNS artifacts the loader accepts (VF-014)."}
   ],
   "VF-015": [
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_arith_edges.c","test":"(VF-005, VF-015)."}
@@ -47,7 +59,13 @@
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/semantic-errors.test.ts","test":"semantic errors fail the build (CMP-001, CMP-002 stopgap)","partial":true}
   ],
   "CMP-003": [
-    {"kind":"conformance","ref":"conformance/cmp/cmp-003-unknown-type-name.expect.json","test":"CMP-003 a declaration with an unknown type name is rejected"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-003-char-is-rejected.expect.json","test":"CMP-003 a declaration of type CHAR is rejected naming the type"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-003-ldate-is-rejected.expect.json","test":"CMP-003 a declaration of type LDATE is rejected naming the type"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-003-ldt-is-rejected.expect.json","test":"CMP-003 a declaration of type LDT is rejected naming the type"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-003-ltime-is-rejected.expect.json","test":"CMP-003 a declaration of type LTIME is rejected naming the type"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-003-ltod-is-rejected.expect.json","test":"CMP-003 a declaration of type LTOD is rejected naming the type"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-003-unknown-type-name.expect.json","test":"CMP-003 a declaration with an unknown type name is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-003-wchar-is-rejected.expect.json","test":"CMP-003 a declaration of type WCHAR is rejected naming the type"}
   ],
   "CMP-004": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-004-identifier-case-insensitive.expect.json","test":"CMP-004 identifiers are matched without regard to case"},
@@ -60,14 +78,27 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-005-int-assigned-from-real.expect.json","test":"CMP-005 assigning a REAL to an INT is rejected"}
   ],
   "CMP-006": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-006-action-block-in-a-program-is-rejected.expect.json","test":"CMP-006 an ACTION block of a textual program is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-006-adr-is-rejected.expect.json","test":"CMP-006 a call of ADR is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-006-array-of-arrays-is-rejected.expect.json","test":"CMP-006 an array of arrays is rejected where the inner array is written"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-006-byte-order-mark.expect.json","test":"CMP-006 an error in a source that starts with a byte order mark is reported at its line"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-006-crlf-line-endings.expect.json","test":"CMP-006 an error in a source with CR LF line ends is reported at its line"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-006-duplicate-variable-position.expect.json","test":"CMP-006 a duplicate declaration is reported at its own line"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-006-enumeration-with-base-type-is-rejected.expect.json","test":"CMP-006 an enumeration with an explicit base type is rejected"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-006-missing-base-block.expect.json","test":"CMP-006 a block that extends a missing block is reported at its declaration"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-006-namespace-is-rejected.expect.json","test":"CMP-006 a NAMESPACE is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-006-operator-function-form-is-rejected.expect.json","test":"CMP-006 the function form ADD of an operator is rejected naming the function"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-006-persistent-qualifier-is-rejected.expect.json","test":"CMP-006 a PERSISTENT variable block is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-006-pointer-to-is-rejected.expect.json","test":"CMP-006 a POINTER TO declaration is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-006-positional-function-block-call-is-rejected.expect.json","test":"CMP-006 a positional function-block call is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-006-property-is-rejected.expect.json","test":"CMP-006 a PROPERTY of a function block is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-006-subrange-type-is-rejected.expect.json","test":"CMP-006 a subrange type is rejected"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-006-tab-indented-source.expect.json","test":"CMP-006 an error in a source indented with tabs is reported at its line"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-006-textual-configuration-is-rejected.expect.json","test":"CMP-006 a textual CONFIGURATION with RESOURCE and TASK is rejected"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-006-unknown-identifier-in-block-body.expect.json","test":"CMP-006 an error in the body of a function block is reported at its line, once"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-006-unknown-identifier-in-function.expect.json","test":"CMP-006 an error in the body of a function is reported at its line"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-006-unknown-member-position.expect.json","test":"CMP-006 an unknown member of a function block is reported at its own line"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-006-var-access-is-rejected.expect.json","test":"CMP-006 a VAR_ACCESS block is rejected"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/compiler.test.ts","test":"positions a generation error that has no position of its own at its statement (CMP-006)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/semantic-errors.test.ts","test":"rejects an unknown member of a function block instance (position comes with CMP-006)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/syntax.test.ts","test":"compile: every independent error, each positioned (CMP-006, CMP-007)"},
@@ -90,6 +121,7 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-009-block-comment-never-closed.expect.json","test":"CMP-009 an unterminated /* comment is reported where it opens"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-009-comment-closed-with-the-wrong-delimiter.expect.json","test":"CMP-009 a (* comment closed with */ is reported where it opens"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-009-error-before-an-unterminated-comment.expect.json","test":"CMP-009 an error before an unterminated comment is reported too"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-009-parenthesis-star-comments.expect.json","test":"CMP-009 a (* *) comment between statements and inside an expression changes nothing"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-009-unterminated-comment-position.expect.json","test":"CMP-009 an unterminated comment is reported where it opens"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/syntax.test.ts","test":"reports an unterminated comment alone, where it opens (CMP-009)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/syntax.test.ts","test":"reports an unterminated comment where it opens (CMP-009)"}
@@ -122,6 +154,7 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-011-sint-negative-arithmetic.expect.json","test":"CMP-011 SINT arithmetic with a negative operand"}
   ],
   "CMP-012": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-012-literal-above-int32-as-a-dword-argument.expect.json","test":"CMP-012 a literal above 2147483647 is accepted as the argument of a DWORD parameter"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-012-udint-around-2-31.expect.json","test":"CMP-012 UDINT compares correctly on both sides of 2147483648"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-012-udint-compare-unsigned.expect.json","test":"CMP-012 UDINT comparison above 2147483647"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-012-udint-divide-and-modulo.expect.json","test":"CMP-012 UDINT division and modulo above 2147483647, by small and by large divisors"},
@@ -132,6 +165,7 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-012-udint-to-real.expect.json","test":"CMP-012 UDINT above 2147483647 converts to REAL as a positive number"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-012-uint-65535.expect.json","test":"CMP-012 UINT 65535 compares and widens as a positive number"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-012-uint-compare-above-int16.expect.json","test":"CMP-012 UINT comparison above 32767"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-012-usint-holds-0-to-255.expect.json","test":"CMP-012 USINT holds 0 to 255 and compares as unsigned"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_arith_edges.c","test":"The same pattern orders differently signed and unsigned: the compiler picks LT/GT or LTU/GTU by type (CMP-012)."}
   ],
   "CMP-013": [
@@ -142,6 +176,7 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-013-real-arithmetic-positive.expect.json","test":"CMP-013 REAL arithmetic with positive operands"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-013-real-assigned-from-integer.expect.json","test":"CMP-013 a REAL variable takes an integer value and an integer initial value"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-013-real-compare-negative.expect.json","test":"CMP-013 REAL comparison of two negative values"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-013-real-exponent-and-boolean-literals.expect.json","test":"CMP-013 a REAL literal with an exponent, and TRUE and FALSE"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-013-real-infinities-order.expect.json","test":"CMP-013 REAL infinities order below and above every finite value and equal themselves"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-013-real-max-min-limit-abs.expect.json","test":"CMP-013 MAX, MIN, LIMIT and ABS on negative REAL values"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-013-real-nan-is-unordered.expect.json","test":"CMP-013 REAL NaN is not equal, less or greater than anything, and not equal to itself"},
@@ -159,7 +194,8 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-014-not-word.expect.json","test":"CMP-014 NOT on a WORD"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-014-rol-byte-rotates-within-8-bits.expect.json","test":"CMP-014 ROL on a BYTE rotates within 8 bits"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-014-ror-word-rotates-within-16-bits.expect.json","test":"CMP-014 ROR on a WORD rotates within 16 bits"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-014-shl-byte-keeps-8-bits.expect.json","test":"CMP-014 SHL on a BYTE drops the bits shifted past bit 7"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-014-shl-byte-keeps-8-bits.expect.json","test":"CMP-014 SHL on a BYTE drops the bits shifted past bit 7"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-014-shr-and-word-logic-functions.expect.json","test":"CMP-014 SHR, AND_WORD, OR_WORD, XOR_WORD, NOT_WORD and their DWORD forms use the full width"}
   ],
   "CMP-015": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-015-dt-plus-time-and-difference.expect.json","test":"CMP-015 DT compares and takes a TIME; the difference of two DT is a TIME"},
@@ -171,6 +207,7 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-015-lint-small-value.expect.json","test":"CMP-015 LINT initialised and incremented"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-015-lint-widens-and-narrows.expect.json","test":"CMP-015 a LINT takes a DINT with its sign and a UDINT without one; a DINT takes the low word"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-015-lreal-double-precision.expect.json","test":"CMP-015 LREAL keeps double precision"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-015-mixed-width-locals-keep-their-values.expect.json","test":"CMP-015 locals of every width declared in turn each keep their own value"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-015-ulint-compares-unsigned.expect.json","test":"CMP-015 ULINT 18446744073709551615 is above 1 and LWORD bit operations are 64 bits wide"}
   ],
   "CMP-016": [
@@ -211,64 +248,166 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-018-constant-does-not-fit.expect.json","test":"CMP-018 a constant that does not fit its type is rejected"}
   ],
   "CMP-019": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-019-assignment-between-different-structures-rejected.expect.json","test":"CMP-019 a structure assigned to a structure of another type is rejected"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-019-fb-member-int.expect.json","test":"CMP-019 function-block output INT of 1000"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-019-fb-mixed-width-members.expect.json","test":"CMP-019 function-block members of 8, 16 and 32 bits keep their own width"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-019-function-returning-a-structure-rejected.expect.json","test":"CMP-019 a function that returns a structure is rejected with a message, not built wrongly"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-019-nested-struct-member.expect.json","test":"CMP-019 nested structure member access"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-019-nested-struct-wide-leaf.expect.json","test":"CMP-019 a DINT inside a structure inside a structure"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-019-struct-as-parameter.expect.json","test":"CMP-019 structure passed to a function"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-019-struct-assignment-copies-all.expect.json","test":"CMP-019 whole-structure assignment copies every byte"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-019-struct-assignment-nested.expect.json","test":"CMP-019 a whole structure with a nested structure is copied and then independent"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-019-struct-dint-member.expect.json","test":"CMP-019 structure DINT member of 100000"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-019-struct-initialiser-defaults.expect.json","test":"CMP-019 a structure initialiser overrides one member and the declared defaults stay"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-019-struct-initialiser.expect.json","test":"CMP-019 structure initialiser"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-019-struct-int-member.expect.json","test":"CMP-019 structure INT member of 1000"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-019-struct-small-members.expect.json","test":"CMP-019 structure members that fit in a byte"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-019-struct-members-do-not-overlap.expect.json","test":"CMP-019 five members of different widths hold their own values"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-019-struct-negative-members.expect.json","test":"CMP-019 negative SINT, INT and DINT structure members read back with their sign"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-019-struct-parameter-keeps-every-member.expect.json","test":"CMP-019 a structure passed to a function arrives whole and the caller keeps its own"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-019-struct-small-members.expect.json","test":"CMP-019 structure members that fit in a byte"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-019-structure-as-a-number-rejected.expect.json","test":"CMP-019 a whole structure used where a number is expected is rejected"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/declarations.test.ts","test":"layout (CMP-019, CMP-022, CMP-028)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/storage.test.ts","test":"the width of a member access (CMP-019, CMP-020)"}
   ],
   "CMP-020": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-020-enum-array.expect.json","test":"CMP-020 an array of an enumeration type keeps each element"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-020-enum-case-labels.expect.json","test":"CMP-020 an enumeration selects a CASE branch by its values"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-020-enum-compare-ignores-neighbour.expect.json","test":"CMP-020 comparing an enumeration ignores the next variable"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-020-enum-members-keep-neighbours.expect.json","test":"CMP-020 an enumeration member of a structure does not touch the members around it"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-020-enum-qualified-case-label.expect.json","test":"CMP-020 a CASE branch labelled with Type#Value"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-020-enum-qualified-literal.expect.json","test":"CMP-020 qualified enumeration value St#RUN"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-020-enum-store-keeps-neighbour.expect.json","test":"CMP-020 storing an enumeration keeps the next variable"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-020-enum-store-keeps-neighbour.expect.json","test":"CMP-020 storing an enumeration keeps the next variable"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-020-two-enums-same-value-name.expect.json","test":"CMP-020 Type#Value tells apart a value name two enumerations share"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/storage.test.ts","test":"the width of a member access (CMP-019, CMP-020)"}
   ],
   "CMP-021": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-021-concat-leaves-its-arguments.expect.json","test":"CMP-021 CONCAT returns a new string and keeps both arguments"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-021-fb-string-member-initial-value.expect.json","test":"CMP-021 a string member of a function block holds its declared text"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-021-find.expect.json","test":"CMP-021 FIND gives the 1-based position or 0"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-021-function-returning-a-string.expect.json","test":"CMP-021 a function returns a string and two calls in one expression do not share the result"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-021-initial-literal-longer-than-capacity-rejected.expect.json","test":"CMP-021 an initial text longer than the capacity is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-021-insert-delete-replace.expect.json","test":"CMP-021 INSERT, DELETE and REPLACE edit a copy"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-021-left-and-right-beyond-the-length.expect.json","test":"CMP-021 LEFT and RIGHT of more characters than the string has give the whole string"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-021-left-right-mid-keep-the-argument.expect.json","test":"CMP-021 LEFT, RIGHT and MID give the part and keep the string"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-021-literal-longer-than-capacity-rejected.expect.json","test":"CMP-021 a literal longer than the capacity of its variable is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-021-nested-string-functions.expect.json","test":"CMP-021 string functions used as arguments of string functions"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-021-string-assign-length.expect.json","test":"CMP-021 STRING variable holds an assigned text"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-021-string-assignment-between-variables.expect.json","test":"CMP-021 a string assigned to another variable is a copy"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-021-string-buffer-survives-a-function-call.expect.json","test":"CMP-021 a string argument built before a call that builds strings itself is not overwritten"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-021-string-built-from-itself.expect.json","test":"CMP-021 CONCAT, INSERT and REPLACE assigned to a variable they read"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-021-string-comparison.expect.json","test":"CMP-021 strings compare by their characters"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-021-string-cut-in-place.expect.json","test":"CMP-021 LEFT, RIGHT, MID and DELETE assigned to their own argument"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-021-string-function-into-array-element.expect.json","test":"CMP-021 a string function assigned to an array element with a variable index"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-021-string-function-keeps-argument.expect.json","test":"CMP-021 a string function leaves its argument unchanged"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-021-string-function-reading-its-target-in-a-count.expect.json","test":"CMP-021 a count that reads the variable being assigned"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-021-string-initial-values.expect.json","test":"CMP-021 STRING variables hold their declared texts"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-021-string-literal-length.expect.json","test":"CMP-021 LEN of a string literal"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-021-string-with-capacity.expect.json","test":"CMP-021 STRING[20] declaration"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-021-string-members-and-elements.expect.json","test":"CMP-021 strings in a structure and in an array hold their texts"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-021-string-parameter-is-a-copy.expect.json","test":"CMP-021 a string given to a function is copied"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-021-string-truncates-to-its-capacity.expect.json","test":"CMP-021 a longer string assigned from a variable is cut to the capacity"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-021-string-with-capacity.expect.json","test":"CMP-021 STRING[20] declaration"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-021-wstring-assignment.expect.json","test":"CMP-021 WSTRING variables hold assigned text"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-021-wstring-literal-length.expect.json","test":"CMP-021 LEN of a WSTRING literal"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-021-wstring-variable-length.expect.json","test":"CMP-021 a WSTRING variable holds its initial value"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/storage.test.ts","test":"strings (CMP-021)"}
   ],
   "CMP-022": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-022-array-bound-constant-expression.expect.json","test":"CMP-022 array bounds written as an expression of constants"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-022-array-constant-bound.expect.json","test":"CMP-022 ARRAY bound written as a constant"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-022-array-element-read-write.expect.json","test":"CMP-022 array element written and read in a loop"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-022-array-index-from-array.expect.json","test":"CMP-022 an array element used as the index of another array"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-022-array-initialiser-large-repeat.expect.json","test":"CMP-022 a repeat count of 100 fills the whole array"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-022-array-initialiser-list.expect.json","test":"CMP-022 array initialiser with a list of values"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-022-array-initialiser-of-structures.expect.json","test":"CMP-022 an array of structures initialised with structure values"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-022-array-initialiser-repeat.expect.json","test":"CMP-022 array initialiser with a repeat count"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-022-array-initialiser-two-dimensions.expect.json","test":"CMP-022 a two-dimensional array initialised with nested lists"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-022-array-inside-structure.expect.json","test":"CMP-022 an array that is a member of a structure, indexed by a variable"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-022-array-negative-lower-bound.expect.json","test":"CMP-022 ARRAY[-5..5] with a negative lower bound"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-022-array-of-lint-negative.expect.json","test":"CMP-022 an array of LINT keeps a negative value in both words"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-022-array-of-lint-variable-index.expect.json","test":"CMP-022 a LINT array element written and read with a variable index keeps both words"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-022-array-of-lint.expect.json","test":"CMP-022 array of LINT"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-022-array-of-structures.expect.json","test":"CMP-022 array of structures"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-022-array-of-real-and-bool.expect.json","test":"CMP-022 array elements of REAL and BOOL"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-022-array-of-structures-index-expression.expect.json","test":"CMP-022 an element member of an array of structures written and read with a variable index"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-022-array-of-structures.expect.json","test":"CMP-022 array of structures"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-022-array-two-dimensions-negative-bounds.expect.json","test":"CMP-022 a two-dimensional array with a negative lower bound"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-022-multi-dimensional-arrays.expect.json","test":"CMP-022 two- and three-dimensional arrays of INT, DINT, REAL and BOOL"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/declarations.test.ts","test":"layout (CMP-019, CMP-022, CMP-028)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/storage.test.ts","test":"arrays (CMP-022, CMP-023)"}
   ],
   "CMP-023": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-023-array-index-out-of-bounds-faults.expect.json","test":"CMP-023 a variable array index outside the bounds raises a VM fault"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-023-constant-index-out-of-bounds.expect.json","test":"CMP-023 a constant array index outside the bounds is rejected"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-023-constant-index-in-second-dimension-rejected.expect.json","test":"CMP-023 a constant index outside the bounds of the second dimension is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-023-constant-index-out-of-bounds.expect.json","test":"CMP-023 a constant array index outside the bounds is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-023-index-at-both-bounds-is-accepted.expect.json","test":"CMP-023 the first and the last element are reachable with a variable index"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-023-index-below-lower-bound-faults.expect.json","test":"CMP-023 an index below the lower bound raises a VM fault"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-023-negative-constant-index-rejected.expect.json","test":"CMP-023 a negative constant index outside the bounds is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-023-read-out-of-bounds-faults.expect.json","test":"CMP-023 reading an element outside the bounds raises a VM fault"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-023-second-dimension-out-of-bounds-faults.expect.json","test":"CMP-023 an index that is wrong in the second dimension only raises a VM fault"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/storage.test.ts","test":"arrays (CMP-022, CMP-023)"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_core.c","test":"null-reference faults, CMP-023 and CMP-024)"}
   ],
   "CMP-024": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-024-dereference-of-non-reference-rejected.expect.json","test":"CMP-024 the dereference of a variable that is not a reference is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-024-null-inside-a-function-block.expect.json","test":"CMP-024 NULL and a reference member inside a function block"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-024-null-reference-faults.expect.json","test":"CMP-024 dereferencing a null reference raises a VM fault"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-024-ref-of-another-type.expect.json","test":"CMP-024 REF() of a REAL assigned to a REF_TO INT is rejected"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-024-ref-of-another-type.expect.json","test":"CMP-024 REF() of a REAL assigned to a REF_TO INT is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-024-ref-to-reads-and-writes-the-referenced-variable.expect.json","test":"CMP-024 a REF_TO variable reads and writes the variable it refers to"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-024-reference-is-null-until-assigned.expect.json","test":"CMP-024 a reference variable is NULL until it is given a value"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-024-reference-of-wrong-type-passed-rejected.expect.json","test":"CMP-024 a reference of another type given to a function parameter is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-024-reference-of-wrong-type-variable-rejected.expect.json","test":"CMP-024 REF() of a DINT assigned to a REF_TO INT is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-024-reference-passed-to-a-function.expect.json","test":"CMP-024 a reference given to a function parameter of the same type"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-024-reference-read-and-write.expect.json","test":"CMP-024 a reference reads and writes the variable it points at"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-024-reference-stored-in-a-number-rejected.expect.json","test":"CMP-024 a reference assigned to a DINT is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-024-reference-to-a-structure.expect.json","test":"CMP-024 a reference to a structure reads and writes its members"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-024-reference-to-member-and-element.expect.json","test":"CMP-024 a reference to a structure member and to an array element"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/storage.test.ts","test":"references (CMP-024)"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_core.c","test":"null-reference faults, CMP-023 and CMP-024)"}
   ],
   "CMP-025": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-025-fb-instances-keep-their-own-initial-values.expect.json","test":"CMP-025 two instances of one function block start from their own initial values"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-025-fb-member-initial-value.expect.json","test":"CMP-025 function-block member holds its declared initial value"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-025-fifo-default-size-is-eight.expect.json","test":"CMP-025 a FIFO called without SIZE holds its documented default of eight items"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-025-function-local-initial-value.expect.json","test":"CMP-025 function local holds its declared initial value"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-025-global-initial-value.expect.json","test":"CMP-025 VAR_GLOBAL holds its declared initial value"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-025-global-initial-value.expect.json","test":"CMP-025 VAR_GLOBAL holds its declared initial value"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-025-global-structure-and-array-initial-values.expect.json","test":"CMP-025 a global structure and a global array hold their declared values"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-025-initial-value-is-written-once.expect.json","test":"CMP-025 an initial value is written at the first scan only"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-025-initial-values-of-each-type.expect.json","test":"CMP-025 BOOL, REAL, DINT and TIME variables hold their declared values"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-025-var-input-and-var-output-of-a-function-block.expect.json","test":"CMP-025 VAR_INPUT and VAR_OUTPUT of a function block"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/storage.test.ts","test":"initial values (CMP-025, CMP-026, CMP-027)"}
   ],
   "CMP-026": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-026-assignment-to-a-constant.expect.json","test":"CMP-026 an assignment to a constant is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-026-constants-of-real-and-integer.expect.json","test":"CMP-026 global constants of REAL and INT take part in expressions"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-026-function-block-constant-assignment-rejected.expect.json","test":"CMP-026 an assignment to the CONSTANT of a function block is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-026-function-block-constant-member.expect.json","test":"CMP-026 a CONSTANT of a function block holds its value in the body"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-026-global-constant-value.expect.json","test":"CMP-026 VAR_GLOBAL CONSTANT holds its value"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-026-var-constant.expect.json","test":"CMP-026 VAR CONSTANT in a program"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-026-var-constant-assignment-rejected.expect.json","test":"CMP-026 an assignment to a VAR CONSTANT of a program is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-026-var-constant.expect.json","test":"CMP-026 VAR CONSTANT in a program"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/storage.test.ts","test":"initial values (CMP-025, CMP-026, CMP-027)"}
   ],
   "CMP-027": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-027-fb-var-temp-initial-value-on-every-call.expect.json","test":"CMP-027 a VAR_TEMP of a function block starts from its declared value on every call"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-027-fb-var-temp-not-retained.expect.json","test":"CMP-027 VAR_TEMP of a function block is initialised on every call"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-027-function-local-not-retained.expect.json","test":"CMP-027 a function holds no state between calls"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-027-function-local-initial-value-on-every-call.expect.json","test":"CMP-027 a function local starts from its declared value on every call"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-027-function-local-not-retained.expect.json","test":"CMP-027 a function holds no state between calls"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-027-function-local-string-and-array.expect.json","test":"CMP-027 a function local string and array are empty again on every call"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/storage.test.ts","test":"initial values (CMP-025, CMP-026, CMP-027)"}
   ],
   "CMP-028": [
-    {"kind":"conformance","ref":"conformance/cmp/cmp-028-var-in-out-by-reference.expect.json","test":"CMP-028 VAR_IN_OUT is passed by reference"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-028-in-out-bound-to-member-and-element.expect.json","test":"CMP-028 a VAR_IN_OUT bound to a structure member and to an array element"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-028-in-out-of-another-type-rejected.expect.json","test":"CMP-028 a DINT variable passed to an INT VAR_IN_OUT is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-028-in-out-two-instances-different-targets.expect.json","test":"CMP-028 two instances keep a reference each"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-028-in-out-whole-structure.expect.json","test":"CMP-028 a VAR_IN_OUT of a structure type changes the caller structure"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-028-unbound-in-out-faults.expect.json","test":"CMP-028 a VAR_IN_OUT that was never bound raises a VM fault"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-028-var-in-out-by-reference.expect.json","test":"CMP-028 VAR_IN_OUT is passed by reference"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/declarations.test.ts","test":"layout (CMP-019, CMP-022, CMP-028)"},
+    {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/storage.test.ts","test":"VAR_IN_OUT (CMP-028)"}
   ],
   "CMP-029": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-029-non-retain-accepted.expect.json","test":"CMP-029 VAR NON_RETAIN is accepted"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-029-retain-and-ordinary-variables-together.expect.json","test":"CMP-029 retained and ordinary variables of one program"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-029-var-global-retain.expect.json","test":"CMP-029 VAR_GLOBAL RETAIN is accepted and works"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-029-var-non-retain-is-accepted.expect.json","test":"CMP-029 VAR NON_RETAIN is accepted and takes its initial value"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-029-var-retain-accepted.expect.json","test":"CMP-029 VAR RETAIN is accepted"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/compiler.test.ts","test":"RETAIN declarations (CMP-029)"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/syntax.test.ts","test":"parser: declarations (CMP-029, CMP-030)"},
@@ -295,6 +434,7 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-031-0x-form-still-works.expect.json","test":"CMP-031 the non-IEC 0x form keeps working"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-031-base-not-supported.expect.json","test":"CMP-031 a number base other than 2, 8 and 16 is rejected"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-031-binary-literal.expect.json","test":"CMP-031 binary literal 2#1010"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-031-c-style-hexadecimal-keeps-working.expect.json","test":"CMP-031 the non-IEC 0xFF form keeps working"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-031-digit-separator.expect.json","test":"CMP-031 digit separator in 1_000"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-031-hexadecimal-literal.expect.json","test":"CMP-031 hexadecimal literal 16#FF"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-031-negative-based-literal.expect.json","test":"CMP-031 a based literal with a minus sign"},
@@ -371,6 +511,7 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-038-two-instances-keep-own-state.expect.json","test":"CMP-038 two instances of one function block keep their own state"}
   ],
   "CMP-039": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-039-continue-skips-the-rest-of-the-body.expect.json","test":"CMP-039 CONTINUE ends the pass of the loop and the loop goes on"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-039-for-counting-down.expect.json","test":"CMP-039 FOR with a negative BY counts down"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-039-for-inside-function-block.expect.json","test":"CMP-039 FOR loop inside a function block"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-039-for-variable-negative-step.expect.json","test":"CMP-039 FOR with a negative BY held in a variable counts down"},
@@ -382,12 +523,17 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-040-case-integer-list.expect.json","test":"CMP-040 CASE with a list of integer labels"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-040-case-negative-label.expect.json","test":"CMP-040 CASE with a negative label"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-040-case-range.expect.json","test":"CMP-040 CASE with a range label"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-040-case-without-else-in-a-loop.expect.json","test":"CMP-040 CASE without ELSE inside a loop leaves nothing on the stack"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-040-overlapping-case-labels.expect.json","test":"CMP-040 overlapping CASE labels are rejected"},
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/control-flow.test.ts","test":"CASE labels (CMP-040 stopgap)","partial":true}
   ],
   "CMP-041": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-041-final-method-cannot-be-overridden.expect.json","test":"CMP-041 a FINAL method that a derived block overrides is rejected at the override"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-041-interface-dispatch.expect.json","test":"CMP-041 a variable of an interface type calls the method of its instance"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-041-override-and-inherited-method.expect.json","test":"CMP-041 an inherited method and an overriding one"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-041-private-method-is-not-callable-from-outside.expect.json","test":"CMP-041 a PRIVATE method called from outside its function block is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-041-protected-method-is-not-callable-from-outside.expect.json","test":"CMP-041 a PROTECTED method called from outside its function block is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-041-public-method-is-callable.expect.json","test":"CMP-041 a PUBLIC method is callable from outside its function block"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-041-super-call.expect.json","test":"CMP-041 SUPER^ calls the method of the base block"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-041-this-member-in-method.expect.json","test":"CMP-041 THIS.member inside a method"}
   ],
@@ -401,7 +547,13 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"17 Large program, and one over the limit","partial":true}
   ],
   "CMP-044": [
-    {"kind":"conformance","ref":"conformance/cmp/cmp-044-located-memory-overlap.expect.json","test":"CMP-044 a variable that overlaps an AT %M variable is rejected"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-044-located-memory-overlap.expect.json","test":"CMP-044 a variable that overlaps an AT %M variable is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-044-located-memory-variable.expect.json","test":"CMP-044 a variable located in the work memory (%MW0) keeps its value between scans"}
+  ],
+  "CMP-047": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-047-direct-addresses-of-every-width.expect.json","test":"CMP-047 a direct input of each width reaches a direct output of the same width"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-047-two-cyclic-tasks-of-one-interval.expect.json","test":"CMP-047 two cyclic tasks of one interval each run their program on every scan"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-047-two-programs-writing-one-output-are-rejected.expect.json","test":"CMP-047 two programs that write the same physical output are rejected at the second declaration"}
   ],
   "CMP-052": [
     {"kind":"unit","ref":"packages/zplc-compiler/src/compiler/compiler.test.ts","test":"records the draft contract counter in the artifact of every entry point (CMP-052)"},
@@ -426,14 +578,18 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/conformance/conformance.test.ts","test":"CMP-055 every instruction of a statement resolves to that statement in the debug map"}
   ],
   "CMP-057": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-057-bool-and-round-conversions.expect.json","test":"CMP-057 BOOL_TO_INT, INT_TO_BOOL and ROUND"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-057-dint-to-real-exists.expect.json","test":"CMP-057 DINT_TO_REAL exists"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-057-int-to-dint-exists.expect.json","test":"CMP-057 INT_TO_DINT exists"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-057-integer-conversion-functions.expect.json","test":"CMP-057 conversion functions between integer types keep an in-range value"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-057-real-to-int-rounds.expect.json","test":"CMP-057 REAL_TO_INT rounds to the nearest integer"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-057-ton-elapsed-stops-at-preset.expect.json","test":"CMP-057 TON elapsed time stops at the preset"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-057-tp-not-retriggered.expect.json","test":"CMP-057 TP is not retriggered while its input stays true"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-057-tp-pulse-ignores-the-input-falling.expect.json","test":"CMP-057 TP holds Q for the preset when IN falls, and ends it at the preset"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-057-trunc-truncates.expect.json","test":"CMP-057 TRUNC truncates toward zero"}
   ],
   "CMP-058": [
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-blink-alternates-on-and-off.expect.json","test":"CMP-058 BLINK is on for T_ON and off for T_OFF while ENABLE holds"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-ctd-edge-during-load-is-not-counted.expect.json","test":"CMP-058 CTD does not count a pulse that rises while Load is TRUE"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-ctd-edge-on-the-scan-load-is-released-counts.expect.json","test":"CMP-058 CTD counts a pulse that rises on the scan Load is released"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-ctu-counts-to-preset.expect.json","test":"CMP-058 CTU counts rising edges up to the preset"},
@@ -446,11 +602,20 @@
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-ctud-reset-beats-load.expect.json","test":"CMP-058 CTUD Reset beats Load when both are TRUE"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-ctud-stops-at-32767.expect.json","test":"CMP-058 CTUD stops at 32767 instead of wrapping to -32768"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-ctud-up-and-down-edge-in-one-scan-cancel.expect.json","test":"CMP-058 CTUD counts nothing when an up edge and a down edge arrive in one scan"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-deadband-ignores-small-changes.expect.json","test":"CMP-058 DEADBAND moves its output only when the input leaves the band around it"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-f-trig-pulses-on-the-falling-edge.expect.json","test":"CMP-058 F_TRIG gives one pulse when its input falls"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-fifo-returns-values-in-order.expect.json","test":"CMP-058 FIFO pops in the order of the pushes and counts its items"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-hysteresis-switches-at-its-thresholds.expect.json","test":"CMP-058 HYSTERESIS sets above HIGH, holds between the thresholds and resets below LOW"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-inverse-trigonometric-functions.expect.json","test":"CMP-058 ASIN, ACOS and ATAN return radians"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-lag-filter-approaches-the-input.expect.json","test":"CMP-058 LAG_FILTER moves its output by GAIN of the distance to the input"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-logarithmic-and-exponential-functions.expect.json","test":"CMP-058 LN, LOG, EXP and SQRT"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-r-trig-one-pulse-per-edge.expect.json","test":"CMP-058 R_TRIG gives one pulse per rising edge"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-selection-and-limit-functions.expect.json","test":"CMP-058 SQRT, ABS, MAX, LIMIT, SEL, MUX, MIN and MOD with positive operands"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-sr-and-rs-dominance.expect.json","test":"CMP-058 SR is set-dominant and RS is reset-dominant"},
     {"kind":"conformance","ref":"conformance/cmp/cmp-058-tof-holds-output.expect.json","test":"CMP-058 TOF holds Q for the preset after IN falls"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-058-ton-delays-output.expect.json","test":"CMP-058 TON sets Q after the preset"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-ton-delays-output.expect.json","test":"CMP-058 TON sets Q after the preset"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-trigonometric-functions.expect.json","test":"CMP-058 SIN, COS and TAN of positive and negative angles in radians"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-058-uptime-follows-the-clock.expect.json","test":"CMP-058 UPTIME returns the milliseconds since the start, and CYCLE_TIME and WATCHDOG_RESET can be called"}
   ],
   "LNG-001": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"15 New file: create, edit, save, reopen","partial":true},
@@ -459,8 +624,10 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"6 Simulate: connect, run, watch a value change","partial":true}
   ],
   "LNG-002": [
+    {"kind":"conformance","ref":"conformance/lng/lng-002-fbd-en-input-is-rejected.expect.json","test":"LNG-002 an FBD connection to an EN input is rejected naming the block"},
     {"kind":"conformance","ref":"conformance/lng/lng-002-fbd-function-not-translated.expect.json","test":"LNG-002 an FBD block of a type the transpiler does not translate is rejected by name"},
     {"kind":"conformance","ref":"conformance/lng/lng-002-fbd-unknown-block.expect.json","test":"LNG-002 an FBD block the transpiler does not know is rejected"},
+    {"kind":"conformance","ref":"conformance/lng/lng-002-ld-jump-is-rejected.expect.json","test":"LNG-002 an LD jump is rejected by name"},
     {"kind":"conformance","ref":"conformance/lng/lng-002-ld-unknown-element.expect.json","test":"LNG-002 an LD element the transpiler does not know is rejected by name"},
     {"kind":"conformance","ref":"conformance/lng/lng-002-sfc-unsupported-qualifier.expect.json","test":"LNG-002 an SFC action qualifier the transpiler does not translate is rejected naming the step"},
     {"kind":"unit","ref":"packages/zplc-ide/src/compiler/il/il.test.ts","test":"IL transpiler errors (LNG-002, LNG-017, LNG-018)"},
@@ -470,6 +637,9 @@
   ],
   "LNG-005": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"7 Breakpoint stops execution","partial":true}
+  ],
+  "LNG-008": [
+    {"kind":"conformance","ref":"conformance/lng/lng-008-fbd-calls-a-user-function-block.expect.json","test":"LNG-008 an FBD block that is a user function block from another file runs"}
   ],
   "LNG-009": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"9 Undo after switching tabs"}
@@ -538,6 +708,7 @@
     {"kind":"unit","ref":"packages/zplc-ide/src/transpiler/transpiler.test.ts","test":"SFC scan semantics (LNG-024, LNG-025, LNG-002)"}
   ],
   "LNG-025": [
+    {"kind":"conformance","ref":"conformance/lng/lng-025-sfc-chart-of-twenty-steps.expect.json","test":"LNG-025 an SFC chart of twenty steps runs every step once, one per scan"},
     {"kind":"conformance","ref":"conformance/lng/lng-025-sfc-edge-pulses-on-entry-and-exit.expect.json","test":"LNG-025 an SFC P1 pulse runs when its step is entered and P0 when it is left"},
     {"kind":"conformance","ref":"conformance/lng/lng-025-sfc-n-action-runs-in-its-step.expect.json","test":"LNG-025 an SFC step runs its N action"},
     {"kind":"conformance","ref":"conformance/lng/lng-025-sfc-reset-qualifier-stops-a-stored-action.expect.json","test":"LNG-025 an SFC R action stops the stored action it names"},
@@ -551,10 +722,34 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"16 Debug details: stop, trace, resume mid-scan","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"7 Breakpoint stops execution","partial":true}
   ],
+  "RT-001": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/fuzz_run_program.c","test":"RT-001/COM-001 are open, so that a long run can look for other findings); ZPLC_FUZZ_DUMP=<path> writes the"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_opcode_coverage.c","test":"inside one region, writable unless the opcode only reads (RT-001, RT-002)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sandbox.c","test":"RT-001, RT-002: what the run fuzzer found in the communication opcodes"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sandbox.c","test":"RT-001: communication opcodes (the PoC shapes, address built at run time)"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sandbox.c","test":"RT-001: indirect loads and stores"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sandbox.c","test":"RT-001: string operations"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sandbox.c","test":"Sandbox closure of the VM and the loader (RT-001, RT-002, RT-003)."}
+  ],
+  "RT-002": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_dispatch.c","test":"RT-002: the dispatcher hands a handler no less than the layout of its"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_opcode_coverage.c","test":"inside one region, writable unless the opcode only reads (RT-001, RT-002)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sandbox.c","test":"RT-001, RT-002: what the run fuzzer found in the communication opcodes"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sandbox.c","test":"RT-002: the loader refuses a statically known block that does not fit"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sandbox.c","test":"Sandbox closure of the VM and the loader (RT-001, RT-002, RT-003)."}
+  ],
+  "RT-003": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_loader_verify.c","test":"the address value is pushed first: RT-003 refuses a path that takes more"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sandbox.c","test":"RT-003 premise: the stack effects of the contract table are what the VM does"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sandbox.c","test":"RT-003: the loader verifies the stack effect of every path"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_sandbox.c","test":"Sandbox closure of the VM and the loader (RT-001, RT-002, RT-003)."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_admission/src/main.c","test":"artifact is loaded (RT-003), so the VM never reaches the overflow at run"}
+  ],
   "RT-004": [
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_dispatch.c","test":"RT-004: the STATUS field is written byte by byte, little endian, at any"}
   ],
   "RT-005": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_opcode_coverage.c","test":"table, the memory map and the defined edge-case results of RT-005); it"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_arith_edges.c","test":"Defined results for the integer and float edge cases of the VM (RT-005, CMP-016)"}
   ],
   "RT-006": [
@@ -563,11 +758,32 @@
   "RT-007": [
     {"kind":"conformance","ref":"conformance/rt/rt-007-vm-fault-drives-outputs-safe.expect.json","test":"RT-007 a VM fault drives the outputs to their safe state"}
   ],
+  "RT-015": [
+    {"kind":"conformance","ref":"conformance/rt/rt-015-event-triggered-task-is-rejected.expect.json","test":"RT-015 an event-triggered task is rejected by the build"},
+    {"kind":"conformance","ref":"conformance/rt/rt-015-two-cyclic-tasks-with-different-intervals.expect.json","test":"RT-015 two cyclic tasks with different intervals load in simulation and each runs at its own interval"}
+  ],
   "RT-017": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"16 Debug details: stop, trace, resume mid-scan","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"18 Force an input while stopped at a breakpoint","partial":true},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_native_runtime_session.c","test":"RT-017: resume and step continue the scan a breakpoint interrupted"},
-    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_core.c","test":"Resume continues the scan a breakpoint interrupted (RT-017)."}
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_core.c","test":"Resume continues the scan a breakpoint interrupted (RT-017)."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_admission/src/main.c","test":"RT-017: a step keeps the committed image and leaves the pins safe."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_admission/src/main.c","test":"RT-017: the physical outputs are safe; the image is not the safe state."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_run_control/src/main.c","test":"RT-017: STOP drops a scan that a resume armed and no task has consumed."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_run_control/src/main.c","test":"RT-017: a breakpoint pause keeps the image and forces; resume continues."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_run_control/src/main.c","test":"RT-017: a force is kept while paused and reaches the pins after resume."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_run_control/src/main.c","test":"RT-017: a pause keeps the program's image and forces and makes the pins safe."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_run_control/src/main.c","test":"RT-017: a step keeps the image and forces and leaves the pins safe."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_run_control/src/main.c","test":"RT-017: an interrupted scan keeps its task id and first-scan flag."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_run_control/src/main.c","test":"RT-017: step from a breakpoint finishes the interrupted scan."},
+    {"kind":"c-test","ref":"firmware/tests/scheduler_run_control/src/main.c","test":"RT-017: the pause command keeps the image and forces with the pins safe."}
+  ],
+  "COM-001": [
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/fuzz_run_program.c","test":"RT-001/COM-001 are open, so that a long run can look for other findings); ZPLC_FUZZ_DUMP=<path> writes the"},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_fb_access.c","test":"The bounded accessors of a function-block instance (COM-001)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_cloud.c","test":"The cloud function-block handlers against crafted blocks (COM-001)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_modbus.c","test":"The Modbus function-block handler against crafted blocks (COM-001)."},
+    {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_comm_handler_mqtt.c","test":"The MQTT function-block handler against crafted blocks (COM-001)."}
   ],
   "IDE-001": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/projectFiles.test.ts","test":"the root held for the main process (IDE-001)"},

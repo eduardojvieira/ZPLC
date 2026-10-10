@@ -1,0 +1,23 @@
+{
+  "requirement": "CMP-028",
+  "title": "a VAR_IN_OUT bound to a structure member and to an array element",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 41
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 8
+    },
+    {
+      "at": "%QW2",
+      "type": "INT",
+      "value": 0
+    }
+  ]
+}

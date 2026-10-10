@@ -1,6 +1,7 @@
 {
   "requirement": "LNG-025",
   "title": "an SFC pulse runs once, a limited action for its time, a delayed one after it",
+  "matrix": ["sfc.qualifiers-s-r-p", "sfc.qualifiers-p0-p1-l-d"],
   "scans": 6,
   "scanMs": 10,
   "expect": [

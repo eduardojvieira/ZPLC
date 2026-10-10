@@ -100,7 +100,9 @@ typedef struct {
   uint8_t registered;
   uint8_t timer_running;
   uint8_t work_pending;
-  uint8_t reserved;
+  /* The scan a breakpoint interrupted was the task's first one: its remainder
+   * must still see the first-scan flag. Owned by the scan executor. */
+  uint8_t first_scan_interrupted;
 } zplc_task_internal_t;
 
 /* ============================================================================
@@ -380,6 +382,7 @@ static void coordinator_work_handler(struct k_work *work);
 static int execute_task_cycle_locked(zplc_task_internal_t *t,
                                      bool single_step_mode,
                                      bool *deadline_missed);
+static int drive_safe_outputs_with_mem_locked(void);
 static int apply_safe_outputs_with_mem_locked(void);
 static void increment_counter(uint32_t *counter);
 static int watchdog_disarm(void);
@@ -670,34 +673,35 @@ static int execute_task_cycle_locked(zplc_task_internal_t *t,
   uint32_t exec_time;
   int result;
   bool first_scan;
-  bool continue_from_current_pc;
+  bool continuing_scan;
 
   if (deadline_missed == NULL) {
     return -EINVAL;
   }
   *deadline_missed = false;
 
-  /* Check if this is the first scan */
-  first_scan = (t->task.stats.cycle_count == 0);
-  continue_from_current_pc = (!single_step_mode) &&
-                             (t->vm.pc != t->vm.entry_point) &&
-                             (t->vm.halted == 0U);
+  /* A breakpoint interrupted the previous scan and a resume or a step armed
+   * it: zplc_vm_run_cycle() continues it from the preserved pc and stacks
+   * instead of starting a new scan (the same test it applies itself). */
+  continuing_scan = t->vm.scan_resumed != 0U && t->vm.paused == 0U &&
+                    t->vm.halted == 0U;
+  /* The remainder of an interrupted scan belongs to the scan it started in:
+   * it keeps that scan's first-scan flag, however many parts the scan has. */
+  first_scan = continuing_scan ? t->first_scan_interrupted != 0U
+                               : t->task.stats.cycle_count == 0;
 
   /* Record start time */
   start_stamp = scheduler_stamp_now();
 
-  /* Update system registers BEFORE execution so program can read them */
+  /* Update system registers BEFORE execution so program can read them. Every
+   * part of a scan writes its own task id, even when another task ran in
+   * between in the same batch. */
   update_system_registers(t->task.config.id, t->task.stats.last_exec_time_us,
                           first_scan);
 
-  /* Execute from the current PC when resuming from a breakpoint, otherwise run
-   * a fresh PLC scan cycle from the task entry point.
-   */
-  if (continue_from_current_pc) {
-    result = zplc_vm_run_bounded(&t->vm, ZPLC_VM_CYCLE_INSTRUCTION_BUDGET);
-  } else {
-    result = zplc_vm_run_cycle(&t->vm);
-  }
+  result = zplc_vm_run_cycle(&t->vm);
+  t->first_scan_interrupted =
+      (zplc_vm_is_paused(&t->vm) != 0 && first_scan) ? 1U : 0U;
 
   /* Record end time */
   end_stamp = scheduler_stamp_now();
@@ -898,6 +902,7 @@ static int execute_batch(zplc_task_internal_t *const *batch, uint8_t count,
   int result = 0;
   int faulted = 0;
   int paused = 0;
+  int pause_safe_result = 0;
 
   if (count == 0U) {
     return 0;
@@ -1005,15 +1010,15 @@ static int execute_batch(zplc_task_internal_t *const *batch, uint8_t count,
       }
     }
   }
-  k_mutex_unlock(&mem_mutex);
 
-  if (faulted) {
-    stop_all_task_timers();
-    return result;
-  }
-  if (paused) {
+  /* A breakpoint or a step pauses the runtime (RT-017). The batch has just
+   * committed its image to the pins; the pause drives them back to the safe
+   * level and keeps the output image and the force table, so a resume or a
+   * step continues from them. PAUSED is announced and the pins are driven under
+   * one hold of the memory lock: a thread that sees PAUSED and then takes the
+   * lock never sees a pin that still holds the committed image. */
+  if (paused && !faulted) {
     int task_index;
-    int safe_result = 0;
     k_spinlock_key_t key = k_spin_lock(&admission_lock);
     if (scheduler_fault_latched == 0U &&
         sched_state == ZPLC_SCHED_STATE_RUNNING) {
@@ -1027,14 +1032,20 @@ static int execute_batch(zplc_task_internal_t *const *batch, uint8_t count,
       }
     }
     k_spin_unlock(&admission_lock, key);
-    k_mutex_lock(&mem_mutex, K_FOREVER);
-    safe_result = apply_safe_outputs_with_mem_locked();
-    if (safe_result != 0) {
+    pause_safe_result = drive_safe_outputs_with_mem_locked();
+    if (pause_safe_result != 0) {
       (void)latch_fault_locked();
     }
-    k_mutex_unlock(&mem_mutex);
+  }
+  k_mutex_unlock(&mem_mutex);
+
+  if (faulted) {
     stop_all_task_timers();
-    if (safe_result == 0 && watchdog_disarm() != 0) {
+    return result;
+  }
+  if (paused) {
+    stop_all_task_timers();
+    if (pause_safe_result == 0 && watchdog_disarm() != 0) {
       k_mutex_lock(&mem_mutex, K_FOREVER);
       (void)latch_fault_locked();
       k_mutex_unlock(&mem_mutex);
@@ -1218,19 +1229,18 @@ static int validate_program_locked(const uint8_t *binary, size_t size) {
   return ZPLC_LOADER_OK;
 }
 
-/* mem_mutex is held after admission was closed or a local fault was latched. */
-static int apply_safe_outputs_with_mem_locked(void) {
-  uint8_t *opi;
+/* mem_mutex is held. Drives every physical output channel to its safe level and
+ * touches nothing else: the output process image and the force table are the
+ * logical state of the program, not the physical one, and stay as they are.
+ * This is the whole safe state of a paused runtime (RT-017): the commit that
+ * copies the image to the pins does not run while paused, so the pins stay at
+ * the safe level until the next normal commit after a resume.
+ * The level is off for every channel; RT-023 will let a project declare
+ * another one, and that choice belongs here and nowhere else. */
+static int drive_safe_outputs_with_mem_locked(void) {
   int first_error = 0;
   int index;
 
-  zplc_force_clear_all();
-  opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
-  if (opi == NULL) {
-    first_error = -1;
-  } else {
-    memset(opi, 0, ZPLC_MEM_OPI_SIZE);
-  }
   for (index = 0; index < ZPLC_DIO_CHANNEL_COUNT; ++index) {
     zplc_hal_result_t result;
 
@@ -1248,21 +1258,44 @@ static int apply_safe_outputs_with_mem_locked(void) {
   return first_error;
 }
 
+/* mem_mutex is held after admission was closed or a local fault was latched.
+ * STOP, a fault and the removal of the last task end the run: the physical
+ * outputs go safe and the program's logical state is discarded with them (the
+ * output image is zeroed and the force table cleared). A pause does not end the
+ * run and must use drive_safe_outputs_with_mem_locked() instead. */
+static int apply_safe_outputs_with_mem_locked(void) {
+  uint8_t *opi;
+  int first_error = 0;
+  int drive_result;
+
+  zplc_force_clear_all();
+  opi = zplc_mem_get_region(ZPLC_MEM_OPI_BASE);
+  if (opi == NULL) {
+    first_error = -1;
+  } else {
+    memset(opi, 0, ZPLC_MEM_OPI_SIZE);
+  }
+  drive_result = drive_safe_outputs_with_mem_locked();
+  return first_error != 0 ? first_error : drive_result;
+}
+
 static int stop_locked(void) {
   int index;
   int safe_result;
+  int faulted;
   struct k_work_sync sync;
 
   k_mutex_lock(&mem_mutex, K_FOREVER);
   {
     k_spinlock_key_t key = k_spin_lock(&admission_lock);
-    if (scheduler_fault_latched == 0U) {
+    faulted = scheduler_fault_latched != 0U;
+    if (!faulted) {
       sched_state = ZPLC_SCHED_STATE_IDLE;
     }
     for (index = 0; index < CONFIG_ZPLC_MAX_TASKS; index++) {
       zplc_task_internal_t *t = &tasks[index];
       if (t->registered != 0U) {
-        if (scheduler_fault_latched == 0U) {
+        if (!faulted) {
           t->task.state = ZPLC_TASK_STATE_READY;
         }
         t->timer_running = 0U;
@@ -1270,6 +1303,21 @@ static int stop_locked(void) {
       }
     }
     k_spin_unlock(&admission_lock, key);
+  }
+  /* STOP ends the run: every task starts its next scan from its entry point.
+   * A scan that a breakpoint interrupted, or that a resume armed before any
+   * task ran, must not survive. A latched fault keeps its VM untouched so the
+   * program counter and error it reports stay readable until a reload. */
+  for (index = 0; !faulted && index < CONFIG_ZPLC_MAX_TASKS; index++) {
+    zplc_task_internal_t *t = &tasks[index];
+
+    if (t->registered != 0U) {
+      zplc_vm_reset_cycle(&t->vm);
+      /* reset_cycle keeps this mark for a restart inside one run; a stopped
+       * task has no pc left to skip a breakpoint at. */
+      t->vm.resume_skip_breakpoint_once = 0U;
+      t->first_scan_interrupted = 0U;
+    }
   }
   safe_result = apply_safe_outputs_with_mem_locked();
   k_mutex_unlock(&mem_mutex);
@@ -1385,7 +1433,8 @@ static int pause_locked(void) {
     }
     k_spin_unlock(&admission_lock, key);
   }
-  safe_result = apply_safe_outputs_with_mem_locked();
+  /* RT-017: pause keeps the output image and the force table. */
+  safe_result = drive_safe_outputs_with_mem_locked();
   k_mutex_unlock(&mem_mutex);
   stop_all_task_timers();
   (void)k_work_cancel_sync(&coordinator_work, &sync);
@@ -1804,6 +1853,11 @@ int zplc_sched_start(void) {
   return 0;
 }
 
+/* STOP ends the run: physical outputs safe, output image zeroed, force table
+ * cleared and every task back at its entry point, so a scan that a breakpoint
+ * interrupted, or that a resume armed, is discarded. A pause keeps all of that
+ * except the physical outputs. See "Pause, resume, step and stop" in
+ * docs/docs/runtime/scheduler.md. */
 int zplc_sched_stop(void) {
   int result;
 
@@ -1838,6 +1892,9 @@ int zplc_sched_enter_safe_error(void) {
   return safe_result;
 }
 
+/* Pause (RT-017): the physical outputs go safe; the output image, the force
+ * table and every task's interrupted scan are kept. Returns -1 unless the
+ * scheduler is running. */
 int zplc_sched_pause(void) {
   int result;
 
@@ -1851,6 +1908,10 @@ int zplc_sched_pause(void) {
   return result;
 }
 
+/* Resume (RT-017): a task whose scan stopped at a breakpoint continues that
+ * scan at its next release, from the preserved program counter and stacks. The
+ * pins are not driven here: the first normal commit does it, from the kept
+ * output image with the force table applied. */
 int zplc_sched_resume(void) {
   int index;
   k_spinlock_key_t key;
@@ -1866,8 +1927,9 @@ int zplc_sched_resume(void) {
   if (watchdog_prepare() != 0) {
     int safe_result;
 
+    /* The scheduler stays paused: its image and forces stay with it. */
     k_mutex_lock(&mem_mutex, K_FOREVER);
-    safe_result = apply_safe_outputs_with_mem_locked();
+    safe_result = drive_safe_outputs_with_mem_locked();
     if (safe_result != 0) {
       (void)latch_fault_locked();
     }
@@ -1882,7 +1944,11 @@ int zplc_sched_resume(void) {
   for (index = 0; index < CONFIG_ZPLC_MAX_TASKS; index++) {
     if (tasks[index].registered != 0U &&
         tasks[index].task.state == ZPLC_TASK_STATE_PAUSED) {
-      (void)zplc_vm_resume(&tasks[index].vm);
+      /* Only a VM that stopped at a breakpoint holds an interrupted scan; one
+       * paused between scans must keep its breakpoints armed. */
+      if (zplc_vm_is_paused(&tasks[index].vm) != 0) {
+        (void)zplc_vm_resume(&tasks[index].vm);
+      }
       k_timer_start(&tasks[index].timer,
                     K_MSEC(tasks[index].task.config.interval_us / 1000U),
                     K_MSEC(tasks[index].task.config.interval_us / 1000U));
@@ -1922,6 +1988,9 @@ int zplc_sched_resume(void) {
   return 0;
 }
 
+/* Step (RT-017): one ordered batch. A task stopped at a breakpoint finishes
+ * its scan, any other task runs one whole scan; the batch commits once and the
+ * scheduler pauses again with the pins safe and the image and forces kept. */
 int zplc_sched_step(void) {
   zplc_task_internal_t *batch[CONFIG_ZPLC_MAX_TASKS];
   scheduler_stamp_t release;
@@ -1981,6 +2050,16 @@ int zplc_sched_step(void) {
     }
     batch[previous + 1] = current;
   }
+  /* A task that is stopped at a breakpoint finishes its scan in this step;
+   * one between scans runs a whole scan. Either way the step ends at the next
+   * cycle boundary, or at a breakpoint the rest of the scan reaches. */
+  k_mutex_lock(&mem_mutex, K_FOREVER);
+  for (index = 0; index < count; ++index) {
+    if (zplc_vm_is_paused(&batch[index]->vm) != 0) {
+      (void)zplc_vm_resume(&batch[index]->vm);
+    }
+  }
+  k_mutex_unlock(&mem_mutex);
   result = execute_batch(batch, count, true);
   k_mutex_unlock(&control_mutex);
   return result < 0 ? result : 0;

@@ -292,6 +292,17 @@ describe('parser: error recovery reports every independent error (CMP-007)', () 
         }
     });
 
+    it('reports a construct this compiler does not have once, at its first word, and skips it whole', () => {
+        const inProgram = program('  q : INT;', '  q := 1;\nACTION Bump\n  q := q + 1;\nEND_ACTION\n  q := 2;');
+        expect(errorsOf(inProgram)).toEqual(['6:1 ACTION ... END_ACTION is not supported']);
+        expect(parseWithDiagnostics(inProgram).unit.programs[0]!.statements.length).toBe(2);
+        const outside = 'NAMESPACE Lib\nFUNCTION F : INT\nF := 1;\nEND_FUNCTION\nEND_NAMESPACE\nPROGRAM P\nEND_PROGRAM';
+        expect(errorsOf(outside)).toEqual(['1:1 NAMESPACE ... END_NAMESPACE is not supported']);
+        expect(parseWithDiagnostics(outside).unit.programs.map((entry) => entry.name)).toEqual(['P']);
+        // a name followed by another name is the only shape taken for one: a mistake in an assignment is not
+        expect(errorsOf(program('  Action : INT;', '  Action := ;\n  Action := 1;'))).toEqual(['5:13 Expected expression, got SEMICOLON']);
+    });
+
     it('parse throws the first error carrying every one', () => {
         try {
             parse(program('  x : INT;', '  x := ;\n  x := ;'));
@@ -607,7 +618,7 @@ describe('compile: every independent error, each positioned (CMP-006, CMP-007)',
 
     it('reports an unknown member of a structure in an expression at that expression', () => {
         const source = 'TYPE S : STRUCT a : INT; END_STRUCT END_TYPE\nPROGRAM P\nVAR s : S; x : INT; END_VAR\n  x := 1;\n  x := x + s.b;\nEND_PROGRAM';
-        expect(compile(source)).toEqual(["src/P0.st codegen 5:12 Unknown member 'b' on instance 's'"]);
+        expect(compile(source)).toEqual(["src/P0.st codegen 5:12 Unknown member 'b' on struct 'S'"]);
     });
 
     it('produces the same errors once for a block body that is inlined twice', () => {

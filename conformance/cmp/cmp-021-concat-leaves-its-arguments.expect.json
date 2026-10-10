@@ -1,0 +1,28 @@
+{
+  "requirement": "CMP-021",
+  "title": "CONCAT returns a new string and keeps both arguments",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 2
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 2
+    },
+    {
+      "at": "%QW2",
+      "type": "INT",
+      "value": 4
+    },
+    {
+      "at": "%QX6.0",
+      "type": "BOOL",
+      "value": true
+    }
+  ]
+}

@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-013",
   "title": "REAL comparison orders negatives, zero and positives",
+  "matrix": ["data-types.real", "statements.arithmetic-and-comparisons"],
+  "tags": ["arch-sensitive", "float"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

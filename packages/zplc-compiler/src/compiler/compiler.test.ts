@@ -383,7 +383,7 @@ describe('target memory profiles', () => {
     it('keeps pooled STRING and WSTRING storage inside WORK and away from direct locations', () => {
         const profile = { workSize: 96, retainSize: 1, codeSizeMax: 0xB000 };
         expect(() => compileToBinary(`PROGRAM Strings\nVAR\nSink : STRING;\nEND_VAR\nSink := 'abc';\nEND_PROGRAM`, { memoryProfile: profile })).not.toThrow();
-        expect(() => compileToBinary(`PROGRAM WStrings\nVAR\nSink : STRING;\nEND_VAR\nSink := "x";\nEND_PROGRAM`, { memoryProfile: profile })).not.toThrow();
+        expect(() => compileToBinary(`PROGRAM WStrings\nVAR\nSink : WSTRING[5];\nEND_VAR\nSink := "x";\nEND_PROGRAM`, { memoryProfile: profile })).not.toThrow();
         expect(() => compileToBinary(`PROGRAM Collision\nVAR\nSink : STRING;\nLocated AT %MB86 : BOOL;\nEND_VAR\nSink := 'abc';\nEND_PROGRAM`, { memoryProfile: profile })).toThrow(/string literal pool collides with WORK symbol/);
     });
 

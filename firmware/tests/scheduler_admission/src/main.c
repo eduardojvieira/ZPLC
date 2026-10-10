@@ -379,9 +379,12 @@ ZTEST(zplc_scheduler_admission,
   zassert_equal(zplc_mem_get_code_size(), code_size, "core code changed");
 }
 
-ZTEST(zplc_scheduler_admission, test_task_stack_limit_faults_safely) {
+/* A task that pushes more than its declared depth is refused when the
+ * artifact is loaded (RT-003), so the VM never reaches the overflow at run
+ * time. The scheduler fault path itself stays covered by the watchdog tests. */
+ZTEST(zplc_scheduler_admission, test_task_stack_limit_is_refused_at_load) {
   uint8_t program[PROGRAM_CAPACITY];
-  uint8_t force = 1U;
+  zplc_sched_stats_t stats;
   size_t size;
 
   clear_scheduler();
@@ -389,15 +392,12 @@ ZTEST(zplc_scheduler_admission, test_task_stack_limit_faults_safely) {
   set_task_two_pushes(program, 0U);
   set_task_stack_size(program, 0U, 1U);
   rewrite_program_crc(program, size);
-  zassert_equal(zplc_sched_load(program, size), 1, "load stack-limited task");
-  zassert_ok(zplc_force_set_bytes(ZPLC_MEM_OPI_BASE, &force, 1U),
-             "set force before stack fault");
-  zassert_equal(zplc_sched_step(), -ZPLC_VM_STACK_OVERFLOW,
-                "task stack limit faults on second push");
-  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR,
-                "stack overflow latches scheduler error");
-  zassert_equal(zplc_opi_read8(0U), 0U, "stack fault leaves OPI safe");
-  zassert_equal(zplc_force_get_count(), 0U, "stack fault clears forces");
+  zassert_true(zplc_sched_load(program, size) < 0,
+               "a task above its declared stack depth must be refused");
+  zassert_ok(zplc_sched_get_stats(&stats), "read stats after the refusal");
+  zassert_equal(stats.active_tasks, 0U, "a refused artifact registers no task");
+  zassert_not_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_RUNNING,
+                    "a refused artifact never runs");
 }
 
 ZTEST(zplc_scheduler_admission, test_task_stack_limit_allows_configured_depth) {
@@ -724,8 +724,10 @@ ZTEST(zplc_scheduler_admission, test_step_orders_batch_and_commits_once) {
   zassert_equal(zplc_sched_load(program, size), 3, "load ordered batch");
   zassert_ok(zplc_sched_get_stats(&before), "read batch baseline");
   zassert_ok(zplc_sched_step(), "step ordered batch");
-  zassert_equal(zplc_opi_read8(0U), 0U,
-                "single-step pause returns the process image to safe output");
+  /* RT-017: a step keeps the committed image and leaves the pins safe.
+   * The last ordered task wrote 0x11. */
+  zassert_equal(zplc_opi_read8(0U), 0x11U,
+                "single-step pause keeps the committed process image");
   zassert_ok(zplc_sched_get_stats(&after), "read batch result");
   zassert_equal(after.input_latch_count - before.input_latch_count, 1U,
                 "one process-image input latch");
@@ -757,8 +759,8 @@ ZTEST(zplc_scheduler_admission,
   zassert_ok(zplc_sched_step(), "step shared ordered artifact");
   zassert_equal(zplc_mem_get_region(ZPLC_MEM_WORK_BASE)[0], 0x11U,
                 "priority then task ID determines the final process image");
-  zassert_equal(zplc_opi_read8(0U), 0U,
-                "single-step teardown returns OPI to its safe state");
+  zassert_equal(zplc_opi_read8(0U), 0x11U,
+                "single-step pause keeps the ordered OPI like the POSIX host");
   zassert_ok(zplc_sched_get_stats(&after), "read ordered result");
   zassert_equal(after.input_latch_count - before.input_latch_count, 1U,
                 "one input latch for the shared ordered artifact");
@@ -1088,10 +1090,15 @@ ZTEST(zplc_scheduler_admission,
   zassert_equal(zplc_sched_load(program, size), 1, "load pause task");
   zassert_ok(zplc_sched_start(), "start pause task");
   k_msleep(10);
+  for (int waited_ms = 0; zplc_opi_read8(0U) != 0x5AU && waited_ms < 200;
+       waited_ms++) {
+    k_msleep(1);
+  }
   feeds_before = zplc_sched_test_watchdog_feed_count();
   disarms_before = zplc_sched_test_watchdog_disarm_count();
   zassert_ok(zplc_sched_pause(), "pause applies safe state");
-  zassert_equal(zplc_opi_read8(0U), 0U, "pause applies safe OPI");
+  /* RT-017: the physical outputs are safe; the image is not the safe state. */
+  zassert_equal(zplc_opi_read8(0U), 0x5AU, "pause keeps the output image");
   zassert_true(zplc_sched_test_watchdog_disarm_count() > disarms_before,
                "pause disarms hardware watchdog");
   k_msleep(10);

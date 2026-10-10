@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-002",
   "title": "EXIT outside a loop builds no artifact",
+  "matrix": ["statements.if-while-repeat-exit-continue"],
   "build": "fails",
   "lines": [5],
   "messageIncludes": ["EXIT"]

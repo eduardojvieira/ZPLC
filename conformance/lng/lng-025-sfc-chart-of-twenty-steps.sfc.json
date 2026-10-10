@@ -1,0 +1,439 @@
+{
+  "name": "Long",
+  "variables": {
+    "local": [],
+    "outputs": [
+      {
+        "name": "Visited",
+        "type": "INT",
+        "address": "%QW0"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "id": "s1",
+      "name": "S1",
+      "isInitial": true,
+      "position": {
+        "x": 0,
+        "y": 1
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "Count"
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "name": "S2",
+      "isInitial": false,
+      "position": {
+        "x": 0,
+        "y": 2
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "Count"
+        }
+      ]
+    },
+    {
+      "id": "s3",
+      "name": "S3",
+      "isInitial": false,
+      "position": {
+        "x": 0,
+        "y": 3
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "Count"
+        }
+      ]
+    },
+    {
+      "id": "s4",
+      "name": "S4",
+      "isInitial": false,
+      "position": {
+        "x": 0,
+        "y": 4
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "Count"
+        }
+      ]
+    },
+    {
+      "id": "s5",
+      "name": "S5",
+      "isInitial": false,
+      "position": {
+        "x": 0,
+        "y": 5
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "Count"
+        }
+      ]
+    },
+    {
+      "id": "s6",
+      "name": "S6",
+      "isInitial": false,
+      "position": {
+        "x": 0,
+        "y": 6
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "Count"
+        }
+      ]
+    },
+    {
+      "id": "s7",
+      "name": "S7",
+      "isInitial": false,
+      "position": {
+        "x": 0,
+        "y": 7
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "Count"
+        }
+      ]
+    },
+    {
+      "id": "s8",
+      "name": "S8",
+      "isInitial": false,
+      "position": {
+        "x": 0,
+        "y": 8
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "Count"
+        }
+      ]
+    },
+    {
+      "id": "s9",
+      "name": "S9",
+      "isInitial": false,
+      "position": {
+        "x": 0,
+        "y": 9
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "Count"
+        }
+      ]
+    },
+    {
+      "id": "s10",
+      "name": "S10",
+      "isInitial": false,
+      "position": {
+        "x": 0,
+        "y": 10
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "Count"
+        }
+      ]
+    },
+    {
+      "id": "s11",
+      "name": "S11",
+      "isInitial": false,
+      "position": {
+        "x": 0,
+        "y": 11
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "Count"
+        }
+      ]
+    },
+    {
+      "id": "s12",
+      "name": "S12",
+      "isInitial": false,
+      "position": {
+        "x": 0,
+        "y": 12
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "Count"
+        }
+      ]
+    },
+    {
+      "id": "s13",
+      "name": "S13",
+      "isInitial": false,
+      "position": {
+        "x": 0,
+        "y": 13
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "Count"
+        }
+      ]
+    },
+    {
+      "id": "s14",
+      "name": "S14",
+      "isInitial": false,
+      "position": {
+        "x": 0,
+        "y": 14
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "Count"
+        }
+      ]
+    },
+    {
+      "id": "s15",
+      "name": "S15",
+      "isInitial": false,
+      "position": {
+        "x": 0,
+        "y": 15
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "Count"
+        }
+      ]
+    },
+    {
+      "id": "s16",
+      "name": "S16",
+      "isInitial": false,
+      "position": {
+        "x": 0,
+        "y": 16
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "Count"
+        }
+      ]
+    },
+    {
+      "id": "s17",
+      "name": "S17",
+      "isInitial": false,
+      "position": {
+        "x": 0,
+        "y": 17
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "Count"
+        }
+      ]
+    },
+    {
+      "id": "s18",
+      "name": "S18",
+      "isInitial": false,
+      "position": {
+        "x": 0,
+        "y": 18
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "Count"
+        }
+      ]
+    },
+    {
+      "id": "s19",
+      "name": "S19",
+      "isInitial": false,
+      "position": {
+        "x": 0,
+        "y": 19
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "Count"
+        }
+      ]
+    },
+    {
+      "id": "s20",
+      "name": "S20",
+      "isInitial": false,
+      "position": {
+        "x": 0,
+        "y": 20
+      },
+      "actions": [
+        {
+          "qualifier": "N",
+          "actionName": "Count"
+        }
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "t1",
+      "fromStep": "s1",
+      "toStep": "s2",
+      "condition": "TRUE"
+    },
+    {
+      "id": "t2",
+      "fromStep": "s2",
+      "toStep": "s3",
+      "condition": "TRUE"
+    },
+    {
+      "id": "t3",
+      "fromStep": "s3",
+      "toStep": "s4",
+      "condition": "TRUE"
+    },
+    {
+      "id": "t4",
+      "fromStep": "s4",
+      "toStep": "s5",
+      "condition": "TRUE"
+    },
+    {
+      "id": "t5",
+      "fromStep": "s5",
+      "toStep": "s6",
+      "condition": "TRUE"
+    },
+    {
+      "id": "t6",
+      "fromStep": "s6",
+      "toStep": "s7",
+      "condition": "TRUE"
+    },
+    {
+      "id": "t7",
+      "fromStep": "s7",
+      "toStep": "s8",
+      "condition": "TRUE"
+    },
+    {
+      "id": "t8",
+      "fromStep": "s8",
+      "toStep": "s9",
+      "condition": "TRUE"
+    },
+    {
+      "id": "t9",
+      "fromStep": "s9",
+      "toStep": "s10",
+      "condition": "TRUE"
+    },
+    {
+      "id": "t10",
+      "fromStep": "s10",
+      "toStep": "s11",
+      "condition": "TRUE"
+    },
+    {
+      "id": "t11",
+      "fromStep": "s11",
+      "toStep": "s12",
+      "condition": "TRUE"
+    },
+    {
+      "id": "t12",
+      "fromStep": "s12",
+      "toStep": "s13",
+      "condition": "TRUE"
+    },
+    {
+      "id": "t13",
+      "fromStep": "s13",
+      "toStep": "s14",
+      "condition": "TRUE"
+    },
+    {
+      "id": "t14",
+      "fromStep": "s14",
+      "toStep": "s15",
+      "condition": "TRUE"
+    },
+    {
+      "id": "t15",
+      "fromStep": "s15",
+      "toStep": "s16",
+      "condition": "TRUE"
+    },
+    {
+      "id": "t16",
+      "fromStep": "s16",
+      "toStep": "s17",
+      "condition": "TRUE"
+    },
+    {
+      "id": "t17",
+      "fromStep": "s17",
+      "toStep": "s18",
+      "condition": "TRUE"
+    },
+    {
+      "id": "t18",
+      "fromStep": "s18",
+      "toStep": "s19",
+      "condition": "TRUE"
+    },
+    {
+      "id": "t19",
+      "fromStep": "s19",
+      "toStep": "s20",
+      "condition": "TRUE"
+    }
+  ],
+  "actions": [
+    {
+      "id": "count",
+      "name": "Count",
+      "type": "ST",
+      "body": "Visited := Visited + 1;"
+    }
+  ]
+}

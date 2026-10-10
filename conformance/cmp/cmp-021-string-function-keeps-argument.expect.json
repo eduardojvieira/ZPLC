@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-021",
   "title": "a string function leaves its argument unchanged",
+  "matrix": ["functions.string-functions"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

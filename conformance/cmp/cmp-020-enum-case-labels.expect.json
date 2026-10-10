@@ -1,0 +1,13 @@
+{
+  "requirement": "CMP-020",
+  "title": "an enumeration selects a CASE branch by its values",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 50
+    }
+  ]
+}

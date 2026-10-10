@@ -87,6 +87,13 @@ La enumeración `zplc_opcode_t` agrupa las instrucciones públicas en familias c
 | Conversión | `OP_I2F`, `OP_F2I`, `OP_I2B`, `OP_EXT8`, `OP_EXT16`, `OP_ZEXT8`, `OP_ZEXT16` | adaptación de tipos |
 | Comunicación | `OP_COMM_EXEC`, `OP_COMM_STATUS`, `OP_COMM_RESET` | ejecución de FBs de comunicación |
 
+Un acceso indirecto (`OP_LOADI*`, `OP_STOREI*`) a una dirección que ninguna región de datos
+contiene, como `0xFFFF` o cualquier dirección de la región CODE, termina el scan con
+`ZPLC_VM_OUT_OF_BOUNDS` (violación de acceso a memoria). El compilador se apoya en esa falla:
+una variable `REF_TO` empieza en `0xFFFF`, así que desreferenciar una referencia nula falla, y
+un índice de arreglo fuera de los límites en ejecución lee desde la dirección base de CODE
+(CMP-023, CMP-024). Una prueba de host fija el comportamiento.
+
 La ISA también fija el tamaño del operando por rango de opcode:
 
 - `0x00-0x3F`: sin operando

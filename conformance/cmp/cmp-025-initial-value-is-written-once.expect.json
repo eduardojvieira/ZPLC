@@ -1,0 +1,13 @@
+{
+  "requirement": "CMP-025",
+  "title": "an initial value is written at the first scan only",
+  "scans": 3,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 8
+    }
+  ]
+}

@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-057",
   "title": "DINT_TO_REAL exists",
+  "matrix": ["functions.other-conversions"],
+  "tags": ["arch-sensitive", "float-conversion"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QD0", "type": "REAL", "value": 100000.0 }]

@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-043",
   "title": "a program with three STRING variables",
+  "matrix": ["data-types.string-string-n", "configuration.ownership-and-memory-checks"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QW0", "type": "INT", "value": 1 }]

@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-016",
   "title": "ABS of the most negative DINT is the most negative DINT",
+  "matrix": ["data-types.dint", "functions.selection-limit-and-sqrt-functions"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QD0", "type": "DINT", "value": -2147483648 }]

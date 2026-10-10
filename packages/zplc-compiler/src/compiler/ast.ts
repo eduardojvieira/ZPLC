@@ -347,7 +347,7 @@ export interface VarDecl extends ASTNode {
     kind: 'VarDecl';
     name: string;
     dataType: STDataType;  // Can be elementary type or array type or user-defined type
-    initialValue: Expression | ArrayLiteral | null;
+    initialValue: InitialValue | null;
     ioAddress: IOAddress | null;  // For I/O-mapped variables
     section: VarSectionValue;
     tags: Record<string, string | true>; // Optional attributes like {publish} or {modbus:40001}
@@ -473,8 +473,29 @@ export interface ArrayAccess extends ASTNode {
  */
 export interface ArrayLiteral extends ASTNode {
     kind: 'ArrayLiteral';
-    elements: (Expression | ArrayLiteral)[];  // Nested for multi-dimensional
+    elements: (Expression | ArrayLiteral | StructInitializer | ArrayRepeat)[];  // Nested for multi-dimensional
 }
+
+/**
+ * Repeat count inside an array initialiser: `4(7)` is 7, 7, 7, 7 (CMP-022).
+ */
+export interface ArrayRepeat extends ASTNode {
+    kind: 'ArrayRepeat';
+    count: number;
+    value: Expression | ArrayLiteral | StructInitializer;
+}
+
+/**
+ * Structure or function-block initialiser: `(x := 1, y := 2)` (CMP-019, CMP-025).
+ * A field left out keeps the default its declaration gives.
+ */
+export interface StructInitializer extends ASTNode {
+    kind: 'StructInitializer';
+    fields: { name: string; value: Expression | ArrayLiteral | StructInitializer; line: number; column: number }[];
+}
+
+/** What a declaration may initialise a variable with. */
+export type InitialValue = Expression | ArrayLiteral | StructInitializer;
 
 /**
  * Boolean literal: TRUE or FALSE.

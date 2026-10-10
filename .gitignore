@@ -1,15 +1,11 @@
-# Build directories
+# Build directories, at any depth: build/, build_*/ (build_posix, build_pico, build_tests, ...),
+# build-*/, cmake-build-*/, and the Twister and distribution outputs.
 build/
-build_posix/
-build_pico/
-build_release/
-build_disco/
-build_esp32s3/
-build_giga/
-build_verify_esp32s3/
+build_*/
+build-*/
+cmake-build-*/
 bin/
 dist/
-build_zephyr/
 /twister-out*/
 
 # Root workspace
@@ -53,6 +49,13 @@ venv/
 # Compiled ZPLC files
 *.zplc
 !examples/*.zplc
+!tools/fuzz/findings/*.zplc
+
+# Third-party agent skills installed for local use are not part of the repository;
+# the project skill zplc-plc-programmer is.
+/.agents/skills/*
+!/.agents/skills/zplc-plc-programmer/
+/.claude/skills/*
 
 # Local artifacts
 Screenshots/

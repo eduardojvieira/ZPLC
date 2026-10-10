@@ -1,0 +1,9 @@
+{
+  "requirement": "CMP-006",
+  "title": "a PERSISTENT variable block is rejected",
+  "matrix": ["declarations.var-access-var-config-persistent"],
+  "note": "Decision D-04 (2.x recommended): VAR_ACCESS, VAR_CONFIG and PERSISTENT are left to 2.x; RETAIN covers persistence in 2.0",
+  "build": "fails",
+  "lines": [2],
+  "messageIncludes": []
+}

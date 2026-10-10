@@ -1,6 +1,7 @@
 {
   "requirement": "RT-006",
   "title": "a scan that runs past the instruction budget ends in a VM fault",
+  "matrix": ["configuration.cyclic-tasks"],
   "scans": 1,
   "scanMs": 10,
   "fault": true

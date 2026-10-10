@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-012",
   "title": "UDINT 4294967295 is the largest value in every comparison",
+  "matrix": ["data-types.udint"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

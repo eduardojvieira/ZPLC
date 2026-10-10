@@ -12,6 +12,7 @@
     "webpack": "5.105.4"
   },
   "scripts": {
+    "setup": "bun install --frozen-lockfile && bun run build:compiler && bun run build:runtime",
     "build": "bun run build:compiler && bun run build:ide",
     "test": "bun run test:compiler && bun run test:ide",
     "lint": "bun run lint:ide",
@@ -21,15 +22,31 @@
     "test:ide": "bun run --cwd=packages/zplc-ide test",
     "lint:ide": "bun run --cwd=packages/zplc-ide lint",
     "typecheck:hil": "bun run --cwd=packages/zplc-hil typecheck",
+    "build:runtime": "cmake -S firmware/lib/zplc_core -B firmware/lib/zplc_core/build -DCMAKE_BUILD_TYPE=Release && cmake --build firmware/lib/zplc_core/build --target zplc_runtime --parallel",
+    "test:core": "cmake -S firmware/lib/zplc_core -B build/core-sanitized -DCMAKE_BUILD_TYPE=Debug \"-DCMAKE_C_FLAGS=-fsanitize=address,undefined,float-cast-overflow -fno-sanitize-recover=undefined,float-cast-overflow -fno-omit-frame-pointer\" && cmake --build build/core-sanitized --parallel && ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=halt_on_error=1 ctest --test-dir build/core-sanitized --output-on-failure",
+    "test:compiler:ci": "mkdir -p build/ci && status=0; bun run test:compiler -- --reporter=junit \"--reporter-outfile=$PWD/build/ci/junit-compiler.xml\" || status=$?; bun tools/ci/check-expected-failures.ts --exit-code $status \"packages/zplc-compiler=$PWD/build/ci/junit-compiler.xml\"",
+    "test:ide:ci": "mkdir -p build/ci && status=0; bun run test:ide -- --reporter=junit \"--reporter-outfile=$PWD/build/ci/junit-ide.xml\" || status=$?; bun tools/ci/check-expected-failures.ts --exit-code $status \"packages/zplc-ide=$PWD/build/ci/junit-ide.xml\"",
+    "test:ci": "bun run test:compiler:ci && bun run test:ide:ci",
+    "setup:firmware": "bash tools/firmware-test/setup.sh",
+    "test:firmware": "bash tools/firmware-test/run.sh all",
+    "test:journeys": "bun run --cwd=packages/zplc-ide smoke:journeys",
+    "dev": "bun run build:runtime && bun run --cwd=packages/zplc-ide electron:dev",
+    "simulate": "bun packages/zplc-ide/src/cli/index.ts test",
     "docs:generate": "bun run --cwd=docs generate:docs",
     "docs:validate": "bun run --cwd=docs validate:docs",
     "docs:build": "bun run --cwd=docs build",
+    "docs:start": "bun run --cwd=docs start",
     "check:versions": "bun scripts/release-version.ts --check",
     "req:coverage": "bun tools/ci/requirement-coverage.ts",
+    "conformance:matrix": "bun tools/ci/generate-conformance-matrix.ts",
+    "conformance:coverage": "bun tools/ci/conformance-coverage.ts",
     "check:typescript": "bun run build:compiler && bun run test:compiler && bun run typecheck:hil && bun run build:ide && bun run test:ide && bun run lint:ide",
-    "check:docs": "bun run docs:generate && bun run docs:validate && bun run docs:build",
+    "check:docs": "bun run docs:generate && bun run docs:validate && python3 tools/docs/test_validate_docs_pages.py && python3 tools/docs/validate_docs_pages.py && bun run docs:build",
+    "release:rehearsal": "bun run check:versions && bun test scripts/release-version.test.ts && node --test scripts/release-artifacts.test.mjs && node --test scripts/workflow-action-pins.test.mjs && python3 tools/hil/audit_repo_hygiene.py && python3 tools/hil/validate_release_evidence.py && python3 tools/hil/validate_supported_boards.py && bun run contract:check",
     "contract:generate": "python3 tools/contract/generate.py",
-    "contract:check": "python3 tools/contract/generate.py --check && python3 tools/contract/test_contract.py && bun test ./tools/contract"
+    "contract:check": "python3 tools/contract/generate.py --check && python3 tools/contract/test_contract.py && bun test ./tools/contract",
+    "fuzz": "bash tools/fuzz/run.sh 60 both",
+    "fuzz:seed": "bun tools/fuzz/seed-corpus.ts"
   },
   "devDependencies": {
     "typescript": "~5.9.3"

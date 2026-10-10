@@ -1,0 +1,9 @@
+PROGRAM Kept
+VAR PERSISTENT
+  x : INT;
+END_VAR
+VAR
+  q AT %QW0 : INT;
+END_VAR
+  q := x;
+END_PROGRAM

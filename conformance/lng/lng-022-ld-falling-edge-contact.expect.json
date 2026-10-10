@@ -1,6 +1,7 @@
 {
   "requirement": "LNG-022",
   "title": "an LD falling-edge contact passes power for one scan",
+  "matrix": ["ld-fbd.ld-edge-contacts-and-edge-coils"],
   "scans": 5,
   "scanMs": 10,
   "inputs": [

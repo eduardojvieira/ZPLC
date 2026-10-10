@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-016",
   "title": "the most negative DINT MOD -1 is 0",
+  "matrix": ["data-types.dint"],
+  "tags": ["arch-sensitive", "division"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QD0", "type": "DINT", "value": 0 }]

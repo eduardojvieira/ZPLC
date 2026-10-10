@@ -67,7 +67,7 @@ int zplc_comm_register_handler(zplc_comm_fb_kind_t kind, zplc_comm_handler_t fn)
 #### `zplc_comm_fb_exec`
 
 ```c
-int zplc_comm_fb_exec(zplc_comm_fb_kind_t kind, uint8_t *fb_mem);
+int zplc_comm_fb_exec(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, uint16_t fb_len);
 ```
 
 **Source summary:** Execute a communication FB instance (called by VM from OP_COMM_EXEC).
@@ -76,13 +76,16 @@ int zplc_comm_fb_exec(zplc_comm_fb_kind_t kind, uint8_t *fb_mem);
 
 | Name | Type | Source description |
 | --- | --- | --- |
-| `kind` | `zplc_comm_fb_kind_t` | — |
-| `fb_mem` | `uint8_t *` | — |
+| `kind` | `zplc_comm_fb_kind_t` | The function-block kind |
+| `fb_mem` | `uint8_t *` | The block; the caller has placed all of it in PLC memory |
+| `fb_len` | `uint16_t` | Length of the block; refused (-1) when it is shorter than the handshake or than the size of the kind in the table |
+
+**Source return value:** 0, or -1 when the block is refused
 
 #### `zplc_comm_fb_reset`
 
 ```c
-int zplc_comm_fb_reset(zplc_comm_fb_kind_t kind, uint8_t *fb_mem);
+int zplc_comm_fb_reset(zplc_comm_fb_kind_t kind, uint8_t *fb_mem, uint16_t fb_len);
 ```
 
 **Source summary:** Reset a communication FB instance (called by VM from OP_COMM_RESET).
@@ -91,8 +94,11 @@ int zplc_comm_fb_reset(zplc_comm_fb_kind_t kind, uint8_t *fb_mem);
 
 | Name | Type | Source description |
 | --- | --- | --- |
-| `kind` | `zplc_comm_fb_kind_t` | — |
-| `fb_mem` | `uint8_t *` | — |
+| `kind` | `zplc_comm_fb_kind_t` | The function-block kind |
+| `fb_mem` | `uint8_t *` | The block; the caller has placed all of it in PLC memory |
+| `fb_len` | `uint16_t` | Length of the block; refused (-1) as for zplc_comm_fb_exec() |
+
+**Source return value:** 0, or -1 when the block is refused
 
 ### Types
 
@@ -104,7 +110,9 @@ int zplc_comm_fb_reset(zplc_comm_fb_kind_t kind, uint8_t *fb_mem);
 
 ### Constants and macros
 
-None.
+| Name | Value | Source summary |
+| --- | --- | --- |
+| `ZPLC_COMM_FB_HANDSHAKE_SIZE` | `8U` | Size in bytes of the handshake every communication block starts with (EN, BUSY, DONE, ERROR, STATUS). |
 
 ## `zplc_core.h`
 
@@ -2009,7 +2017,7 @@ static inline int zplc_opcode_is_valid(uint8_t opcode);
 | `ZPLC_MAGIC` | `0x434C505AU` | Magic number for .zplc files. |
 | `ZPLC_VERSION_MAJOR` | `1` | Current ISA major version |
 | `ZPLC_VERSION_MINOR` | `0` | Current ISA minor version |
-| `ZPLC_DRAFT_COUNTER` | `1U` | Draft contract counter (CMP-052). |
+| `ZPLC_DRAFT_COUNTER` | `2U` | Draft contract counter (CMP-052). |
 | `ZPLC_MEM_IPI_BASE` | `0x0000U` | Base address of Input Process Image |
 | `ZPLC_MEM_IPI_SIZE` | `0x1000U` | Size of Input Process Image (4 KB, fixed by spec) |
 | `ZPLC_MEM_OPI_BASE` | `0x1000U` | Base address of Output Process Image |
@@ -2064,7 +2072,7 @@ int zplc_loader_verify(const uint8_t *data, size_t len, uint8_t *workspace, size
 
 **Source summary:** Verify the supported structural and semantic v1 ZPLC subset.
 
-This does not load or authorize a runtime. Product load paths remain a separate integration gate.
+Besides the structure of the file, the code is verified statically: every jump lands on an instruction, every direct memory access and every block of a communication opcode at a statically known address lies inside the regions of PLC memory (ZPLC_LOADER_ERR_MEMORY, ZPLC_LOADER_ERR_COMM), and no path from an entry point (the header's, and each task's) can underflow the evaluation stack or exceed the depth the task declares (ZPLC_LOADER_ERR_STACK). The stack check follows every path, joins the depths where paths meet, and treats a call by the effect of the callee on the stack; it refuses what it cannot prove, among it recursion. This does not load or authorize a runtime. Product load paths remain a separate integration gate.
 
 **Parameters**
 
@@ -2123,9 +2131,14 @@ Reads header word 28 and nothing else. The magic, the CRC and the rest of the ar
 | `ZPLC_LOADER_ERR_MEMORY` | `-13` | Static memory access outside the writable regions |
 | `ZPLC_LOADER_ERR_TASK` | `-14` | Task definition is invalid or there are too many tasks |
 | `ZPLC_LOADER_ERR_TAGS` | `-15` | Tag entry is invalid |
-| `ZPLC_LOADER_ERR_COMM` | `-16` | Communication function-block kind is NONE or at or above the kind limit |
+| `ZPLC_LOADER_ERR_COMM` | `-16` | Communication function-block kind is NONE or at or above the kind limit, or a block at a statically known address does not fit one memory region |
 | `ZPLC_LOADER_ERR_DRAFT` | `-17` | Draft contract counter of the artifact differs from the loader's, or the artifact has none |
+| `ZPLC_LOADER_ERR_STACK` | `-18` | The evaluation stack can underflow, or exceed the depth the task declares, on some path, or the verifier cannot prove that it cannot |
 | `ZPLC_LOADER_MAX_TASKS` | `16U` | — |
+| `ZPLC_VERIFY_MAX_DEPTH` | `127` | — |
+| `ZPLC_VERIFY_FRAME_BYTES` | `7U` | — |
+| `ZPLC_VERIFY_STEPS_PER_BYTE` | `64U` | — |
+| `ZPLC_LOADER_VERIFY_WORKSPACE_SIZE` | `\\ (((ZPLC_MEM_CODE_SIZE + 7U) / 8U) + \\ 2U * ((ZPLC_MEM_CODE_SIZE + 127U) / 128U) + \\ 2U * ZPLC_VERIFY_MAX_LEADERS + (ZPLC_VERIFY_MAX_LEADERS + 7U) / 8U + \\ ZPLC_VERIFY_MAX_FRAMES * ZPLC_VERIFY_FRAME_BYTES)` | — |
 
 ## `zplc_scheduler.h`
 
@@ -2276,7 +2289,7 @@ int zplc_sched_stop(void);
 
 **Source summary:** Stop the scheduler.
 
-Stops all tasks but keeps them registered.
+Stops all tasks but keeps them registered. Unlike a pause, a stop ends the run: the physical outputs go to their safe state, the output process image is zeroed, the force table is cleared, every task is back at its entry point and a scan interrupted by a breakpoint is discarded (RT-017).
 
 **Parameters**
 
@@ -2312,6 +2325,8 @@ int zplc_sched_pause(void);
 
 **Source summary:** Pause the scheduler (for debugging).
 
+Pauses between scans: a batch in flight finishes first. The physical outputs are driven to their safe state before the call returns; the output process image and the force table are kept, so a later resume or step continues the program from where it stopped (RT-017).
+
 **Parameters**
 
 | Name | Type | Source description |
@@ -2328,6 +2343,8 @@ int zplc_sched_resume(void);
 
 **Source summary:** Resume the scheduler from pause.
 
+Does not drive the pins itself. A scan stopped at a breakpoint continues from its program counter at the next release; a pause between scans starts a new scan. The first normal commit copies the output image, with the force table applied, to the pins.
+
 **Parameters**
 
 | Name | Type | Source description |
@@ -2342,9 +2359,9 @@ int zplc_sched_resume(void);
 int zplc_sched_step(void);
 ```
 
-**Source summary:** Execute exactly one cycle for each paused/ready task.
+**Source summary:** Execute exactly one scan for each paused/ready task.
 
-Used by the debugger when the scheduler is paused. Tasks remain paused after the stepped cycle unless a task enters error state.
+Used by the debugger when the scheduler is paused. A scan stopped at a breakpoint is finished; otherwise one whole scan runs. The scan is committed to the pins once and the pins are then driven safe again. The output image and the force table are kept. Tasks remain paused after the stepped cycle unless a task enters error state.
 
 **Parameters**
 
@@ -2550,7 +2567,7 @@ These tables are generated from `tools/contract/contract.json`, the single sourc
 | --- | --- | --- |
 | Magic number | `0x434C505A` | `5A 50 4C 43` = "ZPLC" |
 | ISA version (major.minor) | `1.0` |  |
-| Draft contract counter | `1` | Written in header word 28 of every artifact. The loader and Studio refuse an artifact, or a device image, whose counter differs from their own and show both numbers; 0 means an artifact built before the counter. It increases with every contract change until the freeze. |
+| Draft contract counter | `2` | Written in header word 28 of every artifact. The loader and Studio refuse an artifact, or a device image, whose counter differs from their own and show both numbers; 0 means an artifact built before the counter. It increases with every contract change until the freeze. |
 | File header size (bytes) | `32` |  |
 | Segment entry size (bytes) | `8` |  |
 | Task definition size (bytes) | `16` |  |
@@ -2843,8 +2860,9 @@ The operand size follows the opcode range (0x00-0x3F none, 0x40-0x7F 8-bit, 0x80
 | `ZPLC_LOADER_ERR_MEMORY` | `-13` | Static memory access outside the writable regions |
 | `ZPLC_LOADER_ERR_TASK` | `-14` | Task definition is invalid or there are too many tasks |
 | `ZPLC_LOADER_ERR_TAGS` | `-15` | Tag entry is invalid |
-| `ZPLC_LOADER_ERR_COMM` | `-16` | Communication function-block kind is NONE or at or above the kind limit |
+| `ZPLC_LOADER_ERR_COMM` | `-16` | Communication function-block kind is NONE or at or above the kind limit, or a block at a statically known address does not fit one memory region |
 | `ZPLC_LOADER_ERR_DRAFT` | `-17` | Draft contract counter of the artifact differs from the loader's, or the artifact has none |
+| `ZPLC_LOADER_ERR_STACK` | `-18` | The evaluation stack can underflow, or exceed the depth the task declares, on some path, or the verifier cannot prove that it cannot |
 
 ### Communication function blocks
 

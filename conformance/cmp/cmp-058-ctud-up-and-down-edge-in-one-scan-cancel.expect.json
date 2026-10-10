@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-058",
   "title": "CTUD counts nothing when an up edge and a down edge arrive in one scan",
+  "matrix": ["blocks.ctu-ctd-ctud"],
   "scans": 7,
   "scanMs": 10,
   "inputs": [

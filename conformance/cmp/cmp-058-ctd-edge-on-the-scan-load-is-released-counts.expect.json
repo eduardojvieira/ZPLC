@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-058",
   "title": "CTD counts a pulse that rises on the scan Load is released",
+  "matrix": ["blocks.ctu-ctd-ctud"],
   "scans": 4,
   "scanMs": 10,
   "inputs": [

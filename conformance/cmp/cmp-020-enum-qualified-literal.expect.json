@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-020",
   "title": "qualified enumeration value St#RUN",
+  "matrix": ["data-types.enumerations"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QX0.0", "type": "BOOL", "value": true }]

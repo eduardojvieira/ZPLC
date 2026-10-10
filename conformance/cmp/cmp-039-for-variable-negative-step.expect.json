@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-039",
   "title": "FOR with a negative BY held in a variable counts down",
+  "matrix": ["statements.for"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QW0", "type": "INT", "value": 3 }]

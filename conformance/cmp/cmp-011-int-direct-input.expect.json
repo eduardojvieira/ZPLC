@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-011",
   "title": "a negative INT read from a direct input",
+  "matrix": ["data-types.sint-int", "declarations.at-i-at-q-direct-addresses"],
   "scans": 1,
   "scanMs": 10,
   "inputs": [

@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-042",
   "title": "a global declared in another file",
+  "matrix": ["declarations.var-global", "pous.shared-pous-and-libraries"],
   "scans": 1,
   "scanMs": 10,
   "files": ["cmp-042-global-in-another-file-globals.st"],

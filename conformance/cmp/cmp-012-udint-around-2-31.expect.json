@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-012",
   "title": "UDINT compares correctly on both sides of 2147483648",
+  "matrix": ["data-types.udint"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

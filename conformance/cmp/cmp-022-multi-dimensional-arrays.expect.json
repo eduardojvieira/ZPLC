@@ -1,0 +1,17 @@
+{
+  "requirement": "CMP-022",
+  "title": "two- and three-dimensional arrays of INT, DINT, REAL and BOOL",
+  "matrix": ["data-types.arrays-one-to-three-dimensions-of-bool-int-dint"],
+  "tags": ["arch-sensitive", "alignment"],
+  "note": "IEC 61131-3, array data types: an array has one to three dimensions, each with its own bounds, and an element is addressed by one subscript for each; a variable starts at its type default (FALSE)",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QW0", "type": "INT", "value": 12},
+    {"at": "%QW1", "type": "INT", "value": 1},
+    {"at": "%QD1", "type": "DINT", "value": 212},
+    {"at": "%QD2", "type": "REAL", "value": 1.5},
+    {"at": "%QX12.0", "type": "BOOL", "value": true},
+    {"at": "%QX12.1", "type": "BOOL", "value": false}
+  ]
+}

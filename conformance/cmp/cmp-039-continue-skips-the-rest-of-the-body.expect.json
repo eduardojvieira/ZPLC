@@ -1,0 +1,12 @@
+{
+  "requirement": "CMP-039",
+  "title": "CONTINUE ends the pass of the loop and the loop goes on",
+  "matrix": ["statements.if-while-repeat-exit-continue"],
+  "note": "IEC 61131-3 ed. 3, iteration statements: CONTINUE ends the current pass of the innermost loop; the six passes each count, and only the odd values 1, 3 and 5 are added, which is 9",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QW0", "type": "INT", "value": 9},
+    {"at": "%QW1", "type": "INT", "value": 6}
+  ]
+}

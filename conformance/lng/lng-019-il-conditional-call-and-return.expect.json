@@ -1,6 +1,7 @@
 {
   "requirement": "LNG-019",
   "title": "IL CALC, CALCN and RETC",
+  "matrix": ["il.implemented-operators"],
   "scans": 3,
   "scanMs": 10,
   "inputs": [

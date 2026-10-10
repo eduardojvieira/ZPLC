@@ -49,22 +49,31 @@ import type {
     TODLiteral,
     DTLiteral,
     WStringLiteral,
+    ArrayLiteral,
+    ArrayRepeat,
+    StructInitializer,
+    InitialValue,
+    PointerType,
 } from './ast.ts';
-import { getDataTypeSize, isArrayType, VarSection } from './ast.ts';
+import { getArrayElementCount, isArrayType, VarSection } from './ast.ts';
 import { CodegenError, codegenErrorFrom, orderedUniqueErrors } from './diagnostics.ts';
 import {
     getLoadStoreSuffix,
     buildSymbolTable,
     MemoryLayout,
     alignTo,
+    parseStringType,
+    typeToString as typeText,
 } from './symbol-table.ts';
-import type { SymbolTable, Symbol } from './symbol-table.ts';
+import type { SymbolTable, Symbol, MemberInfo } from './symbol-table.ts';
 import {
     getFn,
     getFB,
     type CodeGenContext,
     type MemberSize,
 } from './stdlib/index.ts';
+import { strappendHelper, strdelHelper, strfindHelper, strsubHelper } from './stdlib/strings.ts';
+import type { StringCells } from './stdlib/strings.ts';
 import {
     ADD64_LABEL,
     CMP64S_LABEL,
@@ -72,6 +81,9 @@ import {
     FCMP_LABEL,
     HELPERS,
     LITERAL_INT,
+    MEMCPY_LABEL,
+    MEMZERO_LABEL,
+    WSTRCPY_LABEL,
     SUB64_LABEL,
     UDIV32_LABEL,
     UNKNOWN_TYPE,
@@ -161,6 +173,12 @@ export interface CodeGenOptions {
      * Default: false
      */
     emitSourceAnnotations?: boolean;
+
+    /**
+     * Check every array index at run time and end the scan with a VM fault when it is outside the
+     * bounds (CMP-023). On by default: a build that turns it off writes over the next variable instead.
+     */
+    arrayBoundsCheck?: boolean;
 }
 
 // ============================================================================
@@ -232,6 +250,26 @@ interface CodeGenState {
     helpers: Set<HelperName | 'powf'>;
     /** The errors of statements that could not be generated, in the order found (CMP-007). */
     errors: CodegenError[];
+    /** Check array indices at run time (CMP-023). */
+    arrayBoundsCheck: boolean;
+    /** Work memory the code generator took after the symbols: string buffers and the cells of the string routines. */
+    scratchStrings: Array<{ address: number; size: number }>;
+    /**
+     * The string buffers of the program or function being generated: free again at the start of every
+     * statement. Each POU has its own, so a buffer that is live while a function is called is never one
+     * the function uses.
+     */
+    stringBuffers: Array<{ address: number; size: number; free: boolean }>;
+    /** Depth of statements generated inside an expression (the body of an inlined method). */
+    expressionDepth: number;
+    /** Routines that need work cells of their own, by label; appended after the main cycle. */
+    cellHelpers: Map<string, string[]>;
+    /** The work cells the string routines share (none calls another). */
+    stringCells: StringCells | null;
+    /** A string the next function that returns a string writes its result into, instead of a work buffer. */
+    resultBuffer: { address: number } | null;
+    /** Characters the result of the string function being generated can hold at most, when that is known. */
+    resultCapacity: number | null;
 }
 
 /**
@@ -355,6 +393,14 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
         workMemorySize,
         helpers: new Set(),
         errors,
+        arrayBoundsCheck: options?.arrayBoundsCheck ?? true,
+        scratchStrings: [],
+        stringBuffers: [],
+        expressionDepth: 0,
+        cellHelpers: new Map(),
+        stringCells: null,
+        resultBuffer: null,
+        resultCapacity: null,
     };
     // inside an inlined function block, its members (and the instances declared in it) are in scope
     symbols.scopeResolver = (name) => fbScopeSymbol(state, name);
@@ -368,14 +414,7 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
 
     // First pass: collect string literals
     if (isUnit) {
-        for (const func of (unit as CompilationUnit).functions) {
-            for (const stmt of func.body) {
-                collectStringLiteralsInStatement(state, stmt);
-            }
-        }
-        for (const prog of (unit as CompilationUnit).programs) {
-            collectStringLiterals(state, prog);
-        }
+        collectUnitStringLiterals(state, unit as CompilationUnit);
     } else {
         collectStringLiterals(state, mainProgram);
     }
@@ -425,16 +464,20 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
     emit(state, `    LOAD8 ${formatAddress(state.initFlagAddr)}    ; _initialized flag`);
     emit(state, `    JNZ _cycle                  ; Skip init if already done`);
 
-    // Initialization
+    // Initialization: the literal pool first, the variable initialisers copy from it
+    emitStringLiteralInit(state);
+
+    // the initial values of the RETAIN variables of the globals and of the programs share one guard
+    const retained: VarDecl[] = [];
     if (isUnit) {
+        emitGlobalInitialization(state, unit as CompilationUnit, retained);
         for (const prog of (unit as CompilationUnit).programs) {
-            emitInitialization(state, prog);
+            emitInitialization(state, prog, retained);
         }
     } else {
-        emitInitialization(state, mainProgram);
+        emitInitialization(state, mainProgram, retained);
     }
-
-    emitStringLiteralInit(state);
+    emitRetainedInitialization(state, retained);
 
     emit(state, ``);
     emit(state, `    ; Mark as initialized`);
@@ -454,12 +497,20 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
     emit(state, `    ; End of cycle`);
     emit(state, `    HALT`);
 
+    // The work buffers the string functions took came after the literal pool was checked
+    validateStringLiteralPool(state, workMemoryBase, workMemorySize);
+
     // Routines the program called, reachable only through CALL
     for (const helper of [...HELPERS, { name: 'powf' as const, title: 'REAL exponentiation (**)', lines: POWF_HELPER }]) {
         if (!state.helpers.has(helper.name)) continue;
         emit(state, ``);
         emit(state, `; --- Helper: ${helper.title} ---`);
         state.output.push(...helper.lines);
+    }
+    for (const [label, lines] of state.cellHelpers) {
+        emit(state, ``);
+        emit(state, `; --- Helper: ${label} ---`);
+        state.output.push(...lines);
     }
 
     return state.output.join('\n');
@@ -657,7 +708,11 @@ function validateWorkSymbols(symbols: SymbolTable, workMemoryBase: number, workM
 function validateStringLiteralPool(state: CodeGenState, workMemoryBase: number, workMemorySize: number): void {
     const workEnd = workMemoryBase + workMemorySize;
     const directlyLocatedSymbols = state.symbols.all().filter(symbol => symbol.ioAddress?.type === 'M');
-    for (const literal of state.stringLiterals) {
+    const pooled = [
+        ...state.stringLiterals,
+        ...state.scratchStrings,
+    ];
+    for (const literal of pooled) {
         const literalEnd = literal.address + literal.size;
         if (!Number.isSafeInteger(literalEnd)
             || literal.address < workMemoryBase
@@ -796,16 +851,60 @@ function getStringLiteralSize(value: string): number {
 function collectStringLiterals(state: CodeGenState, program: Program): void {
     // Visit all variable initializers
     for (const block of program.varBlocks) {
-        for (const decl of block.variables) {
-            if (decl.initialValue) {
-                collectStringLiteralsInExpression(state, decl.initialValue);
-            }
-        }
+        collectStringLiteralsInDeclarations(state, block.variables);
     }
 
     // Visit all statements
     for (const stmt of program.statements) {
         collectStringLiteralsInStatement(state, stmt);
+    }
+}
+
+/** The literals a declaration initialises a variable with, however deep in an array or a structure value. */
+function collectStringLiteralsInInitializer(state: CodeGenState, value: InitialValue | ArrayRepeat): void {
+    switch (value.kind) {
+        case 'ArrayLiteral':
+            for (const element of value.elements) collectStringLiteralsInInitializer(state, element);
+            break;
+        case 'ArrayRepeat':
+            collectStringLiteralsInInitializer(state, value.value);
+            break;
+        case 'StructInitializer':
+            for (const field of value.fields) collectStringLiteralsInInitializer(state, field.value);
+            break;
+        default:
+            collectStringLiteralsInExpression(state, value);
+    }
+}
+
+function collectStringLiteralsInDeclarations(state: CodeGenState, declarations: VarDecl[]): void {
+    for (const decl of declarations) {
+        if (decl.initialValue) collectStringLiteralsInInitializer(state, decl.initialValue);
+    }
+}
+
+/** Every literal of the unit: globals, structure defaults, functions, function blocks, methods and programs. */
+function collectUnitStringLiterals(state: CodeGenState, unit: CompilationUnit): void {
+    for (const type of unit.typeDefinitions ?? []) {
+        if (type.kind === 'StructDecl') collectStringLiteralsInDeclarations(state, type.members);
+    }
+    for (const block of unit.globalVars) {
+        collectStringLiteralsInDeclarations(state, block.variables);
+    }
+    for (const func of unit.functions) {
+        collectStringLiteralsInDeclarations(state, [...func.inputs, ...func.locals]);
+        for (const stmt of func.body) collectStringLiteralsInStatement(state, stmt);
+    }
+    for (const fb of unit.functionBlocks) {
+        collectStringLiteralsInDeclarations(state, [...fb.inputs, ...fb.outputs, ...fb.inouts, ...fb.locals]);
+        for (const stmt of fb.body) collectStringLiteralsInStatement(state, stmt);
+        for (const method of fb.methods) {
+            collectStringLiteralsInDeclarations(state, [...method.inputs, ...method.outputs, ...method.locals]);
+            for (const stmt of method.body) collectStringLiteralsInStatement(state, stmt);
+        }
+    }
+    for (const prog of unit.programs) {
+        collectStringLiterals(state, prog);
     }
 }
 
@@ -889,8 +988,14 @@ function collectStringLiteralsInExpression(state: CodeGenState, expr: Expression
             break;
         case 'ArrayLiteral':
             for (const element of expr.elements) {
-                collectStringLiteralsInExpression(state, element as Expression);
+                collectStringLiteralsInInitializer(state, element);
             }
+            break;
+        case 'ReferenceExpr':
+            collectStringLiteralsInExpression(state, expr.operand);
+            break;
+        case 'DereferenceExpr':
+            collectStringLiteralsInExpression(state, expr.operand);
             break;
         case 'IntLiteral':
         case 'RealLiteral':
@@ -1063,46 +1168,308 @@ function emitStringLiteralInit(state: CodeGenState): void {
 // Initialization
 // ============================================================================
 
-function emitInitialization(state: CodeGenState, program: Program): void {
-    let hasInit = false;
+// ============================================================================
+// Initialisation (CMP-025, CMP-026, CMP-027)
+//
+// Every variable holds its declared initial value, or the default of its type, at the
+// first scan: the variables of the program, the globals, the members of every function
+// block instance and structure, every array element. A function local, a VAR_TEMP and a
+// method local get theirs again on every call, so a function holds no state.
+// ============================================================================
 
-    for (const block of program.varBlocks) {
-        for (const decl of block.variables) {
-            if (decl.initialValue) {
-                if (!hasInit) {
-                    emit(state, ``);
-                    emit(state, `    ; --- Variable Initialization ---`);
-                    hasInit = true;
+interface InitOptions {
+    /** Clear what has no declared value too (a function local, a VAR_TEMP): they are written on every call. */
+    everyCall: boolean;
+}
+
+/** Whether a value of this type holds something other than zero before the program writes to it. */
+function hasNonZeroDefault(state: CodeGenState, type: STDataType | ArrayType): boolean {
+    const t = storedType(state, type);
+    if (isStringType(t) || isPointerType(t)) return true;
+    if (isArrayType(t as STDataType)) return hasNonZeroDefault(state, (t as ArrayType).elementType);
+    if (typeof t !== 'string') return false;
+    const members = state.symbols.getStructDefinition(t)?.members ?? state.symbols.getFBDefinition(t)?.members;
+    if (!members) return false;
+    for (const member of members.values()) {
+        if (member.section === VarSection.VAR_IN_OUT || member.initialValue || hasNonZeroDefault(state, member.dataType)) return true;
+    }
+    return false;
+}
+
+/** Fill `count` elements of `stride` bytes from `address` with the value `emitValue` leaves, in a loop. */
+function emitFillLoop(state: CodeGenState, address: number, count: number, stride: number,
+                      width: '8' | '16' | '32', emitValue: () => void): void {
+    const loop = newLabel(state, 'fill_loop');
+    const done = newLabel(state, 'fill_done');
+    emitPushInteger(state, address);
+    emitPushInteger(state, count);
+    emit(state, `${loop}:                         ; [pointer count]`);
+    emit(state, `    DUP`);
+    emit(state, `    JZ ${done}`);
+    emit(state, `    OVER`);
+    emitValue();
+    emit(state, `    STOREI${width}`);
+    emit(state, `    SWAP`);
+    emitPushInteger(state, stride);
+    emit(state, `    ADD`);
+    emit(state, `    SWAP`);
+    emit(state, `    PUSH8 1`);
+    emit(state, `    SUB`);
+    emit(state, `    JMP ${loop}`);
+    emit(state, `${done}:`);
+    emit(state, `    DROP`);
+    emit(state, `    DROP`);
+}
+
+type ElementInit = Expression | StructInitializer;
+
+/** The values of an array initialiser in element order: repeat counts expanded, nested brackets flattened. */
+function flattenArrayInitializer(literal: ArrayLiteral, out: Array<{ value: ElementInit; repeat: number }>): void {
+    for (const element of literal.elements) {
+        if (element.kind === 'ArrayRepeat') {
+            const repeated = (element as ArrayRepeat).value;
+            if (repeated.kind === 'ArrayLiteral') {
+                for (let i = 0; i < (element as ArrayRepeat).count; i++) flattenArrayInitializer(repeated, out);
+            } else {
+                out.push({ value: repeated as ElementInit, repeat: (element as ArrayRepeat).count });
+            }
+        } else if (element.kind === 'ArrayLiteral') {
+            flattenArrayInitializer(element, out);
+        } else {
+            out.push({ value: element as ElementInit, repeat: 1 });
+        }
+    }
+}
+
+/** A string literal must fit the capacity of the variable it initialises or is assigned to (CMP-021). */
+function checkStringFits(literal: StringLiteral | WStringLiteral, type: unknown, name: string): void {
+    const text = parseStringType(type);
+    if (text && literal.value.length > text.capacity) {
+        fail(literal, `String literal of ${literal.value.length} characters does not fit '${name}' (${typeText(type)} holds ${text.capacity})`);
+    }
+}
+
+/**
+ * Write the declared initial value of the storage at the fixed `address` (see InitOptions).
+ * `init` is the value the declaration gives, or null.
+ */
+function emitInitValue(state: CodeGenState, address: number, type: STDataType | ArrayType,
+                       init: InitialValue | null | undefined, at: { line: number; column: number },
+                       name: string, options: InitOptions): void {
+    const t = storedType(state, type);
+
+    if (isArrayType(t as STDataType)) {
+        emitArrayInit(state, address, t as ArrayType, init, at, name, options);
+        return;
+    }
+
+    const text = parseStringType(t);
+    if (text) {
+        // The capacity is part of the value: STRCPY and every string function read it.
+        emit(state, `    PUSH16 ${text.capacity}`);
+        emit(state, `    STORE16 ${formatAddress(address + 2)}   ; ${name} capacity`);
+        if (init && init.kind === 'StringLiteral' && !text.wide) {
+            checkStringFits(init, t, name);
+            emit(state, `    PUSH16 ${formatAddress(findStringLiteralAddress(state, init.value) ?? fail(init, `String literal not found in pool: '${init.value}'`))}`);
+            emit(state, `    PUSH16 ${formatAddress(address)}`);
+            emit(state, `    STRCPY              ; ${name} := '${init.value.substring(0, 20)}'`);
+        } else if (init && init.kind === 'WStringLiteral' && text.wide) {
+            checkStringFits(init, t, name);
+            emit(state, `    PUSH16 ${init.value.length}`);
+            emit(state, `    STORE16 ${formatAddress(address)}`);
+            for (let i = 0; i < init.value.length; i++) {
+                emit(state, `    PUSH16 ${init.value.charCodeAt(i)}`);
+                emit(state, `    STORE16 ${formatAddress(address + 4 + i * 2)}`);
+            }
+            emit(state, `    PUSH16 0`);
+            emit(state, `    STORE16 ${formatAddress(address + 4 + init.value.length * 2)}`);
+        } else if (init) {
+            fail(at, `'${name}' of type ${typeText(t)} cannot be initialised with ${stringifyExpression(init as Expression)}`);
+        } else if (options.everyCall) {
+            emit(state, `    PUSH16 0`);
+            emit(state, `    STORE16 ${formatAddress(address)}   ; ${name} := ''`);
+            emit(state, text.wide ? `    PUSH16 0` : `    PUSH8 0`);
+            emit(state, `    STORE${text.wide ? 16 : 8} ${formatAddress(address + 4)}`);
+        }
+        return;
+    }
+
+    if (isPointerType(t)) {
+        emit(state, `    ; ${name} := ${init ? '...' : 'NULL'}`);
+        if (init) {
+            checkReferenceValue(state, t, init as Expression, name);
+            emitReferenceValue(state, t, init as Expression);
+        } else {
+            emit(state, `    PUSH16 ${NULL_REFERENCE}   ; NULL: no memory region contains it`);
+        }
+        emit(state, `    STORE32 ${formatAddress(address)}`);
+        return;
+    }
+
+    if (typeof t === 'string') {
+        const struct = state.symbols.getStructDefinition(t);
+        const fb = struct ? undefined : state.symbols.getFBDefinition(t);
+        const members = struct?.members ?? fb?.members;
+        if (members) {
+            if (init && init.kind !== 'StructInitializer') {
+                fail(at, `'${name}' of type ${t} needs an initialiser of the form (member := value, ...)`);
+            }
+            const fields = init && init.kind === 'StructInitializer' ? init.fields : [];
+            for (const field of fields) {
+                if (!members.has(field.name)) fail(field, `Unknown member '${field.name}' on '${t}'`);
+            }
+            if (options.everyCall && !hasNonZeroDefault(state, t)) {
+                emitZeroBytes(state, address, state.symbols.sizeOf(t));
+                return;
+            }
+            if (options.everyCall) emitZeroBytes(state, address, state.symbols.sizeOf(t));
+            for (const [memberName, member] of members) {
+                const given = fields.find((field) => field.name === memberName);
+                const memberInit = given ? given.value : member.initialValue ?? null;
+                const memberAt = given ?? at;
+                if (member.section === VarSection.VAR_IN_OUT) {
+                    // not bound yet: a null reference, so the body faults instead of touching address 0
+                    emit(state, `    PUSH16 ${NULL_REFERENCE}`);
+                    emit(state, `    STORE32 ${formatAddress(address + member.offset)}   ; ${name}.${memberName} unbound`);
+                    continue;
                 }
+                if (member.section === VarSection.VAR_TEMP && !options.everyCall) continue; // written on each call
+                if (!memberInit && !hasNonZeroDefault(state, member.dataType)) continue;
+                emitInitValue(state, address + member.offset, member.dataType, memberInit, memberAt,
+                    `${name}.${memberName}`, { everyCall: false });
+            }
+            return;
+        }
 
-                const sym = state.symbols.get(decl.name);
-                if (!sym) continue;
-                // a retained variable is initialised below, only when the retentive region holds no saved state
-                if (sym.retain) continue;
+        if (state.symbols.isFBType(t)) {
+            // a standard function block: its state is zero
+            if (options.everyCall) emitZeroBytes(state, address, state.symbols.sizeOf(t));
+            return;
+        }
+    }
 
-                emit(state, `    ; ${decl.name} := ...`);
-                emitValueFor(state, decl.initialValue as Expression, sym.dataType);
-                emitStore(state, sym);
+    // a scalar
+    if (init) {
+        if (init.kind === 'ArrayLiteral' || init.kind === 'StructInitializer') {
+            fail(at, `'${name}' of type ${typeText(t)} cannot be initialised with ${init.kind === 'ArrayLiteral' ? 'an array' : 'a structure'} value`);
+        }
+        emit(state, `    ; ${name} := ...`);
+        emitValueFor(state, init as Expression, t);
+        emit(state, `    STORE${getLoadStoreSuffix(t as DataTypeValue)} ${formatAddress(address)}`);
+    } else if (options.everyCall) {
+        emit(state, `    ; ${name} := 0`);
+        const width = getLoadStoreSuffix(t as DataTypeValue);
+        if (width === '64') emit(state, `    PUSH32 0`);
+        emit(state, `    PUSH32 0`);
+        emit(state, `    STORE${width} ${formatAddress(address)}`);
+    }
+}
+
+function emitArrayInit(state: CodeGenState, address: number, type: ArrayType,
+                       init: InitialValue | null | undefined, at: { line: number; column: number },
+                       name: string, options: InitOptions): void {
+    const elementType = type.elementType;
+    const stride = state.symbols.sizeOf(elementType);
+    const count = getArrayElementCount(type);
+
+    if (init && init.kind !== 'ArrayLiteral') {
+        fail(at, `Array '${name}' needs an initialiser in brackets: [value, ...]`);
+    }
+
+    if (options.everyCall) emitZeroBytes(state, address, stride * count);
+
+    const items: Array<{ value: ElementInit; repeat: number }> = [];
+    if (init && init.kind === 'ArrayLiteral') flattenArrayInitializer(init, items);
+    const given = items.reduce((n, item) => n + item.repeat, 0);
+    if (given > count) {
+        fail(init as { line: number; column: number }, `Too many initial values for '${name}': ${given} given, it has ${count} elements`);
+    }
+
+    const scalar = !isArrayType(elementType as STDataType) && !isStringType(storedType(state, elementType))
+        && !isAggregateType(state, storedType(state, elementType));
+    let index = 0;
+    for (const item of items) {
+        const start = index;
+        const width = scalar && !isPointerType(storedType(state, elementType)) ? getLoadStoreSuffix(storedType(state, elementType) as DataTypeValue) : null;
+        // many equal scalars: one loop instead of one store each
+        if (item.repeat >= 8 && width !== null && width !== '64' && item.value.kind !== 'StructInitializer') {
+            const value = item.value;
+            emit(state, `    ; ${name}[${start}..${start + item.repeat - 1}] := ...`);
+            emitFillLoop(state, address + start * stride, item.repeat, stride, width, () => emitValueFor(state, value, storedType(state, elementType)));
+            index += item.repeat;
+            continue;
+        }
+        for (let r = 0; r < item.repeat; r++) {
+            emitInitValue(state, address + index * stride, elementType, item.value, item.value, `${name}[${index}]`, { everyCall: false });
+            index++;
+        }
+    }
+
+    // the elements nothing was given for still hold a default that is not zero (a string's capacity, a null reference)
+    if (index < count && hasNonZeroDefault(state, elementType)) {
+        const elementText = storedType(state, elementType);
+        if (isPointerType(elementText)) {
+            emit(state, `    ; ${name}[${index}..${count - 1}] := NULL`);
+            emitFillLoop(state, address + index * stride, count - index, stride, '32', () => emit(state, `    PUSH16 ${NULL_REFERENCE}`));
+        } else {
+            for (; index < count; index++) {
+                emitInitValue(state, address + index * stride, elementType, null, at, `${name}[${index}]`, { everyCall: false });
             }
         }
     }
 
-    emitRetainedInitialization(state, program);
+}
+
+/** First-scan initialisation of a list of declarations (a program's variables, a block of globals). */
+function emitDeclarationInitialization(state: CodeGenState, declarations: VarDecl[], retained: VarDecl[]): void {
+    let hasInit = false;
+
+    for (const decl of declarations) {
+        const sym = state.symbols.get(decl.name);
+        if (!sym) continue;
+        if (!decl.initialValue && !hasNonZeroDefault(state, sym.dataType)) continue;
+        // a retained variable is initialised apart, only when the retentive region holds no saved state (CMP-029)
+        if (sym.retain) {
+            retained.push(decl);
+            continue;
+        }
+
+        if (!hasInit) {
+            emit(state, ``);
+            emit(state, `    ; --- Variable Initialization ---`);
+            hasInit = true;
+        }
+
+        const isLocatedBit = sym.dataType === 'BOOL' && sym.ioAddress &&
+            (sym.ioAddress.size === 'X' || sym.ioAddress.bitOffset !== undefined);
+        if (isLocatedBit && decl.initialValue) {
+            // a bit of a byte: read-modify-write
+            emit(state, `    ; ${decl.name} := ...`);
+            emitValueFor(state, decl.initialValue as Expression, sym.dataType);
+            emitStore(state, sym);
+            continue;
+        }
+
+        emitInitValue(state, sym.address, sym.dataType, decl.initialValue, decl, decl.name, { everyCall: false });
+    }
+}
+
+function emitInitialization(state: CodeGenState, program: Program, retained: VarDecl[]): void {
+    emitDeclarationInitialization(state, program.varBlocks.flatMap((block) => block.variables), retained);
+}
+
+/** The VAR_GLOBAL blocks hold their declared values at the first scan too (CMP-025). */
+function emitGlobalInitialization(state: CodeGenState, unit: CompilationUnit, retained: VarDecl[]): void {
+    emitDeclarationInitialization(state, unit.globalVars.flatMap((block) => block.variables), retained);
 }
 
 /**
- * The initial values of the VAR RETAIN variables of a program (CMP-029): applied when the first byte of the retentive
- * region is zero, then that byte is set. The runtime saves the region with the byte, and restores both together
+ * The initial values of the VAR RETAIN variables (CMP-029): applied when the first byte of the retentive region
+ * is zero, then that byte is set. The runtime saves the region with the byte, and restores both together
  * (RT-025), so a restored region keeps its values and a region that was never saved, or whose layout changed,
  * which the runtime clears, gets the declared ones.
  */
-function emitRetainedInitialization(state: CodeGenState, program: Program): void {
-    const retained: VarDecl[] = [];
-    for (const block of program.varBlocks) {
-        for (const decl of block.variables) {
-            if (decl.initialValue && state.symbols.get(decl.name)?.retain) retained.push(decl);
-        }
-    }
+function emitRetainedInitialization(state: CodeGenState, retained: VarDecl[]): void {
     if (retained.length === 0) return;
 
     const marker = formatAddress(MemoryLayout.RETAIN_BASE);
@@ -1113,9 +1480,7 @@ function emitRetainedInitialization(state: CodeGenState, program: Program): void
     emit(state, `    JNZ ${restored}`);
     for (const decl of retained) {
         const sym = state.symbols.get(decl.name)!;
-        emit(state, `    ; ${decl.name} := ...`);
-        emitValueFor(state, decl.initialValue as Expression, sym.dataType);
-        emitStore(state, sym);
+        emitInitValue(state, sym.address, sym.dataType, decl.initialValue, decl, decl.name, { everyCall: false });
     }
     emit(state, `    PUSH8 1`);
     emit(state, `    STORE8 ${marker}`);
@@ -1134,8 +1499,16 @@ function generateFunctionDecl(state: CodeGenState, func: FunctionDecl): void {
         inputs: func.inputs,
     });
 
+    const returnType = state.symbols.effectiveType(func.returnType);
+    if (isArrayType(returnType as STDataType) || (typeof returnType === 'string' && isAggregateType(state, returnType))) {
+        fail(func, `Function '${func.name}' returns ${typeText(returnType)}: a function can return an elementary value or a string, not a structure, function block or array`);
+    }
+
     state.currentFunction = func;
     state.returnLabel = newLabel(state, 'func_return');
+    // the function has string buffers of its own
+    const callerBuffers = state.stringBuffers;
+    state.stringBuffers = [];
 
     emit(state, ``);
     emit(state, `; --- FUNCTION ${func.name} ---`);
@@ -1148,9 +1521,31 @@ function generateFunctionDecl(state: CodeGenState, func: FunctionDecl): void {
         const sym = state.symbols.get(input.name);
         if (sym) {
             emit(state, `    ; Pop parameter ${input.name}`);
-            emitStore(state, sym);
+            const type = storedType(state, sym.dataType);
+            if (isStringType(type)) {
+                // the caller passed the address of its string: copy it, the parameter is a value
+                emit(state, `    PUSH16 ${parseStringType(type)!.capacity}`);
+                emit(state, `    STORE16 ${formatAddress(sym.address + 2)}`);
+                emit(state, `    PUSH16 ${formatAddress(sym.address)}`);
+                emit(state, `    STRCPY`);
+            } else if (isAggregateType(state, type)) {
+                // the caller passed the address of its structure or array: copy it
+                emitPushInteger(state, sym.address);
+                emit(state, `    SWAP`);
+                emitCopyBytes(state, sym.size, null, null);
+            } else {
+                emitStore(state, sym);
+            }
         }
     }
+
+    // Locals and the result start from their declared value on every call: a function holds no state (CMP-027)
+    for (const local of func.locals) {
+        const sym = state.symbols.get(local.name);
+        if (sym) emitInitValue(state, sym.address, sym.dataType, local.initialValue, local, local.name, { everyCall: true });
+    }
+    const resultSym = state.symbols.get(func.name);
+    if (resultSym) emitInitValue(state, resultSym.address, resultSym.dataType, null, func, func.name, { everyCall: true });
 
     // Emit body statements
     for (const stmt of func.body) {
@@ -1160,9 +1555,13 @@ function generateFunctionDecl(state: CodeGenState, func: FunctionDecl): void {
     // RETURN lands here; load return value (stored in the variable named func.name) onto stack
     emit(state, `${state.returnLabel}:`);
     const returnSym = state.symbols.get(func.name);
-    if (returnSym) {
+    if (returnSym && isStringType(storedType(state, returnSym.dataType))) {
+        // a string result goes back by address; the caller copies it out before the next call
+        emit(state, `    ; Push return value (the address of the string)`);
+        emit(state, `    PUSH16 ${formatAddress(returnSym.address)}`);
+    } else if (returnSym) {
         emit(state, `    ; Push return value`);
-        const suffix = getLoadStoreSuffix(returnSym.dataType as DataTypeValue);
+        const suffix = getLoadStoreSuffix(storedType(state, returnSym.dataType) as DataTypeValue);
         emit(state, `    LOAD${suffix} ${formatAddress(returnSym.address)}`);
     } else {
         emit(state, `    PUSH32 0    ; Default return value`);
@@ -1171,6 +1570,7 @@ function generateFunctionDecl(state: CodeGenState, func: FunctionDecl): void {
     emit(state, `    RET`);
     state.currentFunction = null;
     state.returnLabel = null;
+    state.stringBuffers = callerBuffers;
 }
 
 // ============================================================================
@@ -1184,7 +1584,7 @@ function generateFunctionDecl(state: CodeGenState, func: FunctionDecl): void {
  */
 function emitStatement(state: CodeGenState, stmt: Statement): void {
     const loops = state.loopStack.length;
-    const { currentFBInstance, currentMethod, currentFunction, returnLabel } = state;
+    const { currentFBInstance, currentMethod, currentFunction, returnLabel, expressionDepth, resultBuffer, resultCapacity } = state;
     try {
         emitStatementNode(state, stmt);
     } catch (caught) {
@@ -1195,6 +1595,9 @@ function emitStatement(state: CodeGenState, stmt: Statement): void {
         state.currentMethod = currentMethod;
         state.currentFunction = currentFunction;
         state.returnLabel = returnLabel;
+        state.expressionDepth = expressionDepth;
+        state.resultBuffer = resultBuffer;
+        state.resultCapacity = resultCapacity;
         state.errors.push(...error.errors);
     }
 }
@@ -1202,6 +1605,12 @@ function emitStatement(state: CodeGenState, stmt: Statement): void {
 function emitStatementNode(state: CodeGenState, stmt: Statement): void {
     // Emit source annotation before the first instruction of this statement
     emitSourceAnnotation(state, stmt.line);
+
+    // The string buffers the previous statement used hold nothing anyone still reads. A statement inside an
+    // expression (the body of an inlined method) is not a boundary: the expression still holds its values.
+    if (state.expressionDepth === 0) {
+        for (const buffer of state.stringBuffers) buffer.free = true;
+    }
 
     switch (stmt.kind) {
         case 'Assignment':
@@ -1284,6 +1693,11 @@ function emitAssignment(state: CodeGenState, stmt: Assignment): void {
         if (state.currentFunction && stmt.target.name === state.currentFunction.name) {
             emit(state, `    ; RETURN ${state.currentFunction.name} := ...`);
             const sym = state.symbols.get(stmt.target.name);
+            if (sym && isStringType(storedType(state, sym.dataType))) {
+                const result: Place = { addr: { k: 'const', a: sym.address }, type: sym.dataType, size: sym.size, sym, name: sym.name };
+                emitAssignToPlace(state, result, stmt.value, stmt.target);
+                return;
+            }
             emitValueFor(state, stmt.value, sym?.dataType);
             if (sym) {
                 emitStore(state, sym);
@@ -1301,82 +1715,17 @@ function emitAssignment(state: CodeGenState, stmt: Assignment): void {
             return;
         }
 
-        const sym = resolveSymbol(state, stmt.target.name);
-        if (!sym) fail(stmt.target, `Unknown identifier '${stmt.target.name}'`);
+        const place = identifierPlace(state, stmt.target);
 
         emit(state, `    ; ${stmt.target.name} := ...`);
-        emitValueFor(state, stmt.value, sym.dataType);
-        emitStore(state, sym);
-    } else if (stmt.target.kind === 'MemberAccess') {
-        emit(state, `    ; ${stringifyExpression(stmt.target)} := ...`);
-        emitValueFor(state, stmt.value, memberAccessType(state, stmt.target));
-
-        // Handle THIS.member assignment
-        if (stmt.target.object.kind === 'ThisExpr') {
-            if (!state.currentFBInstance) {
-                fail(stmt.target, `THIS used outside of FB/method context`);
-            }
-            
-            const fbTypeName = state.currentFBInstance.dataType as string;
-            const fbDef = state.symbols.getFBDefinition(fbTypeName);
-            
-            if (!fbDef) {
-                fail(stmt.target, `Unknown FB type '${fbTypeName}'`);
-            }
-            
-            const member = fbDef.members.get(stmt.target.member);
-            if (!member) {
-                fail(stmt.target, `Unknown member '${stmt.target.member}' on FB '${fbTypeName}'`);
-            }
-            
-            const memberAddr = state.currentFBInstance.address + member.offset;
-            let suffix: '8' | '16' | '32' | '64' = '32';
-            if (member.size === 1) suffix = '8';
-            else if (member.size === 2) suffix = '16';
-            else if (member.size === 8) suffix = '64';
-            
-            emit(state, `    STORE${suffix} ${formatAddress(memberAddr)}   ; THIS.${stmt.target.member}`);
-        } else {
-            const resolution = state.symbols.resolveMemberPath(stmt.target);
-            const suffix = getLoadStoreSuffix(resolution.dataType as DataTypeValue);
-            emit(state, `    STORE${suffix} ${formatAddress(resolution.address)}`);
-        }
-    } else if (stmt.target.kind === 'ArrayAccess') {
-        // Array element assignment: arr[i] := value
-        const resolution = state.symbols.resolveMemberPath(stmt.target.array);
-        const arrayType = resolution.dataType as ArrayType;
-
-        if (!isArrayType(arrayType)) {
-            fail(stmt.target, `target is not an array`);
-        }
-
-        emit(state, `    ; ${stringifyExpression(stmt.target)} := ...`);
-
-        // Calculate the address: base + offset
-        emitArrayAddress(state, stmt.target, resolution);
-
-        // Evaluate the value to store
-        emitValueFor(state, stmt.value, arrayType.elementType);
-
-        // Store using indirect addressing
-        const elementSize = getDataTypeSize(arrayType.elementType as DataTypeValue);
-        emit(state, `    STOREI${elementSize * 8}`);
-    } else if (stmt.target.kind === 'DereferenceExpr') {
-        // ptr^ := value
-        emit(state, `    ; *(${stringifyExpression(stmt.target.operand)}) := ...`);
-
-        // 1. Calculate address (load pointer value)
-        emitExpression(state, stmt.target.operand);
-        
-        // 2. Evaluate value to store
-        emitValueFor(state, stmt.value, resolveType(state, stmt.target));
-        
-        // 3. Determine size
-        const type = resolveType(state, stmt.target);
-        const size = type ? getDataTypeSize(type) : 4;
-        
-        // 4. Store Indirect
-        emit(state, `    STOREI${size * 8}`);
+        emitAssignToPlace(state, place, stmt.value, stmt.target);
+    } else if (stmt.target.kind === 'MemberAccess' || stmt.target.kind === 'ArrayAccess' || stmt.target.kind === 'DereferenceExpr') {
+        // structure and function-block members, array elements and dereferenced references (CMP-019, CMP-022)
+        const place = resolvePlace(state, stmt.target);
+        emit(state, `    ; ${stmt.target.kind === 'DereferenceExpr'
+            ? `*(${stringifyExpression(stmt.target.operand)})`
+            : stringifyExpression(stmt.target)} := ...`);
+        emitAssignToPlace(state, place, stmt.value, stmt.target);
     }
 }
 
@@ -1515,22 +1864,23 @@ function emitForStatement(state: CodeGenState, stmt: ForStatement): void {
     const continueLabel = newLabel(state, 'for_continue');
     const endLabel = newLabel(state, 'end_for');
 
-    // Get counter variable symbol (a local of the function, function block or method, or a global)
-    const counterSym = resolveSymbol(state, stmt.counter);
-    if (!counterSym) {
-        fail(stmt, `Unknown loop counter variable '${stmt.counter}'`);
+    // The counter: a local of the function, function block or method, or a global
+    let counterPlace: Place;
+    try {
+        counterPlace = identifierPlace(state, { kind: 'Identifier', name: stmt.counter, line: stmt.line, column: stmt.column });
+    } catch (error) {
+        if (error instanceof CodegenError) fail(stmt, `Unknown loop counter variable '${stmt.counter}'`);
+        throw error;
     }
 
-    const counterAddr = formatAddress(counterSym.address);
-    const suffix = getLoadStoreSuffix(counterSym.dataType as DataTypeValue);
-    const counterType = numericTypeName(counterSym.dataType);
+    const counterType = numericTypeName(storedType(state, counterPlace.type));
     if (isWide(counterType)) {
         fail(stmt, `A FOR counter of 64 bits is not supported yet (CMP-015)`);
     }
     const counterExtend = signExtension(counterType);
     /** Load the counter in its canonical 32-bit form. */
     const loadCounter = (): void => {
-        emit(state, `    LOAD${suffix} ${counterAddr}`);
+        emitLoadPlace(state, counterPlace);
         if (counterExtend) emit(state, counterExtend);
     };
 
@@ -1545,8 +1895,7 @@ function emitForStatement(state: CodeGenState, stmt: ForStatement): void {
 
     // Initialize counter
     emit(state, `    ; counter := start`);
-    emitExpression(state, stmt.start);
-    emit(state, `    STORE${suffix} ${counterAddr}`);
+    emitStorePlace(state, counterPlace, () => emitExpression(state, stmt.start));
 
     // Loop condition check: past the end is counter > end going up, counter < end going down
     // (an unsigned counter or end compares unsigned)
@@ -1588,14 +1937,15 @@ function emitForStatement(state: CodeGenState, stmt: ForStatement): void {
     // Increment section (CONTINUE target)
     emit(state, `${continueLabel}:`);
     emit(state, `    ; counter := counter + step`);
-    loadCounter();
-    if (stmt.step) {
-        emitExpression(state, stmt.step);
-    } else {
-        emit(state, `    PUSH8 1       ; default step`);
-    }
-    emit(state, `    ADD`);
-    emit(state, `    STORE${suffix} ${counterAddr}`);
+    emitStorePlace(state, counterPlace, () => {
+        loadCounter();
+        if (stmt.step) {
+            emitExpression(state, stmt.step);
+        } else {
+            emit(state, `    PUSH8 1       ; default step`);
+        }
+        emit(state, `    ADD`);
+    });
     emit(state, `    JMP ${loopLabel}`);
 
     emit(state, `${endLabel}:`);
@@ -1672,7 +2022,7 @@ function emitRepeatStatement(state: CodeGenState, stmt: RepeatStatement): void {
  *   EQ
  *   JNZ case_branch_1
  *   ...
- *   JMP case_else_N (or end_case if no else)
+ *   JMP case_else_N (or case_drop_N if no else)
  *   case_branch_0:
  *       DROP
  *       <statements>
@@ -1684,6 +2034,8 @@ function emitRepeatStatement(state: CodeGenState, stmt: RepeatStatement): void {
  *   case_else_N:
  *       DROP
  *       <statements>
+ *   (no else) case_drop_N:
+ *       DROP
  *   end_case_N:
  */
 function emitCaseStatement(state: CodeGenState, stmt: CaseStatement): void {
@@ -1692,6 +2044,8 @@ function emitCaseStatement(state: CodeGenState, stmt: CaseStatement): void {
     }
     const endLabel = newLabel(state, 'end_case');
     const elseLabel = stmt.elseBranch ? newLabel(state, 'case_else') : null;
+    // Without an ELSE the selector is still on the stack when no label matches: that path drops it itself.
+    const dropLabel = stmt.elseBranch ? null : newLabel(state, 'case_drop');
 
     // Generate labels for each branch
     const branchLabels: string[] = stmt.branches.map(() => newLabel(state, 'case_branch'));
@@ -1739,8 +2093,8 @@ function emitCaseStatement(state: CodeGenState, stmt: CaseStatement): void {
         }
     }
 
-    // Jump to else or end if no match
-    emit(state, `    JMP ${elseLabel ?? endLabel}`);
+    // Jump to else, or to the drop of the selector, if no match
+    emit(state, `    JMP ${elseLabel ?? dropLabel}`);
 
     // Emit each branch body
     for (let i = 0; i < stmt.branches.length; i++) {
@@ -1763,10 +2117,10 @@ function emitCaseStatement(state: CodeGenState, stmt: CaseStatement): void {
         for (const s of stmt.elseBranch) {
             emitStatement(state, s);
         }
-    } else if (!stmt.elseBranch) {
-        // No else - still need to drop the selector before end
-        // We need a small shim to drop before ending
-        emit(state, `${newLabel(state, 'case_drop')}:`);
+    } else if (dropLabel) {
+        // The branches jump over this drop: only the no-match path reaches it, with the selector on the
+        // stack. Without it the selector leaks once per execution and a loop around the CASE is unbounded.
+        emit(state, `${dropLabel}:`);
         emit(state, `    DROP        ; discard selector (no match)`);
     }
 
@@ -1782,10 +2136,15 @@ function constantInt(state: CodeGenState, expr: Expression): number {
     if (expr.kind === 'IntLiteral') return expr.value;
     if (expr.kind === 'UnaryExpr' && expr.operator === 'NEG') return -constantInt(state, expr.operand);
     if (expr.kind === 'Identifier') {
+        const qualified = qualifiedEnumValue(state, expr);
+        if (qualified !== undefined) return qualified;
         const sym = resolveSymbol(state, expr.name);
         if (!sym) fail(expr, `Unknown identifier '${expr.name}'`);
         const initial = sym.initialValue as Expression | null;
-        if (sym.section === 'CONSTANT' && initial?.kind === 'IntLiteral') return initial.value;
+        if (sym.section === 'CONSTANT' && initial) {
+            const value = constantInteger(initial);
+            if (value !== undefined) return Number(value);
+        }
         fail(expr, `'${expr.name}' is not an integer constant`);
     }
     fail(expr, `A CASE label must be an integer constant`);
@@ -1871,17 +2230,34 @@ function emitInstanceCall(state: CodeGenState, stmt: FBCallStatement, sym: Symbo
     if (userFB) {
         emit(state, `    ; --- FB CALL: ${stmt.fbName} (${typeName}) ---`);
 
+        const fbDef = state.symbols.getFBDefinition(typeName);
+        const instance: Place = { addr: { k: 'const', a: sym.address }, type: typeName, size: sym.size, sym, name: stmt.fbName };
+
         // Assign inputs
         for (const param of stmt.parameters) {
+            const member = fbDef?.members.get(param.name);
+            if (!member) fail(stmt, `Unknown member '${param.name}' on instance '${stmt.fbName}'`);
             emit(state, `    ; ${stmt.fbName}.${param.name} := ...`);
-            emitExpression(state, param.value);
-            const memberOffset = sym.members?.get(param.name);
-            if (memberOffset === undefined) {
-                throw new Error(`Unknown member '${param.name}' on instance '${stmt.fbName}'`);
+            if (member.section === VarSection.VAR_IN_OUT) {
+                // by reference (CMP-028): the member keeps the address of the caller's variable
+                const actual = resolvePlace(state, param.value);
+                if (actual.readonly) fail(param.value, `'${actual.name}' is a constant and cannot be passed to the VAR_IN_OUT '${param.name}'`);
+                if (typeText(storedType(state, actual.type)) !== typeText(storedType(state, member.dataType))) {
+                    fail(param.value, `VAR_IN_OUT '${param.name}' of '${typeName}' is ${typeText(member.dataType)}, '${actual.name}' is ${typeText(actual.type)}`);
+                }
+                emitAddr(state, actual.addr);
+                emit(state, `    STORE32 ${formatAddress(sym.address + member.offset)}   ; ${stmt.fbName}.${param.name} -> ${actual.name}`);
+                continue;
             }
-            const memberAddr = sym.address + memberOffset;
-            const suffix = getMemberLoadStoreSuffix(state.symbols, typeName, param.name);
-            emit(state, `    STORE${suffix} ${formatAddress(memberAddr)}`);
+            emitAssignToPlace(state, placeOfMember(state, instance, member, `${stmt.fbName}.${param.name}`), param.value, param.value);
+        }
+
+        // VAR_TEMP holds nothing from the previous call (CMP-027)
+        for (const [memberName, member] of fbDef?.members ?? []) {
+            if (member.section === VarSection.VAR_TEMP) {
+                emitInitValue(state, sym.address + member.offset, member.dataType, member.initialValue, stmt,
+                    `${stmt.fbName}.${memberName}`, { everyCall: true });
+            }
         }
 
         // Set context for inlining
@@ -1972,7 +2348,7 @@ function emitExpressionNode(state: CodeGenState, expr: Expression): void {
             fail(expr, 'A function block call cannot be used as an expression');
             break;
         case 'ArrayAccess':
-            emitArrayAccess(state, expr);
+            emitPlaceExpression(state, expr);
             break;
         case 'ReferenceExpr':
             emitReference(state, expr);
@@ -2061,125 +2437,65 @@ function emitStringLiteral(state: CodeGenState, expr: StringLiteral): void {
     }
 }
 
+/** The value of `Type#Value` (an enumeration value written with its type), or undefined for any other name. */
+function qualifiedEnumValue(state: CodeGenState, expr: Identifier): number | undefined {
+    const hash = expr.name.indexOf('#');
+    if (hash < 0) return undefined;
+    const type = expr.name.slice(0, hash);
+    const name = expr.name.slice(hash + 1);
+    const enumeration = state.symbols.getEnumDefinition(type);
+    if (!enumeration) fail(expr, `Unknown enumeration type '${type}' in '${expr.name}'`);
+    const value = enumeration.values.get(name);
+    if (value === undefined) fail(expr, `'${name}' is not a value of the enumeration '${type}'`);
+    return value;
+}
+
+/** `NULL`, unless the program declares something of that name. */
+function isNullLiteral(state: CodeGenState, expr: Expression): boolean {
+    if (expr.kind !== 'Identifier' || expr.name.toUpperCase() !== 'NULL') return false;
+    try {
+        identifierPlace(state, expr);
+        return false;
+    } catch (error) {
+        if (error instanceof CodegenError) return true;
+        throw error;
+    }
+}
+
 function emitIdentifier(state: CodeGenState, expr: Identifier): void {
-    // 1. Check if we are in an inlined FB context
-    if (state.currentFBInstance && state.currentFBInstance.members) {
-        const offset = state.currentFBInstance.members.get(expr.name);
-        if (offset !== undefined) {
-            const absAddr = state.currentFBInstance.address + offset;
-            const typeName = state.currentFBInstance.dataType as string;
-            const suffix = getMemberLoadStoreSuffix(state.symbols, typeName, expr.name);
-            emit(state, `    LOAD${suffix} ${formatAddress(absAddr)}   ; (FB context) ${expr.name}`);
-            return;
-        }
+    const qualified = qualifiedEnumValue(state, expr);
+    if (qualified !== undefined) {
+        emitIntLiteral(state, { kind: 'IntLiteral', value: qualified, line: expr.line, column: expr.column });
+        return;
     }
 
-    // 2. Regular symbol lookup
-    const sym = resolveSymbol(state, expr.name);
-    if (!sym) {
-        fail(expr, `Unknown identifier '${expr.name}'`);
+    // NULL: the reference that points at nothing (CMP-024)
+    if (isNullLiteral(state, expr)) {
+        emit(state, `    PUSH16 ${NULL_REFERENCE}   ; NULL`);
+        return;
     }
 
-    // Inline CONSTANT values (e.g. ENUMs)
-    if (sym.section === 'CONSTANT' && sym.initialValue) {
+    const place = identifierPlace(state, expr);
+    const sym = place.sym;
+
+    // Inline CONSTANT values (e.g. ENUMs, VAR CONSTANT)
+    if (sym && sym.section === 'CONSTANT' && sym.initialValue) {
         const initVal = sym.initialValue as any;
         if (initVal.kind === 'IntLiteral' || initVal.kind === 'BoolLiteral' || initVal.kind === 'RealLiteral') {
-            emitExpression(state, initVal);
+            emitValueFor(state, initVal, sym.dataType);
             return;
         }
     }
 
-    // For STRING type, push the address (not load the value)
-    if (sym.dataType === 'STRING') {
-        emit(state, `    PUSH16 ${formatAddress(sym.address)}   ; &${expr.name}`);
-        return;
+    const type = storedType(state, place.type);
+    if (isArrayType(type as STDataType) || (typeof type === 'string' && state.symbols.isStructType(type))) {
+        fail(expr, `'${expr.name}' is ${typeText(type)}: use one of its members or elements, or assign the whole value to a variable of the same type`);
     }
-
-    // Bit-addressed BOOL (e.g. AT %QX0.1): extract the specific bit from the byte
-    // Stack result: [0 or 1] (the bit value as BOOL)
-    if (sym.dataType === 'BOOL' && sym.ioAddress &&
-        (sym.ioAddress.size === 'X' || sym.ioAddress.bitOffset !== undefined)) {
-        const bitPos = sym.ioAddress.bitOffset;
-        emit(state, `    LOAD8 ${formatAddress(sym.address)}   ; ${expr.name} (byte)`);
-        if (bitPos > 0) {
-            emit(state, `    PUSH8 ${bitPos}`);
-            emit(state, `    SHR                 ; extract bit ${bitPos}`);
-        }
-        emit(state, `    PUSH8 1`);
-        emit(state, `    AND                 ; mask to 0 or 1`);
-        return;
-    }
-
-    const suffix = getLoadStoreSuffix(sym.dataType as DataTypeValue);
-    emit(state, `    LOAD${suffix} ${formatAddress(sym.address)}   ; ${expr.name}`);
+    emitLoadPlace(state, place, expr.name);
 }
 
 function emitMemberAccess(state: CodeGenState, expr: MemberAccess): void {
-    // Handle THIS.member access
-    if (expr.object.kind === 'ThisExpr') {
-        if (!state.currentFBInstance) {
-            fail(expr, `THIS used outside of FB/method context`);
-        }
-        
-        const fbTypeName = state.currentFBInstance.dataType as string;
-        const fbDef = state.symbols.getFBDefinition(fbTypeName);
-        
-        if (!fbDef) {
-            fail(expr, `Unknown FB type '${fbTypeName}'`);
-        }
-        
-        const member = fbDef.members.get(expr.member);
-        if (!member) {
-            fail(expr, `Unknown member '${expr.member}' on FB '${fbTypeName}'`);
-        }
-        
-        const memberAddr = state.currentFBInstance.address + member.offset;
-        let suffix: '8' | '16' | '32' | '64' = '32';
-        if (member.size === 1) suffix = '8';
-        else if (member.size === 2) suffix = '16';
-        else if (member.size === 8) suffix = '64';
-        
-        emit(state, `    LOAD${suffix} ${formatAddress(memberAddr)}   ; THIS.${expr.member}`);
-        return;
-    }
-    
-    // Nested path (a.b.c): the symbol table resolves it, as it does for an assignment target
-    if (expr.object.kind !== 'Identifier') {
-        const resolution = state.symbols.resolveMemberPath(expr);
-        emit(state, `    LOAD${getLoadStoreSuffix(resolution.dataType as DataTypeValue)} ${formatAddress(resolution.address)}`);
-        return;
-    }
-
-    const structName = (expr.object as Identifier).name;
-    const sym = state.symbols.get(structName);
-    if (!sym) {
-        fail(expr, `Unknown struct/instance '${structName}'`);
-    }
-
-    const memberAddr = state.symbols.getMemberAddress(structName, expr.member);
-    
-    // FORCE CORRECT SIZE for standard members
-    let suffix = '32';
-    // Handle PointerType or other complex types safely
-    const typeName = typeof sym.dataType === 'string' 
-        ? sym.dataType.toUpperCase() 
-        : (sym.dataType as any)?.baseType || '';
-    const memberName = expr.member.toUpperCase().replace(/^\./, '');
-    
-    const fbDef = getFB(typeName);
-    if (fbDef) {
-        const member = fbDef.members.find(m => m.name.toUpperCase() === memberName);
-        if (member) {
-            if (member.size === 1) suffix = '8';
-            else if (member.size === 2) suffix = '16';
-            else if (member.size === 4) suffix = '32';
-        }
-    } else {
-        // Fallback to symbol table logic
-        suffix = getMemberLoadStoreSuffix(state.symbols, typeof sym.dataType === 'string' ? sym.dataType : '', expr.member);
-    }
-    
-    emit(state, `    LOAD${suffix} ${formatAddress(memberAddr)}`);
+    emitPlaceExpression(state, expr);
 }
 
 
@@ -2268,11 +2584,23 @@ function inferExpressionType(state: CodeGenState, expr: Expression): string {
             return 'REAL';
         case 'TimeLiteral':
             return 'TIME';
-        case 'Identifier': {
-            const sym = resolveSymbol(state, expr.name);
-            return (sym?.dataType as string) ?? 'UNKNOWN';
+        case 'WStringLiteral':
+            return 'WSTRING';
+        case 'Identifier':
+        case 'MemberAccess':
+        case 'ArrayAccess':
+        case 'DereferenceExpr': {
+            try {
+                const type = storedType(state, resolvePlace(state, expr).type);
+                return typeof type === 'string' ? type : 'UNKNOWN';
+            } catch (error) {
+                if (error instanceof CodegenError) return 'UNKNOWN';
+                throw error;
+            }
         }
         case 'FunctionCall': {
+            const userFunction = state.functionTable.get(expr.name);
+            if (userFunction) return typeof userFunction.returnType === 'string' ? userFunction.returnType : 'UNKNOWN';
             // String functions return STRING
             const stringFunctions = ['CONCAT', 'LEFT', 'RIGHT', 'MID', 'INSERT', 'DELETE', 'REPLACE', 'COPY', 'CLEAR'];
             if (stringFunctions.includes(expr.name)) {
@@ -2344,7 +2672,7 @@ function stringifyExpression(expr: Expression): string {
  * Check if an expression is of STRING type.
  */
 function isStringExpression(state: CodeGenState, expr: Expression): boolean {
-    return inferExpressionType(state, expr) === 'STRING';
+    return isStringType(inferExpressionType(state, expr));
 }
 
 // ============================================================================
@@ -2368,22 +2696,17 @@ function stdlibMemberType(fbType: string, member: { name: string; size: number; 
 }
 
 function memberAccessType(state: CodeGenState, expr: MemberAccess): string {
+    return placeType(state, expr);
+}
+
+/** Numeric type of the place an expression names (an enumeration is its base type), or UNKNOWN_TYPE. */
+function placeType(state: CodeGenState, expr: Expression): string {
     try {
-        if (expr.object.kind === 'ThisExpr') {
-            const fbType = state.currentFBInstance?.dataType;
-            const fbDef = typeof fbType === 'string' ? state.symbols.getFBDefinition(fbType) : undefined;
-            return numericTypeName(fbDef?.members.get(expr.member)?.dataType);
-        }
-        const owner = state.symbols.resolveMemberPath(expr.object);
-        const ownerType = typeof owner.dataType === 'string' ? owner.dataType : undefined;
-        const stdFB = ownerType ? getFB(ownerType as DataTypeValue) : undefined;
-        if (stdFB && !state.symbols.getFBDefinition(ownerType!) && !state.symbols.getStructDefinition(ownerType!)) {
-            const member = stdFB.members.find((m) => m.name === expr.member);
-            return member ? stdlibMemberType(ownerType!, member) : UNKNOWN_TYPE;
-        }
-        return numericTypeName(state.symbols.resolveMemberPath(expr).dataType);
-    } catch {
-        return UNKNOWN_TYPE;
+        const place = resolvePlace(state, expr);
+        return numericTypeName(storedType(state, place.type));
+    } catch (error) {
+        if (error instanceof CodegenError) return UNKNOWN_TYPE;
+        throw error;
     }
 }
 
@@ -2437,23 +2760,14 @@ function staticType(state: CodeGenState, expr: Expression): string {
         case 'TODLiteral': return 'TOD';
         case 'DTLiteral': return 'DT';
         case 'Identifier': {
-            const sym = resolveSymbol(state, expr.name);
-            return sym ? numericTypeName(sym.dataType) : UNKNOWN_TYPE;
+            if (expr.name.includes('#')) return 'INT';  // Type#Value of an enumeration
+            return placeType(state, expr);
         }
         case 'MemberAccess':
             return memberAccessType(state, expr);
-        case 'ArrayAccess': {
-            try {
-                const arrayType = state.symbols.resolveMemberPath(expr.array).dataType;
-                return isArrayType(arrayType) ? numericTypeName(arrayType.elementType) : UNKNOWN_TYPE;
-            } catch {
-                return UNKNOWN_TYPE;
-            }
-        }
-        case 'DereferenceExpr': {
-            const base = resolveType(state, expr);
-            return base ? numericTypeName(base) : UNKNOWN_TYPE;
-        }
+        case 'ArrayAccess':
+        case 'DereferenceExpr':
+            return placeType(state, expr);
         case 'UnaryExpr':
             return staticType(state, expr.operand);
         case 'BitAccess':
@@ -2624,6 +2938,107 @@ function emitCompare(state: CodeGenState, op: CompareOp, type: string): void {
     emit(state, `    ${op}`);
 }
 
+/** Take `size` bytes of WORK memory after the symbols and the literal pool. */
+function allocateWork(state: CodeGenState, size: number, alignment: number): number {
+    const address = alignTo(state.stringLiteralNextAddr, alignment);
+    state.stringLiteralNextAddr = address + size;
+    state.scratchStrings.push({ address, size });
+    return address;
+}
+
+/**
+ * A work buffer for a new string of up to `capacity` characters, with its capacity field written.
+ * The buffers are reused from one statement to the next (CMP-021).
+ */
+function acquireStringBuffer(state: CodeGenState, capacity: number): number {
+    const bound = state.resultCapacity;
+    state.resultCapacity = null;
+
+    // The call is the right side of an assignment to a string variable: the result goes there
+    if (state.resultBuffer) {
+        const { address } = state.resultBuffer;
+        state.resultBuffer = null;
+        return address;
+    }
+    // a count written as a constant bounds the result of LEFT, RIGHT and MID
+    if (bound !== null) capacity = Math.min(capacity, bound);
+    const size = 4 + capacity + 1;
+    let buffer = state.stringBuffers
+        .filter((candidate) => candidate.free && candidate.size >= size)
+        .sort((a, b) => a.size - b.size)[0];
+    if (buffer) {
+        buffer.free = false;
+    } else {
+        buffer = { address: allocateWork(state, size, 2), size, free: false };
+        state.stringBuffers.push(buffer);
+    }
+    emit(state, `    PUSH16 ${capacity}`);
+    emit(state, `    STORE16 ${formatAddress(buffer.address + 2)}   ; string buffer capacity`);
+    return buffer.address;
+}
+
+const STRING_FUNCTION_NAMES = new Set(['LEN', 'CONCAT', 'COPY', 'CLEAR', 'LEFT', 'RIGHT', 'MID', 'FIND', 'INSERT', 'DELETE', 'REPLACE', 'STRCMP', 'EQ_STRING', 'NE_STRING']);
+function isStringFunction(name: string): boolean {
+    return STRING_FUNCTION_NAMES.has(name.toUpperCase());
+}
+
+/** Characters the string `expr` is known to hold at most; 80 (the default STRING) when it is not known. */
+function stringCapacityOf(state: CodeGenState, expr: Expression): number {
+    switch (expr.kind) {
+        case 'StringLiteral':
+            return Math.max(1, expr.value.length);
+        case 'FunctionCall': {
+            const userFunction = state.functionTable.get(expr.name);
+            if (userFunction) return parseStringType(userFunction.returnType)?.capacity ?? 80;
+            const args = expr.args.map((a) => ((a as any).kind === 'NamedArgument' ? (a as any).value : a) as Expression);
+            switch (expr.name.toUpperCase()) {
+                case 'LEFT': case 'RIGHT': case 'MID': {
+                    // a constant count bounds the result
+                    const whole = args[0] ? stringCapacityOf(state, args[0]) : 80;
+                    const count = args[expr.name.toUpperCase() === 'MID' ? 2 : 1];
+                    const constant = count ? constantIndexValue(count) : undefined;
+                    return constant === undefined ? whole : Math.max(1, Math.min(whole, constant));
+                }
+                case 'DELETE':
+                    return args[0] ? stringCapacityOf(state, args[0]) : 80;
+                case 'CONCAT': case 'INSERT': case 'REPLACE':
+                    return args.length > 1 ? Math.min(0xFFFF, stringCapacityOf(state, args[0]) + stringCapacityOf(state, args[1])) : 80;
+                default:
+                    return 80;
+            }
+        }
+        default: {
+            try {
+                const text = parseStringType(storedType(state, resolvePlace(state, expr).type));
+                return text ? text.capacity : 80;
+            } catch (error) {
+                if (error instanceof CodegenError) return 80;
+                throw error;
+            }
+        }
+    }
+}
+
+/** Call a string routine, adding it (and the work cells the string routines share) to the program the first time. */
+function callStringHelper(state: CodeGenState, name: 'strappend' | 'strfind' | 'strsub' | 'strdel'): void {
+    const label = `_zplc_${name}`;
+    if (!state.cellHelpers.has(label)) {
+        if (!state.stringCells) {
+            const base = allocateWork(state, 24, 4);
+            state.stringCells = { c0: base, c1: base + 4, c2: base + 8, c3: base + 12, c4: base + 16, c5: base + 20 };
+        }
+        const cells = state.stringCells;
+        if (name === 'strfind') {
+            state.cellHelpers.set(label, strfindHelper(label, cells));
+        } else {
+            state.helpers.add('memcpy');
+            const build = { strappend: strappendHelper, strsub: strsubHelper, strdel: strdelHelper }[name];
+            state.cellHelpers.set(label, build(label, cells, MEMCPY_LABEL));
+        }
+    }
+    emit(state, `    CALL ${label}`);
+}
+
 /** The stdlib code generators ask the compiler, not the opcode table, for typed operations. */
 function makeCodeGenContext(
     state: CodeGenState,
@@ -2644,6 +3059,9 @@ function makeCodeGenContext(
         },
         emitOperand: (e: Expression, asType: string) => emitConverted(state, e, asType),
         emitCompare: (op: CompareOp, type?: string) => emitCompare(state, op, type ?? UNKNOWN_TYPE),
+        stringTemp: (capacity: number) => acquireStringBuffer(state, capacity),
+        stringCapacity: (e: Expression) => stringCapacityOf(state, e),
+        callHelper: (name) => callStringHelper(state, name),
     };
 }
 
@@ -2662,6 +3080,9 @@ function emitBinaryExpr(state: CodeGenState, expr: BinaryExpr, contextType?: str
     const rightIsString = isStringExpression(state, expr.right);
 
     if (leftIsString || rightIsString) {
+        if (parseStringType(inferExpressionType(state, expr.left))?.wide || parseStringType(inferExpressionType(state, expr.right))?.wide) {
+            fail(expr, `A WSTRING cannot be compared yet`);
+        }
         // String comparison: s1 = s2, s1 <> s2
         if (expr.operator === 'EQ' || expr.operator === 'NE') {
             emit(state, `    ; String comparison`);
@@ -2791,17 +3212,39 @@ function emitFunctionCall(state: CodeGenState, expr: FunctionCall): void {
             const input = named
                 ? userFn.inputs.find((i) => i.name === (arg as any).name)
                 : userFn.inputs[index];
-            // an argument for a parameter that is not a VAR_INPUT (a VAR_OUTPUT or VAR_IN_OUT is declared, but is not
-            // passed yet: CMP-028, CMP-035) would be pushed and never read, leaving the stack unbalanced
+            // an argument for a parameter that is not a VAR_INPUT (a VAR_OUTPUT or VAR_IN_OUT of a function is
+            // declared, but is not passed yet: CMP-035) would be pushed and never read, leaving the stack unbalanced
             if (input === undefined) {
                 fail(arg as { line: number; column: number }, named
                     ? `Function '${expr.name}' has no input parameter '${(arg as any).name}'`
                     : `Function '${expr.name}' takes ${userFn.inputs.length} argument(s)`);
             }
-            emitValueFor(state, value, input.dataType);
+            const type = storedType(state, input.dataType);
+            if (isStringType(type)) {
+                // a string goes by address; the function copies it (it never changes the caller's)
+                if (value.kind === 'StringLiteral') checkStringFits(value, type, input.name);
+                emitExpression(state, value);
+            } else if (isAggregateType(state, type)) {
+                // a structure or an array goes by address; the function copies it
+                emitAddr(state, aggregateSource(state, value, type, value, input.name).addr);
+            } else if (isPointerType(type)) {
+                checkReferenceValue(state, type, value, input.name);
+                emitReferenceValue(state, type, value);
+            } else {
+                emitValueFor(state, value, input.dataType);
+            }
         });
 
         emit(state, `    CALL ${userFn.label}`);
+        const returned = storedType(state, userFn.returnType);
+        const text = parseStringType(returned);
+        if (text) {
+            // [address of the function's result]: copy it, the next call of the function overwrites it
+            const buffer = acquireStringBuffer(state, text.capacity);
+            emit(state, `    PUSH16 ${buffer}`);
+            emit(state, `    STRCPY`);
+            emit(state, `    PUSH16 ${buffer}   ; ${expr.name} result`);
+        }
         return;
     }
 
@@ -2822,9 +3265,16 @@ function emitFunctionCall(state: CodeGenState, expr: FunctionCall): void {
         if (isWide(argType)) {
             fail(expr, `${expr.name} does not take a 64-bit argument yet (CMP-015)`);
         }
+        // the string routines of the VM work on one-byte characters
+        if (expr.name.toUpperCase() !== 'LEN' && isStringFunction(expr.name)
+            && parseStringType(inferExpressionType(state, value))?.wide) {
+            fail(value, `${expr.name} does not take a WSTRING yet: only LEN, assignment and initial values do`);
+        }
     }
 
     emit(state, `    ; ${expr.name}(...)`);
+
+    state.resultCapacity = isStringFunction(expr.name) ? stringCapacityOf(state, expr) : null;
 
     // Create code generation context for inline function
     // (baseAddress is not used for stateless functions)
@@ -2837,6 +3287,7 @@ function emitFunctionCall(state: CodeGenState, expr: FunctionCall): void {
     ) as Expression[];
 
     fnDef.generateInline(ctx, simpleArgs);
+    state.resultCapacity = null;
 }
 
 // ============================================================================
@@ -2880,180 +3331,716 @@ function emitStore(state: CodeGenState, sym: Symbol): void {
         return;
     }
 
-    const suffix = getLoadStoreSuffix(sym.dataType as DataTypeValue);
+    const suffix = getLoadStoreSuffix(storedType(state, sym.dataType) as DataTypeValue);
     emit(state, `    STORE${suffix} ${formatAddress(sym.address)}`);
 }
 
 // ============================================================================
-// Array Support (v1.4.3+)
+// Places: where a variable lives (CMP-019, CMP-022, CMP-023, CMP-024, CMP-028)
+//
+// A place is an address the generator can compute: a constant for a plain variable,
+// a constant plus offsets for a member, an index term for an array element, and a
+// read of a stored address for a VAR_IN_OUT member or a dereferenced reference.
+// Every read and write of a variable goes through one, so a structure member, an
+// array element, a function-block member and a reference are all loaded and stored
+// at their declared width.
 // ============================================================================
 
-/**
- * Emit code to calculate the memory address of an array element.
- * Pushes the calculated address onto the stack.
- * 
- * For a 1D array: base + (index - lowerBound) * elementSize
- * For 2D array:  base + ((row - rowLower) * rowSize + (col - colLower)) * elementSize
- * For 3D array:  similar pattern with 3 indices
- */
-function emitArrayAddress(state: CodeGenState, access: ArrayAccess, base: { address: number; dataType: STDataType }): void {
-    const arrayType = base.dataType as ArrayType;
-    const elementSize = getDataTypeSize(arrayType.elementType as DataTypeValue);
-    const dims = arrayType.dimensions;
+type Addr =
+    | { k: 'const'; a: number }
+    | { k: 'add'; base: Addr; off: number }
+    | { k: 'index'; base: Addr; index: Expression; lower: number; count: number; stride: number }
+    /** The address is the 32-bit value stored at `ptr`. */
+    | { k: 'deref'; ptr: Addr };
 
-    // Push base address
-    emit(state, `    PUSH32 ${base.address}`);
-
-    if (dims.length === 1) {
-        // 1D array: base + (index - lower) * elementSize
-        emitExpression(state, access.indices[0]);
-        emit(state, `    PUSH32 ${dims[0].lowerBound}`);
-        emit(state, `    SUB`);
-        emit(state, `    PUSH32 ${elementSize}`);
-        emit(state, `    MUL`);
-        emit(state, `    ADD`);
-    } else if (dims.length === 2) {
-        // 2D array: base + ((row - rowLower) * rowSize + (col - colLower)) * elementSize
-        const rowSize = dims[1].upperBound - dims[1].lowerBound + 1;
-
-        // Calculate row offset
-        emitExpression(state, access.indices[0]);
-        emit(state, `    PUSH32 ${dims[0].lowerBound}`);
-        emit(state, `    SUB`);
-        emit(state, `    PUSH32 ${rowSize}`);
-        emit(state, `    MUL`);
-
-        // Add column offset
-        emitExpression(state, access.indices[1]);
-        emit(state, `    PUSH32 ${dims[1].lowerBound}`);
-        emit(state, `    SUB`);
-        emit(state, `    ADD`);
-
-        // Multiply by element size and add to base
-        emit(state, `    PUSH32 ${elementSize}`);
-        emit(state, `    MUL`);
-        emit(state, `    ADD`);
-    } else if (dims.length === 3) {
-        // 3D array: base + (((dim0 - lower0) * size1 + (dim1 - lower1)) * size2 + (dim2 - lower2)) * elementSize
-        const size1 = dims[1].upperBound - dims[1].lowerBound + 1;
-        const size2 = dims[2].upperBound - dims[2].lowerBound + 1;
-
-        // Calculate dim0 offset
-        emitExpression(state, access.indices[0]);
-        emit(state, `    PUSH32 ${dims[0].lowerBound}`);
-        emit(state, `    SUB`);
-        emit(state, `    PUSH32 ${size1 * size2}`);
-        emit(state, `    MUL`);
-
-        // Add dim1 offset
-        emitExpression(state, access.indices[1]);
-        emit(state, `    PUSH32 ${dims[1].lowerBound}`);
-        emit(state, `    SUB`);
-        emit(state, `    PUSH32 ${size2}`);
-        emit(state, `    MUL`);
-        emit(state, `    ADD`);
-
-        // Add dim2 offset
-        emitExpression(state, access.indices[2]);
-        emit(state, `    PUSH32 ${dims[2].lowerBound}`);
-        emit(state, `    SUB`);
-        emit(state, `    ADD`);
-
-        // Multiply by element size and add to base
-        emit(state, `    PUSH32 ${elementSize}`);
-        emit(state, `    MUL`);
-        emit(state, `    ADD`);
-    }
+interface Place {
+    addr: Addr;
+    /** Declared type of the stored value (an enumeration is still its own name here). */
+    type: STDataType | ArrayType;
+    size: number;
+    /** The variable, when the place is exactly one. */
+    sym?: Symbol;
+    /** A constant: no statement may assign it (CMP-026). */
+    readonly?: boolean;
+    /** Source text for messages. */
+    name: string;
 }
 
-/**
- * Emit code to read an array element.
- * Pushes the element value onto the stack.
- */
-function emitArrayAccess(state: CodeGenState, expr: ArrayAccess): void {
-    const resolution = state.symbols.resolveMemberPath(expr.array);
-    const arrayType = resolution.dataType as ArrayType;
+/** The address `0xFFFF`: no memory region contains it, so any access through it is a VM fault (CMP-024). */
+const NULL_REFERENCE = 0xFFFF;
 
-    if (!isArrayType(arrayType)) {
-        fail(expr, `target is not an array`);
-    }
+/** Address inside the CODE region: a load from it ends the scan with the VM fault of a memory access violation. */
+const FAULT_ADDRESS = MEMORY_REGION.CODE.base;
 
-    const elementSize = getDataTypeSize(arrayType.elementType as DataTypeValue);
-
-    // Calculate address
-    emitArrayAddress(state, expr, resolution);
-
-    // Load using indirect addressing
-    emit(state, `    LOADI${elementSize * 8}`);
+function addOffset(base: Addr, off: number): Addr {
+    if (off === 0) return base;
+    if (base.k === 'const') return { k: 'const', a: base.a + off };
+    if (base.k === 'add') return { k: 'add', base: base.base, off: base.off + off };
+    return { k: 'add', base, off };
 }
 
-/**
- * Resolve the data type of an expression.
- */
-function resolveType(state: CodeGenState, expr: Expression): STDataType | null {
-    if (expr.kind === 'Identifier') {
-        const sym = state.symbols.get(expr.name);
-        return sym ? sym.dataType : null;
-    } else if (expr.kind === 'ReferenceExpr') {
-        const base = resolveType(state, expr.operand);
-        return base ? { kind: 'PointerType', baseType: base } as any : null;
-    } else if (expr.kind === 'DereferenceExpr') {
-        const ptrType = resolveType(state, expr.operand);
-        if (ptrType && typeof ptrType === 'object' && (ptrType as any).kind === 'PointerType') {
-            return (ptrType as any).baseType;
+function staticAddress(place: Place): number | undefined {
+    return place.addr.k === 'const' ? place.addr.a : undefined;
+}
+
+function isPointerType(type: unknown): type is PointerType {
+    return typeof type === 'object' && type !== null && (type as { kind?: string }).kind === 'PointerType';
+}
+
+/** The type a value is stored and computed as: an enumeration is its base type. */
+function storedType(state: CodeGenState, type: STDataType | ArrayType): STDataType | ArrayType {
+    return state.symbols.effectiveType(type);
+}
+
+function isStringType(type: unknown): boolean {
+    return parseStringType(type) !== null;
+}
+
+/** A structure, a function block or an array: a value of one is copied as bytes and passed by address. */
+function isAggregateType(state: CodeGenState, type: STDataType | ArrayType): boolean {
+    if (isArrayType(type as STDataType)) return true;
+    if (typeof type !== 'string') return false;
+    return state.symbols.isStructType(type) || state.symbols.isFBType(type);
+}
+
+function placeOfMember(state: CodeGenState, owner: Place, member: MemberInfo, name: string): Place {
+    const slot = addOffset(owner.addr, member.offset);
+    const readonly = owner.readonly || member.section === VarSection.CONSTANT;
+    if (member.section === VarSection.VAR_IN_OUT) {
+        // the slot holds the address of the caller's variable (CMP-028)
+        return { addr: { k: 'deref', ptr: slot }, type: member.dataType, size: state.symbols.sizeOf(member.dataType), name, readonly };
+    }
+    return { addr: slot, type: member.dataType, size: member.size, name, readonly };
+}
+
+function identifierPlace(state: CodeGenState, expr: Identifier): Place {
+    const name = expr.name;
+
+    // 1. Inputs, outputs and locals of the method being inlined: statics with a mangled name
+    if (state.currentMethod) {
+        const method = state.currentMethod as any;
+        const findVar = (list: any[]) => list && list.find((v: any) => v.name === name);
+        const methodVar = findVar(method.inputs) || findVar(method.outputs) || findVar(method.locals);
+        if (methodVar && methodVar.mangledName) {
+            const sym = state.symbols.get(methodVar.mangledName);
+            if (sym) return { addr: { k: 'const', a: sym.address }, type: sym.dataType, size: sym.size, sym, name };
         }
-        return null;
     }
-    // TODO: Support MemberAccess, ArrayAccess resolution
-    return null;
+
+    // 2. Members of the function block instance being inlined (implicit THIS)
+    const instance = state.currentFBInstance;
+    if (instance && typeof instance.dataType === 'string') {
+        const member = state.symbols.getFBDefinition(instance.dataType)?.members.get(name);
+        if (member) {
+            const owner: Place = { addr: { k: 'const', a: instance.address }, type: instance.dataType, size: instance.size, sym: instance, name: instance.name };
+            return placeOfMember(state, owner, member, name);
+        }
+    }
+
+    // 3. A global, a program variable or the variable of a function
+    const sym = state.symbols.get(name);
+    if (!sym) fail(expr, `Unknown identifier '${name}'`);
+    return { addr: { k: 'const', a: sym.address }, type: sym.dataType, size: sym.size, sym, readonly: sym.section === VarSection.CONSTANT, name };
 }
 
-/**
- * Emit code to calculate the address of an L-Value.
- */
-function emitAddress(state: CodeGenState, expr: Expression): void {
-    if (expr.kind === 'Identifier') {
-        const sym = state.symbols.get(expr.name);
-        if (sym) {
-            emit(state, `    PUSH32 ${formatAddress(sym.address)}`);
+function memberPlace(state: CodeGenState, owner: Place, expr: MemberAccess): Place {
+    const typeName = owner.type;
+    const name = `${owner.name}.${expr.member}`;
+    if (typeof typeName !== 'string') {
+        fail(expr, `Cannot access member '${expr.member}' of '${owner.name}': it is not a structure or a function block`);
+    }
+
+    const struct = state.symbols.getStructDefinition(typeName);
+    if (struct) {
+        const member = struct.members.get(expr.member);
+        if (!member) fail(expr, `Unknown member '${expr.member}' on struct '${typeName}'`);
+        return placeOfMember(state, owner, member, name);
+    }
+
+    const fb = state.symbols.getFBDefinition(typeName);
+    if (fb) {
+        const member = fb.members.get(expr.member);
+        if (!member) fail(expr, `Unknown member '${expr.member}' on FB '${typeName}'`);
+        return placeOfMember(state, owner, member, name);
+    }
+
+    const standard = getFB(typeName as DataTypeValue);
+    if (standard) {
+        const member = standard.members.find((m) => m.name === expr.member);
+        if (!member) fail(expr, `Unknown member '${expr.member}' on FB '${typeName}'`);
+        return { addr: addOffset(owner.addr, member.offset), type: stdlibMemberType(typeName, member), size: member.size, name };
+    }
+
+    fail(expr, `Cannot access member '${expr.member}' of '${owner.name}': type '${typeName}' has no members`);
+}
+
+/** Value of a constant index: a literal or its negation. */
+function constantIndexValue(expr: Expression): number | undefined {
+    const value = constantInteger(expr);
+    return value === undefined ? undefined : Number(value);
+}
+
+function arrayPlace(state: CodeGenState, expr: ArrayAccess): Place {
+    const array = resolvePlace(state, expr.array);
+    if (!isArrayType(array.type as STDataType)) fail(expr, `'${array.name}' is not an array`);
+    const type = array.type as ArrayType;
+    const dims = type.dimensions;
+    if (expr.indices.length !== dims.length) {
+        fail(expr, `'${array.name}' has ${dims.length} dimension${dims.length === 1 ? '' : 's'}, ${expr.indices.length} given`);
+    }
+
+    const elementSize = state.symbols.sizeOf(type.elementType);
+    let addr = array.addr;
+    for (let d = 0; d < dims.length; d++) {
+        const count = dims[d].upperBound - dims[d].lowerBound + 1;
+        const inner = dims.slice(d + 1).reduce((n, dim) => n * (dim.upperBound - dim.lowerBound + 1), 1);
+        const stride = inner * elementSize;
+        const index = expr.indices[d];
+        const constant = constantIndexValue(index);
+        if (constant !== undefined) {
+            // CMP-023: a constant index outside the bounds is a compile error
+            if (constant < dims[d].lowerBound || constant > dims[d].upperBound) {
+                fail(index, `Array index ${constant} is outside the bounds ${dims[d].lowerBound}..${dims[d].upperBound} of '${array.name}'`);
+            }
+            addr = addOffset(addr, (constant - dims[d].lowerBound) * stride);
         } else {
-            fail(expr, `Unknown identifier '${expr.name}'`);
+            const indexType = staticType(state, index);
+            if (isFloatType(indexType)) fail(index, `An array index must be an integer, not ${indexType}`);
+            if (isWide(indexType)) failWide(index, 'An array index');
+            addr = { k: 'index', base: addr, index, lower: dims[d].lowerBound, count, stride };
         }
-    } else if (expr.kind === 'ArrayAccess') {
-        const resolution = state.symbols.resolveMemberPath(expr.array);
-        emitArrayAddress(state, expr, resolution);
-    } else if (expr.kind === 'DereferenceExpr') {
-        // Address of (ptr^) is the value of ptr
-        emitExpression(state, expr.operand);
-    } else if (expr.kind === 'MemberAccess') {
-         if (expr.object.kind !== 'Identifier') {
-            fail(expr, `Complex member access address not supported`);
-        }
-        const structName = (expr.object as Identifier).name;
-        const memberAddr = state.symbols.getMemberAddress(structName, expr.member);
-        emit(state, `    PUSH32 ${formatAddress(memberAddr)}`);
-    } else {
-        fail(expr, `Cannot take address of ${expr.kind}`);
     }
+    return { addr, type: type.elementType, size: elementSize, name: `${array.name}[...]`, readonly: array.readonly };
+}
+
+/** The place an expression names: a variable, a member, an array element or a dereferenced reference. */
+function resolvePlace(state: CodeGenState, expr: Expression): Place {
+    switch (expr.kind) {
+        case 'Identifier':
+            return identifierPlace(state, expr);
+        case 'ThisExpr': {
+            const instance = state.currentFBInstance;
+            if (!instance) fail(expr, `THIS used outside of FB/method context`);
+            return { addr: { k: 'const', a: instance.address }, type: instance.dataType, size: instance.size, sym: instance, name: 'THIS' };
+        }
+        case 'MemberAccess':
+            return memberPlace(state, resolvePlace(state, expr.object), expr);
+        case 'ArrayAccess':
+            return arrayPlace(state, expr);
+        case 'DereferenceExpr': {
+            const pointer = resolvePlace(state, expr.operand);
+            if (!isPointerType(pointer.type)) {
+                fail(expr, `'${pointer.name}' is not a reference: only a REF_TO variable can be dereferenced`);
+            }
+            const base = pointer.type.baseType;
+            return { addr: { k: 'deref', ptr: pointer.addr }, type: base, size: state.symbols.sizeOf(base), name: `${pointer.name}^` };
+        }
+        default:
+            fail(expr, `${stringifyExpression(expr)} is not a variable`);
+    }
+}
+
+/** Push an integer constant (an address, an offset, a stride) with the shortest PUSH. */
+function emitPushInteger(state: CodeGenState, value: number): void {
+    emitIntLiteral(state, { kind: 'IntLiteral', value, line: 0, column: 0 });
+}
+
+/** Leave the address of the place on the stack. */
+function emitAddr(state: CodeGenState, addr: Addr): void {
+    switch (addr.k) {
+        case 'const':
+            emitPushInteger(state, addr.a);
+            return;
+        case 'add':
+            emitAddr(state, addr.base);
+            emitPushInteger(state, addr.off);
+            emit(state, `    ADD`);
+            return;
+        case 'index': {
+            emitAddr(state, addr.base);
+            emitExpression(state, addr.index);
+            if (addr.lower !== 0) {
+                emitPushInteger(state, addr.lower);
+                emit(state, `    SUB`);
+            }
+            if (state.arrayBoundsCheck) {
+                // CMP-023: an index outside the bounds is a VM fault, never a write over the next variable.
+                // One unsigned compare covers both ends: a negative offset is a very large one.
+                const ok = newLabel(state, 'index_ok');
+                emit(state, `    DUP`);
+                emitPushInteger(state, addr.count);
+                emit(state, `    LTU`);
+                emit(state, `    JNZ ${ok}`);
+                emitFault(state, 'array index out of bounds');
+                emit(state, `${ok}:`);
+            }
+            if (addr.stride !== 1) {
+                emitPushInteger(state, addr.stride);
+                emit(state, `    MUL`);
+            }
+            emit(state, `    ADD`);
+            return;
+        }
+        case 'deref':
+            if (addr.ptr.k === 'const') {
+                emit(state, `    LOAD32 ${formatAddress(addr.ptr.a)}   ; reference`);
+            } else {
+                emitAddr(state, addr.ptr);
+                emit(state, `    LOADI32`);
+            }
+            return;
+    }
+}
+
+/**
+ * Raise the VM fault of a memory access violation: every address of the CODE region is refused by LOADI.
+ * The HALT after it is never reached; it ends the path for the loader's stack verifier (RT-003), which
+ * cannot know that the access faults and would otherwise join this path, one value deeper, with the
+ * path that passed the check.
+ */
+function emitFault(state: CodeGenState, why: string): void {
+    emit(state, `    PUSH16 ${FAULT_ADDRESS}   ; fault: ${why}`);
+    emit(state, `    LOADI8`);
+    emit(state, `    HALT   ; not reached`);
+}
+
+/** Width in bits of the load or store of a scalar place. */
+function accessWidth(state: CodeGenState, place: Place): '8' | '16' | '32' | '64' {
+    if (isPointerType(place.type)) return '32';
+    const type = storedType(state, place.type);
+    // the member of a standard function block declares its size, not always a type
+    if (typeof type === 'string' && numericTypeName(type) === UNKNOWN_TYPE && place.size > 0) return getSizeSuffix(place.size as MemberSize);
+    return getLoadStoreSuffix(type as DataTypeValue);
+}
+
+/** Push the value of a scalar place; a string, a structure or an array gives its address. */
+function emitLoadPlace(state: CodeGenState, place: Place, label?: string): void {
+    const type = storedType(state, place.type);
+    const comment = label ? `   ; ${label}` : '';
+
+    if (isStringType(type) || isAggregateType(state, type)) {
+        if (place.addr.k === 'const') {
+            emit(state, `    PUSH16 ${formatAddress(place.addr.a)}   ; &${label ?? place.name}`);
+        } else {
+            emitAddr(state, place.addr);
+        }
+        return;
+    }
+
+    const width = accessWidth(state, place);
+    if (place.addr.k === 'const') {
+        const sym = place.sym;
+        // Bit-addressed BOOL (e.g. AT %QX0.1): extract the specific bit from the byte
+        if (sym && sym.dataType === 'BOOL' && sym.ioAddress &&
+            (sym.ioAddress.size === 'X' || sym.ioAddress.bitOffset !== undefined)) {
+            const bitPos = sym.ioAddress.bitOffset;
+            emit(state, `    LOAD8 ${formatAddress(sym.address)}   ; ${label ?? sym.name} (byte)`);
+            if (bitPos > 0) {
+                emit(state, `    PUSH8 ${bitPos}`);
+                emit(state, `    SHR                 ; extract bit ${bitPos}`);
+            }
+            emit(state, `    PUSH8 1`);
+            emit(state, `    AND                 ; mask to 0 or 1`);
+            return;
+        }
+        emit(state, `    LOAD${width} ${formatAddress(place.addr.a)}${comment}`);
+        return;
+    }
+
+    emitAddr(state, place.addr);
+    if (width === '64') {
+        // two 32-bit reads: [lo hi], the order LOAD64 leaves
+        emit(state, `    DUP`);
+        emit(state, `    LOADI32`);
+        emit(state, `    SWAP`);
+        emit(state, `    PUSH8 4`);
+        emit(state, `    ADD`);
+        emit(state, `    LOADI32`);
+        return;
+    }
+    emit(state, `    LOADI${width}${comment}`);
+}
+
+/**
+ * Store a scalar into a place. `emitValue` leaves the value on the stack; for a place whose
+ * address is computed the address is pushed first, below it.
+ */
+function emitStorePlace(state: CodeGenState, place: Place, emitValue: () => void): void {
+    const width = accessWidth(state, place);
+    if (place.addr.k === 'const') {
+        emitValue();
+        const sym = place.sym;
+        if (sym && sym.dataType === 'BOOL' && sym.ioAddress &&
+            (sym.ioAddress.size === 'X' || sym.ioAddress.bitOffset !== undefined)) {
+            emitStore(state, sym);
+        } else {
+            emit(state, `    STORE${width} ${formatAddress(place.addr.a)}`);
+        }
+        return;
+    }
+
+    emitAddr(state, place.addr);
+    emitValue();
+    if (width === '64') {
+        // [addr lo hi]: the high word goes to addr+4, the low word to addr
+        emit(state, `    PICK 2`);
+        emit(state, `    PUSH8 4`);
+        emit(state, `    ADD`);
+        emit(state, `    SWAP`);
+        emit(state, `    STOREI32`);
+        emit(state, `    STOREI32`);
+        return;
+    }
+    emit(state, `    STOREI${width}`);
+}
+
+/**
+ * Copy `size` bytes: [dst src] -> []. Each side is the address of a place; a short copy
+ * is unrolled in words, a long one calls the byte-copy routine.
+ */
+function emitCopyBytes(state: CodeGenState, size: number, dst: Place | null, src: Place | null): void {
+    const dstConst = dst ? staticAddress(dst) : undefined;
+    const srcConst = src ? staticAddress(src) : undefined;
+
+    if (dstConst !== undefined && srcConst !== undefined && dst && src) {
+        // both sides are fixed: direct loads and stores, no address arithmetic
+        let off = 0;
+        while (off < size) {
+            const chunk = size - off >= 4 ? 4 : size - off >= 2 ? 2 : 1;
+            emit(state, `    LOAD${chunk * 8} ${formatAddress(srcConst + off)}`);
+            emit(state, `    STORE${chunk * 8} ${formatAddress(dstConst + off)}`);
+            off += chunk;
+        }
+        return;
+    }
+
+    if (dst) emitAddr(state, dst.addr);
+    if (src) emitAddr(state, src.addr);
+    if (size > 32) {
+        emit(state, `    PUSH16 ${size}`);
+        callHelper(state, 'memcpy', MEMCPY_LABEL);
+        return;
+    }
+    let off = 0;
+    while (off < size) {
+        const chunk = size - off >= 4 ? 4 : size - off >= 2 ? 2 : 1;
+        emit(state, `    PICK 1`);
+        if (off) { emitPushInteger(state, off); emit(state, `    ADD`); }
+        emit(state, `    PICK 1`);
+        if (off) { emitPushInteger(state, off); emit(state, `    ADD`); }
+        emit(state, `    LOADI${chunk * 8}`);
+        emit(state, `    STOREI${chunk * 8}`);
+        off += chunk;
+    }
+    emit(state, `    DROP`);
+    emit(state, `    DROP`);
+}
+
+/** Clear `size` bytes at a fixed address. */
+function emitZeroBytes(state: CodeGenState, address: number, size: number): void {
+    if (size > 16) {
+        emitPushInteger(state, address);
+        emit(state, `    PUSH16 ${size}`);
+        callHelper(state, 'memzero', MEMZERO_LABEL);
+        return;
+    }
+    let off = 0;
+    while (off < size) {
+        const chunk = size - off >= 4 ? 4 : size - off >= 2 ? 2 : 1;
+        emit(state, `    PUSH8 0`);
+        emit(state, `    STORE${chunk * 8} ${formatAddress(address + off)}`);
+        off += chunk;
+    }
+}
+
+/**
+ * Whether `value` names a variable (or a member, an element) of exactly `type`: the only
+ * thing a whole structure or array can be assigned from.
+ */
+function aggregateSource(state: CodeGenState, value: Expression, type: STDataType | ArrayType, at: { line: number; column: number }, target: string): Place {
+    let place: Place;
+    try {
+        place = resolvePlace(state, value);
+    } catch (error) {
+        if (error instanceof CodegenError) throw error;
+        throw error;
+    }
+    if (typeText(storedType(state, place.type)) !== typeText(type)) {
+        fail(at, `Cannot assign ${typeText(place.type)} to '${target}' of type ${typeText(type)}`);
+    }
+    return place;
+}
+
+/** `target := value` for any target the place machinery resolves. */
+function emitAssignToPlace(state: CodeGenState, place: Place, value: Expression, at: { line: number; column: number }): void {
+    if (place.readonly) fail(at, `Cannot assign to constant '${place.name}'`);
+
+    const type = storedType(state, place.type);
+
+    if (isStringType(type)) {
+        emitStringAssign(state, place, value, at);
+        return;
+    }
+
+    if (isAggregateType(state, type)) {
+        const source = aggregateSource(state, value, type, value, place.name);
+        emit(state, `    ; copy ${place.size} bytes`);
+        emitCopyBytes(state, place.size, place, source);
+        return;
+    }
+
+    if (isPointerType(type)) {
+        checkReferenceValue(state, type, value, place.name);
+        emitStorePlace(state, place, () => emitReferenceValue(state, type, value));
+        return;
+    } else if (value.kind === 'ReferenceExpr' || valueIsReference(state, value)) {
+        // CMP-024: a reference is not a number
+        fail(value, `Cannot assign a reference to '${place.name}' of type ${typeText(type)}: only a REF_TO variable holds one`);
+    }
+
+    emitStorePlace(state, place, () => emitValueFor(state, value, type));
+}
+
+/** The places an expression reads, as fixed address ranges; null when one of them is not fixed or is a call that may write. */
+function readRanges(state: CodeGenState, expr: Expression, out: Array<{ from: number; to: number }>): boolean {
+    switch (expr.kind) {
+        case 'Identifier':
+        case 'MemberAccess':
+        case 'ArrayAccess':
+        case 'DereferenceExpr': {
+            if (expr.kind === 'Identifier' && (expr.name.includes('#') || expr.name.toUpperCase() === 'NULL')) return true;
+            let place: Place;
+            try {
+                place = resolvePlace(state, expr);
+            } catch (error) {
+                if (error instanceof CodegenError) return true; // the real error comes later
+                throw error;
+            }
+            if (place.addr.k !== 'const') return false;
+            out.push({ from: place.addr.a, to: place.addr.a + Math.max(1, place.size) });
+            if (expr.kind === 'ArrayAccess') {
+                // the indices read variables of their own
+                for (const index of expr.indices) if (!readRanges(state, index, out)) return false;
+            }
+            return true;
+        }
+        case 'FunctionCall': {
+            if (state.functionTable.has(expr.name)) return false; // a function of the program may write any variable
+            for (const arg of expr.args) {
+                const value = ((arg as any).kind === 'NamedArgument' ? (arg as any).value : arg) as Expression;
+                if (!readRanges(state, value, out)) return false;
+            }
+            return true;
+        }
+        case 'UnaryExpr':
+            return readRanges(state, expr.operand, out);
+        case 'BinaryExpr':
+            return readRanges(state, expr.left, out) && readRanges(state, expr.right, out);
+        case 'MethodCall':
+        case 'ThisExpr':
+            return false;
+        default:
+            return true;
+    }
+}
+
+/** Whether the expression may read the storage `[from, to)`, or be unable to tell. */
+function mayReadRange(state: CodeGenState, expr: Expression, from: number, to: number): boolean {
+    const ranges: Array<{ from: number; to: number }> = [];
+    if (!readRanges(state, expr, ranges)) return true;
+    return ranges.some((range) => range.from < to && from < range.to);
+}
+
+/**
+ * `target := LEFT(...)` and the other string functions that build a string: when the target is a
+ * fixed variable and nothing the call reads overlaps it, the function writes its result straight
+ * into the variable and no work buffer is needed; `s := CONCAT(s, x)`, `s := LEFT(s, n)`,
+ * `s := RIGHT(s, n)`, `s := MID(s, p, n)` and `s := DELETE(s, p, n)` work on the variable in place
+ * (CMP-021; the 256-byte WORK bucket of a program has no room for a copy of every string).
+ * Returns false when the general path (a work buffer, then STRCPY) must be used.
+ */
+function emitStringFunctionInto(state: CodeGenState, place: Place, call: FunctionCall): boolean {
+    const name = call.name.toUpperCase();
+    if (state.functionTable.has(call.name)) return false;
+    if (!['CONCAT', 'LEFT', 'RIGHT', 'MID', 'DELETE', 'INSERT', 'REPLACE'].includes(name)) return false;
+    const args = call.args.map((arg) => ((arg as any).kind === 'NamedArgument' ? (arg as any).value : arg) as Expression);
+    if (place.addr.k !== 'const' || args.length === 0) return false;
+    const text = parseStringType(storedType(state, place.type));
+    if (!text || text.wide) return false;
+    const target = place.addr.a;
+    const end = target + place.size;
+    const first = args[0];
+    const arity = { CONCAT: 2, LEFT: 2, RIGHT: 2, MID: 3, DELETE: 3, INSERT: 3, REPLACE: 4 }[name]!;
+    if (args.length !== arity) return false;
+
+    // the first argument is the target itself
+    let firstIsTarget = false;
+    if (first.kind === 'Identifier' || first.kind === 'MemberAccess' || first.kind === 'ArrayAccess') {
+        try {
+            const firstPlace = resolvePlace(state, first);
+            firstIsTarget = firstPlace.addr.k === 'const' && firstPlace.addr.a === target
+                && typeText(storedType(state, firstPlace.type)) === typeText(storedType(state, place.type));
+        } catch (error) {
+            if (!(error instanceof CodegenError)) throw error;
+        }
+    }
+
+    const strings = name === 'CONCAT' ? [args[1]] : name === 'INSERT' || name === 'REPLACE' ? [args[1]] : [];
+    const stringArgsRead = strings.some((arg) => mayReadRange(state, arg, target, end));
+
+    if (firstIsTarget && !stringArgsRead && name !== 'INSERT' && name !== 'REPLACE') {
+        if (name === 'CONCAT') {
+            // the arguments of the call are evaluated before the variable changes
+            emit(state, `    ; ${place.name} := CONCAT(${place.name}, ...) in place`);
+            emitExpression(state, args[1]);
+            emit(state, `    PUSH16 ${formatAddress(target)}`);
+            emit(state, `    STRCAT`);
+            return true;
+        }
+        emit(state, `    ; ${place.name} := ${name}(${place.name}, ...) in place`);
+        emit(state, `    PUSH16 ${formatAddress(target)}`);
+        switch (name) {
+            case 'LEFT':
+                emit(state, `    PUSH8 0`);
+                emitExpression(state, args[1]);
+                callStringHelper(state, 'strsub');
+                break;
+            case 'RIGHT':
+                emit(state, `    PUSH16 ${formatAddress(target)}`);
+                emit(state, `    STRLEN`);
+                emitExpression(state, args[1]);
+                emit(state, `    SUB`);
+                emitExpression(state, args[1]);
+                callStringHelper(state, 'strsub');
+                break;
+            case 'MID':
+                emitExpression(state, args[1]);
+                emit(state, `    PUSH8 1`);
+                emit(state, `    SUB`);
+                emitExpression(state, args[2]);
+                callStringHelper(state, 'strsub');
+                break;
+            case 'DELETE':
+                emitExpression(state, args[1]);
+                emit(state, `    PUSH8 1`);
+                emit(state, `    SUB`);
+                emitExpression(state, args[2]);
+                callStringHelper(state, 'strdel');
+                break;
+        }
+        return true;
+    }
+
+    // nothing the call reads is the target: the function builds its result in the variable
+    if (!args.some((arg) => mayReadRange(state, arg, target, end))) {
+        emit(state, `    ; ${place.name} := ${name}(...) built in place`);
+        // the declared capacity of the variable stays: the routines truncate to it
+        state.resultBuffer = { address: target };
+        emitFunctionCall(state, call);
+        state.resultBuffer = null;
+        emit(state, `    DROP`);
+        return true;
+    }
+    return false;
+}
+
+/** Whether the value is a variable of a REF_TO type. */
+function valueIsReference(state: CodeGenState, value: Expression): boolean {
+    if (value.kind !== 'Identifier' && value.kind !== 'MemberAccess' && value.kind !== 'ArrayAccess') return false;
+    try {
+        return isPointerType(resolvePlace(state, value).type);
+    } catch (error) {
+        if (error instanceof CodegenError) return false;
+        throw error;
+    }
+}
+
+/** `string := value` (CMP-021): the characters are copied into the variable, up to its capacity. */
+function emitStringAssign(state: CodeGenState, place: Place, value: Expression, at: { line: number; column: number }): void {
+    const type = storedType(state, place.type);
+    const text = parseStringType(type)!;
+
+    if (value.kind === 'StringLiteral' || value.kind === 'WStringLiteral') {
+        if ((value.kind === 'WStringLiteral') !== text.wide) {
+            fail(value, `Cannot assign ${value.kind === 'WStringLiteral' ? 'a WSTRING' : 'a STRING'} literal to '${place.name}' of type ${typeText(type)}`);
+        }
+        checkStringFits(value, type, place.name);
+    } else if (!isStringExpression(state, value)) {
+        fail(value, `Cannot assign ${stringifyExpression(value)} to '${place.name}' of type ${typeText(type)}: it is not a string`);
+    } else if (text.wide !== (inferExpressionType(state, value).toUpperCase().startsWith('W'))) {
+        fail(value, `Cannot assign ${stringifyExpression(value)} to '${place.name}' of type ${typeText(type)}: STRING and WSTRING do not mix`);
+    }
+
+    if (!text.wide && place.addr.k === 'const' && value.kind === 'FunctionCall' && emitStringFunctionInto(state, place, value)) {
+        return;
+    }
+
+    emitExpression(state, value);                // [src]
+    emitAddr(state, place.addr);                 // [src dst]
+    if (text.wide) {
+        state.helpers.add('memcpy');
+        callHelper(state, 'wstrcpy', WSTRCPY_LABEL);
+    } else {
+        emit(state, `    STRCPY`);
+    }
+}
+
+/** The value a REF_TO variable is given: NULL (also written 0) is the address no region contains. */
+function emitReferenceValue(state: CodeGenState, target: PointerType, value: Expression): void {
+    if (value.kind === 'IntLiteral' && value.value === 0) {
+        emit(state, `    PUSH16 ${NULL_REFERENCE}   ; NULL`);
+        return;
+    }
+    emitValueFor(state, value, target);
+}
+
+/** CMP-024: what a REF_TO variable may be given. */
+function checkReferenceValue(state: CodeGenState, target: PointerType, value: Expression, name: string): void {
+    if (value.kind === 'IntLiteral' && value.value === 0) return;
+    if (isNullLiteral(state, value)) return;
+
+    let given: unknown;
+    if (value.kind === 'ReferenceExpr') {
+        given = { kind: 'PointerType', baseType: resolvePlace(state, value.operand).type };
+    } else {
+        try {
+            given = resolvePlace(state, value).type;
+        } catch {
+            given = undefined;
+        }
+    }
+
+    if (!isPointerType(given)) {
+        fail(value, `'${name}' is a ${typeText(target)}: assign a REF(...) of a ${typeText(target.baseType)} variable or NULL, not ${stringifyExpression(value)}`);
+    }
+    if (typeText(storedType(state, given.baseType)) !== typeText(storedType(state, target.baseType))) {
+        fail(value, `Cannot assign a ${typeText(given)} to '${name}' of type ${typeText(target)}`);
+    }
+}
+
+/**
+ * Emit code to read an array element, a member or a dereferenced reference.
+ * Pushes the value onto the stack.
+ */
+function emitPlaceExpression(state: CodeGenState, expr: Expression): void {
+    const place = resolvePlace(state, expr);
+    const type = storedType(state, place.type);
+    if (isArrayType(type as STDataType) || (typeof type === 'string' && state.symbols.isStructType(type))) {
+        fail(expr, `'${place.name}' is ${typeText(type)}: use one of its members or elements, or assign the whole value to a variable of the same type`);
+    }
+    emitLoadPlace(state, place);
 }
 
 function emitReference(state: CodeGenState, expr: ReferenceExpr): void {
-    emitAddress(state, expr.operand);
+    const place = resolvePlace(state, expr.operand);
+    if (place.readonly && place.sym?.section === VarSection.CONSTANT) {
+        fail(expr, `Cannot take a reference to constant '${place.name}'`);
+    }
+    emitAddr(state, place.addr);
 }
 
 function emitDereference(state: CodeGenState, expr: DereferenceExpr): void {
-    // 1. Load pointer value (address)
-    emitExpression(state, expr.operand);
-
-    // 2. Determine type size to load
-    const type = resolveType(state, expr);
-    let size = 4; // Default to 32-bit if unknown
-    if (type) {
-        size = getDataTypeSize(type);
-    }
-    
-    // 3. Load indirect
-    emit(state, `    LOADI${size * 8}`);
+    emitPlaceExpression(state, expr);
 }
 
 /**
@@ -3150,13 +4137,12 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
             }
             
             emit(state, `    ; Arg ${inputName} := ...`);
-            emitValueFor(state, argExpr, input.dataType);
-            
+
             if (input.mangledName) {
                 const sym = state.symbols.get(input.mangledName);
                 if (sym) {
-                    const suffix = getLoadStoreSuffix(sym.dataType as DataTypeValue);
-                    emit(state, `    STORE${suffix} ${formatAddress(sym.address)}`);
+                    const target: Place = { addr: { k: 'const', a: sym.address }, type: sym.dataType, size: sym.size, sym, name: inputName };
+                    emitAssignToPlace(state, target, argExpr, argExpr);
                 } else {
                      fail(expr, `Symbol for input '${inputName}' not found`);
                 }
@@ -3172,16 +4158,21 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
             if (local.mangledName) {
                 const sym = state.symbols.get(local.mangledName);
                 if (sym) {
+                    const localType = storedType(state, sym.dataType);
+                    if (isStringType(localType) || isAggregateType(state, localType) || isPointerType(localType)) {
+                        emitInitValue(state, sym.address, sym.dataType, local.initialValue, expr, local.name, { everyCall: true });
+                        continue;
+                    }
                     if (local.initialValue) {
                         emit(state, `    ; Init ${local.name} := ...`);
-                        emitValueFor(state, local.initialValue, sym.dataType);
+                        emitValueFor(state, local.initialValue as Expression, sym.dataType);
                     } else {
                         emit(state, `    ; Init ${local.name} := 0`);
                         // a 64-bit local is two cells: low word, then high word
                         if (sym.size === 8) emit(state, `    PUSH32 0`);
                         emit(state, `    PUSH32 0`);
                     }
-                    const suffix = getLoadStoreSuffix(sym.dataType as DataTypeValue);
+                    const suffix = getLoadStoreSuffix(localType as DataTypeValue);
                     emit(state, `    STORE${suffix} ${formatAddress(sym.address)}`);
                 }
             }
@@ -3189,9 +4180,11 @@ function emitMethodCall(state: CodeGenState, expr: MethodCall): void {
     }
 
     // Inline the method body
+    state.expressionDepth++;
     for (const stmt of methodInfo.body) {
         emitStatement(state, stmt);
     }
+    state.expressionDepth--;
     emit(state, `${state.returnLabel}:`);
     
     // If method has a return type, the result should be on the stack
@@ -3262,11 +4255,6 @@ function emitWStringLiteral(state: CodeGenState, expr: WStringLiteral): void {
     }
 }
 
-/**
- * Helper to get the load/store suffix for a member (resolves through FBs and Structs).
- * Re-exporting from symbol-table to maintain backward compatibility in this file.
- */
-import { getMemberLoadStoreSuffix } from './symbol-table.ts';
 import { DATA_TYPE_ID, MEMORY_REGION, STRING_LAYOUT, TAG_ID } from '../contract.generated.ts';
 
 // ============================================================================

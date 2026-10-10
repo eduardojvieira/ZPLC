@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-023",
   "title": "a constant array index outside the bounds is rejected",
+  "matrix": ["data-types.array-bounds-checking"],
   "build": "fails",
   "lines": [5]
 }

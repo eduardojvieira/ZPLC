@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-011",
   "title": "INT, DINT and REAL operands mix with their signs",
+  "matrix": ["statements.arithmetic-and-comparisons", "functions.implicit-widening-conversion"],
+  "tags": ["arch-sensitive", "float-conversion"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

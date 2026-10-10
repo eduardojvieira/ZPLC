@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-011",
   "title": "a FOR loop counts an INT counter through negative values",
+  "matrix": ["statements.for"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

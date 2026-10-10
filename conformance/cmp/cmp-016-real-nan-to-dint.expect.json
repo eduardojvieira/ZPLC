@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-016",
   "title": "a not-a-number REAL converts to the integer 0",
+  "tags": ["arch-sensitive", "float-conversion"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QD0", "type": "DINT", "value": 0 }]

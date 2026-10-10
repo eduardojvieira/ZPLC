@@ -200,20 +200,24 @@ Rotate Right. Shift bits out of the right side re-enter on the left side.
 
 ## 8. String Functions
 
-ZPLC strings use bounded buffers (`STRING[80]`) with built-in overflow protection. Memory holds current length and maximum capacity.
+ZPLC strings use bounded buffers: `STRING` holds 80 characters, `STRING[n]` holds `n`. Memory holds the current length and the maximum capacity, and an assignment copies as many characters as fit.
+
+A function that builds a string (`CONCAT`, `LEFT`, `RIGHT`, `MID`, `INSERT`, `DELETE`, `REPLACE`) returns a new string and never changes its arguments. Positions are 1-based.
 
 - **LEN(s)**: Returns `INT` representing current character count of string `s`.
-- **CONCAT(s1, s2)**: Appends `s2` to `s1` (modifies `s1`).
-- **COPY(src, dst)**: Copies `src` string into `dst`.
-- **CLEAR(s)**: Empties string `s` to 0 length.
-- **LEFT(s, n)**: Modifies `s` to keep only the leftmost `n` characters.
-- **RIGHT(s, n)**: Modifies `s` to keep only the rightmost `n` characters.
-- **MID(s, pos, n)**: Modifies `s` to keep `n` characters starting at 1-based index `pos`.
+- **CONCAT(s1, s2)**: Returns `s1` followed by `s2`.
+- **COPY(src, dst)**: Copies `src` string into `dst` (it writes to `dst`, as its name says).
+- **CLEAR(s)**: Empties string `s` to 0 length (it writes to `s`).
+- **LEFT(s, n)**: Returns the leftmost `n` characters of `s`.
+- **RIGHT(s, n)**: Returns the rightmost `n` characters of `s`.
+- **MID(s, pos, n)**: Returns `n` characters of `s` starting at 1-based index `pos`.
 - **FIND(s1, s2)**: Returns `INT` position (1-based) of `s2` within `s1`, or 0 if not found.
-- **INSERT(s1, s2, pos)**: Inserts `s2` into `s1` starting at index `pos`.
-- **DELETE(s, pos, n)**: Removes `n` characters from `s` starting at index `pos`.
-- **REPLACE(s1, s2, pos, n)**: Overwrites `n` characters in `s1` starting at index `pos` using `s2`.
+- **INSERT(s1, s2, pos)**: Returns `s1` with `s2` inserted after its `pos`-th character (`pos` 0 inserts in front).
+- **DELETE(s, pos, n)**: Returns `s` without the `n` characters that start at index `pos`.
+- **REPLACE(s1, s2, pos, n)**: Returns `s1` with the `n` characters that start at index `pos` replaced by `s2`.
 - **STRCMP(s1, s2)**: Lexicographical comparison. Returns `INT` (-1 if s1 < s2, 0 if s1 == s2, 1 if s1 > s2).
+
+The position comes before the count in `MID`, `DELETE` and `REPLACE`. IEC 61131-3 writes the length first (`MID(IN, L, P)`): a program written to that order must swap the two arguments.
 
 *Note: You can also use standard `=` and `< >` operators directly on STRING variables to compare them for equality.*
 

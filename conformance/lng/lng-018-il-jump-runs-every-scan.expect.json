@@ -1,6 +1,7 @@
 {
   "requirement": "LNG-018",
   "title": "an IL program with a jump runs completely on every scan",
+  "matrix": ["il.jmp-jmpc-jmpcn-labels"],
   "scans": 3,
   "scanMs": 10,
   "expect": [

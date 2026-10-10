@@ -1,0 +1,9 @@
+{
+  "requirement": "CMP-006",
+  "title": "an array of arrays is rejected where the inner array is written",
+  "matrix": ["data-types.arrays-of-arrays"],
+  "note": "Decision D-04 (2.x recommended): arrays of arrays are left to 2.x and rejected with a message; multi-dimensional arrays cover the need",
+  "build": "fails",
+  "lines": [3],
+  "messageIncludes": []
+}

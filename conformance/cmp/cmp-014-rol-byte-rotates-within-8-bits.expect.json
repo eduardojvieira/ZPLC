@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-014",
   "title": "ROL on a BYTE rotates within 8 bits",
+  "matrix": ["functions.shift-rotate-and-word-logic"],
+  "tags": ["arch-sensitive", "shifts"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

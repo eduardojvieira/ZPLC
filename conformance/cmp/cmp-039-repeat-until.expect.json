@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-039",
   "title": "REPEAT runs its body until the condition holds",
+  "matrix": ["statements.if-while-repeat-exit-continue"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QW0", "type": "INT", "value": 3 }]

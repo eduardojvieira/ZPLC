@@ -1,0 +1,15 @@
+{
+  "requirement": "CMP-013",
+  "title": "a REAL literal with an exponent, and TRUE and FALSE",
+  "matrix": ["literals.decimal-real-exponent-boolean"],
+  "note": "IEC 61131-3, numeric and Boolean literals: a real literal may carry an exponent (1.5E2 is 150.0, 2.5E-1 is 0.25); the Boolean literals are FALSE and TRUE",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QD0", "type": "REAL", "value": 150.0},
+    {"at": "%QD1", "type": "REAL", "value": 0.25},
+    {"at": "%QW4", "type": "INT", "value": 12345},
+    {"at": "%QX10.0", "type": "BOOL", "value": true},
+    {"at": "%QX10.1", "type": "BOOL", "value": false}
+  ]
+}

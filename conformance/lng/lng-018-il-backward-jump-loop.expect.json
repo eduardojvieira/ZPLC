@@ -1,6 +1,7 @@
 {
   "requirement": "LNG-018",
   "title": "an IL backward jump loops and restarts on every scan",
+  "matrix": ["il.jmp-jmpc-jmpcn-labels"],
   "scans": 3,
   "scanMs": 10,
   "expect": [

@@ -78,6 +78,15 @@ export interface CodeGenContext {
     emitOperand?: (expr: Expression, asType: string) => void;
     /** Emit the comparison of the two values on the stack, read as `type` (REAL, unsigned or signed). */
     emitCompare?: (op: 'EQ' | 'NE' | 'LT' | 'LE' | 'GT' | 'GE', type?: string) => void;
+    /**
+     * Address of a work buffer for a new string of up to `capacity` characters (its capacity field is
+     * written). It is valid until the end of the statement being generated (CMP-021).
+     */
+    stringTemp?: (capacity: number) => number;
+    /** Characters the string `expr` can hold: its declared capacity, a literal's length; 80 when unknown. */
+    stringCapacity?: (expr: Expression) => number;
+    /** Call a string routine: 'strappend' [dst src start n] -> [], 'strfind' [s1 s2] -> [pos]. */
+    callHelper?: (name: 'strappend' | 'strfind') => void;
 }
 
 // ============================================================================

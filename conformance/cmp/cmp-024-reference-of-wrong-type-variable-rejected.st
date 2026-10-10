@@ -1,0 +1,7 @@
+PROGRAM Main
+VAR
+  d : DINT;
+  p : REF_TO INT;
+END_VAR
+  p := REF(d);
+END_PROGRAM

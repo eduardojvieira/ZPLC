@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test';
+import { createHash } from 'node:crypto';
 
 import { createHardwareDeployConfirmation } from './hardwareDeployConfirmation';
 import { ZPLC_CONSTANTS } from '@zplc/compiler';
@@ -36,7 +37,7 @@ describe('hardware deploy confirmation', () => {
       byteLength: ZPLC_CONSTANTS.HEADER_SIZE,
       taskCount: 2,
     });
-    expect(confirmation.sha256).toBe('d6053d9742968b7947d6be8a3e424075614e9904b270d5b13826579095f6de89');
+    expect(confirmation.sha256).toBe(createHash('sha256').update(artifact()).digest('hex'));
     expect(confirmation.message).toContain('stops the current PLC program and leaves the runtime stopped');
     expect(confirmation.message).toContain('does not prove hardware or HIL behavior');
   });

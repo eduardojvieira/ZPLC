@@ -51,10 +51,27 @@ typedef enum {
 /* <<< END GENERATED: comm-status <<< */
 
 /**
+ * @brief Size in bytes of the handshake every communication block starts with
+ *        (EN, BUSY, DONE, ERROR, STATUS).
+ *
+ * A block of a kind that has no layout in the table is exactly this long.
+ */
+#define ZPLC_COMM_FB_HANDSHAKE_SIZE 8U
+
+/**
  * @brief Comm FB handler function type.
+ *
+ * @param kind   The function-block kind
+ * @param fb_mem The block, fb_len bytes; the handler must not read or write
+ *               outside it, and must validate every count or length it reads
+ *               from the block against fb_len (COM-001)
+ * @param fb_len Length of the block in bytes: the size of the kind from the
+ *               table, or ZPLC_COMM_FB_HANDSHAKE_SIZE for a kind without layout
+ * @param reset  true to reset the instance, false to execute it
+ * @return 0 on success, negative on error
  */
 typedef int (*zplc_comm_handler_t)(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
-                                   bool reset);
+                                   uint16_t fb_len, bool reset);
 
 /* >>> GENERATED (tools/contract/generate.py): comm-blocks. Do not edit. >>> */
 /**
@@ -369,13 +386,26 @@ int zplc_comm_register_handler(zplc_comm_fb_kind_t kind,
 
 /**
  * @brief Execute a communication FB instance (called by VM from OP_COMM_EXEC).
+ *
+ * @param kind   The function-block kind
+ * @param fb_mem The block; the caller has placed all of it in PLC memory
+ * @param fb_len Length of the block; refused (-1) when it is shorter than the
+ *               handshake or than the size of the kind in the table
+ * @return 0, or -1 when the block is refused
  */
-int zplc_comm_fb_exec(zplc_comm_fb_kind_t kind, uint8_t *fb_mem);
+int zplc_comm_fb_exec(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
+                      uint16_t fb_len);
 
 /**
  * @brief Reset a communication FB instance (called by VM from OP_COMM_RESET).
+ *
+ * @param kind   The function-block kind
+ * @param fb_mem The block; the caller has placed all of it in PLC memory
+ * @param fb_len Length of the block; refused (-1) as for zplc_comm_fb_exec()
+ * @return 0, or -1 when the block is refused
  */
-int zplc_comm_fb_reset(zplc_comm_fb_kind_t kind, uint8_t *fb_mem);
+int zplc_comm_fb_reset(zplc_comm_fb_kind_t kind, uint8_t *fb_mem,
+                       uint16_t fb_len);
 
 #ifdef __cplusplus
 }

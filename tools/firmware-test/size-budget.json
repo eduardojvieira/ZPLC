@@ -19,12 +19,12 @@
         ]
       },
       "measured": {
-        "flash": 142172,
-        "ram": 164720
+        "flash": 145584,
+        "ram": 179808
       },
       "budget": {
-        "flash": 149504,
-        "ram": 173056
+        "flash": 153088,
+        "ram": 188928
       }
     },
     "arduino-giga-r1-m7": {
@@ -45,12 +45,12 @@
         ]
       },
       "measured": {
-        "flash": 191328,
-        "ram": 179692
+        "flash": 194628,
+        "ram": 194796
       },
       "budget": {
-        "flash": 200960,
-        "ram": 188928
+        "flash": 204544,
+        "ram": 204544
       }
     },
     "esp32-s3-devkitc": {
@@ -67,12 +67,12 @@
         ]
       },
       "measured": {
-        "flash": 1001380,
-        "ram": 2419808
+        "flash": 1002756,
+        "ram": 2419920
       },
       "budget": {
-        "flash": 1051648,
-        "ram": 2540800
+        "flash": 1052928,
+        "ram": 2541056
       }
     },
     "stm32f746g-disco": {
@@ -88,12 +88,12 @@
         ]
       },
       "measured": {
-        "flash": 276816,
-        "ram": 225676
+        "flash": 280104,
+        "ram": 240780
       },
       "budget": {
-        "flash": 290816,
-        "ram": 237056
+        "flash": 294144,
+        "ram": 252928
       }
     },
     "nucleo-h743zi": {
@@ -115,12 +115,12 @@
         ]
       },
       "measured": {
-        "flash": 410732,
-        "ram": 374684
+        "flash": 414512,
+        "ram": 389788
       },
       "budget": {
-        "flash": 431360,
-        "ram": 393472
+        "flash": 435456,
+        "ram": 409344
       }
     },
     "arduino-opta-wifi-m7": {
@@ -141,12 +141,12 @@
         ]
       },
       "measured": {
-        "flash": 431364,
-        "ram": 395540
+        "flash": 434976,
+        "ram": 414612
       },
       "budget": {
-        "flash": 453120,
-        "ram": 415488
+        "flash": 456960,
+        "ram": 435456
       }
     }
   },

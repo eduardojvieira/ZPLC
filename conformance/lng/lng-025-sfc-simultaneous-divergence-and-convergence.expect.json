@@ -1,6 +1,7 @@
 {
   "requirement": "LNG-025",
   "title": "an SFC simultaneous divergence starts both branches and the convergence waits for both",
+  "matrix": ["sfc.simultaneous-divergence-and-convergence"],
   "scans": 5,
   "scanMs": 10,
   "inputs": [

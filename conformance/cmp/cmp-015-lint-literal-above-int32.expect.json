@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-015",
   "title": "LINT holds a literal above 4294967295",
+  "matrix": ["data-types.lint-ulint-lword"],
+  "tags": ["arch-sensitive", "64-bit", "alignment"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QX0.0", "type": "BOOL", "value": true }]

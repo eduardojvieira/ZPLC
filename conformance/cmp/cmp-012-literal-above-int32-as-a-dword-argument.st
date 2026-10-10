@@ -1,0 +1,7 @@
+PROGRAM BigArgument
+VAR
+  d : DWORD := 4042322160;
+  flipped AT %QD0 : DWORD;
+END_VAR
+  flipped := XOR_DWORD(d, 4294967295);
+END_PROGRAM

@@ -1,0 +1,28 @@
+{
+  "requirement": "CMP-019",
+  "title": "a structure initialiser overrides one member and the declared defaults stay",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 7
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 20
+    },
+    {
+      "at": "%QD1",
+      "type": "DINT",
+      "value": 100000
+    },
+    {
+      "at": "%QW4",
+      "type": "INT",
+      "value": 7
+    }
+  ]
+}

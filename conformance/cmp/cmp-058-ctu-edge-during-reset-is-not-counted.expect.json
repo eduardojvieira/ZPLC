@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-058",
   "title": "CTU does not count a pulse that rises while Reset is TRUE",
+  "matrix": ["blocks.ctu-ctd-ctud"],
   "scans": 7,
   "scanMs": 10,
   "inputs": [

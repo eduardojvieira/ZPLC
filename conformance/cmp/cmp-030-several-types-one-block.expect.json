@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-030",
   "title": "several types in one TYPE block",
+  "matrix": ["data-types.type-aliases-and-type-blocks"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QW0", "type": "INT", "value": 6 }]

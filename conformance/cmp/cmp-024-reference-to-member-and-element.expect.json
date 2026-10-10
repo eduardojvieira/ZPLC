@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-024",
+  "title": "a reference to a structure member and to an array element",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "DINT",
+      "value": 123456
+    },
+    {
+      "at": "%QD1",
+      "type": "DINT",
+      "value": 654321
+    }
+  ]
+}

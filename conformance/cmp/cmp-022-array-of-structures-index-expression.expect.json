@@ -1,0 +1,23 @@
+{
+  "requirement": "CMP-022",
+  "title": "an element member of an array of structures written and read with a variable index",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "DINT",
+      "value": 72000
+    },
+    {
+      "at": "%QW2",
+      "type": "INT",
+      "value": -3
+    },
+    {
+      "at": "%QW3",
+      "type": "INT",
+      "value": 0
+    }
+  ]
+}

@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-015",
   "title": "DT compares and takes a TIME; the difference of two DT is a TIME",
+  "matrix": ["data-types.date-tod-dt"],
+  "tags": ["arch-sensitive", "64-bit", "alignment"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

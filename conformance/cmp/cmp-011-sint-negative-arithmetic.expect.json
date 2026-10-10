@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-011",
   "title": "SINT arithmetic with a negative operand",
+  "matrix": ["data-types.sint-int"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QW0", "type": "INT", "value": -2 }]

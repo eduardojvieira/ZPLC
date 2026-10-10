@@ -1,0 +1,23 @@
+{
+  "requirement": "CMP-021",
+  "title": "string functions used as arguments of string functions",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 4
+    },
+    {
+      "at": "%QX2.0",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX2.1",
+      "type": "BOOL",
+      "value": true
+    }
+  ]
+}

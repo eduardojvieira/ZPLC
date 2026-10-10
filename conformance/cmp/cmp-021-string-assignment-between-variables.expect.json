@@ -1,0 +1,23 @@
+{
+  "requirement": "CMP-021",
+  "title": "a string assigned to another variable is a copy",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 1
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 5
+    },
+    {
+      "at": "%QX4.0",
+      "type": "BOOL",
+      "value": true
+    }
+  ]
+}

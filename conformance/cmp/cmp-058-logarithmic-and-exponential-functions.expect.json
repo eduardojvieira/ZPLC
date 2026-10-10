@@ -1,0 +1,19 @@
+{
+  "requirement": "CMP-058",
+  "title": "LN, LOG, EXP and SQRT",
+  "matrix": ["functions.trigonometric-logarithmic-exponential", "functions.selection-limit-and-sqrt-functions"],
+  "tags": ["arch-sensitive", "float"],
+  "note": "IEC 61131-3, numerical functions: LN is the natural logarithm (LN(10) = 2.3025851), LOG the logarithm to base 10, EXP the natural exponential (EXP(1) = 2.7182818) and SQRT the square root; the tolerance is 0.001",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QX0.0", "type": "BOOL", "value": true},
+    {"at": "%QX0.1", "type": "BOOL", "value": true},
+    {"at": "%QX0.2", "type": "BOOL", "value": true},
+    {"at": "%QX0.3", "type": "BOOL", "value": true},
+    {"at": "%QX0.4", "type": "BOOL", "value": true},
+    {"at": "%QX0.5", "type": "BOOL", "value": true},
+    {"at": "%QX0.6", "type": "BOOL", "value": true},
+    {"at": "%QX0.7", "type": "BOOL", "value": true}
+  ]
+}

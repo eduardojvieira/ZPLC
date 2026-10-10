@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-058",
   "title": "CTU stops at 32767 instead of wrapping to -32768",
+  "matrix": ["blocks.ctu-ctd-ctud"],
   "scans": 6,
   "scanMs": 10,
   "inputs": [

@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-036",
   "title": "RETURN in a program ends the scan of that program",
+  "matrix": ["statements.return"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QW0", "type": "INT", "value": 1 }]

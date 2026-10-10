@@ -1,0 +1,28 @@
+{
+  "requirement": "CMP-021",
+  "title": "FIND gives the 1-based position or 0",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 3
+    },
+    {
+      "at": "%QW1",
+      "type": "INT",
+      "value": 1
+    },
+    {
+      "at": "%QW2",
+      "type": "INT",
+      "value": 0
+    },
+    {
+      "at": "%QW3",
+      "type": "INT",
+      "value": 5
+    }
+  ]
+}

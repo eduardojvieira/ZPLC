@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-016",
   "title": "a shift by 32 or more, or by a negative count, gives 0",
+  "matrix": ["functions.shift-rotate-and-word-logic"],
+  "tags": ["arch-sensitive", "shifts"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QD0", "type": "DWORD", "value": 0 }, { "at": "%QD4", "type": "DWORD", "value": 0 }, { "at": "%QD8", "type": "DWORD", "value": 0 }]

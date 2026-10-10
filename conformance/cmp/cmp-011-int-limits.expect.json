@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-011",
   "title": "INT holds -32768 and 32767 through compare and widening",
+  "matrix": ["data-types.sint-int", "declarations.initial-values"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

@@ -50,9 +50,11 @@ The `dbg` commands give you direct access to the execution state, memory and bre
 - `zplc dbg force clear_all` - Removes all forces, so the program controls every address again.
 
 ### Execution Control
-- `zplc dbg pause` - Pauses the virtual machine.
-- `zplc dbg resume` - Resumes execution.
-- `zplc dbg step` - Runs exactly one scan cycle and pauses again.
+- `zplc dbg pause` - Pauses the scheduler between scans. The physical outputs go to their safe state; the output image and the force table are kept.
+- `zplc dbg resume` - Resumes. A scan that stopped at a breakpoint continues from where it stopped, and the first scan commit drives the outputs again from the kept image.
+- `zplc dbg step` - Finishes the scan that stopped at a breakpoint, or runs one whole scan, and pauses at the next cycle boundary or at the next breakpoint. The image shows the stepped scan; the outputs are safe.
+
+`zplc stop` is not a pause: it also zeroes the output image, clears the force table and returns every task to its entry point. See [Pause, resume, step and stop](../runtime/scheduler.md#pause-resume-step-and-stop).
 
 ### Memory Introspection
 - `zplc dbg info` - Shows the virtual machine state and the current PC.

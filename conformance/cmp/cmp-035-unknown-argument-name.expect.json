@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-035",
   "title": "a call with an unknown argument name is rejected",
+  "matrix": ["pous.function"],
   "build": "fails",
   "lines": [11]
 }

@@ -89,6 +89,13 @@ The public `zplc_opcode_t` enum groups instructions into clear runtime-facing fa
 | Conversion | `OP_I2F`, `OP_F2I`, `OP_I2B`, `OP_EXT8`, `OP_EXT16`, `OP_ZEXT8`, `OP_ZEXT16` | type adaptation |
 | Communication | `OP_COMM_EXEC`, `OP_COMM_STATUS`, `OP_COMM_RESET` | communication FB execution |
 
+An indirect access (`OP_LOADI*`, `OP_STOREI*`) to an address that no data region
+contains, such as `0xFFFF` or any address of the CODE region, ends the scan with
+`ZPLC_VM_OUT_OF_BOUNDS` (memory access violation). The compiler relies on that
+fault: a `REF_TO` variable starts as `0xFFFF`, so dereferencing a null reference
+faults, and a run-time array index outside the bounds loads from the CODE base
+address (CMP-023, CMP-024). A host test pins the behaviour.
+
 The ISA also fixes operand width by opcode range:
 
 - `0x00-0x3F`: no operand

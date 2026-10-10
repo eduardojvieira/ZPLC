@@ -1,0 +1,13 @@
+{
+  "requirement": "CMP-012",
+  "title": "USINT holds 0 to 255 and compares as unsigned",
+  "matrix": ["data-types.usint-uint"],
+  "note": "IEC 61131-3, elementary data types: USINT is the unsigned integer 0 to 255; 200 + 55 widens to DINT and is 255, and 200 is greater than 55",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QD0", "type": "DINT", "value": 255},
+    {"at": "%QX4.0", "type": "BOOL", "value": true},
+    {"at": "%QB5", "type": "USINT", "value": 255}
+  ]
+}

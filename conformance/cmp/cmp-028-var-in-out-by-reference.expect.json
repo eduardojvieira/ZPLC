@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-028",
   "title": "VAR_IN_OUT is passed by reference",
+  "matrix": ["declarations.var-in-out"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QW0", "type": "INT", "value": 6 }]

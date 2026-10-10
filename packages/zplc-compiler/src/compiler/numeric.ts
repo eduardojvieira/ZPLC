@@ -397,8 +397,110 @@ export function cmp64Test(op: CompareOp): string[] {
     }
 }
 
+export const MEMCPY_LABEL = '_zplc_memcpy';
+export const MEMZERO_LABEL = '_zplc_memzero';
+
+/** Byte copy of a structure or an array: [dst src n] -> []. The regions must not overlap. */
+export const MEMCPY_HELPER: string[] = [
+    `${MEMCPY_LABEL}:`,
+    `${MEMCPY_LABEL}_loop:     ; [dst src n]`,
+    `    DUP`,
+    `    JZ ${MEMCPY_LABEL}_done`,
+    `    PICK 2`,
+    `    PICK 2              ; [dst src n dst src]`,
+    `    LOADI8              ; [dst src n dst byte]`,
+    `    STOREI8             ; [dst src n]`,
+    `    ROT                 ; [src n dst]`,
+    `    PUSH8 1`,
+    `    ADD`,
+    `    ROT                 ; [n dst+1 src]`,
+    `    PUSH8 1`,
+    `    ADD`,
+    `    ROT                 ; [dst+1 src+1 n]`,
+    `    PUSH8 1`,
+    `    SUB`,
+    `    JMP ${MEMCPY_LABEL}_loop`,
+    `${MEMCPY_LABEL}_done:`,
+    `    DROP`,
+    `    DROP`,
+    `    DROP`,
+    `    RET`,
+];
+
+/** Clear n bytes: [dst n] -> []. */
+export const MEMZERO_HELPER: string[] = [
+    `${MEMZERO_LABEL}:`,
+    `${MEMZERO_LABEL}_loop:    ; [dst n]`,
+    `    DUP`,
+    `    JZ ${MEMZERO_LABEL}_done`,
+    `    OVER`,
+    `    PUSH8 0`,
+    `    STOREI8             ; [dst n]`,
+    `    SWAP`,
+    `    PUSH8 1`,
+    `    ADD`,
+    `    SWAP                ; [dst+1 n]`,
+    `    PUSH8 1`,
+    `    SUB`,
+    `    JMP ${MEMZERO_LABEL}_loop`,
+    `${MEMZERO_LABEL}_done:`,
+    `    DROP`,
+    `    DROP`,
+    `    RET`,
+];
+
+export const WSTRCPY_LABEL = '_zplc_wstrcpy';
+
+/**
+ * WSTRING assignment: [src dst] -> []. Keeps the capacity of dst, truncates to it, copies the
+ * characters and writes the terminator. Needs the byte-copy routine.
+ */
+export const WSTRCPY_HELPER: string[] = [
+    `${WSTRCPY_LABEL}:             ; [src dst]`,
+    `    OVER`,
+    `    LOADI16             ; [src dst len]`,
+    `    OVER`,
+    `    PUSH8 2`,
+    `    ADD`,
+    `    LOADI16             ; [src dst len cap]`,
+    `    OVER`,
+    `    OVER`,
+    `    GTU                 ; [src dst len cap len>cap]`,
+    `    JZ ${WSTRCPY_LABEL}_fits`,
+    `    SWAP`,
+    `    DROP                ; [src dst cap]`,
+    `    JMP ${WSTRCPY_LABEL}_copy`,
+    `${WSTRCPY_LABEL}_fits:`,
+    `    DROP                ; [src dst len]`,
+    `${WSTRCPY_LABEL}_copy:`,
+    `    DUP`,
+    `    PICK 2              ; [src dst len len dst]`,
+    `    SWAP`,
+    `    STOREI16            ; dst.len := len, [src dst len]`,
+    `    PUSH8 1`,
+    `    SHL                 ; [src dst n] n = bytes of characters`,
+    `    OVER`,
+    `    OVER`,
+    `    ADD`,
+    `    PUSH8 4`,
+    `    ADD                 ; [src dst n end]`,
+    `    PUSH16 0`,
+    `    STOREI16            ; terminator, [src dst n]`,
+    `    ROT                 ; [dst n src]`,
+    `    PUSH8 4`,
+    `    ADD`,
+    `    SWAP                ; [dst src+4 n]`,
+    `    ROT                 ; [src+4 n dst]`,
+    `    PUSH8 4`,
+    `    ADD`,
+    `    ROT                 ; [n dst+4 src+4]`,
+    `    ROT                 ; [dst+4 src+4 n]`,
+    `    CALL ${MEMCPY_LABEL}`,
+    `    RET`,
+];
+
 /** The helper routines a program may link, in the order they are appended. */
-export type HelperName = 'udiv32' | 'fcmp' | 'add64' | 'sub64' | 'cmp64';
+export type HelperName = 'udiv32' | 'fcmp' | 'add64' | 'sub64' | 'cmp64' | 'memcpy' | 'memzero' | 'wstrcpy';
 
 export const HELPERS: ReadonlyArray<{ name: HelperName; title: string; lines: string[] }> = [
     { name: 'udiv32', title: 'unsigned 32-bit division', lines: UDIV32_HELPER },
@@ -406,4 +508,7 @@ export const HELPERS: ReadonlyArray<{ name: HelperName; title: string; lines: st
     { name: 'add64', title: '64-bit addition', lines: ADD64_HELPER },
     { name: 'sub64', title: '64-bit subtraction', lines: SUB64_HELPER },
     { name: 'cmp64', title: '64-bit three-way comparison', lines: CMP64_HELPER },
+    { name: 'memcpy', title: 'byte copy', lines: MEMCPY_HELPER },
+    { name: 'memzero', title: 'byte clear', lines: MEMZERO_HELPER },
+    { name: 'wstrcpy', title: 'WSTRING assignment', lines: WSTRCPY_HELPER },
 ];

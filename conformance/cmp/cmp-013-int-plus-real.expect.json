@@ -1,6 +1,8 @@
 {
   "requirement": "CMP-013",
   "title": "a negative INT plus a REAL",
+  "matrix": ["functions.implicit-widening-conversion"],
+  "tags": ["arch-sensitive", "float-conversion"],
   "scans": 1,
   "scanMs": 10,
   "expect": [

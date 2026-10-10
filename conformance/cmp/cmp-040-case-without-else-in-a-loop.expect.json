@@ -1,0 +1,9 @@
+{
+  "requirement": "CMP-040",
+  "title": "CASE without ELSE inside a loop leaves nothing on the stack",
+  "matrix": ["statements.case"],
+  "scans": 1,
+  "scanMs": 10,
+  "note": "A label that matches no value used to leave the selector on the evaluation stack; the loader's stack verifier refuses a loop that grows it (RT-003).",
+  "expect": [{ "at": "%QW0", "type": "INT", "value": 11 }]
+}

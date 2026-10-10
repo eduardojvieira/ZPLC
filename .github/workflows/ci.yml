@@ -173,25 +173,16 @@ jobs:
           UBSAN_OPTIONS: halt_on_error=1
         run: ctest --test-dir "${{ runner.temp }}/zplc-core-sanitized-build" --output-on-failure
 
-      - name: Fuzz loader verification smoke
+      # VF-014: the loader fuzzer (mutations keep the CRC valid) and the run fuzzer (accepted artifacts are
+      # executed under the sanitizers) for 60 seconds each, in parallel. A finding fails the job and its
+      # reproducer is printed in the log (base64). The long run is proposed in tools/fuzz/nightly-fuzz.proposed.yml.
+      - name: Fuzz loader verification and artifact execution (short)
         env:
           ASAN_OPTIONS: detect_leaks=1
           UBSAN_OPTIONS: halt_on_error=1
-        run: |
-          cmake -S firmware/lib/zplc_core -B "${{ runner.temp }}/zplc-loader-fuzz-build" \
-            -DCMAKE_C_COMPILER=clang -DZPLC_BUILD_FUZZER=ON
-          cmake --build "${{ runner.temp }}/zplc-loader-fuzz-build" --target fuzz_loader_verify --parallel
-          corpus_dir="$(mktemp -d)"
-          trap 'rm -rf -- "$corpus_dir"' EXIT
-          python3 - "$corpus_dir" <<'PY'
-          import sys
-          from pathlib import Path
-
-          fixture = Path("firmware/lib/zplc_core/tests/fixtures/zplc-v1-code-task-tags.hex")
-          Path(sys.argv[1], "fixture").write_bytes(bytes.fromhex(fixture.read_text()))
-          PY
-          "${{ runner.temp }}/zplc-loader-fuzz-build/fuzz_loader_verify" "$corpus_dir" \
-            -runs=10000 -max_len=65536 -timeout=2
+          ZPLC_FUZZ_WORK: ${{ runner.temp }}/zplc-fuzz
+          ZPLC_FUZZ_ARTIFACTS: ${{ runner.temp }}/zplc-fuzz-artifacts
+        run: tools/fuzz/run.sh 60 both
 
   zephyr-twister:
     name: Zephyr Twister (native_sim/native/64)

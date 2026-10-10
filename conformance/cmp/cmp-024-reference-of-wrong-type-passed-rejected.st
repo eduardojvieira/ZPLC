@@ -1,0 +1,12 @@
+FUNCTION Peek : INT
+VAR_INPUT r : REF_TO INT; END_VAR
+  Peek := r^;
+END_FUNCTION
+
+PROGRAM Main
+VAR
+  d : DINT;
+  seen AT %QW0 : INT;
+END_VAR
+  seen := Peek(REF(d));
+END_PROGRAM

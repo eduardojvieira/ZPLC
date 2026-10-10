@@ -1,6 +1,7 @@
 {
   "requirement": "CMP-041",
   "title": "SUPER^ calls the method of the base block",
+  "matrix": ["pous.extends-override-final-super"],
   "scans": 1,
   "scanMs": 10,
   "expect": [{ "at": "%QW0", "type": "INT", "value": 2 }]

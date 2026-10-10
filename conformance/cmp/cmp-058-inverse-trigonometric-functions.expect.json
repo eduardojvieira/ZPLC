@@ -1,0 +1,17 @@
+{
+  "requirement": "CMP-058",
+  "title": "ASIN, ACOS and ATAN return radians",
+  "matrix": ["functions.trigonometric-logarithmic-exponential"],
+  "tags": ["arch-sensitive", "float"],
+  "note": "IEC 61131-3, numerical functions: ASIN, ACOS and ATAN are the principal values in radians; ASIN(0.5) = pi/6, ACOS(0.5) = pi/3, ATAN(1) = pi/4; the tolerance is 0.001",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QX0.0", "type": "BOOL", "value": true},
+    {"at": "%QX0.1", "type": "BOOL", "value": true},
+    {"at": "%QX0.2", "type": "BOOL", "value": true},
+    {"at": "%QX0.3", "type": "BOOL", "value": true},
+    {"at": "%QX0.4", "type": "BOOL", "value": true},
+    {"at": "%QX0.5", "type": "BOOL", "value": true}
+  ]
+}

@@ -1,6 +1,7 @@
 {
   "requirement": "VF-001",
   "title": "BOOL output toggles on every scan",
+  "matrix": ["data-types.bool", "configuration.cyclic-tasks"],
   "scans": 4,
   "scanMs": 10,
   "expect": [

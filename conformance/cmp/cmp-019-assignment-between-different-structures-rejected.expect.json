@@ -1,0 +1,11 @@
+{
+  "requirement": "CMP-019",
+  "title": "a structure assigned to a structure of another type is rejected",
+  "build": "fails",
+  "lines": [
+    9
+  ],
+  "messageIncludes": [
+    "Cannot assign Pt"
+  ]
+}

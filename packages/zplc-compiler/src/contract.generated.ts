@@ -11,7 +11,7 @@
 export const ABI_VERSION = { major: 1, minor: 0 } as const;
 
 /** Draft contract counter (CMP-052): written in header word 28 of every artifact and compared by the loader. */
-export const DRAFT_COUNTER = 1 as const;
+export const DRAFT_COUNTER = 2 as const;
 
 /** Container (.zplc file) constants. */
 export const CONTAINER = {
@@ -440,8 +440,9 @@ export const LOADER_ERRORS = [
   { name: "ZPLC_LOADER_ERR_MEMORY", code: -13, doc: "Static memory access outside the writable regions" },
   { name: "ZPLC_LOADER_ERR_TASK", code: -14, doc: "Task definition is invalid or there are too many tasks" },
   { name: "ZPLC_LOADER_ERR_TAGS", code: -15, doc: "Tag entry is invalid" },
-  { name: "ZPLC_LOADER_ERR_COMM", code: -16, doc: "Communication function-block kind is NONE or at or above the kind limit" },
+  { name: "ZPLC_LOADER_ERR_COMM", code: -16, doc: "Communication function-block kind is NONE or at or above the kind limit, or a block at a statically known address does not fit one memory region" },
   { name: "ZPLC_LOADER_ERR_DRAFT", code: -17, doc: "Draft contract counter of the artifact differs from the loader's, or the artifact has none" },
+  { name: "ZPLC_LOADER_ERR_STACK", code: -18, doc: "The evaluation stack can underflow, or exceed the depth the task declares, on some path, or the verifier cannot prove that it cannot" },
 ] as const;
 
 /** Every communication function-block kind identifier of the core (zplc_comm_fb_kind_t). */

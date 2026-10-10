@@ -1,0 +1,9 @@
+{
+  "requirement": "CMP-006",
+  "title": "a VAR_ACCESS block is rejected",
+  "matrix": ["declarations.var-access-var-config-persistent"],
+  "note": "Decision D-04 (2.x recommended): VAR_ACCESS is left to 2.x and rejected with a message",
+  "build": "fails",
+  "lines": [1],
+  "messageIncludes": []
+}
