@@ -10,7 +10,7 @@ const read = (name: string) => readFileSync(path.join(electronDir, name), 'utf8'
 const mainSource = read('main.ts');
 const preloadSource = read('preload.ts');
 
-describe('update check IPC boundary (IDE-010, IDE-017)', () => {
+describe('update check IPC boundary (IDE-010)', () => {
   it('registers the channel that the protocol defines and repeats it once in the preload', () => {
     expect(UPDATE_CHECK_CHANNEL).toEqual({ RUN: 'update-check:run' });
     expect(mainSource).toContain("from './updateCheckProtocol.js'");

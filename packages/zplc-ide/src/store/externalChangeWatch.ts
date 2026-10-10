@@ -92,7 +92,9 @@ export function resolveConflict(path: string, choice: 'mine' | 'disk'): void {
  */
 export function startExternalChangeWatch(): () => void {
   const bridge = typeof window === 'undefined' ? undefined : window.electronAPI?.projectFiles;
-  if (!bridge || typeof bridge.watch !== 'function' || typeof bridge.onChanged !== 'function') return () => undefined;
+  const watch = bridge?.watch?.bind(bridge);
+  const onChanged = bridge?.onChanged?.bind(bridge);
+  if (!watch || !onChanged) return () => undefined;
   let watched: string | null = null;
   let running = false;
   let again = false;
@@ -119,14 +121,14 @@ export function startExternalChangeWatch(): () => void {
     if (rootId === watched) return;
     watched = rootId;
     useExternalConflicts.setState({ conflicts: [] });
-    if (rootId !== null) void Promise.resolve(bridge.watch({ rootId })).catch((error: unknown) => debugLog('[ExternalChanges] watch failed', error));
+    if (rootId !== null) void Promise.resolve(watch({ rootId })).catch((error: unknown) => debugLog('[ExternalChanges] watch failed', error));
   };
 
   follow();
   const unsubscribe = useIDEStore.subscribe((state, previous) => {
     if (state.directoryHandle !== previous.directoryHandle || state.isProjectOpen !== previous.isProjectOpen) follow();
   });
-  const stopListening = bridge.onChanged((raw) => {
+  const stopListening = onChanged((raw) => {
     const change = parseProjectChange(raw);
     if (change && change.rootId === watched) void run();
   });

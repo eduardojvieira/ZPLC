@@ -130,9 +130,10 @@ export type ProjectFilesBridge = {
   openRecent(request: RecentRequests['openRecent']): Promise<ProjectFilesResult<ProjectFolder>>;
   forgetRecent(request: RecentRequests['forgetRecent']): Promise<ProjectFilesResult<null>>;
   markOpened(request: RecentRequests['markOpened']): Promise<ProjectFilesResult<null>>;
-  watch(request: WatchRequests['watch']): Promise<ProjectFilesResult<null>>;
+  /** Both are absent where nothing watches (a test host, an older preload): the renderer then simply never hears of a change. */
+  watch?(request: WatchRequests['watch']): Promise<ProjectFilesResult<null>>;
   /** Subscribes to the batches of changes (IDE-004); returns the function that stops listening. */
-  onChanged(callback: (change: unknown) => void): () => void;
+  onChanged?(callback: (change: unknown) => void): () => void;
 } & { [Op in ProjectFilesOp]: (request: ProjectFilesRequests[Op]) => Promise<ProjectFilesResult<ProjectFilesValues[Op]>> };
 
 type Field = 'id' | 'path' | 'bytes' | 'bool';

@@ -121,7 +121,7 @@ describe('recovery store (IDE-006)', () => {
   });
 });
 
-describe('recovery messages (IDE-006, IDE-017)', () => {
+describe('recovery messages (IDE-006)', () => {
   test('accept exactly the documented fields and nothing else', () => {
     expect(parseRecoveryWrite({ rootId: 'r', path: 'src/A.st', content: 'x' })).toEqual({ rootId: 'r', path: 'src/A.st', content: 'x' });
     expect(parseRecoveryList({ rootId: 'r' })).toEqual({ rootId: 'r' });

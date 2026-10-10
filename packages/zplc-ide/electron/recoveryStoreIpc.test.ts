@@ -17,7 +17,7 @@ function handler(channel: string): string {
   return mainSource.slice(start, mainSource.indexOf('\n  });', start) + 6);
 }
 
-describe('recovery IPC boundary (IDE-006, IDE-017)', () => {
+describe('recovery IPC boundary (IDE-006)', () => {
   it('registers in the main process the channels that the protocol defines, and repeats them once in the preload', () => {
     expect(RECOVERY_CHANNEL).toEqual({ WRITE: 'recovery:write', LIST: 'recovery:list', DISCARD: 'recovery:discard' });
     expect(mainSource).toContain("from './recoveryStoreProtocol.js'");

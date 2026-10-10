@@ -963,7 +963,7 @@ export const JOURNEYS: Journey[] = [
   },
 
   {
-    name: '21 Preferences apply and persist per user', example: 'motor_start_stop', proves: ['IDE-007', 'IDE-010'], partly: [],
+    name: '21 Preferences apply and persist per user', example: 'motor_start_stop', proves: ['IDE-007'], partly: ['IDE-010'],
     run: async (app, { project, relaunch }) => {
       const file = join(project, 'src', 'Motor.st');
       /** Walks a native select to the option with this text with the arrow keys, as a keyboard user would. */

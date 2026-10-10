@@ -814,10 +814,44 @@
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"3b Save with Ctrl+S in the editor","partial":true}
   ],
   "IDE-004": [
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"15 New file: create, edit, save, reopen","partial":true}
+    {"kind":"unit","ref":"packages/zplc-ide/electron/projectFiles.test.ts","test":"watching the window folder (IDE-004)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/projectFilesProtocol.test.ts","test":"watching the folder for changes made outside Studio (IDE-004)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/projectWatcher.test.ts","test":"project watcher (IDE-004)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/projectWatcher.test.ts","test":"which changes are worth telling the window about (IDE-004)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/project/treeOperations.test.ts","test":"a copy of a file (IDE-004)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/project/treeOperations.test.ts","test":"folders to choose from (IDE-004)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/project/treeOperations.test.ts","test":"names in the project tree (IDE-004)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/project/treeOperations.test.ts","test":"names that the build reads as one (IDE-004)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/project/treeOperations.test.ts","test":"open files when their path changes (IDE-004)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/project/treeOperations.test.ts","test":"the programs a task names (IDE-004)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/project/treeOperations.test.ts","test":"which folders are open in the Explorer (IDE-004)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/externalChanges.test.ts","test":"what a change made outside Studio does to an open file (IDE-004)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/useIDEStore.test.ts","test":"project tree operations (IDE-004)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"15 New file: create, edit, save, reopen","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"23 Project tree operations","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"24 Changes made outside Studio","partial":true}
   ],
   "IDE-005": [
-    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"10 Close with unsaved changes","partial":true}
+    {"kind":"unit","ref":"packages/zplc-ide/electron/appMenu.test.ts","test":"reload shortcuts (IDE-005, stopgap: the chord only)","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"10 Close with unsaved changes","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"22 Close Project asks before it closes","partial":true}
+  ],
+  "IDE-006": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/recoveryStore.test.ts","test":"recovery messages (IDE-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/recoveryStore.test.ts","test":"recovery store (IDE-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/recoveryStoreIpc.test.ts","test":"recovery IPC boundary (IDE-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ipc/recoveryBridge.test.ts","test":"recovery bridge adapter (IDE-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/recoveryPersistence.test.ts","test":"recovery plan (IDE-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/recoveryPersistence.test.ts","test":"recovery saver (IDE-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/recoveryPersistence.test.ts","test":"recovery wiring to the store (IDE-006)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/recoveryOffer.test.ts","test":"the offer to restore modified files after a crash (IDE-006)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"19 Recover modified files after a crash"}
+  ],
+  "IDE-007": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/autosave.test.ts","test":"autosave (IDE-007)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/autosave.test.ts","test":"autosave wiring to the store (IDE-007)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/appSettings.test.ts","test":"application settings (IDE-007, IDE-010)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"21 Preferences apply and persist per user"}
   ],
   "IDE-008": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/projectFiles.test.ts","test":"recent projects (IDE-008)"},
@@ -845,6 +879,20 @@
   "IDE-009": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"2 Create a project from an example","partial":true},
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"2b Create a new project","partial":true}
+  ],
+  "IDE-010": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/updateCheck.test.ts","test":"latest release (IDE-010)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/updateCheck.test.ts","test":"update check (IDE-010)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/updateCheck.test.ts","test":"version order (IDE-010)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/updateCheckIpc.test.ts","test":"update check IPC boundary (IDE-010)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/ipc/updateCheckBridge.test.ts","test":"update check bridge adapter (IDE-010)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/store/useAppSettings.test.ts","test":"application settings store (IDE-010)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/utils/appSettings.test.ts","test":"application settings (IDE-007, IDE-010)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"21 Preferences apply and persist per user","partial":true}
+  ],
+  "IDE-011": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/ErrorBoundary.test.tsx","test":"a region that throws (IDE-011)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"20 A failing region does not blank the window"}
   ],
   "IDE-019": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"18 Force an input while stopped at a breakpoint","partial":true},
