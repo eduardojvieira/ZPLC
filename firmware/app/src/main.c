@@ -15,6 +15,7 @@
 #include "program_boot_restore.h"
 #include "program_store.h"
 #include "zplc_config.h"
+#include "zplc_lock.h"
 #include "zplc_time.h"
 #include <zephyr/kernel.h>
 #include <zplc_core.h>
@@ -145,11 +146,17 @@ int zplc_legacy_apply_safe_outputs_locked(void) {
 
 static int legacy_latch_boot_restore_failure(void) {
   int safe_result;
+  int init_result;
 
-  k_mutex_lock(&legacy_runtime_lock, K_FOREVER);
+  if (zplc_lock_take(&legacy_runtime_lock, "runtime lock") != 0) {
+    return -EIO;
+  }
   step_requested = 0;
-  zplc_core_init();
+  init_result = zplc_core_init();
   safe_result = zplc_legacy_apply_safe_outputs_locked();
+  if (safe_result == 0 && init_result != 0) {
+    safe_result = init_result;
+  }
   runtime_state = ZPLC_STATE_ERROR;
   memset(program_buffer, 0, program_buffer_size);
   memset(program_staging_buffer, 0,
@@ -180,7 +187,9 @@ static int try_restore_legacy_program(void) {
       program_staging_buffer, sizeof(s_program_staging_buf), s_program_workspace,
       sizeof(s_program_workspace), &saved_len, &restored_scan_interval_ms);
   if (result == ZPLC_BOOT_RESTORE_EMPTY) {
-    k_mutex_lock(&legacy_runtime_lock, K_FOREVER);
+    if (zplc_lock_take(&legacy_runtime_lock, "runtime lock") != 0) {
+      return -EIO;
+    }
     ret = zplc_legacy_apply_safe_outputs_locked();
     if (ret != 0)
       runtime_state = ZPLC_STATE_ERROR;
@@ -197,7 +206,10 @@ static int try_restore_legacy_program(void) {
     return -EIO;
   }
 
-  k_mutex_lock(&legacy_runtime_lock, K_FOREVER);
+  if (zplc_lock_take(&legacy_runtime_lock, "runtime lock") != 0) {
+    (void)legacy_latch_boot_restore_failure();
+    return -EIO;
+  }
   ret = zplc_core_load(program_staging_buffer, saved_len, s_program_workspace,
                        sizeof(s_program_workspace));
   if (ret != 0) {
@@ -253,7 +265,14 @@ static int run_legacy_mode(void) {
     bool executed_cycle = false;
     bool wait_for_next_cycle = false;
 
-    k_mutex_lock(&legacy_runtime_lock, K_FOREVER);
+    if (zplc_lock_take(&legacy_runtime_lock, "runtime lock") != 0) {
+      /* Without the lock the loop cannot tell what the runtime is doing: the pins go safe and it tries again. */
+      for (int channel = 0; channel < ZPLC_GPIO_OUTPUT_COUNT; channel++) {
+        (void)zplc_hal_gpio_write(channel, 0U);
+      }
+      k_msleep(100);
+      continue;
+    }
     /* A pending step is meaningful only while paused. */
     if (runtime_state == ZPLC_STATE_RUNNING) {
       step_requested = 0;

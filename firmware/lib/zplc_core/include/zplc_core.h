@@ -571,9 +571,13 @@ const char* zplc_core_version(void);
 /**
  * @brief Initialize the ZPLC core.
  *
- * Initializes shared memory and default VM instance.
+ * Initializes shared memory and default VM instance, and creates the
+ * process-image lock.
  *
- * @return 0 on success
+ * @return 0 on success, -1 when the process-image lock could not be created.
+ *         In that case the memory and the VM are initialised but the runtime
+ *         must not start: external threads cannot be synchronised with the
+ *         scan. A later call tries again.
  */
 int zplc_core_init(void);
 

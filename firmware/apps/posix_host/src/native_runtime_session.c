@@ -83,9 +83,9 @@ static int narrow_uint16(uint32_t value, uint16_t *out)
     return 0;
 }
 
-static void retain_lock(void)
+static int retain_lock(void)
 {
-    (void)zplc_pi_lock();
+    return zplc_pi_lock();
 }
 
 static void retain_unlock(void)
@@ -2224,7 +2224,11 @@ void zplc_native_runtime_session_init(zplc_native_runtime_session_t *session)
     session->state = ZPLC_NATIVE_SESSION_IDLE;
     session->scan_interval_ms = 100U;
     session->deadline_miss_limit = deadline_miss_limit();
-    zplc_core_init();
+    if (zplc_core_init() != 0) {
+        /* No process-image lock: the session cannot run a program (RT-030). */
+        session->state = ZPLC_NATIVE_SESSION_ERROR;
+        return;
+    }
     session_retain_configure();
 
     if (zplc_native_program_store_restore(session->program, sizeof(session->program),

@@ -54,6 +54,14 @@ extern "C" {
 #endif
 #endif
 
+/**
+ * @brief A lock the scheduler needed could not be taken or created (RT-030).
+ *
+ * Returned by the control-plane calls, which change nothing in that case, and by a scan or a control path that
+ * had to reach the safe state without the memory lock: the outputs are driven safe and the fault is latched.
+ */
+#define ZPLC_SCHED_ERR_LOCK (-100)
+
 /** @brief Minimum task interval in microseconds (1ms) */
 #define ZPLC_MIN_INTERVAL_US 1000
 

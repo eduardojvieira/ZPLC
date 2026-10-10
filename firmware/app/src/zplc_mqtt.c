@@ -682,7 +682,9 @@ static int encode_sparkplug_payload(const zplc_tag_entry_t *tag,
     return -1;
   }
 
-  zplc_pi_lock();
+  if (zplc_pi_lock() != 0) {
+    return -1;
+  }
 
   uint16_t base = tag->var_addr & 0xF000U;
   uint16_t offset = tag->var_addr & 0x0FFFU;
@@ -1248,7 +1250,9 @@ static int publish_generic_telemetry(struct mqtt_client *client) {
   }
   used = (size_t)written;
 
-  zplc_pi_lock();
+  if (zplc_pi_lock() != 0) {
+    return -EBUSY;
+  }
   uint16_t count = zplc_core_get_tag_count();
   for (uint16_t i = 0U; i < count; i++) {
     const zplc_tag_entry_t *tag = zplc_core_get_tag(i);

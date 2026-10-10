@@ -44,6 +44,7 @@
 #include <zplc_retain.h>
 #endif
 #include "zplc_config.h"
+#include "zplc_lock.h"
 #include "zplc_parse.h"
 #include "zplc_time.h"
 #include "program_admission.h"
@@ -54,6 +55,17 @@ extern void zplc_mqtt_request_backoff_reset(void);
 
 #ifdef CONFIG_ZPLC_SCHEDULER
 #include <zplc_scheduler.h>
+#endif
+
+#ifdef CONFIG_ZPLC_SCHEDULER
+/* RT-030: a release of the scheduler lock that fails is reported to the operator; nothing else can be done. */
+static void sched_unlock_reported(const struct shell *sh) {
+  int rc = zplc_sched_unlock();
+
+  if (rc != 0) {
+    shell_error(sh, "ERROR: scheduler lock release failed (%d)", rc);
+  }
+}
 #endif
 
 #include <zephyr/version.h>
@@ -96,6 +108,16 @@ static uint8_t program_admission_workspace[ZPLC_LOADER_VERIFY_WORKSPACE_SIZE];
 extern struct k_mutex legacy_runtime_lock;
 extern uint32_t legacy_scan_interval_ms;
 extern void zplc_legacy_wake(void);
+
+/* RT-030: a command that cannot take the runtime lock says so and does nothing. */
+static int legacy_lock_take(const struct shell *sh) {
+  int rc = zplc_lock_take(&legacy_runtime_lock, "runtime lock");
+
+  if (rc != 0) {
+    shell_error(sh, "ERROR: runtime lock unavailable (%d)", rc);
+  }
+  return rc;
+}
 /* Implemented in main.c; callers hold legacy_runtime_lock. */
 extern int zplc_legacy_apply_safe_outputs_locked(void);
 #endif
@@ -457,7 +479,7 @@ static void hil_watch_poll_once(bool force_emit) {
   }
 
 #ifdef CONFIG_ZPLC_SCHEDULER
-  (void)zplc_sched_unlock();
+  sched_unlock_reported(s_hil_shell);
 #endif
 }
 
@@ -1192,7 +1214,7 @@ static int cmd_dbg_mpeek(const struct shell *sh, size_t argc, char **argv) {
     /* Validate bounds */
     if (base == NULL || (uint32_t)offset + (uint32_t)len > (uint32_t)region_size) {
 #ifdef CONFIG_ZPLC_SCHEDULER
-      (void)zplc_sched_unlock();
+      sched_unlock_reported(sh);
 #endif
       shell_error(sh, "ERROR: Invalid address or out-of-bounds at 0x%lX", addr);
       return -EINVAL;
@@ -1215,7 +1237,7 @@ static int cmd_dbg_mpeek(const struct shell *sh, size_t argc, char **argv) {
   shell_print(sh, "]}");
 
 #ifdef CONFIG_ZPLC_SCHEDULER
-  (void)zplc_sched_unlock();
+  sched_unlock_reported(sh);
 #endif
 
   return 0;
@@ -1253,7 +1275,7 @@ static int cmd_dbg_poke(const struct shell *sh, size_t argc, char **argv) {
   rc = zplc_force_write_bytes((uint16_t)addr, &byte, 1U);
 
 #ifdef CONFIG_ZPLC_SCHEDULER
-  (void)zplc_sched_unlock();
+  sched_unlock_reported(sh);
 #endif
 
   if (rc != 0) {
@@ -1300,7 +1322,7 @@ static int cmd_dbg_force_set(const struct shell *sh, size_t argc, char **argv) {
   rc = zplc_force_set_bytes((uint16_t)addr, bytes, (uint16_t)decoded);
 
 #ifdef CONFIG_ZPLC_SCHEDULER
-  (void)zplc_sched_unlock();
+  sched_unlock_reported(sh);
 #endif
 
   if (rc == -2) {
@@ -1350,7 +1372,7 @@ static int cmd_dbg_force_clear(const struct shell *sh, size_t argc, char **argv)
   rc = zplc_force_clear((uint16_t)addr);
 
 #ifdef CONFIG_ZPLC_SCHEDULER
-  (void)zplc_sched_unlock();
+  sched_unlock_reported(sh);
 #endif
 
   if (rc != 0) {
@@ -1377,7 +1399,7 @@ static int cmd_dbg_force_clear_all(const struct shell *sh, size_t argc,
   zplc_force_clear_all();
 
 #ifdef CONFIG_ZPLC_SCHEDULER
-  (void)zplc_sched_unlock();
+  sched_unlock_reported(sh);
 #endif
 
   shell_print(sh, "OK: Cleared all force entries");
@@ -1433,14 +1455,14 @@ static int cmd_dbg_force_list(const struct shell *sh, size_t argc, char **argv) 
     JSON_NEWLINE(sh);
 
 #ifdef CONFIG_ZPLC_SCHEDULER
-    (void)zplc_sched_unlock();
+    sched_unlock_reported(sh);
 #endif
     return 0;
   }
 
   if (count == 0U) {
 #ifdef CONFIG_ZPLC_SCHEDULER
-    (void)zplc_sched_unlock();
+    sched_unlock_reported(sh);
 #endif
     shell_print(sh, "No active force entries");
     return 0;
@@ -1466,7 +1488,7 @@ static int cmd_dbg_force_list(const struct shell *sh, size_t argc, char **argv) 
   }
 
 #ifdef CONFIG_ZPLC_SCHEDULER
-  (void)zplc_sched_unlock();
+  sched_unlock_reported(sh);
 #endif
 
   return 0;
@@ -1641,7 +1663,9 @@ static int cmd_zplc_load(const struct shell *sh, size_t argc, char **argv) {
     shell_error(sh, "Usage: zplc load <size>");
     return -EINVAL;
   }
-  k_mutex_lock(&legacy_runtime_lock, K_FOREVER);
+  if (legacy_lock_take(sh) != 0) {
+    return -EIO;
+  }
   faulted = runtime_state == ZPLC_STATE_ERROR;
   k_mutex_unlock(&legacy_runtime_lock);
   if (faulted) {
@@ -1678,11 +1702,17 @@ static int legacy_validate_program(const uint8_t *binary, size_t size,
  * invalidating both buffers and leaving outputs de-energized. */
 static int legacy_latch_ambiguous_program_publication(void) {
   int safe_result;
+  int init_result;
 
-  k_mutex_lock(&legacy_runtime_lock, K_FOREVER);
+  if (zplc_lock_take(&legacy_runtime_lock, "runtime lock") != 0) {
+    return -EIO;
+  }
   step_requested = 0;
-  zplc_core_init();
+  init_result = zplc_core_init();
   safe_result = zplc_legacy_apply_safe_outputs_locked();
+  if (safe_result == 0 && init_result != 0) {
+    safe_result = init_result;
+  }
   runtime_state = ZPLC_STATE_ERROR;
   memset(program_buffer, 0, program_buffer_size);
   memset(program_staging_buffer, 0,
@@ -1743,7 +1773,11 @@ static int cmd_zplc_data(const struct shell *sh, size_t argc, char **argv) {
       memset(program_staging_buffer, 0, program_buffer_size);
       return -EIO;
     }
-    k_mutex_lock(&legacy_runtime_lock, K_FOREVER);
+    if (legacy_lock_take(sh) != 0) {
+      program_expected_size = 0;
+      program_staging_received_size = 0;
+      return -EIO;
+    }
     zplc_state_t old_state = runtime_state;
     runtime_state = ZPLC_STATE_IDLE;
     ret = zplc_core_load(program_staging_buffer, program_staging_received_size,
@@ -1785,7 +1819,9 @@ static int cmd_zplc_data(const struct shell *sh, size_t argc, char **argv) {
 static int cmd_zplc_start(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
-  k_mutex_lock(&legacy_runtime_lock, K_FOREVER);
+  if (legacy_lock_take(sh) != 0) {
+    return -EIO;
+  }
   if (runtime_state != ZPLC_STATE_READY && runtime_state != ZPLC_STATE_PAUSED) {
     k_mutex_unlock(&legacy_runtime_lock);
     shell_error(sh, "ERROR: Not ready (state=%s)", state_name(runtime_state));
@@ -1811,7 +1847,9 @@ static int cmd_zplc_stop(const struct shell *sh, size_t argc, char **argv) {
 
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
-  k_mutex_lock(&legacy_runtime_lock, K_FOREVER);
+  if (legacy_lock_take(sh) != 0) {
+    return -EIO;
+  }
   was_faulted = runtime_state == ZPLC_STATE_ERROR;
   step_requested = 0;
   {
@@ -1838,7 +1876,9 @@ static int cmd_zplc_reset(const struct shell *sh, size_t argc, char **argv) {
 
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
-  k_mutex_lock(&legacy_runtime_lock, K_FOREVER);
+  if (legacy_lock_take(sh) != 0) {
+    return -EIO;
+  }
   step_requested = 0;
   runtime_state = ZPLC_STATE_IDLE;
   cycle_count = 0;
@@ -1875,7 +1915,15 @@ static int cmd_zplc_reset(const struct shell *sh, size_t argc, char **argv) {
     runtime_state = ZPLC_STATE_READY;
     k_mutex_unlock(&legacy_runtime_lock);
   } else {
-    zplc_core_init();
+    int init_result = zplc_core_init();
+
+    if (init_result != 0) {
+      runtime_state = ZPLC_STATE_ERROR;
+      k_mutex_unlock(&legacy_runtime_lock);
+      zplc_legacy_wake();
+      shell_error(sh, "ERROR: Core init failed (%d)", init_result);
+      return init_result;
+    }
     legacy_scan_interval_ms = 100U;
     k_mutex_unlock(&legacy_runtime_lock);
   }
@@ -1930,7 +1978,9 @@ static int cmd_zplc_status(const struct shell *sh, size_t argc, char **argv) {
 static int cmd_dbg_pause(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
-  k_mutex_lock(&legacy_runtime_lock, K_FOREVER);
+  if (legacy_lock_take(sh) != 0) {
+    return -EIO;
+  }
   if (runtime_state != ZPLC_STATE_RUNNING) {
     k_mutex_unlock(&legacy_runtime_lock);
     shell_warn(sh, "WARN: Not running (state=%s)", state_name(runtime_state));
@@ -1947,7 +1997,9 @@ static int cmd_dbg_pause(const struct shell *sh, size_t argc, char **argv) {
 static int cmd_dbg_resume(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argc);
   ARG_UNUSED(argv);
-  k_mutex_lock(&legacy_runtime_lock, K_FOREVER);
+  if (legacy_lock_take(sh) != 0) {
+    return -EIO;
+  }
   if (runtime_state != ZPLC_STATE_PAUSED) {
     k_mutex_unlock(&legacy_runtime_lock);
     shell_warn(sh, "WARN: Not paused (state=%s)", state_name(runtime_state));
@@ -1966,7 +2018,9 @@ static int cmd_dbg_step(const struct shell *sh, size_t argc, char **argv) {
   ARG_UNUSED(argv);
   zplc_state_t observed_state;
 
-  k_mutex_lock(&legacy_runtime_lock, K_FOREVER);
+  if (legacy_lock_take(sh) != 0) {
+    return -EIO;
+  }
   observed_state = runtime_state;
   k_mutex_unlock(&legacy_runtime_lock);
   if (observed_state == ZPLC_STATE_READY) {
@@ -1976,7 +2030,9 @@ static int cmd_dbg_step(const struct shell *sh, size_t argc, char **argv) {
       return rc;
     }
   }
-  k_mutex_lock(&legacy_runtime_lock, K_FOREVER);
+  if (legacy_lock_take(sh) != 0) {
+    return -EIO;
+  }
   if (runtime_state == ZPLC_STATE_RUNNING) {
     runtime_state = ZPLC_STATE_PAUSED;
   }

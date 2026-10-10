@@ -547,7 +547,9 @@ static int poll_modbus_tags(bool use_tcp)
 
         value = (width == 2U) ? (((uint32_t)regs[0] << 16) | regs[1]) : regs[0];
 
-        zplc_pi_lock();
+        if (zplc_pi_lock() != 0) {
+            return -EBUSY;
+        }
         mem_write_val(tag->var_addr, (zplc_data_type_t)tag->var_type, value);
         zplc_pi_unlock();
     }

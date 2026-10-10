@@ -92,6 +92,8 @@ uint32_t zplc_sched_test_watchdog_prepare_count(void);
 uint32_t zplc_sched_test_watchdog_feed_count(void);
 uint32_t zplc_sched_test_watchdog_disarm_count(void);
 void zplc_sched_test_force_next_deadline_miss(void);
+/** @brief Make the next take of the control (non-zero) or memory (zero) mutex fail with result (RT-030). */
+void zplc_sched_test_fail_next_lock(int result, int control_lock);
 
 /* Seams for the portable release and duration arithmetic. */
 int zplc_sched_test_release_before(uint64_t left_uptime_ms,

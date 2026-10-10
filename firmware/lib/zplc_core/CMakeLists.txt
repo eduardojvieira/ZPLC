@@ -293,6 +293,22 @@ target_compile_definitions(zplc_cfg_limits PRIVATE
     CONFIG_LOG_PROCESS_THREAD_CUSTOM_PRIORITY=1 CONFIG_LOG_PROCESS_THREAD_PRIORITY=14
 )
 
+# Test: a failure to create or take the process-image lock is reported (RT-030). The test supplies its own HAL.
+add_executable(test_core_lock
+    tests/test_core_lock.c
+    src/core/zplc_core.c
+    src/core/zplc_loader.c
+    src/core/zplc_comm_dispatch.c
+)
+
+target_include_directories(test_core_lock PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_compile_definitions(test_core_lock PRIVATE ZPLC_CORE_VERSION_STR="${ZPLC_CORE_VERSION_STR}")
+
+add_test(NAME test_core_lock COMMAND test_core_lock)
+
 # Test: VM Core Execution
 add_executable(test_vm_core
     tests/test_vm_core.c

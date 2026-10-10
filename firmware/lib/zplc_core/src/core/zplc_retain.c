@@ -52,7 +52,7 @@ static struct {
   int configured;
   uint8_t *region;
   uint32_t region_size;
-  void (*lock)(void);
+  int (*lock)(void);
   void (*unlock)(void);
   uint32_t min_interval_ms;
   int restored;            /* restore ran since init */
@@ -105,11 +105,20 @@ static void chunk_key(unsigned slot, unsigned chunk, char *key)
   key[9] = '\0';
 }
 
-static void lock_region(void)
+/* Takes the lock; 0 when the region may be touched. A lock that could not be taken is never ignored: the caller
+ * leaves the region alone, and the result is kept in the status (RT-030). */
+static int lock_region(void)
 {
+  int result = 0;
+
   if (s.lock != NULL) {
-    s.lock();
+    result = s.lock();
   }
+  if (result != 0) {
+    s.status.last_error = (int32_t)result;
+    zplc_hal_log("[RETAIN] the region lock could not be taken: %d\n", result);
+  }
+  return result;
 }
 
 static void unlock_region(void)
@@ -327,13 +336,18 @@ zplc_retain_reason_t zplc_retain_restore(const zplc_retain_identity_t *identity,
   invalid_seen |= (failed[0] | failed[1]) != 0;
 
   if (matched >= 0) {
-    lock_region();
-    memcpy(s.region, s_buf + ZPLC_RETAIN_HEADER_SIZE, s.region_size);
-    unlock_region();
-    s.image_valid = 1;
-    s.image_id = *identity;
-    s.status.sequence = header[matched].sequence;
-    reason = ZPLC_RETAIN_RESTORED;
+    if (lock_region() != 0) {
+      /* The record is intact, but the region cannot be written coherently: say so, and write nothing. */
+      backend_down = 1;
+      reason = ZPLC_RETAIN_IO_ERROR;
+    } else {
+      memcpy(s.region, s_buf + ZPLC_RETAIN_HEADER_SIZE, s.region_size);
+      unlock_region();
+      s.image_valid = 1;
+      s.image_id = *identity;
+      s.status.sequence = header[matched].sequence;
+      reason = ZPLC_RETAIN_RESTORED;
+    }
   } else {
     if (backend_down != 0) {
       reason = ZPLC_RETAIN_IO_ERROR;
@@ -344,9 +358,13 @@ zplc_retain_reason_t zplc_retain_restore(const zplc_retain_identity_t *identity,
     } else {
       reason = ZPLC_RETAIN_NONE;
     }
-    lock_region();
-    memset(s.region, 0, s.region_size);
-    unlock_region();
+    if (lock_region() != 0) {
+      backend_down = 1;
+      reason = ZPLC_RETAIN_IO_ERROR;
+    } else {
+      memset(s.region, 0, s.region_size);
+      unlock_region();
+    }
     s.status.sequence = s.newest_sequence;
   }
 
@@ -390,7 +408,10 @@ zplc_retain_save_result_t zplc_retain_save(const zplc_retain_identity_t *identit
   }
 
   /* One coherent copy of the region, under the hook, and no backend call under it. */
-  lock_region();
+  if (lock_region() != 0) {
+    s.status.save_errors++;
+    return ZPLC_RETAIN_SAVE_IO_ERROR;
+  }
   unchanged = s.image_valid != 0 && s.image_id.crc32 == identity->crc32 &&
               s.image_id.code_size == identity->code_size &&
               memcmp(s.region, s_buf + ZPLC_RETAIN_HEADER_SIZE, s.region_size) == 0;
@@ -452,7 +473,10 @@ zplc_retain_save_result_t zplc_retain_cold_reset(const zplc_retain_identity_t *i
   if (s.configured == 0 || identity == NULL) {
     return ZPLC_RETAIN_SAVE_NOT_READY;
   }
-  lock_region();
+  if (lock_region() != 0) {
+    s.status.save_errors++;
+    return ZPLC_RETAIN_SAVE_IO_ERROR;
+  }
   memset(s.region, 0, s.region_size);
   unlock_region();
   result = zplc_retain_save(identity, now_ms, ZPLC_RETAIN_SAVE_FORCED);

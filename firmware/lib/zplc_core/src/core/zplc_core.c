@@ -2853,7 +2853,8 @@ int zplc_core_init(void) {
   /* Initialize shared memory */
   zplc_mem_init();
 
-  /* Create PI Mutex */
+  /* Create PI Mutex. A runtime without it cannot synchronise its communication threads with the scan: the failure
+   * is reported (RT-030) and a later call creates it again. */
   if (pi_mutex == NULL) {
     pi_mutex = zplc_hal_mutex_create();
   }
@@ -2862,7 +2863,7 @@ int zplc_core_init(void) {
   zplc_vm_init(&default_vm);
   default_program_loaded = 0;
 
-  return 0;
+  return pi_mutex != NULL ? 0 : -1;
 }
 
 int zplc_core_shutdown(void) {

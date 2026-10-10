@@ -1576,5 +1576,73 @@ ZTEST(zplc_scheduler_admission, test_debug_mutation_waits_for_active_batch) {
   zassert_ok(zplc_sched_stop(), "stop debug lock program");
 }
 
+/* RT-030: a lock the scheduler cannot take is an error the caller sees, never a silent continuation. */
+ZTEST(zplc_scheduler_admission,
+      test_control_lock_failure_is_reported_and_changes_nothing) {
+  uint8_t program[PROGRAM_CAPACITY];
+  size_t size;
+
+  clear_scheduler();
+  size = build_program(program, 1U, ZPLC_TASK_CYCLIC, 1000U, 1U);
+  zassert_equal(zplc_sched_load(program, size), 1, "load a program");
+
+  zplc_sched_test_fail_next_lock(-EAGAIN, 1);
+  zassert_equal(zplc_sched_start(), ZPLC_SCHED_ERR_LOCK,
+                "start reports the control lock it could not take");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_IDLE,
+                "a refused start changes nothing");
+  zplc_sched_test_fail_next_lock(-EAGAIN, 1);
+  zassert_equal(zplc_sched_load(program, size), ZPLC_SCHED_ERR_LOCK,
+                "load reports it too");
+  zplc_sched_test_fail_next_lock(-EAGAIN, 1);
+  zassert_equal(zplc_sched_stop(), ZPLC_SCHED_ERR_LOCK, "and stop");
+  zplc_sched_test_fail_next_lock(-EAGAIN, 1);
+  zassert_equal(zplc_sched_debug_clear_breakpoints(0), ZPLC_SCHED_ERR_LOCK,
+                "and the debug calls");
+
+  zassert_ok(zplc_sched_start(), "the same start works once the lock is back");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_RUNNING,
+                "and the scheduler runs");
+  zassert_ok(zplc_sched_stop(), "stop");
+}
+
+ZTEST(zplc_scheduler_admission,
+      test_memory_lock_failure_latches_the_fault_with_outputs_safe) {
+  uint8_t program[PROGRAM_CAPACITY];
+  uint8_t replacement[PROGRAM_CAPACITY];
+  size_t size;
+  uint8_t force = 1U;
+  zplc_sched_stats_t stats;
+
+  clear_scheduler();
+  size = build_program(program, 1U, ZPLC_TASK_CYCLIC, 1000U, 1U);
+  zassert_equal(zplc_sched_load(program, size), 1, "load a program");
+  zassert_ok(zplc_sched_start(), "start");
+  zassert_ok(zplc_force_set_bytes(ZPLC_MEM_OPI_BASE, &force, 1U), "force an output");
+
+  /* A control path that needs the memory lock and cannot take it: the pins are driven safe without it, the fault
+   * is latched, and the caller is told. */
+  zplc_sched_test_fail_next_lock(-EAGAIN, 0);
+  zassert_equal(zplc_sched_stop(), ZPLC_SCHED_ERR_LOCK,
+                "stop reports the memory lock it could not take");
+  zassert_equal(zplc_sched_get_state(), ZPLC_SCHED_STATE_ERROR,
+                "the scheduler latched its fault");
+  zassert_true(zplc_sched_start() < 0, "a latched fault refuses a start");
+
+  /* The statistics call cannot take the memory lock either, and says so. */
+  zplc_sched_test_fail_next_lock(-EAGAIN, 0);
+  zassert_equal(zplc_sched_get_stats(&stats), ZPLC_SCHED_ERR_LOCK,
+                "the statistics call reports the lock");
+  zassert_ok(zplc_sched_get_stats(&stats), "and works with the lock back");
+
+  /* A validated replacement is the only way out, as for any fault. */
+  clear_scheduler();
+  size = build_program(replacement, 1U, ZPLC_TASK_CYCLIC, 1000U, 1U);
+  zassert_equal(zplc_sched_load(replacement, size), 1,
+                "a replacement program clears the latch");
+  zassert_ok(zplc_sched_start(), "and starts");
+  zassert_ok(zplc_sched_stop(), "stop");
+}
+
 ZTEST_SUITE(zplc_scheduler_admission, NULL, scheduler_setup, NULL, NULL,
             scheduler_teardown);

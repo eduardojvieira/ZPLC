@@ -864,8 +864,14 @@ zplc_hal_result_t zplc_hal_persist_delete(const char *key) {
 
 zplc_hal_mutex_t zplc_hal_mutex_create(void) {
   struct k_mutex *mutex = k_malloc(sizeof(struct k_mutex));
-  if (mutex != NULL) {
-    k_mutex_init(mutex);
+
+  if (mutex == NULL) {
+    return NULL;
+  }
+  if (k_mutex_init(mutex) != 0) {
+    /* RT-030: a mutex that did not initialise is not handed out. */
+    k_free(mutex);
+    return NULL;
   }
   return (zplc_hal_mutex_t)mutex;
 }
@@ -884,7 +890,9 @@ zplc_hal_result_t zplc_hal_mutex_unlock(zplc_hal_mutex_t mutex) {
   if (mutex == NULL) {
     return ZPLC_HAL_ERROR;
   }
-  k_mutex_unlock((struct k_mutex *)mutex);
+  if (k_mutex_unlock((struct k_mutex *)mutex) != 0) {
+    return ZPLC_HAL_ERROR;
+  }
   return ZPLC_HAL_OK;
 }
 
