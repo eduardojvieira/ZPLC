@@ -9,10 +9,11 @@ import { projectRootId } from './projectFilesHandles';
 
 type Bridge = NonNullable<NonNullable<Window['electronAPI']>['workspaceTests']>;
 
-export type ShownProjectBridge = Omit<Bridge, 'run' | 'compile' | 'safetyCheck'> & {
+export type ShownProjectBridge = Omit<Bridge, 'run' | 'compile' | 'safetyCheck' | 'lessonCheck'> & {
   run(request: { workspaceId: string; scenarioId?: string }): Promise<unknown>;
   compile(request: { workspaceId: string }): Promise<unknown>;
   safetyCheck(request: { workspaceId: string }): Promise<unknown>;
+  lessonCheck(request: { workspaceId: string; lessonId: string }): Promise<unknown>;
 };
 
 const bound = new WeakMap<object, ShownProjectBridge>();
@@ -33,6 +34,7 @@ export function shownProjectBridge(bridge: Bridge | undefined): ShownProjectBrid
       run: (request) => bridge.run({ ...request, rootId: shownRootId() }),
       compile: (request) => bridge.compile({ ...request, rootId: shownRootId() }),
       safetyCheck: (request) => bridge.safetyCheck({ ...request, rootId: shownRootId() }),
+      lessonCheck: (request) => bridge.lessonCheck({ ...request, rootId: shownRootId() }),
     };
     bound.set(bridge, wrapped);
   }

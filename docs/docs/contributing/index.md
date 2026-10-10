@@ -67,6 +67,44 @@ firmware mode shows and what it does not.
 Do not publish, flash hardware, deploy a PLC program, or actuate equipment
 without explicit authorization.
 
+## Adding a lesson
+
+A lesson is a data package, so adding one needs no change to application code (LRN-027). Lesson ids
+have one source, the manifests: Studio, the progress store and the MCP course resource read an index
+generated from them, and CI fails on a hand-written list of ids (LRN-028).
+
+1. Make the exercise as two example projects under `packages/zplc-ide/projects/`: a starter that
+   builds and fails the scenario, and a solution that passes it.
+2. Create `packages/zplc-ide/lessons/<id>/` with the files below.
+3. Run the generator, then the lesson CI.
+
+| File | What it holds |
+|---|---|
+| `lesson.json` | The manifest: id, version, module, level, prerequisites, languages, tracks, plant, estimated minutes, the starter and solution projects, and the reference scenario with its content hash. |
+| `scenario.json` | The reference scenario the lesson is graded by. Keep a copy in the starter's `tests/` folder so that the learner can run it from Tests; CI fails when the copy differs. |
+| `text.en.json`, `text.es.json` | The text: title, summary, scope, objectives, the six stages (`objective`, `predict`, `edit`, `run`, `observe`, `reflect`), two hint levels and the fault to fix. Both files must have the same structure. |
+| `checks.json` | Optional: wrong programs that must stay red, and other correct programs that must pass. |
+
+The text marks every time and value it quotes, so that CI can check it against the scenario. The
+generator expands the markup once; no lesson string is replaced when the application runs (LRN-038).
+
+| Markup | Shows | CI checks |
+|---|---|---|
+| `{{t:250}}` | `250` | The time is on the timeline of the scenario: a multiple of its tick and at most its duration. |
+| `{{assertions}}` | The number of assertions | Nothing to check: the number comes from the scenario. |
+| `{{v:Sig=true@30\|text}}` | `text` | The scenario asserts those values at 30 ms: an `AT` there, or a `FOR` or `ALWAYS` that covers it. |
+
+```bash
+bun tools/ci/generate-lesson-index.ts                  # writes packages/zplc-ide/src/generated/lessonIndex.ts
+bun tools/ci/generate-lesson-index.ts --update-hashes  # after editing a scenario: pin its hash, raise the version
+bun tools/ci/generate-lesson-index.ts --check          # what CI runs: the file is what the packages produce
+bun run --cwd packages/zplc-ide test src/learn         # lesson CI; set ZPLC_NATIVE_SIM_BIN for the runtime proofs
+```
+
+The lesson CI runs every package in both languages: the starter fails the reference scenario because
+an assertion fails, the solution passes it, each wrong program stays red, every time and value the
+text quotes exists in the scenario, and every file it cites exists in the starter (LRN-025).
+
 ## Runnable documentation samples
 
 A code sample in the docs is checked in CI when its fence says so. The first word of the

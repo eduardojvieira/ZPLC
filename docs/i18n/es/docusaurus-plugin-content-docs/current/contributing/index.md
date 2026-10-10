@@ -67,6 +67,47 @@ explica qué muestra cada modo del firmware y qué no.
 No publique, no flashee hardware, no despliegue un programa PLC ni accione equipos
 sin autorización explícita.
 
+## Agregar una lección
+
+Una lección es un paquete de datos, de modo que agregar una no requiere cambiar el código de la
+aplicación (LRN-027). Los identificadores de lección tienen una sola fuente, los manifiestos: Studio,
+el almacén de progreso y el recurso de curso de MCP leen un índice generado a partir de ellos, y CI
+falla ante una lista de identificadores escrita a mano (LRN-028).
+
+1. Arme el ejercicio como dos proyectos de ejemplo en `packages/zplc-ide/projects/`: un starter que
+   compila y falla el escenario, y una solución que lo pasa.
+2. Cree `packages/zplc-ide/lessons/<id>/` con los archivos de abajo.
+3. Ejecute el generador y luego el CI de lecciones.
+
+| Archivo | Qué contiene |
+|---|---|
+| `lesson.json` | El manifiesto: identificador, versión, módulo, nivel, prerrequisitos, lenguajes, vías, planta, minutos estimados, los proyectos starter y solución, y el escenario de referencia con su hash de contenido. |
+| `scenario.json` | El escenario de referencia con el que se califica la lección. Mantenga una copia en la carpeta `tests/` del starter para que el alumno lo ejecute desde Tests; CI falla cuando la copia difiere. |
+| `text.en.json`, `text.es.json` | El texto: título, resumen, alcance, objetivos, las seis etapas (`objective`, `predict`, `edit`, `run`, `observe`, `reflect`), dos niveles de pista y la falla a corregir. Ambos archivos deben tener la misma estructura. |
+| `checks.json` | Opcional: programas incorrectos que deben seguir en rojo, y otros programas correctos que deben pasar. |
+
+El texto marca cada tiempo y valor que cita, para que CI lo compare con el escenario. El generador
+expande la marca una sola vez; ninguna cadena de la lección se reemplaza cuando la aplicación corre
+(LRN-038).
+
+| Marca | Muestra | CI verifica |
+|---|---|---|
+| `{{t:250}}` | `250` | El tiempo está en la línea de tiempo del escenario: múltiplo de su tick y no mayor que su duración. |
+| `{{assertions}}` | La cantidad de aserciones | Nada que verificar: la cantidad sale del escenario. |
+| `{{v:Sig=true@30\|texto}}` | `texto` | El escenario afirma esos valores a 30 ms: un `AT` ahí, o un `FOR` o `ALWAYS` que lo cubra. |
+
+```bash
+bun tools/ci/generate-lesson-index.ts                  # escribe packages/zplc-ide/src/generated/lessonIndex.ts
+bun tools/ci/generate-lesson-index.ts --update-hashes  # tras editar un escenario: fija su hash y sube la versión
+bun tools/ci/generate-lesson-index.ts --check          # lo que corre CI: el archivo es lo que producen los paquetes
+bun run --cwd packages/zplc-ide test src/learn         # CI de lecciones; defina ZPLC_NATIVE_SIM_BIN para las pruebas con runtime
+```
+
+El CI de lecciones ejecuta cada paquete en ambos idiomas: el starter falla el escenario de
+referencia porque una aserción falla, la solución lo pasa, cada programa incorrecto sigue en rojo,
+cada tiempo y valor que cita el texto existe en el escenario, y cada archivo que cita existe en el
+starter (LRN-025).
+
 ## Ejemplos de código ejecutables
 
 Un ejemplo de código de la documentación se verifica en CI cuando su cerco lo indica. La primera

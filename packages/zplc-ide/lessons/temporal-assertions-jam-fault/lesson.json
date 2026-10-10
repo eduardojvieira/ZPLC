@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "temporal-assertions-jam-fault",
+  "version": 1,
+  "order": 9,
+  "module": 8,
+  "level": "advanced",
+  "prerequisites": [
+    "conveyor-classification-jam"
+  ],
+  "languages": [
+    "ST"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "plant": null,
+  "estimatedMinutes": 25,
+  "starter": {
+    "project": "conveyor_01_starter",
+    "program": "src/Conveyor.st"
+  },
+  "solution": {
+    "project": "conveyor_01",
+    "program": "src/Conveyor.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "ConveyorJamTiming",
+    "path": "tests/conveyor-jam-timing.scenario.json",
+    "sha256": "10f2f969755ac7cb863612afbc155279e82884dc1c07482edfe7acae2b23c2bf"
+  },
+  "regressionScenarios": [
+    "Conveyor01"
+  ]
+}

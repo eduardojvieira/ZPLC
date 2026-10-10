@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "motor-plant-feedback",
+  "version": 1,
+  "order": 6,
+  "module": 6,
+  "level": "intermediate",
+  "prerequisites": [
+    "pedestrian-crossing-states"
+  ],
+  "languages": [
+    "ST"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "plant": "motor-v1",
+  "estimatedMinutes": 20,
+  "starter": {
+    "project": "motor_plant_starter",
+    "program": "src/MotorPlant.st"
+  },
+  "solution": {
+    "project": "motor_plant",
+    "program": "src/MotorPlant.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "MotorPlant",
+    "path": "tests/motor-plant.scenario.json",
+    "sha256": "8e545033f57a6ec3df9019b295286a575bffd0010d174ffd6683f10a74631468"
+  },
+  "regressionScenarios": []
+}

@@ -408,3 +408,80 @@ describe('compile, safety check and tests run outside the main process (IDE-012)
     expect(audit).toMatchObject({ operation: 'compile', outcome: 'cancelled' });
   });
 });
+
+describe('the lesson check over the IPC boundary (LRN-022, LRN-026, IDE-002, IDE-012)', () => {
+  const record = {
+    schemaVersion: 1, lessonId: 'motor-start-stop-safe', lessonVersion: 1, track: 'simulation', scenarioId: 'MotorStartStop', scenarioSha256: 'a'.repeat(64), programSha256: 'b'.repeat(64),
+    runtimeVersion: '1.0.0', time: '2026-10-10T12:00:00.000Z', result: 'passed', assertions: { total: 3, passed: 3 }, failedAssertions: [],
+  };
+
+  it('runs in the tool worker for the folder of the window, by lesson id alone, and answers a validated record with its execution', async () => {
+    const h = await harness({ worker: async () => ({ ok: true, record, evidence: { diagnostics: [], artifacts: [] } }) });
+    const answer = await h.invoke('workspace-tests:lesson-check', TRUSTED, { workspaceId: WORKSPACE_ID, rootId: h.rootId, lessonId: 'motor-start-stop-safe' }) as { ok: boolean; record: unknown; execution: unknown };
+    expect(answer.ok).toBe(true);
+    expect(answer.record).toEqual(record);
+    expect(answer.execution).toMatchObject({ actor: 'human-studio', permission: 'tests:run', operation: 'scenario-run' });
+    expect(h.touched).toContain('worker.lesson-check');
+    expect(h.touched.filter((entry) => entry.startsWith('gateway.run:')).every((entry) => entry.endsWith('@window-folder'))).toBe(true);
+  });
+
+  it('refuses a scenario, a path or a malformed lesson id before anything runs, and a folder id that is not the window folder', async () => {
+    const h = await harness();
+    const base = { workspaceId: WORKSPACE_ID, rootId: h.rootId, lessonId: 'motor-start-stop-safe' };
+    for (const request of [{ ...base, scenario: '{}' }, { ...base, lessonId: '../x' }, { workspaceId: WORKSPACE_ID, lessonId: base.lessonId }, { ...base, workspaceId: 'x' }]) {
+      expect(await settle(h.invoke('workspace-tests:lesson-check', TRUSTED, request))).toEqual({ ok: false, message: IPC_DENIED });
+    }
+    expect(await settle(h.invoke('workspace-tests:lesson-check', TRUSTED, { ...base, rootId: 'a-folder-that-is-closed' }))).toEqual({ ok: false, message: 'Workspace operation failed' });
+    expect(h.touched.filter((entry) => entry.startsWith('gateway.') || entry.startsWith('worker.'))).toEqual([]);
+  });
+
+  it('releases no result that is not a lesson check answer, and records a cancelled check as cancelled', async () => {
+    const wrong = await harness({ worker: async () => ({ ok: true, record: { ...record, result: 'failed' } }) });
+    expect(await settle(wrong.invoke('workspace-tests:lesson-check', TRUSTED, { workspaceId: WORKSPACE_ID, rootId: wrong.rootId, lessonId: 'motor-start-stop-safe' }))).toEqual({ ok: false, message: 'Workspace operation failed' });
+    const { ToolWorkerError } = await import('./toolWorkerHost');
+    const cancelled = await harness({ worker: async () => { throw new ToolWorkerError('cancelled'); } });
+    expect(await settle(cancelled.invoke('workspace-tests:lesson-check', TRUSTED, { workspaceId: WORKSPACE_ID, rootId: cancelled.rootId, lessonId: 'motor-start-stop-safe' }))).toEqual({ ok: false, message: 'Workspace operation failed' });
+    const audit = JSON.parse(cancelled.touched.find((entry) => entry.startsWith('audit.add:'))!.slice('audit.add:'.length)) as { operation: string; outcome: string };
+    expect(audit).toMatchObject({ operation: 'scenario-run', outcome: 'cancelled' });
+  });
+});
+
+describe('the Learn progress channels over the IPC boundary (LRN-031, LRN-032)', () => {
+  const record = {
+    schemaVersion: 1, lessonId: 'motor-start-stop-safe', lessonVersion: 1, track: 'simulation', scenarioId: 'MotorStartStop', scenarioSha256: 'a'.repeat(64), programSha256: 'b'.repeat(64),
+    runtimeVersion: '1.0.0', time: '2026-10-10T12:00:00.000Z', result: 'passed', assertions: { total: 3, passed: 3 }, failedAssertions: [],
+  };
+
+  it('reach the store with exactly one grade record, one lesson note or one chosen file, and nothing else', async () => {
+    const h = await harness();
+    await h.invoke('learn-progress:read-progress', TRUSTED);
+    await h.invoke('learn-progress:record-grade', TRUSTED, record);
+    await h.invoke('learn-progress:note-lesson', TRUSTED, { lessonId: 'motor-start-stop-safe', hint: 2, last: true });
+    await h.invoke('learn-progress:export', TRUSTED);
+    await h.invoke('learn-progress:import', TRUSTED, '{"schemaVersion":1,"mastered":[]}');
+    expect(h.touched.filter((entry) => entry.startsWith('learn.')).map((entry) => entry.split(':')[0])).toEqual([
+      'learn.readProgress', 'learn.recordGrade', 'learn.noteLesson', 'learn.exportProgress', 'learn.importProgress',
+    ]);
+  });
+
+  it('refuse a forged record, a note with an extra field or a bad hint level, an oversize file and an id list that is not ids', async () => {
+    const h = await harness();
+    const denied = { ok: false as const, message: IPC_DENIED };
+    expect(await settle(h.invoke('learn-progress:record-grade', TRUSTED, { ...record, assertions: { total: 3, passed: 1 } }))).toEqual(denied);
+    expect(await settle(h.invoke('learn-progress:record-grade', TRUSTED, { ...record, extra: true }))).toEqual(denied);
+    expect(await settle(h.invoke('learn-progress:note-lesson', TRUSTED, { lessonId: 'motor-start-stop-safe', hint: 3 }))).toEqual(denied);
+    expect(await settle(h.invoke('learn-progress:note-lesson', TRUSTED, { lessonId: 'motor-start-stop-safe', path: '/etc' }))).toEqual(denied);
+    expect(await settle(h.invoke('learn-progress:import', TRUSTED, 'x'.repeat(300 * 1024)))).toEqual(denied);
+    expect(await settle(h.invoke('learn-progress:import', TRUSTED, { text: 'x' }))).toEqual(denied);
+    expect(await settle(h.invoke('learn-progress:merge', TRUSTED, ['Not An Id']))).toEqual(denied);
+    expect(await settle(h.invoke('learn-progress:export', TRUSTED, 'x'))).toEqual(denied);
+    expect(h.touched.filter((entry) => entry.startsWith('learn.'))).toEqual([]);
+  });
+
+  it('keep the two ids-only operations of the first release, for any number of lessons the store holds', async () => {
+    const h = await harness();
+    expect(await h.invoke('learn-progress:read', TRUSTED)).toEqual(['a']);
+    const many = Array.from({ length: 40 }, (_, index) => `lesson-number-${index}`);
+    expect(await h.invoke('learn-progress:merge', TRUSTED, many)).toEqual(many);
+  });
+});

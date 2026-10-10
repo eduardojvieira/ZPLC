@@ -177,6 +177,58 @@ All notable changes are documented here.
     `zplc_retain_config_t.lock` is now `int (*)(void)` so a lock failure can be
     reported.
 
+- Learn lessons are data packages with one generated index of ids (LRN-009, LRN-027,
+  LRN-028). Each of the ten lessons lives in `packages/zplc-ide/lessons/<id>/`: a manifest
+  (id, version, module, level, prerequisites, languages, tracks, plant, estimated time,
+  starter, solution, and the reference scenario with its content hash), English and
+  Spanish text with the same structure, learning objectives, two hint levels, and the
+  reference scenario. `tools/ci/generate-lesson-index.ts` produces
+  `src/generated/lessonIndex.ts`, which the panel, the progress store and the MCP course
+  resource read; CI fails when a product file keeps a list of lesson ids, when the index
+  is stale and when a scenario changes without its hash and version being raised. The
+  text marks the times and values it quotes and the generator expands the markup once,
+  so no lesson string is replaced when the application runs (LRN-038). Adding a lesson
+  needs no change to application code: see Contributing.
+- A lesson is graded against the scenario of its package, not the one in the learner's
+  folder (LRN-022, LRN-023, LRN-026). The new `lessonCheck` of the Tool API runs the
+  program of a workspace against the scenario the lesson package carries, identified by
+  its content hash, and returns a grade record: lesson id and version, scenario hash,
+  program hash, runtime version and time, which is the same for the same program and
+  scenario but for the time. A failed check lists each failed assertion with its instant,
+  the values expected and observed, and the address of that sample in the recorded trace.
+  The panel no longer grades a run whose recorded assertions are not those of the lesson
+  scenario, and shows the failures, the objectives and the hints. A run that failed was
+  shown as "evidence is incomplete" in the real application, because a failed run reports
+  no scenario count; it is now graded as failed and lists its failed assertions.
+- The Learn panel grades with the lesson check (LRN-022). A **Check** button sends the id
+  of a lesson to the main process, which runs the saved program of the shown project
+  against the scenario of the lesson package in the tool worker (cancellable, one run at a
+  time, bound to the folder on screen, recorded in the execution audit as a scenario run)
+  and answers a grade record or a fixed reason; the renderer validates the answer again.
+  The scenario files of the learner's folder are never read, so an edited scenario cannot
+  pass a lesson. The panel records the grade, the hints and the solutions shown and the
+  last lesson through typed progress operations, and opens the last lesson again.
+- Lesson CI runs for every lesson and both languages (LRN-025): the starter fails the
+  reference scenario because an assertion fails, the reference solution passes it, wrong
+  programs stay red, other correct programs pass, every time and value the text quotes
+  exists in the scenario and every file it cites exists in the starter. The table of
+  wrong programs moved from TypeScript to `checks.json` of each package.
+- Lesson 5 has the learner edit a Ladder program and lesson 10 has an Edit stage
+  (LRN-038). The starter `blinky_starter` is now the Ladder blinker with its two TON
+  rungs drawn and the SET and RESET coil rungs missing, and its reference solution is the
+  `blinky` Ladder project; the graded scenario is unchanged, so a Structured Text
+  solution still passes. Lesson 10 gets the Edit stage the other lessons have.
+- Learn progress is one versioned file, `zplc-learn-progress.v2.json`, in the user-data
+  directory (LRN-031, LRN-032): passed lessons with their grade record, lessons in
+  progress, the last lesson, and the hints and solutions used. The progress file of the
+  earlier release (`zplc-learn-mastery.v1.json`) is migrated in memory when the new file
+  does not exist and is never written or deleted. The store exports and imports the whole
+  document, validates it exactly, merges it with the newest grade first, and keeps
+  progress for lessons it does not know. The MCP course resource reads the new file and
+  stays read-only (LRN-034). The IPC contract gains `learn-progress:read-progress`,
+  `record-grade`, `note-lesson`, `export` and `import`, each with an exact request schema,
+  and `workspace-tests:lesson-check`; Export and Import progress in the panel move the
+  whole document on the desktop.
 - The palettes of LD, FBD and SFC offer only what their transpiler translates, and every
   element they offer is placed in a program and run in the virtual machine by a generated
   test (LNG-007). The Ladder palette offers the edge coils that the transpiler has

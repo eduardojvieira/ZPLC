@@ -7,7 +7,7 @@
  * id and the candidate edit, which the IPC schemas have already bounded.
  */
 
-export const TOOL_WORKER_OPERATIONS = ['compile', 'safety-check', 'test', 'scenario-run', 'change-set-review'] as const;
+export const TOOL_WORKER_OPERATIONS = ['compile', 'safety-check', 'test', 'scenario-run', 'change-set-review', 'lesson-check'] as const;
 export type ToolWorkerOperation = typeof TOOL_WORKER_OPERATIONS[number];
 
 export type ToolWorkerRequest =
@@ -15,7 +15,9 @@ export type ToolWorkerRequest =
   | { operation: 'safety-check'; root: string }
   | { operation: 'test'; root: string }
   | { operation: 'scenario-run'; root: string; scenarioId: string }
-  | { operation: 'change-set-review'; root: string; edits: Array<{ path: string; content: string }> };
+  | { operation: 'change-set-review'; root: string; edits: Array<{ path: string; content: string }> }
+  /** Grades the workspace program against the scenario of a lesson package (LRN-022); the scenario is never sent. */
+  | { operation: 'lesson-check'; root: string; lessonId: string };
 
 /** Main to worker: one `run`, then at most one `cancel`. */
 export type ToolWorkerCommand = ({ type: 'run'; id: string } & ToolWorkerRequest) | { type: 'cancel' };
@@ -38,6 +40,8 @@ export function parseToolWorkerCommand(value: unknown): ToolWorkerCommand | null
       return Object.keys(value).length === 4 ? { type: 'run', id, operation: value.operation, root } : null;
     case 'scenario-run':
       return Object.keys(value).length === 5 && typeof value.scenarioId === 'string' ? { type: 'run', id, operation: 'scenario-run', root, scenarioId: value.scenarioId } : null;
+    case 'lesson-check':
+      return Object.keys(value).length === 5 && typeof value.lessonId === 'string' && /^[a-z0-9][a-z0-9-]{1,62}[a-z0-9]$/.test(value.lessonId) ? { type: 'run', id, operation: 'lesson-check', root, lessonId: value.lessonId } : null;
     case 'change-set-review': {
       const { edits } = value;
       if (Object.keys(value).length !== 5 || !Array.isArray(edits) || edits.length < 1 || edits.length > 8) return null;

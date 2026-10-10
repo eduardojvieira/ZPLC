@@ -1,0 +1,175 @@
+/**
+ * Reads the lesson packages of `packages/zplc-ide/lessons/` from disk (Node only; the application reads the generated
+ * index instead). Shared by the generator `tools/ci/generate-lesson-index.ts` and by the lesson CI.
+ */
+import { createHash } from 'node:crypto';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+
+import {
+  canonicalJson,
+  expandText,
+  parseScenarioFile,
+  textShape,
+  validateChecks,
+  validateManifest,
+  validateText,
+  type LessonChecks,
+  type LessonIndex,
+  type LessonIndexEntry,
+  type LessonLocale,
+  type LessonManifest,
+  type LessonText,
+  type ScenarioFile,
+} from './lessonPackage';
+
+export const LESSONS_DIRECTORY = join(import.meta.dir, '..', '..', 'lessons');
+export const PROJECTS_DIRECTORY = join(import.meta.dir, '..', '..', 'projects');
+const LOCALES: readonly LessonLocale[] = ['en', 'es'];
+
+export const sha256Hex = (text: string): string => createHash('sha256').update(text, 'utf8').digest('hex');
+/** The hash the manifest carries: SHA-256 of the canonical JSON of the scenario. */
+export const scenarioHash = (scenario: unknown): string => sha256Hex(canonicalJson(scenario));
+
+export interface LessonPackage {
+  id: string;
+  directory: string;
+  manifest: LessonManifest;
+  scenario: ScenarioFile;
+  scenarioBytes: string;
+  texts: Record<LessonLocale, LessonText>;
+  checks: LessonChecks | undefined;
+}
+
+export interface LoadedPackages { packages: LessonPackage[]; problems: string[] }
+
+function readJson(path: string, problems: string[]): unknown {
+  try { return JSON.parse(readFileSync(path, 'utf8')); } catch (error) { problems.push(`${path}: ${error instanceof Error ? error.message : String(error)}`); return undefined; }
+}
+
+/** Loads and validates every package. A broken package is reported by its problems and left out. */
+export function loadLessonPackages(lessonsDirectory = LESSONS_DIRECTORY, projectsDirectory = PROJECTS_DIRECTORY): LoadedPackages {
+  const problems: string[] = [];
+  const packages: LessonPackage[] = [];
+  const directories = readdirSync(lessonsDirectory).filter((name) => statSync(join(lessonsDirectory, name)).isDirectory()).sort();
+  for (const id of directories) {
+    const directory = join(lessonsDirectory, id);
+    const here: string[] = [];
+    const manifest = readJson(join(directory, 'lesson.json'), here);
+    const manifestProblems = validateManifest(manifest);
+    here.push(...manifestProblems.map((problem) => `${id}/lesson.json: ${problem}`));
+    if (manifestProblems.length > 0 || manifest === undefined) { problems.push(...here); continue; }
+    const typed = manifest as LessonManifest;
+    if (typed.id !== id) here.push(`${id}/lesson.json: id "${typed.id}" must equal the directory name`);
+    const scenarioRaw = readJson(join(directory, typed.scenario.file), here);
+    const scenarioParsed = parseScenarioFile(scenarioRaw);
+    here.push(...scenarioParsed.problems.map((problem) => `${id}/${typed.scenario.file}: ${problem}`));
+    const texts: Partial<Record<LessonLocale, LessonText>> = {};
+    for (const locale of LOCALES) {
+      const raw = readJson(join(directory, `text.${locale}.json`), here);
+      const textProblems = validateText(raw);
+      here.push(...textProblems.map((problem) => `${id}/text.${locale}.json: ${problem}`));
+      if (textProblems.length === 0) texts[locale] = raw as LessonText;
+    }
+    let checks: LessonChecks | undefined;
+    if (existsSync(join(directory, 'checks.json'))) {
+      const raw = readJson(join(directory, 'checks.json'), here);
+      const checkProblems = validateChecks(raw);
+      here.push(...checkProblems.map((problem) => `${id}/checks.json: ${problem}`));
+      if (checkProblems.length === 0) checks = raw as LessonChecks;
+    }
+    const scenario = scenarioParsed.scenario;
+    if (scenario) {
+      if (scenario.id !== typed.scenario.id) here.push(`${id}: scenario id "${scenario.id}" differs from the manifest "${typed.scenario.id}"`);
+      if ((scenario.plant ?? null) !== typed.plant) here.push(`${id}: manifest plant "${typed.plant}" differs from the scenario plant "${scenario.plant ?? null}"`);
+      const hash = scenarioHash(scenarioRaw);
+      if (hash !== typed.scenario.sha256) here.push(`${id}: scenario hash is ${hash} but the manifest pins ${typed.scenario.sha256}; bump the lesson version and pin the new hash`);
+      for (const part of [typed.starter, typed.solution]) {
+        const project = join(projectsDirectory, part.project);
+        if (!existsSync(join(project, 'zplc.json'))) here.push(`${id}: example project "${part.project}" does not exist`);
+        else if (!existsSync(join(project, part.program))) here.push(`${id}: "${part.program}" does not exist in example project "${part.project}"`);
+      }
+    }
+    problems.push(...here);
+    if (here.length === 0 && scenario && texts.en && texts.es) {
+      packages.push({ id, directory, manifest: typed, scenario, scenarioBytes: canonicalJson(scenarioRaw), texts: { en: texts.en, es: texts.es }, checks });
+    }
+  }
+  return { packages, problems };
+}
+
+/** Cross-package rules: unique ids and order, existing and acyclic prerequisites, the same text structure in every language. */
+export function validateCourse(packages: readonly LessonPackage[]): string[] {
+  const problems: string[] = [];
+  const ids = new Set(packages.map((item) => item.id));
+  const orders = new Map<number, string>();
+  for (const { id, manifest } of packages) {
+    const other = orders.get(manifest.order);
+    if (other) problems.push(`${id}: order ${manifest.order} is also used by ${other}`);
+    orders.set(manifest.order, id);
+    for (const prerequisite of manifest.prerequisites) if (!ids.has(prerequisite)) problems.push(`${id}: prerequisite "${prerequisite}" is not a lesson`);
+  }
+  const visiting = new Set<string>();
+  const done = new Set<string>();
+  const visit = (id: string): void => {
+    if (done.has(id)) return;
+    if (visiting.has(id)) { problems.push(`${id}: prerequisites form a cycle`); return; }
+    visiting.add(id);
+    for (const prerequisite of packages.find((item) => item.id === id)?.manifest.prerequisites ?? []) if (ids.has(prerequisite)) visit(prerequisite);
+    visiting.delete(id);
+    done.add(id);
+  };
+  for (const { id } of packages) visit(id);
+  for (const { id, texts } of packages) {
+    if (textShape(texts.en) !== textShape(texts.es)) problems.push(`${id}: English and Spanish do not have the same structure (stage keys, hint levels, quoted facts)`);
+  }
+  return problems;
+}
+
+/** The generated index of the packages, in course order, with the text expanded. Problems of expansion are returned. */
+export function buildIndex(packages: readonly LessonPackage[]): { index: LessonIndex; problems: string[] } {
+  const problems: string[] = [];
+  const lessons: LessonIndexEntry[] = [...packages].sort((left, right) => left.manifest.order - right.manifest.order).map(({ id, manifest, scenario, scenarioBytes, texts }) => {
+    const expanded = Object.fromEntries(LOCALES.map((locale) => {
+      const result = expandText(texts[locale], scenario);
+      problems.push(...result.problems.map((problem) => `${id}/text.${locale}.json: ${problem}`));
+      return [locale, result.text];
+    })) as unknown as LessonIndexEntry['text'];
+    return {
+      id: manifest.id,
+      version: manifest.version,
+      order: manifest.order,
+      module: manifest.module,
+      level: manifest.level,
+      prerequisites: manifest.prerequisites,
+      languages: manifest.languages,
+      tracks: manifest.tracks,
+      plant: manifest.plant,
+      estimatedMinutes: manifest.estimatedMinutes,
+      starter: manifest.starter,
+      solution: manifest.solution,
+      scenario: { id: manifest.scenario.id, path: manifest.scenario.path, sha256: manifest.scenario.sha256, tickMs: scenario.tickMs, durationMs: scenario.durationMs, assertions: scenario.expectations.length, canonical: scenarioBytes },
+      regressionScenarios: manifest.regressionScenarios,
+      text: expanded,
+    };
+  });
+  return { index: { schemaVersion: 1, lessons }, problems };
+}
+
+const HEADER = [
+  '// GENERATED by tools/ci/generate-lesson-index.ts from packages/zplc-ide/lessons/*/. Do not edit.',
+  '// `bun tools/ci/generate-lesson-index.ts --check` fails when this file or lessonIndex.json is out of date with the lesson packages.',
+  '// It is the one source of lesson ids (LRN-028): Studio, the progress store and the MCP course resource read it.',
+  '// The data is in lessonIndex.json so that this module stays small (IDE-014 measures modules, not data files).',
+].join('\n');
+
+/** The exact text of `src/generated/lessonIndex.ts`: the id list and the type, over the data of `lessonIndex.json`. */
+export function renderIndexModule(index: LessonIndex): string {
+  const ids = index.lessons.map((lesson) => JSON.stringify(lesson.id)).join(',\n  ');
+  return `${HEADER}\nimport type { LessonIndex } from '../learn/lessonPackage';\nimport data from './lessonIndex.json';\n\nexport const LESSON_IDS = [\n  ${ids},\n] as const;\n\nexport type LessonId = typeof LESSON_IDS[number];\n\nexport const LESSON_INDEX = data as unknown as LessonIndex;\n`;
+}
+
+/** The exact text of `src/generated/lessonIndex.json`. */
+export function renderIndexData(index: LessonIndex): string {
+  return `${JSON.stringify(index, null, 2)}\n`;
+}

@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "id": "conveyor-classification-jam",
+  "version": 1,
+  "order": 4,
+  "module": 8,
+  "level": "advanced",
+  "prerequisites": [
+    "motor-plant-feedback",
+    "tank-level-fault-reset"
+  ],
+  "languages": [
+    "ST"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "plant": "conveyor-v1",
+  "estimatedMinutes": 25,
+  "starter": {
+    "project": "conveyor_01_starter",
+    "program": "src/Conveyor.st"
+  },
+  "solution": {
+    "project": "conveyor_01",
+    "program": "src/Conveyor.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "Conveyor01",
+    "path": "tests/conveyor-01.scenario.json",
+    "sha256": "e77da7a6e13e4c5e8b1d3ec2ffdfc050ff4d4d54f9f7b4aadad77dc6263be58d"
+  },
+  "regressionScenarios": []
+}

@@ -8,6 +8,7 @@
  * because only own enumerable fields survive the structured clone that carries the answer.
  */
 import { compilerCompile, createCandidateChangeSet, safetyCheck, scenarioRun, testsRun } from '../src/cli/toolApi';
+import { lessonCheck } from '../src/learn/lessonCheck';
 import { parseToolWorkerCommand, type ToolWorkerCommand, type ToolWorkerReply } from './toolWorkerProtocol';
 
 interface ParentPort {
@@ -45,6 +46,7 @@ async function execute(command: RunCommand, signal: AbortSignal): Promise<unknow
     case 'test': return await testsRun(command.root, { signal });
     case 'scenario-run': return await scenarioRun(command.root, command.scenarioId, { signal });
     case 'change-set-review': return await createCandidateChangeSet(command.root, command.edits, { signal });
+    case 'lesson-check': return await lessonCheck(command.root, command.lessonId, { signal });
   }
 }
 

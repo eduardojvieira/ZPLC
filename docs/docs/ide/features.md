@@ -248,15 +248,16 @@ run/debug. A person starts each of them.
 
 Learn is a tab of the bottom panel. The **Learn** action on the Welcome screen copies the first lesson into a folder that you choose and opens that tab. This is what it offers today:
 
-- Ten lessons, in Spanish and in English (the toggle is in the panel, and Spanish is the default). Each lesson comes with its own example project: a source file in Structured Text and a scenario file.
-- Every lesson goes through the stages Objective, Predict, Edit, Run, Observe and Reflect, and the expected checkpoint of each stage stays hidden until you ask for it.
-- You edit the copied project and run only the scenario of that lesson from **Tests**. The panel grades the recorded run: a lesson counts as completed when its scenario passed with all its assertions saved. Studio remembers the completed lessons, and **Export progress** and **Import progress** move them as a small file.
+- Ten lessons, in Spanish and in English (the toggle is in the panel, and Spanish is the default). Each lesson is a data package, `packages/zplc-ide/lessons/<id>/`, with its text in both languages, learning objectives, two levels of hint, a reference scenario with its content hash, and the example project you start from: a Structured Text file, or a Ladder file in lesson 5.
+- Every lesson goes through the stages Objective, Predict, Edit, Run, Observe and Reflect, the expected checkpoint of each stage stays hidden until you ask for it, and the two hints open on request.
+- You edit the copied project, save it and press **Check**. Studio runs your saved program against the scenario of the lesson package, identified by its content hash, in a process of its own that **Cancel** stops; the scenario files of your folder are never read, so editing a scenario there does not produce a pass. A lesson counts as completed when every assertion of that scenario passed. A failed check lists each failed assertion with its instant, the values expected and observed, and the address of that sample in the recorded trace. The grade record holds the lesson id and version, the scenario hash, the program hash, the runtime version and the time. You can still run the scenario of your folder from **Tests**; that run is not the grade.
+- Studio keeps your progress in one versioned file in its user-data directory: passed lessons with their grade record, lessons in progress, the last lesson (the panel opens it again), and the hints and solutions used (the reference solution opens on request). The progress file of an earlier release is migrated, and left where it was. **Export progress** and **Import progress** move the whole document as a file; an import is validated, merged with the newest grade first, and keeps lessons this build does not know.
 - All the lessons are unlocked and can be taken in any order. Learn never starts a physical operation: it only copies a project and opens **Tests**.
 - A result is host evidence from the native simulation, not hardware evidence.
 
-A course with levels, prerequisites and a fixed order, a lesson surface that stays beside the editor, and a track for a learner board are future work (the LRN requirements). Nothing on this page promises them.
+A course with levels, prerequisites and a fixed order, a lesson surface that stays beside the editor, and a track for a learner board are future work (the LRN requirements). Nothing on this page promises them. To add a lesson, see [Contributing](../contributing/index.md#adding-a-lesson).
 
-Evidence level: host. `packages/zplc-ide/src/components/learnLesson.test.ts` and `LearnPanel.test.ts` cover the lessons and the grading, and `packages/zplc-ide/src/learn/starterGrading.test.ts` runs every starter against its scenario.
+Evidence level: host. `packages/zplc-ide/src/learn/lessonCi.test.ts` runs every lesson package in both languages (the starter fails its scenario, the solution passes it, every time and value the text quotes is in the scenario), `packages/zplc-ide/src/learn/lessonCheck.test.ts` grades programs on the native runtime, `packages/zplc-ide/electron/ipcRegistry.test.ts` covers the lesson check and the progress channels at the IPC boundary, and journeys 39 and 39b run the check in the real application.
 
 ## Debugging boundary
 

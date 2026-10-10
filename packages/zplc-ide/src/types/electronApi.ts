@@ -56,15 +56,23 @@ declare global {
         cancel: () => Promise<{ requested: boolean }>;
         compile: (request: { workspaceId: string; rootId: string }) => Promise<unknown>;
         safetyCheck: (request: { workspaceId: string; rootId: string }) => Promise<unknown>;
+        /** Grades the shown project against the reference scenario of a lesson package (LRN-022); the answer is validated by the caller. */
+        lessonCheck: (request: { workspaceId: string; rootId: string; lessonId: string }) => Promise<unknown>;
       };
       closeGuard?: {
         setDirty: (dirty: boolean) => Promise<void>;
         closeNow: () => Promise<void>;
         onCloseRequested: (callback: (action: 'close' | 'reload') => void) => () => void;
       };
+      /** The Learn progress the main process keeps (LRN-031, LRN-032); every document it returns is validated by the caller. */
       learnProgress?: {
         read: () => Promise<string[]>;
         merge: (mastered: string[]) => Promise<string[]>;
+        readProgress: () => Promise<unknown>;
+        recordGrade: (record: unknown) => Promise<unknown>;
+        noteLesson: (note: unknown) => Promise<unknown>;
+        exportProgress: () => Promise<unknown>;
+        importProgress: (text: string) => Promise<unknown>;
       };
       candidateChangeSet?: {
         review: (request: { workspaceId: string; edit: { path: string; content: string } }) => Promise<unknown>;

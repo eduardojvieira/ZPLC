@@ -83,6 +83,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke(WORKSPACE_TESTS_CHANNEL.COMPILE, request) as Promise<unknown>,
     safetyCheck: (request: { workspaceId: string; rootId: string }) =>
       ipcRenderer.invoke(WORKSPACE_TESTS_CHANNEL.SAFETY_CHECK, request) as Promise<unknown>,
+    // Grades the shown project against the scenario of a lesson package: a lesson id crosses, never a scenario (LRN-022).
+    lessonCheck: (request: { workspaceId: string; rootId: string; lessonId: string }) =>
+      ipcRenderer.invoke(WORKSPACE_TESTS_CHANNEL.LESSON_CHECK, request) as Promise<unknown>,
   },
   closeGuard: {
     setDirty: (dirty: boolean) => ipcRenderer.invoke(CLOSE_GUARD_CHANNEL.SET_DIRTY, dirty) as Promise<void>,
@@ -143,9 +146,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
   updateCheck: {
     run: () => ipcRenderer.invoke(UPDATE_CHECK_CHANNEL.RUN) as Promise<unknown>,
   },
+  // Learn progress (LRN-031, LRN-032): ids, one grade record, one lesson note, or the text of a file the learner chose. The
+  // main process keeps the document under the user-data directory; results are documents the renderer validates again.
   learnProgress: {
     read: () => ipcRenderer.invoke(LEARN_PROGRESS_CHANNEL.READ) as Promise<string[]>,
     merge: (mastered: string[]) => ipcRenderer.invoke(LEARN_PROGRESS_CHANNEL.MERGE, mastered) as Promise<string[]>,
+    readProgress: () => ipcRenderer.invoke(LEARN_PROGRESS_CHANNEL.READ_PROGRESS) as Promise<unknown>,
+    recordGrade: (record: unknown) => ipcRenderer.invoke(LEARN_PROGRESS_CHANNEL.RECORD_GRADE, record) as Promise<unknown>,
+    noteLesson: (note: unknown) => ipcRenderer.invoke(LEARN_PROGRESS_CHANNEL.NOTE_LESSON, note) as Promise<unknown>,
+    exportProgress: () => ipcRenderer.invoke(LEARN_PROGRESS_CHANNEL.EXPORT) as Promise<unknown>,
+    importProgress: (text: string) => ipcRenderer.invoke(LEARN_PROGRESS_CHANNEL.IMPORT, text) as Promise<unknown>,
   },
 
   candidateChangeSet: {
@@ -210,6 +220,16 @@ declare global {
         cancel: () => Promise<{ requested: boolean }>;
         compile: (request: { workspaceId: string; rootId: string }) => Promise<unknown>;
         safetyCheck: (request: { workspaceId: string; rootId: string }) => Promise<unknown>;
+        lessonCheck: (request: { workspaceId: string; rootId: string; lessonId: string }) => Promise<unknown>;
+      };
+      learnProgress: {
+        read: () => Promise<string[]>;
+        merge: (mastered: string[]) => Promise<string[]>;
+        readProgress: () => Promise<unknown>;
+        recordGrade: (record: unknown) => Promise<unknown>;
+        noteLesson: (note: unknown) => Promise<unknown>;
+        exportProgress: () => Promise<unknown>;
+        importProgress: (text: string) => Promise<unknown>;
       };
       closeGuard: {
         setDirty: (dirty: boolean) => Promise<void>;

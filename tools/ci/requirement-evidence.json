@@ -1267,6 +1267,7 @@
   ],
   "IDE-002": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"a build, a test run and a review act only on the project of the editor (IDE-002)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"the lesson check over the IPC boundary (LRN-022, LRN-026, IDE-002, IDE-012)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/security.test.ts","test":"accepts a build or a safety check only with the workspace token and the id of the folder of the window (IDE-002)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/security.test.ts","test":"admits an optional bounded ASCII scenario selector only for scenario runs, which name the folder of the window (IDE-002)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/workspaceTestGateway.test.ts","test":"registers and runs only the folder that the window shows (IDE-002)"},
@@ -1364,6 +1365,7 @@
   ],
   "IDE-012": [
     {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"compile, safety check and tests run outside the main process (IDE-012)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"the lesson check over the IPC boundary (LRN-022, LRN-026, IDE-002, IDE-012)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/toolWorkerHost.test.ts","test":"real worker processes (IDE-012)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/toolWorkerHost.test.ts","test":"the tool worker host (IDE-012)"},
     {"kind":"unit","ref":"packages/zplc-ide/electron/toolWorkerHost.test.ts","test":"the worker command schema (IDE-012, IDE-017)"},
@@ -1478,8 +1480,68 @@
   "LRN-003": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"11 Learn with no project open","partial":true}
   ],
+  "LRN-009": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"lesson packages (LRN-009, LRN-010, LRN-027)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"lesson package validators (LRN-009, LRN-010, LRN-027)"}
+  ],
+  "LRN-010": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"lesson packages (LRN-009, LRN-010, LRN-027)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"lesson package validators (LRN-009, LRN-010, LRN-027)"}
+  ],
+  "LRN-022": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"the lesson check over the IPC boundary (LRN-022, LRN-026, IDE-002, IDE-012)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/lessonCheckProtocol.test.ts","test":"the lesson check request and answer (LRN-022, LRN-026)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/learnLesson.test.ts","test":"Learn grading against the lesson package (LRN-022, LRN-026)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCheck.test.ts","test":"lesson check (LRN-022, LRN-023, LRN-026)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"39 Learn reports the failed assertion of a lesson","partial":true}
+  ],
+  "LRN-023": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/gradeRecord.test.ts","test":"grade record (LRN-023)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCheck.test.ts","test":"lesson check (LRN-022, LRN-023, LRN-026)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"39b Learn records the grade of a passed lesson","partial":true}
+  ],
+  "LRN-025": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"lesson text markup (LRN-025)"}
+  ],
+  "LRN-026": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"the lesson check over the IPC boundary (LRN-022, LRN-026, IDE-002, IDE-012)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/lessonCheckProtocol.test.ts","test":"the lesson check request and answer (LRN-022, LRN-026)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/learnLesson.test.ts","test":"Learn grading against the lesson package (LRN-022, LRN-026)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/gradeRecord.test.ts","test":"failed assertions of a lesson check (LRN-026)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCheck.test.ts","test":"lesson check (LRN-022, LRN-023, LRN-026)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"39 Learn reports the failed assertion of a lesson","partial":true}
+  ],
+  "LRN-027": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonCi.test.ts","test":"lesson packages (LRN-009, LRN-010, LRN-027)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/lessonPackage.test.ts","test":"lesson package validators (LRN-009, LRN-010, LRN-027)"},
+    {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"the generated lesson index (LRN-027, LRN-028)"}
+  ],
+  "LRN-028": [
+    {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"lesson ids have one source (LRN-028)"},
+    {"kind":"unit","ref":"tools/ci/lesson-index.test.ts","test":"the generated lesson index (LRN-027, LRN-028)"}
+  ],
+  "LRN-031": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"the Learn progress channels over the IPC boundary (LRN-031, LRN-032)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressModel.test.ts","test":"the Learn progress document (LRN-031, LRN-032)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressStore.test.ts","test":"Learn progress main-process store (LRN-031, LRN-032)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/progressClient.test.ts","test":"the Learn progress client validates what the main process answers (LRN-031, LRN-032)"},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"39 Learn reports the failed assertion of a lesson","partial":true},
+    {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"39b Learn records the grade of a passed lesson","partial":true}
+  ],
+  "LRN-032": [
+    {"kind":"unit","ref":"packages/zplc-ide/electron/ipcRegistry.test.ts","test":"the Learn progress channels over the IPC boundary (LRN-031, LRN-032)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressModel.test.ts","test":"the Learn progress document (LRN-031, LRN-032)"},
+    {"kind":"unit","ref":"packages/zplc-ide/electron/learnProgressStore.test.ts","test":"Learn progress main-process store (LRN-031, LRN-032)"},
+    {"kind":"unit","ref":"packages/zplc-ide/src/learn/progressClient.test.ts","test":"the Learn progress client validates what the main process answers (LRN-031, LRN-032)"}
+  ],
+  "LRN-034": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/mcp/server.test.ts","test":"cannot mark a lesson passed: no tool takes a lesson or progress, and no tool or resource read changes the progress files (LRN-034)"}
+  ],
   "LRN-036": [
     {"kind":"journey","ref":"packages/zplc-ide/scripts/journeys.ts","test":"13 Welcome helps a newcomer choose","partial":true}
+  ],
+  "LRN-038": [
+    {"kind":"unit","ref":"packages/zplc-ide/src/components/learnLesson.test.ts","test":"Learn lesson text is never replaced at run time (LRN-038)"}
   ],
   "REL-001": [
     {"kind":"unit","ref":"packages/zplc-ide/scripts/release-config.test.ts","test":"electron-builder.yml macOS signing (REL-001)","partial":true,"note":"asserts the parsed electron-builder and workflow configuration, not the produced installer; its own header says a hosted release run is the proof (VF-021)"}

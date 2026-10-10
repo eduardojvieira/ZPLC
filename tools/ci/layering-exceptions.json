@@ -19,5 +19,12 @@
     "requirement": "IDE-017",
     "added": "2026-10-10",
     "reason": "The allow-list is plain Node (a closed list of fixed argument vectors over node:child_process) and the Tool API starts the toolchain probes through it, as the main process starts the native runtime and the tool worker through it. It lives under electron/ for the reason of the entry for nativeSimulationSupervisor.ts: tsconfig.electron.json compiles with rootDir electron, so electron/main.ts cannot import a module of src/, and a spawn list that the command line owned would leave the main process without it. Moving it needs the shared Node modules in a folder both programs compile, a change to the packaged layout of electron-dist that is not made here; do it with the move of the supervisor and delete these entries."
+  },
+  {
+    "file": "packages/zplc-ide/src/mcp/server.ts",
+    "imports": "packages/zplc-ide/electron/learnProgressModel.ts",
+    "requirement": "LRN-034",
+    "added": "2026-10-10",
+    "reason": "The module is plain TypeScript with no Electron or Node API: the document the Learn progress store keeps and the parser of it. It lives under electron/ only because the main process compiles with rootDir electron and must share it with the renderer, so the course resource of the MCP server (read-only, LRN-034) cannot import it from src/. It moves with the shared modules of the IPC contract work (IDE-017); delete this entry then."
   }
 ]
