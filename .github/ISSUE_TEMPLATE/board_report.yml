@@ -1,0 +1,94 @@
+name: Board report
+description: Tell us what happened when you built, flashed or ran ZPLC on a board, whether it worked or not.
+title: "[Board] "
+labels: ["board", "hardware"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A report is useful evidence only when it names the exact board, the firmware
+        and the steps. One bench is a lead, not a qualification. ZPLC does not flash
+        or deploy for you: list what you did yourself. Never paste credentials, Wi-Fi
+        names or tokens.
+  - type: dropdown
+    id: board
+    attributes:
+      label: Board profile
+      options:
+        - Raspberry Pi Pico (rpi_pico)
+        - Arduino GIGA R1 (arduino_giga_r1)
+        - ESP32-S3 DevKitC (esp32s3_devkitc)
+        - STM32F746G Discovery (stm32f746g_disco)
+        - STM32 Nucleo-H743ZI (nucleo_h743zi)
+        - Arduino Opta WiFi (arduino_opta_wifi)
+        - A board that is not in this list
+    validations:
+      required: true
+  - type: input
+    id: board_detail
+    attributes:
+      label: Exact board, variant and revision
+      description: For example the module, the flash and RAM size, and any carrier or shield.
+    validations:
+      required: true
+  - type: input
+    id: firmware
+    attributes:
+      label: Firmware
+      description: The release asset name and its SHA-256, or the commit you built from, and the output of `zplc version`.
+    validations:
+      required: true
+  - type: input
+    id: studio
+    attributes:
+      label: Studio or CLI version
+      placeholder: 2.0.0-rc.3
+  - type: checkboxes
+    id: steps
+    attributes:
+      label: What did you do?
+      options:
+        - label: Built the firmware from source
+        - label: Used a released firmware image
+        - label: Flashed the board
+        - label: Connected from Studio or the shell
+        - label: Uploaded a program
+        - label: Started the program and observed the outputs
+  - type: textarea
+    id: worked
+    attributes:
+      label: What worked
+  - type: textarea
+    id: failed
+    attributes:
+      label: What did not work, or surprised you
+    validations:
+      required: true
+  - type: dropdown
+    id: observed
+    attributes:
+      label: How did you observe the result?
+      options:
+        - Serial console output
+        - Studio watch window
+        - LED, lamp or meter on the output
+        - Oscilloscope or logic analyzer
+        - Other
+  - type: textarea
+    id: program
+    attributes:
+      label: Program or project
+      description: The smallest Structured Text file or project that shows it.
+  - type: textarea
+    id: output
+    attributes:
+      label: Log
+      description: Serial output and `zplc sys info --json`. Remove anything private.
+      render: shell
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Before you send
+      options:
+        - label: I removed credentials, network names and tokens from everything I attached.
+          required: true
