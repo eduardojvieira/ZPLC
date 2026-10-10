@@ -167,7 +167,9 @@ compilan las fuentes del núcleo con él.
 ## Integración continua
 
 El trabajo `host-core-sanitized` ejecuta la pasada de host después de su compilación con sanitizadores, con
-`clang-tidy` instalado desde la distribución. El trabajo `zephyr-twister` ejecuta `native` con su propio paso de Twister y
+`clang-tidy` instalado desde la distribución. Cada trabajo `zephyr-cross-build` ejecuta la pasada de Zephyr
+sobre la compilación que acaba de hacer, contra la línea base de su placa (la placa Xtensa no tiene destino
+clang y se omite). El trabajo `zephyr-twister` ejecuta `native` con su propio paso de Twister y
 luego `native32`, `qemu-m3` y `qemu-m0` con `run.sh`, en el mismo espacio de
 trabajo. Cada trabajo `zephyr-cross-build` comprueba la flash y la RAM de su
 placa frente a `size-budget.json` y escribe la tabla en el resumen del
@@ -228,9 +230,12 @@ ni la marca máxima del heap.
   `native_sim`.
 - El modo `app` todavía no forma parte de la integración continua: ningún
   trabajo compila una placa y luego ejecuta la prueba de host.
-- La pasada de Zephyr de `tidy` todavía no forma parte de la integración
-  continua: la pasada de host sí. La línea base de `firmware/app` es la lista
-  de hallazgos que faltan por corregir allí.
+- La línea base de `firmware/app` de la pasada de Zephyr es la lista de
+  hallazgos que faltan por corregir allí; `tools/ci/clang-tidy-app-baseline.json`
+  guarda un conteo por placa, archivo y chequeo. La pasada se probó contra
+  compilaciones locales de placa con una versión de `clang-tidy`; la primera
+  ejecución en integración continua mostrará si las líneas base también valen
+  con la del runner.
 - Dos casos de integración de `test_vm_core.c` se omiten en todos los
   destinos, el host incluido, porque los binarios de ejemplo que cargan son
   anteriores al campo CRC. Las líneas `SKIP:` están en el registro de la

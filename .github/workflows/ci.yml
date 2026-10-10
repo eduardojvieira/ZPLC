@@ -261,18 +261,26 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # tidy_board names the board in tools/ci/clang-tidy-app-baseline.json (the board ids of
+          # firmware/app/boards/supported-boards.v1.5.0.json).
           - id: rpi-pico
             board: rpi_pico/rp2040
+            tidy_board: rpi-pico-rp2040
           - id: arduino-giga-r1
             board: arduino_giga_r1/stm32h747xx/m7
+            tidy_board: arduino-giga-r1-m7
           - id: esp32s3-devkitc
             board: esp32s3_devkitc/esp32s3/procpu
+            tidy_board: esp32-s3-devkitc
           - id: stm32f746g-disco
             board: stm32f746g_disco/stm32f746xx
+            tidy_board: stm32f746g-disco
           - id: nucleo-h743zi
             board: nucleo_h743zi/stm32h743xx
+            tidy_board: nucleo-h743zi
           - id: arduino-opta
             board: arduino_opta/stm32h747xx/m7
+            tidy_board: arduino-opta-wifi-m7
     env:
       ZEPHYR_TOOLCHAIN_VARIANT: zephyr
     steps:
@@ -317,6 +325,18 @@ jobs:
         run: |
           set -o pipefail
           west build -p always -b "${{ matrix.board }}" zplc/firmware/app -d "${RUNNER_TEMP}/zplc-${{ matrix.id }}" 2>&1 | tee "${RUNNER_TEMP}/zplc-${{ matrix.id }}.build.log"
+
+      # VF-018: clang-tidy over the Zephyr HAL, the scheduler, the core as built for this board and firmware/app, with
+      # the compile commands of the build above rewritten for clang. The core and the HAL must report nothing; the
+      # findings that firmware/app still has are counted per board in tools/ci/clang-tidy-app-baseline.json and a
+      # new one fails the step. The Xtensa board (esp32s3-devkitc) has no clang target and is skipped by the script.
+      - name: Static analysis of the Zephyr HAL and firmware/app (clang-tidy, warnings are errors)
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends clang-tidy
+          python3 zplc/tools/ci/run_clang_tidy.py --zephyr-only \
+            --zephyr-build "${RUNNER_TEMP}/zplc-${{ matrix.id }}" --board "${{ matrix.tidy_board }}"
 
       - name: Check flash and RAM against the size budget
         shell: bash

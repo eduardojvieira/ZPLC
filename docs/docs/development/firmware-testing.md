@@ -156,7 +156,8 @@ sources with it as well.
 ## Continuous integration
 
 The `host-core-sanitized` job runs the host pass after its sanitized build, with `clang-tidy` installed from
-the distribution. The `zephyr-twister` job runs `native` through its own Twister step and then
+the distribution. Each `zephyr-cross-build` job runs the Zephyr pass on the build it has just made, against the
+baseline of its board (the Xtensa board has no clang target and is skipped). The `zephyr-twister` job runs `native` through its own Twister step and then
 `native32`, `qemu-m3` and `qemu-m0` through `run.sh`, in the same workspace.
 Each `zephyr-cross-build` job checks its board's flash and RAM against
 `size-budget.json` and writes the table to the job summary. The report tool has
@@ -212,9 +213,11 @@ the heap high-water mark.
   so "outputs safe while paused" is observed on `native_sim` alone.
 - The `app` mode is not part of continuous integration yet: no job builds a
   board and then runs the host test.
-- The Zephyr pass of `tidy` is not part of continuous integration yet: the
-  host pass is. The `firmware/app` baseline is the list of findings that
-  remain to be fixed there.
+- The `firmware/app` baseline of the Zephyr pass is the list of findings that
+  remain to be fixed there; `tools/ci/clang-tidy-app-baseline.json` holds one
+  count per board, file and check. The pass was proven against local board
+  builds with one `clang-tidy` version; the first run in continuous integration
+  shows whether the baselines also hold with the runner's.
 - Two integration cases in `test_vm_core.c` skip on every target, the host
   included, because the example binaries they load predate the CRC field.
   The `SKIP:` lines are in the suite log and the summary still reports a pass.
