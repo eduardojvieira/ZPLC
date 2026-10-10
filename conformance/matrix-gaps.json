@@ -6,7 +6,6 @@
   {"row": "data-types.array-initialisers", "requirement": "CMP-022", "reason": "both initialiser cases (value list, repeat count) are on the expected-failure list", "added": "2026-10-10"},
   {"row": "data-types.array-bounds-checking", "requirement": "CMP-023", "reason": "the run-time fault and the constant-index rejection are both on the expected-failure list", "added": "2026-10-10"},
   {"row": "data-types.type-aliases-and-type-blocks", "requirement": "CMP-030", "reason": "the alias case and the several-types case are on the expected-failure list", "added": "2026-10-10"},
-  {"row": "data-types.ref-to-ref-deref", "requirement": "CMP-024", "reason": "the null-dereference fault and the type check are both on the expected-failure list; no case shows a REF_TO that works until they pass", "added": "2026-10-10"},
   {"row": "literals.typed-literals", "requirement": "CMP-031", "reason": "the typed literal INT#5 is on the expected-failure list", "added": "2026-10-10"},
   {"row": "declarations.var-in-out", "requirement": "CMP-028", "reason": "VAR_IN_OUT is passed by value; its case is on the expected-failure list", "added": "2026-10-10"},
   {"row": "declarations.var-temp", "requirement": "CMP-027", "reason": "VAR_TEMP is static and is rejected in a PROGRAM; both cases are on the expected-failure list", "added": "2026-10-10"},

@@ -3,7 +3,7 @@
   "title": "SIN, COS and TAN of positive and negative angles in radians",
   "matrix": ["functions.trigonometric-logarithmic-exponential"],
   "tags": ["arch-sensitive", "float"],
-  "note": "IEC 61131-3 table 29: SIN, COS and TAN take an angle in radians; SIN(1) = 0.8414710, COS(1) = 0.5403023, TAN(1) = 1.5574077; SIN is odd and COS even; the tolerance is 0.001",
+  "note": "IEC 61131-3, numerical functions: SIN, COS and TAN take an angle in radians; SIN(1) = 0.8414710, COS(1) = 0.5403023, TAN(1) = 1.5574077; SIN is odd and COS even; the tolerance is 0.001",
   "scans": 1,
   "scanMs": 10,
   "expect": [

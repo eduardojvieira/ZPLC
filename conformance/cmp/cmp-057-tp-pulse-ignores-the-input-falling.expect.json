@@ -2,7 +2,7 @@
   "requirement": "CMP-057",
   "title": "TP holds Q for the preset when IN falls, and ends it at the preset",
   "matrix": ["blocks.tp"],
-  "note": "IEC 61131-3 table 46 (timing diagram of TP): a rising edge of IN sets Q for the time PT whatever IN does meanwhile; the input rises at 10 ms and falls at 20 ms, so Q is TRUE until 60 ms, where the elapsed time equals PT",
+  "note": "IEC 61131-3, the TP timer (timing diagram): a rising edge of IN sets Q for the time PT whatever IN does meanwhile; the input rises at 10 ms and falls at 20 ms, so Q is TRUE until 60 ms, where the elapsed time equals PT",
   "scans": 8,
   "scanMs": 10,
   "inputs": [

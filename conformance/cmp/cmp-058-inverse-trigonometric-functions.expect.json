@@ -3,7 +3,7 @@
   "title": "ASIN, ACOS and ATAN return radians",
   "matrix": ["functions.trigonometric-logarithmic-exponential"],
   "tags": ["arch-sensitive", "float"],
-  "note": "IEC 61131-3 table 29: ASIN, ACOS and ATAN are the principal values in radians; ASIN(0.5) = pi/6, ACOS(0.5) = pi/3, ATAN(1) = pi/4; the tolerance is 0.001",
+  "note": "IEC 61131-3, numerical functions: ASIN, ACOS and ATAN are the principal values in radians; ASIN(0.5) = pi/6, ACOS(0.5) = pi/3, ATAN(1) = pi/4; the tolerance is 0.001",
   "scans": 1,
   "scanMs": 10,
   "expect": [

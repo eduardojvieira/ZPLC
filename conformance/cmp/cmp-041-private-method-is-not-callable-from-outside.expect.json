@@ -2,7 +2,7 @@
   "requirement": "CMP-041",
   "title": "a PRIVATE method called from outside its function block is rejected",
   "matrix": ["pous.public-private-protected-abstract"],
-  "note": "IEC 61131-3 ed. 3 table 50: a PRIVATE method is accessible only inside its own function block; the access specifier is enforced (CMP-041)",
+  "note": "IEC 61131-3 ed. 3, access specifiers of methods: a PRIVATE method is accessible only inside its own function block; the access specifier is enforced (CMP-041)",
   "build": "fails",
   "lines": [12],
   "messageIncludes": []

@@ -2,7 +2,7 @@
   "requirement": "CMP-058",
   "title": "F_TRIG gives one pulse when its input falls",
   "matrix": ["blocks.edge-detectors-and-bistables"],
-  "note": "IEC 61131-3 table 43: F_TRIG sets Q for one execution when CLK goes from TRUE to FALSE; the output is FALSE at power-up even when CLK is already FALSE",
+  "note": "IEC 61131-3, standard edge detection function blocks: F_TRIG sets Q for one execution when CLK goes from TRUE to FALSE; the output is FALSE at power-up even when CLK is already FALSE",
   "scans": 5,
   "scanMs": 10,
   "inputs": [

@@ -9,6 +9,7 @@
   ],
   "VF-005": [
     {"kind":"unit","ref":"packages/zplc-ide/src/conformance/cases.test.ts","test":"parseExpectation: matrix rows, tags and located diagnostics (VF-003, VF-005)"},
+    {"kind":"unit","ref":"tools/ci/conformance-matrix.test.ts","test":"tags every row that is architecture-sensitive with a case that carries the tag (VF-005)"},
     {"kind":"c-test","ref":"firmware/lib/zplc_core/tests/test_vm_arith_edges.c","test":"(VF-005, VF-015)."}
   ],
   "VF-008": [
@@ -261,7 +262,8 @@
   ],
   "CMP-024": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-024-null-reference-faults.expect.json","test":"CMP-024 dereferencing a null reference raises a VM fault"},
-    {"kind":"conformance","ref":"conformance/cmp/cmp-024-ref-of-another-type.expect.json","test":"CMP-024 REF() of a REAL assigned to a REF_TO INT is rejected"}
+    {"kind":"conformance","ref":"conformance/cmp/cmp-024-ref-of-another-type.expect.json","test":"CMP-024 REF() of a REAL assigned to a REF_TO INT is rejected"},
+    {"kind":"conformance","ref":"conformance/cmp/cmp-024-ref-to-reads-and-writes-the-referenced-variable.expect.json","test":"CMP-024 a REF_TO variable reads and writes the variable it refers to"}
   ],
   "CMP-025": [
     {"kind":"conformance","ref":"conformance/cmp/cmp-025-fb-member-initial-value.expect.json","test":"CMP-025 function-block member holds its declared initial value"},

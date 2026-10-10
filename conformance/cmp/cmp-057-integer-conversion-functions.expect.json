@@ -2,7 +2,7 @@
   "requirement": "CMP-057",
   "title": "conversion functions between integer types keep an in-range value",
   "matrix": ["functions.other-conversions"],
-  "note": "IEC 61131-3 table 22: a conversion function exists for every pair of elementary types; a value in the range of the target type keeps its value",
+  "note": "IEC 61131-3, data type conversion functions: a conversion function exists for every pair of elementary types; a value in the range of the target type keeps its value",
   "scans": 1,
   "scanMs": 10,
   "expect": [

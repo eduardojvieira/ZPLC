@@ -2,7 +2,7 @@
   "requirement": "CMP-041",
   "title": "a PUBLIC method is callable from outside its function block",
   "matrix": ["pous.public-private-protected-abstract"],
-  "note": "IEC 61131-3 ed. 3 table 50: a PUBLIC method is accessible from anywhere",
+  "note": "IEC 61131-3 ed. 3, access specifiers of methods: a PUBLIC method is accessible from anywhere",
   "scans": 1,
   "scanMs": 10,
   "expect": [

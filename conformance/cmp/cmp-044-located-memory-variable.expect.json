@@ -2,7 +2,7 @@
   "requirement": "CMP-044",
   "title": "a variable located in the work memory (%MW0) keeps its value between scans",
   "matrix": ["declarations.at-m"],
-  "note": "IEC 61131-3 table 16: the location prefix M names a memory location; a located variable is a static variable that keeps its value between scans",
+  "note": "IEC 61131-3, directly represented variables: the location prefix M names a memory location; a located variable is a static variable that keeps its value between scans",
   "scans": 3,
   "scanMs": 10,
   "expect": [

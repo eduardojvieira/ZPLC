@@ -2,7 +2,7 @@
   "requirement": "CMP-025",
   "title": "VAR_INPUT and VAR_OUTPUT of a function block",
   "matrix": ["declarations.var-var-input-var-output", "pous.function-block-with-state-and-several-instances"],
-  "note": "IEC 61131-3 tables 13 and 14: inputs are given at the call and outputs are read from the instance; the instance keeps its state between scans, so four calls of step 3 total 12",
+  "note": "IEC 61131-3, function block declaration and call: inputs are given at the call and outputs are read from the instance; the instance keeps its state between scans, so four calls of step 3 total 12",
   "scans": 4,
   "scanMs": 10,
   "expect": [

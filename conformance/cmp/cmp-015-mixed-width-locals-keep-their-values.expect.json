@@ -3,7 +3,7 @@
   "title": "locals of every width declared in turn each keep their own value",
   "matrix": ["data-types.lint-ulint-lword", "data-types.bool"],
   "tags": ["arch-sensitive", "alignment", "64-bit"],
-  "note": "IEC 61131-3 table 10 and 12: each variable holds the value assigned to it whatever its neighbours are; a 64-bit LINT placed after 8-, 16- and 32-bit variables sit at an address that a Cortex-M0 can only read if the compiler or the VM aligns it",
+  "note": "IEC 61131-3, elementary data types and variables: each variable holds the value assigned to it whatever its neighbours are; a 64-bit LINT placed after 8-, 16- and 32-bit variables sit at an address that a Cortex-M0 can only read if the compiler or the VM aligns it",
   "scans": 1,
   "scanMs": 10,
   "expect": [

@@ -2,7 +2,7 @@
   "requirement": "CMP-047",
   "title": "a direct input of each width reaches a direct output of the same width",
   "matrix": ["declarations.at-i-at-q-direct-addresses"],
-  "note": "IEC 61131-3 table 16: %IX, %IB, %IW and %ID address a bit, a byte, a word and a double word of the input image and %Q the same of the output image; the program copies each unchanged",
+  "note": "IEC 61131-3, directly represented variables: %IX, %IB, %IW and %ID address a bit, a byte, a word and a double word of the input image and %Q the same of the output image; the program copies each unchanged",
   "scans": 1,
   "scanMs": 10,
   "inputs": [

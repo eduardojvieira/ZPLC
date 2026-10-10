@@ -2,7 +2,7 @@
   "requirement": "LNG-025",
   "title": "an SFC chart of twenty steps runs every step once, one per scan",
   "matrix": ["sfc.charts-of-more-than-14-steps"],
-  "note": "IEC 61131-3 table 56: a step is active until the transition after it fires, and one transition fires per scan in this runtime (LNG-024); twenty steps each run their N action once, in twenty scans",
+  "note": "IEC 61131-3, sequential function chart: a step is active until the transition after it fires, and one transition fires per scan in this runtime (LNG-024); twenty steps each run their N action once, in twenty scans",
   "scans": 20,
   "scanMs": 10,
   "expect": [
