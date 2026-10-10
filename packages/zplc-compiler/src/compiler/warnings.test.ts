@@ -258,3 +258,65 @@ describe('compiler.strictTypes (CMP-059)', () => {
         expect(() => compileToBinary('PROGRAM P\nVAR i : INT; d : DINT; END_VAR\n    i := DINT_TO_INT(d);\n    d := i;\nEND_PROGRAM', { strictTypes: true })).not.toThrow();
     });
 });
+
+describe('a call to WATCHDOG_RESET does nothing, and the build says so (RT-034)', () => {
+  const call = 'PROGRAM P\nVAR n : INT; END_VAR\n  n := 1;\n  WATCHDOG_RESET();\n  n := 2;\nEND_PROGRAM\n';
+
+  test('is reported at the call, with what the runtime does instead', () => {
+    const found = warningsOf(call).filter((warning) => warning.code === 'WATCHDOG_RESET_NO_EFFECT');
+    expect(found.map((warning) => `${warning.line}:${warning.column}`)).toEqual(['4:3']);
+    expect(found[0]!.message).toContain('WATCHDOG_RESET');
+    expect(found[0]!.message).toContain('does nothing');
+    expect(found[0]!.message).toContain('feeds the hardware watchdog');
+    expect(found[0]!.message).toContain('after each completed scan');
+  });
+
+  test('is reported for each call and whatever the case of the name', () => {
+    const source = 'PROGRAM P\nVAR n : INT; END_VAR\n  watchdog_reset();\n  n := 1;\n  Watchdog_Reset();\nEND_PROGRAM\n';
+    expect(at(warningsOf(source), 'WATCHDOG_RESET_NO_EFFECT')).toEqual(['3:3', '5:3']);
+  });
+
+  test('is selected by the level like every warning: default and all report it, none and a list without it do not', () => {
+    expect(codes(warningsOf(call, 'default'))).toContain('WATCHDOG_RESET_NO_EFFECT');
+    expect(codes(warningsOf(call, 'all'))).toContain('WATCHDOG_RESET_NO_EFFECT');
+    expect(warningsOf(call, 'none')).toEqual([]);
+    expect(codes(warningsOf(call, ['UNUSED_VARIABLE']))).not.toContain('WATCHDOG_RESET_NO_EFFECT');
+    expect(codes(warningsOf(call, ['WATCHDOG_RESET_NO_EFFECT']))).toEqual(['WATCHDOG_RESET_NO_EFFECT']);
+  });
+
+  test('a function block body that calls it is reported once, however many instances inline it', () => {
+    const source = [
+      'FUNCTION_BLOCK Guard',
+      'VAR_INPUT go : BOOL; END_VAR',
+      '  WATCHDOG_RESET();',
+      'END_FUNCTION_BLOCK',
+      'PROGRAM P',
+      'VAR a : Guard; b : Guard; END_VAR',
+      '  a(go := TRUE);',
+      '  b(go := TRUE);',
+      'END_PROGRAM',
+    ].join('\n');
+    expect(at(warningsOf(source), 'WATCHDOG_RESET_NO_EFFECT')).toEqual(['3:3']);
+  });
+
+  test('a function of the project that has the name is called, not reported', () => {
+    const source = [
+      'FUNCTION WATCHDOG_RESET : INT',
+      'VAR_INPUT value : INT; END_VAR',
+      '  WATCHDOG_RESET := value;',
+      'END_FUNCTION',
+      'PROGRAM P',
+      'VAR result : INT; END_VAR',
+      '  result := WATCHDOG_RESET(1);',
+      'END_PROGRAM',
+    ].join('\n');
+    expect(codes(warningsOf(source))).not.toContain('WATCHDOG_RESET_NO_EFFECT');
+  });
+
+  test('a project build names the file of the call', () => {
+    const config = { name: 'W', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic' as const, interval: 10, priority: 1, programs: ['P'] }] };
+    const found = compileMultiTaskProject(config, [{ name: 'P', content: call, sourceRef: 'src/p.st' }]).warnings
+      .filter((warning) => warning.code === 'WATCHDOG_RESET_NO_EFFECT');
+    expect(found.map((warning) => `${warning.sourceRef}:${warning.line}`)).toEqual(['src/p.st:4']);
+  });
+});

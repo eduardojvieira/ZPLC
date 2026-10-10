@@ -516,6 +516,13 @@ All notable changes are documented here.
 - The assembly listing of a build is a tested output of the CLI (CMP-060):
   `zplc-cli compile <workspace|file> --emit asm` prints it, or writes it to
   `--output`, and assembling it gives the bytecode of the artifact.
+- A call to `WATCHDOG_RESET()` is reported by the build with the warning
+  `WATCHDOG_RESET_NO_EFFECT` at the call (RT-034): it compiles to nothing, no
+  opcode feeds the hardware watchdog, and the runtime feeds it itself after each
+  completed scan. It is a warning, not an error, so programs that call it still
+  build; `compiler.warnings` selects it (the level `default` reports it). The
+  bundled `kitchen_sink` fixture keeps its call, which exercises the function,
+  and already selects no warnings.
 
 ## 2.0.0-rc.3 - 2026-09-01
 

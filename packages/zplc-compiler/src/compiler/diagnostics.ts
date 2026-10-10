@@ -39,6 +39,8 @@ export interface SyntaxIssue extends SourceSpan {
  *  - WRITE_ONLY_VARIABLE: a variable that is written and never read
  *  - OPTION_IGNORED: a project option, or a value of one, that has no effect on this compiler
  *  - SOURCE_NOT_COMPILED: a source file of the project folder that is in neither `src` nor a listed library
+ *  - WATCHDOG_RESET_NO_EFFECT: a call to WATCHDOG_RESET, which compiles to nothing: the runtime feeds the
+ *    hardware watchdog itself after each completed scan (RT-034)
  */
 export const WARNING_CODES = [
     'NON_IEC_HEX_LITERAL',
@@ -49,6 +51,7 @@ export const WARNING_CODES = [
     'WRITE_ONLY_VARIABLE',
     'OPTION_IGNORED',
     'SOURCE_NOT_COMPILED',
+    'WATCHDOG_RESET_NO_EFFECT',
 ] as const;
 
 export type WarningCode = typeof WARNING_CODES[number];
