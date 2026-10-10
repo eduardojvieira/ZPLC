@@ -8,10 +8,12 @@
  *   ZPLC_JOURNEY_SHOTS=<dir> bun run ...        also save a screenshot of the screen where a journey failed
  */
 import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { assert, packageRoot } from './run-desktop-smoke';
 import { NotPossible, launchApp, startHarness, type Harness } from './journeyApp';
-import { JOURNEYS, type Journey } from './journeys';
+import { JOURNEYS, runPackagedSecurityProbes, type Journey } from './journeys';
+import { discoverPackagedExecutable } from './run-packaged-desktop-smoke';
 
 /**
  * Journeys that fail (or are not possible) today because of a defect that a later package fixes. Each entry names the
@@ -61,7 +63,24 @@ async function runJourney(harness: Harness, journey: Journey, scratch: string): 
   }
 }
 
+/**
+ * ZPLC_PACKAGED_DIST names the output directory of electron-builder: the security probes of IDE-016 then run against the
+ * unpacked packaged application (production policy, file:// renderer) instead of the development host.
+ */
+async function runPackaged(distribution: string): Promise<void> {
+  const executable = discoverPackagedExecutable(distribution);
+  const scratch = mkdtempSync(join(tmpdir(), 'zplc-packaged-security-'));
+  try {
+    const started = Date.now();
+    const evidence = await runPackagedSecurityProbes(executable, scratch);
+    console.log(`PASS         IDE-016 security probes on the packaged application (${((Date.now() - started) / 1000).toFixed(1)}s)`);
+    for (const line of evidence) console.log(`  - ${line}`);
+    console.log('\nThe packaged application on Linux only, native POSIX: no installer, macOS, Windows, HIL, timing or hardware evidence.');
+  } finally { rmSync(scratch, { recursive: true, force: true }); }
+}
+
 async function main(): Promise<void> {
+  if (process.env.ZPLC_PACKAGED_DIST) { await runPackaged(process.env.ZPLC_PACKAGED_DIST); return; }
   const only = process.env.ZPLC_JOURNEY_ONLY;
   const selected = JOURNEYS.filter((journey) => !only || journey.name.toLowerCase().includes(only.toLowerCase()));
   assert(selected.length > 0, `No journey matches ZPLC_JOURNEY_ONLY=${only}`);

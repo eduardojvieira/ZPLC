@@ -3,7 +3,7 @@
  * expects (assert), or reports that the journey cannot be performed at all (notPossible). Observation reads the screen
  * and the editor; every action is a real click, key or text insertion.
  */
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { readZip } from '../electron/projectArchiveZip';
@@ -11,7 +11,7 @@ import { learnLessonCatalog } from '../src/components/learnLesson';
 import { compilerCompile } from '../src/cli/toolApi';
 import { NATIVE_PROGRAM_MAX_BYTES } from '../electron/security';
 import { assert, MONACO_MODULE_URL, packageRoot } from './run-desktop-smoke';
-import { button, css, menuItem, tab, type App, type Target } from './journeyApp';
+import { button, css, launchPackagedApp, menuItem, tab, type App, type Target } from './journeyApp';
 
 export interface JourneyContext {
   root: string;
@@ -275,6 +275,164 @@ async function writeProjectOfSize(folder: string, bytes: number): Promise<void> 
   writeBigProject(folder, [...Array<string>(steps).fill('  X := X + 1;'), ...Array<string>(a).fill('  Y := 0;'), ...Array<string>(b).fill('  Y := X;')]);
   const made = await compiledSize([...Array<string>(steps).fill('  X := X + 1;'), ...Array<string>(a).fill('  Y := 0;'), ...Array<string>(b).fill('  Y := X;')]);
   assert(made === bytes, `The generated program is ${made} bytes, not the ${bytes} the journey needs.`);
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Security probes (IDE-016): what a hostile page, or a person with DevTools, can and cannot make the application do
+// ---------------------------------------------------------------------------------------------------------------------
+
+/** The project of the path probes: a folder with a file, a file outside it, and two links that leave it. */
+export function writeSecurityFixture(base: string): { project: string; outside: string; secret: string } {
+  const outside = realpathSync(mkdtempSync(join(base, 'security-')));
+  // A real example, so that the project that the probes work in can also be built and tested afterwards.
+  const project = join(outside, 'project');
+  cpSync(join(packageRoot, 'projects', 'motor_start_stop'), project, { recursive: true });
+  const secret = join(outside, 'secret.txt');
+  writeFileSync(secret, 'outside the project');
+  symlinkSync(secret, join(project, 'leak.txt'));
+  symlinkSync(outside, join(project, 'linkdir'), 'dir');
+  return { project, outside, secret };
+}
+
+/**
+ * The five properties of IDE-016, each shown by what the running application does. The page injects a script, asks for
+ * permissions, navigates, opens windows and sends project operations with hostile paths, as a person with DevTools could.
+ * `packaged` says that the page runs the production policy (`script-src 'self'`): the development host serves its own
+ * scripts inline for hot reload, so the inline-script probe is made only on the packaged application.
+ */
+export async function probeSecurity(app: App, options: { packaged: boolean; fixture: { project: string; outside: string; secret: string }; open(): Promise<string> }): Promise<string[]> {
+  const evidence: string[] = [];
+  const probe = <T,>(body: string) => app.eval<T>(`(async () => { ${body} })()`);
+
+  // 1. An injected inline script is blocked.
+  if (options.packaged) {
+    const inline = await probe<{ ran: boolean; handlerRan: boolean; violations: string[] }>(`
+      const violations = [];
+      document.addEventListener('securitypolicyviolation', (event) => violations.push(event.violatedDirective));
+      window.__zplcInline = false; window.__zplcHandler = false;
+      const script = document.createElement('script'); script.textContent = 'window.__zplcInline = true;'; document.head.appendChild(script);
+      const image = document.createElement('img'); image.setAttribute('onerror', 'window.__zplcHandler = true'); image.src = 'zplc-probe-missing.png'; document.body.appendChild(image);
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      return { ran: window.__zplcInline === true, handlerRan: window.__zplcHandler === true, violations };`);
+    assert(!inline.ran, 'An inline script that the page injected ran.');
+    assert(!inline.handlerRan, 'An inline event handler that the page injected ran.');
+    assert(inline.violations.some((directive) => directive.startsWith('script-src')), `The policy reported no script violation: ${JSON.stringify(inline.violations)}`);
+    evidence.push(`inline script and inline event handler blocked (${[...new Set(inline.violations)].join(', ')})`);
+  }
+  // The policy is applied to the page in both builds: a request to another origin is refused by connect-src.
+  const connect = await probe<{ blocked: boolean; violated: string[] }>(`
+    const violated = [];
+    document.addEventListener('securitypolicyviolation', (event) => violated.push(event.violatedDirective));
+    const blocked = await fetch('https://example.invalid/zplc-probe').then(() => false, () => true);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    return { blocked, violated };`);
+  assert(connect.blocked && connect.violated.includes('connect-src'), `A request to another origin was not stopped by the policy: ${JSON.stringify(connect)}`);
+  evidence.push('a request to another origin is refused by connect-src');
+
+  // 2. A permission other than serial is refused; serial is the one that the trusted document has.
+  const permissions = await probe<Record<string, string>>(`
+    const outcome = (promise) => promise.then(() => 'granted', (error) => error && error.name ? error.name : 'refused');
+    return {
+      notifications: await Notification.requestPermission(),
+      geolocation: await new Promise((resolve) => navigator.geolocation.getCurrentPosition(() => resolve('granted'), (error) => resolve(error.code === 1 ? 'denied' : 'error:' + error.code))),
+      // What the permission check handler answers for a device permission: a machine with no camera or microphone cannot tell
+      // a refused request from a missing device, so the state that the page is given is read as well.
+      camera: await navigator.permissions.query({ name: 'camera' }).then((status) => status.state, (error) => error.name),
+      microphone: await navigator.permissions.query({ name: 'microphone' }).then((status) => status.state, (error) => error.name),
+      clipboardRead: await outcome(navigator.clipboard.readText()),
+      midi: await outcome(navigator.requestMIDIAccess()),
+      serialPorts: await navigator.serial.getPorts().then((ports) => Array.isArray(ports) ? 'available' : 'unexpected', (error) => error.name),
+    };`);
+  for (const name of ['notifications', 'geolocation', 'camera', 'microphone', 'clipboardRead', 'midi']) {
+    assert(permissions[name] !== 'granted' && ['denied', 'NotAllowedError', 'SecurityError', 'NotSupportedError', 'refused'].includes(permissions[name]!), `${name} was not refused: ${JSON.stringify(permissions)}`);
+  }
+  assert(permissions.serialPorts === 'available', `The trusted document cannot use serial: ${JSON.stringify(permissions)}`);
+  evidence.push(`permissions refused: ${['notifications', 'geolocation', 'camera', 'microphone', 'clipboardRead', 'midi'].map((name) => `${name}=${permissions[name]}`).join(', ')}; serial available`);
+
+  // 3. Navigation and new windows are refused.
+  const pagesBefore = await app.pages();
+  const navigation = await probe<{ sameDocument: boolean; opened: boolean; openedSame: boolean }>(`
+    const href = location.href;
+    const opened = window.open('https://example.invalid/zplc-probe');
+    const openedSame = window.open(location.href);
+    const link = document.createElement('a'); link.href = 'https://example.invalid/zplc-link'; link.target = '_blank'; document.body.appendChild(link); link.click(); link.remove();
+    location.assign('https://example.invalid/zplc-navigation');
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    return { sameDocument: location.href === href, opened: opened !== null, openedSame: openedSame !== null };`);
+  assert(navigation.sameDocument, 'The page navigated away from the application document.');
+  assert(!navigation.opened && !navigation.openedSame, 'window.open produced a window.');
+  assert(await app.pages() === pagesBefore, 'A window was opened.');
+  evidence.push('window.open, a _blank link and navigation to another origin refused; the document and the window count did not change');
+
+  // 4. A project operation with `..`, an absolute path or a link that leaves the project is refused.
+  const rootId = await options.open();
+  const operation = (name: string, request: string) => probe<{ ok: boolean; code?: string }>(`return await window.electronAPI.projectFiles.${name}(${request});`);
+  /** The request as page script: `bytes` is a Uint8Array of the text after `utf8:` (a typed array does not survive JSON). */
+  const literal = (request: Record<string, unknown>) => `{ ${Object.entries({ rootId, ...request }).map(([key, value]) => `${JSON.stringify(key)}: ${key === 'bytes' && typeof value === 'string' ? `new TextEncoder().encode(${JSON.stringify(value)})` : JSON.stringify(value)}`).join(', ')} }`;
+  const refused = async (name: string, request: Record<string, unknown>, code: string) => {
+    const answer = await operation(name, literal(request));
+    assert(!answer.ok && answer.code === code, `${name} ${JSON.stringify(request)} should be refused as ${code}: ${JSON.stringify(answer)}`);
+  };
+  const control = await operation('read', literal({ path: 'src/Motor.st' }));
+  assert(control.ok, `A read inside the project should work: ${JSON.stringify(control)}`);
+  await refused('read', { path: '../secret.txt' }, 'invalid-path');
+  await refused('read', { path: 'src/../../secret.txt' }, 'invalid-path');
+  await refused('read', { path: options.fixture.secret }, 'invalid-path');
+  await refused('read', { path: 'C:\\Windows\\win.ini' }, 'invalid-path');
+  await refused('list', { path: '..' }, 'invalid-path');
+  await refused('remove', { path: '../secret.txt', recursive: false }, 'invalid-path');
+  await refused('rename', { from: 'src/Motor.st', to: '../moved.st' }, 'invalid-path');
+  await refused('read', { path: 'leak.txt' }, 'outside-root');
+  await refused('write', { path: 'leak.txt', bytes: 'overwritten' }, 'outside-root');
+  await refused('list', { path: 'linkdir' }, 'outside-root');
+  await refused('write', { path: 'linkdir/pwned.txt', bytes: 'pwned' }, 'outside-root');
+  const huge = await operation('write', `{ rootId: ${JSON.stringify(rootId)}, path: 'src/Huge.st', bytes: new Uint8Array(16 * 1024 * 1024 + 1) }`);
+  assert(!huge.ok && huge.code === 'too-large', `An over-size write should be refused: ${JSON.stringify(huge)}`);
+  const foreign = await operation('read', JSON.stringify({ rootId: 'not-the-folder-of-this-window', path: 'src/Motor.st' }));
+  assert(!foreign.ok && foreign.code === 'no-folder', `A folder id that is not the window's should be refused: ${JSON.stringify(foreign)}`);
+  assert(readFileSync(options.fixture.secret, 'utf8') === 'outside the project', 'A refused write changed the file outside the project.');
+  assert(!existsSync(join(options.fixture.outside, 'pwned.txt')) && !existsSync(join(options.fixture.project, 'src', 'Huge.st')), 'A refused write left a file behind.');
+  assert(existsSync(join(options.fixture.project, 'src', 'Motor.st')), 'A refused operation removed a project file.');
+  evidence.push('project operations refused: "..", absolute and drive paths, a file link and a directory link that leave the project, an over-size write, and another window\'s folder id; nothing outside the project changed');
+
+  // 5. After all of that the window still works: its folder builds and its scenarios run, in the worker process (IDE-012).
+  const registered = await probe<{ workspaceId: string } | null>(`return await window.electronAPI.workspaceTests.registerProjectRoot({ rootId: ${JSON.stringify(rootId)} });`);
+  assert(registered?.workspaceId, `The folder of the window could not be registered after the probes: ${JSON.stringify(registered)}`);
+  const request = `{ workspaceId: ${JSON.stringify(registered.workspaceId)}, rootId: ${JSON.stringify(rootId)} }`;
+  const built = await probe<{ ok: boolean; name?: string }>(`const result = await window.electronAPI.workspaceTests.compile(${request}); return { ok: result.ok === true, name: result.summary && result.summary.name };`);
+  assert(built.ok && built.name === 'Motor Start Stop', `The window cannot build its project after the probes: ${JSON.stringify(built)}`);
+  const tested = await probe<{ ok: boolean }>(`const result = await window.electronAPI.workspaceTests.run(${request}); return { ok: result.ok === true };`);
+  assert(tested.ok, `The window cannot run its scenarios after the probes: ${JSON.stringify(tested)}`);
+  evidence.push('after the probes the window still builds its project and runs its scenarios on the native runtime');
+  return evidence;
+}
+
+/**
+ * The same probes against a packaged application (`ZPLC_PACKAGED_DIST=<electron-builder output> bun run smoke:journeys`):
+ * the production policy and the file:// renderer, with the project reached through the recent projects of a seeded
+ * user-data directory because the packaged archive has no folder dialog hook (VF-008).
+ */
+export async function runPackagedSecurityProbes(executable: string, scratch: string): Promise<string[]> {
+  const fixture = writeSecurityFixture(scratch);
+  const profileRoot = mkdtempSync(join(scratch, 'packaged-'));
+  const launched = await launchPackagedApp(executable, profileRoot, [fixture.project]);
+  try {
+    const { app } = launched;
+    return await probeSecurity(app, {
+      packaged: true,
+      fixture,
+      open: async () => {
+        const listed = await app.eval<{ ok: boolean; value?: Array<{ recentId: string; displayName: string }> }>(`window.electronAPI.projectFiles.listRecent()`);
+        const entry = listed.value?.find((item) => item.displayName === 'project');
+        assert(listed.ok && entry, `The packaged application does not list the seeded project: ${JSON.stringify(listed)}`);
+        const opened = await app.eval<{ ok: boolean; value?: { rootId: string } }>(`window.electronAPI.projectFiles.openRecent({ recentId: ${JSON.stringify(entry.recentId)} })`);
+        assert(opened.ok && opened.value?.rootId, `The packaged application did not open the seeded project: ${JSON.stringify(opened)}`);
+        return opened.value.rootId;
+      },
+    });
+  } finally {
+    await launched.stop();
+  }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -1221,15 +1379,28 @@ export const JOURNEYS: Journey[] = [
     run: async (app, { project }) => {
       // the NOT block loses the wire into its input: the build says which block, and the problem has no line to go to
       const file = join(project, 'src', 'main.fbd.json');
-      const model = JSON.parse(disk(file)) as { connections: Array<{ to: { block: string } }> };
+      const intact = disk(file);
+      const model = JSON.parse(intact) as { connections: Array<{ to: { block: string } }> };
       model.connections = model.connections.filter((wire) => wire.to.block !== 'not_led');
       writeFileSync(file, JSON.stringify(model, null, 2));
       await openFolder(app, project);
       await openDiagram(app, 'src/main.fbd.json', '.react-flow__node');
       assert((await compile(app)).kind === 'failed', 'A diagram with an unwired input should not build.');
+      const selectedBlock = () => app.eval<string | null>(`document.querySelector('.react-flow__node.selected')?.getAttribute('data-id') ?? null`);
       await activateFirstProblem(app);
-      await app.until('the block of the problem selected on the canvas', async () => await app.eval<boolean>(`document.querySelector('.react-flow__node.selected')?.getAttribute('data-id') === 'not_led'`) || undefined)
+      await app.until('the block of the problem selected on the canvas', async () => await selectedBlock() === 'not_led' || undefined)
         .catch(async (error: Error) => { throw new Error(`${error.message}: selected nodes are ${JSON.stringify(await app.eval(`[...document.querySelectorAll('.react-flow__node.selected')].map((node) => node.getAttribute('data-id'))`))}`); });
+
+      // The element comes with the diagnostic, as the build named it: the wire is put back on disk and the open diagram
+      // follows it, so the open file no longer has the finding to place the problem from, and the problem is still the
+      // block's that the build named.
+      const wires = model.connections.length;
+      writeFileSync(file, intact);
+      await app.until('the open diagram to follow the file on disk', async () => await app.eval<number>(`document.querySelectorAll('.react-flow__edge').length`) === wires + 1 || undefined);
+      await app.click(css('.react-flow__node[data-id="ton_on"]'), 'another block');
+      await app.until('the other block selected', async () => await selectedBlock() === 'ton_on' || undefined);
+      await activateFirstProblem(app);
+      await app.until('the block the build named selected again, from the element it carried', async () => await selectedBlock() === 'not_led' || undefined);
     },
   },
   {
@@ -1481,6 +1652,287 @@ export const JOURNEYS: Journey[] = [
       await app.until('the declared pair in the table', async () => await app.eval<boolean>(`document.querySelector('[data-interlock-coverage] table')?.innerText.includes('Motor.Forward') === true`) || undefined);
       const report = await app.eval<string>(`document.querySelector('[data-interlock-coverage] table').innerText`);
       assert(report.includes('Motor.Reverse') && /Covered|Missing exact NEVER coverage/.test(report), `The table does not say whether the pair is covered: ${report}`);
+    },
+  },
+  {
+    // IDE-002: a message crafted through the bridge cannot make Build or Test act on a folder other than the one the window
+    // shows. The bridge calls are the same ones the toolbar makes; only the ids they carry are the ones of another project.
+    name: '34 A build and a test run act only on the project shown', example: 'motor_start_stop', proves: ['IDE-002'], partly: ['IDE-001'],
+    run: async (app, { root, project }) => {
+      const other = join(root, 'other-project');
+      cpSync(join(packageRoot, 'projects', 'blinky_st'), other, { recursive: true });
+      const shownName = (JSON.parse(disk(join(project, 'zplc.json'))) as { name: string }).name;
+      const otherName = (JSON.parse(disk(join(other, 'zplc.json'))) as { name: string }).name;
+      assert(shownName !== otherName, 'The two example projects must have different names for this journey to tell them apart.');
+
+      await openFolder(app, project);
+      const built = await compile(app);
+      assert(built.kind === 'built', `The project shown should build from the toolbar: ${built.kind} ${built.message}`);
+
+      type Answer = { ok: boolean; value?: unknown; message?: string };
+      const call = (body: string) => app.eval<Answer>(`(async () => { const api = window.electronAPI; try { return { ok: true, value: await (async () => { ${body} })() }; } catch (error) { return { ok: false, message: String((error && error.message) || error) }; } })()`);
+      const folderId = async (folder: string) => {
+        app.answer(folder);
+        const answer = await call('return await api.projectFiles.chooseFolder();');
+        const typed = answer.value as { ok: boolean; value: { rootId: string } | null } | undefined;
+        assert(answer.ok && typed?.ok && typed.value, `The bridge did not hand back a folder id: ${JSON.stringify(answer)}`);
+        return typed.value!.rootId;
+      };
+      const workspaceOf = async (rootId: string) => {
+        const answer = await call(`return await api.workspaceTests.registerProjectRoot({ rootId: ${JSON.stringify(rootId)} });`);
+        return answer.ok ? (answer.value as { workspaceId: string } | null)?.workspaceId ?? null : null;
+      };
+      /** What the bridge answers to an operation, reduced to whether it was refused and which project it built. */
+      const operation = async (name: 'compile' | 'safetyCheck' | 'run', workspaceId: string, rootId: string) => {
+        const answer = await call(`const result = await api.workspaceTests.${name}({ workspaceId: ${JSON.stringify(workspaceId)}, rootId: ${JSON.stringify(rootId)} }); return { ok: result && result.ok === true, name: result && result.summary && result.summary.name };`);
+        return { refused: !answer.ok, built: answer.ok ? (answer.value as { ok: boolean; name?: string }) : undefined };
+      };
+
+      // The window shows the project: a build asked for that project is the project's build.
+      const shownId = await folderId(project);
+      const shownWorkspace = await workspaceOf(shownId);
+      assert(shownWorkspace, 'The folder of the window could not be registered as a workspace.');
+      const control = await operation('compile', shownWorkspace, shownId);
+      assert(!control.refused && control.built?.ok && control.built.name === shownName, `A build of the project shown must succeed and be that project's: ${JSON.stringify(control)}`);
+
+      // The window now holds another folder. Everything addressed to the project it showed is refused.
+      const otherId = await folderId(other);
+      for (const name of ['compile', 'safetyCheck', 'run'] as const) {
+        const stale = await operation(name, shownWorkspace, shownId);
+        assert(stale.refused, `${name} for the folder that the window no longer holds must be refused: ${JSON.stringify(stale)}`);
+        const crossed = await operation(name, shownWorkspace, otherId);
+        assert(crossed.refused, `${name} with the workspace of one project and the id of another must be refused: ${JSON.stringify(crossed)}`);
+      }
+      assert(await workspaceOf(shownId) === null, 'The folder that the window no longer holds must not be registered as a workspace.');
+
+      // The project the window holds now builds, and it is its own build, not the earlier project's.
+      const otherWorkspace = await workspaceOf(otherId);
+      assert(otherWorkspace, 'The folder of the window could not be registered as a workspace.');
+      const rebuilt = await operation('compile', otherWorkspace, otherId);
+      assert(!rebuilt.refused && rebuilt.built?.ok && rebuilt.built.name === otherName, `A build of the project now held must be that project's: ${JSON.stringify(rebuilt)}`);
+      assert((await operation('compile', shownWorkspace, otherId)).refused, 'The earlier workspace must stay refused after the new one is registered.');
+    },
+  },
+
+  {
+    // IDE-012: the work of Tests runs in processes of its own and is cancellable; the window keeps answering throughout.
+    name: '35 A long test run can be cancelled and leaves no process behind', example: 'motor_start_stop', proves: ['IDE-012'], partly: [],
+    run: async (app, { project, root }) => {
+      // Three scenarios of the longest allowed length (10,000 samples each): seconds of work in the runtime.
+      for (const name of ['LongA', 'LongB', 'LongC']) {
+        const scenario = { schemaVersion: 1, id: name, tickMs: 10, durationMs: 99_990, events: [{ atMs: 0, set: { 'Motor.Start': true, 'Motor.Stop': false, 'Motor.EStop': false, 'Motor.Overload': false } }], expectations: [{ kind: 'AT', atMs: 0, condition: { 'Motor.Forward': false, 'Motor.Reverse': false } }] };
+        writeFileSync(join(project, 'tests', `${name}.scenario.json`), JSON.stringify(scenario));
+      }
+      /**
+       * The processes below the main process of the app under test (found by the private user-data directory only it
+       * carries: other applications may be running on the machine): pid and name.
+       * A utility process rewrites its command line once it is up, so the tree and the process name are what identify it.
+       */
+      const descendants = (): Array<{ pid: number; name: string }> => {
+        const table = new Map<number, { parent: number; name: string; command: string }>();
+        for (const entry of readdirSync('/proc')) {
+          if (!/^\d+$/.test(entry)) continue;
+          try {
+            const parent = Number(/PPid:\s+(\d+)/.exec(readFileSync(`/proc/${entry}/status`, 'utf8'))?.[1]);
+            table.set(Number(entry), { parent, name: readFileSync(`/proc/${entry}/comm`, 'utf8').trim(), command: readFileSync(`/proc/${entry}/cmdline`, 'utf8').split('\0').join(' ') });
+          } catch { /* it exited meanwhile */ }
+        }
+        const profile = `--user-data-dir=${join(root, 'profile')}`;
+        const main = [...table.entries()].find(([, entry]) => entry.command.split(' ').includes(profile) && entry.command.includes('--zplc-smoke-port=') && !entry.command.includes('--type='))?.[0];
+        const found: Array<{ pid: number; name: string }> = [];
+        const walk = (pid: number) => { for (const [child, entry] of table) if (entry.parent === pid) { found.push({ pid: child, name: entry.name }); walk(child); } };
+        if (main !== undefined) walk(main);
+        return found;
+      };
+      const reply = () => app.eval<number>(`(async () => { const started = performance.now(); await window.electronAPI.getAppInfo(); return performance.now() - started; })()`);
+      const run = button('Run host scenarios');
+      const cancel = button('Cancel scenarios');
+
+      await openFolder(app, project);
+      const known = new Set(descendants().map((process) => process.pid));
+      const added = () => descendants().filter((process) => !known.has(process.pid));
+      assert(known.size > 0, 'The journey could not find the processes of the app under test.');
+      await app.click(tab('Tests'));
+      await app.click(run);
+      await app.until('Cancel scenarios while the scenarios run', async () => await app.visible(cancel) || undefined);
+      // The tests run in a process of their own, which starts the native runtime: neither is a process of the app's main process alone.
+      const during = await app.until('a worker process that owns a native runtime', async () => {
+        const now = added();
+        return now.some((process) => process.name === 'zplc_runtime') && now.some((process) => process.name !== 'zplc_runtime') ? now : undefined;
+      }, 20_000);
+      assert(during.filter((process) => process.name !== 'zplc_runtime').length >= 1, 'The tests did not run in a process of their own.');
+
+      // The main process answers the window promptly while the work runs somewhere else.
+      const latencies: number[] = [];
+      for (let probe = 0; probe < 10; probe++) latencies.push(await reply());
+      assert(Math.max(...latencies) < 500, `The main process answered slowly while tests ran: ${latencies.map((value) => Math.round(value)).join(', ')} ms`);
+
+      await app.click(cancel);
+      await app.until('the run to end and Run host scenarios to come back', async () => !await app.visible(cancel) && await app.clickable(run) || undefined, 10_000);
+      await app.until('no worker and no runtime left', async () => added().length === 0 || undefined, 10_000);
+      assert((await app.text()).includes('Cancelled') || (await app.text()).toLowerCase().includes('cancel'), 'The Tests panel should say that the run was cancelled.');
+
+      // The window is alive and the next operation works.
+      assert(await reply() < 500, 'The main process does not answer after the cancel.');
+      const built = await compile(app);
+      assert(built.kind === 'built', `A build after a cancelled run should succeed: ${built.kind} ${built.message}`);
+    },
+  },
+
+  {
+    // IDE-021: the result of a save, a build, a connection change and a test run appears as a notification that opens the
+    // panel with its details, and a long operation shows progress with a Cancel action.
+    name: '36 Results appear as notifications that lead to their details', example: 'motor_start_stop', proves: ['IDE-021'], partly: [],
+    run: async (app, { project }) => {
+      const notification = (kind: string, status?: string) => css(`[data-notification="${kind}"]${status ? `[data-status="${status}"]` : ''}`);
+      const openDetails = css('[data-notification] [data-details]');
+      const textOf = (kind: string) => app.eval<string>(`document.querySelector('[data-notification="${kind}"]')?.innerText ?? ''`);
+      /** What every notification on screen says, for the failure message of a wait that ran out. */
+      const onScreen = () => app.eval<string>(`[...document.querySelectorAll('[data-notification]')].map((item) => item.getAttribute('data-notification') + '/' + item.getAttribute('data-status') + ': ' + item.innerText.replace(/\\s+/g, ' ')).join(' | ')`);
+      const waitFor = (description: string, kind: string, status: string, timeoutMs?: number) => app.until(description, async () => await app.visible(notification(kind, status)) || undefined, timeoutMs)
+        .catch(async (error: Error) => { throw new Error(`${error.message}; on screen: ${await onScreen()}`); });
+      const selectedPanel = () => app.eval<string | null>(`document.querySelector('[role="tab"][aria-selected="true"][id^="console-tab-"]')?.id ?? null`);
+      /** Click Details of the only notification on screen and say which panel opened. */
+      const followDetails = async (kind: string, otherTab: string) => {
+        await app.click(tab(otherTab));
+        await app.click(css(`[data-notification="${kind}"] [data-details]`), `Details of the ${kind} notification`);
+        return await app.until('a panel to open', async () => await selectedPanel() ?? undefined);
+      };
+      void openDetails;
+
+      await openFolder(app, project);
+      await openFile(app, 'src/Motor.st');
+      // A trailing comment on the last statement: valid Structured Text, so that the build below succeeds.
+      const statement = await lineWith(app, 'Reverse := FALSE;');
+      assert(statement > 0, 'Motor.st no longer has the statement Reverse := FALSE; the journey edits after it.');
+      await cursorAtEndOfLine(app, statement);
+      await app.type(EDIT);
+      await app.until('the typed text', async () => (await editorText(app)).includes(EDIT) || undefined);
+
+      // A save is a result: it names the file and leads to Output.
+      await app.click(saveButton);
+      await waitFor('the save notification', 'save', 'success');
+      assert((await textOf('save')).includes('Saved Motor.st'), `The save notification should name the file: ${await textOf('save')}`);
+      assert(await followDetails('save', 'Watch') === 'console-tab-output', 'Details of a save should open Output.');
+
+      // A build is a result too, with the project's own numbers.
+      await app.click(button('Build options'));
+      await app.click(menuItem('Compile'));
+      await waitFor('the build notification', 'build', 'success');
+      assert((await textOf('build')).includes('Build succeeded') && /\d+ bytes/.test(await textOf('build')), `The build notification should say it succeeded and how large the artifact is: ${await textOf('build')}`);
+      assert(await followDetails('build', 'Watch') === 'console-tab-output', 'Details of a successful build should open Output.');
+
+      // A connection change.
+      await app.click(button('Connect'));
+      await waitFor('the connection notification', 'connection', 'success');
+      assert((await textOf('connection')).includes('Simulator ready'), `The connection notification should say the simulator is ready: ${await textOf('connection')}`);
+
+      // A long operation shows progress and a Cancel action, and its end is a result.
+      for (const name of ['LongA', 'LongB', 'LongC']) {
+        const scenario = { schemaVersion: 1, id: name, tickMs: 10, durationMs: 99_990, events: [{ atMs: 0, set: { 'Motor.Start': true, 'Motor.Stop': false, 'Motor.EStop': false, 'Motor.Overload': false } }], expectations: [{ kind: 'AT', atMs: 0, condition: { 'Motor.Forward': false, 'Motor.Reverse': false } }] };
+        writeFileSync(join(project, 'tests', `${name}.scenario.json`), JSON.stringify(scenario));
+      }
+      await app.click(tab('Tests'));
+      await app.click(button('Run host scenarios'));
+      await app.until('the running notification with progress and Cancel', async () => await app.visible(css('[data-notification="tests"][data-status="running"] [role="progressbar"]')) && await app.visible(button('Cancel: Running host scenarios')) || undefined);
+      await app.click(button('Cancel: Running host scenarios'));
+      await waitFor('the cancelled notification', 'tests', 'cancelled', 10_000);
+      assert(await followDetails('tests', 'Watch') === 'console-tab-tests', 'Details of a test run should open Tests.');
+
+      // A failed build leads to Problems.
+      await openFile(app, 'src/Motor.st');
+      await cursorAtEndOfLine(app, await lineWith(app, 'Reverse := FALSE;'));
+      await app.press('Enter');
+      await app.type('UndefinedVariable := 1;');
+      await app.click(saveButton);
+      await app.until('the faulty file on disk', () => disk(join(project, 'src', 'Motor.st')).includes('UndefinedVariable') || undefined);
+      await app.click(button('Build options'));
+      await app.click(menuItem('Compile'));
+      await waitFor('the failed build notification', 'build', 'error');
+      assert(await followDetails('build', 'Watch') === 'console-tab-problems', 'Details of a failed build should open Problems.');
+    },
+  },
+
+  {
+    // IDE-024: any input the program declares can be set from Studio, whatever its name: none of these names is one the
+    // runtime or Studio knows. Each set is seen by the program on its next scan.
+    name: '37 Any declared input of the running program can be set', example: 'none', proves: ['IDE-024'], partly: [],
+    run: async (app, { root }) => {
+      const folder = join(root, 'plant-inputs');
+      mkdirSync(join(folder, 'src'), { recursive: true });
+      writeFileSync(join(folder, 'zplc.json'), JSON.stringify({ schemaVersion: 2, name: 'Plant Inputs', version: '1.0.0', target: { board: 'posix' }, tasks: [{ name: 'MainTask', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['Plant.st'] }] }));
+      // Result follows Setpoint only while both gates are set, so that one watched value proves all three inputs reached the program.
+      writeFileSync(join(folder, 'src', 'Plant.st'), [
+        'PROGRAM Plant',
+        'VAR_INPUT',
+        '  SensorWest AT %IX0.3 : BOOL;',
+        '  Setpoint AT %IW2 : INT;',
+        '  Enable : BOOL;',
+        'END_VAR',
+        'VAR_OUTPUT',
+        '  Result AT %QW2 : INT;',
+        'END_VAR',
+        'IF SensorWest AND Enable THEN',
+        '  Result := Setpoint;',
+        'ELSE',
+        '  Result := 0;',
+        'END_IF;',
+        'END_PROGRAM',
+        '',
+      ].join('\n'));
+      // The steps wait on a runtime and a Watch table that share the machine with other work: a generous bound, not a slow product.
+      const patiently = <T,>(description: string, check: () => Promise<T | undefined | false> | T | undefined | false) => app.until(description, check, 45_000);
+      const switchFor = (name: string, state: 'TRUE' | 'FALSE') => button(`${name}: ${state}`);
+
+      await openFolder(app, folder);
+      const built = await compile(app);
+      assert(built.kind === 'built', `The program with custom-named inputs does not build: ${built.message}`);
+      await connectAndRun(app);
+      await watch(app, 'Result');
+
+      // Every declared input is listed, by its own name: a mapped bit, a mapped word and a plain program input.
+      for (const name of ['Plant.SensorWest', 'Plant.Setpoint', 'Plant.Enable']) {
+        await patiently(`${name} in the simulation inputs`, async () => await app.visible(css(`[data-input="${name}"]`)) || undefined);
+      }
+
+      await app.click(switchFor('SensorWest', 'FALSE'));
+      await patiently('SensorWest to read TRUE', async () => await app.visible(switchFor('SensorWest', 'TRUE')) || undefined);
+      await app.click(switchFor('Enable', 'FALSE'));
+      await patiently('Enable to read TRUE', async () => await app.visible(switchFor('Enable', 'TRUE')) || undefined);
+      await app.click(css('input[aria-label="Value of Setpoint"]'));
+      await app.type('1234');
+      await app.click(button('Set Setpoint'));
+      await patiently('Setpoint to read 1234', async () => (await app.eval<string>(`document.querySelector('[data-input="Plant.Setpoint"] [data-input-value]')?.textContent ?? ''`)) === '1234' || undefined);
+
+      // The program saw all three on its next scans.
+      await patiently('Result to be 1234: the three inputs reached the program', async () => await watchValue(app, 'Result') === '1234' || undefined);
+
+      // Setting one input leaves the others alone: clearing the bit of SensorWest does not clear Enable or Setpoint.
+      await app.click(switchFor('SensorWest', 'TRUE'));
+      await patiently('SensorWest to read FALSE', async () => await app.visible(switchFor('SensorWest', 'FALSE')) || undefined);
+      assert(await app.visible(switchFor('Enable', 'TRUE')), 'Clearing SensorWest changed Enable.');
+      assert((await app.eval<string>(`document.querySelector('[data-input="Plant.Setpoint"] [data-input-value]')?.textContent ?? ''`)) === '1234', 'Clearing SensorWest changed Setpoint.');
+      await patiently('Result to go 0: the gate closed', async () => await watchValue(app, 'Result') === '0' || undefined);
+    },
+  },
+
+  {
+    // IDE-016 on the development host: the policy is applied, permissions other than serial are refused, navigation and new
+    // windows are refused, and a hostile project path is refused. The inline-script probe needs the production policy and
+    // is made on the packaged application (runPackagedSecurityProbes).
+    name: '38 The security properties hold in the running application', example: 'none', proves: [], partly: ['IDE-016', 'IDE-001'],
+    run: async (app, { root }) => {
+      const fixture = writeSecurityFixture(root);
+      await probeSecurity(app, {
+        packaged: false,
+        fixture,
+        open: async () => {
+          app.answer(fixture.project);
+          const chosen = await app.eval<{ ok: boolean; value: { rootId: string } | null }>(`window.electronAPI.projectFiles.chooseFolder()`);
+          assert(chosen.ok && chosen.value, `The development host did not hand back the folder: ${JSON.stringify(chosen)}`);
+          return chosen.value.rootId;
+        },
+      });
     },
   },
   {

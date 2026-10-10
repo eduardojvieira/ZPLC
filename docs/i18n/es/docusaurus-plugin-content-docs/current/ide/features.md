@@ -173,6 +173,59 @@ Si el editor, el panel inferior o la barra de herramientas lanzan una excepción
 
 Nivel de evidencia: host. El recorrido 20 (una región que falla no deja la ventana en blanco) de `bun run test:journeys` hace fallar cada una de las tres regiones en la aplicación real, comprueba que las otras dos siguen funcionando y que Retry devuelve la región caída; `packages/zplc-ide/src/components/ErrorBoundary.test.tsx` cubre la lógica de la región.
 
+## Entradas de la simulación
+
+En la simulación nativa, la pestaña **Watch** empieza con **Simulation inputs**:
+todas las entradas que declara el programa en ejecución, con su propio nombre. Es
+decir, cada variable mapeada a la imagen de entrada (`AT %IX0.3`, `AT %IW2`, como
+la haya llamado) y cada `VAR_INPUT` de un programa, con su tipo, su dirección y el
+valor leído del runtime. Un BOOL tiene un interruptor **Set TRUE / Set FALSE** que
+cambia solo su propio bit, y cada otro tipo numérico tiene una casilla numérica con
+**Set**; un valor que no cabe en el tipo se rechaza con un mensaje antes de
+escribir nada. **Force** mantiene la entrada en su valor actual (y **Set** cambia
+entonces el valor forzado), para los tipos de hasta 32 bits que transporta un
+force; al liberarlo la entrada vuelve a quedar libre.
+
+El propio runtime sigue aceptando solo los tres nombres de motor de su petición
+`simulation.input.set`; cualquier otra entrada se escribe con la escritura de
+memoria tipada, en la dirección y con el ancho del mapa de depuración. En hardware,
+las entradas se fuerzan desde la tabla Watch.
+
+Nivel de evidencia: host. `packages/zplc-ide/src/runtime/declaredInputs.test.ts`
+cubre la lista, la codificación de cada tipo numérico y la escritura sin tocar los
+demás bits, contra un mapa de depuración del compilador real;
+`src/cli/toolApi.test.ts` cubre el marcado de las entradas de programa, y el
+recorrido 37 de `bun run test:journeys` fija un bit, una palabra y una entrada de
+programa de un proyecto con nombres propios en la aplicación real y ve que la salida
+del programa los sigue (requisito IDE-024). Evidencia de host con POSIX nativo, no
+de hardware.
+
+## Notificaciones
+
+El resultado de una compilación, un guardado, un despliegue, un cambio de conexión
+y una ejecución de pruebas aparece abajo a la derecha de la ventana como una
+notificación. Cada una dice qué pasó y tiene **Details**, que abre el panel con la
+evidencia: **Output** para un guardado, una compilación correcta, un despliegue y
+una conexión; **Problems** para una compilación fallida; **Tests** para una
+ejecución de pruebas. Una operación larga (una compilación, una ejecución de
+escenarios, un despliegue, una conexión) muestra una barra de progreso mientras
+corre, y una compilación y una ejecución de pruebas muestran además **Cancel**: una
+compilación cancelada no conserva ningún artefacto, y una ejecución cancelada
+detiene su runtime nativo.
+
+Un éxito se va solo tras unos segundos. Un fallo, una advertencia (por ejemplo un
+dispositivo que recibió una compilación anterior) y una cancelación permanecen
+hasta que usted las descarta. La notificación es un resumen: todos los mensajes que
+Studio escribía antes en el panel Output siguen ahí.
+
+Nivel de evidencia: host. `packages/zplc-ide/src/store/notifications.test.ts` cubre
+el modelo (progreso, la acción de cancelar, cuánto permanece cada resultado, el
+límite de la lista) y `src/components/NotificationsList.test.tsx` el dibujo; el
+recorrido 36 de `bun run test:journeys` guarda, compila, conecta, ejecuta y cancela
+una ejecución larga de pruebas y rompe la compilación en la aplicación real, y
+sigue **Details** de cada notificación hasta su panel (requisito IDE-021). Una
+notificación de despliegue necesita un dispositivo y no la cubre ningún recorrido.
+
 ## Qué se carga al iniciar
 
 La pantalla de bienvenida es lo primero que muestra Studio, y se carga sin el editor de código, los editores visuales
