@@ -3,6 +3,7 @@
   "title": "an SFC action qualifier the transpiler does not translate is rejected naming the step",
   "matrix": ["sfc.qualifiers-sd-ds-sl"],
   "build": "fails",
+  "elements": ["step:s_a"],
   "messageIncludes": [
     "'s_a'",
     "SD"

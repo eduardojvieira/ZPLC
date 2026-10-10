@@ -1,0 +1,12 @@
+{
+  "requirement": "LNG-003",
+  "title": "an error the compiler finds in the code of an FBD block is reported against the block",
+  "build": "fails",
+  "elements": [
+    "block:not1"
+  ],
+  "messageIncludes": [
+    "FBD block 'not1'",
+    "'Missing'"
+  ]
+}

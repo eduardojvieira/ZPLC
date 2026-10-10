@@ -2,7 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { compileSingleFileWithTask, type DebugMap, type PLCLanguage } from './index';
+import { compileMultiTaskProject, compileSingleFileWithTask, type DebugMap, type PLCLanguage } from './index';
 import { breakpointElements, breakpointLineElement, elementAtPc, elementBreakpointLine } from './debugElements';
 
 const projects = join(import.meta.dir, '../../projects');
@@ -141,5 +141,59 @@ describe('the debug map of a Structured Text file is not touched', () => {
     expect(only.sourceMap.length).toBeGreaterThan(0);
     expect(only.sourceMap.every((range) => range.element === undefined)).toBe(true);
     expect(only.breakpoints.every((location) => location.element === undefined)).toBe(true);
+  });
+});
+
+describe('LNG-004 the elements survive the debug map of a project built as one unit', () => {
+  const ref = 'src/main.ld.json';
+  const hold = 'FUNCTION_BLOCK Hold\nVAR_INPUT Set : BOOL; END_VAR\nVAR_OUTPUT Q : BOOL; END_VAR\nQ := Q OR Set;\nEND_FUNCTION_BLOCK\n';
+  const globals = 'VAR_GLOBAL\n  Shared : BOOL;\nEND_VAR\n';
+  const cell = (element: object | null) => ({ element, hasWire: true });
+  const ld = JSON.stringify({
+    name: 'Main',
+    variables: { local: [{ name: 'latch', type: 'Hold' }], inputs: [{ name: 'Sw', type: 'BOOL', address: '%IX0.0' }], outputs: [{ name: 'Lamp', type: 'BOOL', address: '%QX0.0' }] },
+    rungs: [{
+      id: 'r1', number: 1, gridConfig: { rows: 1, cols: 3, cellWidth: 80, cellHeight: 60 }, branches: [],
+      grid: [[
+        cell({ id: 'c', type: 'contact_no', variable: 'Sw', row: 0, col: 0 }),
+        cell({ id: 'f', type: 'function_block', fbType: 'Hold', instance: 'latch', parameters: { Set: 'Sw' }, row: 0, col: 1 }),
+        cell({ id: 'k', type: 'coil', variable: 'Lamp', row: 0, col: 2 }),
+      ]],
+    }],
+  });
+
+  function unit(): DebugMap {
+    return compileMultiTaskProject(
+      { name: 'P', version: '1.0.0', tasks: [{ name: 'Main', trigger: 'cyclic', interval_ms: 10, priority: 1, programs: ['main'] }] },
+      [
+        { name: 'main', content: ld, language: 'LD', sourceRef: ref },
+        { name: 'hold', content: hold, language: 'ST', sourceRef: 'src/hold.st' },
+        { name: 'globals', content: globals, language: 'ST', sourceRef: 'src/globals.st' },
+      ],
+    ).debugMap;
+  }
+
+  it('annotates the diagram and leaves the library files without an element', () => {
+    const map = unit();
+    const main = Object.values(map.pou).find((candidate) => candidate.sourceRef === ref)!;
+    expect(main.sourceMap.length).toBeGreaterThan(0);
+    expect(main.sourceMap.every((range) => range.element !== undefined)).toBe(true);
+    expect(elementBreakpointLine(map, ref, 'rung:r1/cell:0,1')).toBeDefined();
+    expect(elementBreakpointLine(map, ref, 'rung:r1')).toBeDefined();
+
+    const library = Object.values(map.pou).filter((candidate) => candidate.sourceRef !== ref);
+    expect(library.length).toBeGreaterThan(0);
+    for (const pou of library) {
+      expect(pou.sourceMap.every((range) => range.element === undefined)).toBe(true);
+      expect(pou.breakpoints.every((location) => location.element === undefined)).toBe(true);
+    }
+  });
+
+  it('keeps the global of another file as the one variable of every program', () => {
+    const map = unit();
+    const owners = Object.values(map.pou).filter((candidate) => candidate.vars.Shared !== undefined);
+    expect(owners.length).toBe(1);
+    expect(owners[0]!.sourceRef).toBe('src/globals.st');
+    expect(owners[0]!.vars.Shared!.scope).toBe('global');
   });
 });

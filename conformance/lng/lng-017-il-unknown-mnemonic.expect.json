@@ -3,6 +3,7 @@
   "title": "an IL unknown mnemonic is an error on its line",
   "matrix": ["il.unknown-mnemonic"],
   "build": "fails",
+  "elements": ["line:7"],
   "lines": [
     7
   ],

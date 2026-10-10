@@ -1,0 +1,65 @@
+{
+  "name": "Blocks",
+  "variables": {
+    "local": [],
+    "outputs": [
+      {
+        "name": "Res",
+        "type": "BOOL",
+        "address": "%QX0.0"
+      }
+    ]
+  },
+  "blocks": [
+    {
+      "id": "miss",
+      "type": "variable",
+      "variableName": "Missing",
+      "position": {
+        "x": 0,
+        "y": 0
+      }
+    },
+    {
+      "id": "not1",
+      "type": "NOT",
+      "position": {
+        "x": 100,
+        "y": 0
+      }
+    },
+    {
+      "id": "out1",
+      "type": "output",
+      "variableName": "Res",
+      "position": {
+        "x": 200,
+        "y": 0
+      }
+    }
+  ],
+  "connections": [
+    {
+      "id": "w1",
+      "from": {
+        "block": "miss",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "not1",
+        "port": "IN"
+      }
+    },
+    {
+      "id": "w2",
+      "from": {
+        "block": "not1",
+        "port": "OUT"
+      },
+      "to": {
+        "block": "out1",
+        "port": "IN"
+      }
+    }
+  ]
+}

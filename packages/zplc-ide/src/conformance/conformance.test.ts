@@ -37,8 +37,8 @@ const loader = { accepted: [] as string[], refused: [] as string[] };
 
 const label = (cell: Cell) => `${cell.at ?? cell.var} (${cell.type})`;
 
-function diagnosticText(diagnostics: Array<{ code: string; message: string; phase?: string; line?: number }>): string {
-  return diagnostics.map(({ code, message, phase, line }) => `${code}${phase ? ` in ${phase}` : ''}${line === undefined ? '' : ` at line ${line}`}: ${message}`).join('; ');
+function diagnosticText(diagnostics: Array<{ code: string; message: string; phase?: string; line?: number; element?: string }>): string {
+  return diagnostics.map(({ code, message, phase, line, element }) => `${code}${phase ? ` in ${phase}` : ''}${line === undefined ? '' : ` at line ${line}`}${element === undefined ? '' : ` on ${element}`}: ${message}`).join('; ');
 }
 
 async function workspace(found: Pick<ConformanceCase, 'source' | 'extension' | 'extras'> & { tasks: TaskSpec[] }, scanMs: number): Promise<string> {
@@ -125,6 +125,9 @@ async function runCase(found: ConformanceCase): Promise<string[]> {
       }
       if (expectation.columns && JSON.stringify(diagnostics.map((diagnostic) => diagnostic.column)) !== JSON.stringify(expectation.columns)) {
         failures.push(`diagnostics at columns [${diagnostics.map((diagnostic) => diagnostic.column ?? 'none').join(', ')}], expected [${expectation.columns.join(', ')}] (${diagnosticText(diagnostics)})`);
+      }
+      if (expectation.elements && JSON.stringify(diagnostics.map((diagnostic) => diagnostic.element ?? null)) !== JSON.stringify(expectation.elements)) {
+        failures.push(`diagnostics on elements [${diagnostics.map((diagnostic) => diagnostic.element ?? 'none').join(', ')}], expected [${expectation.elements.join(', ')}] (${diagnosticText(diagnostics)})`);
       }
       if (expectation.codes && JSON.stringify(diagnostics.map((diagnostic) => diagnostic.code)) !== JSON.stringify(expectation.codes)) {
         failures.push(`diagnostic codes [${diagnostics.map((diagnostic) => diagnostic.code).join(', ')}], expected [${expectation.codes.join(', ')}]`);
