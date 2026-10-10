@@ -142,10 +142,13 @@ export interface DebugMap {
     version: string;
     /** Program name */
     programName: string;
-    /** Compiler version that generated this map */
+    /** Version of the compiler package that generated this map */
     compilerVersion: string;
-    /** Timestamp when the map was generated */
-    generatedAt: string;
+    /**
+     * Not written by the compiler: a build is a function of its sources, so the same project gives the
+     * same map byte for byte (CMP-053). Maps of older builds may carry the time of the build here.
+     */
+    generatedAt?: string;
     /** POU information indexed by name */
     pou: Record<string, DebugPOUInfo>;
     /** Global string literal pool */
@@ -177,14 +180,20 @@ export interface DebugMap {
 // ============================================================================
 
 /**
+ * Version of the compiler package, recorded in every debug map (CMP-053). It is the `version` of this
+ * package's package.json; the compiler test `debug-map.test.ts` fails when the two differ, so a version
+ * bump cannot ship a map that names the old compiler.
+ */
+export const COMPILER_VERSION = '2.0.0-rc.3';
+
+/**
  * Creates an empty debug map with default values.
  */
 export function createDebugMap(programName: string, memoryProfile?: { workSize: number; retainSize: number; codeSizeMax: number }): DebugMap {
     return {
         version: '1.0.0',
         programName,
-        compilerVersion: '1.2.0',
-        generatedAt: new Date().toISOString(),
+        compilerVersion: COMPILER_VERSION,
         pou: {},
         memoryLayout: {
             ipiBase: MEMORY_REGION.IPI.base,
@@ -406,61 +415,51 @@ function buildVarInfoFromSymbol(sym: Symbol, typeResolver?: TypeResolver): Debug
 }
 
 /**
- * Build source line mappings from instruction mappings with source annotations.
- * Groups consecutive instructions from the same source line.
+ * Build the source ranges: each statement owns every instruction from its first one to the next
+ * annotation, so any program counter inside it resolves to it (CMP-055). An annotation of line 0 is
+ * the end of a statement with no other one following (the end of the cycle, the return of a function).
+ * A statement that holds others has one range for each stretch of its own instructions.
  */
 function buildSourceMappings(instructionMappings: InstructionMapping[]): SourceLineMapping[] {
     const mappings: SourceLineMapping[] = [];
-    
-    // Filter to only instructions with source annotations
-    const annotated = instructionMappings.filter(m => m.sourceAnnotation);
-    if (annotated.length === 0) return mappings;
-    
-    // Group consecutive instructions by source line
-    let currentLine = annotated[0].sourceAnnotation!.line;
-    let currentPC = annotated[0].pc;
-    let currentLength = annotated[0].size;
-    
-    for (let i = 1; i < annotated.length; i++) {
-        const m = annotated[i];
-        const line = m.sourceAnnotation!.line;
-        
-        if (line === currentLine) {
-            // Same source line - extend the range
-            currentLength = (m.pc + m.size) - currentPC;
-        } else {
-            // New source line - save previous and start new
+    let open: { line: number; column?: number; pc: number } | null = null;
+    const close = (end: number): void => {
+        if (open && end > open.pc) {
             mappings.push({
-                line: currentLine,
-                pc: currentPC,
-                length: currentLength,
+                line: open.line,
+                ...(open.column === undefined ? {} : { column: open.column }),
+                pc: open.pc,
+                length: end - open.pc,
             });
-            currentLine = line;
-            currentPC = m.pc;
-            currentLength = m.size;
         }
+        open = null;
+    };
+
+    for (const m of instructionMappings) {
+        const annotation = m.sourceAnnotation;
+        if (!annotation) continue;
+        close(m.pc);
+        if (annotation.line > 0) open = { line: annotation.line, column: annotation.column, pc: m.pc };
     }
-    
-    // Don't forget the last one
-    mappings.push({
-        line: currentLine,
-        pc: currentPC,
-        length: currentLength,
-    });
-    
+    const last = instructionMappings[instructionMappings.length - 1];
+    if (last) close(last.pc + last.size);
+
     return mappings;
 }
 
 /**
- * Build breakpoint locations from source line mappings.
- * Each mapped source line is a valid breakpoint location.
+ * Build breakpoint locations from source ranges: a line is one location, at the first instruction of
+ * its first range.
  */
 function buildBreakpointLocations(sourceMappings: SourceLineMapping[]): BreakpointLocation[] {
-    return sourceMappings.map(m => ({
-        line: m.line,
-        pc: m.pc,
-        valid: true,
-    }));
+    const seen = new Set<number>();
+    const locations: BreakpointLocation[] = [];
+    for (const mapping of sourceMappings) {
+        if (seen.has(mapping.line)) continue;
+        seen.add(mapping.line);
+        locations.push({ line: mapping.line, pc: mapping.pc, valid: true });
+    }
+    return locations;
 }
 
 /**

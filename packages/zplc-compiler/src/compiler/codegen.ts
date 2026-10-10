@@ -228,8 +228,13 @@ interface CodeGenState {
     stringLiteralNextAddr: number;
     /** Stack of loop contexts for EXIT/CONTINUE handling */
     loopStack: LoopContext[];
-    /** Last emitted source line (for deduplication) */
-    lastSourceLine: number;
+    /** The `line:column` of the last source annotation emitted, or '0' after an end marker (for deduplication) */
+    lastSourceKey: string;
+    /**
+     * The statements being generated, outermost first. A statement that holds others (IF, FOR...) has
+     * instructions of its own after the nested ones; its position is annotated again there (CMP-055).
+     */
+    statementStack: Array<{ line: number; column: number }>;
     /** Enable source annotations in assembly output */
     emitSourceAnnotations: boolean;
     /** User-defined functions registry */
@@ -381,7 +386,8 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
         stringLiterals: [],
         stringLiteralNextAddr: stringLiteralBase,
         loopStack: [],
-        lastSourceLine: 0,
+        lastSourceKey: '',
+        statementStack: [],
         emitSourceAnnotations: options?.emitSourceAnnotations ?? false,
         functionTable: new Map(),
         functionBlockTable: new Map(),
@@ -493,6 +499,7 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
         emitStatement(state, stmt);
     }
 
+    emitSourceEnd(state);
     emit(state, ``);
     emit(state, `    ; End of cycle`);
     emit(state, `    HALT`);
@@ -530,16 +537,26 @@ function fail(at: { line: number; column: number; endLine?: number; endColumn?: 
 }
 
 /**
- * Emit a source line annotation comment.
- * This allows the assembler to track source line → bytecode PC mapping.
- * Only emits if the line is different from the last emitted line (deduplication).
+ * Emit a source annotation comment: the statement at `at` starts here, and owns every instruction up to the
+ * next annotation (CMP-055). The assembler attaches it to the next instruction, so one `; @source`
+ * line becomes one range of the debug map. The same position is not annotated twice in a row.
  */
-function emitSourceAnnotation(state: CodeGenState, line: number | undefined): void {
-    if (!state.emitSourceAnnotations || !line || line === state.lastSourceLine) {
-        return;
-    }
-    state.lastSourceLine = line;
-    emit(state, `    ; @source ${line}`);
+function emitSourceAnnotation(state: CodeGenState, at: { line: number; column: number } | undefined): void {
+    if (!state.emitSourceAnnotations || !at || !at.line) return;
+    const key = `${at.line}:${at.column}`;
+    if (key === state.lastSourceKey) return;
+    state.lastSourceKey = key;
+    emit(state, `    ; @source ${at.line}${at.column > 0 ? `:${at.column}` : ''}`);
+}
+
+/**
+ * Close the range of the statement that was being generated: what follows (the end of the cycle, the
+ * return of a function) belongs to no statement. Line 0 is how an annotation says so.
+ */
+function emitSourceEnd(state: CodeGenState): void {
+    if (!state.emitSourceAnnotations || state.lastSourceKey === '0') return;
+    state.lastSourceKey = '0';
+    emit(state, `    ; @source 0`);
 }
 
 function newLabel(state: CodeGenState, prefix: string): string {
@@ -1553,6 +1570,7 @@ function generateFunctionDecl(state: CodeGenState, func: FunctionDecl): void {
     }
 
     // RETURN lands here; load return value (stored in the variable named func.name) onto stack
+    emitSourceEnd(state);
     emit(state, `${state.returnLabel}:`);
     const returnSym = state.symbols.get(func.name);
     if (returnSym && isStringType(storedType(state, returnSym.dataType))) {
@@ -1585,6 +1603,8 @@ function generateFunctionDecl(state: CodeGenState, func: FunctionDecl): void {
 function emitStatement(state: CodeGenState, stmt: Statement): void {
     const loops = state.loopStack.length;
     const { currentFBInstance, currentMethod, currentFunction, returnLabel, expressionDepth, resultBuffer, resultCapacity } = state;
+    const depth = state.statementStack.length;
+    state.statementStack.push({ line: stmt.line, column: stmt.column });
     try {
         emitStatementNode(state, stmt);
     } catch (caught) {
@@ -1599,12 +1619,16 @@ function emitStatement(state: CodeGenState, stmt: Statement): void {
         state.resultBuffer = resultBuffer;
         state.resultCapacity = resultCapacity;
         state.errors.push(...error.errors);
+    } finally {
+        state.statementStack.length = depth;
     }
+    // What the statement that holds this one generates next is that statement's own (CMP-055)
+    emitSourceAnnotation(state, state.statementStack[depth - 1]);
 }
 
 function emitStatementNode(state: CodeGenState, stmt: Statement): void {
     // Emit source annotation before the first instruction of this statement
-    emitSourceAnnotation(state, stmt.line);
+    emitSourceAnnotation(state, stmt);
 
     // The string buffers the previous statement used hold nothing anyone still reads. A statement inside an
     // expression (the body of an inlined method) is not a boundary: the expression still holds its values.

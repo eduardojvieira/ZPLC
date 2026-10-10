@@ -51,6 +51,12 @@ All notable changes are documented here.
   position comes before the count in `MID`, `DELETE` and `REPLACE` (IEC 61131-3
   writes the length first); `WSTRING` supports declaration, initial values,
   assignment and `LEN`.
+- The debug map is a function of the sources: two builds of the same project
+  give the same bytes (the `generatedAt` timestamp is gone), and
+  `compilerVersion` is the version of the compiler package. Each statement
+  has the full range of its instructions with its line and column, so any
+  program counter inside a statement resolves to that statement; the end of a
+  function and the helper routines after the cycle belong to none.
 
 ## 2.0.0-rc.3 - 2026-09-01
 
