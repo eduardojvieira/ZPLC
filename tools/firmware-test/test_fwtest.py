@@ -218,6 +218,34 @@ class RunScriptModes(unittest.TestCase):
         self.assertRegex(done.stdout, r"(?m)^  tidy +clang-tidy")
         self.assertIn("every mode above except tidy", done.stdout)
 
+    def run_tidy(self, status: int, extra: str = ""):
+        """run.sh tidy with a python3 that stands in for tools/ci/run_clang_tidy.py: the mode must call it and report
+        what it said, whatever clang-tidy is on this machine."""
+        import os, subprocess, tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            root = pathlib.Path(tmp)
+            (root / "ws" / "zephyr").mkdir(parents=True)
+            (root / "ws" / "zephyr" / "VERSION").write_text("VERSION_MAJOR = 4\n")
+            (root / "bin").mkdir()
+            fake = root / "bin" / "python3"
+            fake.write_text(f'#!/usr/bin/env bash\necho "clang-tidy: host pass clean"\n{extra}\nexit {status}\n')
+            fake.chmod(0o755)
+            env = dict(os.environ, ZPLC_FW_WS=str(root / "ws"), PATH=f"{root / 'bin'}:{os.environ['PATH']}")
+            return subprocess.run(["bash", str(self.SCRIPT), "tidy"], capture_output=True, text=True, check=False, env=env)
+
+    def test_tidy_passes_when_the_analysis_is_clean_and_says_when_the_zephyr_pass_was_skipped(self) -> None:
+        done = self.run_tidy(0, 'echo "clang-tidy: Zephyr pass skipped, no west build tree."')
+        self.assertEqual(done.returncode, 0, done.stdout + done.stderr)
+        self.assertRegex(done.stdout, r"PASS tidy .*Zephyr pass skipped")
+
+    def test_tidy_fails_on_a_finding_and_says_so_apart_from_a_tool_that_could_not_run(self) -> None:
+        found = self.run_tidy(1)
+        self.assertEqual(found.returncode, 1)
+        self.assertRegex(found.stdout, r"FAIL tidy clang-tidy reported findings")
+        missing = self.run_tidy(2)
+        self.assertEqual(missing.returncode, 1)
+        self.assertRegex(missing.stdout, r"FAIL tidy clang-tidy could not run")
+
     def test_an_unknown_mode_is_refused(self) -> None:
         done = self.run_script("lint")
         self.assertEqual(done.returncode, 2)
