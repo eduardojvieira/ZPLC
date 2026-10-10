@@ -194,6 +194,13 @@ export interface CodeGenOptions {
      * stored in a narrower type: IMPLICIT_NARROWING). The build is not affected.
      */
     warnings?: CodegenWarning[];
+
+    /**
+     * An implicit narrowing (a wider integer in a narrower one, an LREAL in a REAL) is an error that names
+     * the value, instead of the IMPLICIT_NARROWING warning (project option `compiler.strictTypes`, CMP-059).
+     * Default: false.
+     */
+    strictTypes?: boolean;
 }
 
 // ============================================================================
@@ -279,6 +286,8 @@ interface CodeGenState {
     arrayBoundsCheck: boolean;
     /** The warnings of the generation (see CodeGenOptions.warnings). */
     warnings: CodegenWarning[];
+    /** An implicit narrowing is an error (see CodeGenOptions.strictTypes). */
+    strictTypes: boolean;
     /** Work memory the code generator took after the symbols: string buffers and the cells of the string routines. */
     scratchStrings: Array<{ address: number; size: number }>;
     /**
@@ -477,6 +486,7 @@ function generateUnit(unit: CompilationUnit | Program, options: CodeGenOptions |
         errors,
         arrayBoundsCheck: options?.arrayBoundsCheck ?? true,
         warnings: options?.warnings ?? [],
+        strictTypes: options?.strictTypes ?? false,
         scratchStrings: [],
         stringBuffers: [],
         expressionDepth: 0,
@@ -3725,9 +3735,9 @@ function warnNarrowing(state: CodeGenState, value: Expression, from: string, to:
             line: value.line,
             column: value.column,
             ...(value.endLine === undefined ? {} : { endLine: value.endLine, endColumn: value.endColumn }),
+            ...(state.sourceRef === undefined ? {} : { sourceRef: state.sourceRef }),
         };
-        const seen = state.warnings.some((each) => each.line === warning.line && each.column === warning.column && each.message === warning.message);
-        if (!seen) state.warnings.push(warning);
+        reportNarrowing(state, warning, value);
         return;
     }
     if (!integerLike(source) || !integerLike(target)) return;
@@ -3749,7 +3759,16 @@ function warnNarrowing(state: CodeGenState, value: Expression, from: string, to:
         ...(value.endLine === undefined ? {} : { endLine: value.endLine, endColumn: value.endColumn }),
         ...(state.sourceRef === undefined ? {} : { sourceRef: state.sourceRef }),
     };
-    const seen = state.warnings.some((each) => each.line === warning.line && each.column === warning.column && each.message === warning.message && each.sourceRef === warning.sourceRef);
+    reportNarrowing(state, warning, value);
+}
+
+/** An implicit narrowing: the IMPLICIT_NARROWING warning, or an error under `compiler.strictTypes` (CMP-059). */
+function reportNarrowing(state: CodeGenState, warning: CodegenWarning, value: Expression): void {
+    if (state.strictTypes) {
+        fail(value, `${warning.message}. This is an error because compiler.strictTypes is on`);
+    }
+    const seen = state.warnings.some((each) => each.line === warning.line && each.column === warning.column
+        && each.message === warning.message && each.sourceRef === warning.sourceRef);
     if (!seen) state.warnings.push(warning);
 }
 

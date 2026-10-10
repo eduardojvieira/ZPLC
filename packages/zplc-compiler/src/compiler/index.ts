@@ -58,7 +58,8 @@ export type {
 // =============================================================================
 export { parse, parseWithDiagnostics, ParseError } from './parser.ts';
 export type { ParseOutcome } from './parser.ts';
-export type { SourceSpan, SourceWarning, SyntaxIssue } from './diagnostics.ts';
+export type { SourceSpan, SourceWarning, SyntaxIssue, WarningCode, WarningSelection } from './diagnostics.ts';
+export { WARNING_CODES, parseWarningSelection, selectWarnings } from './diagnostics.ts';
 
 // =============================================================================
 // Symbol table exports
@@ -126,7 +127,9 @@ import { parse, parseWithDiagnostics } from './parser.ts';
 import { ParseError } from './parser.ts';
 import { LexerError } from './lexer.ts';
 import { generate, generateProject, CodegenError, DEFAULT_COMPILER_MEMORY_PROFILE, validateCompilerMemoryProfile } from './codegen.ts';
-import type { CodegenWarning, SyntaxIssue } from './diagnostics.ts';
+import { selectWarnings } from './diagnostics.ts';
+import type { CodegenWarning, SyntaxIssue, WarningCode, WarningSelection } from './diagnostics.ts';
+import { analyzeUnit } from './warnings.ts';
 import type { GeneratedProject } from './codegen.ts';
 import type { CodeGenOptions, CompilerMemoryProfile } from './codegen.ts';
 import { assemble, createMultiTaskZplcFile, TASK_TYPE, ZPLC_CONSTANTS } from '../assembler/index.ts';
@@ -252,6 +255,13 @@ export interface CompilationResult {
 export interface CompileOptions extends CodeGenOptions {
     /** Generate debug map for source-level debugging */
     generateDebugMap?: boolean;
+    /** Which warnings the build reports (project option `compiler.warnings`). Default: 'default'. */
+    reportWarnings?: WarningSelection;
+    /**
+     * Source-level debug information in the debug map: the statement ranges and line mappings that
+     * breakpoints and the current line need (project option `compiler.debug`). Default: true.
+     */
+    debug?: boolean;
 }
 
 function requireSingleProgram(ast: CompilationUnit, sourceRef?: string): Program {
@@ -426,7 +436,7 @@ export function compileToBinary(source: string, options?: CompileOptions): Compi
         throw first;
     }
     const ast = parsed.unit;
-    const warnings: CompilerWarning[] = parsed.warnings.map((warning) => ({ ...warning, code: 'NON_IEC_HEX_LITERAL' as const }));
+    const warnings: CompilerWarning[] = parsed.warnings.map((warning) => ({ ...warning }));
 
     if (ast.programs.length === 0) {
         throw new CompilerError('No program found in source', 1, 1, 'parser');
@@ -439,7 +449,7 @@ export function compileToBinary(source: string, options?: CompileOptions): Compi
     const generated: CodegenWarning[] = [];
     const codegenOptions: CodeGenOptions = {
         ...options,
-        emitSourceAnnotations: generateDebugMap,
+        emitSourceAnnotations: generateDebugMap && (options?.debug ?? true),
         warnings: generated,
     };
 
@@ -450,7 +460,7 @@ export function compileToBinary(source: string, options?: CompileOptions): Compi
         const project = generateProject(ast, codegenOptions);
         assembly = project.assembly;
         symbols = project.symbols;
-        warnings.push(...generated);
+        warnings.push(...generated, ...analyzeUnit(ast));
         warnings.sort((first, second) => first.line - second.line || first.column - second.column);
     } catch (e) {
         if (e instanceof CodegenError) {
@@ -477,7 +487,7 @@ export function compileToBinary(source: string, options?: CompileOptions): Compi
         zplcFile: asmResult.zplcFile,
         entryPoint: asmResult.entryPoint,
         codeSize: asmResult.codeSize,
-        warnings,
+        warnings: selectWarnings(warnings, options?.reportWarnings),
     };
 
     // Build debug map if requested
@@ -579,7 +589,7 @@ function attachSourceRef(error: CompilerError, sourceRef: string): CompilerError
  */
 export interface CompilerWarning {
     /** Stable identifier of the kind of warning. */
-    code: 'NON_IEC_HEX_LITERAL' | 'IMPLICIT_NARROWING';
+    code: WarningCode;
     message: string;
     line: number;
     column: number;
@@ -745,7 +755,7 @@ function admitPhysicalOutputOwners(
 export function compileMultiTaskProject(
     config: ProjectConfig,
     programSources: ProgramSource[],
-    options?: { memoryProfile?: CompilerMemoryProfile },
+    options?: Pick<CompileOptions, 'memoryProfile' | 'strictTypes' | 'reportWarnings' | 'debug'>,
 ): MultiTaskCompilationResult {
     if (!config.tasks || config.tasks.length === 0) {
         throw new CompilerError('No tasks defined in project configuration', 0, 0, 'codegen');
@@ -817,7 +827,7 @@ export function compileMultiTaskProject(
             // what this file is accepted with: the non-IEC forms the parser saw
             for (const warning of parsed.warnings) {
                 warnings.push({
-                    code: 'NON_IEC_HEX_LITERAL',
+                    code: warning.code,
                     message: warning.message,
                     line: warning.line,
                     column: warning.column,
@@ -872,16 +882,22 @@ export function compileMultiTaskProject(
     let project: GeneratedProject | undefined;
     if (merged.unit.programs.length > 0) {
         try {
-            project = generateProject(merged.unit, { memoryProfile, emitSourceAnnotations: true, warnings: generated });
+            project = generateProject(merged.unit, {
+                memoryProfile,
+                emitSourceAnnotations: options?.debug ?? true,
+                strictTypes: options?.strictTypes ?? false,
+                warnings: generated,
+            });
         } catch (e) {
             failures.push(...compilerErrorsOf(e, files[0]!.label, files[0]!.ref, merged.unit.programs[0]!));
         }
     }
     if (failures.length > 0 || project === undefined) throwFound();
     const built = project!;
-    for (const warning of generated) warnings.push({ ...warning });
+    for (const warning of [...generated, ...analyzeUnit(merged.unit)]) warnings.push({ ...warning });
     warnings.sort((first, second) => fileOrder(first.sourceRef) - fileOrder(second.sourceRef)
         || first.line - second.line || first.column - second.column);
+    const reported = selectWarnings(warnings, options?.reportWarnings);
 
     // Assemble to bytecode
     let asmResult: AssemblyResult;
@@ -992,7 +1008,7 @@ export function compileMultiTaskProject(
     });
 
     return {
-        warnings,
+        warnings: reported,
         zplcFile,
         bytecode: asmResult.bytecode,
         tasks: taskDefs,
