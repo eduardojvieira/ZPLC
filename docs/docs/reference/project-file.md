@@ -64,7 +64,7 @@ This table is read off the source file `packages/zplc-ide/zplc.schema.json`; its
 | `communication.mqtt.profile` | `string: "sparkplug-b" \| "generic-broker" \| "aws-iot-core" \| "azure-iot-hub" \| "azure-event-grid-mqtt"` | yes |   |   |
 | `communication.mqtt.protocolVersion` | `string: "3.1.1" \| "5.0"` | yes |   |   |
 | `communication.mqtt.transport` | `string: "tcp" \| "tls" \| "ws" \| "wss"` | yes |   |   |
-| `communication.mqtt.broker` | `string (length >= 1)` | yes |   |   |
+| `communication.mqtt.broker` | `string` | yes |   | Host name or address of the broker. Empty means none: a controller connects nowhere until one is named (COM-014). |
 | `communication.mqtt.port` | `integer (1 to 65535)` | yes |   |   |
 | `communication.mqtt.clientId` | `string (length >= 1)` | yes |   |   |
 | `communication.mqtt.keepAliveSec` | `integer (5 to 3600)` | yes |   |   |

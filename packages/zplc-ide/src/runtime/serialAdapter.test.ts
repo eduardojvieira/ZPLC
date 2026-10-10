@@ -123,6 +123,21 @@ describe('SerialAdapter program control', () => {
     await expect(adapter.getStatus()).rejects.not.toThrow('must-not-leak');
   });
 
+  it('keeps the standing warnings of the status and rejects nothing for them (COM-014)', async () => {
+    const adapter = new SerialAdapter();
+    (adapter as unknown as { sendJsonCommand: () => Promise<unknown> }).sendJsonCommand = async () => ({
+      state: 'running',
+      uptime_ms: 1200,
+      warnings: ['mqtt_tls_verify_off'],
+      stats: { cycles: 12, overruns: 0, active_tasks: 1 },
+      opi: [0, 1],
+    });
+
+    const status = await adapter.getStatus();
+    expect(status.state).toBe('running');
+    expect((status as unknown as { warnings?: string[] }).warnings).toEqual(['mqtt_tls_verify_off']);
+  });
+
   it('accepts only a complete, internally consistent force-list response', async () => {
     const adapter = new SerialAdapter();
     const internals = adapter as unknown as { _connected: boolean; sendJsonCommand: () => Promise<unknown> };
