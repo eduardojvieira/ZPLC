@@ -123,5 +123,5 @@ ZPLC provides native SNTP hooks for time-critical logical operations.
 
 ## System Base (`zplc sys`)
 
-- `zplc sys info` - Dumps Zephyr OS metrics, build configurations, and physical HW boundaries.
+- `zplc sys info` - Dumps Zephyr OS metrics, build configurations, and physical HW boundaries. `--json` also reports the `draft_counter` of the image; a program built for another draft is refused (see [Contributing](/contributing#draft-contract-counter)).
 - `zplc sys reboot` - Initiates a rigid microcontroller system software reset simulating a power cycle.
