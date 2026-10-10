@@ -1921,42 +1921,49 @@
             "direction": "in",
             "name": "EN",
             "offset": 0,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "BUSY",
             "offset": 1,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "DONE",
             "offset": 2,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "ERROR",
             "offset": 3,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "STATUS",
             "offset": 4,
+            "size": 4,
             "type": "DINT"
           },
           {
             "direction": "in",
             "name": "TEMPLATE_NAME",
             "offset": 8,
+            "size": 85,
             "type": "STRING"
           },
           {
             "direction": "out",
             "name": "THING_NAME",
             "offset": 73,
+            "size": 85,
             "type": "STRING"
           }
         ],
@@ -1968,42 +1975,49 @@
             "direction": "in",
             "name": "EN",
             "offset": 0,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "BUSY",
             "offset": 1,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "DONE",
             "offset": 2,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "ERROR",
             "offset": 3,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "STATUS",
             "offset": 4,
+            "size": 4,
             "type": "DINT"
           },
           {
             "direction": "out",
             "name": "PAYLOAD",
             "offset": 8,
+            "size": 85,
             "type": "STRING"
           },
           {
             "direction": "out",
             "name": "VALID",
             "offset": 93,
+            "size": 1,
             "type": "BOOL"
           }
         ],
@@ -2015,42 +2029,49 @@
             "direction": "in",
             "name": "EN",
             "offset": 0,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "BUSY",
             "offset": 1,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "DONE",
             "offset": 2,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "ERROR",
             "offset": 3,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "STATUS",
             "offset": 4,
+            "size": 4,
             "type": "DINT"
           },
           {
             "direction": "in",
             "name": "DEVICE_ID",
             "offset": 8,
+            "size": 85,
             "type": "STRING"
           },
           {
             "direction": "out",
             "name": "ASSIGNED_HUB",
             "offset": 73,
+            "size": 85,
             "type": "STRING"
           }
         ],
@@ -2062,48 +2083,56 @@
             "direction": "in",
             "name": "EN",
             "offset": 0,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "BUSY",
             "offset": 1,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "DONE",
             "offset": 2,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "ERROR",
             "offset": 3,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "STATUS",
             "offset": 4,
+            "size": 4,
             "type": "DINT"
           },
           {
             "direction": "in",
             "name": "TOPIC",
             "offset": 8,
+            "size": 85,
             "type": "STRING"
           },
           {
             "direction": "in",
             "name": "EVENT_TYPE",
             "offset": 73,
+            "size": 85,
             "type": "STRING"
           },
           {
             "direction": "in",
             "name": "PAYLOAD",
             "offset": 138,
+            "size": 85,
             "type": "STRING"
           }
         ],
@@ -2115,72 +2144,84 @@
             "direction": "in",
             "name": "EN",
             "offset": 0,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "BUSY",
             "offset": 1,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "DONE",
             "offset": 2,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "ERROR",
             "offset": 3,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "STATUS",
             "offset": 4,
+            "size": 4,
             "type": "DINT"
           },
           {
             "direction": "in",
             "name": "PROTO",
             "offset": 8,
+            "size": 1,
             "type": "USINT"
           },
           {
             "direction": "in",
             "name": "SLAVE_ID",
             "offset": 9,
+            "size": 2,
             "type": "UINT"
           },
           {
             "direction": "in",
             "name": "ADDR",
             "offset": 11,
+            "size": 2,
             "type": "UINT"
           },
           {
             "direction": "in",
             "name": "COUNT",
             "offset": 13,
+            "size": 2,
             "type": "UINT"
           },
           {
             "direction": "out",
             "name": "VALUE",
             "offset": 15,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "in",
             "name": "HOST",
             "offset": 18,
+            "size": 85,
             "type": "STRING"
           },
           {
             "direction": "in",
             "name": "PORT",
             "offset": 103,
+            "size": 2,
             "type": "UINT"
           }
         ],
@@ -2192,72 +2233,84 @@
             "direction": "in",
             "name": "EN",
             "offset": 0,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "BUSY",
             "offset": 1,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "DONE",
             "offset": 2,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "ERROR",
             "offset": 3,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "STATUS",
             "offset": 4,
+            "size": 4,
             "type": "DINT"
           },
           {
             "direction": "in",
             "name": "PROTO",
             "offset": 8,
+            "size": 1,
             "type": "USINT"
           },
           {
             "direction": "in",
             "name": "SLAVE_ID",
             "offset": 9,
+            "size": 2,
             "type": "UINT"
           },
           {
             "direction": "in",
             "name": "ADDR",
             "offset": 11,
+            "size": 2,
             "type": "UINT"
           },
           {
             "direction": "in",
             "name": "COUNT",
             "offset": 13,
+            "size": 2,
             "type": "UINT"
           },
           {
             "direction": "out",
             "name": "VALUE",
             "offset": 15,
+            "size": 2,
             "type": "UINT"
           },
           {
             "direction": "in",
             "name": "HOST",
             "offset": 18,
+            "size": 85,
             "type": "STRING"
           },
           {
             "direction": "in",
             "name": "PORT",
             "offset": 103,
+            "size": 2,
             "type": "UINT"
           }
         ],
@@ -2269,72 +2322,84 @@
             "direction": "in",
             "name": "EN",
             "offset": 0,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "BUSY",
             "offset": 1,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "DONE",
             "offset": 2,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "ERROR",
             "offset": 3,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "STATUS",
             "offset": 4,
+            "size": 4,
             "type": "DINT"
           },
           {
             "direction": "in",
             "name": "PROTO",
             "offset": 8,
+            "size": 1,
             "type": "USINT"
           },
           {
             "direction": "in",
             "name": "SLAVE_ID",
             "offset": 9,
+            "size": 2,
             "type": "UINT"
           },
           {
             "direction": "in",
             "name": "ADDR",
             "offset": 11,
+            "size": 2,
             "type": "UINT"
           },
           {
             "direction": "in",
             "name": "COUNT",
             "offset": 13,
+            "size": 2,
             "type": "UINT"
           },
           {
             "direction": "in",
             "name": "VALUE",
             "offset": 15,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "in",
             "name": "HOST",
             "offset": 18,
+            "size": 85,
             "type": "STRING"
           },
           {
             "direction": "in",
             "name": "PORT",
             "offset": 103,
+            "size": 2,
             "type": "UINT"
           }
         ],
@@ -2346,72 +2411,84 @@
             "direction": "in",
             "name": "EN",
             "offset": 0,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "BUSY",
             "offset": 1,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "DONE",
             "offset": 2,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "ERROR",
             "offset": 3,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "STATUS",
             "offset": 4,
+            "size": 4,
             "type": "DINT"
           },
           {
             "direction": "in",
             "name": "PROTO",
             "offset": 8,
+            "size": 1,
             "type": "USINT"
           },
           {
             "direction": "in",
             "name": "SLAVE_ID",
             "offset": 9,
+            "size": 2,
             "type": "UINT"
           },
           {
             "direction": "in",
             "name": "ADDR",
             "offset": 11,
+            "size": 2,
             "type": "UINT"
           },
           {
             "direction": "in",
             "name": "COUNT",
             "offset": 13,
+            "size": 2,
             "type": "UINT"
           },
           {
             "direction": "in",
             "name": "VALUE",
             "offset": 15,
+            "size": 2,
             "type": "UINT"
           },
           {
             "direction": "in",
             "name": "HOST",
             "offset": 18,
+            "size": 85,
             "type": "STRING"
           },
           {
             "direction": "in",
             "name": "PORT",
             "offset": 103,
+            "size": 2,
             "type": "UINT"
           }
         ],
@@ -2423,42 +2500,49 @@
             "direction": "in",
             "name": "EN",
             "offset": 0,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "BUSY",
             "offset": 1,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "DONE",
             "offset": 2,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "ERROR",
             "offset": 3,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "STATUS",
             "offset": 4,
+            "size": 4,
             "type": "DINT"
           },
           {
             "direction": "in",
             "name": "PROFILE",
             "offset": 8,
+            "size": 1,
             "type": "USINT"
           },
           {
             "direction": "out",
             "name": "CONNECTED",
             "offset": 9,
+            "size": 1,
             "type": "BOOL"
           }
         ],
@@ -2470,54 +2554,63 @@
             "direction": "in",
             "name": "EN",
             "offset": 0,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "BUSY",
             "offset": 1,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "DONE",
             "offset": 2,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "ERROR",
             "offset": 3,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "STATUS",
             "offset": 4,
+            "size": 4,
             "type": "DINT"
           },
           {
             "direction": "in",
             "name": "QOS",
             "offset": 8,
+            "size": 1,
             "type": "USINT"
           },
           {
             "direction": "in",
             "name": "RETAIN",
             "offset": 9,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "in",
             "name": "TOPIC",
             "offset": 12,
+            "size": 85,
             "type": "STRING"
           },
           {
             "direction": "in",
             "name": "PAYLOAD",
             "offset": 97,
+            "size": 85,
             "type": "STRING"
           }
         ],
@@ -2529,54 +2622,63 @@
             "direction": "in",
             "name": "EN",
             "offset": 0,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "BUSY",
             "offset": 1,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "DONE",
             "offset": 2,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "ERROR",
             "offset": 3,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "STATUS",
             "offset": 4,
+            "size": 4,
             "type": "DINT"
           },
           {
             "direction": "in",
             "name": "QOS",
             "offset": 8,
+            "size": 1,
             "type": "USINT"
           },
           {
             "direction": "out",
             "name": "VALID",
             "offset": 9,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "in",
             "name": "TOPIC",
             "offset": 12,
+            "size": 85,
             "type": "STRING"
           },
           {
             "direction": "out",
             "name": "PAYLOAD",
             "offset": 97,
+            "size": 85,
             "type": "STRING"
           }
         ],
@@ -2588,30 +2690,35 @@
             "direction": "in",
             "name": "EN",
             "offset": 0,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "BUSY",
             "offset": 1,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "DONE",
             "offset": 2,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "ERROR",
             "offset": 3,
+            "size": 1,
             "type": "BOOL"
           },
           {
             "direction": "out",
             "name": "STATUS",
             "offset": 4,
+            "size": 4,
             "type": "DINT"
           }
         ],

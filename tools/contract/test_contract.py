@@ -124,8 +124,8 @@ class SourceMatchesGolden(unittest.TestCase):
             golden = compiler["commBlocks"][b["name"]]
             self.assertEqual(b["size"], golden["size"], b["name"])
             self.assertEqual(
-                [(m["name"], m["type"], m["offset"], m["dir"]) for m in b["members"]],
-                [(m["name"], m["type"], m["offset"], m["direction"]) for m in golden["members"]], b["name"])
+                [(m["name"], m["type"], m["offset"], m["size"], m["dir"]) for m in b["members"]],
+                [(m["name"], m["type"], m["offset"], m["size"], m["direction"]) for m in golden["members"]], b["name"])
         self.assertEqual(sorted(b["name"] for b in blocks), sorted(compiler["commBlocks"]))
 
 
@@ -166,8 +166,8 @@ class PythonModuleMatchesGolden(unittest.TestCase):
         for name, block in zc.COMM_BLOCKS.items():
             self.assertEqual(block["size"], golden[name]["size"], name)
             self.assertEqual(block["kind"], GOLDEN["compiler"]["commKinds"][name], name)
-            self.assertEqual([(m["name"], m["type"], m["offset"], m["direction"]) for m in block["members"]],
-                             [(m["name"], m["type"], m["offset"], m["direction"]) for m in golden[name]["members"]], name)
+            self.assertEqual([(m["name"], m["type"], m["offset"], m["size"], m["direction"]) for m in block["members"]],
+                             [(m["name"], m["type"], m["offset"], m["size"], m["direction"]) for m in golden[name]["members"]], name)
         self.assertEqual(zc.COMM_KIND_MAX, GOLDEN["c"]["enums"]["zplc_comm_fb_kind_t"]["ZPLC_COMM_FB_KIND_MAX"])
         self.assertEqual({k.name: int(k) for k in zc.CommKind},
                          {k.removeprefix("ZPLC_COMM_FB_"): v for k, v in golden_c_enum("zplc_comm_fb_kind_t").items() if not k.endswith("KIND_MAX")})
@@ -227,6 +227,22 @@ class DocumentationTablesAreGenerated(unittest.TestCase):
         self.assertEqual(len(rows(generate.render_docs(CONTRACT, "es"))), len(rows(generate.render_docs(CONTRACT, "en"))))
 
 
+class TypeScriptConsumersMatchGolden(unittest.TestCase):
+    """What the compiler and the IDE hold, read by running them, is what the hand-written tables held."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.view = snapshot.ts_view()
+
+    def test_compiler_tables_equal_the_frozen_snapshot(self):
+        for key, value in GOLDEN["compiler"].items():
+            self.assertEqual(self.view["compiler"][key], value, key)
+
+    def test_ide_tables_equal_the_frozen_snapshot(self):
+        for key, value in GOLDEN["ide"].items():
+            self.assertEqual(self.view["ide"][key], value, key)
+
+
 class ValidationRejectsADriftedSource(unittest.TestCase):
     """The generator refuses a contract.json that contradicts itself."""
 
@@ -263,6 +279,12 @@ class ValidationRejectsADriftedSource(unittest.TestCase):
         def edit(c):
             c["comm"]["blocks"][4]["members"] = [{"name": "EN", "dir": "in", "type": "BOOL", "offset": 0}]
         with self.assertRaisesRegex(generate.ContractError, "handshake"):
+            generate.validate(self.mutate(edit))
+
+    def test_a_member_size_that_disagrees_with_the_string_layout_is_refused(self):
+        def edit(c):
+            c["comm"]["memberSizes"]["STRING"] = 84
+        with self.assertRaisesRegex(generate.ContractError, "STRING"):
             generate.validate(self.mutate(edit))
 
     def test_a_kind_at_or_above_the_limit_is_refused(self):

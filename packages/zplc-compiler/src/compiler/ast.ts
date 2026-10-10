@@ -7,6 +7,8 @@
  * Supports the subset needed for blinky.st.
  */
 
+import { STRING_LAYOUT } from '../contract.generated.ts';
+
 // ============================================================================
 // Base Node Types
 // ============================================================================
@@ -131,7 +133,7 @@ export function getDataTypeSize(type: STDataType): number {
             case 'DT':
                 return 8;
             case 'STRING':
-                return 85; // 4 byte header + 80 chars + 1 null
+                return STRING_LAYOUT.defaultTotalSize; // 4 byte header + 80 chars + 1 null
             case 'WSTRING':
                 return 166; // 4 byte header + 80 wchars + 2 null
             

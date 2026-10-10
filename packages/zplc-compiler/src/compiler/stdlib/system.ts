@@ -13,6 +13,7 @@
 import type { FunctionDef, FunctionBlockDef, CodeGenContext, MemberDef } from './types.ts';
 import { inputMember, outputMember, internalMember, formatAddr } from './types.ts';
 import type { FBParameter, Expression } from '../ast.ts';
+import { SYSTEM_REGISTER } from '../../contract.generated.ts';
 
 // ============================================================================
 // UPTIME - System Uptime Function
@@ -498,7 +499,7 @@ export const CYCLE_TIME_FN: FunctionDef = {
 
     generateInline(ctx: CodeGenContext, _args: Expression[]): void {
         ctx.emit(`    ; CYCLE_TIME() - Read last cycle execution time from system registers`);
-        ctx.emit(`    LOAD32 0x0FF0`);  // ZPLC_SYS_CYCLE_TIME in IPI
+        ctx.emit(`    LOAD32 0x${SYSTEM_REGISTER.CYCLE_TIME.address.toString(16).toUpperCase().padStart(4, '0')}`);  // ZPLC_SYS_CYCLE_TIME in IPI
     }
 };
 

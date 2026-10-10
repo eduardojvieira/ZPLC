@@ -83,6 +83,14 @@ export { assemble, createZplcFile, createMultiTaskZplcFile, relocateBytecode, TA
 export type { AssemblyResult, TaskDef, TaskType, InstructionMapping, TagDef } from '../assembler/index.ts';
 
 // =============================================================================
+// Binary contract (generated from tools/contract/contract.json)
+// =============================================================================
+
+// Opcodes, container constants, memory regions, error codes and function-block
+// layouts, for the IDE and tools that must agree with the runtime.
+export * as ZPLC_CONTRACT from '../contract.generated.ts';
+
+// =============================================================================
 // Debug map exports
 // =============================================================================
 export {

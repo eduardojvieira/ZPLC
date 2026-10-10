@@ -8,6 +8,7 @@ import { describe, expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
 
 import * as contract from '../../packages/zplc-compiler/src/contract.generated.ts';
+import { getDataTypeSize } from '../../packages/zplc-compiler/src/compiler/ast.ts';
 
 const golden = JSON.parse(readFileSync(new URL('./golden/contract.golden.json', import.meta.url), 'utf8'));
 const macros: Record<string, number> = golden.c.macros;
@@ -108,8 +109,16 @@ describe('generated TypeScript contract equals the frozen snapshot', () => {
     for (const block of contract.COMM_BLOCKS) {
       const expected = golden.compiler.commBlocks[block.name];
       expect(block.size).toBe(expected.size);
-      expect(block.members.map(({ name, type, offset, direction }) => ({ name, type, offset, direction })))
+      expect(block.members.map(({ name, type, offset, size, direction }) => ({ name, type, offset, size, direction })))
         .toEqual(expected.members);
     }
+  });
+
+  test('the compiler allocates each fixed-size type with the size the contract gives it', () => {
+    for (const [name, size] of Object.entries(contract.DATA_TYPE_SIZE)) {
+      if (name === 'NONE') continue;
+      expect(getDataTypeSize(name as never)).toBe(size);
+    }
+    expect(getDataTypeSize('STRING')).toBe(contract.STRING_LAYOUT.defaultTotalSize);
   });
 });

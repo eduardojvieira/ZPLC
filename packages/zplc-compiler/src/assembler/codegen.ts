@@ -7,7 +7,8 @@
  * All multi-byte values are little-endian.
  */
 
-import { getOperandSize, OPCODE_BY_VALUE, isRelativeJump, Opcode } from './opcodes';
+import { getOperandSize, OPCODE_BY_VALUE, isRelativeJump } from './opcodes';
+import { CONTAINER, OPCODE_TABLE } from '../contract.generated';
 import type { Instruction, TaskDef, TagDef } from './types';
 import { AssemblerError, TASK_TYPE, ZPLC_CONSTANTS } from './types';
 import type { ParseResult } from './parser';
@@ -46,12 +47,9 @@ export function crc32(data: Uint8Array): number {
  * Set of opcodes that use absolute 16-bit addresses and need relocation.
  * These are jumps and calls that target absolute code addresses.
  */
-const RELOCATABLE_OPCODES: Set<number> = new Set([
-    Opcode.JMP,   // 0x90 - Unconditional jump
-    Opcode.JZ,    // 0x91 - Jump if zero
-    Opcode.JNZ,   // 0x92 - Jump if not zero
-    Opcode.CALL,  // 0x93 - Call subroutine
-]);
+const RELOCATABLE_OPCODES: Set<number> = new Set(
+    OPCODE_TABLE.filter((entry) => entry.flags.includes('absolute')).map((entry) => entry.code),
+);
 
 const UINT16_MAX = 0xFFFF;
 const UINT32_MAX = 0xFFFFFFFF;
@@ -343,8 +341,8 @@ export function createZplcFile(bytecode: Uint8Array, entryPoint: number, tags?: 
     // =========================================================================
     // CRC32: checksum everything EXCEPT the crc32 field itself (bytes 12-15)
     // =========================================================================
-    const crcOffset = 12; // crc32 field starts at byte 12
-    const crcSize = 4;
+    const crcOffset = CONTAINER.crcOffset; // crc32 field starts at byte 12
+    const crcSize = CONTAINER.crcSize;
     const preCrc = output.subarray(0, crcOffset);
     const postCrc = output.subarray(crcOffset + crcSize);
     const payload = new Uint8Array(preCrc.length + postCrc.length);
@@ -531,8 +529,8 @@ export function createMultiTaskZplcFile(bytecode: Uint8Array, tasks: TaskDef[], 
     // =========================================================================
     // CRC32: checksum everything EXCEPT the crc32 field itself (bytes 12-15)
     // =========================================================================
-    const crcOffset = 12; // crc32 field starts at byte 12
-    const crcSize = 4;
+    const crcOffset = CONTAINER.crcOffset; // crc32 field starts at byte 12
+    const crcSize = CONTAINER.crcSize;
     const preCrc = output.subarray(0, crcOffset);
     const postCrc = output.subarray(crcOffset + crcSize);
     const payload = new Uint8Array(preCrc.length + postCrc.length);

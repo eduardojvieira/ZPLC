@@ -36,6 +36,7 @@ for (const [name, def] of Object.entries(CommBlocks)) {
       name: member.name,
       type: String(member.type),
       offset: member.offset,
+      size: member.size,
       direction: member.isInput ? 'in' : member.isOutput ? 'out' : 'internal',
     })),
   };

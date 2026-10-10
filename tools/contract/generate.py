@@ -193,6 +193,12 @@ def validate(c: dict) -> None:
         raise ContractError("the system registers must be the last 16 bytes of the input image")
 
     comm = c["comm"]
+    text = c["string"]
+    if comm["memberSizes"]["STRING"] != text["dataOffset"] + text["defaultSize"] + 1:
+        raise ContractError("comm.memberSizes.STRING must be the size of a default STRING (header + capacity + terminator)")
+    for m in c["types"]["members"]:
+        if m["size"] is not None and comm["memberSizes"].get(m["name"], m["size"]) != m["size"]:
+            raise ContractError(f"comm.memberSizes.{m['name']} disagrees with the size of the data type")
     kinds = comm["kinds"]["members"]
     unique([k["name"] for k in kinds], "communication kind name")
     unique([num(k["value"]) for k in kinds], "communication kind number")

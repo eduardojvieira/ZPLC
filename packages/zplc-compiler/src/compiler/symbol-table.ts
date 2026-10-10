@@ -14,6 +14,7 @@
 import { getDataTypeSize, getArrayTotalSize, isArrayType, DataType, VarSection } from './ast.ts';
 import type { STDataType, DataTypeValue, VarSectionValue, IOAddress, VarDecl, Program, ArrayType, CompilationUnit, Expression, Statement, ArrayLiteral } from './ast.ts';
 import { getFB } from './stdlib/index.ts';
+import { MEMORY_REGION } from '../contract.generated.ts';
 
 // ============================================================================
 // Memory Layout Constants
@@ -21,13 +22,13 @@ import { getFB } from './stdlib/index.ts';
 
 export const MemoryLayout = {
     /** Input Process Image base address */
-    IPI_BASE: 0x0000,
+    IPI_BASE: MEMORY_REGION.IPI.base,
     /** Output Process Image base address */
-    OPI_BASE: 0x1000,
+    OPI_BASE: MEMORY_REGION.OPI.base,
     /** Work Memory base address */
-    WORK_BASE: 0x2000,
+    WORK_BASE: MEMORY_REGION.WORK.base,
     /** Retentive Memory base address */
-    RETAIN_BASE: 0x4000,
+    RETAIN_BASE: MEMORY_REGION.RETAIN.base,
 } as const;
 
 // ============================================================================

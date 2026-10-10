@@ -11,6 +11,8 @@
  * - Breakpoint locations
  */
 
+import { MEMORY_REGION } from '../contract.generated.ts';
+
 // ============================================================================
 // Variable Information
 // ============================================================================
@@ -185,16 +187,16 @@ export function createDebugMap(programName: string, memoryProfile?: { workSize: 
         generatedAt: new Date().toISOString(),
         pou: {},
         memoryLayout: {
-            ipiBase: 0x0000,
-            ipiSize: 0x1000,
-            opiBase: 0x1000,
-            opiSize: 0x1000,
-            workBase: 0x2000,
-            workSize: memoryProfile?.workSize ?? 0x2000,
-            retainBase: 0x4000,
-            retainSize: memoryProfile?.retainSize ?? 0x1000,
-            codeBase: 0x5000,
-            codeSize: memoryProfile?.codeSizeMax ?? 0xB000,
+            ipiBase: MEMORY_REGION.IPI.base,
+            ipiSize: MEMORY_REGION.IPI.size,
+            opiBase: MEMORY_REGION.OPI.base,
+            opiSize: MEMORY_REGION.OPI.size,
+            workBase: MEMORY_REGION.WORK.base,
+            workSize: memoryProfile?.workSize ?? MEMORY_REGION.WORK.size,
+            retainBase: MEMORY_REGION.RETAIN.base,
+            retainSize: memoryProfile?.retainSize ?? MEMORY_REGION.RETAIN.size,
+            codeBase: MEMORY_REGION.CODE.base,
+            codeSize: memoryProfile?.codeSizeMax ?? MEMORY_REGION.CODE.size,
         },
     };
 }
@@ -338,10 +340,10 @@ import type { InstructionMapping } from '../assembler/types.ts';
  * Determine memory region from address.
  */
 function getRegionFromAddress(addr: number): MemoryRegion {
-    if (addr < 0x1000) return 'IPI';
-    if (addr < 0x2000) return 'OPI';
-    if (addr < 0x4000) return 'WORK';
-    if (addr < 0x5000) return 'RETAIN';
+    if (addr < MEMORY_REGION.OPI.base) return 'IPI';
+    if (addr < MEMORY_REGION.WORK.base) return 'OPI';
+    if (addr < MEMORY_REGION.RETAIN.base) return 'WORK';
+    if (addr < MEMORY_REGION.CODE.base) return 'RETAIN';
     return 'CODE';
 }
 

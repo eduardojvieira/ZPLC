@@ -82,14 +82,14 @@ export interface CompilerMemoryProfile {
 }
 
 export const DEFAULT_COMPILER_MEMORY_PROFILE: CompilerMemoryProfile = {
-    workSize: 0x2000,
-    retainSize: 0x1000,
-    codeSizeMax: 0xB000,
+    workSize: MEMORY_REGION.WORK.size,
+    retainSize: MEMORY_REGION.RETAIN.size,
+    codeSizeMax: MEMORY_REGION.CODE.size,
 };
 
-const VM_WORK_SIZE_MAX = 0x2000;
-const VM_RETAIN_SIZE_MAX = 0x1000;
-const VM_CODE_SIZE_MAX = 0xB000;
+const VM_WORK_SIZE_MAX = MEMORY_REGION.WORK.size;
+const VM_RETAIN_SIZE_MAX = MEMORY_REGION.RETAIN.size;
+const VM_CODE_SIZE_MAX = MEMORY_REGION.CODE.size;
 
 /** Validate public target capacities before any address arithmetic. */
 export function validateCompilerMemoryProfile(profile: CompilerMemoryProfile): CompilerMemoryProfile {
@@ -467,9 +467,9 @@ function emitMemoryMap(state: CodeGenState): void {
  * Map tag names to numeric IDs from zplc_isa.h
  */
 export const TAG_MAP: Record<string, number> = {
-    'publish': 1,
-    'modbus': 2,
-    'subscribe': 3,
+    'publish': TAG_ID.PUBLISH,
+    'modbus': TAG_ID.MODBUS,
+    'subscribe': TAG_ID.SUBSCRIBE,
 };
 
 /**
@@ -603,49 +603,31 @@ function validateStringLiteralPool(state: CodeGenState, workMemoryBase: number, 
  */
 export function getDataTypeId(type: any): number {
     const typeStr = typeof type === 'string' ? type.toUpperCase() : 'UNKNOWN';
-    switch (typeStr) {
-        case 'BOOL': return 0x01;
-        case 'SINT': return 0x02;
-        case 'USINT': return 0x03;
-        case 'INT': return 0x04;
-        case 'UINT': return 0x05;
-        case 'DINT': return 0x06;
-        case 'UDINT': return 0x07;
-        case 'LINT': return 0x08;
-        case 'ULINT': return 0x09;
-        case 'REAL': return 0x0A;
-        case 'LREAL': return 0x0B;
-        case 'TIME': return 0x0C;
-        case 'BYTE': return 0x10;
-        case 'WORD': return 0x11;
-        case 'DWORD': return 0x12;
-        case 'LWORD': return 0x13;
-        case 'STRING': return 0x20;
-        default: return 0x00;
-    }
+    return Object.hasOwn(DATA_TYPE_ID, typeStr) ? DATA_TYPE_ID[typeStr as keyof typeof DATA_TYPE_ID] : 0x00;
 }
 
 function tagTypeWidth(tagId: number, typeId: number): number {
     if (tagId === TAG_MAP.publish || tagId === TAG_MAP.subscribe) {
-        if (typeId === 0x01) return 1;
-        if (typeId === 0x04 || typeId === 0x05 || typeId === 0x11) return 2;
-        if (typeId === 0x0A) return 4;
+        if (typeId === DATA_TYPE_ID.BOOL) return 1;
+        if (typeId === DATA_TYPE_ID.INT || typeId === DATA_TYPE_ID.UINT || typeId === DATA_TYPE_ID.WORD) return 2;
+        if (typeId === DATA_TYPE_ID.REAL) return 4;
         return 0;
     }
     if (tagId === TAG_MAP.modbus) {
-        if (typeId === 0x01 || typeId === 0x02 || typeId === 0x03 || typeId === 0x10) return 1;
-        if (typeId === 0x04 || typeId === 0x05 || typeId === 0x11) return 2;
-        if (typeId === 0x06 || typeId === 0x07 || typeId === 0x0A || typeId === 0x12) return 4;
+        if (typeId === DATA_TYPE_ID.BOOL || typeId === DATA_TYPE_ID.SINT || typeId === DATA_TYPE_ID.USINT || typeId === DATA_TYPE_ID.BYTE) return 1;
+        if (typeId === DATA_TYPE_ID.INT || typeId === DATA_TYPE_ID.UINT || typeId === DATA_TYPE_ID.WORD) return 2;
+        if (typeId === DATA_TYPE_ID.DINT || typeId === DATA_TYPE_ID.UDINT || typeId === DATA_TYPE_ID.REAL || typeId === DATA_TYPE_ID.DWORD) return 4;
     }
     return 0;
 }
 
 function tagMemoryRegion(address: number, width: number, profile: CompilerMemoryProfile): 'IPI' | 'OPI' | 'WORK' | 'RETAIN' | undefined {
     const end = address + width;
-    if (address >= 0x0000 && end <= 0x1000) return 'IPI';
-    if (address >= 0x1000 && end <= 0x2000) return 'OPI';
-    if (address >= 0x2000 && end <= 0x2000 + profile.workSize) return 'WORK';
-    if (address >= 0x4000 && end <= 0x4000 + profile.retainSize) return 'RETAIN';
+    const { IPI, OPI, WORK, RETAIN } = MEMORY_REGION;
+    if (address >= IPI.base && end <= IPI.base + IPI.size) return 'IPI';
+    if (address >= OPI.base && end <= OPI.base + OPI.size) return 'OPI';
+    if (address >= WORK.base && end <= WORK.base + profile.workSize) return 'WORK';
+    if (address >= RETAIN.base && end <= RETAIN.base + profile.retainSize) return 'RETAIN';
     return undefined;
 }
 
@@ -717,7 +699,7 @@ function emitVariableTags(state: CodeGenState): void {
  * STRING memory layout constants.
  * Matches zplc_isa.h definitions.
  */
-const STRING_HEADER_SIZE = 4;  // 2 bytes length + 2 bytes capacity
+const STRING_HEADER_SIZE = STRING_LAYOUT.headerSize;  // 2 bytes length + 2 bytes capacity
 // Default capacity is defined in zplc_isa.h as 80 bytes
 
 /**
@@ -2709,3 +2691,4 @@ function emitWStringLiteral(state: CodeGenState, expr: WStringLiteral): void {
  * Re-exporting from symbol-table to maintain backward compatibility in this file.
  */
 import { getMemberLoadStoreSuffix } from './symbol-table.ts';
+import { DATA_TYPE_ID, MEMORY_REGION, STRING_LAYOUT, TAG_ID } from '../contract.generated.ts';

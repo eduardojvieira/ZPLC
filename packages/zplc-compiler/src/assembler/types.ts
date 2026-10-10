@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: MIT
  */
 
+import { ABI_VERSION, CONTAINER, MEMORY_LIMIT, MEMORY_REGION, SEGMENT_TYPE, TASK_TYPE_ID } from '../contract.generated';
+
 /**
  * A parsed token from source code.
  */
@@ -86,43 +88,43 @@ export interface AssemblerOptions {
 
 /**
  * ZPLC file format constants.
- * Must match zplc_isa.h definitions.
+ * Taken from the generated contract (tools/contract/contract.json), the source of zplc_isa.h.
  */
 export const ZPLC_CONSTANTS = {
     /** Magic number: "ZPLC" in little-endian (0x5A 0x50 0x4C 0x43) */
-    MAGIC: 0x434C505A,
+    MAGIC: CONTAINER.magic,
     /** Current ISA major version */
-    VERSION_MAJOR: 1,
+    VERSION_MAJOR: ABI_VERSION.major,
     /** Current ISA minor version */
-    VERSION_MINOR: 0,
+    VERSION_MINOR: ABI_VERSION.minor,
     /** File header size in bytes */
-    HEADER_SIZE: 32,
+    HEADER_SIZE: CONTAINER.headerSize,
     /** Segment entry size in bytes */
-    SEGMENT_ENTRY_SIZE: 8,
+    SEGMENT_ENTRY_SIZE: CONTAINER.segmentEntrySize,
     /** Segment type IDs */
-    SEGMENT_TYPE_CODE: 0x01,
-    SEGMENT_TYPE_DATA: 0x02,
-    SEGMENT_TYPE_TASK: 0x20,
-    SEGMENT_TYPE_TAGS: 0x30,
+    SEGMENT_TYPE_CODE: SEGMENT_TYPE.CODE,
+    SEGMENT_TYPE_DATA: SEGMENT_TYPE.DATA,
+    SEGMENT_TYPE_TASK: SEGMENT_TYPE.TASK,
+    SEGMENT_TYPE_TAGS: SEGMENT_TYPE.TAGS,
     /** Task definition size in bytes (per zplc_isa.h) */
-    TASK_DEF_SIZE: 16,
+    TASK_DEF_SIZE: CONTAINER.taskDefSize,
     /** Portable ABI v1 task limit accepted by the shared loader. */
-    MAX_TASKS: 16,
+    MAX_TASKS: CONTAINER.maxTasks,
     /** Default loader maximum evaluation stack depth (per zplc_isa.h). */
-    TASK_STACK_MAX_DEPTH: 256,
+    TASK_STACK_MAX_DEPTH: MEMORY_LIMIT.stackMaxDepth,
     /** Tag entry size in bytes (per zplc_isa.h) */
-    TAG_ENTRY_SIZE: 8,
+    TAG_ENTRY_SIZE: CONTAINER.tagEntrySize,
     /** Portable/default maximum CODE size accepted by the runtime loader (ZPLC_MEM_CODE_SIZE). */
-    CODE_SIZE_MAX: 0xB000,
+    CODE_SIZE_MAX: MEMORY_REGION.CODE.size,
 } as const;
 
 /**
  * Task trigger types (matches zplc_task_type_t in zplc_isa.h)
  */
 export const TASK_TYPE = {
-    CYCLIC: 0,
-    EVENT: 1,
-    INIT: 2,
+    CYCLIC: TASK_TYPE_ID.CYCLIC,
+    EVENT: TASK_TYPE_ID.EVENT,
+    INIT: TASK_TYPE_ID.INIT,
 } as const;
 
 export type TaskType = typeof TASK_TYPE[keyof typeof TASK_TYPE];
