@@ -437,7 +437,8 @@ export const LOADER_ERRORS = [
   { name: "ZPLC_LOADER_ERR_MEMORY", code: -13, doc: "Static memory access outside the writable regions" },
   { name: "ZPLC_LOADER_ERR_TASK", code: -14, doc: "Task definition is invalid or there are too many tasks" },
   { name: "ZPLC_LOADER_ERR_TAGS", code: -15, doc: "Tag entry is invalid" },
-  { name: "ZPLC_LOADER_ERR_COMM", code: -16, doc: "Communication function-block kind is NONE or at or above the kind limit" },
+  { name: "ZPLC_LOADER_ERR_COMM", code: -16, doc: "Communication function-block kind is NONE or at or above the kind limit, or a block at a statically known address does not fit one memory region" },
+  { name: "ZPLC_LOADER_ERR_STACK", code: -17, doc: "The evaluation stack can underflow, or exceed the depth the task declares, on some path, or the verifier cannot prove that it cannot" },
 ] as const;
 
 /** Every communication function-block kind identifier of the core (zplc_comm_fb_kind_t). */
