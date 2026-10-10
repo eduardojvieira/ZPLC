@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [],
+  "wrong": [
+    {
+      "intent": "fault is not latched: lamp and belt follow the jam input",
+      "files": {
+        "src/Conveyor.st": "PROGRAM Conveyor\nVAR_INPUT Start AT %I0.0 : BOOL; Stop AT %I0.1 : BOOL; Reset AT %I0.2 : BOOL; PartAtClassifier AT %I0.3 : BOOL; MetalDetected AT %I0.4 : BOOL; PartAtDiverter AT %I0.5 : BOOL; JamDetected AT %I0.6 : BOOL; END_VAR\nVAR_OUTPUT BeltCommand AT %Q0.0 : BOOL; DiverterCommand AT %Q0.1 : BOOL; FaultLamp AT %Q0.2 : BOOL; END_VAR\nVAR Requested : BOOL := FALSE; END_VAR\nIF JamDetected OR Stop THEN Requested := FALSE; ELSIF Start THEN Requested := TRUE; END_IF;\nBeltCommand := Requested; DiverterCommand := FALSE; FaultLamp := JamDetected;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "Reset clears the fault even while the jam is still present",
+      "files": {
+        "src/Conveyor.st": "PROGRAM Conveyor\nVAR_INPUT Start AT %I0.0 : BOOL; Stop AT %I0.1 : BOOL; Reset AT %I0.2 : BOOL; PartAtClassifier AT %I0.3 : BOOL; MetalDetected AT %I0.4 : BOOL; PartAtDiverter AT %I0.5 : BOOL; JamDetected AT %I0.6 : BOOL; END_VAR\nVAR_OUTPUT BeltCommand AT %Q0.0 : BOOL; DiverterCommand AT %Q0.1 : BOOL; FaultLamp AT %Q0.2 : BOOL; END_VAR\nVAR Requested : BOOL := FALSE; Faulted : BOOL := FALSE; END_VAR\nIF JamDetected THEN Faulted := TRUE; Requested := FALSE; ELSIF Stop THEN Requested := FALSE; ELSIF Start AND NOT Faulted THEN Requested := TRUE; END_IF;\nIF Reset THEN Faulted := FALSE; END_IF;\nBeltCommand := Requested AND NOT Faulted; DiverterCommand := FALSE; FaultLamp := Faulted;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "belt restarts by itself when Reset releases the fault",
+      "files": {
+        "src/Conveyor.st": "PROGRAM Conveyor\nVAR_INPUT Start AT %I0.0 : BOOL; Stop AT %I0.1 : BOOL; Reset AT %I0.2 : BOOL; PartAtClassifier AT %I0.3 : BOOL; MetalDetected AT %I0.4 : BOOL; PartAtDiverter AT %I0.5 : BOOL; JamDetected AT %I0.6 : BOOL; END_VAR\nVAR_OUTPUT BeltCommand AT %Q0.0 : BOOL; DiverterCommand AT %Q0.1 : BOOL; FaultLamp AT %Q0.2 : BOOL; END_VAR\nVAR Requested : BOOL := FALSE; Faulted : BOOL := FALSE; END_VAR\nIF JamDetected THEN Faulted := TRUE; ELSIF Stop THEN Requested := FALSE; ELSIF Start THEN Requested := TRUE; END_IF;\nIF Reset AND NOT JamDetected THEN Faulted := FALSE; END_IF;\nBeltCommand := Requested AND NOT Faulted; DiverterCommand := FALSE; FaultLamp := Faulted OR JamDetected;\nEND_PROGRAM\n"
+      }
+    }
+  ]
+}

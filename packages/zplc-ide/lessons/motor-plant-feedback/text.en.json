@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Command, feedback, and speed",
+  "summary": "Separate a motor command from the run confirmation using the Motor Plant.",
+  "scope": "Tests provide deterministic native POSIX host and discrete-plant evidence only; they are not physical-motor, hardware, HIL, or certification evidence.",
+  "objectives": [
+    "Separate the command to the motor from the confirmation that it runs.",
+    "Keep the request until Stop and let Running follow the request only once AtSpeed arrives."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/MotorPlant.st, keep a Requested memory set by Start and cleared by Stop, and wire Requested, Command, and Running.",
+      "checkpoint": "Command reflects the request; Running also depends on AtSpeed."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, distinguish the command from the confirmation.",
+      "checkpoint": "{{v:MotorPlant.Command=false,MotorPlant.Running=false@0|0}} ms: Command/Running OFF; {{v:MotorPlant.Command=true,MotorPlant.Running=false@10|10}}: Command ON and Running OFF; {{v:MotorPlant.Command=true,MotorPlant.Running=true@30|30}}: both ON; {{v:MotorPlant.Command=false,MotorPlant.Running=false@40|40}}: both OFF."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then run: The starter loses Command when Start falls and ignores Stop; retain the request until Stop and gate Running with AtSpeed.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "In Tests, choose the saved zplc.json and run only the MotorPlant scenario.",
+      "checkpoint": "The required scenario is named MotorPlant and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Compare {{t:10}} with {{t:30}} ms: the plant records the command before AtSpeed; Stop at {{t:40}} turns both off.",
+      "checkpoint": "The recorded matrix and trace show the discrete speed/AtSpeed advance."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "RISING/FALLING cover this transition, and NEVER checks that Running never appears without Command in this scenario.",
+      "checkpoint": "It does not establish inertia, a physical motor, hardware timing, HIL, or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Start only needs a pulse, so the request has to be remembered: set Requested with Start and clear it with Stop (Stop wins when both are TRUE)."
+    },
+    {
+      "level": 2,
+      "text": "Drive Command from Requested and Running from Requested AND AtSpeed: Command rises first, Running follows when the plant reports speed, and both fall together at Stop."
+    }
+  ],
+  "faultCases": [
+    "The starter loses Command when Start falls and ignores Stop; retain the request until Stop and gate Running with AtSpeed."
+  ]
+}

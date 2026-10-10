@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Tank level, faults, and reset",
+  "summary": "Walk through level control and the fault and reset latches in the Tank Level example.",
+  "scope": "Tests provide deterministic native POSIX host evidence only; they are not physical-process, hardware, HIL, or certification evidence.",
+  "objectives": [
+    "Keep the pump on from LevelLow until LevelHigh with a latch.",
+    "Latch the alarm on PumpFault or EStop and release it only with a fresh Reset after the fault has cleared."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/TankLevel.st, add PumpLatched, FaultLatched, and ResetArmed memories (or equivalents); the plant owns LevelLow and LevelHigh.",
+      "checkpoint": "Pump, fault, and reset memory must have explicit states."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, predict the pump and alarm through the level and fault changes.",
+      "checkpoint": "Pump ON/Alarm NORMAL {{t:10}}–{{t:60}} ms; Pump OFF/Alarm NORMAL {{t:70}} ms; OFF/ALARM {{t:80}}–{{t:90}}; OFF/NORMAL {{t:100}}–{{t:110}}; OFF/ALARM {{t:120}}–{{t:130}}; OFF/NORMAL {{t:140}}–{{t:150}}."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then run: The starter has no pump hysteresis and runs through a pump fault; keep the pump on from LevelLow until LevelHigh, latch the alarm on PumpFault or EStop, and release it only with a Reset pressed after the fault has cleared.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "In Tests, choose the saved zplc.json and run only the TankLevel scenario.",
+      "checkpoint": "The required scenario is named TankLevel and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Relate {{t:80}}/{{t:100}}/{{t:120}}/{{t:140}} ms to fault, reset, EStop, and recovery; Pump+Alarm must never coexist.",
+      "checkpoint": "The recorded matrix in Tests shows every pump and alarm transition."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "The NEVER assertion covers Pump+Alarm only in this recorded scenario.",
+      "checkpoint": "It does not establish a physical process, hardware timing, HIL, or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "LevelLow goes FALSE as soon as the level rises, so the pump needs its own memory (PumpLatched) that LevelLow sets and LevelHigh clears."
+    },
+    {
+      "level": 2,
+      "text": "Add FaultLatched, set by PumpFault or EStop and kept after the input goes away, and ResetArmed, set only when Reset is seen released while the fault is latched; clear FaultLatched on a Reset press while armed and with no fault input present, and gate Pump with NOT FaultLatched."
+    }
+  ],
+  "faultCases": [
+    "The starter has no pump hysteresis and runs through a pump fault; keep the pump on from LevelLow until LevelHigh, latch the alarm on PumpFault or EStop, and release it only with a Reset pressed after the fault has cleared."
+  ]
+}

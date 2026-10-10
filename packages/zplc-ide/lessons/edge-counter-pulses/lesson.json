@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "edge-counter-pulses",
+  "version": 1,
+  "order": 7,
+  "module": 3,
+  "level": "foundation",
+  "prerequisites": [
+    "motor-start-stop-safe"
+  ],
+  "languages": [
+    "ST"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "plant": null,
+  "estimatedMinutes": 15,
+  "starter": {
+    "project": "edge_counter_starter",
+    "program": "src/EdgeCounter.st"
+  },
+  "solution": {
+    "project": "edge_counter",
+    "program": "src/EdgeCounter.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "EdgeCounter",
+    "path": "tests/edge-counter.scenario.json",
+    "sha256": "113e7ec465e6bb596e31d2679ba513863e0e8695e12c6713aa5445e9588cdcc0"
+  },
+  "regressionScenarios": []
+}

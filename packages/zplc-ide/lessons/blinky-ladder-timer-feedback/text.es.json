@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Oscilador TON y realimentación de salida",
+  "summary": "Construí un parpadeo TON de 500 ms en Structured Text y verificá sus tiempos de encendido y apagado con assertions FOR y AT.",
+  "scope": "La evidencia de Tests es del host nativo POSIX; no es evidencia de LED físico, timing de hardware, HIL ni certificación.",
+  "objectives": [
+    "Armá un oscilador de {{t:500}} ms con un temporizador TON y realimentación de salida.",
+    "Verificá sus tiempos de encendido y apagado con assertions FOR y AT."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/Blinky.st, armá el oscilador alrededor de un TON con PT T#500ms, por ejemplo BlinkTimer: dejalo corriendo con IN := TRUE, y cuando su Q sea TRUE invertí una variable de estado como LedState y reiniciá el temporizador con una llamada con IN := FALSE; LED_Output sigue al estado.",
+      "checkpoint": "La salida del temporizador se realimenta para invertir el estado y reiniciarlo, y el LED arranca en OFF."
+    },
+    {
+      "key": "predict",
+      "title": "Predecí",
+      "body": "Antes de ejecutar, anticipá LED_Output a {{t:250}}, {{t:750}}, {{t:1250}} y {{t:1750}} ms.",
+      "checkpoint": "OFF a {{t:250}} ms, ON a {{t:750}}, OFF a {{t:1250}}, ON a {{t:1750}}; el primer flanco ascendente cae entre {{t:400}} y {{t:600}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Editá",
+      "body": "Corregí esta omisión del starter y guardá antes de ejecutar: El starter mantiene LED_Output en OFF para siempre; agregá un temporizador TON (T#500ms) que invierta un estado cada vez que vence, de modo que el LED esté OFF unos {{t:500}} ms, luego ON unos {{t:500}} ms, y repita.",
+      "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
+    },
+    {
+      "key": "run",
+      "title": "Ejecutá",
+      "body": "En Tests, elegí el zplc.json guardado y ejecutá únicamente el escenario BlinkyVisual.",
+      "checkpoint": "El escenario requerido se llama BlinkyVisual y contiene {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observá",
+      "body": "Revisá la traza y la tabla: OFF hasta unos {{t:500}} ms, ON hasta unos {{t:1000}} ms, OFF de nuevo y ON otra vez desde unos {{t:1500}} ms.",
+      "checkpoint": "Las tres ventanas FOR ({{t:20}}-{{t:400}} ms OFF, {{t:620}}-{{t:900}} ms ON, {{t:1120}}-{{t:1400}} ms OFF) se sostienen, y se encuentran los dos flancos ascendentes y el descendente."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexioná",
+      "body": "Un programa que invierte la salida en cada scan, parpadea al doble de velocidad o queda ON sólo el 20 % del tiempo falla las assertions FOR y AT.",
+      "checkpoint": "El escenario host evalúa la forma de onda lógica, no la técnica (un semiperíodo de {{t:500}} o {{t:510}} ms pasa); no demuestra período eléctrico, brillo, timing de hardware, HIL ni certificación."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Un TON sólo termina cuando su entrada estuvo en TRUE durante todo el preset, así que el oscilador necesita un temporizador cuya salida invierta un estado y luego lo reinicie."
+    },
+    {
+      "level": 2,
+      "text": "Declará un TON con PT T#500ms y una variable de estado; cuando la Q del temporizador sea TRUE, invertí el estado y volvé a llamar al temporizador con IN := FALSE para reiniciarlo, y dejá que LED_Output siga al estado."
+    }
+  ],
+  "faultCases": [
+    "El starter mantiene LED_Output en OFF para siempre; agregá un temporizador TON (T#500ms) que invierta un estado cada vez que vence, de modo que el LED esté OFF unos 500 ms, luego ON unos 500 ms, y repita."
+  ]
+}

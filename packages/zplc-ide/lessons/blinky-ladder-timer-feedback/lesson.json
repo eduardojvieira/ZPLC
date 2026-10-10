@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "blinky-ladder-timer-feedback",
+  "version": 1,
+  "order": 5,
+  "module": 1,
+  "level": "foundation",
+  "prerequisites": [
+    "scan-cycle-one-scan-memory"
+  ],
+  "languages": [
+    "ST"
+  ],
+  "tracks": [
+    "simulation"
+  ],
+  "plant": null,
+  "estimatedMinutes": 20,
+  "starter": {
+    "project": "blinky_starter",
+    "program": "src/Blinky.st"
+  },
+  "solution": {
+    "project": "blinky_st",
+    "program": "src/main.st"
+  },
+  "scenario": {
+    "file": "scenario.json",
+    "id": "BlinkyVisual",
+    "path": "tests/blinky-visual.scenario.json",
+    "sha256": "749042dfdb080b0b453a43655328f675208b4f809e7147b584748a4933b8ffac"
+  },
+  "regressionScenarios": []
+}

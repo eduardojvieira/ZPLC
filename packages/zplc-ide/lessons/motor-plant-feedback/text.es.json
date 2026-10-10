@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "Comando, realimentación y velocidad",
+  "summary": "Separá la orden del motor de la confirmación de marcha usando la planta Motor Plant.",
+  "scope": "La evidencia de Tests es determinística del host nativo POSIX y de la planta discreta; no es evidencia de motor físico, hardware, HIL ni certificación.",
+  "objectives": [
+    "Separá la orden al motor de la confirmación de que está en marcha.",
+    "Retené el pedido hasta Stop y dejá que Running siga al pedido sólo cuando llegue AtSpeed."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objetivo",
+      "body": "En src/MotorPlant.st, mantené una memoria Requested que Start activa y Stop borra, y cableá Requested, Command y Running.",
+      "checkpoint": "Command expresa la orden; Running depende además de AtSpeed."
+    },
+    {
+      "key": "predict",
+      "title": "Predecí",
+      "body": "Antes de ejecutar, diferenciá la orden de la confirmación.",
+      "checkpoint": "{{v:MotorPlant.Command=false,MotorPlant.Running=false@0|0}} ms: Command/Running OFF; {{v:MotorPlant.Command=true,MotorPlant.Running=false@10|10}}: Command ON y Running OFF; {{v:MotorPlant.Command=true,MotorPlant.Running=true@30|30}}: ambos ON; {{v:MotorPlant.Command=false,MotorPlant.Running=false@40|40}}: ambos OFF."
+    },
+    {
+      "key": "edit",
+      "title": "Editá",
+      "body": "Corregí esta omisión del starter y guardá antes de ejecutar: El starter pierde Command cuando cae Start y no respeta Stop; retené el pedido hasta Stop y condicioná Running con AtSpeed.",
+      "checkpoint": "El escenario visible debe pasar con evidencia host guardada."
+    },
+    {
+      "key": "run",
+      "title": "Ejecutá",
+      "body": "En Tests, elegí el zplc.json guardado y ejecutá únicamente el escenario MotorPlant.",
+      "checkpoint": "El escenario requerido se llama MotorPlant y contiene {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observá",
+      "body": "Compará {{t:10}} con {{t:30}} ms: la planta registra orden antes de AtSpeed; Stop a {{t:40}} apaga ambos.",
+      "checkpoint": "La matriz y la traza registradas muestran el avance discreto de speed/AtSpeed."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflexioná",
+      "body": "RISING/FALLING cubren esta transición y NEVER comprueba que Running no aparezca sin Command dentro de este escenario.",
+      "checkpoint": "No demuestra inercia, motor físico, timing de hardware, HIL ni certificación."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "Start sólo necesita un pulso, así que el pedido tiene que recordarse: activá Requested con Start y borralo con Stop (Stop gana si ambos están en TRUE)."
+    },
+    {
+      "level": 2,
+      "text": "Manejá Command desde Requested y Running desde Requested AND AtSpeed: Command sube primero, Running lo sigue cuando la planta informa velocidad, y ambos caen juntos con Stop."
+    }
+  ],
+  "faultCases": [
+    "El starter pierde Command cuando cae Start y no respeta Stop; retené el pedido hasta Stop y condicioná Running con AtSpeed."
+  ]
+}

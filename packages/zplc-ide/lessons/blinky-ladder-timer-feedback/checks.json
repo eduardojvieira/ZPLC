@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "alsoGreen": [
+    {
+      "intent": "two TON timers, one per half period (OffTimer and OnTimer)",
+      "files": {
+        "src/Blinky.st": "PROGRAM Blinky\nVAR_OUTPUT LED_Output AT %Q0.0 : BOOL; END_VAR\nVAR OffTimer : TON; OnTimer : TON; State : BOOL := FALSE; END_VAR\nOffTimer(IN := NOT State, PT := T#500ms);\nOnTimer(IN := State, PT := T#500ms);\nIF OffTimer.Q THEN State := TRUE; END_IF;\nIF OnTimer.Q THEN State := FALSE; END_IF;\nLED_Output := State;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "one TON restarted by its own output and a toggled state",
+      "files": {
+        "src/Blinky.st": "PROGRAM Blinky\nVAR_OUTPUT LED_Output AT %Q0.0 : BOOL; END_VAR\nVAR BlinkTimer : TON; LedState : BOOL := FALSE; END_VAR\nBlinkTimer(IN := TRUE, PT := T#500ms);\nIF BlinkTimer.Q THEN LedState := NOT LedState; BlinkTimer(IN := FALSE, PT := T#500ms); END_IF;\nLED_Output := LedState;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "exact 500 ms half period counted in scans",
+      "files": {
+        "src/Blinky.st": "PROGRAM Blinky\nVAR_OUTPUT LED_Output AT %Q0.0 : BOOL; END_VAR\nVAR Scans : INT := 0; END_VAR\nScans := Scans + 1;\nIF Scans >= 100 THEN Scans := 0; END_IF;\nLED_Output := Scans >= 50;\nEND_PROGRAM\n"
+      }
+    }
+  ],
+  "wrong": [
+    {
+      "intent": "LED is always on",
+      "files": {
+        "src/Blinky.st": "PROGRAM Blinky\nVAR_OUTPUT LED_Output AT %Q0.0 : BOOL; END_VAR\nLED_Output := TRUE;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "LED toggles on every scan: a flicker, not a 500 ms blink",
+      "files": {
+        "src/Blinky.st": "PROGRAM Blinky\nVAR_OUTPUT LED_Output AT %Q0.0 : BOOL; END_VAR\nLED_Output := NOT LED_Output;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "TON oscillator with a 250 ms half period: twice too fast",
+      "files": {
+        "src/Blinky.st": "PROGRAM Blinky\nVAR_OUTPUT LED_Output AT %Q0.0 : BOOL; END_VAR\nVAR Timer : TON; State : BOOL := FALSE; END_VAR\nTimer(IN := TRUE, PT := T#250ms);\nIF Timer.Q THEN State := NOT State; Timer(IN := FALSE, PT := T#250ms); END_IF;\nLED_Output := State;\nEND_PROGRAM\n"
+      }
+    },
+    {
+      "intent": "right period but 20 percent duty (100 ms on, 400 ms off)",
+      "files": {
+        "src/Blinky.st": "PROGRAM Blinky\nVAR_OUTPUT LED_Output AT %Q0.0 : BOOL; END_VAR\nVAR Scans : INT := 0; END_VAR\nScans := Scans + 1;\nIF Scans >= 50 THEN Scans := 0; END_IF;\nLED_Output := Scans < 10;\nEND_PROGRAM\n"
+      }
+    }
+  ]
+}

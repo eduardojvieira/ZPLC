@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "title": "TON oscillator and output feedback",
+  "summary": "Build a 500 ms TON blinker in Structured Text and check its on and off times with FOR and AT assertions.",
+  "scope": "Tests provide native POSIX host evidence only; they are not physical LED, hardware timing, HIL, or certification evidence.",
+  "objectives": [
+    "Build a {{t:500}} ms oscillator from a TON timer and output feedback.",
+    "Check its on and off times with FOR and AT assertions."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Objective",
+      "body": "In src/Blinky.st, build the oscillator around one TON with PT T#500ms, for example BlinkTimer: keep it running with IN := TRUE, and when its Q is TRUE flip a state variable such as LedState and restart the timer with one call using IN := FALSE; LED_Output follows the state.",
+      "checkpoint": "The timer's output feeds back to flip the state and restart the timer, and the LED starts OFF."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "Before running, predict LED_Output at {{t:250}}, {{t:750}}, {{t:1250}}, and {{t:1750}} ms.",
+      "checkpoint": "OFF at {{t:250}} ms, ON at {{t:750}}, OFF at {{t:1250}}, ON at {{t:1750}}; the first rising edge lands between {{t:400}} and {{t:600}} ms."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then run: The starter holds LED_Output OFF forever; add a TON timer (T#500ms) that flips a state each time it expires, so the LED is OFF for about {{t:500}} ms, then ON for about {{t:500}} ms, repeating.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "In Tests, choose the saved zplc.json and run only the BlinkyVisual scenario.",
+      "checkpoint": "The required scenario is named BlinkyVisual and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Observe",
+      "body": "Review the trace and table: OFF until about {{t:500}} ms, ON until about {{t:1000}} ms, OFF again, then ON from about {{t:1500}} ms.",
+      "checkpoint": "The three FOR windows ({{t:20}}-{{t:400}} ms OFF, {{t:620}}-{{t:900}} ms ON, {{t:1120}}-{{t:1400}} ms OFF) hold, and both rising edges and the falling edge are found."
+    },
+    {
+      "key": "reflect",
+      "title": "Reflect",
+      "body": "A program that toggles on every scan, blinks twice as fast, or stays ON only 20% of the time fails the FOR and AT assertions.",
+      "checkpoint": "The host scenario grades the logical waveform, not the technique (a {{t:500}} ms or {{t:510}} ms half period passes); it does not establish electrical period, brightness, hardware timing, HIL, or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "A TON only finishes after its input has been TRUE for the whole preset, so the oscillator needs a timer whose output flips a state and then restarts the timer."
+    },
+    {
+      "level": 2,
+      "text": "Declare a TON with PT T#500ms and a state variable; when the timer's Q is TRUE, invert the state and call the timer again with IN := FALSE so it restarts, and let LED_Output follow the state."
+    }
+  ],
+  "faultCases": [
+    "The starter holds LED_Output OFF forever; add a TON timer (T#500ms) that flips a state each time it expires, so the LED is OFF for about 500 ms, then ON for about 500 ms, repeating."
+  ]
+}

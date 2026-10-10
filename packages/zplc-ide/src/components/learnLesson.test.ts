@@ -44,7 +44,8 @@ describe('Learn lesson catalog', () => {
     expect(es.map(({ id }) => id)).toEqual(['motor-start-stop-safe', 'pedestrian-crossing-states', 'tank-level-fault-reset', 'conveyor-classification-jam', 'blinky-ladder-timer-feedback', 'motor-plant-feedback', 'edge-counter-pulses', 'scan-cycle-one-scan-memory', 'temporal-assertions-jam-fault', 'conveyor-two-parts-diagnosis']);
     expect(es[1]).toMatchObject({ exampleId: 'pedestrian_crossing', requiredScenario: 'PedestrianCrossing', sourcePath: 'src/PedestrianCrossing.st', scenarioPath: 'tests/pedestrian-crossing.scenario.json', title: 'Cruce peatonal y estados seguros' });
     expect(en[1]).toMatchObject({ title: 'Pedestrian crossing and safe states' });
-    for (const lesson of [...es, ...en].filter((lesson) => lesson.id !== 'scan-cycle-one-scan-memory')) expect(lesson.stages).toHaveLength(6);
+    // Lesson 8 has an extra Evidence stage; lesson 10 has its Edit stage since LRN-038 (it used to have none).
+    for (const lesson of [...es, ...en].filter((lesson) => lesson.id !== 'scan-cycle-one-scan-memory' && lesson.id !== 'conveyor-two-parts-diagnosis')) expect(lesson.stages).toHaveLength(6);
     expect(es[1]?.stages.map(({ title }) => title)).toEqual(['Objetivo', 'Predecí', 'Editá', 'Ejecutá', 'Observá', 'Reflexioná']);
     expect(en[1]?.stages.map(({ title }) => title)).toEqual(['Objective', 'Predict', 'Edit', 'Run', 'Observe', 'Reflect']);
     expect(es[1]?.stages[1]?.checkpoint).toBe('verde+STOP 0 ms; amarillo+STOP 20; rojo+STOP 40; rojo+WALK 60; rojo+STOP 90; verde+STOP 110.');
@@ -150,10 +151,11 @@ describe('Learn lesson catalog', () => {
     expect(en[3]?.faultCases).not.toEqual(en[8]?.faultCases);
     expect(es[9]).toMatchObject({ exampleId: 'conveyor_01', requiredScenario: 'ConveyorTwoParts', sourcePath: 'src/Conveyor.st', scenarioPath: 'tests/conveyor-two-parts.scenario.json', title: 'Diagnóstico reproducible: dos piezas, una decisión', scope: 'La evidencia de Tests es del runtime nativo POSIX host con inputs programados por escenario; no es evidencia de sensores ni piezas físicas, timing de target, hardware, HIL ni certificación.' });
     expect(en[9]).toMatchObject({ title: 'Reproducible diagnosis: two parts, one decision', scope: 'Tests provide native POSIX host runtime evidence with scenario-scheduled inputs; they are not physical sensors or parts, target timing, hardware, HIL, or certification evidence.' });
-    expect(es[9]?.stages.map(({ title }) => title)).toEqual(['Ubicá', 'Predecí', 'Leé el calendario', 'Ejecutá', 'Diagnosticá', 'Límites']);
-    expect(en[9]?.stages.map(({ title }) => title)).toEqual(['Locate', 'Predict', 'Read the schedule', 'Run', 'Diagnose', 'Limits']);
+    expect(es[9]?.stages.map(({ title }) => title)).toEqual(['Ubicá', 'Predecí', 'Leé el calendario', 'Editá', 'Ejecutá', 'Diagnosticá', 'Límites']);
+    expect(en[9]?.stages.map(({ title }) => title)).toEqual(['Locate', 'Predict', 'Read the schedule', 'Edit', 'Run', 'Diagnose', 'Limits']);
     for (const lesson of [es[9]!, en[9]!]) {
-      expect(lesson.stages).toHaveLength(6);
+      expect(lesson.stages).toHaveLength(7);
+      expect(lesson.stageKeys).toContain('edit');
       expect(lesson.stages.map(({ body, checkpoint }) => `${body} ${checkpoint}`).join(' ')).toContain('AT@30');
       expect(lesson.stages.map(({ body, checkpoint }) => `${body} ${checkpoint}`).join(' ')).toContain('AT@70');
       expect(lesson.stages.map(({ body, checkpoint }) => `${body} ${checkpoint}`).join(' ')).toContain('NEVER');
@@ -213,10 +215,10 @@ describe('Learn lesson catalog', () => {
       expect(scenario.id).toBe(lesson.requiredScenario);
       for (const path of text.match(/\b(?:src|tests)\/[\w.-]*\w/g) ?? []) expect({ lesson: lesson.id, path, exists: existsSync(join(starter, path)) }).toEqual({ lesson: lesson.id, path, exists: true });
       // The Run stage states the real number of assertions in the graded scenario.
-      const run = lesson.stages[3]!;
+      const run = lesson.stages[lesson.stageKeys.indexOf('run')]!;
       expect({ lesson: lesson.id, run: run.checkpoint }).toEqual({ lesson: lesson.id, run: expect.stringContaining(`${lesson.locale === 'en' ? 'contains' : 'contiene'} ${scenario.expectations.length} assertions`) });
       // Every instant the lesson predicts exists in the scenario's time base.
-      const predicted = lesson.stages[1]!;
+      const predicted = lesson.stages[lesson.stageKeys.indexOf('predict')]!;
       for (const [, value] of `${predicted.body} ${predicted.checkpoint}`.matchAll(/(\d+) ?ms/g)) expect({ lesson: lesson.id, atMs: Number(value), inScenario: Number(value) <= scenario.durationMs && Number(value) % scenario.tickMs === 0 }).toEqual({ lesson: lesson.id, atMs: Number(value), inScenario: true });
     }
   });

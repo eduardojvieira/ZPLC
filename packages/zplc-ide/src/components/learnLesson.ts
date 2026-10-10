@@ -1,11 +1,11 @@
 import type { WorkspaceTestPresentation } from './workspaceTestPresentation';
+import { LESSON_IDS, LESSON_INDEX, type LessonId } from '../generated/lessonIndex';
 import { createLearnContentV1, validateLearnContentV1, type VersionedLearnLesson } from './learnContent.v1';
-import { learnLessonContentEsV1 } from './learnContent.es.v1';
-import { learnLessonContentEnV1 } from './learnContent.en.v1';
 
 export type LearnLocale = 'es' | 'en';
-export type LearnLessonId = 'motor-start-stop-safe' | 'pedestrian-crossing-states' | 'tank-level-fault-reset' | 'conveyor-classification-jam' | 'blinky-ladder-timer-feedback' | 'motor-plant-feedback' | 'edge-counter-pulses' | 'scan-cycle-one-scan-memory' | 'temporal-assertions-jam-fault' | 'conveyor-two-parts-diagnosis';
-const canonicalLessonIds: readonly LearnLessonId[] = ['motor-start-stop-safe', 'pedestrian-crossing-states', 'tank-level-fault-reset', 'conveyor-classification-jam', 'blinky-ladder-timer-feedback', 'motor-plant-feedback', 'edge-counter-pulses', 'scan-cycle-one-scan-memory', 'temporal-assertions-jam-fault', 'conveyor-two-parts-diagnosis'];
+/** One source of lesson ids: the generated index, itself generated from the lesson manifests (LRN-028). */
+export type LearnLessonId = LessonId;
+const canonicalLessonIds: readonly LearnLessonId[] = LESSON_IDS;
 export const LEARN_MASTERY_STORAGE_KEY = 'zplc:learn-mastery:v1';
 const LEARN_MASTERY_MAX_BYTES = 4096;
 
@@ -13,10 +13,11 @@ export type LearnStage = { title: string; body: string; checkpoint: string };
 
 export type LearnLesson = {
   id: LearnLessonId;
-  exampleId: 'motor_start_stop' | 'pedestrian_crossing' | 'tank_level' | 'conveyor_01' | 'blinky_st' | 'motor_plant' | 'edge_counter' | 'scan_snapshot';
-  requiredScenario: 'MotorStartStop' | 'PedestrianCrossing' | 'TankLevel' | 'Conveyor01' | 'ConveyorJamTiming' | 'ConveyorTwoParts' | 'BlinkyVisual' | 'MotorPlant' | 'EdgeCounter' | 'ScanSnapshot';
-  sourcePath: 'src/Motor.st' | 'src/PedestrianCrossing.st' | 'src/TankLevel.st' | 'src/Conveyor.st' | 'src/Blinky.st' | 'src/MotorPlant.st' | 'src/EdgeCounter.st' | 'src/ScanSnapshot.st';
-  scenarioPath: 'tests/motor-start-stop.scenario.json' | 'tests/pedestrian-crossing.scenario.json' | 'tests/tank-level.scenario.json' | 'tests/conveyor-01.scenario.json' | 'tests/conveyor-jam-timing.scenario.json' | 'tests/conveyor-two-parts.scenario.json' | 'tests/blinky-visual.scenario.json' | 'tests/motor-plant.scenario.json' | 'tests/edge-counter.scenario.json' | 'tests/scan-snapshot.scenario.json';
+  /** The example project that holds the reference solution of the lesson. */
+  exampleId: string;
+  requiredScenario: string;
+  sourcePath: string;
+  scenarioPath: string;
   title: string;
   summary: string;
   stages: readonly LearnStage[];
@@ -126,8 +127,8 @@ export function gradeRecordedScenarioLesson(lesson: VersionedLearnLesson, presen
 }
 
 export const learnLessonCatalog: Readonly<Record<LearnLocale, readonly VersionedLearnLesson[]>> = Object.freeze({
-  es: createLearnContentV1('es', learnLessonContentEsV1),
-  en: createLearnContentV1('en', learnLessonContentEnV1),
+  es: createLearnContentV1('es', LESSON_INDEX.lessons),
+  en: createLearnContentV1('en', LESSON_INDEX.lessons),
 });
 
 if (!validateLearnContentV1(learnLessonCatalog)) throw new Error('Learn content v1 locale parity failed');

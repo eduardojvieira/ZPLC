@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "title": "Reproducible diagnosis: two parts, one decision",
+  "summary": "Use the versioned schedule to distinguish one metal part from one non-metal part without inventing observability.",
+  "scope": "Tests provide native POSIX host runtime evidence with scenario-scheduled inputs; they are not physical sensors or parts, target timing, hardware, HIL, or certification evidence.",
+  "objectives": [
+    "Distinguish a metal part from a non-metal part with one memory that lives between two sensors.",
+    "Read a scheduled input timeline and predict the outputs before running it."
+  ],
+  "stages": [
+    {
+      "key": "objective",
+      "title": "Locate",
+      "body": "Use PartAtClassifier, MetalDetected, and PartAtDiverter in src/Conveyor.st and add MetalLatched.",
+      "checkpoint": "MetalLatched sets with classifier+metal and clears when the part reaches the diverter."
+    },
+    {
+      "key": "predict",
+      "title": "Predict",
+      "body": "The first part is metal and the second is non-metal.",
+      "checkpoint": "Expect diversion only for the first; Belt stays active for both."
+    },
+    {
+      "key": "schedule",
+      "title": "Read the schedule",
+      "body": "The JSON schedules classifier→diverter at {{t:20}}→{{t:30}} ms and {{t:50}}→{{t:70}} ms, with a {{t:10}} ms tick through {{t:80}} ms. Start is pressed only at {{t:0}} ms, so the program must hold the belt request.",
+      "checkpoint": "The three assertions are {{v:Conveyor.BeltCommand=true,Conveyor.DiverterCommand=true@30|AT@30 Belt=true/Diverter=true}}, {{v:Conveyor.BeltCommand=true,Conveyor.DiverterCommand=false@70|AT@70 Belt=true/Diverter=false}}, and NEVER Diverter=true with Belt=false."
+    },
+    {
+      "key": "edit",
+      "title": "Edit",
+      "body": "Correct this starter omission, save it, then run: The starter never latches metal for the diverter; hold the belt request after Start, latch metal at the classifier, and clear it only when the part reaches the diverter.",
+      "checkpoint": "The visible scenario must pass with saved host evidence."
+    },
+    {
+      "key": "run",
+      "title": "Run",
+      "body": "In Tests, choose the saved zplc.json and run only ConveyorTwoParts.",
+      "checkpoint": "The required scenario is named ConveyorTwoParts and contains {{assertions}} assertions."
+    },
+    {
+      "key": "observe",
+      "title": "Diagnose",
+      "body": "The Tests matrix proves host outputs: compare the {{t:30}} and {{t:70}} ms samples.",
+      "checkpoint": "It does not prove or record inputs, physical parts, or the internal MetalLatched state."
+    },
+    {
+      "key": "reflect",
+      "title": "Limits",
+      "body": "Repeat the same scenario for a reproducible decision about host outputs.",
+      "checkpoint": "It does not establish physical sensors or parts, target timing, hardware, HIL, or certification."
+    }
+  ],
+  "hints": [
+    {
+      "level": 1,
+      "text": "The classifier and the diverter see the part at different instants, so remember what the classifier saw: MetalLatched sets with PartAtClassifier AND MetalDetected."
+    },
+    {
+      "level": 2,
+      "text": "Clear MetalLatched once the part reaches the diverter, drive DiverterCommand from BeltCommand AND PartAtDiverter AND MetalLatched, and hold the belt request after the single Start press at {{t:0}} ms."
+    }
+  ],
+  "faultCases": [
+    "The starter never latches metal for the diverter; hold the belt request after Start, latch metal at the classifier, and clear it only when the part reaches the diverter."
+  ]
+}

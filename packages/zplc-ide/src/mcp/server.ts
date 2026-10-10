@@ -7,10 +7,10 @@ import * as z from 'zod/v4';
 import idePackage from '../../package.json';
 import { directoryIdentity, sameDirectoryIdentity, type DirectoryIdentity } from '../cli/firmwareBuildRunner';
 import * as toolApi from '../cli/toolApi';
+import { LESSON_IDS as LEARN_LESSON_IDS } from '../generated/lessonIndex';
 import { LEARN_PROGRESS_FILENAME, LEARN_PROGRESS_LEGACY_FILENAME, LEARN_PROGRESS_MAX_BYTES, emptyProgress, migrateLegacyMastery, parseProgress, type LearnProgress } from '../../electron/learnProgressModel';
 
 const MAX_OUTPUT_BYTES = 512 * 1024;
-const LEARN_LESSON_IDS = ['motor-start-stop-safe', 'pedestrian-crossing-states', 'tank-level-fault-reset', 'conveyor-classification-jam', 'blinky-ladder-timer-feedback', 'motor-plant-feedback', 'edge-counter-pulses', 'scan-cycle-one-scan-memory', 'temporal-assertions-jam-fault', 'conveyor-two-parts-diagnosis'] as const;
 const shortText = z.string().min(1).max(256);
 const identifier = z.string().min(1).max(128).regex(/^[A-Za-z_][A-Za-z0-9_.:-]*$/);
 const EMPTY_INPUT = z.object({}).strict();
