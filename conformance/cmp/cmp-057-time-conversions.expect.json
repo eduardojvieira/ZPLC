@@ -1,0 +1,17 @@
+{
+  "requirement": "CMP-057",
+  "title": "a TIME converts to and from its count of milliseconds",
+  "matrix": ["functions.other-conversions"],
+  "tags": ["arch-sensitive", "float-conversion"],
+  "note": "A TIME is an unsigned count of milliseconds (CMP-017): T#2s is 2000, T#1h is 3600000, T#1s500ms is 1500.0 as a REAL and T#70s as a WORD is 70000 mod 65536 = 4464; the conversions to TIME are the inverse",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QD0", "type": "DINT", "value": 2000},
+    {"at": "%QD1", "type": "DINT", "value": 1500},
+    {"at": "%QD2", "type": "UDINT", "value": 3600000},
+    {"at": "%QD3", "type": "REAL", "value": 1500.0},
+    {"at": "%QD4", "type": "DINT", "value": 2500},
+    {"at": "%QW10", "type": "WORD", "value": 4464}
+  ]
+}

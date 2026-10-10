@@ -1,0 +1,24 @@
+{
+  "requirement": "CMP-058",
+  "title": "EXP, LN and LOG of negative arguments, of 0, of 1 and at the ends of the REAL range",
+  "matrix": ["functions.trigonometric-logarithmic-exponential"],
+  "tags": ["arch-sensitive", "float"],
+  "note": "EXP is the natural exponential (EXP(-20.0) = 2.0611536E-9, EXP(88.0) = 1.6516363E38), infinity above 88.72 and 0.0 below -103.3; LN and LOG of 1.0 are 0.0, LN(0.0) is minus infinity and the logarithm of a negative number is not a number; a subnormal argument works (LN(1.0E-40) = -92.10340)",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QX0.0", "type": "BOOL", "value": true},
+    {"at": "%QX0.1", "type": "BOOL", "value": true},
+    {"at": "%QX0.2", "type": "BOOL", "value": true},
+    {"at": "%QX0.3", "type": "BOOL", "value": true},
+    {"at": "%QX0.4", "type": "BOOL", "value": true},
+    {"at": "%QX0.5", "type": "BOOL", "value": true},
+    {"at": "%QX0.6", "type": "BOOL", "value": true},
+    {"at": "%QX0.7", "type": "BOOL", "value": true},
+    {"at": "%QX1.0", "type": "BOOL", "value": true},
+    {"at": "%QX1.1", "type": "BOOL", "value": true},
+    {"at": "%QX1.2", "type": "BOOL", "value": true},
+    {"at": "%QX1.3", "type": "BOOL", "value": true},
+    {"at": "%QX1.4", "type": "BOOL", "value": true}
+  ]
+}

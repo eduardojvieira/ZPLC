@@ -1,0 +1,23 @@
+{
+  "requirement": "CMP-058",
+  "title": "DERIVATIVE gives the change of IN over DT, negative for a falling input, and 0.0 for a DT of 0",
+  "matrix": ["blocks.library-blocks-not-in-the-standard"],
+  "tags": ["arch-sensitive", "float"],
+  "note": "Not an IEC block: OUT = (IN - previous IN) / DT; with DT 0.5 the input 0, 2, 6, 6, -2 gives 0, 4, 8, 0, -16, and a DT of 0.0 gives 0.0 instead of a division by zero",
+  "scans": 5,
+  "scanMs": 10,
+  "inputs": [
+    {"at": "%ID0", "type": "REAL", "value": 0.0, "beforeScan": 1},
+    {"at": "%ID0", "type": "REAL", "value": 2.0, "beforeScan": 2},
+    {"at": "%ID0", "type": "REAL", "value": 6.0, "beforeScan": 3},
+    {"at": "%ID0", "type": "REAL", "value": -2.0, "beforeScan": 5}
+  ],
+  "expect": [
+    {"at": "%QD0", "type": "REAL", "value": 0.0, "afterScan": 1},
+    {"at": "%QD0", "type": "REAL", "value": 4.0, "afterScan": 2},
+    {"at": "%QD0", "type": "REAL", "value": 8.0, "afterScan": 3},
+    {"at": "%QD0", "type": "REAL", "value": 0.0, "afterScan": 4},
+    {"at": "%QD0", "type": "REAL", "value": -16.0, "afterScan": 5},
+    {"at": "%QD1", "type": "REAL", "value": 0.0, "afterScan": 5}
+  ]
+}

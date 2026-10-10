@@ -1,0 +1,19 @@
+{
+  "requirement": "CMP-058",
+  "title": "SEL and MUX return negative and REAL inputs, the last input, and IN0 for a selector out of range",
+  "matrix": ["functions.selection-limit-and-sqrt-functions"],
+  "tags": ["arch-sensitive", "float"],
+  "note": "IEC 61131-3 SEL(G, IN0, IN1) returns IN1 when G is TRUE and IN0 otherwise, and MUX(K, IN0, ..., INn) returns INK; ZPLC returns IN0 for a K below 0 or above n (the standard leaves it undefined); the inputs may be negative or REAL",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QW0", "type": "INT", "value": -5},
+    {"at": "%QW1", "type": "INT", "value": 7},
+    {"at": "%QD1", "type": "REAL", "value": -2.5},
+    {"at": "%QW4", "type": "INT", "value": -10},
+    {"at": "%QW5", "type": "INT", "value": 30},
+    {"at": "%QW6", "type": "INT", "value": -10},
+    {"at": "%QW7", "type": "INT", "value": -10},
+    {"at": "%QD4", "type": "REAL", "value": 2.5}
+  ]
+}

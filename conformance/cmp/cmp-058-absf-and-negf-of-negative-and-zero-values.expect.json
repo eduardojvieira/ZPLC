@@ -1,0 +1,19 @@
+{
+  "requirement": "CMP-058",
+  "title": "ABSF and NEGF of negative, positive and zero REAL values",
+  "matrix": ["functions.selection-limit-and-sqrt-functions"],
+  "tags": ["arch-sensitive", "float"],
+  "note": "ABSF clears the sign and NEGF flips it: ABSF(-3.5) = 3.5, ABSF(2.5) = 2.5, NEGF(2.5) = -2.5, NEGF(-3.5) = 3.5 and large values are exact; the zero results compare equal to 0.0",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QD0", "type": "REAL", "value": 3.5},
+    {"at": "%QD1", "type": "REAL", "value": 2.5},
+    {"at": "%QD2", "type": "REAL", "value": 0.0},
+    {"at": "%QD3", "type": "REAL", "value": 1e+30},
+    {"at": "%QD4", "type": "REAL", "value": -2.5},
+    {"at": "%QD5", "type": "REAL", "value": 3.5},
+    {"at": "%QD6", "type": "REAL", "value": 0.0},
+    {"at": "%QD7", "type": "REAL", "value": 1e+30}
+  ]
+}

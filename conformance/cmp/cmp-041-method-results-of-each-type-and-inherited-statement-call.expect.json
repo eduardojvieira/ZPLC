@@ -1,0 +1,15 @@
+{
+  "requirement": "CMP-041",
+  "title": "a method returns a BOOL, a SINT, a REAL and a DINT through its result slot, and an inherited method called as a statement leaves nothing",
+  "matrix": ["pous.methods-this", "pous.extends-override-final-super"],
+  "note": "IEC 61131-3, methods: the value of a method is of its declared type (the SINT -5 keeps its sign, the DINT -70000 its width) and a call used as a statement discards it; twenty such calls of an inherited method in a loop load, and Bump ran twenty times",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QX0.0", "type": "BOOL", "value": true},
+    {"at": "%QB1", "type": "SINT", "value": -5},
+    {"at": "%QD1", "type": "REAL", "value": 2.5},
+    {"at": "%QD2", "type": "DINT", "value": -70000},
+    {"at": "%QW6", "type": "INT", "value": 20}
+  ]
+}

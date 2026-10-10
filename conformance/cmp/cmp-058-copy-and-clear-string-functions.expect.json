@@ -1,0 +1,16 @@
+{
+  "requirement": "CMP-058",
+  "title": "COPY writes its second argument and CLEAR empties its argument",
+  "matrix": ["functions.string-functions"],
+  "note": "COPY(src, dst) copies the characters of src into dst, truncated to the capacity of dst (a STRING[3] keeps 3), and returns dst; CLEAR(s) makes the length 0 and returns s; neither changes the source",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QW0", "type": "INT", "value": 5},
+    {"at": "%QX8.0", "type": "BOOL", "value": true},
+    {"at": "%QW1", "type": "INT", "value": 0},
+    {"at": "%QW2", "type": "INT", "value": 3},
+    {"at": "%QX8.1", "type": "BOOL", "value": true},
+    {"at": "%QW3", "type": "INT", "value": 5}
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "requirement": "CMP-058",
+  "title": "a FIFO holds at most the eight items of its instance whatever SIZE says",
+  "matrix": ["blocks.library-blocks-not-in-the-standard"],
+  "note": "Not an IEC block: the instance of stdlib/system.ts is 32 bytes of header and room for eight DINT items, so a SIZE above 8 is limited to 8; ten pushes leave COUNT 8, FULL TRUE, and the variable declared after the block untouched",
+  "scans": 20,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QD0", "type": "DINT", "value": 7, "afterScan": 14},
+    {"at": "%QX4.0", "type": "BOOL", "value": false, "afterScan": 14},
+    {"at": "%QD0", "type": "DINT", "value": 8, "afterScan": 20},
+    {"at": "%QX4.0", "type": "BOOL", "value": true, "afterScan": 20},
+    {"at": "%QD2", "type": "DINT", "value": 77, "afterScan": 20}
+  ]
+}

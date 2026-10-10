@@ -1,0 +1,23 @@
+{
+  "requirement": "CMP-016",
+  "title": "a REAL outside the range of the destination integer type saturates to its nearest limit",
+  "matrix": ["functions.basic-conversions"],
+  "tags": ["arch-sensitive", "float-conversion"],
+  "note": "CMP-016 and CMP-057: the conversion of a REAL gives the integer nearest to it inside the range of the destination type, so 200.0 is the SINT 127 and -5.0 the USINT 0; 3.0E9 is a valid UDINT; infinity gives the limit of its sign and a NaN gives 0, on every platform",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QB0", "type": "SINT", "value": 127},
+    {"at": "%QB1", "type": "SINT", "value": -128},
+    {"at": "%QB2", "type": "USINT", "value": 255},
+    {"at": "%QB3", "type": "USINT", "value": 0},
+    {"at": "%QW2", "type": "INT", "value": 32767},
+    {"at": "%QW3", "type": "INT", "value": -32768},
+    {"at": "%QW4", "type": "UINT", "value": 65535},
+    {"at": "%QD3", "type": "UDINT", "value": 4294967295},
+    {"at": "%QD4", "type": "UDINT", "value": 3000000000},
+    {"at": "%QD5", "type": "DINT", "value": 0},
+    {"at": "%QD6", "type": "DINT", "value": -2147483648},
+    {"at": "%QD7", "type": "UDINT", "value": 4294967295}
+  ]
+}

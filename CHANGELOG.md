@@ -100,9 +100,7 @@ All notable changes are documented here.
   Reset or Load is TRUE, so a pulse that rises during Reset or Load is no longer
   counted when it is released; in `CTUD`, Reset beats Load and both beat the count
   edges, an up edge and a down edge in one scan cancel, and `CV` stops at 32767
-  instead of wrapping to -32768 (CMP-058). Counting below zero and negative
-  presets still do not follow IEC 61131-3 (CMP-011): see the standard library
-  reference.
+  instead of wrapping to -32768 (CMP-058).
 - The compiler reports every independent error of a file, in order and at its own
   line (a duplicate declaration and an unknown member no longer at line 0; an
   unterminated comment where it opens), and accepts the forms it used to reject:
@@ -171,6 +169,64 @@ All notable changes are documented here.
 - Studio resolves a program counter to the statement that owns it, not only
   the first instruction of the statement, and `release-version.ts` rewrites
   and checks the compiler version that every debug map records.
+- `TP` starts a pulse only on a rising edge of `IN` and is not retriggered by a
+  level that stays true after the pulse; `TON`, `TOF` and `TP` hold their
+  elapsed time at the preset and a `TON` with a preset of 0 follows its input.
+- A conversion function `<FROM>_TO_<TO>` exists for every pair of different types
+  among `BOOL`, `SINT`, `USINT`, `BYTE`, `INT`, `UINT`, `WORD`, `DINT`, `UDINT`,
+  `DWORD`, `REAL` and `TIME` (it was an unknown function for all but four).
+  `REAL_TO_INT` and its relatives now round to the nearest integer, an exact
+  half to the even one, and saturate at the limits of the destination type
+  (they truncated and wrapped); a NaN converts to 0. `REAL_TO_INT(x)` no longer
+  yields a 32-bit value: use `REAL_TO_DINT`. `TRUNC` and `ROUND` keep a `REAL`
+  of 2^23 or more as it is instead of clamping it to the `DINT` range.
+- `FIFO` and `LIFO` called without `SIZE` hold their documented eight items (the
+  first call faulted on `MOD` by zero, a `LIFO` was full), a `SIZE` above eight
+  is limited to eight instead of writing past the instance, a pop of an empty
+  buffer on the first call does nothing, and a call no longer leaves two
+  values on the evaluation stack (a call inside a loop was refused by the
+  loader).
+- `SQRT`, `EXP`, `LN`, `LOG`, `SIN`, `COS`, `TAN`, `ASIN`, `ACOS`, `ATAN` and
+  `ATAN2` are computed by REAL routines with argument reduction and a polynomial
+  of fixed degree, measured against `Math.*` in the compiler tests (errors from
+  1.3e-7 relative to 4e-7 absolute, bounds in the standard-library reference);
+  the old series gave `ASIN(0.5)` = 0.5259, `ACOS(0.5)` = 1.0449, `ATAN(1.0)` =
+  0.7238, `LN(10.0)` = 2.218, `LOG(1000.0)` = 1.449 and an `ATAN2` wrong in
+  three quadrants. Their arguments may be integers. `SIN`, `COS` and `TAN` of
+  an angle of 100000 or more are reduced modulo 2 pi with 2 pi held to 36 bits
+  and a correction, so they are exact up to 2^40 (2e-6) and finite for every
+  finite REAL (an infinity or a NaN gives a NaN; no angle gives a fault or a
+  result outside -1 to 1); `LN(0.0)` is minus infinity, and
+  `ASIN` or `ACOS` outside -1 to 1 are a NaN. `EXPT` is the operator `**`: it
+  no longer underflows the evaluation stack for an exponent of 0 (the artifact
+  was refused by the loader) and no longer takes the bits of a REAL exponent as
+  a loop count.
+- An inlined method that returns a number writes a result slot that is pushed
+  once where the method ends: a method that assigned its name twice left two
+  values on the evaluation stack (a call in a loop was refused by the loader),
+  one that never assigned left none, and an inherited method called as a
+  statement was not dropped. A method that never assigns returns 0.
+- `NAND` and `NOR` return a `BOOL` of 0 or 1: they returned the bitwise
+  complement (254 or 255), so `IF NAND(TRUE, TRUE) THEN` was true.
+- `HYSTERESIS`, `RAMP_REAL` and `PID_Compact` compare REAL values as REAL: with
+  a negative threshold, a negative error or a negative `OUT_MIN` they compared
+  bit patterns as signed integers (a `RAMP_REAL` falling through zero did not
+  ramp, a `PID_Compact` output of -10 was limited to `OUT_MIN` -100). An integer
+  argument of any of these blocks and of `NORM_X` and `SCALE_X` is converted to
+  REAL, and `PID_Compact` called without `DT` no longer faults on its
+  derivative term.
+- `CTD` and `CTUD` count below 0 and stop at -32768 as IEC 61131-3 defines
+  (`CTD` stopped at 0), and the three counters compare `CV` with `PV` and 0 as
+  signed values: a negative `PV` made `Q` and `QU` wrong because the 16-bit
+  members were loaded without their sign. A `CTD` that was never loaded counts
+  from 0 to -1 on its first edge.
+- `BLINK` starts its cycle with the ON phase in the scan where `ENABLE` rises
+  (it started with the OFF phase) and starts it again after `ENABLE` was
+  FALSE; a phase ends at the first call at which its time has elapsed.
+- `PWM` takes an integer `DUTY` as a REAL (`DUTY := 1` was a denormal and the
+  output never came on), ends its pulse at `PERIOD * DUTY` also when that is not
+  a whole number of milliseconds (the comparison truncated 30.5 ms to 30 ms of
+  difference), and a `PERIOD` of 0 is off instead of dividing by zero.
 
 ## 2.0.0-rc.3 - 2026-09-01
 

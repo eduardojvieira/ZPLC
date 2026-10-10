@@ -1,6 +1,6 @@
 {
   "requirement": "CMP-016",
-  "title": "an in-range REAL converts to the DINT truncated toward zero",
+  "title": "TRUNC followed by REAL_TO_DINT gives the integer toward zero",
   "matrix": ["functions.basic-conversions"],
   "tags": ["arch-sensitive", "float-conversion"],
   "scans": 1,

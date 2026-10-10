@@ -1,0 +1,17 @@
+{
+  "requirement": "CMP-058",
+  "title": "SIN, COS and TAN of infinity and of a NaN are not a number",
+  "matrix": ["functions.trigonometric-logarithmic-exponential"],
+  "tags": ["arch-sensitive", "float"],
+  "note": "The sine, cosine and tangent of an infinity have no value, and a NaN stays a NaN; the result is a NaN and the VM does not fault",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QX0.0", "type": "BOOL", "value": true},
+    {"at": "%QX0.1", "type": "BOOL", "value": true},
+    {"at": "%QX0.2", "type": "BOOL", "value": true},
+    {"at": "%QX0.3", "type": "BOOL", "value": true},
+    {"at": "%QX0.4", "type": "BOOL", "value": true},
+    {"at": "%QX0.5", "type": "BOOL", "value": true}
+  ]
+}

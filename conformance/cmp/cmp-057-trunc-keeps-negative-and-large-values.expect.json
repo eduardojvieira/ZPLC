@@ -1,0 +1,15 @@
+{
+  "requirement": "CMP-057",
+  "title": "TRUNC removes the fraction toward zero for negative values and leaves a REAL above 2^31 as it is",
+  "matrix": ["functions.basic-conversions"],
+  "tags": ["arch-sensitive", "float-conversion"],
+  "note": "TRUNC truncates toward zero and returns a REAL: -3.7 gives -3.0 and -0.9 gives -0.0; 3.0E9 has no fraction and is not clamped to the range of a DINT",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {"at": "%QD0", "type": "REAL", "value": -3.0},
+    {"at": "%QD1", "type": "REAL", "value": 0.0},
+    {"at": "%QD2", "type": "REAL", "value": 3000000000.0},
+    {"at": "%QD3", "type": "REAL", "value": 0.0}
+  ]
+}
