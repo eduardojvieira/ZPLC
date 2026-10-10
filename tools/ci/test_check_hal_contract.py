@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """IO-007: every HAL function has an implementation on every shipped port and a caller.
 
-tools/ci/check_hal_contract.py reads firmware/lib/zplc_core/include/zplc_hal.h, the three port sources and the
-callers, and compares them with the ledger of tools/ci/hal-contract.json. These tests pin the rules on a synthetic tree
-and then run the real one.
+tools/ci/check_hal_contract.py reads the HAL header, the three port sources and the callers, and compares them with
+the ledger of tools/ci/hal-contract.json. These tests pin the rules on a synthetic tree and then run the real one.
 """
 from __future__ import annotations
 
@@ -65,7 +64,7 @@ class CheckerTests(unittest.TestCase):
     def test_a_declaration_inside_a_comment_is_not_a_function(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = tree(Path(directory), posix=FULL, zephyr=FULL, wasm=FULL, user=USER)
-            names = checker.declared_functions((root / "firmware/lib/zplc_core/include/zplc_hal.h").read_text())
+            names = checker.declared_functions((root / checker.HEADER).read_text())
             self.assertEqual(["zplc_hal_tick", "zplc_hal_gpio_read", "zplc_io_table"], names)
 
     def test_a_port_without_an_implementation_is_reported_with_its_name(self) -> None:
