@@ -107,8 +107,8 @@
   },
   "CMP-051": {
     "page": "language",
-    "en": "The loader refuses the artifact that the compiler builds for a program with an `LREAL` and for two cyclic tasks with different intervals.",
-    "es": "El cargador rechaza el artefacto que el compilador genera para un programa con un `LREAL` y para dos tareas cíclicas con intervalos distintos."
+    "en": "The loader refuses the artifact that the compiler builds for two cyclic tasks with different intervals.",
+    "es": "El cargador rechaza el artefacto que el compilador genera para dos tareas cíclicas con intervalos distintos."
   },
   "CMP-053": {
     "page": "language",

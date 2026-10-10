@@ -18,6 +18,24 @@ All notable changes are documented here.
   a negative `SAR64`) and a conversion to an integer truncates, saturates and
   maps a NaN to `0`; the results are stated in the runtime ISA page. The opcodes
   add about 4 KB of code on a Cortex-M3 at `-Os`.
+- `LREAL` and the 64-bit integers work (CMP-015). `LREAL` is declared,
+  initialised, computed (`+ - * /`, negation, comparison with IEEE 754 results,
+  a NaN is unordered), stored in arrays and structures, passed to and returned
+  from functions and retained; `LINT`, `ULINT` and `LWORD` have `*`, `/`, `MOD`
+  (unsigned for `ULINT` and `LWORD`), `ABS`, `SHL`, `SHR`, `ROL`, `ROR`, a `FOR`
+  counter, a `CASE` selector with 64-bit labels and literals of the whole range.
+  A real literal in an `LREAL` expression is the double it writes, an `LREAL`
+  assigned to a `REAL` builds with the `IMPLICIT_NARROWING` warning, and 240
+  conversion functions exist (16 types, ties to even, saturation). `SQRT`,
+  `ABS`, `TRUNC`, `ROUND`, `MAX`, `MIN`, `LIMIT`, `SEL` and `MUX` are exact on
+  an `LREAL`; the transcendental functions compute in `REAL` and widen the
+  result back, with the accuracy of a `REAL`. Division and `MOD` by zero fault
+  as the 32-bit ones do. The conformance cases give the same results on a 64-bit
+  and a 32-bit runtime.
+- Studio watches `LINT`, `ULINT`, `LWORD` and `LREAL` at their own width: a
+  64-bit integer shows every digit, an `LWORD` as 16 hexadecimal digits and an
+  `LREAL` as a double; they used to show the low 4 bytes as a `DINT`, a `DWORD`
+  or a `REAL`.
 - **ABI:** the draft counter is now 3. Artifacts built before this draft are
   refused by the loader, the native runtime, the firmware shell and Studio, with
   both numbers: rebuild programs and reflash boards together.
@@ -79,8 +97,7 @@ All notable changes are documented here.
 - The compiler gives correct results for negative `SINT`/`INT`, unsigned
   comparison and division, `REAL` arithmetic with integer operands, `NOT` on
   `BYTE`/`WORD`, compound and fractional `TIME` literals and `TIME` over 24.8
-  days; 64-bit multiply, divide, modulo and shifts are now build errors
-  instead of wrong code.
+  days.
 - Pause, breakpoint and step on the Zephyr scheduler keep the output image and
   the force table and only drive the physical outputs to their safe state
   (RT-017); a paused or stepped target now shows the image of the scan that ran
