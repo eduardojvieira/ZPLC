@@ -1,0 +1,11 @@
+{
+  "requirement": "CMP-007",
+  "title": "lexical and syntax errors come in one list, in order",
+  "build": "fails",
+  "lines": [
+    5,
+    6,
+    7,
+    8
+  ]
+}

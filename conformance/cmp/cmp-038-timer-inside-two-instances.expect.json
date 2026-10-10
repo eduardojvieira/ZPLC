@@ -1,0 +1,18 @@
+{
+  "requirement": "CMP-038",
+  "title": "two instances of a block that holds a timer keep a timer each",
+  "scans": 5,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QX0.0",
+      "type": "BOOL",
+      "value": true
+    },
+    {
+      "at": "%QX0.1",
+      "type": "BOOL",
+      "value": false
+    }
+  ]
+}

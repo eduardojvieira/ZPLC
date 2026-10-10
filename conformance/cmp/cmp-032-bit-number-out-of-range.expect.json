@@ -1,0 +1,11 @@
+{
+  "requirement": "CMP-032",
+  "title": "a bit number beyond the width of the type is rejected",
+  "build": "fails",
+  "lines": [
+    6
+  ],
+  "messageIncludes": [
+    "Bit 8 is out of range for BYTE"
+  ]
+}

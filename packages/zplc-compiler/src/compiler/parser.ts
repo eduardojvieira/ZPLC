@@ -7,8 +7,11 @@
  * Converts token stream to AST.
  */
 
-import { tokenize, TokenType } from './lexer.ts';
-import type { Token, TokenTypeValue } from './lexer.ts';
+import { tokenizeWithErrors, TokenType } from './lexer.ts';
+import type { Token, TokenTypeValue, LexerError } from './lexer.ts';
+import { orderedUniqueErrors } from './diagnostics.ts';
+import type { SourceWarning, SyntaxIssue } from './diagnostics.ts';
+import { resolveTypeNames } from './type-names.ts';
 import { DataType, VarSection, parseTimeLiteral, parseIOAddress } from './ast.ts';
 import type {
     CompilationUnit,
@@ -64,6 +67,8 @@ import type {
     InitialValue,
     // Extended types
     GlobalVarBlock,
+    AliasDecl,
+    BitAccess,
     FunctionDecl,
     FunctionBlockDecl,
     FBParameter,
@@ -80,13 +85,50 @@ import type {
 export class ParseError extends Error {
     line: number;
     column: number;
+    /** Position just after the offending token. */
+    endLine: number;
+    endColumn: number;
+    /** The message without the position prefix. */
+    detail: string;
+    /** Every syntax error of the source, in order; the thrown error is the first of them. */
+    errors: SyntaxIssue[] = [this];
+    /** Index of the token the error was found at (error recovery only). */
+    tokenIndex = -1;
 
-    constructor(message: string, line: number, column: number) {
+    constructor(message: string, line: number, column: number, endLine = line, endColumn = column + 1) {
         super(`Parse error at ${line}:${column}: ${message}`);
         this.name = 'ParseError';
+        this.detail = message;
         this.line = line;
         this.column = column;
+        this.endLine = endLine;
+        this.endColumn = endColumn;
     }
+}
+
+/** What reading a source produced: the tree (complete only when `errors` is empty), every error, the warnings. */
+export interface ParseOutcome {
+    unit: CompilationUnit;
+    errors: Array<LexerError | ParseError>;
+    warnings: SourceWarning[];
+}
+
+/**
+ * Parse ST source code and report every syntax error it holds (CMP-007).
+ *
+ * The parser recovers from an error at the next statement, declaration or program organisation unit,
+ * so independent errors are all reported. The tree it returns when `errors` is not empty is incomplete:
+ * a build must stop.
+ */
+export function parseWithDiagnostics(source: string): ParseOutcome {
+    const lexed = tokenizeWithErrors(source);
+    const parser = new Parser(lexed.tokens);
+    const unit = parser.parseCompilationUnit();
+    return {
+        unit,
+        errors: orderedUniqueErrors<LexerError | ParseError>([...lexed.errors, ...parser.errors]),
+        warnings: lexed.warnings,
+    };
 }
 
 /**
@@ -94,12 +136,52 @@ export class ParseError extends Error {
  *
  * @param source - ST source code
  * @returns Compilation unit with parsed programs
+ * @throws LexerError or ParseError: the first error, with every error of the source in `errors`
  */
 export function parse(source: string): CompilationUnit {
-    const tokens = tokenize(source);
-    const parser = new Parser(tokens);
-    return parser.parseCompilationUnit();
+    const { unit, errors } = parseWithDiagnostics(source);
+    if (errors.length > 0) {
+        const first = errors[0]!;
+        first.errors = errors;
+        throw first;
+    }
+    return unit;
 }
+
+/** Tokens at which a statement list ends: the end of the enclosing program organisation unit, or the start of the next one. */
+const BLOCK_END_TOKENS = new Set<TokenTypeValue>([
+    TokenType.END_PROGRAM, TokenType.END_FUNCTION, TokenType.END_FUNCTION_BLOCK, TokenType.END_METHOD,
+    TokenType.END_INTERFACE, TokenType.END_TYPE, TokenType.END_STRUCT,
+    TokenType.PROGRAM, TokenType.FUNCTION, TokenType.FUNCTION_BLOCK, TokenType.INTERFACE, TokenType.TYPE,
+    TokenType.VAR_GLOBAL,
+]);
+/** Tokens that start a program organisation unit or a global declaration. */
+const TOP_LEVEL_TOKENS = new Set<TokenTypeValue>([
+    TokenType.PROGRAM, TokenType.FUNCTION, TokenType.FUNCTION_BLOCK, TokenType.INTERFACE, TokenType.TYPE,
+    TokenType.VAR_GLOBAL,
+]);
+const STATEMENT_OPENERS = new Set<TokenTypeValue>([
+    TokenType.IF, TokenType.WHILE, TokenType.FOR, TokenType.REPEAT, TokenType.CASE,
+]);
+const STATEMENT_CLOSERS = new Set<TokenTypeValue>([
+    TokenType.END_IF, TokenType.END_WHILE, TokenType.END_FOR, TokenType.END_REPEAT, TokenType.END_CASE,
+]);
+/** Words in the middle of a compound statement: they belong to the statement that is open. */
+const STATEMENT_MIDDLES = new Set<TokenTypeValue>([TokenType.ELSE, TokenType.ELSIF, TokenType.UNTIL]);
+/** The word that closes each compound statement. */
+const STATEMENT_CLOSER_OF: Record<string, string> = {
+    [TokenType.IF]: 'END_IF',
+    [TokenType.WHILE]: 'END_WHILE',
+    [TokenType.FOR]: 'END_FOR',
+    [TokenType.REPEAT]: 'END_REPEAT',
+    [TokenType.CASE]: 'END_CASE',
+};
+const VAR_BLOCK_STARTS = new Set<TokenTypeValue>([
+    TokenType.VAR, TokenType.VAR_INPUT, TokenType.VAR_OUTPUT, TokenType.VAR_IN_OUT, TokenType.VAR_TEMP,
+    TokenType.VAR_GLOBAL, TokenType.VAR_EXTERNAL,
+]);
+/** After this many errors the parser gives up: the rest would only bury the first ones. */
+const MAX_SYNTAX_ERRORS = 100;
 
 /**
  * Recursive descent parser for Structured Text.
@@ -107,6 +189,9 @@ export function parse(source: string): CompilationUnit {
 class Parser {
     private tokens: Token[];
     private pos = 0;
+    /** The syntax errors the parser recovered from, in the order they were found (CMP-007). */
+    errors: ParseError[] = [];
+    private lastErrorIndex = -2;
     /** Integer constants declared so far: the bounds of an array may name them (CMP-022). */
     private constants = new Map<string, number>();
 
@@ -119,7 +204,7 @@ class Parser {
     // ========================================================================
 
     private current(): Token {
-        return this.tokens[this.pos] ?? { type: TokenType.EOF, value: '', line: 0, column: 0 };
+        return this.tokens[this.pos] ?? { type: TokenType.EOF, value: '', line: 0, column: 0, endLine: 0, endColumn: 0 };
     }
 
     private previous(): Token {
@@ -131,7 +216,7 @@ class Parser {
     }
 
     private peek(offset = 1): Token {
-        return this.tokens[this.pos + offset] ?? { type: TokenType.EOF, value: '', line: 0, column: 0 };
+        return this.tokens[this.pos + offset] ?? { type: TokenType.EOF, value: '', line: 0, column: 0, endLine: 0, endColumn: 0 };
     }
 
     private check(type: TokenTypeValue): boolean {
@@ -160,12 +245,19 @@ class Parser {
             return this.advance();
         }
         const curr = this.current();
-        throw new ParseError(`${message}, got ${curr.type} '${curr.value}'`, curr.line, curr.column);
+        throw this.syntaxError(`${message}, got ${curr.type} '${curr.value}'`);
     }
 
     private error(message: string): never {
+        throw this.syntaxError(message);
+    }
+
+    /** A syntax error at the current token. */
+    private syntaxError(message: string): ParseError {
         const curr = this.current();
-        throw new ParseError(message, curr.line, curr.column);
+        const error = new ParseError(message, curr.line, curr.column, curr.endLine, curr.endColumn);
+        error.tokenIndex = this.pos;
+        return error;
     }
 
     // ========================================================================
@@ -184,35 +276,56 @@ class Parser {
         const interfaces: InterfaceDecl[] = [];
         const start = this.current();
 
+        const typeAliases: AliasDecl[] = [];
+
         while (!this.isAtEnd()) {
-            if (this.check(TokenType.VAR_GLOBAL)) {
-                globalVars.push(this.parseGlobalVarBlock());
-            } else if (this.check(TokenType.FUNCTION)) {
-                functions.push(this.parseFunctionDecl());
-            } else if (this.check(TokenType.FUNCTION_BLOCK)) {
-                functionBlocks.push(this.parseFunctionBlockDecl());
-            } else if (this.check(TokenType.PROGRAM)) {
-                programs.push(this.parseProgram());
-            } else if (this.check(TokenType.TYPE)) {
-                typeDefinitions.push(this.parseTypeDecl());
-            } else if (this.check(TokenType.INTERFACE)) {
-                interfaces.push(this.parseInterfaceDecl());
-            } else {
-                this.error(`Expected VAR_GLOBAL, FUNCTION, FUNCTION_BLOCK, PROGRAM, TYPE or INTERFACE, got ${this.current().type}`);
+            const itemStart = this.pos;
+            if (this.skipUnsupportedBlock()) continue;
+            try {
+                if (this.check(TokenType.VAR_GLOBAL)) {
+                    globalVars.push(this.parseGlobalVarBlock());
+                } else if (this.check(TokenType.FUNCTION)) {
+                    functions.push(this.parseFunctionDecl());
+                } else if (this.check(TokenType.FUNCTION_BLOCK)) {
+                    functionBlocks.push(this.parseFunctionBlockDecl());
+                } else if (this.check(TokenType.PROGRAM)) {
+                    programs.push(this.parseProgram());
+                } else if (this.check(TokenType.TYPE)) {
+                    for (const definition of this.parseTypeBlock()) {
+                        if (definition.kind === 'AliasDecl') typeAliases.push(definition);
+                        else typeDefinitions.push(definition);
+                    }
+                } else if (this.check(TokenType.INTERFACE)) {
+                    interfaces.push(this.parseInterfaceDecl());
+                } else {
+                    this.error(`Expected VAR_GLOBAL, FUNCTION, FUNCTION_BLOCK, PROGRAM, TYPE or INTERFACE, got ${this.current().type}`);
+                }
+            } catch (caught) {
+                if (!(caught instanceof ParseError)) throw caught;
+                // The unit that failed is lost; the next one is read from its first word
+                this.record(caught);
+                while (!this.isAtEnd() && !TOP_LEVEL_TOKENS.has(this.current().type)) this.advance();
+                if (this.pos === itemStart) this.advance();
             }
         }
 
-        return {
+        const unit: CompilationUnit = {
             kind: 'CompilationUnit',
             globalVars,
             functions,
             functionBlocks,
             programs,
             typeDefinitions,
+            typeAliases,
             interfaces,
             line: start.line,
             column: start.column,
         };
+        // Replace every use of an alias by the type it stands for, and name the library blocks (CMP-030, CMP-033)
+        for (const issue of resolveTypeNames(unit)) {
+            this.record(new ParseError(issue.message, issue.line, issue.column, issue.endLine, issue.endColumn));
+        }
+        return unit;
     }
 
     /**
@@ -223,13 +336,13 @@ class Parser {
         const nameToken = this.expect(TokenType.IDENTIFIER, 'Expected program name');
 
         const varBlocks: VarBlock[] = [];
-        while (this.check(TokenType.VAR) || this.check(TokenType.VAR_OUTPUT) || this.check(TokenType.VAR_INPUT)) {
+        while (this.startsVarBlock()) {
             varBlocks.push(this.parseVarBlock());
         }
 
         const statements: Statement[] = [];
         while (!this.check(TokenType.END_PROGRAM) && !this.isAtEnd()) {
-            statements.push(this.parseStatement());
+            this.parseStatementInto(statements);
         }
 
         this.expect(TokenType.END_PROGRAM, 'Expected END_PROGRAM');
@@ -280,6 +393,7 @@ class Parser {
             this.check(TokenType.VAR_OUTPUT) ||
             this.check(TokenType.VAR_IN_OUT) ||
             this.check(TokenType.VAR_TEMP) ||
+            this.check(TokenType.VAR_EXTERNAL) ||
             this.check(TokenType.METHOD)
         ) {
             // Check for method (starts with METHOD keyword)
@@ -309,7 +423,7 @@ class Parser {
         // Parse body statements (legacy FB body, executed on call)
         const body: Statement[] = [];
         while (!this.check(TokenType.END_FUNCTION_BLOCK) && !this.isAtEnd()) {
-            body.push(this.parseStatement());
+            this.parseStatementInto(body);
         }
 
         this.expect(TokenType.END_FUNCTION_BLOCK, 'Expected END_FUNCTION_BLOCK');
@@ -331,10 +445,24 @@ class Parser {
     }
 
     /**
-     * global_var_block := VAR_GLOBAL (CONSTANT)? var_decl* END_VAR
+     * type_block := TYPE type_declaration+ END_TYPE
      */
-    private parseTypeDecl(): TypeDefinition {
-        const start = this.expect(TokenType.TYPE, "Expected 'TYPE'");
+    private parseTypeBlock(): Array<TypeDefinition | AliasDecl> {
+        const typeToken = this.expect(TokenType.TYPE, "Expected 'TYPE'");
+        const definitions: Array<TypeDefinition | AliasDecl> = [];
+        do {
+            // the first declaration of the block is positioned at the TYPE word, as a block of one always was
+            definitions.push(this.parseTypeDecl(definitions.length === 0 ? typeToken : undefined));
+        } while (!this.check(TokenType.END_TYPE) && !this.isAtEnd());
+        this.expect(TokenType.END_TYPE, "Expected 'END_TYPE'");
+        return definitions;
+    }
+
+    /**
+     * type_declaration := identifier [':'] (STRUCT ... END_STRUCT | '(' enum_values ')' | type_name [':=' value]) [';']
+     */
+    private parseTypeDecl(blockStart?: Token): TypeDefinition | AliasDecl {
+        const start = blockStart ?? this.current();
         const nameToken = this.expect(TokenType.IDENTIFIER, "Expected type name");
 
         // Handle optional colon (TYPE MotorData : STRUCT)
@@ -379,7 +507,6 @@ class Parser {
 
             this.expect(TokenType.END_STRUCT, "Expected 'END_STRUCT'");
             if (this.match(TokenType.SEMICOLON)) { }
-            this.expect(TokenType.END_TYPE, "Expected 'END_TYPE'");
 
             return {
                 kind: 'StructDecl',
@@ -413,7 +540,6 @@ class Parser {
             
             this.expect(TokenType.RPAREN, "Expected ')' after enum values");
             if (this.match(TokenType.SEMICOLON)) { }
-            this.expect(TokenType.END_TYPE, "Expected 'END_TYPE'");
             
             return {
                 kind: 'EnumDecl',
@@ -424,9 +550,21 @@ class Parser {
                 column: start.column
             };
         } else {
-            this.error("Expected 'STRUCT' or '(' for type definition");
-            // Unreachable
-            return {} as any;
+            // Type alias: TYPE Speed : INT; END_TYPE (CMP-030)
+            const baseType = this.parseTypeName();
+            let initialValue: Expression | null = null;
+            if (this.match(TokenType.ASSIGN)) {
+                initialValue = this.parseExpression();
+            }
+            this.expect(TokenType.SEMICOLON, "Expected ';' after the type alias");
+            return {
+                kind: 'AliasDecl',
+                name: nameToken.value,
+                baseType,
+                initialValue,
+                line: start.line,
+                column: start.column,
+            };
         }
     }
 
@@ -521,7 +659,8 @@ class Parser {
             this.check(TokenType.VAR) ||
             this.check(TokenType.VAR_INPUT) ||
             this.check(TokenType.VAR_OUTPUT) ||
-            this.check(TokenType.VAR_TEMP)
+            this.check(TokenType.VAR_TEMP) ||
+            this.check(TokenType.VAR_EXTERNAL)
         ) {
             const block = this.parseVarBlock();
             switch (block.section) {
@@ -543,7 +682,7 @@ class Parser {
         const body: Statement[] = [];
         if (!isAbstract) {
             while (!this.check(TokenType.END_METHOD) && !this.isAtEnd()) {
-                body.push(this.parseStatement());
+                this.parseStatementInto(body);
             }
         }
 
@@ -569,14 +708,15 @@ class Parser {
     private parseGlobalVarBlock(): GlobalVarBlock {
         const start = this.expect(TokenType.VAR_GLOBAL, 'Expected VAR_GLOBAL');
         const isConstant = this.match(TokenType.CONSTANT);
-        this.rejectRetainDeclaration();
+        const retain = this.parseRetainQualifier();
 
         const variables: VarDecl[] = [];
         while (!this.check(TokenType.END_VAR) && !this.isAtEnd()) {
-            variables.push(this.parseVarDecl(isConstant ? VarSection.CONSTANT : VarSection.VAR_GLOBAL));
+            this.parseVarDeclInto(variables, isConstant ? VarSection.CONSTANT : VarSection.VAR_GLOBAL);
         }
 
         this.expect(TokenType.END_VAR, 'Expected END_VAR');
+        if (retain !== undefined) for (const variable of variables) variable.retain = retain;
 
         return {
             kind: 'GlobalVarBlock',
@@ -603,21 +743,26 @@ class Parser {
 
         const inputs: VarDecl[] = [];
         const locals: VarDecl[] = [];
+        const outputs: VarDecl[] = [];
+        const inouts: VarDecl[] = [];
 
-        // Parse VAR_INPUT, VAR, and VAR_TEMP blocks
-        while (this.check(TokenType.VAR) || this.check(TokenType.VAR_INPUT) || this.check(TokenType.VAR_TEMP)) {
+        // Parse VAR_INPUT, VAR_OUTPUT, VAR_IN_OUT, VAR, VAR_TEMP and VAR_EXTERNAL blocks
+        while (this.startsVarBlock()) {
             const block = this.parseVarBlock();
             if (block.section === VarSection.VAR_INPUT) {
                 inputs.push(...block.variables);
             } else {
+                // a function keeps its outputs and in-out variables in static storage, like its locals (CMP-030)
                 locals.push(...block.variables);
+                if (block.section === VarSection.VAR_OUTPUT) outputs.push(...block.variables);
+                if (block.section === VarSection.VAR_IN_OUT) inouts.push(...block.variables);
             }
         }
 
         // Parse body statements
         const body: Statement[] = [];
         while (!this.check(TokenType.END_FUNCTION) && !this.isAtEnd()) {
-            body.push(this.parseStatement());
+            this.parseStatementInto(body);
         }
 
         this.expect(TokenType.END_FUNCTION, 'Expected END_FUNCTION');
@@ -628,6 +773,8 @@ class Parser {
             returnType: returnType as any,
             inputs,
             locals,
+            outputs,
+            inouts,
             body,
             line: start.line,
             column: start.column,
@@ -654,33 +801,47 @@ class Parser {
             section = VarSection.VAR_GLOBAL;
         } else if (this.match(TokenType.VAR_TEMP)) {
             section = VarSection.VAR_TEMP;
+        } else if (this.match(TokenType.VAR_EXTERNAL)) {
+            section = VarSection.VAR_EXTERNAL;
         } else {
             this.error('Expected VAR, VAR_OUTPUT, VAR_INPUT, VAR_IN_OUT, VAR_GLOBAL, or VAR_TEMP');
         }
 
-        this.rejectRetainDeclaration();
+        const retain = this.parseRetainQualifier();
 
         const variables: VarDecl[] = [];
         while (!this.check(TokenType.END_VAR) && !this.isAtEnd()) {
-            variables.push(this.parseVarDecl(section));
+            this.parseVarDeclInto(variables, section);
         }
 
         this.expect(TokenType.END_VAR, 'Expected END_VAR');
+        if (retain !== undefined) for (const variable of variables) variable.retain = retain;
 
         return {
             kind: 'VarBlock',
             section,
             variables,
+            ...(retain === undefined ? {} : { retain }),
             line: start.line,
             column: start.column,
         };
     }
 
-    private rejectRetainDeclaration(): void {
+    /** `RETAIN` (true) or `NON_RETAIN` (false) after the VAR keyword; undefined when neither is written (CMP-029). */
+    private parseRetainQualifier(): boolean | undefined {
         const token = this.current();
-        if (token.type === TokenType.IDENTIFIER && token.value.toUpperCase() === 'RETAIN') {
-            this.error('RETAIN declarations are not supported');
-        }
+        if (token.type !== TokenType.IDENTIFIER) return undefined;
+        // `retain : BOOL;` declares a variable named retain
+        const next = this.peek().type;
+        if (next === TokenType.COLON || next === TokenType.COMMA || next === TokenType.AT) return undefined;
+        const word = token.value.toUpperCase();
+        if (word !== 'RETAIN' && word !== 'NON_RETAIN') return undefined;
+        this.advance();
+        return word === 'RETAIN';
+    }
+
+    private startsVarBlock(): boolean {
+        return VAR_BLOCK_STARTS.has(this.current().type) && !this.check(TokenType.VAR_GLOBAL);
     }
 
     /**
@@ -694,7 +855,11 @@ class Parser {
         let ioAddress = null;
         if (this.match(TokenType.AT)) {
             const addrToken = this.expect(TokenType.IO_ADDRESS, 'Expected I/O address after AT');
-            ioAddress = parseIOAddress(addrToken.value);
+            try {
+                ioAddress = parseIOAddress(addrToken.value);
+            } catch (e) {
+                throw new ParseError((e as Error).message, addrToken.line, addrToken.column, addrToken.endLine, addrToken.endColumn);
+            }
         }
 
         this.expect(TokenType.COLON, 'Expected : after variable name');
@@ -801,6 +966,8 @@ class Parser {
         if (this.match(TokenType.FIFO)) return DataType.FIFO;
         if (this.match(TokenType.LIFO)) return DataType.LIFO;
 
+        // A library function block (TON, CTU, PULSE...) is a name here, not a reserved word (CMP-033):
+        // type-names.ts turns the name into the library block once the program's own types are known.
         // User defined type (Struct or FB)
         if (this.check(TokenType.IDENTIFIER)) {
             const token = this.advance();
@@ -1030,6 +1197,13 @@ class Parser {
         // Must be an assignment (possibly with nested access) or a method call statement
         const target = this.parsePrimaryExpr();
 
+        // A call of an instance that is an array element: timers[2](IN := x) (CMP-038)
+        if (target.kind === 'ArrayAccess' && this.check(TokenType.LPAREN)) {
+            const call = this.parseFBCallStatement({ ...startToken, value: describeInstance(target) }, startToken);
+            call.instance = target;
+            return call;
+        }
+
         // Check if this is a standalone method call (no assignment needed)
         if (target.kind === 'MethodCall') {
             this.expect(TokenType.SEMICOLON, 'Expected ; after method call');
@@ -1075,7 +1249,7 @@ class Parser {
 
         const thenBranch: Statement[] = [];
         while (!this.check(TokenType.ELSIF) && !this.check(TokenType.ELSE) && !this.check(TokenType.END_IF) && !this.isAtEnd()) {
-            thenBranch.push(this.parseStatement());
+            this.parseStatementInto(thenBranch);
         }
 
         // Parse ELSIF branches
@@ -1086,7 +1260,7 @@ class Parser {
 
             const elsifStatements: Statement[] = [];
             while (!this.check(TokenType.ELSIF) && !this.check(TokenType.ELSE) && !this.check(TokenType.END_IF) && !this.isAtEnd()) {
-                elsifStatements.push(this.parseStatement());
+                this.parseStatementInto(elsifStatements);
             }
 
             elsifBranches.push({
@@ -1100,7 +1274,7 @@ class Parser {
         if (this.match(TokenType.ELSE)) {
             elseBranch = [];
             while (!this.check(TokenType.END_IF) && !this.isAtEnd()) {
-                elseBranch.push(this.parseStatement());
+                this.parseStatementInto(elseBranch);
             }
         }
 
@@ -1128,7 +1302,7 @@ class Parser {
 
         const body: Statement[] = [];
         while (!this.check(TokenType.END_WHILE) && !this.isAtEnd()) {
-            body.push(this.parseStatement());
+            this.parseStatementInto(body);
         }
 
         this.expect(TokenType.END_WHILE, 'Expected END_WHILE');
@@ -1166,7 +1340,7 @@ class Parser {
 
         const body: Statement[] = [];
         while (!this.check(TokenType.END_FOR) && !this.isAtEnd()) {
-            body.push(this.parseStatement());
+            this.parseStatementInto(body);
         }
 
         this.expect(TokenType.END_FOR, 'Expected END_FOR');
@@ -1192,7 +1366,7 @@ class Parser {
 
         const body: Statement[] = [];
         while (!this.check(TokenType.UNTIL) && !this.isAtEnd()) {
-            body.push(this.parseStatement());
+            this.parseStatementInto(body);
         }
 
         this.expect(TokenType.UNTIL, 'Expected UNTIL');
@@ -1235,7 +1409,7 @@ class Parser {
         if (this.match(TokenType.ELSE)) {
             elseBranch = [];
             while (!this.check(TokenType.END_CASE) && !this.isAtEnd()) {
-                elseBranch.push(this.parseStatement());
+                this.parseStatementInto(elseBranch);
             }
         }
 
@@ -1273,7 +1447,7 @@ class Parser {
         const statements: Statement[] = [];
         // Parse statements until we see another case label, ELSE, or END_CASE
         while (!this.startsCaseLabel() && !this.check(TokenType.ELSE) && !this.check(TokenType.END_CASE) && !this.isAtEnd()) {
-            statements.push(this.parseStatement());
+            this.parseStatementInto(statements);
         }
 
         return { values, statements };
@@ -1575,6 +1749,43 @@ class Parser {
             } as UnaryExpr;
         }
 
+        return this.parsePowerExpr();
+    }
+
+    /**
+     * power_expr := primary_expr (** (+|-)? primary_expr)*
+     *
+     * `**` binds tighter than the unary minus and NOT, as in the precedence table of IEC 61131-3 (CMP-032),
+     * and is left associative.
+     */
+    private parsePowerExpr(): Expression {
+        let left = this.parsePrimaryExpr();
+
+        while (this.match(TokenType.POWER)) {
+            const right = this.parsePowerOperand();
+            left = {
+                kind: 'BinaryExpr',
+                operator: 'POW',
+                left,
+                right,
+                line: left.line,
+                column: left.column,
+                endLine: right.endLine,
+                endColumn: right.endColumn,
+            };
+        }
+
+        return left;
+    }
+
+    /** The exponent: a primary expression that may carry a sign (`2 ** -1`). */
+    private parsePowerOperand(): Expression {
+        if (this.match(TokenType.MINUS)) {
+            const startToken = this.previous();
+            const operand = this.parsePrimaryExpr();
+            return { kind: 'UnaryExpr', operator: 'NEG', operand, line: startToken.line, column: startToken.column, endLine: operand.endLine, endColumn: operand.endColumn } as UnaryExpr;
+        }
+        this.match(TokenType.PLUS);
         return this.parsePrimaryExpr();
     }
 
@@ -1582,6 +1793,17 @@ class Parser {
      * primary_expr := TRUE | FALSE | INTEGER | TIME_LITERAL | identifier (. member)? | LPAREN expression RPAREN
      */
     private parsePrimaryExpr(): Expression {
+        const expr = this.parsePrimaryExprNode();
+        // the position just after the last token of the expression, for the diagnostics that point at it
+        if (expr.endLine === undefined && this.pos > 0) {
+            const last = this.tokens[this.pos - 1]!;
+            expr.endLine = last.endLine;
+            expr.endColumn = last.endColumn;
+        }
+        return expr;
+    }
+
+    private parsePrimaryExprNode(): Expression {
         const curr = this.current();
 
         // Boolean literals
@@ -1605,20 +1827,22 @@ class Parser {
 
         // Integer literal
         if (this.match(TokenType.INTEGER)) {
-            let value: number;
-            if (curr.value.toLowerCase().startsWith('0x')) {
-                value = parseInt(curr.value, 16);
-            } else {
-                value = parseInt(curr.value, 10);
-            }
+            // the lexer hands over decimal digits, or 0x, 0o and 0b digits for a based literal (16#FF, 8#17, 2#1010)
+            const exact = BigInt(curr.value);
+            const value = Number(exact);
             return {
                 kind: 'IntLiteral',
                 value,
                 // beyond 2^53 a number is rounded: keep the exact value for a 64-bit literal
-                ...(Number.isSafeInteger(value) ? {} : { big: BigInt(curr.value) }),
+                ...(Number.isSafeInteger(value) ? {} : { big: exact }),
                 line: curr.line,
                 column: curr.column,
             } as IntLiteral;
+        }
+
+        // Typed literal: INT#5, SINT#-3, WORD#16#FF, REAL#1.5, BOOL#TRUE (CMP-031)
+        if (this.match(TokenType.TYPED_LITERAL)) {
+            return this.typedLiteral(curr);
         }
 
         // Real (floating-point) literal
@@ -1749,7 +1973,23 @@ class Parser {
 
             // Parse suffixes recursively (.member, .method(), [indices], ^)
             while (true) {
-                if (this.match(TokenType.DOT)) {
+                if (this.check(TokenType.DOT) && this.peek().type === TokenType.INTEGER) {
+                    // Bit access: w.0 (CMP-032)
+                    this.advance(); // .
+                    const bitToken = this.advance();
+                    if (!/^\d+$/.test(bitToken.value) || Number(bitToken.value) > 63) {
+                        throw new ParseError(`A bit number is a decimal number from 0 to 63, got '${bitToken.value}'`, bitToken.line, bitToken.column, bitToken.endLine, bitToken.endColumn);
+                    }
+                    expr = {
+                        kind: 'BitAccess',
+                        operand: expr,
+                        bit: Number(bitToken.value),
+                        line: startToken.line,
+                        column: startToken.column,
+                        endLine: bitToken.endLine,
+                        endColumn: bitToken.endColumn,
+                    } as BitAccess;
+                } else if (this.match(TokenType.DOT)) {
                     const memberToken = this.expect(TokenType.IDENTIFIER, 'Expected member name after .');
                     
                     // Check if this is a method call: instance.Method(args)
@@ -1908,4 +2148,263 @@ class Parser {
         this.error(`Expected expression, got ${this.current().type}`);
     }
 
+    // ========================================================================
+    // Typed literals (CMP-031)
+    // ========================================================================
+
+    /** `INT#5`, `SINT#-3`, `WORD#0xFF`, `REAL#1.5`, `BOOL#1`: the value is written TYPE#text by the lexer. */
+    private typedLiteral(token: Token): Expression {
+        const hash = token.value.indexOf('#');
+        const typeName = token.value.slice(0, hash);
+        const text = token.value.slice(hash + 1);
+        const negative = text.startsWith('-');
+        const digits = negative ? text.slice(1) : text;
+        const at = { line: token.line, column: token.column, endLine: token.endLine, endColumn: token.endColumn };
+
+        if (typeName === 'BOOL') {
+            if (digits !== '0' && digits !== '1') {
+                throw new ParseError(`BOOL# takes 0, 1, TRUE or FALSE, got ${text}`, at.line, at.column, at.endLine, at.endColumn);
+            }
+            return { kind: 'BoolLiteral', value: digits === '1' && !negative, literalType: undefined, ...at } as BoolLiteral;
+        }
+
+        if (typeName === 'REAL' || typeName === 'LREAL') {
+            const magnitude = /^0[xob]/.test(digits) ? Number(BigInt(digits)) : parseFloat(digits);
+            return { kind: 'RealLiteral', value: negative ? -magnitude : magnitude, literalType: typeName, ...at } as RealLiteral;
+        }
+
+        if (/[.eE]/.test(digits) && !/^0x/.test(digits)) {
+            throw new ParseError(`${typeName}#${text}: an integer literal has no fraction or exponent`, at.line, at.column, at.endLine, at.endColumn);
+        }
+        const exact = negative ? -BigInt(digits) : BigInt(digits);
+        const [low, high] = INTEGER_TYPE_RANGES[typeName]!;
+        if (exact < low || exact > high) {
+            throw new ParseError(`The literal ${typeName}#${text} is out of range: ${typeName} holds ${low} to ${high}`, at.line, at.column, at.endLine, at.endColumn);
+        }
+        const value = Number(exact);
+        return {
+            kind: 'IntLiteral',
+            value,
+            ...(Number.isSafeInteger(value) ? {} : { big: exact }),
+            literalType: typeName,
+            ...at,
+        } as IntLiteral;
+    }
+
+    // ========================================================================
+    // Error recovery (CMP-007)
+    //
+    // An error in a statement, a declaration or a program organisation unit is
+    // recorded and the parser goes on after it, so that a file with several
+    // independent errors reports all of them. The tree built after an error is
+    // incomplete: a build never uses it.
+    // ========================================================================
+
+    /** Keep a recovered error, unless it repeats an earlier one at the same token or one the lexer reported. */
+    private record(error: ParseError): void {
+        if (this.errors.length >= MAX_SYNTAX_ERRORS) {
+            // stop reading: every loop ends at the end of the file
+            this.pos = this.tokens.length - 1;
+            return;
+        }
+        const index = error.tokenIndex;
+        if (index >= 0) {
+            if (index === this.lastErrorIndex) return;
+            // text the lexer could not read, or what follows it: the lexical error says it already
+            if (this.tokens[index]?.type === TokenType.ERROR || this.tokens[index - 1]?.type === TokenType.ERROR) return;
+            this.lastErrorIndex = index;
+        }
+        this.errors.push(error);
+    }
+
+    /**
+     * A construct of IEC 61131-3 this compiler does not have, written `WORD name ... END_WORD` (ACTION, PROPERTY,
+     * NAMESPACE, CONFIGURATION, RESOURCE): one error at its first word, and the whole construct is skipped, so
+     * that what is inside it is not reported as a dozen errors of its own. Returns true when one was skipped.
+     */
+    private skipUnsupportedBlock(): boolean {
+        const first = this.current();
+        if (first.type !== TokenType.IDENTIFIER || this.peek().type !== TokenType.IDENTIFIER) return false;
+        const closer = `END_${first.value.toUpperCase()}`;
+        for (let index = this.pos + 2; index < this.tokens.length; index++) {
+            const token = this.tokens[index]!;
+            if (token.type !== TokenType.IDENTIFIER || token.value.toUpperCase() !== closer) continue;
+            const error = this.syntaxError(`${first.value.toUpperCase()} ... ${closer} is not supported`);
+            this.record(error);
+            this.pos = index + 1;
+            this.match(TokenType.SEMICOLON);
+            return true;
+        }
+        return false;
+    }
+
+    /** At the end of the enclosing unit: a statement list must not read on into the next one. */
+    private atBlockEnd(): boolean {
+        return BLOCK_END_TOKENS.has(this.current().type);
+    }
+
+    /**
+     * Parse one statement of a list into `into`. A statement with an error is recorded and skipped; an
+     * empty statement (`;`) is accepted and produces nothing (CMP-032).
+     */
+    private parseStatementInto(into: Statement[]): void {
+        if (this.match(TokenType.SEMICOLON)) return;
+        if (this.skipUnsupportedBlock()) return;
+        // The list ended without the word that closes it: the error belongs to the construct around it
+        if (this.atBlockEnd()) {
+            const open = this.innermostOpenStatement();
+            if (open !== undefined) {
+                const here = this.current();
+                throw this.syntaxError(`Expected ${STATEMENT_CLOSER_OF[open]}, got ${here.type} '${here.value}'`);
+            }
+            into.push(this.parseStatement());
+            return;
+        }
+        const start = this.pos;
+        const opener = this.current().type;
+        try {
+            const statement = this.parseStatement();
+            // the position just after the statement, for the diagnostics that point at it
+            const last = this.tokens[this.pos - 1]!;
+            statement.endLine ??= last.endLine;
+            statement.endColumn ??= last.endColumn;
+            into.push(statement);
+        } catch (caught) {
+            if (!(caught instanceof ParseError)) throw caught;
+            this.record(caught);
+            this.skipStatement(opener, this.unterminatedStringLine(caught));
+            if (this.pos === start) this.advance();
+        }
+    }
+
+    /**
+     * When `error` was found at the text of an unterminated string, the line that text ends on: the string
+     * ran to the end of the line and took the semicolon of the statement with it.
+     */
+    private unterminatedStringLine(error: ParseError): number | undefined {
+        const token = this.tokens[error.tokenIndex];
+        if (token?.type !== TokenType.ERROR || !/^['"]/.test(token.value)) return undefined;
+        return token.endLine;
+    }
+
+    /** The opening word of the innermost compound statement that has not been closed at the current token, if any. */
+    private innermostOpenStatement(): TokenTypeValue | undefined {
+        const open: TokenTypeValue[] = [];
+        for (let index = 0; index < this.pos; index++) {
+            const type = this.tokens[index]!.type;
+            if (STATEMENT_OPENERS.has(type)) open.push(type);
+            else if (STATEMENT_CLOSERS.has(type)) open.pop();
+            else if (TOP_LEVEL_TOKENS.has(type)) open.length = 0;
+        }
+        return open.pop();
+    }
+
+    /**
+     * After an error: skip to the end of the statement that began with `opener`. A compound statement
+     * (IF, WHILE, FOR, REPEAT, CASE) is skipped up to its END word, so that the words inside it are not
+     * read as statements. The words that close the construct around it are left for its own parser.
+     */
+    private skipStatement(opener: TokenTypeValue, stopAfterLine?: number): void {
+        let depth = STATEMENT_OPENERS.has(opener) ? 1 : 0;
+        while (!this.isAtEnd()) {
+            const type = this.current().type;
+            if (BLOCK_END_TOKENS.has(type)) return;
+            // the line of an unterminated string ends the statement: its semicolon is inside the string
+            if (stopAfterLine !== undefined && this.current().line > stopAfterLine) return;
+            if (VAR_BLOCK_STARTS.has(type)) {
+                // a declaration block where a statement should be: skip it whole
+                while (!this.isAtEnd() && !this.check(TokenType.END_VAR) && !BLOCK_END_TOKENS.has(this.current().type)) this.advance();
+                this.match(TokenType.END_VAR);
+                return;
+            }
+            if (type === TokenType.SEMICOLON && depth === 0) {
+                this.advance();
+                return;
+            }
+            if (STATEMENT_OPENERS.has(type)) {
+                depth++;
+            } else if (STATEMENT_CLOSERS.has(type)) {
+                if (depth === 0) return;
+                depth--;
+                this.advance();
+                if (depth === 0) {
+                    this.match(TokenType.SEMICOLON);
+                    return;
+                }
+                continue;
+            } else if (depth === 0 && STATEMENT_MIDDLES.has(type)) {
+                return;
+            }
+            this.advance();
+        }
+    }
+
+    /**
+     * Parse one declaration of a VAR block into `into`; `a, b : INT;` declares both (CMP-030).
+     * A declaration with an error is recorded and skipped.
+     */
+    private parseVarDeclInto(into: VarDecl[], section: VarSectionValue): void {
+        if (this.atBlockEnd()) {
+            // END_VAR is missing: the error is that of the unit
+            into.push(this.parseVarDecl(section));
+            return;
+        }
+        const start = this.pos;
+        try {
+            // Names after the first are taken out of the token list and declared again with the first one's type
+            const extra: Token[] = [];
+            let at = this.pos + 1;
+            while (this.tokens[at]?.type === TokenType.COMMA && this.tokens[at + 1]?.type === TokenType.IDENTIFIER) {
+                extra.push(this.tokens[at + 1]!);
+                at += 2;
+            }
+            if (extra.length > 0 && this.tokens[at]?.type === TokenType.COLON && this.tokens[this.pos]?.type === TokenType.IDENTIFIER) {
+                this.tokens.splice(this.pos + 1, extra.length * 2);
+                const first = this.parseVarDecl(section);
+                into.push(first);
+                for (const name of extra) {
+                    into.push({ ...first, name: name.value, line: name.line, column: name.column, tags: { ...first.tags } });
+                }
+            } else {
+                into.push(this.parseVarDecl(section));
+            }
+        } catch (caught) {
+            if (!(caught instanceof ParseError)) throw caught;
+            this.record(caught);
+            // the declaration ends at its semicolon; the block at END_VAR
+            const stopAfterLine = this.unterminatedStringLine(caught);
+            while (!this.isAtEnd() && !this.check(TokenType.END_VAR) && !this.atBlockEnd()) {
+                if (this.match(TokenType.SEMICOLON)) break;
+                if (stopAfterLine !== undefined && this.current().line > stopAfterLine) break;
+                this.advance();
+            }
+            if (this.pos === start && !this.check(TokenType.END_VAR)) this.advance();
+        }
+    }
 }
+
+/** Text that stands for an instance expression, for messages and annotations. */
+function describeInstance(expr: Expression): string {
+    switch (expr.kind) {
+        case 'Identifier': return expr.name;
+        case 'MemberAccess': return `${describeInstance(expr.object)}.${expr.member}`;
+        case 'ArrayAccess': return `${describeInstance(expr.array)}[...]`;
+        default: return '<instance>';
+    }
+}
+
+/** What an integer type holds, for the range check of a typed literal. */
+const INTEGER_TYPE_RANGES: Record<string, [bigint, bigint]> = {
+    SINT: [-128n, 127n],
+    USINT: [0n, 255n],
+    BYTE: [0n, 255n],
+    INT: [-32768n, 32767n],
+    UINT: [0n, 65535n],
+    WORD: [0n, 65535n],
+    DINT: [-2147483648n, 2147483647n],
+    UDINT: [0n, 4294967295n],
+    DWORD: [0n, 4294967295n],
+    LINT: [-(2n ** 63n), 2n ** 63n - 1n],
+    ULINT: [0n, 2n ** 64n - 1n],
+    LWORD: [0n, 2n ** 64n - 1n],
+};

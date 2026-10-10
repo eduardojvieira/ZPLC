@@ -1,0 +1,13 @@
+{
+  "requirement": "CMP-033",
+  "title": "library block names as names of members, parameters, functions and variables",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QW0",
+      "type": "INT",
+      "value": 14
+    }
+  ]
+}

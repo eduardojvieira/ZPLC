@@ -7,7 +7,7 @@ import productManifest from '../../../../package.json';
 import { ZPLC_CONSTANTS } from '@zplc/compiler';
 import { compileSingleFileWithTask, type PLCLanguage } from '../compiler';
 import { getLanguageFromFilename } from '../types';
-import { artifactEvidence, compilerCheck, compilerCompile, executionPermission, finishToolExecution, firmwareBuild, projectInspect, projectMigrationExport, projectMigrationPreview, projectValidate, safeCompilerDiagnostic, safetyCheck, scenarioRun, startToolExecution, symbolsList, testsRun, toolchainInspect, withToolExecution, type FirmwareBuildSummary, type ProjectMigrationExportResult, type TestRunResult, type ToolEvidence, type ToolExecutionStart, type ToolResult } from './toolApi';
+import { artifactEvidence, compilerCheck, compilerCompile, compilerWarningDiagnostics, executionPermission, finishToolExecution, firmwareBuild, projectInspect, projectMigrationExport, projectMigrationPreview, projectValidate, safeCompilerDiagnostics, safetyCheck, scenarioRun, startToolExecution, symbolsList, testsRun, toolchainInspect, withToolExecution, type FirmwareBuildSummary, type ProjectMigrationExportResult, type TestRunResult, type ToolEvidence, type ToolExecutionStart, type ToolResult } from './toolApi';
 
 type Values = { help?: boolean; version?: boolean; json?: boolean; output?: string; language?: string };
 type Output = Pick<typeof console, 'log' | 'error'>;
@@ -50,10 +50,12 @@ function describeDiagnostic(diagnostic: { message: string; path?: string; line?:
 }
 /** A single-file build failure with the compiler's own message, line and column (CMP-010 stopgap). */
 function emitCompilerFailure(output: Output, json: boolean, operation: ToolEvidence['operation'], error: unknown, file: string, start: ToolExecutionStart): number {
-  const diagnostic = safeCompilerDiagnostic(error);
-  delete diagnostic.path; // the compiler names the program here, not a file; the human line names the file
-  if (json) emitJson(output, cliExecution(operation, { ok: false, evidence: { schemaVersion: 1, operation, outcome: 'failed', diagnostics: [diagnostic], artifacts: [] } }, start));
-  else output.error(`Error: ${describeDiagnostic(diagnostic, file)}`);
+  // every independent error of the source (CMP-007)
+  const diagnostics = safeCompilerDiagnostics(error);
+  // the compiler names the program here, not a file; the human line names the file
+  for (const diagnostic of diagnostics) delete diagnostic.path;
+  if (json) emitJson(output, cliExecution(operation, { ok: false, evidence: { schemaVersion: 1, operation, outcome: 'failed', diagnostics, artifacts: [] } }, start));
+  else diagnostics.forEach((diagnostic) => output.error(`Error: ${describeDiagnostic(diagnostic, file)}`));
   return 1;
 }
 export function firmwareBuildExitCode(result: ToolResult<FirmwareBuildSummary>): number {
@@ -116,7 +118,10 @@ async function singleFileCompile(file: string, values: Values, output: Output): 
     const result = compileSingleFileWithTask(await readFile(file, 'utf8'), language, { taskName: 'Main', intervalMs: 50, priority: 3, programName: 'Main' });
     const artifact = values.output?.toLowerCase().endsWith('.bin') ? result.bytecode : result.zplcFile;
     if (values.output && !await writeArtifact(values.output, artifact)) return emitFailure(output, json, 'compile', 'Unable to write output artifact', start);
-    const value = { ok: true as const, summary: { codeSize: result.codeSize, language, draftCounter: ZPLC_CONSTANTS.DRAFT_COUNTER }, evidence: { schemaVersion: 1 as const, operation: 'compile' as const, outcome: 'passed' as const, diagnostics: [], artifacts: [artifactEvidence(values.output?.toLowerCase().endsWith('.bin') ? 'bytecode' : 'zplc', artifact)] } };
+    const warnings = compilerWarningDiagnostics(result.warnings);
+    for (const warning of warnings) delete warning.path; // the compiler names the program here, not a file
+    const value = { ok: true as const, summary: { codeSize: result.codeSize, language, draftCounter: ZPLC_CONSTANTS.DRAFT_COUNTER }, evidence: { schemaVersion: 1 as const, operation: 'compile' as const, outcome: 'passed' as const, diagnostics: warnings, artifacts: [artifactEvidence(values.output?.toLowerCase().endsWith('.bin') ? 'bytecode' : 'zplc', artifact)] } };
+    if (!json) value.evidence.diagnostics.forEach((warning) => output.error(`Warning: ${describeDiagnostic(warning, file)}`));
     if (json) emitJson(output, cliExecution('compile', value, start));
     else if (values.output) output.log(`Compiled ${file} (${result.codeSize} bytes, contract draft ${ZPLC_CONSTANTS.DRAFT_COUNTER})`);
     else output.log(result.assembly);
@@ -169,6 +174,8 @@ export async function main(args = Bun.argv.slice(2), output: Output = console, o
   else if (result.ok && command === 'safety-check') output.log('safety-check coverage checked');
   else if (result.ok && command === 'compile') output.log(`compile passed (contract draft ${ZPLC_CONSTANTS.DRAFT_COUNTER})`);
   else if (result.ok) output.log(`${command} passed`); else result.evidence.diagnostics.forEach((diagnostic) => output.error(`Error: ${describeDiagnostic(diagnostic)}`));
+  // a build that passed can still say what it accepted that the language reference does not define (CMP-031)
+  if (result.ok && !values.json && (command === 'compile' || command === 'check')) result.evidence.diagnostics.forEach((warning) => output.error(`Warning: ${describeDiagnostic(warning)}`));
   return command === 'test' || command === 'scenario-run' ? testExitCode(result as TestRunResult) : result.ok ? 0 : 1;
 }
 

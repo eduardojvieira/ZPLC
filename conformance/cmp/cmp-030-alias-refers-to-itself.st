@@ -1,0 +1,7 @@
+TYPE A : B; B : A; END_TYPE
+
+PROGRAM Cycle
+VAR
+  x : A;
+END_VAR
+END_PROGRAM

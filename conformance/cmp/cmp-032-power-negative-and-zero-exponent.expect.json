@@ -1,0 +1,23 @@
+{
+  "requirement": "CMP-032",
+  "title": "** with a negative exponent and with the exponent 0",
+  "scans": 1,
+  "scanMs": 10,
+  "expect": [
+    {
+      "at": "%QD0",
+      "type": "REAL",
+      "value": 0.25
+    },
+    {
+      "at": "%QD4",
+      "type": "REAL",
+      "value": 1.0
+    },
+    {
+      "at": "%QD8",
+      "type": "REAL",
+      "value": 1.0
+    }
+  ]
+}

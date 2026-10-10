@@ -1,0 +1,13 @@
+{
+  "requirement": "CMP-007",
+  "title": "an undeclared name in each of several statements is reported once each",
+  "build": "fails",
+  "lines": [
+    5,
+    7,
+    8
+  ],
+  "messageIncludes": [
+    "first"
+  ]
+}

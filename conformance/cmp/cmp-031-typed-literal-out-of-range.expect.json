@@ -1,0 +1,11 @@
+{
+  "requirement": "CMP-031",
+  "title": "a typed literal outside the range of its type is rejected",
+  "build": "fails",
+  "lines": [
+    5
+  ],
+  "messageIncludes": [
+    "out of range"
+  ]
+}

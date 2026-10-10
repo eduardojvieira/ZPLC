@@ -1,0 +1,6 @@
+PROGRAM Literal
+VAR
+  seen AT %QW0 : INT;
+END_VAR
+  seen := SINT#200;
+END_PROGRAM

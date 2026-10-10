@@ -1,0 +1,9 @@
+{
+  "requirement": "CMP-007",
+  "title": "the END_IF of a broken IF is not a second error",
+  "build": "fails",
+  "lines": [
+    5,
+    10
+  ]
+}

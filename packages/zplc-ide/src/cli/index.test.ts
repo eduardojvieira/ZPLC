@@ -246,6 +246,25 @@ describe('CLI JSON boundary', () => {
       expect(JSON.parse(json.lines[0] ?? '{}')).toMatchObject({ ok: false, evidence: { operation: 'compile', outcome: 'failed', artifacts: [], diagnostics: [{ code: 'COMPILATION_FAILED', message: "Unknown identifier 'nope'", phase: 'codegen', line: 5, column: 3 }] } });
     } finally { await rm(root, { recursive: true, force: true }); }
   });
+  it('prints every error of a single file, one line each, and the warnings of a file that builds (CMP-007, CMP-031)', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'zplc-cli-many-')); const broken = join(root, 'broken.st'); const hex = join(root, 'hex.st');
+    try {
+      await writeFile(broken, 'PROGRAM Broken\nVAR\n  x : INT;\nEND_VAR\n  x := ;\n  x := 1 @ 2;\n  nope := 3;\nEND_PROGRAM\n');
+      const human = output(); expect(await main(['compile', broken], human)).toBe(1);
+      expect(human.errors).toEqual([
+        `Error: ${broken}:5:8: Compilation of 'Main' failed: Expected expression, got SEMICOLON`,
+        `Error: ${broken}:6:10: Compilation of 'Main' failed: Unexpected character: '@'`,
+      ]);
+      const json = output(); expect(await main(['compile', broken, '--json'], json)).toBe(1);
+      expect(JSON.parse(json.lines[0] ?? '{}').evidence.diagnostics.map((diagnostic: { line: number; column: number }) => [diagnostic.line, diagnostic.column])).toEqual([[5, 8], [6, 10]]);
+
+      await writeFile(hex, 'PROGRAM Hex\nVAR\n  x AT %QW0 : INT;\nEND_VAR\n  x := 0xFF;\nEND_PROGRAM\n');
+      const passed = output(); expect(await main(['compile', hex], passed)).toBe(0);
+      expect(passed.errors).toEqual([`Warning: ${hex}:5:8: The hexadecimal literal 0xFF is not IEC 61131-3 syntax: write 16#FF`]);
+      const passedJson = output(); expect(await main(['compile', hex, '--json'], passedJson)).toBe(0);
+      expect(JSON.parse(passedJson.lines[0] ?? '{}')).toMatchObject({ ok: true, evidence: { outcome: 'passed', diagnostics: [{ code: 'NON_IEC_HEX_LITERAL', line: 5, column: 8 }] } });
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
   it('says the position refers to the generated Structured Text for a graphical single file', async () => {
     const root = await mkdtemp(join(tmpdir(), 'zplc-cli-message-sfc-')); const source = join(root, 'chart.sfc.json');
     try {
